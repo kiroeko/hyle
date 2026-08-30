@@ -47,18 +47,6 @@ void saxpy_highway(float a, const float* x, float* y, std::size_t n) {
   for (; i < n; ++i) y[i] = a * x[i] + y[i];
 }
 
-float reduce_max_highway(const float* x, std::size_t n) {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
-  if (n == 0) return 0.0f;
-  auto acc = hn::Set(d, x[0]);
-  std::size_t i = 0;
-  for (; i + w <= n; i += w) acc = hn::Max(acc, hn::LoadU(d, x + i));
-  float m = hn::ReduceMax(d, acc);
-  for (; i < n; ++i) m = x[i] > m ? x[i] : m;
-  return m;
-}
-
 void scale_highway(float a, const float* x, float* y, std::size_t n) {
   const hn::ScalableTag<float> d;
   const std::size_t w = hn::Lanes(d);

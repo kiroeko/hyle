@@ -1,5 +1,13 @@
 # SIMD/Math 重构与收口 epic
 
+> 当前执行面已在 2026-08-30 转入
+> [`simd-v3 multi-provider routing`](simd-v3-provider-routing.md)：Highway、xsimd 与 HYLE 是并存候选，
+> baseline 的 387 个 operation 必须逐项有账、比较和终态。SIMD-00～11 及下文原 vendor-first 计划保存已发生
+> 的工作；SIMD-12 已被新范围取代，不再授权“抽样后整体删除”。
+>
+> 当前进度：SIMD-13、SIMD-14 已完成，SIMD-15 正在执行。下文 00～12 的 vendor-first 目标形状是历史方案，
+> 不能覆盖 v3 的多 provider、逐项资格化与 fail-closed route 合同。
+
 ## 目标
 
 在不把 API 和实现扭曲成 benchmark 形状的前提下，把约 3.8 万行 CPU SIMD 产品迁移为“成熟 vendor
@@ -13,7 +21,8 @@
 
 ## 为什么必须使用 epic
 
-- 当前 SIMD 约 38,118 行 tracked 实现、108 个实现文件；约占当前自实现非测试代码的 45.5%；
+- 当前 SIMD 约 3.86 万行 tracked 实现；其中 `vec.h`、`native/*` 与七套 `backend/*` 约 24,990 行，
+  是本轮必须清算的平行机制，不得因普通 family 已迁移就继续冒充终态产品；
 - tests/simd 约 11,475 行，bench/simd 约 5,846 行；全量操作、类型、size、ISA、peer 的笛卡尔积不可作为
   日常收口门；
 - 48 份相关文档中 37 份是历史 task，architecture 又混入阶段流水账和旧终态叙事；
@@ -26,7 +35,7 @@
 |---|---|
 | C++23 已有的普通 scalar primitive | 标准库 |
 | 非负整数 shape 的 ceiling division / representable round-up | 已关闭的 `hyle::math` |
-| register/D-tag、dtype、连续 row/buffer、runtime/exact/native dispatch | `hyle::simd` |
+| dtype、连续 row/buffer、private runtime、exact 与 source-fat dispatch | `hyle::simd` |
 | stride/layout/workspace/threading、tensor operator、模型融合、quant block/GEMM | `compute` 或消费者 |
 | GPU/accelerator backend | 对应 accelerator owner |
 
@@ -76,9 +85,19 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 | 09 | [search 与 scan](tickets/simd-09-search-scan.md) | product | 08 | 是 | 1 日 |
 | 10 | [bitpack 与 random](tickets/simd-10-bitpack-random.md) | product | 09 | 是 | 1 日 |
 | 11 | [ordering、radix 与 top-k](tickets/simd-11-ordering.md) | product | 10 | 是 | 1 日 |
-| 12 | [集成、文档、六问与 closure](tickets/simd-12-integration-closure.md) | verification | 11 | 仅修复阻断项 | 1 日 |
+| 12 | [机制清算、集成、文档、六问与 closure](tickets/simd-12-integration-closure.md) | superseded historical work | 11 | 停止；不得继续删除 | terminal |
+| 13 | [387-operation 全量 inventory 与审计](tickets/simd-13-all-op-audit.md) | scope audit / machine contract | v3 card | 否 | 4 工程时 |
+| 14 | [多 provider 静态路由底座](tickets/simd-14-provider-substrate.md) | product architecture | 13 | 是 | 1 日 / P1 30 分钟 |
+| 15 | [全部 operation 路由资格化](tickets/simd-15-route-qualification.md) | correctness / P1 route audit | 14 | 只提取赢家 | 2 日 / 串行机器 8 小时 |
+| 16 | [consumer 迁移与旧机制清算](tickets/simd-16-migration-cleanup.md) | product migration / deletion | 15 | 是，受 ledger 控制 | 1 日 / P1 60 分钟 |
+| 17 | [交付与收口](tickets/simd-17-delivery-closure.md) | candidate / verification | 16 | 只修集成 blocker | 1 日 / 串行机器 4 小时 |
 
 条件产品票允许得出 `DIRECT WRAP / DELETE PORT / KEEP MINIMAL PORT`；“升级”不预设一定复制更多上游代码。
+
+SIMD-00～11 的 `DONE` 是其能力、语义和当时有限 FIX 的历史事实，不等于旧 register mechanism 已经删除。
+SIMD-12 原计划已被 owner 的 multi-provider/387 全量要求击穿。当前每项终态细化为
+`KEEP_HYLE/ROUTE_HIGHWAY/ROUTE_XSIMD/REMOVE_REDUNDANT`；只有 387/387 ledger 零漏项、零 `PENDING`，
+且获胜实现先提取、引用和覆盖迁移后，SIMD-16 才有删除权限。
 
 ## 控制面建立时的草稿归属裁决
 
@@ -98,7 +117,7 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 ## 文档终态
 
 - architecture：只保留长期边界、vendor ownership、dispatch/accuracy/resource 决策；
-- user：只保留普通、expert native、exact/fat-kernel 的选择方法、合同和陷阱；
+- user：只保留普通、fixed-source、exact/source-fat kernel 的选择方法、合同和陷阱；
 - developer：仪器、dispatch 维护与已复现疑难问题；
 - implementation：本 epic、tickets、历史 task 和按 family 保存的证据。
 
@@ -109,7 +128,7 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 - 每张 ticket 都为 `DONE` 或有不会被掩盖的 terminal blocker；
 - 所有准入 `MUST` 为 `COMPLETE/ROUTED`，不存在 `PARTIAL/MISSING + KEEP`；
 - 第三方 integrated source 的版本、修改面、许可证、semantic/mechanism/delivery owner 可追踪；
-- source/static/shared、native/exact/fat/runtime、直接 consumer 与三平台适用 correctness 通过；
+- source/static/shared、fixed/exact/fat/runtime、直接 consumer 与三平台适用 correctness 通过；
 - 每个 P1 family 只有具名、合格、可重放 verdict，未测 ISA/类型/操作不被外推；
 - C/Native FFI 保持清洁负空间，C++ 普通入口无需理解内部 selector；
 - architecture/user/developer/implementation 四类文档无互相冲突的当前结论；

@@ -31,12 +31,14 @@ std::uint32_t str_ascii_lower_avx2(const char*, std::uint32_t, char*,
                                    std::uint32_t) noexcept;
 std::uint32_t str_ascii_upper_avx2(const char*, std::uint32_t, char*,
                                    std::uint32_t) noexcept;
+#if defined(HYLE_CONTAINER_HAS_AVX512)
 std::uint32_t str_count_avx512(const char* data, std::uint32_t size, char c) noexcept;
 std::uint32_t str_rfind_char_avx512(const char* data, std::uint32_t size, char c) noexcept;
 std::uint32_t str_ascii_lower_avx512(const char*, std::uint32_t, char*,
                                      std::uint32_t) noexcept;
 std::uint32_t str_ascii_upper_avx512(const char*, std::uint32_t, char*,
                                      std::uint32_t) noexcept;
+#endif
 #elif defined(HYLE_ARCH_ARM64)
 std::uint32_t str_count_neon(const char* data, std::uint32_t size, char c) noexcept;
 std::uint32_t str_rfind_char_neon(const char* data, std::uint32_t size, char c) noexcept;

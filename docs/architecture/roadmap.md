@@ -48,8 +48,9 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | graph | core, error, mem, container, sched | util_core |
 
 声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
-container 另有不进入产品闭包的 build-private `simd_vec_headers` seam：它让 per-ISA 实现复用
-`hyle/simd/vec.h` 时留下真实 build-interface target 边，但不会为 container 用户构建或安装完整 simd。
+SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only
+`hyle_highway_headers` 外部实现 target，但 Container 不因此依赖、构建或安装 `hyle::simd`。Highway 的
+来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。
 
 `container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
 `hyle::container`；target 名称为 `hyle::container_intrusive`。`time` 的公开 `TimerEntry` 与

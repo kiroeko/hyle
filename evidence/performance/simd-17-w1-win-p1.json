@@ -1,0 +1,79 @@
+{
+  "schema": "hyle.simd.closure-p1/v1",
+  "date": "2026-08-30",
+  "verdict": "PASS",
+  "scope": {
+    "machine_profile": "W1-WIN",
+    "compiler": "MSVC-19.50.35728.0",
+    "build_type": "Release",
+    "target": "AVX2",
+    "instrument_profile": "closure-perf-v1",
+    "material_margin_pct": 5,
+    "counts": [4096, 1048576]
+  },
+  "qualification": {
+    "orders": {"candidate_first": 2, "peer_first": 2},
+    "replicas_per_side_per_run": 4,
+    "cpu": 2,
+    "core_class": 1,
+    "priority": "high",
+    "calibration": "PASS",
+    "certification": "PASS"
+  },
+  "ordinary_row_dtype": {
+    "candidate": "shipping target body selected by the terminal provider route",
+    "peer": "same-contract direct locked Highway body",
+    "aggregate_non_inferiority_5pct": "PASS",
+    "reporter_counts": {"TIE": 3, "INCONCLUSIVE": 4, "LOSE": 0},
+    "interpretation": "The reporter does not promote four placement-sensitive rows to TIE, but every product row has a 95% lower bound above 0.95. This proves the predeclared 5% non-inferiority gate without claiming equality or superiority.",
+    "rows": [
+      {"title": "row add f32 (4096)", "ratio": 1.014, "ci95": [1.005, 1.024]},
+      {"title": "row add f32 (1048576)", "ratio": 1.006, "ci95": [0.997, 1.034]},
+      {"title": "convert f16-to-f32 (4096)", "ratio": 1.008, "ci95": [0.992, 1.019]},
+      {"title": "convert f16-to-f32 (1048576)", "ratio": 1.010, "ci95": [0.995, 1.022]},
+      {"title": "mixed bf16 dot (4096)", "ratio": 1.007, "ci95": [0.997, 1.021]},
+      {"title": "mixed bf16 dot (1048576)", "ratio": 1.010, "ci95": [0.995, 1.022]}
+    ],
+    "report": "evidence/performance/simd-17-w1-win-row-report.txt"
+  },
+  "activation_route": {
+    "candidate": "locked Highway f32 whole-buffer body",
+    "peer_and_product_route": "locked xsimd f32 whole-buffer body",
+    "decision": "ROUTE_XSIMD",
+    "aggregate": "PASS",
+    "rows": [
+      {"title": "tanh f32 (4096)", "ratio_highway_over_xsimd": 0.702, "ci95": [0.648, 0.775]},
+      {"title": "tanh f32 (1048576)", "ratio_highway_over_xsimd": 0.714, "ci95": [0.664, 0.798]},
+      {"title": "tanh-gelu f32 (4096)", "ratio_highway_over_xsimd": 0.751, "ci95": [0.694, 0.835]},
+      {"title": "tanh-gelu f32 (1048576)", "ratio_highway_over_xsimd": 0.759, "ci95": [0.714, 0.850]}
+    ],
+    "interpretation": "All four qualified rows reproduce the finite xsimd material-winner exception. LOSE in the reporter is the Highway candidate losing to the xsimd peer; the shipped route selects xsimd.",
+    "report": "evidence/performance/simd-17-w1-win-activation-report.txt"
+  },
+  "public_boundary": {
+    "contract": "ordinary fat delivery performs one cached target call per whole buffer; fixed/exact source delivery performs no runtime provider selection",
+    "verdict": "STRUCTURAL_PASS",
+    "evidence": [
+      "evidence/performance/simd-14-provider-route-codegen-w1-win-msvc-avx2.json",
+      "evidence/performance/simd-15-algorithm-codegen-w1-win-msvc-avx2.json"
+    ],
+    "claim_limit": "Informational public/body timing is retained for diagnostics and does not create a separate peer or an all-platform latency claim."
+  },
+  "raw_inputs": [
+    {"path": "evidence/performance/simd-17-w1-win-row-hyle-first-1.txt", "sha256": "e161ab669b1986f80277ae83b2a37ae530b66c10d66806735189fc90d2808727"},
+    {"path": "evidence/performance/simd-17-w1-win-row-hyle-first-2.txt", "sha256": "730b2a4b9858d7001bd48c5f64b74ac88527c448e3dc57b1cf9fccd975ccab86"},
+    {"path": "evidence/performance/simd-17-w1-win-row-highway-first-1.txt", "sha256": "8ce1836e821c686aa1f64faf0a14b1eb0f96d83f8bd9cc02eb9bbef528261362"},
+    {"path": "evidence/performance/simd-17-w1-win-row-highway-first-2.txt", "sha256": "af81879519d5bb5f3780c2a9a751b33b6d9c6a73c65e8798fe0ff6ae17d93c28"},
+    {"path": "evidence/performance/simd-17-w1-win-activation-highway-first-1.txt", "sha256": "196ee2a96588f57646d17e31d83fcbf1fb4f9c0ad4fbe2f1dcd49ccdfef94272"},
+    {"path": "evidence/performance/simd-17-w1-win-activation-highway-first-2.txt", "sha256": "6c47cdb23184d5e51b5cd65c019268f321ac75a36c145e41f769ace33b2e5051"},
+    {"path": "evidence/performance/simd-17-w1-win-activation-xsimd-first-1.txt", "sha256": "bc1b3654c3ed1d69dc1eb5a50d07429bcd2483c7674e97fb46908f95706103f5"},
+    {"path": "evidence/performance/simd-17-w1-win-activation-xsimd-first-2.txt", "sha256": "1826e0a44309de778a1360628e18bda67a935e520aff785d9976c1d0b64d80f8"}
+  ],
+  "tool_identity": {
+    "row_benchmark_sha256": "100787bc14e674bdcb111cee375a0a15b9dc41c597b03abdf5ea8e8c5899bdbf",
+    "activation_benchmark_sha256": "5f79c2ccdc9bf4d12c5a27cdb4ea426563a56c3c7c0471d68d5e653f49e602be",
+    "engine_sha256": "f3dac7163c83706a8aaa95885b0a45c851c628b8346edf974ebe9728adb670a6",
+    "reporter_sha256": "50001fbea285fa23dfa85d15ea6d75e2d70bba608d2846e07b8199d65bb2b62b"
+  },
+  "claim": "On W1-WIN/MSVC/AVX2, the frozen source-primary row/dtype routes pass the 5% engineering non-inferiority gate and the two admitted activation exceptions materially favor the shipped xsimd route. No all-operation, all-platform or Formal SOTA claim is made."
+}

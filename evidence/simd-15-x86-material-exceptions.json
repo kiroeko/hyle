@@ -1,0 +1,519 @@
+{
+  "schema": "hyle.simd.material-exceptions/v1",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "policy": "Retain HYLE only when the same title clears the 5% material gate on both qualified AVX2 compilers. Ties, inconclusive rows, one-compiler-only wins and cross-compiler reversals route to Highway.",
+  "receipts": [
+    "evidence/performance/simd-15-w1-win-msvc-avx2-highway.json",
+    "evidence/performance/simd-15-w1-wsl-gcc14-avx2-highway.json"
+  ],
+  "exception_title_count": 28,
+  "exception_operation_count": 28,
+  "exceptions": [
+    {
+      "title": "BitShuffle u64 (4096)",
+      "operations": [
+        "BitShuffle"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.066,
+        "ci95_lo": 1.056,
+        "ci95_hi": 1.092
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.109,
+        "ci95_lo": 1.097,
+        "ci95_hi": 1.118
+      }
+    },
+    {
+      "title": "CeilInt f32->i32",
+      "operations": [
+        "CeilInt"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.47,
+        "ci95_lo": 1.425,
+        "ci95_hi": 1.493
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.756,
+        "ci95_lo": 1.727,
+        "ci95_hi": 1.779
+      }
+    },
+    {
+      "title": "ConvertTo f32->i32",
+      "operations": [
+        "ConvertTo"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.42,
+        "ci95_lo": 1.355,
+        "ci95_hi": 1.53
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.831,
+        "ci95_lo": 1.766,
+        "ci95_hi": 1.885
+      }
+    },
+    {
+      "title": "DemoteTo i32->i16 (sat)",
+      "operations": [
+        "DemoteTo"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.871,
+        "ci95_lo": 1.828,
+        "ci95_hi": 1.893
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 2.004,
+        "ci95_lo": 1.92,
+        "ci95_hi": 2.045
+      }
+    },
+    {
+      "title": "Div i32 invariant",
+      "operations": [
+        "Div"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.145,
+        "ci95_lo": 1.133,
+        "ci95_hi": 1.152
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.193,
+        "ci95_lo": 1.176,
+        "ci95_hi": 1.214
+      }
+    },
+    {
+      "title": "Expand i32 (4096, 50%)",
+      "operations": [
+        "Expand"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 2.204,
+        "ci95_lo": 2.185,
+        "ci95_hi": 2.251
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 2.124,
+        "ci95_lo": 2.1,
+        "ci95_hi": 2.151
+      }
+    },
+    {
+      "title": "FloorInt f32->i32",
+      "operations": [
+        "FloorInt"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.477,
+        "ci95_lo": 1.433,
+        "ci95_hi": 1.5
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.783,
+        "ci95_lo": 1.749,
+        "ci95_hi": 1.814
+      }
+    },
+    {
+      "title": "IfNegativeThenElseZero f32",
+      "operations": [
+        "IfNegativeThenElseZero"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.356,
+        "ci95_lo": 1.34,
+        "ci95_hi": 1.374
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.189,
+        "ci95_lo": 1.172,
+        "ci95_hi": 1.217
+      }
+    },
+    {
+      "title": "IfNegativeThenZeroElse f32",
+      "operations": [
+        "IfNegativeThenZeroElse"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.301,
+        "ci95_lo": 1.233,
+        "ci95_hi": 1.365
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.19,
+        "ci95_lo": 1.181,
+        "ci95_hi": 1.222
+      }
+    },
+    {
+      "title": "LoadExpand i32 (4096, 50%)",
+      "operations": [
+        "LoadExpand"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 2.205,
+        "ci95_lo": 2.185,
+        "ci95_hi": 2.253
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 2.135,
+        "ci95_lo": 2.118,
+        "ci95_hi": 2.168
+      }
+    },
+    {
+      "title": "LoadN/StoreN i32 (half lanes)",
+      "operations": [
+        "LoadN",
+        "StoreN"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.589,
+        "ci95_lo": 1.567,
+        "ci95_hi": 1.61
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.683,
+        "ci95_lo": 1.622,
+        "ci95_hi": 1.716
+      }
+    },
+    {
+      "title": "MaskedConvertTo f32-i32",
+      "operations": [
+        "MaskedConvertTo"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 2.057,
+        "ci95_lo": 2.031,
+        "ci95_hi": 2.079
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.811,
+        "ci95_lo": 1.78,
+        "ci95_hi": 1.892
+      }
+    },
+    {
+      "title": "MaskedModOr i32 invariant",
+      "operations": [
+        "MaskedModOr"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.108,
+        "ci95_lo": 1.095,
+        "ci95_hi": 1.114
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.117,
+        "ci95_lo": 1.097,
+        "ci95_hi": 1.13
+      }
+    },
+    {
+      "title": "MaskedMulComplex f32",
+      "operations": [
+        "MaskedMulComplex"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.213,
+        "ci95_lo": 1.196,
+        "ci95_hi": 1.223
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.102,
+        "ci95_lo": 1.084,
+        "ci95_hi": 1.123
+      }
+    },
+    {
+      "title": "MaskedMulComplexConj f32",
+      "operations": [
+        "MaskedMulComplexConj"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.21,
+        "ci95_lo": 1.199,
+        "ci95_hi": 1.223
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.107,
+        "ci95_lo": 1.09,
+        "ci95_hi": 1.12
+      }
+    },
+    {
+      "title": "Mod i32 invariant",
+      "operations": [
+        "Mod"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.141,
+        "ci95_lo": 1.128,
+        "ci95_hi": 1.148
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.159,
+        "ci95_lo": 1.134,
+        "ci95_hi": 1.182
+      }
+    },
+    {
+      "title": "MulComplex f32",
+      "operations": [
+        "MulComplex"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.426,
+        "ci95_lo": 1.409,
+        "ci95_hi": 1.44
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.26,
+        "ci95_lo": 1.224,
+        "ci95_hi": 1.288
+      }
+    },
+    {
+      "title": "MulComplexConj f32",
+      "operations": [
+        "MulComplexConj"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.398,
+        "ci95_lo": 1.382,
+        "ci95_hi": 1.424
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.246,
+        "ci95_lo": 1.217,
+        "ci95_hi": 1.26
+      }
+    },
+    {
+      "title": "NearestInt f32->i32",
+      "operations": [
+        "NearestInt"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.413,
+        "ci95_lo": 1.338,
+        "ci95_hi": 1.514
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.803,
+        "ci95_lo": 1.751,
+        "ci95_hi": 1.857
+      }
+    },
+    {
+      "title": "PairwiseSub i32",
+      "operations": [
+        "PairwiseSub"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.082,
+        "ci95_lo": 1.063,
+        "ci95_hi": 1.112
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.13,
+        "ci95_lo": 1.055,
+        "ci95_hi": 1.152
+      }
+    },
+    {
+      "title": "PairwiseSub128 i32",
+      "operations": [
+        "PairwiseSub128"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.1,
+        "ci95_lo": 1.051,
+        "ci95_hi": 1.119
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.125,
+        "ci95_lo": 1.06,
+        "ci95_hi": 1.164
+      }
+    },
+    {
+      "title": "PopulationCount u32 (4096)",
+      "operations": [
+        "PopulationCount"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.493,
+        "ci95_lo": 1.477,
+        "ci95_hi": 1.518
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.509,
+        "ci95_lo": 1.471,
+        "ci95_hi": 1.532
+      }
+    },
+    {
+      "title": "ReverseBits i32",
+      "operations": [
+        "ReverseBits"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 2.086,
+        "ci95_lo": 2.072,
+        "ci95_hi": 2.104
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 2.207,
+        "ci95_lo": 1.868,
+        "ci95_hi": 2.286
+      }
+    },
+    {
+      "title": "RoundingShr i32",
+      "operations": [
+        "RoundingShr"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.476,
+        "ci95_lo": 1.381,
+        "ci95_hi": 1.496
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.43,
+        "ci95_lo": 1.325,
+        "ci95_hi": 1.459
+      }
+    },
+    {
+      "title": "RoundToInt f32->i32",
+      "operations": [
+        "RoundToInt"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.4,
+        "ci95_lo": 1.368,
+        "ci95_hi": 1.441
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.82,
+        "ci95_lo": 1.745,
+        "ci95_hi": 1.866
+      }
+    },
+    {
+      "title": "StoreInterleaved4 f32 (4096)",
+      "operations": [
+        "StoreInterleaved4"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.491,
+        "ci95_lo": 1.477,
+        "ci95_hi": 1.501
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.466,
+        "ci95_lo": 1.441,
+        "ci95_hi": 1.489
+      }
+    },
+    {
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 identity",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.355,
+        "ci95_lo": 1.323,
+        "ci95_hi": 1.384
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.488,
+        "ci95_lo": 1.434,
+        "ci95_hi": 1.534
+      }
+    },
+    {
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 permuted",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "scope": "AVX2 on both qualified MSVC-19.50 and GCC-14.2 routes for the title type/shape",
+      "decision": "KEEP_HYLE",
+      "msvc": {
+        "ratio_hyle_over_highway": 1.429,
+        "ci95_lo": 1.389,
+        "ci95_hi": 1.47
+      },
+      "gcc": {
+        "ratio_hyle_over_highway": 1.451,
+        "ci95_lo": 1.415,
+        "ci95_hi": 1.479
+      }
+    }
+  ]
+}

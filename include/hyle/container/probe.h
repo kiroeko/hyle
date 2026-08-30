@@ -8,15 +8,12 @@
 #include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 
-// SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, NOT
-// routed through the simd/vec.h abstraction -- ON PURPOSE, and the reason is INLINEABILITY, not
-// a dependency rule. (container is topologically after simd in the DAG and CAN depend on it --
-// sibling str_search.cc does, for count/rfind.) But `match()` is inlined into the innermost
-// find/insert/erase probe loop, so it must use the COMPILE-TIME baseline ISA (SSE2 everywhere
-// on x86-64, NEON baseline on aarch64) and inline with zero dispatch. vec.h reaches wide ISAs
-// (AVX2/AVX-512) via per-TU -march compilation + a runtime best_isa() indirect call -- fine to
-// pay ONCE per whole-buffer scan (str_search), fatal to pay PER PROBE. A fixed 16-wide (SSE2) /
-// 8-wide (NEON/SWAR) group is exactly abseil's choice, and the right one here.
+// SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, not
+// routed through a whole-buffer provider kernel. The reason is inlineability, not a dependency
+// rule: `match()` sits inside every find/insert/erase probe and must use the compile-time baseline
+// ISA (SSE2 on x86-64, NEON on AArch64) with zero dispatch. Container's string scans can afford
+// one cached target call for an entire buffer; a hash probe cannot afford one per group. A fixed
+// 16-wide SSE2 or 8-wide NEON/SWAR group follows the mature SwissTable shape.
 //
 // GroupPortable (SWAR, 8-wide) is ALWAYS compiled, so it is testable on every platform
 // (including x64). GroupSse2 (16-wide) is compiled + aliased as `Group` on x86-64; GroupNeon

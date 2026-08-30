@@ -1,0 +1,59 @@
+{
+  "schema": "hyle.simd.material-exceptions/v1",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "policy": "Retain HYLE only for an exact NEON type/contract row whose qualified finite AppleClang batch clears the 5% material gate. The uncalibrated full batch authorizes no exception and is not rerun.",
+  "receipts": [
+    "evidence/performance/simd-15-m1-mac-clang21-neon-highway.json",
+    "evidence/performance/simd-15-m1-mac-clang21-neon-full-unqualified.json"
+  ],
+  "exception_title_count": 5,
+  "exception_operation_count": 5,
+  "exceptions": [
+    {
+      "title": "CompressNot u64 (4096, 50%)",
+      "operations": ["CompressNot"],
+      "scope": "NEON on the qualified AppleClang-21 route for the title type/contract",
+      "decision": "KEEP_HYLE",
+      "ratio_hyle_over_highway": 1.284,
+      "ci95_lo": 1.284,
+      "ci95_hi": 1.285
+    },
+    {
+      "title": "Expand i32 (4096, 50%)",
+      "operations": ["Expand"],
+      "scope": "NEON on the qualified AppleClang-21 route for the title type/contract",
+      "decision": "KEEP_HYLE",
+      "ratio_hyle_over_highway": 2.229,
+      "ci95_lo": 2.052,
+      "ci95_hi": 2.234
+    },
+    {
+      "title": "LoadExpand i32 (4096, 50%)",
+      "operations": ["LoadExpand"],
+      "scope": "NEON on the qualified AppleClang-21 route for the title type/contract",
+      "decision": "KEEP_HYLE",
+      "ratio_hyle_over_highway": 2.279,
+      "ci95_lo": 2.264,
+      "ci95_hi": 2.282
+    },
+    {
+      "title": "CompressBlendedStore i32 (4096, 50%)",
+      "operations": ["CompressBlendedStore"],
+      "scope": "NEON on the qualified AppleClang-21 route for the title type/contract",
+      "decision": "KEEP_HYLE",
+      "ratio_hyle_over_highway": 5.172,
+      "ci95_lo": 5.091,
+      "ci95_hi": 5.257
+    },
+    {
+      "title": "DemoteTo i32->i16 (sat)",
+      "operations": ["DemoteTo"],
+      "scope": "NEON on the qualified AppleClang-21 route for the title type/contract",
+      "decision": "KEEP_HYLE",
+      "ratio_hyle_over_highway": 1.896,
+      "ci95_lo": 1.882,
+      "ci95_hi": 2.143
+    }
+  ]
+}

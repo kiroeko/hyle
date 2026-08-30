@@ -1,0 +1,121 @@
+{
+  "schema": "hyle.simd.xsimd-bounded-screen/v1",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "policy": "Highway is the maintenance default for same-contract standard primitives. xsimd requires an existing material advantage before a narrower fixed-width scope is created; token availability alone does not trigger another benchmark.",
+  "inventory_counts": {
+    "xsimd_unavailable": 277,
+    "xsimd_non_unavailable": 110,
+    "xsimd_non_unavailable_pending_before_screen": 91,
+    "pending_scopes_including_sve_or_rvv": 78,
+    "fixed_or_facade_only_findings_below": 13
+  },
+  "scalable_scope_disposition": "The 78 pending legacy scopes that include SVE or RVV cannot be fully implemented by xsimd's fixed-width batch. No existing material xsimd evidence authorizes splitting those scopes, so Highway remains the default without another timing matrix.",
+  "fixed_or_facade_findings": [
+    {
+      "operation": "BitwiseIfThenElse",
+      "xsimd_contract": "COMPOSED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd can spell the arbitrary-bit blend from bitwise operators, but has no distinct algorithm or material evidence against Highway's direct primitive.",
+      "source": "xsimd:include/xsimd/arch/common/xsimd_common_arithmetic.hpp"
+    },
+    {
+      "operation": "ComplexConj",
+      "xsimd_contract": "NOT_COMPARABLE",
+      "disposition": "ROUTE_BY_HYLE_HIGHWAY_EVIDENCE",
+      "reason": "HYLE consumes one interleaved real vector; xsimd::batch<std::complex<T>> owns separate real/imag batches, so a representation bridge is not the same register contract.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:640-647"
+    },
+    {
+      "operation": "MaxOfLanes",
+      "xsimd_contract": "COMPOSED_SAME_CONTRACT",
+      "disposition": "ROUTE_BY_HYLE_HIGHWAY_EVIDENCE",
+      "reason": "xsimd reduce_max returns one scalar; matching HYLE's broadcast-vector result requires an additional broadcast and has no independent material evidence.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:2103-2111"
+    },
+    {
+      "operation": "MinOfLanes",
+      "xsimd_contract": "COMPOSED_SAME_CONTRACT",
+      "disposition": "ROUTE_BY_HYLE_HIGHWAY_EVIDENCE",
+      "reason": "xsimd reduce_min returns one scalar; matching HYLE's broadcast-vector result requires an additional broadcast and has no independent material evidence.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:2114-2125"
+    },
+    {
+      "operation": "Mod",
+      "xsimd_contract": "NOT_COMPARABLE",
+      "disposition": "ROUTE_BY_HYLE_HIGHWAY_EVIDENCE",
+      "reason": "HYLE Mod consumes a reusable precomputed invariant Divisor; xsimd remainder/fmod consumes a batch divisor and does not provide the same setup/amortization contract.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:993-1001,2142-2154"
+    },
+    {
+      "operation": "MulHighLow",
+      "xsimd_contract": "ADAPTED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd mul_hilo returns {high, low}; a zero-cost field reorder matches HYLE's low return/high out contract, but the locked AVX2 implementation uses the same 32-bit partial-product construction and has no material winner evidence.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:1817-1824;include/xsimd/arch/xsimd_avx2.hpp:955-962"
+    },
+    {
+      "operation": "MulSub",
+      "xsimd_contract": "ADAPTED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd fms and Highway/HYLE lower to the target FMA form when available; no different algorithm or material xsimd evidence exists.",
+      "source": "xsimd:include/xsimd/arch/common/xsimd_common_arithmetic.hpp:101-105"
+    },
+    {
+      "operation": "NearestInt",
+      "xsimd_contract": "NOT_COMPARABLE",
+      "disposition": "ROUTE_BY_HYLE_HIGHWAY_EVIDENCE",
+      "reason": "nearbyint_as_int has an explicit silent-overflow warning and its complete exceptional/out-of-range behavior has not been qualified against HYLE's signed-vector conversion contract.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:1831-1857"
+    },
+    {
+      "operation": "NegMulSub",
+      "xsimd_contract": "ADAPTED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd fnms is the same fused arithmetic shape on applicable targets and has no material evidence that justifies a separate provider route.",
+      "source": "xsimd:include/xsimd/arch/common/xsimd_common_arithmetic.hpp:131-135"
+    },
+    {
+      "operation": "PromoteTo",
+      "xsimd_contract": "NOT_COMPARABLE",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd widen returns two full batches and its common fallback stores and reloads memory; this is not HYLE/Highway's selected-half D-tag result contract.",
+      "source": "xsimd:include/xsimd/arch/common/xsimd_common_cast.hpp:24-36"
+    },
+    {
+      "operation": "RebindMask",
+      "xsimd_contract": "NOT_COMPARABLE",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd batch_bool is bound to its batch lane/architecture representation; public bitwise_cast does not establish HYLE's cross-lane-type mask rebind contract.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:3037-3055"
+    },
+    {
+      "operation": "ReciprocalNewton",
+      "xsimd_contract": "COMPOSED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd exposes the raw reciprocal estimate (or division fallback), not a distinct one-Newton-step primitive; composing the same refinement has no algorithmic advantage over Highway primitives.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:2055-2068;include/xsimd/arch/xsimd_avx.hpp:1414-1420"
+    },
+    {
+      "operation": "ReciprocalSqrtNewton",
+      "xsimd_contract": "COMPOSED_SAME_CONTRACT",
+      "disposition": "ROUTE_HIGHWAY",
+      "reason": "xsimd exposes the raw rsqrt estimate; matching HYLE requires the same Newton composition and has no independent material winner evidence.",
+      "source": "xsimd:include/xsimd/types/xsimd_api.hpp:2287-2295;include/xsimd/arch/xsimd_avx.hpp:1462-1471"
+    }
+  ],
+  "known_outside_register_inventory": {
+    "capability": "tanh_f32_batch and gelu_tanh_f32_batch",
+    "disposition": "ROUTE_XSIMD",
+    "reason": "The certified current-peer report records matching special-case outputs, 1 ULP xsimd versus 2 ULP Highway, and a material throughput advantage at 4096 and 1048576 elements in both orders.",
+    "evidence": [
+      "evidence/performance/simd-15-w1-win-msvc-avx2-xsimd-tanh.json"
+    ]
+  },
+  "benchmark_additions": 0,
+  "conclusion": "No additional primitive xsimd timing matrix is justified. Keep the known tanh family candidate; choose Highway for unresolved standard primitives and use existing HYLE/Highway material evidence for finite HYLE exceptions."
+}

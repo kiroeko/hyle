@@ -1,10 +1,16 @@
 # SIMD v2 vendor-first resume closure
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: TERMINAL SUPERSEDED -->
 
 > 当前产品状态只以 [`module-status.json`](../../module-status.json) 为准。本页是从 terminal
 > [`simd-v1`](simd-v1-closure.md) 恢复的新一轮冻结卡；旧 task/evidence 只作审计输入，不授权产品改动。
 > 施工顺序和单票停止规则见 [`SIMD epic`](simd-epic-v1.md)。
+
+> 2026-08-30 terminal verdict：`BLOCKED/SUPERSEDED_BY_OWNER_RESCOPE`。在 SIMD-12 删除旧 register
+> mechanism 前，current xsimd f32 `tanh` 已复现 material advantage；owner 随后明确要求 Highway、xsimd
+> 与 HYLE 多套候选长期并存，并对旧 387 个 operation 全量逐项裁决。该新需求与本卡“Highway 为默认产品
+> 机制、xsimd 仅具名补位、抽样后删除”的冻结范围不兼容。本轮没有 candidate，禁止按本页余下 FIX 清单
+> 继续删除；恢复记录见 [`simd-v3-provider-routing`](simd-v3-provider-routing.md)。
 
 ## Closure card（`AUDITED`）
 
@@ -17,7 +23,7 @@
   `9f2a3c0dd653c16823e3aec7eca0d960dbca0b08`。工作树中的 search、ordering、activation 与 dependency-hash
   草稿不是 baseline 或 candidate，只是 SIMD-08/09/11 的 `REWORK/REGENERATE` 输入。
 - 进入原因与 demand IDs：
-  - `SIMD-V2-VENDOR-01`：约 1.9 万行平行 register backend 与 checked-in vendor ports 让 HYLE 重复承担
+  - `SIMD-V2-VENDOR-01`：约 2.5 万行平行 register/backend/native 机制与 checked-in vendor ports让 HYLE 重复承担
     Highway/xsimd 的 ISA、compiler 与算法升级；用户要求成熟 vendor 机制优先；
   - `SIMD-V2-DELIVERY-01`：普通 C++ 用户仍需要自然 pointer/span/buffer API、一次 runtime dispatch，
     source-primary expert 需要 direct/fixed/fat kernel；不能把 vendor 类型泄漏到普通 ABI；
@@ -55,9 +61,9 @@
     route 不支付 runtime dispatch；
   - 同 capability 的 candidate shared artifact 或 clean selected-component build time 若较 baseline 增长超过
     20%，必须由新增能力/target 明确计费，否则为 material resource failure。
-- 总调查 / 性能预算：SIMD-04～11 各最多一个工程日、P1 60 分钟；SIMD-12 最多一个工程日、P1 90 分钟；
-  全轮上限 9 个工程日与 9.5 小时性能取证。任何票未到结论即按自己的 `DONE/BLOCKED` 停止，不把余额
-  借给另一票无限调查。
+- 总调查 / 性能预算：SIMD-04～11 各最多一个工程日、P1 60 分钟；SIMD-12 在 2026-08-30 owner
+  “不兼容旧实现”重定界和本次计划复核后，**既有消耗不重置**，剩余硬上限 8 工程时、P1 60 分钟。
+  达到剩余上限仍不能删除通用 legacy mechanism 或形成候选即 `BLOCKED`，不得继续研究或重置预算。
 - 最多实验 / 修复：每票一次正反序复现、一次 codegen/profile 机制检查、一个有界产品批次和一次重跑；
   不发明第五种 benchmark 姿势。公共工具失格登记独立 tool task 并使适用 gate `INCONCLUSIVE/BLOCKED`。
 - machine profile：W1-WIN 负责资格化 P1；W1-WIN、W1-WSL、M1-MAC 负责适用 correctness 与
@@ -81,7 +87,7 @@
   property/differential、ASan/UBSan、真实或隔离 ISA、public-header self-containment 与 direct consumer。
   move/destroy/cancellation 只在最终公开 owning state 确实存在时适用，不制造虚构 gate。
 - delivery gates：selected SIMD source embedding、installed static/shared C++23 consumers；Windows
-  export/import 和 runtime staging、Unix loader-relative lookup、offline locked dependency、exact/fat/native
+  export/import 和 runtime staging、Unix loader-relative lookup、offline locked dependency、exact/fat/source
   target discovery、中央 component graph 与 target link 一致。不得恢复旧 C/FFI artifact。
 - performance gates：每票只跑其预声明 family rows，source 对 source、runtime 对等价 runtime、同 ISA/
   accuracy/layout/alias/workspace。最终只重放受后续 backend 改动影响的 family 与冻结 sentinel，不重跑
@@ -106,8 +112,8 @@ source 路径。参考库只形成下面的具名能力族，不按 symbol 求�
 | family | admitted journeys / semantic variants | lifecycle、boundary 与正常资源 | current route | coverage | missing edge / v2 destination |
 |---|---|---|---|---|---|
 | target selection and delivery | unknown-CPU ordinary batch；known-target exact；expert source/fat kernel；actual-target diagnostics | process-wide immutable selection；ordinary 每 batch 一次 indirect call；source/static/shared/offline | public `Runtime` table、Platform aliases、HYLE per-ISA TUs | `PARTIAL` | 函数表和 CPU aliases 泄漏实现且多处各自选择；SIMD-05/06 改为 private table + 小型实际-target诊断，Highway 是 kernel authority |
-| expert register/kernel construction | Container string/bitset 两条当前消费者；未来 codec/quant/filter/fused row | compile-time target；vector type 不跨 TU/shared boundary；O(n)、零 allocation | `vec.h` + 七套 backend + `native/*` | `PARTIAL` | 约 1.9 万行平行机制；先迁移两条真实消费者，再 direct Highway 或极薄 adapter，未被 demand 证明的 HYLE spelling 删除 |
-| native source algorithms | fixed-target transform/generate/find/count/copy-if 与自定义 tail | caller owns buffers；exact alias only；无 runtime callback | HYLE templates built on D-tag | `PARTIAL` | 用户任务成立但机制重复；保留 task-shaped thin adapters，内部改写为 Highway |
+| expert register/kernel construction | Container string/bitset 两条当前消费者；未来 codec/quant/filter/fused row | compile-time target；vector type 不跨 TU/shared boundary；O(n)、零 allocation | `vec.h` + 七套 backend + `native/*` | `PARTIAL` | 约 2.5 万行平行机制；迁移真实消费者后物理删除，expert 直接使用锁定 Highway，不保留 HYLE register adapter 产品 |
+| source algorithms | fixed-target transform/generate/find/count/copy-if 与自定义 tail | caller owns buffers；exact alias only；无 runtime callback | HYLE templates built on D-tag | `PARTIAL` | 任务形状成立但平行模板面没有独立价值；ordinary 能力走 HYLE batch API，自定义 kernel 走 direct Highway fixed/fat source seam，旧 native surface 删除 |
 | ordinary f32/f64 row algebra | residual/add、gate multiply、scale/bias、SAXPY、sum/dot/norm composition | exact alias 或 disjoint；O(n)/O(1)；零 heap/lock/copy | `dot/saxpy/add` | `PARTIAL` | 缺 sub/mul/div/scale/add-scalar/affine/sum/abs/negate/square/sqrt；SIMD-07 补齐，不把 tensor stride/fusion 下沉 |
 | storage dtype conversion | f32 与 f16/bf16/e4m3/e5m2；storage-to-storage without full temporary；mixed dot | explicit RNE/saturation/NaN；exact alias only when widths equal；O(n)/O(1) | scalar types + asymmetric named batch calls | `PARTIAL` | 现有 f16→fp8 特例使转换图单向；SIMD-07 提供一个可发现的完整 hub/直接路线并保留 specialty kernels |
 | narrow numeric source work | target-bound f16/bf16 arithmetic、search、sum、total order | register widen/operate/narrow；whole-buffer tensor policy belongs higher layer | expert narrow tags + ordinary search/sum | `COMPLETE/ROUTED` | expert task 完整；普通 narrow activation/sort/quant policy 路由 Compute，具体 CPU half-row consumer 出现才准入 |
@@ -128,7 +134,7 @@ source 路径。参考库只形成下面的具名能力族，不按 symbol 求�
 | `types.h`, `dtype.h`, `dtype_ops.h` | storage types/conversion；Compute mixed row north-star | `FIX/BORROW` in SIMD-07；HYLE owns value/rounding contract，vendor owns mechanism |
 | `dispatch.h`, `runtime.h`, `target.h`, `fat_kernel.h` | target/delivery；仓库外无直接语法消费者 | `FIX/REMOVE_INTERNALS` in SIMD-05/06；不再公开 function table 或转发 Platform detector |
 | `vec.h`, `backend/*.h` | expert register family；Container 只有 string/bitset 两条 direct consumer | `MIGRATE_THEN_DROP` in SIMD-05；387 names 是删除 inventory，不是兼容清单 |
-| `native.h`, `native/*.h` | task-shaped source algorithms/row primitives | `THIN_ADAPTER` in SIMD-05/07/09/10；只保留能比 direct Highway 更自然的 whole-range helper |
+| `native.h`, `native/*.h` | task-shaped source algorithms/row primitives | owner 重定界为 `DELETE`；ordinary whole-range helper 已由 batch API 承担，自定义源码 kernel 直接使用锁定 Highway |
 | `narrow_float.h`, `narrow_algorithm.h`, `narrow_ops.h` | narrow expert work及 ordinary search/sum | `KEEP/BORROW` in SIMD-07；不扩张 tensor/activation policy |
 | `ops.h` | Compute 当前 add/dot/saxpy；Qwen/ggml row algebra | `FIX` in SIMD-07，形成完整普通 row seam |
 | `math.h` | Compute 当前 exp；real/complex engineering 与 AI row | `BORROW/FIX` in SIMD-04/08；移除 hidden heap，保留 HYLE accuracy/alias API |
@@ -184,8 +190,10 @@ managed sample 或 C package metadata。shared library 的 decorated C++ exports
 7. SIMD-10：把普通 bitpack 改为跨 tier canonical bytes；为 RNG 增加 advance/split 生命周期并记录线程合同。
 8. SIMD-11：ordinary full/partial/select 不隐藏 O(n) allocation；资格化或移除 benchmark-derived strategy；完成
    stable radix/argsort workspace、OOM、overlap、type/order，最终 direct-wrap VQSort。
-9. SIMD-12：只修集成 blocker，冻结 candidate、三交付/consumer/correctness/P1 family evidence、文档六问与
-   terminal receipt；不得在最后一票新增能力。
+9. SIMD-12：完成 SIMD-05 已明确递延的 Container 两条 consumer 退出、Ordering-owned VQSort mechanism
+   内聚和通用 `vec/native/backend` 物理删除；随后只修集成 blocker，冻结 candidate、三交付/consumer/
+   correctness/P1 family evidence、文档六问与 terminal receipt。该清算属于原冻结 FIX，不得新增能力、
+   Container 公共 API 或 benchmark shape。
 
 工作树草稿裁决不变：extrema→SIMD-09 `REWORK`，activation headers→SIMD-08 `REWORK`，typed scratch
 ordering→SIMD-11 `REWORK`，dependency content hash→最终内容后 `REGENERATE`。任何草稿都不是 candidate。
@@ -201,7 +209,7 @@ ordering→SIMD-11 `REWORK`，dependency content hash→最终内容后 `REGENER
    family；wrapper proof 只证明架构可行。
 4. **旧 C ABI / Native FFI：**源码树为清洁负空间；没有 SIMD C 产品面。历史 build artifact 不构成合同。
 5. **构建与导入：**当前旧实现能构建不证明迁移候选；direct Highway 后必须重签 source/static/shared、
-   offline、Windows staging、Unix lookup、exact/native/fat consumer。
+   offline、Windows staging、Unix lookup、exact/fixed/fat consumer。
 6. **C++ API 与文档：**普通 whole-buffer 形状方向正确，但 public Runtime/dispatch、bitpack format、hidden
    allocation、单向 dtype 与若干半项 journey 不自然；它们正是冻结 FIX。当前 user guide 标为 provisional，
    SIMD-12 前不得当成终态指南。

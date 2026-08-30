@@ -1,0 +1,117 @@
+{
+  "schema": "hyle.simd.algorithm-route-proof/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "proof_method": "Current consumer/contract audit plus bounded whole-range workload and final optimized code-shape evidence. Tail helpers retain their user-facing one-vector clamp and are not distorted into large-array benchmarks; Stream uses its existing greater-than-LLC workload.",
+  "ledger_evidence_group": {
+    "id": "P1:algorithm:memory-workloads",
+    "kind": "CURRENT_WORKLOAD_AND_CODEGEN_PROOF",
+    "contract": "all three algorithm-classified operations have explicit three-provider assessments, consumer semantics, bounded resource cost and a complete route"
+  },
+  "validation": {
+    "hyle_correctness": "tests/simd/vec_test.cc covers zero/partial-lane memory results; vqsort uses SafeCopyN only for disjoint tail buffers with remaining <= Lanes(d)",
+    "codegen": "evidence/performance/simd-15-algorithm-codegen-w1-win-msvc-avx2.json",
+    "stream_workload": "evidence/performance/simd-15-stream-workload.json",
+    "inventory_erratum": "evidence/simd-15-inventory-parser-erratum.json"
+  },
+  "operations": [
+    {
+      "name": "SafeCopyN",
+      "scope_id": "legacy-all",
+      "public_mapping": "CAPABILITY:SafeCopyN(clamp-to-Lanes, non-overlap)",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "ADAPTER", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:948",
+          "src/simd/sort/vqsort_hyle/vqsort-inl.h:303",
+          "tests/simd/vec_test.cc:842"
+        ]
+      },
+      "highway": {
+        "contract": "ADAPTED_SAME_CONTRACT",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:204",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:g3doc/quick_reference.md:1899",
+          "adapter:min(num,Lanes(d)) preserves HYLE's target-independent clamp",
+          "evidence/performance/simd-15-algorithm-codegen-w1-win-msvc-avx2.json#safe_copy_n"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_AVAILABLE",
+        "evidence": ["locked-xsimd-public-symbol-audit:SafeCopyN=0"]
+      },
+      "decision": "ROUTE_HIGHWAY",
+      "provider": "HIGHWAY",
+      "selection_rationale": "The adapter restores HYLE's deterministic clamp before the locked Highway primitive. It is exact-codegen tied on W1-WIN AVX2, remains O(min(num,Lanes))/O(1), and allows native masked tails on non-faulting targets."
+    },
+    {
+      "name": "SafeFillN",
+      "scope_id": "legacy-all",
+      "public_mapping": "CAPABILITY:SafeFillN(clamp-to-Lanes)",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "ADAPTER", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:943",
+          "tests/simd/vec_test.cc:839"
+        ]
+      },
+      "highway": {
+        "contract": "ADAPTED_SAME_CONTRACT",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:189",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:g3doc/quick_reference.md:1892",
+          "adapter:min(num,Lanes(d)) preserves HYLE's target-independent clamp",
+          "evidence/performance/simd-15-algorithm-codegen-w1-win-msvc-avx2.json#safe_fill_n"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_AVAILABLE",
+        "evidence": ["locked-xsimd-public-symbol-audit:SafeFillN=0"]
+      },
+      "decision": "ROUTE_HIGHWAY",
+      "provider": "HIGHWAY",
+      "selection_rationale": "The clamp adapter is exact-codegen tied on W1-WIN AVX2, never increases asymptotic cost, and exposes the locked provider's native masked-tail implementation where available."
+    },
+    {
+      "name": "Stream",
+      "scope_id": "legacy-all",
+      "public_mapping": "CAPABILITY:Stream+FlushStream lifecycle",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "scripts/simd-op-routing.json#Stream.legacy_sites",
+          "evidence/performance/simd-15-stream-workload.json#windows",
+          "evidence/performance/simd-15-stream-workload.json#macos"
+        ]
+      },
+      "highway": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:g3doc/quick_reference.md:2008",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_256-inl.h:4893",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_neon-inl.h:4212",
+          "evidence/performance/simd-15-stream-workload.json"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_AVAILABLE",
+        "evidence": ["locked-xsimd-public-symbol-audit:Stream=0"]
+      },
+      "decision": "KEEP_HYLE",
+      "provider": "HYLE",
+      "selection_rationale": "HYLE and Highway are exact-codegen tied on AVX2 and source-equivalent on the other fallback/native-store targets, while Highway's AArch64 write-prefetch makes it 2.9x-6.4x slower on current Apple M4 NEON. Provider-coherent HYLE therefore preserves the only demonstrated material winner without losing the tied targets.",
+      "migration_requirement": "SIMD-16 must expose the matching FlushStream completion primitive and document destination alignment, whole-cache-line batching, visibility and cross-core publication. This completes the existing Stream lifecycle; it is not an unrelated new capability."
+    }
+  ]
+}

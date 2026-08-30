@@ -56,6 +56,66 @@ lifecycle 必须记为 `PARTIAL`。
 - 本轮冻结 `FIX` 集：
 - 相邻模块 backlog：
 
+## Owner 六问直答
+
+### 1. 第三方产品路径
+
+| Dependency / locked identity | direct / indirect | `product/test/benchmark/peer` | semantic owner | mechanism / artifact owner | decision authority | delivery owner | public-type leak / upgrade trigger |
+|---|---|---|---|---|---|---|---|
+
+- 标准库 / compiler builtin / OS API 合同：
+- 无第三方时的 target、源码与锁文件反证：
+
+### 2. 推理引擎能力完整度
+
+| Inference journey / ggml difference | admitted demand | HYLE route / owner | `COMPLETE/ROUTED/OUT_OF_SCOPE/MISSING` | evidence / remaining trigger |
+|---|---|---|---|---|
+
+- 当前证据下是否存在未处置 `MUST`：`YES / NO / BLOCKED`
+- 结论边界：这里只回答已准入常用旅程，不承诺未来永不新增，也不按 ggml API 求并集。
+
+### 3. 拟真、公平性能
+
+- tier / normal consumer task / delivery shape：
+- candidate / machine / instrument / peer / resource accounting / margin：
+- verdict：`P0 STRUCTURAL PASS|FAIL + TIMING NOT_APPLICABLE`，或
+  `P1/P2 NON_INFERIOR|BETTER|FAIL|INCONCLUSIVE`；
+- 可以公开的有限 claim：
+- 明确禁止外推的 SOTA / 全平台 / 全操作 claim：
+
+### 4. 旧 C ABI / Native FFI 清洁度
+
+- 当前 FFI policy / 是否有已准入 slice：
+- public C headers/schema、bridge sources、未装饰 C exports：
+- C/managed samples、options、targets、package metadata：
+- private `extern "C"` / C / assembly 边界及 owner：
+- shared C++ decorated exports 与允许的 symbol evidence：
+- verdict：`CLEAN / ADMITTED_FFI_PASS / FAIL / BLOCKED`
+
+### 5. Source / static / shared 构建与导入
+
+| Journey | `PASS/FAIL/NOT_APPLICABLE/BLOCKED` | component/artifact/import evidence | relocation/runtime/known limit |
+|---|---|---|---|
+| source embedding consumer |  |  |  |
+| installed static consumer |  |  |  |
+| installed shared consumer |  |  |  |
+
+- 中央组件闭包 / selected headers：
+- static compile definitions / transitive link closure：
+- shared export/import / Windows staging 或 Unix loader lookup：
+- exact package discovery / relocation：
+
+### 6. C++ API 易用性与文档
+
+| User journey | natural public route | ownership/lifetime/failure/concurrency | misuse/compile diagnostics | guide/example evidence | verdict |
+|---|---|---|---|---|---|
+
+- 默认路径与显式 opt-in 成本：
+- public/internal/benchmark seam 泄漏检查：
+- architecture / user / implementation / performance 职责检查：
+- 过时 API、C ABI、状态或构建说明扫描：
+- verdict：`PASS / FAIL / BLOCKED`
+
 ## Candidate
 
 - product commit / tree：

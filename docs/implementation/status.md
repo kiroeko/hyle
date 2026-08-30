@@ -1,6 +1,6 @@
 # 当前模块施工状态
 
-> 更新时间：2026-08-29。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
+> 更新时间：2026-08-30。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
 > `python scripts/check-module-closure.py` 校验的人读投影。历史任务、architecture、user 或性能页中的
 > `SIGNED/AUDITED/CANDIDATE/PRODUCT LOCKED` 字样都不是当前模块状态。
 
@@ -19,7 +19,7 @@
 | time | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v2-platform-macro-reanchor.md) | time-v2 CLOSED：当前 Time 身份与 Windows 宏组合修复已由三平台正确性、source/static/shared 交付、无宏汇编等价、C++ API/文档和 retained W1-WIN 5% P1 工程证据签署；Formal 独立 PENDING。 |
 | platform | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v2-inference-residency.md) | platform-v2 CLOSED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部签署；Formal 独立 PENDING。 |
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v1-closure.md) | mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。 |
-| simd | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v2-closure.md) | simd-v2 AUDITED：双向 capability/public-surface 审计已映射 34 个公开头、真实 Container/Compute 消费者和 integrated-source 路径；vendor-first、API 清理及 row/dtype/activation/search/scan/bitpack/random/ordering 的有限 FIX 集已冻结，产品施工严格按 SIMD-04～12 顺序执行。 |
+| simd | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v3-provider-routing.md) | simd-v3 AUDITED：387 个 operation / 1,797 个 baseline 定义位置已全部裁决；迁移终态为 422/422 route scope，366 ROUTE_HIGHWAY、34 KEEP_HYLE、22 REMOVE_REDUNDANT、零 PENDING，whole-buffer tanh/GELU 的具名 MSVC/AVX2 例外路由 xsimd。SIMD-16 已完成 consumer 迁移和旧 register/backend 物理清算；SIMD-17 正在冻结 candidate 与终态证据。 |
 | container | BLOCKED | P1 | INCONCLUSIVE / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v1-closure.md) | container-v1 BLOCKED：功能/API、correctness、三平台交付、文档与红队均通过；已资格化的五项 P1 slice 全部通过 5% NI，但冻结卡其余正常性能轴未运行，聚合工程性能保持 INCONCLUSIVE。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 CLOSED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |

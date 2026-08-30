@@ -1,0 +1,2407 @@
+{
+  "compiler": "AppleClang-21.0.0.21000050",
+  "decision_state": "EVIDENCE_ONLY",
+  "instrument": {
+    "engine_sha256": "f3dac7163c83706a8aaa95885b0a45c851c628b8346edf974ebe9728adb670a6",
+    "report_practical_band_pct": 3,
+    "reporter_sha256": "50001fbea285fa23dfa85d15ea6d75e2d70bba608d2846e07b8199d65bb2b62b",
+    "route_material_margin_pct": 5
+  },
+  "ledger": {
+    "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+    "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+    "operation_count": 387,
+    "path": "scripts/simd-op-routing.json",
+    "schema": "hyle.simd.operation-routing/v2"
+  },
+  "machine_profile": "M1-MAC",
+  "missing_source_benched_operations": [
+    "Abs",
+    "AbsDiff",
+    "AddSub",
+    "AllBits0",
+    "AllBits1",
+    "AllFalse",
+    "AllTrue",
+    "And",
+    "AndNot",
+    "AndXor",
+    "ApproximateReciprocal",
+    "ApproximateReciprocalSqrt",
+    "AverageRound",
+    "BitCast",
+    "BitShuffle",
+    "BitwiseIfThenElse",
+    "Broadcast",
+    "BroadcastBlock",
+    "BroadcastLane",
+    "BroadcastSignBit",
+    "Ceil",
+    "CeilInt",
+    "Clamp",
+    "CombineShiftRightBytes",
+    "CombineShiftRightLanes",
+    "ComplexConj",
+    "ConcatLowerLower",
+    "ConcatLowerUpper",
+    "ConcatOdd",
+    "ConcatUpperLower",
+    "ConcatUpperUpper",
+    "ConvertTo",
+    "CopySign",
+    "CopySignToAbs",
+    "CountTrue",
+    "Div",
+    "DupEven",
+    "DupOdd",
+    "Eq",
+    "Eq128",
+    "ExclusiveNeither",
+    "FindFirstTrue",
+    "FindKnownFirstTrue",
+    "FindKnownLastTrue",
+    "FindLastTrue",
+    "Floor",
+    "FloorInt",
+    "Ge",
+    "GetBiasedExponent",
+    "Gt",
+    "HighestSetBitIndex",
+    "IfNegativeThenElse",
+    "IfNegativeThenElseZero",
+    "IfNegativeThenZeroElse",
+    "IfThenElse",
+    "IfThenElseZero",
+    "IfThenZeroElse",
+    "IfVecThenElse",
+    "InterleaveEven",
+    "InterleaveEvenBlocks",
+    "InterleaveLowerBlocks",
+    "InterleaveOdd",
+    "InterleaveOddBlocks",
+    "InterleaveUpper",
+    "InterleaveWholeLower",
+    "InterleaveWholeUpper",
+    "IsEitherNaN",
+    "IsFinite",
+    "IsInf",
+    "IsNaN",
+    "IsNegative",
+    "Le",
+    "Load",
+    "LoadU",
+    "Lt",
+    "Lt128",
+    "Lt128Upper",
+    "MaskedApproximateReciprocal",
+    "MaskedApproximateReciprocalSqrt",
+    "MaskedConvertTo",
+    "MaskedLeadingZeroCount",
+    "MaskedModOr",
+    "MaskedMulAdd",
+    "MaskedMulAddOr",
+    "MaskedMulComplex",
+    "MaskedMulComplexAdd",
+    "MaskedMulComplexConj",
+    "MaskedMulComplexConjAdd",
+    "MaskedMulComplexOr",
+    "MaskedMulFixedPoint15",
+    "MaskedNegMulAdd",
+    "MaskedReduceMax",
+    "MaskedReduceMin",
+    "MaskedReduceSum",
+    "MaskedSatAddOr",
+    "MaskedSatSubOr",
+    "MaskedShiftLeft",
+    "MaskedShiftLeftOr",
+    "MaskedShiftRight",
+    "MaskedShiftRightOr",
+    "MaskedShl",
+    "MaskedShlOr",
+    "MaskedShr",
+    "MaskedShrOr",
+    "MaskedWidenMulPairwiseAdd",
+    "Max",
+    "Max128",
+    "MaxMagnitude",
+    "MaxNumber",
+    "MaxOfLanes",
+    "Min128",
+    "MinMagnitude",
+    "MinNumber",
+    "MinOfLanes",
+    "Mod",
+    "Mul",
+    "MulAddSub",
+    "MulByFloorPow2",
+    "MulByPow2",
+    "MulComplex",
+    "MulComplexAdd",
+    "MulComplexConj",
+    "MulComplexConjAdd",
+    "MulEven",
+    "MulOdd",
+    "MulRound",
+    "MulSub",
+    "MulSubAdd",
+    "MultiRotateRight",
+    "Ne",
+    "Ne128",
+    "NearestInt",
+    "Neg",
+    "NegMulAdd",
+    "NegMulSub",
+    "Not",
+    "OddEven",
+    "OddEvenBlocks",
+    "Or",
+    "Or3",
+    "OrAnd",
+    "PairwiseAdd",
+    "PairwiseAdd128",
+    "PairwiseSub",
+    "PairwiseSub128",
+    "Per4LaneBlockShuffle",
+    "ReciprocalNewton",
+    "ReciprocalSqrtNewton",
+    "ReduceAnd",
+    "ReduceMax",
+    "ReduceMin",
+    "ReduceMul",
+    "ReduceOr",
+    "Reverse2",
+    "Reverse4",
+    "Reverse8",
+    "ReverseBits",
+    "ReverseBlocks",
+    "RotateLeft",
+    "RotateLeftSame",
+    "RotateRight",
+    "RotateRightSame",
+    "Round",
+    "RoundToInt",
+    "RoundingShiftRight",
+    "RoundingShiftRightSame",
+    "RoundingShr",
+    "SaturatedAbs",
+    "SaturatedNeg",
+    "SaturatedSub",
+    "Set",
+    "SetAtOrAfterFirst",
+    "SetAtOrBeforeFirst",
+    "SetBeforeFirst",
+    "SetOnlyFirst",
+    "ShiftLeft",
+    "ShiftLeftBytes",
+    "ShiftLeftLanes",
+    "ShiftLeftSame",
+    "ShiftRight",
+    "ShiftRightBytes",
+    "ShiftRightLanes",
+    "ShiftRightSame",
+    "ShiftRightUniform",
+    "Shl",
+    "Shr",
+    "Shuffle01",
+    "Shuffle0123",
+    "Shuffle0321",
+    "Shuffle1032",
+    "Shuffle2103",
+    "Shuffle2301",
+    "Slide1Down",
+    "Slide1Up",
+    "SlideDownBlocks",
+    "SlideDownLanes",
+    "SlideUpBlocks",
+    "SlideUpLanes",
+    "Sqrt",
+    "Store",
+    "StoreU",
+    "Sub",
+    "SumOfLanes",
+    "SwapAdjacentBlocks",
+    "TestBit",
+    "TrailingZeroCount",
+    "Trunc",
+    "TruncateTo",
+    "Xor",
+    "Xor3",
+    "XorAndNot",
+    "Zero",
+    "ZeroIfNegative"
+  ],
+  "observed_operation_count": 105,
+  "operation_rows": {
+    "AESInvMixColumns": [
+      47
+    ],
+    "AESKeyGenAssist": [
+      55
+    ],
+    "AESLastRound": [
+      16
+    ],
+    "AESLastRoundInv": [
+      63
+    ],
+    "AESRound": [
+      62
+    ],
+    "AESRoundInv": [
+      56
+    ],
+    "Add": [
+      82,
+      115
+    ],
+    "BitsFromMask": [
+      52
+    ],
+    "BlendedStore": [
+      58
+    ],
+    "CLMulLower": [
+      14
+    ],
+    "CLMulUpper": [
+      20
+    ],
+    "CombineMasks": [
+      54
+    ],
+    "Compress": [
+      40
+    ],
+    "CompressBlendedStore": [
+      35
+    ],
+    "CompressNot": [
+      21,
+      32
+    ],
+    "CompressStore": [
+      36
+    ],
+    "ConcatEven": [
+      15
+    ],
+    "ConvertInRangeTo": [
+      85
+    ],
+    "DemoteInRangeTo": [
+      95
+    ],
+    "DemoteMaskTo": [
+      79
+    ],
+    "DemoteTo": [
+      73,
+      116
+    ],
+    "DemoteToNearestInt": [
+      38
+    ],
+    "Dup128MaskFromMaskBits": [
+      61
+    ],
+    "Expand": [
+      33
+    ],
+    "GatherIndex": [
+      66
+    ],
+    "GatherIndexN": [
+      26
+    ],
+    "GatherIndexNOr": [
+      19
+    ],
+    "GatherOffset": [
+      17
+    ],
+    "GetExponent": [
+      84
+    ],
+    "InterleaveLower": [
+      25
+    ],
+    "LeadingZeroCount": [
+      18
+    ],
+    "LoadExpand": [
+      34
+    ],
+    "LoadInterleaved2": [
+      51
+    ],
+    "LoadInterleaved3": [
+      53
+    ],
+    "LoadInterleaved4": [
+      74
+    ],
+    "LoadMaskBits": [
+      44
+    ],
+    "LoadN": [
+      75
+    ],
+    "LoadNOr": [
+      81
+    ],
+    "MaskFromVec": [
+      42
+    ],
+    "MaskedGatherIndex": [
+      11
+    ],
+    "MaskedGatherIndexOr": [
+      3
+    ],
+    "MaskedLoad": [
+      22
+    ],
+    "MaskedLoadOr": [
+      29
+    ],
+    "MaskedScatterIndex": [
+      28
+    ],
+    "Min": [
+      23
+    ],
+    "MulAdd": [
+      37
+    ],
+    "MulEvenAdd": [
+      87
+    ],
+    "MulFixedPoint15": [
+      102
+    ],
+    "MulHigh": [
+      0,
+      1,
+      4,
+      5,
+      6,
+      7,
+      8,
+      10
+    ],
+    "MulHighLow": [
+      2
+    ],
+    "MulOddAdd": [
+      94
+    ],
+    "OrderedDemote2MasksTo": [
+      49
+    ],
+    "OrderedDemote2To": [
+      99
+    ],
+    "OrderedRoundingShiftRightAndDemote2To": [
+      89
+    ],
+    "OrderedShiftRightAndDemote2To": [
+      106
+    ],
+    "PopulationCount": [
+      12
+    ],
+    "PromoteEvenTo": [
+      101
+    ],
+    "PromoteLowerTo": [
+      71
+    ],
+    "PromoteMaskTo": [
+      43
+    ],
+    "PromoteOddTo": [
+      113
+    ],
+    "PromoteTo": [
+      72
+    ],
+    "PromoteUpperTo": [
+      93
+    ],
+    "RebindMask": [
+      46
+    ],
+    "ReduceSum": [
+      78
+    ],
+    "ReorderDemote2To": [
+      88
+    ],
+    "ReorderRoundingShiftRightAndDemote2To": [
+      112
+    ],
+    "ReorderShiftRightAndDemote2To": [
+      96
+    ],
+    "ReorderWidenMulAccumulate": [
+      92
+    ],
+    "Reverse": [
+      39
+    ],
+    "ReverseLaneBytes": [
+      59
+    ],
+    "RoundingShiftRightAndDemoteTo": [
+      80
+    ],
+    "SatWidenMulAccumFixedPoint": [
+      104
+    ],
+    "SatWidenMulPairwiseAccumulate": [
+      107
+    ],
+    "SatWidenMulPairwiseAdd": [
+      91
+    ],
+    "SaturatedAdd": [
+      67
+    ],
+    "ScatterIndex": [
+      41
+    ],
+    "ScatterIndexN": [
+      48,
+      69,
+      77
+    ],
+    "ScatterOffset": [
+      70
+    ],
+    "SetMask": [
+      60
+    ],
+    "ShiftRightAndDemoteTo": [
+      45
+    ],
+    "SlideMask1Down": [
+      65
+    ],
+    "SlideMask1Up": [
+      64
+    ],
+    "SlideMaskDownLanes": [
+      68
+    ],
+    "SlideMaskUpLanes": [
+      13
+    ],
+    "StoreInterleaved2": [
+      31
+    ],
+    "StoreInterleaved3": [
+      27
+    ],
+    "StoreInterleaved4": [
+      30
+    ],
+    "StoreMaskBits": [
+      57
+    ],
+    "StoreN": [
+      75
+    ],
+    "SumOfMulQuadAccumulate": [
+      110
+    ],
+    "SumsOf2": [
+      86
+    ],
+    "SumsOf4": [
+      105
+    ],
+    "SumsOf8": [
+      100
+    ],
+    "SumsOf8AbsDiff": [
+      114
+    ],
+    "SumsOfAdjQuadAbsDiff": [
+      98
+    ],
+    "SumsOfShuffledQuadAbsDiff": [
+      109,
+      111
+    ],
+    "TableLookupBytes": [
+      76
+    ],
+    "TableLookupBytesOr0": [
+      50
+    ],
+    "TableLookupLanes": [
+      24
+    ],
+    "TwoTablesLookupLanes": [
+      9
+    ],
+    "U8FromU32": [
+      103
+    ],
+    "VecFromMask": [
+      83
+    ],
+    "WidenMulAccumulate": [
+      108
+    ],
+    "WidenMulPairwiseAdd": [
+      90
+    ],
+    "ZeroExtendVector": [
+      97
+    ]
+  },
+  "peer": "HIGHWAY",
+  "peer_revision": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+  "ratio_orientation": "HYLE/peer",
+  "raw_inputs": [
+    {
+      "name": "parity-hyle-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "ee45fdcb0ce5a441616684cad6044648f5df5cefaf5ab0d11666ba3a5cca14f8"
+    },
+    {
+      "name": "parity-hwy-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "1e920310cfdd091a06c598ebd9a06d9c6151db885d32647842b3b25d4ffeefd4"
+    },
+    {
+      "name": "parity-hyle-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "9ea6ecce18425ca197d2779ba1827eca37435ba7b8f83f65db019ebd69dc2278"
+    },
+    {
+      "name": "parity-hwy-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "98331bf70c71055ef6dbee3274d17c41504b6f815b9e8e0ad6dafd3d6368173a"
+    },
+    {
+      "name": "widen-hyle-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "e680a95dd6c02398ab35791aff8832bdd020143cb7bfbe0af9100c8c5ae84f60"
+    },
+    {
+      "name": "widen-hwy-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "e31c6533f92b5a66108cc08d45f41ee1b54e1746ee5fd62c49d3acac30710667"
+    },
+    {
+      "name": "widen-hyle-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "8b505f5d02545bb07de731c4321eb2976550b457cdca6ea5996894727789f707"
+    },
+    {
+      "name": "widen-hwy-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "fe68281daff8d792e80e3809777818e244d278ffeed1180fad3756bffe4ebe21"
+    }
+  ],
+  "reports": [
+    {
+      "name": "parity-neon-certified.tsv",
+      "row_count": 84,
+      "sha256": "7428a416ade5d1a988eef6a1bb692a0e7b6ec868f2c0456850399f9b0e179829"
+    },
+    {
+      "name": "widen-neon-certified.tsv",
+      "row_count": 33,
+      "sha256": "989f36e50daef9a12333fbfcb54b16b2ad3ddbdea253ba20477d68d120b5bdf2"
+    }
+  ],
+  "row_count": 117,
+  "rows": [
+    {
+      "ci95_hi": 0.573,
+      "ci95_lo": 0.571,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.571,
+      "ratio_median": 0.571,
+      "spread_hyle": 1.0,
+      "spread_peer": 1.004,
+      "title": "MulHigh i64 (4096)",
+      "verdict": "LOSE"
+    },
+    {
+      "ci95_hi": 0.698,
+      "ci95_lo": 0.696,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.697,
+      "ratio_median": 0.697,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.004,
+      "title": "MulHigh u64 (4096)",
+      "verdict": "LOSE"
+    },
+    {
+      "ci95_hi": 0.89,
+      "ci95_lo": 0.85,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHighLow"
+      ],
+      "placement_uncertainty": 0.046,
+      "ratio_hyle_over_peer": 0.867,
+      "ratio_median": 0.867,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.091,
+      "title": "MulHighLow u64 (4096)",
+      "verdict": "LOSE"
+    },
+    {
+      "ci95_hi": 1.028,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedGatherIndexOr"
+      ],
+      "placement_uncertainty": 0.075,
+      "ratio_hyle_over_peer": 0.982,
+      "ratio_median": 0.983,
+      "spread_hyle": 1.133,
+      "spread_peer": 1.15,
+      "title": "MaskedGatherIndexOr i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.99,
+      "ci95_lo": 0.897,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.987,
+      "ratio_median": 0.986,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.007,
+      "title": "MulHigh u16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.991,
+      "ci95_lo": 0.897,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.988,
+      "ratio_median": 0.987,
+      "spread_hyle": 1.015,
+      "spread_peer": 1.008,
+      "title": "MulHigh u32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.993,
+      "ci95_lo": 0.899,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.99,
+      "spread_hyle": 1.009,
+      "spread_peer": 1.007,
+      "title": "MulHigh i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.991,
+      "ci95_lo": 0.902,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.989,
+      "spread_hyle": 1.008,
+      "spread_peer": 1.007,
+      "title": "MulHigh i8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.995,
+      "ci95_lo": 0.9,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.007,
+      "title": "MulHigh u8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.02,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TwoTablesLookupLanes"
+      ],
+      "placement_uncertainty": 0.127,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.253,
+      "spread_peer": 1.11,
+      "title": "TwoTablesLookupLanes i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.994,
+      "ci95_lo": 0.898,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.009,
+      "spread_peer": 1.009,
+      "title": "MulHigh i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.962,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedGatherIndex"
+      ],
+      "placement_uncertainty": 0.072,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.103,
+      "spread_peer": 1.144,
+      "title": "MaskedGatherIndex i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.026,
+      "ci95_lo": 0.965,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PopulationCount"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.062,
+      "title": "PopulationCount u32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.999,
+      "ci95_lo": 0.905,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMaskUpLanes"
+      ],
+      "placement_uncertainty": 0.294,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.588,
+      "spread_peer": 1.006,
+      "title": "SlideMaskUpLanes i32 amt=2 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 0.918,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CLMulLower"
+      ],
+      "placement_uncertainty": 0.103,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.207,
+      "spread_peer": 1.116,
+      "title": "CLMulLower u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.978,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatEven"
+      ],
+      "placement_uncertainty": 0.034,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.994,
+      "spread_hyle": 1.062,
+      "spread_peer": 1.067,
+      "title": "ConcatEven i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.883,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESLastRound"
+      ],
+      "placement_uncertainty": 0.444,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.888,
+      "spread_peer": 1.003,
+      "title": "AESLastRound u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherOffset"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.062,
+      "spread_peer": 1.047,
+      "title": "GatherOffset i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.024,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LeadingZeroCount"
+      ],
+      "placement_uncertainty": 0.053,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.105,
+      "spread_peer": 1.076,
+      "title": "LeadingZeroCount u32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.121,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndexNOr"
+      ],
+      "placement_uncertainty": 0.234,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.081,
+      "spread_peer": 1.468,
+      "title": "GatherIndexNOr i32 (half n)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.083,
+      "ci95_lo": 0.948,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CLMulUpper"
+      ],
+      "placement_uncertainty": 0.115,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.23,
+      "spread_peer": 1.135,
+      "title": "CLMulUpper u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.139,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressNot"
+      ],
+      "placement_uncertainty": 0.25,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.018,
+      "spread_peer": 1.499,
+      "title": "CompressNot i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.06,
+      "ci95_lo": 0.974,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedLoad"
+      ],
+      "placement_uncertainty": 0.09,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.01,
+      "spread_hyle": 1.155,
+      "spread_peer": 1.18,
+      "title": "MaskedLoad i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.87,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Min"
+      ],
+      "placement_uncertainty": 0.483,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.007,
+      "spread_hyle": 1.966,
+      "spread_peer": 1.039,
+      "title": "Min i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.04,
+      "ci95_lo": 0.973,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupLanes"
+      ],
+      "placement_uncertainty": 0.054,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.109,
+      "spread_peer": 1.1,
+      "title": "TableLookupLanes i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveLower"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 1.011,
+      "ratio_median": 1.012,
+      "spread_hyle": 1.069,
+      "spread_peer": 1.065,
+      "title": "InterleaveLower i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.037,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndexN"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 1.012,
+      "ratio_median": 1.011,
+      "spread_hyle": 1.033,
+      "spread_peer": 1.078,
+      "title": "GatherIndexN i32 (half n)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.121,
+      "ci95_lo": 0.864,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved3"
+      ],
+      "placement_uncertainty": 0.265,
+      "ratio_hyle_over_peer": 1.015,
+      "ratio_median": 0.981,
+      "spread_hyle": 1.382,
+      "spread_peer": 1.531,
+      "title": "StoreInterleaved3 f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.085,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedScatterIndex"
+      ],
+      "placement_uncertainty": 0.071,
+      "ratio_hyle_over_peer": 1.015,
+      "ratio_median": 1.011,
+      "spread_hyle": 1.141,
+      "spread_peer": 1.134,
+      "title": "MaskedScatterIndex i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.073,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedLoadOr"
+      ],
+      "placement_uncertainty": 0.065,
+      "ratio_hyle_over_peer": 1.02,
+      "ratio_median": 1.031,
+      "spread_hyle": 1.096,
+      "spread_peer": 1.129,
+      "title": "MaskedLoadOr i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.22,
+      "ci95_lo": 0.914,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved4"
+      ],
+      "placement_uncertainty": 0.145,
+      "ratio_hyle_over_peer": 1.029,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.214,
+      "spread_peer": 1.289,
+      "title": "StoreInterleaved4 f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.19,
+      "ci95_lo": 0.933,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved2"
+      ],
+      "placement_uncertainty": 0.291,
+      "ratio_hyle_over_peer": 1.085,
+      "ratio_median": 1.098,
+      "spread_hyle": 1.583,
+      "spread_peer": 1.516,
+      "title": "StoreInterleaved2 f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.285,
+      "ci95_lo": 1.284,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressNot"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.284,
+      "ratio_median": 1.284,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "CompressNot u64 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.234,
+      "ci95_lo": 2.052,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Expand"
+      ],
+      "placement_uncertainty": 0.23,
+      "ratio_hyle_over_peer": 2.229,
+      "ratio_median": 2.23,
+      "spread_hyle": 1.46,
+      "spread_peer": 1.003,
+      "title": "Expand i32 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.282,
+      "ci95_lo": 2.264,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadExpand"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 2.279,
+      "ratio_median": 2.281,
+      "spread_hyle": 1.027,
+      "spread_peer": 1.002,
+      "title": "LoadExpand i32 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 5.257,
+      "ci95_lo": 5.091,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressBlendedStore"
+      ],
+      "placement_uncertainty": 0.042,
+      "ratio_hyle_over_peer": 5.172,
+      "ratio_median": 5.15,
+      "spread_hyle": 1.065,
+      "spread_peer": 1.084,
+      "title": "CompressBlendedStore i32 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 0.982,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressStore"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.003,
+      "title": "CompressStore i32 (4096, 50%)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.029,
+      "spread_peer": 1.037,
+      "title": "MulAdd f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.999,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteToNearestInt"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.008,
+      "spread_peer": 1.004,
+      "title": "DemoteToNearestInt f64->i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.996,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Reverse"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.014,
+      "title": "Reverse i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Compress"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.021,
+      "spread_peer": 1.008,
+      "title": "Compress i32 (4096, 50% dense)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndex"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.012,
+      "spread_peer": 1.012,
+      "title": "ScatterIndex i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.997,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskFromVec"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.012,
+      "spread_peer": 1.015,
+      "title": "MaskFromVec i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteMaskTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.005,
+      "spread_peer": 1.004,
+      "title": "PromoteMaskTo i16->i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadMaskBits"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.006,
+      "title": "LoadMaskBits i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightAndDemoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.017,
+      "title": "ShiftRightAndDemoteTo<3> i32->i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RebindMask"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.003,
+      "title": "RebindMask i32->f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.997,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESInvMixColumns"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.011,
+      "title": "AESInvMixColumns u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.003,
+      "spread_peer": 1.004,
+      "title": "ScatterIndexN i32 (one lane)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedDemote2MasksTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "OrderedDemote2MasksTo i32->i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupBytesOr0"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.011,
+      "title": "TableLookupBytesOr0 u8 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "LoadInterleaved2 f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitsFromMask"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.011,
+      "spread_peer": 1.016,
+      "title": "BitsFromMask i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved3"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.0,
+      "spread_peer": 1.0,
+      "title": "LoadInterleaved3 f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CombineMasks"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.011,
+      "spread_peer": 1.011,
+      "title": "CombineMasks i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESKeyGenAssist"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.014,
+      "title": "AESKeyGenAssist u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESRoundInv"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.005,
+      "spread_peer": 1.014,
+      "title": "AESRoundInv u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreMaskBits"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.03,
+      "spread_peer": 1.031,
+      "title": "StoreMaskBits i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BlendedStore"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.003,
+      "spread_peer": 1.003,
+      "title": "BlendedStore i32 (4096, 50%)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReverseLaneBytes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.023,
+      "spread_peer": 1.021,
+      "title": "ReverseLaneBytes u32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetMask"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.021,
+      "spread_peer": 1.021,
+      "title": "SetMask i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Dup128MaskFromMaskBits"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "Dup128MaskFromMaskBits i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESRound"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.013,
+      "title": "AESRound u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESLastRoundInv"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.003,
+      "spread_peer": 1.014,
+      "title": "AESLastRoundInv u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMask1Up"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.006,
+      "spread_peer": 1.006,
+      "title": "SlideMask1Up i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMask1Down"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.006,
+      "spread_peer": 1.006,
+      "title": "SlideMask1Down i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.997,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndex"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.019,
+      "spread_peer": 1.017,
+      "title": "GatherIndex i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.997,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SaturatedAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.003,
+      "title": "SaturatedAdd i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMaskDownLanes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.006,
+      "spread_peer": 1.008,
+      "title": "SlideMaskDownLanes i32 amt=2 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.003,
+      "spread_peer": 1.002,
+      "title": "ScatterIndexN i32 (full n)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterOffset"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.017,
+      "spread_peer": 1.013,
+      "title": "ScatterOffset i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteLowerTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.004,
+      "spread_peer": 1.003,
+      "title": "PromoteLowerTo i16->i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.003,
+      "title": "PromoteTo i16->i32 1-arg (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.023,
+      "title": "DemoteTo i32->i16 1-arg (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.019,
+      "title": "LoadInterleaved4 u8 (4096, RGBA)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadN",
+        "StoreN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.003,
+      "spread_peer": 1.004,
+      "title": "LoadN/StoreN i32 (half lanes)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupBytes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.014,
+      "title": "TableLookupBytes u8 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.007,
+      "title": "ScatterIndexN i32 (half n)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceSum"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.025,
+      "spread_peer": 1.012,
+      "title": "ReduceSum f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 1.002,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteMaskTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.004,
+      "spread_peer": 1.004,
+      "title": "DemoteMaskTo i32->i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundingShiftRightAndDemoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.024,
+      "spread_peer": 1.023,
+      "title": "RoundingShiftRightAndDemoteTo<3> i32->i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.024,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadNOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.056,
+      "spread_peer": 1.043,
+      "title": "LoadNOr i32 (half n)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.022,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Add"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.007,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.033,
+      "spread_peer": 1.057,
+      "title": "Add f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.983,
+      "comparison_kind": "PEER",
+      "operations": [
+        "VecFromMask"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.008,
+      "ratio_median": 1.009,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.024,
+      "title": "VecFromMask i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.056,
+      "ci95_lo": 0.851,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GetExponent"
+      ],
+      "placement_uncertainty": 0.484,
+      "ratio_hyle_over_peer": 0.972,
+      "ratio_median": 0.974,
+      "spread_hyle": 1.968,
+      "spread_peer": 1.046,
+      "title": "GetExponent f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.116,
+      "ci95_lo": 0.958,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConvertInRangeTo"
+      ],
+      "placement_uncertainty": 0.047,
+      "ratio_hyle_over_peer": 0.976,
+      "ratio_median": 0.975,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.094,
+      "title": "ConvertInRangeTo f32->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.977,
+      "ratio_median": 0.977,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.014,
+      "title": "SumsOf2 u8->u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.047,
+      "ci95_lo": 0.759,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulEvenAdd"
+      ],
+      "placement_uncertainty": 0.402,
+      "ratio_hyle_over_peer": 0.977,
+      "ratio_median": 0.976,
+      "spread_hyle": 1.803,
+      "spread_peer": 1.007,
+      "title": "MulEvenAdd bf16->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.108,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.007,
+      "spread_peer": 1.009,
+      "title": "ReorderDemote2To i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedRoundingShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.004,
+      "spread_peer": 1.041,
+      "title": "OrderedRoundingShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.967,
+      "comparison_kind": "PEER",
+      "operations": [
+        "WidenMulPairwiseAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.011,
+      "spread_peer": 1.001,
+      "title": "WidenMulPairwiseAdd i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulPairwiseAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.002,
+      "title": "SatWidenMulPairwiseAdd u8*i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderWidenMulAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.005,
+      "spread_peer": 1.003,
+      "title": "ReorderWidenMulAccumulate i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteUpperTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.007,
+      "spread_peer": 1.002,
+      "title": "PromoteUpperTo i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulOddAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.011,
+      "spread_peer": 1.007,
+      "title": "MulOddAdd bf16->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteInRangeTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.003,
+      "title": "DemoteInRangeTo f64->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.109,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.065,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.13,
+      "spread_peer": 1.008,
+      "title": "ReorderShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ZeroExtendVector"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.003,
+      "title": "ZeroExtendVector i16 half->full",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfAdjQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "SumsOfAdjQuadAbsDiff u8->u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.971,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.006,
+      "spread_peer": 1.042,
+      "title": "OrderedDemote2To i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.099,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf8"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.01,
+      "spread_peer": 1.001,
+      "title": "SumsOf8 u8->u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.967,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteEvenTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.023,
+      "spread_peer": 1.022,
+      "title": "PromoteEvenTo i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.105,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulFixedPoint15"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.979,
+      "spread_hyle": 1.034,
+      "spread_peer": 1.006,
+      "title": "MulFixedPoint15 i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "U8FromU32"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.001,
+      "title": "U8FromU32 u32->u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.099,
+      "ci95_lo": 0.965,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulAccumFixedPoint"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.982,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.022,
+      "title": "SatWidenMulAccumFixedPoint i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.003,
+      "title": "SumsOf4 u8->u32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.005,
+      "spread_peer": 1.034,
+      "title": "OrderedShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulPairwiseAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.001,
+      "spread_peer": 1.002,
+      "title": "SatWidenMulPairwiseAccumulate i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.265,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "WidenMulAccumulate"
+      ],
+      "placement_uncertainty": 0.47,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.94,
+      "title": "WidenMulAccumulate i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.0,
+      "spread_peer": 1.002,
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 permuted",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumOfMulQuadAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.981,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.014,
+      "title": "SumOfMulQuadAccumulate i8->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.107,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.002,
+      "spread_peer": 1.003,
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 identity",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.102,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderRoundingShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.981,
+      "ratio_median": 0.981,
+      "spread_hyle": 1.029,
+      "spread_peer": 1.025,
+      "title": "ReorderRoundingShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.111,
+      "ci95_lo": 0.967,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteOddTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.981,
+      "ratio_median": 0.982,
+      "spread_hyle": 1.013,
+      "spread_peer": 1.042,
+      "title": "PromoteOddTo i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.249,
+      "ci95_lo": 0.973,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf8AbsDiff"
+      ],
+      "placement_uncertainty": 0.441,
+      "ratio_hyle_over_peer": 0.984,
+      "ratio_median": 0.985,
+      "spread_hyle": 1.014,
+      "spread_peer": 1.882,
+      "title": "SumsOf8AbsDiff u8->u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.063,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Add"
+      ],
+      "placement_uncertainty": 0.143,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.285,
+      "spread_peer": 1.247,
+      "title": "Add f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 2.143,
+      "ci95_lo": 1.882,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.896,
+      "ratio_median": 1.895,
+      "spread_hyle": 1.008,
+      "spread_peer": 1.002,
+      "title": "DemoteTo i32->i16 (sat)",
+      "verdict": "WIN"
+    }
+  ],
+  "schema": "hyle.simd.route-qualification/v2",
+  "source_benched_operation_count": 318,
+  "target": "NEON",
+  "verdict": "PASS",
+  "verdict_counts": {
+    "INCONCLUSIVE": 61,
+    "INFO": 0,
+    "LOSE": 3,
+    "TIE": 48,
+    "WIN": 5
+  }
+}

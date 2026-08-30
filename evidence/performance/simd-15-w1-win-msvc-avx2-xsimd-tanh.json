@@ -1,0 +1,93 @@
+{
+  "schema": "hyle.simd.family-route-qualification/v1",
+  "verdict": "PASS",
+  "decision": "ROUTE_XSIMD",
+  "families": [
+    "tanh_f32_batch",
+    "gelu_tanh_f32_batch"
+  ],
+  "scope": {
+    "machine_profile": "W1-WIN",
+    "target": "AVX2",
+    "compiler": "MSVC-19.50.35728.0",
+    "lane_type": "f32",
+    "counts": [4096, 1048576]
+  },
+  "providers": {
+    "candidate": "locked Highway f32 math implementation",
+    "peer": "xsimd",
+    "peer_revision": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "contract": {
+    "tail": "scalar std::tanh / HYLE gelu scalar contract",
+    "alias": "in-place input/output supported",
+    "special_values": "qualified by the activation salvage correctness preflight",
+    "accuracy": {
+      "highway_max_ulp": 2,
+      "xsimd_max_ulp": 1,
+      "tanh_mismatches": 0,
+      "gelu_mismatches": 0
+    }
+  },
+  "instrument": {
+    "report_practical_band_pct": 3,
+    "route_material_margin_pct": 5,
+    "calibration": "PASS",
+    "certification": "PASS",
+    "hyle_first_runs": 2,
+    "xsimd_first_runs": 2,
+    "report_sha256": "7d463c81122b87a21425504ef091a0a554f4bd59661e8d4ced8c9cfab613c9f7",
+    "benchmark_sha256": "419901d6218e0407e1d492ab914002de9f4c64f1de5e05db9abaf33869de3bf4",
+    "engine_sha256": "f3dac7163c83706a8aaa95885b0a45c851c628b8346edf974ebe9728adb670a6",
+    "reporter_sha256": "50001fbea285fa23dfa85d15ea6d75e2d70bba608d2846e07b8199d65bb2b62b"
+  },
+  "rows": [
+    {
+      "title": "salvage tanh f32 xsimd (4096)",
+      "ratio_highway_over_xsimd": 0.724,
+      "ci95_lo": 0.715,
+      "ci95_hi": 0.738,
+      "verdict": "XSIMD_MATERIAL_WIN"
+    },
+    {
+      "title": "salvage tanh f32 xsimd (1048576)",
+      "ratio_highway_over_xsimd": 0.733,
+      "ci95_lo": 0.710,
+      "ci95_hi": 0.743,
+      "verdict": "XSIMD_MATERIAL_WIN"
+    },
+    {
+      "title": "salvage tanh-gelu f32 xsimd (4096)",
+      "ratio_highway_over_xsimd": 0.746,
+      "ci95_lo": 0.728,
+      "ci95_hi": 0.764,
+      "verdict": "XSIMD_MATERIAL_WIN"
+    },
+    {
+      "title": "salvage tanh-gelu f32 xsimd (1048576)",
+      "ratio_highway_over_xsimd": 0.760,
+      "ci95_lo": 0.742,
+      "ci95_hi": 0.767,
+      "verdict": "XSIMD_MATERIAL_WIN"
+    }
+  ],
+  "raw_inputs": [
+    {
+      "name": "simd-12-tanh-hyle-first-1.txt",
+      "sha256": "ca2056d3a3d5f61893db5f12505c97692ee8c78779b8b298d04299d2b1f30792"
+    },
+    {
+      "name": "simd-12-tanh-xsimd-first-1.txt",
+      "sha256": "43acc4dadcfd3298136f67135b23c656791ecae1c4919ae326f56d64da48d7ff"
+    },
+    {
+      "name": "simd-12-tanh-hyle-first-2.txt",
+      "sha256": "79e36e661b58a1b6863884993e900ac52ba3fc5e5aea02da082f831c34aad3d2"
+    },
+    {
+      "name": "simd-12-tanh-xsimd-first-2.txt",
+      "sha256": "52d2cc43dd54861adf5c1e85ed374ee8b0b7d96418349ff138bb6dd53f418d5a"
+    }
+  ],
+  "rationale": "All four qualified size/order rows clear the 5% route margin in the same direction, while xsimd also has the tighter observed ULP bound. This is a finite whole-buffer family exception, not authority to route unrelated register primitives to xsimd."
+}

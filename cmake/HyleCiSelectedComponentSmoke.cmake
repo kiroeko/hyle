@@ -109,6 +109,25 @@ foreach(_linkage IN ITEMS shared static)
     "${CMAKE_COMMAND}" --build "${_sdk_build}" --config Release --parallel 2)
   _hyle_selected_run("install ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" --install "${_sdk_build}" --config Release)
+  if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
+    foreach(_source_only_simd_header IN ITEMS
+        hyle/simd/fat_kernel.h
+        hyle/simd/target.h)
+      if(EXISTS "${_staging}/include/${_source_only_simd_header}")
+        message(FATAL_ERROR
+          "installed ${_linkage} SIMD SDK leaked source-only header "
+          "${_source_only_simd_header}")
+      endif()
+    endforeach()
+    foreach(_source_only_simd_directory IN ITEMS
+        hyle/simd/provider)
+      if(EXISTS "${_staging}/include/${_source_only_simd_directory}")
+        message(FATAL_ERROR
+          "installed ${_linkage} SIMD SDK leaked source-only directory "
+          "${_source_only_simd_directory}")
+      endif()
+    endforeach()
+  endif()
   file(RENAME "${_staging}" "${_prefix}" RESULT _relocate_result)
   if(NOT _relocate_result STREQUAL "0")
     message(FATAL_ERROR

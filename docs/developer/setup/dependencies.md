@@ -7,7 +7,7 @@
 | 依赖 | 类别 | 缺了会怎样 | 怎么被发现 |
 |---|---|---|---|
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
-| **Highway** | **自动拉取**（FetchContent） | 选择 `simd`（或依赖它的组件）时取得；严格离线 bundle 缺源码则配置失败 | lock pin `f503c485…`；只执行 HYLE 自己的 target/package 集成 |
+| **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `f503c485…`；只执行 HYLE 自己的 target/package 集成 |
 | **ggml** | **自动拉取**（FetchContent） | compute + sched/fcontext 且启用 bridge 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `v0.21.0` |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
 | **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
@@ -36,7 +36,7 @@ SHA-256，in-tree snapshot 登记 vendored content tree，修改后并入产品�
 
 当前产品/测试 FetchContent 快照为：
 
-- Highway `f503c485…`（`simd` 直接产品源码）；
+- Highway `f503c485…`（`simd` 与选定 `container` kernel 的直接产品源码）；
 - ggml `v0.21.0`；
 - nghttp2 `v1.70.0`；
 - Vulkan-Headers、volk、glslang 同一 `vulkan-sdk-1.4.357.0` train；
@@ -53,8 +53,8 @@ target 仍强制全量审计，防止发布介质夹带未复证快照。
 代码以 GLOBAL property 证明一个精确测试路径；能注入 toolchain/top-level include 的代码本来就在构建
 信任边界内。
 
-Highway/xsimd 的身份不能混为一谈：`highway` 是 `simd` 选择时取得的直接产品源码，HYLE 只编译
-自己的目标 TU，不执行上游 project，也不把 Highway 类型泄漏进 ordinary batch API；benchmark 使用
+Highway/xsimd 的身份不能混为一谈：`highway` 是选择 `simd` 或 `container` 时取得的直接产品源码，
+HYLE 只编译自己的 target-bound TU，不执行上游 project，也不把 Highway 类型泄漏进 ordinary batch API；benchmark 使用
 独立、干净的 sibling checkout 作同 identity peer。`xsimd` 目前只是数学对照，不进入产品。
 `highway_port` 只登记 SIMD-11 有界裁决后保留的最小 VQSort adaptation，绑定旧 origin、adapted-path
 内容 hash 和 Apache-2.0 payload；它保留 compiler/scalable target glue、HYLE public POD/static entry 与
@@ -94,7 +94,7 @@ symlink 目标的完整 manifest，两者都重验许可证。通过后才设置
 ```text
 hyle-offline-deps.cmake
 deps/
-  highway/         # 选择 simd 时需要
+  highway/         # 选择 simd 或 container 时需要
   ggml/
   nghttp2/
   vulkan_headers/

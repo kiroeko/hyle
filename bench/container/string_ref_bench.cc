@@ -305,10 +305,10 @@ int bench_string_ref() {
   }
 
   // ---- count/rfind at SCALE: 4KB / 64KB / 1MB (the SIMD-width regression gate) --------
-  // count/rfind were unified from hand-rolled SSE2/AVX2 onto the simd/vec.h abstraction
-  // (2026-07). This section is the regression watch: at larger sizes the vector core
-  // dominates (call overhead amortized), so any per-iter penalty vs the old hand core shows
-  // here. Rival is std (std::count / std::string_view::rfind, both libc/STL SIMD). A random
+  // count/rfind use one cached whole-buffer dispatch into direct Highway target TUs. This
+  // section is the regression watch: at larger sizes the vector core dominates (call overhead
+  // amortized), so any per-iteration dispatch or provider-adapter penalty shows here. Rival is
+  // std (std::count / std::string_view::rfind, both libc/STL SIMD). A random
   // byte buffer with a rare needle (present ~1/256) exercises the full scan + a real hit.
   for (std::size_t kb : {std::size_t{4}, std::size_t{64}, std::size_t{1024}}) {
     std::string big;

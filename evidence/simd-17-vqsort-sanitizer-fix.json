@@ -1,0 +1,36 @@
+{
+  "schema": "hyle.simd.correctness-finding/v1",
+  "date": "2026-08-30",
+  "finding": "VQSORT-ASAN-BASECASE-01",
+  "verdict": "FIXED",
+  "scope": "The integrated Highway VQSort adaptation under GCC 14.2 ASan/debug target builds.",
+  "initial_failure": {
+    "machine_profile": "W1-WSL",
+    "sanitizer": "asan",
+    "test": "hyle_simd_avx2_ordering_test/SortKernel.U16DirectFixedTier",
+    "symptom": "BaseCase called a null entry in its small-network function table for a 129-256 lane partition."
+  },
+  "mechanism": {
+    "upstream_contract": "Highway forces HWY_IS_DEBUG_BUILD=1 under ASan and omits its 256-key sorting network in that shape.",
+    "local_defect": "The adapted SortConstants selected the release 16-column threshold from NDEBUG, so ASan RelWithDebInfo still admitted the omitted function-table slot.",
+    "fix": "Select the adapted threshold from HWY_COMPILER_MSVC || HWY_IS_DEBUG_BUILD, the same authority that controls the network implementation.",
+    "release_hot_path_change": "none; non-sanitized GCC/AppleClang release and the existing MSVC branch retain their prior compile-time value"
+  },
+  "files": {
+    "src/simd/sort/vqsort_hyle/vqsort_ops.h": "4a90a0a27d61b31222bd168d9264a224992959a0adc862bd1bfa968602d72faa",
+    "cmake/HyleDependencyLock.json": "732348c52b05d38897c3debc5ff874266b001c6e1513b97e3eafc34c0689ed39"
+  },
+  "integrated_source": {
+    "dependency": "highway_port",
+    "origin_revision": "83eff39371e5e6494b305b253f8a3c06f831faf4",
+    "content_sha256": "425200b173ce47f74fd51c33857cdc43d5fd6ebce7152b79d7f6a51af3cbce0e"
+  },
+  "verification": [
+    {"machine": "W1-WSL", "shape": "GCC 14.2 ASan RelWithDebInfo", "tests": "5/5", "verdict": "PASS"},
+    {"machine": "W1-WSL", "shape": "GCC 14.2 UBSan RelWithDebInfo", "tests": "5/5", "verdict": "PASS"},
+    {"machine": "W1-WSL", "shape": "GCC 14.2 release", "tests": "5/5", "verdict": "PASS"},
+    {"machine": "W1-WIN", "shape": "MSVC 19.50 release", "tests": "5/5", "verdict": "PASS"},
+    {"machine": "M1-MAC", "shape": "AppleClang 21 release", "tests": "5/5", "verdict": "PASS"},
+    {"machine": "W1-WIN", "shape": "locked/offline dependency positive and negative contract", "verdict": "PASS"}
+  ]
+}

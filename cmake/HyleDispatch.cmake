@@ -141,11 +141,12 @@ function(hyle_simd_target_manifest)
   set(${ARG_OUT_HEADER} "${_header}" PARENT_SCOPE)
 endfunction()
 
-# Bind a source-embedding consumer target to one explicit SIMD backend. This is
-# the zero-dispatch expert path: it exposes the centrally locked Highway headers,
-# selects one static Highway target and applies the matching compiler flags.
-# HYLE target definitions remain during the internal-family migration, but new
-# consumer kernels should use Highway directly instead of hyle::simd::vec/native.
+# Bind a source-embedding consumer target to one explicit SIMD target. This is
+# the zero-dispatch expert path: it exposes the centrally locked Highway/xsimd
+# headers plus HYLE's compile-time route manifest, selects one static Highway
+# target (xsimd observes the same compiler ISA flags), and applies those flags.
+# A consumer may use the HYLE route or explicitly pin one provider-native body;
+# provider register types must remain inside this target-bound translation unit.
 # It deliberately does not inspect CPUID; the produced binary requires the ISA.
 #
 #   hyle_target_simd(TARGET my_app ISA AVX2)
@@ -193,7 +194,8 @@ function(hyle_target_simd)
   set(_define "")
   set(_tier SCALAR)
   if(_isa STREQUAL "SCALAR")
-    # No target macro and no extra flags: vec.h selects the portable floor.
+    # No target macro and no extra flags: provider headers select the portable
+    # scalar floor and the generated body keeps its baseline codegen contract.
   elseif(_isa STREQUAL "SSE4")
     set(_define HYLE_SIMD_TARGET_SSE4)
     set(_tier SSE42)
@@ -305,7 +307,7 @@ function(hyle_exact_simd_library)
 endfunction()
 
 function(hyle_add_dispatched_kernel)
-  cmake_parse_arguments(ARG "HIGHWAY" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
+  cmake_parse_arguments(ARG "HIGHWAY;XSIMD;OWN_TARGET_SET" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
     message(FATAL_ERROR
       "hyle_add_dispatched_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
@@ -340,7 +342,9 @@ function(hyle_add_dispatched_kernel)
   elseif(_target_processor MATCHES "riscv64|RISCV64")
     set(_is_riscv64 TRUE)
   endif()
-  get_property(_manifest_variants GLOBAL PROPERTY HYLE_SIMD_COMPILED_VARIANTS)
+  if(NOT ARG_OWN_TARGET_SET)
+    get_property(_manifest_variants GLOBAL PROPERTY HYLE_SIMD_COMPILED_VARIANTS)
+  endif()
 
   if(IS_ABSOLUTE "${ARG_IMPL}")
     set(_impl "${ARG_IMPL}")
@@ -356,16 +360,25 @@ function(hyle_add_dispatched_kernel)
   file(TO_CMAKE_PATH "${_impl}" _impl)
 
   if(ARG_HIGHWAY)
-    if(NOT TARGET hyle_simd_source_expert)
+    if(NOT TARGET hyle_highway_headers)
       message(FATAL_ERROR
-        "hyle_add_fat_kernel is a source-embedding expert seam. Installed static/shared "
-        "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
+        "hyle_add_dispatched_kernel(HIGHWAY) requires the centrally locked "
+        "build-only Highway dependency")
     endif()
     # The expert seam supplies build-tree compile usage only. Static libraries
     # otherwise retain a LINK_ONLY reference in their installed export even
     # though every Highway body is already compiled into the archive.
     target_link_libraries(${ARG_TARGET} PRIVATE
-      "$<BUILD_INTERFACE:hyle_simd_source_expert>")
+      "$<BUILD_INTERFACE:hyle_highway_headers>")
+  endif()
+  if(ARG_XSIMD)
+    if(NOT TARGET hyle_xsimd_headers)
+      message(FATAL_ERROR
+        "hyle_add_dispatched_kernel(XSIMD) requires the centrally locked "
+        "build-only xsimd dependency")
+    endif()
+    target_link_libraries(${ARG_TARGET} PRIVATE
+      "$<BUILD_INTERFACE:hyle_xsimd_headers>")
   endif()
 
   set(_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/simd-dispatch/${ARG_NAME}")
@@ -525,7 +538,8 @@ function(hyle_add_dispatched_kernel)
 endfunction()
 
 # Public spelling for source consumers. IMPL defines suffixed pointer/POD entry points using
-# HYLE_SIMD_VARIANT_SUFFIX; pair it with HYLE_SIMD_SELECT_FAT_KERNEL in the baseline TU.
+# HYLE_SIMD_VARIANT_SUFFIX and may instantiate a compile-time Highway/xsimd/HYLE route; pair it
+# with HYLE_SIMD_SELECT_FAT_KERNEL in the baseline TU.
 # In an exact build the manifest emits only one variant. Mark the consumer target so the
 # selection macro preprocesses away references to variants that intentionally do not exist.
 function(hyle_add_fat_kernel)
@@ -576,7 +590,7 @@ function(hyle_add_fat_kernel)
     endforeach()
   endif()
 
-  hyle_add_dispatched_kernel(HIGHWAY ${ARGN})
+  hyle_add_dispatched_kernel(HIGHWAY XSIMD ${ARGN})
   if(HYLE_SIMD_EXACT_TARGET AND ARG_TARGET)
     string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _exact)
     target_compile_definitions(${ARG_TARGET} PRIVATE

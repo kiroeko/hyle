@@ -1,0 +1,29 @@
+{
+  "schema": "hyle.simd.migration-route-corrections/v1",
+  "ticket": "SIMD-16",
+  "baseline_inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "reason": "VQSort was migrated from the deleted HYLE register facade to locked Highway native values. Facade aliases and semantic compositions that had been retained only to serve that register owner no longer justify a third register stack.",
+  "structural-facades": {
+    "operations": [
+      "CompressBlocksNot",
+      "Eq128Upper",
+      "Lt128Vec",
+      "MaskFromNormalizedVec",
+      "Max128Upper",
+      "Min128Upper",
+      "Ne128Upper",
+      "RearrangeToOddPlusEven",
+      "SignBit",
+      "TableLookupBytesInRange"
+    ],
+    "old_decision": "KEEP_HYLE",
+    "new_decision": "ROUTE_HIGHWAY",
+    "proof": "The SIMD-15 provider assessments already record Highway as SAME_CONTRACT or COMPOSED_SAME_CONTRACT. After the sole register consumer migrated, the old HYLE definitions have zero live references and Highway owns the mechanism directly. This is a migration-time ownership correction, not a new performance qualification."
+  },
+  "stream": {
+    "old_decision": "global KEEP_HYLE",
+    "new_decision": "KEEP_HYLE only for AnyVariant on AppleClang 21.0.x NEON; ROUTE_HIGHWAY otherwise",
+    "proof": "The locked workload shows identical AVX2 code shape and non-material reversals, while Apple M4 NEON is 2.9x to 6.4x faster without Highway's per-vector write prefetch. The split applies the frozen tie-to-Highway policy without discarding the material Apple winner.",
+    "evidence": "evidence/performance/simd-15-stream-workload.json"
+  }
+}

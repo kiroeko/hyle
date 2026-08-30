@@ -1,9 +1,6 @@
-// str_search_impl.h -- the SHARED count/rfind kernel bodies, written ONCE against the vec.h
-// D-tag abstraction (no raw intrinsics). Each per-ISA TU (str_search_{scalar,sse4,avx2,neon}
-// .cc) #defines HYLE_SIMD_TARGET_* + HYLE_STRSEARCH_SUFFIX then includes this, so the SAME
-// source compiles to str_count_scalar / str_count_avx2 / str_count_neon / ... The backend +
-// -march make the loop 16-wide (SSE/NEON), 32-wide (AVX2), or 64-wide (AVX512); the kernel
-// author writes one loop. The dispatcher (string_ref.cc) picks among them by best_isa().
+// Shared Container string kernels. HyleDispatch generates one per-ISA TU and
+// freezes Highway's static target before including this file. HYLE owns the
+// pointer/count behavior; Highway owns register types and lowering.
 //
 // These REPLACE the old hand-rolled string_ref_avx2.cc (256b) + the SSE2 core in
 // string_ref.cc: one source, all ISAs, and NEON/AVX-512 for free (previously x86-only ->
@@ -14,47 +11,56 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/vec.h"
+#include "hwy/highway.h"
 
-#ifndef HYLE_STRSEARCH_SUFFIX
-#error "define HYLE_STRSEARCH_SUFFIX (scalar|sse4|avx2|avx512|neon) before including this"
+#ifndef HYLE_SIMD_VARIANT_SUFFIX
+#error "define HYLE_SIMD_VARIANT_SUFFIX before including str_search_impl.h"
 #endif
 
 #define HYLE_STRSEARCH_CAT_(a, b) a##b
 #define HYLE_STRSEARCH_CAT(a, b) HYLE_STRSEARCH_CAT_(a, b)
-#define STR_COUNT_FN HYLE_STRSEARCH_CAT(str_count_, HYLE_STRSEARCH_SUFFIX)
-#define STR_RFIND_FN HYLE_STRSEARCH_CAT(str_rfind_char_, HYLE_STRSEARCH_SUFFIX)
-#define STR_LOWER_FN HYLE_STRSEARCH_CAT(str_ascii_lower_, HYLE_STRSEARCH_SUFFIX)
-#define STR_UPPER_FN HYLE_STRSEARCH_CAT(str_ascii_upper_, HYLE_STRSEARCH_SUFFIX)
+#define STR_COUNT_FN HYLE_STRSEARCH_CAT(str_count_, HYLE_SIMD_VARIANT_SUFFIX)
+#define STR_RFIND_FN \
+  HYLE_STRSEARCH_CAT(str_rfind_char_, HYLE_SIMD_VARIANT_SUFFIX)
+#define STR_LOWER_FN \
+  HYLE_STRSEARCH_CAT(str_ascii_lower_, HYLE_SIMD_VARIANT_SUFFIX)
+#define STR_UPPER_FN \
+  HYLE_STRSEARCH_CAT(str_ascii_upper_, HYLE_SIMD_VARIANT_SUFFIX)
 
 namespace hyle::container::detail {
 
-namespace hs = ::hyle::simd;
+namespace hn = hwy::HWY_NAMESPACE;
 
 // Count occurrences of `c` in data[0,size). SAD accumulate: Eq marks matches, VecFromMask
 // turns them into 0xFF bytes, SumsOf8 horizontally sums each 8-byte group (a 0xFF match = 255)
 // into u64 lanes; accumulate across vectors, sum the lanes, divide by 255. FOUR independent
 // accumulators so the per-iter SumsOf8+Add chains don't serialize (single-acc lost ~1.7x).
 std::uint32_t STR_COUNT_FN(const char* data, std::uint32_t size, char c) noexcept {
-  const hs::ScalableTag<std::uint8_t> d;
-  const hs::ScalableTag<std::uint64_t> d64;
-  const std::size_t w = hs::Lanes(d);
-  const auto needle = hs::Set(d, static_cast<std::uint8_t>(c));
+  const hn::ScalableTag<std::uint8_t> d;
+  const hn::ScalableTag<std::uint64_t> d64;
+  const std::size_t w = hn::Lanes(d);
+  const auto needle = hn::Set(d, static_cast<std::uint8_t>(c));
   const auto* p = reinterpret_cast<const std::uint8_t*>(data);
 
-  auto a0 = hs::Zero(d64), a1 = hs::Zero(d64), a2 = hs::Zero(d64), a3 = hs::Zero(d64);
+  auto a0 = hn::Zero(d64), a1 = hn::Zero(d64), a2 = hn::Zero(d64),
+       a3 = hn::Zero(d64);
   std::size_t i = 0;
   const std::size_t w4 = w * 4;
   for (; i + w4 <= size; i += w4) {
-    a0 = hs::Add(a0, hs::SumsOf8(hs::VecFromMask(d, hs::Eq(hs::LoadU(d, p + i), needle))));
-    a1 = hs::Add(a1, hs::SumsOf8(hs::VecFromMask(d, hs::Eq(hs::LoadU(d, p + i + w), needle))));
-    a2 = hs::Add(a2, hs::SumsOf8(hs::VecFromMask(d, hs::Eq(hs::LoadU(d, p + i + w * 2), needle))));
-    a3 = hs::Add(a3, hs::SumsOf8(hs::VecFromMask(d, hs::Eq(hs::LoadU(d, p + i + w * 3), needle))));
+    a0 = hn::Add(a0, hn::SumsOf8(hn::VecFromMask(
+                         d, hn::Eq(hn::LoadU(d, p + i), needle))));
+    a1 = hn::Add(a1, hn::SumsOf8(hn::VecFromMask(
+                         d, hn::Eq(hn::LoadU(d, p + i + w), needle))));
+    a2 = hn::Add(a2, hn::SumsOf8(hn::VecFromMask(
+                         d, hn::Eq(hn::LoadU(d, p + i + w * 2), needle))));
+    a3 = hn::Add(a3, hn::SumsOf8(hn::VecFromMask(
+                         d, hn::Eq(hn::LoadU(d, p + i + w * 3), needle))));
   }
-  auto acc = hs::Add(hs::Add(a0, a1), hs::Add(a2, a3));
+  auto acc = hn::Add(hn::Add(a0, a1), hn::Add(a2, a3));
   for (; i + w <= size; i += w)  // whole-vector remainder
-    acc = hs::Add(acc, hs::SumsOf8(hs::VecFromMask(d, hs::Eq(hs::LoadU(d, p + i), needle))));
-  std::uint64_t byte_sum = hs::ReduceSum(d64, acc);
+    acc = hn::Add(acc, hn::SumsOf8(hn::VecFromMask(
+                           d, hn::Eq(hn::LoadU(d, p + i), needle))));
+  std::uint64_t byte_sum = hn::ReduceSum(d64, acc);
   std::uint32_t n = static_cast<std::uint32_t>(byte_sum / 255u);
   for (; i < size; ++i) n += (data[i] == c);  // scalar tail (< w bytes)
   return n;
@@ -65,15 +71,15 @@ std::uint32_t STR_COUNT_FN(const char* data, std::uint32_t size, char c) noexcep
 // scalar. (find(char) has memchr; rfind has no portable reverse-memchr, so this is the win.)
 std::uint32_t STR_RFIND_FN(const char* data, std::uint32_t size, char c) noexcept {
   constexpr std::uint32_t kNpos = 0xFFFFFFFFu;
-  const hs::ScalableTag<std::uint8_t> d;
-  const std::size_t w = hs::Lanes(d);
-  const auto needle = hs::Set(d, static_cast<std::uint8_t>(c));
+  const hn::ScalableTag<std::uint8_t> d;
+  const std::size_t w = hn::Lanes(d);
+  const auto needle = hn::Set(d, static_cast<std::uint8_t>(c));
   const auto* p = reinterpret_cast<const std::uint8_t*>(data);
   std::size_t i = size;
   while (i >= w) {
     i -= w;
-    const auto m = hs::Eq(hs::LoadU(d, p + i), needle);
-    const std::ptrdiff_t lane = hs::FindLastTrue(d, m);
+    const auto m = hn::Eq(hn::LoadU(d, p + i), needle);
+    const std::ptrdiff_t lane = hn::FindLastTrue(d, m);
     if (lane >= 0) return static_cast<std::uint32_t>(i) + static_cast<std::uint32_t>(lane);
   }
   for (std::uint32_t j = static_cast<std::uint32_t>(i); j-- > 0;)  // scalar head (< w bytes)
@@ -85,19 +91,19 @@ std::uint32_t STR_LOWER_FN(const char* data, std::uint32_t size, char* out,
                            std::uint32_t cap) noexcept {
   const std::uint32_t n =
       cap == 0 ? 0 : (size < cap - 1 ? size : cap - 1);
-  const hs::ScalableTag<std::uint8_t> d;
-  const std::size_t width = hs::Lanes(d);
-  const auto lower_a = hs::Set(d, static_cast<std::uint8_t>('A'));
-  const auto upper_z = hs::Set(d, static_cast<std::uint8_t>('Z'));
-  const auto delta = hs::Set(d, static_cast<std::uint8_t>('a' - 'A'));
+  const hn::ScalableTag<std::uint8_t> d;
+  const std::size_t width = hn::Lanes(d);
+  const auto lower_a = hn::Set(d, static_cast<std::uint8_t>('A'));
+  const auto upper_z = hn::Set(d, static_cast<std::uint8_t>('Z'));
+  const auto delta = hn::Set(d, static_cast<std::uint8_t>('a' - 'A'));
   const auto* input = reinterpret_cast<const std::uint8_t*>(data);
   auto* output = reinterpret_cast<std::uint8_t*>(out);
   std::size_t i = 0;
   for (; i + width <= n; i += width) {
-    const auto value = hs::LoadU(d, input + i);
+    const auto value = hn::LoadU(d, input + i);
     const auto ascii_upper =
-        hs::And(hs::Ge(value, lower_a), hs::Le(value, upper_z));
-    hs::StoreU(hs::Add(value, hs::IfThenElseZero(ascii_upper, delta)), d,
+        hn::And(hn::Ge(value, lower_a), hn::Le(value, upper_z));
+    hn::StoreU(hn::Add(value, hn::IfThenElseZero(ascii_upper, delta)), d,
                output + i);
   }
   for (; i < n; ++i) {
@@ -112,19 +118,19 @@ std::uint32_t STR_UPPER_FN(const char* data, std::uint32_t size, char* out,
                            std::uint32_t cap) noexcept {
   const std::uint32_t n =
       cap == 0 ? 0 : (size < cap - 1 ? size : cap - 1);
-  const hs::ScalableTag<std::uint8_t> d;
-  const std::size_t width = hs::Lanes(d);
-  const auto lower_a = hs::Set(d, static_cast<std::uint8_t>('a'));
-  const auto lower_z = hs::Set(d, static_cast<std::uint8_t>('z'));
-  const auto delta = hs::Set(d, static_cast<std::uint8_t>('a' - 'A'));
+  const hn::ScalableTag<std::uint8_t> d;
+  const std::size_t width = hn::Lanes(d);
+  const auto lower_a = hn::Set(d, static_cast<std::uint8_t>('a'));
+  const auto lower_z = hn::Set(d, static_cast<std::uint8_t>('z'));
+  const auto delta = hn::Set(d, static_cast<std::uint8_t>('a' - 'A'));
   const auto* input = reinterpret_cast<const std::uint8_t*>(data);
   auto* output = reinterpret_cast<std::uint8_t*>(out);
   std::size_t i = 0;
   for (; i + width <= n; i += width) {
-    const auto value = hs::LoadU(d, input + i);
+    const auto value = hn::LoadU(d, input + i);
     const auto ascii_lower =
-        hs::And(hs::Ge(value, lower_a), hs::Le(value, lower_z));
-    hs::StoreU(hs::Sub(value, hs::IfThenElseZero(ascii_lower, delta)), d,
+        hn::And(hn::Ge(value, lower_a), hn::Le(value, lower_z));
+    hn::StoreU(hn::Sub(value, hn::IfThenElseZero(ascii_lower, delta)), d,
                output + i);
   }
   for (; i < n; ++i) {

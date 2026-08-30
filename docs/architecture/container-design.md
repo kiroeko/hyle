@@ -36,12 +36,12 @@ C++ typed / source surface      compiled cold cores
                       v
 Tier 0 dependencies: core cache geometry + mem allocator
                      + private platform CPU discovery
-Build-only seam:     simd_vec_headers register DSL
+External mechanism:  locked Highway in target-bound implementation TUs
 ```
 
 - 完整 `container -> PUBLIC {core, mem}`、`PRIVATE {platform}`；platform 只服务
-  编译实现的 CPU/OS dispatch。per-ISA TU 对寄存器 DSL 的借用另由 build-private
-  `simd_vec_headers` target seam 登记，不扩大产品闭包。
+  编译实现的 CPU/OS dispatch。字符串和 bitset 的 per-ISA TU 直接链接 build-only
+  `hyle_highway_headers` 并实例化中央锁定 Highway；这是外部实现依赖，不扩大 HYLE 内部产品闭包。
 - `container_intrusive` 是只 `PUBLIC core` 的轻量 `INTERFACE` 组件；它不拉入完整 container、mem、
   error 或 platform，`hyle::container` target 也不聚合它。当前中央 component graph 选择完整
   container 时，会因 `mem -> platform -> time -> container_intrusive` 的传递交付闭包安装该独立
@@ -49,10 +49,9 @@ Build-only seam:     simd_vec_headers register DSL
   INTERFACE，所以这条公开源码依赖没有 binary artifact。
 - 完整 container 对 `<hyle/core/cache.h>`/compiler contract 的使用由直接 `PUBLIC core` 边表达；
   中央图与公开头扫描会拒绝靠安装 include tree 隐藏这条依赖。
-- 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
-  当前不调用 SIMD runtime，也不会把 SIMD 公共 API 带给 container 消费者；中央 manifest 用直接
-  `PRIVATE_BUILD_DEPS simd_vec_headers` 投影真实 build-interface target 边，避免共享 include root
-  隐藏耦合，同时避免为 container 单独编译完整 simd runtime。
+- 字符串批处理由一份 direct-Highway implementation header 生成每 ISA TU。Container 拥有
+  pointer/count 语义、阈值和 resolver，Highway 拥有 target-bound register lowering；实现不调用
+  SIMD runtime，不经过 HYLE register wrapper，也不会把 Highway 或 SIMD 公共类型带给消费者。
 - Swiss control group 仍在 `probe.h` 自包含实现：x86 16-byte group、NEON/portable
   8-byte group。它必须可被 typed `SwissTable` hot path 内联。
 
@@ -318,9 +317,10 @@ shift、count/any/all、find-first/find-next 和 set-bit range。没有照抄 st
 stream operator 等非基础加速职责。storage 是 allocator-owned `uint64_t` blocks；最后一块
 的非逻辑 bit 永远清零，所有 bulk kernel 因此不需要额外 mask 每个 lane，只在 mutation
 结束 sanitize 一次。大块集合运算通过 platform `best_isa()` 选独立 variant TU，container
-通过 `PRIVATE platform` 与 build-private `simd_vec_headers` 登记实现依赖；当前只使用
-`hyle/simd/vec.h` 的编译期 DSL，
-不调用 `hyle_simd` 的 runtime 函数，也不把 SIMD 类型暴露给 container 消费者。
+通过 `PRIVATE platform` 登记 CPU/OS facts 依赖，并由 build-only `hyle_highway_headers` 直接实例化
+每个 target body。它不调用 `hyle_simd` runtime，也不把 Highway/SIMD 类型暴露给 container 消费者。
+NEON count 是经真机证据保留的 Container-owned CNT+UDOT specialty body；这只保留具名算法优势，
+不构成保留通用 HYLE register DSL 的理由。
 
 `SparseSet<Id>` 采用 Folly `SparseByteSet` 与经典 dense+sparse set 的共同算法：sparse[id]
 记录 dense position，membership 再验证 `dense[position] == id`，因此 `clear()` 只需 size=0，
@@ -526,12 +526,12 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 | 路径 | 当前向量化 | 决策 |
 |---|---|---|
 | Swiss control-byte probe | x86 SSE2 16 lanes；AArch64 NEON 8 lanes | 已是成熟 Swiss 基线形状；每次 probe 再动态派发 AVX2 的固定税通常不值 |
-| count/rfind/ASCII case | SSE4/AVX2/AVX512/NEON runtime dispatch | 已进入产品；长串摊薄 dispatcher，短串走标量 |
+| count/rfind/ASCII case | direct-Highway SSE4/AVX2/AVX512/NEON target TU + Container runtime dispatch | 已进入产品；长串摊薄一次已缓存 whole-call，短串走标量；不依赖 SIMD runtime |
 | UTF-8 validate/count | simdutf 自派发 | 一遍 validate-only 与严格 validate+count 分开；借成熟核，不重写 |
 | table hash | 17–128B inline multiply stream；x86 AVX2 / AArch64 NEON XXH3；baseline wyhash | varied-input 产品 API 证据后进入产品；Windows/M4 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform |
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
-| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，避免通用 u64-lane reduction 的已测回退；小于 8/16 words 分别走本地 scalar |
+| DynamicBitSet | direct-Highway SSE4/AVX2/AVX512/NEON target TU + Container runtime dispatch | 位运算与 x86 count 直接使用 Highway；NEON count 保留 byte CNT+四路 UDOT specialty body，避免通用 u64-lane reduction 的已测回退；小于 8/16 words 分别走本地 scalar |
 | BTree node search | 数值 key 线性比较；通用 comparator 二分 | 典型 node 很小且 comparator/entry layout 泛型；当前三平台实际 workload 不支持为每个 node 增加 SIMD metadata 或动态派发税 |
 
 长 hash 的 x86 宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门

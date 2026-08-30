@@ -1,4 +1,4 @@
-# simd: runtime ISA dispatch + portable vec<T,N> D-tag abstraction (simd-design).
+# simd: whole-buffer API, runtime ISA dispatch and compile-time provider bodies.
 #
 include(HyleDispatch)
 hyle_simd_target_manifest(
@@ -126,9 +126,10 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
   endif()
 endif()
 
-# Highway is a header-only product mechanism compiled into HYLE's fixed-target TUs; it does not
-# add a second runtime library ABI. VQSort remains a named compiler/scalable/public-POD adaptation
-# because direct all-type instantiation is not buildable within the qualified MSVC budget.
+# Highway and xsimd are header-only product candidates compiled into HYLE's
+# fixed-target TUs; neither adds a runtime library ABI. VQSort remains a named
+# compiler/scalable/public-POD adaptation because direct all-type instantiation
+# is not buildable within the qualified MSVC budget.
 hyle_add_module(simd SOURCES
   runtime.cc
   ops/dispatch_ops.cc
@@ -146,13 +147,14 @@ hyle_add_module(simd SOURCES
   sort/radix_sort.cc
   bitpack/bitpack_dispatch.cc
   ${_simd_arch_sources})
+target_link_libraries(hyle_simd PRIVATE
+  "$<BUILD_INTERFACE:hyle_simd_provider_headers>")
 
-# HYLE deliberately consumes Highway without executing its upstream CMake
-# project or importing a second runtime library ABI. Some otherwise
+# HYLE deliberately consumes provider headers without executing upstream CMake
+# projects or importing another runtime library ABI. Some otherwise
 # header-defined Highway paths retain fail-fast assertions that call
 # hwy::Abort; the upstream-supported header-only mode provides that tiny
 # implementation inline and keeps source/static/shared delivery self-contained.
-target_compile_definitions(hyle_simd PRIVATE HWY_HEADER_ONLY)
 if(HYLE_SIMD_X64 AND _hyle_simd_cl_sort_fallback)
   # This is a compiler-front-end capability, not an ISA property. clang-cl
   # defines _MSC_VER as well, but supports Highway's AVX3 targets; only the
@@ -163,14 +165,17 @@ endif()
 
 # Source-primary expert seam. It is deliberately build-tree-only: ordinary
 # installed consumers use HYLE's pointer/count APIs, while a consumer that
-# embeds the source tree may bind one TU to an ISA and use the exact locked
-# Highway register surface without HYLE cloning that surface into a second DSL.
+# embeds the source tree may bind one TU to an ISA and use HYLE's compile-time
+# route or explicitly pin a locked provider. Provider-native types remain in
+# that TU and never cross a compiled HYLE boundary.
 add_library(hyle_simd_source_expert INTERFACE)
 add_library(hyle::simd_source_expert ALIAS hyle_simd_source_expert)
 target_compile_features(hyle_simd_source_expert INTERFACE cxx_std_23)
-target_compile_definitions(hyle_simd_source_expert INTERFACE HWY_HEADER_ONLY)
-target_include_directories(hyle_simd_source_expert SYSTEM INTERFACE
-  "$<BUILD_INTERFACE:${HYLE_SIMD_HIGHWAY_SOURCE_DIR}>")
+target_include_directories(hyle_simd_source_expert INTERFACE
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
+target_link_libraries(hyle_simd_source_expert INTERFACE
+  "$<BUILD_INTERFACE:hyle_simd_provider_headers>")
 
 if(MSVC AND
    (_simd_exact_target STREQUAL "SCALAR" OR
@@ -193,8 +198,6 @@ endif()
 target_include_directories(hyle_simd PRIVATE
   "${PROJECT_SOURCE_DIR}"
   "${CMAKE_CURRENT_BINARY_DIR}/generated")
-target_include_directories(hyle_simd SYSTEM PRIVATE
-  "${HYLE_SIMD_HIGHWAY_SOURCE_DIR}")
 if(HYLE_SIMD_BUILD_SVE)
   target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_SVE_VARIANT=1)
 endif()
@@ -341,13 +344,6 @@ endif()
 # fine -- the dispatcher also gets native codegen, but it runs on the machine you built it
 # for, so there is no SIGILL. Just don't ship THAT binary to an older CPU. LTO-off does not
 # defend against a global -march; the two deployment modes are a deliberate choice, not a bug.
-
-hyle_register_package_dependency(
-  NAME simd_highway
-  OWNER simd
-  LOCKED_DEPENDENCIES highway
-  RUNTIME_FILE_SPECS
-    "${HYLE_SIMD_HIGHWAY_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-upstream-LICENSE")
 
 hyle_register_package_dependency(
   NAME simd_highway_port

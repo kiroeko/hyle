@@ -1,8 +1,8 @@
 # Compatibility projection of the central dependency ledger for the standalone
 # benchmark fetchers (simd-20 X4+).
-# Highway is also a locked product source, while xsimd remains a benchmark peer.
-# Benchmarks still use clean sibling checkouts so candidate and peer include paths
-# cannot accidentally collapse into one implementation.
+# Highway and xsimd are locked product sources. Benchmarks still use clean sibling
+# checkouts at the same pins so candidate and peer include paths cannot accidentally
+# collapse into one implementation.
 include("${CMAKE_CURRENT_LIST_DIR}/HyleDependencyVersions.cmake")
 set(HYLE_BENCH_VENDOR_HIGHWAY_REPOSITORY "${HYLE_DEP_HIGHWAY_REPOSITORY}")
 set(HYLE_BENCH_VENDOR_HIGHWAY_REV "${HYLE_DEP_HIGHWAY_COMMIT}")

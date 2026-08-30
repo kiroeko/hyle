@@ -20,6 +20,7 @@ license text and the notices in each source file control.
 | Component | HYLE use | License | Full text in checkout / installed package |
 |---|---|---|---|
 | Google Highway | `simd` portable register, target and mathematics implementation | Apache-2.0 OR BSD-3-Clause | fetched checkout `LICENSE` / `highway-upstream-LICENSE` |
+| xsimd | `simd` target-bound register and mathematics implementation candidate | BSD-3-Clause | fetched checkout `LICENSE` / `xsimd-upstream-LICENSE` |
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
 | ggml | `compute` CPU/CUDA operator implementation | MIT | fetched checkout `LICENSE` / `ggml-LICENSE` |
 | volk | `compute` Vulkan meta-loader | MIT | fetched checkout `LICENSE.md` / `volk-LICENSE.md` |
@@ -42,7 +43,7 @@ provided by the target system and remain governed by their suppliers. glslang is
 when HYLE's Vulkan tests or benchmarks regenerate shaders; it is not linked into or installed
 with a production HYLE package.
 
-GoogleTest, nanobench, and xsimd checkouts used only as tests or benchmark opponents are not
-part of a production HYLE installation. Highway is different: SIMD product builds consume the
-centrally locked source directly, while parity benchmarks still use a separate clean checkout
-of the same identity so candidate and peer cannot accidentally share include paths.
+GoogleTest and nanobench checkouts used only by validation are not part of a production HYLE
+installation. Highway and xsimd are different: SIMD product builds consume centrally locked
+sources directly, while parity benchmarks still use separate clean checkouts of the same identities
+so candidate and peer cannot accidentally share include paths.

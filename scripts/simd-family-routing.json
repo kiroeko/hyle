@@ -1,0 +1,71 @@
+{
+  "schema": "hyle.simd.family-routing/v1",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "families": [
+    {
+      "name": "TanhF32Batch",
+      "default": {
+        "decision": "ROUTE_HIGHWAY",
+        "provider": "HIGHWAY"
+      },
+      "exceptions": [
+        {
+          "decision": "ROUTE_XSIMD",
+          "provider": "XSIMD",
+          "selector": {
+            "variant": {
+              "kind": "LANE",
+              "lane": "f32",
+              "contract_tags": []
+            },
+            "runtime_targets": ["AVX2"],
+            "compiler_ranges": [
+              {
+                "kind": "MSVC",
+                "min": 195000000,
+                "max": 195099999
+              }
+            ]
+          },
+          "evidence": [
+            "evidence/performance/simd-15-w1-win-msvc-avx2-xsimd-tanh.json"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GeluTanhF32Batch",
+      "default": {
+        "decision": "ROUTE_HIGHWAY",
+        "provider": "HIGHWAY"
+      },
+      "exceptions": [
+        {
+          "decision": "ROUTE_XSIMD",
+          "provider": "XSIMD",
+          "selector": {
+            "variant": {
+              "kind": "LANE",
+              "lane": "f32",
+              "contract_tags": []
+            },
+            "runtime_targets": ["AVX2"],
+            "compiler_ranges": [
+              {
+                "kind": "MSVC",
+                "min": 195000000,
+                "max": 195099999
+              }
+            ]
+          },
+          "evidence": [
+            "evidence/performance/simd-15-w1-win-msvc-avx2-xsimd-tanh.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -85,6 +85,38 @@ owner。它不等于 HYLE 自己实现所有功能，也不等于与任一参考
 标准库或成熟依赖已经给出更自然路线时，HYLE 文档应直接指向组合方式，不为“功能数量”再造包装。
 相反，若组合需要用户重复写易错的 overflow、lifetime、dispatch 或平台分支，这通常说明基础能力仍不完整。
 
+### 成熟依赖、适配边界与唯一决策权威
+
+`BORROW` 不是把产品责任交给依赖。每项借用能力必须分别写清四种 owner：
+
+- **semantic owner**：向 HYLE 用户承诺语义、ownership、failure 和 concurrency 的模块；
+- **mechanism/artifact owner**：实际提供算法、源码或二进制的 HYLE 模块或第三方项目；
+- **decision authority**：运行时对同一件事作选择的唯一实现，例如选择可执行 SIMD target；
+- **delivery owner**：负责组件边、锁定、安装、离线、许可证和装载的构建/package 合同。
+
+同一运行时决策只能有一个 authority。两个模块可以观察不同层次的事实，但不能各自根据近似相同的
+探测结果控制同一 hot path。例如 platform 可以拥有 OS、CPU、topology、NUMA 和 affinity 等通用
+机器事实；若 SIMD 借用 Highway，具体可执行 target 与 kernel dispatch 由 Highway/HYLE SIMD adapter
+唯一裁决，其他模块不能再读取一套 `CpuFeatures` 自行选择同一 kernel。面向诊断的重复展示只有在来源、
+时点和可能不一致的语义写明后才可保留，不能成为第二条决策路径。
+
+第三方类型、allocator handle、错误枚举和配置宏不得无意泄漏为 HYLE 的通用公开合同。HYLE 可以把
+算法机制交给成熟依赖，但仍拥有稳定、自然的 C++ 任务形状和完整的依赖交付路线；依赖为可选项或目标
+平台无法提供时，还必须有正确 fallback 或明确的 unsupported 路线。若公开接口必须暴露第三方类型，
+应把它登记为有意的 interop capability，而不是适配层偶然泄漏。
+
+第三方升级是一项有身份的产品输入变化，不能自动继承旧证书。升级前后按影响面裁决：
+
+1. 只改变获取元数据且不改变源码、产物、语义、codegen、许可证或交付时，执行 build/package 维护门；
+2. 改变 owner 模块使用的源码、ABI、算法、默认策略或 hot-path codegen 时，定向重开该能力族，绑定
+   新 baseline，并回放适用 correctness、consumer、delivery 和性能门；
+3. 影响公开合同、跨模块 ownership 或运行时决策时，同时复检直接消费者，但不借升级无界重审全库；
+4. 新版本未通过时可以继续锁定旧版；“最新版”本身不是能力需求或性能结论。
+
+因此，mimalloc 一类依赖可以拥有 allocator 核心实现，但 `mem` 仍拥有 HYLE allocation/PMR/pool 的
+语义与生命周期；mimalloc 版本改变后只重签受影响的 host-memory 路线和交付闭包，不重新发明整个
+Mem API，也不能沿用旧版性能证据。
+
 ## 收口判据
 
 模块只有在以下事实同时成立时，才可声明功能面收口：

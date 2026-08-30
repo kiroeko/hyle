@@ -1,0 +1,184 @@
+{
+  "schema": "hyle.simd.selector-internalization-proof/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "inventory_erratum": "evidence/simd-15-inventory-parser-erratum.json; this receipt is disjoint from the seven operations gaining sites",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "proof_method": "P0 source and consumer audit. Each spelling forces one HYLE native or emulated mechanism but is not an independent semantic capability. The corresponding umbrella operation preserves the capability and owns provider routing. No timing result is used to create or retain a public selector.",
+  "consumer_audit": {
+    "scope": "include, src, tests, bench and docs, excluding the generated provider manifest and route ledger",
+    "result": "Eleven Native spellings are called only by their umbrella operation. CompressEmulated and GatherIndexEmulated additionally occur only in bench/simd/gather_bench.cc. No product consumer directly requires any selector spelling.",
+    "migration_rule": "SIMD-16 may remove the spelling from the product operation surface, but must retain or move any mechanism still selected by the umbrella operation. Benchmark-only emulated references become local benchmark/oracle code if still needed."
+  },
+  "ledger_evidence_group": {
+    "id": "P0:selector:internalization",
+    "kind": "SELECTOR_CONSUMER_AND_CONTRACT_PROOF",
+    "contract": "all thirteen explicit native/emulated selectors are implementation details of named umbrella capabilities, not independently routed public operations"
+  },
+  "validation": {
+    "method": "definition-site inventory plus repository-wide exact symbol consumer scan",
+    "result": "13/13 selectors mapped to an umbrella capability; zero independent product consumers"
+  },
+  "operations": [
+    {
+      "name": "CompressEmulated",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:Compress",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3699", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx512.h:2453", "bench/simd/gather_bench.cc:62"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "CompressNotNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:CompressNot",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3678", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/neon.h:3312", "include/hyle/simd/vec.h:811"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "DemoteToNearestIntNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:DemoteToNearestInt",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:1288", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/neon.h:1438", "include/hyle/simd/vec.h:2110"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "GatherIndexEmulated",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:GatherIndex",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3475", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx512.h:2348", "bench/simd/gather_bench.cc:44"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "HighestSetBitIndexNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:HighestSetBitIndex",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3853", "include/hyle/simd/vec.h:1767"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "MaxOfLanesNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:MaxOfLanes",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:2851", "include/hyle/simd/vec.h:768"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "MinOfLanesNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:MinOfLanes",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:2847", "include/hyle/simd/vec.h:760"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "NativeGatherOffset32",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:GatherOffset",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3462", "include/hyle/simd/vec.h:864"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "NativeMaskedGatherOr32",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:MaskedGatherIndexOr",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:3440", "include/hyle/simd/vec.h:901", "include/hyle/simd/vec.h:1786"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "ReciprocalNewtonNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:ReciprocalNewton",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/neon.h:645", "include/hyle/simd/vec.h:719"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "ReciprocalSqrtNewtonNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:ReciprocalSqrtNewton",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/neon.h:658", "include/hyle/simd/vec.h:729"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "SatWidenMulAccumFixedPointNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:SatWidenMulAccumFixedPoint",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/neon.h:1101", "include/hyle/simd/vec.h:2244"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "SumOfLanesNative",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_SELECTOR:SumOfLanes",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "UNAVAILABLE", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:2843", "include/hyle/simd/vec.h:752"]},
+      "highway": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:HIGHWAY:no-public-selector"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["provider_discovery:XSIMD:no-same-contract-source-token"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    }
+  ]
+}

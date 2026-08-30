@@ -10,10 +10,11 @@
 
 #include "src/simd/runtime_internal.h"
 #include "hyle/simd/sort.h"
-#include "hyle/simd/vec.h"
 #include "src/simd/sort/kernels.h"
+#include "hwy/highway.h"
 
 namespace hs = hyle::simd;
+namespace hn = hwy::HWY_NAMESPACE;
 
 #if defined(HYLE_SIMD_TARGET_RVV)
 #define HYLE_SCALABLE_SORT(name) hs::detail::name##_rvv
@@ -213,7 +214,7 @@ TEST(ScalableSortProduct, RuntimeAndPublicApiUseScalableTier) {
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 TEST(ScalableSortProduct, SvePartitionAcceptsEveryPhysicalLaneCount) {
-  const std::size_t full_lanes = hs::Lanes(hs::ScalableTag<std::uint32_t>{});
+  const std::size_t full_lanes = hn::Lanes(hn::ScalableTag<std::uint32_t>{});
   const std::size_t n = 8 * full_lanes + 17;
   auto values = make_values<std::uint32_t>(n, 0);
   direct_sort(values.data(), values.size(), true);

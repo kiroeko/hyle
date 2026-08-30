@@ -158,7 +158,7 @@
         "src/simd/sort/vqsort_hyle_neon.cc",
         "src/simd/sort/vqsort_hyle_rvv.cc",
         "src/simd/sort/vqsort_hyle_sve.cc"
-      ], "content_sha256": "0bc69e4a24dbd0e5151b8d671f66a53f274c7caed4cb32230eb8f0cae668ac70" },
+      ], "content_sha256": "425200b173ce47f74fd51c33857cdc43d5fd6ebce7152b79d7f6a51af3cbce0e" },
       "license": { "expression": "Apache-2.0", "files": [
         { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" }
       ] }
@@ -174,10 +174,11 @@
       ] }
     },
     {
-      "name": "xsimd", "class": "benchmark",
+      "name": "xsimd", "class": "fetchcontent",
       "repository": "https://github.com/xtensor-stack/xsimd.git", "version": "snapshot-2026-08-22",
       "revision": "3b3151ff665514a00a437cc985f47b7de99b772b", "git_tree": "6179b2daf3d1066e4e35b775a94a260597c9362f",
       "archive": { "url": "https://codeload.github.com/xtensor-stack/xsimd/tar.gz/3b3151ff665514a00a437cc985f47b7de99b772b", "sha256": "2316f51eb6209b5df2e5eb30fae489d3e32173780e209ab4c4f1d9b6f0b448ca" },
+      "expanded_tree_sha256": "9d5dd7c2104dcef54e9d04da3b86b0b0432255fecf40b06ad32d551ba620d733",
       "license": { "expression": "BSD-3-Clause", "files": [
         { "root": "dependency", "path": "LICENSE", "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940" }
       ] }

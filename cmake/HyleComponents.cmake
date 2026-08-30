@@ -10,7 +10,7 @@
 # while hyle_add_module() projects PUBLIC/PRIVATE entries into real CMake link
 # edges after the dependency targets exist.  External implementation libraries
 # remain module-owned and deliberately do not appear here.
-set(HYLE_KNOWN_BUILD_DEPENDENCIES simd_vec_headers)
+set(HYLE_KNOWN_BUILD_DEPENDENCIES "")
 
 function(_hyle_declare_component name)
   cmake_parse_arguments(ARG "TRACE" ""
@@ -90,7 +90,6 @@ _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # implementation paths such as runtime ISA/topology support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
-  PRIVATE_BUILD_DEPS simd_vec_headers
   PUBLIC_DEPS core mem)
 _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 # SchedulerOptions publicly names platform types, while time is consumed only
@@ -279,6 +278,17 @@ function(_hyle_component_public_headers name out_var)
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/util/*.h")
     list(REMOVE_ITEM _headers ${_hyle_util_core_headers})
+  elseif(name STREQUAL "simd")
+    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
+      "${HYLE_SOURCE_DIR}/include/hyle/simd/*.h")
+    # Fixed/fat target helpers and finite provider winners are source-tree
+    # implementation seams. Keep the installed component limited to the
+    # ordinary pointer/count API; source embedding obtains the locked provider
+    # headers and target compile contract from HYLE's CMake package.
+    list(FILTER _headers EXCLUDE REGEX "/hyle/simd/provider/")
+    list(REMOVE_ITEM _headers
+      "${HYLE_SOURCE_DIR}/include/hyle/simd/fat_kernel.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/simd/target.h")
   else()
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/${name}/*.h")
@@ -320,10 +330,6 @@ endfunction()
 # for implementation reuse that leaves no public header or binary requirement.
 function(_hyle_source_include_build_dependency include_path out_var)
   set(_dependency "")
-  if(include_path STREQUAL "hyle/simd/vec.h" OR
-     include_path MATCHES "^hyle/simd/backend/")
-    set(_dependency simd_vec_headers)
-  endif()
   set(${out_var} "${_dependency}" PARENT_SCOPE)
 endfunction()
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # check-no-vendor.sh — SIMD vendor-boundary gate (historical filename).
-# Public headers must never expose vendor headers or types. Product sources may
-# include locked Highway only in the explicit private math adapters below;
-# xsimd remains a benchmark peer and is forbidden from product sources.
+# Installed public headers must never expose vendor headers or types. Product
+# sources may include centrally locked Highway/xsimd only in explicit
+# target-bound implementation bodies; baseline dispatch/API files may not.
 # Bench code under bench/ may use external HYLE_BENCH_VENDOR_DIR copies.
 #
 # Usage: scripts/check-no-vendor.sh
@@ -31,13 +31,13 @@ if hits=$(grep -RIn --include='*.h' --include='*.hh' --include='*.hpp' \
     --include='*.cc' --include='*.cpp' --include='*.inc' \
     -E '#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)' src 2>/dev/null || true); then
   unexpected=$(printf '%s\n' "${hits}" | grep -Ev \
-    '^src/simd/math/(highway_math_kernel-inl\.h|complex_hyle-inl\.h|complex_typed_hyle-inl\.h):[0-9]+:#[[:space:]]*include[[:space:]]*"hwy/' || true)
+    '^src/simd/(provider/[^:]+|bitpack/kernel_impl\.h|dtype/(conversion_kernel_impl\.h|highway_narrow\.h)|math/(highway_math_kernel-inl\.h|complex_hyle-inl\.h|complex_typed_hyle-inl\.h|provider_[^/:]+\.h)|narrow/kernel_impl\.h|ops/kernel_impl\.h|random/kernel_impl\.h|scan/kernel_impl\.h|search/kernel_impl\.h):[0-9]+:#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)|^src/container/(bitset_ops_impl\.h|str_search_impl\.h):[0-9]+:#[[:space:]]*include[[:space:]]*[<"]hwy/' || true)
   if [[ -n "${unexpected}" ]]; then
-    echo "FAIL: product vendor includes escaped the explicit private adapter allowlist:"
+    echo "FAIL: product vendor includes escaped target-bound implementation bodies:"
     echo "${unexpected}"
     fail=1
   else
-    echo "OK: locked Highway includes are confined to private math adapters; xsimd is absent"
+    echo "OK: locked Highway/xsimd includes are confined to target-bound implementation bodies"
   fi
 fi
 

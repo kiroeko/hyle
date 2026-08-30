@@ -1,0 +1,43 @@
+{
+  "schema": "hyle.simd.inventory-parser-erratum/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "old_inventory": {
+    "operation_count": 387,
+    "definition_site_count": 1774,
+    "sha256": "57d473756193db5530b2dcb8f206a9f6c7e0bd8ecf9574fb70ddb5c3b1f7d7b3"
+  },
+  "corrected_inventory": {
+    "operation_count": 387,
+    "definition_site_count": 1797,
+    "sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401"
+  },
+  "defect": "The old inline-definition regex stopped at the first parenthesis after HYLE_FORCE_INLINE, so a parenthesized expression in the return type hid the real function name.",
+  "safety": {
+    "operation_names_added": 0,
+    "definition_sites_removed": 0,
+    "definition_sites_added": 23,
+    "affected_operations": 7,
+    "affected_terminal_routes": 0,
+    "rule": "The refresh command accepts only the same ordered operation set, an additive site delta, and one still-PENDING legacy-all route for every affected operation."
+  },
+  "added_sites": {
+    "ExtractBlock": ["backend/avx512.h:2872"],
+    "FirstN": ["backend/avx2.h:3224", "backend/avx512.h:2256", "backend/neon.h:3033", "backend/scalar.h:1174", "backend/sse4.h:2315"],
+    "IndicesFromVec": ["backend/avx2.h:1816", "backend/avx512.h:1355", "backend/neon.h:1795", "backend/scalar.h:1752", "backend/sse4.h:1485"],
+    "LoadMaskBits": ["backend/avx2.h:2233", "backend/avx512.h:1686", "backend/neon.h:2488", "backend/scalar.h:899", "backend/sse4.h:1823"],
+    "LowerHalf": ["backend/avx2.h:4221", "backend/avx512.h:2779", "backend/neon.h:3820", "backend/scalar.h:1696", "backend/sse4.h:2790"],
+    "Set": ["backend/scalar.h:55"],
+    "Zero": ["backend/scalar.h:65"]
+  },
+  "receipt_rebinding": {
+    "semantic_receipts": "The four existing alias/composition/selector receipts are disjoint from all seven affected operations and are rebound to the corrected immutable digest.",
+    "performance_receipts": "Raw MaskedLoad performance receipts preserve the digest emitted at execution time. MaskedLoad is disjoint from the additive delta; this erratum is the explicit provenance bridge rather than rewriting raw run evidence."
+  },
+  "validation": [
+    "The lexical parser found all 1774 old sites plus exactly 23 real definitions and lost none.",
+    "Every public HYLE_FORCE_INLINE line not recognized after the fix was the intentionally lowercase reduce_scalar helper.",
+    "scripts/simd-op-routing.json validates against the baseline Git sources at 387 operations / 1797 sites.",
+    "The generated provider operation manifest carries the corrected digest and still contains exactly 387 unique operations."
+  ]
+}

@@ -21,7 +21,7 @@
 #include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
 #include "hyle/simd/types.h"
-#include "hyle/simd/vec.h"
+#include "hwy/highway.h"
 
 // Must be included only from a TU that already defined HYLE_SIMD_TARGET_*.
 #if !defined(HYLE_SIMD_TARGET_AVX2) && !defined(HYLE_SIMD_TARGET_AVX512) && \
@@ -34,11 +34,17 @@ namespace hyle::simd {
 namespace detail {
 namespace vqsort {
 
+// The retained VQSort algorithm port binds directly to the locked Highway
+// target selected for this translation unit.  No HYLE register facade sits
+// between the algorithm and Highway, and no vendor type crosses the public
+// pointer/POD boundary in sort.h.
+using namespace ::hwy::HWY_NAMESPACE;
+
 // ---- Highway-compat type aliases used by the ported headers ---------------------
 template <class D>
-using Vec = VFromD<D>;
+using Vec = ::hwy::HWY_NAMESPACE::VFromD<D>;
 template <class D>
-using Mask = MFromD<D>;
+using Mask = ::hwy::HWY_NAMESPACE::MFromD<D>;
 
 // Unqualified size_t / fixed-width names (Highway headers use the C names).
 using size_t = std::size_t;
@@ -121,34 +127,9 @@ HYLE_FORCE_INLINE void Fill(D d, T value, size_t count, T* ptr) noexcept {
   for (; i < count; ++i) ptr[i] = value;
 }
 
-// ---- Highway 3-arg Concat* (D, hi, lo) -> fixed-width HYLE 2-arg (hi, lo) -------
-#if !defined(HYLE_SIMD_TARGET_RVV) && !defined(HYLE_SIMD_TARGET_SVE)
-template <class D, class V>
-HYLE_FORCE_INLINE V ConcatUpperLower(D, V hi, V lo) noexcept {
-  return hyle::simd::ConcatUpperLower(hi, lo);
-}
-template <class D, class V>
-HYLE_FORCE_INLINE V ConcatLowerUpper(D, V hi, V lo) noexcept {
-  return hyle::simd::ConcatLowerUpper(hi, lo);
-}
-template <class D, class V>
-HYLE_FORCE_INLINE V ConcatLowerLower(D, V hi, V lo) noexcept {
-  return hyle::simd::ConcatLowerLower(hi, lo);
-}
-template <class D, class V>
-HYLE_FORCE_INLINE V ConcatUpperUpper(D, V hi, V lo) noexcept {
-  return hyle::simd::ConcatUpperUpper(hi, lo);
-}
-#endif
-
 template <class D, class M>
-HYLE_FORCE_INLINE M VqExclusiveNeither(D d, M a, M b) noexcept {
-#if defined(HYLE_SIMD_TARGET_RVV) || defined(HYLE_SIMD_TARGET_SVE)
-  return hyle::simd::ExclusiveNeither(d, a, b);
-#else
-  (void)d;
-  return hyle::simd::ExclusiveNeither(a, b);
-#endif
+HYLE_FORCE_INLINE M VqExclusiveNeither(D, M a, M b) noexcept {
+  return ::hwy::HWY_NAMESPACE::ExclusiveNeither(a, b);
 }
 
 // ---- Entropy for pivot sampling -------------------------------------------------
@@ -205,7 +186,7 @@ HYLE_FORCE_INLINE uint64_t RandomBits(uint64_t* state) noexcept {
 }
 
 struct SortConstants {
-#if defined(_MSC_VER) || !defined(NDEBUG)
+#if HWY_COMPILER_MSVC || HWY_IS_DEBUG_BUILD
   static constexpr size_t kMaxCols = 8;
 #else
   static constexpr size_t kMaxCols = 16;
@@ -287,7 +268,7 @@ HYLE_FORCE_INLINE void MaybePrintVector(D, const char*, Vec<D>, size_t = 0,
 // IsFull(d): true when d is a full native vector (not a Half/Capped fraction).
 template <class D>
 constexpr bool IsFull(D d) noexcept {
-  return d.MaxLanes() == (kNativeVectorBytes / sizeof(TFromD<D>)) && d.Pow2() == 0;
+  return ::hwy::HWY_NAMESPACE::detail::IsFull(d);
 }
 
 // Highway NaN(d) is defined for any lane type (bit-cast of all-ones). HYLE's public
@@ -298,7 +279,7 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
   if constexpr (std::is_floating_point_v<TFromD<D>>) {
     return NaN(d);
   } else {
-    using TS = MakeSigned<TFromD<D>>;
+    using TS = ::hwy::MakeSigned<TFromD<D>>;
     const RebindToSigned<D> di;
     return BitCast(d, Set(di, LimitsMax<TS>()));
   }
@@ -405,77 +386,6 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_CONCAT(a, b) HWY_CONCAT2(a, b)
 #endif
 
-// Target IDs (Highway bit values; lower = wider). Used only by ported #if paths.
-#ifndef HWY_AVX3
-#define HWY_AVX3 (1LL << 8)
-#define HWY_AVX2 (1LL << 9)
-#define HWY_SSSE3 (1LL << 12)
-#define HWY_NEON (1LL << 28)
-#define HWY_SCALAR (1LL << 62)
-#define HWY_SVE_256 (1LL << 22)
-#define HWY_ALL_SVE 0
-#define HWY_RVV (1LL << 37)
-#endif
-
-#if defined(HYLE_SIMD_TARGET_AVX512)
-#define HWY_TARGET HWY_AVX3
-#define HWY_MAX_BYTES 64
-#elif defined(HYLE_SIMD_TARGET_AVX2)
-#define HWY_TARGET HWY_AVX2
-#define HWY_MAX_BYTES 32
-#elif defined(HYLE_SIMD_TARGET_NEON)
-#define HWY_TARGET HWY_NEON
-#define HWY_MAX_BYTES 16
-#elif defined(HYLE_SIMD_TARGET_RVV)
-#define HWY_TARGET HWY_RVV
-#define HWY_MAX_BYTES 256
-#elif defined(HYLE_SIMD_TARGET_SVE)
-#define HWY_TARGET HWY_SVE_256
-#define HWY_MAX_BYTES 32
-#else
-#define HWY_TARGET HWY_SCALAR
-#define HWY_MAX_BYTES 16
-#endif
-
-// Prefer fault-safe buf path: HYLE LoadU always touches full native width, so the
-// Highway MaskedLoadOr path is riskier for partial rows; buf+SafeCopyN is correct.
-#ifndef HWY_MEM_OPS_MIGHT_FAULT
-#define HWY_MEM_OPS_MIGHT_FAULT 1
-#endif
-#ifndef HWY_HAVE_FLOAT64
-#define HWY_HAVE_FLOAT64 1
-#endif
-#ifndef HWY_HAVE_FLOAT16
-#define HWY_HAVE_FLOAT16 0
-#endif
-#ifndef HWY_IS_DEBUG_BUILD
-#ifdef NDEBUG
-#define HWY_IS_DEBUG_BUILD 0
-#else
-#define HWY_IS_DEBUG_BUILD 1
-#endif
-#endif
-#if defined(_MSC_VER)
-#define HWY_COMPILER_MSVC 1
-#else
-#define HWY_COMPILER_MSVC 0
-#endif
-#if defined(__clang__)
-#define HWY_COMPILER_CLANG (__clang_major__ * 100 + __clang_minor__)
-#else
-#define HWY_COMPILER_CLANG 0
-#endif
-#if defined(__GNUC__) && !defined(__clang__)
-#define HWY_COMPILER_GCC_ACTUAL __GNUC__
-#else
-#define HWY_COMPILER_GCC_ACTUAL 0
-#endif
-#if defined(__arm__) && !defined(__aarch64__)
-#define HWY_ARCH_ARM_V7 1
-#else
-#define HWY_ARCH_ARM_V7 0
-#endif
-
 // SFINAE macro renames used in ported sources (keep HWY_IF_* spelling for minimal diff).
 #ifndef HWY_IF_T_SIZE_D
 #define HWY_IF_T_SIZE_D(D, bytes) HYLE_VQSORT_IF_T_SIZE_D(D, bytes)
@@ -497,7 +407,6 @@ struct float16_t {};
 }  // namespace detail
 }  // namespace hyle::simd
 
-// Bring HYLE ops + vqsort helpers into an unqualified lookup surface for the
-// ported algorithm headers (included after this file from the same namespace).
-using namespace hyle::simd;
+// Bring only the private vqsort helpers into the ported algorithm headers.
+// Highway operations are found through the target-native vector arguments.
 using namespace hyle::simd::detail::vqsort;

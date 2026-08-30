@@ -4,11 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#define HYLE_SIMD_TARGET_NEON
-#define HYLE_BITSET_CUSTOM_COUNT
-#define HYLE_BITSET_SUFFIX neon
-#include "src/container/bitset_ops_impl.h"
-
 namespace hyle::container::detail {
 
 std::size_t bitset_count_neon(const std::uint64_t* words,

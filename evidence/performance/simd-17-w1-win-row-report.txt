@@ -1,0 +1,23 @@
+# INCONCLUSIVE: 4/7
+# TIE: 3/7
+== calibration anchors (true ratio 1.00 by construction) ==
+  Add f32 (4096)           paired=0.988 best=0.986 med=0.987 maxspread=1.061 (4 runs) ok
+CALIBRATION PASS
+run set: HYLE_FIRST=2, HWY_FIRST=2, metadata=ok, layout=ok, inputs=distinct
+execution audit: priority=ok, pin=ok, pinned_cpu=consistent(2), core_class=consistent(1)
+CERTIFICATION PASS
+
+op	ratio_paired	ci95_lo	ci95_hi	ratio_med	spreadH	spreadG	place_u	verdict
+Add f32 (4096)	1.000	0.994	1.009	0.996	1.055	1.061	0.031	INCONCLUSIVE
+row add f32 (1048576)	1.006	0.997	1.034	1.011	1.054	1.029	0.030	INCONCLUSIVE
+mixed bf16 dot (4096)	1.007	0.997	1.021	1.010	1.072	1.044	0.036	INCONCLUSIVE
+row add f32 (4096)	1.014	1.005	1.024	1.015	1.073	1.075	0.038	INCONCLUSIVE
+convert f16-to-f32 (4096)	1.008	0.992	1.019	1.012	1.046	1.018	0.030	TIE
+mixed bf16 dot (1048576)	1.010	0.995	1.022	1.011	1.014	1.027	0.030	TIE
+convert f16-to-f32 (1048576)	1.010	0.995	1.022	1.010	1.015	1.020	0.030	TIE
+
+# informational replicated pairs (A/B; no Highway verdict)
+# op	ratio_A_over_B	ci95_lo	ci95_hi	orders_H/G	samples
+# public/body row add (1048576)	1.006	0.992	1.025	0.999/1.018	16	INFO
+# public/body row add (4096)	0.981	0.951	1.041	0.966/0.984	16	INFO
+

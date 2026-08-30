@@ -28,11 +28,13 @@ struct BitsetOps {
 BitsetOps resolve_ops() noexcept {
 #if defined(HYLE_ARCH_X64)
   const auto isa = static_cast<std::uint32_t>(platform::best_isa());
+#if defined(HYLE_CONTAINER_HAS_AVX512)
   if (isa >= static_cast<std::uint32_t>(platform::Isa::kAvx512))
     return {&detail::bitset_and_avx512, &detail::bitset_or_avx512,
             &detail::bitset_xor_avx512, &detail::bitset_and_not_avx512,
             &detail::bitset_not_avx512,
             &detail::bitset_count_avx512};
+#endif
   if (isa >= static_cast<std::uint32_t>(platform::Isa::kAvx2))
     return {&detail::bitset_and_avx2, &detail::bitset_or_avx2,
             &detail::bitset_xor_avx2, &detail::bitset_and_not_avx2,

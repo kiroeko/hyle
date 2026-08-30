@@ -71,21 +71,15 @@ message(STATUS
   "HYLE bench vendors: Highway ${HYLE_BENCH_VENDOR_HIGHWAY_REV}, xsimd ${HYLE_BENCH_VENDOR_XSIMD_REV} (${HYLE_BENCH_VENDOR_DIR})")
 endif()
 
-# simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
-# enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
-# and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only
-# = the honest "free from the optimizer" reference). Built into one exe.
+# Ordinary pointer/count throughput versus scalar auto-vectorization and the
+# locked Highway peer. Legacy register-facade kernels are deliberately absent:
+# product performance is decided by shipping whole-buffer entry points.
 add_executable(hyle_simd_bench
   simd_bench.cc
   simd_kernels_scalar.cc
-  simd_kernels_sse4.cc
-  simd_kernels_avx2.cc
   simd_kernels_highway.cc)
 target_link_libraries(hyle_simd_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_simd_bench PRIVATE "${PROJECT_SOURCE_DIR}")
-# Per-ISA flags via the single-source hyle_set_isa (HyleIsa.cmake). scalar TU: none.
-hyle_set_isa(simd_kernels_sse4.cc SSE42)
-hyle_set_isa(simd_kernels_avx2.cc AVX2)
 hyle_apply_warnings(hyle_simd_bench)
 
 # math bench: HYLE's dispatched exp/log/tanh (vectorized borrow core) vs scalar libm +
@@ -152,11 +146,16 @@ add_executable(hyle_activation_bench activation_bench.cc)
 target_link_libraries(hyle_activation_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_activation_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_activation_bench SYSTEM PRIVATE
-  "${_hyle_bench_highway_dir}")
+  "${_hyle_bench_highway_dir}"
+  "${_hyle_bench_xsimd_dir}/include")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_target_isa(activation_bench.cc AVX2)
+  target_compile_definitions(hyle_activation_bench PRIVATE
+    HYLE_SIMD_TARGET_AVX2=1)
 elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_set_highway_target_isa(activation_bench.cc NEON)
+  target_compile_definitions(hyle_activation_bench PRIVATE
+    HYLE_SIMD_TARGET_NEON=1)
 endif()
 hyle_apply_warnings(hyle_activation_bench)
 
@@ -175,26 +174,6 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_set_highway_target_isa(search_scan_parity_bench.cc NEON)
 endif()
 hyle_apply_warnings(hyle_search_scan_parity_bench)
-
-# Target-bound range algorithms: same TU, same ISA, same pointer/count and
-# predicate contracts as Highway contrib/algo. This measures the loop/tail
-# helper itself rather than a runtime dispatcher.
-add_executable(hyle_native_algorithm_bench native_algorithm_bench.cc)
-target_link_libraries(hyle_native_algorithm_bench PRIVATE nanobench)
-target_include_directories(hyle_native_algorithm_bench PRIVATE
-  "${PROJECT_SOURCE_DIR}/include")
-target_include_directories(hyle_native_algorithm_bench SYSTEM PRIVATE
-  "${_hyle_bench_highway_dir}")
-if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  target_compile_definitions(hyle_native_algorithm_bench PRIVATE
-    HYLE_SIMD_TARGET_AVX2)
-  hyle_set_highway_isa(native_algorithm_bench.cc)
-elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  target_compile_definitions(hyle_native_algorithm_bench PRIVATE
-    HYLE_SIMD_TARGET_NEON)
-  hyle_set_isa(native_algorithm_bench.cc NEON)
-endif()
-hyle_apply_warnings(hyle_native_algorithm_bench)
 
 add_executable(hyle_mixed_dot_bench mixed_dot_bench.cc)
 target_link_libraries(hyle_mixed_dot_bench PRIVATE hyle_simd nanobench)
@@ -248,179 +227,6 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_apply_warnings(hyle_ordering_parity_bench)
 endif()
 
-# gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
-# (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
-# an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).
-if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  # The parity translation units intentionally use a benchmark-size `kN` and
-  # instantiate header-only HYLE/Highway templates that use the same local
-  # spelling. MSVC C4459 diagnoses that caller/header name coincidence even
-  # though neither declaration can refer to the other. Keep /WX for actionable
-  # diagnostics while suppressing this target-local template warning only.
-  set(_hyle_op_parity_msvc_options)
-  if(MSVC)
-    set(_hyle_op_parity_msvc_options /wd4459)
-  endif()
-  hyle_isa_flags(_gb_avx2 AVX2)
-  add_executable(hyle_gather_bench_avx2 gather_bench.cc)
-  target_link_libraries(hyle_gather_bench_avx2 PRIVATE nanobench)
-  target_include_directories(hyle_gather_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_compile_definitions(hyle_gather_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  target_compile_options(hyle_gather_bench_avx2 PRIVATE ${_gb_avx2})
-  hyle_apply_warnings(hyle_gather_bench_avx2)
-
-  hyle_isa_flags(_gb_avx512 AVX512)
-  add_executable(hyle_gather_bench_avx512 gather_bench.cc)
-  target_link_libraries(hyle_gather_bench_avx512 PRIVATE nanobench)
-  target_include_directories(hyle_gather_bench_avx512 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_compile_definitions(hyle_gather_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
-  target_compile_options(hyle_gather_bench_avx512 PRIVATE ${_gb_avx512})
-  hyle_apply_warnings(hyle_gather_bench_avx512)
-
-  # op-parity bench (HYLE self-made ops vs Highway same op, same ISA, same TU -> apples-to-apples,
-  # both inline). Answers "did self-making an op cost us vs just calling Highway?". Per-ISA exe:
-  # avx2 on host, avx512 under SDE. Needs the Highway include dir AND the FULL AVX2/AVX512 baseline
-  # (hyle_set_highway_isa / hyle_set_avx512_*_isa) so Highway's static dispatch doesn't silently
-  # downgrade to SSSE3 (which would make it a HYLE-256 vs Highway-128 non-race).
-  add_executable(hyle_op_parity_bench_avx2 op_parity_bench.cc)
-  target_link_libraries(hyle_op_parity_bench_avx2 PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
-  target_compile_definitions(hyle_op_parity_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  # PER-TARGET flags (not set_source_files_properties, which would leak onto the avx512 target that
-  # shares this source): full AVX2 baseline so Highway static dispatch picks true 256-bit.
-  if(MSVC)
-    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE /arch:AVX2 /bigobj
-                                                                ${_hyle_op_parity_msvc_options})
-  else()
-    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_op_parity_bench_avx2)
-
-  add_executable(hyle_op_parity_bench_avx512 op_parity_bench.cc)
-  target_link_libraries(hyle_op_parity_bench_avx512 PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_bench_avx512 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_avx512 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
-  target_compile_definitions(hyle_op_parity_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
-  hyle_isa_flags(_op_avx512 AVX512)
-  target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512}
-                                                              ${_hyle_op_parity_msvc_options})
-  if(MSVC)
-    # xsimd's AVX-512BW template has an intentionally unreachable fallback;
-    # MSVC reports C4702 at the instantiation point despite /external:W0.
-    target_compile_options(hyle_op_parity_bench_avx512 PRIVATE /wd4702)
-  endif()
-  hyle_apply_warnings(hyle_op_parity_bench_avx512)
-
-  # sse4 variant (128-bit): proves the sse4 backend's native-op rewrites (PopCount/LZCnt/TZCnt/
-  # ReverseBits/DupEven/Odd/ConcatEven/Odd/GetExponent) match/beat Highway's SSE4 same ops. Same
-  # apples-to-apples (both inline, same TU/ISA). Highway needs the AES/PCLMUL baseline so its SSE4
-  # static target isn't downgraded.
-  add_executable(hyle_op_parity_bench_sse4 op_parity_bench.cc
-                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
-  target_link_libraries(hyle_op_parity_bench_sse4 PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_bench_sse4 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_sse4 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
-  target_compile_definitions(hyle_op_parity_bench_sse4 PRIVATE HYLE_SIMD_TARGET_SSE4)
-  if(MSVC)
-    # MSVC has no /arch:SSE4; SSE4.2 intrinsics are unconditional on x64.
-    target_compile_options(hyle_op_parity_bench_sse4 PRIVATE
-      ${_hyle_op_parity_msvc_options})
-  else()
-    target_compile_options(hyle_op_parity_bench_sse4 PRIVATE -msse4.2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_op_parity_bench_sse4)
-
-  add_executable(hyle_op_parity_full_bench_avx2 op_parity_full_bench.cc)
-  target_link_libraries(hyle_op_parity_full_bench_avx2 PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_full_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_full_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_op_parity_full_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  if(MSVC)
-    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE /arch:AVX2 /bigobj
-                                                                     ${_hyle_op_parity_msvc_options})
-  else()
-    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_op_parity_full_bench_avx2)
-
-  # widen / promote-demote / MAC family (bespoke harness; was un-wired)
-  add_executable(hyle_op_parity_widen_bench_avx2 op_parity_widen_bench.cc)
-  target_link_libraries(hyle_op_parity_widen_bench_avx2 PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_widen_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_widen_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_op_parity_widen_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  if(MSVC)
-    target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE /arch:AVX2 /bigobj
-                                                                      ${_hyle_op_parity_msvc_options})
-  else()
-    target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_op_parity_widen_bench_avx2)
-
-  # Stream is a non-temporal-store algorithm contract, measured on a >LLC working set rather
-  # than in the L1 op-parity harness.
-  add_executable(hyle_stream_bench_avx2 stream_bench.cc)
-  target_include_directories(hyle_stream_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_stream_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_stream_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  if(MSVC)
-    target_compile_options(hyle_stream_bench_avx2 PRIVATE /arch:AVX2)
-  else()
-    target_compile_options(hyle_stream_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_stream_bench_avx2)
-
-  # crypto AES/CLMul (Tier1; needs AES-NI + PCLMUL baseline)
-  add_executable(hyle_crypto_bench_avx2 crypto_bench.cc)
-  target_link_libraries(hyle_crypto_bench_avx2 PRIVATE nanobench)
-  target_include_directories(hyle_crypto_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_crypto_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_crypto_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
-  if(MSVC)
-    target_compile_options(hyle_crypto_bench_avx2 PRIVATE /arch:AVX2)
-  else()
-    target_compile_options(hyle_crypto_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
-  endif()
-  hyle_apply_warnings(hyle_crypto_bench_avx2)
-endif()
-
-if(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  add_executable(hyle_op_parity_full_bench_neon op_parity_full_bench.cc)
-  target_link_libraries(hyle_op_parity_full_bench_neon PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_full_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_full_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_op_parity_full_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
-  hyle_apply_warnings(hyle_op_parity_full_bench_neon)
-
-  # NEON parity for the mask/gather/tail/crypto TU (op_parity_bench) and the widen TU
-  # (bf16/U8/promote-demote). These were x86-only -- the recently-added masked-FMA / bit-ternary /
-  # masked-gather / bf16-dot / U8FromU32 / narrow-reduce ops had NO NEON perf bench (only gtest).
-  # gather/crypto Highway paths reference hwy::Abort (HWY_DASSERT) that Apple-clang doesn't DCE on
-  # arm64 -> compile highway's abort.cc in (op_parity_full doesn't hit it, so it links bare).
-  add_executable(hyle_op_parity_bench_neon op_parity_bench.cc
-                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
-  target_link_libraries(hyle_op_parity_bench_neon PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
-  target_compile_definitions(hyle_op_parity_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
-  hyle_apply_warnings(hyle_op_parity_bench_neon)
-
-  add_executable(hyle_op_parity_widen_bench_neon op_parity_widen_bench.cc
-                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
-  target_link_libraries(hyle_op_parity_widen_bench_neon PRIVATE nanobench)
-  target_include_directories(hyle_op_parity_widen_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_widen_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_op_parity_widen_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
-  hyle_apply_warnings(hyle_op_parity_widen_bench_neon)
-
-  add_executable(hyle_stream_bench_neon stream_bench.cc)
-  target_include_directories(hyle_stream_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_stream_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
-  target_compile_definitions(hyle_stream_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
-  hyle_apply_warnings(hyle_stream_bench_neon)
-endif()
-
 # dtype conversion bench: HYLE overload graph vs scalar reference (+ Highway gated). The public
 # convert ops live in hyle_simd; the bench TU only needs special ISA flags when
 # the Highway path is compiled in (PromoteTo/DemoteTo intrinsics) -- added in the Highway
@@ -455,28 +261,12 @@ set(_hyle_simd_bench_targets
   hyle_bitpack_bench
   hyle_activation_bench
   hyle_search_scan_parity_bench
-  hyle_native_algorithm_bench
   hyle_mixed_dot_bench
   hyle_row_dtype_parity_bench
   hyle_dtype_bench)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   list(APPEND _hyle_simd_bench_targets
-    hyle_ordering_parity_bench
-    hyle_gather_bench_avx2
-    hyle_gather_bench_avx512
-    hyle_op_parity_bench_avx2
-    hyle_op_parity_bench_avx512
-    hyle_op_parity_bench_sse4
-    hyle_op_parity_full_bench_avx2
-    hyle_op_parity_widen_bench_avx2
-    hyle_stream_bench_avx2
-    hyle_crypto_bench_avx2)
-elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  list(APPEND _hyle_simd_bench_targets
-    hyle_op_parity_full_bench_neon
-    hyle_op_parity_bench_neon
-    hyle_op_parity_widen_bench_neon
-    hyle_stream_bench_neon)
+    hyle_ordering_parity_bench)
 endif()
 hyle_register_benches(simd ${_hyle_simd_bench_targets})
 unset(_hyle_simd_bench_targets)

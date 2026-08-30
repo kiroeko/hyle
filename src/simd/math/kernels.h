@@ -25,10 +25,9 @@ namespace hyle::simd::detail {
 #define HYLE_DECLARE_ROW_REDUCTION(symbol)                                    \
   void symbol(const float* src, float* dst, std::size_t n) noexcept;
 
-#define HYLE_REAL_UNARY_LIST(M, suffix, type, tag) \
+#define HYLE_REAL_UNARY_LIST_WITHOUT_TANH(M, suffix, type, tag) \
   M(exp_##tag##_##suffix, type)                       \
   M(log_##tag##_##suffix, type)                       \
-  M(tanh_##tag##_##suffix, type)                      \
   M(sin_##tag##_##suffix, type)                       \
   M(cos_##tag##_##suffix, type)                       \
   M(exp2_##tag##_##suffix, type)                      \
@@ -49,6 +48,10 @@ namespace hyle::simd::detail {
   M(log10_##tag##_##suffix, type)                     \
   M(tgamma_##tag##_##suffix, type)                    \
   M(lgamma_##tag##_##suffix, type)
+
+#define HYLE_REAL_UNARY_LIST(M, suffix, type, tag)                \
+  HYLE_REAL_UNARY_LIST_WITHOUT_TANH(M, suffix, type, tag)         \
+  M(tanh_##tag##_##suffix, type)
 
 #define HYLE_REAL_BINARY_LIST(M, suffix, type, tag) \
   M(atan2_##tag##_##suffix, type)                    \
@@ -112,8 +115,9 @@ HYLE_DECLARE_ROW_REDUCTION(log_softmax_f32_scalar)
 // fixed target. Declarations are harmless on architectures whose TUs are not
 // built; the baseline dispatcher only references compiled variants.
 #define HYLE_DECLARE_VARIANT(suffix)                                              \
-  HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, highway_##suffix, float, f32)          \
+  HYLE_REAL_UNARY_LIST_WITHOUT_TANH(HYLE_DECLARE_UNARY, highway_##suffix, float, f32) \
   HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, highway_##suffix, double, f64)         \
+  HYLE_DECLARE_UNARY(tanh_f32_route_##suffix, float)                              \
   HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, highway_##suffix, float, f32)        \
   HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, highway_##suffix, double, f64)       \
   HYLE_DECLARE_SINCOS(sincos_f32_highway_##suffix, float)                         \
@@ -136,7 +140,7 @@ HYLE_DECLARE_ROW_REDUCTION(log_softmax_f32_scalar)
 
 #define HYLE_DECLARE_ACTIVATION_VARIANT(suffix)                              \
   HYLE_DECLARE_UNARY(gelu_f32_hyle_##suffix, float)                          \
-  HYLE_DECLARE_UNARY(gelu_tanh_f32_hyle_##suffix, float)                     \
+  HYLE_DECLARE_UNARY(gelu_tanh_f32_route_##suffix, float)                    \
   HYLE_DECLARE_UNARY(sigmoid_f32_hyle_##suffix, float)                       \
   HYLE_DECLARE_UNARY(silu_f32_hyle_##suffix, float)                          \
   HYLE_DECLARE_UNARY(relu_f32_hyle_##suffix, float)                          \
@@ -163,6 +167,7 @@ HYLE_DECLARE_ACTIVATION_VARIANT(rvv)
 #undef HYLE_COMPLEX_UNARY_LIST
 #undef HYLE_REAL_BINARY_LIST
 #undef HYLE_REAL_UNARY_LIST
+#undef HYLE_REAL_UNARY_LIST_WITHOUT_TANH
 #undef HYLE_DECLARE_COMPLEX_POW
 #undef HYLE_DECLARE_COMPLEX_UNARY
 #undef HYLE_DECLARE_SINCOS

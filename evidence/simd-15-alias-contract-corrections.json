@@ -1,0 +1,191 @@
+{
+  "schema": "hyle.simd.alias-contract-proof/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "inventory_erratum": "evidence/simd-15-inventory-parser-erratum.json; this receipt is disjoint from the seven operations gaining sites",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "proof_method": "Exact contract and implementation review followed by width-agnostic block-oracle tests on the W1-WIN scalar, SSE4 and AVX2 test artifacts. P0 structural decisions do not infer equivalence from spelling or sub-nanosecond timing.",
+  "ledger_evidence_group": {
+    "id": "P0:alias:contract-corrections",
+    "kind": "ALIAS_CONTRACT_PROOF",
+    "contract": "four legacy alias-classified names receive exact semantic disposition: two retained/routed distinct block capabilities and two true forwarding aliases"
+  },
+  "validation": {
+    "machine_profile": "W1-WIN",
+    "toolchain": "MSVC 19.50",
+    "build_targets": [
+      "hyle_simd_test",
+      "hyle_simd_sse4_test",
+      "hyle_simd_avx2_test"
+    ],
+    "ctest_regex": "^hyle_simd_(test|sse4_test|avx2_test)$",
+    "result": "3/3 PASS"
+  },
+  "operations": [
+    {
+      "name": "CompressBlocksNot",
+      "scope_id": "legacy-all",
+      "public_mapping": "INTERNAL_VQSORT:COMPRESS_128_BLOCKS_NOT",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {
+        "HIGHWAY": "DIRECT",
+        "XSIMD": "UNAVAILABLE",
+        "HYLE": "SOURCE_PRESENT"
+      },
+      "legacy_classification_finding": "Not a general alias for lane-wise CompressNot. It compacts two-u64 128-bit blocks, requires a block-uniform mask and defines only the retained prefix.",
+      "consumer": "src/simd/sort/vqsort_hyle/traits128-inl.h:36",
+      "hyle": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "include/hyle/simd/vec.h:1999",
+          "tests/simd/vec_test.cc:1404"
+        ],
+        "mechanism": "one-block compile-time identity; otherwise the existing CompressNot primitive"
+      },
+      "highway": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/tests/compress_test.cc:243",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_128-inl.h:14579",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_256-inl.h:9378"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_AVAILABLE",
+        "evidence": [
+          "locked-xsimd-public-symbol-audit:CompressBlocksNot=0"
+        ]
+      },
+      "decision": "KEEP_HYLE",
+      "provider": "HYLE",
+      "reason": "The HYLE vqsort kernel already owns HYLE vectors; the corrected implementation has the same O(1), allocation-free mechanism and avoids a cross-provider register bridge."
+    },
+    {
+      "name": "InterleaveUpperBlocks",
+      "scope_id": "legacy-all",
+      "public_mapping": "KEEP_CAPABILITY:InterleaveUpperBlocks",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {
+        "HIGHWAY": "DIRECT",
+        "XSIMD": "UNAVAILABLE",
+        "HYLE": "SOURCE_PRESENT"
+      },
+      "legacy_classification_finding": "Not an alias for InterleaveOddBlocks once a vector contains more than two 128-bit blocks; upper-half blocks and odd-indexed blocks are different sets.",
+      "hyle": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "include/hyle/simd/backend/avx2.h:4432",
+          "include/hyle/simd/backend/avx512.h:3038",
+          "include/hyle/simd/backend/sve.h:1123",
+          "include/hyle/simd/backend/rvv.h:1560",
+          "tests/simd/vec_test.cc:4097"
+        ]
+      },
+      "highway": {
+        "contract": "SAME_CONTRACT",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_256-inl.h:6432",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_512-inl.h:6516",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:4257",
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/rvv-inl.h:4336"
+        ],
+        "mechanism": "direct target operation, including table-lookup implementations for wide vectors"
+      },
+      "xsimd": {
+        "contract": "NOT_AVAILABLE",
+        "evidence": [
+          "locked-xsimd-public-symbol-audit:InterleaveUpperBlocks=0"
+        ]
+      },
+      "decision": "ROUTE_HIGHWAY",
+      "provider": "HIGHWAY",
+      "reason": "Highway directly owns the complete block semantic on every locked target; this also avoids retaining HYLE's AVX-512 byte/word store-loop fallback."
+    },
+    {
+      "name": "ZipLower",
+      "scope_id": "legacy-all",
+      "public_mapping": "MERGE_ALIAS:InterleaveLower",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {
+        "HIGHWAY": "DIRECT",
+        "XSIMD": "DIRECT",
+        "HYLE": "SOURCE_PRESENT"
+      },
+      "canonical": "InterleaveLower",
+      "hyle": {
+        "contract": "COMPOSED_SAME_CONTRACT",
+        "evidence": [
+          "include/hyle/simd/backend/avx2.h:3159",
+          "include/hyle/simd/backend/avx512.h:2244",
+          "include/hyle/simd/backend/neon.h:3023",
+          "include/hyle/simd/backend/rvv.h:1347",
+          "include/hyle/simd/backend/scalar.h:1346",
+          "include/hyle/simd/backend/sse4.h:2301",
+          "include/hyle/simd/backend/sve.h:891"
+        ]
+      },
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway ZipLower returns double-width integer lanes; HYLE returns the original lane type and bit pattern.",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_128-inl.h:9344"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "xsimd zip_lo selects and interleaves the whole batch lower half on wide x86, whereas the legacy HYLE spelling exactly forwards to its per-128-bit-lane InterleaveLower.",
+        "evidence": [
+          "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:3025",
+          "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/arch/xsimd_avx.hpp:2225"
+        ]
+      },
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "ZipUpper",
+      "scope_id": "legacy-all",
+      "public_mapping": "MERGE_ALIAS:InterleaveUpper",
+      "variant_audit": "COMPLETE",
+      "candidate_availability": {
+        "HIGHWAY": "DIRECT",
+        "XSIMD": "DIRECT",
+        "HYLE": "SOURCE_PRESENT"
+      },
+      "canonical": "InterleaveUpper",
+      "hyle": {
+        "contract": "COMPOSED_SAME_CONTRACT",
+        "evidence": [
+          "include/hyle/simd/backend/avx2.h:3161",
+          "include/hyle/simd/backend/avx512.h:2246",
+          "include/hyle/simd/backend/neon.h:3025",
+          "include/hyle/simd/backend/rvv.h:1348",
+          "include/hyle/simd/backend/scalar.h:1348",
+          "include/hyle/simd/backend/sse4.h:2303",
+          "include/hyle/simd/backend/sve.h:892"
+        ]
+      },
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway ZipUpper returns double-width integer lanes; HYLE returns the original lane type and bit pattern.",
+        "evidence": [
+          "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_128-inl.h:9353"
+        ]
+      },
+      "xsimd": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "xsimd zip_hi selects and interleaves the whole batch upper half on wide x86, whereas the legacy HYLE spelling exactly forwards to its per-128-bit-lane InterleaveUpper.",
+        "evidence": [
+          "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:3009",
+          "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/arch/xsimd_avx.hpp:2162"
+        ]
+      },
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    }
+  ]
+}

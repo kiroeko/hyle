@@ -2,15 +2,16 @@
 
 #include "hyle/simd/dtype_ops.h"
 #include "src/simd/runtime_internal.h"
-#include "hyle/simd/vec.h"
 #include "src/simd/dtype/conversion_kernels.h"
 #include "src/simd/dtype/kernels.h"
+#include "hwy/highway.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
 namespace hs = hyle::simd;
+namespace hn = hwy::HWY_NAMESPACE;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_DTYPE(name) hs::detail::name##_sve
@@ -31,7 +32,7 @@ constexpr std::uint32_t kF32Patterns[] = {
 };
 
 void CheckConversions(bool public_api) {
-  const std::size_t w = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t w = hn::Lanes(hn::ScalableTag<float>{});
   const std::size_t n = 2 * w + 5;
   ASSERT_LE(n, kMaxLanes);
   alignas(64) float f32[kMaxLanes], f16_out[kMaxLanes], bf16_out[kMaxLanes];

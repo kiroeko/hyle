@@ -12,13 +12,11 @@
 // exported (HYLE_CONTAINER_API) so the public header stays free of <string_view>
 // (string_ref.h pulls in no std string headers, this .cc does).
 //
-// count/rfind DISPATCH (2026-07, unified onto simd/vec.h): str_count / str_rfind_char are
-// now function-pointer dispatchers picking the widest compiled kernel by best_isa(), exactly
-// like simd/ops.h's dot/saxpy. The kernels live in str_search_{scalar,sse4,avx2,avx512,neon}
-// .cc (shared body str_search_impl.h, written against the vec.h D-tag abstraction). This
-// REPLACED the old hand-rolled string_ref_avx2.cc (256b) + inline SSE2 core here: one source
-// for every ISA, and aarch64/NEON + AVX-512 count/rfind for free (previously x86-only ->
-// arm64 fell to scalar). The SAD count keeps its 4-accumulator psadbw structure (via SumsOf8).
+// count/rfind dispatch picks the widest compiled whole-buffer kernel once per call through
+// best_isa(), exactly like the ordinary SIMD pointer/count APIs. The generated variant TUs
+// share str_search_impl.h and use locked Highway register types directly; Container owns the
+// public string contract and its four-accumulator SAD algorithm. This replaced the old
+// hand-written AVX2/SSE2 split without creating a dependency on HYLE's retired register API.
 //
 // SPLIT STRATEGY (measured, 2026-07): HYLE self-implements the ops where it matches or beats
 // std (find(char)/rfind(char)/count via the dispatched kernels, starts_with/split via memcmp),
@@ -38,7 +36,9 @@ using TransformFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
 CountFn resolve_count() noexcept {
 #if defined(HYLE_ARCH_X64)
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+#if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_count_avx512;
+#endif
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_count_avx2;
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_count_sse4;
   return &str_count_scalar;
@@ -54,7 +54,9 @@ CountFn resolve_count() noexcept {
 RfindFn resolve_rfind() noexcept {
 #if defined(HYLE_ARCH_X64)
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+#if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_rfind_char_avx512;
+#endif
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_rfind_char_avx2;
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_rfind_char_sse4;
   return &str_rfind_char_scalar;
@@ -70,8 +72,10 @@ RfindFn resolve_rfind() noexcept {
 TransformFn resolve_transform(bool lower) noexcept {
 #if defined(HYLE_ARCH_X64)
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+#if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512))
     return lower ? &str_ascii_lower_avx512 : &str_ascii_upper_avx512;
+#endif
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2))
     return lower ? &str_ascii_lower_avx2 : &str_ascii_upper_avx2;
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42))

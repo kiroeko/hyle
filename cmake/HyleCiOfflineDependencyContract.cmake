@@ -34,6 +34,7 @@ configure_file("${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake"
 # wrapper.  This makes a new direct override impossible to forget locally.
 set(_locked_consumer_specs
   "cmake/HyleSimdDependencies.cmake|highway"
+  "cmake/HyleSimdDependencies.cmake|xsimd"
   "cmake/HyleComputeDependencies.cmake|ggml"
   "cmake/HyleComputeDependencies.cmake|vulkan_headers"
   "cmake/HyleComputeDependencies.cmake|volk"

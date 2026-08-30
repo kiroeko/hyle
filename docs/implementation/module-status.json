@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-08-29",
+  "updated_at": "2026-08-30",
   "modules": [
     {
       "module": "core",
@@ -559,11 +559,11 @@
     {
       "module": "simd",
       "product_state": "AUDITED",
-      "round_id": "simd-v2",
-      "closure_task": "docs/implementation/tasks/simd/simd-v2-closure.md",
-      "scope": "Vendor-first refactor of the complete CPU SIMD product through bounded sequential tickets: direct locked Highway adoption and port/backend reduction; ordinary row, dtype, math/activation, search/scan, bitpack/random and ordering capability completion; runtime/exact/native/fat delivery; affected consumers, usability, documentation, correctness and per-family P1 evidence.",
-      "non_goals": "GPU backends, matrix/attention/RoPE/SSM/GEMM or tensor layout/workspace/threading, complete BLAS/FFT/linear algebra, copying all ggml/Highway spellings, new PowerPC/LoongArch support, per-ISA DLLs, C API or Native FFI, stable cross-toolchain C++ ABI, central closure/performance instrument changes and Formal certification.",
-      "baseline_commit": "5becc37ff546e64351b00c56ac6eb39eee7fec3f",
+      "round_id": "simd-v3",
+      "closure_task": "docs/implementation/tasks/simd/simd-v3-provider-routing.md",
+      "scope": "Multi-provider CPU SIMD refactor: lock Highway and xsimd as coexisting product candidates, retain proven HYLE implementations, establish zero-overhead compile-time routing, and mechanically disposition all 387 baseline operations before consumer migration, legacy deletion, delivery and closure.",
+      "non_goals": "Compatibility with old SIMD headers or spellings, public vendor register ABI, per-operation runtime dispatch, exhaustive operation-by-overload-by-size-by-ISA timing, GPU/tensor/layout/threading/GEMM/attention/quant-format policy, per-ISA DLLs, C or Native FFI, stable cross-toolchain C++ ABI, SLEEF admission, central closure/performance instrument changes and Formal certification.",
+      "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -581,7 +581,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v2 AUDITED：双向 capability/public-surface 审计已映射 34 个公开头、真实 Container/Compute 消费者和 integrated-source 路径；vendor-first、API 清理及 row/dtype/activation/search/scan/bitpack/random/ordering 的有限 FIX 集已冻结，产品施工严格按 SIMD-04～12 顺序执行。"
+      "summary": "simd-v3 AUDITED：387 个 operation / 1,797 个 baseline 定义位置已全部裁决；迁移终态为 422/422 route scope，366 ROUTE_HIGHWAY、34 KEEP_HYLE、22 REMOVE_REDUNDANT、零 PENDING，whole-buffer tanh/GELU 的具名 MSVC/AVX2 例外路由 xsimd。SIMD-16 已完成 consumer 迁移和旧 register/backend 物理清算；SIMD-17 正在冻结 candidate 与终态证据。"
     },
     {
       "module": "container",

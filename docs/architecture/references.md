@@ -137,7 +137,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（Highway 数学/向量机制、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、HYLE SIMD 产品合同与缺口组合）。container 的 byte-hash core 与 UTF-8 validate/count 明确属于上一类叶子依赖，分别借 wyhash/XXH3 与 simdutf，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（Highway 数学/向量机制、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、HYLE SIMD 产品合同与缺口组合）。container 的 byte-hash core、UTF-8 validate/count 以及 target-bound string/bitset register lowering 分别借 wyhash/XXH3、simdutf 与锁定 Highway，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
 
 ### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
 

@@ -1,0 +1,110 @@
+{
+  "schema": "hyle.simd.alias-proof/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "inventory_erratum": "evidence/simd-15-inventory-parser-erratum.json; this receipt is disjoint from the seven operations gaining sites",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "proof_method": "Source-level forwarding proof plus exact public-signature review. These aliases have no product consumer outside their definitions; tests are migration sentinels, not ownership.",
+  "operations": [
+    {
+      "name": "Rol",
+      "canonical": "RotateLeft",
+      "legacy_contract": "template<int kBits>(vector) performs a compile-time constant bit rotation independently in every integer lane",
+      "hyle": {
+        "contract": "COMPOSED_SAME_CONTRACT",
+        "evidence": ["include/hyle/simd/vec.h:777"]
+      },
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway Rol(vector, vector) takes a runtime per-lane shift vector rather than HYLE's one-argument compile-time spelling",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/inside-inl.h:157"]
+      },
+      "xsimd": {
+        "contract": "ADAPTED_SAME_CONTRACT",
+        "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:2230"]
+      },
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "Ror",
+      "canonical": "RotateRight",
+      "legacy_contract": "template<int kBits>(vector) performs a compile-time constant bit rotation independently in every integer lane",
+      "hyle": {
+        "contract": "COMPOSED_SAME_CONTRACT",
+        "evidence": ["include/hyle/simd/vec.h:778"]
+      },
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway Ror(vector, vector) takes a runtime per-lane shift vector rather than HYLE's one-argument compile-time spelling",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/inside-inl.h:171"]
+      },
+      "xsimd": {
+        "contract": "ADAPTED_SAME_CONTRACT",
+        "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:2258"]
+      },
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "PromoteInRangeLowerTo",
+      "canonical": "PromoteLowerTo",
+      "legacy_contract": "exact forwarding alias over the complete HYLE template domain",
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["include/hyle/simd/vec.h:2075"]},
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway's same-name public entry is a narrower in-range f32-to-u64 contract, not HYLE's unconstrained forwarding template",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:3907"]
+      },
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:PromoteInRangeLowerTo=0"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "PromoteInRangeUpperTo",
+      "canonical": "PromoteUpperTo",
+      "legacy_contract": "exact forwarding alias over the complete HYLE template domain",
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["include/hyle/simd/vec.h:2079"]},
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway's same-name public entry is a narrower in-range f32-to-u64 contract, not HYLE's unconstrained forwarding template",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:3916"]
+      },
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:PromoteInRangeUpperTo=0"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "PromoteInRangeEvenTo",
+      "canonical": "PromoteEvenTo",
+      "legacy_contract": "exact forwarding alias over the complete HYLE template domain",
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["include/hyle/simd/vec.h:2083"]},
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway's same-name public entry is a narrower in-range f32-to-u64 contract, not HYLE's unconstrained forwarding template",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:3938"]
+      },
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:PromoteInRangeEvenTo=0"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    },
+    {
+      "name": "PromoteInRangeOddTo",
+      "canonical": "PromoteOddTo",
+      "legacy_contract": "exact forwarding alias over the complete HYLE template domain",
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["include/hyle/simd/vec.h:2087"]},
+      "highway": {
+        "contract": "NOT_COMPARABLE",
+        "reason": "Highway's same-name public entry is a narrower in-range f32-to-u64 contract, not HYLE's unconstrained forwarding template",
+        "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:3961"]
+      },
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:PromoteInRangeOddTo=0"]},
+      "decision": "REMOVE_REDUNDANT",
+      "provider": "COMPOSITION"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "hyle/simd/vec.h"
 #include "src/simd/math/kernels.h"
+#include "hwy/highway.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,6 +10,7 @@
 #include <limits>
 
 namespace hs = hyle::simd;
+namespace hn = hwy::HWY_NAMESPACE;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_PRODUCT(name) hs::detail::name##_sve
@@ -28,7 +29,7 @@ void ExpectNearRelative(T actual, T expected, T tolerance) {
 }  // namespace
 
 TEST(ScalableMathProduct, LengthAgnosticF32CoreAndTail) {
-  const std::size_t w = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t w = hn::Lanes(hn::ScalableTag<float>{});
   const std::size_t n = 2 * w + 3;
   ASSERT_LE(n, kMaxLanes);
   alignas(64) float src[kMaxLanes], exp_out[kMaxLanes], log_out[kMaxLanes];
@@ -43,7 +44,7 @@ TEST(ScalableMathProduct, LengthAgnosticF32CoreAndTail) {
 }
 
 TEST(ScalableMathProduct, F64TableBinaryAndSinCos) {
-  const std::size_t w = hs::Lanes(hs::ScalableTag<double>{});
+  const std::size_t w = hn::Lanes(hn::ScalableTag<double>{});
   const std::size_t n = 2 * w + 1;
   ASSERT_LE(n, kMaxLanes);
   alignas(64) double a[kMaxLanes], b[kMaxLanes], out[kMaxLanes];
@@ -67,7 +68,7 @@ TEST(ScalableMathProduct, F64TableBinaryAndSinCos) {
 }
 
 TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
-  const std::size_t w32 = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t w32 = hn::Lanes(hn::ScalableTag<float>{});
   const std::size_t n32 = 2 * w32 + 3;
   ASSERT_LE(n32, kMaxLanes);
   alignas(64) float x32[kMaxLanes], y32[kMaxLanes], out32[kMaxLanes];
@@ -95,7 +96,7 @@ TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
     ExpectNearRelative(out32[i], std::sqrt(std::fma(x32[i], x32[i], y32[i] * y32[i])),
                        2e-6f);
 
-  const std::size_t w64 = hs::Lanes(hs::ScalableTag<double>{});
+  const std::size_t w64 = hn::Lanes(hn::ScalableTag<double>{});
   const std::size_t n64 = 2 * w64 + 3;
   ASSERT_LE(n64, kMaxLanes);
   alignas(64) double x64[kMaxLanes], y64[kMaxLanes], out64[kMaxLanes];
@@ -120,7 +121,7 @@ TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
 }
 
 TEST(ScalableMathProduct, ActivationsAndRowReductionsCoverWideTail) {
-  const std::size_t width = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t width = hn::Lanes(hn::ScalableTag<float>{});
   const std::size_t n = 2 * width + 3;
   ASSERT_LE(n, kMaxLanes);
   alignas(64) float input[kMaxLanes], output[kMaxLanes], alias[kMaxLanes];
@@ -204,7 +205,7 @@ TEST(ScalableMathProduct, ActivationsAndRowReductionsCoverWideTail) {
 }
 
 TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
-  const std::size_t w = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t w = hn::Lanes(hn::ScalableTag<float>{});
   const std::size_t n = 2 * w + 3;
   ASSERT_LE(n, kMaxLanes);
   alignas(64) float zr[kMaxLanes], zi[kMaxLanes], wr[kMaxLanes], wi[kMaxLanes];
@@ -251,7 +252,7 @@ TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
     ExpectNearRelative(di[i], expected.imag(), 3e-5f);
   }
 
-  const std::size_t w64 = hs::Lanes(hs::ScalableTag<double>{});
+  const std::size_t w64 = hn::Lanes(hn::ScalableTag<double>{});
   const std::size_t n64 = 2 * w64 + 3;
   ASSERT_LE(n64, kMaxLanes);
   alignas(64) double zr64[kMaxLanes], zi64[kMaxLanes], wr64[kMaxLanes], wi64[kMaxLanes];

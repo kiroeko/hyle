@@ -50,8 +50,10 @@ hyle::core ──PUBLIC──► every component whose public headers consume Co
 ```
 
 `core` 自身没有 HYLE 依赖。当前所有真实公开头消费者——`container_intrusive`、`util_core`、
-`error`、`obs`、`platform`、`time`、`mem`、`simd`、`container`、`util`、`sched`、`io`、
-`compute`、`graph`——都直接声明 `PUBLIC core`；`math` 没有 Core include，因此没有伪依赖。
+`error`、`obs`、`math`、`time`、`platform`、`mem`、`simd`、`container`、`util`、`sched`、`io`、
+`compute`、`graph`——都直接声明 `PUBLIC core`。例如 `math` 的 unchecked scalar helpers 公开使用
+`HYLE_FATAL_ASSERT`，因此 `math -> PUBLIC core` 是真实 source/package 合同，不是为了构造顺序保留的
+伪依赖。
 
 这条边不是为了链接一个 DLL，而是让 include directory、C++23/build contract、安装组件闭包和
 公开源码依赖成为 target 的机器事实。中央组件图负责唯一声明，真实 target link 从同一记录

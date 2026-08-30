@@ -1,0 +1,6370 @@
+{
+  "compiler": "MSVC-19.50.35728.0",
+  "decision_state": "EVIDENCE_ONLY",
+  "instrument": {
+    "engine_sha256": "f3dac7163c83706a8aaa95885b0a45c851c628b8346edf974ebe9728adb670a6",
+    "report_practical_band_pct": 3,
+    "reporter_sha256": "50001fbea285fa23dfa85d15ea6d75e2d70bba608d2846e07b8199d65bb2b62b",
+    "route_material_margin_pct": 5
+  },
+  "ledger": {
+    "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+    "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+    "operation_count": 387,
+    "path": "scripts/simd-op-routing.json",
+    "schema": "hyle.simd.operation-routing/v2"
+  },
+  "machine_profile": "W1-WIN",
+  "missing_source_benched_operations": [],
+  "observed_operation_count": 318,
+  "operation_rows": {
+    "AESInvMixColumns": [
+      271
+    ],
+    "AESKeyGenAssist": [
+      267
+    ],
+    "AESLastRound": [
+      315
+    ],
+    "AESLastRoundInv": [
+      291
+    ],
+    "AESRound": [
+      256
+    ],
+    "AESRoundInv": [
+      299
+    ],
+    "Abs": [
+      184
+    ],
+    "AbsDiff": [
+      175
+    ],
+    "Add": [
+      92,
+      313,
+      348
+    ],
+    "AddSub": [
+      58
+    ],
+    "AllBits0": [
+      45
+    ],
+    "AllBits1": [
+      150
+    ],
+    "AllFalse": [
+      8
+    ],
+    "AllTrue": [
+      19
+    ],
+    "And": [
+      51,
+      146
+    ],
+    "AndNot": [
+      162,
+      216
+    ],
+    "AndXor": [
+      169
+    ],
+    "ApproximateReciprocal": [
+      39
+    ],
+    "ApproximateReciprocalSqrt": [
+      29
+    ],
+    "AverageRound": [
+      66
+    ],
+    "BitCast": [
+      41,
+      84
+    ],
+    "BitShuffle": [
+      278
+    ],
+    "BitsFromMask": [
+      308
+    ],
+    "BitwiseIfThenElse": [
+      170
+    ],
+    "BlendedStore": [
+      304
+    ],
+    "Broadcast": [
+      173
+    ],
+    "BroadcastBlock": [
+      23
+    ],
+    "BroadcastLane": [
+      81
+    ],
+    "BroadcastSignBit": [
+      32
+    ],
+    "CLMulLower": [
+      312
+    ],
+    "CLMulUpper": [
+      309
+    ],
+    "Ceil": [
+      80
+    ],
+    "CeilInt": [
+      131
+    ],
+    "Clamp": [
+      34
+    ],
+    "CombineMasks": [
+      245
+    ],
+    "CombineShiftRightBytes": [
+      76
+    ],
+    "CombineShiftRightLanes": [
+      30
+    ],
+    "ComplexConj": [
+      123
+    ],
+    "Compress": [
+      252
+    ],
+    "CompressBlendedStore": [
+      303
+    ],
+    "CompressNot": [
+      248,
+      279
+    ],
+    "CompressStore": [
+      240
+    ],
+    "ConcatEven": [
+      247
+    ],
+    "ConcatLowerLower": [
+      87
+    ],
+    "ConcatLowerUpper": [
+      97
+    ],
+    "ConcatOdd": [
+      186
+    ],
+    "ConcatUpperLower": [
+      13
+    ],
+    "ConcatUpperUpper": [
+      25
+    ],
+    "ConvertInRangeTo": [
+      326
+    ],
+    "ConvertTo": [
+      11,
+      129
+    ],
+    "CopySign": [
+      206
+    ],
+    "CopySignToAbs": [
+      205
+    ],
+    "CountTrue": [
+      102
+    ],
+    "DemoteInRangeTo": [
+      347
+    ],
+    "DemoteMaskTo": [
+      268
+    ],
+    "DemoteTo": [
+      257,
+      336
+    ],
+    "DemoteToNearestInt": [
+      254
+    ],
+    "Div": [
+      117,
+      194
+    ],
+    "Dup128MaskFromMaskBits": [
+      273
+    ],
+    "DupEven": [
+      48
+    ],
+    "DupOdd": [
+      177
+    ],
+    "Eq": [
+      137
+    ],
+    "Eq128": [
+      149
+    ],
+    "ExclusiveNeither": [
+      88
+    ],
+    "Expand": [
+      284
+    ],
+    "FindFirstTrue": [
+      72
+    ],
+    "FindKnownFirstTrue": [
+      85
+    ],
+    "FindKnownLastTrue": [
+      196
+    ],
+    "FindLastTrue": [
+      99
+    ],
+    "Floor": [
+      15
+    ],
+    "FloorInt": [
+      133
+    ],
+    "GatherIndex": [
+      296
+    ],
+    "GatherIndexN": [
+      310
+    ],
+    "GatherIndexNOr": [
+      305
+    ],
+    "GatherOffset": [
+      302
+    ],
+    "Ge": [
+      140
+    ],
+    "GetBiasedExponent": [
+      148
+    ],
+    "GetExponent": [
+      339
+    ],
+    "Gt": [
+      142
+    ],
+    "HighestSetBitIndex": [
+      70
+    ],
+    "IfNegativeThenElse": [
+      61
+    ],
+    "IfNegativeThenElseZero": [
+      125
+    ],
+    "IfNegativeThenZeroElse": [
+      124
+    ],
+    "IfThenElse": [
+      203
+    ],
+    "IfThenElseZero": [
+      3
+    ],
+    "IfThenZeroElse": [
+      1
+    ],
+    "IfVecThenElse": [
+      33
+    ],
+    "InterleaveEven": [
+      214
+    ],
+    "InterleaveEvenBlocks": [
+      4
+    ],
+    "InterleaveLower": [
+      298
+    ],
+    "InterleaveLowerBlocks": [
+      0
+    ],
+    "InterleaveOdd": [
+      190
+    ],
+    "InterleaveOddBlocks": [
+      73
+    ],
+    "InterleaveUpper": [
+      160
+    ],
+    "InterleaveWholeLower": [
+      211
+    ],
+    "InterleaveWholeUpper": [
+      154
+    ],
+    "IsEitherNaN": [
+      31
+    ],
+    "IsFinite": [
+      50
+    ],
+    "IsInf": [
+      74
+    ],
+    "IsNaN": [
+      77
+    ],
+    "IsNegative": [
+      86
+    ],
+    "Le": [
+      5
+    ],
+    "LeadingZeroCount": [
+      233
+    ],
+    "Load": [
+      28
+    ],
+    "LoadExpand": [
+      285
+    ],
+    "LoadInterleaved2": [
+      306
+    ],
+    "LoadInterleaved3": [
+      289
+    ],
+    "LoadInterleaved4": [
+      316
+    ],
+    "LoadMaskBits": [
+      286
+    ],
+    "LoadN": [
+      283
+    ],
+    "LoadNOr": [
+      277
+    ],
+    "LoadU": [
+      27
+    ],
+    "Lt": [
+      14
+    ],
+    "Lt128": [
+      59
+    ],
+    "Lt128Upper": [
+      22
+    ],
+    "MaskFromVec": [
+      251
+    ],
+    "MaskedApproximateReciprocal": [
+      57
+    ],
+    "MaskedApproximateReciprocalSqrt": [
+      12
+    ],
+    "MaskedConvertTo": [
+      135
+    ],
+    "MaskedGatherIndex": [
+      249
+    ],
+    "MaskedGatherIndexOr": [
+      314
+    ],
+    "MaskedLeadingZeroCount": [
+      204
+    ],
+    "MaskedLoad": [
+      230
+    ],
+    "MaskedLoadOr": [
+      260
+    ],
+    "MaskedModOr": [
+      111
+    ],
+    "MaskedMulAdd": [
+      152
+    ],
+    "MaskedMulAddOr": [
+      47
+    ],
+    "MaskedMulComplex": [
+      122
+    ],
+    "MaskedMulComplexAdd": [
+      116
+    ],
+    "MaskedMulComplexConj": [
+      121
+    ],
+    "MaskedMulComplexConjAdd": [
+      113
+    ],
+    "MaskedMulComplexOr": [
+      119
+    ],
+    "MaskedMulFixedPoint15": [
+      52
+    ],
+    "MaskedNegMulAdd": [
+      44
+    ],
+    "MaskedReduceMax": [
+      199
+    ],
+    "MaskedReduceMin": [
+      176
+    ],
+    "MaskedReduceSum": [
+      75
+    ],
+    "MaskedSatAddOr": [
+      167
+    ],
+    "MaskedSatSubOr": [
+      166
+    ],
+    "MaskedScatterIndex": [
+      262
+    ],
+    "MaskedShiftLeft": [
+      17
+    ],
+    "MaskedShiftLeftOr": [
+      35
+    ],
+    "MaskedShiftRight": [
+      155
+    ],
+    "MaskedShiftRightOr": [
+      62
+    ],
+    "MaskedShl": [
+      63
+    ],
+    "MaskedShlOr": [
+      49
+    ],
+    "MaskedShr": [
+      215
+    ],
+    "MaskedShrOr": [
+      46
+    ],
+    "MaskedWidenMulPairwiseAdd": [
+      145
+    ],
+    "Max": [
+      171,
+      213
+    ],
+    "Max128": [
+      68
+    ],
+    "MaxMagnitude": [
+      36
+    ],
+    "MaxNumber": [
+      96
+    ],
+    "MaxOfLanes": [
+      112
+    ],
+    "Min": [
+      208,
+      295
+    ],
+    "Min128": [
+      26
+    ],
+    "MinMagnitude": [
+      195
+    ],
+    "MinNumber": [
+      7
+    ],
+    "MinOfLanes": [
+      114
+    ],
+    "Mod": [
+      108,
+      115
+    ],
+    "Mul": [
+      65,
+      164
+    ],
+    "MulAdd": [
+      290
+    ],
+    "MulAddSub": [
+      210
+    ],
+    "MulByFloorPow2": [
+      98
+    ],
+    "MulByPow2": [
+      202
+    ],
+    "MulComplex": [
+      130
+    ],
+    "MulComplexAdd": [
+      91
+    ],
+    "MulComplexConj": [
+      126
+    ],
+    "MulComplexConjAdd": [
+      221
+    ],
+    "MulEven": [
+      159
+    ],
+    "MulEvenAdd": [
+      323
+    ],
+    "MulFixedPoint15": [
+      338
+    ],
+    "MulHigh": [
+      231,
+      236,
+      244,
+      258,
+      264,
+      288,
+      293,
+      294
+    ],
+    "MulHighLow": [
+      269
+    ],
+    "MulOdd": [
+      89
+    ],
+    "MulOddAdd": [
+      325
+    ],
+    "MulRound": [
+      64
+    ],
+    "MulSub": [
+      192
+    ],
+    "MulSubAdd": [
+      217
+    ],
+    "MultiRotateRight": [
+      297
+    ],
+    "Ne": [
+      138
+    ],
+    "Ne128": [
+      200
+    ],
+    "NearestInt": [
+      128
+    ],
+    "Neg": [
+      212
+    ],
+    "NegMulAdd": [
+      201
+    ],
+    "NegMulSub": [
+      168
+    ],
+    "Not": [
+      2,
+      67
+    ],
+    "OddEven": [
+      219
+    ],
+    "OddEvenBlocks": [
+      104
+    ],
+    "Or": [
+      21,
+      143
+    ],
+    "Or3": [
+      191
+    ],
+    "OrAnd": [
+      71
+    ],
+    "OrderedDemote2MasksTo": [
+      246
+    ],
+    "OrderedDemote2To": [
+      320
+    ],
+    "OrderedRoundingShiftRightAndDemote2To": [
+      327
+    ],
+    "OrderedShiftRightAndDemote2To": [
+      319
+    ],
+    "PairwiseAdd": [
+      110
+    ],
+    "PairwiseAdd128": [
+      218
+    ],
+    "PairwiseSub": [
+      106
+    ],
+    "PairwiseSub128": [
+      109
+    ],
+    "Per4LaneBlockShuffle": [
+      69
+    ],
+    "PopulationCount": [
+      282
+    ],
+    "PromoteEvenTo": [
+      331
+    ],
+    "PromoteLowerTo": [
+      237
+    ],
+    "PromoteMaskTo": [
+      255
+    ],
+    "PromoteOddTo": [
+      328
+    ],
+    "PromoteTo": [
+      239
+    ],
+    "PromoteUpperTo": [
+      330
+    ],
+    "RebindMask": [
+      243
+    ],
+    "ReciprocalNewton": [
+      223,
+      224
+    ],
+    "ReciprocalSqrtNewton": [
+      225,
+      226
+    ],
+    "ReduceAnd": [
+      227
+    ],
+    "ReduceMax": [
+      95,
+      118,
+      207
+    ],
+    "ReduceMin": [
+      90,
+      120,
+      174
+    ],
+    "ReduceMul": [
+      228
+    ],
+    "ReduceOr": [
+      229
+    ],
+    "ReduceSum": [
+      101,
+      222,
+      287
+    ],
+    "ReorderDemote2To": [
+      346
+    ],
+    "ReorderRoundingShiftRightAndDemote2To": [
+      324
+    ],
+    "ReorderShiftRightAndDemote2To": [
+      349
+    ],
+    "ReorderWidenMulAccumulate": [
+      343
+    ],
+    "Reverse": [
+      292
+    ],
+    "Reverse2": [
+      158
+    ],
+    "Reverse4": [
+      178
+    ],
+    "Reverse8": [
+      301
+    ],
+    "ReverseBits": [
+      136
+    ],
+    "ReverseBlocks": [
+      82
+    ],
+    "ReverseLaneBytes": [
+      234
+    ],
+    "RotateLeft": [
+      20
+    ],
+    "RotateLeftSame": [
+      144
+    ],
+    "RotateRight": [
+      139
+    ],
+    "RotateRightSame": [
+      188
+    ],
+    "Round": [
+      53
+    ],
+    "RoundToInt": [
+      127
+    ],
+    "RoundingShiftRight": [
+      43
+    ],
+    "RoundingShiftRightAndDemoteTo": [
+      235
+    ],
+    "RoundingShiftRightSame": [
+      107
+    ],
+    "RoundingShr": [
+      132
+    ],
+    "SatWidenMulAccumFixedPoint": [
+      344
+    ],
+    "SatWidenMulPairwiseAccumulate": [
+      341
+    ],
+    "SatWidenMulPairwiseAdd": [
+      329
+    ],
+    "SaturatedAbs": [
+      18
+    ],
+    "SaturatedAdd": [
+      311
+    ],
+    "SaturatedNeg": [
+      187
+    ],
+    "SaturatedSub": [
+      198
+    ],
+    "ScatterIndex": [
+      266
+    ],
+    "ScatterIndexN": [
+      232,
+      250,
+      280
+    ],
+    "ScatterOffset": [
+      261
+    ],
+    "Set": [
+      181
+    ],
+    "SetAtOrAfterFirst": [
+      10
+    ],
+    "SetAtOrBeforeFirst": [
+      16
+    ],
+    "SetBeforeFirst": [
+      94
+    ],
+    "SetMask": [
+      238
+    ],
+    "SetOnlyFirst": [
+      147
+    ],
+    "ShiftLeft": [
+      189
+    ],
+    "ShiftLeftBytes": [
+      42
+    ],
+    "ShiftLeftLanes": [
+      78
+    ],
+    "ShiftLeftSame": [
+      55
+    ],
+    "ShiftRight": [
+      182
+    ],
+    "ShiftRightAndDemoteTo": [
+      253
+    ],
+    "ShiftRightBytes": [
+      56
+    ],
+    "ShiftRightLanes": [
+      9
+    ],
+    "ShiftRightSame": [
+      183
+    ],
+    "ShiftRightUniform": [
+      54
+    ],
+    "Shl": [
+      153
+    ],
+    "Shr": [
+      156
+    ],
+    "Shuffle01": [
+      157
+    ],
+    "Shuffle0123": [
+      163
+    ],
+    "Shuffle0321": [
+      172
+    ],
+    "Shuffle1032": [
+      38
+    ],
+    "Shuffle2103": [
+      151
+    ],
+    "Shuffle2301": [
+      179
+    ],
+    "Slide1Down": [
+      197
+    ],
+    "Slide1Up": [
+      161
+    ],
+    "SlideDownBlocks": [
+      6
+    ],
+    "SlideDownLanes": [
+      24
+    ],
+    "SlideMask1Down": [
+      274
+    ],
+    "SlideMask1Up": [
+      272
+    ],
+    "SlideMaskDownLanes": [
+      276
+    ],
+    "SlideMaskUpLanes": [
+      275
+    ],
+    "SlideUpBlocks": [
+      100
+    ],
+    "SlideUpLanes": [
+      180
+    ],
+    "Sqrt": [
+      165
+    ],
+    "Store": [
+      28
+    ],
+    "StoreInterleaved2": [
+      300
+    ],
+    "StoreInterleaved3": [
+      270
+    ],
+    "StoreInterleaved4": [
+      281
+    ],
+    "StoreMaskBits": [
+      263
+    ],
+    "StoreN": [
+      283
+    ],
+    "StoreU": [
+      27
+    ],
+    "Sub": [
+      193,
+      209
+    ],
+    "SumOfLanes": [
+      105
+    ],
+    "SumOfMulQuadAccumulate": [
+      340
+    ],
+    "SumsOf2": [
+      317
+    ],
+    "SumsOf4": [
+      337
+    ],
+    "SumsOf8": [
+      321
+    ],
+    "SumsOf8AbsDiff": [
+      318
+    ],
+    "SumsOfAdjQuadAbsDiff": [
+      322
+    ],
+    "SumsOfShuffledQuadAbsDiff": [
+      334,
+      335
+    ],
+    "SwapAdjacentBlocks": [
+      79
+    ],
+    "TableLookupBytes": [
+      242
+    ],
+    "TableLookupBytesOr0": [
+      241
+    ],
+    "TableLookupLanes": [
+      307
+    ],
+    "TestBit": [
+      103
+    ],
+    "TrailingZeroCount": [
+      40
+    ],
+    "Trunc": [
+      83
+    ],
+    "TruncateTo": [
+      93
+    ],
+    "TwoTablesLookupLanes": [
+      265
+    ],
+    "U8FromU32": [
+      333
+    ],
+    "VecFromMask": [
+      259
+    ],
+    "WidenMulAccumulate": [
+      345
+    ],
+    "WidenMulPairwiseAdd": [
+      342
+    ],
+    "Xor": [
+      60,
+      141
+    ],
+    "Xor3": [
+      134
+    ],
+    "XorAndNot": [
+      185
+    ],
+    "Zero": [
+      37
+    ],
+    "ZeroExtendVector": [
+      332
+    ],
+    "ZeroIfNegative": [
+      220
+    ]
+  },
+  "peer": "HIGHWAY",
+  "peer_revision": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+  "ratio_orientation": "HYLE/peer",
+  "raw_inputs": [
+    {
+      "name": "full-hyle-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "7b609ecf583159641b9c360f3c92205281842c6f5528a831de214159c0896c19"
+    },
+    {
+      "name": "full-hyle-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "0376456699242c8642ad3f9eaac4f23d12c4c3d0454f9283970a2e9a13e1c43f"
+    },
+    {
+      "name": "full-hwy-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "610e01b6a6b805dc9158737e8d6dd9ef2ae59cd4c81f6e4c9825587b2ee2b822"
+    },
+    {
+      "name": "full-hwy-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "a4e7d5259a9a93effa8a8023c244a1fead53d3c30db2866105f43e436dee7ccd"
+    },
+    {
+      "name": "parity-hyle-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "6bdbc3f833844b525ead783038f342e7a1a55146a5e8e3a7d4d5ed0fed483c5e"
+    },
+    {
+      "name": "parity-hyle-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "d47247329c7f7315aa84118e517b3b250c1a4996215f59185d24c380737a682a"
+    },
+    {
+      "name": "parity-hwy-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "952f70f307943d9d6da79e5ea182ff40f3d6e0750497d82a006e270f965d1f29"
+    },
+    {
+      "name": "parity-hwy-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "95de47a5220a12960932791ed5e1dc80faeb116fbd30565c4f2deb6d5a562fc3"
+    },
+    {
+      "name": "widen-hyle-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "1c895eb743f5e29f513f3900ef6be09f44f49b8413652e1bb1421dfdb1ab1209"
+    },
+    {
+      "name": "widen-hyle-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "b209aa52a33c6d52e1ab3333af65e052ef8ec3048468c0a291be678563dcfba9"
+    },
+    {
+      "name": "widen-hwy-first-1.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "d25b35d6a3e313f0db4f182b2bd9e6000dd63cc17222138dcfd903eb86f3c947"
+    },
+    {
+      "name": "widen-hwy-first-2.txt",
+      "peer_marker": {
+        "required": false
+      },
+      "sha256": "866e18b1ba3161c29102e80b5d95c58e4fc05d8a617aef88c321de3d9a600e96"
+    }
+  ],
+  "reports": [
+    {
+      "name": "full-avx2-certified.tsv",
+      "row_count": 230,
+      "sha256": "9b90c859f219f8779b963ba7475fbfe37f341353db13e729abee85bf7602395c"
+    },
+    {
+      "name": "parity-avx2-certified.tsv",
+      "row_count": 87,
+      "sha256": "c306b852287ab0ccaf123884b773438cb6e64becd40c190bf2ee74c63a5586ce"
+    },
+    {
+      "name": "widen-avx2-certified.tsv",
+      "row_count": 33,
+      "sha256": "2f33134dca5e7bb90fc3bb457c829651cc60dce253e1d1e072172ad0c4f9c45b"
+    }
+  ],
+  "row_count": 350,
+  "rows": [
+    {
+      "ci95_hi": 0.975,
+      "ci95_lo": 0.861,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveLowerBlocks"
+      ],
+      "placement_uncertainty": 0.125,
+      "ratio_hyle_over_peer": 0.922,
+      "ratio_median": 0.933,
+      "spread_hyle": 1.251,
+      "spread_peer": 1.058,
+      "title": "InterleaveLowerBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.971,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfThenZeroElse"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.96,
+      "ratio_median": 0.961,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.024,
+      "title": "IfThenZeroElse i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.991,
+      "ci95_lo": 0.948,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Not"
+      ],
+      "placement_uncertainty": 0.072,
+      "ratio_hyle_over_peer": 0.96,
+      "ratio_median": 0.954,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.144,
+      "title": "Not i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.978,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfThenElseZero"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.967,
+      "ratio_median": 0.968,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.035,
+      "title": "IfThenElseZero i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.886,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveEvenBlocks"
+      ],
+      "placement_uncertainty": 0.123,
+      "ratio_hyle_over_peer": 0.972,
+      "ratio_median": 0.978,
+      "spread_hyle": 1.246,
+      "spread_peer": 1.075,
+      "title": "InterleaveEvenBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.987,
+      "ci95_lo": 0.961,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Le"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.974,
+      "ratio_median": 0.975,
+      "spread_hyle": 1.029,
+      "spread_peer": 1.025,
+      "title": "Le i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.019,
+      "ci95_lo": 0.945,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideDownBlocks"
+      ],
+      "placement_uncertainty": 0.075,
+      "ratio_hyle_over_peer": 0.98,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.14,
+      "spread_peer": 1.15,
+      "title": "SlideDownBlocks<1> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.998,
+      "ci95_lo": 0.953,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MinNumber"
+      ],
+      "placement_uncertainty": 0.04,
+      "ratio_hyle_over_peer": 0.981,
+      "ratio_median": 0.98,
+      "spread_hyle": 1.027,
+      "spread_peer": 1.08,
+      "title": "MinNumber f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.971,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AllFalse"
+      ],
+      "placement_uncertainty": 0.046,
+      "ratio_hyle_over_peer": 0.982,
+      "ratio_median": 0.984,
+      "spread_hyle": 1.069,
+      "spread_peer": 1.093,
+      "title": "AllFalse i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.017,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightLanes"
+      ],
+      "placement_uncertainty": 0.094,
+      "ratio_hyle_over_peer": 0.983,
+      "ratio_median": 0.983,
+      "spread_hyle": 1.159,
+      "spread_peer": 1.188,
+      "title": "ShiftRightLanes<1> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetAtOrAfterFirst"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.983,
+      "ratio_median": 0.985,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.047,
+      "title": "SetAtOrAfterFirst i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.034,
+      "ci95_lo": 0.94,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConvertTo"
+      ],
+      "placement_uncertainty": 0.064,
+      "ratio_hyle_over_peer": 0.983,
+      "ratio_median": 0.984,
+      "spread_hyle": 1.128,
+      "spread_peer": 1.128,
+      "title": "ConvertTo i32->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.026,
+      "ci95_lo": 0.962,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedApproximateReciprocalSqrt"
+      ],
+      "placement_uncertainty": 0.075,
+      "ratio_hyle_over_peer": 0.984,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.139,
+      "spread_peer": 1.151,
+      "title": "MaskedApproxReciprocalSqrt f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.047,
+      "ci95_lo": 0.944,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatUpperLower"
+      ],
+      "placement_uncertainty": 0.134,
+      "ratio_hyle_over_peer": 0.988,
+      "ratio_median": 0.994,
+      "spread_hyle": 1.268,
+      "spread_peer": 1.252,
+      "title": "ConcatUpperLower i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.977,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Lt"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.064,
+      "title": "Lt i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.032,
+      "ci95_lo": 0.948,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Floor"
+      ],
+      "placement_uncertainty": 0.045,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.085,
+      "spread_peer": 1.09,
+      "title": "Floor f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.974,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetAtOrBeforeFirst"
+      ],
+      "placement_uncertainty": 0.036,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.071,
+      "spread_peer": 1.042,
+      "title": "SetAtOrBeforeFirst i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.98,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShiftLeft"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.057,
+      "spread_peer": 1.061,
+      "title": "MaskedShiftLeft<3> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.019,
+      "ci95_lo": 0.966,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SaturatedAbs"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.988,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.071,
+      "title": "SaturatedAbs i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.026,
+      "ci95_lo": 0.978,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AllTrue"
+      ],
+      "placement_uncertainty": 0.066,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.132,
+      "title": "AllTrue i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.974,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RotateLeft"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.99,
+      "spread_hyle": 1.07,
+      "spread_peer": 1.03,
+      "title": "RotateLeft<3> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.978,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Or"
+      ],
+      "placement_uncertainty": 0.036,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.066,
+      "spread_peer": 1.072,
+      "title": "Mask Or i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.023,
+      "ci95_lo": 0.975,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Lt128Upper"
+      ],
+      "placement_uncertainty": 0.055,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.063,
+      "spread_peer": 1.111,
+      "title": "Lt128Upper u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.037,
+      "ci95_lo": 0.947,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BroadcastBlock"
+      ],
+      "placement_uncertainty": 0.095,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.189,
+      "spread_peer": 1.128,
+      "title": "BroadcastBlock<1> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideDownLanes"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.064,
+      "spread_peer": 1.02,
+      "title": "SlideDownLanes amt=2 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.031,
+      "ci95_lo": 0.933,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatUpperUpper"
+      ],
+      "placement_uncertainty": 0.135,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.269,
+      "spread_peer": 1.077,
+      "title": "ConcatUpperUpper i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.014,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Min128"
+      ],
+      "placement_uncertainty": 0.033,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.066,
+      "spread_peer": 1.052,
+      "title": "Min128 u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.058,
+      "ci95_lo": 0.951,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadU",
+        "StoreU"
+      ],
+      "placement_uncertainty": 0.116,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.156,
+      "spread_peer": 1.231,
+      "title": "LoadU/StoreU i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.033,
+      "ci95_lo": 0.949,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Load",
+        "Store"
+      ],
+      "placement_uncertainty": 0.106,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.191,
+      "spread_peer": 1.213,
+      "title": "Load/Store i32 aligned",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ApproximateReciprocalSqrt"
+      ],
+      "placement_uncertainty": 0.038,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.05,
+      "spread_peer": 1.077,
+      "title": "ApproximateReciprocalSqrt f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.083,
+      "ci95_lo": 0.898,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CombineShiftRightLanes"
+      ],
+      "placement_uncertainty": 0.137,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.215,
+      "spread_peer": 1.275,
+      "title": "CombineShiftRightLanes1 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.027,
+      "ci95_lo": 0.971,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IsEitherNaN"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.073,
+      "spread_peer": 1.078,
+      "title": "IsEitherNaN f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BroadcastSignBit"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.061,
+      "spread_peer": 1.03,
+      "title": "BroadcastSignBit i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.044,
+      "ci95_lo": 0.931,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfVecThenElse"
+      ],
+      "placement_uncertainty": 0.111,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.221,
+      "spread_peer": 1.146,
+      "title": "IfVecThenElse i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Clamp"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.064,
+      "title": "Clamp i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShiftLeftOr"
+      ],
+      "placement_uncertainty": 0.054,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.109,
+      "spread_peer": 1.088,
+      "title": "MaskedShiftLeftOr<3> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaxMagnitude"
+      ],
+      "placement_uncertainty": 0.037,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.074,
+      "spread_peer": 1.055,
+      "title": "MaxMagnitude f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.022,
+      "ci95_lo": 0.983,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Zero"
+      ],
+      "placement_uncertainty": 0.078,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.156,
+      "spread_peer": 1.132,
+      "title": "Zero i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle1032"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.06,
+      "spread_peer": 1.064,
+      "title": "Shuffle1032 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ApproximateReciprocal"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.064,
+      "spread_peer": 1.06,
+      "title": "ApproximateReciprocal f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TrailingZeroCount"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.06,
+      "title": "TrailingZeroCount i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.024,
+      "ci95_lo": 0.956,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitCast"
+      ],
+      "placement_uncertainty": 0.088,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.177,
+      "spread_peer": 1.054,
+      "title": "BitCast i32->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftLeftBytes"
+      ],
+      "placement_uncertainty": 0.05,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.1,
+      "spread_peer": 1.088,
+      "title": "ShiftLeftBytes<4> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.071,
+      "ci95_lo": 0.935,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundingShiftRight"
+      ],
+      "placement_uncertainty": 0.084,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.167,
+      "spread_peer": 1.161,
+      "title": "RoundingShiftRight<2> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedNegMulAdd"
+      ],
+      "placement_uncertainty": 0.033,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.066,
+      "title": "MaskedNegMulAdd f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.03,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AllBits0"
+      ],
+      "placement_uncertainty": 0.061,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.122,
+      "spread_peer": 1.089,
+      "title": "AllBits0 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShrOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.061,
+      "spread_peer": 1.05,
+      "title": "MaskedShrOr i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulAddOr"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.07,
+      "spread_peer": 1.041,
+      "title": "MaskedMulAddOr f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.017,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DupEven"
+      ],
+      "placement_uncertainty": 0.058,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.063,
+      "spread_peer": 1.117,
+      "title": "DupEven i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShlOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.06,
+      "spread_peer": 1.049,
+      "title": "MaskedShlOr i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.971,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IsFinite"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.064,
+      "title": "IsFinite f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.02,
+      "ci95_lo": 0.977,
+      "comparison_kind": "PEER",
+      "operations": [
+        "And"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.065,
+      "title": "Mask And i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.03,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulFixedPoint15"
+      ],
+      "placement_uncertainty": 0.07,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.129,
+      "spread_peer": 1.14,
+      "title": "MaskedMulFixedPoint15 i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.037,
+      "ci95_lo": 0.964,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Round"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.121,
+      "spread_peer": 1.092,
+      "title": "Round f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightUniform"
+      ],
+      "placement_uncertainty": 0.136,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.261,
+      "spread_peer": 1.272,
+      "title": "ShiftRightUniform i32 bits=3",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftLeftSame"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.078,
+      "spread_peer": 1.066,
+      "title": "ShiftLeftSame i32 bits=3",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.014,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightBytes"
+      ],
+      "placement_uncertainty": 0.059,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.119,
+      "spread_peer": 1.111,
+      "title": "ShiftRightBytes<4> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 0.971,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedApproximateReciprocal"
+      ],
+      "placement_uncertainty": 0.063,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.107,
+      "spread_peer": 1.126,
+      "title": "MaskedApproxReciprocal f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AddSub"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.062,
+      "spread_peer": 1.036,
+      "title": "AddSub i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Lt128"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.036,
+      "spread_peer": 1.062,
+      "title": "Lt128 u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Xor"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.064,
+      "spread_peer": 1.033,
+      "title": "Mask Xor i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfNegativeThenElse"
+      ],
+      "placement_uncertainty": 0.093,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.185,
+      "spread_peer": 1.032,
+      "title": "IfNegativeThenElse f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.029,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShiftRightOr"
+      ],
+      "placement_uncertainty": 0.049,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.095,
+      "spread_peer": 1.097,
+      "title": "MaskedShiftRightOr<3> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShl"
+      ],
+      "placement_uncertainty": 0.033,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.065,
+      "spread_peer": 1.054,
+      "title": "MaskedShl i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.07,
+      "ci95_lo": 0.933,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulRound"
+      ],
+      "placement_uncertainty": 0.064,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.125,
+      "spread_peer": 1.127,
+      "title": "MulRound f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.014,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Mul"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.061,
+      "spread_peer": 1.041,
+      "title": "Mul i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.977,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AverageRound"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.064,
+      "spread_peer": 1.121,
+      "title": "AverageRound u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.017,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Not"
+      ],
+      "placement_uncertainty": 0.034,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.068,
+      "spread_peer": 1.066,
+      "title": "Mask Not i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Max128"
+      ],
+      "placement_uncertainty": 0.04,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.079,
+      "spread_peer": 1.071,
+      "title": "Max128 u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.069,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Per4LaneBlockShuffle"
+      ],
+      "placement_uncertainty": 0.099,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.011,
+      "spread_hyle": 1.088,
+      "spread_peer": 1.198,
+      "title": "Per4LaneBlockShuffle 3210 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.078,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "HighestSetBitIndex"
+      ],
+      "placement_uncertainty": 0.099,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.145,
+      "spread_peer": 1.199,
+      "title": "HighestSetBitIndex u32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.017,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrAnd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.038,
+      "spread_peer": 1.06,
+      "title": "OrAnd i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "FindFirstTrue"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.007,
+      "spread_hyle": 1.061,
+      "spread_peer": 1.049,
+      "title": "FindFirstTrue i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.059,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveOddBlocks"
+      ],
+      "placement_uncertainty": 0.138,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.257,
+      "spread_peer": 1.276,
+      "title": "InterleaveOddBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.036,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IsInf"
+      ],
+      "placement_uncertainty": 0.044,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.087,
+      "spread_peer": 1.083,
+      "title": "IsInf f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedReduceSum"
+      ],
+      "placement_uncertainty": 0.037,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.044,
+      "spread_peer": 1.074,
+      "title": "MaskedReduceSum i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.14,
+      "ci95_lo": 0.908,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CombineShiftRightBytes"
+      ],
+      "placement_uncertainty": 0.129,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.2,
+      "spread_peer": 1.258,
+      "title": "CombineShiftRightBytes4 i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.083,
+      "ci95_lo": 0.949,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IsNaN"
+      ],
+      "placement_uncertainty": 0.088,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 1.018,
+      "spread_hyle": 1.176,
+      "spread_peer": 1.155,
+      "title": "IsNaN f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.034,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftLeftLanes"
+      ],
+      "placement_uncertainty": 0.359,
+      "ratio_hyle_over_peer": 1.007,
+      "ratio_median": 1.021,
+      "spread_hyle": 1.719,
+      "spread_peer": 1.14,
+      "title": "ShiftLeftLanes<1> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.088,
+      "ci95_lo": 0.953,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SwapAdjacentBlocks"
+      ],
+      "placement_uncertainty": 0.103,
+      "ratio_hyle_over_peer": 1.008,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.174,
+      "spread_peer": 1.207,
+      "title": "SwapAdjacentBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.042,
+      "ci95_lo": 0.958,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Ceil"
+      ],
+      "placement_uncertainty": 0.101,
+      "ratio_hyle_over_peer": 1.01,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.202,
+      "spread_peer": 1.131,
+      "title": "Ceil f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.027,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BroadcastLane"
+      ],
+      "placement_uncertainty": 0.043,
+      "ratio_hyle_over_peer": 1.01,
+      "ratio_median": 1.014,
+      "spread_hyle": 1.086,
+      "spread_peer": 1.081,
+      "title": "BroadcastLane<3> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.089,
+      "ci95_lo": 0.938,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReverseBlocks"
+      ],
+      "placement_uncertainty": 0.091,
+      "ratio_hyle_over_peer": 1.01,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.182,
+      "spread_peer": 1.163,
+      "title": "ReverseBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.049,
+      "ci95_lo": 0.963,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Trunc"
+      ],
+      "placement_uncertainty": 0.056,
+      "ratio_hyle_over_peer": 1.011,
+      "ratio_median": 1.009,
+      "spread_hyle": 1.1,
+      "spread_peer": 1.111,
+      "title": "Trunc f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.047,
+      "ci95_lo": 0.978,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitCast"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 1.011,
+      "ratio_median": 1.012,
+      "spread_hyle": 1.07,
+      "spread_peer": 1.12,
+      "title": "BitCast f32->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.023,
+      "ci95_lo": 1.002,
+      "comparison_kind": "PEER",
+      "operations": [
+        "FindKnownFirstTrue"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.012,
+      "ratio_median": 1.01,
+      "spread_hyle": 1.056,
+      "spread_peer": 1.062,
+      "title": "FindKnownFirstTrue i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.06,
+      "ci95_lo": 0.95,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IsNegative"
+      ],
+      "placement_uncertainty": 0.059,
+      "ratio_hyle_over_peer": 1.014,
+      "ratio_median": 1.014,
+      "spread_hyle": 1.112,
+      "spread_peer": 1.119,
+      "title": "IsNegative i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.115,
+      "ci95_lo": 0.945,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatLowerLower"
+      ],
+      "placement_uncertainty": 0.164,
+      "ratio_hyle_over_peer": 1.018,
+      "ratio_median": 1.084,
+      "spread_hyle": 1.327,
+      "spread_peer": 1.285,
+      "title": "ConcatLowerLower i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.099,
+      "ci95_lo": 0.947,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ExclusiveNeither"
+      ],
+      "placement_uncertainty": 0.08,
+      "ratio_hyle_over_peer": 1.018,
+      "ratio_median": 1.008,
+      "spread_hyle": 1.16,
+      "spread_peer": 1.155,
+      "title": "ExclusiveNeither i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.069,
+      "ci95_lo": 0.973,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulOdd"
+      ],
+      "placement_uncertainty": 0.07,
+      "ratio_hyle_over_peer": 1.023,
+      "ratio_median": 1.021,
+      "spread_hyle": 1.112,
+      "spread_peer": 1.14,
+      "title": "MulOdd i32-i64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.037,
+      "ci95_lo": 1.018,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMin"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.024,
+      "ratio_median": 1.023,
+      "spread_hyle": 1.063,
+      "spread_peer": 1.035,
+      "title": "ReduceMin i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.034,
+      "ci95_lo": 1.014,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulComplexAdd"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 1.024,
+      "ratio_median": 1.025,
+      "spread_hyle": 1.059,
+      "spread_peer": 1.064,
+      "title": "MulComplexAdd f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.042,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Add"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.024,
+      "ratio_median": 1.022,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.023,
+      "title": "Add f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.118,
+      "ci95_lo": 0.926,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TruncateTo"
+      ],
+      "placement_uncertainty": 0.093,
+      "ratio_hyle_over_peer": 1.024,
+      "ratio_median": 1.025,
+      "spread_hyle": 1.176,
+      "spread_peer": 1.185,
+      "title": "TruncateTo u32->u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.055,
+      "ci95_lo": 0.997,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetBeforeFirst"
+      ],
+      "placement_uncertainty": 0.055,
+      "ratio_hyle_over_peer": 1.025,
+      "ratio_median": 1.031,
+      "spread_hyle": 1.075,
+      "spread_peer": 1.11,
+      "title": "SetBeforeFirst i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.041,
+      "ci95_lo": 1.017,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMax"
+      ],
+      "placement_uncertainty": 0.075,
+      "ratio_hyle_over_peer": 1.026,
+      "ratio_median": 1.027,
+      "spread_hyle": 1.15,
+      "spread_peer": 1.054,
+      "title": "ReduceMax i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.06,
+      "ci95_lo": 1.001,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaxNumber"
+      ],
+      "placement_uncertainty": 0.053,
+      "ratio_hyle_over_peer": 1.026,
+      "ratio_median": 1.028,
+      "spread_hyle": 1.105,
+      "spread_peer": 1.03,
+      "title": "MaxNumber f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.104,
+      "ci95_lo": 0.966,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatLowerUpper"
+      ],
+      "placement_uncertainty": 0.143,
+      "ratio_hyle_over_peer": 1.026,
+      "ratio_median": 1.023,
+      "spread_hyle": 1.286,
+      "spread_peer": 1.285,
+      "title": "ConcatLowerUpper i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.036,
+      "ci95_lo": 1.016,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulByFloorPow2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.027,
+      "ratio_median": 1.027,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.038,
+      "title": "MulByFloorPow2 f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.04,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "FindLastTrue"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.028,
+      "ratio_median": 1.025,
+      "spread_hyle": 1.06,
+      "spread_peer": 1.052,
+      "title": "FindLastTrue i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.145,
+      "ci95_lo": 0.909,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideUpBlocks"
+      ],
+      "placement_uncertainty": 0.152,
+      "ratio_hyle_over_peer": 1.035,
+      "ratio_median": 1.04,
+      "spread_hyle": 1.197,
+      "spread_peer": 1.305,
+      "title": "SlideUpBlocks<1> i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 1.029,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceSum"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.04,
+      "ratio_median": 1.042,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.028,
+      "title": "ReduceSum i64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.073,
+      "ci95_lo": 1.006,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CountTrue"
+      ],
+      "placement_uncertainty": 0.059,
+      "ratio_hyle_over_peer": 1.043,
+      "ratio_median": 1.033,
+      "spread_hyle": 1.119,
+      "spread_peer": 1.116,
+      "title": "CountTrue i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.087,
+      "ci95_lo": 1.025,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TestBit"
+      ],
+      "placement_uncertainty": 0.045,
+      "ratio_hyle_over_peer": 1.056,
+      "ratio_median": 1.053,
+      "spread_hyle": 1.085,
+      "spread_peer": 1.089,
+      "title": "TestBit i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.165,
+      "ci95_lo": 0.946,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OddEvenBlocks"
+      ],
+      "placement_uncertainty": 0.149,
+      "ratio_hyle_over_peer": 1.059,
+      "ratio_median": 1.059,
+      "spread_hyle": 1.267,
+      "spread_peer": 1.297,
+      "title": "OddEvenBlocks i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.091,
+      "ci95_lo": 1.047,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumOfLanes"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 1.072,
+      "ratio_median": 1.072,
+      "spread_hyle": 1.018,
+      "spread_peer": 1.064,
+      "title": "SumOfLanes i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.112,
+      "ci95_lo": 1.063,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PairwiseSub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.082,
+      "ratio_median": 1.075,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.042,
+      "title": "PairwiseSub i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.118,
+      "ci95_lo": 1.08,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundingShiftRightSame"
+      ],
+      "placement_uncertainty": 0.04,
+      "ratio_hyle_over_peer": 1.097,
+      "ratio_median": 1.1,
+      "spread_hyle": 1.036,
+      "spread_peer": 1.08,
+      "title": "RoundingShiftRightSame i32 bits=5",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.111,
+      "ci95_lo": 1.091,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Mod"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.098,
+      "ratio_median": 1.1,
+      "spread_hyle": 1.026,
+      "spread_peer": 1.043,
+      "title": "Mod i32 invariant store",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.119,
+      "ci95_lo": 1.051,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PairwiseSub128"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 1.1,
+      "ratio_median": 1.098,
+      "spread_hyle": 1.078,
+      "spread_peer": 1.047,
+      "title": "PairwiseSub128 i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.128,
+      "ci95_lo": 1.075,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PairwiseAdd"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 1.103,
+      "ratio_median": 1.103,
+      "spread_hyle": 1.03,
+      "spread_peer": 1.071,
+      "title": "PairwiseAdd i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.114,
+      "ci95_lo": 1.095,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedModOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.108,
+      "ratio_median": 1.109,
+      "spread_hyle": 1.022,
+      "spread_peer": 1.036,
+      "title": "MaskedModOr i32 invariant",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.142,
+      "ci95_lo": 1.094,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaxOfLanes"
+      ],
+      "placement_uncertainty": 0.044,
+      "ratio_hyle_over_peer": 1.124,
+      "ratio_median": 1.116,
+      "spread_hyle": 1.06,
+      "spread_peer": 1.087,
+      "title": "MaxOfLanes i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.138,
+      "ci95_lo": 1.115,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulComplexConjAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.126,
+      "ratio_median": 1.127,
+      "spread_hyle": 1.039,
+      "spread_peer": 1.049,
+      "title": "MaskedMulComplexConjAdd f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.147,
+      "ci95_lo": 1.122,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MinOfLanes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.14,
+      "ratio_median": 1.141,
+      "spread_hyle": 1.023,
+      "spread_peer": 1.021,
+      "title": "MinOfLanes i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.148,
+      "ci95_lo": 1.128,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Mod"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.141,
+      "ratio_median": 1.142,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.045,
+      "title": "Mod i32 invariant",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.155,
+      "ci95_lo": 1.127,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulComplexAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.142,
+      "ratio_median": 1.14,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.059,
+      "title": "MaskedMulComplexAdd f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.152,
+      "ci95_lo": 1.133,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Div"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.145,
+      "ratio_median": 1.144,
+      "spread_hyle": 1.044,
+      "spread_peer": 1.031,
+      "title": "Div i32 invariant",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.193,
+      "ci95_lo": 1.149,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMax"
+      ],
+      "placement_uncertainty": 0.042,
+      "ratio_hyle_over_peer": 1.173,
+      "ratio_median": 1.172,
+      "spread_hyle": 1.083,
+      "spread_peer": 1.035,
+      "title": "ReduceMax i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.184,
+      "ci95_lo": 1.147,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulComplexOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.173,
+      "ratio_median": 1.172,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.02,
+      "title": "MaskedMulComplexOr f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.2,
+      "ci95_lo": 1.169,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMin"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.191,
+      "ratio_median": 1.193,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.04,
+      "title": "ReduceMin i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.223,
+      "ci95_lo": 1.199,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulComplexConj"
+      ],
+      "placement_uncertainty": 0.033,
+      "ratio_hyle_over_peer": 1.21,
+      "ratio_median": 1.212,
+      "spread_hyle": 1.066,
+      "spread_peer": 1.053,
+      "title": "MaskedMulComplexConj f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.223,
+      "ci95_lo": 1.196,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulComplex"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.213,
+      "ratio_median": 1.21,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.035,
+      "title": "MaskedMulComplex f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.251,
+      "ci95_lo": 1.22,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ComplexConj"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.237,
+      "ratio_median": 1.238,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.041,
+      "title": "ComplexConj f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.365,
+      "ci95_lo": 1.233,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfNegativeThenZeroElse"
+      ],
+      "placement_uncertainty": 0.078,
+      "ratio_hyle_over_peer": 1.301,
+      "ratio_median": 1.304,
+      "spread_hyle": 1.156,
+      "spread_peer": 1.038,
+      "title": "IfNegativeThenZeroElse f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.374,
+      "ci95_lo": 1.34,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfNegativeThenElseZero"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.356,
+      "ratio_median": 1.357,
+      "spread_hyle": 1.024,
+      "spread_peer": 1.04,
+      "title": "IfNegativeThenElseZero f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.424,
+      "ci95_lo": 1.382,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulComplexConj"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.398,
+      "ratio_median": 1.394,
+      "spread_hyle": 1.057,
+      "spread_peer": 1.06,
+      "title": "MulComplexConj f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.441,
+      "ci95_lo": 1.368,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundToInt"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.4,
+      "ratio_median": 1.397,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.048,
+      "title": "RoundToInt f32->i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.514,
+      "ci95_lo": 1.338,
+      "comparison_kind": "PEER",
+      "operations": [
+        "NearestInt"
+      ],
+      "placement_uncertainty": 0.081,
+      "ratio_hyle_over_peer": 1.413,
+      "ratio_median": 1.422,
+      "spread_hyle": 1.161,
+      "spread_peer": 1.132,
+      "title": "NearestInt f32->i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.53,
+      "ci95_lo": 1.355,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConvertTo"
+      ],
+      "placement_uncertainty": 0.079,
+      "ratio_hyle_over_peer": 1.42,
+      "ratio_median": 1.416,
+      "spread_hyle": 1.158,
+      "spread_peer": 1.148,
+      "title": "ConvertTo f32->i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.44,
+      "ci95_lo": 1.409,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulComplex"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.426,
+      "ratio_median": 1.425,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.031,
+      "title": "MulComplex f32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.493,
+      "ci95_lo": 1.425,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CeilInt"
+      ],
+      "placement_uncertainty": 0.048,
+      "ratio_hyle_over_peer": 1.47,
+      "ratio_median": 1.48,
+      "spread_hyle": 1.095,
+      "spread_peer": 1.029,
+      "title": "CeilInt f32->i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.496,
+      "ci95_lo": 1.381,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundingShr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.476,
+      "ratio_median": 1.476,
+      "spread_hyle": 1.059,
+      "spread_peer": 1.052,
+      "title": "RoundingShr i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.5,
+      "ci95_lo": 1.433,
+      "comparison_kind": "PEER",
+      "operations": [
+        "FloorInt"
+      ],
+      "placement_uncertainty": 0.047,
+      "ratio_hyle_over_peer": 1.477,
+      "ratio_median": 1.483,
+      "spread_hyle": 1.093,
+      "spread_peer": 1.044,
+      "title": "FloorInt f32->i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.645,
+      "ci95_lo": 1.502,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Xor3"
+      ],
+      "placement_uncertainty": 0.144,
+      "ratio_hyle_over_peer": 1.608,
+      "ratio_median": 1.602,
+      "spread_hyle": 1.287,
+      "spread_peer": 1.063,
+      "title": "Xor3 i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.079,
+      "ci95_lo": 2.031,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedConvertTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 2.057,
+      "ratio_median": 2.062,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.039,
+      "title": "MaskedConvertTo f32-i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.104,
+      "ci95_lo": 2.072,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReverseBits"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 2.086,
+      "ratio_median": 2.08,
+      "spread_hyle": 1.019,
+      "spread_peer": 1.027,
+      "title": "ReverseBits i32",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 0.992,
+      "ci95_lo": 0.973,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Eq"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.983,
+      "ratio_median": 0.983,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.038,
+      "title": "Eq i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.992,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Ne"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.986,
+      "ratio_median": 0.982,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.059,
+      "title": "Ne i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.975,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RotateRight"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.986,
+      "ratio_median": 0.983,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.056,
+      "title": "RotateRight<3> i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.997,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Ge"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.986,
+      "ratio_median": 0.986,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.058,
+      "title": "Ge i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.0,
+      "ci95_lo": 0.977,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Xor"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.986,
+      "ratio_median": 0.986,
+      "spread_hyle": 1.033,
+      "spread_peer": 1.026,
+      "title": "Xor i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.998,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Gt"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.987,
+      "ratio_median": 0.986,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.057,
+      "title": "Gt i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.995,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Or"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.989,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.027,
+      "title": "Or i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.997,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RotateLeftSame"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.988,
+      "spread_hyle": 1.032,
+      "spread_peer": 1.018,
+      "title": "RotateLeftSame u32 bits=5",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedWidenMulPairwiseAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.044,
+      "title": "MaskedWidenMulPairwiseAdd i16-i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.001,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "And"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.027,
+      "spread_peer": 1.034,
+      "title": "And i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.001,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetOnlyFirst"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.018,
+      "spread_peer": 1.021,
+      "title": "SetOnlyFirst i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GetBiasedExponent"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.056,
+      "spread_peer": 1.054,
+      "title": "GetBiasedExponent f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.973,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Eq128"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.043,
+      "title": "Eq128 u64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AllBits1"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.033,
+      "spread_peer": 1.057,
+      "title": "AllBits1 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle2103"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.038,
+      "title": "Shuffle2103 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.983,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedMulAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.012,
+      "spread_peer": 1.013,
+      "title": "MaskedMulAdd f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.001,
+      "ci95_lo": 0.98,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shl"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.017,
+      "spread_peer": 1.034,
+      "title": "Shl i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveWholeUpper"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.032,
+      "spread_peer": 1.022,
+      "title": "InterleaveWholeUpper i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShiftRight"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.031,
+      "spread_peer": 1.025,
+      "title": "MaskedShiftRight<3> i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.016,
+      "spread_peer": 1.039,
+      "title": "Shr u32 (variable)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle01"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.05,
+      "spread_peer": 1.044,
+      "title": "Shuffle01 u64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Reverse2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.029,
+      "title": "Reverse2 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulEven"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.045,
+      "title": "MulEven i32-i64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveUpper"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.027,
+      "spread_peer": 1.011,
+      "title": "InterleaveUpper i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Slide1Up"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.044,
+      "title": "Slide1Up i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.978,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AndNot"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.045,
+      "title": "AndNot i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle0123"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.038,
+      "spread_peer": 1.046,
+      "title": "Shuffle0123 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Mul"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.021,
+      "spread_peer": 1.043,
+      "title": "Mul f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Sqrt"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.04,
+      "title": "Sqrt f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedSatSubOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.994,
+      "spread_hyle": 1.018,
+      "spread_peer": 1.048,
+      "title": "MaskedSatSubOr i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedSatAddOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.022,
+      "spread_peer": 1.034,
+      "title": "MaskedSatAddOr i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "NegMulSub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.047,
+      "title": "NegMulSub f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AndXor"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.042,
+      "title": "AndXor i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitwiseIfThenElse"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.047,
+      "title": "BitwiseIfThenElse i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Max"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.054,
+      "title": "Max i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle0321"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.027,
+      "title": "Shuffle0321 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Broadcast"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.019,
+      "spread_peer": 1.044,
+      "title": "Broadcast<0> i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMin"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.051,
+      "spread_peer": 1.044,
+      "title": "ReduceMin i64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AbsDiff"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.028,
+      "spread_peer": 1.022,
+      "title": "AbsDiff i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedReduceMin"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.034,
+      "spread_peer": 1.034,
+      "title": "MaskedReduceMin i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.98,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DupOdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.027,
+      "spread_peer": 1.042,
+      "title": "DupOdd i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Reverse4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.026,
+      "spread_peer": 1.018,
+      "title": "Reverse4 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Shuffle2301"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.012,
+      "title": "Shuffle2301 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideUpLanes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.046,
+      "title": "SlideUpLanes amt=2 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Set"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.038,
+      "spread_peer": 1.044,
+      "title": "Set i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRight"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.05,
+      "spread_peer": 1.016,
+      "title": "ShiftRight<3> i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightSame"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.051,
+      "spread_peer": 1.053,
+      "title": "ShiftRightSame i32 bits=3",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Abs"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.023,
+      "title": "Abs i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "XorAndNot"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.044,
+      "title": "XorAndNot i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatOdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.024,
+      "spread_peer": 1.046,
+      "title": "ConcatOdd i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SaturatedNeg"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.049,
+      "title": "SaturatedNeg i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.995,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RotateRightSame"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.041,
+      "title": "RotateRightSame u32 bits=5",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftLeft"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.024,
+      "title": "ShiftLeft<3> i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveOdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.048,
+      "title": "InterleaveOdd i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Or3"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.049,
+      "title": "Or3 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulSub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.02,
+      "title": "MulSub f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Sub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.047,
+      "title": "Sub i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Div"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.012,
+      "spread_peer": 1.01,
+      "title": "Div f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MinMagnitude"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.048,
+      "title": "MinMagnitude f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.985,
+      "comparison_kind": "PEER",
+      "operations": [
+        "FindKnownLastTrue"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.045,
+      "spread_peer": 1.03,
+      "title": "FindKnownLastTrue i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Slide1Down"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.03,
+      "title": "Slide1Down i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SaturatedSub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.023,
+      "spread_peer": 1.018,
+      "title": "SaturatedSub i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedReduceMax"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.015,
+      "spread_peer": 1.023,
+      "title": "MaskedReduceMax i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Ne128"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.057,
+      "title": "Ne128 u64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "NegMulAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.051,
+      "title": "NegMulAdd f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.996,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulByPow2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.026,
+      "spread_peer": 1.024,
+      "title": "MulByPow2 f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "IfThenElse"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.043,
+      "title": "IfThenElse i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.014,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedLeadingZeroCount"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.049,
+      "title": "MaskedLeadingZeroCount i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CopySignToAbs"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.054,
+      "spread_peer": 1.059,
+      "title": "CopySignToAbs f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CopySign"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.05,
+      "title": "CopySign f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceMax"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.048,
+      "title": "ReduceMax i64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Min"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.045,
+      "spread_peer": 1.052,
+      "title": "Min f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Sub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.035,
+      "title": "Sub f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulAddSub"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.045,
+      "title": "MulAddSub f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveWholeLower"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.008,
+      "spread_hyle": 1.038,
+      "spread_peer": 1.048,
+      "title": "InterleaveWholeLower i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.995,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Neg"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.057,
+      "spread_peer": 1.044,
+      "title": "Neg i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Max"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.037,
+      "spread_peer": 1.043,
+      "title": "Max f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveEven"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.059,
+      "title": "InterleaveEven i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedShr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 1.007,
+      "spread_hyle": 1.05,
+      "spread_peer": 1.037,
+      "title": "MaskedShr i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AndNot"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.037,
+      "title": "Mask AndNot i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulSubAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.041,
+      "title": "MulSubAdd f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PairwiseAdd128"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.008,
+      "ratio_median": 1.008,
+      "spread_hyle": 1.039,
+      "spread_peer": 1.043,
+      "title": "PairwiseAdd128 i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OddEven"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.009,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.03,
+      "spread_peer": 1.041,
+      "title": "OddEven i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.022,
+      "ci95_lo": 1.0,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ZeroIfNegative"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.014,
+      "ratio_median": 1.012,
+      "spread_hyle": 1.054,
+      "spread_peer": 1.043,
+      "title": "ZeroIfNegative f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.029,
+      "ci95_lo": 1.007,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulComplexConjAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.018,
+      "ratio_median": 1.019,
+      "spread_hyle": 1.013,
+      "spread_peer": 1.024,
+      "title": "MulComplexConjAdd f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.028,
+      "ci95_lo": 1.01,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceSum"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.019,
+      "ratio_median": 1.019,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.054,
+      "title": "ReduceSum i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.807,
+      "ci95_lo": 0.767,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReciprocalNewton"
+      ],
+      "order_medians": "0.784/0.804",
+      "ratio_a_over_b": 0.787,
+      "sample_count": 16,
+      "title": "ReciprocalNewton f32 [info Newton/Approx]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 2.427,
+      "ci95_lo": 2.386,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReciprocalNewton"
+      ],
+      "order_medians": "2.418/2.422",
+      "ratio_a_over_b": 2.418,
+      "sample_count": 16,
+      "title": "ReciprocalNewton f32 [info Newton/Div]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 0.686,
+      "ci95_lo": 0.614,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReciprocalSqrtNewton"
+      ],
+      "order_medians": "0.629/0.663",
+      "ratio_a_over_b": 0.647,
+      "sample_count": 16,
+      "title": "ReciprocalSqrtNewton f32 [info Newton/Approx]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 4.413,
+      "ci95_lo": 4.3,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReciprocalSqrtNewton"
+      ],
+      "order_medians": "4.358/4.377",
+      "ratio_a_over_b": 4.367,
+      "sample_count": 16,
+      "title": "ReciprocalSqrtNewton f32 [info Newton/DivSqrt]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 1.478,
+      "ci95_lo": 1.441,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReduceAnd"
+      ],
+      "order_medians": "1.473/1.445",
+      "ratio_a_over_b": 1.457,
+      "sample_count": 16,
+      "title": "ReduceAnd i32 [info HYLE/scalar fold]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 1.568,
+      "ci95_lo": 1.522,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReduceMul"
+      ],
+      "order_medians": "1.541/1.551",
+      "ratio_a_over_b": 1.548,
+      "sample_count": 16,
+      "title": "ReduceMul i32 [info HYLE/scalar fold]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 1.469,
+      "ci95_lo": 1.414,
+      "comparison_kind": "INFORMATIONAL",
+      "operations": [
+        "ReduceOr"
+      ],
+      "order_medians": "1.424/1.461",
+      "ratio_a_over_b": 1.444,
+      "sample_count": 16,
+      "title": "ReduceOr i32 [info HYLE/scalar fold]",
+      "verdict": "INFO"
+    },
+    {
+      "ci95_hi": 0.966,
+      "ci95_lo": 0.929,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedLoad"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.95,
+      "ratio_median": 0.952,
+      "spread_hyle": 1.017,
+      "spread_peer": 1.056,
+      "title": "MaskedLoad i32 (4096, 50%)",
+      "verdict": "LOSE"
+    },
+    {
+      "ci95_hi": 0.996,
+      "ci95_lo": 0.888,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.945,
+      "ratio_median": 0.949,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.051,
+      "title": "MulHigh u64 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.98,
+      "ci95_lo": 0.947,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.04,
+      "ratio_hyle_over_peer": 0.962,
+      "ratio_median": 0.96,
+      "spread_hyle": 1.068,
+      "spread_peer": 1.08,
+      "title": "ScatterIndexN i32 (full n)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.989,
+      "ci95_lo": 0.934,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LeadingZeroCount"
+      ],
+      "placement_uncertainty": 0.046,
+      "ratio_hyle_over_peer": 0.966,
+      "ratio_median": 0.966,
+      "spread_hyle": 1.084,
+      "spread_peer": 1.091,
+      "title": "LeadingZeroCount u32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.072,
+      "ci95_lo": 0.916,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReverseLaneBytes"
+      ],
+      "placement_uncertainty": 0.119,
+      "ratio_hyle_over_peer": 0.975,
+      "ratio_median": 0.982,
+      "spread_hyle": 1.18,
+      "spread_peer": 1.238,
+      "title": "ReverseLaneBytes u32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.986,
+      "ci95_lo": 0.968,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RoundingShiftRightAndDemoteTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.978,
+      "ratio_median": 0.977,
+      "spread_hyle": 1.038,
+      "spread_peer": 1.052,
+      "title": "RoundingShiftRightAndDemoteTo<3> i32->i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.949,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.05,
+      "ratio_hyle_over_peer": 0.979,
+      "ratio_median": 0.977,
+      "spread_hyle": 1.087,
+      "spread_peer": 1.101,
+      "title": "MulHigh u8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.029,
+      "ci95_lo": 0.954,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteLowerTo"
+      ],
+      "placement_uncertainty": 0.076,
+      "ratio_hyle_over_peer": 0.984,
+      "ratio_median": 0.968,
+      "spread_hyle": 1.152,
+      "spread_peer": 1.143,
+      "title": "PromoteLowerTo i16->i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.963,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SetMask"
+      ],
+      "placement_uncertainty": 0.041,
+      "ratio_hyle_over_peer": 0.984,
+      "ratio_median": 0.988,
+      "spread_hyle": 1.064,
+      "spread_peer": 1.082,
+      "title": "SetMask i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.965,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteTo"
+      ],
+      "placement_uncertainty": 0.04,
+      "ratio_hyle_over_peer": 0.985,
+      "ratio_median": 0.992,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.08,
+      "title": "PromoteTo i16->i32 1-arg (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 0.997,
+      "ci95_lo": 0.94,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressStore"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.986,
+      "ratio_median": 0.989,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.039,
+      "title": "CompressStore i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupBytesOr0"
+      ],
+      "placement_uncertainty": 0.045,
+      "ratio_hyle_over_peer": 0.987,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.089,
+      "spread_peer": 1.083,
+      "title": "TableLookupBytesOr0 u8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.043,
+      "ci95_lo": 0.962,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupBytes"
+      ],
+      "placement_uncertainty": 0.061,
+      "ratio_hyle_over_peer": 0.987,
+      "ratio_median": 0.987,
+      "spread_hyle": 1.122,
+      "spread_peer": 1.079,
+      "title": "TableLookupBytes u8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.026,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "RebindMask"
+      ],
+      "placement_uncertainty": 0.048,
+      "ratio_hyle_over_peer": 0.989,
+      "ratio_median": 0.987,
+      "spread_hyle": 1.095,
+      "spread_peer": 1.071,
+      "title": "RebindMask i32->f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.922,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.062,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.119,
+      "spread_peer": 1.125,
+      "title": "MulHigh i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.032,
+      "ci95_lo": 0.949,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CombineMasks"
+      ],
+      "placement_uncertainty": 0.062,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.99,
+      "spread_hyle": 1.124,
+      "spread_peer": 1.071,
+      "title": "CombineMasks i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.041,
+      "ci95_lo": 0.963,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedDemote2MasksTo"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.986,
+      "spread_hyle": 1.079,
+      "spread_peer": 1.067,
+      "title": "OrderedDemote2MasksTo i32->i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.012,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConcatEven"
+      ],
+      "placement_uncertainty": 0.055,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.065,
+      "spread_peer": 1.109,
+      "title": "ConcatEven i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressNot"
+      ],
+      "placement_uncertainty": 0.042,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.991,
+      "spread_hyle": 1.084,
+      "spread_peer": 1.07,
+      "title": "CompressNot i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedGatherIndex"
+      ],
+      "placement_uncertainty": 0.039,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.078,
+      "spread_peer": 1.053,
+      "title": "MaskedGatherIndex i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.055,
+      "ci95_lo": 0.974,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.053,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.009,
+      "spread_hyle": 1.084,
+      "spread_peer": 1.105,
+      "title": "ScatterIndexN i32 (one lane)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.025,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskFromVec"
+      ],
+      "placement_uncertainty": 0.032,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.0,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.065,
+      "title": "MaskFromVec i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.015,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Compress"
+      ],
+      "placement_uncertainty": 0.037,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.074,
+      "spread_peer": 1.039,
+      "title": "Compress i32 (4096, 50% dense)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.982,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ShiftRightAndDemoteTo"
+      ],
+      "placement_uncertainty": 0.045,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.09,
+      "spread_peer": 1.059,
+      "title": "ShiftRightAndDemoteTo<3> i32->i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteToNearestInt"
+      ],
+      "placement_uncertainty": 0.106,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.209,
+      "spread_peer": 1.212,
+      "title": "DemoteToNearestInt f64->i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.026,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteMaskTo"
+      ],
+      "placement_uncertainty": 0.036,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.066,
+      "spread_peer": 1.073,
+      "title": "PromoteMaskTo i16->i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.045,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESRound"
+      ],
+      "placement_uncertainty": 0.084,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.054,
+      "spread_peer": 1.168,
+      "title": "AESRound u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.027,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteTo"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 1.005,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.12,
+      "spread_peer": 1.119,
+      "title": "DemoteTo i32->i16 1-arg (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.039,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.077,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 1.008,
+      "spread_hyle": 1.127,
+      "spread_peer": 1.153,
+      "title": "MulHigh i64 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.073,
+      "ci95_lo": 0.926,
+      "comparison_kind": "PEER",
+      "operations": [
+        "VecFromMask"
+      ],
+      "placement_uncertainty": 0.124,
+      "ratio_hyle_over_peer": 1.009,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.227,
+      "spread_peer": 1.248,
+      "title": "VecFromMask i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.027,
+      "ci95_lo": 0.98,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedLoadOr"
+      ],
+      "placement_uncertainty": 0.048,
+      "ratio_hyle_over_peer": 1.009,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.079,
+      "spread_peer": 1.097,
+      "title": "MaskedLoadOr i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.033,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterOffset"
+      ],
+      "placement_uncertainty": 0.041,
+      "ratio_hyle_over_peer": 1.011,
+      "ratio_median": 1.014,
+      "spread_hyle": 1.083,
+      "spread_peer": 1.056,
+      "title": "ScatterOffset i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 0.954,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedScatterIndex"
+      ],
+      "placement_uncertainty": 0.082,
+      "ratio_hyle_over_peer": 1.012,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.123,
+      "spread_peer": 1.165,
+      "title": "MaskedScatterIndex i32 (4096, 50%)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.053,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreMaskBits"
+      ],
+      "placement_uncertainty": 0.087,
+      "ratio_hyle_over_peer": 1.013,
+      "ratio_median": 1.01,
+      "spread_hyle": 1.163,
+      "spread_peer": 1.174,
+      "title": "StoreMaskBits i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.038,
+      "ci95_lo": 0.996,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.014,
+      "ratio_median": 1.016,
+      "spread_hyle": 1.021,
+      "spread_peer": 1.041,
+      "title": "MulHigh i8 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.036,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TwoTablesLookupLanes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.016,
+      "ratio_median": 1.014,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.054,
+      "title": "TwoTablesLookupLanes i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.1,
+      "ci95_lo": 0.885,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndex"
+      ],
+      "placement_uncertainty": 0.318,
+      "ratio_hyle_over_peer": 1.018,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.637,
+      "spread_peer": 1.331,
+      "title": "ScatterIndex i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.043,
+      "ci95_lo": 1.015,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESKeyGenAssist"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.028,
+      "ratio_median": 1.032,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.058,
+      "title": "AESKeyGenAssist u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.05,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteMaskTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.031,
+      "ratio_median": 1.037,
+      "spread_hyle": 1.035,
+      "spread_peer": 1.046,
+      "title": "DemoteMaskTo i32->i16 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.076,
+      "ci95_lo": 0.979,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHighLow"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.031,
+      "ratio_median": 1.03,
+      "spread_hyle": 1.036,
+      "spread_peer": 1.059,
+      "title": "MulHighLow u64 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.04,
+      "ci95_lo": 1.016,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved3"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.031,
+      "ratio_median": 1.029,
+      "spread_hyle": 1.052,
+      "spread_peer": 1.045,
+      "title": "StoreInterleaved3 f32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.116,
+      "ci95_lo": 0.953,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESInvMixColumns"
+      ],
+      "placement_uncertainty": 0.1,
+      "ratio_hyle_over_peer": 1.042,
+      "ratio_median": 1.039,
+      "spread_hyle": 1.199,
+      "spread_peer": 1.083,
+      "title": "AESInvMixColumns u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.117,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMask1Up"
+      ],
+      "placement_uncertainty": 0.071,
+      "ratio_hyle_over_peer": 1.054,
+      "ratio_median": 1.06,
+      "spread_hyle": 1.088,
+      "spread_peer": 1.143,
+      "title": "SlideMask1Up i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.101,
+      "ci95_lo": 1.017,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Dup128MaskFromMaskBits"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.055,
+      "ratio_median": 1.054,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.028,
+      "title": "Dup128MaskFromMaskBits i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.097,
+      "ci95_lo": 1.018,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMask1Down"
+      ],
+      "placement_uncertainty": 0.042,
+      "ratio_hyle_over_peer": 1.079,
+      "ratio_median": 1.071,
+      "spread_hyle": 1.06,
+      "spread_peer": 1.084,
+      "title": "SlideMask1Down i32 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.106,
+      "ci95_lo": 1.056,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMaskUpLanes"
+      ],
+      "placement_uncertainty": 0.072,
+      "ratio_hyle_over_peer": 1.09,
+      "ratio_median": 1.089,
+      "spread_hyle": 1.144,
+      "spread_peer": 1.046,
+      "title": "SlideMaskUpLanes i32 amt=2 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.128,
+      "ci95_lo": 1.049,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SlideMaskDownLanes"
+      ],
+      "placement_uncertainty": 0.07,
+      "ratio_hyle_over_peer": 1.103,
+      "ratio_median": 1.102,
+      "spread_hyle": 1.14,
+      "spread_peer": 1.053,
+      "title": "SlideMaskDownLanes i32 amt=2 (4096)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.254,
+      "ci95_lo": 1.102,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadNOr"
+      ],
+      "placement_uncertainty": 0.134,
+      "ratio_hyle_over_peer": 1.147,
+      "ratio_median": 1.161,
+      "spread_hyle": 1.202,
+      "spread_peer": 1.269,
+      "title": "LoadNOr i32 (half n)",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.092,
+      "ci95_lo": 1.056,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitShuffle"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.066,
+      "ratio_median": 1.067,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.043,
+      "title": "BitShuffle u64 (4096)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.117,
+      "ci95_lo": 1.099,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressNot"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.106,
+      "ratio_median": 1.103,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.045,
+      "title": "CompressNot u64 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.284,
+      "ci95_lo": 1.153,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ScatterIndexN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.173,
+      "ratio_median": 1.172,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.045,
+      "title": "ScatterIndexN i32 (half n)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.501,
+      "ci95_lo": 1.477,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.491,
+      "ratio_median": 1.49,
+      "spread_hyle": 1.051,
+      "spread_peer": 1.032,
+      "title": "StoreInterleaved4 f32 (4096)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.518,
+      "ci95_lo": 1.477,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PopulationCount"
+      ],
+      "placement_uncertainty": 0.049,
+      "ratio_hyle_over_peer": 1.493,
+      "ratio_median": 1.501,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.098,
+      "title": "PopulationCount u32 (4096)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.61,
+      "ci95_lo": 1.567,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadN",
+        "StoreN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.589,
+      "ratio_median": 1.585,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.035,
+      "title": "LoadN/StoreN i32 (half lanes)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.251,
+      "ci95_lo": 2.185,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Expand"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 2.204,
+      "ratio_median": 2.191,
+      "spread_hyle": 1.039,
+      "spread_peer": 1.032,
+      "title": "Expand i32 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 2.253,
+      "ci95_lo": 2.185,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadExpand"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 2.205,
+      "ratio_median": 2.205,
+      "spread_hyle": 1.013,
+      "spread_peer": 1.022,
+      "title": "LoadExpand i32 (4096, 50%)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 11.464,
+      "ci95_lo": 10.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadMaskBits"
+      ],
+      "placement_uncertainty": 0.055,
+      "ratio_hyle_over_peer": 11.214,
+      "ratio_median": 11.224,
+      "spread_hyle": 1.111,
+      "spread_peer": 1.048,
+      "title": "LoadMaskBits i32 (4096)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 0.998,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReduceSum"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.987,
+      "ratio_median": 0.989,
+      "spread_hyle": 1.039,
+      "spread_peer": 1.038,
+      "title": "ReduceSum f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.99,
+      "spread_hyle": 1.053,
+      "spread_peer": 1.046,
+      "title": "MulHigh u32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved3"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.057,
+      "spread_peer": 1.037,
+      "title": "LoadInterleaved3 f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.038,
+      "title": "MulAdd f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESLastRoundInv"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.033,
+      "title": "AESLastRoundInv u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Reverse"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.047,
+      "title": "Reverse i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.981,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.047,
+      "spread_peer": 1.059,
+      "title": "MulHigh u16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.987,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulHigh"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.036,
+      "title": "MulHigh i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Min"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.041,
+      "spread_peer": 1.04,
+      "title": "Min i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndex"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.054,
+      "spread_peer": 1.056,
+      "title": "GatherIndex i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MultiRotateRight"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.048,
+      "spread_peer": 1.037,
+      "title": "MultiRotateRight u64 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "InterleaveLower"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.054,
+      "spread_peer": 1.043,
+      "title": "InterleaveLower i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESRoundInv"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.059,
+      "spread_peer": 1.045,
+      "title": "AESRoundInv u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "StoreInterleaved2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.006,
+      "spread_hyle": 1.036,
+      "spread_peer": 1.044,
+      "title": "StoreInterleaved2 f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Reverse8"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.033,
+      "title": "Reverse8 i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherOffset"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.046,
+      "spread_peer": 1.047,
+      "title": "GatherOffset i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CompressBlendedStore"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.045,
+      "spread_peer": 1.042,
+      "title": "CompressBlendedStore i32 (4096, 50%)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.995,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BlendedStore"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.037,
+      "spread_peer": 1.022,
+      "title": "BlendedStore i32 (4096, 50%)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndexNOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.043,
+      "title": "GatherIndexNOr i32 (half n)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved2"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.041,
+      "title": "LoadInterleaved2 f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.983,
+      "comparison_kind": "PEER",
+      "operations": [
+        "TableLookupLanes"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.031,
+      "spread_peer": 1.054,
+      "title": "TableLookupLanes i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "BitsFromMask"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.049,
+      "spread_peer": 1.059,
+      "title": "BitsFromMask i32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CLMulUpper"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.042,
+      "spread_peer": 1.031,
+      "title": "CLMulUpper u64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GatherIndexN"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.001,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.044,
+      "spread_peer": 1.05,
+      "title": "GatherIndexN i32 (half n)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SaturatedAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.018,
+      "spread_peer": 1.017,
+      "title": "SaturatedAdd i16 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.013,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "CLMulLower"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.044,
+      "spread_peer": 1.037,
+      "title": "CLMulLower u64",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.995,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Add"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.003,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.045,
+      "spread_peer": 1.039,
+      "title": "Add f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.008,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MaskedGatherIndexOr"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.003,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.05,
+      "title": "MaskedGatherIndexOr i32 (4096, 50%)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "AESLastRound"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.056,
+      "spread_peer": 1.058,
+      "title": "AESLastRound u8",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.011,
+      "ci95_lo": 0.999,
+      "comparison_kind": "PEER",
+      "operations": [
+        "LoadInterleaved4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.002,
+      "spread_hyle": 1.015,
+      "spread_peer": 1.022,
+      "title": "LoadInterleaved4 u8 (4096, RGBA)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 0.994,
+      "ci95_lo": 0.961,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf2"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 0.978,
+      "ratio_median": 0.974,
+      "spread_hyle": 1.12,
+      "spread_peer": 1.111,
+      "title": "SumsOf2 u8->u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.03,
+      "ci95_lo": 0.947,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf8AbsDiff"
+      ],
+      "placement_uncertainty": 0.071,
+      "ratio_hyle_over_peer": 0.985,
+      "ratio_median": 0.982,
+      "spread_hyle": 1.141,
+      "spread_peer": 1.075,
+      "title": "SumsOf8AbsDiff u8->u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.969,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.051,
+      "ratio_hyle_over_peer": 0.99,
+      "ratio_median": 0.989,
+      "spread_hyle": 1.065,
+      "spread_peer": 1.102,
+      "title": "OrderedShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.914,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedDemote2To"
+      ],
+      "placement_uncertainty": 0.184,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.368,
+      "spread_peer": 1.048,
+      "title": "OrderedDemote2To i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.018,
+      "ci95_lo": 0.972,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf8"
+      ],
+      "placement_uncertainty": 0.06,
+      "ratio_hyle_over_peer": 0.991,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.067,
+      "spread_peer": 1.12,
+      "title": "SumsOf8 u8->u64",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.043,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfAdjQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.064,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.129,
+      "spread_peer": 1.121,
+      "title": "SumsOfAdjQuadAbsDiff u8->u16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.03,
+      "ci95_lo": 0.951,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulEvenAdd"
+      ],
+      "placement_uncertainty": 0.082,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.993,
+      "spread_hyle": 1.164,
+      "spread_peer": 1.161,
+      "title": "MulEvenAdd bf16->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.021,
+      "ci95_lo": 0.967,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderRoundingShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.058,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.983,
+      "spread_hyle": 1.099,
+      "spread_peer": 1.117,
+      "title": "ReorderRoundingShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.009,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulOddAdd"
+      ],
+      "placement_uncertainty": 0.08,
+      "ratio_hyle_over_peer": 0.994,
+      "ratio_median": 0.994,
+      "spread_hyle": 1.107,
+      "spread_peer": 1.161,
+      "title": "MulOddAdd bf16->f32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.034,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ConvertInRangeTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.055,
+      "spread_peer": 1.039,
+      "title": "ConvertInRangeTo f32->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.986,
+      "comparison_kind": "PEER",
+      "operations": [
+        "OrderedRoundingShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.035,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.07,
+      "spread_peer": 1.067,
+      "title": "OrderedRoundingShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.049,
+      "ci95_lo": 0.955,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteOddTo"
+      ],
+      "placement_uncertainty": 0.052,
+      "ratio_hyle_over_peer": 1.002,
+      "ratio_median": 1.005,
+      "spread_hyle": 1.104,
+      "spread_peer": 1.077,
+      "title": "PromoteOddTo i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.04,
+      "ci95_lo": 0.958,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulPairwiseAdd"
+      ],
+      "placement_uncertainty": 0.063,
+      "ratio_hyle_over_peer": 1.004,
+      "ratio_median": 1.004,
+      "spread_hyle": 1.108,
+      "spread_peer": 1.125,
+      "title": "SatWidenMulPairwiseAdd u8*i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.185,
+      "ci95_lo": 0.877,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteUpperTo"
+      ],
+      "placement_uncertainty": 0.138,
+      "ratio_hyle_over_peer": 1.009,
+      "ratio_median": 1.011,
+      "spread_hyle": 1.277,
+      "spread_peer": 1.25,
+      "title": "PromoteUpperTo i16->i32",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.041,
+      "ci95_lo": 0.988,
+      "comparison_kind": "PEER",
+      "operations": [
+        "PromoteEvenTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.019,
+      "ratio_median": 1.022,
+      "spread_hyle": 1.057,
+      "spread_peer": 1.061,
+      "title": "PromoteEvenTo i8->i16",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.092,
+      "ci95_lo": 0.96,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ZeroExtendVector"
+      ],
+      "placement_uncertainty": 0.086,
+      "ratio_hyle_over_peer": 1.03,
+      "ratio_median": 1.025,
+      "spread_hyle": 1.147,
+      "spread_peer": 1.172,
+      "title": "ZeroExtendVector i16 half->full",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.067,
+      "ci95_lo": 0.998,
+      "comparison_kind": "PEER",
+      "operations": [
+        "U8FromU32"
+      ],
+      "placement_uncertainty": 0.069,
+      "ratio_hyle_over_peer": 1.031,
+      "ratio_median": 1.023,
+      "spread_hyle": 1.138,
+      "spread_peer": 1.037,
+      "title": "U8FromU32 u32->u8",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "ci95_hi": 1.384,
+      "ci95_lo": 1.323,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.045,
+      "ratio_hyle_over_peer": 1.355,
+      "ratio_median": 1.364,
+      "spread_hyle": 1.09,
+      "spread_peer": 1.048,
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 identity",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.47,
+      "ci95_lo": 1.389,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOfShuffledQuadAbsDiff"
+      ],
+      "placement_uncertainty": 0.031,
+      "ratio_hyle_over_peer": 1.429,
+      "ratio_median": 1.427,
+      "spread_hyle": 1.061,
+      "spread_peer": 1.039,
+      "title": "SumsOfShuffledQuadAbsDiff u8->u16 permuted",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.893,
+      "ci95_lo": 1.828,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteTo"
+      ],
+      "placement_uncertainty": 0.103,
+      "ratio_hyle_over_peer": 1.871,
+      "ratio_median": 1.869,
+      "spread_hyle": 1.206,
+      "spread_peer": 1.05,
+      "title": "DemoteTo i32->i16 (sat)",
+      "verdict": "WIN"
+    },
+    {
+      "ci95_hi": 1.019,
+      "ci95_lo": 0.97,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumsOf4"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.992,
+      "ratio_median": 0.995,
+      "spread_hyle": 1.029,
+      "spread_peer": 1.029,
+      "title": "SumsOf4 u8->u32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.984,
+      "comparison_kind": "PEER",
+      "operations": [
+        "MulFixedPoint15"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.993,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.034,
+      "title": "MulFixedPoint15 i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.01,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "GetExponent"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.995,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.025,
+      "spread_peer": 1.041,
+      "title": "GetExponent f32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.016,
+      "ci95_lo": 0.976,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SumOfMulQuadAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.996,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.04,
+      "spread_peer": 1.05,
+      "title": "SumOfMulQuadAccumulate i8->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulPairwiseAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.022,
+      "spread_peer": 1.014,
+      "title": "SatWidenMulPairwiseAccumulate i16->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.004,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "WidenMulPairwiseAdd"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.997,
+      "ratio_median": 0.998,
+      "spread_hyle": 1.024,
+      "spread_peer": 1.052,
+      "title": "WidenMulPairwiseAdd i16->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.989,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderWidenMulAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.023,
+      "spread_peer": 1.021,
+      "title": "ReorderWidenMulAccumulate i16->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.003,
+      "ci95_lo": 0.991,
+      "comparison_kind": "PEER",
+      "operations": [
+        "SatWidenMulAccumFixedPoint"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.994,
+      "spread_hyle": 1.043,
+      "spread_peer": 1.039,
+      "title": "SatWidenMulAccumFixedPoint i16->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.007,
+      "ci95_lo": 0.99,
+      "comparison_kind": "PEER",
+      "operations": [
+        "WidenMulAccumulate"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.998,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.051,
+      "spread_peer": 1.044,
+      "title": "WidenMulAccumulate i16->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.005,
+      "ci95_lo": 0.993,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 1.001,
+      "spread_hyle": 1.033,
+      "spread_peer": 1.048,
+      "title": "ReorderDemote2To i32->i16",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.002,
+      "ci95_lo": 0.992,
+      "comparison_kind": "PEER",
+      "operations": [
+        "DemoteInRangeTo"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 0.999,
+      "ratio_median": 0.997,
+      "spread_hyle": 1.05,
+      "spread_peer": 1.042,
+      "title": "DemoteInRangeTo f64->i32",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.006,
+      "ci95_lo": 0.994,
+      "comparison_kind": "PEER",
+      "operations": [
+        "Add"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.0,
+      "ratio_median": 0.999,
+      "spread_hyle": 1.02,
+      "spread_peer": 1.029,
+      "title": "Add f32 (4096)",
+      "verdict": "TIE"
+    },
+    {
+      "ci95_hi": 1.017,
+      "ci95_lo": 0.977,
+      "comparison_kind": "PEER",
+      "operations": [
+        "ReorderShiftRightAndDemote2To"
+      ],
+      "placement_uncertainty": 0.03,
+      "ratio_hyle_over_peer": 1.006,
+      "ratio_median": 0.996,
+      "spread_hyle": 1.058,
+      "spread_peer": 1.054,
+      "title": "ReorderShiftRightAndDemote2To<2> i32->i16",
+      "verdict": "TIE"
+    }
+  ],
+  "schema": "hyle.simd.route-qualification/v2",
+  "source_benched_operation_count": 318,
+  "target": "AVX2",
+  "verdict": "PASS",
+  "verdict_counts": {
+    "INCONCLUSIVE": 169,
+    "INFO": 7,
+    "LOSE": 1,
+    "TIE": 129,
+    "WIN": 44
+  }
+}

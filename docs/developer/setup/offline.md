@@ -15,8 +15,9 @@
 4. **系统 SDK/运行时**：OpenSSL、CUDA Toolkit/driver、Vulkan loader/ICD 等。这些由
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
-选择 `simd` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的产品源码，而不是
-任意系统安装。bitpack 直接编译这份锁定 Highway；尚待裁决的 VQSort integrated port 已是 HYLE 源码包
+选择 `simd` 或 `container` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的
+产品源码，而不是任意系统安装。SIMD bitpack 与 Container 的选定 string/bitset kernel 直接编译这份
+锁定 Highway；尚待裁决的 VQSort integrated port 已是 HYLE 源码包
 内的修改代码，不另放 checkout。完整源码审计会验证其 origin、integration paths、adapted-content hash
 和许可证副本。
 benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path；xsimd
@@ -32,7 +33,7 @@ benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与
 
 | 构建能力 | `deps/` 目录 |
 |---|---|
-| `simd`，或任何传递依赖 `simd` 的组件 | `highway/` |
+| `simd`、`container`，或任何传递依赖二者的组件 | `highway/` |
 | `HYLE_BUILD_TESTS=ON` | `googletest/` |
 | 有 sched/fcontext 且 `HYLE_IO_HTTP2=ON` | `nghttp2/` |
 | 有 sched/fcontext 且 `HYLE_COMPUTE_GGML=ON` | `ggml/` |

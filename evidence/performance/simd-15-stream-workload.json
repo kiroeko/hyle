@@ -1,0 +1,60 @@
+{
+  "schema": "hyle.simd.stream-workload/v1",
+  "verdict": "PASS",
+  "decision_state": "ROUTE_INPUT",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "contract": {
+    "operation": "Stream",
+    "shape": "256 MiB sequential aligned stores followed by the target-appropriate completion fence",
+    "working_set_reason": "The range is larger than either qualification machine's last-level cache and measures the write-stream use case instead of an L1 register loop.",
+    "ordering": "Each process performs six samples per candidate and alternates HYLE-first and Highway-first internally.",
+    "interpretation": "Timing is a whole-range route input. Exact final code shape overrides a boundary-sized apparent winner; a repeatable instruction difference with a material workload effect remains actionable."
+  },
+  "windows": {
+    "machine_profile": "W1-WIN",
+    "cpu": "13th Gen Intel Core i9-13900K",
+    "os": "Windows 11 10.0.26200 build 26200",
+    "compiler": "MSVC 19.50.35728 x64",
+    "target": "AVX2",
+    "command": "build-bench\\bin\\hyle_stream_bench_avx2.exe",
+    "samples": [
+      {"hyle_gib_s": 47.987, "highway_gib_s": 45.649, "hyle_over_highway": 1.0512, "cached_store_gib_s": 16.847},
+      {"hyle_gib_s": 45.942, "highway_gib_s": 46.504, "hyle_over_highway": 0.9879, "cached_store_gib_s": 15.438},
+      {"hyle_gib_s": 47.797, "highway_gib_s": 47.693, "hyle_over_highway": 1.0022, "cached_store_gib_s": 16.364}
+    ],
+    "codegen": {
+      "receipt": "evidence/performance/simd-15-algorithm-codegen-w1-win-msvc-avx2.json",
+      "receipt_sha256": "43c6ffc9543fdc4d6c7264679697ba98934616adff20c8fe160b00c1dc8600b5",
+      "equivalent_instruction_shape": true,
+      "instruction_count_each": 26
+    },
+    "finding": "The first process landed just beyond the 5% material boundary, while two immediate reproductions were within 1.3%. The optimized loops are instruction-shape identical, so this is a tie and not a HYLE algorithm advantage."
+  },
+  "macos": {
+    "machine_profile": "M1-MAC",
+    "host_binding": "explicitly-unbound engineering run",
+    "machine": "MacBook Air Mac16,12 / Apple M4 / 16 GiB",
+    "power": "AC power, battery 100%, charged",
+    "os": "macOS 26.6.2 build 25G83",
+    "compiler": "Apple clang 21.0.0 (clang-2100.1.1.101)",
+    "target": "NEON",
+    "command": "./build-bench/bin/hyle_stream_bench_neon",
+    "samples": [
+      {"hyle_gib_s": 32.621, "highway_gib_s": 5.134, "hyle_over_highway": 6.3539, "cached_store_gib_s": 32.607},
+      {"hyle_gib_s": 34.943, "highway_gib_s": 11.976, "hyle_over_highway": 2.9177, "cached_store_gib_s": 37.177}
+    ],
+    "disassembly": {
+      "tool": "/usr/bin/otool -tvV",
+      "hyle_loop": "str q0, [x9], #0x10; add; cmp; b.lo",
+      "highway_loop": "prfm pstl1strm, [x9]; str q0, [x9], #0x10; add; cmp; b.lo",
+      "provider_source": "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_neon-inl.h:4212"
+    },
+    "finding": "Highway's per-vector AArch64 write-prefetch is materially harmful on the current Apple M4 workload. HYLE's plain store is 2.9x to 6.4x faster and matches the cached-store control, so the NEON difference is real rather than a code-placement tie."
+  },
+  "route_conclusion": "KEEP_HYLE globally for Stream: HYLE is exact-codegen tied on AVX2, source-equivalent on scalar/SSE4/AVX512/SVE/RVV, and materially better on the current NEON silicon. This avoids a target split without sacrificing a demonstrated winner."
+}

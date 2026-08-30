@@ -10,15 +10,19 @@
 
 #include <nanobench.h>
 
+#include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
 
 #include "hyle/simd/math.h"
 #include "op_parity_engine.h"
+#include "xsimd/xsimd.hpp"
 
 #define HWY_COMPILE_ONLY_STATIC 1
 #define HYLE_HIGHWAY_MATH_SUFFIX parity
@@ -89,11 +93,122 @@ HWY_INLINE void peer_exp(const float* src, float* dst,
 }
 
 HWY_INLINE void candidate_gelu_tanh(const float* src, float* dst,
-                                    std::size_t n) noexcept {
+                                     std::size_t n) noexcept {
   hp::unary_loop<hp::UnaryDomain::kDirect>(
       src, dst, n,
       [](auto d, auto x) { return hp::activation_gelu_tanh(d, x); },
       [](float x) { return hp::activation_gelu_tanh_scalar(x); });
+}
+
+HWY_INLINE void candidate_tanh(const float* src, float* dst,
+                               std::size_t n) noexcept {
+  hp::unary_loop<hp::UnaryDomain::kDirect>(
+      src, dst, n, [](auto d, auto x) { return hn::Tanh(d, x); },
+      [](float x) { return std::tanh(x); });
+}
+
+HWY_INLINE void peer_tanh_xsimd(const float* src, float* dst,
+                                std::size_t n) noexcept {
+  using Batch = xsimd::batch<float>;
+  constexpr std::size_t width = Batch::size;
+  std::size_t i = 0;
+  for (; width <= n - i; i += width) {
+    xsimd::tanh(Batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  }
+  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+}
+
+HWY_INLINE void peer_gelu_tanh_xsimd(const float* src, float* dst,
+                                     std::size_t n) noexcept {
+  using Batch = xsimd::batch<float>;
+  constexpr std::size_t width = Batch::size;
+  const Batch zero(0.0f);
+  const Batch one(1.0f);
+  const Batch half(0.5f);
+  const Batch scale(0.79788456080286535588f);
+  const Batch cubic(0.044715f);
+  std::size_t i = 0;
+  for (; width <= n - i; i += width) {
+    const Batch x = Batch::load_unaligned(src + i);
+    const Batch inner = (scale * x) * xsimd::fma(cubic, x * x, one);
+    const Batch result = (half * x) * (one + xsimd::tanh(inner));
+    xsimd::select(xsimd::isinf(x) & (x < zero), zero, result)
+        .store_unaligned(dst + i);
+  }
+  for (; i < n; ++i) dst[i] = hp::activation_gelu_tanh_scalar(src[i]);
+}
+
+std::uint32_t ordered_f32_bits(float value) noexcept {
+  const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);
+  return (bits & 0x80000000U) != 0 ? ~bits + 1U
+                                   : bits | 0x80000000U;
+}
+
+std::uint32_t ulp_distance(float lhs, float rhs) noexcept {
+  const std::uint32_t a = ordered_f32_bits(lhs);
+  const std::uint32_t b = ordered_f32_bits(rhs);
+  return a >= b ? a - b : b - a;
+}
+
+bool equivalent_result(float got, float want) noexcept {
+  if (std::isnan(want)) return std::isnan(got);
+  if (std::isinf(want) || want == 0.0f) {
+    return got == want && std::signbit(got) == std::signbit(want);
+  }
+  return std::isfinite(got) &&
+         std::abs(got - want) <= std::abs(want) * 8e-7f + 1e-6f;
+}
+
+bool qualify_xsimd_tanh_salvage() {
+  constexpr std::size_t count = 65535;  // deliberately exercises a non-vector tail
+  std::vector<float> input(count), highway(count), xsimd(count), inplace(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    input[i] = 10.0f * std::sin(static_cast<float>(i) * 0.0137f);
+  }
+  input[0] = -std::numeric_limits<float>::infinity();
+  input[1] = -0.0f;
+  input[2] = 0.0f;
+  input[3] = std::numeric_limits<float>::infinity();
+  input[4] = std::numeric_limits<float>::quiet_NaN();
+
+  candidate_tanh(input.data(), highway.data(), count);
+  peer_tanh_xsimd(input.data(), xsimd.data(), count);
+  inplace = input;
+  peer_tanh_xsimd(inplace.data(), inplace.data(), count);
+  std::uint32_t highway_max_ulp = 0;
+  std::uint32_t xsimd_max_ulp = 0;
+  std::size_t mismatches = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    const float want = std::tanh(input[i]);
+    mismatches += !equivalent_result(highway[i], want);
+    mismatches += !equivalent_result(xsimd[i], want);
+    mismatches += !equivalent_result(inplace[i], want);
+    if (std::isfinite(want) && want != 0.0f) {
+      highway_max_ulp = std::max(highway_max_ulp,
+                                 ulp_distance(highway[i], want));
+      xsimd_max_ulp = std::max(xsimd_max_ulp,
+                               ulp_distance(xsimd[i], want));
+    }
+  }
+
+  candidate_gelu_tanh(input.data(), highway.data(), count);
+  peer_gelu_tanh_xsimd(input.data(), xsimd.data(), count);
+  inplace = input;
+  peer_gelu_tanh_xsimd(inplace.data(), inplace.data(), count);
+  std::size_t gelu_mismatches = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    const float want = hp::activation_gelu_tanh_scalar(input[i]);
+    gelu_mismatches += !equivalent_result(highway[i], want);
+    gelu_mismatches += !equivalent_result(xsimd[i], want);
+    gelu_mismatches += !equivalent_result(inplace[i], want);
+  }
+  std::printf(
+      "# HYLE_TANH_SALVAGE accuracy highway_max_ulp=%u "
+      "xsimd_max_ulp=%u tanh_mismatch=%zu gelu_mismatch=%zu "
+      "highway_lanes=%zu xsimd_lanes=%zu\n",
+      highway_max_ulp, xsimd_max_ulp, mismatches, gelu_mismatches,
+      hn::Lanes(hn::ScalableTag<float>()), xsimd::batch<float>::size);
+  return mismatches == 0 && gelu_mismatches == 0;
 }
 
 HWY_INLINE void peer_gelu_tanh(const float* src, float* dst,
@@ -276,6 +391,12 @@ void run_size(std::size_t n) {
              [&] { peer_add(input.data(), other.data(), output.data(), n); },
              [&] { peer_add(input.data(), other.data(), output.data(), n); });
   }
+  run_pair("salvage tanh f32 xsimd" + suffix, n,
+           [&] { candidate_tanh(input.data(), output.data(), n); },
+           [&] { peer_tanh_xsimd(input.data(), output.data(), n); });
+  run_pair("salvage tanh-gelu f32 xsimd" + suffix, n,
+           [&] { candidate_gelu_tanh(input.data(), output.data(), n); },
+           [&] { peer_gelu_tanh_xsimd(input.data(), output.data(), n); });
   run_pair("activation exp f32" + suffix, n,
            [&] { candidate_exp(input.data(), output.data(), n); },
            [&] { peer_exp(input.data(), output.data(), n); });
@@ -300,7 +421,7 @@ void run_size(std::size_t n) {
                     hs::gelu_tanh_f32_batch(input.data(), output.data(), n);
                   },
                   [&] {
-                    hs::detail::gelu_tanh_f32_hyle_parity(
+                    hs::detail::gelu_tanh_f32_route_parity(
                         input.data(), output.data(), n);
                   });
   run_public_info("public/body SiLU" + suffix, n,
@@ -321,8 +442,12 @@ void run_size(std::size_t n) {
 
 int main() {
   hyle_bench::pin_and_boost();
+  if (!qualify_xsimd_tanh_salvage()) {
+    std::fprintf(stderr, "xsimd tanh salvage accuracy qualification failed\n");
+    return 2;
+  }
   std::printf(
-      "SIMD-08 activation parity: shipping target helper vs direct Highway\n");
+      "SIMD-08 activation parity plus SIMD-12 xsimd tanh salvage\n");
   run_size(kResidentCount);
   run_size(kStreamingCount);
 }

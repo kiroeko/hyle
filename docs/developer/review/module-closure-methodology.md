@@ -147,6 +147,44 @@ verification | negative space
 `PARTIAL/MISSING` 的明确去向。发现相邻模块问题时登记任务；只有 correctness/security 或当前构建
 阻断允许越界修复。
 
+### 3.1 Owner 逐模块六问
+
+每个模块在 `AUDITED` 和终止时都必须给 owner 留下一份直答，不得只给聚合绿色状态：
+
+1. **第三方：**产品路径是否直接或经组件闭包间接使用第三方实现？逐项列出锁定身份、直接/间接、
+   `product/test/benchmark/peer` 类别，以及 semantic、mechanism/artifact、decision 和 delivery owner。
+   标准库、compiler builtin 与 OS API 不冒充第三方模块，但仍记录其平台合同。vendored、ported 或
+   integrated source 仍算第三方实现，不能因复制进仓库而记作 HYLE 自实现。
+2. **功能：**对于已声明的量化推理引擎旅程，并以 ggml 等具名 consumer/peer 作差异输入，所有准入
+   能力是否为 `COMPLETE` 或完整 `ROUTED`？每个差异必须落到本模块、具名相邻模块、推理引擎策略或
+   `MISSING/BLOCKED`，不能以 API 数量对齐代替 owner 裁决。“没有可再加的”只允许解释为当前证据下
+   没有未处置的 `MUST`；不承诺未来不存在新能力，也不要求复制 ggml 的 tensor/backend/模型策略。
+3. **性能：**该模块的正常用户任务属于哪一级，是否在冻结 candidate、相同语义/资源计费和真实交付
+   形状下得到有效 verdict？`P0` 必须直答“timing peer comparison `NOT_APPLICABLE`，结构成本
+   `PASS/FAIL`”，不得改写成“平或更快/SOTA”；`P1/P2` 只有在合格仪器、拟真 consumer/replay、同合同
+   strong peer（若存在）和预声明 margin 下才能回答 non-inferior 或 better。没有同合同 peer 时只能
+   回答 consumer budget，不得产生 SOTA 声明。
+4. **旧 C ABI / Native FFI：**当前全局策略为 `N/A` 时，确认产品树没有公开 C schema/header、bridge
+   source、未装饰 C export、C/managed sample、专用 option/target/package metadata 或只为 FFI 支付的
+   layout/indirection。内部 OS/第三方/汇编边界的 C 或 `extern "C"` 必须标为 private，不能仅凭存在就
+   判成产品 FFI；shared library 导出的 C++ decorated symbols 也不是 C ABI。若未来某个窄 FFI slice
+   已通过准入，则改为验证其具名语言 journey、符号白名单、ownership/version/unload，而不是要求清空。
+5. **构建与导入：**真实验证组件根的 source embedding、installed static 和 installed shared consumer；
+   核对中央组件闭包、selected headers、static compile definitions、shared export/import、Windows runtime
+   staging 或 Unix loader-relative lookup、relocation 和 exact package discovery。header-only 或平台上
+   确实无该 artifact 时写 `NOT_APPLICABLE`，不能制造虚构 binary，也不能把 producer build 成功当作
+   consumer 导入成功。
+6. **C++ API 与文档：**从正常用户任务而不是 symbol 清单验证构造、操作、组合、失败、ownership、
+   lifetime、concurrency 和 teardown 是否自然；合理默认值与 opt-in 成本是否清楚，编译错误和类型
+   形状是否不会迫使用户接触 internal/benchmark seam。architecture 只解释长期边界和决策，user guide
+   必须按“什么情况选什么”给出可复制 journey 与陷阱，implementation/performance 只保存事实和证据；
+   当前 user 文档不得宣传历史 API、已删除 C ABI 或尚未准入的能力。
+
+六问分别裁决依赖风险、能力完整性、性能证据、遗留产品面、交付闭包与实际使用质量，不能互相代替。
+依赖为零不证明功能完整；功能路线完整不证明性能；shared library 可运行不证明存在或需要 C ABI；
+producer build 成功不证明安装后的 consumer 能导入；API 能编译不证明用户能自然发现和正确使用；
+`CLOSED` 也不把 `P0` 变成计时冠军。owner 可以据此逐模块亲自签署，而不必从 task 全文猜测结论。
+
 ## 4. 类型、实现与 correctness 门
 
 每个保留形状回答 ownership、borrow invalidation、move/destroy、并发/进展、容量/OOM、取消/关闭、
@@ -200,8 +238,14 @@ workload。registry 中每个 instrument ID 必须在 `scripts/perf-machines.jso
 - 普通约千行及以下的 P0/P1 模块，默认审查与取证预算不超过两小时；计划实现超过一个工作日时先
   拆成可独立验证的 defect/demand。
 - P1 异常最多允许：一次复现/反序、一次 codegen/profile 机制检查、一个产品修改与一次重跑。
-- 同一轮不得发明第五种 benchmark 姿势。中央仪器失败时记录 instrument issue；模块按硬门进入
-  `BLOCKED`，不在模块任务内扩建统计平台。
+- 同一轮不得发明第五种 benchmark 姿势。活动收口轮需要的中央仪器无法给出 verdict 时，记录独立
+  instrument issue，并让该轮按硬门进入 `BLOCKED`；不得在模块任务内扩建统计平台。回放一个已经
+  `CLOSED` 的模块时，后来发生的仪器实现或兼容策略漂移只产生 `METHOD_GAP`，产品状态保持不变；
+  只有新的产品事实满足 reopen trigger，或 owner 明确要求用当前身份续签声明，才进入重开/阻塞流程。
+- 历史 engineering evidence 的 consumer provenance 整文件 hash 漂移时，先比较冻结 workload 的
+  ownership、charged phases、material contribution、算法和 delivery。全部不变才可由独立 instrument
+  task 登记精确旧 hash→新 hash 的 `NON_MATERIAL` renewal；未知变化继续 `METHOD_GAP`，material 变化
+  使用新 contract/qualification。Formal 不继承这种 renewal，旧 manifest 永远不改写。
 - 红队 P0/P1 默认 30 分钟，只攻击已冻结的能力、合同、correctness、依赖和工程性能门。新发现的
   通用仪器增强进入下一版工具；除非已证明当前 material verdict 无效，不追溯移动本轮终点。
 
@@ -292,6 +336,11 @@ LOC 只用于规模与过程复盘，不是完成度、优先级或重开依据�
 - 直接依赖、compiler、平台、ISA/backend 改变实际语义、算法或 codegen；
 - 公开 API、组件依赖或交付形状改变；
 - 强 peer 证明更好的复杂度档或可复现 material consumer advantage。
+
+第三方版本、vendored/ported 内容或 adapter 改变时，先比较锁定身份与实际产品输入。若变化会影响
+源码、语义、算法、默认策略、ABI/codegen、运行时 decision authority、许可证或交付，即形成受影响
+能力族的定向重开输入，并回放直接消费者；旧性能证据不得跨产品依赖 identity 自动继承。只有下载
+位置或等价元数据变化、且机器合同证明产品输入完全相同时，才可只走 build/package 维护任务。
 
 新 benchmark、新 peer 发布但没有 material 证据、LOC/API 数、命名偏好、单次点值、地址翻转、
 亚纳秒差异或 Formal 证书单独过期都不重开产品。

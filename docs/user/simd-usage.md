@@ -1,11 +1,16 @@
 # SIMD 使用指南
 
-> **`provisional / NOT_REVIEWED_V2`。** SIMD 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
+> SIMD 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
 > headers + shared libraries 使用。`hyle/simd/*.h` 中的 whole-buffer 算法供普通 C++ 用户
-> 使用；源码嵌入的固定目标 expert TU 直接使用项目锁定的 Highway。旧 `vec.h`/`native/*`
-> 只是内部 family 迁移脚手架，不再是新用户接口。预编译交付遵守其明确的 C++ 工具链合同，
+> 使用；源码嵌入的固定目标 expert TU 可直接使用项目锁定的 Highway 或 xsimd。旧
+> `vec.h`/`native/*`/`backend/*` 已删除；`target.h`、`fat_kernel.h` 和 `provider/*`
+> 只随完整源码的 expert CMake seam 使用。预编译交付遵守其明确的 C++ 工具链合同，
 > 本页适用于 C++23 source/static/shared 三种交付，不承诺任意编译器之间的 C++ ABI，
 > 也不描述 C API 或跨语言调用层。
+>
+> 内部 route ledger 已对冻结的 387 个旧 operation 全部终态裁决。Highway 是同合同默认实现；xsimd/HYLE
+> 只保留精确、具证据的 type × target × compiler 例外。source expert 可以取得两个锁定 vendor、失败关闭的
+> route contract 和有限 HYLE winner body；这些 source-only 机制不是 installed SDK 的公共 API。
 
 HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制一套平行 Highway DSL。应用通常只应
 调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
@@ -15,12 +20,11 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
 
 | 需求 | 应选层 | 是否运行时选 ISA | 稳定性 |
 |---|---|---:|---|
-| C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 是，每个模块缓存选择结果 | 同受支持工具链的 C++ source contract |
-| C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 是 | 原生 source API，不承诺跨工具链 ABI |
-| 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
-| 源码嵌入时自己写一个固定 ISA 的 kernel TU | `hyle_target_simd(...)` + `<hwy/highway.h>` | 否 | source-only expert surface；vendor 类型不得跨 TU |
-| 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + direct Highway impl header | 是，只在整批入口选择并缓存一次 | source-only expert surface；vendor 类型不得跨 TU |
-| 维护现有 HYLE 内部 family | `vec.h` / `native/*` | 否 | migration-only legacy；禁止新用户依赖 |
+| C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 进程内解析一次；每个整批调用一次间接调用 | 同受支持工具链的 C++ source contract |
+| C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 同上 | 原生 source API，不承诺跨工具链 ABI |
+| 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 无；宏生成并直接绑定目标 symbol | 构建配置 |
+| 源码嵌入时自己写一个固定 ISA 的 kernel TU | `hyle_target_simd(...)` + direct Highway/xsimd body | 无；宏/模板单态化并可内联 | source-only expert surface；vendor 类型不得跨 TU |
+| 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + provider-coherent impl header | 进程内解析一次；每个整批调用一次间接调用 | source-only expert surface；vendor 类型不得跨 TU |
 
 ```text
                               C++ 普通应用
@@ -36,11 +40,14 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
               \                                       /
                +------- HYLE pointer/count kernel -----+
                                   |
-                 locked Highway / minimal HYLE gap
+          locked Highway / xsimd / qualified HYLE body
 ```
 
-运行时选择不是每个元素做 CPUID，也不是在循环里反复判断 ISA。平台能力只探测一次；whole-buffer 调用
-经缓存的函数入口进入一个 kernel。调用很小的数据时，函数边界本身仍可能比计算贵，因此应尽量批量调用。
+运行时选择不是每个元素做 CPUID，也不是在循环里反复判断 ISA。平台能力只探测一次；之后**每次调用**
+whole-buffer API 都经一个已缓存的函数入口进入 kernel。这里不是“同一 buffer 对象一生只路由一次”——
+pointer/count API 不给用户内存增加路由 metadata。调用很小的数据时，函数边界本身仍可能比计算贵，
+因此应批量调用；部署 ISA 已知或必须融合 tiny kernel 时，改用下文 fixed/exact 源码路径，其宏和模板会
+直接绑定目标实现，运行时函数指针成本为零。
 
 若只为日志或部署诊断查看 HYLE 实际选中的 tier，而不是原始 CPU 能力：
 
@@ -72,6 +79,7 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
 | `bitpack.h` | canonical-v1 `pack`、`unpack`、`packed_size` | 模型载荷、文件或网络 framing 内的定宽整数 payload |
 | `<hwy/highway.h>`（源码嵌入 + `hyle_target_simd`） | 锁定版本的 register/tag/load/store/arithmetic/reduction 等 | 自定义固定目标 kernel；source-only expert surface |
+| `<xsimd/xsimd.hpp>`（源码嵌入 + `hyle_target_simd`） | 锁定版本的 batch、mask、数学与 load/store | 自定义固定目标 kernel；source-only expert surface |
 
 ### 数学接口分组
 
@@ -310,14 +318,15 @@ cmake -S . -B build-avx2 -DHYLE_SIMD_EXACT_TARGET=AVX2
 AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 
 只想固定自己的一两个 kernel TU 时，在**源码嵌入**构建中使用 `hyle_target_simd`，为该 TU 设置目标
-ISA。该 helper 提供中央锁定 Highway 的 include path、单目标宏和编译器 flags；安装后的 static/shared
+ISA。该 helper 提供中央锁定 Highway/xsimd 的 include path、失败关闭的 HYLE route contract、单目标宏
+和统一编译器 flags；安装后的 static/shared
 SDK 不交付第三方 register headers，仍使用 HYLE whole-buffer API。
 
 ```cmake
 hyle_target_simd(TARGET my_kernel ISA AVX2)
 ```
 
-kernel 内直接使用 Highway，而不是再经一套 HYLE 寄存器转发层：
+kernel 内可以显式使用 Highway（xsimd 同理），而不是再经一套 HYLE 寄存器转发层：
 
 ```cpp
 #include "hwy/highway.h"
@@ -352,10 +361,13 @@ hyle_add_fat_kernel(
 ```
 
 baseline 调用点用 `HYLE_SIMD_SELECT_FAT_KERNEL(...)` 选择并缓存入口。不要直接手写 CPUID，也不要让
-vector/mask 出现在 entry 签名中。impl header 直接包含 `hwy/highway.h`，以模板/tag 写唯一 body；生成
-TU 会冻结 vendor target 并在编译期验证实际 `HWY_STATIC_TARGET`。这个选择宏在默认 fat 构建中走一次平台探测，在
-`HYLE_SIMD_EXACT_TARGET` 构建中只引用唯一生成的 exact symbol；在 macOS ARM64 上也不会引用未生成的
-SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
+vector/mask 出现在 entry 签名中。impl header 可以显式固定一个 vendor，也可以让已资格化的 HYLE route
+选择一套完整 provider body；不能在 element loop 中来回桥接两家 register 类型。生成 TU 会冻结 target，
+Highway body 还会在编译期验证实际 `HWY_STATIC_TARGET`。这个选择宏在默认 fat 构建中首次使用时
+解析平台事实并缓存函数指针，之后每个整批调用只有一次间接函数调用；它不会每个 buffer 重新探测 CPU。
+在 `HYLE_SIMD_EXACT_TARGET` 构建中则只引用唯一生成的 exact symbol，运行时没有 selector 或函数指针；
+在 macOS ARM64 上也不会引用未生成的 SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，
+CMake 会在配置期检查。
 
 不要为寄存器操作增加运行时 callback：逐 lane function pointer 会阻断内联和向量化。fixed source
 由宏 + 模板单态化直接内联；source-fat 仅在 whole-kernel pointer/count 边界有一次可预测间接调用，

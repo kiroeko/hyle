@@ -1,0 +1,53 @@
+{
+  "schema": "hyle.simd.unqualified-parity-report/v1",
+  "verdict": "INCONCLUSIVE",
+  "route_authority": "NONE",
+  "machine_profile": "M1-MAC",
+  "target": "NEON",
+  "compiler": "AppleClang-21.0.0.21000050",
+  "peer": "HIGHWAY",
+  "peer_revision": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "finite_batch": {
+    "hyle_first_runs": 2,
+    "highway_first_runs": 2,
+    "report_practical_band_pct": 3,
+    "route_material_margin_pct": 5,
+    "certification": "PASS",
+    "calibration": "FAIL",
+    "failed_anchor": {
+      "title": "ShiftLeft<3> i32",
+      "paired_ratio": 0.940,
+      "allowed_interval": [0.96, 1.04]
+    },
+    "suppressed_rows": 210
+  },
+  "policy_disposition": "The frozen full batch is retained as an unqualified fact. It authorizes no HYLE or xsimd exception and is not rerun; same-contract rows fall back to the Highway maintenance default.",
+  "report": {
+    "name": "full-neon-certified.tsv",
+    "sha256": "7540b86138e2091e36897fa9bfaf524910363ddfd166640436b822d7c338f309"
+  },
+  "raw_inputs": [
+    {
+      "name": "full-hyle-first-1.txt",
+      "sha256": "f15df03c912d7149967901c946da7075d2fde69565beb687530b178bc6293647"
+    },
+    {
+      "name": "full-hwy-first-1.txt",
+      "sha256": "05d276a94f7be72885fb4dc259267f576127ced47eef9259217ed1a8ef5ab156"
+    },
+    {
+      "name": "full-hyle-first-2.txt",
+      "sha256": "cc8bd52e86833579dd49c2658624cfeda390941a5c937e2d63c104052163c1eb"
+    },
+    {
+      "name": "full-hwy-first-2.txt",
+      "sha256": "ac6459706f294e9c744a6b3d4cc8348a97082751a5955654938c11f897b4fb7f"
+    }
+  ],
+  "instrument": {
+    "engine_sha256": "f3dac7163c83706a8aaa95885b0a45c851c628b8346edf974ebe9728adb670a6",
+    "reporter_sha256": "50001fbea285fa23dfa85d15ea6d75e2d70bba608d2846e07b8199d65bb2b62b"
+  }
+}

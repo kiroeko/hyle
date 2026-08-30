@@ -42,6 +42,58 @@ report so the certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
 
+## `simd-op-coverage.py` — frozen SIMD operation and route ledger
+
+SIMD v3 freezes the complete legacy operation surface before any backend deletion. The generated
+`simd-op-routing.json` records all 387 operation names and all 1,797 baseline definition sites, then
+keeps mutable provider/evidence decisions beside that immutable inventory:
+
+```bash
+python scripts/simd-op-coverage.py \
+  --check-provider-manifest --check-ledger \
+  --require-route-decisions --check-provider-routes
+```
+
+This terminal command rejects missing/extra operations, edited baseline sites, broken aliases,
+malformed route scopes, unknown route references, generated-manifest drift and any non-terminal
+provider assessment or route. The frozen result is 387 operation rows and 422 finite route scopes.
+The old `--check`, `--reports`, provider-discovery and inventory-refresh modes read the physically
+retired register/backend sources; after SIMD-16 they fail explicitly and are historical audit tools,
+not current product validation. Rebuilding the immutable inventory requires a new scoped baseline and
+is a rescope operation, not a normal vendor upgrade or benchmark update.
+
+The baseline parser was corrected once after its original regex missed return types containing
+parenthesized template expressions. The 1,774 → 1,797 correction and exact 23-site delta remain in
+`evidence/simd-15-inventory-parser-erratum.json`; they are frozen history, not permission to recreate
+the deleted stack.
+
+`simd-route-qualification.py` consumed certified parity TSVs during route qualification and emits a hash-bound,
+per-operation receipt. It neither times code nor chooses a route. Informational rows may prove that an
+operation was exercised, but never become a peer winner. Use one receipt per peer/machine/target/compiler
+slice and reference it from the corresponding ledger scopes. The receipt binds the immutable baseline
+commit and 387-operation inventory digest, report/raw hashes and instrument hashes; it deliberately does
+not bind the whole mutable route-ledger file, so a later independent route decision cannot invalidate
+earlier measurements. xsimd raw inputs must each carry exactly one
+`# HYLE_OP_PEER peer=XSIMD revision=<locked-commit>` marker; the receipt verifies and preserves it so
+the parity engine's historical `HWY` side label cannot misidentify the measured provider. UTF-8 and
+Windows PowerShell UTF-16/CRLF output are both accepted. Receipts distinguish the reporter's 3%
+practical band (whether the instrument resolved a difference) from SIMD's frozen 5% route material
+margin (whether a resolved difference may change product ownership); a 3–5% `WIN`/`LOSE` is evidence,
+not route authority.
+
+A reviewed qualification receipt may replace one route under an explicitly reopened qualification task with finite
+`type × target/compiler` scopes before applying their decisions. The ledger tool accepts that split only
+when every new site/target is a subset of the source scope and the union preserves every frozen legacy
+site; overlap is allowed for an exact exception plus its explicitly stated remainder. Terminal routes,
+operation names and the frozen baseline/site inventory cannot be rewritten by this mechanism.
+
+`simd-provider-codegen-audit.py` disassembles the optimized SIMD-14 probe object and compares direct
+versus compile-time-routed HYLE/Highway/xsimd bodies for arithmetic, load/store, mask, math and fused
+rows. It is a zero-overhead mechanism gate, not a provider ranking benchmark; any extra effective
+instruction, call, stack reference, outlined route symbol or missing pair fails. Explicit architectural
+NOP encodings inserted solely for function/loop alignment are excluded and counted in the receipt;
+ordinary moves, branches, memory operations and arithmetic remain in the exact comparison.
+
 ## `check-docs.py` — documentation contract
 
 Runs without third-party packages. It enforces the root agent entry and four
@@ -372,8 +424,8 @@ QEMU scripts below remain ISA-specific product tests rather than substitutes for
 Every `HYLE_BUILD_BENCH=ON` configuration needs external, exact-revision
 `highway/` and `xsimd/` checkouts. SIMD scaling/parity harnesses compile those
 headers even when their optional comparison rows are off. These peer checkouts
-are distinct from the centrally locked Highway product source used by private
-SIMD target TUs; public HYLE headers expose neither Highway nor xsimd types.
+are distinct from the centrally locked Highway and xsimd product sources used
+by private SIMD target TUs; public HYLE headers expose neither vendor's types.
 
 ```sh
 # Windows Git Bash: default C:/public/project-hyle
@@ -401,10 +453,10 @@ explicit path.
 ## `check-no-vendor.sh` — SIMD vendor-boundary gate
 
 The historical filename is retained, but the current contract is not “never use
-a vendor”. It fails if public headers expose vendor includes, xsimd enters
-product sources, locked Highway includes escape the explicit private adapter
-allowlist, `third_party/{highway,xsimd}` reappears, or CMake points at those
-in-tree paths. Run after any SIMD vendor-boundary change:
+a vendor”. It fails if installed public headers expose vendor includes,
+Highway/xsimd escape explicit target-bound implementation bodies,
+`third_party/{highway,xsimd}` reappears, or CMake points at those in-tree paths.
+Run after any SIMD vendor-boundary change:
 
 ```sh
 scripts/check-no-vendor.sh

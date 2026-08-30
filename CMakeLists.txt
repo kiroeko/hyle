@@ -318,9 +318,27 @@ if(HYLE_BUILD_IO)
   include(HyleIoDependencies)
   hyle_configure_io_dependencies()
 endif()
-if(HYLE_BUILD_SIMD)
+if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
   include(HyleSimdDependencies)
-  hyle_configure_simd_dependencies()
+  if(HYLE_BUILD_SIMD)
+    hyle_configure_simd_provider_dependencies()
+  else()
+    hyle_configure_highway_dependency()
+  endif()
+  hyle_register_package_dependency(
+    NAME foundation_highway
+    OWNER foundation
+    LOCKED_DEPENDENCIES highway
+    RUNTIME_FILE_SPECS
+      "${HYLE_HIGHWAY_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-upstream-LICENSE")
+  if(HYLE_BUILD_SIMD)
+    hyle_register_package_dependency(
+      NAME simd_xsimd
+      OWNER simd
+      LOCKED_DEPENDENCIES xsimd
+      RUNTIME_FILE_SPECS
+        "${HYLE_XSIMD_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xsimd-upstream-LICENSE")
+  endif()
 endif()
 if(HYLE_BUILD_COMPUTE)
   include(HyleComputeDependencies)

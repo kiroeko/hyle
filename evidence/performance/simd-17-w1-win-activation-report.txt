@@ -1,0 +1,21 @@
+# LOSE: 4/5
+# INCONCLUSIVE: 1/5
+== calibration anchors (true ratio 1.00 by construction) ==
+  Add f32 (4096)           paired=1.030 best=1.015 med=1.033 maxspread=1.234 (4 runs) ok
+CALIBRATION PASS
+run set: HYLE_FIRST=2, HWY_FIRST=2, metadata=ok, layout=ok, inputs=distinct
+execution audit: priority=ok, pin=ok, pinned_cpu=consistent(2), core_class=consistent(1)
+CERTIFICATION PASS
+
+op	ratio_paired	ci95_lo	ci95_hi	ratio_med	spreadH	spreadG	place_u	verdict
+salvage tanh f32 xsimd (4096)	0.702	0.648	0.775	0.703	1.034	1.041	0.030	LOSE
+salvage tanh f32 xsimd (1048576)	0.714	0.664	0.798	0.715	1.041	1.065	0.032	LOSE
+salvage tanh-gelu f32 xsimd (4096)	0.751	0.694	0.835	0.752	1.015	1.044	0.030	LOSE
+salvage tanh-gelu f32 xsimd (1048576)	0.759	0.714	0.850	0.758	1.053	1.028	0.030	LOSE
+Add f32 (4096)	1.000	0.933	1.078	0.999	1.234	1.223	0.117	INCONCLUSIVE
+
+# informational replicated pairs (A/B; no Highway verdict)
+# op	ratio_A_over_B	ci95_lo	ci95_hi	orders_H/G	samples
+# public/body tanh-gelu (1048576)	0.969	0.896	1.088	0.907/1.057	16	INFO
+# public/body tanh-gelu (4096)	0.974	0.887	1.079	0.895/1.058	16	INFO
+

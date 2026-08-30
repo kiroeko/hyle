@@ -146,7 +146,6 @@ bool have_rvv_math() noexcept {
 #define HYLE_DEFINE_PUBLIC_UNARY_SET(type, tag) \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp)        \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, log)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, tanh)       \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, sin)        \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, cos)        \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp2)       \
@@ -170,6 +169,14 @@ bool have_rvv_math() noexcept {
 
 HYLE_DEFINE_PUBLIC_UNARY_SET(float, f32)
 HYLE_DEFINE_PUBLIC_UNARY_SET(double, f64)
+
+void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
+  HYLE_DISPATCH(tanh, f32, route, src, dst, n);
+}
+
+void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+  HYLE_DISPATCH(tanh, f64, highway, src, dst, n);
+}
 #undef HYLE_DEFINE_PUBLIC_UNARY_SET
 #undef HYLE_DEFINE_PUBLIC_UNARY
 
@@ -261,12 +268,16 @@ HYLE_DEFINE_SCALAR_BINARY(double, f64, nextafter)
     HYLE_DISPATCH(name, f32, hyle, src, dst, n);                            \
   }
 HYLE_DEFINE_PUBLIC_ACTIVATION(gelu)
-HYLE_DEFINE_PUBLIC_ACTIVATION(gelu_tanh)
 HYLE_DEFINE_PUBLIC_ACTIVATION(sigmoid)
 HYLE_DEFINE_PUBLIC_ACTIVATION(silu)
 HYLE_DEFINE_PUBLIC_ACTIVATION(relu)
 HYLE_DEFINE_PUBLIC_ACTIVATION(hard_sigmoid)
 HYLE_DEFINE_PUBLIC_ACTIVATION(hard_swish)
+
+void gelu_tanh_f32_batch(const float* src, float* dst,
+                         std::size_t n) noexcept {
+  HYLE_DISPATCH(gelu_tanh, f32, route, src, dst, n);
+}
 #undef HYLE_DEFINE_PUBLIC_ACTIVATION
 
 void leaky_relu_f32_batch(const float* src, float negative_slope, float* dst,

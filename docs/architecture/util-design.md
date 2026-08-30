@@ -1,7 +1,7 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-08-28）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
-> runtime 的 Registry v1 结论经回放保持成立，demangle owning-text 易用性切片已进入 v2。施工/签证
+> **当前边界（2026-08-29）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
+> runtime 的 Registry v1 结论经回放保持成立，demangle owning-text 易用性切片 v2 已 `CLOSED`。施工/签证
 > 状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
@@ -14,20 +14,20 @@
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
 
 ```text
-P0 hyle::util_core（INTERFACE，无 binary artifact）
+foundation：hyle::util_core（INTERFACE，无 binary artifact）
    ScopeGuard / Ref / Rng / type_name / SpinLock / cpu_relax
                     │
                     ├──► mem / sched / graph
                     └──► C++ 用户
 
-P4 hyle::util（hyle_util binary；严格收口波次 R2）
+runtime：hyle::util（hyle_util binary；严格收口波次 R2）
    demangle / Registry
                     │
                     └──► core + error + mem + container
 ```
 
 Registry 是模板头，但公开形状直接使用 container 的 `string_ref/SwissTable`，并借 mem allocator/
-Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖 `hyle_util`，从而没有
+Region；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util`，从而没有
 `container ↔ util` binary 环。demangle 只有 buffer entry 和服务 header-inline owning convenience 的
 internal sink 两个冷路径动态符号，本身不依赖 container；为它新增 binary component 会增加发布和
 消费选择而没有形成独立能力族，因此与 runtime 共用 target。

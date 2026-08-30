@@ -33,8 +33,15 @@
   通常是编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
 - `hyle_simd_source_expert` 是仅在源码构建树存在的 `INTERFACE` seam：
-  `hyle_target_simd()` 通过它向一个固定目标 consumer TU 提供中央锁定 Highway 头。它不是产品组件、
-  不导出到 installed static/shared SDK，也不建立 vendor register ABI。
+  `hyle_target_simd()` 通过它向一个固定目标 consumer TU 提供中央锁定 Highway/xsimd 头、HYLE
+  编译期 route manifest 和一致的 ISA flags。它不是产品组件、不导出到 installed static/shared SDK，
+  也不建立 vendor register ABI。
+- `hyle_highway_headers` 是由中央 lock 建立的 build-only 外部实现 target。SIMD 和 Container 的 target-bound
+  TU 可以直接链接它；它只投影受锁 include/define，不是 HYLE 产品组件，也不制造 `container -> simd`
+  内部依赖。
+- `hyle_xsimd_headers` 与 `hyle_simd_provider_headers` 同样只存在于源码构建树；前者投影锁定 xsimd，后者
+  组合两个候选给 SIMD target-bound TU。它们不进入 installed export，xsimd 也不因共享中央 lock 形成新的
+  HYLE 组件边。
 - 横切 target 也必须遵守真实消费边：模块只有在源码或公开头读取 trace/testing gate 时才传播
   对应 target，并通过 `TRACE`/`TESTING` 显式 opt-in；配置会把声明与当前 selected sources/公开头
   反向对账。纯编译/布局地基 `core` 不声明这两个 gate，不能因全局开关无故携带 profiler runtime
@@ -80,7 +87,7 @@ time        -> PUBLIC core container_intrusive
 platform    -> PUBLIC core error time
 mem         -> PUBLIC core error platform util_core
 simd        -> PUBLIC core platform
-container   -> PUBLIC core mem; PRIVATE platform; BUILD_PRIVATE simd_vec_headers
+container   -> PUBLIC core mem; PRIVATE platform
 util        -> PUBLIC core error mem container
 sched       -> PUBLIC core error platform mem container util_core; PRIVATE time
 io          -> PUBLIC core error mem container time sched
@@ -89,9 +96,11 @@ graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
 
 `PUBLIC` 表示消费者编译或链接本模块时也需要该产品依赖；`PRIVATE` 表示只服务本模块实现。
-`BUILD_PRIVATE` 是有真实 `$<BUILD_INTERFACE:...>` target 边、但不扩大安装闭包的内部 header seam；
-当前 container 的 per-ISA TU 只借 `simd_vec_headers`，不会因此构建/交付完整 simd runtime。这里记录的
-都是实际 target/link 契约。`container_intrusive` 证明 header-only 能力也应在公开类型穿过模块边界
+`BUILD_PRIVATE` 保留给确有真实 `$<BUILD_INTERFACE:...>` target 边、但不扩大安装闭包的 HYLE 内部
+header seam，不能用来伪装外部依赖或隐藏产品组件调用。当前 Container 的字符串/bitset target TU
+直接链接 build-only `hyle_highway_headers`，所以中央内部图没有 `container -> simd` 或其他虚构
+内部 header 边；来源与许可证由下节的外部依赖登记投影。这里记录的都是实际 target/link 契约。
+`container_intrusive` 证明 header-only 能力也应在公开类型穿过模块边界
 时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
 `container` 不聚合这项独立能力。`platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform -> PUBLIC time` 是真实 SDK 边；sched 的 waiter 链因 detached wake-link 复用而保留私有特化，

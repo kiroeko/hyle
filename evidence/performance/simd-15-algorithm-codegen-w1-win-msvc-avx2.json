@@ -1,0 +1,208 @@
+{
+  "architecture": "AMD64",
+  "disassembler": "dumpbin",
+  "object": "C:\\public\\project-hyle\\hyle\\build-windows-ninja\\tests\\simd\\CMakeFiles\\hyle_simd_provider_codegen_probe.dir\\provider_codegen_probe.cc.obj",
+  "object_sha256": "67e106e9009b00909da730269296ea86d130ffeeea9611f49a6a49f035c81fd9",
+  "pair_count": 15,
+  "pairs": [
+    {
+      "instruction_count": 126,
+      "instruction_shape_sha256": "4d4a0a500877929a9d4462af4bb72c74143fdd279df4ddae70c84d5f6ed61182",
+      "kernel": "add",
+      "provider": "hyle",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 71,
+      "instruction_shape_sha256": "87995fbf67269dc08607ff4834ddf62901996ef6404a5dad818366fbb0401ed3",
+      "kernel": "copy",
+      "provider": "hyle",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 90,
+      "instruction_shape_sha256": "51a84db50a222c7a5a2a1f0752b817753c9a4ac069defb1eb0fbed157bba3b5f",
+      "kernel": "relu",
+      "provider": "hyle",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 24,
+      "instruction_shape_sha256": "6123e0abb26f472f98b14bac866612f4a81df8a29515214182500de2c7a096d6",
+      "kernel": "tanh",
+      "provider": "hyle",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 117,
+      "instruction_shape_sha256": "36f7de8f6886d15c59847f00a6f5cb094ce4b38577e35069e4edb90a2b3ce541",
+      "kernel": "fused",
+      "provider": "hyle",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 126,
+      "instruction_shape_sha256": "4d4a0a500877929a9d4462af4bb72c74143fdd279df4ddae70c84d5f6ed61182",
+      "kernel": "add",
+      "provider": "highway",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 71,
+      "instruction_shape_sha256": "87995fbf67269dc08607ff4834ddf62901996ef6404a5dad818366fbb0401ed3",
+      "kernel": "copy",
+      "provider": "highway",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 90,
+      "instruction_shape_sha256": "51a84db50a222c7a5a2a1f0752b817753c9a4ac069defb1eb0fbed157bba3b5f",
+      "kernel": "relu",
+      "provider": "highway",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 114,
+      "instruction_shape_sha256": "9f9e98f685715b2912ad5217a9eedd5036a0b7ef74275756ad6a531d29d73340",
+      "kernel": "tanh",
+      "provider": "highway",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 117,
+      "instruction_shape_sha256": "36f7de8f6886d15c59847f00a6f5cb094ce4b38577e35069e4edb90a2b3ce541",
+      "kernel": "fused",
+      "provider": "highway",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 126,
+      "instruction_shape_sha256": "4d4a0a500877929a9d4462af4bb72c74143fdd279df4ddae70c84d5f6ed61182",
+      "kernel": "add",
+      "provider": "xsimd",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 71,
+      "instruction_shape_sha256": "87995fbf67269dc08607ff4834ddf62901996ef6404a5dad818366fbb0401ed3",
+      "kernel": "copy",
+      "provider": "xsimd",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 90,
+      "instruction_shape_sha256": "5d47f350081eb131202c89fe00fd75d27b1965b6376a186fc0da847a5f8ad792",
+      "kernel": "relu",
+      "provider": "xsimd",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 121,
+      "instruction_shape_sha256": "162ac77dc73a70ff745796c80ff9f261cdd305ffa4f08e26092ac56569955dbd",
+      "kernel": "tanh",
+      "provider": "xsimd",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    },
+    {
+      "instruction_count": 117,
+      "instruction_shape_sha256": "324ff76aa736be78f91c64d302e8c949f7b2e1bc35bbcf7567c7269f083065a8",
+      "kernel": "fused",
+      "provider": "xsimd",
+      "route_extra_calls": 0,
+      "route_extra_instructions": 0,
+      "route_extra_stack_references": 0
+    }
+  ],
+  "peer_comparisons": [
+    {
+      "equivalent_instruction_shape": false,
+      "left_instruction_count": 80,
+      "left_instruction_shape_sha256": "7795a3cfeb9f2dfe78fd4c2afe907ab5772c1c04c3929e494026d4bef3079869",
+      "left_provider": "hyle",
+      "operation": "masked_load",
+      "right_instruction_count": 80,
+      "right_instruction_shape_sha256": "cff235ecd220f20e3fddd9e41d12f644bd8c15c0af2562879f4a24bde6b6607b",
+      "right_provider": "highway"
+    },
+    {
+      "equivalent_instruction_shape": false,
+      "left_instruction_count": 80,
+      "left_instruction_shape_sha256": "7795a3cfeb9f2dfe78fd4c2afe907ab5772c1c04c3929e494026d4bef3079869",
+      "left_provider": "hyle",
+      "operation": "masked_load",
+      "right_instruction_count": 80,
+      "right_instruction_shape_sha256": "cff235ecd220f20e3fddd9e41d12f644bd8c15c0af2562879f4a24bde6b6607b",
+      "right_provider": "xsimd"
+    },
+    {
+      "equivalent_instruction_shape": true,
+      "left_instruction_count": 80,
+      "left_instruction_shape_sha256": "cff235ecd220f20e3fddd9e41d12f644bd8c15c0af2562879f4a24bde6b6607b",
+      "left_provider": "highway",
+      "operation": "masked_load",
+      "right_instruction_count": 80,
+      "right_instruction_shape_sha256": "cff235ecd220f20e3fddd9e41d12f644bd8c15c0af2562879f4a24bde6b6607b",
+      "right_provider": "xsimd"
+    },
+    {
+      "equivalent_instruction_shape": true,
+      "left_instruction_count": 34,
+      "left_instruction_shape_sha256": "8f6c13791319e21e031c734add7632b9ce12490815df5bee8f25606a1e312b4c",
+      "left_provider": "hyle",
+      "operation": "safe_copy_n",
+      "right_instruction_count": 34,
+      "right_instruction_shape_sha256": "8f6c13791319e21e031c734add7632b9ce12490815df5bee8f25606a1e312b4c",
+      "right_provider": "highway"
+    },
+    {
+      "equivalent_instruction_shape": true,
+      "left_instruction_count": 14,
+      "left_instruction_shape_sha256": "c01822552add998b5ed272bacf68fabdc50904725a1ddde505d9191471030d2e",
+      "left_provider": "hyle",
+      "operation": "safe_fill_n",
+      "right_instruction_count": 14,
+      "right_instruction_shape_sha256": "c01822552add998b5ed272bacf68fabdc50904725a1ddde505d9191471030d2e",
+      "right_provider": "highway"
+    },
+    {
+      "equivalent_instruction_shape": true,
+      "left_instruction_count": 26,
+      "left_instruction_shape_sha256": "efcb14954c06e6fd5af0c5b01a8f25a0c70650b131bbd638ee480b2eef64b647",
+      "left_provider": "hyle",
+      "operation": "stream",
+      "right_instruction_count": 26,
+      "right_instruction_shape_sha256": "efcb14954c06e6fd5af0c5b01a8f25a0c70650b131bbd638ee480b2eef64b647",
+      "right_provider": "highway"
+    }
+  ],
+  "schema": "hyle.simd.provider-codegen/v1",
+  "verdict": "PASS"
+}

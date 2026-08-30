@@ -1,0 +1,231 @@
+{
+  "schema": "hyle.simd.structural-route-proof/v1",
+  "verdict": "PASS",
+  "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+  "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401",
+  "provider_revisions": {
+    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b"
+  },
+  "proof_method": "P0 exact source-contract, type/width/target and cost-structure review. These constructors, accessors, tags and bit views are not independently timed throughput workloads. Direct locked-Highway ownership is preferred when it covers the complete HYLE contract; unsupported xsimd shapes are not inferred from token hits.",
+  "ledger_evidence_group": {
+    "id": "P0:structural:semantic-routes",
+    "kind": "STRUCTURAL_CONTRACT_AND_COST_PROOF",
+    "contract": "all 26 non-timing structural operations have explicit three-provider assessments and a complete route or capability-preserving removal"
+  },
+  "validation": {
+    "hyle_correctness": "W1-WIN scalar/SSE4/AVX2 vec test artifacts 3/3 PASS",
+    "provider_source": "locked Highway and xsimd revisions reviewed at callable public/target definitions",
+    "inventory_erratum": "evidence/simd-15-inventory-parser-erratum.json"
+  },
+  "operations": [
+    {
+      "name": "BitCast", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:BitCast", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:1120", "scripts/simd-op-routing.json#BitCast.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:117", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:551"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:351"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Blocks", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Blocks", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "NOT_COMPARABLE", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:2043", "finding:HYLE-uses-MaxLanes-not-runtime-Lanes-on-scalable-targets"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:8064"]},
+      "xsimd": {"contract": "NOT_COMPARABLE", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:220", "finding:xsimd-batch-size-does-not-provide-HYLE-runtime-scalable-block-count-contract"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Combine", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Combine", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4251", "scripts/simd-op-routing.json#Combine.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1494", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:3887"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:Combine=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Dup128VecFromValues", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Dup128VecFromValues", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:1846", "tests/simd/vec_test.cc:4133"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:173", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:666"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:Dup128VecFromValues=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "ExtractBlock", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:ExtractBlock", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4330", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx512.h:2872"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:8083", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_512-inl.h:5458"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:ExtractBlock=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "ExtractLane", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:ExtractLane", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:605"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/scalar-inl.h:1633", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_256-inl.h:5989"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:302", "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:943"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "FirstN", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:FirstN", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#FirstN.legacy_sites", "evidence/simd-15-inventory-parser-erratum.json#FirstN"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:400", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:357"]},
+      "xsimd": {"contract": "NOT_COMPARABLE", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:467", "finding:no-complete-runtime-scalable-FirstN-contract"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "GetLane", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:GetLane", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:2592", "scripts/simd-op-routing.json#GetLane.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/scalar-inl.h:1628", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_128-inl.h:401"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:304", "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:952"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "IndicesFromVec", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:IndicesFromVec", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#IndicesFromVec.legacy_sites", "evidence/simd-15-inventory-parser-erratum.json#IndicesFromVec"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/scalar-inl.h:1700", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/rvv-inl.h:4213"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:IndicesFromVec=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Inf", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Inf", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:1727"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:93"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:259", "contract:broadcast-positive-infinity"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "InsertBlock", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:InsertBlock", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4392", "scripts/simd-op-routing.json#InsertBlock.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:8077", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_512-inl.h:5496"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:InsertBlock=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "InsertIntoUpper", "scope_id": "legacy-all", "public_mapping": "COMPOSE:Combine+LowerHalf", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "COMPOSITION", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4264", "tests/simd/vec_half_combine_oracle_test.cc:131"]},
+      "highway": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1467", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1494", "finding:current-Highway-InsertIntoUpper-pointer-overload-is-NOT-COMPARABLE"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:InsertIntoUpper-vector-contract=0"]},
+      "decision": "REMOVE_REDUNDANT", "provider": "COMPOSITION"
+    },
+    {
+      "name": "InsertLane", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:InsertLane", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "COMPOSITION", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:612"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/scalar-inl.h:1640", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_256-inl.h:6011"]},
+      "xsimd": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:263", "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:283"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Iota", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Iota", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "COMPOSITION", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:620"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:239", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:3532"]},
+      "xsimd": {"contract": "NOT_COMPARABLE", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:220", "finding:no-complete-runtime-scalable-iota-contract"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Lanes", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Lanes", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/sve.h:139", "hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/rvv.h:125"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/shared-inl.h:492", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/rvv-inl.h:664"]},
+      "xsimd": {"contract": "NOT_COMPARABLE", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:220", "finding:static-batch-size-is-not-HYLE-runtime-scalable-Lanes"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "LoadDup128", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:LoadDup128", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4167", "scripts/simd-op-routing.json#LoadDup128.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1400", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:2544"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:LoadDup128=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "LowerHalf", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:LowerHalf", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#LowerHalf.legacy_sites", "evidence/simd-15-inventory-parser-erratum.json#LowerHalf"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1467", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:3900"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-api-audit:LowerHalf=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "NaN", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:NaN", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:1732", "contract:quiet-NaN-payload-unspecified"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:84", "contract:quiet-NaN-payload-unspecified"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:259", "contract:broadcast-quiet-NaN"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "ResizeBitCast", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:ResizeBitCast", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#ResizeBitCast.legacy_sites", "include/hyle/simd/vec.h:304"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:126", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:659"]},
+      "xsimd": {"contract": "NOT_COMPARABLE", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_api.hpp:351", "finding:xsimd-bitwise_cast-does-not-resize-logical-vector-width"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Set", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Set", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#Set.legacy_sites", "evidence/simd-15-inventory-parser-erratum.json#Set"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:156", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/x86_512-inl.h:259"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:259", "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:715"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "SetTableIndices", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:SetTableIndices", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:1996", "tests/simd/vec_test.cc:1395"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:2348", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/rvv-inl.h:4213"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:SetTableIndices=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Undefined", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Undefined", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "COMPOSED_SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:627", "contract:zero-is-a-valid-unspecified-value"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:166", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_neon-inl.h:1199"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:228"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "UpperHalf", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:UpperHalf", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4225", "scripts/simd-op-routing.json#UpperHalf.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1479", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/rvv-inl.h:3968"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-api-audit:UpperHalf=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "Zero", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:Zero", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "ADAPTER", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["scripts/simd-op-routing.json#Zero.legacy_sites", "evidence/simd-15-inventory-parser-erratum.json#Zero"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:106", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/scalar-inl.h:112"]},
+      "xsimd": {"contract": "ADAPTED_SAME_CONTRACT", "evidence": ["xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:229", "xsimd@3b3151ff665514a00a437cc985f47b7de99b772b:include/xsimd/types/xsimd_batch.hpp:670"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "ZeroExtendResizeBitCast", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:ZeroExtendResizeBitCast", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "NOT_COMPARABLE", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/vec.h:2018", "finding:HYLE-wrapper-ignores-source-tag-needed-by-scalable-widening"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/generic_ops-inl.h:126", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/tests/resize_test.cc:41"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:ZeroExtendResizeBitCast=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    },
+    {
+      "name": "ZeroExtendVector", "scope_id": "legacy-all", "public_mapping": "CAPABILITY:ZeroExtendVector", "variant_audit": "COMPLETE",
+      "candidate_availability": {"HIGHWAY": "DIRECT", "XSIMD": "UNAVAILABLE", "HYLE": "SOURCE_PRESENT"},
+      "hyle": {"contract": "SAME_CONTRACT", "evidence": ["hyle@77d22d11be31f3184e96f8379068fa9779ed33e0:include/hyle/simd/backend/avx2.h:4239", "scripts/simd-op-routing.json#ZeroExtendVector.legacy_sites"]},
+      "highway": {"contract": "SAME_CONTRACT", "evidence": ["highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/emu128-inl.h:1486", "highway@f503c485cec6b4f2f596fa60d83484797c9eeb5c:hwy/ops/arm_sve-inl.h:3893"]},
+      "xsimd": {"contract": "NOT_AVAILABLE", "evidence": ["locked-xsimd-public-symbol-audit:ZeroExtendVector=0"]},
+      "decision": "ROUTE_HIGHWAY", "provider": "HIGHWAY"
+    }
+  ]
+}

@@ -14,7 +14,16 @@
 #include <limits>
 #include <type_traits>
 
+#include "hyle/simd/provider/route.h"
 #include "hwy/contrib/math/math-inl.h"
+
+// Only the currently qualified AVX2/classic-MSVC family route needs xsimd in
+// this body. Other target TUs do not parse or instantiate an unused vendor
+// stack; a future route must deliberately widen this availability guard.
+#if defined(HYLE_SIMD_TARGET_AVX2) && defined(_MSC_VER) && !defined(__clang__)
+#include "xsimd/xsimd.hpp"
+#define HYLE_SIMD_MATH_HAS_XSIMD_BODY 1
+#endif
 
 #ifndef HYLE_HIGHWAY_MATH_SUFFIX
 #error "Define HYLE_HIGHWAY_MATH_SUFFIX before including highway_math_kernel-inl.h"
@@ -493,6 +502,11 @@ namespace hm = ::HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE;
 #define HYLE_OWNED_SYMBOL_II(name, tag, suffix) HYLE_OWNED_SYMBOL_I(name, tag, suffix)
 #define HYLE_OWNED_SYMBOL(name, tag) \
   HYLE_OWNED_SYMBOL_II(name, tag, HYLE_HIGHWAY_MATH_SUFFIX)
+#define HYLE_ROUTE_SYMBOL_I(name, tag, suffix) name##_##tag##_route_##suffix
+#define HYLE_ROUTE_SYMBOL_II(name, tag, suffix) \
+  HYLE_ROUTE_SYMBOL_I(name, tag, suffix)
+#define HYLE_ROUTE_SYMBOL(name, tag) \
+  HYLE_ROUTE_SYMBOL_II(name, tag, HYLE_HIGHWAY_MATH_SUFFIX)
 
 #define HYLE_DEFINE_DIRECT_UNARY(type, tag, name, hwy_name, scalar_name, domain)       \
   void HYLE_HWY_SYMBOL(name, tag)(const type* src, type* dst,                         \
@@ -506,7 +520,6 @@ namespace hm = ::HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE;
 #define HYLE_DEFINE_DIRECT_UNARY_SET(type, tag)                                       \
   HYLE_DEFINE_DIRECT_UNARY(type, tag, exp, Exp, exp, kExp)                            \
   HYLE_DEFINE_DIRECT_UNARY(type, tag, log, Log, log, kPositive)                       \
-  HYLE_DEFINE_DIRECT_UNARY(type, tag, tanh, Tanh, tanh, kDirect)                      \
   HYLE_DEFINE_DIRECT_UNARY(type, tag, sin, Sin, sin, kTrig)                           \
   HYLE_DEFINE_DIRECT_UNARY(type, tag, cos, Cos, cos, kTrig)                           \
   HYLE_DEFINE_DIRECT_UNARY(type, tag, exp2, Exp2, exp2, kExp2)                        \
@@ -530,6 +543,35 @@ namespace hm = ::HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE;
 
 HYLE_DEFINE_DIRECT_UNARY_SET(float, f32)
 HYLE_DEFINE_DIRECT_UNARY_SET(double, f64)
+HYLE_DEFINE_DIRECT_UNARY(double, f64, tanh, Tanh, tanh, kDirect)
+
+void HYLE_ROUTE_SYMBOL(tanh, f32)(const float* src, float* dst,
+                                  std::size_t n) noexcept {
+  constexpr auto selected = provider::kQualifiedProviderFor<
+      provider::Family::kTanhF32Batch, provider::LaneVariant<float>>;
+  static_assert(selected == provider::Provider::kHighway ||
+                selected == provider::Provider::kXsimd,
+                "tanh f32 route lacks a provider-coherent body");
+  if constexpr (selected == provider::Provider::kXsimd) {
+#if defined(HYLE_SIMD_MATH_HAS_XSIMD_BODY)
+    using Batch = xsimd::batch<float>;
+    constexpr std::size_t width = Batch::size;
+    std::size_t i = 0;
+    for (; width <= n - i; i += width) {
+      xsimd::tanh(Batch::load_unaligned(src + i)).store_unaligned(dst + i);
+    }
+    for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+#else
+    static_assert(selected != provider::Provider::kXsimd,
+                  "qualified xsimd route has no target body");
+#endif
+  } else {
+    hm::unary_loop<hm::UnaryDomain::kDirect>(
+        src, dst, n,
+        [](auto d, auto x) { return hwy::HWY_NAMESPACE::Tanh(d, x); },
+        [](float x) { return std::tanh(x); });
+  }
+}
 #undef HYLE_DEFINE_DIRECT_UNARY_SET
 #undef HYLE_DEFINE_DIRECT_UNARY
 
@@ -632,8 +674,6 @@ HYLE_DEFINE_OWNED_GAPS(double, f64)
 
 HYLE_DEFINE_ACTIVATION_UNARY(gelu, activation_gelu,
                              activation_gelu_scalar)
-HYLE_DEFINE_ACTIVATION_UNARY(gelu_tanh, activation_gelu_tanh,
-                             activation_gelu_tanh_scalar)
 HYLE_DEFINE_ACTIVATION_UNARY(sigmoid, activation_sigmoid,
                              activation_sigmoid_scalar)
 HYLE_DEFINE_ACTIVATION_UNARY(silu, activation_silu,
@@ -644,6 +684,45 @@ HYLE_DEFINE_ACTIVATION_UNARY(hard_sigmoid, activation_hard_sigmoid,
                              activation_hard_sigmoid_scalar)
 HYLE_DEFINE_ACTIVATION_UNARY(hard_swish, activation_hard_swish,
                              activation_hard_swish_scalar)
+
+void HYLE_ROUTE_SYMBOL(gelu_tanh, f32)(const float* src, float* dst,
+                                       std::size_t n) noexcept {
+  constexpr auto selected = provider::kQualifiedProviderFor<
+      provider::Family::kGeluTanhF32Batch, provider::LaneVariant<float>>;
+  static_assert(selected == provider::Provider::kHighway ||
+                selected == provider::Provider::kXsimd,
+                "gelu_tanh f32 route lacks a provider-coherent body");
+  if constexpr (selected == provider::Provider::kXsimd) {
+#if defined(HYLE_SIMD_MATH_HAS_XSIMD_BODY)
+    using Batch = xsimd::batch<float>;
+    constexpr std::size_t width = Batch::size;
+    const Batch zero(0.0f);
+    const Batch one(1.0f);
+    const Batch half(0.5f);
+    const Batch scale(hm::kActivationSqrt2OverPi);
+    const Batch cubic(hm::kActivationGeluCoefficient);
+    std::size_t i = 0;
+    for (; width <= n - i; i += width) {
+      const Batch x = Batch::load_unaligned(src + i);
+      const Batch inner = (scale * x) * xsimd::fma(cubic, x * x, one);
+      const Batch result = (half * x) * (one + xsimd::tanh(inner));
+      xsimd::select(xsimd::isinf(x) & (x < zero), zero, result)
+          .store_unaligned(dst + i);
+    }
+    for (; i < n; ++i) {
+      dst[i] = hm::activation_gelu_tanh_scalar(src[i]);
+    }
+#else
+    static_assert(selected != provider::Provider::kXsimd,
+                  "qualified xsimd route has no target body");
+#endif
+  } else {
+    hm::unary_loop<hm::UnaryDomain::kDirect>(
+        src, dst, n,
+        [](auto d, auto x) { return hm::activation_gelu_tanh(d, x); },
+        [](float x) { return hm::activation_gelu_tanh_scalar(x); });
+  }
+}
 #undef HYLE_DEFINE_ACTIVATION_UNARY
 
 void HYLE_OWNED_SYMBOL(leaky_relu, f32)(const float* src,
@@ -745,6 +824,9 @@ void HYLE_OWNED_SYMBOL(cpow, f64)(const double* z_re, const double* z_im,
 #undef HYLE_OWNED_SYMBOL
 #undef HYLE_OWNED_SYMBOL_II
 #undef HYLE_OWNED_SYMBOL_I
+#undef HYLE_ROUTE_SYMBOL
+#undef HYLE_ROUTE_SYMBOL_II
+#undef HYLE_ROUTE_SYMBOL_I
 #undef HYLE_HWY_SYMBOL
 #undef HYLE_HWY_SYMBOL_II
 #undef HYLE_HWY_SYMBOL_I
@@ -755,3 +837,7 @@ void HYLE_OWNED_SYMBOL(cpow, f64)(const double* z_re, const double* z_im,
 #undef HYLE_HWY_DETAIL_NAMESPACE
 #undef HYLE_HWY_DETAIL_NAMESPACE_II
 #undef HYLE_HWY_DETAIL_NAMESPACE_I
+
+#if defined(HYLE_SIMD_MATH_HAS_XSIMD_BODY)
+#undef HYLE_SIMD_MATH_HAS_XSIMD_BODY
+#endif
