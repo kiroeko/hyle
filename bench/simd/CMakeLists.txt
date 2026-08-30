@@ -227,20 +227,26 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_row_dtype_parity_bench)
 
-add_executable(hyle_sort_bench sort_bench.cc)
-target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
-target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
-target_include_directories(hyle_sort_bench SYSTEM PRIVATE
-  "${_hyle_bench_highway_dir}")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  hyle_set_highway_isa(sort_bench.cc)
+  # SIMD-11 bounded ordering instrument. Each mutating invocation receives a
+  # fresh pre-materialized buffer; input copy/allocation/page faults are never
+  # mixed into sort time. Only the ordinary HYLE and direct locked-Highway f32
+  # comparison rows are parity verdicts. Stable radix/argsort have no qualified
+  # same-contract peer and are emitted as informational repeatability rows.
+  add_executable(hyle_ordering_parity_bench
+    ordering_parity_bench.cc
+    ordering_highway_avx2.cc)
+  target_link_libraries(hyle_ordering_parity_bench PRIVATE hyle_simd nanobench)
+  target_include_directories(hyle_ordering_parity_bench PRIVATE
+    "${PROJECT_SOURCE_DIR}")
+  target_include_directories(hyle_ordering_parity_bench SYSTEM PRIVATE
+    "${_hyle_bench_highway_dir}")
+  set_source_files_properties(ordering_highway_avx2.cc PROPERTIES
+    COMPILE_DEFINITIONS "HWY_HEADER_ONLY=1;HWY_COMPILE_ONLY_STATIC=1")
+  hyle_set_isa(ordering_parity_bench.cc AVX2)
+  hyle_set_highway_target_isa(ordering_highway_avx2.cc AVX2)
+  hyle_apply_warnings(hyle_ordering_parity_bench)
 endif()
-hyle_apply_warnings(hyle_sort_bench)
-
-# P1-2: radix vs std::sort / HYLE sort auto-threshold crossover.
-add_executable(hyle_radix_sort_bench radix_sort_bench.cc)
-target_link_libraries(hyle_radix_sort_bench PRIVATE hyle_simd nanobench)
-hyle_apply_warnings(hyle_radix_sort_bench)
 
 # gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
 # (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
@@ -452,11 +458,10 @@ set(_hyle_simd_bench_targets
   hyle_native_algorithm_bench
   hyle_mixed_dot_bench
   hyle_row_dtype_parity_bench
-  hyle_sort_bench
-  hyle_radix_sort_bench
   hyle_dtype_bench)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   list(APPEND _hyle_simd_bench_targets
+    hyle_ordering_parity_bench
     hyle_gather_bench_avx2
     hyle_gather_bench_avx512
     hyle_op_parity_bench_avx2
