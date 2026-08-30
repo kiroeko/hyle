@@ -30,4 +30,25 @@
 - stop：上述门通过即关闭；若不能在命令运行前确定受支持的成对 toolchain，则 `BLOCKED`，不在 CMake
   项目初始化后偷偷切换 compiler。
 
-当前状态为 `SCOPED`。下一步只审计现有 Unix 入口和冻结有限 FIX；审计前不改构建产品。
+## Audit 与有限 FIX（AUDITED）
+
+| surface / journey | current fact | verdict | frozen action |
+|---|---|---|---|
+| 顶层 compiler floor | configure 已拒绝 GCC <14、Clang <18 | `COMPLETE / KEEP` | 保留为最终 fail-closed；不承担选择职责 |
+| `wsl` preset | 精确写入 `gcc-14/g++-14`，但只适用于该名称和 preset journey | `COMPLETE / KEEP` | 继续作为方便入口，不强迫所有 Linux 用户使用 |
+| generic `linux` preset / direct CMake | 正确允许任意受支持 toolchain，但要求每次手写 `CC/CXX` | `PARTIAL / ROUTE` | 由可组合 wrapper 在命令前选择，不把 generic preset 锁死到 GCC |
+| `cmake -P HyleCi*` smoke | script mode 再 spawn configure，不能在 project 初始化后可靠切换 compiler | `MISSING / FIX` | 由同一外层 wrapper 包住任意 CMake/CTest/自定义命令；CMake helper 不偷偷猜环境 |
+| explicit `CC/CXX` | CMake 会采用，但只设一个或显式低版本仍到 configure 才报错 | `PARTIAL / FIX` | wrapper 要求成对、同 compiler family 且在执行命令前满足 floor |
+| Linux auto selection | 机器常同时有默认 GCC 13 与 versioned GCC 14 | `MISSING / FIX` | 未显式选择时优先成对 versioned GCC 14+，其次 Clang 18+，最后检查 unversioned pair |
+| macOS | 系统 AppleClang 是受支持 canonical compiler | `PARTIAL / FIX` | 未显式设置时选择系统 clang/clang++ 并用同一 floor preflight |
+| CI / maintainer docs | CI 自己写 `GITHUB_ENV`，setup 多处提示手写，但没有验证统一入口 | `PARTIAL / FIX` | Unix configure 经 wrapper；setup/scripts/architecture 只保留一个维护者入口并说明 escape hatch |
+| 已存在 build cache | CMake compiler identity 不允许原地更换 | `COMPLETE / KEEP` | 明确 wrapper 只管新 configure；旧 cache 用新 scratch，不自动删除用户数据 |
+
+public-surface trace：`CMakePresets.json` 的 `linux/wsl/macos`、顶层 compiler floor 与 CI GCC 安装均有自然
+任务，全部保留；新增 `scripts/hyle-unix.sh` 只组合这些既有合同，不产生安装后 SDK API。它接受 `--`
+后的任意 argv 并用 `exec` 原样替换进程，也提供只读 `--print-toolchain` 供诊断/CI。脚本不使用 `eval`、
+不安装软件、不修改 PATH/cache/preset，也不把 GCC 14 写成唯一支持的 Unix compiler。
+
+冻结 FIX 只有：新增上述 wrapper；把 Unix CI configure 接到 wrapper 并加入自动选择 smoke；更新
+architecture/setup/scripts 文档。任何 compiler floor、preset cache、CMake component/package 或产品源码
+变化均超出本轮。当前状态为 `AUDITED`。
