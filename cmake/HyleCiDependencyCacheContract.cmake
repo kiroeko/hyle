@@ -59,11 +59,13 @@ endfunction()
 # become a hit.
 execute_process(
   COMMAND "${CMAKE_COMMAND}"
+    --log-level=ERROR
     -DHYLE_DEP_SOURCE_CACHE=${_cache}
     -DHYLE_DEP_ACTION=status
     -DHYLE_DEP_NAMES=highway
     -P "${_tool}"
   COMMAND "${CMAKE_COMMAND}"
+    --log-level=ERROR
     -DHYLE_DEP_SOURCE_CACHE=${_cache}
     -DHYLE_DEP_ACTION=status
     -DHYLE_DEP_NAMES=highway
@@ -86,11 +88,13 @@ file(WRITE
 
 execute_process(
   COMMAND "${CMAKE_COMMAND}"
+    --log-level=ERROR
     -DHYLE_DEP_SOURCE_CACHE=${_cache}
     -DHYLE_DEP_ACTION=sync
     -DHYLE_DEP_NAMES=highway
     -P "${_tool}"
   COMMAND "${CMAKE_COMMAND}"
+    --log-level=ERROR
     -DHYLE_DEP_SOURCE_CACHE=${_cache}
     -DHYLE_DEP_ACTION=sync
     -DHYLE_DEP_NAMES=highway
