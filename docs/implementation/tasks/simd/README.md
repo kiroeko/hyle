@@ -7,6 +7,8 @@
 
 ## 当前专题
 
+- [SIMD v4 expert SDK](simd-v4-expert-sdk.md)：统一 source/static/shared 的锁定 provider header 与
+  fixed/fat kernel 构建路线；
 - [SIMD/Math epic](simd-epic-v1.md)：目标、顺序、预算、依赖和最终验收；
 - [simd-v1 closure](simd-v1-closure.md)：上一轮的 capability audit 与终止记录；
 - [tickets](tickets/README.md)：本专题唯一顺序施工队列。
