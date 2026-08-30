@@ -2,8 +2,9 @@
 //
 // Mutating algorithms cannot reuse one input across nanobench epochs: after
 // the first invocation it is already sorted. Every measured invocation here
-// consumes a distinct, preallocated and prefilled buffer. epochIterations(1)
-// makes that accounting exact, so input materialization, allocation and page
+// consumes a distinct, preallocated and prefilled buffer. Fixed
+// epochIterations make that accounting exact while giving short kernels a
+// long enough timer window, so input materialization, allocation and page
 // faults stay outside the timed region. The ordinary HYLE API and the direct
 // locked-Highway peer therefore see the same fresh-input and ISA contract.
 
@@ -39,8 +40,9 @@ constexpr std::size_t kStreamingEpochs = 5;
 constexpr std::size_t kResidentCount = 4096;
 constexpr std::size_t kStreamingCount = 1u << 20;
 constexpr std::size_t kTopK = 10;
-constexpr std::size_t kPartialRowsPerSample = 16;
-constexpr std::size_t kStreamingRowsPerSample = 4;
+constexpr std::size_t kResidentSortIterations = 4;
+constexpr std::size_t kPartialIterations = 16;
+constexpr std::size_t kStreamingInfoIterations = 4;
 
 [[noreturn]] void qualification_failure(const char* message) {
   std::fprintf(stderr, "SIMD-11 ordering qualification failed: %s\n", message);
@@ -146,14 +148,15 @@ std::pair<std::unique_ptr<Bank>, std::unique_ptr<Bank>> make_ordered_banks(
 }
 
 nb::Bench fresh_input_bench(const std::string& title, std::size_t count,
-                            std::size_t epochs) {
+                            std::size_t epochs,
+                            std::size_t epoch_iterations = 1) {
   nb::Bench bench;
   bench.title(title)
       .unit("value")
       .relative(true)
       .batch(count)
       .epochs(epochs)
-      .epochIterations(1);
+      .epochIterations(epoch_iterations);
   return bench;
 }
 
@@ -176,7 +179,7 @@ void run_anchor() {
       .unit("value")
       .relative(true)
       .batch(kResidentCount)
-      .minEpochIterations(4096);
+      .minEpochIterations(131072);
   HYLE_RUN_PAIR(
       bench,
       [&](auto rep) {
@@ -229,7 +232,10 @@ void qualify_peer() {
 void run_comparison_sort(std::size_t count) {
   const std::size_t epochs =
       count == kResidentCount ? kResidentEpochs : kStreamingEpochs;
-  const std::size_t calls = hyle_bench::kReplicas * epochs;
+  const std::size_t epoch_iterations =
+      count == kResidentCount ? kResidentSortIterations : 1;
+  const std::size_t calls =
+      hyle_bench::kReplicas * epochs * epoch_iterations;
   const auto input = make_f32_input(count);
   auto [candidate_bank, peer_bank] =
       make_ordered_banks<FreshBank<float>>(
@@ -237,7 +243,8 @@ void run_comparison_sort(std::size_t count) {
   std::size_t candidate_call = 0;
   std::size_t peer_call = 0;
   auto bench = fresh_input_bench(
-      "full sort f32 (" + std::to_string(count) + ")", count, epochs);
+      "full sort f32 (" + std::to_string(count) + ")", count, epochs,
+      epoch_iterations);
   HYLE_RUN_PAIR(
       bench,
       [&](auto rep) {
@@ -260,7 +267,7 @@ void run_comparison_sort(std::size_t count) {
 
 void run_comparison_partial() {
   constexpr std::size_t kCalls = hyle_bench::kReplicas * kResidentEpochs *
-                                 kPartialRowsPerSample;
+                                 kPartialIterations;
   const auto input = make_f32_input(kResidentCount);
   auto [candidate_bank, peer_bank] =
       make_ordered_banks<FreshBank<float>>(
@@ -268,27 +275,23 @@ void run_comparison_partial() {
   std::size_t candidate_call = 0;
   std::size_t peer_call = 0;
   auto bench = fresh_input_bench("partial sort f32 (4096,k=10)",
-                                 kResidentCount * kPartialRowsPerSample,
-                                 kResidentEpochs);
+                                 kResidentCount, kResidentEpochs,
+                                 kPartialIterations);
   HYLE_RUN_PAIR(
       bench,
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kPartialRowsPerSample; ++row) {
-          float* values = candidate_bank->data(candidate_call++);
-          hs::partial_sort(values, kResidentCount, kTopK);
-          nb::doNotOptimizeAway(values);
-        }
+        float* values = candidate_bank->data(candidate_call++);
+        hs::partial_sort(values, kResidentCount, kTopK);
+        nb::doNotOptimizeAway(values);
         hyle_bench::mark(rep);
       },
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kPartialRowsPerSample; ++row) {
-          float* values = peer_bank->data(peer_call++);
-          hyle_bench::ordering::highway_partial_sort_f32(
-              values, kResidentCount, kTopK);
-          nb::doNotOptimizeAway(values);
-        }
+        float* values = peer_bank->data(peer_call++);
+        hyle_bench::ordering::highway_partial_sort_f32(
+            values, kResidentCount, kTopK);
+        nb::doNotOptimizeAway(values);
         hyle_bench::mark(rep);
       });
   require(candidate_call == kCalls && peer_call == kCalls,
@@ -297,7 +300,7 @@ void run_comparison_partial() {
 
 void run_radix_info() {
   constexpr std::size_t kCalls = hyle_bench::kReplicas * kStreamingEpochs *
-                                 kStreamingRowsPerSample;
+                                 kStreamingInfoIterations;
   const auto input = make_u32_input(kStreamingCount);
   auto [first_bank, repeat_bank] = make_ordered_banks<RadixBank<std::uint32_t>>(
       [&] {
@@ -306,34 +309,30 @@ void run_radix_info() {
   std::size_t first_call = 0;
   std::size_t repeat_call = 0;
   auto bench = fresh_input_bench("scratch radix u32 (1048576)",
-                                 kStreamingCount * kStreamingRowsPerSample,
-                                 kStreamingEpochs);
+                                 kStreamingCount, kStreamingEpochs,
+                                 kStreamingInfoIterations);
   HYLE_RUN_INFO_PAIR(
       bench,
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kStreamingRowsPerSample; ++row) {
-          const std::size_t invocation = first_call++;
-          auto* values = first_bank->input(invocation);
-          hs::radix_sort(values, kStreamingCount,
-                         std::span<std::uint32_t>(
-                             first_bank->scratch(invocation, kStreamingCount),
-                             kStreamingCount));
-          nb::doNotOptimizeAway(values);
-        }
+        const std::size_t invocation = first_call++;
+        auto* values = first_bank->input(invocation);
+        hs::radix_sort(values, kStreamingCount,
+                       std::span<std::uint32_t>(
+                           first_bank->scratch(invocation, kStreamingCount),
+                           kStreamingCount));
+        nb::doNotOptimizeAway(values);
         hyle_bench::mark(rep);
       },
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kStreamingRowsPerSample; ++row) {
-          const std::size_t invocation = repeat_call++;
-          auto* values = repeat_bank->input(invocation);
-          hs::radix_sort(values, kStreamingCount,
-                         std::span<std::uint32_t>(
-                             repeat_bank->scratch(invocation, kStreamingCount),
-                             kStreamingCount));
-          nb::doNotOptimizeAway(values);
-        }
+        const std::size_t invocation = repeat_call++;
+        auto* values = repeat_bank->input(invocation);
+        hs::radix_sort(values, kStreamingCount,
+                       std::span<std::uint32_t>(
+                           repeat_bank->scratch(invocation, kStreamingCount),
+                           kStreamingCount));
+        nb::doNotOptimizeAway(values);
         hyle_bench::mark(rep);
       });
   require(first_call == kCalls && repeat_call == kCalls,
@@ -342,7 +341,7 @@ void run_radix_info() {
 
 void run_argsort_info() {
   constexpr std::size_t kCalls = hyle_bench::kReplicas * kStreamingEpochs *
-                                 kStreamingRowsPerSample;
+                                 kStreamingInfoIterations;
   const auto keys = make_f32_input(kStreamingCount);
   auto [first_bank, repeat_bank] = make_ordered_banks<ArgsortBank>(
       [&] {
@@ -351,32 +350,28 @@ void run_argsort_info() {
   std::size_t first_call = 0;
   std::size_t repeat_call = 0;
   auto bench = fresh_input_bench("stable argsort f32 (1048576)",
-                                 kStreamingCount * kStreamingRowsPerSample,
-                                 kStreamingEpochs);
+                                 kStreamingCount, kStreamingEpochs,
+                                 kStreamingInfoIterations);
   HYLE_RUN_INFO_PAIR(
       bench,
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kStreamingRowsPerSample; ++row) {
-          const std::size_t invocation = first_call++;
-          auto* indices = first_bank->indices(invocation);
-          hs::argsort(keys.data(), indices, kStreamingCount,
-                      std::span<std::uint32_t>(
-                          first_bank->scratch(invocation), kStreamingCount));
-          nb::doNotOptimizeAway(indices);
-        }
+        const std::size_t invocation = first_call++;
+        auto* indices = first_bank->indices(invocation);
+        hs::argsort(keys.data(), indices, kStreamingCount,
+                    std::span<std::uint32_t>(first_bank->scratch(invocation),
+                                             kStreamingCount));
+        nb::doNotOptimizeAway(indices);
         hyle_bench::mark(rep);
       },
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        for (std::size_t row = 0; row < kStreamingRowsPerSample; ++row) {
-          const std::size_t invocation = repeat_call++;
-          auto* indices = repeat_bank->indices(invocation);
-          hs::argsort(keys.data(), indices, kStreamingCount,
-                      std::span<std::uint32_t>(
-                          repeat_bank->scratch(invocation), kStreamingCount));
-          nb::doNotOptimizeAway(indices);
-        }
+        const std::size_t invocation = repeat_call++;
+        auto* indices = repeat_bank->indices(invocation);
+        hs::argsort(keys.data(), indices, kStreamingCount,
+                    std::span<std::uint32_t>(repeat_bank->scratch(invocation),
+                                             kStreamingCount));
+        nb::doNotOptimizeAway(indices);
         hyle_bench::mark(rep);
       });
   require(first_call == kCalls && repeat_call == kCalls,
@@ -392,12 +387,14 @@ int main() {
       "isa=avx2 resident_epochs=%zu streaming_epochs=%zu "
       "resident_sort_fresh_buffers=%zu partial_fresh_buffers=%zu "
       "streaming_fresh_buffers=%zu "
-      "partial_rows_per_sample=%zu streaming_rows_per_sample=%zu\n",
+      "resident_sort_iterations=%zu partial_iterations=%zu "
+      "streaming_info_iterations=%zu\n",
       kResidentEpochs, kStreamingEpochs,
-      hyle_bench::kReplicas * kResidentEpochs,
-      hyle_bench::kReplicas * kResidentEpochs * kPartialRowsPerSample,
-      hyle_bench::kReplicas * kStreamingEpochs * kStreamingRowsPerSample,
-      kPartialRowsPerSample, kStreamingRowsPerSample);
+      hyle_bench::kReplicas * kResidentEpochs * kResidentSortIterations,
+      hyle_bench::kReplicas * kResidentEpochs * kPartialIterations,
+      hyle_bench::kReplicas * kStreamingEpochs * kStreamingInfoIterations,
+      kResidentSortIterations, kPartialIterations,
+      kStreamingInfoIterations);
   std::printf(
       "# HYLE_ORDERING_NOT_COMPARABLE rows=radix,argsort "
       "reason=no-qualified-peer-with-same-stability-nan-workspace-contract\n");
