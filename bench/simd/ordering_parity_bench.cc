@@ -40,7 +40,7 @@ constexpr std::size_t kStreamingEpochs = 5;
 constexpr std::size_t kResidentCount = 4096;
 constexpr std::size_t kStreamingCount = 1u << 20;
 constexpr std::size_t kTopK = 10;
-constexpr std::size_t kResidentSortIterations = 4;
+constexpr std::size_t kResidentSortIterations = 64;
 constexpr std::size_t kPartialIterations = 16;
 constexpr std::size_t kStreamingInfoIterations = 4;
 
