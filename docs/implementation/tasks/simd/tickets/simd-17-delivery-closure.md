@@ -20,10 +20,18 @@ C++ 易用性、Native FFI 清洁负空间、architecture/user/developer/impleme
   `evidence/simd-17-vqsort-sanitizer-fix.json`；TSan 对本轮纯 compile-time route、无新增共享可变状态的
   改动为 `NOT_APPLICABLE`；
 - locked/offline Highway+xsimd 依赖的 positive/negative contract `PASS`，integrated VQSort source hash 为
-  `425200b173ce47f74fd51c33857cdc43d5fd6ebce7152b79d7f6a51af3cbce0e`；
+  `24d39fbef0b8b53c2d1bdbf7cfba0f9ccbb42e4a91ec4302be51015a97503442`；
 - W1-WIN 当前 P1：普通 row/dtype 六个产品 row 的 95% lower bound 全部高于 0.95；Highway 对 xsimd 的
   tanh/GELU 四个 row 全部 material `LOSE`，因此产品按已冻结例外选择 xsimd。收据为
   `evidence/performance/simd-17-w1-win-p1.json`。
 
 上述是冻结 candidate 之前的 finding/fix 输入，不能代替不可变提交回放。下一步只允许：创建 candidate、
 回放 source/static/shared 与适用 correctness、完成文档/红队/六问/LOC，并形成 terminal receipt。
+
+首个候选 `4a1c216c/5d7269b9` 在 SVE 交叉回放中发现 VQSort scratch authority 仍引用已删除旧常量，已按
+协议撤回。有限修复使用锁定 Highway 的 `HWY_MAX_BYTES`，并校正可扩展产品测试入口；SVE 128/256/384/
+512/2048-bit 与 RVV 128/256/512/1024-bit QEMU、W1-WIN、W1-WSL ASan/UBSan、M1-MAC 均通过后，第二个
+candidate 冻结为 `e49ba0ec8e17956a23a7ba83c7abc2da91879b1e` /
+`69702d9e9a2ec5399b9d1a4c5665bc0105f1303b`。随后 source-delivery 的 integrated-source audit 正确
+拒绝了未随 VQSort 修复更新的 provenance hash，因此该候选也已撤回；当前有限修复只更新
+`highway_port` 内容锁与相应证据，后续新 candidate 才是终态绑定身份。

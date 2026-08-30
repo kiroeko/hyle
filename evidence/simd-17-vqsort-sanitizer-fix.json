@@ -18,12 +18,12 @@
   },
   "files": {
     "src/simd/sort/vqsort_hyle/vqsort_ops.h": "4a90a0a27d61b31222bd168d9264a224992959a0adc862bd1bfa968602d72faa",
-    "cmake/HyleDependencyLock.json": "732348c52b05d38897c3debc5ff874266b001c6e1513b97e3eafc34c0689ed39"
+    "cmake/HyleDependencyLock.json": "6ad79e54436de2e467b33ba212526457d4b10c623316f21db29398a548be98ca"
   },
   "integrated_source": {
     "dependency": "highway_port",
     "origin_revision": "83eff39371e5e6494b305b253f8a3c06f831faf4",
-    "content_sha256": "425200b173ce47f74fd51c33857cdc43d5fd6ebce7152b79d7f6a51af3cbce0e"
+    "content_sha256": "24d39fbef0b8b53c2d1bdbf7cfba0f9ccbb42e4a91ec4302be51015a97503442"
   },
   "verification": [
     {"machine": "W1-WSL", "shape": "GCC 14.2 ASan RelWithDebInfo", "tests": "5/5", "verdict": "PASS"},

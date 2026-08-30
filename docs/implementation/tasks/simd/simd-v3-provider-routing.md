@@ -116,6 +116,31 @@ SIMD-13 完成后的 v3 `SCOPED` 快照位于同目录 `module-status-v3-scoped.
 因此扩大或改变。后续新 candidate 仍必须遵守：只允许补验证、说明和 receipt；公开合同、算法、route 或
 正常 workload 再改变时必须再次退回 `AUDITED`。
 
+## Withdrawn second candidate
+
+- product commit/tree：`e49ba0ec8e17956a23a7ba83c7abc2da91879b1e` /
+  `69702d9e9a2ec5399b9d1a4c5665bc0105f1303b`，现已撤回，不再作为 terminal candidate；
+- 状态前态快照：`C:\hyle-scratch\simd-v3\transitions\module-status-v3-audited-before-candidate-2.json`，
+  SHA-256 `AED76D086875E133B59EA9ECD74517BC17F74CF9F4781A2AE9D6C29698A793AE`；
+- 冻结内容：当前公开 pointer/count/POD 语义、Highway/xsimd 锁定身份、387-operation ledger、422 个
+  terminal scope、compile-time provider route、有限 HYLE/xsimd 例外、ordinary/fixed/exact/fat 选择与
+  Container/VQSort 直接消费边；
+- 冻结复杂度：whole-buffer primitive 保持 O(n)/O(1)，ordering 保持已签复杂度；fixed/exact provider
+  选择在编译期消失，unknown-CPU ordinary/source-fat 只有既有的每个 whole-buffer 一次 cached target call；
+  不新增常态 allocation、copy、lock、syscall 或 provider metadata；
+- candidate 前测试：三平台 release SIMD 5/5、W1-WSL ASan/UBSan 5/5、SVE QEMU 五种 VL、RVV QEMU
+  四种 VLEN、route completeness、W1-WIN P1 均 `PASS`；但 source-delivery 配置正确拒绝了 VQSort
+  变化后未刷新的 integrated-source provenance hash，因此没有通过交付门；
+- registry 再次由 `CANDIDATE` 退回 `AUDITED`。前态快照为
+  `C:\hyle-scratch\simd-v3\transitions\module-status-v3-candidate-2-before-lock-fix.json`，SHA-256
+  `B8AB61CAD68636A0D7F2E4D5EED74B2FC4D1CD087EEB323CA98E61AFC76A9C30`；
+- 新增且只新增一个有限 FIX：把 `highway_port` integrated-source 内容锁原子刷新为当前适配源码哈希
+  `24d39fbef0b8b53c2d1bdbf7cfba0f9ccbb42e4a91ec4302be51015a97503442`，同步证据并重跑 offline 与
+  source/static/shared 交付。产品算法、公开 API、route 和复杂度均不改变。
+
+该 candidate 不继承撤回候选或 v2 的聚合声明。candidate 后只允许补验证、说明和 receipt；任何公开合同、
+算法、route 或正常 workload 改动必须退回 `AUDITED` 并产生新 commit/tree。
+
 ## SIMD-13 双向审计结果
 
 自顶向下重新核对 inference/source-primary、ordinary buffer 与交付旅程；自底向上枚举 13 个 installed

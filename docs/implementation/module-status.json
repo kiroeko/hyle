@@ -563,7 +563,7 @@
       "closure_task": "docs/implementation/tasks/simd/simd-v3-provider-routing.md",
       "scope": "Multi-provider CPU SIMD refactor: lock Highway and xsimd as coexisting product candidates, retain proven HYLE implementations, establish zero-overhead compile-time routing, and mechanically disposition all 387 baseline operations before consumer migration, legacy deletion, delivery and closure.",
       "non_goals": "Compatibility with old SIMD headers or spellings, public vendor register ABI, per-operation runtime dispatch, exhaustive operation-by-overload-by-size-by-ISA timing, GPU/tensor/layout/threading/GEMM/attention/quant-format policy, per-ISA DLLs, C or Native FFI, stable cross-toolchain C++ ABI, SLEEF admission, central closure/performance instrument changes and Formal certification.",
-      "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
+        "baseline_commit": "77d22d11be31f3184e96f8379068fa9779ed33e0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -581,7 +581,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-        "summary": "simd-v3 AUDITED：首个候选 4a1c216c 在 SVE 交叉验证中因 VQSort scratch 上界仍引用已删除的旧 register 常量而撤回；有限 FIX 为改用锁定 Highway 的 HWY_MAX_BYTES authority，并重跑可扩展 ISA 与受影响回归后产生新候选。387 个 operation / 422 个 route scope 仍为终态且零 PENDING。"
+        "summary": "simd-v3 AUDITED：第二个候选 e49ba0ec 在 source-delivery 配置中因 VQSort 修复后 integrated-source provenance hash 未原子刷新而撤回；有限 FIX 为更新 highway_port 内容锁与证据并重跑 offline/三交付门。387 个 operation / 422 个 route scope 仍为终态且零 PENDING。"
     },
     {
       "module": "container",
