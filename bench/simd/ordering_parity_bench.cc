@@ -34,11 +34,12 @@ namespace hs = hyle::simd;
 
 namespace {
 
-constexpr std::size_t kResidentEpochs = 127;
+constexpr std::size_t kResidentEpochs = 31;
 constexpr std::size_t kStreamingEpochs = 11;
 constexpr std::size_t kResidentCount = 4096;
 constexpr std::size_t kStreamingCount = 1u << 20;
 constexpr std::size_t kTopK = 10;
+constexpr std::size_t kPartialRowsPerSample = 16;
 
 [[noreturn]] void qualification_failure(const char* message) {
   std::fprintf(stderr, "SIMD-11 ordering qualification failed: %s\n", message);
@@ -257,7 +258,8 @@ void run_comparison_sort(std::size_t count) {
 }
 
 void run_comparison_partial() {
-  constexpr std::size_t kCalls = hyle_bench::kReplicas * kResidentEpochs;
+  constexpr std::size_t kCalls = hyle_bench::kReplicas * kResidentEpochs *
+                                 kPartialRowsPerSample;
   const auto input = make_f32_input(kResidentCount);
   auto [candidate_bank, peer_bank] =
       make_ordered_banks<FreshBank<float>>(
@@ -265,22 +267,27 @@ void run_comparison_partial() {
   std::size_t candidate_call = 0;
   std::size_t peer_call = 0;
   auto bench = fresh_input_bench("partial sort f32 (4096,k=10)",
-                                 kResidentCount, kResidentEpochs);
+                                 kResidentCount * kPartialRowsPerSample,
+                                 kResidentEpochs);
   HYLE_RUN_PAIR(
       bench,
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        float* values = candidate_bank->data(candidate_call++);
-        hs::partial_sort(values, kResidentCount, kTopK);
-        nb::doNotOptimizeAway(values);
+        for (std::size_t row = 0; row < kPartialRowsPerSample; ++row) {
+          float* values = candidate_bank->data(candidate_call++);
+          hs::partial_sort(values, kResidentCount, kTopK);
+          nb::doNotOptimizeAway(values);
+        }
         hyle_bench::mark(rep);
       },
       [&](auto rep) {
         hyle_bench::stagger(rep);
-        float* values = peer_bank->data(peer_call++);
-        hyle_bench::ordering::highway_partial_sort_f32(
-            values, kResidentCount, kTopK);
-        nb::doNotOptimizeAway(values);
+        for (std::size_t row = 0; row < kPartialRowsPerSample; ++row) {
+          float* values = peer_bank->data(peer_call++);
+          hyle_bench::ordering::highway_partial_sort_f32(
+              values, kResidentCount, kTopK);
+          nb::doNotOptimizeAway(values);
+        }
         hyle_bench::mark(rep);
       });
   require(candidate_call == kCalls && peer_call == kCalls,
@@ -370,10 +377,13 @@ int main() {
   std::printf(
       "# HYLE_ORDERING_PARITY candidate=ordinary-hyle peer=locked-highway "
       "isa=avx2 resident_epochs=%zu streaming_epochs=%zu "
-      "resident_fresh_buffers=%zu streaming_fresh_buffers=%zu\n",
+      "resident_sort_fresh_buffers=%zu partial_fresh_buffers=%zu "
+      "streaming_fresh_buffers=%zu "
+      "partial_rows_per_sample=%zu\n",
       kResidentEpochs, kStreamingEpochs,
       hyle_bench::kReplicas * kResidentEpochs,
-      hyle_bench::kReplicas * kStreamingEpochs);
+      hyle_bench::kReplicas * kResidentEpochs * kPartialRowsPerSample,
+      hyle_bench::kReplicas * kStreamingEpochs, kPartialRowsPerSample);
   std::printf(
       "# HYLE_ORDERING_NOT_COMPARABLE rows=radix,argsort "
       "reason=no-qualified-peer-with-same-stability-nan-workspace-contract\n");
