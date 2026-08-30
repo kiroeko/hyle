@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "SIMD-V4-DELIVERY-01",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
       "round_id": "simd-v4-expert-sdk",
@@ -616,7 +616,7 @@
         "New hardware or compiler support materially changes the finite target matrix, especially SVE or RVV silicon or classic-MSVC AVX3 support.",
         "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
       ],
-      "summary": "simd-v4 SCOPED：三种 C++ 交付统一使用一个锁定 Highway/xsimd expert target 与 fixed/fat helper；普通 API、387/422 路由、运行时代码和必须编译的上游 contrib 均不在本轮。"
+      "summary": "simd-v4 AUDITED：冻结五项 delivery FIX，使原生 Highway/xsimd header、fixed helper 与 custom fat helper 在 source/static/shared 使用同一 expert target；不包装 vendor API，也不修改 ordinary SIMD 或运行时代码。"
     },
     {
       "module": "container",
