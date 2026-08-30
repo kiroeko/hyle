@@ -86,8 +86,8 @@ Tracy；SIMD 的 Highway、xsimd 与 adapted Highway VQSort。GoogleTest 和 ben
 
 ## Candidate freeze
 
-- product candidate / tree：`750c9892daede4bfab4a5c0a1b7ef7db481b6954` /
-  `9bdfd99670ddd7b36d22e27f4769774a9e1a022c`；
+- product candidate / tree：`01adf07fd76e31ab9ee19cdc9cf3cc3b36e99b1c` /
+  `ca8283b17f1508e973a24c4c3084b2f589e35588`；
 - source resource：`HYLE_DEP_SOURCE_CACHE` 只保存中央 lock identity 对应的官方 archive、完整校验后的
   immutable 展开树和管理 metadata；默认位于平台用户 cache，也可由 CMake 变量或同名环境变量指定；
 - build state：`HYLE_DEP_BUILD_DIR` 只保存当前 build 的 binary/subbuild，Hyle 只在自己的目录作用域设置
@@ -99,7 +99,8 @@ Tracy；SIMD 的 Highway、xsimd 与 adapted Highway VQSort。GoogleTest 和 ben
 - management：统一工具提供 `status/sync/check-updates/prune`；具名 `HYLE_DEP_REPAIR=YES` 只重建选中
   identity，保留 SHA 正确的 archive；prune 要求 marker 与显式确认，只删除当前 lock 不再引用的 identity；
 - CI/product integration：普通构建、产品形状 smoke、locked-feature/Tracy smoke 都走同一 resolver；
-  GitHub Actions 以 dependency-lock hash 缓存共享 source tree，不再维护第二套 archive downloader；
+  GitHub Actions 在 job 允许使用的 `github.workspace` context 下选择 checkout sibling cache，并以
+  dependency-lock hash 缓存共享 source tree，不再维护第二套 archive downloader；
 - cleanup：canonical checkout 顶层 39 个已确认 ignored build/cache/object 目标与仓库内旧 `.deps` 已删除，
   tracked 文件未被清理；`.claude` 保留，历史证据仍引用且本轮继续使用的 `C:\hyle-scratch` 不冒充废料删除。
 
@@ -118,13 +119,15 @@ Candidate 后产品取得语义、变量、锁/发布算法或正常 consumer jo
 | current CPU product shape | `PASS` | shipping-layout `core,util,obs,time` 闭包构建完成，40/40 CTest；GoogleTest source 位于共享 cache，build tree 只生成 `_deps/googletest-build` |
 | Tracy / feature package | `PASS` | 默认 `HYLE_TRACE=ON` 自动取得 Tracy 并构建 Obs；locked-feature `trace` scope 的 static/shared SDK、许可证/开发头、搬迁后 consumer 各 1/1 |
 | dependency freshness tool | `PASS` | 2026-08-30：Highway/xsimd lock 等于 upstream HEAD；Tracy v0.14.1、GoogleTest v1.18.0、mimalloc v3.5.0 以 release pin 报告 HEAD 差异但不把默认分支误判为 release upgrade |
-| workflow / docs / closure | `PASS` | workflow YAML 与 PowerShell parser 通过；329 个 Markdown、930 个相对链接、16-component closure schema 与 `git diff --check` 通过 |
+| workflow / docs / closure | `PASS` | workflow YAML 与 PowerShell parser 通过；逐键核对 GitHub context-availability 合同，job env 只用允许的 `github`、step cache key/path 才用 `runner/env/hashFiles`；329 个 Markdown、930 个相对链接、16-component closure schema 与 `git diff --check` 通过 |
 | immutable LOC | `PASS` | candidate 上 `loc-report.py --module build-package --self-check` 通过 |
 
 验证过程中修复了两个真实状态机缺口：断网 resolver 原先会在有效 archive 存在时过早拒绝 source repair；
 Windows 两个首次 configure 还可能在目录创建的瞬间命中 `EXISTS/IS_DIRECTORY` TOCTOU。另一个 WSL
 `SIGPIPE` 只属于并发合同把两个 CMake 进程串成输出管道的仪器错误；candidate 用静默子进程保留真实
-并发和双退出码裁决，没有修改产品算法。
+并发和双退出码裁决，没有修改产品算法。终审还发现 `runner.temp` 不能用于 GitHub
+`jobs.<job_id>.env`；candidate 改用该位置允许的 `github.workspace` 生成 checkout sibling，避免 hosted
+workflow 在进入 runner 前表达式求值失败。
 
 本轮没有运行 M1-MAC、hosted GitHub Actions、locked-feature `adapters/all`、真实 CUDA/Vulkan/HTTP2
 或完整 source-package smoke。前两项分别保留为跨平台/托管执行限制；后几项没有改变产品 adapter、lock
@@ -145,9 +148,9 @@ cache；或正常 consumer 出现可复现的 material configure/build 回归。
 某个未选 optional backend 缺 SDK 或一次冷配置点值不单独重开。
 
 terminal receipt：`build-v6-shared-source-cache` 对 candidate
-`750c9892daede4bfab4a5c0a1b7ef7db481b6954` / tree
-`9bdfd99670ddd7b36d22e27f4769774a9e1a022c` 的全部本轮适用门为 `PASS`，无 blocker；本页所在提交保存
+`01adf07fd76e31ab9ee19cdc9cf3cc3b36e99b1c` / tree
+`ca8283b17f1508e973a24c4c3084b2f589e35588` 的全部本轮适用门为 `PASS`，无 blocker；本页所在提交保存
 terminal end receipt。
 
-Candidate immutable LOC：全库代码 **402,475**；自实现包含测试 **96,041**；自实现不包含测试
+Candidate immutable LOC：全库代码 **402,531**；自实现包含测试 **96,041**；自实现不包含测试
 **59,898**；build/package 实现 **8,810** 行。LOC 只说明规模，不形成完成度或性能证书。
