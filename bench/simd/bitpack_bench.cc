@@ -201,7 +201,7 @@ std::size_t epoch_iterations(std::size_t n) {
   // Qualified after the first certified replay exposed nanobench instability
   // markers. Keep each epoch long enough for both frozen workload sizes without
   // changing the compared operation or its accounting boundary.
-  return n == kResidentCount ? 65536 : 256;
+  return n == kResidentCount ? 65536 : 4096;
 }
 
 template <class Candidate, class Peer>
