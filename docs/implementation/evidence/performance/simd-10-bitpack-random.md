@@ -6,8 +6,10 @@
 
 ## 被签署的命题
 
-最终候选是 commit `ee0c77e0`（canonical API/实现起于 `62458bd3`，仪器进入
-`09f662f3`），锁定 Highway 是 `f503c485cec6b4f2f596fa60d83484797c9eeb5c`。instrument 在一个固定
+最终产品候选是 commit `ee0c77e07f9be962e0a50afa4ea7a2cd1995a3ab`（canonical API/实现起于
+`62458bd3`，仪器进入 `09f662f3`，最终 epoch 资格提交是
+`07bf8843b0cb25be37abc6d1ca5dd1f4bf33c8ab`），锁定 Highway 是
+`f503c485cec6b4f2f596fa60d83484797c9eeb5c`。instrument 在一个固定
 AVX2 TU 中实例化 exact shipping target body；bitpack peer 独立使用 Highway
 `CappedTag<uint16_t, 8>` 对相同 fixed-128 canonical block 调用 `Pack16<11/13>`，random peer 独立拼写
 相同八流 xoshiro256++ 状态迁移与 f32 映射。双方对齐格式/序列、ISA、pointer/count、tail、状态所有权、
@@ -23,44 +25,51 @@ SVE 五种 VL、RVV 四种 VLEN 与 exact AVX512 artifact gate 在修复后重�
 
 - machine：登记的 `W1-WIN`，Intel Core i9-13900K，性能逻辑核 2，core class 1；pin 与 high priority
   均成功；
-- source：干净 detached worktree `ee0c77e0`；该隔离同时发现并修正了被另一张 ordering 票未提交改动
-  污染的 `highway_port` content hash；
+- source：干净 detached worktree `07bf8843b0cb25be37abc6d1ca5dd1f4bf33c8ab`；产品实现仍绑定上述
+  `ee0c77e0`。该隔离同时发现并修正了被另一张 ordering 票未提交改动污染的 `highway_port` content
+  hash；
 - build：Windows 11、Ninja Release、MSVC 19.50.35728、x64、AVX2，target
   `hyle_bitpack_bench`；
-- instrument：每侧四个 placement replica、两个 layout bank、两个执行顺序各两次；
-  `scripts/op-parity-report.py --gate 0.05 --certify`；
+- instrument：每侧四个 placement replica、两个 layout bank、两个执行顺序各两次；4K/1M 的
+  `minEpochIterations` 分别为 65,536/4,096；`scripts/op-parity-report.py --gate 0.05 --certify`；
 - accounting：初始化、资格对拍和 allocation 在计时区外；一次完整 buffer body 在计时区内；ratio 大于
   1 表示候选更快。
 
 ## 结果
 
-A/A calibration、四份输入唯一性、正反序、双 layout、pin/priority audit 与 certification 全部 `PASS`。
-11 行得到 2 `TIE`、9 `INCONCLUSIVE`、0 `LOSE`。产品中心比为：
+A/A calibration、四份输入唯一性、正反序、双 layout、pin/priority audit 与 certification 全部 `PASS`；
+四份日志均无 nanobench instability marker。11 行得到 3 `WIN`、2 `TIE`、6 `INCONCLUSIVE`、0
+`LOSE`。产品中心比为：
 
-- bitpack 4K：pack 11/13-bit `1.025/0.988`，unpack `1.025/1.017`；
-- bitpack 1M：pack 11/13-bit `1.128/1.129`，unpack `1.113/1.118`；
-- random f32 4K/1M：`1.002/1.025`。
+- bitpack 4K：pack 11/13-bit `0.966/0.997`，unpack `1.021/0.983`；
+- bitpack 1M：pack 11/13-bit `1.154/1.047`，unpack `1.110/1.130`；
+- random f32 4K/1M：`0.993/1.003`。
 
-不能把 1M bitpack 的表面优势写成确定 `WIN`：相同机制的 replica placement spread 达
-`1.163..1.226`，统一仪器因此保守给出 `INCONCLUSIVE`。同理，4K 13-bit pack 的中心 `0.988` 不能写成
-确定回退。P0 成本结构与源码检查已证明最终候选和 peer 都是 single-pass O(n)/O(1) fixed-block direct
-Highway composition，没有 transpose、whole-buffer copy、heap、lock 或逐元素 dispatch；P1 没有裁决出
-超过预声明 5% margin 的 material lose。这支持“同机制正常水平”，不支持夸张的全局排名。
+1M 的 b11 pack 与两条 unpack 通过 `WIN` 门；1M b13 pack 的中心虽为 `1.047`，其置信区间和统一
+5% margin 仍使它保持 `INCONCLUSIVE`。4K b11 pack 的中心 `0.966` 也因置信区间跨越 5% loss 边界而
+保持 `INCONCLUSIVE`，不能写成确定回退。最终 product/peer placement spread 最大约 `1.092`。P0 成本
+结构与源码检查已证明最终候选和 peer 都是 single-pass O(n)/O(1) fixed-block direct Highway
+composition，没有 transpose、whole-buffer copy、heap、lock 或逐元素 dispatch；P1 没有裁决出超过预声明
+5% margin 的 material lose。这支持“同机制正常水平”，不支持夸张的全局排名。
 
-public/body informational 中心为：bitpack pack 4K/1M `0.998/1.007`、unpack `0.983/0.972`，random
-`0.995/1.016`。正常调用路径没有第二次算法、copy 或 allocation；其中点值仍受同一 placement uncertainty
+public/body informational 中心为：bitpack pack 4K/1M `1.003/0.985`、unpack `0.975/0.997`，random
+`0.992/1.005`。正常调用路径没有第二次算法、copy 或 allocation；其中点值仍受同一 placement uncertainty
 约束，不单独触发产品改动。
+
+早期短 epoch 证据曾出现 nanobench `Unstable` 标记，因此不能用于签署。资格轮先把 4K 提到 65,536，
+随后按仪器对一条 1M unpack replica 给出的至少约 2,778 次建议，把 1M 固定为 4,096；这里列出的四份
+原始日志完整替换早期日志，没有改变 workload、操作、peer 或计费边界。
 
 ## 原始证据与重放
 
 - [HWY-first run 1](../../../../evidence/performance/simd-10-bitpack-random-hwy-first-1.txt)，SHA-256
-  `3f880d9729b5b1531d27f72b7cc2188a2f45525215a29b4f693e91713dac10e6`；
+  `32548c35c8a674a49a7b634cc2f8a15d91cc01f7128f83aed41adbed8c51f006`；
 - [HWY-first run 2](../../../../evidence/performance/simd-10-bitpack-random-hwy-first-2.txt)，SHA-256
-  `e29ae5be862e4a8c8655a9325cb2df3bf0a6f76b55b39005614634588265b6ff`；
+  `21596ab55391f8a34f255bca6a773b438a023ec000444215a88434e20ed16a88`；
 - [HYLE-first run 1](../../../../evidence/performance/simd-10-bitpack-random-hyle-first-1.txt)，SHA-256
-  `a1b2d9ad537bb4e33196a68ed114e272146515e273027b45a963c874c52221f9`；
+  `f9df3305e28469840dc10ea0934989465051ea6df6b16d72da5314b0a2a0dafd`；
 - [HYLE-first run 2](../../../../evidence/performance/simd-10-bitpack-random-hyle-first-2.txt)，SHA-256
-  `547ba1770311f79ac6ed52c3b89617a85039bc8d7af8d659462d7046579fcfee`。
+  `7dba37df40d457c916320e54abd2940d9e96ee0e383c2fc93b48875c31b1a37d`。
 
 ```powershell
 python scripts/op-parity-report.py --gate 0.05 --certify `
