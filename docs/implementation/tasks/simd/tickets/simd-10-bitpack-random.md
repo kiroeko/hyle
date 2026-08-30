@@ -1,6 +1,6 @@
 # SIMD-10：Bitpack 与 random
 
-- ticket state：`ACTIVE`
+- ticket state：`DONE`
 - kind：product capability/correctness
 - depends on：SIMD-09
 - budget：1 工程日；性能预算 60 分钟
@@ -80,3 +80,55 @@ u16 11/13-bit 与代表性 f32 fill；优先检查 bytes moved、额外 pass 和
 本票只允许上述六项。generic u64 bitpack、variable-bit-per-value、frame-of-reference、delta/varint、streaming
 incremental codec、quant block/GEMM fusion、协议 framing、entropy/crypto RNG、分布采样和 thread-safe shared
 state 分别由未来 consumer、Compute、format owner、标准/专用随机库承担；不得在本票扩张。
+
+## 实现与验证结果
+
+- ordinary bitpack 现在提供 u8/u16/u32 全宽度、固定 128-value logical block、little-endian canonical-v1
+  payload；pointer/count core 与 `std::span` convenience 共用同一语义。zero/tail/multi-block、golden bytes、
+  input-fit、padding、cross-tier 与跨 VL/VLEN bytes 均有 exhaustive/differential 覆盖。
+- fixed/scalable target TU 直接实例化锁定 Highway bit-pack，删除约 2,800 行平行 vendor port；HYLE 只拥有
+  canonical block/tail/wire 编排与 u16 11/13 correction。Runtime v10 同时拥有六个 bitpack pointer 和真实
+  module metadata，ordinary 只有一次 cached batch dispatch，exact route 直接绑定 target suffix。
+- `RandomState` 完成 seed/reseed、copy/assignment、O(n) 无输出 `advance`、固定成本 LongJump `split` 和
+  u64/f32/f64 fill。八流序列、chunk/ISA 位一致性、float bounds 与 worker 独立 segment 均通过测试；同一
+  state 非并发安全的负空间已写入公开头和 user guide。旧 `native/random.h` 自消费迁移面已删除，generated
+  TU 直接使用 Highway register mechanism。
+- W1-WIN MSVC 19.50 的 shipping scalar/SSE4/AVX2/fat correctness 与 exact AVX512 artifact gate 通过；
+  同一 exact scalable binary 在 QEMU SVE VL 128/256/384/512/2048 和 RVV VLEN 128/256/512/1024 各通过
+  22/22。`bitpack.h`/`random.h` self-contained 2/2；模拟器只签 correctness，不签 timing。
+- selected-component source embedding、relocated shared SDK、relocated static SDK 都重新构建并实际消费
+  canonical bitpack 与 RNG lifecycle；文档、组件闭包、dependency/port lock 和 exact artifact checker
+  全部通过。
+
+## 有界性能 verdict
+
+本票签 `PASS / P1_ENGINEERING / 5% / NO MATERIAL LOSE`，不签整个 SIMD、全部 type/width/ISA 或 Formal
+SOTA。第一次资格测量真实发现 canonical bitpack 为吃满宽寄存器而做 stack-tile 双向转置，八条代表行
+中心只有 `0.199..0.297`；有限产品修复删除额外 O(n) 搬运，直接逐 fixed-128 block 使用 Highway
+mechanism，未改变 API、wire bytes 或常态 metadata。
+
+最终 W1-WIN、MSVC 19.50、固定 AVX2 的四份 clean-source 日志使用双顺序、双 layout、每侧四个 replica、
+4K/1M epoch 65,536/4,096 和 5% margin，均无 instability marker；A/A、pin/priority 与 certification
+全部通过。含 anchor 的 11 行为 3 `WIN`、2 `TIE`、6 `INCONCLUSIVE`、0 `LOSE`。1M b11 pack 与两条
+unpack 为 `WIN`；其余产品行没有裁决出 material loss。最终实现与 peer 都是 single-pass O(n)/O(1)、
+无 transpose/whole-buffer copy/heap/lock/逐元素 dispatch。完整比值、hash、重放和禁止外推范围见
+[SIMD-10 performance evidence](../../../evidence/performance/simd-10-bitpack-random.md)。
+
+## 终止 receipt
+
+- immutable output commit：`44f2d023920e7cc2fad29b2ab31a5493a48db147`，tree
+  `a930f41bd606a82b1cf7e14707009682a5d1722e`；canonical 产品实现起于 `62458bd3`，性能机制修复是
+  `ee0c77e07f9be962e0a50afa4ea7a2cd1995a3ab`，最终 instrument identity 是
+  `07bf8843b0cb25be37abc6d1ca5dd1f4bf33c8ab`。相对 input commit 共 55 个文件，2,902 additions、
+  4,769 deletions。
+- 四项 LOC 由 immutable output 以 `cloc 2.08`、
+  `python scripts/loc-report.py --module simd --commit 44f2d023920e7cc2fad29b2ab31a5493a48db147 --self-check --json`
+  复算且 `self-check=pass`：全库代码 **312,262**；自实现包含测试 **119,349**；自实现不包含测试
+  **77,391**；当前 SIMD 实现 **31,708** 行。
+- known limits：ordinary bitpack 是无 framing payload，type/count/bits/version 由格式 owner 保存，输入必须
+  已落在 bit width；entropy/crypto/distributions、variable-bit/FOR/delta/varint、quant/GEMM fusion 与
+  thread-safe shared RNG 不属于本票；SVE/RVV/AVX512/macOS 未签固定 timing；6 行 `INCONCLUSIVE` 不得
+  改写为胜负。下一张有限票是 SIMD-11 ordering。
+- reopen：canonical bytes、tail/padding/input-fit 或 RNG stream lifecycle 出现可复现缺陷，Runtime
+  metadata/pointer 再次分叉，热路径重现额外 whole-buffer pass/heap/lock/逐元素 dispatch，三种交付失效，
+  或同合同真实 consumer 在资格化真机上复现超过 5% 的 material regression。
