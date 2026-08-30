@@ -136,14 +136,35 @@ Highway load/add/slide/store，Runtime 的函数指针与 `selected_target` meta
 一次间接调用。custom predicate/op、segmented/parallel/tensor/GPU scan 分别归标准算法、source expert、
 Graph/Compute 或 accelerator owner。
 
+### Ordering 合同
+
+普通 `sort/partial_sort/select` 是原地 comparison ordering，不建立与 `n` 成比例的 heap workspace；
+`partial_sort` 只保证前 `k` 项有序，`select` 只保证第 `k` 项及两侧 partition。普通路径不稳定，不能按
+长度暗中切换到稳定 radix，也不能为 benchmark 的小 `k` 特例保留 `O(n*k)` insertion route。numeric、
+`UInt128` 与整数 `KeyValue32/64` 的 full/partial/select entry 和 `selected_target` 由同一 Runtime 表生成，
+每个完整 buffer 只有一次已缓存间接调用。经典 cl.exe 因 Highway 官方 AVX3 blocklist 将 ordering 降到
+AVX2；这是可报告的 per-family feature，不得伪称 AVX-512 kernel。
+
+稳定 `radix_sort/argsort` 使用 base-256 LSD，时间为 `O(n * sizeof(key))`，空间为 `O(n)`。核心重载接收
+caller-owned typed span，不分配；便利重载只负责分配同样大小的 workspace，失败传播 `std::bad_alloc`，
+不会静默改用不稳定算法。`argsort` 保留 keys，输出 32 位稳定 permutation。浮点有限值按 numeric order，
+NaN 在升降序都排在有限值之后；NaN payload 和 `-0/+0` 的输入顺序保持。keys、indices 与 scratch 的有效
+字节区间必须两两不重叠，不能依赖只比较首地址的弱 alias 检查。
+
+ordering 使用来自 Highway `83eff393...` 的具名最小 VQSort adaptation，而不是第二套 HYLE 排序设计。
+直接以当前锁定 Highway 为 11 种公开类型、三种 operation 生成全部 target TU，在 classic MSVC 的有界
+资格化尝试中无法满足构建时间预算；保留 adaptation 的 delta 限于 compiler/scalable target glue、HYLE
+公开 POD、静态入口及上述产品合同。来源、路径、许可证和内容 hash 由中央 dependency lock 机械验证。
+
 ## Vendor 与升级边界
 
 锁定 Highway 是 header-only product dependency，不形成第二个 runtime ABI。xsimd 当前只作独立 accuracy/
 performance peer；只有 Highway 无法满足的具名 capability、accuracy 或真实 consumer 性能缺口才能进入
 产品，不能为“同时支持两个 vendor”在热循环增加 runtime abstraction。
 
-checked-in Highway-derived port 是待裁决债务，不因改 namespace 就变成自实现。direct wrapper 可行即删除；
-必须保留时只保留真实 contract delta，并登记 origin、local delta、许可证和内容 hash。完整规则见
+checked-in Highway-derived port 不因改 namespace 就变成自实现。direct wrapper 可行即删除；必须保留时
+只保留真实 contract delta，并登记 origin、local delta、许可证和内容 hash。ordering 的有界裁决保留上述
+最小 adaptation；后续 Highway 升级必须重新移植相关 upstream 修复，而不是把它视为冻结自实现。完整规则见
 [`SIMD vendor ownership`](simd-vendor-surface.md)。
 
 ## 依赖与交付

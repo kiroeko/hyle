@@ -10,6 +10,7 @@
 #include "src/simd/random/kernels.h"
 #include "src/simd/scan/kernels.h"
 #include "src/simd/search/kernels.h"
+#include "src/simd/sort/kernels.h"
 
 namespace hyle::simd {
 namespace {
@@ -74,6 +75,71 @@ namespace {
   {HYLE_BITPACK_RUNTIME_ONE(u8, suffix) HYLE_BITPACK_RUNTIME_ONE(u16, suffix)  \
        HYLE_BITPACK_RUNTIME_ONE(u32, suffix)}
 
+#define HYLE_SORT_RUNTIME_ONE(T, tag, suffix)                                  \
+  &detail::sort_##tag##_##suffix, &detail::psort_##tag##_##suffix,             \
+      &detail::select_##tag##_##suffix,
+
+#define HYLE_SORT_RUNTIME(suffix)                                                \
+  {HYLE_SORT_RUNTIME_ONE(std::uint16_t, u16, suffix)                            \
+   HYLE_SORT_RUNTIME_ONE(std::int16_t, i16, suffix)                             \
+   HYLE_SORT_RUNTIME_ONE(std::uint32_t, u32, suffix)                            \
+   HYLE_SORT_RUNTIME_ONE(std::int32_t, i32, suffix)                             \
+   HYLE_SORT_RUNTIME_ONE(std::uint64_t, u64, suffix)                            \
+   HYLE_SORT_RUNTIME_ONE(std::int64_t, i64, suffix)                             \
+   HYLE_SORT_RUNTIME_ONE(float, f32, suffix)                                    \
+   HYLE_SORT_RUNTIME_ONE(double, f64, suffix)                                   \
+   HYLE_SORT_RUNTIME_ONE(UInt128, u128, suffix)                                 \
+   HYLE_SORT_RUNTIME_ONE(KeyValue32, kv32, suffix)                              \
+   HYLE_SORT_RUNTIME_ONE(KeyValue64, kv64, suffix)}
+
+Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_SCALAR) || defined(HYLE_SIMD_EXACT_TARGET_SSE4)
+  (void)isa;
+  return HYLE_SORT_RUNTIME(scalar);
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
+  (void)isa;
+  return HYLE_SORT_RUNTIME(avx2);
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  (void)isa;
+#if defined(HYLE_COMPILER_MSVC)
+  return HYLE_SORT_RUNTIME(avx2);
+#else
+  return HYLE_SORT_RUNTIME(avx512);
+#endif
+#elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
+  (void)isa;
+  return HYLE_SORT_RUNTIME(neon);
+#elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
+  (void)isa;
+  return HYLE_SORT_RUNTIME(sve);
+#elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
+  (void)isa;
+  return HYLE_SORT_RUNTIME(rvv);
+#else
+  switch (isa) {
+#if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512:
+#if defined(HYLE_COMPILER_MSVC)
+      return HYLE_SORT_RUNTIME(avx2);
+#else
+      return HYLE_SORT_RUNTIME(avx512);
+#endif
+    case Isa::kAvx2: return HYLE_SORT_RUNTIME(avx2);
+    // The bounded adaptation has no separate SSE4 body.
+    case Isa::kSse42: return HYLE_SORT_RUNTIME(scalar);
+#elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+    case Isa::kSve: return HYLE_SORT_RUNTIME(sve);
+#endif
+    case Isa::kNeon: return HYLE_SORT_RUNTIME(neon);
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+    case Isa::kRvv: return HYLE_SORT_RUNTIME(rvv);
+#endif
+    default: return HYLE_SORT_RUNTIME(scalar);
+  }
+#endif
+}
+
 #if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
 #define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                           \
   value.ops_module.isa = Isa::kAvx2;                                          \
@@ -115,6 +181,7 @@ namespace {
          &detail::bf16_to_f32_##suffix, &detail::f32_to_bf16_##suffix,             \
          &detail::f16_to_bf16_##suffix, &detail::bf16_to_f16_##suffix},            \
         HYLE_BITPACK_RUNTIME(suffix),                                              \
+        sort_ops_for_product_isa(tier),                                            \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
@@ -150,6 +217,8 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 
 #undef HYLE_RUNTIME_TABLE
 #undef HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK
+#undef HYLE_SORT_RUNTIME
+#undef HYLE_SORT_RUNTIME_ONE
 #undef HYLE_BITPACK_RUNTIME
 #undef HYLE_BITPACK_RUNTIME_ONE
 #undef HYLE_OPS_ROW_RUNTIME_ONE

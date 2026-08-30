@@ -14,7 +14,7 @@ class RandomState;
 // ordinary calls pay one function-pointer hop per whole buffer. Its layout and
 // per-tier accessors are deliberately not part of the installed C++ surface.
 struct Runtime {
-  static constexpr std::uint32_t kTableVersion = 10;
+  static constexpr std::uint32_t kTableVersion = 11;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -140,6 +140,27 @@ struct Runtime {
                        unsigned) noexcept;
   };
 
+  struct Sort {
+#define HYLE_RUNTIME_SORT_FIELDS(T, tag)                                      \
+    void (*sort_##tag)(T*, std::size_t, bool) noexcept;                       \
+    void (*partial_sort_##tag)(T*, std::size_t, std::size_t, bool) noexcept;  \
+    void (*select_##tag)(T*, std::size_t, std::size_t, bool) noexcept;
+
+    HYLE_RUNTIME_SORT_FIELDS(std::uint16_t, u16)
+    HYLE_RUNTIME_SORT_FIELDS(std::int16_t, i16)
+    HYLE_RUNTIME_SORT_FIELDS(std::uint32_t, u32)
+    HYLE_RUNTIME_SORT_FIELDS(std::int32_t, i32)
+    HYLE_RUNTIME_SORT_FIELDS(std::uint64_t, u64)
+    HYLE_RUNTIME_SORT_FIELDS(std::int64_t, i64)
+    HYLE_RUNTIME_SORT_FIELDS(float, f32)
+    HYLE_RUNTIME_SORT_FIELDS(double, f64)
+    HYLE_RUNTIME_SORT_FIELDS(UInt128, u128)
+    HYLE_RUNTIME_SORT_FIELDS(KeyValue32, kv32)
+    HYLE_RUNTIME_SORT_FIELDS(KeyValue64, kv64)
+
+#undef HYLE_RUNTIME_SORT_FIELDS
+  };
+
   struct Module {
     Isa isa;
     std::uint64_t features;
@@ -176,6 +197,7 @@ struct Runtime {
   Narrow narrow;
   DtypeConvert dtype_convert;
   Bitpack bitpack_ops;
+  Sort sort_ops;
   Module ops_module;
   Module random_module;
   Module search_module;

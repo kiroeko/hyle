@@ -2,26 +2,24 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
 #include "hyle/simd/types.h"
 
-// sort.h -- in-place vectorized sort / partial_sort / select (simd-09 line②, "算法级能力").
-// The accelerated path is a HYLE port of Highway's verified vqsort (VQSortStatic /
-// VQPartialSortStatic / VQSelectStatic; origin hwy/contrib/sort, SHA 83eff393…). The port lives
-// under src/simd/sort/vqsort_hyle/ and uses only hyle::simd D-tag primitives. Per-ISA TUs are
-// compiled at their own -march and entered through a baseline dispatcher (sort_dispatch.cc)
-// gated on cpu_features().
+// In-place whole-buffer sort / partial_sort / select. Accelerated target TUs use the licensed,
+// bounded HYLE adaptation of Highway VQSort; HYLE retains pointer/count, order, floating-point,
+// public-POD and dispatch contracts. No vendor type crosses this public boundary.
 //
 // TIERS (sort_dispatch.cc, same shape as math_dispatch): x86 avx512 -> avx2 -> scalar; arm64
-// SVE full-VL partition + capped base network -> NEON; riscv64 RVV -> scalar. The scalar floor is
+// SVE capped-network -> NEON; riscv64 RVV -> scalar. The scalar floor is
 // std::sort / std::partial_sort / std::nth_element --
 // ALWAYS compiled, the correctness oracle + the non-x86 / old-CPU fallback (never a SIGILL).
-// vqsort is NOT a stable sort (order of equal keys is unspecified), matching std::sort/
-// std::nth_element (use a key-index pair if stability is needed).
+// VQSort is NOT stable (the order of equal keys is unspecified), matching std::sort/
+// std::nth_element. Use radix_sort or argsort below when stability is required.
 //
 // Scalar keys are u16/i16/u32/i32/u64/i64/f32/f64. UInt128 is an unsigned 128-bit POD key;
-// KeyValue32/64 provide zero-copy top-k payload pairs. All public data surfaces are pointers,
+// KeyValue32/64 provide in-place top-k payload pairs. All public data surfaces are pointers,
 // counts, and fixed-layout PODs (no standard-library container crosses the library boundary).
 //
 // SEMANTICS (units of KEYS, mirroring the vqsort static entry points):
@@ -38,8 +36,7 @@
 
 namespace hyle::simd {
 
-// Sort direction. Ascending = smallest first; Descending = largest first. Maps to the port's
-// SortAscending{} / SortDescending{} order tags inside the ISA TUs.
+// Sort direction. Ascending = smallest first; Descending = largest first.
 enum class SortOrder : std::uint8_t { kAscending, kDescending };
 
 // --- full sort (in place) ---
@@ -98,7 +95,7 @@ HYLE_SIMD_API void select(double* keys, std::size_t n, std::size_t k,
 
 // --- unsigned 128-bit keys ---------------------------------------------------------------
 // Numeric order is lexicographic by (hi, lo). The explicit POD keeps the ABI independent of
-// compiler-specific __int128 support and is byte-identical to the internal vqsort key.
+// compiler-specific __int128 support.
 inline constexpr bool operator==(UInt128 a, UInt128 b) noexcept {
   return a.lo == b.lo && a.hi == b.hi;
 }
@@ -121,10 +118,9 @@ HYLE_SIMD_API void select(UInt128* keys, std::size_t n, std::size_t k,
 // key, read the values out in key order. vqsort terminates recursion earlier for KV than for a
 // full 128-bit key (only the key half is compared), so this is the fast path for "sort scores,
 // keep track of which lane each came from" -- attention/logits top-k sampling, MoE routing,
-// sparse index building. Layout is {value, key} (little-endian, value first), byte-identical to
-// the port's K32V32/K64V64 for zero-copy reinterpret_cast; construct with the designated fields,
-// don't assume field order. Sorts by `key` only; equal keys' value order is unspecified (vqsort
-// is not stable), same as the scalar-T ops.
+// sparse index building. Layout is {value, key}; construct with the designated fields and do not
+// use this integer-key shape for floating logits. Sorts by `key` only; equal keys' value order is
+// unspecified (vqsort is not stable), same as the scalar-T ops.
 
 HYLE_SIMD_API void sort(KeyValue32* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void sort(KeyValue64* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;
@@ -137,33 +133,57 @@ HYLE_SIMD_API void select(KeyValue32* kv, std::size_t n, std::size_t k,
 HYLE_SIMD_API void select(KeyValue64* kv, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 
-// --- P1-2: LSD radix sort (stable, O(n · passes)) + argsort ---------------------------------
-// Integer / float keys via LSD base-256 (8-bit digits). STABLE (equal keys keep relative order),
-// unlike vqsort. Needs O(n) temporary storage (malloc); on OOM falls back to sort().
-// u32 = 4 passes, u64 = 8, f32 = bit-flip then 4. Intended for large n (auto threshold in
-// sort() for integer keys is kRadixSortMinN; explicit radix_sort always uses radix).
+// --- Stable LSD radix sort + argsort ---------------------------------------------------------
+// Base-256, O(n * sizeof(key)) time and O(n) caller-reusable scratch. Equal integer keys,
+// -0/+0 and all NaNs retain input order. Floating-point finite values use numeric order and NaNs
+// are stable-last in BOTH directions, matching the ordinary sort family above.
 //
-// argsort: writes indices[0..n) as a permutation of 0..n-1 such that
-//   keys[indices[i]] is sorted by `order` (stable). indices is output-only.
+// The std::span overloads never allocate and require scratch.size() >= n with no overlap between
+// scratch and the live input/output ranges. The convenience overloads allocate exactly n scratch
+// elements and therefore may throw std::bad_alloc (including array-length failure). This is
+// intentional: a stable
+// algorithm never silently falls back to an unstable one on OOM. Repeated/hot callers should own
+// one scratch buffer and use the span overload.
+//
+// argsort writes 32-bit indices as a stable permutation. Therefore n==0 or n-1 must fit uint32_t;
+// violating that size contract fails fast. keys is borrowed and unchanged; indices is output-only.
 
-inline constexpr std::size_t kRadixSortMinN = 4096;  // sort() auto-picks radix above this
+inline constexpr std::size_t radix_sort_workspace_size(std::size_t n) noexcept { return n; }
+inline constexpr std::size_t argsort_workspace_size(std::size_t n) noexcept { return n; }
 
-HYLE_SIMD_API void radix_sort(std::uint32_t* keys, std::size_t n,
-                              SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void radix_sort(std::int32_t* keys, std::size_t n,
-                              SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void radix_sort(std::uint64_t* keys, std::size_t n,
-                              SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void radix_sort(std::int64_t* keys, std::size_t n,
-                              SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void radix_sort(float* keys, std::size_t n,
-                              SortOrder order = SortOrder::kAscending) noexcept;
+#define HYLE_SIMD_DECLARE_RADIX(T)                                                   \
+  HYLE_SIMD_API void radix_sort(T* keys, std::size_t n, std::span<T> scratch,       \
+                                SortOrder order = SortOrder::kAscending) noexcept;   \
+  HYLE_SIMD_API void radix_sort(T* keys, std::size_t n,                             \
+                                SortOrder order = SortOrder::kAscending);
 
-HYLE_SIMD_API void argsort(const std::uint32_t* keys, std::uint32_t* indices, std::size_t n,
-                           SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void argsort(const std::int32_t* keys, std::uint32_t* indices, std::size_t n,
-                           SortOrder order = SortOrder::kAscending) noexcept;
-HYLE_SIMD_API void argsort(const float* keys, std::uint32_t* indices, std::size_t n,
-                           SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_DECLARE_RADIX(std::uint16_t)
+HYLE_SIMD_DECLARE_RADIX(std::int16_t)
+HYLE_SIMD_DECLARE_RADIX(std::uint32_t)
+HYLE_SIMD_DECLARE_RADIX(std::int32_t)
+HYLE_SIMD_DECLARE_RADIX(std::uint64_t)
+HYLE_SIMD_DECLARE_RADIX(std::int64_t)
+HYLE_SIMD_DECLARE_RADIX(float)
+HYLE_SIMD_DECLARE_RADIX(double)
+
+#undef HYLE_SIMD_DECLARE_RADIX
+
+#define HYLE_SIMD_DECLARE_ARGSORT(T)                                                \
+  HYLE_SIMD_API void argsort(const T* keys, std::uint32_t* indices, std::size_t n, \
+                             std::span<std::uint32_t> scratch,                      \
+                             SortOrder order = SortOrder::kAscending) noexcept;     \
+  HYLE_SIMD_API void argsort(const T* keys, std::uint32_t* indices, std::size_t n, \
+                             SortOrder order = SortOrder::kAscending);
+
+HYLE_SIMD_DECLARE_ARGSORT(std::uint16_t)
+HYLE_SIMD_DECLARE_ARGSORT(std::int16_t)
+HYLE_SIMD_DECLARE_ARGSORT(std::uint32_t)
+HYLE_SIMD_DECLARE_ARGSORT(std::int32_t)
+HYLE_SIMD_DECLARE_ARGSORT(std::uint64_t)
+HYLE_SIMD_DECLARE_ARGSORT(std::int64_t)
+HYLE_SIMD_DECLARE_ARGSORT(float)
+HYLE_SIMD_DECLARE_ARGSORT(double)
+
+#undef HYLE_SIMD_DECLARE_ARGSORT
 
 }  // namespace hyle::simd

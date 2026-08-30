@@ -5,6 +5,7 @@
 #include "hyle/simd/runtime.h"
 #include "hyle/simd/scan.h"
 #include "hyle/simd/search.h"
+#include "hyle/simd/sort.h"
 
 #include <array>
 #include <cmath>
@@ -88,9 +89,34 @@ int main() {
   if (random_a != random_b)
     return 9;
 
+  std::array<float, 6> top_keys{3.0f, -2.0f, 9.0f, 1.0f, 7.0f, 4.0f};
+  hyle::simd::partial_sort(top_keys.data(), top_keys.size(), 2,
+                           hyle::simd::SortOrder::kDescending);
+  if (top_keys[0] != 9.0f || top_keys[1] != 7.0f)
+    return 10;
+
+  std::array<std::uint32_t, 7> stable_keys{4, 1, 4, 2, 1, 3, 1};
+  std::array<std::uint32_t, stable_keys.size()> radix_scratch{};
+  hyle::simd::radix_sort(stable_keys.data(), stable_keys.size(), radix_scratch);
+  if (stable_keys != std::array<std::uint32_t, 7>{1, 1, 1, 2, 3, 4, 4})
+    return 11;
+
+  const std::array<float, 4> scores{0.5f, 2.0f, -1.0f, 2.0f};
+  std::array<std::uint32_t, scores.size()> indices{};
+  std::array<std::uint32_t, scores.size()> argsort_scratch{};
+  hyle::simd::argsort(scores.data(), indices.data(), scores.size(),
+                      argsort_scratch, hyle::simd::SortOrder::kDescending);
+  if (indices != std::array<std::uint32_t, 4>{1, 3, 0, 2})
+    return 12;
+
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
-  const char *active = hyle::platform::isa_name(
+  const char* active = hyle::platform::isa_name(
       hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
-  return active == nullptr || active[0] == '\0' ? 10 : 0;
+  const char* ordering = hyle::platform::isa_name(
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kSort).isa);
+  return active == nullptr || active[0] == '\0' || ordering == nullptr ||
+                 ordering[0] == '\0'
+             ? 13
+             : 0;
 }

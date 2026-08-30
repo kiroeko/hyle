@@ -22,6 +22,8 @@
 #                                      # SIMD-09 bounded family gate
 #   HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/rvv-qemu-test.sh base
 #                                      # SIMD-10 bounded family gate
+#   HYLE_SCALABLE_SORT_ONLY=1 bash scripts/rvv-qemu-test.sh base
+#                                      # SIMD-11 bounded ordering gate
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -93,7 +95,8 @@ run_tier() {
   local math_test_objects=()
   if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
      [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ] &&
-     [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" != "1" ]; then
+     [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" != "1" ] &&
+     [ "${HYLE_SCALABLE_SORT_ONLY:-0}" != "1" ]; then
     $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
     $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
     math_test_objects+=(
@@ -135,7 +138,6 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/sort_dispatch.cc" -o "$OUT/sort_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort_${name}.o"
-  $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk_${name}.o"
   for module in ops random scan search narrow; do
     printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
@@ -169,7 +171,7 @@ run_tier() {
     "$OUT/bitpack_rvv_${name}.o" "$OUT/bitpack_scalar_${name}.o" "$OUT/bitpack_dispatch_${name}.o" \
     "$OUT/scan_rvv_${name}.o" "$OUT/scan_scalar_${name}.o" "$OUT/scan_dispatch_${name}.o" \
     "$OUT/sort_rvv_${name}.o" "$OUT/sort_scalar_${name}.o" "$OUT/sort_dispatch_${name}.o" \
-    "$OUT/radix_sort_${name}.o" "$OUT/stream_topk_${name}.o" \
+    "$OUT/radix_sort_${name}.o" \
     "$OUT/cpu_${name}.o" "$OUT/error_status_${name}.o" "$OUT/thread_test_stub_${name}.o" \
     "$OUT/fat_scalar_${name}.o" "$OUT/fat_rvv_${name}.o" "$OUT/runtime_${name}.o" \
     "$OUT/ops_scalar_${name}.o" "$OUT/ops_rvv_${name}.o" "$OUT/ops_dispatch_${name}.o" \
@@ -188,6 +190,8 @@ run_tier() {
     test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Rvv.LoadStoreAllTypes)
   elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
     test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*:Rvv.LoadStoreAllTypes)
+  elif [ "${HYLE_SCALABLE_SORT_ONLY:-0}" = "1" ]; then
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*:Rvv.LoadStoreAllTypes)
   fi
   # qemu-linux-user 8.2 executes Zvbb/Zvbc instructions but does not emulate the
   # riscv_hwprobe optional-extension result (the syscall safely reports no bit).

@@ -35,9 +35,9 @@ endif()
 set(_simd_arch_sources "")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
-  # Official Highway excludes every AVX3 target under cl.exe. The HYLE vqsort
-  # port has the same correctness boundary, while clang-cl is known-good and
-  # must not be caught by CMake's broader MSVC frontend-family variable.
+  # Official Highway excludes every AVX3 target under cl.exe. The qualified
+  # local VQSort adaptation has the same correctness boundary; clang-cl is
+  # known-good and must not be caught by CMake's broader MSVC variable.
   set(_hyle_simd_cl_sort_fallback FALSE)
   if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(_hyle_simd_cl_sort_fallback TRUE)
@@ -64,8 +64,8 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
   if(HYLE_SIMD_BUILD_AVX2 OR
      (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
-    # An exact AVX-512 cl.exe product still needs the AVX2 vqsort TU: this is a
-    # compiler-specific per-module fallback, not a second runtime target.
+    # An exact AVX-512 cl.exe product still needs the AVX2 VQSort TU: this is
+    # a compiler-specific per-module fallback, not a second runtime target.
     list(APPEND _simd_arch_sources sort/vqsort_hyle_avx2.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX512)
@@ -127,8 +127,8 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
 endif()
 
 # Highway is a header-only product mechanism compiled into HYLE's fixed-target TUs; it does not
-# add a second runtime library ABI. The remaining VQSort port is tracked separately until its
-# bounded ordering ticket decides direct adoption or a minimal local delta.
+# add a second runtime library ABI. VQSort remains a named compiler/scalable/public-POD adaptation
+# because direct all-type instantiation is not buildable within the qualified MSVC budget.
 hyle_add_module(simd SOURCES
   runtime.cc
   ops/dispatch_ops.cc
@@ -144,7 +144,6 @@ hyle_add_module(simd SOURCES
   sort/sort_dispatch.cc
   sort/vqsort_scalar.cc
   sort/radix_sort.cc
-  sort/stream_topk.cc
   bitpack/bitpack_dispatch.cc
   ${_simd_arch_sources})
 
@@ -177,12 +176,9 @@ if(MSVC AND
    (_simd_exact_target STREQUAL "SCALAR" OR
     _simd_exact_target STREQUAL "SSE4"))
   # Recent MSVC STL headers embed their own AVX sorting variants and runtime selector into any TU
-  # that instantiates std::sort. They are safe, but would violate an exact scalar/SSE artifact's
-  # stronger "contains no higher-tier instructions" contract.
+  # that instantiates std::sort. They are safe, but violate an exact scalar/SSE artifact contract.
   set_source_files_properties(
     sort/vqsort_scalar.cc
-    sort/radix_sort.cc
-    sort/stream_topk.cc
     PROPERTIES COMPILE_DEFINITIONS _DISABLE_VECTOR_ALGORITHMS=1)
 endif()
 
@@ -246,7 +242,6 @@ hyle_add_dispatched_kernel(HIGHWAY
   NAME bitpack
   IMPL "src/simd/bitpack/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleIsa.cmake) -- one tier
 # name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none. Gated by
 # arch: the wide x86 TUs only exist in an x86 build (see the SOURCES split above), and the
@@ -316,22 +311,16 @@ if(HYLE_SIMD_X64)
       hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
     endif()
   endif()
-  # The HYLE vqsort variant still uses the migration D-tag backend selected by
-  # HYLE_SIMD_TARGET_*; hyle_set_isa supplies its target codegen.
   if(HYLE_SIMD_BUILD_AVX2 OR
      (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
     hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
   endif()
-  if(HYLE_SIMD_BUILD_AVX512)
-    if(NOT _hyle_simd_cl_sort_fallback)
-      hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
-    endif()
+  if(HYLE_SIMD_BUILD_AVX512 AND NOT _hyle_simd_cl_sort_fallback)
+    hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
   endif()
   if(MSVC)
-    # MSVC 19.50 diagnoses the intentionally unreachable sides of vqsort's
-    # compile-time sorting networks after __assume/if-constexpr folding. Keep
-    # the exception local to the two ported vqsort instantiation units; all
-    # other HYLE code remains under /W4 /WX and C4702.
+    # Compile-time network branches are intentionally unreachable after
+    # if-constexpr folding; keep this warning exception local to port TUs.
     if(HYLE_SIMD_BUILD_AVX2 OR
        (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
       set_property(SOURCE sort/vqsort_hyle_avx2.cc

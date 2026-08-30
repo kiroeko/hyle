@@ -226,18 +226,46 @@ hyle::simd::softmax_f32(src, probabilities, n);  // out-of-place
 hyle::simd::log_softmax_f32(dst, n);             // 原地 convenience
 ```
 
+### 排序、top-k 与稳定索引怎么选
+
+| 需求 | 使用 | 数据与资源合同 |
+|---|---|---|
+| 全量排序，不要求相等项稳定 | `sort(keys, n, order)` | 原地 comparison ordering；无隐藏的大数组分配 |
+| 只要排好序的前 `k` 项 | `partial_sort(keys, n, k, order)` | 原地；前 `k` 项有序，尾部内容未指定 |
+| 只要第 `k` 项及两侧 partition | `select(keys, n, k, order)` | 原地；不要为只取阈值付全排序成本 |
+| 整数 key 和整数 payload 一起移动 | `partial_sort(KeyValue32/64*, ...)` | 按 `key` 排序，`value` 跟随；相同 key 不稳定 |
+| 值本身要稳定排序 | `radix_sort(keys, n, scratch, order)` | base-256；显式 `n` 个同类型 scratch，不分配 |
+| 保留原 key，只输出稳定索引 | `argsort(keys, indices, n, scratch, order)` | 输出 `uint32_t` permutation；需要 `n` 个 index scratch |
+
+浮点 score 需要稳定索引时使用 `argsort`，再读取前 `k` 个 index；不要把浮点 bit pattern 塞入只按
+整数 key 比较的 `KeyValue32/64`。当前没有会暗中把小 `k` 改走 `O(n*k)` 插入算法的快速路径，也没有
+在普通 `sort` 达到某个长度后偷偷分配 radix workspace。
+
 ```cpp
 #include "hyle/simd/sort.h"
+#include <vector>
 
 hyle::simd::sort(keys, n, hyle::simd::SortOrder::kAscending);
 hyle::simd::partial_sort(keys, n, 10, hyle::simd::SortOrder::kAscending);
 hyle::simd::select(keys, n, k, hyle::simd::SortOrder::kAscending);
+
+std::vector<float> value_scratch(hyle::simd::radix_sort_workspace_size(n));
+hyle::simd::radix_sort(keys, n, value_scratch,
+                       hyle::simd::SortOrder::kAscending);
+
+std::vector<std::uint32_t> indices(n);
+std::vector<std::uint32_t> index_scratch(hyle::simd::argsort_workspace_size(n));
+hyle::simd::argsort(read_only_scores, indices.data(), n, index_scratch,
+                    hyle::simd::SortOrder::kDescending);
 ```
 
 普通 key 支持 i/u16、i/u32、i/u64、f32/f64。标准 C++ 没有可移植 `uint128_t` 类型，因此使用
 `UInt128 {lo, hi}`，按 `(hi, lo)` 的 unsigned 数值序排序。需要“分数排序时索引跟着走”时使用
 `KeyValue32/64`；需要稳定排序时显式用 `radix_sort` 或 `argsort`，不要假设普通 `sort`
-对相等 key 稳定。
+对相等 key 稳定。stable 浮点排序把所有 NaN 放在有限值之后（升降序均如此），保留 NaN payload 间及
+`-0/+0` 间的输入顺序。scratch 重载不会分配；省略 scratch 的 convenience 会分配恰好 `n` 个元素并可能
+抛出 `std::bad_alloc`，不会在 OOM 时静默改用不稳定算法。`argsort` 使用 32 位 index，因此 `n - 1`
+必须能由 `uint32_t` 表示。
 
 ```cpp
 #include "hyle/simd/bitpack.h"
@@ -260,6 +288,8 @@ SVE 与 RVV 产生相同字节，VL/VLEN 不影响格式。codec 本身不写 fr
 - `n == 0` 在上述 batch/scan/search/sort 接口通常允许空 data 指针；search 的 `minmax_value` 输出仍须有效。
 - 只有头文件明确写出的 exact in-place alias 才受支持；带偏移的重叠区间通常不受支持。
 - `partial_sort` 要求 `k <= n`；`select` 在 `n > 0` 时要求 `k < n`。
+- `radix_sort` 的 scratch 与 keys、`argsort` 的 keys/indices/scratch 三者都不得重叠；workspace helper
+  返回的是元素数，不是字节数。热路径应复用 caller-owned scratch，只有便利重载可能分配/抛异常。
 - bitpack 的 `bits` 必须在元素位宽内，每个输入值必须已经能放入 `bits`；codec 不做隐式 mask pass。
   输入输出不得重叠，输出容量至少为 `packed_size<T>(count, bits)`。
 - signed integer scan 明确定义为 modulo；浮点 scan 的结合顺序随 ISA 宽度变化，不要要求不同 ISA 得到

@@ -13,7 +13,7 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 | origin | HYLE product paths | ownership |
 |---|---|---|
 | Highway direct | `src/simd/{ops,narrow,dtype,math,search,scan,bitpack,random}` 的 direct kernel body、fixed-target source seam 与 generated source-fat TU | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade、canonical bitpack layout、RNG state 与具名 gap |
-| Highway integrated source | `src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns adaptation/local delta；由 SIMD-11 裁决 direct/minimal-port/drop |
+| Highway integrated source | `src/simd/sort/vqsort_hyle/**` 与 target TUs | Highway `83eff393...` owns VQSort algorithm；HYLE owns the retained minimal compiler/scalable/public-POD/static-entry adaptation and product contracts |
 | xsimd | 当前只作独立数学 benchmark/accuracy peer，不进入产品或安装包 | 若未来出现 Highway 无法满足的具名 capability/accuracy gap，必须重新准入；历史 math port 已删除 |
 | simdutf | container UTF-8 implementation，不属于 `hyle::simd` target | container owns semantics/delivery；vendored simdutf owns implementation mechanism |
 
@@ -31,8 +31,10 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
   生成 per-ISA TU、施加准确 codegen flags、在 pointer/POD 边界选择一次。ordinary batch 的函数表是
   私有实现，不是用户可依赖的 layout。Platform 仍服务其他模块；SIMD 不复制已经正确的 register 实现。
 - xsimd/SLEEF 只补 Highway 无等价能力或不满足资格化 accuracy/resource contract 的数学 family。
-- integrated port 是过渡债务：direct wrapper 可行即删除；不可行时只保留真实 contract delta，并记录
-  upstream identity、local delta、许可证和内容 hash。
+- integrated port 是显式供应链债务：direct wrapper 可行即删除；不可行时只保留真实 contract delta，并记录
+  upstream identity、local delta、许可证和内容 hash。ordering 已按有界 SIMD-11 试验保留最小 port：当前
+  Highway 的 11 类型 × full/partial/select 直接实例化在 classic MSVC 下超出构建预算；保留项只承担
+  compiler/scalable glue、HYLE public POD/static entry 和产品语义，不另建 public register DSL。
 - HYLE 自实现只因真实 semantic/ISA/complexity/consumer gap 存在，不因 benchmark 某行获胜而复制。
 
 ## Dispatch 集成规则

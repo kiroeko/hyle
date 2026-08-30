@@ -20,6 +20,7 @@
 
 #include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
+#include "hyle/simd/types.h"
 #include "hyle/simd/vec.h"
 
 // Must be included only from a TU that already defined HYLE_SIMD_TARGET_*.
@@ -83,21 +84,11 @@ constexpr T LowestValue() noexcept {
 template <bool B, class Then, class Else>
 using If = std::conditional_t<B, Then, Else>;
 
-// 128-bit key (only needed for KeyAdapter completeness; public HYLE API uses KV).
-struct alignas(16) uint128_t {
-  uint64_t lo;
-  uint64_t hi;
-};
-
-// Byte-identical to hyle::simd::KeyValue32 / KeyValue64 and detail::KV32Bits / KV64Bits.
-struct alignas(8) K32V32 {
-  uint32_t value;
-  uint32_t key;
-};
-struct alignas(16) K64V64 {
-  uint64_t value;
-  uint64_t key;
-};
+// Use the public POD object types directly. Older code duplicated these
+// layouts and crossed between unrelated struct lifetimes via reinterpret_cast.
+using uint128_t = ::hyle::simd::UInt128;
+using K32V32 = ::hyle::simd::KeyValue32;
+using K64V64 = ::hyle::simd::KeyValue64;
 
 // ---- Sort order tags ------------------------------------------------------------
 struct SortAscending {

@@ -151,7 +151,6 @@
       "revision": "83eff39371e5e6494b305b253f8a3c06f831faf4", "git_tree": "d39e0609201e1f1361c24da7075272a157177925",
       "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/83eff39371e5e6494b305b253f8a3c06f831faf4", "sha256": "ef9874b4f1f3739d409c5615f49eba4e4c9b017977141a55f9992ca10e5e6dfc" },
       "integrated": { "paths": [
-        "src/simd/sort/sort_dispatch.cc",
         "src/simd/sort/vqsort_hyle",
         "src/simd/sort/vqsort_body.inc",
         "src/simd/sort/vqsort_hyle_avx2.cc",
@@ -159,7 +158,7 @@
         "src/simd/sort/vqsort_hyle_neon.cc",
         "src/simd/sort/vqsort_hyle_rvv.cc",
         "src/simd/sort/vqsort_hyle_sve.cc"
-      ], "content_sha256": "ce1378594b5aeefe5ea97d5005e2e942592063e9bb835c9fd44930a53a88c103" },
+      ], "content_sha256": "a8fc9bfe4c2465ac7accfbe42fd5aefd210da920a3b4591c1eca0d161793a0e4" },
       "license": { "expression": "Apache-2.0", "files": [
         { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" }
       ] }

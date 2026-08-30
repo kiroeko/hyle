@@ -51,44 +51,38 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DEFINE)
 // then low and already provide the paired-lane sorting networks.
 #define HYLE_SORT_U128_DEFINE(KT, tag, tier)                                                \
   void HYLE_SORT_SYM(sort, tag)(KT* keys, std::size_t n, bool ascending) noexcept {         \
-    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
-    if (ascending) vqsort::VQSortStatic(h, n, vqsort::SortAscending{});                    \
-    else vqsort::VQSortStatic(h, n, vqsort::SortDescending{});                             \
+    if (ascending) vqsort::VQSortStatic(keys, n, vqsort::SortAscending{});                  \
+    else vqsort::VQSortStatic(keys, n, vqsort::SortDescending{});                           \
   }                                                                                        \
   void HYLE_SORT_SYM(psort, tag)(KT* keys, std::size_t n, std::size_t k, bool ascending)   \
       noexcept {                                                                           \
-    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
-    if (ascending) vqsort::VQPartialSortStatic(h, n, k, vqsort::SortAscending{});          \
-    else vqsort::VQPartialSortStatic(h, n, k, vqsort::SortDescending{});                   \
+    if (ascending) vqsort::VQPartialSortStatic(keys, n, k, vqsort::SortAscending{});        \
+    else vqsort::VQPartialSortStatic(keys, n, k, vqsort::SortDescending{});                 \
   }                                                                                        \
   void HYLE_SORT_SYM(select, tag)(KT* keys, std::size_t n, std::size_t k, bool ascending)  \
       noexcept {                                                                           \
-    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
-    if (ascending) vqsort::VQSelectStatic(h, n, k, vqsort::SortAscending{});               \
-    else vqsort::VQSelectStatic(h, n, k, vqsort::SortDescending{});                        \
+    if (ascending) vqsort::VQSelectStatic(keys, n, k, vqsort::SortAscending{});             \
+    else vqsort::VQSelectStatic(keys, n, k, vqsort::SortDescending{});                      \
   }
 HYLE_SORT_U128_TYPES(HYLE_SORT_U128_DEFINE, ignored)
 #undef HYLE_SORT_U128_DEFINE
 
-// KV (top-k): HYLE KV32Bits/KV64Bits are byte-identical to the port's K32V32/K64V64
-// ({value, key}, same alignas), so reinterpret_cast is a zero-copy view.
+// KV (top-k): the compatibility names and the port traits both name HYLE's
+// public {value, key} PODs, so no unrelated public/vendor object type is crossed.
 #define HYLE_SORT_KV_DEFINE(KVT, PortT, kvtag)                                                \
   void HYLE_SORT_SYM(sort, kvtag)(KVT* kv, std::size_t n, bool ascending) noexcept {          \
-    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
-    if (ascending) vqsort::VQSortStatic(h, n, vqsort::SortAscending{});                       \
-    else vqsort::VQSortStatic(h, n, vqsort::SortDescending{});                                \
+    if (ascending) vqsort::VQSortStatic(kv, n, vqsort::SortAscending{});                       \
+    else vqsort::VQSortStatic(kv, n, vqsort::SortDescending{});                               \
   }                                                                                           \
   void HYLE_SORT_SYM(psort, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)     \
       noexcept {                                                                              \
-    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
-    if (ascending) vqsort::VQPartialSortStatic(h, n, k, vqsort::SortAscending{});             \
-    else vqsort::VQPartialSortStatic(h, n, k, vqsort::SortDescending{});                      \
+    if (ascending) vqsort::VQPartialSortStatic(kv, n, k, vqsort::SortAscending{});             \
+    else vqsort::VQPartialSortStatic(kv, n, k, vqsort::SortDescending{});                     \
   }                                                                                           \
   void HYLE_SORT_SYM(select, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)    \
       noexcept {                                                                              \
-    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
-    if (ascending) vqsort::VQSelectStatic(h, n, k, vqsort::SortAscending{});                  \
-    else vqsort::VQSelectStatic(h, n, k, vqsort::SortDescending{});                           \
+    if (ascending) vqsort::VQSelectStatic(kv, n, k, vqsort::SortAscending{});                  \
+    else vqsort::VQSelectStatic(kv, n, k, vqsort::SortDescending{});                          \
   }
 HYLE_SORT_KV_DEFINE(KV32Bits, K32V32, kv32)
 HYLE_SORT_KV_DEFINE(KV64Bits, K64V64, kv64)

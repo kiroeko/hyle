@@ -511,6 +511,36 @@ TEST(Sort, SmallKKeyValue64) {
 // scalar). Not asserting a specific value (depends on the build host), just that it is one of the
 // expected tiers -- a smoke check that the shared runtime metadata is wired.
 TEST(Sort, ActiveVariantIsSane) {
-  const Isa v = hyle::simd::runtime().sort.isa;
-  EXPECT_TRUE(v == Isa::kAvx512 || v == Isa::kAvx2 || v == Isa::kNeon || v == Isa::kScalar);
+  const auto& active = hyle::simd::runtime();
+  const Isa v = active.sort.isa;
+  EXPECT_TRUE(v == Isa::kAvx512 || v == Isa::kAvx2 || v == Isa::kSve ||
+              v == Isa::kNeon || v == Isa::kRvv || v == Isa::kScalar);
+  const auto* owner = hyle::simd::runtime_for(v);
+  if (owner != nullptr) {
+    EXPECT_EQ(active.sort_ops.sort_u32, owner->sort_ops.sort_u32);
+    EXPECT_EQ(active.sort_ops.partial_sort_f32,
+              owner->sort_ops.partial_sort_f32);
+    EXPECT_EQ(active.sort_ops.select_kv64, owner->sort_ops.select_kv64);
+  } else {
+    // Exact SSE4 emits one complete SSE4 product table. Ordering has no SSE4
+    // body and legally binds its fields to the separately compiled scalar
+    // implementation; it must not manufacture a second incomplete table. The
+    // preceding behavioral cases execute all three public operation families.
+    EXPECT_EQ(active.isa, Isa::kSse42);
+    EXPECT_EQ(v, Isa::kScalar);
+    EXPECT_NE(active.sort_ops.sort_u32, nullptr);
+    EXPECT_NE(active.sort_ops.partial_sort_f32, nullptr);
+    EXPECT_NE(active.sort_ops.select_kv64, nullptr);
+  }
+}
+
+TEST(Sort, EmptyRangesAcceptNullButNonemptyRangesDoNot) {
+  sort(static_cast<std::uint32_t*>(nullptr), 0);
+  partial_sort(static_cast<std::uint32_t*>(nullptr), 0, 0);
+  select(static_cast<std::uint32_t*>(nullptr), 0, 0);
+  EXPECT_DEATH(sort(static_cast<std::uint32_t*>(nullptr), 1), "HYLE fatal");
+  EXPECT_DEATH(partial_sort(static_cast<std::uint32_t*>(nullptr), 1, 0),
+               "HYLE fatal");
+  EXPECT_DEATH(select(static_cast<std::uint32_t*>(nullptr), 1, 0),
+               "HYLE fatal");
 }

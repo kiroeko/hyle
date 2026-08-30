@@ -16,6 +16,8 @@
 #                                      # SIMD-09 bounded family gate
 #   HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/sve-qemu-test.sh
 #                                      # SIMD-10 bounded family gate
+#   HYLE_SCALABLE_SORT_ONLY=1 bash scripts/sve-qemu-test.sh
+#                                      # SIMD-11 bounded ordering gate
 #
 # On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with
 # -DHYLE_TEST_SIMD_SVE=ON
@@ -73,7 +75,8 @@ $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 SCALABLE_MATH_TEST_OBJECTS=()
 if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
    [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ] &&
-   [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" != "1" ]; then
+   [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" != "1" ] &&
+   [ "${HYLE_SCALABLE_SORT_ONLY:-0}" != "1" ]; then
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/neon_math_product_test.cc" -o "$OUT/neon_math_product_test.o"
@@ -121,7 +124,6 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/sort_dispatch.cc" -o "$OUT/sort_dispa
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_neon.cc" -o "$OUT/sort_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort.o"
-$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk.o"
 for module in ops random scan search narrow; do
   printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
@@ -164,7 +166,7 @@ $CXX $FLAGS "$OUT/sve_test.o" \
   "$OUT/bitpack_sve.o" "$OUT/bitpack_neon.o" "$OUT/bitpack_scalar.o" "$OUT/bitpack_dispatch.o" \
   "$OUT/scan_scalar.o" "$OUT/scan_neon.o" "$OUT/scan_sve.o" "$OUT/scan_dispatch.o" \
   "$OUT/sort_sve.o" "$OUT/sort_neon.o" "$OUT/sort_scalar.o" "$OUT/sort_dispatch.o" \
-  "$OUT/radix_sort.o" "$OUT/stream_topk.o" \
+  "$OUT/radix_sort.o" \
   "$OUT/ops_scalar.o" "$OUT/ops_neon.o" "$OUT/ops_sve.o" "$OUT/ops_dispatch.o" \
   "$OUT/random_scalar.o" "$OUT/random_neon.o" "$OUT/random_sve.o" "$OUT/random_dispatch.o" \
   "$OUT/search_scalar.o" "$OUT/search_neon.o" "$OUT/search_sve.o" "$OUT/search_dispatch.o" \
@@ -182,6 +184,8 @@ elif [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
   TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Sve.RuntimeVectorLengthMatchesGate)
 elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
   TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*:Sve.RuntimeVectorLengthMatchesGate)
+elif [ "${HYLE_SCALABLE_SORT_ONLY:-0}" = "1" ]; then
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*:Sve.RuntimeVectorLengthMatchesGate)
 fi
 if [ "$TIER" = "crypto" ]; then
   FEATURE_ENV+=(HYLE_EXPECT_SVE2=1 HYLE_EXPECT_SVE_AES=1 HYLE_EXPECT_SVE_PMULL=1)
