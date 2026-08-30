@@ -34,7 +34,7 @@ namespace hs = hyle::simd;
 
 namespace {
 
-constexpr std::size_t kResidentEpochs = 31;
+constexpr std::size_t kResidentEpochs = 127;
 constexpr std::size_t kStreamingEpochs = 11;
 constexpr std::size_t kResidentCount = 4096;
 constexpr std::size_t kStreamingCount = 1u << 20;
