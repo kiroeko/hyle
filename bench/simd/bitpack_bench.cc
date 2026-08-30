@@ -198,7 +198,10 @@ HYLE_NOINLINE void peer_add(const float* x, const float* y, float* dst,
 }
 
 std::size_t epoch_iterations(std::size_t n) {
-  return n == kResidentCount ? 4096 : 8;
+  // Qualified after the first certified replay exposed nanobench instability
+  // markers. Keep each epoch long enough for both frozen workload sizes without
+  // changing the compared operation or its accounting boundary.
+  return n == kResidentCount ? 65536 : 256;
 }
 
 template <class Candidate, class Peer>
