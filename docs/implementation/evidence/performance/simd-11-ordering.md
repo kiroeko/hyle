@@ -57,13 +57,13 @@ radix/argsort 的稳定性、NaN/signed-zero 与 caller workspace 合同没有�
 ## 原始证据与重放
 
 - [HWY-first run 1](../../../../evidence/performance/simd-11-ordering-hwy-first-1.txt)，SHA-256
-  `06339ff7856b9f37f45dca3fd15c84be00ab78f63f56c7d26e0e6869780e0bbe`；
+  `b94be3eeac19ebb9f32e84a86dc8d63adc417d4dfe53e0c6a6da42298bca36b5`；
 - [HWY-first run 2](../../../../evidence/performance/simd-11-ordering-hwy-first-2.txt)，SHA-256
-  `29d3ca33c3c93d880768de050ec4ad87b06335a6801bd83e28abf1c6f32adcf8`；
+  `f9d87d29a6e0764e274d75360be7a14e5a1c99a8303f8ed1e998cad8e0f7116d`；
 - [HYLE-first run 1](../../../../evidence/performance/simd-11-ordering-hyle-first-1.txt)，SHA-256
-  `ea5364d322e0f25d50aabbf38d9a78827075b1a5472d1733e8ee76b571328acd`；
+  `c8b519442b81557f084e3abe58de497225c29a26fde8129f0d115255109f8e3f`；
 - [HYLE-first run 2](../../../../evidence/performance/simd-11-ordering-hyle-first-2.txt)，SHA-256
-  `861ead102e2503820e5f0e0badd8a86dc9d5ec2beb3beb5f8f6c0d34bfe95ab2`。
+  `62afe57ef6415cd953268531d6e4f002a53734fe1bfaccbdde35c4e7cb49e129`。
 
 ```powershell
 python scripts/op-parity-report.py --gate 0.05 --certify `
