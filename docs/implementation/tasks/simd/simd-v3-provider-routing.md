@@ -99,9 +99,22 @@ SIMD-13 完成后的 v3 `SCOPED` 快照位于同目录 `module-status-v3-scoped.
 `7496331165384E3D87166FEEDD79119BDCE97200685E468FE9C3FDA2C2EDE1DA`；该快照用于机械验证
 `SCOPED -> AUDITED`。进入 `AUDITED` 只授权下文冻结 FIX，387 个 route decision 仍全部为 `PENDING`。
 
-## Candidate
+## Withdrawn candidate and bounded return to `AUDITED`
 
-尚未产生；不得继承 v2 candidate 名称、历史 parity 矩阵或当前工作树草稿。
+- 首个 product commit/tree：`4a1c216cb546ef1df9ca041516ecca2b66d10859` /
+  `5d7269b9342e99bbbd580f6f005359c172a4c134`，现已撤回，不再作为 terminal candidate；
+- SVE QEMU 回放发现 `vqsort-inl.h` 的 scratch capacity 仍引用随旧 register API 删除的
+  `kNativeVectorBytes`。这是产品可移植性缺陷，不是 benchmark 差异；
+- 按 candidate 后产品变化规则，registry 由 `CANDIDATE` 退回 `AUDITED`。前态快照为
+  `C:\hyle-scratch\simd-v3\transitions\module-status-v3-candidate-before-sve-fix.json`，SHA-256
+  `51F1ECEA5006DC0D1A64880EECC7C42E23D0DFD8076930FAB55198E2147FE7AB`；
+- 新增且只新增一个有限 FIX：scratch upper bound 使用当前锁定 Highway target authority
+  `HWY_MAX_BYTES`；它在 SVE 下是 256-byte architectural maximum，保持 O(1) stack scratch、无 heap、
+  无热路径 branch。修复后重跑 SVE/RVV QEMU、ordering correctness 与三平台适用回归，再创建新 candidate。
+
+387-operation ledger、422 个 terminal scope、公开 pointer/count/POD 语义、provider route 和 P1 裁决均未
+因此扩大或改变。后续新 candidate 仍必须遵守：只允许补验证、说明和 receipt；公开合同、算法、route 或
+正常 workload 再改变时必须再次退回 `AUDITED`。
 
 ## SIMD-13 双向审计结果
 

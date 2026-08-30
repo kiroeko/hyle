@@ -1,20 +1,12 @@
 #!/bin/bash
-# rvv-qemu-test.sh -- cross-compile the RVV backend gtest (tests/simd/rvv_test.cc) and
-# run it under qemu-riscv64 at VLEN 128/256/512/1024.
+# rvv-qemu-test.sh -- cross-compile the current RVV whole-buffer product tests and
+# run them under qemu-riscv64 at VLEN 128/256/512/1024.
 #
 # Tiers:
-#   base  (default) : -march=rv64gcv            (existing P0-P5 surface)
-#   zvbb            : -march=rv64gcv_zvbb       (simd-16 LeadingZero/TrailingZero/ReverseBits/Rotate)
-#   zvbc            : -march=rv64gcv_zvbc       (simd-16 CLMulLower/Upper)
-#   zvkned          : -march=rv64gcv_zvkned     (native AES round operations)
-#   all             : run base + zvbb + zvbc + zvkned
+#   base  (default) : -march=rv64gcv
 #
 # Usage:
 #   bash scripts/rvv-qemu-test.sh            # base only
-#   bash scripts/rvv-qemu-test.sh zvbb
-#   bash scripts/rvv-qemu-test.sh zvbc
-#   bash scripts/rvv-qemu-test.sh zvkned
-#   bash scripts/rvv-qemu-test.sh all
 #   bash scripts/rvv-qemu-test.sh fat    # direct-Highway source-fat seam only
 #   HYLE_SCALABLE_ROW_DTYPE_ONLY=1 bash scripts/rvv-qemu-test.sh base
 #                                      # SIMD-07 bounded family gate
@@ -34,7 +26,6 @@ fi
 
 CXX=${CXX_RISCV64:-riscv64-linux-gnu-g++-14}
 QEMU=${QEMU_RISCV64:-qemu-riscv64-static}
-OBJDUMP=${OBJDUMP_RISCV64:-riscv64-linux-gnu-objdump}
 OUT=${OUT_DIR:-/tmp/hyle-rvv}
 mkdir -p "$OUT"
 HWY=${HIGHWAY_SOURCE_DIR:-"$REPO/../highway"}
@@ -78,20 +69,9 @@ run_tier() {
     -I$REPO/include -I$REPO -I$HWY -I$GT/include -I$GT"
   local FLAGS="$COMMON_FLAGS -march=${march} -DHYLE_SIMD_TARGET_RVV"
 
-  echo "[${name}] cross-compiling register + product-math probes (-march=${march}) ..."
+  echo "[${name}] cross-compiling current scalable product probes (-march=${march}) ..."
   $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all_${name}.o"
   $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main_${name}.o"
-  $CXX $FLAGS -c "$REPO/tests/simd/rvv_test.cc" -o "$OUT/rvv_test_${name}.o"
-  $OBJDUMP -d "$OUT/rvv_test_${name}.o" > "$OUT/rvv_test_${name}.dis"
-  if [ "$name" = "zvkned" ]; then
-    for op in vaesem vaesef vaesdm vaesdf; do
-      if ! grep -q "${op}\\.vv" "$OUT/rvv_test_${name}.dis"; then
-        echo "ERROR: Zvkned object did not emit ${op}.vv"; exit 1
-      fi
-    done
-  elif grep -Eq 'vaes(em|ef|dm|df)\.vv' "$OUT/rvv_test_${name}.dis"; then
-    echo "ERROR: optional Zvkned instruction leaked into ${name} object"; exit 1
-  fi
   local math_test_objects=()
   if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
      [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ] &&
@@ -152,8 +132,7 @@ run_tier() {
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/dtype_scalar_${name}.o"
   printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
     $CXX $FLAGS -x c++ -c - -o "$OUT/dtype_rvv_${name}.o"
-  $CXX $FLAGS "$OUT/rvv_test_${name}.o" \
-    "${math_test_objects[@]}" \
+  $CXX $FLAGS "${math_test_objects[@]}" \
     "$OUT/scalable_dtype_product_test_${name}.o" \
     "$OUT/scalable_bitpack_product_test_${name}.o" \
     "$OUT/scalable_sort_product_test_${name}.o" \
@@ -185,22 +164,13 @@ run_tier() {
   local feature_env=(HYLE_EXPECT_RVV=1)
   local test_args=()
   if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" = "1" ]; then
-    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*:Rvv.LoadStoreAllTypes)
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*)
   elif [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
-    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Rvv.LoadStoreAllTypes)
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*)
   elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
-    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*:Rvv.LoadStoreAllTypes)
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*)
   elif [ "${HYLE_SCALABLE_SORT_ONLY:-0}" = "1" ]; then
-    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*:Rvv.LoadStoreAllTypes)
-  fi
-  # qemu-linux-user 8.2 executes Zvbb/Zvbc instructions but does not emulate the
-  # riscv_hwprobe optional-extension result (the syscall safely reports no bit).
-  # A newer emulator or a full-system guest kernel may opt into the positive
-  # detector assertion; real Linux uses the same official hwprobe ABI.
-  if [ "${HYLE_QEMU_EXPECT_OPTIONAL_FEATURES:-0}" = "1" ]; then
-    if [ "$name" = "zvbb" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBB=1); fi
-    if [ "$name" = "zvbc" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBC=1); fi
-    if [ "$name" = "zvkned" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVKNED=1); fi
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*)
   fi
   for bits in 128 256 512 1024; do
     echo "----- RVV ${name} VLEN=${bits}-bit -----"
@@ -217,23 +187,8 @@ case "$TIER" in
   base)
     run_tier base rv64gcv ""
     ;;
-  zvbb)
-    run_tier zvbb rv64gcv_zvbb "zvbb=true,"
-    ;;
-  zvbc)
-    run_tier zvbc rv64gcv_zvbc "zvbc=true,"
-    ;;
-  zvkned)
-    run_tier zvkned rv64gcv_zvkned "zvkned=true,"
-    ;;
-  all)
-    run_tier base rv64gcv ""
-    run_tier zvbb rv64gcv_zvbb "zvbb=true,"
-    run_tier zvbc rv64gcv_zvbc "zvbc=true,"
-    run_tier zvkned rv64gcv_zvkned "zvkned=true,"
-    ;;
   *)
-    echo "Usage: $0 [base|zvbb|zvbc|zvkned|all|fat]"; exit 2
+    echo "Usage: $0 [base|fat]"; exit 2
     ;;
 esac
 

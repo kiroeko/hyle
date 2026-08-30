@@ -1904,15 +1904,10 @@ HWY_INLINE size_t PartitionNaNToBack(D, Traits, T* HWY_RESTRICT, size_t) {
   return 0;
 }
 
-// SVE keeps sorting networks capped at 32 bytes but may partition at the full architectural VL,
-// so its scratch capacity must follow the physical upper bound. Other targets use the same width
-// for both roles.
-static constexpr size_t kSortScratchVectorBytes =
-#if defined(HYLE_SIMD_TARGET_SVE)
-    kNativeVectorBytes;
-#else
-    HWY_MAX_BYTES;
-#endif
+// Sorting networks may use a capped tag while scalable targets partition at the full physical VL.
+// Highway owns the active target's architectural upper bound, so scratch capacity follows the same
+// authority instead of the removed HYLE register stack's kNativeVectorBytes constant.
+static constexpr size_t kSortScratchVectorBytes = HWY_MAX_BYTES;
 
 // Old interface with user-specified buffer, retained for compatibility. Called by the newer
 // overload below. `buf` must be vector-aligned and hold at least

@@ -145,7 +145,7 @@ TEST(ScalableMathProduct, ActivationsAndRowReductionsCoverWideTail) {
                        (1.0f + std::erf(x * 0.70710678118654752440f));
               },
               8e-6f);
-  check_unary(HYLE_SCALABLE_PRODUCT(gelu_tanh_f32_hyle),
+  check_unary(HYLE_SCALABLE_PRODUCT(gelu_tanh_f32_route),
               [](float x) {
                 return 0.5f * x *
                        (1.0f +

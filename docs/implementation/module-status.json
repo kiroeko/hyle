@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+        "product_state": "AUDITED",
       "round_id": "simd-v3",
       "closure_task": "docs/implementation/tasks/simd/simd-v3-provider-routing.md",
       "scope": "Multi-provider CPU SIMD refactor: lock Highway and xsimd as coexisting product candidates, retain proven HYLE implementations, establish zero-overhead compile-time routing, and mechanically disposition all 387 baseline operations before consumer migration, legacy deletion, delivery and closure.",
@@ -581,7 +581,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v3 AUDITED：387 个 operation / 1,797 个 baseline 定义位置已全部裁决；迁移终态为 422/422 route scope，366 ROUTE_HIGHWAY、34 KEEP_HYLE、22 REMOVE_REDUNDANT、零 PENDING，whole-buffer tanh/GELU 的具名 MSVC/AVX2 例外路由 xsimd。SIMD-16 已完成 consumer 迁移和旧 register/backend 物理清算；SIMD-17 正在冻结 candidate 与终态证据。"
+        "summary": "simd-v3 AUDITED：首个候选 4a1c216c 在 SVE 交叉验证中因 VQSort scratch 上界仍引用已删除的旧 register 常量而撤回；有限 FIX 为改用锁定 Highway 的 HWY_MAX_BYTES authority，并重跑可扩展 ISA 与受影响回归后产生新候选。387 个 operation / 422 个 route scope 仍为终态且零 PENDING。"
     },
     {
       "module": "container",

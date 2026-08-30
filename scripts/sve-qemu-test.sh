@@ -1,5 +1,5 @@
 #!/bin/bash
-# sve-qemu-test.sh -- cross-compile the SVE backend gtest (tests/simd/sve_test.cc) for aarch64 and
+# sve-qemu-test.sh -- cross-compile the current SVE whole-buffer product tests for aarch64 and
 # run it under qemu-aarch64 at multiple SVE vector lengths (128/256/384/512/2048-bit). This is the "one
 # binary, every width" scalable proof: SVE's vector length is a runtime property, so the SAME
 # binary must pass at every VL. There is no SVE dev machine in this project, so qemu's -cpu
@@ -8,7 +8,7 @@
 # Prereqs (WSL Ubuntu, already installed here):
 #   aarch64-linux-gnu-g++-14, qemu-aarch64-static, gtest source under .deps/googletest-src.
 # Usage: run from the repo root on a Linux box with the aarch64 cross toolchain:
-#   bash scripts/sve-qemu-test.sh       # full legacy/product gate
+#   bash scripts/sve-qemu-test.sh       # current scalable product gate
 #   bash scripts/sve-qemu-test.sh fat   # direct-Highway source-fat seam only
 #   HYLE_SCALABLE_ROW_DTYPE_ONLY=1 bash scripts/sve-qemu-test.sh
 #                                      # SIMD-07 bounded family gate
@@ -39,11 +39,13 @@ if [ ! -f "$HWY/hwy/highway.h" ]; then
   echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)"; exit 1
 fi
 
-# tier: base (armv8-a+sve, default) or crypto (armv8-a+sve2-aes, unlocks the SVE2 AES/CLMul test
-# guarded by __ARM_FEATURE_SVE2_AES). qemu -cpu max enables sve2-aes at every VL.
+# tier: base (armv8-a+sve, default). Register-level optional crypto tiers belonged
+# to the retired HYLE register stack and are no longer a product gate.
 TIER=${1:-base}
 ARCH="armv8-a+sve"
-if [ "$TIER" = "crypto" ]; then ARCH="armv8-a+sve2-aes"; fi
+if [ "$TIER" != "base" ] && [ "$TIER" != "fat" ]; then
+  echo "Usage: $0 [base|fat]"; exit 2
+fi
 
 COMMON_FLAGS="-std=c++23 -O2 -march=armv8-a -DHYLE_SIMD_HAS_SVE_VARIANT=1 \
   -DHWY_HEADER_ONLY=1 -pthread \
@@ -68,10 +70,9 @@ if [ "$TIER" = "fat" ]; then
   exit 0
 fi
 
-echo "[1/3] cross-compiling register + product-math probes for aarch64 ($ARCH) ..."
+echo "[1/3] cross-compiling current scalable product probes for aarch64 ($ARCH) ..."
 $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all.o"
 $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
-$CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 SCALABLE_MATH_TEST_OBJECTS=()
 if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
    [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ] &&
@@ -144,8 +145,7 @@ printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#defin
   $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/dtype_neon.o"
 printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
   $CXX $FLAGS -x c++ -c - -o "$OUT/dtype_sve.o"
-$CXX $FLAGS "$OUT/sve_test.o" \
-  "${SCALABLE_MATH_TEST_OBJECTS[@]}" \
+$CXX $FLAGS "${SCALABLE_MATH_TEST_OBJECTS[@]}" \
   "$OUT/scalable_dtype_product_test.o" \
   "$OUT/scalable_bitpack_product_test.o" \
   "$OUT/scalable_sort_product_test.o" \
@@ -179,16 +179,13 @@ rc=0
 FEATURE_ENV=(HYLE_EXPECT_SVE=1)
 TEST_ARGS=()
 if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" = "1" ]; then
-  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*:Sve.RuntimeVectorLengthMatchesGate)
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*)
 elif [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
-  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Sve.RuntimeVectorLengthMatchesGate)
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*)
 elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
-  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*:Sve.RuntimeVectorLengthMatchesGate)
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*)
 elif [ "${HYLE_SCALABLE_SORT_ONLY:-0}" = "1" ]; then
-  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*:Sve.RuntimeVectorLengthMatchesGate)
-fi
-if [ "$TIER" = "crypto" ]; then
-  FEATURE_ENV+=(HYLE_EXPECT_SVE2=1 HYLE_EXPECT_SVE_AES=1 HYLE_EXPECT_SVE_PMULL=1)
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:ScalableSortProduct.*)
 fi
 for bits in 128 256 384 512 2048; do
   echo "----- SVE VL=${bits}-bit -----"
