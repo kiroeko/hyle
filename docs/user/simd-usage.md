@@ -22,8 +22,9 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
 |---|---|---:|---|
 | C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 进程内解析一次；每个整批调用一次间接调用 | 同受支持工具链的 C++ source contract |
 | C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 同上 | 原生 source API，不承诺跨工具链 ABI |
+| HYLE 没有所需 whole-buffer 语义，只需在当前编译目标下使用 vendor 原语 | `hyle::simd_expert` + direct `hwy::`/`xsimd::` body | 无 HYLE runtime selector；采用 consumer target 的现有编译 flags | source/static/shared 同一锁定 header surface；vendor 类型不得跨 TU |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 无；宏生成并直接绑定目标 symbol | 构建配置 |
-| 自己写一个固定 ISA 的 kernel TU | `hyle_target_simd(...)` + direct Highway/xsimd body | 无；宏/模板单态化并可内联 | source/static/shared 同一 expert surface；vendor 类型不得跨 TU |
+| 自己写一个固定 ISA 的 kernel target | 单独 OBJECT target + `hyle_target_simd(...)` + direct Highway/xsimd body | 无；宏/模板单态化并可内联 | helper 作用于整个 CMake target；vendor 类型不得跨 TU |
 | 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + provider-coherent impl header | 进程内解析一次；每个整批调用一次间接调用 | source/static/shared 同一 expert surface；vendor 类型不得跨 TU |
 
 ```text
@@ -306,6 +307,23 @@ SVE 与 RVV 产生相同字节，VL/VLEN 不影响格式。codec 本身不写 fr
 - 窄合同 `InRange` API 不做逐 lane 防御；违反范围前置条件的结果不受保证。
 - 所有批量 RNG 都是非加密随机数；同一个 mutable `RandomState` 不可并发调用。
 
+## 直接使用锁定的 Highway/xsimd 头
+
+如果 ordinary whole-buffer API 没有所需语义，而当前 target 的编译 flags 已经是你想要的部署基线，可把
+自定义 kernel 放在单独的 OBJECT target 中并显式链接专家层：
+
+```cmake
+add_library(my_kernel OBJECT my_kernel.cc)
+target_link_libraries(my_kernel PRIVATE hyle::simd_expert)
+target_sources(my_app PRIVATE $<TARGET_OBJECTS:my_kernel>)
+```
+
+`my_kernel.cc` 可直接包含 `<hwy/highway.h>` 或 `<xsimd/xsimd.hpp>`。这条路径只投影 HYLE 锁定的
+provider headers、C++23 合同和必要定义，不探测运行时 CPU，也不会替 consumer 增加 ISA 编译 flags；
+因此它适合已有 target policy 的 kernel 或基线实现，不会自动把未知客户 CPU 路由到最快 ISA。需要固定
+ISA 时使用下一节的 `hyle_target_simd()`；同一二进制要覆盖未知 CPU 且利用多种 ISA 时使用
+`hyle_add_fat_kernel()`。三种选择都应让公开 entry 保持 pointer/count/POD，vendor 类型只留在 kernel TU。
+
 ## 已知目标：固定整库或固定 kernel
 
 如果交付环境明确要求某个 ISA，可在配置 HYLE 时固定整个 SIMD 库：
@@ -317,14 +335,20 @@ cmake -S . -B build-avx2 -DHYLE_SIMD_EXACT_TARGET=AVX2
 这不是“逃避动态税”，而是另一种产品合同：二进制本来就只允许运行在 AVX2 机器上，因此可以直接绑定
 AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 
-只想固定自己的一两个 kernel TU 时，使用 `hyle_target_simd`，为该 TU 设置目标 ISA。源码嵌入、安装
-static SDK 和安装 shared SDK 使用同一个 helper；它会显式链接 `hyle::simd_expert`，提供中央锁定
-Highway/xsimd 的 include path、单目标宏和统一编译器 flags。普通 `hyle::simd` consumer 不继承这些
-vendor 头，因此不用专家层时没有额外编译或运行成本。
+只想固定自己的一两个 kernel TU 时，把它们放在专用 CMake target 中，再用 `hyle_target_simd` 为整个
+target 设置目标 ISA。源码嵌入、安装 static SDK 和安装 shared SDK 使用同一个 helper；它会显式链接
+`hyle::simd_expert`，提供中央锁定 Highway/xsimd 的 include path、单目标宏和统一编译器 flags。普通
+`hyle::simd` consumer 不继承这些 vendor 头，因此不用专家层时没有额外编译或运行成本。
 
 ```cmake
-hyle_target_simd(TARGET my_kernel ISA AVX2)
+add_library(my_avx2_kernel OBJECT my_kernel.cc)
+hyle_target_simd(TARGET my_avx2_kernel ISA AVX2)
+target_sources(my_app PRIVATE $<TARGET_OBJECTS:my_avx2_kernel>)
 ```
+
+helper 的粒度是 CMake target，不是单个 source 参数。除非整个应用本来就要求该 ISA，不要直接把它施加到
+含大量普通源码的 executable/library target；使用上述单独 OBJECT target，能把 ISA 要求和 provider 类型
+限制在 kernel TU 中。
 
 kernel 内可以显式使用 Highway（xsimd 同理），而不是再经一套 HYLE 寄存器转发层：
 

@@ -124,7 +124,10 @@ target_sources(my_app PRIVATE $<TARGET_OBJECTS:my_kernel>)
 helper 会让该 target 显式消费 `hyle::simd_expert`；SDK 自带锁定 Highway/xsimd 开发头，不在 consumer
 configure 时下载依赖。普通 `hyle::simd` target 不传播这些 include/definition。expert 头类型只留在
 target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额外 binary ABI，也不承诺需要上游
-`.cc` 的 compiled contrib。完整 fixed/fat 示例见 [SIMD 使用指南](simd-usage.md)。
+`.cc` 的 compiled contrib。`hyle_target_simd` 会把 ISA flags 施加到整个 CMake target，所以通常应像示例
+一样为 kernel 建立专用 OBJECT target；不要误把一个多源应用整体编成 AVX2。若只需锁定 vendor headers、
+不需要 helper 增加 ISA flags，可直接让该 OBJECT target 链接 `hyle::simd_expert`。完整 direct/fixed/fat
+选择见 [SIMD 使用指南](simd-usage.md)。
 
 预发布 `0.y.z` 包只接受完整精确版本；`find_package(Hyle 0.y.z EXACT ...)` 中 patch 也属于构建
 合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
