@@ -30,7 +30,7 @@ jobs:
       CTEST_PARALLEL_LEVEL: 2
       HYLE_CI_PRESET: ${{ matrix.os == 'windows-latest' && 'windows-ninja' || matrix.os == 'macos-latest' && 'macos' || 'linux' }}
       HYLE_CI_GENERATOR: ${{ matrix.os == 'windows-latest' && 'Ninja' || 'Unix Makefiles' }}
-      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
+      HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
 
@@ -152,7 +152,7 @@ jobs:
     timeout-minutes: 45
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
-      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
+      HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
 
@@ -181,7 +181,7 @@ jobs:
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
-      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
+      HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
 
@@ -230,7 +230,7 @@ jobs:
       CXX: g++-14
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
-      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
+      HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
 
