@@ -5,11 +5,11 @@
 //      runs fast everywhere; an old CPU never executes an instruction it lacks. This is
 //      what most consumers want. selected_target().isa reports the selected kernel tier.
 //
-//  (B) EXACT-TARGET KERNEL -- source users can bind this TU to one ISA and use the centrally
+//  (B) EXACT-TARGET KERNEL -- users can bind this TU to one ISA and use the centrally
 //      locked Highway register API directly. There is no CPUID or indirect call; the resulting
-//      binary requires that deployment ISA. Installed SDK users stay on (A).
+//      binary requires that deployment ISA. This is identical for source/static/shared delivery.
 //
-//  (C) SOURCE FAT KERNEL -- source users can compile one direct-Highway template body once per
+//  (C) CUSTOM FAT KERNEL -- users can compile one direct-Highway template body once per
 //      canonical ISA. HYLE selects and caches one whole-kernel pointer; the vector loop has no
 //      feature branch, callback, wrapper register type, or second Highway dispatch.
 //
@@ -40,7 +40,7 @@ void hyle_sample_bias_relu_rvv(float*, std::size_t, float) noexcept;
 #endif
 #endif
 
-#if defined(HYLE_SIMD_SOURCE_EXPERT)
+#if defined(HYLE_SIMD_EXPERT)
 #include "hwy/highway.h"
 
 #if defined(HYLE_SIMD_EXACT_TARGET_SCALAR) && HWY_STATIC_TARGET != HWY_SCALAR
@@ -100,9 +100,9 @@ int main() {
   hyle::simd::saxpy(0.5f, x.data(), y.data(), n);
   std::printf("y[0] after saxpy    = %.4f  (dispatched)\n", y[0]);
 
-#if defined(HYLE_SIMD_SOURCE_EXPERT)
+#if defined(HYLE_SIMD_EXPERT)
   // (B) direct locked-Highway kernel, enabled only by HYLE_SAMPLE_SIMD_ISA.
-  std::printf("sum_of_squares(x)   = %.4f  (source expert: direct Highway)\n",
+  std::printf("sum_of_squares(x)   = %.4f  (expert: direct Highway)\n",
               sum_of_squares(x.data(), n));
 #endif
 

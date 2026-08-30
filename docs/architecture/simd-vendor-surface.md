@@ -2,7 +2,7 @@
 
 本文只描述长期 ownership 和升级原则，不承担操作覆盖率、性能排名或任务状态。当前 product state 见
 [`module-status.json`](../implementation/module-status.json)，本轮版本与施工事实见
-[`SIMD v3 closure card`](../implementation/tasks/simd/simd-v3-provider-routing.md)。
+[`SIMD v4 closure card`](../implementation/tasks/simd/simd-v4-expert-sdk.md)。
 
 ## 两种依赖必须分开说
 
@@ -28,9 +28,8 @@ header-only 的产品候选：上游 project 不执行，HYLE target TU 只编�
   integration；这些用户合同不改成 vendor API。
 - expert register/kernel surface 通过 target-bound seam 使用静态 route，或显式固定某个 vendor；极薄
   adapter 只提供 HYLE 需要的 semantic/target/dtype glue，不把完整 Highway/xsimd operation set 再复制一遍
-  改名。`hyle_target_simd()` 是源码嵌入时的
-  fixed-target seam；installed static/shared SDK 不安装 vendor register headers、已经退役的 HYLE register
-  DSL 或 source-only target/fat helpers，也不导出相应 ABI。
+  改名。`hyle::simd_expert`、`hyle_target_simd()` 与 `hyle_add_fat_kernel()` 在源码、installed static 和
+  installed shared 三种交付中同形；安装包携带中央锁定的 vendor 开发头，但不导出 vendor register ABI。
 - fixed/fat source kernel 由 route manifest、provider target namespace 与模板单态化承载；HYLE 的 CMake 只负责
   生成 per-ISA TU、施加准确 codegen flags、在 pointer/POD 边界选择一次。ordinary batch 的函数表是
   私有实现，不是用户可依赖的 layout。Platform 仍服务其他模块；SIMD 不复制已经正确的 register 实现。
@@ -70,7 +69,7 @@ compile definition 与 ISA options 在同一个 target 声明中产生；未选�
 证据重签有限 route；升级 Highway/xsimd 时也只重签受到源码或 target 变化影响的 group。这是可持续的
 “忒修斯之船”维护入口，不授权重新复制完整 vendor surface。
 
-机器链路为 `scripts/simd-op-routing.json` → 生成的 source-only
+机器链路为 `scripts/simd-op-routing.json` → 生成的 HYLE-internal
 `hyle/simd/provider/operation_manifest.h` → `hyle/simd/provider/route.h`。清单机械包含 387/387 个旧
 operation；`RouteFor<operation, lane, target, compiler, version>` 的 primary 永远是 `PENDING`，未资格化时
 直接编译失败。终态 route 只生成模板特化，调用展开为 `Candidate<selected_provider>::run(...)`；不存在可被
@@ -110,7 +109,7 @@ HYLE/xsimd 只以已有、资格化且超过 5% 的 type × ISA/platform 证据�
   symbol；source-fat 每个生成 TU 使用
   `HWY_COMPILE_ONLY_SCALAR` 或 `HWY_COMPILE_ONLY_STATIC`，并编译期断言 `HWY_STATIC_TARGET` 与声明 tier
   一致。两条路径都在算法模板内直接使用所选 provider，普通 façade 不把 vector type 跨 TU/shared boundary。
-  fixed/exact 的 runtime dispatch 成本为零；tiny fused hot loop 走 exact 或 expert source，不要求未知 CPU
+  fixed/exact 的 runtime dispatch 成本为零；tiny fused hot loop 走 exact 或 expert target，不要求未知 CPU
   的 runtime route 冒充编译期零开销。
 - HYLE canonical x86 tier 不承诺 AES/PCLMUL；direct Highway TU 使用上游支持的
   `HWY_DISABLE_PCLMUL_AES` 让 vendor target 与 Platform facts 对齐，不能为了满足 Highway target 名称偷偷

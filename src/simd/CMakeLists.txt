@@ -163,18 +163,27 @@ if(HYLE_SIMD_X64 AND _hyle_simd_cl_sort_fallback)
     HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK=1)
 endif()
 
-# Source-primary expert seam. It is deliberately build-tree-only: ordinary
-# installed consumers use HYLE's pointer/count APIs, while a consumer that
-# embeds the source tree may bind one TU to an ISA and use HYLE's compile-time
-# route or explicitly pin a locked provider. Provider-native types remain in
-# that TU and never cross a compiled HYLE boundary.
-add_library(hyle_simd_source_expert INTERFACE)
-add_library(hyle::simd_source_expert ALIAS hyle_simd_source_expert)
-target_compile_features(hyle_simd_source_expert INTERFACE cxx_std_23)
-target_include_directories(hyle_simd_source_expert INTERFACE
-  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-  "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>")
-target_link_libraries(hyle_simd_source_expert INTERFACE
+# Opt-in expert development seam shared by source, static-SDK and shared-SDK
+# consumers. It carries the exact locked provider headers and compiler contract,
+# but no runtime artifact or vendor ABI. Ordinary hyle::simd users do not link
+# this target and therefore do not inherit provider include paths or parse cost.
+add_library(hyle_simd_expert INTERFACE)
+add_library(hyle::simd_expert ALIAS hyle_simd_expert)
+set_target_properties(hyle_simd_expert PROPERTIES
+  EXPORT_NAME simd_expert
+  HYLE_SIMD_TARGET_PROCESSOR "${HYLE_TARGET_PROCESSOR}"
+  HYLE_SIMD_EXACT_TARGET "${HYLE_SIMD_EXACT_TARGET}"
+  EXPORT_PROPERTIES "HYLE_SIMD_TARGET_PROCESSOR;HYLE_SIMD_EXACT_TARGET"
+  FOLDER "hyle/modules")
+target_compile_features(hyle_simd_expert INTERFACE cxx_std_23)
+target_compile_definitions(hyle_simd_expert INTERFACE
+  HYLE_SIMD_EXPERT=1
+  "$<INSTALL_INTERFACE:HWY_HEADER_ONLY>")
+target_include_directories(hyle_simd_expert SYSTEM INTERFACE
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/Hyle/dependencies/highway>"
+  "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/Hyle/dependencies/xsimd/include>")
+target_link_libraries(hyle_simd_expert INTERFACE
+  hyle_core
   "$<BUILD_INTERFACE:hyle_simd_provider_headers>")
 
 if(MSVC AND

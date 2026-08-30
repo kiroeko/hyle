@@ -15,20 +15,58 @@
 # their feature predicates and fallback semantics are module contracts, not CMake metadata.
 include_guard(GLOBAL)
 
+# Resolve the one expert target spelling shared by source and installed SDKs.
+function(_hyle_simd_expert_target out_var)
+  if(TARGET hyle::simd_expert)
+    set(${out_var} hyle::simd_expert PARENT_SCOPE)
+  elseif(TARGET hyle_simd_expert)
+    set(${out_var} hyle_simd_expert PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR
+      "The selected HYLE package/source tree has no SIMD expert capability; "
+      "select the simd component before calling this helper")
+  endif()
+endfunction()
+
 # CMake directory scopes do not propagate ordinary variables from HYLE's
-# add_subdirectory() back to a source consumer. Publish/consume the normalized
-# processor through the global property established by HyleTargetPlatform.
+# add_subdirectory() back to a source consumer. The expert target exports the
+# normalized package target, while the global property remains the source-tree
+# fallback established by HyleTargetPlatform.
 function(_hyle_simd_target_processor out_var)
-  set(_processor "${HYLE_TARGET_PROCESSOR}")
+  set(_processor "")
+  if(TARGET hyle_simd_expert)
+    get_target_property(_processor hyle_simd_expert HYLE_SIMD_TARGET_PROCESSOR)
+  elseif(TARGET hyle::simd_expert)
+    get_target_property(_processor hyle::simd_expert HYLE_SIMD_TARGET_PROCESSOR)
+  endif()
+  if(_processor MATCHES "-NOTFOUND$")
+    set(_processor "")
+  endif()
+  if(_processor STREQUAL "")
+    set(_processor "${HYLE_TARGET_PROCESSOR}")
+  endif()
   if(_processor STREQUAL "")
     get_property(_processor GLOBAL PROPERTY HYLE_TARGET_PROCESSOR)
   endif()
   if(_processor STREQUAL "")
     message(FATAL_ERROR
       "HYLE's normalized target processor is unavailable; call this helper only "
-      "after add_subdirectory(hyle)")
+      "after add_subdirectory(hyle) or find_package(Hyle COMPONENTS simd)")
   endif()
   set(${out_var} "${_processor}" PARENT_SCOPE)
+endfunction()
+
+function(_hyle_simd_expert_exact_target out_var)
+  set(_exact "")
+  if(TARGET hyle_simd_expert)
+    get_target_property(_exact hyle_simd_expert HYLE_SIMD_EXACT_TARGET)
+  elseif(TARGET hyle::simd_expert)
+    get_target_property(_exact hyle::simd_expert HYLE_SIMD_EXACT_TARGET)
+  endif()
+  if(_exact MATCHES "-NOTFOUND$")
+    set(_exact "")
+  endif()
+  set(${out_var} "${_exact}" PARENT_SCOPE)
 endfunction()
 
 # Resolve the canonical SIMD targets compiled into hyle_simd from one manifest. Fat builds keep
@@ -141,12 +179,11 @@ function(hyle_simd_target_manifest)
   set(${ARG_OUT_HEADER} "${_header}" PARENT_SCOPE)
 endfunction()
 
-# Bind a source-embedding consumer target to one explicit SIMD target. This is
+# Bind a consumer target to one explicit SIMD target. This is
 # the zero-dispatch expert path: it exposes the centrally locked Highway/xsimd
-# headers plus HYLE's compile-time route manifest, selects one static Highway
-# target (xsimd observes the same compiler ISA flags), and applies those flags.
-# A consumer may use the HYLE route or explicitly pin one provider-native body;
-# provider register types must remain inside this target-bound translation unit.
+# headers, selects one static Highway target (xsimd observes the same compiler
+# ISA flags), and applies those flags. Provider register types must remain
+# inside this target-bound translation unit.
 # It deliberately does not inspect CPUID; the produced binary requires the ISA.
 #
 #   hyle_target_simd(TARGET my_app ISA AVX2)
@@ -165,11 +202,7 @@ function(hyle_target_simd)
   if(NOT TARGET ${ARG_TARGET})
     message(FATAL_ERROR "hyle_target_simd: target '${ARG_TARGET}' does not exist")
   endif()
-  if(NOT TARGET hyle_simd_source_expert)
-    message(FATAL_ERROR
-      "hyle_target_simd is a source-embedding expert seam. Installed static/shared "
-      "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
-  endif()
+  _hyle_simd_expert_target(_expert_target)
   string(TOUPPER "${ARG_ISA}" _isa)
   _hyle_simd_target_processor(_target_processor)
   set(_is_x64 FALSE)
@@ -233,7 +266,7 @@ function(hyle_target_simd)
   endif()
   target_compile_definitions(${ARG_TARGET} PRIVATE
     HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1
-    HYLE_SIMD_SOURCE_EXPERT=1)
+    HYLE_SIMD_EXPERT=1)
   if(_isa MATCHES "^(SSE4|AVX2|AVX512)$")
     target_compile_definitions(${ARG_TARGET} PRIVATE
       HWY_DISABLE_PCLMUL_AES=1)
@@ -246,7 +279,7 @@ function(hyle_target_simd)
   else()
     target_compile_definitions(${ARG_TARGET} PRIVATE HWY_COMPILE_ONLY_STATIC=1)
   endif()
-  target_link_libraries(${ARG_TARGET} PRIVATE hyle_simd_source_expert)
+  target_link_libraries(${ARG_TARGET} PRIVATE ${_expert_target})
   hyle_highway_isa_flags(_flags "${_tier}")
   if(_flags)
     target_compile_options(${ARG_TARGET} PRIVATE ${_flags})
@@ -360,25 +393,24 @@ function(hyle_add_dispatched_kernel)
   file(TO_CMAKE_PATH "${_impl}" _impl)
 
   if(ARG_HIGHWAY)
-    if(NOT TARGET hyle_highway_headers)
-      message(FATAL_ERROR
-        "hyle_add_dispatched_kernel(HIGHWAY) requires the centrally locked "
-        "build-only Highway dependency")
+    if(TARGET hyle_highway_headers)
+      # HYLE's own source build keeps provider targets build-only so compiled
+      # libraries do not retain a package dependency after instantiation.
+      target_link_libraries(${ARG_TARGET} PRIVATE
+        "$<BUILD_INTERFACE:hyle_highway_headers>")
+    else()
+      _hyle_simd_expert_target(_expert_target)
+      target_link_libraries(${ARG_TARGET} PRIVATE ${_expert_target})
     endif()
-    # The expert seam supplies build-tree compile usage only. Static libraries
-    # otherwise retain a LINK_ONLY reference in their installed export even
-    # though every Highway body is already compiled into the archive.
-    target_link_libraries(${ARG_TARGET} PRIVATE
-      "$<BUILD_INTERFACE:hyle_highway_headers>")
   endif()
   if(ARG_XSIMD)
-    if(NOT TARGET hyle_xsimd_headers)
-      message(FATAL_ERROR
-        "hyle_add_dispatched_kernel(XSIMD) requires the centrally locked "
-        "build-only xsimd dependency")
+    if(TARGET hyle_xsimd_headers)
+      target_link_libraries(${ARG_TARGET} PRIVATE
+        "$<BUILD_INTERFACE:hyle_xsimd_headers>")
+    else()
+      _hyle_simd_expert_target(_expert_target)
+      target_link_libraries(${ARG_TARGET} PRIVATE ${_expert_target})
     endif()
-    target_link_libraries(${ARG_TARGET} PRIVATE
-      "$<BUILD_INTERFACE:hyle_xsimd_headers>")
   endif()
 
   set(_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/simd-dispatch/${ARG_NAME}")
@@ -537,7 +569,7 @@ function(hyle_add_dispatched_kernel)
   endforeach()
 endfunction()
 
-# Public spelling for source consumers. IMPL defines suffixed pointer/POD entry points using
+# Public spelling for C++ consumers. IMPL defines suffixed pointer/POD entry points using
 # HYLE_SIMD_VARIANT_SUFFIX and may instantiate a compile-time Highway/xsimd/HYLE route; pair it
 # with HYLE_SIMD_SELECT_FAT_KERNEL in the baseline TU.
 # In an exact build the manifest emits only one variant. Mark the consumer target so the
@@ -549,14 +581,17 @@ function(hyle_add_fat_kernel)
       "hyle_add_fat_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
       "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
   endif()
-  if(NOT TARGET hyle_simd_source_expert)
+  if(NOT ARG_TARGET OR NOT TARGET ${ARG_TARGET})
     message(FATAL_ERROR
-      "hyle_add_fat_kernel is source-only; installed static/shared SDK consumers "
-      "must use HYLE whole-buffer APIs")
+      "hyle_add_fat_kernel requires an existing TARGET")
   endif()
+  _hyle_simd_expert_target(_expert_target)
+  target_link_libraries(${ARG_TARGET} PRIVATE
+    ${_expert_target} hyle::platform)
   _hyle_simd_target_processor(_target_processor)
-  if(HYLE_SIMD_EXACT_TARGET)
-    string(TOLOWER "${HYLE_SIMD_EXACT_TARGET}" _exact_lower)
+  _hyle_simd_expert_exact_target(_exact_target)
+  if(_exact_target)
+    string(TOLOWER "${_exact_target}" _exact_lower)
     list(FIND ARG_TARGETS "${_exact_lower}" _exact_index)
     if(_exact_index EQUAL -1)
       message(FATAL_ERROR
@@ -591,8 +626,8 @@ function(hyle_add_fat_kernel)
   endif()
 
   hyle_add_dispatched_kernel(HIGHWAY XSIMD ${ARGN})
-  if(HYLE_SIMD_EXACT_TARGET AND ARG_TARGET)
-    string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _exact)
+  if(_exact_target)
+    string(TOUPPER "${_exact_target}" _exact)
     target_compile_definitions(${ARG_TARGET} PRIVATE
       HYLE_SIMD_FAT_EXACT_VARIANT_${_exact}=1
       HYLE_SIMD_EXACT=1

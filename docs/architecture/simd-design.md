@@ -13,7 +13,7 @@ SIMD 当前是 C++23 source/static/shared 组件。它不提供 Native FFI，也
 HYLE SIMD 同时服务推理引擎和普通连续数据消费者：
 
 - ordinary 用户获得按语义组织的 pointer/count whole-buffer API，不需要理解 ISA 或寄存器类型；
-- 源码 consumer 可以为固定 ISA 或多版本 kernel 使用 HYLE 的 target-bound seam；其实现可以静态路由到
+- 三种 C++ 交付的 consumer 都可以为固定 ISA 或多版本 kernel 使用 HYLE 的 target-bound seam；其实现可以静态路由到
   项目锁定的 Highway、xsimd 或经证明的 HYLE body，保持模板单态化和内联；
 - HYLE 拥有 dtype、rounding、alias、layout、错误、选择和交付合同；成熟 vendor 拥有其已经正确解决的
   register/target/math 机制；
@@ -35,7 +35,7 @@ ordinary C++ pointer/count API
               |
  provider-coherent Highway / xsimd / HYLE body
 
-source expert TU
+expert consumer TU
       |
 hyle_target_simd() or hyle_add_fat_kernel()
       |
@@ -237,11 +237,16 @@ SIMD 的 HYLE 依赖只有 Core 和 Platform。Container 的选定 kernel 与 SI
 build-only 外部实现 target，但 Container 不调用或依赖 `hyle::simd`；Compute 可以消费 ordinary SIMD API，
 SIMD 不依赖 Compute。
 
-source、installed static 和 installed shared 三种交付必须分别验证。installed SDK 只交付 ordinary
-pointer/count API，不交付第三方 register headers。旧 `vec.h`、`native/*`、`backend/*` 已物理删除；
-`provider/*`、`target.h` 与 `fat_kernel.h` 是 source-only expert seam，也不进入 installed SDK。direct vendor
-expert seam 只属于完整源码交付。符号检查只允许
-HYLE ordinary API 与小型诊断面，不得导出私有 Runtime 表或 vendor 类型。
+source、installed static 和 installed shared 三种交付必须分别验证。三者都交付 ordinary pointer/count
+API，也都能由用户显式链接 `hyle::simd_expert`，取得精确锁定 Highway/xsimd 开发头以及同一套 fixed/fat
+CMake helper。旧 `vec.h`、`native/*`、`backend/*` 已物理删除；`target.h` 与 `fat_kernel.h` 属 expert SDK，
+`provider/*` 仍是 HYLE 内部 route 实现，不安装。expert target 只编译进 consumer TU，不产生新的 HYLE 或
+vendor binary ABI；符号检查只允许 HYLE ordinary API 与小型诊断面，不得导出私有 Runtime 表或 vendor 类型。
+
+Highway/xsimd 的原生 namespace 是专家层本身：HYLE 不把其完整函数集重新包装成数百个同义 API。锁定版本
+提供但 387-operation 历史迁移账本未覆盖的 header-only 能力，可由用户在 expert TU 直接调用；需要上游
+`.cc` 的 thread pool、完整 VQSort/image/hash 等 compiled contrib 不因安装头文件而自动成为 HYLE 产品，必须
+由真实 capability owner 单独准入、构建和验证。
 
 ## 性能与验证原则
 

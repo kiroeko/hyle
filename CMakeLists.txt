@@ -336,17 +336,48 @@ if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
   else()
     hyle_configure_highway_dependency()
   endif()
+  set(_hyle_highway_development_assets "")
+  if(HYLE_BUILD_SIMD)
+    # The expert SDK needs Highway's complete public header tree, not its
+    # upstream tests, benchmarks or compiled .cc implementations. Project each
+    # locked header through the package registry so the installed tree remains
+    # self-contained without turning an SDK into a copy of the vendor checkout.
+    file(GLOB_RECURSE _hyle_highway_development_headers
+      CONFIGURE_DEPENDS LIST_DIRECTORIES false
+      "${HYLE_HIGHWAY_SOURCE_DIR}/hwy/*.h")
+    list(APPEND _hyle_highway_development_assets DEVELOPMENT_FILE_SPECS)
+    foreach(_hyle_highway_header IN LISTS _hyle_highway_development_headers)
+      file(RELATIVE_PATH _hyle_highway_relative
+        "${HYLE_HIGHWAY_SOURCE_DIR}" "${_hyle_highway_header}")
+      get_filename_component(_hyle_highway_relative_dir
+        "${_hyle_highway_relative}" DIRECTORY)
+      list(APPEND _hyle_highway_development_assets
+        "${_hyle_highway_header}|${CMAKE_INSTALL_DATADIR}/Hyle/dependencies/highway/${_hyle_highway_relative_dir}")
+    endforeach()
+    unset(_hyle_highway_development_headers)
+    unset(_hyle_highway_header)
+    unset(_hyle_highway_relative)
+    unset(_hyle_highway_relative_dir)
+  endif()
   hyle_register_package_dependency(
     NAME foundation_highway
     OWNER foundation
     LOCKED_DEPENDENCIES highway
+    ${_hyle_highway_development_assets}
     RUNTIME_FILE_SPECS
       "${HYLE_HIGHWAY_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-upstream-LICENSE")
+  unset(_hyle_highway_development_assets)
   if(HYLE_BUILD_SIMD)
     hyle_register_package_dependency(
       NAME simd_xsimd
       OWNER simd
+      EXPORT_TARGETS hyle_simd_expert
       LOCKED_DEPENDENCIES xsimd
+      DEVELOPMENT_FILE_SPECS
+        "${HYLE_SOURCE_DIR}/cmake/HyleIsa.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/Hyle"
+        "${HYLE_SOURCE_DIR}/cmake/HyleDispatch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/Hyle"
+      DEVELOPMENT_DIRECTORY_SPECS
+        "${HYLE_XSIMD_SOURCE_DIR}/include/xsimd|${CMAKE_INSTALL_DATADIR}/Hyle/dependencies/xsimd/include"
       RUNTIME_FILE_SPECS
         "${HYLE_XSIMD_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xsimd-upstream-LICENSE")
   endif()

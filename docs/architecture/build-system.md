@@ -32,16 +32,17 @@
   组件；其余组件
   通常是编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
-- `hyle_simd_source_expert` 是仅在源码构建树存在的 `INTERFACE` seam：
-  `hyle_target_simd()` 通过它向一个固定目标 consumer TU 提供中央锁定 Highway/xsimd 头、HYLE
-  编译期 route manifest 和一致的 ISA flags。它不是产品组件、不导出到 installed static/shared SDK，
-  也不建立 vendor register ABI。
+- `hyle::simd_expert` 是 SIMD 用户显式选择的 `INTERFACE` 开发 target，在源码、installed static 和
+  installed shared 三种交付中同名存在。`hyle_target_simd()` / `hyle_add_fat_kernel()` 通过它向
+  target-bound consumer TU 提供中央锁定 Highway/xsimd 头和一致的 ISA flags。它不被普通
+  `hyle::simd` 传递、不建立 vendor register ABI，也不承诺需要上游 `.cc` 的 compiled contrib。
 - `hyle_highway_headers` 是由中央 lock 建立的 build-only 外部实现 target。SIMD 和 Container 的 target-bound
   TU 可以直接链接它；它只投影受锁 include/define，不是 HYLE 产品组件，也不制造 `container -> simd`
   内部依赖。
-- `hyle_xsimd_headers` 与 `hyle_simd_provider_headers` 同样只存在于源码构建树；前者投影锁定 xsimd，后者
-  组合两个候选给 SIMD target-bound TU。它们不进入 installed export，xsimd 也不因共享中央 lock 形成新的
-  HYLE 组件边。
+- `hyle_xsimd_headers` 与 `hyle_simd_provider_headers` 只存在于源码构建树；前者投影锁定 xsimd，后者
+  组合两个候选给 HYLE 自身 SIMD target-bound TU。安装包不导出这些内部 target，而由
+  `hyle::simd_expert` 直接投影随 SDK 安装的精确锁定开发头；xsimd 也不因共享中央 lock 形成新的 HYLE
+  组件边。
 - 横切 target 也必须遵守真实消费边：模块只有在源码或公开头读取 trace/testing gate 时才传播
   对应 target，并通过 `TRACE`/`TESTING` 显式 opt-in；配置会把声明与当前 selected sources/公开头
   反向对账。纯编译/布局地基 `core` 不声明这两个 gate，不能因全局开关无故携带 profiler runtime

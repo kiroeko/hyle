@@ -109,6 +109,23 @@ endif()
 `find_package` 会拒绝不存在或未打包的 component。imported target 负责公开头、C++23 floor、
 传递组件和必要第三方依赖；若用户必须手工补 link/include 参数，应视为 package bug。
 
+SIMD 有一个显式专家开发层，三种交付写法相同。普通用户仍只链接 `hyle::simd`；需要 HYLE ordinary
+API 尚未覆盖的 Highway/xsimd header-only 能力，或要生成固定/多 ISA 自定义 kernel 时，调用安装包自动
+加载的 helper：
+
+```cmake
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS simd)
+add_library(my_kernel OBJECT my_kernel.cc)
+hyle_target_simd(TARGET my_kernel ISA AVX2)
+target_link_libraries(my_app PRIVATE hyle::simd)
+target_sources(my_app PRIVATE $<TARGET_OBJECTS:my_kernel>)
+```
+
+helper 会让该 target 显式消费 `hyle::simd_expert`；SDK 自带锁定 Highway/xsimd 开发头，不在 consumer
+configure 时下载依赖。普通 `hyle::simd` target 不传播这些 include/definition。expert 头类型只留在
+target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额外 binary ABI，也不承诺需要上游
+`.cc` 的 compiled contrib。完整 fixed/fat 示例见 [SIMD 使用指南](simd-usage.md)。
+
 预发布 `0.y.z` 包只接受完整精确版本；`find_package(Hyle 0.y.z EXACT ...)` 中 patch 也属于构建
 合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
 

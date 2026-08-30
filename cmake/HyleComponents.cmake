@@ -281,14 +281,10 @@ function(_hyle_component_public_headers name out_var)
   elseif(name STREQUAL "simd")
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/simd/*.h")
-    # Fixed/fat target helpers and finite provider winners are source-tree
-    # implementation seams. Keep the installed component limited to the
-    # ordinary pointer/count API; source embedding obtains the locked provider
-    # headers and target compile contract from HYLE's CMake package.
+    # Finite provider routes remain implementation-only. target.h and
+    # fat_kernel.h are public expert headers shared by source/static/shared
+    # delivery and are therefore installed with the selected SIMD component.
     list(FILTER _headers EXCLUDE REGEX "/hyle/simd/provider/")
-    list(REMOVE_ITEM _headers
-      "${HYLE_SOURCE_DIR}/include/hyle/simd/fat_kernel.h"
-      "${HYLE_SOURCE_DIR}/include/hyle/simd/target.h")
   else()
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/${name}/*.h")

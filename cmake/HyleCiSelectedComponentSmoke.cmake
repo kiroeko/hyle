@@ -62,6 +62,14 @@ file(MAKE_DIRECTORY "${_root}")
 set(_source_parent "${_root}/source-parent")
 set(_source_build "${_root}/source-build")
 file(MAKE_DIRECTORY "${_source_parent}")
+set(_source_expert_contract "")
+if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
+  string(APPEND _source_expert_contract
+    "add_library(hyle_selected_source_provider OBJECT \"${_sample}/expert_probe.cc\")\n"
+    "hyle_target_simd(TARGET hyle_selected_source_provider ISA SCALAR)\n"
+    "target_sources(hyle_selected_source_consumer PRIVATE $<TARGET_OBJECTS:hyle_selected_source_provider>)\n"
+    "hyle_add_fat_kernel(TARGET hyle_selected_source_consumer NAME package_bias_relu IMPL \"${_sample}/fat_kernel-inl.h\" TARGETS scalar sse4 avx2 avx512 neon sve rvv)\n")
+endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_selected_source_consumer LANGUAGES CXX)\n"
@@ -72,6 +80,7 @@ file(WRITE "${_source_parent}/CMakeLists.txt"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "add_executable(hyle_selected_source_consumer \"${_sample}/main.cc\")\n"
 "target_link_libraries(hyle_selected_source_consumer PRIVATE hyle::${HYLE_SMOKE_COMPONENT})\n"
+"${_source_expert_contract}"
 "hyle_stage_runtime_dependencies(hyle_selected_source_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_selected_source_consumer COMMAND hyle_selected_source_consumer)\n")
@@ -110,21 +119,27 @@ foreach(_linkage IN ITEMS shared static)
   _hyle_selected_run("install ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" --install "${_sdk_build}" --config Release)
   if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
-    foreach(_source_only_simd_header IN ITEMS
+    foreach(_expert_simd_header IN ITEMS
         hyle/simd/fat_kernel.h
         hyle/simd/target.h)
-      if(EXISTS "${_staging}/include/${_source_only_simd_header}")
+      if(NOT EXISTS "${_staging}/include/${_expert_simd_header}")
         message(FATAL_ERROR
-          "installed ${_linkage} SIMD SDK leaked source-only header "
-          "${_source_only_simd_header}")
+          "installed ${_linkage} SIMD SDK lacks expert header "
+          "${_expert_simd_header}")
       endif()
     endforeach()
-    foreach(_source_only_simd_directory IN ITEMS
-        hyle/simd/provider)
-      if(EXISTS "${_staging}/include/${_source_only_simd_directory}")
+    if(EXISTS "${_staging}/include/hyle/simd/provider")
+      message(FATAL_ERROR
+        "installed ${_linkage} SIMD SDK leaked internal provider routes")
+    endif()
+    foreach(_expert_asset IN ITEMS
+        share/Hyle/dependencies/highway/hwy/highway.h
+        share/Hyle/dependencies/xsimd/include/xsimd/xsimd.hpp
+        lib/cmake/Hyle/HyleIsa.cmake
+        lib/cmake/Hyle/HyleDispatch.cmake)
+      if(NOT EXISTS "${_staging}/${_expert_asset}")
         message(FATAL_ERROR
-          "installed ${_linkage} SIMD SDK leaked source-only directory "
-          "${_source_only_simd_directory}")
+          "installed ${_linkage} SIMD SDK lacks expert asset ${_expert_asset}")
       endif()
     endforeach()
   endif()

@@ -1,5 +1,6 @@
 #include "hyle/platform/cpu.h"
 #include "hyle/simd/bitpack.h"
+#include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/random.h"
 #include "hyle/simd/runtime.h"
@@ -12,6 +13,23 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+
+float hyle_package_expert_sum(const float*, std::size_t) noexcept;
+std::size_t hyle_package_xsimd_width() noexcept;
+
+using HylePackageBiasReluFn =
+    void (*)(float*, std::size_t, float) noexcept;
+void hyle_package_bias_relu_scalar(float*, std::size_t, float) noexcept;
+#if defined(HYLE_ARCH_X64)
+void hyle_package_bias_relu_sse4(float*, std::size_t, float) noexcept;
+void hyle_package_bias_relu_avx2(float*, std::size_t, float) noexcept;
+void hyle_package_bias_relu_avx512(float*, std::size_t, float) noexcept;
+#elif defined(HYLE_ARCH_ARM64)
+void hyle_package_bias_relu_neon(float*, std::size_t, float) noexcept;
+void hyle_package_bias_relu_sve(float*, std::size_t, float) noexcept;
+#elif defined(HYLE_ARCH_RISCV64)
+void hyle_package_bias_relu_rvv(float*, std::size_t, float) noexcept;
+#endif
 
 int main() {
   std::array<float, 9> input{-4.0f, -1.0f, -0.0f, 0.0f, 0.25f,
@@ -115,8 +133,33 @@ int main() {
       hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
   const char* ordering = hyle::platform::isa_name(
       hyle::simd::selected_target(hyle::simd::KernelFamily::kSort).isa);
-  return active == nullptr || active[0] == '\0' || ordering == nullptr ||
-                 ordering[0] == '\0'
-             ? 13
-             : 0;
+  if (active == nullptr || active[0] == '\0' || ordering == nullptr ||
+      ordering[0] == '\0')
+    return 13;
+
+  const std::array<float, 5> expert_values{1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+  if (hyle_package_expert_sum(expert_values.data(), expert_values.size()) !=
+          15.0f ||
+      hyle_package_xsimd_width() == 0)
+    return 14;
+
+  std::array<float, 4> fat_values{-2.0f, -0.5f, 1.0f, 4.0f};
+#if defined(HYLE_ARCH_X64)
+  static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_sse4,
+      &hyle_package_bias_relu_avx2, &hyle_package_bias_relu_avx512);
+#elif defined(HYLE_ARCH_ARM64)
+  static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_neon,
+      &hyle_package_bias_relu_sve);
+#elif defined(HYLE_ARCH_RISCV64)
+  static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_rvv);
+#else
+  static const HylePackageBiasReluFn bias_relu =
+      HYLE_SIMD_SELECT_FAT_KERNEL(&hyle_package_bias_relu_scalar);
+#endif
+  bias_relu(fat_values.data(), fat_values.size(), 1.0f);
+  return fat_values != std::array<float, 4>{0.0f, 0.5f, 2.0f, 5.0f} ? 15
+                                                                        : 0;
 }
