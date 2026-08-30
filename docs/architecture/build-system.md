@@ -127,6 +127,26 @@ include root 或复制整棵 include tree 都不能使未登记依赖合法。
 交付；Core 本身不拥有 linked version query。`<hyle/visibility.h>` 的 export/import policy 也由
 build/package 拥有，随各 compiled module 的 static/shared 形状维护，而不是 Core capability。
 
+## Host 工具链选择入口
+
+CMake 顶层只负责在 language 初始化后验证 floor：GCC 14+、Clang/AppleClang 18+、MSVC 19.43+；它
+不能在已有 build cache 中安全换 compiler。Windows 维护命令由 `scripts/hyle-windows.ps1` 导入已安装
+Visual Studio 环境；Linux/WSL/macOS 维护命令统一由 `scripts/hyle-unix.sh` 包住任意 argv：
+
+```bash
+scripts/hyle-unix.sh cmake --preset linux
+scripts/hyle-unix.sh cmake -DHYLE_SOURCE_DIR="$PWD" \
+  -DHYLE_SMOKE_ROOT=/tmp/hyle-time -DHYLE_SMOKE_COMPONENT=time \
+  -P cmake/HyleCiSelectedComponentSmoke.cmake
+```
+
+Unix wrapper 不安装软件、不改 PATH/preset/cache，也不复制 CMake action。调用者未设置 `CC/CXX` 时，
+Linux 从已安装的成对 versioned GCC 14+、Clang 18+ 或合格的 unversioned pair 中选择；macOS 选择系统
+clang。调用者可以显式设置任意受支持 pair，但只设一个、混用 family 或低于 floor 会在目标命令启动前
+失败。随后脚本以 `exec "$@"` 原样执行命令，因此 configure、`cmake -P` smoke、sanitizer driver 和
+诊断工具共用一个选择入口而不形成第二套 build graph。已有 cache 已绑定旧 compiler 时必须使用新的
+独占 scratch；wrapper 不删除或重写用户数据。
+
 ## 外部依赖：单点登记，多路投影
 
 外部依赖分成两个正交登记层，不能相互替代：
@@ -307,7 +327,9 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 
 1. 本模块及其传递依赖的 source build/test。
 2. 用独占 scratch 跑该根的 `HyleCiSelectedComponentSmoke.cmake`：source embedding、shared、static
-   及搬迁后 installed consumer；Windows 可用 `hyle-windows.ps1 -Action SelectedComponentSmoke`。
+   及搬迁后 installed consumer；Windows 使用 `hyle-windows.ps1 -Action SelectedComponentSmoke`，
+   Unix 用 `hyle-unix.sh cmake ... -P cmake/HyleCiSelectedComponentSmoke.cmake`，避免继承不受支持的
+   host 默认 compiler。
    smoke 生成的 Darwin 父工程从中央 platform requirement 取得 deployment target；不得让 source 与
    SDK 两种形状偶然使用不同的 macOS loader floor。
 3. 涉及外部依赖时的锁、离线和许可证投影。

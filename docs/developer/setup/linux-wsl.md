@@ -13,14 +13,21 @@
 | Generator | Ninja 或 Make | `sudo apt install ninja-build`；没有 Ninja 时使用系统 Make |
 | GAS | 随 gcc（fcontext ELF 汇编） | 自带 |
 
-**必须显式指 gcc-14**（默认 `cc`/`c++` 是 gcc-13，CMake 硬门槛 FATAL_ERROR）：
+统一入口会从已安装 toolchain 中优先选择 `gcc-14/g++-14`，因此不会再继承 Ubuntu 24.04 默认
+GCC 13。它只选择、不安装；显式覆盖仍必须同时设置 `CC/CXX`：
 
 ```bash
-CC=gcc-14 CXX=g++-14 cmake --preset linux
-# 名称固定为 gcc-14/g++-14 的 WSL 机器也可直接：cmake --preset wsl
-cmake --build --preset linux --parallel 2
-ctest --preset linux --output-on-failure
+scripts/hyle-unix.sh --print-toolchain
+scripts/hyle-unix.sh cmake --preset linux
+scripts/hyle-unix.sh cmake --build --preset linux --parallel 2
+scripts/hyle-unix.sh ctest --preset linux --output-on-failure
+
+# 需要显式选择 Clang 等其它受支持 pair 时：
+CC=clang-18 CXX=clang++-18 scripts/hyle-unix.sh cmake --preset linux
 ```
+
+`cmake --preset wsl` 仍是名称固定为 `gcc-14/g++-14` 时的方便入口。已有 cache 若曾绑定 GCC 13，必须
+换新的独占 build/scratch；CMake 不支持原地换 compiler，wrapper 也不会删除旧目录。
 
 ## 二、⚠️ 9p 铁律（血泪，最重要）
 

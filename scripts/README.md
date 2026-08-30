@@ -307,6 +307,28 @@ physical hosts or mismatched candidate/contract/peer identities.
 Old raw results therefore remain diagnostics or historical evidence; the
 presence of a module-specific runner is not a module engineering `PASS`.
 
+## `hyle-unix.sh` — select a supported installed Unix toolchain
+
+Linux/WSL often exposes an unsupported default GCC even when `gcc-14/g++-14`
+is installed. Wrap maintainer commands once instead of repeating compiler flags
+in every configure, smoke, or sanitizer invocation:
+
+```bash
+scripts/hyle-unix.sh --print-toolchain
+scripts/hyle-unix.sh cmake --preset linux
+scripts/hyle-unix.sh cmake -DHYLE_SOURCE_DIR="$PWD" \
+  -DHYLE_SMOKE_ROOT=/tmp/hyle-time -DHYLE_SMOKE_COMPONENT=time \
+  -P cmake/HyleCiSelectedComponentSmoke.cmake
+```
+
+When `CC/CXX` are unset, Linux selects an installed paired GCC 14+ (preferring
+the documented GCC 14 baseline), then Clang 18+, then a qualified unversioned
+pair; macOS selects system clang. Explicit `CC/CXX` are preserved but must be
+paired, from one family, and satisfy the floor before the command starts. The
+wrapper installs nothing, does not alter an existing CMake cache, and executes
+the argv directly without `eval`. Use a fresh task-owned scratch if a cache was
+already configured with another compiler.
+
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.

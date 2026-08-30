@@ -42,7 +42,7 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 - **第 2 类（源码依赖）已经自动**：首次在线 configure 按需填充共享、锁定的 source cache；后续
   build tree 复用且不重新下载。隔离网交付由发行方搬运该受管 cache，或准备可审计的
   `deps/<FetchContent-name>/` 源码闭包。
-- **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装 SDK/MSVC ABI 环境，并按 preset 调用已安装的 cl.exe 或 PATH 中的 clang-cl；它不安装或修改 Visual Studio/LLVM。
+- **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装 SDK/MSVC ABI 环境；Linux/WSL/macOS 的 `scripts/hyle-unix.sh` 只从已安装 compiler 中选择并预检 floor，再原样执行给它的命令。两者都不安装或持久修改系统工具链。
 - **第 3 类中的系统 SDK 不自动**：CUDA Toolkit/driver、OpenSSL 等重量级且机器相关，只在你**要**那个能力时才装；HTTP/2、ggml、Vulkan 的源码部分仍按第 2 类取得。文档给出确切边界（[`dependencies.md`](dependencies.md)）。
 
 ## 验证一切就绪（各平台通用终点）
@@ -50,9 +50,13 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 配置 + 构建 + 跑几个测试，绿了就能开工：
 
 ```bash
-cmake --preset <windows-vs2026|windows|linux|macos>
-cmake --build --preset <windows-vs2026|windows|linux|macos> --parallel 2
-ctest --preset <windows-vs2026|windows|linux|macos>
+# Linux / WSL / macOS：统一选择已安装的受支持 compiler。
+scripts/hyle-unix.sh cmake --preset <linux|macos>
+scripts/hyle-unix.sh cmake --build --preset <linux|macos> --parallel 2
+scripts/hyle-unix.sh ctest --preset <linux|macos>
+
+# Windows 使用 hyle-windows.ps1 或已初始化的 VS shell。
+cmake --preset <windows-vs2026|windows>
 ```
 
 这些 preset 的开发 feature contract 相同：顶层默认选择 `HYLE_COMPONENTS=all`，昂贵的
@@ -77,7 +81,7 @@ MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`；安装 clang-cl 18+
 ## 并行开发与单组件交付门
 
 每个 agent/session 使用独占、绝对 scratch build 路径，不得复用 preset 的固定 build tree 或另一
-会话的 CMake cache。跨平台可直接以 `-B <session-scratch>` 配置；Windows wrapper 使用
+会话的 CMake cache。Unix 用 `scripts/hyle-unix.sh cmake ... -B <session-scratch>`；Windows wrapper 使用
 `-BinaryDir <absolute-path>`，单组件配置再加 `-Component <name>`。
 
 模块交接前运行 `cmake/HyleCiSelectedComponentSmoke.cmake`。它对一个组件根分别验证 source
@@ -88,6 +92,15 @@ embedding、shared SDK、static SDK，以及搬迁后的 installed C++ consumer�
 scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
   -Component mem `
   -SmokeRoot C:\hyle-scratch\mem-<session-id>
+```
+
+Unix 入口例如：
+
+```bash
+scripts/hyle-unix.sh cmake -DHYLE_SOURCE_DIR="$PWD" \
+  -DHYLE_SMOKE_ROOT=/tmp/hyle-mem-agent-a \
+  -DHYLE_SMOKE_COMPONENT=mem \
+  -P cmake/HyleCiSelectedComponentSmoke.cmake
 ```
 
 GitHub Actions 的 PR/main push 只跑高信号 Linux CPU/合同门以控制额度；Windows、macOS、交叉编译、

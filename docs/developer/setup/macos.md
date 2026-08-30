@@ -27,8 +27,8 @@
 ```bash
 export PATH=/opt/homebrew/bin:$PATH
 cd ~/hyle
-/opt/homebrew/bin/cmake --preset macos
-/opt/homebrew/bin/cmake --build --preset macos --parallel 2
+scripts/hyle-unix.sh /opt/homebrew/bin/cmake --preset macos
+scripts/hyle-unix.sh /opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
 - 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、ggml、Vulkan、CUDA 和 trace 都是

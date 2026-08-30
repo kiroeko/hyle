@@ -52,10 +52,19 @@ jobs:
           echo "CC=gcc-14" >> "$GITHUB_ENV"
           echo "CXX=g++-14" >> "$GITHUB_ENV"
 
+      - name: Verify Unix toolchain entry
+        if: runner.os == 'Linux'
+        run: |
+          test "$(env -u CC -u CXX ./scripts/hyle-unix.sh --print-toolchain)" = $'CC=gcc-14\nCXX=g++-14'
+          if env -u CXX CC=gcc-14 ./scripts/hyle-unix.sh true; then
+            echo "half-configured compiler pair unexpectedly succeeded" >&2
+            exit 1
+          fi
+
       - name: Configure all CPU modules (Unix)
         if: runner.os != 'Windows'
         run: >-
-          cmake --preset ${{ env.HYLE_CI_PRESET }}
+          ./scripts/hyle-unix.sh cmake --preset ${{ env.HYLE_CI_PRESET }}
           -DHYLE_COMPONENTS=all
           -DHYLE_BUILD_TESTS=ON
           -DHYLE_TEST_INSTRUMENTATION=OFF
