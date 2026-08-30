@@ -49,5 +49,5 @@
 
 ## 当前状态
 
-`REOPENED`。下一合法状态是 `SCOPED`；冻结卡经状态检查后再执行 capability audit，产品代码尚未修改。
-
+`SCOPED`。上述 closure card 已冻结；下一步只审计这条 delivery journey 及其现有 target/helper/资产，
+形成有限 `FIX` 集后进入 `AUDITED`，产品代码尚未修改。
