@@ -86,9 +86,9 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 |---|---|---|---|
 | inference row seam 的 audit revision 2 | 00/07 | `KEEP` → SIMD-07 `DONE` | 修正了把基础 row arithmetic 误判为完整的事实错误，最终由 07 的完整 row 合同吸收 |
 | `index_of_min/index_of_max` 实现与 Runtime v9 草稿 | 09 | `REWORK` → SIMD-09 `DONE` | 以 direct Highway + 最小 NaN gap 重写并完成跨 ISA、交付与 P1 证据，没有原样接受草稿 |
-| stable radix/argsort workspace/API 草稿 | 11 | `REWORK` | 修复真实 alias/OOM/API 缺陷，但 overlap、异常说明、float order 与交付仍须独立审计 |
+| stable radix/argsort workspace/API 草稿 | 11 | `REWORK` → SIMD-11 `DONE` | 以完整 typed-scratch type family、overlap/OOM/index/float-order 合同重写并完成交付与有界 P1 证据，草稿未原样继承 |
 | allocation-free activation kernel 两个未跟踪头 | 08 | `REWORK` → SIMD-08 `DONE` | 算法意图被重写进 direct-Highway math seam，旧草稿没有原样进入候选 |
-| integrated Highway content hash 改动 | 03/11 | 03 已机械锁定；11 待最终内容后 `REGENERATE` | hash 必须由最终接受的 port 内容机械生成，控制面字面值不单独继承 |
+| integrated Highway content hash 改动 | 03/11 | 03/11 均已按最终内容机械锁定 | hash 由最终接受的最小 port 内容生成，控制面字面值未单独继承 |
 | core/util/methodology 等其他脏文件 | 不属于本 epic | `PRESERVE` | 不得顺手提交或覆盖 |
 
 本表保存 SIMD-00 建立控制面时的归属事实，并补记 terminal 结果；它不是当前工作树清单。`REWORK`

@@ -1,6 +1,6 @@
 # SIMD-11：Ordering、radix 与 top-k
 
-- ticket state：`ACTIVE`
+- ticket state：`DONE`
 - kind：product capability/correctness/performance
 - depends on：SIMD-10
 - budget：1 工程日；性能预算 60 分钟
@@ -72,3 +72,33 @@
 本票只允许以上六项和它们直接暴露的构建/测试/文档修复。若 direct Highway compatibility spike 不能在一次
 有界尝试内证明，必须选择具名最小 delta 或把该适用 gate 裁决为 `BLOCKED`；不得无限研究编译器、地址布局或
 亚纳秒噪声。到达预算后以 `DONE` 或明确 blocker 终止，SIMD-12 才负责聚合 closure。
+
+## Terminal record
+
+- product：ordering 公共产品提交 `9d6e2767`，bounded-small-k 机制修复提交
+  `6233fde58a21173971c41da144b66f4fdd4719b9`；最终性能 instrument 提交 `14d6bcb4`。
+- ordinary route：删除按 `n>=4096` 隐藏分配 radix workspace 和最坏 `O(n*k)` streaming top-k；numeric、
+  U128、KV 的 full/partial/select 与 metadata 进入 Runtime v11 单一表。小 prefix 以既有 base-case 容量为
+  结构边界使用 `O(n log k)`/`O(1)` heap selection，大 prefix 保留向量 select+sort；没有 benchmark size
+  threshold。
+- stable route：u/i16/32/64、f32/f64 typed-scratch radix/argsort 与 allocating convenience 完成；
+  overlap、OOM、32-bit index、NaN payload、signed zero 和 first-equal stability 合同已覆盖。公开 POD 直接
+  实例化 port，删除跨类型 reinterpret bridge；旧 `sort_bench`/`radix_sort_bench` 被合格的 bounded
+  ordering instrument 替代。
+- vendor：direct current-Highway 全类型/全 target 生成在 classic MSVC 构建时间预算内失败，因此裁决为
+  `KEEP MINIMAL PORT`。保留 Highway `83eff393...` adaptation，delta 限于 compiler/scalable glue、HYLE
+  public POD、static entry 与产品合同；当前 lock/许可证/content hash 机械审计通过。
+- correctness：Windows fat `Sort.*:RadixSort.*:SimdRuntime.*` 52/52；exact scalar/SSE4/AVX2 各 52/52
+  且 artifact `PASS`；clang-cl exact AVX-512 artifact `PASS`；direct AVX2 SortKernel 3/3；SVE 同一 binary
+  在 VL 128/256/384/512/2048 各 15/15；RVV 在 VLEN 128/256/512/1024 各 14/14。
+- delivery：`sort.h` header self-containment，以及 selected-component source embedding、搬迁后的 shared
+  SDK、搬迁后的 static SDK consumer 均构建并实际执行 ordering sample，全部 `PASS`。
+- performance：W1-WIN、5% P1、干净 detached instrument `14d6bcb4`；A/A、双顺序、双 layout、四 replica、
+  pin/priority 和四份输入唯一性全部通过，最终日志无 instability marker。f32 partial 4K/k10 为
+  `1.147x [1.108,1.185] WIN`，full 4K 为 `5.950x [5.883,6.052] WIN`，full 1M 为
+  `7.463x [7.374,7.556] WIN`；radix/argsort 因合同不同保持 `NOT_COMPARABLE`，HYLE A/B repeatability
+  中心为 `0.996/1.003`。详见[SIMD-11 性能证据](../../../evidence/performance/simd-11-ordering.md)。
+- docs：architecture、public header、user choice table、sample、dependency/port lock 和本票同步；
+  distributed/external/tensor/parallel/GPU ordering 仍为明确 non-goal。
+- terminal verdict：冻结六项全部完成，SIMD-11 `DONE`；后继仅为 SIMD-12 的全模块集成、六问、文档与
+  closure，不授权重新扩大 ordering 产品面或性能矩阵。

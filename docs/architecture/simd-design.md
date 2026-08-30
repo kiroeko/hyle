@@ -145,6 +145,11 @@ Graph/Compute 或 accelerator owner。
 每个完整 buffer 只有一次已缓存间接调用。经典 cl.exe 因 Highway 官方 AVX3 blocklist 将 ordering 降到
 AVX2；这是可报告的 per-family feature，不得伪称 AVX-512 kernel。
 
+`partial_sort` 按算法结构选择机制：请求 prefix 能完整落入 VQSort 已有 sorting-network base-case 容量时，
+使用成熟的 in-place heap selection（`O(n log k)`、`O(1)` extra storage）；更大 prefix 使用向量化
+average-`O(n)` selection 后排序。边界来自 target/base-case 容量，不是输入总长度或某条 benchmark 的
+经验阈值；两条路径都保持相同 NaN、payload、allocation 与公开 API 合同。
+
 稳定 `radix_sort/argsort` 使用 base-256 LSD，时间为 `O(n * sizeof(key))`，空间为 `O(n)`。核心重载接收
 caller-owned typed span，不分配；便利重载只负责分配同样大小的 workspace，失败传播 `std::bad_alloc`，
 不会静默改用不稳定算法。`argsort` 保留 keys，输出 32 位稳定 permutation。浮点有限值按 numeric order，
