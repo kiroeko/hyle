@@ -49,8 +49,9 @@
 
 ## 当前状态
 
-`CANDIDATE`。上述 closure card 与有限 `FIX` 集已落实到下列不可变产品身份，进入候选后只补验证与
-terminal record；若公开合同、算法或正常运行时代码再变化，退回 `AUDITED`。
+`VERIFIED`。上述 closure card 与有限 `FIX` 集已落实到下列不可变产品身份；三平台、三交付、P0
+结构成本、文档和最终红队门均已完成。产品 candidate 后只增加验证与 terminal record；若公开合同、
+算法或正常运行时代码再变化，退回 `AUDITED`。
 
 ## Capability-family coverage map
 
@@ -119,3 +120,73 @@ selected-package smoke 扩成三种交付同一 journey；更新当前 architect
 - Windows candidate-bound 预验证：SIMD 5/5 correctness/codegen；source、relocated shared、relocated
   static expert consumer 各 1/1，均直接编译运行 Highway + xsimd fixed object 和 custom fat kernel；文档、
   closure checker 与 route verifier 通过。跨平台和最终红队 verdict 见后续 verification manifest。
+
+## Verification manifest
+
+验证始终绑定 product commit `1e543dec85ad6cef411f4499f7449294a2507b1c` / tree
+`4e4e82e5e22e09f55c7af165b45de9d4dfbb4896`。用于 WSL/macOS 的 clean source archive SHA-256 为
+`EEE0092EA1DA0EB5BE1525731B3363883EE83A81B4DCBF91D84B0441575EBA69`；candidate 到本次验证提交之间，
+`CMakeLists.txt`、`cmake/`、`include/`、`src/`、`samples/` 与 `scripts/` 的产品 diff 为零。
+
+| machine / toolchain | source consumer | relocated shared SDK | relocated static SDK | verdict |
+|---|---:|---:|---:|---|
+| `W1-WIN` / MSVC 19.44 + Ninja | 1/1 | 1/1 | 1/1 | `PASS` |
+| `W1-WSL` / GCC 14.2 + Ninja | 1/1 | 1/1 | 1/1 | `PASS` |
+| `M1-MAC` / AppleClang 21 + Unix Makefiles | 1/1 | 1/1 | 1/1 | `PASS` |
+
+每条 journey 都使用同一 package sample，直接编译 Highway 与 xsimd fixed-target object，生成并运行
+HYLE custom fat kernel，并在断网可用的 relocated SDK 中查找 package。Windows 另运行 SIMD
+correctness/provider route/provider codegen/provider winner/ordering 5/5；route verifier 保持 387 operation、
+422 route scope、零 pending。installed inventory 含 Highway 88 个 `.h`、零 `.cc`、完整 xsimd public
+header tree、两个 helper 与 expert HYLE headers；不含 `include/hyle/simd/provider`。文档检查为 330 个
+Markdown、934 条本地链接全通过。
+
+风险矩阵：固定 ISA 直接 code、custom fat dispatch、空/尾部与 provider 组合由同一真实 sample 和既有
+SIMD tests `PASS`；source/static/shared、relocation、离线依赖、许可证、selected component、普通/expert
+隔离和 public-header inventory 均 `PASS`。本轮不新增对象状态、allocation、OOM、锁、线程、取消、销毁
+或 C/FFI 边界，相应生命周期风险 `NOT_APPLICABLE`；运行时 SIMD correctness 与 sanitizer 结论继承未变的
+simd-v3 candidate，本轮没有重写算法来伪造新结论。
+
+P0 engineering performance verdict 为 **`PASS / STRUCTURAL`**：fixed path 只产生 consumer 自己的 provider
+模板/宏代码，fat path 保持既有 whole-kernel batch-boundary selection；没有新增运行时 wrapper、逐元素
+provider decision、allocation、lock、syscall 或常态 metadata。timing peer comparison
+`NOT_APPLICABLE`，本轮不宣称新的 operation winner 或 SOTA。
+
+## Final red team
+
+| finding | disposition / evidence |
+|---|---|
+| 安装整个 Highway tree 会把测试、benchmark 和 compiled contrib 混入 SDK | `FIXED BEFORE CANDIDATE`：只安装递归得到的 88 个 `.h`；三平台 inventory 均无 `.cc` |
+| ordinary `hyle::simd` 可能无意传播 vendor include/define | `DISPROVED`：package configure 的负向 target-property assertion 与三种 journey 通过；只有显式 helper/target 取得 expert surface |
+| provider register/type 跨 shared/static ABI | `DISPROVED`：fixed object 与每 ISA TU 在 consumer 侧编译，HYLE binary 边界仍为 pointer/count/POD；export target 为 `INTERFACE` |
+| installed helper 可能不知道 producer processor/exact target | `DISPROVED`：两项 facts 作为 exported target property 搬迁，x86_64 Windows/WSL 与 arm64 macOS 均生成正确有限 ISA 集 |
+| header target 可能暗示完整 compiled Highway contrib 受支持 | `FIXED BY CONTRACT`：architecture/user guide 明确 thread pool、完整 VQSort/image/hash 等 `.cc` 产品不属于本轮，须按真实 owner 另行准入 |
+| vendor 资产缺 license 或 configure 时联网 | `DISPROVED`：安装 HYLE notices 与 Highway license；relocated consumers 只读 SDK 自带头，无下载步骤 |
+| 为交付缺口顺手改变 ordinary route/算法/性能 harness | `DISPROVED`：candidate 后产品 diff 为零；本轮 candidate 本身未修改 `src/simd/**/*.cc`、公开 ordinary declaration、route ledger 或性能工具 |
+| WSL 默认选到 GCC 13，反复在 configure 才失败 | `OUT_OF_SCOPE BUILD ENTRY DEFECT`：顶层按合同 fail closed；同一 clean candidate 显式绑定 GCC 14.2 后三条 journey 全通过。统一 Linux/WSL 工具链入口由独立 build/package task 处理，不在 SIMD 候选中扩建构建系统 |
+
+红队没有发现未处置的 SIMD `MUST`、correctness/security/ownership/交付缺陷或 material runtime 成本。
+`CANDIDATE -> VERIFIED` 的 pre-transition registry snapshot 为
+`C:\hyle-scratch\simd-v4-expert-sdk\module-status-before-verified.json`，SHA-256
+`6AD2DE92C29304A85735EEF2DC0704C85400E8DCC346BEB6C9A8FCF31687722C`。
+
+## Owner 六问（VERIFIED）
+
+1. **第三方：**产品 expert 路径直接使用锁定 Highway
+   `f503c485cec6b4f2f596fa60d83484797c9eeb5c` 与 xsimd
+   `3b3151ff6655967c4d783d0534dde68fbb7b258f` public headers；两家拥有 native 语义/实现，HYLE 拥有
+   fixed/fat 组合与 ordinary route 决策，build/package 拥有锁、安装、离线与许可证。ordinary 产品仍按
+   simd-v3 的逐 route owner 结论执行。
+2. **功能：**ordinary 387-operation/422-scope 结论不变；其外的 provider header 能力现通过原生 namespace
+   完整 `ROUTED`，而不是复制一套不完整 HYLE wrapper。需要上游 `.cc` 的产品、tensor/quant/GEMM/
+   attention/RoPE/fusion/GPU 仍分别归未来真实 owner，不冒充 SIMD primitive 缺口。
+3. **性能：**本轮为 P0 delivery-only；结构成本 `PASS`，timing peer comparison `NOT_APPLICABLE`。没有
+   因 package 形状重测或改写既有 route winner，也没有新的 SOTA 声明。
+4. **旧 C ABI / Native FFI：**产品树没有 SIMD C schema/header/bridge/export/sample/option；provider 类型
+   只在 C++ consumer TU。Native FFI 仍为 `N/A`。
+5. **构建与导入：**Windows、WSL、macOS 的 source embedding、installed static、installed shared、
+   relocation、selected component 与 offline consumer 均 `PASS`；三种形状使用同一
+   `hyle::simd_expert` 和 helper。
+6. **C++ API 与文档：**普通任务继续选 `hyle::simd`；缺少语义 wrapper 时显式选 expert target，直接用
+   `hwy::` / `xsimd::`，fixed/fat 示例可复制。文档明确版本升级需重编、类型/ownership 边界、普通用户
+   零传播和 compiled contrib 陷阱。

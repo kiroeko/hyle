@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-08-30",
+  "updated_at": "2026-08-31",
   "modules": [
     {
       "module": "core",
@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "SIMD-V4-DELIVERY-01",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
       "round_id": "simd-v4-expert-sdk",
@@ -577,9 +577,10 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md"
       },
       "formal_performance": {
         "state": "PENDING",
@@ -594,10 +595,10 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/simd/simd-v3-provider-routing.md",
+      "closure_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
       "loc": {
-        "snapshot_commit": "27633329949a88321e5e0d71bad28e6dbb997f9c",
-        "repository_code": 401264,
+        "snapshot_commit": "1e543dec85ad6cef411f4499f7449294a2507b1c",
+        "repository_code": 402821,
         "self_with_tests": 96041,
         "self_without_tests": 59898,
         "module_implementation": 14211
@@ -607,7 +608,9 @@
         "SVE and RVV are correctness and code-generation qualified under QEMU, without real-silicon performance claims.",
         "Classic cl.exe direct Highway target bodies remain capped at AVX2 by the upstream AVX3 blocklist; direct AVX-512 uses clang-cl.",
         "SIMD provides no Native FFI, C ABI or stable cross-toolchain C++ ABI.",
-        "The integrated Highway VQSort adaptation must be rebased and re-audited when its upstream source changes."
+        "The integrated Highway VQSort adaptation must be rebased and re-audited when its upstream source changes.",
+        "The expert SDK intentionally delivers header-only Highway/xsimd surfaces; upstream products requiring compiled .cc files need a separate owner and admission.",
+        "Expert code uses provider-native types inside consumer translation units and must be rebuilt when the locked provider version or target toolchain changes."
       ],
       "reopen_triggers": [
         "A locked Highway or xsimd upgrade, or an integrated VQSort upgrade, changes an affected route or contract.",
@@ -616,7 +619,7 @@
         "New hardware or compiler support materially changes the finite target matrix, especially SVE or RVV silicon or classic-MSVC AVX3 support.",
         "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
       ],
-      "summary": "simd-v4 CANDIDATE：1e543dec/4e4e82e5 冻结统一 hyle::simd_expert、锁定 provider 头与 fixed/fat helper；ordinary SIMD、387/422 路由、算法和运行时代码零变化，进入跨平台验证。"
+      "summary": "simd-v4 VERIFIED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品仍为 1e543dec/4e4e82e5。"
     },
     {
       "module": "container",
