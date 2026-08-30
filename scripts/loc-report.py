@@ -22,7 +22,14 @@ from typing import Iterable, Sequence
 
 
 NATIVE_LANGUAGES = ("C++", "C/C++ Header", "C", "CUDA")
-BUILD_PACKAGE_LANGUAGES = ("CMake", "Python", "PowerShell", "JSON", "YAML")
+BUILD_PACKAGE_LANGUAGES = (
+    "CMake",
+    "Python",
+    "PowerShell",
+    "Bourne Shell",
+    "JSON",
+    "YAML",
+)
 SELF_WITH_TESTS_ROOTS = ("include/hyle", "src", "tests")
 SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 
@@ -65,6 +72,7 @@ MODULE_BOUNDARIES = {
         "hyle-offline-deps.cmake",
         "scripts/check-docs.py",
         "scripts/header-self-contained.py",
+        "scripts/hyle-unix.sh",
         "scripts/hyle-windows.ps1",
     ),
 }

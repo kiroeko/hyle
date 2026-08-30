@@ -43,6 +43,7 @@
 | macOS | 系统 AppleClang 是受支持 canonical compiler | `PARTIAL / FIX` | 未显式设置时选择系统 clang/clang++ 并用同一 floor preflight |
 | CI / maintainer docs | CI 自己写 `GITHUB_ENV`，setup 多处提示手写，但没有验证统一入口 | `PARTIAL / FIX` | Unix configure 经 wrapper；setup/scripts/architecture 只保留一个维护者入口并说明 escape hatch |
 | 已存在 build cache | CMake compiler identity 不允许原地更换 | `COMPLETE / KEEP` | 明确 wrapper 只管新 configure；旧 cache 用新 scratch，不自动删除用户数据 |
+| build/package canonical boundary | 新增 Shell 脚本若未登记路径与语言会从 terminal LOC/审计边界漏掉 | `PARTIAL / FIX` | 在 `loc-report.py` 的唯一 build/package boundary 加入 Unix wrapper 与 `Bourne Shell` 并跑 immutable self-check |
 
 public-surface trace：`CMakePresets.json` 的 `linux/wsl/macos`、顶层 compiler floor 与 CI GCC 安装均有自然
 任务，全部保留；新增 `scripts/hyle-unix.sh` 只组合这些既有合同，不产生安装后 SDK API。它接受 `--`
@@ -50,5 +51,5 @@ public-surface trace：`CMakePresets.json` 的 `linux/wsl/macos`、顶层 compil
 不安装软件、不修改 PATH/cache/preset，也不把 GCC 14 写成唯一支持的 Unix compiler。
 
 冻结 FIX 只有：新增上述 wrapper；把 Unix CI configure 接到 wrapper 并加入自动选择 smoke；更新
-architecture/setup/scripts 文档。任何 compiler floor、preset cache、CMake component/package 或产品源码
-变化均超出本轮。当前状态为 `AUDITED`。
+architecture/setup/scripts 文档；把新脚本登记到既有 canonical build/package 计数边界。任何 compiler
+floor、preset cache、CMake component/package 或产品源码变化均超出本轮。当前状态为 `AUDITED`。
