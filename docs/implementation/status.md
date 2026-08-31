@@ -22,7 +22,7 @@
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 CLOSED：exact overwrite ring、semantic composite hash、flat filtering、真实 StringView 与 const interner 已完成不兼容收束；三平台 correctness/sanitizer/ISA、直接消费者、source/static/shared、文档/红队和 W1-WIN 五项 5% P1 非劣门全部通过。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
-| sched | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v1-rebuild.md) | sched-v1 SCOPED：完整 scheduler 产品面、推理/IO/Compute/Graph 真实旅程、P1 资源合同、三平台/三交付门与有限预算已冻结；产品实现等待 AUDITED ledger。 |
+| sched | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v1-rebuild.md) | sched-v1 AUDITED：完整 capability-family map、public trace、llama.cpp/ggml/peer 差异和 SCHED-FIX-01--08 已冻结；当前缺口集中在 cancellation、placement、typed time/sync、task/message 易用性、allocator/boundary、delivery/docs 与 P1 证据。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |

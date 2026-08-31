@@ -748,7 +748,7 @@
     },
     {
       "module": "sched",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "sched-v1",
       "closure_task": "docs/implementation/tasks/sched/sched-v1-rebuild.md",
       "scope": "Current complete C++ Scheduler product: fcontext and fibers, worker scheduling and work stealing, completion wake/timer/cancellation, structured join and blocking offload, synchronization and messaging, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering performance.",
@@ -770,7 +770,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v1 SCOPED：完整 scheduler 产品面、推理/IO/Compute/Graph 真实旅程、P1 资源合同、三平台/三交付门与有限预算已冻结；产品实现等待 AUDITED ledger。"
+      "summary": "sched-v1 AUDITED：完整 capability-family map、public trace、llama.cpp/ggml/peer 差异和 SCHED-FIX-01--08 已冻结；当前缺口集中在 cancellation、placement、typed time/sync、task/message 易用性、allocator/boundary、delivery/docs 与 P1 证据。"
     },
     {
       "module": "io",
