@@ -748,16 +748,12 @@
     },
     {
       "module": "sched",
-      "product_state": "BLOCKED",
-      "round_id": "sched-v2-batch-structured",
-      "closure_task": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
-      "scope": "Restore the missing non-suspending batch-structured task route: one batch-level completion, shared failure/cancellation, caller-owned result slots, no per-item independent handle/status or suspension; define its relation to schedule, schedule_task and spawn_task, then requalify the affected P1 contract and delivery closure.",
-      "non_goals": "Closing or redesigning IO, Compute or Graph; graph/DAG/model/kernel/grain/NUMA/priority/caller-participating SPMD policy; copying the oneTBB algorithm suite; changing unrelated per-task or suspending semantics; Native FFI/C API, stable cross-toolchain C++ ABI, P2 end-to-end claims and Formal certification.",
-      "baseline_commit": "1908f7b9bf8c86c1da9c11aa63e767577d0fa602",
-      "candidate_commit": "22ec2382589656d1e45ff5a0665e384aba97dc4c",
-      "candidate_tree": "bc49a194fdbb678cd558937f0068bf5ac8c891c9",
-      "end_commit": "c6c6ab2e8233410748450898576f174528543ce1",
-      "registry_anchor_commit": "c6c6ab2e8233410748450898576f174528543ce1",
+      "product_state": "SCOPED",
+      "round_id": "sched-v3-root-participation",
+      "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
+      "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
+      "non_goals": "External-caller computation, cross-Scheduler worker borrowing, public partitioner or auto-grain policy, benchmark workload or peer changes, Graph/Compute/IO redesign, whole-scheduler rewrites, semantic weakening, Native FFI/C API, P2 claims and Formal certification.",
+      "baseline_commit": "3a2bbca61038f5343729bf2dad66596bffc687b3",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -765,50 +761,16 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "FAIL",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "FAIL"
-      },
-      "blocker": "SCHED-V2-PERF-ONETBB-01: the qualified same-contract batch replay fails the 5% oneTBB non-inferiority gate.",
-      "blocker_owner": "Sched execution and partitioning owner",
-      "resume_condition": "A newly scoped execution or partitioning mechanism has a complexity argument and bounded proof plan capable of removing the measured batch-level gap without changing the admitted consumer contract.",
-      "blocked_from": "CANDIDATE",
-      "closure_evidence": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
-      "loc": {
-        "snapshot_commit": "22ec2382589656d1e45ff5a0665e384aba97dc4c",
-        "repository_code": 410076,
-        "self_with_tests": 99150,
-        "self_without_tests": 61607,
-        "module_implementation": 5532
-      },
-      "known_limitations": [
-        "The valid W1-WIN same-contract batch replay fails oneTBB 5% non-inferiority: peer-first median advantage is 0.916 with a 99.26% confidence interval [0.777, 0.937]; no batch SOTA or aggregate non-inferiority claim is allowed.",
-        "The Marl replay passes non-inferiority in candidate-first order but remains unresolved in peer-first order, so it does not independently rescue the aggregate P1 verdict.",
-        "consumer_shapes_v2.json retains the first candidate identity inside its immutable narrative; the final bundle is bound to the current runtime source and artifacts, and a future resume must issue new provenance and a new contract rather than rewrite this evidence.",
-        "IO, Compute and Graph passed only their explicit Sched compatibility slices; those queued modules remain unclosed and receive no functionality or performance verdict here."
-      ],
-      "reopen_triggers": [
-        "A new scoped Sched execution or partitioning design has a complexity and mechanism argument capable of removing the measured oneTBB material gap without changing the admitted consumer contract.",
-        "A real inference-engine profile raises this route to P2 and supplies a different, predeclared end-to-end contribution budget that supersedes the provisional P1 archetype.",
-        "A correctness, security, lifetime, delivery or API-usability defect is reproduced in the frozen batch route and requires a new candidate.",
-        "The consumer semantics, direct dependencies, supported toolchain or mature peer route changes materially enough to require a new scoped contract."
-      ],
-      "summary": "sched-v2 BLOCKED：功能、correctness、三平台/三交付、直接消费者、文档与红队均通过；有效同合同 P1 对 oneTBB peer-first 为 0.916、99.26% CI [0.777,0.937]，未过 5% 非劣门，blocker SCHED-V2-PERF-ONETBB-01。"
+      "summary": "sched-v3 SCOPED：v2 的 oneTBB hard FAIL 已量化为约 4.7--6.6 us/batch 的固定差距；本轮只审计并验证 same-Scheduler root-Fiber participation，不修改 workload、peer 或公开语义。"
     },
     {
       "module": "io",
