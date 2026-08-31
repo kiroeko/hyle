@@ -748,12 +748,14 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "sched-v2-batch-structured",
       "closure_task": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
       "scope": "Restore the missing non-suspending batch-structured task route: one batch-level completion, shared failure/cancellation, caller-owned result slots, no per-item independent handle/status or suspension; define its relation to schedule, schedule_task and spawn_task, then requalify the affected P1 contract and delivery closure.",
       "non_goals": "Closing or redesigning IO, Compute or Graph; graph/DAG/model/kernel/grain/NUMA/priority/caller-participating SPMD policy; copying the oneTBB algorithm suite; changing unrelated per-task or suspending semantics; Native FFI/C API, stable cross-toolchain C++ ABI, P2 end-to-end claims and Formal certification.",
       "baseline_commit": "1908f7b9bf8c86c1da9c11aa63e767577d0fa602",
+      "candidate_commit": "22ec2382589656d1e45ff5a0665e384aba97dc4c",
+      "candidate_tree": "bc49a194fdbb678cd558937f0068bf5ac8c891c9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -770,7 +772,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v2 AUDITED：FIX-06 reservation 形状通过 Windows、WSL Release/ASan/UBSan，但 TSan 证明 terminal Event 可在唤醒 caller 后仍访问栈上 BulkState；冻结 mandatory FIX-07 为 signal-return handoff，正式 P1 重跑尚未消费。"
+      "summary": "sched-v2 CANDIDATE：FIX-06 reservation 与 FIX-07 terminal-notifier handoff 已冻结为 22ec2382/bc49a194；Windows 与 WSL Release/ASan/UBSan/TSan correctness 通过，macOS、三交付、原合同唯一 P1 重跑与红队待完成。"
     },
     {
       "module": "io",

@@ -7,7 +7,7 @@
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -189,13 +189,13 @@ error。空 range 为成功；反向 range、零 grain、空 raw callback 或无
 | `FIX-04` | 新 header/TU 的 component/package 闭包尚无证据 | delivery owner=`build/package`，产品依赖不变 | `PARTIAL -> FIX`：登记 sched source/header，验证 source/static/shared 与 FFI 清洁 | selected-component 三 journey、header self-contained、符号/import；不新增 build option/third party |
 | `FIX-05` | v1 structured peer 行语义失配 | evidence owner=`sched/perf`；primary 固定为 bulk same-contract | `INVALID -> FIX`：替换为 batch primary；rich 行只保留 `NATURAL_ROUTE/NOT_COMPARABLE` | semantic matrix、W1-WIN qualification、反序/holdout 仅按预算；不据 mechanism diagnostic 改 API |
 | `FIX-06` | 首个候选每个 public grain 都在四个 worker 间竞争同一 CAS cursor；qualified batch replay 对 oneTBB 中位慢 8.1%--9.3%，在 `n=31` 后仍未通过 5% NI | product owner=`sched`；公开 grain 是 callback 粒度，不要求内部每次只领取一个 grain；保持 O(N) work、O(worker) runner、O(1) batch state 与 stop contract | `INCONCLUSIVE -> FIXED`：`fc9cc652` 让 runner 有界预领取，正常范围用 `fetch_add`、回绕边界用 saturating CAS；仍逐 grain 调 body、每次调用前检查 stop/cancel，不新增 API/layout/常态外部 metadata | 既有 callback/exactly-once/error/cancel/partial-admission/stress 全部复跑；唯一正式 P1 重跑；不加入公开 partitioner/auto-grain，不改 normal workload、peer 或 5% 门 |
-| `FIX-07` | 最后 runner 的 `Event::signal()` 可先唤醒 waiter、随后仍在 `notify_all()` 读取栈上 Event；caller 返回并复用 `BulkState` 时形成真实 lifetime race | correctness owner=`sched`；同步返回必须保证所有 body 与 terminal notifier 不再访问 borrowed state，不能靠“signal 已发生”冒充 signaler quiescent | `MISSING -> FIX`：last runner 在 `signal()` 返回后 release-publish `notification_complete`，waiter 在 Event 返回后 acquire 等待该 handoff；publish 后 runner 不再触碰 state | WSL TSan 原 `RepeatedBatchLifetimeStress` 必须由 FAIL 转 PASS；Release/ASan/UBSan、external/Fiber/one-worker/500-round stress 全复跑；保持 O(1) metadata、无分配、无新 API |
+| `FIX-07` | 最后 runner 的 `Event::signal()` 可先唤醒 waiter、随后仍在 `notify_all()` 读取栈上 Event；caller 返回并复用 `BulkState` 时形成真实 lifetime race | correctness owner=`sched`；同步返回必须保证所有 body 与 terminal notifier 不再访问 borrowed state，不能靠“signal 已发生”冒充 signaler quiescent | `MISSING -> FIXED`：`22ec2382` 让 last runner 在 `signal()` 返回后 release-publish `notification_complete`，waiter 在 Event 返回后 acquire 等待该 handoff；publish 后 runner 不再触碰 state | WSL TSan 原 `RepeatedBatchLifetimeStress` 20 轮和全 170 tests 均 PASS；Release/ASan/UBSan 全量 PASS；O(1) metadata、无新 API |
 
-本轮产品修改严格限于 `FIX-01..07`；`FIX-01..06` 已实现，当前唯一未完成产品项是 correctness
-`FIX-07`。动态 task-group API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 与
+本轮产品修改严格限于 `FIX-01..07`，现已全部实现并冻结为下述 candidate。动态 task-group API、Graph
+迁移、caller-participating SPMD、公开自动 grain/partitioner 与
 P2 推理端到端均不因本审计进入施工。
 
-## Owner 六问直答（`AUDITED`）
+## Owner 六问直答（`CANDIDATE`）
 
 1. **第三方：**Sched 产品直接使用 vendored Boost.Context fcontext 汇编；经既有公开 component closure
    间接使用 Core/Error/Time/Platform/Mem/Util-core，Container 是 private queue 支撑。Marl/oneTBB 只作
@@ -272,16 +272,40 @@ P2 推理端到端均不因本审计进入施工。
 `C:\hyle-scratch\sched-v2\module-status-before-candidate-fix06.json`，SHA-256
 `21161A0A8F0164DC75CA607A38879B5587224C221BF7819D8DA89369B0B92B20`。
 
+## 最终产品 Candidate
+
+- product commit：`22ec2382589656d1e45ff5a0665e384aba97dc4c`；tree：
+  `bc49a194fdbb678cd558937f0068bf5ac8c891c9`；
+- public contract：仍为一个同步、固定 public grain、non-suspending 的 `bulk_execute`；raw `fn+ctx` 与
+  `noexcept` lambda adapter、首错/共享取消、partial admission、external/Fiber wait 和 worker-stack
+  serial fallback 均未改变；
+- algorithm/resource：O(N) body work、O(worker) raw runners/queue entries、O(1) batch state/terminal wake；
+  有界 reservation 将正常 cursor RMW 限到约 `worker_count * 8`，仍逐 public grain 调用和观察 stop；
+  没有 per-item allocation/status/cancel/handle；
+- lifetime correction：last runner 在 `Event::signal()` 完整返回后 release-publish
+  `notification_complete`；waiter acquire 后才允许 caller-stack `BulkState` 离开作用域，因此同步返回现在
+  同时保证 body、runner 与 terminal notifier 全部 quiescent；
+- candidate-test harness：`1eabfcc83da481ecbceaa75f5af7c235c6f5b7a9`。`22ec2382..1eabfcc8`
+  只修改 `tests/sched/bulk_test.cc`，没有产品、公开合同、算法、layout、依赖或 normal workload 漂移；
+  allocator test 只统计 submitting thread，避免把 worker 的异步 idle bookkeeping 误记为 runner record；
+- candidate tests：W1-WIN MSVC Release `/W4 /WX`、170 tests/header closure 通过，提交零分配断言 100 轮
+  通过；W1-WSL GCC 14 Release/ASan/UBSan/TSan 全部 170 tests/header closure 通过，原 TSan lifetime
+  复现 20 轮通过且无 sanitizer report。
+
+`AUDITED -> CANDIDATE` 前态快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v2\module-status-before-candidate-fix07.json`，SHA-256
+`DCC250C3E9A37D0282E80E7D58A967A13A9C61AAEF1A033414F46664991FB07E`。
+
 ## Verification manifest
 
-候选前本机定向 correctness 只作为 candidate test：
+当前 candidate verification 进度：
 
-| gate | W1-WIN candidate result | terminal requirement |
+| gate | current candidate result | terminal requirement |
 |---|---|---|
-| new bulk semantics/resource tests | `PASS`（9） | candidate 上重复，并扩展 sanitizer/stress |
-| full Sched unit suite | `PASS`（166） | 三平台适用 suite |
-| public headers | `PASS`（10） | 三平台 + installed consumer |
-| WSL/macOS correctness/sanitizer | `FAIL`（WSL Release/ASan/UBSan 通过；TSan 在 `RepeatedBatchLifetimeStress` 报 terminal Event vs 下一轮 `BulkState` 构造 race；macOS 尚未运行） | `FIX-07` 后 WSL 四档 + macOS Release |
+| new bulk semantics/resource tests | `PASS`（9；allocation window 100 轮） | macOS candidate 上重复 |
+| full Sched unit suite | `PASS`（W1-WIN/W1-WSL 各 170） | macOS 适用 suite |
+| public headers | `PASS`（W1-WIN/W1-WSL 各 10） | macOS + installed consumer |
+| WSL/macOS correctness/sanitizer | `PARTIAL`（WSL Release/ASan/UBSan/TSan 全 PASS，原 lifetime 复现 20 轮 PASS；macOS 尚未运行） | macOS AppleClang/AArch64 Release |
 | source/static/shared delivery | `BLOCKED`（新 candidate 尚未运行） | 三平台受影响 selected-component consumer |
 | same-contract P1 | `BLOCKED`（新 candidate 尚未运行；首个 candidate 的 `INCONCLUSIVE` 只作历史输入） | 原合同唯一一次 W1-WIN 重跑 |
 | docs/usability/FFI cleanliness | `BLOCKED`（candidate docs/header compile 已过；installed/symbol drift 尚未重跑） | checks + consumer compile + symbol scan |
@@ -289,12 +313,13 @@ P2 推理端到端均不因本审计进入施工。
 
 ## 独立红队
 
-等待 `FIX-06` 后的新 candidate 与全部验证后执行，先攻击 comparison class、semantic-equivalence matrix、
+等待当前 candidate 全部验证后执行，先攻击 comparison class、semantic-equivalence matrix、
 reservation 对 first-error/cancel latency 的影响，以及是否出现未声明的 public grain policy。
 
 ## Closure decision
 
-当前机械状态：`AUDITED`。`FIX-06` 的性能成本结构成立，但该 candidate 被 mandatory correctness
-`FIX-07` 否决。下一步只能实现 signal-return handoff、冻结新 candidate，再复跑受影响 correctness、
-三平台、三交付、原 same-contract P1、文档/FFI cleanliness 和独立红队。不得改 public API、normal
-workload、peer、5% margin 或中央统计语义；P1 若仍未通过就按卡终止为具名 `BLOCKED`。
+当前机械状态：`CANDIDATE`。`FIX-01..07` 已冻结为 `22ec2382/bc49a194`，Windows 与 WSL correctness、
+header closure 和四档 sanitizer 已通过。下一步只复跑 macOS、三平台 source/static/shared selected-component、
+直接消费者/符号/文档清洁度、原 same-contract P1 和独立红队；不得改 public API、算法、normal workload、
+peer、5% margin 或中央统计语义。任何产品变化必须退回 `AUDITED`；P1 若仍未通过就按卡终止为具名
+`BLOCKED`。
