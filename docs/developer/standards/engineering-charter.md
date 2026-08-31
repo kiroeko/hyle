@@ -64,6 +64,8 @@ HYLE 是 C++23 基础加速库，服务 AI 推理和工程计算。它提供可�
 - 强 peer 是同问题域成熟实现；赢 `std` 不是在所有领域都足够。
 - benchmark 先通过 A/A、known-delta、timer floor、order/placement 与最终 codegen 资格门。
 - 真实 consumer 或保真 trace replay 是产品证据；microbench 只负责归因。
+- consumer/replay 仍须区分自然产品路线与同语义实现比较；只有逐项通过语义等价门的后者才能签
+  peer non-inferiority，前者只回答用户采用当前自然路线会发生什么。
 - 性能结论绑定 capability、contract、hardware、delivery 与 candidate，不宣称模块全局 SOTA。
 - 未知或仪器不合格时写 `INCONCLUSIVE/DIAGNOSTIC`，不能解释成平局或选择有利姿势。
 

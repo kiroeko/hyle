@@ -25,6 +25,9 @@
 - instrument profile：
 - strong peers（每项 capability 最多两个，绑定版本/commit/source）：
 - 无同合同 peer 时的 consumer latency/throughput/resource 预算及禁止声明：
+- 使用原型 provenance：`REAL_CONSUMER / NORTH_STAR_JOURNEY / PROVISIONAL_ARCHETYPE / STANDARD / DIAGNOSTIC_SYNTHETIC`
+- API 语义档位与选择前提（按任务命名，不使用只有快慢含义的档位）：
+- 每档常态成本合同（per-item/per-batch metadata、allocation、queue、copy、atomic、wake/context-switch、syscall、working set）：
 - 适用 correctness / delivery / performance gates：
 - 预期输出：
 - 停止条件 / 可接受限制：
@@ -161,6 +164,22 @@ lifecycle 必须记为 `PARTIAL`。
 P1/P2 补充：
 
 - frozen workload / peer /计费边界 / margin：
+- comparison class：`NATURAL_ROUTE / SAME_CONTRACT / MECHANISM_DIAGNOSTIC`
+- 语义等价矩阵（`SAME_CONTRACT` 必填；其他类型用于解释边界）：
+
+| Dimension | candidate | peer / adapter | `EQUAL/ADAPTER_EQUALIZED/INTENTIONALLY_DIFFERENT` | charged/resource note |
+|---|---|---|---|---|
+| work / result / result granularity |  |  |  |  |
+| ownership / lifetime / teardown |  |  |  |  |
+| failure / OOM / cancel / close |  |  |  |  |
+| ordering / capacity / backpressure |  |  |  |  |
+| thread-safety / progress / caller participation |  |  |  |  |
+| blocking / suspension / wake |  |  |  |  |
+| affinity / stealing / topology |  |  |  |  |
+| setup / steady-state / teardown charging |  |  |  |  |
+| memory-resource / delivery / codegen |  |  |  |  |
+
+- 资源结果：per-item/per-batch allocation/bytes、queue entries、atomic/lock、wake/context-switch、syscall、working set：
 - machine / instrument profile：
 - A/A 与 known-delta qualification：
 - 正常 consumer/replay verdict：
@@ -174,6 +193,7 @@ P1/P2 补充：
 - correctness / lifetime / concurrency：
 - dependency / build / delivery：
 - engineering performance validity：
+- comparison class / semantic-equivalence validity：
 
 | 问题 | severity | `fixed/disproved/accepted/out-of-scope` | 证据 |
 |---|---|---|---|

@@ -99,6 +99,34 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 不得一边看结果一边修改中央统计规则、机器配置或 material margin；公共仪器缺口另开 project/perf
 任务。
 
+### 2.1 从用户任务到 API 的固定设计顺序
+
+基础库没有当前仓库消费者时，不能从已有类名、peer symbol 或 benchmark case 反推产品。先建立一个
+可追溯的**使用原型**，证据优先级依次是：当前真实消费者、北极星消费者中的具体操作序列、至少两个
+独立成熟实现共同提供的稳定任务、语言/平台标准或定义性算法，最后才是明确标为 diagnostic 的 synthetic
+shape。没有真实消费者、但由后两类证据准入的形状必须标为 `PROVISIONAL_ARCHETYPE`；它能驱动基础
+能力设计和 P1 replay，不能冒充已经存在的生产 trace。
+
+一个能力族按以下顺序设计，不能先写实现再从跑分解释 API：
+
+1. 用对象、操作序列和完成条件描述用户任务；
+2. 枚举真正不同的语义档位，而不是先命名“fast/light/heavy”入口；
+3. 为每档写清 result 粒度、ownership/lifetime、failure/OOM、cancel/close、blocking/suspension、
+   concurrency/progress 和 teardown；
+4. 写常态成本合同：per-item/per-batch metadata、allocation ownership、queue admission、copy、atomic、
+   lock、wake/context-switch、syscall 和工作集的目标档位；
+5. 用最多两个 strong peers 验证该任务和语义档位确实成熟、常用，并记录 peer 选择了什么取舍；
+6. 给出普通 C++ 调用草图、适用前提、误用路径和相邻档位的选择规则；
+7. 冻结有限 capability/`FIX` ledger 后才实现 correctness；
+8. 性能先做同语义产品比较，再做自然路线竞争，最后用机制实验归因；
+9. 只有机制差异与 normal task 的 material 影响同时成立，才继续改变产品；
+10. 用一个 normal primary shape 和至多一个不同粒度/生命周期的 holdout 防止过拟合，不建立无界矩阵。
+
+两个入口若只在预期“快慢”上不同，却没有 material 的 result、ownership、failure、cancel、progress 或
+lifecycle 差异，应合并为同一入口并由实现选择最佳机制。反之，要求逐任务结果/控制与只要求批级完成，
+或可挂起任务与 worker-stack 非挂起任务，会产生不同的语义与资源账单，可以形成独立、按任务命名的
+public shape。用户指南必须直接说明选择前提，不能要求用户理解内部 benchmark 名称。
+
 ## 3. 有界审计及其输出
 
 审计固定做两遍，并以
@@ -232,6 +260,34 @@ workload。registry 中每个 instrument ID 必须在 `scripts/perf-machines.jso
 产品改动仍需两把钥匙：可复核的复杂度/指令/allocation/copy/syscall/contention/codegen 机制，以及
 可传播到正常 consumer 的 material 影响。只有亚纳秒 microbench、顺序/地址翻转或总体 profile 不可见
 的差异不允许改变 API、layout 或常态 metadata。
+
+### 5.1 比较类型与语义等价前置门
+
+证据来源的 `consumer/replay/mechanism` 与比较类型是两个正交维度。每个有 peer 的 workload 必须在
+采样前只选择一种比较类型：
+
+| Comparison class | 两侧路线 | 可以回答 | 禁止外推 |
+|---|---|---|---|
+| `NATURAL_ROUTE` | 完成同一用户任务，各库使用其自然、公开且正确的最佳路线 | 用户采用哪条产品路线更合适；HYLE 是否缺少自然档位 | 不能把差距归因于底层算法，也不能签 same-contract SOTA/non-inferiority |
+| `SAME_CONTRACT` | minimum semantics、生命周期、进展和计费边界相同；缺失项由具名 adapter 对齐 | 实现级 non-inferiority/better，以及资源/机制取舍 | 不能隐藏 adapter 成本，不能让一侧承担未被任务要求的额外产品语义 |
+| `MECHANISM_DIAGNOSTIC` | 刻意隔离 allocation、queue、wake、atomic、dispatch 等单一机制 | 差距归因与复杂度/codegen 检查 | 不能单独形成产品 gate 或公共 API 需求 |
+
+`SAME_CONTRACT` 在运行前必须逐项填写语义等价矩阵：工作/结果、result 粒度、ownership/lifetime、
+failure/OOM、cancel/close、ordering/capacity/backpressure、thread-safety/progress、caller participation、
+blocking/suspension、affinity/stealing、setup/steady-state/teardown 计费、memory-resource 与交付/codegen
+合同。每格只允许 `EQUAL`、`ADAPTER_EQUALIZED` 或 `INTENTIONALLY_DIFFERENT`。任何 material
+`INTENTIONALLY_DIFFERENT` 都使 comparability 成为 `NOT_COMPARABLE`，该行只能降为
+`NATURAL_ROUTE` 或 diagnostic。实际 allocation 次数、bytes、atomic、wake 和 context-switch 是应当
+报告的结果，不要求数值相等；必须相等的是谁拥有资源、何时创建/销毁以及是否计费。
+
+`NATURAL_ROUTE` 的额外语义成本仍由选择它的产品承担：如果 HYLE 只提供明显更重的自然路线而输给
+peer，这可以形成“缺少合适产品档位”的 capability/performance finding，但不能写成 scheduler、queue
+或 allocator 实现本身慢同样幅度。若 peer 没有可防御的同合同路线，写 `NOT_COMPARABLE`，使用预冻结
+consumer resource budget 和 HYLE 内部语义成本阶梯；不得为得到绿色 verdict 随意拼一个弱语义 peer。
+
+独立红队必须先攻击 comparison class 与等价矩阵，再看统计结果。发现 material 语义不等价时，即使
+A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-contract verdict；精密仪器不能修复
+错误命题。
 
 ## 6. 固定预算与硬停止
 

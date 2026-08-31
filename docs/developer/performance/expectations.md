@@ -36,6 +36,11 @@ P1/P2 的工程性能 `PASS` 是模块进入 `CLOSED` 的硬门；缺资格或�
 
 ## 三个独立结果与统一方向
 
+在以下三轴之前先冻结 comparison class：`NATURAL_ROUTE` 比较同一用户任务下各库最自然的产品路线，
+`SAME_CONTRACT` 只比较语义、生命周期、进展与计费边界已经对齐的实现，
+`MECHANISM_DIAGNOSTIC` 只负责归因。只有 `SAME_CONTRACT` 可以签 peer non-inferiority/SOTA；自然路线
+输赢只能说明用户可见产品路线或能力档位是否合适。
+
 每个 workload 分别记录：
 
 - comparability：`COMPARABLE | NOT_COMPARABLE`；

@@ -22,7 +22,7 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 算法复杂度与纳秒点值分开审查。若强 peer 在正常规模拥有更好的渐进复杂度、进展保证或显著
 更少的搬运/分配/syscall，不能用小 N 的一次领先掩盖。
 
-## 2. 三种证据形状
+## 2. 证据来源与比较类型是两个维度
 
 | 层 | 回答的问题 | 例子 | 能否单独签产品结论 |
 |---|---|---|---|
@@ -50,6 +50,23 @@ equivalence，以及用 frequency/value/unit/budget/denominator/derivation 冻�
 peer/SOTA 声明。P1/P2 工程 `PASS` 是产品进入 `CLOSED` 的硬门。Formal 发布证书是独立状态轴，
 不应成为普通模块每次重构的重复三平台门。
 
+上表描述证据从哪里来，不描述两侧是否在做同一件事。每个有 peer 的 workload 还必须在采样前声明：
+
+| Comparison class | Contract | 合法结论 |
+|---|---|---|
+| `NATURAL_ROUTE` | 同一用户任务；各库采用自身自然、公开、正确的最佳路线，允许产品语义不同 | route-level 用户收益或产品形状缺口；不能签 same-contract peer/SOTA 结论 |
+| `SAME_CONTRACT` | minimum semantics、lifecycle、progress 和计费边界全部等价，或由公开记录的 adapter 对齐 | 同合同 non-inferiority/better 与资源取舍 |
+| `MECHANISM_DIAGNOSTIC` | 刻意隔离一个实现机制 | 归因；不能单独形成产品 gate |
+
+因此 consumer-shaped replay 不自动获得 `SAME_CONTRACT` 身份。`NATURAL_ROUTE` 的输赢仍然重要：它
+回答用户采用当前自然路线会发生什么，并可能证明 HYLE 缺少一个常见语义档位；但不能把额外 result、
+cancel、error、allocation 或 suspension 合同的成本全部归因给底层 queue/scheduler/allocator。
+
+没有当前真实消费者时，workload 来源按当前真实消费者、北极星具体旅程、至少两个独立成熟实现共同
+任务、标准/定义性算法、diagnostic synthetic 的顺序选择。由成熟共识而非生产 trace 准入的 normal
+shape 标为 `PROVISIONAL_ARCHETYPE`，冻结一个 primary 和至多一个 holdout；不得把 API 数、benchmark
+case 或单库独有示例当作调用频率。
+
 ## 3. 测量前的合同卡
 
 在看结果前冻结以下内容：
@@ -59,6 +76,9 @@ peer/SOTA 声明。P1/P2 工程 `PASS` 是产品进入 `CLOSED` 的硬门。Form
 - 正常输入分布与至少一个边界规模，不能只选最有利 size；
 - 强 peer、版本、配置以及为什么语义等价；没有同合同 peer 时记录查找范围、`NOT_COMPARABLE` 和
   预冻结的 consumer 预算；
+- comparison class，以及 evidence provenance 属于 real consumer、north-star journey、
+  provisional archetype、standard 还是 diagnostic synthetic；
+- `SAME_CONTRACT` 的逐项语义等价矩阵；`NATURAL_ROUTE` 的额外语义与 route-level 解释边界；
 - setup、steady-state、teardown 哪些计费；allocation/copy/cache 是否包含；
 - latency、throughput、峰值/常驻内存、fragmentation、tail、CPU/energy 等适用指标；
 - 预声明 practical/material margin 和 non-inferiority margin；
@@ -127,7 +147,8 @@ minimum detectable effect（MDE）。预计差异小于 MDE 时，先扩大真�
 
 ## 5. 同合同对拍
 
-双方必须完成同一语义任务。逐项核对：
+双方必须完成同一语义任务。逐项核对并把每格裁决为 `EQUAL`、`ADAPTER_EQUALIZED` 或
+`INTENTIONALLY_DIFFERENT`：
 
 - 输入/输出、精度、排序/稳定性和错误处理；
 - allocation、初始化、hash、copy、同步和销毁边界；
@@ -135,8 +156,15 @@ minimum detectable effect（MDE）。预计差异小于 MDE 时，先扩大真�
 - cache cold/warm、batch、NUMA/affinity、ISA/backend；
 - 安全检查、统计与诊断是否一方承担而另一方免除。
 
-合同不能对齐就用 `NOT_COMPARABLE`，并分别报告绝对成本。不要把“功能更少所以更快”写成 SOTA，
-也不要强迫 HYLE 模拟 peer 的怪异 API；可以建立机制 microbench 解释必要语义税。
+还必须核对 result 是逐项还是批级、failure/cancellation 是逐项还是共享、caller 是否参与执行、任务能否
+挂起，以及 wait/wake 与 teardown 的生命周期。allocation 数量和 atomic/wake 次数可以正是待比较的
+实现结果，但 allocation ownership、memory-resource、创建/销毁阶段和计费边界必须一致。
+
+任何 material `INTENTIONALLY_DIFFERENT` 都禁止 `SAME_CONTRACT` 和 non-inferiority。此时改为
+`NATURAL_ROUTE` 并分别报告用户可见绝对成本，或使用 adapter 补齐后建立一份新的同合同实验。不要把
+“功能更少所以更快”写成 SOTA，也不要强迫 HYLE 模拟 peer 的怪异 API；可以建立 HYLE 内部语义成本
+阶梯和机制 microbench 解释必要语义税。adapter 的构造、分配、同步和 teardown 全部进入 peer 计费，
+不能只模拟返回类型而漏掉产品语义。
 
 强 peer 应是相同问题域中成熟、当前且配置合理的实现。`std` 可作为常识基线，但当 oneTBB、folly、
 mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完成证据门。
@@ -160,6 +188,9 @@ mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完�
 | comparability | `COMPARABLE | NOT_COMPARABLE` | 两侧语义合同能否合理对齐 |
 | qualification | `QUALIFIED | DIAGNOSTIC` | 当前机器、harness、controls 是否有资格影响产品 |
 | exact performance | `WIN | PARITY | LOSE | INCONCLUSIVE` | 统计区间相对预声明 material band 的位置 |
+
+comparison class 是这三轴之前的命题分类；只有 `SAME_CONTRACT + COMPARABLE + QUALIFIED` 才能产生
+peer non-inferiority/SOTA verdict。`NATURAL_ROUTE` 即使统计清晰也只形成 route-level 结论。
 
 统一使用 `advantage_ratio`，且大于 1 永远有利于 HYLE candidate：higher-is-better 为
 `candidate/peer`，lower-is-better 为 `peer/candidate`。给定 margin `m`，等价带固定为
@@ -193,6 +224,10 @@ API、对象布局、常态 metadata、分支或依赖的性能改动需要两�
 
 反之，真实 consumer 出现 material regression 时必须下钻归因；不能因微基准“多数平”就解释掉。
 优先修复杂度、搬运、分配、syscall 与争用，再处理无法传播到消费者的微小指令差。
+
+对于存在多个真正不同语义档位的基础能力，还应报告 HYLE 内部成本阶梯，例如 fire-and-forget、批级
+完成、逐任务 result/control、可挂起任务。该阶梯用来解释用户为哪些语义付费，不要求每一档都有 peer；
+若两个档位没有 material 语义差异却只有跑分差异，应合并实现，而不是暴露 `fast/light/heavy` API。
 
 ## 8. 证据包与有效期
 
