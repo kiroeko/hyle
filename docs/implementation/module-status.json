@@ -626,12 +626,14 @@
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-v2",
       "closure_task": "docs/implementation/tasks/container/container-v2-rebuild.md",
       "scope": "Fresh current-source review of the complete non-intrusive C++ Container product: capability families, every public surface, algorithms/resources, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering evidence.",
       "non_goals": "The independently closed container_intrusive component, model/tensor/KV/serving policy, scheduler wait/cancel/backpressure services, cache/eviction or persistence policy, full std/Boost parity, device memory, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
       "baseline_commit": "5cebdddf8dd40f48218b5eb15c03dc8d9910b8ef",
+      "candidate_commit": "336793d63dd7cf08fde9c1be74c6439472335381",
+      "candidate_tree": "968d169bafe0eab270d397ab1614f80c1a98079f",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -648,7 +650,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v2 AUDITED：以当前 llama.cpp/ggml 真实消费、强 peer 和全部公开面冻结六项有限 FIX；进入 exact overwrite ring、semantic hash、flat erase、StringView/interner 易用性与文档实现。"
+      "summary": "container-v2 CANDIDATE：六项冻结 FIX 已在 336793d6/968d169b 实现；exact overwrite ring、semantic hash、flat erase、真实 StringView、const interner lookup 与当前文档/消费者迁移已冻结，进入三平台、交付、P1 与红队验证。"
     },
     {
       "module": "util",

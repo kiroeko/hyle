@@ -208,6 +208,37 @@
 - C++ API / 三种交付：修复集专门收束 Ring/Hash/Flat/Text 的不自然形状；source/static/shared 将在 Candidate 后分别验证 selected-component consumer，不承诺稳定跨版 C++ ABI。
 - 文档：architecture 只保留长期 owner/边界，user guide 按“什么情况选什么”，implementation task 保留本轮事实，performance 只发布资格化有限 claim；当前旧文档为 `DOC-01` 待修。
 
-## Candidate、Verification、红队与终止裁决
+## Candidate
 
-这些章节在对应状态到达时填写。未运行项保持未裁决，不从 `container-v1` 复制 `PASS`。
+当前产品候选固定为：
+
+- commit：`336793d63dd7cf08fde9c1be74c6439472335381`
+- tree：`968d169bafe0eab270d397ab1614f80c1a98079f`
+
+它只实施审计阶段冻结的六项 FIX：
+
+1. 新增 `CircularBuffer<T>`，用独立 exact logical capacity 表达“最近 N 项”；满时端点覆盖、steady
+   push/pop/index 为 O(1) 且零分配，调整容量为 O(n)，缩小保留最新项。`RingDeque` 的 grow/bounded
+   合同与常态布局未被 benchmark 改写。
+2. `Hash` 新增 equality-compatible 的 `noexcept std::hash` bridge、pair/tuple/array 逐字段组合、公开
+   `hash_combine` 和 `StringId` 语义 hash；不推断 padding 或任意 object representation。
+3. `FlatHashMap`/`FlatHashSet` 新增 iterator/range erase 与 `erase_if`；单项 erase 不重新 hash，
+   amortized O(1)，predicate/range 遍历 O(n)，无 allocation 或新 per-entry metadata。
+4. 删除 lowercase `string_ref` 公开类型/header，交付真实 `StringView`：私有 16-byte trivial layout、
+   method-shaped API、`std::string_view` interop、显式 known-NUL 与正确 empty-tail pointer/terminator 语义。
+   util/io 等直接消费者已经整体迁移，不保留伪兼容 alias。
+5. `StringInterner::lookup` 成为 const query，`StringId` 可自然作为 HYLE flat key；锁、generation 和
+   lifetime 算法不变。
+6. architecture/user/build sample/bench contract 和直接消费者同步到上述形状；未新增 C schema、Native
+   FFI 或稳定 C++ ABI 声明。
+
+候选前置验证不作为最终 manifest：受控 MSVC Release 下 Container 336/336 单元测试与 public-header
+self-containment 通过；util、HTTP、HTTP/2 直接消费者编译/测试通过；container-only source、relocated
+shared 与 relocated static selected-component smoke 通过。一次 dirty/single-sample probe 只用于确认
+五个既有代表机制能运行并排除明显回退，明确不形成 P1 verdict。最终 correctness、sanitizer/ISA、
+delivery、qualified P1 和独立红队只能绑定上述冻结候选及后续纯证据快照。
+
+## Verification、红队与终止裁决
+
+这些章节在对应状态到达时填写。未运行项保持未裁决，不从 `container-v1` 或候选前置 smoke 复制
+`PASS`。
