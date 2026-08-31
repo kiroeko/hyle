@@ -748,7 +748,7 @@
     },
     {
       "module": "sched",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "sched-v3-root-participation",
       "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
       "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
@@ -756,6 +756,8 @@
       "baseline_commit": "3a2bbca61038f5343729bf2dad66596bffc687b3",
       "candidate_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
       "candidate_tree": "bc9b6baaa5dbf4f3d214047e85cb3ada472e45df",
+      "end_commit": "939504d2b60469cd982b34141c1b27cc1d76f7ab",
+      "registry_anchor_commit": "939504d2b60469cd982b34141c1b27cc1d76f7ab",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -783,7 +785,29 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "sched-v3 VERIFIED：536d4abf/bc9b6baa 的三平台 correctness/sanitizer、三种交付、符号/FFI 清洁、直接消费者、文档/红队和 W1-WIN 5% P1 engineering gate 全部通过；Formal 保持 PENDING。"
+      "closure_evidence": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
+      "loc": {
+        "snapshot_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
+        "repository_code": 410759,
+        "self_with_tests": 99270,
+        "self_without_tests": 61670,
+        "module_implementation": 5595
+      },
+      "known_limitations": [
+        "The P1 engineering claim covers one frozen W1-WIN four-worker batch-structured source workload against pinned Marl and oneTBB revisions; it is not an all-operation, cross-platform, P2 inference-engine or Formal SOTA certificate.",
+        "The oneTBB and one Marl order exact-superiority verdicts remain INCONCLUSIVE even though every 5% non-inferiority gate passes; HYLE must not be described as universally faster than either runtime.",
+        "Root participation applies only when bulk_execute is called from a Fiber owned by the same Scheduler; external callers and cross-Scheduler Fibers do not compute, while worker-stack nested calls retain the serial progress-safe fallback.",
+        "Bulk bodies remain synchronous, non-suspending and borrowed until return; same-Scheduler root participation makes Fiber::current() and caller Fiber stack budget observable as documented.",
+        "Native FFI, a C API and a stable cross-toolchain C++ ABI are not promised; the vendored fcontext C and assembly boundary remains a private product mechanism."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a correctness, security, cancellation, lifetime, stack-budget, API-usability or common scheduling-capability defect within the Sched boundary.",
+        "A public API or layout, bulk or ordinary scheduling algorithm, direct dependency, worker topology contract or source, static or shared delivery shape changes materially.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material regression beyond the frozen 5% margin on a normal Sched consumer workload.",
+        "The performance contract, consumer provenance, peer revision, W1-WIN machine profile, instrument or retained evidence bundle changes while the engineering claim must be renewed.",
+        "A real inference-engine consumer admits adaptive partitioning, external-thread participation, suspending bulk bodies, heterogeneous execution or another currently excluded scheduling family."
+      ],
+      "summary": "sched-v3 CLOSED：same-Scheduler root participation 与 bounded sibling activation 消除了 v2 的 oneTBB batch gap；三平台 correctness/sanitizer、三种 C++ 交付、符号/FFI 清洁、直接消费者、文档/红队与 W1-WIN 5% P1 engineering gate 全部通过，Formal 保持 PENDING。"
     },
     {
       "module": "io",

@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`VERIFIED`）
+## Closure card（`CLOSED`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -201,3 +201,10 @@ verdict 是 `WIN`，其余 exact verdict 为 `INCONCLUSIVE`。完整 CI、identi
 
 本轮四项 LOC（candidate commit `536d4abf`，`loc-report --self-check`）为：全库代码 `410,759`；自实现
 含测试 `99,270`；自实现不含测试 `61,670`；Sched 实现 `5,595`。
+
+## Terminal verdict
+
+`CLOSED`。全部适用工程门为 `PASS`，没有遗留 blocker；Formal 证书仍是独立的 `PENDING` 工作。后续
+只有 registry 中列出的 reopen trigger 能重开 Sched，旧 v1/v2/v3 task 与 bundle 中的命令式文字都不构成
+新授权。`VERIFIED -> CLOSED` 前态 registry 快照位于 canonical checkout 外：
+`C:\hyle-scratch\sched-v3\module-status-before-closed.json`。
