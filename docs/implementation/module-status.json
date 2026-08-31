@@ -688,7 +688,7 @@
     },
     {
       "module": "util",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "UTIL-V3-CONTAINER-PUBLIC-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v3-rebuild.md",
       "round_id": "util-runtime-v3",
@@ -710,7 +710,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v3 SCOPED：当前 Registry/demangle、真实推理发现旅程、P0 资源合同、三平台/三交付门和有限预算已冻结；产品实现等待 AUDITED ledger。"
+      "summary": "util-runtime-v3 AUDITED：能力地图与完整 public trace 已完成；唯一产品缺口是按名 lookup-only factory，有限 FIX 已冻结，backend/device 与动态 module 生命周期明确留给领域 owner。"
     },
     {
       "module": "sched",

@@ -21,7 +21,7 @@
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v1-closure.md) | mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。 |
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 CLOSED：exact overwrite ring、semantic composite hash、flat filtering、真实 StringView 与 const interner 已完成不兼容收束；三平台 correctness/sanitizer/ISA、直接消费者、source/static/shared、文档/红队和 W1-WIN 五项 5% P1 非劣门全部通过。 |
-| util | SCOPED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 SCOPED：当前 Registry/demangle、真实推理发现旅程、P0 资源合同、三平台/三交付门和有限预算已冻结；产品实现等待 AUDITED ledger。 |
+| util | AUDITED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 AUDITED：能力地图与完整 public trace 已完成；唯一产品缺口是按名 lookup-only factory，有限 FIX 已冻结，backend/device 与动态 module 生命周期明确留给领域 owner。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
