@@ -20,8 +20,22 @@
 ## 当前结果
 
 产品候选已冻结为 `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
-`010323120bc6eb07b5a07e7d3e6de1725968d314`。W1-WIN 的 MSVC 19.50 optimized object 已确认 add/sub
-各一次目标运算，signed/unsigned multiply 各一次 `imul/mul`，六个 probe 均无 call、divide 或
-indirect dispatch；W1-WSL 与 M1-MAC 尚未完成，因此聚合 verdict 仍为 `PLANNED`。未运行项不得改写为
-`PASS`。math-v1 的 ceil/round 结构结论继续由
+`010323120bc6eb07b5a07e7d3e6de1725968d314`；candidate 后只有 warning-clean test fixture 与证据
+提交，产品路径为零 diff。probe source SHA-256 为
+`FDC60F286C7934144AB6F6C6CAA56318651C336015DC048A44DFE0D28233F998`。
+
+| Environment / object SHA-256 | add/sub 64-bit | multiply 64-bit | calls / dynamic resources | Verdict |
+|---|---|---|---|---|
+| W1-WIN, MSVC 19.50 x64, `026659C5E954751E686A2956DD8E686A549300CB4EE41B0CB4A087B6EBAB5973` | one `lea/sub` plus carry/sign predicate | one `mul/imul` plus high-half/sign predicate | no call/divide/indirect；zero heap/lock | `PASS` |
+| W1-WSL, GCC 14.2 x86-64, `081f8ef9cd41bb601f03a21a0f7736651a898fdf38ac44f82d2af85fee433057` | one `add/sub` plus `jb/jo` | one `mul/imul` plus `jo` | no call/divide/indirect；zero heap/lock | `PASS` |
+| M1-MAC, AppleClang 21 arm64, `e303735fb738805230c950074a811642c0552c3dbd3673352e5da2a9f2263f38` | one `adds/subs` and flag predicate | unsigned `umulh+mul`；signed `mul+smulh`，再比较 sign extension | no call/divide/indirect；zero heap/lock | `PASS` |
+
+AArch64 没有单指令同时返回 64-bit product 的 low/high halves；low+high 两条 multiply 是 full-width
+overflow detection 的原生最短形状，不是 optional、HYLE wrapper 或 runtime route 的成本。x86 的
+`mul/imul` 同时提供所需 halves/overflow flag。三个工具链都把 public optional API 内联进 observable
+caller，没有 material helper seam。
+
+聚合 P0 verdict 为 **`PASS`**：新增函数保持 O(1)、零动态资源和工具链原生 overflow lowering；没有
+运行 timing benchmark，也不声明跨 workload 的纳秒优胜或整个 Math/SIMD SOTA。math-v1 的 ceil/round
+结构结论继续由
 [`benchmarks-math`](benchmarks-math.md)承担，但不能替代本轮新增函数的证据。

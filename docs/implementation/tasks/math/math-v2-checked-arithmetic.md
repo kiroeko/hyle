@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前状态：`CANDIDATE`。** 当前产品候选为
+> **当前状态：`VERIFIED`。** 当前产品候选为
 > `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
 > `010323120bc6eb07b5a07e7d3e6de1725968d314`；当前机械状态只看
 > [`module-status.json`](../../module-status.json)。本轮由
@@ -200,3 +200,91 @@
 `C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-candidate.json`，SHA-256
 `9A06A2F848BE35DC5D8C5BC3025594FE61E46F29EA0C2FD5ADAF90FEBE19A95E`。候选后公开合同、算法、
 layout 或正常 workload 若变化，必须退回 `AUDITED`；只补验证与事实记录不改变候选 identity。
+
+## Verification manifest
+
+验证绑定 product candidate `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
+`010323120bc6eb07b5a07e7d3e6de1725968d314`。candidate 后 test-only commits
+`a8f5844e08c19d758f76482850181a21f54b4d12`、
+`cf93514e88057cb8d05e7ab3337a33a16027b1be` 只为 GCC/AppleClang `-Werror` 校准 oracle fixture；从
+candidate 到验证提交的 `include/hyle/math`、package sample 与当前 architecture/user 产品合同均零 diff。
+
+### Correctness risk matrix
+
+| Risk | evidence | verdict / limitation |
+|---|---|---|
+| normal / zero / min / max | 三平台 math unit；8/16/32/64 signed/unsigned boundary；zero 与符号四象限 | `PASS` |
+| overflow / underflow / invalid intermediate | 8-bit signed/unsigned operand 全空间精确 oracle；max+1、min-1、unsigned 0-1、max×2、min×-1 | `PASS`；不返回 wrapped/clamped value |
+| constexpr / constraints | valid/overflow compile-time assertions；bool 与 mixed-type 不可调用 | `PASS` |
+| property / differential | 131,072 个 8-bit operand pair × add/sub/multiply 与 wide exact oracle 对拍 | `PASS` |
+| UB / sanitizer | W1-WSL GCC 14.2 RelWithDebInfo UBSan math/header 2/2 | `PASS`；signed operation 只在先证明可表示后执行 |
+| allocation / OOM | 纯 inline value function，无 allocation/owner | `NOT_APPLICABLE`；结构扫描确认零动态资源 |
+| lifetime / move / cancellation | 无对象、borrow、挂起工作或 teardown | `NOT_APPLICABLE` |
+| concurrency / reentrancy | 无共享或 thread-local state | `PASS`；任意线程独立调用 |
+| ASan / TSan | 无 memory ownership、共享状态或同步协议 | `NOT_APPLICABLE`；不把未运行写成 PASS |
+| compiler / ISA | MSVC 19.50 x64、GCC 14.2 x86-64、AppleClang 21 arm64 真编译运行 | `PASS` |
+| public header | 三平台 `hyle_math_header_self_contained_test` 各 1/1 | `PASS` |
+| dependency / third party | product include/link scan；selected closure 仅 `core,math` | `PASS`；CCCL/Folly/ggml 只作 evidence |
+| source/static/shared delivery | W1-WIN、W1-WSL、M1-MAC 的 selected source、relocated shared、relocated static consumer 各 1/1 | `PASS`；INTERFACE target 不虚构 archive |
+| P0 code shape | 三工具链 object/hash/反汇编见 performance evidence | `PASS`；不产生 timing SOTA 声明 |
+
+### Aggregate gates
+
+| Gate | verdict | evidence / limitation |
+|---|---|---|
+| scope | `PASS` | 冻结四项 FIX 完成；ceil/round、其他模块、build/instrument 零产品改动 |
+| architecture | `PASS` | checked scalar shape arithmetic 归 Math；SIMD/model/domain/standard routes 不变；`PUBLIC core` 真实 |
+| correctness | `PASS` | 三平台 unit/header，WSL UBSan，boundary/constexpr/全空间 oracle |
+| delivery | `PASS` | 三平台三种 C++ journey 共 9/9；header-only 无 binary/Native FFI 假入口 |
+| usability / docs | `PASS` | architecture 与 guide 写清 trusted operator、untrusted `try_`、组合、same-type、unsigned subtract 和 alignment 陷阱 |
+| red team | `PASS` | 见下节；无未处理 high finding |
+| engineering performance | `PASS` | P0 O(1)/零资源；三工具链原生 overflow lowering；不运行纳秒 benchmark |
+
+### Reproduction summary
+
+- W1-WIN：MSVC 19.50.35728，Ninja Release/Werror，math/header 2/2；selected source/shared/static
+  各 1/1；scratch `C:\hyle-scratch\math-v2-checked-arithmetic\{win-build,win-delivery}`；
+- W1-WSL：GCC 14.2 native ext4，Release 与 UBSan 各 2/2；source/shared/static 各 1/1；scratch
+  `/root/hyle-scratch/math-v2-{1a9e680c,build-release-1a9e680c,build-ubsan-1a9e680c,delivery-cf93514e}`；
+- M1-MAC：AppleClang 21 arm64 / Unix Makefiles / deployment target 14.4，Release 2/2；source/shared/
+  static 各 1/1；scratch `/Users/kiro/hyle-scratch/math-v2-{a8f5844e,build-a8f5844e,delivery-cf93514e}`；
+- exact code shape、object hashes 和 ISA 解释见
+  [`benchmarks-math-v2`](../../evidence/performance/benchmarks-math-v2.md)。这些是本地工程 artifact，
+  不冒充长期签名 Formal bundle。
+
+## 独立红队
+
+| Attack | severity | verdict / evidence |
+|---|---|---|
+| signed add/sub/mul 先执行 UB 再检查 | high | `disproved`：add/sub 在 unsigned domain；mul builtin/intrinsic 或先判界；UBSan + min/max oracle 通过 |
+| `min * -1`、negative×negative 或 unsigned borrow 漏判 | high | `disproved`：具名 boundary + exhaustive int8 三平台通过 |
+| optional API 隐藏 allocation/exception/ABI seam | high | `disproved`：inline value-only；反汇编无 call；组件无 math binary symbol，三交付同一头 |
+| MSVC fallback 用 divide 进入正常 runtime multiply | high | `disproved`：x64 `mul/imul`；ARM64 路径使用 `__umulh/__mulh`；portable divide 只属 constant-evaluation/unknown compiler fallback |
+| AArch64 两条 multiply 被误判为 wrapper regression | medium | `disproved`：ISA 分离 low/high；AppleClang builtin 直接形成 `mul+umulh/smulh`，无 HYLE seam |
+| mixed signed/unsigned 自动 promotion 产生意外结果 | high | `fixed by contract`：same-type deduction，compile-negative test，guide 要求显式选择 result type |
+| peer API union 扩出 saturation、variadic 或 mixed result | medium | `rejected`：无当前 admitted journey；保持 standard/SIMD/domain route |
+| test-only `extern "C"` 被当成公开 Native FFI | medium | `disproved`：probe object 不安装，package 只有 header/INTERFACE target，文档明确无 C ABI |
+| 为减少仓内手写 guard 越界迁移已关闭/未审模块 | medium | `rejected`：candidate diff 只触及 Math 产品/fixture/docs，下游 adoption 由 owner 触发 |
+| 文档仍称 ceil/round 是唯一能力族 | medium | `fixed`：architecture、user guide/index 与当前 API 对账，docs checker 通过 |
+
+红队未发现未处理 HIGH、未声明资源、错误复杂度或需退回 `AUDITED` 的产品事实。
+
+## 验证后六问
+
+1. **直接/间接第三方：**Math 产品只有 Core/std；没有 vendored/runtime third party。GoogleTest 仅测试，
+   CCCL/Folly/ggml 仅为 pinned 设计证据。
+2. **推理底座功能：**scalar shape/stride/offset/byte sizing 现在有 checked add/sub/mul 与 ceil/round；本
+   边界全部 `MUST` 为 `COMPLETE`。SIMD、linear algebra、model ops、mixed/saturation 都有明确 owner/
+   trigger，不是半实现。
+3. **性能：**复杂度和资源达到最佳档；三工具链正常 runtime 采用原生 overflow lowering，无 call/
+   divide/dispatch。这里只签 P0 structural，不伪称端到端 inference 或纳秒 SOTA。
+4. **C ABI 清理：**产品没有 Math C ABI、exported symbol 或旧伪 C surface；test-only C linkage 不交付。
+5. **build/package：**中央 component graph 与真实 `hyle::math -> PUBLIC core` 一致；三平台 source/
+   static/shared 用户均通过；header-only 不制造 archive。
+6. **C++ 易用性/文档：**可信算术用 operator，不可信值用同风格 optional `try_`；same-type、链式检查、
+   underflow、alignment/rounding 等陷阱已写入当前 guide，architecture/performance 也已对账。
+
+`CANDIDATE -> VERIFIED` 的前态 registry 快照位于
+`C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-verified.json`，SHA-256
+`D98E053468D6318B73AE8699A03595E57D36E1E9B42BCC2102CDC37708563FB1`。全部适用 aggregate gate
+有真实 `PASS`，Formal 为 `NONE`；下一步只允许 terminal receipt、LOC 与 registry anchor，不再改产品。
