@@ -1,6 +1,6 @@
 # Container v2 当前源码重构与收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 本轮是从 `container-v1` 的 `BLOCKED` 状态恢复的全新审查。旧轮的 capability、API、correctness、
 > performance 与 delivery verdict 全部只作历史线索，不能继承为本轮结论。原因不是单纯重复 review：
@@ -337,7 +337,7 @@ P1 bundle：合同 SHA-256
 没有 finding 需要修改冻结产品；red-team 产生的 ISA test 与 TLS test portability 修正只改变测试，已单独
 提交为 `1199a9edbffef46a1c76bdee2f2e722f76371532`。
 
-## Closure decision（等待机械终止提交）
+## Closure decision
 
 - 所有当前 `MUST` 已为 `COMPLETE` 或完整 `ROUTED`，不存在 `PARTIAL/MISSING + KEEP`。
 - scope、architecture、correctness、delivery、usability/docs、red-team、engineering performance 全部
@@ -356,4 +356,10 @@ P1 bundle：合同 SHA-256
 - 四项 LOC snapshot commit：`1199a9edbffef46a1c76bdee2f2e722f76371532`；全库代码 404,562；自实现
   包含测试 96,940；自实现不含测试 60,339；Container 目录实现 11,871，其中独立已关闭的
   `container_intrusive` 为 564，本轮非侵入式实现净值 11,307。
-- 建议机械状态：`VERIFIED`；保存 terminal receipt 后再以合法相邻 transition 进入 `CLOSED`。
+- terminal receipt：`CLOSED`。产品 candidate 保持
+  `336793d63dd7cf08fde9c1be74c6439472335381` /
+  `968d169bafe0eab270d397ab1614f80c1a98079f`；七项 gate 全部 `PASS`，没有 blocker。receipt 所在提交
+  产生后由后续 registry 提交记录完整 end/anchor identity。
+- 建议机械状态：`CLOSED`。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
