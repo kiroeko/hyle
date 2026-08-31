@@ -91,8 +91,10 @@ participant 在 caller Fiber 栈上执行 body；non-suspending 合同不变，�
 
 验证冻结为：新增同 owner Fiber 确实在原 Fiber 内执行至少一个 grain、跨 Scheduler Fiber 不参与、
 单 worker/error/cancel/exactly-once/lifetime/zero-allocation regressions；三平台 full Sched + sanitizer、
-三交付与直接 consumer slice；最后只重放原 v2 W1-WIN P1 contract。除非 `FIX-01` 暴露 correctness
-缺陷，本轮不再加入第二个产品假设。
+三交付与直接 consumer slice；最后只重放与 v2 相同 workload、peer、顺序和 5% margin 的 W1-WIN P1。
+由于 v2 provenance 仍描述旧候选“root 只等待、至多四个 runner”，本轮使用
+`consumer_shapes_v3.json` 与 `sched-batch-p1-v3.json` 重新绑定候选身份和自然执行拓扑；这不是新增
+benchmark 姿势。除非 `FIX-01` 暴露 correctness 缺陷，本轮不再加入第二个产品假设。
 
 ## `FIX-01` implementation diagnostic（pre-candidate）
 

@@ -1,0 +1,91 @@
+{
+  "schema": "hyle.sched.consumer-shapes/v3",
+  "owner": "sched-v3-root-participation",
+  "candidate_product_commit": "38a5ca048b796e5f7e30283fef5b9c0c4f4875d5",
+  "candidate_product_tree": "cf2fe3c28a606c787875b5c25cce869bcd860b5b",
+  "journeys": [
+    {
+      "id": "batch-structured",
+      "consumer": "graph, tensor-kernel or inference execution layer",
+      "topology": "one already-admitted root runs 16 finite batches; each batch exposes 128 indexed, non-suspending work items to four provider workers, each item computes one deterministic 1024-element tile, and the root returns only after the whole batch is quiescent",
+      "ownership": "the root owns immutable input and 128 stable result slots; workers borrow the callable, input and slots only until batch completion; the provider owns execution metadata but no individual result, future or detached lifetime",
+      "normal_shape": {
+        "workers": 4,
+        "batches": 16,
+        "items_per_batch": 128,
+        "tile_elements": 1024,
+        "result_slots": 128,
+        "failure": "all bodies succeed",
+        "cancellation": "one dormant batch-level source or provider cancellation domain"
+      },
+      "charged_phases": [
+        "batch admission and provider dispatch/partitioning",
+        "1024-element deterministic tile compute for every indexed item",
+        "write to caller-owned stable result slot",
+        "one whole-batch completion and exact result consumption"
+      ],
+      "excluded_setup": [
+        "provider and worker construction",
+        "worker affinity establishment",
+        "input/result allocation and expected-checksum construction",
+        "root admission and one complete warmup batch"
+      ],
+      "sources": [
+        {
+          "path": "src/graph/data_parallel.cc",
+          "sha256": "5d469a986ee3ade35eb94348fb3088181ee3e708b1d48e68c69872a51361c856",
+          "status": "Graph is QUEUED; this proves only the range/fan-out consumer shape and grants no Graph verdict."
+        }
+      ],
+      "external_provenance": {
+        "llama_cpp_revision": "662a0b0121a53c23b825a71e64ab6eff59b7f4d8",
+        "ggml_revision": "36da57138425487184aa1da2eee2cde155909c6f",
+        "observation": "Both CPU runtimes execute a finite graph/kernel episode with shared completion, abort/control state and chunk allocation rather than one independently owned future per chunk."
+      },
+      "reason": "A 1024-element floor comes from the current Graph consumer and matches tile-sized inference work. It prevents a noop or queue-only benchmark from choosing the public API while retaining enough batches to expose dispatch and completion cost."
+    }
+  ],
+  "semantic_equivalence": {
+    "common": {
+      "result_granularity": "one caller-owned uint64 result slot per indexed work item",
+      "completion_granularity": "one synchronous completion per batch; all work is quiescent before the next batch",
+      "failure": "normal replay has no body failure and no admission failure",
+      "cancellation": "normal replay never requests cancellation; no side pays per-item cancellation ownership",
+      "suspension": "work bodies never suspend or block",
+      "lifetime": "input, callable and result slots remain valid for the complete synchronous batch",
+      "parallelism": "four pinned provider worker threads; the external process role never executes a tile",
+      "accounting": "2048 exact item callbacks and one identical checksum"
+    },
+    "hyle": {
+      "revision": "38a5ca048b796e5f7e30283fef5b9c0c4f4875d5",
+      "route": "sched::bulk_execute with grain_size=1 and max_concurrency=4",
+      "root_wait": "the admitted Scheduler Fiber computes from the shared cursor, then waits only while admitted sibling runners remain active",
+      "metadata": "one caller-stack batch state, one root participant, at most three raw sibling runners and one shared atomic cursor"
+    },
+    "marl": {
+      "revision": "b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+      "route": "Scheduler::enqueue one Task per indexed item plus one WaitGroup per batch",
+      "root_wait": "the admitted Marl task/fiber waits on the batch WaitGroup",
+      "metadata": "Marl owns its natural Task records and group state; caller retains result slots"
+    },
+    "onetbb": {
+      "revision": "a8216b95202f3c55f9749870f4f8cfa4df0b32e3",
+      "route": "task_arena(max_concurrency=4) plus parallel_for blocked_range grain=1 and simple_partitioner",
+      "root_wait": "one enqueued arena root executes the synchronous parallel_for; provider task-helping is an implementation mechanism inside the same four-worker ceiling",
+      "metadata": "oneTBB owns partition/task metadata; caller retains result slots"
+    }
+  },
+  "comparison_classes": {
+    "hyle_vs_marl": "SAME_CONTRACT",
+    "hyle_vs_onetbb": "SAME_CONTRACT",
+    "historical_schedule_task_vs_marl": "NATURAL_ROUTE_NOT_COMPARABLE"
+  },
+  "negative_space": {
+    "noop_or_queue_only": "Zero-work and queue-only rows are mechanism diagnostics and cannot gate this product route.",
+    "rich_per_task": "schedule_task/JoinHandle retains independent typed result/status/cancel ownership and is not a peer for this journey.",
+    "adaptive_algorithms": "Partitioners, reduce/scan/sort, graph policy and tensor kernels remain Graph/algorithm responsibilities.",
+    "downstream_closure": "Building IO, Compute or Graph against sched proves compatibility only; it does not validate their functionality or performance."
+  }
+}
+
+
