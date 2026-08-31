@@ -7,7 +7,7 @@
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -87,6 +87,10 @@
 首个候选因性能未裁决而从 `CANDIDATE -> AUDITED` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\hyle-scratch\sched-v2\module-status-before-audited-fix06.json`，SHA-256
 `9AFB680D40FBABA7CAE5DC5BBDD0E8FC3F7533DDA48AABD633BDBA346577B34F`。
+
+`FIX-06` candidate 因 TSan correctness finding 从 `CANDIDATE -> AUDITED` 的前态 registry 快照保存在
+canonical checkout 外：`C:\hyle-scratch\sched-v2\module-status-before-audited-fix07.json`，SHA-256
+`B006E41D87B386F4DE409C0BC279735D6DBE65C56660510C8F3A05E16C852A97`。
 
 ## 审计输入与设计裁决
 
@@ -185,10 +189,11 @@ error。空 range 为成功；反向 range、零 grain、空 raw callback 或无
 | `FIX-04` | 新 header/TU 的 component/package 闭包尚无证据 | delivery owner=`build/package`，产品依赖不变 | `PARTIAL -> FIX`：登记 sched source/header，验证 source/static/shared 与 FFI 清洁 | selected-component 三 journey、header self-contained、符号/import；不新增 build option/third party |
 | `FIX-05` | v1 structured peer 行语义失配 | evidence owner=`sched/perf`；primary 固定为 bulk same-contract | `INVALID -> FIX`：替换为 batch primary；rich 行只保留 `NATURAL_ROUTE/NOT_COMPARABLE` | semantic matrix、W1-WIN qualification、反序/holdout 仅按预算；不据 mechanism diagnostic 改 API |
 | `FIX-06` | 首个候选每个 public grain 都在四个 worker 间竞争同一 CAS cursor；qualified batch replay 对 oneTBB 中位慢 8.1%--9.3%，在 `n=31` 后仍未通过 5% NI | product owner=`sched`；公开 grain 是 callback 粒度，不要求内部每次只领取一个 grain；保持 O(N) work、O(worker) runner、O(1) batch state 与 stop contract | `INCONCLUSIVE -> FIXED`：`fc9cc652` 让 runner 有界预领取，正常范围用 `fetch_add`、回绕边界用 saturating CAS；仍逐 grain 调 body、每次调用前检查 stop/cancel，不新增 API/layout/常态外部 metadata | 既有 callback/exactly-once/error/cancel/partial-admission/stress 全部复跑；唯一正式 P1 重跑；不加入公开 partitioner/auto-grain，不改 normal workload、peer 或 5% 门 |
+| `FIX-07` | 最后 runner 的 `Event::signal()` 可先唤醒 waiter、随后仍在 `notify_all()` 读取栈上 Event；caller 返回并复用 `BulkState` 时形成真实 lifetime race | correctness owner=`sched`；同步返回必须保证所有 body 与 terminal notifier 不再访问 borrowed state，不能靠“signal 已发生”冒充 signaler quiescent | `MISSING -> FIX`：last runner 在 `signal()` 返回后 release-publish `notification_complete`，waiter 在 Event 返回后 acquire 等待该 handoff；publish 后 runner 不再触碰 state | WSL TSan 原 `RepeatedBatchLifetimeStress` 必须由 FAIL 转 PASS；Release/ASan/UBSan、external/Fiber/one-worker/500-round stress 全复跑；保持 O(1) metadata、无分配、无新 API |
 
-本轮产品修改严格限于 `FIX-01..06`，当前全部进入新 candidate；没有剩余产品施工授权。动态 task-group
-API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 与 P2 推理端到端均不因本审计
-进入施工。
+本轮产品修改严格限于 `FIX-01..07`；`FIX-01..06` 已实现，当前唯一未完成产品项是 correctness
+`FIX-07`。动态 task-group API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 与
+P2 推理端到端均不因本审计进入施工。
 
 ## Owner 六问直答（`AUDITED`）
 
@@ -243,9 +248,10 @@ API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 
 `C:\hyle-scratch\sched-v2\module-status-before-candidate.json`，SHA-256
 `8A79BB632B24C52B23598A5554FF895BAC41A2011331B661FFDE616137DBC924`。
 
-## `FIX-06` Candidate
+## `FIX-06` Candidate（本轮历史输入，已因 `FIX-07` 退阶）
 
-当前冻结产品候选：
+以下 identity 曾冻结为产品候选；WSL TSan 在 terminal notifier 中发现真实 lifetime race 后，registry 已
+退回 `AUDITED`，所以它不再是当前 candidate，也不能进入 `VERIFIED`：
 
 - commit：`fc9cc65207d6d05589da89b32435a62f0733e2ad`；
 - tree：`6e516ceaec2f83ce3089429b07b5bd9bd945d80e`；
@@ -275,7 +281,7 @@ API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 
 | new bulk semantics/resource tests | `PASS`（9） | candidate 上重复，并扩展 sanitizer/stress |
 | full Sched unit suite | `PASS`（166） | 三平台适用 suite |
 | public headers | `PASS`（10） | 三平台 + installed consumer |
-| WSL/macOS correctness/sanitizer | `BLOCKED`（新 candidate 尚未运行） | WSL Release/ASan/UBSan/TSan + macOS Release |
+| WSL/macOS correctness/sanitizer | `FAIL`（WSL Release/ASan/UBSan 通过；TSan 在 `RepeatedBatchLifetimeStress` 报 terminal Event vs 下一轮 `BulkState` 构造 race；macOS 尚未运行） | `FIX-07` 后 WSL 四档 + macOS Release |
 | source/static/shared delivery | `BLOCKED`（新 candidate 尚未运行） | 三平台受影响 selected-component consumer |
 | same-contract P1 | `BLOCKED`（新 candidate 尚未运行；首个 candidate 的 `INCONCLUSIVE` 只作历史输入） | 原合同唯一一次 W1-WIN 重跑 |
 | docs/usability/FFI cleanliness | `BLOCKED`（candidate docs/header compile 已过；installed/symbol drift 尚未重跑） | checks + consumer compile + symbol scan |
@@ -288,6 +294,7 @@ reservation 对 first-error/cancel latency 的影响，以及是否出现未声�
 
 ## Closure decision
 
-当前机械状态：`CANDIDATE`。`FIX-06` 产品 identity 与 public/resource contract 已冻结；下一步只复跑受
-影响 correctness、三平台、三交付、原 same-contract P1、文档/FFI cleanliness 和独立红队。不得再改
-产品/API/normal workload、peer、5% margin 或中央统计语义；P1 若仍未通过就按卡终止为具名 `BLOCKED`。
+当前机械状态：`AUDITED`。`FIX-06` 的性能成本结构成立，但该 candidate 被 mandatory correctness
+`FIX-07` 否决。下一步只能实现 signal-return handoff、冻结新 candidate，再复跑受影响 correctness、
+三平台、三交付、原 same-contract P1、文档/FFI cleanliness 和独立红队。不得改 public API、normal
+workload、peer、5% margin 或中央统计语义；P1 若仍未通过就按卡终止为具名 `BLOCKED`。
