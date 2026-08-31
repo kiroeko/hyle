@@ -1,6 +1,6 @@
 # Math 能力完整性回放 — 2026-08
 
-<!-- CAPABILITY REPLAY RECORD: DRAFT -->
+<!-- CAPABILITY REPLAY RECORD: COMPLETE -->
 
 > 本页把当前能力完整性标准回放到已经 `CLOSED` 的 `math-v1`。回放本身不修改产品 API、算法、
 > layout、依赖或交付；它只判断旧结论能否继续成立。机械状态只看
@@ -16,8 +16,8 @@
   `93f7bf1a996d6beabebe2b42801b086c483a18e6` /
   `8b7c55e6661994be08661eb13022fde9627cb6bb` /
   `8b7c55e6661994be08661eb13022fde9627cb6bb`；
-- replay base：`fb8dd115982aa60e6eef20d67e97d030174ce778`；实际 evidence commit 在本记录从
-  `DRAFT` 变为 `COMPLETE` 时钉死；reviewer：Codex；日期：2026-08-31；
+- replay base：`fb8dd115982aa60e6eef20d67e97d030174ce778`；evidence commit：
+  `57ea0ba90c8472c938c4e3c6360ae4e0a6c69250`；reviewer：Codex；日期：2026-08-31；
 - normal consumer：C++23 用户从不可信 tensor shape、stride、element count 和 element size 计算可表示的
   offset、元素总数与 byte size；可信且已验证的普通算术仍直接使用语言运算符；
 - north-star journey：量化推理引擎解析模型或建立 tensor layout 时，在分配、映射或 kernel launch 前

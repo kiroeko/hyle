@@ -306,16 +306,14 @@
     },
     {
       "module": "math",
-      "product_state": "CLOSED",
-      "round_id": "math-v1",
-      "closure_task": "docs/implementation/tasks/math/math-v1-closure.md",
-      "scope": "The scalar numeric math component, all four current public helpers, its component and package journey, and the scalar-versus-SIMD ownership boundary.",
-      "non_goals": "SIMD lane/backend/batch implementation, linear algebra, FFT, geometry, random facilities, special-function libraries, model operators, C++23 standard-library mirrors, Native FFI/C API, stable C++ ABI and Formal certification.",
-      "baseline_commit": "8652aa53c46ee28ff002bf301906c5ab4a148765",
-      "candidate_commit": "753ad5f304f52727c3ba925c9aac0a30f941502e",
-      "candidate_tree": "93f7bf1a996d6beabebe2b42801b086c483a18e6",
-      "end_commit": "8b7c55e6661994be08661eb13022fde9627cb6bb",
-      "registry_anchor_commit": "8b7c55e6661994be08661eb13022fde9627cb6bb",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "MATH-REPLAY-CHECKED-ARITH-01",
+      "reopen_evidence": "docs/implementation/tasks/math/math-capability-replay-v2.md",
+      "round_id": "math-v2-checked-arithmetic",
+      "closure_task": "docs/implementation/tasks/math/math-v2-checked-arithmetic.md",
+      "scope": "Same-type non-boolean integral checked add, subtract and multiply, including the public C++ shape, implementation, tests, package journey and adjacent documentation.",
+      "non_goals": "Saturating or mixed-type arithmetic, arbitrary precision, signed rounding, floating point, SIMD, model operators, downstream consumer migration, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
+      "baseline_commit": "57ea0ba90c8472c938c4e3c6360ae4e0a6c69250",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -323,46 +321,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-math.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/math/math-v1-closure.md",
-      "loc": {
-        "snapshot_commit": "753ad5f304f52727c3ba925c9aac0a30f941502e",
-        "repository_code": 306687,
-        "self_with_tests": 124254,
-        "self_without_tests": 83119,
-        "module_implementation": 59
-      },
-      "known_limitations": [
-        "The component admits only same-type non-boolean non-negative integral tasks; callers own mixed-type conversion and negative rounding policy.",
-        "C++23 scalar math routes directly to the standard library, while lane, vector and buffer math remain owned by simd.",
-        "There is no current HYLE product syntax consumer; the package fixture proves delivery but carries no downstream performance claim.",
-        "Normal APIs retain an invalid-input fail-fast branch and MSVC may reserve ABI shadow space; untrusted values should use the checked try_ APIs.",
-        "Math is a header-only C++ component and provides no fabricated binary artifact, stable C++ ABI or consumerless Native FFI surface."
-      ],
-      "reopen_triggers": [
-        "A named consumer exposes a correctness, security, usability or missing-capability defect within the scalar math boundary.",
-        "The public API, algorithm, direct Core dependency or source, static or shared delivery shape changes.",
-        "A supported compiler or ISA introduces duplicate division, dynamic resources or a reproducible material regression in a normal consumer workload.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material consumer advantage.",
-        "The frozen candidate or structural probe identity becomes unavailable when the engineering conclusion must be renewed."
-      ],
-      "summary": "math-v1 CLOSED：scalar integer 能力边界、checked/fail-fast API、正确性、三平台与三交付形状、文档、红队和 P0 结构性能全部签署；产品候选为 753ad5f3/93f7bf1a，SIMD 能力另行收口。"
+      "summary": "math-v2 REOPENED：成熟 peer 与真实推理 shape/stride/byte-size 路径证明 checked add/sub/mul 是旧轮遗漏的 scalar MUST；尚未进入产品施工。"
     },
     {
       "module": "time",
