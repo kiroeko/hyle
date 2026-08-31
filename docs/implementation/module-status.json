@@ -748,12 +748,14 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "sched-v2-batch-structured",
       "closure_task": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
       "scope": "Restore the missing non-suspending batch-structured task route: one batch-level completion, shared failure/cancellation, caller-owned result slots, no per-item independent handle/status or suspension; define its relation to schedule, schedule_task and spawn_task, then requalify the affected P1 contract and delivery closure.",
       "non_goals": "Closing or redesigning IO, Compute or Graph; graph/DAG/model/kernel/grain/NUMA/priority/caller-participating SPMD policy; copying the oneTBB algorithm suite; changing unrelated per-task or suspending semantics; Native FFI/C API, stable cross-toolchain C++ ABI, P2 end-to-end claims and Formal certification.",
       "baseline_commit": "1908f7b9bf8c86c1da9c11aa63e767577d0fa602",
+      "candidate_commit": "7cd2ad5a0d49f3c396a74888dc79fd98ebed09d2",
+      "candidate_tree": "8e15c2be0c784dc43f985119209f84df39899270",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -770,7 +772,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v2 AUDITED：双向审计确认缺口是有限 non-suspending batch，而不是另一条按快慢命名的 queue；冻结 bulk_execute、共享首错/取消、O(worker) runner 与同合同 P1 的 FIX-01..05，Graph algorithms 保持邻接负空间。"
+      "summary": "sched-v2 CANDIDATE：bulk_execute 候选 7cd2ad5a/8e15c2be 已冻结；以 O(worker) raw runner + O(1) batch state 提供共享首错/取消/完成且无逐项 allocation/handle，进入三平台、三交付与 same-contract P1 验证。"
     },
     {
       "module": "io",

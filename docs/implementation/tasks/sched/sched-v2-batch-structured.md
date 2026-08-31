@@ -7,7 +7,7 @@
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -202,11 +202,43 @@ partitioner 与 P2 推理端到端均不因本审计进入施工。
 
 ## Candidate
 
-尚未产生。
+冻结产品候选：
+
+- commit：`7cd2ad5a0d49f3c396a74888dc79fd98ebed09d2`；
+- tree：`8e15c2be0c784dc43f985119209f84df39899270`；
+- public contract：新增 `hyle/sched/bulk.h` 的 `BulkExecuteOptions`、raw `BulkBodyFn`、compiled
+  `bulk_execute` 与 `void/Status` noexcept lambda adapter；现有 Scheduler/InlineJob/JoinHandle/Fiber layout
+  与入口不变；
+- implementation：一个 caller-stack `BulkState`，至多 `min(chunk count, max concurrency, workers)` 个 raw
+  `schedule` runner，一个 lock-free chunk cursor，一次 manual Event terminal notification；无 per-item state、
+  allocation、queue entry、status、cancel 或 handle；
+- correctness semantics：external thread 与 Scheduler Fiber 走 parallel route；worker-stack nesting serial
+  fallback；first body error 优先于 cancellation；partial runner admission 只降低并发，不丢 chunk；零 runner
+  admission 返回 typed scheduler error；
+- 直接产品面：Sched CMake 新增一个 TU，自动 public-header projection 安装 `bulk.h`；用户选择表、可复制
+  journey、陷阱、架构任务表和复杂度合同已更新；Graph 只保留 future migration seam，未改产品；
+- candidate tests：W1-WIN MSVC 19.50 Release shared selected-component build 通过；9 个 BulkExecute tests 与
+  全部 166 个 Sched tests 通过；Sched 10 个 public headers self-contained compile 通过；计数 allocator
+  证明 warm 后 4096-item bulk 的 runner path 新增 allocation 为 0。
+
+`AUDITED -> CANDIDATE` 前态快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v2\module-status-before-candidate.json`，SHA-256
+`8A79BB632B24C52B23598A5554FF895BAC41A2011331B661FFDE616137DBC924`。
 
 ## Verification manifest
 
-尚未进入 candidate；未运行项不得写 `PASS`。
+候选前本机定向 correctness 只作为 candidate test：
+
+| gate | W1-WIN candidate result | terminal requirement |
+|---|---|---|
+| new bulk semantics/resource tests | `PASS`（9） | candidate 上重复，并扩展 sanitizer/stress |
+| full Sched unit suite | `PASS`（166） | 三平台适用 suite |
+| public headers | `PASS`（10） | 三平台 + installed consumer |
+| WSL/macOS correctness/sanitizer | `BLOCKED`（尚未运行） | 必须运行，不能继承 v1 |
+| source/static/shared delivery | `BLOCKED`（仅 source/shared producer） | 三种真实 consumer |
+| same-contract P1 | `INCONCLUSIVE`（尚未运行） | W1-WIN 资格化 bundle |
+| docs/usability/FFI cleanliness | `BLOCKED`（候选内容已写，未完成终验） | checks + consumer compile + symbol scan |
+| red team | `BLOCKED`（尚未运行） | candidate 验证后独立攻击 |
 
 ## 独立红队
 
@@ -214,5 +246,6 @@ partitioner 与 P2 推理端到端均不因本审计进入施工。
 
 ## Closure decision
 
-当前建议机械状态：`AUDITED`。双向能力审计已经完成，有限 `FIX-01..05` 与 public/cost contract 已冻结；
-下一步只实现该集合，产品形状与直接 consumer trace 冻结后再进入 `CANDIDATE`。
+当前建议机械状态：`CANDIDATE`。产品 identity 与 public/resource contract 已冻结；下一步只执行 card 已声明
+的 correctness、三平台、三交付、same-contract P1、文档/易用性和独立红队。任何产品/API/normal workload
+变化必须退回 `AUDITED`，不能在性能采样中原地调形状。
