@@ -748,7 +748,11 @@
     },
     {
       "module": "sched",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "SCHED-RT-01: the normal non-suspending batch fork/join journey has no natural safe batch-level public route, and the v1 structured peer pair charged per-task result/status/cancel/JoinHandle semantics only to HYLE, so it cannot produce the required same-contract P1 verdict.",
+      "blocker_owner": "sched",
+      "resume_condition": "Start a new RESUME round that freezes distinct fire-and-forget, batch-structured, per-task typed-control and suspending contracts; implement the admitted batch route; then qualify HYLE batch versus Marl batch as SAME_CONTRACT and evaluate the richer route only against an equivalent adapter/peer or a predeclared resource budget.",
       "round_id": "sched-v1",
       "closure_task": "docs/implementation/tasks/sched/sched-v1-rebuild.md",
       "scope": "Current complete C++ Scheduler product: fcontext and fibers, worker scheduling and work stealing, completion wake/timer/cancellation, structured join and blocking offload, synchronization and messaging, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering performance.",
@@ -756,6 +760,8 @@
       "baseline_commit": "63406dd0bf37ed2eb78baef8008820c64294fd81",
       "candidate_commit": "f358d084d17f92e64ec51ae2bd974d2a67f417d2",
       "candidate_tree": "44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6",
+      "end_commit": "6d4ce6080e6fe9e62bae16da6694f9bbeeed64c8",
+      "registry_anchor_commit": "6d4ce6080e6fe9e62bae16da6694f9bbeeed64c8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -763,16 +769,46 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v1 CANDIDATE：非挂起 typed work 现由单 allocator cell 的 worker-stack schedule_task 承载，产品冻结于 f358d084/44a0d4e0；正在重签三平台 correctness、三交付、唯一一次正式 P1 重跑与红队。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "FAIL",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/sched/sched-v1-rebuild.md",
+      "loc": {
+        "snapshot_commit": "f358d084d17f92e64ec51ae2bd974d2a67f417d2",
+        "repository_code": 408169,
+        "self_with_tests": 98581,
+        "self_without_tests": 61337,
+        "module_implementation": 5262
+      },
+      "known_limitations": [
+        "The v1 candidate is correctness- and delivery-qualified, but schedule_task is not the natural route for a large batch that only needs one completion and caller-owned result slots.",
+        "The request dispatch WIN and completion wake PARITY are qualified same-contract results; the structured row is only a qualified NATURAL_ROUTE observation and cannot establish scheduler-level non-inferiority or SOTA.",
+        "The v1 product has no Native FFI or stable cross-toolchain C++ ABI; private Boost.Context C and assembly symbols remain implementation details.",
+        "IO, Compute and Graph builds only prove direct Sched API compatibility; those downstream modules remain unclosed."
+      ],
+      "reopen_triggers": [
+        "The recorded resume condition is satisfied by a separately scoped batch-structured task design and a predeclared same-contract performance plan.",
+        "A real consumer exposes another correctness, security, OOM, ownership, cancellation, progress, usability or missing-capability defect within the Sched boundary.",
+        "The public task/lifetime contract, scheduler algorithm, direct dependency, fcontext mechanism or source/static/shared delivery shape changes materially.",
+        "A qualified same-contract normal workload or a mature peer establishes a new material performance or complexity fact."
+      ],
+      "summary": "sched-v1 BLOCKED：三平台 correctness/sanitizer、三种 C++ 交付与 request/completion P1 行通过；红队发现 structured pair 语义不等价，并证明产品缺少自然的批级 structured route，因此不能签聚合 P1，须由新 RESUME round 重做。"
     },
     {
       "module": "io",
