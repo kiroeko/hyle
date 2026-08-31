@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -92,9 +92,10 @@ participant 在 caller Fiber 栈上执行 body；non-suspending 合同不变，�
 验证冻结为：新增同 owner Fiber 确实在原 Fiber 内执行至少一个 grain、跨 Scheduler Fiber 不参与、
 单 worker/error/cancel/exactly-once/lifetime/zero-allocation regressions；三平台 full Sched + sanitizer、
 三交付与直接 consumer slice；最后只重放与 v2 相同 workload、peer、顺序和 5% margin 的 W1-WIN P1。
-由于 v2 provenance 仍描述旧候选“root 只等待、至多四个 runner”，本轮使用
-`consumer_shapes_v3.json` 与 `sched-batch-p1-v3.json` 重新绑定候选身份和自然执行拓扑；这不是新增
-benchmark 姿势。除非 `FIX-01` 暴露 correctness 缺陷，本轮不再加入第二个产品假设。
+由于 v2 provenance 仍描述旧候选“root 只等待、至多四个 runner”，首个 candidate 使用
+`consumer_shapes_v3.json` 与 `sched-batch-p1-v3.json` 重新绑定候选身份和自然执行拓扑；visibility
+修正后的最终 candidate 使用内容相同、只更新产品身份的 v4 文件。这不是新增 benchmark 姿势。除非
+`FIX-01` 暴露 correctness 缺陷，本轮不再加入第二个产品假设。
 
 ## `FIX-01` implementation diagnostic（pre-candidate）
 
@@ -113,13 +114,14 @@ known-delta、timer-floor、artifact/provenance validator，因此只允许进�
 或 SOTA 声明。Windows Release 的全部 Sched tests/public-header tests 已通过，新 same-owner/cross-owner
 测试各重复 100 次通过。
 
-## Candidate
+## 首个 Candidate
 
 - product commit：`38a5ca048b796e5f7e30283fef5b9c0c4f4875d5`；tree：
   `cf2fe3c28a606c787875b5c25cce869bcd860b5b`；工作树在冻结时 clean。
-- public surface：没有新增 declaration、symbol、option、layout 或依赖；`bulk_execute` 的 callable、
-  first-error、cancel、grain、borrow 与同步 quiescence 合同不变。公开注释、architecture 和 guide 现在准确
-  说明同 Scheduler root Fiber 可在自己的 Fiber 栈执行 body，另一个 Scheduler 的 Fiber 不会参与。
+- public surface：没有新增 public declaration、option、layout 或依赖；后续 symbol scan 发现两个 private
+  seam 在 ELF/Mach-O 默认可见，见下节 finding。`bulk_execute` 的 callable、first-error、cancel、grain、
+  borrow 与同步 quiescence 合同不变。公开注释、architecture 和 guide 现在准确说明同 Scheduler root
+  Fiber 可在自己的 Fiber 栈执行 body，另一个 Scheduler 的 Fiber 不会参与。
 - implementation：新增未安装的 `src/sched/scheduler_access.h`，只给 `bulk.cc` 做 current-owner identity 与
   bounded sibling admission。普通 `schedule` 仍复用当前 accounting shard；bulk root 的至多
   `concurrency-1` 个 sibling 轮转到其他 shard，root 自己消费同一 reservation cursor。若 sibling 已在
@@ -149,3 +151,14 @@ library 却因默认 visibility 各导出了
 影响的三平台 build/delivery/symbol、correctness smoke、直接 consumer slice 与同一正式 P1；首个 P1
 bundle 只作诊断事实，不继承为最终 verdict。退回前 registry 快照位于 canonical checkout 外：
 `C:\hyle-scratch\sched-v3\module-status-before-hidden-symbol-audit.json`。
+
+## 最终 Candidate
+
+- product commit：`536d4abf6324e2b08ed7b3a80df34e83f955e60b`；tree：
+  `bc9b6baaa5dbf4f3d214047e85cb3ada472e45df`。
+- 相对首个 candidate 的唯一产品 diff 是 `class HYLE_HIDDEN SchedulerAccess`；GCC 14 shared probe 已确认
+  两个 private dynamic symbol 消失，Windows Release Sched/header correctness 保持通过。
+- 最终性能合同为 `sched-batch-p1-v4.json`，其 workload、peer revisions、四核拓扑、两个执行顺序、
+  controls 与 5% margin 均和 v3 相同；只把 provenance 绑定到最终 product commit/tree。
+- `AUDITED -> CANDIDATE` 前态 registry 快照位于 canonical checkout 外：
+  `C:\hyle-scratch\sched-v3\module-status-before-final-candidate.json`。

@@ -1,0 +1,258 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "sched-batch-p1-v4",
+  "module": "sched",
+  "claim": "P1 engineering non-inferiority of the finite batch-structured consumer route against Marl and oneTBB under one frozen semantic and four-worker physical-core contract",
+  "candidate": {
+    "target": "hyle_sched",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "sched",
+    "entrypoint": "hyle/sched/bulk.h"
+  },
+  "peers": [
+    {
+      "id": "marl",
+      "revision": "b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+      "configuration": {
+        "delivery_shape": "source-built static library in a separate peer process",
+        "route": "Marl Scheduler::enqueue plus one caller-owned WaitGroup per finite batch",
+        "worker_topology": "four dedicated pinned Marl workers; the external process role only submits the root and waits"
+      }
+    },
+    {
+      "id": "onetbb",
+      "revision": "a8216b95202f3c55f9749870f4f8cfa4df0b32e3",
+      "configuration": {
+        "delivery_shape": "source-built oneTBB runtime in a separate peer process",
+        "route": "task_arena(max_concurrency=4) plus parallel_for with unit grain and simple_partitioner",
+        "worker_topology": "four pinned arena slots; the external process role enqueues the root and waits without entering the arena"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "marl-candidate-first",
+      "dimensions": {"execution_order": "candidate-first", "peer": "marl"},
+      "target_variant": "marl"
+    },
+    {
+      "id": "marl-peer-first",
+      "dimensions": {"execution_order": "peer-first", "peer": "marl"},
+      "target_variant": "marl"
+    },
+    {
+      "id": "onetbb-candidate-first",
+      "dimensions": {"execution_order": "candidate-first", "peer": "onetbb"},
+      "target_variant": "onetbb"
+    },
+    {
+      "id": "onetbb-peer-first",
+      "dimensions": {"execution_order": "peer-first", "peer": "onetbb"},
+      "target_variant": "onetbb"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}}
+  ],
+  "workloads": [
+    {
+      "id": "batch-structured-marl",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-foundation/sched/batch-structured/marl",
+      "provenance": {
+        "path": "bench/sched/consumer_shapes_v4.json",
+        "sha256": "613bc590b452c2718853fdb884bc041ea56018a74f41e7a77bd7ed6b09a837b5"
+      },
+      "ownership_topology": {
+        "candidate": "One admitted HYLE root Fiber calls bulk_execute for each batch, claims unit indices itself and activates at most three sibling runners; all participants write caller-owned slots and share one batch completion/error/cancel state",
+        "peer": "One admitted Marl root task enqueues one Task per unit index, writes the same caller-owned slots and waits on one Marl WaitGroup per batch",
+        "equivalence": "Both run 16 batches of 128 non-suspending 1024-element tiles on four pinned workers; setup/root admission are excluded, all bodies succeed, cancellation is dormant, the external role never computes a tile, and each batch is quiescent before result consumption"
+      },
+      "material_contribution": {
+        "frequency": 16,
+        "value": 128,
+        "unit": "indexed-tile-work-item",
+        "budget": 5,
+        "denominator": "one four-worker finite batch replay",
+        "derivation": "Current Graph range work and llama.cpp/ggml finite graph episodes require batch-level completion with caller-owned results rather than one independently owned future per work item"
+      },
+      "semantic_contract": "Execute every indexed non-suspending tile exactly once, write every caller-owned result slot and synchronously quiesce each finite batch without per-item result/control ownership",
+      "comparability": "COMPARABLE",
+      "peer_id": "marl",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "fixed deterministic 1024-element uint64 tile with one seed per indexed item",
+        "scale": {"workers": 4, "batches": 16, "items_per_batch": 128, "items": 2048, "tile_elements": 1024}
+      },
+      "setup": "Provider construction, worker pinning, input/result allocation, expected checksum, root admission and one complete warmup batch are outside measurement",
+      "charged_phases": [
+        "batch admission and dispatch/stealing",
+        "1024-element deterministic tile for every indexed item",
+        "caller-owned result-slot publication",
+        "whole-batch completion and exact result consumption"
+      ],
+      "pair": {"candidate": "HYLE bulk_execute", "peer": "Marl Task plus WaitGroup batch"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["marl-candidate-first", "marl-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    },
+    {
+      "id": "batch-structured-onetbb",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-foundation/sched/batch-structured/onetbb",
+      "provenance": {
+        "path": "bench/sched/consumer_shapes_v4.json",
+        "sha256": "613bc590b452c2718853fdb884bc041ea56018a74f41e7a77bd7ed6b09a837b5"
+      },
+      "ownership_topology": {
+        "candidate": "One admitted HYLE root Fiber calls bulk_execute for each batch, claims unit indices itself and activates at most three sibling runners; all participants write caller-owned slots and share one batch completion/error/cancel state",
+        "peer": "One enqueued oneTBB arena root invokes synchronous parallel_for with unit grain; provider tasks write the same caller-owned slots and return only after the whole range completes",
+        "equivalence": "Both run 16 batches of 128 non-suspending 1024-element tiles under a four-worker ceiling on the same pinned cores; setup/root admission are excluded, all bodies succeed, cancellation is dormant, the external role never computes a tile, and each batch is quiescent before result consumption"
+      },
+      "material_contribution": {
+        "frequency": 16,
+        "value": 128,
+        "unit": "indexed-tile-work-item",
+        "budget": 5,
+        "denominator": "one four-worker finite batch replay",
+        "derivation": "oneTBB parallel_for is the mature general C++ finite-range route matching the Graph/tile consumer contract; provider-internal partitioning is an implementation choice rather than an API semantic difference"
+      },
+      "semantic_contract": "Execute every indexed non-suspending tile exactly once, write every caller-owned result slot and synchronously quiesce each finite batch without per-item result/control ownership",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "fixed deterministic 1024-element uint64 tile with one seed per indexed item",
+        "scale": {"workers": 4, "batches": 16, "items_per_batch": 128, "items": 2048, "tile_elements": 1024}
+      },
+      "setup": "Provider construction, worker pinning, input/result allocation, expected checksum, root admission and one complete warmup batch are outside measurement",
+      "charged_phases": [
+        "batch admission and provider partition/dispatch",
+        "1024-element deterministic tile for every indexed item",
+        "caller-owned result-slot publication",
+        "whole-batch completion and exact result consumption"
+      ],
+      "pair": {"candidate": "HYLE bulk_execute", "peer": "oneTBB parallel_for unit-grain batch"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["onetbb-candidate-first", "onetbb-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "measurement_adapter": "structured-paired-process-v1",
+      "sampling_topology": "n-worker-physical-cores",
+      "sampling_worker_count": 4,
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_MARL": "ON",
+          "HYLE_BENCH_TBB": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "sched",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"marl": "HYLE_MARL_DIR", "onetbb": "HYLE_TBB_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "sched-batch-candidate-marl",
+          "target": "hyle_sched_bulk_p1_candidate_marl_bench",
+          "stem": "hyle_sched_bulk_p1_candidate_marl_bench",
+          "target_variant": "marl",
+          "measurement_batch": 256,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "batch-structured-marl", "row_id": "batch-structured"}]
+        },
+        {
+          "id": "sched-batch-marl",
+          "target": "hyle_sched_bulk_p1_marl_bench",
+          "stem": "hyle_sched_bulk_p1_marl_bench",
+          "target_variant": "marl",
+          "measurement_batch": 256,
+          "pair_role": "peer",
+          "peer_id": "marl",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "batch-structured-marl", "row_id": "batch-structured"}]
+        },
+        {
+          "id": "sched-batch-candidate-onetbb",
+          "target": "hyle_sched_bulk_p1_candidate_tbb_bench",
+          "stem": "hyle_sched_bulk_p1_candidate_tbb_bench",
+          "target_variant": "onetbb",
+          "measurement_batch": 256,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "batch-structured-onetbb", "row_id": "batch-structured"}]
+        },
+        {
+          "id": "sched-batch-onetbb",
+          "target": "hyle_sched_bulk_p1_tbb_bench",
+          "stem": "hyle_sched_bulk_p1_tbb_bench",
+          "target_variant": "onetbb",
+          "measurement_batch": 256,
+          "pair_role": "peer",
+          "peer_id": "onetbb",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "batch-structured-onetbb", "row_id": "batch-structured"}]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": [],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}
+
+
+
+
