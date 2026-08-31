@@ -144,6 +144,21 @@ if(HYLE_BENCH_MARL)
   target_link_libraries(hyle_sched_marl_bench PRIVATE hyle_sched nanobench
                                                         ${_hyle_bench_marl_target})
   hyle_apply_warnings(hyle_sched_marl_bench)
+
+  # sched-v1 P1 closure evidence. Keep candidate and peer in separate
+  # executables so neither product changes the other's layout or link graph.
+  # The shared instrument launches both under the same four-physical-core
+  # policy and owns pairing, calibration and statistical verdicts.
+  if(WIN32)
+    add_executable(hyle_sched_p1_candidate_bench p1_candidate_bench.cc)
+    target_link_libraries(hyle_sched_p1_candidate_bench PRIVATE hyle_sched)
+    hyle_apply_warnings(hyle_sched_p1_candidate_bench)
+
+    add_executable(hyle_sched_p1_peer_bench p1_peer_bench.cc)
+    target_link_libraries(hyle_sched_p1_peer_bench PRIVATE
+      ${_hyle_bench_marl_target})
+    hyle_apply_warnings(hyle_sched_p1_peer_bench)
+  endif()
   # sched-11 blocking_bench's marl comparison row (marl::blocking_call = new-thread-
   # per-call; the HYLE-pool-vs-marl-new-thread head-to-head). Same gate; links marl.
   if(TARGET hyle_sched_blocking_bench)
@@ -152,6 +167,10 @@ if(HYLE_BENCH_MARL)
       ${_hyle_bench_marl_target})
   endif()
   hyle_register_benches(sched hyle_sched_marl_bench)
+  if(TARGET hyle_sched_p1_candidate_bench)
+    hyle_register_benches(sched
+      hyle_sched_p1_candidate_bench hyle_sched_p1_peer_bench)
+  endif()
 endif()
 
 hyle_register_benches(sched

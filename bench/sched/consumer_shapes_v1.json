@@ -1,0 +1,87 @@
+{
+  "schema": "hyle.sched.consumer-shapes/v1",
+  "owner": "sched-v1",
+  "candidate_product_commit": "9f24714190c7247abe46a4f030f27a60101fe90d",
+  "candidate_product_tree": "01f20256f201a366bc094a078e2348dee670bb89",
+  "journeys": [
+    {
+      "id": "request-fanout-collect",
+      "consumer": "direct-source inference or service runtime",
+      "topology": "one external producer submits 16384 short request tiles to four pinned scheduler workers; every callback polls one shared cancellation source, computes a 64-element deterministic tile and publishes one result through a bounded channel",
+      "ownership": "the caller owns immutable input, callback records, cancellation root and result drain; the scheduler owns only admitted callback execution; the channel owns exactly one result per admitted callback",
+      "charged_phases": [
+        "external scheduler admission and worker dispatch",
+        "O(1) cooperative-cancellation poll",
+        "64-element tile compute",
+        "bounded channel publication and caller collection",
+        "WaitGroup completion"
+      ],
+      "sources": [
+        {
+          "path": "samples/package/sched/cpp/main.cc",
+          "sha256": "234f1b9105e7d1beac13754c446a69136746affd9e0be9fc4d099317d2a9e558"
+        }
+      ],
+      "reason": "This is the ordinary short-work route exposed by the installed sched journey; nonzero tile work prevents a zero-callback benchmark from defining product shape."
+    },
+    {
+      "id": "structured-spawn-join",
+      "consumer": "graph or inference execution layer",
+      "topology": "one admitted root fiber runs 16 batches that each fan out 128 typed tasks over four workers; each task computes a 1024-element tile, and the root waits for the whole dynamic span and consumes every typed result",
+      "ownership": "the caller owns immutable input and the root-lifetime acknowledgement; the root fiber owns dynamic JoinHandles/results; each scheduler task owns its coroutine frame and recycled guarded fiber stack until completion",
+      "charged_phases": [
+        "typed task and JoinHandle construction",
+        "scheduler admission, dispatch and stealing",
+        "1024-element tile compute",
+        "dynamic when_all and typed result join",
+        "task/frame/stack lifecycle completion"
+      ],
+      "sources": [
+        {
+          "path": "src/graph/parallel_eval.cc",
+          "sha256": "5a4888eab4a46f670f81f8a112587cc5c2f5b0872592b5b132f1a2e8ee0f7fb4"
+        }
+      ],
+      "downstream_status": "Graph remains QUEUED; this file is provenance for the sched API shape only and grants no Graph verdict.",
+      "reason": "The current Graph consumer already runs spawn_task and fan-out completion from a scheduler fiber and floors automatic grains at 1024 elements. The replay retains that structure while keeping graph algorithms outside sched."
+    },
+    {
+      "id": "completion-wake",
+      "consumer": "IO, timer or GPU completion source",
+      "topology": "one external completion role drives 4096 episodes; each episode wakes one persistent suspended fiber on each of four pinned workers, blocks for all four acknowledgements without burning a fifth execution role, and then advances",
+      "ownership": "each fiber owns and republishes one fresh HYLE Waker per episode; the external source borrows it only through wake(); pinned worker ownership survives suspension and reinjection",
+      "charged_phases": [
+        "fresh wait-episode publication",
+        "external cross-thread wake",
+        "scheduler reinjection and worker unpark",
+        "fiber resume and completion acknowledgement"
+      ],
+      "sources": [
+        {
+          "path": "src/io/proactor.cc",
+          "sha256": "a40a3ed7a9c6624b5a1e380faedc6ee5c745898dd0fa2fc4db7e13c53d1fd519"
+        },
+        {
+          "path": "src/compute/gpu_poller.cc",
+          "sha256": "e72ecf0b225be05761be293cd4292180d91a2196f55995bc3ccf2b884d0605e4"
+        },
+        {
+          "path": "include/hyle/io/net.h",
+          "sha256": "5aa84d5ca1aec13357cec80c64bac07959973bc4867cf25cf1b4cfc8d14ca38d"
+        }
+      ],
+      "downstream_status": "IO is not closed by this evidence; Compute remains QUEUED. These sources prove only the common sched completion contract.",
+      "reason": "IO and GPU polling already converge on Waker::wake(); a persistent multi-episode replay measures the normal completion spine instead of fiber construction."
+    }
+  ],
+  "peer_contract": {
+    "scheduler": "Marl b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+    "cancellation_submechanism": "C++23 std::stop_token from the same MSVC toolchain",
+    "equivalence": "Candidate and peer use separate processes, the same four physical cores, identical input/tile/count/accounting, persistent scheduler lifetimes and setup exclusions. Marl owns peer scheduling, fiber wait/wake, WaitGroup and channel lock/notification composition; std::stop_token supplies the standard O(1) cancellation poll Marl does not define."
+  },
+  "negative_space": {
+    "zero_work": "Historical zero/noop task results remain diagnostic API-cost facts and do not gate the normal nonzero consumer replays.",
+    "specialized_spmd": "ggml-style caller-participating graph execution, pause/resume and chunk policy belong to Graph/Compute or a future inference runtime.",
+    "downstream_closure": "Building IO, Compute or Graph against sched proves compatibility only; it does not validate their functionality or performance."
+  }
+}
