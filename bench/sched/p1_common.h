@@ -251,12 +251,12 @@ inline void print_measurement(const char* row_id, double operations_per_second,
 
   const auto observed = affinity.observed_snapshot();
   std::printf(
-      "{\"record\":\"hyle_perf_structured_measurement\"," 
-      "\"schema\":\"hyle.perf.structured-measurement/v1\"," 
-      "\"row_id\":\"%s\",\"value\":%.9f,\"worker_count\":%zu," 
-      "\"work_items_per_worker\":%llu,\"work_item_count\":%llu," 
-      "\"fanout\":%llu,\"callback_count\":%llu," 
-      "\"expected_callback_count\":%llu,\"affinity_ok\":true," 
+      "{\"record\":\"hyle_perf_structured_measurement\","
+      "\"schema\":\"hyle.perf.structured-measurement/v1\","
+      "\"row_id\":\"%s\",\"value\":%.9f,\"worker_count\":%zu,"
+      "\"work_items_per_worker\":%llu,\"work_item_count\":%llu,"
+      "\"fanout\":%llu,\"callback_count\":%llu,"
+      "\"expected_callback_count\":%llu,\"affinity_ok\":true,"
       "\"requested_logical_cpus\":",
       row_id, operations_per_second, kWorkerCount,
       static_cast<unsigned long long>(work_items / kWorkerCount),
@@ -270,7 +270,7 @@ inline void print_measurement(const char* row_id, double operations_per_second,
   std::printf(",\"worker_singleton_masks\":");
   print_json_singleton_masks(affinity.requested);
   std::printf(
-      ",\"diagnostics\":{\"elapsed_ns\":%.3f,\"checksum\":%llu," 
+      ",\"diagnostics\":{\"elapsed_ns\":%.3f,\"checksum\":%llu,"
       "\"active_workers\":%zu,\"worker_callbacks\":%llu}}\n",
       wall_ns, static_cast<unsigned long long>(checksum), hits.active(),
       static_cast<unsigned long long>(hits.total()));
