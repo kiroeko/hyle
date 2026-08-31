@@ -210,9 +210,11 @@
 - SCHED-FIX-07 API/文档与 source journey 实现批：architecture 已从旧 ticket/点值叙事收敛为长期
   runtime、任务、wake、placement、lifetime、依赖和复杂度决策；新增场景化 C++ 用户指南，覆盖
   schedule/detached/task/blocking、取消/shutdown、同步/消息 ownership 与常见陷阱；公开头移除过期
-  milestone 叙事，`samples/03_sched_fibers` 改走默认栈和 owning lambda 正常入口。独立 Windows shared
-  `add_subdirectory` consumer 从零 configure/build/run 成功（100 fibers、500 steps）；installed
-  static/shared journey 仍待 candidate gate，未在此批伪写通过。
+  milestone 叙事，`samples/03_sched_fibers` 改走默认栈和 owning lambda 正常入口。新增的独立 package
+  consumer 实际覆盖 callback、Fiber yield、typed sleep、Task/join、Channel 与 BlockingPool；Windows
+  selected-component smoke 的 source embedding、搬迁后 installed shared 和搬迁后 installed static
+  configure/build/run 全部通过。最终 candidate 若不再改变产品 tree，可继承该批 delivery 证据；若改变
+  公开头、依赖或 artifact 则必须重跑。
 
 上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。
