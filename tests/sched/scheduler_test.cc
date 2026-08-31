@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <span>
 #include <thread>
 #include <vector>
 
@@ -24,6 +25,7 @@ using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
+using hyle::sched::SchedulerIdlePolicy;
 using hyle::sched::SchedulerOptions;
 using hyle::sched::Waker;
 using hyle::platform::CpuOrder;
@@ -34,6 +36,23 @@ void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
 void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
+}
+
+struct WorkerHookProbe {
+  std::atomic<unsigned> starts[4]{};
+  std::atomic<unsigned> stops[4]{};
+};
+
+void worker_start_hook(void* raw, unsigned worker) noexcept {
+  auto* probe = static_cast<WorkerHookProbe*>(raw);
+  if (worker < 4)
+    probe->starts[worker].fetch_add(1, std::memory_order_relaxed);
+}
+
+void worker_stop_hook(void* raw, unsigned worker) noexcept {
+  auto* probe = static_cast<WorkerHookProbe*>(raw);
+  if (worker < 4)
+    probe->stops[worker].fetch_add(1, std::memory_order_relaxed);
 }
 
 // A fiber body that yields `yields` times, bumping a shared atomic each segment.
@@ -113,6 +132,13 @@ TEST(Scheduler, RecoverableConstructionRejectsInvalidShape) {
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(invalid_order.valid());
 
+  unsigned cpu = 0;
+  invalid_options.worker_cpu_set = std::span<const unsigned>(&cpu, 1);
+  Scheduler conflicting_placement(2, system_allocator(), 64,
+                                  invalid_options, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(conflicting_placement.valid());
+
   invalid_options = {};
   invalid_options.worker_priority =
       static_cast<hyle::platform::ThreadPriority>(127);
@@ -120,6 +146,21 @@ TEST(Scheduler, RecoverableConstructionRejectsInvalidShape) {
                              &status);
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(invalid_priority.valid());
+
+  invalid_options = {};
+  invalid_options.worker_config_policy =
+      static_cast<hyle::platform::ThreadConfigPolicy>(255);
+  Scheduler invalid_config_policy(1, system_allocator(), 64, invalid_options,
+                                  &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(invalid_config_policy.valid());
+
+  invalid_options = {};
+  invalid_options.idle_policy = static_cast<SchedulerIdlePolicy>(255);
+  Scheduler invalid_idle_policy(1, system_allocator(), 64, invalid_options,
+                                &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(invalid_idle_policy.valid());
 }
 
 TEST(Scheduler, WorkerCpuOrderIsAnExplicitConstructionPreference) {
@@ -150,6 +191,47 @@ TEST(Scheduler, PerformanceFirstPinsFirstWorkerToPreferredCpu) {
   scheduler.drain();
   EXPECT_EQ(observed.load(std::memory_order_acquire), expected);
 #endif
+}
+
+TEST(Scheduler, RequiredInvalidCpuPlacementIsRecoverable) {
+  const unsigned invalid_cpu = ~0u;
+  SchedulerOptions options;
+  options.worker_cpu_set = std::span<const unsigned>(&invalid_cpu, 1);
+  options.worker_config_policy =
+      hyle::platform::ThreadConfigPolicy::kRequired;
+  hyle::Status status;
+  Scheduler scheduler(1, system_allocator(), 64, options, &status);
+  EXPECT_FALSE(status.ok());
+  EXPECT_FALSE(scheduler.valid());
+}
+
+TEST(Scheduler, IdlePoliciesAndWorkerLifecycleHooksAreOperational) {
+  for (SchedulerIdlePolicy policy : {SchedulerIdlePolicy::kBalanced,
+                                     SchedulerIdlePolicy::kLowLatency,
+                                     SchedulerIdlePolicy::kPowerSaving}) {
+    WorkerHookProbe probe;
+    SchedulerOptions options;
+    options.idle_policy = policy;
+    options.on_worker_start = &worker_start_hook;
+    options.on_worker_stop = &worker_stop_hook;
+    options.worker_hook_context = &probe;
+    std::atomic<unsigned> ran{0};
+    {
+      Scheduler scheduler(4, system_allocator(), 64, options);
+      ASSERT_TRUE(scheduler.schedule(
+          +[](void* raw) noexcept {
+            static_cast<std::atomic<unsigned>*>(raw)->fetch_add(
+                1, std::memory_order_relaxed);
+          },
+          &ran).ok());
+      scheduler.shutdown();
+    }
+    EXPECT_EQ(ran.load(std::memory_order_relaxed), 1u);
+    for (unsigned worker = 0; worker < 4; ++worker) {
+      EXPECT_EQ(probe.starts[worker].load(std::memory_order_relaxed), 1u);
+      EXPECT_EQ(probe.stops[worker].load(std::memory_order_relaxed), 1u);
+    }
+  }
 }
 
 TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {

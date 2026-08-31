@@ -7,7 +7,7 @@
 > verdict。当前机械状态只看 [`module-status.json`](../../module-status.json)。进入 `AUDITED` 并冻结有限
 > `FIX` 集前，不修改 sched 产品实现。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v1`；
 - task kind：`REFACTOR`；baseline commit：
@@ -173,7 +173,20 @@
 
 ## Candidate
 
-尚未产生；`AUDITED` 已冻结 SCHED-FIX-01--08，下一步才允许修改产品实现。
+尚未冻结完整 candidate；`AUDITED` 已冻结 SCHED-FIX-01--08，当前只按该集合实施。已完成但仍须随
+最终 candidate 做跨平台、sanitizer、交付和红队复签的批次如下：
+
+- SCHED-FIX-01 实现批：取消 token 改为可共享、tree control path 跨线程串行化，保留 O(1) atomic
+  `is_cancelled()`；新增 recoverable OOM；嵌套 cancel source 与 `JoinHandle::abort` 组合；Fiber 禁止启动后
+  move。Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.21s）；
+- SCHED-FIX-02 与 SCHED-FIX-06 allocator 子项实现批：默认 Scheduler 不再隐式硬绑 CPU；显式 ordered
+  CPU/CPU-id set、best-effort/required、balanced/low-latency/power-saving idle policy 和 worker lifecycle
+  hooks 已进入 public C++ shape；Scheduler Pimpl、Worker 与 allocator-aware bookkeeping 使用注入的
+  `mem::Allocator`。invalid option、strict placement、三种 idle policy 与 hook lifecycle 已补边界测试；
+  Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.17s）。
+
+上述单测是实现批回归，不是 SCHED-FIX-01/02/06 的 terminal `PASS`，也没有把尚未运行的 Linux
+CPU-set 语义、TSan/ASan 或三交付写成通过。
 
 ## Verification manifest
 

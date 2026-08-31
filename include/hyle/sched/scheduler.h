@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <span>
 
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
@@ -28,13 +30,38 @@ class Fiber;
 class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
 HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
+enum class SchedulerIdlePolicy : std::uint8_t {
+  kBalanced = 0,
+  kLowLatency = 1,
+  kPowerSaving = 2,
+};
+
+using SchedulerWorkerHook = void (*)(void* context,
+                                     unsigned worker_index) noexcept;
+
 struct SchedulerOptions {
-  // A preference, not a hard filter: all process-available CPUs remain usable.
-  // It only changes which CPUs lower-index workers are pinned to first.
-  platform::CpuOrder worker_cpu_order = platform::CpuOrder::kOsDefault;
+  // Default is deliberately unpinned so an embedded scheduler composes with a
+  // host runtime. Set worker_cpu_order to select and pin process-available CPUs,
+  // or provide an explicit ordered CPU set. The set is copied synchronously by
+  // Scheduler construction; its backing only needs to outlive the constructor.
+  std::optional<platform::CpuOrder> worker_cpu_order;
+  std::span<const unsigned> worker_cpu_set;
+  // kRequired turns an invalid/unavailable requested name, affinity or priority
+  // into construction failure. Best-effort is portable (notably on macOS).
+  platform::ThreadConfigPolicy worker_config_policy =
+      platform::ThreadConfigPolicy::kBestEffort;
   // Optional OS scheduling preference. On macOS this maps to QoS and is the
   // portable way to request performance-oriented placement without fake pins.
   std::optional<platform::ThreadPriority> worker_priority;
+  // Semantic latency/energy choice. Balanced preserves the normal bounded
+  // search; LowLatency spins longer before parking; PowerSaving parks directly.
+  SchedulerIdlePolicy idle_policy = SchedulerIdlePolicy::kBalanced;
+  // Cold lifecycle hooks for backend TLS, scratch arenas or profiler setup.
+  // They run on each worker after scheduler TLS is installed and immediately
+  // before it is removed. Hooks must not throw or block shutdown indefinitely.
+  SchedulerWorkerHook on_worker_start = nullptr;
+  SchedulerWorkerHook on_worker_stop = nullptr;
+  void* worker_hook_context = nullptr;
 };
 
 // M:N work-stealing scheduler: N OS-thread workers, each with its own FIFO local

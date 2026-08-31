@@ -6,7 +6,6 @@
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
-#include <memory>
 #include <mutex>
 #include <new>
 #include <stdexcept>
@@ -20,6 +19,7 @@
 #include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/fiber_stack.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/obs/trace.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
@@ -154,8 +154,9 @@ struct ReadyOverflow {
 // searcher exists. This spin then just keeps the searcher warm to catch the next
 // item before the (now rare) park, and bridges sub-µs producer gaps. cpu_relax,
 // no syscall. (Prior comment said §2.3 ②③ were deferred -- they are now done.)
-constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
-constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
+constexpr int kBalancedSpinPolls = 4096;
+constexpr int kBalancedYieldsBeforePark = 4;
+constexpr int kLowLatencySpinPolls = 32768;
 
 // Cap on consecutive LIFO-slot polls before the slot's fiber is demoted to the
 // local FIFO ring, so a hot ping-pong / RPC pair can't monopolize the worker and
@@ -187,7 +188,7 @@ constexpr int kInlineBatch = 8;
 struct Scheduler::Impl {
   struct Worker {
     container::WsFifoQueue<Fiber*, mem::Allocator> local;
-    platform::Parker parker;  // non-movable -> Worker lives in a unique_ptr
+    platform::Parker parker;  // non-movable -> Worker has a stable allocation
     // Per-worker timing queue (sched-04b). Owned and touched ONLY by this worker
     // thread on its park cold path -> no lock needed. Sleeping fibers arm here;
     // the worker advances it before parking and fires due timers into the run
@@ -231,7 +232,8 @@ struct Scheduler::Impl {
     // invalidate the worker-only cursors above it.
     alignas(core::kMaxDestructiveInterferenceSize)
         std::atomic<std::uint64_t> inline_outstanding{0};
-    Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
+    Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed,
+           unsigned i) noexcept
         : local(a, cap),
           timers(time::monotonic_ns()),
           pinned(a, cap),
@@ -265,9 +267,9 @@ struct Scheduler::Impl {
   // pair per tiny task.
   container::ShardedQueue<InlineJob, mem::Allocator> inline_jobs;
   mem::Allocator allocator;
-  std::vector<std::unique_ptr<Worker>> workers;
-  std::vector<Ctx> ctxs;
-  std::vector<platform::Thread> threads;
+  std::vector<Worker*, mem::StdAllocator<Worker*>> workers;
+  std::vector<Ctx, mem::StdAllocator<Ctx>> ctxs;
+  std::vector<platform::Thread, mem::StdAllocator<platform::Thread>> threads;
   std::atomic<bool> stop{false};
   // Fiber admission and its in-flight count share one linearizable state.
   // Separate `accepting` + a fiber count previously allowed this execution:
@@ -338,7 +340,7 @@ struct Scheduler::Impl {
   Status init_status;
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
-  std::vector<unsigned> sleepers;  // ids of currently-parked workers (compact stack)
+  std::vector<unsigned, mem::StdAllocator<unsigned>> sleepers;
   // Per-worker position in `sleepers` (or kNotSleeping), so remove_sleeper is O(1)
   // instead of an O(worker-count) scan (complexity opportunity ②). HYLE calls
   // remove_sleeper on EVERY park exit (unlike tokio, which only scans on the rare
@@ -348,7 +350,7 @@ struct Scheduler::Impl {
   // remove_sleeper) keep this in sync; a swap-remove updates the moved id's slot.
   // Guarded by idle_mu (same lock as `sleepers`) -- no new atomics.
   static constexpr std::size_t kNotSleeping = static_cast<std::size_t>(-1);
-  std::vector<std::size_t> sleeper_pos;  // size n; index into `sleepers` or kNotSleeping
+  std::vector<std::size_t, mem::StdAllocator<std::size_t>> sleeper_pos;
   // Count of workers currently SEARCHING for work (spinning/stealing, not yet
   // parked). The §2.3 ②③ anti-herd gate: a producer skips waking a parked worker
   // when a searcher already exists (it will find the new work), killing the
@@ -361,25 +363,95 @@ struct Scheduler::Impl {
   std::atomic<std::size_t> inject_rr_{0};
   unsigned n;
   Scheduler* owner;  // for tls_owner / current_waker()
+  int spin_polls = kBalancedSpinPolls;
+  int yields_before_park = kBalancedYieldsBeforePark;
+  SchedulerWorkerHook on_worker_start = nullptr;
+  SchedulerWorkerHook on_worker_stop = nullptr;
+  void* worker_hook_context = nullptr;
 
   Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap,
-       platform::CpuOrder cpu_order,
-       std::optional<platform::ThreadPriority> worker_priority,
+       SchedulerOptions options,
        Scheduler* sched)
       : global(alloc, num_workers, cap),
         inline_jobs(alloc, num_workers, cap < 256 ? cap : 256),
         allocator(alloc),
+        workers(mem::StdAllocator<Worker*>(alloc)),
+        ctxs(mem::StdAllocator<Ctx>(alloc)),
+        threads(mem::StdAllocator<platform::Thread>(alloc)),
+        sleepers(mem::StdAllocator<unsigned>(alloc)),
+        sleeper_pos(mem::StdAllocator<std::size_t>(alloc)),
         n(num_workers),
-        owner(sched) {
+        owner(sched),
+        on_worker_start(options.on_worker_start),
+        on_worker_stop(options.on_worker_stop),
+        worker_hook_context(options.worker_hook_context) {
     HYLE_FATAL_ASSERT(num_workers >= 1);
+    switch (options.idle_policy) {
+      case SchedulerIdlePolicy::kBalanced:
+        spin_polls = kBalancedSpinPolls;
+        yields_before_park = kBalancedYieldsBeforePark;
+        break;
+      case SchedulerIdlePolicy::kLowLatency:
+        spin_polls = kLowLatencySpinPolls;
+        yields_before_park = kBalancedYieldsBeforePark;
+        break;
+      case SchedulerIdlePolicy::kPowerSaving:
+        spin_polls = 0;
+        yields_before_park = 0;
+        break;
+    }
     sleeper_pos.assign(num_workers, kNotSleeping);  // O(1) sleeper-set bookkeeping
     workers.reserve(num_workers);
     ctxs.reserve(num_workers);
     threads.reserve(num_workers);
+    // Default construction is deliberately unrestricted: an embedded runtime
+    // must not silently replace its host's placement policy. Affinity ids are OS
+    // ids, not dense worker ordinals. Linux cpusets can be sparse (for example
+    // {4, 6}); Windows ids flatten processor groups. Only an explicit CPU set or
+    // ordering request enters this path. If there are fewer CPUs than workers,
+    // round-robin is an honest, deterministic oversubscription policy. Resolve
+    // this allocator-backed temporary before constructing raw Worker records so
+    // a vector allocation exception cannot strand those records.
+    std::vector<unsigned, mem::StdAllocator<unsigned>> worker_cpus{
+        mem::StdAllocator<unsigned>(alloc)};
+    if (!options.worker_cpu_set.empty()) {
+      worker_cpus.assign(options.worker_cpu_set.begin(),
+                         options.worker_cpu_set.end());
+    } else if (options.worker_cpu_order.has_value()) {
+      worker_cpus.resize(num_workers);
+      auto available = platform::available_cpu_ids(
+          *options.worker_cpu_order, worker_cpus.data(), worker_cpus.size());
+      if (!available) {
+        if (options.worker_config_policy ==
+            platform::ThreadConfigPolicy::kRequired) {
+          init_status = std::move(available).error().WithContext(
+              "scheduler worker CPU discovery");
+          return;
+        }
+        worker_cpus.clear();
+      } else {
+        worker_cpus.resize(
+            std::min<std::size_t>(*available, worker_cpus.size()));
+        if (worker_cpus.empty() &&
+            options.worker_config_policy ==
+                platform::ThreadConfigPolicy::kRequired) {
+          init_status = Status::Unavailable(
+              "scheduler worker CPU discovery returned no available CPU");
+          return;
+        }
+      }
+    }
     for (unsigned i = 0; i < num_workers; ++i) {
-      workers.push_back(std::make_unique<Worker>(
-          alloc, cap, 0x9e3779b97f4a7c15ull ^ (static_cast<std::uint64_t>(i) + 1),
-          i));
+      void* storage = allocator.allocate(sizeof(Worker), alignof(Worker));
+      if (storage == nullptr) {
+        init_status =
+            Status::ResourceExhausted("scheduler worker allocation failed");
+        return;
+      }
+      Worker* worker = new (storage) Worker(
+          alloc, cap,
+          0x9e3779b97f4a7c15ull ^ (static_cast<std::uint64_t>(i) + 1), i);
+      workers.push_back(worker);
       ctxs.push_back(Ctx{this, i});
     }
     if (!global.valid() || !inline_jobs.valid()) {
@@ -394,29 +466,19 @@ struct Scheduler::Impl {
         return;
       }
     }
-    // Affinity ids are OS ids, not dense worker ordinals. Linux cpusets can be
-    // sparse (for example {4, 6}); Windows ids flatten processor groups. Keep
-    // placement a sched policy, but consume the platform process view exactly.
-    std::vector<unsigned> available_cpus(num_workers);
-    auto available = platform::available_cpu_ids(
-        cpu_order, available_cpus.data(), available_cpus.size());
-    const std::size_t pin_count =
-        available ? std::min<std::size_t>(*available, available_cpus.size()) : 0;
     for (unsigned i = 0; i < num_workers; ++i) {
-      // Pin one-to-one while a real process-available id exists. Explicit
-      // over-subscription leaves surplus workers movable instead of pretending
-      // worker ordinal i is a valid CPU. Placement remains best-effort so a
-      // runtime affinity change cannot make the scheduler unusable.
       platform::ThreadOpts opts;
-      if (i < pin_count) opts.affinity = available_cpus[i];
-      opts.priority = worker_priority;
+      if (!worker_cpus.empty())
+        opts.affinity = worker_cpus[i % worker_cpus.size()];
+      opts.priority = options.worker_priority;
+      opts.config_policy = options.worker_config_policy;
       char wname[24];
       std::snprintf(wname, sizeof(wname), "hyle-wkr-%u", i);
       opts.name = wname;  // string_view; spawn() copies it synchronously (make_start)
       auto r = platform::Thread::spawn(&Impl::worker_main, &ctxs[i], opts);
       if (!r.has_value()) {
-        init_status =
-            Status::Unavailable("scheduler worker thread creation failed");
+        init_status = std::move(r).error().WithContext(
+            "scheduler worker thread creation");
         stop.store(true, std::memory_order_release);
         for (std::size_t j = 0; j < threads.size(); ++j)
           wake_worker(static_cast<unsigned>(j));
@@ -427,6 +489,18 @@ struct Scheduler::Impl {
         return;
       }
       threads.push_back(std::move(*r));
+    }
+  }
+
+  ~Impl() {
+    HYLE_FATAL_ASSERT(threads.empty() ||
+                      std::all_of(threads.begin(), threads.end(),
+                                  [](const platform::Thread& thread) {
+                                    return !thread.joinable();
+                                  }));
+    for (Worker* worker : workers) {
+      worker->~Worker();
+      allocator.deallocate(worker, sizeof(Worker), alignof(Worker));
     }
   }
 
@@ -851,6 +925,7 @@ struct Scheduler::Impl {
     tls_worker_idx = static_cast<int>(idx);  // publish for current_worker_index()
     Worker& w = *workers[idx];
     tls_timer_queue = &w.timers;  // publish for sleep_*_ns (this worker only)
+    if (on_worker_start != nullptr) on_worker_start(worker_hook_context, idx);
 
     while (!stop.load(std::memory_order_acquire)) {
       // Fire this worker's due sleep timers FIRST (cheap queue.empty() gate when
@@ -890,7 +965,7 @@ struct Scheduler::Impl {
       num_searching_.fetch_add(1, std::memory_order_relaxed);
       bool got = false;
       bool ran_inline = false;
-      for (int spin = 0; spin < kSpinPolls && !got; ++spin) {
+      for (int spin = 0; spin < spin_polls && !got; ++spin) {
         util::cpu_relax();
         if (run_inline(w)) {
           ran_inline = true;
@@ -900,7 +975,7 @@ struct Scheduler::Impl {
           if (f != nullptr) got = true;
         }
       }
-      for (int y = 0; y < kYieldsBeforePark && !got; ++y) {
+      for (int y = 0; y < yields_before_park && !got; ++y) {
         platform::this_thread::yield();
         if (run_inline(w)) {
           ran_inline = true;
@@ -991,10 +1066,12 @@ struct Scheduler::Impl {
       remove_sleeper(idx);  // idempotent: a notifier may have popped us already
     }
 
+    if (on_worker_stop != nullptr) on_worker_stop(worker_hook_context, idx);
     t_current = nullptr;
     t_worker_idx = -1;
     tls_timer_queue = nullptr;
     tls_worker_idx = -1;
+    tls_owner = nullptr;
   }
 
   bool try_admit() noexcept {
@@ -1263,16 +1340,37 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
         "scheduler worker count must be in [1, 1024]");
     return;
   }
-  if (options.worker_cpu_order != platform::CpuOrder::kOsDefault &&
-      options.worker_cpu_order != platform::CpuOrder::kPerformanceFirst &&
-      options.worker_cpu_order != platform::CpuOrder::kEfficiencyFirst) {
+  if (options.worker_cpu_order.has_value() &&
+      *options.worker_cpu_order != platform::CpuOrder::kOsDefault &&
+      *options.worker_cpu_order != platform::CpuOrder::kPerformanceFirst &&
+      *options.worker_cpu_order != platform::CpuOrder::kEfficiencyFirst) {
     *status = Status::InvalidArgument("scheduler worker CPU order is invalid");
+    return;
+  }
+  if (options.worker_cpu_order.has_value() &&
+      !options.worker_cpu_set.empty()) {
+    *status = Status::InvalidArgument(
+        "scheduler accepts either a worker CPU order or an explicit CPU set");
+    return;
+  }
+  if (options.worker_config_policy !=
+          platform::ThreadConfigPolicy::kBestEffort &&
+      options.worker_config_policy !=
+          platform::ThreadConfigPolicy::kRequired) {
+    *status = Status::InvalidArgument(
+        "scheduler worker configuration policy is invalid");
     return;
   }
   if (options.worker_priority &&
       (*options.worker_priority < platform::ThreadPriority::kLowest ||
        *options.worker_priority > platform::ThreadPriority::kHighest)) {
     *status = Status::InvalidArgument("scheduler worker priority is invalid");
+    return;
+  }
+  if (options.idle_policy != SchedulerIdlePolicy::kBalanced &&
+      options.idle_policy != SchedulerIdlePolicy::kLowLatency &&
+      options.idle_policy != SchedulerIdlePolicy::kPowerSaving) {
+    *status = Status::InvalidArgument("scheduler idle policy is invalid");
     return;
   }
   if (queue_capacity < 2 || queue_capacity > (std::size_t{1} << 31) ||
@@ -1282,18 +1380,24 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
     return;
   }
   try {
-    Impl* candidate =
-        new (std::nothrow) Impl(num_workers, alloc, queue_capacity,
-                                options.worker_cpu_order,
-                                options.worker_priority, this);
-    if (candidate == nullptr) {
+    void* storage = alloc.allocate(sizeof(Impl), alignof(Impl));
+    if (storage == nullptr) {
       *status = Status::ResourceExhausted(
           "scheduler implementation allocation failed");
       return;
     }
+    Impl* candidate = nullptr;
+    try {
+      candidate =
+          new (storage) Impl(num_workers, alloc, queue_capacity, options, this);
+    } catch (...) {
+      alloc.deallocate(storage, sizeof(Impl), alignof(Impl));
+      throw;
+    }
     if (!candidate->init_status.ok()) {
       *status = candidate->init_status;
-      delete candidate;
+      candidate->~Impl();
+      alloc.deallocate(candidate, sizeof(Impl), alignof(Impl));
       return;
     }
     impl_ = candidate;
@@ -1308,7 +1412,9 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
 Scheduler::~Scheduler() {
   if (impl_ == nullptr) return;
   impl_->shutdown();
-  delete impl_;
+  const mem::Allocator allocator = impl_->allocator;
+  impl_->~Impl();
+  allocator.deallocate(impl_, sizeof(Impl), alignof(Impl));
 }
 
 bool Scheduler::spawn(Fiber* fiber) { return impl_->spawn(fiber); }

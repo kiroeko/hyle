@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <span>
 #include <thread>
 #include <vector>
 
@@ -26,6 +27,7 @@ using hyle::sched::current_waker;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
+using hyle::sched::SchedulerOptions;
 using hyle::sched::Waker;
 
 namespace {
@@ -191,8 +193,12 @@ TEST(Affinity, WorkerPlacementUsesSparseProcessCpuIds) {
   CPU_SET(selected[1], &sparse);
   ASSERT_EQ(::sched_setaffinity(0, sizeof(sparse), &sparse), 0);
 
-  Scheduler sched(2, system_allocator(), 64);
-  NativeAffinityProbe probes[2]{{selected[1]}, {selected[0]}};
+  SchedulerOptions options;
+  options.worker_cpu_set = std::span<const unsigned>(selected, 2);
+  options.worker_config_policy =
+      hyle::platform::ThreadConfigPolicy::kRequired;
+  Scheduler sched(2, system_allocator(), 64, options);
+  NativeAffinityProbe probes[2]{{selected[0]}, {selected[1]}};
   Fiber first(kDefaultStackSize, &native_affinity_probe, &probes[0]);
   Fiber second(kDefaultStackSize, &native_affinity_probe, &probes[1]);
   ASSERT_TRUE(sched.spawn_on(0, &first));
@@ -204,5 +210,33 @@ TEST(Affinity, WorkerPlacementUsesSparseProcessCpuIds) {
     EXPECT_EQ(probe.mask_count, 1);
     EXPECT_TRUE(probe.contains_expected);
   }
+}
+
+TEST(Affinity, DefaultSchedulerPreservesHostCpuSet) {
+  AffinityRestore restore{};
+  CPU_ZERO(&restore.mask);
+  ASSERT_EQ(::sched_getaffinity(0, sizeof(restore.mask), &restore.mask), 0);
+
+  unsigned selected[2]{};
+  std::size_t found = 0;
+  for (int cpu = 0; cpu < CPU_SETSIZE && found < 2; ++cpu) {
+    if (CPU_ISSET(cpu, &restore.mask)) selected[found++] = cpu;
+  }
+  if (found < 2) GTEST_SKIP() << "need two allowed CPU ids";
+
+  cpu_set_t pair;
+  CPU_ZERO(&pair);
+  CPU_SET(selected[0], &pair);
+  CPU_SET(selected[1], &pair);
+  ASSERT_EQ(::sched_setaffinity(0, sizeof(pair), &pair), 0);
+
+  Scheduler sched(1, system_allocator(), 64);
+  NativeAffinityProbe probe{selected[0]};
+  Fiber fiber(kDefaultStackSize, &native_affinity_probe, &probe);
+  ASSERT_TRUE(sched.spawn_on(0, &fiber));
+  sched.shutdown();
+
+  EXPECT_EQ(probe.mask_count, 2);
+  EXPECT_TRUE(probe.contains_expected);
 }
 #endif
