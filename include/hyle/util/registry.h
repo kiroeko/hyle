@@ -8,6 +8,7 @@
 #include <limits>
 #include <mutex>
 #include <new>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -83,6 +84,9 @@ class Registry {
   // value (normally Result<T>); captured state belongs in explicit Args/owners.
   using Creator = Ptr (*)(Args...) noexcept;
 
+  // A lookup result is a value snapshot. `creator` and `priority` are copied;
+  // `key` and `help` borrow Registry-owned bytes and remain valid until the
+  // Registry is destroyed, including across a later priority replacement.
   struct EntryView {
     container::StringView key;
     Creator creator;
@@ -105,6 +109,14 @@ class Registry {
 
     bool has(const container::StringView& key) const noexcept {
       return Registry::frozen_table(index_)->find(key) != nullptr;
+    }
+
+    // Resolve without invoking the factory. This is the startup path for an
+    // owner that wants to cache a typed Creator or descriptor before serving.
+    std::optional<EntryView> find(
+        const container::StringView& key) const noexcept {
+      return Registry::entry_view(
+          Registry::frozen_table(index_)->find(key));
     }
 
     container::StringView help(
@@ -246,6 +258,21 @@ class Registry {
     return entries_.find(key) != nullptr;
   }
 
+  // Resolve without invoking the factory. Mutable lookup returns a value
+  // snapshot under the existing startup mutex; after freeze it uses the same
+  // immutable expected-O(1) path as FrozenView and performs no allocation.
+  std::optional<EntryView> find(container::StringView key) const noexcept {
+    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
+      return entry_view(index->find(key));
+    }
+    std::lock_guard<std::mutex> lock(mu_);
+    if (const auto* index =
+            frozen_index_.load(std::memory_order_relaxed)) {
+      return entry_view(index->find(key));
+    }
+    return entry_view(entries_.find(key));
+  }
+
   // Create the object registered under `key`. A nullable Ptr returns its empty
   // value when absent. Registry<Result<T>, ...> instead returns NotFound and
   // propagates the selected creator's Status without changing the table shape.
@@ -360,6 +387,13 @@ class Registry {
   using Table = container::FlatHashMap<
       container::StringView, IndexValue, container::Hash<container::StringView>,
       std::equal_to<>, mem::Allocator>;
+
+  static std::optional<EntryView> entry_view(
+      const IndexValue* value) noexcept {
+    if (value == nullptr) return std::nullopt;
+    const Entry* entry = value->entry;
+    return EntryView{entry->key, value->creator, entry->priority, entry->help};
+  }
 
   class SnapshotStorage {
    public:

@@ -1,7 +1,7 @@
 # util：什么情况选什么
 
-> **当前边界（2026-08-28）：**本页前半的 `util_core` 五项能力已完成 v1 收口并通过新版能力
-> 完整性回放；后半是当前 Registry 合同和 demangle v2 owning/buffer 形状，签证状态只看中央
+> **当前边界（2026-08-31）：**本页前半的 `util_core` 五项能力已完成 v1 收口并通过新版能力
+> 完整性回放；后半是当前 Registry lookup/create 合同和 demangle owning/buffer 形状，签证状态只看中央
 > [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
 > 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
@@ -37,7 +37,9 @@ include path 绕过组件与安装包合同。
 | 已有固定日志字段/栈 buffer | buffer `demangle(name, out)` | 以为 caller buffer 让实现无分配、无锁或可在 signal handler 调用 |
 | 启动期注册、factory 不会失败或 NULL 已是完整语义 | `Registry<T*, Args...>` | 需要诊断时仍让 NULL 同时表示 missing、初始化失败和成功空值 |
 | 启动期注册、backend 初始化可能失败 | `Registry<Result<T*>, Args...>` | 用旁路 thread-local/ctx 保存 error，或丢掉设备/驱动失败原因 |
-| Registry 初始化后的反复按名查询/创建 | `auto view = registry.freeze()`，缓存 `FrozenView` | 在 kernel/op 热循环重复字符串 dispatch，或让 view 活过 registry |
+| 只想按名解析 factory/metadata，稍后再构造 | `registry.find(name)`；服务期用 `FrozenView::find` | 为取得 creator 做 O(n) 枚举，或被迫提前创建对象 |
+| 现在就要按名构造 | `registry.create(name, args...)`；服务期用 `FrozenView::create` | 无视 nullable 与 `Result<T>` 的不同 missing/failure 语义 |
+| Registry 初始化后的反复查询 | `auto view = registry.freeze()`，缓存 `FrozenView` | 在 kernel/op 热循环重复字符串 dispatch，或让 view 活过 registry |
 
 ## ScopeGuard：只处理临时控制流
 
@@ -196,7 +198,15 @@ HYLE_RETURN_IF_ERROR(engines.register_creator(
 
 // 初始化结束：单向、幂等、O(1)、零分配。
 auto factories = engines.freeze();
-HYLE_ASSIGN_OR_RETURN(Engine * engine, factories.create("cuda", config));
+
+// 只解析一次；随后可在 owner 中缓存这个 typed function pointer。
+auto cuda = factories.find("cuda");
+if (!cuda) return hyle::Status::NotFound("engine factory not found");
+auto make_selected_engine = cuda->creator;
+HYLE_ASSIGN_OR_RETURN(Engine * engine, make_selected_engine(config));
+
+// 不需要分开解析/缓存时，直接 lookup + invoke。
+HYLE_ASSIGN_OR_RETURN(Engine * cpu, factories.create("cpu", config));
 ```
 
 Registry 会复制并拥有 key/help；调用者无需保留传入字符串。相同 key 的更高 priority 覆盖，
@@ -211,6 +221,11 @@ lookup value 和复杂度；Result 不是额外的 per-entry 元数据。Registr
 factory 必须是 `noexcept` function pointer，`Result<Ref<T>>` 等 owning value 由 factory 显式构造，
 OOM/设备/驱动失败都通过 `Result` 返回。
 
+`find()` 不调用 factory，missing 返回 `std::nullopt`。它返回 `EntryView` 的值快照：creator 与 priority
+被复制，key/help 是 Registry-owned 字节的借用 view；旧快照即使遇到更高 priority 替换也保持可读，
+但不能活过 Registry。缓存 Creator 还要求提供这段代码的 executable/shared module 未被卸载；Registry
+不会替 module owner 证明对象、线程和函数指针已经 quiescent。
+
 启动登记必须显式执行并检查 `Status`。不要把“只靠全局构造器副作用的 registration TU”塞进
 static archive：链接器可以直接丢弃该 TU，静态初始化也没有自然位置向应用返回 collision/OOM。
 需要动态 shared-library backend 时，HYLE 的 `platform::DynLib` 只负责 loader handle。调用方自己的
@@ -221,8 +236,8 @@ Registry，最后 unload；HYLE 当前没有可直接实例化的通用 `ModuleM
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
 Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
 在冻结后只多一次生命周期 acquire load，适合普通调用；反复按名的 service lookup 可缓存
-`FrozenView`，直接查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1) probes，creator 自身
-成本另计。若 backend/op 已经能在初始化时解析成 typed handle 或 function pointer，应缓存解析结果，
+`FrozenView`，其 `find/create` 直接查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1)
+probes，creator 自身成本另计。若 backend/op 已经能在初始化时解析成 typed handle 或 function pointer，应缓存解析结果，
 不要在每个 kernel/token 内重复按字符串 dispatch。
 
 Registry 不提供 unregister：已经创建对象、函数指针和并发 reader 的代码/数据生命周期无法由

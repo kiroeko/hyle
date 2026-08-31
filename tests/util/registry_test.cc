@@ -7,6 +7,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -112,6 +113,31 @@ TEST(Registry, CreateByName) {
   std::unique_ptr<Shape> s(registry.create("square"));
   ASSERT_NE(s, nullptr);
   EXPECT_EQ(s->sides(), 4);
+}
+
+TEST(Registry, FindResolvesFactoryMetadataWithoutCreating) {
+  hyle::util::Registry<Shape*> registry;
+  ASSERT_TRUE(register_shapes(&registry).ok());
+
+  const auto triangle = registry.find("triangle");
+  ASSERT_TRUE(triangle.has_value());
+  EXPECT_EQ(triangle->key, StringView{"triangle"});
+  EXPECT_EQ(triangle->creator, &create_triangle);
+  EXPECT_EQ(triangle->priority, RegistryPriority::kDefault);
+  EXPECT_EQ(triangle->help, StringView{"three-sided shape"});
+  EXPECT_FALSE(registry.find("hexagon").has_value());
+
+  std::unique_ptr<Shape> object(triangle->creator());
+  ASSERT_NE(object, nullptr);
+  EXPECT_EQ(object->sides(), 3);
+
+  const auto frozen = registry.freeze();
+  const auto square = frozen.find("square");
+  ASSERT_TRUE(square.has_value());
+  EXPECT_EQ(square->key, StringView{"square"});
+  EXPECT_EQ(square->creator, &create_square);
+  EXPECT_EQ(square->help, StringView{"four-sided shape"});
+  EXPECT_FALSE(frozen.find("hexagon").has_value());
 }
 
 TEST(Registry, MissingKeyReturnsNull) {
@@ -318,6 +344,7 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
     while (!start.load(std::memory_order_acquire)) {}
     while (!finished.load(std::memory_order_acquire)) {
       (void)registry.has("missing");
+      (void)registry.find("missing");
       (void)registry.size();
     }
   });
@@ -340,8 +367,11 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
 
   EXPECT_EQ(registry.size(), kKeys);
   for (std::size_t i = 0; i < kKeys; ++i) {
+    const auto entry = registry.find(key_storage[i].data());
+    ASSERT_TRUE(entry.has_value());
+    EXPECT_EQ(entry->creator, creator);
     std::unique_ptr<CheapWidget> value(
-        registry.create(key_storage[i].data()));
+        entry->creator());
     ASSERT_NE(value, nullptr);
   }
 }
@@ -361,26 +391,41 @@ TEST(Registry, RejectsInvalidRegistration) {
 
 TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
   hyle::util::Registry<CheapWidget*> registry;
+  auto fallback = +[]() noexcept -> CheapWidget* {
+    return new (std::nothrow) CheapWidget();
+  };
+  auto preferred = +[]() noexcept -> CheapWidget* {
+    return new (std::nothrow) FancyWidget();
+  };
   StringView old_help;
+  std::optional<hyle::util::Registry<CheapWidget*>::EntryView> old_entry;
   {
     std::string key = "dynamic-widget";
     std::string help = "fallback implementation";
     ASSERT_TRUE(registry.register_creator(
-        key, +[]() noexcept -> CheapWidget* {
-          return new (std::nothrow) CheapWidget();
-        },
-        RegistryPriority::kFallback, help).ok());
+        key, fallback, RegistryPriority::kFallback, help).ok());
     old_help = registry.help("dynamic-widget");
+    old_entry = registry.find("dynamic-widget");
   }
+  ASSERT_TRUE(old_entry.has_value());
+  EXPECT_EQ(old_entry->creator, fallback);
+  EXPECT_EQ(old_entry->priority, RegistryPriority::kFallback);
+  EXPECT_EQ(old_entry->key, StringView{"dynamic-widget"});
   EXPECT_EQ(old_help, StringView{"fallback implementation"});
   std::unique_ptr<CheapWidget> value(registry.create("dynamic-widget"));
   ASSERT_NE(value, nullptr);
 
   ASSERT_TRUE(registry.register_creator(
-      "dynamic-widget", +[]() noexcept -> CheapWidget* {
-        return new (std::nothrow) FancyWidget();
-      },
-      RegistryPriority::kPreferred, "preferred implementation").ok());
+      "dynamic-widget", preferred, RegistryPriority::kPreferred,
+      "preferred implementation").ok());
+  const auto current_entry = registry.find("dynamic-widget");
+  ASSERT_TRUE(current_entry.has_value());
+  EXPECT_EQ(current_entry->creator, preferred);
+  EXPECT_EQ(current_entry->priority, RegistryPriority::kPreferred);
+  EXPECT_EQ(current_entry->help, StringView{"preferred implementation"});
+  EXPECT_EQ(old_entry->creator, fallback);
+  EXPECT_EQ(old_entry->priority, RegistryPriority::kFallback);
+  EXPECT_EQ(old_entry->help, StringView{"fallback implementation"});
   EXPECT_EQ(old_help, StringView{"fallback implementation"});
   EXPECT_EQ(registry.help("dynamic-widget"),
             StringView{"preferred implementation"});
@@ -416,6 +461,11 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   (void)frozen_again;
   EXPECT_TRUE(registry.frozen());
   EXPECT_TRUE(frozen.has("frozen"));
+  const auto found = frozen.find("frozen");
+  ASSERT_TRUE(found.has_value());
+  EXPECT_EQ(found->creator, creator);
+  EXPECT_EQ(found->priority, RegistryPriority::kDefault);
+  EXPECT_EQ(found->help, StringView{"immutable entry"});
   EXPECT_EQ(frozen.help("frozen"), StringView{"immutable entry"});
   EXPECT_EQ(frozen.size(), 1u);
   EXPECT_EQ(frozen.create("frozen"), nullptr);
@@ -430,6 +480,9 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
     readers.emplace_back([&] {
       for (int i = 0; i < 10'000; ++i) {
         if (registry.has("frozen") && registry.size() == 1) {
+          const auto entry = frozen.find("frozen");
+          EXPECT_TRUE(entry.has_value());
+          EXPECT_EQ(entry->creator, creator);
           observations.fetch_add(1, std::memory_order_relaxed);
         }
       }
@@ -474,6 +527,9 @@ TEST(Registry, AllocationFailureIsRecoverableAndFreezeDoesNotAllocate) {
   EXPECT_TRUE(populated.frozen());
   EXPECT_TRUE(populated.has("entry"));
   EXPECT_TRUE(frozen.has("entry"));
+  EXPECT_TRUE(populated.find("entry").has_value());
+  EXPECT_TRUE(frozen.find("entry").has_value());
+  EXPECT_FALSE(frozen.find("missing").has_value());
   EXPECT_EQ(frozen.help("entry"), StringView{});
   EXPECT_EQ(frozen.size(), 1u);
   EXPECT_EQ(frozen.create("entry"), nullptr);

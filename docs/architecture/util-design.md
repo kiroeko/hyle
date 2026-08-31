@@ -1,7 +1,7 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-08-29）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
-> runtime 的 Registry v1 结论经回放保持成立，demangle owning-text 易用性切片 v2 已 `CLOSED`。施工/签证
+> **当前边界（2026-08-31）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
+> runtime 正在以当前 Container 合同重签 Registry lookup/create 旅程，demangle owning/buffer 形状原样回放。施工/签证
 > 状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
@@ -42,7 +42,7 @@ internal sink 两个冷路径动态符号，本身不依赖 container；为它�
 | `type_name/hash` | 编译期诊断、受控构建内标签 | pretty-function constexpr probe；hash 允许碰撞 | 持久/唯一 correctness ID、跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
 | `demangle` | 日志、backtrace、诊断 UI | 完整 caller-owned `std::string`；或 caller buffer + required-size | 热路径、async-signal-safe、无内部 allocation/lock 保证 |
-| `Registry<Value, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | raw nullable 或 `Result<T>` fallible factory、owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
+| `Registry<Value, Args...>` | backend/plugin factory 在启动期组合，按名解析 factory 或直接创建 | raw nullable 或 `Result<T>` fallible factory、owned names、lookup-only snapshot、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
 
 没有内部消费者不等于应删除用户能力，也不能为了“采用率”把它硬塞进不合适的热路径。反过来，
 新增 helper 必须先有真实消费者场景，并证明它不属于 core/container/mem/platform 等既有模块。
@@ -58,8 +58,8 @@ mutable startup
              ▼
 immutable service
   the same Swiss index is release-published
-  Registry reads: one acquire lifecycle load + expected-O(1) lookup
-  cached FrozenView: direct expected-O(1) lookup
+  Registry find/create: one acquire lifecycle load + expected-O(1) lookup
+  cached FrozenView find/create: direct expected-O(1) lookup
 ```
 
 旧形状若在 freeze 时复制/重建第二张表，会让启动延迟、峰值内存和 OOM surface 随注册规模增长；
@@ -71,6 +71,9 @@ init-heavy/read-heavy 消费形状的架构优化，不是按 benchmark 的 key 
 
 Registry 拥有 key/help，priority 保证显式组合顺序不成为隐式策略：更高覆盖、更低忽略、
 同级冲突报错。可变枚举在锁内复制时间点快照，锁外执行 callback；冻结枚举直接遍历不可变表。
+`find()` 返回 lookup-only `EntryView` value snapshot：creator/priority 被复制，key/help 借用 Registry-owned
+storage。它使 backend owner 能在启动期解析并缓存 typed factory，而不必为了取得 callable 提前构造或
+O(n) 枚举；没有新增表、entry 字段、allocation 或动态分发。
 `FrozenView` 不拥有表，Registry 必须活过 view 和所有在途 operation。没有 unregister 是安全
 边界：module unload 需要追踪 created object、函数指针与并发 reader quiescence，应由独立 module
 manager 负责，而不是让通用名字表猜测。
@@ -97,7 +100,7 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
 - ScopeGuard 操作、Ref copy/drop/cast、SpinLock 无争用和 RNG scalar draw 是 O(1)。
 - RNG bounded draw 期望 O(1)，`discard(n)` O(n)，`jump/long_jump` 固定 O(256)，shuffle O(n)。
 - type-name 在常量求值切片；hash 是 O(类型名长度) 的 constexpr 工作，不在运行期热路。
-- Registry 查找是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销
+- Registry `find/create` 是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销
   expected O(1)；枚举 O(n)。mutable 枚举临时空间 O(n)，frozen 枚举 O(1)；freeze 时间/额外
   空间 O(1)。最坏查找仍受恶意 collision 约束。
 - `Ref<T>` 保持一个指针，计数在对象内；SpinLock 保持 1 byte。需要 cache-line padding 时由经
