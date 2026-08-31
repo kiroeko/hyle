@@ -3,6 +3,45 @@
 > 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
 > `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
 
+## sched-v3 最终工程证据（2026-08-31，`PASS`）
+
+最终产品 candidate 为 `536d4abf6324e2b08ed7b3a80df34e83f955e60b` / tree
+`bc9b6baaa5dbf4f3d214047e85cb3ada472e45df`；采样时 clean source 为
+`f315803b1962a497a12df1f457e8e13d6127b6a0`，candidate 后只有合同与状态文档，产品目录无漂移。
+W1-WIN、MSVC 19.50、Release/static、四个固定 physical cores；合同 `sched-batch-p1-v4` SHA-256
+`FC5DBFA551BFE8F6DA778E7AAF836D6ED0CE19092BD65C970CFF519F1339AD58`。Marl 与 oneTBB revision 分别为
+`b8406ab0a82524170ead6dd6c371b579bbc28b3e` 和
+`a8216b95202f3c55f9749870f4f8cfa4df0b32e3`。
+
+normal workload 沿用 v2：一个已进入 HYLE Scheduler 的 root Fiber 同步执行 16 批，每批 128 个
+non-suspending 1024-element tile，四个 provider workers、caller-owned result slots、批级 completion；
+外部进程角色只 enqueue/wait，不执行 tile。sched-v3 让同 Scheduler root Fiber 消费同一 cursor，并只
+激活至多三个 sibling runner；它消除了 v2 的一次批级 suspend/wake handoff，没有增加第五个 worker、
+改变 callback 数或使用 SIMD。双方仍执行 2048 个相同标量 `tile_digest` callback。
+
+advantage 定义为 HYLE/peer，越大越有利于 HYLE；每个 stratum 为 15 个独立进程 paired samples，
+置信水平 99.26%：
+
+| peer / 顺序 | HYLE / peer 中位吞吐（M item/s） | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| Marl / HYLE first | 2.089 / 1.804 | 1.149 / [1.101, 1.224] | `WIN` | `PASS` |
+| Marl / peer first | 2.010 / 1.828 | 1.126 / [0.993, 1.232] | `INCONCLUSIVE` | `PASS` |
+| oneTBB / HYLE first | 2.065 / 1.966 | 1.037 / [0.998, 1.123] | `INCONCLUSIVE` | `PASS` |
+| oneTBB / peer first | 2.060 / 1.969 | 1.047 / [0.979, 1.090] | `INCONCLUSIVE` | `PASS` |
+
+因此本轮允许的结论是：在这一个真实、同语义 batch-structured 合同上，HYLE 对两个 mature peers 的
+5% engineering non-inferiority 全部通过；Marl 一个顺序可判确定胜出，其余 exact superiority 未决。
+这不是全操作、跨平台或 Formal SOTA 证书，也不能把 oneTBB 的未决写成“确定更快”。A/A、5%/10%
+known-delta、timer floor、artifact identity、build contract、consumer provenance 均 `PASS`；独立 verifier
+报告 `QUALIFIED`、provenance `EXACT`、paths verified。
+
+原始 bundle：`C:\hyle-scratch\sched-v3\p1-evidence-v4-final`；manifest SHA-256
+`3062198809CE7D8A44F19FA5BA652567CB5BE4E56AF9A89FC0D028E3239C8718`，summary
+`F94AA55CCB99F43A95226ED56054CFD46FC662C7C1A0E85C5A945CE50A80D600`，controls
+`BF27D0A8FB7DF3B2D0DF1175517C9DF6A804ECE3A24F6C4671AACF93D7BD5466`，host probe
+`DB0606FA93DA8E9AB965EDA6EA426ECD998FEC5A9B83D54228B7FCEBA136C816`。产品、合同、peer、machine 或
+instrument 改变时必须重新资格化，不能从本 bundle 外推。
+
 ## sched-v2 最终 candidate 工程证据（2026-08-31，`FAIL`）
 
 产品 candidate 为 `22ec2382589656d1e45ff5a0665e384aba97dc4c` / tree

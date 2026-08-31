@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`VERIFIED`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -162,3 +162,42 @@ bundle 只作诊断事实，不继承为最终 verdict。退回前 registry 快�
   controls 与 5% margin 均和 v3 相同；只把 provenance 绑定到最终 product commit/tree。
 - `AUDITED -> CANDIDATE` 前态 registry 快照位于 canonical checkout 外：
   `C:\hyle-scratch\sched-v3\module-status-before-final-candidate.json`。
+
+## 最终验证与红队
+
+最终候选 archive `hyle-536d4abf.tar` 的 SHA-256 为
+`BEFA92B48F3305197508DC0EEAD734BCF43C6D173ED4937BF93AE17F79485075`；Windows、WSL 与 macOS 使用的
+解包内容 hash 相同。candidate 到采样提交之间的 `include/`、`src/`、CMake 与 tests 产品 diff 为空。
+
+| gate | result | evidence |
+|---|---|---|
+| W1-WIN correctness / headers | `PASS` | MSVC 19.50 Release、`/W4 /WX`；完整 Sched suite 与 10 个 public headers self-contained |
+| W1-WSL correctness / sanitizers | `PASS` | GCC 14.2 Release、ASan、UBSan、TSan；TSan 用 `setarch x86_64 -R`，same-owner/cross-owner/lifetime 三测重复 20 次 |
+| M1-MAC correctness / codegen | `PASS` | AppleClang 21 AArch64 Release；完整 Sched suite 与 public headers |
+| source / shared / static delivery | `PASS` | 三平台 selected `sched`；source embedding、relocated shared consumer、relocated static consumer 均运行通过 |
+| symbol / old FFI cleanliness | `PASS` | 三平台最终 shared library 均无 `SchedulerAccess` export；private header 未安装；无 sched C/Native FFI surface，fcontext C/asm 仍是 private mechanism |
+| direct consumers | `PASS` | Windows/WSL/macOS 各通过 IO 3 条、Compute GPU-await 1 条、Graph parallel 2 条；只授予兼容性，不授予下游 closure |
+| engineering P1 | `PASS` | `sched-batch-p1-v4` qualification/performance、A/A、5%/10% known delta、timer floor、artifact/build/provenance 与独立 verifier 全 PASS |
+
+P1 最终 advantage（HYLE/peer）为：Marl candidate-first `1.149`、peer-first `1.126`；oneTBB
+candidate-first `1.037`、peer-first `1.047`。四个 5% NI gate 均通过；只有 Marl candidate-first 的 exact
+verdict 是 `WIN`，其余 exact verdict 为 `INCONCLUSIVE`。完整 CI、identity 与 bundle hash 见
+[`benchmarks-sched.md`](../../evidence/performance/benchmarks-sched.md)，不得把工程非劣扩大成全操作 SOTA。
+
+红队结论：
+
+- **不是 SIMD 或减少工作量：**共同 `tile_digest` 是相同 106-byte 标量 recurrence；双方执行 2048 个
+  用户 callback 和相同 checksum。
+- **没有偷第五个 worker：**root 已经是四个 provider workers 之一；external role 不进入 arena/runtime
+  计算。root participation 只替代一个 sibling 与一次 terminal handoff。
+- **语义没有为 benchmark 变薄：**public grain、exactly-once、first-error、cancel、caller-borrow、同步
+  quiescence 与 O(N) work / O(worker) participants / O(1) batch state 不变；full tests 与 TSan 重签。
+- **所有权没有串台：**只有同 Scheduler Fiber 参与；另一个 Scheduler Fiber 不借用 target worker；裸
+  worker-stack nested call 仍走 progress-safe serial fallback。
+- **常态成本没有转嫁：**普通 `schedule()` 的 locality/anti-herd 路线未改，Scheduler layout 与常态
+  metadata 未增；只有有限 bulk sibling admission 轮转 accounting shard。
+- **交付 seam 真正私有：**首次 scan 找到的 ELF/Mach-O symbol leak 已在最终 candidate 中消除，三平台
+  installed headers 与动态符号复查均通过。
+
+本轮四项 LOC（candidate commit `536d4abf`，`loc-report --self-check`）为：全库代码 `410,759`；自实现
+含测试 `99,270`；自实现不含测试 `61,670`；Sched 实现 `5,595`。

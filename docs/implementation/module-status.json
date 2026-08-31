@@ -748,7 +748,7 @@
     },
     {
       "module": "sched",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "sched-v3-root-participation",
       "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
       "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
@@ -763,16 +763,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
       },
       "formal_performance": {
-        "state": "NONE"
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v3 CANDIDATE：536d4abf/bc9b6baa 在 root-participation 候选上隐藏两个 private SchedulerAccess 动态符号；算法、公开 API 与 workload 不变，最终三平台、三交付、直接消费者和 P1 v4 待重签。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "sched-v3 VERIFIED：536d4abf/bc9b6baa 的三平台 correctness/sanitizer、三种交付、符号/FFI 清洁、直接消费者、文档/红队和 W1-WIN 5% P1 engineering gate 全部通过；Formal 保持 PENDING。"
     },
     {
       "module": "io",
