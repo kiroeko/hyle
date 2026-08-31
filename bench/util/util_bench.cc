@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
 #include "hyle/util/random.h"
@@ -187,7 +187,7 @@ HYLE_FORCE_INLINE hyle::Result<void*> create_peer_result(
 struct RegistryFixture {
   static constexpr std::size_t kEntries = 256;
   std::array<std::string, kEntries> keys;
-  std::array<hyle::container::string_ref, kEntries> hyle_keys;
+  std::array<hyle::container::StringView, kEntries> hyle_keys;
   std::array<std::string_view, kEntries> std_keys;
   hyle::util::Registry<void*> mutable_hyle;
   hyle::util::Registry<void*> frozen_hyle;
@@ -216,7 +216,7 @@ struct RegistryFixture {
       char text[32];
       std::snprintf(text, sizeof(text), "backend-%03zu", i);
       keys[i] = text;
-      hyle_keys[i] = hyle::container::string_ref(keys[i]);
+      hyle_keys[i] = hyle::container::StringView(keys[i]);
       std_keys[i] = keys[i];
       check(mutable_hyle.register_creator(
           hyle_keys[i], &create_token, hyle::util::RegistryPriority::kDefault,
@@ -301,7 +301,8 @@ int main() {
     index = 0;
     bench.run("HYLE hash_bytes", [&] {
       const auto key = fixture.hyle_keys[index++ & 255];
-      nb::doNotOptimizeAway(hyle::container::hash_bytes(key.data, key.size));
+      nb::doNotOptimizeAway(
+          hyle::container::hash_bytes(key.data(), key.size()));
     });
   }
 

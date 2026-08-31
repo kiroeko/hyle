@@ -1,4 +1,4 @@
-hyle_add_bench(container SOURCES container_bench_main.cc swiss_table_bench.cc string_buf_bench.cc string_ref_bench.cc path_bench.cc string_algo_bench.cc DEPS hyle_platform)
+hyle_add_bench(container SOURCES container_bench_main.cc swiss_table_bench.cc string_buf_bench.cc string_view_bench.cc path_bench.cc string_algo_bench.cc DEPS hyle_platform)
 # string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
 # simdutf is VENDORED in third_party and compiled into hyle_container (the product uses it
 # unconditionally), but those symbols are PRIVATE/non-exported across the hyle_container DLL
@@ -155,10 +155,11 @@ hyle_register_benches(container
 
 # Current closure-perf-v1 adapter. Legacy breadth benchmarks above remain
 # useful diagnostics; this target contains only the five frozen normal-use
-# replays admitted by container-v1. It is opt-in because all four source-pinned
+# replays admitted by the current Container closure contract. It is opt-in
+# because all four source-pinned
 # peers must be present and clean for the unified runner.
 option(HYLE_CONTAINER_P1_BENCH
-  "build the container-v1 closure-perf adapter" OFF)
+  "build the Container closure-perf adapter" OFF)
 if(HYLE_CONTAINER_P1_BENCH)
   if(NOT HYLE_STATIC OR NOT HYLE_BENCH_ABSL OR NOT HYLE_BENCH_BOOST OR
      NOT HYLE_BENCH_RIGTORP)

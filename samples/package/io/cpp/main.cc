@@ -14,8 +14,8 @@ int main() {
   if (!status.IsInvalidArgument()) return 1;
 
   if (!hyle::mem::system_allocator().valid()) return 2;
-  hyle::io::string_ref body{"installed io payload"};
-  if (body.find("payload") == hyle::io::string_ref::npos) return 3;
+  hyle::io::StringView body{"installed io payload"};
+  if (body.find("payload") == hyle::io::StringView::npos) return 3;
 
   // complete() is header-inline and calls Waker::wake().  The harmless public
   // scheduler query proves the same hyle::io usage requirement is propagated

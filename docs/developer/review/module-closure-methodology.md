@@ -155,8 +155,10 @@ verification | negative space
    `product/test/benchmark/peer` 类别，以及 semantic、mechanism/artifact、decision 和 delivery owner。
    标准库、compiler builtin 与 OS API 不冒充第三方模块，但仍记录其平台合同。vendored、ported 或
    integrated source 仍算第三方实现，不能因复制进仓库而记作 HYLE 自实现。
-2. **功能：**对于已声明的量化推理引擎旅程，并以 ggml 等具名 consumer/peer 作差异输入，所有准入
-   能力是否为 `COMPLETE` 或完整 `ROUTED`？每个差异必须落到本模块、具名相邻模块、推理引擎策略或
+2. **功能：**对于已声明的量化推理引擎旅程，必须同时使用**当前锁定的 llama.cpp 真实消费形状**和
+   **当前锁定的 ggml 底座能力**作差异输入，所有准入能力是否为 `COMPLETE` 或完整 `ROUTED`？两者
+   每轮先更新或确认远端状态，再记录 clean commit；llama.cpp 随仓 ggml 与独立 ggml 不同时分别记录，
+   不把漂移的 `master`/`main` 当证据身份。每个差异必须落到本模块、具名相邻模块、推理引擎策略或
    `MISSING/BLOCKED`，不能以 API 数量对齐代替 owner 裁决。“没有可再加的”只允许解释为当前证据下
    没有未处置的 `MUST`；不承诺未来不存在新能力，也不要求复制 ggml 的 tensor/backend/模型策略。
 3. **性能：**该模块的正常用户任务属于哪一级，是否在冻结 candidate、相同语义/资源计费和真实交付

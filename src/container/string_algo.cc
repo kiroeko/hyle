@@ -22,10 +22,10 @@ static_assert(simdutf::SIMDUTF_VERSION_MAJOR == 9 &&
 
 namespace hyle::container::detail {
 
-bool utf8_validate_runtime(string_ref s) noexcept {
-  if (s.data == nullptr) return s.size == 0;
+bool utf8_validate_runtime(StringView s) noexcept {
+  if (s.data() == nullptr) return s.size() == 0;
 #if defined(HYLE_SIMD_SIMDUTF)
-  return simdutf::validate_utf8(s.data, s.size);
+  return simdutf::validate_utf8(s.data(), s.size());
 #else
   Utf8Decoder decoder(s);
   while (!decoder.is_end()) {
@@ -36,13 +36,13 @@ bool utf8_validate_runtime(string_ref s) noexcept {
 #endif
 }
 
-std::int64_t utf8_length_runtime(string_ref s) noexcept {
-  if (s.data == nullptr) return s.size == 0 ? 0 : -1;
+std::int64_t utf8_length_runtime(StringView s) noexcept {
+  if (s.data() == nullptr) return s.size() == 0 ? 0 : -1;
 #if defined(HYLE_SIMD_SIMDUTF)
   // Borrowed SIMD core: validate then count (matches utf8_length's validate+count
   // contract). simdutf runs its own internal runtime ISA dispatch.
-  if (!simdutf::validate_utf8(s.data, s.size)) return -1;
-  return static_cast<std::int64_t>(simdutf::count_utf8(s.data, s.size));
+  if (!simdutf::validate_utf8(s.data(), s.size())) return -1;
+  return static_cast<std::int64_t>(simdutf::count_utf8(s.data(), s.size()));
 #else
   // Scalar fallback: identical to the header's compile-time path.
   Utf8Decoder d(s);

@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <bit>
+#include <array>
+#include <bitset>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
@@ -58,6 +61,27 @@ struct SemanticKeyHash {
 TEST(Hash, BytesDeterministic) {
   const char* s = "hello world";
   EXPECT_EQ(hash_bytes(s, 11), hash_bytes(s, 11));  // same input -> same hash
+}
+
+TEST(Hash, CompositeKeysUseSemanticFieldHashes) {
+  using Pair = std::pair<std::string, std::string>;
+  const Pair pair_a{"token", "rank"};
+  const Pair pair_b{"rank", "token"};
+  EXPECT_EQ(Hash<Pair>{}(pair_a), Hash<Pair>{}(pair_a));
+  EXPECT_NE(Hash<Pair>{}(pair_a), Hash<Pair>{}(pair_b));
+
+  using Tuple = std::tuple<int, std::string_view, std::uint64_t>;
+  using Array = std::array<int, 3>;
+  const Tuple tuple{7, "layer", 3};
+  const Array array{1, 2, 3};
+  EXPECT_EQ(Hash<Tuple>{}(tuple), Hash<Tuple>{}(tuple));
+  EXPECT_EQ(Hash<Array>{}(array), Hash<Array>{}(array));
+}
+
+TEST(Hash, ValidNoexceptStdHashTypesHaveANaturalBridge) {
+  const std::bitset<64> mask{0x12345678u};
+  static_assert(Hashable<std::bitset<64>>);
+  EXPECT_EQ(Hash<std::bitset<64>>{}(mask), Hash<std::bitset<64>>{}(mask));
 }
 
 TEST(Hash, BytesSeedChangesResult) {

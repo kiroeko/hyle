@@ -192,6 +192,10 @@ class SwissTable {
       if (owner_ != nullptr && index_ < owner_->cap_) load_next_group();
     }
 
+    BasicIterator(Owner* owner, std::size_t index, std::size_t group,
+                  detail::GroupMask remaining) noexcept
+        : owner_(owner), index_(index), group_(group), remaining_(remaining) {}
+
     void load_next_group() noexcept {
       if (owner_ == nullptr) return;
       while (group_ < owner_->cap_) {
@@ -603,6 +607,25 @@ class SwissTable {
     }
   }
 
+  // Erasing through an iterator avoids hashing and probing the key again. The
+  // returned iterator is the next live entry, matching the standard associative
+  // container loop shape: `it = table.erase(it)`. Other iterators remain valid;
+  // the erased element's iterator/reference is invalidated.
+  iterator erase(const_iterator position) noexcept {
+    HYLE_FATAL_ASSERT(position.owner_ == this && position.index_ < cap_);
+    const_iterator next = position;
+    ++next;
+    slots_[position.index_].~Slot();
+    erase_at(position.index_);
+    return iterator(this, next.index_, next.group_, next.remaining_);
+  }
+
+  iterator erase(const_iterator first, const_iterator last) noexcept {
+    HYLE_FATAL_ASSERT(first.owner_ == this && last.owner_ == this);
+    while (first != last) first = erase(first);
+    return iterator(this, first.index_, first.group_, first.remaining_);
+  }
+
   // Visit every live (key, value): calls fn(const K&, V&) once per full slot, in
   // unspecified order. A function template (not std::function) so it inlines and
   // adds no allocation. This group-scan form remains the fastest full traversal;
@@ -908,6 +931,20 @@ template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 using FlatHashMap = SwissTable<K, V, Hash, Eq, Alloc>;
 
+template <class K, class V, class Hash, class Eq, class Alloc, class Predicate>
+std::size_t erase_if(SwissTable<K, V, Hash, Eq, Alloc>& table,
+                     Predicate predicate) {
+  const std::size_t before = table.size();
+  for (auto iterator = table.begin(); iterator != table.end();) {
+    if (predicate(*iterator)) {
+      iterator = table.erase(iterator);
+    } else {
+      ++iterator;
+    }
+  }
+  return before - table.size();
+}
+
 namespace detail {
 struct SwissSetValue {};
 }  // namespace detail
@@ -1075,6 +1112,14 @@ class FlatHashSet {
     return table_.erase(key);
   }
 
+  iterator erase(const_iterator position) noexcept {
+    return iterator(table_.erase(position.current_));
+  }
+
+  iterator erase(const_iterator first, const_iterator last) noexcept {
+    return iterator(table_.erase(first.current_, last.current_));
+  }
+
   iterator begin() noexcept { return iterator(table_.cbegin()); }
   iterator end() noexcept { return iterator(table_.cend()); }
   const_iterator begin() const noexcept { return iterator(table_.cbegin()); }
@@ -1098,6 +1143,20 @@ class FlatHashSet {
  private:
   Table table_;
 };
+
+template <class K, class Hash, class Eq, class Alloc, class Predicate>
+std::size_t erase_if(FlatHashSet<K, Hash, Eq, Alloc>& set,
+                     Predicate predicate) {
+  const std::size_t before = set.size();
+  for (auto iterator = set.begin(); iterator != set.end();) {
+    if (predicate(*iterator)) {
+      iterator = set.erase(iterator);
+    } else {
+      ++iterator;
+    }
+  }
+  return before - set.size();
+}
 
 }  // namespace hyle::container
 

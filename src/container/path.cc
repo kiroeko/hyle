@@ -105,22 +105,22 @@ std::size_t join_path(std::span<const StringView> parts,
   // root); a trailing separator only on the last part. Interior separators are
   // collapsed to one '/' between tokens.
   const bool lead =
-      !parts.empty() && parts.front().size > 0 &&
-      is_separator(parts.front().data[0]);
-  const bool trail = !parts.empty() && parts.back().size > 0 &&
-                     is_separator(parts.back().data[parts.back().size - 1]);
+      !parts.empty() && parts.front().size() > 0 &&
+      is_separator(parts.front().data()[0]);
+  const bool trail = !parts.empty() && parts.back().size() > 0 &&
+                     is_separator(parts.back().data()[parts.back().size() - 1]);
 
   if (lead) out.put('/');
   bool first_tok = true;
   for (const StringView p : parts) {
     std::uint32_t j = 0;
-    while (j < p.size) {
-      while (j < p.size && is_separator(p.data[j])) ++j;
+    while (j < p.size()) {
+      while (j < p.size() && is_separator(p.data()[j])) ++j;
       const std::uint32_t ts = j;
-      while (j < p.size && !is_separator(p.data[j])) ++j;
+      while (j < p.size() && !is_separator(p.data()[j])) ++j;
       if (j > ts) {
         if (!first_tok) out.put('/');
-        out.put(p.data + ts, j - ts);
+        out.put(p.data() + ts, j - ts);
         first_tok = false;
       }
     }
@@ -129,10 +129,10 @@ std::size_t join_path(std::span<const StringView> parts,
   return out.finish();
 }
 
-PodVector<string_ref> split_all(string_ref path, mem::Allocator alloc) {
-  PodVector<string_ref> out(alloc);
-  string_ref rest = path;
-  while (rest.size > 0) out.push_back(pop_first(&rest));
+PodVector<StringView> split_all(StringView path, mem::Allocator alloc) {
+  PodVector<StringView> out(alloc);
+  StringView rest = path;
+  while (rest.size() > 0) out.push_back(pop_first(&rest));
   return out;
 }
 
@@ -140,23 +140,23 @@ std::size_t replace_extension(StringView path, StringView ext,
                               std::span<char> output) noexcept {
   BufWriter out(output);
   const StringView stem = strip_extension(path);
-  out.put(stem.data, stem.size);
-  out.put(ext.data, ext.size);
+  out.put(stem.data(), stem.size());
+  out.put(ext.data(), ext.size());
   return out.finish();
 }
 
 std::optional<StringView> normalize_path(StringView path,
                                          std::span<char> output) noexcept {
-  const std::size_t input_size = path.size;
+  const std::size_t input_size = path.size();
   if (input_size == (std::numeric_limits<std::size_t>::max)())
     return std::nullopt;
   const std::size_t required = std::max<std::size_t>(input_size, 1) + 1;
   if (output.size() < required) return std::nullopt;
   if (input_size != 0)
-    std::memmove(output.data(), path.data, input_size);
+    std::memmove(output.data(), path.data(), input_size);
   output[input_size] = '\0';
   const std::uint32_t normalized_size =
-      normalize_in_place(output.data(), path.size);
+      normalize_in_place(output.data(), path.size());
   return StringView{output.data(), normalized_size, true};
 }
 

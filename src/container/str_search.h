@@ -3,12 +3,12 @@
 #include <cstdint>
 
 // str_search.h (internal) -- declares the per-ISA str_count/str_rfind_char variant symbols
-// the string_ref.cc dispatcher takes the address of. Each is DEFINED in its own -march TU
+// the StringView.cc dispatcher takes the address of. Each is DEFINED in its own -march TU
 // (str_search_{scalar,sse4,avx2,avx512,neon}.cc) from the shared body in str_search_impl.h.
 // Names carry an ISA suffix so the variants coexist in one binary (one backend per TU).
 //
 // NOT a public header -- lives under src/container/, never installed. Public callers use
-// string_ref.h's count()/rfind() which forward through detail::str_count / str_rfind_char.
+// string_view.h's count()/rfind() which forward through detail::str_count / str_rfind_char.
 
 namespace hyle::container::detail {
 

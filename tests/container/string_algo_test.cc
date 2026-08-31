@@ -5,7 +5,7 @@
 #include <array>
 #include <string>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 
 using namespace hyle::container;
 using namespace hyle::container::literals;
@@ -35,16 +35,16 @@ TEST(StringAlgo, HexValueSignalsInvalid) {
 
 TEST(StringAlgo, CaseConvertBufferFill) {
   char buf[16];
-  EXPECT_EQ(to_lower("HeLLo"_sr, buf, sizeof(buf)), 5u);
+  EXPECT_EQ(to_lower("HeLLo"_sv, buf, sizeof(buf)), 5u);
   EXPECT_STREQ(buf, "hello");
-  EXPECT_EQ(to_upper("HeLLo"_sr, buf, sizeof(buf)), 5u);
+  EXPECT_EQ(to_upper("HeLLo"_sv, buf, sizeof(buf)), 5u);
   EXPECT_STREQ(buf, "HELLO");
 }
 
 TEST(StringAlgo, CaseConvertTruncates) {
   char buf[4];
   // 5 chars into a 4-byte buffer: writes 3 + NUL, returns full length 5.
-  EXPECT_EQ(to_lower("ABCDE"_sr, buf, sizeof(buf)), 5u);
+  EXPECT_EQ(to_lower("ABCDE"_sv, buf, sizeof(buf)), 5u);
   EXPECT_STREQ(buf, "abc");
 }
 
@@ -79,18 +79,18 @@ TEST(StringAlgo, HexEncode) {
 
 TEST(StringAlgo, HexDecodeAndValidation) {
   unsigned char bytes[4] = {};
-  EXPECT_EQ(hex_decode("00aBff10"_sr, bytes, sizeof(bytes)), 4u);
+  EXPECT_EQ(hex_decode("00aBff10"_sv, bytes, sizeof(bytes)), 4u);
   EXPECT_EQ(bytes[0], 0x00);
   EXPECT_EQ(bytes[1], 0xAB);
   EXPECT_EQ(bytes[2], 0xFF);
   EXPECT_EQ(bytes[3], 0x10);
-  EXPECT_EQ(hex_decode("abc"_sr, bytes, sizeof(bytes)), SIZE_MAX);
-  EXPECT_EQ(hex_decode("zz"_sr, bytes, sizeof(bytes)), SIZE_MAX);
+  EXPECT_EQ(hex_decode("abc"_sv, bytes, sizeof(bytes)), SIZE_MAX);
+  EXPECT_EQ(hex_decode("zz"_sv, bytes, sizeof(bytes)), SIZE_MAX);
 }
 
 TEST(StringAlgo, Escape) {
   char buf[32];
-  std::size_t n = c_escape("a\tb\nc\\d"_sr, buf, sizeof(buf));
+  std::size_t n = c_escape("a\tb\nc\\d"_sv, buf, sizeof(buf));
   EXPECT_STREQ(buf, "a\\tb\\nc\\\\d");
   EXPECT_EQ(n, 10u);  // a \t b \n c \\ d = 1+2+1+2+1+2+1
 
@@ -103,40 +103,40 @@ TEST(StringAlgo, Escape) {
 TEST(StringAlgo, EscapeReportsTruncation) {
   char buf[4];
   // Full escaped length reported even when the buffer can't hold it.
-  std::size_t n = c_escape("\n\n\n"_sr, buf, sizeof(buf));
+  std::size_t n = c_escape("\n\n\n"_sv, buf, sizeof(buf));
   EXPECT_EQ(n, 6u);  // 3 * "\n" = 6
   EXPECT_STREQ(buf, "\\n");
 
   char tiny[2];
-  n = c_escape("\nA"_sr, tiny, sizeof(tiny));
+  n = c_escape("\nA"_sv, tiny, sizeof(tiny));
   EXPECT_EQ(n, 3u);
   EXPECT_STREQ(tiny, "");  // truncation is a prefix; it never skips a token
 }
 
 TEST(StringAlgo, Utf8LengthAscii) {
-  EXPECT_TRUE(utf8_validate("hello"_sr));
-  EXPECT_TRUE(utf8_validate(""_sr));
-  EXPECT_EQ(utf8_length("hello"_sr), 5);
-  EXPECT_EQ(utf8_length(""_sr), 0);
+  EXPECT_TRUE(utf8_validate("hello"_sv));
+  EXPECT_TRUE(utf8_validate(""_sv));
+  EXPECT_EQ(utf8_length("hello"_sv), 5);
+  EXPECT_EQ(utf8_length(""_sv), 0);
 }
 
 TEST(StringAlgo, Utf8RuntimeRejectsNullNonemptyView) {
-  const string_ref empty_null{nullptr, 0};
+  const StringView empty_null{nullptr, 0};
   EXPECT_TRUE(utf8_validate(empty_null));
   EXPECT_EQ(utf8_length(empty_null), 0);
 
-  const string_ref invalid_null{nullptr, 1};
+  const StringView invalid_null{nullptr, 1};
   EXPECT_FALSE(utf8_validate(invalid_null));
   EXPECT_EQ(utf8_length(invalid_null), -1);
 }
 
 TEST(StringAlgo, Utf8DecoderRejectsNullNonemptyView) {
-  Utf8Decoder empty(string_ref{nullptr, 0});
+  Utf8Decoder empty(StringView{nullptr, 0});
   EXPECT_TRUE(empty.is_end());
   EXPECT_TRUE(empty.valid());
   EXPECT_EQ(empty.next(), 0);
 
-  Utf8Decoder invalid(string_ref{nullptr, 1});
+  Utf8Decoder invalid(StringView{nullptr, 1});
   EXPECT_TRUE(invalid.is_end());
   EXPECT_FALSE(invalid.valid());
   EXPECT_EQ(invalid.next(), 0);
@@ -145,38 +145,38 @@ TEST(StringAlgo, Utf8DecoderRejectsNullNonemptyView) {
 
 TEST(StringAlgo, Utf8LengthMultibyte) {
   // "héllo": é is 2 bytes (U+00E9 -> 0xC3 0xA9) -> 5 code points, 6 bytes.
-  string_ref s("h\xC3\xA9llo");
-  EXPECT_EQ(s.size, 6u);
+  StringView s("h\xC3\xA9llo");
+  EXPECT_EQ(s.size(), 6u);
   EXPECT_TRUE(utf8_validate(s));
   EXPECT_EQ(utf8_length(s), 5);
 
   // "你好" = 2 code points, 6 bytes (each CJK char is 3 bytes).
-  string_ref cjk("\xE4\xBD\xA0\xE5\xA5\xBD");
-  EXPECT_EQ(cjk.size, 6u);
+  StringView cjk("\xE4\xBD\xA0\xE5\xA5\xBD");
+  EXPECT_EQ(cjk.size(), 6u);
   EXPECT_TRUE(utf8_validate(cjk));
   EXPECT_EQ(utf8_length(cjk), 2);
 }
 
 TEST(StringAlgo, Utf8LengthInvalid) {
   // A lone continuation byte 0x80 is not valid UTF-8.
-  string_ref bad("\x80");
+  StringView bad("\x80");
   EXPECT_FALSE(utf8_validate(bad));
   EXPECT_EQ(utf8_length(bad), -1);
   // Truncated 2-byte sequence (0xC3 with no continuation).
-  string_ref truncated("\xC3");
+  StringView truncated("\xC3");
   EXPECT_FALSE(utf8_validate(truncated));
   EXPECT_EQ(utf8_length(truncated), -1);
   const char overlong[] = {static_cast<char>(0xC0), static_cast<char>(0xAF)};
-  EXPECT_FALSE(utf8_validate(string_ref{overlong, 2}));
-  EXPECT_EQ(utf8_length(string_ref{overlong, 2}), -1);
+  EXPECT_FALSE(utf8_validate(StringView{overlong, 2}));
+  EXPECT_EQ(utf8_length(StringView{overlong, 2}), -1);
   const char surrogate[] = {static_cast<char>(0xED), static_cast<char>(0xA0),
                             static_cast<char>(0x80)};
-  EXPECT_FALSE(utf8_validate(string_ref{surrogate, 3}));
-  EXPECT_EQ(utf8_length(string_ref{surrogate, 3}), -1);
+  EXPECT_FALSE(utf8_validate(StringView{surrogate, 3}));
+  EXPECT_EQ(utf8_length(StringView{surrogate, 3}), -1);
   const char too_large[] = {static_cast<char>(0xF4), static_cast<char>(0x90),
                             static_cast<char>(0x80), static_cast<char>(0x80)};
-  EXPECT_FALSE(utf8_validate(string_ref{too_large, 4}));
-  EXPECT_EQ(utf8_length(string_ref{too_large, 4}), -1);
+  EXPECT_FALSE(utf8_validate(StringView{too_large, 4}));
+  EXPECT_EQ(utf8_length(StringView{too_large, 4}), -1);
 }
 
 TEST(StringAlgo, Utf8LengthDispatchedBackendHandlesBlockTails) {
@@ -186,9 +186,9 @@ TEST(StringAlgo, Utf8LengthDispatchedBackendHandlesBlockTails) {
   for (std::size_t size = 0; size <= 257; ++size) {
     std::string ascii(size, 'a');
     if (size != 0) ascii[size / 2] = '\0';
-    EXPECT_TRUE(utf8_validate(string_ref{ascii}))
+    EXPECT_TRUE(utf8_validate(StringView{ascii}))
         << "ASCII tail size=" << size;
-    EXPECT_EQ(utf8_length(string_ref{ascii}),
+    EXPECT_EQ(utf8_length(StringView{ascii}),
               static_cast<std::int64_t>(size))
         << "ASCII tail size=" << size;
   }
@@ -203,9 +203,9 @@ TEST(StringAlgo, Utf8LengthDispatchedBackendHandlesBlockTails) {
   for (std::size_t prefix = 0; prefix <= 257; ++prefix) {
     std::string mixed(prefix, 'x');
     mixed.append(suffix, sizeof(suffix));
-    EXPECT_TRUE(utf8_validate(string_ref{mixed}))
+    EXPECT_TRUE(utf8_validate(StringView{mixed}))
         << "multibyte tail prefix=" << prefix;
-    EXPECT_EQ(utf8_length(string_ref{mixed}),
+    EXPECT_EQ(utf8_length(StringView{mixed}),
               static_cast<std::int64_t>(prefix + 3))
         << "multibyte tail prefix=" << prefix;
   }
@@ -223,42 +223,42 @@ TEST(StringAlgo, Utf8LengthDispatchedBackendRejectsTruncatedTails) {
   for (std::size_t prefix = 0; prefix <= 257; ++prefix) {
     std::string input(prefix, 'x');
     input.append(truncated_three, sizeof(truncated_three));
-    EXPECT_FALSE(utf8_validate(string_ref{input}))
+    EXPECT_FALSE(utf8_validate(StringView{input}))
         << "truncated 3-byte tail prefix=" << prefix;
-    EXPECT_EQ(utf8_length(string_ref{input}), -1)
+    EXPECT_EQ(utf8_length(StringView{input}), -1)
         << "truncated 3-byte tail prefix=" << prefix;
 
     input.assign(prefix, 'x');
     input.append(truncated_four, sizeof(truncated_four));
-    EXPECT_FALSE(utf8_validate(string_ref{input}))
+    EXPECT_FALSE(utf8_validate(StringView{input}))
         << "truncated 4-byte tail prefix=" << prefix;
-    EXPECT_EQ(utf8_length(string_ref{input}), -1)
+    EXPECT_EQ(utf8_length(StringView{input}), -1)
         << "truncated 4-byte tail prefix=" << prefix;
 
     input.assign(prefix, 'x');
     input.append(bad_continuation, sizeof(bad_continuation));
-    EXPECT_FALSE(utf8_validate(string_ref{input}))
+    EXPECT_FALSE(utf8_validate(StringView{input}))
         << "bad continuation tail prefix=" << prefix;
-    EXPECT_EQ(utf8_length(string_ref{input}), -1)
+    EXPECT_EQ(utf8_length(StringView{input}), -1)
         << "bad continuation tail prefix=" << prefix;
   }
 }
 
 TEST(StringAlgo, ScalarUtf8DecoderRejectsNonUnicodeSequences) {
   const char overlong[] = {static_cast<char>(0xC0), static_cast<char>(0xAF)};
-  Utf8Decoder a(string_ref{overlong, 2});
+  Utf8Decoder a(StringView{overlong, 2});
   EXPECT_EQ(a.next(), 0);
   EXPECT_FALSE(a.valid());
 
   const char surrogate[] = {static_cast<char>(0xED), static_cast<char>(0xA0),
                             static_cast<char>(0x80)};
-  Utf8Decoder b(string_ref{surrogate, 3});
+  Utf8Decoder b(StringView{surrogate, 3});
   EXPECT_EQ(b.next(), 0);
   EXPECT_FALSE(b.valid());
 
   const char maximum[] = {static_cast<char>(0xF4), static_cast<char>(0x8F),
                           static_cast<char>(0xBF), static_cast<char>(0xBF)};
-  Utf8Decoder c(string_ref{maximum, 4});
+  Utf8Decoder c(StringView{maximum, 4});
   EXPECT_EQ(c.next(), 0x10FFFF);
   EXPECT_TRUE(c.valid());
 }

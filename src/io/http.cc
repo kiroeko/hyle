@@ -58,10 +58,10 @@ sched::Task<int> http_transport_shutdown(mem::Allocator alloc,
 namespace {
 
 // ASCII case-insensitive byte compare (HTTP header names are case-insensitive).
-bool iequal(string_ref a, string_ref b) noexcept {
-  if (a.size != b.size) return false;
-  for (std::uint32_t i = 0; i < a.size; ++i) {
-    char ca = a.data[i], cb = b.data[i];
+bool iequal(StringView a, StringView b) noexcept {
+  if (a.size() != b.size()) return false;
+  for (std::uint32_t i = 0; i < a.size(); ++i) {
+    char ca = a[i], cb = b[i];
     if (ca >= 'A' && ca <= 'Z') ca = static_cast<char>(ca - 'A' + 'a');
     if (cb >= 'A' && cb <= 'Z') cb = static_cast<char>(cb - 'A' + 'a');
     if (ca != cb) return false;
@@ -69,19 +69,19 @@ bool iequal(string_ref a, string_ref b) noexcept {
   return true;
 }
 
-bool contains_crlf(string_ref s) noexcept {
-  for (std::uint32_t i = 0; i < s.size; ++i)
-    if (s.data[i] == '\r' || s.data[i] == '\n') return true;
+bool contains_crlf(StringView s) noexcept {
+  for (std::uint32_t i = 0; i < s.size(); ++i)
+    if (s[i] == '\r' || s[i] == '\n') return true;
   return false;
 }
 
-bool valid_header_name(string_ref s) noexcept {
-  if (s.size == 0) return false;
+bool valid_header_name(StringView s) noexcept {
+  if (s.empty()) return false;
   // RFC token: reject controls, separators, space and non-ASCII. This is stricter
   // than merely blocking CRLF and keeps emitted framing unambiguous.
   static constexpr const char* kSeparators = "()<>@,;:\\\"/[]?={} \t";
-  for (std::uint32_t i = 0; i < s.size; ++i) {
-    unsigned char c = static_cast<unsigned char>(s.data[i]);
+  for (std::uint32_t i = 0; i < s.size(); ++i) {
+    unsigned char c = static_cast<unsigned char>(s[i]);
     if (c <= 0x20 || c >= 0x7f || std::strchr(kSeparators, c) != nullptr)
       return false;
   }
@@ -90,11 +90,11 @@ bool valid_header_name(string_ref s) noexcept {
 
 // Parse a non-negative decimal (Content-Length). Returns false on overflow / a
 // non-digit / empty. Bounds the value to guard against absurd lengths.
-bool parse_u64(string_ref s, std::uint64_t& out) noexcept {
-  if (s.size == 0) return false;
+bool parse_u64(StringView s, std::uint64_t& out) noexcept {
+  if (s.empty()) return false;
   std::uint64_t v = 0;
-  for (std::uint32_t i = 0; i < s.size; ++i) {
-    char c = s.data[i];
+  for (std::uint32_t i = 0; i < s.size(); ++i) {
+    char c = s[i];
     if (c < '0' || c > '9') return false;
     if (v > (0xFFFFFFFFFFFFFFFFull - 9) / 10) return false;  // overflow guard
     v = v * 10 + static_cast<std::uint64_t>(c - '0');
@@ -168,17 +168,17 @@ struct HttpServerConn::Impl {
 
 // ---- HttpRequest accessors -------------------------------------------------
 
-string_ref HttpRequest::header_name(std::size_t i) const noexcept {
+StringView HttpRequest::header_name(std::size_t i) const noexcept {
   if (i >= header_count_) return {};
   const auto& h = headers_[i];
-  return string_ref{h.name, static_cast<std::uint32_t>(h.name_len)};
+  return StringView{h.name, static_cast<std::uint32_t>(h.name_len)};
 }
-string_ref HttpRequest::header_value(std::size_t i) const noexcept {
+StringView HttpRequest::header_value(std::size_t i) const noexcept {
   if (i >= header_count_) return {};
   const auto& h = headers_[i];
-  return string_ref{h.value, static_cast<std::uint32_t>(h.value_len)};
+  return StringView{h.value, static_cast<std::uint32_t>(h.value_len)};
 }
-string_ref HttpRequest::header(string_ref name) const noexcept {
+StringView HttpRequest::header(StringView name) const noexcept {
   for (std::size_t i = 0; i < header_count_; ++i) {
     if (iequal(header_name(i), name)) return header_value(i);
   }
@@ -187,7 +187,7 @@ string_ref HttpRequest::header(string_ref name) const noexcept {
 
 // ---- HttpResponse ----------------------------------------------------------
 
-bool HttpResponse::add_header(string_ref name, string_ref value) noexcept {
+bool HttpResponse::add_header(StringView name, StringView value) noexcept {
   if (h_count_ >= kMaxRespHeaders) return false;
   h_names_[h_count_] = name;
   h_vals_[h_count_] = value;
@@ -197,17 +197,17 @@ bool HttpResponse::add_header(string_ref name, string_ref value) noexcept {
 
 // ---- HttpResponseView accessors --------------------------------------------
 
-string_ref HttpResponseView::header_name(std::size_t i) const noexcept {
+StringView HttpResponseView::header_name(std::size_t i) const noexcept {
   if (i >= header_count_) return {};
   const auto& h = headers_[i];
-  return string_ref{h.name, static_cast<std::uint32_t>(h.name_len)};
+  return StringView{h.name, static_cast<std::uint32_t>(h.name_len)};
 }
-string_ref HttpResponseView::header_value(std::size_t i) const noexcept {
+StringView HttpResponseView::header_value(std::size_t i) const noexcept {
   if (i >= header_count_) return {};
   const auto& h = headers_[i];
-  return string_ref{h.value, static_cast<std::uint32_t>(h.value_len)};
+  return StringView{h.value, static_cast<std::uint32_t>(h.value_len)};
 }
-string_ref HttpResponseView::header(string_ref name) const noexcept {
+StringView HttpResponseView::header(StringView name) const noexcept {
   for (std::size_t i = 0; i < header_count_; ++i) {
     if (iequal(header_name(i), name)) return header_value(i);
   }
@@ -398,19 +398,19 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
 
   HttpRequest& r = im.req;
   r = HttpRequest{};
-  r.method_ = string_ref{method, static_cast<std::uint32_t>(method_len)};
-  r.target_ = string_ref{path, static_cast<std::uint32_t>(path_len)};
+  r.method_ = StringView{method, static_cast<std::uint32_t>(method_len)};
+  r.target_ = StringView{path, static_cast<std::uint32_t>(path_len)};
   r.minor_version_ = minor_version;
   r.headers_ = im.headers;
   r.header_count_ = num_headers;
   std::uint32_t q = r.target_.find('?');
-  if (q == string_ref::npos) {
+  if (q == StringView::npos) {
     r.path_ = r.target_;
   } else {
     r.path_ = r.target_.substr(0, q);
-    r.query_ = r.target_.substr(q + 1, r.target_.size - q - 1);
+    r.query_ = r.target_.substr(q + 1, r.target_.size() - q - 1);
   }
-  string_ref conn = r.header("connection");
+  StringView conn = r.header("connection");
   if (minor_version >= 1) {
     r.keep_alive_ = !iequal(conn, "close");
   } else {
@@ -419,8 +419,8 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
 
   // Body framing. chunked precedence over Content-Length (RFC). Body goes into
   // im.body (stable) so the body view is also safe against buf moves.
-  string_ref te = r.header("transfer-encoding");
-  string_ref cl = r.header("content-length");
+  StringView te = r.header("transfer-encoding");
+  StringView cl = r.header("content-length");
   // Request-smuggling defense (RFC 7230 §3.3.3). A message that is ambiguous about
   // its body length is a desync/smuggling vector when HYLE sits behind or in front
   // of another HTTP actor that resolves the ambiguity differently. Reject (close
@@ -435,27 +435,27 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
   //  - Duplicate Content-Length headers with CONFLICTING values (RFC 7230 §3.3.3
   //    rule: multiple CL with different values is unrecoverable): scan all headers,
   //    reject if two "content-length" values differ.
-  if (te.size > 0) {
-    if (cl.size > 0) co_return nullptr;          // TE + CL both present -> reject
+  if (!te.empty()) {
+    if (!cl.empty()) co_return nullptr;          // TE + CL both present -> reject
     if (!iequal(te, "chunked")) co_return nullptr;  // non-bare-chunked TE -> reject
   } else {
-    string_ref seen_cl{};
+    StringView seen_cl{};
     for (std::size_t i = 0; i < r.header_count_; ++i) {
       if (iequal(r.header_name(i), "content-length")) {
-        string_ref v = r.header_value(i);
-        if (seen_cl.size > 0 && !(seen_cl == v)) co_return nullptr;  // conflicting
+        StringView v = r.header_value(i);
+        if (!seen_cl.empty() && !(seen_cl == v)) co_return nullptr;  // conflicting
         seen_cl = v;
       }
     }
   }
   buf.consume(head_len);  // head is safely copied; drop it from the read buffer
   im.body.size = 0;
-  if (te.size > 0) {  // == chunked (guarded above)
+  if (!te.empty()) {  // == chunked (guarded above)
     std::uint64_t dn =
         co_await decode_chunked(alloc, buf, im.body, c.transport_);
     if (dn == UINT64_MAX) co_return nullptr;
-    r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(dn)};
-  } else if (cl.size > 0) {
+    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(dn)};
+  } else if (!cl.empty()) {
     std::uint64_t body_len = 0;
     if (!parse_u64(cl, body_len)) co_return nullptr;
     if (body_len > kHttpMaxBodyBytes) co_return nullptr;
@@ -466,10 +466,10 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
     if (!im.body.reserve(static_cast<std::uint32_t>(body_len))) co_return nullptr;
     std::memcpy(im.body.data, buf.data, body_len);
     im.body.size = static_cast<std::uint32_t>(body_len);
-    r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(body_len)};
+    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(body_len)};
     buf.consume(static_cast<std::uint32_t>(body_len));  // leftover pipelined stays
   } else {
-    r.body_ = string_ref{};  // no body (GET/DELETE)
+    r.body_ = StringView{};  // no body (GET/DELETE)
   }
   co_return &r;
 }
@@ -499,14 +499,16 @@ const char* reason_phrase(int code) noexcept {
   }
 }
 
-// Append raw bytes / a decimal / a string_ref to a GrowBuf (out framing buffer).
+// Append raw bytes / a decimal / a StringView to a GrowBuf (out framing buffer).
 bool put(GrowBuf& b, const char* s, std::uint32_t n) noexcept {
   if (!b.reserve(b.size + n)) return false;
   std::memcpy(b.data + b.size, s, n);
   b.size += n;
   return true;
 }
-bool put(GrowBuf& b, string_ref s) noexcept { return put(b, s.data, s.size); }
+bool put(GrowBuf& b, StringView s) noexcept {
+  return put(b, s.data(), s.size());
+}
 bool put_cstr(GrowBuf& b, const char* s) noexcept {
   return put(b, s, static_cast<std::uint32_t>(std::strlen(s)));
 }
@@ -569,8 +571,8 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
   if (!put_cstr(out, "HTTP/1.1 ")) co_return false;
   if (!put_u64(out, static_cast<std::uint64_t>(resp.status()))) co_return false;
   if (!put(out, " ", 1)) co_return false;
-  string_ref reason = resp.reason_;
-  if (reason.size > 0) {
+  StringView reason = resp.reason_;
+  if (!reason.empty()) {
     if (!put(out, reason)) co_return false;
   } else {
     if (!put_cstr(out, reason_phrase(resp.status()))) co_return false;
@@ -587,14 +589,14 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
     if (!put_cstr(out, "Transfer-Encoding: chunked\r\n")) co_return false;
   } else {
     if (!put_cstr(out, "Content-Length: ")) co_return false;
-    if (!put_u64(out, resp.body_.size)) co_return false;
+    if (!put_u64(out, resp.body_.size())) co_return false;
     if (!put_cstr(out, "\r\n")) co_return false;
   }
   if (!put_cstr(out, "\r\n")) co_return false;  // end of headers
 
   // Send head (+ fixed body appended for the common small-response case).
   if (!resp.streaming()) {
-    if (resp.body_.size > 0) {
+    if (!resp.body_.empty()) {
       if (!put(out, resp.body_)) co_return false;
     }
     co_return co_await write_all(alloc, c.transport_, out.data, out.size);
@@ -731,23 +733,23 @@ HttpClientConn& HttpClientConn::operator=(HttpClientConn&& o) noexcept {
 
 sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
                                                    HttpClientConn& c,
-                                                   string_ref method,
-                                                   string_ref path, string_ref host,
-                                                   string_ref body) noexcept {
+                                                   StringView method,
+                                                   StringView path, StringView host,
+                                                   StringView body) noexcept {
   // These fields are serialized directly into the request line/Host header.
   // Reject delimiter injection instead of emitting a second attacker-controlled
   // header or request on the keep-alive connection.
-  if (method.size == 0 || path.size == 0 || host.size == 0 ||
+  if (method.empty() || path.empty() || host.empty() ||
       contains_crlf(method) || contains_crlf(path) || contains_crlf(host)) {
     co_return nullptr;
   }
   if (!valid_header_name(method)) co_return nullptr;
-  for (std::uint32_t i = 0; i < path.size; ++i) {
-    const unsigned char ch = static_cast<unsigned char>(path.data[i]);
+  for (std::uint32_t i = 0; i < path.size(); ++i) {
+    const unsigned char ch = static_cast<unsigned char>(path[i]);
     if (ch <= 0x20 || ch == 0x7f) co_return nullptr;
   }
-  for (std::uint32_t i = 0; i < host.size; ++i) {
-    const unsigned char ch = static_cast<unsigned char>(host.data[i]);
+  for (std::uint32_t i = 0; i < host.size(); ++i) {
+    const unsigned char ch = static_cast<unsigned char>(host[i]);
     if (ch <= 0x20 || ch == 0x7f) co_return nullptr;
   }
   HttpClientConn::Impl& im = *c.impl_;
@@ -759,13 +761,13 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
         !put_cstr(out, " HTTP/1.1\r\nHost: ") || !put(out, host) ||
         !put_cstr(out, "\r\n"))
       co_return nullptr;
-    if (body.size > 0) {
-      if (!put_cstr(out, "Content-Length: ") || !put_u64(out, body.size) ||
+    if (!body.empty()) {
+      if (!put_cstr(out, "Content-Length: ") || !put_u64(out, body.size()) ||
           !put_cstr(out, "\r\n"))
         co_return nullptr;
     }
     if (!put_cstr(out, "\r\n")) co_return nullptr;
-    if (body.size > 0 && !put(out, body)) co_return nullptr;
+    if (!body.empty() && !put(out, body)) co_return nullptr;
     if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
       co_return nullptr;
   }
@@ -810,7 +812,7 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
   r = HttpResponseView{};
   r.status_ = status;
   r.minor_version_ = minor_version;
-  r.reason_ = string_ref{msg, static_cast<std::uint32_t>(msg_len)};
+  r.reason_ = StringView{msg, static_cast<std::uint32_t>(msg_len)};
   r.headers_ = im.headers;
   r.header_count_ = num_headers;
 
@@ -825,37 +827,37 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
   if (no_body) {
     buf.consume(head_len);
     im.body.size = 0;
-    r.body_ = string_ref{};
+    r.body_ = StringView{};
     co_return &r;
   }
 
   // Body framing (same rules as the server request path).
-  string_ref te = r.header("transfer-encoding");
-  string_ref cl = r.header("content-length");
+  StringView te = r.header("transfer-encoding");
+  StringView cl = r.header("content-length");
   // Apply the same anti-smuggling framing policy on responses as requests.
   // A client that accepts TE+CL, an unsupported transfer coding, or conflicting
   // duplicate Content-Length values can desynchronize its keep-alive stream from
   // an intermediary that resolves the ambiguity differently.
-  if (te.size > 0) {
-    if (cl.size > 0) co_return nullptr;
+  if (!te.empty()) {
+    if (!cl.empty()) co_return nullptr;
     if (!iequal(te, "chunked")) co_return nullptr;
   } else {
-    string_ref seen_cl{};
+    StringView seen_cl{};
     for (std::size_t i = 0; i < r.header_count_; ++i) {
       if (!iequal(r.header_name(i), "content-length")) continue;
-      string_ref v = r.header_value(i);
-      if (seen_cl.size > 0 && !(seen_cl == v)) co_return nullptr;
+      StringView v = r.header_value(i);
+      if (!seen_cl.empty() && !(seen_cl == v)) co_return nullptr;
       seen_cl = v;
     }
   }
   buf.consume(head_len);
   im.body.size = 0;
-  if (te.size > 0) {  // exactly bare "chunked" (validated above)
+  if (!te.empty()) {  // exactly bare "chunked" (validated above)
     std::uint64_t dn =
         co_await decode_chunked(alloc, buf, im.body, c.transport_);
     if (dn == UINT64_MAX) co_return nullptr;
-    r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(dn)};
-  } else if (cl.size > 0) {
+    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(dn)};
+  } else if (!cl.empty()) {
     std::uint64_t body_len = 0;
     if (!parse_u64(cl, body_len)) co_return nullptr;
     if (body_len > kHttpMaxBodyBytes) co_return nullptr;
@@ -864,7 +866,7 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
     if (!im.body.reserve(static_cast<std::uint32_t>(body_len))) co_return nullptr;
     std::memcpy(im.body.data, buf.data, body_len);
     im.body.size = static_cast<std::uint32_t>(body_len);
-    r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(body_len)};
+    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(body_len)};
     buf.consume(static_cast<std::uint32_t>(body_len));
   } else {
     // No Content-Length and not chunked: the body runs until the peer CLOSES the
@@ -887,16 +889,16 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
       std::memcpy(im.body.data, buf.data, avail);
       im.body.size = avail;
     }
-    r.body_ = string_ref{im.body.data, avail};
+    r.body_ = StringView{im.body.data, avail};
     buf.consume(avail);
   }
   co_return &r;
 }
 
-sched::Task<HttpResponseView*> HttpClientConn::request(string_ref method,
-                                                       string_ref path,
-                                                       string_ref host,
-                                                       string_ref body) noexcept {
+sched::Task<HttpResponseView*> HttpClientConn::request(StringView method,
+                                                       StringView path,
+                                                       StringView host,
+                                                       StringView body) noexcept {
   return http_client_request(alloc_, *this, method, path, host, body);
 }
 

@@ -78,7 +78,7 @@ cache 复用 hard pool 的 batch pop/push；正常走 32-bit tagged CAS，tag �
 
 ## 4. 通用纪律
 
-- **跨平台代价讲在明处**：HYLE 的所有权/生命周期约定见 [`lifecycle-design.md`](../architecture/lifecycle-design.md)；`string_ref` 等借用视图的生命周期由调用者保证，`PodVector` 则拥有自己的连续存储。
+- **跨平台代价讲在明处**：HYLE 的所有权/生命周期约定见 [`lifecycle-design.md`](../architecture/lifecycle-design.md)；`StringView` 等借用视图的生命周期由调用者保证，`PodVector` 则拥有自己的连续存储。
 - **线程/迁移模型**：除非文档另述,假定 fiber 可在任意 worker 间迁移;不要假设"同一 fiber 总在同一 OS 线程"。
 - **本契约随实现演进**：新增热路径若引入"为性能而限制调用方式"的约束,必须在此登记(规则 + 为什么 + 安全模式 + 后果)。
 

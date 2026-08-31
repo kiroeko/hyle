@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/tls.h"
@@ -48,7 +48,7 @@ struct phr_header;  // picohttpparser (impl detail; never leaks into this header
 
 namespace hyle::io {
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 
 // Cap on request-line + headers (DoS guard: the incremental parse buffer is capped
 // here; a client that never sends the header terminator can't grow it unbounded).
@@ -80,8 +80,8 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noex
 sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
                                    const HttpResponse&) noexcept;
 sched::Task<HttpResponseView*> http_client_request(mem::Allocator, HttpClientConn&,
-                                                   string_ref, string_ref,
-                                                   string_ref, string_ref) noexcept;
+                                                   StringView, StringView,
+                                                   StringView, StringView) noexcept;
 
 // A connected byte transport for HTTP. Plain TCP is always available; TLS is an
 // additional leg when HYLE was built with OpenSSL. A TLS stream must already
@@ -136,28 +136,28 @@ class HttpTransport {
 // high-level handler receives it by const& and must copy anything it keeps.
 class HttpRequest {
  public:
-  string_ref method() const noexcept { return method_; }
-  string_ref target() const noexcept { return target_; }  // raw request-target (path?query), undecoded
-  string_ref path() const noexcept { return path_; }      // target with any ?query stripped
-  string_ref query() const noexcept { return query_; }    // after '?', empty if none
+  StringView method() const noexcept { return method_; }
+  StringView target() const noexcept { return target_; }  // raw request-target (path?query), undecoded
+  StringView path() const noexcept { return path_; }      // target with any ?query stripped
+  StringView query() const noexcept { return query_; }    // after '?', empty if none
   int minor_version() const noexcept { return minor_version_; }  // 0 => HTTP/1.0, 1 => HTTP/1.1
 
   std::size_t header_count() const noexcept { return header_count_; }
   // header name/value by index (0..header_count()). Names are case-insensitive per
   // HTTP; use header() for a case-insensitive lookup.
-  string_ref header_name(std::size_t i) const noexcept;
-  string_ref header_value(std::size_t i) const noexcept;
-  // Case-insensitive header lookup; returns an empty string_ref if absent.
-  HYLE_IO_API string_ref header(string_ref name) const noexcept;
+  StringView header_name(std::size_t i) const noexcept;
+  StringView header_value(std::size_t i) const noexcept;
+  // Case-insensitive header lookup; returns an empty StringView if absent.
+  HYLE_IO_API StringView header(StringView name) const noexcept;
 
   // The (buffered) request body. Empty for GET/DELETE and when there is no body.
-  string_ref body() const noexcept { return body_; }
+  StringView body() const noexcept { return body_; }
   bool keep_alive() const noexcept { return keep_alive_; }
 
  private:
   friend sched::Task<HttpRequest*> http_server_next(mem::Allocator,
                                                     HttpServerConn&) noexcept;
-  string_ref method_, target_, path_, query_, body_;
+  StringView method_, target_, path_, query_, body_;
   // Header views are stored as offsets into the parser's phr_header array, exposed
   // via the accessors above. We keep the raw array pointer + count (set by the conn).
   const phr_header* headers_ = nullptr;
@@ -193,14 +193,14 @@ class HttpResponse {
   HttpResponse() noexcept = default;
 
   // Status line. reason may be empty -> a default phrase is chosen for common codes.
-  void set_status(int code, string_ref reason = {}) noexcept {
+  void set_status(int code, StringView reason = {}) noexcept {
     status_ = code;
     reason_ = reason;
   }
   // Append a header. name/value views must outlive the send.
-  HYLE_IO_API bool add_header(string_ref name, string_ref value) noexcept;
+  HYLE_IO_API bool add_header(StringView name, StringView value) noexcept;
   // Whole in-memory body (sets Content-Length). Mutually exclusive with set_stream.
-  void set_body(string_ref body) noexcept {
+  void set_body(StringView body) noexcept {
     body_ = body;
     streaming_ = false;
   }
@@ -219,10 +219,10 @@ class HttpResponse {
   friend sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
                                             const HttpResponse&) noexcept;
   static constexpr std::size_t kMaxRespHeaders = 32;
-  string_ref reason_;
-  string_ref body_;
-  string_ref h_names_[kMaxRespHeaders];
-  string_ref h_vals_[kMaxRespHeaders];
+  StringView reason_;
+  StringView body_;
+  StringView h_names_[kMaxRespHeaders];
+  StringView h_vals_[kMaxRespHeaders];
   std::size_t h_count_ = 0;
   NextChunkFn next_ = nullptr;
   void* stream_ctx_ = nullptr;
@@ -343,18 +343,18 @@ class HttpResponseView {
  public:
   int status() const noexcept { return status_; }
   int minor_version() const noexcept { return minor_version_; }
-  string_ref reason() const noexcept { return reason_; }
+  StringView reason() const noexcept { return reason_; }
   std::size_t header_count() const noexcept { return header_count_; }
-  string_ref header_name(std::size_t i) const noexcept;
-  string_ref header_value(std::size_t i) const noexcept;
-  HYLE_IO_API string_ref header(string_ref name) const noexcept;
-  string_ref body() const noexcept { return body_; }
+  StringView header_name(std::size_t i) const noexcept;
+  StringView header_value(std::size_t i) const noexcept;
+  HYLE_IO_API StringView header(StringView name) const noexcept;
+  StringView body() const noexcept { return body_; }
 
  private:
   friend sched::Task<HttpResponseView*> http_client_request(
-      mem::Allocator, HttpClientConn&, string_ref, string_ref, string_ref,
-      string_ref) noexcept;
-  string_ref reason_, body_;
+      mem::Allocator, HttpClientConn&, StringView, StringView, StringView,
+      StringView) noexcept;
+  StringView reason_, body_;
   const phr_header* headers_ = nullptr;
   std::size_t header_count_ = 0;
   int status_ = 0;
@@ -379,14 +379,14 @@ class HttpClientConn {
   // until the next request) or nullptr on error. Writes "METHOD path HTTP/1.1\r\n
   // Host: <host>\r\n" (+ Content-Length if body) + body, then parses the response.
   // Forwards to a free coroutine (Allocator-first), same reason as the server conn.
-  HYLE_IO_API sched::Task<HttpResponseView*> request(string_ref method, string_ref path,
-                                                     string_ref host,
-                                                     string_ref body = {}) noexcept;
+  HYLE_IO_API sched::Task<HttpResponseView*> request(StringView method, StringView path,
+                                                     StringView host,
+                                                     StringView body = {}) noexcept;
 
  private:
   friend sched::Task<HttpResponseView*> http_client_request(
-      mem::Allocator, HttpClientConn&, string_ref, string_ref, string_ref,
-      string_ref) noexcept;
+      mem::Allocator, HttpClientConn&, StringView, StringView, StringView,
+      StringView) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;
   HttpTransport transport_;

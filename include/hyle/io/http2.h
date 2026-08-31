@@ -33,8 +33,8 @@ inline constexpr std::uint64_t kHttp2MaxBodyBytes = 8ull * 1024 * 1024;
 inline constexpr std::uint32_t kHttp2DefaultMaxConcurrentStreams = 100;
 
 struct Http2Header {
-  string_ref name;
-  string_ref value;
+  StringView name;
+  StringView value;
 };
 
 enum class Http2Error : std::uint32_t {
@@ -64,17 +64,17 @@ class Http2MessageView {
  public:
   bool valid() const noexcept { return stream_ != nullptr; }
   HYLE_IO_API std::int32_t stream_id() const noexcept;
-  HYLE_IO_API string_ref method() const noexcept;
-  HYLE_IO_API string_ref scheme() const noexcept;
-  HYLE_IO_API string_ref authority() const noexcept;
-  HYLE_IO_API string_ref path() const noexcept;
+  HYLE_IO_API StringView method() const noexcept;
+  HYLE_IO_API StringView scheme() const noexcept;
+  HYLE_IO_API StringView authority() const noexcept;
+  HYLE_IO_API StringView path() const noexcept;
   HYLE_IO_API int status() const noexcept;
   HYLE_IO_API Http2Error stream_error() const noexcept;
   HYLE_IO_API std::size_t header_count() const noexcept;
-  HYLE_IO_API string_ref header_name(std::size_t index) const noexcept;
-  HYLE_IO_API string_ref header_value(std::size_t index) const noexcept;
-  HYLE_IO_API string_ref header(string_ref name) const noexcept;
-  HYLE_IO_API string_ref body() const noexcept;
+  HYLE_IO_API StringView header_name(std::size_t index) const noexcept;
+  HYLE_IO_API StringView header_value(std::size_t index) const noexcept;
+  HYLE_IO_API StringView header(StringView name) const noexcept;
+  HYLE_IO_API StringView body() const noexcept;
 
  private:
   friend class Http2ServerConn;
@@ -90,7 +90,7 @@ sched::Task<Http2MessageView*> http2_server_next(
     mem::Allocator, Http2ServerConn&) noexcept;
 sched::Task<bool> http2_server_respond(
     mem::Allocator, Http2ServerConn&, std::int32_t, int, const Http2Header*,
-    std::size_t, string_ref) noexcept;
+    std::size_t, StringView) noexcept;
 sched::Task<bool> http2_server_reset(mem::Allocator, Http2ServerConn&,
                                      std::int32_t, Http2Error) noexcept;
 sched::Task<bool> http2_server_shutdown(mem::Allocator, Http2ServerConn&,
@@ -122,7 +122,7 @@ class Http2ServerConn {
   // frames. nghttp2 applies peer flow-control windows and frame sizing.
   HYLE_IO_API sched::Task<bool> respond(
       std::int32_t stream_id, int status, const Http2Header* headers = nullptr,
-      std::size_t header_count = 0, string_ref body = {}) noexcept;
+      std::size_t header_count = 0, StringView body = {}) noexcept;
   HYLE_IO_API sched::Task<bool> reset(
       std::int32_t stream_id,
       Http2Error error = Http2Error::kCancel) noexcept;
@@ -134,7 +134,7 @@ class Http2ServerConn {
       mem::Allocator, Http2ServerConn&) noexcept;
   friend sched::Task<bool> http2_server_respond(
       mem::Allocator, Http2ServerConn&, std::int32_t, int,
-      const Http2Header*, std::size_t, string_ref) noexcept;
+      const Http2Header*, std::size_t, StringView) noexcept;
   friend sched::Task<bool> http2_server_reset(
       mem::Allocator, Http2ServerConn&, std::int32_t, Http2Error) noexcept;
   friend sched::Task<bool> http2_server_shutdown(
@@ -147,8 +147,8 @@ class Http2ServerConn {
 };
 
 sched::Task<std::int32_t> http2_client_submit(
-    mem::Allocator, Http2ClientConn&, string_ref, string_ref, string_ref,
-    string_ref, const Http2Header*, std::size_t, string_ref) noexcept;
+    mem::Allocator, Http2ClientConn&, StringView, StringView, StringView,
+    StringView, const Http2Header*, std::size_t, StringView) noexcept;
 sched::Task<Http2MessageView*> http2_client_next(
     mem::Allocator, Http2ClientConn&) noexcept;
 sched::Task<bool> http2_client_reset(mem::Allocator, Http2ClientConn&,
@@ -175,9 +175,9 @@ class Http2ClientConn {
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 
   HYLE_IO_API sched::Task<std::int32_t> submit_request(
-      string_ref method, string_ref scheme, string_ref authority,
-      string_ref path, const Http2Header* headers = nullptr,
-      std::size_t header_count = 0, string_ref body = {}) noexcept;
+      StringView method, StringView scheme, StringView authority,
+      StringView path, const Http2Header* headers = nullptr,
+      std::size_t header_count = 0, StringView body = {}) noexcept;
   HYLE_IO_API sched::Task<Http2MessageView*> next_response() noexcept;
   HYLE_IO_API sched::Task<bool> reset(
       std::int32_t stream_id,
@@ -187,8 +187,8 @@ class Http2ClientConn {
 
  private:
   friend sched::Task<std::int32_t> http2_client_submit(
-      mem::Allocator, Http2ClientConn&, string_ref, string_ref, string_ref,
-      string_ref, const Http2Header*, std::size_t, string_ref) noexcept;
+      mem::Allocator, Http2ClientConn&, StringView, StringView, StringView,
+      StringView, const Http2Header*, std::size_t, StringView) noexcept;
   friend sched::Task<Http2MessageView*> http2_client_next(
       mem::Allocator, Http2ClientConn&) noexcept;
   friend sched::Task<bool> http2_client_reset(

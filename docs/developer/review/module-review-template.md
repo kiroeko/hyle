@@ -68,7 +68,11 @@ lifecycle 必须记为 `PARTIAL`。
 
 ### 2. 推理引擎能力完整度
 
-| Inference journey / ggml difference | admitted demand | HYLE route / owner | `COMPLETE/ROUTED/OUT_OF_SCOPE/MISSING` | evidence / remaining trigger |
+- llama.cpp reference / clean locked commit / last remote check：
+- standalone ggml reference / clean locked commit / last remote check：
+- llama.cpp 随仓 ggml identity（若与 standalone 不同）：
+
+| llama.cpp real journey / ggml foundation difference | admitted demand | HYLE route / owner | `COMPLETE/ROUTED/OUT_OF_SCOPE/MISSING` | evidence / remaining trigger |
 |---|---|---|---|---|
 
 - 当前证据下是否存在未处置 `MUST`：`YES / NO / BLOCKED`

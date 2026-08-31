@@ -14,7 +14,7 @@
 //
 // Returns std::string_view (a borrowed view into the compiler's static string)
 // -- the conventions-approved view use, and it keeps util independent of
-// container/string_ref (whose placement is a deferred architecture decision).
+// container/StringView (whose placement is a deferred architecture decision).
 // The exact spelling differs per compiler (MSVC prefixes "class"/"struct").
 // Use it for diagnostics or a controlled build-local label, never as a unique
 // correctness, persistence, plugin, wire, or cross-compiler identity.

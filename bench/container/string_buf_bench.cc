@@ -20,10 +20,10 @@
 #endif
 
 #include "hyle/container/string_interner.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/mem/allocator.h"
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::container::StringInterner;
 using hyle::mem::system_allocator;
 
@@ -85,7 +85,7 @@ std::vector<std::vector<std::string>> gen_thread_streams(int thread_count, int p
 
 int bench_string_buf() {
   const std::vector<std::string> stream = gen_stream();
-  std::vector<string_ref> stream_views;
+  std::vector<StringView> stream_views;
   stream_views.reserve(stream.size());
   for (const auto& s : stream)
     stream_views.emplace_back(s.data(), static_cast<std::uint32_t>(s.size()));
@@ -129,8 +129,8 @@ int bench_string_buf() {
     StringInterner buf(system_allocator());
     const char* last = nullptr;
     for (const auto& s : stream) {
-      string_ref r = buf.intern(string_ref{s.data(), static_cast<std::uint32_t>(s.size())});
-      last = r.data;
+      StringView r = buf.intern(StringView{s.data(), static_cast<std::uint32_t>(s.size())});
+      last = r.data();
     }
     ankerl::nanobench::doNotOptimizeAway(last);
     ankerl::nanobench::doNotOptimizeAway(buf.size());
@@ -152,7 +152,7 @@ int bench_string_buf() {
     constexpr int kLongCount = 4096;
     constexpr int kLongBytes = 1024;
     std::vector<std::string> long_strings;
-    std::vector<string_ref> long_views;
+    std::vector<StringView> long_views;
     long_strings.reserve(kLongCount);
     long_views.reserve(kLongCount);
     for (int i = 0; i < kLongCount; ++i) {
@@ -251,7 +251,7 @@ int bench_string_buf() {
     b2.title("refcount churn: add+retain+remove*2 (2k uniques)")
         .relative(true)
         .batch(static_cast<std::uint64_t>(kUnique) * 4); // add+retain+2x remove
-    std::vector<string_ref> lifecycle_views;
+    std::vector<StringView> lifecycle_views;
     std::vector<hyle::container::StringId> lifecycle_ids(uniques.size());
     lifecycle_views.reserve(uniques.size());
     for (const auto& text : uniques)
@@ -316,7 +316,7 @@ int bench_string_buf() {
     b2.run("HYLE StringInterner acquire/retain/release (direct ID)", [&] {
       StringInterner buf(system_allocator());
       for (const auto& s : uniques) {
-        auto h = buf.acquire(string_ref{s.data(), static_cast<std::uint32_t>(s.size())});
+        auto h = buf.acquire(StringView{s.data(), static_cast<std::uint32_t>(s.size())});
         buf.retain(h);
         buf.release(h); // drop the retain
         buf.release(h); // drop the acquire -> count zero -> erase + deallocate

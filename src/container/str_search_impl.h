@@ -2,11 +2,9 @@
 // freezes Highway's static target before including this file. HYLE owns the
 // pointer/count behavior; Highway owns register types and lowering.
 //
-// These REPLACE the old hand-rolled string_ref_avx2.cc (256b) + the SSE2 core in
-// string_ref.cc: one source, all ISAs, and NEON/AVX-512 for free (previously x86-only ->
-// aarch64 fell to scalar). Count keeps the psadbw-style SAD accumulate (SumsOf8) with FOUR
-// independent accumulators -- the single-accumulator loop lost std::count ~1.7x; rfind uses
-// the reverse-scan FindLastTrue primitive.
+// One implementation source is generated for every supported ISA. Count uses
+// SumsOf8 with four independent accumulators; rfind uses the reverse-scan
+// FindLastTrue primitive.
 
 #include <cstddef>
 #include <cstdint>
@@ -34,7 +32,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 // Count occurrences of `c` in data[0,size). SAD accumulate: Eq marks matches, VecFromMask
 // turns them into 0xFF bytes, SumsOf8 horizontally sums each 8-byte group (a 0xFF match = 255)
 // into u64 lanes; accumulate across vectors, sum the lanes, divide by 255. FOUR independent
-// accumulators so the per-iter SumsOf8+Add chains don't serialize (single-acc lost ~1.7x).
+// accumulators so the per-iteration SumsOf8+Add chains do not serialize.
 std::uint32_t STR_COUNT_FN(const char* data, std::uint32_t size, char c) noexcept {
   const hn::ScalableTag<std::uint8_t> d;
   const hn::ScalableTag<std::uint64_t> d64;
@@ -68,7 +66,7 @@ std::uint32_t STR_COUNT_FN(const char* data, std::uint32_t size, char c) noexcep
 
 // Index of the last `c` in data[0,size), or 0xFFFFFFFF if absent. Backward w-byte blocks from
 // the high end; in each, Eq + FindLastTrue gives the highest matching lane. A sub-w head runs
-// scalar. (find(char) has memchr; rfind has no portable reverse-memchr, so this is the win.)
+// scalar because C++ has no portable reverse-memchr primitive.
 std::uint32_t STR_RFIND_FN(const char* data, std::uint32_t size, char c) noexcept {
   constexpr std::uint32_t kNpos = 0xFFFFFFFFu;
   const hn::ScalableTag<std::uint8_t> d;

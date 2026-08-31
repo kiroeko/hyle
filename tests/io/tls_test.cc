@@ -291,9 +291,9 @@ Task<int> https_client(Allocator alloc, IoContext* io, TlsContext* context,
         result->status.store(response->status(), std::memory_order_release);
         const auto body = response->body();
         const auto size =
-            body.size < sizeof(result->body) - 1 ? body.size
+            body.size() < sizeof(result->body) - 1 ? body.size()
                                                   : sizeof(result->body) - 1;
-        std::memcpy(result->body, body.data, size);
+        std::memcpy(result->body, body.data(), size);
       }
     }
   }
@@ -391,7 +391,7 @@ Task<int> h2_tls_client(Allocator alloc, IoContext* io, TlsContext* context,
           result->client_stage.store(5);
           result->status.store(response->status(), std::memory_order_release);
           const auto body = response->body();
-          std::memcpy(result->body, body.data, body.size);
+          std::memcpy(result->body, body.data(), body.size());
         }
       }
     }

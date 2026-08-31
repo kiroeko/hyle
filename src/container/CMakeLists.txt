@@ -7,7 +7,7 @@
 # long); those include dirs are PRIVATE so neither leaks to consumers.
 # string_algo.cc provides dispatched UTF-8 validate/count entries by BORROWING
 # simdutf's verified SIMD core.
-# string_ref.cc holds std forwards plus count/rfind/ASCII-case dispatchers;
+# string_view.cc holds std forwards plus count/rfind/ASCII-case dispatchers;
 # DynamicBitSet owns its algebra/count dispatcher. Both kernel families are
 # generated from one direct-Highway implementation header per family. Container
 # owns the pointer/count semantics and one cached whole-buffer call, while
@@ -36,7 +36,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_add_module(container
   SOURCES hash.cc pod_vector.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
-          string_ref.cc dynamic_bitset.cc ${_container_arch_sources})
+          string_view.cc dynamic_bitset.cc ${_container_arch_sources})
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash"
@@ -58,7 +58,7 @@ hyle_add_dispatched_kernel(HIGHWAY OWN_TARGET_SET
   TARGETS ${_container_highway_targets})
 
 # Per-variant ISA flags: each str_search kernel TU gets ONLY its target's -march; the
-# dispatcher (string_ref.cc) stays baseline so it never emits a wide instruction on the
+# dispatcher (string_view.cc) stays baseline so it never emits a wide instruction on the
 # always-taken path. Gated by arch (the wide TUs only exist in the matching build).
 if(HYLE_CONTAINER_X64)
   hyle_set_isa(hash_xxh3_avx2.cc AVX2)

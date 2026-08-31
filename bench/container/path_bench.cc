@@ -1,13 +1,13 @@
 // path lexical-op bench (re-audit gap-fill #51) vs std::filesystem::path. path.h
 // is HYLE's pure-string path layer (no syscalls): extension/base/directory/
-// normalize/split walk components over a string_ref view, ZERO allocation.
+// normalize/split walk components over a StringView view, ZERO allocation.
 //
 // THREE-WAY compare per lexical op, to keep the win HONEST:
 //   1. std::filesystem::path -- the std drop-in SOTA, but it CONSTRUCTS a path
 //      object (heap-allocates) each call, so it also pays a structural cost.
 //   2. std::string_view hand-rolled -- SAME zero-alloc view + SAME back-to-front
 //      scan as HYLE, only the API differs. This is the pure ALGORITHM baseline.
-//   3. HYLE path::* -- the string_ref view walk.
+//   3. HYLE path::* -- the StringView view walk.
 // HYLE ~= (2) means the scan algorithm is already optimal (no more to squeeze);
 // (2)&(3) both crushing (1) is the "view-only vs must-allocate" STRUCTURAL gap,
 // not cleverer scanning. NOTE: this measures LEXICAL ops only (no filesystem
@@ -23,19 +23,19 @@
 #include <string_view>
 
 #include "hyle/container/path.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 
 using hyle::container::base;
 using hyle::container::directory;
 using hyle::container::extension;
 using hyle::container::join_path;
 using hyle::container::normalize_path;
-using hyle::container::string_ref;
+using hyle::container::StringView;
 
 namespace {
 namespace nb = ankerl::nanobench;
 // A realistic deep-ish path with an extension (the common parse target).
-constexpr const char* kPath = "/usr/local/share/hyle/include/hyle/container/string_ref.h";
+constexpr const char* kPath = "/usr/local/share/hyle/include/hyle/container/string_view.h";
 
 // ---- std::string_view hand-rolled lexical parse (the ALGORITHM baseline) -----
 // std::filesystem::path is the drop-in SOTA, but it CONSTRUCTS a path object
@@ -96,7 +96,7 @@ std::string_view sv_directory(std::string_view p) noexcept {
 }  // namespace
 
 int bench_path() {
-  const string_ref sp{kPath};
+  const StringView sp{kPath};
   const std::string std_in{kPath};
   const std::string_view sv{kPath};  // algorithm-baseline input (zero-alloc)
 
@@ -114,7 +114,7 @@ int bench_path() {
       nb::doNotOptimizeAway(sv_extension(sv).size());
     });
     b.run("HYLE path::extension", [&] {
-      nb::doNotOptimizeAway(extension(sp).size);
+      nb::doNotOptimizeAway(extension(sp).size());
     });
   }
 
@@ -130,7 +130,7 @@ int bench_path() {
       nb::doNotOptimizeAway(sv_base(sv).size());
     });
     b.run("HYLE path::base", [&] {
-      nb::doNotOptimizeAway(base(sp).size);
+      nb::doNotOptimizeAway(base(sp).size());
     });
   }
 
@@ -146,7 +146,7 @@ int bench_path() {
       nb::doNotOptimizeAway(sv_directory(sv).size());
     });
     b.run("HYLE path::directory", [&] {
-      nb::doNotOptimizeAway(directory(sp).size);
+      nb::doNotOptimizeAway(directory(sp).size());
     });
   }
 
@@ -167,7 +167,7 @@ int bench_path() {
       nb::doNotOptimizeAway(p.lexically_normal().native().size());
     });
     b.run("HYLE path::normalize_path (caller storage)", [&] {
-      nb::doNotOptimizeAway(normalize_path(string_ref{kMessy}, buf));
+      nb::doNotOptimizeAway(normalize_path(StringView{kMessy}, buf));
     });
   }
 
@@ -177,9 +177,9 @@ int bench_path() {
   // class (parallel to normalize). Rival: std::filesystem::path operator/=
   // accumulated over the same parts (which builds a path object -> allocates).
   {
-    const string_ref parts[] = {string_ref{"usr"}, string_ref{"local"},
-                                string_ref{"share"}, string_ref{"hyle"},
-                                string_ref{"include"}, string_ref{"container"}};
+    const StringView parts[] = {StringView{"usr"}, StringView{"local"},
+                                StringView{"share"}, StringView{"hyle"},
+                                StringView{"include"}, StringView{"container"}};
     char dst[128];
     const char* std_parts[] = {"usr", "local", "share", "hyle", "include", "container"};
     nb::Bench b;

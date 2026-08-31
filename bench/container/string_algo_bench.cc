@@ -11,7 +11,7 @@
 #include <string>
 
 #include "hyle/container/string_algo.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 
 #if defined(HYLE_BENCH_SIMDUTF)
 #  include "simdutf.h"
@@ -19,7 +19,7 @@
 
 using hyle::container::hex_encode;
 using hyle::container::hex_decode;
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::container::to_lower;
 using hyle::container::utf8_length;
 using hyle::container::utf8_validate;
@@ -44,7 +44,7 @@ std::string gen_mixed_utf8(std::size_t minimum_size) {
 }
 
 void bench_utf8_case(const char* label, const std::string& input) {
-  const string_ref text{input.data(), static_cast<std::uint32_t>(input.size())};
+  const StringView text{input.data(), static_cast<std::uint32_t>(input.size())};
   const std::uint64_t minimum_iterations =
       input.size() <= 64 ? 200'000 : 20'000;
 
@@ -145,7 +145,7 @@ int bench_string_algo() {
     std::string hex(bytes.size() * 2 + 1, '\0');
     std::string out(bytes.size(), '\0');
     hex_encode(bytes.data(), bytes.size(), hex.data(), hex.size());
-    const string_ref input{
+    const StringView input{
         hex.data(), static_cast<std::uint32_t>(bytes.size() * 2)};
     nb::Bench b;
     b.title("hex_decode 2KB->1KB (validated)")
@@ -175,7 +175,7 @@ int bench_string_algo() {
     for (std::size_t i = 0; i < input.size(); ++i)
       input[i] = static_cast<char>('A' + (i % 26));
     std::string out(input.size() + 1, '\0');
-    const string_ref text{input.data(),
+    const StringView text{input.data(),
                           static_cast<std::uint32_t>(input.size())};
     nb::Bench b;
     b.title("ASCII lowercase 4KB")

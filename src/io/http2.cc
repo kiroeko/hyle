@@ -468,18 +468,18 @@ void SessionState::release_current(const void*& current) noexcept {
   }
 }
 
-string_ref field_view(const Stream* stream, FieldRef ref) noexcept {
+StringView field_view(const Stream* stream, FieldRef ref) noexcept {
   if (stream == nullptr || !ref.present) return {};
-  return string_ref{
+  return StringView{
       reinterpret_cast<const char*>(stream->header_bytes.data + ref.offset),
       ref.length};
 }
 
-bool ascii_iequal(string_ref a, string_ref b) noexcept {
-  if (a.size != b.size) return false;
-  for (std::uint32_t i = 0; i < a.size; ++i) {
-    unsigned char x = static_cast<unsigned char>(a.data[i]);
-    unsigned char y = static_cast<unsigned char>(b.data[i]);
+bool ascii_iequal(StringView a, StringView b) noexcept {
+  if (a.size() != b.size()) return false;
+  for (std::uint32_t i = 0; i < a.size(); ++i) {
+    unsigned char x = static_cast<unsigned char>(a[i]);
+    unsigned char y = static_cast<unsigned char>(b[i]);
     if (x >= 'A' && x <= 'Z') x = static_cast<unsigned char>(x + 32);
     if (y >= 'A' && y <= 'Z') y = static_cast<unsigned char>(y + 32);
     if (x != y) return false;
@@ -487,22 +487,22 @@ bool ascii_iequal(string_ref a, string_ref b) noexcept {
   return true;
 }
 
-bool valid_view(string_ref value) noexcept {
-  return value.size == 0 || value.data != nullptr;
+bool valid_view(StringView value) noexcept {
+  return value.empty() || value.data() != nullptr;
 }
 
-nghttp2_nv make_nv(string_ref name, string_ref value) noexcept {
+nghttp2_nv make_nv(StringView name, StringView value) noexcept {
   return nghttp2_nv{
-      reinterpret_cast<std::uint8_t*>(const_cast<char*>(name.data)),
-      reinterpret_cast<std::uint8_t*>(const_cast<char*>(value.data)), name.size,
-      value.size, NGHTTP2_NV_FLAG_NONE};
+      reinterpret_cast<std::uint8_t*>(const_cast<char*>(name.data())),
+      reinterpret_cast<std::uint8_t*>(const_cast<char*>(value.data())),
+      name.size(), value.size(), NGHTTP2_NV_FLAG_NONE};
 }
 
-bool append_outbound(Stream& stream, string_ref body) noexcept {
+bool append_outbound(Stream& stream, StringView body) noexcept {
   stream.outbound.size = 0;
   stream.outbound_sent = 0;
   return valid_view(body) &&
-         stream.outbound.append(body.data, body.size,
+         stream.outbound.append(body.data(), body.size(),
                                 static_cast<std::uint32_t>(kHttp2MaxBodyBytes));
 }
 
@@ -513,20 +513,20 @@ bool valid_headers(const Http2Header* headers,
     return false;
   for (std::size_t i = 0; i < header_count; ++i) {
     if (!valid_view(headers[i].name) || !valid_view(headers[i].value) ||
-        headers[i].name.size == 0 || headers[i].name.data[0] == ':')
+        headers[i].name.empty() || headers[i].name[0] == ':')
       return false;
   }
   return true;
 }
 
 std::int32_t submit_request_state(
-    SessionState& state, string_ref method, string_ref scheme,
-    string_ref authority, string_ref path, const Http2Header* headers,
-    std::size_t header_count, string_ref body) noexcept {
+    SessionState& state, StringView method, StringView scheme,
+    StringView authority, StringView path, const Http2Header* headers,
+    std::size_t header_count, StringView body) noexcept {
   if (state.server || state.fatal || !valid_view(method) ||
       !valid_view(scheme) || !valid_view(authority) || !valid_view(path) ||
-      method.size == 0 || scheme.size == 0 || authority.size == 0 ||
-      path.size == 0 || !valid_headers(headers, header_count) ||
+      method.empty() || scheme.empty() || authority.empty() || path.empty() ||
+      !valid_headers(headers, header_count) ||
       !valid_view(body) ||
       state.streams.size() >= kHttp2DefaultMaxConcurrentStreams * 2)
     return -1;
@@ -537,10 +537,10 @@ std::int32_t submit_request_state(
     return -1;
   }
   nghttp2_nv fields[4 + kHttp2MaxHeaders];
-  fields[0] = make_nv(string_ref{":method", 7}, method);
-  fields[1] = make_nv(string_ref{":scheme", 7}, scheme);
-  fields[2] = make_nv(string_ref{":authority", 10}, authority);
-  fields[3] = make_nv(string_ref{":path", 5}, path);
+  fields[0] = make_nv(StringView{":method", 7}, method);
+  fields[1] = make_nv(StringView{":scheme", 7}, scheme);
+  fields[2] = make_nv(StringView{":authority", 10}, authority);
+  fields[3] = make_nv(StringView{":path", 5}, path);
   for (std::size_t i = 0; i < header_count; ++i)
     fields[i + 4] = make_nv(headers[i].name, headers[i].value);
 
@@ -565,7 +565,7 @@ std::int32_t submit_request_state(
 bool submit_response_state(SessionState& state, std::int32_t stream_id,
                            int status, const Http2Header* headers,
                            std::size_t header_count,
-                           string_ref body) noexcept {
+                           StringView body) noexcept {
   if (!state.server || state.fatal || status < 100 || status > 999 ||
       !valid_headers(headers, header_count) || !valid_view(body))
     return false;
@@ -580,7 +580,7 @@ bool submit_response_state(SessionState& state, std::int32_t stream_id,
       static_cast<char>('0' + status % 10), '\0'};
   nghttp2_nv fields[1 + kHttp2MaxHeaders];
   fields[0] =
-      make_nv(string_ref{":status", 7}, string_ref{status_text, 3});
+      make_nv(StringView{":status", 7}, StringView{status_text, 3});
   for (std::size_t i = 0; i < header_count; ++i)
     fields[i + 1] = make_nv(headers[i].name, headers[i].value);
 
@@ -706,19 +706,19 @@ std::int32_t Http2MessageView::stream_id() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return stream == nullptr ? 0 : stream->id;
 }
-string_ref Http2MessageView::method() const noexcept {
+StringView Http2MessageView::method() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return field_view(stream, stream == nullptr ? FieldRef{} : stream->method);
 }
-string_ref Http2MessageView::scheme() const noexcept {
+StringView Http2MessageView::scheme() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return field_view(stream, stream == nullptr ? FieldRef{} : stream->scheme);
 }
-string_ref Http2MessageView::authority() const noexcept {
+StringView Http2MessageView::authority() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return field_view(stream, stream == nullptr ? FieldRef{} : stream->authority);
 }
-string_ref Http2MessageView::path() const noexcept {
+StringView Http2MessageView::path() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return field_view(stream, stream == nullptr ? FieldRef{} : stream->path);
 }
@@ -734,26 +734,26 @@ std::size_t Http2MessageView::header_count() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return stream == nullptr ? 0 : stream->header_count;
 }
-string_ref Http2MessageView::header_name(std::size_t index) const noexcept {
+StringView Http2MessageView::header_name(std::size_t index) const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   if (stream == nullptr || index >= stream->header_count) return {};
   return field_view(stream, stream->headers[index].name);
 }
-string_ref Http2MessageView::header_value(std::size_t index) const noexcept {
+StringView Http2MessageView::header_value(std::size_t index) const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   if (stream == nullptr || index >= stream->header_count) return {};
   return field_view(stream, stream->headers[index].value);
 }
-string_ref Http2MessageView::header(string_ref name) const noexcept {
+StringView Http2MessageView::header(StringView name) const noexcept {
   for (std::size_t i = 0; i < header_count(); ++i)
     if (ascii_iequal(header_name(i), name)) return header_value(i);
   return {};
 }
-string_ref Http2MessageView::body() const noexcept {
+StringView Http2MessageView::body() const noexcept {
   const auto* stream = static_cast<const Stream*>(stream_);
   return stream == nullptr
-             ? string_ref{}
-             : string_ref{reinterpret_cast<const char*>(stream->body.data),
+             ? StringView{}
+             : StringView{reinterpret_cast<const char*>(stream->body.data),
                           stream->body.size};
 }
 
@@ -836,7 +836,7 @@ sched::Task<Http2MessageView*> Http2ServerConn::next_request() noexcept {
 sched::Task<bool> http2_server_respond(
     mem::Allocator alloc, Http2ServerConn& conn, std::int32_t stream_id,
     int status, const Http2Header* headers, std::size_t header_count,
-    string_ref body) noexcept {
+    StringView body) noexcept {
   if (!conn.valid() ||
       !submit_response_state(*conn.impl_, stream_id, status, headers,
                              header_count, body))
@@ -848,7 +848,7 @@ sched::Task<bool> http2_server_respond(
 
 sched::Task<bool> Http2ServerConn::respond(
     std::int32_t stream_id, int status, const Http2Header* headers,
-    std::size_t header_count, string_ref body) noexcept {
+    std::size_t header_count, StringView body) noexcept {
   return http2_server_respond(alloc_, *this, stream_id, status, headers,
                               header_count, body);
 }
@@ -913,10 +913,10 @@ Http2ClientConn& Http2ClientConn::operator=(Http2ClientConn&& other) noexcept {
 }
 
 sched::Task<std::int32_t> http2_client_submit(
-    mem::Allocator alloc, Http2ClientConn& conn, string_ref method,
-    string_ref scheme, string_ref authority, string_ref path,
+    mem::Allocator alloc, Http2ClientConn& conn, StringView method,
+    StringView scheme, StringView authority, StringView path,
     const Http2Header* headers, std::size_t header_count,
-    string_ref body) noexcept {
+    StringView body) noexcept {
   if (!conn.valid()) co_return -1;
   const std::int32_t id =
       submit_request_state(*conn.impl_, method, scheme, authority, path,
@@ -930,9 +930,9 @@ sched::Task<std::int32_t> http2_client_submit(
 }
 
 sched::Task<std::int32_t> Http2ClientConn::submit_request(
-    string_ref method, string_ref scheme, string_ref authority,
-    string_ref path, const Http2Header* headers, std::size_t header_count,
-    string_ref body) noexcept {
+    StringView method, StringView scheme, StringView authority,
+    StringView path, const Http2Header* headers, std::size_t header_count,
+    StringView body) noexcept {
   return http2_client_submit(alloc_, *this, method, scheme, authority, path,
                              headers, header_count, body);
 }

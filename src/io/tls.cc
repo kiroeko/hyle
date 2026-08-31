@@ -208,12 +208,12 @@ TlsStream& TlsStream::operator=(TlsStream&& o) noexcept {
   return *this;
 }
 
-container::string_ref TlsStream::negotiated_protocol() const noexcept {
+container::StringView TlsStream::negotiated_protocol() const noexcept {
   if (ssl_ == nullptr) return {};
   const unsigned char* data = nullptr;
   unsigned int length = 0;
   SSL_get0_alpn_selected(ssl_, &data, &length);
-  return container::string_ref{reinterpret_cast<const char*>(data),
+  return container::StringView{reinterpret_cast<const char*>(data),
                                static_cast<std::uint32_t>(length)};
 }
 

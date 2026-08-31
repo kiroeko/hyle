@@ -26,7 +26,7 @@ runtime：hyle::util（hyle_util binary；严格收口波次 R2）
                     └──► core + error + mem + container
 ```
 
-Registry 是模板头，但公开形状直接使用 container 的 `string_ref/SwissTable`，并借 mem allocator/
+Registry 是模板头，但公开形状直接使用 container 的 `StringView/FlatHashMap`，并借 mem allocator/
 Region；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util`，从而没有
 `container ↔ util` binary 环。demangle 只有 buffer entry 和服务 header-inline owning convenience 的
 internal sink 两个冷路径动态符号，本身不依赖 container；为它新增 binary component 会增加发布和

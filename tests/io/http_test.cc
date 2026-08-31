@@ -21,7 +21,7 @@
 // -> write). Covers: GET + fixed response, POST body round-trip, chunked streaming
 // response (the LLM-serving path), and keep-alive (multiple requests on one conn).
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::io::HttpRequest;
 using hyle::io::HttpResponse;
 using hyle::io::HttpResponseView;
@@ -115,13 +115,13 @@ Task<HttpResponse> handler(Allocator alloc, void* ctx,
   }
   if (req.method() == "POST") {
     // Echo back a fixed OK; record what body the server received.
-    std::uint32_t n = req.body().size < 255 ? req.body().size : 255;
-    std::memcpy(r->post_seen, req.body().data, n);
+    std::uint32_t n = req.body().size() < 255 ? req.body().size() : 255;
+    std::memcpy(r->post_seen, req.body().data(), n);
     r->post_seen[n] = '\0';
     resp.set_status(200);
     resp.add_header("Content-Type", "text/plain");
     std::memcpy(scratch, "posted-ok", 9);
-    resp.set_body(string_ref{static_cast<const char*>(scratch), 9});
+    resp.set_body(StringView{static_cast<const char*>(scratch), 9});
   } else if (req.path() == "/stream") {
     // Chunked streaming response (SSE-style token stream). The generator yields a
     // few fixed chunks then ends. ctx is a small counter kept in a static (test).
@@ -163,7 +163,7 @@ Task<HttpResponse> handler(Allocator alloc, void* ctx,
     resp.set_status(200);
     resp.add_header("Content-Type", "text/plain");
     std::memcpy(scratch, "hello-hyle", 10);
-    resp.set_body(string_ref{static_cast<const char*>(scratch), 10});
+    resp.set_body(StringView{static_cast<const char*>(scratch), 10});
   }
   co_return resp;
 }
@@ -194,16 +194,16 @@ Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
   HttpResponseView* resp = co_await conn.request("GET", "/", "127.0.0.1");
   if (resp != nullptr) {
     r->client_status.store(resp->status(), std::memory_order_release);
-    std::uint32_t n = resp->body().size < 255 ? resp->body().size : 255;
-    std::memcpy(r->body_got, resp->body().data, n);
+    std::uint32_t n = resp->body().size() < 255 ? resp->body().size() : 255;
+    std::memcpy(r->body_got, resp->body().data(), n);
     r->body_got[n] = '\0';
   }
   // Request 2 on the SAME connection (keep-alive): GET / again.
   HttpResponseView* resp2 = co_await conn.request("GET", "/", "127.0.0.1");
   if (resp2 != nullptr) {
     r->client_status2.store(resp2->status(), std::memory_order_release);
-    std::uint32_t n = resp2->body().size < 255 ? resp2->body().size : 255;
-    std::memcpy(r->body_got2, resp2->body().data, n);
+    std::uint32_t n = resp2->body().size() < 255 ? resp2->body().size() : 255;
+    std::memcpy(r->body_got2, resp2->body().data(), n);
     r->body_got2[n] = '\0';
   }
   // Request 3 (keep-alive): POST with a body -> server records it + replies ok.
@@ -211,8 +211,8 @@ Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
       co_await conn.request("POST", "/echo", "127.0.0.1", "the-post-body");
   if (resp3 != nullptr) {
     r->post_status.store(resp3->status(), std::memory_order_release);
-    std::uint32_t n = resp3->body().size < 255 ? resp3->body().size : 255;
-    std::memcpy(r->post_body_got, resp3->body().data, n);
+    std::uint32_t n = resp3->body().size() < 255 ? resp3->body().size() : 255;
+    std::memcpy(r->post_body_got, resp3->body().data(), n);
     r->post_body_got[n] = '\0';
   }
   // Request 4 (keep-alive): GET /stream -> chunked streaming response; the client
@@ -220,8 +220,8 @@ Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
   HttpResponseView* resp4 = co_await conn.request("GET", "/stream", "127.0.0.1");
   if (resp4 != nullptr) {
     r->stream_status.store(resp4->status(), std::memory_order_release);
-    std::uint32_t n = resp4->body().size < 255 ? resp4->body().size : 255;
-    std::memcpy(r->stream_body_got, resp4->body().data, n);
+    std::uint32_t n = resp4->body().size() < 255 ? resp4->body().size() : 255;
+    std::memcpy(r->stream_body_got, resp4->body().data(), n);
     r->stream_body_got[n] = '\0';
   }
   // Request 5 (keep-alive): GET /stream AGAIN -- a chunked response FOLLOWING a
@@ -232,8 +232,8 @@ Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
   HttpResponseView* resp5 = co_await conn.request("GET", "/stream", "127.0.0.1");
   if (resp5 != nullptr) {
     r->stream2_status.store(resp5->status(), std::memory_order_release);
-    std::uint32_t n = resp5->body().size < 255 ? resp5->body().size : 255;
-    std::memcpy(r->stream2_body_got, resp5->body().data, n);
+    std::uint32_t n = resp5->body().size() < 255 ? resp5->body().size() : 255;
+    std::memcpy(r->stream2_body_got, resp5->body().data(), n);
     r->stream2_body_got[n] = '\0';
   }
   r->client_done.store(true, std::memory_order_release);
@@ -395,7 +395,8 @@ Task<int> closebody_client(Allocator alloc, IoContext* io, CloseBodyResult* r,
   HttpResponseView* resp = co_await conn.request("GET", "/", "127.0.0.1");
   if (resp != nullptr) {
     r->status.store(resp->status(), std::memory_order_release);
-    r->body_len.store(static_cast<int>(resp->body().size), std::memory_order_release);
+    r->body_len.store(static_cast<int>(resp->body().size()),
+                      std::memory_order_release);
   }
   co_return 0;
 }

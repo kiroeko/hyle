@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "hyle/container/flat_hash_map.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
@@ -84,10 +84,10 @@ class Registry {
   using Creator = Ptr (*)(Args...) noexcept;
 
   struct EntryView {
-    container::string_ref key;
+    container::StringView key;
     Creator creator;
     RegistryPriority priority;
-    container::string_ref help;
+    container::StringView help;
   };
 
   // A non-owning handle to the registry's immutable phase. Cache this handle
@@ -97,18 +97,18 @@ class Registry {
   // while any view operation is in flight.
   class FrozenView {
    public:
-    HYLE_FORCE_INLINE Ptr create(const container::string_ref& key,
+    HYLE_FORCE_INLINE Ptr create(const container::StringView& key,
                                  Args... args) const {
       return Registry::create_frozen_from(index_, key,
                                           std::forward<Args>(args)...);
     }
 
-    bool has(const container::string_ref& key) const noexcept {
+    bool has(const container::StringView& key) const noexcept {
       return Registry::frozen_table(index_)->find(key) != nullptr;
     }
 
-    container::string_ref help(
-        const container::string_ref& key) const noexcept {
+    container::StringView help(
+        const container::StringView& key) const noexcept {
       if (const IndexValue* value = Registry::frozen_table(index_)->find(key)) {
         return value->entry->help;
       }
@@ -145,13 +145,13 @@ class Registry {
   // `help` is optional descriptive text. Key/help are copied before return.
   // Registration after freeze() returns FailedPrecondition.
   [[nodiscard]] Status register_creator(
-      container::string_ref key, Creator creator,
+      container::StringView key, Creator creator,
       RegistryPriority priority = RegistryPriority::kDefault,
-      container::string_ref help = {}) noexcept {
-    if (key.data == nullptr || key.size == 0) {
+      container::StringView help = {}) noexcept {
+    if (key.data() == nullptr || key.empty()) {
       return Status::InvalidArgument("registry key is null or empty");
     }
-    if (help.data == nullptr && help.size != 0) {
+    if (help.data() == nullptr && !help.empty()) {
       return Status::InvalidArgument("registry help has null data");
     }
     if (creator == nullptr) {
@@ -168,7 +168,7 @@ class Registry {
     if (IndexValue* index = entries_.find(key)) {
       Entry* e = index->entry;
       if (priority > e->priority) {
-        container::string_ref owned_help;
+        container::StringView owned_help;
         if (!copy_string(help, &owned_help)) {
           return Status::ResourceExhausted(
               "registry help allocation failed");
@@ -235,7 +235,7 @@ class Registry {
     return frozen_index_.load(std::memory_order_acquire) != nullptr;
   }
 
-  bool has(container::string_ref key) const noexcept {
+  bool has(container::StringView key) const noexcept {
     if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
       return index->find(key) != nullptr;
     }
@@ -249,7 +249,7 @@ class Registry {
   // Create the object registered under `key`. A nullable Ptr returns its empty
   // value when absent. Registry<Result<T>, ...> instead returns NotFound and
   // propagates the selected creator's Status without changing the table shape.
-  HYLE_FORCE_INLINE Ptr create(container::string_ref key, Args... args) const {
+  HYLE_FORCE_INLINE Ptr create(container::StringView key, Args... args) const {
     if (const auto* frozen_slots =
             frozen_index_.load(std::memory_order_acquire)) {
       if (const IndexValue* value = frozen_slots->find(key)) {
@@ -261,7 +261,7 @@ class Registry {
   }
 
   // Help text for `key` (empty if absent or none given).
-  container::string_ref help(container::string_ref key) const noexcept {
+  container::StringView help(container::StringView key) const noexcept {
     if (const auto* frozen_slots =
             frozen_index_.load(std::memory_order_acquire)) {
       if (const IndexValue* value = frozen_slots->find(key)) {
@@ -313,7 +313,7 @@ class Registry {
         return Status::ResourceExhausted(
             "registry enumeration snapshot allocation failed");
       } else {
-        entries_.for_each([&](container::string_ref,
+        entries_.for_each([&](container::StringView,
                               const IndexValue& index) {
           const Entry& entry = *index.entry;
           snapshot.push(EntryView{entry.key, entry.creator, entry.priority,
@@ -342,10 +342,10 @@ class Registry {
 
  private:
   struct Entry {
-    container::string_ref key;
+    container::StringView key;
     Creator creator;
     RegistryPriority priority;
-    container::string_ref help;
+    container::StringView help;
   };
   static_assert(std::is_trivially_destructible_v<Entry>);
 
@@ -358,7 +358,7 @@ class Registry {
   static_assert(std::is_trivially_copyable_v<IndexValue>);
 
   using Table = container::FlatHashMap<
-      container::string_ref, IndexValue, container::Hash<container::string_ref>,
+      container::StringView, IndexValue, container::Hash<container::StringView>,
       std::equal_to<>, mem::Allocator>;
 
   class SnapshotStorage {
@@ -415,29 +415,29 @@ class Registry {
     return options;
   }
 
-  bool copy_string(container::string_ref source,
-                   container::string_ref* out) noexcept {
-    if (source.size == 0) {
-      *out = container::string_ref{"", 0, true};
+  bool copy_string(container::StringView source,
+                   container::StringView* out) noexcept {
+    if (source.empty()) {
+      *out = container::StringView{"", 0, true};
       return true;
     }
-    std::size_t bytes = static_cast<std::size_t>(source.size);
+    std::size_t bytes = static_cast<std::size_t>(source.size());
     if (bytes == (std::numeric_limits<std::size_t>::max)()) return false;
     ++bytes;
     auto* storage = static_cast<char*>(storage_.allocate(bytes, 1));
     if (storage == nullptr) return false;
-    std::memcpy(storage, source.data, source.size);
-    storage[source.size] = '\0';
-    *out = container::string_ref{storage, source.size, true};
+    std::memcpy(storage, source.data(), source.size());
+    storage[source.size()] = '\0';
+    *out = container::StringView{storage, source.size(), true};
     return true;
   }
 
-  Entry* allocate_entry(container::string_ref key, Creator creator,
+  Entry* allocate_entry(container::StringView key, Creator creator,
                         RegistryPriority priority,
-                        container::string_ref help) noexcept {
+                        container::StringView help) noexcept {
     const std::size_t maximum = (std::numeric_limits<std::size_t>::max)();
-    std::size_t key_bytes = static_cast<std::size_t>(key.size);
-    std::size_t help_bytes = static_cast<std::size_t>(help.size);
+    std::size_t key_bytes = static_cast<std::size_t>(key.size());
+    std::size_t help_bytes = static_cast<std::size_t>(help.size());
     if (key_bytes == maximum || (help_bytes != 0 && help_bytes == maximum)) {
       return nullptr;
     }
@@ -453,16 +453,16 @@ class Registry {
     void* allocation = storage_.allocate(total, alignof(Entry));
     if (allocation == nullptr) return nullptr;
     auto* cursor = static_cast<char*>(allocation) + sizeof(Entry);
-    std::memcpy(cursor, key.data, key.size);
-    cursor[key.size] = '\0';
-    const container::string_ref owned_key{cursor, key.size, true};
+    std::memcpy(cursor, key.data(), key.size());
+    cursor[key.size()] = '\0';
+    const container::StringView owned_key{cursor, key.size(), true};
     cursor += key_bytes;
 
-    container::string_ref owned_help{"", 0, true};
-    if (help.size != 0) {
-      std::memcpy(cursor, help.data, help.size);
-      cursor[help.size] = '\0';
-      owned_help = container::string_ref{cursor, help.size, true};
+    container::StringView owned_help{"", 0, true};
+    if (!help.empty()) {
+      std::memcpy(cursor, help.data(), help.size());
+      cursor[help.size()] = '\0';
+      owned_help = container::StringView{cursor, help.size(), true};
     }
     return ::new (allocation)
         Entry{owned_key, creator, priority, owned_help};
@@ -473,7 +473,7 @@ class Registry {
   }
 
   HYLE_FORCE_INLINE static Ptr create_frozen_from(
-      const void* index, const container::string_ref& key, Args... args) {
+      const void* index, const container::StringView& key, Args... args) {
     if (const IndexValue* value = frozen_table(index)->find(key)) {
       return value->creator(std::forward<Args>(args)...);
     }
@@ -489,7 +489,7 @@ class Registry {
 #else
   HYLE_NOINLINE
 #endif
-  Ptr create_mutable(container::string_ref key, Args... args) const {
+  Ptr create_mutable(container::StringView key, Args... args) const {
     Creator creator = nullptr;
     {
       std::lock_guard<std::mutex> lock(mu_);
@@ -514,7 +514,7 @@ class Registry {
   template <class Fn>
   static void visit_frozen_table(Fn& fn, const Table* index) {
     bool keep_going = true;
-    index->for_each([&](container::string_ref, const IndexValue& value) {
+    index->for_each([&](container::StringView, const IndexValue& value) {
       if (keep_going) {
         const Entry* entry = value.entry;
         keep_going = invoke_visitor(

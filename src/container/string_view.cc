@@ -1,6 +1,6 @@
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 
-#include <string_view>  // membership/substring family forwards to std's SOTA (see below)
+#include <string_view>
 
 #include "hyle/container/string_algo.h"
 #include "hyle/core/compiler.h"
@@ -8,21 +8,16 @@
 #include "hyle/platform/cpu.h"  // best_isa() -> pick the widest compiled count/rfind kernel
 #include "src/container/str_search.h"  // per-ISA str_count/str_rfind_char variant symbols
 
-// Out-of-line SIMD cores for string_ref's search family. Compiled ONCE here and
-// exported (HYLE_CONTAINER_API) so the public header stays free of <string_view>
-// (string_ref.h pulls in no std string headers, this .cc does).
+// Out-of-line SIMD cores for StringView's search family. Compiled once here and
+// exported so the public header stays free of ISA-specific headers.
 //
-// count/rfind dispatch picks the widest compiled whole-buffer kernel once per call through
-// best_isa(), exactly like the ordinary SIMD pointer/count APIs. The generated variant TUs
-// share str_search_impl.h and use locked Highway register types directly; Container owns the
-// public string contract and its four-accumulator SAD algorithm. This replaced the old
-// hand-written AVX2/SSE2 split without creating a dependency on HYLE's retired register API.
+// count/rfind dispatch resolves the widest safe compiled whole-buffer kernel.
+// Generated variant TUs share str_search_impl.h and use locked Highway register
+// types directly; Container retains the public pointer/count contract.
 //
-// SPLIT STRATEGY (measured, 2026-07): HYLE self-implements the ops where it matches or beats
-// std (find(char)/rfind(char)/count via the dispatched kernels, starts_with/split via memcmp),
-// but FORWARDS to std::string_view for the ops where MSVC STL's hand-written vectorized asm
-// (two-way substring search, PCMPESTRI char-set scans) is genuinely ahead. The forward is
-// header-inline-free (stays out of the public header + DLL symbol table).
+// HYLE owns dispatched count/reverse-char/case kernels. Substring and
+// character-set searches delegate to the standard library instead of
+// duplicating its mature search implementation.
 
 namespace hyle::container::detail {
 
@@ -92,9 +87,8 @@ TransformFn resolve_transform(bool lower) noexcept {
 }
 }  // namespace
 
-// Meyers-cached fn ptr (thread-safe init-once); after the first call it's a predictable load
-// + one indirect call, dwarfed by the scan. A short input still enters the kernel, whose own
-// scalar tail handles a sub-vector length -- no separate small-size branch needed.
+// Function selection is thread-safe and cached once. A short input is handled
+// by each kernel's scalar tail without a separate public API branch.
 std::uint32_t str_count(const char* data, std::uint32_t size, char c) noexcept {
   static const CountFn fn = resolve_count();
   return fn(data, size, c);
@@ -114,11 +108,8 @@ std::uint32_t str_ascii_upper(const char* data, std::uint32_t size, char* out,
   return fn(data, size, out, cap);
 }
 
-// Forward char-set scan. `want`=true: first index IN set (find_first_of); false:
-// first NOT in set (find_first_not_of). Forwards to std::string_view, whose MSVC
-// vectorized find_first_of/not_of is the measured SOTA here (PCMPESTRI-class asm we
-// couldn't out-engineer; our own PCMPESTRI attempt only reached ~0.78x). npos maps to
-// our 0xFFFFFFFF.
+// Forward char-set scan. `want`=true: first index IN set (find_first_of);
+// false: first NOT in set (find_first_not_of). npos maps to 0xFFFFFFFF.
 std::uint32_t str_find_first_of(const char* data, std::uint32_t size,
                                 const char* set, std::uint32_t set_size,
                                 std::uint32_t pos, bool want) noexcept {
@@ -131,8 +122,7 @@ std::uint32_t str_find_first_of(const char* data, std::uint32_t size,
 }
 
 // Backward char-set scan. `pos` is the highest index to consider (inclusive).
-// want=true => find_last_of; false => find_last_not_of. Forwards to std::string_view
-// (same SOTA rationale as the forward variant).
+// want=true => find_last_of; false => find_last_not_of.
 std::uint32_t str_find_last_of(const char* data, std::uint32_t size,
                                const char* set, std::uint32_t set_size,
                                std::uint32_t pos, bool want) noexcept {
@@ -144,8 +134,8 @@ std::uint32_t str_find_last_of(const char* data, std::uint32_t size,
   return r == std::string_view::npos ? kNpos : static_cast<std::uint32_t>(r);
 }
 
-// Substring search, forwards to std::string_view (two-way vectorized SOTA). rev=false
-// => find (first at/after pos); rev=true => rfind (last at/before pos).
+// Substring search delegates to std::string_view. rev=false => find (first
+// at/after pos); rev=true => rfind (last at/before pos).
 std::uint32_t str_find_substr(const char* data, std::uint32_t size,
                               const char* needle, std::uint32_t needle_size,
                               std::uint32_t pos, bool rev) noexcept {

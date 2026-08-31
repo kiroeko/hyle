@@ -28,7 +28,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -106,7 +106,7 @@ class TlsStream {
   unsigned owner_worker() const noexcept { return sock_.owner_worker(); }
   // Borrowed view into SSL state, valid for this stream's lifetime. Empty before
   // a successful handshake or when the peer did not negotiate ALPN.
-  HYLE_IO_API container::string_ref negotiated_protocol() const noexcept;
+  HYLE_IO_API container::StringView negotiated_protocol() const noexcept;
 
   // The co_await operations are FREE FUNCTIONS taking (mem::Allocator, TlsStream&),
   // not member coroutines. A coroutine's frame is allocated by its promise's

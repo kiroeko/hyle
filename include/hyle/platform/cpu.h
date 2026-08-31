@@ -20,7 +20,7 @@
 // is a platform capability, not a SIMD-module concept. Any module can query it
 // WITHOUT depending on the (heavy) simd module: simd/ borrows it for its ISA
 // dispatch, and container/ uses it to safely opt into AVX2 kernels beyond the
-// SSE2 baseline (its probe.h / string_ref.cc SIMD is compile-time-gated SSE2;
+// SSE2 baseline (its probe.h / StringView.cc SIMD is compile-time-gated SSE2;
 // crossing to AVX2 needs THIS runtime check or an old CPU SIGILLs).
 //
 // PROBE ISOLATION (llama.cpp's hard-won bug, conventions §10): the code that runs

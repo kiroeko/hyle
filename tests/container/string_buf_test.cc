@@ -6,13 +6,14 @@
 #include <vector>
 
 #include "hyle/container/string_interner.h"
-#include "hyle/container/string_ref.h"
+#include "hyle/container/swiss_table.h"
+#include "hyle/container/string_view.h"
 #include "hyle/mem/allocator.h"
 
 using hyle::container::destroy_string_interner;
 using hyle::container::StringId;
 using hyle::container::make_string_interner;
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::container::StringInterner;
 using hyle::mem::system_allocator;
 
@@ -20,18 +21,28 @@ TEST(StringInterner, AcquireAndLookup) {
   StringInterner buf(system_allocator());
   StringId h = buf.acquire("hello");
   EXPECT_FALSE(h.empty());
-  string_ref s = buf.lookup(h);
-  EXPECT_TRUE(s == string_ref{"hello"});
-  EXPECT_TRUE(s.null_terminated);  // interned strings are always C-usable
+  StringView s = buf.lookup(h);
+  EXPECT_TRUE(s == StringView{"hello"});
+  EXPECT_TRUE(s.is_null_terminated());  // interned strings are always C-usable
   EXPECT_EQ(buf.size(), 1u);
 }
+TEST(StringInterner, ConstLookupAndStringIdHashAreNatural) {
+  StringInterner buf(system_allocator());
+  const StringId id = buf.acquire("const-lookup");
+  const StringInterner& read_only = buf;
+  EXPECT_EQ(read_only.lookup(id).as_std(), "const-lookup");
 
+  hyle::container::FlatHashMap<StringId, int> by_id;
+  ASSERT_TRUE(by_id.insert(id, 42));
+  ASSERT_NE(by_id.find(id), nullptr);
+  EXPECT_EQ(*by_id.find(id), 42);
+}
 TEST(StringInterner, EmptyStringIsImplicitZero) {
   StringInterner buf(system_allocator());
   EXPECT_TRUE(buf.acquire("").empty());          // empty maps to empty id, never stored
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_TRUE(buf.lookup(StringId{0}).empty());  // empty id -> empty string
-  EXPECT_TRUE(buf.lookup(StringId{0}).null_terminated);
+  EXPECT_TRUE(buf.lookup(StringId{0}).is_null_terminated());
 }
 
 TEST(StringInterner, MissingIdLookupIsEmpty) {
@@ -46,24 +57,24 @@ TEST(StringInterner, InternReturnsStablePointerForEqualContent) {
   std::string b = std::string("interned") + "_value";
   ASSERT_NE(a.data(), b.data());
 
-  string_ref ra = buf.intern(a);
-  string_ref rb = buf.intern(b);
-  EXPECT_EQ(ra.data, rb.data);   // same interned pointer -> pointer identity
+  StringView ra = buf.intern(a);
+  StringView rb = buf.intern(b);
+  EXPECT_EQ(ra.data(), rb.data());   // same interned pointer -> pointer identity
   EXPECT_EQ(buf.size(), 1u);     // stored once
-  EXPECT_TRUE(ra == string_ref{"interned_value"});
+  EXPECT_TRUE(ra == StringView{"interned_value"});
 }
 
 TEST(StringInterner, InternedAddressSurvivesMoreInterns) {
   StringInterner buf(system_allocator());
-  string_ref first = buf.intern("keep_me");
-  const char* addr = first.data;
+  StringView first = buf.intern("keep_me");
+  const char* addr = first.data();
   for (int i = 0; i < 1000; ++i) {
     buf.intern(std::string("filler_") + std::to_string(i));
   }
   // The reverse index (SwissTable) rehashed many times; the string storage must
   // not have moved (short strings occupy stable slab blocks).
-  string_ref again = buf.lookup(buf.acquire("keep_me"));
-  EXPECT_EQ(again.data, addr);
+  StringView again = buf.lookup(buf.acquire("keep_me"));
+  EXPECT_EQ(again.data(), addr);
   buf.release(buf.acquire("keep_me"));  // undo the extra add above
 }
 
@@ -74,7 +85,7 @@ TEST(StringInterner, RefcountReclaimsOnLastRelease) {
   EXPECT_EQ(buf.size(), 1u);
 
   buf.release(h);                            // refs = 1, still alive
-  EXPECT_TRUE(buf.lookup(h) == string_ref{"refcounted"});
+  EXPECT_TRUE(buf.lookup(h) == StringView{"refcounted"});
   EXPECT_EQ(buf.size(), 1u);
 
   buf.release(h);                            // refs = 0 -> reclaimed
@@ -104,39 +115,39 @@ TEST(StringInterner, ReleaseUnknownOrZeroIsNoop) {
 
 TEST(StringInterner, PermanentInternDoesNotAccumulateHiddenReferences) {
   StringInterner buf(system_allocator());
-  string_ref first = buf.intern("permanent");
+  StringView first = buf.intern("permanent");
   for (int i = 0; i < 100; ++i)
-    EXPECT_EQ(buf.intern("permanent").data, first.data);
+    EXPECT_EQ(buf.intern("permanent").data(), first.data());
   StringId id = buf.acquire("permanent");
   EXPECT_TRUE(buf.release(id));
-  EXPECT_TRUE(buf.lookup(id) == string_ref{"permanent"});
+  EXPECT_TRUE(buf.lookup(id) == StringView{"permanent"});
   EXPECT_FALSE(buf.release(id));  // no releasable reference remains
   EXPECT_EQ(buf.size(), 1u);     // permanent until pool destruction
 }
 
 TEST(StringInterner, ReusedSlotRejectsStaleGeneration) {
   StringInterner buf(system_allocator());
-  const StringId old = buf.acquire(string_ref{"first"});
+  const StringId old = buf.acquire(StringView{"first"});
   ASSERT_FALSE(old.empty());
   ASSERT_TRUE(buf.release(old));
 
-  const StringId current = buf.acquire(string_ref{"second"});
+  const StringId current = buf.acquire(StringView{"second"});
   ASSERT_FALSE(current.empty());
   EXPECT_NE(old.value, current.value);
-  EXPECT_EQ(buf.lookup(old).data, nullptr);
+  EXPECT_EQ(buf.lookup(old).data(), nullptr);
   EXPECT_FALSE(buf.retain(old));
   EXPECT_FALSE(buf.release(old));
-  EXPECT_TRUE(buf.lookup(current) == string_ref{"second"});
+  EXPECT_TRUE(buf.lookup(current) == StringView{"second"});
 }
 
 TEST(StringInterner, InternManyReturnsStableViewsAndCanPrewarm) {
   StringInterner buf(system_allocator());
-  const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
-                              string_ref{"alpha"}};
-  string_ref output[3];
+  const StringView input[] = {StringView{"alpha"}, StringView{"beta"},
+                              StringView{"alpha"}};
+  StringView output[3];
   EXPECT_EQ(buf.intern_many(input, output), 3u);
-  EXPECT_EQ(output[0].data, output[2].data);
-  EXPECT_TRUE(output[1] == string_ref{"beta"});
+  EXPECT_EQ(output[0].data(), output[2].data());
+  EXPECT_TRUE(output[1] == StringView{"beta"});
   EXPECT_EQ(buf.size(), 2u);
   EXPECT_EQ(buf.prewarm(input), 3u);
   EXPECT_EQ(buf.size(), 2u);
@@ -144,8 +155,8 @@ TEST(StringInterner, InternManyReturnsStableViewsAndCanPrewarm) {
 
 TEST(StringInterner, BatchLifecyclePreservesOrderAndReclaims) {
   StringInterner buf(system_allocator());
-  const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
-                              string_ref{"alpha"}, string_ref{""}};
+  const StringView input[] = {StringView{"alpha"}, StringView{"beta"},
+                              StringView{"alpha"}, StringView{""}};
   StringId ids[4];
   EXPECT_EQ(buf.acquire_many(input, ids), 4u);
   EXPECT_EQ(ids[0], ids[2]);
@@ -167,7 +178,7 @@ TEST(StringInterner, BatchLifecycleStopsAtStaleHandle) {
   const StringId sequence[] = {ids[1], ids[0], ids[1]};
   EXPECT_EQ(buf.retain_many(sequence), 1u);
   EXPECT_EQ(buf.release_many(sequence), 1u);
-  EXPECT_TRUE(buf.lookup(ids[1]) == string_ref{"two"});
+  EXPECT_TRUE(buf.lookup(ids[1]) == StringView{"two"});
 }
 
 TEST(StringInterner, LongStringsSurviveGrowthAndEraseWithoutIdentityLoss) {
@@ -183,7 +194,7 @@ TEST(StringInterner, LongStringsSurviveGrowthAndEraseWithoutIdentityLoss) {
   }
   EXPECT_EQ(buf.size(), ids.size());
   for (std::size_t i = 0; i < ids.size(); ++i)
-    EXPECT_TRUE(buf.lookup(ids[i]) == string_ref{storage[i]});
+    EXPECT_TRUE(buf.lookup(ids[i]) == StringView{storage[i]});
   EXPECT_EQ(buf.release_many(ids), ids.size());
   EXPECT_EQ(buf.size(), 0u);
 }
@@ -195,8 +206,8 @@ TEST(StringInterner, ManyDistinctStrings) {
     handles.push_back(buf.acquire(std::string("s") + std::to_string(i)));
   EXPECT_EQ(buf.size(), 5000u);
   for (int i = 0; i < 5000; ++i) {
-    string_ref s = buf.lookup(handles[i]);
-    EXPECT_TRUE(s == string_ref{(std::string("s") + std::to_string(i)).c_str()});
+    StringView s = buf.lookup(handles[i]);
+    EXPECT_TRUE(s == StringView{(std::string("s") + std::to_string(i)).c_str()});
   }
 }
 
@@ -204,7 +215,7 @@ TEST(StringInterner, MakeDestroyFactory) {
   StringInterner* buf = make_string_interner(system_allocator());
   ASSERT_NE(buf, nullptr);
   StringId h = buf->acquire("factory");
-  EXPECT_TRUE(buf->lookup(h) == string_ref{"factory"});
+  EXPECT_TRUE(buf->lookup(h) == StringView{"factory"});
   destroy_string_interner(buf);  // must free the pool + all interned strings
 }
 
@@ -229,8 +240,8 @@ TEST(StringInterner, ConcurrentInternSameContent) {
   for (int t = 0; t < kThreads; ++t) {
     ts.emplace_back([&] {
       for (int i = 0; i < 2000; ++i) {
-        string_ref s = buf.intern("shared_content");
-        const char* p = s.data;
+        StringView s = buf.intern("shared_content");
+        const char* p = s.data();
         const char* prev = seen.exchange(p);
         if (prev != nullptr && prev != p) mismatch = true;
       }
@@ -239,7 +250,7 @@ TEST(StringInterner, ConcurrentInternSameContent) {
   for (auto& th : ts) th.join();
   EXPECT_FALSE(mismatch.load());
   EXPECT_TRUE(buf.lookup(buf.acquire("shared_content")) ==
-              string_ref{"shared_content"});
+              StringView{"shared_content"});
 }
 
 TEST(StringInterner, ConcurrentInternDistinctContent) {

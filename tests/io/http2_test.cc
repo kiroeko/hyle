@@ -13,7 +13,7 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::io::Http2ClientConn;
 using hyle::io::Http2Header;
 using hyle::io::Http2MessageView;
@@ -48,9 +48,9 @@ struct Result {
   char response_body[2][32]{};
 };
 
-void copy_ref(char* out, std::size_t cap, string_ref value) noexcept {
-  const std::size_t n = value.size < cap - 1 ? value.size : cap - 1;
-  if (n != 0) std::memcpy(out, value.data, n);
+void copy_ref(char* out, std::size_t cap, StringView value) noexcept {
+  const std::size_t n = value.size() < cap - 1 ? value.size() : cap - 1;
+  if (n != 0) std::memcpy(out, value.data(), n);
   out[n] = '\0';
 }
 
@@ -177,8 +177,8 @@ Task<int> flow_server(Allocator alloc, TcpListener* listener,
   Http2ServerConn conn{alloc, std::move(stream)};
   Http2MessageView* request = co_await conn.next_request();
   if (request == nullptr) co_return 0;
-  result->server_size.store(request->body().size, std::memory_order_release);
-  const string_ref response{result->response.data(),
+  result->server_size.store(request->body().size(), std::memory_order_release);
+  const StringView response{result->response.data(),
                             static_cast<std::uint32_t>(result->response.size())};
   result->ok.store(
       co_await conn.respond(request->stream_id(), 200, nullptr, 0, response),
@@ -195,14 +195,14 @@ Task<int> flow_client(Allocator alloc, IoContext* io, std::uint16_t port,
       co_await stream.connect(address, length) != 0)
     co_return 0;
   Http2ClientConn conn{alloc, std::move(stream)};
-  const string_ref request{result->request.data(),
+  const StringView request{result->request.data(),
                            static_cast<std::uint32_t>(result->request.size())};
   if (co_await conn.submit_request("POST", "http", "127.0.0.1", "/flow",
                                    nullptr, 0, request) <= 0)
     co_return 0;
   Http2MessageView* response = co_await conn.next_response();
   if (response != nullptr && response->status() == 200)
-    result->client_size.store(response->body().size,
+    result->client_size.store(response->body().size(),
                               std::memory_order_release);
   co_return 0;
 }

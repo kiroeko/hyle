@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/mem/allocator.h"
 
@@ -21,7 +21,7 @@ using hyle::container::HardenedStringHash;
 using hyle::container::StringEqual;
 using hyle::container::StringHash;
 using hyle::container::SwissTable;
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
@@ -512,7 +512,7 @@ TEST(SwissTable, HeterogeneousLookupAndEraseAvoidKeyConstruction) {
   ASSERT_NE(table.find(query), nullptr);
   EXPECT_EQ(*table.find(query), 7);
   EXPECT_TRUE(table.contains(query));
-  EXPECT_EQ(*table.find(string_ref{"alpha"}), 7);
+  EXPECT_EQ(*table.find(StringView{"alpha"}), 7);
   EXPECT_EQ(*table.find("alpha"), 7);
   EXPECT_TRUE(table.erase(query));
   EXPECT_FALSE(table.contains(query));
@@ -521,7 +521,7 @@ TEST(SwissTable, HeterogeneousLookupAndEraseAvoidKeyConstruction) {
 TEST(SwissTable, PublicStringHelpersShareOneByteEqualityClass) {
   const std::string owned = "alpha";
   const std::string_view view = owned;
-  const string_ref ref{owned};
+  const StringView ref{owned};
   constexpr char embedded[] = {'a', '\0', 'b', '\0'};
   const std::string embedded_owned(embedded, 3);
   const std::string embedded_prefix(embedded, 1);
@@ -556,7 +556,7 @@ TEST(SwissTable, HardenedStringHasherSupportsOwningAndBorrowedKeys) {
   ASSERT_TRUE(table.insert_or_assign(std::string("request-id"), 42));
 
   const std::string_view view = "request-id";
-  const string_ref ref{view};
+  const StringView ref{view};
   ASSERT_NE(table.find(view), nullptr);
   EXPECT_EQ(*table.find(ref), 42);
   EXPECT_TRUE(table.contains("request-id"));
@@ -597,6 +597,46 @@ TEST(FlatHashMap, IterationKeepsKeysConstAndValuesMutable) {
   EXPECT_EQ(count, table.size());
   ASSERT_NE(table.find_key(87), nullptr);
   EXPECT_EQ(*table.find_key(87), 87);
+}
+
+TEST(FlatHashMap, IteratorRangeAndPredicateEraseSupportFilteringLoops) {
+  FlatHashMap<int, int> table;
+  for (int value = 0; value < 20; ++value) table.insert(value, value * 10);
+
+  for (auto iterator = table.begin(); iterator != table.end();) {
+    if ((iterator->key() & 1) == 0) {
+      iterator = table.erase(iterator);
+    } else {
+      ++iterator;
+    }
+  }
+  ASSERT_EQ(table.size(), 10u);
+  for (int value = 0; value < 20; ++value) {
+    EXPECT_EQ(table.contains(value), (value & 1) != 0);
+  }
+
+  const std::size_t removed = hyle::container::erase_if(
+      table, [](const auto& entry) { return entry.value() >= 100; });
+  EXPECT_EQ(removed, 5u);
+
+  const auto first = table.begin();
+  table.erase(first, table.end());
+  EXPECT_TRUE(table.empty());
+}
+
+TEST(FlatHashSet, IteratorRangeAndPredicateEraseAreAvailable) {
+  hyle::container::FlatHashSet<int> set;
+  for (int value = 0; value < 12; ++value) set.insert(value);
+
+  const std::size_t removed = hyle::container::erase_if(
+      set, [](int value) { return value % 3 == 0; });
+  EXPECT_EQ(removed, 4u);
+  for (int value = 0; value < 12; ++value) {
+    EXPECT_EQ(set.contains(value), value % 3 != 0);
+  }
+
+  set.erase(set.begin(), set.end());
+  EXPECT_TRUE(set.empty());
 }
 
 TEST(FlatHashMap, FloatingPointSignedZeroUsesOneEqualityClass) {

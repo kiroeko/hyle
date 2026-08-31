@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
@@ -9,6 +10,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_ARM64))
@@ -35,8 +37,8 @@ namespace detail {
 HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
                                                    std::uint64_t seed) noexcept;
 // Process-local long-input dispatcher. On x86 it may select an AVX2 XXH3 TU for
-// sufficiently large inputs; AArch64 uses its baseline NEON XXH3 path after the
-// measured crossover. Other CPUs retain the scalar/baseline best-of path.
+// sufficiently large inputs; AArch64 can use its baseline NEON XXH3 path for
+// long inputs. Other CPUs retain the scalar/baseline path.
 // This is intentionally an implementation seam rather than a user-selectable ISA
 // API: callers describe bytes, platform owns safe feature selection.
 HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t len,
@@ -309,7 +311,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes_medium_inline(
 // Inline hash for a SMALL fixed-size byte blob (n <= 16) -- the common map-key case
 // (PODs/small structs). absl/F14 do the same: small keys get an inline integer mix, NOT a
 // call into the general byte hasher. This avoids the non-inlinable long-input dispatcher
-// whose fixed cost dominates tiny inputs (measured ~1.85x at 8B). Loads up to two 64-bit
+// whose fixed cost dominates tiny inputs. Loads up to two 64-bit
 // words (zero-padded; n is constant per type so no length ambiguity) and folds them through
 // the same 128-bit-multiply mixer as the integer path -- so both words avalanche.
 HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcept {
@@ -411,14 +413,22 @@ struct BytewiseHash {
   }
 };
 
-// Default hasher. The primary template is deliberately unavailable for every
-// user-defined type: neither trivial copyability nor unique object
-// representations prove compatibility with that type's equality relation.
-// Supply a semantic hasher (or specialize Hash<T>), or explicitly opt in to
-// BytewiseHash<T> when equality is exactly bytewise.
+// Default hasher. A type with a valid noexcept std::hash specialization already
+// has a semantic, equality-compatible hashing contract, so bridge it through
+// HYLE's final avalanche. Other user-defined types remain unavailable: neither
+// trivial copyability nor unique object representations proves compatibility
+// with that type's equality relation. Supply a semantic hasher (or specialize
+// Hash<T>), or explicitly opt in to BytewiseHash<T> when equality is bytewise.
 template <class T, class = void>
 struct Hash {
-  std::uint64_t operator()(const T&) const noexcept = delete;
+  std::uint64_t operator()(const T& value) const noexcept
+    requires requires {
+      { std::hash<T>{}(value) } noexcept -> std::convertible_to<std::size_t>;
+    }
+  {
+    return detail::mix64(
+        static_cast<std::uint64_t>(std::hash<T>{}(value)));
+  }
 };
 
 // Integral / enum: inline mix, no out-of-line call.
@@ -544,7 +554,7 @@ inline StringSpan as_string_span(const R& value) noexcept {
 // A post-initialization fork inherits the parent's process seed; it is not an
 // automatic key-rotation boundary.
 //
-// Queries may be std::string/string_view, string_ref-like {data,size} views, or
+// Queries may be std::string/string_view, StringView-like {data,size} views, or
 // NUL-terminated C strings. Bytes are inspected only during the call and no
 // borrowed pointer is retained. Use a sized view for embedded NUL bytes.
 struct StringHash {
@@ -614,6 +624,66 @@ struct Hash<std::string_view> : StringHash {
 template <>
 struct Hash<std::string> : StringHash {
   using StringHash::StringHash;
+};
+
+// Ordered semantic composition for common metadata keys. Each field is hashed
+// through its own Hash<T> policy and visited once; no bytes, padding, or object
+// representation are inferred. hash_combine is public so user-defined semantic
+// hashers can use the same route without specializing std::hash.
+inline std::uint64_t hash_combine(std::uint64_t state,
+                                  std::uint64_t value) noexcept {
+  constexpr std::uint64_t kStep = 0x9e3779b97f4a7c15ull;
+  return detail::mix64_2(state ^ kStep, value + kStep);
+}
+
+namespace detail {
+template <class... T>
+inline std::uint64_t hash_tuple_fields(const std::tuple<T...>& value) noexcept {
+  std::uint64_t state = mix64(sizeof...(T));
+  std::apply(
+      [&](const T&... field) {
+        ((state = hash_combine(state, Hash<T>{}(field))), ...);
+      },
+      value);
+  return state;
+}
+}  // namespace detail
+
+template <class First, class Second>
+struct Hash<std::pair<First, Second>> {
+  std::uint64_t operator()(const std::pair<First, Second>& value) const noexcept
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, Hash<First>,
+                                            const First&> &&
+             std::is_nothrow_invocable_r_v<std::uint64_t, Hash<Second>,
+                                            const Second&>)
+  {
+    std::uint64_t state = detail::mix64(2);
+    state = hash_combine(state, Hash<First>{}(value.first));
+    return hash_combine(state, Hash<Second>{}(value.second));
+  }
+};
+
+template <class... T>
+struct Hash<std::tuple<T...>> {
+  std::uint64_t operator()(const std::tuple<T...>& value) const noexcept
+    requires((std::is_nothrow_invocable_r_v<std::uint64_t, Hash<T>,
+                                             const T&> && ...))
+  {
+    return detail::hash_tuple_fields(value);
+  }
+};
+
+template <class T, std::size_t N>
+struct Hash<std::array<T, N>> {
+  std::uint64_t operator()(const std::array<T, N>& value) const noexcept
+    requires std::is_nothrow_invocable_r_v<std::uint64_t, Hash<T>, const T&>
+  {
+    std::uint64_t state = detail::mix64(N);
+    for (const T& field : value) {
+      state = hash_combine(state, Hash<T>{}(field));
+    }
+    return state;
+  }
 };
 
 // A type usable as a hash key: Hash<T> yields a uint64 for it.

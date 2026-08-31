@@ -1,4 +1,4 @@
-// string_ref search/split API vs std::string_view (gap-fill #45). string_ref is
+// StringView search/split API vs std::string_view.
 // HYLE's std::string_view replacement (conventions §7: same 16-byte POD + a
 // null_terminated bit). Its whole search family (find/find_first_of/starts_with/
 // split) had ZERO bench coverage. The find(char) path is a scalar loop documented
@@ -14,9 +14,9 @@
 #include <string>
 #include <string_view>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -42,10 +42,10 @@ std::string gen_text() {
 }
 }  // namespace
 
-int bench_string_ref() {
+int bench_string_view() {
   const std::string text = gen_text();
   const std::string_view sv{text};
-  const string_ref sr{text.data(), static_cast<std::uint32_t>(text.size())};
+  const StringView sr{text.data(), static_cast<std::uint32_t>(text.size())};
 
   // ---- find(char): full-scan MISS (purest memchr-vs-scalar signal) -----------
   // '~' is absent -> both scan the whole buffer. std::string_view::find lowers to
@@ -57,7 +57,7 @@ int bench_string_ref() {
   // doNotOptimizeAway) so neither side can precompute the result.
   {
     nb::Bench b;
-    b.title("string_ref find(char) full-scan miss (~4KB)")
+    b.title("StringView find(char) full-scan miss (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::find('~')", [&] {
@@ -65,7 +65,7 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.find('~', pos));
     });
-    b.run("HYLE string_ref::find('~')", [&] {
+    b.run("HYLE StringView::find('~')", [&] {
       std::uint32_t pos = 0;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.find('~', pos));
@@ -79,10 +79,10 @@ int bench_string_ref() {
   {
     const std::string needle_s = text.substr(text.size() - 24, 6);
     const std::string_view sv_needle{needle_s};
-    const string_ref sr_needle{needle_s.data(),
+    const StringView sr_needle{needle_s.data(),
                                static_cast<std::uint32_t>(needle_s.size())};
     nb::Bench b;
-    b.title("string_ref find(needle) 6B substring (~4KB)")
+    b.title("StringView find(needle) 6B substring (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::find(needle)", [&] {
@@ -90,7 +90,7 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.find(sv_needle, pos));
     });
-    b.run("HYLE string_ref::find(needle)", [&] {
+    b.run("HYLE StringView::find(needle)", [&] {
       std::uint32_t pos = 0;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.find(sr_needle, pos));
@@ -104,10 +104,10 @@ int bench_string_ref() {
   {
     const std::string set_s = "0123";
     const std::string_view sv_set{set_s};
-    const string_ref sr_set{set_s.data(),
+    const StringView sr_set{set_s.data(),
                             static_cast<std::uint32_t>(set_s.size())};
     nb::Bench b;
-    b.title("string_ref find_first_of(4-char set) miss (~4KB)")
+    b.title("StringView find_first_of(4-char set) miss (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::find_first_of(set)", [&] {
@@ -115,7 +115,7 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.find_first_of(sv_set, pos));
     });
-    b.run("HYLE string_ref::find_first_of(set)", [&] {
+    b.run("HYLE StringView::find_first_of(set)", [&] {
       std::uint32_t pos = 0;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.find_first_of(sr_set, pos));
@@ -126,13 +126,13 @@ int bench_string_ref() {
   {
     const std::string pre_s = text.substr(0, 16);
     const std::string_view sv_pre{pre_s};
-    const string_ref sr_pre{pre_s.data(),
+    const StringView sr_pre{pre_s.data(),
                             static_cast<std::uint32_t>(pre_s.size())};
     nb::Bench b;
-    b.title("string_ref starts_with(16B prefix)").relative(true);
+    b.title("StringView starts_with(16B prefix)").relative(true);
     b.run("std::string_view::starts_with",
           [&] { nb::doNotOptimizeAway(sv.starts_with(sv_pre)); });
-    b.run("HYLE string_ref::starts_with",
+    b.run("HYLE StringView::starts_with",
           [&] { nb::doNotOptimizeAway(sr.starts_with(sr_pre)); });
   }
 
@@ -142,7 +142,7 @@ int bench_string_ref() {
   // whole buffer; measures the per-token split cost.
   {
     nb::Bench b;
-    b.title("string_ref split whole text by ' ' (~4KB)")
+    b.title("StringView split whole text by ' ' (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view find+remove_prefix loop", [&] {
@@ -159,12 +159,12 @@ int bench_string_ref() {
       }
       nb::doNotOptimizeAway(acc);
     });
-    b.run("HYLE string_ref::split", [&] {
-      string_ref s = sr;
+    b.run("HYLE StringView::split", [&] {
+      StringView s = sr;
       std::uint32_t acc = 0;
       while (!s.empty()) {
-        string_ref tok = hyle::container::split(&s, ' ');
-        acc += tok.size;
+        StringView tok = hyle::container::split(&s, ' ');
+        acc += tok.size();
       }
       nb::doNotOptimizeAway(acc);
     });
@@ -177,7 +177,7 @@ int bench_string_ref() {
   // Opaque pos defeats hoisting symmetrically (same fairness fix as find above).
   {
     nb::Bench b;
-    b.title("string_ref rfind(char) full-scan miss (~4KB)")
+    b.title("StringView rfind(char) full-scan miss (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::rfind('~')", [&] {
@@ -185,8 +185,8 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.rfind('~', pos));
     });
-    b.run("HYLE string_ref::rfind('~')", [&] {
-      std::uint32_t pos = string_ref::npos;
+    b.run("HYLE StringView::rfind('~')", [&] {
+      std::uint32_t pos = StringView::npos;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.rfind('~', pos));
     });
@@ -200,9 +200,9 @@ int bench_string_ref() {
   {
     const std::string set_s = "abcdefghijklmnopqrstuvwxyz ";
     const std::string_view sv_set{set_s};
-    const string_ref sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
+    const StringView sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
     nb::Bench b;
-    b.title("string_ref find_first_not_of(full alphabet) miss (~4KB)")
+    b.title("StringView find_first_not_of(full alphabet) miss (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::find_first_not_of", [&] {
@@ -210,7 +210,7 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.find_first_not_of(sv_set, pos));
     });
-    b.run("HYLE string_ref::find_first_not_of", [&] {
+    b.run("HYLE StringView::find_first_not_of", [&] {
       std::uint32_t pos = 0;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.find_first_not_of(sr_set, pos));
@@ -223,9 +223,9 @@ int bench_string_ref() {
   {
     const std::string set_s = "0123456789";
     const std::string_view sv_set{set_s};
-    const string_ref sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
+    const StringView sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
     nb::Bench b;
-    b.title("string_ref find_last_of(digits) miss (~4KB)")
+    b.title("StringView find_last_of(digits) miss (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::find_last_of", [&] {
@@ -233,8 +233,8 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.find_last_of(sv_set, pos));
     });
-    b.run("HYLE string_ref::find_last_of", [&] {
-      std::uint32_t pos = string_ref::npos;
+    b.run("HYLE StringView::find_last_of", [&] {
+      std::uint32_t pos = StringView::npos;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.find_last_of(sr_set, pos));
     });
@@ -247,11 +247,11 @@ int bench_string_ref() {
   {
     std::string padded = "   \t  " + text + "  \t   ";
     const std::string_view sv_pad{padded};
-    const string_ref sr_pad{padded.data(), static_cast<std::uint32_t>(padded.size())};
-    const string_ref ws{" \t\r\n"};
+    const StringView sr_pad{padded.data(), static_cast<std::uint32_t>(padded.size())};
+    const StringView ws{" \t\r\n"};
     const std::string_view sv_ws{" \t\r\n"};
     nb::Bench b;
-    b.title("string_ref trim (both ends, ~4KB)").relative(true);
+    b.title("StringView trim (both ends, ~4KB)").relative(true);
     b.run("std::string_view two-sided trim", [&] {
       std::size_t b0 = sv_pad.find_first_not_of(sv_ws);
       std::size_t e0 = sv_pad.find_last_not_of(sv_ws);
@@ -260,8 +260,8 @@ int bench_string_ref() {
                                : sv_pad.substr(b0, e0 - b0 + 1);
       nb::doNotOptimizeAway(t.size());
     });
-    b.run("HYLE string_ref::trim", [&] {
-      nb::doNotOptimizeAway(sr_pad.trim(ws).size);
+    b.run("HYLE StringView::trim", [&] {
+      nb::doNotOptimizeAway(sr_pad.trim(ws).size());
     });
   }
 
@@ -272,9 +272,9 @@ int bench_string_ref() {
   {
     const std::string needle_s = text.substr(8, 6);
     const std::string_view sv_needle{needle_s};
-    const string_ref sr_needle{needle_s.data(), static_cast<std::uint32_t>(needle_s.size())};
+    const StringView sr_needle{needle_s.data(), static_cast<std::uint32_t>(needle_s.size())};
     nb::Bench b;
-    b.title("string_ref rfind(needle) 6B (~4KB)")
+    b.title("StringView rfind(needle) 6B (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::string_view::rfind(needle)", [&] {
@@ -282,8 +282,8 @@ int bench_string_ref() {
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sv.rfind(sv_needle, pos));
     });
-    b.run("HYLE string_ref::rfind(needle)", [&] {
-      std::uint32_t pos = string_ref::npos;
+    b.run("HYLE StringView::rfind(needle)", [&] {
+      std::uint32_t pos = StringView::npos;
       nb::doNotOptimizeAway(pos);
       nb::doNotOptimizeAway(sr.rfind(sr_needle, pos));
     });
@@ -293,13 +293,13 @@ int bench_string_ref() {
   // has no direct string_view::count -> std::count over the range is the rival.
   {
     nb::Bench b;
-    b.title("string_ref count(' ') full-scan (~4KB)")
+    b.title("StringView count(' ') full-scan (~4KB)")
         .relative(true)
         .batch(text.size());
     b.run("std::count(begin,end,' ')", [&] {
       nb::doNotOptimizeAway(std::count(sv.begin(), sv.end(), ' '));
     });
-    b.run("HYLE string_ref::count", [&] {
+    b.run("HYLE StringView::count", [&] {
       nb::doNotOptimizeAway(sr.count(' '));
     });
   }
@@ -321,7 +321,7 @@ int bench_string_ref() {
     // sprinkle 'z' at ~1/512 so rfind finds a real hit and count is nonzero-but-sparse
     for (std::size_t i = 251; i < big.size(); i += 512) big[i] = 'z';
     const std::string_view bsv{big};
-    const string_ref bsr{big.data(), static_cast<std::uint32_t>(big.size())};
+    const StringView bsr{big.data(), static_cast<std::uint32_t>(big.size())};
 
     // Anti-hoist: nanobench runs the lambda in a tight loop; with a loop-invariant buffer the
     // compiler hoists the whole scan out (computes once -> ~0ns, physically impossible for MB
@@ -330,7 +330,7 @@ int bench_string_ref() {
     std::size_t mut = 0;
     auto* mutp = big.data();
     nb::Bench b;
-    b.title("string_ref count('z') vs std (" + std::to_string(kb) + "KB)")
+    b.title("StringView count('z') vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
     b.run("std::count", [&] {
       mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();  // perturb, wrap
@@ -342,7 +342,7 @@ int bench_string_ref() {
     });
 
     nb::Bench br;
-    br.title("string_ref rfind('Q' miss) vs std (" + std::to_string(kb) + "KB)")
+    br.title("StringView rfind('Q' miss) vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
     br.run("std::string_view::rfind", [&] {
       mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();

@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <limits>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/core/compiler.h"
 
 // Allocation-free byte-string foundations for parsers, protocols, configuration,
-// and path helpers. Inputs are non-owning string_ref values; transforms use
+// and path helpers. Inputs are non-owning StringView values; transforms use
 // caller-provided buffers; character rules are locale-free and deterministic.
 //
 // Scope:
@@ -61,13 +61,13 @@ HYLE_CONTAINER_API std::uint32_t str_ascii_lower(
 HYLE_CONTAINER_API std::uint32_t str_ascii_upper(
     const char*, std::uint32_t, char*, std::uint32_t) noexcept;
 }
-inline std::uint32_t to_lower(string_ref s, char* out,
+inline std::uint32_t to_lower(StringView s, char* out,
                               std::uint32_t cap) noexcept {
-  return detail::str_ascii_lower(s.data, s.size, out, cap);
+  return detail::str_ascii_lower(s.data(), s.size(), out, cap);
 }
-inline std::uint32_t to_upper(string_ref s, char* out,
+inline std::uint32_t to_upper(StringView s, char* out,
                               std::uint32_t cap) noexcept {
-  return detail::str_ascii_upper(s.data, s.size, out, cap);
+  return detail::str_ascii_upper(s.data(), s.size(), out, cap);
 }
 
 // ---- hex encode / C escape (buffer-fill) ------------------------------------
@@ -93,22 +93,22 @@ inline std::size_t hex_encode(const void* data, std::size_t len, char* out,
 // Decode an even-length hexadecimal string. Returns the full decoded byte
 // count, SIZE_MAX on malformed/odd input. Writes at most `cap` bytes; size-only
 // calls may pass out==nullptr with cap==0.
-inline std::size_t hex_decode(string_ref hex, void* out,
+inline std::size_t hex_decode(StringView hex, void* out,
                               std::size_t cap) noexcept {
-  if ((hex.size & 1u) != 0) return std::numeric_limits<std::size_t>::max();
-  const std::size_t need = hex.size / 2;
+  if ((hex.size() & 1u) != 0) return std::numeric_limits<std::size_t>::max();
+  const std::size_t need = hex.size() / 2;
   auto* bytes = static_cast<unsigned char*>(out);
   const std::size_t write_count = cap < need ? cap : need;
   for (std::size_t i = 0; i < write_count; ++i) {
-    const int high = hex_value(hex.data[i * 2]);
-    const int low = hex_value(hex.data[i * 2 + 1]);
+    const int high = hex_value(hex.data()[i * 2]);
+    const int low = hex_value(hex.data()[i * 2 + 1]);
     if (high < 0 || low < 0) return std::numeric_limits<std::size_t>::max();
     bytes[i] = static_cast<unsigned char>((high << 4) | low);
   }
   // A truncated output buffer must not weaken validation of the suffix.
   for (std::size_t i = write_count; i < need; ++i) {
-    if (hex_value(hex.data[i * 2]) < 0 ||
-        hex_value(hex.data[i * 2 + 1]) < 0)
+    if (hex_value(hex.data()[i * 2]) < 0 ||
+        hex_value(hex.data()[i * 2 + 1]) < 0)
       return std::numeric_limits<std::size_t>::max();
   }
   return need;
@@ -120,7 +120,7 @@ inline std::size_t hex_decode(string_ref hex, void* out,
 // escaped length (>= cap signals truncation) and emits only complete escape
 // tokens. This is the allocation-free buffer-fill counterpart of Abseil
 // CEscape, not a UI/display policy.
-inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
+inline std::size_t c_escape(StringView s, char* out, std::size_t cap) noexcept {
   auto esc = [](char c) -> char {
     switch (c) {
       case '\a': return 'a';
@@ -139,8 +139,8 @@ inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
   static constexpr char kOctal[] = "01234567";
   std::size_t need = 0, w = 0;
   bool writing = true;
-  for (std::uint32_t i = 0; i < s.size; ++i) {
-    const unsigned char byte = static_cast<unsigned char>(s.data[i]);
+  for (std::uint32_t i = 0; i < s.size(); ++i) {
+    const unsigned char byte = static_cast<unsigned char>(s.data()[i]);
     const char e = esc(static_cast<char>(byte));
     const bool printable = byte >= 0x20 && byte <= 0x7e;
     const std::size_t add = e ? 2 : printable ? 1 : 4;
@@ -176,10 +176,10 @@ inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
 // empty valid range only when size is zero; null + nonzero starts invalid.
 class Utf8Decoder {
  public:
-  explicit Utf8Decoder(string_ref s) noexcept
-      : p_(s.data),
-        end_(s.data == nullptr ? nullptr : s.data + s.size),
-        valid_(s.data != nullptr || s.size == 0) {}
+  explicit Utf8Decoder(StringView s) noexcept
+      : p_(s.data()),
+        end_(s.data() == nullptr ? nullptr : s.data() + s.size()),
+        valid_(s.data() != nullptr || s.size() == 0) {}
 
   bool is_end() const noexcept { return p_ == end_; }
   bool valid() const noexcept { return valid_; }
@@ -246,13 +246,13 @@ class Utf8Decoder {
 // scalar/reference fallback; vendor types do not cross this public seam. The
 // runtime entries live in string_algo.cc.
 namespace detail {
-HYLE_CONTAINER_API bool utf8_validate_runtime(string_ref s) noexcept;
-HYLE_CONTAINER_API std::int64_t utf8_length_runtime(string_ref s) noexcept;
+HYLE_CONTAINER_API bool utf8_validate_runtime(StringView s) noexcept;
+HYLE_CONTAINER_API std::int64_t utf8_length_runtime(StringView s) noexcept;
 }
-inline bool utf8_validate(string_ref s) noexcept {
+inline bool utf8_validate(StringView s) noexcept {
   return detail::utf8_validate_runtime(s);
 }
-inline std::int64_t utf8_length(string_ref s) noexcept {
+inline std::int64_t utf8_length(StringView s) noexcept {
   return detail::utf8_length_runtime(s);
 }
 

@@ -5,7 +5,7 @@
 #include <span>
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
@@ -38,6 +38,13 @@ struct StringId {
   std::uint64_t value = 0;
   friend bool operator==(StringId, StringId) noexcept = default;
   bool empty() const noexcept { return value == 0; }
+};
+
+template <>
+struct Hash<StringId> {
+  std::uint64_t operator()(StringId id) const noexcept {
+    return Hash<std::uint64_t>{}(id.value);
+  }
 };
 
 class StringInterner {
@@ -78,7 +85,7 @@ class StringInterner {
       std::span<const StringId> ids) noexcept;
 
   // String for `id`, or empty if absent. The result is always null-terminated.
-  HYLE_CONTAINER_API StringView lookup(StringId id) noexcept;
+  HYLE_CONTAINER_API StringView lookup(StringId id) const noexcept;
 
   // Permanently interns `s` until pool destruction and returns its stable,
   // null-terminated view. Repeated calls do not grow a hidden refcount. Use

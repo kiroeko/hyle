@@ -11,11 +11,11 @@
 #include <thread>
 #include <vector>
 
-#include "hyle/container/string_ref.h"
+#include "hyle/container/string_view.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/registry.h"
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::util::RegistryPriority;
 
 namespace {
@@ -187,7 +187,7 @@ TEST(Registry, ExplicitFallibleCreatorSupportsIntrusiveRef) {
 TEST(Registry, HelpTextIsExplicitConsumerDescription) {
   hyle::util::Registry<Shape*> registry;
   ASSERT_TRUE(register_shapes(&registry).ok());
-  EXPECT_EQ(registry.help("triangle"), string_ref{"three-sided shape"});
+  EXPECT_EQ(registry.help("triangle"), StringView{"three-sided shape"});
 }
 
 TEST(Registry, RegisteredKeysVisible) {
@@ -195,9 +195,9 @@ TEST(Registry, RegisteredKeysVisible) {
   ASSERT_TRUE(register_shapes(&registry).ok());
   int count = 0;
   bool saw_triangle = false;
-  const hyle::Status status = registry.for_each_key([&](string_ref k) {
+  const hyle::Status status = registry.for_each_key([&](StringView k) {
     ++count;
-    if (k == string_ref{"triangle"}) saw_triangle = true;
+    if (k == StringView{"triangle"}) saw_triangle = true;
   });
   ASSERT_TRUE(status.ok());
   EXPECT_GE(count, 2);
@@ -329,7 +329,7 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
         const auto length = static_cast<std::uint32_t>(
             std::strlen(key_storage[i].data()));
         ASSERT_TRUE(registry.register_creator(
-            string_ref{key_storage[i].data(), length, true}, creator).ok());
+            StringView{key_storage[i].data(), length, true}, creator).ok());
       }
     });
   }
@@ -361,7 +361,7 @@ TEST(Registry, RejectsInvalidRegistration) {
 
 TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
   hyle::util::Registry<CheapWidget*> registry;
-  string_ref old_help;
+  StringView old_help;
   {
     std::string key = "dynamic-widget";
     std::string help = "fallback implementation";
@@ -372,7 +372,7 @@ TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
         RegistryPriority::kFallback, help).ok());
     old_help = registry.help("dynamic-widget");
   }
-  EXPECT_EQ(old_help, string_ref{"fallback implementation"});
+  EXPECT_EQ(old_help, StringView{"fallback implementation"});
   std::unique_ptr<CheapWidget> value(registry.create("dynamic-widget"));
   ASSERT_NE(value, nullptr);
 
@@ -381,9 +381,9 @@ TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
         return new (std::nothrow) FancyWidget();
       },
       RegistryPriority::kPreferred, "preferred implementation").ok());
-  EXPECT_EQ(old_help, string_ref{"fallback implementation"});
+  EXPECT_EQ(old_help, StringView{"fallback implementation"});
   EXPECT_EQ(registry.help("dynamic-widget"),
-            string_ref{"preferred implementation"});
+            StringView{"preferred implementation"});
 }
 
 TEST(Registry, MutableEnumerationIsSnapshotBasedAndReentrant) {
@@ -396,7 +396,7 @@ TEST(Registry, MutableEnumerationIsSnapshotBasedAndReentrant) {
       [&](hyle::util::Registry<CheapWidget*>::EntryView entry) {
         ++visited;
         EXPECT_TRUE(registry.has(entry.key));
-        if (entry.key == string_ref{"first"}) {
+        if (entry.key == StringView{"first"}) {
           EXPECT_TRUE(registry.register_creator("second", creator).ok());
         }
       });
@@ -416,11 +416,11 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   (void)frozen_again;
   EXPECT_TRUE(registry.frozen());
   EXPECT_TRUE(frozen.has("frozen"));
-  EXPECT_EQ(frozen.help("frozen"), string_ref{"immutable entry"});
+  EXPECT_EQ(frozen.help("frozen"), StringView{"immutable entry"});
   EXPECT_EQ(frozen.size(), 1u);
   EXPECT_EQ(frozen.create("frozen"), nullptr);
   EXPECT_TRUE(registry.has("frozen"));
-  EXPECT_EQ(registry.help("frozen"), string_ref{"immutable entry"});
+  EXPECT_EQ(registry.help("frozen"), StringView{"immutable entry"});
   EXPECT_TRUE(registry.register_creator("late", creator).IsFailedPrecondition());
   EXPECT_TRUE(registry.reserve(64).IsFailedPrecondition());
 
@@ -448,7 +448,7 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   visited = 0;
   frozen.for_each([&](auto entry) {
     ++visited;
-    EXPECT_EQ(entry.key, string_ref{"frozen"});
+    EXPECT_EQ(entry.key, StringView{"frozen"});
   });
   EXPECT_EQ(visited, 1u);
 }
@@ -474,7 +474,7 @@ TEST(Registry, AllocationFailureIsRecoverableAndFreezeDoesNotAllocate) {
   EXPECT_TRUE(populated.frozen());
   EXPECT_TRUE(populated.has("entry"));
   EXPECT_TRUE(frozen.has("entry"));
-  EXPECT_EQ(frozen.help("entry"), string_ref{});
+  EXPECT_EQ(frozen.help("entry"), StringView{});
   EXPECT_EQ(frozen.size(), 1u);
   EXPECT_EQ(frozen.create("entry"), nullptr);
   std::size_t visited = 0;
@@ -523,7 +523,7 @@ TEST(Registry, EveryInitialAllocationFailureIsAtomicAndRetryable) {
                                          "diagnostics")
                     .ok());
     EXPECT_EQ(registry.size(), 1u);
-    EXPECT_EQ(registry.help("entry"), string_ref{"diagnostics"});
+    EXPECT_EQ(registry.help("entry"), StringView{"diagnostics"});
   }
 }
 
@@ -548,7 +548,7 @@ TEST(Registry, FailedPriorityReplacementKeepsPreviousEntry) {
                                         RegistryPriority::kPreferred,
                                         large_help)
                   .IsResourceExhausted());
-  EXPECT_EQ(registry.help("widget"), string_ref{"fallback"});
+  EXPECT_EQ(registry.help("widget"), StringView{"fallback"});
   std::unique_ptr<CheapWidget> value(registry.create("widget"));
   ASSERT_NE(value, nullptr);
   EXPECT_EQ(value->quality(), 1);
@@ -575,12 +575,12 @@ TEST(Registry, MaximumStringLengthWidensBeforeNulByteAllocation) {
   // never read and this test does not copy a 4 GiB string. Widening must happen
   // before adding the terminator and Entry bytes.
   const char placeholder = 'x';
-  const string_ref maximum_key{&placeholder, string_ref::npos};
+  const StringView maximum_key{&placeholder, StringView::npos};
   const hyle::Status status =
       registry.register_creator(maximum_key, creator);
 
   EXPECT_TRUE(status.IsResourceExhausted());
   EXPECT_EQ(failure.calls, probe.calls);
   EXPECT_GT(failure.last_allocation_size,
-            static_cast<std::size_t>(string_ref::npos));
+            static_cast<std::size_t>(StringView::npos));
 }

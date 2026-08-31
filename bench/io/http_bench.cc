@@ -68,7 +68,7 @@
 #  include <pthread.h>
 #endif
 
-using hyle::container::string_ref;
+using hyle::container::StringView;
 using hyle::io::HttpClientConn;
 using hyle::io::HttpRequest;
 using hyle::io::HttpResponse;
