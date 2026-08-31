@@ -46,7 +46,7 @@
       "tier": "replay",
       "gate_role": "product",
       "consumer_key": "inference-foundation/sched/request-fanout-collect",
-      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "232cbf4f471c6170fd435ac9807a4dc49b56713c6d0bd9450b034e2c80212453"},
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "76a572e0e653f05f610b8b0d411b06ec850e2e0ca16cd202a3242fc1bfe17c98"},
       "ownership_topology": {
         "candidate": "One external caller submits preallocated raw callbacks; HYLE workers poll one shared CancelToken, process one short tile, publish to one bounded HYLE Channel and signal a WaitGroup",
         "peer": "The same caller and preallocated records enqueue Marl tasks; Marl workers poll one shared standard stop_token, process the identical tile, publish to an equal-capacity Marl mutex/ConditionVariable ring and signal Marl WaitGroup",
@@ -72,9 +72,9 @@
       "tier": "replay",
       "gate_role": "product",
       "consumer_key": "inference-foundation/sched/structured-spawn-join",
-      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "232cbf4f471c6170fd435ac9807a4dc49b56713c6d0bd9450b034e2c80212453"},
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "76a572e0e653f05f610b8b0d411b06ec850e2e0ca16cd202a3242fc1bfe17c98"},
       "ownership_topology": {
-        "candidate": "One admitted root fiber creates 128 allocator-backed Task<uint64_t> values per batch, retains JoinHandles, waits through dynamic when_all, consumes typed results and completes every task/frame/stack lifecycle",
+        "candidate": "One admitted root fiber creates 128 single-cell non-suspending schedule_task<uint64_t> values per batch, retains JoinHandles, waits through dynamic when_all, consumes typed results and completes every callable/result-cell lifecycle",
         "peer": "One admitted Marl root fiber enqueues 128 Marl tasks per batch, retains preallocated typed result slots, waits through Marl WaitGroup and consumes every result",
         "equivalence": "Both root fibers run 16 batches on four dedicated pinned workers, use identical input/tile/seed/result accounting, exclude root admission and persistent scheduler setup and include full per-task ownership plus batch join lifecycle"
       },
@@ -85,8 +85,8 @@
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {"distribution": "fixed deterministic 1024-element uint64 tile with per-task seed", "scale": {"workers": 4, "batches": 16, "fanout": 128, "tasks": 2048}},
       "setup": "Scheduler/thread creation, exact CPU pinning, input allocation, expected checksum, vector reservation, root admission and a 64-task warmup are outside the measured interval",
-      "charged_phases": ["typed task/result ownership construction", "admission, dispatch and stealing", "1024-element deterministic tile", "whole-batch wait", "typed result collection and task lifecycle teardown"],
-      "pair": {"candidate": "HYLE Task/JoinHandle/span when_all", "peer": "Marl Task/preallocated typed slots/WaitGroup"},
+      "charged_phases": ["single-cell typed task/result ownership construction", "admission, dispatch and stealing", "1024-element deterministic tile", "whole-batch wait", "typed result collection and callable/cell lifecycle teardown"],
+      "pair": {"candidate": "HYLE schedule_task/JoinHandle/span when_all", "peer": "Marl Task/preallocated typed slots/WaitGroup"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
@@ -98,7 +98,7 @@
       "tier": "replay",
       "gate_role": "product",
       "consumer_key": "inference-foundation/sched/external-completion-wake",
-      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "232cbf4f471c6170fd435ac9807a4dc49b56713c6d0bd9450b034e2c80212453"},
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "76a572e0e653f05f610b8b0d411b06ec850e2e0ca16cd202a3242fc1bfe17c98"},
       "ownership_topology": {
         "candidate": "One persistent pinned HYLE fiber per worker publishes a fresh episode Waker, suspends, is woken from the external caller and acknowledges resume before the next episode",
         "peer": "One persistent pinned Marl fiber per worker publishes episode readiness, waits on an auto-reset Marl Event, is signalled from the same external-caller role and acknowledges resume",

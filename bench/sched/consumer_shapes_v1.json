@@ -1,8 +1,8 @@
 {
   "schema": "hyle.sched.consumer-shapes/v1",
   "owner": "sched-v1",
-  "candidate_product_commit": "9f24714190c7247abe46a4f030f27a60101fe90d",
-  "candidate_product_tree": "01f20256f201a366bc094a078e2348dee670bb89",
+  "candidate_product_commit": "f358d084d17f92e64ec51ae2bd974d2a67f417d2",
+  "candidate_product_tree": "44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6",
   "journeys": [
     {
       "id": "request-fanout-collect",
@@ -19,7 +19,7 @@
       "sources": [
         {
           "path": "samples/package/sched/cpp/main.cc",
-          "sha256": "234f1b9105e7d1beac13754c446a69136746affd9e0be9fc4d099317d2a9e558"
+          "sha256": "df7b847cab23f6654f89c533b52ba782cb671ca081d1c824d769e21b878cda45"
         }
       ],
       "reason": "This is the ordinary short-work route exposed by the installed sched journey; nonzero tile work prevents a zero-callback benchmark from defining product shape."
@@ -27,14 +27,14 @@
     {
       "id": "structured-spawn-join",
       "consumer": "graph or inference execution layer",
-      "topology": "one admitted root fiber runs 16 batches that each fan out 128 typed tasks over four workers; each task computes a 1024-element tile, and the root waits for the whole dynamic span and consumes every typed result",
-      "ownership": "the caller owns immutable input and the root-lifetime acknowledgement; the root fiber owns dynamic JoinHandles/results; each scheduler task owns its coroutine frame and recycled guarded fiber stack until completion",
+      "topology": "one admitted root fiber runs 16 batches that each fan out 128 non-suspending typed worker-stack tasks over four workers; each task computes a 1024-element tile, and the root waits for the whole dynamic span and consumes every typed result",
+      "ownership": "the caller owns immutable input and the root-lifetime acknowledgement; the root fiber owns dynamic JoinHandles/results; each scheduled task owns one allocator cell containing its callable and result state until execution and handle teardown complete",
       "charged_phases": [
-        "typed task and JoinHandle construction",
+        "single-cell typed task and JoinHandle construction",
         "scheduler admission, dispatch and stealing",
         "1024-element tile compute",
         "dynamic when_all and typed result join",
-        "task/frame/stack lifecycle completion"
+        "callable/result-cell lifecycle completion"
       ],
       "sources": [
         {
@@ -43,7 +43,7 @@
         }
       ],
       "downstream_status": "Graph remains QUEUED; this file is provenance for the sched API shape only and grants no Graph verdict.",
-      "reason": "The current Graph consumer already runs spawn_task and fan-out completion from a scheduler fiber and floors automatic grains at 1024 elements. The replay retains that structure while keeping graph algorithms outside sched."
+      "reason": "The current Graph consumer already performs non-suspending typed fan-out from a scheduler fiber and floors automatic grains at 1024 elements. The replay retains that semantic structure through sched's worker-stack typed route; Graph migration remains owned by its future review."
     },
     {
       "id": "completion-wake",

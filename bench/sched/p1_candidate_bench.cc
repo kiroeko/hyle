@@ -9,7 +9,6 @@
 
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/cancel.h"
-#include "hyle/sched/coro.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
@@ -23,7 +22,6 @@ using hyle::sched::CancelToken;
 using hyle::sched::Channel;
 using hyle::sched::JoinHandle;
 using hyle::sched::Scheduler;
-using hyle::sched::Task;
 using hyle::sched::WaitGroup;
 
 struct RequestContext {
@@ -94,13 +92,6 @@ RequestRun run_request_replay(Scheduler& scheduler, Allocator allocator,
   return {p1::elapsed_ns(start, finish), checksum};
 }
 
-Task<std::uint64_t> tile_task(Allocator, std::span<const std::uint64_t> input,
-                              std::uint64_t seed,
-                              p1::WorkerHits* hits) noexcept {
-  hits->hit(hyle::sched::current_worker_index());
-  co_return p1::tile_digest(input, seed);
-}
-
 struct StructuredRun {
   double wall_ns = 0.0;
   std::uint64_t checksum = 0;
@@ -126,8 +117,11 @@ StructuredRun run_structured_body(
     handles.clear();
     for (std::size_t task = 0; task < fanout; ++task) {
       const auto seed = static_cast<std::uint64_t>(round * fanout + task + 1);
-      handles.push_back(hyle::sched::spawn_task(
-          scheduler, allocator, tile_task(allocator, input, seed, &hits)));
+      handles.push_back(hyle::sched::schedule_task(
+          scheduler, allocator, [input, seed, &hits]() noexcept {
+            hits.hit(hyle::sched::current_worker_index());
+            return p1::tile_digest(input, seed);
+          }));
     }
     hyle::sched::when_all(
         std::span<JoinHandle<std::uint64_t>>(handles.data(), handles.size()));
