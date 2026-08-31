@@ -748,7 +748,7 @@
     },
     {
       "module": "sched",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "sched-v2-batch-structured",
       "closure_task": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
       "scope": "Restore the missing non-suspending batch-structured task route: one batch-level completion, shared failure/cancellation, caller-owned result slots, no per-item independent handle/status or suspension; define its relation to schedule, schedule_task and spawn_task, then requalify the affected P1 contract and delivery closure.",
@@ -770,7 +770,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v2 SCOPED：恢复普通批级 non-suspending structured work；先冻结与 fire-and-forget、逐任务 typed control、可挂起任务真正不同的语义/成本合同，再实现 batch route 并重签 same-contract P1。"
+      "summary": "sched-v2 AUDITED：双向审计确认缺口是有限 non-suspending batch，而不是另一条按快慢命名的 queue；冻结 bulk_execute、共享首错/取消、O(worker) runner 与同合同 P1 的 FIX-01..05，Graph algorithms 保持邻接负空间。"
     },
     {
       "module": "io",

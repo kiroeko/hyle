@@ -7,7 +7,7 @@
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -82,17 +82,123 @@
 `C:\hyle-scratch\sched-v2\module-status-before-scoped.json`，SHA-256
 `9880363F9F0D5F2E7B6D9DB8EEC9ACF1A0AA63A076C9E5E685BC57DEA1E83EB1`。
 
+## 审计输入与设计裁决
+
+本轮只读审计绑定以下 clean identity：
+
+- HYLE baseline：`1908f7b9bf8c86c1da9c11aa63e767577d0fa602`；
+- llama.cpp：2026-08-31 fast-forward 后的
+  `662a0b0121a53c23b825a71e64ab6eff59b7f4d8`；其 CPU graph 继续把一次 graph/kernel 工作作为共享
+  threadpool episode，由 `ith/nth`、barrier、abort callback 与共享 chunk cursor 协作，不为每个 chunk
+  建独立 future；
+- standalone ggml：`36da57138425487184aa1da2eee2cde155909c6f`；同样保留 threadpool barrier、
+  `ggml_threadpool_chunk_add` 动态分块与一次 graph completion；
+- Marl：`b8406ab0a82524170ead6dd6c371b579bbc28b3e`；`schedule(Task)` + 一个共享
+  `WaitGroup` 是 batch completion，Task/结果 slot 不带逐项 JoinHandle；
+- oneTBB：`a8216b95202f3c55f9749870f4f8cfa4df0b32e3`；`task_group` 提供 group wait/cancel，
+  `parallel_for` 提供同步 range completion 与 caller-owned 数据，但 task_group 的普通 `run(F)` 仍会为
+  每项准备 task storage；
+- 当前 HYLE Graph 只作语法 consumer：`graph::parallel_for` 的旧实现用递归 coroutine、`spawn_task`、
+  Fiber stack 与 JoinState 完成每次 split；它证明 range 任务存在，也证明该机制不能冒充 sched 的轻量
+  batch route。Graph 当前为 `QUEUED`，本轮不迁移或冻结其产品。
+
+冻结的 public shape 名为 `sched::bulk_execute`，而不是 `light_schedule`/`heavy_schedule`：
+
+```cpp
+struct BulkExecuteOptions {
+  std::size_t grain_size = 1;
+  unsigned max_concurrency = 0;       // 0 = Scheduler worker 数
+  const CancelToken* cancel_token = nullptr;
+};
+
+using BulkBodyFn =
+    Status (*)(void*, std::size_t begin, std::size_t end) noexcept;
+
+Status bulk_execute(Scheduler&, std::size_t begin, std::size_t end,
+                    BulkBodyFn, void*, BulkExecuteOptions = {}) noexcept;
+// 同头提供 noexcept lambda adapter；body 可返回 void 或 Status。
+```
+
+它是 scheduler 级固定 grain bulk primitive，不拥有自适应 partitioner、reduce/scan/sort、tensor 或 graph
+policy。正常 parallel 路线借用 callable/context、cancel token 与 caller-owned result slots直到函数返回；
+只提交 `min(chunks, max_concurrency/workers)` 个共享 batch-state runner，各 runner 从一个 atomic chunk cursor
+领取区间。调用者在普通线程等待时阻塞线程，在 Scheduler Fiber 等待时挂起 Fiber；从 worker-stack
+non-suspending callback 嵌套调用时为避免单 worker 自死锁，明确退化为当前 callback 上的串行执行。
+
+body 的第一个 non-OK `Status` 停止领取新 chunk，已领取 chunk 仍完成；多个并发错误的 winner 不保证
+index 顺序。取消同样只阻止领取新 chunk，并在没有 body error 时返回 `Cancelled`。提交部分 runner 后
+发生 queue pressure 不丢工作：已经 admission 的任一 runner 都能领取剩余全部 chunk；一个 runner 都
+未 admission 才返回 admission error。空 range 为成功；反向 range、零 grain、空 raw callback 或无效
+Scheduler 为可恢复错误。
+
+拒绝的替代方案：
+
+- 不给所有 `InlineJob` 增加可选 group/completion 指针；那会让无关 fire-and-forget 常态 queue item 为
+  本轮能力永久增大；
+- 不用 `schedule_task`/`spawn_task` 包装每个 item；那会重新缴纳逐项 result/cancel/JoinState 或 Fiber；
+- 不先增加一个每项 heap node 的 `TaskGroup::run`；它虽接近 oneTBB shape，却违反本轮已冻结的
+  per-batch/O(worker) 资源合同，动态异构 addition 继续由 `schedule + WaitGroup` 组合承载；
+- 不把 Graph 的 recursive split、auto grain、reduce/scan/sort 下沉到 Sched；它们属于算法/consumer
+  policy，未来 Graph 审核可把本原语作为底座。
+
 ## Capability-family coverage map
 
-进入 `AUDITED` 前完成。当前只允许只读 peer/consumer/public-surface 审计，不修改产品。
+| family | admitted journeys / semantic variants | lifecycle / boundary | current route | coverage | missing edge |
+|---|---|---|---|---|---|
+| 短 fire-and-forget | runtime callback、无结果/等待/取消 owner | raw `fn+ctx` 零分配；capturing callable 一次 record | `Scheduler::schedule` | `COMPLETE` | 无；保持独立 |
+| 有限 homogeneous/indexed batch | Graph level、量化 tile、ggml chunk episode；整批 completion/首错/可选取消 | caller-owned slots；同步 quiescence；不能挂起 | 尚无自然入口 | `MISSING` | `SCHED-V2-BATCH-01` |
+| 有限 caller-context/heterogeneous batch | 一组稳定 work records，整批等待 | 以 index body dispatch caller-owned records | 新 bulk route 可完整表达 | `ROUTED` | 文档给出数组 dispatch 形状 |
+| 动态异构 group | work 在执行期继续 addition；group completion | caller 平衡 add/done/admission；允许每项 owning callable 成本 | `schedule + WaitGroup` | `ROUTED` | 不满足 bulk 的 O(worker) 成本，不冒充 same-contract peer |
+| 逐项 typed structured | 每项独立 result/join/abort/status | 每项 JoinHandle/cell，non-suspending worker stack | `schedule_task` | `COMPLETE` | 无；不得用于 batch peer 行 |
+| 可挂起 structured/detached | timer/IO/channel await，独立 Fiber lifetime | coroutine/Fiber/stack；可 join 或 detached | `spawn_task` / `spawn_detached` | `COMPLETE` | 无；保持重语义 |
+| blocking offload | OS/blocking API 或不可合作长任务 | 独立 OS pool，typed completion | `BlockingPool` / `spawn_blocking` | `COMPLETE` | 无 |
+| data-parallel algorithms | adaptive split、reduce/scan/sort、kernel grain policy | Graph/算法 owner；Sched 只提供 execution primitive | 当前 Graph 旧实现 | `OUT_OF_SCOPE` | Graph 后续轮决定迁移 |
 
-## Capability / gap ledger
+## Public-surface trace
 
-进入 `AUDITED` 前冻结有限 `FIX` 集。
+- `scheduler.h`：`schedule`、`schedule_task` 的底层 worker-stack admission，`spawn*` 的 Fiber admission，
+  worker 数与 lifecycle；本轮只新增 bulk 的 direct dependency，不改现有 layout；
+- `join.h/coro.h`：逐项 result/abort/when-all 与 suspending typed route，映射到相邻第三/第四档，不复用其
+  per-item state；
+- `sync.h`：`WaitGroup` 是动态异构组合路线，`Event/ConditionVariable` 证明 external-thread/Fiber 双模 wait；
+- `cancel.h`：`CancelToken`/`CancelScope` 作为一次 batch 共享取消源，runner 内只做 O(1) poll；
+- `blocking.h`：阻塞工作独立路线；`timer.h/waker.h/fiber.h` 不因 bulk 增加新公开职责；
+- 用户指南和架构任务表当前没有 batch 档，旧 `structured_task_bench` 又把不同语义写成 peer 行，均映射到
+  本轮文档/证据 FIX。
 
-## Owner 六问直答
+## Capability / gap ledger（冻结 `FIX` 集）
 
-进入 `AUDITED` 与 terminal 时分别填写。
+| ID | demand / defect | owner 与合同 | coverage / action | verification / negative space |
+|---|---|---|---|---|
+| `FIX-01` | `SCHED-V2-BATCH-01` 缺少有限 batch structured route | semantic/artifact/delivery=`sched`；borrow 到同步返回，caller-owned result，O(N) work + O(worker) queue entries + O(1) batch state | `MISSING -> FIX`：新增 `bulk.h/bulk.cc` 与 lambda adapter | zero/one/range/grain、exactly-once、external/Fiber/worker-stack、single-worker、public header；不做 async handle |
+| `FIX-02` | batch failure/cancel/admission/shutdown 边界未定义 | first-error、cooperative token、partial admission、quiescent teardown | `MISSING -> FIX`：一次共享状态，无 per-item status/cancel/handle/allocation | first error、pre/mid cancel、CancelScope、closed/full、partial admission/stress；不做强杀与错误 index 排序 |
+| `FIX-03` | 四档选择和 Graph 边界不可发现 | architecture/user owner=`sched`，Graph 只作邻接记录 | `PARTIAL -> FIX`：更新 task table、可复制 journey、陷阱与成本表 | docs checker + user compile；不宣传 Graph 已迁移 |
+| `FIX-04` | 新 header/TU 的 component/package 闭包尚无证据 | delivery owner=`build/package`，产品依赖不变 | `PARTIAL -> FIX`：登记 sched source/header，验证 source/static/shared 与 FFI 清洁 | selected-component 三 journey、header self-contained、符号/import；不新增 build option/third party |
+| `FIX-05` | v1 structured peer 行语义失配 | evidence owner=`sched/perf`；primary 固定为 bulk same-contract | `INVALID -> FIX`：替换为 batch primary；rich 行只保留 `NATURAL_ROUTE/NOT_COMPARABLE` | semantic matrix、W1-WIN qualification、反序/holdout 仅按预算；不据 mechanism diagnostic 改 API |
+
+本轮产品修改严格限于 `FIX-01..05`。动态 task-group API、Graph 迁移、caller-participating SPMD、自动 grain/
+partitioner 与 P2 推理端到端均不因本审计进入施工。
+
+## Owner 六问直答（`AUDITED`）
+
+1. **第三方：**Sched 产品直接使用 vendored Boost.Context fcontext 汇编；经既有公开 component closure
+   间接使用 Core/Error/Time/Platform/Mem/Util-core，Container 是 private queue 支撑。Marl/oneTBB 只作
+   peer，llama.cpp/ggml 只作 consumer/capability 输入；`bulk_execute` 不新增第三方 product dependency。
+2. **功能：**llama.cpp/ggml 的共享 thread episode、barrier、abort 与 dynamic chunk shape 证明 batch
+   route 是推理底座 `MUST`；当前 Sched 只有手工 `schedule + WaitGroup` 或逐项 rich handle，有限 indexed
+   batch 为 `MISSING`，完成 `FIX-01/02` 后才可答完整。Graph 的 adaptive algorithms 明确归 Graph。
+3. **性能：**本轮为 P1。v1 request/completion 自然路线只是历史输入；structured peer verdict 因语义失配
+   无效。候选必须证明零 per-item allocation/status/cancel/handle、O(worker) queue entries、O(1) terminal
+   wake，并在 W1-WIN 对 Marl/oneTBB 的 same-contract batch primary 通过 5% non-inferiority；当前为
+   `INCONCLUSIVE`，不声明 SOTA。
+4. **旧 C ABI / Native FFI：**全局策略 `N/A`；当前 Sched 公开树没有 C schema/header/bridge/专用 option。
+   fcontext `extern "C"` 是私有汇编边界。新能力只提供 C++ header/decorated symbol，不制造伪 C ABI。
+5. **构建与导入：**v1 已证明既有 sched source/static/shared journey，但新 `bulk.h/bulk.cc` 尚未进入候选，
+   因此当前为 `PARTIAL`；`FIX-04` 必须重验 selected component 的三种真实 consumer 与 Windows/Unix
+   loader/import 行为，不能继承 producer build 代替。
+6. **C++ API 与文档：**现有单项四档基本自然，但用户无法从选择表发现有限 batch，并容易被旧 benchmark
+   诱导到 `schedule_task`。冻结的 `bulk_execute` 让普通 lambda、首错、共享 cancel、caller-owned slots 和
+   同步 lifetime 直接可见；完成 `FIX-03`、用户 compile 与陷阱说明前仍为 `PARTIAL`。
 
 ## Candidate
 
@@ -108,5 +214,5 @@
 
 ## Closure decision
 
-当前建议机械状态：`SCOPED`。下一步只做有界双向能力审计和 peer mechanism review；冻结
-capability/`FIX` ledger 并进入 `AUDITED` 前不得修改 Sched 产品。
+当前建议机械状态：`AUDITED`。双向能力审计已经完成，有限 `FIX-01..05` 与 public/cost contract 已冻结；
+下一步只实现该集合，产品形状与直接 consumer trace 冻结后再进入 `CANDIDATE`。
