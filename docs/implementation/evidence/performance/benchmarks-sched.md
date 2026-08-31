@@ -1,4 +1,33 @@
-# sched 实测铁证
+# sched 性能证据
+
+> 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
+> `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
+
+## sched-v1 terminal evidence（2026-08-31）
+
+候选产品为 `f358d084d17f92e64ec51ae2bd974d2a67f417d2` / tree
+`44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6`，W1-WIN，MSVC 19.50，source/static Release，四个固定
+physical cores，`closure-perf-v1`，5% material margin。A/A、5%/10% known delta、timer floor、artifact
+identity、build contract 与 deep verifier 全部通过；31 个独立进程级 paired samples 和双顺序完成。
+
+独立语义红队发现原 contract 把 structured 行错误声明为 `COMPARABLE`。修订后的结论是：
+
+| Workload | Comparison class / comparability | Result | 可以声明 |
+|---|---|---|---|
+| request-fanout-collect | `SAME_CONTRACT / COMPARABLE` | advantage 1.489 / 1.522 | 双顺序 `WIN`，5% NI `PASS` |
+| completion-wake | `SAME_CONTRACT / COMPARABLE` | 1.013 / 1.017 | 双顺序 `PARITY`，5% NI `PASS` |
+| structured-spawn-join | `NATURAL_ROUTE / NOT_COMPARABLE` | candidate-first 0.962；peer-first 0.910；后者绝对中位 1.598M vs 1.830M op/s | 当前 HYLE 自然路线存在 material 产品风险；不能归因成 scheduler 同合同慢 9%--12.7% |
+
+structured 两侧完成相同业务计算，但 HYLE `schedule_task` 为每项承担 allocator cell、typed result、
+Status、cancel flag、JoinHandle 与 group registration；Marl 使用 caller-owned result slots 和一个批级
+WaitGroup。精密计时不能修复这个语义差异。该结果因此触发“缺少轻量批级 structured route”的产品
+finding；Sched v1 聚合工程性能为 `INCONCLUSIVE` 并终止为 `BLOCKED`，不是接受该差距。
+
+原始 bundle：`C:\hyle-scratch\sched-v1\p1-final-evidence`；manifest SHA-256
+`658F7F31A6D91B35322AF80FDD8E395D410F6C417F2039870274ACC8B71BC915`，summary
+`70F2906196341D47E1E448156057E8FAE2E81E75C9AA8DFA2A657A7AFDFD2C56`，controls
+`F622C3AE9B7290FD789D831FF9A99000B15121C5B1625ED96FB6D020DEC6BC93`。完整解释和恢复条件见
+[`sched-v1` terminal task](../../tasks/sched/sched-v1-rebuild.md)。
 
 > **V2：`HISTORICAL / UNQUALIFIED`。** sched 尚未按当前真实消费者与仪器资格标准重审；
 > 本页数字只解释旧 candidate，不是当前模块证书。

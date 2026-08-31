@@ -1,13 +1,23 @@
 # sched-v1 当前源码重构与收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
+
+> **终态：`BLOCKED`。** 产品候选仍为
+> `f358d084d17f92e64ec51ae2bd974d2a67f417d2` / tree
+> `44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6`。三平台 correctness/sanitizer、三种 C++ 交付和直接
+> consumer compatibility 均通过；但是独立性能红队推翻了 `structured-spawn-join` 的同合同声明：
+> HYLE `schedule_task` 承担逐任务 allocation/result/status/cancel/handle，Marl 只承担 caller-owned result
+> slots 与一个批级 `WaitGroup`。该行只能作为 `NATURAL_ROUTE` 证据，证明 HYLE 缺少自然的批级轻量
+> structured route，不能签 scheduler 实现级 non-inferiority。本轮按预算停止，不回写产品；恢复条件见
+> Closure decision。
 
 > 本轮是 `sched` 第一次按当前模块收口协议审查。2026-07 的 `sched-01`--`sched-11`、旧
 > `sched-module-closure.md`、架构叙事和 benchmark 只作历史输入，不继承功能、性能、交付或 API
 > verdict。当前机械状态只看 [`module-status.json`](../../module-status.json)。进入 `AUDITED` 并冻结有限
 > `FIX` 集前，不修改 sched 产品实现。
 
-## Closure card（`CANDIDATE`）
+## Closure card（terminal `BLOCKED`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v1`；
 - task kind：`REFACTOR`；baseline commit：
@@ -91,7 +101,7 @@
 |---|---|---|---|---|---|---|
 | stackful execution context | low-level callback/fiber；IO/GPU completion 冻结深调用栈；Boost.Context/Marl | guarded small/default/large/one-off stack；pre-start move；resume/yield/finish | stack owner、guard、pool return、finish-after-switch、真实 x86-64/AArch64 | `Fiber` + Mem `FiberStack/FiberStackPool` + vendored fcontext | `COMPLETE` | started Fiber 不可 move；dispatch mutation 只由内部 accessor/friend 使用；平台证据待本候选重签 |
 | general scheduler / placement / lifecycle | 短 CPU callback、可挂起任务、work stealing、外部 inject、IO pin、drain/shutdown；ggml cpumask/poll/priority，Marl affinity/initializer | unpinned default；显式 CPU ids 或 ordered pin；best-effort/required；balanced/latency/power idle；worker hooks | bounded admission、steal/pin、fairness、thread start failure、concurrent shutdown | M:N worker + sharded inject/local FIFO/LIFO + pinned queue | `COMPLETE` | 通用 priority 仍按 SCHED-GEN-01 等真实 serving demand；不保留 benchmark proof 类型 |
-| lightweight / owned / structured task | raw zero-allocation callback、自然 lambda、detached suspend、typed join、dynamic fan-out、blocking syscall/backend | worker-stack callback；worker-stack typed join；stackful detached；`Task<T>`；homogeneous range/heterogeneous pack；blocking offload | closure ownership、OOM/throw、detach/abort/join、shutdown | `schedule`、`schedule_task`、`spawn_detached`、`spawn_task`、`JoinHandle`、`BlockingPool` | `COMPLETE` | 非挂起 typed work 使用单 cell worker-stack route；会挂起的 typed work 明确承担 coroutine/Fiber 成本 |
+| lightweight / owned / structured task | raw zero-allocation callback、自然 lambda、批级 fork/join、逐任务 typed join、detached suspend、blocking syscall/backend | worker-stack callback；批级完成 + caller-owned results；逐任务 worker-stack typed join；stackful detached；`Task<T>`；blocking offload | closure ownership、OOM/throw、batch/individual result、detach/abort/join、shutdown | `schedule`、手写 `schedule + WaitGroup`、`schedule_task`、`spawn_detached`、`spawn_task`、`JoinHandle`、`BlockingPool` | `PARTIAL` | 普通批级完成只能让用户手写 context/result lifetime；`schedule_task` 强制每项购买独立 result/status/cancel/handle，缺少自然且安全的 batch route |
 | wake / timer / deadline integration | IO、GPU、timer completion 单次唤醒；sleep/timeout；当前 IO consumer | wake-before-suspend rendezvous；relative duration/absolute monotonic deadline；arm/cancel | timer entry owner、pin episode、timeout-vs-completion winner、shutdown | `Waker` + per-worker Time `TimerQueue` | `COMPLETE` | public 时间边界为 typed Time；IO poll/wake 通过不安装的 detail integration seam |
 | cooperative cancellation | request fan-out、deadline/client disconnect、JoinHandle abort、in-flight IO callback；Tokio/Folly | shareable token；child subtree；cross-thread cancel/register/drop；nested sources；O(1) poll | allocator/OOM、token/callback lifetime、reentrancy、destruction、migration | cancel tree + Fiber/worker-stack execution-local flag chain | `COMPLETE` | poll 仍为 O(k) active-source atomic loads；tree/control path 与 callback 生命周期单独串行化 |
 | synchronization / notification | fiber 与外部线程的 monitor、countdown、phase barrier、signal、permits、RW access；Marl Event、Tokio/standard barriers | notify one/all；auto/manual event；one-shot latch；reusable barrier；timed semaphore | fiber/thread dual wait、FIFO/fairness、timeout unlink、close | CV、Mutex、WaitGroup、Event、Latch、Barrier、Semaphore、RwLock | `COMPLETE` | timeout unlink 为 O(1)；平台实现仍须本候选 sanitizer/correctness 重签 |
@@ -111,7 +121,7 @@
 | SCHED-FIX-05 | `MUST` | 现有公开 messaging 承诺、Tokio ownership shape、C++ exception safety | nothrow value contract或异常安全 RAII；oneshot unsent value；自然 receive/lag diagnostics | `COMPLETE` | `KEEP` | correctness/usability；不因 API 数量重造 actor/stream 系统 |
 | SCHED-FIX-06 | `MUST` | allocator charter、Fiber 可复现 move defect、benchmark-only public trace | Scheduler/BlockingPool bookkeeping 走注入 allocator；Fiber 仅 pre-start move；删除 proof RunQueue/Worker；detail integration access | `COMPLETE` | `KEEP` | lifetime/OOM/boundary；OS Thread 自身冷路径 allocation 属 Platform 合同，不在本轮越界 |
 | SCHED-FIX-07 | `MUST` | build/package 六问与当前无 guide | Time 改为真实 PUBLIC edge；source/static/shared；private fcontext C/asm；architecture + scenario guide | `COMPLETE` | `KEEP` | delivery/docs；不恢复旧 C ABI 或 Native FFI |
-| SCHED-FIX-08 | `MUST` | P1 closure card | request dispatch、Graph-shaped non-suspending typed fan-out/join、completion wake 的有限 consumer replay | `CANDIDATE` | `VERIFY` | 唯一产品修正已完成；只剩一次正式 P1 重跑，稳定 material FAIL 即 BLOCKED |
+| SCHED-FIX-08 | `MUST` | P1 closure card | request dispatch、Graph-shaped non-suspending typed fan-out/join、completion wake 的有限 consumer replay | `BLOCKED` | `STOP` | 仪器资格通过，但红队判定 structured pair 语义不等价；自然路线还暴露缺少批级 structured route，必须由新 round 重新 scope，不能在本轮继续换形状 |
 | SCHED-GEN-01 | `GENERAL` | llama server priority cancel lane；Taskflow/oneTBB priority | 通用 task priority | `OUT_OF_SCOPE` | `DEFER` | owner=Sched+serving；真实 HYLE consumer证明默认/opt-in metadata与 starvation合同后重开 |
 | SCHED-GEN-02 | `GENERAL` | ggml paused persistent SPMD pool | pause/resume/caller participation/hot spin barrier | `ROUTED` | `REJECT` | owner=Graph/Compute/inference；通用 scheduler pause 会阻塞 IO/timer progress |
 
@@ -272,14 +282,84 @@ CPU-set 语义、TSan/ASan 或三交付写成通过。
 
 ## Verification manifest
 
-原候选的证据仍是审计输入，但不能替代新候选身份。新候选的 Windows 定向回归已完成；WSL/macOS
-correctness/sanitizer、static/shared 交付、正式 P1 重跑与红队尚未完成，未运行项不得写为 `PASS`。
+冻结产品身份从 `f358d084d17f92e64ec51ae2bd974d2a67f417d2` 到 terminal task 没有任何
+`include/hyle/sched`、`src/sched`、Sched package sample 或 Sched 测试漂移。验证结果如下：
+
+| Gate / risk | Verdict | Evidence | Limit |
+|---|---|---|---|
+| Windows Release sched correctness | `PASS` | selected `hyle_sched_test` 1/1（6.34s） | W1-WIN / MSVC 19.50 |
+| direct IO consumer | `PASS` | selected `hyle_io_test` 1/1（0.07s） | 只证明 Sched edge，不关闭 IO |
+| WSL Release / ASan / UBSan / TSan | `PASS` | 1/1（1.24s）/ 1/1（3.37s）/ 1/1（1.75s）/ 161 tests（5.617s） | GCC 14.2；TSan 由 `setarch -R` 运行 |
+| M1-MAC correctness | `PASS` | AppleClang 21.0 arm64 Mach-O fcontext，1/1（4.16s） | disposable canonical sync；Unix Makefiles |
+| public headers | `PASS` | 9 个 Sched public headers self-contained | 当前 selected closure |
+| source/static/shared C++ delivery | `PASS` | `C:\hyle-scratch\sched-v1\delivery-candidate-0829` source embedding、relocated static/shared consumer 全部运行通过 | Windows selected component |
+| Graph/Compute syntax consumer | `PASS` | Windows selected CPU targets 编译通过 | 两者仍 `QUEUED`，不继承功能 verdict |
+| C/Native FFI cleanliness | `PASS` | public tree 无 C/FFI surface；仅 `src/sched/fcontext.h` 保留 private Boost.Context `extern "C"` | decorated C++ shared exports 不是 C ABI |
+| docs/usability | `PASS` | architecture、scenario user guide 和 package sample 已覆盖四类既有路线 | batch route 缺口成为新 round 输入 |
+| P1 engineering performance | `INCONCLUSIVE` | 仪器合格；两行同合同结论有效，一行在红队中变为 `NATURAL_ROUTE/NOT_COMPARABLE` | 不能聚合为 same-contract P1 PASS |
+| independent red team | `FAIL` | `SCHED-RT-01` 发现 structured 语义账单不等价与产品档位缺口 | 当前 round 的 terminal blocker |
+
+正式 bundle 位于 `C:\hyle-scratch\sched-v1\p1-final-evidence`：contract SHA-256
+`dae15db50195b0906d741bb8b35df623e2d0f5d18e129351b60c3bcfe132ca52`，consumer provenance
+SHA-256 `76a572e0e653f05f610b8b0d411b06ec850e2e0ca16cd202a3242fc1bfe17c98`；`manifest.json`
+`658F7F31A6D91B35322AF80FDD8E395D410F6C417F2039870274ACC8B71BC915`，`summary.json`
+`70F2906196341D47E1E448156057E8FAE2E81E75C9AA8DFA2A657A7AFDFD2C56`，`controls.json`
+`F622C3AE9B7290FD789D831FF9A99000B15121C5B1625ED96FB6D020DEC6BC93`，`raw-log-index.json`
+`1C442CD43D1BB62573D4D4A80FEEBEB6D41A70421AA0A241886882FDB00482EA`。deep verifier、artifact、
+build-contract、A/A、5%/10% known delta 与 timer floor 全部通过；这些事实证明计时器能辨别 material
+差异，不证明 benchmark 两侧语义相同。
+
+| Workload | Revised class / comparability | Qualified observation | Valid conclusion |
+|---|---|---|---|
+| request-fanout-collect | `SAME_CONTRACT / COMPARABLE` | HYLE 双顺序 paired median advantage 1.489 / 1.522 | 5% NI `PASS`，双顺序 `WIN` |
+| completion-wake | `SAME_CONTRACT / COMPARABLE` | 1.013 / 1.017 | 5% NI `PASS`，双顺序 `PARITY` |
+| structured-spawn-join | `NATURAL_ROUTE / NOT_COMPARABLE` | candidate-first paired 0.962，peer-first 0.910；后者绝对中位 1.598M vs 1.830M op/s | 当前自然 HYLE route 有 material 风险并缺产品档位；不得归因成 scheduler 同合同慢 9%--12.7% |
+
+候选 LOC 由 `python scripts/loc-report.py --module sched --commit
+f358d084d17f92e64ec51ae2bd974d2a67f417d2 --self-check --json` 从 immutable tree 复算：全库代码
+`408169`，自实现包含测试 `98581`，自实现不包含测试 `61337`，Sched 实现 `5262`。
 
 ## 独立红队
 
-等待新候选完成全部验证后执行；当前无红队 verdict。
+- reviewer / date / budget：独立 terminal review / 2026-08-31 / 30 分钟；
+- `SCHED-RT-01`（high / contract + product）：`structured-spawn-join` 把 HYLE 每任务独立
+  allocator cell、typed result、Status、cancel flag、JoinHandle 与 group install/clear，同 Marl caller-owned
+  slots + 单批 WaitGroup 写成 `COMPARABLE`。裁决：`accepted`；仪器结果重分类，不删除 raw evidence；
+- 真实使用复核：当前 Graph level route 确实需要一批 non-suspending node work 和 caller-owned outcome，
+  但 HYLE 只提供手写 `schedule + WaitGroup` 或更重的 `schedule_task`。该缺口同时由 Marl WaitGroup、
+  oneTBB task_group/parallel family 和推理 graph fan-out 证明，不是 benchmark-only API；
+- correctness/lifetime/build findings：未发现冻结产品新增 blocker；三平台 sanitizer、private fcontext ABI、
+  selected component 和三交付证据保持有效；
+- 性能有效性：request 与 completion 的同合同结论保留；structured 的 runner `FAIL` 只保留为原合同输出，
+  聚合 engineering verdict 因语义前置门失败改为 `INCONCLUSIVE`。
+
+## Terminal owner 六问
+
+1. **第三方：**Boost.Context fcontext 是直接 private product mechanism；mimalloc 经 Mem、Highway/
+   simdutf/xxHash/wyhash 经 Container 间接进入；Marl 只作 peer。所有锁定身份与 owner 仍见上方审计表。
+2. **功能：**`NO`。既有 fiber、wake、cancel、sync、messaging、blocking 与逐任务 structured route 已完成；
+   但普通批级 non-suspending fork/join 缺自然 public route，当前能力族为 `PARTIAL`。
+3. **性能：**request dispatch 为 qualified `WIN`，completion wake 为 qualified `PARITY`；批级 structured
+   路线只有 qualified `NATURAL_ROUTE` material 风险，没有有效 same-contract verdict；聚合为
+   `INCONCLUSIVE/BLOCKED`，不声明全 sched SOTA。
+4. **旧 C ABI / Native FFI：**`CLEAN`。private vendored fcontext C/asm seam 不构成产品 FFI。
+5. **三交付：**source embedding、relocated installed static/shared C++ consumer 均 `PASS`；直接
+   IO/Compute/Graph compatibility slice 通过但不关闭下游。
+6. **C++ API/文档：**既有路线文档与接口可用；“无结果短任务、逐任务 result/control、可挂起任务”
+   边界清楚，但批级完成的安全自然形状缺失，因此整体 verdict 为 `FAIL/BLOCKED`。
 
 ## Closure decision
 
-当前状态为 `CANDIDATE`。下一步只对冻结身份重签 correctness/sanitizer/consumer/三交付，执行唯一一次
-完整 P1 重跑和独立红队；若 P1 仍为稳定 material `FAIL`，则停止为 `BLOCKED`，不再修改产品或仪器。
+- 各门：scope/architecture/correctness/delivery/docs 为 `PASS`；engineering performance 为
+  `INCONCLUSIVE`；red team 为 `FAIL`；因此不能进入 `VERIFIED/CLOSED`；
+- 唯一 blocker：`SCHED-RT-01`，owner 为 Sched。普通批级 non-suspending fork/join 没有安全、自然且
+  与其语义成本相称的 public route，旧 structured peer pair 又不能提供 same-contract verdict；
+- resume condition：创建新的 `RESUME` round，先冻结 fire-and-forget、批级 structured、逐任务 typed
+  control 与可挂起任务四个语义账单；实现 batch-level route 后，以 HYLE batch 对 Marl batch 做
+  `SAME_CONTRACT`，逐任务 route 只与等价 adapter/peer 比较或使用预冻结 resource budget；
+- 已知限制：冻结 v1 候选可正确使用，但 `schedule_task` 不应被推荐给只需批级完成与 caller-owned result
+  的大量短任务；旧 structured 点值不是 scheduler 算法证书；
+- reopen triggers：上述 resume condition；或公开任务/lifetime、dependency/delivery 变化；或同合同正常
+  workload 暴露新的 material correctness/performance 事实；
+- terminal raw evidence 与 LOC 如上；完整 end/registry anchor 由后续 registry 提交记录；
+- 建议机械状态：`BLOCKED`。
