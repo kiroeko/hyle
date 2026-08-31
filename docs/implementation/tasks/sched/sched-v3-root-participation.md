@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -110,3 +110,25 @@ mask `0x55`、AboveNormal，15 次进程交替顺序；HYLE 中位 `2.056M callb
 known-delta、timer-floor、artifact/provenance validator，因此只允许进入 candidate，绝不是 P1 verdict
 或 SOTA 声明。Windows Release 的全部 Sched tests/public-header tests 已通过，新 same-owner/cross-owner
 测试各重复 100 次通过。
+
+## Candidate
+
+- product commit：`38a5ca048b796e5f7e30283fef5b9c0c4f4875d5`；tree：
+  `cf2fe3c28a606c787875b5c25cce869bcd860b5b`；工作树在冻结时 clean。
+- public surface：没有新增 declaration、symbol、option、layout 或依赖；`bulk_execute` 的 callable、
+  first-error、cancel、grain、borrow 与同步 quiescence 合同不变。公开注释、architecture 和 guide 现在准确
+  说明同 Scheduler root Fiber 可在自己的 Fiber 栈执行 body，另一个 Scheduler 的 Fiber 不会参与。
+- implementation：新增未安装的 `src/sched/scheduler_access.h`，只给 `bulk.cc` 做 current-owner identity 与
+  bounded sibling admission。普通 `schedule` 仍复用当前 accounting shard；bulk root 的至多
+  `concurrency-1` 个 sibling 轮转到其他 shard，root 自己消费同一 reservation cursor。若 sibling 已在
+  root 结束前 quiescent，acquire 读取 submission guard 后直接返回；否则沿用 v2 的 Event + terminal
+  notifier lifetime handoff。
+- complexity/resource：O(N) body work、O(worker) participant/queue entries、O(1) caller-stack batch state；
+  无 per-item allocation/status/cancel/handle，无新 Scheduler object metadata。相对 v2 只减少一个 runner，
+  并把有限 sibling 的既有 accounting 分散到最多 worker 数个 shard。
+- candidate tests：W1-WIN MSVC 19.50 Release build 通过；全部 Sched tests 与 10 个 public header
+  self-contained tests 通过；same-owner participation 与 cross-owner rejection 各重复 100 次通过。quick
+  diagnostic 只授权冻结该 candidate，工程性能仍是 `PLANNED`。
+
+`AUDITED -> CANDIDATE` 前态快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v2\module-status-before-sched-v3-candidate.json`。
