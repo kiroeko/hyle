@@ -1,6 +1,6 @@
 # util-runtime-v3 重审与重构记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 当前机械状态只看 [`module-status.json`](../../module-status.json)。本轮由已关闭候选之后发生的
 > Container 公开字符串/索引合同替换触发；在进入 `AUDITED` 并冻结有限 `FIX` 集前不得修改产品实现。
@@ -318,8 +318,7 @@ build/package method gap rather than misreported as a Util failure. No closure c
 
 ## Closure decision
 
-- 当前各适用 gate 全部 `PASS`，无 Util product blocker；建议机械状态 `VERIFIED`，再以独立 terminal
-  receipt 提交转 `CLOSED`；
+- 当前各适用 gate 全部 `PASS`，无 Util product blocker；
 - known limits：无 generic dynamic module manager/unregister/quiescence；factory 是 no-capture `noexcept`
   function pointer；EntryView/FrozenView 借用 Registry；P0 不给 timing/SOTA/Formal 声明；当前 HYLE 没有
   已完成推理引擎消费者；
@@ -336,3 +335,11 @@ build/package method gap rather than misreported as a Util failure. No closure c
 `CANDIDATE -> VERIFIED` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\hyle-scratch\util-runtime-v3\module-status-before-verified.json`，SHA-256
 `CAD782DA73F6D6C63ABB0D7E39A04CA659A8E98AD8C824C5C2F40054E778EFC7`。
+
+- terminal receipt：`CLOSED`。产品 candidate 保持
+  `b2b7bd679293d748d996662414c01c4cbcefcbda` /
+  `1a95077cccbcabe4701a50873143297739adcb59`；七项 gate 全部 `PASS`，没有 blocker。receipt 所在提交
+  产生后由后续 registry 提交记录完整 end/anchor identity；
+- 建议机械状态：`CLOSED`。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
