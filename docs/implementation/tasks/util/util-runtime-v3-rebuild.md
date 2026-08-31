@@ -232,7 +232,32 @@
 
 ## Candidate
 
-尚无。
+- product commit：`b2b7bd679293d748d996662414c01c4cbcefcbda`；tree：
+  `1a95077cccbcabe4701a50873143297739adcb59`；
+- public contract：mutable `Registry` 与 `FrozenView` 新增
+  `find(StringView) -> std::optional<EntryView>`；missing 为 `nullopt`，不调用 factory；其余公开入口与
+  demangle contract 不变；
+- ownership / lifetime / concurrency / failure：返回值复制 creator/priority，key/help 借用
+  Registry-owned storage；旧 snapshot 跨 priority replacement 可读但不得活过 Registry。mutable find 在
+  现有 mutex 内取得 snapshot，frozen find 无锁；缓存 Creator 仍要求 module image 存活。lookup missing
+  不属于运营错误，因此使用 optional，而 create 的 nullable/`Result<T>` 失败合同不变；
+- algorithm / complexity / metadata：复用同一 `FlatHashMap` 和 `IndexValue`；没有新 table、entry 字段、
+  allocation、indirection、virtual dispatch 或 binary symbol。mutable/frozen find 均为 O(|key|)+expected
+  O(1)，frozen 零 allocation/lock；普通 Registry 只保留既有 lifecycle acquire；
+- direct consumer：package sample 真实执行 `find -> cache Creator -> invoke`，同时继续覆盖 direct
+  `create` failure/missing 与 owning/buffer demangle；Compute/Obs 未迁移，原因见 owner boundary；
+- pre-candidate Windows evidence：MSVC 19.50 Release selected `util` closure build PASS；Registry 21/21、
+  Util aggregate、public-header self-containment PASS；source embedding、relocated installed shared/static
+  consumer PASS。全 selected-closure ctest 36/37，唯一失败是独立 build/package `loc_report_test` 的 synthetic
+  fixture 未包含其 canonical boundary 新增的 `scripts/hyle-unix.sh`，与 Util product/path 无关；本轮不越界
+  修改公共工具，终止前把它作为 build/package method gap 单独裁决；
+- harness/tool identity：`closure-correctness-v1`；scratch
+  `C:\hyle-scratch\util-runtime-v3\build-win-candidate` 与
+  `C:\hyle-scratch\util-runtime-v3\smoke-win-candidate`；candidate 身份与 harness 分离。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
+`C:\hyle-scratch\util-runtime-v3\module-status-before-candidate.json`，SHA-256
+`4656C98A0AF31A0A41EA6213118028DDE24B7F00F85DAC329ED9F63F73E37AEA`。
 
 ## Verification manifest
 
