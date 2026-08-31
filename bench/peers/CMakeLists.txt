@@ -5,7 +5,7 @@
 # benchmark owner can consume it; a Core-only benchmark cache must not advertise
 # unrelated peer libraries.
 set(_hyle_bench_tbb_owner FALSE)
-foreach(_hyle_owner IN ITEMS platform mem container util_core)
+foreach(_hyle_owner IN ITEMS platform mem container util_core sched)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_tbb_owner TRUE)

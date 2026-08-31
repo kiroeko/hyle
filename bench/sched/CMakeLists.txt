@@ -158,6 +158,19 @@ if(HYLE_BENCH_MARL)
     target_link_libraries(hyle_sched_p1_peer_bench PRIVATE
       ${_hyle_bench_marl_target})
     hyle_apply_warnings(hyle_sched_p1_peer_bench)
+
+    # sched-v2 batch-structured P1 pair.  Keep it separate from the historical
+    # rich schedule_task-vs-batch row so old raw evidence stays reproducible.
+    add_executable(hyle_sched_bulk_p1_candidate_marl_bench
+      bulk_p1_candidate_bench.cc)
+    target_link_libraries(hyle_sched_bulk_p1_candidate_marl_bench PRIVATE
+      hyle_sched)
+    hyle_apply_warnings(hyle_sched_bulk_p1_candidate_marl_bench)
+
+    add_executable(hyle_sched_bulk_p1_marl_bench bulk_p1_marl_bench.cc)
+    target_link_libraries(hyle_sched_bulk_p1_marl_bench PRIVATE
+      ${_hyle_bench_marl_target})
+    hyle_apply_warnings(hyle_sched_bulk_p1_marl_bench)
   endif()
   # sched-11 blocking_bench's marl comparison row (marl::blocking_call = new-thread-
   # per-call; the HYLE-pool-vs-marl-new-thread head-to-head). Same gate; links marl.
@@ -171,6 +184,31 @@ if(HYLE_BENCH_MARL)
     hyle_register_benches(sched
       hyle_sched_p1_candidate_bench hyle_sched_p1_peer_bench)
   endif()
+  if(TARGET hyle_sched_bulk_p1_candidate_marl_bench)
+    hyle_register_benches(sched
+      hyle_sched_bulk_p1_candidate_marl_bench
+      hyle_sched_bulk_p1_marl_bench)
+  endif()
+endif()
+
+# oneTBB is the second mature same-contract batch peer.  Its synchronous
+# parallel_for route and HYLE bulk_execute live in separate processes so neither
+# provider changes the other's code placement or runtime initialization.
+if(WIN32 AND HYLE_BENCH_TBB)
+  add_executable(hyle_sched_bulk_p1_candidate_tbb_bench
+    bulk_p1_candidate_bench.cc)
+  target_link_libraries(hyle_sched_bulk_p1_candidate_tbb_bench PRIVATE
+    hyle_sched)
+  hyle_apply_warnings(hyle_sched_bulk_p1_candidate_tbb_bench)
+
+  add_executable(hyle_sched_bulk_p1_tbb_bench bulk_p1_tbb_bench.cc)
+  target_link_libraries(hyle_sched_bulk_p1_tbb_bench PRIVATE TBB::tbb)
+  hyle_apply_warnings(hyle_sched_bulk_p1_tbb_bench)
+  hyle_stage_tbb_benchmark_runtime(hyle_sched_bulk_p1_tbb_bench)
+
+  hyle_register_benches(sched
+    hyle_sched_bulk_p1_candidate_tbb_bench
+    hyle_sched_bulk_p1_tbb_bench)
 endif()
 
 hyle_register_benches(sched

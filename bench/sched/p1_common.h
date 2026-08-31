@@ -129,6 +129,26 @@ struct AffinityState {
     ready.fetch_add(1, std::memory_order_release);
   }
 
+  // oneTBB may detach one worker and later enter the same arena slot with a
+  // replacement OS thread.  The slot contract is still exact when every
+  // entrant is pinned to the same requested CPU.  Scheduler-specific benches
+  // retain record(), whose stricter single-entry check catches accidental
+  // duplicate worker initialization.
+  void record_or_validate(std::size_t worker, unsigned cpu) noexcept {
+    if (worker >= kWorkerCount)
+      fail("scheduler reported an out-of-range worker index");
+    const unsigned sentinel = (std::numeric_limits<unsigned>::max)();
+    unsigned expected = sentinel;
+    if (observed[worker].compare_exchange_strong(
+            expected, cpu, std::memory_order_release,
+            std::memory_order_relaxed)) {
+      ready.fetch_add(1, std::memory_order_release);
+      return;
+    }
+    if (expected != cpu)
+      fail("one scheduler slot entered on a different requested CPU");
+  }
+
   void await_ready() const {
     wait_until(
         [&] { return ready.load(std::memory_order_acquire) == kWorkerCount; },
