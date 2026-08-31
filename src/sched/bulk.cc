@@ -42,6 +42,7 @@ struct BulkState {
   std::atomic<unsigned> active{1};
   std::atomic<bool> failed{false};
   std::atomic<bool> cancelled{false};
+  std::atomic<bool> notification_complete{false};
   util::SpinLock error_mu;
   Status first_error;
   Event completed{EventResetMode::kManual};
@@ -84,7 +85,13 @@ struct BulkState {
   void finish_one() noexcept {
     const unsigned previous = active.fetch_sub(1, std::memory_order_acq_rel);
     HYLE_FATAL_ASSERT(previous != 0);
-    if (previous == 1) completed.signal();
+    if (previous == 1) {
+      // Event::signal() may wake the waiter before notify_all() itself has
+      // returned. Publish only after the notifier has stopped touching Event;
+      // the waiter treats this release as the BulkState lifetime handoff.
+      completed.signal();
+      notification_complete.store(true, std::memory_order_release);
+    }
   }
 
   Status result() noexcept {
@@ -246,6 +253,9 @@ Status bulk_execute(Scheduler& scheduler, std::size_t begin,
   // can still drain the shared cursor. Queue pressure reduces concurrency; it
   // never drops an item or changes the result contract.
   state.completed.wait();
+  while (!state.notification_complete.load(std::memory_order_acquire)) {
+    util::cpu_relax();
+  }
   return state.result();
 }
 

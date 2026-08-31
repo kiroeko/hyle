@@ -83,6 +83,11 @@ split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消
 不让 caller 参与执行；从 non-suspending worker-stack callback 嵌套时串行退化，避免一个 worker 同时
 成为 waiter 和唯一 executor。
 
+同步返回的 lifetime 门是两阶段完成：manual Event 负责阻塞/挂起与唤醒，最后 notifier 只有在
+`signal()` 整体返回、不再访问 Event 后才 release-publish terminal handoff；waiter 醒来后 acquire 该
+handoff 才能销毁 caller-stack batch state。观察到 Event signaled 只证明业务完成，不能单独证明 signaler
+已离开 notification primitive。这个约束适用于任何借用 caller storage 的同步批处理实现。
+
 ## Worker 与队列
 
 每个 worker 有 owner FIFO、本地 run-next LIFO slot、pinned queue 和 timer queue；外部生产者使用分片
