@@ -195,6 +195,11 @@
 - SCHED-FIX-06 BlockingPool allocator 子项实现批：Pimpl、thread record、allocator-aware bookkeeping 与
   shutdown 暂存均使用注入 allocator；构造参数与 OOM 可经 `Status` 恢复，保留显式 fail-fast convenience。
   invalid/OOM 与 allocation/free 对账测试通过。OS Thread 自身的冷路径分配仍属于 Platform 合同。
+- SCHED-FIX-05 实现批：Channel 新增 `Result<T>` 的 blocking/try/timed receive，同时保留可复用调用方
+  storage 的低层 overload；oneshot send failure 返还原始未发送值；broadcast receive error 暴露精确
+  missed count。ownership move/destruction 采用明确 nothrow value contract；watch/broadcast 可能抛出的
+  copy 由 RAII monitor guard 保证异常后可继续使用且 cursor 不前移，mutation callback 则显式要求
+  `noexcept`。Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.28s）。
 
 上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。
