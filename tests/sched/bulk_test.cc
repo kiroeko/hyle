@@ -147,7 +147,7 @@ TEST(BulkExecute, CancellationIsSharedAndVisibleInsideBody) {
   scheduler.shutdown();
 }
 
-Task<int> run_on_fiber(hyle::mem::Allocator allocator, Scheduler* scheduler,
+Task<int> run_on_fiber(hyle::mem::Allocator, Scheduler* scheduler,
                        std::atomic<unsigned>* hits,
                        std::size_t count) noexcept {
   BulkExecuteOptions options;
