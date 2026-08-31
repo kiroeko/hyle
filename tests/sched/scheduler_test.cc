@@ -242,8 +242,7 @@ TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {
   };
 
   Scheduler sched(2, system_allocator(), 64);
-  EXPECT_TRUE(
-      sched.spawn_detached(callback, &ran, kDefaultStackSize).ok());
+  EXPECT_TRUE(sched.spawn_detached(callback, &ran).ok());
   EXPECT_TRUE(
       sched.spawn_detached_on(1, callback, &ran, kDefaultStackSize).ok());
   for (int i = 0; i < 100; ++i)
@@ -263,6 +262,37 @@ TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {
       sched.spawn_detached(callback, &ran, kDefaultStackSize).IsCancelled());
   EXPECT_TRUE(sched.schedule(callback, &ran).IsCancelled());
   sched.shutdown();
+}
+
+TEST(Scheduler, OwningCallableConveniencesSupportMoveOnlyCaptures) {
+  Scheduler scheduler(2, system_allocator(), 64);
+  std::atomic<int> result{0};
+
+  auto inline_value = std::make_unique<int>(7);
+  ASSERT_TRUE(scheduler.schedule(
+      [value = std::move(inline_value), &result]() noexcept {
+        result.fetch_add(*value, std::memory_order_relaxed);
+      }).ok());
+  EXPECT_EQ(inline_value, nullptr);
+
+  auto detached_value = std::make_unique<int>(11);
+  ASSERT_TRUE(scheduler.spawn_detached(
+      [value = std::move(detached_value), &result]() noexcept {
+        Fiber::yield();
+        result.fetch_add(*value, std::memory_order_relaxed);
+      }).ok());
+  EXPECT_EQ(detached_value, nullptr);
+
+  std::atomic<int> observed_worker{-1};
+  ASSERT_TRUE(scheduler.spawn_detached_on(1, [&]() noexcept {
+    observed_worker.store(hyle::sched::current_worker_index(),
+                          std::memory_order_release);
+    result.fetch_add(13, std::memory_order_relaxed);
+  }).ok());
+
+  scheduler.drain();
+  EXPECT_EQ(result.load(std::memory_order_relaxed), 31);
+  EXPECT_EQ(observed_worker.load(std::memory_order_acquire), 1);
 }
 
 TEST(Scheduler, InlineScheduleMultiProducerConservesEveryTask) {

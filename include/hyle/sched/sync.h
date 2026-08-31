@@ -13,6 +13,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/sched/waker.h"
+#include "hyle/time/clock.h"
 #include "hyle/util/spin_lock.h"
 #include "hyle/visibility.h"
 
@@ -98,8 +99,8 @@ class ConditionVariable {
   }
 
   // Timed wait (sched-04c). Atomically release `lock` and block until notified
-  // OR `timeout_ns` elapses, then re-acquire `lock`. Returns whether it returned
-  // because of the timeout. Deadline keys on time::monotonic_ns().
+  // OR `timeout` elapses, then re-acquire `lock`. Returns whether it returned
+  // because of the timeout. Deadline keys on time::MonotonicClock.
   //
   // Bare threads use Parker::park_for. Fibers arm their current worker's
   // timer queue and are temporarily pinned to that worker for this wait episode,
@@ -108,12 +109,12 @@ class ConditionVariable {
   enum class CvStatus { kNoTimeout, kTimeout };
 
   template <class Lock>
-  CvStatus wait_for(Lock& lock, std::uint64_t timeout_ns) {
+  CvStatus wait_for(Lock& lock, time::Duration timeout) {
     Waiter node;
     const bool fiber = prepare_wait_(&node);
     lock.unlock();
-    const CvStatus st = fiber ? finish_wait_timed_fiber_(&node, timeout_ns)
-                              : finish_wait_timed_(&node, timeout_ns);
+    const CvStatus st = fiber ? finish_wait_timed_fiber_(&node, timeout)
+                              : finish_wait_timed_(&node, timeout);
     lock.lock();
     return st;
   }
@@ -121,22 +122,23 @@ class ConditionVariable {
   // Predicate form: loops re-checking `stop()` until it holds or the deadline
   // passes. Returns stop() -- true if the condition was met, false on timeout.
   // Recomputes the remaining time each iteration so spurious wakes don't extend
-  // the total wait (deadline captured once from now + timeout_ns).
+  // the total wait (deadline captured once from now + timeout).
   template <class Lock, class Pred>
-  bool wait_for(Lock& lock, std::uint64_t timeout_ns, Pred stop) {
-    return wait_until(lock, deadline_from_now_(timeout_ns), stop);
+  bool wait_for(Lock& lock, time::Duration timeout, Pred stop) {
+    return wait_until(lock, time::deadline_after(timeout), stop);
   }
 
-  // Absolute-deadline variants (monotonic ns), mirroring std::cv wait_until.
+  // Absolute monotonic deadline variants, mirroring std::cv wait_until without
+  // accepting wall-clock time points.
   template <class Lock>
-  CvStatus wait_until(Lock& lock, std::uint64_t deadline_ns) {
-    return wait_for(lock, remaining_ns_(deadline_ns));
+  CvStatus wait_until(Lock& lock, time::MonotonicTimePoint deadline) {
+    return wait_for(lock, time::remaining(deadline));
   }
 
   template <class Lock, class Pred>
-  bool wait_until(Lock& lock, std::uint64_t deadline_ns, Pred stop) {
+  bool wait_until(Lock& lock, time::MonotonicTimePoint deadline, Pred stop) {
     while (!stop()) {
-      if (wait_for(lock, remaining_ns_(deadline_ns)) == CvStatus::kTimeout) {
+      if (wait_until(lock, deadline) == CvStatus::kTimeout) {
         return stop();  // last check: the predicate may have become true at the wire
       }
     }
@@ -193,9 +195,9 @@ class ConditionVariable {
   // dead node. Returns whether it timed out. (Out-of-line: pulls in time/ +
   // platform futex, kept out of this header.)
   HYLE_SCHED_API CvStatus finish_wait_timed_(Waiter* node,
-                                             std::uint64_t timeout_ns) noexcept;
+                                             time::Duration timeout) noexcept;
   HYLE_SCHED_API CvStatus finish_wait_timed_fiber_(
-      Waiter* node, std::uint64_t timeout_ns) noexcept;
+      Waiter* node, time::Duration timeout) noexcept;
   HYLE_SCHED_API static void timed_fiber_fire_(
       hyle::time::TimerEntry* entry) noexcept;
 
@@ -203,13 +205,6 @@ class ConditionVariable {
   // mu_. Used by a timed waiter that woke on its deadline before a notify reached
   // it -- it retracts its own node so a later notify can't pop a dead stack node.
   HYLE_SCHED_API void remove_waiter_(Waiter* node) noexcept;
-
-  // now + timeout_ns as an absolute monotonic deadline (saturating).
-  HYLE_SCHED_API static std::uint64_t deadline_from_now_(
-      std::uint64_t timeout_ns) noexcept;
-  // deadline - now, clamped at 0 (already passed => non-blocking).
-  HYLE_SCHED_API static std::uint64_t remaining_ns_(
-      std::uint64_t deadline_ns) noexcept;
 
   util::SpinLock mu_;        // guards the waiter list (tiny critical sections)
   Waiter* head_ = nullptr;   // FIFO: notify pops head
@@ -424,10 +419,82 @@ class Latch {
     mu_.unlock();
   }
 
+  void arrive_and_wait(long n = 1) noexcept {
+    count_down(n);
+    wait();
+  }
+
  private:
   mutable util::SpinLock mu_;
   ConditionVariable cv_;
   std::atomic<long> count_;
+};
+
+// ---- Event ------------------------------------------------------------------
+// Binary notification state for one-shot readiness and repeated control-plane
+// signals. Auto-reset releases one waiter per signal and consumes the signal;
+// manual-reset releases all waiters and remains signalled until reset(). This is
+// the fiber-aware equivalent of Marl Event / Win32 event semantics.
+enum class EventResetMode : std::uint8_t {
+  kAuto = 0,
+  kManual = 1,
+};
+
+class Event {
+ public:
+  explicit Event(EventResetMode mode = EventResetMode::kAuto,
+                 bool signaled = false) noexcept
+      : mode_(mode), signaled_(signaled) {
+    HYLE_FATAL_ASSERT(mode == EventResetMode::kAuto ||
+                      mode == EventResetMode::kManual);
+  }
+  Event(const Event&) = delete;
+  Event& operator=(const Event&) = delete;
+  Event(Event&&) = delete;
+  Event& operator=(Event&&) = delete;
+
+  HYLE_SCHED_API void signal() noexcept;
+  HYLE_SCHED_API void reset() noexcept;
+  HYLE_SCHED_API bool is_signaled() const noexcept;
+  HYLE_SCHED_API void wait() noexcept;
+  HYLE_SCHED_API bool wait_for(time::Duration timeout) noexcept;
+  HYLE_SCHED_API bool wait_until(
+      time::MonotonicTimePoint deadline) noexcept;
+
+ private:
+  mutable util::SpinLock mu_;
+  ConditionVariable cv_;
+  EventResetMode mode_;
+  bool signaled_;
+};
+
+// ---- Barrier ----------------------------------------------------------------
+// Fixed-participant reusable phase barrier. arrive_and_wait() returns true to
+// exactly one participant (the phase completer), which is useful for rotating
+// shared inference scratch or publishing phase statistics without a second
+// election. arrive_and_drop() permanently removes one participant after its
+// arrival in the current phase.
+class Barrier {
+ public:
+  explicit Barrier(std::size_t participants) noexcept
+      : expected_(participants), remaining_(participants) {
+    HYLE_FATAL_ASSERT(participants > 0);
+  }
+  Barrier(const Barrier&) = delete;
+  Barrier& operator=(const Barrier&) = delete;
+  Barrier(Barrier&&) = delete;
+  Barrier& operator=(Barrier&&) = delete;
+
+  HYLE_SCHED_API bool arrive_and_wait() noexcept;
+  HYLE_SCHED_API void arrive_and_drop() noexcept;
+  HYLE_SCHED_API std::size_t participants() const noexcept;
+
+ private:
+  mutable util::SpinLock mu_;
+  ConditionVariable cv_;
+  std::size_t expected_;
+  std::size_t remaining_;
+  std::size_t generation_ = 0;
 };
 
 // ---- Channel ----------------------------------------------------------------
@@ -509,11 +576,11 @@ class Channel {
     return SendStatus::kSent;
   }
 
-  SendStatus send_for(T v, std::uint64_t timeout_ns) {
+  SendStatus send_for(T v, time::Duration timeout) {
     if (buf_ == nullptr) return SendStatus::kClosed;
     mu_.lock();
     const bool ready = not_full_.wait_for(
-        mu_, timeout_ns, [&] { return size_ != cap_ || closed_; });
+        mu_, timeout, [&] { return size_ != cap_ || closed_; });
     if (closed_) {
       mu_.unlock();
       return SendStatus::kClosed;
@@ -567,11 +634,11 @@ class Channel {
     return RecvStatus::kValue;
   }
 
-  RecvStatus recv_for(T& out, std::uint64_t timeout_ns) {
+  RecvStatus recv_for(T& out, time::Duration timeout) {
     if (buf_ == nullptr) return RecvStatus::kClosed;
     mu_.lock();
     const bool ready = not_empty_.wait_for(
-        mu_, timeout_ns, [&] { return size_ != 0 || closed_; });
+        mu_, timeout, [&] { return size_ != 0 || closed_; });
     if (size_ == 0) {
       const RecvStatus status =
           closed_ ? RecvStatus::kClosed : RecvStatus::kEmptyOrTimeout;
@@ -647,6 +714,15 @@ class Semaphore {
   // if fewer than n are available OR the semaphore is closed. Never queues.
   HYLE_SCHED_API bool try_acquire(std::size_t n = 1) noexcept;
 
+  // Timed FIFO acquire. An expired deadline still performs one immediate
+  // acquisition attempt. A timed-out queued request unlinks itself in O(1),
+  // then makes any newly-unblocked follower eligible without waiting for a new
+  // release. False also means the semaphore was closed.
+  HYLE_SCHED_API bool try_acquire_for(time::Duration timeout,
+                                      std::size_t n = 1) noexcept;
+  HYLE_SCHED_API bool try_acquire_until(time::MonotonicTimePoint deadline,
+                                        std::size_t n = 1) noexcept;
+
   // Return `n` permits to the pool, waking FIFO-front waiters whose full request
   // is thereby satisfied. Wakes are delivered after the internal lock is dropped.
   HYLE_SCHED_API bool try_release(std::size_t n = 1) noexcept;
@@ -705,6 +781,14 @@ class Semaphore {
   Permit try_acquire_guard(std::size_t n = 1) noexcept {
     return try_acquire(n) ? Permit(this, n) : Permit();
   }
+  Permit try_acquire_guard_for(time::Duration timeout,
+                               std::size_t n = 1) noexcept {
+    return try_acquire_for(timeout, n) ? Permit(this, n) : Permit();
+  }
+  Permit try_acquire_guard_until(time::MonotonicTimePoint deadline,
+                                 std::size_t n = 1) noexcept {
+    return try_acquire_until(deadline, n) ? Permit(this, n) : Permit();
+  }
 
  private:
   // One queued acquirer. `need` is how many permits it still wants; `granted` +
@@ -715,8 +799,13 @@ class Semaphore {
     std::size_t need = 0;    // permits still required before this waiter proceeds
     bool granted = false;    // set by release(): request fully satisfied
     bool aborted = false;    // set by close(): give up, acquire() returns false
+    bool linked = false;     // guarded by mu_; enables O(1) timeout unlink
     ConditionVariable cv;    // this waiter blocks here; woken 1:1
   };
+
+  HYLE_SCHED_API void unlink_waiter_locked_(Waiter* waiter) noexcept;
+  HYLE_SCHED_API Waiter* grant_waiters_locked_() noexcept;
+  HYLE_SCHED_API static void notify_waiters_(Waiter* waiters) noexcept;
 
   mutable util::SpinLock mu_;
   std::size_t permits_;

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -99,9 +100,9 @@ Task<int> cancel_client(Allocator, IoContext* io, CancelResult* r,
 // recv before cancelling.
 Task<int> canceller(Allocator, CancelResult* r) {
   while (!r->connected.load(std::memory_order_acquire)) {
-    hyle::sched::sleep_for_ns(1'000'000ull);  // 1ms: yields + timer-wakes
+    hyle::sched::sleep_for(std::chrono::milliseconds(1));
   }
-  hyle::sched::sleep_for_ns(20'000'000ull);  // 20ms: let the recv get in flight
+  hyle::sched::sleep_for(std::chrono::milliseconds(20));
   r->tok->cancel();
   co_return 0;
 }

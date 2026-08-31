@@ -387,7 +387,8 @@ int main() {
       std::thread waiter([&] {
         for (int i = 0; i < kRounds; ++i) {
           std::lock_guard<SpinLock> lk(mu);
-          to_waiter.wait_for(mu, 10'000'000'000ull, [&] { return ready; });
+          to_waiter.wait_for(mu, std::chrono::seconds(10),
+                             [&] { return ready; });
           ready = false;
           done = true;
           to_main.notify_one();
@@ -426,7 +427,7 @@ int main() {
       SpinLock mu;
       ConditionVariable cv;
       std::lock_guard<SpinLock> lk(mu);
-      cv.wait_for(mu, 1'000'000ull);
+      cv.wait_for(mu, std::chrono::milliseconds(1));
     });
   }
 

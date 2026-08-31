@@ -477,7 +477,7 @@ Task<int> footprint_coordinator(Allocator, FootprintState* state) {
     std::size_t previous = (std::numeric_limits<std::size_t>::max)();
     int stable_rounds = 0;
     for (int round = 0; round < 32 && stable_rounds < 4; ++round) {
-      hyle::sched::sleep_for_ns(1'000'000);
+      hyle::sched::sleep_for(std::chrono::milliseconds(1));
       const std::size_t current =
           state->backing.current.load(std::memory_order_acquire);
       if (current == previous)
@@ -498,7 +498,7 @@ Task<int> footprint_coordinator(Allocator, FootprintState* state) {
     // RSS is intentionally a settled idle observation, not the just-touched
     // process peak recorded separately. Backing deallocation is synchronous,
     // while mimalloc/OS page purge is allowed to lag briefly.
-    hyle::sched::sleep_for_ns(25'000'000);
+    hyle::sched::sleep_for(std::chrono::milliseconds(25));
     state->memory[phase] = process_memory();
     state->released[phase]->count_down();
   }

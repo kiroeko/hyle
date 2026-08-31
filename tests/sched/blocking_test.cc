@@ -22,7 +22,79 @@ using hyle::sched::Scheduler;
 using hyle::sched::spawn_blocking;
 
 namespace {
+struct AllocationCounts {
+  std::atomic<std::size_t> allocations{0};
+  std::atomic<std::size_t> frees{0};
+};
+
+void* counting_alloc(void* raw, std::size_t size,
+                     std::size_t alignment) noexcept {
+  void* pointer = system_allocator().allocate(size, alignment);
+  if (pointer != nullptr) {
+    static_cast<AllocationCounts*>(raw)->allocations.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  return pointer;
+}
+
+void counting_free(void* raw, void* pointer, std::size_t size,
+                   std::size_t alignment) noexcept {
+  if (pointer != nullptr) {
+    static_cast<AllocationCounts*>(raw)->frees.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void* counting_realloc(void*, void* pointer, std::size_t old_size,
+                       std::size_t new_size,
+                       std::size_t alignment) noexcept {
+  return system_allocator().reallocate(pointer, old_size, new_size, alignment);
+}
 }  // namespace
+
+TEST(Blocking, RecoverableConstructionRejectsInvalidOrMissingResources) {
+  hyle::Status status;
+  BlockingPool invalid_allocator(Allocator{}, 1, std::chrono::seconds(1),
+                                 &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(invalid_allocator.valid());
+
+  BlockingPool no_threads(system_allocator(), 0, std::chrono::seconds(1),
+                          &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(no_threads.valid());
+
+  BlockingPool negative_keep_alive(system_allocator(), 1,
+                                   -std::chrono::milliseconds(1), &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(negative_keep_alive.valid());
+
+  Allocator failing(
+      [](void*, std::size_t, std::size_t) noexcept -> void* { return nullptr; },
+      [](void*, void*, std::size_t, std::size_t) noexcept {},
+      [](void*, void*, std::size_t, std::size_t,
+         std::size_t) noexcept -> void* { return nullptr; },
+      nullptr);
+  BlockingPool no_metadata(failing, 1, std::chrono::seconds(1), &status);
+  EXPECT_TRUE(status.IsResourceExhausted());
+  EXPECT_FALSE(no_metadata.valid());
+}
+
+TEST(Blocking, InjectedAllocatorOwnsPoolBookkeepingAndJobs) {
+  AllocationCounts counts;
+  Allocator allocator(&counting_alloc, &counting_free, &counting_realloc,
+                      &counts);
+  {
+    BlockingPool pool(allocator, 2, std::chrono::milliseconds(10));
+    auto handle = spawn_blocking(pool, allocator, [] { return 42; });
+    ASSERT_EQ(*handle.join(), 42);
+    pool.shutdown();
+  }
+  EXPECT_GT(counts.allocations.load(std::memory_order_relaxed), 4u);
+  EXPECT_EQ(counts.allocations.load(std::memory_order_relaxed),
+            counts.frees.load(std::memory_order_relaxed));
+}
 
 // A blocking closure returns its value; a bare thread joins it (thread-mode).
 TEST(Blocking, ReturnsValueThreadJoin) {
@@ -248,7 +320,7 @@ TEST(Blocking, AbortSkipsQueuedClosureBeforeItStarts) {
 
 TEST(Blocking, RetiredThreadHandlesStayBoundedAcrossBursts) {
   BlockingPool pool(system_allocator(), /*max_threads=*/1,
-                    /*keep_alive_ns=*/1'000'000);
+                    std::chrono::milliseconds(1));
   for (int i = 0; i < 20; ++i) {
     auto h = spawn_blocking(pool, system_allocator(), [i] { return i; });
     ASSERT_EQ(*h.join(), i);

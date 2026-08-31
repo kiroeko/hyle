@@ -2,7 +2,9 @@
 
 #include <atomic>
 #include <cstddef>
+#include <limits>
 #include <new>
+#include <span>
 #include <utility>
 
 #include "hyle/error/result.h"
@@ -564,6 +566,28 @@ int group_wait(GroupSignal& g, long target, States*... states) noexcept {
   return winner;
 }
 
+template <class T>
+int group_wait_span(GroupSignal& group, long target,
+                    std::span<JoinHandle<T>> handles) noexcept {
+  HYLE_FATAL_ASSERT(
+      handles.size() <= static_cast<std::size_t>((std::numeric_limits<int>::max)()));
+  group.remaining = target;
+  for (std::size_t i = 0; i < handles.size(); ++i) {
+    auto* state = handles[i].state_for_group_();
+    if (state == nullptr || state->install_group(&group, static_cast<int>(i)))
+      group.on_complete(static_cast<int>(i));
+  }
+  group.mu.lock();
+  group.cv.wait(group.mu, [&] { return group.fired; });
+  const int winner = group.winner;
+  group.mu.unlock();
+  for (JoinHandle<T>& handle : handles) {
+    if (auto* state = handle.state_for_group_(); state != nullptr)
+      state->clear_group();
+  }
+  return winner;
+}
+
 }  // namespace detail
 
 // Wait until EVERY handle's task has finished. Handles are left intact (join
@@ -577,6 +601,16 @@ void when_all(JoinHandle<Ts>&... handles) noexcept {
   }
 }
 
+// Runtime-sized homogeneous fan-out (batch decode shards, dynamically sized IO
+// groups). This is the span counterpart to the heterogeneous parameter-pack
+// overload and does not allocate or consume the handles.
+template <class T>
+void when_all(std::span<JoinHandle<T>> handles) noexcept {
+  if (handles.empty()) return;
+  detail::GroupSignal group;
+  detail::group_wait_span(group, static_cast<long>(handles.size()), handles);
+}
+
 // Wait until the FIRST handle's task finishes; returns its index. Handles are
 // left intact -- the caller decides whether to abort()/join the losers. This is
 // the select primitive underpinning C2 timeout io (io op vs timer, first wins).
@@ -585,6 +619,15 @@ int when_any(JoinHandle<Ts>&... handles) noexcept {
   static_assert(sizeof...(Ts) > 0, "when_any needs at least one handle");
   detail::GroupSignal g;
   return detail::group_wait(g, 1, handles.state_for_group_()...);
+}
+
+
+template <class T>
+std::size_t when_any(std::span<JoinHandle<T>> handles) noexcept {
+  HYLE_FATAL_ASSERT(!handles.empty());
+  detail::GroupSignal group;
+  return static_cast<std::size_t>(
+      detail::group_wait_span(group, 1, handles));
 }
 
 }  // namespace hyle::sched

@@ -8,6 +8,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/join.h"
+#include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -82,16 +83,23 @@ struct BlockingJob {
 class HYLE_SCHED_API BlockingPool {
  public:
   // `max_threads` caps concurrently-live pool threads (default 512, tokio's
-  // default). `keep_alive_ns` is how long an idle thread waits for work before
+  // default). `keep_alive` is how long an idle thread waits for work before
   // retiring (default 10s, tokio's default). `alloc` is retained as the runtime
   // allocator identity; submitted jobs choose their own allocator explicitly.
   explicit BlockingPool(mem::Allocator alloc, unsigned max_threads = 512,
-                        unsigned long long keep_alive_ns = 10ull * 1000 * 1000 * 1000);
+                        time::Duration keep_alive =
+                            std::chrono::seconds(10));
+  // Recoverable construction for runtimes that cannot treat metadata OOM as a
+  // process invariant. On failure status is non-OK and valid()==false; the
+  // object remains destructible and submissions resolve as cancelled.
+  BlockingPool(mem::Allocator alloc, unsigned max_threads,
+               time::Duration keep_alive, Status* status) noexcept;
   ~BlockingPool();
   BlockingPool(const BlockingPool&) = delete;
   BlockingPool& operator=(const BlockingPool&) = delete;
   BlockingPool(BlockingPool&&) = delete;
   BlockingPool& operator=(BlockingPool&&) = delete;
+  bool valid() const noexcept { return impl_ != nullptr; }
 
   // Stop accepting work, wake all threads, and join them. Jobs still RUNNING
   // finish; jobs still QUEUED (not yet started) are dropped -- their JoinHandle
@@ -112,7 +120,9 @@ class HYLE_SCHED_API BlockingPool {
 
  private:
   struct Impl;
-  Impl* impl_;
+  Impl* impl_ = nullptr;
+  void init_(mem::Allocator alloc, unsigned max_threads,
+             time::Duration keep_alive, Status* status) noexcept;
 };
 
 namespace detail {

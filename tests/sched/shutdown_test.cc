@@ -23,6 +23,7 @@ using hyle::sched::kSmallStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::shutdown_requested;
 using hyle::sched::wait_for_shutdown;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -60,7 +61,7 @@ TEST(Shutdown, LongLivedFiberWindsDownOnSignal) {
   EXPECT_FALSE(exited->load());  // still looping -- a plain drain() would hang here
 
   sched.begin_shutdown();                       // phase 1: broadcast the signal
-  EXPECT_TRUE(sched.drain_for(2'000'000'000));  // phase 2: it winds down within 2s
+  EXPECT_TRUE(sched.drain_for(2s));  // phase 2: it winds down within 2s
   sched.shutdown();                             // stop + join workers
 
   EXPECT_TRUE(exited->load());  // the fiber observed shutdown and exited its loop
@@ -84,7 +85,7 @@ TEST(Shutdown, SpawnRejectedAfterBeginShutdown) {
   Fiber f(kDefaultStackSize, entry, &b);
   EXPECT_FALSE(sched.spawn(&f));
 
-  EXPECT_TRUE(sched.drain_for(500'000'000));  // nothing admitted -> drains at once
+  EXPECT_TRUE(sched.drain_for(500ms));  // nothing admitted -> drains at once
   sched.shutdown();
   EXPECT_FALSE(ran.load());  // rejected spawn never executed
 }
@@ -106,7 +107,7 @@ TEST(Shutdown, SuspendedWaiterIsBroadcastWithoutPolling) {
   while (!state.entered.load(std::memory_order_acquire))
     std::this_thread::yield();
   sched.begin_shutdown();
-  EXPECT_TRUE(sched.drain_for(2'000'000'000));
+  EXPECT_TRUE(sched.drain_for(2s));
   sched.shutdown();
   EXPECT_TRUE(state.exited.load(std::memory_order_acquire));
 }
@@ -232,7 +233,7 @@ TEST(Shutdown, ConcurrentAdmissionAndCloseAreLinearizable) {
       go.store(true, std::memory_order_release);
       sched.begin_shutdown();
       for (auto& producer : producers) producer.join();
-      EXPECT_TRUE(sched.drain_for(2'000'000'000));
+      EXPECT_TRUE(sched.drain_for(2s));
       EXPECT_EQ(ran.load(std::memory_order_relaxed),
                 accepted.load(std::memory_order_relaxed));
       sched.shutdown();
@@ -265,7 +266,7 @@ TEST(Shutdown, ConcurrentAdmissionAndCloseAreLinearizable) {
       go.store(true, std::memory_order_release);
       sched.begin_shutdown();
       for (auto& producer : producers) producer.join();
-      EXPECT_TRUE(sched.drain_for(2'000'000'000));
+      EXPECT_TRUE(sched.drain_for(2s));
       EXPECT_EQ(ran.load(std::memory_order_relaxed),
                 accepted.load(std::memory_order_relaxed));
       sched.shutdown();
@@ -292,7 +293,7 @@ TEST(Shutdown, DrainForTimesOutOnStuckFiber) {
   sched.spawn(&f);
   sched.begin_shutdown();
   // The fiber ignores the signal, so drain can't complete -> timeout returns false.
-  EXPECT_FALSE(sched.drain_for(100'000'000));  // 100ms budget, fiber won't exit
+  EXPECT_FALSE(sched.drain_for(100ms));  // fiber won't exit
 
   // Release it so teardown can finish (real code would abandon it at process exit).
   keep_going->store(false, std::memory_order_release);

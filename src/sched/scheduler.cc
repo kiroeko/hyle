@@ -1229,22 +1229,22 @@ struct Scheduler::Impl {
     }
   }
 
-  // sched-08 phase 2: wait up to timeout_ns (0 == forever) for outstanding to hit
-  // zero. Returns true if drained, false on timeout.
-  bool drain_for(std::uint64_t timeout_ns) noexcept {
+  // sched-08 phase 2: bounded wait for outstanding to hit zero. Unbounded waiting
+  // remains the distinctly named drain() operation.
+  bool drain_for(time::Duration timeout) noexcept {
+    return drain_until(time::deadline_after(timeout));
+  }
+
+  bool drain_until(time::MonotonicTimePoint deadline) noexcept {
     HYLE_FATAL_ASSERT(t_current != this &&
-                      "drain_for from this scheduler's worker can deadlock");
-    if (timeout_ns == 0) {
-      drain();
-      return true;
-    }
-    const std::uint64_t deadline = time::deadline_after_ns(timeout_ns);
+                      "bounded drain from this scheduler's worker can deadlock");
     while (has_outstanding()) {
       const std::uint32_t epoch = drain_epoch.load(std::memory_order_acquire);
       if (!has_outstanding()) return true;
-      const std::uint64_t remaining = time::remaining_ns(deadline);
-      if (remaining == 0) return false;
-      platform::detail::wait_on_address_for(&drain_epoch, epoch, remaining);
+      const time::Duration remaining = time::remaining(deadline);
+      if (remaining <= time::Duration::zero()) return false;
+      platform::detail::wait_on_address_for(
+          &drain_epoch, epoch, time::duration_ns_saturated(remaining));
     }
     return true;
   }
@@ -1434,6 +1434,18 @@ Status Scheduler::schedule(DetachedFn fn, void* ctx) noexcept {
   }
   return Status{};
 }
+
+void* Scheduler::allocate_owned_callable_(std::size_t size,
+                                          std::size_t alignment) noexcept {
+  return impl_ != nullptr ? impl_->allocator.allocate(size, alignment) : nullptr;
+}
+
+void Scheduler::deallocate_owned_callable_(void* pointer, std::size_t size,
+                                           std::size_t alignment) noexcept {
+  HYLE_FATAL_ASSERT(impl_ != nullptr);
+  impl_->allocator.deallocate(pointer, size, alignment);
+}
+
 bool Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber) {
   return impl_->spawn_on(worker_idx, fiber);
 }
@@ -1498,8 +1510,12 @@ bool Scheduler::accepting() const noexcept {
 }
 void Scheduler::begin_shutdown() noexcept { impl_->begin_shutdown(); }
 void Scheduler::wait_for_shutdown() noexcept { impl_->wait_for_shutdown(); }
-bool Scheduler::drain_for(unsigned long long timeout_ns) noexcept {
-  return impl_->drain_for(timeout_ns);
+bool Scheduler::drain_for(time::Duration timeout) noexcept {
+  return impl_->drain_for(timeout);
+}
+
+bool Scheduler::drain_until(time::MonotonicTimePoint deadline) noexcept {
+  return impl_->drain_until(deadline);
 }
 
 void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
@@ -1555,7 +1571,7 @@ void suspend() noexcept {
 
 // ---- fiber sleep (sched-04b) ------------------------------------------------
 
-void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
+void sleep_until(time::MonotonicTimePoint deadline) noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr);  // sleep outside a fiber is a bug
   HYLE_FATAL_ASSERT(tls_timer_queue != nullptr);  // must be on a scheduler worker
@@ -1566,7 +1582,7 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
   // O(1) onto this worker's own queue (single-threaded: we ARE that worker).
   time::TimerEntry entry;
   entry.set_data(self);
-  tls_timer_queue->schedule(&entry, deadline_ns);
+  tls_timer_queue->schedule(&entry, deadline);
 
   // Suspend on the SAME spine as an io completion: request_wait + yield, and the
   // worker's dispatch rendezvous with the eventual timer fire (fire_due_timers
@@ -1578,8 +1594,8 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
   Fiber::yield();
 }
 
-void sleep_for_ns(std::uint64_t ns) noexcept {
-  sleep_until_ns(time::deadline_after_ns(ns));
+void sleep_for(time::Duration duration) noexcept {
+  sleep_until(time::deadline_after(duration));
 }
 
 // ---- timed-io building blocks (io-06) ---------------------------------------
@@ -1590,7 +1606,8 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 // fire_due_timers -> wake_rendezvous). No cross-core cancel queue: the timed io
 // fiber is pinned (shard-per-core), so arm/fire/cancel are all on this worker.
 
-void arm_timeout(time::TimerEntry* entry, std::uint64_t deadline_ns) noexcept {
+void arm_timeout(time::TimerEntry* entry,
+                 time::MonotonicTimePoint deadline) noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr);       // timed io outside a fiber is a bug
   HYLE_FATAL_ASSERT(tls_timer_queue != nullptr);  // must be on a scheduler worker
@@ -1601,7 +1618,7 @@ void arm_timeout(time::TimerEntry* entry, std::uint64_t deadline_ns) noexcept {
     // sub-tick deadline can never expose a half-built callback record.
     HYLE_FATAL_ASSERT(entry->data() != nullptr);
   }
-  tls_timer_queue->schedule(entry, deadline_ns);
+  tls_timer_queue->schedule(entry, deadline);
 }
 
 void cancel_timeout(time::TimerEntry* entry) noexcept {

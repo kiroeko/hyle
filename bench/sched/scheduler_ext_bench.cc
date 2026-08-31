@@ -51,7 +51,7 @@ using hyle::sched::current_waker;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
-using hyle::sched::sleep_for_ns;
+using hyle::sched::sleep_for;
 using hyle::sched::suspend;
 using hyle::sched::SuspendFiber;
 using hyle::sched::Task;
@@ -154,9 +154,9 @@ void coro_drive(void* p) { static_cast<CoroDrive*>(p)->task.resume(); }
 
 // ---- (4) fiber sleep -----------------------------------------------------
 struct SleepArg {
-  std::uint64_t ns;
+  hyle::time::Duration duration;
 };
-void sleep_body(void* p) { sleep_for_ns(static_cast<SleepArg*>(p)->ns); }
+void sleep_body(void* p) { sleep_for(static_cast<SleepArg*>(p)->duration); }
 
 }  // namespace
 

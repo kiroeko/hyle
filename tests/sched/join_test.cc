@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <span>
+#include <vector>
 
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -210,6 +212,25 @@ TEST(Join, WhenAllWaitsForEvery) {
   sched.shutdown();
 }
 
+TEST(Join, RuntimeSizedWhenAllSupportsDynamicHomogeneousFanout) {
+  constexpr int kTasks = 32;
+  Scheduler scheduler(4, system_allocator(), 128);
+  std::vector<JoinHandle<int>> handles;
+  handles.reserve(kTasks);
+  for (int value = 0; value < kTasks; ++value) {
+    handles.push_back(spawn_task(
+        scheduler, system_allocator(),
+        add_coro(system_allocator(), value, 1)));
+  }
+  when_all(std::span<JoinHandle<int>>(handles));
+  int sum = 0;
+  for (auto& handle : handles) sum += *handle.join();
+  EXPECT_EQ(sum, kTasks * (kTasks + 1) / 2);
+
+  std::span<JoinHandle<int>> empty;
+  when_all(empty);
+}
+
 // when_all over already-completed tasks (install-time pre-accounting path).
 TEST(Join, WhenAllAllReadyBeforeWait) {
   Scheduler sched(4, system_allocator(), 256);
@@ -241,6 +262,23 @@ TEST(Join, WhenAnyReturnsAWinner) {
   EXPECT_EQ(*slow.join(), 99);
   EXPECT_EQ(*fast.join(), 14);
   sched.shutdown();
+}
+
+TEST(Join, RuntimeSizedWhenAnyReturnsDynamicWinner) {
+  Scheduler scheduler(2, system_allocator(), 64);
+  WaitBox box;
+  std::vector<JoinHandle<int>> handles;
+  handles.push_back(spawn_task(
+      scheduler, system_allocator(),
+      wait_then(system_allocator(), &box, 99)));
+  handles.push_back(spawn_task(
+      scheduler, system_allocator(),
+      add_coro(system_allocator(), 20, 22)));
+  EXPECT_EQ(when_any(std::span<JoinHandle<int>>(handles)), 1u);
+  while (!box.ready.load(std::memory_order_acquire)) {}
+  box.waker.wake();
+  EXPECT_EQ(*handles[0].join(), 99);
+  EXPECT_EQ(*handles[1].join(), 42);
 }
 
 // abort() sets the cooperative flag; a task that checks is_cancel_requested()

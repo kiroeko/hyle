@@ -92,12 +92,11 @@ _hyle_declare_component(container
   PRIVATE_DEPS platform
   PUBLIC_DEPS core mem)
 _hyle_declare_component(util PUBLIC_DEPS core error mem container)
-# SchedulerOptions publicly names platform types, while time is consumed only
-# by scheduler implementation TUs.
+# SchedulerOptions and the public timer/synchronization APIs name platform and
+# typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
   TRACE
-  PRIVATE_DEPS time
-  PUBLIC_DEPS core error platform mem container util_core)
+  PUBLIC_DEPS core error time platform mem container util_core)
 # io's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
 # consumer usage requirements, not only implementation closure: installed

@@ -199,34 +199,24 @@ void ConditionVariable::notify_all() noexcept {
 
 // ---- timed wait (sched-04c, thread-mode) ------------------------------------
 
-std::uint64_t ConditionVariable::deadline_from_now_(
-    std::uint64_t timeout_ns) noexcept {
-  return time::deadline_after_ns(timeout_ns);
-}
-
-std::uint64_t ConditionVariable::remaining_ns_(
-    std::uint64_t deadline_ns) noexcept {
-  return time::remaining_ns(deadline_ns);
-}
-
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
-    Waiter* node, std::uint64_t timeout_ns) noexcept {
+    Waiter* node, time::Duration timeout) noexcept {
   // Thread-mode only. prepare_wait_ set token to this thread's ThreadToken; a
   // fiber node has token==nullptr and is routed to finish_wait_timed_fiber_.
   HYLE_FATAL_ASSERT(node->token != nullptr);
   auto* tok = static_cast<ThreadToken*>(node->token);
 
   // Absolute deadline so spurious/early park returns don't extend the wait.
-  const std::uint64_t deadline = deadline_from_now_(timeout_ns);
+  const time::MonotonicTimePoint deadline = time::deadline_after(timeout);
   bool notified = tok->notified.load(std::memory_order_acquire);
   while (!notified) {
-    std::uint64_t rem = remaining_ns_(deadline);
-    if (rem == 0) break;  // deadline reached
+    const time::Duration remaining = time::remaining(deadline);
+    if (remaining <= time::Duration::zero()) break;  // deadline reached
     // park_for is single-shot: it may return early (spurious / real unpark).
     // The loop re-checks `notified` and recomputes the remaining time, so the
     // total wait never exceeds the deadline. A real notify unparks + sets
     // notified (wake_one), so the next load observes it.
-    tok->parker.park_for(time::Duration(rem));
+    tok->parker.park_for(remaining);
     notified = tok->notified.load(std::memory_order_acquire);
   }
   if (notified) return CvStatus::kNoTimeout;
@@ -267,7 +257,7 @@ void ConditionVariable::timed_fiber_fire_(
 }
 
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
-    Waiter* node, std::uint64_t timeout_ns) noexcept {
+    Waiter* node, time::Duration timeout) noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr && node->waker.valid());
   // prepare_wait_ marked every fiber waiter before publishing its stack node.
@@ -276,7 +266,7 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
 
   // An immediate deadline still has to arbitrate with a notify that may have
   // popped us after the monitor lock was released.
-  if (timeout_ns == 0) {
+  if (timeout <= time::Duration::zero()) {
     bool timed_out = false;
     mu_.lock();
     unsigned char expected = 0;
@@ -311,7 +301,7 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
   timer.set_data(&ctx);  // callback context; callback path needs no Fiber payload
   // Publish the complete callback record before inserting it into the live
   // queue. A sub-tick deadline may fire as soon as arm_timeout returns.
-  arm_timeout(&timer, deadline_from_now_(timeout_ns));
+  arm_timeout(&timer, time::deadline_after(timeout));
   suspend();
 
   // We resume on the temporary owner worker. If notify won before expiry, remove
@@ -321,6 +311,93 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
   return node->timed_state.load(std::memory_order_acquire) == 2
              ? CvStatus::kTimeout
              : CvStatus::kNoTimeout;
+}
+
+
+// ---- Event ------------------------------------------------------------------
+
+void Event::signal() noexcept {
+  mu_.lock();
+  const bool changed = !signaled_;
+  signaled_ = true;
+  const EventResetMode mode = mode_;
+  mu_.unlock();
+  if (!changed) return;  // binary state: repeated signals coalesce
+  if (mode == EventResetMode::kManual)
+    cv_.notify_all();
+  else
+    cv_.notify_one();
+}
+
+void Event::reset() noexcept {
+  mu_.lock();
+  signaled_ = false;
+  mu_.unlock();
+}
+
+bool Event::is_signaled() const noexcept {
+  mu_.lock();
+  const bool signaled = signaled_;
+  mu_.unlock();
+  return signaled;
+}
+
+void Event::wait() noexcept {
+  mu_.lock();
+  cv_.wait(mu_, [&] { return signaled_; });
+  if (mode_ == EventResetMode::kAuto) signaled_ = false;
+  mu_.unlock();
+}
+
+bool Event::wait_for(time::Duration timeout) noexcept {
+  return wait_until(time::deadline_after(timeout));
+}
+
+bool Event::wait_until(time::MonotonicTimePoint deadline) noexcept {
+  mu_.lock();
+  const bool ready = cv_.wait_until(mu_, deadline, [&] { return signaled_; });
+  if (ready && mode_ == EventResetMode::kAuto) signaled_ = false;
+  mu_.unlock();
+  return ready;
+}
+
+// ---- Barrier ----------------------------------------------------------------
+
+bool Barrier::arrive_and_wait() noexcept {
+  mu_.lock();
+  HYLE_FATAL_ASSERT(expected_ > 0 && remaining_ > 0);
+  const std::size_t generation = generation_;
+  if (--remaining_ == 0) {
+    remaining_ = expected_;
+    ++generation_;
+    mu_.unlock();
+    cv_.notify_all();
+    return true;
+  }
+  cv_.wait(mu_, [&] { return generation_ != generation; });
+  mu_.unlock();
+  return false;
+}
+
+void Barrier::arrive_and_drop() noexcept {
+  mu_.lock();
+  HYLE_FATAL_ASSERT(expected_ > 0 && remaining_ > 0);
+  --expected_;
+  if (--remaining_ == 0) {
+    remaining_ = expected_;
+    ++generation_;
+    mu_.unlock();
+    cv_.notify_all();
+    return;
+  }
+  mu_.unlock();
+}
+
+std::size_t Barrier::participants() const noexcept {
+  mu_.lock();
+  const std::size_t count = expected_;
+  mu_.unlock();
+  return count;
 }
 
 
@@ -359,6 +436,7 @@ bool Semaphore::acquire(std::size_t n) noexcept {
   Waiter node;
   node.need = n;
   node.prev = tail_;
+  node.linked = true;
   if (tail_ == nullptr) {
     head_ = &node;
   } else {
@@ -374,48 +452,111 @@ bool Semaphore::acquire(std::size_t n) noexcept {
   return ok;
 }
 
+void Semaphore::unlink_waiter_locked_(Waiter* waiter) noexcept {
+  HYLE_FATAL_ASSERT(waiter != nullptr && waiter->linked);
+  if (waiter->prev != nullptr)
+    waiter->prev->next = waiter->next;
+  else
+    head_ = waiter->next;
+  if (waiter->next != nullptr)
+    waiter->next->prev = waiter->prev;
+  else
+    tail_ = waiter->prev;
+  waiter->next = nullptr;
+  waiter->prev = nullptr;
+  waiter->linked = false;
+}
+
+Semaphore::Waiter* Semaphore::grant_waiters_locked_() noexcept {
+  Waiter* woken_head = nullptr;
+  Waiter* woken_tail = nullptr;
+  while (head_ != nullptr && permits_ >= head_->need) {
+    Waiter* waiter = head_;
+    permits_ -= waiter->need;
+    unlink_waiter_locked_(waiter);
+    waiter->granted = true;
+    if (woken_tail == nullptr)
+      woken_head = waiter;
+    else
+      woken_tail->next = waiter;
+    woken_tail = waiter;
+  }
+  return woken_head;
+}
+
+void Semaphore::notify_waiters_(Waiter* waiters) noexcept {
+  while (waiters != nullptr) {
+    Waiter* next = waiters->next;
+    waiters->cv.notify_one();
+    waiters = next;
+  }
+}
+
+bool Semaphore::try_acquire_for(time::Duration timeout,
+                                std::size_t n) noexcept {
+  return try_acquire_until(time::deadline_after(timeout), n);
+}
+
+bool Semaphore::try_acquire_until(time::MonotonicTimePoint deadline,
+                                  std::size_t n) noexcept {
+  mu_.lock();
+  if (closed_) {
+    mu_.unlock();
+    return false;
+  }
+  if (head_ == nullptr && permits_ >= n) {
+    permits_ -= n;
+    mu_.unlock();
+    return true;
+  }
+  if (deadline <= time::monotonic_now()) {
+    mu_.unlock();
+    return false;
+  }
+
+  Waiter node;
+  node.need = n;
+  node.prev = tail_;
+  node.linked = true;
+  if (tail_ == nullptr)
+    head_ = &node;
+  else
+    tail_->next = &node;
+  tail_ = &node;
+
+  const bool completed = node.cv.wait_until(
+      mu_, deadline, [&] { return node.granted || node.aborted; });
+  if (completed) {
+    const bool granted = node.granted;
+    mu_.unlock();
+    return granted;
+  }
+
+  // A predicate-false timeout still owns mu_. The node therefore cannot race a
+  // grant/close while it unlinks. Removing a large head request can expose
+  // followers to permits accumulated behind it, so grant them immediately.
+  HYLE_FATAL_ASSERT(node.linked && !node.granted && !node.aborted);
+  unlink_waiter_locked_(&node);
+  Waiter* newly_granted = grant_waiters_locked_();
+  mu_.unlock();
+  notify_waiters_(newly_granted);
+  return false;
+}
+
 bool Semaphore::try_release(std::size_t n) noexcept {
   // Collect the CVs to notify AFTER dropping mu_ (waking can run scheduler code;
   // don't do it under the tiny spinlock). Each satisfied waiter is unlinked here.
   // We notify by pointer into each woken node's own CV -- valid because the waiter
   // cannot destroy its node until its cv.wait returns, which needs this notify.
-  Waiter* woken_head = nullptr;
-  Waiter* woken_tail = nullptr;  // build a temporary "to notify" list via `next`
   mu_.lock();
   if (n > std::numeric_limits<std::size_t>::max() - permits_) {
     mu_.unlock();
     return false;
   }
   permits_ += n;
-  // FIFO: satisfy the front waiter fully before moving on; STOP at the first
-  // waiter we cannot fully satisfy (no skip-ahead -> no large-request starvation).
-  while (head_ != nullptr && permits_ >= head_->need) {
-    Waiter* w = head_;
-    permits_ -= w->need;
-    // Unlink from the wait list.
-    head_ = w->next;
-    if (head_ == nullptr) {
-      tail_ = nullptr;
-    } else {
-      head_->prev = nullptr;
-    }
-    w->granted = true;
-    // Splice onto the local to-notify list (reuse `next`; `prev` no longer used).
-    w->next = nullptr;
-    if (woken_tail == nullptr) {
-      woken_head = w;
-    } else {
-      woken_tail->next = w;
-    }
-    woken_tail = w;
-  }
+  Waiter* woken_head = grant_waiters_locked_();
   mu_.unlock();
-  // Wake each satisfied waiter on its own CV, outside the lock.
-  for (Waiter* w = woken_head; w != nullptr;) {
-    Waiter* next = w->next;  // read before notify: w may vanish once woken
-    w->cv.notify_one();
-    w = next;
-  }
+  notify_waiters_(woken_head);
   return true;
 }
 
@@ -432,6 +573,7 @@ void Semaphore::close() noexcept {
   while (w != nullptr) {
     w->aborted = true;
     Waiter* n = w->next;
+    w->linked = false;
     w->prev = nullptr;
     w->next = n;  // keep FIFO order for tidy waking (order is not load-bearing)
     w = n;

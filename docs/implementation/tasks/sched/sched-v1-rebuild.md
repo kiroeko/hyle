@@ -184,8 +184,19 @@
   hooks 已进入 public C++ shape；Scheduler Pimpl、Worker 与 allocator-aware bookkeeping 使用注入的
   `mem::Allocator`。invalid option、strict placement、三种 idle policy 与 hook lifecycle 已补边界测试；
   Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.17s）。
+- SCHED-FIX-03 实现批：公开 timer、sleep、drain、ConditionVariable、Channel 与 BlockingPool 的时间边界
+  改用 `time::Duration/MonotonicTimePoint`；新增 fiber-aware auto/manual-reset Event、可复用 Barrier、
+  `Latch::arrive_and_wait()` 与定时 Semaphore，timeout waiter 维持 O(1) unlink。直接 IO deadline consumer
+  已迁移；Windows selected sched 与 IO build 成功，`hyle_sched_test`、`hyle_io_test` 分别 1/1 通过；
+- SCHED-FIX-04 实现批：保留 raw callback 零分配 hot seam，同时新增 allocator-owned、`noexcept`、可捕获
+  callable 的自然 `schedule/spawn_detached/spawn_detached_on` 路线与默认 fiber stack；同型动态任务组可用
+  `std::span<JoinHandle<T>>` 做 `when_all/when_any`，不再要求 Graph consumer 手写 parameter-pack 形状。
+  Windows selected sched build 与 `hyle_sched_test` 1/1 通过；
+- SCHED-FIX-06 BlockingPool allocator 子项实现批：Pimpl、thread record、allocator-aware bookkeeping 与
+  shutdown 暂存均使用注入 allocator；构造参数与 OOM 可经 `Status` 恢复，保留显式 fail-fast convenience。
+  invalid/OOM 与 allocation/free 对账测试通过。OS Thread 自身的冷路径分配仍属于 Platform 合同。
 
-上述单测是实现批回归，不是 SCHED-FIX-01/02/06 的 terminal `PASS`，也没有把尚未运行的 Linux
+上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。
 
 ## Verification manifest

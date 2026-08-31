@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -373,7 +374,8 @@ Task<int> closebody_server(Allocator, IoContext*, TcpListener* ls, int body_size
     if (w <= 0) co_return 0;
     off += static_cast<std::uint32_t>(w);
   }
-  hyle::sched::sleep_for_ns(20'000'000);  // 20ms: client's first read gets only head
+  hyle::sched::sleep_for(std::chrono::milliseconds(20));
+  // The client's first read gets only the head.
   std::string body(static_cast<std::size_t>(body_size), 'B');
   off = 0;
   t = static_cast<std::uint32_t>(body.size());

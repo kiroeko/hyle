@@ -1,15 +1,22 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <new>
 #include <optional>
 #include <span>
+#include <type_traits>
+#include <utility>
 
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
+#include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -115,7 +122,22 @@ class HYLE_SCHED_API Scheduler {
   // spawn_task for structured result and cancellation semantics.
   using DetachedFn = void (*)(void* ctx);
   Status spawn_detached(DetachedFn fn, void* ctx,
-                        std::size_t stack_size) noexcept;
+                        std::size_t stack_size =
+                            mem::kFiberStackDefault) noexcept;
+
+  // Owning C++ convenience for capturing/move-only noexcept callables. It pays
+  // one allocator-backed callable record; the raw fn+ctx overload above remains
+  // the allocation-minimal route. The callable may use fiber suspension APIs.
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status spawn_detached(Fn&& fn,
+                        std::size_t stack_size =
+                            mem::kFiberStackDefault) noexcept {
+    return submit_owned_callable_(false, 0, true, stack_size,
+                                  std::forward<Fn>(fn));
+  }
 
   // Queue a small non-suspending callback that runs directly on a worker stack.
   // This avoids allocating/switching a Fiber and is the scheduler counterpart
@@ -127,13 +149,36 @@ class HYLE_SCHED_API Scheduler {
   // ResourceExhausted instead of spinning and deadlocking its own consumer.
   Status schedule(DetachedFn fn, void* ctx) noexcept;
 
+  // Natural one-shot lambda route for short, non-suspending work. The callable
+  // record uses this Scheduler's injected allocator and destroys itself after
+  // invocation. No type-erasure allocation is charged to the raw overload.
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status schedule(Fn&& fn) noexcept {
+    return submit_owned_callable_(false, 0, false, 0,
+                                  std::forward<Fn>(fn));
+  }
+
   // Submit a fiber PINNED to worker `worker_idx`: it runs only on that worker and
   // is never stolen, on spawn and on every wake (shard-per-core, io-04). Use this
   // to keep a connection's fiber on the core that owns its io ring so submit +
   // reap + resume stay single-threaded. `worker_idx` must be < num_workers().
   bool spawn_on(unsigned worker_idx, Fiber* fiber);
   Status spawn_detached_on(unsigned worker_idx, DetachedFn fn, void* ctx,
-                           std::size_t stack_size) noexcept;
+                           std::size_t stack_size =
+                               mem::kFiberStackDefault) noexcept;
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status spawn_detached_on(
+      unsigned worker_idx, Fn&& fn,
+      std::size_t stack_size = mem::kFiberStackDefault) noexcept {
+    return submit_owned_callable_(true, worker_idx, true, stack_size,
+                                  std::forward<Fn>(fn));
+  }
 
   // The number of worker threads (for choosing a spawn_on target / sizing an
   // IoContext's per-worker rings).
@@ -176,7 +221,7 @@ class HYLE_SCHED_API Scheduler {
   // shutdown token -- uses a flat broadcast for shutdown; the tree is for the
   // orthogonal "cancel one task subtree" problem and is not needed here.
   //
-  // PHASE 2: drain_for(timeout_ns) waits for the in-flight fibers to finish (the
+  // PHASE 2: drain_for(timeout) waits for the in-flight fibers to finish (the
   // count to reach zero). Returns true if drained, false on timeout. A stackful
   // fiber CANNOT be preempted, so on timeout the caller's recourse is cooperative:
   // request cancellation / close its I/O and call drain_for again. shutdown() never
@@ -192,9 +237,11 @@ class HYLE_SCHED_API Scheduler {
   void begin_shutdown() noexcept;
   // Suspend the current fiber owned by this scheduler until begin_shutdown().
   void wait_for_shutdown() noexcept;
-  // Wait up to `timeout_ns` for all in-flight fibers to finish (0 == wait forever,
-  // same as drain()). Returns true if the count reached zero, false on timeout.
-  bool drain_for(unsigned long long timeout_ns) noexcept;
+  // Wait up to `timeout` for all in-flight fibers to finish. A non-positive
+  // duration is an immediate check; use drain() for an unbounded wait.
+  bool drain_for(time::Duration timeout) noexcept;
+  // Absolute monotonic counterpart. A past deadline is an immediate check.
+  bool drain_until(time::MonotonicTimePoint deadline) noexcept;
 
   // ---- io poll hook (io-04 integration) -------------------------------------
   // A worker calls this when its run queue drains, to service io completions
@@ -238,6 +285,55 @@ class HYLE_SCHED_API Scheduler {
   void init_(unsigned num_workers, mem::Allocator alloc,
              std::size_t queue_capacity, SchedulerOptions options,
              Status* status) noexcept;
+  void* allocate_owned_callable_(std::size_t size,
+                                 std::size_t alignment) noexcept;
+  void deallocate_owned_callable_(void* pointer, std::size_t size,
+                                  std::size_t alignment) noexcept;
+
+  template <class Fn>
+  struct OwnedCallable {
+    Scheduler* scheduler;
+    Fn fn;
+
+    static void run(void* raw) noexcept {
+      auto* self = static_cast<OwnedCallable*>(raw);
+      Scheduler* scheduler = self->scheduler;
+      std::invoke(self->fn);
+      self->~OwnedCallable();
+      scheduler->deallocate_owned_callable_(self, sizeof(OwnedCallable),
+                                            alignof(OwnedCallable));
+    }
+  };
+
+  template <class Fn>
+  Status submit_owned_callable_(bool pinned, unsigned worker_idx,
+                                bool detached, std::size_t stack_size,
+                                Fn&& fn) noexcept {
+    using Callable = std::decay_t<Fn>;
+    using Record = OwnedCallable<Callable>;
+    void* storage =
+        allocate_owned_callable_(sizeof(Record), alignof(Record));
+    if (storage == nullptr) {
+      return Status::ResourceExhausted(
+          "scheduler callable allocation failed");
+    }
+    auto* record = new (storage)
+        Record{this, Callable(std::forward<Fn>(fn))};
+    Status status;
+    if (!detached) {
+      status = schedule(&Record::run, record);
+    } else if (pinned) {
+      status = spawn_detached_on(worker_idx, &Record::run, record,
+                                 stack_size);
+    } else {
+      status = spawn_detached(&Record::run, record, stack_size);
+    }
+    if (!status.ok()) {
+      record->~Record();
+      deallocate_owned_callable_(record, sizeof(Record), alignof(Record));
+    }
+    return status;
+  }
   Status spawn_detached_(unsigned worker_idx, bool pinned, DetachedFn fn,
                          void* ctx, std::size_t stack_size) noexcept;
 };

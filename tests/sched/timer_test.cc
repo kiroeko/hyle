@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -15,17 +16,17 @@ using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
-using hyle::sched::sleep_for_ns;
-using hyle::sched::sleep_until_ns;
+using hyle::sched::sleep_for;
 using hyle::time::monotonic_ns;
 
 namespace {
 
 constexpr std::uint64_t kMs = 1'000'000ull;
+using namespace std::chrono_literals;
 
 // A fiber that sleeps once and records elapsed monotonic ns around the sleep.
 struct SleepProbe {
-  std::uint64_t sleep_ns = 0;
+  hyle::time::Duration sleep_duration{};
   std::uint64_t elapsed = 0;
   std::atomic<bool> done{false};
 };
@@ -33,7 +34,7 @@ struct SleepProbe {
 void sleep_entry(void* p) {
   auto* s = static_cast<SleepProbe*>(p);
   std::uint64_t t0 = monotonic_ns();
-  sleep_for_ns(s->sleep_ns);
+  sleep_for(s->sleep_duration);
   s->elapsed = monotonic_ns() - t0;
   s->done.store(true, std::memory_order_release);
 }
@@ -44,7 +45,7 @@ void sleep_entry(void* p) {
 // run other things meanwhile (it parks with a timeout, not a busy spin).
 TEST(SchedTimer, SleepResumesAfterDeadline) {
   SleepProbe s;
-  s.sleep_ns = 30 * kMs;
+  s.sleep_duration = 30ms;
   Fiber f(kDefaultStackSize, &sleep_entry, &s);
   {
     Scheduler sched(2, system_allocator(), 256);
@@ -67,7 +68,7 @@ TEST(SchedTimer, ManyDifferentDeadlinesAllResume) {
   fibers.reserve(kN);
   for (int i = 0; i < kN; ++i) {
     auto p = std::make_unique<SleepProbe>();
-    p->sleep_ns = static_cast<std::uint64_t>(i + 1) * kMs;  // 1..64 ms
+    p->sleep_duration = std::chrono::milliseconds(i + 1);
     probes.push_back(std::move(p));
     fibers.push_back(std::make_unique<Fiber>(
         kDefaultStackSize, &sleep_entry, probes[i].get()));
@@ -84,10 +85,10 @@ TEST(SchedTimer, ManyDifferentDeadlinesAllResume) {
   }
 }
 
-// sleep_for_ns(0) is a valid "yield to next tick" -- resumes promptly, no hang.
+// sleep_for(0ns) is a valid "yield to next tick" -- resumes promptly, no hang.
 TEST(SchedTimer, ZeroSleepResumesPromptly) {
   SleepProbe s;
-  s.sleep_ns = 0;
+  s.sleep_duration = hyle::time::Duration::zero();
   Fiber f(kDefaultStackSize, &sleep_entry, &s);
   {
     Scheduler sched(2, system_allocator(), 256);
@@ -108,7 +109,7 @@ struct ChainProbe {
 };
 void chain_entry(void* p) {
   auto* c = static_cast<ChainProbe*>(p);
-  sleep_for_ns(5 * kMs);
+  sleep_for(5ms);
   c->counter->fetch_add(1, std::memory_order_acq_rel);
 }
 }  // namespace
@@ -157,7 +158,7 @@ TEST(SchedTimer, MixedSleepersAndRunnables) {
   std::vector<std::unique_ptr<Fiber>> fibers;
 
   auto sleeper = [](void* p) {
-    sleep_for_ns(10 * kMs);
+    sleep_for(10ms);
     static_cast<S*>(p)->woke->fetch_add(1, std::memory_order_acq_rel);
   };
   auto busy = [](void* p) {

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstdint>
-
+#include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -39,16 +38,17 @@ namespace hyle::sched {
 
 // Suspend the current fiber until the exact monotonic deadline is due, then
 // resume. Must be called from inside a fiber running on a Scheduler worker
-// (asserts otherwise). ns == 0 becomes due on the next scheduler advance.
+// (asserts otherwise). A non-positive duration becomes due on the next
+// scheduler advance.
 //
 // A sleeping fiber is still OUTSTANDING work: Scheduler::drain()/shutdown() block
 // until it wakes and finishes. A fiber sleeping N seconds therefore holds up
 // teardown for N seconds -- cancel long sleeps before shutdown if that matters.
-HYLE_SCHED_API void sleep_for_ns(std::uint64_t ns) noexcept;
+HYLE_SCHED_API void sleep_for(time::Duration duration) noexcept;
 
-// Absolute-deadline variant: suspend until monotonic_ns() reaches at least
-// `deadline_ns`. A past deadline becomes due on the next scheduler advance.
-HYLE_SCHED_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
+// Absolute-deadline variant. A past deadline becomes due on the next scheduler
+// advance. The monotonic type cannot be confused with a wall-clock timestamp.
+HYLE_SCHED_API void sleep_until(time::MonotonicTimePoint deadline) noexcept;
 
 // ---- timed-io building blocks (io-06 / C2) ----------------------------------
 // Lower-level timer arm/cancel that do NOT suspend -- for composing a timeout with
@@ -59,13 +59,13 @@ HYLE_SCHED_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
 // pinned, so arm/fire/cancel all happen single-threaded on one worker -- no
 // cross-core cancel queue needed, which is why this can ship without sched-04d).
 //
-// arm_timeout: schedule `entry` to fire at `deadline_ns`. With no fire callback
+// arm_timeout: schedule `entry` to fire at `deadline`. With no fire callback
 // callback it wakes THIS fiber (entry payload is filled automatically, same as
 // sleep). With a fire callback set, the caller initializes the payload BEFORE this
 // call; the callback owns wake arbitration. The entry MUST outlive the wait
 // (put it on the coroutine/awaitable frame). Does NOT suspend.
 HYLE_SCHED_API void arm_timeout(time::TimerEntry* entry,
-                                std::uint64_t deadline_ns) noexcept;
+                                time::MonotonicTimePoint deadline) noexcept;
 // cancel_timeout: remove `entry` from this worker's queue if still armed (O(1),
 // no-op if it already fired). Call when the io op won the race, so a stale timer
 // doesn't fire into a reused fiber. Same-worker only.

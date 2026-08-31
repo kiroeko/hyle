@@ -15,6 +15,9 @@
 using hyle::mem::system_allocator;
 using hyle::sched::Channel;
 using hyle::sched::ConditionVariable;
+using hyle::sched::Barrier;
+using hyle::sched::Event;
+using hyle::sched::EventResetMode;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Latch;
@@ -27,6 +30,7 @@ using hyle::sched::Scheduler;
 using hyle::sched::Semaphore;
 using hyle::sched::WaitGroup;
 using hyle::util::SpinLock;
+using namespace std::chrono_literals;
 
 namespace {
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
@@ -172,6 +176,120 @@ TEST(Sync, LatchReleasesAllWaiters) {
   EXPECT_EQ(a.resumed.load(), kWaiters);
 }
 
+TEST(Sync, LatchArriveAndWaitCombinesCountdownWithWait) {
+  Latch latch(2);
+  std::atomic<bool> returned{false};
+  std::thread participant([&] {
+    latch.arrive_and_wait();
+    returned.store(true, std::memory_order_release);
+  });
+  std::this_thread::sleep_for(2ms);
+  EXPECT_FALSE(returned.load(std::memory_order_acquire));
+  latch.count_down();
+  participant.join();
+  EXPECT_TRUE(returned.load(std::memory_order_acquire));
+}
+
+namespace {
+struct EventWaitArg {
+  Event* event;
+  std::atomic<int>* entered;
+  std::atomic<int>* returned;
+};
+
+void event_waiter(void* raw) {
+  auto* arg = static_cast<EventWaitArg*>(raw);
+  arg->entered->fetch_add(1, std::memory_order_release);
+  arg->event->wait();
+  arg->returned->fetch_add(1, std::memory_order_release);
+}
+}  // namespace
+
+TEST(Sync, ManualEventBroadcastsAndStaysSignaledUntilReset) {
+  Event event(EventResetMode::kManual);
+  std::atomic<int> entered{0};
+  std::atomic<int> returned{0};
+  EventWaitArg arg{&event, &entered, &returned};
+  Fiber fibers[] = {
+      Fiber(kDefaultStackSize, &event_waiter, &arg),
+      Fiber(kDefaultStackSize, &event_waiter, &arg),
+      Fiber(kDefaultStackSize, &event_waiter, &arg),
+  };
+  Scheduler scheduler(2, system_allocator(), 64);
+  for (auto& fiber : fibers) ASSERT_TRUE(scheduler.spawn(&fiber));
+  while (entered.load(std::memory_order_acquire) != 3)
+    std::this_thread::yield();
+  event.signal();
+  scheduler.drain();
+  EXPECT_EQ(returned.load(std::memory_order_acquire), 3);
+  EXPECT_TRUE(event.is_signaled());
+  EXPECT_TRUE(event.wait_for(hyle::time::Duration::zero()));
+  event.reset();
+  EXPECT_FALSE(event.is_signaled());
+  EXPECT_FALSE(event.wait_for(1ms));
+}
+
+TEST(Sync, AutoEventReleasesOneWaiterPerSignal) {
+  Event event(EventResetMode::kAuto);
+  std::atomic<int> entered{0};
+  std::atomic<int> returned{0};
+  EventWaitArg arg{&event, &entered, &returned};
+  Fiber first(kDefaultStackSize, &event_waiter, &arg);
+  Fiber second(kDefaultStackSize, &event_waiter, &arg);
+  Scheduler scheduler(2, system_allocator(), 64);
+  ASSERT_TRUE(scheduler.spawn(&first));
+  ASSERT_TRUE(scheduler.spawn(&second));
+  while (entered.load(std::memory_order_acquire) != 2)
+    std::this_thread::yield();
+  event.signal();
+  while (returned.load(std::memory_order_acquire) != 1)
+    std::this_thread::yield();
+  EXPECT_FALSE(event.is_signaled());
+  event.signal();
+  scheduler.drain();
+  EXPECT_EQ(returned.load(std::memory_order_acquire), 2);
+  EXPECT_FALSE(event.is_signaled());
+}
+
+TEST(Sync, BarrierIsReusableAndElectsOnePhaseCompleter) {
+  constexpr int kParticipants = 4;
+  constexpr int kPhases = 50;
+  Barrier barrier(kParticipants);
+  std::atomic<int> leaders{0};
+  std::vector<std::thread> threads;
+  for (int participant = 0; participant < kParticipants; ++participant) {
+    threads.emplace_back([&] {
+      for (int phase = 0; phase < kPhases; ++phase) {
+        if (barrier.arrive_and_wait())
+          leaders.fetch_add(1, std::memory_order_relaxed);
+      }
+    });
+  }
+  for (auto& thread : threads) thread.join();
+  EXPECT_EQ(leaders.load(std::memory_order_relaxed), kPhases);
+  EXPECT_EQ(barrier.participants(), kParticipants);
+}
+
+TEST(Sync, BarrierArriveAndDropReducesFuturePhase) {
+  Barrier barrier(3);
+  std::atomic<int> passed{0};
+  std::thread dropping([&] {
+    barrier.arrive_and_drop();
+    passed.fetch_add(1, std::memory_order_relaxed);
+  });
+  std::thread participant([&] {
+    barrier.arrive_and_wait();
+    barrier.arrive_and_wait();
+    passed.fetch_add(1, std::memory_order_relaxed);
+  });
+  barrier.arrive_and_wait();
+  dropping.join();
+  barrier.arrive_and_wait();
+  participant.join();
+  EXPECT_EQ(passed.load(std::memory_order_relaxed), 2);
+  EXPECT_EQ(barrier.participants(), 2u);
+}
+
 // ---- Channel ----------------------------------------------------------------
 
 struct ChanArg {
@@ -220,10 +338,10 @@ TEST(Sync, ChannelTryAndTimedPathsDistinguishFullEmptyAndClosed) {
   Ch ch(system_allocator(), 1);
   int out = -1;
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kEmptyOrTimeout);
-  EXPECT_EQ(ch.recv_for(out, 1'000'000), Ch::RecvStatus::kEmptyOrTimeout);
+  EXPECT_EQ(ch.recv_for(out, 1ms), Ch::RecvStatus::kEmptyOrTimeout);
   EXPECT_EQ(ch.try_send(7), Ch::SendStatus::kSent);
   EXPECT_EQ(ch.try_send(8), Ch::SendStatus::kFullOrTimeout);
-  EXPECT_EQ(ch.send_for(8, 1'000'000), Ch::SendStatus::kFullOrTimeout);
+  EXPECT_EQ(ch.send_for(8, 1ms), Ch::SendStatus::kFullOrTimeout);
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kValue);
   EXPECT_EQ(out, 7);
   ch.close();
@@ -412,7 +530,7 @@ TEST(SyncTimed, WaitForTimesOut) {
   CvStatus st;
   {
     std::lock_guard<SpinLock> lk(mu);
-    st = cv.wait_for(mu, 30'000'000ull);  // 30ms, nobody notifies
+    st = cv.wait_for(mu, 30ms);  // nobody notifies
   }
   auto elapsed = std::chrono::steady_clock::now() - t0;
   EXPECT_EQ(st, CvStatus::kTimeout);
@@ -429,7 +547,7 @@ TEST(SyncTimed, WaitForNotifiedBeforeDeadline) {
   std::thread waiter([&] {
     std::lock_guard<SpinLock> lk(mu);
     parked.store(true, std::memory_order_release);
-    st.store(cv.wait_for(mu, 5'000'000'000ull),  // 5s -- we notify well before
+    st.store(cv.wait_for(mu, 5s),  // we notify well before
              std::memory_order_release);
   });
   while (!parked.load(std::memory_order_acquire)) std::this_thread::yield();
@@ -459,7 +577,7 @@ TEST(SyncTimed, WaitForPredicate) {
   bool got;
   {
     std::lock_guard<SpinLock> lk(mu);
-    got = cv.wait_for(mu, 2'000'000'000ull, [&] { return ready; });
+    got = cv.wait_for(mu, 2s, [&] { return ready; });
   }
   setter.join();
   EXPECT_TRUE(got);
@@ -469,7 +587,7 @@ TEST(SyncTimed, WaitForPredicate) {
   bool got2;
   {
     std::lock_guard<SpinLock> lk(mu);
-    got2 = cv.wait_for(mu, 20'000'000ull, [&] { return never; });
+    got2 = cv.wait_for(mu, 20ms, [&] { return never; });
   }
   EXPECT_FALSE(got2);
 }
@@ -487,7 +605,7 @@ TEST(SyncTimed, NotifyVsTimeoutRace) {
   for (int i = 0; i < kN; ++i) {
     waiters.emplace_back([&] {
       std::lock_guard<SpinLock> lk(mu);
-      cv.wait_for(mu, 5'000'000ull);  // 5ms: half will race a notify, half time out
+      cv.wait_for(mu, 5ms);  // half will race a notify, half time out
       returned.fetch_add(1, std::memory_order_acq_rel);
     });
   }
@@ -505,7 +623,7 @@ TEST(SyncTimed, WaitUntilPastDeadline) {
   ConditionVariable cv;
   SpinLock mu;
   std::lock_guard<SpinLock> lk(mu);
-  CvStatus st = cv.wait_until(mu, 1);  // deadline ns=1, long in the past
+  CvStatus st = cv.wait_until(mu, hyle::time::MonotonicTimePoint{});
   EXPECT_EQ(st, CvStatus::kTimeout);
 }
 
@@ -516,13 +634,13 @@ struct FiberTimedArg {
   std::atomic<bool> entered{false};
   std::atomic<bool> returned{false};
   CvStatus status = CvStatus::kNoTimeout;
-  std::uint64_t timeout_ns = 0;
+  hyle::time::Duration timeout{};
 };
 void fiber_timed_waiter(void* p) {
   auto* a = static_cast<FiberTimedArg*>(p);
   a->mu.lock();
   a->entered.store(true, std::memory_order_release);
-  a->status = a->cv.wait_for(a->mu, a->timeout_ns);
+  a->status = a->cv.wait_for(a->mu, a->timeout);
   a->mu.unlock();
   a->returned.store(true, std::memory_order_release);
 }
@@ -530,11 +648,11 @@ void fiber_timed_waiter(void* p) {
 
 TEST(SyncTimed, FiberWaitTimesOutWithoutBlockingWorker) {
   FiberTimedArg arg;
-  arg.timeout_ns = 15'000'000;
+  arg.timeout = 15ms;
   Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
   Scheduler sched(1, system_allocator(), 64);
   EXPECT_TRUE(sched.spawn(&f));
-  EXPECT_TRUE(sched.drain_for(2'000'000'000));
+  EXPECT_TRUE(sched.drain_for(2s));
   EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
   EXPECT_EQ(arg.status, CvStatus::kTimeout);
   sched.shutdown();
@@ -544,10 +662,10 @@ TEST(SyncTimed, FiberImmediateDeadlineIsSafe) {
   Scheduler sched(2, system_allocator(), 256);
   for (int round = 0; round < 200; ++round) {
     FiberTimedArg arg;
-    arg.timeout_ns = 0;
+    arg.timeout = hyle::time::Duration::zero();
     Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
     EXPECT_TRUE(sched.spawn(&f));
-    EXPECT_TRUE(sched.drain_for(1'000'000'000));
+    EXPECT_TRUE(sched.drain_for(1s));
     EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
     EXPECT_EQ(arg.status, CvStatus::kTimeout);
   }
@@ -556,7 +674,7 @@ TEST(SyncTimed, FiberImmediateDeadlineIsSafe) {
 
 TEST(SyncTimed, FiberNotifyWinsAndCancelsTimer) {
   FiberTimedArg arg;
-  arg.timeout_ns = 2'000'000'000;
+  arg.timeout = 2s;
   Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
   Scheduler sched(2, system_allocator(), 64);
   EXPECT_TRUE(sched.spawn(&f));
@@ -565,7 +683,7 @@ TEST(SyncTimed, FiberNotifyWinsAndCancelsTimer) {
   arg.mu.lock();
   arg.mu.unlock();
   arg.cv.notify_one();
-  EXPECT_TRUE(sched.drain_for(2'000'000'000));
+  EXPECT_TRUE(sched.drain_for(2s));
   EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
   EXPECT_EQ(arg.status, CvStatus::kNoTimeout);
   sched.shutdown();
@@ -575,7 +693,7 @@ TEST(SyncTimed, FiberNotifyVsTimeoutRaceDoesNotDoubleWake) {
   Scheduler sched(4, system_allocator(), 256);
   for (int round = 0; round < 200; ++round) {
     FiberTimedArg arg;
-    arg.timeout_ns = 1'000'000;
+    arg.timeout = 1ms;
     Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
     EXPECT_TRUE(sched.spawn(&f));
     while (!arg.entered.load(std::memory_order_acquire))
@@ -585,7 +703,7 @@ TEST(SyncTimed, FiberNotifyVsTimeoutRaceDoesNotDoubleWake) {
       arg.mu.unlock();
       arg.cv.notify_one();
     }
-    EXPECT_TRUE(sched.drain_for(1'000'000'000));
+    EXPECT_TRUE(sched.drain_for(1s));
     EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
   }
   sched.shutdown();
@@ -602,6 +720,72 @@ TEST(Sync, SemaphoreTryAcquireCounts) {
   EXPECT_FALSE(s.try_acquire(1));  // empty
   s.release(3);
   EXPECT_EQ(s.available(), 3u);
+}
+
+TEST(Sync, SemaphoreTimedAcquireSupportsImmediateSuccessAndTimeout) {
+  Semaphore semaphore(1);
+  EXPECT_TRUE(semaphore.try_acquire_for(hyle::time::Duration::zero()));
+  EXPECT_FALSE(semaphore.try_acquire_for(2ms));
+  semaphore.release();
+  EXPECT_TRUE(semaphore.try_acquire_until(hyle::time::monotonic_now() + 1s));
+}
+
+TEST(Sync, SemaphoreTimedOutHeadMakesAccumulatedPermitsAvailable) {
+  Semaphore semaphore(0);
+  std::atomic<bool> head_entered{false};
+  std::atomic<bool> follower_entered{false};
+  std::atomic<bool> head_acquired{true};
+  std::atomic<bool> follower_acquired{false};
+
+  std::thread head([&] {
+    head_entered.store(true, std::memory_order_release);
+    head_acquired.store(semaphore.try_acquire_for(40ms, 2),
+                        std::memory_order_release);
+  });
+  while (!head_entered.load(std::memory_order_acquire))
+    std::this_thread::yield();
+  std::this_thread::sleep_for(5ms);  // establish the two-permit head waiter
+
+  std::thread follower([&] {
+    follower_entered.store(true, std::memory_order_release);
+    follower_acquired.store(semaphore.acquire(1), std::memory_order_release);
+  });
+  while (!follower_entered.load(std::memory_order_acquire))
+    std::this_thread::yield();
+  std::this_thread::sleep_for(5ms);  // follower queues behind the head
+  semaphore.release(1);             // insufficient for the head, enough after timeout
+
+  head.join();
+  follower.join();
+  EXPECT_FALSE(head_acquired.load(std::memory_order_acquire));
+  EXPECT_TRUE(follower_acquired.load(std::memory_order_acquire));
+  EXPECT_EQ(semaphore.available(), 0u);
+}
+
+namespace {
+struct TimedSemaphoreArg {
+  Semaphore* semaphore;
+  std::atomic<bool>* returned;
+  bool acquired = true;
+};
+
+void timed_semaphore_waiter(void* raw) {
+  auto* arg = static_cast<TimedSemaphoreArg*>(raw);
+  arg->acquired = arg->semaphore->try_acquire_for(5ms);
+  arg->returned->store(true, std::memory_order_release);
+}
+}  // namespace
+
+TEST(Sync, SemaphoreTimedAcquireSuspendsFiberWithoutBlockingWorker) {
+  Semaphore semaphore(0);
+  std::atomic<bool> returned{false};
+  TimedSemaphoreArg arg{&semaphore, &returned};
+  Fiber waiter(kDefaultStackSize, &timed_semaphore_waiter, &arg);
+  Scheduler scheduler(1, system_allocator(), 64);
+  ASSERT_TRUE(scheduler.spawn(&waiter));
+  EXPECT_TRUE(scheduler.drain_for(1s));
+  EXPECT_TRUE(returned.load(std::memory_order_acquire));
+  EXPECT_FALSE(arg.acquired);
 }
 
 // A semaphore as a concurrency limiter: N fibers each acquire(1)/work/release(1)

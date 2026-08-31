@@ -1,13 +1,13 @@
 #include "hyle/sched/blocking.h"
 
 #include <condition_variable>
-#include <limits>
-#include <memory>
 #include <mutex>
 #include <new>
+#include <stdexcept>
 #include <vector>
 
 #include "hyle/core/compiler.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/platform/thread.h"
 
 namespace hyle::sched {
@@ -30,7 +30,7 @@ thread_local const void* tls_blocking_pool = nullptr;
 struct BlockingPool::Impl {
   mem::Allocator alloc;
   const unsigned max_threads;
-  const unsigned long long keep_alive_ns;
+  const time::Duration keep_alive;
 
   std::mutex mu;
   std::condition_variable cv;
@@ -53,14 +53,30 @@ struct BlockingPool::Impl {
   // Stable records let a worker publish its own retirement. The next submission
   // extracts and joins retired handles before growing the pool, preventing
   // unbounded handle retention across repeated burst/idle cycles.
-  std::vector<std::unique_ptr<ThreadRecord>> threads;
+  std::vector<ThreadRecord*, mem::StdAllocator<ThreadRecord*>> threads;
 
-  Impl(mem::Allocator a, unsigned max_t, unsigned long long keep_ns)
-      : alloc(a), max_threads(max_t), keep_alive_ns(keep_ns) {
+  Impl(mem::Allocator a, unsigned max_t, time::Duration keep_alive_duration)
+      : alloc(a),
+        max_threads(max_t),
+        keep_alive(keep_alive_duration > time::Duration::zero()
+                       ? keep_alive_duration
+                       : time::Duration::zero()),
+        threads(mem::StdAllocator<ThreadRecord*>(a)) {
     HYLE_FATAL_ASSERT(max_t >= 1);
     // submit() is noexcept. Reserve the bounded handle set here, where a
     // construction failure may propagate to the owning factory/constructor.
     threads.reserve(max_threads);
+  }
+
+  ~Impl() {
+    HYLE_FATAL_ASSERT(threads.empty());
+    HYLE_FATAL_ASSERT(head == nullptr && tail == nullptr);
+  }
+
+  void destroy_record(ThreadRecord* record) noexcept {
+    if (record == nullptr) return;
+    record->~ThreadRecord();
+    alloc.deallocate(record, sizeof(ThreadRecord), alignof(ThreadRecord));
   }
 
   static void thread_main(void* p) noexcept {
@@ -97,14 +113,8 @@ struct BlockingPool::Impl {
       // No work: wait as an idle thread, bounded by keep_alive so a burst doesn't
       // pin threads forever. num_notify pairs a real wake against a spurious one.
       ++num_idle;
-      using Rep = std::chrono::nanoseconds::rep;
-      const auto bounded_ns = static_cast<Rep>(
-          keep_alive_ns > static_cast<unsigned long long>(
-                              std::numeric_limits<Rep>::max())
-              ? std::numeric_limits<Rep>::max()
-              : keep_alive_ns);
       const bool ready = cv.wait_for(
-          lk, std::chrono::nanoseconds(bounded_ns),
+          lk, keep_alive,
           [&] { return shutting_down || head != nullptr; });
       --num_idle;
 
@@ -127,7 +137,7 @@ struct BlockingPool::Impl {
     // noexcept path. A retired worker published the flag under `mu` immediately
     // before returning, so after we acquire/release `mu` its handle is joinable.
     for (;;) {
-      std::unique_ptr<ThreadRecord> retired;
+      ThreadRecord* retired = nullptr;
       {
         std::lock_guard<std::mutex> lk(mu);
         std::size_t found = threads.size();
@@ -137,11 +147,12 @@ struct BlockingPool::Impl {
           break;
         }
         if (found == threads.size()) return;
-        retired = std::move(threads[found]);
-        threads[found] = std::move(threads.back());
+        retired = threads[found];
+        threads[found] = threads.back();
         threads.pop_back();
       }
       if (retired->thread.joinable()) retired->thread.join();
+      destroy_record(retired);
     }
   }
 
@@ -170,9 +181,8 @@ struct BlockingPool::Impl {
       // already have >=1 thread, the job simply waits for a busy thread to free up.
       platform::ThreadOpts opts;
       opts.name = "hyle-blocking";
-      std::unique_ptr<ThreadRecord> record(
-          new (std::nothrow) ThreadRecord());
-      if (!record) {
+      void* storage = alloc.allocate(sizeof(ThreadRecord), alignof(ThreadRecord));
+      if (storage == nullptr) {
         if (num_threads == 0) {
           HYLE_FATAL_ASSERT(head == job && tail == job);
           head = tail = nullptr;
@@ -180,18 +190,22 @@ struct BlockingPool::Impl {
         }
         return true;  // an existing busy worker will eventually take the job
       }
+      ThreadRecord* record = new (storage) ThreadRecord();
       record->owner = this;
-      auto r = platform::Thread::spawn(&Impl::thread_main, record.get(), opts);
+      auto r = platform::Thread::spawn(&Impl::thread_main, record, opts);
       if (r.has_value()) {
         record->thread = std::move(*r);
-        threads.push_back(std::move(record));
+        threads.push_back(record);
         ++num_threads;
       } else if (num_threads == 0) {
         // No worker exists to drain the just-enqueued task. Retract it and let
         // submit's caller publish a normal Cancelled/resource failure.
         HYLE_FATAL_ASSERT(head == job && tail == job);
         head = tail = nullptr;
+        destroy_record(record);
         return false;
+      } else {
+        destroy_record(record);
       }
       return true;
     }
@@ -205,7 +219,8 @@ struct BlockingPool::Impl {
     // a programming error; request shutdown from its owner/scheduler instead.
     HYLE_FATAL_ASSERT(tls_blocking_pool != this);
 
-    std::vector<std::unique_ptr<ThreadRecord>> to_join;
+    std::vector<ThreadRecord*, mem::StdAllocator<ThreadRecord*>> to_join(
+        threads.get_allocator());
     detail::BlockingJob* leftover = nullptr;
     {
       std::unique_lock<std::mutex> lk(mu);
@@ -234,8 +249,9 @@ struct BlockingPool::Impl {
       leftover = next;
     }
     // Join all threads (running jobs finish first; retired threads join instantly).
-    for (auto& record : to_join) {
+    for (ThreadRecord* record : to_join) {
       if (record->thread.joinable()) record->thread.join();
+      destroy_record(record);
     }
     {
       std::lock_guard<std::mutex> lk(mu);
@@ -258,26 +274,81 @@ struct BlockingPool::Impl {
 // ---- BlockingPool public surface --------------------------------------------
 
 BlockingPool::BlockingPool(mem::Allocator alloc, unsigned max_threads,
-                           unsigned long long keep_alive_ns)
-    : impl_(new Impl(alloc, max_threads, keep_alive_ns)) {}
-
-BlockingPool::~BlockingPool() {
-  impl_->shutdown();
-  delete impl_;
+                           time::Duration keep_alive)
+    : impl_(nullptr) {
+  Status status;
+  init_(alloc, max_threads, keep_alive, &status);
+  HYLE_FATAL_ASSERT(status.ok() &&
+                    "blocking pool construction failed; use the Status overload "
+                    "when resource failure is recoverable");
 }
 
-void BlockingPool::shutdown() { impl_->shutdown(); }
+BlockingPool::BlockingPool(mem::Allocator alloc, unsigned max_threads,
+                           time::Duration keep_alive,
+                           Status* status) noexcept {
+  HYLE_FATAL_ASSERT(status != nullptr);
+  init_(alloc, max_threads, keep_alive, status);
+}
+
+void BlockingPool::init_(mem::Allocator alloc, unsigned max_threads,
+                         time::Duration keep_alive, Status* status) noexcept {
+  *status = Status{};
+  if (!alloc.valid()) {
+    *status = Status::InvalidArgument(
+        "blocking pool requires a complete allocator");
+    return;
+  }
+  if (max_threads == 0) {
+    *status = Status::InvalidArgument(
+        "blocking pool max_threads must be at least one");
+    return;
+  }
+  if (keep_alive < time::Duration::zero()) {
+    *status = Status::InvalidArgument(
+        "blocking pool keep_alive must be non-negative");
+    return;
+  }
+  void* storage = alloc.allocate(sizeof(Impl), alignof(Impl));
+  if (storage == nullptr) {
+    *status = Status::ResourceExhausted(
+        "blocking pool implementation allocation failed");
+    return;
+  }
+  try {
+    impl_ = new (storage) Impl(alloc, max_threads, keep_alive);
+  } catch (const std::bad_alloc&) {
+    alloc.deallocate(storage, sizeof(Impl), alignof(Impl));
+    *status = Status::ResourceExhausted(
+        "blocking pool bookkeeping allocation failed");
+  } catch (const std::length_error&) {
+    alloc.deallocate(storage, sizeof(Impl), alignof(Impl));
+    *status = Status::InvalidArgument(
+        "blocking pool max_threads exceeds platform limits");
+  }
+}
+
+BlockingPool::~BlockingPool() {
+  if (impl_ == nullptr) return;
+  impl_->shutdown();
+  const mem::Allocator allocator = impl_->alloc;
+  impl_->~Impl();
+  allocator.deallocate(impl_, sizeof(Impl), alignof(Impl));
+}
+
+void BlockingPool::shutdown() {
+  if (impl_ != nullptr) impl_->shutdown();
+}
 
 unsigned BlockingPool::live_threads() const noexcept {
-  return impl_->live_threads();
+  return impl_ != nullptr ? impl_->live_threads() : 0;
 }
 
 std::size_t BlockingPool::retained_thread_handles() const noexcept {
-  return impl_->retained_thread_handles();
+  return impl_ != nullptr ? impl_->retained_thread_handles() : 0;
 }
 
 bool BlockingPool::submit(detail::BlockingJob* job) noexcept {
-  return impl_->submit(job);
+  return impl_ != nullptr && impl_->submit(job);
 }
 
 }  // namespace hyle::sched

@@ -152,7 +152,7 @@ inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
   s->timer.set_fire_callback(
       &timed_on_fire);  // route timer fire through the arbiter
   s->timer.set_data(s);  // publish complete callback context before the live arm
-  sched::arm_timeout(&s->timer, deadline_ns);
+  sched::arm_timeout(&s->timer, time::monotonic_time_point(deadline_ns));
   return s;
 }
 
