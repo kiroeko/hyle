@@ -24,6 +24,7 @@
 | Folly | `23ebefdf96c116700d3e134f04d95a2b60a509de` | 成熟基础库 peer |
 | oneTBB | `a8216b95202f3c55f9749870f4f8cfa4df0b32e3` | 成熟并行/基础库 peer |
 | Boost | `78505eab9b203e3e26e83893d0685f160133fa0f` | 成熟 C++ 组件 peer |
+| Abseil | `2c004366e983c5be8334ac1ea3d4420e8fbcbea7` | Core/Error 等基础能力 strong peer |
 
 其他域可增加至多两个直接 strong peers，但必须锁定完整身份并写明发现职责。参考更新后先更新身份和
 差异，不把“最新版”当功能准入理由。
@@ -79,6 +80,50 @@ prefetch,macros}.h`、Folly `folly/{CPortability,lang/SafeAssert,lang/Hint}.h` �
 
 这表示 Core 产品域的阶段 A 第一遍已经完成，但不表示 Core 模块需要立刻重开，也不表示上述能力最终
 都属于一个 Core target。只有 13 域完成并做跨域反查以后才产生 `PRODUCT_TRIGGER` 和 owner。
+
+#### A2. Error 产品域（第一遍完成，尚未跨域冻结）
+
+本节重新从真实失败旅程展开能力，不继承旧 `error-v4` 的“已关闭所以功能完整”结论，也不把 llama.cpp
+面向 C 的 bool、null、整数返回值原样复制成 HYLE C++ API。直接推理证据来自锁定 ggml 的
+`ggml_status`、graph/backend 返回、fatal/compute-abort callback，llama.cpp 的模型/backend 加载失败与
+异常边界，以及 HYLE 当前 Platform/Mem/Obs/Sched/IO 消费。strong peers 限于本轮锁定的 Abseil
+`Status/StatusOr/StatusBuilder` 和 Folly `Expected/result/exception_wrapper`；C++23 `std::expected` 是
+语言合同，不计作第三个 peer。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `ERROR-A-01` | 叶子失败跨平台分类，上层按稳定语义恢复 | OK + 完整 canonical code 集；名称、predicate、factory；未知外来值 fail closed 为 `Unknown` | 无返回值时返回 `Status`；恢复只比较 typed code，不解析文本 | `COMPLETE`：gRPC/Abseil 17-code taxonomy、name/factory/predicate 已闭环 | ggml 的四态 status 证明最小需求，Abseil 与多 HYLE consumer 证明完整 taxonomy；基础 `MUST` |
+| `ERROR-A-02` | operational failure 作为便宜值跨函数、模块和线程传递 | OK/code-only、message/detail、copy/move/swap/equality/destroy；共享不可变；OOM 仍保留 code；同对象并发写不承诺 | 小型 `noexcept` value；成功和 code-only 不分配，诊断走冷 backing；不使用 TLS last-error 或隐式日志 | `COMPLETE`：one-word tagged `Status`、immutable refcount backing、OOM degradation | Abseil tagged carrier + HYLE Platform/Mem/Sched handoff；基础与推理控制面 `MUST` |
+| `ERROR-A-03` | 操作成功时还交付 owning value，或只交付成功/失败 | value、move-only value、`void`、error、default construction、observer、monadic composition；error arm 永不含 OK | `Result<T>`/`Result<void>` 与标准 expected surface；失败显式 `unexpected`，不增加第三个 empty 状态 | `COMPLETE`：`std::expected<T, ResultError>` 保持标准 surface 并补非 OK invariant | Abseil/Folly + HYLE 35-file historical adoption；基础 `MUST` |
+| `ERROR-A-04` | registry/backend/map lookup 成功时返回一个保证非空、但不拥有对象的 borrow | mutable/const borrow、temporary rejection、deep-const、lifetime-bound、转换和 monadic propagation；nullable 与 range/text view 分开 | 与 `Result<T>` 一致的 `Result<T&>`-like borrow，或语义同等的具名 non-null borrow；nullable 仍用 pointer，range/text 用 span/view | `PARTIAL`：`reference_wrapper`/pointer/span/view 能表达 ownership，但没有直接 borrow carrier，且 wrapper 改变 observer/monadic 形状 | 当前 Abseil `StatusOr<T&>` 与 Folly `result<T&>` 都完整提供；通用 foundation lookup `GENERAL`，待 Container/Util/Platform 反查真实频度后定 API |
+| `ERROR-A-05` | 中间层只在增加用户可理解语义时给失败加 context | empty/OK no-op、lvalue snapshot、unique rvalue chain、native detail 保真、OOM；正常链总复制 O(final bytes) | 显式 `WithContext`，输出保持 `outer: inner: leaf`；不自动塞函数名/source location/log | `COMPLETE`：扁平渐进 prefix storage；共享历史的 lvalue 分支成本已显式 | llama/ggml 的分层加载诊断 + Abseil builder practice；基础 `MUST` |
+| `ERROR-A-06` | 失败文本需要包含路径、尺寸、设备号等运行时值 | UTF-8、嵌入 NUL、格式失败/OOM、临时对象 lifetime；文本 convenience 不绑定 logging/source policy | 普通 C++ 可先用标准/项目 formatter 产生 owning text；若 noexcept 边界反复需要，则是独立的 bounded/format-to-Status 冷 helper，而非有副作用 StatusBuilder | `PARTIAL/ROUTED`：Status 接受任意 `string_view`，但没有统一 no-throw 动态格式化路线 | llama/ggml formatted diagnostics + Abseil StatusBuilder；`GENERAL`，带入 Util/Obs/Core 反查，不能仅为 API 数量把 logger 塞入 Error |
+| `ERROR-A-07` | OS/backend 失败同时保留 portable recovery code 与一个机器可读原生值 | POSIX errno、Win32、WinSock、HRESULT、Vulkan、CUDA 及后续 backend；立即捕获；跨 host 可命名；不能保存有 DSO lifetime 的 category pointer | `StatusCode` + 可选稳定 `{domain-id, int64 code}`；热 completion 可先保留紧凑 native outcome，在 ownership/API 冷边界转换 | `PARTIAL`：errno/Win32/HRESULT factory 和若干固定 backend domain 完整；缺 WinSock，固定 enum 对新增 backend 的登记策略尚未统一 | HYLE IOCP 已真实调用 `WSAGetLastError`，Compute 有 Vulkan/CUDA；推理多 backend `MUST`，旧“WinSock 无消费者”前提已失效 |
+| `ERROR-A-08` | `std::error_code`、filesystem、第三方 SDK 或自定义 category 在拥有它的边界进入共享失败流 | generic/system category、owner custom category、operation-specific override、未知 category；避免伪 round-trip | generic/POSIX 与 Windows system 走稳定 adapter；custom category 由 owner 映 canonical code，只有已登记稳定 domain 才保留 numeric detail | `PARTIAL/ROUTED`：规则已文档化但无公共 cold adapter；ggml filesystem 与 HYLE 各模块仍各自转换 | ggml backend registry/OpenCL cache 使用 `std::error_code`，Abseil errno 与 Folly typed failure；基础集成 `GENERAL`，待跨域去重 |
+| `ERROR-A-09` | 多层同步函数短路传播失败，成功路径不构造诊断 | Status/`Result<void>`、`Result<T>`、lvalue copy/rvalue move、表达式一次求值、外层 Status/Result、标准 monadic use | 两个窄传播宏 + 标准 expected operations；context/logging 仍显式；宏陷阱可见 | `COMPLETE`：`RETURN_IF_ERROR`、`ASSIGN_OR_RETURN` 与标准 monadic surface | Abseil/Folly propagation + 大量 HYLE consumer；易用性 `MUST` |
+| `ERROR-A-10` | cleanup/批处理需要保留首错、显式忽略，或有界收集全部错误 | first error、discard、all-error ordering/cap/OOM/parallel merge；聚合 storage 由业务 owner 定义 | `Update`/`IgnoreError`；全部错误先使用 caller-owned collection，只有两个消费者共享同一 bounded contract 才提公共 helper | `COMPLETE + ROUTED`：first/discard 完整，all-error 可组合 | foundation teardown/parallel journey；`MUST`，但不准入无界 `MultiError` |
+| `ERROR-A-11` | 最终边界把失败交给人读日志、测试或 UI | code/message/native 分片、caller-buffer size query、truncation、embedded NUL/UTF-8、可选 owning string | allocation-free `ToString` + opt-in owning `to_string`；structured observation 交给 Obs | `COMPLETE`：caller buffer 与 owning convenience 均有 | Abseil formatting + HYLE user/Obs boundary；基础 `MUST` |
+| `ERROR-A-12` | async 工作跨线程完成、取消或超时，上层区分失败与正常 pending/stopped | transport/lifetime、cancel/deadline canonical outcome、pending/empty/closed/stopped protocol states | 已完成 operational failure 可用 Status；pending/stopped/closed 用 owning Sched/IO 状态机或 enum，不能给每次 poll 分配 Status | `COMPLETE + ROUTED`：Status 可跨线程且有 Cancelled/DeadlineExceeded；协议状态不由 Error 承载 | ggml compute-abort + Folly `stopped_result` + HYLE Sched/IO；能力 `MUST`，状态机 owner 留到因子阶段 |
+| `ERROR-A-13` | parser/backend 需要多个 typed fields、cause 或诊断 provenance，边界仍需共享恢复语义 | schema、typed matching、cause traversal、serialization、source/backtrace、OOM/隐私/DSO lifetime | owner 可用 `std::expected<T, E>` 保真 typed error，再显式降为 canonical/native；trace/log/crash 信息走 Obs/Core 对应机制 | `ROUTED`：单 native detail + caller typed error route 能表达当前恢复；通用 Status 无 payload/cause | Abseil payload 与 Folly rich error 用于发现；没有真实共享 schema，不准入常驻 payload map，但必须在 Obs/Compute/IO 域反查是否确实可达 |
+| `ERROR-A-14` | 第三方 callback、标准容器或 backend 在明确边界抛异常，HYLE noexcept/value API 必须给出确定结果 | `bad_alloc`、`system_error`、known exception、unknown exception；只在 owning boundary 捕获；不跨模块传播 RTTI/exception ABI | owner adapter 映成精确 Status 或保留 typed exception；只有重复且完全同语义的 mapping 才抽冷 helper | `PARTIAL`：Mem/Sched/Obs/Compute 等已有多处手写 catch/mapping，尚未证明一致或穷尽 | llama.cpp 大量 throw/catch + Folly exception wrapper；边界处理 `MUST`，但“所有异常进入 Status”明确拒绝 |
+| `ERROR-A-15` | 不可恢复 invariant/fatal 与可恢复 operational failure 不混淆 | fatal context/observer 后必终止；Status 不恢复内存损坏或合同违反 | Core fatal route；Error 只处理可恢复值 | `ROUTED` 到 `CORE-A-01/02` | ggml assert/abort；基础 `MUST`，不复制 fatal handler 到 Error |
+| `ERROR-A-16` | foreign runtime/RPC 需要稳定 wire/handle/error schema | create/call/error/cancel/destroy/unload、schema/version、serialization 与 ownership | 只有具名 consumer 才设计窄 runtime type erasure；不是机械导出全部 C++ Status/Result | `OUT_OF_SCOPE`（当前产品） | 当前 source/static/shared C++ 是唯一交付；无 named FFI/RPC consumer，明确拒绝伪 C ABI |
+
+当前 public-surface 反向追踪覆盖 `<hyle/error/{status,result,format}.h>`、compiled `hyle_error` seam、
+现行 architecture/user guide，以及 Platform/Mem/Obs/Sched/IO/Compute 的生产调用。第一遍得到四个跨域候选
+触发，而不是 Error 施工票：
+
+1. WinSock 已有真实 IO consumer，旧 negative-space 需要在 IO 域清点后确定 domain/factory 与热 completion
+   转换边界；
+2. 直接 borrowed result 已由两个当前 strong peer 提供，需由 Container/Util/Platform 的非空 lookup
+   journey 判断 `reference_wrapper` 路线是否仍然自然；
+3. 动态格式化、rich typed error 和 exception adapter 的最终 owner 只能与 Core/Util/Obs/IO/Compute 一起
+   去重，不能把 Abseil StatusBuilder 的 logging/payload 副作用整体复制进来；
+4. 固定 native-domain enum 的新增登记和 binary/version 成本必须在 Build/package 横向合同中裁决，不能让
+   每个 backend 自造第二套错误系统。
+
+这表示 Error 产品域的阶段 A 第一遍已经完成，但不重开当前 `CLOSED` Error，也不授权实现上述候选。
+最终 `MUST`、owner、组件形状和依赖只能在 13 域完成后的跨域账本中冻结。
 
 ### B. 跨域归属与质因数分解
 
