@@ -688,7 +688,7 @@
     },
     {
       "module": "util",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "UTIL-V3-CONTAINER-PUBLIC-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v3-rebuild.md",
       "round_id": "util-runtime-v3",
@@ -710,7 +710,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v3 REOPENED：Container 已替换 Registry 的公开字符串/索引合同；当前真实推理 registry-by-name 旅程还暴露 lookup-only API 待裁决，尚未进入产品施工。"
+      "summary": "util-runtime-v3 SCOPED：当前 Registry/demangle、真实推理发现旅程、P0 资源合同、三平台/三交付门和有限预算已冻结；产品实现等待 AUDITED ledger。"
     },
     {
       "module": "sched",
