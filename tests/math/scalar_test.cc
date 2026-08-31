@@ -28,11 +28,12 @@ template <class T, class Wide>
 void expect_small_exact(T lhs, T rhs) {
   const Wide wide_lhs = static_cast<Wide>(lhs);
   const Wide wide_rhs = static_cast<Wide>(rhs);
-  const Wide minimum = static_cast<Wide>((std::numeric_limits<T>::min)());
-  const Wide maximum = static_cast<Wide>((std::numeric_limits<T>::max)());
 
-  const auto check = [minimum, maximum](const std::optional<T>& actual,
-                                        Wide expected) {
+  const auto check = [](const std::optional<T>& actual, Wide expected) {
+    constexpr Wide minimum =
+        static_cast<Wide>((std::numeric_limits<T>::min)());
+    constexpr Wide maximum =
+        static_cast<Wide>((std::numeric_limits<T>::max)());
     const bool representable = expected >= minimum && expected <= maximum;
     ASSERT_EQ(actual.has_value(), representable);
     if (representable) {
