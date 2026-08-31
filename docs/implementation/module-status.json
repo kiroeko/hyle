@@ -306,7 +306,7 @@
     },
     {
       "module": "math",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "MATH-REPLAY-CHECKED-ARITH-01",
       "reopen_evidence": "docs/implementation/tasks/math/math-capability-replay-v2.md",
       "round_id": "math-v2-checked-arithmetic",
@@ -328,7 +328,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v2 SCOPED：checked add/sub/mul 的真实推理需求、边界、P0 资源合同、三平台/三交付门与有限预算已冻结；实现等待 AUDITED ledger。"
+      "summary": "math-v2 AUDITED：try_add/try_subtract/try_multiply 的 optional C++ 形状、无 UB/P0 实现合同与四项有限 FIX 已冻结；允许进入单一产品批次。"
     },
     {
       "module": "time",

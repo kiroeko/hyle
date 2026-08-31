@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前状态：`SCOPED`。** `math-v1` 仍是上一轮有效历史候选；当前机械状态只看
+> **当前状态：`AUDITED`。** `math-v1` 仍是上一轮有效历史候选；当前机械状态只看
 > [`module-status.json`](../../module-status.json)。本轮由
 > [`math capability replay`](math-capability-replay-v2.md) 的真实 `PRODUCT_TRIGGER` 启动。在完成
 > `AUDITED` 并冻结有限 `FIX` 集前不得修改产品实现。
@@ -78,3 +78,97 @@
 `REOPENED -> SCOPED` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-scoped.json`，SHA-256
 `7418E3318981398F83CAD28BB34249BF108BA2F3E869F13E0F4D318073970AE0`。
+
+## Capability-family map（`AUDITED`）
+
+| Family | admitted journeys / source | required semantic variants and boundary | current route | coverage | action / negative space |
+|---|---|---|---|---|---|
+| checked integral add | tensor offset、range end、allocation header+payload；CCCL mdspan、Folly、仓内多个 owner | same-type non-bool signed/unsigned；成功为数学和，overflow 无 UB；`constexpr noexcept` | owner-local guard；Math 无入口 | `MISSING` | `FIX` as `try_add`；不加 variadic fold |
+| checked integral subtract | range length、offset delta；CCCL；与完整基本算术族对称 | 同上；同时覆盖 signed positive/negative overflow 与 unsigned underflow | owner-local comparison；Math 无入口 | `MISSING` | `FIX` as `try_subtract`；不定义 saturating/clamped 结果 |
+| checked integral multiply | element-count/stride/byte size；CCCL mdspan、Folly、ggml | 同上；zero、min×-1、符号四象限和 64-bit 边界 | owner-local `max / rhs` 或 backend helper；Math 无入口 | `MISSING` | `FIX` as `try_multiply`；不加 arbitrary arity/mul-add |
+| non-negative ceil division / round-up | math-v1 shape/block journey | same-type non-bool、invalid/unrepresentable 可发现 | 现有四个入口 | `COMPLETE` | `KEEP`，产品实现不改 |
+| standard bit/scalar math and safe range query | C++23 | 标准合同 | standard library | `ROUTED` | `KEEP` route；`bit_ceil/in_range` 等不重包 |
+| saturation / mixed-result checked arithmetic | CCCL 有扩展 surface，但当前无具名 HYLE journey | result-type conversion、clamp policy、heterogeneous promotion 需要独立合同 | 无 | `OUT_OF_SCOPE` | `DEFER` only on real trigger；不能由 peer API 数量扩面 |
+| floating / SIMD / model operators | domain-specific | accuracy、dtype、backend、dispatch | standard/domain/`hyle::simd`/consumer | `OUT_OF_SCOPE` | 不建立依赖或 umbrella API |
+
+## Public-surface trace 与 API 裁决
+
+| Entry / candidate shape | reverse demand | verdict |
+|---|---|---|
+| `try_ceil_div<T>(T,T)` | `MATH-INT-01`，非负 shape partition | `KEEP`；零改动 |
+| `ceil_div<T>(T,T)` | 可信 invariant convenience | `KEEP`；零改动 |
+| `try_round_up_to_multiple<T>(T,T)` | `MATH-ROUND-01`，可表示 padded extent | `KEEP`；零改动 |
+| `round_up_to_multiple<T>(T,T)` | 可信 invariant convenience | `KEEP`；零改动 |
+| `try_add<T>(T,T) -> optional<T>` | `MATH-CHECKED-01` | `FIX`；untrusted value composition |
+| `try_subtract<T>(T,T) -> optional<T>` | `MATH-CHECKED-01` | `FIX`；名称不缩成含糊的 `sub` |
+| `try_multiply<T>(T,T) -> optional<T>` | `MATH-CHECKED-01` | `FIX`；名称不缩成含糊的 `mul` |
+
+选择 `try_ + optional<T>` 而不是照抄 peer 的 `bool + T*` 或公开 `overflow_result<T>`：它与 math-v1
+现有错误可发现路线一致，没有 out-parameter/null contract，能够直接 `if (!value)` 或链式赋值；优化后
+仍是 value+success flag。CCCL 的 mixed-result struct 是 GPU/heterogeneous surface 的合理形状，但会把
+本轮 promotion 语义扩入公共 API。可信算术不新增 `add/subtract/multiply` fail-fast wrapper：语言 operator
+最自然，也没有失败分支；只有来自模型、文件、网络或不可信尺寸的数据走 `try_`。
+
+三个新函数保持同类型、非 `bool` integral constraint。`char` 等标准 integral 仍按自身 signedness 工作；
+调用者必须先显式选择共同 result type，避免 implicit promotion 或窄化。成功结果精确，失败返回
+`nullopt`，不提供 wrapped/clamped value。
+
+## Capability / gap ledger（冻结）
+
+| ID | kind / exact source | normal shape | owner / failure / resources | coverage | action / severity / verification |
+|---|---|---|---|---|---|
+| `MATH-CHECKED-ADD-01` | `MUST`；CCCL add_overflow + mdspan、Folly checked_add | `try_add(a,b)` | public math header；overflow→`nullopt`；O(1)，零动态资源 | `MISSING` | `FIX / high`；signed/unsigned exhaustive-small + boundary/property + codegen |
+| `MATH-CHECKED-SUB-02` | `MUST`；CCCL sub_overflow；完整基础族 | `try_subtract(a,b)` | 同上，unsigned underflow 也失败 | `MISSING` | `FIX / high`；四个符号方向与 min/max/codegen |
+| `MATH-CHECKED-MUL-03` | `MUST`；CCCL/Folly；ggml shape bytes | `try_multiply(a,b)` | 同上；zero 成功，min×-1 失败；runtime 用 toolchain overflow primitive/高半积，constexpr 用无 UB guard | `MISSING` | `FIX / high`；符号四象限、8..64 bit、UBSan/codegen |
+| `MATH-API-04` | `MUST`；现有 HYLE checked convention | 三个 optional-returning binary helper | caller owns type selection；没有 binary ABI | `MISSING` | `FIX / high`；constraint compile tests、package sample、guide |
+| `MATH-P0-05` | `MUST`；P0 structural contract | source caller observable bool+value | inline/constexpr；一个 arithmetic op + predicate；零 allocation/lock/syscall/indirect | `MISSING` for new family | `FIX / high`；MSVC/GCC/AppleClang optimized object inspection，不计时 |
+| `MATH-DOC-06` | `MUST`；当前 docs 仍称 ceil/round 是唯一族 | trusted operator vs untrusted checked shape | architecture/user/perf owners | `PARTIAL` | `FIX / medium`；选择、组合、类型与 overflow 陷阱 |
+| `MATH-DELIVERY-07` | `MUST`；C++ source/static/shared SDK | select math、include scalar header、link `hyle::math` | header-only INTERFACE；保持 `PUBLIC core` | `PARTIAL` for new journey | `FIX / medium`；sample + isolated/relocated three shapes |
+| `MATH-ADOPT-08` | `GENERAL`；仓内 owner-local guards | 各模块未来按自身变更采用 helper | downstream owner | `OUT_OF_SCOPE` | `DEFER`；本轮不重开 error/platform/container/sched/io/compute |
+
+覆盖状态与施工动作分离：三个新 `MUST` 当前仍是 `MISSING`，只有候选完成有限 FIX 后才能写
+`COMPLETE`。没有 `PARTIAL + KEEP`。
+
+## 实现策略冻结
+
+- add/sub 使用 unsigned modulo arithmetic 与符号位 overflow predicate，成功时 `std::bit_cast` 回原类型；
+  unsigned 分别检查 carry/borrow。这个表达式本身 `constexpr`、无 signed UB，并让支持工具链生成一次
+  add/sub 与条件；
+- multiply 在 GCC/Clang runtime/constexpr 可用路径使用 compiler overflow builtin；MSVC 64-bit runtime
+  在 x64/ARM64 使用高半积 intrinsic，小类型使用无溢出的 wider intermediate；constant evaluation 和
+  未知工具链使用先比较后乘的 portable guard；
+- compiler-specific 内容只在 header `detail`，public signature/semantics 不暴露 compiler；不能新增
+  runtime dispatch、第三方依赖、异常或常态 metadata；
+- 若 MSVC/GCC/AppleClang 任一 optimized probe 出现除法型 runtime multiply fallback、out-of-line helper
+  或重复 arithmetic，允许一次实现纠正；不得因此改变 public API 或建立 timing benchmark。
+
+## 冻结 `FIX` 集
+
+只授权一个产品批次：
+
+1. 在 `scalar.h` 实现 `try_add/try_subtract/try_multiply` 及最小 header-internal overflow lowering；
+2. 扩充 unit/constexpr/property/UBSan 与 test-only codegen probe，覆盖 signed/unsigned 8/16/32/64 bit；
+3. 扩充 math package sample，验证正常结果与 overflow 失败；
+4. 更新 math architecture、user guide/user index 与 P0 evidence，写清模块边界、接口选择、资源和陷阱。
+
+禁止修改现有 ceil/round 合同、Core、其他产品模块、中央 component graph、公共性能仪器或构建开关。
+任何额外 capability 必须退回 `SCOPED/AUDITED`，不得附加到本批次。
+
+## 施工前六问直答
+
+1. **第三方依赖：**产品只依赖 Core 与 C++23 standard library；CCCL/Folly/ggml 是 pinned evidence，
+   不成为 product dependency。GoogleTest 仅测试。
+2. **推理底座能力：**ceil/round 已完整；checked shape/stride/byte arithmetic 是唯一已证明缺口，冻结
+   三个 FIX 后本轮范围完整。linear algebra/SIMD/model op 有明确 owner，不冒充 Math 缺口。
+3. **性能：**现有四函数的 v1 P0 结论保持；新函数目标是最佳 O(1)/零资源/code shape，当前尚未验证，
+   所以模块仍为 `PLANNED`，不提前写 SOTA/PASS。
+4. **C ABI / FFI：**仓库中没有 Math 产品 C symbol、旧伪 C ABI 或导出；header-only template 不适合作
+   无消费者 FFI。test-only `extern "C"` 仅稳定反汇编符号名，不是交付 API。
+5. **构建/交付：**中央 `math -> PUBLIC core` 与 target/link 一致，INTERFACE component 形状正确；新 API
+   的 source/static/shared installed journey 尚待候选验证，不伪造 binary artifact。
+6. **C++ 易用性/文档：**现有 ceil/round 自然；新 optional API 已冻结为同一风格。architecture/user/perf
+   仍过时，属于有限 FIX，候选前必须校准。
+
+`SCOPED -> AUDITED` 的前态 registry 快照位于
+`C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-audited.json`，SHA-256
+`9A7BD73D6F022BE277A089366ECFF5AA254F203F82F7EE6A91703197F7625593`。
