@@ -306,7 +306,7 @@
     },
     {
       "module": "math",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MATH-REPLAY-CHECKED-ARITH-01",
       "reopen_evidence": "docs/implementation/tasks/math/math-capability-replay-v2.md",
       "round_id": "math-v2-checked-arithmetic",
@@ -314,6 +314,8 @@
       "scope": "Same-type non-boolean integral checked add, subtract and multiply, including the public C++ shape, implementation, tests, package journey and adjacent documentation.",
       "non_goals": "Saturating or mixed-type arithmetic, arbitrary precision, signed rounding, floating point, SIMD, model operators, downstream consumer migration, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
       "baseline_commit": "57ea0ba90c8472c938c4e3c6360ae4e0a6c69250",
+      "candidate_commit": "1a9e680cb5a25ccc0c20786f4635625eef2d7ab0",
+      "candidate_tree": "010323120bc6eb07b5a07e7d3e6de1725968d314",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -328,7 +330,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v2 AUDITED：try_add/try_subtract/try_multiply 的 optional C++ 形状、无 UB/P0 实现合同与四项有限 FIX 已冻结；允许进入单一产品批次。"
+      "summary": "math-v2 CANDIDATE：checked arithmetic 产品已冻结为 1a9e680c/01032312；Windows correctness、三交付与 P0 code shape 通过，等待 WSL/macOS 和最终门。"
     },
     {
       "module": "time",

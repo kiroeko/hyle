@@ -19,6 +19,9 @@
 
 ## 当前结果
 
-产品候选尚未冻结，三工具链 optimized object 尚未完成检查，因此 verdict 为 `PLANNED`。结果只能在
-绑定 product commit/tree 后写入；未运行项不得改写为 `PASS`。math-v1 的 ceil/round 结构结论继续由
+产品候选已冻结为 `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
+`010323120bc6eb07b5a07e7d3e6de1725968d314`。W1-WIN 的 MSVC 19.50 optimized object 已确认 add/sub
+各一次目标运算，signed/unsigned multiply 各一次 `imul/mul`，六个 probe 均无 call、divide 或
+indirect dispatch；W1-WSL 与 M1-MAC 尚未完成，因此聚合 verdict 仍为 `PLANNED`。未运行项不得改写为
+`PASS`。math-v1 的 ceil/round 结构结论继续由
 [`benchmarks-math`](benchmarks-math.md)承担，但不能替代本轮新增函数的证据。

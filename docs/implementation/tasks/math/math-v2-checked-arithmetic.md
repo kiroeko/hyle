@@ -2,7 +2,9 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前状态：`AUDITED`。** `math-v1` 仍是上一轮有效历史候选；当前机械状态只看
+> **当前状态：`CANDIDATE`。** 当前产品候选为
+> `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
+> `010323120bc6eb07b5a07e7d3e6de1725968d314`；当前机械状态只看
 > [`module-status.json`](../../module-status.json)。本轮由
 > [`math capability replay`](math-capability-replay-v2.md) 的真实 `PRODUCT_TRIGGER` 启动。在完成
 > `AUDITED` 并冻结有限 `FIX` 集前不得修改产品实现。
@@ -172,3 +174,29 @@
 `SCOPED -> AUDITED` 的前态 registry 快照位于
 `C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-audited.json`，SHA-256
 `9A7BD73D6F022BE277A089366ECFF5AA254F203F82F7EE6A91703197F7625593`。
+
+## Candidate
+
+- product commit / tree：`1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` /
+  `010323120bc6eb07b5a07e7d3e6de1725968d314`；
+- public contract：新增同类型非 `bool` integral 的 `try_add`、`try_subtract`、`try_multiply`，均为
+  `constexpr noexcept -> optional<T>`；成功为精确值，overflow/underflow 为 `nullopt`，无 wrapped/
+  saturated result。现有 ceil/round 四入口零改动；
+- implementation：add/sub 在 unsigned bit domain 判定 carry/sign overflow；GCC/Clang runtime 使用
+  overflow builtin，MSVC x64/ARM64 64-bit multiply 使用 signed/unsigned 高半积，小类型使用 wider
+  intermediate，constant evaluation/unknown toolchain 使用无 UB guard；
+- algorithm/resources：每项 O(1)，零 allocation/lock/syscall/常态 metadata/exception/runtime dispatch；
+  public header 仍只依赖 Core/std，不引入 CCCL/Folly/ggml；
+- tests：8-bit signed/unsigned operand 全空间 oracle，8/16/32/64-bit min/max/zero/sign 边界，constexpr、
+  constraint、public-header；test-only probe 新增六个 observable 64-bit entry；package sample 覆盖组合与
+  overflow；
+- W1-WIN candidate smoke：MSVC 19.50 Release/Werror，math unit/header 2/2；selected source、relocated
+  shared、relocated static consumer 各 1/1；optimized probe 的 add/sub 各一次目标运算，multiply 各一次
+  `mul/imul`，零 call/divide/indirect dispatch；
+- pending：W1-WSL GCC 14 + UBSan、M1-MAC AppleClang、两平台 code shape、最终 docs/red-team/aggregate
+  gates。未运行项不写 `PASS`。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照位于
+`C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-candidate.json`，SHA-256
+`9A06A2F848BE35DC5D8C5BC3025594FE61E46F29EA0C2FD5ADAF90FEBE19A95E`。候选后公开合同、算法、
+layout 或正常 workload 若变化，必须退回 `AUDITED`；只补验证与事实记录不改变候选 identity。
