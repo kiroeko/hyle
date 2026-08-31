@@ -22,7 +22,7 @@
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 CLOSED：exact overwrite ring、semantic composite hash、flat filtering、真实 StringView 与 const interner 已完成不兼容收束；三平台 correctness/sanitizer/ISA、直接消费者、source/static/shared、文档/红队和 W1-WIN 五项 5% P1 非劣门全部通过。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
-| sched | BLOCKED | P1 | INCONCLUSIVE / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v1-rebuild.md) | sched-v1 BLOCKED：三平台 correctness/sanitizer、三种 C++ 交付与 request/completion P1 行通过；红队发现 structured pair 语义不等价，并证明产品缺少自然的批级 structured route，因此不能签聚合 P1，须由新 RESUME round 重做。 |
+| sched | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v2-batch-structured.md) | sched-v2 SCOPED：恢复普通批级 non-suspending structured work；先冻结与 fire-and-forget、逐任务 typed control、可挂起任务真正不同的语义/成本合同，再实现 batch route 并重签 same-contract P1。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
