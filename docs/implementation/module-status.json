@@ -748,14 +748,12 @@
     },
     {
       "module": "sched",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "sched-v3-root-participation",
       "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
       "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
       "non_goals": "External-caller computation, cross-Scheduler worker borrowing, public partitioner or auto-grain policy, benchmark workload or peer changes, Graph/Compute/IO redesign, whole-scheduler rewrites, semantic weakening, Native FFI/C API, P2 claims and Formal certification.",
       "baseline_commit": "3a2bbca61038f5343729bf2dad66596bffc687b3",
-      "candidate_commit": "38a5ca048b796e5f7e30283fef5b9c0c4f4875d5",
-      "candidate_tree": "cf2fe3c28a606c787875b5c25cce869bcd860b5b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -772,7 +770,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v3 CANDIDATE：38a5ca04/cf2fe3c2 冻结 same-Scheduler root participation 与分散 sibling activation；Windows correctness/header 通过，三平台、三交付、直接消费者与唯一正式 P1 重跑待完成。"
+      "summary": "sched-v3 AUDITED：首个候选 correctness、三平台交付、直接消费者与 P1 均通过，但 ELF/Mach-O symbol scan 发现两个 private SchedulerAccess seam 默认可见；冻结同一 FIX-01 内的 hidden-visibility 修正，产品改动前退回 AUDITED。"
     },
     {
       "module": "io",

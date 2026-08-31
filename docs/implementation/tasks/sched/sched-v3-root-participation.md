@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -134,3 +134,18 @@ known-delta、timer-floor、artifact/provenance validator，因此只允许进�
 
 `AUDITED -> CANDIDATE` 前态快照保存在 canonical checkout 外：
 `C:\hyle-scratch\sched-v2\module-status-before-sched-v3-candidate.json`。
+
+## 首个 candidate 的交付 finding 与退回
+
+首个 candidate 的 Windows/WSL/macOS correctness、sanitizer、source/relocated shared/static、六条直接
+consumer slice 均通过；新合同 `sched-batch-p1-v3` 的 W1-WIN qualification 与 performance gate 也均为
+`PASS`。但是最终 symbol scan 发现：Windows DLL 没有导出 `SchedulerAccess`，ELF 与 Mach-O shared
+library 却因默认 visibility 各导出了
+`detail::SchedulerAccess::is_current_scheduler` 和 `schedule_bulk_sibling`。这不改变运行语义或已测性能，
+但违反冻结的“private seam、无新增公开 symbol”交付合同，因此不能把首个 candidate 提升为 VERIFIED。
+
+本轮按协议从 `CANDIDATE -> AUDITED`，冻结 `FIX-01-VIS`：只给这两个 Sched-private declaration 加
+`HYLE_HIDDEN`，不改变函数体、路由、layout、依赖、公开 header 或 benchmark。新 candidate 必须重跑受
+影响的三平台 build/delivery/symbol、correctness smoke、直接 consumer slice 与同一正式 P1；首个 P1
+bundle 只作诊断事实，不继承为最终 verdict。退回前 registry 快照位于 canonical checkout 外：
+`C:\hyle-scratch\sched-v3\module-status-before-hidden-symbol-audit.json`。
