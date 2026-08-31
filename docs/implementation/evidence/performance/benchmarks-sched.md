@@ -3,6 +3,44 @@
 > 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
 > `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
 
+## sched-v2 最终 candidate 工程证据（2026-08-31，`FAIL`）
+
+产品 candidate 为 `22ec2382589656d1e45ff5a0665e384aba97dc4c` / tree
+`bc49a194fdbb678cd558937f0068bf5ac8c891c9`；采样时 clean source 为
+`2f33ccd066b9719a77c9caffb4593ab7c3df138f` / tree
+`b34a4097d86288a5eb35b933fe7ccf912381995b`，两者之间只有 task/status/test，没有产品漂移。W1-WIN、
+MSVC 19.50、Release/static、四个固定 physical cores；合同 `sched-batch-p1-v2` SHA-256
+`0B9B228702AECC6F6775AD4C012DCAB2175F91A3182665C59FF3DDAD2627C149`；Marl
+`b8406ab0a82524170ead6dd6c371b579bbc28b3e`；oneTBB
+`a8216b95202f3c55f9749870f4f8cfa4df0b32e3`。normal workload 和首个 candidate 相同：16 批 ×
+128 item × 1024-element tile，四 worker，caller-owned slots、一次 batch completion，比较类
+`SAME_CONTRACT`。
+
+资格、artifact/build/source/peer provenance、A/A、5%/10% known delta 和 timer floor 均 `PASS`；独立
+verifier 为 `QUALIFIED`、provenance `EXACT`、paths verified。n=15 已产生一个确定失败，按预声明规则不为
+已经落在门外的 CI 扩到 n=31。advantage 定义为 HYLE/peer，越大越有利于 HYLE：
+
+| peer / 顺序 | HYLE / peer 中位吞吐（M item/s） | advantage / 99.26% CI | 5% NI |
+|---|---:|---:|---|
+| Marl / HYLE first | 1.844 / 1.846 | 1.015 / [0.959, 1.194] | `PASS` |
+| Marl / peer first | 1.820 / 1.826 | 0.997 / [0.803, 1.020] | `UNRESOLVED` |
+| oneTBB / HYLE first | 1.848 / 1.983 | 0.947 / [0.831, 0.975] | `UNRESOLVED` |
+| oneTBB / peer first | 1.826 / 2.015 | 0.916 / [0.777, 0.937] | **`FAIL`** |
+
+oneTBB peer-first 的 CI 上界 `0.937` 仍低于 5% NI 边界 `0.95`，所以 oneTBB aggregate 和本轮 P1
+engineering gate 都是 `FAIL`；不能把它写成顺序噪声、统计平局或 SOTA。红队复核双方都是四个固定
+provider workers，外部线程不计算；代表日志双方均为 `active_workers=4`、`worker_callbacks=2048`、
+相同 checksum，setup/root admission 同样排除。oneTBB root helping 只是在同四 worker 内的 provider
+实现机制，不增加第五个参与者。因此 comparison class 保持有效，blocker 为
+`SCHED-V2-PERF-ONETBB-01`，owner 是 Sched execution/partitioning，而不是仪器。
+
+原始 bundle：`C:\hyle-scratch\sched-v2\p1-evidence-final-fix07`；manifest SHA-256
+`63D2230E6F21352D372160F0673CCF277DC26B0E839AAC4732806BE3CD58BF14`，summary
+`6116AEB54FB4B6A534460501310844B6991B67C65A4915CAC8038D532F18DDAE`，controls
+`A017E518B1BA8AB083287B414813FD91BD68D25521EA9B9EE769240C8E0C51EE`，host probe
+`AD178953299343C0D61B7A7A9D191AF8BED61C6B2DF88A6D386B5BB3044BE86B`。本轮已经消费冻结卡允许的唯一
+机制修正和正式重跑；后续恢复必须创建新 round/contract/candidate，不能改写本 bundle。
+
 ## sched-v2 首个 candidate 工程证据（2026-08-31，`INCONCLUSIVE`）
 
 本段是当前活动轮的历史输入，不是 terminal certificate。产品 candidate 为

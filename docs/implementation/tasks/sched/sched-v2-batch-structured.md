@@ -1,13 +1,13 @@
 # sched-v2 批级 structured work 恢复轮
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本轮只恢复 `sched-v1` 红队证明缺失的批级 non-suspending structured route，并用新版 comparison-class
 > 规则重签受影响性能能力。旧 [`sched-v1`](sched-v1-rebuild.md) 永久保持 `HISTORICAL/BLOCKED`；其
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`CANDIDATE`）
+## Closure card（terminal `BLOCKED`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -195,7 +195,7 @@ error。空 range 为成功；反向 range、零 grain、空 raw callback 或无
 迁移、caller-participating SPMD、公开自动 grain/partitioner 与
 P2 推理端到端均不因本审计进入施工。
 
-## Owner 六问直答（`CANDIDATE`）
+## Owner 六问直答（terminal `BLOCKED`）
 
 1. **第三方：**Sched 产品直接使用 vendored Boost.Context fcontext 汇编；经既有公开 component closure
    间接使用 Core/Error/Time/Platform/Mem/Util-core，Container 是 private queue 支撑。Marl/oneTBB 只作
@@ -205,22 +205,21 @@ P2 推理端到端均不因本审计进入施工。
    quiescence、partial admission 与 worker-stack progress fallback。动态异构 addition 由
    `schedule + WaitGroup` 路由，逐项 rich 与可挂起任务各有独立入口；Graph 的 adaptive algorithms 明确
    归 Graph。当前审计没有仍属 Sched 的能力缺口。
-3. **性能：**本轮为 P1。首个候选已证明零 per-item allocation/status/cancel/handle、O(worker) queue
-   entries 与 O(1) terminal wake；qualified W1-WIN bundle 的资格、A/A、5%/10% known delta、timer floor、
-   artifact/build/provenance 全部通过。对 Marl 的两个顺序中位 advantage 为 `1.022/0.988`，第二个顺序
-   的 NI 置信区间跨过 0.95；对 oneTBB 为 `0.919/0.907`，两顺序均跨过 0.95，因此聚合性能为
-   `INCONCLUSIVE`。唯一 codegen 诊断确认热循环逐 grain 执行 `lock cmpxchg` 且竞争失败回跳；`FIX-06`
-   只修该成本结构，随后使用原合同完成唯一重跑，当前不声明 SOTA 或非劣。
+3. **性能：**本轮为 P1。最终 candidate 保持零 per-item allocation/status/cancel/handle、O(worker) queue
+   entries 与 O(1) terminal wake；正式 W1-WIN bundle 的资格、A/A、5%/10% known delta、timer floor、
+   artifact/build/provenance 全部通过。对 Marl 的两个顺序中位 advantage 为 `1.015/0.997`，一个 NI
+   `PASS`、一个 `UNRESOLVED`；对 oneTBB 为 `0.947/0.916`，peer-first 的 99.26% CI
+   `[0.777, 0.937]` 整体低于 0.95，故 oneTBB 聚合 NI 为 `FAIL`，工程性能为 `FAIL`。冻结预算只允许的
+   codegen 诊断、一个产品修正和一个正式重跑均已消费；本轮必须停止，不声明 SOTA 或非劣。
 4. **旧 C ABI / Native FFI：**全局策略 `N/A`；当前 Sched 公开树没有 C schema/header/bridge/专用 option。
    fcontext `extern "C"` 是私有汇编边界。新能力只提供 C++ header/decorated symbol，不制造伪 C ABI。
-5. **构建与导入：**首个 candidate 已在 Windows/WSL/macOS 证明 source embedding、relocated static 与
-   relocated shared selected-component consumer；`bulk.h/bulk.cc` 安装和导入正确。`FIX-06` 只改同一 TU
-   的私有算法，但新 candidate 仍须复跑受影响 producer/consumer 与 Windows/ELF/Mach-O symbol/import，
-   不能自动继承旧二进制。
+5. **构建与导入：**最终 candidate 已在 Windows/WSL/macOS 重新证明 source embedding、relocated static
+   与 relocated shared selected-component consumer；`bulk.h/bulk.cc` 安装和导入正确。三平台还各自
+   构建运行 IO/Compute/Graph 六个直接消费 slice；Windows/ELF/Mach-O 都导出当前 C++ `bulk_execute`。
 6. **C++ API 与文档：**四档选择表、`noexcept` lambda/Status 例子、caller-owned lifetime、grain、并发写、
    worker-stack serial fallback、取消/失败非事务性等陷阱已经进入 architecture/user docs 并通过用户头编译。
    `FIX-06` 进一步明确 grain 是用户 callback/停止粒度，内部 reservation 不是调参要求或公开 partitioner；
-   当前 public shape 自然，terminal 仍须重跑 installed consumer 与 docs/symbol drift check。
+   当前 public shape 自然；三平台 installed consumer、docs checker 和 symbol/旧 FFI 清洁度均通过。
 
 ## 首个 Candidate（本轮历史输入，已因 `FIX-06` 退阶）
 
@@ -302,24 +301,54 @@ P2 推理端到端均不因本审计进入施工。
 
 | gate | current candidate result | terminal requirement |
 |---|---|---|
-| new bulk semantics/resource tests | `PASS`（9；allocation window 100 轮） | macOS candidate 上重复 |
-| full Sched unit suite | `PASS`（W1-WIN/W1-WSL 各 170） | macOS 适用 suite |
-| public headers | `PASS`（W1-WIN/W1-WSL 各 10） | macOS + installed consumer |
-| WSL/macOS correctness/sanitizer | `PARTIAL`（WSL Release/ASan/UBSan/TSan 全 PASS，原 lifetime 复现 20 轮 PASS；macOS 尚未运行） | macOS AppleClang/AArch64 Release |
-| source/static/shared delivery | `BLOCKED`（新 candidate 尚未运行） | 三平台受影响 selected-component consumer |
-| same-contract P1 | `BLOCKED`（新 candidate 尚未运行；首个 candidate 的 `INCONCLUSIVE` 只作历史输入） | 原合同唯一一次 W1-WIN 重跑 |
-| docs/usability/FFI cleanliness | `BLOCKED`（candidate docs/header compile 已过；installed/symbol drift 尚未重跑） | checks + consumer compile + symbol scan |
-| red team | `BLOCKED`（尚未运行） | candidate 验证后独立攻击 |
+| new bulk semantics/resource tests | `PASS`（三平台；Windows/macOS allocation window 各 100 轮，WSL Release 同合同稳定） | 完成 |
+| full Sched unit suite | `PASS`（W1-WIN、W1-WSL、M1-MAC 各 170） | 完成 |
+| public headers | `PASS`（三平台各 10；installed consumer 同时通过） | 完成 |
+| correctness/sanitizer | `PASS`（WSL Release/ASan/UBSan/TSan；原 lifetime 复现 20 轮；macOS AppleClang/AArch64 Release） | 完成 |
+| source/static/shared delivery | `PASS`（三平台同一 selected-component smoke；source + relocated shared/static） | 完成 |
+| direct consumers | `PASS`（三平台各 IO×3、Compute×1、Graph×2） | 只签 Sched compatibility，不签下游模块 |
+| same-contract P1 | `FAIL`（资格/verifier PASS；oneTBB peer-first advantage `0.916`、99.26% CI `[0.777,0.937]`） | `SCHED-V2-PERF-ONETBB-01` terminal blocker |
+| docs/usability/FFI cleanliness | `PASS`（checks、consumer compile、三平台 symbol scan；无公开 C/FFI surface） | 完成 |
+| red team | `PASS`（comparison class 有效；接受具名 performance blocker） | 完成 |
 
 ## 独立红队
 
-等待当前 candidate 全部验证后执行，先攻击 comparison class、semantic-equivalence matrix、
-reservation 对 first-error/cancel latency 的影响，以及是否出现未声明的 public grain policy。
+| 攻击 | 风险 | 裁决 | 证据 |
+|---|---|---|---|
+| oneTBB 是否多出第五个计算线程 | 若是则 comparison 无效 | `DISPROVED` | 外部线程只 enqueue/wait；arena ceiling=4，双方 exact CPU `[0,2,4,6]`、`active_workers=4` |
+| 两侧工作/结果/生命周期是否不同 | 鸡鸭对比不能形成产品门 | `DISPROVED` | 双方 16×128×1024、2048 callbacks、同 checksum、caller-owned slots、逐 batch quiescence；root admission/setup 同样排除 |
+| oneTBB root helping vs HYLE Fiber suspend | 可能是 caller-participation 语义差 | `ACCEPTED AS PROVIDER MECHANISM` | helping 只发生在同四个 provider workers 内；外部 caller 均不计算，公开 consumer 合同相同 |
+| reservation 是否改变 public grain、首错或取消语义 | benchmark 优化可能扭曲 API | `DISPROVED` | callback 边界/计数 tests、first-error/cancel/stress 与三平台 sanitizer；每个 public grain 前仍检查 stop |
+| 最终 evidence 是否测到当前产品 | test/docs 提交可能漂移 product | `DISPROVED` | manifest source `2f33ccd0/b34a4097` clean；`22ec2382..2f33ccd0` 只有 task/status/test，产品 diff 为空 |
+| provenance narrative 仍内嵌首个 candidate hash | metadata 可能误导 future replay | `ACCEPTED LIMITATION` | runtime-bound contract、artifact/build validator 和 manifest 绑定当前产品；future resume 必须生成新 provenance/contract，不改写本 bundle |
+
+红队结论：`SAME_CONTRACT` 有效，仪器 controls 与 verifier 均有效，因此 oneTBB material non-inferiority
+`FAIL` 不能降为 benchmark 噪声、语义不等价或工具 blocker。
 
 ## Closure decision
 
-当前机械状态：`CANDIDATE`。`FIX-01..07` 已冻结为 `22ec2382/bc49a194`，Windows 与 WSL correctness、
-header closure 和四档 sanitizer 已通过。下一步只复跑 macOS、三平台 source/static/shared selected-component、
-直接消费者/符号/文档清洁度、原 same-contract P1 和独立红队；不得改 public API、算法、normal workload、
-peer、5% margin 或中央统计语义。任何产品变化必须退回 `AUDITED`；P1 若仍未通过就按卡终止为具名
-`BLOCKED`。
+本轮 terminal verdict：`BLOCKED`。
+
+- blocker：`SCHED-V2-PERF-ONETBB-01`。最终 candidate 在有效同合同 W1-WIN workload 上未通过 oneTBB
+  5% non-inferiority；peer-first median advantage `0.916`，99.26% CI `[0.777,0.937]`，CI 上界仍低于
+  0.95，属于确定 material `FAIL`，不是 `INCONCLUSIVE`；
+- blocker owner：Sched execution/partitioning owner；不是 performance-instrument、Build、Graph 或 oneTBB
+  owner；
+- 已通过且保留：功能/API/复杂度、correctness/sanitizer、三平台、三交付、直接消费者、C++ 文档与
+  FFI 清洁度；它们不把聚合 P1 `FAIL` 改写为 `PASS`；
+- resume condition：由新的外部事实触发新 round，例如真实推理 profile 将该路径改判为 P2 并给出不同的
+  端到端贡献预算，或一个预先设计、复杂度有据且不改变当前 consumer contract 的 execution/partitioning
+  方案有理由消除 oneTBB material gap。恢复必须 `BLOCKED -> SCOPED`，创建新 task、新 provenance/contract
+  和新 candidate；不得在本轮继续调 reservation、换顺序、换 tile 或扩建仪器；
+- 已知限制：本 candidate 对 Marl 也只有一个顺序 NI `PASS`、另一个 `UNRESOLVED`；因此没有任何 batch
+  SOTA/全面非劣声明。`consumer_shapes_v2.json` 的 narrative identity 仍指首个 candidate，但本 bundle
+  由 runtime source/artifact identity 绑定最终产品；下一轮不得复用该旧 narrative hash；
+- terminal LOC（candidate `22ec2382`）：全库 `410,076`；自实现含测试 `99,150`；自实现不含测试
+  `61,607`；Sched 实现 `5,532`。
+
+原始正式 bundle：`C:\hyle-scratch\sched-v2\p1-evidence-final-fix07`；manifest SHA-256
+`63D2230E6F21352D372160F0673CCF277DC26B0E839AAC4732806BE3CD58BF14`，summary
+`6116AEB54FB4B6A534460501310844B6991B67C65A4915CAC8038D532F18DDAE`，controls
+`A017E518B1BA8AB083287B414813FD91BD68D25521EA9B9EE769240C8E0C51EE`，host probe
+`AD178953299343C0D61B7A7A9D191AF8BED61C6B2DF88A6D386B5BB3044BE86B`。独立 verifier 为
+`QUALIFIED`、provenance `EXACT`、paths verified。
