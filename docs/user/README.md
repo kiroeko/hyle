@@ -24,7 +24,7 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [util](util.md)
 - [container_intrusive](container-intrusive.md)：稳定节点、零分配、auto/safe-link 双向链表
 - [container](container.md)：完整数据结构模块；轻量 intrusive target 独立选择
-- [math](math.md)：非负整数 ceil-division 与可表示 multiple round-up
+- [math](math.md)：checked integral shape/byte arithmetic、非负 ceil-division 与可表示 multiple round-up
 - [simd](simd-usage.md)
 - [io](io.md)
 

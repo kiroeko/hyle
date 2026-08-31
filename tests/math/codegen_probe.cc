@@ -24,4 +24,22 @@ HYLE_NOINLINE bool hyle_math_probe_try_round(
   return true;
 }
 
+#define HYLE_MATH_CHECKED_PROBE(name, type, operation)                       \
+  HYLE_NOINLINE bool hyle_math_probe_##name(type lhs, type rhs,              \
+                                             type* output) noexcept {         \
+    const auto result = hyle::math::operation(lhs, rhs);                     \
+    if (!result.has_value()) return false;                                   \
+    *output = *result;                                                       \
+    return true;                                                             \
+  }
+
+HYLE_MATH_CHECKED_PROBE(try_add_u64, std::uint64_t, try_add)
+HYLE_MATH_CHECKED_PROBE(try_add_i64, std::int64_t, try_add)
+HYLE_MATH_CHECKED_PROBE(try_subtract_u64, std::uint64_t, try_subtract)
+HYLE_MATH_CHECKED_PROBE(try_subtract_i64, std::int64_t, try_subtract)
+HYLE_MATH_CHECKED_PROBE(try_multiply_u64, std::uint64_t, try_multiply)
+HYLE_MATH_CHECKED_PROBE(try_multiply_i64, std::int64_t, try_multiply)
+
+#undef HYLE_MATH_CHECKED_PROBE
+
 }  // extern "C"
