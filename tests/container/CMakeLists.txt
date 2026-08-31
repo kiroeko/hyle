@@ -1,6 +1,17 @@
 hyle_add_header_self_contained_test(container)
 hyle_add_test(container SOURCES bounded_queue_test.cc spsc_queue_test.cc sharded_queue_test.cc work_stealing_deque_test.cc ws_fifo_queue_test.cc hash_test.cc pod_vector_test.cc small_vector_test.cc static_vector_test.cc probe_test.cc swiss_table_test.cc string_view_test.cc string_buf_test.cc concurrent_vector_test.cc concurrent_hash_map_test.cc concurrent_node_hash_map_test.cc string_algo_test.cc path_test.cc dynamic_bitset_test.cc sparse_set_test.cc ring_deque_test.cc circular_buffer_test.cc byte_ring_buffer_test.cc btree_test.cc flat_sorted_test.cc adaptive_mutex_test.cc DEPS hyle_platform)
 
+# Internal per-ISA symbols are intentionally hidden from shared SDK consumers.
+# A static product build can still execute every locally supported Container
+# kernel directly and compare it with the scalar implementation. This proves
+# fallback correctness without adding a public test hook to platform dispatch.
+if(HYLE_STATIC)
+  hyle_add_test(container NAME isa_variants SOURCES isa_variant_test.cc
+    DEPS hyle_platform)
+  target_include_directories(hyle_container_isa_variants_test PRIVATE
+    "${PROJECT_SOURCE_DIR}")
+endif()
+
 # A fresh executable process must receive a different best-effort default
 # StringHash seed. A CMake driver gives Windows and POSIX the same exec (rather
 # than fork-only) contract and keeps this property independent from GTest's

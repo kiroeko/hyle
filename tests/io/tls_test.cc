@@ -128,8 +128,8 @@ struct TlsResult {
 };
 
 // Server: accept, wrap in server TlsStream, handshake, read plaintext, echo it back.
-Task<int> tls_server(Allocator alloc, IoContext* io, TcpListener* ls,
-                     TlsContext* sctx, TlsResult* r) {
+Task<int> tls_server(Allocator alloc, TcpListener* ls, TlsContext* sctx,
+                     TlsResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) { r->server_done.store(true); co_return 0; }
   TlsStream tls(std::move(conn), *sctx, /*is_server=*/true);
@@ -210,7 +210,7 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   auto r = std::make_unique<TlsResult>();
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();
-  ds->task = tls_server(system_allocator(), &io, &ls, &sctx, r.get());
+  ds->task = tls_server(system_allocator(), &ls, &sctx, r.get());
   dc->task = tls_client(system_allocator(), &io, &cctx, r.get());
   Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
   Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
