@@ -7,7 +7,7 @@
 > verdict。当前机械状态只看 [`module-status.json`](../../module-status.json)。进入 `AUDITED` 并冻结有限
 > `FIX` 集前，不修改 sched 产品实现。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v1`；
 - task kind：`REFACTOR`；baseline commit：
@@ -72,6 +72,10 @@
 `SCOPED -> AUDITED` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\hyle-scratch\sched-v1\module-status-before-audited.json`，SHA-256
 `2966168581C074437E787398E60753865281F7FD0C1E19BEFCAEA1124C0EF0ED`。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v1\module-status-before-candidate.json`，SHA-256
+`58FC3725C673FE98204DD28D4958EFD0B6C9A3D91120566D7F372436DF0277DE`。
 
 ## Capability-family coverage map
 
@@ -173,8 +177,10 @@
 
 ## Candidate
 
-尚未冻结完整 candidate；`AUDITED` 已冻结 SCHED-FIX-01--08，当前只按该集合实施。已完成但仍须随
-最终 candidate 做跨平台、sanitizer、交付和红队复签的批次如下：
+产品候选冻结为 commit `9f24714190c7247abe46a4f030f27a60101fe90d`、tree
+`01f20256f201a366bc094a078e2348dee670bb89`。公开合同、算法、normal workload、P1 tier 和
+SCHED-FIX-01--08 不再扩张；候选后若改变产品代码、公开头或产品依赖，退回 `AUDITED`。已完成并纳入
+该 candidate 的实现批如下：
 
 - SCHED-FIX-01 实现批：取消 token 改为可共享、tree control path 跨线程串行化，保留 O(1) atomic
   `is_cancelled()`；新增 recoverable OOM；嵌套 cancel source 与 `JoinHandle::abort` 组合；Fiber 禁止启动后
@@ -219,9 +225,14 @@
 上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。
 
+当前 IO、Compute 与 Graph 的 Windows CPU library targets 已在关闭昂贵可选 backend 后全部编译通过，
+只证明候选 sched API 没有打断现有直接 consumer slice；三个下游模块的功能、正确性和性能状态不因此
+改变，Compute/Graph 仍为 `QUEUED` 半成品。
+
 ## Verification manifest
 
-尚未进入候选验证；未运行项不得写为 `PASS`。
+已进入候选验证。Windows selected sched 单测、IO 定向单测、直接 consumer compile 和三种 C++ 交付
+已有候选同 tree 证据；Linux/macOS、sanitizer、P1 性能及红队仍未完成，未运行项不得写为 `PASS`。
 
 ## 独立红队
 
@@ -229,5 +240,6 @@ CPU-set 语义、TSan/ASan 或三交付写成通过。
 
 ## Closure decision
 
-当前状态为 `AUDITED`；能力地图、public trace 与有限 FIX ledger 已冻结。下一合法状态是在全部产品
-修复和直接 consumer 迁移后进入 `CANDIDATE`，或以具名 blocker 停止。
+当前状态为 `CANDIDATE`；产品 commit/tree、能力边界、公开合同、normal workload 与 P1 tier 已冻结。
+下一合法状态是在完整 verification manifest 与独立红队都有真实 verdict 后进入 `VERIFIED`，产品变更
+则退回 `AUDITED`，出现具名 blocker 则停止为 `BLOCKED`。
