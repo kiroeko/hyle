@@ -127,15 +127,18 @@ Status bulk_execute(Scheduler&, std::size_t begin, std::size_t end,
 
 它是 scheduler 级固定 grain bulk primitive，不拥有自适应 partitioner、reduce/scan/sort、tensor 或 graph
 policy。正常 parallel 路线借用 callable/context、cancel token 与 caller-owned result slots直到函数返回；
-只提交 `min(chunks, max_concurrency/workers)` 个共享 batch-state runner，各 runner 从一个 atomic chunk cursor
-领取区间。调用者在普通线程等待时阻塞线程，在 Scheduler Fiber 等待时挂起 Fiber；从 worker-stack
-non-suspending callback 嵌套调用时为避免单 worker 自死锁，明确退化为当前 callback 上的串行执行。
+只提交 `min(chunks, max_concurrency/workers)` 个共享 batch-state runner。`FIX-06` 后 runner 从一个 atomic
+cursor 有界预领取内部 reservation，目标为每个 runner 八次 reservation；正常范围使用 `fetch_add`，只有
+接近 `SIZE_MAX`、终止领取可能回绕时使用饱和 CAS。每个 reservation 内仍逐 public grain 调 body，并在
+每次调用前观察 stop/cancel。调用者在普通线程等待时阻塞线程，在 Scheduler Fiber 等待时挂起 Fiber；
+从 worker-stack non-suspending callback 嵌套调用时为避免单 worker 自死锁，明确退化为当前 callback 上的
+串行执行。
 
-body 的第一个 non-OK `Status` 停止领取新 chunk，已领取 chunk 仍完成；多个并发错误的 winner 不保证
-index 顺序。取消同样只阻止领取新 chunk，并在没有 body error 时返回 `Cancelled`。提交部分 runner 后
-发生 queue pressure 不丢工作：已经 admission 的任一 runner 都能领取剩余全部 chunk；一个 runner 都
-未 admission 才返回 admission error。空 range 为成功；反向 range、零 grain、空 raw callback 或无效
-Scheduler 为可恢复错误。
+body 的第一个 non-OK `Status` 让 runner 在下一次 body 调用前停止；已经在执行的 body 仍完成，内部已
+reservation 但未开始的 grain 可以放弃。多个并发错误的 winner 不保证 index 顺序。取消同样只阻止后续
+body 调用，并在没有 body error 时返回 `Cancelled`。提交部分 runner 后发生 queue pressure 不丢工作：
+已经 admission 的任一 runner 都能领取剩余全部 chunk；一个 runner 都未 admission 才返回 admission
+error。空 range 为成功；反向 range、零 grain、空 raw callback 或无效 Scheduler 为可恢复错误。
 
 拒绝的替代方案：
 

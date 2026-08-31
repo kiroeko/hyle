@@ -101,16 +101,19 @@ if (!status.ok()) return status;
 consume(output);
 ```
 
-`grain_size` 是消费者的算法选择，不是隐藏 benchmark tuning：大 grain 降低领取 chunk 的 atomic 成本，
-小 grain 更容易平衡不均匀工作；先从一个能让单次 body 做有意义计算的业务 tile 开始。`max_concurrency=0`
-使用 Scheduler worker 数，也可以显式降低本批并发。实现只投递不超过 worker 数的 raw runner，共享一个
-batch state；不会为每个 item 分配、排队或创建 status/cancel/handle。同一个 callable/context 可能被多个
-runner 并发调用；capture 中的可变共享状态必须自行同步，最自然的形状仍是按 chunk 写互不重叠的 slot。
+`grain_size` 是消费者的算法选择，不是隐藏 benchmark tuning：它决定一次 body 的数据局部性、callback
+边界和 error/cancel 观察粒度。先从业务 kernel 自然处理的 tile 开始；工作高度不均匀或需要更快停止时用
+较小 grain，callback 本身过轻时才适度合并。不要单纯为了躲内部 atomic 而放大 grain——runner 已经用
+有界预领取摊销共享 cursor，并且仍逐 public grain 调 body。`max_concurrency=0` 使用 Scheduler worker 数，
+也可以显式降低本批并发。实现只投递不超过 worker 数的 raw runner，共享一个 batch state；不会为每个
+item 分配、排队或创建 status/cancel/handle。同一个 callable/context 可能被多个 runner 并发调用；
+capture 中的可变共享状态必须自行同步，最自然的形状仍是按 chunk 写互不重叠的 slot。
 
-body 返回的第一个并发可见 non-OK `Status` 会停止领取新 chunk；已经领取的 chunk 仍会完成，所以输出
-可能包含一段或若干已完成 slot，失败时不能把整张输出假定为事务性回滚。多个同时失败的 item 不保证按
-index 选最小者。取消同样是协作式：runner 在领取每个 chunk 后检查 token，并把 token 通过
-`CancelScope` 暴露给 body 内的 `is_cancel_requested()`；它不会强杀正在执行的 kernel。
+body 返回的第一个并发可见 non-OK `Status` 会让各 runner 在下一次 body 调用前停止；当时已经运行的
+body 会完成，所以输出可能包含一段或若干已完成 slot，失败时不能把整张输出假定为事务性回滚。内部
+预领取但尚未开始的 grain 不会因此被强制执行。多个同时失败的 item 不保证按 index 选最小者。取消同样
+是协作式：runner 在每次 body 调用前检查 token，并把 token 通过 `CancelScope` 暴露给 body 内的
+`is_cancel_requested()`；它不会强杀正在执行的 kernel。
 
 普通线程调用会阻塞该线程，Scheduler Fiber 调用会挂起该 Fiber。若从 `schedule`/`schedule_task` 这类
 worker-stack callback 中嵌套调用，为避免单 worker 自死锁，整批在当前 callback 上串行执行；需要并行

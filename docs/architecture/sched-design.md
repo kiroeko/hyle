@@ -75,11 +75,13 @@ Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要�
 C++ 用户优先传捕获 lambda。`spawn(Fiber*)` 是显式 lifetime 的低层入口，Scheduler 不取得 Fiber
 ownership；一般 fire-and-forget 不应手工管理它。
 
-`bulk_execute` 不是 Graph algorithm：Sched 只按 caller 给定 grain，用一个 atomic cursor 把有限半开
-range 交给至多 worker 数个 runner，并提供一次 quiescent completion、共享首错和可选 cooperative
-cancel。adaptive split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消费者。正常外部
-线程/Fiber 路线不让 caller 参与执行；从 non-suspending worker-stack callback 嵌套时串行退化，避免一个
-worker 同时成为 waiter 和唯一 executor。
+`bulk_execute` 不是 Graph algorithm：Sched 只按 caller 给定 grain，把有限半开 range 交给至多 worker
+数个 runner，并提供一次 quiescent completion、共享首错和可选 cooperative cancel。runner 从一个
+atomic cursor 有界预领取若干 grain 以摊销共享 cache-line 竞争，但每个 public grain 仍是一次独立 body
+调用和一次 error/cancel observation；预领取不改变 callback 边界，也不是公开 partitioner。adaptive
+split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消费者。正常外部线程/Fiber 路线
+不让 caller 参与执行；从 non-suspending worker-stack callback 嵌套时串行退化，避免一个 worker 同时
+成为 waiter 和唯一 executor。
 
 ## Worker 与队列
 

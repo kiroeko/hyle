@@ -42,6 +42,8 @@ TEST(BulkExecute, RawAndVoidLambdaCoverEachIndexExactlyOnce) {
   constexpr std::size_t kCount = 257;
   std::vector<std::atomic<unsigned>> raw_hits(kCount);
   std::vector<std::atomic<unsigned>> lambda_hits(kCount);
+  std::atomic<unsigned> lambda_calls{0};
+  std::atomic<unsigned> invalid_lambda_bounds{0};
 
   BulkExecuteOptions options;
   options.grain_size = 7;
@@ -52,12 +54,20 @@ TEST(BulkExecute, RawAndVoidLambdaCoverEachIndexExactlyOnce) {
   Status adapted = bulk_execute(
       scheduler, 0, kCount,
       [&](std::size_t begin, std::size_t end) noexcept {
+        lambda_calls.fetch_add(1, std::memory_order_relaxed);
+        const std::size_t expected_end =
+            begin + 7 < kCount ? begin + 7 : kCount;
+        if (begin % 7 != 0 || end != expected_end) {
+          invalid_lambda_bounds.fetch_add(1, std::memory_order_relaxed);
+        }
         for (std::size_t i = begin; i < end; ++i) {
           lambda_hits[i].fetch_add(1, std::memory_order_relaxed);
         }
       },
       options);
   ASSERT_TRUE(adapted.ok()) << adapted.message();
+  EXPECT_EQ(lambda_calls.load(std::memory_order_relaxed), 37u);
+  EXPECT_EQ(invalid_lambda_bounds.load(std::memory_order_relaxed), 0u);
 
   for (std::size_t i = 0; i < kCount; ++i) {
     EXPECT_EQ(raw_hits[i].load(std::memory_order_relaxed), 1u) << i;

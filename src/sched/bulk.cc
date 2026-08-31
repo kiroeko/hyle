@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <limits>
 #include <utility>
 
 #include "hyle/core/compiler.h"
@@ -16,6 +17,13 @@
 namespace hyle::sched {
 namespace {
 
+constexpr std::size_t kTargetReservationsPerRunner = 8;
+
+struct ChunkReservation {
+  std::size_t begin = 0;
+  std::size_t end = 0;
+};
+
 struct BulkState {
   BulkBodyFn body = nullptr;
   void* context = nullptr;
@@ -24,6 +32,8 @@ struct BulkState {
   std::size_t span = 0;
   std::size_t grain = 1;
   std::size_t chunk_count = 0;
+  std::size_t reservation_size = 1;
+  bool fetch_add_claims = false;
 
   std::atomic<std::size_t> next_chunk{0};
   // The initial count is a submission guard. A runner may finish while its
@@ -36,12 +46,25 @@ struct BulkState {
   Status first_error;
   Event completed{EventResetMode::kManual};
 
-  bool claim(std::size_t& index) noexcept {
-    index = next_chunk.load(std::memory_order_relaxed);
+  bool claim(ChunkReservation& reservation) noexcept {
+    if (fetch_add_claims) {
+      const std::size_t first = next_chunk.fetch_add(
+          reservation_size, std::memory_order_relaxed);
+      if (first >= chunk_count) return false;
+      reservation.begin = first;
+      reservation.end = first +
+                        (std::min)(reservation_size, chunk_count - first);
+      return true;
+    }
+
+    std::size_t first = next_chunk.load(std::memory_order_relaxed);
     do {
-      if (index >= chunk_count) return false;
+      if (first >= chunk_count) return false;
+      reservation.begin = first;
+      reservation.end = first +
+                        (std::min)(reservation_size, chunk_count - first);
     } while (!next_chunk.compare_exchange_weak(
-        index, index + 1, std::memory_order_relaxed,
+        first, reservation.end, std::memory_order_relaxed,
         std::memory_order_relaxed));
     return true;
   }
@@ -80,28 +103,30 @@ struct BulkState {
 
 void run_chunks(BulkState& state) noexcept {
   for (;;) {
-    if (state.failed.load(std::memory_order_acquire)) return;
+    ChunkReservation reservation;
+    if (!state.claim(reservation)) return;
 
-    std::size_t chunk = 0;
-    if (!state.claim(chunk)) return;
+    for (std::size_t chunk = reservation.begin;
+         chunk < reservation.end; ++chunk) {
+      // A reservation is only an internal cursor optimization. Preserve the
+      // public grain as the callback and cancellation unit by checking before
+      // every body invocation, not merely once per reservation.
+      if (state.failed.load(std::memory_order_acquire)) return;
+      if (state.cancel_token != nullptr &&
+          state.cancel_token->is_cancelled()) {
+        state.cancelled.store(true, std::memory_order_release);
+        return;
+      }
 
-    // Check after a successful claim. This makes cancellation observable only
-    // when it actually prevents a chunk from running; a token cancelled after
-    // the final chunk completed does not retroactively change success.
-    if (state.cancel_token != nullptr &&
-        state.cancel_token->is_cancelled()) {
-      state.cancelled.store(true, std::memory_order_release);
-      return;
-    }
-
-    const std::size_t offset = chunk * state.grain;
-    const std::size_t length =
-        (std::min)(state.grain, state.span - offset);
-    Status status = state.body(state.context, state.begin + offset,
-                               state.begin + offset + length);
-    if (!status.ok()) {
-      state.record_error(std::move(status));
-      return;
+      const std::size_t offset = chunk * state.grain;
+      const std::size_t length =
+          (std::min)(state.grain, state.span - offset);
+      Status status = state.body(state.context, state.begin + offset,
+                                 state.begin + offset + length);
+      if (!status.ok()) {
+        state.record_error(std::move(status));
+        return;
+      }
     }
   }
 }
@@ -175,6 +200,29 @@ Status bulk_execute(Scheduler& scheduler, std::size_t begin,
                              : (std::min)(options.max_concurrency, workers);
   concurrency = static_cast<unsigned>(
       (std::min)(static_cast<std::size_t>(concurrency), chunks));
+
+  // Keep enough reservations for late load balancing while amortizing the
+  // shared cursor across several public grains. This changes no callback
+  // boundary: run_chunks() still invokes and checks each grain separately.
+  const std::size_t maximum = (std::numeric_limits<std::size_t>::max)();
+  const std::size_t concurrency_size = static_cast<std::size_t>(concurrency);
+  const std::size_t target_capacity =
+      concurrency_size <= maximum / kTargetReservationsPerRunner
+          ? concurrency_size * kTargetReservationsPerRunner
+          : maximum;
+  const std::size_t target_reservations =
+      (std::min)(chunks, target_capacity);
+  state.reservation_size =
+      chunks / target_reservations +
+      (chunks % target_reservations != 0 ? 1 : 0);
+
+  // fetch_add is the normal single-RMW claim. Near SIZE_MAX, failed terminal
+  // claims could wrap the cursor, so retain a saturating CAS path for that
+  // representable but impractical boundary instead of weakening correctness.
+  state.fetch_add_claims =
+      concurrency_size < maximum &&
+      state.reservation_size <=
+          (maximum - chunks) / (concurrency_size + 1);
 
   unsigned admitted = 0;
   Status admission_error;

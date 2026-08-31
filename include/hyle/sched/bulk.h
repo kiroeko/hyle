@@ -35,10 +35,10 @@ struct BulkExecuteOptions {
 
 // Process one half-open chunk [begin, end). The callback runs on a Scheduler
 // worker stack, must not suspend/block/throw, and may return a shared batch
-// error. The first concurrently observed non-OK Status wins; already claimed
-// chunks finish while no new chunks are claimed. The same context may be called
-// concurrently by multiple runners; mutable shared state is the caller's
-// synchronization responsibility.
+// error. The first concurrently observed non-OK Status wins; body calls already
+// in flight finish while each runner stops before its next invocation. The same
+// context may be called concurrently by multiple runners; mutable shared state
+// is the caller's synchronization responsibility.
 using BulkBodyFn =
     Status (*)(void* context, std::size_t begin, std::size_t end) noexcept;
 
