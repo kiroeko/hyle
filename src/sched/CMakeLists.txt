@@ -47,6 +47,7 @@ hyle_add_module(sched TRACE
     join.cc
     blocking.cc
     cancel.cc
+    bulk.cc
     ${_fctx_asm})
 
 if(MSVC)

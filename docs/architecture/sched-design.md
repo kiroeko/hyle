@@ -13,14 +13,16 @@
 Sched 拥有：
 
 - stackful Fiber、M:N worker、work stealing、显式 worker placement 和 idle policy；
-- 短 callback、worker-stack typed task、可挂起 detached/structured task 与 blocking offload；
+- 短 callback、固定 grain 的有限 bulk execution、worker-stack typed task、可挂起 detached/structured
+  task 与 blocking offload；
 - suspend/wake、typed monotonic sleep/deadline、协作取消和两阶段 shutdown；
 - fiber/thread 双模同步原语，以及 bounded、oneshot、watch、broadcast 消息形状；
 - scheduler 需要的 allocator、错误和生命周期合同。
 
 Sched 不拥有：
 
-- graph 拆分、kernel chunking、caller-participating SPMD、模型 priority 或 KV/scratch policy；
+- graph/DAG 拆分、自适应 partitioner、kernel grain policy、caller-participating SPMD、模型 priority 或
+  KV/scratch policy；
 - IO reactor/proactor、协议状态机、GPU stream/event policy；
 - distributed/actor/process scheduler、抢占式 kill 或自动检测阻塞调用的 sysmon；
 - Native FFI、稳定跨工具链 C++ ABI，或把所有标准/peer API 求并集。
@@ -63,6 +65,7 @@ worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并�
 | 形状 | 运行位置 | ownership / 成本 | 适用情况 |
 |---|---|---|---|
 | `schedule` | worker 自身栈 | raw 入口零分配；owning callable 一次 allocator record | 很短、不会挂起或阻塞、无需结果 |
+| `bulk_execute` | 至多 worker 数个 worker-stack runner | callable/results 借用到同步返回；O(1) batch state、O(worker) queue entries、无逐项 allocation/handle | 有限 indexed/chunk work，只需要 batch completion/首错/取消 |
 | `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 abort | 很短、不会挂起或阻塞、需要 typed result/join |
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
 | `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 abort | 会挂起且需要结果、join/select/fan-out |
@@ -71,6 +74,12 @@ worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并�
 Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；普通
 C++ 用户优先传捕获 lambda。`spawn(Fiber*)` 是显式 lifetime 的低层入口，Scheduler 不取得 Fiber
 ownership；一般 fire-and-forget 不应手工管理它。
+
+`bulk_execute` 不是 Graph algorithm：Sched 只按 caller 给定 grain，用一个 atomic cursor 把有限半开
+range 交给至多 worker 数个 runner，并提供一次 quiescent completion、共享首错和可选 cooperative
+cancel。adaptive split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消费者。正常外部
+线程/Fiber 路线不让 caller 参与执行；从 non-suspending worker-stack callback 嵌套时串行退化，避免一个
+worker 同时成为 waiter 和唯一 executor。
 
 ## Worker 与队列
 
@@ -160,6 +169,7 @@ build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改
 | steal | 一次 victim probe + bounded batch；不得全局扫描每个任务 |
 | wake/suspend | 常态无分配；至多一次 ready routing/worker wake |
 | worker-stack typed task | O(1) admission；callable/result state 合并为一次 allocation；无 Fiber/context switch |
+| finite bulk execution | O(N) body work；O(worker) raw queue entries；O(1) batch state/terminal notification；无 per-item allocation/status/cancel/handle |
 | timer arm/cancel | 继承 Time queue 的 O(1) node operation |
 | semaphore timeout unlink | O(1) |
 | join group | O(n) install/clear，等待期间无 polling |

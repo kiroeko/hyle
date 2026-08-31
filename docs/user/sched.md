@@ -1,6 +1,6 @@
 # HYLE sched：什么情况选择什么
 
-> 本页描述 `sched-v1` 当前 C++ 产品面，适用于 C++23 source/static/shared 三种交付；不描述 C API、
+> 本页描述当前 Sched C++ 产品面，适用于 C++23 source/static/shared 三种交付；不描述 C API、
 > Native FFI 或内部 worker-loop bridge。机械施工状态见
 > [`module-status.json`](../implementation/module-status.json)。
 
@@ -13,6 +13,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 需求 | 首选形状 | 关键合同 |
 |---|---|---|
 | 很短、不挂起、无结果 callback | `Scheduler::schedule` | 直接在 worker stack 执行；不得 sleep/yield/block |
+| 一批短小、不挂起的 indexed/chunk work，只等整批结果 | `bulk_execute` | caller-owned result slots；一个 batch 首错/取消/完成；无逐项 handle |
 | 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；取消是协作式 |
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `Allocator`；独立 guarded Fiber |
@@ -67,6 +68,55 @@ shard state 的 consumer；普通工作保持可窃取。
 `kRequired`。`kLowLatency`、`kBalanced`、`kPowerSaving` 是延迟/功耗策略，不是 benchmark 档位。
 worker start/stop hook 适合安装 runtime TLS、scratch 或 profiler state；hook 不得抛异常或无限阻塞
 shutdown。
+
+## 一批短任务只需要一次完成态
+
+量化 tile、有限 graph level 或一组 caller-owned work records 通常只需要“全部结束以后继续”，不需要给
+每个 item 建 `JoinHandle`。这时用 `bulk_execute`：body 接收半开 chunk `[begin,end)`，结果直接写进
+调用者预先准备且互不重叠的 slot。调用同步返回，因此 callable、cancel token、输入和输出只需活到返回。
+
+```cpp
+#include "hyle/sched/bulk.h"
+#include "hyle/sched/cancel.h"
+#include "hyle/sched/scheduler.h"
+
+std::vector<TileResult> output(tiles.size());
+auto cancel = hyle::sched::CancelToken::root(alloc);
+
+hyle::sched::BulkExecuteOptions options;
+options.grain_size = 4;              // 每次 body 处理至多 4 个 tile
+options.cancel_token = &cancel;      // 可省略
+
+auto status = hyle::sched::bulk_execute(
+    scheduler, 0, tiles.size(),
+    [&](std::size_t begin, std::size_t end) noexcept -> hyle::Status {
+      for (std::size_t i = begin; i < end; ++i) {
+        auto item_status = decode_tile(tiles[i], output[i]);
+        if (!item_status.ok()) return item_status;
+      }
+      return hyle::Status();
+    },
+    options);
+if (!status.ok()) return status;
+consume(output);
+```
+
+`grain_size` 是消费者的算法选择，不是隐藏 benchmark tuning：大 grain 降低领取 chunk 的 atomic 成本，
+小 grain 更容易平衡不均匀工作；先从一个能让单次 body 做有意义计算的业务 tile 开始。`max_concurrency=0`
+使用 Scheduler worker 数，也可以显式降低本批并发。实现只投递不超过 worker 数的 raw runner，共享一个
+batch state；不会为每个 item 分配、排队或创建 status/cancel/handle。同一个 callable/context 可能被多个
+runner 并发调用；capture 中的可变共享状态必须自行同步，最自然的形状仍是按 chunk 写互不重叠的 slot。
+
+body 返回的第一个并发可见 non-OK `Status` 会停止领取新 chunk；已经领取的 chunk 仍会完成，所以输出
+可能包含一段或若干已完成 slot，失败时不能把整张输出假定为事务性回滚。多个同时失败的 item 不保证按
+index 选最小者。取消同样是协作式：runner 在领取每个 chunk 后检查 token，并把 token 通过
+`CancelScope` 暴露给 body 内的 `is_cancel_requested()`；它不会强杀正在执行的 kernel。
+
+普通线程调用会阻塞该线程，Scheduler Fiber 调用会挂起该 Fiber。若从 `schedule`/`schedule_task` 这类
+worker-stack callback 中嵌套调用，为避免单 worker 自死锁，整批在当前 callback 上串行执行；需要并行
+bulk 时从外部控制线程或可挂起 Fiber 调用。body 本身仍不得 yield、fiber-wait、blocking syscall 或抛
+异常。动态添加的异构任务可组合 `schedule + WaitGroup`；需要逐项 result/join/abort 时才选
+`schedule_task`，不要为了等待整批而制造一组 handles。
 
 ## 有结果任务与 fan-out
 
@@ -202,6 +252,8 @@ overload 是热路 adapter；默认优先 value-returning `Result<T>`。
   owner 或 lock ownership 跨 `yield/suspend/sleep/wait` 保存；恢复后重新读取，或显式 pinned。
 - `schedule`/`schedule_task` callback 运行在 worker stack，不能调用任何会挂起 Fiber 的 API；无结果的
   可挂起工作选 `spawn_detached`，有结果的可挂起工作选 `spawn_task`。
+- `bulk_execute` 是同步 batch barrier，不是异步 handle；传入的 input/output/callable/token 在它返回前
+  不能销毁。不同 chunk 写同一非原子 slot 是用户数据竞争。
 - 不要在 worker 上调用 `hyle::time::sleep_*`，那会阻塞 OS thread；使用 `hyle::sched::sleep_*`。
 - `Fiber::create` 与 raw `spawn(Fiber*)` 只适合实现 runtime integration 的 owner。`spawn` 不接管对象，
   caller 必须保持 Fiber 存活直到结束；started Fiber 不能 move。
