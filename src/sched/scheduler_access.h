@@ -6,7 +6,7 @@ namespace hyle::sched {
 
 namespace detail {
 
-class SchedulerAccess {
+class HYLE_HIDDEN SchedulerAccess {
  public:
   // These seams deliberately remain outside the installed product surface.
   // Bulk execution uses identity to avoid borrowing a worker from a different
