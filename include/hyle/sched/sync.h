@@ -29,15 +29,14 @@
 #define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
-// Fiber-aware synchronization primitives (sched-design §2.4 缺口补记, §3
-// spine).
+// Fiber-aware synchronization primitives over the common wake spine.
 //
 // WHY they exist: a std::mutex / std::condition_variable blocks the WORKER OS
 // THREAD. On an M:N scheduler that strands every OTHER fiber pinned to that
 // core
 // -- the whole point of fibers is defeated. The fix is "on contention, YIELD
 // the fiber (it leaves the run loop), and on release RE-INJECT it" -- which is
-// just another completion/wake, i.e. the sched-04a Waker spine reused.
+// just another completion/wake through the same Waker spine.
 //
 // Convergence (marl's lesson, adopted): do NOT write a bespoke wake mechanism
 // for mutex / waitgroup / channel / latch. Build ONE fiber-aware
@@ -106,7 +105,7 @@ public:
       wait(lock);
   }
 
-  // Timed wait (sched-04c). Atomically release `lock` and block until notified
+  // Timed wait. Atomically release `lock` and block until notified
   // OR `timeout` elapses, then re-acquire `lock`. Returns whether it returned
   // because of the timeout. Deadline keys on time::MonotonicClock.
   //
@@ -866,8 +865,8 @@ private:
 //
 // Each waiter owns its own CV on its stack, so release() wakes EXACTLY the head
 // waiter it just satisfied (no thundering herd re-checking a shared predicate).
-// The waiter list is intrusive + doubly linked so a (future) timed/cancelled
-// acquire can unlink in O(1); the node lives on the blocking fiber/thread stack
+// The waiter list is intrusive + doubly linked so a timed acquire can unlink in
+// O(1); the node lives on the blocking fiber/thread stack
 // and stays linked only while parked (same discipline as ConditionVariable).
 class Semaphore {
 public:

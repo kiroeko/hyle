@@ -12,7 +12,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/waker.h"
 
-// sched-06: the coroutine <-> fiber glue (sched-design §4). A `co_await` inside a
+// Coroutine <-> fiber glue. A `co_await` inside a
 // fiber suspends the FIBER (fcontext stack switch), not just the coroutine, so a
 // deep call chain can await without every frame being a coroutine. The coroutine
 // frame lives in the supplied Allocator; the fiber owns the execution stack, so
@@ -30,9 +30,9 @@
 // fiber. Suspending that fiber freezes the caller stack while the coroutine
 // frame remains stable in allocator storage.
 //
-// This is the ergonomic shell over the sched-04a Waker spine; the raw fiber +
+// This is the ergonomic shell over the Waker spine; the raw fiber +
 // Waker interface stays available for hot paths that don't want a coroutine
-// frame (sched-design §4.3).
+// frame.
 
 namespace hyle::sched {
 
@@ -46,8 +46,8 @@ HYLE_SCHED_API Waker current_waker() noexcept;
 // coroutine frame from a mem::Allocator threaded through operator new/delete, so
 // no hidden heap. Move-only handle; destroying it destroys the frame.
 //
-// Minimal by design (sched-06 is the glue, not a full task library): start(),
-// done(), result(). Composition combinators (when_all/select) are later steps.
+// Task remains the coroutine-frame/value primitive; spawn_task, JoinHandle and
+// when_all/when_any provide runtime ownership and structured composition.
 template <class T>
 class Task;
 
@@ -156,7 +156,7 @@ class Task {
   // just "drive it to done on this fiber" -- each of its internal co_awaits parks
   // the fiber and resumes it, and when the sub-Task finishes we lift its result.
   // No continuation chaining is needed (the fiber suspend covers everything), which
-  // is why this minimal awaiter suffices for composing Task pumps (io-08 TLS).
+  // is why this minimal awaiter suffices for composing nested Task pumps.
   bool await_ready() noexcept { return done(); }
   bool await_suspend(std::coroutine_handle<>) noexcept {
     // Run the sub-Task to completion on THIS fiber. resume() returns either when it

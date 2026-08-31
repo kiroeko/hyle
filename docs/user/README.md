@@ -26,6 +26,7 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [container](container.md)：完整数据结构模块；轻量 intrusive target 独立选择
 - [math](math.md)：checked integral shape/byte arithmetic、非负 ceil-division 与可表示 multiple round-up
 - [simd](simd-usage.md)
+- [sched](sched.md)：CPU task/fiber runtime、结构化任务、同步与消息
 - [io](io.md)
 
 未列在上述模块指南中的组件可能还没有经过审查的正常用户 journey；以施工状态和实际用户页为准。

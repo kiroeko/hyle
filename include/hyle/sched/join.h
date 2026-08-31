@@ -17,23 +17,22 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 
-// sched-10: JoinHandle + when_all/when_any(select) -- the structured-concurrency
-// layer (capability C7, and the load-bearing prerequisite for C2 timeout io / C3
-// cancellation). Reference-lib consensus (tokio/folly/seastar/marl, read in full
-// 2026-07-03) drove every decision:
+// JoinHandle + when_all/when_any form the structured-concurrency layer.
+// Reference implementations from Tokio, Folly, Seastar and Marl informed the
+// following ownership decisions:
 //
 //  * JoinHandle does NOT own the Fiber -- only a refcounted result slot
 //    (JoinState). marl proved a join can be as thin as WaitGroup(1)+slot; tokio's
 //    6-bit state machine is complexity born of reusing the task cell for both the
 //    future and the output -- HYLE's independent slot sidesteps it.
-//  * Completion notification reuses the sched-05 ConditionVariable (dual-mode: a
+//  * Completion notification reuses ConditionVariable (dual-mode: a
 //    joining fiber suspend()s, a bare thread parks) -- already TSan-proven. No
 //    hand-rolled rendezvous state machine.
 //  * Cancellation is COOPERATIVE. A stackful fiber cannot be preempted (folly
 //    /fibers offers no external cancel, marl none) -- abort() sets a flag and the
 //    task checks is_cancel_requested() at its own suspend points and unwinds via
-//    RAII. when_any's loser cancellation is the same mechanism. (Real in-flight io
-//    cancellation -- IORING_ASYNC_CANCEL/CancelIoEx -- is io-06/C2's job.)
+//    RAII. when_any's loser cancellation is the same mechanism. In-flight OS
+//    operation cancellation remains the completion source owner's job.
 //  * spawn_task OWNS the Fiber via a heap TaskDriver that self-destructs when the
 //    fiber finishes (tokio drop==detach). This is the ONE place sched owns a
 //    fiber; spawn(Fiber*)'s caller-keeps-it-alive contract is unchanged.

@@ -28,13 +28,13 @@
 #endif
 
 namespace hyle::mem {
-class FiberStackPool;  // sched-10: recycles spawn_task fiber stacks (avoid mmap churn)
+class FiberStackPool;  // recycles structured-task stacks without repeated VM churn
 }  // namespace hyle::mem
 
 namespace hyle::sched {
 
 class Fiber;
-class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
+class Waker;  // re-injects a suspended fiber through the private runtime seam
 namespace detail {
 class SchedulerIntegration;
 }
@@ -74,13 +74,10 @@ struct SchedulerOptions {
   void* worker_hook_context = nullptr;
 };
 
-// M:N work-stealing scheduler: N OS-thread workers, each with its own FIFO local
-// run-queue (container WsFifoQueue), a shared global injection queue (Vyukov
-// MPMC), and random-victim stealing. A fiber that yields goes back on a local
-// queue; an idle worker steals ~half from a random victim. (sched-design §2.2.)
-//
-// sched-03 step 1: idle workers BUSY-SPIN (yield). step 2 replaces that with
-// spin-then-park + unpark relay (§2.3). Completion/waker wiring is sched-04.
+// M:N work-stealing scheduler: N OS-thread workers, each with an owner FIFO and
+// one bounded run-next slot, plus sharded external injection queues and
+// random-victim stealing. Idle behavior is selected by SchedulerIdlePolicy and
+// converges on park/unpark rather than burning a worker indefinitely.
 //
 // Pimpl: the implementation holds std::vector / threads / queues; keeping them
 // out of this header avoids leaking std types across the DLL seam (C4251) and
@@ -165,7 +162,7 @@ class HYLE_SCHED_API Scheduler {
   }
 
   // Submit a fiber PINNED to worker `worker_idx`: it runs only on that worker and
-  // is never stolen, on spawn and on every wake (shard-per-core, io-04). Use this
+  // is never stolen, on spawn and on every wake. Use this
   // to keep a connection's fiber on the core that owns its io ring so submit +
   // reap + resume stay single-threaded. `worker_idx` must be < num_workers().
   bool spawn_on(unsigned worker_idx, Fiber* fiber);
@@ -188,7 +185,7 @@ class HYLE_SCHED_API Scheduler {
   unsigned num_workers() const noexcept;
   bool valid() const noexcept { return impl_ != nullptr; }
 
-  // Shared fiber-stack recycle pool for a given USABLE size (sched-10 spawn_task).
+  // Shared fiber-stack recycle pool for a given USABLE size.
   // Returns a pool whose tier matches `usable_bytes` when it equals one of the
   // standard tiers (Small/Default/Large), else nullptr (caller allocates a
   // one-off stack). The pool is owned by the scheduler and outlives every fiber
@@ -209,7 +206,7 @@ class HYLE_SCHED_API Scheduler {
   // share one completion barrier and all return only after workers have joined.
   void shutdown();
 
-  // ---- graceful shutdown (sched-08, capability C4) --------------------------
+  // ---- graceful shutdown ----------------------------------------------------
   // Two-phase drain for a SERVER (long-lived fibers -- accept loops, connection
   // loops -- that never finish on their own, so plain drain() would block forever).
   //
@@ -220,7 +217,7 @@ class HYLE_SCHED_API Scheduler {
   // own yield points -- typically `when_any(shutdown_wait(), accept())` -- and
   // break their loop, which lets them finish and decrement the in-flight count.
   // This is a FLAT signal (one scheduler-wide flag broadcast), NOT a cancellation
-  // tree (sched-07): every reference runtime -- seastar abort_source, tokio's
+  // tree: reference runtimes such as seastar abort_source and tokio's
   // shutdown token -- uses a flat broadcast for shutdown; the tree is for the
   // orthogonal "cancel one task subtree" problem and is not needed here.
   //

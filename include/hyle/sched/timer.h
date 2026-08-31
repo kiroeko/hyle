@@ -15,10 +15,10 @@ namespace hyle::time {
 class TimerEntry;  // fwd: defined in time/timer_entry.h (opaque here)
 }
 
-// Fiber sleep (sched-04b): a fiber suspends for a duration WITHOUT burning its
+// Fiber sleep: a fiber suspends for a duration WITHOUT burning its
 // worker. This is the first consumer of time::TimerQueue through the
-// sched-04a Waker spine -- "timer expired" funnels into the same wake path as an
-// io/gpu completion (sched-design §3). Each worker owns a TimerQueue; a sleeping
+// Waker spine -- "timer expired" funnels into the same wake path as an
+// io/gpu completion. Each worker owns a TimerQueue; a sleeping
 // fiber arms an entry on its worker's queue and suspend()s. The worker, when it
 // would otherwise park, advances its queue and fires due timers -> Waker::wake()
 // re-injects the fiber. Deadlines key on monotonic_ns (never the wall clock).
@@ -50,14 +50,14 @@ HYLE_SCHED_API void sleep_for(time::Duration duration) noexcept;
 // advance. The monotonic type cannot be confused with a wall-clock timestamp.
 HYLE_SCHED_API void sleep_until(time::MonotonicTimePoint deadline) noexcept;
 
-// ---- timed-io building blocks (io-06 / C2) ----------------------------------
+// ---- timed-completion building blocks ---------------------------------------
 // Lower-level timer arm/cancel that do NOT suspend -- for composing a timeout with
 // a concurrent io op (recv/accept/connect + deadline, first-to-fire wins). Unlike
 // sleep_*, the caller arms a timer AND submits an io op, then suspends ONCE; on
 // resume it arbitrates which fired. Both operate on the CURRENT worker's queue and
 // MUST be called from a fiber on that worker (shard-per-core: the timed io fiber is
 // pinned, so arm/fire/cancel all happen single-threaded on one worker -- no
-// cross-core cancel queue needed, which is why this can ship without sched-04d).
+// cross-core cancel queue needed).
 //
 // arm_timeout: schedule `entry` to fire at `deadline`. With no fire callback
 // callback it wakes THIS fiber (entry payload is filled automatically, same as

@@ -26,7 +26,7 @@
 - 非目标：收口 IO/Compute/Graph；把 graph bulk/parallel algorithm、IO reactor、GPU stream policy 或模型
   执行策略下沉 sched；distributed/actor/process scheduler、抢占式 kill、自动 sysmon、稳定跨工具链 C++
   ABI、Native FFI/C API、全操作/全平台 SOTA、P2 端到端声明和 Formal 证书；
-- 直接依赖：中央图 `PUBLIC core,error,platform,mem,container,util_core`，`PRIVATE time`；编译实现还使用
+- 直接依赖：中央图 `PUBLIC core,error,time,platform,mem,util_core`，`PRIVATE container`；编译实现还使用
   compile-time Obs trace seam，必须在审计中裁决是否由 trace infrastructure 完整接线。产品第三方输入是
   vendored Boost.Context fcontext `cc1b9e02cd530d6607becc984e1e5bfa4f7b3600`；
 - 直接消费者：`io`、`compute`、`graph`，以及 `samples/03_sched_fibers`；这些未收口模块只提供真实
@@ -115,7 +115,7 @@
   `core,container_intrusive,util_core,error,time,platform,mem,container,sched`；build 成功，
   `hyle_sched_test` 1/1 通过（6.13s）。这只是 baseline，不是 candidate verdict。
 
-## Owner 六问直答
+## Owner 六问直答（`AUDITED` 快照）
 
 ### 1. 第三方产品路径
 
@@ -207,6 +207,12 @@
   实现边，已同步修正；Fiber 的 wait/pin/finish/rendezvous mutation 同样改为 private，sched 源码经
   source-only accessor、structured task 经具名 friend 使用，用户仍保留 trace label。Windows selected
   sched/IO 重新 configure/build，`hyle_sched_test` 与 `hyle_io_test` 分别 1/1 通过。
+- SCHED-FIX-07 API/文档与 source journey 实现批：architecture 已从旧 ticket/点值叙事收敛为长期
+  runtime、任务、wake、placement、lifetime、依赖和复杂度决策；新增场景化 C++ 用户指南，覆盖
+  schedule/detached/task/blocking、取消/shutdown、同步/消息 ownership 与常见陷阱；公开头移除过期
+  milestone 叙事，`samples/03_sched_fibers` 改走默认栈和 owning lambda 正常入口。独立 Windows shared
+  `add_subdirectory` consumer 从零 configure/build/run 成功（100 fibers、500 steps）；installed
+  static/shared journey 仍待 candidate gate，未在此批伪写通过。
 
 上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。

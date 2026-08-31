@@ -64,7 +64,7 @@ TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相�
 | 非负整数 ceil-division 与可表示 multiple round-up | [math](math.md) |
 | 向量、转换、bitpack 和向量算法 | [simd](simd-usage.md) |
 | 异步文件、网络和 protocol 机制 | [io](io.md) |
-| task/fiber/coroutine 与同步 | sched；尚无 v2 用户指南，仅供内部试验 |
+| CPU task/fiber runtime、结构化任务、同步与消息 | [sched](sched.md) |
 | device/backend/operator 与 graph | compute/graph 尚未完成，不作为已支持用户面 |
 
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有

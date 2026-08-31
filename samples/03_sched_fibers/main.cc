@@ -21,7 +21,6 @@
 
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
-using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 
 namespace {
@@ -32,8 +31,7 @@ struct Work {
 };
 
 // A fiber entry: do `steps` units of work, yielding between each so other fibers run.
-void fiber_body(void* arg) {
-  auto* w = static_cast<Work*>(arg);
+void fiber_body(Work* w) noexcept {
   for (int i = 0; i < w->steps; ++i) {
     w->total_steps->fetch_add(1, std::memory_order_relaxed);
     Fiber::yield();  // cooperative hand-off; may resume on another worker
@@ -57,9 +55,9 @@ int main() {
       // Fire-and-forget callbacks that may yield use spawn_detached: the scheduler
       // owns the Fiber and recycles its guarded FiberStack after completion. Raw
       // Fiber construction is for callers that specifically need manual ownership.
-      if (!sched
-               .spawn_detached(&fiber_body, &work[i], kDefaultStackSize)
-               .ok()) {
+      if (!sched.spawn_detached([item = &work[i]]() noexcept {
+                  fiber_body(item);
+                }).ok()) {
         std::printf("failed to submit fiber %d\n", i);
         submitted_all = false;
         break;

@@ -11,7 +11,7 @@
 #  define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
-// The completion spine (sched-design §3): the single seam through which every
+// The completion spine: the single seam through which every
 // asynchronous source -- io_uring/IOCP completions, GPU events, timers -- wakes a
 // fiber. A fiber that must block on an external event captures a Waker (which
 // names {this scheduler, this fiber}), hands it to the source, and suspends();
@@ -19,8 +19,8 @@
 // re-injects the fiber into the run loop. This is what makes "GPU finished / NIC
 // got a packet / timer expired" all funnel back to one scheduler -- HYLE's thesis.
 //
-// sched-04a delivers the spine itself (suspend + wake, race-free). Deadline/timer
-// wiring (Waker fired by a timer queue) is sched-04b, gated on time.
+// suspend + wake form the race-free spine. Deadline/timer wiring uses the same
+// Waker through the Time queue.
 
 namespace hyle::sched {
 
@@ -55,7 +55,7 @@ class Waker {
 HYLE_SCHED_API Waker current_waker() noexcept;
 
 // The index of the worker thread currently running this fiber, or -1 if not on a
-// worker. Lets io/ pick THIS worker's proactor (per-core ring, io-04 plan A) so a
+// worker. Lets an integration owner pick THIS worker's per-core completion source so a
 // submit and the reap of its completion happen on the same thread -- the per-core
 // discipline that makes multi-worker io safe without locking the ring.
 HYLE_SCHED_API int current_worker_index() noexcept;

@@ -19,8 +19,8 @@
 #  define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
-// sched-11: spawn_blocking -- run a BLOCKING syscall / CPU-bound closure on a
-// dedicated offload thread pool, NOT on a scheduler worker (sched-design §2.4).
+// spawn_blocking runs a BLOCKING syscall / CPU-bound closure on a dedicated
+// offload thread pool, NOT on a scheduler worker.
 //
 // WHY: an M:N scheduler's worker threads == core count; each drives many fibers.
 // A fiber that makes a blocking syscall (a DB driver, synchronous file IO,
@@ -38,8 +38,8 @@
 //    keep-alive timeout so a burst doesn't leave 512 threads parked forever.
 //  - One shared MPMC job queue + one condvar; a submit wakes one idle thread, or
 //    spawns a new one if none idle and under the cap, else the job waits in queue.
-//  - Result travels back through the SAME JoinState<T>/JoinHandle<T> as spawn_task
-//    (sched-10): the pool thread runs the closure, stores the result, and the CV
+//  - Result travels back through the SAME JoinState<T>/JoinHandle<T> as spawn_task:
+//    the pool thread runs the closure, stores the result, and the CV
 //    inside JoinState wakes whoever is join()-ing -- fiber-aware if that joiner is
 //    a fiber on a worker, thread-mode if it's a bare thread. No bespoke plumbing.
 //

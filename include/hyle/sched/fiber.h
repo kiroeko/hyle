@@ -67,7 +67,7 @@ inline constexpr std::size_t kLargeStackSize = mem::kFiberStackLarge;
 // Stackful fiber: a cooperative unit of execution with its own stack, able to
 // suspend (yield) at ANY call depth and be resumed later. Built on the vendored
 // fcontext assembly (see src/sched/fcontext.h). This is the scheduling unit the
-// rest of sched/ will manage; sched-01 only proves the switch works.
+// rest of sched/ manages.
 //
 // Stack storage is mem::FiberStack (platform VM + permanent low guard page).
 // Stack grows down from top() toward base()/guard.
@@ -136,7 +136,7 @@ class Fiber {
 
   // The fiber currently running on this thread, or nullptr if none. Lets the
   // scheduler's suspend()/current_waker() name "this fiber" without the caller
-  // threading a handle through (sched-04).
+  // threading a handle through.
   HYLE_SCHED_API static Fiber* current() noexcept;
 
   // Optional profiler track label. The pointer must remain valid for the
@@ -222,7 +222,7 @@ class Fiber {
   bool finished_ = false;
   bool wait_requested_ = false;       // set by request_wait(), read by scheduler
   int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
-  FinishFn on_finish_ = nullptr;      // sched-10: run by dispatch after done()
+  FinishFn on_finish_ = nullptr;      // run by dispatch after done()
   void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
   detail::CancelFlagLink* cancel_flags_ = nullptr;  // active cancel sources
   Fiber* ready_next_ = nullptr;       // scheduler cold overflow intrusive link
