@@ -16,6 +16,7 @@
 using hyle::mem::system_allocator;
 using hyle::sched::Barrier;
 using hyle::sched::Channel;
+using hyle::sched::ChannelSendFailure;
 using hyle::sched::ConditionVariable;
 using hyle::sched::Event;
 using hyle::sched::EventResetMode;
@@ -56,14 +57,24 @@ struct ThrowOnCopy {
 
 TEST(Sync, AllocationFailuresAreRecoverable) {
   hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
-  Channel<int> channel(failing, 4);
+  hyle::Status channel_status;
+  Channel<int> channel(failing, 4, &channel_status);
   EXPECT_FALSE(channel.valid());
-  EXPECT_FALSE(channel.send(1));
+  EXPECT_TRUE(channel_status.IsResourceExhausted());
+  auto unsent = channel.send(1);
+  ASSERT_FALSE(unsent.has_value());
+  EXPECT_EQ(unsent.error().reason(), ChannelSendFailure::kInvalid);
+  EXPECT_EQ(unsent.error().value(), 1);
   int out = 0;
   EXPECT_FALSE(channel.recv(out));
   EXPECT_FALSE(hyle::sched::try_make_oneshot<int>(failing).has_value());
   EXPECT_FALSE(hyle::sched::try_make_watch<int>(failing, 1).has_value());
   EXPECT_FALSE(hyle::sched::try_make_broadcast<int>(failing, 4).has_value());
+
+  hyle::Status invalid_capacity;
+  Channel<int> invalid(system_allocator(), 0, &invalid_capacity);
+  EXPECT_FALSE(invalid.valid());
+  EXPECT_TRUE(invalid_capacity.IsInvalidArgument());
 }
 
 // Spawn `bodies.size()` fibers on a `workers`-wide scheduler and block until
@@ -320,7 +331,7 @@ struct ChanArg {
 void chan_producer(void *p) {
   auto *a = static_cast<ChanArg *>(p);
   for (int i = 0; i < a->n; ++i)
-    a->ch->send(i);
+    (void)a->ch->send(i);
   a->ch->close();
 }
 void chan_consumer(void *p) {
@@ -360,13 +371,22 @@ TEST(Sync, ChannelTryAndTimedPathsDistinguishFullEmptyAndClosed) {
   int out = -1;
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kEmptyOrTimeout);
   EXPECT_EQ(ch.recv_for(out, 1ms), Ch::RecvStatus::kEmptyOrTimeout);
-  EXPECT_EQ(ch.try_send(7), Ch::SendStatus::kSent);
-  EXPECT_EQ(ch.try_send(8), Ch::SendStatus::kFullOrTimeout);
-  EXPECT_EQ(ch.send_for(8, 1ms), Ch::SendStatus::kFullOrTimeout);
+  EXPECT_TRUE(ch.try_send(7).has_value());
+  auto full = ch.try_send(8);
+  ASSERT_FALSE(full.has_value());
+  EXPECT_EQ(full.error().reason(), ChannelSendFailure::kFull);
+  EXPECT_EQ(full.error().value(), 8);
+  auto timed_out = ch.send_for(9, 1ms);
+  ASSERT_FALSE(timed_out.has_value());
+  EXPECT_EQ(timed_out.error().reason(), ChannelSendFailure::kTimeout);
+  EXPECT_EQ(timed_out.error().value(), 9);
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kValue);
   EXPECT_EQ(out, 7);
   ch.close();
-  EXPECT_EQ(ch.try_send(9), Ch::SendStatus::kClosed);
+  auto closed_send = ch.try_send(10);
+  ASSERT_FALSE(closed_send.has_value());
+  EXPECT_EQ(closed_send.error().reason(), ChannelSendFailure::kClosed);
+  EXPECT_EQ(closed_send.error().value(), 10);
   EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kClosed);
 }
 
@@ -382,7 +402,7 @@ TEST(Sync, ChannelNaturalReceiveReturnsTypedErrorsAndMoveOnlyValue) {
   auto empty = ch.try_recv();
   ASSERT_FALSE(empty.has_value());
   EXPECT_TRUE(empty.error().IsNotFound());
-  EXPECT_EQ(ch.try_send(MoveOnly(7)), Channel<MoveOnly>::SendStatus::kSent);
+  EXPECT_TRUE(ch.try_send(MoveOnly(7)).has_value());
   auto value = ch.recv();
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value->value, 7);
@@ -408,7 +428,7 @@ struct ChanMpmcArg {
 void mpmc_producer(void *p) {
   auto *a = static_cast<ChanMpmcArg *>(p);
   for (int i = 0; i < a->per_producer; ++i)
-    a->ch->send(1);
+    (void)a->ch->send(1);
   a->producers_done->done();
 }
 void mpmc_closer(void *p) {

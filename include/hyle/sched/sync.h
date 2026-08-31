@@ -546,20 +546,66 @@ concept BroadcastValue = WatchValue<T>;
 
 } // namespace detail
 
+enum class ChannelSendFailure : std::uint8_t {
+  kFull,
+  kTimeout,
+  kClosed,
+  kInvalid,
+};
+
+// Failed admission always returns ownership of the caller's value. A producer
+// can retry, reroute or drop deliberately instead of losing a message merely
+// because a bounded try/timed send did not win capacity.
+template <detail::ChannelValue T> class ChannelSendError {
+public:
+  ChannelSendError(ChannelSendFailure reason, T value) noexcept
+      : reason_(reason), value_(std::move(value)) {}
+
+  ChannelSendFailure reason() const noexcept { return reason_; }
+  T &value() & noexcept { return value_; }
+  const T &value() const & noexcept { return value_; }
+  T &&value() && noexcept { return std::move(value_); }
+  Status status() const noexcept {
+    switch (reason_) {
+    case ChannelSendFailure::kFull:
+      return Status(StatusCode::Unavailable);
+    case ChannelSendFailure::kTimeout:
+      return Status(StatusCode::DeadlineExceeded);
+    case ChannelSendFailure::kClosed:
+      return Status(StatusCode::Cancelled);
+    case ChannelSendFailure::kInvalid:
+      return Status(StatusCode::ResourceExhausted);
+    }
+    HYLE_UNREACHABLE();
+  }
+
+private:
+  ChannelSendFailure reason_;
+  T value_;
+};
+
+template <detail::ChannelValue T>
+using ChannelSendResult = std::expected<void, ChannelSendError<T>>;
+
 // Storage comes from the injected allocator (charter: no hidden heap). Built on
 // the same CV foundation -- demonstrates it composes.
 template <detail::ChannelValue T> class Channel {
 public:
-  enum class SendStatus { kSent, kFullOrTimeout, kClosed };
   enum class RecvStatus { kValue, kEmptyOrTimeout, kClosed };
 
   Channel(mem::Allocator alloc, std::size_t capacity)
-      : alloc_(alloc), cap_(capacity) {
-    HYLE_FATAL_ASSERT(alloc_.valid());
-    HYLE_FATAL_ASSERT(capacity >= 1);
-    HYLE_FATAL_ASSERT(capacity <=
-                      (std::numeric_limits<std::size_t>::max)() / sizeof(T));
-    buf_ = static_cast<T *>(alloc_.allocate(sizeof(T) * cap_, alignof(T)));
+      : alloc_(alloc) {
+    Status status;
+    init_(capacity, &status);
+    HYLE_FATAL_ASSERT(status.ok());
+  }
+
+  // Recoverable construction for untrusted capacity or allocator exhaustion.
+  // On failure status is non-OK and valid()==false; the object remains safely
+  // destructible and operations return typed errors.
+  Channel(mem::Allocator alloc, std::size_t capacity, Status *status) noexcept
+      : alloc_(alloc) {
+    init_(capacity, status);
   }
 
   ~Channel() {
@@ -578,71 +624,78 @@ public:
   Channel(Channel &&) = delete;
   Channel &operator=(Channel &&) = delete;
 
-  // Allocation failure leaves a closed/empty invalid channel. Check this once
-  // after construction; send/recv also fail safely. This low-level constructor
-  // has no hidden last-error side channel.
+  // A recoverably-constructed channel may be invalid. Check once after
+  // construction; send/recv also fail safely.
   bool valid() const noexcept { return buf_ != nullptr; }
 
-  // Enqueue `v`, blocking the fiber while the buffer is full. Returns false if
-  // the channel is closed (the value is dropped).
-  bool send(T v) {
+  // Enqueue `v`, blocking the fiber while the buffer is full. Every failure
+  // returns the unsent value in ChannelSendError.
+  ChannelSendResult<T> send(T v) noexcept {
     if (buf_ == nullptr)
-      return false;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kInvalid, std::move(v)));
     mu_.lock();
     while (size_ == cap_ && !closed_)
       not_full_.wait(mu_);
     if (closed_) {
       mu_.unlock();
-      return false;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kClosed, std::move(v)));
     }
     new (&buf_[tail_]) T(std::move(v));
     tail_ = (tail_ + 1) % cap_;
     ++size_;
     mu_.unlock();
     not_empty_.notify_one();
-    return true;
+    return {};
   }
 
-  SendStatus try_send(T v) {
+  ChannelSendResult<T> try_send(T v) noexcept {
     if (buf_ == nullptr)
-      return SendStatus::kClosed;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kInvalid, std::move(v)));
     mu_.lock();
     if (closed_) {
       mu_.unlock();
-      return SendStatus::kClosed;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kClosed, std::move(v)));
     }
     if (size_ == cap_) {
       mu_.unlock();
-      return SendStatus::kFullOrTimeout;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kFull, std::move(v)));
     }
     new (&buf_[tail_]) T(std::move(v));
     tail_ = (tail_ + 1) % cap_;
     ++size_;
     mu_.unlock();
     not_empty_.notify_one();
-    return SendStatus::kSent;
+    return {};
   }
 
-  SendStatus send_for(T v, time::Duration timeout) {
+  ChannelSendResult<T> send_for(T v, time::Duration timeout) noexcept {
     if (buf_ == nullptr)
-      return SendStatus::kClosed;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kInvalid, std::move(v)));
     mu_.lock();
     const bool ready = not_full_.wait_for(
         mu_, timeout, [&] { return size_ != cap_ || closed_; });
     if (closed_) {
       mu_.unlock();
-      return SendStatus::kClosed;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kClosed, std::move(v)));
     }
     if (!ready) {
       mu_.unlock();
-      return SendStatus::kFullOrTimeout;
+      return std::unexpected(
+          ChannelSendError(ChannelSendFailure::kTimeout, std::move(v)));
     }
     new (&buf_[tail_]) T(std::move(v));
     tail_ = (tail_ + 1) % cap_;
     ++size_;
     mu_.unlock();
     not_empty_.notify_one();
-    return SendStatus::kSent;
+    return {};
   }
 
   // Dequeue a value, blocking the fiber while empty. Cancelled means the
@@ -762,12 +815,34 @@ public:
   }
 
 private:
+  void init_(std::size_t capacity, Status *status) noexcept {
+    HYLE_FATAL_ASSERT(status != nullptr);
+    *status = Status{};
+    if (!alloc_.valid()) {
+      *status =
+          Status::InvalidArgument("channel requires a complete allocator");
+      return;
+    }
+    if (capacity == 0 ||
+        capacity >
+            (std::numeric_limits<std::size_t>::max)() / sizeof(T)) {
+      *status = Status::InvalidArgument("invalid channel capacity");
+      return;
+    }
+    cap_ = capacity;
+    buf_ = static_cast<T *>(alloc_.allocate(sizeof(T) * cap_, alignof(T)));
+    if (buf_ == nullptr) {
+      *status = Status::ResourceExhausted(
+          "channel storage allocation failed");
+    }
+  }
+
   mem::Allocator alloc_;
   util::SpinLock mu_;           // guards the ring + closed_ (short holds)
   ConditionVariable not_empty_; // consumers wait here
   ConditionVariable not_full_;  // producers wait here
   T *buf_ = nullptr;
-  std::size_t cap_;
+  std::size_t cap_ = 0;
   std::size_t head_ = 0;
   std::size_t tail_ = 0;
   std::size_t size_ = 0;

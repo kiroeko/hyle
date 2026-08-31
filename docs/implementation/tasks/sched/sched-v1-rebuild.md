@@ -196,10 +196,11 @@
   shutdown 暂存均使用注入 allocator；构造参数与 OOM 可经 `Status` 恢复，保留显式 fail-fast convenience。
   invalid/OOM 与 allocation/free 对账测试通过。OS Thread 自身的冷路径分配仍属于 Platform 合同。
 - SCHED-FIX-05 实现批：Channel 新增 `Result<T>` 的 blocking/try/timed receive，同时保留可复用调用方
-  storage 的低层 overload；oneshot send failure 返还原始未发送值；broadcast receive error 暴露精确
-  missed count。ownership move/destruction 采用明确 nothrow value contract；watch/broadcast 可能抛出的
-  copy 由 RAII monitor guard 保证异常后可继续使用且 cursor 不前移，mutation callback 则显式要求
-  `noexcept`。Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.28s）。
+  storage 的低层 overload；bounded send 的 full/timeout/closed/invalid error 返还未发送值，普通构造
+  fail-fast、显式 `Status*` 构造提供 recoverable validation/OOM；oneshot send failure 同样返还原值；
+  broadcast receive error 暴露精确 missed count。ownership move/destruction 采用明确 nothrow value
+  contract；watch/broadcast 可能抛出的 copy 由 RAII monitor guard 保证异常后可继续使用且 cursor 不前移，
+  mutation callback 则显式要求 `noexcept`。Windows selected sched build 与 `hyle_sched_test` 1/1 通过。
 - SCHED-FIX-06/07 边界实现批：删除不属于真实 Scheduler 实现的 public `RunQueue/Worker` proof、对应
   自身 benchmark 与重复测试；IO poll/wake mutation 移入不安装的 `sched/detail` build-only bridge，普通
   C++ 用户只通过 `io::IoContext` 组合。删除 proof header 后，中央图暴露出 `container` 只是真实 PRIVATE

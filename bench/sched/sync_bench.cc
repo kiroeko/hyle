@@ -68,7 +68,7 @@ struct ChanPair {
 };
 void chan_prod(void* p) {
   auto* a = static_cast<ChanPair*>(p);
-  for (int i = 0; i < a->n; ++i) a->ch->send(i);
+  for (int i = 0; i < a->n; ++i) (void)a->ch->send(i);
   a->ch->close();
 }
 void chan_cons(void* p) {
