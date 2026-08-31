@@ -688,7 +688,7 @@
     },
     {
       "module": "util",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "UTIL-V3-CONTAINER-PUBLIC-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v3-rebuild.md",
       "round_id": "util-runtime-v3",
@@ -705,14 +705,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v3 CANDIDATE：lookup-only factory 缺口已由零额外常态状态的 find 补齐；产品绑定 b2b7bd67/1a95077c，进入三平台 correctness、sanitizer、交付与红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "util-runtime-v3 VERIFIED：唯一 lookup-only 缺口已补齐；三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部通过。"
     },
     {
       "module": "sched",

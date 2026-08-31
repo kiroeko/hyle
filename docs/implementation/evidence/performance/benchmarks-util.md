@@ -1,6 +1,6 @@
 # util 性能证据
 
-## util-runtime v3 当前 P0 结构任务（2026-08-31，ACTIVE）
+## util-runtime v3 当前 P0 结构证据（2026-08-31）
 
 本轮由 Container 的 `StringView/FlatHashMap` 公开合同替换触发，并用当前 llama.cpp/ggml 的真实
 backend discovery 旅程回放 Registry。审计只准入一个产品缺口：lookup-only
@@ -12,8 +12,10 @@ Tier 仍为 **P0 / STRUCTURAL**：正常形状是启动期 4--32 项 registratio
 demangle，没有 profile 证明其进入 token/kernel 热路径。本轮不运行 lookup 纳秒 benchmark，也不继承
 下方历史 N=256 数字。候选必须证明 register 为 O(|key|+|help|)+expected-amortized O(1)，find/create
 为 O(|key|)+expected O(1)，freeze 为 O(1)/零 allocation，frozen find/create 无锁/零 allocation，且
-mutable callback/factory 不在 mutex 内。当前尚未完成 candidate/三平台/三交付验证，因此本节不发布
-PASS 或 SOTA 声明；状态只看中央 registry 与
+mutable callback/factory 不在 mutex 内。产品候选 `b2b7bd679293d748d996662414c01c4cbcefcbda`
+（tree `1a95077cccbcabe4701a50873143297739adcb59`）已经通过 Windows/WSL/macOS 的 correctness、
+sanitizer 与 source/static/shared 交付验证；结构 verdict 为 **PASS**。它不发布 timing/SOTA 声明；
+状态只看中央 registry 与
 [`util-runtime-v3 task`](../../tasks/util/util-runtime-v3-rebuild.md)。
 
 ## util-core v1 当前工程证据（2026-08-27）
