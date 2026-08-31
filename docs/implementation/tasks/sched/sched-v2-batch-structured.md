@@ -7,7 +7,7 @@
 > correctness、交付和未受影响的 request/completion 证据可以作为审计输入，不能自动继承为本轮 verdict。
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v2-batch-structured`；
 - task kind：`RESUME`；
@@ -184,11 +184,11 @@ error。空 range 为成功；反向 range、零 grain、空 raw callback 或无
 | `FIX-03` | 四档选择和 Graph 边界不可发现 | architecture/user owner=`sched`，Graph 只作邻接记录 | `PARTIAL -> FIX`：更新 task table、可复制 journey、陷阱与成本表 | docs checker + user compile；不宣传 Graph 已迁移 |
 | `FIX-04` | 新 header/TU 的 component/package 闭包尚无证据 | delivery owner=`build/package`，产品依赖不变 | `PARTIAL -> FIX`：登记 sched source/header，验证 source/static/shared 与 FFI 清洁 | selected-component 三 journey、header self-contained、符号/import；不新增 build option/third party |
 | `FIX-05` | v1 structured peer 行语义失配 | evidence owner=`sched/perf`；primary 固定为 bulk same-contract | `INVALID -> FIX`：替换为 batch primary；rich 行只保留 `NATURAL_ROUTE/NOT_COMPARABLE` | semantic matrix、W1-WIN qualification、反序/holdout 仅按预算；不据 mechanism diagnostic 改 API |
-| `FIX-06` | 首个候选每个 public grain 都在四个 worker 间竞争同一 CAS cursor；qualified batch replay 对 oneTBB 中位慢 8.1%--9.3%，在 `n=31` 后仍未通过 5% NI | product owner=`sched`；公开 grain 是 callback 粒度，不要求内部每次只领取一个 grain；保持 O(N) work、O(worker) runner、O(1) batch state 与 stop contract | `INCONCLUSIVE -> FIX`：runner 以有界内部 reservation 减少共享领取次数，但仍逐 grain 调 body、每次调用前检查 stop/cancel，不新增 API/layout/metadata | 既有 callback/exactly-once/error/cancel/partial-admission/stress 全部复跑；唯一正式 P1 重跑；不加入公开 partitioner/auto-grain，不改 normal workload、peer 或 5% 门 |
+| `FIX-06` | 首个候选每个 public grain 都在四个 worker 间竞争同一 CAS cursor；qualified batch replay 对 oneTBB 中位慢 8.1%--9.3%，在 `n=31` 后仍未通过 5% NI | product owner=`sched`；公开 grain 是 callback 粒度，不要求内部每次只领取一个 grain；保持 O(N) work、O(worker) runner、O(1) batch state 与 stop contract | `INCONCLUSIVE -> FIXED`：`fc9cc652` 让 runner 有界预领取，正常范围用 `fetch_add`、回绕边界用 saturating CAS；仍逐 grain 调 body、每次调用前检查 stop/cancel，不新增 API/layout/常态外部 metadata | 既有 callback/exactly-once/error/cancel/partial-admission/stress 全部复跑；唯一正式 P1 重跑；不加入公开 partitioner/auto-grain，不改 normal workload、peer 或 5% 门 |
 
-本轮产品修改严格限于 `FIX-01..06`；`FIX-01..05` 已由首个候选完成，退阶后唯一未完成产品项是
-`FIX-06`。动态 task-group API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 与
-P2 推理端到端均不因本审计进入施工。
+本轮产品修改严格限于 `FIX-01..06`，当前全部进入新 candidate；没有剩余产品施工授权。动态 task-group
+API、Graph 迁移、caller-participating SPMD、公开自动 grain/partitioner 与 P2 推理端到端均不因本审计
+进入施工。
 
 ## Owner 六问直答（`AUDITED`）
 
@@ -196,8 +196,10 @@ P2 推理端到端均不因本审计进入施工。
    间接使用 Core/Error/Time/Platform/Mem/Util-core，Container 是 private queue 支撑。Marl/oneTBB 只作
    peer，llama.cpp/ggml 只作 consumer/capability 输入；`bulk_execute` 不新增第三方 product dependency。
 2. **功能：**llama.cpp/ggml 的共享 thread episode、barrier、abort 与 dynamic chunk shape 证明 batch
-   route 是推理底座 `MUST`；当前 Sched 只有手工 `schedule + WaitGroup` 或逐项 rich handle，有限 indexed
-   batch 为 `MISSING`，完成 `FIX-01/02` 后才可答完整。Graph 的 adaptive algorithms 明确归 Graph。
+   route 是推理底座 `MUST`；`bulk_execute` 已补齐有限 indexed/caller-context batch、共享首错/取消、同步
+   quiescence、partial admission 与 worker-stack progress fallback。动态异构 addition 由
+   `schedule + WaitGroup` 路由，逐项 rich 与可挂起任务各有独立入口；Graph 的 adaptive algorithms 明确
+   归 Graph。当前审计没有仍属 Sched 的能力缺口。
 3. **性能：**本轮为 P1。首个候选已证明零 per-item allocation/status/cancel/handle、O(worker) queue
    entries 与 O(1) terminal wake；qualified W1-WIN bundle 的资格、A/A、5%/10% known delta、timer floor、
    artifact/build/provenance 全部通过。对 Marl 的两个顺序中位 advantage 为 `1.022/0.988`，第二个顺序
@@ -206,12 +208,14 @@ P2 推理端到端均不因本审计进入施工。
    只修该成本结构，随后使用原合同完成唯一重跑，当前不声明 SOTA 或非劣。
 4. **旧 C ABI / Native FFI：**全局策略 `N/A`；当前 Sched 公开树没有 C schema/header/bridge/专用 option。
    fcontext `extern "C"` 是私有汇编边界。新能力只提供 C++ header/decorated symbol，不制造伪 C ABI。
-5. **构建与导入：**v1 已证明既有 sched source/static/shared journey，但新 `bulk.h/bulk.cc` 尚未进入候选，
-   因此当前为 `PARTIAL`；`FIX-04` 必须重验 selected component 的三种真实 consumer 与 Windows/Unix
-   loader/import 行为，不能继承 producer build 代替。
-6. **C++ API 与文档：**现有单项四档基本自然，但用户无法从选择表发现有限 batch，并容易被旧 benchmark
-   诱导到 `schedule_task`。冻结的 `bulk_execute` 让普通 lambda、首错、共享 cancel、caller-owned slots 和
-   同步 lifetime 直接可见；完成 `FIX-03`、用户 compile 与陷阱说明前仍为 `PARTIAL`。
+5. **构建与导入：**首个 candidate 已在 Windows/WSL/macOS 证明 source embedding、relocated static 与
+   relocated shared selected-component consumer；`bulk.h/bulk.cc` 安装和导入正确。`FIX-06` 只改同一 TU
+   的私有算法，但新 candidate 仍须复跑受影响 producer/consumer 与 Windows/ELF/Mach-O symbol/import，
+   不能自动继承旧二进制。
+6. **C++ API 与文档：**四档选择表、`noexcept` lambda/Status 例子、caller-owned lifetime、grain、并发写、
+   worker-stack serial fallback、取消/失败非事务性等陷阱已经进入 architecture/user docs 并通过用户头编译。
+   `FIX-06` 进一步明确 grain 是用户 callback/停止粒度，内部 reservation 不是调参要求或公开 partitioner；
+   当前 public shape 自然，terminal 仍须重跑 installed consumer 与 docs/symbol drift check。
 
 ## 首个 Candidate（本轮历史输入，已因 `FIX-06` 退阶）
 
@@ -239,6 +243,29 @@ P2 推理端到端均不因本审计进入施工。
 `C:\hyle-scratch\sched-v2\module-status-before-candidate.json`，SHA-256
 `8A79BB632B24C52B23598A5554FF895BAC41A2011331B661FFDE616137DBC924`。
 
+## `FIX-06` Candidate
+
+当前冻结产品候选：
+
+- commit：`fc9cc65207d6d05589da89b32435a62f0733e2ad`；
+- tree：`6e516ceaec2f83ce3089429b07b5bd9bd945d80e`；
+- public contract：保留首个 candidate 的 `BulkExecuteOptions`、raw `BulkBodyFn`、compiled entry 与
+  `void/Status` lambda adapter；只把 stop 文字从内部“claim”改写为用户可观察的“下一次 body invocation”，
+  无新 symbol、option、public type/layout 或依赖；
+- implementation：一个 caller-stack `BulkState`、O(worker) raw runners、O(1) manual Event completion；
+  正常范围把 chunk cursor RMW 限到约 `min(chunks, worker_count * 8)` 个 reservation 加 terminal claims，
+  接近 `SIZE_MAX` 时以 saturating CAS 防回绕；reservation 内逐 public grain 调 body 并逐次观察 stop/cancel；
+- resource/complexity：O(N) body work、O(worker) queue entries、O(1) batch metadata/wake，仍无 per-item
+  allocation/status/cancel/handle/queue entry；内部多两个 `size_t/bool` 是一次 batch 算法状态，不进入
+  Scheduler/InlineJob/public layout；
+- candidate tests：fresh W1-WIN MSVC 19.50 Release shared、`/W4 /WX` 通过；全部 166 个 Sched tests 与
+  10 个 public headers 通过。既有 grain=7 test 现额外签 callback 数与精确边界，first-error 仍最多四个
+  in-flight body，cancel/stress/zero-allocation 全部通过；尚未查看修正后的性能结果。
+
+`AUDITED -> CANDIDATE` 前态快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v2\module-status-before-candidate-fix06.json`，SHA-256
+`21161A0A8F0164DC75CA607A38879B5587224C221BF7819D8DA89369B0B92B20`。
+
 ## Verification manifest
 
 候选前本机定向 correctness 只作为 candidate test：
@@ -248,10 +275,10 @@ P2 推理端到端均不因本审计进入施工。
 | new bulk semantics/resource tests | `PASS`（9） | candidate 上重复，并扩展 sanitizer/stress |
 | full Sched unit suite | `PASS`（166） | 三平台适用 suite |
 | public headers | `PASS`（10） | 三平台 + installed consumer |
-| WSL/macOS correctness/sanitizer | `PASS`（WSL Release/ASan/UBSan/TSan；macOS AppleClang ARM64 Release） | `FIX-06` 后定向复跑 |
-| source/static/shared delivery | `PASS`（Windows/WSL/macOS 三种 selected-component consumer） | `FIX-06` 后复跑受影响 producer/consumer |
-| same-contract P1 | `INCONCLUSIVE`（qualified、`n=31`；Marl 一顺序 NI unresolved，oneTBB 双顺序 unresolved） | `FIX-06` 后仅一次 W1-WIN 重跑 |
-| docs/usability/FFI cleanliness | `PASS`（用户 compile、三交付、无 C/Native FFI 面；产品文档已覆盖选择与陷阱） | terminal 时重跑 docs/symbol drift check |
+| WSL/macOS correctness/sanitizer | `BLOCKED`（新 candidate 尚未运行） | WSL Release/ASan/UBSan/TSan + macOS Release |
+| source/static/shared delivery | `BLOCKED`（新 candidate 尚未运行） | 三平台受影响 selected-component consumer |
+| same-contract P1 | `BLOCKED`（新 candidate 尚未运行；首个 candidate 的 `INCONCLUSIVE` 只作历史输入） | 原合同唯一一次 W1-WIN 重跑 |
+| docs/usability/FFI cleanliness | `BLOCKED`（candidate docs/header compile 已过；installed/symbol drift 尚未重跑） | checks + consumer compile + symbol scan |
 | red team | `BLOCKED`（尚未运行） | candidate 验证后独立攻击 |
 
 ## 独立红队
@@ -261,7 +288,6 @@ reservation 对 first-error/cancel latency 的影响，以及是否出现未声�
 
 ## Closure decision
 
-当前机械状态：`AUDITED`。首个 candidate 的 public/resource contract、correctness 和交付方向成立，但
-same-contract P1 未通过关闭硬门；唯一机制诊断把问题收敛到逐 grain 共享 CAS。下一步只能实现
-`FIX-06`、冻结一个新 candidate、复跑受影响 correctness/三平台/三交付与唯一正式 P1，然后红队并终止；
-不得改 public API、normal workload、peer、5% margin 或中央统计语义。
+当前机械状态：`CANDIDATE`。`FIX-06` 产品 identity 与 public/resource contract 已冻结；下一步只复跑受
+影响 correctness、三平台、三交付、原 same-contract P1、文档/FFI cleanliness 和独立红队。不得再改
+产品/API/normal workload、peer、5% margin 或中央统计语义；P1 若仍未通过就按卡终止为具名 `BLOCKED`。

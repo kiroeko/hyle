@@ -748,12 +748,14 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "sched-v2-batch-structured",
       "closure_task": "docs/implementation/tasks/sched/sched-v2-batch-structured.md",
       "scope": "Restore the missing non-suspending batch-structured task route: one batch-level completion, shared failure/cancellation, caller-owned result slots, no per-item independent handle/status or suspension; define its relation to schedule, schedule_task and spawn_task, then requalify the affected P1 contract and delivery closure.",
       "non_goals": "Closing or redesigning IO, Compute or Graph; graph/DAG/model/kernel/grain/NUMA/priority/caller-participating SPMD policy; copying the oneTBB algorithm suite; changing unrelated per-task or suspending semantics; Native FFI/C API, stable cross-toolchain C++ ABI, P2 end-to-end claims and Formal certification.",
       "baseline_commit": "1908f7b9bf8c86c1da9c11aa63e767577d0fa602",
+      "candidate_commit": "fc9cc65207d6d05589da89b32435a62f0733e2ad",
+      "candidate_tree": "6e516ceaec2f83ce3089429b07b5bd9bd945d80e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -770,7 +772,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v2 AUDITED：首个 bulk_execute 候选的三平台、三交付和正确性门通过，但 qualified W1-WIN same-contract P1 在 n=31 后仍为 INCONCLUSIVE；唯一 codegen 诊断确认逐 grain 共享 CAS 热点，冻结 FIX-06 为保持公开 grain/callback 语义的内部批量预领取。"
+      "summary": "sched-v2 CANDIDATE：FIX-06 候选 fc9cc652/6e516cea 已冻结；以有界内部 reservation 摊销共享 cursor，保持逐 public grain callback/error/cancel 语义、O(worker) runner 和零逐项 allocation，等待受影响三平台/三交付及唯一 same-contract P1 重跑。"
     },
     {
       "module": "io",
