@@ -748,12 +748,14 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "sched-v1",
       "closure_task": "docs/implementation/tasks/sched/sched-v1-rebuild.md",
       "scope": "Current complete C++ Scheduler product: fcontext and fibers, worker scheduling and work stealing, completion wake/timer/cancellation, structured join and blocking offload, synchronization and messaging, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering performance.",
       "non_goals": "Closing IO, Compute or Graph; graph bulk algorithms, IO reactor, GPU or model policy, actor/distributed/process scheduling, preemptive kill, automatic sysmon, Native FFI/C API, stable cross-toolchain C++ ABI, all-operation or all-platform SOTA, P2 end-to-end claims and Formal certification.",
       "baseline_commit": "63406dd0bf37ed2eb78baef8008820c64294fd81",
+      "candidate_commit": "f358d084d17f92e64ec51ae2bd974d2a67f417d2",
+      "candidate_tree": "44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -770,7 +772,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v1 AUDITED：原候选 9f247141/01f20256 的三平台 correctness 与交付已通过；冻结 P1 replay 发现非挂起 typed spawn/join 相对 Marl 稳定慢约 29%，机制定位为每个叶任务无条件承担 coroutine、guarded Fiber 和 context switch，现按 FIX04/FIX08 执行唯一一次产品修正。"
+      "summary": "sched-v1 CANDIDATE：非挂起 typed work 现由单 allocator cell 的 worker-stack schedule_task 承载，产品冻结于 f358d084/44a0d4e0；正在重签三平台 correctness、三交付、唯一一次正式 P1 重跑与红队。"
     },
     {
       "module": "io",

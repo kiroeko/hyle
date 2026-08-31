@@ -7,7 +7,7 @@
 > verdict。当前机械状态只看 [`module-status.json`](../../module-status.json)。进入 `AUDITED` 并冻结有限
 > `FIX` 集前，不修改 sched 产品实现。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`sched` / scheduling-runtime owner / `sched-v1`；
 - task kind：`REFACTOR`；baseline commit：
@@ -81,33 +81,37 @@
 `C:\hyle-scratch\sched-v1\module-status-before-performance-return-audited.json`，SHA-256
 `5449D000DC825947E90E25735C901DFD25A05BD5D137B27C526E8F90C3125359`。
 
+唯一产品修正完成后再次进入 `CANDIDATE` 前的 registry 快照保存在 canonical checkout 外：
+`C:\hyle-scratch\sched-v1\module-status-before-worker-task-candidate.json`，SHA-256
+`59D1FF73E40757D33E8BB6C0ACBF0DC60FB14196D862B7ED6D026AC81E38A330`。
+
 ## Capability-family coverage map
 
 | Family | admitted user journeys / evidence | required semantic variants | lifecycle / boundary / ownership dimensions | current route | Coverage | missing edge / negative space |
 |---|---|---|---|---|---|---|
-| stackful execution context | low-level callback/fiber；IO/GPU completion 冻结深调用栈；Boost.Context/Marl | guarded small/default/large/one-off stack；pre-start move；resume/yield/finish | stack owner、guard、pool return、finish-after-switch、真实 x86-64/AArch64 | `Fiber` + Mem `FiberStack/FiberStackPool` + vendored fcontext | `PARTIAL` | 已启动 Fiber 仍可公开 move，fcontext trampoline 保留旧 `this`，是可复现 lifetime 缺陷；大量 dispatch mutation seam 暴露为普通 public API |
-| general scheduler / placement / lifecycle | 短 CPU callback、可挂起任务、work stealing、外部 inject、IO pin、drain/shutdown；ggml cpumask/poll/priority，Marl affinity/initializer | unpinned default；显式 CPU ids 或 ordered pin；best-effort/required；balanced/latency/power idle；worker hooks | bounded admission、steal/pin、fairness、thread start failure、concurrent shutdown | M:N worker + sharded inject/local FIFO/LIFO + pinned queue | `PARTIAL` | 当前默认悄悄单 CPU 硬绑；不能表达显式 CPU set/严格策略；固定 4096 spin；没有 worker start/stop hook；`RunQueue/Worker` 是 benchmark proof 而非真实实现 |
-| lightweight / owned / structured task | raw zero-allocation callback、自然 lambda、detached suspend、typed join、dynamic fan-out、blocking syscall/backend | worker-stack callback；worker-stack typed join；stackful detached；`Task<T>`；homogeneous range/heterogeneous pack；blocking offload | closure ownership、OOM/throw、detach/abort/join、shutdown | `schedule`、`spawn_detached`、`spawn_task`、`JoinHandle`、`BlockingPool` | `PARTIAL` | FIX01--07 已补自然 lambda、默认栈、span join 与 allocator；P1 replay 证明非挂起 typed 叶任务仍只能走完整 coroutine/Fiber，缺少与 raw `schedule` 同成本档的 typed worker-stack route |
-| wake / timer / deadline integration | IO、GPU、timer completion 单次唤醒；sleep/timeout；当前 IO consumer | wake-before-suspend rendezvous；relative duration/absolute monotonic deadline；arm/cancel | timer entry owner、pin episode、timeout-vs-completion winner、shutdown | `Waker` + per-worker Time `TimerQueue` | `PARTIAL` | C++ public API 仍暴露无单位 `uint64_t ns`；IO poll/wake 与 stack-pool wiring 作为普通 Scheduler API 泄漏，而不是具名 integration seam |
-| cooperative cancellation | request fan-out、deadline/client disconnect、JoinHandle abort、in-flight IO callback；Tokio/Folly | shareable token；child subtree；cross-thread cancel/register/drop；nested sources；O(1) poll | allocator/OOM、token/callback lifetime、reentrancy、destruction、migration | cancel tree + callback + fiber-local flag | `PARTIAL` | tree/link/callback 写操作宣称 same-worker，但公开 API、IO 和现有测试跨线程使用；token 不可共享；invalid-on-OOM；单 cancel slot 使 `CancelScope` 屏蔽 `JoinHandle::abort` |
-| synchronization / notification | fiber 与外部线程的 monitor、countdown、phase barrier、signal、permits、RW access；Marl Event、Tokio/standard barriers | notify one/all；auto/manual event；one-shot latch；reusable barrier；timed semaphore | fiber/thread dual wait、FIFO/fairness、timeout unlink、close | CV、Mutex、WaitGroup、Latch、Semaphore、RwLock | `PARTIAL` | 通用 Event 与 reusable Barrier 缺失；Latch 缺 arrive-and-wait；Semaphore 缺 timed acquire；历史注释仍把未验证 macOS 结论写进当前头 |
-| bounded / latest / broadcast messaging | producer/consumer queue、reply slot、config/watch、fan-out broadcast；Tokio channels | blocking/try/timed/close；single-shot；latest value；lag detection | value exception contract、unsent value、OOM、sender/receiver drop、lag count | `Channel`、oneshot、watch、broadcast | `PARTIAL` | 多个 `noexcept` 模板没有 nothrow 类型约束；手写 lock 在抛出时会永久锁住；oneshot 文档承诺失败返还原值但 `Result<void>` 丢值；Channel 只给 output 参数且 OOM 路线不醒目；broadcast 丢失可编程 lag count |
-| observability / integration | 零成本关闭 trace；IO/Compute/Graph 直接消费 | trace off 零依赖；on 时单一 backend；private integration access | callback/context lifetime、registration/teardown、组件方向 | `HYLE_TRACE` foundation + raw integration callbacks | `PARTIAL` | trace 接线本身正确；普通 public surface 与 internal seam 未分层，旧 milestone 注释掩盖当前合同 |
+| stackful execution context | low-level callback/fiber；IO/GPU completion 冻结深调用栈；Boost.Context/Marl | guarded small/default/large/one-off stack；pre-start move；resume/yield/finish | stack owner、guard、pool return、finish-after-switch、真实 x86-64/AArch64 | `Fiber` + Mem `FiberStack/FiberStackPool` + vendored fcontext | `COMPLETE` | started Fiber 不可 move；dispatch mutation 只由内部 accessor/friend 使用；平台证据待本候选重签 |
+| general scheduler / placement / lifecycle | 短 CPU callback、可挂起任务、work stealing、外部 inject、IO pin、drain/shutdown；ggml cpumask/poll/priority，Marl affinity/initializer | unpinned default；显式 CPU ids 或 ordered pin；best-effort/required；balanced/latency/power idle；worker hooks | bounded admission、steal/pin、fairness、thread start failure、concurrent shutdown | M:N worker + sharded inject/local FIFO/LIFO + pinned queue | `COMPLETE` | 通用 priority 仍按 SCHED-GEN-01 等真实 serving demand；不保留 benchmark proof 类型 |
+| lightweight / owned / structured task | raw zero-allocation callback、自然 lambda、detached suspend、typed join、dynamic fan-out、blocking syscall/backend | worker-stack callback；worker-stack typed join；stackful detached；`Task<T>`；homogeneous range/heterogeneous pack；blocking offload | closure ownership、OOM/throw、detach/abort/join、shutdown | `schedule`、`schedule_task`、`spawn_detached`、`spawn_task`、`JoinHandle`、`BlockingPool` | `COMPLETE` | 非挂起 typed work 使用单 cell worker-stack route；会挂起的 typed work 明确承担 coroutine/Fiber 成本 |
+| wake / timer / deadline integration | IO、GPU、timer completion 单次唤醒；sleep/timeout；当前 IO consumer | wake-before-suspend rendezvous；relative duration/absolute monotonic deadline；arm/cancel | timer entry owner、pin episode、timeout-vs-completion winner、shutdown | `Waker` + per-worker Time `TimerQueue` | `COMPLETE` | public 时间边界为 typed Time；IO poll/wake 通过不安装的 detail integration seam |
+| cooperative cancellation | request fan-out、deadline/client disconnect、JoinHandle abort、in-flight IO callback；Tokio/Folly | shareable token；child subtree；cross-thread cancel/register/drop；nested sources；O(1) poll | allocator/OOM、token/callback lifetime、reentrancy、destruction、migration | cancel tree + Fiber/worker-stack execution-local flag chain | `COMPLETE` | poll 仍为 O(k) active-source atomic loads；tree/control path 与 callback 生命周期单独串行化 |
+| synchronization / notification | fiber 与外部线程的 monitor、countdown、phase barrier、signal、permits、RW access；Marl Event、Tokio/standard barriers | notify one/all；auto/manual event；one-shot latch；reusable barrier；timed semaphore | fiber/thread dual wait、FIFO/fairness、timeout unlink、close | CV、Mutex、WaitGroup、Event、Latch、Barrier、Semaphore、RwLock | `COMPLETE` | timeout unlink 为 O(1)；平台实现仍须本候选 sanitizer/correctness 重签 |
+| bounded / latest / broadcast messaging | producer/consumer queue、reply slot、config/watch、fan-out broadcast；Tokio channels | blocking/try/timed/close；single-shot；latest value；lag detection | value exception contract、unsent value、OOM、sender/receiver drop、lag count | `Channel`、oneshot、watch、broadcast | `COMPLETE` | nothrow value 与 recoverable OOM/unsent ownership 已成为显式合同；watch/broadcast copy 由 RAII 保持异常安全 |
+| observability / integration | 零成本关闭 trace；IO/Compute/Graph 直接消费 | trace off 零依赖；on 时单一 backend；private integration access | callback/context lifetime、registration/teardown、组件方向 | `HYLE_TRACE` foundation + private raw integration callbacks | `COMPLETE` | trace off 不引入 runtime backend；普通 public surface 与内部 mutation seam 已分层 |
 | specialized inference execution | ggml caller-participating SPMD、hot spin barrier、pause/resume；llama serving priority/cancel lane | graph plan、kernel chunking、backend/NUMA/model policy | caller participation、scratch、tensor/backend lifetime | Graph/Compute 或未来 inference runtime | `ROUTED` | 不把 ggml 专用 threadpool、模型 priority 或 GPU policy复制到通用 sched；真实 consumer 证明需要通用 priority 后重开 |
-| product delivery / dependencies | direct-source inference engine；installed static/shared C++ SDK | selected closure、private fcontext C/asm seam、same-toolchain C++ import | lock/license/relocation/export/header ownership | central component graph + package registry | `PARTIAL` | 当前 build 基线成立；删改 public seam、Time public edge和 allocator artifact 后必须重新验证三种 journey；无 Native FFI |
+| product delivery / dependencies | direct-source inference engine；installed static/shared C++ SDK | selected closure、private fcontext C/asm seam、same-toolchain C++ import | lock/license/relocation/export/header ownership | central component graph + package registry | `COMPLETE` | 产品接线已完成；本候选 source/static/shared journey 仍须重新执行才取得 gate verdict；无 Native FFI |
 
 ## Capability / gap ledger
 
 | ID | class | exact demand / source | normal shape and target | current | action | severity / verification / negative space |
 |---|---|---|---|---|---|---|
-| SCHED-FIX-01 | `MUST` | 现有跨线程 cancel tests、IO callback、Tokio/Folly cancellation | 可复制 token；tree control path 可跨线程；`is_cancelled` O(1) atomic；所有 active cancel source 可组合；OOM 为 `Result` | `PARTIAL` | `FIX` | correctness；并发/重入/树 drop/TSan；不得给 poll hot path 加锁或 allocation |
-| SCHED-FIX-02 | `MUST` | ggml CPU set/poll/priority；Marl affinity/initializer；通用组合 | unpinned default；显式 ordered/CPU-id placement；required policy；semantic idle policy；noexcept worker hooks | `PARTIAL` | `FIX` | API/latency/energy；默认无隐式 pin，专用 SPMD/pause 留 Graph/Compute |
-| SCHED-FIX-03 | `MUST` | `std::chrono`/HYLE Time、Marl Event、standard/Tokio barrier、现有 timer consumer | `Duration/MonotonicTimePoint`；Event；Barrier；Latch arrive-and-wait；timed Semaphore | `PARTIAL` | `FIX` | common primitive completeness；O(1) state transitions、timeout O(1) unlink，不复制 peer 独有组合器 |
-| SCHED-FIX-04 | `MUST` | 普通 C++ user、Graph 动态 fan-out、Marl/Tokio worker tasks | raw hot seam保留；非挂起 callable 有 typed worker-stack join；可挂起 callable 走默认 stackful route；span join | `PARTIAL` | `FIX` | 易用性/性能；原候选已补 lambda、默认栈与 span，但 P1 机制证据补充冻结一个轻量 typed route；不得让不会挂起的叶任务支付 coroutine frame、guarded stack 或 context switch，也不下沉 graph algorithms |
-| SCHED-FIX-05 | `MUST` | 现有公开 messaging 承诺、Tokio ownership shape、C++ exception safety | nothrow value contract或异常安全 RAII；oneshot unsent value；自然 receive/lag diagnostics | `PARTIAL` | `FIX` | correctness/usability；不因 API 数量重造 actor/stream 系统 |
-| SCHED-FIX-06 | `MUST` | allocator charter、Fiber 可复现 move defect、benchmark-only public trace | Scheduler/BlockingPool bookkeeping 走注入 allocator；Fiber 仅 pre-start move；删除 proof RunQueue/Worker；detail integration access | `PARTIAL` | `FIX` | lifetime/OOM/boundary；OS Thread 自身冷路径 allocation 属 Platform 合同，不在本轮越界 |
-| SCHED-FIX-07 | `MUST` | build/package 六问与当前无 guide | Time 改为真实 PUBLIC edge；source/static/shared；private fcontext C/asm；architecture + scenario guide | `PARTIAL` | `FIX` | delivery/docs；不恢复旧 C ABI 或 Native FFI |
-| SCHED-FIX-08 | `MUST` | P1 closure card | request dispatch、Graph-shaped non-suspending typed fan-out/join、completion wake 的有限 consumer replay | `PARTIAL` | `FIX` | W1-WIN probe 中 request HYLE 快 63--86%、completion 持平到快 6%，structured 双顺序均约慢 29%；一次 codegen/机制诊断已定位完整 Fiber 固定成本，只允许 FIX04 的一次产品修正与一次正式重跑 |
+| SCHED-FIX-01 | `MUST` | 现有跨线程 cancel tests、IO callback、Tokio/Folly cancellation | 可复制 token；tree control path 可跨线程；`is_cancelled` O(1) atomic；所有 active cancel source 可组合；OOM 为 `Result` | `COMPLETE` | `KEEP` | correctness；并发/重入/树 drop/TSan；不得给 poll hot path 加锁或 allocation |
+| SCHED-FIX-02 | `MUST` | ggml CPU set/poll/priority；Marl affinity/initializer；通用组合 | unpinned default；显式 ordered/CPU-id placement；required policy；semantic idle policy；noexcept worker hooks | `COMPLETE` | `KEEP` | API/latency/energy；默认无隐式 pin，专用 SPMD/pause 留 Graph/Compute |
+| SCHED-FIX-03 | `MUST` | `std::chrono`/HYLE Time、Marl Event、standard/Tokio barrier、现有 timer consumer | `Duration/MonotonicTimePoint`；Event；Barrier；Latch arrive-and-wait；timed Semaphore | `COMPLETE` | `KEEP` | common primitive completeness；O(1) state transitions、timeout O(1) unlink，不复制 peer 独有组合器 |
+| SCHED-FIX-04 | `MUST` | 普通 C++ user、Graph 动态 fan-out、Marl/Tokio worker tasks | raw hot seam保留；非挂起 callable 有 typed worker-stack join；可挂起 callable 走默认 stackful route；span join | `COMPLETE` | `KEEP` | `schedule_task` 用单 allocator cell 保存 callable/result state，直接在 worker stack 执行；不会为 benchmark 下沉 graph algorithms |
+| SCHED-FIX-05 | `MUST` | 现有公开 messaging 承诺、Tokio ownership shape、C++ exception safety | nothrow value contract或异常安全 RAII；oneshot unsent value；自然 receive/lag diagnostics | `COMPLETE` | `KEEP` | correctness/usability；不因 API 数量重造 actor/stream 系统 |
+| SCHED-FIX-06 | `MUST` | allocator charter、Fiber 可复现 move defect、benchmark-only public trace | Scheduler/BlockingPool bookkeeping 走注入 allocator；Fiber 仅 pre-start move；删除 proof RunQueue/Worker；detail integration access | `COMPLETE` | `KEEP` | lifetime/OOM/boundary；OS Thread 自身冷路径 allocation 属 Platform 合同，不在本轮越界 |
+| SCHED-FIX-07 | `MUST` | build/package 六问与当前无 guide | Time 改为真实 PUBLIC edge；source/static/shared；private fcontext C/asm；architecture + scenario guide | `COMPLETE` | `KEEP` | delivery/docs；不恢复旧 C ABI 或 Native FFI |
+| SCHED-FIX-08 | `MUST` | P1 closure card | request dispatch、Graph-shaped non-suspending typed fan-out/join、completion wake 的有限 consumer replay | `CANDIDATE` | `VERIFY` | 唯一产品修正已完成；只剩一次正式 P1 重跑，稳定 material FAIL 即 BLOCKED |
 | SCHED-GEN-01 | `GENERAL` | llama server priority cancel lane；Taskflow/oneTBB priority | 通用 task priority | `OUT_OF_SCOPE` | `DEFER` | owner=Sched+serving；真实 HYLE consumer证明默认/opt-in metadata与 starvation合同后重开 |
 | SCHED-GEN-02 | `GENERAL` | ggml paused persistent SPMD pool | pause/resume/caller participation/hot spin barrier | `ROUTED` | `REJECT` | owner=Graph/Compute/inference；通用 scheduler pause 会阻塞 IO/timer progress |
 
@@ -248,18 +252,34 @@ CPU-set 语义、TSan/ASan 或三交付写成通过。
 - 反序复现与一次机制诊断预算已用完。只允许一次上述产品修正和一次完整 P1 重跑；若仍稳定 material
   `FAIL`，本轮以具名性能 blocker 进入 `BLOCKED`，不再改变 workload 或扩建中央仪器。
 
+### 新候选冻结（2026-08-31）
+
+- 产品 commit `f358d084d17f92e64ec51ae2bd974d2a67f417d2`，tree
+  `44a0d4e0de048bf93d53ec0a1febdfe6135ac6a6`；公开合同、算法、normal workload 与 P1 tier 自此冻结。
+- `schedule_task` 对 `noexcept`、不挂起的 callable 返回与 `spawn_task` 共用的 `JoinHandle<T>`，callable、
+  result state 与协作取消 flag 合并为一个调用方 allocator cell；worker 直接调用，不创建 coroutine frame、
+  guarded stack 或 fcontext。会挂起/阻塞的工作仍分别走 `spawn_task`/`spawn_blocking`。
+- completion group 使用 atomic target + manual-reset Event，只在目标完成时唤醒；直接 join 仅在确有 waiter 时
+  notify。算法仍为 O(n) install/clear、O(1) completion transition，等待期间无 polling。
+- cancellation flag chain 在 Fiber 上随执行迁移，在非 Fiber 的 Scheduler worker callback 中使用
+  thread-local execution scope；外部普通线程不会被误判成 sched execution context。
+- Windows Release：`hyle_sched_test` 1/1 通过（6.34s），`hyle_io_test` 1/1 通过（0.07s），直接源码
+  selected-component package consumer configure/build/run 通过；P1 candidate target 编译通过。上述是候选
+  定向回归，不替代 WSL/macOS、sanitizer、static/shared 与正式 P1 verdict。
+- harness/provenance commit 为 `67a3619a`；consumer provenance SHA-256
+  `76a572e0e653f05f610b8b0d411b06ec850e2e0ca16cd202a3242fc1bfe17c98`，P1 contract SHA-256
+  `dae15db50195b0906d741bb8b35df623e2d0f5d18e129351b60c3bcfe132ca52`。
+
 ## Verification manifest
 
-原候选的 Windows selected sched 单测、IO 定向单测、直接 consumer compile、三种 C++ 交付以及随后
-完成的 WSL/macOS correctness/sanitizer/交付证据仍是审计输入，但产品修正会产生新 identity；所有受
-影响门必须对新候选重签。P1 正式重跑与红队尚未完成，未运行项不得写为 `PASS`。
+原候选的证据仍是审计输入，但不能替代新候选身份。新候选的 Windows 定向回归已完成；WSL/macOS
+correctness/sanitizer、static/shared 交付、正式 P1 重跑与红队尚未完成，未运行项不得写为 `PASS`。
 
 ## 独立红队
 
-等待唯一产品修正后重新冻结 candidate。
+等待新候选完成全部验证后执行；当前无红队 verdict。
 
 ## Closure decision
 
-当前状态为 `AUDITED`；能力边界、normal workload、P1 tier 与唯一修正均已冻结。下一步只实现
-SCHED-FIX-04 的非挂起 typed worker-stack join，完成定向 correctness/consumer/交付后重新冻结
-`CANDIDATE`；若一次完整 P1 重跑仍为 material `FAIL`，则停止为 `BLOCKED`。
+当前状态为 `CANDIDATE`。下一步只对冻结身份重签 correctness/sanitizer/consumer/三交付，执行唯一一次
+完整 P1 重跑和独立红队；若 P1 仍为稳定 material `FAIL`，则停止为 `BLOCKED`，不再修改产品或仪器。

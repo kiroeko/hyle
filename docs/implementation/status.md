@@ -22,7 +22,7 @@
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 CLOSED：exact overwrite ring、semantic composite hash、flat filtering、真实 StringView 与 const interner 已完成不兼容收束；三平台 correctness/sanitizer/ISA、直接消费者、source/static/shared、文档/红队和 W1-WIN 五项 5% P1 非劣门全部通过。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
-| sched | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v1-rebuild.md) | sched-v1 AUDITED：原候选 9f247141/01f20256 的三平台 correctness 与交付已通过；冻结 P1 replay 发现非挂起 typed spawn/join 相对 Marl 稳定慢约 29%，机制定位为每个叶任务无条件承担 coroutine、guarded Fiber 和 context switch，现按 FIX04/FIX08 执行唯一一次产品修正。 |
+| sched | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/sched/sched-v1-rebuild.md) | sched-v1 CANDIDATE：非挂起 typed work 现由单 allocator cell 的 worker-stack schedule_task 承载，产品冻结于 f358d084/44a0d4e0；正在重签三平台 correctness、三交付、唯一一次正式 P1 重跑与红队。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
