@@ -2,6 +2,10 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
+> 使用前确认：本轮对象是边界已经由全局能力/因子审计确定的组件。若功能归属或依赖图仍有争议，先按
+> [`capability-factorization`](../../architecture/capability-factorization.md)完成全局只读阶段，不填写
+> 本模板并提前修改产品。
+
 > 复制到 `docs/implementation/tasks/<module>/`。权威状态文件是
 > `docs/implementation/module-status.json`，完整判据是
 > `docs/developer/review/module-closure-methodology.md`。本页记录该轮事实，不复制当前状态；真正进入
@@ -58,6 +62,20 @@ lifecycle 必须记为 `PARTIAL`。
 - public/internal/higher-layer 裁决：
 - 本轮冻结 `FIX` 集：
 - 相邻模块 backlog：
+
+## API / usability freeze（性能前硬门）
+
+- 状态：`DRAFT / FROZEN`
+- 覆盖全部 `MUST` 的普通 C++ journey / compile-only sketch：
+- 类型关系、ownership/lifetime/failure/concurrency/default 决策：
+- 场景选型表、误用诊断和 guide recipe：
+- public dependency / source-static-shared 可发现性：
+- freeze identity / reviewer：
+- 冻结后允许的内部优化边界：
+- 若性能要求退回 `AUDITED`，对应 normal-consumer material evidence 与新增 `FIX`：
+
+P1/P2 计时只能在本节为 `FROZEN`、correctness 实现已绑定 candidate 后开始。benchmark 不得成为新增
+public 入口或常态 metadata 的需求来源。
 
 ## Owner 六问直答
 

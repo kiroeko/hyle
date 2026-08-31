@@ -21,6 +21,7 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 ## 系统级决策
 
 - [基础库能力完整性](capability-completeness.md)
+- [能力展开与组件质因数分解](capability-factorization.md)
 - [构建与打包架构](build-system.md)
 - [生命周期、取消和失败边界](lifecycle-design.md)
 - [Native FFI 准入策略](native-ffi-policy.md)

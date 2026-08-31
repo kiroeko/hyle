@@ -4,6 +4,10 @@
 
 > 当前轮由 [`mem-v1 capability replay`](mem-v1-capability-replay-2026-09.md) 的
 > `PRODUCT_TRIGGER` 启动。旧 `mem-v1` task/evidence 只作 baseline 证据，不是本轮待办。
+>
+> 项目级阶段门：[`全库能力展开与组件因子化 v1`](../project/capability-factorization-v1.md) 正在先统计
+> 13 个产品域的功能超集。Mem v2 的现有能力表和 FIX 集是该轮输入；在全局能力、owner、因子与依赖图
+> 完成前暂停产品实现。若全局裁决改变 Mem 边界，必须显式退回并更新本卡，不能沿本卡静默施工。
 
 ## Closure card（SCOPED）
 
@@ -76,6 +80,24 @@
 | owned Buffer/mapping | owner 自身不 pimpl 分配；provider allocation 计费 | 只执行所请求 provider/OS operation | move-only；析构经原 provider 释放 |
 | arena/pool | 按公开 capacity/growth/retention | 热路不隐藏 syscall；并发语义决定 atomic/lock | clear/reset/trim 的 invalidation 明示 |
 | lifetime planner | O(N) records/scratch | 构建 O((N+E) log N) 或更好；不搬 payload | plan 与 instantiated buffers 分离 |
+
+### 施工顺序：先功能与易用性，后性能
+
+`MEM2-01`～`MEM2-07` 不按“实现一个类型、跑一轮 benchmark、再补下一个类型”的方式施工，而分四遍：
+
+1. **能力与 API pass：**一次性画出全部 public taxonomy、ownership/resource/provider 关系、失败与并发
+   合同，并写出 host heap、模型映射、persistent buffer、transient pool、planner 五条普通 C++
+   compile-only recipe；同时完成场景选型表和误用路径；
+2. **API / usability freeze：**确认每项 `MUST` 都有自然路线，锁定名称、类型关系、默认值、view
+   invalidation、依赖暴露和 source/static/shared 可发现性。此门以前不运行 P1 计时；
+3. **correctness / migration pass：**在固定接口后实现算法和 provider mechanism，完成边界/OOM/move/
+   concurrency 测试并迁移直接消费者；接口若因 correctness 不成立而变化，显式更新本卡，不能悄悄漂移；
+4. **candidate / performance pass：**冻结 product commit/tree 后，才运行同合同 normal consumer 与一个
+   holdout。性能修复默认只换内部算法或零成本路由；只有 normal workload 的 material 机制证据证明
+   public contract 本身有错，才退回 `AUDITED`。
+
+全局因子图完成并允许本卡恢复后，这四遍顺序才生效；届时相邻域只提供已经裁决的公开因子或私有机制，
+不会让 POSIX/Windows 某个 syscall benchmark 反向决定公共类型。
 
 ## Capability-family coverage map（AUDITED）
 

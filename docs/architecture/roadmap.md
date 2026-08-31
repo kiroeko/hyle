@@ -5,6 +5,10 @@
 组件图的机器真相是 [`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake)；本页解释它，
 不另建一份可手工漂移的 manifest。
 
+当前图只描述当前可构建实现，不是下一版架构的先验。全库重构先按
+[能力展开与组件质因数分解](capability-factorization.md)统计功能超集和自然形状，再由完整能力集合导出
+owner、组件因子和新依赖图。
+
 ## 1. 分层原则
 
 HYLE 是推理引擎与工程计算消费者下面的通用 C++ 加速底座。能力应归到能够完整表达其 ownership、
@@ -81,9 +85,10 @@ primitive，因此同样声明真实 `PUBLIC core` 边。配置合同会把公�
 修一条底层边后，必须回审直接消费者，不做无界的全库顺手重构。若问题属于另一个模块，登记
 demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即跨边修复。
 
-## 4. 逐模块重审顺序
+## 4. 全局功能展开顺序
 
-顺序综合机器依赖和推理消费者价值；build/package 是贯穿轴，不是最后补票：
+下列顺序只用于有界地完成只读能力统计，不代表现有边界已正确，也不是未来实施拓扑。Build/package 是
+贯穿每个候选组件的横向合同，不是最后补票：
 
 1. core；
 2. error；
@@ -93,19 +98,19 @@ demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即
 6. platform；
 7. mem；
 8. obs；
-9. container；
-10. util-runtime；
-11. simd 与 math 边界；
+9. simd 与 math 边界；
+10. container；
+11. util-runtime；
 12. sched；
-13. io；
-14. compute；
-15. graph。
+13. io。
 
-前一个模块 `CLOSED` 后再冻结下一个，以免下层 API 反复击穿上层证据。研究成熟库、准备 workload
-和独立红队可以并行；会修改同一依赖边或公开面的实现不得在共享分支并行合并。
+这一遍必须先完成每个问题域的 ggml 能力、llama.cpp 真实需要、成熟库通用能力、定义性能力和现有 HYLE
+承诺的超集，再统一做跨域去重、归属和质因数分解。不得边统计边实现，也不得以当前依赖冲突删除能力。
+新组件图完成后，实际施工顺序只由它的拓扑序决定。
 
-compute 与 graph 的产品形状仍可能由真实推理引擎推翻，在其前置模块稳定前只修 correctness、
-构建阻断和必要 adapter，不为旧 benchmark 形状做冻结式优化。
+SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 边界仍需
+独立裁决。Compute 与 Graph 保持 `QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理
+consumer slice 成立前不做产品重构，也不为旧 benchmark 形状优化。
 
 ## 5. 每轮架构输出
 

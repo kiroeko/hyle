@@ -11,6 +11,11 @@
 自动当成需求。无论代码多少，都不得在 `SCOPED/AUDITED` 前先写产品实现。历史 task/evidence 中的
 命令式文字只记录当时工作，不是新会话的授权或待办。
 
+若要审的不是一个已确定边界的组件，而是全库功能归属和组件图本身，先执行
+[能力展开与组件质因数分解](../../architecture/capability-factorization.md)：完整统计所有产品问题域的
+功能超集和自然形状以后，才确定 owner、组件和依赖。这个只读项目阶段不沿现有拓扑逐模块施工，也不
+改变模块状态；新因子图成立后，才对拓扑序首项使用本文状态流。
+
 ## 1. 两条互不冒充的状态轴
 
 ### 1.1 产品收口轴
@@ -121,6 +126,19 @@ shape。没有真实消费者、但由后两类证据准入的形状必须标为
 8. 性能先做同语义产品比较，再做自然路线竞争，最后用机制实验归因；
 9. 只有机制差异与 normal task 的 material 影响同时成立，才继续改变产品；
 10. 用一个 normal primary shape 和至多一个不同粒度/生命周期的 holdout 防止过拟合，不建立无界矩阵。
+
+其中第 6～8 步之间有一个不可省略的 **API / usability freeze**。在同一轮全部 `MUST` 能力都已经有
+普通 C++ 调用草图、选型规则、ownership/lifetime/failure/concurrency 合同和常态成本合同以前，不得
+开始 P1/P2 计时，也不得按已有 benchmark 逐项补入口。冻结时同时锁定 public 名称与类型关系、默认值、
+错误形状、依赖暴露、source/static/shared 发现方式和用户指南中的正常 recipe；compile-only journey 与
+误用诊断是冻结证据的一部分。随后先在这套固定接口后完成 correctness、边界和直接消费者迁移，再形成
+candidate，最后才运行性能门。
+
+接口冻结后，性能工作默认只能改变内部算法、provider 路由、布局中不属于公开合同的部分和构建时选择，
+不能因为某个 benchmark 点值重新命名类型、拆出 `fast/light` 入口或给所有对象增加常态 metadata。只有
+同时证明“接口合同本身造成可复现的机制差异”以及“该差异在 normal consumer 中达到 material 影响”，
+才允许退回 `AUDITED` 重新裁决接口；该退回必须更新有限 `FIX` 集和 usability 证据，不能在性能循环中
+静默漂移 public shape。
 
 两个入口若只在预期“快慢”上不同，却没有 material 的 result、ownership、failure、cancel、progress 或
 lifecycle 差异，应合并为同一入口并由实现选择最佳机制。反之，要求逐任务结果/控制与只要求批级完成，
