@@ -140,6 +140,25 @@ TEST(Registry, FindResolvesFactoryMetadataWithoutCreating) {
   EXPECT_FALSE(frozen.find("hexagon").has_value());
 }
 
+TEST(Registry, LengthAwareLookupPreservesEmbeddedNulKeys) {
+  hyle::util::Registry<Shape*> registry;
+  constexpr char key_bytes[] = {'g', 'p', 'u', '\0', '1'};
+  const StringView key{key_bytes, sizeof(key_bytes), false};
+  ASSERT_TRUE(registry.register_creator(key, &create_triangle).ok());
+
+  const auto mutable_entry = registry.find(key);
+  ASSERT_TRUE(mutable_entry.has_value());
+  EXPECT_EQ(mutable_entry->key.size(), sizeof(key_bytes));
+  EXPECT_EQ(mutable_entry->key, key);
+  EXPECT_FALSE(registry.find("gpu").has_value());
+
+  const auto frozen = registry.freeze();
+  const auto frozen_entry = frozen.find(key);
+  ASSERT_TRUE(frozen_entry.has_value());
+  EXPECT_EQ(frozen_entry->key, key);
+  EXPECT_FALSE(frozen.find("gpu").has_value());
+}
+
 TEST(Registry, MissingKeyReturnsNull) {
   hyle::util::Registry<Shape*> registry;
   ASSERT_TRUE(register_shapes(&registry).ok());
