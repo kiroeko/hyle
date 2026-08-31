@@ -100,16 +100,12 @@
 - 适用 delivery gates：中央 component/include-owner 对账；Highway/xxhash/wyhash/simdutf pin、offline、
   license 与 package projection；container-only source embedding、relocated static/shared C++23 consumer；
   无旧 C schema/bridge/fixture/Native FFI symbol。
-- 有限 performance gates：
-  1. `metadata-sequence`：短 append/iterate、spill/grow 与 strict/non-trivial fixed sequence；
-  2. `metadata-index`：integral/string flat hit/miss/build/erase，read-mostly sorted lookup/bulk 与 ordered
-     range mutation；
-  3. `registry-and-handoff`：read-heavy/mixed concurrent map、parallel append，以及 SPSC/MPMC/sharded/
-     work-steal 的正常角色 journey；
-  4. `active-set-and-stream`：bitset count/algebra/set-bit iteration、SparseSet lifecycle、object/byte ring
-     batch staging；
-  5. `hash-text-intern`：short/64-byte/long hash、UTF-8 validate/count、borrowed search/case 与 interner
-     acquire/find/release。每组只以代表 workload 裁决共享算法/成本机制，不为每个 overload 建一项跑分。
+- 有限 performance gates：candidate 同时冻结的 [`container-p1-v2.json`](../../../../bench/contracts/container-p1-v2.json)
+  只把五个已有真实 provenance 的重复任务纳入 P1：4096-element short inline/spill lifecycle、32768-entry
+  metadata flat lookup、4096-item bounded MPMC handoff、4096-block dense mask count、varied 64-byte table
+  hash。ring/text/interner/ordered 等没有当前 profile 证明为热点的能力只做 P0 复杂度、allocation/copy/
+  lock/syscall/metadata 与 correctness 门，不以“模块整体 P1”为由制造逐 overload 微基准。这个边界在
+  `336793d63dd7cf08fde9c1be74c6439472335381` 中先于正式采样冻结，不是看结果后的降级。
 - 预期输出：全新 capability-family map、完整 public-surface trace、owner/复杂度/资源表、有限 `FIX`
   集、依赖与消费者裁决、correctness/sanitizer/ISA、资格化 P1 bundle、三种交付、四类文档、owner
   六问、独立红队和四项 LOC。
@@ -238,7 +234,126 @@ shared 与 relocated static selected-component smoke 通过。一次 dirty/singl
 五个既有代表机制能运行并排除明显回退，明确不形成 P1 verdict。最终 correctness、sanitizer/ISA、
 delivery、qualified P1 和独立红队只能绑定上述冻结候选及后续纯证据快照。
 
-## Verification、红队与终止裁决
+## Verification manifest
 
-这些章节在对应状态到达时填写。未运行项保持未裁决，不从 `container-v1` 或候选前置 smoke 复制
-`PASS`。
+产品 candidate 始终是 `336793d63dd7cf08fde9c1be74c6439472335381` /
+`968d169bafe0eab270d397ab1614f80c1a98079f`。资格化性能从 clean
+`0ce6168c94ccdf008dfce7337354f437fe82f67b` 构建；correctness/ISA/交付的最终测试快照为
+`1199a9edbffef46a1c76bdee2f2e722f76371532`。从 candidate 到测试快照，Container 产品、P1 contract、
+bench adapter 和 package sample 的路径 diff 为空；仅 closure 状态/任务与测试证据改变，因此没有
+candidate drift。
+
+### Correctness risk matrix
+
+| Risk | Verdict | 命令 / 证据 | 限制 |
+|---|---|---|---|
+| normal | `PASS` | W1-WIN MSVC、W1-WSL GCC 14.2、M1-MAC AppleClang 21 的 Release `hyle_container_test` 均通过 336 cases；public-header self-containment 三平台通过 | `container_intrusive` 是独立组件，不并入本轮 test count |
+| empty / zero | `PASS` | sequence/map/set/queue/bitset/ring/text/interner 的 empty/zero tests；`CircularBuffer` 覆盖 capacity 0/1 | empty `StringView` 保留原 tail pointer 与 known-NUL 语义 |
+| capacity / boundary / overflow | `PASS` | `circular_buffer_test.cc` 覆盖 0/1/60、wrap、full overwrite 与 shrink/grow；vector/ring/hash/text 覆盖边界和 32-bit view 上限 | `StringView` 明确拒绝超过 `uint32_t` 的长度 |
+| OOM / system failure / invalid input | `PASS` | failing allocator、reserve/grow failure、invalid UTF-8/path/hash/interner stale-ID tests | 容器层没有 OS I/O；可恢复 allocation failure 保持原 owner 有效 |
+| move / destroy / lifetime | `PASS` | non-trivial/move-only/self-alias sequence、ring、queue、map 与 interner generation tests；ASan/UBSan | borrowed views 不延长 backing lifetime |
+| concurrency / reentrancy | `PASS` | concurrent map/vector、SPSC/MPMC/sharded/work-steal stress；W1-WSL TSan 全 Container suite | 非并发容器仍是 caller-synchronized |
+| cancellation / close | `NOT_APPLICABLE` | Container 只提供 nonblocking primitive；wait/cancel/timeout/backpressure 归 `sched` | 未把缺少 scheduler service 写成容器 PASS |
+| property / differential / fuzz / stress | `PASS` | randomized wrap/churn/hash/equality/bitset tests；scalar↔ISA differential；并发 stress | 本轮没有独立 coverage-guided fuzz campaign，不把它伪称已运行 |
+| ASan / UBSan / TSan | `PASS` | W1-WSL fresh GCC 14 builds：ASan、UBSan、TSan 各完整 336 cases；TSan 用 `setarch x86_64 -R` | mimalloc aligned-allocation 与 GTest fork warning 无 sanitizer report |
+| real ISA / backend | `PASS` | W1-WIN static test 直接执行 scalar/SSE4/AVX2；M1-MAC static test 直接执行 scalar/NEON，逐 boundary 比较 string/bitset kernel | 主机不支持的 AVX-512、SVE、RVV 未写成 PASS；Container 没有 device backend |
+
+W1-WIN 最终显式运行 `hyle_container_header_self_contained_test`、`hyle_container_test` 与
+`hyle_container_hash_seed_process_test` 3/3，以及 static `hyle_container_isa_variants_test` 1/1。
+一次 `ctest -L container` 同时选中独立 `container_intrusive` 的两个未构建 executable 而非零；它只说明
+label 横跨两个组件，不能作为本轮结果，故按 closure card 的精确目标重跑并记录。W1-WSL 的 util、sched、
+IO HTTP/HTTP2/TLS、graph/parallel/data-parallel 八个直接消费者 8/8 通过；TLS test 的未使用参数只做了
+test-only 可移植性修正，没有改变 IO 或 Container 产品。
+
+### Aggregate gates
+
+| Gate | Verdict | 证据 | 限制 |
+|---|---|---|---|
+| scope | `PASS` | capability-family map、全部 public header trace、冻结六项 FIX；candidate 后无产品扩项 | 结论只绑定当前 llama.cpp/ggml 与已准入 common journeys |
+| architecture | `PASS` | `PUBLIC core mem`、`PRIVATE platform`；Highway build-only seam 和 xxhash/wyhash/simdutf private mechanism 均由现行组件/package 合同投影 | tokenizer/cache/scheduler policy 不下沉 |
+| correctness | `PASS` | 上述三平台、sanitizer、direct ISA 与 risk matrix | 未运行 ISA 明确保留限制 |
+| delivery | `PASS` | W1-WIN、W1-WSL、M1-MAC 的 selected `container` source、relocated shared、relocated static consumer 全部通过 | C++23，同 headers/artifact/toolchain 合同；不承诺稳定跨工具链 C++ ABI |
+| usability/docs | `PASS` | architecture、choice-oriented user guide、package sample、public-header test、旧 API 扫描 | 不提供兼容 alias/header |
+| red team | `PASS` | 下节有界攻击均 fixed/disproved/accepted，无 blocker | 只攻击冻结合同，不扩大 peer/API 并集 |
+| engineering performance | `PASS` | W1-WIN `container-p1-v2` QUALIFIED；五项全部通过 5% NI；详见 performance evidence | 只覆盖五个具名 normal tasks，Formal 为 `NONE` |
+
+P1 bundle：合同 SHA-256
+`50323f331be34fa1528dceb2d2ffbf07058a3f5593e121580d1f6ed65e532941`，manifest SHA-256
+`44a4d2e9aaa3726e74282df16987c5f407ecfffa7fbf7ded5ed4c04625f2ca94`，deep verifier 返回
+`QUALIFIED`、`paths_verified=true`、provenance `EXACT`、current policy eligible。五个 task 的八个 strata
+均通过 5% NI；sequence、flat lookup、MPMC、dense count 为 exact `WIN`，64-byte hash 为 exact
+`INCONCLUSIVE`，没有把 margin 内约 3% 点值写成胜出。完整边界见
+[`benchmarks-container.md`](../../evidence/performance/benchmarks-container.md)。
+
+## 终止阶段 owner 六问
+
+1. **第三方。**产品路径直接使用 Highway
+   `f503c485d990a6f6adb5b220c4e8a47533110e66`、xxHash
+   `c0b5ea995d66691734b1a79ad89e73a0d2fd5a53`、wyhash
+   `e4764a0aa99a62691a7f5d35cc7d627b9ad94d28`、simdutf
+   `2d4e249dcfd978b39dd567b156f20a43db97377b`，并经 `mem` 间接使用其已审机制。Container 是
+   semantic owner；第三方只拥有 private/build-only mechanism，public API 不泄漏 vendor 类型；
+   build/package 拥有 pin、cache/offline、license 和三种交付。升级算法、dispatcher 或 codegen 时定向
+   重开受影响能力族。
+2. **功能。**2026-08-31 终止前再次对 llama.cpp 与 standalone ggml 执行 `fetch --prune`；两者 clean
+   `origin/master` 仍分别是 `9723942adc518b43c4b95dc4dce6906903eb5e09` 与
+   `36da57138425487184aa1da2eee2cde155909c6f`，llama 随仓 `scripts/sync-ggml.last` 也是后者。exact recent
+   history、semantic composite key、flat filtering、borrowed text 与 const interner 已是
+   `COMPLETE`；graph side-array、标准 heap/container、tokenizer/cache policy 有完整 `ROUTED` 或
+   `OUT_OF_SCOPE` owner。当前没有未处置 `MUST`，但不承诺未来模型永不提出新需求。
+3. **性能。**模块级 P1 的五个真实重复任务在 source-primary、同语义/ownership/resource 计费、锁定
+   peer、W1-WIN 与 5% margin 下 `NON_INFERIOR`，四项还为 exact `WIN`；其余能力只有 P0 structural
+   `PASS`。禁止外推“Container 全面 SOTA”、跨平台固定点值或未运行 operation/ISA。
+4. **旧 C ABI / Native FFI。**策略为 `N/A`；Container 产品树没有 public C header/schema、bridge、
+   undecorated export、C/managed sample、option/target/package metadata 或为 FFI 支付的 layout。第三方 C
+   implementation seam 是 private，不是客户 ABI。verdict：`CLEAN`。
+5. **构建与导入。**Windows、WSL、macOS 的 source embedding、installed relocated static、installed
+   relocated shared journey 都为 `PASS`；selected headers 包含 `circular_buffer.h`、`string_view.h`，不再
+   安装 `string_ref.h`。中央 closure、static private link、shared loader/RPATH 与 exact package discovery
+   都由真实 consumer 证明，不以 producer build 替代。
+6. **C++ API 与文档。**用户按任务选择 sequence、flat/sorted/B-tree、concurrent registry、queue、
+   active set/ring、hash/text/interner；`StringView` 是自然 method-shaped borrowed value，
+   `CircularBuffer` 表达 exact overwrite，flat filtering 与 composite hash 不再需要 internal seam。
+   ownership、failure、concurrency、invalidations、OOM 和选择陷阱见 user guide；architecture 只保留长期
+   边界，implementation/performance 只保留事实。无旧 `string_ref`/`_sr` 活动引用，也无兼容层。
+
+## 独立红队
+
+- 审查者 / 日期 / 预算：当前 closure reviewer / 2026-08-31 / 30 分钟；只攻击冻结 candidate、依赖、
+  correctness、交付和 P1 validity。
+
+| 问题 | Severity | 裁决 | 证据 |
+|---|---|---|---|
+| 旧 lowercase text API 可能通过 alias/header/consumer 残留 | material | `fixed` | 删除类型/头/源/测试/bench，活动树 `string_ref`、旧头、`_sr` 扫描为空；三种 SDK 不安装旧头 |
+| 新 `StringView` 为 generic range 隐藏 throwing/oversize 或 empty-tail 语义 | material | `fixed` | generic route 只接受 noexcept `data/size`，超过 u32 fail-fast；empty-tail/NUL/bounds tests 通过 |
+| exact-capacity ring 在 full/self-alias/shrink/OOM 时破坏最新项或 non-trivial lifetime | material | `fixed` | 0/1/60、wrap、两端 overwrite、self-alias、move/destroy、failing allocator 与 sanitizer 通过 |
+| composite hash 读取 padding、与 Eq 不兼容或无界桥接用户 `std::hash` | material | `fixed` | 逐字段 combine；只桥接 valid noexcept `std::hash`；pair/tuple/array/StringId differential tests |
+| iterator erase 跳项、range 返回错误或引入 per-entry metadata | material | `fixed` | map/set erase/erase_if churn tests；算法仍 amortized O(1)/O(n)，layout 无新增字段 |
+| exact-target 配置被误当成 Container 多 ISA execution proof | material | `fixed` | 新 test-only static gate 直接调用本机 supported internal kernels；Windows scalar/SSE4/AVX2、Mac scalar/NEON 真差分 |
+| vendor 类型/target 或私有 link 从 shared/static package 泄漏 | material | `disproved` | selected component source/static/shared relocated consumers + installed header/license census；public target 只暴露 HYLE owner |
+| 旧 v1 五行或当前五项被外推为全模块 SOTA | material | `fixed` | performance 文档重写；P1 applicability 与 P0 negative space 明写，hash exact 保持 `INCONCLUSIVE` |
+| llama.cpp/ggml reference 在本轮期间漂移 | material | `disproved` | terminal `fetch --prune` 后 clean HEAD 与 origin/master 未变，embedded ggml identity 一致 |
+
+没有 finding 需要修改冻结产品；red-team 产生的 ISA test 与 TLS test portability 修正只改变测试，已单独
+提交为 `1199a9edbffef46a1c76bdee2f2e722f76371532`。
+
+## Closure decision（等待机械终止提交）
+
+- 所有当前 `MUST` 已为 `COMPLETE` 或完整 `ROUTED`，不存在 `PARTIAL/MISSING + KEEP`。
+- scope、architecture、correctness、delivery、usability/docs、red-team、engineering performance 全部
+  `PASS`；没有 correctness/security/ownership/delivery/P1 blocker。
+- 已知限制：P1 只签 W1-WIN 五项 normal task；Formal 为 `NONE`；未在真硬件执行 AVX-512/SVE/RVV；
+  `StringView` 是 caller-owned <=4 GiB borrow；普通容器不自动线程安全；blocking/cancel/cache/tokenizer/
+  model/device policy 不属于本模块；C++ shared SDK 不承诺跨工具链稳定 ABI，也无 Native FFI。
+- reopen triggers：真实消费者暴露缺失 common journey、correctness/security/OOM/lifetime/concurrency/交付
+  缺陷；公共 API/layout/算法/组件边变化；Highway/xxhash/wyhash/simdutf 或直接 HYLE 依赖改变实际产品
+  semantics/codegen；锁定正常 workload 出现 material regression；新 ISA/platform 或更新 llama.cpp/ggml
+  提供可准入、当前 route 无法完整承载的通用能力。
+- raw evidence：Windows
+  `C:\hyle-scratch\container-v2-perf-qualified-336793d6-evidence`；WSL
+  `/root/hyle-scratch/container-v2-1199a9ed-delivery`；Mac
+  `/Users/kiro/hyle-scratch/container-v2-1199a9ed-delivery`。后两者是可丢弃验证副本，不是产品来源。
+- 四项 LOC snapshot commit：`1199a9edbffef46a1c76bdee2f2e722f76371532`；全库代码 404,562；自实现
+  包含测试 96,940；自实现不含测试 60,339；Container 目录实现 11,871，其中独立已关闭的
+  `container_intrusive` 为 564，本轮非侵入式实现净值 11,307。
+- 建议机械状态：`VERIFIED`；保存 terminal receipt 后再以合法相邻 transition 进入 `CLOSED`。

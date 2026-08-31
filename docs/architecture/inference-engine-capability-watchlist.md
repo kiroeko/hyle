@@ -20,9 +20,10 @@
 - 不允许据此新增公开 API、layout、常态 metadata、依赖、benchmark 或组件边；
 - 它可能最终被准入、由标准库/第三方/相邻模块承载，留在引擎私有 seam，或被证明不需要。
 
-本页创建时只枚举拥有当前 `CLOSED` receipt 的九个产品组件，以及不进入组件 registry、但拥有独立
-`CLOSED` receipt 的 build/package 开发单元。`obs`、`container`、`simd`、`sched`、`io`、`compute`、
-`graph` 的需求应进入各自当前/未来 closure card，不能借本页把它们伪装成已关闭模块。
+本页只枚举已经取得 `CLOSED` receipt、且存在尚未准入推理观察项的产品组件，以及不进入组件
+registry、但拥有独立 receipt 的 build/package 开发单元；没有单独小节不表示模块状态。仍在施工的
+`simd`、`sched`、`io`、`compute`、`graph` 的需求应进入各自当前/未来 closure card，不能借本页把它们
+伪装成已关闭模块。
 观察项被合法提升后，本页只保留尚未准入的剩余边界；当前施工范围和状态改由对应 closure task/
 registry 管理，不能继续把已经提升的部分写成“未承诺”。
 
@@ -117,6 +118,16 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 | `MEM-WATCH-04` | GPU/NPU 需要 pinned/registered/coherent/unified buffer 与 staging lifetime | `compute` backend 拥有 device handle、mapping、completion；Mem 只在通用 host backing 成立时参与 | host allocator 不能猜 device coherence；需真实 backend、异步 completion、fallback 和 copy/overlap workload |
 | `MEM-WATCH-05` | KV page/cell、prefix sharing、fork/copy、evict/defrag 或 allocation planner | 推理引擎/compute/graph 策略消费 Mem 原语 | KV/token/sequence 是模型状态，不进入 Host Mem API；只有语义擦除后的通用 pool/backing 缺口才重开 Mem |
 | `MEM-WATCH-06` | 内存压力触发模型/KV eviction、tiering 或 OOM recovery | 引擎策略读取 `system_memory_snapshot`/quota/stats；Platform 提供 pressure fact | Mem 不决定丢哪个模型/sequence；需真实压力控制环证明缺少通用机制，而非策略函数 |
+
+## Container
+
+| ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
+|---|---|---|---|
+| `CONTAINER-WATCH-01` | 极大稀疏 token/sequence ID 空间需要 compressed bitmap、rank/select 或 fast set-bit merge | 先组合 `DynamicBitSet`/`SparseSet` 或成熟 bitmap；稳定通用 owner 才重开 Container | 当前没有规模、density、mutation/iteration trace，也不能让普通 mask 支付压缩索引 metadata；需端到端 active-set workload 与同合同 peer |
+| `CONTAINER-WATCH-02` | BPE、graph frontier 或 scheduling 需要 indexed/decrease-key heap、stable handle 或 move-pop | tokenizer/graph/sched 先用私有 policy + `std` heap；语义擦除后再评估通用 indexed heap | 当前 llama.cpp 的 priority journey 可由标准 heap 完整承载；需两个消费者、handle invalidation/OOM 合同和 material profile |
+| `CONTAINER-WATCH-03` | tokenizer、grammar 或 protocol parser 需要 trie、Aho-Corasick、double-array trie 或 compact automaton | text/tokenizer/grammar owner；Container 只在 alphabet/policy 被擦除后拥有通用 storage primitive | alphabet、normalization、failure output、build/persist policy 都是算法语义；单个 llama.cpp trie 不能自动形成基础容器 MUST |
+| `CONTAINER-WATCH-04` | 权重/KV/backend buffer 复用需要 LRU、segmented cache、quota-aware eviction 或 concurrent cache | runtime/compute 拥有 budget、device lifetime 与 eviction；Container 可提供被证明缺失的索引/storage mechanism | cache 命中、回收、异步 completion 和内存压力是产品策略；需具名引擎生命周期并证明 map/list/queue 组合不完整或有 material 成本 |
+| `CONTAINER-WATCH-05` | ggml 风格 graph traversal 需要 stable compact slot、SoA side arrays 或 generation handle | graph owner；当前 `FlatHashMap<pointer, State>`/owning vector route | slot identity 会泄漏 graph pass 与 C side-array 布局；需第二个模型无关消费者和更好复杂度/内存证据，不能只对齐 ggml C API |
 
 ## Util Runtime
 

@@ -1,139 +1,111 @@
-# container-v1 工程性能证据
+# Container v2 工程性能证据
 
-本页只记录当前 `container-v1` 的工程性能结论。2026-07 的混合 microbenchmark 表、旧 C
-surface 和不同 API/容量/并发语义的点值已经从 current 文档删除；它们仍可从 Git 历史追溯，
-但不能参与本轮裁决。
+本页只解释 `container-v2` 的有限工程性能结论。旧 `container-v1` 的五行结果和聚合
+`INCONCLUSIVE` 属历史 candidate，不能续签当前产品；需要追溯时从 Git 历史读取。
 
-产品 candidate 为 `19a1e9b515522ad74872fb963a3b3260cf915bab` / tree
-`68d456382352d2d81fdd41e4d1c725440424336a`。当前性能 harness revision 为
-`9f3fa43adad6afc14cd71c4d7792f55b7924d619` / tree
-`221a9ad72d126ad2a4c23e43e088d31ee8c43b0d`；harness、contract 和安装消费示例没有改变
-container 产品实现 identity。
+产品 candidate 是 `336793d63dd7cf08fde9c1be74c6439472335381`，tree 是
+`968d169bafe0eab270d397ab1614f80c1a98079f`。正式 bundle 从 clean
+`0ce6168c94ccdf008dfce7337354f437fe82f67b` 构建；candidate 到该提交只改变任务/状态文档，
+没有改变 Container 公开头、实现、正常 workload 或 peer。后续测试提交同样不改变产品 candidate。
 
-## 当前裁决
+## 裁决
 
-当前五项 W1-WIN consumer/replay slice 为 `PASS`；`container-v1` 冻结卡的聚合 P1 门仍为
-`INCONCLUSIVE`。原因不是下表存在性能失败，而是 closure card 预声明的若干正常轴尚未进入
-`closure-perf-v1`：未运行项不能写成 `PASS`。因此 container 本轮必须保持 `BLOCKED`，不能由五项
-代表性结果外推为整模块 SOTA。
+`container-v2` 的 P1 engineering verdict 为 **PASS**。这个结论严格限定为下面五个当前正常
+consumer/replay 任务，在 W1-WIN、source-primary static Release 形状、5% material margin 下，相对
+锁定同合同 peer 的 non-inferiority。它不是“Container 全操作/全平台 SOTA”。
 
-| workload | 正常消费形状 | source-pinned peer | 8 个分层的 advantage-ratio 中位数范围 | 最差置信下界 | verdict |
-|---|---|---|---:|---:|---|
-| inline + spill sequence | 4096 个 element lifecycle，混合 256 个 8-element inline owner 与 32 个 64-element spill owner | Abseil `InlinedVector` | 1.557030–1.723319 | 1.510363 | `WIN`；NI `PASS` |
-| metadata flat lookup | 32768-entry table，4096 个 50% hit/miss integral query | Abseil `flat_hash_map` | 1.198815–1.209000 | 1.158363 | `WIN`；NI `PASS` |
-| bounded MPMC handoff | 两个不同物理 P-core 间，通过 1024-slot strict bounded ring 传 4096 个 `uint64_t` | rigtorp `MPMCQueue` | 1.402940–1.462899 | 1.361199 | `WIN`；NI `PASS` |
-| dense active-mask count | 4096 个 `uint64_t` block / 262144 bits | Boost `dynamic_bitset<uint64_t>` | 5.144917–5.336622 | 5.104358 | `WIN`；NI `PASS` |
-| varied 64-byte metadata hash | 256-key warm working set，4096 次带 seed table hash | xxHash `XXH3_64bits_withSeed` | 1.033094–1.039218 | 0.999593 | `PARITY`；NI `PASS` |
+比值定义为大于 1 有利于 HYLE；范围是八个 placement × execution-order × allocation-order strata
+各自的 process-median advantage ratio，独立样本数均为 15。
 
-比值大于 1 有利于 HYLE。每项独立裁决，不汇总成一个 container 分数。严格胜负采用合同中的
-5% practical margin；hash 虽然点估计约快 3%，仍如实写 `PARITY`。
+| 正常任务 | 同合同 peer | 八 strata 中位比值范围 | 最差置信下界 | exact / 5% NI |
+|---|---|---:|---:|---|
+| 4096-element 短 sequence inline+spill 完整生命周期 | Abseil `InlinedVector` | 1.522–1.754 | 1.464 | `WIN / PASS` |
+| 32768-entry metadata flat index 的 4096 次 50% hit/miss lookup | Abseil `flat_hash_map` | 1.187–1.212 | 1.156 | `WIN / PASS` |
+| 两个不同物理 P-core 间、1024-slot ring 的 4096-item bounded MPMC handoff | rigtorp `MPMCQueue` | 1.403–1.450 | 1.341 | `WIN / PASS` |
+| 262144-bit dense active mask 的 4096-block count | Boost `dynamic_bitset<uint64_t>` | 2.556–2.613 | 2.498 | `WIN / PASS` |
+| 256-key warm set 上 4096 次 varied 64-byte seeded table hash | xxHash `XXH3_64bits_withSeed` | 1.028–1.040 | 1.007 | `INCONCLUSIVE / PASS` |
 
-冻结卡中仍缺资格化证据的有限集合是：
+hash 的点估计只有约 3%，在预声明 5% practical margin 内，因此不写成 HYLE 胜出；但八个 strata
+都通过 non-inferiority。五项分别裁决，不平均成一个“Container 分数”，sequence 的优势也不能抵偿
+另一项未来可能出现的 material regression。
 
-1. strict fixed/non-trivial sequence lifecycle；
-2. string flat hit/miss/build/erase、read-mostly sorted lookup/bulk 与 ordered mutation/expiry；
-3. SPSC/sharded/work-steal、concurrent append、flat/stable-node concurrent map 的正常读写/rebuild；
-4. bitset algebra/iteration、SparseSet lifecycle、object/byte ring staging；
-5. short/long byte hash、UTF-8 validate/count、borrowed search/case 与 interner 的单线程/正常并发
-   lifecycle。
+## 为什么只有这五项计时
 
-没有同合同 peer 的轴仍须按冻结 card 对 immutable baseline 做 5% source-primary NI，并守住零额外
-常态 allocation/hash scan/lock/syscall。恢复轮可以把这些轴拆成有限 contract，但不能改变 candidate、
-margin、正常 ownership/concurrency 语义，或用旧 2026-07 点值代签。
+P1 计时只覆盖已经绑定当前真实消费 provenance、会反复执行且存在同合同 peer 的五个机制：短 batch、
+metadata lookup、跨核 handoff、dense mask scan 和中等长度 table hash。其他 Container 能力仍接受
+复杂度、allocation/copy/lock/syscall/metadata、correctness 和 direct-consumer 门，但没有 profile
+事实时不制造逐 overload 微基准：
 
-## 资格与资源门
+- `CircularBuffer` steady push/pop/index 是 O(1)、满时覆盖且不分配；capacity change 是 O(n)。
+- iterator erase 是 amortized O(1)，range/`erase_if` 是 O(n)，没有新增 per-entry metadata。
+- pair/tuple/array semantic hash 对每个字段访问一次，不读取 padding，不动态分发。
+- `StringView` 是 16-byte trivial borrowed value，无 allocation/lock/动态分发；查找成本仍按输入长度。
+- const interner lookup 保持 expected O(1) 和一个 shard lock，不新增 allocation。
 
-不可变合同是
-[`container-p1-v1.json`](../../../../bench/contracts/container-p1-v1.json)，SHA-256
-`f46e4e4af0d46ab530d62ae82894c6875b8fe13f9fa6453e55933b59ea22f3a4`。clean fresh
-qualification bundle 位于
-`C:\hyle-scratch\container-v1-p1-qualify-9f3fa43-output`：
+这些是 P0 结构 verdict，不是计时胜负。若真实推理 profile 把 ring、text、interner、ordered map 或其他
+操作提升成端到端热点，再按具名 workload 定向重开；不能用本页五行提前替它们签 SOTA。
 
-- manifest SHA-256：`7a7acb9aed353d5d58275cddd6fa41395c15ccc6db260e055c4c22afc8366db4`；
-- summary SHA-256：`ddb456f7f55b0f09d876d8b9fecadd3951caf6751d8ba9ed98e7283efdc5e72d`；
-- runner/verifier：`QUALIFIED`、`paths_verified=true`、current engineering policy eligible；
-- source clean、MSVC 19.50、Release/static、LTO off、registered W1-WIN、fresh build；
-- artifact identity、build contract、module semantic/resource oracle 全部 `PASS`；
-- A/A、已知 5%/10% 差值、timer floor、primary/placement、双执行顺序和双 allocation
-  顺序全部 `PASS`；n=15 已给出终局，没有选择性追加样本。
+## 资格、身份与资源
 
-资源 oracle 同时冻结了比较形状，避免只看吞吐：
+冻结合同是 [`container-p1-v2.json`](../../../../bench/contracts/container-p1-v2.json)，SHA-256：
+`50323f331be34fa1528dceb2d2ffbf07058a3f5593e121580d1f6ed65e532941`。锁定 peers：
 
-| resource fact | HYLE | peer | 解释 |
-|---|---:|---:|---|
-| inline sequence owner object | 88 B | 72 B | HYLE 更快但 owner 大 16 B；不能隐去这个 layout trade-off |
-| reserved flat-map capacity | 65536 | 65535 | 等价规模，没有用更稀疏表换取点值 |
-| 1024-slot MPMC backing | 65536 B | 65600 B | 都为 cache-line-spaced strict bounded ring |
-| 262144-bit bitset payload | 32768 B | 32768 B | 相同逻辑位数与 block payload |
+- Abseil `2c004366e983c5be8334ac1ea3d4420e8fbcbea7`；
+- Boost `78505eab9b203e3e26e83893d0685f160133fa0f`；
+- rigtorp `b9808ede08f26fa9df4df4e081d19cace8f6c6ea`；
+- xxHash `c0b5ea995d66691734b1a79ad89e73a0d2fd5a53`。
 
-这五条路径均无额外 per-entry benchmark metadata、动态派发、常态 lock 或隐藏 allocation。
-P0 结构审计另外守住：连续/关联结构达到对应的 amortized O(1)、expected O(1)、O(log N) 或 O(N)
-下界；固定/队列热路径预分配；text/path/hash 按输入 bytes 线性；没有为本表改变公开 API。P0
-结构门不能替代上面已冻结的未运行 P1 replay。
+bundle 位于
+`C:\hyle-scratch\container-v2-perf-qualified-336793d6-evidence`，关键摘要为：
 
-## MPMC 仪器纠错
+- manifest SHA-256：`44a4d2e9aaa3726e74282df16987c5f407ecfffa7fbf7ded5ed4c04625f2ca94`；
+- summary SHA-256：`d4dba9b8a22c50bba1b29a9240007b27c55ef7327bb931ede1e56a70f1eda921`；
+- observations SHA-256：`dddc79f13b2bcaa471c5b9eebe8bf78f64af0a8a5dede971ff734811524d6864`；
+- `qualification=QUALIFIED`、`paths_verified=true`、provenance `EXACT`、当前工程策略 eligible；
+- MSVC 19.50、Release、static、LTO off、portable ISA、fresh build、W1-WIN 注册 P-core pair；
+- artifact/build/semantic/resource validator 和 A/A、5%/10% known delta、timer floor、placement、
+  双执行顺序、双 allocation 顺序全部通过；n=15 已给出终局，没有看结果追加到 31。
 
-第一版 adapter 让 candidate 与 peer 各自创建 worker，并在每个计时 callback 内使用
-`atomic::wait/notify` 和 `std::this_thread::yield`。两边因此都随机落入 Windows scheduler 的慢模态：
-candidate 约 25M/115M、peer 约 23M/80M operations/s；31 个独立样本后仍有两个分层的 5% NI
-置信区间未决。100 ms 计时外预热没有消除该模态，证明问题不是普通冷启动。
+资源合同把两边的语义、逻辑规模、ownership 和计费阶段锁在一起：sequence 的 owner 构造、spill、遍历
+与销毁都计费；map build/reserve 在两边都属于 setup；两种 queue 都预分配同容量并使用同一 persistent
+producer/consumer；bitset 都拥有 262144 logical bits/32768 payload bytes；hash 两边读取同一完整
+64-byte key 和 seed schedule。吞吐没有通过更弱 lifetime、隐藏 allocation、额外稀疏容量或少读 bytes
+换取。
 
-源码审计发现这个 adapter 与合同不符：所谓被 4096 items 摊薄的 batch boundary 实际进入了 OS
-park/yield。最终 adapter 复用已经资格化的 mem 双核形状：两个 queue 按受控 allocation 顺序构造，
-同一条常驻、固定到 worker core 的线程处理 candidate/peer，32 个 paired warmup batch 在计时外完成，
-callback 只用 busy-pause generation 和相同 full/empty retry。修正后的 diagnostic 8 个分层为
-candidate 115.73–118.24M、peer 80.58–85.60M；随后正式 n=15 得到上表 `PASS`。
+## 平台与声明边界
 
-这次修正只移除了测量器的 OS 调度噪声，没有改变 `BoundedQueue`、容量、slot layout、memory order、
-API 或常态 metadata。旧 bundle 只能说明旧仪器未决，不能被挑选为产品证据。
+W1-WSL 和 M1-MAC 只验证 GCC/AppleClang correctness、sanitizer、真实受支持 ISA 和交付，不与
+W1-WIN 点值池化。Windows 直接差分执行 scalar/SSE4/AVX2；Apple M4 直接差分执行 scalar/NEON。
+AVX-512、SVE、RVV 等未在本轮真硬件执行的路径没有被写成 PASS。
 
-## 声明边界
+Formal 状态是 `NONE`。本页不能外推：
 
-- sequence 只证明冻结的短 inline + 偶发 spill 生命周期；普通长寿命 sequence 仍优先
-  `std::vector`/PMR，不能从该行宣称所有 vector 操作胜出。
-- map 行是 integral metadata mixed lookup，不替代 string、build、erase、ordered 或 concurrent map
-  的逐操作证书；这些能力的复杂度、正确性和资源门已审查，未被真实 profile 提升为独立 P2。
-- MPMC 行是持续的 1 producer / 1 consumer strict bounded handoff。它不代表 SPSC、sharded、
-  work-stealing、blocking/backpressure 或 many-producer scalability。
-- bitset 行证明 dense count；SparseSet 的价值是 O(1) clear + O(active) iteration，不应为 dense
-  membership benchmark 增加第三份 bitmap。
-- hash 是进程内 table hash，不是稳定 fingerprint、wire format 或安全 MAC；不可信输入使用显式
-  `HardenedStringHash` 与调用方 secret。
-- Linux/macOS 承担 correctness、sanitizer 与 ISA fallback，不和 W1-WIN 点值池化。Formal 保持
-  `PENDING`。
+- 普通长 sequence、string/build/erase、ordered/concurrent map 的全部操作；
+- SPSC/sharded/work-steal、many-producer scalability 或 blocking/backpressure；
+- sparse set、ring、UTF-8、interner、path 的逐操作计时胜负；
+- 稳定 fingerprint、wire hash、安全 MAC，或跨平台固定纳秒。
 
 ## 复现
 
-从 clean checkout 使用唯一 scratch 路径：
+从 clean Windows 权威 checkout 和新的独占 scratch 执行：
 
 ```powershell
 python scripts/hyle-perf.py validate `
-  --contract bench/contracts/container-p1-v1.json
-
-python scripts/hyle-perf.py probe `
-  --contract bench/contracts/container-p1-v1.json `
-  --machine W1-WIN `
-  --peer abseil=C:\public\project-hyle\abseil-cpp `
-  --peer boost=C:\public\project-hyle\boost `
-  --peer rigtorp=C:\public\project-hyle\rigtorp-MPMCQueue `
-  --peer xxhash=C:\public\project-hyle\xxHash `
-  --build C:\hyle-scratch\container-p1-probe-build `
-  --output C:\hyle-scratch\container-p1-probe-output
+  --contract bench/contracts/container-p1-v2.json
 
 python scripts/hyle-perf.py qualify-platform `
-  --contract bench/contracts/container-p1-v1.json `
+  --contract bench/contracts/container-p1-v2.json `
   --machine W1-WIN `
   --peer abseil=C:\public\project-hyle\abseil-cpp `
   --peer boost=C:\public\project-hyle\boost `
   --peer rigtorp=C:\public\project-hyle\rigtorp-MPMCQueue `
   --peer xxhash=C:\public\project-hyle\xxHash `
-  --build C:\hyle-scratch\container-p1-qualify-build `
-  --output C:\hyle-scratch\container-p1-qualify-output
+  --build C:\hyle-scratch\container-v2-perf-qualified-build `
+  --output C:\hyle-scratch\container-v2-perf-qualified-evidence
 
 python scripts/hyle-perf.py verify `
-  --contract bench/contracts/container-p1-v1.json `
-  --manifest C:\hyle-scratch\container-p1-qualify-output\manifest.json
+  --contract bench/contracts/container-p1-v2.json `
+  --manifest C:\hyle-scratch\container-v2-perf-qualified-evidence\manifest.json
 ```
 
-`probe` 只检查映射、资源、timer floor 和预计成本；只有 clean independent-process
-`qualify-platform` manifest 与成功 deep replay 能携带工程 verdict。
+`probe` 只用于资格预检；只有 clean `qualify-platform` bundle 和成功 deep verify 能携带本页 verdict。

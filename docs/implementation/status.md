@@ -20,7 +20,7 @@
 | platform | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v2-inference-residency.md) | platform-v2 CLOSED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部签署；Formal 独立 PENDING。 |
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v1-closure.md) | mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。 |
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
-| container | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 CANDIDATE：六项冻结 FIX 已在 336793d6/968d169b 实现；exact overwrite ring、semantic hash、flat erase、真实 StringView、const interner lookup 与当前文档/消费者迁移已冻结，进入三平台、交付、P1 与红队验证。 |
+| container | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v2-rebuild.md) | container-v2 VERIFIED：六项 consumer-shaped FIX、三平台 correctness/sanitizer/ISA、直接消费者、三种 C++ 交付、文档/红队与 W1-WIN 五项 5% P1 非劣门均已通过，等待 terminal receipt。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 CLOSED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |

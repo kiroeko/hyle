@@ -626,7 +626,7 @@
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "container-v2",
       "closure_task": "docs/implementation/tasks/container/container-v2-rebuild.md",
       "scope": "Fresh current-source review of the complete non-intrusive C++ Container product: capability families, every public surface, algorithms/resources, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering evidence.",
@@ -641,16 +641,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v2 CANDIDATE：六项冻结 FIX 已在 336793d6/968d169b 实现；exact overwrite ring、semantic hash、flat erase、真实 StringView、const interner lookup 与当前文档/消费者迁移已冻结，进入三平台、交付、P1 与红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container-v2 VERIFIED：六项 consumer-shaped FIX、三平台 correctness/sanitizer/ISA、直接消费者、三种 C++ 交付、文档/红队与 W1-WIN 五项 5% P1 非劣门均已通过，等待 terminal receipt。"
     },
     {
       "module": "util",
