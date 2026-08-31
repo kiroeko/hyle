@@ -3,6 +3,46 @@
 > 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
 > `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
 
+## sched-v2 首个 candidate 工程证据（2026-08-31，`INCONCLUSIVE`）
+
+本段是当前活动轮的历史输入，不是 terminal certificate。产品 candidate 为
+`7cd2ad5a0d49f3c396a74888dc79fd98ebed09d2` / tree
+`8e15c2be0c784dc43f985119209f84df39899270`；证据源提交为 `a924a854c8134aed2e7055b187d121f76d4cae50`
+且产品目录相对 candidate 无漂移。W1-WIN、MSVC 19.50、Release/static、四个固定 physical cores，
+合同 `sched-batch-p1-v2` SHA-256
+`0B9B228702AECC6F6775AD4C012DCAB2175F91A3182665C59FF3DDAD2627C149`，Marl
+`b8406ab0a82524170ead6dd6c371b579bbc28b3e`，oneTBB
+`a8216b95202f3c55f9749870f4f8cfa4df0b32e3`。两侧均执行 16 批 × 128 item ×
+1024-element deterministic tile、四 worker、external caller 不参与计算、caller-owned result、一次 batch
+completion；比较类为 `SAME_CONTRACT`。
+
+资格化、artifact/build/provenance、A/A、5%/10% known delta、timer floor 全部 `PASS`；合同从 15 对自动
+且仅一次扩样到 31 对，双顺序结果如下。advantage 定义为 HYLE/peer，越大越有利于 HYLE：
+
+| peer / 顺序 | HYLE / peer 中位吞吐（M item/s） | advantage / 98.93% CI | 5% NI |
+|---|---:|---:|---|
+| Marl / HYLE first | 1.817 / 1.814 | 1.022 / [0.996, 1.059] | `PASS` |
+| Marl / peer first | 1.817 / 1.821 | 0.988 / [0.938, 1.093] | `UNRESOLVED` |
+| oneTBB / HYLE first | 1.827 / 1.984 | 0.919 / [0.893, 0.955] | `UNRESOLVED` |
+| oneTBB / peer first | 1.788 / 1.947 | 0.907 / [0.859, 0.982] | `UNRESOLVED` |
+
+因此 evidence qualification 为 `PASS`，工程性能聚合为 `INCONCLUSIVE`；不能写成 HYLE 已非劣，也不能
+把置信区间跨门误写成确定 `FAIL`。首轮受另一项目并发 build 影响且未生成 manifest 的残缺目录未参与
+任何统计；本表只来自重新取得 sampling mutex 后的 fresh build/evidence。
+
+冻结卡唯一 codegen 诊断显示，HYLE `run_chunks` 对每个 public grain 执行一个共享 cache-line 上的
+`lock cmpxchg`，失败后回跳重试；normal workload 共 2048 次成功领取，另有终止领取与竞争重试。oneTBB
+simple partitioner 使用可拆分 range/task 链，Marl 使用逐项队列任务，二者都不在四个 worker 间为每个
+item 竞争同一个 cursor。该机制 finding 已形成 `FIX-06`：只做有界内部 reservation，仍逐 public grain
+调用 body 并在每次调用前观察 error/cancel；不改 API、callback 粒度、normal workload、peer 或门限。
+
+原始 bundle：`C:\hyle-scratch\sched-v2\p1-evidence-retry1`；manifest SHA-256
+`90A4FE820D4A05D2CEE928D80BC9DE17031182233DBDE3526AB05E088E45A3F0`，summary
+`BA75416551756AC8AAA678677221432CB29DE8E48BB43A4A41CD2195BE946F2F`，controls
+`45D3590FF806ED0CACA142A4486A14C86C285E72451E6525F871867FF5648868`。独立 verifier 报告
+`QUALIFIED`、provenance `EXACT`、paths verified。后续只能按当前 closure card 做一个机制修正和一次
+正式重跑，不能用本段挑选新 benchmark 形状。
+
 ## sched-v1 terminal evidence（2026-08-31）
 
 候选产品为 `f358d084d17f92e64ec51ae2bd974d2a67f417d2` / tree
