@@ -748,8 +748,29 @@
     },
     {
       "module": "sched",
-      "product_state": "QUEUED",
-      "summary": "现有实现只作输入；特化 waiter 链仍归 scheduler。"
+      "product_state": "SCOPED",
+      "round_id": "sched-v1",
+      "closure_task": "docs/implementation/tasks/sched/sched-v1-rebuild.md",
+      "scope": "Current complete C++ Scheduler product: fcontext and fibers, worker scheduling and work stealing, completion wake/timer/cancellation, structured join and blocking offload, synchronization and messaging, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering performance.",
+      "non_goals": "Closing IO, Compute or Graph; graph bulk algorithms, IO reactor, GPU or model policy, actor/distributed/process scheduling, preemptive kill, automatic sysmon, Native FFI/C API, stable cross-toolchain C++ ABI, all-operation or all-platform SOTA, P2 end-to-end claims and Formal certification.",
+      "baseline_commit": "63406dd0bf37ed2eb78baef8008820c64294fd81",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "sched-v1 SCOPED：完整 scheduler 产品面、推理/IO/Compute/Graph 真实旅程、P1 资源合同、三平台/三交付门与有限预算已冻结；产品实现等待 AUDITED ledger。"
     },
     {
       "module": "io",
