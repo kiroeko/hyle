@@ -119,7 +119,8 @@ class HYLE_SCHED_API Scheduler {
   // scheduler allocates the driver, obtains a guarded stack from its recycle
   // pool, and destroys both after the callback returns. This is the lightweight
   // product path for callbacks that do not need a result/JoinHandle; use
-  // spawn_task for structured result and cancellation semantics.
+  // schedule_task for a non-suspending typed result and spawn_task when the
+  // structured task may suspend.
   using DetachedFn = void (*)(void* ctx);
   Status spawn_detached(DetachedFn fn, void* ctx,
                         std::size_t stack_size =
@@ -143,10 +144,12 @@ class HYLE_SCHED_API Scheduler {
   // This avoids allocating/switching a Fiber and is the scheduler counterpart
   // to Highway/marl lightweight work items. The callback MUST NOT call
   // yield/suspend/sleep, throw, or perform a blocking fiber wait; use
-  // spawn_detached when it may suspend, and spawn_task when it also needs a
-  // result/cancellation. Foreign producers apply bounded backpressure. A worker
-  // recursively submitting after every inline shard is full receives
-  // ResourceExhausted instead of spinning and deadlocking its own consumer.
+  // schedule_task when it needs a typed result but still cannot suspend,
+  // spawn_detached when it may suspend without a result, and spawn_task when a
+  // result-bearing task may suspend. Foreign producers apply bounded
+  // backpressure. A worker recursively submitting after every inline shard is
+  // full receives ResourceExhausted instead of spinning and deadlocking its own
+  // consumer.
   Status schedule(DetachedFn fn, void* ctx) noexcept;
 
   // Natural one-shot lambda route for short, non-suspending work. The callable

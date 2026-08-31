@@ -7,6 +7,7 @@
 #include "fcontext.h"
 #include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"  // obs-02: HYLE_TRACE_FIBER_* (compile-time gated, OFF=0 code)
+#include "hyle/sched/waker.h"
 
 // ---- ThreadSanitizer fiber integration --------------------------------------
 // fcontext swaps the stack pointer invisibly to TSan. TSan keeps shadow state
@@ -46,6 +47,12 @@ namespace {
 // The fiber currently running on this OS thread (so yield() can find itself).
 // nullptr when no fiber is executing (we're on the resumer's stack).
 thread_local Fiber* t_current = nullptr;
+
+// Cooperative cancellation for a short task executing directly on a worker
+// stack. Fiber work keeps the same chain on Fiber so it can migrate; an inline
+// task cannot migrate while its callback is running, so thread-local ownership
+// is the exact execution-lifetime boundary.
+thread_local detail::CancelFlagLink* t_thread_cancel_flags = nullptr;
 
 // Usable stack must be at least one OS page (guard is extra below).
 constexpr std::size_t kMinStackSize = 4096;
@@ -240,26 +247,30 @@ bool push_cancel_flag(CancelFlagLink* link,
   HYLE_FATAL_ASSERT(link != nullptr);
   if (flag == nullptr) return false;
   Fiber* fiber = Fiber::current();
-  if (fiber == nullptr) return false;
+  if (fiber == nullptr && current_worker_index() < 0) return false;
+  CancelFlagLink** owner_head =
+      fiber != nullptr ? &fiber->cancel_flags_ : &t_thread_cancel_flags;
   link->flag = flag;
-  link->previous = fiber->cancel_flags_;
-  fiber->cancel_flags_ = link;
+  link->previous = *owner_head;
+  link->owner_head = owner_head;
+  *owner_head = link;
   return true;
 }
 
 void pop_cancel_flag(CancelFlagLink* link) noexcept {
-  Fiber* fiber = Fiber::current();
-  HYLE_FATAL_ASSERT(fiber != nullptr && link != nullptr);
-  HYLE_FATAL_ASSERT(fiber->cancel_flags_ == link);
-  fiber->cancel_flags_ = link->previous;
+  HYLE_FATAL_ASSERT(link != nullptr && link->owner_head != nullptr);
+  HYLE_FATAL_ASSERT(*link->owner_head == link);
+  *link->owner_head = link->previous;
   link->flag = nullptr;
   link->previous = nullptr;
+  link->owner_head = nullptr;
 }
 
 bool current_cancel_requested() noexcept {
   Fiber* fiber = Fiber::current();
-  if (fiber == nullptr) return false;
-  for (CancelFlagLink* link = fiber->cancel_flags_; link != nullptr;
+  CancelFlagLink* head =
+      fiber != nullptr ? fiber->cancel_flags_ : t_thread_cancel_flags;
+  for (CancelFlagLink* link = head; link != nullptr;
        link = link->previous) {
     if (link->flag->load(std::memory_order_acquire)) return true;
   }

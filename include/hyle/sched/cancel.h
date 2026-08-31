@@ -82,9 +82,11 @@ class CancelToken {
   detail::CancelNode* node_ = nullptr;
 };
 
-// Adds a token to the active cancellation sources of the current Fiber.
-// Nested scopes compose with JoinHandle::abort instead of replacing it. The
-// token (or one of its copies) must outlive the scope.
+// Adds a token to the active cancellation sources of the current sched
+// execution context. On a Fiber the scope migrates with that Fiber; inside a
+// worker-stack schedule_task callback it is thread-confined for the callback's
+// lifetime. Nested scopes compose with JoinHandle::abort instead of replacing
+// it. The token (or one of its copies) must outlive the scope.
 class CancelScope {
  public:
   explicit CancelScope(const CancelToken& token) noexcept
@@ -119,9 +121,10 @@ class CancelCallback {
   detail::CancelCallbackRecord record_{};
 };
 
-// True when any active cancellation source on the current Fiber is set. False
-// outside a Fiber. Cost is O(k) atomic loads where k is the number of nested
-// sources (normally one JoinHandle flag plus zero or one request token).
+// True when any active cancellation source on the current Fiber or
+// worker-stack task is set. False outside an active sched execution scope. Cost
+// is O(k) atomic loads where k is the number of nested sources (normally one
+// JoinHandle flag plus zero or one request token).
 HYLE_SCHED_API bool is_cancel_requested() noexcept;
 
 #define HYLE_CHECK_CANCEL()                              \

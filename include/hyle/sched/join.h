@@ -1,10 +1,14 @@
 #pragma once
 
 #include <atomic>
+#include <concepts>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <new>
+#include <optional>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/error/result.h"
@@ -33,9 +37,10 @@
 //    task checks is_cancel_requested() at its own suspend points and unwinds via
 //    RAII. when_any's loser cancellation is the same mechanism. In-flight OS
 //    operation cancellation remains the completion source owner's job.
-//  * spawn_task OWNS the Fiber via a heap TaskDriver that self-destructs when the
-//    fiber finishes (tokio drop==detach). This is the ONE place sched owns a
-//    fiber; spawn(Fiber*)'s caller-keeps-it-alive contract is unchanged.
+//  * schedule_task runs a non-suspending callable directly on a worker stack and
+//    keeps its callable + JoinState in one allocation. spawn_task owns a Fiber
+//    via a heap TaskDriver for work that really can suspend. In both routes,
+//    dropping the JoinHandle detaches without abandoning scheduler ownership.
 //  * when_all/when_any share ONE GroupSignal (a target-count latch each task
 //    signals on completion). when_all targets N; when_any targets 1 + records the
 //    winner. The critical UAF guard (folly WhenN-inl.h:59): the waiter UNINSTALLS
@@ -51,24 +56,24 @@ namespace detail {
 // until `remaining` hits zero (all, or 1 for when_any). `winner` is the index of
 // the first task to complete.
 struct GroupSignal {
-  util::SpinLock mu;
-  ConditionVariable cv;
-  long remaining = 0;  // completions still needed to fire
-  int winner = -1;     // index of the first completer
-  bool fired = false;
+  std::atomic<long> remaining{0};
+  std::atomic<int> winner{-1};
+  Event completed{EventResetMode::kManual};
 
   // Called by a JoinState (under ITS lock) when its task completes while this
   // group is installed. Records the winner and fires when the target is met.
   void on_complete(int idx) noexcept {
-    mu.lock();
-    if (winner < 0) winner = idx;
-    if (remaining > 0 && --remaining == 0) {
-      fired = true;
-      mu.unlock();
-      cv.notify_all();
-      return;
+    int no_winner = -1;
+    winner.compare_exchange_strong(no_winner, idx,
+                                   std::memory_order_acq_rel,
+                                   std::memory_order_acquire);
+    long pending = remaining.load(std::memory_order_acquire);
+    while (pending > 0 &&
+           !remaining.compare_exchange_weak(pending, pending - 1,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
     }
-    mu.unlock();
+    if (pending == 1) completed.signal();
   }
 };
 
@@ -78,12 +83,16 @@ struct GroupSignal {
 // (fiber or thread) blocks correctly regardless of join-vs-complete ordering.
 template <class T>
 struct JoinState {
+  using DisposeFn = void (*)(JoinState*) noexcept;
+
   mem::Allocator alloc;
+  DisposeFn dispose_fn = &JoinState::dispose_default;
   std::atomic<int> refcount{2};
   util::SpinLock mu;              // guards done/status/storage/group
   ConditionVariable cv;          // a direct joiner waits here
   bool done = false;
   bool value_present = false;
+  bool direct_waiter = false;
   std::atomic<bool> cancel_req{false};
   Status status;                 // OK on success, error/Cancelled otherwise
   GroupSignal* group = nullptr;  // set by when_all/when_any while grouped
@@ -103,20 +112,24 @@ struct JoinState {
     // winner fires the group, the waiter wakes, calls clear_group() on every state
     // and returns -- destroying the stack GroupSignal -- and only then does the
     // delayed loser call g->on_complete() on freed memory. clear_group() takes THIS
-    // state's mu, so holding mu across on_complete() forces the waiter's clear_group
-    // to block until we are done touching `g`, keeping the group alive. Lock order is
-    // state.mu -> g.mu (never the reverse: group_wait's clear_group/install_group
-    // take only state.mu, on_complete takes only g.mu), so no deadlock.
+    // state's mu, so holding mu across on_complete() forces the waiter's
+    // clear_group to block until we are done touching `g`, keeping the group
+    // alive. Group completion never acquires a JoinState lock, so there is no
+    // reverse lock edge.
     if (group != nullptr) group->on_complete(group_idx);
+    const bool notify_direct = direct_waiter;
     mu.unlock();
-    cv.notify_all();
+    if (notify_direct) cv.notify_all();
   }
   void set_value(T&& v) noexcept { complete_(Status(), &v); }
   void set_error(Status s) noexcept { complete_(std::move(s), nullptr); }
 
   Result<T> take() noexcept {
     mu.lock();
-    cv.wait(mu, [&] { return done; });
+    if (!done) {
+      direct_waiter = true;
+      cv.wait(mu, [&] { return done; });
+    }
     Status s = status;
     if (!s.ok()) {
       mu.unlock();
@@ -158,22 +171,31 @@ struct JoinState {
   void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
   void release() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      if (value_present) reinterpret_cast<T*>(storage)->~T();  // detached value
-      mem::Allocator a = alloc;
-      this->~JoinState();
-      a.deallocate(this, sizeof(JoinState), alignof(JoinState));
+      dispose_fn(this);
     }
+  }
+
+  static void dispose_default(JoinState* state) noexcept {
+    if (state->value_present)
+      reinterpret_cast<T*>(state->storage)->~T();  // detached value
+    mem::Allocator allocator = state->alloc;
+    state->~JoinState();
+    allocator.deallocate(state, sizeof(JoinState), alignof(JoinState));
   }
 };
 
 // void specialization: no result storage.
 template <>
 struct JoinState<void> {
+  using DisposeFn = void (*)(JoinState*) noexcept;
+
   mem::Allocator alloc;
+  DisposeFn dispose_fn = &JoinState::dispose_default;
   std::atomic<int> refcount{2};
   util::SpinLock mu;
   ConditionVariable cv;
   bool done = false;
+  bool direct_waiter = false;
   std::atomic<bool> cancel_req{false};
   Status status;
   GroupSignal* group = nullptr;
@@ -183,18 +205,22 @@ struct JoinState<void> {
     mu.lock();
     status = std::move(s);
     done = true;
-    // Signal the group while holding mu -- see the T-specialization's complete_ for
-    // the full rationale (loser-vs-dead-GroupSignal UAF; lock order state.mu->g.mu).
+    // Signal the group while holding mu -- see the T-specialization's complete_
+    // for the full loser-vs-dead-GroupSignal UAF rationale.
     if (group != nullptr) group->on_complete(group_idx);
+    const bool notify_direct = direct_waiter;
     mu.unlock();
-    cv.notify_all();
+    if (notify_direct) cv.notify_all();
   }
   void set_done() noexcept { complete_(Status()); }
   void set_error(Status s) noexcept { complete_(std::move(s)); }
 
   Status take() noexcept {
     mu.lock();
-    cv.wait(mu, [&] { return done; });
+    if (!done) {
+      direct_waiter = true;
+      cv.wait(mu, [&] { return done; });
+    }
     Status s = status;
     mu.unlock();
     return s;
@@ -223,10 +249,14 @@ struct JoinState<void> {
   void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
   void release() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      mem::Allocator a = alloc;
-      this->~JoinState();
-      a.deallocate(this, sizeof(JoinState), alignof(JoinState));
+      dispose_fn(this);
     }
+  }
+
+  static void dispose_default(JoinState* state) noexcept {
+    mem::Allocator allocator = state->alloc;
+    state->~JoinState();
+    allocator.deallocate(state, sizeof(JoinState), alignof(JoinState));
   }
 };
 
@@ -366,6 +396,139 @@ class JoinHandle<void> {
   detail::JoinState<void>* state_ = nullptr;
   Status immediate_;
 };
+
+// ---- schedule_task: typed worker-stack task --------------------------------
+namespace detail {
+
+template <class Fn>
+using ScheduledCallable = std::decay_t<Fn>;
+
+template <class Fn>
+using ScheduledResult =
+    std::remove_cv_t<std::invoke_result_t<ScheduledCallable<Fn>&>>;
+
+template <class Fn>
+concept WorkerStackTask =
+    requires(ScheduledCallable<Fn>& callable) {
+      { std::invoke(callable) } noexcept;
+    } &&
+    std::is_nothrow_constructible_v<ScheduledCallable<Fn>, Fn&&> &&
+    std::is_nothrow_destructible_v<ScheduledCallable<Fn>> &&
+    !std::is_reference_v<std::invoke_result_t<ScheduledCallable<Fn>&>> &&
+    (std::is_void_v<ScheduledResult<Fn>> ||
+     (std::is_nothrow_move_constructible_v<ScheduledResult<Fn>> &&
+      std::is_nothrow_destructible_v<ScheduledResult<Fn>>));
+
+// One allocation owns both the public completion state and the callable. The
+// result may outlive callable execution, so the state supplies a typed disposer
+// instead of forcing a second driver allocation or retaining captures until the
+// JoinHandle is dropped.
+template <class F, class R>
+struct ScheduledTaskCell final : JoinState<R> {
+  template <class Fn>
+  ScheduledTaskCell(mem::Allocator allocator, Fn&& callable) noexcept
+      : fn(std::in_place, std::forward<Fn>(callable)) {
+    this->alloc = allocator;
+    this->dispose_fn = &ScheduledTaskCell::destroy;
+  }
+
+  static void run(void* raw) noexcept {
+    auto* self = static_cast<ScheduledTaskCell*>(raw);
+    JoinState<R>* state = self;
+    if (state->cancel_req.load(std::memory_order_acquire)) {
+      self->fn.reset();
+      state->set_error(Status::Cancelled("scheduled task aborted before start"));
+    } else {
+      ScopedCancelFlag cancel_scope(&state->cancel_req);
+      R value = std::invoke(*self->fn);
+      self->fn.reset();
+      state->set_value(std::move(value));
+    }
+    state->release();
+  }
+
+  static void destroy(JoinState<R>* state) noexcept {
+    auto* self = static_cast<ScheduledTaskCell*>(state);
+    mem::Allocator allocator = self->alloc;
+    self->~ScheduledTaskCell();
+    allocator.deallocate(self, sizeof(ScheduledTaskCell),
+                         alignof(ScheduledTaskCell));
+  }
+
+  std::optional<F> fn;
+};
+
+template <class F>
+struct ScheduledTaskCell<F, void> final : JoinState<void> {
+  template <class Fn>
+  ScheduledTaskCell(mem::Allocator allocator, Fn&& callable) noexcept
+      : fn(std::in_place, std::forward<Fn>(callable)) {
+    this->alloc = allocator;
+    this->dispose_fn = &ScheduledTaskCell::destroy;
+  }
+
+  static void run(void* raw) noexcept {
+    auto* self = static_cast<ScheduledTaskCell*>(raw);
+    JoinState<void>* state = self;
+    if (state->cancel_req.load(std::memory_order_acquire)) {
+      self->fn.reset();
+      state->set_error(Status::Cancelled("scheduled task aborted before start"));
+    } else {
+      ScopedCancelFlag cancel_scope(&state->cancel_req);
+      std::invoke(*self->fn);
+      self->fn.reset();
+      state->set_done();
+    }
+    state->release();
+  }
+
+  static void destroy(JoinState<void>* state) noexcept {
+    auto* self = static_cast<ScheduledTaskCell*>(state);
+    mem::Allocator allocator = self->alloc;
+    self->~ScheduledTaskCell();
+    allocator.deallocate(self, sizeof(ScheduledTaskCell),
+                         alignof(ScheduledTaskCell));
+  }
+
+  std::optional<F> fn;
+};
+
+}  // namespace detail
+
+// Schedule a short, non-suspending callable directly on a worker stack and
+// return a typed JoinHandle. The callable, completion state and cooperative
+// cancellation flag use one allocator-backed cell; no coroutine frame, guarded
+// stack or context switch is created. The callable MUST be noexcept and MUST NOT
+// yield, suspend, sleep or perform a blocking fiber wait. Use spawn_task for a
+// coroutine that may suspend, or spawn_blocking for blocking work.
+template <class Fn>
+  requires detail::WorkerStackTask<Fn>
+JoinHandle<detail::ScheduledResult<Fn>> schedule_task(
+    Scheduler& scheduler, mem::Allocator allocator, Fn&& fn) noexcept {
+  using Callable = detail::ScheduledCallable<Fn>;
+  using R = detail::ScheduledResult<Fn>;
+  using Cell = detail::ScheduledTaskCell<Callable, R>;
+
+  if (!allocator.valid()) {
+    return JoinHandle<R>(
+        Status::InvalidArgument("schedule_task requires a complete allocator"));
+  }
+  auto* cell = static_cast<Cell*>(
+      allocator.allocate(sizeof(Cell), alignof(Cell)));
+  if (cell == nullptr) {
+    return JoinHandle<R>(
+        Status::ResourceExhausted("scheduled task allocation failed"));
+  }
+  new (cell) Cell(allocator, std::forward<Fn>(fn));
+
+  Status admitted = scheduler.schedule(&Cell::run, cell);
+  if (!admitted.ok()) {
+    cell->fn.reset();
+    cell->set_error(std::move(admitted).WithContext("schedule_task"));
+    cell->release();  // no worker owns the reserved task-side reference
+  }
+  return JoinHandle<R>(cell);
+}
 
 // ---- spawn_task: spawn a Task<T>, get a JoinHandle<T> -----------------------
 namespace detail {
@@ -542,7 +705,7 @@ namespace detail {
 template <class... States>
 int group_wait(GroupSignal& g, long target, States*... states) noexcept {
   constexpr int kN = static_cast<int>(sizeof...(States));
-  g.remaining = target;
+  g.remaining.store(target, std::memory_order_relaxed);
   // Install into each; collect indices of those already done to pre-account.
   int idx = 0;
   bool already[kN == 0 ? 1 : kN] = {};
@@ -553,19 +716,11 @@ int group_wait(GroupSignal& g, long target, States*... states) noexcept {
   // Pre-account completions that happened before/at install (their on_complete
   // won't fire for us since group wasn't set at their completion).
   for (int i = 0; i < kN; ++i) {
-    if (already[i]) {
-      g.mu.lock();
-      if (g.winner < 0) g.winner = i;
-      bool fire = (g.remaining > 0 && --g.remaining == 0);
-      if (fire) g.fired = true;
-      g.mu.unlock();
-    }
+    if (already[i]) g.on_complete(i);
   }
   // Block until the target is met.
-  g.mu.lock();
-  g.cv.wait(g.mu, [&] { return g.fired; });
-  int winner = g.winner;
-  g.mu.unlock();
+  g.completed.wait();
+  const int winner = g.winner.load(std::memory_order_acquire);
   // Uninstall from every state BEFORE g dies (critical: a not-yet-fired loser
   // would otherwise call on_complete on a dead stack object).
   (void)std::initializer_list<int>{
@@ -578,16 +733,14 @@ int group_wait_span(GroupSignal& group, long target,
                     std::span<JoinHandle<T>> handles) noexcept {
   HYLE_FATAL_ASSERT(
       handles.size() <= static_cast<std::size_t>((std::numeric_limits<int>::max)()));
-  group.remaining = target;
+  group.remaining.store(target, std::memory_order_relaxed);
   for (std::size_t i = 0; i < handles.size(); ++i) {
     auto* state = handles[i].state_for_group_();
     if (state == nullptr || state->install_group(&group, static_cast<int>(i)))
       group.on_complete(static_cast<int>(i));
   }
-  group.mu.lock();
-  group.cv.wait(group.mu, [&] { return group.fired; });
-  const int winner = group.winner;
-  group.mu.unlock();
+  group.completed.wait();
+  const int winner = group.winner.load(std::memory_order_acquire);
   for (JoinHandle<T>& handle : handles) {
     if (auto* state = handle.state_for_group_(); state != nullptr)
       state->clear_group();

@@ -20,6 +20,7 @@ using hyle::sched::CancelToken;
 using hyle::sched::Fiber;
 using hyle::sched::is_cancel_requested;
 using hyle::sched::kDefaultStackSize;
+using hyle::sched::schedule_task;
 using hyle::sched::Scheduler;
 using hyle::sched::spawn_task;
 using hyle::sched::SuspendFiber;
@@ -37,9 +38,9 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
 }  // namespace
 
 // sched-07 cancellation-tree tests. The tree ops (derive/cancel/propagate/re-parent/
-// callback) are owner-worker-only pure logic -- most can be exercised directly on the
-// test thread (no fiber needed). Only the CancelScope <-> is_cancel_requested()
-// integration and the cancellable-io path need a real fiber under a Scheduler.
+// callback) are pure control-path logic -- most can be exercised directly on the
+// test thread. CancelScope migration and cancellable IO still need a real Fiber;
+// the same execution-local chain also serves worker-stack tasks.
 
 // ---- tree propagation (pure logic, no scheduler) ---------------------------
 
@@ -61,6 +62,23 @@ TEST(Cancel, InvalidAndExhaustedAllocatorsAreRecoverable) {
   ASSERT_FALSE(exhausted.has_value());
   EXPECT_TRUE(exhausted.error().IsResourceExhausted());
   CancelScope no_op{CancelToken{}};
+  EXPECT_FALSE(is_cancel_requested());
+}
+
+TEST(Cancel, ScopePublishesOnWorkerStackWithoutAFiber) {
+  CancelToken token = CancelToken::root(system_allocator());
+  token.cancel();
+  EXPECT_FALSE(is_cancel_requested());
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto handle = schedule_task(
+      scheduler, system_allocator(), [token]() noexcept {
+        CancelScope scope{token};
+        return is_cancel_requested();
+      });
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_TRUE(*result);
+  scheduler.shutdown();
   EXPECT_FALSE(is_cancel_requested());
 }
 

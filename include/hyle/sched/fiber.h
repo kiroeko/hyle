@@ -28,13 +28,16 @@ struct FiberAccess;
 template <class T>
 struct TaskDriver;
 
-// One active cooperative-cancellation source on a Fiber. The record lives in
-// the owning RAII scope (normally a TaskDriver or CancelScope), so pushing a
-// source allocates nothing. A linked stack is required: a request token must
-// compose with JoinHandle::abort instead of replacing it.
+// One active cooperative-cancellation source on a sched execution context.
+// Fiber work stores the chain on the Fiber so migration is safe; worker-stack
+// work stores it in thread-local state for the duration of the callback. The
+// record lives in the owning RAII scope, so pushing a source allocates nothing.
+// A linked stack is required: a request token must compose with
+// JoinHandle::abort instead of replacing it.
 struct CancelFlagLink {
   std::atomic<bool>* flag = nullptr;
   CancelFlagLink* previous = nullptr;
+  CancelFlagLink** owner_head = nullptr;
 };
 
 HYLE_SCHED_API bool push_cancel_flag(CancelFlagLink* link,

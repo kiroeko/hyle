@@ -38,23 +38,28 @@ int main() {
     return 2;
   }
 
+  auto scheduled = hyle::sched::schedule_task(
+      scheduler, allocator, []() noexcept { return 21 * 2; });
+  auto scheduled_result = scheduled.join();
+  if (!scheduled_result || *scheduled_result != 42) return 3;
+
   auto task = hyle::sched::spawn_task(
       scheduler, allocator, delayed_value(allocator, 42));
   auto task_result = task.join();
-  if (!task_result || *task_result != 42) return 3;
+  if (!task_result || *task_result != 42) return 4;
 
   hyle::sched::Channel<int> channel(allocator, 2);
-  if (!channel.try_send(7)) return 4;
+  if (!channel.try_send(7)) return 5;
   auto message = channel.try_recv();
-  if (!message || *message != 7) return 5;
+  if (!message || *message != 7) return 6;
 
   hyle::sched::BlockingPool blocking(allocator, 2);
   auto blocking_task = hyle::sched::spawn_blocking(
       blocking, allocator, []() noexcept { return 11; });
   auto blocking_result = blocking_task.join();
-  if (!blocking_result || *blocking_result != 11) return 6;
+  if (!blocking_result || *blocking_result != 11) return 7;
   blocking.shutdown();
 
   scheduler.shutdown();
-  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 7;
+  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 8;
 }

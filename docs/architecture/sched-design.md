@@ -13,7 +13,7 @@
 Sched 拥有：
 
 - stackful Fiber、M:N worker、work stealing、显式 worker placement 和 idle policy；
-- 短 callback、可挂起 detached task、带结果 structured task 与 blocking offload；
+- 短 callback、worker-stack typed task、可挂起 detached/structured task 与 blocking offload；
 - suspend/wake、typed monotonic sleep/deadline、协作取消和两阶段 shutdown；
 - fiber/thread 双模同步原语，以及 bounded、oneshot、watch、broadcast 消息形状；
 - scheduler 需要的 allocator、错误和生命周期合同。
@@ -37,7 +37,7 @@ Sched 不把 thread、fiber、coroutine 和 process 假装成同一种对象：
 |---|---|
 | OS worker thread | 执行引擎；一个 worker 依次运行多个 Fiber |
 | stackful Fiber | 可调度实体；可在任意调用深度协作挂起，并在挂起期间被迁移 |
-| C++ coroutine | Fiber 内的 typed result/await 写法；不是第二套 worker scheduler |
+| C++ coroutine | 需要挂起的 Fiber 内 typed result/await 写法；不是每个 typed task 的必缴成本 |
 | process | 隔离边界；跨进程工作通过 IO/共享内存形成 completion，不共享 Fiber 指针或 run queue |
 
 统一的是 completion：
@@ -56,15 +56,16 @@ timer / IO / GPU / channel notification
 worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并发 resume 同一栈。一个 Fiber 同时只能在
 一个线程上运行；仅在 suspended 状态才允许迁移。
 
-## 三种任务形状
+## 任务形状
 
 公共任务入口按工作语义分层，而不是按 benchmark 分层：
 
 | 形状 | 运行位置 | ownership / 成本 | 适用情况 |
 |---|---|---|---|
 | `schedule` | worker 自身栈 | raw 入口零分配；owning callable 一次 allocator record | 很短、不会挂起或阻塞、无需结果 |
+| `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 abort | 很短、不会挂起或阻塞、需要 typed result/join |
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
-| `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed driver/result；协作 abort | 需要结果、异常转 Status、join/select/fan-out |
+| `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 abort | 会挂起且需要结果、join/select/fan-out |
 | `spawn_blocking` + `BlockingPool` | 专用 OS thread pool | 独立有界 runtime metadata；结果走 JoinHandle | 阻塞 syscall、外部同步 API、长 CPU 工作 |
 
 Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；普通
@@ -110,7 +111,8 @@ Fiber stack 由 Mem 的 `FiberStack`/`FiberStackPool` 提供 guarded small/defau
 
 - `CancelToken` 可共享；`derive()` 建立子树；`is_cancelled()` 是 O(1) atomic load；
 - tree mutation、callback register/drop 与 cancel 是 control path，可跨线程并按树串行化；
-- `CancelScope` 把 token 加入当前 Fiber 的 active source 栈，与 `JoinHandle::abort()` 组合而非覆盖；
+- `CancelScope` 把 token 加入当前 sched execution context 的 active source 栈：Fiber 上随 Fiber 迁移，
+  worker-stack task 中按 callback/thread 生命周期约束；它与 `JoinHandle::abort()` 组合而非覆盖；
 - callback 只能请求底层操作取消或唤醒等待者，不能强行摧毁正在运行的 stack。
 
 Sched shutdown 分成关闭 admission/广播 shutdown 与等待 in-flight 完成。stackful work 无法安全抢占；
@@ -138,7 +140,8 @@ copy 使用 RAII monitor guard，失败不锁死 channel 且不推进版本/curs
 
 ## Allocator、Error 与依赖方向
 
-Sched 的 runtime metadata、task driver、join state、blocking job 和 pooled stack 都走显式 Mem allocator；
+Sched 的 runtime metadata、worker-stack task cell、task driver、join state、blocking job 和 pooled stack
+都走显式 Mem allocator；
 OS Thread 自身的系统资源属于 Platform 合同。便利构造可对可信不变量 fail-fast，面向运营失败的构造和
 提交必须返回 `Status`/`Result`。队列 full、timeout、shutdown 和 OOM 不能被压成同一个 bool，涉及
 未消费 value 时还必须返还 ownership。
@@ -156,6 +159,7 @@ build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改
 | external injection | O(1) amortized，按 shard 分散 contention |
 | steal | 一次 victim probe + bounded batch；不得全局扫描每个任务 |
 | wake/suspend | 常态无分配；至多一次 ready routing/worker wake |
+| worker-stack typed task | O(1) admission；callable/result state 合并为一次 allocation；无 Fiber/context switch |
 | timer arm/cancel | 继承 Time queue 的 O(1) node operation |
 | semaphore timeout unlink | O(1) |
 | join group | O(n) install/clear，等待期间无 polling |

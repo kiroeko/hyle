@@ -13,8 +13,9 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 需求 | 首选形状 | 关键合同 |
 |---|---|---|
 | 很短、不挂起、无结果 callback | `Scheduler::schedule` | 直接在 worker stack 执行；不得 sleep/yield/block |
+| 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；取消是协作式 |
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
-| 有结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `Allocator`；取消是协作式 |
+| 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `Allocator`；独立 guarded Fiber |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
@@ -69,6 +70,21 @@ shutdown。
 
 ## 有结果任务与 fan-out
 
+短小且确定不会挂起的 result-bearing work 直接使用 `schedule_task`。callable 与 result state 合并为一次
+allocator allocation，并在 worker stack 执行；它不能调用 yield、sched sleep 或任何 fiber-blocking
+wait：
+
+```cpp
+auto decoded = hyle::sched::schedule_task(
+    scheduler, alloc, [tile]() noexcept { return decode_tile(tile); });
+auto result = decoded.join();
+if (!result) return result.error();
+consume(*result);
+```
+
+只有任务确实会在 timer、I/O、channel 或其他 completion 上挂起时，才为它创建 coroutine 与 guarded
+Fiber：
+
 `Task<T>` coroutine frame 从函数的第一个 `mem::Allocator` 参数取得 storage。漏掉这个首参数会编译
 失败；frame OOM 和 driver/stack OOM 会成为 `JoinHandle::join()` 返回的错误。
 
@@ -86,7 +102,8 @@ if (!result) return result.error();
 use(*result);                         // 42
 ```
 
-`JoinHandle` 是 move-only result slot；析构或 `detach()` 只放弃结果，任务继续运行且仍被
+两条路线返回相同的 `JoinHandle`，因此可以混合进入 `when_all/when_any`。它是 move-only result slot；
+析构或 `detach()` 只放弃结果，任务继续运行且仍被
 `Scheduler::drain/shutdown` 计数。`abort()` 只设置协作取消标志，任务必须在循环、等待或 I/O 边界检查
 `is_cancel_requested()` 并通过 RAII 自行退出。
 
@@ -117,7 +134,8 @@ job 内 shutdown 自己。
 
 `CancelToken::root(alloc)` 建立可复制根句柄，`derive()` 建立子树；父取消向下传播，子取消不反向污染
 父或 sibling。运营环境需要恢复 OOM 时使用 `try_create_root` / `try_derive`。`CancelScope` 把一个
-token 叠加到当前 Fiber 的活动取消源；嵌套 scope 与 `JoinHandle::abort()` 组合，不互相覆盖。主动取消
+token 叠加到当前 sched execution context 的活动取消源：Fiber 上随 Fiber 迁移，`schedule_task` 中只在
+该 worker-stack callback 期间有效；嵌套 scope 与 `JoinHandle::abort()` 组合，不互相覆盖。主动取消
 已提交的 I/O 可用无分配 RAII `CancelCallback`，其 token copy 必须比 callback 长寿。
 
 短生命周期批处理直接 `shutdown()`：它等待有限工作归零、关闭 admission 并 join workers。长期服务先：
@@ -182,8 +200,8 @@ overload 是热路 adapter；默认优先 value-returning `Result<T>`。
 
 - Fiber 只在挂起状态迁移，但恢复后可能位于另一个 worker。不要把 thread-local 指针、当前 CPU、arena
   owner 或 lock ownership 跨 `yield/suspend/sleep/wait` 保存；恢复后重新读取，或显式 pinned。
-- `schedule` callback 运行在 worker stack，不能调用任何会挂起 Fiber 的 API；需要挂起就选
-  `spawn_detached`/`spawn_task`。
+- `schedule`/`schedule_task` callback 运行在 worker stack，不能调用任何会挂起 Fiber 的 API；无结果的
+  可挂起工作选 `spawn_detached`，有结果的可挂起工作选 `spawn_task`。
 - 不要在 worker 上调用 `hyle::time::sleep_*`，那会阻塞 OS thread；使用 `hyle::sched::sleep_*`。
 - `Fiber::create` 与 raw `spawn(Fiber*)` 只适合实现 runtime integration 的 owner。`spawn` 不接管对象，
   caller 必须保持 Fiber 存活直到结束；started Fiber 不能 move。

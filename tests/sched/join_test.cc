@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <span>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -14,6 +15,7 @@ using hyle::mem::system_allocator;
 using hyle::sched::is_cancel_requested;
 using hyle::sched::JoinHandle;
 using hyle::sched::Scheduler;
+using hyle::sched::schedule_task;
 using hyle::sched::spawn_task;
 using hyle::sched::SuspendFiber;
 using hyle::sched::CaptureWaker;
@@ -31,6 +33,36 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
 }
 Allocator failing_allocator() noexcept {
   return Allocator(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+}
+
+struct AllocationCounter {
+  Allocator backing = system_allocator();
+  std::atomic<std::size_t> allocations{0};
+  std::atomic<std::size_t> frees{0};
+};
+
+void* counted_alloc(void* raw, std::size_t size,
+                    std::size_t alignment) noexcept {
+  auto* counter = static_cast<AllocationCounter*>(raw);
+  void* result = counter->backing.allocate(size, alignment);
+  if (result != nullptr)
+    counter->allocations.fetch_add(1, std::memory_order_relaxed);
+  return result;
+}
+
+void counted_free(void* raw, void* ptr, std::size_t size,
+                  std::size_t alignment) noexcept {
+  auto* counter = static_cast<AllocationCounter*>(raw);
+  if (ptr != nullptr)
+    counter->frees.fetch_add(1, std::memory_order_relaxed);
+  counter->backing.deallocate(ptr, size, alignment);
+}
+
+void* counted_realloc(void* raw, void* ptr, std::size_t old_size,
+                      std::size_t new_size,
+                      std::size_t alignment) noexcept {
+  auto* counter = static_cast<AllocationCounter*>(raw);
+  return counter->backing.reallocate(ptr, old_size, new_size, alignment);
 }
 }  // namespace
 
@@ -88,6 +120,116 @@ TEST(Join, SpawnTaskJoinReturnsValue) {
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, 42);
   sched.shutdown();
+}
+
+TEST(Join, ScheduledTaskRunsOnWorkerStackAndReturnsTypedValue) {
+  Scheduler scheduler(2, system_allocator(), 64);
+  std::atomic<bool> used_worker_stack{false};
+  auto handle = schedule_task(
+      scheduler, system_allocator(), [&used_worker_stack]() noexcept {
+        used_worker_stack.store(
+            hyle::sched::Fiber::current() == nullptr &&
+                hyle::sched::current_worker_index() >= 0,
+            std::memory_order_release);
+        return 42;
+      });
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(*result, 42);
+  EXPECT_TRUE(used_worker_stack.load(std::memory_order_acquire));
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledTaskUsesOneOwnedCell) {
+  AllocationCounter counter;
+  Allocator counted(&counted_alloc, &counted_free, &counted_realloc,
+                    &counter);
+  Scheduler scheduler(1, system_allocator(), 64);
+  {
+    auto handle = schedule_task(
+        scheduler, counted, [payload = 40]() noexcept {
+          return payload + 2;
+        });
+    auto result = handle.join();
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result, 42);
+  }
+  scheduler.drain();
+  EXPECT_EQ(counter.allocations.load(std::memory_order_relaxed), 1u);
+  EXPECT_EQ(counter.frees.load(std::memory_order_relaxed), 1u);
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledVoidTaskJoinsAndDetachStillDrains) {
+  Scheduler scheduler(2, system_allocator(), 64);
+  std::atomic<int> calls{0};
+  auto joined = schedule_task(scheduler, system_allocator(), [&]() noexcept {
+    calls.fetch_add(1, std::memory_order_relaxed);
+  });
+  EXPECT_TRUE(joined.join().has_value());
+  {
+    auto detached = schedule_task(
+        scheduler, system_allocator(), [&]() noexcept {
+          calls.fetch_add(1, std::memory_order_relaxed);
+        });
+    detached.detach();
+  }
+  scheduler.drain();
+  EXPECT_EQ(calls.load(std::memory_order_relaxed), 2);
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledTaskFailureAndClosedAdmissionAreStructured) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto exhausted = schedule_task(
+      scheduler, failing_allocator(), []() noexcept { return 1; });
+  ASSERT_FALSE(exhausted.join().has_value());
+
+  scheduler.begin_shutdown();
+  auto rejected = schedule_task(
+      scheduler, system_allocator(), []() noexcept { return 2; });
+  auto result = rejected.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledTaskSupportsDynamicTypedFanout) {
+  constexpr int kTasks = 64;
+  Scheduler scheduler(4, system_allocator(), 256);
+  std::vector<JoinHandle<int>> handles;
+  handles.reserve(kTasks);
+  for (int value = 0; value < kTasks; ++value) {
+    handles.push_back(schedule_task(
+        scheduler, system_allocator(), [value]() noexcept {
+          return value + 1;
+        }));
+  }
+  when_all(std::span<JoinHandle<int>>(handles));
+  int sum = 0;
+  for (auto& handle : handles) sum += *handle.join();
+  EXPECT_EQ(sum, kTasks * (kTasks + 1) / 2);
+  scheduler.shutdown();
+}
+
+TEST(Join, ScheduledTaskAbortIsVisibleDuringWorkerStackExecution) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  std::atomic<bool> started{false};
+  std::atomic<bool> observed{false};
+  auto handle = schedule_task(
+      scheduler, system_allocator(), [&]() noexcept {
+        started.store(true, std::memory_order_release);
+        while (!is_cancel_requested()) std::this_thread::yield();
+        observed.store(true, std::memory_order_release);
+        return 7;
+      });
+  while (!started.load(std::memory_order_acquire)) std::this_thread::yield();
+  handle.abort();
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(*result, 7);
+  EXPECT_TRUE(observed.load(std::memory_order_acquire));
+  scheduler.shutdown();
 }
 
 TEST(Join, UserExceptionBecomesInternalStatus) {
