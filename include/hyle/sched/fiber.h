@@ -21,8 +21,39 @@
 
 namespace hyle::sched {
 
+class Fiber;
+
 namespace detail {
 struct FiberReadyAccess;
+
+// One active cooperative-cancellation source on a Fiber. The record lives in
+// the owning RAII scope (normally a TaskDriver or CancelScope), so pushing a
+// source allocates nothing. A linked stack is required: a request token must
+// compose with JoinHandle::abort instead of replacing it.
+struct CancelFlagLink {
+  std::atomic<bool>* flag = nullptr;
+  CancelFlagLink* previous = nullptr;
+};
+
+HYLE_SCHED_API bool push_cancel_flag(CancelFlagLink* link,
+                                     std::atomic<bool>* flag) noexcept;
+HYLE_SCHED_API void pop_cancel_flag(CancelFlagLink* link) noexcept;
+HYLE_SCHED_API bool current_cancel_requested() noexcept;
+
+class ScopedCancelFlag {
+ public:
+  explicit ScopedCancelFlag(std::atomic<bool>* flag) noexcept
+      : active_(push_cancel_flag(&link_, flag)) {}
+  ~ScopedCancelFlag() {
+    if (active_) pop_cancel_flag(&link_);
+  }
+  ScopedCancelFlag(const ScopedCancelFlag&) = delete;
+  ScopedCancelFlag& operator=(const ScopedCancelFlag&) = delete;
+
+ private:
+  CancelFlagLink link_{};
+  bool active_ = false;
+};
 }  // namespace detail
 
 // Tiered fiber stack sizes (usable bytes; a guard page is added below).
@@ -46,8 +77,10 @@ inline constexpr std::size_t kLargeStackSize = mem::kFiberStackLarge;
 //   f.resume();            // continues after the yield
 //   f.done();              // true once my_entry has returned
 //
-// Single-thread cooperative model: a fiber is resumed by exactly one thread at a
-// time. Move-only ownership of the stack.
+// A fiber is resumed by exactly one thread at a time. It may migrate between
+// worker threads only while suspended. Ownership is movable before the first
+// resume; moving a started fiber is forbidden because fcontext retains the
+// original object address handed to its trampoline.
 //
 // API macro is on the methods, not the class: exporting the whole class would
 // drag members across the seam (MSVC C4251). Method-level export keeps the layout
@@ -104,7 +137,18 @@ class Fiber {
   // threading a handle through (sched-04).
   HYLE_SCHED_API static Fiber* current() noexcept;
 
-  // ---- wait/wake coordination (used by the scheduler's Waker, sched-04) -------
+ private:
+  // Scheduling/integration machinery is intentionally not ordinary user API.
+  // Scheduler, Waker and the detail accessors below own these state transitions.
+  friend struct FiberLaunch;
+  friend struct detail::FiberReadyAccess;
+  friend bool detail::push_cancel_flag(detail::CancelFlagLink*,
+                                       std::atomic<bool>*) noexcept;
+  friend void detail::pop_cancel_flag(detail::CancelFlagLink*) noexcept;
+  friend bool detail::current_cancel_requested() noexcept;
+
+ public:
+  // ---- wait/wake coordination (internal scheduler seam) ----------------------
   // A fiber that yields to WAIT on an external event (vs an ordinary cooperative
   // yield) sets this flag before yielding; the scheduler reads+clears it after
   // resume() returns and, if set, does NOT reschedule -- the fiber sits out of
@@ -153,19 +197,6 @@ class Fiber {
   FinishFn on_finish() const noexcept { return on_finish_; }
   void* on_finish_ctx() const noexcept { return on_finish_ctx_; }
 
-  // ---- cooperative-cancel flag (sched-10 is_cancel_requested) -----------------
-  // The cancel flag of the task running ON this fiber. It MUST live on the fiber,
-  // not in thread_local: a task fiber suspends at a co_await and is re-injected on
-  // a POSSIBLY DIFFERENT worker thread, so a thread-local cancel scope set on the
-  // first worker is invisible after migration -> is_cancel_requested() would read
-  // false on the new thread and miss an abort() (the Join.AbortIsCooperative
-  // flake, root-caused 2026-07-03). Storing it on the fiber makes it travel WITH
-  // the execution, exactly like the TSan fiber handle. `void*` points at the
-  // task's std::atomic<bool> cancel_req; null when the fiber runs no cancellable
-  // task. is_cancel_requested() reads it via Fiber::current().
-  void set_cancel_flag(void* flag) noexcept { cancel_flag_ = flag; }
-  void* cancel_flag() const noexcept { return cancel_flag_; }
-
   // Symmetric rendezvous closing the wake-before-suspend race. BOTH the worker
   // (after resume() returns, having seen a wait request) and Waker::wake() call
   // this; whichever observes the OTHER already arrived returns true and must do
@@ -181,11 +212,6 @@ class Fiber {
   }
 
  private:
-  // friend so the file-local fcontext trampoline can drive private state without
-  // exposing transfer_t/fcontext_t in this public header.
-  friend struct FiberLaunch;
-  friend struct detail::FiberReadyAccess;
-
   void release_stack_() noexcept;
 
   void* fctx_ = nullptr;        // fcontext_t: fiber's suspended context
@@ -194,12 +220,13 @@ class Fiber {
   mem::FiberStackPool* pool_ = nullptr;  // optional recycle target (non-owning)
   EntryFn entry_ = nullptr;
   void* arg_ = nullptr;
+  bool started_ = false;
   bool finished_ = false;
   bool wait_requested_ = false;       // set by request_wait(), read by scheduler
   int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
   FinishFn on_finish_ = nullptr;      // sched-10: run by dispatch after done()
   void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
-  void* cancel_flag_ = nullptr;       // sched-10: task's cancel_req, travels w/ fiber
+  detail::CancelFlagLink* cancel_flags_ = nullptr;  // active cancel sources
   Fiber* ready_next_ = nullptr;       // scheduler cold overflow intrusive link
   const char* name_ = nullptr;        // obs-02: trace label (stable ptr), OFF-build unused
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)

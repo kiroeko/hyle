@@ -1,124 +1,358 @@
 #include "hyle/sched/cancel.h"
 
-#include <atomic>
-
-// sched-07 cancellation-tree operations. Owner-worker-only: a whole tree lives on
-// one shard (shard-per-core), so every walk here is single-threaded and touches
-// the plain (non-atomic) tree/callback links directly. The only atomic is the
-// per-node `cancelled` flag (so is_cancel_requested() reads it correctly after a
-// task fiber migrates workers between awaits -- see cancel.h header).
-//
-// INVARIANT (relied on by the walk): cancelling a node cancels every descendant.
-// A node's `cancelled` becomes true only via cancel_subtree (which cascades to the
-// whole subtree) or born-cancelled at derive() (a leaf with no children yet). So a
-// node already cancelled implies its entire current subtree is cancelled -- the
-// walk can prune it.
+#include <cstddef>
+#include <mutex>
+#include <new>
+#include <utility>
 
 namespace hyle::sched {
 namespace detail {
 
-void fire_callbacks(CancelNode* n) noexcept {
-  // Pop-then-invoke: detach the HEAD callback, then run it -- repeat until the list
-  // is empty. Popping one at a time (rather than caching next before invoking) keeps
-  // the walk correct even if a callback body unregisters ANOTHER still-pending
-  // callback: that unregister splices the live list via prev_next, and we always
-  // re-read the current head, so no stale/dangling pointer is ever dereferenced (the
-  // folly unlink-before-invoke discipline, made robust to sibling teardown). A body
-  // that registers a NEW callback pushes onto the head and it, too, will fire.
-  // Single-threaded (owner worker), so no atomics; invoking_cb documents re-entry.
-  n->invoking_cb = true;
-  while (n->first_cb != nullptr) {
-    CancelNode::Callback* cb = n->first_cb;
-    // Unlink the head from the live list BEFORE invoking (O(1) via prev_next).
-    n->first_cb = cb->next;
-    if (cb->next != nullptr) cb->next->prev_next = &n->first_cb;
-    cb->node = nullptr;  // mark detached so its owner's unregister() is a no-op
-    cb->prev_next = nullptr;
-    cb->next = nullptr;
-    cb->fn(cb->ctx);  // active-cancel action (e.g. submit_cancel the in-flight op)
+struct CancelTree {
+  mem::Allocator allocator;
+  std::recursive_mutex mutex;
+  std::size_t node_count = 0;
+  unsigned cancel_depth = 0;
+  CancelNode* pending_delete = nullptr;
+};
+
+struct CancelNode {
+  CancelTree* tree = nullptr;
+  CancelNode* parent = nullptr;
+  CancelNode* first_child = nullptr;
+  CancelNode* next_sibling = nullptr;
+  CancelNode* previous_sibling = nullptr;
+  CancelNode* next_pending = nullptr;
+  CancelCallbackRecord* first_callback = nullptr;
+  std::size_t handle_count = 1;
+  std::atomic<bool> cancelled{false};
+  bool pending_delete = false;
+};
+
+namespace {
+
+void cancel_subtree_locked(CancelNode* root) noexcept;
+
+void fire_callbacks_locked(CancelNode* node) noexcept {
+  while (node->first_callback != nullptr) {
+    CancelCallbackRecord* callback = node->first_callback;
+    node->first_callback = callback->next;
+    if (callback->next != nullptr) {
+      callback->next->previous_link = &node->first_callback;
+    }
+    callback->node = nullptr;
+    callback->next = nullptr;
+    callback->previous_link = nullptr;
+    callback->fn(callback->context);
   }
-  n->invoking_cb = false;
 }
 
-void cancel_subtree(CancelNode* root) noexcept {
-  if (root == nullptr) return;
-  // Mark the root; if it was already cancelled, its subtree is too (invariant) -> done.
-  if (root->cancelled.exchange(true, std::memory_order_acq_rel)) return;
-  fire_callbacks(root);
+void cancel_subtree_locked(CancelNode* root) noexcept {
+  if (root == nullptr ||
+      root->cancelled.exchange(true, std::memory_order_acq_rel)) {
+    return;
+  }
+  fire_callbacks_locked(root);
 
-  // Iterative depth-first walk over the tree's own first_child/next_sibling links
-  // (NO recursion, NO allocation: a deep fan-out tree must not blow the fiber
-  // stack). Descend only into NEWLY-cancelled nodes; an already-cancelled node's
-  // whole subtree is already cancelled (invariant), so prune it. Climb back via
-  // parent, stopping at `root` (never touch root's own siblings/parent).
-  CancelNode* cur = root->first_child;
-  while (cur != nullptr && cur != root) {
-    bool was = cur->cancelled.exchange(true, std::memory_order_acq_rel);
-    if (!was) fire_callbacks(cur);
-    if (!was && cur->first_child != nullptr) {
-      cur = cur->first_child;  // descend into the newly-cancelled node
-    } else if (cur->next_sibling != nullptr) {
-      cur = cur->next_sibling;  // across to the next sibling
+  // Re-entrant token drops are deferred until the outermost cancel returns,
+  // keeping this allocation-free topology walk stable while callbacks run.
+  CancelNode* current = root->first_child;
+  while (current != nullptr && current != root) {
+    const bool was_cancelled =
+        current->cancelled.exchange(true, std::memory_order_acq_rel);
+    if (!was_cancelled) fire_callbacks_locked(current);
+    if (!was_cancelled && current->first_child != nullptr) {
+      current = current->first_child;
+    } else if (current->next_sibling != nullptr) {
+      current = current->next_sibling;
     } else {
-      // Climb to the nearest ancestor (below root) that has an unvisited sibling.
-      while (cur != nullptr && cur != root && cur->next_sibling == nullptr) {
-        cur = cur->parent;
+      while (current != nullptr && current != root &&
+             current->next_sibling == nullptr) {
+        current = current->parent;
       }
-      if (cur == nullptr || cur == root) break;  // whole subtree walked
-      cur = cur->next_sibling;
+      if (current == nullptr || current == root) break;
+      current = current->next_sibling;
     }
   }
 }
 
-void unlink_node(CancelNode* n) noexcept {
-  // Re-parent this node's children to its parent BEFORE removing it, so a dropped
-  // middle node never orphans its subtree from an ancestor's future cancel (tokio
-  // move_children_to_parent). A root drop (parent == nullptr) leaves its children
-  // parentless -- they simply become roots (their own drops free them).
-  CancelNode* p = n->parent;
-  CancelNode* child = n->first_child;
+void unlink_node_locked(CancelNode* node) noexcept {
+  CancelNode* parent = node->parent;
+  CancelNode* child = node->first_child;
   if (child != nullptr) {
-    // Point every direct child at p; remember the tail to splice the span.
     CancelNode* tail = child;
     for (;;) {
-      tail->parent = p;
+      tail->parent = parent;
       if (tail->next_sibling == nullptr) break;
       tail = tail->next_sibling;
     }
-    if (p != nullptr) {
-      // Splice n's children onto the FRONT of p's child list.
-      tail->next_sibling = p->first_child;
-      if (p->first_child != nullptr) p->first_child->prev_sibling = tail;
-      p->first_child = child;
-      child->prev_sibling = nullptr;
-      // If p is already cancelled, the freshly re-parented children missed the
-      // original cascade -- cancel each re-parented subtree now. Walk the original
-      // child span [child .. tail] (tail->next_sibling now points into p's old list,
-      // so stop AT tail).
-      if (p->cancelled.load(std::memory_order_acquire)) {
-        for (CancelNode* c = child;;) {
-          CancelNode* nxt = (c == tail) ? nullptr : c->next_sibling;
-          cancel_subtree(c);
-          if (nxt == nullptr) break;
-          c = nxt;
+    if (parent != nullptr) {
+      tail->next_sibling = parent->first_child;
+      if (parent->first_child != nullptr) {
+        parent->first_child->previous_sibling = tail;
+      }
+      parent->first_child = child;
+      child->previous_sibling = nullptr;
+      if (parent->cancelled.load(std::memory_order_acquire)) {
+        for (CancelNode* current = child;;) {
+          CancelNode* next = current == tail ? nullptr : current->next_sibling;
+          cancel_subtree_locked(current);
+          if (next == nullptr) break;
+          current = next;
         }
       }
     } else {
-      child->prev_sibling = nullptr;  // no grandparent: children become roots
+      child->previous_sibling = nullptr;
     }
   }
-  // Unlink n from p's child list (O(1) via the sibling doubly-linked list).
-  if (n->prev_sibling != nullptr) {
-    n->prev_sibling->next_sibling = n->next_sibling;
-  } else if (p != nullptr && p->first_child == n) {
-    p->first_child = n->next_sibling;
+
+  if (parent != nullptr) {
+    if (node->previous_sibling != nullptr) {
+      node->previous_sibling->next_sibling = node->next_sibling;
+    } else {
+      HYLE_FATAL_ASSERT(parent->first_child == node);
+      parent->first_child = node->next_sibling;
+    }
+    if (node->next_sibling != nullptr) {
+      node->next_sibling->previous_sibling = node->previous_sibling;
+    }
   }
-  if (n->next_sibling != nullptr) n->next_sibling->prev_sibling = n->prev_sibling;
-  n->parent = nullptr;
-  n->first_child = nullptr;
-  n->next_sibling = nullptr;
-  n->prev_sibling = nullptr;
+  node->parent = nullptr;
+  node->first_child = nullptr;
+  node->next_sibling = nullptr;
+  node->previous_sibling = nullptr;
 }
 
+void enqueue_delete_locked(CancelNode* node) noexcept {
+  if (node->pending_delete) return;
+  HYLE_FATAL_ASSERT(node->handle_count == 0);
+  HYLE_FATAL_ASSERT(node->first_callback == nullptr &&
+                    "CancelToken must outlive its CancelCallback objects");
+  node->pending_delete = true;
+  node->next_pending = node->tree->pending_delete;
+  node->tree->pending_delete = node;
+}
+
+void drain_deletes_locked(CancelTree* tree) noexcept {
+  HYLE_FATAL_ASSERT(tree->cancel_depth == 0);
+  ++tree->cancel_depth;
+  while (tree->pending_delete != nullptr) {
+    CancelNode* node = tree->pending_delete;
+    tree->pending_delete = node->next_pending;
+    node->next_pending = nullptr;
+    unlink_node_locked(node);
+    mem::Allocator allocator = tree->allocator;
+    node->~CancelNode();
+    allocator.deallocate(node, sizeof(CancelNode), alignof(CancelNode));
+    HYLE_FATAL_ASSERT(tree->node_count != 0);
+    --tree->node_count;
+  }
+  --tree->cancel_depth;
+}
+
+}  // namespace
 }  // namespace detail
+
+Result<CancelToken> CancelToken::try_create_root(
+    mem::Allocator allocator) noexcept {
+  if (!allocator.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("cancellation tree requires an allocator"));
+  }
+
+  void* tree_storage =
+      allocator.allocate(sizeof(detail::CancelTree), alignof(detail::CancelTree));
+  if (tree_storage == nullptr) {
+    return std::unexpected(
+        Status::ResourceExhausted("cancellation tree allocation failed"));
+  }
+  detail::CancelTree* tree = nullptr;
+  try {
+    tree = new (tree_storage) detail::CancelTree{};
+  } catch (...) {
+    allocator.deallocate(tree_storage, sizeof(detail::CancelTree),
+                         alignof(detail::CancelTree));
+    return std::unexpected(
+        Status::Unavailable("cancellation tree lock initialization failed"));
+  }
+  tree->allocator = allocator;
+
+  void* node_storage =
+      allocator.allocate(sizeof(detail::CancelNode), alignof(detail::CancelNode));
+  if (node_storage == nullptr) {
+    tree->~CancelTree();
+    allocator.deallocate(tree, sizeof(detail::CancelTree),
+                         alignof(detail::CancelTree));
+    return std::unexpected(
+        Status::ResourceExhausted("cancellation root allocation failed"));
+  }
+  auto* node = new (node_storage) detail::CancelNode{};
+  node->tree = tree;
+  tree->node_count = 1;
+  return CancelToken(node);
+}
+
+CancelToken CancelToken::root(mem::Allocator allocator) noexcept {
+  auto result = try_create_root(allocator);
+  HYLE_FATAL_ASSERT(result.has_value());
+  return *std::move(result);
+}
+
+Result<CancelToken> CancelToken::try_derive() const noexcept {
+  if (node_ == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("cannot derive from an invalid cancel token"));
+  }
+  detail::CancelTree* tree = node_->tree;
+  std::lock_guard<std::recursive_mutex> lock(tree->mutex);
+  void* storage = tree->allocator.allocate(sizeof(detail::CancelNode),
+                                           alignof(detail::CancelNode));
+  if (storage == nullptr) {
+    return std::unexpected(
+        Status::ResourceExhausted("cancellation child allocation failed"));
+  }
+  auto* child = new (storage) detail::CancelNode{};
+  child->tree = tree;
+  child->parent = node_;
+  child->next_sibling = node_->first_child;
+  if (node_->first_child != nullptr) {
+    node_->first_child->previous_sibling = child;
+  }
+  node_->first_child = child;
+  if (node_->cancelled.load(std::memory_order_acquire)) {
+    child->cancelled.store(true, std::memory_order_release);
+  }
+  ++tree->node_count;
+  return CancelToken(child);
+}
+
+CancelToken CancelToken::derive() const noexcept {
+  auto result = try_derive();
+  HYLE_FATAL_ASSERT(result.has_value());
+  return *std::move(result);
+}
+
+CancelToken::CancelToken(const CancelToken& other) noexcept : node_(other.node_) {
+  retain_();
+}
+
+CancelToken& CancelToken::operator=(const CancelToken& other) noexcept {
+  if (this == &other) return *this;
+  detail::CancelNode* next = other.node_;
+  if (next != nullptr) {
+    std::lock_guard<std::recursive_mutex> lock(next->tree->mutex);
+    ++next->handle_count;
+  }
+  reset_();
+  node_ = next;
+  return *this;
+}
+
+CancelToken::CancelToken(CancelToken&& other) noexcept
+    : node_(std::exchange(other.node_, nullptr)) {}
+
+CancelToken& CancelToken::operator=(CancelToken&& other) noexcept {
+  if (this != &other) {
+    reset_();
+    node_ = std::exchange(other.node_, nullptr);
+  }
+  return *this;
+}
+
+CancelToken::~CancelToken() { reset_(); }
+
+void CancelToken::retain_() noexcept {
+  if (node_ == nullptr) return;
+  std::lock_guard<std::recursive_mutex> lock(node_->tree->mutex);
+  ++node_->handle_count;
+}
+
+void CancelToken::reset_() noexcept {
+  if (node_ == nullptr) return;
+  detail::CancelNode* node = std::exchange(node_, nullptr);
+  detail::CancelTree* tree = node->tree;
+  bool destroy_tree = false;
+  {
+    std::lock_guard<std::recursive_mutex> lock(tree->mutex);
+    HYLE_FATAL_ASSERT(node->handle_count != 0);
+    if (--node->handle_count == 0) {
+      detail::enqueue_delete_locked(node);
+      if (tree->cancel_depth == 0) detail::drain_deletes_locked(tree);
+    }
+    destroy_tree = tree->node_count == 0;
+  }
+  if (destroy_tree) {
+    mem::Allocator allocator = tree->allocator;
+    tree->~CancelTree();
+    allocator.deallocate(tree, sizeof(detail::CancelTree),
+                         alignof(detail::CancelTree));
+  }
+}
+
+void CancelToken::cancel() const noexcept {
+  if (node_ == nullptr) return;
+  detail::CancelTree* tree = node_->tree;
+  std::lock_guard<std::recursive_mutex> lock(tree->mutex);
+  ++tree->cancel_depth;
+  detail::cancel_subtree_locked(node_);
+  HYLE_FATAL_ASSERT(tree->cancel_depth != 0);
+  --tree->cancel_depth;
+  if (tree->cancel_depth == 0 && tree->pending_delete != nullptr) {
+    detail::drain_deletes_locked(tree);
+  }
+}
+
+bool CancelToken::is_cancelled() const noexcept {
+  return node_ != nullptr &&
+         node_->cancelled.load(std::memory_order_acquire);
+}
+
+std::atomic<bool>* CancelToken::flag_() const noexcept {
+  return node_ != nullptr ? &node_->cancelled : nullptr;
+}
+
+CancelCallback::CancelCallback(const CancelToken& token, Fn fn,
+                               void* context) noexcept {
+  HYLE_FATAL_ASSERT(fn != nullptr);
+  detail::CancelNode* node = token.node_;
+  if (node == nullptr) return;
+  std::lock_guard<std::recursive_mutex> lock(node->tree->mutex);
+  if (node->cancelled.load(std::memory_order_acquire)) {
+    fn(context);
+    return;
+  }
+  record_.node = node;
+  record_.tree = node->tree;
+  record_.fn = fn;
+  record_.context = context;
+  record_.next = node->first_callback;
+  record_.previous_link = &node->first_callback;
+  if (node->first_callback != nullptr) {
+    node->first_callback->previous_link = &record_.next;
+  }
+  node->first_callback = &record_;
+}
+
+CancelCallback::~CancelCallback() { unregister(); }
+
+void CancelCallback::unregister() noexcept {
+  detail::CancelTree* tree = record_.tree;
+  if (tree == nullptr) return;
+  std::lock_guard<std::recursive_mutex> lock(tree->mutex);
+  detail::CancelNode* node = record_.node;
+  if (node == nullptr) {
+    record_.tree = nullptr;
+    return;
+  }
+  HYLE_FATAL_ASSERT(record_.previous_link != nullptr);
+  *record_.previous_link = record_.next;
+  if (record_.next != nullptr) {
+    record_.next->previous_link = record_.previous_link;
+  }
+  record_.node = nullptr;
+  record_.tree = nullptr;
+  record_.next = nullptr;
+  record_.previous_link = nullptr;
+}
+
 }  // namespace hyle::sched

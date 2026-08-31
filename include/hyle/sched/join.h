@@ -229,12 +229,6 @@ struct JoinState<void> {
   }
 };
 
-// The task's cooperative-cancel flag is published on the running Fiber while a task
-// runs, so is_cancel_requested() (called from anywhere down the task's stack)
-// can find it without threading a handle through every frame.
-HYLE_SCHED_API void push_cancel_scope(std::atomic<bool>* flag) noexcept;
-HYLE_SCHED_API void pop_cancel_scope() noexcept;
-
 }  // namespace detail
 
 // A running task queries this at its own checkpoints; if true it should unwind
@@ -390,9 +384,8 @@ struct TaskDriver {
   static void entry(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
     JoinState<T>* st = d->state;
-    push_cancel_scope(&st->cancel_req);
+    ScopedCancelFlag cancel_scope(&st->cancel_req);
     d->task.resume();  // one resume drives the whole coroutine (fiber-yields on await)
-    pop_cancel_scope();
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
       st->set_error(Status::Cancelled("task aborted"));
     } else {
@@ -431,9 +424,8 @@ struct TaskDriver<void> {
   static void entry(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
     JoinState<void>* st = d->state;
-    push_cancel_scope(&st->cancel_req);
+    ScopedCancelFlag cancel_scope(&st->cancel_req);
     d->task.resume();
-    pop_cancel_scope();
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
       st->set_error(Status::Cancelled("task aborted"));
     } else {

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -52,11 +53,24 @@ TEST(Cancel, RootCancelSetsFlag) {
 }
 
 TEST(Cancel, InvalidAndExhaustedAllocatorsAreRecoverable) {
-  EXPECT_FALSE(CancelToken::root(Allocator{}).valid());
+  auto invalid = CancelToken::try_create_root(Allocator{});
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
   Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
-  EXPECT_FALSE(CancelToken::root(failing).valid());
+  auto exhausted = CancelToken::try_create_root(failing);
+  ASSERT_FALSE(exhausted.has_value());
+  EXPECT_TRUE(exhausted.error().IsResourceExhausted());
   CancelScope no_op{CancelToken{}};
   EXPECT_FALSE(is_cancel_requested());
+}
+
+TEST(Cancel, CopiesShareOneThreadSafeCancellationState) {
+  CancelToken root = CancelToken::root(system_allocator());
+  CancelToken copy = root;
+  std::thread canceller([copy]() { copy.cancel(); });
+  canceller.join();
+  EXPECT_TRUE(root.is_cancelled());
+  EXPECT_TRUE(copy.is_cancelled());
 }
 
 // Cancelling a parent cascades to a derived child.
@@ -302,6 +316,23 @@ TEST(Cancel, ScopePublishesTokenToIsCancelRequested) {
   auto r = h.join();
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(box->observed.load(), 1);  // the fiber saw the token's cancellation
+  sched.shutdown();
+}
+
+TEST(Cancel, TokenScopeComposesWithJoinHandleAbort) {
+  Scheduler sched(2, system_allocator(), 256);
+  auto box = std::make_unique<ScopeBox>();
+  box->tok = CancelToken::root(system_allocator());
+  auto handle = spawn_task(
+      sched, system_allocator(),
+      scoped_waiter(system_allocator(), box.get()));
+  while (!box->ready.load(std::memory_order_acquire)) {}
+  handle.abort();  // the request token itself remains live and not cancelled
+  box->waker.wake();
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(box->observed.load(std::memory_order_acquire), 1);
+  EXPECT_FALSE(box->tok.is_cancelled());
   sched.shutdown();
 }
 

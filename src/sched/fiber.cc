@@ -130,6 +130,7 @@ Fiber::Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
 }
 
 Fiber::~Fiber() {
+  HYLE_FATAL_ASSERT(!started_ || finished_ || !stack_.valid());
   release_stack_();
   HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);
 }
@@ -141,17 +142,18 @@ Fiber::Fiber(Fiber&& o) noexcept
       pool_(std::exchange(o.pool_, nullptr)),
       entry_(o.entry_),
       arg_(o.arg_),
+      started_(o.started_),
       finished_(o.finished_),
       wait_requested_(o.wait_requested_),
       owner_worker_(o.owner_worker_),
       on_finish_(o.on_finish_),
       on_finish_ctx_(o.on_finish_ctx_),
-      cancel_flag_(o.cancel_flag_),
       name_(o.name_),
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
       default_trace_name_(std::move(o.default_trace_name_)),
 #endif
       tsan_fiber_(std::exchange(o.tsan_fiber_, nullptr)) {
+  HYLE_FATAL_ASSERT(!started_ && o.cancel_flags_ == nullptr);
   // wake_state_ starts fresh on the moved-to object (rendezvous is per-episode).
 }
 
@@ -160,6 +162,7 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     // Overwriting a live stack would leak it; a half-run fiber can't be dropped
     // mid-flight safely -> fail-fast (mirrors Thread's joinable assert).
     HYLE_FATAL_ASSERT(!stack_.valid());
+    HYLE_FATAL_ASSERT(!o.started_ && o.cancel_flags_ == nullptr);
     HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);  // null on a moved-from target; safe
     fctx_ = std::exchange(o.fctx_, nullptr);
     return_ctx_ = o.return_ctx_;
@@ -167,12 +170,12 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     pool_ = std::exchange(o.pool_, nullptr);
     entry_ = o.entry_;
     arg_ = o.arg_;
+    started_ = o.started_;
     finished_ = o.finished_;
     wait_requested_ = o.wait_requested_;
     owner_worker_ = o.owner_worker_;
     on_finish_ = o.on_finish_;
     on_finish_ctx_ = o.on_finish_ctx_;
-    cancel_flag_ = o.cancel_flag_;
     name_ = o.name_;
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
     default_trace_name_ = std::move(o.default_trace_name_);
@@ -184,6 +187,7 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
 
 void Fiber::resume() {
   HYLE_FATAL_ASSERT(!finished_);
+  started_ = true;
   Fiber* prev = t_current;
   t_current = this;  // this fiber is now the running one
   // Tell TSan we are leaving the resumer (worker) context for this fiber's. The
@@ -228,5 +232,40 @@ void Fiber::yield() noexcept {
 }
 
 Fiber* Fiber::current() noexcept { return t_current; }
+
+namespace detail {
+
+bool push_cancel_flag(CancelFlagLink* link,
+                      std::atomic<bool>* flag) noexcept {
+  HYLE_FATAL_ASSERT(link != nullptr);
+  if (flag == nullptr) return false;
+  Fiber* fiber = Fiber::current();
+  if (fiber == nullptr) return false;
+  link->flag = flag;
+  link->previous = fiber->cancel_flags_;
+  fiber->cancel_flags_ = link;
+  return true;
+}
+
+void pop_cancel_flag(CancelFlagLink* link) noexcept {
+  Fiber* fiber = Fiber::current();
+  HYLE_FATAL_ASSERT(fiber != nullptr && link != nullptr);
+  HYLE_FATAL_ASSERT(fiber->cancel_flags_ == link);
+  fiber->cancel_flags_ = link->previous;
+  link->flag = nullptr;
+  link->previous = nullptr;
+}
+
+bool current_cancel_requested() noexcept {
+  Fiber* fiber = Fiber::current();
+  if (fiber == nullptr) return false;
+  for (CancelFlagLink* link = fiber->cancel_flags_; link != nullptr;
+       link = link->previous) {
+    if (link->flag->load(std::memory_order_acquire)) return true;
+  }
+  return false;
+}
+
+}  // namespace detail
 
 }  // namespace hyle::sched
