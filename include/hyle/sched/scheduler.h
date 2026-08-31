@@ -37,6 +37,7 @@ class Fiber;
 class Waker;  // re-injects a suspended fiber through the private runtime seam
 namespace detail {
 class SchedulerIntegration;
+class SchedulerAccess;
 }
 HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
@@ -249,6 +250,7 @@ class HYLE_SCHED_API Scheduler {
  private:
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   friend class detail::SchedulerIntegration;
+  friend class detail::SchedulerAccess;
   using IoPollFn = bool (*)(void* context, unsigned worker_index,
                             unsigned long long timeout_ns) noexcept;
   using IoWakeFn = void (*)(void* context,

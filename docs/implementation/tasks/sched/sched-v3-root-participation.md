@@ -83,11 +83,30 @@
 
 冻结的唯一产品修改是 `FIX-01`：增加一个 Sched-private current-owner identity seam；在
 `bulk_execute` 中仅对“`Fiber::current()!=nullptr` 且 current owner 是参数 Scheduler”的路径启用上述
-root participation。它不新增 public header、symbol、option、layout、依赖或常态 metadata；runner/queue
-entry 从最多 `concurrency` 降为最多 `concurrency-1`，work/state 复杂度不变，单 worker Fiber 路线退化为
-直接执行而非一次无用 schedule+suspend+wake。
+root participation。它不新增 public declaration、symbol、option、layout、依赖或常态 metadata；
+runner/queue entry 从最多 `concurrency` 降为最多 `concurrency-1`，work/state 复杂度不变，单 worker
+Fiber 路线退化为直接执行而非一次无用 schedule+suspend+wake。公开注释和 guide 必须同步说明：该
+participant 在 caller Fiber 栈上执行 body；non-suspending 合同不变，但 `Fiber::current()` 与 stack budget
+是可观察的，不能继续写成“所有 body 都在裸 worker stack”。
 
 验证冻结为：新增同 owner Fiber 确实在原 Fiber 内执行至少一个 grain、跨 Scheduler Fiber 不参与、
 单 worker/error/cancel/exactly-once/lifetime/zero-allocation regressions；三平台 full Sched + sanitizer、
 三交付与直接 consumer slice；最后只重放原 v2 W1-WIN P1 contract。除非 `FIX-01` 暴露 correctness
 缺陷，本轮不再加入第二个产品假设。
+
+## `FIX-01` implementation diagnostic（pre-candidate）
+
+首个实现只把 runner 数从 `concurrency` 降到 `concurrency-1` 并让 root 消费 cursor；Windows correctness
+通过，但同形状 raw replay 出现明显启动长尾。代码机制检查发现，普通 `Scheduler::schedule` 从 worker
+内 burst 提交时故意复用当前 worker 的 accounting shard，只有该 shard 的首个 outstanding callback
+执行一次 notify；这个策略适合普通短 callback 的 locality/anti-herd，却不能保证有限 bulk fork 的三个
+sibling 立即激活。因此 `FIX-01` 的完整实现加入 Sched-private `SchedulerAccess`：root 的 sibling runner
+轮转到其他 accounting shard，每个空→非空 shard 才触发一次既有 notify；普通公开 `schedule` 路径完全
+不变。这是 root-participating fork 的 admission 完整性，不新增第二个用户能力或 benchmark 路线。
+
+修正后消费本轮唯一 mechanism diagnostic：沿用相同 16×128×1024 workload、CPU `[0,2,4,6]`、parent
+mask `0x55`、AboveNormal，15 次进程交替顺序；HYLE 中位 `2.056M callback/s`，oneTBB 中位
+`1.968M callback/s`，中位比约 `1.045`。该 quick diagnostic 有明显共同系统长尾，未运行统一 A/A、
+known-delta、timer-floor、artifact/provenance validator，因此只允许进入 candidate，绝不是 P1 verdict
+或 SOTA 声明。Windows Release 的全部 Sched tests/public-header tests 已通过，新 same-owner/cross-owner
+测试各重复 100 次通过。

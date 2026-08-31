@@ -34,18 +34,23 @@ struct BulkExecuteOptions {
 };
 
 // Process one half-open chunk [begin, end). The callback runs on a Scheduler
-// worker stack, must not suspend/block/throw, and may return a shared batch
-// error. The first concurrently observed non-OK Status wins; body calls already
-// in flight finish while each runner stops before its next invocation. The same
-// context may be called concurrently by multiple runners; mutable shared state
-// is the caller's synchronization responsibility.
+// provider worker. A Fiber already running on this same Scheduler may execute
+// chunks inline on its own Fiber stack while worker-stack runners handle sibling
+// chunks; external callers and Fibers owned by another Scheduler never execute
+// the body. The callback must not suspend/block/throw and may return a shared
+// batch error. The first concurrently observed non-OK Status wins; body calls
+// already in flight finish while each runner stops before its next invocation.
+// The same context may be called concurrently by multiple participants; mutable
+// shared state is the caller's synchronization responsibility.
 using BulkBodyFn =
     Status (*)(void* context, std::size_t begin, std::size_t end) noexcept;
 
 // Executes [begin, end) as a single structured batch and returns only after all
-// admitted runners are quiescent. Results belong in caller-owned storage that
-// outlives this call. Normal external-thread and Scheduler-Fiber calls submit at
-// most O(worker-count) allocation-free runners sharing O(1) batch state. A call
+// admitted participants are quiescent. Results belong in caller-owned storage
+// that outlives this call. External-thread and cross-Scheduler Fiber calls submit
+// at most O(worker-count) allocation-free runners sharing O(1) batch state. A
+// same-Scheduler Fiber participates and submits at most worker-count minus one;
+// it suspends only if a sibling is still running after its local share. A call
 // nested inside a non-suspending worker-stack callback executes serially on that
 // callback to preserve progress even for a one-worker Scheduler.
 HYLE_SCHED_API Status bulk_execute(

@@ -14,6 +14,8 @@
 #include "hyle/sched/waker.h"
 #include "hyle/util/spin_lock.h"
 
+#include "scheduler_access.h"
+
 namespace hyle::sched {
 namespace {
 
@@ -208,6 +210,16 @@ Status bulk_execute(Scheduler& scheduler, std::size_t begin,
   concurrency = static_cast<unsigned>(
       (std::min)(static_cast<std::size_t>(concurrency), chunks));
 
+  // A Fiber already admitted to this Scheduler is one of its provider workers.
+  // Let it retain useful work while its siblings drain the same cursor, as
+  // oneTBB's arena root does. Never borrow an external thread or a Fiber owned
+  // by another Scheduler: both continue through the all-runner route below.
+  const bool caller_participates =
+      Fiber::current() != nullptr &&
+      detail::SchedulerAccess::is_current_scheduler(&scheduler);
+  const unsigned runner_count =
+      concurrency - static_cast<unsigned>(caller_participates);
+
   // Keep enough reservations for late load balancing while amortizing the
   // shared cursor across several public grains. This changes no callback
   // boundary: run_chunks() still invokes and checks each grain separately.
@@ -233,9 +245,12 @@ Status bulk_execute(Scheduler& scheduler, std::size_t begin,
 
   unsigned admitted = 0;
   Status admission_error;
-  for (unsigned i = 0; i < concurrency; ++i) {
+  for (unsigned i = 0; i < runner_count; ++i) {
     state.active.fetch_add(1, std::memory_order_relaxed);
-    Status status = scheduler.schedule(&run_bulk_runner, &state);
+    Status status = caller_participates
+                        ? detail::SchedulerAccess::schedule_bulk_sibling(
+                              scheduler, i, &run_bulk_runner, &state)
+                        : scheduler.schedule(&run_bulk_runner, &state);
     if (!status.ok()) {
       state.finish_one();
       admission_error = std::move(status);
@@ -244,8 +259,27 @@ Status bulk_execute(Scheduler& scheduler, std::size_t begin,
     ++admitted;
   }
 
+  if (caller_participates) {
+    // The submission guard also covers this synchronous participant: async
+    // runners may finish, but none can publish terminal completion until the
+    // root has stopped touching the caller-stack state.
+    run_with_cancel_scope(state);
+
+    // No asynchronous runner was admitted (the normal one-worker case, or
+    // admission pressure). The root drained the complete shared cursor, so no
+    // Event handoff or counter transition is needed before returning.
+    if (admitted == 0) return state.result();
+
+    // If every sibling finished while the root was computing, an acquire read
+    // of the guard-only count is the quiescence handoff. Avoid manufacturing a
+    // signal/wait episode when no notifier remains.
+    if (state.active.load(std::memory_order_acquire) == 1) {
+      return state.result();
+    }
+  }
+
   state.finish_one();  // release the submission guard
-  if (admitted == 0) {
+  if (!caller_participates && admitted == 0) {
     return admission_error.WithContext("bulk execution admission");
   }
 

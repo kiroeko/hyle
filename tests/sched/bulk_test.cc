@@ -10,6 +10,7 @@
 #include "hyle/sched/bulk.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
+#include "hyle/sched/fiber.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
@@ -23,6 +24,7 @@ using hyle::sched::bulk_execute;
 using hyle::sched::BulkExecuteOptions;
 using hyle::sched::CancelToken;
 using hyle::sched::Event;
+using hyle::sched::Fiber;
 using hyle::sched::is_cancel_requested;
 using hyle::sched::Scheduler;
 using hyle::sched::spawn_task;
@@ -186,6 +188,57 @@ TEST(BulkExecute, SchedulerFiberWaitsWithoutDeadlockingOneWorker) {
     EXPECT_EQ(hits[i].load(std::memory_order_relaxed), 1u) << i;
   }
   scheduler.shutdown();
+}
+
+Task<int> probe_root_participation(
+    hyle::mem::Allocator, Scheduler* scheduler,
+    std::atomic<unsigned>* root_calls,
+    std::atomic<unsigned>* total_calls) noexcept {
+  Fiber* const root = Fiber::current();
+  BulkExecuteOptions options;
+  options.max_concurrency = 1;
+  Status status = bulk_execute(
+      *scheduler, 0, 17,
+      [=](std::size_t, std::size_t) noexcept {
+        total_calls->fetch_add(1, std::memory_order_relaxed);
+        if (Fiber::current() == root) {
+          root_calls->fetch_add(1, std::memory_order_relaxed);
+        }
+      },
+      options);
+  co_return status.ok() ? 0 : -1;
+}
+
+TEST(BulkExecute, SameSchedulerFiberParticipatesWithoutAWorkerHandoff) {
+  Scheduler scheduler(1, system_allocator(), 32);
+  std::atomic<unsigned> root_calls{0};
+  std::atomic<unsigned> total_calls{0};
+  auto task = probe_root_participation(system_allocator(), &scheduler,
+                                       &root_calls, &total_calls);
+  auto handle = spawn_task(scheduler, system_allocator(), std::move(task));
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  EXPECT_EQ(*result, 0);
+  EXPECT_EQ(root_calls.load(std::memory_order_relaxed), 17u);
+  EXPECT_EQ(total_calls.load(std::memory_order_relaxed), 17u);
+  scheduler.shutdown();
+}
+
+TEST(BulkExecute, FiberDoesNotBorrowAWorkerFromAnotherScheduler) {
+  Scheduler caller(1, system_allocator(), 32);
+  Scheduler target(1, system_allocator(), 32);
+  std::atomic<unsigned> caller_fiber_calls{0};
+  std::atomic<unsigned> total_calls{0};
+  auto task = probe_root_participation(system_allocator(), &target,
+                                       &caller_fiber_calls, &total_calls);
+  auto handle = spawn_task(caller, system_allocator(), std::move(task));
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  EXPECT_EQ(*result, 0);
+  EXPECT_EQ(caller_fiber_calls.load(std::memory_order_relaxed), 0u);
+  EXPECT_EQ(total_calls.load(std::memory_order_relaxed), 17u);
+  caller.shutdown();
+  target.shutdown();
 }
 
 struct NestedContext {

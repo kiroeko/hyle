@@ -105,9 +105,10 @@ consume(output);
 边界和 error/cancel 观察粒度。先从业务 kernel 自然处理的 tile 开始；工作高度不均匀或需要更快停止时用
 较小 grain，callback 本身过轻时才适度合并。不要单纯为了躲内部 atomic 而放大 grain——runner 已经用
 有界预领取摊销共享 cursor，并且仍逐 public grain 调 body。`max_concurrency=0` 使用 Scheduler worker 数，
-也可以显式降低本批并发。实现只投递不超过 worker 数的 raw runner，共享一个 batch state；不会为每个
-item 分配、排队或创建 status/cancel/handle。同一个 callable/context 可能被多个 runner 并发调用；
-capture 中的可变共享状态必须自行同步，最自然的形状仍是按 chunk 写互不重叠的 slot。
+也可以显式降低本批并发。外部线程和另一个 Scheduler 的 Fiber 只投递不超过 worker 数的 raw runner；
+同 Scheduler 的调用 Fiber 自己参与，并只投递至多 `worker-1` 个 runner。它们共享一个 batch state，
+不会为每个 item 分配、排队或创建 status/cancel/handle。同一个 callable/context 可能被多个 participant
+并发调用；capture 中的可变共享状态必须自行同步，最自然的形状仍是按 chunk 写互不重叠的 slot。
 
 body 返回的第一个并发可见 non-OK `Status` 会让各 runner 在下一次 body 调用前停止；当时已经运行的
 body 会完成，所以输出可能包含一段或若干已完成 slot，失败时不能把整张输出假定为事务性回滚。内部
@@ -115,11 +116,13 @@ body 会完成，所以输出可能包含一段或若干已完成 slot，失败�
 是协作式：runner 在每次 body 调用前检查 token，并把 token 通过 `CancelScope` 暴露给 body 内的
 `is_cancel_requested()`；它不会强杀正在执行的 kernel。
 
-普通线程调用会阻塞该线程，Scheduler Fiber 调用会挂起该 Fiber。若从 `schedule`/`schedule_task` 这类
-worker-stack callback 中嵌套调用，为避免单 worker 自死锁，整批在当前 callback 上串行执行；需要并行
-bulk 时从外部控制线程或可挂起 Fiber 调用。body 本身仍不得 yield、fiber-wait、blocking syscall 或抛
-异常。动态添加的异构任务可组合 `schedule + WaitGroup`；需要逐项 result/join/abort 时才选
-`schedule_task`，不要为了等待整批而制造一组 handles。
+普通线程调用会阻塞该线程。同 Scheduler Fiber 调用会先在自己的 Fiber 栈上完成一份 chunk，只在其他
+runner 尚未结束时挂起；另一个 Scheduler 的 Fiber 不会被借来替目标 Scheduler 计算。从
+`schedule`/`schedule_task` 这类 worker-stack callback 中嵌套调用时，为避免单 worker 自死锁，整批在
+当前 callback 上串行执行。body 无论运行在 caller Fiber 还是 worker-stack runner 上，都不得 yield、
+fiber-wait、blocking syscall 或抛异常；栈较深的 kernel 还要把 caller Fiber 的 stack tier 计入预算。
+动态添加的异构任务可组合 `schedule + WaitGroup`；需要逐项 result/join/abort 时才选 `schedule_task`，
+不要为了等待整批而制造一组 handles。
 
 ## 有结果任务与 fan-out
 
@@ -256,7 +259,8 @@ overload 是热路 adapter；默认优先 value-returning `Result<T>`。
 - `schedule`/`schedule_task` callback 运行在 worker stack，不能调用任何会挂起 Fiber 的 API；无结果的
   可挂起工作选 `spawn_detached`，有结果的可挂起工作选 `spawn_task`。
 - `bulk_execute` 是同步 batch barrier，不是异步 handle；传入的 input/output/callable/token 在它返回前
-  不能销毁。不同 chunk 写同一非原子 slot 是用户数据竞争。
+  不能销毁。不同 chunk 写同一非原子 slot 是用户数据竞争。同 Scheduler Fiber 可能直接执行 body；
+  不要假设 `Fiber::current()==nullptr`，也不要在 body 内利用这一事实偷偷挂起。
 - 不要在 worker 上调用 `hyle::time::sleep_*`，那会阻塞 OS thread；使用 `hyle::sched::sleep_*`。
 - `Fiber::create` 与 raw `spawn(Fiber*)` 只适合实现 runtime integration 的 owner。`spawn` 不接管对象，
   caller 必须保持 Fiber 存活直到结束；started Fiber 不能 move。

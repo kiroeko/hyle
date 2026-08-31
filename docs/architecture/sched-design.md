@@ -65,7 +65,7 @@ worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并�
 | 形状 | 运行位置 | ownership / 成本 | 适用情况 |
 |---|---|---|---|
 | `schedule` | worker 自身栈 | raw 入口零分配；owning callable 一次 allocator record | 很短、不会挂起或阻塞、无需结果 |
-| `bulk_execute` | 至多 worker 数个 worker-stack runner | callable/results 借用到同步返回；O(1) batch state、O(worker) queue entries、无逐项 allocation/handle | 有限 indexed/chunk work，只需要 batch completion/首错/取消 |
+| `bulk_execute` | 至多 worker 数个 provider participant；同 Scheduler root Fiber 可直接参与 | callable/results 借用到同步返回；O(1) batch state、O(worker) queue entries、无逐项 allocation/handle | 有限 indexed/chunk work，只需要 batch completion/首错/取消 |
 | `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 abort | 很短、不会挂起或阻塞、需要 typed result/join |
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
 | `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 abort | 会挂起且需要结果、join/select/fan-out |
@@ -79,9 +79,14 @@ ownership；一般 fire-and-forget 不应手工管理它。
 数个 runner，并提供一次 quiescent completion、共享首错和可选 cooperative cancel。runner 从一个
 atomic cursor 有界预领取若干 grain 以摊销共享 cache-line 竞争，但每个 public grain 仍是一次独立 body
 调用和一次 error/cancel observation；预领取不改变 callback 边界，也不是公开 partitioner。adaptive
-split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消费者。正常外部线程/Fiber 路线
-不让 caller 参与执行；从 non-suspending worker-stack callback 嵌套时串行退化，避免一个 worker 同时
-成为 waiter 和唯一 executor。
+split、reduce/scan/sort、tensor tiling 和模型策略留给 Graph/Compute/消费者。外部线程和另一个
+Scheduler 拥有的 Fiber 不参与目标 Scheduler 的计算；已经运行在同一 Scheduler 上的 root Fiber 则先
+投递至多 `concurrency-1` 个 runner，再在自己的 Fiber 栈上消费同一 cursor，只在 sibling 仍未完成时
+挂起。这与 oneTBB arena root helping 一样保留已准入 provider 的计算能力，也避免每批无条件的
+schedule/suspend/wake handoff。sibling admission 轮转使用 Sched-private accounting shard，让一次有限
+fork 能唤醒所需 provider；普通 `schedule` 的同 shard burst/locality 策略不变。从 non-suspending
+worker-stack callback 嵌套时仍串行退化，避免一个 worker 同时成为 waiter 和唯一 executor。body
+无论在哪种 participant 上都不得挂起、阻塞或抛异常。
 
 同步返回的 lifetime 门是两阶段完成：manual Event 负责阻塞/挂起与唤醒，最后 notifier 只有在
 `signal()` 整体返回、不再访问 Event 后才 release-publish terminal handoff；waiter 醒来后 acquire 该

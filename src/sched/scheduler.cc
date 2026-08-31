@@ -32,6 +32,7 @@
 #include "hyle/util/spin_lock.h"  // util::cpu_relax (pause hint)
 
 #include "fiber_access.h"
+#include "scheduler_access.h"
 
 namespace hyle::sched {
 
@@ -700,14 +701,10 @@ struct Scheduler::Impl {
 
   enum class ScheduleResult : unsigned char { kQueued, kClosed, kFull };
 
-  ScheduleResult schedule(InlineJob job) noexcept {
+  ScheduleResult schedule_with_hint(InlineJob job, std::size_t hint,
+                                    bool on_worker) noexcept {
     if ((lifecycle.load(std::memory_order_acquire) & kAdmissionClosed) != 0)
       return ScheduleResult::kClosed;
-    const bool on_worker = t_current == this && t_worker_idx >= 0;
-    const std::size_t hint =
-        on_worker
-            ? static_cast<std::size_t>(t_worker_idx)
-            : inject_rr_.fetch_add(1, std::memory_order_relaxed);
     job.accounting_idx = static_cast<std::uint32_t>(
         (n & (n - 1)) == 0 ? hint & (n - 1) : hint % n);
     const std::uint64_t prior_inline =
@@ -740,6 +737,24 @@ struct Scheduler::Impl {
       }
       platform::this_thread::yield();
     }
+  }
+
+  ScheduleResult schedule(InlineJob job) noexcept {
+    const bool on_worker = t_current == this && t_worker_idx >= 0;
+    const std::size_t hint =
+        on_worker
+            ? static_cast<std::size_t>(t_worker_idx)
+            : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+    return schedule_with_hint(job, hint, on_worker);
+  }
+
+  ScheduleResult schedule_bulk_sibling(InlineJob job,
+                                       unsigned ordinal) noexcept {
+    HYLE_FATAL_ASSERT(t_current == this && t_worker_idx >= 0);
+    HYLE_FATAL_ASSERT(ordinal + 1 < n);
+    const std::size_t root = static_cast<std::size_t>(t_worker_idx);
+    const std::size_t hint = (root + ordinal + 1) % n;
+    return schedule_with_hint(job, hint, true);
   }
 
   bool run_inline(Worker& worker) noexcept {
@@ -1428,6 +1443,22 @@ Status Scheduler::schedule(DetachedFn fn, void* ctx) noexcept {
   return Status{};
 }
 
+Status detail::SchedulerAccess::schedule_bulk_sibling(
+    Scheduler& scheduler, unsigned ordinal, Scheduler::DetachedFn fn,
+    void* context) noexcept {
+  if (fn == nullptr)
+    return Status::InvalidArgument("bulk sibling callback is null");
+  const auto submitted =
+      scheduler.impl_->schedule_bulk_sibling(InlineJob{fn, context}, ordinal);
+  if (submitted != Scheduler::Impl::ScheduleResult::kQueued) {
+    if (submitted == Scheduler::Impl::ScheduleResult::kClosed)
+      return Status::Cancelled("scheduler admission is closed");
+    return Status::ResourceExhausted(
+        "scheduler inline queue is full during bulk admission");
+  }
+  return Status{};
+}
+
 void* Scheduler::allocate_owned_callable_(std::size_t size,
                                           std::size_t alignment) noexcept {
   return impl_ != nullptr ? impl_->allocator.allocate(size, alignment) : nullptr;
@@ -1542,6 +1573,11 @@ Waker current_waker() noexcept {
 }
 
 int current_worker_index() noexcept { return tls_worker_idx; }
+
+bool detail::SchedulerAccess::is_current_scheduler(
+    const Scheduler* scheduler) noexcept {
+  return tls_owner == scheduler;
+}
 
 // sched-08: a long-lived fiber polls this to learn its scheduler has begun graceful
 // shutdown, so it can break its loop. tls_owner is the Scheduler running this fiber
