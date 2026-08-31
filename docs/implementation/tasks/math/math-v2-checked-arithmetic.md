@@ -333,10 +333,15 @@ Terminal receipt：
 - raw engineering artifacts：W1-WIN、W1-WSL、M1-MAC 路径见 reproduction summary；
 - end receipt commit：`0ab83f780087802699bae9cb2a330c74b832922a`，这是首次保存完整 terminal
   decision 的提交；
-- registry anchor：本次状态迁移先以 end receipt 占位以满足非自引用记录；紧随其后的 evidence-only
-  提交会把它校准到首个实际保存本 `CLOSED` state/candidate 的 registry commit，产品与 verdict 不变；
+- registry anchor commit：`a1c771d7674bb5c7313ee27781ce0f09da48487e`，这是首个实际保存本
+  `CLOSED` state/candidate、全部 terminal 字段与人读状态投影的中央 registry 快照；本次紧随的
+  evidence-only 提交只校准该非自引用 identity，产品、状态和 verdict 均未变化；
 - 后续只按本节 reopen triggers 重开；math-v1 与本轮 replay/audit 只作历史事实，不再授权施工。
 
 `VERIFIED -> CLOSED` 的前态 registry 快照位于
 `C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-closed.json`，SHA-256
 `2251E6377CE8544958F9FCAB3A085DC582660EA63C591FCC31FFA1736BB26F99`。
+
+Anchor 校准前态 snapshot：
+`C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-anchor.json`，SHA-256
+`59AEA5A0A1DB46CFC7AEC417097319431DB2F2902FB248CB078F765EA0EC9AA2`。
