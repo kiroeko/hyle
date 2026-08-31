@@ -1,6 +1,6 @@
 # Math-v2 P0 结构性能证据
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 本页承载 `math-v2-checked-arithmetic` 的 P0 结构合同。它不运行纳秒 benchmark，也不声明整个 Math、
 > SIMD 或推理引擎全面 SOTA。当前产品状态只看

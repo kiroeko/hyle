@@ -306,7 +306,7 @@
     },
     {
       "module": "math",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MATH-REPLAY-CHECKED-ARITH-01",
       "reopen_evidence": "docs/implementation/tasks/math/math-capability-replay-v2.md",
       "round_id": "math-v2-checked-arithmetic",
@@ -316,6 +316,8 @@
       "baseline_commit": "57ea0ba90c8472c938c4e3c6360ae4e0a6c69250",
       "candidate_commit": "1a9e680cb5a25ccc0c20786f4635625eef2d7ab0",
       "candidate_tree": "010323120bc6eb07b5a07e7d3e6de1725968d314",
+      "end_commit": "0ab83f780087802699bae9cb2a330c74b832922a",
+      "registry_anchor_commit": "0ab83f780087802699bae9cb2a330c74b832922a",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -340,7 +342,30 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "math-v2 VERIFIED：checked arithmetic 的三平台正确性/UBSan、三种交付、易用性/文档、红队与原生 overflow P0 code shape 全部通过；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/math/math-v2-checked-arithmetic.md",
+      "loc": {
+        "snapshot_commit": "1a9e680cb5a25ccc0c20786f4635625eef2d7ab0",
+        "repository_code": 403849,
+        "self_with_tests": 96313,
+        "self_without_tests": 60061,
+        "module_implementation": 222
+      },
+      "known_limitations": [
+        "The component accepts same-type non-boolean native integral operands; callers own validated mixed-width and signed/unsigned conversion.",
+        "Failure returns nullopt; wrapped, saturated, clamped, variadic-product and mul-add policies are not part of this contract.",
+        "Math is a header-only C++ component without stable C++ ABI, C/Native FFI or a fabricated binary artifact.",
+        "The performance verdict is P0 structural only: O(1), zero dynamic resources and native lowering on the three frozen toolchains, not end-to-end inference or timing SOTA.",
+        "There is no current HYLE product syntax consumer; package fixtures prove delivery and pinned inference peers establish demand without claiming a finished HYLE engine.",
+        "Unknown compiler constant-evaluation or portable fallback paths may use division; the three shipping runtime toolchains use native overflow lowering."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, usability or missing-capability defect within checked scalar arithmetic.",
+        "The public API, overflow algorithm, direct Core dependency, compiler or ISA semantics, or source/static/shared delivery shape changes.",
+        "A supported toolchain emits a runtime divide, out-of-line helper, dynamic resource or material consumer regression for the frozen normal shape.",
+        "A standard facility can completely replace the contract, or a mature same-contract peer proves a better complexity class or material consumer advantage.",
+        "A real mixed-result, saturation or bulk-product journey is formally admitted."
+      ],
+      "summary": "math-v2 CLOSED：checked add/sub/mul 与既有 ceil/round 的功能/API、三平台正确性/UBSan、三交付、文档、红队和原生 overflow P0 code shape 全部签署；候选 1a9e680c/01032312。"
     },
     {
       "module": "time",

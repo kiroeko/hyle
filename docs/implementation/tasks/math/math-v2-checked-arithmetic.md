@@ -1,8 +1,9 @@
 # math-v2 checked arithmetic 收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> **当前状态：`VERIFIED`。** 当前产品候选为
+> **终态：`CLOSED`。** 当前产品候选为
 > `1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` / tree
 > `010323120bc6eb07b5a07e7d3e6de1725968d314`；当前机械状态只看
 > [`module-status.json`](../../module-status.json)。本轮由
@@ -330,6 +331,12 @@ Terminal receipt：
   `010323120bc6eb07b5a07e7d3e6de1725968d314`；
 - final verification evidence commit：`8e2777d3bca8784f63e197483f919b16b2f0d504`；
 - raw engineering artifacts：W1-WIN、W1-WSL、M1-MAC 路径见 reproduction summary；
-- end receipt identity：以首次保存本完整 terminal decision 的提交为准；下一次中央 registry 状态迁移
-  将钉死该完整 40 位对象名，并建立首个真实 `CLOSED` registry anchor；
+- end receipt commit：`0ab83f780087802699bae9cb2a330c74b832922a`，这是首次保存完整 terminal
+  decision 的提交；
+- registry anchor：本次状态迁移先以 end receipt 占位以满足非自引用记录；紧随其后的 evidence-only
+  提交会把它校准到首个实际保存本 `CLOSED` state/candidate 的 registry commit，产品与 verdict 不变；
 - 后续只按本节 reopen triggers 重开；math-v1 与本轮 replay/audit 只作历史事实，不再授权施工。
+
+`VERIFIED -> CLOSED` 的前态 registry 快照位于
+`C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-closed.json`，SHA-256
+`2251E6377CE8544958F9FCAB3A085DC582660EA63C591FCC31FFA1736BB26F99`。
