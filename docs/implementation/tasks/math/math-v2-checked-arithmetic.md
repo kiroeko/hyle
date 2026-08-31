@@ -288,3 +288,48 @@ candidate 到验证提交的 `include/hyle/math`、package sample 与当前 arch
 `C:\hyle-scratch\math-v2-checked-arithmetic\module-status-before-verified.json`，SHA-256
 `D98E053468D6318B73AE8699A03595E57D36E1E9B42BCC2102CDC37708563FB1`。全部适用 aggregate gate
 有真实 `PASS`，Formal 为 `NONE`；下一步只允许 terminal receipt、LOC 与 registry anchor，不再改产品。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**：三个新增 `MUST` 已从 `MISSING` 变为 `COMPLETE`，旧 ceil/round
+仍为 `COMPLETE`，standard/SIMD/domain 路线保持完整；scope、architecture、correctness、delivery、
+usability/docs、red-team、engineering-performance 七门全部 `PASS`，没有 `PARTIAL + KEEP`、
+`INCONCLUSIVE`、未命名 blocker 或未执行的适用门。Formal 为 `NONE`。
+
+已知限制：
+
+- 只接受同类型、非 `bool` native integral；调用者负责先验证/转换 mixed-width 与 signed/unsigned
+  数据，不提供 mixed-result promotion；
+- 失败只返回 `nullopt`，不提供 wrapped、saturated、clamped、variadic product 或 mul-add；binary helper
+  可组合但每个中间结果都应检查；
+- Math 是 header-only C++ component，没有 stable C++ ABI、C/Native FFI 或独立 binary artifact；
+- P0 只签 O(1)、资源与三工具链 code shape；没有端到端推理 profile、纳秒胜负或 Formal SOTA 证书；
+- 当前仓内没有 HYLE product syntax consumer；package fixture 和 llama.cpp/ggml north-star 证明交付与需求，
+  但不冒充已经完成的 HYLE inference engine；
+- 未知/非冻结编译器的 portable multiply constant-evaluation fallback 可以使用 division；三个 shipping
+  工具链的正常 runtime 都已证明原生 lowering。
+
+重新打开只允许以下新事实：
+
+1. 真实 consumer 暴露 checked scalar arithmetic 的 correctness、security、易用性或缺失能力；
+2. public API、overflow 算法、Core 依赖、compiler/ISA semantics 或 source/static/shared delivery 变化；
+3. 支持工具链的正常 runtime 出现 divide、out-of-line helper、动态资源或 material consumer regression；
+4. 新标准设施可完整取代本能力，或成熟同合同 peer 证明更好复杂度档/material consumer advantage；
+5. 真实 mixed-result、saturation 或 bulk-product journey 被正式准入。单纯 peer API 数、benchmark 点值或
+   下游 owner 选择采用现有 helper 不重开 Math。
+
+候选的 canonical LOC self-check（snapshot
+`1a9e680cb5a25ccc0c20786f4635625eef2d7ab0`）：全库代码 **403,849**；自实现包含测试 **96,313**；
+自实现不包含测试 **60,061**；当前 Math 实现 **222** 行。命令为
+`python scripts/loc-report.py --module math --commit 1a9e680c... --self-check --json`，结果
+`self_check=pass`；LOC 只记录规模，不证明完成度。
+
+Terminal receipt：
+
+- product candidate / tree：`1a9e680cb5a25ccc0c20786f4635625eef2d7ab0` /
+  `010323120bc6eb07b5a07e7d3e6de1725968d314`；
+- final verification evidence commit：`8e2777d3bca8784f63e197483f919b16b2f0d504`；
+- raw engineering artifacts：W1-WIN、W1-WSL、M1-MAC 路径见 reproduction summary；
+- end receipt identity：以首次保存本完整 terminal decision 的提交为准；下一次中央 registry 状态迁移
+  将钉死该完整 40 位对象名，并建立首个真实 `CLOSED` registry anchor；
+- 后续只按本节 reopen triggers 重开；math-v1 与本轮 replay/audit 只作历史事实，不再授权施工。
