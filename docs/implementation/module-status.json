@@ -688,7 +688,7 @@
     },
     {
       "module": "util",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "UTIL-V3-CONTAINER-PUBLIC-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v3-rebuild.md",
       "round_id": "util-runtime-v3",
@@ -698,6 +698,8 @@
       "baseline_commit": "8eb8926a7b15b879d8c96628b1f2c35c804d27b9",
       "candidate_commit": "b2b7bd679293d748d996662414c01c4cbcefcbda",
       "candidate_tree": "1a95077cccbcabe4701a50873143297739adcb59",
+      "end_commit": "b0aa881df58bfc05266540b0993177be1d166bb6",
+      "registry_anchor_commit": "b0aa881df58bfc05266540b0993177be1d166bb6",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -722,7 +724,27 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "util-runtime-v3 VERIFIED：唯一 lookup-only 缺口已补齐；三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部通过。"
+      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v3-rebuild.md",
+      "loc": {
+        "snapshot_commit": "b2b7bd679293d748d996662414c01c4cbcefcbda",
+        "repository_code": 404969,
+        "self_with_tests": 97015,
+        "self_without_tests": 60362,
+        "module_implementation": 1267
+      },
+      "known_limitations": [
+        "Registry is a one-way startup-to-service publication primitive; generic dynamic-module discovery, unload, unregister and reader or object quiescence belong to their domain owner.",
+        "Creators are no-capture noexcept function pointers; EntryView and FrozenView borrow Registry-owned storage, and a cached Creator requires its module image to remain loaded.",
+        "The P0 verdict proves cost structure only: no lookup timing, all-operation SOTA or Formal claim is made, and HYLE does not yet have a completed inference-engine consumer.",
+        "The product is C++23 source, static and shared delivery for same-toolchain consumers without a Native FFI or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A real consumer proves that captured-state factories, unregister or another lookup or publication semantic is a common Util requirement that the current route cannot carry.",
+        "Registry public API, layout, algorithm, direct Container dependency or source, static or shared delivery shape changes.",
+        "A reproducible correctness, security, OOM, lifetime, concurrency or API-usability defect is found within the Util boundary.",
+        "A profile raises Registry lookup or demangle to P1 or P2, or a mature same-contract peer proves a better complexity class or material consumer advantage."
+      ],
+      "summary": "util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。"
     },
     {
       "module": "sched",
