@@ -306,7 +306,7 @@
     },
     {
       "module": "math",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "MATH-REPLAY-CHECKED-ARITH-01",
       "reopen_evidence": "docs/implementation/tasks/math/math-capability-replay-v2.md",
       "round_id": "math-v2-checked-arithmetic",
@@ -328,7 +328,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v2 REOPENED：成熟 peer 与真实推理 shape/stride/byte-size 路径证明 checked add/sub/mul 是旧轮遗漏的 scalar MUST；尚未进入产品施工。"
+      "summary": "math-v2 SCOPED：checked add/sub/mul 的真实推理需求、边界、P0 资源合同、三平台/三交付门与有限预算已冻结；实现等待 AUDITED ledger。"
     },
     {
       "module": "time",
