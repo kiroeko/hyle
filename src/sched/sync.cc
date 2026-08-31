@@ -11,6 +11,8 @@
 #include "hyle/time/clock.h"
 #include "hyle/time/timer_entry.h"
 
+#include "fiber_access.h"
+
 namespace hyle::sched {
 namespace {
 
@@ -288,11 +290,11 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
     return CvStatus::kNoTimeout;
   }
 
-  const int previous_owner = self->owner_worker();
+  const int previous_owner = detail::FiberAccess::owner_worker(self);
   if (previous_owner < 0) {
     const int current = current_worker_index();
     HYLE_FATAL_ASSERT(current >= 0);
-    self->set_owner_worker(current);
+    detail::FiberAccess::set_owner_worker(self, current);
   }
 
   time::TimerEntry timer;
@@ -307,7 +309,7 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
   // We resume on the temporary owner worker. If notify won before expiry, remove
   // its still-live timer from this worker's queue before the stack entry dies.
   if (timer.scheduled()) cancel_timeout(&timer);
-  if (previous_owner < 0) self->set_owner_worker(-1);
+  if (previous_owner < 0) detail::FiberAccess::set_owner_worker(self, -1);
   return node->timed_state.load(std::memory_order_acquire) == 2
              ? CvStatus::kTimeout
              : CvStatus::kNoTimeout;

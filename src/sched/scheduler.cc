@@ -31,18 +31,9 @@
 #include "hyle/time/timer_queue.h"
 #include "hyle/util/spin_lock.h"  // util::cpu_relax (pause hint)
 
+#include "fiber_access.h"
+
 namespace hyle::sched {
-
-namespace detail {
-
-struct FiberReadyAccess {
-  static Fiber* next(Fiber* fiber) noexcept { return fiber->ready_next_; }
-  static void set_next(Fiber* fiber, Fiber* next) noexcept {
-    fiber->ready_next_ = next;
-  }
-};
-
-}  // namespace detail
 
 namespace {
 
@@ -86,7 +77,7 @@ struct DetachedDriver {
         fn(task),
         ctx(context),
         fiber(std::move(stack), &entry, this, pool) {
-    fiber.set_on_finish(&destroy, this);
+    detail::FiberAccess::set_on_finish(&fiber, &destroy, this);
   }
 
   static void entry(void* p) {
@@ -121,11 +112,11 @@ struct ReadyOverflow {
 
   void push(Fiber* fiber) noexcept {
     std::lock_guard<std::mutex> lock(mu);
-    HYLE_FATAL_ASSERT(detail::FiberReadyAccess::next(fiber) == nullptr);
+    HYLE_FATAL_ASSERT(detail::FiberAccess::next(fiber) == nullptr);
     if (tail == nullptr) {
       head = fiber;
     } else {
-      detail::FiberReadyAccess::set_next(tail, fiber);
+      detail::FiberAccess::set_next(tail, fiber);
     }
     tail = fiber;
     nonempty.store(true, std::memory_order_release);
@@ -138,12 +129,12 @@ struct ReadyOverflow {
     std::lock_guard<std::mutex> lock(mu);
     Fiber* fiber = head;
     if (fiber == nullptr) return nullptr;
-    head = detail::FiberReadyAccess::next(fiber);
+    head = detail::FiberAccess::next(fiber);
     if (head == nullptr) {
       tail = nullptr;
       nonempty.store(false, std::memory_order_release);
     }
-    detail::FiberReadyAccess::set_next(fiber, nullptr);
+    detail::FiberAccess::set_next(fiber, nullptr);
     return fiber;
   }
 };
@@ -576,8 +567,9 @@ struct Scheduler::Impl {
     // a plain cooperative yield would otherwise let another core steal it. Keep it
     // on its owner's private queue. (owner == w.idx here, since a pinned fiber only
     // ever runs on its owner, but route via owner to be explicit + future-proof.)
-    if (f->owner_worker() >= 0) {
-      unsigned owner_idx = static_cast<unsigned>(f->owner_worker());
+    if (detail::FiberAccess::owner_worker(f) >= 0) {
+      unsigned owner_idx =
+          static_cast<unsigned>(detail::FiberAccess::owner_worker(f));
       if (!workers[owner_idx]->pinned.try_push(f))
         workers[owner_idx]->pinned_overflow.push(f);
       return;  // owner is THIS running worker -> it'll pop next loop; no unpark
@@ -776,21 +768,21 @@ struct Scheduler::Impl {
       // stack is no longer executing (unlike freeing from inside the fiber's own
       // entry, which UAFs the fcontext trampoline). Run the hook LAST; after it
       // `f` may be gone, so read nothing more from it.
-      Fiber::FinishFn fin = f->on_finish();
-      void* fin_ctx = f->on_finish_ctx();
+      detail::FiberAccess::FinishFn fin = detail::FiberAccess::on_finish(f);
+      void* fin_ctx = detail::FiberAccess::on_finish_context(f);
       if (fin != nullptr) fin(fin_ctx);
       // Count completion only AFTER the self-owned driver's finish hook has run.
       // Otherwise drain()/~Scheduler may return and destroy stack pools while the
       // last driver is still releasing its Fiber stack into one of those pools.
       finish_one();
-    } else if (f->consume_wait_request()) {
+    } else if (detail::FiberAccess::consume_wait_request(f)) {
       // The fiber suspended to WAIT on an external event (sched-04). Don't
       // reschedule -- it leaves the run loop until a Waker re-injects it. But a
       // wake() may have already fired (wake-before-suspend): the rendezvous tells
       // us if THIS side must do the re-injection now (wake got here first) or
       // leave it for wake() (we got here first). Re-injection is always post-
       // resume(), so the fiber is fully suspended -- never resumed on two threads.
-      if (f->wake_rendezvous()) reschedule(w, f);
+      if (detail::FiberAccess::wake_rendezvous(f)) reschedule(w, f);
     } else {
       reschedule(w, f);  // ordinary cooperative yield
     }
@@ -805,7 +797,7 @@ struct Scheduler::Impl {
     // the global stealable pool -- so its io ring + fiber stay on one core. Push
     // to that worker's private queue and unpark IT specifically. The queue is a
     // bounded MPMC ring, so a Waker firing from any thread is safe.
-    int owner_idx = f->owner_worker();
+    int owner_idx = detail::FiberAccess::owner_worker(f);
     if (owner_idx >= 0) {
       Worker& owner_worker = *workers[static_cast<unsigned>(owner_idx)];
       if (!owner_worker.pinned.try_push(f))
@@ -890,7 +882,7 @@ struct Scheduler::Impl {
                                 // only if io hasn't already won
       } else {
         auto* f = static_cast<Fiber*>(e->data());
-        if (f->wake_rendezvous()) reinject(f);
+        if (detail::FiberAccess::wake_rendezvous(f)) reinject(f);
       }
       ++n_fired;
     });
@@ -1125,11 +1117,11 @@ struct Scheduler::Impl {
     HYLE_FATAL_ASSERT(idx < n);
     HYLE_FATAL_ASSERT(f != nullptr);
     if (!try_admit()) return false;
-    const int previous_owner = f->owner_worker();
-    f->set_owner_worker(static_cast<int>(idx));
+    const int previous_owner = detail::FiberAccess::owner_worker(f);
+    detail::FiberAccess::set_owner_worker(f, static_cast<int>(idx));
     while (!workers[idx]->pinned.try_push(f)) {
       if (t_current == this && t_worker_idx >= 0) {
-        f->set_owner_worker(previous_owner);
+        detail::FiberAccess::set_owner_worker(f, previous_owner);
         finish_one();
         return false;
       }
@@ -1541,7 +1533,8 @@ void Waker::wake() const noexcept {
   // Rendezvous: whichever of {worker dispatch, this wake()} sees the other has
   // already arrived performs the single re-injection. If we arrived first, the
   // worker's dispatch will re-inject post-suspend.
-  if (fiber_->wake_rendezvous()) sched_->impl_->reinject(fiber_);
+  if (detail::FiberAccess::wake_rendezvous(fiber_))
+    sched_->impl_->reinject(fiber_);
 }
 
 Waker current_waker() noexcept {
@@ -1566,7 +1559,8 @@ void wait_for_shutdown() noexcept {
 void suspend() noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr);  // suspend() outside a fiber is a bug
-  self->request_wait();  // tell dispatch: don't reschedule me, I'm waiting
+  detail::FiberAccess::request_wait(
+      self);  // tell dispatch: don't reschedule me, I'm waiting
   Fiber::yield();        // control returns to the worker; resumes when re-injected
 }
 
@@ -1591,7 +1585,7 @@ void sleep_until(time::MonotonicTimePoint deadline) noexcept {
   // for a plain sleep, so the timer always fires and the entry always leaves the
   // queue -- no cancel needed (that's the fiber-mode wait_for/wait_until case,
   // sched-04d).
-  self->request_wait();
+  detail::FiberAccess::request_wait(self);
   Fiber::yield();
 }
 

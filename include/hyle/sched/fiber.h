@@ -24,7 +24,9 @@ namespace hyle::sched {
 class Fiber;
 
 namespace detail {
-struct FiberReadyAccess;
+struct FiberAccess;
+template <class T>
+struct TaskDriver;
 
 // One active cooperative-cancellation source on a Fiber. The record lives in
 // the owning RAII scope (normally a TaskDriver or CancelScope), so pushing a
@@ -137,18 +139,25 @@ class Fiber {
   // threading a handle through (sched-04).
   HYLE_SCHED_API static Fiber* current() noexcept;
 
+  // Optional profiler track label. The pointer must remain valid for the
+  // Fiber's lifetime (normally a string literal or runtime-owned name).
+  const char* trace_name() const noexcept { return name_; }
+  void set_trace_name(const char* name) noexcept { name_ = name; }
+
  private:
   // Scheduling/integration machinery is intentionally not ordinary user API.
-  // Scheduler, Waker and the detail accessors below own these state transitions.
+  // Scheduler, synchronization and structured-task drivers own these state
+  // transitions; ordinary users compose through their public operations.
   friend struct FiberLaunch;
-  friend struct detail::FiberReadyAccess;
+  friend struct detail::FiberAccess;
+  template <class T>
+  friend struct detail::TaskDriver;
   friend bool detail::push_cancel_flag(detail::CancelFlagLink*,
                                        std::atomic<bool>*) noexcept;
   friend void detail::pop_cancel_flag(detail::CancelFlagLink*) noexcept;
   friend bool detail::current_cancel_requested() noexcept;
 
- public:
-  // ---- wait/wake coordination (internal scheduler seam) ----------------------
+  // ---- wait/wake coordination ------------------------------------------------
   // A fiber that yields to WAIT on an external event (vs an ordinary cooperative
   // yield) sets this flag before yielding; the scheduler reads+clears it after
   // resume() returns and, if set, does NOT reschedule -- the fiber sits out of
@@ -160,7 +169,7 @@ class Fiber {
     return r;
   }
 
-  // ---- worker affinity (shard-per-core, io-04) --------------------------------
+  // ---- worker affinity -------------------------------------------------------
   // A pinned fiber runs ONLY on its owner worker: the scheduler routes it to that
   // worker's private queue on spawn AND on every wake, and the work-stealing path
   // never takes it. -1 = unpinned (ordinary stealable fiber). This is what lets a
@@ -169,18 +178,7 @@ class Fiber {
   int owner_worker() const noexcept { return owner_worker_; }
   void set_owner_worker(int idx) noexcept { owner_worker_ = idx; }
 
-  // ---- trace name (obs-02) ----------------------------------------------------
-  // Optional label for the profiler's fiber track (HYLE_TRACE_FIBER_ENTER). Must be
-  // a STABLE, long-lived pointer (a string literal or a buffer outliving the fiber)
-  // -- tracy keys a fiber by pointer identity, so the same fiber must always present
-  // the same pointer. Null uses a per-fiber unique name owned by a trace build;
-  // anonymous fibers must not collapse onto one shared "hyle.fiber" track.
-  // Read ONLY when HYLE_TRACE is enabled; the OFF build never touches it, so setting
-  // it costs a single non-hot-path pointer store and the switch path stays zero-cost.
-  const char* trace_name() const noexcept { return name_; }
-  void set_trace_name(const char* name) noexcept { name_ = name; }
-
-  // ---- finish hook (sched-10 spawn_task self-owned fibers) --------------------
+  // ---- finish hook -----------------------------------------------------------
   // Optional callback the scheduler invokes AFTER this fiber has finished, from
   // the worker's dispatch -- i.e. once control has returned from the fiber and its
   // stack is no longer executing. This is the ONLY safe point to free a fiber that

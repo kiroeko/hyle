@@ -383,6 +383,10 @@ struct TaskDriver {
   JoinState<T>* state;
   Fiber fiber;
 
+  void arm_finish_hook() noexcept {
+    fiber.set_on_finish(&TaskDriver::destroy, this);
+  }
+
   static void entry(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
     JoinState<T>* st = d->state;
@@ -422,6 +426,10 @@ struct TaskDriver<void> {
   Task<void> task;
   JoinState<void>* state;
   Fiber fiber;
+
+  void arm_finish_hook() noexcept {
+    fiber.set_on_finish(&TaskDriver::destroy, this);
+  }
 
   static void entry(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
@@ -505,7 +513,7 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
   // dispatch() frees the driver via this hook AFTER the fiber finishes and is off
   // its stack (a fiber must never free its own stack from within entry). The
   // Fiber dtor returns the stack to `pool` (if any) at that safe point.
-  d->fiber.set_on_finish(&TaskDriver<T>::destroy, d);
+  d->arm_finish_hook();
   if (!sched.spawn(&d->fiber)) {
     // Admission closed or a recursively-submitting worker saturated every
     // bounded runnable queue. Resolve the handle instead of leaking the
