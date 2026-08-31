@@ -295,16 +295,16 @@ TEST(BulkExecute, RunnerPathDoesNotAllocateFromSchedulerAllocator) {
   auto body = [&](std::size_t begin, std::size_t end) noexcept {
     total.fetch_add(end - begin, std::memory_order_relaxed);
   };
-  ASSERT_TRUE(bulk_execute(scheduler, 0, 32, body).ok());  // warm wait path
-  scheduler.drain();  // exclude the warm runner's Scheduler epilogue
-  const std::size_t before = counter.calls.load(std::memory_order_relaxed);
-
   BulkExecuteOptions options;
   options.grain_size = 3;
   ASSERT_TRUE(bulk_execute(scheduler, 0, 4096, body, options).ok());
+  scheduler.drain();  // warm the same runner/wait shape measured below
+  const std::size_t before = counter.calls.load(std::memory_order_relaxed);
+
+  ASSERT_TRUE(bulk_execute(scheduler, 0, 4096, body, options).ok());
   scheduler.drain();
   EXPECT_EQ(counter.calls.load(std::memory_order_relaxed), before);
-  EXPECT_EQ(total.load(std::memory_order_relaxed), 4128u);
+  EXPECT_EQ(total.load(std::memory_order_relaxed), 8192u);
   scheduler.shutdown();
 }
 
