@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已经终止的
 > [`sched-v2`](sched-v2-batch-structured.md) 只保存候选、验证和失败事实，不在本轮回写。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`sched` / Sched execution owner / `sched-v3-root-participation`；
   task kind：`RESUME`。
@@ -54,10 +54,40 @@
 
 | ID | question | evidence required before `AUDITED` | current |
 |---|---|---|---|
-| `SCHED-V3-EQUIV-01` | oneTBB 是否减少了用户 callback 数或使用 SIMD | peer source、callback 边界与共同 body codegen | `PARTIAL`：source 已排除 range 合并与算法级 SIMD，待形成审计签名 |
-| `SCHED-V3-COST-01` | 差距是每 item 还是每 batch 固定成本 | v2 immutable summary 的 throughput→wall-time 分解；至多一个 diagnostic | `PARTIAL`：现有中位数支持 4.7--6.6 us/batch |
-| `SCHED-V3-ROOT-01` | root participation 是否保持同合同并消除一次 handoff | same-owner 判定、状态图、复杂度与失败/取消/lifetime proof | `PLANNED` |
-| `SCHED-V3-FIX-01` | 应冻结的唯一产品修改 | 上述三项完成后形成有限 capability/gap ledger | `PLANNED` |
+| `SCHED-V3-EQUIV-01` | oneTBB 是否减少了用户 callback 数或使用 SIMD | peer source、callback 边界与共同 body codegen | `PASS` |
+| `SCHED-V3-COST-01` | 差距是每 item 还是每 batch 固定成本 | v2 immutable summary 的 throughput→wall-time 分解；至多一个 diagnostic | `PASS`：现有正式证据已给出 4.7--6.6 us/batch，不消费额外姿势 |
+| `SCHED-V3-ROOT-01` | root participation 是否保持同合同并消除一次 handoff | same-owner 判定、状态图、复杂度与失败/取消/lifetime proof | `PASS` |
+| `SCHED-V3-FIX-01` | 应冻结的唯一产品修改 | 上述三项完成后形成有限 capability/gap ledger | `FIX`：见下节 |
 
-本页在 `SCOPED` 阶段不授权产品修改。先完成上述 audit，进入 `AUDITED` 并冻结 `FIX` 集后才可施工。
+## Audit result 与冻结 `FIX`
 
+- callback 等价：oneTBB `simple_partition_type::execute` 在 `range.is_divisible()` 时持续 split，
+  `blocked_range::is_divisible()` 是 `grainsize < size`；因此 `[0,128), grain=1` 的自然路线执行 128 个
+  unit body。HYLE 同样按 128 个 public grain 调用 body，不存在 oneTBB 合并 callback 的语义便宜。
+- body codegen 等价：v2 candidate 与 oneTBB peer object 中的 `tile_digest` 指令逐项相同，都是同一
+  106-byte 标量 recurrence（load、shift、rotate、multiply）；没有 vector instruction，也没有不同的
+  digest 实现。SIMD 不是本差距来源。
+- 成本分解：按 `2048e9 / median throughput` 还原 wall time，candidate-first 总差约 `75.7 us`，
+  peer-first 总差约 `104.8 us`；除以 16 batch 是 `4.7--6.6 us/batch`。这比一个稳定目标的间接调用或
+  x86 acquire load 的预期成本阶高，并与当前每 batch 的四次 runner admission、root suspend/resume、
+  terminal wake 相吻合。Marl 的 enqueue/wait 自然路线与 HYLE 持平，是独立的机制交叉检查。
+- ownership 状态图：
+  1. external caller 或另一个 Scheduler 的 Fiber：仍投递全部 `concurrency` runner 并等待；不得借用非
+     owner worker；
+  2. 同一 Scheduler 的 Fiber：投递 `concurrency-1` runner，caller 在原 Fiber 上调用同一个
+     `run_with_cancel_scope` 消费共享 cursor，然后只在其他 runner 尚未 quiescent 时等待；
+  3. 同一 Scheduler 的 worker-stack callback：保留现有 serial fallback，不能在 worker stack 上阻塞；
+  4. submission guard 在 caller 参与和投递期间保持 `active>=1`，因此异步 runner 不能提前 signal 或
+     释放 caller-stack state；caller 完成本地 work 后才释放 guard，并沿用 v2 的 notifier lifetime
+     handoff。
+
+冻结的唯一产品修改是 `FIX-01`：增加一个 Sched-private current-owner identity seam；在
+`bulk_execute` 中仅对“`Fiber::current()!=nullptr` 且 current owner 是参数 Scheduler”的路径启用上述
+root participation。它不新增 public header、symbol、option、layout、依赖或常态 metadata；runner/queue
+entry 从最多 `concurrency` 降为最多 `concurrency-1`，work/state 复杂度不变，单 worker Fiber 路线退化为
+直接执行而非一次无用 schedule+suspend+wake。
+
+验证冻结为：新增同 owner Fiber 确实在原 Fiber 内执行至少一个 grain、跨 Scheduler Fiber 不参与、
+单 worker/error/cancel/exactly-once/lifetime/zero-allocation regressions；三平台 full Sched + sanitizer、
+三交付与直接 consumer slice；最后只重放原 v2 W1-WIN P1 contract。除非 `FIX-01` 暴露 correctness
+缺陷，本轮不再加入第二个产品假设。

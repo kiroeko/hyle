@@ -748,7 +748,7 @@
     },
     {
       "module": "sched",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "sched-v3-root-participation",
       "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
       "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
@@ -770,7 +770,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "sched-v3 SCOPED：v2 的 oneTBB hard FAIL 已量化为约 4.7--6.6 us/batch 的固定差距；本轮只审计并验证 same-Scheduler root-Fiber participation，不修改 workload、peer 或公开语义。"
+      "summary": "sched-v3 AUDITED：已排除 callback 合并和 SIMD 差异，并将 4.7--6.6 us/batch 固定成本归因到 root handoff；唯一 FIX 是 same-Scheduler root-Fiber participation，不修改 workload、peer 或公开语义。"
     },
     {
       "module": "io",
