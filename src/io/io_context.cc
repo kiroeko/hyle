@@ -5,6 +5,7 @@
 #include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
 #include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
+#include "hyle/sched/detail/integration.h"
 #include "hyle/sched/waker.h"  // current_worker_index()
 
 // io-04 integration (plan A). One proactor per worker; the poll hook reaps the
@@ -31,16 +32,18 @@ IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
     if (!p->init(256, /*defer_worker_thread=*/defer_taskrun)) valid_ = false;
     rings_.push_back(std::move(p));
   }
-  sched_.set_io_poll(&IoContext::poll_trampoline, this);
-  sched_.set_io_wake(&IoContext::wake_trampoline, this);
+  sched::detail::SchedulerIntegration::set_io_poll(
+      sched_, &IoContext::poll_trampoline, this);
+  sched::detail::SchedulerIntegration::set_io_wake(
+      sched_, &IoContext::wake_trampoline, this);
 }
 
 IoContext::~IoContext() {
   // Unregister before we (and our rings) are destroyed so no worker calls a
   // dangling hook during teardown. The scheduler is expected already stopped
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
-  sched_.set_io_wake(nullptr, nullptr);
-  sched_.set_io_poll(nullptr, nullptr);
+  sched::detail::SchedulerIntegration::set_io_wake(sched_, nullptr, nullptr);
+  sched::detail::SchedulerIntegration::set_io_poll(sched_, nullptr, nullptr);
 
   // io-06 orphan drain: a timed op whose TIMER won submitted a cancel and resumed
   // its fiber, but the cancelled kernel op still owes a late completion (io_uring

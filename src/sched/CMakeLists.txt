@@ -1,4 +1,4 @@
-# sched-01/02: fiber context switching on vendored fcontext asm + run-queue.
+# Stackful fiber scheduling on vendored fcontext assembly.
 # Pick the asm flavor for this (platform, arch). Vendored asm covers x86_64 (MS/PE MASM,
 # SysV/ELF GAS, SysV/macho GAS) AND arm64 (AAPCS ELF/macho GAS). The top-level gate
 # (HYLE_HAS_FCONTEXT) guarantees we only get here on a target we have asm for.
@@ -42,7 +42,6 @@ endif()
 hyle_add_module(sched TRACE
   SOURCES
     fiber.cc
-    worker.cc
     scheduler.cc
     sync.cc
     join.cc

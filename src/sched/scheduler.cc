@@ -160,8 +160,8 @@ constexpr int kLowLatencySpinPolls = 32768;
 
 // Cap on consecutive LIFO-slot polls before the slot's fiber is demoted to the
 // local FIFO ring, so a hot ping-pong / RPC pair can't monopolize the worker and
-// starve its ring (tokio MAX_LIFO_POLLS_PER_TICK = 3; the sched-02 RunQueue uses
-// the same value). See the lifo_slot field + find_task for the mechanism.
+// starve its ring (tokio MAX_LIFO_POLLS_PER_TICK = 3). See the internal
+// lifo_slot field + find_task for the mechanism.
 constexpr int kMaxLifoPolls = 3;
 
 // Every Nth find_task, check the GLOBAL inject queue BEFORE the local ring, so a
@@ -323,8 +323,8 @@ struct Scheduler::Impl {
     return nullptr;  // non-tier size: caller allocates a one-off stack
   }
 
-  // io poll hook (io-04). Registered by an io::IoContext via set_io_poll; the
-  // worker loop calls it to reap io completions. Null when no io is in use ->
+  // IO poll hook. Registered by IoContext through the build-only integration
+  // bridge; the worker loop calls it to reap completions. Null with no IO ->
   // never called, zero cost. ATOMIC because the registering thread (IoContext
   // ctor on the main thread) writes these while worker threads are already
   // spinning their loops and reading them -- a genuine cross-thread publish
@@ -531,8 +531,8 @@ struct Scheduler::Impl {
     // resumes immediately, cache-hot, while under its poll budget. The budget cap
     // (kMaxLifoPolls) stops a hot ping-pong pair from starving the local ring: once
     // spent, demote the slot fiber to the ring and serve FIFO (which resets the
-    // budget). Mirrors tokio's lifo_slot + MAX_LIFO_POLLS_PER_TICK and the sched-02
-    // RunQueue::next logic. Single-threaded: only this worker touches lifo_slot.
+    // budget). Mirrors tokio's lifo_slot + MAX_LIFO_POLLS_PER_TICK.
+    // Single-threaded: only this worker touches lifo_slot.
     if (w.lifo_slot != nullptr) {
       if (w.lifo_polls < kMaxLifoPolls) {
         ++w.lifo_polls;
@@ -1051,7 +1051,8 @@ struct Scheduler::Impl {
         // (measured: 421 enters over 500ms idle before this). A foreign spawn/
         // steal breaks the block promptly via Scheduler::wake_worker -> the ring's
         // wake eventfd (Proactor::wake), so responsiveness is preserved without the
-        // poll. This is why set_io_wake is mandatory once the cap is gone.
+        // poll. This is why the integration wake hook is mandatory once the cap
+        // is gone.
         if (poll(io_poll_ctx.load(std::memory_order_relaxed), idx, timeout)) {
           remove_sleeper(idx);
           continue;  // io was in flight -> serviced in the ring, re-check queues
@@ -1518,7 +1519,7 @@ bool Scheduler::drain_until(time::MonotonicTimePoint deadline) noexcept {
   return impl_->drain_until(deadline);
 }
 
-void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
+void Scheduler::set_io_poll_(IoPollFn fn, void* ctx) noexcept {
   // Publish ctx BEFORE fn (release) so a worker that reads a non-null fn is
   // guaranteed to see the matching ctx. Clearing (fn=null) is the reverse but
   // benign: a worker reading the stale non-null fn with a now-null ctx still runs
@@ -1528,8 +1529,8 @@ void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
   impl_->io_poll.store(fn, std::memory_order_release);
 }
 
-void Scheduler::set_io_wake(IoWakeFn fn, void* ctx) noexcept {
-  // Same publish discipline as set_io_poll (ctx before fn, release).
+void Scheduler::set_io_wake_(IoWakeFn fn, void* ctx) noexcept {
+  // Same publish discipline as set_io_poll_ (ctx before fn, release).
   impl_->io_wake_ctx.store(ctx, std::memory_order_relaxed);
   impl_->io_wake.store(fn, std::memory_order_release);
 }

@@ -35,6 +35,9 @@ namespace hyle::sched {
 
 class Fiber;
 class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
+namespace detail {
+class SchedulerIntegration;
+}
 HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
 enum class SchedulerIdlePolicy : std::uint8_t {
@@ -243,43 +246,18 @@ class HYLE_SCHED_API Scheduler {
   // Absolute monotonic counterpart. A past deadline is an immediate check.
   bool drain_until(time::MonotonicTimePoint deadline) noexcept;
 
-  // ---- io poll hook (io-04 integration) -------------------------------------
-  // A worker calls this when its run queue drains, to service io completions
-  // (proactor CQ). It is a raw function pointer + opaque ctx, NOT an io type:
-  // sched/ must not depend on io/ (the dependency runs the other way -- io/ uses
-  // sched's Waker). io/ registers its IoContext here; the worker invokes it with
-  // its own index and a timeout budget. When no io is in use the hook stays null
-  // and the worker never calls it -- zero cost.
-  //
-  // timeout_ns == 0 is the non-blocking drain (run-queue-drained hot path). A
-  // non-zero timeout is the worker's PARK boundary: the hook may BLOCK up to that
-  // long harvesting completions (a GETEVENTS io_uring_enter), which is a
-  // correctness requirement -- io_uring only surfaces many completions when the
-  // owning thread enters the kernel, so a worker with ops in flight MUST block in
-  // the ring rather than the futex parker or those completions never arrive.
-  //
-  // RETURNS true iff io ops were in flight (so the hook serviced/blocked on the
-  // ring): the worker then loops instead of parking. false means nothing was in
-  // flight (the hook did at most a cheap non-blocking drain), so the worker parks
-  // on its futex Parker as usual -- giving an immediate cross-thread wake when no
-  // io is pending (a reap block can't be interrupted by parker.unpark()).
-  using IoPollFn = bool (*)(void* ctx, unsigned worker_idx,
-                            unsigned long long timeout_ns) noexcept;
-  void set_io_poll(IoPollFn fn, void* ctx) noexcept;
-
-  // Companion to set_io_poll: how the scheduler WAKES a worker that is blocked in
-  // the io poll hook (a blocking reap) from another thread. When io is active an
-  // idle worker blocks IN the proactor (a GETEVENTS reap / GQCSEx) with no poll
-  // timeout -- truly asleep, no 1ms re-poll -- so a plain futex unpark can't reach
-  // it. This hook breaks that block: io/ registers a fn that calls Proactor::wake()
-  // on worker_idx's ring (writes its eventfd / posts its port). Same raw-fn-ptr +
-  // ctx seam as set_io_poll (sched stays independent of io). Null when no io is in
-  // use -> the worker parks on its futex Parker as before (zero cost).
-  using IoWakeFn = void (*)(void* ctx, unsigned worker_idx) noexcept;
-  void set_io_wake(IoWakeFn fn, void* ctx) noexcept;
-
  private:
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
+  friend class detail::SchedulerIntegration;
+  using IoPollFn = bool (*)(void* context, unsigned worker_index,
+                            unsigned long long timeout_ns) noexcept;
+  using IoWakeFn = void (*)(void* context,
+                            unsigned worker_index) noexcept;
+  // Build-only IO integration. Public users compose through IoContext; these
+  // single-slot worker-loop hooks are deliberately inaccessible as scheduler
+  // policy and are not installed as an SDK header.
+  void set_io_poll_(IoPollFn fn, void* context) noexcept;
+  void set_io_wake_(IoWakeFn fn, void* context) noexcept;
   struct Impl;
   Impl* impl_;
   void init_(unsigned num_workers, mem::Allocator alloc,

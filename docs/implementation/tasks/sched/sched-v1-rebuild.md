@@ -200,6 +200,11 @@
   missed count。ownership move/destruction 采用明确 nothrow value contract；watch/broadcast 可能抛出的
   copy 由 RAII monitor guard 保证异常后可继续使用且 cursor 不前移，mutation callback 则显式要求
   `noexcept`。Windows selected sched build 与 `hyle_sched_test` 1/1 通过（6.28s）。
+- SCHED-FIX-06/07 边界实现批：删除不属于真实 Scheduler 实现的 public `RunQueue/Worker` proof、对应
+  自身 benchmark 与重复测试；IO poll/wake mutation 移入不安装的 `sched/detail` build-only bridge，普通
+  C++ 用户只通过 `io::IoContext` 组合。删除 proof header 后，中央图暴露出 `container` 只是真实 PRIVATE
+  实现边，已同步修正。Windows selected sched/IO 重新 configure/build，`hyle_sched_test` 与
+  `hyle_io_test` 分别 1/1 通过。
 
 上述单测是实现批回归，不是 SCHED-FIX-01--06 的 terminal `PASS`，也没有把尚未运行的 Linux
 CPU-set 语义、TSan/ASan 或三交付写成通过。

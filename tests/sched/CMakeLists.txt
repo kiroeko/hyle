@@ -1,1 +1,1 @@
-hyle_add_test(sched SOURCES fiber_test.cc fiber_stack_guard_test.cc run_queue_test.cc scheduler_test.cc waker_test.cc sync_test.cc timer_test.cc coro_test.cc affinity_test.cc join_test.cc blocking_test.cc shutdown_test.cc cancel_test.cc DEPS hyle_time)
+hyle_add_test(sched SOURCES fiber_test.cc fiber_stack_guard_test.cc scheduler_test.cc waker_test.cc sync_test.cc timer_test.cc coro_test.cc affinity_test.cc join_test.cc blocking_test.cc shutdown_test.cc cancel_test.cc DEPS hyle_time)

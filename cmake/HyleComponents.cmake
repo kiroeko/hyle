@@ -96,7 +96,8 @@ _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 # typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
   TRACE
-  PUBLIC_DEPS core error time platform mem container util_core)
+  PRIVATE_DEPS container
+  PUBLIC_DEPS core error time platform mem util_core)
 # io's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
 # consumer usage requirements, not only implementation closure: installed
@@ -284,6 +285,12 @@ function(_hyle_component_public_headers name out_var)
     # fat_kernel.h are public expert headers shared by source/static/shared
     # delivery and are therefore installed with the selected SIMD component.
     list(FILTER _headers EXCLUDE REGEX "/hyle/simd/provider/")
+  elseif(name STREQUAL "sched")
+    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
+      "${HYLE_SOURCE_DIR}/include/hyle/sched/*.h")
+    # Cross-component worker-loop bridges are source-composition details. They
+    # are available while building HYLE but are not an installed C++ SDK API.
+    list(FILTER _headers EXCLUDE REGEX "/hyle/sched/detail/")
   else()
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/${name}/*.h")
