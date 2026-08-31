@@ -35,7 +35,9 @@ void expect_small_exact(T lhs, T rhs) {
                                         Wide expected) {
     const bool representable = expected >= minimum && expected <= maximum;
     ASSERT_EQ(actual.has_value(), representable);
-    if (representable) EXPECT_EQ(*actual, static_cast<T>(expected));
+    if (representable) {
+      EXPECT_EQ(*actual, static_cast<T>(expected));
+    }
   };
 
   check(try_add(lhs, rhs), wide_lhs + wide_rhs);
