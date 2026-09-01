@@ -68,6 +68,7 @@ def main() -> None:
             "hyle-offline-deps.cmake",
             "scripts/check-docs.py",
             "scripts/header-self-contained.py",
+            "scripts/hyle-unix.sh",
             "scripts/hyle-windows.ps1",
         ),
     )

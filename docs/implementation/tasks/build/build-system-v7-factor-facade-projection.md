@@ -110,7 +110,7 @@
 | Windows isolated wrapper | `PASS` | VS 2026 fresh Core 与 Container 配置/构建通过；修复重复 `PATH`/`Path` 覆盖选中 MSVC toolchain 的问题 |
 | 项目一致性 | `PASS` | `check-module-closure.py`、`check-docs.py`、`git diff --check` 与改动脚本语法检查通过 |
 
-本轮最终代码量口径：全库代码 `412,830` 行；自实现含测试 `99,270` 行；自实现不含测试
+本轮最终代码量口径：全库代码 `412,935` 行；自实现含测试 `99,270` 行；自实现不含测试
 `61,670` 行；Build/package 实现 `9,156` 行。文档改动不计入代码口径。
 
 ## 终态裁决
