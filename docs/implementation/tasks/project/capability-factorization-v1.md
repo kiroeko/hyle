@@ -949,14 +949,139 @@ consumer、锁定 peer 差异、可复现产品缺陷或标准变化，才能以
 
 ### B. 跨域归属与质因数分解
 
-只使用已经冻结的 A 输入，建立全局账本：
+只使用已经冻结的 A 输入建立全局账本。下列 `B-Fxx` 是本 task 内的 semantic factor ID，不是已经登记的
+component ID、CMake target 或模块状态；真实 target 名、公开/私有边和迁移顺序只在 C 阶段登记。
 
-| capability family | semantic owner | owning product domain | irreducible component | independent consumers | cost/delivery closure | duplicate/conflict resolution |
-|---|---|---|---|---|---|---|
+factor verdict 的含义如下：
 
-`container_intrusive` 作为正例校准：属于 Container 产品域，但因 Time 等消费者只需要零分配侵入式链接，
-可独立闭环并避免完整 Container 的 Mem/Platform 闭包，所以是独立因子。没有独立消费、依赖缩减或成本
-隔离收益的文件/函数不得制造 target。
+- `KEEP_PRIME`：现有边界的语义闭环可以保留；不表示当前实现自动覆盖新增能力行；
+- `SPLIT_PRIME`：应从现有聚合边界分出，因而能减少真实闭包或隔离可选成本；
+- `NEW_PRIME`：当前没有相应产品因子，但已准入能力、独立 consumer 和生命周期足以建立一个；
+- `ROUTE`：标准库、成熟依赖、上层或宿主才是自然完成路线，不制造 HYLE component。
+
+`source A rows` 使用闭区间，例如 `CORE-A-01..06`。每个 A 行只在下面一张主表出现一次；若一行本来混合
+了多个 owner，则整体进入 `B-R06`，再由后面的 decomposition table 切开语义，不能让同一个 A ID 在
+两个 factor 中重复计票。
+
+#### B1. 全局 factor 与 owner 账本
+
+| ID / verdict | semantic factor and owning product domain | source A rows | independent consumers | cost and delivery closure | duplicate/conflict resolution |
+|---|---|---|---|---|---|
+| `B-F01 KEEP_PRIME` | `core` / Core | `CORE-A-01..06, CORE-A-08..09, ERROR-A-15` | Error、Platform、Mem 及所有低层 header | header-only；成功路径无 allocation/lock/runtime registry；source/static/shared 只传播 header contract | Core 只拥有 invariant、compiler/layout facts 与 hints；fatal observer 是无反向依赖的 bounded callback seam，日志/crash policy不进入 Core |
+| `B-F02 KEEP_PRIME` | `error` / Error | `ERROR-A-01..11` | Platform、Mem、Sched、IO 及宿主边界 | code-only/success 不分配；rich text 留冷 backing；一个 compiled representation seam | Error 唯一拥有 canonical recovery vocabulary；协议 pending/closed、fatal、日志、exception boundary和 owner-specific typed schema 分别外置 |
+| `B-F03 KEEP_PRIME` | `container_intrusive` / Container | `INTR-A-01..13` | Time timer nodes、Sched/IO state machines、普通 stable-address owner | header-only、caller-owned storage；counted/atomic/heap 是独立类型选择，不给默认 hook 加 metadata | list/slist/atomic publish/intrusive heap 都共享 hook ownership 边界；高级 policy 可直接借 Boost，不复制 policy matrix |
+| `B-F04 KEEP_PRIME` | `util_core` / Util-core | `UTILC-A-01..02, UTILC-A-04, UTILC-A-06, UTILC-A-08..09, UTILC-A-12, UTILC-A-14..15, UTILC-A-17..18` | sampler/test RNG、owner RAII、短锁状态、同步 callback API | header-only，只依赖 Core；每个 header 按需编译，继续拆 target 不减少依赖或常态成本 | 只保留 statistical RNG、scope guard、intrusive strong ref、spin/backoff、FunctionRef、borrow vocabulary 和 diagnostic type name；park/fiber/crypto 外置 |
+| `B-F05 SPLIT_PRIME` | `time` host clocks / Time | `TIME-A-01..05, TIME-A-07..08, TIME-A-10, TIME-A-12, TIME-A-17` | Platform thread/fs、Sched、Obs、IO、独立 elapsed/deadline 用户 | typed host clocks + 很小 OS artifact；不带 intrusive node、callback executor 或 timezone database | Time 唯一拥有 host time domains/conversion 与 injectable clock vocabulary；device time和 async policy外置 |
+| `B-F06 SPLIT_PRIME` | `timer_queue` / Time | `TIME-A-13..15` | Sched timer service、IO common timeout、独立 event loop | header/data-structure factor，依赖 host time value与 intrusive hook；无 thread、callback、allocation | 从 Time clocks 分离，使只需 timestamp 的 Platform 不取得 intrusive closure；全序/执行 policy 仍归 consumer |
+| `B-F07 SPLIT_PRIME` | `platform_host` / Platform | `UTILC-A-05, PLAT-A-01, PLAT-A-03..12, PLAT-A-31..33` | SIMD target facts、Mem VM/NUMA、backend loader、secure seed caller | Core/Error 上的 OS facts与冷机制；不携带 thread wait 的 Time type或 filesystem surface | 拥有 CPU/topology/NUMA/raw VM、DynLib、environment和 secure entropy事实；SIMD只消费事实，不能在这里建立第二个 kernel dispatcher |
+| `B-F08 SPLIT_PRIME` | `platform_thread` / Platform | `PLAT-A-02, PLAT-A-15..20` | Sched workers、Compute poller、长寿命 native service和 extended-ISA kernel thread | native Thread、current-thread ISA state、wait/wake/Parker 与 priority；time dependency只由 timed wait带入 | host factor报告静态 facts，本 factor拥有每线程 VL/AMX/SME enable/restore；fiber-aware wait属于 Sched，process lifecycle不塞入 Thread facade |
+| `B-F09 SPLIT_PRIME` | `platform_fs` / Platform | `PLAT-A-21, PLAT-A-23..26, IO-A-28` | model/cache loader、IO download/async adapter、工具与配置读取 | synchronous FileHandle、namespace/temp/atomic replacement；不携带 Proactor、TLS或HTTP | Platform唯一拥有同步 namespace与cursor机制；IO只适配异步 operation，mapping/residency移交 Mem VM |
+| `B-F10 SPLIT_PRIME` | `mem_core` / Mem | `MEM-A-01..05, MEM-A-07..08, MEM-A-20..22` | Container、Registry、Sched/IO allocator injection、普通 PMR/STL 用户 | alignment、AllocatorRef、system heap、PMR、quota/stats；mimalloc是 build-only mechanism；不依赖 Platform VM | 唯一拥有 host allocation/resource vocabulary；decorator 只由 opt-in owner支付，不把 pool/device/mapping塞进最小 allocator闭包 |
+| `B-F11 SPLIT_PRIME` | `mem_pool` / Mem | `MEM-A-06, MEM-A-09..19` | request/parser arenas、object churn、worker-local cache、embedded fixed storage | Heap/Region/fixed/shared/object/growable pool；每种 metadata和 concurrency由具名类型承担 | variable/fixed、individual/bulk、reconstruct/preserve 语义按类型分开；不是 benchmark 的 fast/light 档位 |
+| `B-F12 SPLIT_PRIME` | `mem_vm` / Mem | `PLAT-A-14, PLAT-A-27..29, MEM-A-23..25` | model mapping/residency、Sched fiber stacks、shared-memory transport | over Platform raw VM/fs mechanisms；HugeRegion、mapping family、guarded stack和 residency policy独立交付 | 消除 Platform MappedFile、Mem HugeRegion与 IO SharedMemory 的三个 storage owner；namespace/async notification仍由 IO |
+| `B-F13 NEW_PRIME` | `mem_buffer` / Mem | `MEM-A-26..31` | Compute backend provider、IO transfer、inference loader/planner、工程 accelerator | provider-neutral ResourceRef、Buffer/View、sync/async seam、pool和 tensor-free LifetimePlanner；不得反向依赖 Compute | Compute/IO只实现 provider adapter；device/tensor placement policy不进入 Mem，闭合 enum不成为扩展点 |
+| `B-F14 NEW_PRIME` | `mem_reclaim` / Mem | `MEM-A-32` | concurrent node/table Container 与 Obs sink snapshot | 独立 domain/guard/retire 生命周期；只有使用者支付 reader/retire metadata | intrusive link不负责 reclamation，Container不再各自保留到析构；具体 hazard/epoch机制由同一 factor裁决 |
+| `B-F15 KEEP_PRIME` | `obs` log/trace seam / Obs | `OBS-A-01..15, OBS-A-24` | 所有库 call site、宿主 logger、CPU/GPU runtime tracing adapter | synchronous borrowed record；trace OFF为零产品依赖，Tracy是可选 build-only backend | log与trace共享 event/correlation schema且 disabled cost已闭合，不为 viewer knob拆产品；metrics和crash artifact另行处理 |
+| `B-F16 NEW_PRIME` | `metrics` / Obs | `OBS-A-16..20, OBS-A-22, IO-A-51` | inference server、Sched/IO/runtime telemetry、普通工程服务 | owner-held counter/gauge/distribution + local merge/snapshot；无默认全局 registry，exporter由宿主拥有 | 与瞬时 trace plot分离，防止 trace OFF时统计消失；Platform/Mem/Sched/IO只提供事实，不重复存储/导出 |
+| `B-F17 KEEP_PRIME` | `simd` / SIMD | `CORE-A-07, SIMD-A-01..11, SIMD-A-14..18, SIMD-A-20..23, SIMD-A-25..29, SIMD-A-33` | ordinary buffer用户、custom kernel作者、Container/Compute实现 | 一个不可拆分公开产品；whole-buffer边界最多一次 dispatch，expert/fixed/fat编译期路线无额外层 | Platform只给 facts；Highway/xsimd/HYLE是内部 mechanism；SIMD是自身 target/kernel route唯一 decision authority |
+| `B-F18 KEEP_PRIME` | `math` checked scalar / Math | `MATH-A-01..02` | shape/stride/size schema与任意低层 checked arithmetic caller | 极小 header-only O(1) helper；标准可完整表达的能力不包装 | 不吸收 SIMD、linear algebra、统计、tolerance或模型运算；小不是并入 Util 的理由，独立 failure语义和消费者已闭合 |
+| `B-F19 SPLIT_PRIME` | `container` sequential storage/algorithms / Container | `CONT-A-02..06, CONT-A-09..11, CONT-A-24..26, CONT-A-33, CONT-A-36` | tensor/token metadata、ordered/hash index、bitset、cache storage | allocator-aware owning structures；无并发/reclamation/wait metadata；compiled hash/algorithm mechanism可私有 | 标准容器足够的旅程直接路由；mutable heap和LRU只拥有通用 storage/lifetime，不吸收 timer/backend policy |
+| `B-F20 SPLIT_PRIME` | `container_concurrent` / Container | `CONT-A-14..17` | backend registry、runtime maps/sets、并发 append state | accessor/publication合同 + Mem reclamation；不携带 scheduler wait/cancel | 与 sequential容器分开，stable-node和table retirement由 Mem reclamation统一，不为 set伪造 mapped值 |
+| `B-F21 SPLIT_PRIME` | `container_queue` / Container | `CONT-A-07, CONT-A-18..23` | Sched ready/work-steal、IO/pipeline handoff、普通 bounded/unbounded queue用户 | try-only storage mechanisms；bounded/unbounded/role/priority为真实类型差异，无 CV/deadline/cancel | Sched拥有 blocking/backpressure/close service；队列不再迫使 Sched取得完整 text/map/bitset Container闭包 |
+| `B-F22 SPLIT_PRIME` | `text` / Container | `CONT-A-28..32` | IO protocol/header、tokenizer/parser、path与intern metadata | borrowed UTF-8/byte view、codec、lexical path和interner；simdutf/Highway可作 build-only mechanism | 文本语义归 Text而非“任何用了SIMD的算法”；不复制 owning string，Unicode错误与转码保持 typed shape |
+| `B-F23 SPLIT_PRIME` | `registry` / Util-runtime | `UTILR-A-01..09, UTILR-A-14` | backend/op/factory catalogue和一般 composition root | startup→freeze→read one-way factory publication；header/template交付，不携带 demangler artifact | exact name→factory是唯一语义；device scoring、module unload、auto registration与业务 alias policy不上浮进 Registry |
+| `B-F24 SPLIT_PRIME` | `symbol` ordinary C++ demangle / Util-runtime | `UTILR-A-15..17, UTILR-A-20` | logs、tests、debug UI和普通 diagnostic tools | compiled owning/caller-buffer demangle；不依赖 Registry、Mem或Container，不承诺 signal safety | 从 Util aggregate分离，避免只要 demangle就拉入 registry closure；crash symbolization是另一生命周期 |
+| `B-F25 KEEP_PRIME` | `sched` execution runtime / Sched | `ERROR-A-12, TIME-A-09, TIME-A-16, TIME-A-18..19, OBS-A-21, SCHED-A-01..35, SCHED-A-38..40` | inference request runtime、IO coroutine/timeout、一般 CPU async用户 | worker/Fiber/coroutine/task/cancel/select/timer/sync/channel同一 suspension生命周期；策略metadata按 opt-in类型 | Time只给 clock/queue，Container只给 storage，Obs只消费 context；sync primitives不能脱离 scheduler progress合同假拆 target |
+| `B-F26 SPLIT_PRIME` | `io_core` completion/file/net/IPC / IO | `PLAT-A-22, IO-A-01..21, IO-A-23..27, IO-A-29, IO-A-31` | async file、TCP/UDP/local endpoint、RPC transport、server runtime | one Proactor/IoContext completion runtime；typed Endpoint/Error/operation budget；不携带 TLS/HTTP依赖 | Platform保留同步 fs/native mechanism，Mem保留 storage；socket/file共享 completion ownership所以不按 syscall拆组件 |
+| `B-F27 SPLIT_PRIME` | `io_tls` / IO | `IO-A-32..34` | HTTPS/RPC TLS和普通 secure stream用户 | transport adapter + immutable config/session；OpenSSL是 mechanism，feature关闭时不构建/探测 | TLS不泄漏 OpenSSL类型；deadline/cancel沿 IO/Sched协议，不让 HTTP专有 ALPN成为通用 TLS合同 |
+| `B-F28 SPLIT_PRIME` | `io_http` HTTP/1 + host/client/async body / IO | `IO-A-35..42` | inference HTTP/SSE server、普通 HTTP client/server | transport-neutral framing + async body + client/server host；pico parser为私有 mechanism；不默认拉入 H2 | routing/auth/JSON是应用；TLS通过 stream adapter组合；whole-request deadline/context不逐层复制 state machine |
+| `B-F29 SPLIT_PRIME` | `io_http2` / IO | `IO-A-44..45` | 需要 multiplex/flow control 的 server/client | nghttp2私有协议状态 + HYLE async body；独立可选依赖和 capability | 不用一个 IO_HTTP2 bool改变整个 IO artifact；HTTP message/body语义复用 HTTP factor，nghttp2类型不外泄 |
+| `B-F30 NEW_PRIME` | `io_transfer` reliable HTTP download/cache / IO | `IO-A-43` | model downloader、数据/asset cache与普通 large-file fetcher | 组合 HTTP async body、Platform atomic file、resume/ETag/range/checksum；独立隔离 filesystem/retry metadata | 不把模型格式或 cache policy塞入 HTTP connection；一个直接推理 journey加通用独立 consumer足以形成高层因子 |
+
+`B-F01..30` 共覆盖 303 个 A 行。`container_intrusive` 仍是校准正例，但不是先验模板：TimerQueue、
+Platform、Mem、Container、Util 和 IO 的上述拆分都必须同时产生独立 consumer、依赖/可选成本缩减和完整
+lifecycle；相反，单个文件、函数或同依赖的 header 不因此成为 target。
+
+#### B2. 完整 route 账本
+
+以下 74 行不再制造 product factor，或必须先按语义拆开：
+
+| ID / verdict | source A rows | final route |
+|---|---|---|
+| `B-R01 ROUTE_STANDARD` | `CORE-A-13, UTILC-A-03, UTILC-A-07, UTILC-A-10, UTILC-A-16, UTILC-A-19..20, TIME-A-11, SIMD-A-30, MATH-A-03..04, MATH-A-06, CONT-A-01, CONT-A-08, CONT-A-12` | C++23/标准容器/标准 distribution 已给出自然完整路线；HYLE不制造兼容层或同义 wrapper |
+| `B-R02 DELIVERY_PROJECTION` | `CORE-A-11..12, ERROR-A-16, INTR-A-15, UTILC-A-21, TIME-A-20, PLAT-A-36, MEM-A-35, OBS-A-26, SIMD-A-34, MATH-A-08, CONT-A-37, UTILR-A-21, SCHED-A-41, IO-A-52, IO-A-54` | Build/package 是所有 factor 的唯一 delivery owner；版本 manifest、visibility、source/static/shared、feature和未来具名 Native FFI由横向合同投影，不拥有运行时语义 |
+| `B-R03 ROUTE_UPPER_OWNER` | `TIME-A-06, PLAT-A-34, MEM-A-34, SIMD-A-12..13, SIMD-A-19, SIMD-A-32, MATH-A-07, CONT-A-13, UTILR-A-10, UTILR-A-13, SCHED-A-36..37, IO-A-49` | device event、tensor/quant/operator、graph dense-ID、backend catalogue、parallel algorithm与 RPC codec 属 Compute/Graph/engine；需求保留但这些 owner 仍冻结 |
+| `B-R04 ROUTE_HOST_POLICY` | `OBS-A-25, IO-A-46` | secret/redaction、routing、auth、CORS、JSON和业务 middleware由宿主/application拥有；基础 seam 保留但不下沉 policy |
+| `B-R05 DEFERRED_FACTOR` | `PLAT-A-13, PLAT-A-35, MEM-A-33, OBS-A-23, MATH-A-05, CONT-A-35, UTILR-A-11..12, UTILR-A-18..19, IO-A-48, IO-A-50` | executable memory、Process/module manager、secure memory、crash symbolization、consumer-specific arithmetic、matcher、foreign symbols、QUIC/gRPC/Web protocol和 RDMA 均有具名 owner/触发条件，但当前证据未准入公开 component |
+| `B-R06 DECOMPOSED` | `CORE-A-10, ERROR-A-13..14, INTR-A-14, UTILC-A-11, UTILC-A-13, PLAT-A-30, SIMD-A-24, SIMD-A-31, CONT-A-27, CONT-A-34, IO-A-22, IO-A-30, IO-A-47` | A 行包含多个语义 owner；按下表拆开，不把 composite family 强塞给一个模块 |
+| `B-R07 USER_GUIDE_PROJECTION` | `IO-A-53` | 每个 IO factor拥有自己的场景、lifetime、失败和陷阱说明；跨 factor选择页属于 IO产品指南，不归 Build/package或某一个 binary owner |
+
+`B-R06` 的最终唯一权威如下：
+
+| source row | decomposition and unique semantic owner |
+|---|---|
+| `CORE-A-10` | spin pause/backoff 归 `util_core`；streaming store与 kernel fence归 `simd`/owning kernel；persistence cache flush归 `mem_vm` 或持久化 owner；Core 不拥有万能 machine-action API |
+| `ERROR-A-13` | owning parser/backend 保留 typed `E`；`error` 只拥有 canonical/native projection；`obs` 只拥有 structured observation，不给 Status加常驻 payload map |
+| `ERROR-A-14` | 每个 owning exception boundary负责捕获和精确 mapping；只有完全同语义在两个 owner重复后，`error`才提供 cold no-throw helper，不建立 blanket “所有 exception 转 Status” policy |
+| `INTR-A-14` | `container_intrusive` 只承诺 external synchronization与 atomic publish类型；reader-safe retirement归 `mem_reclaim` |
+| `UTILC-A-11` | `mem_core`提供 fallible allocate/deallocate，`error`提供 Result，最终对象模块拥有 construct/destroy factory；Util不造跨 owner allocator factory |
+| `UTILC-A-13` | 普通 thread mutex/RW路线优先标准库，OS wait mechanism归 `platform_thread`，可挂起锁归 `sched`；`util_core`只留短 spin/backoff |
+| `PLAT-A-30` | shared mapping/residency owner归 `mem_vm`，name/handle transfer/async notification归 `io_core`；Platform只保留 raw OS mechanism |
+| `SIMD-A-24` | 普通 contiguous sum scan留 `simd`；keyed/segmented storage algorithm归 Container，parallel/device scan归 Compute |
+| `SIMD-A-31` | hash/text/codec/compression/crypto由各自语义 factor拥有并可直接借 vendor SIMD；不能因实现用了向量就依赖或迁入 `simd` |
+| `CONT-A-27` | 简单 sparse map组合归 `container`；generation arena归对象 owner；compressed rank/select只有新 consumer准入后才建立格式 factor |
+| `CONT-A-34` | runtime hash归 `container`；稳定 checksum/fingerprint归 IO/format owner，且必须具名 wire/format版本 |
+| `IO-A-22` | adopted async pipe endpoint归 `io_core`；child process/exit/job/signal生命周期留在 `B-R05` 的 Process候选 |
+| `IO-A-30` | mapping owner归 `mem_vm`；namespace、handle transfer和 notification归 `io_core`，进程间同步由协议 owner组合 |
+| `IO-A-47` | SSE归 `io_http` async body；WebSocket只有具名双向 consumer后才从 `B-R05` 建独立 protocol factor |
+
+#### B3. mechanism、decision authority 与交付权威
+
+| semantic factors | mechanism/artifact owner | sole decision authority | delivery owner |
+|---|---|---|---|
+| `mem_core`, `mem_pool` | locked mimalloc + HYLE typed owners | Mem 对 allocator/resource/pool shape、fallback和 trim作唯一决定 | Build/package 投影锁、许可证、offline/source/static/shared |
+| `obs` | HYLE seam + optional locked Tracy | Obs 对 event schema与 trace enablement作决定；viewer policy不进入 HYLE | Build/package |
+| `simd` | locked Highway、xsimd、HYLE winners与 ISA TUs | SIMD 对自身 operation/target route唯一裁决；Platform只报告 facts | Build/package，包括 expert/fixed/fat assets |
+| `container`, `text` | HYLE algorithms及 locked Highway/simdutf/xxHash/wyhash等 build-only mechanism | 各语义 factor只裁决自己的 hash/text/container algorithm，不复用 SIMD产品 dispatcher | Build/package |
+| `sched` | HYLE runtime + locked private fcontext C/assembly | Sched 对 worker、suspension、wake、timer和cancel state machine唯一裁决 | Build/package按平台选择私有 artifact |
+| `io_tls` | OpenSSL transport mechanism | IO TLS 对 config/session/operation outcome唯一裁决；OpenSSL type不公开 | Build/package对 optional system dependency作显式 availability/failure投影 |
+| `io_http` | HYLE message/body/host + locked private pico parser | IO HTTP 对 framing、limits、body/backpressure唯一裁决 | Build/package |
+| `io_http2` | locked nghttp2 protocol core | IO HTTP2 adapter对 HYLE stream/body lifecycle唯一裁决，nghttp2维护 wire state | Build/package |
+| standard/direct routes | C++23标准库或用户显式选择的成熟依赖 | 标准/owning consumer | 用户自己的交付；HYLE文档只说明 route |
+
+GoogleTest、nanobench和 peer checkout 只属于测试/证据，不是产品 mechanism；Folly、oneTBB、Abseil、
+Seastar、Marl 与 Boost 只有在某行明确选择 `BORROW` 后才成为交付输入，不能因参与发现就自动进入依赖图。
+任一锁定 dependency 升级只重开上述受影响 semantic factor 与直接 consumer，不继承旧性能或交付证书。
+
+#### B4. 跨域冲突和拒绝过度拆分
+
+| conflict | frozen resolution |
+|---|---|
+| CPU/ISA discovery | `platform_host`拥有 OS/CPU/topology facts，`platform_thread`拥有 current-thread VL/extended-state enable，`simd`拥有 SIMD product dispatch；Container/Text 自己的算法 route 只消费 facts或编译期 vendor mechanism，不建立第二个 SIMD authority |
+| clocks/timers/deadlines | `time`拥有时间值和时钟；`timer_queue`只管理 node；`sched`拥有等待、取消、周期和传播；IO复用同一 operation budget |
+| file/mapping/shared memory | `platform_fs`拥有同步 namespace/FileHandle；`mem_vm`拥有 mapping/residency/storage；`io_core`拥有 async operation、namespace transfer和 notification；三者不得各自持有同一 native handle owner |
+| allocator/resource/buffer | `mem_core`拥有 host allocator vocabulary，`mem_buffer`拥有 provider-neutral storage，Compute只实现 provider并拥有 tensor placement policy |
+| links/reclamation/concurrent container | `container_intrusive`拥有 membership，`mem_reclaim`拥有 reader-safe retirement，`container_concurrent`拥有 map/accessor semantics |
+| spin/native/fiber synchronization | `util_core`拥有短 spin/backoff，`platform_thread`拥有 OS thread/wait，`sched`拥有可挂起同步与 progress |
+| diagnostics/context/metrics | Core只 fail-fast，Error只传失败，Sched传播 task context，Obs记录 event，Metrics聚合值；没有一个“全能 telemetry/error context”对象 |
+| Registry/module/plugin | `registry`只做 one-way name→factory；`platform_host`只做 DynLib mechanism；卸载/quiescence等待未来 Module factor，不给 Registry增加不安全 erase |
+| network/protocol/application | `io_core`、TLS、HTTP、HTTP2、transfer分别闭环；routing/auth/model policy在宿主，QUIC/gRPC/RDMA等按具名 consumer准入 |
+
+以下拆分被明确拒绝：Core 每个 attribute、Util-core 每个 header、Container 每个 class和 Platform 每个 OS
+function 都没有独立 target收益；Error 的 Status/Result共享同一 failure representation；Obs 的 log/trace共享
+零成本 seam；Sched 的 sync/cancel/timer共享 suspension lifecycle；IO 的 socket/file共享 completion runtime；SIMD
+受不可拆分产品决策约束。它们可有私有 source/object分区，但不是公开组件。
+
+#### B5. Stage B 机械裁决与冻结
+
+主账本共有 30 个 factor、303 个来源行；route账本共有 7 类、74 个来源行。按上述闭区间展开后，
+`CORE/ERROR/INTR/UTILC/TIME/PLAT/MEM/OBS/SIMD/MATH/CONT/UTILR/SCHED/IO` 的 377 个 A ID
+全部恰好出现一次：缺失 0、重复 0、未知 owner 0。14 个 composite A 行又在 `B-R06` 中完成语义拆分。
+
+据此裁决：**阶段 B 已冻结，阶段 C 尚未开始**。冻结的是 semantic owner、30 个候选质因数、route 与
+negative space；不是 CMake target、依赖可见性、目录迁移、FIX 集或模块 reopen。现有 umbrella 名称是否
+保留为纯 convenience target、每个 factor 的 component ID、公开/私有/build-only 边、旧 API迁移和真实
+施工拓扑都必须由 C 阶段从本账本导出，不能回头用当前图删除已经冻结的能力。
 
 ### C. 依赖图与施工顺序
 
