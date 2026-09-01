@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
       "round_id": "core-v5-assert-macro-contract",
@@ -13,6 +13,8 @@
       "scope": "Repair the reproduced public assertion-macro hygiene and disabled-Debug semantic checking defects without changing Core's admitted capability families or normal runtime cost contract.",
       "non_goals": "New Core capabilities, logging or crash management, recoverable errors, arbitrary formatting, C or Native FFI, timing benchmarks, adjacent-module review and build-system redesign.",
       "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
+      "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+      "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -27,7 +29,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v5 审计完成：其余 Core 能力保持 COMPLETE；唯一 PARTIAL 是 assertion 宏卫生/编译语义与 observer unload 指南，CORE5-01～04 有限 FIX 集已冻结。"
+      "summary": "core-v5 candidate 4b7f28c5/074617e1 已冻结：公开 API 不变，宏卫生、Release/Debug 编译语义、字段边界、回归和 observer 指南已完成，等待三平台门。"
     },
     {
       "module": "container_intrusive",

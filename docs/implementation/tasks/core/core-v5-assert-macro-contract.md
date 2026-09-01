@@ -170,3 +170,17 @@ normal metadata or generic test-framework work must start another scope, not ent
 No second product correction was needed after replacing the initial parameter-pack draft with one array expression
 before candidate freeze；that final shape preserves left-to-right field construction while eliminating macro-local
 capture。The next step is one immutable product commit/tree and full frozen-gate replay。
+
+## Candidate identity
+
+- product commit：`4b7f28c55e9ca118cf87b80058ce291261033ec5`；
+- product tree：`074617e1b1dc9d11843493c1e2240da7fd798d9a`；
+- `AUDITED -> CANDIDATE` previous registry：
+  `C:\hyle-scratch\core-v5\module-status-audited.json`；
+- candidate includes the final header、Core-only tests/tool extension and current architecture/user/task facts；
+  unrelated dirty Container evidence is absent from the commit；
+- after this identity only verification evidence、task/registry/receipt and factual documentation may change。
+  Any product header、test/tool verdict semantics、public contract、dependency or delivery change returns the round
+  to `AUDITED` and creates a new candidate。
+
+当前为 `CANDIDATE`；所有 fixed gates will run from this immutable pushed identity。
