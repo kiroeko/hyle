@@ -5,18 +5,14 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "CORE-FOUNDATION-COMPLETENESS-01",
-      "reopen_evidence": "docs/implementation/tasks/project/capability-factorization-v1.md",
-      "round_id": "core-v3-foundation",
-      "closure_task": "docs/implementation/tasks/core/core-v3-foundation-completeness.md",
-      "scope": "Complete bounded fatal context and observer, assertion modes, consumer-backed compiler contracts and current-TU environment facts while preserving Core's header-only prime boundary.",
-      "non_goals": "Logging, crash reporting, recoverable errors, runtime topology or ISA dispatch, machine actions, runtime version artifacts, Native FFI, timing benchmarks and adjacent-module algorithm review.",
-      "baseline_commit": "0fc5fbc0cc8a86ef043788400e6305e5e6afa0e4",
-      "candidate_commit": "cdd6b1c612c8e318220972fa0936f23e28045447",
-      "candidate_tree": "3855da3095dcd52417aeb46b8822346755b28abd",
-      "end_commit": "025ff40588311ef15a24adcc9b66ac59f76c1cfe",
-      "registry_anchor_commit": "025ff40588311ef15a24adcc9b66ac59f76c1cfe",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
+      "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
+      "round_id": "core-v4-build-contract-projection",
+      "closure_task": "docs/implementation/tasks/core/core-v4-build-contract-projection.md",
+      "scope": "Re-sign the unchanged Core product behind a minimal Core-only compile-usage contract by removing leaked Container ISA and forced exception-mode policy from hyle::core while preserving all three C++ delivery shapes.",
+      "non_goals": "Core API or implementation changes, Container algorithm or performance review, whole-HYLE no-exception support, CPU-floor redesign, Native FFI, timing benchmarks and physical library aggregation.",
+      "baseline_commit": "fe944155e6ada4e68997aaa3fa7d52f27b0769e0",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -24,44 +20,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/core/core-v3-foundation-completeness.md",
-      "loc": {
-        "snapshot_commit": "cdd6b1c612c8e318220972fa0936f23e28045447",
-        "repository_code": 413981,
-        "self_with_tests": 99891,
-        "self_without_tests": 62143,
-        "module_implementation": 763
-      },
-      "known_limitations": [
-        "Fatal text and fields are synchronous borrowed views; the linked-image failure observer is not async-signal-safe and is not a backtrace, logging or cross-DSO crash-management facility.",
-        "Compiler hints and annotations may safely degrade on unsupported targets and retain caller preconditions; compile-time cache, layout and environment facts do not replace runtime topology or ISA dispatch.",
-        "The P0 certificate covers structural cost on the frozen toolchains and delivery shapes; it makes no timing, cache-hit, downstream-throughput, universal SOTA or Formal-performance claim."
-      ],
-      "reopen_triggers": [
-        "A named consumer exposes a correctness, security, missing-foundation or API-usability defect within the Core boundary.",
-        "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
-        "A supported compiler or target invalidates the frozen code generation, attribute, environment truth-table or symbol-visibility contract.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage.",
-        "A capability currently routed to Error, Platform, SIMD or Obs changes ownership and creates a named Core demand."
-      ],
-      "summary": "core-v3 CLOSED：五项基础能力、三平台正确性/sanitizer、三种 C++ 交付、直接消费者、文档/易用性、红队与 P0 结构性能均已签署；无未决 blocker，Formal 不适用。"
+      "summary": "core-v4 已由 CORE-BUILD-CONTRACT-01 定向重开：产品实现保持冻结，只处理 Core-only target 泄漏 Container SSSE3 与强制 MSVC exception mode 的 delivery 合同。"
     },
     {
       "module": "container_intrusive",

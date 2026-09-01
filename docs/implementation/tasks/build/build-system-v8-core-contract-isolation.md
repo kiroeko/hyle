@@ -1,0 +1,39 @@
+# Build/package v8：Core 编译合同隔离
+
+<!-- PROJECT UNIT REVIEW: ACTIVE -->
+
+> Build/package 是横向开发单元，不进入 `module-status.json`。本页只处理一次已经由当前 Core-only
+> consumer 复现的编译策略泄漏；Core 产品状态与本轮重签事实保存在对应 Core v4 task 和 registry。
+
+## Trigger
+
+2026-09-01 对已关闭 Core 的 build/package 交叉审计证明：
+
+- `hyle::core -> hyle::_factor_core -> hyle::_build_contract` 的 source/static/shared 三种真实路径都会
+  取得全局 `hyle_build_contract`；
+- 该 target 在 x86 GCC/Clang/AppleClang/clang-cl consumer 上允许 `SSSE3`，但唯一产品原因是
+  Container 的公开 inline probe；Core v3 已明确把这一 compile-target 条件归还 Container；
+- MSVC 路径又显式追加 `/EHsc`，使只使用无异常 Core headers 的源码消费者不能自然选择
+  exception-disabled TU。普通 CMake MSVC 配置本来已有默认异常模式，因此该选项同时是重复且过宽的
+  usage requirement；
+- fresh W1-WIN component contract 与 Core source/relocated shared/static smoke 均通过，说明问题不是
+  缺 target、漏头或坏包，而是成功交付了错误归属的编译策略。
+
+## 有界范围
+
+- 让 `hyle_build_contract` 只承载所有 HYLE C++ target 都真实需要的最小编译合同；
+- 从 Core-only source/static/shared consumer 移除 ISA-specific 与强制 exception-mode 选项；
+- 把现有 SSSE3 usage requirement 直接投影到真正拥有 inline probe 的 Container factor，保持
+  Container 正常 consumer 的有效编译输入与代码路径不变；
+- 增加机器合同，证明 Core-only 无 ISA/exception 泄漏、exception-disabled Core TU 可编译，且
+  Container 仍直接拥有 SSSE3 requirement；
+- 更新 architecture/user 文档并重放 Core 与 Container 的适用交付门。
+
+非目标：改变 Core/Container API、算法或布局；承诺完整 HYLE 在 `-fno-exceptions` 下可构建；改变
+SIMD fixed/fat ISA helper；重新选择项目最低 CPU；重审 Container 性能；修改 Native FFI、依赖锁或
+物理 archive/DSO 粒度。
+
+## 当前状态
+
+`REOPENED`。产品代码尚未修改；下一步先冻结所有权、等价性与验证矩阵，再进入实现。
+
