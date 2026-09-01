@@ -147,6 +147,90 @@
 - 冻结后允许的内部优化边界：failure formatter/observer implementation、compiler spelling 与
   target-specific no-op fallback；不得由 codegen 结果增加新 public macro、字段或 runtime artifact。
 
+## Owner 六问直答
+
+### 1. 第三方产品路径
+
+| Dependency / locked identity | direct / indirect | class | owner / disposition |
+|---|---|---|---|
+| 无 | — | product | Core 的 selected product closure 只有 HYLE headers；semantic/mechanism/decision/delivery owner 均为 Core/build-package |
+| GoogleTest `063de7e9578f82b369302001269680b4b1553359` | test configure only | test | test mechanism；tests-off source/static/shared consumer 不取得它，不泄漏 public type |
+| Highway `63f4b16cda024e2adff8a18dee81e067f8a87d61`、Abseil `b7adf83dccc73cd897fa6938978d96dce63a5d52`、Folly `eeac00030b8408cf5de8f7123967db86582b2857` | no link | peer | 只用于 fatal/assert/compiler shape 对账；不是 Core mechanism/artifact |
+| llama.cpp `0eadefebd3f8f92a86d634a0e5b8fffc9dc792c0`、随仓 ggml tree `2e3f246882361e111128191d95ec3b6151d640a0`、standalone ggml `d4716378882593333721eb33f153144b6885caf2` | no link | north star / peer | 只提供推理宿主真实旅程与 failure shape |
+
+平台合同是 C++ standard library、compiler builtin/attribute、C stdio 与 `abort()`；它们不冒充第三方
+HYLE 模块。`git ls-tree`、selected `core` configure 和三交付安装清单共同反证 Core 没有 vendored、
+integrated 或 FetchContent 产品输入。第三方升级不会改变 Core，除非新的 peer/consumer 事实触发重开。
+
+### 2. 推理引擎能力完整度
+
+llama.cpp、随仓 ggml 与 standalone ggml 均在 2026-09-01 fetch 后以本卡冻结的 clean identity 审计：
+
+| Real journey / foundation difference | admitted demand | HYLE route / owner | coverage |
+|---|---|---|---|
+| tensor/kernel invariant 带 index、size、pointer 后终止 | bounded typed fatal event + host observation | Core fatal context/observer | `COMPLETE` |
+| expensive internal validation 与 release hard invariant 分级 | debug/instrumented + always-on family | Core assertion modes | `COMPLETE` |
+| 多 backend/target TU 的 compiler、OS、arch、sanitizer 与 build facts | numeric current-TU facts；consumer-backed annotations | Core environment/compiler | `COMPLETE` |
+| cache-aware container/kernel 的单地址提示与静态 layout | three intent prefetch + interference constants | Core primitive；收益由 consumer owner | `COMPLETE` |
+| recoverable backend/input/resource failure | 不能用 fatal 冒充返回值 | Error | `ROUTED` |
+| runtime CPU/topology/NUMA 与 kernel dispatch | 非 compile-site fact | Platform / SIMD | `ROUTED` |
+| logging、trace、backtrace、signal/minidump/crash policy | 不属于 prime foundation | Obs / future crash owner | `OUT_OF_SCOPE` |
+
+当前证据下未处置 `MUST = NO`。这只表示本轮准入的推理基础旅程全部 `COMPLETE/ROUTED`；不承诺未来
+消费者永不提出新能力，也不按 ggml/peer API 数量求并集。
+
+### 3. 拟真、公平性能
+
+- tier / normal task：`P0`；成功 invariant、禁用 debug check、compile environment/annotation 与单地址
+  cache primitive，交付形状为实际 source/static/shared C++ consumer；
+- candidate / machines / instrument：`cdd6b1c612c8e318220972fa0936f23e28045447`；W1-WIN、W1-WSL、
+  M1-MAC；`closure-correctness-v1` 的 optimized codegen、symbol、sanitizer 与真实 direct consumer；
+- verdict：`P0 STRUCTURAL PASS + TIMING NOT_APPLICABLE`；success context 是一个冷 branch，disabled
+  debug 是零 runtime，compile facts/attributes 是零 registry/metadata，failure work 有 8 fields/256-byte
+  segment 上限；
+- 有限 claim：冻结工具链/交付上的结构成本满足上述合同；具体 hint 收益由 owning workload 裁决；
+- 禁止外推：不声称比 Highway/Abseil/Folly 更快，不声称所有 compiler lowering、cache hit、下游吞吐或
+  全平台 SOTA。完整证据见
+  [`benchmarks-core`](../../evidence/performance/benchmarks-core.md)与
+  [`manifest-cdd6b1c`](../../../../evidence/core/manifest-cdd6b1c.md)。
+
+### 4. 旧 C ABI / Native FFI 清洁度
+
+- 全局 policy 为 `N/A`，Core 没有准入 FFI slice；
+- candidate 的 Core boundary 没有 public C header/schema、bridge source、未装饰 C export、C/managed
+  sample、专用 option/target/package metadata或只为 FFI 支付的 layout/indirection；
+- C stdio/`abort()` 是 private platform boundary，不是 HYLE C ABI；shared symbol audit 证明 detail fatal
+  helper 不进入 COFF/ELF/Mach-O public export；
+- shared package 只导入 C++ INTERFACE target，没有 Core DSO 或 decorated runtime API；
+- verdict：`CLEAN`。
+
+### 5. Source / static / shared 构建与导入
+
+| Journey | verdict | component / artifact / relocation evidence |
+|---|---|---|
+| source embedding consumer | `PASS` | 三平台 parent `add_subdirectory` 只选 `core` 并链接 `hyle::core`，各 `1/1` |
+| installed static consumer | `PASS` | 三平台 relocated exact-package consumer 各 `1/1`；header-only，无 Core archive |
+| installed shared consumer | `PASS` | 三平台 relocated exact-package consumer 各 `1/1`；header-only，无 Core DSO/staging |
+
+中央 graph 把 `core` 定义为无 HYLE dependency 的 prime factor，selected header 清单安装 8 个当前头；
+static/shared 不制造虚构 compile definition、link closure 或 runtime loader 任务。三种 journey 都由
+`HyleCiSelectedComponentSmoke.cmake` 验证，不以 producer configure 成功代替 consumer 导入。
+
+### 6. C++ API 易用性与文档
+
+| User journey | natural route | ownership / failure / concurrency | misuse guidance | verdict |
+|---|---|---|---|---|
+| hard invariant | `HYLE_FATAL_ASSERT[_MSG/_CONTEXT]` | failure-only borrowed values；observer 原子替换、同步返回后终止 | recoverable failure 走 Error；observer 不保留 view | `PASS` |
+| expensive diagnostic | `HYLE_DEBUG_ASSERT[_MSG/_CONTEXT]` | Release disabled 且不求值；debug/sanitizer/analyzer active | 不把必要工作放在表达式/fields | `PASS` |
+| compile target/config | `<hyle/core/environment.h>` numeric facts | 当前 TU，不代表 runtime machine | clang-cl frontend 与 Windows ABI 分开判断 | `PASS` |
+| compiler source contract | `<hyle/core/compiler.h>` narrow macros | 前置条件由 caller 证明；unsupported safe fallback | 不为“也许更快”遍撒 hint | `PASS` |
+| cache/layout primitive | `<hyle/core/cache.h>` | compile-time layout；prefetch 只是一地址 hint | runtime topology 走 Platform；策略归 consumer | `PASS` |
+
+默认静态消息最简单，只有需要动态诊断值才 opt in typed fields/observer；没有 internal/benchmark seam
+泄漏。architecture 解释边界，user guide 按“什么情况选什么”给出可复制 journey 与陷阱，本 task 保存
+事实，performance 页只保存有限 claim。stale scan 只在历史 task/evidence 找到旧 `<hyle/platform.h>`/
+C ABI，当前 architecture/user/sample/package 没有宣传已删能力。verdict：`PASS`。
+
 ## Candidate / verification / closure
 
 ### Candidate 1 construction
@@ -174,9 +258,8 @@ Windows 还编译运行迁移涉及的 Obs/SIMD/IO。GCC shared-symbol audit 曾
 `write_fatal_event` 可见性遗漏，修正后通过；这属于候选冻结前的真实产品缺陷，不保留为限制。
 
 首个候选 identity：commit `cbc2951ca34ffa961d9db8660b45f17eac2a0104`，tree
-`21697748299939378a258a5c5aee02ef02582c15`。后续所有产品 gate 只验证这一不可变 identity；若公共
-合同、算法或正常成本发生变化则退回 `AUDITED`，不得把新 tree 冒充同一候选。不可变 replay、gate
-matrix、LOC 和 terminal receipt 在验证后填写。
+`21697748299939378a258a5c5aee02ef02582c15`。冻结时约定所有产品 gate 只验证这一不可变 identity；
+下节记录它被拒绝并按状态机退回 `AUDITED`，没有把修复后的新 tree 冒充同一候选。
 
 ### Rejected candidate 1
 
@@ -200,3 +283,79 @@ array reference 重复施加 `lifetimebound`，formatter test 则按 `HYLE_OS_WI
 Release WERROR 全套测试；公共 API、failure formatter、success path codegen 与候选 1 的成本合同均未
 改变。candidate 2 冻结为 commit `cdd6b1c612c8e318220972fa0936f23e28045447`、tree
 `3855da3095dcd52417aeb46b8822346755b28abd`；所有正式 gate 只验证这一不可变 identity 并从头重放。
+
+## Verification manifest
+
+完整平台/命令边界记录在
+[`manifest-cdd6b1c`](../../../../evidence/core/manifest-cdd6b1c.md)；下表不把未运行项写成 PASS。
+
+### Correctness risk matrix
+
+| Risk | verdict | command / evidence | limitation / reason |
+|---|---|---|---|
+| normal | `PASS` | immutable candidate：Windows MSVC/clang-cl、WSL GCC、macOS AppleClang Core `18/18` | 只覆盖冻结 public contract |
+| empty / zero | `PASS` | zero fields/message、null pointer、disabled expression 与 header tests | empty observer 仍走默认 terminal formatter |
+| capacity / boundary / overflow | `PASS` | 256-byte formatter bound；scratch compile：8 fields WERROR 成功、9 fields 精确 static-assert 失败；unsupported type 精确 compile 失败 | field/text 上限是 diagnostic resource contract |
+| OOM / system failure / invalid input | `NOT_APPLICABLE` | success path 不分配；failure 必然终止；可恢复输入/资源失败由 Error | 不制造假的 OOM recovery |
+| move / destroy / lifetime | `PASS` | borrowed string/pointer field tests、同步 observer/death path、lifetime-bound 三前端 compile | views 只活到 callback 返回 |
+| concurrency / reentrancy | `PASS` | 2 threads × 20,000 observer exchanges；recursive observer fallback；WSL TSan | observer 是 linked-image seam，不是跨 DSO manager |
+| cancellation / close | `NOT_APPLICABLE` | invariant terminates；observer set/exchange/null reset 已覆盖 | 无异步 service lifecycle |
+| property / differential / fuzz / stress | `PASS` | deterministic typed-value/formatter cases与 40,000 次 atomic exchange under TSan | 未运行 coverage-guided fuzz，不作该 claim |
+| ASan / UBSan / TSan | `PASS` | WSL GCC 14：ASan `5/5`、UBSan `5/5`；TSan Core `14/14` + release assertion `1/1` | TSan 按文档用 `setarch x86_64 -R` |
+| real ISA / backend | `PASS` | x64 MSVC/clang-cl/GCC 与 Apple M4 arm64 AppleClang optimized codegen/environment truth table | runtime ISA/backend dispatch 不属于 Core |
+
+### Aggregate gates
+
+| Aggregate gate | verdict | evidence | limitation |
+|---|---|---|---|
+| correctness / sanitizer | `PASS` | 三平台 immutable Core、negative compile、ASan/UBSan/TSan | 无 signal-safety claim |
+| component / source / static / shared | `PASS` | 三平台 selected Core smoke；每种 journey 各 `1/1` | Core 正确地没有 binary artifact |
+| direct consumer | `PASS` | Windows/macOS WERROR 与 WSL normal policy 的 Mem/Container/Sched 各 `38/38` | 不签下游算法；WSL Container test-only GCC warning 单独披露 |
+| P0 engineering performance | `PASS` | optimized codegen + symbol audit；`closure-correctness-v1` | timing `NOT_APPLICABLE`；无 SOTA claim |
+| usability / docs | `PASS` | architecture/user/sample/package/stale API scan + `check-docs.py` | 历史 task 可保留旧名但不能冒充当前入口 |
+| independent red team | `PASS` | candidate 1 被真实拒绝；candidate 2 重放全部 gates | 剩余 MEDIUM+ = 0 |
+
+### Red-team findings
+
+| Finding | severity / class | disposition |
+|---|---|---|
+| array-reference `lifetimebound` 在 clang-cl 被解释到错误 declarator | high / portability | `FIXED`；删除冗余 annotation，candidate 2 clang-cl WERROR `18/18` |
+| formatter test 把 MSVC frontend 与 Windows CRT ABI 混为一谈 | high / test portability | `FIXED`；按 `HYLE_OS_WINDOWS` 选 `tmpfile_s` |
+| hidden fatal helper 曾泄漏 ELF shared symbol | high / delivery | 候选 1 前 `FIXED`；三平台 symbol audit PASS |
+| Windows worktree 的 `.git` pointer 在 WSL LOC test 不可解析 | medium / fixture | `DISPROVED` 为产品问题；WSL native candidate clone 完整 `18/18` |
+| WSL GCC WERROR 在 Container `SmallVector` test-only 发出既存 array-bounds diagnostic | adjacent / consumer | Core 三个产品 target 已编译；normal consumer suite `38/38`；不越界修改 Container，也不写成其新证书 |
+
+### Candidate LOC
+
+命令：
+
+```text
+python scripts/loc-report.py --module core --commit cdd6b1c612c8e318220972fa0936f23e28045447 --self-check --json
+```
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 413,981 |
+| 自实现包含测试 | 99,891 |
+| 自实现不包含测试 | 62,143 |
+| Core 实现 | 763 |
+
+`cloc 2.08` 对 1,339 个 tracked files 的 immutable tree self-check 为 `pass`；Core canonical boundary 是
+`include/hyle/core/**`、`include/hyle/version.h`、`include/hyle/visibility.h` 与 `src/core/**`。
+
+## 接受限制与重开条件
+
+接受限制：fatal text/fields 为同步 borrowed views；observer 仅 linked-image、failure-only，不承诺
+async-signal safety、backtrace、日志或跨 DSO crash policy；compiler hints/attributes 可在不支持的 target
+退化，且 semantic promise 仍要求 caller 证明前置；静态 cache/layout 不等于 runtime topology；P0 证据
+不签任何 consumer throughput 或全平台 SOTA。
+
+只有下列新事实重开 Core：
+
+1. 真实消费者暴露 Core 边界内 correctness/security、缺失 foundation 或难用 API；
+2. public API、正常成本、layout、compiler/environment 语义、组件/交付边界改变；
+3. 支持的 compiler/target 使冻结 codegen、attribute、truth table 或 symbol contract 失效；
+4. 强 peer 证明更优复杂度档，或同合同正常 consumer 证明 material regression/advantage；
+5. 当前明确路由到 Error/Platform/SIMD/Obs 的能力改变 ownership，形成新的具名 Core demand。
+
+新 benchmark、API/LOC 数量、命名偏好、亚纳秒点值或历史任务命令句本身不构成重开。
