@@ -19,13 +19,13 @@ namespace hyle::container::detail {
                                     std::size_t) noexcept
 
 HYLE_DECLARE_BITSET_VARIANT(scalar);
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 HYLE_DECLARE_BITSET_VARIANT(sse4);
 HYLE_DECLARE_BITSET_VARIANT(avx2);
 #if defined(HYLE_CONTAINER_HAS_AVX512)
 HYLE_DECLARE_BITSET_VARIANT(avx512);
 #endif
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 HYLE_DECLARE_BITSET_VARIANT(neon);
 #endif
 

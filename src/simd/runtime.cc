@@ -1,6 +1,6 @@
 #include "src/simd/runtime_internal.h"
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "src/simd/bitpack/kernels.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/dtype/conversion_kernels.h"
@@ -101,7 +101,7 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
   return HYLE_SORT_RUNTIME(avx2);
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   (void)isa;
-#if defined(HYLE_COMPILER_MSVC)
+#if HYLE_COMPILER_MSVC
   return HYLE_SORT_RUNTIME(avx2);
 #else
   return HYLE_SORT_RUNTIME(avx512);
@@ -117,9 +117,9 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
   return HYLE_SORT_RUNTIME(rvv);
 #else
   switch (isa) {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
     case Isa::kAvx512:
-#if defined(HYLE_COMPILER_MSVC)
+#if HYLE_COMPILER_MSVC
       return HYLE_SORT_RUNTIME(avx2);
 #else
       return HYLE_SORT_RUNTIME(avx512);
@@ -127,12 +127,12 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
     case Isa::kAvx2: return HYLE_SORT_RUNTIME(avx2);
     // The bounded adaptation has no separate SSE4 body.
     case Isa::kSse42: return HYLE_SORT_RUNTIME(scalar);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
     case Isa::kSve: return HYLE_SORT_RUNTIME(sve);
 #endif
     case Isa::kNeon: return HYLE_SORT_RUNTIME(neon);
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
     case Isa::kRvv: return HYLE_SORT_RUNTIME(rvv);
 #endif
     default: return HYLE_SORT_RUNTIME(scalar);
@@ -258,7 +258,7 @@ Runtime selected_runtime() noexcept {
   result.sort.isa = Isa::kScalar;
 #elif defined(HYLE_SIMD_EXACT)
   // The generated table already describes the sole compiled Highway target.
-#elif defined(HYLE_ARCH_X64)
+#elif HYLE_ARCH_X64
   const auto& f = platform::cpu_features();
   const auto specialty = detail::x86_specialty_support(f);
   if (specialty.f16c)
@@ -302,11 +302,11 @@ Runtime selected_runtime() noexcept {
     result.math.features |= Runtime::kFeaturePerOpLowerTier;
   if (result.sort.isa != product_tier)
     result.sort.features |= Runtime::kFeaturePerOpLowerTier;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   result.dtype.isa = Isa::kNeon;
 #endif
 
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
   // Math, common dtype conversions, canonical bitpack and sort have SVE product TUs.
   if (result.isa == Isa::kSve) {
     result.dtype.isa = Isa::kSve;
@@ -315,7 +315,7 @@ Runtime selected_runtime() noexcept {
     result.sort.features |= Runtime::kFeatureSortCappedNetwork;
     result.bitpack.isa = Isa::kSve;
   }
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   // RVV math, common dtype conversions and canonical bitpack have product TUs.
   result.dtype.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
@@ -340,11 +340,11 @@ const Runtime* runtime_for(Isa isa) noexcept {
   return result;
 #else
   if (result == nullptr || isa == Isa::kScalar) return result;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   if (isa != Isa::kSse42 && isa != Isa::kAvx2 && isa != Isa::kAvx512) return nullptr;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (isa != Isa::kNeon && isa != Isa::kSve) return nullptr;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   if (isa != Isa::kRvv) return nullptr;
 #else
   return nullptr;

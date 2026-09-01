@@ -1,9 +1,9 @@
 // Fixed AVX-512 batch/SoA façade over the locked Highway mathematics core.
 // Highway excludes its AVX3 targets under classic cl.exe, so this TU is only
 // part of GCC/Clang builds; MSVC intentionally uses the AVX2 math kernel.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
+#if HYLE_ARCH_X64 && !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 
 #define HWY_COMPILE_ONLY_STATIC 1
 #define HYLE_SIMD_TARGET_AVX512 1

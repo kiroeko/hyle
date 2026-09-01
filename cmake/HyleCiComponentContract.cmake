@@ -149,11 +149,14 @@ set(_selected_audit_fixture
   "${_hyle_contract_root}/selected-audit-fixture")
 file(MAKE_DIRECTORY
   "${_selected_audit_fixture}/include/hyle"
+  "${_selected_audit_fixture}/include/hyle/core"
   "${_selected_audit_fixture}/src/graph")
-foreach(_core_root_header IN ITEMS platform.h version.h visibility.h)
+foreach(_core_root_header IN ITEMS version.h visibility.h)
   file(WRITE
     "${_selected_audit_fixture}/include/hyle/${_core_root_header}" "")
 endforeach()
+file(WRITE
+  "${_selected_audit_fixture}/include/hyle/core/environment.h" "")
 file(WRITE "${_selected_audit_fixture}/src/graph/probe.cc"
   "#include <hyle/obs/log.h>\n")
 file(WRITE "${_selected_audit_fixture}/CMakeLists.txt"
@@ -171,11 +174,14 @@ set(_selected_invalid_fixture
   "${_hyle_contract_root}/selected-invalid-fixture")
 file(MAKE_DIRECTORY
   "${_selected_invalid_fixture}/include/hyle"
+  "${_selected_invalid_fixture}/include/hyle/core"
   "${_selected_invalid_fixture}/src/core")
-foreach(_core_root_header IN ITEMS platform.h version.h visibility.h)
+foreach(_core_root_header IN ITEMS version.h visibility.h)
   file(WRITE
     "${_selected_invalid_fixture}/include/hyle/${_core_root_header}" "")
 endforeach()
+file(WRITE
+  "${_selected_invalid_fixture}/include/hyle/core/environment.h" "")
 file(WRITE "${_selected_invalid_fixture}/src/core/probe.cc"
   "#include <hyle/obs/log.h>\n")
 file(WRITE "${_selected_invalid_fixture}/CMakeLists.txt"

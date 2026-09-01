@@ -6,7 +6,7 @@ namespace hyle::simd {
 
 namespace detail {
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 template <class Fn>
 inline Fn select_x86_fat_kernel_for_isa(Isa isa, Fn scalar, Fn sse4, Fn avx2,
                                          Fn avx512) noexcept {
@@ -27,7 +27,7 @@ inline Fn select_x86_fat_kernel_for_isa(Isa isa, Fn scalar, Fn sse4, Fn avx2,
 // Selects one stable-signature whole-kernel function. Call once and cache the returned pointer;
 // the kernel itself then pays no feature branch. In an exact-target TU the choice is constexpr
 // and no CPU probe is referenced. Vector or mask types must never appear in Fn's signature.
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 template <class Fn>
 inline Fn select_fat_kernel(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -55,7 +55,7 @@ inline Fn select_fat_kernel(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexcept {
       ::hyle::platform::best_isa(), scalar, sse4, avx2, avx512);
 #endif
 }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 template <class Fn>
 inline Fn select_fat_kernel(Fn scalar, Fn neon, Fn sve = nullptr) noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SVE)
@@ -76,7 +76,7 @@ inline Fn select_fat_kernel(Fn scalar, Fn neon, Fn sve = nullptr) noexcept {
   return isa == Isa::kNeon ? neon : scalar;
 #endif
 }
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 template <class Fn>
 inline Fn select_fat_kernel(Fn scalar, Fn rvv) noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_RVV)
@@ -101,7 +101,7 @@ inline Fn select_fat_kernel(Fn scalar) noexcept { return scalar; }
 // branch can discard the unused pointers. This macro keeps one call spelling in
 // fat and exact builds while preprocessing away symbols that were not generated.
 // All arguments must be function-pointer expressions with the same type.
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 #  if defined(HYLE_SIMD_FAT_EXACT_VARIANT_AVX512)
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) (avx512)
 #  elif defined(HYLE_SIMD_FAT_EXACT_VARIANT_AVX2)
@@ -120,7 +120,7 @@ inline Fn select_fat_kernel(Fn scalar) noexcept { return scalar; }
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) \
       ::hyle::simd::select_fat_kernel((scalar), (sse4), (avx2), (avx512))
 #  endif
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 #  if defined(HYLE_SIMD_FAT_EXACT_VARIANT_SVE)
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, neon, sve) (sve)
 #  elif defined(HYLE_SIMD_FAT_EXACT_VARIANT_NEON)
@@ -136,7 +136,7 @@ inline Fn select_fat_kernel(Fn scalar) noexcept { return scalar; }
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, neon, sve) \
       ::hyle::simd::select_fat_kernel((scalar), (neon), (sve))
 #  endif
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 #  if defined(HYLE_SIMD_FAT_EXACT_VARIANT_RVV)
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, rvv) (rvv)
 #  elif defined(HYLE_SIMD_FAT_EXACT_VARIANT_SCALAR)

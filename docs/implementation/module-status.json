@@ -5,16 +5,14 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CLOSED",
-      "round_id": "core-v2",
-      "closure_task": "docs/implementation/tasks/core/core-rebuild.md",
-      "scope": "Minimal header-only compiler, invariant, version-value and cache-layout foundation.",
-      "non_goals": "Runtime version artifact, cache-topology discovery, native FFI and owning-module performance claims.",
-      "baseline_commit": "87c831d228e4e2f7844e60a3e9fd167cef4992b9",
-      "candidate_commit": "b241a228d3311f0faa65cde68123de7da3688c2f",
-      "candidate_tree": "e73472e2cefedd70e41eca6243871b2343db7d74",
-      "end_commit": "49512b77434c4f15fec355e4bd6d6ab5a8b9b650",
-      "registry_anchor_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
+      "product_state": "AUDITED",
+      "reopen_trigger_id": "CORE-FOUNDATION-COMPLETENESS-01",
+      "reopen_evidence": "docs/implementation/tasks/project/capability-factorization-v1.md",
+      "round_id": "core-v3-foundation",
+      "closure_task": "docs/implementation/tasks/core/core-v3-foundation-completeness.md",
+      "scope": "Complete bounded fatal context and observer, assertion modes, consumer-backed compiler contracts and current-TU environment facts while preserving Core's header-only prime boundary.",
+      "non_goals": "Logging, crash reporting, recoverable errors, runtime topology or ISA dispatch, machine actions, runtime version artifacts, Native FFI, timing benchmarks and adjacent-module algorithm review.",
+      "baseline_commit": "0fc5fbc0cc8a86ef043788400e6305e5e6afa0e4",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -22,42 +20,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/core/core-rebuild.md",
-      "loc": {
-        "snapshot_commit": "b241a228d3311f0faa65cde68123de7da3688c2f",
-        "repository_code": 296932,
-        "self_with_tests": 141867,
-        "self_without_tests": 96105,
-        "module_implementation": 233
-      },
-      "known_limitations": [
-        "Compiler hints remain preconditioned and do not guarantee a cache hit or a chosen lowering.",
-        "Runtime topology and crash-reporting policy remain with their owning modules."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security or missing-foundation defect.",
-        "A supported compiler or target invalidates the frozen code-generation contract.",
-        "A direct dependency changes Core semantics, or the public component/delivery boundary changes.",
-        "A strong peer proves a better complexity class or a reproducible material advantage for the same consumer contract."
-      ],
-      "summary": "P0 基础层已关闭；消费者性能声明由所属模块承担。"
+      "summary": "core-v3 双向审计与 API freeze 完成；CORE3-01～05 是唯一 FIX 集，P0 成功路径和 header-only 边界保持不变。"
     },
     {
       "module": "container_intrusive",

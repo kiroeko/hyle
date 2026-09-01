@@ -23,11 +23,11 @@
 #include <cstring>
 #include <limits>
 
-#include "hyle/platform.h"  // HYLE_OS_* for the branches below (the _GNU_SOURCE/_CRT
+#include "hyle/core/environment.h"  // HYLE_OS_* for the branches below (the _GNU_SOURCE/_CRT
                             // feature macros above MUST stay raw -- they precede ALL
                             // includes, before platform.h is parsed).
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <winioctl.h>  // FSCTL_GET_REPARSE_POINT for read_symlink
@@ -70,7 +70,7 @@ bool valid_env_name(const char* name) noexcept {
 // colon cannot turn a would-be temp file into an alternate data stream.
 bool valid_temp_prefix(const char* prefix) noexcept {
   if (prefix == nullptr) return true;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return std::strpbrk(prefix, "<>:\"/\\|?*") == nullptr;
 #else
   // Reject both separators for cross-platform behavior even though backslash
@@ -169,7 +169,7 @@ class TempDirectoryInput {
 // Join "a/b" into dst[cap]. Returns false (no write) if it would not fit. Bounded
 // and allocation-free -- used to rebuild child paths during recursion without
 // snprintf (whose worst-case length trips GCC -Wformat-truncation under -Werror).
-#if !defined(HYLE_OS_WINDOWS)
+#if !HYLE_OS_WINDOWS
 bool join_path(char* dst, std::size_t cap, const char* a,
                const char* b) noexcept {
   std::size_t la = std::strlen(a), lb = std::strlen(b);
@@ -196,7 +196,7 @@ Status sync_raw(std::intptr_t raw, bool data_only) noexcept;
 
 }  // namespace
 
-#if defined(HYLE_TESTING) && !defined(HYLE_OS_WINDOWS)
+#if defined(HYLE_TESTING) && !HYLE_OS_WINDOWS
 namespace detail {
 namespace {
 ReadSymlinkFunctionForTesting g_read_symlink_function_for_testing = nullptr;
@@ -209,7 +209,7 @@ void set_read_symlink_function_for_testing(
 } // namespace detail
 #endif
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 
 // ---- Windows ----------------------------------------------------------------
 //
@@ -1243,7 +1243,7 @@ Result<FileInfo> stat(const char* path) noexcept {
   }
   r.type = file_type_from_mode(s.st_mode);
   r.size = r.is_regular() ? static_cast<std::uint64_t>(s.st_size) : 0;
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   r.modified_time = time::unix_timestamp(
       static_cast<std::int64_t>(s.st_mtimespec.tv_sec),
       static_cast<std::uint32_t>(s.st_mtimespec.tv_nsec));
@@ -1364,7 +1364,7 @@ Status copy_file(const char* from, const char* to) noexcept {
   }
 
   Status status = Status::Ok();
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   // Fast path: copy_file_range keeps bytes in the kernel (and can reflink on
   // btrfs/xfs) -- no user-space bounce. Drive it to EOF instead of trusting
   // st_size: procfs/sysfs regular files can report size zero while yielding
@@ -1617,7 +1617,7 @@ Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
     return Status::FailedPrecondition("file sync: handle is closed");
   }
   int rc = -1;
-#if defined(HYLE_OS_MACOS)
+#if HYLE_OS_MACOS
   (void)data_only;
   rc = ::fsync(static_cast<int>(raw));
 #else
@@ -1824,7 +1824,7 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   std::memcpy(tmpl.data() + w, "XXXXXX", 6);
   w += 6;
   tmpl.data()[w] = '\0';
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   // Keep the descriptor non-inheritable from the instant it is created. A
   // later fcntl leaves a fork+exec race in multi-threaded programs.
   int fd = ::mkostemp(tmpl.data(), O_CLOEXEC);
@@ -2034,7 +2034,7 @@ Result<std::uint64_t> file_size(const char* path) noexcept {
 
 Status touch(const char* path) noexcept {
   if (path == nullptr) return Status::InvalidArgument("touch: path is null");
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // CreateFileW with OPEN_ALWAYS creates the file if absent, opens it if present
   // -- no std::fopen (which is ANSI on Windows and would mis-decode a UTF-8
   // path). Then stamp mtime to now.
@@ -2180,7 +2180,7 @@ void rm_path_destroy(RmPath* path) noexcept {
   path->capacity = sizeof(path->stack);
 }
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 struct RmFrame {
   HANDLE iterator = INVALID_HANDLE_VALUE;
   WIN32_FIND_DATAW entry{};
@@ -2227,7 +2227,7 @@ Status rm_frames_reserve(RmFrames* frames, std::size_t required) noexcept {
 
 Status rm_open_frame(const char* path, std::size_t path_size,
                      RmFrame* frame) noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   WidePath wide_path(path);
   if (wide_path.w() == nullptr) {
     return wide_path.allocation_failed()
@@ -2283,7 +2283,7 @@ Status rm_open_frame(const char* path, std::size_t path_size,
 }
 
 Status rm_close_frame(RmFrame* frame) noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (frame->iterator == INVALID_HANDLE_VALUE) return Status::Ok();
   const BOOL closed = ::FindClose(frame->iterator);
   const DWORD code = closed ? 0 : ::GetLastError();
@@ -2302,7 +2302,7 @@ Status rm_close_frame(RmFrame* frame) noexcept {
 Status rm_next_entry(RmFrame* frame, char* name, std::size_t name_capacity,
                      FileType* type, bool* has_entry) noexcept {
   *has_entry = false;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   for (;;) {
     if (frame->first_pending) {
       frame->first_pending = false;

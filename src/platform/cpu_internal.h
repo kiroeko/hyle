@@ -4,7 +4,7 @@
 
 namespace hyle::platform::detail {
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 // Canonical x86 dispatch groups. Keep this private and constexpr so the probe
 // and synthetic tests share one definition without exposing implementation
 // policy as part of the public CPU-feature API.

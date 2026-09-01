@@ -32,7 +32,9 @@ platform 不拥有调度策略、通用堆、异步 completion 或设备内存�
 deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `FileInfo::modified_time` 类型产生，
 不授权 platform 接管 clock、sleep、deadline 或 timer 行为。
 
-`hyle/platform.h` 只是跨编译器的 `HYLE_OS_*`/属性宏头；包含它不等于链接 platform 模块。
+`<hyle/core/environment.h>` 的 `HYLE_OS_*` 等数值宏只描述当前 translation unit 的编译目标，
+归 header-only Core；包含它不等于链接 platform binary。Platform 只拥有运行时 OS/CPU/cache/NUMA
+事实与资源机制，不再与根级“platform”宏头共享一个容易误解的名字。
 `FileInfo::modified_time` 复用 time 的 `UnixTimestamp`，以免 OS metadata 与时间转换产生两种表示；
 这既是公开 header include，也是 `hyle_platform -> hyle_time` 的真实 `PUBLIC` target 边。
 只有直接调用本模块符号的实现才声明 private 依赖，公开头若命名 `CpuOrder`、`ThreadPriority`、

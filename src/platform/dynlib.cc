@@ -3,9 +3,9 @@
 #include <cstdio>
 #include <new>
 
-#include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32/__APPLE__)
+#include "hyle/core/environment.h"  // HYLE_OS_* (project convention over raw _WIN32/__APPLE__)
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -15,7 +15,7 @@
 namespace hyle::platform {
 
 namespace {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 Status win32_loader_error(const char* operation, DWORD code) noexcept {
   return status_from_win32(code, operation);
 }
@@ -68,9 +68,9 @@ Status posix_loader_close_error(const char* detail) noexcept {
 }  // namespace
 
 const char* dynlib_extension() noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return "dll";
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
   return "dylib";
 #else
   return "so";
@@ -82,7 +82,7 @@ Result<DynLib> DynLib::open(const char* path) noexcept {
   if (path == nullptr || path[0] == '\0') {
     return std::unexpected(Status::InvalidArgument("dynlib open: empty path"));
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   WideString w(path);
   if (!w.ptr) {
     return std::unexpected(
@@ -113,7 +113,7 @@ Result<DynLib> DynLib::get(const char* path) noexcept {
   if (path == nullptr || path[0] == '\0') {
     return std::unexpected(Status::InvalidArgument("dynlib get: empty path"));
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // Already-mapped modules only. GetModuleHandleEx pins the returned image by
   // incrementing its loader refcount, closing the unload-vs-symbol race present
   // with a borrowed GetModuleHandleW result.
@@ -149,7 +149,7 @@ Result<DynLib> DynLib::get(const char* path) noexcept {
 
 Result<DynLib> DynLib::current() noexcept {
   DynLib lib;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   lib.handle_ = reinterpret_cast<void*>(GetModuleHandleW(nullptr));
   if (lib.handle_ == nullptr) {
     return std::unexpected(
@@ -176,7 +176,7 @@ Result<void*> DynLib::symbol(const char* name) const noexcept {
   if (name == nullptr || name[0] == '\0') {
     return std::unexpected(Status::InvalidArgument("dynlib symbol: empty name"));
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   FARPROC p = GetProcAddress(reinterpret_cast<HMODULE>(handle_), name);
   if (p == nullptr) {
     return std::unexpected(
@@ -200,7 +200,7 @@ Status DynLib::close() noexcept {
   handle_ = nullptr;
   owns_ = false;
   if (handle != nullptr && owns) {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
     if (!::FreeLibrary(reinterpret_cast<HMODULE>(handle))) {
       return win32_loader_error("FreeLibrary", ::GetLastError());
     }

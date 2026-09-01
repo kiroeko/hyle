@@ -62,7 +62,7 @@ std::uint64_t hash_bytes_long(const void* data, std::size_t len,
   if (len >= kWideHashThreshold && has_avx2) {
     return hash_bytes_xxh3_avx2(data, len, seed);
   }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   // NEON is part of the AArch64 baseline, so the XXH3 TU already contains its
   // wide product path and needs no runtime feature branch. Call the in-TU core
   // directly: routing through the exported short/mid wrapper added a second ABI

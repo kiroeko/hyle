@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "hyle/platform/fs.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/virtual_memory.h"  // page_size()
 
 using hyle::platform::MappedFile;
@@ -256,7 +256,7 @@ TEST_F(MapTest, OnFaultLockIsExplicitlySupportedOrRejected) {
   MappedFile::LockOptions options;
   options.mode = MappedFile::LockMode::kOnFault;
   Status locked = m.lock_prefix(1, options);
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   if (locked.ok()) {
     EXPECT_TRUE(m.locked());
     EXPECT_GE(m.locked_size(), 1u);

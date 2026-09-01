@@ -1,6 +1,6 @@
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 
 #include "src/simd/ops/kernels.h"
 

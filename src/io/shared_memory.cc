@@ -3,9 +3,9 @@
 #include <limits>
 #include <utility>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -22,7 +22,7 @@
 namespace hyle::io {
 namespace {
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 struct MappingHeader {
   std::uint64_t magic;
   std::uint64_t size;
@@ -52,7 +52,7 @@ bool normalize_name(const char* name, char* out, std::size_t cap) noexcept {
 SharedMemory SharedMemory::create(const char* name, std::size_t size) noexcept {
   SharedMemory out;
   if (size == 0 || size > SIZE_MAX - 16) return out;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   wchar_t wide[260];
   if (!utf8_to_wide(name, wide, 260)) return out;
   const DWORD high = static_cast<DWORD>(
@@ -109,7 +109,7 @@ SharedMemory SharedMemory::create(const char* name, std::size_t size) noexcept {
 
 SharedMemory SharedMemory::open(const char* name) noexcept {
   SharedMemory out;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   wchar_t wide[260];
   if (!utf8_to_wide(name, wide, 260)) return out;
   HANDLE h = ::OpenFileMappingW(FILE_MAP_ALL_ACCESS, FALSE, wide);
@@ -172,7 +172,7 @@ SharedMemory SharedMemory::open(const char* name) noexcept {
 }
 
 Status SharedMemory::unlink(const char* name) noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (name == nullptr || *name == '\0')
     return Status::InvalidArgument("shared memory name is empty");
   return Status::Unimplemented(
@@ -189,7 +189,7 @@ Status SharedMemory::unlink(const char* name) noexcept {
 
 bool SharedMemory::flush() noexcept {
   if (!valid()) return false;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return ::FlushViewOfFile(mapping_, size_ + sizeof(MappingHeader)) != 0;
 #else
   return ::msync(data_, size_, MS_SYNC) == 0;
@@ -198,7 +198,7 @@ bool SharedMemory::flush() noexcept {
 
 void SharedMemory::reset() noexcept {
   if (data_ == nullptr) return;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::UnmapViewOfFile(mapping_);
   if (handle_ != -1) ::CloseHandle(reinterpret_cast<HANDLE>(handle_));
 #else

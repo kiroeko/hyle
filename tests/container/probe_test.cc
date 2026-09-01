@@ -67,7 +67,7 @@ TEST(GroupPortable, NoFalseMatchOnEmpty) {
   EXPECT_FALSE(static_cast<bool>(g.match(5)));  // 5 is full-range; no match
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 #include "hyle/container/probe.h"
 using hyle::container::detail::GroupSse2;
 

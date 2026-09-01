@@ -8,7 +8,7 @@
 #include <new>
 #include <type_traits>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
 // Verified on three platforms: Windows MSVC, WSL Linux (GCC14), and macOS arm64
 // (Apple clang) -- spawn/join, name, affinity, stack size, and priority all
@@ -98,7 +98,7 @@ void release_start(ThreadStart* s) noexcept {
   if (s->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) destroy_start(s);
 }
 
-#if !defined(HYLE_OS_WINDOWS)
+#if !HYLE_OS_WINDOWS
 void publish_required_setup(ThreadStart* s, Status status) noexcept {
   if (!s->require_config) {
     status.IgnoreError();
@@ -127,7 +127,7 @@ Status await_required_setup(ThreadStart* s) noexcept {
 }  // namespace
 }  // namespace hyle::platform
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -330,9 +330,9 @@ Status set_priority(ThreadPriority priority) noexcept {
 #  include <sched.h>
 #  include <sys/resource.h>  // setpriority (best-effort thread nice)
 #  include <unistd.h>
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
 #    include <sys/syscall.h>
-#  elif defined(HYLE_OS_MACOS)
+#  elif HYLE_OS_MACOS
 #    include <pthread/qos.h>
 #  endif
 
@@ -350,7 +350,7 @@ Status thread_os_error(const char* operation, int code) noexcept {
 
 Status set_name_impl(std::string_view name) noexcept {
   char buffer[kThreadNameCap];
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
   // Linux includes the NUL in its 16-byte limit. Truncate deliberately instead
   // of passing a longer name and silently losing the entire request with ERANGE.
   constexpr std::size_t effective_cap = 16;
@@ -361,7 +361,7 @@ Status set_name_impl(std::string_view name) noexcept {
                                                     : effective_cap - 1;
   std::memcpy(buffer, name.data(), n);
   buffer[n] = '\0';
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   const int rc = ::pthread_setname_np(buffer);
 #  else
   const int rc = ::pthread_setname_np(::pthread_self(), buffer);
@@ -373,7 +373,7 @@ Status set_affinity_impl(const unsigned* cpus, std::size_t cpu_count) noexcept {
   if (cpu_count == 0) {
     return Status::InvalidArgument("thread affinity CPU set is empty");
   }
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
   // Match available_cpu_ids()'s explicit dynamic-mask ceiling. This prevents a
   // bogus UINT_MAX request from allocating hundreds of MiB without assuming
   // configured CPU ids are dense (hotplug systems may have holes).
@@ -418,7 +418,7 @@ Status set_affinity_impl(const unsigned* cpus, std::size_t cpu_count) noexcept {
 }
 
 Status set_priority_impl(ThreadPriority priority) noexcept {
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
   int nice_value = 0;
   switch (priority) {
     case ThreadPriority::kLowest:  nice_value = 10; break;
@@ -558,7 +558,7 @@ std::uint64_t get_id() noexcept {
   // fork epoch (folly's approach) or a pthread_atfork handler to clear the cache.
   static thread_local std::uint64_t cached = 0;
   if (cached != 0) return cached;
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
   cached = static_cast<std::uint64_t>(::syscall(SYS_gettid));
 #  else
   std::uint64_t tid = 0;

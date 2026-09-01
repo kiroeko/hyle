@@ -1,6 +1,7 @@
 #include <hyle/core/assert.h>
 #include <hyle/core/cache.h>
 #include <hyle/core/compiler.h>
+#include <hyle/core/environment.h>
 #include <hyle/version.h>
 
 #include <cstddef>
@@ -13,6 +14,9 @@ static_assert(hyle::core::kConstructiveInterferenceSize <=
               hyle::core::kDestructiveInterferenceSize);
 static_assert(hyle::core::kDestructiveInterferenceSize <=
               hyle::core::kMaxDestructiveInterferenceSize);
+static_assert(HYLE_OS_WINDOWS + HYLE_OS_LINUX + HYLE_OS_MACOS +
+                  HYLE_OS_UNKNOWN ==
+              1);
 
 HYLE_NOINLINE int consume(int value) {
   return HYLE_LIKELY(value == 42) ? value : 0;
@@ -29,8 +33,10 @@ HYLE_NOINLINE int consume(int value) {
 
 int main() {
   const int values[] = {20, 22};
-  HYLE_FATAL_ASSERT_MSG(values[0] + values[1] == 42,
-                        "Core package sample invariant");
+  HYLE_FATAL_ASSERT_CONTEXT(
+      values[0] + values[1] == 42, "Core package sample invariant",
+      HYLE_FATAL_NAMED_FIELD("sum", values[0] + values[1]));
+  HYLE_DEBUG_ASSERT(values[0] <= values[1]);
   hyle::core::prefetch_read(values);
   return hyle::kVersionPacked != 0 && consume(42) == 42 &&
                  sum_values(values, 2) == 42

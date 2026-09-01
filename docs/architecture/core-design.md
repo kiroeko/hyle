@@ -2,7 +2,7 @@
 
 > 本页描述当前长期设计，不是验收证书。当前产品状态只见
 > [`module-status.json`](../implementation/module-status.json)；历史施工与三平台、codegen、package、
-> 红队证据见 [`core-rebuild`](../implementation/tasks/core/core-rebuild.md)，性能结论边界见
+> 红队证据见 [`core-v3-foundation-completeness`](../implementation/tasks/core/core-v3-foundation-completeness.md)，性能结论边界见
 > [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
 > [`user/core`](../user/core.md)。
 
@@ -11,9 +11,11 @@
 Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类在任何 runtime 建立前就必须
 可用、没有 owning state、且需要跨模块保持一致的 primitive：
 
-1. 编译器合同与程序不变量失败，包括 inline/noinline、aliasing、branch、loop/layout hint，
-   optimizer promise，以及 release-surviving fatal assertion；
-2. 编译期 cache layout recommendation 与三种 best-effort prefetch intent。
+1. 程序不变量与诊断失败：always-on fatal、debug/instrumented assertion、有界 typed context，
+   以及宿主在终止前观察失败事件的窄 seam；
+2. 当前 translation unit 的编译环境事实和编译器合同，包括 OS/arch/compiler/build/sanitizer、
+   inline/noinline、aliasing、branch、loop/layout hint 与 optimizer promise；
+3. 编译期 cache layout recommendation 与三种 best-effort prefetch intent。
 
 产品版本位于根级 `<hyle/version.h>`。它是 build/package 拥有的 checked-in 产品元数据，经
 `hyle::core` 的 include contract 交付，但不是第三个 Core runtime 能力。symbol export/import
@@ -26,14 +28,16 @@ Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类�
 
 | 用户任务 | 公开头 | 当前形状 | 语义 owner |
 |---|---|---|---|
-| 违反程序不变量时立即终止并给出位置/静态上下文 | `<hyle/core/assert.h>` | `HYLE_FATAL_ASSERT`、`HYLE_FATAL_ASSERT_MSG` | core |
-| 在已测 native hot path 表达编译器合同 | `<hyle/core/compiler.h>` | `HYLE_FORCE_INLINE`、`HYLE_NOINLINE`、`HYLE_RESTRICT`、`HYLE_FLATTEN`、`HYLE_UNROLL`、`HYLE_DEFAULT_UNROLL`、`HYLE_NO_UNIQUE_ADDRESS`、`HYLE_LIKELY`、`HYLE_UNLIKELY`、`HYLE_ASSUME`、`HYLE_UNREACHABLE` | core |
+| 违反程序不变量时立即终止并携带有界上下文 | `<hyle/core/assert.h>` | fatal/debug 两族 assertion、typed fields、failure observer | core |
+| 查询当前 TU 的编译目标与 instrumentation | `<hyle/core/environment.h>` | 始终为 `0/1` 的 OS/arch/compiler/build/sanitizer/endianness 等事实与 generic feature probes | core |
+| 在已测 native hot path 表达编译器合同 | `<hyle/core/compiler.h>` | inline/cold/alias/branch/loop/layout/lifetime/allocator-return/optimizer contracts | core |
 | 设计 false-sharing/constructive layout | `<hyle/core/cache.h>` | constructive/destructive/max-destructive 常量 | core |
 | 为已知访问模式给出 cache hint | `<hyle/core/cache.h>` | read、one-shot read、write intent prefetch | core |
 | 识别编译当前 TU 的 HYLE headers | `<hyle/version.h>` | major/minor/patch、packed、string 编译期常量 | build/package |
 | 为 compiled target 选择 export/import decoration | `<hyle/visibility.h>` | build-owned symbol visibility contract | build/package |
 
-旧的 `<hyle/macros.h>`、`compiler_defs.h`、`cache_defs.h`、`<hyle/core/version.h>`、linked
+旧的 `<hyle/macros.h>`、`compiler_defs.h`、`cache_defs.h`、`<hyle/core/version.h>`、
+含义容易与 runtime Platform 混淆的 `<hyle/platform.h>`、linked
 `version()/version_string()` 与 version-only `hyle_core` binary 已退出当前产品面。项目尚未发布，
 不保留转发头或兼容别名，避免让两个 owner 长期并存。
 
@@ -43,6 +47,7 @@ Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类�
 <hyle/core/assert.h> ──────────────┐
                                   ├──► hyle::core (INTERFACE, no artifact)
 <hyle/core/compiler.h> ───────────┤
+<hyle/core/environment.h> ────────┤
 <hyle/core/cache.h> ──────────────┤
 <hyle/version.h> ─────────────────┘
 
@@ -80,16 +85,42 @@ Highway、Abseil、Folly 等成熟底层库都把 compiler-specific attribute/pr
 退化；`ASSUME`、`RESTRICT` 和 release `UNREACHABLE` 则是语义承诺，违约为 undefined behavior，
 不能被当成 validation。
 
+只有已经存在真实 consumer 的窄 attribute 才准入。`HYLE_COLD`、`HYLE_NO_TAIL_CALL` 用于 Core
+failure sink，`HYLE_LIFETIME_BOUND` 标注同步借用，`HYLE_ALLOCATOR_RETURN(size_index)` 统一 Mem
+对 fresh allocation 的声明。没有 consumer 的 `HOT`、blanket no-sanitize 或 nonnull matrix 不进入
+Core；不为“宏更全”制造第二套注解语言。
+
+### 编译环境事实：只描述当前 TU
+
+`<hyle/core/environment.h>` 的 OS、architecture、compiler、pointer width、endianness、build mode、
+sanitizer、static analyzer、exception 与 RTTI facts 始终展开为整数 `0` 或 `1`，可安全写成
+`#if HYLE_OS_WINDOWS`。`HYLE_BITNESS` 为 `32/64`，未知表示为 `0`；generic `HYLE_HAS_*` probe 只用于
+预处理条件。Clang 与 clang-cl 通过 primary compiler fact 和 `HYLE_COMPILER_CLANG_CL` secondary fact
+区分，避免把 ABI mode 当作另一个 frontend。
+
+这些值描述“正在编译这个 translation unit 的目标和选项”，不探测运行机器，也不证明某条 ISA
+可执行。runtime OS/CPU/cache/NUMA 归 Platform，fat-binary ISA dispatch 归 SIMD。Core 不再为单个
+consumer 发布 `HYLE_HAVE_SSSE3` 一类特例；Container 的 fixed-target probe 自己根据 current-TU
+compiler target 选择实现。
+
 ### Fatal assertion 与 error 的边界
 
-`HYLE_FATAL_ASSERT` 与 `HYLE_FATAL_ASSERT_MSG` 在 Debug 和 Release 都检查，失败写入最小诊断后
-`abort()`。消息版本只在失败时求值一次；它借用一个在 `abort()` 前仍有效的 NUL-terminated
-`const char*`，不承担 ownership，也不做 formatting。失败 sink 是
-header-inline、ODR-safe、noinline，并在有对应 compiler spelling 时标为 cold；它借用 build-owned
-`HYLE_HIDDEN`，不能成为每个下游 shared module 都可抢占的动态符号。这样成功路径不复制格式化
-逻辑。它只处理 HYLE 或调用者已经证明的程序不变量；OOM、输入、文件、设备和协议失败必须用
-error 模块的 `Status/Result`。失败诊断使用 stdio/`abort()`，不承诺 async-signal-safe，也不替代
-crash reporter。
+`HYLE_FATAL_ASSERT[_MSG/_CONTEXT]` 在 Debug 和 Release 都检查；它处理继续执行已不可信的 invariant
+或 hardening 条件。`HYLE_DEBUG_ASSERT[_MSG/_CONTEXT]` 只在 Debug、sanitizer 或 static-analyzer TU
+启用，普通 Release 中表达式仍被类型检查但不求值、没有 runtime 指令。两族条件都只求值一次，
+message 与 fields 只在失败时构造。
+
+context 不是 printf 格式串：调用方显式提供最多 8 个 `FatalField`，值只接受 bool、最多 64-bit 的
+integral/enum、floating、object pointer、C string 或 `std::string_view`。事件全部同步借用；Core
+不分配，默认 formatter 对每段 text 最多写 256 bytes。`set_fatal_observer()` 原子交换一个
+`noexcept` callback；callback 可把事件交给宿主已有的 crash/log pipeline，但返回后 Core 仍然
+`abort()`。递归 fatal 跳过 observer，走默认诊断并终止，避免无限递归。
+
+失败 sink 是 header-inline、ODR-safe、noinline/cold/no-tail-call，并使用 build-owned hidden
+visibility，不能成为下游 shared module 的公开实现符号。observer slot 只承诺同一 linked image 内
+一致，不冒充跨 DSO、跨语言或 signal-safe crash manager。失败诊断使用 stdio/`abort()`，不承诺
+async-signal-safe、backtrace、minidump、logging policy 或恢复执行。OOM、输入、文件、设备和协议失败
+必须用 error 模块的 `Status/Result`。
 
 `HYLE_ASSUME` 在 Debug 借 fatal assertion 尽早暴露错误，在 Release 才向 optimizer 作承诺；
 `HYLE_UNREACHABLE` 同理。assumption 表达式必须无副作用：Debug/GCC fallback 会求值，而其他
@@ -152,7 +183,8 @@ module 不能更新已经内联进 consumer 的 Core 代码。
 ## 明确负空间与重开条件
 
 Core 不拥有 runtime CPU/cache/NUMA/OS discovery、allocator、container、clock、同步、日志、
-recoverable error、crash reporter、ABI compatibility probe 或 foreign-language binding。它不承诺
+recoverable error、backtrace/signal/minidump crash policy、ABI compatibility probe 或
+foreign-language binding。它不承诺
 具体 cache residency、精确机器 cache-line size、force-inline 必然发生，或对失效地址安全 prefetch。
 
 只有以下事实足以重开这个边界：真实 consumer 需要一种在所有 runtime 之前可用的跨模块 primitive；

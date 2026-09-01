@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "src/simd/math/kernels.h"
 
 #include <algorithm>
@@ -8,7 +8,7 @@
 #include <complex>
 #include <cstddef>
 
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
 
 namespace {
 

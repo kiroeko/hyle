@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/ops.h"
 #include "src/simd/runtime_internal.h"
@@ -383,7 +383,7 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   EXPECT_EQ(active, Isa::kSve);
 #elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
   EXPECT_EQ(active, Isa::kRvv);
-#elif defined(HYLE_ARCH_X64)
+#elif HYLE_ARCH_X64
   const auto best = static_cast<std::uint32_t>(best_isa());
   Isa expect;
   if (best >= static_cast<std::uint32_t>(Isa::kAvx512)) expect = Isa::kAvx512;
@@ -393,7 +393,7 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   EXPECT_EQ(active, expect);
   // On any modern x86-64 dev box this should be a real SIMD tier, not the floor.
   EXPECT_GE(static_cast<std::uint32_t>(active), static_cast<std::uint32_t>(Isa::kSse42));
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   // Linux aarch64 may additionally ship the SVE scalable variant. The active
   // Runtime must match the highest variant actually compiled into this binary.
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
@@ -411,7 +411,7 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
     EXPECT_EQ(active, Isa::kScalar);
   }
 #endif
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 #if defined(HYLE_SIMD_HAS_RVV_VARIANT)
   EXPECT_EQ(active, best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar);
 #else

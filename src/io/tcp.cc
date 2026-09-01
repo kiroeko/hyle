@@ -3,9 +3,9 @@
 #include <cstring>
 #include <utility>
 
-#include "hyle/platform.h"  // HYLE_OS_* (must precede the per-OS socket headers)
+#include "hyle/core/environment.h"  // HYLE_OS_* (must precede the per-OS socket headers)
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -31,7 +31,7 @@ namespace {
 // Close a socket fd on either platform.
 void close_fd(std::intptr_t fd) noexcept {
   if (fd < 0) return;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::closesocket(static_cast<SOCKET>(fd));
 #else
   ::close(static_cast<int>(fd));
@@ -45,13 +45,13 @@ int native_family(AddressFamily family) noexcept {
 
 std::intptr_t make_tcp_socket(AddressFamily family) noexcept {
   const int af = native_family(family);
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   SOCKET s = ::WSASocketW(af, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
   return s == INVALID_SOCKET ? -1 : static_cast<std::intptr_t>(s);
 #else
   int s = ::socket(af, SOCK_STREAM, 0);
   if (s < 0) return -1;
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   // macOS has no MSG_NOSIGNAL. Without SO_NOSIGPIPE a normal peer-close race
   // during TLS close_notify can terminate the entire process instead of
   // completing the pending write with EPIPE.
@@ -96,7 +96,7 @@ TcpStream& TcpStream::operator=(TcpStream&& o) noexcept {
 bool TcpStream::set_nodelay(bool enabled) noexcept {
   if (!valid()) return false;
   const int value = enabled ? 1 : 0;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return ::setsockopt(static_cast<SOCKET>(fd_), IPPROTO_TCP, TCP_NODELAY,
                       reinterpret_cast<const char*>(&value),
                       sizeof(value)) == 0;
@@ -109,7 +109,7 @@ bool TcpStream::set_nodelay(bool enabled) noexcept {
 bool TcpStream::set_keepalive(bool enabled) noexcept {
   if (!valid()) return false;
   const int value = enabled ? 1 : 0;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return ::setsockopt(static_cast<SOCKET>(fd_), SOL_SOCKET, SO_KEEPALIVE,
                       reinterpret_cast<const char*>(&value),
                       sizeof(value)) == 0;
@@ -121,7 +121,7 @@ bool TcpStream::set_keepalive(bool enabled) noexcept {
 
 bool TcpStream::shutdown_write() noexcept {
   if (!valid()) return false;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return ::shutdown(static_cast<SOCKET>(fd_), SD_SEND) == 0;
 #else
   return ::shutdown(static_cast<int>(fd_), SHUT_WR) == 0;
@@ -164,7 +164,7 @@ TcpStream TcpListener::finish_accept(std::int64_t result,
                                      unsigned assign_owner) noexcept {
   if (result < 0) return TcpStream{};
   std::intptr_t new_fd = static_cast<std::intptr_t>(result);
-#if defined(HYLE_OS_MACOS)
+#if HYLE_OS_MACOS
   const int no_sigpipe = 1;
   if (::setsockopt(static_cast<int>(new_fd), SOL_SOCKET, SO_NOSIGPIPE,
                    &no_sigpipe, sizeof(no_sigpipe)) != 0) {
@@ -218,14 +218,14 @@ TcpListener tcp_listen(IoContext& io, unsigned owner_worker, const char* host,
   if (fd < 0) return TcpListener{};
 
   int one = 1;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_REUSEADDR,
                reinterpret_cast<const char*>(&one), sizeof(one));
 #else
   ::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 #endif
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (::bind(static_cast<SOCKET>(fd), reinterpret_cast<sockaddr*>(&sa),
              static_cast<int>(len)) != 0 ||
       ::listen(static_cast<SOCKET>(fd), backlog) != 0) {

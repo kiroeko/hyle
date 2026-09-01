@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "src/simd/runtime_internal.h"
 #include "src/simd/math/kernels.h"
 #include "src/simd/target_manifest.h"
@@ -12,7 +12,7 @@
 namespace hyle::simd {
 namespace {
 
-#if defined(HYLE_ARCH_X64) &&                                      \
+#if HYLE_ARCH_X64 &&                                      \
     (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
      (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
       defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
@@ -29,7 +29,7 @@ bool have_avx2_math() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_X64) && defined(HYLE_SIMD_COMPILED_AVX512) && \
+#if HYLE_ARCH_X64 && defined(HYLE_SIMD_COMPILED_AVX512) && \
     !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 bool have_avx512_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -42,7 +42,7 @@ bool have_avx512_math() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_COMPILED_SVE)
+#if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_COMPILED_SVE)
 bool have_sve_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SVE)
   return true;
@@ -54,7 +54,7 @@ bool have_sve_math() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_COMPILED_RVV)
+#if HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_COMPILED_RVV)
 bool have_rvv_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_RVV)
   return true;
@@ -75,7 +75,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_SCALAR_KERNEL_I(name, tag) detail::name##_##tag##_scalar
 #define HYLE_SCALAR_KERNEL(name, tag) HYLE_SCALAR_KERNEL_I(name, tag)
 
-#if defined(HYLE_ARCH_X64) && defined(HYLE_SIMD_COMPILED_AVX512) && \
+#if HYLE_ARCH_X64 && defined(HYLE_SIMD_COMPILED_AVX512) && \
     !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 #define HYLE_TRY_AVX512(name, tag, owner, ...)                              \
   if (have_avx512_math()) {                                                 \
@@ -86,7 +86,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_TRY_AVX512(name, tag, owner, ...)
 #endif
 
-#if defined(HYLE_ARCH_X64) &&                                      \
+#if HYLE_ARCH_X64 &&                                      \
     (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
      (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
       defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
@@ -99,7 +99,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_TRY_AVX2(name, tag, owner, ...)
 #endif
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_COMPILED_SVE)
+#if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_COMPILED_SVE)
 #define HYLE_TRY_SVE(name, tag, owner, ...)                                  \
   if (have_sve_math()) {                                                     \
     HYLE_VARIANT_KERNEL_II(name, tag, owner, sve)(__VA_ARGS__);              \
@@ -109,7 +109,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_TRY_SVE(name, tag, owner, ...)
 #endif
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_COMPILED_NEON)
+#if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_COMPILED_NEON)
 #define HYLE_TRY_NEON(name, tag, owner, ...)                                 \
   HYLE_VARIANT_KERNEL_II(name, tag, owner, neon)(__VA_ARGS__);               \
   return;
@@ -117,7 +117,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_TRY_NEON(name, tag, owner, ...)
 #endif
 
-#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_COMPILED_RVV)
+#if HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_COMPILED_RVV)
 #define HYLE_TRY_RVV(name, tag, owner, ...)                                  \
   if (have_rvv_math()) {                                                     \
     HYLE_VARIANT_KERNEL_II(name, tag, owner, rvv)(__VA_ARGS__);              \

@@ -5,11 +5,11 @@
 #include <utility>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/sched/coro.h"   // sched::suspend
 #include "hyle/sched/waker.h"  // sched::current_waker
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -29,7 +29,7 @@
 
 namespace hyle::io {
 
-#if !defined(HYLE_OS_WINDOWS)
+#if !HYLE_OS_WINDOWS
 
 namespace {
 
@@ -345,7 +345,7 @@ SignalSet& SignalSet::operator=(SignalSet&& o) noexcept {
 
 void SignalSet::reset() noexcept {
   if (!valid_) return;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   WinSigGlobal& g = win_sig_global();
   std::lock_guard<std::mutex> lk(g.mu);
   if (g.refcount > 0 && --g.refcount == 0 && g.installed) {

@@ -17,15 +17,7 @@
 // its own runtime. The fix (mandated by TSan, used by boost.context/folly) is to
 // announce each switch via __tsan_switch_to_fiber. Compiles to nothing unless
 // built with -fsanitize=thread, so the shipped/benchmarked build pays ZERO.
-#if defined(__has_feature)
-#  if __has_feature(thread_sanitizer)
-#    define HYLE_TSAN 1
-#  endif
-#elif defined(__SANITIZE_THREAD__)
-#  define HYLE_TSAN 1
-#endif
-
-#if defined(HYLE_TSAN)
+#if HYLE_SANITIZER_THREAD
 #  include <sanitizer/tsan_interface.h>
 #  define HYLE_TSAN_CREATE_FIBER() __tsan_create_fiber(0)
 #  define HYLE_TSAN_DESTROY_FIBER(f) \

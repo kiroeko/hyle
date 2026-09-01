@@ -55,7 +55,7 @@ Variant scalar_variant() {
 
 std::vector<Variant> supported_variants() {
   std::vector<Variant> result{scalar_variant()};
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   if (supports(Isa::kSse42)) {
     result.push_back({"sse4",
                       &detail::str_count_sse4,
@@ -82,7 +82,7 @@ std::vector<Variant> supported_variants() {
                       &detail::bitset_not_avx2,
                       &detail::bitset_count_avx2});
   }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (supports(Isa::kNeon)) {
     result.push_back({"neon",
                       &detail::str_count_neon,

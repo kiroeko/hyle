@@ -1,7 +1,7 @@
 // Fixed AVX2 batch/SoA façade over the locked Highway mathematics core.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 
 #define HWY_COMPILE_ONLY_STATIC 1
 #define HYLE_SIMD_TARGET_AVX2 1

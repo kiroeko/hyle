@@ -48,7 +48,8 @@ void hyle_core_probe_prefetch_write(const void* address) noexcept {
 }
 
 int hyle_core_probe_fatal_hot(const int* value) noexcept {
-  HYLE_FATAL_ASSERT(value != nullptr);
+  HYLE_FATAL_ASSERT_CONTEXT(value != nullptr, "required input",
+                            HYLE_FATAL_FIELD(value));
   return *value;
 }
 

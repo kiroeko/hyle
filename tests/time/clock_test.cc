@@ -8,8 +8,8 @@
 #include <time.h>
 #include <type_traits>
 
-#include "hyle/platform.h"
-#if defined(HYLE_OS_WINDOWS)
+#include "hyle/core/environment.h"
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -56,7 +56,7 @@ consteval bool is_steady_chrono_clock_shape() {
 }
 
 bool force_tsc_timing_calibration_requested() noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   char value[2] = {};
   const DWORD length = ::GetEnvironmentVariableA(
       "HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION", value,
@@ -80,8 +80,8 @@ TEST(Clock, MonotonicNonDecreasing) {
   }
 }
 
-#if defined(HYLE_ARCH_ARM64) && \
-    (defined(HYLE_COMPILER_CLANG) || defined(HYLE_COMPILER_GCC))
+#if HYLE_ARCH_ARM64 && \
+    (HYLE_COMPILER_CLANG || HYLE_COMPILER_GCC)
 TEST(Clock, ArmProfilingCounterIsAvailableAndNonDecreasing) {
   ASSERT_TRUE(profiling_clock_available());
   std::uint64_t previous = profiling_clock_ns();
@@ -326,7 +326,7 @@ TEST(Clock, CoarseMonotonicSharesPreciseClockDomain) {
       typed_ns > coarse ? typed_ns - coarse : coarse - typed_ns;
   EXPECT_LT(typed_diff, 100'000'000ull);
 
-#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_MONOTONIC_COARSE)
+#if HYLE_OS_WINDOWS || defined(CLOCK_MONOTONIC_COARSE)
   EXPECT_TRUE(coarse_monotonic_available());
 #else
   EXPECT_FALSE(coarse_monotonic_available());
@@ -621,7 +621,7 @@ TEST(Clock, ProfilingClockFallbackEqualsMonotonic) {
 }
 
 TEST(Clock, ProfilingClockTimingCalibrationIsLowCpu) {
-#if !defined(HYLE_ARCH_X64)
+#if !HYLE_ARCH_X64
   GTEST_SKIP() << "TSC timing calibration exists only on x86-64";
 #endif
   if (!force_tsc_timing_calibration_requested()) {

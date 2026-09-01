@@ -9,11 +9,11 @@
 #include <new>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/virtual_memory.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -27,17 +27,17 @@
 namespace hyle::platform {
 namespace {
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 Status numa_native_status(const char* operation, DWORD code) noexcept {
   return status_from_win32(code, operation);
 }
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
 Status numa_native_status(const char* operation, int code) noexcept {
   return status_from_errno(code, operation);
 }
 #endif
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 
 using PGetNumaHighestNodeNumber = BOOL(WINAPI*)(PULONG);
 using PGetCurrentProcessorNumberEx = void(WINAPI*)(PROCESSOR_NUMBER*);
@@ -122,7 +122,7 @@ constexpr bool win_selected_interleave_supported(
   return has_virtual_alloc_ex_numa;
 }
 
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
 
 // linux/mempolicy.h constants (avoid header dependency).
 #  ifndef MPOL_DEFAULT
@@ -187,7 +187,7 @@ using NumaTopologyMask =
     std::array<std::uint64_t,
                (kMaxNumaNodes + kTopologyWordBits - 1u) / kTopologyWordBits>;
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 inline constexpr unsigned kMaskBits = sizeof(unsigned long) * 8u;
 using NumaMask =
     std::array<unsigned long, (kMaxNumaNodes + kMaskBits - 1u) / kMaskBits>;
@@ -209,7 +209,7 @@ void append_node(NumaTopology& topology, unsigned node) noexcept {
   topology.ids[topology.count++] = node;
 }
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 bool read_linux_allowed_nodes(NumaTopology& topology) noexcept {
 #  if defined(SYS_get_mempolicy)
   NumaMask allowed{};
@@ -288,7 +288,7 @@ bool read_linux_online_nodes(NumaTopology& topology) noexcept {
 
 NumaTopology discover_topology() noexcept {
   NumaTopology topology;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ULONG highest = 0;
   auto& f = win_fns();
   if (f.get_highest && f.get_highest(&highest)) {
@@ -306,7 +306,7 @@ NumaTopology discover_topology() noexcept {
     }
     topology.native = topology.count != 0;
   }
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   // Prefer the process' current cpuset/mempolicy view. This avoids advertising
   // a system node that the process cannot legally target inside a container.
   topology.native = read_linux_allowed_nodes(topology);
@@ -380,7 +380,7 @@ Result<bool> process_cpu_available(unsigned cpu) noexcept {
       "NUMA CPU lookup changed repeatedly during snapshot"));
 }
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 Result<unsigned> make_numa_mask(std::span<const unsigned> nodes,
                                 NumaMask& mask) noexcept {
   unsigned max_node = 0;
@@ -398,7 +398,7 @@ Result<unsigned> make_numa_mask(std::span<const unsigned> nodes,
 
 }  // namespace
 
-#if defined(HYLE_OS_WINDOWS) && defined(HYLE_TESTING)
+#if HYLE_OS_WINDOWS && defined(HYLE_TESTING)
 namespace detail {
 bool windows_selected_interleave_supported_for_testing(
     bool has_virtual_alloc_ex_numa, bool has_virtual_alloc2) noexcept {
@@ -412,14 +412,14 @@ NumaCapability numa_capabilities() noexcept {
   NumaCapability capabilities = NumaCapability::kNone;
   if (topology().native)
     capabilities = capabilities | NumaCapability::kTopology;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   auto& f = win_fns();
   if (f.virtual_alloc2 || f.virtual_alloc_ex_numa)
     capabilities = capabilities | NumaCapability::kPreferredReservation;
   if (win_selected_interleave_supported(f.virtual_alloc_ex_numa != nullptr,
                                         f.virtual_alloc2 != nullptr))
     capabilities = capabilities | NumaCapability::kSelectedInterleave;
-#elif defined(HYLE_OS_LINUX) && defined(SYS_mbind)
+#elif HYLE_OS_LINUX && defined(SYS_mbind)
   capabilities = capabilities | NumaCapability::kPreferredReservation |
                  NumaCapability::kBindExisting |
                  NumaCapability::kInterleaveExisting |
@@ -444,7 +444,7 @@ unsigned numa_node_count() noexcept {
 Result<unsigned> numa_current_node() noexcept {
   const auto nodes = numa_nodes();
   if (nodes.size() == 1u) return nodes.front();
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   auto& f = win_fns();
   if (!f.get_cpu_ex || !f.get_node_ex) {
     return std::unexpected(Status::Unimplemented(
@@ -463,7 +463,7 @@ Result<unsigned> numa_current_node() noexcept {
         "current CPU belongs to a process-unavailable NUMA node"));
   }
   return result;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
 #  if defined(SYS_getcpu)
   unsigned cpu = 0;
   unsigned node = 0;
@@ -491,7 +491,7 @@ Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept {
         Status::OutOfRange("NUMA CPU is unavailable to this process"));
   }
   if (nodes.size() <= 1u) return nodes.front();
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   auto& f = win_fns();
   if (!f.get_node_ex) {
     return std::unexpected(Status::Unimplemented(
@@ -528,7 +528,7 @@ Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept {
         "CPU belongs to a process-unavailable NUMA node"));
   }
   return result;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   // sysfs exposes one symlink /sys/devices/system/node/nodeN/cpuM per
   // (node,cpu) membership; find the node whose directory contains this cpu.
   for (unsigned nd : nodes) {
@@ -571,7 +571,7 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
     // Interleave is a genuine no-op on a single-node machine. Linux rejects
     // MPOL_INTERLEAVE with a one-bit nodemask on some kernels.
     if (available_nodes.size() <= 1u) return NumaPlacement::kNotNeeded;
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     NumaMask mask{};
     HYLE_ASSIGN_OR_RETURN(unsigned max_node,
                           make_numa_mask(available_nodes, mask));
@@ -596,7 +596,7 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
   // A valid per-node policy is a genuine no-op on a single-node machine.
   if (available_nodes.size() <= 1u) return NumaPlacement::kNotNeeded;
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   const unsigned nd = static_cast<unsigned>(node);
   NumaMask mask{};
   const std::array<unsigned, 1> selected{nd};
@@ -611,7 +611,7 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
                                               errno));
   }
   return NumaPlacement::kApplied;
-#elif defined(HYLE_OS_WINDOWS)
+#elif HYLE_OS_WINDOWS
   // No post-hoc bind for anonymous VirtualAlloc. Preferred is SOFT (real
   // placement is done at reserve time by vm_reserve_numa via VirtualAlloc2) ->
   // report success. Hard Bind cannot be honored post-hoc on a multi-node box ->
@@ -658,7 +658,7 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
     return NumaReservation{data, NumaPlacement::kNotNeeded};
   }
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   auto& f = win_fns();
   if (f.virtual_alloc2) {
     HyleMemExtendedParameter param{};
@@ -678,7 +678,7 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
   }
   HYLE_ASSIGN_OR_RETURN(void* data, vm_reserve(size));
   return NumaReservation{data, NumaPlacement::kUnavailable};
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   HYLE_ASSIGN_OR_RETURN(void* data, vm_reserve(size));
   // Soft preferred placement: a bind failure must NOT drop the reservation.
   // The placement result records the fallback without inventing a side channel.
@@ -744,7 +744,7 @@ vm_allocate_numa_interleaved(std::size_t size,
                               "unavailable on this platform"));
   }
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   HYLE_ASSIGN_OR_RETURN(void* data, vm_allocate_rw(aligned));
 
   // Linux can install one lazy whole-range policy for the common page stripe
@@ -868,7 +868,7 @@ vm_allocate_numa_interleaved(std::size_t size,
   }
   return NumaAllocation{data, aligned, NumaPlacement::kApplied};
 
-#elif defined(HYLE_OS_WINDOWS)
+#elif HYLE_OS_WINDOWS
   auto& f = win_fns();
   const PVirtualAllocExNuma commit_numa = f.virtual_alloc_ex_numa;
   // Only VirtualAllocExNuma preserves one ordinary reservation while

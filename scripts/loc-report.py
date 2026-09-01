@@ -40,7 +40,6 @@ SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 MODULE_BOUNDARIES = {
     "core": (
         "include/hyle/core",
-        "include/hyle/platform.h",
         "include/hyle/version.h",
         "include/hyle/visibility.h",
         "src/core",
@@ -488,7 +487,6 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
 def self_check(report: dict[str, object]) -> None:
     expected_core = (
         "include/hyle/core",
-        "include/hyle/platform.h",
         "include/hyle/version.h",
         "include/hyle/visibility.h",
         "src/core",

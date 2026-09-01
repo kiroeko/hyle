@@ -23,9 +23,9 @@
 // 65504) to fp8 max-normal, which is CORRECT for a finite fp8 overflow -- no fixup needed there;
 // (2) only a GENUINE f32 inf/NaN needs restoring (f16 alone can't distinguish it from finite
 // overflow), so the fixup keys on the ORIGINAL f32 exponent bits, not the f16.
-#include "hyle/platform.h"  // HYLE_ARCH_X64
+#include "hyle/core/environment.h"  // HYLE_ARCH_X64
 
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
 
 #include "src/simd/dtype/kernels.h"
 

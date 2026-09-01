@@ -3,13 +3,13 @@
 #include <atomic>
 #include <cstdint>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
 // ---- low-level wait_on_address: one backend per OS --------------------------
 // Each maps the (addr, expected) compare-and-block 1:1 onto the platform futex.
 // All three backends are exercised on their native Windows/Linux/macOS hosts.
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -58,7 +58,7 @@ void wake_all(const std::atomic<std::uint32_t>* addr) noexcept {
 
 }  // namespace hyle::platform::detail
 
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
 #  include <climits>
 #  include <ctime>
 #  include <cerrno>
@@ -106,7 +106,7 @@ void wake_all(const std::atomic<std::uint32_t>* addr) noexcept {
 
 }  // namespace hyle::platform::detail
 
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
 // os_sync_wait_on_address is public API on macOS 14.4+. The project/package
 // contract sets and validates that deployment floor; keep a source-level guard
 // too so a non-CMake compilation cannot emit a binary with unresolved imports

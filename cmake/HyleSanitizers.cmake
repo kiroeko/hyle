@@ -10,6 +10,8 @@ function(hyle_apply_sanitizer target)
   endif()
   if(MSVC)
     if(HYLE_SANITIZER STREQUAL "asan")
+      target_compile_definitions(${target} PRIVATE
+        HYLE_DETAIL_SANITIZER_ADDRESS=1)
       # /Zi is part of a valid MSVC ASan invocation (native cl emits C5072
       # without it) and gives both compiler frontends actionable reports.
       target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
@@ -108,8 +110,12 @@ function(hyle_apply_sanitizer target)
   endif()
   if(HYLE_SANITIZER STREQUAL "asan")
     set(flags -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_definitions(${target} PRIVATE
+      HYLE_DETAIL_SANITIZER_ADDRESS=1)
   elseif(HYLE_SANITIZER STREQUAL "tsan")
     set(flags -fsanitize=thread)
+    target_compile_definitions(${target} PRIVATE
+      HYLE_DETAIL_SANITIZER_THREAD=1)
     # GCC warns (-Wtsan) that std::atomic_thread_fence "is not supported" under
     # TSan: TSan cannot model STANDALONE fences, so it won't observe the ordering
     # our Chase-Lev deque (Le 2013) relies on. This is a known, universal
@@ -122,6 +128,8 @@ function(hyle_apply_sanitizer target)
     endif()
   elseif(HYLE_SANITIZER STREQUAL "ubsan")
     set(flags -fsanitize=undefined -fno-sanitize-recover=all)
+    target_compile_definitions(${target} PRIVATE
+      HYLE_DETAIL_SANITIZER_UNDEFINED=1)
   else()
     message(FATAL_ERROR "hyle_apply_sanitizer: unhandled HYLE_SANITIZER='${HYLE_SANITIZER}'")
   endif()

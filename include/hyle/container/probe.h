@@ -6,7 +6,13 @@
 #include <cstring>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
+
+#if HYLE_ARCH_X64 && (HYLE_COMPILER_MSVC || defined(__SSSE3__))
+#  define HYLE_CONTAINER_COMPILED_SSSE3 1
+#else
+#  define HYLE_CONTAINER_COMPILED_SSSE3 0
+#endif
 
 // SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, not
 // routed through a whole-buffer provider kernel. The reason is inlineability, not a dependency
@@ -140,9 +146,9 @@ class GroupPortable {
 
 }  // namespace hyle::container::detail
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 #  include <emmintrin.h>  // SSE2
-#  if defined(HYLE_HAVE_SSSE3)
+#  if HYLE_CONTAINER_COMPILED_SSSE3
 #    include <tmmintrin.h>  // SSSE3: _mm_sign_epi8 (1-insn match_empty)
 #  endif
 namespace hyle::container::detail {
@@ -158,7 +164,7 @@ class GroupSse2 {
         _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_set1_epi8(h), ctrl_))));
   }
   BitMask match_empty() const noexcept {
-#if defined(HYLE_HAVE_SSSE3)
+#if HYLE_CONTAINER_COMPILED_SSSE3
     // abseil's trick: _mm_sign_epi8(c,c) negates per byte -> c<0:-c, 0:0, c>0:c.
     // Only kEmpty=0x80(-128) negates to itself (overflow), keeping its top bit
     // set; kDeleted/kSentinel(-2/-1) become +2/+1 (top bit clear) and full(0..127)
@@ -188,7 +194,7 @@ class GroupSse2 {
 };
 using Group = GroupSse2;
 }  // namespace hyle::container::detail
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 #  include <arm_neon.h>
 namespace hyle::container::detail {
 // ---- ARM64 NEON group (8-wide) ----------------------------------------------
@@ -265,4 +271,6 @@ using Group = GroupPortable;
 namespace hyle::container::detail {
 using GroupMask = typename Group::Mask;
 inline constexpr std::size_t kGroupWidth = Group::kWidth;
-}
+}  // namespace hyle::container::detail
+
+#undef HYLE_CONTAINER_COMPILED_SSSE3

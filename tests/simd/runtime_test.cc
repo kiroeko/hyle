@@ -7,7 +7,7 @@
 #include <span>
 #include <vector>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/random.h"
 #include "hyle/simd/runtime.h"
@@ -20,33 +20,33 @@ using FatAddOneFn = void (*)(const float *, float *, std::size_t,
                              std::uint32_t *) noexcept;
 void hyle_test_fat_add_one_scalar(const float *, float *, std::size_t,
                                   std::uint32_t *) noexcept;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 void hyle_test_fat_add_one_sse4(const float *, float *, std::size_t,
                                 std::uint32_t *) noexcept;
 void hyle_test_fat_add_one_avx2(const float *, float *, std::size_t,
                                 std::uint32_t *) noexcept;
 void hyle_test_fat_add_one_avx512(const float *, float *, std::size_t,
                                   std::uint32_t *) noexcept;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 void hyle_test_fat_add_one_neon(const float *, float *, std::size_t,
                                 std::uint32_t *) noexcept;
 void hyle_test_fat_add_one_sve(const float *, float *, std::size_t,
                                std::uint32_t *) noexcept;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 void hyle_test_fat_add_one_rvv(const float *, float *, std::size_t,
                                std::uint32_t *) noexcept;
 #endif
 
 namespace {
 int fat_scalar() noexcept { return 0; }
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 int fat_sse4() noexcept { return 1; }
 int fat_avx2() noexcept { return 2; }
 int fat_avx512() noexcept { return 3; }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 int fat_neon() noexcept { return 1; }
 int fat_sve() noexcept { return 2; }
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 int fat_rvv() noexcept { return 1; }
 #endif
 } // namespace
@@ -107,7 +107,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   }
   EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128,
             0u);
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   if (active.isa == hs::Isa::kAvx512) {
     EXPECT_EQ(active.sort.isa,
               hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512));
@@ -136,7 +136,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
     EXPECT_EQ(active.scan.isa, active.isa);
   } else {
     EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
-#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_EXACT)
+#if HYLE_ARCH_X64 && !defined(HYLE_SIMD_EXACT)
     const auto specialty =
         hs::detail::x86_specialty_support(hyle::platform::cpu_features());
     if (specialty.avx512_vnni) {
@@ -152,25 +152,25 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
     EXPECT_EQ(active.scan.isa, active.search_module.isa);
   }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
   if (const hs::Runtime *sse = hs::runtime_for(hs::Isa::kSse42)) {
     EXPECT_EQ(sse->math.isa, hs::Isa::kScalar);
     EXPECT_EQ(sse->dtype.isa, hs::Isa::kSse42);
   }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
 #endif
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 TEST(SimdRuntime, SortCompilerTierContract) {
   EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx2),
             hs::Isa::kAvx2);
-#if defined(HYLE_COMPILER_MSVC)
+#if HYLE_COMPILER_MSVC
   EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512),
             hs::Isa::kAvx2);
 #else
@@ -183,7 +183,7 @@ TEST(SimdRuntime, SortCompilerTierContract) {
 #endif
 
 TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto fn =
       hs::select_fat_kernel(&fat_scalar, &fat_sse4, &fat_avx2, &fat_avx512);
   const int expected = hs::runtime().isa == hs::Isa::kAvx512  ? 3
@@ -191,13 +191,13 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
                        : hs::runtime().isa == hs::Isa::kSse42 ? 1
                                                               : 0;
   EXPECT_EQ(fn(), expected);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_neon, &fat_sve);
   const int expected = hs::runtime().isa == hs::Isa::kSve    ? 2
                        : hs::runtime().isa == hs::Isa::kNeon ? 1
                                                              : 0;
   EXPECT_EQ(fn(), expected);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_rvv);
   EXPECT_EQ(fn(), hs::runtime().isa == hs::Isa::kRvv ? 1 : 0);
 #else
@@ -207,15 +207,15 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
 
 TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
   FatAddOneFn fn = nullptr;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   fn = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_test_fat_add_one_scalar, &hyle_test_fat_add_one_sse4,
       &hyle_test_fat_add_one_avx2, &hyle_test_fat_add_one_avx512);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   fn = HYLE_SIMD_SELECT_FAT_KERNEL(&hyle_test_fat_add_one_scalar,
                                    &hyle_test_fat_add_one_neon,
                                    &hyle_test_fat_add_one_sve);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   fn = HYLE_SIMD_SELECT_FAT_KERNEL(&hyle_test_fat_add_one_scalar,
                                    &hyle_test_fat_add_one_rvv);
 #else
@@ -239,7 +239,7 @@ TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
   EXPECT_EQ(selected, expected_selected);
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
   hyle::platform::CpuFeatures f;
   f.avx2 = true;

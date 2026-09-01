@@ -26,7 +26,7 @@ struct BitsetOps {
 };
 
 BitsetOps resolve_ops() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto isa = static_cast<std::uint32_t>(platform::best_isa());
 #if defined(HYLE_CONTAINER_HAS_AVX512)
   if (isa >= static_cast<std::uint32_t>(platform::Isa::kAvx512))
@@ -45,7 +45,7 @@ BitsetOps resolve_ops() noexcept {
             &detail::bitset_xor_sse4, &detail::bitset_and_not_sse4,
             &detail::bitset_not_sse4,
             &detail::bitset_count_sse4};
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (static_cast<std::uint32_t>(platform::best_isa()) >=
       static_cast<std::uint32_t>(platform::Isa::kNeon))
     return {&detail::bitset_and_neon, &detail::bitset_or_neon,

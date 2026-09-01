@@ -414,7 +414,6 @@ function(_hyle_component_public_headers name out_var)
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/core/*.h")
     list(APPEND _headers
-      "${HYLE_SOURCE_DIR}/include/hyle/platform.h"
       "${HYLE_SOURCE_DIR}/include/hyle/version.h"
       "${HYLE_SOURCE_DIR}/include/hyle/visibility.h")
   elseif(name STREQUAL "container_intrusive")
@@ -453,14 +452,13 @@ function(_hyle_component_public_headers name out_var)
 endfunction()
 
 # Resolve a public include to the component that owns that header. Root-level
-# platform/compiler/visibility/version contracts belong to Core. The trace macro
+# Compiler/environment/visibility/version contracts belong to Core. The trace macro
 # header is owned by the always-exported hyle_trace foundation target and is
 # already validated through hyle_add_module(... TRACE), so it has no product
 # component edge of its own.
 function(_hyle_public_include_owner include_path out_var)
   set(_owner "")
-  if(include_path STREQUAL "hyle/platform.h" OR
-     include_path STREQUAL "hyle/version.h" OR
+  if(include_path STREQUAL "hyle/version.h" OR
      include_path STREQUAL "hyle/visibility.h" OR
      include_path MATCHES "^hyle/core/")
     set(_owner core)

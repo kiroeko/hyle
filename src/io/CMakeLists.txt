@@ -2,7 +2,7 @@
 # Windows IOCP (ReadFile/WriteFile/WSARecv/WSASend/AcceptEx/ConnectEx) and Linux
 # io_uring (raw syscalls, no liburing link) + epoll reactor fallback. Binds to
 # sched via the Waker spine -- proactor.cc only moves completion tokens, sched/
-# owns the wake. `hyle/platform.h` contributes compile-time HYLE_OS_* macros but
+# owns the wake. `hyle/core/environment.h` contributes compile-time HYLE_OS_* macros but
 # no platform library symbol/type; the native async backends therefore do not
 # claim a direct binary dependency on the synchronous platform module.
 #

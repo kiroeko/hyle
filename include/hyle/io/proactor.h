@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
@@ -388,7 +388,7 @@ class Proactor {
 
   // Backend primitives used only through IoUringExtension. Keeping them private
   // prevents the portable surface from advertising Linux-only facilities.
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
                                      unsigned buf_size) noexcept;
   HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
@@ -462,7 +462,7 @@ class IoUringExtension {
 
   bool register_buffer_ring(int group_id, unsigned entries,
                             unsigned buffer_size) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() &&
            proactor_->register_buf_ring(group_id, entries, buffer_size);
 #else
@@ -471,7 +471,7 @@ class IoUringExtension {
 #endif
   }
   bool register_file_table(unsigned entries) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->register_file_table(entries);
 #else
     (void)entries;
@@ -479,7 +479,7 @@ class IoUringExtension {
 #endif
   }
   int assign_fixed_file(std::intptr_t fd) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() ? proactor_->assign_fixed_slot(fd) : -1;
 #else
     (void)fd;
@@ -487,7 +487,7 @@ class IoUringExtension {
 #endif
   }
   bool release_fixed_file(int slot) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->release_fixed_slot(slot);
 #else
     (void)slot;
@@ -497,7 +497,7 @@ class IoUringExtension {
   bool submit_recv_fixed(int slot, void* buffer, std::uint32_t length,
                          std::uint32_t flags,
                          std::uint64_t user_data) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->submit_recv_fixed(
                           slot, buffer, length, flags, user_data);
 #else
@@ -508,7 +508,7 @@ class IoUringExtension {
   bool submit_send_fixed(int slot, const void* buffer, std::uint32_t length,
                          std::uint32_t flags,
                          std::uint64_t user_data) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->submit_send_fixed(
                           slot, buffer, length, flags, user_data);
 #else
@@ -518,7 +518,7 @@ class IoUringExtension {
   }
   bool submit_accept_direct(std::intptr_t fd,
                             std::uint64_t user_data) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->submit_accept_direct(fd, user_data);
 #else
     (void)fd; (void)user_data;
@@ -527,7 +527,7 @@ class IoUringExtension {
   }
   bool submit_close_direct(int slot,
                            std::uint64_t user_data) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->submit_close_direct(slot, user_data);
 #else
     (void)slot; (void)user_data;
@@ -536,7 +536,7 @@ class IoUringExtension {
   }
   bool submit_recv_multishot(std::intptr_t fd, int group_id,
                              std::uint64_t user_data) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() &&
            proactor_->submit_recv_multishot(fd, group_id, user_data);
 #else
@@ -546,7 +546,7 @@ class IoUringExtension {
   }
   void* buffer_address(int group_id,
                        std::uint32_t buffer_id) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() ? proactor_->buf_ring_addr(group_id, buffer_id) : nullptr;
 #else
     (void)group_id; (void)buffer_id;
@@ -554,7 +554,7 @@ class IoUringExtension {
 #endif
   }
   bool return_buffer(int group_id, std::uint32_t buffer_id) const noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
     return valid() && proactor_->buf_ring_return(group_id, buffer_id);
 #else
     (void)group_id; (void)buffer_id;

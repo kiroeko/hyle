@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
 #pragma once
 
+#include "hyle/core/detail/compiler_attributes.h"
 #include "hyle/core/assert.h"
 
 #if !defined(__cplusplus)
@@ -11,9 +12,9 @@
 // compilers degrade hints safely; ASSUME/RESTRICT/UNREACHABLE remain semantic
 // promises and must never be used to validate untrusted input.
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if HYLE_COMPILER_MSVC
 #  define HYLE_FORCE_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
+#elif HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
 #  if defined(__OPTIMIZE__)
 #    define HYLE_FORCE_INLINE __attribute__((always_inline)) inline
 #  else
@@ -23,39 +24,36 @@
 #  define HYLE_FORCE_INLINE inline
 #endif
 
-#if defined(_MSC_VER)
-#  define HYLE_NOINLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_NOINLINE __attribute__((noinline))
-#else
-#  define HYLE_NOINLINE
-#endif
+#define HYLE_NOINLINE HYLE_DETAIL_NOINLINE
+#define HYLE_COLD HYLE_DETAIL_COLD
+#define HYLE_NO_TAIL_CALL HYLE_DETAIL_NO_TAIL_CALL
+#define HYLE_LIFETIME_BOUND HYLE_DETAIL_LIFETIME_BOUND
+#define HYLE_ALLOCATOR_RETURN(size_index) \
+  HYLE_DETAIL_ALLOCATOR_RETURN(size_index)
 
 #if defined(_MSC_VER)
 #  define HYLE_RESTRICT __restrict
-#elif defined(__GNUC__) || defined(__clang__)
+#elif HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
 #  define HYLE_RESTRICT __restrict__
 #else
 #  define HYLE_RESTRICT
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
 #  define HYLE_FLATTEN __attribute__((flatten))
 #else
 #  define HYLE_FLATTEN
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if HYLE_COMPILER_GCC
 #  define HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens) _Pragma(#tokens)
 #  define HYLE_DETAIL_COMPILER_PRAGMA(tokens) \
     HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens)
 #  define HYLE_UNROLL(factor) \
     HYLE_DETAIL_COMPILER_PRAGMA(GCC unroll factor)
 #  define HYLE_DEFAULT_UNROLL HYLE_UNROLL(4)
-#elif defined(__clang__)
-#  if defined(__OPTIMIZE__) && !__has_feature(address_sanitizer) &&           \
-      !__has_feature(thread_sanitizer) && !__has_feature(memory_sanitizer) && \
-      !__has_feature(undefined_behavior_sanitizer)
+#elif HYLE_COMPILER_CLANG
+#  if defined(__OPTIMIZE__) && !HYLE_SANITIZER_ANY
 #    define HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens) _Pragma(#tokens)
 #    define HYLE_DETAIL_COMPILER_PRAGMA(tokens) \
       HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens)
@@ -80,7 +78,7 @@
 #  define HYLE_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+#if HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
 #  define HYLE_LIKELY(cond) (__builtin_expect(!!(cond), 1))
 #  define HYLE_UNLIKELY(cond) (__builtin_expect(!!(cond), 0))
 #else
@@ -88,11 +86,11 @@
 #  define HYLE_UNLIKELY(cond) (!!(cond))
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if HYLE_COMPILER_MSVC
 #  define HYLE_DETAIL_COMPILER_ASSUME(cond) __assume(!!(cond))
-#elif defined(__clang__)
+#elif HYLE_COMPILER_CLANG
 #  define HYLE_DETAIL_COMPILER_ASSUME(cond) __builtin_assume(!!(cond))
-#elif defined(__GNUC__)
+#elif HYLE_COMPILER_GCC
 #  define HYLE_DETAIL_COMPILER_ASSUME(cond)  \
     do {                                       \
       if (!(cond)) __builtin_unreachable();   \
@@ -101,9 +99,9 @@
 #  define HYLE_DETAIL_COMPILER_ASSUME(cond) ((void)sizeof(!!(cond)))
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if HYLE_COMPILER_MSVC
 #  define HYLE_DETAIL_COMPILER_UNREACHABLE() __assume(0)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG
 #  define HYLE_DETAIL_COMPILER_UNREACHABLE() __builtin_unreachable()
 #else
 #  define HYLE_DETAIL_COMPILER_UNREACHABLE() ((void)0)
@@ -114,7 +112,7 @@
 // `cond` must be free of side effects: compiler spellings are permitted to
 // discard its evaluation, while the Debug diagnostic and GCC fallback evaluate
 // it. This is an optimizer contract, never a way to perform required work.
-#if !defined(NDEBUG)
+#if HYLE_BUILD_DEBUG
 #  define HYLE_ASSUME(cond) HYLE_FATAL_ASSERT(cond)
 #  define HYLE_UNREACHABLE() HYLE_FATAL_ASSERT(false)
 #else

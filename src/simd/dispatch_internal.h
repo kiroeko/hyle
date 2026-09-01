@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/dispatch.h"
 #include "src/simd/target_manifest.h"
 
@@ -19,13 +19,13 @@ namespace hyle::simd::detail {
 // report an AVX-512 product runtime while sort uses the safe AVX2 product TU.
 // clang-cl defines _MSC_VER too, but is not affected and must retain AVX-512.
 constexpr Isa sort_isa_for_product_isa(Isa product_isa) noexcept {
-#if defined(HYLE_COMPILER_MSVC)
+#if HYLE_COMPILER_MSVC
   if (product_isa == Isa::kAvx512) return Isa::kAvx2;
 #endif
   return product_isa;
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 // Exact runtime prerequisites for the optional x86 product TUs. These are
 // deliberately narrower than best_isa(): a specialty kernel may be useful
 // below HYLE's broad Highway-compatible AVX2/AVX-512 tier, but it must still
@@ -88,25 +88,25 @@ inline Isa default_dispatched_isa() noexcept {
   return Isa::kRvv;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
   return Isa::kScalar;
-#elif defined(HYLE_ARCH_X64)
+#elif HYLE_ARCH_X64
   const auto tier = static_cast<std::uint32_t>(platform::best_isa());
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
   if (tier >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
   return Isa::kScalar;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
   if (platform::best_isa() == Isa::kSve) return Isa::kSve;
 #endif
   return platform::best_isa() == Isa::kNeon ? Isa::kNeon : Isa::kScalar;
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
   return platform::best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
 #else
   return Isa::kScalar;
 #endif
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 template <class Fn>
 inline Fn resolve_default_variant(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexcept {
   switch (default_dispatched_isa()) {
@@ -116,7 +116,7 @@ inline Fn resolve_default_variant(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexce
     default: return scalar;
   }
 }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 template <class Fn>
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
 inline Fn resolve_default_variant(Fn scalar, Fn neon, Fn sve) noexcept {
@@ -128,7 +128,7 @@ inline Fn resolve_default_variant(Fn scalar, Fn neon) noexcept {
   return default_dispatched_isa() == Isa::kNeon ? neon : scalar;
 }
 #endif
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
 template <class Fn>
 inline Fn resolve_default_variant(Fn scalar, Fn rvv) noexcept {
   return default_dispatched_isa() == Isa::kRvv ? rvv : scalar;

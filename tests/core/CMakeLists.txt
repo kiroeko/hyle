@@ -1,4 +1,6 @@
 hyle_add_test(core SOURCES core_test.cc)
+hyle_add_test(core NAME release_assert SOURCES release_assert_test.cc
+              DEFINES NDEBUG)
 hyle_add_header_self_contained_test(core)
 
 add_test(NAME hyle_core_codegen_audit_parser_test

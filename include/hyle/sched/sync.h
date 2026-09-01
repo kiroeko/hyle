@@ -15,7 +15,7 @@
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform.h" // HYLE_OS_WINDOWS (Mutex backend split)
+#include "hyle/core/environment.h" // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/sched/waker.h"
 #include "hyle/time/clock.h"
 #include "hyle/util/spin_lock.h"
@@ -266,7 +266,7 @@ private:
 // -- a likely win there too, but UNMEASURED (no mac to bench), so not added:
 // adding an untested platform branch would violate "write+verify". Revisit with
 // a mac.
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 class Mutex {
 public:
   Mutex() noexcept = default;

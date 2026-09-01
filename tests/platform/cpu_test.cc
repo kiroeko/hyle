@@ -261,7 +261,7 @@ TEST(Cpu, IsaNameNonEmpty) {
 TEST(Cpu, FeatureImplicationsHold) {
   const CpuFeatures& f = cpu_features();
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   // x86-64 baseline: SSE2 is mandatory.
   EXPECT_TRUE(f.sse2);
 
@@ -282,7 +282,7 @@ TEST(Cpu, FeatureImplicationsHold) {
   if (f.sse42) { EXPECT_TRUE(f.sse41); }
   if (f.sse41) { EXPECT_TRUE(f.ssse3); }
   if (f.ssse3) { EXPECT_TRUE(f.sse2); }
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   // aarch64 baseline: NEON is mandatory.
   EXPECT_TRUE(f.neon);
   // SVE2 implies SVE; SVE sub-features imply SVE2 / SVE.
@@ -291,7 +291,7 @@ TEST(Cpu, FeatureImplicationsHold) {
   if (f.sve_i8mm || f.sve_f32mm || f.sve_f64mm || f.sve_bf16) {
     EXPECT_TRUE(f.sve);
   }
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   // Every vector sub-extension implies the V extension.
   if (f.rvv_zvbb || f.rvv_zvbc || f.rvv_zvkned || f.rvv_zvfh || f.rvv_zvfhmin) {
     EXPECT_TRUE(f.rvv);
@@ -305,7 +305,7 @@ TEST(Cpu, BestIsaAgreesWithFeatures) {
   const CpuFeatures& f = cpu_features();
   Isa best = best_isa();
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto groups = hyle::platform::detail::x86_isa_groups(f);
   if (best == Isa::kAvx512) {
     EXPECT_TRUE(groups.avx512);
@@ -315,19 +315,19 @@ TEST(Cpu, BestIsaAgreesWithFeatures) {
   }
   // Whatever the tier, scalar/sse2 remain supported on x86-64.
   EXPECT_TRUE(supports(Isa::kSse2));
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (best == Isa::kSve) {
     EXPECT_TRUE(f.sve);
   }
   EXPECT_TRUE(supports(Isa::kNeon));  // mandatory on aarch64
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   if (best == Isa::kRvv) {
     EXPECT_TRUE(f.rvv);
   }
 #endif
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 TEST(Cpu, SyntheticIsaGroupsRequireEveryCompiledTierFeature) {
   CpuFeatures f;
   f.avx = true;
@@ -389,12 +389,12 @@ TEST(Cpu, SupportsIsMonotone) {
   Isa best = best_isa();
   const std::uint32_t bv = static_cast<std::uint32_t>(best);
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const Isa arch_tiers[] = {Isa::kSse2, Isa::kSsse3, Isa::kSse42,
                             Isa::kAvx2, Isa::kAvx512};
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   const Isa arch_tiers[] = {Isa::kNeon, Isa::kSve};
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   const Isa arch_tiers[] = {Isa::kRvv};
 #else
   const Isa arch_tiers[] = {Isa::kScalar};

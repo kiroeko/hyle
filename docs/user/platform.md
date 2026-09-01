@@ -334,8 +334,9 @@ Windows 和 Linux 都可能在目标节点内存压力下回退，不能把它�
 
 先用 `numa_nodes()` 取得真实可用 id；它们可能稀疏，因此不要写
 `for (unsigned n=0; n<numa_node_count(); ++n)`。`numa_capabilities()` 适合启动期预检或 UI
-报告，实际操作返回的 `Status` 仍是最终结果。`HYLE_OS_*` 是 HYLE 实现层分派宏，不是用户
-选择 NUMA 路径的公共合同：
+报告，实际操作返回的 `Status` 仍是最终结果。`<hyle/core/environment.h>` 的 `HYLE_OS_*` 是
+当前 translation unit 的编译目标事实，不是运行时 NUMA capability；用户不能用它代替这里的
+查询结果来选择 NUMA 路径：
 
 ```cpp
 using namespace hyle::platform;

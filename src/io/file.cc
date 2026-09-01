@@ -4,11 +4,11 @@
 #include <limits>
 #include <utility>
 
-#include "hyle/platform.h"  // HYLE_OS_*
+#include "hyle/core/environment.h"  // HYLE_OS_*
 #include "hyle/sched/blocking.h"
 #include "hyle/time/unix_timestamp.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
@@ -16,7 +16,7 @@
 #  include <fcntl.h>
 #  include <sys/stat.h>
 #  include <unistd.h>
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
 #    include <sys/fcntl.h>
 #  endif
 #endif
@@ -31,14 +31,14 @@ namespace hyle::io {
 namespace {
 
 std::int64_t os_error() noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return -static_cast<std::int64_t>(::GetLastError());
 #else
   return -static_cast<std::int64_t>(errno);
 #endif
 }
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 std::int64_t file_read_sync(std::intptr_t fd, void* buf, std::uint32_t len,
                             std::uint64_t offset) noexcept {
   HANDLE event = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
@@ -202,7 +202,7 @@ std::int64_t file_stat_sync(std::intptr_t fd,
   if (::fstat(static_cast<int>(fd), &st) != 0) return os_error();
   *out = Proactor::FileStat{};
   out->size = static_cast<std::uint64_t>(st.st_size);
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   out->modified_time = time::unix_timestamp(
       static_cast<std::int64_t>(st.st_mtimespec.tv_sec),
       static_cast<std::uint32_t>(st.st_mtimespec.tv_nsec));
@@ -217,7 +217,7 @@ std::int64_t file_stat_sync(std::intptr_t fd,
 }
 
 std::int64_t file_sync_sync(std::intptr_t fd, bool datasync) noexcept {
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   (void)datasync;
   const int result = ::fsync(static_cast<int>(fd));
 #  else
@@ -237,7 +237,7 @@ std::int64_t file_allocate_sync(std::intptr_t fd, std::uint32_t mode,
               len) {
     return -EOVERFLOW;
   }
-#  if defined(HYLE_OS_MACOS)
+#  if HYLE_OS_MACOS
   const off_t want = static_cast<off_t>(offset + len);
   fstore_t store{};
   store.fst_flags = F_ALLOCATECONTIG;
@@ -287,7 +287,7 @@ bool submit_and_suspend(IoOperation& op, bool& submitted,
 
 void close_fd_sync(std::intptr_t fd) noexcept {
   if (fd < 0) return;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::CloseHandle(reinterpret_cast<HANDLE>(fd));
 #else
   ::close(static_cast<int>(fd));

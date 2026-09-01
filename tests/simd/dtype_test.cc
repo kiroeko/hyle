@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/dtype_ops.h"
 #include "src/simd/runtime_internal.h"
@@ -301,7 +301,7 @@ TEST(DtypeBatch, F32ToBf16SelectedRouteMatchesScalarExact) {
 // every result is bit-exact. Skip unless the selected artifact actually routes
 // through the specialization (CPU support alone is insufficient for exact builds).
 TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   if ((hyle::simd::runtime().dtype.features &
        hyle::simd::Runtime::kFeatureAvx512Bf16) == 0)
     GTEST_SKIP() << "selected artifact does not use AVX-512-BF16";
@@ -329,7 +329,7 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 // Fat artifacts may add precise-feature specializations from the host probe;
 // exact artifacts expose only features owned by their sole compiled product tier.
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 #if defined(HYLE_SIMD_EXACT)
   const bool tier_owns_f16c = hyle::simd::runtime().isa == Isa::kAvx2 ||
                               hyle::simd::runtime().isa == Isa::kAvx512;
@@ -347,11 +347,11 @@ TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
               0u);
   }
 #endif
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   // AArch64 always has the NEON floor. A fat SVE artifact promotes the common
   // conversion graph to its selected scalable tier instead of stopping at NEON.
   EXPECT_EQ(hyle::simd::runtime().dtype.isa, hyle::simd::runtime().isa);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   // A compiled RVV product owns the common conversion graph directly.
   EXPECT_EQ(hyle::simd::runtime().dtype.isa, hyle::simd::runtime().isa);
 #else

@@ -501,10 +501,10 @@ TEST(Math, TailSizes) {
 // runtime diagnostic names the fixed target actually compiled for the host.
 TEST(Math, ActiveVariantReported) {
   const Isa v = hyle::simd::runtime().math.isa;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   // x86: scalar floor, or locked-Highway AVX2 / AVX-512 target when available.
   EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2 || v == Isa::kAvx512);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   // aarch64: Highway NEON cores are always compiled (ARMv8 baseline) -> kNeon.
   EXPECT_EQ(v, Isa::kNeon);
 #else

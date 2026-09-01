@@ -1,7 +1,7 @@
 // AArch64 NEON batch/SoA façade over the locked Highway mathematics core.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
 
 #define HWY_COMPILE_ONLY_STATIC 1
 #define HYLE_SIMD_TARGET_NEON 1

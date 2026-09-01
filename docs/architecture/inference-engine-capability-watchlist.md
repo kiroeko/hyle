@@ -48,7 +48,7 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 | ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
 |---|---|---|---|
 | `CORE-WATCH-01` | 新编译器/ISA hint、target attribute 或 optimizer contract 被多个 hot kernel 共同需要 | 先由 `simd`/`compute` 私有 seam 验证；只有模型无关且跨两个消费者时才考虑 Core | 单个 kernel 的 codegen 需求不能扩成全库宏；需两个消费者、三编译器语义和真实 codegen/footprint 证据 |
-| `CORE-WATCH-02` | fatal invariant 需要崩溃 ID、stack 或更丰富静态上下文 | crash/obs owner；Core 最多保留最小 fail-fast sink | 当前 fatal 路径不承诺 async-signal-safe 或 crash reporter；需具名生产崩溃收集旅程并证明不污染成功热路 |
+| `CORE-WATCH-02` | fatal invariant 需要进程级 crash ID、stack/backtrace、signal/minidump 或持久化策略 | crash/obs owner；Core 已提供有界 typed fields 与 failure-only observer seam | Core observer 仍只在 failing thread 同步借用、返回后终止，且不承诺跨 DSO 或 async-signal-safe；更高层能力需具名生产崩溃收集旅程并证明不污染成功热路 |
 | `CORE-WATCH-03` | tensor/queue layout 想按 runtime cache/core domain 动态选择 padding | `platform` 提供事实，拥有该对象的 `container`/`sched`/引擎选择策略 | runtime topology 不能进入编译期 ABI 常量；需真实 false-sharing trace，且不能通过现有 interference constants + owner policy 解决 |
 
 ## Container Intrusive

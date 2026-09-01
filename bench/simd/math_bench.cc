@@ -21,7 +21,7 @@
 #include <string_view>
 #include <vector>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/runtime.h"
@@ -345,7 +345,7 @@ std::size_t chain_lanes() noexcept {
       hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa;
   if (isa == hyle::simd::Isa::kAvx512) return sizeof(T) == sizeof(double) ? 8 : 16;
   if (isa == hyle::simd::Isa::kAvx2) return sizeof(T) == sizeof(double) ? 4 : 8;
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
   return sizeof(T) == sizeof(double) ? 2 : 4;
 #else
   return 1;

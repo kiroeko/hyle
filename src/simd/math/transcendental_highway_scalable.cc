@@ -1,11 +1,11 @@
 // Length-agnostic SVE/RVV batch/SoA façade over the locked Highway mathematics
 // core. CMake compiles this TU once for the selected scalable target.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 #define HYLE_SIMD_TARGET_SVE 1
 #define HYLE_HIGHWAY_MATH_SUFFIX sve
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
 #define HYLE_SIMD_TARGET_RVV 1
 #define HYLE_HIGHWAY_MATH_SUFFIX rvv
 #endif

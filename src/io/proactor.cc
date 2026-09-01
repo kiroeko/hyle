@@ -6,7 +6,7 @@
 
 #include "hyle/container/swiss_table.h"
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/time/unix_timestamp.h"
 
 #include "timeout_internal.h"
@@ -18,7 +18,7 @@
 // drives the sched Waker spine -- io/ only moves completion tokens, sched/ owns
 // the wake. Mechanism heartbeat-verified per backend before each was written.
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 // winsock2 MUST precede windows.h (else the older winsock.h leaks in and clashes).
@@ -768,7 +768,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 
 }  // namespace hyle::io
 
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
 
 // io_uring backend (io-02). io-design says borrow ONLY the syscall shim, not
 // liburing's helpers -- and the mechanism heartbeat proved we need even less:
@@ -2663,7 +2663,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 
 }  // namespace hyle::io
 
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
 
 // kqueue backend (io-03 mac). kqueue is the SAME readiness-reactor model as Linux's
 // epoll fallback -- this block is a MECHANICAL MIRROR of that epoll backend, with the

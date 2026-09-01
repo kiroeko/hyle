@@ -13,14 +13,14 @@
 // HYLE ships matching fcontext assembly/build integration.
 #include <cstdint>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_X64) &&                                           \
-    ((defined(HYLE_OS_WINDOWS) && defined(_MSC_VER)) ||                 \
-     defined(HYLE_OS_LINUX) || defined(HYLE_OS_MACOS))
+#if HYLE_ARCH_X64 &&                                           \
+    ((HYLE_OS_WINDOWS && defined(_MSC_VER)) ||                 \
+     HYLE_OS_LINUX || HYLE_OS_MACOS)
 #  define HYLE_IO_DETAIL_DERIVED_COROUTINE_TRANSPORT 1
-#elif defined(HYLE_ARCH_ARM64) &&                                      \
-    (defined(HYLE_OS_LINUX) || defined(HYLE_OS_MACOS))
+#elif HYLE_ARCH_ARM64 &&                                      \
+    (HYLE_OS_LINUX || HYLE_OS_MACOS)
 #  define HYLE_IO_DETAIL_DERIVED_COROUTINE_TRANSPORT 1
 #else
 #  define HYLE_IO_DETAIL_DERIVED_COROUTINE_TRANSPORT 0

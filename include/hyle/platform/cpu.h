@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/error/result.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)

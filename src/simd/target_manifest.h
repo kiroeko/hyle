@@ -7,7 +7,7 @@
 #include "simd-dispatch/target_manifest.h"
 #else
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
 #if defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
 #define HYLE_SIMD_COMPILED_SCALAR 1
@@ -51,7 +51,7 @@
 #define HYLE_SIMD_EXACT_VARIANT rvv
 #define HYLE_SIMD_EXACT_RUNTIME kRvvRuntime
 #define HYLE_SIMD_EXACT_ISA_TOKEN Rvv
-#elif defined(HYLE_ARCH_X64)
+#elif HYLE_ARCH_X64
 #define HYLE_SIMD_COMPILED_SCALAR 1
 #define HYLE_SIMD_COMPILED_SSE4 1
 #define HYLE_SIMD_COMPILED_AVX2 1
@@ -61,7 +61,7 @@
   M(Sse4, sse4, Sse42)                        \
   M(Avx2, avx2, Avx2)                         \
   M(Avx512, avx512, Avx512)
-#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#elif HYLE_ARCH_ARM64 && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 #define HYLE_SIMD_COMPILED_SCALAR 1
 #define HYLE_SIMD_COMPILED_NEON 1
 #define HYLE_SIMD_COMPILED_SVE 1
@@ -69,13 +69,13 @@
   M(Scalar, scalar, Scalar)                    \
   M(Neon, neon, Neon)                         \
   M(Sve, sve, Sve)
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 #define HYLE_SIMD_COMPILED_SCALAR 1
 #define HYLE_SIMD_COMPILED_NEON 1
 #define HYLE_SIMD_FOR_EACH_COMPILED_TARGET(M) \
   M(Scalar, scalar, Scalar)                    \
   M(Neon, neon, Neon)
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
 #define HYLE_SIMD_COMPILED_SCALAR 1
 #define HYLE_SIMD_COMPILED_RVV 1
 #define HYLE_SIMD_FOR_EACH_COMPILED_TARGET(M) \

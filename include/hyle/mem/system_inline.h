@@ -22,26 +22,14 @@
 // implementation dependency. Shared consumers do not name mi_* at all.
 //
 #if defined(HYLE_STATIC) && !defined(HYLE_MEM_BUILD)
-#if defined(_MSC_VER) && !defined(__EDG__)
-// Keep the redeclaration type-compatible with mimalloc v3's public prototype.
-// Some users (and the allocator comparison benchmark) legitimately include
-// mimalloc.h in the same translation unit; MSVC diagnoses a later addition of
-// __declspec(restrict) as C4565 under /WX.
-#define HYLE_MEM_MI_ALLOCATOR_RETURN __declspec(allocator) __declspec(restrict)
-#elif defined(_MSC_VER)
-#define HYLE_MEM_MI_ALLOCATOR_RETURN __declspec(restrict)
-#else
-#define HYLE_MEM_MI_ALLOCATOR_RETURN
-#endif
 extern "C" {
-HYLE_MEM_MI_ALLOCATOR_RETURN void* mi_malloc(std::size_t size) noexcept;
-HYLE_MEM_MI_ALLOCATOR_RETURN void* mi_malloc_aligned(
+HYLE_ALLOCATOR_RETURN(1) void* mi_malloc(std::size_t size) noexcept;
+HYLE_ALLOCATOR_RETURN(1) void* mi_malloc_aligned(
     std::size_t size, std::size_t alignment) noexcept;
 void mi_free(void* p) noexcept;
 void* mi_realloc(void* p, std::size_t newsize) noexcept;
 void* mi_realloc_aligned(void* p, std::size_t newsize, std::size_t alignment) noexcept;
 }
-#undef HYLE_MEM_MI_ALLOCATOR_RETURN
 #endif
 
 namespace hyle::mem {

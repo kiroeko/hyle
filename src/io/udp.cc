@@ -4,9 +4,9 @@
 #include <utility>
 
 #include "hyle/io/tcp.h"     // resolve_addr (shared IPv4 literal -> sockaddr_in)
-#include "hyle/platform.h"   // HYLE_OS_* (must precede the per-OS socket headers)
+#include "hyle/core/environment.h"   // HYLE_OS_* (must precede the per-OS socket headers)
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -28,7 +28,7 @@ namespace {
 
 void close_fd(std::intptr_t fd) noexcept {
   if (fd < 0) return;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::closesocket(static_cast<SOCKET>(fd));
 #else
   ::close(static_cast<int>(fd));
@@ -42,7 +42,7 @@ int native_family(AddressFamily family) noexcept {
 
 std::intptr_t make_udp_socket(AddressFamily family) noexcept {
   const int af = native_family(family);
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   SOCKET s = ::WSASocketW(af, SOCK_DGRAM, IPPROTO_UDP, nullptr, 0,
                           WSA_FLAG_OVERLAPPED);
   return s == INVALID_SOCKET ? -1 : static_cast<std::intptr_t>(s);
@@ -93,14 +93,14 @@ UdpSocket udp_bind(IoContext& io, unsigned owner_worker, const char* host,
   if (fd < 0) return UdpSocket{};
 
   int one = 1;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_REUSEADDR,
                reinterpret_cast<const char*>(&one), sizeof(one));
 #else
   ::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
 #endif
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (::bind(static_cast<SOCKET>(fd), reinterpret_cast<sockaddr*>(&sa),
              static_cast<int>(len)) != 0) {
     close_fd(fd);

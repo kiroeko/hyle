@@ -4,7 +4,7 @@
 
 #include "hyle/container/string_algo.h"
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"  // best_isa() -> pick the widest compiled count/rfind kernel
 #include "src/container/str_search.h"  // per-ISA str_count/str_rfind_char variant symbols
 
@@ -29,7 +29,7 @@ using TransformFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
                                       std::uint32_t) noexcept;
 
 CountFn resolve_count() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
 #if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_count_avx512;
@@ -37,7 +37,7 @@ CountFn resolve_count() noexcept {
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_count_avx2;
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_count_sse4;
   return &str_count_scalar;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
       static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
     return &str_count_neon;
@@ -47,7 +47,7 @@ CountFn resolve_count() noexcept {
 #endif
 }
 RfindFn resolve_rfind() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
 #if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_rfind_char_avx512;
@@ -55,7 +55,7 @@ RfindFn resolve_rfind() noexcept {
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_rfind_char_avx2;
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_rfind_char_sse4;
   return &str_rfind_char_scalar;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
       static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
     return &str_rfind_char_neon;
@@ -65,7 +65,7 @@ RfindFn resolve_rfind() noexcept {
 #endif
 }
 TransformFn resolve_transform(bool lower) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
 #if defined(HYLE_CONTAINER_HAS_AVX512)
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512))
@@ -76,7 +76,7 @@ TransformFn resolve_transform(bool lower) noexcept {
   if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42))
     return lower ? &str_ascii_lower_sse4 : &str_ascii_upper_sse4;
   return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
       static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
     return lower ? &str_ascii_lower_neon : &str_ascii_upper_neon;

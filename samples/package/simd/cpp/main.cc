@@ -20,14 +20,14 @@ std::size_t hyle_package_xsimd_width() noexcept;
 using HylePackageBiasReluFn =
     void (*)(float*, std::size_t, float) noexcept;
 void hyle_package_bias_relu_scalar(float*, std::size_t, float) noexcept;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 void hyle_package_bias_relu_sse4(float*, std::size_t, float) noexcept;
 void hyle_package_bias_relu_avx2(float*, std::size_t, float) noexcept;
 void hyle_package_bias_relu_avx512(float*, std::size_t, float) noexcept;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 void hyle_package_bias_relu_neon(float*, std::size_t, float) noexcept;
 void hyle_package_bias_relu_sve(float*, std::size_t, float) noexcept;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 void hyle_package_bias_relu_rvv(float*, std::size_t, float) noexcept;
 #endif
 
@@ -144,15 +144,15 @@ int main() {
     return 14;
 
   std::array<float, 4> fat_values{-2.0f, -0.5f, 1.0f, 4.0f};
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_sse4,
       &hyle_package_bias_relu_avx2, &hyle_package_bias_relu_avx512);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_neon,
       &hyle_package_bias_relu_sve);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   static const HylePackageBiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_package_bias_relu_scalar, &hyle_package_bias_relu_rvv);
 #else

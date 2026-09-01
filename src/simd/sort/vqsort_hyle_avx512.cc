@@ -3,9 +3,9 @@
 // The target macro selects the 512-bit D-tag backend. Product CMake intentionally
 // excludes this TU for cl.exe (matching Highway's HWY_BROKEN_MSVC AVX3 gate);
 // supported frontends enter these symbols only when runtime().sort.isa is AVX-512.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 #define HYLE_SIMD_TARGET_AVX512
 #define HYLE_SORT_TIER avx512
 #include "src/simd/sort/vqsort_body.inc"

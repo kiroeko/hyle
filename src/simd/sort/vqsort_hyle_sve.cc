@@ -1,7 +1,7 @@
 // HYLE port of Highway vqsort, SVE scalable experiment/product tier.
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 #ifndef HYLE_SIMD_TARGET_SVE
 #define HYLE_SIMD_TARGET_SVE
 #endif

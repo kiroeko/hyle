@@ -8,10 +8,10 @@
 #include <new>
 #include <utility>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/fs.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -19,7 +19,7 @@
 #  include <sys/mman.h>
 #  include <sys/resource.h>
 #  include <sys/stat.h>
-#  if defined(HYLE_OS_LINUX)
+#  if HYLE_OS_LINUX
 #    include <sys/syscall.h>
 #  endif
 #  include <unistd.h>
@@ -57,7 +57,7 @@ bool round_up(std::size_t value, std::size_t alignment,
 
 }  // namespace
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 
 // ---- Windows ----------------------------------------------------------------
 namespace {
@@ -407,7 +407,7 @@ int lock_pages(const void* address, std::size_t length,
   if (mode == MappedFile::LockMode::kEager) {
     return ::mlock(address, length);
   }
-#if defined(HYLE_OS_LINUX) && defined(SYS_mlock2)
+#if HYLE_OS_LINUX && defined(SYS_mlock2)
   // MLOCK_ONFAULT is 0x01 in the Linux UAPI. Keeping the literal here avoids
   // requiring non-portable GNU/Linux headers in the public interface.
   return static_cast<int>(::syscall(SYS_mlock2, address, length, 0x01));

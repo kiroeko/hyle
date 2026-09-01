@@ -26,30 +26,30 @@
 
 #include "hyle/platform/thread.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
 #endif
-#if defined(HYLE_OS_LINUX) && (defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64))
+#if HYLE_OS_LINUX && (HYLE_ARCH_ARM64 || HYLE_ARCH_RISCV64)
 #include <sys/auxv.h>
 #endif
 
-#if defined(HYLE_OS_MACOS)
+#if HYLE_OS_MACOS
 #include <sys/sysctl.h>  // sysctlbyname("hw.cachelinesize")
 #endif
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 #include <sched.h>
 #include <unistd.h>  // sysconf(_SC_LEVEL1_DCACHE_LINESIZE)
 #endif
 
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_RISCV64)
+#if HYLE_OS_LINUX && HYLE_ARCH_RISCV64
 #include <sys/syscall.h>
 #include <unistd.h>
 #endif
 
-#if defined(HYLE_ARCH_X64)
-#  if defined(HYLE_COMPILER_MSVC)
+#if HYLE_ARCH_X64
+#  if HYLE_COMPILER_MSVC
 #    include <intrin.h>
 #  else
 #    include <cpuid.h>
@@ -59,13 +59,13 @@
 namespace hyle::platform {
 namespace {
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 
 // CPUID(leaf, subleaf) -> {eax, ebx, ecx, edx} in abcd. Wraps the two compiler ABIs
 // (Highway x86_cpuid.h does the same): MSVC's __cpuidex vs GCC/Clang's __cpuid_count.
 void cpuid(std::uint32_t leaf, std::uint32_t subleaf,
            std::uint32_t abcd[4]) noexcept {
-#  if defined(HYLE_COMPILER_MSVC)
+#  if HYLE_COMPILER_MSVC
   int regs[4];
   __cpuidex(regs, static_cast<int>(leaf), static_cast<int>(subleaf));
   for (int i = 0; i < 4; ++i) abcd[i] = static_cast<std::uint32_t>(regs[i]);
@@ -85,7 +85,7 @@ void cpuid(std::uint32_t leaf, std::uint32_t subleaf,
 // across context switches; a CPU can have AVX while a stale OS does not save YMM, and
 // using AVX there silently corrupts register state. (Highway targets.cc ReadXCR0.)
 std::uint32_t read_xcr0() noexcept {
-#  if defined(HYLE_COMPILER_MSVC)
+#  if HYLE_COMPILER_MSVC
   return static_cast<std::uint32_t>(_xgetbv(0));
 #  else
   std::uint32_t lo, hi;
@@ -201,7 +201,7 @@ CpuFeatures detect_x86() noexcept {
 
 #endif  // HYLE_ARCH_X64
 
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_RISCV64)
+#if HYLE_OS_LINUX && HYLE_ARCH_RISCV64
 
 constexpr std::uint64_t kRiscvExtV = std::uint64_t{1} << 2;
 constexpr std::uint64_t kRiscvExtZvbb = std::uint64_t{1} << 17;
@@ -240,12 +240,12 @@ static_assert([] {
 #endif
 
 CpuFeatures detect() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   return detect_x86();
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   CpuFeatures f;
   f.neon = true;  // mandatory on aarch64
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   // Keep the constants local instead of including asm/hwcap.h: old deployment
   // sysroots may not name newer bits, but the stable Linux userspace ABI does.
   constexpr unsigned long kHwcapSve = 1ul << 22;
@@ -277,9 +277,9 @@ CpuFeatures detect() noexcept {
   f.arm_bf16 = (caps2 & kHwcap2Bf16) != 0;
 #endif
   return f;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   CpuFeatures f;
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   constexpr unsigned long kHwcapIsaV = 1ul << ('V' - 'A');
   f.rvv = (getauxval(AT_HWCAP) & kHwcapIsaV) != 0;
 
@@ -313,7 +313,7 @@ CpuFeatures detect() noexcept {
 }
 
 Isa compute_best(const CpuFeatures& f) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   // Mirror Highway's group gating (targets.cc kGroupAVX2 / kGroupAVX3): a tier needs
   // ALL of its group's features, AND each tier's group SUBSUMES the lower tier's, so
   // a higher Isa genuinely implies every lower one (the enum's contract).
@@ -332,11 +332,11 @@ Isa compute_best(const CpuFeatures& f) noexcept {
   if (f.ssse3) return Isa::kSsse3;
   if (f.sse2) return Isa::kSse2;
   return Isa::kScalar;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (f.sve) return Isa::kSve;
   if (f.neon) return Isa::kNeon;
   return Isa::kScalar;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   return f.rvv ? Isa::kRvv : Isa::kScalar;
 #else
   (void)f;
@@ -349,12 +349,12 @@ Isa compute_best(const CpuFeatures& f) noexcept {
 // sysconf. 64 fallback. Compiled in this LTO-off baseline TU so the x86 CPUID
 // path is SIGILL-safe.
 unsigned detect_cache_line() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   std::uint32_t abcd[4];
   cpuid(1, 0, abcd);
   const unsigned line = ((abcd[1] >> 8) & 0xffu) * 8u;
   return line ? line : 64u;
-#elif defined(HYLE_OS_WINDOWS)
+#elif HYLE_OS_WINDOWS
   DWORD bytes = 0;
   if (::GetLogicalProcessorInformationEx(RelationCache, nullptr, &bytes) ||
       ::GetLastError() != ERROR_INSUFFICIENT_BUFFER ||
@@ -392,14 +392,14 @@ unsigned detect_cache_line() noexcept {
   }
   delete[] storage;
   return detected != 0 ? detected : 64u;
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
   std::size_t v = 0;
   std::size_t sz = sizeof(v);
   if (::sysctlbyname("hw.cachelinesize", &v, &sz, nullptr, 0) == 0 && v != 0) {
     return static_cast<unsigned>(v);
   }
   return 64u;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   const long v = ::sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
   return v > 0 ? static_cast<unsigned>(v) : 64u;
 #else
@@ -409,7 +409,7 @@ unsigned detect_cache_line() noexcept {
 
 CacheInfo detect_cache_info() noexcept {
   CacheInfo out;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   std::uint32_t abcd[4];
   cpuid(0, 0, abcd);
   const std::uint32_t max_basic = abcd[0];
@@ -444,7 +444,7 @@ CacheInfo detect_cache_info() noexcept {
     cpuid(0x80000000u, 0, abcd);
     if (abcd[0] >= 0x8000001du) enumerate(0x8000001du);
   }
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
   auto get = [](const char* name) noexcept {
     std::uint64_t value = 0;
     std::size_t size = sizeof(value);
@@ -454,7 +454,7 @@ CacheInfo detect_cache_info() noexcept {
   out.l1i = get("hw.l1icachesize");
   out.l2 = get("hw.l2cachesize");
   out.l3 = get("hw.l3cachesize");
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   auto get = [](int name) noexcept {
     const long value = ::sysconf(name);
     return value > 0 ? static_cast<std::uint64_t>(value) : 0;
@@ -475,7 +475,7 @@ CacheInfo detect_cache_info() noexcept {
   return out;
 }
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
   std::FILE* file = std::fopen(path, "r");
   if (!file) return false;
@@ -485,9 +485,9 @@ bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
 }
 #endif
 
-#if defined(HYLE_OS_WINDOWS) || defined(HYLE_OS_LINUX)
+#if HYLE_OS_WINDOWS || HYLE_OS_LINUX
 Status cpu_query_status(const char* operation, unsigned long code) noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   return status_from_win32(static_cast<std::uint32_t>(code), operation);
 #else
   return status_from_errno(static_cast<int>(code), operation);
@@ -498,7 +498,7 @@ Status cpu_query_status(const char* operation, unsigned long code) noexcept {
 Result<std::size_t> query_available_cpu_ids(unsigned* dst,
                                             std::size_t cap) noexcept {
   if (dst == nullptr) cap = 0;
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   HANDLE process = ::GetCurrentProcess();
 
   // A process may explicitly select CPU Set ids. Empty means no CPU-Set
@@ -611,7 +611,7 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
         "available CPU ids: process has no usable CPU set"));
   }
   return count;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   auto copy_set = [dst, cap](const cpu_set_t* set, std::size_t bytes,
                              std::size_t bits) noexcept
       -> Result<std::size_t> {
@@ -680,7 +680,7 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
 void fill_cpu_performance_ranks(const unsigned* ids, std::size_t count,
                                 unsigned* ranks) noexcept {
   std::memset(ranks, 0, count * sizeof(*ranks));
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   const std::size_t system_count = hardware_concurrency();
   unsigned rank_stack[256]{};
   unsigned* rank_by_id = system_count <= 256
@@ -723,7 +723,7 @@ void fill_cpu_performance_ranks(const unsigned* ids, std::size_t count,
   }
   if (storage != storage_stack) delete[] storage;
   if (rank_by_id != rank_stack) delete[] rank_by_id;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   for (std::size_t i = 0; i < count; ++i) {
     char path[96];
     std::snprintf(path, sizeof(path),
@@ -797,7 +797,7 @@ CpuTopology detect_topology() noexcept {
   if (out.system_logical_cpus == 0) out.system_logical_cpus = 1;
   out.performance_cpus = out.system_logical_cpus;
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   DWORD bytes = 0;
   (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
                                      ::GetCurrentProcess(), 0);
@@ -844,7 +844,7 @@ CpuTopology detect_topology() noexcept {
     }
   }
   delete[] storage;
-#elif defined(HYLE_OS_MACOS)
+#elif HYLE_OS_MACOS
   int levels = 0;
   std::size_t levels_size = sizeof(levels);
   if (::sysctlbyname("hw.nperflevels", &levels, &levels_size, nullptr, 0) ==
@@ -870,7 +870,7 @@ CpuTopology detect_topology() noexcept {
       out.hybrid = true;
     }
   }
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
   // Linux exposes scheduler capacity on heterogeneous ARM systems. Only trust
   // it when every process-visible logical CPU has a value and capacities differ.
   unsigned capacities[4096];
@@ -1016,11 +1016,11 @@ Isa best_isa() noexcept {
 
 bool supports(Isa isa) noexcept {
   if (isa == Isa::kScalar) return true;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   if (isa < Isa::kSse2 || isa > Isa::kAvx512) return false;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   if (isa != Isa::kNeon && isa != Isa::kSve) return false;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   if (isa != Isa::kRvv) return false;
 #else
   return false;

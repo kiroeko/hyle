@@ -4,7 +4,7 @@
 #include <cstring>
 #include <utility>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
@@ -168,7 +168,7 @@ TEST(Numa, BindHardAndInterleave) {
     EXPECT_EQ(*hard, hyle::platform::NumaPlacement::kNotNeeded);
     EXPECT_EQ(*inter, hyle::platform::NumaPlacement::kNotNeeded);
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // Multi-node Windows: no post-hoc hard bind / interleave -> honest errors.
   if (!single_node) {
     EXPECT_FALSE(hard.has_value());

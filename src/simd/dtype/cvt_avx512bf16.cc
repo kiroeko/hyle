@@ -9,9 +9,9 @@
 //
 // VCVTNEPS2BF16 is bit-identical to the scalar oracle for finite values. Hardware may choose
 // another quiet-NaN payload; those cold exceptional lanes are restored after the vector store.
-#include "hyle/platform.h"  // HYLE_ARCH_X64 -- MUST precede the guard below
+#include "hyle/core/environment.h"  // HYLE_ARCH_X64 -- MUST precede the guard below
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 
 #include "src/simd/dtype/kernels.h"
 

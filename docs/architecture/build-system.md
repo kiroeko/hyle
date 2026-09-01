@@ -171,6 +171,9 @@ factor manifest 自身的 unknown edge、重复、PUBLIC/PRIVATE 冲突和非拓
 `<hyle/version.h>` 是 build/package 拥有的 checked-in 产品元数据，并由 Core include contract
 交付；Core 本身不拥有 linked version query。`<hyle/visibility.h>` 的 export/import policy 也由
 build/package 拥有，随各 compiled module 的 static/shared 形状维护，而不是 Core capability。
+当前 TU 的 OS/arch/compiler/build/sanitizer facts 由 Core 自己的
+`<hyle/core/environment.h>` 交付；它不是 runtime Platform binary，也不再使用旧根级
+`<hyle/platform.h>`。source、static 与 shared consumer 必须编译同一份环境合同。
 
 ## Host 工具链选择入口
 

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/simd/dispatch.h"
 
 using hyle::simd::Isa;
@@ -69,7 +69,7 @@ TEST(Dispatch, EnvironmentFeatureExpectations) {
   ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVKNED", f.rvv_zvkned);
 }
 
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 // SSE2 is guaranteed on every x86-64 CPU, so the probe MUST report it and best_isa
 // must be at least the SSE2 tier.
 TEST(Dispatch, X64AlwaysHasSse2) {
@@ -123,7 +123,7 @@ TEST(Dispatch, Avx512ExtensionsImplyBase) {
 }
 #endif  // HYLE_ARCH_X64
 
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
 TEST(Dispatch, ArmScalableExtensionsImplyBase) {
   const CpuFeatures& f = cpu_features();
   if (f.sve2 || f.sve_aes || f.sve_pmull || f.sve_i8mm || f.sve_f32mm ||
@@ -136,7 +136,7 @@ TEST(Dispatch, ArmScalableExtensionsImplyBase) {
 }
 #endif
 
-#if defined(HYLE_ARCH_RISCV64)
+#if HYLE_ARCH_RISCV64
 TEST(Dispatch, RvvExtensionsImplyBase) {
   const CpuFeatures& f = cpu_features();
   if (f.rvv_zvbb || f.rvv_zvbc || f.rvv_zvkned || f.rvv_zvfh ||
@@ -151,13 +151,13 @@ TEST(Dispatch, RvvExtensionsImplyBase) {
 TEST(Dispatch, SupportsIsMonotone) {
   EXPECT_TRUE(supports(best_isa()));
   EXPECT_TRUE(supports(Isa::kScalar));  // floor: always supported
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   EXPECT_FALSE(supports(Isa::kNeon));
   EXPECT_FALSE(supports(Isa::kRvv));
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   EXPECT_FALSE(supports(Isa::kAvx2));
   EXPECT_FALSE(supports(Isa::kRvv));
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   EXPECT_FALSE(supports(Isa::kAvx2));
   EXPECT_FALSE(supports(Isa::kNeon));
 #endif

@@ -14,9 +14,9 @@ namespace hs = hyle::simd;
 
 namespace {
 
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
 constexpr hs::Isa kExpectedIsa = hs::Isa::kSve;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 constexpr hs::Isa kExpectedIsa = hs::Isa::kRvv;
 #endif
 

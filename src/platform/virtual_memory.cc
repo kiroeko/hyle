@@ -5,18 +5,18 @@
 #include <cstdio>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/numa.h"
 
 // Linux THP advice flags live behind feature macros on some libcs.
-#if defined(HYLE_OS_LINUX) && !defined(MADV_HUGEPAGE)
+#if HYLE_OS_LINUX && !defined(MADV_HUGEPAGE)
 #  define MADV_HUGEPAGE 14
 #endif
-#if defined(HYLE_OS_LINUX) && !defined(MADV_NOHUGEPAGE)
+#if HYLE_OS_LINUX && !defined(MADV_NOHUGEPAGE)
 #  define MADV_NOHUGEPAGE 15
 #endif
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -28,7 +28,7 @@
 namespace hyle::platform {
 namespace {
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 Status native_status(const char* operation, DWORD code) noexcept {
   return status_from_win32(code, operation);
 }
@@ -40,7 +40,7 @@ Status native_status(const char* operation, int code) noexcept {
 
 std::size_t page_size_cached() noexcept {
   static const std::size_t kPage = []() noexcept -> std::size_t {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
     return static_cast<std::size_t>(si.dwPageSize);
@@ -62,7 +62,7 @@ std::size_t align_size(std::size_t size) noexcept {
   return page_align_up(size);
 }
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 DWORD protect_to_win(Protect prot) noexcept {
   if (prot == Protect::kRead) return PAGE_READONLY;
   if (prot == Protect::kReadWrite) return PAGE_READWRITE;
@@ -109,7 +109,7 @@ bool align_nonempty_size(std::size_t requested, std::size_t& aligned) noexcept {
   return requested == 0 || aligned != 0;
 }
 
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
 std::size_t linux_large_page_size() noexcept {
   // The THP PMD size is the kernel's actual promotion granularity. Do not infer
   // it from ISA: Linux supports different base/huge-page configurations on the
@@ -150,7 +150,7 @@ std::size_t page_size() noexcept { return page_size_cached(); }
 
 std::size_t large_page_size() noexcept {
   static const std::size_t kLarge = []() noexcept -> std::size_t {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
     // GetLargePageMinimum is the hard large-page size (often 2 MiB). Requires
     // SeLockMemoryPrivilege to actually allocate with MEM_LARGE_PAGES; the size
     // query itself is fine without it.
@@ -162,7 +162,7 @@ std::size_t large_page_size() noexcept {
     if (fn == nullptr) return 0;
     SIZE_T s = fn();
     return s > 0 ? static_cast<std::size_t>(s) : 0;
-#elif defined(HYLE_OS_LINUX)
+#elif HYLE_OS_LINUX
     return linux_large_page_size();
 #else
     // macOS has no anonymous huge-page advice contract corresponding to Linux
@@ -182,7 +182,7 @@ Status vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
   if (!align_nonempty_size(size, size)) {
     return Status::OutOfRange("vm advise hugepage: size overflow");
   }
-#if defined(HYLE_OS_LINUX) && defined(MADV_HUGEPAGE)
+#if HYLE_OS_LINUX && defined(MADV_HUGEPAGE)
   if (::madvise(ptr, size, MADV_HUGEPAGE) != 0) {
     return native_status("madvise(MADV_HUGEPAGE)", errno);
   }
@@ -204,7 +204,7 @@ Status vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept {
   if (!align_nonempty_size(size, size)) {
     return Status::OutOfRange("vm advise no-hugepage: size overflow");
   }
-#if defined(HYLE_OS_LINUX) && defined(MADV_NOHUGEPAGE)
+#if HYLE_OS_LINUX && defined(MADV_NOHUGEPAGE)
   if (::madvise(ptr, size, MADV_NOHUGEPAGE) != 0) {
     return native_status("madvise(MADV_NOHUGEPAGE)", errno);
   }
@@ -223,7 +223,7 @@ Result<void*> vm_reserve(std::size_t size) noexcept {
     return std::unexpected(Status::InvalidArgument(
         "vm reserve: size is zero or overflows page alignment"));
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // Reserve only -- no physical pages. PAGE_NOACCESS until commit.
   void* p = ::VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS);
   if (p == nullptr) {
@@ -247,7 +247,7 @@ Result<void*> vm_allocate_rw(std::size_t size) noexcept {
     return std::unexpected(Status::InvalidArgument(
         "vm allocate RW: size is zero or overflows page alignment"));
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   void* base = ::VirtualAlloc(nullptr, aligned, MEM_RESERVE | MEM_COMMIT,
                               PAGE_READWRITE);
   if (base == nullptr) {
@@ -273,7 +273,7 @@ Status vm_commit(void* ptr, std::size_t size) noexcept {
   if (!align_nonempty_size(size, size)) {
     return Status::OutOfRange("vm commit: size overflow");
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   void* p = ::VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
   if (p == nullptr) {
     return native_status("VirtualAlloc(MEM_COMMIT)", ::GetLastError());
@@ -296,7 +296,7 @@ Status vm_decommit(void* ptr, std::size_t size) noexcept {
   if (!align_nonempty_size(size, size)) {
     return Status::OutOfRange("vm decommit: size overflow");
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (::VirtualFree(ptr, size, MEM_DECOMMIT) == 0) {
     return native_status("VirtualFree(MEM_DECOMMIT)", ::GetLastError());
   }
@@ -328,7 +328,7 @@ Status vm_release(void* base, std::size_t size) noexcept {
     return Status::InvalidArgument(
         "vm release: size is zero or overflows page alignment");
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // MEM_RELEASE requires dwSize == 0 and the ORIGINAL reserve base.
   (void)size;
   if (::VirtualFree(base, 0, MEM_RELEASE) == 0) {
@@ -356,7 +356,7 @@ Status vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
   if (!align_nonempty_size(size, size)) {
     return Status::OutOfRange("vm protect: size overflow");
   }
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   // Windows: VirtualProtect needs the pages to be committed for non-NOACCESS
   // changes in some cases; for PAGE_NOACCESS on committed pages it works.
   // Fiber guard use: commit usable pages, then protect the guard page as

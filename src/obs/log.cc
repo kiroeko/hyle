@@ -7,9 +7,9 @@
 #include <utility>
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <windows.h>
@@ -179,7 +179,7 @@ void write_escaped(FILE *stream, std::string_view text) noexcept {
   }
 }
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 // OutputDebugStringA has no length-taking form. Mirror the same escaped logical
 // record as stderr into one bounded buffer so hostile control bytes cannot
 // forge debugger lines and the mirror does not allocate in a diagnostic path.
@@ -256,7 +256,7 @@ private:
 
 void default_write(void *, const LogRecord &record) noexcept {
   std::lock_guard<std::mutex> lock(registry().default_mutex);
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   const bool color_enabled = _isatty(_fileno(stderr)) != 0;
 #else
   const bool color_enabled = isatty(fileno(stderr)) != 0;
@@ -277,7 +277,7 @@ void default_write(void *, const LogRecord &record) noexcept {
   }
   std::fputc('\n', stderr);
   std::fflush(stderr);
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   DebugLine debug;
   debug.append("[");
   debug.append(level_name(record.level));

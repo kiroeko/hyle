@@ -2,9 +2,9 @@
 
 #include <cstring>
 
-#include "hyle/platform.h"  // HYLE_OS_* (must precede the per-OS socket headers)
+#include "hyle/core/environment.h"  // HYLE_OS_* (must precede the per-OS socket headers)
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
@@ -38,7 +38,7 @@ void resolve_blocking(const char* host, std::uint16_t port,
 
   // getaddrinfo takes the port as a decimal service string.
   char service[8];
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   ::_itoa_s(static_cast<int>(port), service, sizeof(service), 10);
 #else
   std::snprintf(service, sizeof(service), "%u", static_cast<unsigned>(port));

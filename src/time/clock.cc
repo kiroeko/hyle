@@ -7,9 +7,9 @@
 #endif
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32)
+#include "hyle/core/environment.h"  // HYLE_OS_* (project convention over raw _WIN32)
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -38,8 +38,8 @@
 // Clang support the required system-register asm on Linux/macOS. MSVC ARM64
 // stays on the portable monotonic fallback until a reviewed intrinsic path is
 // available instead of relying on unsupported inline asm.
-#if defined(HYLE_ARCH_ARM64) && \
-    (defined(HYLE_COMPILER_CLANG) || defined(HYLE_COMPILER_GCC))
+#if HYLE_ARCH_ARM64 && \
+    (HYLE_COMPILER_CLANG || HYLE_COMPILER_GCC)
 #  define HYLE_TIME_HAS_ARM_COUNTER 1
 #else
 #  define HYLE_TIME_HAS_ARM_COUNTER 0
@@ -81,7 +81,7 @@ inline std::uint64_t scale_hardware_counter(std::uint64_t counter,
 
 #if defined(HYLE_TESTING) && HYLE_TIME_HAS_TSC
 bool force_tsc_timing_calibration() noexcept {
-#  if defined(HYLE_OS_WINDOWS)
+#  if HYLE_OS_WINDOWS
   char value[2] = {};
   const DWORD length = ::GetEnvironmentVariableA(
       "HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION", value,
@@ -97,7 +97,7 @@ bool force_tsc_timing_calibration() noexcept {
 
 }  // namespace
 
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
 
 namespace {
 
@@ -265,7 +265,7 @@ std::uint64_t coarse_realtime_ns() noexcept {
 }
 
 bool coarse_realtime_available() noexcept {
-#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_REALTIME_COARSE)
+#if HYLE_OS_WINDOWS || defined(CLOCK_REALTIME_COARSE)
   return true;
 #else
   return false;
@@ -277,7 +277,7 @@ std::uint64_t coarse_monotonic_ns() noexcept {
 }
 
 bool coarse_monotonic_available() noexcept {
-#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_MONOTONIC_COARSE)
+#if HYLE_OS_WINDOWS || defined(CLOCK_MONOTONIC_COARSE)
   return true;
 #else
   return false;
@@ -285,7 +285,7 @@ bool coarse_monotonic_available() noexcept {
 }
 
 std::uint64_t current_thread_cpu_ns() noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   FILETIME created;
   FILETIME exited;
   FILETIME kernel;
@@ -306,7 +306,7 @@ std::uint64_t current_thread_cpu_ns() noexcept {
 }
 
 std::uint64_t process_cpu_ns() noexcept {
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   FILETIME created;
   FILETIME exited;
   FILETIME kernel;
@@ -327,7 +327,7 @@ std::uint64_t process_cpu_ns() noexcept {
 }
 
 void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
-#if defined(HYLE_OS_LINUX)
+#if HYLE_OS_LINUX
   // Linux exposes the exact primitive this API means: an absolute
   // CLOCK_MONOTONIC sleep. It avoids a userspace now/read/subtract loop and is
   // immune to relative-wait drift across signals.

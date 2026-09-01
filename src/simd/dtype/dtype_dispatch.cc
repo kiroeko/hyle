@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/dtype/conversion_kernels.h"
 #include "src/simd/dtype/kernels.h"
@@ -60,7 +60,7 @@ void convert(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept {
 }
 
 // AVX10.2 gate: build has -mavx10.2-512 (clang-20) AND the CPU advertises avx10_2 (+ZMM).
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
 bool use_avx10_2() noexcept {
   return (runtime().dtype.features & Runtime::kFeatureAvx10_2) != 0;
 }
@@ -70,28 +70,28 @@ bool use_avx10_2() noexcept {
 // the kernel goes f32 --(round-to-odd)--> f16 --(hw)--> fp8, which is BIT-IDENTICAL to the direct
 // scalar oracle (round-to-odd defeats the double-rounding; verified over 486.6M f32). Else scalar.
 void convert(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
   static const bool hw = use_avx10_2();
   if (hw) { detail::f32_to_f8e4m3_avx10_2(src, dst, n); return; }
 #endif
   detail::f32_to_f8e4m3_scalar(src, dst, n);
 }
 void convert(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
   static const bool hw = use_avx10_2();
   if (hw) { detail::f32_to_f8e5m2_avx10_2(src, dst, n); return; }
 #endif
   detail::f32_to_f8e5m2_scalar(src, dst, n);
 }
 void convert(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
   static const bool hw = use_avx10_2();
   if (hw) { detail::f16_to_f8e4m3_avx10_2(src, dst, n); return; }
 #endif
   detail::f16_to_f8e4m3_scalar(src, dst, n);
 }
 void convert(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+#if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
   static const bool hw = use_avx10_2();
   if (hw) { detail::f16_to_f8e5m2_avx10_2(src, dst, n); return; }
 #endif

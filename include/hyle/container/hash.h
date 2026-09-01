@@ -18,7 +18,7 @@
 #endif
 
 #include "hyle/core/compiler.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -60,7 +60,7 @@ inline constexpr std::size_t kWyhashThreshold = 128;
 // different points for the shipping toolchains: 512B on Linux/GCC 14, but 1KiB
 // on Windows/MSVC and macOS/Clang. The latter includes the public dispatch seam;
 // using the raw algorithm crossover would make real 512/768B callers slower.
-#if defined(__linux__) && !defined(HYLE_ARCH_ARM64)
+#if defined(__linux__) && !HYLE_ARCH_ARM64
 inline constexpr std::size_t kWideHashThreshold = 512;
 #else
 inline constexpr std::size_t kWideHashThreshold = 1024;
@@ -360,7 +360,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
   // dispatcher chooses wyhash or a runtime-safe wide XXH3 kernel. Vendor headers
   // stay hidden and hashes remain repeatable for this process.
   if (len <= 32) {
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
     return detail::hash_bytes_medium_inline(data, len, seed);
 #else
     return detail::hash_medium_17_32(data, len, seed);
@@ -400,7 +400,7 @@ struct BytewiseHash {
     if constexpr (sizeof(T) <= 16) {
       return detail::hash_small(&v, sizeof(T));           // inline mix, no call
     } else if constexpr (sizeof(T) <= 32) {
-#if defined(HYLE_ARCH_ARM64)
+#if HYLE_ARCH_ARM64
       return detail::hash_bytes_medium_inline(&v, sizeof(T), 0);
 #else
       return detail::hash_medium_17_32(&v, sizeof(T), 0);

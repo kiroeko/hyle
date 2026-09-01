@@ -43,6 +43,16 @@ def main() -> None:
     if actual_modules != checker.declared_components(root):
         raise AssertionError("registry stopped following the central component graph")
 
+    # Contract tests must remain valid while any particular module is moving
+    # through a legal closure round. Pick a terminal receipt for mutations that
+    # specifically exercise CLOSED-only fields instead of assuming Core is
+    # permanently CLOSED.
+    terminal_record = next(
+        record for record in data["modules"]
+        if record["product_state"] == "CLOSED"
+    )
+    terminal_module = terminal_record["module"]
+
     p1_engineering_close = copy.deepcopy(data)
     intrusive = next(
         record for record in p1_engineering_close["modules"]
@@ -72,7 +82,7 @@ def main() -> None:
     missing_loc = copy.deepcopy(data)
     core = next(
         record for record in missing_loc["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     del core["loc"]["module_implementation"]
     errors = checker.validate_registry(missing_loc, root)
     require_error(errors, "missing LOC fields")
@@ -80,7 +90,7 @@ def main() -> None:
     missing_anchor = copy.deepcopy(data)
     core = next(
         record for record in missing_anchor["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     del core["registry_anchor_commit"]
     errors = checker.validate_registry(missing_anchor, root)
     require_error(errors, "registry_anchor_commit")
@@ -88,7 +98,7 @@ def main() -> None:
     short_identity = copy.deepcopy(data)
     core = next(
         record for record in short_identity["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     core["baseline_commit"] = core["baseline_commit"][:7]
     errors = checker.validate_registry(short_identity, root)
     require_error(errors, "full 40-digit lowercase Git id")
@@ -132,7 +142,7 @@ def main() -> None:
     task_is_directory = copy.deepcopy(data)
     core = next(
         record for record in task_is_directory["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     core["closure_task"] = "docs/implementation/tasks/core"
     errors = checker.validate_registry(task_is_directory, root)
     require_error(errors, "must name a repository file")
@@ -151,7 +161,7 @@ def main() -> None:
     absolute_evidence = copy.deepcopy(data)
     core = next(
         record for record in absolute_evidence["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     core["closure_evidence"] = "C:/private/core.log"
     errors = checker.validate_registry(absolute_evidence, root)
     require_error(errors, "must not be an absolute path")
@@ -159,7 +169,7 @@ def main() -> None:
     illegal = copy.deepcopy(data)
     core = next(
         record for record in illegal["modules"]
-        if record["module"] == "core")
+        if record["module"] == terminal_module)
     core["product_state"] = "QUEUED"
     errors = checker.validate_transitions(data, illegal)
     require_error(errors, "illegal transition 'CLOSED' -> 'QUEUED'")
@@ -178,7 +188,10 @@ def main() -> None:
     require_error(errors, "illegal transition 'QUEUED' -> 'BLOCKED'")
 
     drifted_status = status_path.read_text(encoding="utf-8").replace(
-        "| core | CLOSED |", "| core | QUEUED |", 1)
+        f"| {terminal_module} | CLOSED |",
+        f"| {terminal_module} | QUEUED |",
+        1,
+    )
     errors = checker.validate_status_page(data, drifted_status)
     require_error(errors, "differs from module-status.json")
 

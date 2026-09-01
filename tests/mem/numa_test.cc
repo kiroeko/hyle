@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "hyle/mem/hugepage.h"
-#include "hyle/platform.h"
+#include "hyle/core/environment.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 
@@ -57,7 +57,7 @@ TEST(MemNuma, HugeRegionHardBindFlag) {
       HugeRegion::allocate(page_size() * 8,
                            HugeFlags::kThpHint | HugeFlags::kNumaBind,
                            static_cast<int>(numa_nodes().front()));
-#if defined(HYLE_OS_WINDOWS)
+#if HYLE_OS_WINDOWS
   if (numa_nodes().size() > 1u) {
     EXPECT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented());

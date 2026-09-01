@@ -28,14 +28,14 @@
 
 using BiasReluFn = void (*)(float*, std::size_t, float) noexcept;
 void hyle_sample_bias_relu_scalar(float*, std::size_t, float) noexcept;
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
 void hyle_sample_bias_relu_sse4(float*, std::size_t, float) noexcept;
 void hyle_sample_bias_relu_avx2(float*, std::size_t, float) noexcept;
 void hyle_sample_bias_relu_avx512(float*, std::size_t, float) noexcept;
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
 void hyle_sample_bias_relu_neon(float*, std::size_t, float) noexcept;
 void hyle_sample_bias_relu_sve(float*, std::size_t, float) noexcept;
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
 void hyle_sample_bias_relu_rvv(float*, std::size_t, float) noexcept;
 #endif
 #endif
@@ -108,15 +108,15 @@ int main() {
 
 #if defined(HYLE_SAMPLE_SIMD_FAT)
   // (C) Select once at the pointer/count boundary, then call the same direct-Highway body.
-#if defined(HYLE_ARCH_X64)
+#if HYLE_ARCH_X64
   static const BiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_sample_bias_relu_scalar, &hyle_sample_bias_relu_sse4,
       &hyle_sample_bias_relu_avx2, &hyle_sample_bias_relu_avx512);
-#elif defined(HYLE_ARCH_ARM64)
+#elif HYLE_ARCH_ARM64
   static const BiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_sample_bias_relu_scalar, &hyle_sample_bias_relu_neon,
       &hyle_sample_bias_relu_sve);
-#elif defined(HYLE_ARCH_RISCV64)
+#elif HYLE_ARCH_RISCV64
   static const BiasReluFn bias_relu = HYLE_SIMD_SELECT_FAT_KERNEL(
       &hyle_sample_bias_relu_scalar, &hyle_sample_bias_relu_rvv);
 #else
