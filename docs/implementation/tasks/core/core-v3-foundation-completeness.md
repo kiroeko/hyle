@@ -177,3 +177,17 @@ Windows 还编译运行迁移涉及的 Obs/SIMD/IO。GCC shared-symbol audit 曾
 `21697748299939378a258a5c5aee02ef02582c15`。后续所有产品 gate 只验证这一不可变 identity；若公共
 合同、算法或正常成本发生变化则退回 `AUDITED`，不得把新 tree 冒充同一候选。不可变 replay、gate
 matrix、LOC 和 terminal receipt 在验证后填写。
+
+### Rejected candidate 1
+
+`cbc2951ca34ffa961d9db8660b45f17eac2a0104` / `21697748299939378a258a5c5aee02ef02582c15`
+在 W1-WIN 的 MSVC Release/Debug WERROR 全部通过，但 clang-cl 20.1.8 WERROR 在编译阶段拒绝：
+
+1. `[[clang::lifetimebound]]` 放在 array-reference declarator 之后，被解释为作用于 array type 而非
+   parameter；普通 `std::string_view`/pointer 参数没有该问题；
+2. formatter bound test 用 `HYLE_COMPILER_MSVC` 选择 `tmpfile_s`，但 clang-cl 是 Clang frontend +
+   Windows CRT ABI，错误进入 deprecated `tmpfile()` 分支。
+
+这两项是 `CORE3-03/04` 内的可移植性缺陷，不改变 frozen API、算法、normal workload 或成本合同。
+按 `CANDIDATE -> AUDITED` 退回后，只允许修正 attribute placement 与 test ABI condition，再建立新的
+commit/tree；首个候选不得复用或写成 PASS。
