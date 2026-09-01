@@ -1,6 +1,6 @@
 # 全库能力展开与组件因子化 v1
 
-> 记录性质：`ACTIVE PROJECT ARCHITECTURE REPLAY`。它不改变任何模块的机械状态，也不授权修改产品
+> 记录性质：`COMPLETED PROJECT ARCHITECTURE REPLAY`。它不改变任何模块的机械状态，也不授权修改产品
 > 代码；当前状态仍只以 [`module-status.json`](../../module-status.json) 为准。
 
 ## 目标与基线
@@ -942,8 +942,8 @@ compile/runtime facts、time、topology、filesystem/process、memory、concurre
 政策。Compute/Graph 仍冻结，但它们的直接消费要求已作为 `ROUTED` 行或上述 cluster 输入保留；
 Build/package 仍是横向开发单元，不伪造第 14 个产品能力域。
 
-据此裁决：**阶段 A 已冻结，阶段 B/C 尚未开始**。冻结的是能力输入和拒绝理由，不是 177 行以外的实现
-承诺，也不改变 `module-status.json`、不重开任何 `CLOSED` 模块、不授权产品改动。以后只有新的具名
+据此裁决：**阶段 A 已冻结；该时点阶段 B/C 尚未开始，后续结果见下文**。冻结的是能力输入和拒绝理由，
+不是 177 行以外的实现承诺，也不改变 `module-status.json`、不重开任何 `CLOSED` 模块、不授权产品改动。以后只有新的具名
 consumer、锁定 peer 差异、可复现产品缺陷或标准变化，才能以增量 evidence 修订 A；不能用 benchmark
 行、代码行数或“再看一遍”恢复无限清点。
 
@@ -1078,16 +1078,235 @@ function 都没有独立 target收益；Error 的 Status/Result共享同一 fail
 `CORE/ERROR/INTR/UTILC/TIME/PLAT/MEM/OBS/SIMD/MATH/CONT/UTILR/SCHED/IO` 的 377 个 A ID
 全部恰好出现一次：缺失 0、重复 0、未知 owner 0。14 个 composite A 行又在 `B-R06` 中完成语义拆分。
 
-据此裁决：**阶段 B 已冻结，阶段 C 尚未开始**。冻结的是 semantic owner、30 个候选质因数、route 与
-negative space；不是 CMake target、依赖可见性、目录迁移、FIX 集或模块 reopen。现有 umbrella 名称是否
+据此裁决：**阶段 B 已冻结；该时点阶段 C 尚未开始，最终结果见下节**。冻结的是 semantic owner、30 个候选
+质因数、route 与 negative space；不是 CMake target、依赖可见性、目录迁移、FIX 集或模块 reopen。现有 umbrella 名称是否
 保留为纯 convenience target、每个 factor 的 component ID、公开/私有/build-only 边、旧 API迁移和真实
 施工拓扑都必须由 C 阶段从本账本导出，不能回头用当前图删除已经冻结的能力。
 
 ### C. 依赖图与施工顺序
 
-为每个因子记录 public semantic/type、private mechanism、build-only vendor、consumer 与唯一 decision
-authority 五类边。消除 owner 错位、机制类型泄漏和重复决策后，输出无环中央组件图、旧到新迁移表及
-拓扑施工顺序。只有此后才为首个组件建立 `SCOPED/AUDITED` 的有限 FIX 集并修改产品代码。
+本节只从已经冻结的 A/B 账本导出图，不以现有目录或 CMake 边作前提。`PUBLIC` 表示公开头、公开类型或
+inline 合同需要依赖方；`PRIVATE` 表示本组件的 source/static/shared artifact 构建必须取得、但不进入
+本组件公开类型的 HYLE 机制；`BUILD_ONLY` 是 vendor、生成物或系统链接资产，不是 HYLE 产品组件。三类依赖都必须由
+Build/package 投影，只有前两类进入 HYLE 内部 DAG。
+
+#### C1. 组件 ID、依赖可见性与唯一裁决权
+
+`B-F01..30` 现在分别取得同名的稳定 component ID；安装目标统一为 `hyle::<component_id>`，真实构建
+目标统一为 `hyle_<component_id>`。component ID 不强迫 C++ namespace 与 target 同名：
+Platform、Mem、Container、Util、Sched 和 IO 的子因子仍可留在各自语义 namespace；`metrics` 使用
+`hyle::metrics`，Text 使用 `hyle::text`。精确 symbol 与文件移动仍由各因子的 `SCOPED/AUDITED` task
+冻结，不能在本架构记录中假装已经实现。
+
+| factor / component ID | PUBLIC semantic/type deps | PRIVATE mechanism deps | BUILD_ONLY mechanism | sole decision authority |
+|---|---|---|---|---|
+| `B-F01 core` | — | — | — | invariant/fatal 终止、compiler/layout/header facts 与窄 optimizer hints |
+| `B-F02 error` | `core` | — | — | canonical `Status/Result`、native projection 与 failure propagation |
+| `B-F03 container_intrusive` | `core` | — | — | caller-owned hook、membership 与 intrusive ordering；不拥有 retirement |
+| `B-F04 util_core` | `core` | — | — | leaf RAII/borrow/callback、statistical RNG 与短 spin/backoff vocabulary |
+| `B-F05 time` | `core` | — | OS clock source | host clock domains、typed value、conversion 与 injectable clock |
+| `B-F06 timer_queue` | `core`、`time`、`container_intrusive` | — | — | timer node ordering/data structure；不执行 callback、wait 或 cancel |
+| `B-F07 platform_host` | `core`、`error` | — | OS/CPU APIs | CPU/topology/NUMA/raw VM、DynLib、environment 与 secure entropy facts |
+| `B-F08 platform_thread` | `core`、`error`、`time`、`platform_host` | — | OS thread/wait APIs | native thread、priority/affinity、current-thread ISA state 与 wait/wake |
+| `B-F09 platform_fs` | `core`、`error`、`time` | `platform_host` | OS filesystem APIs | synchronous namespace、`FileHandle`、temp 与 atomic replacement |
+| `B-F10 mem_core` | `core`、`error` | — | mimalloc | host allocation/resource vocabulary、quota/stats/decorator policy |
+| `B-F11 mem_pool` | `core`、`error`、`mem_core` | `platform_host` | mimalloc | arena/pool/cache 的 variable/fixed、individual/bulk 与 concurrency lifecycle |
+| `B-F12 mem_vm` | `core`、`error`、`platform_host`、`platform_fs`、`mem_core`、`util_core` | — | OS VM/mapping APIs | mapping/residency/huge/guarded-stack storage；不拥有 namespace notification |
+| `B-F13 mem_buffer` | `core`、`error`、`mem_core` | `mem_pool`、`mem_vm` | — | provider-neutral resource/buffer/view、sync seam、pool 与 lifetime planner |
+| `B-F14 mem_reclaim` | `core` | — | — | reclamation domain、reader guard、retire 与 quiescent reclamation |
+| `B-F15 obs` | `core`、`error`、`time` | `mem_reclaim` | Tracy | structured log/trace event、sink lifecycle、correlation 与 profiling seam |
+| `B-F16 metrics` | `core`、`error`、`time`、`mem_core` | — | — | counter/gauge/distribution、local merge 与 typed snapshot；不拥有 exporter |
+| `B-F17 simd` | `core` | `platform_host` | Highway、xsimd、ISA object TUs | 全部 SIMD operation/target/provider route；Platform 不再公开第二个 `Isa` authority |
+| `B-F18 math` | `core` | — | — | checked scalar size/shape arithmetic；不吸收 SIMD 或模型数学 |
+| `B-F19 container` | `core`、`mem_core` | `platform_host` | Highway、xxHash、wyhash | sequential storage、runtime hash、ordering、bitset、heap 与 cache algorithms |
+| `B-F20 container_concurrent` | `core`、`mem_core`、`mem_reclaim`、`container`、`util_core` | — | — | concurrent map/set/vector publication、accessor 与 retirement contract |
+| `B-F21 container_queue` | `core`、`mem_core` | — | — | try-only bounded/unbounded/role/priority queue storage；不等待或取消 |
+| `B-F22 text` | `core`、`mem_core` | `platform_host` | simdutf、Highway | borrowed text、ASCII/Unicode codec、lexical path 与 interning semantics |
+| `B-F23 registry` | `core`、`error`、`mem_core`、`container`、`text` | — | — | exact name→factory、priority 与 startup→freeze→read publication |
+| `B-F24 symbol` | `core` | — | DbgHelp / platform C++ ABI demangler | ordinary C++ demangle owning/caller-buffer contract；不承诺 crash safety |
+| `B-F25 sched` | `core`、`error`、`time`、`platform_host`、`platform_thread`、`mem_core`、`util_core` | `timer_queue`、`mem_pool`、`mem_vm`、`container_queue`、`metrics` | fcontext C/assembly | worker/fiber/coroutine progress、suspension、wake、cancel、timer 与 async sync |
+| `B-F26 io_core` | `core`、`error`、`time`、`platform_fs`、`mem_core`、`mem_vm`、`mem_buffer`、`text`、`sched` | `platform_host`、`platform_thread`、`mem_pool`、`container_queue`、`metrics` | OS completion backends | one completion runtime、async file/net/IPC、Endpoint 与 operation budget |
+| `B-F27 io_tls` | `core`、`error`、`io_core`、`mem_core`、`text` | — | OpenSSL | TLS config/session/stream operation；OpenSSL type不进入公开面 |
+| `B-F28 io_http` | `core`、`error`、`time`、`io_core`、`mem_core`、`text`、`sched` | `mem_pool`、`container`、`container_queue` | pico parser | HTTP/1 message/framing、async body、client/server host 与 SSE |
+| `B-F29 io_http2` | `core`、`error`、`io_core`、`io_http`、`sched` | `mem_pool`、`container`、`container_queue` | nghttp2 | HTTP/2 multiplex、flow control 与 HYLE async-body adapter |
+| `B-F30 io_transfer` | `core`、`error`、`time`、`io_http`、`text` | `io_tls`、`platform_fs`、`mem_buffer`、`mem_vm` | — | resumable/validated download、atomic destination 与 transfer progress |
+
+`core` 的直接 PUBLIC 边看似密集，是因为每个公开 C++ component 都直接消费 compiler/visibility/header
+合同；这不是把全库 runtime 塞进 Core。`platform_host` 对 SIMD/Container/Text 的边只允许消费 facts，
+不能调用它们的 algorithm dispatcher。`mem_vm` 对 Platform 的公开边只用于 `NumaNodeId`、
+`FileHandle` 等有唯一 owner 的互操作类型；raw VM mechanism 不得原样泄漏成 Mem 的第二套 owner。
+当前 header 中的反例必须在各自迁移 task消失后才能宣称新图落地：`mem_pool` 的默认 shard探测移到
+compiled helper，SIMD不再公开 alias `platform::Isa`，Container/Text 的 dispatch header也不得暴露
+Platform runtime类型。不能只把 CMake edge从 PUBLIC改成 PRIVATE来掩盖仍存在的 public include。
+
+#### C2. consumer 边与 build-only 投影
+
+下表是 C1 全部 PUBLIC/PRIVATE 边的反向直接 consumer；不列传递 consumer。`—` 表示本轮 30 个底座
+因子中没有下游，不表示没有产品需求。
+
+| component | direct internal consumers |
+|---|---|
+| `core` | `error`、`container_intrusive`、`util_core`、`time`、`timer_queue`、`platform_host`、`platform_thread`、`platform_fs`、`mem_core`、`mem_pool`、`mem_vm`、`mem_buffer`、`mem_reclaim`、`obs`、`metrics`、`simd`、`math`、`container`、`container_concurrent`、`container_queue`、`text`、`registry`、`symbol`、`sched`、`io_core`、`io_tls`、`io_http`、`io_http2`、`io_transfer` |
+| `error` | `platform_host`、`platform_thread`、`platform_fs`、`mem_core`、`mem_pool`、`mem_vm`、`mem_buffer`、`obs`、`metrics`、`registry`、`sched`、`io_core`、`io_tls`、`io_http`、`io_http2`、`io_transfer` |
+| `container_intrusive` | `timer_queue` |
+| `util_core` | `mem_vm`、`container_concurrent`、`sched` |
+| `time` | `timer_queue`、`platform_thread`、`platform_fs`、`obs`、`metrics`、`sched`、`io_core`、`io_http`、`io_transfer` |
+| `timer_queue` | `sched` |
+| `platform_host` | `platform_thread`、`platform_fs`、`mem_pool`、`mem_vm`、`simd`、`container`、`text`、`sched`、`io_core` |
+| `platform_thread` | `sched`、`io_core` |
+| `platform_fs` | `mem_vm`、`io_core`、`io_transfer` |
+| `mem_core` | `mem_pool`、`mem_vm`、`mem_buffer`、`metrics`、`container`、`container_concurrent`、`container_queue`、`text`、`registry`、`sched`、`io_core`、`io_tls`、`io_http` |
+| `mem_pool` | `mem_buffer`、`sched`、`io_core`、`io_http`、`io_http2` |
+| `mem_vm` | `mem_buffer`、`sched`、`io_core`、`io_transfer` |
+| `mem_buffer` | `io_core`、`io_transfer` |
+| `mem_reclaim` | `obs`、`container_concurrent` |
+| `obs` | — |
+| `metrics` | `sched`、`io_core` |
+| `simd` | — |
+| `math` | — |
+| `container` | `container_concurrent`、`registry`、`io_http`、`io_http2` |
+| `container_concurrent` | — |
+| `container_queue` | `sched`、`io_core`、`io_http`、`io_http2` |
+| `text` | `registry`、`io_core`、`io_tls`、`io_http`、`io_transfer` |
+| `registry` | — |
+| `symbol` | — |
+| `sched` | `io_core`、`io_http`、`io_http2` |
+| `io_core` | `io_tls`、`io_http`、`io_http2` |
+| `io_tls` | `io_transfer` |
+| `io_http` | `io_http2`、`io_transfer` |
+| `io_http2` | — |
+| `io_transfer` | — |
+
+没有内部 consumer 的组件都有具名外部根：`simd` 服务普通 buffer/custom kernel及冻结的 Compute demand；
+`math` 服务 shape/stride/size schema；`container_concurrent` 服务 backend/runtime shared maps；
+`registry` 服务 composition root与冻结的 backend catalogue demand；`symbol` 服务日志、测试和 debug UI；
+`obs` 服务宿主 logger/profiler；`io_http2` 和 `io_transfer` 服务推理 server/model downloader及普通工程
+consumer。Compute/Graph 需求仍是 consumer evidence，不在它们恢复 `SCOPED` 前伪造图边或 target。
+
+Build/package 对外部机制的唯一投影如下：
+
+| build-only mechanism | owning components | delivery rule |
+|---|---|---|
+| mimalloc | `mem_core`、`mem_pool` | 中央锁定 source/license/offline identity；不把 mimalloc header/type导出 |
+| Tracy 与 `hyle_trace` call-site seam | `obs`；Mem/Sched/IO等只消费 build projection | trace OFF 无产品 runtime依赖；trace ON 仍只有 Obs 决定 event/backend |
+| Highway、xsimd、ISA object TUs | `simd` | SIMD唯一裁决 provider；fixed/fat/expert交付由同一 component导出 |
+| Highway、xxHash、wyhash | `container` | 只实现 Container semantic algorithm；不依赖 `simd` target |
+| simdutf、Highway | `text` | 只实现 Text codec/search；不建立第二个 SIMD产品 dispatcher |
+| fcontext | `sched` | 按平台选择私有 C/assembly artifact；不导出 fcontext ABI |
+| OpenSSL | `io_tls` | 只在选择 TLS/其显式 bundle时探测；不可用则配置明确失败 |
+| pico parser | `io_http` | parser type不外泄，HTTP拥有 limits/framing/error shape |
+| nghttp2 | `io_http2` | 只在选择 H2时探测；nghttp2 state不外泄 |
+| DbgHelp / platform C++ ABI demangler | `symbol` | Build/package投影系统链接资产与 availability |
+| OS clock/VM/thread/fs/completion APIs | 对应 `time/platform_*/mem_vm/io_core` owner | 是 owner-private platform source，不是 FetchContent vendor或跨组件 authority |
+
+GoogleTest、nanobench和所有 peer checkout仍只属于 test/evidence。Folly、oneTBB、Abseil、Marl、
+Seastar 与 Boost没有任何隐含 build edge；以后只有单个 factor 的新 `BORROW` 裁决才能把它们加入
+Build/package 账本。
+
+#### C3. 解环与禁止的反向依赖
+
+| potential cycle/duplicate | frozen resolution |
+|---|---|
+| Platform ↔ SIMD | `simd::Isa`/target route由 SIMD拥有；Platform只给 CPU facts和 current-thread enable mechanism，因此 `simd -> platform_host` 是 PRIVATE 单向边 |
+| Platform fs ↔ Mem VM ↔ IO | `platform_fs`拥有 namespace/`FileHandle`，`mem_vm`拥有 storage mapping，`io_core`拥有 async operation/transfer/notification；native handle只能被一个 owner持有并显式 adopt/borrow |
+| Mem buffer ↔ Compute/IO | `mem_buffer`定义 provider-neutral interface；Compute/IO adapter向下实现它，Mem不 include backend/tensor/Proactor类型 |
+| Time ↔ Sched ↔ queue | `time`只给 clock value，`timer_queue`只给 node ordering，`sched`私下组合 timer/queue并唯一拥有 wait/cancel/progress |
+| Obs/Metrics ↔ Sched/IO | Obs/metrics不读取 scheduler internals；Sched负责 context capture/restore并私下使用 metrics，宿主在顶层组合 exporter |
+| SIMD ↔ Container/Text | Container/Text可直接编译锁定 vendor或消费 Platform facts；不能复用 `hyle::simd` dispatcher，也不能把 semantic hash/codec搬入 SIMD |
+| Container ↔ Text ↔ Registry | Text不依赖 Container产品；Registry作为上层模板显式依赖二者，避免 StringInterner/Path 为复用一个 map拉回完整 Container闭包 |
+| IO HTTP ↔ TLS | `io_http` 与 `io_tls` 都只依赖 transport-neutral `io_core`；只有 `io_transfer` 私下组合两者，HTTP不因 HTTPS产生反向边 |
+| Registry ↔ DynLib/module unload | Registry保持 one-way publication，Platform只拥有 DynLib；未准入的 Module/quiescence factor不以 unsafe erase或 callback pin伪装 |
+
+唯一允许的非图 seam 是 Obs/Build共同拥有的 `hyle_trace` build projection：它无产品状态、无公开 runtime
+authority，不能承载 logging、metrics或业务 context。其余“共享 detail header/object library”只能由一个
+semantic owner私有拥有并随 consumer安装/编译，不能借 `PRIVATE_BUILD_DEPS` 绕过真实产品依赖。
+
+#### C4. 现有组件迁移与 umbrella 规则
+
+| current component | target factors | frozen migration boundary |
+|---|---|---|
+| `core` | `core` | 保持质因数；只在新 manifest 投影改变公开/交付边时按 trigger回开 |
+| `error` | `error` | 保持 canonical failure owner；typed parser/backend error仍留 owning factor |
+| `container_intrusive` | `container_intrusive` | 保持独立；reader-safe retirement移交 `mem_reclaim` |
+| `util_core` | `util_core` | 保持 leaf utilities；wait/park、crypto RNG、allocator factory不上浮 |
+| `time` | `time`、`timer_queue` | clocks/timestamps留 `time`；`TimerEntry/TimerQueue/CommonTimeoutQueue` family迁到 `timer_queue` |
+| `platform` | `platform_host`、`platform_thread`、`platform_fs` | CPU/NUMA/raw VM/DynLib/env/entropy、thread/wait、sync fs分别迁移；`MappedFile`/residency高层 owner迁 `mem_vm` |
+| `mem` | `mem_core`、`mem_pool`、`mem_vm`、`mem_buffer`、`mem_reclaim` | allocator/PMR/stats、pools/arenas、mapping/huge/stack、provider buffer、reclamation分别唯一落位 |
+| `obs` | `obs`、`metrics` | log/trace保留；可查询 counter/distribution/merge不再依赖 profiler enable |
+| `simd` | `simd` | 公开产品不拆；去掉 `platform::Isa` 公开别名和 provider mechanism泄漏 |
+| `math` | `math` | 只保留 checked scalar helper，不吸收 SIMD/linear algebra |
+| `container` | `container`、`container_concurrent`、`container_queue`、`text` | sequential、concurrent、try-only queue、text/path/interner分离；`StringView/Path/codec/interner` 转入 `hyle::text` |
+| `util` | `registry`、`symbol` | factory publication与 compiled demangle分离；`util_core` 不被重新聚合进任一 binary |
+| `sched` | `sched` | 产品闭环保留，但 timer/storage/reclamation/metrics改为新图的直接依赖 |
+| `io` | `io_core`、`io_tls`、`io_http`、`io_http2`、`io_transfer` | completion/file/net/IPC、TLS、HTTP/1、H2、download分别交付；shared mapping storage归 `mem_vm` |
+| `compute`、`graph` | 暂不迁移 | 保持 `QUEUED`/冻结；旧代码只提供 demand，待底座图落地后重新 `SCOPED/AUDITED` |
+| Build/package | 横向投影，不是 component | 先支持新 ID、依赖边、bundle、source/static/shared与 optional vendor，再允许首个产品迁移 |
+
+HYLE 尚未发布，本迁移不保留 forwarding header、旧 aggregate binary或两套 symbol owner。target变更必须让
+错误在 configure/compile/link 边界显式出现，指南给出一次性迁移表；不能为兼容把旧聚合 target永远留在
+DAG 中。
+
+为易用性只提供下列纯 `INTERFACE` consumer bundles；它们没有 component ID、源码、头、模块状态、
+decision authority或产品依赖资格：
+
+| bundle target / selector | exact factor roots |
+|---|---|
+| `hyle::time_all` / `time_all` | `time`、`timer_queue` |
+| `hyle::platform_all` / `platform_all` | `platform_host`、`platform_thread`、`platform_fs` |
+| `hyle::mem_all` / `mem_all` | `mem_core`、`mem_pool`、`mem_vm`、`mem_buffer`、`mem_reclaim` |
+| `hyle::obs_all` / `obs_all` | `obs`、`metrics` |
+| `hyle::container_all` / `container_all` | `container_intrusive`、`container`、`container_concurrent`、`container_queue`、`text` |
+| `hyle::util_all` / `util_all` | `util_core`、`registry`、`symbol` |
+| `hyle::io_all` / `io_all` | `io_core`、`io_tls`、`io_http`、`io_http2`、`io_transfer` |
+
+`HYLE_COMPONENTS=all` 仍只是开发者全树 selector，不是可被组件依赖的 target。source consumer在 configure
+时选择 factor/bundle；installed static/shared consumer链接同名 factor/bundle；三种交付必须由同一张
+123-edge manifest构建，随后按 PUBLIC/PRIVATE 语义投影各自的编译、链接和 runtime closure。选择
+`io_all` 等含 optional vendor 的 bundle就明确要求相应依赖，不能静默删掉 TLS/H2 后仍声称 bundle完整。
+
+#### C5. 无环证明、拓扑序与可并行施工
+
+冻结图共有 30 个 vertex、95 条 PUBLIC edge、28 条 PRIVATE edge，共 123 条 HYLE 内部直接边。按
+`B-Fxx` 作稳定 tie-break 运行 Kahn 拓扑检查，30/30 vertex均被取出且每条边都从较小 ID 指向较大 ID；
+因此 canonical serial order 恰好是 `B-F01 core` 到 `B-F30 io_transfer` 的账本顺序。build-only vendor、
+consumer reverse edge和 bundle均不参与 DAG，不能用来伪造环或解环。
+
+允许的并行 wave如下；一个 wave只有在全部 predecessor 的 API/交付 candidate冻结后才可开始：
+
+| wave | factors |
+|---|---|
+| `L0` | `core` |
+| `L1` | `error`、`container_intrusive`、`util_core`、`time`、`mem_reclaim`、`math`、`symbol` |
+| `L2` | `timer_queue`、`platform_host`、`mem_core`、`obs` |
+| `L3` | `platform_thread`、`platform_fs`、`mem_pool`、`metrics`、`simd`、`container`、`container_queue`、`text` |
+| `L4` | `mem_vm`、`container_concurrent`、`registry` |
+| `L5` | `mem_buffer`、`sched` |
+| `L6` | `io_core` |
+| `L7` | `io_tls`、`io_http` |
+| `L8` | `io_http2`、`io_transfer` |
+
+真实施工必须先建立独立的 registry/build migration task：保存 `module-status.json` previous snapshot，
+为新增 ID登记 `QUEUED`，再让 Build/package接受新 factor与 bundle。现有 `CLOSED` 结论不能分裂继承；
+若公开 component/delivery边改变，就按各记录已有 reopen trigger建立新 round。每个 factor随后仍按
+“`SCOPED` 能力/API → `AUDITED` 有限 FIX → correctness/migration → candidate → P0/P1/P2性能与
+source/static/shared交付”施工。
+
+为支持并行，中央 `cmake/HyleComponents.cmake`、bundle生成、状态 registry与总迁移指南只由 integration
+task修改；factor task只拥有自己的 headers/source/tests/docs。每个 factor合入后只回审直接 consumers，
+不在模块任务中顺手改公共 checker或下一 wave。任何性能发现都必须在已冻结的自然 API和同合同 workload
+上裁决，不能反向制造 `fast/light/benchmark` 类型。
+
+#### C6. Stage C 冻结
+
+30 个 B factor均取得一个 component ID、一个唯一 authority、完整 PUBLIC/PRIVATE/build-only/consumer
+投影和一个 canonical拓扑位置；7 类 route仍无产品 vertex；旧 16-component实现到新图的迁移和 7 个纯
+bundle也已逐项登记。机械展开结果为缺失 component 0、未知 dependency 0、重复 authority 0、拓扑剩余
+vertex 0。
+
+据此裁决：**阶段 C 已冻结，本架构 replay 完成**。本 task没有修改产品代码、CMake、
+`module-status.json`、benchmark或性能结论；它也不授权直接开始任一 factor实现。后续产品工作必须由
+新的 registry/build migration task与各 factor closure card按上述拓扑重新授权，不能继续把本历史记录
+中的施工描述当当前命令。
 
 ## 停止与裁决
 
