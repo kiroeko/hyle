@@ -186,7 +186,7 @@
     },
     {
       "module": "error",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "round_id": "error-v5-capability-completion",
@@ -194,6 +194,8 @@
       "scope": "Complete the consumer-proven WinSock domain plus the admitted borrowed-result, no-throw dynamic-diagnostic and standard-error adapter families while preserving the existing owning Status/Result hot-path contract.",
       "non_goals": "Exceptions, arbitrary payload/cause/source-location systems, MultiError, runtime domain registries, logging, downstream IO migration, adjacent-module closure, Native FFI/C API, stable C++ ABI, benchmark-invented APIs, instrumentation redesign and Formal certification.",
       "baseline_commit": "afdb6b81ab4e8e3ad9d790be87a80dc9242c1cec",
+      "candidate_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
+      "candidate_tree": "305b2cb5947627dfb5b9697c939205b6c26cc6b7",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -211,7 +213,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v5 AUDITED：ERR5-01..04 有限 FIX、Result<T&>/WinSock/format_status/std::error_code 自然 API、Core-only 依赖、常态成本和 P1 消费者合同已冻结，现在授权实现。"
+      "summary": "error-v5 CANDIDATE：ERR5-01..04 已实现，候选 d61f0710/305b2cb5 冻结；三平台正确性与 source/static/shared C++ 交付已通过，等待 W1-WIN P1 qualification、红队和终态登记。"
     },
     {
       "module": "obs",

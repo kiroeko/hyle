@@ -209,3 +209,34 @@ custom pointer 仍只在调用期间借用且不进入 Status。这是 shared-de
 
 当前为 `AUDITED`：四项有限 `FIX`、公开 API、依赖、常态成本、正常 workload 与停止线全部冻结；现在才
 授权实现产品代码。
+
+## Implementation and candidate freeze
+
+- `ERR5-01 COMPLETE`：新增固定 `WinSock` native domain、O(1) classifier 与立即捕获 raw code 的
+  no-throw Status factory；零码、已知 taxonomy、未知码、非 Windows numeric fallback 均有测试；
+- `ERR5-02 COMPLETE`：`Result<T>` 成为可正常模板推导的统一公开 class-template family；owning/void
+  仍以 `std::expected<T, ResultError>` 表示且无附加状态，`Result<T&>` 交付非空 borrow、deep const、
+  lvalue-only construction、expected-style observers/monads/comparison 和两种传播宏；
+- `ERR5-03 COMPLETE`：`format_status` 使用固定 1 KiB caller stack scratch，有明确 truncation marker，
+  formatter exception 与 Status OOM 均遏制为 no-throw failure，且不记录日志或 source policy；
+- `ERR5-04 COMPLETE`：新增 generic/system/custom `std::error_code` 单向 adapter 与显式 canonical override。
+  标准 category 在 consumer 侧 inline 分类，跨 DLL 只传 category-neutral parts，避免把标准库 singleton
+  地址误当稳定 ABI identity；custom category pointer 不进入 Status；
+- `ERR5-05 KEEP`：既有 owning Status/Result consumer 形状、one-word Status、Core-only 依赖、无 C/Native
+  FFI 产品面保持；v4 四个 owning workload 纳入 v2 replay；
+- public guide、architecture、component header inventory、source consumer sample 和 performance contract 已与
+  最终 API 同步；候选前 diagnostic probe 仅确认仪器可运行，不作为 qualification verdict。
+
+候选身份：
+
+- product commit：`d61f0710ec0e465b31d458257e2587fdfe37ed52`；
+- product tree：`305b2cb5947627dfb5b9697c939205b6c26cc6b7`；
+- `AUDITED -> CANDIDATE` previous registry：
+  `C:\hyle-scratch\error-v5\module-status-audited.json`；
+- candidate 前三平台 Error Release/WERROR shipping tests 均为 `19/19 PASS`；W1-WIN、W1-WSL、M1-MAC
+  的 component-only source、relocated installed shared 与 relocated installed static consumer 均 `PASS`；
+- 此 identity 后只允许补充验证证据、task/registry/receipt 和事实文档。任何产品 API、表示、算法、依赖、
+  workload verdict 语义或交付合同改动都退回 `AUDITED` 并产生新 candidate。
+
+当前为 `CANDIDATE`。下一步只从 clean candidate checkout 执行冻结的 W1-WIN P1 qualification、独立红队、
+四项 LOC 与终态门；不能再增加能力或第五种 benchmark 姿势。
