@@ -1,5 +1,5 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared and static all-component CPU SDKs, then configures/builds/runs
+# shared and static all-product CPU SDKs, then configures/builds/runs
 # source-independent consumers against each install prefix. The general sample
 # exercises the native mem C++ API and every exported target; module-owned
 # focused probes under samples/package are discovered automatically and

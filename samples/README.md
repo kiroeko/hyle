@@ -6,7 +6,7 @@ shared libraries。这里的产品示例只演示这三种 C++ 接入；shared l
 早期 C schema/package fixture 与 managed probe 已移除；本目录没有 native-C 或外语产品示例。
 
 每个 C++ 示例都是独立 CMake project。源码 sample 用 `add_subdirectory`，安装包 sample 用
-`find_package`；消费者均链接同名 `hyle::<module>` target。
+`find_package`；消费者均链接同名 `hyle::<product>` façade target。
 
 ## 接入模式（每个 sample 的 CMakeLists 都这么做）
 
@@ -14,12 +14,14 @@ shared libraries。这里的产品示例只演示这三种 C++ 接入；shared l
 # 集成方在 add_subdirectory 之前关掉 HYLE 自己的测试/基准，避免拖入 GoogleTest 等
 set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(HYLE_COMPONENTS "container;mem")
 add_subdirectory(<path-to-hyle> hyle_build)
 
-target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选模块
+target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选产品
 ```
 
-链接 `hyle::<module>` 自动带上头路径与依赖模块（如 `hyle::container` 自动拉 `hyle::mem`）。
+链接 `hyle::<product>` 自动带上头路径与内部 factor 闭包（如 `hyle::container` 自动拉所需 mem）。
+不要直接链接包内的 `hyle::_factor_*` detail target。
 头一律 `#include "hyle/<module>/<header>.h"`。
 
 ## C++ 用户示例
@@ -33,7 +35,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`05_installed_sdk/`](05_installed_sdk/) | 构建/集成 | source-independent C++ package consumer：普通 mem/STL/PMR journey 与全部 advertised imported targets |
 | [`06_installed_io_http2/`](06_installed_io_http2/) | io + HTTP/2 | source-independent C++ feature consumer：原生 HTTP/2 seam 与 static/shared 私有协议依赖闭包 |
 | [`07_installed_compute/`](07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
-| [`package/container_intrusive/cpp/`](package/container_intrusive/cpp/) | container_intrusive | source-independent C++ package consumer：auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
+| [`package/container_intrusive/cpp/`](package/container_intrusive/cpp/) | container product / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
 

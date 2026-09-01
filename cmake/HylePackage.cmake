@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
 # Install/export is deliberately centralized here. Module CMakeLists describe
-# product targets; this file turns the already-resolved target graph into one
+# factor and product targets; this file turns the already-resolved target graph into one
 # relocatable package without reconstructing dependencies from filenames.
 function(hyle_install_package)
   if(NOT HYLE_INSTALL)
@@ -12,11 +12,18 @@ function(hyle_install_package)
   include(CMakePackageConfigHelpers)
 
   set(_hyle_export_targets hyle_build_contract hyle_trace hyle_testing)
-  set(_hyle_package_components "")
+  set(_hyle_package_factors "")
   foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
     if(TARGET hyle_${_component})
       list(APPEND _hyle_export_targets hyle_${_component})
-      list(APPEND _hyle_package_components "${_component}")
+      list(APPEND _hyle_package_factors "${_component}")
+    endif()
+  endforeach()
+  set(_hyle_package_products "")
+  foreach(_product IN LISTS HYLE_KNOWN_PRODUCTS)
+    if(TARGET hyle_product_${_product})
+      list(APPEND _hyle_export_targets hyle_product_${_product})
+      list(APPEND _hyle_package_products "${_product}")
     endif()
   endforeach()
   hyle_package_collect_registry(
@@ -60,15 +67,15 @@ function(hyle_install_package)
             NAMELINK_COMPONENT Hyle_Development
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT Hyle_Development)
 
-  # Install exactly the selected component closure. Copying the whole public
+  # Install exactly the selected factor closure. Copying the whole public
   # tree made a platform-only SDK appear usable even when its target graph had
   # omitted a direct header dependency. HyleComponents owns the header boundary
   # for ordinary and split components; its configure-time include audit ensures
   # every copied cross-component header is backed by a PUBLIC imported edge.
   set(_hyle_installed_headers "")
-  foreach(_hyle_package_component IN LISTS _hyle_package_components)
+  foreach(_hyle_package_factor IN LISTS _hyle_package_factors)
     _hyle_component_public_headers(
-      "${_hyle_package_component}" _hyle_component_headers)
+      "${_hyle_package_factor}" _hyle_component_headers)
     list(APPEND _hyle_installed_headers ${_hyle_component_headers})
   endforeach()
   # obs/trace.h belongs to the hyle_trace foundation target and is consumed by
@@ -92,7 +99,7 @@ function(hyle_install_package)
   endforeach()
   unset(_hyle_component_headers)
   unset(_hyle_installed_headers)
-  unset(_hyle_package_component)
+  unset(_hyle_package_factor)
   unset(_hyle_public_header)
   unset(_hyle_public_header_directory)
   unset(_hyle_public_header_relative)
@@ -110,7 +117,7 @@ function(hyle_install_package)
   hyle_package_install_registered_assets()
 
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
-  set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_components}")
+  set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_products}")
   set(HYLE_PACKAGE_STATIC "${HYLE_STATIC}")
 
   configure_package_config_file(

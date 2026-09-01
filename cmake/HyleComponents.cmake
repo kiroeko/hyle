@@ -1,9 +1,10 @@
-# HYLE component selection and dependency closure.
+# HYLE factor selection, dependency closure, and product facade catalog.
 #
-# HYLE_COMPONENTS names the product roots a consumer wants.  The resolved
-# HYLE_BUILD_<COMPONENT> variables are the executable form of the module graph;
-# root CMake uses them both for add_subdirectory() and optional dependency
-# discovery.  Keep this graph synchronized with docs/architecture/roadmap.md.
+# HYLE_COMPONENTS names cohesive products a consumer wants. Product facades
+# select one or more internal factor roots; HYLE_BUILD_<FACTOR> variables are
+# the executable form of the internal DAG used by source ownership, module
+# tests, and optional dependency discovery. Keep both catalogs synchronized
+# with docs/architecture/build-system.md.
 
 # Declare every component and its direct internal link visibility once.  This
 # manifest is consumed twice: the union drives pre-target component closure,
@@ -117,26 +118,98 @@ _hyle_declare_component(graph
   PUBLIC_DEPS core error mem container sched
   PUBLIC_TYPE_DEPS sched)
 
-# Resolve the requested product roots before inspecting source text. The
-# manifest schema is global metadata and is always validated, but a source
-# consumer selecting Core must not be coupled to an unselected module that
-# another maintainer is editing in parallel.
-if(DEFINED HYLE_COMPONENTS)
-  set(_hyle_components_input "${HYLE_COMPONENTS}")
-elseif(PROJECT_IS_TOP_LEVEL)
-  set(_hyle_components_input "all")
-else()
-  message(FATAL_ERROR
-    "An embedding parent must set HYLE_COMPONENTS before add_subdirectory(). "
-    "HYLE will not turn an omitted subproject option into an accidental "
-    "all-component build.")
-endif()
-set(HYLE_COMPONENTS "${_hyle_components_input}" CACHE STRING
-    "HYLE product roots to build (all or a semicolon/comma-separated component list)"
-    FORCE)
-unset(_hyle_components_input)
+# Product facades are deliberately outside the factor DAG. They have no source,
+# module status, or decision authority and must never be used by an internal
+# factor edge. A facade only selects the exact factor roots that make one
+# consumer-facing problem domain complete.
+function(_hyle_declare_product name)
+  cmake_parse_arguments(ARG "" "" "FACTORS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "HYLE product '${name}' has unrecognized manifest arguments: "
+      "${ARG_UNPARSED_ARGUMENTS}")
+  endif()
+  if(ARG_KEYWORDS_MISSING_VALUES OR NOT ARG_FACTORS)
+    message(FATAL_ERROR "HYLE product '${name}' must declare FACTORS")
+  endif()
+  if(name IN_LIST HYLE_KNOWN_PRODUCTS)
+    message(FATAL_ERROR "HYLE product '${name}' is declared more than once")
+  endif()
 
-set(_hyle_requested "${HYLE_COMPONENTS}")
+  set(_factors ${ARG_FACTORS})
+  set(_unique_factors ${_factors})
+  list(REMOVE_DUPLICATES _unique_factors)
+  if(NOT "${_factors}" STREQUAL "${_unique_factors}")
+    message(FATAL_ERROR "HYLE product '${name}' repeats a factor root")
+  endif()
+  foreach(_factor IN LISTS _factors)
+    if(NOT _factor IN_LIST HYLE_KNOWN_COMPONENTS)
+      message(FATAL_ERROR
+        "HYLE product '${name}' names unknown factor '${_factor}'")
+    endif()
+  endforeach()
+
+  string(TOUPPER "${name}" _product_upper)
+  set(_HYLE_PRODUCT_FACTORS_${_product_upper} "${_factors}" PARENT_SCOPE)
+  set(_known_products ${HYLE_KNOWN_PRODUCTS})
+  list(APPEND _known_products "${name}")
+  set(HYLE_KNOWN_PRODUCTS "${_known_products}" PARENT_SCOPE)
+endfunction()
+
+set(HYLE_KNOWN_PRODUCTS "")
+_hyle_declare_product(core FACTORS core)
+_hyle_declare_product(error FACTORS error)
+_hyle_declare_product(time FACTORS time)
+_hyle_declare_product(platform FACTORS platform)
+_hyle_declare_product(mem FACTORS mem)
+_hyle_declare_product(obs FACTORS obs)
+_hyle_declare_product(simd FACTORS simd)
+_hyle_declare_product(math FACTORS math)
+_hyle_declare_product(container FACTORS container_intrusive container)
+_hyle_declare_product(util FACTORS util_core util)
+_hyle_declare_product(sched FACTORS sched)
+_hyle_declare_product(io FACTORS io)
+_hyle_declare_product(compute FACTORS compute)
+_hyle_declare_product(graph FACTORS graph)
+
+# Resolve requested product or developer factor roots before inspecting source
+# text. The two selectors are intentionally mutually exclusive. Downstream
+# source consumers use only HYLE_COMPONENTS; HYLE_DEV_FACTORS is a top-level
+# maintainer/CI seam for independently building one internal factor.
+if(DEFINED HYLE_DEV_FACTORS)
+  if(DEFINED HYLE_COMPONENTS)
+    message(FATAL_ERROR
+      "HYLE_DEV_FACTORS and HYLE_COMPONENTS are mutually exclusive; use a "
+      "fresh build tree and choose either an internal maintenance root or a "
+      "consumer product")
+  endif()
+  if(NOT PROJECT_IS_TOP_LEVEL)
+    message(FATAL_ERROR
+      "HYLE_DEV_FACTORS is a top-level maintainer option and cannot be used "
+      "by an embedding parent; select a product with HYLE_COMPONENTS")
+  endif()
+  set(_hyle_selection_mode factor)
+  set(_hyle_selection_input "${HYLE_DEV_FACTORS}")
+  set(HYLE_DEV_FACTORS "${_hyle_selection_input}" CACHE STRING
+      "HYLE internal factor roots for top-level maintenance only" FORCE)
+else()
+  set(_hyle_selection_mode product)
+  if(DEFINED HYLE_COMPONENTS)
+    set(_hyle_selection_input "${HYLE_COMPONENTS}")
+  elseif(PROJECT_IS_TOP_LEVEL)
+    set(_hyle_selection_input "all")
+  else()
+    message(FATAL_ERROR
+      "An embedding parent must set HYLE_COMPONENTS before add_subdirectory(). "
+      "HYLE will not turn an omitted subproject option into an accidental "
+      "all-product build.")
+  endif()
+  set(HYLE_COMPONENTS "${_hyle_selection_input}" CACHE STRING
+      "HYLE products to build (all or a semicolon/comma-separated product list)"
+      FORCE)
+endif()
+
+set(_hyle_requested "${_hyle_selection_input}")
 string(REPLACE "," ";" _hyle_requested "${_hyle_requested}")
 list(TRANSFORM _hyle_requested STRIP)
 list(TRANSFORM _hyle_requested TOLOWER)
@@ -146,25 +219,62 @@ if("all" IN_LIST _hyle_requested)
   list(LENGTH _hyle_requested _hyle_requested_count)
   if(NOT _hyle_requested_count EQUAL 1)
     message(FATAL_ERROR
-      "HYLE_COMPONENTS='${HYLE_COMPONENTS}' mixes 'all' with explicit names; "
+      "HYLE ${_hyle_selection_mode} selector '${_hyle_selection_input}' mixes "
+      "'all' with explicit names; "
       "use 'all' alone or list only the requested product roots")
   endif()
-  set(_hyle_requested_roots ${HYLE_KNOWN_COMPONENTS})
+  if(_hyle_selection_mode STREQUAL "factor")
+    set(_hyle_requested_roots ${HYLE_KNOWN_COMPONENTS})
+    set(_hyle_requested_products "")
+  else()
+    set(_hyle_requested_products ${HYLE_KNOWN_PRODUCTS})
+    set(_hyle_requested_roots "")
+    foreach(_product IN LISTS _hyle_requested_products)
+      string(TOUPPER "${_product}" _product_upper)
+      list(APPEND _hyle_requested_roots
+        ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
+    endforeach()
+    list(REMOVE_DUPLICATES _hyle_requested_roots)
+  endif()
 elseif(NOT _hyle_requested)
-  message(FATAL_ERROR
-    "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
-    "product, or provide one or more component roots. Refusing to turn an empty "
-    "script/CI argument into an accidental all-component build.")
+  if(_hyle_selection_mode STREQUAL "factor")
+    message(FATAL_ERROR
+      "HYLE_DEV_FACTORS is explicitly empty. Omit it for the normal product "
+      "build, or provide one or more internal factor roots.")
+  else()
+    message(FATAL_ERROR
+      "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
+      "product, or provide one or more product roots. Refusing to turn an empty "
+      "script/CI argument into an accidental all-product build.")
+  endif()
 else()
   set(_hyle_requested_roots "")
-  foreach(_component IN LISTS _hyle_requested)
-    if(NOT _component IN_LIST HYLE_KNOWN_COMPONENTS)
-      list(JOIN HYLE_KNOWN_COMPONENTS ", " _hyle_known_text)
-      message(FATAL_ERROR
-        "Unknown HYLE component '${_component}'. Known components: ${_hyle_known_text}")
-    endif()
-    list(APPEND _hyle_requested_roots "${_component}")
-  endforeach()
+  set(_hyle_requested_products "")
+  if(_hyle_selection_mode STREQUAL "factor")
+    foreach(_factor IN LISTS _hyle_requested)
+      if(NOT _factor IN_LIST HYLE_KNOWN_COMPONENTS)
+        list(JOIN HYLE_KNOWN_COMPONENTS ", " _hyle_known_text)
+        message(FATAL_ERROR
+          "Unknown HYLE internal factor '${_factor}'. Known factors: "
+          "${_hyle_known_text}")
+      endif()
+      list(APPEND _hyle_requested_roots "${_factor}")
+    endforeach()
+  else()
+    foreach(_product IN LISTS _hyle_requested)
+      if(NOT _product IN_LIST HYLE_KNOWN_PRODUCTS)
+        list(JOIN HYLE_KNOWN_PRODUCTS ", " _hyle_known_text)
+        message(FATAL_ERROR
+          "Unknown HYLE product '${_product}'. Known products: "
+          "${_hyle_known_text}")
+      endif()
+      list(APPEND _hyle_requested_products "${_product}")
+      string(TOUPPER "${_product}" _product_upper)
+      list(APPEND _hyle_requested_roots
+        ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
+    endforeach()
+    list(REMOVE_DUPLICATES _hyle_requested_roots)
+  endif()
 endif()
 
 # HYLE_KNOWN_COMPONENTS is also construction order. Validate every manifest
@@ -221,6 +331,33 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   endif()
 endforeach()
 
+# Product mode exposes a facade only when all of its root factors are present.
+# This also exposes a complete transitive product (for example Core) when
+# another requested product already built it, while refusing to manufacture a
+# partial Container facade from Time's container_intrusive dependency alone.
+# Exact-factor maintenance mode creates no product facade at all.
+set(HYLE_RESOLVED_PRODUCT_LIST "")
+foreach(_product IN LISTS HYLE_KNOWN_PRODUCTS)
+  string(TOUPPER "${_product}" _product_upper)
+  set(_product_complete FALSE)
+  if(_hyle_selection_mode STREQUAL "product")
+    set(_product_complete TRUE)
+    foreach(_factor IN LISTS _HYLE_PRODUCT_FACTORS_${_product_upper})
+      string(TOUPPER "${_factor}" _factor_upper)
+      if(NOT HYLE_BUILD_${_factor_upper})
+        set(_product_complete FALSE)
+        break()
+      endif()
+    endforeach()
+  endif()
+  if(_product_complete)
+    set(HYLE_BUILD_PRODUCT_${_product_upper} TRUE)
+    list(APPEND HYLE_RESOLVED_PRODUCT_LIST "${_product}")
+  else()
+    set(HYLE_BUILD_PRODUCT_${_product_upper} FALSE)
+  endif()
+endforeach()
+
 # Owner-scope the trace option: a fresh Core-only/cache-light configure must not
 # advertise a switch which cannot affect any selected target.
 set(HYLE_TRACE_AVAILABLE FALSE)
@@ -233,8 +370,16 @@ foreach(_component IN LISTS _hyle_resolved)
 endforeach()
 
 list(JOIN _hyle_resolved "," HYLE_RESOLVED_COMPONENTS)
-message(STATUS
-  "HYLE components: requested='${HYLE_COMPONENTS}' resolved='${HYLE_RESOLVED_COMPONENTS}'")
+list(JOIN HYLE_RESOLVED_PRODUCT_LIST "," HYLE_RESOLVED_PRODUCTS)
+if(_hyle_selection_mode STREQUAL "factor")
+  message(STATUS
+    "HYLE developer factors: requested='${HYLE_DEV_FACTORS}' "
+    "resolved='${HYLE_RESOLVED_COMPONENTS}' products='${HYLE_RESOLVED_PRODUCTS}'")
+else()
+  message(STATUS
+    "HYLE products: requested='${HYLE_COMPONENTS}' "
+    "available='${HYLE_RESOLVED_PRODUCTS}' factors='${HYLE_RESOLVED_COMPONENTS}'")
+endif()
 
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
@@ -242,13 +387,21 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
 endforeach()
 unset(_hyle_requested)
 unset(_hyle_requested_count)
+unset(_hyle_requested_products)
 unset(_hyle_requested_roots)
+unset(_hyle_selection_input)
+unset(_hyle_selection_mode)
 unset(_hyle_resolution_order)
 unset(_hyle_known_text)
 unset(_component)
 unset(_component_upper)
 unset(_dependency)
 unset(_dependency_upper)
+unset(_factor)
+unset(_factor_upper)
+unset(_product)
+unset(_product_complete)
+unset(_product_upper)
 
 function(_hyle_component_public_headers name out_var)
   set(_hyle_util_core_headers

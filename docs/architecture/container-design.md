@@ -33,7 +33,8 @@ platform (private) ─┘
 - `mem` 提供 allocator；Container 不自建第二套系统分配器。
 - `platform` 只提供运行时 ISA/CPU 事实，Container 自己拥有容器语义和 fallback。
 - Highway、xxHash、wyhash、simdutf 只是私有实现机制，公开头不泄漏它们的类型。
-- `intrusive_list.h` 的 include owner 是独立的 `container_intrusive` 组件，不属于本组件实现边界。
+- `intrusive_list.h` 的 include owner 是独立的 `container_intrusive` factor，不属于 compiled container
+  factor 的实现边界；用户侧 `hyle::container` façade 聚合两者。
 
 产品源码是 C++23。Container 没有 C API、Native FFI schema 或稳定跨版本 C++ ABI；source、static 和
 shared 三种交付暴露同一套 HYLE C++ 源码接口。

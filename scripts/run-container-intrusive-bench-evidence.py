@@ -182,7 +182,7 @@ def cmake_cache_values(build):
                 key in {"CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE"}):
             values[key] = value
     expected = {
-        "HYLE_COMPONENTS": "container_intrusive",
+        "HYLE_DEV_FACTORS": "container_intrusive",
         "HYLE_BUILD_BENCH": "ON",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_TEST_INSTRUMENTATION": "OFF",
@@ -361,7 +361,7 @@ def validate_prior_inconclusive_manifest(
     contract_keys = {
         "CMAKE_GENERATOR", "CMAKE_GENERATOR_PLATFORM",
         "CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE", "HYLE_BOOST_DIR",
-        "HYLE_COMPONENTS", "HYLE_BUILD_BENCH", "HYLE_BUILD_TESTS",
+        "HYLE_DEV_FACTORS", "HYLE_BUILD_BENCH", "HYLE_BUILD_TESTS",
         "HYLE_TEST_INSTRUMENTATION", "HYLE_SANITIZER", "HYLE_TRACE",
         "HYLE_STATIC", "HYLE_BENCH_BOOST",
     }
@@ -2433,7 +2433,7 @@ def main():
     if args.fresh_configure:
         configure = [
             "cmake", "-S", str(repo), "-B", str(build),
-            "-DHYLE_COMPONENTS=container_intrusive",
+            "-DHYLE_DEV_FACTORS=container_intrusive",
             "-DHYLE_BUILD_BENCH=ON", "-DHYLE_BUILD_TESTS=OFF",
             "-DHYLE_TEST_INSTRUMENTATION=OFF", "-DHYLE_SANITIZER=off",
             "-DHYLE_TRACE=OFF", "-DHYLE_STATIC=ON",

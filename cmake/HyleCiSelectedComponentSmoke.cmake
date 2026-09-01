@@ -1,5 +1,5 @@
-# Source/static/shared smoke for one component root. This is the bounded
-# hand-off gate used by an individual module review; the all-component package
+# Source/static/shared smoke for one product root. This is the bounded
+# hand-off gate used by an individual module review; the all-product package
 # smoke remains a separate whole-graph regression.
 
 cmake_minimum_required(VERSION 3.25)
@@ -11,7 +11,7 @@ foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_SMOKE_ROOT HYLE_SMOKE_COMPONENT)
 endforeach()
 if(NOT HYLE_SMOKE_COMPONENT MATCHES "^[a-z][a-z0-9_]*$")
   message(FATAL_ERROR
-    "HYLE_SMOKE_COMPONENT must be one canonical component name")
+    "HYLE_SMOKE_COMPONENT must be one canonical product name")
 endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
@@ -22,7 +22,7 @@ set(_sample
 if(NOT EXISTS "${_sample}/CMakeLists.txt" OR
    NOT EXISTS "${_sample}/main.cc")
   message(FATAL_ERROR
-    "component '${HYLE_SMOKE_COMPONENT}' has no installed C++ consumer under "
+    "product '${HYLE_SMOKE_COMPONENT}' has no installed C++ consumer under "
     "samples/package/${HYLE_SMOKE_COMPONENT}/cpp; add the real consumer "
     "journey before claiming independent delivery")
 endif()
@@ -163,5 +163,5 @@ foreach(_linkage IN ITEMS shared static)
 endforeach()
 
 message(STATUS
-  "HYLE selected component smoke passed: ${HYLE_SMOKE_COMPONENT} "
+  "HYLE selected product smoke passed: ${HYLE_SMOKE_COMPONENT} "
   "(source, shared, static, relocated consumers)")

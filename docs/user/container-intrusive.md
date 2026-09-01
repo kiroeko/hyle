@@ -10,17 +10,17 @@
 
 ## 接入
 
-只需要侵入式链表时选择轻量组件，不必链接完整 container：
+侵入式链表属于 Container 产品，用户只选择一个稳定入口：
 
 ```cmake
-find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container_intrusive)
-target_link_libraries(my_target PRIVATE hyle::container_intrusive)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container)
+target_link_libraries(my_target PRIVATE hyle::container)
 ```
 
-源码集成可在 `add_subdirectory` 前设置 `HYLE_COMPONENTS=container_intrusive`。`hyle::time`
-会传播这个依赖；完整 `hyle::container` 不拥有或聚合该组件。直接使用本页类型的 target 必须显式选择并
-链接 `hyle::container_intrusive`，不要依赖其他组件碰巧形成的传递路径，也不需要手工添加 include
-directory。独立安装包 consumer 见
+源码集成在 `add_subdirectory` 前设置 `HYLE_COMPONENTS=container`，再链接 `hyle::container`；不要
+手工添加 include directory。`container_intrusive` 仍是 HYLE 内部独立、header-only factor，所以 Time
+可以只依赖它而不会在内部图拉入完整 Container/Mem/Platform 闭包；该内部 target 不属于
+`find_package COMPONENTS` 或用户兼容面。独立安装包 consumer 见
 [`samples/package/container_intrusive/cpp`](../../samples/package/container_intrusive/cpp)。
 
 ## 先选择析构合同
@@ -241,4 +241,4 @@ iterator 保持稳定，sentinel iterator 始终属于具体 list 对象。
 
 本模块的 Native FFI 为 `N/A`。Pointer-to-member、C++ node lifetime 和 inline iterator 没有自然的
 窄 C ABI；当前 source/static/shared 都是 C++ 交付，shared SDK 也不会产生
-`container_intrusive` DLL 或 raw-hook export。
+独立 `container_intrusive` DLL、用户 package component 或 raw-hook export。

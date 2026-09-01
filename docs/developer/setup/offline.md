@@ -216,8 +216,8 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 
 ## 最小、确定的离线验收
 
-下面验证中央 component manifest 当前登记的全部 HYLE 产品组件（包括 header-only `util_core` 与
-`container_intrusive`）的 CPU 基线，不启用需要系统 SDK
+下面验证中央 manifest 当前登记的全部 HYLE 产品及其 factor 闭包（其中包含 header-only
+`util_core` 与 `container_intrusive` 内部 factor）的 CPU 基线，不启用需要系统 SDK
 或额外协议/计算后端的 feature；
 因为全组件包含 `simd` 且 tests 打开，逐项 override bundle 需要 `deps/highway/`、`deps/xsimd/` 与
 `deps/googletest/`；若使用共享 cache 介质，则其中需要有这三个 locked identity：

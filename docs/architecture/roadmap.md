@@ -9,6 +9,11 @@
 [能力展开与组件质因数分解](capability-factorization.md)统计功能超集和自然形状，再由完整能力集合导出
 owner、组件因子和新依赖图。
 
+Stage C 已导出 30-factor 内部 DAG；后续用户决策又明确：该 DAG 服务源码 ownership、解环与并行施工，
+不等于用户组件菜单。Build/package v7 将从中央记录另外投影 Core/Error/Time/Platform/Mem/Obs/SIMD/
+Math/Container/Util/Sched/IO 等产品 façade。内部 factor 只能依赖 factor，用户只需选择产品域；详见
+[构建系统](build-system.md)的双层投影目标。
+
 ## 1. 分层原则
 
 HYLE 是推理引擎与工程计算消费者下面的通用 C++ 加速底座。能力应归到能够完整表达其 ownership、
@@ -27,6 +32,10 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 会暴露策略或仍在变化的能力留在 internal seam。
 
 ## 2. 组件图
+
+本节表格是**当前 16-component 可构建现树**。下一版 30-factor DAG 的冻结边和波次保存在
+[`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)；它不会
+再被逐项公开成 `find_package` component。双层 CMake 投影落地前，不得把两张图混写成已经实现的状态。
 
 下表是当前中央声明的直接边。`PUBLIC` 表示公开头/链接合同泄露该依赖；`PRIVATE` 只属于编译实现。
 当前 io、compute 与 graph 的公开面都暴露 sched 类型，因此它们无条件选择 sched；目标平台缺少
@@ -57,13 +66,15 @@ SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Hi
 来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。
 
 `container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
-`hyle::container`；target 名称为 `hyle::container_intrusive`。`time` 的公开 `TimerEntry` 与
-`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 不聚合这项独立能力。
+`hyle::container`；内部 factor target 是 `hyle_container_intrusive`，普通用户由 `hyle::container`
+façade 取得该能力。`time` 的公开 `TimerEntry` 与 `TimerList` 暴露该类型，所以它保留真实 `PUBLIC`
+factor 依赖，但不会因此反向依赖完整 Container 产品。
 sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假 direct edge。
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。
 
-`core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` 产品组件。公开头直接 include
+`core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
+分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol
 需要链接；这条边传播 include/build/package contract。`math` 使用 Core 的 release-surviving fail-fast
 primitive，因此同样声明真实 `PUBLIC core` 边。配置合同会把公开头扫描与中央

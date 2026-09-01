@@ -76,7 +76,8 @@ benchmark fixture、拼内部类型或理解第三方实现才能完成任务。
 2. **独立消费：**至少存在一个消费者只需要该能力，而不应被迫取得更大的产品闭包；
 3. **依赖极小：**继续拆分不再减少真实公开依赖或消除循环；
 4. **成本闭环：**默认路径不替别的策略支付 allocation、锁、动态分发或常态 metadata；
-5. **交付闭环：**source/static/shared 下能被独立选择、测试、安装和链接；
+5. **交付闭环：**source/static/shared 下能作为内部 build/ownership 单元独立构建、测试和验证；用户交付
+   可以由所属产品 façade 聚合，但不能丢失精确依赖、头 owner 或静态链接闭包；
 6. **不含上层策略：**去掉具名模型、服务、backend 或 benchmark 后仍是自然基础能力。
 
 `container_intrusive` 是现有范例：它属于 Container 产品域，却是零分配、header-only、依赖极小且可由
@@ -84,6 +85,26 @@ Time 单独选择的独立组件；Time 不应为侵入式链表拉入完整 Con
 
 分解不是追求最小文件或单函数 target。只有拆分能形成真实独立消费者、减少依赖或隔离成本时才成立；
 否则留在所属产品组件内部。
+
+### 内部 factor 与外部产品不是同一张菜单
+
+质因数回答“源码、状态、直接依赖和唯一裁决权怎样组织”，不自动回答“用户愿意选择什么”。多数
+`platform_host`、`mem_reclaim`、`container_queue` 一类 factor 是为 HYLE 自己精确复用、避免依赖环和
+隔离成本而存在；普通用户不应为了调用 Mem 或 Container 先理解整张内部 DAG。
+
+Build/package 因此从同一份中央记录生成两个正交投影：
+
+- **内部 factor DAG**：供 HYLE target、模块状态、精确测试和并行施工使用；factor 只能依赖 factor；
+- **外部 product façade catalog**：按 Core、Error、Time、Platform、Mem、Obs、SIMD、Math、Container、
+  Util、Sched、IO 等完整问题域提供 `hyle::<product>`，纯 `INTERFACE` 地选择相应 factor roots。
+
+façade 没有源码、模块状态或新的 decision authority，也不能成为内部 factor 的依赖。安装静态库时，
+CMake 可能必须导出未承诺的 detail target 才能表达传递 archive 闭包；这些 target 不进入
+`find_package(... COMPONENTS ...)`、用户指南或兼容承诺。source/static/shared 三种交付始终使用同名
+产品 façade。可选 TLS/H2 等是产品 feature，不是内部 factor 名的公开化。
+
+该投影的施工合同见
+[`build-system-v7-factor-facade-projection`](../implementation/tasks/build/build-system-v7-factor-facade-projection.md)。
 
 ### SIMD 不可拆分例外
 

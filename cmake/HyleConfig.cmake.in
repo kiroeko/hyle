@@ -16,7 +16,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/HyleTargets.cmake")
 
 # SIMD's expert development target is an opt-in header capability. Load the
 # exact same fixed/fat helper implementation used by source embedding only when
-# this installation contains the SIMD component.
+# this installation contains the SIMD product.
 if(TARGET hyle::simd_expert)
   include("${CMAKE_CURRENT_LIST_DIR}/HyleIsa.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/HyleDispatch.cmake")
@@ -34,8 +34,8 @@ foreach(_Hyle_component IN LISTS Hyle_FIND_COMPONENTS)
     set(Hyle_${_Hyle_component}_FOUND FALSE)
     list(APPEND _Hyle_missing_components "${_Hyle_component}")
     string(CONCAT Hyle_${_Hyle_component}_NOT_FOUND_MESSAGE
-      "Hyle component '${_Hyle_component}' is not present in this installation; "
-      "available components: ${Hyle_AVAILABLE_COMPONENTS}")
+      "Hyle product '${_Hyle_component}' is not present in this installation; "
+      "available products: ${Hyle_AVAILABLE_COMPONENTS}")
   endif()
 endforeach()
 if(_Hyle_missing_components)

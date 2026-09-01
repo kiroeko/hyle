@@ -28,6 +28,21 @@ function(_hyle_simd_expert_target out_var)
   endif()
 endfunction()
 
+# Internal source builds use the physical factor target. Installed expert
+# helpers see the same factor under its deliberately non-product export name.
+# Never route HYLE's own fat-kernel implementation through the public Platform
+# facade: facades are graph roots, not internal dependencies.
+function(_hyle_platform_factor_target out_var)
+  if(TARGET hyle_platform)
+    set(${out_var} hyle_platform PARENT_SCOPE)
+  elseif(TARGET hyle::_factor_platform)
+    set(${out_var} hyle::_factor_platform PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR
+      "HYLE SIMD expert helper requires the Platform factor target")
+  endif()
+endfunction()
+
 # CMake directory scopes do not propagate ordinary variables from HYLE's
 # add_subdirectory() back to a source consumer. The expert target exports the
 # normalized package target, while the global property remains the source-tree
@@ -586,8 +601,9 @@ function(hyle_add_fat_kernel)
       "hyle_add_fat_kernel requires an existing TARGET")
   endif()
   _hyle_simd_expert_target(_expert_target)
+  _hyle_platform_factor_target(_platform_factor_target)
   target_link_libraries(${ARG_TARGET} PRIVATE
-    ${_expert_target} hyle::platform)
+    ${_expert_target} ${_platform_factor_target})
   _hyle_simd_target_processor(_target_processor)
   _hyle_simd_expert_exact_target(_exact_target)
   if(_exact_target)

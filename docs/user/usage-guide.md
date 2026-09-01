@@ -9,7 +9,7 @@ HYLE 支持三种 C++ 消费方式：
 
 | 方式 | 适合场景 | 用户入口 |
 |---|---|---|
-| 完整源码 | 需要审计、定制 ISA/backend、LTO 或整体组装 | `add_subdirectory` 后链接 `hyle::<module>` |
+| 完整源码 | 需要审计、定制 ISA/backend、LTO 或整体组装 | `add_subdirectory` 后链接 `hyle::<product>` |
 | headers + static | 固定工具链/配置，部署时不携带 HYLE 动态库 | `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS ...)` |
 | headers + shared | 多个 C++ 程序共享二进制、独立更新 artifact | `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS ...)` |
 
@@ -27,8 +27,9 @@ add_subdirectory(path/to/hyle hyle-build)
 target_link_libraries(my_app PRIVATE hyle::container)
 ```
 
-`HYLE_COMPONENTS` 指定产品根；构建系统自动解析它们的传递闭包。仍应只链接代码实际使用的
-`hyle::<module>` target，让 CMake 能发现错误依赖。`add_subdirectory()` 消费者必须显式设置该
+`HYLE_COMPONENTS` 指定产品根；构建系统自动解析它们的内部 factor 闭包。仍应只链接代码实际使用的
+`hyle::<product>` target，让 CMake 能发现错误依赖。`container_intrusive`、`util_core` 等内部
+factor 不属于这张用户菜单。`add_subdirectory()` 消费者必须显式设置该
 变量；只有直接把 HYLE 作为顶层工程配置时，省略才默认 `all`。
 
 ## 安装包集成

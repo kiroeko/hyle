@@ -1,7 +1,6 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-08-31）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
-> runtime 正在以当前 Container 合同重签 Registry lookup/create 旅程，demangle owning/buffer 形状原样回放。施工/签证
+> **当前边界（2026-09-01）：**`util_core` 与 `util` 均为 `CLOSED`；施工/签证
 > 状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
@@ -14,13 +13,13 @@
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
 
 ```text
-foundation：hyle::util_core（INTERFACE，无 binary artifact）
+foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
    ScopeGuard / Ref / Rng / type_name / SpinLock / cpu_relax
                     │
                     ├──► mem / sched / graph
-                    └──► C++ 用户
+                    └──► hyle::util 产品 façade
 
-runtime：hyle::util（hyle_util binary；严格收口波次 R2）
+runtime：hyle_util（内部 compiled factor；严格收口波次 R2）
    demangle / Registry
                     │
                     └──► core + error + mem + container
@@ -124,7 +123,7 @@ template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 
 ## 内部采用与依赖检查
 
-mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle::util_core` 的
+mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle_util_core` factor 的
 SpinLock/cpu_relax。会 allocate/rehash/执行未知用户代码的 mem LeakTracker 与 container
 ConcurrentVector 使用 mutex。Registry runtime 显式链接 core、error、mem 和 container；
 删除静态注册/default creator 后不再依赖 util_core。这些依赖同时由中央 component graph 与
@@ -135,7 +134,8 @@ target link 生成/验证。
 
 ## 维护闸门
 
-1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
+1. util-core 公开头必须逐头 self-contained，并可通过 `HYLE_DEV_FACTORS=util_core` 独立构建；禁止
+   include runtime 头。用户安装包只通过 `util` 产品请求和 `hyle::util` façade 取得两层能力。
    当前收口证据与 reopen triggers 见
    [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze

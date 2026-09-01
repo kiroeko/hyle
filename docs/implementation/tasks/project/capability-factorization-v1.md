@@ -1,5 +1,11 @@
 # 全库能力展开与组件因子化 v1
 
+> **后续投影更正（2026-09-01）：**本记录 Stage C 冻结的 30-factor owner、依赖 DAG、解环和实施波次
+> 仍有效；但 C1“每个 factor 都是 `hyle::<factor>` 安装组件”和 C4 `_all` bundle 已被用户后续决策
+> 取代。当前长期合同是内部 factor DAG + 外部产品 façade，详见
+> [`build-system-v7-factor-facade-projection`](../build/build-system-v7-factor-facade-projection.md)。本页保留
+> 原文作为当时审计事实，不能再把相关段落当当前施工授权。
+
 > 记录性质：`COMPLETED PROJECT ARCHITECTURE REPLAY`。它不改变任何模块的机械状态，也不授权修改产品
 > 代码；当前状态仍只以 [`module-status.json`](../../module-status.json) 为准。
 
@@ -1092,6 +1098,9 @@ Build/package 投影，只有前两类进入 HYLE 内部 DAG。
 
 #### C1. 组件 ID、依赖可见性与唯一裁决权
 
+> 本节的 component ID、依赖与 authority 仍是内部 factor 合同；其中安装 target 命名已由页首后续决策
+> supersede，不再代表用户组件 catalog。
+
 `B-F01..30` 现在分别取得同名的稳定 component ID；安装目标统一为 `hyle::<component_id>`，真实构建
 目标统一为 `hyle_<component_id>`。component ID 不强迫 C++ namespace 与 target 同名：
 Platform、Mem、Container、Util、Sched 和 IO 的子因子仍可留在各自语义 namespace；`metrics` 使用
@@ -1222,6 +1231,9 @@ authority，不能承载 logging、metrics或业务 context。其余“共享 de
 semantic owner私有拥有并随 consumer安装/编译，不能借 `PRIVATE_BUILD_DEPS` 绕过真实产品依赖。
 
 #### C4. 现有组件迁移与 umbrella 规则
+
+> 下表的 factor 迁移边界仍有效；其后 `_all` bundle 与“用户选择 factor”规则只保留为历史方案，当前由
+> 产品 façade 投影替代。
 
 | current component | target factors | frozen migration boundary |
 |---|---|---|

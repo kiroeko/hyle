@@ -78,13 +78,22 @@ MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`；安装 clang-cl 18+
 - correctness、engineering 与 formal 的机器角色以
   [性能机器合同](../performance/machines.md)为准；“三个执行环境”不等于“三台独立性能机器”。
 
-## 并行开发与单组件交付门
+## 并行开发、factor 构建与产品交付门
 
 每个 agent/session 使用独占、绝对 scratch build 路径，不得复用 preset 的固定 build tree 或另一
 会话的 CMake cache。Unix 用 `scripts/hyle-unix.sh cmake ... -B <session-scratch>`；Windows wrapper 使用
-`-BinaryDir <absolute-path>`，单组件配置再加 `-Component <name>`。
+`-BinaryDir <absolute-path>`。普通源码/SDK journey 用 `-Component <product>`；只验证一个内部施工
+单元时用 `-Factor <factor>`，等价于顶层 fresh tree 的 `HYLE_DEV_FACTORS`。factor selector 不能用于
+父工程嵌入或 `HYLE_INSTALL=ON`，也不会制造用户 `hyle::<factor>` target。
 
-模块交接前运行 `cmake/HyleCiSelectedComponentSmoke.cmake`。它对一个组件根分别验证 source
+```powershell
+scripts/hyle-windows.ps1 -Action Configure `
+  -Preset windows-ninja `
+  -BinaryDir C:\hyle-scratch\container-intrusive-factor `
+  -Factor container_intrusive
+```
+
+产品交付前运行 `cmake/HyleCiSelectedComponentSmoke.cmake`。它对一个产品根分别验证 source
 embedding、shared SDK、static SDK，以及搬迁后的 installed C++ consumer；这比“全库刚好能编”更能
 发现闭包、owned headers 和 package 边错误。Windows 入口例如：
 

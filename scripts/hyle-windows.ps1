@@ -5,6 +5,7 @@ param(
     [string]$Preset = 'windows-ninja',
     [string]$BinaryDir,
     [string]$Component,
+    [string]$Factor,
     [string]$SmokeRoot,
     [string]$DependencySourceCache,
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -42,6 +43,17 @@ if ($Component) {
     }
     if ($Action -notin @('Configure', 'SelectedComponentSmoke')) {
         throw '-Component is supported only by isolated Configure or SelectedComponentSmoke.'
+    }
+}
+if ($Factor) {
+    if ([string]::IsNullOrWhiteSpace($Factor)) {
+        throw '-Factor cannot be empty.'
+    }
+    if ($Component) {
+        throw '-Factor and -Component are mutually exclusive.'
+    }
+    if ($Action -ne 'Configure' -or -not $resolvedBinaryDir) {
+        throw '-Factor is supported only by isolated Configure with an explicit -BinaryDir.'
     }
 }
 
@@ -121,7 +133,19 @@ if (-not $hasSelectedEnvironment) {
         if ($separator -gt 0) {
             $name = $line.Substring(0, $separator)
             $value = $line.Substring($separator + 1)
-            Set-Item -Path "Env:$name" -Value $value
+            # Windows environment keys are case-insensitive, but a parent
+            # process can still hand cmd.exe duplicate PATH/Path entries.
+            # VsDevCmd emits its toolchain-prefixed PATH and may then echo the
+            # stale mixed-case entry; importing both makes PowerShell let the
+            # latter erase cl.exe again. For PATH, accept only the initialized
+            # value that contains this Visual Studio installation.
+            if ($name -ieq 'Path') {
+                if ($value -like "*$installation\VC\Tools\MSVC\*") {
+                    Set-Item -Path 'Env:Path' -Value $value
+                }
+            } else {
+                Set-Item -Path "Env:$name" -Value $value
+            }
         }
     }
 }
@@ -173,12 +197,14 @@ if ($Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
 switch ($Action) {
     'Configure' {
         if ($resolvedBinaryDir) {
-            $componentArg = @()
+            $selectionArg = @()
             if ($Component) {
-                $componentArg = @("-DHYLE_COMPONENTS=$Component")
+                $selectionArg = @("-DHYLE_COMPONENTS=$Component")
+            } elseif ($Factor) {
+                $selectionArg = @("-DHYLE_DEV_FACTORS=$Factor")
             }
             Write-Host "HYLE isolated configure: $resolvedBinaryDir"
-            & cmake --preset $Preset -B $resolvedBinaryDir @componentArg @effectiveExtraArgs
+            & cmake --preset $Preset -B $resolvedBinaryDir @selectionArg @effectiveExtraArgs
         } else {
             & cmake --preset $Preset @effectiveExtraArgs
         }

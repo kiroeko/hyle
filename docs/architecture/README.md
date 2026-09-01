@@ -37,8 +37,8 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 - [time](time-design.md)
 - [obs](obs-design.md)
 - [util](util-design.md)
-- [container_intrusive](container-intrusive-design.md)：独立轻量的 auto/safe-link 侵入式链接组件
-- [container](container-design.md)：完整数据结构模块；`container_intrusive` 独立选择
+- [container_intrusive](container-intrusive-design.md)：内部独立、轻量的 auto/safe-link 侵入式 factor
+- [container](container-design.md)：完整数据结构产品；公开 façade 聚合 intrusive 与普通容器 factor
 - [simd](simd-design.md) 与 [vendor 边界](simd-vendor-surface.md)
 - [math 边界](math-design.md)
 - [sched](sched-design.md)

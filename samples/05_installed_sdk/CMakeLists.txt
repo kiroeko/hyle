@@ -11,6 +11,20 @@ if(NOT Hyle_AVAILABLE_COMPONENTS)
   message(FATAL_ERROR "installed HYLE package reported no components")
 endif()
 
+foreach(_internal_factor IN ITEMS container_intrusive util_core)
+  if(_internal_factor IN_LIST Hyle_AVAILABLE_COMPONENTS OR
+     TARGET hyle::${_internal_factor})
+    message(FATAL_ERROR
+      "installed HYLE package leaked internal factor '${_internal_factor}' "
+      "as a consumer product")
+  endif()
+  if(NOT TARGET hyle::_factor_${_internal_factor})
+    message(FATAL_ERROR
+      "all-product SDK lacks detail target for '${_internal_factor}'")
+  endif()
+endforeach()
+unset(_internal_factor)
+
 enable_testing()
 
 foreach(_component IN LISTS Hyle_AVAILABLE_COMPONENTS)

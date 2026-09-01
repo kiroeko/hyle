@@ -9,9 +9,10 @@
 `container_intrusive` 为已有稳定 storage 的节点提供最小的、non-owning 双向链接机制。公开入口是
 `<hyle/container/intrusive_list.h>`，公开成对入口是
 `IntrusiveListHook` / `IntrusiveList<T, &T::hook>` 与
-`SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`；产品 target 是
-`hyle::container_intrusive`。它是只依赖 `hyle::core` 的 header-only `INTERFACE` 组件，不产生
-runtime artifact，也不拉入完整 `container`、`mem`、`error` 或 `platform`。
+`SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`。它在内部是只依赖 Core factor 的
+header-only `hyle_container_intrusive` factor，不产生 runtime artifact，也不把完整 `container`、
+`mem`、`error` 或 `platform` 拉入 Time 等内部消费者。普通用户从 `hyle::container` 产品 façade
+取得该能力；`container_intrusive` 不是 `HYLE_COMPONENTS`/`find_package COMPONENTS` 产品名。
 
 每条同时存在的 membership 在 node 中嵌入一个 member hook。auto-unlink 与 safe-link hook 都只保存
 前后两个 raw pointer，list 只保存一个双向 sentinel；二者共享同一重链算法，区别只在 node 析构
@@ -34,7 +35,7 @@ runtime artifact，也不拉入完整 `container`、`mem`、`error` 或 `platfor
 | 用户节点允许先于 list 析构，希望析构自动撤销 membership | auto hook；FIFO、任意摘链与批量 handoff | `IntrusiveListHook` / `IntrusiveList` |
 | 用户状态机要求在 owner lock 下显式摘链，漏摘必须被诊断 | safe hook；同一 list 操作面 | `SafeIntrusiveListHook` / `SafeIntrusiveList`；Release 不为析构检查付常态分支 |
 | sched ConditionVariable / Semaphore 的 stack waiter | 摘链后复用原 `next` 作锁外 wake chain | 保留 sched 专用链；通用 list 会增加 waiter footprint 和锁内写，且不能表达 link storage 的状态复用 |
-| 完整 container 用户同时需要该能力 | 显式再选 target | `container` 不聚合 `container_intrusive`；调用方按需求分别链接，避免无关闭包 |
+| Container 用户需要该能力 | 选择 `container` 产品 | `hyle::container` façade 已聚合 intrusive factor；用户不需要理解内部解环 target |
 
 语义重复不按“看见 next/prev 就迁移”处理。Windows IOCP `IoOp` 保留内部特化链：`OVERLAPPED`
 必须是对象首成员，完成时还要把同一个对象从 inflight 双链切换到 owner-thread free-list 并复用 link
@@ -185,11 +186,11 @@ iterator 都没有自然的窄 C ABI；当前也没有已命名外语消费者�
 任务，应由拥有 opaque node 与 callback lifetime 的上层模块按
 [Native FFI 准入策略](native-ffi-policy.md)建立 adapter，不导出 raw hook/list layout。
 
-源码、installed static 与 installed shared SDK 中，`hyle::container_intrusive` 都是同一个
-header-only imported/interface target；static/shared 选择不会产生 intrusive DLL、导出符号或运行时
-stage。`time` 通过真实 PUBLIC target edge 传播该依赖；完整 `container` 不拥有或聚合它，直接消费者
-必须显式选择并链接 `hyle::container_intrusive`，不得依赖当前其他组件可能形成的传递闭包。sched 的
-专用 waiter 链不建立一条虚假的 direct dependency。
+源码、installed static 与 installed shared SDK 都通过 `hyle::container` 暴露同一套 intrusive C++
+API；static/shared 选择不会产生 intrusive DLL、导出符号或运行时 stage。安装包中的
+`hyle::_factor_container_intrusive` 只为 façade/传递闭包服务，不列入产品 catalog，也不是用户入口。
+`time` 通过真实 PUBLIC factor edge 使用轻量 factor，因此不会反向依赖完整 Container 产品或拉入
+mem/platform；sched 的专用 waiter 链仍不建立一条虚假的 direct dependency。
 
 只有真实消费者要求新 hook/link policy、受支持 compiler ABI 使 member recovery 不成立、发现
 lifetime/correctness 缺陷，或同合同 peer 证明 material 的复杂度/消费者性能优势时才重开产品

@@ -247,7 +247,7 @@ file(WRITE "${_core_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"Core leaks \${_forbidden_link}: \${_core_links}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_forbidden IN ITEMS container_intrusive util_core error obs math platform time mem simd container util sched io compute graph)\n"
+"foreach(_forbidden IN ITEMS error obs math platform time mem simd container util sched io compute graph)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
@@ -375,175 +375,52 @@ unset(_core_relocate_result)
 unset(_core_static)
 unset(_core_unselected_header)
 
-# A caller that wants only the allocation-free intrusive container gets Core's
-# header-only source contracts as its sole dependency and no compiled HYLE
-# runtime closure. This prevents an
-# installed-all-headers layout from hiding a missing or accidentally widened
-# component edge.
-set(_intrusive_source "${_hyle_contract_root}/intrusive-source")
-file(MAKE_DIRECTORY "${_intrusive_source}")
-file(WRITE "${_intrusive_source}/CMakeLists.txt"
-"cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_intrusive_component LANGUAGES CXX)\n"
-"set(HYLE_COMPONENTS container_intrusive)\n"
-"set(HYLE_BUILD_TESTS OFF)\n"
-"set(HYLE_BUILD_BENCH OFF)\n"
-"set(HYLE_INSTALL OFF)\n"
-"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
-"include(\"${_hyle_direct_public_edge_helper}\")\n"
-"if(NOT TARGET hyle::container_intrusive)\n"
-"  message(FATAL_ERROR \"missing hyle::container_intrusive\")\n"
-"endif()\n"
-"foreach(_required IN ITEMS core container_intrusive)\n"
-"  if(NOT TARGET hyle::\${_required})\n"
-"    message(FATAL_ERROR \"missing intrusive-closure target hyle::\${_required}\")\n"
-"  endif()\n"
-"  get_target_property(_type hyle_\${_required} TYPE)\n"
-"  if(NOT _type STREQUAL \"INTERFACE_LIBRARY\")\n"
-"    message(FATAL_ERROR \"\${_required} is not header-only: \${_type}\")\n"
-"  endif()\n"
-"endforeach()\n"
-"hyle_contract_require_direct_public_edge(hyle_container_intrusive hyle_core)\n"
-"foreach(_forbidden IN ITEMS util_core error obs math platform time mem simd container util sched io compute graph)\n"
-"  if(TARGET hyle::\${_forbidden})\n"
-"    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
-"  endif()\n"
-"endforeach()\n"
-"add_executable(hyle_container_intrusive_source_consumer\n"
-"  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
-"target_compile_features(\n"
-"  hyle_container_intrusive_source_consumer PRIVATE cxx_std_23)\n"
-"target_link_libraries(hyle_container_intrusive_source_consumer\n"
-"  PRIVATE hyle::container_intrusive)\n"
-"enable_testing()\n"
-"add_test(NAME hyle_container_intrusive_source_consumer\n"
-"  COMMAND hyle_container_intrusive_source_consumer)\n")
-_hyle_contract_run("standalone container_intrusive closure" TRUE
-  "${CMAKE_COMMAND}" -S "${_intrusive_source}"
-  -B "${_hyle_contract_root}/intrusive-build"
+# container_intrusive remains an independently buildable internal factor, but
+# it is no longer a consumer product or installable SDK root. The maintainer
+# selector builds its real module tests; public selection and installation must
+# reject the factor name rather than silently exposing a partial product.
+set(_intrusive_factor_build "${_hyle_contract_root}/intrusive-factor-build")
+_hyle_contract_run("configure exact container_intrusive factor" TRUE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_intrusive_factor_build}"
   ${_hyle_generator_args}
-  -DCMAKE_BUILD_TYPE=Release)
-_hyle_contract_run("build standalone container_intrusive source consumer" TRUE
-  "${CMAKE_COMMAND}" --build "${_hyle_contract_root}/intrusive-build"
-  --config Release --parallel 2)
-_hyle_contract_run("run standalone container_intrusive source consumer" TRUE
-  "${CMAKE_CTEST_COMMAND}" --test-dir
-  "${_hyle_contract_root}/intrusive-build"
-  -C Release --output-on-failure)
+  -DCMAKE_BUILD_TYPE=Release
+  -DHYLE_DEV_FACTORS=container_intrusive
+  -DHYLE_BUILD_TESTS=ON
+  -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_INSTALL=OFF)
+_hyle_contract_run("build exact container_intrusive factor tests" TRUE
+  "${CMAKE_COMMAND}" --build "${_intrusive_factor_build}"
+  --config Release --target hyle_container_intrusive_tests --parallel 2)
 
-# The target is also an independently deliverable installed component.  Build
-# an isolated SDK rather than testing against an all-component prefix: the
-# latter installs every public header and can hide a missing export or an
-# accidental binary dependency.  The installed consumer also inspects the
-# imported target graph, because a package can be source-correct but export an
-# incomplete or over-broad usage contract.
-set(_intrusive_installed_consumer
-  "${_hyle_contract_root}/intrusive-installed-consumer")
-file(MAKE_DIRECTORY "${_intrusive_installed_consumer}")
-file(WRITE "${_intrusive_installed_consumer}/CMakeLists.txt"
-"cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_intrusive_installed_consumer LANGUAGES CXX)\n"
-"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container_intrusive)\n"
-"include(\"${_hyle_direct_public_edge_helper}\")\n"
-"foreach(_required IN ITEMS core container_intrusive)\n"
-"  if(NOT TARGET hyle::\${_required})\n"
-"    message(FATAL_ERROR \"missing installed target hyle::\${_required}\")\n"
-"  endif()\n"
-"endforeach()\n"
-"hyle_contract_require_direct_public_edge(\n"
-"  hyle::container_intrusive hyle::core)\n"
-"foreach(_forbidden IN ITEMS util_core error obs math platform time mem simd container util sched io compute graph)\n"
-"  if(TARGET hyle::\${_forbidden})\n"
-"    message(FATAL_ERROR \"unexpected installed target hyle::\${_forbidden}\")\n"
-"  endif()\n"
-"endforeach()\n"
-"add_executable(hyle_container_intrusive_installed_consumer\n"
-"  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
-"target_compile_features(\n"
-"  hyle_container_intrusive_installed_consumer PRIVATE cxx_std_23)\n"
-"target_link_libraries(hyle_container_intrusive_installed_consumer\n"
-"  PRIVATE hyle::container_intrusive)\n"
-"enable_testing()\n"
-"add_test(NAME hyle_container_intrusive_installed_consumer\n"
-"  COMMAND hyle_container_intrusive_installed_consumer)\n")
+_hyle_contract_run("internal factor is not a public product" FALSE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_hyle_contract_root}/intrusive-as-product"
+  ${_hyle_generator_args}
+  -DHYLE_COMPONENTS=container_intrusive
+  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_INSTALL=OFF)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "Unknown HYLE product 'container_intrusive'")
+  message(FATAL_ERROR
+    "internal factor product request failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
 
-foreach(_intrusive_linkage IN ITEMS shared static)
-  if(_intrusive_linkage STREQUAL "static")
-    set(_intrusive_static ON)
-  else()
-    set(_intrusive_static OFF)
-  endif()
-  set(_intrusive_sdk_build
-    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-build")
-  set(_intrusive_sdk_staging_prefix
-    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-staging")
-  set(_intrusive_sdk_prefix
-    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-relocated")
-  _hyle_contract_run(
-    "configure isolated ${_intrusive_linkage} container_intrusive SDK" TRUE
-    "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
-    -B "${_intrusive_sdk_build}"
-    ${_hyle_generator_args}
-    -DCMAKE_BUILD_TYPE=Release
-    -DCMAKE_INSTALL_PREFIX=${_intrusive_sdk_staging_prefix}
-    -DHYLE_COMPONENTS=container_intrusive
-    -DHYLE_BUILD_TESTS=OFF
-    -DHYLE_BUILD_BENCH=OFF
-    -DHYLE_INSTALL=ON
-    -DHYLE_STATIC=${_intrusive_static}
-    -DHYLE_IO_TLS=OFF
-    -DHYLE_COMPUTE_CUDA=OFF)
-  _hyle_contract_run(
-    "install isolated ${_intrusive_linkage} container_intrusive SDK" TRUE
-    "${CMAKE_COMMAND}" --install "${_intrusive_sdk_build}" --config Release)
-  file(RENAME "${_intrusive_sdk_staging_prefix}" "${_intrusive_sdk_prefix}"
-       RESULT _intrusive_relocate_result)
-  if(NOT _intrusive_relocate_result STREQUAL "0")
-    message(FATAL_ERROR
-      "could not relocate isolated ${_intrusive_linkage} "
-      "container_intrusive SDK: ${_intrusive_relocate_result}")
-  endif()
-  file(GLOB_RECURSE _intrusive_binary_artifacts LIST_DIRECTORIES FALSE
-    "${_intrusive_sdk_prefix}/*.a"
-    "${_intrusive_sdk_prefix}/*.dll"
-    "${_intrusive_sdk_prefix}/*.dylib"
-    "${_intrusive_sdk_prefix}/*.lib"
-    "${_intrusive_sdk_prefix}/*.so"
-    "${_intrusive_sdk_prefix}/*.so.*")
-  if(_intrusive_binary_artifacts)
-    message(FATAL_ERROR
-      "header-only ${_intrusive_linkage} container_intrusive SDK installed "
-      "binary artifacts: ${_intrusive_binary_artifacts}")
-  endif()
-  set(_intrusive_consumer_build
-    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-consumer-build")
-  _hyle_contract_run(
-    "configure isolated ${_intrusive_linkage} container_intrusive consumer"
-    TRUE
-    "${CMAKE_COMMAND}"
-    -S "${_intrusive_installed_consumer}"
-    -B "${_intrusive_consumer_build}"
-    ${_hyle_generator_args}
-    -DCMAKE_BUILD_TYPE=Release
-    -DCMAKE_PREFIX_PATH=${_intrusive_sdk_prefix})
-  _hyle_contract_run(
-    "build isolated ${_intrusive_linkage} container_intrusive consumer" TRUE
-    "${CMAKE_COMMAND}" --build "${_intrusive_consumer_build}"
-    --config Release --parallel 2)
-  _hyle_contract_run(
-    "run isolated ${_intrusive_linkage} container_intrusive consumer" TRUE
-    "${CMAKE_CTEST_COMMAND}" --test-dir "${_intrusive_consumer_build}"
-    -C Release --output-on-failure)
-endforeach()
-unset(_intrusive_binary_artifacts)
-unset(_intrusive_consumer_build)
-unset(_intrusive_installed_consumer)
-unset(_intrusive_linkage)
-unset(_intrusive_relocate_result)
-unset(_intrusive_sdk_build)
-unset(_intrusive_sdk_prefix)
-unset(_intrusive_sdk_staging_prefix)
-unset(_intrusive_static)
+_hyle_contract_run("internal factor cannot produce an SDK" FALSE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_hyle_contract_root}/intrusive-factor-install"
+  ${_hyle_generator_args}
+  -DHYLE_DEV_FACTORS=container_intrusive
+  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_INSTALL=ON)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "HYLE_INSTALL=ON cannot be combined with HYLE_DEV_FACTORS")
+  message(FATAL_ERROR
+    "internal factor install failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+unset(_intrusive_factor_build)
 
 # time publicly exposes TimerList, so selecting time must carry the lightweight
 # intrusive target but must not pull the compiled container/mem/platform stack.
@@ -558,11 +435,19 @@ file(WRITE "${_time_source}/CMakeLists.txt"
 "set(HYLE_INSTALL OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
-"foreach(_required IN ITEMS core container_intrusive time)\n"
-"  if(NOT TARGET hyle::\${_required})\n"
-"    message(FATAL_ERROR \"missing time-closure target hyle::\${_required}\")\n"
+"foreach(_required_product IN ITEMS core time)\n"
+"  if(NOT TARGET hyle::\${_required_product})\n"
+"    message(FATAL_ERROR \"missing time product hyle::\${_required_product}\")\n"
 "  endif()\n"
 "endforeach()\n"
+"foreach(_required_factor IN ITEMS core container_intrusive time)\n"
+"  if(NOT TARGET hyle_\${_required_factor})\n"
+"    message(FATAL_ERROR \"missing time factor hyle_\${_required_factor}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"if(TARGET hyle::container_intrusive)\n"
+"  message(FATAL_ERROR \"internal intrusive factor leaked as a product\")\n"
+"endif()\n"
 "foreach(_forbidden IN ITEMS mem platform container)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected time-closure target hyle::\${_forbidden}\")\n"
@@ -620,9 +505,19 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _sanitizer_cached STREQUAL \"off\" OR NOT _sanitizer_effective STREQUAL \"off\")\n"
 "  message(FATAL_ERROR \"HYLE_SANITIZER cache/effective split: cache='\${_sanitizer_cached}', effective='\${_sanitizer_effective}'\")\n"
 "endif()\n"
-"foreach(_required IN ITEMS core error container_intrusive time platform util_core mem container)\n"
-"  if(NOT TARGET hyle::\${_required})\n"
-"    message(FATAL_ERROR \"missing selected-closure target hyle::\${_required}\")\n"
+"foreach(_required_product IN ITEMS core error time platform mem container)\n"
+"  if(NOT TARGET hyle::\${_required_product})\n"
+"    message(FATAL_ERROR \"missing selected product hyle::\${_required_product}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"foreach(_required_factor IN ITEMS core error container_intrusive time platform util_core mem container)\n"
+"  if(NOT TARGET hyle_\${_required_factor})\n"
+"    message(FATAL_ERROR \"missing selected factor hyle_\${_required_factor}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"foreach(_internal_alias IN ITEMS container_intrusive util_core)\n"
+"  if(TARGET hyle::\${_internal_alias})\n"
+"    message(FATAL_ERROR \"internal factor leaked as hyle::\${_internal_alias}\")\n"
 "  endif()\n"
 "endforeach()\n"
 "foreach(_forbidden IN ITEMS io compute graph simd)\n"
@@ -708,11 +603,14 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "if(NOT _hyle_fcontext_supported)\n"
 "  message(FATAL_ERROR \"test host unexpectedly lacks supported fcontext\")\n"
 "endif()\n"
-"foreach(_required IN ITEMS container_intrusive time sched io)\n"
-"  if(NOT TARGET hyle::\${_required})\n"
-"    message(FATAL_ERROR \"missing transport target hyle::\${_required}\")\n"
+"foreach(_required_product IN ITEMS container time sched io)\n"
+"  if(NOT TARGET hyle::\${_required_product})\n"
+"    message(FATAL_ERROR \"missing transport product hyle::\${_required_product}\")\n"
 "  endif()\n"
 "endforeach()\n"
+"if(NOT TARGET hyle_container_intrusive OR TARGET hyle::container_intrusive)\n"
+"  message(FATAL_ERROR \"transport factor/product projection is invalid\")\n"
+"endif()\n"
 "hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
 "hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n")
 _hyle_contract_run("supported transport direct PUBLIC edges" TRUE

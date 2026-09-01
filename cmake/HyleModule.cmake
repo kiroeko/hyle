@@ -196,12 +196,14 @@ function(_hyle_module_uses_gate name token out_var)
 endfunction()
 
 # hyle_add_module(<name> [TRACE] [TESTING] [SOURCES ...])
-# Declares a HYLE module as a library target `hyle_<name>` with conventional
+# Declares an internal HYLE factor as `hyle_<name>` with conventional
 # include dirs, manifest-derived internal links, warnings, sanitizer flags, and
 # a tri-state export macro. TRACE/TESTING are explicit opt-ins and must match the
 # checked-in module sources/public headers; this prevents a pure target from
 # acquiring an unrelated profiler runtime or test ABI. External links stay in the
-# owning module CMakeLists via ordinary target_link_libraries().
+# owning module CMakeLists via ordinary target_link_libraries(). Consumer aliases
+# are created separately by hyle_add_product_facades(); a factor must never link
+# a product facade.
 function(hyle_add_module name)
   cmake_parse_arguments(ARG "TRACE;TESTING" "" "SOURCES" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
@@ -337,14 +339,49 @@ function(hyle_add_module name)
   unset(_hyle_uses_testing)
 
   set_target_properties(${target} PROPERTIES
-    EXPORT_NAME "${name}"
+    EXPORT_NAME "_factor_${name}"
+    HYLE_FACTOR_ID "${name}"
     FOLDER "hyle/modules")
   if(ARG_SOURCES AND NOT HYLE_STATIC)
     set_target_properties(${target} PROPERTIES
       VERSION "${PROJECT_VERSION}"
       SOVERSION "${HYLE_ABI_VERSION}")
   endif()
-  add_library(hyle::${name} ALIAS ${target})
+endfunction()
+
+# Create the consumer-facing product catalog after every selected factor target
+# exists. Facades are graph roots only: they own no source or module state and
+# cannot appear in factor dependency declarations.
+function(hyle_add_product_facades)
+  foreach(_product IN LISTS HYLE_KNOWN_PRODUCTS)
+    string(TOUPPER "${_product}" _product_upper)
+    if(NOT HYLE_BUILD_PRODUCT_${_product_upper})
+      continue()
+    endif()
+
+    set(_facade_target "hyle_product_${_product}")
+    if(TARGET ${_facade_target} OR TARGET hyle::${_product})
+      message(FATAL_ERROR
+        "HYLE product facade '${_product}' collides with an existing target")
+    endif()
+    set(_factor_targets "")
+    foreach(_factor IN LISTS _HYLE_PRODUCT_FACTORS_${_product_upper})
+      if(NOT TARGET hyle_${_factor})
+        message(FATAL_ERROR
+          "HYLE product '${_product}' is complete in the manifest but factor "
+          "target 'hyle_${_factor}' does not exist")
+      endif()
+      list(APPEND _factor_targets hyle_${_factor})
+    endforeach()
+
+    add_library(${_facade_target} INTERFACE)
+    target_link_libraries(${_facade_target} INTERFACE ${_factor_targets})
+    set_target_properties(${_facade_target} PROPERTIES
+      EXPORT_NAME "${_product}"
+      HYLE_PRODUCT_NAME "${_product}"
+      FOLDER "hyle/products")
+    add_library(hyle::${_product} ALIAS ${_facade_target})
+  endforeach()
 endfunction()
 
 # hyle_add_test(<module> SOURCES ... [NAME <suffix>] [DEFINES ...] [OPTIONS ...] [DEPS ...])

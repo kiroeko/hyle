@@ -1,26 +1,22 @@
 # util：什么情况选什么
 
-> **当前边界（2026-08-31）：**本页前半的 `util_core` 五项能力已完成 v1 收口并通过新版能力
-> 完整性回放；后半是当前 Registry lookup/create 合同和 demangle owning/buffer 形状，签证状态只看中央
+> **当前边界（2026-09-01）：**`util_core` 与 `util` 均为 `CLOSED`；当前 Registry lookup/create
+> 合同和 demangle owning/buffer 形状的签证状态只看中央
 > [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
 > 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
-按场景包含 `hyle/util/<capability>.h`。五个 header-only primitive 链接
-`hyle::util_core`；demangle/Registry 链接 `hyle::util`。两个 target 彼此独立，同时使用时都要列出。
+按场景包含 `hyle/util/<capability>.h`，构建时统一选择 Util 产品 façade：
 
 ```cmake
-find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util_core)
-target_link_libraries(my_target PRIVATE hyle::util_core)
-
-# runtime registry/demangle（若也用 util_core，COMPONENTS/links 同时列出）
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util)
-target_link_libraries(my_runtime_target PRIVATE hyle::util)
+target_link_libraries(my_target PRIVATE hyle::util)
 ```
 
-源码嵌入时按实际根设置 `HYLE_COMPONENTS=util_core`、`util` 或二者，再链接对应 target；不要靠手写
-include path 绕过组件与安装包合同。
+源码嵌入时设置 `HYLE_COMPONENTS=util` 并链接 `hyle::util`；不要靠手写 include path 绕过产品与
+安装包合同。内部仍把 header-only `util_core` 与 compiled Registry/symbol factor 分开，使 Mem/Sched
+能精确复用 leaf primitive 而不产生反向环；这些内部 target 不进入用户 component catalog。
 
 ## 先看选择表
 
@@ -247,12 +243,11 @@ module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活�
 
 ## 分层与证据入口
 
-header-only util-core 作为独立 `util_core` 组件交付，当前 v1 收口记录见
+header-only util-core 仍作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；当前 v1 收口记录见
 [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)，新版完整性复检见
 [`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)；Registry
-和 demangle 属于
-独立 `util` runtime component；v2 owning-text 任务见
+和 demangle 属于独立 runtime factor；v2 owning-text 任务见
 [`util-runtime-v2`](../implementation/tasks/util/util-runtime-v2-closure.md)。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
 不代表当前 runtime 证书；唯一当前状态见
 [`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个
-运行时 Registry 反向链接 `hyle_util`。
+运行时 Registry 反向链接 runtime factor。用户只看到一个 Util 产品不改变这条内部依赖。

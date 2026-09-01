@@ -3,6 +3,9 @@
 > 状态：当前设计。本文描述仓库中实际生效的 CMake 契约，而不是发布承诺。
 > Hyle 当前交付面是 C++：源码组装、静态 SDK、共享 SDK。早期公开 C/跨语言表面已经移除，
 > 不属于当前产品设计。
+>
+> 2026-09-01 起，当前实现采用“内部 factor DAG / 外部产品 façade”双层投影；本轮证据记录在
+> [`build-system-v7-factor-facade-projection`](../implementation/tasks/build/build-system-v7-factor-facade-projection.md)。
 
 ## 设计目标
 
@@ -10,6 +13,7 @@
 
 - 模块边界可见：每个组件拥有明确 target，内部依赖不能藏在目录顺序或手工链接里。
 - 组装可裁剪：源码使用者、静态 SDK 和共享 SDK 使用同一组件图。
+- 用户入口内聚：内部为解环产生的细粒度 factor 不直接变成用户必须理解的产品菜单。
 - 外部依赖可复现：身份、版本、内容和许可证来自一份锁定记录，并投影到在线、离线、安装和 CI 流程。
 - 回归可持续：新模块加入后自动进入基本构建测试；更昂贵的产品形态和硬件路径分层验证。
 
@@ -22,15 +26,17 @@
 归一化结果同时写入只读 global property，供 `add_subdirectory(hyle)` 返回后的父工程 helper 使用；
 父工程不得重新从 `CMAKE_SYSTEM_PROCESSOR` 猜一次目标架构。
 
-## Target 与组件所有权
+## 当前 Target 与所有权
 
-一个公开组件对应一个 CMake target：
+当前 target 分为两层：
 
-- 构建树名称：`hyle_<module>`。
-- 构建树和安装树的消费名称：`hyle::<module>`。
-- `core`、`util_core`、`container_intrusive` 与 `math` 是可选择、可安装的 `INTERFACE`
-  组件；其余组件
-  通常是编译型 target。
+- 内部 factor 的构建树名称是 `hyle_<factor>`；安装包为表达传递闭包时导出为
+  `hyle::_factor_<factor>` detail target。两者都不是普通用户入口。
+- 用户在源码树和安装树都只消费 `hyle::<product>` façade；`HYLE_COMPONENTS` 和
+  `find_package(Hyle COMPONENTS ...)` 也只接受产品名。
+- 当前 `core` 与 `math` factor 是 `INTERFACE`；`container_intrusive`、`util_core` 也是
+  `INTERFACE` factor，但分别由公开的 `container`、`util` façade 聚合，不是独立用户产品。
+- 其余 factor 通常是编译型 target；product façade 始终是无运行时成本的 `INTERFACE` target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
 - `hyle::simd_expert` 是 SIMD 用户显式选择的 `INTERFACE` 开发 target，在源码、installed static 和
   installed shared 三种交付中同名存在。`hyle_target_simd()` / `hyle_add_fat_kernel()` 通过它向
@@ -50,6 +56,42 @@
 - Tracy 实现在模块图声明后才建立；`HYLE_TRACE=ON` 而所选闭包没有 trace consumer 会配置失败，
   不会把 Tracy 悄悄变成第二个产品根。
 
+### 双层投影合同
+
+Stage C 的 30 个 semantic factor 是源码 ownership、`module-status.json`、测试和 HYLE 直接依赖的
+目标粒度；当前已有 16 个 factor 已接入该机制，它们不是 16 个用户产品。双层投影把旧
+“component”承担的四种含义拆开：
+
+| layer | owns | may depend on | consumer-visible contract |
+|---|---|---|---|
+| factor | 源码/头 owner、状态、direct `PUBLIC/PRIVATE` 边、测试与唯一算法裁决权 | 其他 factor 与 build-only mechanism | 默认无 `hyle::<factor>`；安装时只可能以 `_factor_*` detail target 承载传递闭包 |
+| product façade | 用户问题域和完整 factor-root 集 | 只以 `INTERFACE` 链接 factor roots | `HYLE_COMPONENTS`、`find_package(Hyle COMPONENTS ...)` 与 `hyle::<product>` 的唯一普通入口 |
+| feature | 可选产品能力与相应外部依赖 | owning product/factor | 显式 build option 与 package capability metadata |
+| build-only mechanism | vendor、生成器、系统库、trace/testing/build contract | 不参与 HYLE semantic DAG | 不进入产品 catalog |
+
+内部 factor 不能链接 façade；否则 `Time -> Container façade -> Mem -> Platform -> Time` 会把已经消除的
+环重新引入。façade 自身没有源码、binary、模块状态、API owner 或 closure verdict，只在图外选择一组
+factor roots。公开头仍由 factor 唯一拥有，产品安装的是所选 factor 闭包的头并继续执行 direct-edge
+审计。
+
+外部 catalog 按完整问题域保持小而稳定：`core,error,time,platform,mem,obs,simd,math,container,util,
+sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive` 与未来
+`container_queue` 是内部 factor，用户从 `hyle::container` 获得 Container 产品；`util_core/registry/
+symbol` 由 `hyle::util` 聚合。只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
+不能因为内部有一个 target 就自动公开。
+
+source/static/shared 必须暴露同名 façade。当前首选物理实现是继续保留精确 factor artifact/target，由
+INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可加载同级 factor DSO。CMake export 为表达
+传递闭包而出现的 `hyle::_factor_*` 是不承诺的 package detail，既不列入
+`Hyle_AVAILABLE_COMPONENTS`，也不写入用户指南。是否进一步像本地 Folly
+`23ebefdf96c116700d3e134f04d95a2b60a509de` 那样把 OBJECT 单元聚合成 monolithic shared artifact，必须
+由启动、部署或符号边界证据另立任务；不能借 façade 迁移顺手改变物理 ABI。
+
+本地 peer 对账还包括 oneTBB `a8216b95202f3c55f9749870f4f8cfa4df0b32e3` 的少量语义组件、ggml
+`d4716378882593333721eb33f153144b6885caf2` 的 frontend/backend 分层，以及 Abseil/Boost 的细粒度
+公开 target 反例。结论不是复制任一库，而是把逻辑 factor、物理 artifact 与用户产品入口作为三项分别
+裁决。
+
 各层只拥有一类事实：
 
 | 位置 | 唯一职责 |
@@ -64,15 +106,17 @@
 
 ### 单一内部依赖 manifest
 
-`HyleComponents.cmake` 是内部组件关系的唯一 manifest，并产生两种投影：
+当前 `HyleComponents.cmake` 是 factor 关系与产品 catalog 的唯一 manifest，并产生三种投影：
 
-1. 配置开始时解析 `HYLE_COMPONENTS` 的传递闭包，决定实际加入哪些模块目录。
-2. `hyle_add_module()` 从同一记录生成真实的 `target_link_libraries(... PUBLIC|PRIVATE ...)` 边。
+1. `HYLE_COMPONENTS` 先把产品映射为 factor roots，再解析传递闭包，决定实际加入哪些模块目录；
+2. `HYLE_DEV_FACTORS` 让顶层维护/CI 精确选择 factor roots，不能用于嵌入或安装；
+3. `hyle_add_module()` 生成真实 factor `PUBLIC|PRIVATE` 边，`hyle_add_product_facades()` 在图外生成
+   无源码的用户入口。
 
 配置结束时 `hyle_validate_final_module_graph()` 再核对 target 的 `LINK_LIBRARIES` 和
-`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。组件 schema、名称与拓扑始终按完整
+`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。factor schema、名称与拓扑始终按完整
 manifest 做轻量元数据验证，依赖闭包按已验证的拓扑单次反向传播；随后只对本次 selected closure
-读取公开头和实现源码。这样 all-component CI 仍审完整树，而单模块源码消费者不会被另一个未选模块
+读取公开头和实现源码。这样 all-product CI 仍审完整树，而单产品源码消费者不会被另一个未选 factor
 的施工中状态阻断，include audit 成本也从全库 `S_all` 收束到 `S_selected`。
 
 当前图的关键关系是：
@@ -96,18 +140,19 @@ compute     -> PUBLIC core error mem sched; PRIVATE platform simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
 
-`PUBLIC` 表示消费者编译或链接本模块时也需要该产品依赖；`PRIVATE` 表示只服务本模块实现。
+`PUBLIC` 表示消费者编译或链接本 factor 时也需要该 factor 依赖；`PRIVATE` 表示只服务本 factor 实现。
 `BUILD_PRIVATE` 保留给确有真实 `$<BUILD_INTERFACE:...>` target 边、但不扩大安装闭包的 HYLE 内部
-header seam，不能用来伪装外部依赖或隐藏产品组件调用。当前 Container 的字符串/bitset target TU
+header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 Container 的字符串/bitset target TU
 直接链接 build-only `hyle_highway_headers`，所以中央内部图没有 `container -> simd` 或其他虚构
 内部 header 边；来源与许可证由下节的外部依赖登记投影。这里记录的都是实际 target/link 契约。
-`container_intrusive` 证明 header-only 能力也应在公开类型穿过模块边界
+`container_intrusive` 证明 header-only 能力也应在公开类型穿过 factor 边界
 时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
-`container` 不聚合这项独立能力。`platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
+`container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
+`platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform -> PUBLIC time` 是真实 SDK 边；sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
 不伪造一条未直接使用的依赖。io、compute 与 graph 的当前公开面都暴露 sched 类型，因此 sched
 是无条件 `PUBLIC` 边；无 fcontext 平台会诚实拒绝这三个产品根。未来若要交付 raw proactor 或
-host-only compute，必须先拆成拥有独立公开头与 journey 的真实组件，不能只从图上删边。
+host-only compute，必须先拆成拥有独立公开头与 journey 的真实 factor，不能只从图上删边。
 
 Core 的 source contract 不再是 target-neutral 例外。公开头直接 include `<hyle/core/**>` 或
 `<hyle/version.h>` 的组件必须直接声明 `PUBLIC core`，即使 `hyle::core` 是 `INTERFACE`、没有
@@ -119,8 +164,8 @@ declaration 暴露外部类型的边用显式 `PUBLIC_TYPE_DEPS` 注释；不进
 include root 或复制整棵 include tree 都不能使未登记依赖合法。
 
 该 include-owner 检查只裁决正在组装的 selected closure，不把未选模块重新耦合进 source journey。
-选择某组件时，它和全部传递依赖都会被检查；CI 的 `HYLE_COMPONENTS=all` 因而仍机械覆盖每个组件。
-组件 manifest 自身的 unknown edge、重复、PUBLIC/PRIVATE 冲突和非拓扑顺序无论选择什么 root 都会
+选择某产品时，它的全部传递 factor 都会被检查；CI 的 `HYLE_COMPONENTS=all` 因而仍机械覆盖每个 factor。
+factor manifest 自身的 unknown edge、重复、PUBLIC/PRIVATE 冲突和非拓扑顺序无论选择什么 root 都会
 失败，因为这些属于轻量全局 schema，而不是未选源码内容。
 
 `<hyle/version.h>` 是 build/package 拥有的 checked-in 产品元数据，并由 Core include contract
@@ -204,9 +249,14 @@ cmake -DHYLE_DEP_ACTION=prune -DHYLE_DEP_PRUNE_CONFIRM=YES -P cmake/HyleDependen
 
 用户可理解的 option 应表达产品选择或验证强度；计算得到的 `HYLE_BUILD_<COMPONENT>` 只是内部状态。
 
+`HYLE_COMPONENTS` 只接受产品 façade 名。精确 factor build 使用仅限顶层维护/CI 的
+`HYLE_DEV_FACTORS`，它与 `HYLE_COMPONENTS` 互斥且不能用于安装包或普通源码嵌入。`all` 始终表示
+所有产品，而不是公开全部 factor。
+
 | 类别 | 选项 | 语义 |
 |---|---|---|
-| 组件 | `HYLE_COMPONENTS` | `all` 或逗号/分号列表；空值、未知名、`all` 与显式名混用均失败 |
+| 产品 | `HYLE_COMPONENTS` | `all` 或逗号/分号产品列表；空值、未知名、`all` 与显式名混用均失败 |
+| 内部维护 | `HYLE_DEV_FACTORS` | 仅顶层维护/CI 的精确 factor 根；不得与 `HYLE_COMPONENTS` 或 `HYLE_INSTALL=ON` 混用 |
 | 链接形态 | `HYLE_STATIC` | `OFF` 明确构建 shared，`ON` 明确构建 static；不改父工程 `BUILD_SHARED_LIBS` |
 | 安装 | `HYLE_INSTALL` | 生成可重定位 SDK；当前要求 `HYLE_BUILD_TESTS=OFF` |
 | 验证 | `HYLE_BUILD_TESTS`, `HYLE_TEST_INSTRUMENTATION`, `HYLE_WERROR`, `HYLE_BUILD_BENCH` | 分别控制测试、测试插桩、警告门和 benchmark；普通测试默认 shipping layout，诊断插桩须显式开启 |
@@ -225,7 +275,7 @@ SEH interceptor 与调试信息，并把匹配的 ASan DLL 放到最终产物旁
 提供的 `GTest::gtest_main` 则由父工程保证 ABI/插桩一致。
 
 顶层配置省略 `HYLE_COMPONENTS` 时默认 `all`；作为子目录嵌入时，父工程必须在
-`add_subdirectory()` 前显式设置根组件，防止一次普通依赖引入意外构建整库。在独占的 fresh build
+`add_subdirectory()` 前显式设置产品根，防止一次普通依赖引入意外构建整库。在独占的 fresh build
 tree 中，测试插桩、SIMD exact、IO/compute feature 和 trace 路径等 cache 控制只在其 owner/gate
 成立时声明。CMake 会保留旧配置曾写入的 cache key；改变组件闭包或产品形状时应使用新的独占
 scratch，或明确 `--fresh` 后重新配置，不能把旧 key 仍可见误认为当前闭包消费了该能力。生成器、工具链、配置类型、安装前缀、CUDA architectures 和
@@ -236,8 +286,8 @@ scratch，或明确 `--fresh` 后重新配置，不能把旧 key 仍可见误认
 
 ### 源码组装
 
-获得授权源码的使用者在 `add_subdirectory()` 前显式设置 `HYLE_COMPONENTS`，组装所需组件并链接
-`hyle::<module>`。只有 Hyle 自身作为顶层工程时，省略该变量才表示 `all`。父工程拥有生成器、
+获得授权源码的使用者在 `add_subdirectory()` 前显式设置 `HYLE_COMPONENTS`，组装所需产品并链接
+`hyle::<product>`。只有 Hyle 自身作为顶层工程时，省略该变量才表示 `all`。父工程拥有生成器、
 工具链、输出目录和标准 CMake 策略；Hyle option 只描述 Hyle 自身。嵌入模式不创建源码发行 target。
 
 根 `project()` 只声明 `LANGUAGES CXX`。C 是内部实现语言而非产品消费者前置条件；在
@@ -245,7 +295,7 @@ scratch，或明确 `--fresh` 后重新配置，不能把旧 key 仍可见误认
 `enable_language(C)`。测试构建还会进入 GoogleTest 自己的 CMake project，并可能探测 C frontend；
 这属于测试工具链需求，不建立 C 产品 surface。
 
-请求 `core` 时唯一的产品组件 target 是 `hyle::core` INTERFACE target；构建树仍有无 artifact 的
+请求 `core` 时唯一的产品 target 是 `hyle::core` INTERFACE target；构建树仍有无 artifact 的
 内部 build/trace/testing foundation targets，但 Core 不链接 trace/testing，也不产生
 object/archive/runtime。请求其他组件会通过中央图取得它所需的 Core source contract，不能靠父工程
 的 include path 偶然可见。
@@ -266,11 +316,12 @@ target_link_libraries(app PRIVATE hyle::mem)
 
 以 `HYLE_INSTALL=ON`、`HYLE_STATIC=OFF` 安装，消费语法相同。Unix 安装 target 使用相对同级 RPATH；Windows 消费 target 可调用 `hyle_stage_runtime_dependencies(target)` 把所需 DLL 放到运行目录。
 
-安装前缀和 GNUInstallDirs 必须保持相对、可搬迁；绝对安装子目录会失败。SDK 只安装所选组件闭包
+安装前缀和 GNUInstallDirs 必须保持相对、可搬迁；绝对安装子目录会失败。SDK 只安装所选产品对应的 factor 闭包
 拥有的公开头；只有闭包含 `TRACE` consumer 时才额外安装 trace foundation 的 `obs/trace.h`，不会
 复制整棵 `include/hyle`。
 公开头 include-owner 审计要求每个跨组件 include 都有对应直接 `PUBLIC` 边，防止缺失 target 被整树
-安装偶然遮蔽。可用组件仍以导入 target 和 `Hyle_AVAILABLE_COMPONENTS` 为准。源码授权与静态/共享
+安装偶然遮蔽。`Hyle_AVAILABLE_COMPONENTS` 沿用 CMake 的 component 术语，但内容只列产品 façade；
+`hyle::_factor_*` detail target 不在其中。源码授权与静态/共享
 产物形态是两个独立维度。
 
 预发布 `0.y.z` 的 package version 和 shared-object loader/SOVERSION identity 都使用完整版本并要求
@@ -308,15 +359,16 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 
 | 层级 | 当前职责 |
 |---|---|
-| PR / main push | 只跑 Linux all-component shipping-layout CPU 基线、文档和组件/依赖合同；昂贵可选后端关闭 |
+| PR / main push | 只跑 Linux all-product shipping-layout CPU 基线、文档和产品/factor/依赖合同；昂贵可选后端关闭 |
 | 手工 full dispatch | Linux/Windows/macOS CPU 基线，并在适用主机跑 production shape、package consumer 与源码包 |
 | 手工 Windows clang-cl | 显式 test instrumentation 的一组底层组件及多个 exact-SIMD artifact |
-| 手工 Linux AArch64 cross | 全组件交叉编译；不宣称目标机运行正确性 |
+| 手工 Linux AArch64 cross | 全产品交叉编译；不宣称目标机运行正确性 |
 | 手工 locked feature/package | 锁定归档、可选适配器、static/shared SDK 和 trace smoke |
 | 手工/发布证据 | sanitizer、真实 TLS/CUDA/Vulkan 设备、SVE/RVV 运行和性能认证 |
 
-基线遍历 `HYLE_KNOWN_COMPONENTS`，所以新组件自动进入 all-component build；开启测试时，缺少模块
-测试目录会机械失败。PR 与 main push 都故意只保留高信号 Linux 门以控制额度；Windows、macOS、
+当前仍沿用历史内部变量名 `HYLE_KNOWN_COMPONENTS` 存放 factor 构造序；基线遍历它，所以新 factor
+自动进入 all-product build，开启测试时缺少 factor 测试目录会机械失败。该变量不是用户 component
+catalog。PR 与 main push 都故意只保留高信号 Linux 门以控制额度；Windows、macOS、
 交叉编译、完整交付和 locked feature 由 `workflow_dispatch` 展开。package smoke 自动发现安装消费
 样例。更严格的 production roots 仍是显式列表，只能在对应模块通过收口后扩展。CI 绿灯只覆盖
 该 job 明示的形状，不能外推硬件、性能或未运行配置。
@@ -326,7 +378,7 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 模块审查后的每次依赖、公开头或 option 改动，都应至少重跑：
 
 1. 本模块及其传递依赖的 source build/test。
-2. 用独占 scratch 跑该根的 `HyleCiSelectedComponentSmoke.cmake`：source embedding、shared、static
+2. 用独占 scratch 跑该产品根的 `HyleCiSelectedComponentSmoke.cmake`：source embedding、shared、static
    及搬迁后 installed consumer；Windows 使用 `hyle-windows.ps1 -Action SelectedComponentSmoke`，
    Unix 用 `hyle-unix.sh cmake ... -P cmake/HyleCiSelectedComponentSmoke.cmake`，避免继承不受支持的
    host 默认 compiler。
@@ -338,17 +390,21 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 
 并行 agent/session 不得复用 preset 的固定 build tree，也不得在另一会话的 cache 上重配。Windows
 wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提供独占目录；配置单个
-根时同时传 `-Component <name>`。临时 scratch 应位于明确的会话目录，完成后由拥有它的会话清理。
+产品时传 `-Component <product>`，精确 factor 维护配置传 `-Factor <factor>`。临时 scratch 应位于
+明确的会话目录，完成后由拥有它的会话清理。
 
 ## 新模块接入协议
 
-1. 在 `HyleComponents.cmake` 登记组件、构造顺序和全部产品 `PUBLIC`/`PRIVATE` 边；若仅借用另一
+以下协议中的“模块”指 factor；中央 product catalog 另行决定它被哪些 façade 聚合。factor task
+不得自行创建、命名或链接 façade。
+
+1. 在 `HyleComponents.cmake` 登记 factor、构造顺序和全部 factor `PUBLIC`/`PRIVATE` 边；若仅借用另一
    模块的实现 header 且不形成交付需求，登记受审的 `PRIVATE_BUILD_DEPS` seam，不得伪造成产品边。
 2. 用 `hyle_add_module()` 创建 `src/<module>` target，只列本模块源码和外部实现 target。
 3. 增加 `tests/<module>/CMakeLists.txt` 及模块聚合测试；需要时再增加 benchmark。
 4. 若引入外部源码，先更新 dependency lock，再在模块包登记中声明唯一 owner、feature、导出 target、资产和许可证投影。
 5. 增加 C++ 源码消费和 static/shared 安装消费样例；确认 relocation。
-6. 运行 all-component、依赖图、离线、源码包和适用的 feature 合同并修到通过；新增合同测试时，
+6. 运行 all-product、依赖图、离线、源码包和适用的 feature 合同并修到通过；新增合同测试时，
    用隔离的负向 fixture 证明它能拒绝缺边/缺资产，不能故意破坏产品树或共享 CI 来“失败一次”。
 7. 更新 architecture、user guide、task/evidence；构建通过不等于模块收口。
 
@@ -371,4 +427,4 @@ wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提
 - 安装只复制 selected closure 的 owned public headers；缺少 owner 或 `PUBLIC` 边会在配置阶段失败。
 - 源码包有意不携带 FetchContent 依赖；需要全离线构建时必须同时准备可搬运的 HYLE 共享源码 cache，
   或 `hyle-offline-deps.cmake` 使用的独立 `deps/<name>` 目录。
-- `compute` 与 `graph` 仍是未完成模块。all-component 绿灯只证明现有构建与测试契约，不证明其功能已经完成。
+- `compute` 与 `graph` 仍是未完成模块。all-product 绿灯只证明现有构建与测试契约，不证明其功能已经完成。

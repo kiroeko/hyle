@@ -34,7 +34,8 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 | 重复字符串只存一份并获得 generation ID | `StringInterner` |
 | 普通 borrowed text，不需要 HYLE 额外事实/算法 | `std::string_view` |
 
-`intrusive_list.h` 来自单独的 `container_intrusive` 组件；它不是选择普通 owning container 的捷径。
+`intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付；它在 HYLE
+内部仍由独立 `container_intrusive` factor 拥有，以便 Time 等底层消费者不取得完整 Container 闭包。
 
 ## Sequence 和 ring
 

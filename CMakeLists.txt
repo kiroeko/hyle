@@ -157,6 +157,12 @@ else()
 endif()
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
+if(HYLE_INSTALL AND DEFINED HYLE_DEV_FACTORS)
+  message(FATAL_ERROR
+    "HYLE_INSTALL=ON cannot be combined with HYLE_DEV_FACTORS. Internal factor "
+    "selection is a source-maintenance journey; install a complete product "
+    "selected through HYLE_COMPONENTS instead.")
+endif()
 if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
   message(FATAL_ERROR
     "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test configurations are validation "
@@ -411,6 +417,10 @@ endforeach()
 unset(_component)
 unset(_component_upper)
 
+# Product facades are consumer roots outside the factor DAG. Create them only
+# after all selected factor targets exist; no module CMakeLists may link one.
+hyle_add_product_facades()
+
 # Trace backend construction is deliberately deferred until the selected
 # module graph has declared whether any target consumes the gate. This keeps a
 # Core-only package from manufacturing/registering an unrelated Tracy runtime.
@@ -444,5 +454,5 @@ if(HYLE_STATIC)
 else()
   set(_hyle_linkage shared)
 endif()
-message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | linkage=${_hyle_linkage} | components=${HYLE_RESOLVED_COMPONENTS}")
+message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | linkage=${_hyle_linkage} | products=${HYLE_RESOLVED_PRODUCTS} | factors=${HYLE_RESOLVED_COMPONENTS}")
 unset(_hyle_linkage)

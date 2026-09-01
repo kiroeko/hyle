@@ -12,6 +12,7 @@
 - [Build/package 能力完整性存量回放（PRODUCT_TRIGGER）](build-package-capability-replay-v1.md)
 - [Build/package v5 selected-closure 修复（CLOSED）](build-system-v5-selected-closure.md)
 - [Build/package v6 共享锁定源码缓存（CLOSED）](build-system-v6-shared-source-cache.md)
+- [Build/package v7 内部 factor / 外部产品 façade 投影（CLOSED）](build-system-v7-factor-facade-projection.md)
 - [模块收口状态机与统一性能仪器 v1](closure-system-v1.md)
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 

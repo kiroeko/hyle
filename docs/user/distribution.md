@@ -27,10 +27,11 @@ add_subdirectory(path/to/hyle hyle-build)
 target_link_libraries(my_app PRIVATE hyle::container)
 ```
 
-`HYLE_COMPONENTS` 是分号或逗号分隔的根组件。HYLE 作为顶层工程时，省略或设为 `all` 会构建
+`HYLE_COMPONENTS` 是分号或逗号分隔的产品根。HYLE 作为顶层工程时，省略或设为 `all` 会构建
 完整产品；通过 `add_subdirectory()` 嵌入时父工程必须显式设置，防止一次依赖意外构建整库。
-显式空值会报错。依赖闭包由中央组件图解析，但用户 target 仍只链接实际使用的
-`hyle::<module>`。
+显式空值会报错。用户只链接实际使用的 `hyle::<product>`。为打破内部依赖环而存在的
+`container_intrusive`、`util_core` 等 factor 由产品 façade 聚合，不是产品名，也不能传给
+`HYLE_COMPONENTS`。源码、static SDK 和 shared SDK 使用同一套产品名。
 
 HYLE 根工程只要求 C++23 编译器；若所选闭包包含 mem，其内部 mimalloc 实现会按需启用 C 编译器。
 这不建立 C 产品 surface，也不要求 core/error 等纯 C++ 闭包安装 C 工具链。
@@ -106,7 +107,8 @@ endif()
 配置时用 `CMAKE_PREFIX_PATH` 或 `Hyle_DIR` 指向相应安装 prefix。不要把 static 与 shared SDK 安装
 到同一个 prefix 后依赖偶然搜索顺序；也不要从一个 SDK 拿头、从另一个拿库。
 
-`find_package` 会拒绝不存在或未打包的 component。imported target 负责公开头、C++23 floor、
+`find_package` 会拒绝不存在或未打包的产品。`Hyle_AVAILABLE_COMPONENTS` 沿用 CMake 命名，但只列
+产品 façade；包内 `hyle::_factor_*` 仅用于 imported target 的传递闭包，不是用户 API。imported target 负责公开头、C++23 floor、
 传递组件和必要第三方依赖；若用户必须手工补 link/include 参数，应视为 package bug。
 
 SIMD 有一个显式专家开发层，三种交付写法相同。普通用户仍只链接 `hyle::simd`；需要 HYLE ordinary

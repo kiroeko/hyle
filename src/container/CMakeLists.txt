@@ -1,6 +1,6 @@
 # container: owning/concurrent templates plus compiled algorithms. The
-# allocation-free intrusive-list surface remains a separately selectable
-# hyle::container_intrusive component; full container does not aggregate it.
+# allocation-free intrusive-list surface remains a separate internal factor;
+# the consumer-facing hyle::container facade aggregates both factors.
 # SPSC / bounded_queue / ws_fifo / ws deque remain header-only here; the
 # compiled hash unit (container-02). hash.cc privately includes the vendored
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
