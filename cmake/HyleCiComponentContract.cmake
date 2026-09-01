@@ -404,6 +404,65 @@ unset(_core_relocate_result)
 unset(_core_static)
 unset(_core_unselected_header)
 
+# A split factor declares each public header once. The same record must select
+# the factor header, exclude it from the parent namespace owner, and drive
+# include-owner auditing. Exercise those three projections without a compiler.
+set(_split_header_projection_source
+  "${_hyle_contract_root}/split-header-projection-source")
+set(_split_header_projection_build
+  "${_hyle_contract_root}/split-header-projection-build")
+file(MAKE_DIRECTORY "${_split_header_projection_source}")
+file(WRITE "${_split_header_projection_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_split_header_projection LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${HYLE_SOURCE_DIR}\")\n"
+"set(HYLE_COMPONENTS container)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n"
+"set(_header \"hyle/container/intrusive_list.h\")\n"
+"set(_absolute \"${HYLE_SOURCE_DIR}/include/\${_header}\")\n"
+"_hyle_component_public_headers(container_intrusive _factor_headers)\n"
+"if(NOT _factor_headers STREQUAL _absolute)\n"
+"  message(FATAL_ERROR \"split factor header projection is '\${_factor_headers}'\")\n"
+"endif()\n"
+"_hyle_component_public_headers(container _parent_headers)\n"
+"if(_absolute IN_LIST _parent_headers)\n"
+"  message(FATAL_ERROR \"split header leaked into its parent factor\")\n"
+"endif()\n"
+"_hyle_public_include_owner(\"\${_header}\" _owner)\n"
+"if(NOT _owner STREQUAL \"container_intrusive\")\n"
+"  message(FATAL_ERROR \"split header owner is '\${_owner}'\")\n"
+"endif()\n")
+_hyle_contract_run("split public header manifest projection" TRUE
+  "${CMAKE_COMMAND}" -S "${_split_header_projection_source}"
+  -B "${_split_header_projection_build}"
+  ${_hyle_generator_args})
+
+set(_split_header_duplicate_source
+  "${_hyle_contract_root}/split-header-duplicate-source")
+set(_split_header_duplicate_build
+  "${_hyle_contract_root}/split-header-duplicate-build")
+file(MAKE_DIRECTORY "${_split_header_duplicate_source}")
+file(WRITE "${_split_header_duplicate_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_split_header_duplicate LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${HYLE_SOURCE_DIR}\")\n"
+"set(HYLE_COMPONENTS core)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n"
+"_hyle_declare_component(duplicate_owner SPLIT_PUBLIC_HEADERS hyle/container/intrusive_list.h)\n")
+_hyle_contract_run("duplicate split public header owner" FALSE
+  "${CMAKE_COMMAND}" -S "${_split_header_duplicate_source}"
+  -B "${_split_header_duplicate_build}"
+  ${_hyle_generator_args})
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "owned by both")
+  message(FATAL_ERROR
+    "duplicate split header failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+unset(_split_header_duplicate_build)
+unset(_split_header_duplicate_source)
+unset(_split_header_projection_build)
+unset(_split_header_projection_source)
+
 # container_intrusive remains an independently buildable internal factor, but
 # it is no longer a consumer product or installable SDK root. The maintainer
 # selector builds its real module tests; public selection and installation must

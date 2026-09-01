@@ -29,9 +29,9 @@ target_link_libraries(my_app PRIVATE hyle::container)
 
 `HYLE_COMPONENTS` 是分号或逗号分隔的产品根。HYLE 作为顶层工程时，省略或设为 `all` 会构建
 完整产品；通过 `add_subdirectory()` 嵌入时父工程必须显式设置，防止一次依赖意外构建整库。
-显式空值会报错。用户只链接实际使用的 `hyle::<product>`。为打破内部依赖环而存在的
-`container_intrusive`、`util_core` 等 factor 由产品 façade 聚合，不是产品名，也不能传给
-`HYLE_COMPONENTS`。源码、static SDK 和 shared SDK 使用同一套产品名。
+显式空值会报错。用户只链接实际使用的 `hyle::<product>`。为组织内部依赖而存在的
+`_factor_*` detail target 由产品 façade 聚合，不是产品名，也不能传给 `HYLE_COMPONENTS`。
+源码、static SDK 和 shared SDK 使用同一套产品名。
 
 HYLE 根工程只要求 C++23 编译器；若所选闭包包含 mem，其内部 mimalloc 实现会按需启用 C 编译器。
 这不建立 C 产品 surface，也不要求 core/error 等纯 C++ 闭包安装 C 工具链。

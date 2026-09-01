@@ -27,9 +27,10 @@ template <class T, auto Hook, class PublicList> class IntrusiveListImpl;
 
 } // namespace detail
 
-// Allocation-free intrusive linking primitive shared by low-level consumers
-// such as time. It is its own lightweight component so users do not acquire
-// the owning container/mem/platform dependency closure.
+// Allocation-free intrusive Container primitive shared by low-level consumers
+// such as time. HYLE isolates it as a lightweight internal factor so those
+// consumers do not acquire the owning container/mem/platform dependency
+// closure; users obtain it through the Container product.
 //
 // Embed one direct hook data member in a complete, stable-address node, then
 // list it via IntrusiveList<Node, &Node::hook>. The hook must be accessible
@@ -668,8 +669,7 @@ private:
 } // namespace detail
 
 // Auto-unlink list: nodes may detach themselves through hook.unlink() and a
-// linked node detaches during destruction. This preserves the original HYLE
-// API, layout and hot-path code generation.
+// linked node detaches during destruction.
 template <class T, IntrusiveListHook T::*Hook>
 class IntrusiveList
     : public detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>> {

@@ -35,7 +35,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`05_installed_sdk/`](05_installed_sdk/) | 构建/集成 | source-independent C++ package consumer：普通 mem/STL/PMR journey 与全部 advertised imported targets |
 | [`06_installed_io_http2/`](06_installed_io_http2/) | io + HTTP/2 | source-independent C++ feature consumer：原生 HTTP/2 seam 与 static/shared 私有协议依赖闭包 |
 | [`07_installed_compute/`](07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
-| [`package/container_intrusive/cpp/`](package/container_intrusive/cpp/) | container product / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
+| [`package/container/intrusive/cpp/`](package/container/intrusive/cpp/) | container / intrusive journey | source-independent C++ package consumer：通过 `hyle::container` 使用 auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 | [`package/math/cpp/`](package/math/cpp/) | math | source/static/shared 中的 checked/fail-fast integer ceil/round 与 header-only target 闭包 |
 | [`package/simd/cpp/`](package/simd/cpp/) | simd | source/static/shared 同一 `hyle::simd_expert`、fixed-target direct Highway/xsimd 与 custom fat kernel |
 

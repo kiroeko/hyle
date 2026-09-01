@@ -22,8 +22,8 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [time](time.md)
 - [obs](obs.md)
 - [util](util.md)
-- [container_intrusive](container-intrusive.md)：稳定节点、零分配、auto/safe-link 双向链表
-- [container](container.md)：完整数据结构模块；轻量 intrusive target 独立选择
+- [container](container.md)：通用数据结构；稳定节点的零分配链表另见
+  [Container 侵入式链表指南](container-intrusive.md)
 - [math](math.md)：checked integral shape/byte arithmetic、非负 ceil-division 与可表示 multiple round-up
 - [simd](simd-usage.md)
 - [sched](sched.md)：CPU task/fiber runtime、结构化任务、同步与消息

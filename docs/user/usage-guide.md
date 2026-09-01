@@ -27,9 +27,9 @@ add_subdirectory(path/to/hyle hyle-build)
 target_link_libraries(my_app PRIVATE hyle::container)
 ```
 
-`HYLE_COMPONENTS` 指定产品根；构建系统自动解析它们的内部 factor 闭包。仍应只链接代码实际使用的
-`hyle::<product>` target，让 CMake 能发现错误依赖。`container_intrusive`、`util_core` 等内部
-factor 不属于这张用户菜单。`add_subdirectory()` 消费者必须显式设置该
+`HYLE_COMPONENTS` 指定产品根；构建系统自动解析它们的内部实现闭包。仍应只链接代码实际使用的
+`hyle::<product>` target，让 CMake 能发现错误依赖。安装包中可能出现的 `_factor_*` detail target
+不属于用户菜单，也不能传给 `HYLE_COMPONENTS`。`add_subdirectory()` 消费者必须显式设置该
 变量；只有直接把 HYLE 作为顶层工程配置时，省略才默认 `all`。
 
 ## 安装包集成
@@ -60,7 +60,7 @@ TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相�
 | clock、deadline、sleep 与 timer queue | [time](time.md) |
 | log、trace、counter 与 sink 接缝 | [obs](obs.md) |
 | 通用 RAII、registry、random 等工具 | [util](util.md) |
-| caller-owned 稳定节点的零分配链、auto/safe retirement、O(1) 摘链/range handoff | [container_intrusive](container-intrusive.md) |
+| caller-owned 稳定节点的零分配链、auto/safe retirement、O(1) 摘链/range handoff | [Container：侵入式链表](container-intrusive.md) |
 | flat/small/concurrent 等通用数据结构 | [container](container.md) |
 | 非负整数 ceil-division 与可表示 multiple round-up | [math](math.md) |
 | 向量、转换、bitpack 和向量算法 | [simd](simd-usage.md) |

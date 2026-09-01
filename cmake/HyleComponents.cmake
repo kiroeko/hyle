@@ -12,10 +12,13 @@
 # edges after the dependency targets exist.  External implementation libraries
 # remain module-owned and deliberately do not appear here.
 set(HYLE_KNOWN_BUILD_DEPENDENCIES "")
+set(_HYLE_SPLIT_PUBLIC_HEADERS "")
+set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS "")
 
 function(_hyle_declare_component name)
   cmake_parse_arguments(ARG "TRACE" ""
-    "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS" ${ARGN})
+    "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS;SPLIT_PUBLIC_HEADERS"
+    ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "HYLE component '${name}' has unrecognized manifest arguments: "
@@ -55,6 +58,28 @@ function(_hyle_declare_component name)
     endif()
   endforeach()
 
+  set(_split_public_headers ${ARG_SPLIT_PUBLIC_HEADERS})
+  set(_all_split_public_headers ${_HYLE_SPLIT_PUBLIC_HEADERS})
+  set(_all_split_public_header_owners ${_HYLE_SPLIT_PUBLIC_HEADER_OWNERS})
+  foreach(_header IN LISTS _split_public_headers)
+    if(IS_ABSOLUTE "${_header}" OR
+       NOT _header MATCHES "^hyle/[^/]+/.+")
+      message(FATAL_ERROR
+        "HYLE component '${name}' has invalid split public header '${_header}'; "
+        "use an include-relative hyle/<namespace>/<header> path")
+    endif()
+    list(FIND _all_split_public_headers "${_header}" _header_index)
+    if(NOT _header_index EQUAL -1)
+      list(GET _all_split_public_header_owners ${_header_index}
+        _existing_owner)
+      message(FATAL_ERROR
+        "HYLE split public header '${_header}' is owned by both "
+        "'${_existing_owner}' and '${name}'")
+    endif()
+    list(APPEND _all_split_public_headers "${_header}")
+    list(APPEND _all_split_public_header_owners "${name}")
+  endforeach()
+
   set(_all ${_private} ${_public})
   list(REMOVE_DUPLICATES _all)
   string(TOUPPER "${name}" _component_upper)
@@ -64,8 +89,14 @@ function(_hyle_declare_component name)
       "${ARG_PUBLIC_TYPE_DEPS}" PARENT_SCOPE)
   set(_HYLE_PRIVATE_BUILD_DEPS_${_component_upper}
       "${ARG_PRIVATE_BUILD_DEPS}" PARENT_SCOPE)
+  set(_HYLE_SPLIT_PUBLIC_HEADERS_${_component_upper}
+      "${_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_DEPS_${_component_upper} "${_all}" PARENT_SCOPE)
   set(_HYLE_TRACE_${_component_upper} "${ARG_TRACE}" PARENT_SCOPE)
+  set(_HYLE_SPLIT_PUBLIC_HEADERS
+      "${_all_split_public_headers}" PARENT_SCOPE)
+  set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS
+      "${_all_split_public_header_owners}" PARENT_SCOPE)
   set(_known_components ${HYLE_KNOWN_COMPONENTS})
   list(APPEND _known_components "${name}")
   set(HYLE_KNOWN_COMPONENTS "${_known_components}" PARENT_SCOPE)
@@ -76,8 +107,17 @@ set(HYLE_KNOWN_COMPONENTS "")
 # Declaration order is construction order and must remain topological.  The
 # visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
-_hyle_declare_component(container_intrusive PUBLIC_DEPS core)
-_hyle_declare_component(util_core PUBLIC_DEPS core)
+_hyle_declare_component(container_intrusive
+  PUBLIC_DEPS core
+  SPLIT_PUBLIC_HEADERS hyle/container/intrusive_list.h)
+_hyle_declare_component(util_core
+  PUBLIC_DEPS core
+  SPLIT_PUBLIC_HEADERS
+    hyle/util/random.h
+    hyle/util/ref_counted.h
+    hyle/util/scope_guard.h
+    hyle/util/spin_lock.h
+    hyle/util/type_name.h)
 _hyle_declare_component(error PUBLIC_DEPS core)
 _hyle_declare_component(obs TRACE PUBLIC_DEPS core error)
 _hyle_declare_component(math PUBLIC_DEPS core)
@@ -404,48 +444,39 @@ unset(_product_complete)
 unset(_product_upper)
 
 function(_hyle_component_public_headers name out_var)
-  set(_hyle_util_core_headers
-    "${HYLE_SOURCE_DIR}/include/hyle/util/random.h"
-    "${HYLE_SOURCE_DIR}/include/hyle/util/ref_counted.h"
-    "${HYLE_SOURCE_DIR}/include/hyle/util/scope_guard.h"
-    "${HYLE_SOURCE_DIR}/include/hyle/util/spin_lock.h"
-    "${HYLE_SOURCE_DIR}/include/hyle/util/type_name.h")
-  if(name STREQUAL "core")
+  string(TOUPPER "${name}" _component_upper)
+  set(_split_public_headers
+      "${_HYLE_SPLIT_PUBLIC_HEADERS_${_component_upper}}")
+  if(_split_public_headers)
+    set(_headers "")
+    foreach(_split_public_header IN LISTS _split_public_headers)
+      list(APPEND _headers
+        "${HYLE_SOURCE_DIR}/include/${_split_public_header}")
+    endforeach()
+  elseif(name STREQUAL "core")
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/core/*.h")
     list(APPEND _headers
       "${HYLE_SOURCE_DIR}/include/hyle/version.h"
       "${HYLE_SOURCE_DIR}/include/hyle/visibility.h")
-  elseif(name STREQUAL "container_intrusive")
-    set(_headers
-      "${HYLE_SOURCE_DIR}/include/hyle/container/intrusive_list.h")
-  elseif(name STREQUAL "container")
-    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
-      "${HYLE_SOURCE_DIR}/include/hyle/container/*.h")
-    list(REMOVE_ITEM _headers
-      "${HYLE_SOURCE_DIR}/include/hyle/container/intrusive_list.h")
-  elseif(name STREQUAL "util_core")
-    set(_headers ${_hyle_util_core_headers})
-  elseif(name STREQUAL "util")
-    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
-      "${HYLE_SOURCE_DIR}/include/hyle/util/*.h")
-    list(REMOVE_ITEM _headers ${_hyle_util_core_headers})
-  elseif(name STREQUAL "simd")
-    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
-      "${HYLE_SOURCE_DIR}/include/hyle/simd/*.h")
-    # Finite provider routes remain implementation-only. target.h and
-    # fat_kernel.h are public expert headers shared by source/static/shared
-    # delivery and are therefore installed with the selected SIMD component.
-    list(FILTER _headers EXCLUDE REGEX "/hyle/simd/provider/")
-  elseif(name STREQUAL "sched")
-    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
-      "${HYLE_SOURCE_DIR}/include/hyle/sched/*.h")
-    # Cross-component worker-loop bridges are source-composition details. They
-    # are available while building HYLE but are not an installed C++ SDK API.
-    list(FILTER _headers EXCLUDE REGEX "/hyle/sched/detail/")
   else()
     file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
       "${HYLE_SOURCE_DIR}/include/hyle/${name}/*.h")
+    foreach(_split_public_header IN LISTS _HYLE_SPLIT_PUBLIC_HEADERS)
+      list(REMOVE_ITEM _headers
+        "${HYLE_SOURCE_DIR}/include/${_split_public_header}")
+    endforeach()
+    if(name STREQUAL "simd")
+      # Finite provider routes remain implementation-only. target.h and
+      # fat_kernel.h are public expert headers shared by source/static/shared
+      # delivery and are therefore installed with the selected SIMD component.
+      list(FILTER _headers EXCLUDE REGEX "/hyle/simd/provider/")
+    elseif(name STREQUAL "sched")
+      # Cross-component worker-loop bridges are source-composition details.
+      # They are available while building HYLE but are not an installed C++
+      # SDK API.
+      list(FILTER _headers EXCLUDE REGEX "/hyle/sched/detail/")
+    endif()
   endif()
   list(SORT _headers)
   set(${out_var} "${_headers}" PARENT_SCOPE)
@@ -458,15 +489,15 @@ endfunction()
 # component edge of its own.
 function(_hyle_public_include_owner include_path out_var)
   set(_owner "")
-  if(include_path STREQUAL "hyle/version.h" OR
+  list(FIND _HYLE_SPLIT_PUBLIC_HEADERS "${include_path}"
+    _split_public_header_index)
+  if(NOT _split_public_header_index EQUAL -1)
+    list(GET _HYLE_SPLIT_PUBLIC_HEADER_OWNERS
+      ${_split_public_header_index} _owner)
+  elseif(include_path STREQUAL "hyle/version.h" OR
      include_path STREQUAL "hyle/visibility.h" OR
      include_path MATCHES "^hyle/core/")
     set(_owner core)
-  elseif(include_path STREQUAL "hyle/container/intrusive_list.h")
-    set(_owner container_intrusive)
-  elseif(include_path MATCHES
-         "^hyle/util/(random|ref_counted|scope_guard|spin_lock|type_name)\\.h$")
-    set(_owner util_core)
   elseif(include_path STREQUAL "hyle/obs/trace.h")
     set(_owner "")
   elseif(include_path MATCHES "^hyle/([^/]+)/")

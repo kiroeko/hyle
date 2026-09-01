@@ -1,4 +1,4 @@
-# HYLE container_intrusive：稳定节点的零分配链表
+# HYLE Container：稳定节点的零分配侵入式链表
 
 > 本页描述当前 C++23 API 和使用合同，不是稳定性或性能签署。唯一施工状态见
 > [implementation/status](../implementation/status.md)。
@@ -10,7 +10,7 @@
 
 ## 接入
 
-侵入式链表属于 Container 产品，用户只选择一个稳定入口：
+侵入式链表属于 Container 产品。直接使用这项能力时只选择一个稳定入口：
 
 ```cmake
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container)
@@ -18,10 +18,9 @@ target_link_libraries(my_target PRIVATE hyle::container)
 ```
 
 源码集成在 `add_subdirectory` 前设置 `HYLE_COMPONENTS=container`，再链接 `hyle::container`；不要
-手工添加 include directory。`container_intrusive` 仍是 HYLE 内部独立、header-only factor，所以 Time
-可以只依赖它而不会在内部图拉入完整 Container/Mem/Platform 闭包；该内部 target 不属于
-`find_package COMPONENTS` 或用户兼容面。独立安装包 consumer 见
-[`samples/package/container_intrusive/cpp`](../../samples/package/container_intrusive/cpp)。
+手工添加 include directory，也不要寻找第二个 intrusive 组件或 target。只使用 Time 等其他产品时，
+它们会自行携带公开类型所需的传递闭包，用户仍不需要选择额外组件。独立安装包 consumer 见
+[`samples/package/container/intrusive/cpp`](../../samples/package/container/intrusive/cpp)。
 
 ## 先选择析构合同
 
@@ -239,6 +238,6 @@ iterator 保持稳定，sentinel iterator 始终属于具体 list 对象。
   标准容器；
 - 需要内部同步、lock-free 或 reclamation：选择 sched/container 的并发机制。
 
-本模块的 Native FFI 为 `N/A`。Pointer-to-member、C++ node lifetime 和 inline iterator 没有自然的
-窄 C ABI；当前 source/static/shared 都是 C++ 交付，shared SDK 也不会产生
-独立 `container_intrusive` DLL、用户 package component 或 raw-hook export。
+这项能力的 Native FFI 为 `N/A`。Pointer-to-member、C++ node lifetime 和 inline iterator 没有自然的
+窄 C ABI；它是 header-only 的 Container 能力，因此 source/static/shared 使用同一套 C++ API，
+shared SDK 也不会为它产生额外 DLL、用户 package component 或 raw-hook export。

@@ -117,6 +117,11 @@ INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可�
 3. `hyle_add_module()` 生成真实 factor `PUBLIC|PRIVATE` 边，`hyle_add_product_facades()` 在图外生成
    无源码的用户入口。
 
+公开头通常按 `include/hyle/<factor>/` 自动归属。若细粒度 factor 的头必须留在完整产品命名空间中，
+例如 `container_intrusive` 的头位于 `include/hyle/container/`，只在该 factor 的中央声明中用
+`SPLIT_PUBLIC_HEADERS` 登记一次；factor 头集合、父 namespace 排除、安装集合和 include-owner 审计都
+从该记录派生，不得分别维护路径名单。
+
 配置结束时 `hyle_validate_final_module_graph()` 再核对 target 的 `LINK_LIBRARIES` 和
 `INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。factor schema、名称与拓扑始终按完整
 manifest 做轻量元数据验证，依赖闭包按已验证的拓扑单次反向传播；随后只对本次 selected closure
@@ -410,7 +415,8 @@ wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提
 以下协议中的“模块”指 factor；中央 product catalog 另行决定它被哪些 façade 聚合。factor task
 不得自行创建、命名或链接 façade。
 
-1. 在 `HyleComponents.cmake` 登记 factor、构造顺序和全部 factor `PUBLIC`/`PRIVATE` 边；若仅借用另一
+1. 在 `HyleComponents.cmake` 登记 factor、构造顺序和全部 factor `PUBLIC`/`PRIVATE` 边；公开头若位于
+   另一个 factor 的产品 namespace，同时在这一次声明中登记 `SPLIT_PUBLIC_HEADERS`。若仅借用另一
    模块的实现 header 且不形成交付需求，登记受审的 `PRIVATE_BUILD_DEPS` seam，不得伪造成产品边。
 2. 用 `hyle_add_module()` 创建 `src/<module>` target，只列本模块源码和外部实现 target。
 3. 增加 `tests/<module>/CMakeLists.txt` 及模块聚合测试；需要时再增加 benchmark。

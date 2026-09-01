@@ -10,6 +10,7 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 
 | 你的需求 | 选择 |
 |---|---|
+| caller-owned 稳定节点，需要零分配 O(1) 摘链或整段 handoff | `IntrusiveList` / `SafeIntrusiveList`（见[专门指南](container-intrusive.md)） |
 | 元素很少，通常不分配，但允许偶尔增长 | `SmallVector<T, N>` |
 | 编译期固定最大容量，绝不能增长 | `StaticVector<T, N>` / `InplaceVector<T, N>` |
 | trivial/POD 连续数据、bulk 操作、显式 runtime allocator | `PodVector<T>` |
@@ -34,8 +35,9 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 | 重复字符串只存一份并获得 generation ID | `StringInterner` |
 | 普通 borrowed text，不需要 HYLE 额外事实/算法 | `std::string_view` |
 
-`intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付；它在 HYLE
-内部仍由独立 `container_intrusive` factor 拥有，以便 Time 等底层消费者不取得完整 Container 闭包。
+`intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付。直接使用
+任何 Container 能力都选择并链接同一个 `container` 产品；其他产品公开类型所需的传递闭包由 CMake
+自动处理。
 
 ## Sequence 和 ring
 
