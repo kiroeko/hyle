@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
       "round_id": "core-v4-build-contract-projection",
@@ -22,14 +22,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v4 candidate 2 已冻结为 7ae3de40/b6c04d0e；首个候选的 Mac component-contract floor 投影缺陷已在有限范围修复，全部 gate 从新身份重放。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "core-v4 的不可变候选 7ae3de40/b6c04d0e 已通过三平台正确性、三种 C++ 交付、最小 build projection、易用性/文档、红队与 P0 结构性能门。"
     },
     {
       "module": "container_intrusive",

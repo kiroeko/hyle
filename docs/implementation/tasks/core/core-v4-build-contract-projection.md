@@ -175,4 +175,5 @@ debug context 与 prefetch intent 仍对应正常宿主/开发任务，并且不
 不变，而不是为本轮测试重新塑形。
 
 当前证据下没有未处置 `MUST`、correctness/security、delivery 或 P0 性能 blocker；候选已具备进入
-`VERIFIED` 的条件。
+`VERIFIED` 的条件。证据提交后，registry 已按保存的 candidate-2 前态快照完成
+`CANDIDATE -> VERIFIED`。
