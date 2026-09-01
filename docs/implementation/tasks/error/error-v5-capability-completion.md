@@ -163,9 +163,10 @@
   annotated lifetime-bound；pointer Result remains nullable by design and is not silently changed；OK ignores native/
   diagnostic detail；nonzero error + `_as(StatusCode::Ok, ...)` fails closed to Unknown；guide recipes show when to
   choose value、borrow、nullable pointer、view、native adapter and formatted diagnostic；
-- delivery/discovery：the new standard-error header is selected and installed as Error-owned public API；new compiled
-  WinSock/error-code symbols carry `HYLE_ERROR_API`；format and borrow stay header-only and use the same source/static/
-  shared C++ spelling；
+- delivery/discovery：the new standard-error header is selected and installed as Error-owned public API；WinSock
+  symbols and category-neutral error-code part helpers carry `HYLE_ERROR_API`；public `std::error_code` adapters
+  classify the caller's standard-library category inline before the DLL seam，so no cross-DSO singleton address is
+  treated as stable identity；format and borrow stay header-only and use the same source/static/shared C++ spelling；
 - freeze identity / reviewer：本 task 的 `AUDITED` transition / primary owner；
 - allowed implementation freedom：private storage/helpers、switch layout、stack appender and inlining may change，but
   no public name/semantic、owning Result representation/cost、dependency or frozen workload may change without
@@ -183,6 +184,11 @@ template deduction 无法反解 nested dependent type，导致普通 `f(const Re
 allocation、observer、monadic semantics 与 generated hot path 必须保持；exact type identity 不再作为产品
 需求。新增 deduction/monadic/comparison compile-time tests，并继续用四个既有 owning consumer workload
 裁决成本。该修正没有新增能力、workload 或依赖，`FIX` 集仍为 `ERR5-01..04`，状态保持 `AUDITED`。
+
+同一 delivery smoke 随后证明 MSVC consumer 与 HYLE DLL 可各持一个不同地址的 standard category
+singleton；把 category comparison 放在 `status.cc` 会把 consumer 的 generic error 错判为 custom。
+API spelling 不变，冻结实现边界修正为 caller-side inline classification + category-neutral compiled parts；
+custom pointer 仍只在调用期间借用且不进入 Status。这是 shared-delivery correctness 修复，不改变能力集。
 
 ## Owner 六问（AUDITED 直答）
 

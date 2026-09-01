@@ -106,6 +106,9 @@ WinSock、HRESULT、Vulkan、CUDA runtime/driver 与 NVRTC 边界。它不是动
 分别落到 errno/Win32 domain；custom category 默认 canonical `Unknown`，或由 owner 通过
 `status_from_error_code_as` 提供 operation-specific code，且不保留不稳定的 category/numeric identity。
 category identity 若仍参与机器恢复，就继续保留模块 typed error，不能经诊断 message 伪造 round-trip。
+generic/system route 在 `system_error.h` 的 caller-side inline adapter 中识别，再把闭合 route 交给 Error
+artifact；不能在 HYLE DLL 内拿 consumer 的 `error_category*` 与 DLL 自己的标准库 singleton 比地址。
+这保证 source/static/shared 的标准 category 语义一致，同时 custom category 仍由实际 owner 明确降级。
 
 ### 2.3 message、UTF-8 与 context
 

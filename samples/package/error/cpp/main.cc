@@ -27,25 +27,24 @@ int main() {
   hyle::Status formatted = hyle::format_status(
       hyle::StatusCode::DataLoss, "tensor shard {} is corrupt", 7);
 
-  return ok.ok() && shared_copy.IsNotFound() &&
-                 shared_copy.message() == std::string_view("model.bin") &&
-                 !result && result.error().IsNotFound() &&
-                 hyle::status_code_from_win32(5) ==
-                     hyle::StatusCode::PermissionDenied &&
-                 com.IsPermissionDenied() && com_copy == com &&
-                 borrowed && &*borrowed == &registry_value &&
-                 socket.IsUnavailable() &&
-                 socket.native_error() ==
-                     hyle::NativeError{hyle::NativeErrorDomain::WinSock,
-                                       10061} &&
-                 generic.IsPermissionDenied() &&
-                 formatted.message() ==
-                     std::string_view("tensor shard 7 is corrupt") &&
-                 com.native_error() ==
-                     hyle::NativeError{hyle::NativeErrorDomain::HResult,
-                                       kAccessDenied} &&
-                 result.error().message() ==
-                     std::string_view("loading model: model.bin")
-             ? 0
-             : 1;
+  if (!ok.ok()) return 1;
+  if (!shared_copy.IsNotFound() || shared_copy.message() != "model.bin")
+    return 2;
+  if (result || !result.error().IsNotFound()) return 3;
+  if (hyle::status_code_from_win32(5) !=
+      hyle::StatusCode::PermissionDenied)
+    return 4;
+  if (!com.IsPermissionDenied() || com_copy != com) return 5;
+  if (!borrowed || &*borrowed != &registry_value) return 6;
+  if (!socket.IsUnavailable() ||
+      socket.native_error() !=
+          hyle::NativeError{hyle::NativeErrorDomain::WinSock, 10061})
+    return 7;
+  if (!generic.IsPermissionDenied()) return 8;
+  if (formatted.message() != "tensor shard 7 is corrupt") return 9;
+  if (com.native_error() !=
+      hyle::NativeError{hyle::NativeErrorDomain::HResult, kAccessDenied})
+    return 10;
+  if (result.error().message() != "loading model: model.bin") return 11;
+  return 0;
 }

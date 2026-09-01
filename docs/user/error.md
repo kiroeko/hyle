@@ -178,6 +178,10 @@ adapter 在调用期间读取它，并按以下规则转换：
 - 若调用者的恢复逻辑必须保留 custom category 的类型和值，就暂时保留
   `std::error_code` 或模块自己的 `std::expected<T, E>`，不要先擦成 Status 再解析 message。
 
+adapter 是 header-inline caller boundary：它先在创建/拥有 `std::error_code` 的 C++ 模块识别本地
+generic/system singleton，再跨 HYLE shared-library seam。不要把 error code 保存到插件卸载之后再转换；
+第三方 DSO 自有的 category 应在该 DSO 仍存活的 owner 边界用 `_as` 明确 canonical 语义。
+
 `error_code::message()` 可能分配、抛异常或产生非 UTF-8 字节；adapter 捕获 custom `message()` 异常，
 非法文本退化为确定性 numeric 诊断，且不改变 8B Status。抛出 `std::system_error` 的 API 仍应在拥有
 该调用的异常边界捕获，再把其中的 `code()` 交给 adapter；异常不能越过 HYLE `noexcept`/模块边界。

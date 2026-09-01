@@ -1160,31 +1160,26 @@ Status status_from_hresult(std::int32_t error_number,
   return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
 }
 
-StatusCode status_code_from_error_code(
-    const std::error_code& error) noexcept {
-  if (!error) return StatusCode::Ok;
-  if (&error.category() == &std::generic_category()) {
-    return status_code_from_errno(error.value());
-  }
-  if (&error.category() == &std::system_category()) {
+StatusCode detail::status_code_from_error_code_parts(
+    int value, StandardErrorCategoryRoute route) noexcept {
+  switch (route) {
+  case StandardErrorCategoryRoute::Generic:
+    return status_code_from_errno(value);
+  case StandardErrorCategoryRoute::System:
 #if defined(_WIN32)
-    return status_code_from_win32(static_cast<std::uint32_t>(error.value()));
+    return status_code_from_win32(static_cast<std::uint32_t>(value));
 #else
-    return status_code_from_errno(error.value());
+    return status_code_from_errno(value);
 #endif
+  case StandardErrorCategoryRoute::Custom:
+    return StatusCode::Unknown;
   }
   return StatusCode::Unknown;
 }
 
-Status status_from_error_code(const std::error_code& error,
-                              std::string_view context) noexcept {
-  return status_from_error_code_as(
-      status_code_from_error_code(error), error, context);
-}
-
-Status status_from_error_code_as(StatusCode canonical_code,
-                                 const std::error_code& error,
-                                 std::string_view context) noexcept {
+Status detail::status_from_error_code_parts(
+    StatusCode canonical_code, const std::error_code& error,
+    std::string_view context, StandardErrorCategoryRoute route) noexcept {
   if (!error) return Status{};
   canonical_code = detail::normalize_status_code(canonical_code);
   if (canonical_code == StatusCode::Ok) canonical_code = StatusCode::Unknown;
@@ -1193,10 +1188,10 @@ Status status_from_error_code_as(StatusCode canonical_code,
   description[0] = '\0';
   NativeError native;
   std::string_view text;
-  if (&error.category() == &std::generic_category()) {
+  if (route == StandardErrorCategoryRoute::Generic) {
     native = {NativeErrorDomain::PosixErrno, error.value()};
     text = describe_errno(error.value(), description, sizeof(description));
-  } else if (&error.category() == &std::system_category()) {
+  } else if (route == StandardErrorCategoryRoute::System) {
 #if defined(_WIN32)
     native = {NativeErrorDomain::Win32, error.value()};
     text = describe_win32(static_cast<std::uint32_t>(error.value()),
