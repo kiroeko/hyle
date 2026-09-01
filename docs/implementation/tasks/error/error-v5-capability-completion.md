@@ -240,3 +240,95 @@ custom pointer 仍只在调用期间借用且不进入 Status。这是 shared-de
 
 当前为 `CANDIDATE`。下一步只从 clean candidate checkout 执行冻结的 W1-WIN P1 qualification、独立红队、
 四项 LOC 与终态门；不能再增加能力或第五种 benchmark 姿势。
+
+## Candidate verification
+
+### Correctness、delivery 与结构成本
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| Release/WERROR Error shipping tests | `19/19` | `19/19` | `19/19` | `PASS` |
+| public-header/self-contained compile | `PASS` | `PASS` | `PASS` | `PASS` |
+| component-only source consumer | `PASS` | `PASS` | `PASS` | `PASS` |
+| relocated installed shared consumer | `PASS` | `PASS` | `PASS` | `PASS` |
+| relocated installed static consumer | `PASS` | `PASS` | `PASS` | `PASS` |
+
+三平台均绑定 candidate `d61f0710` 的相同 Error product tree；WSL/macOS 是 disposable native validation
+copy，不是产品改动来源。测试覆盖冻结卡所列 normal/error、zero/unknown、WinSock taxonomy/text fallback、
+formatted exact/truncated/throw/OOM、borrow mutable/const/deep-const/temporary rejection/conversion/monads/macros、
+custom/throwing `std::error_category`、Result invariant、copy/move 和 immutable shared Status handoff。取消/关闭、
+real ISA/backend 与 runtime domain registry 在本模块语义上 `NOT_APPLICABLE`。冷边界结构检查确认 classifier
+O(1)、format scratch bounded、无隐式 log/lock/global registry，owning Result 无附加字段，borrow 无分配。
+
+### W1-WIN P1 qualification
+
+- clean candidate：`d61f0710ec0e465b31d458257e2587fdfe37ed52` / tree
+  `305b2cb5947627dfb5b9697c939205b6c26cc6b7`；clean Abseil：
+  `5e12b490a2009cb223dd75a70fd0213847b82f9c` / tree
+  `82ccc3a39ed6f9829391f361063d8177a9039a17`；
+- contract `error-source-consumer-v2` SHA-256：
+  `61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0`；fresh MSVC 19.50 Release/static、
+  portable ISA、LTO off、n=15；全部 required validators/controls `PASS`，未触发 n=31；
+- 五个 workload × 四个 order/placement strata 的 5% non-inferiority 全 `PASS`。TaskGraph success combined
+  `PARITY`，其最低 CI lower 0.9673；三个 owning failure handoff 与 `Result<T&>` registry borrow combined
+  `WIN`，最低 CI lower 分别为 1.1814、1.3534、1.4904、1.6850；
+- retained manifest：`C:/hyle-scratch/error-v5/qualify-v2-output/manifest.json`，SHA-256
+  `12685d8f398d4f55c9f05c71d54a3f5054ee3b99f21147778dfe91644f8b7eff`；summary/contract-lock SHA-256 为
+  `3303032a19b5cf036733ac2627626631f8460147b26432453cb60e5a6421cd45` /
+  `04b41774b914124c3189083dee962a46819e8312256bcd5ad51cb2fb5ca10612`；deep verifier 为
+  `QUALIFIED`、paths verified、exact provenance、current-policy eligible；
+- owning-failure peer 数字有明显 execution-order 摆动；红队因此只接受所有 strata 的保守 NI/最低 CI
+  结论，不宣传最大倍数。成功路径亚百分比变化没有触发产品修改。
+
+### Hostile red team 与 owner 六问终答
+
+1. **第三方：`PASS`。**产品闭包仍只有 Core；Abseil/Folly/llama/ggml 只是锁定 peer/provenance，标准库与
+   OS API 是机制。没有新增 FetchContent、package dependency 或第三方 public type。
+2. **功能：`PASS`。**`ERR5-01..04` 已由真实 IOCP、普通 registry/adapter 与推理诊断 journey 完成，
+   `ERR5-05` 保持；未处置 `MUST` 为 0。payload/MultiError/runtime registry、async protocol、fatal、logging
+   仍分别拒绝或路由给 owner，没有用 API 数量扩张 Error。
+3. **性能：`PASS`。**冷能力通过复杂度/allocation/exception 结构门；可能高频的 owning/reborrow 五个
+   同合同 consumer 全部通过冻结的 W1-WIN 5% P1 非劣门。只签该范围，不声称跨平台或全操作 SOTA。
+4. **旧 C ABI / Native FFI：`CLEAN`。**产品树无 C header/schema/bridge/managed sample/option；Windows
+   candidate DLL 的 22 个 exports 全是 MSVC decorated C++ symbols，没有 undecorated C export。`detail`
+   exports 是 header-inline C++ adapter 的 compiled seam，不是 Native FFI。
+5. **构建与导入：`PASS`。**中央图真实声明 `error PUBLIC_DEPS core`；selected header 安装与三平台
+   source/static/shared relocation consumer 全通过。shared smoke 真实捕获并修复了 category singleton
+   跨 image 地址不稳定缺陷，而非只验证 producer build。
+6. **C++ API/文档：`PASS`。**公开形状按 value/non-null borrow/nullable pointer/view/native/standard adapter/
+   dynamic diagnostic 的正常任务选择；ownership、deep const、temporary、custom category/unload、truncation、
+   exception-disabled formatter 陷阱均在 guide。公开 symbol 无 benchmark seam，architecture/user/task/
+   performance 各自承担长期设计、当前用法、事实和证据。
+
+红队进一步比较 baseline→candidate 产品 diff、依赖闭包、公开 header、DLL exports、consumer semantic matrix、
+四种 placement/order 与 retained bundle；候选后产品 diff 为零，剩余 medium-or-higher finding 为 0。
+
+### Candidate LOC
+
+`python scripts/loc-report.py --module error --commit d61f0710ec0e465b31d458257e2587fdfe37ed52
+--self-check --json` 从不可变 tree 复算并通过 cloc 2.08 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 417,715 |
+| 自实现包含测试 | 101,020 |
+| 自实现不包含测试 | 62,970 |
+| Error 实现 | 2,178 |
+
+### Aggregate verdict
+
+| Gate | Verdict | Boundary |
+|---|---|---|
+| scope | `PASS` | 仅冻结 `ERR5-01..04` 与 `ERR5-05 KEEP`；candidate 后产品未改 |
+| architecture | `PASS` | Error 保持 Core-only prime、无第三方产品路径或依赖环 |
+| correctness | `PASS` | 三平台冻结风险矩阵与 header contract |
+| delivery | `PASS` | 三平台 source/relocated shared/relocated static consumer |
+| usability/docs | `PASS` | task-shaped C++ API、选型 recipe 与陷阱完整 |
+| red team | `PASS` | 依赖/API/FFI/DLL seam/比较合同/产品 diff；MEDIUM+ 为 0 |
+| engineering performance | `PASS` | W1-WIN P1 资格门、五个 workload 全 strata 5% NI |
+
+七项 aggregate gate 全部 `PASS`，五个 `MUST` 均 `COMPLETE`，没有 blocker。Formal 仍为独立 `PENDING`，
+不属于工程关闭条件。Registry 使用保存于
+`C:\hyle-scratch\error-v5\module-status-candidate.json` 的明确前态执行 `CANDIDATE -> VERIFIED`。
+
+当前为 `VERIFIED`；下一步只写接受限制、重开条件和 terminal receipt，不再改变 candidate product。

@@ -186,7 +186,7 @@
     },
     {
       "module": "error",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "round_id": "error-v5-capability-completion",
@@ -203,17 +203,34 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v5 CANDIDATE：ERR5-01..04 已实现，候选 d61f0710/305b2cb5 冻结；三平台正确性与 source/static/shared C++ 交付已通过，等待 W1-WIN P1 qualification、红队和终态登记。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "loc": {
+        "snapshot_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
+        "repository_code": 417715,
+        "self_with_tests": 101020,
+        "self_without_tests": 62970,
+        "module_implementation": 2178
+      },
+      "summary": "error-v5 VERIFIED：ERR5-01..04 与既有能力均完成；三平台正确性及三种 C++ 交付、易用性/文档、红队和 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过，等待 terminal receipt。"
     },
     {
       "module": "obs",

@@ -1,10 +1,11 @@
 # error 性能证据
 
-> **error-v5 current engineering evidence：`PLANNED`。** v5 新增 WinSock、`Result<T&>`、bounded
-> dynamic diagnostic 与 `std::error_code` cold adapter；`error-source-consumer-v2` contract/validator 已
-> 通过 Windows diagnostic probe，但尚未冻结 candidate 或运行 n=15 资格轮。error-v4
-> 的 `9595724a` / `a828fb4c` 与四个 source-primary consumer workload `QUALIFIED / PASS` 只作为前一
-> product identity 的历史基线，不能签署 v5。error-v3 的错误合同和历史点值同样只保留作追溯。
+> **error-v5 current engineering evidence：`PASS`。** candidate `d61f0710` / tree `305b2cb5` 在
+> W1-WIN 以 `error-source-consumer-v2` 完成 fresh n=15 qualification；资格门、工程性能门、全部
+> artifact/build/source/codegen validators、A/A、5%/10% known-delta、timer-floor 与 placement controls
+> 均 `PASS`。五个同合同 consumer workload 的所有四种 order/placement strata 均通过 5% non-inferiority；
+> success 为 `PARITY`，三个 owning failure handoff 与新增 registry borrow 为 `WIN`。这是冻结消费者范围的
+> P1 工程结论，不外推为 Error 所有操作、所有平台或 Formal SOTA。
 > 产品状态只看
 > [`module status`](../../status.md)。
 
@@ -14,7 +15,7 @@
 benchmark 本身不定义 API；v4 合同通过受检 source provenance、ownership topology 和 material
 contribution 取得产品门资格，旧 v3 合同没有。
 
-## error-v5 冻结资格范围
+## error-v5 current qualification
 
 v5 不建立 microbenchmark 大全。合同 `error-source-consumer-v2` 只运行两部分：
 
@@ -28,8 +29,29 @@ fixed-table 分布由 `borrow_consumer_shapes_v1.json` 明确标为 admitted nor
 生产频率；benchmark 不能反向定义 API。v2 peer 固定为 Abseil
 `5e12b490a2009cb223dd75a70fd0213847b82f9c`，contract SHA-256 当前为
 `61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0`。首次 n=1 probe 只证明 semantic、
-call topology、source hash 与 placement validators 工作，按协议保持 `DIAGNOSTIC / INCONCLUSIVE`；其
-点值不写入产品 verdict。
+call topology、source hash 与 placement validators 工作，按协议保持 `DIAGNOSTIC / INCONCLUSIVE`；最终
+资格轮从 clean candidate 和 clean peer checkout 运行，没有复用 probe build/output，也没有触发 n=31。
+
+| consumer workload | combined exact verdict | 四 strata 中位 advantage ratio | 最低 99.26% CI lower | 工程解释 |
+|---|---|---:|---:|---|
+| TaskGraph 64-node success | `PARITY` | 0.9923–0.9986 | 0.9673 | 5% NI `PASS`；亚百分比摆动不改产品 |
+| TaskGraph fresh owning last failure | `WIN` | 1.2118–2.5097 | 1.1814 | 5% NI `PASS` |
+| parallel first-error owning handoff | `WIN` | 1.4103–3.9143 | 1.3534 | 5% NI `PASS` |
+| Join failed owning handoff | `WIN` | 1.5182–4.7840 | 1.4904 | 5% NI `PASS` |
+| fixed-table `Result<T&>` borrow | `WIN` | 1.7282–1.7515 | 1.6850 | 5% NI `PASS` |
+
+ratio 大于 1 有利于 HYLE，5% NI 下限为 `1/1.05 = 0.95238`。部分 Abseil owning-failure strata 存在很大的
+execution-order 摆动，所以本轮只采用四 strata 全通过和最保守 CI 下限，不把最大倍数宣传成稳定产品
+加速比；placement、A/A 和 known-delta 全通过也不授权这种外推。
+
+retained engineering bundle 位于 `C:/hyle-scratch/error-v5/qualify-v2-output`；manifest、summary 与
+contract-lock SHA-256 分别为
+`12685d8f398d4f55c9f05c71d54a3f5054ee3b99f21147778dfe91644f8b7eff`、
+`3303032a19b5cf036733ac2627626631f8460147b26432453cb60e5a6421cd45` 与
+`04b41774b914124c3189083dee962a46819e8312256bcd5ad51cb2fb5ca10612`。独立 verifier 返回
+`qualification=QUALIFIED`、`paths_verified=true`、`provenance_compatibility=EXACT` 和
+`current_certification_policy_eligible=true`。该本机 bundle 是可深验工程证据，不是发布 artifact 或
+Formal certificate。
 
 WinSock classifier、bounded formatting 与 `std::error_code` adapter 是错误冷边界，使用 O(1)/bounded
 结构、allocation count、异常遏制和 correctness 证明，不为罕见失败率编造 P1 计时。旧 fixed-backing
@@ -216,6 +238,14 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
 - Win32 canonical 分类是跨 host 的固定 O(1) switch；Windows 仅在错误路径调用
   `FormatMessage`，最终同样只构造一个 owning Status。这里不增加“高错误率”微基准；其真实
   验收是 platform 删除重复 translator 后保持相同复杂度、统一分类与诊断合同。
+- WinSock canonical 分类同样是固定 O(1) switch；raw integer 直接保留为 native detail，错误文本只在
+  factory 冷路径获取或使用 numeric fallback。
+- `Result<T&>` 使用 pointer 与普通 `ResultError` discriminator，成功/错误观察均 O(1)，不分配、无锁、
+  无 registry；referent lifetime 由 caller 所有，const carrier 只暴露 deep-const borrow。
+- `format_status` 的格式化工作集固定为 1 KiB caller stack，输出 O(min(formatted bytes, 1023))，随后
+  Status 至多一次 exact-size backing allocation；截断、formatter exception 与 OOM 均不抛出。
+- `std::error_code` 的 generic/system 分类在 caller image O(1) 完成；custom category 的 `message()` 成本由
+  category 实现主导，但 pointer 只在调用期间借用，不跨 DSO 保存。
 - 非法 Result error arm 的 fail-fast 诊断放在冷 `noinline` helper；正常传播帧不复制 abort
   文本和控制流。M4 栈帧从 112B 降到与 Abseil 相同的 80B，这是冷热路径架构修正，不增加
   产品状态。
