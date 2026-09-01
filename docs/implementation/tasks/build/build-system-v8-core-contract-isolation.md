@@ -1,6 +1,6 @@
 # Build/package v8：Core 编译合同隔离
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: HISTORICAL -->
 
 > Build/package 是横向开发单元，不进入 `module-status.json`。本页只处理一次已经由当前 Core-only
 > consumer 复现的编译策略泄漏；Core 产品状态与本轮重签事实保存在对应 Core v4 task 和 registry。
@@ -79,3 +79,6 @@ floor，未更改项目支持下限。
 因此本开发单元的结论是 `PASS`：公共 build contract 只承载共同语言/编译语义，ISA requirement 由
 真正拥有该 inline contract 的 Container target 传播，exception policy 归还父工程。本结论不续签
 Container 算法或性能，也不把 Core 变成 binary。
+
+本有界 build/package 开发单元至此结束；后续只有新的 target-property、交付或父工程复现才能重新
+开启，不因泛化的构建改进愿望保持活动状态。

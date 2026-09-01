@@ -1,6 +1,7 @@
 # Core v4 编译合同投影重签
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
@@ -177,3 +178,29 @@ debug context 与 prefetch intent 仍对应正常宿主/开发任务，并且不
 当前证据下没有未处置 `MUST`、correctness/security、delivery 或 P0 性能 blocker；候选已具备进入
 `VERIFIED` 的条件。证据提交后，registry 已按保存的 candidate-2 前态快照完成
 `CANDIDATE -> VERIFIED`。
+
+## 接受限制与重开条件
+
+接受限制：本轮只证明 Core-only TU 可选择 no-exception，不宣称 Error、Container 或完整 HYLE 闭包
+支持 `-fno-exceptions`；MSVC/CMake 自带的父工程默认 `/EHsc` 不属于 HYLE usage requirement，显式关闭
+异常时编译器可以报告常规 option override warning；Container 的公开 inline probe 仍要求当前
+compiler-conditioned SSSE3 许可，本轮只修正 owner，不重审该算法或 CPU floor；P0 结构证据不签 timing、
+cache-hit、下游吞吐或全局 SOTA。
+
+只有下列新事实重开 Core：
+
+1. 真实 Core-only consumer 再次收到非 Core ISA、异常、RTTI 或 sanitizer policy；
+2. 真实消费者暴露 Core API 的 correctness/security、缺失 foundation 或易用性缺陷；
+3. public API、正常成本、layout、compiler/environment 语义、组件依赖或交付形状改变；
+4. 支持的 compiler/target 使冻结 no-exception、codegen、header 或 target-property 合同失效；
+5. 强 peer 证明更优复杂度档，或同合同正常 consumer 证明 material regression/advantage。
+
+新 benchmark、API/LOC 数量、命名偏好、单次点值或历史任务命令句不构成重开理由。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：Core 的公开能力与开发者形状保持 v3 已签产品，不存在 benchmark/test-only seam；
+本轮唯一产品缺陷是 build usage requirement 所有权，两个泄漏及其 Mac 验证工具缺口均已修复。第二候选
+的七项 aggregate gate 全部 `PASS`，没有未处置 blocker。候选保持
+`7ae3de400b5d7b598972ebf4913d336b60517483` / `b6c04d0e97c93724a9136c34e4ea55b6e4449092`；
+本 terminal receipt 不改变产品 identity。
