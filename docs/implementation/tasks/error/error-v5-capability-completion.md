@@ -138,8 +138,11 @@
   `status_from_winsock(int, std::string_view context = {}) noexcept`。Zero is OK；unknown stays Unknown；the raw
   integer is retained under the WinSock domain。Future fixed domains require a named consumer and Error review；no
   runtime registration or category pointer is admitted；
-- borrowed result：`Result<T&>` selects a header-only borrow carrier while every non-reference `Result<T>` remains
-  exactly `std::expected<T, ResultError>`。A borrow constructs only from a compatible lvalue or unexpected error；an
+- borrowed result：`Result<T>` is one public class-template family：owning/void specializations retain the
+  `std::expected<T, ResultError>` representation and operations，while `Result<T&>` selects a header-only borrow
+  carrier。The family must preserve ordinary template-argument deduction such as
+  `template<class T> f(const Result<T>&)`；it must not route through a non-deducible selector alias。A borrow
+  constructs only from a compatible lvalue or unexpected error；an
   explicit default is code-only Unknown，temporaries/null are rejected。Mutable carriers expose `T&`，const carriers
   expose deep-const；a mutable borrow cannot be copied back out of a const carrier。Provide expected-style
   `has_value`/bool、`*`/`->`/`value`/`error`、swap/rebind assignment、compatible const/base conversion、`value_or`
@@ -165,8 +168,21 @@
   shared C++ spelling；
 - freeze identity / reviewer：本 task 的 `AUDITED` transition / primary owner；
 - allowed implementation freedom：private storage/helpers、switch layout、stack appender and inlining may change，but
-  no public name/semantic、owning Result identity、normal metadata、dependency or frozen workload may change without
+  no public name/semantic、owning Result representation/cost、dependency or frozen workload may change without
   returning to `AUDITED`。
+
+### AUDITED freeze correction：generic deduction
+
+首次编译冻结的 v4 source-consumer replay 时发现：原拟实现把 `Result<T>` 改成
+`ResultSelector<T>::type` alias；虽然 non-reference instantiation 仍与 `std::expected` 类型相同，C++ 的
+template deduction 无法反解 nested dependent type，导致普通 `f(const Result<T>&)` 和既有 carrier trait
+无法推导 `T`。这是 public C++ usability regression，不是 benchmark 胜负，也不是兼容性要求。
+
+因此候选前修正上述 freeze：`Result<T>` 改为统一 public class template；owning/void route 以零附加成员的
+`std::expected` 表示实现，reference route 以 pointer + `ResultError` discriminator 实现。Owning 的 layout、
+allocation、observer、monadic semantics 与 generated hot path 必须保持；exact type identity 不再作为产品
+需求。新增 deduction/monadic/comparison compile-time tests，并继续用四个既有 owning consumer workload
+裁决成本。该修正没有新增能力、workload 或依赖，`FIX` 集仍为 `ERR5-01..04`，状态保持 `AUDITED`。
 
 ## Owner 六问（AUDITED 直答）
 
