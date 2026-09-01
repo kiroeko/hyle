@@ -343,6 +343,13 @@ python scripts/loc-report.py --module core --commit cdd6b1c612c8e318220972fa0936
 `cloc 2.08` 对 1,339 个 tracked files 的 immutable tree self-check 为 `pass`；Core canonical boundary 是
 `include/hyle/core/**`、`include/hyle/version.h`、`include/hyle/visibility.h` 与 `src/core/**`。
 
+## VERIFIED verdict
+
+不可变 candidate `cdd6b1c612c8e318220972fa0936f23e28045447` / `3855da3095dcd52417aeb46b8822346755b28abd`
+的 scope、architecture、correctness、delivery、usability/docs、red-team 与 P0 engineering-performance
+七项 aggregate gate 均为 `PASS`。正式验证没有再改产品代码、公开合同、正常成本或 candidate identity；
+本轮没有未处置的 `MUST` 能力、correctness/security blocker 或需要继续研究的性能点。
+
 ## 接受限制与重开条件
 
 接受限制：fatal text/fields 为同步 borrowed views；observer 仅 linked-image、failure-only，不承诺

@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "CORE-FOUNDATION-COMPLETENESS-01",
       "reopen_evidence": "docs/implementation/tasks/project/capability-factorization-v1.md",
       "round_id": "core-v3-foundation",
@@ -22,14 +22,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v3 candidate 2 已冻结为 cdd6b1c6/3855da30；首个候选暴露的 clang-cl attribute/CRT 可移植性缺陷已在不扩张 API 与成本合同的前提下修复，正式 gate 从头重放。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "core-v3 的 immutable candidate cdd6b1c6/3855da30 已通过范围、架构、三平台正确性、sanitizer、三种 C++ 交付、易用性/文档、直接消费者、独立红队与 P0 结构性能门。"
     },
     {
       "module": "container_intrusive",
