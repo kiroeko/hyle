@@ -7,8 +7,9 @@
 > runtime 发布证书。当前只提供 C++23
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
 
-> 用户当前选型见 [user/util](../user/util.md)，current util-core/runtime 与历史 util 证据见
-> [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
+> 用户当前选型见 [user/util](../user/util.md)，current util-core 证据见
+> [util-core v2 performance evidence](../implementation/evidence/performance/benchmarks-util-core-v2.md)，
+> runtime/历史证据见 [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
 > [util tasks](../implementation/tasks/util/)。
 
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
@@ -115,9 +116,10 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
   mode branch，但跨线程使用是合同违反。
 - SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
-  当前 v1 的 W1-WIN 同合同工程门为非劣 PASS；M1-MAC 的超短手工诊断被执行顺序完全翻转，按仪器
-  规则只能记为 inconclusive，不能驱动产品。具体身份、点值与 freshness 只见
-  [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
+  当前 v2 的 W1-WIN 同合同工程门为 Ref `WIN`、短状态转移 `PARITY`，两项 5% 非劣门均 `PASS`；
+  M1-MAC 的旧超短手工诊断被执行顺序完全翻转，按仪器规则只能记为 inconclusive，不能驱动产品。
+  当前身份、点值与 freshness 只见
+  [`benchmarks-util-core-v2`](../implementation/evidence/performance/benchmarks-util-core-v2.md)。
 - 两种 demangle 形状都是 O(input+output)，一次 public 调用只执行一次平台 demangler（Windows 因
   DbgHelp 不返回 required size，超长 decorated symbol 可能做有界容量重试）。owning shape 另有一个
   caller-owned string，buffer shape 不增加 API-owned storage。

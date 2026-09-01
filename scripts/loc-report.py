@@ -48,6 +48,8 @@ MODULE_BOUNDARIES = {
         "include/hyle/container/intrusive_list.h",
     ),
     "util-core": (
+        "include/hyle/util/borrow.h",
+        "include/hyle/util/function_ref.h",
         "include/hyle/util/random.h",
         "include/hyle/util/ref_counted.h",
         "include/hyle/util/scope_guard.h",

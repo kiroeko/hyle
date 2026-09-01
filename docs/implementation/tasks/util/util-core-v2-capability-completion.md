@@ -147,28 +147,94 @@
 
 ### Correctness risk matrix
 
-| Risk | state | planned evidence | limit |
+| Risk | state | evidence | limit |
 |---|---|---|---|
-| normal callable/pointer/ref/spin | BLOCKED | focused unit and header-self-contained tests | candidate not built |
-| empty / zero / null | BLOCKED | compile rejection and death checks | no nullable FunctionRef/NotNull |
-| capacity / overflow | BLOCKED | existing/new Ref batch boundary tests | no wider counter |
-| move / destroy / lifetime | BLOCKED | callable/ref teardown/conversion matrix | borrow lifetime remains caller-owned |
-| concurrency | BLOCKED | atomic Ref and SpinLock suite/TSan where applicable | unsafe mode intentionally single-thread |
-| property / stress | BLOCKED | existing RNG/Ref/Spin stress | no fuzz-only API |
-| real ISA/backend | BLOCKED | RISC-V compile/codegen/QEMU, x86/Arm build replay | no RISC-V silicon timing |
+| normal callable/pointer/ref/spin | PASS | candidate focused suite + self-contained headers on MSVC/GCC；AppleClang 80/80 | public synchronous contract only |
+| empty / zero / null | PASS | deleted construction static asserts + dynamic null/empty death tests | no nullable FunctionRef/NotNull |
+| capacity / overflow | PASS | Ref zero/overflow/underflow and batch ownership suite | counter remains `uint32_t` |
+| move / destroy / lifetime | PASS | move-only/mutable/const callable、custom teardown、borrow conversion；Clang lifetime diagnostic caught invalid stored temporary member pointer | referent lifetime remains caller-owned |
+| concurrency | PASS | candidate TSan Ref concurrent release + five SpinLock tests 6/6 | unsafe mode intentionally single-thread |
+| property / stress | PASS | existing RNG distribution/state and Ref/Spin contention suite | no fuzz-only API |
+| real ISA/backend | PASS | x64/Arm builds；RISC-V two march codegen + QEMU static sample | no RISC-V silicon timing |
+
+### Candidate correctness、sanitizer、delivery 与 consumers
+
+| Journey | Result |
+|---|---|
+| W1-WIN MSVC 19.50 Release/WERROR focused unit + seven header self-contained | `2/2 PASS` |
+| W1-WIN clang-cl 20.1 Release/WERROR focused unit + headers | `2/2 PASS` |
+| W1-WSL GCC 14.2 Release/WERROR focused unit + headers | `2/2 PASS` |
+| M1-MAC AppleClang 21 independent manual compile | `80/80 PASS` |
+| exact candidate GCC 14 ASan / UBSan | `2/2 PASS` / `2/2 PASS` |
+| exact candidate GCC 14 TSan applicable concurrent subset | `6/6 PASS`，no race report |
+| selected Util source + relocated shared + relocated static consumer | `PASS`；两个新 header 均 installed/consumed |
+| exact candidate Mem/Sched/Graph consumer closure | `7/7 PASS`；含两个 header tests 与三个 Graph tests |
+
+WSL/macOS/RISC-V 树都是 disposable validation copy，canonical product 仍只来自 Windows checkout。util_core
+保持 header-only INTERFACE factor，因此没有虚构 static/shared binary；三种 journey 验的是同一 `hyle::util`
+产品安装/源码消费面。
+
+### W1-WIN P1 qualification
+
+- clean candidate/peers/contract identity、完整 strata 与 bundle hash 见
+  [`benchmarks-util-core-v2`](../../evidence/performance/benchmarks-util-core-v2.md)；independent verifier 返回
+  `QUALIFIED / EXACT / CURRENT`，paths verified；
+- Ref owning-handoff 的四 strata median advantage ratio 为 1.0991--1.1011，最低 99.26% CI lower
+  1.0781，combined `WIN`；
+- short state transition 的四 strata ratio 为 0.9986--1.0000，最低 CI lower 0.9622，combined
+  `PARITY`；两项全部通过 5% non-inferiority；
+- A/A、5%/10% known-delta、timer-floor、placement、artifact/build identity 与 consumer provenance 全
+  `PASS`，n=15 已资格化而未触发 n=31；
+- FunctionRef/NotNull/thread-confined counter 只签 size、allocation、branch/codegen 等 P0 结构合同；没有
+  用新 microbenchmark 反向改变 API。
+
+### Hostile red team 与 Owner 六问终答
+
+1. **第三方：`PASS`。**util_core 产品闭包仍只有 Core；Abseil/Folly/Boost/oneTBB/ggml/llama.cpp 仅是
+   clean locked reference，公开头没有第三方 include/type，标准库和 ISA intrinsic/asm 是机制。
+2. **功能：`PASS`。**`UC2-RISCV/FREF/REFLOCAL/BORROW` 全部 `COMPLETE`，未处置 `MUST` 为 0；secure
+   entropy、parking/fiber lock、owning async callable、weak/aliasing ownership 均有明确 owner 或拒绝理由。
+3. **性能：`PASS`。**既有两项正常 P1 consumer 通过 5% 门；新能力的 O(1)、零分配/常态字段和 codegen
+   结构通过。结论不外推为全操作、跨平台或端到端推理 SOTA。
+4. **旧 C ABI / Native FFI：`CLEAN`。**没有 C header/schema/bridge/managed sample/undecorated product
+   export。test-only `extern "C"` probe 只稳定 object inspection 名称，不安装、不链接入 SDK。
+5. **构建/交付：`PASS`。**中央图仍是 `util_core PUBLIC_DEPS core`，七个 header 由同一 factor 清单选择、
+   安装和导出；source/static/shared consumer 与直接消费者均通过，没有新增 binary 或依赖环。
+6. **C++ 易用性/文档：`PASS`。**guide 以同步/异步、required/nullable/fallible、thread-safe/confined 的真实
+   选择组织 API，并写明 temporary、存储、跨线程、null、RISC-V hint 陷阱；architecture/task/performance
+   分别承担长期设计、事实和有限证据，公开面没有 benchmark seam。
+
+红队逐文件复核 baseline→candidate 产品 diff、依赖、header inventory、FFI/export、生命周期和性能比较
+合同；候选后产品 diff 为零，剩余 medium-or-higher finding 为 0。唯一发现的维护缺陷是 LOC canonical
+boundary 漏登记两个新 header；只更新 `loc-report.py` 的边界清单并增加 tooling regression test，未改变
+candidate 产品 tree 或统计核心。
+
+### Candidate LOC
+
+`python scripts/loc-report.py --module util_core --commit d42d992cf99232669f60422f30fb3b50ec9ec4eb
+--self-check --json` 由 cloc 2.08 从不可变 tree 复算并通过 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 419,146 |
+| 自实现包含测试 | 101,555 |
+| 自实现不包含测试 | 63,267 |
+| util_core 实现 | 967 |
 
 ### Aggregate gates
 
-| Gate | state | planned evidence | limit |
-|---|---|---|---|
-| correctness / sanitizer | INCONCLUSIVE | focused three-platform tests and applicable sanitizers | candidate pending |
-| component / source / static / shared | INCONCLUSIVE | selected Util journeys | candidate pending |
-| direct consumer | INCONCLUSIVE | Mem/Sched/Graph build/tests | no forced migration |
-| P1 engineering performance | INCONCLUSIVE | qualified v1 same-contract replay on W1-WIN | Formal pending |
-| usability / docs | INCONCLUSIVE | examples, stale-name and selected-header checks | docs pending |
-| independent red team | INCONCLUSIVE | frozen-contract attack after candidate | pending |
+| Gate | state | evidence / limit |
+|---|---|---|
+| scope | PASS | only four frozen FIX；candidate product unchanged after freeze |
+| architecture | PASS | Core-only prime、no third-party product path/cycle |
+| correctness | PASS | three native platforms、sanitizers、RISC-V codegen/QEMU |
+| delivery | PASS | header factor + selected source/static/shared product journeys |
+| usability/docs | PASS | natural C++ task shapes、recipes、pitfalls、current design/evidence |
+| red team | PASS | dependency/API/FFI/lifetime/codegen/comparison attack；MEDIUM+ 0 |
+| engineering performance | PASS | W1-WIN two frozen consumers、all strata 5% NI |
 
 ## Closure decision
 
-- current decision：`AUDITED` after legal registry transitions；the finite FIX set is frozen；
-- terminal receipt、candidate、gates、LOC and reopen triggers：pending。
+- current decision：`CANDIDATE`；七项 aggregate gate 全 `PASS`、四项 MUST 全 `COMPLETE`、无 blocker，已满足
+  `CANDIDATE -> VERIFIED` 输入；
+- Formal 独立 `PENDING`，不属于工程关闭条件；terminal receipt、接受限制与 reopen triggers 待写。

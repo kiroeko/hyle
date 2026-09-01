@@ -33,6 +33,16 @@ def main() -> None:
     if not selected:
         raise AssertionError("Core immutable module selection is empty")
 
+    util_core_specs, util_core_files = reporter.module_scope("util_core", files)
+    if tuple(util_core_specs) != reporter.MODULE_BOUNDARIES["util-core"]:
+        raise AssertionError("util_core canonical boundary drifted")
+    for header in (
+        "include/hyle/util/borrow.h",
+        "include/hyle/util/function_ref.h",
+    ):
+        if header not in util_core_files:
+            raise AssertionError(f"util_core boundary lost public header: {header}")
+
     synthetic = (
         "include/hyle/core/cache.h",
         "src/core/CMakeLists.txt",
