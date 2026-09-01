@@ -15,6 +15,8 @@
       "baseline_commit": "0fc5fbc0cc8a86ef043788400e6305e5e6afa0e4",
       "candidate_commit": "cdd6b1c612c8e318220972fa0936f23e28045447",
       "candidate_tree": "3855da3095dcd52417aeb46b8822346755b28abd",
+      "end_commit": "025ff40588311ef15a24adcc9b66ac59f76c1cfe",
+      "registry_anchor_commit": "025ff40588311ef15a24adcc9b66ac59f76c1cfe",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
