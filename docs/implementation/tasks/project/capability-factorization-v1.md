@@ -701,6 +701,86 @@ public-surface 与推理 consumer 反查得到七个关键结论：
 这表示 Util-runtime 产品域的阶段 A 第一遍已经完成；自身没有新的确定 `MUST` API缺口，新增全局输入是
 module manager/quiescence，另有 demangle verdict/input-bound 两个低优先级候选。
 
+#### A12. Sched 产品域（第一遍完成，尚未跨域冻结）
+
+Sched 的产品边界是进程内 CPU execution runtime：拥有 worker、stackful Fiber、C++ coroutine task、唤醒、
+取消、定时挂起、同步原语和阻塞工作移交；不拥有 tensor/DAG 分区、模型 serving policy、网络协议或 GPU
+kernel。public trace覆盖 `scheduler/bulk/blocking/fiber/coro/join/cancel/waker/timer/sync`，并反查当前 IO
+的 worker-loop integration和 Compute的独立 GPU poller。推理证据来自锁定 ggml CPU threadpool的 affinity、
+priority、poll、barrier、pause/resume和 caller participation，以及 llama server的 priority/cancel journey。
+strong peers使用已锁定 Folly、oneTBB，另锁定 Marl
+`b8406ab0a82524170ead6dd6c371b579bbc28b3e` 与 Seastar
+`fd71a5b4c71b91abd4e93c9d20f88e1fd7465976`；peer的 API数量不直接构成准入。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `SCHED-A-01` | runtime在固定 worker集合上启动、接收工作、停止接收、排空并析构 | zero/auto/explicit workers、startup rollback、recursive submit、drain deadline、cooperative shutdown | move-only `Scheduler` + `create/options` + `stop_accepting/drain` | `COMPLETE`：两阶段 shutdown、定时 drain和失败回滚已有 | Folly/Marl executors + server lifecycle；基础 `MUST` |
+| `SCHED-A-02` | 部署按可用 CPU顺序/集合、名称和优先级建立 worker | best-effort/required、P/E偏好、稀疏 CPU id、permission failure、worker hook | `SchedulerOptions`引用 Platform typed facts；不接收裸 OS mask | `COMPLETE`（显式 placement）：CPU order/set、priority、name、policy齐全 | ggml threadpool params + Platform；推理 `MUST` |
+| `SCHED-A-03` | runnable work低争用入队、本地执行并在 worker空闲时窃取 | local FIFO/LIFO、foreign injection、pinned work、fairness、wake/park、bounded admission | 私有 per-worker deque + sharded injection；公开只表达任务语义 | `COMPLETE`：work stealing、pinned queue、idle policy和有界 admission已有 | Folly/Marl/oneTBB；基础 `MUST` |
+| `SCHED-A-04` | 短、不挂起、无返回值 callback在 worker stack执行 | context lifetime、noexcept/status、queue full、shutdown、affinity | `schedule(fn, context)`或无 capture callable convenience | `COMPLETE`：借用期和失败合同完整 | executor normal journey；基础 `MUST` |
+| `SCHED-A-05` | 短 typed callable在 worker stack执行并异步取得值或错误 | move-only callable/result、exception boundary、allocation/OOM、cancel-before-run | `schedule_task(F) -> Result<JoinHandle<R>>` | `COMPLETE`：typed cell和 `Result`传播已有 | Folly SemiFuture/executor journey；`GENERAL` |
+| `SCHED-A-06` | 可挂起 stackful任务拥有独立 stack并在完成后释放 | stack budget/overflow、pool reuse、detached lifetime、cancel、worker migration | `spawn_detached` +显式 stack size/allocator；内部 `FiberStackPool` | `COMPLETE`（支持平台）：Mem-backed stack和 recycle已有 | Marl/Folly fibers；基础 `MUST` |
+| `SCHED-A-07` | C++ coroutine以 Task值表达挂起计算并由 scheduler驱动 | lazy ownership、single consume、void/value、frame OOM、fiber bridge、cancel context | `Task<T>` + `spawn_task` + awaiter | `COMPLETE`：promise/frame lifecycle和 JoinHandle bridge已有 | C++ coroutine runtime journeys；推理 `GENERAL` |
+| `SCHED-A-08` | 调用方等待、轮询或取得一个异步任务结果 | value/error、void、single take、external thread/fiber wait、abandon | move-only `JoinHandle<T>`，`join/ready/get`语义分离 | `COMPLETE`：状态拥有任务结果和等待通知 | Folly futures + Marl wait groups；基础 `MUST` |
+| `SCHED-A-09` | 一个 lexical operation启动若干子任务，失败/取消/离开作用域时保证全部收束 | cancel-on-error、join-on-exit、child error aggregation、nesting、detached escape prohibition | RAII `TaskGroup`/nursery持有 child handles和 CancelScope | `MISSING`：JoinHandle和 CancelScope可手工组合，但没有结构化生命周期 | inference request fan-out + structured-concurrency peers；推理 `MUST`候选 |
+| `SCHED-A-10` | 等待一组已知 task全部完成或任一完成 | homogeneous span/heterogeneous pack、empty、winner index、error/cancel、lifetime | `when_all/when_any(JoinHandle...)` | `COMPLETE`（JoinHandle域）：pack/span和 one-winner仲裁已有 | futures/select journey；基础 `GENERAL` |
+| `SCHED-A-11` | 在 channel、timer、cancel、IO completion等不同 awaitable间做 first-ready race | registration rollback、multiple-ready tie、winner ownership、lost wake、cancel losers、allocation | 有限 typed `select`/registration token协议；不是 runtime `std::function`数组 | `MISSING`：IO timeout/cancel各自实现仲裁，公共层只有 JoinHandle race | IO重复机制 + Seastar/Folly async composition；推理 `MUST`候选 |
+| `SCHED-A-12` | CPU密集、系统调用或外部库阻塞工作离开 scheduler worker | result/error、dynamic threads、idle retirement、shutdown、caller cancellation | `spawn_blocking(F) -> JoinHandle<R>` + process/runtime-owned `BlockingPool` | `COMPLETE`（基础 handoff）：独立线程、最大值和 keepalive已有 | ggml外部 pool隔离 + async runtimes；推理 `MUST` |
+| `SCHED-A-13` | 阻塞突发不能无限累积 pending jobs或线程 | capacity、try/async submit、fairness、deadline、queue metrics、shutdown | `BlockingPoolOptions{max_threads,max_pending}` + explicit admission result | `PARTIAL`：线程上限已有，pending queue无界且无 admission/telemetry | service overload journey；`GENERAL`，需真实 burst profile后准入 |
+| `SCHED-A-14` | 外部线程/设备完成时恢复一个已挂起 fiber且最多恢复一次 | copy/drop、wake-before-suspend、duplicate wake、scheduler shutdown、foreign thread | small owning `Waker` + capture/suspend awaiter | `COMPLETE`：one-shot episode和 reinjection合同已有 | IO/GPU completion；推理 `MUST` |
+| `SCHED-A-15` | worker park边界同时管理 IO、GPU及其他 completion source | register/remove、source lifetime、poll budget、next deadline、wake、deep-sleep veto、shutdown quiescence | 私有 typed completion-source registry；public owner提供 lease | `PARTIAL`：当前仅一个 IO poll/wake槽；GPU另起 poller线程 | Seastar reactor +仓内 IO/Compute；推理 `MUST`候选 |
+| `SCHED-A-16` | fiber按相对时长或单调绝对 deadline挂起 | zero/past/saturation、cancel race、worker timer queue、no busy wait | `sleep_for/sleep_until`；低层 `arm_timeout/cancel_timeout`供组合 | `COMPLETE`：复用 Time timer entry和 O(1) cancel | async runtime timer journey；基础 `MUST` |
+| `SCHED-A-17` | 高基数任务在未来某时执行 callback或按周期运行 | one-shot/periodic、missed tick、drift、cancel handle、callback stack/allocation | `ScheduledExecutor`或 owner组合 timer+waker；周期政策显式 | `MISSING`（公共产品）：当前 `spawn + sleep`每项占 Fiber stack | Folly ScheduledExecutor + maintenance/batch window；`GENERAL`，需消费者决定是否单立因子 |
+| `SCHED-A-18` | 请求/任务形成协作取消树并注册 race-safe callback | parent/child、already-cancelled、callback unlink、scope restore、thread/fiber origin | copyable `CancelToken`、`derive`、`CancelScope`、RAII callback | `COMPLETE`：树传播、当前作用域与 unlink lifecycle已有 | llama request cancel + standard stop token；推理 `MUST` |
+| `SCHED-A-19` | 所有可能长期等待的原语能一致接收 deadline和取消 | absolute vs relative、reason、winner race、resource return、late completion | generic select/deadline wrapper优先；只有值所有权不同才加具名 overload | `PARTIAL`：CV/Event/Channel/Semaphore有 timed形状；Join/RwLock/oneshot/watch/broadcast与 cancellation不一致 | server SLO + IO已有重复；推理 `MUST`候选 |
+| `SCHED-A-20` | trace/request/error correlation随 task/fiber迁移并在 child继承 | typed key、inherit/override、destruction、thread bridge、detached lifetime、no hidden heap on hot path | execution-local context frame + explicit propagation token；Obs只消费 view | `MISSING`：只有 CancelScope有私有 execution-local stack | Folly RequestContext + async trace journey；推理 `MUST`候选，跨 Obs/Error |
+| `SCHED-A-21` | condition predicate等待能由普通线程或 fiber通知，并支持绝对/相对期限 | spurious wake、unlock/relock、notify race、timeout unlink、destruction precondition | `ConditionVariable`配 BasicLockable | `COMPLETE`：双路径和 O(1) timed unlink已有 | std/Folly Baton semantics；基础 `MUST` |
+| `SCHED-A-22` | 极短、不跨挂起点的互斥临界区保护 runtime metadata | contention、worker blocking、try lock、ownership、yield prohibition | 明确命名/文档的 OS/futex `Mutex`; standard lock guard互操作 | `COMPLETE`（窄合同）：故意可能阻塞 worker且禁止跨 yield | runtime metadata journey；基础 `MUST` |
+| `SCHED-A-23` | async/fiber任务持锁时可挂起而不阻塞 worker线程 | fairness、cancel/deadline、owner task、poisoning、guard跨 resume、upgrade | 独立 `AsyncMutex`/fiber mutex；不能悄悄改变现有 short Mutex成本 | `MISSING`：可用 RwLock write guard绕行但形状和成本不自然 | Folly fibers/Seastar mutex + async state；推理 `GENERAL`候选 |
+| `SCHED-A-24` | 固定工作数完成、一次 latch和重复 barrier同步 | add/done race、underflow、thread/fiber wait、reuse/generation、drop | `WaitGroup`、`Latch`、`Barrier`各自表达生命周期 | `COMPLETE` | ggml barrier + standard runtime primitives；基础 `MUST` |
+| `SCHED-A-25` | 单事件按 auto/manual reset通知一个或全部 waiter | set/reset race、timed wait、thread/fiber、destruction | `Event(reset_mode,initial)` | `COMPLETE` | Windows/Folly event journeys；`GENERAL` |
+| `SCHED-A-26` | N-token资源按 FIFO获取、超时并用 RAII归还 | multi-permit、close、overflow、fairness、cancel、guard move | `Semaphore` + move-only `Permit` | `COMPLETE`（无 CancelToken）：FIFO、timed、close和 guard已有 | async capacity control；基础 `MUST` |
+| `SCHED-A-27` | 多读单写 async锁支持 try和 read→write政策 | fairness、writer starvation、downgrade/upgrade、deadline/cancel、guard lifetime | `RwLock` + typed guards | `PARTIAL`：read/write/try/downgrade完整；无 timed/cancel和 safe upgrade | state/cache journey；`GENERAL` |
+| `SCHED-A-28` | 有界 MPMC消息队列提供背压、关闭和 typed失败值 | capacity>0、try/block/timed、close/drain、move-only T、sender value return | `Channel<T>` | `COMPLETE`（bounded）：send/recv/try/relative deadline/close齐全 | service pipeline + async peers；基础 `MUST` |
+| `SCHED-A-29` | producer burst不可预估或需要 capacity=0 rendezvous | unbounded segmented growth、OOM、backpressure absence、close；zero-capacity handoff公平性 | storage复用 Container queue，Sched拥有 wait/cancel/close service；分开 named factory/type | `MISSING`：当前 Channel拒绝 zero且只有 bounded ring | llama server burst + `CONT-A-21`；`GENERAL`，B阶段组合而非复制 storage |
+| `SCHED-A-30` | 单次值从一个 sender交给一个 receiver | sender/receiver drop、value ownership、already sent、thread/fiber wait | `oneshot<T>() -> {Sender,Receiver}` | `COMPLETE`（基础）：drop/error和 move-only值齐全 | async result handoff；`GENERAL` |
+| `SCHED-A-31` | 多 receiver观察最新配置/状态并等待版本变化 | clone receiver、sender drop、version wrap、borrow/copy、slow reader | `watch<T>()` with changed/borrow/value semantics | `COMPLETE`（基础） | async config publication；`GENERAL` |
+| `SCHED-A-32` | 多 receiver取得容量有限的消息流并辨认 lag | subscriber lifecycle、lag count、close、capacity、slow reader、clone cost | `broadcast<T>()` + typed recv error | `COMPLETE`（基础） | telemetry/control fan-out；`GENERAL` |
+| `SCHED-A-33` | 多来源提交的 callback按一个逻辑序列严格串行但可迁移 worker | order、reentrancy、failure、shutdown、queue growth、lifetime | `SerialExecutor`/strand包裹现有 Scheduler | `MISSING`：可手工用 Channel+单 consumer组合，但重复且占常驻任务 | Folly SerialExecutor + protocol/state machine；`GENERAL`候选 |
+| `SCHED-A-34` | latency-sensitive/control/background任务共享 pool时有有限优先级/公平预算 | priority classes、starvation bound、inheritance、queue full、pinned work、dynamic policy | 小而固定的 priority lane + explicit option；模型 score仍由 serving owner持有 | `MISSING`：worker priority仅设置 OS线程，不影响 task次序 | llama priority queue + Folly/oneTBB executor priority；推理 `MUST`候选 |
+| `SCHED-A-35` | 多 NUMA node机器让 worker、ready queue和主要 allocation保持本地 | node arena、CPU set、cross-node steal threshold、fallback、hotplug、memory policy | `SchedulerTopology`由 Platform facts构造，Mem resource按 arena注入 | `PARTIAL`：可显式 pin CPU，但没有 node arena或 locality-aware steal | ggml affinity + Platform/Mem NUMA；推理 `MUST`候选 |
+| `SCHED-A-36` | 一段数据并行工作做 adaptive partition、parallel for/reduce/scan/sort | grain、cost、nested parallelism、cancel、determinism、scratch、backend | 独立 algorithm/Compute factor消费 executor；Sched只提供 execution substrate | `ROUTED`：`bulk_execute`仅 finite index batch，不伪装算法全集 | oneTBB algorithms + inference kernels；推理 `MUST`但 owner不在 Sched |
+| `SCHED-A-37` | ggml式一次建立常驻 CPU team后反复执行 graph plan、barrier、pause/resume | dynamic chunk、caller participant、plan lifetime、nested external pool、NUMA | Compute CPU executor adapter或专用 operator runtime；不污染通用 Scheduler API | `ROUTED`：finite bulk和基础 primitives可组合，未承诺 ggml pool替换 | ggml真实 threadpool；推理 `MUST`，owner为 Compute |
+| `SCHED-A-38` | runtime检测长时间未让出 worker、队列延迟和阻塞误用 | threshold、sampling、false positive、task identity、hook cost、disabled fast path | Obs sink/hook消费 scheduler events；诊断默认可关闭 | `MISSING`（产品诊断）：worker hooks存在但无 stall/queue-latency语义 | Seastar stall detector + tail latency；推理 `GENERAL`候选，跨 Obs |
+| `SCHED-A-39` | 单元测试确定性推进 ready queue和虚拟时间而不依赖 wall clock | manual run-one/run-all、fake clock、timer advance、random steal、deadlock report | developer-only `ManualExecutor`/test scheduler，不进入普通 runtime成本 | `MISSING`：现有测试依赖真实 scheduler/clock | Folly ManualExecutor +定义性测试；开发 `GENERAL`候选 |
+| `SCHED-A-40` | stackful context在所有宣称的 CPU/OS target上构建和切换 | ABI unwind、sanitizer hooks、stack alignment、Windows x64/ARM64、x86-64/AArch64/RISC-V | private Boost.Context fcontext port；public Fiber不暴露 vendor type | `PARTIAL`：Windows/Linux/macOS x86-64/AArch64覆盖；RISC-V与Windows ARM64无产品路径 | HYLE platform matrix + Boost.Context；跨平台 `MUST`候选 |
+| `SCHED-A-41` | source/static/shared C++消费者获得同一 scheduler/fiber语义 | assembly selection、Boost pin、visibility、same-toolchain、thread libs、no private C ABI export | `hyle::sched` C++ target；fcontext C/asm仅私有机制 | `COMPLETE`（当前支持平台）：三交付已签署，无 Native FFI或稳定 C++ ABI承诺 | build/package + sched-v3；交付 `MUST` |
+
+public-surface、仓内 consumer与推理 journey反查得到九个关键结论：
+
+1. Sched 已经是完整 runtime而非一个 thread pool：worker、Fiber/coroutine、typed result、取消、定时、阻塞
+   移交和主要同步原语都有自然闭环；不能因 peer表面更大就重写这些能力；
+2. 当前 `Mutex`的窄语义是短临界区且可能阻塞 worker，它本身完整；“允许跨挂起点”的需求应形成独立
+   AsyncMutex，而不是让同一个类在 benchmark中偷偷改变成本；
+3. JoinHandle的 `when_all/when_any`不能替代异构 select。IO已重复实现 timer/cancel/completion仲裁，
+   通用 registration/select协议是最强的跨域质因数候选之一；
+4. `JoinHandle + CancelScope`提供积木但没有 lexical nursery。推理请求 fan-out要可靠处理异常退出、取消和
+   child lifetime，结构化 TaskGroup是直接产品候选；
+5. CPU affinity完整但 NUMA scheduling不完整：Platform知道 node/CPU，Mem能提供 node资源，Sched仍缺
+   node arena与 locality-aware stealing；该缺口不能由调用方传一个更复杂 CPU数组假装解决；
+6. OS worker priority与 task priority是不同能力。llama serving和成熟 executor证明有限 priority class有真实
+   journey，模型 score/tenant policy仍留上层；
+7. 当前 worker park只有单个 IO source，GPU因此另起 poller。多 completion source、task-local correlation、
+   stall/queue-latency hook都应和 IO/Compute/Obs在 B阶段共同裁决，避免三处私有实现；
+8. `bulk_execute`是有限同步批次，不是 oneTBB算法层，也不是 ggml常驻 graph pool；parallel algorithms和
+   CPU operator team按依赖方向路由给上层，不扭曲 Scheduler；
+9. 本节只登记候选，不继承旧 benchmark verdict，也不重开 `CLOSED` Sched。A13后按独立 consumer、
+   complexity/cost闭环与 delivery边界形成有限 trigger。
+
+这表示 Sched 产品域的阶段 A 第一遍已经完成；最实质的新增输入是 structured TaskGroup、heterogeneous
+select、AsyncMutex、priority lanes、NUMA arenas、multi completion sources和 task context，而非再为单项
+benchmark添加一套 queue或 worker模式。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
