@@ -1,9 +1,10 @@
 # Core v3 基础能力补全
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由全库能力展开中的 `CORE-A-02/03/05/06` 新事实定向重开 Core。它不是对 `core-v2`
-> 的无证据复查；旧轮仍是历史证据。本页是本轮唯一活动 closure card 与施工记录。
+> 的无证据复查；旧轮仍是历史证据。本页保存本轮冻结 card、施工事实与 terminal receipt。
 
 ## Closure card
 
@@ -343,7 +344,7 @@ python scripts/loc-report.py --module core --commit cdd6b1c612c8e318220972fa0936
 `cloc 2.08` 对 1,339 个 tracked files 的 immutable tree self-check 为 `pass`；Core canonical boundary 是
 `include/hyle/core/**`、`include/hyle/version.h`、`include/hyle/visibility.h` 与 `src/core/**`。
 
-## VERIFIED verdict
+## Verification verdict
 
 不可变 candidate `cdd6b1c612c8e318220972fa0936f23e28045447` / `3855da3095dcd52417aeb46b8822346755b28abd`
 的 scope、architecture、correctness、delivery、usability/docs、red-team 与 P0 engineering-performance
@@ -366,3 +367,11 @@ async-signal safety、backtrace、日志或跨 DSO crash policy；compiler hints
 5. 当前明确路由到 Error/Platform/SIMD/Obs 的能力改变 ownership，形成新的具名 Core demand。
 
 新 benchmark、API/LOC 数量、命名偏好、亚纳秒点值或历史任务命令句本身不构成重开。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：能力 ledger 没有未处置的 `MUST`，七项 aggregate gate 全部 `PASS`，没有
+correctness/security、交付或本 tier 性能 blocker。候选仍是
+`cdd6b1c612c8e318220972fa0936f23e28045447` / `3855da3095dcd52417aeb46b8822346755b28abd`；
+终态文档提交只保存 receipt、限制、重开条件与 LOC，不冒充新的产品 candidate。后续 registry anchor
+提交只回填本 receipt 的真实 Git identity，不授权继续修改 Core。
