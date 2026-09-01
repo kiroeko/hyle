@@ -1,8 +1,6 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-09-02）：**`util_core` 正在执行 v2 有限能力补全，`util` runtime 保持
-> `CLOSED`；施工/签证
-> 状态只看中央
+> **当前边界（2026-09-02）：**`util_core` v2 与 `util` runtime 均为 `CLOSED`；施工/签证状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。

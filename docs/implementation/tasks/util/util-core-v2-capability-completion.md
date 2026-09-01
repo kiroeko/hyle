@@ -1,6 +1,7 @@
 # util_core v2 能力补全与跨目标修复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `util-core-v2-capability-completion` 的活动冻结卡。当前机械状态只看
 > [`module-status.json`](../../module-status.json)；v1 与 capability replay 仅作为历史证据，不能覆盖
@@ -235,6 +236,40 @@ candidate 产品 tree 或统计核心。
 
 ## Closure decision
 
-- current decision：`VERIFIED`；七项 aggregate gate 全 `PASS`、四项 MUST 全 `COMPLETE`、无 blocker；
-- Formal 独立 `PENDING`，不属于工程关闭条件；下一步只写 terminal receipt、接受限制与 reopen
-  triggers，不再改变 candidate product。
+接受限制：
+
+- P1 只覆盖 W1-WIN、冻结的 Ref owning-handoff 和短状态转移、锁定 Boost/oneTBB 与 MSVC 19.50；
+  跨平台性能、持续/高争用锁、全部 util_core 操作、端到端推理 KPI、通用 SOTA 与 Formal 未签署；
+- `FunctionRef` 是 non-null synchronous call-only borrow；callee 存储、返回或异步排队会悬空。可选 callback
+  和 owning/async storage 必须使用语义对应的 owner；
+- `NotNull<T*>` 不拥有、不 pin、不延长 lifetime；dynamic null 是 invariant failure。nullable/fallible borrow
+  继续使用 `T*` / `Result<T&>`；
+- `ThreadUnsafeRefCounted<T>` 只允许完整引用生命周期限制在一个线程；任一 owner、borrow 或最终释放跨线程
+  都违反合同，不能靠对象后来只读补救；
+- `SpinLock` 仍只服务极短低争用临界区，`cpu_relax` 不建立同步；RISC-V 本轮只签 compile/codegen/QEMU，
+  没有 silicon timing；
+- HYLE 不承诺稳定 C++ ABI 或 Native FFI；headers/consumer/toolchain 必须匹配。retained P1 bundle 是本机
+  工程证据而非发布 artifact，Formal 保持独立 `PENDING`。
+
+只有以下新事实重开受影响能力族：
+
+1. 已命名真实 consumer 复现 util_core correctness/security、overflow、ownership/lifetime、并发、ISA、
+   API 易用性或缺失能力缺陷；
+2. 公开 API、layout、normal-path cost、Core-only dependency、selected-header inventory 或交付形状改变；
+3. 支持 compiler/stdlib/ISA 改变 FunctionRef calling/lifetime、NotNull layout、atomic ordering/codegen 或
+   RISC-V pause 语义；
+4. Mem/Sched/Graph 或未来推理 consumer 实际采用新 vocabulary 后证明当前同步/required/thread-confined
+   合同不匹配；
+5. 续签工程声明时 consumer provenance、peer、machine、instrument、compiler 或 retained bundle identity
+   发生 material 改变；
+6. mature same-contract peer 证明更优复杂度档，或正常 consumer/profile 证明超过冻结 5% 门的可复现
+   material regression/advantage。
+
+新 benchmark、API/LOC 数、命名偏好、单次点值、order/address 翻转、亚纳秒差异、Formal 待办或没有上述
+新事实的“再看一遍”不构成产品重开理由。
+
+本轮裁决为 `CLOSED`：四项 MUST 全部完成，七项 aggregate gate 全 `PASS`，未处置 MUST 与 blocker 均为
+0。不可变候选在三个支持平台、sanitizer、RISC-V、三种 C++ 交付和 Mem/Sched/Graph consumers 上通过，
+并在冻结的 W1-WIN 两个同合同 consumer 上通过 5% P1 non-inferiority。候选保持
+`d42d992cf99232669f60422f30fb3b50ec9ec4eb` / `9944f099679503df632b6335e69154656164b30b`；
+本 terminal receipt 不改变产品 identity。
