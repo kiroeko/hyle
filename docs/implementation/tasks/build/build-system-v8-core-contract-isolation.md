@@ -52,5 +52,6 @@ checker。Container 只证明有效 flag/route 等价，不续签其算法或性
 
 实施已严格落在冻结集内：全局 target 只剩最低共同合同，Container 直接持有 SSSE3，Core sample 与
 selected/component smoke 具备 normal/no-exception 双 journey，architecture/user 文档已同步。Windows
-与 WSL 的冻结前预检通过；下一步建立不可变 product candidate，再运行三平台验证。本段不提前把预检
-写成 terminal verdict。
+与 WSL 的冻结前预检通过。不可变 product candidate 已冻结为
+`350fc39a25adf953c0f13c7404635b4624d5c6f1` / tree `dafe004eb0651ac0fccc500c658b7cd577e52f4f`；
+下一步从该身份运行三平台验证。本段不提前把预检写成 terminal verdict。

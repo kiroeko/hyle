@@ -5,7 +5,7 @@
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round / kind：`core` / Core + build-package / `core-v4-build-contract-projection` /
   `REOPEN`；
@@ -89,3 +89,14 @@ Core headers、API、算法、layout 与 runtime 行为的产品修改集为空�
 - 冻结前预检：W1-WIN 与 W1-WSL 的 Core tests 各 `6/6`，Core source/static/shared 各 `2/2`，
   Container source/static/shared 各 `1/1`，中央 component contract 均通过。它们是候选建立前的实现
   反馈，不替代对不可变 candidate 的三平台验证。
+
+## Candidate identity
+
+- commit：`350fc39a25adf953c0f13c7404635b4624d5c6f1`；
+- tree：`dafe004eb0651ac0fccc500c658b7cd577e52f4f`；
+- `AUDITED -> CANDIDATE` 前态 registry：
+  `C:\hyle-scratch\core-v4\module-status-audited.json`；
+- 候选后允许的改动只有验证 evidence、task/registry/receipt 与不改变候选解释的文档事实。任何 CMake、
+  sample、公开/内部 header、Container target 或验证工具语义变化都必须退回 `AUDITED` 并建立新候选。
+
+当前为 `CANDIDATE`；冻结前预检不继承为正式 verdict，三平台全部 gate 从该 commit 重放。

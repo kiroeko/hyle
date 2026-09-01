@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
       "round_id": "core-v4-build-contract-projection",
@@ -13,6 +13,8 @@
       "scope": "Re-sign the unchanged Core product behind a minimal Core-only compile-usage contract by removing leaked Container ISA and forced exception-mode policy from hyle::core while preserving all three C++ delivery shapes.",
       "non_goals": "Core API or implementation changes, Container algorithm or performance review, whole-HYLE no-exception support, CPU-floor redesign, Native FFI, timing benchmarks and physical library aggregation.",
       "baseline_commit": "fe944155e6ada4e68997aaa3fa7d52f27b0769e0",
+      "candidate_commit": "350fc39a25adf953c0f13c7404635b4624d5c6f1",
+      "candidate_tree": "dafe004eb0651ac0fccc500c658b7cd577e52f4f",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -27,7 +29,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v4 审计完成：公开 API 无 benchmark seam 或新的能力/易用性缺口；有限 FIX 只隔离 Core build contract、维持 Container SSSE3 所有权并重签三种 C++ delivery。"
+      "summary": "core-v4 candidate 已冻结为 350fc39a/dafe004e：Core API/实现不变，最小 build contract、Container SSSE3 owner 与 Core no-exception 三交付 journey 等待不可变候选验证。"
     },
     {
       "module": "container_intrusive",
