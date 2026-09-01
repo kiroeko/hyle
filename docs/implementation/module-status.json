@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CORE-FOUNDATION-COMPLETENESS-01",
       "reopen_evidence": "docs/implementation/tasks/project/capability-factorization-v1.md",
       "round_id": "core-v3-foundation",
@@ -13,6 +13,8 @@
       "scope": "Complete bounded fatal context and observer, assertion modes, consumer-backed compiler contracts and current-TU environment facts while preserving Core's header-only prime boundary.",
       "non_goals": "Logging, crash reporting, recoverable errors, runtime topology or ISA dispatch, machine actions, runtime version artifacts, Native FFI, timing benchmarks and adjacent-module algorithm review.",
       "baseline_commit": "0fc5fbc0cc8a86ef043788400e6305e5e6afa0e4",
+      "candidate_commit": "cdd6b1c612c8e318220972fa0936f23e28045447",
+      "candidate_tree": "3855da3095dcd52417aeb46b8822346755b28abd",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -27,7 +29,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v3 返回 AUDITED：首个候选 cbc2951c/21697748 被 clang-cl WERROR 拒绝，原因是 array-reference lifetimebound 放置与 Windows CRT test 分支把 frontend/ABI 混为一谈；FIX 集/API 不扩张，完成两项可移植性修正后重建候选。"
+      "summary": "core-v3 candidate 2 已冻结为 cdd6b1c6/3855da30；首个候选暴露的 clang-cl attribute/CRT 可移植性缺陷已在不扩张 API 与成本合同的前提下修复，正式 gate 从头重放。"
     },
     {
       "module": "container_intrusive",

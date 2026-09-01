@@ -198,4 +198,5 @@ commit/tree；首个候选不得复用或写成 PASS。
 array reference 重复施加 `lifetimebound`，formatter test 则按 `HYLE_OS_WINDOWS` 选择 Windows CRT。
 修复后的 mutable tree 已通过 W1-WIN clang-cl 20.1.8、MSVC 19.50 和 W1-WSL GCC 14 的 Core
 Release WERROR 全套测试；公共 API、failure formatter、success path codegen 与候选 1 的成本合同均未
-改变。建立新不可变 commit/tree 后再填写 candidate 2 identity，且所有正式 gate 从头重放。
+改变。candidate 2 冻结为 commit `cdd6b1c612c8e318220972fa0936f23e28045447`、tree
+`3855da3095dcd52417aeb46b8822346755b28abd`；所有正式 gate 只验证这一不可变 identity 并从头重放。
