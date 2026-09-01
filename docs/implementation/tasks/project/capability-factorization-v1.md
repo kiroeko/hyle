@@ -566,6 +566,86 @@ family、provider manifest、锁定 provider交付、Math scalar header，以及
 这表示 SIMD + Math 产品域的阶段 A 第一遍已经完成；SIMD继续是一个不可拆分产品，Math继续是独立极小
 scalar组件。新候选只有在 B 阶段确定语义owner和最小自然API后才可形成有限施工卡。
 
+#### A10. Container 产品域（第一遍完成，尚未跨域冻结）
+
+本节只统计非侵入式 Container 产品；`container_intrusive` 已在 A3 单独展开，不能因为头文件仍位于同一
+目录就重复计入。public trace 覆盖 34 个非侵入式公开头、全部 `src/container/**` 实现以及当前
+Util/Sched/IO/Graph consumer。直接推理证据来自锁定 ggml 的 graph hash + side arrays、allocator/backend
+registries、llama.cpp 的 recent-token history、token/name maps、trie/Aho、n-gram direct index、server
+queues与 backend graph cache。strong peers 按行从 Abseil containers、Boost.Container/Heap/DynamicBitset、
+Folly F14/queues/EvictingCacheMap 与 oneTBB concurrent containers/LRU 中最多取两个；实现输入另锁定
+Highway `f503c485cec6b4f2f596fa60d83484797c9eeb5c`、simdutf
+`2d4e249dcfd978b39dd567b156f20a43db97377b`、xxHash
+`c0b5ea995d66691734b1a79ad89e73a0d2fd5a53` 与 wyhash
+`e4764a0b637d34d3421a7760affada9288b625a8`。标准容器能自然完成的旅程明确路由标准库，不用 HYLE
+类名数量伪装能力完整度。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `CONT-A-01` | 普通动态连续 sequence 保存 tensor、token、shape 或 metadata | allocator、range、move/copy、iterator invalidation、exception/OOM按标准合同 | `std::vector<T>`；只有不同 storage/cost 合同才选 HYLE 类型 | `ROUTED`：不复制 general vector 表面 | llama/ggml 大量 vector + 标准定义；完整路由，不是缺口 |
+| `CONT-A-02` | 通常很短、偶尔 spill 的 sequence 避免常态 heap allocation | inline count、grow/OOM、non-trivial/move-only、self alias、allocator、invalidation | `SmallVector<T,N,Alloc>` | `COMPLETE`：range/insert/erase/reserve/resize 与 fallible grow齐全 | Abseil InlinedVector + Boost small_vector；基础 `MUST` |
+| `CONT-A-03` | 上限编译期已知的 sequence 在对象内只构造实际元素 | zero/full、overflow policy、non-trivial lifetime、move/copy、no allocation | `StaticVector<T,N>` / `InplaceVector<T,N>` | `COMPLETE`：固定容量与 fail-fast overflow合同完整 | Boost static_vector + C++26 inplace_vector形状；基础 `MUST` |
+| `CONT-A-04` | trivially-copyable metadata需要低开销 bulk append/resize和可注入 allocator | relocation、zeroing、overlap、OOM、alignment、capacity growth | `PodVector<T>`，类型约束显式 | `COMPLETE`：POD bulk journey完整 | ggml plain arrays + Folly fbvector机制对照；通用 `GENERAL` |
+| `CONT-A-05` | 双端 staging queue 需要 grow、两段连续访问和稳定 O(1) 端点操作 | wrap、reserve/shrink、reject-on-full、non-trivial lifetime、allocator failure | `RingDeque<T>`；普通 deque语义仍可用 `std::deque` | `COMPLETE`：grow/bounded模式与 segments齐全 | Boost devector/circular buffer + loader journeys；`GENERAL` |
+| `CONT-A-06` | sampler/repetition history只保留精确最近 N 项，满时覆盖最旧 | capacity 0/1/任意值、wrap、resize保留 newest、overwrite alias/lifetime | `CircularBuffer<T>`，不把 overwrite policy塞进普通 deque | `COMPLETE`：exact-capacity overwrite合同完整 | llama recent tokens + Boost circular_buffer；推理 `MUST` |
+| `CONT-A-07` | parser/socket staging需要 byte ring 的 reserve/commit、peek/consume和两段 I/O | exact committed bytes、wrap、partial producer/consumer、growth/OOM、borrow validity | `ByteRingBuffer` 的 reservation/segments；blocking归 IO/Sched | `COMPLETE`：byte lifecycle与两段访问齐全 | HYLE IO consumer + Folly IOBuf用途对照；基础 `MUST` |
+| `CONT-A-08` | append/grow 后元素地址必须稳定，但不需要并发 writer | append-only或erase、iterator/reference稳定范围、segmented locality、allocator | 普通需求先用 `std::deque`；若需要 index-stable append则使用一个具名 segmented sequence | `ROUTED`：标准 deque覆盖端点增长；`ConcurrentVector`不应为单线程强制原子成本 | Boost stable_vector + oneTBB concurrent_vector；无独立消费时不复制类型 |
+| `CONT-A-09` | token/tensor/name metadata做 cache-local expected-O(1) map/set lookup | map/set、heterogeneous lookup、insert/assign、erase/filter、reserve、move-only、OOM | `FlatHashMap` / `FlatHashSet` | `COMPLETE`：Swiss probing、语义 hash、过滤和 allocator路线齐全 | Abseil flat hash + Folly F14；基础 `MUST` |
+| `CONT-A-10` | read-mostly小表需要连续排序存储、range query和低常数迭代 | map/set、bulk sorted-unique、heterogeneous lookup、mutation、invalidation | `FlatMap` / `FlatSet` | `COMPLETE`：SoA map、set、bulk/mutation合同完整 | Boost flat containers + sorted metadata journey；`GENERAL` |
+| `CONT-A-11` | 持续 mutation 的 ordered index 需要 logarithmic lookup/range/erase | map/set、heterogeneous compare、node split/merge、allocator/OOM、iterator lifetime | `BTreeMap` / `BTreeSet` | `COMPLETE`：ordered unique-key family完整 | Abseil btree + Boost ordered containers；`GENERAL` |
+| `CONT-A-12` | multi-key、node extraction/merge或标准 node-address合同是业务语义 | unique/multi、node handle、splice/merge、allocator compatibility | 直接使用 `std::map/set/multimap/multiset/unordered_*` | `ROUTED`：HYLE不复制标准 node表面 | 标准定义 + llama ordinary maps；无不同加速合同不准入 |
+| `CONT-A-13` | graph pass把 pointer/key映射成 dense ID，并以 ID 索引多组 SoA side arrays | build/reset epoch、duplicate、capacity、ID稳定范围、side-array同步、no erase或显式 compaction | Graph owner组合 `FlatHashMap<Key,Index>` 与 dense vectors；ID是逻辑 insertion ID，绝不能暴露 hash物理槽 | `ROUTED`：通用积木齐全，但尚无 graph-owned组合类型 | ggml `ggml_hash_set` 在 graph/backend/allocator多次真实消费；推理 `MUST`，带入 Graph而非新 hash-table API |
+| `CONT-A-14` | 多线程 registry需要 shard-local guard期间访问 flat value | const/mutable accessor、insert/assign/erase、reserve/clear quiescence、OOM | `ConcurrentFlatHashMap`，borrow由 accessor lifetime表达 | `COMPLETE`：sharded map与锁内引用合同完整 | oneTBB concurrent_hash_map + Folly concurrent map；运行时 `MUST` |
+| `CONT-A-15` | 多线程 registry需要 value地址跨 rehash稳定 | accessor、erase safety、rehash publication、reader lifetime、table reclamation、OOM | `ConcurrentNodeHashMap`；stable node与 reclamation domain分离 | `PARTIAL`：node/accessor语义完整，旧 table直到 map析构才释放 | oneTBB concurrent_hash_map + Folly reclamation；`GENERAL`，与 `MEM-A-32` 同一资源缺口 |
+| `CONT-A-16` | 多线程只维护 membership，不应为 dummy mapped value支付不自然的 API/slot成本 | flat/node-stable、heterogeneous lookup、erase、accessor需求、reclamation | `ConcurrentFlatHashSet` / `ConcurrentNodeHashSet` 或能证明零额外成本的 set policy | `MISSING`：只有 concurrent map；`map<K,unit>`形状和成本未签 | oneTBB concurrent sets + Folly concurrent set形状；`GENERAL`，待 Sched/IO/registry反查 |
+| `CONT-A-17` | 多 writer并行 reserve互不重叠 index并 append，读者在 publication后稳定迭代 | grow、partial construction、OOM、clear quiescence、index/reference稳定、exception policy | `ConcurrentVector<T>` segmented append | `COMPLETE`：并发 append/grow与稳定地址合同完整 | oneTBB concurrent_vector + parallel metadata build；`GENERAL` |
+| `CONT-A-18` | 单 producer/单 consumer以固定内存无锁传递 typed payload | exact capacity、peek/consume、move-only、full/empty、thread roles、destruction quiescence | `SpscQueue<T>` try-only mechanism | `COMPLETE`：cache-line隔离和精确容量齐全 | Folly ProducerConsumerQueue + streaming journey；运行时 `MUST` |
+| `CONT-A-19` | 多 producer/consumer在固定预算内传递任务并显式处理 full | bounded MPMC、shard hint/fair pop、move-only、progress、wrap、allocator | `BoundedQueue<T>`；争用需要分片时 `ShardedQueue<T>` | `COMPLETE`：Vyukov ring与分片策略齐全 | Folly MPMC + oneTBB bounded queue；运行时 `MUST` |
+| `CONT-A-20` | scheduler owner fast-path push/pop，thief偷取单项或 FIFO批次 | owner/thief角色、fixed capacity、ABA/wrap、steal race、spill owner、quiescence | `WorkStealingDeque<T>` / `WsFifoQueue<T>`；调度政策不进入类型 | `COMPLETE`：两种窄角色机制齐全 | Folly/oneTBB scheduler mechanisms + HYLE Sched；运行时 `MUST` |
+| `CONT-A-21` | burst不能安全预估小上限、但 producer不能因 full失败的 typed handoff | SPSC/MPSC/MPMC、segmented growth、OOM、try-only core、reclamation、size estimate | unbounded segmented queue mechanism；wait/timeout/close作为 Sched组合层 | `MISSING`：现有五种 queue全部固定容量 | Folly UnboundedQueue + llama server mutex/deque burst；`GENERAL`，必须保留无界内存风险 |
+| `CONT-A-22` | consumer需要阻塞到 item/close/deadline/cancel，producer需要 backpressure | close drain/abort、timeout、stop token、lost wake、executor/fiber/thread、fairness | Sched channel/service组合 queue mechanism与 wait primitive；不是每个 container重复一套 CV | `ROUTED`：Container只有 try语义 | oneTBB blocking queue + llama server queue；运行时 `MUST`，owner带入 Sched |
+| `CONT-A-23` | 多 producer/consumer按 priority取任务，允许近似 size但不需要 key update | comparator、equal-key、concurrent push/try_pop、allocation、starvation、close在外层 | `ConcurrentPriorityQueue<T>` mechanism，service生命周期仍由 Sched拥有 | `MISSING`：只有 FIFO/steal queues | oneTBB concurrent_priority_queue + runtime priority journey；`GENERAL`，需 Sched反查是否真实重复 |
+| `CONT-A-24` | BPE、timer或规划器在已入 heap对象上 decrease/increase key、erase或 meld | stable handle、invalid handle、comparator、stable ties、allocator、O(log n) update/erase | indexed/mutable heap；普通只 push/pop继续用 `std::priority_queue`/heap algorithms | `MISSING`（mutable部分）；普通 heap完整路由标准库 | Boost.Heap + llama BPE/Time candidate；`GENERAL`，必须有 update/erase consumer才准入 |
+| `CONT-A-25` | runtime-sized dense mask做 bit algebra、count、find first/next和 set-bit iteration | resize/bounds、word tail、and/or/xor/not、population、allocator/OOM | `DynamicBitSet` | `COMPLETE`：dense bitset常用操作与 iterator齐全 | Boost dynamic_bitset + ggml graph masks；基础 `MUST` |
+| `CONT-A-26` | 小 active-ID集合在较大 universe内做 O(1) add/remove/contains和 dense iteration | ID bounds/grow、swap-remove invalidation、clear、duplicate | `SparseSet<Id>` | `COMPLETE`：dense+sparse membership合同完整 | scheduler active slots + sparse-set成熟形状；`GENERAL` |
+| `CONT-A-27` | ID到 payload 的 sparse map、generation-safe slot或 compressed rank/select bitmap | stale handle、generation wrap、payload lifetime、compaction，或 bitmap codec/rank/select | `SparseSet + vector`可组合简单 map；generation arena由 owner持有；compressed bitmap需独立格式证据 | `ROUTED`（简单形状）/`OUT_OF_SCOPE`（其余） | 当前 ggml/llama无独立通用消费；peer数量不足以准入新类型 |
+| `CONT-A-28` | API低成本借用 UTF-8/byte text并与标准 string view互操作 | null/empty、embedded NUL、known terminator、<=4 GiB界限、substring、lifetime | `StringView` method-shaped trivial borrow | `COMPLETE`：标准互操作、search/substr/NUL事实齐全 | Abseil StringView + llama metadata；基础 `MUST` |
+| `CONT-A-29` | parser/loader做 ASCII case/trim/split/search、hex/C escape与 UTF-8校验/计数 | malformed offset、streaming partial code point、UTF-8/16/32转换、output capacity、replacement policy | byte/ASCII helpers留 Container；Unicode诊断/转码应为具名 text-codec factor，不堆 bool overload | `PARTIAL`：ASCII/hex/escape、UTF-8 decoder/validate/count齐全；缺错误位置和 UTF转码 | simdutf完整能力 + llama UTF/tokenizer输入；`GENERAL`，与 IO/text owner联查 |
+| `CONT-A-30` | 普通拥有型 text、small string或超大分段 immutable text | allocator、SSO、NUL、mutation、sharing、slice、flatten、encoding | 普通走 `std::string`；短二进制可组合 SmallVector；rope/Cord/IOBuf只有真实跨层传递才单立 factor | `ROUTED`：不复制 owning string；无 Cord产品 | llama大量 std::string + Abseil Cord/Folly IOBuf仅作发现；当前无准入缺口 |
+| `CONT-A-31` | 用户做跨平台 lexical path join/normalize/extension/absolute判断 | separator、root/drive/UNC、`.`/`..`、UTF/bytes、no filesystem access、bounded output | `PathView` + `PathBuffer` lexical helpers；实际 I/O归 Platform/IO | `COMPLETE`：Windows/POSIX lexical family完整 | loader/path journeys；基础 `GENERAL` |
+| `CONT-A-32` | token/op/name重复字符串变成稳定小 ID并按 generation释放 | permanent/ref-counted/batch、OOM prefix、stale ID、const lookup、thread safety、view lifetime | `StringInterner` / `StringId` | `COMPLETE`：sharded intern、generation/refcount/batch与语义 hash齐全 | llama registries + foundation interning；`GENERAL` |
+| `CONT-A-33` | map/set按值语义 hash整数、浮点、pointer、text与 composite key | Eq兼容、NaN/zero、padding、seed/secret、pair/tuple/array/custom、heterogeneous | `Hash<T>`、StringHash/HardenedStringHash、显式 bytewise opt-in | `COMPLETE`：xxHash/wyhash私有 lowering与组合桥接齐全 | Abseil Hash + llama BPE/composite keys；基础 `MUST` |
+| `CONT-A-34` | 文件/model/protocol需要跨进程稳定 fingerprint、checksum或 wire hash | algorithm/version、endianness、streaming、collision/security、持久化兼容 | IO/format owner暴露具名 checksum/fingerprint；Container hash不承诺持久稳定 | `ROUTED`：当前 hash只服务运行期容器 | ggml model/cache metadata + xxHash API；`GENERAL`，不能误用 semantic hash |
+| `CONT-A-35` | tokenizer/parser做 prefix trie、多 pattern Aho-Corasick或 token automaton | alphabet/UTF、longest/all match、streaming state、build/freeze、memory layout、serialization | text/tokenizer algorithm factor组合 Container storage；不把 alphabet/model policy塞入 map | `ROUTED`：通用 storage齐全，无 HYLE matcher产品 | llama `common/trie` 是直接消费；推理 `MUST`，B阶段必须确定 Text/Util-runtime/IO owner |
+| `CONT-A-36` | graph/kernel/backend cache做 O(1) key lookup、命中提升和容量淘汰 | entry-count/weight budget、peek vs touch、erase/clear、eviction callback、ownership、thread safety、in-flight pin | 通用 cache只拥有 hash+recency+entry lifetime；device bytes、compile policy与异步销毁由调用者注入 | `MISSING`：没有 LRU/evicting storage mechanism | ggml CANN graph cache + Folly EvictingCacheMap + oneTBB concurrent_lru_cache；推理 `GENERAL`，旧“全部是 policy”结论过宽 |
+| `CONT-A-37` | source/static/shared C++消费者取得相同模板、compiled kernel和私有依赖行为 | allocator/public edge、vendor type不泄漏、visibility、offline pin/license、header self-containment | HYLE-owned C++ types；无 Container Native FFI或稳定 C++ ABI承诺 | `COMPLETE`（基线交付）：public `core/mem`、private `platform`与 build-only/private providers | build/package + container-v2；交付 `MUST`，依赖图待 C阶段重算 |
+
+public-surface 与 consumer 反向追踪得到九个关键结论：
+
+1. sequence、flat/sorted/B-tree、dense masks、exact history、hash、borrowed text、path和 interner 的已有
+   常用形状很宽；普通 vector/string/node containers继续走标准库，不因基础库定位复制全部标准表面；
+2. ggml 的 physical hash slot 是 C 实现用来耦合 side arrays 的技巧，不是自然公共容器 identity。HYLE应由
+   Graph owner组合 `FlatHashMap<Key,Index>` 与 dense storage，保留 insertion ID而不泄漏 rehash槽位；
+3. 旧审计把全部 LRU/cache能力都归为 domain policy过宽。设备/编译预算仍属 consumer，但 O(1) lookup、
+   recency promotion、容量淘汰与 callback是可复用机制；当前为真实 `MISSING` 候选；
+4. HYLE现有 queue全部有界。固定预算、无 steady allocation的语义必须保留，但 Folly与 llama server证明
+   “burst不可预估且 producer不能因 full失败”是不同的通用旅程；应调查无界 segmented mechanism，
+   close/wait/deadline/cancel仍归 Sched；
+5. concurrent membership和 concurrent priority是成熟 peer已提供的自然形状，当前 HYLE缺失；只有
+   Sched/IO/registry反查出真实消费才升级为 `MUST`，不能为了容器类名大全直接施工；
+6. mutable/indexed heap与普通 priority queue不同；后者完整路由标准库，前者只有真实 decrease-key/
+   erase-handle任务才准入，并与 A3 intrusive heap、Time/Sched共同裁决；
+7. `ConcurrentNodeHashMap`的 stable node合同完整，但 retired table直到析构是资源复杂度缺口，必须与
+   `MEM-A-32` reclamation因子一起处理，不能由各容器继续私藏回收机制；
+8. ASCII/UTF-8基础处理已有，但 Unicode错误定位和转码没有自然公开面；trie/Aho也是真实推理消费。
+   两者需要 B阶段确定 text-codec/tokenizer factor，而不是继续把所有字符串算法堆入 Container；
+9. 本节只登记候选且不继承旧 benchmark verdict。当前 `CLOSED` Container不重开；A13完成后由跨域
+   consumer数量、成本闭环和owner边界形成有限 `PRODUCT_TRIGGER`。
+
+这表示 Container 产品域的阶段 A 第一遍已经完成；新增实质输入为 LRU/recency、unbounded queue、
+concurrent set/priority、mutable heap、Unicode codec、text matcher和 shared reclamation，而不是再次扩写
+现有容器的 convenience API。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
