@@ -186,7 +186,7 @@
     },
     {
       "module": "error",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "round_id": "error-v5-capability-completion",
@@ -211,7 +211,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v5 由真实 IOCP WinSock 类别缺口定向重开，并有限裁决 borrowed result、no-throw 动态诊断与 std::error_code 冷适配；Error 保持 Core-only 质因数。"
+      "summary": "error-v5 SCOPED：四个消费者驱动能力、Core-only 依赖、自然 C++ 形状、常态成本、八小时总预算、三平台/三交付与 5% P1 正常消费者门已经冻结，尚未授权产品实现。"
     },
     {
       "module": "obs",
