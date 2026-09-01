@@ -418,6 +418,66 @@ Platform `VmRegion/MappedFile`、IO `SharedMemory`、Compute `Buffer/BufferType/
 这表示 Mem 产品域的阶段 A 第一遍已经完成；`mem-v2` 保持 `AUDITED` 且暂停产品实现。最终
 PRODUCT_TRIGGER/owner/FIX 集只在 13 域跨查和因子化完成后重新冻结。
 
+#### A8. Obs 产品域（第一遍完成，尚未跨域冻结）
+
+Obs 的产品边界不是一套应用 logger，也不是把 profiler、metrics backend 和 crash reporter 全部绑成一个
+service。它拥有低成本 observation 事件、禁用/采样控制、同步 host-adapter seam，以及可由最终 image
+选择的 profiling seam；队列、持久化、网络和业务 schema 仍由具有相应生命周期的 owner 负责。直接推理
+证据来自 llama.cpp/ggml 的 process log callback、server slot/progress/timing、context/sampler perf snapshot、
+Prometheus metrics 和 backend profiling；仓内反向追踪覆盖 Mem allocation、Sched fiber/timer、IO/Compute
+completion trace。strong peers 锁定为 Abseil `2c004366e983c5be8334ac1ea3d4420e8fbcbea7`、Folly
+`23ebefdf96c116700d3e134f04d95a2b60a509de`，profiling mechanism 为 Tracy
+`30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c`；每个能力族至多直接使用两个 peer。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `OBS-A-01` | library call site 按严重度记录诊断，关闭时不计算昂贵参数 | compile-time floor、process runtime threshold、invalid level、并发读写、OFF 无求值 | `HYLE_LOG_<LEVEL>` + `should_log/set_level`；宏只捕获 caller source | `COMPLETE`：五级门控、compile floor 和 no-evaluation 已覆盖 | Abseil log + llama/ggml macros；基础 `MUST` |
+| `OBS-A-02` | 已格式化 bytes、source、时间和少量字段作为一个同步 event 交给宿主 | embedded NUL、UTF-8/任意 bytes、borrow lifetime、可选 source/time、空字段、字段顺序 | borrowed `LogRecord` + span fields；同步返回前有效 | `PARTIAL`：message/source/time 与 string fields 完整；缺 event/category identity、typed value 和 correlation attributes | llama callback + Folly `LogMessage`; logger-neutral structured seam `MUST`，具体字段待 B 阶段去重 |
+| `OBS-A-03` | 普通 C++ caller 类型安全格式化诊断且日志失败不改变业务流 | format exception、OOM、oversize/truncation、source location、disabled args | `std::format_string` convenience 写 bounded stack buffer；owning formatting 留给 sink | `COMPLETE`：1 KiB bounded format、marker 和 failure record 已有 | Abseil/Folly call-site logging；易用性 `MUST` |
+| `OBS-A-04` | 高频 warning/progress 只记录条件、前 N、每 N、2 的幂或时间间隔 | approximate/exact contention、N<=0、reset/move、call-site static 与 per-request object、注入 monotonic time | 宏控制常见 call site；`LogIntervalLimiter` 等显式 state 服务 request/slot | `COMPLETE`：全部控制族及精确/近似语义齐全 | Abseil/Folly rate controls + llama slot progress；推理 `MUST` |
+| `OBS-A-05` | 一个库进程把同步 record 接入宿主 logger，启动/关闭时安全注册和摘除 | callback 并发、reentry、self/cross remove、quiescence、flush、duplicate/full、state lifetime | borrowed `LogSink` + move-only `SinkRegistration`；一个正常 host adapter | `COMPLETE`：固定 64 slot、无分配 emit、immutable snapshot 与 quiescent RAII remove | Abseil/Folly sink registry；基础 `MUST` |
+| `OBS-A-06` | CLI/tool 没装宿主 logger 时仍得到安全的 stderr 诊断 | TTY color、Windows debugger mirror、控制字符/换行注入、concurrent write、显式 takeover/restore | process default sink，可幂等启停；不是应用配置树 | `COMPLETE`：转义、串行输出、颜色和 takeover 路径齐全 | llama default callback + Abseil stderr；工具 `GENERAL` |
+| `OBS-A-07` | application 需要 async writer、bounded queue、drop/block policy、file rotation 或 remote upload | record deep copy、backpressure、ordering、flush/ack、shutdown、disk/network failure、fork | 宿主 sink callback 内复制后进入应用/IO owner；Obs core 不暗建线程 | `ROUTED`：同步 adapter 合同完整，队列和 persistence 明确外置 | llama `common_log` worker + Folly handlers；能力 `GENERAL`，owner 为 application/IO，不是基础 emit seam |
+| `OBS-A-08` | 大应用按 module/category 与 verbosity 局部过滤，同时仍统一进入一个 sink | hierarchical category、numeric verbosity、dynamic config、unknown category、DSO unload、disabled cost | stable category/event name 作为 record metadata；filter/config tree 可由宿主 adapter 拥有 | `PARTIAL`：severity 和显式 `_IF` 可表达简单情况；record 无 category/event identity，也无 per-category gate | Folly categories + llama verbosity；元数据 `GENERAL`，配置树不自动准入 HYLE |
+| `OBS-A-09` | tests 临时捕获并断言 library diagnostics，不接触全局 stderr | concurrent producers、scope teardown、nested capture、exact bytes/fields、no dangling state | 普通 typed sink + RAII registration；专用 mock 只在重复痛点出现时提供 | `COMPLETE`：现有 adapter 足以自然实现 capture，仓内测试已使用 | Abseil mock log 用于 journey；不复制专用 API 的拒绝性结论 |
+| `OBS-A-10` | profiling build 标记同步 CPU scope 并附 name/text/value/color | compile OFF 零求值、dynamic text bound、nesting、exception return、thread migration 限制 | `HYLE_TRACE_ZONE*` lexical macros；最终 image 选择 backend | `COMPLETE`：Tracy zone 与 bounded annotations 已覆盖 | Tracy + HYLE IO/Compute hot zones；profiling `MUST` |
+| `OBS-A-11` | runtime 时间线记录 plot/counter、message、frame、thread、fiber 和 allocation lifecycle | integer width、literal/dynamic text、alloc/free pairing、fiber migration、frame naming、OFF no-eval | 语义命名的 trace macros，不给普通业务对象增加 metadata | `COMPLETE`：全部列举 seam 已有且 Mem/Sched/IO/Compute 真实消费 | Tracy + HYLE consumers；推理 profiling `MUST` |
+| `OBS-A-12` | IO request、task 或 backend launch 在不同线程开始/结束并在 timeline 上保留因果 flow | 64-bit id、begin/step/end、reuse/overflow、cancel/error、fan-out/fan-in、disabled path | cheap explicit flow token/events；不把 lexical zone 跨线程析构 | `MISSING`：fiber identity 只覆盖 stackful migration，没有普通 async flow seam | Tracy/Perfetto async journey + HYLE IO/Sched/Compute；推理 runtime `GENERAL` |
+| `OBS-A-13` | GPU command、stream/event 与 host launch 在统一 profile 中关联 | backend context、device/queue、timestamp calibration、command lifetime、multi-device、trace OFF | Compute-owned typed GPU tracing adapter，向 Obs profiling seam 发事件 | `ROUTED`：CPU launch/reap zone 已有；无 HYLE GPU zone/context seam | Tracy GPU + ggml backend profiling；推理 `MUST`，实现 owner 为 Compute |
+| `OBS-A-14` | scheduler/container 调查 mutex wait/hold、shared lock 和 contention | lock lifetime、try/shared modes、recursive lock、owner thread、OFF layout/code cost | opt-in lock annotation/wrapper，只对真实 lock owner；不替换同步原语 | `MISSING`：Tracy backend有 lock API，HYLE seam未暴露 | Tracy lock tracing + HYLE Sched/Container；诊断 `GENERAL`，待 consumer 反查 |
+| `OBS-A-15` | profiler 用户选择 callstack depth、sampling、on-demand/connected 和 plot presentation | build-wide consistency、runtime connection、sampling permission、overhead、static/shared single client | build/package options + 极窄 query/control；高级 viewer policy可直接归 backend | `PARTIAL`：trace ON/OFF 和 single-client交付完整；无 sampling/connectivity/callstack seam | Tracy controls；高级 profiling `GENERAL`，不能把所有 vendor knobs 复制进 HYLE |
+| `OBS-A-16` | inference/runtime 累计可查询 counter 与 gauge，而不是只向在线 profiler 发瞬时 plot | relaxed update、signed/unsigned、set/add、snapshot consistency、reset epoch、overflow、cache-line placement | owner-held typed `Counter/Gauge` primitive；无默认全局注册和字符串查找 | `MISSING`：`HYLE_TRACE_COUNTER` 不可查询且 trace OFF 消失 | llama server metrics + Folly counters；推理服务 `MUST` 候选 |
+| `OBS-A-17` | token latency、queue wait、kernel duration 和 size distribution 需要 count/sum/min/max/histogram | units、bucket layout、merge、overflow、concurrent record/snapshot、reset/window、percentile误差 | unit-aware owner-held accumulator/histogram，可 merge snapshot；hot record 不分配 | `MISSING`：各模块可手写 atomics，Obs 无可复用 distribution primitive | llama perf/server buckets + Folly histograms；推理 `MUST` 候选 |
+| `OBS-A-18` | 多 worker/slot 把 local metrics 合并为 process snapshot，避免每 event 全局原子争用 | sharding、thread exit、epoch/reset、merge consistency、bounded cardinality、allocator failure | explicit local shard/merge owner；registry 仅登记静态 descriptor 时才存在 | `MISSING`：无 metrics storage/merge contract | Folly timeseries + llama per-slot/global metrics；性能基础 `GENERAL` |
+| `OBS-A-19` | metric 带 model/backend/device/status 等低基数 labels 并导出 JSON/Prometheus/OTLP | label lifetime、cardinality bound、escaping、schema/version、pull/push、backpressure、security | core 提供 typed snapshot/visitor；具体 exposition/exporter 在 application/IO adapter | `ROUTED`：低层 metric primitives 缺失；export 本身正确归宿主 | llama Prometheus endpoint + telemetry practice；snapshot `GENERAL`，网络 backend 非 Obs core |
+| `OBS-A-20` | context/sampler/graph owner 返回稳定 perf snapshot，并可 reset/print | owner lifecycle、unit、count=0、concurrent query、reset race、derived rate、ABI/version | owner-specific stats struct built from common primitives；格式化/打印在 user boundary | `ROUTED`：Time 可计时，但当前模块各自决定 stats；Obs 无公共 primitives | llama `llama_perf_*` + ggml node perf fields；推理 `MUST` journey，owner保持在 Compute/Graph/Sched |
+| `OBS-A-21` | request、trace、model 和 slot identity 随 task/fiber/IO callback 传播并自动进入 log/trace | explicit parent、TLS/fiber migration、async handoff、nested restore、sampling、ID generation、privacy | small explicit observation context + scoped attach；Sched负责捕获/恢复，record只借用属性 | `MISSING`：现有 log/trace 没有 correlation context | Folly `RequestContext` + llama slot tags；推理服务 `GENERAL`，需与 Sched/IO 因子化 |
+| `OBS-A-22` | telemetry snapshot读取 RSS、host/device memory、queue depth、worker utilization | query cost/failure、sampling cadence、units、NUMA/device、stale value、privilege | Platform/Mem/Compute/Sched提供值，Obs metrics只记录/导出；不重复 OS 探测 | `ROUTED`：各 owner 能力分别待其域裁决 | llama system/backend metrics + HYLE owner boundaries；推理 `GENERAL` |
+| `OBS-A-23` | invariant/fatal/terminate 路径在 abort 前输出 bounded context，且不递归或分配失控 | signal safety、recursive failure、OOM、other threads、stacktrace/minidump、observer lifetime、privacy | Core保留 fail-fast；可选 process-lifetime bounded crash observer 由 Obs/Platform 提供 | `PARTIAL`：Core fatal直接写 stderr，普通 logger非 signal-safe；没有统一 bounded observer/crash artifact | Abseil failure signal + HYLE Core/Error trace；基础诊断 `GENERAL`，是跨域候选而非日志宏扩张 |
+| `OBS-A-24` | Status/native failure 被记录时保留 code/domain/message，而不是先拼成不可解析文本 | OK policy、message bytes、native domain/code、source、redaction、allocation failure | explicit `LogField`/formatter adapter 或 structured error event；logging仍无控制流副作用 | `PARTIAL`：Error有完整访问器/`to_string`，Obs没有 typed adapter且字段只能 string | HYLE Error + Abseil status logging journey；内部易用性 `GENERAL` |
+| `OBS-A-25` | secret/token/prompt/PII 不应因默认 telemetry 被意外记录 | classification、redaction/hash、structured field、binary payload、debug override、sink trust boundary | caller/schema显式选择可记录字段；sink可执行 deployment policy；不做猜测式自动扫描 | `ROUTED`：默认 sink只做控制字符安全转义，不承诺 secret redaction | server security journey；策略归 consumer/sink，Obs应记录合同与安全坑 |
+| `OBS-A-26` | source/static/shared C++ 用户获得相同 log/trace seam，关闭 trace 不携带 client | selected target、visibility、header macro一致性、single Tracy client、final image、无伪 C ABI | `hyle::obs` + optional trace build feature；只公开 C++ surface | `COMPLETE`：三交付和 trace OFF/ON 已验证 | build/package contract；交付 `MUST` |
+
+public-surface 反向追踪覆盖三个 public header、`src/obs/log.cc`、全部仓内 trace consumer、现行 architecture/
+user guide 与 `obs-v3` 证据。第一遍得到六个关键结论：
+
+1. 同步 library logging 的门控、格式化、rate control、host adapter、quiescent lifecycle 与默认 CLI sink
+   已经闭环，不能因 llama 有异步 worker 就把应用 logger 重新塞进 Obs；
+2. 当前 `LogRecord` 的 string-only fields 足以承载旧能力，但对 category/event identity、typed value、Status
+   和 correlation 的自然形状只是 `PARTIAL`，B阶段需决定一个最小 attribute vocabulary；
+3. Tracy CPU/fiber/memory/counter seam 已有真实仓内消费；普通 async flow、lock contention 和 GPU tracing仍需
+   分别与 Sched/IO、Container和Compute owner组合，不能靠跨线程析构 lexical zone；
+4. profiler plot 不是可查询 metrics。llama server/perf 提供了直接 consumer，counter/gauge、distribution与
+   shard/merge snapshot 是实质缺口；网络 exporter 与应用 registry不因此进入低层 hot path；
+5. Core fatal、Error structured status 与 Obs crash/diagnostic bridge仍有跨域空隙，但 signal-safe crash path不能
+   重用任意同步 sink graph；
+6. Obs 私有双 snapshot reader epoch 是固定 registry 的合法实现，同时也是 `MEM-A-32` reclamation 因子输入；
+   A阶段只记录重复机制，不提前替换已经关闭的实现。
+
+这表示 Obs 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 模块不重开。metrics、async correlation、typed
+attributes、GPU/lock trace 与 crash observer 只有在 13 域跨查并确定 owner 后才形成有限
+`PRODUCT_TRIGGER`。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
