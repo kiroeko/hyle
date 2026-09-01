@@ -646,6 +646,61 @@ public-surface 与 consumer 反向追踪得到九个关键结论：
 concurrent set/priority、mutable heap、Unicode codec、text matcher和 shared reclamation，而不是再次扩写
 现有容器的 convenience API。
 
+#### A11. Util-runtime 产品域（第一遍完成，尚未跨域冻结）
+
+Util-runtime 不是剩余功能的杂项桶。当前产品只有两个运行时能力族：显式的名字→factory Registry，以及
+普通线程诊断用的 C++ symbol demangle；RNG、intrusive ownership、scope guard、spin lock和 compile-time
+type name已经在 A4 Util-core展开。public trace覆盖 `registry.h`、`demangle.h`和唯一 compiled
+`demangle.cc`，当前仓内没有 Registry 产品消费者。推理证据来自锁定 ggml/llama.cpp 的 backend
+registration、按名/类型/设备枚举、dynamic load/unload和 proc-address；这些 API用于发现完整 journey，
+不按函数数目全部下沉到通用 Registry。demangle strong peers锁定 Folly
+`23ebefdf96c116700d3e134f04d95a2b60a509de` 与 Boost
+`78505eab9b203e3e26e83893d0685f160133fa0f`。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `UTILR-A-01` | owner在启动期把显式名字绑定到 typed factory | nullable或`Result<T>` factory、typed Args、invalid/OOM、owned key/help、noexcept调用边界 | `Registry<Result, Args...>::register_creator`，无 capture函数指针；状态通过显式 Args/descriptor传入 | `COMPLETE`：两种失败形状、字符串 ownership与 transactional OOM齐全 | ggml backend registration +通用 startup composition；推理 `MUST` |
+| `UTILR-A-02` | 多来源为同名实现提供 fallback/default/preferred并得到确定冲突结果 | lower no-op、equal conflict、higher replace、旧 view lifetime、registration order不决定优先级 | 显式 `RegistryPriority` + `Status` | `COMPLETE`：三档与并发替换 snapshot合同完整 | backend fallback/override journey；通用 `GENERAL` |
+| `UTILR-A-03` | owner按名解析 factory/metadata一次并缓存，而不提前构造对象 | present/missing、mutable/frozen、creator identity、borrowed help/key、replacement snapshot | `find(StringView) -> optional<EntryView>`；缓存 typed creator而不是 opaque `void*` | `COMPLETE`：mutable/frozen expected-O(1) lookup齐全 | ggml `backend_reg_by_name` + registry lookup；推理 `MUST` |
+| `UTILR-A-04` | owner按名直接构造并保留 factory自身失败原因 | missing与creator failure分离、move-only Args、reentry、result ownership | nullable Registry或推荐 `Registry<Result<T>,Args...>::create` | `COMPLETE`：creator锁外执行并原样传播 `Status` | backend init journey + Error contract；推理 `MUST` |
+| `UTILR-A-05` | 诊断/UI枚举所有登记项、名称和帮助并可提前停止 | mutable snapshot OOM、frozen borrow、unspecified order、visitor reentry、size/has/help | `for_each` / `for_each_key` / `size` / `has` / `help` | `COMPLETE`：mutable snapshot解锁回调，frozen零分配 | ggml reg count/get +普通服务发现；`GENERAL` |
+| `UTILR-A-06` | 初始化完成后一次发布，服务期反复只读 lookup/create | idempotent one-way freeze、publication memory order、view lifetime、post-freeze mutation failure | `freeze() -> FrozenView`，consumer缓存 view | `COMPLETE`：freeze O(1)/零分配；frozen read无 mutex/生命周期 atomic | init-heavy/read-heavy engine journey；推理 `MUST` |
+| `UTILR-A-07` | 登记已存在 descriptor/object而不是每次运行 creator | owned/borrowed/shared value、replacement、destruction、mutable/frozen、enumeration | domain owner组合 `FlatHashMap<Name,Value>`；只有多个 owner重复 priority/publication才扩 Registry value policy | `ROUTED`：通用 Container积木完整，Registry只拥有 factory语义 | ggml直接登记 backend reg/device pointer；推理 `MUST`，由 Compute/backend catalogue拥有 |
+| `UTILR-A-08` | factory需要每个 registration独有 context/capture | context lifetime、copy/move/destroy、allocation、module image、exception/noexcept | 优先登记 typed descriptor `{context, function table}`；通用 callable只有两个真实消费者共享合同才准入 | `ROUTED`：现有 Creator无 capture；descriptor可作为 factory结果/Args | Folly stateful factory差异 + plugin journey；`GENERAL`，不为 convenience引入 `std::function` |
+| `UTILR-A-09` | 用户输入的 backend name支持 ASCII case-insensitive、alias或旧名迁移 | canonicalization、Unicode/ASCII、collision、deprecated alias、diagnostics | backend owner在登记/查询边界显式 canonicalize并登记 alias；generic Registry保持 exact bytes | `ROUTED`：StringView exact lookup完整 | ggml `striequals` + CLI backend names；推理 `MUST`，政策不属 Util |
+| `UTILR-A-10` | 注册表按 type、capability、priority score或“best device”选择 | typed enum/schema、multi-device、capability query、ordering/tie、live resources | Compute/backend catalogue提供 typed query；Registry只做 exact name→factory | `ROUTED`（机制）/上层尚未实现 | ggml by-type/best/device APIs；推理 `MUST`，不能伪称 Util缺一个万能 predicate lookup |
+| `UTILR-A-11` | 动态发现/加载 backend library并验证 ABI/version/symbol | search path、duplicate、platform suffix、signature/version、failure diagnostics、security | module manager组合 Platform `DynLib`、typed module manifest与 Registry/catalogue | `ROUTED`（Platform loader）/产品 owner `MISSING` | ggml load/load-all + llama plugin deployment；推理 `MUST`，B阶段需形成 module factor |
+| `UTILR-A-12` | 卸载动态 backend前注销 factory并等待 object/thread/callback/reader排空 | registration token、remove visibility、in-flight pin、DSO code/data lifetime、timeout/failure | module manager拥有 registration leases与quiescence；不能只给 Registry加 `erase(name)`制造假安全 | `MISSING`（全局产品）；Util one-way Registry明确不支持 | ggml unload +其生命周期风险、Obs sink quiescence；推理 `GENERAL`，跨 Platform/Compute/Util/Sched裁决 |
+| `UTILR-A-13` | backend提供可选扩展操作而不让核心接口每次扩张 | typed extension ID/schema、version、signature安全、missing、module lifetime | backend descriptor的 typed extension table；裸 proc-address只留 module ABI边 | `ROUTED`：generic Registry不承载 extension schema | ggml `reg_get_proc_address`真实消费；推理 `MUST`，owner为 Compute/module |
+| `UTILR-A-14` | archive/static link中的实现自动登记 | dead-strip、static-init order、duplicate、error propagation、test isolation | 默认显式 composition root处理 `Status`；必要时 build-generated manifest，而非注册 macro | `OUT_OF_SCOPE`：有意不提供 auto-registration | 静态库定义性陷阱；拒绝把链接副作用当易用性 |
+| `UTILR-A-15` | 普通线程把 ABI mangled C++ name转成完整可读 owning text | null/plain fallback、OOM、type_info、platform ABI、C++/Rust语言边界 | `demangle(const char*) -> std::string` 与 type_info overload | `COMPLETE`：Itanium/MSVC与 caller-owned string齐全 | Folly + Boost demangle；诊断 `MUST` |
+| `UTILR-A-16` | 日志/诊断写入固定 caller buffer并知道所需长度 | cap 0、truncation、NUL、input/output overlap、platform temporary allocation/failure | snprintf-shaped `demangle(name,out,cap)` + array overload | `COMPLETE`：返回 full length、fallback与 overlap合同齐全 | Folly buffer demangle + embedded diagnostics；`MUST` |
+| `UTILR-A-17` | 调试工具判断当前 binary是否真的支持某种 demangler，或区分 raw fallback与成功 | build capability、per-call parse failure、language、raw==demangled歧义 | 只有 consumer需要 machine-readable verdict时增加 `try_demangle`/capability fact；普通显示继续 fallback | `PARTIAL`：当前只返回最终文本，不能辨识成功原因 | Folly build capability接口；`GENERAL`，无当前 HYLE consumer不扩 API |
+| `UTILR-A-18` | crash/signal handler在无 heap、无 lock、无 loader调用下渲染 stack symbol | async-signal safety、bounded parser、reentrancy、preloaded symbol table、truncation | Obs crash/symbolization factor使用 caller storage；普通 Util demangle不能承诺此语义 | `ROUTED`：当前 demangle明确允许 malloc/Windows mutex | Folly optional libiberty + crash journey；诊断 `MUST`，与 `OBS-A-23`联查 |
+| `UTILR-A-19` | Rust/Swift或其他 foreign runtime symbol需要相应 parser | language detection、parser availability/version、安全边界、fallback | foreign-runtime/Obs owner按真实栈引入 parser；不把所有语言塞进 C++ utility默认依赖 | `OUT_OF_SCOPE` | Folly Rust demangle用于发现；无 HYLE consumer，不准入 |
+| `UTILR-A-20` | 极长或不可信 symbol不能让 demangler栈/时间/内存无界增长 | input length ceiling、NUL scan、fallback、stack recursion、allocation cap、platform差异 | 明示 trusted diagnostic name；若 crash/untrusted输入准入则使用 length-bounded API/limit | `PARTIAL`：Windows动态输出限1 MiB；输入本身和 Itanium parser无统一上限 | Folly max-symbol防护 +安全定义；`GENERAL`，交给 Obs/Util边界裁决 |
+| `UTILR-A-21` | source/static/shared C++用户得到相同 Registry模板与 compiled demangle | component closure、visibility、DbgHelp/ABI link、same-toolchain、无 vendor/public FFI泄漏 | `hyle::util` C++ target；Native FFI保持 N/A | `COMPLETE`（基线交付）：public Core/Error/Mem/Container，compiled demangle已三形状签署 | build/package + util-runtime-v3；交付 `MUST`，C阶段重算边 |
+
+public-surface 与推理 consumer 反查得到七个关键结论：
+
+1. Registry 的 factory registration、priority、lookup/create、enumeration和 one-way publication已经形成
+   自然完整闭环；没有理由为了 peer API数量加入 captured callable、global static-init或 predicate大全；
+2. ggml登记的是既有 backend descriptor，HYLE未来应由 Compute/backend catalogue拥有 typed values、
+   device enumeration和 best-selection；用 Container组合即可，不该扭曲 factory Registry；
+3. exact byte name与用户可见的 case-insensitive/alias政策是两层合同。generic Registry保持精确，backend
+   owner canonicalize，避免把 ASCII/Unicode/兼容政策固化到所有 Registry；
+4. dynamic load、typed manifest/proc extension与 safe unload是推理引擎必需的完整 module journey。Platform
+   已有 loader机制，但 module manager和 quiescence尚缺；只增加 `Registry::erase`不能解决悬空代码；
+5. ordinary-thread C++ demangle的 owning/buffer形状完整。成功原因可观察、输入上限是低优先级缺口；
+   async-signal-safe symbolization则是 Obs/crash产品，不是现有 Util overload的“更快版本”；
+6. Util-runtime无直接第三方产品依赖；Container的 Highway/xxHash/wyhash/simdutf仅经组件闭包间接出现，
+   Registry语义不能归给这些实现机制；
+7. 本节不重开 `CLOSED` util。A13之后只有 module lifecycle、Obs symbolization或两个以上真实 Registry
+   consumer证明公共缺口时，才建立有限 trigger。
+
+这表示 Util-runtime 产品域的阶段 A 第一遍已经完成；自身没有新的确定 `MUST` API缺口，新增全局输入是
+module manager/quiescence，另有 demangle verdict/input-bound 两个低优先级候选。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
