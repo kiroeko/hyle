@@ -235,6 +235,6 @@ candidate 产品 tree 或统计核心。
 
 ## Closure decision
 
-- current decision：`CANDIDATE`；七项 aggregate gate 全 `PASS`、四项 MUST 全 `COMPLETE`、无 blocker，已满足
-  `CANDIDATE -> VERIFIED` 输入；
-- Formal 独立 `PENDING`，不属于工程关闭条件；terminal receipt、接受限制与 reopen triggers 待写。
+- current decision：`VERIFIED`；七项 aggregate gate 全 `PASS`、四项 MUST 全 `COMPLETE`、无 blocker；
+- Formal 独立 `PENDING`，不属于工程关闭条件；下一步只写 terminal receipt、接受限制与 reopen
+  triggers，不再改变 candidate product。

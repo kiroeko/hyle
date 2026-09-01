@@ -126,7 +126,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "UTILCORE-FACTORIZATION-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v2-capability-completion.md",
       "round_id": "util-core-v2-capability-completion",
@@ -143,17 +143,34 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v2.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v2 CANDIDATE：四项 frozen FIX 已冻结为 d42d992c/9944f099；三平台与 RISC-V 候选前验证通过，等待 clean candidate 的 P1 qualification、完整 gate manifest 与红队。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "loc": {
+        "snapshot_commit": "d42d992cf99232669f60422f30fb3b50ec9ec4eb",
+        "repository_code": 419146,
+        "self_with_tests": 101555,
+        "self_without_tests": 63267,
+        "module_implementation": 967
+      },
+      "summary": "util-core-v2 VERIFIED：四项 MUST、三平台/sanitizer/RISC-V、三种 C++ 交付、Mem/Sched/Graph consumers、易用性/文档、红队与 W1-WIN 两项 5% P1 工程门全部通过；等待 terminal receipt。"
     },
     {
       "module": "error",
