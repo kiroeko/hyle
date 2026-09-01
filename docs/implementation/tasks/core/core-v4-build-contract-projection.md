@@ -5,7 +5,7 @@
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - component / owner / round / kind：`core` / Core + build-package / `core-v4-build-contract-projection` /
   `REOPEN`；
@@ -73,6 +73,7 @@ Error/Obs/Platform/SIMD、标准 C++ 或未来具名宿主需求；没有当前 
 | `CORE4-01` | 全局 build contract 把 Container-only SSSE3 许可泄漏给 Core | 从 `_build_contract` 移除，并由 `hyle_container` 直接 `PUBLIC` 拥有同一 compiler-conditioned option | 中央 target property 正/负合同；Container 三交付 compile |
 | `CORE4-02` | 全局 `/EHsc` 替父工程选择异常模式，并覆盖 Core-only no-exception TU | 移除显式 `/EHsc`；增加 `HYLE_HAS_EXCEPTIONS == 0` 的 Core package journey | source/static/shared Core normal + no-exception compile/run |
 | `CORE4-03` | 构建所有权和用户例外边界尚未写成当前合同 | 更新 build architecture、Core user guide 与机器合同 | docs/closure checker、package inventory |
+| `CORE4-04` | 公共 component contract 在 macOS 生成需要 Platform 的子工程时未传项目规定的 14.4 deployment target，导致中央 gate 在到达 Core 断言前失败 | 只让该脚本的全部 child configure 继承中央 macOS floor；不改产品 target、API 或平台 floor | 三平台 component contract |
 
 Core headers、API、算法、layout 与 runtime 行为的产品修改集为空。任何新 API、compiler spelling、cache
 常量、fatal 语义或 Container 算法变化都必须退回 `SCOPED/AUDITED`，不能借本轮顺手实施。当前为
@@ -99,4 +100,14 @@ Core headers、API、算法、layout 与 runtime 行为的产品修改集为空�
 - 候选后允许的改动只有验证 evidence、task/registry/receipt 与不改变候选解释的文档事实。任何 CMake、
   sample、公开/内部 header、Container target 或验证工具语义变化都必须退回 `AUDITED` 并建立新候选。
 
-当前为 `CANDIDATE`；冻结前预检不继承为正式 verdict，三平台全部 gate 从该 commit 重放。
+### Rejected candidate 1
+
+`350fc39a25adf953c0f13c7404635b4624d5c6f1` / `dafe004eb0651ac0fccc500c658b7cd577e52f4f`
+的 W1-WIN、W1-WSL Core/Container 三交付、Core tests 与 component contract 通过；M1-MAC 的 Core tests
+`6/6`、Core 三交付各 `2/2`、Container 三交付各 `1/1` 也通过。但 Mac component contract 在其
+SIMD exact-target child configure 因未传 `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` 失败，尚未执行后续中央
+断言。该失败是验证工具的跨平台投影缺陷，不是 Core/Container 产品失败，也不能写成中央 gate PASS。
+
+按 `CANDIDATE -> AUDITED` 退回后，只允许实施 `CORE4-04`，然后建立新 commit/tree 并从头重放；首个
+候选保留为 rejected fact，不复用其 terminal verdict。`CANDIDATE -> AUDITED` 前态 registry 位于
+`C:\hyle-scratch\core-v4\module-status-candidate.json`。当前为 `AUDITED`。

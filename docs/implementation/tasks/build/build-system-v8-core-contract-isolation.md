@@ -55,3 +55,11 @@ selected/component smoke 具备 normal/no-exception 双 journey，architecture/u
 与 WSL 的冻结前预检通过。不可变 product candidate 已冻结为
 `350fc39a25adf953c0f13c7404635b4624d5c6f1` / tree `dafe004eb0651ac0fccc500c658b7cd577e52f4f`；
 下一步从该身份运行三平台验证。本段不提前把预检写成 terminal verdict。
+
+## Candidate 1 rejected by Mac contract projection
+
+候选 `350fc39a` 的 Core/Container 产品 journeys 在三平台均通过，但 M1-MAC 的公共 component contract
+在生成 SIMD 子工程时没有传 HYLE 已规定的 macOS 14.4 deployment floor，因此配置在中央断言前失败。
+这不是把相邻失败塞给 Core：本 build/package development unit 自己拥有该脚本。有限修正只让所有
+child configure 继承中央 floor；不改变 floor、产品图、算法、API 或前述 build-contract 修复。候选已
+按协议退回 `AUDITED`，修正后必须重建 identity。
