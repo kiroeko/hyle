@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
       "round_id": "core-v4-build-contract-projection",
@@ -27,7 +27,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v4 已由 CORE-BUILD-CONTRACT-01 定向重开：产品实现保持冻结，只处理 Core-only target 泄漏 Container SSSE3 与强制 MSVC exception mode 的 delivery 合同。"
+      "summary": "core-v4 范围已冻结：Core 产品实现保持不变，只隔离 Core-only compile usage requirements、维持 Container SSSE3 等价输入，并重签三种 C++ delivery。"
     },
     {
       "module": "container_intrusive",

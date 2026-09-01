@@ -5,7 +5,7 @@
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
 
-## Closure card（`REOPENED`）
+## Closure card（`SCOPED`）
 
 - component / owner / round / kind：`core` / Core + build-package / `core-v4-build-contract-projection` /
   `REOPEN`；
@@ -26,5 +26,16 @@
 - stop：上述门全部通过则建立不可变 candidate 并关闭；任一受支持平台不能保持 Core 最小合同或
   Container 等价交付则写出单一 blocker，不扩大为全库构建重写。
 
-当前为 `REOPENED`：尚未冻结 FIX ledger，也未修改产品或 build 实现。
+## SCOPED decisions
 
+1. Core 的公开 usage requirement 只允许语言级别、头解析/编码和 Core 当前 TU 语义所必需的选项；
+   不允许因另一个产品的 inline fast path 传播 ISA flag，也不替父工程选择 exception mode。
+2. Container 公开 `probe.h` 的同一 SSSE3 route 保持不变，但编译许可必须由
+   `hyle_container` 直接 `PUBLIC` 传播；这是所有权搬迁，不授权改 probe 算法或最低 ISA。
+3. exception-disabled 只签 Core-only TU：`HYLE_HAS_EXCEPTIONS == 0`、正常 Core API 可编译运行。
+   本轮不宣称其他 HYLE 产品或第三方闭包支持 `-fno-exceptions`。
+4. Core 仍是无 binary、无 Native FFI、无第三方依赖的 `INTERFACE` 产品；static/shared 只是统一 SDK
+   选择，不能制造 Core artifact。
+
+冻结预算：实现 60 分钟、验证 60 分钟；最多一次实现修正。性能仅作 P0 structural/code-option
+裁决，不运行纳秒 benchmark。当前为 `SCOPED`，产品/build 实现尚未修改。

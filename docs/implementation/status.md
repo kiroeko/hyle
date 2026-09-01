@@ -10,7 +10,7 @@
 <!-- BEGIN GENERATED MODULE STATUS -->
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
-| core | REOPENED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/core/core-v4-build-contract-projection.md) | core-v4 已由 CORE-BUILD-CONTRACT-01 定向重开：产品实现保持冻结，只处理 Core-only target 泄漏 Container SSSE3 与强制 MSVC exception mode 的 delivery 合同。 |
+| core | SCOPED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/core/core-v4-build-contract-projection.md) | core-v4 范围已冻结：Core 产品实现保持不变，只隔离 Core-only compile usage requirements、维持 Container SSSE3 等价输入，并重签三种 C++ delivery。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；后续 util runtime owning-demangle 重开不影响本组件，Formal 仍独立待办。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |

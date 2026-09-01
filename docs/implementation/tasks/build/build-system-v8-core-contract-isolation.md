@@ -33,7 +33,13 @@
 SIMD fixed/fat ISA helper；重新选择项目最低 CPU；重审 Container 性能；修改 Native FFI、依赖锁或
 物理 archive/DSO 粒度。
 
-## 当前状态
+## SCOPED contract
 
-`REOPENED`。产品代码尚未修改；下一步先冻结所有权、等价性与验证矩阵，再进入实现。
+冻结的投影是：`hyle_build_contract` 移除 SSSE3 与 `/EHsc`；Container factor 直接 `PUBLIC` 取得与原来
+同一 compiler-conditioned SSSE3 option；Core package sample 增加 exception-disabled journey；中央
+合同同时断言 Core 的负空间与 Container 的正向 owner。普通 MSVC 仍使用父工程/CMake 默认异常模式，
+显式关闭异常的 Core target 不再被 HYLE usage requirement 覆盖。
 
+验证固定为三平台 Core tests、Core selected source/static/shared、Container selected
+source/static/shared、中央 component contract、安装 target/header/artifact inventory、文档与 closure
+checker。Container 只证明有效 flag/route 等价，不续签其算法或性能。当前为 `SCOPED`，尚未改实现。
