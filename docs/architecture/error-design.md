@@ -7,7 +7,8 @@
 
 > `error-p1-v1` 是 immutable historical/raw-diagnostic contract，只可重放既有 raw bundle 或运行明确不具
 > 资格的 mechanism diagnostic；其 derived comparison/product verdict 已拒绝，禁止用它产生新的 current
-> qualification。current P1 engineering qualification 使用 `error-source-consumer-v1`。分账、结果与边界见
+> qualification。v4 历史资格使用 `error-source-consumer-v1`；v5 current contract 是
+> `error-source-consumer-v2`。分账、结果与边界见
 > [performance evidence](../implementation/evidence/performance/benchmarks-error.md)。
 
 ## 0. 职责与依赖位置
@@ -163,19 +164,25 @@ Error 提供独立 O(1) taxonomy/factory；IO 在自己的轮次决定 raw compl
 
 ### 2.5 `Result<T>` 与传播
 
-非引用 `Result<T>` 使用标准 `std::expected` 的 value/monadic surface，但错误槽是与 `Status` 同尺寸的
-受检 `detail::ResultError`：
+非引用 `Result<T>` 使用标准 `std::expected` 的 representation 与 value/monadic surface，但错误槽是
+与 `Status` 同尺寸的受检 `detail::ResultError`。公开层是统一 class-template family，而不是 selector
+alias：
 
 ```cpp
 template<class T>
-using Result = std::expected<T, detail::ResultError>;
+class Result;      // owning/void: zero-extra-state std::expected route
+
+template<class T>
+class Result<T&>;  // non-null caller-owned borrow route
 ```
 
 它组合一个 `Status`，能隐式接收/按值交付 Status，却不暴露可变 `Status&`；因此任何 error-arm
 construction/assignment 都会 fail-fast 拒绝 `Status::Ok()`，调用方也不能经基类 upcast 绕过检查。
-常用的 `message/native_error/IsXxx/WithContext` 仍直接可用。这样保持标准 expected API/codegen，
-同时把“错误槽不得为 OK”从传播宏的迟到检查提升为不可绕过的类型不变量。HYLE 未发布，不为此前
-“直接以 `Status` 作为 error type”的 type identity 保留兼容层。
+常用的 `message/native_error/IsXxx/WithContext` 仍直接可用。统一 class template 让
+`template<class T> f(const Result<T>&)` 对 owning 与 borrow 都能正常推导；owning specialization 与底层
+`std::expected` 保持相同 size/alignment、allocation 和 hot-path code shape，但不承诺 exact C++ type
+identity。这样同时保留标准 expected 操作，并把“错误槽不得为 OK”从传播宏的迟到检查提升为不可绕过
+的类型不变量。HYLE 未发布，不为此前任何 type identity 保留兼容层。
 
 它也保留标准 `expected` 的默认构造语义：当 `T` 可默认构造时，`Result<T>{}` 是**成功**并包含
 value-initialized `T`，不是 empty、unknown 或未设置的错误；当 `T` 不可默认构造时该写法不可用。
@@ -191,7 +198,7 @@ code-only `Unknown`，因为 reference 没有 value-initialized success。
 nullable 对象仍用有明确 NULL 合同的 `Result<T*>`，连续范围/文本用 `Result<std::span<T>>` /
 `Result<std::string_view>`。浅 const 或必须显式表现 rebinding 的高级场景仍可把
 `std::reference_wrapper<T>` 作为普通 value；不能用 pointer 偷偷表达“成功必非空”。非引用
-`Result<T>` 的 alias/type/layout/codegen 完全不因 borrow specialization 改变。
+`Result<T>` 不因 borrow specialization 增加状态、allocation 或 runtime route。
 
 普通失败返回使用 `make_unexpected(Status)`；也允许直接 `std::unexpected(Status)`。两个宏只
 补 C++ 缺少的 `?` 语法：

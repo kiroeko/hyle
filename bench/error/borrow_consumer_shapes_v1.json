@@ -1,0 +1,43 @@
+{
+  "schema": "hyle.error-consumer-shapes/v1",
+  "id": "error-borrow-registry-v1",
+  "classification": "NORTH_STAR_JOURNEY",
+  "admission": {
+    "capability": "fallible non-null registry/backend borrow",
+    "peer_consensus": [
+      "absl::StatusOr<T&>",
+      "folly::result<T&>"
+    ],
+    "public_journey": "samples/package/error/cpp/main.cc",
+    "architecture": "docs/architecture/error-design.md",
+    "consumer_note": "Representative foundation-library registry request; not claimed as a captured production frequency"
+  },
+  "registry": {
+    "backing": "caller-owned fixed array",
+    "entries": 256,
+    "key": "uint32_t",
+    "value": "uint64_t payload",
+    "lookup_algorithm": "bounds check followed by direct indexed key check",
+    "success": "non-null mutable borrow into the caller-owned table",
+    "failure": "fresh code-only NotFound status",
+    "allocation": "none"
+  },
+  "request": {
+    "lookups": 64,
+    "hits": 60,
+    "misses": 4,
+    "ordering": "one miss after each group of fifteen hits",
+    "observable": "hit payload/key checksum plus hit/miss counts"
+  },
+  "equivalence": {
+    "candidate": "hyle::Result<T&>",
+    "peer": "absl::StatusOr<T&>",
+    "shared": [
+      "registry backing and lifetime",
+      "lookup algorithm",
+      "key order and branch sequence",
+      "success and failure semantics",
+      "charged construction, observation and destruction"
+    ]
+  }
+}

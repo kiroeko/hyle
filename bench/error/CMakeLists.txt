@@ -25,6 +25,14 @@ target_link_libraries(hyle_error_source_consumer_bench PRIVATE
   nanobench)
 hyle_apply_warnings(hyle_error_source_consumer_bench)
 
+# A normal fixed-table registry request exercises the new Result<T&> public
+# shape with the same lookup algorithm and lifetime under HYLE and Abseil.
+add_executable(hyle_error_borrow_consumer_bench borrow_consumer_bench.cc)
+target_link_libraries(hyle_error_borrow_consumer_bench PRIVATE
+  hyle_error
+  nanobench)
+hyle_apply_warnings(hyle_error_borrow_consumer_bench)
+
 if(HYLE_BENCH_ABSL)
   # Abseil is the mature-library rival for both equivalent contracts.
   target_compile_definitions(hyle_error_bench PRIVATE HYLE_BENCH_ABSL)
@@ -48,13 +56,20 @@ if(HYLE_BENCH_ABSL)
     absl::status
     absl::statusor)
   hyle_mark_absl_benchmark_consumer(hyle_error_source_consumer_bench)
+  target_compile_definitions(hyle_error_borrow_consumer_bench PRIVATE
+    HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_error_borrow_consumer_bench PRIVATE
+    absl::status
+    absl::statusor)
+  hyle_mark_absl_benchmark_consumer(hyle_error_borrow_consumer_bench)
 endif()
 
 set(HYLE_ERROR_BENCH_TARGETS
   hyle_error_bench
   hyle_error_normal_bench
   hyle_error_p1_bench
-  hyle_error_source_consumer_bench)
+  hyle_error_source_consumer_bench
+  hyle_error_borrow_consumer_bench)
 
 # These short aggregates opt into one contract-equivalent code-placement
 # perturbation. Both sides remain in the same translation unit and receive the
@@ -85,6 +100,13 @@ if(HYLE_STATIC)
     nanobench)
   hyle_apply_warnings(hyle_error_source_consumer_bench_placement)
 
+  add_executable(hyle_error_borrow_consumer_bench_placement
+    borrow_consumer_bench.cc)
+  target_link_libraries(hyle_error_borrow_consumer_bench_placement PRIVATE
+    hyle_error
+    nanobench)
+  hyle_apply_warnings(hyle_error_borrow_consumer_bench_placement)
+
   if(MSVC)
     target_link_options(hyle_error_bench_placement PRIVATE /FUNCTIONPADMIN:64)
     target_link_options(hyle_error_normal_bench_placement PRIVATE
@@ -92,6 +114,8 @@ if(HYLE_STATIC)
     target_link_options(hyle_error_p1_bench_placement PRIVATE
       /FUNCTIONPADMIN:64)
     target_link_options(hyle_error_source_consumer_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+    target_link_options(hyle_error_borrow_consumer_bench_placement PRIVATE
       /FUNCTIONPADMIN:64)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(hyle_error_bench_placement PRIVATE
@@ -101,6 +125,8 @@ if(HYLE_STATIC)
     target_compile_options(hyle_error_p1_bench_placement PRIVATE
       -falign-functions=64)
     target_compile_options(hyle_error_source_consumer_bench_placement PRIVATE
+      -falign-functions=64)
+    target_compile_options(hyle_error_borrow_consumer_bench_placement PRIVATE
       -falign-functions=64)
   else()
     message(FATAL_ERROR
@@ -138,13 +164,22 @@ if(HYLE_STATIC)
       absl::statusor)
     hyle_mark_absl_benchmark_consumer(
       hyle_error_source_consumer_bench_placement)
+
+    target_compile_definitions(
+      hyle_error_borrow_consumer_bench_placement PRIVATE HYLE_BENCH_ABSL)
+    target_link_libraries(hyle_error_borrow_consumer_bench_placement PRIVATE
+      absl::status
+      absl::statusor)
+    hyle_mark_absl_benchmark_consumer(
+      hyle_error_borrow_consumer_bench_placement)
   endif()
 
   list(APPEND HYLE_ERROR_BENCH_TARGETS
     hyle_error_bench_placement
     hyle_error_normal_bench_placement
     hyle_error_p1_bench_placement
-    hyle_error_source_consumer_bench_placement)
+    hyle_error_source_consumer_bench_placement
+    hyle_error_borrow_consumer_bench_placement)
 endif()
 
 hyle_register_benches(error

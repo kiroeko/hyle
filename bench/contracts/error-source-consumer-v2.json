@@ -1,0 +1,703 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "error-source-consumer-v2",
+  "module": "error",
+  "claim": "Engineering non-inferiority of HYLE Status/owning Result and fallible Result<T&> registry borrowing against current Abseil under shared consumer algorithms, ownership, charged lifetimes, execution-order strata, and code-placement perturbation",
+  "candidate": {
+    "target": "hyle_error",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "error",
+    "entrypoint": "hyle/error/status.h and hyle/error/result.h"
+  },
+  "peers": [
+    {
+      "id": "abseil",
+      "revision": "5e12b490a2009cb223dd75a70fd0213847b82f9c",
+      "configuration": {
+        "status_source_location": "disabled with an empty absl::SourceLocation",
+        "delivery_shape": "source",
+        "source": "clean external checkout"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    },
+    {
+      "id": "error-source-codegen",
+      "kind": "codegen",
+      "parameters": {
+        "validator_id": "error-source-consumer-contract"
+      }
+    },
+    {
+      "id": "error-borrow-codegen",
+      "kind": "codegen",
+      "parameters": {
+        "validator_id": "error-borrow-consumer-contract"
+      }
+    }
+  ],
+  "workloads": [
+    {
+      "id": "taskgraph-source-success-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "graph/taskgraph/evaluate-success",
+      "provenance": {
+        "path": "src/graph/taskgraph.cc",
+        "sha256": "9adb3f42e9cf9fd11c4edf961f2d121fe06341f6b6417b79ee4c8ecb9a2078f5"
+      },
+      "ownership_topology": {
+        "candidate": "Each indirect node returns a fresh local HYLE Status; the evaluator observes it by reference and the success local dies before the next node",
+        "peer": "Each identical indirect node returns a fresh local absl::Status; the evaluator observes it by reference and the success local dies before the next node",
+        "equivalence": "One shared template owns node storage access, 64 indirect calls, local lifetime, status check, trace writes, and final return; only the carrier trait differs"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 1,
+        "unit": "status-check",
+        "budget": 5,
+        "denominator": "one 64-node TaskGraph evaluate request",
+        "derivation": "Literal TaskGraph::evaluate loop topology at the frozen provenance hash; no future inference frequency is claimed"
+      },
+      "semantic_contract": "Replay one TaskGraph::evaluate source request with 64 active indirect nodes, fresh local success carriers, and observable call/checksum effects",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "64 active nodes, all successful",
+        "scale": {
+          "requests_per_callback": 1,
+          "nodes_per_request": 64
+        }
+      },
+      "setup": "Candidate and peer arrays use the same GraphNode/GraphNodeContext templates and are initialized outside the callback",
+      "charged_phases": [
+        "64 indirect calls",
+        "64 fresh success carriers",
+        "64 status checks",
+        "observable trace updates",
+        "final success return and destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE Status source TaskGraph success",
+        "peer": "absl::Status source TaskGraph success"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement",
+        "error-source-codegen"
+      ]
+    },
+    {
+      "id": "taskgraph-source-owning-last-failure-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "graph/taskgraph/evaluate-owning-failure",
+      "provenance": {
+        "path": "src/graph/taskgraph.cc",
+        "sha256": "9adb3f42e9cf9fd11c4edf961f2d121fe06341f6b6417b79ee4c8ecb9a2078f5"
+      },
+      "ownership_topology": {
+        "candidate": "The last indirect node constructs one owning HYLE error inside the charged phase; TaskGraph's dead local is returned by move and destroyed by the caller",
+        "peer": "The last identical indirect node constructs one owning Abseil error with source location disabled; the dead local is returned by move and destroyed by the caller",
+        "equivalence": "One shared template fixes all 64 calls, message bytes, allocation phase, local value category, early return, trace effects, and destruction"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "owning-error-propagation",
+        "budget": 5,
+        "denominator": "one failed 64-node TaskGraph evaluate request",
+        "derivation": "Literal failed-local move topology from TaskGraph::evaluate; the failure is placed last to retain the source loop cost, not to predict production failure rate"
+      },
+      "semantic_contract": "Replay a TaskGraph::evaluate source request whose final active node constructs and propagates one owning 29-byte NotFound error",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "63 fresh successes followed by one fresh owning failure",
+        "scale": {
+          "requests_per_callback": 1,
+          "nodes_per_request": 64,
+          "failure_index": 63,
+          "message_bytes": 29
+        }
+      },
+      "setup": "Only node/context arrays exist outside the callback; the owning error and its backing are created and destroyed inside the charged phase",
+      "charged_phases": [
+        "64 indirect calls",
+        "63 success checks",
+        "owning error allocation and construction",
+        "failure check and move propagation",
+        "all carrier destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE Status source TaskGraph owning failure",
+        "peer": "absl::Status source TaskGraph owning failure"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement",
+        "error-source-codegen"
+      ]
+    },
+    {
+      "id": "parallel-source-first-error-handoff",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "graph/parallel-eval/first-error-handoff",
+      "provenance": {
+        "path": "src/graph/parallel_eval.cc",
+        "sha256": "5a4888eab4a46f670f81f8a112587cc5c2f5b0872592b5b132f1a2e8ee0f7fb4"
+      },
+      "ownership_topology": {
+        "candidate": "A worker creates an owning HYLE error, copy-assigns the outcome slot, copies through record(Status), moves to first_error, and the waiter copy-assigns the result before shared storage dies",
+        "peer": "The identical shared algorithm performs the same assignments and value categories with an owning Abseil error and source location disabled",
+        "equivalence": "Factory input, message, copy/move topology, noinline record boundary, observable outcome, return, and every destructor are shared"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "failed-node-handoff",
+        "budget": 5,
+        "denominator": "one parallel node failure recorded and lifted to its waiter",
+        "derivation": "Literal outcome/record/first_err/result ownership sequence at the frozen parallel_eval.cc hash"
+      },
+      "semantic_contract": "Replay one current parallel evaluator owning-error handoff from fresh worker error through outcome, first-error storage, and waiter result",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "one fresh owning NotFound error",
+        "scale": {
+          "handoffs_per_callback": 1,
+          "message_bytes": 29
+        }
+      },
+      "setup": "No prebuilt carrier or backing exists outside the callback",
+      "charged_phases": [
+        "owning error allocation and construction",
+        "outcome copy assignment",
+        "record parameter copy",
+        "first-error move assignment",
+        "waiter result copy assignment",
+        "all destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE Status source parallel owning handoff",
+        "peer": "absl::Status source parallel owning handoff"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement",
+        "error-source-codegen"
+      ]
+    },
+    {
+      "id": "join-source-failed-owning-handoff",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "sched/join/failed-owning-handoff",
+      "provenance": {
+        "path": "include/hyle/sched/join.h",
+        "sha256": "be10fceda9516727094ef030454d95d3934eb13ebdf07aa6db2af6b60862e8b9"
+      },
+      "ownership_topology": {
+        "candidate": "A noinline producer creates an owning HYLE error and moves it into a locked JoinState-shaped slot; a noinline consumer copies it under the lock and moves it into HYLE Result<int>",
+        "peer": "The same producer, slot, lock, consumer, and value categories carry an owning Abseil error into absl::StatusOr<int>",
+        "equivalence": "Only Status/Result traits differ; task-boundary noinline calls, uncontended locks, done branch, construction, copy/move sequence, query, and destruction are identical"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "failed-join-handoff",
+        "budget": 5,
+        "denominator": "one completed failed JoinState producer/consumer handoff",
+        "derivation": "The current JoinState failure route still copies the protected Status and moves it into Result<T>; the replay freezes that exact carrier topology at the retained join.h hash without charging unrelated scheduler storage"
+      },
+      "semantic_contract": "Replay one completed failed JoinState handoff including fresh owning error, producer slot, uncontended synchronization, consumer copy, and result carrier",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "one completed failed join with a fresh owning NotFound error",
+        "scale": {
+          "handoffs_per_callback": 1,
+          "message_bytes": 29
+        }
+      },
+      "setup": "The empty JoinState-shaped slot is callback-local; no error carrier or backing is prebuilt",
+      "charged_phases": [
+        "slot construction",
+        "owning error allocation",
+        "producer moves and lock",
+        "consumer lock and status copy",
+        "move into Result or StatusOr",
+        "result query and all destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE Result source JoinState owning failure",
+        "peer": "absl::StatusOr source JoinState owning failure"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement",
+        "error-source-codegen"
+      ]
+    },
+    {
+      "id": "registry-fixed-table-borrow-64",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "northstar/error/fallible-registry-borrow",
+      "provenance": {
+        "path": "bench/error/borrow_consumer_shapes_v1.json",
+        "sha256": "a92b4a63b9ef30ba487592ebe1ba0c0d1422c83aa8b1a0d757a3b8dd3f6e26b0"
+      },
+      "ownership_topology": {
+        "candidate": "Each lookup returns hyle::Result<RegistryEntry&>, borrowing one caller-owned fixed-table entry on a hit or carrying a fresh code-only NotFound Status on a miss",
+        "peer": "The identical lookup returns absl::StatusOr<RegistryEntry&>, borrowing the same caller-owned entry on a hit or carrying an equivalent fresh code-only NotFound Status on a miss",
+        "equivalence": "One shared template fixes table backing, direct-index lookup, key order, 60/4 branch sequence, referent lifetime, carrier observation, checksum and destruction; only the result-carrier trait differs"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 1,
+        "unit": "fallible-registry-lookup",
+        "budget": 5,
+        "denominator": "one frozen 64-lookup foundation registry request",
+        "derivation": "The retained shape records a representative north-star registry aggregate admitted by the Error v5 capability card and explicitly does not claim captured production frequency"
+      },
+      "semantic_contract": "Perform one allocation-free fixed-table registry request with 60 successful non-null borrows and four code-only NotFound results over caller-owned backing",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "64 deterministic direct-index lookups with one miss after each fifteen hits",
+        "scale": {
+          "lookups_per_callback": 64,
+          "table_entries": 256,
+          "hits": 60,
+          "misses": 4
+        }
+      },
+      "setup": "The identical registry backing and key sequence are initialized outside measurement and remain caller-owned across both carrier runs",
+      "charged_phases": [
+        "64 bounds and indexed-key checks",
+        "60 non-null borrow carrier constructions and observations",
+        "four code-only NotFound carrier constructions and observations",
+        "checksum, hit/miss accounting and all carrier destruction"
+      ],
+      "pair": {
+        "candidate": "HYLE Result<T&> registry borrow",
+        "peer": "absl::StatusOr<T&> registry borrow"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement",
+        "error-borrow-codegen"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "error-source-consumer-contract",
+      "error-borrow-consumer-contract"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows",
+      "wsl2",
+      "macos"
+    ],
+    "certification_platforms": [
+      "windows",
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_ABSL": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "error",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "abseil": "HYLE_ABSL_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        },
+        "W1-WSL": {
+          "generator": "Ninja",
+          "compiler_id": "GNU",
+          "compiler_version_prefix": "14",
+          "cache": {
+            "CMAKE_C_COMPILER": "gcc-14",
+            "CMAKE_CXX_COMPILER": "g++-14"
+          }
+        },
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "error-source-consumer-primary",
+          "target": "hyle_error_source_consumer_bench",
+          "stem": "hyle_error_source_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_ERROR_SOURCE_CONSUMER_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "taskgraph-source-success-64",
+              "title": "Source TaskGraph 64-node success propagation"
+            },
+            {
+              "id": "taskgraph-source-owning-last-failure-64",
+              "title": "Source TaskGraph 64-node owning last failure"
+            },
+            {
+              "id": "parallel-source-first-error-handoff",
+              "title": "Source parallel first-error owning handoff"
+            },
+            {
+              "id": "join-source-failed-owning-handoff",
+              "title": "Source JoinState failed owning handoff"
+            }
+          ]
+        },
+        {
+          "id": "error-source-consumer-placement",
+          "target": "hyle_error_source_consumer_bench_placement",
+          "stem": "hyle_error_source_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_ERROR_SOURCE_CONSUMER_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "taskgraph-source-success-64",
+              "title": "Source TaskGraph 64-node success propagation"
+            },
+            {
+              "id": "taskgraph-source-owning-last-failure-64",
+              "title": "Source TaskGraph 64-node owning last failure"
+            },
+            {
+              "id": "parallel-source-first-error-handoff",
+              "title": "Source parallel first-error owning handoff"
+            },
+            {
+              "id": "join-source-failed-owning-handoff",
+              "title": "Source JoinState failed owning handoff"
+            }
+          ]
+        },
+        {
+          "id": "error-borrow-consumer-primary",
+          "target": "hyle_error_borrow_consumer_bench",
+          "stem": "hyle_error_borrow_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 64,
+          "telemetry_prefixes": [
+            "# HYLE_ERROR_BORROW_CONSUMER_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "registry-fixed-table-borrow-64",
+              "title": "Registry fixed-table borrow lookup 60 hit 4 miss"
+            }
+          ]
+        },
+        {
+          "id": "error-borrow-consumer-placement",
+          "target": "hyle_error_borrow_consumer_bench_placement",
+          "stem": "hyle_error_borrow_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 64,
+          "telemetry_prefixes": [
+            "# HYLE_ERROR_BORROW_CONSUMER_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "registry-fixed-table-borrow-64",
+              "title": "Registry fixed-table borrow lookup 60 hit 4 miss"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "error-source-consumer-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-error-source-consumer-bench.py",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--expected-benchmark-sha256",
+            "ebb8c919a1d5236138cbd865d442e87d8f7f9167b02946b795df463259c96466"
+          ]
+        },
+        {
+          "id": "error-borrow-consumer-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-error-borrow-consumer-bench.py",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--expected-benchmark-sha256",
+            "d4b1a35ed83df1d6fd29155e11a64b89e9716621ea197696a09f2dcce40802d3"
+          ]
+        }
+      ]
+    }
+  }
+}

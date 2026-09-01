@@ -64,6 +64,18 @@ HYLE_RETURN_IF_ERROR(std::move(status));
 hyle::Status error = std::move(result).error();
 ```
 
+`Result` 是统一的 class template，因此 generic helper 可以自然推导 owning 或 borrowed value：
+
+```cpp
+template<class T>
+bool succeeded(const hyle::Result<T>& result) {
+  return result.has_value();
+}
+```
+
+owning route 与底层 `std::expected` 具有相同 size/alignment 和运行成本，但 HYLE 不把 exact C++ type
+identity 当作交付合同；需要标准 carrier 的外部 API 应在自己的边界显式选择 `std::expected`。
+
 一个容易漏掉的标准语义是：只要 `T` 可默认构造，`Result<T>{}` 就是**成功**，其 value 是
 value-initialized `T`；它不表示 empty、unknown 或“尚未设置”。需要正常缺失状态时把
 `optional<T>` 放在成功侧，需要失败时显式返回 `make_unexpected(Status)`。若 `T` 不可默认构造，

@@ -142,8 +142,9 @@ roles are registered in `scripts/perf-machines.json` and explained in
 
 `hyle-perf.py` is now the single v1 orchestrator. The registered mappings are
 the historical `bench/contracts/container-intrusive-p1-v1.json` and
-`bench/contracts/error-p1-v1.json`, plus the current
-`bench/contracts/error-source-consumer-v1.json`; their implementation history is tracked in
+`bench/contracts/error-p1-v1.json`, plus retained v4
+`bench/contracts/error-source-consumer-v1.json` and current v5
+`bench/contracts/error-source-consumer-v2.json`; their implementation history is tracked in
 [`closure-system-v1`](../docs/implementation/tasks/build/closure-system-v1.md).
 The contracts and runner existing does not by itself close either module.
 `container_intrusive` now has a candidate-bound engineering `QUALIFIED`
@@ -162,7 +163,7 @@ contract ID with explicit gate roles and consumer evidence keys.
 > samples/statistics are retained, but its derived
 > comparison/product verdict is rejected. It must not produce a new current error
 > qualification. Current error work uses the separate
-> `error-source-consumer-v1` contract; the old ID and raw bundle stay unchanged.
+> `error-source-consumer-v2` contract; the old IDs and raw bundles stay unchanged.
 
 The historical error contract runs only the dedicated `hyle_error_p1_bench` primary and
 placement targets. Its command validator, `validate-error-p1-bench.py`, executes
@@ -172,7 +173,7 @@ placement-layout drift. That validation proves execution integrity, not current
 consumer qualification. The older error executables and module-specific runner
 remain boundary diagnostics; they cannot contribute current product verdicts.
 
-The current `error-source-consumer-v1` contract replays ownership traces frozen
+The retained v4 `error-source-consumer-v1` contract replays ownership traces frozen
 from `TaskGraph::evaluate`, the parallel evaluator's first-error handoff, and
 `JoinState`'s failed producer/consumer handoff. Candidate and peer instantiate
 one shared algorithm with identical value categories and charged lifetimes; the
@@ -181,6 +182,14 @@ semantic/call oracle, binds the benchmark source hash, and proves that the
 declared placement target actually changes relative function layout. The
 contract declares literal per-component contribution only; it does not invent a
 future inference-engine workload mix or failure rate.
+
+The current v5 `error-source-consumer-v2` contract updates the peer identity,
+replays those four owning traces, and adds one separately retained north-star
+fixed-table registry request. Its 60 successful non-null borrows and four
+code-only misses instantiate one shared lookup algorithm with
+`hyle::Result<T&>` and `absl::StatusOr<T&>`; the retained shape explicitly does
+not claim a captured production frequency. A dedicated command validator binds
+the source, semantic oracle, referent identity and authentic placement target.
 
 Validate the immutable contract only for historical bundle/raw-diagnostic work:
 
@@ -249,7 +258,7 @@ candidate and Abseil checkouts and fresh paths:
 
 ```bash
 python scripts/hyle-perf.py qualify-platform \
-  --contract bench/contracts/error-source-consumer-v1.json \
+  --contract bench/contracts/error-source-consumer-v2.json \
   --machine W1-WIN --peer abseil=../abseil-cpp \
   --build .scratch/perf-error-source-build \
   --output .scratch/perf-error-source-evidence

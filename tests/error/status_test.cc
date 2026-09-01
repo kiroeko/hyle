@@ -749,6 +749,21 @@ TEST(Result, MonadicTransformOnValue) {
   EXPECT_EQ(*doubled, 42);
 }
 
+TEST(Result, UnifiedClassKeepsOwningMonadicAndGenericSurface) {
+  Result<int> result = 21;
+  Result<long> chained = result.and_then([](int value) -> Result<long> {
+    return static_cast<long>(value * 2);
+  });
+  static_assert(std::is_same_v<decltype(chained), Result<long>>);
+  ASSERT_TRUE(chained.has_value());
+  EXPECT_TRUE(chained == 42L);
+
+  Result<void> ready;
+  Result<int> from_void = ready.and_then([]() -> Result<int> { return 7; });
+  ASSERT_TRUE(from_void.has_value());
+  EXPECT_EQ(*from_void, 7);
+}
+
 TEST(Result, MonadicAndComparisonSurfaceAcceptsStatus) {
   Result<int> result =
       hyle::make_unexpected(Status::Unavailable("backend offline"));
@@ -848,12 +863,23 @@ Result<int&> propagate_borrow(int& value, bool fail) {
   return borrowed;
 }
 
+template <class T>
+std::type_identity<T> deduce_result_value(const Result<T>&);
+
 }  // namespace
 
 TEST(ResultBorrow, IsDirectNonNullBorrowWithoutChangingOwningResult) {
+  using ExpectedInt = std::expected<int, hyle::detail::ResultError>;
+  static_assert(sizeof(Result<int>) == sizeof(ExpectedInt));
+  static_assert(alignof(Result<int>) == alignof(ExpectedInt));
   static_assert(std::is_same_v<
-                Result<int>,
-                std::expected<int, hyle::detail::ResultError>>);
+                typename decltype(deduce_result_value(
+                    std::declval<const Result<int>&>()))::type,
+                int>);
+  static_assert(std::is_same_v<
+                typename decltype(deduce_result_value(
+                    std::declval<const Result<int&>&>()))::type,
+                int&>);
   static_assert(std::is_same_v<decltype(*std::declval<Result<int&>&>()), int&>);
   static_assert(
       std::is_same_v<decltype(*std::declval<const Result<int&>&>()),

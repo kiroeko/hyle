@@ -1,7 +1,8 @@
 # error 性能证据
 
 > **error-v5 current engineering evidence：`PLANNED`。** v5 新增 WinSock、`Result<T&>`、bounded
-> dynamic diagnostic 与 `std::error_code` cold adapter，尚未冻结 candidate 或运行新资格轮。error-v4
+> dynamic diagnostic 与 `std::error_code` cold adapter；`error-source-consumer-v2` contract/validator 已
+> 通过 Windows diagnostic probe，但尚未冻结 candidate 或运行 n=15 资格轮。error-v4
 > 的 `9595724a` / `a828fb4c` 与四个 source-primary consumer workload `QUALIFIED / PASS` 只作为前一
 > product identity 的历史基线，不能签署 v5。error-v3 的错误合同和历史点值同样只保留作追溯。
 > 产品状态只看
@@ -13,15 +14,22 @@
 benchmark 本身不定义 API；v4 合同通过受检 source provenance、ownership topology 和 material
 contribution 取得产品门资格，旧 v3 合同没有。
 
-## error-v5 预冻结资格范围
+## error-v5 冻结资格范围
 
-v5 不建立 microbenchmark 大全。候选冻结后只运行两部分：
+v5 不建立 microbenchmark 大全。合同 `error-source-consumer-v2` 只运行两部分：
 
 1. 在新 product/Abseil identity 上重放 v4 的四个 source-primary owning Status/Result workload，确认
    新增 public surface 没有改变既有正常路径；
 2. 增加一个 fixed-table registry lookup consumer：命中返回 guaranteed non-null borrow，缺失返回
    code-only error；HYLE `Result<T&>` 与 Abseil `StatusOr<T&>` 共享 lookup、命中分布、referent lifetime、
    charged phases 和 observable，按 `SAME_CONTRACT` / 5% non-inferiority 裁决。
+
+fixed-table 分布由 `borrow_consumer_shapes_v1.json` 明确标为 admitted north-star journey，而不是捕获的
+生产频率；benchmark 不能反向定义 API。v2 peer 固定为 Abseil
+`5e12b490a2009cb223dd75a70fd0213847b82f9c`，contract SHA-256 当前为
+`61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0`。首次 n=1 probe 只证明 semantic、
+call topology、source hash 与 placement validators 工作，按协议保持 `DIAGNOSTIC / INCONCLUSIVE`；其
+点值不写入产品 verdict。
 
 WinSock classifier、bounded formatting 与 `std::error_code` adapter 是错误冷边界，使用 O(1)/bounded
 结构、allocation count、异常遏制和 correctness 证明，不为罕见失败率编造 P1 计时。旧 fixed-backing
@@ -246,8 +254,9 @@ error qualification 必须使用新 contract ID，
 并增加受检的 consumer provenance/materiality 与 ownership topology，不能再由 workload 自报
 `tier=replay` 获得产品门。
 
-当前 replacement 是 `bench/contracts/error-source-consumer-v1.json`。它不复用上述历史结论，而是把
+修复 v3 证据问题的 replacement 是 `bench/contracts/error-source-consumer-v1.json`。它不复用上述历史结论，而是把
 `TaskGraph::evaluate`、parallel evaluator first-error 和 `JoinState` failed handoff 的当前源码 hash、
 ownership topology 与逐组件 material contribution 冻结进新契约；HYLE/Abseil 由同一模板算法实例化，
 source location、值类别、生命周期、执行顺序和 placement strata 对称。它已经产生上文 v4 的 current
 qualification；本段保留在 v3 历史区，只用于说明旧 blocker 如何被满足。
+v5 的 current replacement 已另起 `error-source-consumer-v2`，不改写 v1 的历史合同或 bundle。
