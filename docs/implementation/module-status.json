@@ -186,7 +186,7 @@
     },
     {
       "module": "error",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "round_id": "error-v5-capability-completion",
@@ -211,7 +211,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v5 SCOPED：四个消费者驱动能力、Core-only 依赖、自然 C++ 形状、常态成本、八小时总预算、三平台/三交付与 5% P1 正常消费者门已经冻结，尚未授权产品实现。"
+      "summary": "error-v5 AUDITED：ERR5-01..04 有限 FIX、Result<T&>/WinSock/format_status/std::error_code 自然 API、Core-only 依赖、常态成本和 P1 消费者合同已冻结，现在授权实现。"
     },
     {
       "module": "obs",

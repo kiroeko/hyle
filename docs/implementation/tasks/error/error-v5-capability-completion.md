@@ -92,3 +92,98 @@
 
 当前为 `SCOPED`。上述范围、预算、peer、成本与验证合同冻结；产品代码仍须等待 public-surface 反向
 追踪、capability ledger 和 API freeze 进入 `AUDITED`。
+
+## Capability-family coverage map（`AUDITED`）
+
+| Family | admitted journey / evidence | required variants | current route | state | missing edge / decision |
+|---|---|---|---|---|---|
+| canonical Status value | portable recovery、owning diagnostic、跨线程 handoff | full taxonomy、code/message/native、copy/move/OOM | one-word `Status` + immutable backing | `COMPLETE` | `KEEP`，不重做表示 |
+| owning Result | value/move-only/void/error、短路与 monadic composition | default、observer、non-OK error invariant | exact `std::expected<T, ResultError>` | `COMPLETE` | `KEEP`，类型与 codegen 必须不变 |
+| fallible non-null borrow | registry/backend/map lookup | mutable/const、temporary rejection、deep-const、转换、monadic/宏传播 | 只能手写 `reference_wrapper` | `PARTIAL` | `FIX` 为 `Result<T&>`；nullable 仍用 pointer，range/text 仍用 view |
+| semantic context / dynamic diagnostic | 路径、尺寸、设备号进入失败文本 | UTF-8/NUL、truncation、formatter failure、OOM | `WithContext` 完整；动态值无 no-throw route | `PARTIAL` | `FIX` 一个无日志副作用的 bounded `format_status` |
+| native/system translation | errno、Win32、WinSock、HRESULT、backend 与 standard error | zero/unknown、跨 host、category override、立即捕获 | errno/Win32/HRESULT 完整 | `PARTIAL` | `FIX` WinSock 与单向 `std::error_code` adapter；不保留 custom category pointer |
+| propagation / aggregation / human output | 多层 return、首错、discard、最终文本 | lvalue/rvalue、Status/Result、buffer/owning string | 两个宏、`Update`/`IgnoreError`、`ToString`/`to_string` | `COMPLETE` | `KEEP` |
+| async protocol / typed rich error / fatal / FFI | pending/cancel、owner schema、invariant、foreign runtime | lifecycle 与 policy 由 owner 决定 | Sched/IO、owner typed error、Core、future named FFI | `ROUTED` / `OUT_OF_SCOPE` | 不把协议状态、payload map、fatal 或伪 C ABI 塞入 Error |
+
+### Capability / gap ledger
+
+| ID | class | exact demand / source | normal shape | owner / failure / lifetime | complexity / cost | state | action | verification |
+|---|---|---|---|---|---|---|---|---|
+| `ERR5-01` | `MUST` | IOCP `WSAGetLastError`；`ERROR-A-07` | typed classifier + factory | Error；立即复制 int，Status owning | classifier O(1)；失败冷路一个 Status backing | `MISSING` | `FIX` | table differential、zero/unknown、三平台文本/native |
+| `ERR5-02` | `MUST` | foundation registry/backend lookup；Abseil/Folly；`ERROR-A-04` | `Result<T&>` | caller owns referent；carrier borrow；deep const | O(1)、零 allocation/global state | `PARTIAL` | `FIX` | type traits、lifetime diagnostics、macro/monadic、same-contract P1 |
+| `ERR5-03` | `MUST` | llama/ggml runtime diagnostics；`ERROR-A-06` | `format_status(code, fmt, args...)` | Status owns bounded text；formatter is adapter boundary | 1 KiB stack、至多一个 Status backing、无 log | `PARTIAL` | `FIX` | exact/NUL/truncation/throw/OOM/codegen structure |
+| `ERR5-04` | `MUST` | filesystem/SDK `std::error_code`；`ERROR-A-08` | generic route + explicit canonical override | category borrowed only during call；Status owns result | cold O(message bytes)；custom `message()` may allocate but never escapes exception | `PARTIAL` | `FIX` | generic/system/custom/throwing/override/native retention |
+| `ERR5-05` | `MUST` | existing graph/sched Error consumers | unchanged Status/owning Result | existing ownership contracts | existing complexity/layout | `COMPLETE` | `KEEP` | source replay + static asserts |
+| `ERR5-06` | `GENERAL` | arbitrary dynamic domains/payloads/MultiError | runtime registry or rich schema | would add lifetime/registry policy | normal metadata/indirection not justified | `OUT_OF_SCOPE` | `REJECT` | reopen only with named shared schema/consumer |
+
+- existing public-surface reverse trace：`status.h` owns taxonomy, native pair, one-word Status, errno/Win32/HRESULT
+  translation and context; `result.h` owns checked expected alias, unexpected helper and two propagation macros;
+  `format.h` owns opt-in C++ owning string conversion；`status.cc` is the only compiled representation seam；there
+  are no public C headers, C bridges or unadmitted exports；
+- syntax/semantic duplicate scan：IO currently duplicates WinSock negative integers but remains an IO migration ticket；
+  generic/custom `std::error_code` mapping otherwise exists only as guide prose；Obs formatting has logging-specific
+  truncation/record policy and cannot be called by Error without a cycle，so Error owns only Status construction；
+- public/internal decision：all four entries solve ordinary downstream tasks and are public；storage helpers, UTF-8
+  validation and native description stay source-internal；no new component or dependency edge；
+- frozen `FIX` set：`ERR5-01..04` plus their tests、guide、architecture、delivery and declared performance replay；
+  no other capability may enter this round；
+- adjacent backlog：IO later replaces raw negative WSA outcomes at its public ownership boundary；other modules may
+  adopt `Result<T&>` only in their own rounds，so Error does not generate a repository-wide migration diff。
+
+## API / usability freeze
+
+- status：`FROZEN`；
+- WinSock：append `NativeErrorDomain::WinSock`，add
+  `status_code_from_winsock(int) noexcept` and
+  `status_from_winsock(int, std::string_view context = {}) noexcept`。Zero is OK；unknown stays Unknown；the raw
+  integer is retained under the WinSock domain。Future fixed domains require a named consumer and Error review；no
+  runtime registration or category pointer is admitted；
+- borrowed result：`Result<T&>` selects a header-only borrow carrier while every non-reference `Result<T>` remains
+  exactly `std::expected<T, ResultError>`。A borrow constructs only from a compatible lvalue or unexpected error；an
+  explicit default is code-only Unknown，temporaries/null are rejected。Mutable carriers expose `T&`，const carriers
+  expose deep-const；a mutable borrow cannot be copied back out of a const carrier。Provide expected-style
+  `has_value`/bool、`*`/`->`/`value`/`error`、swap/rebind assignment、compatible const/base conversion、`value_or`
+  and `and_then`/`transform`/`or_else`，plus both propagation macros。`transform_error` is not mirrored：changing the
+  canonical error type exits HYLE Result，and `WithContext` is the supported in-domain operation；
+- dynamic diagnostic：`<hyle/error/format.h>` adds
+  `format_status(StatusCode, std::format_string<Args...>, Args&&...) noexcept`。It formats into a 1 KiB caller stack
+  buffer，marks truncation explicitly，catches custom formatter exceptions when the toolchain supports exceptions，
+  and degrades formatting failure or Status OOM without throwing；it never logs or attaches source location；
+- standard error：new opt-in `<hyle/error/system_error.h>` adds
+  `status_code_from_error_code(const std::error_code&) noexcept`、
+  `status_from_error_code(const std::error_code&, context = {}) noexcept` and
+  `status_from_error_code_as(StatusCode, const std::error_code&, context = {}) noexcept`。Generic category maps as
+  errno；system maps as Win32 on Windows and errno elsewhere；custom category defaults to Unknown，while `_as` lets
+  the owner supply operation-specific canonical semantics。Only generic/system retain stable native numeric detail；
+  custom categories are formatted during the call and never stored by pointer；
+- ownership/default/misuse：Status owns all retained text；borrow lifetime remains entirely caller-owned and is
+  annotated lifetime-bound；pointer Result remains nullable by design and is not silently changed；OK ignores native/
+  diagnostic detail；nonzero error + `_as(StatusCode::Ok, ...)` fails closed to Unknown；guide recipes show when to
+  choose value、borrow、nullable pointer、view、native adapter and formatted diagnostic；
+- delivery/discovery：the new standard-error header is selected and installed as Error-owned public API；new compiled
+  WinSock/error-code symbols carry `HYLE_ERROR_API`；format and borrow stay header-only and use the same source/static/
+  shared C++ spelling；
+- freeze identity / reviewer：本 task 的 `AUDITED` transition / primary owner；
+- allowed implementation freedom：private storage/helpers、switch layout、stack appender and inlining may change，but
+  no public name/semantic、owning Result identity、normal metadata、dependency or frozen workload may change without
+  returning to `AUDITED`。
+
+## Owner 六问（AUDITED 直答）
+
+1. **第三方产品路径：**没有。Error 只依赖 Core；standard library/OS APIs are mechanisms。Abseil/Folly/llama/
+   ggml are clean locked references only and do not enter targets、package or public types beyond standard C++ types。
+2. **推理引擎能力：**对已准入 failure journey，`ERR5-01..04` 完成后不存在未处置 `MUST`；model/token/
+   backend policy、protocol pending、typed backend schema and exception-owning boundaries remain correctly routed。
+3. **拟真性能：**当前 verdict 仍 `PLANNED`。旧 v4 only proves its exact candidate/four workloads；v5 must replay
+   them and qualify the new registry-borrow SAME_CONTRACT row on W1-WIN at 5%。No all-operation/cross-platform SOTA
+   claim is permitted。
+4. **C ABI / Native FFI：**current policy is no admitted slice；no public C headers、bridge source、managed sample、
+   option or undecorated C exports。Private OS C ABI does not create a product surface；expected verdict `CLEAN`。
+5. **Source/static/shared：**the previous shape passed，but new headers and compiled symbols make all three journeys
+   pending on the v5 candidate；Error remains one compiled factor behind the same `hyle::error` façade。
+6. **C++ 易用性与文档：**the frozen API answers value vs borrow vs nullable/view，native vs standard adapter，and
+   literal/context vs dynamic text without exposing benchmark/internal seams。Current guide/architecture are stale on
+   WinSock and reference-wrapper advice，so verdict remains pending until `ERR5-01..04` documentation lands。
+
+当前为 `AUDITED`：四项有限 `FIX`、公开 API、依赖、常态成本、正常 workload 与停止线全部冻结；现在才
+授权实现产品代码。
