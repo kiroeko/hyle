@@ -230,6 +230,55 @@ intrusive strong owner 无效。
 这表示 Util-core 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 组件不重开，任何缺口只有在 13 域
 完成跨查、确定唯一 owner 和有限 FIX 集后才形成 `PRODUCT_TRIGGER`。
 
+#### A5. Time 产品域（第一遍完成，尚未跨域冻结）
+
+本节把 Time 分成“时钟/时间值”“阻塞等待”和“只管理节点、不执行回调的 timer data structure”，不把
+完整 scheduler、calendar 数据库或设备 profiling 强塞进同一 target。直接推理输入包括 llama.cpp 的随机
+seed、下载重试/休眠和时间文本，ggml CPU/Vulkan/WebGPU/设备 backend 的 elapsed/profiling journey，
+以及 HYLE Platform/Sched/IO/Obs 的 deadline、timestamp 与 timer-node 消费。新增 strong peers 锁定为
+Seastar `fd71a5b4c71b91abd4e93c9d20f88e1fd7465976` 的 `timer/manual_clock/lowres_clock`，以及 libevent
+`e1f0335d2f3af1235421c939c62943bb99b3d652` 的 min-heap/common-timeout；可注入时钟形状另用已锁定
+Abseil `Clock/SimulatedClock`，每一能力行仍不超过两个直接 peer。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `TIME-A-01` | 超时、排队与 elapsed 计算取得不回退的 host 时间 | steady identity、ns 精度、跨线程可比、进程生命周期；不能与 realtime 数值混用 | `MonotonicClock/TimePoint/Duration` 与 `monotonic_now/ns()`；typed 路线优先，raw ns 只给紧凑状态机 | `COMPLETE`：标准 steady clock identity 与 typed/raw 两条路线齐全 | ggml timers、llama timeout、Seastar steady timers；基础 `MUST` |
+| `TIME-A-02` | 文件元数据、协议和用户事件取得 Unix wall time | realtime 可校时/回退，1970 前后、负秒、ns normalization、系统时钟跳变；不能用来算 deadline | `RealtimeTimePoint` + `UnixTimestamp{seconds,nanoseconds}`，转换显式 fallible | `COMPLETE`：realtime typed/raw/timestamp 和合法性合同完整 | llama metadata/log timestamps + HYLE Platform/IO；基础 `MUST` |
+| `TIME-A-03` | 大量统计、日志限流或粗粒度 housekeeping 避免每次读取最贵时钟 | realtime/monotonic 两域分离、availability、平台 fallback、精度不承诺 | `coarse_*_now/ns/timestamp()` + capability predicate；语义不适用时显式退化到 precise | `COMPLETE`：Windows/Linux/macOS route 与 availability 均有 | Seastar lowres clock + HYLE Obs rate-limit journey；高频通用 `GENERAL` |
+| `TIME-A-04` | benchmark、tracing 与 kernel instrumentation 读取最低开销 host profiling counter | raw unordered read、ordered start/stop pair、counter stability/frequency/calibration、unsupported fallback | `profiling_clock_ns()` 与成对 measurement API；availability 可查，结果仍是 ns duration domain | `COMPLETE`：x86 invariant TSC、Arm virtual counter 与 monotonic fallback | ggml/Vulkan profiling + Seastar/定义性测量 journey；性能库 `MUST`，但它不替代公平仪器 |
+| `TIME-A-05` | scheduler/diagnostics 区分 wall elapsed 与当前线程或整个进程 CPU 消耗 | current-thread/process、平台失败的确定值、暂停/迁移、累计不回退；arbitrary-thread/children 另行 | chrono-compatible `ThreadCpuClock`/`ProcessCpuClock` 和 raw ns | `COMPLETE`：Windows/POSIX 两类累计 clock 已提供 | HYLE performance/Obs + Seastar thread-cputime clock；基础诊断 `GENERAL` |
+| `TIME-A-06` | backend/device event 需要 CUDA/Vulkan/Metal/accelerator 自己的时间域与相关性 | device tick、queue event、host-device calibration、wrap、异步 completion、跨设备不可比 | owning Compute backend 的 event/timestamp query；需要关联时产出显式 correlation sample | `ROUTED`：Time 只拥有 host clocks，Compute backend 自有 profiling | ggml CUDA/Vulkan/WebGPU journey；推理 `MUST`，但 host Time 不应伪装设备 clock |
+| `TIME-A-07` | 任意 chrono duration 转紧凑 ns deadline，极值输入不能溢出或变成超长等待 | signed/unsigned/floating、负值、NaN/inf、ratio scaling、saturating add/sub、past deadline | `duration_ns_saturated`、typed deadline/remaining 与显式 raw helpers | `COMPLETE`：wide multiply/divide、饱和和 typed conversion 完整 | llama retry/sleep + HYLE Sched/IO；基础 `MUST` |
+| `TIME-A-08` | 同步宿主线程相对睡眠或睡到绝对 monotonic deadline | zero/past/huge duration、interrupt/spurious wake、oversleep、OS timer lifetime；不是 fiber wait | `sleep_for(duration)` / `sleep_until(MonotonicTimePoint)`，`noexcept` 且饱和 | `COMPLETE`：Windows waitable timer、POSIX nanosleep/clock sleep route | llama download delay + 标准线程 journey；通用 `MUST` |
+| `TIME-A-09` | fiber/coroutine 等待 deadline、取消或 timeout，同时不阻塞 worker | ready/cancel/deadline race、timer ownership、wake exactly once、structured task lifetime | Sched 的 `sleep_until/for` 与 deadline/cancellation state；Time 只交付 clock/queue primitive | `ROUTED`：Sched 已消费 `MonotonicTimePoint` 和 `TimerQueue` | llama async/server 与 HYLE Sched；推理 runtime `MUST`，owner 不是 Time facade |
+| `TIME-A-10` | POSIX/Windows/filesystem/protocol 在边界交换 Unix timestamp | `time_t` signedness/range、`timespec` normalization、FILETIME epoch/ticks、system-clock range | `optional` conversions，不用 magic sentinel；canonical value 保留 ns | `COMPLETE`：time point、time_t、timespec、FILETIME 双向覆盖 | HYLE Platform fs + IO protocols；跨平台 `MUST` |
+| `TIME-A-11` | 日历日期、时区/DST、locale 和文本 parse/format | civil arithmetic、tzdb update、ambiguous/skipped time、RFC/ISO format、locale/error | C++23 chrono/tzdb 或协议 owner 的 formatter/parser；运行时 tz database 是独立交付决策 | `ROUTED`：Time 保持 machine-time primitive，当前 llama 文本由标准路线完成 | llama chat/server text + Abseil civil/timezone 用于发现；真实 journey `MUST`，不要求 HYLE 复制 tzdb |
+| `TIME-A-12` | 用户方便地做一次 elapsed/lap 比较且不误用 realtime | snapshot、elapsed/until、回退 clamp、极值、copy/order；统计记录由调用者拥有 | 小值 `Instant`，可取 monotonic time point；不隐式日志或注册 metric | `COMPLETE`：`Instant::now/elapsed/until` 和安全非负差完整 | oneTBB tick-count/标准 stopwatch journey；易用性 `GENERAL` |
+| `TIME-A-13` | 单 event-loop 管理大量任意 deadline，常见路径 arm/cancel，advance 批量交付 | stable caller-owned node、single owner、reschedule、past deadline、cancel-all、queue-first/entry-first teardown、总序不承诺 | intrusive `TimerEntry` + allocation-free `TimerQueue`；回调/command queue 不进入节点 | `COMPLETE`：65-bucket exact radix queue，arm/cancel/next O(1)，advance 与触达/交付成正比 | Seastar timer-set + HYLE Sched production journey；runtime `MUST` |
+| `TIME-A-14` | 数百万连接共享同一 duration，按 arm 顺序形成自然 deadline 序列 | one duration per queue、nondecreasing arms、transactional reject/reschedule、FIFO equal deadline、bulk detach | `CommonTimeoutQueue(duration)`；duration-to-queue router 由 IO owner 按真实档位拥有 | `COMPLETE`：append/pop/unlink/next 均 O(1)，ordering precondition 可恢复检查 | libevent common timeout + server idle-timeout journey；IO 加速 `GENERAL` |
+| `TIME-A-15` | timer 批次必须按 deadline/priority 稳定全序，或需要 indexed update | equal-key stability、erase/update handle、allocation、callback reentrancy、batch size | 默认 queue 交付 batch 后由 caller sort；反复需要 handle heap 时用 Container 的 intrusive/indexed heap factor | `ROUTED`：TimerQueue 明示不保证跨 bucket 总序，现有需求可组合排序 | libevent heap + Seastar timer-set；能力 `GENERAL`，不能为罕见排序给每个 timer 常驻 metadata |
+| `TIME-A-16` | 周期 housekeeping、metrics flush、网络重传按固定延迟或固定速率重复 | fixed-delay/fixed-rate、skip/catch-up/bounded burst、drift、cancel/rearm race、callback duration | Sched/IO 的 repeating task/timer policy，内部复用一次性 timer node；必须让语义在 API 名字可见 | `MISSING`：全库只有一次性 sleep/timer，Obs 的周期日志不是 scheduler | Seastar periodic timer + llama server housekeeping journey；跨域 `GENERAL` 候选，最终 owner 为 Sched/IO 而非低层 Time queue |
+| `TIME-A-17` | scheduler、timeout 算法和重试测试在不睡真实时间的情况下确定性推进 | manual now/set/advance、多个 waiter、回退策略、clock lifetime、真实/虚拟选择在类型或注入点固定 | clock concept/小型 provider 注入 owning runtime；单元测试可用 `ManualClock`，生产默认 system monotonic | `MISSING`：queue 可显式传 now，但 Sched 和 deadline helpers 固定读取全局 clock | Seastar `manual_clock` + Abseil `SimulatedClock`；确定性 runtime 测试 `GENERAL`，带入 Sched 因子化 |
+| `TIME-A-18` | 一个 executor 跨线程 arm/cancel timer，并在到期执行 callback | command serialization、callback ownership/exception、cancel race、shutdown、periodic、worker affinity | Sched/IO timer service 或 executor handle；Time data structure 只返回 due nodes | `ROUTED`：TimerQueue 明确不执行回调，Sched 已拥有 worker/fiber lifecycle | Seastar/libevent runtime journey；基础 runtime `MUST`，拒绝把锁和 owning callable塞入 `TimerQueue` |
+| `TIME-A-19` | deadline/cancellation budget 跨多层 RPC、IO、queue 与 compute 传播 | absolute vs relative、clock domain、child budget、cancel reason、timeout result、serialization | typed monotonic deadline + Sched/IO cancellation/deadline context；跨机器协议传相对 budget 或 wall metadata | `ROUTED`：Time 的 deadline value 完整，传播状态机尚由各 owner 组合 | llama RPC/server 与通用 structured concurrency；`GENERAL`，在 Sched/IO 清点后裁决公共 vocabulary |
+| `TIME-A-20` | source/static/shared C++ 用户只选择 host time primitive 和 timer data structures | header/compiled split、platform implementation、component visibility、模板/inline ODR；无伪 C/Native FFI mirror | `hyle::time` compiled component + 自包含 C++ headers；FFI 只在未来 runtime object consumer task 中类型擦除 | `COMPLETE`：component target、visibility 和三种 C++ delivery journey 已存在 | 当前 build/package contract；交付 `MUST` |
+
+public-surface 反向追踪覆盖 `<hyle/time/{clock,unix_timestamp,timer_entry,timer_queue,
+common_timeout_queue}.h>`、`hyle::time` target，以及 Platform filesystem、Sched timer/sleep、IO timeout 和
+Obs timestamp/rate-control 调用。第一遍得到四个跨域候选：
+
+1. host machine-time、blocking thread sleep 与 callback-free timer data structure 已形成完整低层闭环；日历/
+   时区和 device clocks 有明确 owner，不是 Time API 数量缺口；
+2. manual/injected clock 是成熟 peer 与确定性 scheduler 测试共同证明的真实缺口；仅让 `TimerQueue` 接受
+   显式 `now` 不能替代 runtime 的可注入时间源；
+3. periodic policy、cross-thread timer service 与 deadline/cancellation propagation 属 Sched/IO 生命周期，
+   但全库能力超集必须承认这些 journey，不能因 Time 本身刻意 callback-free 就从账本消失；
+4. arbitrary-deadline radix queue、same-duration queue 和 total-order/indexed heap 是三种不同成本结构；前两者
+   已有自然形状，第三者应优先复用 Container factor，不能为 benchmark 统一成一个万能 timer 类型。
+
+这表示 Time 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 模块不重开，manual clock、periodic policy
+等只有在 13 域跨查并确定 owner 后才形成有限 `PRODUCT_TRIGGER`。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
