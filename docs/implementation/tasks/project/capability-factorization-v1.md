@@ -45,7 +45,7 @@ Util-runtime、Sched、IO 的顺序逐域填写：
 SIMD 在本轮有绑定例外：无论内部后端和 ISA 怎样组织，都保持一个不可拆分的公开产品组件；Math 单独
 裁决边界。不能用组件因子化把 SIMD 重新拆成 Highway、xsimd 或 HYLE 多套用户产品。
 
-#### A1. Core 产品域（第一遍完成，尚未跨域冻结）
+#### A1. Core 产品域（能力账本已随 A 阶段冻结）
 
 本节的 `coverage` 只描述基线实现对该能力行的覆盖，不继承旧 `core-v2` 的模块关闭结论，也不在此时
 决定最终 owner 或依赖。直接推理证据来自锁定 llama.cpp 随仓 ggml 的 `ggml/include/ggml.h`、
@@ -81,7 +81,7 @@ prefetch,macros}.h`、Folly `folly/{CPortability,lang/SafeAssert,lang/Hint}.h` �
 这表示 Core 产品域的阶段 A 第一遍已经完成，但不表示 Core 模块需要立刻重开，也不表示上述能力最终
 都属于一个 Core target。只有 13 域完成并做跨域反查以后才产生 `PRODUCT_TRIGGER` 和 owner。
 
-#### A2. Error 产品域（第一遍完成，尚未跨域冻结）
+#### A2. Error 产品域（能力账本已随 A 阶段冻结）
 
 本节重新从真实失败旅程展开能力，不继承旧 `error-v4` 的“已关闭所以功能完整”结论，也不把 llama.cpp
 面向 C 的 bool、null、整数返回值原样复制成 HYLE C++ API。直接推理证据来自锁定 ggml 的
@@ -125,7 +125,7 @@ prefetch,macros}.h`、Folly `folly/{CPortability,lang/SafeAssert,lang/Hint}.h` �
 这表示 Error 产品域的阶段 A 第一遍已经完成，但不重开当前 `CLOSED` Error，也不授权实现上述候选。
 最终 `MUST`、owner、组件形状和依赖只能在 13 域完成后的跨域账本中冻结。
 
-#### A3. Container-intrusive 产品域（第一遍完成，尚未跨域冻结）
+#### A3. Container-intrusive 产品域（能力账本已随 A 阶段冻结）
 
 本节不把当前 `intrusive_list.h` 等同于整个问题域。直接推理输入包括 HYLE Time 的 timer membership 与
 批量 ready handoff、Sched 的 timeout-unlink/wake-chain/remote-ready 形状、IOCP 的 in-flight/free-list
@@ -169,7 +169,7 @@ vector 中的 index graph，CANN LRU 又拥有并删除对象；两者都不是�
 这表示 Container-intrusive 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 组件不重开，新增候选只有在
 13 域跨查后才形成有限 `PRODUCT_TRIGGER`。
 
-#### A4. Util-core 产品域（第一遍完成，尚未跨域冻结）
+#### A4. Util-core 产品域（能力账本已随 A 阶段冻结）
 
 本节把 `util_core` 当作低层 utility 产品域，而不是把当前五个公开 header 反推成完整定义。直接推理
 输入包括 llama.cpp sampler 的可复制/事务式 RNG 状态、标准 uniform/discrete distribution 与 ggml-opt
@@ -230,7 +230,7 @@ intrusive strong owner 无效。
 这表示 Util-core 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 组件不重开，任何缺口只有在 13 域
 完成跨查、确定唯一 owner 和有限 FIX 集后才形成 `PRODUCT_TRIGGER`。
 
-#### A5. Time 产品域（第一遍完成，尚未跨域冻结）
+#### A5. Time 产品域（能力账本已随 A 阶段冻结）
 
 本节把 Time 分成“时钟/时间值”“阻塞等待”和“只管理节点、不执行回调的 timer data structure”，不把
 完整 scheduler、calendar 数据库或设备 profiling 强塞进同一 target。直接推理输入包括 llama.cpp 的随机
@@ -279,7 +279,7 @@ Obs timestamp/rate-control 调用。第一遍得到四个跨域候选：
 这表示 Time 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 模块不重开，manual clock、periodic policy
 等只有在 13 域跨查并确定 owner 后才形成有限 `PRODUCT_TRIGGER`。
 
-#### A6. Platform 产品域（第一遍完成，尚未跨域冻结）
+#### A6. Platform 产品域（能力账本已随 A 阶段冻结）
 
 本节从“跨 OS 的 host 事实与资源机制”展开，而不是从当前九个 header 反推边界。直接推理输入包括
 llama.cpp/ggml 的 CPU feature/physical-core 选线程、affinity/priority、NUMA、CPU-memory sizing、模型
@@ -349,7 +349,7 @@ dynlib,convenience}.h>`、`hyle::platform` target 和所有直接产品消费者
 memory facts、affinity snapshot、extended ISA state、secure entropy 与 mapping population/fragment lifecycle
 只有在 13 域跨查并选定 owner 后才形成有限 `PRODUCT_TRIGGER`。
 
-#### A7. Mem 产品域（第一遍完成，尚未跨域冻结）
+#### A7. Mem 产品域（能力账本已随 A 阶段冻结）
 
 本节采用已经触发 `mem-v2` 的语义边界：Mem 拥有 storage resource、allocation ownership、view、
 mapping/residency、pool/trim/stats 与 tensor-free lifetime packing；Platform/Compute/IO 只提供 OS、device
@@ -418,7 +418,7 @@ Platform `VmRegion/MappedFile`、IO `SharedMemory`、Compute `Buffer/BufferType/
 这表示 Mem 产品域的阶段 A 第一遍已经完成；`mem-v2` 保持 `AUDITED` 且暂停产品实现。最终
 PRODUCT_TRIGGER/owner/FIX 集只在 13 域跨查和因子化完成后重新冻结。
 
-#### A8. Obs 产品域（第一遍完成，尚未跨域冻结）
+#### A8. Obs 产品域（能力账本已随 A 阶段冻结）
 
 Obs 的产品边界不是一套应用 logger，也不是把 profiler、metrics backend 和 crash reporter 全部绑成一个
 service。它拥有低成本 observation 事件、禁用/采样控制、同步 host-adapter seam，以及可由最终 image
@@ -478,7 +478,7 @@ user guide 与 `obs-v3` 证据。第一遍得到六个关键结论：
 attributes、GPU/lock trace 与 crash observer 只有在 13 域跨查并确定 owner 后才形成有限
 `PRODUCT_TRIGGER`。
 
-#### A9. SIMD + Math 产品域（第一遍完成，尚未跨域冻结）
+#### A9. SIMD + Math 产品域（能力账本已随 A 阶段冻结）
 
 本节保持绑定例外：SIMD 是一个不可拆分的公开产品，不按 Highway、xsimd、HYLE body、ISA 或算法族拆成
 多个用户组件。其两层产品面分别是普通 pointer/count/POD whole-buffer API，以及在 consumer TU 中原样使用
@@ -566,7 +566,7 @@ family、provider manifest、锁定 provider交付、Math scalar header，以及
 这表示 SIMD + Math 产品域的阶段 A 第一遍已经完成；SIMD继续是一个不可拆分产品，Math继续是独立极小
 scalar组件。新候选只有在 B 阶段确定语义owner和最小自然API后才可形成有限施工卡。
 
-#### A10. Container 产品域（第一遍完成，尚未跨域冻结）
+#### A10. Container 产品域（能力账本已随 A 阶段冻结）
 
 本节只统计非侵入式 Container 产品；`container_intrusive` 已在 A3 单独展开，不能因为头文件仍位于同一
 目录就重复计入。public trace 覆盖 34 个非侵入式公开头、全部 `src/container/**` 实现以及当前
@@ -646,7 +646,7 @@ public-surface 与 consumer 反向追踪得到九个关键结论：
 concurrent set/priority、mutable heap、Unicode codec、text matcher和 shared reclamation，而不是再次扩写
 现有容器的 convenience API。
 
-#### A11. Util-runtime 产品域（第一遍完成，尚未跨域冻结）
+#### A11. Util-runtime 产品域（能力账本已随 A 阶段冻结）
 
 Util-runtime 不是剩余功能的杂项桶。当前产品只有两个运行时能力族：显式的名字→factory Registry，以及
 普通线程诊断用的 C++ symbol demangle；RNG、intrusive ownership、scope guard、spin lock和 compile-time
@@ -701,7 +701,7 @@ public-surface 与推理 consumer 反查得到七个关键结论：
 这表示 Util-runtime 产品域的阶段 A 第一遍已经完成；自身没有新的确定 `MUST` API缺口，新增全局输入是
 module manager/quiescence，另有 demangle verdict/input-bound 两个低优先级候选。
 
-#### A12. Sched 产品域（第一遍完成，尚未跨域冻结）
+#### A12. Sched 产品域（能力账本已随 A 阶段冻结）
 
 Sched 的产品边界是进程内 CPU execution runtime：拥有 worker、stackful Fiber、C++ coroutine task、唤醒、
 取消、定时挂起、同步原语和阻塞工作移交；不拥有 tensor/DAG 分区、模型 serving policy、网络协议或 GPU
@@ -781,7 +781,7 @@ public-surface、仓内 consumer与推理 journey反查得到九个关键结论�
 select、AsyncMutex、priority lanes、NUMA arenas、multi completion sources和 task context，而非再为单项
 benchmark添加一套 queue或 worker模式。
 
-#### A13. IO 产品域（第一遍完成，尚未跨域冻结）
+#### A13. IO 产品域（能力账本已随 A 阶段冻结）
 
 IO 当前约 1.13 万行 public/private实现，是 completion runtime、socket/file、TLS和 HTTP协议产品的组合，
 不能用 echo benchmark或“有一个 Proactor”代替功能完整性。public trace覆盖 `capabilities/proactor/io_context/
@@ -882,6 +882,70 @@ public-surface、HYLE相邻模块、locked inference consumer与两个 strong pe
 这表示 IO 产品域以及 13 个产品域的阶段 A第一遍已经完成。IO的确定高价值输入不是更多低层 submit
 重载，而是 typed Endpoint/Error、async body与 whole-operation cancellation、完整 HTTP client/server host、
 Direct/vectored/bulk file IO、local stream，以及 RDMA/shared-memory等跨域 transport的正确因子化。
+
+#### A 阶段全局交叉核对与冻结（完成）
+
+本节是 A1--A13 的 terminal record。机械扫描得到 13 个产品域、14 张能力表（SIMD 与 Math 按绑定规则
+分别审计边界）、377 个连续且唯一的 ID；没有重复、断号、未知覆盖状态或未填写的表行。覆盖分布只描述
+基线事实，不是完成率或施工优先级：
+
+| product ledger | ID range | rows | complete | partial | missing | routed | out of scope |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Core | `CORE-A-01..13` | 13 | 4 | 6 | 0 | 2 | 1 |
+| Error | `ERROR-A-01..16` | 16 | 7 | 5 | 0 | 3 | 1 |
+| Container-intrusive | `INTR-A-01..15` | 15 | 6 | 4 | 3 | 2 | 0 |
+| Util-core | `UTILC-A-01..21` | 21 | 7 | 4 | 2 | 7 | 1 |
+| Time | `TIME-A-01..20` | 20 | 12 | 0 | 2 | 6 | 0 |
+| Platform | `PLAT-A-01..36` | 36 | 20 | 5 | 5 | 4 | 2 |
+| Mem | `MEM-A-01..35` | 35 | 20 | 8 | 5 | 0 | 2 |
+| Obs | `OBS-A-01..26` | 26 | 9 | 5 | 6 | 6 | 0 |
+| SIMD | `SIMD-A-01..34` | 34 | 19 | 5 | 3 | 7 | 0 |
+| Math boundary | `MATH-A-01..08` | 8 | 3 | 0 | 0 | 3 | 2 |
+| Container | `CONT-A-01..37` | 37 | 21 | 2 | 5 | 9 | 0 |
+| Util-runtime | `UTILR-A-01..21` | 21 | 9 | 2 | 1 | 7 | 2 |
+| Sched | `SCHED-A-01..41` | 41 | 23 | 6 | 10 | 2 | 0 |
+| IO | `IO-A-01..54` | 54 | 17 | 13 | 18 | 4 | 2 |
+| **total** | -- | **377** | **177** | **65** | **60** | **62** | **13** |
+
+`PARTIAL` 或 `MISSING` 只表示 HYLE 基线没有完整自有实现；它可能是已准入的基础能力、需要 B 阶段
+定 owner 的候选、需要更多真实 consumer 才能准入的 `GENERAL`，也可能已有标准库或成熟依赖路线。
+因此 125 行未完全覆盖不能机械转换成 125 个 API、FIX 或模块 reopen trigger。
+
+跨域反查把所有 `PARTIAL/MISSING` 且准入文字提到直接、候选或条件式 `MUST` 的 66 行收敛到以下有限
+reconciliation clusters；这张表只证明遗漏已被解释，不提前决定 owner：
+
+| cluster | explained capability rows | B-stage ownership question |
+|---|---|---|
+| R1. 基础合同、fatal 与错误边界 | `CORE-A-02/03/05`、`ERROR-A-07/14`、`OBS-A-02`、`IO-A-05` | compiler contract、fatal observer、native error、exception adapter 与 structured event 各自放在哪个最小因子 |
+| R2. 编译事实、ISA 与三交付合同 | `CORE-A-06/07`、`UTILC-A-12`、`PLAT-A-02`、`MEM-A-35`、`SIMD-A-06`、`SCHED-A-40`、`IO-A-52/53` | Core/Platform/SIMD 的 compile/runtime facts 如何唯一裁决，Build/package 如何只承载交付而不拥有产品语义 |
+| R3. intrusive links 与并发 storage 机制 | `INTR-A-09/10` | 私有 slist/hlist 是否已有两个独立 consumer；safe replace 仍是条件项，不能因一行 `MUST` 字样自动公开化 |
+| R4. allocator、buffer、backend 与 planner | `MEM-A-03/06/14/26/27/28/29/30/31` | resource taxonomy、stable-address pool、device buffer/view、async transfer、pool 与 graph planner 应拆成哪些可独立消费因子 |
+| R5. topology、residency、priority 与 locality | `PLAT-A-05/09/17/29`、`MEM-A-22/25`、`SCHED-A-34/35` | machine facts、mapping/residency policy、NUMA allocation 与 scheduler policy 怎样单向依赖 |
+| R6. structured async composition | `SCHED-A-09/11/15/19/20`、`IO-A-11/12/34/39/40` | task group、heterogeneous select、completion registry、deadline/cancel、task/request context 是否形成共享 runtime factors |
+| R7. endpoint、socket、file 与 local transport | `IO-A-04/08/10/17/18/21/23/25` | typed endpoint/error、vectored/bulk/direct file I/O 和 local stream 的 ownership 如何避免 Platform/IO 双 owner |
+| R8. TLS、HTTP streaming 与 model transfer | `IO-A-33/37/38/42/43/45` | transport-neutral async body、client/server host、TLS config 与 download helper 怎样组合而不把 IO 变成 web framework |
+| R9. metrics 与 distribution | `OBS-A-16/17` | counter/histogram 的低成本原语、aggregation 和 exporter policy 如何分层 |
+| R10. 推理数值原语 | `SIMD-A-11/16/17/20/27` | dtype conversion、activation/gating、normalization 与 top-k 应由不可拆分 SIMD 公开产品还是未来 Compute 算子层拥有 |
+
+其余 `PARTIAL/MISSING` 行的 admission 已明确为 `GENERAL` 或成熟路线比较项；主要相交面是 counted/atomic
+intrusive 与 reclamation（Container-intrusive/Mem/Container）、borrow/nullability/callback vocabulary
+（Error/Util-core）、periodic/manual time 与 async primitives（Time/Sched）、process/module quiescence
+（Platform/Util-runtime/IO）、Unicode/text（Container/IO）、runtime trace/context（Obs/Sched/IO）以及
+IPC/shared-memory/RDMA（Platform/Mem/IO/Compute）。它们进入 B 的同一全局账本，不因 peer surface 大而
+自动获准实现。已有 62 个 `ROUTED` 行保留标准库、成熟依赖或具名上层 owner；13 个 `OUT_OF_SCOPE` 行
+都有显式拒绝理由。其中唯一在 admission 中同时写明推理 `MUST` 的 `MEM-A-34` 已明确路由给 Compute，
+不是被删除的需求。
+
+最后一次纵向查漏覆盖 model load/placement、CPU kernel、sampling、request scheduling、network serving、
+model download、telemetry、shutdown/plugin lifecycle 和 distributed transport；横向查漏覆盖 fatal/error、
+compile/runtime facts、time、topology、filesystem/process、memory、concurrency、text、delivery 与 Native FFI
+政策。Compute/Graph 仍冻结，但它们的直接消费要求已作为 `ROUTED` 行或上述 cluster 输入保留；
+Build/package 仍是横向开发单元，不伪造第 14 个产品能力域。
+
+据此裁决：**阶段 A 已冻结，阶段 B/C 尚未开始**。冻结的是能力输入和拒绝理由，不是 177 行以外的实现
+承诺，也不改变 `module-status.json`、不重开任何 `CLOSED` 模块、不授权产品改动。以后只有新的具名
+consumer、锁定 peer 差异、可复现产品缺陷或标准变化，才能以增量 evidence 修订 A；不能用 benchmark
+行、代码行数或“再看一遍”恢复无限清点。
 
 ### B. 跨域归属与质因数分解
 
