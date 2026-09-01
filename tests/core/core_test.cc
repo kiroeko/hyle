@@ -47,6 +47,13 @@ void recursive_observer(const hyle::core::FatalEvent&) noexcept {
   HYLE_FATAL_ASSERT_MSG(false, "recursive observer fallback");
 }
 
+void same_name_observer(const hyle::core::FatalEvent& event) noexcept {
+  const auto& field = event.fields.front();
+  std::fprintf(stderr, "same-name kind=%u value=%lld\n",
+               static_cast<unsigned>(field.value.kind),
+               static_cast<long long>(field.value.signed_value));
+}
+
 void fail_with_context() {
   HYLE_FATAL_ASSERT_CONTEXT(
       false, "lookup invariant", HYLE_FATAL_NAMED_FIELD("index", 17u),
@@ -62,6 +69,13 @@ void fail_after_installing_observer() {
 void fail_recursively_from_observer() {
   static_cast<void>(hyle::core::set_fatal_observer(&recursive_observer));
   HYLE_FATAL_ASSERT(false);
+}
+
+void fail_with_caller_name_matching_old_macro_local() {
+  const int hyle_fatal_fields = 7;
+  static_cast<void>(hyle::core::set_fatal_observer(&same_name_observer));
+  HYLE_FATAL_ASSERT_CONTEXT(false, "macro hygiene",
+                            HYLE_FATAL_FIELD(hyle_fatal_fields));
 }
 
 }  // namespace
@@ -239,6 +253,11 @@ TEST(CoreAssertDeath, ObserverReceivesEventThenCoreStillTerminates) {
 TEST(CoreAssertDeath, RecursiveFatalBypassesObserver) {
   EXPECT_DEATH({ fail_recursively_from_observer(); },
                "recursive observer fallback");
+}
+
+TEST(CoreAssertDeath, ContextDoesNotCaptureCallerIdentifiers) {
+  EXPECT_DEATH({ fail_with_caller_name_matching_old_macro_local(); },
+               "same-name kind=1 value=7");
 }
 
 #if HYLE_DEBUG_ASSERT_ENABLED

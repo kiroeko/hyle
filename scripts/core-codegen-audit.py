@@ -19,6 +19,7 @@ PROBE_NAMES = (
     "hyle_core_probe_noinline_caller",
     "hyle_core_probe_force_inline_caller",
     "hyle_core_probe_identity",
+    "hyle_core_probe_debug_disabled",
     "hyle_core_probe_assume",
     "hyle_core_probe_prefetch_read",
     "hyle_core_probe_prefetch_read_non_temporal",
@@ -462,6 +463,20 @@ def audit(
         fail(
             "Release HYLE_ASSUME code shape differs from the same-signature "
             "identity control"
+        )
+
+    debug_disabled = through_return(
+        records["hyle_core_probe_debug_disabled"],
+        "disabled HYLE_DEBUG_ASSERT probe",
+    )
+    debug_disabled_shape = [
+        (instruction.mnemonic, instruction.operands)
+        for instruction in debug_disabled
+    ]
+    if debug_disabled_shape != identity_shape:
+        fail(
+            "Disabled HYLE_DEBUG_ASSERT code shape differs from the "
+            "same-signature identity control"
         )
 
     arch = architecture.lower()

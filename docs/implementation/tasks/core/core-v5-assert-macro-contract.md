@@ -146,3 +146,27 @@ proves their distinct task. No adjacent-module backlog or dependency change was 
 
 当前为 `AUDITED`。以上四项是本轮全部授权修改；任何新 public API、capability、layout、dependency、
 normal metadata or generic test-framework work must start another scope, not enter this implementation。
+
+## 实施结果（candidate 前）
+
+- `CORE5-01`：context macros no longer declare a fixed identifier in caller scope。They pass one left-to-right
+  `std::array{fields...}` expression through a constrained `detail::fatal_fields<N>` route；the temporary remains
+  alive through synchronous observer/abort handling，and 1–8 is encoded in overload viability；
+- `CORE5-02`：Release-disabled Debug forms now use `decltype` unevaluated expressions。The condition is checked in
+  the same contextual-Boolean shape as `if (!(cond))`；message goes through the same `fatal_text` overload；context
+  goes through the same array/count route。No argument is evaluated；
+- `CORE5-03`：added caller-name observer regression、valid dependent/non-evaluation runtime coverage、Release
+  compile contracts for condition/dependent/message/field and lower/upper field count，plus an identity-shaped
+  disabled-Debug codegen probe and parser fixtures；
+- `CORE5-04`：architecture records the macro semantic mechanism without hard-coding an old closure task；the user
+  guide now states Release diagnostic parity、empty-context misuse and callback code/unload/quiescence ownership；
+- pre-candidate feedback only：W1-WIN MSVC 19.50 fresh Release/WERROR configure accepted the positive compile
+  contract and rejected all six invalid sources；Core build/tests `6/6 PASS` including codegen and same-name death。
+  W1-WSL GCC 14.2 source-view preflight also passed `6/6`，but because it ran from `/mnt/c` it is diagnostic only and
+  will not be used as final WSL evidence；
+- public API、object layout、HYLE dependencies、component graph、delivery shape and normal cost contract are
+  unchanged。`<array>` is a C++ standard-library implementation dependency，not a third-party/product edge。
+
+No second product correction was needed after replacing the initial parameter-pack draft with one array expression
+before candidate freeze；that final shape preserves left-to-right field construction while eliminating macro-local
+capture。The next step is one immutable product commit/tree and full frozen-gate replay。

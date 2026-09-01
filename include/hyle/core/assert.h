@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -189,6 +190,17 @@ HYLE_HIDDEN inline std::string_view fatal_text(
   return std::string_view(text, N - 1);
 }
 
+// Build context in the caller's full expression without declaring a
+// macro-local identifier. The constraints are part of the call expression so
+// disabled Debug assertions enforce the same 1..8 FatalField contract without
+// instantiating a function body or evaluating an argument.
+template <std::size_t N>
+  requires(N >= 1 && N <= kMaxFatalFields)
+HYLE_HIDDEN inline constexpr std::array<FatalField, N> fatal_fields(
+    std::array<FatalField, N> fields) noexcept {
+  return fields;
+}
+
 HYLE_HIDDEN inline std::atomic<FatalObserver>& fatal_observer_slot() noexcept {
   static std::atomic<FatalObserver> observer{nullptr};
   return observer;
@@ -326,14 +338,12 @@ inline FatalObserver set_fatal_observer(FatalObserver observer) noexcept {
 #define HYLE_FATAL_ASSERT_CONTEXT(cond, message, ...)                       \
   do {                                                                      \
     if (!(cond)) [[unlikely]] {                                             \
-      const ::hyle::core::FatalField hyle_fatal_fields[] = {__VA_ARGS__};   \
-      static_assert(sizeof(hyle_fatal_fields) / sizeof(hyle_fatal_fields[0]) \
-                        <= ::hyle::core::kMaxFatalFields,                    \
-                    "HYLE fatal context supports at most eight fields");   \
       ::hyle::core::detail::fatal_assert_failed(                            \
           ::hyle::core::FatalKind::kInvariant, #cond,                       \
           ::hyle::core::detail::fatal_text((message)), __FILE__, __LINE__,  \
-          std::span<const ::hyle::core::FatalField>(hyle_fatal_fields));    \
+          std::span<const ::hyle::core::FatalField>(                        \
+              ::hyle::core::detail::fatal_fields(                           \
+                  std::array{__VA_ARGS__})));                               \
     }                                                                       \
   } while (false)
 
@@ -363,39 +373,33 @@ inline FatalObserver set_fatal_observer(FatalObserver observer) noexcept {
 #  define HYLE_DEBUG_ASSERT_CONTEXT(cond, message, ...)                     \
     do {                                                                    \
       if (!(cond)) [[unlikely]] {                                           \
-        const ::hyle::core::FatalField hyle_fatal_fields[] = {__VA_ARGS__}; \
-        static_assert(                                                      \
-            sizeof(hyle_fatal_fields) / sizeof(hyle_fatal_fields[0]) <=     \
-                ::hyle::core::kMaxFatalFields,                              \
-            "HYLE debug context supports at most eight fields");           \
         ::hyle::core::detail::fatal_assert_failed(                          \
             ::hyle::core::FatalKind::kDebugAssertion, #cond,                \
             ::hyle::core::detail::fatal_text((message)), __FILE__,          \
             __LINE__,                                                       \
-            std::span<const ::hyle::core::FatalField>(hyle_fatal_fields));  \
+            std::span<const ::hyle::core::FatalField>(                      \
+                ::hyle::core::detail::fatal_fields(                         \
+                    std::array{__VA_ARGS__})));                             \
       }                                                                     \
     } while (false)
 #else
 #  define HYLE_DEBUG_ASSERT(cond)                                           \
     do {                                                                    \
-      if constexpr (false) {                                                \
-        static_cast<void>(cond);                                            \
-      }                                                                     \
+      static_cast<void>(decltype((!(cond)) ? void() : void())());           \
     } while (false)
 #  define HYLE_DEBUG_ASSERT_MSG(cond, message)                              \
     do {                                                                    \
-      if constexpr (false) {                                                \
-        static_cast<void>(cond);                                            \
-        static_cast<void>(::hyle::core::detail::fatal_text((message)));     \
-      }                                                                     \
+      static_cast<void>(decltype((!(cond)) ? void() : void())());           \
+      static_cast<void>(decltype(                                           \
+          (void)(::hyle::core::detail::fatal_text((message))))());          \
     } while (false)
 #  define HYLE_DEBUG_ASSERT_CONTEXT(cond, message, ...)                     \
     do {                                                                    \
-      if constexpr (false) {                                                \
-        static_cast<void>(cond);                                            \
-        static_cast<void>(::hyle::core::detail::fatal_text((message)));     \
-        const ::hyle::core::FatalField hyle_fatal_fields[] = {__VA_ARGS__}; \
-        static_cast<void>(hyle_fatal_fields);                               \
-      }                                                                     \
+      static_cast<void>(decltype((!(cond)) ? void() : void())());           \
+      static_cast<void>(decltype(                                           \
+          (void)(::hyle::core::detail::fatal_text((message))))());          \
+      static_cast<void>(decltype(                                           \
+          (void)(::hyle::core::detail::fatal_fields(                        \
+              std::array{__VA_ARGS__})))());                                \
     } while (false)
 #endif

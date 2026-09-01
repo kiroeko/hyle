@@ -30,6 +30,12 @@ int hyle_core_probe_force_inline_caller(int value) noexcept {
 
 int hyle_core_probe_identity(int value) noexcept { return value; }
 
+int hyle_core_probe_debug_disabled(int value) noexcept {
+  HYLE_DEBUG_ASSERT_CONTEXT(value > 0, "valid release value",
+                            HYLE_FATAL_FIELD(value));
+  return value;
+}
+
 int hyle_core_probe_assume(int value) noexcept {
   HYLE_ASSUME(value > 0);
   return value > 0 ? value : 0;

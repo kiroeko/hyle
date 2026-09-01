@@ -1,8 +1,8 @@
 # Core 架构：header-only 编译与布局地基
 
 > 本页描述当前长期设计，不是验收证书。当前产品状态只见
-> [`module-status.json`](../implementation/module-status.json)；历史施工与三平台、codegen、package、
-> 红队证据见 [`core-v3-foundation-completeness`](../implementation/tasks/core/core-v3-foundation-completeness.md)，性能结论边界见
+> [`module-status.json`](../implementation/module-status.json)，并由其中的 `closure_task` 指向当前轮
+> task；历史施工、三平台、codegen、package 与红队记录只作追溯。性能结论边界见
 > [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
 > [`user/core`](../user/core.md)。
 
@@ -107,8 +107,10 @@ compiler target 选择实现。
 
 `HYLE_FATAL_ASSERT[_MSG/_CONTEXT]` 在 Debug 和 Release 都检查；它处理继续执行已不可信的 invariant
 或 hardening 条件。`HYLE_DEBUG_ASSERT[_MSG/_CONTEXT]` 只在 Debug、sanitizer 或 static-analyzer TU
-启用，普通 Release 中表达式仍被类型检查但不求值、没有 runtime 指令。两族条件都只求值一次，
-message 与 fields 只在失败时构造。
+启用，普通 Release 中使用 C++ unevaluated expression 检查与启用态相同的 condition、message 和
+1–8 `FatalField` 合同，但不求值、没有 runtime 指令。两族条件都只求值一次，message 与 fields
+只在失败时构造。context 的 field array 在调用者完整表达式中形成，不由宏在调用者作用域声明固定
+局部名，因此合法的用户标识符不会被宏捕获。
 
 context 不是 printf 格式串：调用方显式提供最多 8 个 `FatalField`，值只接受 bool、最多 64-bit 的
 integral/enum、floating、object pointer、C string 或 `std::string_view`。事件全部同步借用；Core

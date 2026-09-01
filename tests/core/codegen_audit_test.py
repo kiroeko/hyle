@@ -33,6 +33,9 @@ hyle_core_probe_force_inline_caller:
 hyle_core_probe_identity:
   0000000000000000: mov eax,ecx
   0000000000000002: ret
+hyle_core_probe_debug_disabled:
+  0000000000000000: mov eax,ecx
+  0000000000000002: ret
 hyle_core_probe_assume:
   0000000000000000: mov eax,ecx
   0000000000000002: ret
@@ -69,6 +72,8 @@ hyle_core_probe_force_inline_caller:
   0000000000000008: ret
 hyle_core_probe_identity:
   0000000000000000: ret
+hyle_core_probe_debug_disabled:
+  0000000000000000: ret
 hyle_core_probe_assume:
   0000000000000000: ret
 hyle_core_probe_prefetch_read:
@@ -103,6 +108,9 @@ def objdump_x64() -> str:
 0000000000000030 <hyle_core_probe_identity>:
   30: 89 f8                 mov %edi,%eax
   32: c3                    ret
+0000000000000038 <hyle_core_probe_debug_disabled>:
+  38: 89 f8                 mov %edi,%eax
+  3a: c3                    ret
 0000000000000040 <hyle_core_probe_assume>:
   40: 89 f8                 mov %edi,%eax
   42: c3                    ret
@@ -141,6 +149,8 @@ _hyle_core_probe_force_inline_caller:
 0000000000000024 ret
 _hyle_core_probe_identity:
 0000000000000030 ret
+_hyle_core_probe_debug_disabled:
+0000000000000038 ret
 _hyle_core_probe_assume:
 0000000000000040 ret
 _hyle_core_probe_prefetch_read:

@@ -105,9 +105,12 @@ void verify_expensive(const int* values, std::size_t count) {
 ```
 
 debug family 在 Debug、HYLE sanitizer 和 static-analyzer translation unit 中启用；普通 Release 中
-条件、消息和字段不求值且不产生 runtime 指令，但仍必须是能通过编译的表达式。安全边界、长度验证
-或任何 Release 仍需执行的检查必须使用普通控制流、Error，或 always-on fatal，不能藏在 debug
-assertion 中。`HYLE_DEBUG_ASSERT_ENABLED` 可用于测试/诊断当前模式，不应用来建立两套业务语义。
+条件、消息和字段不求值且不产生 runtime 指令，但 compiler 仍按启用态检查真实 condition、message、
+field 类型和 1–8 field 数量；模板中的 dependent expression 也会在实例化时检查。因此不要让 Debug
+和 Release 依赖两套不同的可编译表达式，也不要用空 context 代替无 context 的普通/`_MSG` 形式。
+安全边界、长度验证或任何 Release 仍需执行的检查必须使用普通控制流、Error，或 always-on fatal，
+不能藏在 debug assertion 中。`HYLE_DEBUG_ASSERT_ENABLED` 可用于测试/诊断当前模式，不应用来建立
+两套业务语义。
 
 ## Fatal observer
 
@@ -131,7 +134,10 @@ observer 在失败线程上同步运行，可能与其他失败线程并发，�
 不得等待一个可能依赖当前线程的服务，也不能阻止随后 `abort()`。递归 fatal 会绕过 observer 后直接
 输出并终止。slot 是 header-only linked-image seam：可执行文件与各 shared library 不保证共享同一个
 registration；需要进程级 crash policy 时由宿主在自己的边界显式统一，而不是依赖 Core 猜测 loader
-拓扑。
+拓扑。callback 的代码和它访问的上下文必须在安装期间一直存活；卸载提供 callback 的 plugin/shared
+image 前，先恢复 previous/null observer，并由宿主确保所有可能正在执行旧 callback 的失败线程已经
+quiescent。`set_fatal_observer()` 只做原子交换，不等待在途 callback，也不提供 unload barrier 或 RAII
+lifetime 管理。
 
 ## 编译环境
 
