@@ -64,5 +64,85 @@
   independent red team 与 P0 structural gate即关闭；受支持 compiler 不能同时满足语义等价与零运行时
   成本时写单一 blocker，不继续发明宏姿势。
 
-当前为 `SCOPED`：closure card 已冻结；产品修改必须等待 capability/public-surface 审计与有限 `FIX`
-ledger 进入 `AUDITED`。
+## Capability-family coverage map
+
+| Family | admitted journey / evidence | semantic and lifecycle boundary | current route | Coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| always-on invariant + typed context | HYLE public consumers；llama.cpp/ggml 高频 invariant | condition once；message/1–8 typed fields failure-only；sync borrow；abort | fatal macro family | `PARTIAL` | fixed macro local can capture caller identifier；fix hygiene，不加入 printf formatting |
+| debug/instrumented invariant | HYLE expensive internal consistency；Abseil assertion mechanism | enabled 与 disabled 接受同一 C++ expression；disabled zero evaluation/code | debug macro family | `PARTIAL` | disabled branch skips dependent/context semantics；fix unevaluated checking |
+| host fatal observation | embedding host forwards bounded event before termination | image-local atomic slot；sync borrowed callback；recursive fallback；always abort | `set_fatal_observer` | `PARTIAL` | implementation complete；guide 未明确 plugin unload/quiescence responsibility |
+| compiler/environment/cache/version foundations | Core v3/v4 admitted families and current public consumers | unchanged ownership、complexity、layout and delivery | existing headers | `COMPLETE` | runtime topology/ISA、logging、error、allocator remain adjacent owners |
+| formatted abort / crash policy | ggml formatted abort and host crash integration | arbitrary formatting、backtrace、signal/minidump and process-wide policy | Obs/host composition | `OUT_OF_SCOPE` | typed bounded context remains Core；不复制 ggml varargs surface |
+
+Public-surface reverse trace found no benchmark/test-only entry. `HYLE_FATAL_ASSERT[_MSG/_CONTEXT]` maps to the
+first family; `HYLE_DEBUG_ASSERT[_MSG/_CONTEXT]` and `HYLE_DEBUG_ASSERT_ENABLED` map to the second;
+`FatalValue/Field/Event`、`fatal_field`、field macros and `set_fatal_observer` map to typed failure observation.
+All other `assert.h` details are implementation seams. `compiler.h`、`environment.h`、`cache.h`、`version.h`
+and visibility ownership are unchanged and remain covered by the v3/v4 candidate evidence; this directed reopen
+does not silently rescope them.
+
+## Capability / gap ledger
+
+| ID | Class / source | normal shape | owner / cost target | Coverage | Action | verification / negative space |
+|---|---|---|---|---|---|---|
+| `CORE5-01` | `MUST` reproducible API defect | caller field expression may use any legal local name | Core / failure-only array construction | `PARTIAL` | `FIX` | same-name observer death test；macro expansion has no caller-visible local declaration |
+| `CORE5-02` | `MUST` reproducible compiler defect + C++23/Abseil mechanism | Release-disabled Debug expression is unevaluated but semantically checked like enabled form | Core / zero runtime code | `PARTIAL` | `FIX` | reject non-Boolean/dependent-invalid/message-invalid/field-invalid and 0/9 fields；accept valid templates |
+| `CORE5-03` | `MUST` frozen P0 contract | successful Fatal remains one cold edge；disabled Debug contributes no work | Core / no metadata, allocation, lock, syscall or instructions | `PARTIAL` | `FIX` | optimized object audit plus existing single/zero evaluation tests |
+| `CORE5-04` | `MUST` usability defect | host installs/restores callback across plugin/image lifetime | Core docs / no runtime addition | `PARTIAL` | `FIX` | guide names restore-before-unload and external quiescence；architecture stops pointing only at v3 task |
+
+Every `MUST` has one finite `FIX`; there is no `PARTIAL + KEEP`. Arbitrary formatting, CHECK comparison families,
+observer RAII/quiescence machinery, cross-DSO process registry and Native FFI remain rejected until a named consumer
+proves their distinct task. No adjacent-module backlog or dependency change was found.
+
+## API / usability freeze
+
+- 状态：`FROZEN`。所有 public names、signatures、field types、1–8 bound、borrow/abort contract and include
+  route remain unchanged；the repair is an internal array factory plus unevaluated compile semantics；
+- normal recipe remains one macro for invariant, `_MSG` for static/borrowed explanation, `_CONTEXT` for 1–8 typed
+  values, and explicit observer install/restore for host forwarding；
+- defaults/cost：always-on condition once；debug disabled zero evaluation/code；message/fields failure-only；
+  observer opt-in and failure-only；
+- misuse diagnostics：zero/nine fields、invalid field/message and invalid condition must fail in every build mode；
+  valid dependent code must compile in every mode；
+- source/static/shared discovery remains `hyle::core` INTERFACE with no artifact。No public dependency、layout、
+  error shape or build option changes；
+- freeze identity：本 `AUDITED` task；performance cannot reopen API from a timing point because timing is N/A。
+
+## Owner 六问（`AUDITED`）
+
+1. **第三方：**Core product path has no direct or indirect third-party implementation。`std::array/span/
+   string_view/atomic`、compiler attributes and C stdio/`abort` are standard/compiler/runtime contracts, not a
+   third-party module。Abseil `b7adf83dccc73cd897fa6938978d96dce63a5d52` is `peer` only：semantic/artifact/
+   decision owner remains Core；build/package remains delivery owner；no public third-party type leaks。
+2. **功能：**2026-09-01 remote check records llama.cpp
+   `518b76236b1f72a186deb5fcabc7b6e59e21fbc4` (only docs changed from the clean local
+   `0eadefebd3f8f92a86d634a0e5b8fffc9dc792c0` across `src/common/include`), bundled ggml tree
+   `2e3f246882361e111128191d95ec3b6151d640a0`, and standalone ggml
+   `d4716378882593333721eb33f153144b6885caf2`。Their frequent invariant journey is admitted and becomes
+   `COMPLETE` after CORE5-01/02；formatted varargs is intentionally Obs/host policy。No other unhandled Core `MUST`。
+3. **性能：**`P0 STRUCTURAL`；normal consumer is source-compiled assertion code。Required verdict is structural
+   `PASS/FAIL`, timing peer comparison `NOT_APPLICABLE`；no SOTA/non-inferiority claim。Candidate must prove one
+   cold failure edge and zero disabled runtime instructions。
+4. **旧 C ABI / Native FFI：**global policy `N/A`；no public C header/schema、bridge、undecorated export、managed
+   sample、FFI option/target/package metadata or FFI-paid layout。Maintenance-only C linkage in codegen probes is
+   test-private；shared decorated C++ symbols do not create C ABI。Expected verdict `CLEAN`。
+5. **构建与导入：**Core stays header-only。Source embedding and installed static/shared consumers all compile
+   through `hyle::core`；the installed shapes are imported INTERFACE journeys with no fabricated archive/DSO。
+   Selected headers、exact package and relocation are rechecked；dependency graph is unchanged。
+6. **C++ API 与文档：**task-shaped macros remain natural and do not expose benchmark/internal seams。The fix makes
+   Release/Debug diagnostics predictable without adding user syntax。Guide must state field count/type rules、
+   unevaluated semantics、borrow and observer unload/quiescence trap；architecture retains only long-term reasons。
+
+## 冻结 FIX 集（`AUDITED`）
+
+1. `CORE5-01`：replace caller-scope fixed array identifiers with a constrained C++23 internal field-array factory;
+   both Fatal and enabled Debug context use it without changing public syntax or failure lifecycle。
+2. `CORE5-02`：disabled Debug uses unevaluated C++ expressions that check the exact condition context、message route
+   and same field factory；1–8 count is constrained in all modes。
+3. `CORE5-03`：add one same-name runtime regression、valid/non-evaluated Release tests、five focused negative compile
+   contracts and a disabled-Debug optimized probe；extend only the existing Core codegen verdict。
+4. `CORE5-04`：update Core architecture/user text for current evidence ownership、semantic parity and observer
+   callback image lifetime/quiescence。
+
+当前为 `AUDITED`。以上四项是本轮全部授权修改；任何新 public API、capability、layout、dependency、
+normal metadata or generic test-framework work must start another scope, not enter this implementation。
