@@ -186,16 +186,14 @@
     },
     {
       "module": "error",
-      "product_state": "CLOSED",
-      "round_id": "error-v4",
-      "closure_task": "docs/implementation/tasks/error/error-v4-resume.md",
-      "scope": "Resume the unchanged error product candidate against a corrected source-primary consumer performance contract, then rebind current architecture, correctness, delivery, usability/docs and red-team evidence.",
-      "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
-      "baseline_commit": "d9644548bf1690a4a1c86f205936cd857b1b92e8",
-      "candidate_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
-      "candidate_tree": "a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d",
-      "end_commit": "26679f1b2a1987b39cdf302eb95ed3e5fefeb168",
-      "registry_anchor_commit": "26679f1b2a1987b39cdf302eb95ed3e5fefeb168",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
+      "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
+      "round_id": "error-v5-capability-completion",
+      "closure_task": "docs/implementation/tasks/error/error-v5-capability-completion.md",
+      "scope": "Complete the consumer-proven WinSock domain plus the admitted borrowed-result, no-throw dynamic-diagnostic and standard-error adapter families while preserving the existing owning Status/Result hot-path contract.",
+      "non_goals": "Exceptions, arbitrary payload/cause/source-location systems, MultiError, runtime domain registries, logging, downstream IO migration, adjacent-module closure, Native FFI/C API, stable C++ ABI, benchmark-invented APIs, instrumentation redesign and Formal certification.",
+      "baseline_commit": "afdb6b81ab4e8e3ad9d790be87a80dc9242c1cec",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -203,47 +201,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/error/error-v4-resume.md",
-      "loc": {
-        "snapshot_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
-        "repository_code": 293909,
-        "self_with_tests": 122027,
-        "self_without_tests": 82135,
-        "module_implementation": 1350
-      },
-      "known_limitations": [
-        "Engineering PASS is limited to W1-WIN, the frozen Abseil peer and four source-primary consumer workloads; Formal, cross-platform performance and all-operation SOTA are not claimed.",
-        "A fixed-fixture shared owning-message copy microbenchmark remains reproducibly about 8% slower, but has no established consumer materiality or cause and remains mechanism diagnostic only.",
-        "The low-bit header-inline representation requires matching headers and artifacts plus a full consumer rebuild; stable C++ ABI and Native FFI are not promised.",
-        "The performance claim must be renewed if graph/sched provenance, contract, peer, machine, instrument or delivery identity changes; adoption in unclosed downstream modules remains their owner's work."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, ownership, API-usability, delivery or missing-capability defect within the error boundary.",
-        "Status/Result algorithms, layout, public surface, direct dependencies or supported compiler semantics change.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material regression on a normal source consumer workload.",
-        "The retained engineering bundle can no longer be deeply replayed, or the contract, peer, machine or instrument identity changes while the claim must be renewed."
-      ],
-      "summary": "error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。"
+      "summary": "error-v5 由真实 IOCP WinSock 类别缺口定向重开，并有限裁决 borrowed result、no-throw 动态诊断与 std::error_code 冷适配；Error 保持 Core-only 质因数。"
     },
     {
       "module": "obs",
