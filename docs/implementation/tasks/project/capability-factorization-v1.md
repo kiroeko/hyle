@@ -478,6 +478,94 @@ user guide 与 `obs-v3` 证据。第一遍得到六个关键结论：
 attributes、GPU/lock trace 与 crash observer 只有在 13 域跨查并确定 owner 后才形成有限
 `PRODUCT_TRIGGER`。
 
+#### A9. SIMD + Math 产品域（第一遍完成，尚未跨域冻结）
+
+本节保持绑定例外：SIMD 是一个不可拆分的公开产品，不按 Highway、xsimd、HYLE body、ISA 或算法族拆成
+多个用户组件。其两层产品面分别是普通 pointer/count/POD whole-buffer API，以及在 consumer TU 中原样使用
+锁定 Highway/xsimd 的 expert SDK；387 operations / 422 route scopes 是旧 HYLE register surface 的迁移账本，
+不是两家 provider 的能力上限。Math 则单独核对为极小 scalar numeric 组件，不能成为 SIMD scalar fallback
+或杂项数学伞头。直接推理证据来自 ggml CPU 的 row algebra、dtype、quant/dequant、mixed dot、GEMV/GEMM、
+activation/norm/softmax、sampling top-k 和多 ISA kernels。strong implementation peers 锁定 Highway
+`f503c485cec6b4f2f596fa60d83484797c9eeb5c`、xsimd
+`3b3151ff665514a00a437cc985f47b7de99b772b`；SLEEF
+`7623d6cfa2712462880fa63a4d0f0b5f775d1a83` 只用于 transcendental discovery，不是当前产品依赖。
+
+##### A9.1 SIMD capability-family map
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `SIMD-A-01` | 普通用户对连续 buffer 调用一次语义明确的加速 operation | null-on-zero、alias、tail、NaN/overflow/rounding、allocation、dispatch frequency逐族声明 | pointer/count core + 少量 span convenience；vendor type 不越过边界 | `COMPLETE`：13 个 ordinary headers覆盖现有 row/math/search/scan/order/codec/RNG族 | HYLE public surface + ggml row journey；产品形状 `MUST` |
+| `SIMD-A-02` | kernel 作者需要 HYLE 未包装的 register/mask/load/store/arithmetic/permute/reduction primitive | lane type、fixed/scalable vector、mask、tail、alignment、target namespace、升级重编 | 显式链接 `hyle::simd_expert` 后原样使用 `hwy::` / `xsimd::` | `COMPLETE`：两家锁定版本完整 header-only surface 在三种交付可用；422 不限制它 | Highway+xsimd；广面能力 `MUST`，拒绝建立第二套 HYLE register DSL |
+| `SIMD-A-03` | 已知部署 ISA 的单个 custom kernel 要模板/宏单态化并完全内联 | scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV、compiler flags、exact fail-closed、provider native type只在 TU | 独立 OBJECT target + `hyle_target_simd()` | `COMPLETE`：source/static/shared 同一 helper；classic cl.exe AVX512 明确拒绝 | Highway target model + HYLE delivery；专家路径 `MUST` |
+| `SIMD-A-04` | 未知客户 CPU 的 custom kernel 需要一个 binary 内含多 ISA 且只在整批边界选择 | canonical target set、symbol suffix、feature/OS state、exact/fat、cached selector、no per-lane callback | pointer/count/POD entry + `hyle_add_fat_kernel` / select macro | `COMPLETE`：每 target TU 单态化，默认一次 cached indirect，exact 零 selector | Highway dispatch + HYLE helper；推理 kernel `MUST` |
+| `SIMD-A-05` | 普通 API 在 x86/ARM/RISC-V 选择安全 broad target并能报告实际 family route | compile/runtime分离、OS vector state、scalar floor、per-family lower tier、override/diagnostic | 私有 Runtime table；公开只给 `SelectedTarget` diagnostics | `COMPLETE`：scalar、SSE4、AVX2、AVX512、NEON、SVE、RVV 与 family facts 齐全 | Highway + Platform facts；基础 `MUST` |
+| `SIMD-A-06` | specialty inference kernel 使用 VNNI、BF16、FP16/FP8、SVE2/dotprod/i8mm、AMX/SME | CPU+OS+per-thread enable、compiler support、feature orthogonality、fallback、matrix state restore | Platform 提供 facts/state；SIMD/Compute kernel单独 feature-gated，不抬高 broad tier | `PARTIAL`：F16C、AVX/AVX512-VNNI、AVX512-BF16、AVX10.2已有；缺 ARM dotprod/i8mm/SVE2/SME 和 AMX | ggml ISA kernels + Highway targets；推理 `MUST` 候选，与 `PLAT-A-02` 联查 |
+| `SIMD-A-07` | f16、bf16、E4M3、E5M2 作为稳定 storage value 跨 buffer/API 保存 | layout/size/triviality、RNE、subnormal、NaN/Inf、saturate、signed zero | HYLE POD bit carrier + scalar conversions | `COMPLETE`：四种窄 storage 与 f32 scalar conversion合同完整 | ggml dtypes + Highway/CUDA semantics；推理 `MUST` |
+| `SIMD-A-08` | 五种公开 floating storage 任意异类型批量转换，不建立 f32 临时数组 | 20 directed edges、same-width exact alias、unequal disjoint、rounding/special values、target feature | overloaded `convert(src,dst,n)` | `COMPLETE`：全转换图，F16C/BF16/AVX10.2 specialty与 portable fallback已有 | Highway + inference storage journey；推理 `MUST` |
+| `SIMD-A-09` | 普通连续 f32/f64 row 做 elementwise algebra 和 scalar transform | add/sub/mul/div、scale/bias/affine、abs/neg/square/sqrt、exact alias、NaN/zero | 语义函数而非 runtime functor；一次 whole-buffer dispatch | `PARTIAL`：列举族完整；常用 min/max/clamp、FMA/mul-add、reciprocal/rsqrt、fill/copy/compare-select无 ordinary 入口 | ggml vec + Highway/xsimd；`GENERAL`，需由 Container/Compute真实重复决定最小扩面 |
+| `SIMD-A-10` | row 计算 sum、dot、min/max/argmin/argmax 与组合统计 | empty、NaN、first tie、accumulator width、reproducibility、one-pass、overflow | 分族 typed reduction；组合统计只在减少真实遍历时准入 | `PARTIAL`：sum、dot、extrema/index/minmax完整；缺 sum-of-squares/L1/L2、mean/variance 等组合 reduction | ggml norm/cvar + Highway reductions；推理 `GENERAL` 候选 |
+| `SIMD-A-11` | storage/mixed precision dot 不先全量 convert | f32/f64、bf16×bf16、f32×bf16对称、f16、i8/i16；accumulation与overflow显式 | overload by storage types；target feature specialization私有 | `PARTIAL`：上述常用族完整；没有 fp8 dot、u8×i8 或 block-quant dot | ggml mixed/quant dot；基础浮点 `COMPLETE`，新推理 dtype为 `MUST` 跨域候选 |
+| `SIMD-A-12` | model weights 使用 Q/IQ/TQ/MXFP/NVFP 等 block format 做 quantize/dequantize | block layout/version、scale/min/zero、rounding、tail、reference codec、alignment、quality policy | format-owning quant component + row codec；不能把 opaque block塞入通用 fp8 carrier | `ROUTED`：SIMD只有通用 bitpack/fp8；HYLE 当前无 block-quant产品 | ggml quants 是直接 consumer；推理 `MUST`，最终 owner在 SIMD/Compute/tensor-format 因子阶段裁决 |
+| `SIMD-A-13` | quantized weights 与 activation直接 row dot/GEMV/GEMM | format pair、tile layout、K multiple、packing、ISA/matrix extension、accumulator、thread partition | format-specific kernel table由 Compute 调度，SIMD提供 expert primitive/target substrate | `ROUTED`：expert可写 kernel，但没有 HYLE quant kernel family | ggml CPU quant kernels；推理 `MUST`，不能把矩阵/tensor policy倒灌普通 row API |
+| `SIMD-A-14` | 常用 f32/f64 transcendental 作用于整段并明确 accuracy/domain | exp/log/trig/hyperbolic/gamma/error/pow/atan2/hypot/remainder/nextafter、special values、alias | `<name>_f32/f64_batch`; safe ordinary 与 caller-proven in-range入口分离 | `COMPLETE`：real unary/binary/sincos及窄合同覆盖广，scalar oracle兜底 | Highway/xsimd/SLEEF discovery；通用数值 `GENERAL` |
+| `SIMD-A-15` | complex SoA buffer 做常见 elementary/transcendental 运算 | f32/f64、branch cuts、NaN/Inf、exact in-place、两个输出 alias约束 | separate real/imag pointer batches，不固化 `std::complex` ABI/layout | `COMPLETE`：exp/log/sqrt/trig/hyperbolic/pow齐全 | xsimd/Highway math +科学计算 journey；`GENERAL` |
+| `SIMD-A-16` | 推理 row 运行 GELU、sigmoid、SiLU、ReLU family | exact/approx variant、model参数、NaN、f32/f16/bf16 storage、in-place | 以数值语义命名 whole-row kernel；不能把模型默认值藏在名字后 | `PARTIAL`：f32 GELU exact/tanh、sigmoid/SiLU/ReLU/leaky/ELU/hard variants完整；缺 f16/bf16与 quick GELU | ggml activation rows；推理 `MUST` 候选 |
+| `SIMD-A-17` | gated MLP 对两段输入做 ReGLU/GeGLU/SwiGLU及可选 backward | split/binary layout、gate variant、f16/f32、output alias、backward、fusion boundary | model-independent row primitive可接受两 input spans；tensor stride/thread在 Compute | `MISSING`：普通 SIMD 无 GLU family | ggml `reglu/geglu/swiglu` 是直接 consumer；推理 `MUST` 候选 |
+| `SIMD-A-18` | 一行 logits 做 stable softmax/log-softmax | max-shift、NaN/+Inf/all -Inf、exact alias、empty、f32 | `src,dst,n` core + in-place convenience | `COMPLETE`：普通连续 f32 合同完整 | ggml softmax + Highway math；推理 `MUST` |
+| `SIMD-A-19` | attention/logits softmax 同时应用 scale、bias/mask、causal window或 online block | mask dtype/stride、-Inf、ALiBi、rows、online combine、precision、thread/backend fusion | Compute operator/kernel；可在固定 TU组合 SIMD primitives，不能堆 ordinary tiny calls | `ROUTED`：基础 softmax已有，tensor/fused variants无 | ggml softmax/flash-attention；推理 `MUST`，owner为 Compute |
+| `SIMD-A-20` | row 做 RMSNorm/LayerNorm、mean/variance 和 normalize | epsilon、f32 accumulate、weights/bias、one/two-pass、NaN、in-place、f16/bf16 I/O | model-independent reduction+transform core或 Compute fused op；必须先裁决复用粒度 | `MISSING`：只有可组合 sum/algebra，没有自然一次/两次遍历 norm API | ggml norm/rmsnorm；推理 `MUST` 候选，SIMD/Compute owner待 B 阶段 |
+| `SIMD-A-21` | scalar numeric buffer 做 equality search、extrema/index 和 sortedness | i/u8..64、f32/f64、empty、first tie、NaN、asc/desc、single-pass minmax | typed pointer/count family | `COMPLETE`：十类型与全部列举操作齐全 | Highway contrib + sampling/index journeys；基础 `GENERAL` |
+| `SIMD-A-22` | f16/bf16 buffer 做 numeric/bit equality、f32 sum 与 IEEE total order | signed zero、NaN payload、encoding equality、reversible key、asc/desc | narrow-specific whole-buffer API + constexpr key transform | `COMPLETE`：两种窄类型合同齐全 | Highway narrow + inference storage inspection；`GENERAL` |
+| `SIMD-A-23` | contiguous numeric buffer 做 inclusive/exclusive prefix sum | i/u32/64、f32/f64、init、exact alias、integer modulo、floating association | const input/output core + in-place convenience | `COMPLETE`：六类型、两 scan语义完整 | Highway scan + offset construction；`GENERAL` |
+| `SIMD-A-24` | segmented/keyed/custom scan、parallel scan 或 GPU scan | segment flags/keys、associativity、identity、partition combine、scratch、executor/backend | expert custom kernel、Container algorithm或 Compute operator按 owner承担 | `ROUTED`：基础 sum scan完整，无万能 runtime callback | Highway/oneDPL style + graph journeys；按真实 owner准入，拒绝逐元素 callback |
+| `SIMD-A-25` | numeric keys 做 full sort、partial sorted prefix 和 nth selection | i/u16..64、f32/f64、u128、key-value、asc/desc、NaN、O(1) hidden workspace | typed in-place operations | `COMPLETE`：11 类 key/POD 和三 operation齐全 | Highway VQSort + HYLE semantics；基础 `GENERAL` |
+| `SIMD-A-26` | 需要稳定 numeric order或保留原 keys输出 permutation | integer/float order、NaN-last、signed zero/payload stability、caller scratch、OOM、32-bit index bound | explicit radix/argsort scratch core + allocating convenience | `COMPLETE`：base-256 stable radix和argsort覆盖公开 numeric types | Highway origin + sampling/data-prep journey；`GENERAL` |
+| `SIMD-A-27` | sampling/beam search 只取 float score 的 top-k并保留 token index | descending score、stable/deterministic ties、NaN、k<<n、scratch、non-destructive input | score+index partial selection/sort或 indices top-k；不能强迫完整 argsort | `MISSING`：float partial_sort会丢 index，argsort必须完整排序；整数 KeyValue不能自然表达 float score | llama top-k sampling + ggml score arrays；推理 `MUST` 候选，和 Container algorithm联查 |
+| `SIMD-A-28` | unsigned values 按固定位宽压缩/解压并跨 ISA得到同一 payload | u8/u16/u32、bits range、tail/padding、endianness/version、capacity、no overlap | `packed_size` + pack/unpack；framing由 owner记录 | `COMPLETE`：canonical v1 layout和全部类型齐全 | Highway bit ops + model metadata/storage；`GENERAL` |
+| `SIMD-A-29` | 大批生成可复现非加密 u64/f32/f64 uniform values并划分 worker stream | seed/copy、jump/split、advance、跨 ISA位一致、thread confinement、range | mutable `RandomState` + fill/split；安全熵另归 Platform | `COMPLETE`（uniform）：xoshiro state lifecycle和三输出完整 | llama sampling RNG + HYLE Util RNG；推理 `GENERAL` |
+| `SIMD-A-30` | 批量 normal/exponential/bernoulli或 categorical sampling | distribution contract、quality、determinism、tail、state consumption、alias、top-k/top-p policy | 通用数值 distribution与模型 sampling policy分开；可在 expert kernel组合 | `ROUTED`：uniform substrate已有；标准 distribution可用，categorical owner不在 SIMD基础层 | llama sampler journey；能力由 sampling/Compute owner按真实算法准入 |
+| `SIMD-A-31` | hash、CRC、UTF、base64、compression、crypto 等算法内部需要 SIMD | wire semantics、security、state/streaming、error、ISA specialty、dispatch | 各语义 owner使用同一 expert/fat substrate；不把所有“用了向量”的算法迁入 SIMD | `ROUTED`：Container/IO等可直接消费锁定 provider或自己的 dependency | Highway contrib + HYLE Container；质因数是 target substrate，不是巨型 SIMD facade |
+| `SIMD-A-32` | GEMM/GEMV/conv/attention/RoPE 等 tensor kernel需要 shape、stride、packing、thread/backend策略 | dtype/quant format、layout、batch、broadcast、scratch、fusion、parallelism、device | Compute operator/kernel registry消费 SIMD expert/ordinary primitives | `ROUTED`：SIMD不实现 tensor operator；Compute/Graph当前冻结且覆盖不作断言 | ggml CPU operators；推理 `MUST`，保持依赖方向 `Compute -> SIMD` |
+| `SIMD-A-33` | provider升级或 HYLE新优化能逐 operation替换实现且不增加路由成本 | semantic equivalence、compiler/target/variant、material evidence、fallback、origin/license | compile-time route manifest；无法稳定分胜负默认当前 Highway | `COMPLETE`：387/387 inventory、422 scopes、HYLE winners与provider route已机械化 | Highway+xsimd/HYLE ledger；渐进强化架构 `MUST` |
+| `SIMD-A-34` | source/static/shared 用户获得同一 ordinary/expert/fixed/fat 形状 | relocatable headers/helpers、offline locked sources、visibility、toolchain/ISA、no vendor binary ABI | `hyle::simd` + opt-in `hyle::simd_expert` | `COMPLETE`：三平台三交付已签署；无旧 register façade或伪 C ABI | build/package + simd-v4；交付 `MUST` |
+
+##### A9.2 Math capability-family map
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `MATH-A-01` | 不可信 shape/stride/offset/byte count 做 checked add/sub/mul | same-type non-bool signed/unsigned、overflow无 UB、constexpr、精确成功值 | `try_add/try_subtract/try_multiply -> optional<T>` | `COMPLETE`：三基本 checked operation和 native/portable lowering完整 | CCCL/Folly + ggml shape arithmetic；基础 `MUST` |
+| `MATH-A-02` | 非负 count 做 ceil division和 representable multiple round-up | divisor>0、non-negative、overflow、trusted/untrusted、constexpr | `try_*` 返回 optional；已验证 invariant convenience fail-fast | `COMPLETE`：ceil/round四入口完整 | tensor/block sizing；基础 `MUST` |
+| `MATH-A-03` | mixed-width/signedness value进入统一 shape type前检查可表示性 | enum/integral、negative-to-unsigned、narrowing、bool、target type choice | 直接使用 C++23 `std::in_range` + explicit cast；复杂 conversion由owner schema处理 | `ROUTED`：标准库已自然覆盖，不复制 `checked_cast` | 标准定义性能力；拒绝无消费者 wrapper |
+| `MATH-A-04` | bit ceil/floor/width、rotate/popcount、gcd/lcm、limits与普通 scalar cmath | 标准整数/浮点语义、constexpr availability、NaN/domain | 直接使用 `<bit>/<numeric>/<cmath>/<numbers>/<limits>` | `ROUTED`：C++23标准库 owner | 标准能力；Math不做改名伞头 |
+| `MATH-A-05` | saturating/clamped/fixed-point或 mixed-result arithmetic | result type、promotion、rounding、saturation bound、overflow flag、constexpr | 只有具名 consumer共享同一政策时才增加窄 helper；lane版本走 SIMD expert | `OUT_OF_SCOPE`：当前无统一 HYLE scalar journey | CCCL扩展用于发现；peer API数量不构成准入 |
+| `MATH-A-06` | floating approximation、tolerance、sign/dead-zone、polynomial与transcendental | abs/relative/ULP、NaN/Inf/zero、accuracy profile、domain | scalar普通用标准库；buffer用 SIMD；领域 tolerance由consumer命名 | `ROUTED`：旧含糊 `sgn/approx_eq` 已正确移除 | 标准库 + SIMD；拒绝把策略伪装通用事实 |
+| `MATH-A-07` | linear algebra、FFT、geometry、statistics、quant scale或模型算子 | shape/layout、precision、scratch、backend、parallelism、domain policy | 成熟依赖或 Compute/Graph/consumer组件；Math不成为算法垃圾桶 | `OUT_OF_SCOPE`：依赖方向和owner边界明确 | ggml/oneDNN真实形状；能力保留给上层，不是 Math缺口 |
+| `MATH-A-08` | header-only scalar primitive在 source/static/shared 中同形使用 | inline/ODR、Core invariant dependency、无 binary/FFI、零动态资源 | `hyle::math` INTERFACE target + `<hyle/math/scalar.h>` | `COMPLETE`：三交付、P0 code shape与文档已签署 | build/package + math-v2；交付 `MUST` |
+
+public-surface 反向追踪覆盖 14 个 SIMD public headers（含两个 expert helper header）、全部普通 Runtime
+family、provider manifest、锁定 provider交付、Math scalar header，以及 ggml CPU/quant/operator和 llama sampling
+消费。第一遍得到八个关键结论：
+
+1. SIMD 的 breadth 已通过 expert SDK取得 Highway/xsimd完整 header-only 能力；不能再把422误写为用户能用
+   的全部 SIMD，也不能为了“API数量”重新制造 HYLE register façade；
+2. 普通 whole-buffer 层已有 dtype、real/complex math、基础 activation/softmax、search/scan/order/bitpack/
+   uniform RNG 的宽能力，但 row min/max/clamp/FMA、组合 reduction、GLU/norm与带索引 top-k存在真实自然缺口；
+3. fp8/block-quant dot与量化 GEMV/GEMM是推理主路径，不得因为 expert可以手写就算产品已覆盖；其 format、
+   packing和tensor调度必须与 Compute边界共同裁决；
+4. broad target完整不代表 specialty feature完整。AMX/SME、SVE2/dotprod/i8mm和每线程matrix state与
+   `PLAT-A-02` 是同一个跨域缺口；
+5. attention mask/fusion、RoPE、matrix和tensor stride属于 Compute，依赖方向必须保持
+   `Compute -> SIMD`，不能让不可拆分 SIMD产品依赖半成品 Compute；
+6. hash/UTF/compression/crypto等“内部用了 SIMD”的能力仍归其语义owner，公共质因数是 expert/fat target
+   substrate；这不违反 SIMD不可拆分的用户产品约束；
+7. Math 的 checked shape arithmetic和non-negative rounding已经完整，标准数值功能直接走 C++23，复杂
+   数值/模型算法有明确owner；本轮未发现应扩大 Math 的准入能力；
+8. A阶段只登记上述候选。当前 `CLOSED` 的 SIMD/Math不重开，不执行逐 op benchmark，也不恢复任何旧实现；
+   最终 trigger必须等 Container/Sched/IO和全局因子化反查。
+
+这表示 SIMD + Math 产品域的阶段 A 第一遍已经完成；SIMD继续是一个不可拆分产品，Math继续是独立极小
+scalar组件。新候选只有在 B 阶段确定语义owner和最小自然API后才可形成有限施工卡。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
