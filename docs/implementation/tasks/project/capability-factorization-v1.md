@@ -169,6 +169,67 @@ vector 中的 index graph，CANN LRU 又拥有并删除对象；两者都不是�
 这表示 Container-intrusive 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 组件不重开，新增候选只有在
 13 域跨查后才形成有限 `PRODUCT_TRIGGER`。
 
+#### A4. Util-core 产品域（第一遍完成，尚未跨域冻结）
+
+本节把 `util_core` 当作低层 utility 产品域，而不是把当前五个公开 header 反推成完整定义。直接推理
+输入包括 llama.cpp sampler 的可复制/事务式 RNG 状态、标准 uniform/discrete distribution 与 ggml-opt
+shuffle，ggml 的大量同步 callback + context 边界，以及 HYLE 当前 Mem/Sched/Graph 的短锁、Platform
+目录 visitor、Sched/IO/Graph 的多套 callback record 和 Container 私有 adaptive lock。strong peers 按
+能力行限于 Folly 的 Random/ScopeGuard/FunctionRef/SpinLock，Abseil 的 Cleanup/FunctionRef/nullability，
+Boost 的 intrusive pointer counter policy，以及 oneTBB 的 spin mutex/rw mutex；C++23 标准库路线不计作
+额外 peer。
+
+| ID | capability family / normal journey | admitted semantic variants and lifecycle | natural C++ downstream shape | HYLE baseline coverage | source and admission result |
+|---|---|---|---|---|---|
+| `UTILC-A-01` | 推理采样、训练 shuffle、仿真或测试需要快速且可复现的统计 bit stream | 显式 seed、copy/move、完整 state checkpoint/restore、非法全零 state、固定算法 identity；常态不分配、不锁 | 一个满足 `uniform_random_bit_generator` 的具体 engine；显式对象承载可复现性，不藏在线程全局状态 | `COMPLETE`：xoshiro256++、SplitMix64 seed、`RngState`、copy/state/from-state 与 URBG surface 完整 | llama sampler 复制主/事务 RNG，ggml-opt 保存 engine；Folly xoshiro；推理与通用计算 `MUST` |
+| `UTILC-A-02` | 用户从 bit stream 取得整数/浮点/概率值，或无偏选择/打乱区间 | u32/u64 全域与有界域、闭/半开边界、bool、float/double、rejection、random-access shuffle；极端输入不溢出 | engine 提供少量高频 typed draw；通用 distribution 继续组合标准 `<random>`，不复制一套 HYLE 名字 | `COMPLETE`：Lemire u32/u64、unit/range float、bool、callback/range shuffle；标准 distribution 可直接消费 `Rng` | llama uniform/discrete + ggml `std::shuffle`，Folly Random；普通旅程 `MUST` |
+| `UTILC-A-03` | token categorical、Bernoulli/Gaussian/Zipf 等领域分布，或要求与既有 engine 逐 draw 对齐 | 权重归一化、数值稳定性、空/退化分布、算法版本、CPU/backend draw commit/rollback；结果可复现合同必须点名 engine 与 distribution | 标准分布能满足时直接接 `Rng&`；token top-k/top-p/categorical 和 backend transactional policy 属推理/Math owner | `ROUTED`：`std::*_distribution` 可组合；HYLE 没有把 sampler policy 塞进 RNG | llama sampler 对 double uniform、discrete 和 backend committed draws 有真实语义；这是 `MUST` journey，但不是 Util-core API 并集 |
+| `UTILC-A-04` | worker/thread 获得独立统计流，或普通代码取得无需复现的 convenience stream | 显式 jump/long-jump 分区、TLS 首次 seed 失败、跨 DSO/线程 identity、稳态无锁；“大概率不同”不能冒充数学不重叠 | 可复现并行用 owner 持有的 engine + 明确分流；best-effort convenience 单独命名并暴露限制 | `COMPLETE`：2^128/2^192 jump 与 best-effort `thread_rng()` 两条路线分离 | Folly ThreadLocalPRNG + HYLE Sched 潜在 worker journey；通用 `MUST` |
+| `UTILC-A-05` | 安全 token/key/nonce、ASLR salt 或可信 seed material 需要操作系统熵 | blocking/failure、fork、sandbox、平台 provider、buffer fill、zeroization；不能从统计 PRNG 或 `random_device` 推断安全 | Platform/安全 owner 的 `secure_random(span<byte>) -> Status`，再显式 seed 统计 engine；不自写 crypto PRNG | `OUT_OF_SCOPE`：`thread_rng` 明确非安全，当前无 secure bytes API | Folly secureRandom 用于发现，HYLE IO/security 边界决定准入；能力本身 `GENERAL`，最终 owner 交给 Platform/IO，不污染 Util-core |
+| `UTILC-A-06` | 资源取得后有多早退，需要一次 lexical rollback、cleanup 或显式 commit | once、dismiss/invoke、move transfer、callable storage 失败、逆序析构、callback throw；borrow 必须活到 guard | owning callable 的 `ScopeGuard`/scope-exit value；普通 typed handle 仍优先自己的 RAII | `COMPLETE`：CTAD、nodiscard、move、dismiss/invoke、constructor failsafe 与 defer macro | Abseil Cleanup + Folly ScopeGuard；通用 `MUST` |
+| `UTILC-A-07` | 只在 exception failure/success 执行 cleanup，或一个 handle/deleter 组成 typed unique resource | `uncaught_exceptions` 边界、deleter state、empty/release/reset、move、invalid handle、析构 no-throw | 工具链 `<scope>` 的 `scope_fail/scope_success`；资源用 `unique_ptr`/owner RAII/可用的 `unique_resource`，不扩成万能 guard | `ROUTED`：status-return 代码可用 guard + commit；exception/typed-resource 由标准和 owner 完整承载 | Abseil/Folly breadth 用于选择边界；无 HYLE consumer 证明需要第二套类型，明确不因 peer API 数量复制 |
+| `UTILC-A-08` | 热对象把 strong count 放在对象内，以单指针 owner 跨函数/线程传递 | initial ownership、adopt/retain、copy/move/reset/release、const/upcast/casts、custom destroy、final handoff ordering、identity hash/order | `RefCounted<T>` + one-word `Ref<T>`；adopt 与 retain 在调用点显式，释放永不抛 | `COMPLETE`：强所有权 surface 与 atomic final-release ordering 完整，duck-typed counter 也可接入 | Boost intrusive_ptr + Folly intrusive ownership；foundation hot object `GENERAL`，不因当前仓内零调用删除公开能力 |
+| `UTILC-A-09` | 确定 thread-confined 的 AST/plan/object graph 不应为每次 retain/release 支付原子 RMW | thread-safe 与 thread-unsafe 是类型级选择；跨线程误用是前置条件；计数宽度/溢出、copy base、custom teardown 一致 | 同一 `Ref<T>` handle 接 counter-policy base，或一个明显命名的 non-atomic base；不能运行时分支 | `PARTIAL`：`Ref` 可接用户 duck type，但内置 `RefCounted<T>` 只有 atomic policy，普通用户没有自然的 non-atomic shape | Boost `thread_safe_counter/thread_unsafe_counter` 是成熟直接证据；性能基础库 `GENERAL`，待 Graph/Container/Sched 反查后定 owner/API |
+| `UTILC-A-10` | 对象需要 weak observer、环打破、aliasing、非侵入 ownership 或 lock-free publication | strong/weak control block、expired/lock、cycle policy、alias subobject、allocator、atomic load/store 与 reclamation | 直接使用 `std::shared_ptr/weak_ptr`、`atomic<shared_ptr>` 或领域 generation/hazard handle；不能给每个 intrusive object 常驻 weak metadata | `ROUTED`：HYLE `Ref` 刻意只承载 strong intrusive；标准库路线完整 | llama Vulkan/adapter/cache 大量 shared/weak/unique ownership；真实 `MUST` journey 证明路线，而不是要求 HYLE 复制 control block |
+| `UTILC-A-11` | intrusive object 要从 injected allocator fallibly 构造，并用同一 allocator 销毁 | size/alignment、constructor failure、OOM、partial construction、deleter state、Result propagation；owner lifetime | owning module 的 `Result<Ref<T>>` factory 完成 allocate/construct/adopt，自定义 `destroy` 回到同一 allocator | `ROUTED`：`make_ref` 是 throwing `new` convenience；Mem/Error/owner 可完整组合 fallible 路线 | HYLE Mem 与 Ref public contract；反向让 Util-core 依赖 Mem/Error 会破坏基础闭包，明确留给 owner |
+| `UTILC-A-12` | 极短低争用状态用紧凑 exclusive lock；原子轮询需要目标 ISA 的低功耗/progress hint | Lockable/try/unlock、TTAS/backoff、尺寸、memory order、x86/Arm/RISC-V hint、unknown fallback、公平/递归/hold-time 边界 | compact `SpinLock` + `std::lock_guard`；单独的 `cpu_relax` 只表达 hint，不建立同步；支持目标有可用 pause feature 时不能悄悄退成空操作 | `PARTIAL`：锁与 x86/Arm hint 完整，但当前 RISC-V 即使编译目标有 Zihintpause 也落入 no-op；owner 也无法询问 pause feature | ggml CPU threadpool 明确含 RISC-V Zihintpause 分支，oneTBB/Folly 提供同类短锁；跨支持平台一致性为 `MUST` 候选 |
+| `UTILC-A-13` | 读多写少或中等争用小状态需要 shared locking、短 spin 后 parking，而不是纯烧核或重量 mutex | SharedLockable、writer starvation/fairness、try/upgrade、spin budget、atomic wait/notify、thread/fiber 区分、false sharing | 按语义命名的 compact RW spin 或 adaptive thread mutex；fiber-aware wait 仍归 Sched；不提供“fast/slow lock”档位 | `MISSING`：Container 已有私有 AdaptiveMutex/AdaptiveRwLock，ggml 有 OS shared mutex；Util-core 只有 exclusive spinner | oneTBB `spin_rw_mutex` + Folly RW/Micro spin families，以及 HYLE 重复实现；`GENERAL` 进入跨域因子化，不预判公开还是私有 foundation |
+| `UTILC-A-14` | 多个 lock-free/parking state machine 都要做 bounded pause、yield、park，而各自仍拥有 wake condition | reset、iteration budget、ISA hint、thread yield、deadline/cancel、park token；不同算法不能共享一个错误的固定常数 | 可复用部分至多是 tiny backoff/hint policy；何时 park/wake 继续由 Container/Sched/Mem owner 决定 | `PARTIAL`：`SpinBackoff` 私有，Container 两份 pause/backoff，Sched 又手写 pause/yield；标准 `atomic::wait` 只覆盖 park primitive | oneTBB internal atomic-backoff + Folly spin families用于机制对照；HYLE 重复是 `GENERAL` 去重输入，不据此强造公共类 |
+| `UTILC-A-15` | 同步 API 在一次调用期间借用任意 callable，不拥有、不复制、不分配，同时避免每个 API 重写 trampoline | void/value/noexcept signature、function/member/lambda、const/mutable、nullable 与 lifetime-bound；绝不能存入异步 record | two-word `FunctionRef<R(Args...)>`-like borrowed view，按值参数；存储/返回/异步队列使用 owning callable 或显式 fn+ctx | `MISSING`：Platform visitor 有自制 trampoline，HYLE 有多套同步模板与 raw pair，但没有统一 borrowed callable vocabulary | Abseil/Folly FunctionRef + HYLE/ggml callback journeys；通用 `GENERAL`，需逐 consumer 区分 call-only 与 stored callback 后再准入 |
+| `UTILC-A-16` | scheduler/thread/IO 要把 callable 保存到稍后、跨线程或重复调用 | copy/move-only、SBO/allocator、exception/noexcept、cancel/destroy、module lifetime、one-shot/repeating；ownership 必须显式 | 普通冷路径用 `std::function/std::move_only_function`；allocator/stack/fiber 约束强的热 record 由 owning module 类型擦除 | `ROUTED`：Platform/Sched 已有自然 lambda convenience 与窄 fn+ctx core；没有通用 owning callable | llama 大量 `std::function`，Folly Function 提供更宽选择；当前无两个 HYLE owner 共享完全相同 storage 合同，拒绝先造万能 wrapper |
+| `UTILC-A-17` | API 区分 required borrow、nullable borrow、optional reference 与“失败但成功时非空”的 borrow | temporary rejection、const conversion、pointer-like smart handle、lifetime-bound、null check、Result composition；不拥有对象 | `T&`/annotated or wrapped non-null pointer 表达 required；`T*`/optional-ref 表达 nullable；fallible non-null borrow 与 Error carrier 对齐 | `PARTIAL`：语义可由 raw pointer/reference/reference_wrapper 组合，但全库大量非空注释，Error 也缺统一 direct borrow carrier | Abseil nullability/optional_ref + Folly not_null；已与 `ERROR-A-04`、`CORE-A-05` 形成跨域 `GENERAL` 候选，最终只保留一个 vocabulary owner |
+| `UTILC-A-18` | 日志、测试和调试在 compile time 取得 static type spelling/label，不依赖 RTTI | cv/ref/array/function/incomplete/local type、unsupported compiler、static storage、hash collision、TU/plugin/compiler/build 边界 | `constexpr string_view type_name<T>()` + diagnostic hash；correctness dispatch 绝不只比较 hash | `COMPLETE`：probe-sliced compiler name 与 FNV diagnostic hash 已明确边界 | Folly TypeInfo + Boost type-name 路线；定义性诊断 `GENERAL`，ggml 的显式 tensor/op enum name 是领域 identity 而非替代品 |
+| `UTILC-A-19` | runtime type erasure/registry 需要进程内无碰撞 token，或持久/plugin/wire 协议需要稳定 ID | RTTI on/off、DSO unload、address uniqueness、collision、version/schema、serialization | build-local runtime dispatch 可用 `std::type_index`/显式 address token；跨 DSO/持久协议必须用 owner enum/schema/UUID | `ROUTED`：runtime demangle 在 Util-runtime，correctness identity 走显式 owner schema；`type_hash` 不承担此合同 | Abseil FastTypeId + Folly TypeInfo 用于发现；llama/ggml 用显式 enum/vtable identity，未证明 HYLE 需要第二个全局 type registry |
+| `UTILC-A-20` | 用户需要 span/optional/variant/expected/bit/source-location/RAII lock/owning function 等通用语言积木 | C++23 标准语义、constexpr/noexcept、range/iterator、compiler floor 与 feature availability | 能由当前 C++23 合同自然表达的直接使用 `std::*`；HYLE 只补真实缺口或跨工具链不一致，不建兼容层大全 | `ROUTED`：当前 Core/Error/Container 只对有独立语义的能力拥有类型 | 定义性工程能力检查；peer 为旧标准提供的 polyfill 不构成 HYLE 新 API 准入理由 |
+| `UTILC-A-21` | source/static/shared 用户只选低层 header 能力，不拉入 allocator/container/runtime artifact | header self-containment、component selection、直接 Core edge、模板/inline ODR、无虚构 binary journey；Native FFI 不镜像模板 | header-only C++ component 或更小因子的聚合 target；安装只交付所选 closure 的 headers | `COMPLETE`：`hyle::util_core -> core` INTERFACE target 与五头交付完整 | 当前 package/source journey；交付 `MUST`，但当前五族是否仍应捆成一个因子留到 B |
+
+public-surface 反向追踪覆盖 `<hyle/util/{random,ref_counted,scope_guard,spin_lock,type_name}.h>`、独立
+`hyle::util_core` target、当前 architecture/user guide 和生产树调用。当前仓内只有 SpinLock/cpu_relax 有
+真实生产采用：Mem、Sched 与冻结但未完成的 Graph；Rng、Ref、ScopeGuard、type-name 的仓内调用为零，
+但各自有标准/成熟 peer 和自然 SDK journey，不能因“内部没用”删除。llama.cpp 的 ownership 以
+`unique_ptr/shared_ptr/weak_ptr` 为主，证明 weak/non-intrusive 路线应保持标准库可选，并不证明单指针
+intrusive strong owner 无效。
+
+第一遍得到六个跨域候选，而不是立即扩写这个 header-only 聚合包：
+
+1. 当前 Rng 能直接组合 llama.cpp 使用的 uniform/discrete/shuffle，copy/state 也能表达 speculative
+   checkpoint；token sampling 数值算法和 backend commit policy 留给 Math/推理 owner；
+2. `cpu_relax` 在已支持的 RISC-V 产品目标上静默 no-op，是支持矩阵缺口；最终修复位置要与 Core 的
+   compile-target facts、Platform runtime feature 和不可拆分 SIMD 路由共同决定；
+3. thread-confined intrusive counter 是成熟的零原子语义档，当前 duck-type escape hatch 不等于自然用户
+   shape；是否补 counter policy 要由 Graph/Container/Sched 的真实 ownership 反查决定；
+4. Container 私有 adaptive locks、Sched backoff 和 Util-core spinner 已形成同步机制重复；第二阶段要区分
+   可复用 thread primitive、fiber policy 与 owner-specific state machine，不能把所有锁堆进 `util`；
+5. borrowed callable 与 non-null/optional borrow 是成熟的低成本 vocabulary，并有 HYLE 重复形状；但
+   stored async callback、fallible borrow 和 compiler annotation 各有不同生命周期，必须分别与 Sched/IO、
+   Error、Core 去重后才决定是否产生公共类型；
+6. 当前 `util_core` 把五个语义无关但同为 header-only/Core-only 的能力聚合在一个 target。它可能只是低
+   成本交付聚合，也可能包含多个可独立消费的因子；B 阶段按依赖缩减、成本隔离和用户选择收益裁决，
+   不能因名字带 `core` 先验认定不可再分。
+
+这表示 Util-core 产品域的阶段 A 第一遍已经完成；当前 `CLOSED` 组件不重开，任何缺口只有在 13 域
+完成跨查、确定唯一 owner 和有限 FIX 集后才形成 `PRODUCT_TRIGGER`。
+
 ### B. 跨域归属与质因数分解
 
 只使用已经冻结的 A 输入，建立全局账本：
