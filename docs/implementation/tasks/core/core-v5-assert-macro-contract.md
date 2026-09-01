@@ -1,6 +1,7 @@
 # Core v5 断言宏合同修复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮不是无新事实复查。Core v4 关闭后，针对公开开发者接口的独立红队得到两个可复现产品缺陷，
 > 命中“真实消费者暴露 correctness/API-usability defect”和“支持编译器使冻结语义失效”重开条件。
@@ -246,3 +247,32 @@ borrow、enabled single evaluation and disabled zero evaluation。完整环境�
 `C:\hyle-scratch\core-v5\module-status-candidate.json` 的明确前态执行 `CANDIDATE -> VERIFIED`。
 
 当前为 `VERIFIED`；下一步只写 terminal receipt 与 registry anchor，不再改变 candidate product。
+
+## 接受限制与重开条件
+
+接受限制：Core observer 仍是 image-local atomic callback slot；exchange 不是 quiescence barrier，embedding
+host 必须在 callback code/context 卸载前先 restore/null 并等待自身调用者退出。Core 只提供 bounded typed
+context，不拥有任意格式化、日志、backtrace、signal/minidump 或 process-wide crash policy。P0 证书只证明
+冻结 compiler、候选与交付形状的正常路径结构成本；不声明 failure I/O、下游 workload、通用 timing、
+cache-hit 或全平台 SOTA。Native FFI 仍按全局政策不提供。
+
+只有下列新事实重开 Core：
+
+1. 真实消费者复现 Core correctness/security、缺失 foundation 或 C++ API 易用性缺陷；
+2. 支持 compiler/target 使 assertion semantic parity、1–8 field bound、macro hygiene、normal-path codegen、
+   header closure 或 visibility 合同失效；
+3. public API、正常成本、layout、compiler/environment 语义、组件依赖或交付形状发生变化；
+4. named host consumer 证明 observer lifetime/coordination 必须由 Core 用不同复杂度或 ownership 形状解决；
+5. mature same-contract peer 证明更优复杂度档，或 normal consumer workload 证明可复现的 material
+   regression/advantage。
+
+新 benchmark、API/LOC 数量、命名偏好、亚纳秒点值、历史 task 命令句或无新事实的“再看一遍”不构成
+重开理由。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：两个公开 assertion 缺陷及两个验证/文档缺口均按冻结 `CORE5-01..04` 修复；public
+API 与能力边界保持不变。不可变候选在三个支持平台通过 correctness、delivery、usability/docs、red
+team 与 P0 structural gates，剩余 blocker 与 medium-or-higher finding 均为 0。候选保持
+`4b7f28c55e9ca118cf87b80058ce291261033ec5` / `074617e1b1dc9d11843493c1e2240da7fd798d9a`；
+本 terminal receipt 不改变产品 identity。
