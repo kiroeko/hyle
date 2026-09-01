@@ -173,4 +173,7 @@
 Windows 还编译运行迁移涉及的 Obs/SIMD/IO。GCC shared-symbol audit 曾发现
 `write_fatal_event` 可见性遗漏，修正后通过；这属于候选冻结前的真实产品缺陷，不保留为限制。
 
-候选 commit/tree、不可变 replay、gate matrix、LOC 和 terminal receipt 在进入 `CANDIDATE` 后填写。
+候选 identity：commit `cbc2951ca34ffa961d9db8660b45f17eac2a0104`，tree
+`21697748299939378a258a5c5aee02ef02582c15`。后续所有产品 gate 只验证这一不可变 identity；若公共
+合同、算法或正常成本发生变化则退回 `AUDITED`，不得把新 tree 冒充同一候选。不可变 replay、gate
+matrix、LOC 和 terminal receipt 在验证后填写。

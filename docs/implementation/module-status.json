@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CORE-FOUNDATION-COMPLETENESS-01",
       "reopen_evidence": "docs/implementation/tasks/project/capability-factorization-v1.md",
       "round_id": "core-v3-foundation",
@@ -13,6 +13,8 @@
       "scope": "Complete bounded fatal context and observer, assertion modes, consumer-backed compiler contracts and current-TU environment facts while preserving Core's header-only prime boundary.",
       "non_goals": "Logging, crash reporting, recoverable errors, runtime topology or ISA dispatch, machine actions, runtime version artifacts, Native FFI, timing benchmarks and adjacent-module algorithm review.",
       "baseline_commit": "0fc5fbc0cc8a86ef043788400e6305e5e6afa0e4",
+      "candidate_commit": "cbc2951ca34ffa961d9db8660b45f17eac2a0104",
+      "candidate_tree": "21697748299939378a258a5c5aee02ef02582c15",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -27,7 +29,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v3 双向审计与 API freeze 完成；CORE3-01～05 是唯一 FIX 集，P0 成功路径和 header-only 边界保持不变。"
+      "summary": "core-v3 CANDIDATE：cbc2951c/21697748 冻结 bounded fatal context/observer、assertion modes、consumer-backed compiler annotations 与数值化 current-TU environment；进入不可变 P0/三平台/三交付验证。"
     },
     {
       "module": "container_intrusive",
