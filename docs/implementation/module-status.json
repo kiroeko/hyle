@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
       "round_id": "core-v5-assert-macro-contract",
@@ -27,7 +27,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v5 由公开 assertion 宏的可复现合同缺陷定向重开：context 宏会捕获同名用户标识符，disabled Debug 宏未完整类型检查真实条件和字段数。"
+      "summary": "core-v5 已冻结为 P0 定向修复：只恢复公开 assertion 宏的调用者作用域卫生、Debug 启用/禁用态编译语义等价和 1–8 fields 合同，并保持零正常运行时成本。"
     },
     {
       "module": "container_intrusive",
