@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
       "round_id": "core-v4-build-contract-projection",
@@ -27,7 +27,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v4 范围已冻结：Core 产品实现保持不变，只隔离 Core-only compile usage requirements、维持 Container SSSE3 等价输入，并重签三种 C++ delivery。"
+      "summary": "core-v4 审计完成：公开 API 无 benchmark seam 或新的能力/易用性缺口；有限 FIX 只隔离 Core build contract、维持 Container SSSE3 所有权并重签三种 C++ delivery。"
     },
     {
       "module": "container_intrusive",

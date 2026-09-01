@@ -33,7 +33,7 @@
 SIMD fixed/fat ISA helper；重新选择项目最低 CPU；重审 Container 性能；修改 Native FFI、依赖锁或
 物理 archive/DSO 粒度。
 
-## SCOPED contract
+## AUDITED contract
 
 冻结的投影是：`hyle_build_contract` 移除 SSSE3 与 `/EHsc`；Container factor 直接 `PUBLIC` 取得与原来
 同一 compiler-conditioned SSSE3 option；Core package sample 增加 exception-disabled journey；中央
@@ -42,4 +42,10 @@ SIMD fixed/fat ISA helper；重新选择项目最低 CPU；重审 Container 性�
 
 验证固定为三平台 Core tests、Core selected source/static/shared、Container selected
 source/static/shared、中央 component contract、安装 target/header/artifact inventory、文档与 closure
-checker。Container 只证明有效 flag/route 等价，不续签其算法或性能。当前为 `SCOPED`，尚未改实现。
+checker。Container 只证明有效 flag/route 等价，不续签其算法或性能。
+
+审计同时逐项检查 Core 公开 API 与真实 HYLE/推理消费者、Highway、Abseil、Folly 的同类任务。没有
+发现由 benchmark 命名、只为计时存在或给常态对象添加测量 metadata 的公开入口，也没有需要本轮新增
+的易用性能力。冻结实现集只有：移除 `_build_contract` 的 SSSE3 与 `/EHsc`，把原 SSSE3 option 原样
+投影到 `hyle_container PUBLIC`，增加 Core-only no-exception package journey 和对应机器/文档合同。
+当前为 `AUDITED`；任何额外产品或构建策略变化均须重新审计。

@@ -5,7 +5,7 @@
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round / kind：`core` / Core + build-package / `core-v4-build-contract-projection` /
   `REOPEN`；
@@ -38,4 +38,42 @@
    选择，不能制造 Core artifact。
 
 冻结预算：实现 60 分钟、验证 60 分钟；最多一次实现修正。性能仅作 P0 structural/code-option
-裁决，不运行纳秒 benchmark。当前为 `SCOPED`，产品/build 实现尚未修改。
+裁决，不运行纳秒 benchmark。
+
+## 能力、易用性与反 benchmark 审计
+
+审计反查了当前 HYLE 生产消费者，并以 Highway `63f4b16c`、Abseil `b7adf83d`、Folly
+`eeac00030`、ggml `d4716378` 与 llama.cpp `0eadefeb` 的同类开发者任务作形状对账。结论不是按 peer
+符号数量求并集，而是确认每个公开入口能回答一个正常 consumer 问题：
+
+| 公开 family | 正常开发者任务 / 真实依据 | AUDITED 决策 |
+|---|---|---|
+| fatal、debug 与 typed context | 推理引擎和 HYLE 内部 invariant；昂贵开发期检查；失败时给宿主少量结构化上下文 | `KEEP`；成功路径只有冷分支，debug-disabled 不求值，context/observer 只在 failure path 付费 |
+| failure observer | 把不可恢复事件同步转给宿主已有 crash/diagnostic 管线 | `KEEP`；显式 install/restore 比暗示跨 DSO 或进程级 RAII ownership 更诚实 |
+| compiler contracts | 已证明的 alias、branch、loop、inline、allocation 与 unreachable 前提 | `KEEP`；名称按语义而非 benchmark case，unsupported compiler 安全退化；不增加无 consumer 的 `HOT`、blanket no-sanitize 或自造 nodiscard |
+| cache layout / three prefetch intents | 隔离独立写字段；区分复用读、一次读和即将写入的 hint | `KEEP`；三种 intent 与 Abseil/成熟 compiler primitive 同形，具体收益仍由拥有访问分布的 consumer 签署 |
+| current-TU environment | 多平台、多 compiler、sanitizer、exceptions/RTTI 条件编译 | `KEEP`；全部是数值预处理 facts，没有 runtime registry/dispatch |
+| compile-time version / visibility | header identity 与 build-owned export decoration | `KEEP`；没有 linked getter、Core binary 或伪 Native FFI |
+
+公开 headers 中未发现 `benchmark`、`fast/slow`、`for_test` 或 test-only ABI；测试只验证上述语义、
+failure bound 与 optimized code shape，没有反向塑造公共 layout/metadata。当前 HYLE 内部尚未直接使用的
+debug context、observer、non-temporal/write prefetch 和少数 annotation，也分别对应成熟库与正常宿主
+任务，并且不向常态对象增加字段，因此不能仅按“内部调用次数为零”删除。
+
+易用性结论是 `PASS`：按任务 include `assert.h`、`compiler.h`、`cache.h`、`environment.h` 或
+`version.h`，没有巨型 umbrella；最短 invariant 是一个 macro，需要信息时才 opt in message/typed
+fields；危险的 assume/restrict/prefetch 前提已在 user guide 就近说明。比较式 CHECK 大全、任意格式化、
+backtrace/minidump、runtime CPU/NUMA、assume-aligned wrapper、observer RAII 与 C/Native FFI 分别属于
+Error/Obs/Platform/SIMD、标准 C++ 或未来具名宿主需求；没有当前 consumer 证据，不准入本轮。
+
+## 冻结 FIX ledger
+
+| ID | Finding | 有限动作 | 验证 |
+|---|---|---|---|
+| `CORE4-01` | 全局 build contract 把 Container-only SSSE3 许可泄漏给 Core | 从 `_build_contract` 移除，并由 `hyle_container` 直接 `PUBLIC` 拥有同一 compiler-conditioned option | 中央 target property 正/负合同；Container 三交付 compile |
+| `CORE4-02` | 全局 `/EHsc` 替父工程选择异常模式，并覆盖 Core-only no-exception TU | 移除显式 `/EHsc`；增加 `HYLE_HAS_EXCEPTIONS == 0` 的 Core package journey | source/static/shared Core normal + no-exception compile/run |
+| `CORE4-03` | 构建所有权和用户例外边界尚未写成当前合同 | 更新 build architecture、Core user guide 与机器合同 | docs/closure checker、package inventory |
+
+Core headers、API、算法、layout 与 runtime 行为的产品修改集为空。任何新 API、compiler spelling、cache
+常量、fatal 语义或 Container 算法变化都必须退回 `SCOPED/AUDITED`，不能借本轮顺手实施。当前为
+`AUDITED`，只授权以上三项。
