@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CANDIDATE",
+        "product_state": "VERIFIED",
       "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
       "round_id": "core-v5-assert-macro-contract",
@@ -21,15 +21,25 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
-      },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "summary": "core-v5 candidate 4b7f28c5/074617e1 已冻结：公开 API 不变，宏卫生、Release/Debug 编译语义、字段边界、回归和 observer 指南已完成，等待三平台门。"
+        "engineering_performance": {
+          "verdict": "PASS",
+          "mode": "STRUCTURAL",
+          "instrument_profile": "closure-correctness-v1",
+          "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
+        },
+        "formal_performance": {
+          "state": "NONE"
+        },
+        "gate_verdicts": {
+          "scope": "PASS",
+          "architecture": "PASS",
+          "correctness": "PASS",
+          "delivery": "PASS",
+          "usability_docs": "PASS",
+          "red_team": "PASS",
+          "engineering_performance": "PASS"
+        },
+        "summary": "core-v5 的不可变候选 4b7f28c5/074617e1 已通过三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能门。"
     },
     {
       "module": "container_intrusive",

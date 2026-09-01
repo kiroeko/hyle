@@ -183,4 +183,66 @@ capture。The next step is one immutable product commit/tree and full frozen-gat
   Any product header、test/tool verdict semantics、public contract、dependency or delivery change returns the round
   to `AUDITED` and creates a new candidate。
 
-当前为 `CANDIDATE`；所有 fixed gates will run from this immutable pushed identity。
+## Candidate verification
+
+### Correctness、delivery 与依赖投影
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| Release WERROR Core tests | `6/6` | `6/6` | `6/6` | `PASS` |
+| Debug WERROR Core tests | `5 PASS` + Release-only codegen `SKIP` | 同左 | 同左 | `PASS` |
+| Release compile contract | positive accepted；6 invalid rejected | 同左 | 同左 | `PASS` |
+| Core source/static/shared relocated journeys | 每种 normal + no-exception `2/2` | 同左 | 同左 | `PASS` |
+| full component contract | `PASS` | `PASS` | `PASS` | `PASS` |
+| ASan / UBSan Debug Core tests | — | 各 `5/5 PASS` | — | `PASS` |
+
+每个平台都从 clean native checkout/worktree 精确重放 candidate。Compile configure gate independently rejects
+non-Boolean condition、invalid dependent condition/message/field、0 fields and 9 fields；positive dependent use
+and caller local named `hyle_fatal_fields` compile。Runtime/death tests verify same-name signed value、failure
+borrow、enabled single evaluation and disabled zero evaluation。完整环境、限制与结果见
+[`manifest-4b7f28c5.md`](../../../../evidence/core/manifest-4b7f28c5.md)。
+
+### P0 structural、usability 与 red team
+
+- Release codegen audit 在 MSVC x64、GCC x86-64、AppleClang arm64 上确认 disabled Debug probe 与同签名
+  identity control 的 normalized instruction sequence 完全一致；Fatal success path 仍有一个条件 failure
+  edge，且 diagnostics/termination 不进入 hot caller；
+- candidate diff 未新增 public name、layout、dependency、option、artifact、normal metadata 或 runtime
+  dispatch；冻结 `FIX` 外的产品路径为零；
+- reverse trace 仍将每个公开 assertion/observer seam 映射到 normal C++ developer/host journey；没有
+  benchmark-named surface。Guide 已明确 Release 诊断一致性、1–8 fields、borrow、reentrancy 和 callback
+  unload/quiescence 陷阱；
+- post-candidate hostile diff review 复核 macro expansion、positive/negative compile、optimized object、公开
+  headers 与 delivery inventory，未发现剩余 medium-or-higher finding。
+
+### Aggregate gates
+
+| Aggregate gate | Verdict | Evidence / limitation |
+|---|---|---|
+| scope | `PASS` | 只有冻结 `CORE5-01..04`；产品 candidate 后未改动 |
+| architecture | `PASS` | Core 仍是无 HYLE/第三方产品依赖的 header-only prime；边界未扩张 |
+| correctness | `PASS` | 三平台正/负编译、Release/Debug、death/observer、ASan/UBSan |
+| delivery | `PASS` | 三平台 source/static/shared relocated journeys 与中央 component contract |
+| usability/docs | `PASS` | task-shaped macros、统一编译诊断、字段/borrow/plugin 生命周期陷阱已说明 |
+| red team | `PASS` | post-candidate 边界/宏卫生/语义/交付复核；剩余 MEDIUM+ 为 0 |
+| engineering performance | `PASS` | P0 structural；disabled zero instructions，Fatal hot/cold 边界保持；timing N/A |
+
+### Candidate LOC
+
+`python scripts/loc-report.py --module core --commit 4b7f28c55e9ca118cf87b80058ce291261033ec5
+--self-check --json` 由 cloc 2.08 从不可变 tree 复算并通过 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 414,925 |
+| 自实现包含测试 | 99,927 |
+| 自实现不包含测试 | 62,142 |
+| Core 实现 | 762 |
+
+## Verification verdict
+
+七项 aggregate gate 全部 `PASS`，四个 `MUST` 均已完成，没有未处置 blocker。P0 结论只签 normal-path
+结构成本，不把 failure I/O、不同诊断产品或亚纳秒点值纳入排名。Registry 已用保存于
+`C:\hyle-scratch\core-v5\module-status-candidate.json` 的明确前态执行 `CANDIDATE -> VERIFIED`。
+
+当前为 `VERIFIED`；下一步只写 terminal receipt 与 registry anchor，不再改变 candidate product。

@@ -1,10 +1,28 @@
 # Core 工程性能资格与证据边界
 
-> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页当前绑定 Core v4 候选
-> `7ae3de400b5d7b598972ebf4913d336b60517483` 的 P0 结构证据；完整三平台结果与限制见
-> [verification manifest](../../../../evidence/core/manifest-7ae3de40.md)，施工与易用性审计见
-> [Core v4 closure card](../../tasks/core/core-v4-build-contract-projection.md)。这不是纳秒榜，也不宣称
+> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页当前绑定 Core v5 候选
+> `4b7f28c55e9ca118cf87b80058ce291261033ec5` 的 P0 结构证据；完整三平台结果与限制见
+> [verification manifest](../../../../evidence/core/manifest-4b7f28c5.md)，施工与易用性审计见
+> [Core v5 closure card](../../tasks/core/core-v5-assert-macro-contract.md)。这不是纳秒榜，也不宣称
 > “整个 Core 全局 SOTA”或脱离消费者的普适加速倍数。
+
+## Core v5 当前有限结论
+
+本轮修复公开 assertion 宏的 C++ 编译语义，没有新增能力、layout、依赖或正常路径状态。因此 timing
+peer comparison 为 `NOT_APPLICABLE`，工程 verdict 是 `P0 STRUCTURAL PASS`：
+
+- context 宏不再声明固定 caller-scope 名称；合法字段表达式不会被宏内部捕获；
+- Release-disabled Debug condition、message、field 与 1–8 fields 边界由 unevaluated expression 按启用态
+  同一形状检查，同时保持零求值；
+- optimized disabled-Debug probe 在 MSVC x64、GCC x86-64 与 AppleClang arm64 上逐指令等同同签名
+  identity control；Fatal success path 仍只有通往冷失败 sink 的条件边；
+- 三平台 Release/Debug WERROR、正/负编译、ASan/UBSan、源码/static/shared relocated consumer 与中央
+  component contract 均通过；
+- public API、常态 metadata、runtime dispatch 和 binary artifact 均未增加。
+
+公开的有限说法是：**冻结候选、工具链和交付形状上的 assertion 正常路径结构成本符合合同。** 本页不
+把终止路径 I/O 计时，不声称比 Abseil/Folly/ggml 的不同诊断产品更快，也不把 P0 structural PASS 外推
+成通用吞吐 SOTA。
 
 ## Core v4 当前有限结论
 
