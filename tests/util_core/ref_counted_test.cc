@@ -15,6 +15,7 @@ using hyle::util::make_ref;
 using hyle::util::Ref;
 using hyle::util::RefCompatible;
 using hyle::util::RefCounted;
+using hyle::util::ThreadUnsafeRefCounted;
 using hyle::util::retain_ref;
 using hyle::util::const_pointer_cast;
 using hyle::util::dynamic_pointer_cast;
@@ -42,6 +43,13 @@ struct CustomTeardown : RefCounted<CustomTeardown> {
   }
 };
 
+struct ThreadConfinedWidget : ThreadUnsafeRefCounted<ThreadConfinedWidget> {
+  static inline int live = 0;
+  explicit ThreadConfinedWidget(int initial) : value(initial) { ++live; }
+  ~ThreadConfinedWidget() { --live; }
+  int value;
+};
+
 }  // namespace
 
 TEST(RefCounted, MakeRefStartsAtOneAndDestroys) {
@@ -54,6 +62,23 @@ TEST(RefCounted, MakeRefStartsAtOneAndDestroys) {
     EXPECT_EQ(Widget::live.load(), 1);
   }
   EXPECT_EQ(Widget::live.load(), 0);  // destroyed at scope exit
+}
+
+TEST(RefCounted, ThreadUnsafePolicyKeepsTheSameOwnerSurface) {
+  ThreadConfinedWidget::live = 0;
+  {
+    Ref<ThreadConfinedWidget> first = make_ref<ThreadConfinedWidget>(12);
+    EXPECT_EQ(first->use_count(), 1u);
+    Ref<ThreadConfinedWidget> second = first;
+    EXPECT_EQ(first->use_count(), 2u);
+    second.reset();
+    EXPECT_TRUE(first->is_unique());
+    first->incref(3);
+    EXPECT_EQ(first->use_count(), 4u);
+    first->decref(3);
+    EXPECT_EQ(first->use_count(), 1u);
+  }
+  EXPECT_EQ(ThreadConfinedWidget::live, 0);
 }
 
 TEST(RefCounted, CopyShares) {

@@ -16,8 +16,10 @@
 // object (CRTP base), so a Ref<T> is one pointer with no separate control block.
 // This is a native same-toolchain C++ ownership type; its object layout is not
 // a cross-runtime contract.
-// incref is relaxed; decref is release plus an acquire fence only on the final
-// drop (a new ref can only form from an existing one).
+// The default thread-safe policy uses relaxed incref and release decref plus an
+// acquire fence only on the final drop (a new ref can only form from an
+// existing one). ThreadUnsafeRefCounted is an explicit type-level opt-in for a
+// complete reference lifetime confined to one thread.
 //
 // Divergences from clay (deliberate):
 //  - clay's decref calls unqualified `destroy()`, which name-resolves to the
@@ -31,11 +33,75 @@
 
 namespace hyle::util {
 
+enum class RefCountMode : std::uint8_t {
+  kThreadSafe,
+  kThreadUnsafe,
+};
+
+namespace detail {
+
+template <RefCountMode Mode>
+class RefCounter;
+
+template <>
+class RefCounter<RefCountMode::kThreadSafe> {
+ public:
+  explicit RefCounter(std::uint32_t value) noexcept : value_(value) {}
+
+  void increment() const noexcept {
+    value_.fetch_add(1, std::memory_order_relaxed);
+  }
+  std::uint32_t fetch_add(std::uint32_t value) const noexcept {
+    return value_.fetch_add(value, std::memory_order_relaxed);
+  }
+  std::uint32_t fetch_sub(std::uint32_t value) const noexcept {
+    return value_.fetch_sub(value, std::memory_order_release);
+  }
+  bool is_unique() const noexcept {
+    return value_.load(std::memory_order_acquire) == 1;
+  }
+  std::uint32_t load() const noexcept {
+    return value_.load(std::memory_order_relaxed);
+  }
+  static void acquire_before_destroy() noexcept {
+    std::atomic_thread_fence(std::memory_order_acquire);
+  }
+
+ private:
+  mutable std::atomic<std::uint32_t> value_;
+};
+
+template <>
+class RefCounter<RefCountMode::kThreadUnsafe> {
+ public:
+  explicit RefCounter(std::uint32_t value) noexcept : value_(value) {}
+
+  void increment() const noexcept { ++value_; }
+  std::uint32_t fetch_add(std::uint32_t value) const noexcept {
+    const std::uint32_t old = value_;
+    value_ += value;
+    return old;
+  }
+  std::uint32_t fetch_sub(std::uint32_t value) const noexcept {
+    const std::uint32_t old = value_;
+    value_ -= value;
+    return old;
+  }
+  bool is_unique() const noexcept { return value_ == 1; }
+  std::uint32_t load() const noexcept { return value_; }
+  static void acquire_before_destroy() noexcept {}
+
+ private:
+  mutable std::uint32_t value_;
+};
+
+}  // namespace detail
+
 // CRTP base: `class Widget : public RefCounted<Widget>`. A fresh object starts
 // at refcount 1 (the constructing reference). No vtable is added; subclasses may
 // add their own. To customize teardown, give the subclass an accessible
-// `destroy()` (public, or `friend class hyle::util::RefCounted<Sub>;`).
-template <class Sub>
+// `destroy()` (public, or friend the exact RefCounted<Sub, Mode> base).
+template <class Sub, RefCountMode Mode = RefCountMode::kThreadSafe>
 class RefCounted {
  public:
   // Lets Ref<T> detect the otherwise-dangerous shape
@@ -56,15 +122,12 @@ class RefCounted {
   // `lock xadd` used by a checked batch operation. As with mature intrusive
   // pointers, callers must already own a live reference and must not overflow
   // the count; ordinary Ref copies maintain that invariant by construction.
-  void incref() const noexcept {
-    refcount_.fetch_add(1, std::memory_order_relaxed);
-  }
+  void incref() const noexcept { refcount_.increment(); }
 
   // Explicit batch change is uncommon and fully validates its arithmetic.
   void incref(std::uint32_t n) const noexcept {
     HYLE_FATAL_ASSERT(n != 0);
-    const std::uint32_t old =
-        refcount_.fetch_add(n, std::memory_order_relaxed);
+    const std::uint32_t old = refcount_.fetch_add(n);
     HYLE_FATAL_ASSERT(old != 0);
     HYLE_FATAL_ASSERT(old <=
                       std::numeric_limits<std::uint32_t>::max() - n);
@@ -79,10 +142,9 @@ class RefCounted {
     // A release without a live +1 is an ownership-contract violation. Keeping
     // that precondition out of this value-returning hot path is what lets Ref
     // match shared_ptr on MSVC; the explicit batch overload remains checked.
-    const std::uint32_t old =
-        refcount_.fetch_sub(1, std::memory_order_release);
+    const std::uint32_t old = refcount_.fetch_sub(1);
     if (old == 1) {
-      std::atomic_thread_fence(std::memory_order_acquire);
+      decltype(refcount_)::acquire_before_destroy();
       const_cast<Sub*>(static_cast<const Sub*>(this))->destroy();
     }
   }
@@ -90,23 +152,18 @@ class RefCounted {
   // Explicit batch change is uncommon and fully validates its arithmetic.
   void decref(std::uint32_t n) const noexcept {
     HYLE_FATAL_ASSERT(n != 0);
-    const std::uint32_t old =
-        refcount_.fetch_sub(n, std::memory_order_release);
+    const std::uint32_t old = refcount_.fetch_sub(n);
     HYLE_FATAL_ASSERT(old >= n);
     if (old == n) {
-      std::atomic_thread_fence(std::memory_order_acquire);
+      decltype(refcount_)::acquire_before_destroy();
       // Reference ownership is logically mutable even through Ref<const T>.
       // Teardown still runs on the concrete non-const object.
       const_cast<Sub*>(static_cast<const Sub*>(this))->destroy();
     }
   }
 
-  bool is_unique() const noexcept {
-    return refcount_.load(std::memory_order_acquire) == 1;
-  }
-  std::uint32_t use_count() const noexcept {
-    return refcount_.load(std::memory_order_relaxed);
-  }
+  bool is_unique() const noexcept { return refcount_.is_unique(); }
+  std::uint32_t use_count() const noexcept { return refcount_.load(); }
 
  protected:
   ~RefCounted() = default;  // non-virtual: destroy through the Sub type
@@ -116,8 +173,16 @@ class RefCounted {
   void destroy() { delete static_cast<Sub*>(this); }
 
  private:
-  mutable std::atomic<std::uint32_t> refcount_;
+  detail::RefCounter<Mode> refcount_;
 };
+
+// Explicit opt-in for objects whose complete reference lifetime is confined to
+// one thread. Ref<T> itself stays the same one-word owner, but copies/drops use
+// plain integer operations. Moving any owner or borrowed pointer across threads
+// violates this type's contract.
+template <class Sub>
+using ThreadUnsafeRefCounted =
+    RefCounted<Sub, RefCountMode::kThreadUnsafe>;
 
 // A type that can back a Ref<T>: exposes incref/decref (i.e. derives from
 // RefCounted, or duck-types the same surface).

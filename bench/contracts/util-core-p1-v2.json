@@ -1,0 +1,407 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "util-core-p1-v2",
+  "module": "util_core",
+  "claim": "P1 engineering non-inferiority for the util_core v2 candidate on normal intrusive owning-handle handoff and short uncontended state transitions against source-pinned Boost and oneTBB peers",
+  "candidate": {
+    "target": "hyle_util_core",
+    "delivery_shape": "header-only",
+    "revision": "runtime-bound",
+    "component": "util_core",
+    "entrypoint": "hyle/util/ref_counted.h"
+  },
+  "peers": [
+    {
+      "id": "boost",
+      "revision": "78505eab9b203e3e26e83893d0685f160133fa0f",
+      "configuration": {
+        "delivery_shape": "header-only",
+        "owner": "boost::intrusive_ptr with thread_safe_counter",
+        "source": "clean external checkout"
+      }
+    },
+    {
+      "id": "onetbb",
+      "revision": "a8216b95202f3c55f9749870f4f8cfa4df0b32e3",
+      "configuration": {
+        "delivery_shape": "static",
+        "lock": "oneapi::tbb::spin_mutex",
+        "source": "clean external checkout"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_UTIL_CORE_BENCH_FORMAL_ONLY": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_UTIL_CORE_BENCH_FORMAL_ONLY": "1",
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_UTIL_CORE_BENCH_FORMAL_ONLY": "1"
+      },
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {
+        "placement": "perturbed",
+        "execution_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_UTIL_CORE_BENCH_FORMAL_ONLY": "1",
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    },
+    {
+      "id": "placement",
+      "kind": "placement",
+      "parameters": {}
+    }
+  ],
+  "workloads": [
+    {
+      "id": "intrusive-owning-handoff-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/util-core/intrusive-owner",
+      "provenance": {
+        "path": "samples/package/util_core/cpp/main.cc",
+        "sha256": "5282593b347aba799b0937d0e81c0e8b71c1f8ac38a4936be4bc5f965fd94e92"
+      },
+      "ownership_topology": {
+        "candidate": "A prebuilt one-pointer HYLE Ref is copied into a noinline owning parameter and dropped on return",
+        "peer": "A prebuilt one-pointer Boost intrusive_ptr is copied into the same noinline owning parameter and dropped on return",
+        "equivalence": "Both pointees embed one thread-safe intrusive strong counter; allocation, construction, and final deletion stay outside the charged phase"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "owning-handle-handoff",
+        "budget": 5,
+        "denominator": "one benchmark callback containing 4096 ordinary owning argument handoffs",
+        "derivation": "The retained package consumer proves direct Ref ownership use; the replay isolates the copy/drop operation whose cost is paid at each owning boundary"
+      },
+      "semantic_contract": "Copy one prebuilt intrusive strong owner through a noinline by-value function boundary, read its payload, and drop the parameter, repeated 4096 times",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "one prebuilt live object with stable payload",
+        "scale": {
+          "handoffs_per_callback": 4096
+        }
+      },
+      "setup": "Candidate and peer objects are allocated and retained before every measured epoch",
+      "charged_phases": [
+        "4096 strong-count increments",
+        "4096 noinline payload reads",
+        "4096 strong-count decrements",
+        "checksum"
+      ],
+      "pair": {
+        "candidate": "HYLE Ref",
+        "peer": "Boost intrusive_ptr"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    },
+    {
+      "id": "fiber-stack-state-transition-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "mem/fiber-stack-pool/short-state-transition",
+      "provenance": {
+        "path": "include/hyle/mem/fiber_stack.h",
+        "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+      },
+      "ownership_topology": {
+        "candidate": "One caller-owned HYLE SpinLock protects one caller-owned scalar state for a few instructions",
+        "peer": "One caller-owned oneTBB spin_mutex protects the identical caller-owned scalar state for the identical instructions",
+        "equivalence": "Both locks are uncontended, allocation-free, non-recursive, and charged through the same noinline lock/mutate/unlock function"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "short-locked-state-transition",
+        "budget": 5,
+        "denominator": "one benchmark callback containing 4096 FiberStackPool-shaped transitions",
+        "derivation": "FiberStackPool serializes only compact free-list state; this replay preserves that short critical-section topology without charging unrelated stack allocation"
+      },
+      "semantic_contract": "Acquire an uncontended compact lock, update one scalar state for a few instructions, release it, and observe the result, repeated 4096 times",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "single-thread sequence over one prebuilt lock and one scalar state",
+        "scale": {
+          "transitions_per_callback": 4096
+        }
+      },
+      "setup": "Both lock objects and their independent scalar states are constructed before measured epochs",
+      "charged_phases": [
+        "4096 uncontended lock acquisitions",
+        "4096 identical scalar mutations",
+        "4096 lock releases",
+        "checksum"
+      ],
+      "pair": {
+        "candidate": "HYLE SpinLock",
+        "peer": "oneTBB spin_mutex"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor",
+        "placement"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15,
+      31
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows",
+      "wsl2",
+      "macos"
+    ],
+    "certification_platforms": [
+      "windows",
+      "macos"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_BOOST": "ON",
+          "HYLE_BENCH_TBB": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "util_core",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "boost": "HYLE_BOOST_DIR",
+          "onetbb": "HYLE_TBB_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        },
+        "W1-WSL": {
+          "generator": "Ninja",
+          "compiler_id": "GNU",
+          "compiler_version_prefix": "14",
+          "cache": {
+            "CMAKE_C_COMPILER": "gcc-14",
+            "CMAKE_CXX_COMPILER": "g++-14"
+          }
+        },
+        "M1-MAC": {
+          "generator": "Ninja",
+          "compiler_id": "AppleClang",
+          "compiler_version_prefix": "21",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "util-core-primary",
+          "target": "hyle_util_core_bench",
+          "stem": "hyle_util_core_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": [
+            "# HYLE_UTIL_CORE_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "intrusive-owning-handoff-4096",
+              "title": "util-core intrusive owning handoff aggregate N=4096"
+            },
+            {
+              "id": "fiber-stack-state-transition-4096",
+              "title": "util-core FiberStackPool-shaped state aggregate N=4096"
+            }
+          ]
+        },
+        {
+          "id": "util-core-placement",
+          "target": "hyle_util_core_bench_placement",
+          "stem": "hyle_util_core_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": [
+            "# HYLE_UTIL_CORE_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "intrusive-owning-handoff-4096",
+              "title": "util-core intrusive owning handoff aggregate N=4096"
+            },
+            {
+              "id": "fiber-stack-state-transition-4096",
+              "title": "util-core FiberStackPool-shaped state aggregate N=4096"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_UTIL_CORE_BENCH_FORMAL_ONLY",
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        }
+      ]
+    }
+  }
+}

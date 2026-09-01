@@ -49,6 +49,16 @@ HYLE_FORCE_INLINE void cpu_relax() noexcept {
   // Apple's `yield` hint is too weak under a many-waiter hand-off and caused
   // the releasing core to be mobbed by repeated atomic exchanges.
   __asm__ __volatile__("isb" ::: "memory");
+#elif HYLE_ARCH_RISCV64 && (HYLE_COMPILER_GCC || HYLE_COMPILER_CLANG)
+  // Zihintpause is backward-compatible: implementations that do not recognize
+  // the hint execute it as a harmless fence encoding. Use the mnemonic when
+  // the compiler advertises the extension and the standardized encoding
+  // otherwise, matching the supported ggml RISC-V polling path.
+#  if defined(__riscv_zihintpause)
+  __asm__ __volatile__("pause" ::: "memory");
+#  else
+  __asm__ __volatile__(".4byte 0x0100000f" ::: "memory");
+#  endif
 #else
   // unknown arch: no-op (still correct, just no pipeline hint)
 #endif

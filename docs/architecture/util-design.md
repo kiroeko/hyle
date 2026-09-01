@@ -1,6 +1,7 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-09-01）：**`util_core` 与 `util` 均为 `CLOSED`；施工/签证
+> **当前边界（2026-09-02）：**`util_core` 正在执行 v2 有限能力补全，`util` runtime 保持
+> `CLOSED`；施工/签证
 > 状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
@@ -14,7 +15,8 @@
 
 ```text
 foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
-   ScopeGuard / Ref / Rng / type_name / SpinLock / cpu_relax
+   ScopeGuard / Ref / Rng / FunctionRef / NotNull
+   type_name / SpinLock / cpu_relax
                     │
                     ├──► mem / sched / graph
                     └──► hyle::util 产品 façade
@@ -36,8 +38,10 @@ internal sink 两个冷路径动态符号，本身不依赖 container；为它�
 | 能力 | 正常消费者需求 | 成熟形状 | 明确不做 |
 |---|---|---|---|
 | `ScopeGuard` / `HYLE_DEFER` | rollback、C API cleanup、多个早退 | Abseil/Folly：栈内、move-only、一次执行、dismiss/invoke | 代替已有资源 RAII；析构期异常恢复 |
-| `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy | Boost/Folly/std 同形 retain/release、比较/hash/casts；普通 `make_ref` 可抛 | weak ref、环检测、aliasing control block；owner-specific fallible allocation factory |
+| `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy；明确 thread-confined 对象免原子 RMW | Boost 同形 safe/unsafe counter policy；retain/release、比较/hash/casts；普通 `make_ref` 可抛 | weak ref、环检测、aliasing control block；owner-specific fallible allocation factory |
 | `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、显式 jump 拆流；TLS 仅 best-effort convenience | 密码学安全随机；默认 TLS 流的唯一/不重叠保证 |
+| `FunctionRef<Sig>` | 同步 API 在一次调用期间借用任意 callable | Abseil/Folly 两机器字 call-only view；value/void/`noexcept` signature | callback storage、return、异步排队；这些必须使用 owning callable 或 owner fn+ctx |
+| `NotNull<T*>` | required 且需要 rebinding/pointer interop 的借用 | 一机器字、构造期 fail-fast、const/base 转换、identity/hash | ownership/lifetime extension、nullable/optional/fallible semantics；分别用 `T*`/`Result<T&>` |
 | `type_name/hash` | 编译期诊断、受控构建内标签 | pretty-function constexpr probe；hash 允许碰撞 | 持久/唯一 correctness ID、跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
 | `demangle` | 日志、backtrace、诊断 UI | 完整 caller-owned `std::string`；或 caller buffer + required-size | 热路径、async-signal-safe、无内部 allocation/lock 保证 |
@@ -96,7 +100,8 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
 
 ## 复杂度与布局合同
 
-- ScopeGuard 操作、Ref copy/drop/cast、SpinLock 无争用和 RNG scalar draw 是 O(1)。
+- ScopeGuard 操作、Ref copy/drop/cast、FunctionRef/NotNull 构造与调用路由、SpinLock 无争用和 RNG
+  scalar draw 是 O(1)。
 - RNG bounded draw 期望 O(1)，`discard(n)` O(n)，`jump/long_jump` 固定 O(256)，shuffle O(n)。
 - type-name 在常量求值切片；hash 是 O(类型名长度) 的 constexpr 工作，不在运行期热路。
 - Registry `find/create` 是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销
@@ -104,6 +109,10 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
   空间 O(1)。最坏查找仍受恶意 collision 约束。
 - `Ref<T>` 保持一个指针，计数在对象内；SpinLock 保持 1 byte。需要 cache-line padding 时由经
   profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
+- `FunctionRef` 保持 callable/function 地址与 invoker 两个机器字，不复制/分配 callable；大或非平凡
+  by-value 参数以引用穿过 erased invoker，避免中间层额外 move。`NotNull<T*>` 保持一个 pointer，
+  动态值只在构造时检查；`ThreadUnsafeRefCounted<T>` 的 retain/drop 是 plain integer 且没有运行时
+  mode branch，但跨线程使用是合同违反。
 - SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
   当前 v1 的 W1-WIN 同合同工程门为非劣 PASS；M1-MAC 的超短手工诊断被执行顺序完全翻转，按仪器
@@ -124,8 +133,10 @@ template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 ## 内部采用与依赖检查
 
 mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle_util_core` factor 的
-SpinLock/cpu_relax。会 allocate/rehash/执行未知用户代码的 mem LeakTracker 与 container
-ConcurrentVector 使用 mutex。Registry runtime 显式链接 core、error、mem 和 container；
+SpinLock/cpu_relax。`FunctionRef` 与 `NotNull` 是供后续 owner 在自己的语义轮采用的公开词汇，
+本轮不把 stored/asynchronous callback 或 nullable pointer 机械迁移成不同合同。会 allocate/rehash/执行
+未知用户代码的 mem LeakTracker 与 container ConcurrentVector 使用 mutex。Registry runtime 显式链接
+core、error、mem 和 container；
 删除静态注册/default creator 后不再依赖 util_core。这些依赖同时由中央 component graph 与
 target link 生成/验证。
 
@@ -137,15 +148,19 @@ target link 生成/验证。
 1. util-core 公开头必须逐头 self-contained，并可通过 `HYLE_DEV_FACTORS=util_core` 独立构建；禁止
    include runtime 头。用户安装包只通过 `util` 产品请求和 `hyle::util` façade 取得两层能力。
    当前收口证据与 reopen triggers 见
-   [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)。
+   [`util-core-v2`](../implementation/tasks/util/util-core-v2-capability-completion.md)。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
    race、allocator failure、TSan 和 installed source/shared/static C++23 consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
 4. Ref/SpinLock 并发修改跑 TSan；布局修改在 MSVC/GCC/AppleClang 和真实下游 owner 上复验。
-5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项，
+   `ThreadUnsafeRefCounted` 必须保留类型级 opt-in 与无原子 codegen；RISC-V `cpu_relax` 必须保留
+   Zihintpause 指令检查，不能在支持目标悄悄退化为空操作。
+5. FunctionRef 只能用于同步 call-only parameter；任何 storage/return/async adoption 都由 consumer
+   自己证明 referent lifetime。NotNull 不得扩成 owning smart pointer wrapper 或 optional-ref 同义层。
+6. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项，
    不能在 util 修改中顺手恢复旧 C schema。
-6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。
-7. demangle 修改必须同时复验 owning/buffer、plain/fallback/truncation/overlap、异常 cleanup、internal
+7. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。
+8. demangle 修改必须同时复验 owning/buffer、plain/fallback/truncation/overlap、异常 cleanup、internal
    sink 的 shared-CRT ownership 边界以及 source/static/shared consumer；caller buffer 不得被描述为
    async-signal-safe。
 

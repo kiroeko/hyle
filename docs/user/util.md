@@ -1,6 +1,7 @@
 # util：什么情况选什么
 
-> **当前边界（2026-09-01）：**`util_core` 与 `util` 均为 `CLOSED`；当前 Registry lookup/create
+> **当前边界（2026-09-02）：**`util_core` 正在执行 v2 有限能力补全，`util` runtime 保持
+> `CLOSED`；当前 Registry lookup/create
 > 合同和 demangle owning/buffer 形状的签证状态只看中央
 > [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
@@ -25,6 +26,10 @@ target_link_libraries(my_target PRIVATE hyle::util)
 | 已经有明确资源类型 | 该类型自己的 RAII / `unique_ptr` | 为了少写一行给每个对象套 ScopeGuard |
 | 临时 rollback、多个早退共享一段 cleanup | `ScopeGuard` 或 `HYLE_DEFER` | cleanup 抛异常；guard 捕获比自己活得短的对象 |
 | 单指针、对象内计数的共享所有权 | `RefCounted<T>` + `Ref<T>` | 需要 weak observer/打破环时仍强行用 Ref |
+| 生命周期完全限制在一个线程的侵入式共享所有权 | `ThreadUnsafeRefCounted<T>` + 同一个 `Ref<T>` | owner 或借用裸指针可能跨线程时省掉 atomic |
+| 同步函数只在本次调用期间执行任意 callable | 参数按值接收 `FunctionRef<Sig>` | 把 FunctionRef 存进对象、返回或塞进异步队列 |
+| required 且要保留 pointer/rebinding 语义的借用 | `NotNull<T*>` | 以为它拥有对象或延长 lifetime |
+| null 是正常值 / 获取可能失败但成功时非空 | `T*` / `Result<T&>` | 用 NotNull 隐藏 optional/failure 语义 |
 | 可复现仿真、采样、测试、shuffle | 显式 seed 的 `Rng` | 用于 token、key、nonce 或任何安全材料 |
 | 每线程普通非安全随机流 | `thread_rng()` | 保存其地址跨线程使用；依赖默认流可复现 |
 | 极短、低争用临界区 | `SpinLock` + `std::lock_guard` | 锁内分配、rehash、I/O、等待或在 fiber 中长期持有 |
@@ -104,6 +109,60 @@ dynamic rvalue cast 保留源引用，避免把一次探测变成意外释放。
 Boost/Folly 一样以前置条件换取最短原子指令：调用者已持有活引用且计数不会溢出。确实需要
 一次转移多份引用时才用带数量的 overload；它会检查零、上溢和下溢。
 
+如果一个对象的**完整引用生命周期**都在同一个线程，可以显式改用非原子 base；handle 和 factory
+不变，不需要第二套 owner：
+
+```cpp
+struct PlanNode : hyle::util::ThreadUnsafeRefCounted<PlanNode> {
+  // ...
+};
+auto node = hyle::util::make_ref<PlanNode>();
+```
+
+这是类型级并发前置条件，不是运行时“快模式”。只要任一 `Ref<PlanNode>`、借用裸指针或最后释放
+可能跨线程，就必须使用默认 `RefCounted<PlanNode>`；发布对象前把它转成只读也不会自动让非原子
+计数变得线程安全。
+
+## FunctionRef：只借用一次同步调用
+
+```cpp
+#include "hyle/util/function_ref.h"
+
+void for_each_token(std::span<const int> tokens,
+                    hyle::util::FunctionRef<void(int)> visit) {
+  for (int token : tokens) visit(token);
+}
+
+for_each_token(tokens, [&](int token) { consume(token); });
+```
+
+`FunctionRef` 只有 callable/function 地址和 invoker 两个机器字，不复制 callable、不分配，也不拥有。
+按值传参是预期形状。临时 lambda 会活到整个调用表达式结束，因此上例安全；被调用函数若保存或
+返回 `visit`，表达式结束后就可能悬空。需要跨调用、异步、取消或排队时使用
+`std::function`、标准库实现可用时的 `std::move_only_function`，或 owning module 已定义的 fn+ctx
+record。
+
+普通 signature 接受可抛 callable；`FunctionRef<R(Args...) noexcept>` 只接受 nothrow callable，并让
+调用表达式保持 `noexcept`。FunctionRef 没有默认/NULL 状态：callback 真正可选时显式用两个入口、
+optional owner，或一个语义清楚的 nullable fn+ctx，而不是让每次调用隐式猜测。
+
+## NotNull：required pointer，不是 owner
+
+```cpp
+#include "hyle/util/borrow.h"
+
+void execute(hyle::util::NotNull<Plan*> plan) {
+  plan->run();
+}
+
+execute(&plan);  // raw pointer 自然构造；动态 NULL 会触发 invariant failure
+```
+
+只需要 required borrow 且无需 rebinding 时，`T&` 更简单；null 是正常语义时继续用 `T*`；操作可能
+失败而成功结果必须非空时用 `Result<T&>`。`NotNull<T*>` 服务的是必须与 pointer API、opaque
+`void*` context 或可重新绑定局部变量组合的 required borrow。它只在构造时检查动态值，随后与裸
+指针同尺寸；不拥有、不 pin、不延长 referent lifetime，也不能把悬空 pointer 变安全。
+
 ## Rng：快、可复现、非安全
 
 ```cpp
@@ -148,7 +207,9 @@ hyle::util::SpinLock lock;
 fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或发生高争用时选
 `std::mutex`；fiber 等待选 sched 的同步原语。`is_locked()` 只是诊断快照，不是所有权证明。
 
-`cpu_relax()` 只是一条自旋 hint，不建立同步关系；必须与 atomic 条件配合。
+`cpu_relax()` 只是一条自旋 hint，不建立同步关系；必须与 atomic 条件配合。x86、Arm 和 RISC-V
+分别发出平台 pause/yield 类 hint；unknown target 才安全退为空操作。它不代表 runtime ISA dispatch，
+也不替 owner 决定何时 yield、park、wake 或取消。
 
 ## type_name 与 demangle
 

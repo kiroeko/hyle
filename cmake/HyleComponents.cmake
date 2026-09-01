@@ -113,6 +113,8 @@ _hyle_declare_component(container_intrusive
 _hyle_declare_component(util_core
   PUBLIC_DEPS core
   SPLIT_PUBLIC_HEADERS
+    hyle/util/borrow.h
+    hyle/util/function_ref.h
     hyle/util/random.h
     hyle/util/ref_counted.h
     hyle/util/scope_guard.h
