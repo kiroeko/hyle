@@ -186,7 +186,7 @@
     },
     {
       "module": "error",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "round_id": "error-v5-capability-completion",
@@ -196,6 +196,8 @@
       "baseline_commit": "afdb6b81ab4e8e3ad9d790be87a80dc9242c1cec",
       "candidate_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
       "candidate_tree": "305b2cb5947627dfb5b9697c939205b6c26cc6b7",
+      "end_commit": "a8e862d92cbe38d85a556689aa95e81aa1b2a771",
+      "registry_anchor_commit": "a8e862d92cbe38d85a556689aa95e81aa1b2a771",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -230,7 +232,22 @@
         "self_without_tests": 62970,
         "module_implementation": 2178
       },
-      "summary": "error-v5 VERIFIED：ERR5-01..04 与既有能力均完成；三平台正确性及三种 C++ 交付、易用性/文档、红队和 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过，等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
+      "known_limitations": [
+        "The P1 certificate covers only the frozen five W1-WIN consumer workloads, Abseil identity and MSVC 19.50 source/static benchmark delivery; cross-platform performance, all Error operations, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "Result<T&> is a caller-owned non-null deep-const borrow and does not extend referent lifetime; nullable, range/text and shared-ownership tasks use their dedicated pointer, view/span or owning-handle shapes.",
+        "format_status retains at most 1023 bytes with an explicit truncation marker; in exception-disabled builds a custom formatter must itself obey the non-throw contract.",
+        "Custom std::error_category pointers are not retained; the category owner supplies canonical semantics and keeps its defining image alive through the adapter call.",
+        "HYLE promises neither stable C++ ABI nor Native FFI; matched headers and binaries are required, IO adoption remains IO-owned, the retained engineering bundle is local evidence and Formal remains PENDING."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces an Error correctness, security, ownership or lifetime, OOM or no-throw, API-usability or missing-capability defect.",
+        "A supported compiler, standard library or OS changes std::expected representation, reference lifetime diagnostics, standard-category image identity, formatting or native-translator semantics.",
+        "The public API, Status or Result layout or normal cost, direct dependency, component closure, selected-header inventory or delivery shape changes.",
+        "Renewing the engineering claim encounters a material change in frozen consumer provenance or ownership, peer, machine, instrument, compiler or retained evidence identity.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen 5% margin."
+      ],
+      "summary": "error-v5 CLOSED：WinSock、Result<T&>、bounded format_status 与 std::error_code adapter 已补齐；既有 Status/Result 无回归，三平台正确性和三种 C++ 交付、易用性/文档、红队及 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过。"
     },
     {
       "module": "obs",
