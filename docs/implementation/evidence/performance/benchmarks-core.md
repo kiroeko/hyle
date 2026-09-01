@@ -1,12 +1,28 @@
 # Core 工程性能资格与证据边界
 
-> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页绑定 Core v3 候选
-> `cdd6b1c612c8e318220972fa0936f23e28045447` 的 P0 结构证据；完整命令边界、三平台结果与限制见
-> [verification manifest](../../../../evidence/core/manifest-cdd6b1c.md)，施工与六问见
-> [Core v3 closure card](../../tasks/core/core-v3-foundation-completeness.md)。这不是纳秒榜，也不宣称
+> 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页当前绑定 Core v4 候选
+> `7ae3de400b5d7b598972ebf4913d336b60517483` 的 P0 结构证据；完整三平台结果与限制见
+> [verification manifest](../../../../evidence/core/manifest-7ae3de40.md)，施工与易用性审计见
+> [Core v4 closure card](../../tasks/core/core-v4-build-contract-projection.md)。这不是纳秒榜，也不宣称
 > “整个 Core 全局 SOTA”或脱离消费者的普适加速倍数。
 
-## Core v3 当前有限结论
+## Core v4 当前有限结论
+
+Core headers、API、算法、layout 与 runtime 实现没有变化；本轮修正的是消费编译合同。因此 timing peer
+comparison 为 `NOT_APPLICABLE`，工程 verdict 是 `P0 STRUCTURAL PASS`：
+
+- Core-only source/static/shared consumer 不再收到 Container-only SSSE3 许可；
+- HYLE 不再替父工程强制 exception mode，Core-only no-exception TU 的
+  `HYLE_HAS_EXCEPTIONS == 0` 已在三种交付方式、三个平台编译运行；
+- Container 直接拥有同一 SSSE3 requirement，三种交付保持通过；
+- 全组件合同在 MSVC 19.50、GCC 14.2 与 AppleClang 21 上通过；Core 仍无 archive/DSO/Native FFI；
+- 公开 API 没有 benchmark/test-only seam，也没有为测量增加常态 metadata 或 runtime dispatch。
+
+公开的有限说法是：**冻结工具链与交付形状上的 Core 常态结构成本和 build projection 符合合同。**
+Prefetch、padding 或 hint 对具体 kernel 的收益仍由拥有访问分布的模块签署。本轮不因无消费者需求的
+peer API 数量或微观计时增加 Core 接口。
+
+## Core v3 历史有限结论
 
 本轮新增的是 failure-only 与 compile-site 能力，因此 timing peer comparison 为
 `NOT_APPLICABLE`，工程 verdict 是 `P0 STRUCTURAL PASS`：

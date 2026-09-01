@@ -126,3 +126,53 @@ SIMD exact-target child configure 因未传 `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` �
   sample 变化必须再次退回 `AUDITED`。
 
 当前为 `CANDIDATE`。
+
+## Candidate 2 verification
+
+### Correctness、delivery 与依赖投影
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| Core Release WERROR tests | `6/6` | `6/6` | `6/6` | `PASS` |
+| Core source/static/shared | 每种 normal + no-exception `2/2` | 每种 `2/2` | 每种 `2/2` | `PASS` |
+| full component contract | `PASS` | `PASS` | `PASS` | `PASS` |
+| Container source/static/shared | 每种 `1/1` | 每种 `1/1` | 每种 `1/1` | `PASS` |
+
+中央合同确认 Core target/installed import 没有 SSSE3、`/EHsc` 或二进制 artifact，Container 则直接持有
+同一 compiler-conditioned SSSE3 requirement。Mac 全组件 gate 同时证明所有 child configure 继承现有
+14.4 deployment floor。完整 manifest 见
+[`manifest-7ae3de40.md`](../../../../evidence/core/manifest-7ae3de40.md)。
+
+### Aggregate gates
+
+| Aggregate gate | Verdict | Evidence / limitation |
+|---|---|---|
+| scope | `PASS` | 产品改动严格为空；只有冻结的 build/tool/sample/docs 集 |
+| architecture | `PASS` | Core 保持无依赖 header-only prime；Container 自有 ISA，父工程自有 exception mode |
+| correctness | `PASS` | 三平台 Core WERROR 与 normal/no-exception compile-time truth |
+| delivery | `PASS` | 三平台 source/static/shared relocated journey；无 Core artifact |
+| usability/docs | `PASS` | 任务型 includes、最短 invariant、危险前提和 no-exception 边界已说明 |
+| red team | `PASS` | candidate 1 被拒绝；candidate 2 全量重放；剩余 MEDIUM+ 为 0 |
+| engineering performance | `PASS` | P0 structural；无新增 runtime work/metadata/dispatch；timing `NOT_APPLICABLE` |
+
+### Candidate LOC
+
+`python scripts/loc-report.py --module core --commit 7ae3de400b5d7b598972ebf4913d336b60517483
+--self-check --json` 由 cloc 2.08 从不可变 tree 复算并通过 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 414,457 |
+| 自实现包含测试 | 99,891 |
+| 自实现不包含测试 | 62,143 |
+| Core 实现 | 763 |
+
+## Verification verdict
+
+第二候选的七项 aggregate gate 全部 `PASS`。公开形状审计没有发现 benchmark/test-only seam、为测试加入
+的常态 metadata，或为了 peer 符号数量而应新增的接口；当前内部零消费者的 failure observer、typed
+debug context 与 prefetch intent 仍对应正常宿主/开发任务，并且不向正常对象收费。Core API 因而保持
+不变，而不是为本轮测试重新塑形。
+
+当前证据下没有未处置 `MUST`、correctness/security、delivery 或 P0 性能 blocker；候选已具备进入
+`VERIFIED` 的条件。

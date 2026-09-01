@@ -68,3 +68,14 @@ child configure 继承中央 floor；不改变 floor、产品图、算法、API 
 M1-MAC 写成 PASS。第二候选现已冻结为
 `7ae3de400b5d7b598972ebf4913d336b60517483` / tree `b6c04d0e97c93724a9136c34e4ea55b6e4449092`；
 所有正式 gate 从该身份重放。
+
+## Candidate 2 verification
+
+不可变候选在 W1-WIN/MSVC 19.50、W1-WSL/GCC 14.2 与 M1-MAC/AppleClang 21 上均通过：Core WERROR
+tests 各 `6/6`；Core source/static/shared 的 normal 与 no-exception journey 各 `2/2`；完整 component
+contract；以及 Container source/static/shared 各 `1/1`。Mac child configure 已统一继承既有 14.4
+floor，未更改项目支持下限。
+
+因此本开发单元的结论是 `PASS`：公共 build contract 只承载共同语言/编译语义，ISA requirement 由
+真正拥有该 inline contract 的 Container target 传播，exception policy 归还父工程。本结论不续签
+Container 算法或性能，也不把 Core 变成 binary。
