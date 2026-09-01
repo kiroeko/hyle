@@ -10,7 +10,7 @@
 <!-- BEGIN GENERATED MODULE STATUS -->
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
-| core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-v4-build-contract-projection.md) | core-v4 CLOSED：公开能力与开发者形状保持自然且无 benchmark seam；非 Core ISA/异常策略泄漏已修复，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能均通过。 |
+| core | REOPENED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/core/core-v5-assert-macro-contract.md) | core-v5 由公开 assertion 宏的可复现合同缺陷定向重开：context 宏会捕获同名用户标识符，disabled Debug 宏未完整类型检查真实条件和字段数。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；后续 util runtime owning-demangle 重开不影响本组件，Formal 仍独立待办。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |

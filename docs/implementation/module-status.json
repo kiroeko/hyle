@@ -5,18 +5,14 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
-      "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
-      "round_id": "core-v4-build-contract-projection",
-      "closure_task": "docs/implementation/tasks/core/core-v4-build-contract-projection.md",
-      "scope": "Re-sign the unchanged Core product behind a minimal Core-only compile-usage contract by removing leaked Container ISA and forced exception-mode policy from hyle::core while preserving all three C++ delivery shapes.",
-      "non_goals": "Core API or implementation changes, Container algorithm or performance review, whole-HYLE no-exception support, CPU-floor redesign, Native FFI, timing benchmarks and physical library aggregation.",
-      "baseline_commit": "fe944155e6ada4e68997aaa3fa7d52f27b0769e0",
-      "candidate_commit": "7ae3de400b5d7b598972ebf4913d336b60517483",
-      "candidate_tree": "b6c04d0e97c93724a9136c34e4ea55b6e4449092",
-      "end_commit": "96ab2a48fac03eb1515285898687e2da158f8207",
-      "registry_anchor_commit": "a1d0b70f431064f68be2d1c6bc3755365025bde2",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
+      "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+      "round_id": "core-v5-assert-macro-contract",
+      "closure_task": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+      "scope": "Repair the reproduced public assertion-macro hygiene and disabled-Debug semantic checking defects without changing Core's admitted capability families or normal runtime cost contract.",
+      "non_goals": "New Core capabilities, logging or crash management, recoverable errors, arbitrary formatting, C or Native FFI, timing benchmarks, adjacent-module review and build-system redesign.",
+      "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -24,44 +20,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/core/core-v4-build-contract-projection.md",
-      "loc": {
-        "snapshot_commit": "7ae3de400b5d7b598972ebf4913d336b60517483",
-        "repository_code": 414457,
-        "self_with_tests": 99891,
-        "self_without_tests": 62143,
-        "module_implementation": 763
-      },
-      "known_limitations": [
-        "The no-exception journey certifies Core-only translation units, not Error, Container or the complete HYLE dependency closure.",
-        "Container still owns its compiler-conditioned SSSE3 permission for the current public inline probe; v4 corrects ownership without re-certifying that downstream algorithm or CPU floor.",
-        "The P0 certificate covers structural cost and build projection on the frozen toolchains and delivery shapes; it makes no timing, cache-hit, downstream-throughput, universal SOTA or Formal-performance claim."
-      ],
-      "reopen_triggers": [
-        "A real Core-only consumer again receives non-Core ISA, exception, RTTI or sanitizer policy.",
-        "A named consumer exposes a correctness, security, missing-foundation or API-usability defect within the Core boundary.",
-        "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
-        "A supported compiler or target invalidates the frozen no-exception, code-generation, header or target-property contract.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage."
-      ],
-      "summary": "core-v4 CLOSED：公开能力与开发者形状保持自然且无 benchmark seam；非 Core ISA/异常策略泄漏已修复，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能均通过。"
+      "summary": "core-v5 由公开 assertion 宏的可复现合同缺陷定向重开：context 宏会捕获同名用户标识符，disabled Debug 宏未完整类型检查真实条件和字段数。"
     },
     {
       "module": "container_intrusive",
