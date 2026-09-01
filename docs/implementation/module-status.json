@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-        "product_state": "VERIFIED",
+        "product_state": "CLOSED",
       "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
       "round_id": "core-v5-assert-macro-contract",
@@ -13,8 +13,10 @@
       "scope": "Repair the reproduced public assertion-macro hygiene and disabled-Debug semantic checking defects without changing Core's admitted capability families or normal runtime cost contract.",
       "non_goals": "New Core capabilities, logging or crash management, recoverable errors, arbitrary formatting, C or Native FFI, timing benchmarks, adjacent-module review and build-system redesign.",
       "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
-      "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
-      "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
+        "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+        "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
+        "end_commit": "f9e8b3c8137a25e8903265da89adfc08eff0abe7",
+        "registry_anchor_commit": "f9e8b3c8137a25e8903265da89adfc08eff0abe7",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -39,7 +41,27 @@
           "red_team": "PASS",
           "engineering_performance": "PASS"
         },
-        "summary": "core-v5 的不可变候选 4b7f28c5/074617e1 已通过三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能门。"
+        "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+        "loc": {
+          "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+          "repository_code": 414925,
+          "self_with_tests": 99927,
+          "self_without_tests": 62142,
+          "module_implementation": 762
+        },
+        "known_limitations": [
+          "The fatal observer remains image-local and synchronously borrowed; callback exchange is not a quiescence barrier, so the embedding host owns restore and quiescence before plugin unload.",
+          "Core owns bounded typed invariant context, not arbitrary formatting, logging, backtraces, signal or minidump handling, process-wide crash policy or Native FFI.",
+          "The P0 certificate covers structural normal-path cost on the frozen candidate, toolchains and delivery shapes; it makes no failure-I/O, downstream-workload, universal timing, cache-hit, SOTA or Formal-performance claim."
+        ],
+        "reopen_triggers": [
+          "A named real consumer reproduces a Core correctness, security, missing-foundation or C++ API-usability defect.",
+          "A supported compiler or target invalidates assertion semantic parity, the one-to-eight field bound, macro hygiene, normal-path code generation, public-header closure or visibility contract.",
+          "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
+          "A named host consumer proves that fatal-observer lifetime or coordination must be owned by Core with a different complexity or ownership shape.",
+          "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage."
+        ],
+        "summary": "core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。"
     },
     {
       "module": "container_intrusive",
