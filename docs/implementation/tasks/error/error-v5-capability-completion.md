@@ -1,6 +1,7 @@
 # Error v5 消费者能力补全
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮不是无新事实复查。Error v4 关闭后，全局能力展开与真实 IOCP 消费路径共同暴露了一个已存在的
 > 原生错误类别缺口；成熟 peer 与普通系统集成 journey 还暴露了三项需要有限裁决的 API 缺口。本轮只
@@ -332,3 +333,41 @@ O(1)、format scratch bounded、无隐式 log/lock/global registry，owning Resu
 `C:\hyle-scratch\error-v5\module-status-candidate.json` 的明确前态执行 `CANDIDATE -> VERIFIED`。
 
 当前为 `VERIFIED`；下一步只写接受限制、重开条件和 terminal receipt，不再改变 candidate product。
+
+## 接受限制与重开条件
+
+接受限制：
+
+- P1 certificate 只覆盖 W1-WIN、冻结的五个 normal consumer、Abseil identity、MSVC 19.50 与 source/static
+  benchmark 交付；跨平台性能、全部 Error 操作、端到端推理 KPI、Formal 和通用 SOTA 均未签署；
+- `Result<T&>` 是 caller-owned non-null borrow；它不延长 referent lifetime，deep const 也刻意不提供浅 const
+  mutable escape。nullable、range/text 和 shared ownership 应分别使用 pointer、view/span 与 owning handle；
+- `format_status` 最多保留 1023 字节并显式标记截断；异常关闭构建无法遏制一个违反合同、主动抛异常的
+  custom formatter，用户必须提供 non-throw formatter；
+- custom `std::error_category` 的 pointer 不保留；category owner 负责 canonical override，且定义该 category
+  的 DSO 至少要存活到 adapter call 返回。standard category 只在 caller image 以地址分类；
+- HYLE 仍不承诺稳定 C++ ABI 或 Native FFI。header、consumer 和 binary 必须匹配；IO 对 WinSock adapter 的
+  adoption 由 IO 自己的轮次完成；
+- retained P1 bundle 位于本机 scratch，不是发布 artifact；Formal 继续作为独立 `PENDING` 工作。
+
+只有以下新事实重开受影响能力族：
+
+1. 真实消费者复现 Error correctness/security、ownership/lifetime、OOM/no-throw、API 易用性或缺失能力缺陷；
+2. 支持 compiler/stdlib/OS 改变 `std::expected` 表示、reference lifetime diagnostics、standard-category
+   image identity、format 或 native translator 语义；
+3. public API、Status/Result layout/normal cost、直接依赖、组件闭包、selected header 或交付形状改变；
+4. 仍要续签工程声明时，冻结 consumer provenance/ownership、peer、machine、instrument、compiler 或
+   retained evidence identity 发生 material 改变；
+5. mature same-contract peer 证明更优复杂度档，或正常 consumer/profile 证明超过 5% 的可复现 material
+   regression/advantage。
+
+新 benchmark、API/LOC 数、命名偏好、单次点值、order/address 摆动、亚纳秒差异、Formal 待办或无新事实的
+“再看一遍”不构成产品重开理由。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：`ERR5-01..04` 已完成，`ERR5-05` 未回归，未处置 `MUST` 与 blocker 均为 0。
+不可变候选在三个支持平台通过 correctness、source/static/shared delivery、C++ usability/docs 与红队，
+并在冻结的 W1-WIN 五个同合同 consumer 上通过 5% P1 non-inferiority。候选保持
+`d61f0710ec0e465b31d458257e2587fdfe37ed52` / `305b2cb5947627dfb5b9697c939205b6c26cc6b7`；
+本 terminal receipt 不改变产品 identity。
