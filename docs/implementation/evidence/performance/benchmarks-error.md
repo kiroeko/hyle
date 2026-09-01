@@ -1,9 +1,10 @@
 # error 性能证据
 
-> **error-v4 current engineering evidence：`QUALIFIED / PASS`。** 未变化的 exact product candidate
-> `9595724a` / `a828fb4c` 已通过新的 source-primary consumer 合同和冻结的 5% P1 non-inferiority
-> gate。该结论只覆盖下列四个真实 consumer workload；不宣称所有 error 操作或跨平台 Formal SOTA。
-> error-v3 的错误合同和历史点值保留在下文，不能覆盖当前裁决。产品状态只看
+> **error-v5 current engineering evidence：`PLANNED`。** v5 新增 WinSock、`Result<T&>`、bounded
+> dynamic diagnostic 与 `std::error_code` cold adapter，尚未冻结 candidate 或运行新资格轮。error-v4
+> 的 `9595724a` / `a828fb4c` 与四个 source-primary consumer workload `QUALIFIED / PASS` 只作为前一
+> product identity 的历史基线，不能签署 v5。error-v3 的错误合同和历史点值同样只保留作追溯。
+> 产品状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
@@ -12,7 +13,22 @@
 benchmark 本身不定义 API；v4 合同通过受检 source provenance、ownership topology 和 material
 contribution 取得产品门资格，旧 v3 合同没有。
 
-## error-v4 source-consumer qualification
+## error-v5 预冻结资格范围
+
+v5 不建立 microbenchmark 大全。候选冻结后只运行两部分：
+
+1. 在新 product/Abseil identity 上重放 v4 的四个 source-primary owning Status/Result workload，确认
+   新增 public surface 没有改变既有正常路径；
+2. 增加一个 fixed-table registry lookup consumer：命中返回 guaranteed non-null borrow，缺失返回
+   code-only error；HYLE `Result<T&>` 与 Abseil `StatusOr<T&>` 共享 lookup、命中分布、referent lifetime、
+   charged phases 和 observable，按 `SAME_CONTRACT` / 5% non-inferiority 裁决。
+
+WinSock classifier、bounded formatting 与 `std::error_code` adapter 是错误冷边界，使用 O(1)/bounded
+结构、allocation count、异常遏制和 correctness 证明，不为罕见失败率编造 P1 计时。旧 fixed-backing
+shared-message copy 仍只作 mechanism diagnostic；只有正常 owning handoff 显示 material loss 才能触发
+一次机制检查。
+
+## error-v4 source-consumer qualification（历史基线）
 
 合同 `error-source-consumer-v1` 的 SHA-256 为
 `dde5b9a2e8c85d11014d2bb8312a948da422af1b1d339f09ef1046f9e1ec6f97`，benchmark source SHA-256 为

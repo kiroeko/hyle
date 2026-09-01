@@ -1,6 +1,9 @@
 #pragma once
 
+#include <concepts>
 #include <expected>
+#include <functional>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -117,13 +120,339 @@ static_assert(std::is_convertible_v<const ResultError &, Status>);
 static_assert(std::is_convertible_v<ResultError &&, Status>);
 static_assert(std::is_nothrow_swappable_v<ResultError>);
 
+template <class T>
+class BorrowedResult;
+
+template <class T>
+struct ResultSelector {
+  using type = std::expected<T, ResultError>;
+};
+
+template <class T>
+struct ResultSelector<T&> {
+  using type = BorrowedResult<T>;
+};
+
+template <class T>
+using SelectedResult = typename ResultSelector<T>::type;
+
+// std::expected deliberately does not accept reference value types. This
+// adapter supplies the missing fallible non-null borrow without changing the
+// representation or code generation of any owning Result<T>. The referent is
+// always caller-owned; only the pointer or the ordinary ResultError is stored.
+//
+// Const is deep: const BorrowedResult<T> observes const T, and a mutable borrow
+// cannot be copied back out through a const carrier. This prevents a const
+// registry/result handle from silently granting mutable access. Callers that
+// intentionally want shallow const should return a nullable pointer or an
+// explicit std::reference_wrapper value instead.
+template <class T>
+class [[nodiscard]] BorrowedResult final {
+  static_assert(!std::is_reference_v<T>);
+
+  template <class>
+  friend class BorrowedResult;
+
+  using Storage = std::expected<T*, ResultError>;
+  using ConstT = std::add_const_t<T>;
+
+ public:
+  using value_type = T&;
+  using error_type = ResultError;
+  using unexpected_type = std::unexpected<ResultError>;
+
+  template <class U>
+  using rebind = SelectedResult<U>;
+
+  // A reference cannot be value-initialized. Match mature reference-result
+  // carriers with an explicit code-only Unknown state, and prevent `return {}`
+  // from looking like a successful borrow.
+  explicit BorrowedResult() noexcept
+      : storage_(std::unexpect, Status::Unknown()) {}
+
+  template <class U>
+    requires std::is_convertible_v<U*, T*>
+  BorrowedResult(U& value HYLE_LIFETIME_BOUND) noexcept  // NOLINT(*-explicit)
+      : storage_(std::in_place, std::addressof(value)) {}
+
+  // In particular, Result<const T&> must not bind a temporary.
+  template <class U>
+    requires(!std::is_lvalue_reference_v<U> &&
+             std::is_convertible_v<std::remove_reference_t<U>*, T*>)
+  BorrowedResult(U&&) = delete;
+
+  template <class E>
+    requires std::is_constructible_v<ResultError, const E&>
+  BorrowedResult(const std::unexpected<E>& error) noexcept
+      : storage_(std::unexpect, error.error()) {}
+
+  template <class E>
+    requires std::is_constructible_v<ResultError, E&&>
+  BorrowedResult(std::unexpected<E>&& error) noexcept
+      : storage_(std::unexpect, std::move(error).error()) {}
+
+  // Deep-const copy semantics. A mutable carrier may copy another mutable
+  // carrier; Result<const T&> remains ordinarily copyable.
+  BorrowedResult(BorrowedResult&) noexcept = default;
+  BorrowedResult(const BorrowedResult&) noexcept
+    requires std::is_const_v<T> = default;
+  BorrowedResult(const BorrowedResult&)
+    requires(!std::is_const_v<T>) = delete;
+  BorrowedResult(BorrowedResult&&) noexcept = default;
+
+  BorrowedResult& operator=(BorrowedResult&) noexcept = default;
+  BorrowedResult& operator=(const BorrowedResult&) noexcept
+    requires std::is_const_v<T> = default;
+  BorrowedResult& operator=(const BorrowedResult&)
+    requires(!std::is_const_v<T>) = delete;
+  BorrowedResult& operator=(BorrowedResult&&) noexcept = default;
+
+  template <class U>
+    requires(!std::is_same_v<T, U> && std::is_convertible_v<U*, T*>)
+  BorrowedResult(BorrowedResult<U>& other) noexcept
+      : storage_(copy_from(other)) {}
+
+  template <class U>
+    requires(!std::is_same_v<T, U> && std::is_const_v<T> &&
+             std::is_convertible_v<std::add_const_t<U>*, T*>)
+  BorrowedResult(const BorrowedResult<U>& other) noexcept
+      : storage_(copy_from(other)) {}
+
+  template <class U>
+    requires(!std::is_same_v<T, U> && std::is_convertible_v<U*, T*>)
+  BorrowedResult(BorrowedResult<U>&& other) noexcept
+      : storage_(move_from(std::move(other))) {}
+
+  template <class U>
+    requires std::is_convertible_v<U*, T*>
+  BorrowedResult& operator=(U& value HYLE_LIFETIME_BOUND) noexcept {
+    storage_.emplace(std::addressof(value));
+    return *this;
+  }
+
+  template <class E>
+    requires std::is_constructible_v<ResultError, const E&>
+  BorrowedResult& operator=(const std::unexpected<E>& error) noexcept {
+    storage_ = std::unexpected<ResultError>(ResultError(error.error()));
+    return *this;
+  }
+
+  template <class E>
+    requires std::is_constructible_v<ResultError, E&&>
+  BorrowedResult& operator=(std::unexpected<E>&& error) noexcept {
+    storage_ = std::unexpected<ResultError>(
+        ResultError(std::move(error).error()));
+    return *this;
+  }
+
+  bool has_value() const noexcept { return storage_.has_value(); }
+  explicit operator bool() const noexcept { return has_value(); }
+
+  T& operator*() & noexcept { return **storage_; }
+  ConstT& operator*() const& noexcept { return std::as_const(**storage_); }
+  T& operator*() && noexcept { return **storage_; }
+  ConstT& operator*() const&& noexcept { return std::as_const(**storage_); }
+
+  T* operator->() noexcept { return std::addressof(**this); }
+  const T* operator->() const noexcept { return std::addressof(**this); }
+
+  T& value() & { return *storage_.value(); }
+  ConstT& value() const& { return std::as_const(*storage_.value()); }
+  T& value() && { return *storage_.value(); }
+  ConstT& value() const&& { return std::as_const(*storage_.value()); }
+
+  ResultError& error() & noexcept { return storage_.error(); }
+  const ResultError& error() const& noexcept { return storage_.error(); }
+  ResultError&& error() && noexcept { return std::move(storage_).error(); }
+  const ResultError&& error() const&& noexcept {
+    return std::move(storage_).error();
+  }
+
+  template <class U>
+    requires std::is_convertible_v<U*, T*>
+  T& emplace(U& value HYLE_LIFETIME_BOUND) noexcept {
+    storage_.emplace(std::addressof(value));
+    return value;
+  }
+
+  template <class U>
+    requires std::is_convertible_v<U*, T*>
+  T& value_or(U& fallback HYLE_LIFETIME_BOUND) & noexcept {
+    return has_value() ? **this : static_cast<T&>(fallback);
+  }
+
+  template <class U>
+    requires std::is_convertible_v<std::add_const_t<U>*, const T*>
+  const T& value_or(U& fallback HYLE_LIFETIME_BOUND) const& noexcept {
+    return has_value() ? **this : static_cast<const T&>(fallback);
+  }
+
+  template <class F>
+  auto and_then(F&& function) & {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, T&>>;
+    if (has_value()) return std::invoke(std::forward<F>(function), **this);
+    return R(std::unexpected<ResultError>(error()));
+  }
+
+  template <class F>
+  auto and_then(F&& function) const& {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, ConstT&>>;
+    if (has_value()) return std::invoke(std::forward<F>(function), **this);
+    return R(std::unexpected<ResultError>(error()));
+  }
+
+  template <class F>
+  auto and_then(F&& function) && {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, T&>>;
+    if (has_value()) return std::invoke(std::forward<F>(function), **this);
+    return R(std::unexpected<ResultError>(std::move(*this).error()));
+  }
+
+  template <class F>
+  auto and_then(F&& function) const&& {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, ConstT&>>;
+    if (has_value()) return std::invoke(std::forward<F>(function), **this);
+    return R(std::unexpected<ResultError>(error()));
+  }
+
+  template <class F>
+  auto transform(F&& function) & {
+    return transform_impl(*this, std::forward<F>(function));
+  }
+
+  template <class F>
+  auto transform(F&& function) const& {
+    return transform_impl(*this, std::forward<F>(function));
+  }
+
+  template <class F>
+  auto transform(F&& function) && {
+    return transform_impl(std::move(*this), std::forward<F>(function));
+  }
+
+  template <class F>
+  auto transform(F&& function) const&& {
+    return transform_impl(std::move(*this), std::forward<F>(function));
+  }
+
+  template <class F>
+  auto or_else(F&& function) & {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, ResultError&>>;
+    if (!has_value()) return std::invoke(std::forward<F>(function), error());
+    return R(**this);
+  }
+
+  template <class F>
+  auto or_else(F&& function) const& {
+    using R =
+        std::remove_cvref_t<std::invoke_result_t<F, const ResultError&>>;
+    if (!has_value()) return std::invoke(std::forward<F>(function), error());
+    return R(**this);
+  }
+
+  template <class F>
+  auto or_else(F&& function) && {
+    using R = std::remove_cvref_t<std::invoke_result_t<F, ResultError&&>>;
+    if (!has_value()) {
+      return std::invoke(std::forward<F>(function), std::move(*this).error());
+    }
+    return R(**this);
+  }
+
+  template <class F>
+  auto or_else(F&& function) const&& {
+    using R =
+        std::remove_cvref_t<std::invoke_result_t<F, const ResultError&&>>;
+    if (!has_value()) {
+      return std::invoke(std::forward<F>(function), std::move(*this).error());
+    }
+    return R(**this);
+  }
+
+  void swap(BorrowedResult& other) noexcept { storage_.swap(other.storage_); }
+  friend void swap(BorrowedResult& lhs, BorrowedResult& rhs) noexcept {
+    lhs.swap(rhs);
+  }
+
+  template <class U>
+  friend bool operator==(const BorrowedResult& lhs,
+                         const BorrowedResult<U>& rhs)
+    requires requires(const T& a, const U& b) {
+      { a == b } -> std::convertible_to<bool>;
+    }
+  {
+    if (lhs.has_value() != rhs.has_value()) return false;
+    return lhs.has_value() ? static_cast<bool>(*lhs == *rhs)
+                           : lhs.error() == rhs.error();
+  }
+
+  template <class E>
+  friend bool operator==(const BorrowedResult& result,
+                         const std::unexpected<E>& error)
+    requires requires(const ResultError& a, const E& b) {
+      { a == b } -> std::convertible_to<bool>;
+    }
+  {
+    return !result.has_value() && result.error() == error.error();
+  }
+
+ private:
+  template <class U>
+  static Storage copy_from(U& other) noexcept {
+    if (other.has_value()) {
+      return Storage(std::in_place, std::addressof(*other));
+    }
+    return Storage(std::unexpect, other.error());
+  }
+
+  template <class U>
+  static Storage move_from(U&& other) noexcept {
+    if (other.has_value()) {
+      return Storage(std::in_place, std::addressof(*other));
+    }
+    return Storage(std::unexpect, std::forward<U>(other).error());
+  }
+
+  template <class Self, class F>
+  static auto transform_impl(Self&& self, F&& function) {
+    using Arg = decltype(*std::forward<Self>(self));
+    using U = std::invoke_result_t<F, Arg>;
+    static_assert(!std::is_rvalue_reference_v<U>,
+                  "Result<T&>::transform cannot create an rvalue borrow");
+    using R = SelectedResult<U>;
+    if (!self.has_value()) {
+      if constexpr (std::is_rvalue_reference_v<Self&&> &&
+                    !std::is_const_v<std::remove_reference_t<Self>>) {
+        return R(std::unexpected<ResultError>(
+            std::forward<Self>(self).error()));
+      } else {
+        return R(std::unexpected<ResultError>(self.error()));
+      }
+    }
+    if constexpr (std::is_void_v<U>) {
+      std::invoke(std::forward<F>(function), *std::forward<Self>(self));
+      return R{};
+    } else {
+      return R(std::invoke(std::forward<F>(function),
+                           *std::forward<Self>(self)));
+    }
+  }
+
+  Storage storage_;
+};
+
 }  // namespace detail
 
 // Result<T> = a value or a non-OK Status error. It remains a thin C++23
-// std::expected alias, so the standard observers and monadic operations come
-// for free; the same-size checked error arm only enforces the invariant above.
+// std::expected alias for every owning/void T, so the standard observers and
+// monadic operations come for free. Result<T&> is the direct, non-null,
+// caller-owned borrow specialization above; nullable results still use T*.
 template <class T>
-using Result = std::expected<T, detail::ResultError>;
+using Result = detail::SelectedResult<T>;
+
+static_assert(
+    std::is_same_v<Result<int>, std::expected<int, detail::ResultError>>,
+    "owning Result<T> must remain the exact std::expected specialization");
 
 // Construct the error arm of any Result<T> without repeating the standard
 // carrier type at every return site:
@@ -178,9 +507,17 @@ class FailReturn {
   operator Status() && noexcept {
     return std::move(status_);
   }  // NOLINT(*-explicit)
-  // -> a function returning Result<U>
+  // -> a function returning an owning Result<U>. Spell the exact expected
+  // target here so conversion-template deduction does not have to invert the
+  // ResultSelector alias used for reference values.
   template <class U>
-  operator Result<U>() && noexcept {  // NOLINT(*-explicit)
+  operator std::expected<U, ResultError>() && noexcept {  // NOLINT(*-explicit)
+    return std::unexpected<Status>(std::move(status_));
+  }
+
+  // -> a function returning Result<U&>.
+  template <class U>
+  operator BorrowedResult<U>() && noexcept {  // NOLINT(*-explicit)
     return std::unexpected<Status>(std::move(status_));
   }
 

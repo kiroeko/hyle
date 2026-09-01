@@ -1,6 +1,6 @@
 # HYLE error：什么情况用什么
 
-> error 是 HYLE 当前的共享失败模型；本页跟随 error-v4 重新绑定的 C++ 产品合同。完整源码、static
+> error 是 HYLE 当前的共享失败模型；本页跟随 error-v5 的 C++ 产品合同。完整源码、static
 > 与 shared SDK 使用相同的 `Status` / `Result<T>` 语义。项目没有原生 C 产品或受支持的
 > Native FFI，早期 error C schema/bridge 已移除。
 
@@ -10,11 +10,13 @@
 |---|---|---|
 | 操作只成功或失败，失败可恢复 | `Status` | bool + TLS last-error |
 | 成功还要返回一个值 | `Result<T>` | output 没初始化却返回 bool |
+| 成功必须返回非空、非 owning 单对象借用 | `Result<T&>` | nullable pointer 或暴露 `reference_wrapper` 细节 |
 | “没有值”本来就是正常结果 | `optional`、nullable/view 或模块枚举 | `NotFound`，除非合同真的把它定义为失败 |
 | poll 未就绪、队列空/满、try-lock 失败 | 模块的紧凑值/枚举合同 | 每次构造 Status |
 | 调用者违反不可恢复合同 | `HYLE_FATAL_ASSERT` | `Internal` 后继续运行 |
 | 给运营人员记录事件 | obs log/trace | 在 Status 构造/传播中自动打印 |
 | 需要按后端原生值恢复 | 先看 canonical code，再看 `native_error()` | 解析 message |
+| failure text 要加入路径/尺寸/设备号 | `format_status` | 为拼字符串引入 logger/stream builder |
 
 ## 最小 C++ 路径
 
@@ -53,7 +55,7 @@ HYLE_RETURN_IF_ERROR(std::move(status));
 这会把 owning message backing 直接交给调用者；不要对成员、引用参数或失败返回后仍需由其他对象观察
 的 Status 使用 `std::move`。
 
-`Result<T>` 有标准 `std::expected` 的 observers 和 monadic 操作。错误槽是 Status-compatible 的
+非引用 `Result<T>` 有标准 `std::expected` 的 observers 和 monadic 操作。错误槽是 Status-compatible 的
 受检类型：任何 `std::unexpected(Status::Ok())` 都会在构造或赋值 Result 时 fail-fast，而不会
 形成“既是 error 又是 OK”的非法值。`result.error()` 直接提供常用只读观察和 `WithContext`，但
 刻意不允许取得可变 `Status&`；需要独立 Status 时按值复制或移动：
@@ -82,20 +84,32 @@ value-initialized `T`；它不表示 empty、unknown 或“尚未设置”。需
 
 ### 借用值怎么返回
 
-`Result<T>` 直接采用 C++23 `std::expected` 的 value 形状，因此 `Result<T&>` **不能实例化**。
 按成功值的真实合同选择：
 
 | 成功值合同 | 形状 |
 |---|---|
-| 必须非空的单对象借用 | `Result<std::reference_wrapper<T>>`，返回 `std::ref(object)` |
+| 必须非空的单对象借用 | `Result<T&>`，直接返回 owner 中的 lvalue |
 | 指针本来允许为空 | `Result<T*>`，并明确成功 NULL 的含义 |
 | 连续范围借用 | `Result<std::span<T>>` |
 | 文本借用 | `Result<std::string_view>` |
 
-这些 `Result` 只拥有失败侧的 Status，**不拥有**成功侧指向的对象或存储；owner 必须活过
-`reference_wrapper`、pointer、span 或 string view 的全部使用。不要用 `Result<T*>` 偷偷表达
-“一定非空”，也不要从临时容器返回 span/string view。若多个真实 API 反复需要引用专用的
-monadic/lifetime 语义，再重开统一 borrowed-result 设计，而不是在调用点各造一种隐式所有权。
+```cpp
+hyle::Result<Model&> find_model(ModelRegistry& registry, ModelId id) {
+  if (Model* model = registry.find(id)) return *model;
+  return hyle::make_unexpected(hyle::Status::NotFound("model id"));
+}
+```
+
+`Result<T&>` 提供 `has_value`、`*`、`->`、`value`、`error`、`and_then/transform/or_else` 和两个传播宏；
+它内部只保存一个非空 pointer 或普通 Result error，不分配。它只拥有失败侧 Status，**不拥有或延长**
+成功对象生命周期；不能从 temporary 构造。const 是 deep-const：`const Result<T&>` 只能得到
+`const T&`，也不能复制回一个可写 borrow；需要可普通复制的只读结果时直接返回 `Result<const T&>`。
+引用 Result 的显式默认构造是 code-only `Unknown`，不是成功，因为 reference 没有可 value-initialize
+的对象。
+
+pointer/span/string view 同样不拥有存储。不要用 `Result<T*>` 偷偷表达“一定非空”，也不要从临时
+容器返回 borrow/span/string view。只有确实需要浅 const/rebinding 语义时，才把
+`std::reference_wrapper<T>` 作为普通 owning Result value；它不再是非空 borrow 的默认写法。
 
 ## code 怎么选
 
@@ -122,30 +136,39 @@ if (fd < 0) {
 }
 ```
 
-Win32 使用 `status_from_win32`，COM/WinRT HRESULT 使用 `status_from_hresult`；不要互换。
-Win32/HRESULT 系统描述会从 UTF-16 转为 UTF-8。`status_from_errno` 会验证 locale-sensitive
+Win32 使用 `status_from_win32`，WinSock/IOCP 的 `WSAGetLastError()` 使用
+`status_from_winsock`，COM/WinRT HRESULT 使用 `status_from_hresult`；三个 numeric namespace 不可
+互换。必须紧跟失败调用保存 raw code，不能先做一次日志/分配再读取 last error。
+Win32/WinSock/HRESULT 系统描述会从 UTF-16 转为 UTF-8。`status_from_errno` 会验证 locale-sensitive
 `strerror` 文本；若它不是合法 UTF-8，则退化为确定性的 ASCII `errno N`，同时完整保留 native
 errno。CUDA/Vulkan 等 SDK-specific translator 由对应模块提供，再通过 `Status::FromNative`
 保存稳定 domain/code。
 
 ### `std::error_code` 与 custom category
 
-HYLE 不保存 `std::error_category*`，也没有一个假装能无损接收任意 category 的通用构造器。
+HYLE 不保存 `std::error_category*`，但提供单向 cold adapter；包含
+`hyle/error/system_error.h`：
+
+```cpp
+std::error_code error;
+std::filesystem::rename(from, to, error);
+if (error) return hyle::status_from_error_code(error, "renaming model cache");
+```
+
 category identity 可能属于某个动态库，不能成为跨 DLL、卸载边界或未来外语运行时边界的长期状态。
-在拥有外部调用的边界、category 仍然有效时完成转换：
+adapter 在调用期间读取它，并按以下规则转换：
 
 - `std::generic_category()` / POSIX system error 映到 `status_from_errno`；
 - Windows `std::system_category()` 的 Win32 值映到 `status_from_win32`；
-- Boost.System、Asio 或第三方 custom category 由所属模块把其 condition/code 映成 canonical
-  `StatusCode`，只有已经登记为稳定 HYLE domain 的原生数值才进入 `NativeError`；
+- Boost.System、Asio 或第三方 custom category 默认得到 `Unknown` 和人读诊断；所属模块知道准确语义
+  时使用 `status_from_error_code_as(StatusCode::..., error, operation)`；custom numeric 不进入
+  `NativeError`，以免伪装成稳定 domain；
 - 若调用者的恢复逻辑必须保留 custom category 的类型和值，就暂时保留
   `std::error_code` 或模块自己的 `std::expected<T, E>`，不要先擦成 Status 再解析 message。
 
-`error_code::message()` 可能分配，返回的本地化字节也不保证满足 HYLE 的 UTF-8 合同；不要在
-`noexcept` 边界盲目调用并直接塞入 Status。抛出 `std::system_error` 的 API 应在拥有该调用的
-异常边界捕获并按上面规则转换，异常绝不能越过 HYLE `noexcept` 或模块边界。若两个以上真实
-模块反复需要同一组 std/Boost 映射，再把它收成独立的冷路径 adapter header；不要增加普通
-Status 的常态字段。
+`error_code::message()` 可能分配、抛异常或产生非 UTF-8 字节；adapter 捕获 custom `message()` 异常，
+非法文本退化为确定性 numeric 诊断，且不改变 8B Status。抛出 `std::system_error` 的 API 仍应在拥有
+该调用的异常边界捕获，再把其中的 `code()` 交给 adapter；异常不能越过 HYLE `noexcept`/模块边界。
 
 普通调用方：
 
@@ -221,6 +244,19 @@ const std::size_t required = status.ToString(text, sizeof(text));
 std::string text = hyle::to_string(status);
 ```
 
+failure text 需要运行时值时，同一 header 提供 no-throw helper：
+
+```cpp
+return hyle::format_status(
+    hyle::StatusCode::NotFound,
+    "model {} shard {} is missing", model_name, shard);
+```
+
+它使用 1 KiB stack scratch，最多创建一个 Status backing；超长输出以 `...[truncated]` 结束。编译期
+format string 会拒绝参数不匹配；启用异常时，抛异常的 custom formatter 被降为
+`[status formatting failed]`。它不打印日志、不附 source location。需要完整的超长文本时先用项目的
+owning formatter 构造 string，再显式传给 Status；不要依赖 bounded helper 保存全部内容。
+
 截断单位是 byte，可能停在 UTF-8 多字节 code point 中间；不要解码截断结果。需要完整文本时按
 返回的 `required + 1` 重新分配，或直接使用 `to_string`。
 
@@ -237,6 +273,9 @@ std::string text = hyle::to_string(status);
 | rvalue context chain | 累计 O(最终文本字节)，稳定空间 O(最终字节) |
 | caller-buffer format | 零分配；按实际写入字节线性 |
 | Result 成功传播 | 标准 expected-shaped 分支/移动，无 error allocation |
+| `Result<T&>` | pointer + Status error arm + discriminator；零分配、不拥有 referent |
+| `format_status` | 1 KiB stack + 至多一个 Status block；O(min(输出, 1023)) |
+| errno/Win32/WinSock classifier | 固定 O(1) switch；零分配 |
 
 message/context OOM 时 HYLE 保留 code，可能丢可选诊断。因此恢复逻辑永远不能依赖 message
 存在；需要机器恢复的数据应进入 canonical code 或一个 native detail。
@@ -245,6 +284,10 @@ message/context OOM 时 HYLE 保留 code，可能丢可选诊断。因此恢复�
 
 - `Result<T>{}` 在 `T` 可默认构造时是持有 `T{}` 的成功值，不是空 Result；不要把默认构造当作
   延迟初始化或未知失败。
+- `Result<T&>{}` 是显式 code-only `Unknown`；它与 owning Result 的默认成功不同。不要从 temporary
+  构造 borrow，也不要让 owner 先于 borrow 销毁。
+- `const Result<T&>` 是 deep-const；若要跨 const carrier 保留可写权限，重新检查 ownership，而不是
+  `const_cast`。浅 const 是显式 pointer/reference-wrapper 合同。
 - 不要对尚未检查的 `Result<T>` 直接调用 `.value()`；失败时标准 `std::expected` 会抛
   `std::bad_expected_access`，绕开 HYLE 的值式传播。使用传播宏，或先检查再访问 value/error。
 - `Status::message()` 是 borrowed view；原 Status 被销毁/赋值后不要继续使用。

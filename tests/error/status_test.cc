@@ -7,8 +7,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -16,6 +18,23 @@
 
 #include "hyle/error/format.h"
 #include "hyle/error/result.h"
+#include "hyle/error/system_error.h"
+
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+struct ThrowingStatusFormatValue {};
+
+template <>
+struct std::formatter<ThrowingStatusFormatValue, char> {
+  constexpr auto parse(std::format_parse_context& context) {
+    return context.begin();
+  }
+
+  auto format(const ThrowingStatusFormatValue&,
+              std::format_context&) const -> std::format_context::iterator {
+    throw std::runtime_error("formatter failure");
+  }
+};
+#endif
 
 using hyle::Result;
 using hyle::Status;
@@ -293,6 +312,8 @@ TEST(Status, NativeErrorDomainNamesAreStable) {
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Nvrtc), "Nvrtc");
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::HResult),
             "HResult");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::WinSock),
+            "WinSock");
   EXPECT_EQ(hyle::native_error_domain_name(
                 static_cast<NativeErrorDomain>(1234)),
             "Unknown");
@@ -408,6 +429,34 @@ TEST(Status, Win32FactoryPreservesNativeCodeAndContext) {
             (NativeError{NativeErrorDomain::Win32, 2}));
 }
 
+TEST(Status, WinSockMapsStableValuesOnEveryHost) {
+  EXPECT_EQ(hyle::status_code_from_winsock(0), StatusCode::Ok);
+  EXPECT_EQ(hyle::status_code_from_winsock(995), StatusCode::Cancelled);
+  EXPECT_EQ(hyle::status_code_from_winsock(10013),
+            StatusCode::PermissionDenied);
+  EXPECT_EQ(hyle::status_code_from_winsock(10035),
+            StatusCode::Unavailable);
+  EXPECT_EQ(hyle::status_code_from_winsock(10048),
+            StatusCode::AlreadyExists);
+  EXPECT_EQ(hyle::status_code_from_winsock(10055),
+            StatusCode::ResourceExhausted);
+  EXPECT_EQ(hyle::status_code_from_winsock(10060),
+            StatusCode::DeadlineExceeded);
+  EXPECT_EQ(hyle::status_code_from_winsock(11001), StatusCode::NotFound);
+  EXPECT_EQ(hyle::status_code_from_winsock(123456), StatusCode::Unknown);
+}
+
+TEST(Status, WinSockFactoryPreservesNativeCodeAndContext) {
+  EXPECT_TRUE(hyle::status_from_winsock(0, "ignored").ok());
+
+  Status refused =
+      hyle::status_from_winsock(10061, "connecting inference server");
+  EXPECT_TRUE(refused.IsUnavailable());
+  EXPECT_EQ(refused.message().find("connecting inference server: "), 0u);
+  EXPECT_EQ(refused.native_error(),
+            (NativeError{NativeErrorDomain::WinSock, 10061}));
+}
+
 TEST(Status, HResultMapsStableValuesOnEveryHost) {
   constexpr auto kAccessDenied = static_cast<std::int32_t>(0x80070005u);
   constexpr auto kInvalidArgument = static_cast<std::int32_t>(0x80070057u);
@@ -446,6 +495,119 @@ TEST(Status, HResultFactoryPreservesNativeCodeAndContext) {
             (NativeError{NativeErrorDomain::HResult, kAccessDenied}));
 }
 
+namespace {
+
+class TestErrorCategory final : public std::error_category {
+ public:
+  const char* name() const noexcept override { return "tensor-cache"; }
+  std::string message(int value) const override {
+    return "cache failure " + std::to_string(value);
+  }
+};
+
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+class ThrowingErrorCategory final : public std::error_category {
+ public:
+  const char* name() const noexcept override { return "throwing"; }
+  std::string message(int) const override {
+    throw std::runtime_error("category failure");
+  }
+};
+#endif
+
+}  // namespace
+
+TEST(Status, StandardErrorCodeMapsKnownCategoriesAndPreservesNativeDetail) {
+  const std::error_code generic(EACCES, std::generic_category());
+  EXPECT_EQ(hyle::status_code_from_error_code(generic),
+            StatusCode::PermissionDenied);
+  Status generic_status =
+      hyle::status_from_error_code(generic, "opening weights");
+  EXPECT_TRUE(generic_status.IsPermissionDenied());
+  EXPECT_EQ(generic_status.message().find("opening weights: "), 0u);
+  EXPECT_EQ(generic_status.native_error(),
+            (NativeError{NativeErrorDomain::PosixErrno, EACCES}));
+
+#if defined(_WIN32)
+  const std::error_code system(5, std::system_category());
+  const NativeError expected_native{NativeErrorDomain::Win32, 5};
+#else
+  const std::error_code system(EACCES, std::system_category());
+  const NativeError expected_native{NativeErrorDomain::PosixErrno, EACCES};
+#endif
+  EXPECT_EQ(hyle::status_code_from_error_code(system),
+            StatusCode::PermissionDenied);
+  Status system_status = hyle::status_from_error_code(system);
+  EXPECT_TRUE(system_status.IsPermissionDenied());
+  EXPECT_EQ(system_status.native_error(), expected_native);
+}
+
+TEST(Status, StandardErrorCodeCustomCategoryNeedsOwnerCanonicalMapping) {
+  static const TestErrorCategory category;
+  const std::error_code custom(17, category);
+  EXPECT_EQ(hyle::status_code_from_error_code(custom), StatusCode::Unknown);
+
+  Status fallback = hyle::status_from_error_code(custom);
+  EXPECT_TRUE(fallback.IsUnknown());
+  EXPECT_FALSE(fallback.has_native_error());
+  EXPECT_NE(fallback.message().find("tensor-cache error 17"),
+            std::string_view::npos);
+  EXPECT_NE(fallback.message().find("cache failure 17"),
+            std::string_view::npos);
+
+  Status mapped = hyle::status_from_error_code_as(
+      StatusCode::DataLoss, custom, "reading tensor cache");
+  EXPECT_TRUE(mapped.IsDataLoss());
+  EXPECT_FALSE(mapped.has_native_error());
+  EXPECT_EQ(mapped.message().find("reading tensor cache: "), 0u);
+
+  EXPECT_TRUE(hyle::status_from_error_code(std::error_code{}).ok());
+  EXPECT_TRUE(hyle::status_from_error_code_as(
+                  StatusCode::DataLoss, std::error_code{})
+                  .ok());
+  EXPECT_TRUE(hyle::status_from_error_code_as(StatusCode::Ok, custom)
+                  .IsUnknown());
+}
+
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+TEST(Status, StandardErrorCodeContainsThrowingCustomCategory) {
+  static const ThrowingErrorCategory category;
+  Status status = hyle::status_from_error_code_as(
+      StatusCode::Unavailable, std::error_code(3, category));
+  EXPECT_TRUE(status.IsUnavailable());
+  EXPECT_EQ(status.message(), "throwing error 3");
+}
+#endif
+
+TEST(Status, FormatStatusOwnsRuntimeDiagnosticAndMarksTruncation) {
+  Status status = hyle::format_status(
+      StatusCode::NotFound, "model {} shard {} is missing", "qwen", 7);
+  EXPECT_TRUE(status.IsNotFound());
+  EXPECT_EQ(status.message(), "model qwen shard 7 is missing");
+
+  const std::string with_null{"gpu\0lost", 8};
+  Status embedded =
+      hyle::format_status(StatusCode::Unavailable, "{}", with_null);
+  EXPECT_EQ(embedded.message(),
+            std::string_view(with_null.data(), with_null.size()));
+
+  const std::string oversized(1400, 'x');
+  Status truncated =
+      hyle::format_status(StatusCode::DataLoss, "{}", oversized);
+  ASSERT_EQ(truncated.message().size(), 1023u);
+  EXPECT_TRUE(truncated.message().ends_with("...[truncated]"));
+  EXPECT_TRUE(hyle::format_status(StatusCode::Ok, "ignored {}", 7).ok());
+}
+
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+TEST(Status, FormatStatusContainsCustomFormatterFailure) {
+  Status status = hyle::format_status(StatusCode::Internal, "{}",
+                                      ThrowingStatusFormatValue{});
+  EXPECT_TRUE(status.IsInternal());
+  EXPECT_EQ(status.message(), "[status formatting failed]");
+}
+#endif
+
 #if defined(HYLE_TESTING)
 TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
@@ -463,6 +625,15 @@ TEST(Status, Win32FactoryOomPreservesCanonicalCode) {
 
   EXPECT_TRUE(denied.IsPermissionDenied());
   EXPECT_FALSE(denied.has_message());
+}
+
+TEST(Status, WinSockFactoryOomPreservesCanonicalCode) {
+  hyle::detail::status_test_force_oom(true);
+  Status refused = hyle::status_from_winsock(10061, "connecting");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(refused.IsUnavailable());
+  EXPECT_FALSE(refused.has_message());
 }
 
 TEST(Status, HResultFactoryOomPreservesCanonicalCode) {
@@ -656,6 +827,119 @@ TEST(Result, RvalueErrorContextLeavesErrorArmNonOk) {
   EXPECT_EQ(contextual.message(), "loading model: model.bin");
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().IsUnknown());
+}
+
+namespace {
+
+struct BorrowBase {
+  int value = 0;
+};
+
+struct BorrowDerived : BorrowBase {};
+
+Result<int&> borrow_int(int& value, bool fail) {
+  if (fail) return hyle::make_unexpected(Status::NotFound("entry"));
+  return value;
+}
+
+Result<int&> propagate_borrow(int& value, bool fail) {
+  HYLE_ASSIGN_OR_RETURN(int& borrowed, borrow_int(value, fail));
+  borrowed += 1;
+  return borrowed;
+}
+
+}  // namespace
+
+TEST(ResultBorrow, IsDirectNonNullBorrowWithoutChangingOwningResult) {
+  static_assert(std::is_same_v<
+                Result<int>,
+                std::expected<int, hyle::detail::ResultError>>);
+  static_assert(std::is_same_v<decltype(*std::declval<Result<int&>&>()), int&>);
+  static_assert(
+      std::is_same_v<decltype(*std::declval<const Result<int&>&>()),
+                     const int&>);
+  static_assert(!std::is_constructible_v<Result<const int&>, int&&>);
+  static_assert(!std::is_copy_constructible_v<Result<int&>>);
+  static_assert(std::is_constructible_v<Result<int&>, Result<int&>&>);
+  static_assert(std::is_copy_constructible_v<Result<const int&>>);
+
+  int value = 41;
+  Result<int&> result = value;
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(std::addressof(*result), std::addressof(value));
+  *result = 42;
+  EXPECT_EQ(value, 42);
+
+  Result<int&> copied = result;
+  EXPECT_EQ(std::addressof(*copied), std::addressof(value));
+  EXPECT_EQ(copied.value_or(value), 42);
+}
+
+TEST(ResultBorrow, ConstCarrierIsDeepConstAndConversionsPreserveIdentity) {
+  BorrowDerived derived;
+  derived.value = 7;
+  Result<BorrowDerived&> mutable_result = derived;
+  Result<const BorrowBase&> base_result = mutable_result;
+  const Result<const BorrowBase&> copied = base_result;
+
+  static_assert(std::is_same_v<decltype(*copied), const BorrowBase&>);
+  ASSERT_TRUE(copied.has_value());
+  EXPECT_EQ(copied->value, 7);
+  EXPECT_EQ(std::addressof(*copied),
+            static_cast<const BorrowBase*>(std::addressof(derived)));
+}
+
+TEST(ResultBorrow, DefaultAndUnexpectedStatesRemainNonOk) {
+  Result<int&> empty;
+  ASSERT_FALSE(empty.has_value());
+  EXPECT_TRUE(empty.error().IsUnknown());
+
+  Result<int&> error =
+      hyle::make_unexpected(Status::Unavailable("registry offline"));
+  ASSERT_FALSE(error.has_value());
+  EXPECT_TRUE(error.error().IsUnavailable());
+  EXPECT_EQ(error.error().message(), "registry offline");
+  EXPECT_TRUE(error ==
+              hyle::make_unexpected(Status::Unavailable("registry offline")));
+}
+
+TEST(ResultBorrow, MonadicAndMacroPropagationUseReferentShape) {
+  int value = 20;
+  Result<int&> result = value;
+
+  Result<int> doubled = result.transform([](int& item) { return item * 2; });
+  ASSERT_TRUE(doubled.has_value());
+  EXPECT_EQ(*doubled, 40);
+
+  Result<const int&> as_const =
+      result.transform([](int& item) -> const int& { return item; });
+  ASSERT_TRUE(as_const.has_value());
+  EXPECT_EQ(std::addressof(*as_const), std::addressof(value));
+
+  Result<int&> chained = result.and_then([](int& item) -> Result<int&> {
+    item += 1;
+    return item;
+  });
+  ASSERT_TRUE(chained.has_value());
+  EXPECT_EQ(value, 21);
+
+  Result<int&> failure =
+      hyle::make_unexpected(Status::NotFound("entry"));
+  int fallback = 9;
+  Result<int&> recovered = failure.or_else(
+      [&](const Status& status) -> Result<int&> {
+        EXPECT_TRUE(status.IsNotFound());
+        return fallback;
+      });
+  ASSERT_TRUE(recovered.has_value());
+  EXPECT_EQ(std::addressof(*recovered), std::addressof(fallback));
+
+  Result<int&> propagated = propagate_borrow(value, false);
+  ASSERT_TRUE(propagated.has_value());
+  EXPECT_EQ(value, 22);
+  Result<int&> propagated_error = propagate_borrow(value, true);
+  ASSERT_FALSE(propagated_error.has_value());
+  EXPECT_TRUE(propagated_error.error().IsNotFound());
 }
 
 // ---- propagation macros: HYLE_RETURN_IF_ERROR -------------------------------

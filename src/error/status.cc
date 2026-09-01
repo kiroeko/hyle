@@ -2,14 +2,18 @@
 
 #include <atomic>
 #include <cerrno>
+#include <charconv>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <new>
+#include <string>
+#include <system_error>
 
 #include "hyle/error/result.h"
+#include "hyle/error/system_error.h"
 #include "hyle/core/compiler.h"
 #include "status_access.h"
 
@@ -42,6 +46,7 @@ std::string_view native_error_domain_name(NativeErrorDomain domain) noexcept {
     case NativeErrorDomain::CudaDriver: return "CudaDriver";
     case NativeErrorDomain::Nvrtc: return "Nvrtc";
     case NativeErrorDomain::HResult: return "HResult";
+    case NativeErrorDomain::WinSock: return "WinSock";
     case NativeErrorDomain::Unknown: return "Unknown";
   }
   return "Unknown";
@@ -283,6 +288,76 @@ StatusCode status_code_from_win32(std::uint32_t error_number) noexcept {
     case 1231:                                          // ERROR_NETWORK_UNREACHABLE
     case 1232:                                          // ERROR_HOST_UNREACHABLE
     case 1236: return StatusCode::Unavailable;          // ERROR_CONNECTION_ABORTED
+    default: return StatusCode::Unknown;
+  }
+}
+
+StatusCode status_code_from_winsock(int error_number) noexcept {
+  // WinSock values are stable protocol constants. Keep the public header free
+  // of winsock2.h and make persisted Windows diagnostics classifiable on any
+  // host. Operation-specific callers may still override a generic category at
+  // their boundary (for example, treating a timed connect as a deadline).
+  switch (error_number) {
+    case 0: return StatusCode::Ok;
+    case 995:                                           // WSA_OPERATION_ABORTED
+    case 10004:                                         // WSAEINTR
+    case 10103:                                         // WSAECANCELLED
+    case 10111: return StatusCode::Cancelled;           // WSA_E_CANCELLED
+    case 10060: return StatusCode::DeadlineExceeded;    // WSAETIMEDOUT
+    case 11001:                                         // WSAHOST_NOT_FOUND
+    case 11004: return StatusCode::NotFound;            // WSANO_DATA
+    case 10037:                                         // WSAEALREADY
+    case 10048: return StatusCode::AlreadyExists;       // WSAEADDRINUSE
+    case 10013: return StatusCode::PermissionDenied;    // WSAEACCES
+    case 10055:                                         // WSAENOBUFS
+    case 10059:                                         // WSAETOOMANYREFS
+    case 10067:                                         // WSAEPROCLIM
+    case 10068:                                         // WSAEUSERS
+    case 10069: return StatusCode::ResourceExhausted;   // WSAEDQUOT
+    case 10014:                                         // WSAEFAULT
+    case 10022:                                         // WSAEINVAL
+    case 10038:                                         // WSAENOTSOCK
+    case 10039:                                         // WSAEDESTADDRREQ
+    case 10041:                                         // WSAEPROTOTYPE
+    case 10042: return StatusCode::InvalidArgument;     // WSAENOPROTOOPT
+    case 10040:                                         // WSAEMSGSIZE
+    case 10062:                                         // WSAELOOP
+    case 10063: return StatusCode::OutOfRange;          // WSAENAMETOOLONG
+    case 10043:                                         // WSAEPROTONOSUPPORT
+    case 10044:                                         // WSAESOCKTNOSUPPORT
+    case 10045:                                         // WSAEOPNOTSUPP
+    case 10046:                                         // WSAEPFNOSUPPORT
+    case 10047:                                         // WSAEAFNOSUPPORT
+    case 10092: return StatusCode::Unimplemented;       // WSAVERNOTSUPPORTED
+    case 10056:                                         // WSAEISCONN
+    case 10057:                                         // WSAENOTCONN
+    case 10058:                                         // WSAESHUTDOWN
+    case 10066:                                         // WSAENOTEMPTY
+    case 10091:                                         // WSASYSNOTREADY
+    case 10093: return StatusCode::FailedPrecondition;  // WSANOTINITIALISED
+    case 10070: return StatusCode::Aborted;             // WSAESTALE
+    case 10104:                                         // WSAEINVALIDPROCTABLE
+    case 10105:                                         // WSAEINVALIDPROVIDER
+    case 10106:                                         // WSAEPROVIDERFAILEDINIT
+    case 10107:                                         // WSASYSCALLFAILURE
+    case 11003: return StatusCode::Internal;            // WSANO_RECOVERY
+    case 10108:                                         // WSASERVICE_NOT_FOUND
+    case 10109: return StatusCode::NotFound;            // WSATYPE_NOT_FOUND
+    case 10035:                                         // WSAEWOULDBLOCK
+    case 10036:                                         // WSAEINPROGRESS
+    case 10049:                                         // WSAEADDRNOTAVAIL
+    case 10050:                                         // WSAENETDOWN
+    case 10051:                                         // WSAENETUNREACH
+    case 10052:                                         // WSAENETRESET
+    case 10053:                                         // WSAECONNABORTED
+    case 10054:                                         // WSAECONNRESET
+    case 10061:                                         // WSAECONNREFUSED
+    case 10064:                                         // WSAEHOSTDOWN
+    case 10065:                                         // WSAEHOSTUNREACH
+    case 10071:                                         // WSAEREMOTE
+    case 10101:                                         // WSAEDISCON
+    case 10112:                                         // WSAEREFUSED
+    case 11002: return StatusCode::Unavailable;         // WSATRY_AGAIN
     default: return StatusCode::Unknown;
   }
 }
@@ -851,6 +926,37 @@ std::string_view describe_win32(std::uint32_t error_number, char *buffer,
       buffer, formatted_length < cap ? formatted_length : cap - 1);
 }
 
+std::string_view describe_winsock(int error_number, char *buffer,
+                                  std::size_t cap) noexcept {
+#if defined(_WIN32)
+  wchar_t wide[512];
+  DWORD length = ::FormatMessageW(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+      static_cast<DWORD>(error_number), 0, wide,
+      static_cast<DWORD>(sizeof(wide) / sizeof(wide[0])), nullptr);
+  while (length != 0 &&
+         (wide[length - 1] == L'\r' || wide[length - 1] == L'\n' ||
+          wide[length - 1] == L' ')) {
+    --length;
+  }
+  if (length != 0 && cap > 1) {
+    const int converted = ::WideCharToMultiByte(
+        CP_UTF8, WC_ERR_INVALID_CHARS, wide, static_cast<int>(length), buffer,
+        static_cast<int>(cap - 1), nullptr, nullptr);
+    if (converted > 0) {
+      buffer[converted] = '\0';
+      return std::string_view(buffer, static_cast<std::size_t>(converted));
+    }
+  }
+#endif
+  const int written =
+      std::snprintf(buffer, cap, "WinSock error %d", error_number);
+  if (written <= 0) return "unknown WinSock error";
+  const std::size_t formatted_length = static_cast<std::size_t>(written);
+  return std::string_view(
+      buffer, formatted_length < cap ? formatted_length : cap - 1);
+}
+
 std::string_view describe_hresult(std::int32_t error_number, char *buffer,
                                   std::size_t cap) noexcept {
 #if defined(_WIN32)
@@ -882,6 +988,92 @@ std::string_view describe_hresult(std::int32_t error_number, char *buffer,
   const std::size_t formatted_length = static_cast<std::size_t>(written);
   return std::string_view(
       buffer, formatted_length < cap ? formatted_length : cap - 1);
+}
+
+std::string_view describe_custom_error_code(const std::error_code& error,
+                                            char* buffer,
+                                            std::size_t cap) noexcept {
+  std::string owned_message;
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    owned_message = error.message();
+  } catch (...) {
+    // A custom category is an adapter boundary. Allocation or a user-defined
+    // message() failure must not escape a noexcept HYLE API.
+  }
+#endif
+
+  const char* category_name = error.category().name();
+  std::string_view category =
+      category_name == nullptr ? std::string_view{} : category_name;
+  if (category.empty() || !is_valid_utf8(category)) category = "custom";
+  std::string_view message = owned_message;
+  if (!is_valid_utf8(message)) message = {};
+
+  if (cap == 0) return {};
+  std::size_t size = 0;
+  bool truncated = false;
+  auto append = [&](std::string_view text) noexcept {
+    const std::size_t available = cap - 1 - size;
+    const std::size_t copied = text.size() < available ? text.size() : available;
+    if (copied != 0) std::memcpy(buffer + size, text.data(), copied);
+    size += copied;
+    truncated = truncated || copied != text.size();
+  };
+
+  append(category);
+  append(" error ");
+  char number[32];
+  const auto converted =
+      std::to_chars(number, number + sizeof(number), error.value());
+  if (converted.ec == std::errc{}) {
+    append(std::string_view(number,
+                            static_cast<std::size_t>(converted.ptr - number)));
+  } else {
+    append("unknown");
+  }
+  if (!message.empty()) {
+    append(": ");
+    append(message);
+  }
+
+  constexpr std::string_view kMarker = "...[truncated]";
+  if (truncated && cap - 1 >= kMarker.size()) {
+    std::memcpy(buffer + cap - 1 - kMarker.size(), kMarker.data(),
+                kMarker.size());
+    size = cap - 1;
+  }
+  buffer[size] = '\0';
+  const std::string_view result(buffer, size);
+  if (is_valid_utf8(result)) return result;
+
+  const int written =
+      std::snprintf(buffer, cap, "custom error %d", error.value());
+  if (written <= 0) return "unknown custom error";
+  const std::size_t formatted_length = static_cast<std::size_t>(written);
+  return std::string_view(
+      buffer, formatted_length < cap ? formatted_length : cap - 1);
+}
+
+Status make_translated_status(StatusCode code, NativeError native,
+                              std::string_view description,
+                              std::string_view context) noexcept {
+  code = detail::normalize_status_code(code);
+  if (code == StatusCode::Ok) code = StatusCode::Unknown;
+  std::uintptr_t rep = 0;
+  if (context.empty()) {
+    if (native.present()) {
+      rep = detail::status_make_native_heap(
+          code, native, description.data(), description.size());
+    } else {
+      return Status(code, description);
+    }
+  } else {
+    rep = detail::status_make_context(
+        code, native, context.data(), context.size(), description.data(),
+        description.size());
+  }
+  return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
 }
 
 }  // namespace
@@ -933,6 +1125,19 @@ Status status_from_win32(std::uint32_t error_number,
   return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
 }
 
+Status status_from_winsock(int error_number,
+                           std::string_view context) noexcept {
+  const StatusCode code = status_code_from_winsock(error_number);
+  if (code == StatusCode::Ok) return Status{};
+
+  char description[2048];
+  description[0] = '\0';
+  const std::string_view native =
+      describe_winsock(error_number, description, sizeof(description));
+  return make_translated_status(
+      code, {NativeErrorDomain::WinSock, error_number}, native, context);
+}
+
 Status status_from_hresult(std::int32_t error_number,
                            std::string_view context) noexcept {
   const StatusCode code = status_code_from_hresult(error_number);
@@ -953,6 +1158,58 @@ Status status_from_hresult(std::int32_t error_number,
                                       native.size());
   }
   return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
+}
+
+StatusCode status_code_from_error_code(
+    const std::error_code& error) noexcept {
+  if (!error) return StatusCode::Ok;
+  if (&error.category() == &std::generic_category()) {
+    return status_code_from_errno(error.value());
+  }
+  if (&error.category() == &std::system_category()) {
+#if defined(_WIN32)
+    return status_code_from_win32(static_cast<std::uint32_t>(error.value()));
+#else
+    return status_code_from_errno(error.value());
+#endif
+  }
+  return StatusCode::Unknown;
+}
+
+Status status_from_error_code(const std::error_code& error,
+                              std::string_view context) noexcept {
+  return status_from_error_code_as(
+      status_code_from_error_code(error), error, context);
+}
+
+Status status_from_error_code_as(StatusCode canonical_code,
+                                 const std::error_code& error,
+                                 std::string_view context) noexcept {
+  if (!error) return Status{};
+  canonical_code = detail::normalize_status_code(canonical_code);
+  if (canonical_code == StatusCode::Ok) canonical_code = StatusCode::Unknown;
+
+  char description[2048];
+  description[0] = '\0';
+  NativeError native;
+  std::string_view text;
+  if (&error.category() == &std::generic_category()) {
+    native = {NativeErrorDomain::PosixErrno, error.value()};
+    text = describe_errno(error.value(), description, sizeof(description));
+  } else if (&error.category() == &std::system_category()) {
+#if defined(_WIN32)
+    native = {NativeErrorDomain::Win32, error.value()};
+    text = describe_win32(static_cast<std::uint32_t>(error.value()),
+                          description, sizeof(description));
+#else
+    native = {NativeErrorDomain::PosixErrno, error.value()};
+    text = describe_errno(error.value(), description, sizeof(description));
+#endif
+  } else {
+    text = describe_custom_error_code(error, description,
+                                      sizeof(description));
+  }
+  return make_translated_status(canonical_code, native, text, context);
 }
 
 std::size_t Status::ToString(char *buf, std::size_t cap) const noexcept {

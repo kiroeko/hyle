@@ -1,6 +1,6 @@
 # error 设计：值语义失败与模块接缝
 
-> **error-v4 当前设计合同。** 本页描述未变化的 `9595724a` 产品边界；候选、验证或终态仍只由
+> **error-v5 当前设计合同。** 本页描述 consumer-driven 的 Error 产品边界；候选、验证或终态仍只由
 > machine-readable registry 裁决。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧
 > C schema、bridge、C-shaped 动态导出和 managed fixture。用户写法见
 > [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
@@ -96,16 +96,15 @@ NativeError native = status.native_error();
 ```
 
 `NativeError` 只保存一个固定宽 `{domain, int64 code}`。domain 覆盖现有 POSIX errno、Win32、
-HRESULT、Vulkan、CUDA runtime/driver 与 NVRTC 边界。它不是动态 category 或多 payload map。
+WinSock、HRESULT、Vulkan、CUDA runtime/driver 与 NVRTC 边界。它不是动态 category 或多 payload map。
 普通恢复只看 canonical code；backend-specific recovery/遥测才看 native detail。禁止解析 message
 取得机器值。
 
-`std::error_code` / Boost.System custom category 必须在拥有第三方调用的模块边界转换，error 不把
-`error_category*` 或 category registry 放进 Status。generic/POSIX 与 Windows system category 可分别
-落到 errno/Win32 adapter；custom category 由所属模块映 canonical code，只有稳定登记的 HYLE
-domain 才保留原生数值。category identity 若仍参与机器恢复，就继续保留模块 typed error，不能
-经诊断 message 伪造 round-trip。重复的真实 std/Boost 消费可触发独立 cold adapter header，但不
-授权扩大 8B carrier 或普通构造热路。
+`<hyle/error/system_error.h>` 在拥有第三方调用的模块边界把 `std::error_code` 单向降为 Status，error
+仍不把 `error_category*` 或 category registry 放进 Status。generic/POSIX 与 Windows system category
+分别落到 errno/Win32 domain；custom category 默认 canonical `Unknown`，或由 owner 通过
+`status_from_error_code_as` 提供 operation-specific code，且不保留不稳定的 category/numeric identity。
+category identity 若仍参与机器恢复，就继续保留模块 typed error，不能经诊断 message 伪造 round-trip。
 
 ### 2.3 message、UTF-8 与 context
 
@@ -116,6 +115,11 @@ domain 才保留原生数值。category identity 若仍参与机器恢复，就�
 `string_view` 与 caller-buffer 格式化都保留精确长度，允许嵌入 NUL；只有显式需要 C-string 的
 消费方才可把它当 NUL 结尾文本。caller-buffer 截断是 byte prefix，可能切断多字节 code point，完整解码必须
 按返回长度重试。
+
+运行时路径、尺寸和设备号可由 opt-in `<hyle/error/format.h>::format_status` 直接形成 Status。它使用
+1 KiB caller-side stack scratch，超长输出带 `...[truncated]`，custom formatter exception 被降为确定性
+诊断，Status OOM 仍只丢 message。它不记录日志、source location 或 payload，也不进入最小
+`status.h` 编译闭包。
 
 叶子 message 回答“底层为什么失败”，中间层只在增加用户可理解语义时前置 context：
 
@@ -134,29 +138,32 @@ return std::move(status).WithContext("creating device buffer");
 
 ### 2.4 OS 适配
 
-error 提供不依赖 OS public headers 的三组基础入口：
+error 提供不依赖 OS public headers 的四组基础入口：
 
 ```cpp
 StatusCode status_code_from_errno(int) noexcept;
 Status status_from_errno(int, std::string_view operation = {}) noexcept;
 StatusCode status_code_from_win32(std::uint32_t) noexcept;
 Status status_from_win32(std::uint32_t, std::string_view operation = {}) noexcept;
+StatusCode status_code_from_winsock(int) noexcept;
+Status status_from_winsock(int, std::string_view operation = {}) noexcept;
 StatusCode status_code_from_hresult(std::int32_t) noexcept;
 Status status_from_hresult(std::int32_t, std::string_view operation = {}) noexcept;
 ```
 
 classification 是固定 switch 的 O(1)；成功值返回零值 OK。factory 在错误路径取得线程安全/OS
 描述并形成一次最终 Status allocation；OOM 保留 code。非 Windows 主机仍能确定性分类持久化的
-Win32/HRESULT 值并产生数值文本。operation-specific 语义可覆盖 canonical code，例如
+Win32/WinSock/HRESULT 值并产生数值文本。operation-specific 语义可覆盖 canonical code，例如
 `pthread_create(EAGAIN)` 比通用 I/O EAGAIN 更准确地表示资源耗尽；但不能复制整套 taxonomy。
 
-WinSock 当前不并入 Win32 domain：`WSAGetLastError` 是不同错误域，而已关闭模块没有 Status
-消费者需要它。io 的冷控制面迁移到 Status 时，若真实恢复逻辑需要，再增加独立 WinSock
-domain/factory；不得把 WSA code 猜成普通 GetLastError。
+WinSock 明确不并入 Win32 domain：`WSAGetLastError` 是不同错误域。IOCP 已构成真实消费者，因而
+Error 提供独立 O(1) taxonomy/factory；IO 在自己的轮次决定 raw completion 到 owning Status 的冷边界。
+未来 fixed domain 只有在具名 consumer、稳定 numeric contract 和 Error review 同时存在时才追加；
+不建立运行时 registration 或依赖 DSO lifetime 的 category pointer。
 
 ### 2.5 `Result<T>` 与传播
 
-`Result<T>` 使用标准 `std::expected` 的 value/monadic surface，但错误槽是与 `Status` 同尺寸的
+非引用 `Result<T>` 使用标准 `std::expected` 的 value/monadic surface，但错误槽是与 `Status` 同尺寸的
 受检 `detail::ResultError`：
 
 ```cpp
@@ -174,12 +181,17 @@ construction/assignment 都会 fail-fast 拒绝 `Status::Ok()`，调用方也不
 value-initialized `T`，不是 empty、unknown 或未设置的错误；当 `T` 不可默认构造时该写法不可用。
 这属于 C++23 value contract，不能为了减少一个易用性陷阱而给 carrier 增加第三状态。
 
-C++23 `std::expected` 禁止 reference value，因此 `Result<T&>` 不是当前产品形状。非空对象借用用
-`Result<std::reference_wrapper<T>>`，nullable 对象用有明确 NULL 合同的 `Result<T*>`，连续范围/
-文本用 `Result<std::span<T>>` / `Result<std::string_view>`；这些成功值都不延长 owner 生命周期。
-Abseil `StatusOr<T&>` 的 lifetime-bound reference specialization 已作为成熟对照审查，但当前树没有
-一个引用 Result 消费者。只有多个真实 API 证明 wrapper 明显破坏 monadic/lifetime 易用性时，才
-重开统一 borrowed-result 形状，不能为 API 数量脱离消费另造 expected 实现。
+C++23 `std::expected` 禁止 reference value；HYLE 因而只对 `Result<T&>` 选择一个 header-only、内部以
+非空 pointer/error 存储的 borrow carrier。它从 compatible lvalue 或 unexpected error 构造，拒绝
+temporary/null，提供 expected-shaped observer、`and_then/transform/or_else` 与传播宏；不分配，也不
+拥有或延长 referent lifetime。const carrier 是 deep-const：`const Result<T&>` 只能观察 `const T&`，
+mutable borrow 也不能从 const carrier 复制出来。`Result<const T&>` 正常可复制；显式 default 是
+code-only `Unknown`，因为 reference 没有 value-initialized success。
+
+nullable 对象仍用有明确 NULL 合同的 `Result<T*>`，连续范围/文本用 `Result<std::span<T>>` /
+`Result<std::string_view>`。浅 const 或必须显式表现 rebinding 的高级场景仍可把
+`std::reference_wrapper<T>` 作为普通 value；不能用 pointer 偷偷表达“成功必非空”。非引用
+`Result<T>` 的 alias/type/layout/codegen 完全不因 borrow specialization 改变。
 
 普通失败返回使用 `make_unexpected(Status)`；也允许直接 `std::unexpected(Status)`。两个宏只
 补 C++ 缺少的 `?` 语法：
@@ -201,7 +213,9 @@ retain/release；成员、引用参数或仍需保留的 lvalue 不得这样移�
 - `status.IgnoreError()` 明确标记无法再报告的清理失败；
 - `Status::ToString(buffer, cap)` 为 allocation-free caller-buffer 格式化；
 - opt-in `hyle/error/format.h::to_string` 提供 owning `std::string`，长输出用
-  `resize_and_overwrite` 避免先零填充再覆盖。
+  `resize_and_overwrite` 避免先零填充再覆盖；
+- 同一 opt-in header 的 `format_status(code, fmt, args...)` 在 no-throw failure boundary 直接创建包含
+  运行时值的有界诊断，不引入 StatusBuilder/logger。
 
 需要收集全部错误、并行错误排序或结构化日志时，所属模块使用 caller-owned
 `std::vector<Status>`、固定容量报告或已有容器，并显式定义顺序、上限与收集 OOM；结构化遥测交给
@@ -235,6 +249,10 @@ foreign-runtime consumer 通过全局 [Native FFI 准入策略](native-ffi-polic
 | 单次 lvalue/shared context | O(current+context) | COW；反复保留历史可累计 O(k²) |
 | caller-buffer format | O(min(F, cap)) | 0 分配；size-only O(1) |
 | owning format | O(F) | 通常一次 string allocation |
+| `format_status` | O(min(F, 1023)) | 1 KiB stack + 至多一个 Status block；超长显式截断 |
+| `Result<T&>` construct/check/propagate | O(1) | pointer + Status error arm + discriminator；0 allocation |
+| errno/Win32/WinSock/HRESULT classify | O(1) | 固定 switch；0 allocation |
+| `std::error_code` adapter | O(message bytes) cold | generic/system 一个 Status block；custom message 可临时分配 |
 | N 项 first-error Update | O(N) | 仅首错发生一次 move/copy |
 | 深度 d Result propagation | O(d) | 每层常数分支/移动 |
 
@@ -244,21 +262,21 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 ## 5. 成熟实现裁决
 
-error-v4 的可复查 peer 身份固定为 Abseil commit
-`81c993af4fb88b3a51829a796df02251fa27102f`（本地
+error-v5 的能力/API peer 身份固定为 Abseil commit
+`5e12b490a2009cb223dd75a70fd0213847b82f9c`（本地
 `C:/public/project-hyle/abseil-cpp`）与 Folly commit
-`423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9`（本地
+`176c088840724715b2c3c6211b2b347611676002`（本地
 `C:/public/project-hyle/folly`）；C++23 `std::expected` 是标准合同，不算第三个性能 peer。
 本轮没有把未初始化的 Boost.System/Outcome/LEAF 源码冒充已读 peer 证据。
 
 | 参考 | 借鉴 | 明确差异 |
 |---|---|---|
-| 上述固定 Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping；审查 `StatusOr<T&>` lifetime guards | 不引入任意 payload/StatusBuilder；context 保留扁平渐进表示；当前借用值保持 C++23 expected wrapper 形状 |
-| 上述固定 Folly `Expected` | 标准 expected-shaped value/error 组合、零成功分配 | 不引入 exception_wrapper 作为 HYLE operational channel |
+| 上述固定 Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping、`StatusOr<T&>` temporary guards | 不引入任意 payload/有日志副作用的 StatusBuilder；context 保留扁平渐进表示 |
+| 上述固定 Folly `result` | deep-const `result<T&>`、reference lifetime/copy 边界 | 不引入 rich exception hierarchy、coroutine stopped state或 exception_wrapper 作为 HYLE operational channel |
 | C++23 `std::expected` | observers 与 monadic surface | 用零状态 `ResultError` 补 Status 的非 OK 不变量 |
 
 本轮负空间固定为：多独立 machine detail、可遍历/序列化的 structured cause、公共 MultiError、
-跨进程序列化、WinSock/任意第三方 category adapter、`Result<T&>` 专用实现、source location/
+跨进程序列化、任意 runtime category registry、反向 error-code round-trip、source location/
 backtrace、异常层级与 Native FFI construction/callback。只有具名消费者证明当前 code/native/
 context、caller-owned aggregate 或 borrowed-result 组合无法表达需求时才重开；参考库 API 更多、
 LOC 更大或某个微基准容易赢都不是功能授权。
@@ -279,10 +297,11 @@ async completion 等正常协议状态继续用紧凑值/枚举。旧模块私�
 error 签署必须同时具备：C++ correctness/三平台、同合同性能 non-inferiority、
 shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
 
-当前 `error-source-consumer-v1` 已在 W1-WIN 对四个 source-primary consumer workload 取得 5% P1
-engineering non-inferiority `PASS`：TaskGraph 成功路径为 `PARITY`，fresh owning failure、parallel
-first-error handoff 和 Join failed handoff 为 `WIN`。这只签署冻结 consumer 合同；旧 fixed-backing
-shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变 Status 的正常产品形状。
+error-v4 的 `error-source-consumer-v1` 曾在 W1-WIN 对四个 source-primary workload 取得 5% P1
+engineering `PASS`；它只绑定旧 candidate/peer。error-v5 改变公开面后必须在新 candidate 上重放这
+四行，并增加 registry non-null borrow 的同合同 consumer；完成前 registry 保持 `PLANNED`，不得从旧
+证据宣称 v5 已通过。旧 fixed-backing shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变
+Status 的正常产品形状。
 
 签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
 性能落后，或发布形状改变而局部重开。

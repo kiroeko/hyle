@@ -64,6 +64,7 @@ enum class NativeErrorDomain : std::uint16_t {
   CudaDriver = 5,
   Nvrtc = 6,
   HResult = 7,
+  WinSock = 8,
   Unknown = 0xffff,
 };
 
@@ -97,6 +98,12 @@ HYLE_ERROR_API StatusCode status_code_from_errno(int error_number) noexcept;
 HYLE_ERROR_API StatusCode
 status_code_from_win32(std::uint32_t error_number) noexcept;
 
+// Map the integer returned by WSAGetLastError without including winsock2.h in
+// public consumers. WinSock codes are a distinct namespace from GetLastError
+// even when a few values overlap. The pure O(1) mapping is available on every
+// host for persisted or remote diagnostics.
+HYLE_ERROR_API StatusCode status_code_from_winsock(int error_number) noexcept;
+
 // Map a signed 32-bit COM/WinRT HRESULT without requiring windows.h. Any
 // non-negative HRESULT is success. HRESULT_FROM_WIN32 values reuse the Win32
 // taxonomy; common COM failures retain their precise portable meaning. The
@@ -127,6 +134,7 @@ normalize_native_error_domain(NativeErrorDomain domain) noexcept {
   case NativeErrorDomain::CudaDriver:
   case NativeErrorDomain::Nvrtc:
   case NativeErrorDomain::HResult:
+  case NativeErrorDomain::WinSock:
   case NativeErrorDomain::Unknown:
     return domain;
   }
@@ -394,6 +402,12 @@ HYLE_ERROR_API Status status_from_errno(int error_number,
 // The native Win32 code is always preserved for machine-readable recovery.
 HYLE_ERROR_API Status status_from_win32(std::uint32_t error_number,
                                         std::string_view context = {}) noexcept;
+
+// Construct a Status from WSAGetLastError. On Windows, FormatMessage supplies
+// the UTF-8 diagnostic; other hosts retain deterministic numeric text. The raw
+// value remains machine-readable as NativeErrorDomain::WinSock.
+HYLE_ERROR_API Status status_from_winsock(
+    int error_number, std::string_view context = {}) noexcept;
 
 // Construct a Status from a COM/WinRT HRESULT. The raw signed 32-bit value is
 // preserved as NativeErrorDomain::HResult. Windows uses FormatMessage when it
