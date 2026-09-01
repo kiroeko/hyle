@@ -111,3 +111,7 @@ SIMD exact-target child configure 因未传 `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` �
 按 `CANDIDATE -> AUDITED` 退回后，只允许实施 `CORE4-04`，然后建立新 commit/tree 并从头重放；首个
 候选保留为 rejected fact，不复用其 terminal verdict。`CANDIDATE -> AUDITED` 前态 registry 位于
 `C:\hyle-scratch\core-v4\module-status-candidate.json`。当前为 `AUDITED`。
+
+`CORE4-04` 已实施：component contract 从中央 `HylePlatformRequirements.cmake` 读取现有 14.4 floor，
+并把它传给在 Mac host 上生成的每个 child configure。冻结前 W1-WIN/W1-WSL component contract
+通过；这仍只是新候选建立前的工具反馈。

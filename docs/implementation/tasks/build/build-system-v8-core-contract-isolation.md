@@ -63,3 +63,6 @@ selected/component smoke 具备 normal/no-exception 双 journey，architecture/u
 这不是把相邻失败塞给 Core：本 build/package development unit 自己拥有该脚本。有限修正只让所有
 child configure 继承中央 floor；不改变 floor、产品图、算法、API 或前述 build-contract 修复。候选已
 按协议退回 `AUDITED`，修正后必须重建 identity。
+
+有限修正现已落地，并在 W1-WIN/W1-WSL 的完整 component contract 预检通过；尚未建立第二个候选，
+也尚未把 M1-MAC 写成 PASS。

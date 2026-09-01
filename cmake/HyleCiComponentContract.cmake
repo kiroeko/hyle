@@ -12,9 +12,18 @@ foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_SMOKE_ROOT)
   file(TO_CMAKE_PATH "${${_required}}" ${_required})
 endforeach()
 
+# Every generated child is a real configure journey and must inherit the same
+# host-required platform floor as the delivery harness. Without this, the Mac
+# contract fails while configuring a Platform-dependent child before it can
+# evaluate the target assertions it was created to test.
+include("${HYLE_SOURCE_DIR}/cmake/HylePlatformRequirements.cmake")
 set(_hyle_generator_args "")
 if(DEFINED HYLE_SMOKE_GENERATOR AND NOT HYLE_SMOKE_GENERATOR STREQUAL "")
   list(APPEND _hyle_generator_args -G "${HYLE_SMOKE_GENERATOR}")
+endif()
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND _hyle_generator_args
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN})
 endif()
 
 set(_hyle_contract_root "${HYLE_SMOKE_ROOT}/component-contract")
