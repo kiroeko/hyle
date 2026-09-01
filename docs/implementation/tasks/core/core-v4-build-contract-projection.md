@@ -5,7 +5,7 @@
 > 本轮由 Core v3 关闭后的真实 delivery 审计定向重开。Core headers、API、算法与布局仍冻结；本页只
 > 重签 `hyle::core` 向 C++ consumer 传播的 build-owned compile contract。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round / kind：`core` / Core + build-package / `core-v4-build-contract-projection` /
   `REOPEN`；
@@ -115,3 +115,14 @@ SIMD exact-target child configure 因未传 `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` �
 `CORE4-04` 已实施：component contract 从中央 `HylePlatformRequirements.cmake` 读取现有 14.4 floor，
 并把它传给在 Mac host 上生成的每个 child configure。冻结前 W1-WIN/W1-WSL component contract
 通过；这仍只是新候选建立前的工具反馈。
+
+### Candidate 2 identity
+
+- commit：`7ae3de400b5d7b598972ebf4913d336b60517483`；
+- tree：`b6c04d0e97c93724a9136c34e4ea55b6e4449092`；
+- `AUDITED -> CANDIDATE` 前态 registry：
+  `C:\hyle-scratch\core-v4\module-status-audited-2.json`；
+- candidate 1 的任何结果不自动继承。第二候选从头运行固定 gates；候选后产品、CMake/tool 语义或
+  sample 变化必须再次退回 `AUDITED`。
+
+当前为 `CANDIDATE`。

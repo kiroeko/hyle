@@ -5,7 +5,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CORE-BUILD-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/build/build-system-v8-core-contract-isolation.md",
       "round_id": "core-v4-build-contract-projection",
@@ -13,6 +13,8 @@
       "scope": "Re-sign the unchanged Core product behind a minimal Core-only compile-usage contract by removing leaked Container ISA and forced exception-mode policy from hyle::core while preserving all three C++ delivery shapes.",
       "non_goals": "Core API or implementation changes, Container algorithm or performance review, whole-HYLE no-exception support, CPU-floor redesign, Native FFI, timing benchmarks and physical library aggregation.",
       "baseline_commit": "fe944155e6ada4e68997aaa3fa7d52f27b0769e0",
+      "candidate_commit": "7ae3de400b5d7b598972ebf4913d336b60517483",
+      "candidate_tree": "b6c04d0e97c93724a9136c34e4ea55b6e4449092",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -27,7 +29,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "core-v4 退回 AUDITED：首个候选 350fc39a/dafe004e 的 Core 与三交付均通过，但公共 component-contract 在 Mac 遗漏 deployment target、无法给出中央 verdict；只修该工具投影后重建候选。"
+      "summary": "core-v4 candidate 2 已冻结为 7ae3de40/b6c04d0e；首个候选的 Mac component-contract floor 投影缺陷已在有限范围修复，全部 gate 从新身份重放。"
     },
     {
       "module": "container_intrusive",

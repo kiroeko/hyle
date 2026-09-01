@@ -64,5 +64,7 @@ selected/component smoke 具备 normal/no-exception 双 journey，architecture/u
 child configure 继承中央 floor；不改变 floor、产品图、算法、API 或前述 build-contract 修复。候选已
 按协议退回 `AUDITED`，修正后必须重建 identity。
 
-有限修正现已落地，并在 W1-WIN/W1-WSL 的完整 component contract 预检通过；尚未建立第二个候选，
-也尚未把 M1-MAC 写成 PASS。
+有限修正已落地，并在 W1-WIN/W1-WSL 的完整 component contract 冻结前预检通过；该预检没有把
+M1-MAC 写成 PASS。第二候选现已冻结为
+`7ae3de400b5d7b598972ebf4913d336b60517483` / tree `b6c04d0e97c93724a9136c34e4ea55b6e4449092`；
+所有正式 gate 从该身份重放。

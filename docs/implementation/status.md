@@ -10,7 +10,7 @@
 <!-- BEGIN GENERATED MODULE STATUS -->
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
-| core | AUDITED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/core/core-v4-build-contract-projection.md) | core-v4 退回 AUDITED：首个候选 350fc39a/dafe004e 的 Core 与三交付均通过，但公共 component-contract 在 Mac 遗漏 deployment target、无法给出中央 verdict；只修该工具投影后重建候选。 |
+| core | CANDIDATE | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/core/core-v4-build-contract-projection.md) | core-v4 candidate 2 已冻结为 7ae3de40/b6c04d0e；首个候选的 Mac component-contract floor 投影缺陷已在有限范围修复，全部 gate 从新身份重放。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；后续 util runtime owning-demangle 重开不影响本组件，Formal 仍独立待办。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |
