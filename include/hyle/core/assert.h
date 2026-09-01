@@ -162,7 +162,7 @@ inline FatalField fatal_field(
 template <std::size_t N>
 inline FatalField fatal_field(
     std::string_view name HYLE_DETAIL_LIFETIME_BOUND,
-    const char (&value)[N] HYLE_DETAIL_LIFETIME_BOUND) noexcept {
+    const char (&value)[N]) noexcept {
   static_assert(N != 0);
   return fatal_field(name, std::string_view(value, N - 1));
 }

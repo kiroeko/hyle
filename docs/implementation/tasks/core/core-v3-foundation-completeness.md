@@ -149,7 +149,7 @@
 
 ## Candidate / verification / closure
 
-### Candidate construction
+### Candidate 1 construction
 
 冻结的五项 FIX 已全部落地，未增加第六项产品能力：
 
@@ -173,7 +173,7 @@
 Windows 还编译运行迁移涉及的 Obs/SIMD/IO。GCC shared-symbol audit 曾发现
 `write_fatal_event` 可见性遗漏，修正后通过；这属于候选冻结前的真实产品缺陷，不保留为限制。
 
-候选 identity：commit `cbc2951ca34ffa961d9db8660b45f17eac2a0104`，tree
+首个候选 identity：commit `cbc2951ca34ffa961d9db8660b45f17eac2a0104`，tree
 `21697748299939378a258a5c5aee02ef02582c15`。后续所有产品 gate 只验证这一不可变 identity；若公共
 合同、算法或正常成本发生变化则退回 `AUDITED`，不得把新 tree 冒充同一候选。不可变 replay、gate
 matrix、LOC 和 terminal receipt 在验证后填写。
@@ -191,3 +191,11 @@ matrix、LOC 和 terminal receipt 在验证后填写。
 这两项是 `CORE3-03/04` 内的可移植性缺陷，不改变 frozen API、算法、normal workload 或成本合同。
 按 `CANDIDATE -> AUDITED` 退回后，只允许修正 attribute placement 与 test ABI condition，再建立新的
 commit/tree；首个候选不得复用或写成 PASS。
+
+### Candidate 2 remediation
+
+退回 `AUDITED` 后只改动两处已授权的可移植性缺陷：char-array overload 不再对编译器已知生命周期的
+array reference 重复施加 `lifetimebound`，formatter test 则按 `HYLE_OS_WINDOWS` 选择 Windows CRT。
+修复后的 mutable tree 已通过 W1-WIN clang-cl 20.1.8、MSVC 19.50 和 W1-WSL GCC 14 的 Core
+Release WERROR 全套测试；公共 API、failure formatter、success path codegen 与候选 1 的成本合同均未
+改变。建立新不可变 commit/tree 后再填写 candidate 2 identity，且所有正式 gate 从头重放。

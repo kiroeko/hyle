@@ -175,7 +175,7 @@ TEST(CoreAssert, FatalFieldsPreserveSupportedValueKinds) {
 }
 
 TEST(CoreAssert, DefaultTextFormatterEnforcesItsDocumentedBound) {
-#if HYLE_COMPILER_MSVC
+#if HYLE_OS_WINDOWS
   std::FILE* stream = nullptr;
   ASSERT_EQ(::tmpfile_s(&stream), 0);
 #else
