@@ -37,6 +37,20 @@ endif()
 hyle_add_module(container
   SOURCES hash.cc pod_vector.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
           string_view.cc dynamic_bitset.cc ${_container_arch_sources})
+# probe.h exposes an SSSE3 inline route on x86 GCC/Clang-family targets. Keep
+# producer and consumer TUs on one ODR/codegen shape, but let Container own the
+# permission instead of leaking it through HYLE's global/Core build contract.
+# Compiler selection stays in generator expressions because the target is
+# exported and a Windows SDK may cross between clang-cl and cl.exe.
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(WIN32)
+    target_compile_options(hyle_container PUBLIC
+      "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:/clang:-mssse3>")
+  else()
+    target_compile_options(hyle_container PUBLIC
+      "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-mssse3>")
+  endif()
+endif()
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash"

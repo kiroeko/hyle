@@ -40,6 +40,10 @@ target_link_libraries(my_target PRIVATE hyle::core)
 `hyle::core` 是 `INTERFACE` target：source、static SDK、shared SDK 三种交付都没有 Core binary，
 也没有 `hyle_core.dll/.so/.dylib` 需要 stage。target 传播 include path 与 HYLE 的 C++23/build
 contract，实际 helper 编进你的 translation unit。不要只手写 include path；那会绕过组件闭包。
+这个最小合同不会替父工程打开异常，也不会因为 Container 的 inline probe 给 Core-only target 添加
+SSSE3。需要 no-exception 的程序应在自己的 toolchain/target 上关闭异常；Core headers 会自然编译，
+`HYLE_HAS_EXCEPTIONS` 反映当前 TU。这里只承诺 Core-only journey，不能据此推断其他 HYLE 产品闭包也
+支持 no-exception。
 Core 没有 trace site 或 test-only ABI，因此不会传播相应横切 target；仅选择 Core 却设置
 `HYLE_TRACE=ON` 会明确配置失败，而不会生成一个无人使用的 profiler runtime。
 

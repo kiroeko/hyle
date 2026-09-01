@@ -77,3 +77,15 @@ Error/Obs/Platform/SIMD、标准 C++ 或未来具名宿主需求；没有当前 
 Core headers、API、算法、layout 与 runtime 行为的产品修改集为空。任何新 API、compiler spelling、cache
 常量、fatal 语义或 Container 算法变化都必须退回 `SCOPED/AUDITED`，不能借本轮顺手实施。当前为
 `AUDITED`，只授权以上三项。
+
+## 实施结果（候选冻结前）
+
+- `CORE4-01`：`hyle_build_contract` 已移除 SSSE3；原 compiler-conditioned option 原样迁到
+  `hyle_container PUBLIC`。中央合同同时检查全局负空间与 x86 Container 的直接 owner。
+- `CORE4-02`：全局 `/EHsc` 已移除；Core package/source journey 新增 no-exception executable，并在
+  编译期要求 `HYLE_HAS_EXCEPTIONS == 0`。
+- `CORE4-03`：build architecture 与 Core guide 已说明 target ownership、no-exception 边界和
+  Container ISA 隔离。
+- 冻结前预检：W1-WIN 与 W1-WSL 的 Core tests 各 `6/6`，Core source/static/shared 各 `2/2`，
+  Container source/static/shared 各 `1/1`，中央 component contract 均通过。它们是候选建立前的实现
+  反馈，不替代对不可变 candidate 的三平台验证。

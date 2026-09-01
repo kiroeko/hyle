@@ -63,12 +63,24 @@ set(_source_parent "${_root}/source-parent")
 set(_source_build "${_root}/source-build")
 file(MAKE_DIRECTORY "${_source_parent}")
 set(_source_expert_contract "")
+set(_source_extra_tests "")
 if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
   string(APPEND _source_expert_contract
     "add_library(hyle_selected_source_provider OBJECT \"${_sample}/expert_probe.cc\")\n"
     "hyle_target_simd(TARGET hyle_selected_source_provider ISA SCALAR)\n"
     "target_sources(hyle_selected_source_consumer PRIVATE $<TARGET_OBJECTS:hyle_selected_source_provider>)\n"
     "hyle_add_fat_kernel(TARGET hyle_selected_source_consumer NAME package_bias_relu IMPL \"${_sample}/fat_kernel-inl.h\" TARGETS scalar sse4 avx2 avx512 neon sve rvv)\n")
+elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
+  string(APPEND _source_expert_contract
+    "add_executable(hyle_selected_core_no_exceptions \"${_sample}/no_exceptions.cc\")\n"
+    "target_link_libraries(hyle_selected_core_no_exceptions PRIVATE hyle::core)\n"
+    "if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL \"MSVC\")\n"
+    "  target_compile_options(hyle_selected_core_no_exceptions PRIVATE /EHs-c-)\n"
+    "else()\n"
+    "  target_compile_options(hyle_selected_core_no_exceptions PRIVATE -fno-exceptions)\n"
+    "endif()\n")
+  string(APPEND _source_extra_tests
+    "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -83,7 +95,8 @@ file(WRITE "${_source_parent}/CMakeLists.txt"
 "${_source_expert_contract}"
 "hyle_stage_runtime_dependencies(hyle_selected_source_consumer)\n"
 "enable_testing()\n"
-"add_test(NAME hyle_selected_source_consumer COMMAND hyle_selected_source_consumer)\n")
+"add_test(NAME hyle_selected_source_consumer COMMAND hyle_selected_source_consumer)\n"
+"${_source_extra_tests}")
 _hyle_selected_run("configure ${HYLE_SMOKE_COMPONENT} source consumer"
   "${CMAKE_COMMAND}" -S "${_source_parent}" -B "${_source_build}"
   ${_generator_args} ${_platform_args} -DCMAKE_BUILD_TYPE=Release)

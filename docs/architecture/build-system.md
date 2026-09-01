@@ -38,6 +38,10 @@
   `INTERFACE` factor，但分别由公开的 `container`、`util` façade 聚合，不是独立用户产品。
 - 其余 factor 通常是编译型 target；product façade 始终是无运行时成本的 `INTERFACE` target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
+- `hyle_build_contract` 只传播所有 C++ factors 共同需要的最低语言、文本编码与预处理语义；它不选择
+  exception mode，也不传播某个产品的 ISA 许可。公开 inline 实现若需要特定 ISA，必须由 owning
+  factor 直接以 `PUBLIC` usage requirement 传播。当前 x86 Container 的 header-inline SSSE3 probe
+  因而由 `hyle_container` 自己拥有；只选择 Core 不会无故提高 ISA permission/floor。
 - `hyle::simd_expert` 是 SIMD 用户显式选择的 `INTERFACE` 开发 target，在源码、installed static 和
   installed shared 三种交付中同名存在。`hyle_target_simd()` / `hyle_add_fat_kernel()` 通过它向
   target-bound consumer TU 提供中央锁定 Highway/xsimd 头和一致的 ISA flags。它不被普通
@@ -174,6 +178,11 @@ build/package 拥有，随各 compiled module 的 static/shared 形状维护，�
 当前 TU 的 OS/arch/compiler/build/sanitizer facts 由 Core 自己的
 `<hyle/core/environment.h>` 交付；它不是 runtime Platform binary，也不再使用旧根级
 `<hyle/platform.h>`。source、static 与 shared consumer 必须编译同一份环境合同。
+
+Exception mode 同样是 parent/toolchain 合同，而不是 HYLE 的全局默认。普通 MSVC CMake 工程仍会按
+其默认选择 `/EHsc`；显式关闭异常的 Core-only translation unit 不会被 `hyle::core` 重新打开，并由
+`HYLE_HAS_EXCEPTIONS == 0` 反映当前 TU。这个事实只签 Core：其他产品是否能在 no-exception 闭包中
+组装，必须由各自的正常 consumer journey 单独证明，不能从全局 target 没有 `/EHsc` 外推。
 
 ## Host 工具链选择入口
 

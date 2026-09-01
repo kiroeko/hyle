@@ -49,3 +49,8 @@ checker。Container 只证明有效 flag/route 等价，不续签其算法或性
 的易用性能力。冻结实现集只有：移除 `_build_contract` 的 SSSE3 与 `/EHsc`，把原 SSSE3 option 原样
 投影到 `hyle_container PUBLIC`，增加 Core-only no-exception package journey 和对应机器/文档合同。
 当前为 `AUDITED`；任何额外产品或构建策略变化均须重新审计。
+
+实施已严格落在冻结集内：全局 target 只剩最低共同合同，Container 直接持有 SSSE3，Core sample 与
+selected/component smoke 具备 normal/no-exception 双 journey，architecture/user 文档已同步。Windows
+与 WSL 的冻结前预检通过；下一步建立不可变 product candidate，再运行三平台验证。本段不提前把预检
+写成 terminal verdict。
