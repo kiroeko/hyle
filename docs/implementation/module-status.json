@@ -126,7 +126,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "UTILCORE-FACTORIZATION-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v2-capability-completion.md",
       "round_id": "util-core-v2-capability-completion",
@@ -136,6 +136,8 @@
       "baseline_commit": "6e75266a06de7f6dafecda3f452b07285e40f6fc",
       "candidate_commit": "d42d992cf99232669f60422f30fb3b50ec9ec4eb",
       "candidate_tree": "9944f099679503df632b6335e69154656164b30b",
+      "end_commit": "12d123f2f567d05538d4d77cb99cfb4aef9ee2de",
+      "registry_anchor_commit": "12d123f2f567d05538d4d77cb99cfb4aef9ee2de",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -170,7 +172,24 @@
         "self_without_tests": 63267,
         "module_implementation": 967
       },
-      "summary": "util-core-v2 VERIFIED：四项 MUST、三平台/sanitizer/RISC-V、三种 C++ 交付、Mem/Sched/Graph consumers、易用性/文档、红队与 W1-WIN 两项 5% P1 工程门全部通过；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/util/util-core-v2-capability-completion.md",
+      "known_limitations": [
+        "The P1 certificate covers only the two frozen W1-WIN consumers, locked Boost and oneTBB identities and MSVC 19.50; cross-platform performance, sustained or high-contention locking, all util_core operations, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "FunctionRef is a non-null synchronous call-only borrow; storing, returning or asynchronously queueing it can dangle, so optional or owning callbacks require a semantically matching owner.",
+        "NotNull<T*> neither owns nor extends lifetime and treats dynamic null as an invariant failure; nullable and fallible borrows remain T* and Result<T&>.",
+        "ThreadUnsafeRefCounted<T> requires the complete reference lifetime, every borrow and final release to remain on one thread; later read-only publication does not repair a violated counter contract.",
+        "SpinLock remains for very short low-contention regions and cpu_relax provides no synchronization; RISC-V has compile, codegen and QEMU evidence but no silicon timing claim.",
+        "HYLE promises neither stable C++ ABI nor Native FFI; matched headers, consumers and toolchains are required, the retained engineering bundle is local evidence and Formal remains PENDING."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a util_core correctness, security, overflow, ownership or lifetime, concurrency, ISA, API-usability or missing-capability defect.",
+        "The public API, layout, normal-path cost, Core-only dependency, selected-header inventory or delivery shape changes.",
+        "A supported compiler, standard library or ISA changes FunctionRef calling or lifetime semantics, NotNull layout, atomic ordering or codegen, or RISC-V pause behavior.",
+        "Mem, Sched, Graph or a future inference consumer adopts the new vocabulary and proves that its synchronous, required-borrow or thread-confined contract is mismatched.",
+        "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen 5% margin."
+      ],
+      "summary": "util-core-v2 CLOSED：RISC-V pause、FunctionRef、NotNull 与 thread-confined RefCounted 已补齐；三平台/sanitizer/RISC-V、三种 C++ 交付、直接消费者、易用性/文档、红队和 W1-WIN 两项 5% P1 工程门全部通过。"
     },
     {
       "module": "error",
