@@ -126,7 +126,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "UTILCORE-FACTORIZATION-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v2-capability-completion.md",
       "round_id": "util-core-v2-capability-completion",
@@ -134,6 +134,8 @@
       "scope": "Complete the admitted RISC-V spin hint, borrowed synchronous callable, thread-confined intrusive counter and required-borrow vocabulary while preserving the existing header-only dependency and hot-path contracts.",
       "non_goals": "RW, adaptive, parking or fiber synchronization, owning asynchronous callables, optional-reference synonyms, secure entropy, weak or aliasing ownership, downstream migrations, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
       "baseline_commit": "6e75266a06de7f6dafecda3f452b07285e40f6fc",
+      "candidate_commit": "d42d992cf99232669f60422f30fb3b50ec9ec4eb",
+      "candidate_tree": "9944f099679503df632b6335e69154656164b30b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -151,7 +153,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v2 AUDITED：UC2-RISCV/FREF/REFLOCAL/BORROW 四项有限 FIX 已实现并通过候选前验证；公开合同、Core-only 依赖与 P1/P0 验证范围保持冻结，等待不可变候选与 P1 qualification。"
+      "summary": "util-core-v2 CANDIDATE：四项 frozen FIX 已冻结为 d42d992c/9944f099；三平台与 RISC-V 候选前验证通过，等待 clean candidate 的 P1 qualification、完整 gate manifest 与红队。"
     },
     {
       "module": "error",

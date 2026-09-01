@@ -138,7 +138,8 @@
 - structural evidence：MSVC/GCC optimized probe 中默认 counter 保留 atomic RMW、thread-confined
   counter 是 plain integer、NotNull unwrap 是 pointer identity；selected Util source/static/shared journey
   已安装并消费两个新 header；
-- product commit / tree：pending；
+- product commit / tree：`d42d992cf99232669f60422f30fb3b50ec9ec4eb` /
+  `9944f099679503df632b6335e69154656164b30b`；
 - public contract changes：`FunctionRef`、`NotNull`、thread-confined RefCounted policy 与 RISC-V pause；
 - candidate tests / harness：focused unit/header suite、maintenance-only codegen object、v2 P1 contract；
 
