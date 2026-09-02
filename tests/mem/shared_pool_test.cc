@@ -804,7 +804,7 @@ TEST(ConcurrentBlockPool, AllocatorReallocateObeysCompleteContract) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
+TEST(ConcurrentBlockPoolDiagnosticsDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(
       {
         ConcurrentBlockPool pool(system_allocator(), 64, 1);
@@ -815,7 +815,7 @@ TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
       ".*");
 }
 
-TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
+TEST(ConcurrentBlockPoolDiagnosticsDeathTest, ForeignPointerTraps) {
   EXPECT_DEATH(
       {
         ConcurrentBlockPool pool(system_allocator(), 64, 1);
@@ -825,7 +825,8 @@ TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
       ".*");
 }
 
-TEST(SharedPoolDiagnosticsDeathTest, OutstandingBlockAtDestructionTraps) {
+TEST(ConcurrentBlockPoolDiagnosticsDeathTest,
+     OutstandingBlockAtDestructionTraps) {
   EXPECT_DEATH(
       {
         ConcurrentBlockPool pool(system_allocator(), 64, 1);
@@ -993,7 +994,7 @@ TEST(PooledArena, PerThreadRegionsNoOverlap) {
 // PooledArena::allocate rejects alignment 0 or a non-power-of-2
 // -> wild pointer / silent misalignment). #1 added is_pow2(), which fail-fast traps
 // alignment 0.
-TEST(PooledRegionDeathTest, ZeroAlignmentTraps) {
+TEST(PooledArenaDeathTest, ZeroAlignmentTraps) {
   EXPECT_DEATH(
       {
         ConcurrentBlockPool pool(system_allocator(), 4096, 2);

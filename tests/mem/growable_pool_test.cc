@@ -152,7 +152,7 @@ TEST(GrowableObjectPool, TrivialLiveObjectsMayBeBulkReleasedAtDestruction) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
+TEST(GrowableObjectPoolDiagnosticsDeathTest, DoubleDestroyTraps) {
   EXPECT_DEATH(
       {
         GrowableObjectPool<int> pool(system_allocator(), 1);
@@ -163,7 +163,7 @@ TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
       ".*");
 }
 
-TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
+TEST(GrowableObjectPoolDiagnosticsDeathTest, ForeignPointerTraps) {
   EXPECT_DEATH(
       {
         struct PointerSizedValue { void* value; };
@@ -174,7 +174,8 @@ TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
       ".*");
 }
 
-TEST(GrowablePoolDiagnosticsDeathTest, OutstandingObjectAtDestructionTraps) {
+TEST(GrowableObjectPoolDiagnosticsDeathTest,
+     OutstandingObjectAtDestructionTraps) {
   EXPECT_DEATH(
       {
         struct NeedsDestruction {

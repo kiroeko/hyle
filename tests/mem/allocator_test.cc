@@ -110,6 +110,14 @@ TEST(AllocatorRef, SystemCollectPreservesLiveAllocations) {
 TEST(AllocatorRef, SystemMemorySnapshotIsStableAndSelfConsistent) {
   const auto before = system_memory_snapshot();
   ASSERT_TRUE(before);
+  EXPECT_GE(before->allocator_peak_reserved_bytes,
+            before->allocator_reserved_bytes);
+  EXPECT_GE(before->allocator_peak_committed_bytes,
+            before->allocator_committed_bytes);
+  EXPECT_GE(before->process_peak_resident_bytes,
+            before->process_resident_bytes);
+  EXPECT_GE(before->process_peak_committed_bytes,
+            before->process_committed_bytes);
 
   constexpr std::size_t kProbeBytes = 8u * 1024u * 1024u;
   AllocatorRef allocator = system_allocator();
@@ -576,7 +584,8 @@ TEST(QuotaAllocator, ConcurrentAdmissionNeverExceedsHardLimit) {
   EXPECT_GT(observed_max.load(std::memory_order_relaxed), 0u);
 }
 
-TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
+TEST(AllocatorComposition,
+     StatsOverQuotaOverConcurrentBlockPoolKeepsOneTruth) {
   hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 512);
   StatsAllocator stats =
@@ -612,7 +621,8 @@ TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
   EXPECT_EQ(quota.used(), 0u);
 }
 
-TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
+TEST(AllocatorComposition,
+     QuotaOverStatsOverConcurrentBlockPoolKeepsOneTruth) {
   hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   StatsAllocator stats = StatsAllocator::create(
                              pool.as_allocator(), /*track_leaks=*/true)
@@ -633,7 +643,8 @@ TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
   pool.deallocate(reused);
 }
 
-TEST(AllocatorComposition, PmrOverDecoratedSharedPoolReturnsCapacity) {
+TEST(AllocatorComposition,
+     PmrOverDecoratedConcurrentBlockPoolReturnsCapacity) {
   hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 128);
   StatsAllocator stats = StatsAllocator::create(quota.get()).value();

@@ -460,7 +460,7 @@ TEST(StackArena, AsAllocatorInjectsAndReallocCopies) {
 // alignment 0 slipped the old `(a & (a-1)) == 0` guard (0 & SIZE_MAX == 0
 // passed) and yielded a wild pointer; #1 switched to is_pow2(), which fail-fast
 // traps it. Locks in #1 for StackArena::allocate.
-TEST(StackAllocatorDeathTest, ZeroAlignmentTraps) {
+TEST(StackArenaDeathTest, ZeroAlignmentTraps) {
   EXPECT_DEATH(
       {
         StackArena sa(system_allocator(), 4096);
@@ -685,7 +685,7 @@ TEST(PooledArena, ExhaustionLeavesSecondRegionInvalid) {
   EXPECT_FALSE(exhausted.valid());
 }
 
-TEST(PooledArena, ClearUsesRegionFamilySpellingAndReusesBlock) {
+TEST(PooledArena, ClearUsesArenaFamilySpellingAndReusesBlock) {
   hyle::mem::ConcurrentBlockPool pool(system_allocator(), 256, 1, 64);
   hyle::mem::PooledArena region(&pool);
   void* first = region.allocate(64, 16);
@@ -1014,7 +1014,7 @@ TEST(FixedHeap, FragmentedLookupExaminesAtMostTwoCandidates) {
 }
 #endif
 
-TEST(FixedPoolDeathTest, DoubleReturnTraps) {
+TEST(FixedHeapDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(
       {
         alignas(64) std::byte storage[2048];
@@ -1026,7 +1026,7 @@ TEST(FixedPoolDeathTest, DoubleReturnTraps) {
       ".*");
 }
 
-TEST(FixedPoolDeathTest, ForeignPointerTrapsBeforeDereference) {
+TEST(FixedHeapDeathTest, ForeignPointerTrapsBeforeDereference) {
   EXPECT_DEATH(
       {
         alignas(64) std::byte storage[2048];

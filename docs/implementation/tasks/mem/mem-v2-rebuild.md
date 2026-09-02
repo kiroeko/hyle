@@ -100,11 +100,12 @@
 全局因子图与 v7 façade 投影已经完成，因此这四遍顺序现在生效；相邻域只提供已经裁决的公开 factor
 或私有机制，不会让 POSIX/Windows 某个 syscall benchmark 反向决定公共类型。
 
-## API / usability freeze（DRAFT）
+## API / usability freeze（FROZEN）
 
-本节是 `MEM2-01` 的唯一 public-shape 草案。`DRAFT` 期间允许用 compile-only journey
-发现类型关系不成立；只有下列全部被真实头文件表达、五条 journey 可编译且
-include graph 无环时，才可改为 `FROZEN`。后续 correctness 不得悄悄改名或恢复旧 alias。
+本节是 `MEM2-01` 的唯一 public-shape 合同。五条 compile-only journey、self-contained headers、
+无环 target graph 与 source/shared/static relocated-package consumer 均已兑现，因此接口于
+2026-09-03 进入 `FROZEN`。后续 correctness 不得悄悄改名或恢复旧 alias；若合同本身不成立，
+必须按本卡显式退回 `AUDITED`。
 
 ### 单一用户心智与依赖方向
 
@@ -204,7 +205,7 @@ StackAllocator` 改为上表 arena 家族；`FixedPool` 改为 `FixedHeap`；`Sh
 - [x] 五条 journey 以正常 public API 编译，不借 test-only constructor/stub；
 - [x] `sizeof(MemoryResourceRef) == 1 word`、`Buffer/View <= 4 words`、owner 无 wrapper pimpl allocation；
 - [x] 头文件语法 include graph 与 CMake target graph 都满足上述无环方向；
-- [ ] source/static/shared selected-component 均可发现同一 API；
+- [x] source/static/shared selected-component 均可发现同一 API；
 - [x] `docs/user/mem.md` 只写当前已落地产品，并已替换为 ownership/domain/lifetime/concurrency 选型表。
 
 ## Capability-family coverage map（AUDITED）
@@ -308,8 +309,19 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   benchmark source 一次迁移。五条 normal journey 分别由 owned Heap 注入 PodVector、只读模型
   FileMapping、Compute resource + Mem nonzero subview kernel、BufferPool lease 与 LifetimePlan
   instantiate 的 public-API 测试覆盖。Windows MSVC `all` 70/70、WSL GCC 14 selected
-  mem/container/compute 48/48 通过；现行 architecture/user 文档只使用新名称。API freeze 仍保持
-  `DRAFT`，唯一未完成门是 taxonomy 后的 source/static/shared selected-package 同形状验证。
+  mem/container/compute 48/48 通过；现行 architecture/user 文档只使用新名称。随后 Windows
+  MSVC 与 WSL GCC 14 的 `mem` selected product smoke 均通过 source embedding、relocated shared
+  SDK 和 relocated static SDK 三形状，安装包消费者实际运行 Heap、FileMapping、BufferPool 与
+  LifetimePlan，故 API freeze 已进入 `FROZEN`。
+- selected-package 扩展旅程在 WSL 暴露了 `mi_process_info` 小进程采样中 `peak_rss < current_rss`
+  的真实缺陷（6.0 MiB 对 7.5 MiB）。`system_memory_snapshot()` 现于 API 边界把 process peak
+  单调归一到至少 current，冷启动与 8 MiB 增长路径都检查不变量；不是放宽样例。Windows/WSL
+  source/shared/static consumer 随后通过。
+- WSL GCC 14 的 ASan 与 UBSan 均通过 Mem correctness 和 self-contained public headers。GCC TSan
+  在普通 WSL ASLR 下于进入 `main` 前报已知的 `unexpected memory mapping`；按 Linux setup 的既定
+  运行合同改用 `setarch x86_64 -R` 后，完整 `hyle_mem_test` **242/242 PASS**（含 concurrent pool、
+  remote return 与 stats 路径），没有 race 报告。这里记录的是运行器前提，不把 runtime 启动失败
+  写成产品 PASS，也没有为消毒器修改产品同步语义。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

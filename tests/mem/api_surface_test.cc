@@ -197,7 +197,7 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
 
 // Compile-checked user recipes. Keep these deliberately short and mirrored in
 // docs/guide/mem.md; they test the public shape rather than internal details.
-TEST(MemUsageRecipe, RequestRegion) {
+TEST(MemUsageRecipe, RequestArena) {
   Arena request(system_allocator());
   ASSERT_NE(request.allocate(128, 64), nullptr);
   request.clear();

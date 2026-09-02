@@ -238,9 +238,15 @@ Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
   out.allocator_peak_committed_bytes =
       static_cast<std::uint64_t>(stats.committed.peak);
   out.process_resident_bytes = static_cast<std::uint64_t>(current_rss);
-  out.process_peak_resident_bytes = static_cast<std::uint64_t>(peak_rss);
+  // On Linux, mimalloc obtains current RSS and the process high-water mark
+  // through different kernel interfaces. At small process sizes the latter
+  // can lag one sampling interval and transiently report less than current.
+  // A snapshot-level peak is still required to include its current value.
+  out.process_peak_resident_bytes = static_cast<std::uint64_t>(
+      peak_rss < current_rss ? current_rss : peak_rss);
   out.process_committed_bytes = static_cast<std::uint64_t>(current_commit);
-  out.process_peak_committed_bytes = static_cast<std::uint64_t>(peak_commit);
+  out.process_peak_committed_bytes = static_cast<std::uint64_t>(
+      peak_commit < current_commit ? current_commit : peak_commit);
   return out;
 }
 

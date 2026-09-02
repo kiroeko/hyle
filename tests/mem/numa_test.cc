@@ -18,7 +18,7 @@ using hyle::platform::kNumaAny;
 using hyle::platform::numa_nodes;
 using hyle::platform::page_size;
 
-TEST(MemNuma, HugeRegionOnAvailableNode) {
+TEST(MemNuma, HugeMappingOnAvailableNode) {
   HugeMapping r = HugeMapping::allocate(page_size() * 8, HugeFlags::kThpHint,
                                       static_cast<int>(numa_nodes().front()))
                      .value();
@@ -27,7 +27,7 @@ TEST(MemNuma, HugeRegionOnAvailableNode) {
   EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0xAB);
 }
 
-TEST(MemNuma, HugeRegionLocal) {
+TEST(MemNuma, HugeMappingLocal) {
   HugeMapping r = HugeMapping::allocate_local(page_size() * 8,
                                              HugeFlags::kThpHint)
                      .value();
@@ -37,14 +37,14 @@ TEST(MemNuma, HugeRegionLocal) {
   EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0xCD);
 }
 
-TEST(MemNuma, HugeRegionAnyNode) {
+TEST(MemNuma, HugeMappingAnyNode) {
   HugeMapping r = HugeMapping::allocate(page_size() * 4, HugeFlags::kNone,
                                       kNumaAny)
                      .value();
   ASSERT_TRUE(r.valid());
 }
 
-TEST(MemNuma, HugeRegionInterleaved) {
+TEST(MemNuma, HugeMappingInterleaved) {
   HugeMapping r =
       HugeMapping::allocate_interleaved(page_size() * 16).value();
   ASSERT_TRUE(r.valid());
@@ -52,7 +52,7 @@ TEST(MemNuma, HugeRegionInterleaved) {
   EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0x3C);
 }
 
-TEST(MemNuma, HugeRegionHardBindFlag) {
+TEST(MemNuma, HugeMappingHardBindFlag) {
   auto result =
       HugeMapping::allocate(page_size() * 8,
                            HugeFlags::kThpHint | HugeFlags::kNumaBind,
