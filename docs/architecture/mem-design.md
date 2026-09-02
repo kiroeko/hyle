@@ -1,6 +1,7 @@
 # HYLE mem/ 设计
 
-> 本页是 `mem-v1` 的当前设计边界。mem 只提供 C++23 source/static/shared，Native FFI 为
+> 本页记录当前 host allocator `mem` factor。独立登记的 `mem_reclaim` 仍是未进入产品 façade 的开发
+> factor，其状态以自己的 closure card 为准；更大的 Mem v2 storage 重构同样以活动 card 为准。Mem 只提供 C++23 source/static/shared，Native FFI 为
 > `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
@@ -10,7 +11,9 @@
 
 ## 1. 边界
 
-`mem/` 只拥有普通 CPU-addressable host RAM 的分配与生命周期原语：通用 allocator、region/stack、固定块池、对象池、fiber stack、NUMA/大页和诊断适配。
+当前 Mem 产品拥有普通 CPU-addressable host RAM 的分配原语：通用 allocator、region/stack、固定块池、
+对象池、fiber stack、NUMA/大页和诊断适配。`mem_reclaim` 候选不分配 payload，也不是并发容器；在它
+通过独立 P1 门并完成具名 consumer migration 前，本文不把它写成用户可依赖的 Mem 能力。
 
 以下能力由使用其完成语义的模块拥有：
 
@@ -23,8 +26,9 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 
 ### 1.1 依赖与构建边界
 
-中央 component graph 与真实 target 链接边一致：
-`mem -> PUBLIC {core, error, platform, util_core}`。`core` 提供 cache-layout/compiler 头合同，
+中央 component graph 与真实 target 链接边一致：host factor
+`mem -> PUBLIC {core, error, platform, util_core}`；开发 factor `mem_reclaim -> PUBLIC {core}` 目前不在
+`hyle::mem` façade。`core` 提供 cache-layout/compiler 头合同，
 `error` 承担构造/VM/NUMA 冷失败，`platform` 承担 CPU、VM 和 NUMA 机制，`util_core` 承担
 fiber stack pool 的 SpinLock；mem 不直接散落 OS 分支，也不自造第二套错误。`obs/trace.h` 只是由
 `HYLE_TRACE` 控制的跨切 trace seam，不让普通 mem binary 反向依赖 obs runtime。HYLE 的模块和同

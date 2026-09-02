@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（SCOPED）
+## Closure card（AUDITED）
 
 - component / product / round：`mem_reclaim` / Mem / `mem-reclaim-v1`；
 - task kind：`NEW`；baseline commit：`31b86dd809ec61cd1fb7c42ed986e2697d20cb91`；
@@ -24,9 +24,10 @@
 - material margin：同合同 warmed read-side route 对锁定 Folly RCU 不劣于 5%；若 peer 无法在 HYLE 独立
   package 中形成可资格化 same-contract 构建，则以固定 API 的原子/分配/锁结构、HYLE direct-consumer
   holdout 和明确 `INCONCLUSIVE` 停止，不换 workload 追点值；
-- resource budget：guard acquire/release 不分配、不锁、不 syscall；每个 guard 至多两次 reader-counter RMW
-  加验证 load，嵌套 guard 每个独立计费；retire 不分配，常态一次短 queue lock；record metadata 只由 opt-in
-  retire owner 支付；无 reader 时 collect 为 O(R)，有 reader 时 nonblocking 返回；
+- resource budget：guard acquire/release 不分配、不锁、不 syscall；普通不超过 64 个同时参与线程时，warmed
+  route 是一次统一 TLS lease 查询、owner-local epoch store、验证 load 和 release store，不做共享 reader RMW；
+  超额线程走固定 fallback stripe，嵌套同 domain guard 只更新本线程 depth；retire 不分配，常态一次短 queue
+  lock；record metadata 只由 opt-in retire owner 支付；无 reader 时 collect 为 O(R)，有 reader 时 nonblocking 返回；
 - investigation / modification budget：一个 API audit、一个实现、一次 correctness 修复；P1 最多一次
   qualification、一次机制诊断、一次产品重跑；禁止因亚纳秒、顺序或地址翻转改变 public layout；
 - machines：`W1-WIN` correctness/P1，`W1-WSL` 与 `M1-MAC` correctness/sanitizer/交付；instrument：
@@ -72,7 +73,7 @@
 |---|---|
 | Folly `rcu_domain` 以 read guard、retire、synchronize 与 barrier 组成普通路线 | `BORROW` 语义分层和显式 domain；callback 在 grace period 后运行 |
 | Folly 默认 domain 让多个轻量 owner 共享 reader registry | `BORROW` 进程生命周期 convenience，但指南优先显式 domain 隔离长 reader；不承诺跨 DSO/plugin 单例 |
-| Folly read path 通过 thread-cached counters 避免一个全局 reader RMW | `BORROW PRINCIPLE`；HYLE 用固定、按线程稳定选择的 cache-line stripe，不引入 Folly TLS/Executor 依赖 |
+| Folly read path 通过 thread-cached counters 避免一个全局 reader RMW | `BORROW PRINCIPLE`；HYLE 用进程映像内统一 TLS lease 给 live thread 分配独占 cache-line slot，线程退出归还；超过 64 个同时参与线程才走固定 fallback stripe，不引入 Folly ThreadLocal/Executor 依赖 |
 | Folly free-function retire 会分配 callback node，hazptr 还提供 holder/cohort/executor 全家族 | `REJECT FOR V1`；HYLE 当前 consumer 可嵌入 record，不能让每次 retire 隐藏分配或把 Sched 拉到底层 |
 | oneTBB concurrent containers 封装自己的 storage lifetime，没有独立 reclamation 产品 API | `BORROW` consumer-facing container 应隐藏机制；`REJECT` 以 oneTBB 缺少公开 API 证明 HYLE 不需要唯一内部 owner |
 | 当前 Obs 双 snapshot + self-removal | `KEEP SPECIALIZED`；这是 fixed-generation handoff，不是通用任意对象回收 |
@@ -107,18 +108,21 @@ domain.drain();           // external quiescence; empties the retire queue
 - domain 长寿于全部 guard 和 pending record；显式 domain 析构要求外部停止新 reader/retire，并执行 drain；
   process-default domain 不析构；
 - guard 只保护**在 guard 建立后**通过 `protect()` acquire-load 得到的 pointer；把裸 load 放在 guard 前是
-  contract violation。guard 可 move、可嵌套，不可跨 domain 保护；
+  contract violation。guard 可 move、可嵌套，不可跨 domain 保护，也必须在进入 read region 的同一线程离开；
 - record 与 callback state 长寿于 callback；同一 record pending 时再次 retire、析构 pending record、空
-  callback 或在本 domain read guard 内调用 blocking synchronize/drain 都是 fatal contract violation；
+  callback 是 fail-fast contract violation；在本 domain read guard 内调用 blocking synchronize/drain 会
+  自等待，属于必须由调用者排除的 lifetime violation；
 - retire/try/synchronize 可由多个 writer 调用；同一 domain 同时只有一个 collector 执行 callbacks。
-  callback 在 collector 调用线程同步、`noexcept`、无顺序保证；可再次 retire，但不得递归 synchronize/drain；
+  callback 在 collector 调用线程同步、`noexcept`、无顺序保证；可再次 retire；同 domain 的递归
+  `try_reclaim` 是无操作，递归 `synchronize/drain` fail-fast；
 - API 无 OOM 返回：normal route 不分配。需要 owning callback storage 的用户把 record 嵌入 owner 或由自己的
   allocator 管理；HYLE 不伪装一个可能分配的 `noexcept` convenience。
 
 ### 冻结成本结构
 
-- reader：O(1)，无 allocation/lock/syscall；稳定线程 stripe 上一次 enter RMW、一次 epoch validation load、
-  一次 exit RMW，极少数 epoch flip 重试；不同 active threads 尽量不写同一 cache line；
+- reader：O(1)，无 allocation/lock/syscall；普通 live-thread 数内使用进程映像统一租赁的独占 slot，warmed
+  路线一次 TLS route 查询、一次 enter store、一次 epoch validation load、一次 exit store，嵌套只改本线程
+  depth；第 65 个同时参与线程起退化到固定 stripe 的 enter/exit RMW，极少数 epoch flip 重试；
 - retire：O(1) queue insertion 和 opt-in record metadata；达到 threshold 时只发起一次 bounded nonblocking
   collect attempt；
 - try_reclaim：有未完成 grace period 时扫描固定 stripe 数，reader 未清空即 O(S) 返回；成功时 O(S+R)；

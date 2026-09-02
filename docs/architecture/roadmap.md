@@ -10,7 +10,7 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同只登记 **17 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
+CMake target。当前机器合同只登记 **18 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
 `module-status.json`、中央组件图和实际 target 的 factor 才算已经落地。Build/package v7 已实现这套
 双层投影。内部 factor 只能依赖 factor，用户只需选择产品域；详见[构建系统](build-system.md)。
 
@@ -33,7 +33,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 17-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+本节表格是**当前 18-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
 逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
@@ -52,6 +52,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | time | core | — |
 | timer_queue | core, time, container_intrusive | — |
 | platform | core, error, time | — |
+| mem_reclaim | core | — |
 | mem | core, error, platform, util_core | — |
 | simd | core, platform | — |
 | container | core, mem | platform |
@@ -81,7 +82,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | compute | compute |
 | graph | graph |
 
-因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 17 个 factor；按普通用户可选择的问题域
+因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 18 个 factor；按普通用户可选择的问题域
 计算是 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，外部依赖 target 与 trace/testing
 target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
@@ -99,6 +100,10 @@ record 嵌入 safe hlist hook，因而同样声明真实 `PUBLIC container_intru
 storage 作锁外 wake chain，仍保留专用实现。
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。
+
+`mem_reclaim` 是从下一版候选图登记的独立开发 factor。它只依赖 Core，拥有 read-side guard、intrusive
+retire record 和 grace-period callback；在其性能门与真实 consumer migration 完成前，不进入 Mem façade，
+也不改变已经关闭的 Container/Obs。具体可交付状态只以 registry 与该 factor 的 closure card 为准。
 
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
