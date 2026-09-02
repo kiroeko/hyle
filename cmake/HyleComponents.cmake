@@ -137,6 +137,10 @@ _hyle_declare_component(timer_queue
 # fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
 # than a header made accidentally available by installing the whole tree.
 _hyle_declare_component(platform PUBLIC_DEPS core error time)
+# Registered independently before source migration. The Mem product facade does
+# not select this factor until its own closure round reaches a deliverable
+# candidate.
+_hyle_declare_component(mem_reclaim PUBLIC_DEPS core)
 _hyle_declare_component(mem TRACE PUBLIC_DEPS core error platform util_core)
 _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # Container headers expose mem types; platform is used only by compiled

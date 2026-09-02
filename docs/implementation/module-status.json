@@ -579,6 +579,11 @@
       "summary": "platform-v2 CLOSED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部签署；Formal 独立 PENDING。"
     },
     {
+      "module": "mem_reclaim",
+      "product_state": "QUEUED",
+      "summary": "已登记为 Mem 内部的并发回收质因数；尚未进入 SCOPED，当前 hyle::mem 产品门面不选择它。"
+    },
+    {
       "module": "mem",
       "product_state": "AUDITED",
       "reopen_trigger_id": "MEM-OWNER-2026-09-01",
