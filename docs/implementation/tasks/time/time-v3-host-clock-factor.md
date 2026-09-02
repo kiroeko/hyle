@@ -85,3 +85,117 @@
 
 `SCOPED` 只冻结上述合同；当前仍不授权产品实现。必须先完成 capability map、全部
 public-surface 反向追踪、依赖/交付影响与有限 `FIX` 集，并进入 `AUDITED`。
+
+## Capability-family coverage map（`AUDITED`）
+
+| Family | admitted journeys / evidence | required variants and lifecycle | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| precise host clocks | Sched/IO deadline，ggml/llama phase elapsed | monotonic/realtime 分域，typed + compact，跨线程可比 | `monotonic/realtime_*` | `COMPLETE` | wall clock 不能用于 deadline |
+| coarse clocks | Obs/rate-limit/event-loop 批次采样，Seastar lowres | monotonic/realtime 分域，availability，precise fallback | `coarse_*` | `COMPLETE` | cached reactor tick 的 update policy 属 owning runtime |
+| profiling clock | inference phase/kernel instrumentation | raw 与 ordered pair，availability/calibration/fallback | profiling API | `COMPLETE` | device timestamp/correlation 属 Compute backend |
+| CPU accounting | worker/process diagnosis | current thread/process typed clock，sleep 不累计 | CPU-clock API | `COMPLETE` | arbitrary thread/child process 未准入 |
+| duration/deadline/elapsed | Sched/IO timeout，ordinary C++ | integral/floating 换算、向上取整、饱和、past/overflow | helpers + `Instant` | `PARTIAL` | 全部 convenience 固定读全局钟，无 provider overload |
+| injectable monotonic time | deterministic scheduler/timeout/retry tests | system/manual，now/forward-set/advance，concurrent readers，borrowed runtime selection | 只能手动向 queue 传 now | `MISSING` | 缺 provider concept、manual value 和窄 runtime ref；waiter 不属 Time |
+| Unix/OS interchange | Platform fs、IO metadata、协议边界 | pre-epoch、canonical ns、chrono/time_t/timespec/FILETIME 双向 checked | `UnixTimestamp` family | `COMPLETE` | tzdb/text formatting 路由标准/协议 owner |
+| blocking host wait | tools/control thread/download retry | relative/absolute monotonic，zero/past/EINTR/oversleep | `sleep_for/until` | `COMPLETE` | fiber wait/cancel 属 Sched；manual clock 不伪造阻塞 sleep |
+| timer-node data structure | Sched timer service、IO timeout node | caller-owned stable node，arbitrary/common duration，cancel/drain/teardown | 当前误由 `time` factor 携带 | `ROUTED` | 迁到 `timer_queue`；callback/wait/cross-thread policy 不迁入 |
+| C++ delivery / legacy | source/static/shared users | header/compiled visibility，selected product facade，无伪 FFI | `hyle::time` + `hyle_time` | `PARTIAL` | host-only consumer 被 intrusive closure 污染；两个无消费的 unit sleep wrapper |
+
+### Capability / gap ledger
+
+| ID | class / demand | source | normal shape / owner | ownership / failure / concurrency | complexity/resource | coverage | action / severity | verification / negative space |
+|---|---|---|---|---|---|---|---|---|
+| `TIME3-CLOCK-01` | MUST / current consumers | Platform/Sched/IO + chrono/OS | precise/coarse/profiling/CPU clocks / Time | value API；native failure 按现有合同 fail closed/fail-fast | 默认 precise 无 HYLE 额外 hop | `COMPLETE` | `KEEP` | 现有 clock suite + P1 primary；不声称跨机器 domain |
+| `TIME3-VALUE-01` | MUST / current consumers | Platform fs + IO | Unix/OS value conversion / Time | value-owned，invalid/range 用 `optional` | constexpr O(1)、零分配 | `COMPLETE` | `KEEP` | 边界/round-trip tests；不包 tzdb/parser |
+| `TIME3-SLEEP-01` | MUST / ordinary thread | llama retry + OS/chrono | blocking `sleep_for/until` / Time | current OS thread，不可 cancel | one native wait，interrupt 重试 | `COMPLETE` | `KEEP` | 不早醒/zero/past；fiber 路由 Sched |
+| `TIME3-INJECT-01` | MUST / admitted general | Seastar manual clock + Abseil simulated clock | `SystemMonotonicClock`、`ManualClock`、`MonotonicClockSource`、`MonotonicClockRef` / Time | manual identity noncopyable，relaxed atomic time value，只允许向前；ref 借用 source | typed route zero dispatch；ref 两字+一间接；零分配 | `MISSING` | `FIX` / blocker | compile-only generic/runtime journey，concurrent set/advance stress；不管 waiter |
+| `TIME3-DEADLINE-01` | MUST / injection composition | Sched/timeout tests | provider-first `deadline_after[_ns]`、`remaining[_ns]`、`Instant::now/elapsed` overload | source 仅借用于一次调用，沿用饱和合同 | 直接模板可 inline；ref 只一次间接 now | `PARTIAL` | `FIX` / blocker | manual-clock 无真实 sleep 的 deadline/elapsed tests |
+| `TIME3-API-01` | GENERAL / usability reverse trace | public header + zero consumers | 移除 `sleep_for_us/ms`，保留 chrono `sleep_for` 与 raw ns primitive | 无兼容承诺；测试改用 chrono | 无产品成本差 | `PARTIAL` | `FIX` / cleanup | stale-symbol scan；不删有真实 compact-state 用途的 `*_ns` |
+| `TIME3-FACTOR-01` | MUST / accepted architecture | `B-F05/B-F06` | `time -> core`；timer headers 属 `timer_queue`；product facade 聚合两 factor | host artifact 不拥有 node；header-only queue 单 owner | host 工作集不携 65 list heads/hook 依赖 | `PARTIAL` | `FIX` / blocker | selected-factor graph、header ownership、Platform/Sched/IO direct-edge audit |
+| `TIME3-POLICY-01` | GENERAL / north-star | llama server + Seastar runtime | periodic/cross-thread/wait/cancel/budget propagation / Sched/IO | executor 拥有 callback/waiter/cancel lifetime | 不给 clock/node 增 lock/owning callable | `ROUTED` | `DEFER` | Sched/IO 后续 ledger；本轮负面扫描 |
+| `TIME3-DELIVERY-01` | MUST / package contract | source/static/shared consumer | `hyle::time` 对用户不变，developer factor 独立 | 无 C/FFI/stable ABI | header-only provider/queue 不造假 binary | `PARTIAL` | `FIX` / blocker | 三交付+重定位+Windows DLL stage |
+
+### Public-surface 与依赖反向追踪
+
+- `clock.h`：`Duration`、四个 clock/time-point alias；precise/coarse/profiling/CPU raw + typed 入口；
+  duration/deadline/remaining/sleep 家族与 `Instant`。全部能映射到 `TIME-A-01..05,07..08,12`；
+  只有 `sleep_for_us/ms` 无 consumer 且与 chrono API 重复；
+- `unix_timestamp.h`：`UnixTimestamp/UnixTimePoint`、valid/factory，chrono/time_t/timespec/FILETIME 双向转换，
+  映射 `TIME-A-02,10`；无单向 interop 缺口；
+- `timer_entry.h/timer_queue.h/common_timeout_queue.h`：全部映射 `TIME-A-13..15`，语义保留但
+  artifact/header owner 迁到 `timer_queue`，将在该 factor 自己的 `SCOPED/AUDITED` 卡中冻结精确修改；
+- 直接消费：Platform 公开 `UnixTimestamp`；Sched 公开 monotonic value 并在实现使用 queue；IO 公开
+  timestamp 并在 `net_timeout.h` 实体化 `TimerEntry`。因此迁移后 IO 对 `timer_queue` 是当前源码的
+  真实 public edge；Sched 的 public forward declaration/private implementation edge 在本轮不改写 API，依安装
+  include audit 与 direct-consumer 结果裁决可见性；
+- 语义重复扫描：Obs 的 `std::chrono::steady_clock` 是无额外 HYLE 成本的同一标准类型，
+  且接受显式 ns，不为“内部必须用 HYLE”强造依赖；Container 的 process hash seed 使用启动
+  钟只是非密码乱数混入，不是 deadline 语义，留给 Container/Platform 后续 owner；Platform
+  `touch` 的 native 当前文件时间是 filesystem mechanism，不重复 Time value policy。
+
+本轮冻结 `FIX` 仅有：
+
+1. `TIME3-INJECT-01`：实现 system/manual provider concept 和零分配 runtime ref；
+2. `TIME3-DEADLINE-01`：让 deadline/remaining/Instant 自然组合显式 provider，不改默认热路；
+3. `TIME3-API-01`：删除无消费且重复的 `sleep_for_us/ms`；
+4. `TIME3-FACTOR-01/TIME3-DELIVERY-01`：与已登记 `timer_queue` factor 一起迁移 header/target/
+   product/direct-edge 所有权，更新测试、三交付、架构与用户文档；
+5. 在固定接口后创建 host-clock normal consumer P1 contract，回放已有 timer P1 时不混合两个
+   factor 的结论。
+
+相邻 backlog：Sched 后续选择 compile-time provider 或 `MonotonicClockRef` 并拥有 manual advance 后的
+poll/wake；periodic/cancellation budget 仍属 Sched/IO。这些不是 Time 本轮未完成 `FIX`。
+
+## API / usability freeze
+
+- 状态：`FROZEN`；
+- 新公开形状：`SystemMonotonicClock`、`ManualClock`、`MonotonicClockSource`、
+  `MonotonicClockRef`；provider 均提供 `now() -> MonotonicTimePoint noexcept`；
+- `ManualClock`：默认从 epoch 0 开始，可指定非负 initial point，不 copy/move，`now()` 线程安全，
+  `try_set()` 只接受不早于当前值的 point，`advance(Duration)` 只接受非负 delta 并饱和；
+  atomic 只发布时间值，不是用户数据的 synchronization fence；
+- `MonotonicClockRef`：默认绑定 system route；只可从满足 concept 的 lvalue 构造，禁止 temporary，
+  source 必须比 ref 长寿；两个 pointer word，无 heap/virtual base/registry；
+- overload：`deadline_after[_ns](source, timeout)`、`remaining[_ns](source, deadline)`、
+  `Instant::now(source)` 和 `instant.elapsed(source)`；现有无 source 入口原样保留并直接 inline 读 system clock；
+- 不提供 manual `sleep_for/until`：“时间如何推进后唤醒哪些 waiter”是 owning runtime 状态机，
+  Time 只提供值和取样 seam；
+- compile journey：
+
+  ```cpp
+  hyle::time::ManualClock clock;
+  const auto deadline = hyle::time::deadline_after(clock, 30s);
+  clock.advance(25s);
+  const auto left = hyle::time::remaining(clock, deadline);
+
+  hyle::time::MonotonicClockRef selected(clock); // clock outlives selected
+  const auto sampled = selected.now();            // one explicit indirect call
+  ```
+
+- 误用诊断：temporary 构造 ref 在编译期删除；manual 倒退 `try_set` 返回 false，负
+  `advance` fail-fast；realtime/manual 类型不互换；用户 guide 必须说明默认/模板/ref 三种选择；
+- 冻结后性能只可调整 provider 内部 codegen/atomic 实现或 clock mechanism，不得改名、
+  加入 fast/light API、默认 dispatch 或常态 metadata。
+
+## Owner 六问（`AUDITED` 直答）
+
+1. **第三方：**Time 产品路径无直接或间接第三方实现；Core 是 HYLE 依赖。C++23
+   chrono、compiler intrinsic 和 Windows/POSIX clock/sleep API 是标准/平台 mechanism。Seastar、Abseil、
+   libevent、llama.cpp/ggml 本轮都只是 peer/journey 证据，不进入产品 artifact。
+2. **推理能力：**llama.cpp `b96806d96061049a5b574269b049bf6241d63d46`、随仓 ggml tree
+   `bc886da1a6c9d69660b0043d407200015667d609` 与 standalone ggml
+   `d4716378882593333721eb33f153144b6885caf2` 已 clean fast-forward 确认。host elapsed/wall/retry/
+   deadline 全部 `COMPLETE`，device clock/tz text/timer execution 都有完整 owner route；当前唯一未处置
+   `MUST` 是 `TIME3-INJECT/DEADLINE` 两个已冻结 `FIX`。
+3. **性能：**`P1`，当前只是 `PLANNED`。默认路线将以 source-equivalent chrono/OS 读钟与
+   批次 elapsed/deadline consumer 资源计费验证 5% non-inferiority；在 candidate 和仪器资格化前
+   不声称 SOTA，manual/ref 只签明确的 atomic/indirect-call 成本。
+4. **C ABI/Native FFI：**`N/A/CLEAN`。没有 C header/schema/bridge、未修饰 C export、managed sample、
+   FFI option/target/package metadata；private OS C API 与 shared C++ decorated symbol 不是产品 C ABI。
+5. **三交付：**baseline 的 Time product source/static/shared 已存在，但候选因子图仍 `PARTIAL`；
+   必须完成 host-only factor、`hyle::time` 双 factor facade、installed header ownership、Windows DLL stage 和
+   relocated exact-package consumer 后才能 `PASS`。
+6. **C++ API/文档：**typed/raw 域、饱和边界、checked OS conversion、sleep 与 timer 选型已自然；
+   当前因缺 injectable composition 和存在只由测试使用的 unit wrappers 为 `FAIL`，按上述
+   API freeze 修复。architecture 将分开 host/timer factor 决策，user guide 将补默认/注入选型和
+   lifetime/atomic-not-a-fence 陷阱，performance 页只放取证事实。
