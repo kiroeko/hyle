@@ -28,7 +28,7 @@
 // Defined in a separate translation unit and built without LTCG. Returning
 // the peer through the standard erased interface prevents this benchmark TU
 // from devirtualizing oneTBB's concrete scalable_resource_impl while HYLE's
-// runtime Allocator still pays its function-pointer dispatch.
+// runtime AllocatorRef still pays its function-pointer dispatch.
 std::pmr::memory_resource* tbb_runtime_resource() noexcept;
 
 namespace {
@@ -142,7 +142,7 @@ void allocation_batch(Allocate&& allocate, Deallocate&& deallocate) {
 
 class BoostAllocatorResource final : public bpmr::memory_resource {
  public:
-  explicit BoostAllocatorResource(hyle::mem::Allocator allocator) noexcept
+  explicit BoostAllocatorResource(hyle::mem::AllocatorRef allocator) noexcept
       : allocator_(allocator) {}
 
  private:
@@ -162,7 +162,7 @@ class BoostAllocatorResource final : public bpmr::memory_resource {
     return this == &other;
   }
 
-  hyle::mem::Allocator allocator_;
+  hyle::mem::AllocatorRef allocator_;
 };
 
 constexpr std::size_t region_size(std::size_t index) noexcept {
@@ -257,7 +257,7 @@ int main() {
       affinity.topology, affinity.cpu, affinity.ok,
       hyle::bench::perf::run_nonce());
 
-  const hyle::mem::Allocator runtime = hyle::mem::system_allocator();
+  const hyle::mem::AllocatorRef runtime = hyle::mem::system_allocator();
   auto runtime_batch = [&] {
     allocation_batch(
         [&](std::size_t bytes, std::size_t alignment) {
@@ -293,24 +293,24 @@ int main() {
 
   nb::Bench direct = make_bench(
       "runtime allocator consumer aggregate N=64 versus direct");
-  run_pair(direct, peer_first, "HYLE runtime Allocator batch N=64",
+  run_pair(direct, peer_first, "HYLE runtime AllocatorRef batch N=64",
            runtime_batch, "HYLE SystemAllocator direct batch N=64",
            direct_batch);
 
   nb::Bench tbb = make_bench(
       "runtime allocator consumer aggregate N=64 versus oneTBB");
-  run_pair(tbb, peer_first, "HYLE runtime Allocator batch N=64",
+  run_pair(tbb, peer_first, "HYLE runtime AllocatorRef batch N=64",
            runtime_batch, "oneTBB scalable memory_resource batch N=64",
            tbb_batch);
 
-  hyle::mem::RegionOptions options;
+  hyle::mem::ArenaOptions options;
   // Match HttpServeOptions::request_region: long-lived keep-alive owners start
   // small, grow ordinary blocks to 64 KiB, and return >=64 KiB outliers on
   // every clear rather than retaining one pathological request forever.
   options.initial_block_size = 4u * 1024u;
   options.max_block_size = 64u * 1024u;
   options.large_allocation_threshold = 64u * 1024u;
-  hyle::mem::Region region(runtime, options);
+  hyle::mem::Arena region(runtime, options);
   BoostAllocatorResource boost_upstream(runtime);
   bpmr::monotonic_buffer_resource boost_region(options.initial_block_size,
                                                 &boost_upstream);
@@ -331,7 +331,7 @@ int main() {
 
   nb::Bench region_bench = make_bench(
       "request region epoch aggregate N=64");
-  run_pair(region_bench, peer_first, "HYLE Region clear/reuse N=64",
+  run_pair(region_bench, peer_first, "HYLE Arena clear/reuse N=64",
            hyle_region_epoch, "Boost monotonic release N=64",
            boost_region_epoch);
 

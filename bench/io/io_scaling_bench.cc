@@ -60,7 +60,7 @@
 using hyle::io::IoContext;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -161,7 +161,7 @@ struct Conn {
   std::atomic<std::uint64_t>* completed;
 };
 
-Task<int> client_task(Allocator, Conn* c) {
+Task<int> client_task(AllocatorRef, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
     std::uint32_t sent = 0;
     while (sent < c->msg_len) {
@@ -183,7 +183,7 @@ Task<int> client_task(Allocator, Conn* c) {
   co_return 0;
 }
 
-Task<int> server_task(Allocator, Conn* c) {
+Task<int> server_task(AllocatorRef, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
     std::uint32_t got = 0;
     while (got < c->msg_len) {

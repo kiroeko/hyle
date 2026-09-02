@@ -10,9 +10,9 @@
 //
 // Workload families. Rows with weaker/different allocation visibility are
 // throughput references, and are not presented as same-contract SOTA:
-//  A. BUMP: PooledRegion + StackAllocator vs pmr::monotonic vs raw mi.
-//  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool
-//  vs raw mi. SharedPool/SharedPoolCache belong to cross-thread sharing
+//  A. BUMP: PooledArena + StackArena vs pmr::monotonic vs raw mi.
+//  B. SINGLE-THREAD pool churn: GrowableObjectPool ONLY vs pmr::unsynchronized_pool
+//  vs raw mi. ConcurrentBlockPool/BlockPoolCache belong to cross-thread sharing
 //     scenarios.
 //  C. 8-thread tight churn: hard pool vs cached pool vs pmr/tbb/mimalloc.
 //  D. Shared-path burst and cross-thread handoff: the same full comparison.
@@ -25,7 +25,7 @@
 //     clear/release retention, and process RSS in isolated processes.
 //  I. Fixed-buffer fragmentation certification: largest satisfiable object
 //     after mixed fill/selective free, normalized to each pool's empty limit.
-//  J. Long-lived Region scaling: clear/reuse over 32..2048 retained blocks.
+//  J. Long-lived Arena scaling: clear/reuse over 32..2048 retained blocks.
 //     This catches restart-from-head traversal that short request benches hide.
 
 #include <mimalloc.h>
@@ -80,20 +80,20 @@
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
 
-using hyle::mem::Allocator;
-using hyle::mem::FixedPool;
-using hyle::mem::FixedRegion;
-using hyle::mem::GrowablePool;
+using hyle::mem::AllocatorRef;
+using hyle::mem::FixedHeap;
+using hyle::mem::FixedArena;
+using hyle::mem::GrowableObjectPool;
 using hyle::mem::ObjectPool;
 using hyle::mem::PmrResource;
-using hyle::mem::PooledRegion;
+using hyle::mem::PooledArena;
 using hyle::mem::PreservingObjectPool;
 using hyle::mem::QuotaAllocator;
-using hyle::mem::Region;
-using hyle::mem::RegionOptions;
-using hyle::mem::SharedPool;
-using hyle::mem::SharedPoolCache;
-using hyle::mem::StackAllocator;
+using hyle::mem::Arena;
+using hyle::mem::ArenaOptions;
+using hyle::mem::ConcurrentBlockPool;
+using hyle::mem::BlockPoolCache;
+using hyle::mem::StackArena;
 using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
 
@@ -236,8 +236,8 @@ void *direct_mi_reallocate(void *, void *p, std::size_t, std::size_t new_bytes,
   return mi_realloc_aligned(p, new_bytes, alignment);
 }
 
-Allocator direct_mi_allocator() noexcept {
-  return Allocator(&direct_mi_allocate, &direct_mi_deallocate,
+AllocatorRef direct_mi_allocator() noexcept {
+  return AllocatorRef(&direct_mi_allocate, &direct_mi_deallocate,
                    &direct_mi_reallocate, nullptr);
 }
 
@@ -479,11 +479,11 @@ void report_request_latency_pair(const char *scenario, const char *first_name,
 
 void report_region_reuse_scaling(std::size_t retained_blocks, int samples) {
   using Clock = std::chrono::steady_clock;
-  RegionOptions options;
+  ArenaOptions options;
   options.initial_block_size = 128;
   options.max_block_size = 128;
   options.large_allocation_threshold = 4096;
-  Region region(system_allocator(), options);
+  Arena region(system_allocator(), options);
   for (std::size_t i = 0; i != retained_blocks; ++i)
     require_allocation(region.allocate(64, 16));
 
@@ -613,7 +613,7 @@ QuotaResult run_quota_scenario(Pool &pool, int threads, std::size_t capacity,
                      ns / static_cast<double>(attempted)};
 }
 
-QuotaResult run_cached_quota_scenario(SharedPool &pool, int threads,
+QuotaResult run_cached_quota_scenario(ConcurrentBlockPool &pool, int threads,
                                       std::size_t capacity,
                                       int request_pct) {
   const std::size_t requested =
@@ -634,7 +634,7 @@ QuotaResult run_cached_quota_scenario(SharedPool &pool, int threads,
   for (int t = 0; t < threads; ++t) {
     workers.emplace_back([&, t] {
       std::array<std::uint32_t, 128> storage{};
-      SharedPoolCache cache(pool, storage, 32);
+      BlockPoolCache cache(pool, storage, 32);
       start.arrive_and_wait();
       for (std::size_t i = 0; i < per_thread; ++i) {
         held[t][i] = cache.allocate();
@@ -690,7 +690,7 @@ QuotaResult run_cached_quota_scenario(SharedPool &pool, int threads,
 
 int main() {
   configure_main_benchmark_thread();
-  Allocator sys = system_allocator(); // mimalloc backing
+  AllocatorRef sys = system_allocator(); // mimalloc backing
 
   // ---- A. BUMP: alloc N small, no per-object free, bulk release ----
   if (want_section('A')) {
@@ -700,11 +700,11 @@ int main() {
         .batch(kN)
         .minEpochIterations(50);
 
-    // HYLE PooledRegion (borrows ONE pooled block; clear() reuses it per
+    // HYLE PooledArena (borrows ONE pooled block; clear() reuses it per
     // round).
-    SharedPool pool(sys, kRegion, 1); // one hard-pool block of kRegion bytes
-    PooledRegion arena(&pool);
-    b.run("HYLE PooledRegion (bump, pooled block)", [&] {
+    ConcurrentBlockPool pool(sys, kRegion, 1); // one hard-pool block of kRegion bytes
+    PooledArena arena(&pool);
+    b.run("HYLE PooledArena (bump, pooled block)", [&] {
       arena.clear();
       for (int i = 0; i < kN; ++i) {
         void *p = require_allocation(arena.allocate(kObj));
@@ -712,9 +712,9 @@ int main() {
       }
     });
 
-    // HYLE StackAllocator (owns its slab; reset() per round).
-    StackAllocator stack(sys, kRegion);
-    b.run("HYLE StackAllocator (bump, own slab)", [&] {
+    // HYLE StackArena (owns its slab; reset() per round).
+    StackArena stack(sys, kRegion);
+    b.run("HYLE StackArena (bump, own slab)", [&] {
       stack.reset();
       for (int i = 0; i < kN; ++i) {
         void *p = require_allocation(stack.allocate(kObj));
@@ -748,8 +748,8 @@ int main() {
     });
   }
 
-  // ---- A2. StackAllocator mark/rewind: nested-scope LIFO release ---- (gated
-  // 'A') mark()/rewind() is the StackAllocator capability reset() can't
+  // ---- A2. StackArena mark/rewind: nested-scope LIFO release ---- (gated
+  // 'A') mark()/rewind() is the StackArena capability reset() can't
   // express: save a checkpoint, allocate a temporary batch, roll back to the
   // checkpoint (freeing exactly that batch) while KEEPING everything before it.
   // The scratch/frame pattern (e.g. a taskgraph pass that allocates per-node
@@ -763,13 +763,13 @@ int main() {
     constexpr int kBase = 256;   // persistent allocations kept across rewinds
     constexpr int kInner = 64;   // temporaries per rewind cycle
     constexpr int kCycles = 128; // rewind cycles per round
-    StackAllocator stack(sys, kRegion);
+    StackArena stack(sys, kRegion);
     nb::Bench b;
-    b.title("StackAllocator mark/rewind: 128 cycles x 64 temps")
+    b.title("StackArena mark/rewind: 128 cycles x 64 temps")
         .relative(true)
         .batch(static_cast<std::uint64_t>(kCycles) * kInner)
         .minEpochIterations(200);
-    b.run("HYLE StackAllocator mark/rewind (LIFO scratch)", [&] {
+    b.run("HYLE StackArena mark/rewind (LIFO scratch)", [&] {
       stack.reset();
       for (int i = 0; i < kBase; ++i)
         nb::doNotOptimizeAway(require_allocation(stack.allocate(kObj)));
@@ -783,8 +783,8 @@ int main() {
     // Baseline: a full reset() can't keep the base batch, but as a pure
     // pointer- move reference it shows rewind is the same O(1) cost (re-bump
     // the temps each cycle from a full reset of just the temp region).
-    StackAllocator stack2(sys, kRegion);
-    b.run("HYLE StackAllocator reset re-bump (baseline)", [&] {
+    StackArena stack2(sys, kRegion);
+    b.run("HYLE StackArena reset re-bump (baseline)", [&] {
       for (int c = 0; c < kCycles; ++c) {
         stack2.reset();
         for (int i = 0; i < kInner; ++i)
@@ -794,10 +794,10 @@ int main() {
   }
 
   // ---- B. SINGLE-THREAD pool churn (fair tools only) ----
-  // GrowablePool is the ST same-size free-list tool. Rivals: pmr unsync pool
-  // (std ST pool SOTA) + raw mi (general baseline). SharedPool/SharedPoolCache
+  // GrowableObjectPool is the ST same-size free-list tool. Rivals: pmr unsync pool
+  // (std ST pool SOTA) + raw mi (general baseline). ConcurrentBlockPool/BlockPoolCache
   // are omitted: a single-thread-only owner should use the simpler
-  // GrowablePool.
+  // GrowableObjectPool.
   if (want_section('B')) {
     nb::Bench b;
     b.title("single-thread pool churn: 8192x alloc/free 64B")
@@ -808,8 +808,8 @@ int main() {
     struct Obj {
       std::byte b[kObj];
     };
-    GrowablePool<Obj> gpool(sys, 64);
-    b.run("HYLE GrowablePool (single-thread)", [&] {
+    GrowableObjectPool<Obj> gpool(sys, 64);
+    b.run("HYLE GrowableObjectPool (single-thread)", [&] {
       for (int i = 0; i < kN; ++i) {
         Obj *p = static_cast<Obj *>(require_allocation(gpool.create()));
         nb::doNotOptimizeAway(std::as_const(p));
@@ -838,14 +838,14 @@ int main() {
   // ---- C. CONCURRENT pool churn: APPLES-TO-APPLES, not apples-to-oranges ----
   // This section separates three contracts instead of declaring a pooled fixed
   // slab faster/slower from one misleading denominator:
-  //   (1) per-thread ownership -> GrowablePool per thread vs mimalloc's local
-  //   heaps; (2) shared HARD capacity -> SharedPool, with immediate post-free
-  //   visibility; (3) explicit owner-local SharedPoolCache over a shared core.
+  //   (1) per-thread ownership -> GrowableObjectPool per thread vs mimalloc's local
+  //   heaps; (2) shared HARD capacity -> ConcurrentBlockPool, with immediate post-free
+  //   visibility; (3) explicit owner-local BlockPoolCache over a shared core.
   // oneTBB fixed_pool shares one caller-owned fixed buffer, but its tbbmalloc
   // frontend keeps owner-thread private free lists and publishes only remote
   // frees. It is a mature fixed-buffer throughput reference, not a rival for
-  // SharedPool's immediate post-free visibility. pmr, scalable_allocator,
-  // mimalloc, and per-worker GrowablePool are growable references only.
+  // ConcurrentBlockPool's immediate post-free visibility. pmr, scalable_allocator,
+  // mimalloc, and per-worker GrowableObjectPool are growable references only.
   if (want_section('C')) {
     const int kThreads = env_int("HYLE_BENCH_THREADS", 8);
     constexpr int kPer = 50000;
@@ -866,12 +866,12 @@ int main() {
         .batch(kThreads * kPer)
         .minEpochIterations(10);
 
-    // (1) APPLES-TO-APPLES: a GrowablePool PER THREAD (no sharing, no atomics)
+    // (1) APPLES-TO-APPLES: a GrowableObjectPool PER THREAD (no sharing, no atomics)
     // -- HYLE's SOTA-parity answer for per-thread same-size churn, the SAME
     // shape as mimalloc's per-thread heaps.
-    b.run("HYLE GrowablePool (one pool per worker)", [&] {
+    b.run("HYLE GrowableObjectPool (one pool per worker)", [&] {
       run_threads([&] {
-        GrowablePool<Obj> local(sys, 256);
+        GrowableObjectPool<Obj> local(sys, 256);
         for (int i = 0; i < kPer; ++i) {
           Obj *p = static_cast<Obj *>(require_allocation(local.create()));
           nb::doNotOptimizeAway(std::as_const(p));
@@ -880,11 +880,11 @@ int main() {
       });
     });
 
-    SharedPool shared_cache_core(sys, kObj, kThreads * 256);
-    b.run("HYLE SharedPoolCache (explicit owner-local reuse)", [&] {
+    ConcurrentBlockPool shared_cache_core(sys, kObj, kThreads * 256);
+    b.run("HYLE BlockPoolCache (explicit owner-local reuse)", [&] {
       run_threads([&] {
         std::array<std::uint32_t, 128> storage{};
-        SharedPoolCache cache(shared_cache_core, storage, 32);
+        BlockPoolCache cache(shared_cache_core, storage, 32);
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(cache.allocate());
           nb::doNotOptimizeAway(std::as_const(p));
@@ -896,8 +896,8 @@ int main() {
     // Hard-capacity counterpart: every operation publishes through a shared
     // home list, isolating deterministic visibility from the cached
     // worker-local fast path.
-    SharedPool shared_hard(sys, kObj, kThreads * 256);
-    b.run("HYLE SharedPool (hard capacity)", [&] {
+    ConcurrentBlockPool shared_hard(sys, kObj, kThreads * 256);
+    b.run("HYLE ConcurrentBlockPool (hard capacity)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(shared_hard.allocate());
@@ -999,8 +999,8 @@ int main() {
         (static_cast<std::uint64_t>(kThreads) * kHold * 100 + capacity_pct -
          1) /
         capacity_pct);
-    SharedPool burst_cache_core(sys, block_size, pool_capacity);
-    SharedPool burst_hard(sys, block_size, pool_capacity);
+    ConcurrentBlockPool burst_cache_core(sys, block_size, pool_capacity);
+    ConcurrentBlockPool burst_hard(sys, block_size, pool_capacity);
     {
       nb::Bench b;
       b.title(std::to_string(kThreads) + " workers: request batch=" +
@@ -1009,10 +1009,10 @@ int main() {
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kRounds * kHold)
           .minEpochIterations(3);
-      b.run("HYLE SharedPoolCache (explicit soft capacity)", [&] {
+      b.run("HYLE BlockPoolCache (explicit soft capacity)", [&] {
         run_threads([&](int) {
           std::array<std::uint32_t, 128> storage{};
-          SharedPoolCache cache(burst_cache_core, storage, 32);
+          BlockPoolCache cache(burst_cache_core, storage, 32);
           std::vector<void *> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
             for (int i = 0; i < kHold; ++i)
@@ -1022,7 +1022,7 @@ int main() {
           }
         });
       });
-      b.run("HYLE SharedPool (hard capacity)", [&] {
+      b.run("HYLE ConcurrentBlockPool (hard capacity)", [&] {
         run_threads([&](int) {
           std::vector<void *> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
@@ -1099,8 +1099,8 @@ int main() {
     const int kHandoffRounds = env_int("HYLE_BENCH_HANDOFF_ROUNDS", 250);
     const std::uint32_t handoff_capacity =
         static_cast<std::uint32_t>(kThreads * kBatch * 2);
-    SharedPool handoff_cache_core(sys, block_size, handoff_capacity);
-    SharedPool handoff_hard(sys, block_size, handoff_capacity);
+    ConcurrentBlockPool handoff_cache_core(sys, block_size, handoff_capacity);
+    ConcurrentBlockPool handoff_hard(sys, block_size, handoff_capacity);
     struct alignas(64) HandoffState {
       std::atomic<int> produced{0};
       std::atomic<int> consumed{0};
@@ -1131,7 +1131,7 @@ int main() {
       auto states = std::make_unique<HandoffState[]>(kThreads);
       run_threads([&](int t) {
         std::array<std::uint32_t, 128> storage{};
-        SharedPoolCache cache(handoff_cache_core, storage, 32);
+        BlockPoolCache cache(handoff_cache_core, storage, 32);
         const int nbr = (t + 1) % kThreads;
         for (int r = 0; r < kHandoffRounds; ++r) {
           while (states[t].consumed.load(std::memory_order_acquire) < r)
@@ -1156,10 +1156,10 @@ int main() {
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kHandoffRounds * kBatch)
           .minEpochIterations(3);
-      b.run("HYLE SharedPoolCache (explicit soft capacity)", [&] {
+      b.run("HYLE BlockPoolCache (explicit soft capacity)", [&] {
         run_explicit_cache_handoff();
       });
-      b.run("HYLE SharedPool (hard capacity)", [&] {
+      b.run("HYLE ConcurrentBlockPool (hard capacity)", [&] {
         run_handoff([&] { return handoff_hard.allocate(); },
                     [&](void *p) { handoff_hard.deallocate(p); });
       });
@@ -1206,8 +1206,8 @@ int main() {
     const std::size_t capacity =
         static_cast<std::size_t>(env_int("HYLE_BENCH_QUOTA", 1024));
     const int request_pct = env_int("HYLE_BENCH_REQUEST_PCT", 110);
-    SharedPool hard(sys, block_size, static_cast<std::uint32_t>(capacity));
-    SharedPool cached_core(sys, block_size,
+    ConcurrentBlockPool hard(sys, block_size, static_cast<std::uint32_t>(capacity));
+    ConcurrentBlockPool cached_core(sys, block_size,
                            static_cast<std::uint32_t>(capacity));
     const QuotaResult hard_result =
         run_quota_scenario(hard, threads, capacity, request_pct);
@@ -1226,8 +1226,8 @@ int main() {
                   r.attempted - r.initial_success, r.recovered_before_publish,
                   r.recovered_after_publish, r.initial_ns_per_attempt);
     };
-    print("HYLE SharedPool (hard)", hard_result);
-    print("HYLE SharedPoolCache (explicit soft)", cached_result);
+    print("HYLE ConcurrentBlockPool (hard)", hard_result);
+    print("HYLE BlockPoolCache (explicit soft)", cached_result);
   }
 
   // ---- F. CLOSURE SHAPES: real lifetime/ownership policies ------------------
@@ -1242,13 +1242,13 @@ int main() {
     if (!adapter_only) {
       std::vector<std::byte> hyle_storage(kScratchBytes);
       std::vector<std::byte> pmr_storage(kScratchBytes);
-      FixedRegion fixed(hyle_storage.data(), hyle_storage.size());
+      FixedArena fixed(hyle_storage.data(), hyle_storage.size());
       nb::Bench b;
       b.title("external request workspace: 4096 mixed-size allocations + reset")
           .relative(true)
           .batch(kScratchAllocations)
           .minEpochIterations(50);
-      b.run("HYLE FixedRegion (external, no fallback)", [&] {
+      b.run("HYLE FixedArena (external, no fallback)", [&] {
         fixed.clear();
         for (int i = 0; i < kScratchAllocations; ++i) {
           void *p = require_allocation(fixed.allocate(scratch_size(i), 16));
@@ -1270,17 +1270,17 @@ int main() {
     // so this measures the warmed steady state expected by a server or graph
     // phase.
     if (!adapter_only) {
-      hyle::mem::RegionOptions options;
+      hyle::mem::ArenaOptions options;
       options.initial_block_size = 64 * 1024;
       options.max_block_size = 256 * 1024;
       options.large_allocation_threshold = 128 * 1024;
-      Region region(sys, options);
+      Arena region(sys, options);
       nb::Bench b;
       b.title("owned request region: 4096 mixed-size allocations + clear")
           .relative(true)
           .batch(kScratchAllocations)
           .minEpochIterations(50);
-      b.run("HYLE Region (retained ordinary blocks)", [&] {
+      b.run("HYLE Arena (retained ordinary blocks)", [&] {
         region.clear();
         for (int i = 0; i < kScratchAllocations; ++i) {
           void *p = require_allocation(region.allocate(scratch_size(i), 16));
@@ -1306,13 +1306,13 @@ int main() {
       constexpr int kWindow = 128;
       constexpr std::size_t kStorageBytes = 1024 * 1024;
       std::vector<std::byte> storage(kStorageBytes);
-      FixedPool pool(storage.data(), storage.size());
+      FixedHeap pool(storage.data(), storage.size());
       nb::Bench b;
       b.title("external fixed buffer: mixed-size sliding live window")
           .relative(true)
           .batch(kOperations)
           .minEpochIterations(30);
-      b.run("HYLE FixedPool (single-thread, hard buffer)", [&] {
+      b.run("HYLE FixedHeap (single-thread, hard buffer)", [&] {
         std::array<void *, kWindow> live{};
         for (int i = 0; i < kOperations; ++i) {
           const int slot = i % kWindow;
@@ -1320,7 +1320,7 @@ int main() {
           live[slot] = pool.allocate(scratch_size(i), 16);
           if (live[slot] == nullptr) {
             std::fprintf(stderr,
-                         "FixedPool benchmark failure: operation=%d used=%zu "
+                         "FixedHeap benchmark failure: operation=%d used=%zu "
                          "capacity=%zu\n",
                          i, pool.used(), pool.capacity());
             std::abort();
@@ -1331,7 +1331,7 @@ int main() {
           pool.deallocate(p);
         if (pool.used() != 0) {
           std::fprintf(stderr,
-                       "FixedPool benchmark leak: used=%zu capacity=%zu\n",
+                       "FixedHeap benchmark leak: used=%zu capacity=%zu\n",
                        pool.used(), pool.capacity());
           std::abort();
         }
@@ -1365,7 +1365,7 @@ int main() {
       constexpr std::size_t kLarge = 1024;
       constexpr std::size_t kStorageBytes = 64 * 1024;
       std::vector<std::byte> storage(kStorageBytes);
-      FixedPool pool(storage.data(), storage.size());
+      FixedHeap pool(storage.data(), storage.size());
       void *hyle_ptr = require_allocation(pool.allocate(kSmall, 16));
       std::memset(hyle_ptr, 0xA5, kSmall);
       nb::Bench b;
@@ -1373,7 +1373,7 @@ int main() {
           .relative(true)
           .batch(static_cast<std::uint64_t>(kResizeCycles) * 2)
           .minEpochIterations(100);
-      b.run("HYLE FixedPool (retained-span in-place resize)", [&] {
+      b.run("HYLE FixedHeap (retained-span in-place resize)", [&] {
         for (int i = 0; i < kResizeCycles; ++i) {
           hyle_ptr = require_allocation(
               pool.reallocate(hyle_ptr, kSmall, kLarge, 16));
@@ -1408,12 +1408,12 @@ int main() {
     {
       constexpr int kOperations = 8192;
       QuotaAllocator quota(sys, 1024 * 1024);
-      Allocator bounded = quota.get();
+      AllocatorRef bounded = quota.get();
       StatsAllocator stats = StatsAllocator::create(sys).value();
-      Allocator measured = stats.get();
+      AllocatorRef measured = stats.get();
       StatsAllocator composed_stats = StatsAllocator::create(sys).value();
       QuotaAllocator composed_quota(composed_stats.get(), 1024 * 1024);
-      Allocator composed = composed_quota.get();
+      AllocatorRef composed = composed_quota.get();
       nb::Bench b;
       b.title("allocator decoration: quota and counters-only stats")
           .relative(true)
@@ -1508,7 +1508,7 @@ int main() {
     {
       std::vector<std::byte> hyle_storage(kStorageBytes);
       std::vector<std::byte> pmr_storage(kStorageBytes);
-      FixedRegion fixed(hyle_storage.data(), hyle_storage.size());
+      FixedArena fixed(hyle_storage.data(), hyle_storage.size());
       report_request_latency_pair(
           "external_region", "hyle_fixed_region", "pmr_reconstruct",
           kOperations, samples,
@@ -1531,11 +1531,11 @@ int main() {
     }
 
     {
-      hyle::mem::RegionOptions options;
+      hyle::mem::ArenaOptions options;
       options.initial_block_size = 64 * 1024;
       options.max_block_size = 256 * 1024;
       options.large_allocation_threshold = 128 * 1024;
-      Region region(sys, options);
+      Arena region(sys, options);
       std::pmr::monotonic_buffer_resource pmr;
       report_request_latency_pair(
           "owned_region", "hyle_region", "pmr_release", kOperations,
@@ -1562,7 +1562,7 @@ int main() {
       std::vector<std::byte> hyle_storage(kStorageBytes);
       std::vector<std::byte> tbb_storage(kStorageBytes +
                                          kTbbFixedBootstrapBytes);
-      FixedPool pool(hyle_storage.data(), hyle_storage.size());
+      FixedHeap pool(hyle_storage.data(), hyle_storage.size());
       tbb::fixed_pool tbb_pool(tbb_storage.data(), tbb_storage.size());
       report_request_latency_pair(
           "fixed_pool_window", "hyle_fixed_pool", "onetbb_fixed_pool",
@@ -1627,15 +1627,15 @@ int main() {
       }
       const std::size_t region_max_block =
           static_cast<std::size_t>(block_mib) * kMiB;
-      const Allocator footprint_backing = direct_mi_allocator();
+      const AllocatorRef footprint_backing = direct_mi_allocator();
       print_certificate_metadata();
 
       if (std::strcmp(variant, "hyle_region") == 0) {
-        RegionOptions options;
+        ArenaOptions options;
         options.initial_block_size = 64 * 1024;
         options.max_block_size = region_max_block;
         options.large_allocation_threshold = 1024 * 1024;
-        Region region(footprint_backing, options);
+        Arena region(footprint_backing, options);
         mi_collect(true);
         const ProcessMemory baseline = process_memory();
         const std::size_t requested =
@@ -1732,7 +1732,7 @@ int main() {
 
       if (std::strcmp(variant, "hyle_fixed_pool") == 0) {
         std::vector<std::byte> storage(payload_budget);
-        FixedPool pool(storage.data(), storage.size());
+        FixedHeap pool(storage.data(), storage.size());
         if (!pool.valid())
           return 2;
         run_fragmentation_scenario(

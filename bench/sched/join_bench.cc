@@ -37,7 +37,7 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::JoinHandle;
@@ -53,7 +53,7 @@ namespace {
 
 // A trivial task: return a value. This is the unit of work whose spawn+join cost
 // we measure (the task body itself is ~free, so the number is the layer's cost).
-Task<int> ret_coro(Allocator, int v) { co_return v; }
+Task<int> ret_coro(AllocatorRef, int v) { co_return v; }
 
 // ---- raw baseline: fiber + manual result slot + WaitGroup(1) ----------------
 // What spawn_task+JoinHandle abstracts, hand-rolled. A heap slot holds the int; a
@@ -77,7 +77,7 @@ int main() {
   // does the identical work without the JoinHandle/JoinState/TaskDriver layer.
   {
     Scheduler sched(4, system_allocator(), 4096);
-    Allocator a = system_allocator();
+    AllocatorRef a = system_allocator();
     ankerl::nanobench::Bench b;
     // Batch kB tasks per epoch, join all. batch(kB) => ns/op is PER TASK. This
     // amortizes the OS scheduler cross-thread handoff (spawn on main -> worker
@@ -122,7 +122,7 @@ int main() {
   {
     constexpr int kN = 64;
     Scheduler sched(4, system_allocator(), 4096);
-    Allocator a = system_allocator();
+    AllocatorRef a = system_allocator();
     ankerl::nanobench::Bench b;
     b.title("when_all over 64 tasks").batch(kN).minEpochIterations(2000);
     b.run("spawn 64 + when_all + join each", [&] {
@@ -147,7 +147,7 @@ int main() {
   // measure the group install + wait + uninstall cost (batch=1 = per group call).
   {
     Scheduler sched(4, system_allocator(), 4096);
-    Allocator a = system_allocator();
+    AllocatorRef a = system_allocator();
     ankerl::nanobench::Bench b;
     b.title("when_all / when_any over 4-task pack").relative(true).minEpochIterations(5000);
 
@@ -193,7 +193,7 @@ int main() {
   {
     constexpr int kN = 8;
     Scheduler sched(8, system_allocator(), 4096);
-    Allocator a = system_allocator();
+    AllocatorRef a = system_allocator();
     ankerl::nanobench::Bench b;
     b.title("when_any(8), all losers complete").batch(kN).minEpochIterations(3000);
     b.run("when_any(8) all-complete [lock-order stack group]", [&] {

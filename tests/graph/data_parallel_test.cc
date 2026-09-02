@@ -19,7 +19,7 @@
 namespace hyle::graph {
 namespace {
 
-using mem::Allocator;
+using mem::AllocatorRef;
 using mem::system_allocator;
 using sched::Fiber;
 using sched::kDefaultStackSize;
@@ -57,7 +57,7 @@ Status square_body(void* ctx, std::size_t b, std::size_t e) noexcept {
   return Status();
 }
 
-Task<int> for_coro(mem::Allocator alloc, Scheduler* sched, std::int64_t* out, std::size_t n,
+Task<int> for_coro(mem::AllocatorRef alloc, Scheduler* sched, std::int64_t* out, std::size_t n,
                    std::size_t grain) {
   Status s = parallel_for(*sched, alloc, BlockedRange(0, n, grain), &square_body, out);
   co_return s.ok() ? 0 : -1;
@@ -109,7 +109,7 @@ Status count_body(void* ctx, std::size_t b, std::size_t e) noexcept {
   for (std::size_t i = b; i < e; ++i) hits[i].fetch_add(1, std::memory_order_relaxed);
   return Status();
 }
-Task<int> count_coro(mem::Allocator alloc, Scheduler* sched, std::atomic<int>* hits, std::size_t n) {
+Task<int> count_coro(mem::AllocatorRef alloc, Scheduler* sched, std::atomic<int>* hits, std::size_t n) {
   Status s = parallel_for(*sched, alloc, BlockedRange(0, n, 7), &count_body, hits);
   co_return s.ok() ? 0 : -1;
 }
@@ -130,7 +130,7 @@ Status fail_at_body(void* ctx, std::size_t b, std::size_t e) noexcept {
   if (b <= target && target < e) return Status::Internal("boom");
   return Status();
 }
-Task<int> forfail_coro(mem::Allocator alloc, Scheduler* sched, std::size_t* target, std::size_t n) {
+Task<int> forfail_coro(mem::AllocatorRef alloc, Scheduler* sched, std::size_t* target, std::size_t n) {
   Status s = parallel_for(*sched, alloc, BlockedRange(0, n, 16), &fail_at_body, target);
   co_return s.ok() ? 0 : (s.IsInternal() ? 1 : 2);
 }
@@ -149,7 +149,7 @@ Status imbalanced_body(void* ctx, std::size_t b, std::size_t e) noexcept {
   for (std::size_t i = b; i < e; ++i) out[i] = 1;
   return Status();
 }
-Task<int> imbal_coro(mem::Allocator alloc, Scheduler* sched, std::int64_t* out, std::size_t n) {
+Task<int> imbal_coro(mem::AllocatorRef alloc, Scheduler* sched, std::int64_t* out, std::size_t n) {
   Status s = parallel_for(*sched, alloc, BlockedRange(0, n, 32), &imbalanced_body, out);
   co_return s.ok() ? 0 : -1;
 }
@@ -177,21 +177,21 @@ void sum_combine(void*, void* a, const void* b) noexcept {
 }
 void sum_identity(void*, void* out) noexcept { *static_cast<std::int64_t*>(out) = 0; }
 
-Task<int> reduce_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, std::size_t grain,
+Task<int> reduce_coro(mem::AllocatorRef alloc, Scheduler* sched, std::size_t n, std::size_t grain,
                       std::int64_t* result) {
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, grain), sizeof(std::int64_t),
                              &sum_body, &sum_combine, &sum_identity, nullptr, result);
   co_return s.ok() ? 0 : -1;
 }
 
-Task<int> saturated_for_coro(mem::Allocator alloc, Scheduler* sched,
+Task<int> saturated_for_coro(mem::AllocatorRef alloc, Scheduler* sched,
                              std::int64_t* out, std::size_t n) {
   Status s = parallel_for(*sched, alloc, BlockedRange(0, n, 1),
                           &square_body, out);
   co_return s.ok() ? 0 : (s.IsResourceExhausted() ? 1 : 2);
 }
 
-Task<int> saturated_reduce_coro(mem::Allocator alloc, Scheduler* sched,
+Task<int> saturated_reduce_coro(mem::AllocatorRef alloc, Scheduler* sched,
                                 std::size_t n, std::int64_t* result) {
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, 1),
                              sizeof(std::int64_t), &sum_body, &sum_combine,
@@ -265,7 +265,7 @@ Status rfail_body(void* ctx, std::size_t b, std::size_t e, void* out) noexcept {
   *static_cast<std::int64_t*>(out) = 0;
   return Status();
 }
-Task<int> reducefail_coro(mem::Allocator alloc, Scheduler* sched, std::size_t* target, std::size_t n,
+Task<int> reducefail_coro(mem::AllocatorRef alloc, Scheduler* sched, std::size_t* target, std::size_t n,
                           std::int64_t* result) {
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, 16), sizeof(std::int64_t),
                              &rfail_body, &sum_combine, &sum_identity, target, result);
@@ -306,7 +306,7 @@ void concat_identity(void*, void* out) noexcept {
   auto* sb = static_cast<StrBuf*>(out);
   sb->len = 0; sb->s[0] = '\0';
 }
-Task<int> concat_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, std::size_t grain,
+Task<int> concat_coro(mem::AllocatorRef alloc, Scheduler* sched, std::size_t n, std::size_t grain,
                       StrBuf* result) {
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, grain), sizeof(StrBuf),
                              &concat_body, &concat_combine, &concat_identity, nullptr, result);
@@ -330,7 +330,7 @@ TEST(DataParallel, ReduceNonCommutativePreservesOrder) {
 // auto-grain floor guards against -- each fork is a full 64KB fiber stack, so 200k leaves would
 // need ~13GB of fiber stacks and hang. Callers who want fine blocks on a big range pass a
 // moderate grain (or kAutoGrain, which floors to keep forks coarse). This test uses grain=256.
-Task<int> big_sum_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, std::size_t grain,
+Task<int> big_sum_coro(mem::AllocatorRef alloc, Scheduler* sched, std::size_t n, std::size_t grain,
                        std::int64_t* r) {
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, grain), sizeof(std::int64_t),
                              &sum_body, &sum_combine, &sum_identity, nullptr, r);

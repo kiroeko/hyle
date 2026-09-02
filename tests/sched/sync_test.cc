@@ -56,7 +56,7 @@ struct ThrowOnCopy {
 };
 
 TEST(Sync, AllocationFailuresAreRecoverable) {
-  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   hyle::Status channel_status;
   Channel<int> channel(failing, 4, &channel_status);
   EXPECT_FALSE(channel.valid());

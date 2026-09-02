@@ -12,7 +12,7 @@
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CancelCallback;
 using hyle::sched::CancelScope;
@@ -54,10 +54,10 @@ TEST(Cancel, RootCancelSetsFlag) {
 }
 
 TEST(Cancel, InvalidAndExhaustedAllocatorsAreRecoverable) {
-  auto invalid = CancelToken::try_create_root(Allocator{});
+  auto invalid = CancelToken::try_create_root(AllocatorRef{});
   ASSERT_FALSE(invalid.has_value());
   EXPECT_TRUE(invalid.error().IsInvalidArgument());
-  Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   auto exhausted = CancelToken::try_create_root(failing);
   ASSERT_FALSE(exhausted.has_value());
   EXPECT_TRUE(exhausted.error().IsResourceExhausted());
@@ -309,7 +309,7 @@ struct ScopeBox {
   std::atomic<int> observed{-1};  // 1 = saw cancel, 0 = did not
 };
 
-Task<int> scoped_waiter(Allocator, ScopeBox* box) {
+Task<int> scoped_waiter(AllocatorRef, ScopeBox* box) {
   CancelScope scope{box->tok};  // publish tok's flag to this fiber
   box->waker = co_await CaptureWaker{};
   box->ready.store(true, std::memory_order_release);
@@ -363,7 +363,7 @@ struct FanBox {
   Waker waker;
   std::atomic<int> observed{-1};
 };
-Task<int> fan_child(Allocator, FanBox* box) {
+Task<int> fan_child(AllocatorRef, FanBox* box) {
   CancelScope scope{box->child};
   box->waker = co_await CaptureWaker{};
   box->ready.store(true, std::memory_order_release);

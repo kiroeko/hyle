@@ -63,7 +63,7 @@ class TcpStream {
     HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
     return RecvOp{&io_->proactor_for_current(), fd_, buf, len, 0};
   }
-  TimedRecvOp read_until(void* buf, std::uint32_t len, mem::Allocator alloc,
+  TimedRecvOp read_until(void* buf, std::uint32_t len, mem::AllocatorRef alloc,
                          std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
@@ -86,7 +86,7 @@ class TcpStream {
     return SendOp{&io_->proactor_for_current(), fd_, buf, len, 0};
   }
   TimedSendOp write_until(const void* buf, std::uint32_t len,
-                          mem::Allocator alloc,
+                          mem::AllocatorRef alloc,
                           std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
@@ -107,7 +107,7 @@ class TcpStream {
   // requiring that handle prevents a non-Linux caller from entering an API that
   // cannot honor its zero-copy provided-buffer contract.
   MultishotRecvStream read_multishot(IoUringExtension uring, int bgid,
-                                     mem::Allocator alloc) noexcept {
+                                     mem::AllocatorRef alloc) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_) &&
                       uring.valid() &&
@@ -125,7 +125,7 @@ class TcpStream {
     return ConnectOp{&io_->proactor_for_current(), fd_, addr, addrlen};
   }
   TimedConnectOp connect_until(const void* addr, std::uint32_t addrlen,
-                               mem::Allocator alloc,
+                               mem::AllocatorRef alloc,
                                std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
@@ -215,7 +215,7 @@ class TcpListener {
                            AcceptOp{&io_->proactor_for_current(), fd_}};
   }
   TimedAcceptAwaitable accept_until(unsigned assign_owner,
-                                    mem::Allocator alloc,
+                                    mem::AllocatorRef alloc,
                                     std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
@@ -269,22 +269,22 @@ HYLE_IO_API bool resolve_addr(const char* host, std::uint16_t port, void* out_ss
 // an OS/timeout/cancel error returns its negative code. The `_until` variants use
 // one absolute deadline across the entire loop, not a fresh timeout per chunk.
 HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact(
-    mem::Allocator alloc, TcpStream& stream, void* buffer,
+    mem::AllocatorRef alloc, TcpStream& stream, void* buffer,
     std::uint32_t len) noexcept;
 HYLE_IO_API sched::Task<std::int64_t> tcp_write_all(
-    mem::Allocator alloc, TcpStream& stream, const void* buffer,
+    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
     std::uint32_t len) noexcept;
 HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact_until(
-    mem::Allocator alloc, TcpStream& stream, void* buffer, std::uint32_t len,
+    mem::AllocatorRef alloc, TcpStream& stream, void* buffer, std::uint32_t len,
     std::uint64_t deadline_ns) noexcept;
 HYLE_IO_API sched::Task<std::int64_t> tcp_write_all_until(
-    mem::Allocator alloc, TcpStream& stream, const void* buffer,
+    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
     std::uint32_t len, std::uint64_t deadline_ns) noexcept;
 HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact_cancel(
-    mem::Allocator alloc, TcpStream& stream, void* buffer, std::uint32_t len,
+    mem::AllocatorRef alloc, TcpStream& stream, void* buffer, std::uint32_t len,
     const sched::CancelToken* token) noexcept;
 HYLE_IO_API sched::Task<std::int64_t> tcp_write_all_cancel(
-    mem::Allocator alloc, TcpStream& stream, const void* buffer,
+    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
     std::uint32_t len, const sched::CancelToken* token) noexcept;
 
 }  // namespace hyle::io

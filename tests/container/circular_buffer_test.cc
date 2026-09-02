@@ -94,7 +94,7 @@ TEST(CircularBuffer, AliasedOverwriteAndObjectLifetimeAreSafe) {
 }
 
 TEST(CircularBuffer, AllocationFailurePreservesCapacityAndElements) {
-  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   CircularBuffer<int> values(failing);
   EXPECT_FALSE(values.try_set_capacity(8));
   EXPECT_EQ(values.capacity(), 0u);

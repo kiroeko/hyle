@@ -16,7 +16,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 
 | 需求 | C++ 形状 | 关键合同 |
 |---|---|---|
-| 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
+| 普通动态分配 / 依赖注入 | `system_allocator()` / `AllocatorRef` | sized-free；free/realloc 带回原 size/alignment |
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
 | 为 Compute kernel 创建 device/pinned/managed bytes | 从 `compute::device_memory_resource` / `host_memory_resource` / `managed_memory_resource` 取得 provider，再创建 `Buffer` | resource 与 Device identity 必须匹配；managed 可能明确返回 `Unimplemented`；owner 活到 in-flight completion 之后 |
@@ -27,23 +27,23 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
 | 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
 | 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
-| 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
+| 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `AllocatorRef` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
 | 进程级 system heap / RSS 压力快照 | `system_memory_snapshot()` | 冷查询；allocator reserved/committed 与 process RSS/commit current+peak；不冒充精确 requested-live |
-| request/frame/graph phase 临时对象 | `Region` | owned、单线程、growable、bulk `clear()` |
-| 调用方 buffer 中的临时对象 | `FixedRegion` | external、单线程、bump、无 fallback |
-| 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量、整体归还 |
-| LIFO checkpoint/rewind scratch | `StackAllocator` | owned fixed slab、单线程 |
-| 外部 buffer 内变长 alloc/free/realloc + 整池 reset | `FixedPool` | 单线程、O(1) indexed fit/merge、无 fallback；约 4 KiB control；fixed 指 backing 容量固定 |
+| request/frame/graph phase 临时对象 | `Arena` | owned、单线程、growable、bulk `clear()` |
+| 调用方 buffer 中的临时对象 | `FixedArena` | external、单线程、bump、无 fallback |
+| 从共享硬池借一个 scratch block | `PooledArena` | 单线程、固定容量、整体归还 |
+| LIFO checkpoint/rewind scratch | `StackArena` | owned fixed slab、单线程 |
+| 外部 buffer 内变长 alloc/free/realloc + 整池 reset | `FixedHeap` | 单线程、O(1) indexed fit/merge、无 fallback；约 4 KiB control；fixed 指 backing 容量固定 |
 | 自己增长 backing 的变长 alloc/free + bulk release | `std::pmr::unsynchronized_pool_resource(system_memory_resource())`；并发用 synchronized 版本 | C++ 复用标准池；运行时 upstream 才包 `PmrResource` |
-| 多线程固定块、严格容量 | `SharedPool` | hard capacity；free 完成后立即全局可见 |
-| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
+| 多线程固定块、严格容量 | `ConcurrentBlockPool` | hard capacity；free 完成后立即全局可见 |
+| worker-local 热点固定块复用 | `BlockPoolCache` over `ConcurrentBlockPool` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
 | 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | 每次取得运行 ctor，归还运行 dtor |
 | 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | return 不销毁内部状态；pool 析构时统一 cleanup |
-| 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | 指针稳定，按需增加 chunks |
+| 单线程 typed 对象、容量可增长 | `GrowableObjectPool<T>` | 指针稳定，按需增加 chunks |
 | 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | owner 必须比 loan/slot 长寿 |
-| 大块、THP/NUMA placement | `HugeRegion` | requested 与 accepted policy 可分别查询 |
+| 大块、THP/NUMA placement | `HugeMapping` | requested 与 accepted policy 可分别查询 |
 | fiber stack | `FiberStack` / `FiberStackPool` | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
@@ -52,7 +52,7 @@ pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、ali
 
 ## Resource 与 Buffer：什么时候不只用 allocator
 
-`Allocator` 回答“从 host backing 取多少 raw bytes”；`MemoryResourceRef` + `Buffer`
+`AllocatorRef` 回答“从 host backing 取多少 raw bytes”；`MemoryResourceRef` + `Buffer`
 回答“这块 storage 属于哪个 provider/domain，谁释放，可以怎样读写和切 view”。
 普通小对象和容器仍优先 allocator；在需要 move-only byte owner、稳定 provider identity、
 opaque native handle 或跨 host/device provider 路由时使用 Buffer。
@@ -228,13 +228,13 @@ auto model_bytes = weights.view();  // owner 必须长寿于 view
 
 ## 通用 allocator、typed array、标准 adapter 与 PMR
 
-`Allocator` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不绕经
+`AllocatorRef` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不绕经
 foreign ABI adapter。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 count
 乘法溢出，
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
-`Allocator{}` 是刻意保留的 **invalid sentinel**，只能先检查 `valid()`、赋入一个有效 backing 或直接
+`AllocatorRef{}` 是刻意保留的 **invalid sentinel**，只能先检查 `valid()`、赋入一个有效 backing 或直接
 销毁；不能对它调用 allocate/deallocate/reallocate。普通默认 backing 应显式取
 `system_allocator()`。句柄还借用 callback state，所有经它取得的 allocation 都必须在该 state
 失效前归还。运行时注入会支付一次间接分派；不需要注入时，热点代码优先用
@@ -246,7 +246,7 @@ foreign ABI adapter。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>`
 binding 的偶然形状。
 
 ```cpp
-hyle::mem::Allocator alloc = hyle::mem::system_allocator();
+hyle::mem::AllocatorRef alloc = hyle::mem::system_allocator();
 auto* samples = alloc.allocate_zeroed<float>(1024, 64);
 if (samples == nullptr) return resource_exhausted;
 if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
@@ -281,7 +281,7 @@ hyle::mem::StatsAllocator stats =
 ```
 
 普通 system-backed PMR 容器直接传 `system_memory_resource()`；它是进程寿命 singleton，
-不需要用户管理 resource 对象，也不会在 PMR 虚调用后再叠一层 `Allocator` 函数指针。只有
+不需要用户管理 resource 对象，也不会在 PMR 虚调用后再叠一层 `AllocatorRef` 函数指针。只有
 运行时 backing 注入才构造 `PmrResource(alloc)`。若 SIMD/cache/page-sensitive 容器明确需要更高的**底层
 buffer 起始地址**，使用 `AlignedPmrResource(alloc, alignment)`；这对应 oneTBB
 `cache_aligned_resource` 的需求形状，但 alignment 由用户选择，不把平台 cache policy 塞进
@@ -300,12 +300,14 @@ std::pmr::vector<std::byte> bytes(&cache_buffer);
 bytes.resize(4096);  // bytes.data() 至少 64-byte aligned
 ```
 
-HYLE **并不缺可变大小内存**：通用 allocator 接受任意请求大小，Region 接受变长请求并 bulk
-clear/release，`FixedPool` 则在调用方固定容量 buffer 内提供变长 allocate/free/reallocate + bulk
+HYLE **并不缺可变大小内存**：通用 allocator 接受任意请求大小，Arena 接受变长请求并 bulk
+clear/release，`FixedHeap` 则在调用方固定容量 buffer 内提供变长 allocate/free/reallocate + bulk
 `reset()`。这里唯一没有单独上架的，是“由 HYLE 自己拥有并自动增长 backing”的又一个通用 heap。
 
-需要 owned growable、individual free + 一次 bulk release 且消费方接受 PMR 时，组合标准 pool
-resource。默认 system upstream 直接使用静态 singleton：
+需要独立 owned growable、individual free + 一次 bulk invalidation 时，直接使用
+`Heap::create()`；它仍可把 `heap.allocator()` 注入 HYLE 容器。需要的是按 size class 缓存大量
+反复分配、且消费方接受 PMR 时，再组合标准 pool resource。默认 system upstream 直接使用静态
+singleton：
 
 ```cpp
 std::pmr::unsynchronized_pool_resource local_pool(
@@ -318,20 +320,20 @@ std::pmr::vector<Record> records(&local_pool);
 用户 backing 时才创建 `PmrResource upstream(alloc)` 并把 `&upstream` 传给标准 pool；此时 pool
 及其所有 allocation 不能比 upstream/backing 长寿。
 
-## Region 家族
+## Arena 家族
 
 ### Owned request scratch
 
 ```cpp
-#include "hyle/mem/region.h"
+#include "hyle/mem/arena.h"
 
-hyle::mem::RegionOptions options;
+hyle::mem::ArenaOptions options;
 options.initial_block_size = 64 * 1024;
 options.max_block_size = 4 * 1024 * 1024;
 options.large_allocation_threshold = 256 * 1024;
 options.size_limit = 8 * 1024 * 1024;  // reserved bytes，包含 header/padding
 
-hyle::mem::Region scratch(hyle::mem::system_allocator(), options);
+hyle::mem::Arena scratch(hyle::mem::system_allocator(), options);
 for (;;) {
   auto* nodes = static_cast<Node*>(
       scratch.allocate(sizeof(Node) * node_count, alignof(Node)));
@@ -346,45 +348,45 @@ scratch.release();                      // 确定归还全部 backing capacity
 `peak_used()` 在当前 epoch 中也精确，并且不因 clear/release 清零（实现把已完成 epoch 的峰值
 延迟到边界折叠，避免每次 allocation 更新 peak）。individual deallocate 是 no-op。大于 threshold 的
 dedicated block 在 `clear()` 时归还，普通 block 保留复用。`initial_block_size` / `max_block_size`
-是 ordinary block 的总 backing-byte target，已经包含 Region header 与最坏 alignment padding；
+是 ordinary block 的总 backing-byte target，已经包含 Arena header 与最坏 alignment padding；
 单个请求放不下时允许为该 block 突破 target。这样 4 MiB target 不会只因内部 header 变成
 `4 MiB + metadata`，`size_limit` 与 allocator size class 也更可预测。
 
-长寿命、多 block Region 在每次 `clear()` 后用单调 cursor 依次复用 retained blocks；一个
+长寿命、多 block Arena 在每次 `clear()` 后用单调 cursor 依次复用 retained blocks；一个
 epoch 内每个 block 至多考察一次，所以总过渡 O(blocks)、分摊到 block transition 为 O(1)。
 某个 block 的尾部不能满足当前请求后，本 epoch 不再回头尝试更小请求；这是 bounded bump
 arena 用少量 tail slack 换取可预测复杂度的合同。若小请求尺寸高度交错且必须回收每个洞，
-应选 `FixedPool`，而不是把 Region 当 variable-size heap。
+应选 `FixedHeap`，而不是把 Arena 当 variable-size heap。
 
 ### External workspace
 
 ```cpp
 alignas(64) std::byte storage[64 * 1024];
-hyle::mem::FixedRegion scratch(storage, sizeof(storage));
+hyle::mem::FixedArena scratch(storage, sizeof(storage));
 void* header = scratch.allocate(96, 32);
 void* table = scratch.allocate(4096, 64);
 if (header == nullptr || table == nullptr) return workspace_too_small;
 scratch.clear();
 ```
 
-`FixedRegion` 不拥有 storage、不增长、不 fallback；storage 必须比所有切片长寿。它不可
+`FixedArena` 不拥有 storage、不增长、不 fallback；storage 必须比所有切片长寿。它不可
 copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 
-`PooledRegion` 语义同样是固定容量 bump，但 storage 来自一个 hard `SharedPool` block；统一使用 `clear()`。
-析构时整块归还。`StackAllocator` 增加 mark/rewind，适合嵌套 LIFO 临时区。
+`PooledArena` 语义同样是固定容量 bump，但 storage 来自一个 hard `ConcurrentBlockPool` block；统一使用 `clear()`。
+析构时整块归还。`StackArena` 增加 mark/rewind，适合嵌套 LIFO 临时区。
 
 ## Pool 家族
 
 ### Hard core 与显式 cache 不能混称
 
-- `SharedPool` 是共享 admission primitive。容量 N 就意味着最多 N 个 live block；任何线程
+- `ConcurrentBlockPool` 是共享 admission primitive。容量 N 就意味着最多 N 个 live block；任何线程
   完成 deallocate 后，其他线程能立即取得该 block。
   默认共享 shard 数按当前进程可用 CPU（Linux 为调用线程可继承的 affinity）取 2 的幂，
   而不是按容器外的整机核数浪费 metadata；仍受 128 与 block count 上限约束。
-- `SharedPoolCache` 是附着到 `SharedPool` 的单 owner L1。storage、容量、transfer batch 和
+- `BlockPoolCache` 是附着到 `ConcurrentBlockPool` 的单 owner L1。storage、容量、transfer batch 和
   生命周期都由用户显式选择；本地 free slot 只有在 `publish()`/析构后才回到共享 core。
 
-`SharedPool::reset()` 是另一条 quiescent bulk-invalidation 路径：先停止所有 core/cache 操作，
+`ConcurrentBlockPool::reset()` 是另一条 quiescent bulk-invalidation 路径：先停止所有 core/cache 操作，
 再对每个仍附着的 cache 调 `publish()`（或销毁 cache），最后 reset core。否则 cache 中仍保存的
 局部 free index 会与 reset 后重新可见的 slot 重复。reset 后任何旧 block 都不能再访问或归还。
 
@@ -392,10 +394,10 @@ typed `ObjectPoolCache<T>` 同样附着到 `ObjectPool<T>`，只增加 placement
 typed shell。Cache 指 slot visibility，不代表对象状态被保留。
 
 ```cpp
-hyle::mem::SharedPool core(hyle::mem::system_allocator(), 64, 4096);
+hyle::mem::ConcurrentBlockPool core(hyle::mem::system_allocator(), 64, 4096);
 if (!core.valid()) { /* propagate slab/metadata OOM before use */ }
 std::array<std::uint32_t, 128> local_slots{};
-hyle::mem::SharedPoolCache local(core, local_slots, 32);
+hyle::mem::BlockPoolCache local(core, local_slots, 32);
 if (!local.valid()) { /* reject unusable cache before use */ }
 void* p = local.allocate();
 if (p != nullptr) local.deallocate(p);
@@ -420,12 +422,12 @@ if (auto context = contexts.try_loan()) {
 
 ### External variable-size pool
 
-`FixedPool` 已经是 **variable-size + individual free/reallocate + bulk reset**；名称中的 fixed
+`FixedHeap` 已经是 **variable-size + individual free/reallocate + bulk reset**；名称中的 fixed
 只指调用方提供的 payload backing 地址和容量固定，不是只能分配固定大小对象。
 
 ```cpp
 alignas(64) std::array<std::byte, 64 * 1024> storage{};
-hyle::mem::FixedPool pool(storage);
+hyle::mem::FixedHeap pool(storage);
 void* header = pool.allocate(96, 32);
 void* payload = pool.allocate(1536, 64);  // 同一池可同时服务不同大小
 if (payload != nullptr) {
@@ -441,8 +443,8 @@ pool.deallocate(payload);
 pool.reset();
 ```
 
-`FixedPool` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
-两层 bitmap、边界和统计属于 `FixedPool` 控制对象，不占用 payload backing。一级按数量级定位，
+`FixedHeap` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
+两层 bitmap、边界和统计属于 `FixedHeap` 控制对象，不占用 payload backing。一级按数量级定位，
 二级把每个范围
 分成 8 段；分配未命中 recent-free 快路后直接取得一个满足大小的链表头，不扫描同级空闲块。
 因此 allocate/free/邻块合并的索引工作都是 O(1)，不会因长期碎片化退化。它支持变长
@@ -454,12 +456,12 @@ invalidation：调用前必须停止并发访问；调用后所有旧指针都�
 
 这个 bounded lookup 需要约 4 KiB 的显式 control。把它放进 arena/cache/device owner 等
 长寿命对象，或通过 control allocator 创建一次并复用；不要为每个 request 在小栈帧上构造。
-如果 storage 本来就很小、生命周期按 phase 结束，`FixedRegion` 的三字 bump cursor 更合适。
+如果 storage 本来就很小、生命周期按 phase 结束，`FixedArena` 的三字 bump cursor 更合适。
 
 它偏向“可诊断、低碎片、固定 backing”的基础设施合同，不应替代：
 
-- request scratch（用 `FixedRegion`，更快、control 更小且没有 individual-free metadata）；
-- 同尺寸对象池（用 `SharedPool` / `ObjectPool`）；
+- request scratch（用 `FixedArena`，更快、control 更小且没有 individual-free metadata）；
+- 同尺寸对象池（用 `ConcurrentBlockPool` / `ObjectPool`）；
 - 通用 growable malloc（用 system allocator）。
 
 ## Quota、统计与失败
@@ -485,7 +487,7 @@ report(memory.allocator_committed_bytes,
 ```cpp
 hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
                                 64 * 1024 * 1024);
-hyle::mem::Allocator bounded = quota.get();
+hyle::mem::AllocatorRef bounded = quota.get();
 void* p = bounded.allocate(bytes, alignment);
 if (p == nullptr) return overload;
 // quota.used(), quota.peak(), quota.remaining()
@@ -494,7 +496,7 @@ bounded.deallocate(p, bytes, alignment);
 
 Quota 在进入 backing 前原子 reserve，因此并发成功调用不会突破 limit；backing OOM 会回滚
 reservation。它计 requested live bytes，不计 allocator usable size/metadata。返回的
-`Allocator` 借用 Quota 对象。
+`AllocatorRef` 借用 Quota 对象。
 
 资源耗尽返回 null；invalid alignment、foreign/double return、错误 sized-free、销毁时仍有
 loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可以与 Quota 叠加，
@@ -510,7 +512,7 @@ complete。只要计数、不需要逐指针报告时不要启用 leak tracking�
 加锁/序列锁保护的共同瞬间；调用方 quiesce 所有借用 allocator 后，整份 snapshot 才可作为一致
 结论。并发 peak 使用本次 `fetch_add` 的线性化结果更新，不会因另一线程随后 free 而漏掉高水位。
 `StatsAllocator`/`LeakTracker` 的 reset、销毁或 move 覆盖目标要求 quiescent 且 balanced，违反时
-fail-fast。不要把这个诊断 wrapper 合同误套到 `FixedPool::reset()` 的 bulk invalidation 上。
+fail-fast。不要把这个诊断 wrapper 合同误套到 `FixedHeap::reset()` 的 bulk invalidation 上。
 
 ## 三份最短组合
 
@@ -518,7 +520,7 @@ fail-fast。不要把这个诊断 wrapper 合同误套到 `FixedPool::reset()` �
 
 ```cpp
 // request bulk lifetime
-hyle::mem::Region request(hyle::mem::system_allocator());
+hyle::mem::Arena request(hyle::mem::system_allocator());
 void* scratch = request.allocate(4096, 64);
 request.clear();
 ```
@@ -541,7 +543,7 @@ local.publish();
 hyle::mem::StatsAllocator stats =
     hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
 hyle::mem::QuotaAllocator quota(stats.get(), 1u << 20);
-hyle::mem::Allocator bounded = quota.get();
+hyle::mem::AllocatorRef bounded = quota.get();
 void* p = bounded.allocate(4096, 64);
 if (p != nullptr) bounded.deallocate(p, 4096, 64);
 ```
@@ -550,13 +552,13 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 所有借用 allocator 和 allocation 必须先失效。交换 wrapper 顺序会改变“被 quota 拒绝的尝试”
 是否进入统计，必须由调用者按观测目标选择。
 
-## HugeRegion：请求不等于承诺
+## HugeMapping：请求不等于承诺
 
-`HugeRegion::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
+`HugeMapping::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
 接受的 THP/prefault/placement policy。THP advice 被接受不代表每一物理页已经提升；同样，
 interleave policy 被接受也不是每页永久驻留目标节点的证明。
 `numa_placement_applied()` 单独说明 placement 调用结果。`allocate*` 返回
-`Result<HugeRegion>`：hard bind 或 interleave policy 无法安装时返回带原因的 Status；preferred
+`Result<HugeMapping>`：hard bind 或 interleave policy 无法安装时返回带原因的 Status；preferred
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
 bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
 
@@ -565,12 +567,12 @@ bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `
 mimalloc 会在进入 `main` / 用户构造器之前由 loader 初始化并缓存该值，因此 HYLE 有意不提供一个
 实际上来不及生效的运行期 setter。这个环境变量属于 system allocator 的进程启动配置，不是某次
 分配的 placement。运行中需要对特定 span 显式选择 node、bind 或 interleave 时使用
-`HugeRegion` / platform NUMA API。
+`HugeMapping` / platform NUMA API。
 
 system allocator 的 THP / large-page 默认策略也必须在启动进程前通过
 `MIMALLOC_ALLOW_THP` / `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。Windows 会在 loader 阶段缓存
 large-page capability；因此 HYLE 不提供一个跨平台语义不一致、在 Windows 用户代码中实际太晚的
-runtime setter。运行中对特定 span 的 THP/prefault/NUMA 策略用 `HugeRegion` flags，显式 1GiB
+runtime setter。运行中对特定 span 的 THP/prefault/NUMA 策略用 `HugeMapping` flags，显式 1GiB
 arena 预留用 `reserve_huge_1g_pages`。
 
 需要一个连续的大块 owner、但只在选定节点间按自定义 chunk 条带时，使用 selected overload：
@@ -580,8 +582,8 @@ constexpr std::size_t kMiB = 1024u * 1024u;
 const auto available = hyle::platform::numa_nodes();
 const unsigned chosen[] = {available.front(), available.back()};
 HYLE_ASSIGN_OR_RETURN(
-    hyle::mem::HugeRegion region,
-    hyle::mem::HugeRegion::allocate_interleaved(
+    hyle::mem::HugeMapping region,
+    hyle::mem::HugeMapping::allocate_interleaved(
         256u * kMiB, chosen, 2u * kMiB,
         hyle::mem::HugeFlags::kPrefault));
 assert(region.interleave_chunk_size() == 2u * kMiB);
@@ -613,9 +615,9 @@ win/loss 或待补证据。性能结果用来帮助选型，不改变前述 owne
 类型也不等于功能缺失，只表示没有发布对应数值声明。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
-[`../milestones/pre-release-readiness.md`](../implementation/status.md)。
-[`../milestones/mem-close-plan.md`](../implementation/tasks/mem/mem-close-plan.md) 与 2026-07-26 的
-[`../milestones/mem-mature-gap-audit.md`](../implementation/tasks/mem/mem-mature-gap-audit.md) 都是上一轮历史
+[`implementation/status.md`](../implementation/status.md)。
+[`mem-close-plan`](../implementation/tasks/mem/mem-close-plan.md) 与 2026-07-26 的
+[`mem-mature-gap-audit`](../implementation/tasks/mem/mem-mature-gap-audit.md) 都是上一轮历史
 验收输入，不是依赖升级后工作树的自动分发证书。
 安装包的最小默认/组合写法也作为可执行 C++ 消费者保存在
 [`../../samples/package/mem`](../../samples/package/mem)。

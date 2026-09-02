@@ -115,14 +115,14 @@ HYLE_FORCE_INLINE std::uint32_t slab_class(std::size_t bytes) noexcept {
 }
 
 struct alignas(core::kDestructiveInterferenceSize) Shard {
-  explicit Shard(mem::Allocator alloc) noexcept : by_string(alloc), by_id(alloc) {}
+  explicit Shard(mem::AllocatorRef alloc) noexcept : by_string(alloc), by_id(alloc) {}
 
   // Exclusive use of the container's bounded-spin/park lock keeps short hit
   // paths in userspace while still parking behind allocation or table growth.
   // std::mutex entered the Darwin kernel frequently under many lightly
   // contended shards; an unbounded spin lock would be wrong for the cold paths.
   detail::AdaptiveMutex mu;
-  FlatHashSet<InternKey, InternHash, InternEq, mem::Allocator> by_string;
+  FlatHashSet<InternKey, InternHash, InternEq, mem::AllocatorRef> by_string;
   PodVector<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
   std::uint32_t live_size = 0;
@@ -161,7 +161,7 @@ HYLE_FORCE_INLINE std::uint32_t id_shard(StringId id) noexcept {
   return static_cast<std::uint32_t>(id.value) >> kSlotBits;
 }
 
-Entry* allocate_entry(Shard& shard, mem::Allocator alloc, std::size_t bytes) noexcept {
+Entry* allocate_entry(Shard& shard, mem::AllocatorRef alloc, std::size_t bytes) noexcept {
   const std::uint32_t size_class = slab_class(bytes);
   if (size_class == kSlabClassCount)
     return static_cast<Entry*>(alloc.allocate(bytes, alignof(Entry)));
@@ -187,7 +187,7 @@ Entry* allocate_entry(Shard& shard, mem::Allocator alloc, std::size_t bytes) noe
   return reinterpret_cast<Entry*>(block);
 }
 
-void release_entry(Shard& shard, mem::Allocator alloc, Entry* entry, bool pool_small) noexcept {
+void release_entry(Shard& shard, mem::AllocatorRef alloc, Entry* entry, bool pool_small) noexcept {
   const std::size_t bytes = sizeof(Entry) + static_cast<std::size_t>(entry->size) + 1;
   const std::uint32_t size_class = slab_class(bytes);
   entry->~Entry();
@@ -200,7 +200,7 @@ void release_entry(Shard& shard, mem::Allocator alloc, Entry* entry, bool pool_s
   }
 }
 
-void release_slabs(Shard& shard, mem::Allocator alloc) noexcept {
+void release_slabs(Shard& shard, mem::AllocatorRef alloc) noexcept {
   constexpr std::size_t kHeaderBytes = (sizeof(Slab) + alignof(Entry) - 1) & ~(alignof(Entry) - 1);
   for (std::uint32_t size_class = 0; size_class < kSlabClassCount; ++size_class) {
     const std::size_t bytes = kHeaderBytes + kSlabSizes[size_class] * kBlocksPerSlab;
@@ -256,7 +256,7 @@ bool assign_id_locked(Impl& impl, Shard& shard, std::uint32_t shard_index, Entry
 }
 
 template <class Impl>
-Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& input,
+Entry* find_or_add_locked(Impl& impl, mem::AllocatorRef alloc, const HashedText& input,
                           bool permanent) noexcept {
   Shard& shard = impl.shards[input.shard];
   const InternLookup query{input.text, input.table_hash};
@@ -317,7 +317,7 @@ template <class Impl> bool retain_locked(Impl& impl, StringId id) noexcept {
   return true;
 }
 
-template <class Impl> bool release_locked(Impl& impl, mem::Allocator alloc, StringId id) noexcept {
+template <class Impl> bool release_locked(Impl& impl, mem::AllocatorRef alloc, StringId id) noexcept {
   Entry* entry = find_id_locked(impl, id);
   if (entry == nullptr || entry->refs == 0) return false;
   --entry->refs;
@@ -343,7 +343,7 @@ template <class Impl> bool release_locked(Impl& impl, mem::Allocator alloc, Stri
 } // namespace
 
 struct StringInterner::Impl {
-  explicit Impl(mem::Allocator allocator) noexcept
+  explicit Impl(mem::AllocatorRef allocator) noexcept
       : alloc(allocator), hash_seed(detail::process_hash_seed()) {
     auto available = platform::available_cpu_count();
     const std::size_t workers = available && *available != 0 ? *available : 8;
@@ -364,7 +364,7 @@ struct StringInterner::Impl {
 
   bool valid() const noexcept { return shards != nullptr; }
 
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t hash_seed;
   Shard* shards = nullptr;
   std::uint32_t shard_bits = 4;
@@ -372,7 +372,7 @@ struct StringInterner::Impl {
   std::mutex growth_mu;
 };
 
-StringInterner::StringInterner(mem::Allocator alloc)
+StringInterner::StringInterner(mem::AllocatorRef alloc)
     : alloc_(alloc), impl_(alloc.construct<Impl>(alloc)) {
   if (impl_ != nullptr && !impl_->valid()) {
     alloc_.destroy(impl_);
@@ -594,7 +594,7 @@ std::uint32_t StringInterner::size() const noexcept {
   return total;
 }
 
-StringInterner* make_string_interner(mem::Allocator alloc) {
+StringInterner* make_string_interner(mem::AllocatorRef alloc) {
   StringInterner* interner = alloc.construct<StringInterner>(alloc);
   if (interner != nullptr && !interner->valid()) {
     alloc.destroy(interner);
@@ -605,7 +605,7 @@ StringInterner* make_string_interner(mem::Allocator alloc) {
 
 void destroy_string_interner(StringInterner* interner) noexcept {
   if (interner == nullptr) return;
-  mem::Allocator alloc = interner->allocator();
+  mem::AllocatorRef alloc = interner->allocator();
   alloc.destroy(interner);
 }
 

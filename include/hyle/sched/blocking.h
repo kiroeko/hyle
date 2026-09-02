@@ -86,13 +86,13 @@ class HYLE_SCHED_API BlockingPool {
   // default). `keep_alive` is how long an idle thread waits for work before
   // retiring (default 10s, tokio's default). `alloc` is retained as the runtime
   // allocator identity; submitted jobs choose their own allocator explicitly.
-  explicit BlockingPool(mem::Allocator alloc, unsigned max_threads = 512,
+  explicit BlockingPool(mem::AllocatorRef alloc, unsigned max_threads = 512,
                         time::Duration keep_alive =
                             std::chrono::seconds(10));
   // Recoverable construction for runtimes that cannot treat metadata OOM as a
   // process invariant. On failure status is non-OK and valid()==false; the
   // object remains destructible and submissions resolve as cancelled.
-  BlockingPool(mem::Allocator alloc, unsigned max_threads,
+  BlockingPool(mem::AllocatorRef alloc, unsigned max_threads,
                time::Duration keep_alive, Status* status) noexcept;
   ~BlockingPool();
   BlockingPool(const BlockingPool&) = delete;
@@ -121,7 +121,7 @@ class HYLE_SCHED_API BlockingPool {
  private:
   struct Impl;
   Impl* impl_ = nullptr;
-  void init_(mem::Allocator alloc, unsigned max_threads,
+  void init_(mem::AllocatorRef alloc, unsigned max_threads,
              time::Duration keep_alive, Status* status) noexcept;
 };
 
@@ -132,11 +132,11 @@ namespace detail {
 template <class F, class R>
 struct BlockingJobImpl {
   BlockingJob hdr;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   F fn;
   JoinState<R>* state;
 
-  BlockingJobImpl(mem::Allocator a, F&& f, JoinState<R>* s) noexcept
+  BlockingJobImpl(mem::AllocatorRef a, F&& f, JoinState<R>* s) noexcept
       : alloc(a), fn(std::move(f)), state(s) {
     static_assert(std::is_nothrow_move_constructible_v<F>,
                   "spawn_blocking requires a noexcept-movable closure");
@@ -168,7 +168,7 @@ struct BlockingJobImpl {
   }
   static void destroy_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
-    mem::Allocator a = self->alloc;
+    mem::AllocatorRef a = self->alloc;
     JoinState<R>* st = self->state;
     self->~BlockingJobImpl();
     a.deallocate(self, sizeof(BlockingJobImpl), alignof(BlockingJobImpl));
@@ -180,11 +180,11 @@ struct BlockingJobImpl {
 template <class F>
 struct BlockingJobImpl<F, void> {
   BlockingJob hdr;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   F fn;
   JoinState<void>* state;
 
-  BlockingJobImpl(mem::Allocator a, F&& f, JoinState<void>* s) noexcept
+  BlockingJobImpl(mem::AllocatorRef a, F&& f, JoinState<void>* s) noexcept
       : alloc(a), fn(std::move(f)), state(s) {
     static_assert(std::is_nothrow_move_constructible_v<F>,
                   "spawn_blocking requires a noexcept-movable closure");
@@ -214,7 +214,7 @@ struct BlockingJobImpl<F, void> {
   }
   static void destroy_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
-    mem::Allocator a = self->alloc;
+    mem::AllocatorRef a = self->alloc;
     JoinState<void>* st = self->state;
     self->~BlockingJobImpl();
     a.deallocate(self, sizeof(BlockingJobImpl), alignof(BlockingJobImpl));
@@ -232,7 +232,7 @@ struct BlockingJobImpl<F, void> {
 // The closure is MOVED onto the pool (it runs on another thread) -- capture by
 // value, and remember its body runs OUTSIDE any fiber (no fiber-local APIs there).
 template <class F, class R = std::invoke_result_t<F&>>
-JoinHandle<R> spawn_blocking(BlockingPool& pool, mem::Allocator alloc,
+JoinHandle<R> spawn_blocking(BlockingPool& pool, mem::AllocatorRef alloc,
                              F fn) noexcept {
   using detail::BlockingJobImpl;
   using detail::JoinState;

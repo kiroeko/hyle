@@ -9,7 +9,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/stats.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::AlignedPmrResource;
 using hyle::mem::PmrResource;
 using hyle::mem::system_allocator;
@@ -107,16 +107,16 @@ TEST(PmrResource, EqualityFollowsBacking) {
 
   int dummy = 0;
   // A distinct allocator (same fns, different state pointer) is not interchangeable.
-  Allocator sys = system_allocator();
-  Allocator other(sys.alloc_fn(), sys.free_fn(), sys.realloc_fn(), &dummy);
+  AllocatorRef sys = system_allocator();
+  AllocatorRef other(sys.alloc_fn(), sys.free_fn(), sys.realloc_fn(), &dummy);
   PmrResource c(other);
   EXPECT_FALSE(a.is_equal(c));
 }
 
 TEST(PmrResource, DifferentFreeFunctionIsNotEqual) {
   EqualityState state;
-  Allocator a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
-  Allocator b(&equality_alloc, &equality_free_b, &equality_realloc, &state);
+  AllocatorRef a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
+  AllocatorRef b(&equality_alloc, &equality_free_b, &equality_realloc, &state);
   PmrResource ra(a);
   PmrResource rb(b);
   EXPECT_FALSE(ra.is_equal(rb));
@@ -124,8 +124,8 @@ TEST(PmrResource, DifferentFreeFunctionIsNotEqual) {
 
 TEST(PmrResource, DifferentReallocateFunctionIsConservativelyNotEqual) {
   EqualityState state;
-  Allocator a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
-  Allocator b(&equality_alloc, &equality_free_a, &equality_realloc_b, &state);
+  AllocatorRef a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
+  AllocatorRef b(&equality_alloc, &equality_free_a, &equality_realloc_b, &state);
   PmrResource ra(a);
   PmrResource rb(b);
   EXPECT_FALSE(ra.is_equal(rb));
@@ -134,7 +134,7 @@ TEST(PmrResource, DifferentReallocateFunctionIsConservativelyNotEqual) {
 TEST(PmrResourceDeathTest, InvalidAllocatorTrapsAtConstruction) {
   EXPECT_DEATH(
       {
-        PmrResource resource(Allocator{});
+        PmrResource resource(AllocatorRef{});
         (void)resource;
       },
       ".*");

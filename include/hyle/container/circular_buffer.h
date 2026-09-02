@@ -33,13 +33,13 @@ class CircularBuffer {
   using ConstSegments = typename RingDeque<T>::ConstSegments;
 
   CircularBuffer() noexcept = default;
-  explicit CircularBuffer(mem::Allocator alloc) noexcept : values_(alloc) {}
+  explicit CircularBuffer(mem::AllocatorRef alloc) noexcept : values_(alloc) {}
   explicit CircularBuffer(size_type capacity) { set_capacity(capacity); }
-  CircularBuffer(mem::Allocator alloc, size_type capacity) : values_(alloc) {
+  CircularBuffer(mem::AllocatorRef alloc, size_type capacity) : values_(alloc) {
     set_capacity(capacity);
   }
 
-  mem::Allocator allocator() const noexcept { return values_.allocator(); }
+  mem::AllocatorRef allocator() const noexcept { return values_.allocator(); }
   size_type size() const noexcept { return values_.size(); }
   size_type capacity() const noexcept { return capacity_; }
   bool empty() const noexcept { return values_.empty(); }

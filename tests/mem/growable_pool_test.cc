@@ -11,12 +11,12 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/stats.h"
 
-using hyle::mem::GrowablePool;
+using hyle::mem::GrowableObjectPool;
 using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
 
-TEST(GrowablePool, CreateDestroyRoundTrip) {
-  GrowablePool<int> pool(system_allocator(), 8);
+TEST(GrowableObjectPool, CreateDestroyRoundTrip) {
+  GrowableObjectPool<int> pool(system_allocator(), 8);
   int* a = pool.create(42);
   ASSERT_NE(a, nullptr);
   EXPECT_EQ(*a, 42);
@@ -27,8 +27,8 @@ TEST(GrowablePool, CreateDestroyRoundTrip) {
 
 // Growth across many blocks (tiny initial -> geometric doubling). All pointers
 // stay valid (slots never move once handed out).
-TEST(GrowablePool, GrowsAndKeepsPointersValid) {
-  GrowablePool<int> pool(system_allocator(), 2);
+TEST(GrowableObjectPool, GrowsAndKeepsPointersValid) {
+  GrowableObjectPool<int> pool(system_allocator(), 2);
   std::vector<int*> ptrs;
   for (int i = 0; i < 1000; ++i) ptrs.push_back(pool.create(i));
   EXPECT_EQ(pool.live(), 1000u);
@@ -38,8 +38,8 @@ TEST(GrowablePool, GrowsAndKeepsPointersValid) {
 }
 
 // A freed slot is reused by the next create (free-list works).
-TEST(GrowablePool, ReusesFreedSlots) {
-  GrowablePool<long> pool(system_allocator(), 4);
+TEST(GrowableObjectPool, ReusesFreedSlots) {
+  GrowableObjectPool<long> pool(system_allocator(), 4);
   long* a = pool.create(1);
   pool.destroy(a);
   long* b = pool.create(2);
@@ -48,13 +48,13 @@ TEST(GrowablePool, ReusesFreedSlots) {
 }
 
 // Non-trivial destructor runs once per destroy().
-TEST(GrowablePool, DestructorRunsOnDestroy) {
+TEST(GrowableObjectPool, DestructorRunsOnDestroy) {
   static std::atomic<int> live{0};
   struct Counted {
     Counted() { live.fetch_add(1); }
     ~Counted() { live.fetch_sub(1); }
   };
-  GrowablePool<Counted> pool(system_allocator(), 4);
+  GrowableObjectPool<Counted> pool(system_allocator(), 4);
   Counted* objs[20];
   for (auto& o : objs) o = pool.create();
   EXPECT_EQ(live.load(), 20);
@@ -62,13 +62,13 @@ TEST(GrowablePool, DestructorRunsOnDestroy) {
   EXPECT_EQ(live.load(), 0);
 }
 
-TEST(GrowablePool, ConstructorThrowReturnsSlotToPool) {
+TEST(GrowableObjectPool, ConstructorThrowReturnsSlotToPool) {
   struct ThrowsOnce {
     explicit ThrowsOnce(bool fail) {
       if (fail) throw std::runtime_error("ctor");
     }
   };
-  GrowablePool<ThrowsOnce> pool(system_allocator(), 1);
+  GrowableObjectPool<ThrowsOnce> pool(system_allocator(), 1);
   EXPECT_THROW((void)pool.create(true), std::runtime_error);
   EXPECT_EQ(pool.live(), 0u);
   auto* value = pool.create(false);
@@ -79,18 +79,18 @@ TEST(GrowablePool, ConstructorThrowReturnsSlotToPool) {
 
 // Move transfers ownership (and the allocator -- clay's move-assign bug). The
 // moved-from pool is empty; the moved-to frees correctly via the right allocator.
-TEST(GrowablePool, MoveTransfersOwnership) {
-  GrowablePool<int> a(system_allocator(), 8);
+TEST(GrowableObjectPool, MoveTransfersOwnership) {
+  GrowableObjectPool<int> a(system_allocator(), 8);
   int* p = a.create(7);
   EXPECT_EQ(a.live(), 1u);
 
-  GrowablePool<int> b(std::move(a));
+  GrowableObjectPool<int> b(std::move(a));
   EXPECT_EQ(b.live(), 1u);
   EXPECT_EQ(*p, 7);  // object survived the move (slot didn't move)
   b.destroy(p);
 
   // Move-assignment: the destination's old blocks are released, then it adopts c.
-  GrowablePool<int> c(system_allocator(), 8);
+  GrowableObjectPool<int> c(system_allocator(), 8);
   int* q = c.create(9);
   b = std::move(c);
   EXPECT_EQ(b.live(), 1u);
@@ -99,8 +99,8 @@ TEST(GrowablePool, MoveTransfersOwnership) {
 }
 
 // Interleaved create/destroy keeps live() and reuse consistent.
-TEST(GrowablePool, InterleavedChurn) {
-  GrowablePool<std::uint64_t> pool(system_allocator(), 16);
+TEST(GrowableObjectPool, InterleavedChurn) {
+  GrowableObjectPool<std::uint64_t> pool(system_allocator(), 16);
   std::unordered_set<std::uint64_t*> live;
   for (int round = 0; round < 5; ++round) {
     for (int i = 0; i < 500; ++i) live.insert(pool.create(i));
@@ -117,11 +117,11 @@ TEST(GrowablePool, InterleavedChurn) {
   EXPECT_EQ(pool.live(), 0u);
 }
 
-TEST(GrowablePool, ClearReclaimsAndReusable) {
+TEST(GrowableObjectPool, ClearReclaimsAndReusable) {
   StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto backing = sa.get();
   // create N (forces geometric growth), destroy all, clear -> blocks handed back.
-  GrowablePool<std::uint64_t> pool(backing, 16);
+  GrowableObjectPool<std::uint64_t> pool(backing, 16);
   std::vector<std::uint64_t*> ps;
   for (int i = 0; i < 500; ++i) ps.push_back(pool.create(i));
   const auto after_grow = sa.snapshot().live_bytes;
@@ -138,10 +138,10 @@ TEST(GrowablePool, ClearReclaimsAndReusable) {
   pool.destroy(q);
 }
 
-TEST(GrowablePool, TrivialLiveObjectsMayBeBulkReleasedAtDestruction) {
+TEST(GrowableObjectPool, TrivialLiveObjectsMayBeBulkReleasedAtDestruction) {
   StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
   {
-    GrowablePool<int> pool(stats.get(), 2);
+    GrowableObjectPool<int> pool(stats.get(), 2);
     ASSERT_NE(pool.create(7), nullptr);
     ASSERT_NE(pool.create(9), nullptr);
     EXPECT_EQ(pool.live(), 2u);
@@ -155,7 +155,7 @@ TEST(GrowablePool, TrivialLiveObjectsMayBeBulkReleasedAtDestruction) {
 TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
   EXPECT_DEATH(
       {
-        GrowablePool<int> pool(system_allocator(), 1);
+        GrowableObjectPool<int> pool(system_allocator(), 1);
         int* p = pool.create(7);
         pool.destroy(p);
         pool.destroy(p);
@@ -167,7 +167,7 @@ TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
   EXPECT_DEATH(
       {
         struct PointerSizedValue { void* value; };
-        GrowablePool<PointerSizedValue> pool(system_allocator(), 1);
+        GrowableObjectPool<PointerSizedValue> pool(system_allocator(), 1);
         PointerSizedValue foreign{};
         pool.destroy(&foreign);
       },
@@ -182,7 +182,7 @@ TEST(GrowablePoolDiagnosticsDeathTest, OutstandingObjectAtDestructionTraps) {
           ~NeedsDestruction() { value = 0; }
           int value;
         };
-        GrowablePool<NeedsDestruction> pool(system_allocator(), 1);
+        GrowableObjectPool<NeedsDestruction> pool(system_allocator(), 1);
         (void)pool.create(7);
       },
       ".*");

@@ -9,7 +9,7 @@ namespace hyle::sched {
 namespace detail {
 
 struct CancelTree {
-  mem::Allocator allocator;
+  mem::AllocatorRef allocator;
   std::recursive_mutex mutex;
   std::size_t node_count = 0;
   unsigned cancel_depth = 0;
@@ -139,7 +139,7 @@ void drain_deletes_locked(CancelTree* tree) noexcept {
     tree->pending_delete = node->next_pending;
     node->next_pending = nullptr;
     unlink_node_locked(node);
-    mem::Allocator allocator = tree->allocator;
+    mem::AllocatorRef allocator = tree->allocator;
     node->~CancelNode();
     allocator.deallocate(node, sizeof(CancelNode), alignof(CancelNode));
     HYLE_FATAL_ASSERT(tree->node_count != 0);
@@ -152,7 +152,7 @@ void drain_deletes_locked(CancelTree* tree) noexcept {
 }  // namespace detail
 
 Result<CancelToken> CancelToken::try_create_root(
-    mem::Allocator allocator) noexcept {
+    mem::AllocatorRef allocator) noexcept {
   if (!allocator.valid()) {
     return std::unexpected(
         Status::InvalidArgument("cancellation tree requires an allocator"));
@@ -190,7 +190,7 @@ Result<CancelToken> CancelToken::try_create_root(
   return CancelToken(node);
 }
 
-CancelToken CancelToken::root(mem::Allocator allocator) noexcept {
+CancelToken CancelToken::root(mem::AllocatorRef allocator) noexcept {
   auto result = try_create_root(allocator);
   HYLE_FATAL_ASSERT(result.has_value());
   return *std::move(result);
@@ -280,7 +280,7 @@ void CancelToken::reset_() noexcept {
     destroy_tree = tree->node_count == 0;
   }
   if (destroy_tree) {
-    mem::Allocator allocator = tree->allocator;
+    mem::AllocatorRef allocator = tree->allocator;
     tree->~CancelTree();
     allocator.deallocate(tree, sizeof(detail::CancelTree),
                          alignof(detail::CancelTree));

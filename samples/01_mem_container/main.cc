@@ -3,7 +3,7 @@
 // FlatHashMap is HYLE's public flat-hash-map shape (control bytes + SIMD probing).
 // Like the other header-inline containers, it defaults to the compile-time-bound,
 // stateless SystemAllocator. Normal users therefore default-construct it; a runtime
-// mem::Allocator is an explicit template-level opt-in for quota/stats/custom backing.
+// mem::AllocatorRef is an explicit template-level opt-in for quota/stats/custom backing.
 //
 // Build: see ../README.md. Run: prints a tiny word-count, demonstrating insert/find.
 

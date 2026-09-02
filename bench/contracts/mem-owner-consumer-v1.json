@@ -2,7 +2,7 @@
   "schema": "hyle.perf.contract/v1",
   "id": "mem-owner-consumer-v1",
   "module": "mem",
-  "claim": "Engineering non-inferiority of runtime host allocation and phase Region against same-contract mature routes, plus scheduler guarded-stack reuse against an attested direct-VM baseline; compile-time versus runtime dispatch remains diagnostic",
+  "claim": "Engineering non-inferiority of runtime host allocation and phase Arena against same-contract mature routes, plus scheduler guarded-stack reuse against an attested direct-VM baseline; compile-time versus runtime dispatch remains diagnostic",
   "candidate": {
     "target": "hyle_mem",
     "delivery_shape": "source",
@@ -37,7 +37,7 @@
         "route": "boost::container::pmr::monotonic_buffer_resource",
         "delivery_shape": "source",
         "autolink": "disabled",
-        "upstream": "the same HYLE runtime Allocator used by candidate Region"
+        "upstream": "the same HYLE runtime AllocatorRef used by candidate Arena"
       }
     }
   ],
@@ -78,14 +78,14 @@
       "id": "runtime-allocator-direct-diagnostic-64",
       "tier": "mechanism",
       "gate_role": "diagnostic",
-      "semantic_contract": "Measure the dynamic injection tax of HYLE Allocator over the exact same mimalloc-backed successful allocation batch used by compile-time SystemAllocator",
+      "semantic_contract": "Measure the dynamic injection tax of HYLE AllocatorRef over the exact same mimalloc-backed successful allocation batch used by compile-time SystemAllocator",
       "comparability": "NOT_COMPARABLE",
       "peer_id": "hyle-baseline",
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {"distribution": "64 deterministic size/alignment pairs", "scale": {"allocations_per_callback": 64}},
       "setup": "Both routes are warmed and share one process allocator; the direct baseline is attested source-identical to the frozen product snapshot",
       "charged_phases": ["64 successful allocations", "first and last byte touches", "64 reverse-order deallocations"],
-      "pair": {"candidate": "HYLE runtime Allocator batch N=64", "peer": "HYLE SystemAllocator direct batch N=64"},
+      "pair": {"candidate": "HYLE runtime AllocatorRef batch N=64", "peer": "HYLE SystemAllocator direct batch N=64"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
@@ -102,7 +102,7 @@
         "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
       },
       "ownership_topology": {
-        "candidate": "A borrowed HYLE Allocator value performs one function-pointer dispatch per successful allocate/free while preserving runtime backing identity and sized-free information",
+        "candidate": "A borrowed HYLE AllocatorRef value performs one function-pointer dispatch per successful allocate/free while preserving runtime backing identity and sized-free information",
         "peer": "A borrowed oneTBB std::pmr::memory_resource pointer performs one virtual dispatch per successful allocate/free over the scalable allocator",
         "equivalence": "Both warmed runtime-erased handles allocate the same 64 size/alignment pairs, expose the same live byte range, charge identical touches and reverse-order destruction, and exclude OOM from this successful steady-state row"
       },
@@ -121,7 +121,7 @@
       "input": {"distribution": "8 deterministic sizes from 24 B to 16 KiB crossed with 16/32/64-byte alignment", "scale": {"allocations_per_callback": 64, "maximum_request_bytes": 16384}},
       "setup": "Both process allocators and erased handles are constructed and warmed outside measurement; oneTBB's concrete resource cannot be devirtualized in the benchmark translation unit",
       "charged_phases": ["64 successful runtime-erased allocations", "first and last byte touches", "64 reverse-order runtime-erased deallocations"],
-      "pair": {"candidate": "HYLE runtime Allocator batch N=64", "peer": "oneTBB scalable memory_resource batch N=64"},
+      "pair": {"candidate": "HYLE runtime AllocatorRef batch N=64", "peer": "oneTBB scalable memory_resource batch N=64"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
@@ -138,7 +138,7 @@
         "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
       },
       "ownership_topology": {
-        "candidate": "One long-lived HYLE Region lazily grows and retains ordinary blocks across request clears while returning the 64 KiB dedicated outlier",
+        "candidate": "One long-lived HYLE Arena lazily grows and retains ordinary blocks across request clears while returning the 64 KiB dedicated outlier",
         "peer": "One long-lived Boost monotonic resource starts at 4 KiB and releases its upstream blocks at the same bulk-invalidation boundary",
         "equivalence": "Both borrow the same HYLE runtime upstream, return the same aligned writable ranges, charge the same 64 allocations/touches and bulk invalidation; retained bytes are reported separately because retention strategy is a deliberate product resource difference"
       },
@@ -148,7 +148,7 @@
         "unit": "phase-allocation",
         "budget": 5,
         "denominator": "one keep-alive request scratch epoch",
-        "derivation": "Current http_serve owns one Region per connection and clears after each response; the retained manifest binds its exact block policy and labels allocation sizes as a frozen request/inference distribution"
+        "derivation": "Current http_serve owns one Arena per connection and clears after each response; the retained manifest binds its exact block policy and labels allocation sizes as a frozen request/inference distribution"
       },
       "semantic_contract": "Serve one phase-lifetime scratch epoch with 63 ordinary allocations, one 64 KiB outlier, observable touches and one bulk invalidation",
       "comparability": "COMPARABLE",
@@ -157,7 +157,7 @@
       "input": {"distribution": "63 deterministic 24 B to 8 KiB ordinary requests followed by one 64 KiB dedicated outlier", "scale": {"allocations_per_epoch": 64, "initial_block_bytes": 4096, "maximum_ordinary_block_bytes": 65536, "dedicated_threshold_bytes": 65536, "retention_cap_bytes": 262144}},
       "setup": "Both owners and their common runtime upstream are warmed before measured epochs; owner construction and final process teardown are outside measurement",
       "charged_phases": ["bulk invalidation", "63 ordinary aligned allocations and touches", "one 64 KiB allocation and touches", "candidate dedicated-block return or peer release work"],
-      "pair": {"candidate": "HYLE Region clear/reuse N=64", "peer": "Boost monotonic release N=64"},
+      "pair": {"candidate": "HYLE Arena clear/reuse N=64", "peer": "Boost monotonic release N=64"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},

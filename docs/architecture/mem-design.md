@@ -44,7 +44,7 @@ migration 前，不是 Mem 用户能力。
 `error` 承担构造/VM/NUMA 冷失败，`platform` 承担 CPU、VM 和 NUMA 机制，`util_core` 承担
 fiber stack pool 的 SpinLock；mem 不直接散落 OS 分支，也不自造第二套错误。`obs/trace.h` 只是由
 `HYLE_TRACE` 控制的跨切 trace seam，不让普通 mem binary 反向依赖 obs runtime。HYLE 的模块和同
-工具链消费者直接使用 C++ `Allocator`/`Result`/owner 类型。
+工具链消费者直接使用 C++ `AllocatorRef`/`Result`/owner 类型。
 
 安装后消费由 `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)` + `hyle::mem` 表达；selected-component 的
 C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮蔽导出/传递依赖缺口。
@@ -55,13 +55,13 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 
 | 能力 | 当前生产消费者 | 真实合同 |
 |---|---|---|
-| `Allocator` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
-| `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `Allocator` |
+| `AllocatorRef` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
+| `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `AllocatorRef` |
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
-| `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
+| `HugeMapping` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
 | graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | phase scratch 继续用 arena；Graph 产生 interval/alias 事实，通用 packing/placement 语义归 Mem planner |
-| `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
-| `SharedPool` / `SharedPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
+| `PooledArena` / `StackArena` / `GrowableObjectPool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
+| `ConcurrentBlockPool` / `BlockPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
 | compute device/host/managed providers 与 `DevicePool` | 当前无生产创建点 | Mem 已拥有 Buffer/View/pool 语义；Compute 只提供 process-lifetime provider artifact、device identity、kernel binding 与 async ordering |
 
@@ -76,8 +76,8 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 3. owned request/frame region：大量小对象，individual free 无效，clear/destroy 整批释放；Folly `Arena` 的 min-block growth、usage 与 hard size limit 是直接参考，HYLE graph evaluation 已提供内部 workload。
 4. 固定容量共享池：耗尽必须可观察；hard quota 与 thread-cache soft limit 必须是不同类型/名称。
 5. typed pool 的 RAII Loan/return 是稳定易用性需求；Reconstruct/Preserve 在 marl 与 Folly expensive-context pool 中都有实证，但并不自动证明每个 bounded pool 都必须同时支持两种 policy。
-6. external fixed buffer：oneTBB `fixed_pool` 证明 embedded/realtime/调用方自有 storage 的需求，但它是可 individual free 的 variable-size pool，不能与 bump Region 混为一谈。
-7. strict byte limit 的强证据首先是 `Region(size_limit)`；通用 sized-free `QuotaAllocator` 是进一步外推，不能冒充成熟库共同基线。
+6. external fixed buffer：oneTBB `fixed_pool` 证明 embedded/realtime/调用方自有 storage 的需求，但它是可 individual free 的 variable-size pool，不能与 bump Arena 混为一谈。
+7. strict byte limit 的强证据首先是 `Arena(size_limit)`；通用 sized-free `QuotaAllocator` 是进一步外推，不能冒充成熟库共同基线。
 8. explicit NUMA/hugepage policy：capability query、失败降级或显式报错，不承诺自动迁移。
 9. tensor-free lifetime packing 进入 Mem，Graph 仍拥有 DAG 推导；GPU staging ring 属拥有 completion 生命周期的 Compute，不进入 Mem。
 
@@ -88,12 +88,12 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 | 成熟形状 | HYLE 处置 | 理由 |
 |---|---|---|
 | oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `SystemStdAllocator<T>` / `StdAllocator<T>` + `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；默认静态绑定与运行时注入分型，高对齐 policy 不污染默认容器 |
-| oneTBB `memory_pool`（owned growable variable-size） | 默认组合 `system_memory_resource()` + 标准 PMR pool；运行时 backing 用 `PmrResource` | `FixedPool` 已覆盖 external bounded 版本；没有真实消费者前，不再复制一个与 mimalloc/标准 PMR 重叠的 HYLE-owned growable heap |
-| oneTBB `fixed_pool` | `FixedPool` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
-| Folly `Arena` | `Region` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
-| Folly `ThreadCachedArena` | 不内建隐藏 TLS registry | 用户可按 worker/thread 持有 `Region`；线程退出合并/全局销毁属于 runtime owner（如 sched），基础 mem 不猜 TLS lifetime |
-| mimalloc heap/arena/local+remote free | `SystemAllocator` 与 `SharedPool`/显式 cache | 任意大小 heap 直接借核；严格固定容量和 soft owner cache 用不同公开类型表达 |
-| marl bounded pool / policy / loan | `SharedPool`、`ObjectPool<T>`、`PreservingObjectPool<T>`、`PoolLoan` | hard capacity、Reconstruct/Preserve 和 RAII return 分型，不塞进一个 policy benchmark 类型 |
+| oneTBB `memory_pool`（owned growable variable-size） | isolated owner 用 `Heap`；按 size class 缓存的 PMR consumer 组合标准 pool resource，运行时 upstream 用 `PmrResource` | `Heap` 提供 individual free、remote free 与 bulk invalidation；`FixedHeap` 覆盖 external bounded 版本；不再复制另一套通用 malloc/pool 算法 |
+| oneTBB `fixed_pool` | `FixedHeap` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
+| Folly `Arena` | `Arena` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
+| Folly `ThreadCachedArena` | 不内建隐藏 TLS registry | 用户可按 worker/thread 持有 `Arena`；线程退出合并/全局销毁属于 runtime owner（如 sched），基础 mem 不猜 TLS lifetime |
+| mimalloc heap/arena/local+remote free | `SystemAllocator` 与 `ConcurrentBlockPool`/显式 cache | 任意大小 heap 直接借核；严格固定容量和 soft owner cache 用不同公开类型表达 |
+| marl bounded pool / policy / loan | `ConcurrentBlockPool`、`ObjectPool<T>`、`PreservingObjectPool<T>`、`PoolLoan` | hard capacity、Reconstruct/Preserve 和 RAII return 分型，不塞进一个 policy benchmark 类型 |
 
 Folly `Arena::merge` 服务其 `ThreadCachedArena` 的 thread-exit zombie 收集；在 HYLE 没有对应
 runtime owner/consumer 前不单独上架，否则还需定义不同 backing、size limit、并发移交和 source
@@ -102,7 +102,7 @@ runtime owner/consumer 前不单独上架，否则还需定义不同 backing、s
 
 ## 3. 公开类型必须表达的五个合同
 
-任何 pool/region 不能只用“更快 allocator”描述；类型、构造参数和方法名必须让用户看见：
+任何 pool/arena 不能只用“更快 allocator”描述；类型、构造参数和方法名必须让用户看见：
 
 | 维度 | 必须显式区分 |
 |---|---|
@@ -119,11 +119,17 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 | 层 | 当前形状 | 产品处置 |
 |---|---|---|
 | `SystemAllocator` | 编译期无状态；static/source 直调 mimalloc，shared 经 mem direct-import seam | 保留；修 typed count 乘法回绕且不向 shared consumer 泄漏 vendor 符号 |
-| `Allocator` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊，不为 Native FFI 预埋另一套形状 |
-| `SystemStdAllocator<T>` / `StdAllocator<T>` | 默认静态 system adapter / 借用 `Allocator` 的运行时 adapter | 分型保留；普通容器保持 empty/EBO/always-equal；运行时 adapter 删除默认构造，必须显式给 backing，避免静默选择较慢形状；标准边界 OOM 抛异常 |
-| `system_memory_resource()` / `PmrResource` | 默认 system PMR singleton / `Allocator` → PMR | 分型保留；默认只付 PMR virtual + shared seam，策略注入才叠加 allocator dispatch；PMR 零字节请求以 1B backing 成对处理，不把健康资源误报为 OOM |
+| `AllocatorRef` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊，不为 Native FFI 预埋另一套形状 |
+| `SystemStdAllocator<T>` / `StdAllocator<T>` | 默认静态 system adapter / 借用 `AllocatorRef` 的运行时 adapter | 分型保留；普通容器保持 empty/EBO/always-equal；运行时 adapter 删除默认构造，必须显式给 backing，避免静默选择较慢形状；标准边界 OOM 抛异常 |
+| `system_memory_resource()` / `PmrResource` | 默认 system PMR singleton / `AllocatorRef` → PMR | 分型保留；默认只付 PMR virtual + shared seam，策略注入才叠加 allocator dispatch；PMR 零字节请求以 1B backing 成对处理，不把健康资源误报为 OOM |
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
+
+`Heap` 是独立、move-only 的 growable host heap owner。它直接持有一个 mimalloc heap，不为 HYLE
+wrapper 再建 control block；`allocator()` 借用 owner，因此 `clear()` 成功换入新 native heap 后原
+borrow 仍可用，move/destruction 则使 borrow 失效。allocate/reallocate 由 owner thread 发起，
+deallocate 允许 remote free；`collect()` 只回收空闲页，`clear()/release()` 是必须先 quiesce 所有
+allocation 的 bulk invalidation。它与 PMR pool 的区别是 ownership/lifetime，不以 benchmark 档位命名。
 
 通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/reallocate 在 dispatch 前验证非零 2 次幂。deallocate 的 size/alignment 必须与成功分配匹配，和 `std::pmr::memory_resource`/allocator-template 一样是调用方前置条件：Debug 诊断，Release 不在每次 free 上重复验证。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求只把 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 与 sized-free 仍记录原请求，over-aligned 才走 `mi_*_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30500` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
 
@@ -131,12 +137,12 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 mem 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax allocator/status
 schema、bridge、动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI 兼容面。HYLE 模块直接使用
-`Allocator`、`Status`、`Result<T>`、`VmRegion` 和各类 RAII owner，不得为所谓“复用 ABI”绕回
+`AllocatorRef`、`Status`、`Result<T>`、`VmRegion` 和各类 RAII owner，不得为所谓“复用 ABI”绕回
 opaque C handle。未来只有已命名的 foreign-runtime allocator/buffer 任务通过全局
 [Native FFI 准入策略](native-ffi-policy.md)后，才另行设计窄的 runtime 类型擦除边界。
 
-mem 不维护私有 TLS error；C++ 冷路径直接复用 P0 `Status/Result`。HugeRegion 直接传递 platform
-VM/NUMA 的 C++ Status，成功零分配，热分配路径不构造 Status。FixedRegion 按值、FixedPool
+mem 不维护私有 TLS error；C++ 冷路径直接复用 P0 `Status/Result`。HugeMapping 直接传递 platform
+VM/NUMA 的 C++ Status，成功零分配，热分配路径不构造 Status。FixedArena 按值、FixedHeap
 提供 caller-owned in-place control；StatsAllocator 作为 opt-in 产品能力导出 POD snapshot
 与返回 Status 的 bounded leak copy；metadata OOM 不阻断被测 allocation，但 dropped count /
 complete bit 使不完整 inventory 可观察。PMR、typed ctor/dtor 与 fiber RAII 没有
@@ -150,9 +156,9 @@ requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充
 
 ## 5. 固定块池
 
-`SharedPool` 独占 `detail::ShardedSlab`；`SharedPoolCache` 通过 narrow batch hooks 组合在 hard core 上，不复制 slab，也不另建 TLS registry。
+`ConcurrentBlockPool` 独占 `detail::ShardedSlab`；`BlockPoolCache` 通过 narrow batch hooks 组合在 hard core 上，不复制 slab，也不另建 TLS registry。
 
-### 5.1 `SharedPool`：hard bounded
+### 5.1 `ConcurrentBlockPool`：hard bounded
 
 - 固定 block size + runtime capacity。
 - completed `deallocate()` 立即进入 shared core；remote free 可见。
@@ -162,9 +168,9 @@ requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充
 - 64-bit packed head；32-bit version 饱和后永久进入该 shard 的 serialized mode，不回绕。
 - 用于严格 object/block quota、跨线程 handoff；本地 request churn 不是它的吞吐强项。
 
-### 5.2 `SharedPoolCache`：显式 owner-local soft cache
+### 5.2 `BlockPoolCache`：显式 owner-local soft cache
 
-- 构造时绑定 `SharedPool`；caller-owned `span<uint32_t>` 可做到 cache metadata 零隐藏分配，也可显式注入 metadata allocator。
+- 构造时绑定 `ConcurrentBlockPool`；caller-owned `span<uint32_t>` 可做到 cache metadata 零隐藏分配，也可显式注入 metadata allocator。
 - capacity 与 transfer batch 是每个 cache 的公开参数；128/32 只是 convenience 默认值。
 - owner-local 命中零原子；其他 cache 中的 free block 暂不可见；`publish()`/析构是显式可见性边界。
 - cache 本身 single-owner，不维护 TLS node/registry；多个 cache 可并发绑定同一 hard core。
@@ -172,7 +178,7 @@ requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充
 
 两层保留。默认 shipping 热路径不增加 per-slot bitmap/atomic live counter；foreign/misaligned pointer 仍做无状态 membership fail-fast。double free、outstanding object 属调用方契约违反，`HYLE_TESTING` 用 per-slot state fail-fast；额外状态和指令在 shipping 构建完全剥离，不破坏 cache 零原子合同。
 
-`SharedPool` 始终服从 injected backing。需要 THP/NUMA 的调用方应显式提供相应 allocator/provider；pool 不根据 allocator identity 偷换 storage domain。
+`ConcurrentBlockPool` 始终服从 injected backing。需要 THP/NUMA 的调用方应显式提供相应 allocator/provider；pool 不根据 allocator identity 偷换 storage domain。
 
 ## 6. typed object pool
 
@@ -188,15 +194,15 @@ requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充
 
 `ObjectPoolCache<T>` 不是 Preserve object cache；Cache 只表示 free slot 的 owner-local 可见性。Preserve 必须由独立 policy/name 表达。
 
-## 7. region、stack 与增长池
+## 7. arena、stack 与增长池
 
-### 7.1 `PooledRegion`
+### 7.1 `PooledArena`
 
-`PooledRegion` 只借 `SharedPool` 的一个 hard block，固定容量、单线程、bulk `clear()`。库尚未发布，旧 `Arena/reset` 双命名已删除，Region 家族只保留一套公开说法。
+`PooledArena` 只借 `ConcurrentBlockPool` 的一个 hard block，固定容量、单线程、bulk `clear()`。库尚未发布，旧 `Arena/reset` 双命名已删除，Arena 家族只保留一套公开说法。
 
-### 7.2 owned `Region` 与 external `FixedRegion`
+### 7.2 owned `Arena` 与 external `FixedArena`
 
-owned growable `Region` 已提供：
+owned growable `Arena` 已提供：
 
 - 按 total backing-byte block target 增长（包含内部 header/alignment，单个大请求可突破）；
 - `clear()` 复用普通 block，大型专用 block 可释放；
@@ -209,26 +215,26 @@ owned growable `Region` 已提供：
 - individual deallocate 明确 no-op；
 - 单线程默认，不偷偷加锁。
 
-`FixedRegion(span<byte>)` 是当前 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback；
+`FixedArena(span<byte>)` 是当前 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback；
 Mem v2 将公开名移为 `FixedArena`。HYLE graph evaluation 的逐次 evaluate 临时数组是
 phase-lifetime workload；Graph 生成 liveness/alias facts，Mem planner 拥有通用 measure/placement。
 
-### 7.3 `StackAllocator`
+### 7.3 `StackArena`
 
 保留固定 owned slab + mark/rewind 的 LIFO scratch 合同。对齐计算必须防 uintptr 加法回绕；极端 alignment 是调用方契约边界，不得静默产生错误指针。
 
-### 7.4 `GrowablePool<T>`
+### 7.4 `GrowableObjectPool<T>`
 
 保留单线程、同尺寸、按需增长的 Reconstruct pool。release 必须来自同一 pool 的 live slot；默认 shipping 可保持零元数据，diagnostics 模式检查 membership/double release/live underflow。
 
 ## 8. strict limit 与 external storage
 
-当前 hard `SharedPool` 解决固定块数量；`Region(size_limit)` 解决 region reserved-byte 上限；`QuotaAllocator` 解决任意 sized-free backing 的 live requested-byte 上限。三者不能互相冒充。
+当前 hard `ConcurrentBlockPool` 解决固定块数量；`Arena(size_limit)` 解决 region reserved-byte 上限；`QuotaAllocator` 解决任意 sized-free backing 的 live requested-byte 上限。三者不能互相冒充。
 
 external 能力按 allocation model 分成两个类型：
 
-1. `FixedRegion`：调用方借入 storage、bump + bulk reset、无 individual free。
-2. `FixedPool`：调用方借入 storage、TLSF 风格的 two-level segregated-fit variable-size
+1. `FixedArena`：调用方借入 storage、bump + bulk reset、无 individual free。
+2. `FixedHeap`：调用方借入 storage、TLSF 风格的 two-level segregated-fit variable-size
    allocate/free/realloc；一级 logarithmic range、每级 8 个线性 subdivision 与两层 bitmap
    把空闲块定位限制为 O(1)，不会随 free-block 数量退化为扫描。侵入式 free list 和 boundary
    metadata 使插入、删除与邻块合并也是 O(1)。一个 recent-free cursor 只作为时间局部性快路，
@@ -239,7 +245,7 @@ external 能力按 allocation model 分成两个类型：
    因而这已经是 **variable-size + individual free/realloc + bulk reset**。它单线程、无 fallback；约 4 KiB 的显式 control
    是长寿命通用固定堆为 bounded lookup 支付的常量成本，不适合作为每个 request 的临时对象。
 
-这里 `FixedPool` 的 “fixed” 指 **payload backing 的地址与容量固定**，不是 allocation 大小固定。
+这里 `FixedHeap` 的 “fixed” 指 **payload backing 的地址与容量固定**，不是 allocation 大小固定。
 如果用户需要池自己取得并增长 backing，C++ 默认组合
 `std::pmr::unsynchronized_pool_resource(system_memory_resource())`，跨线程则用 synchronized 版本；
 需要 quota/stats/region 等运行时 upstream 才构造 `PmrResource`。Native FFI 当前为 `N/A`；是否
@@ -247,18 +253,18 @@ external 能力按 allocation model 分成两个类型：
 
 ## 9. NUMA、大页与专用模块
 
-- `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
+- `HugeMapping`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
 - system allocator 的 mimalloc backing 默认自动探测 NUMA。它在 loader 阶段、进入用户代码前缓存
   node count；因此运行期 `enable_allocator_numa` 形状无法履行并已移除。部署级 node cap 只能由
-  进程启动前的 `MIMALLOC_USE_NUMA_NODES` 提供，运行期 placement 必须走 HugeRegion/platform，
+  进程启动前的 `MIMALLOC_USE_NUMA_NODES` 提供，运行期 placement 必须走 HugeMapping/platform，
   不能用一个调用成功但实际无效的 setter 冒充能力。
 - system allocator 的 THP/large-page 默认同样由启动前的 `MIMALLOC_ALLOW_THP` /
   `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。large-page capability 在 Windows loader 初始化时缓存，
   而 Linux 会对未来 mmap 动态读 option；旧的组合 runtime setter 因而跨平台语义不一致并已移除。
-  HugeRegion 继续拥有可移植的 per-span policy，1GiB 显式 reserve 继续是真 runtime API。
+  HugeMapping 继续拥有可移植的 per-span policy，1GiB 显式 reserve 继续是真 runtime API。
 - selected-node set + `bytes_per_chunk` 由 platform 统一拥有跨 OS 机制，mem 只以
-  `HugeRegion::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
+  `HugeMapping::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
   表示全部可用节点；顺序、重复 id 的 weighted placement、page 粒度和能力失败沿用 platform
   合同；`interleave_chunk_size()` 可观察实际条带。typed node span 保持 platform→mem 的单一表示，
   调用方不需要手写有符号 cast。
@@ -296,12 +302,12 @@ external 能力按 allocation model 分成两个类型：
 | quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
 | guarded/THP/NUMA | `FiberStack`、`HugeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
 
-当前 shipping 名称与可用路线仍由 [user/mem](../user/mem.md) 列出。活动 Mem v2
-将 `Allocator/Region/FixedRegion/PooledRegion/StackAllocator/FixedPool/SharedPool/SharedPoolCache/
-GrowablePool/HugeRegion` 分别迁到上表的借用、arena、heap、block-pool、object-pool 与
-mapping 命名；HYLE 未发布，迁移后删旧名，不留 deprecated alias。
+当前 shipping 名称与可用路线由 [user/mem](../user/mem.md) 列出。Mem v2 已把
+`AllocatorRef/Arena/FixedArena/PooledArena/StackArena/FixedHeap/ConcurrentBlockPool/BlockPoolCache/
+GrowableObjectPool/HugeMapping` 固定到上表的借用、arena、heap、block-pool、object-pool 与
+mapping 心智；旧类型名已经删除，不留 deprecated alias。
 
-## 12. 收口定义与重开边界
+## 11. 收口定义与重开边界
 
 Mem 进入预发布冻结必须同时满足：
 
@@ -324,15 +330,15 @@ Mem 进入预发布冻结必须同时满足：
 暴露能力缺失、新平台使合同失效或既定 harness 确认的持续性能回归可以重开；LOC、命名偏好、
 亚纳秒波动和无 workload 的猜测不能重开。
 
-## 13. 验证边界
+## 12. 验证边界
 
 - allocator：typed count overflow、完整 backing identity、alignment、OOM、PMR throw boundary；下游消费者的 NULL/Status/fail-fast 另按各自公开合同审计。
 - resource/Buffer：provider/ref 生命、property/domain identity、alignment/max/OOM、零长度、
   move/reset/import 与 range overflow；native handle 不得冒充 mapped pointer；host direct 与
   non-coherent flush/invalidate 差分；CUDA/Vulkan/host 真实路线各自验证，硬件未提供的
   driver 路径明确 skip，不用 synthetic 冒充硬件 PASS。
-- bump/region：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 证书防回归。
-- fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedPool 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
+- bump/arena：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 证书防回归。
+- fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedHeap 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。

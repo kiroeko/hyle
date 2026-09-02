@@ -219,7 +219,7 @@ container::StringView TlsStream::negotiated_protocol() const noexcept {
 
 // Lazily allocate (once) the shared 16KB ciphertext pump scratch. Reused for the
 // stream's whole life, freed in the dtor. Returns nullptr on OOM.
-char* TlsStream::ensure_scratch(mem::Allocator alloc) noexcept {
+char* TlsStream::ensure_scratch(mem::AllocatorRef alloc) noexcept {
   if (scratch_ == nullptr) {
     scratch_ = static_cast<char*>(
         alloc.allocate(kBufSize, alignof(std::max_align_t)));
@@ -235,7 +235,7 @@ char* TlsStream::ensure_scratch(mem::Allocator alloc) noexcept {
 // Drain all pending ciphertext from `wbio` and co_await-write it to the peer via
 // `sock`. `scratch` is a kBufSize block owned by the TlsStream (reused across
 // calls). Returns 0 on success, negative on a socket write error.
-static sched::Task<int> flush_wbio(mem::Allocator, TcpStream& sock, bio_st* wbio,
+static sched::Task<int> flush_wbio(mem::AllocatorRef, TcpStream& sock, bio_st* wbio,
                                    char* scratch) noexcept {
   for (;;) {
     int n = BIO_read(wbio, scratch, kBufSize);  // pull ciphertext SSL queued for us
@@ -253,7 +253,7 @@ static sched::Task<int> flush_wbio(mem::Allocator, TcpStream& sock, bio_st* wbio
 // co_await-read a chunk of ciphertext from the peer and feed it into `rbio` so SSL
 // can consume it. `scratch` is the TlsStream's reused kBufSize block. Returns 1 on
 // data fed, 0 on peer EOF, negative on error.
-static sched::Task<int> feed_rbio(mem::Allocator, TcpStream& sock, bio_st* rbio,
+static sched::Task<int> feed_rbio(mem::AllocatorRef, TcpStream& sock, bio_st* rbio,
                                   char* scratch) noexcept {
   std::int64_t n = co_await sock.read(scratch, kBufSize);
   if (n == 0) co_return 0;   // peer closed the transport
@@ -268,7 +268,7 @@ static sched::Task<int> feed_rbio(mem::Allocator, TcpStream& sock, bio_st* rbio,
 
 // ---- handshake -------------------------------------------------------------
 
-sched::Task<int> tls_handshake(mem::Allocator alloc, TlsStream& s) noexcept {
+sched::Task<int> tls_handshake(mem::AllocatorRef alloc, TlsStream& s) noexcept {
   if (s.ssl_ == nullptr) co_return -1;
   char* scratch = s.ensure_scratch(alloc);
   if (scratch == nullptr) co_return -1;  // OOM
@@ -294,7 +294,7 @@ sched::Task<int> tls_handshake(mem::Allocator alloc, TlsStream& s) noexcept {
 
 // ---- read ------------------------------------------------------------------
 
-sched::Task<long> tls_read(mem::Allocator alloc, TlsStream& s, void* buf,
+sched::Task<long> tls_read(mem::AllocatorRef alloc, TlsStream& s, void* buf,
                            std::uint32_t len) noexcept {
   if (s.ssl_ == nullptr) co_return -1;
   char* scratch = s.ensure_scratch(alloc);
@@ -320,7 +320,7 @@ sched::Task<long> tls_read(mem::Allocator alloc, TlsStream& s, void* buf,
 
 // ---- write -----------------------------------------------------------------
 
-sched::Task<long> tls_write(mem::Allocator alloc, TlsStream& s, const void* buf,
+sched::Task<long> tls_write(mem::AllocatorRef alloc, TlsStream& s, const void* buf,
                             std::uint32_t len) noexcept {
   if (s.ssl_ == nullptr) co_return -1;
   char* scratch = s.ensure_scratch(alloc);
@@ -352,7 +352,7 @@ sched::Task<long> tls_write(mem::Allocator alloc, TlsStream& s, const void* buf,
 
 // ---- shutdown --------------------------------------------------------------
 
-sched::Task<int> tls_shutdown(mem::Allocator alloc, TlsStream& s) noexcept {
+sched::Task<int> tls_shutdown(mem::AllocatorRef alloc, TlsStream& s) noexcept {
   if (s.ssl_ == nullptr) co_return 0;
   char* scratch = s.ensure_scratch(alloc);
   if (scratch == nullptr) co_return 0;  // OOM at teardown -> dirty shutdown, fine

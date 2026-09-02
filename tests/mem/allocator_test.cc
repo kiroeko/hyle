@@ -26,7 +26,7 @@
 #endif
 #endif
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::kDefaultAlignment;
 using hyle::mem::QuotaAllocator;
 using hyle::mem::StatsAllocator;
@@ -83,21 +83,21 @@ void *quota_fail_realloc(void *opaque, void *ptr, std::size_t old_size,
 }
 } // namespace
 
-TEST(Allocator, SystemAllocatorIsValid) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, SystemAllocatorIsValid) {
+  AllocatorRef a = system_allocator();
   EXPECT_TRUE(a.valid());
   EXPECT_NE(a.alloc_fn(), nullptr);
 }
 
 #if defined(HYLE_TESTING)
-TEST(Allocator, ShippingBackendIsReviewedMimallocVersion) {
+TEST(AllocatorRef, ShippingBackendIsReviewedMimallocVersion) {
   // mi_version uses major*10000 + minor*100 + patch: v3.5.0 == 30500.
   EXPECT_EQ(system_backend_version_for_testing(), 30500);
 }
 #endif
 
-TEST(Allocator, SystemCollectPreservesLiveAllocations) {
-  Allocator allocator = system_allocator();
+TEST(AllocatorRef, SystemCollectPreservesLiveAllocations) {
+  AllocatorRef allocator = system_allocator();
   auto *live = allocator.allocate_n<std::uint64_t>(128);
   ASSERT_NE(live, nullptr);
   live[0] = 0x123456789abcdef0ULL;
@@ -107,12 +107,12 @@ TEST(Allocator, SystemCollectPreservesLiveAllocations) {
   system_collect(true);
 }
 
-TEST(Allocator, SystemMemorySnapshotIsStableAndSelfConsistent) {
+TEST(AllocatorRef, SystemMemorySnapshotIsStableAndSelfConsistent) {
   const auto before = system_memory_snapshot();
   ASSERT_TRUE(before);
 
   constexpr std::size_t kProbeBytes = 8u * 1024u * 1024u;
-  Allocator allocator = system_allocator();
+  AllocatorRef allocator = system_allocator();
   void *probe = allocator.allocate(kProbeBytes, 64);
   ASSERT_NE(probe, nullptr);
   std::memset(probe, 0xA7, kProbeBytes);
@@ -139,7 +139,7 @@ TEST(Allocator, SystemMemorySnapshotIsStableAndSelfConsistent) {
   allocator.deallocate(probe, kProbeBytes, 64);
 }
 
-TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
+TEST(AllocatorRef, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
   struct RemoteBlock {
     void* pointer;
     std::size_t size;
@@ -148,7 +148,7 @@ TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
   };
 
   constexpr std::size_t kBlocks = 4096;
-  Allocator owner = system_allocator();
+  AllocatorRef owner = system_allocator();
   std::vector<RemoteBlock> blocks;
   blocks.reserve(kBlocks);
   for (std::size_t i = 0; i < kBlocks; ++i) {
@@ -163,7 +163,7 @@ TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
 
   std::atomic<bool> corrupted{false};
   std::thread remote_free([&] {
-    Allocator consumer = system_allocator();
+    AllocatorRef consumer = system_allocator();
     for (const RemoteBlock& block : blocks) {
       const auto* bytes = static_cast<const unsigned char*>(block.pointer);
       if (bytes[0] != block.marker || bytes[block.size - 1] != block.marker) {
@@ -185,13 +185,13 @@ TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
   system_collect(true);
 }
 
-TEST(Allocator, DefaultAllocatorIsInvalid) {
-  Allocator a;
+TEST(AllocatorRef, DefaultAllocatorIsInvalid) {
+  AllocatorRef a;
   EXPECT_FALSE(a.valid());
 }
 
-TEST(Allocator, AllocateWriteFree) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, AllocateWriteFree) {
+  AllocatorRef a = system_allocator();
   void *p = a.allocate(128);
   ASSERT_NE(p, nullptr);
   EXPECT_TRUE(is_aligned(p, kDefaultAlignment));
@@ -209,7 +209,7 @@ TEST(SystemAllocatorAlignmentDeathTest, StaticBindingRejectsZeroAndNonPowerOfTwo
 }
 
 TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo) {
-  const Allocator allocator = system_allocator();
+  const AllocatorRef allocator = system_allocator();
   EXPECT_DEATH((void)allocator.allocate(8, 0), ".*");
   EXPECT_DEATH((void)allocator.allocate(8, 3), ".*");
   EXPECT_DEATH((void)allocator.reallocate(nullptr, 0, 8, 6), ".*");
@@ -220,7 +220,7 @@ TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo
 
 #if defined(HYLE_MEM_TEST_ASAN)
 TEST(AllocatorAsan, SystemFreePoisonsUsableStorage) {
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   void *p = a.allocate(64);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(__asan_address_is_poisoned(p), 0);
@@ -229,14 +229,14 @@ TEST(AllocatorAsan, SystemFreePoisonsUsableStorage) {
 }
 #endif
 
-TEST(Allocator, AllocateZeroReturnsNull) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, AllocateZeroReturnsNull) {
+  AllocatorRef a = system_allocator();
   EXPECT_EQ(a.allocate(0), nullptr); // new_size==0 collapses to the free path
 }
 
 // The headline of mem-01: alignment is honored end-to-end (clay dropped it).
-TEST(Allocator, RespectsExplicitAlignment) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, RespectsExplicitAlignment) {
+  AllocatorRef a = system_allocator();
   for (std::size_t align :
        {std::size_t{16}, std::size_t{32}, std::size_t{64}, std::size_t{128},
         std::size_t{256}, std::size_t{4096}}) {
@@ -247,8 +247,8 @@ TEST(Allocator, RespectsExplicitAlignment) {
   }
 }
 
-TEST(Allocator, SmallAlignmentBumpedToDefault) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, SmallAlignmentBumpedToDefault) {
+  AllocatorRef a = system_allocator();
   for (std::size_t size : {std::size_t{1}, std::size_t{8}, std::size_t{37}}) {
     for (std::size_t alignment :
          {std::size_t{1}, std::size_t{2}, std::size_t{4}, std::size_t{8},
@@ -266,7 +266,7 @@ TEST(Allocator, SmallAlignmentBumpedToDefault) {
   }
 }
 
-TEST(Allocator, CompileTimeSmallAlignmentBumpedToDefault) {
+TEST(AllocatorRef, CompileTimeSmallAlignmentBumpedToDefault) {
   for (std::size_t size : {std::size_t{1}, std::size_t{8}, std::size_t{37}}) {
     void *p = SystemAllocator::allocate(size, 1);
     ASSERT_NE(p, nullptr) << "size=" << size;
@@ -278,8 +278,8 @@ TEST(Allocator, CompileTimeSmallAlignmentBumpedToDefault) {
   }
 }
 
-TEST(Allocator, ReallocatePreservesData) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, ReallocatePreservesData) {
+  AllocatorRef a = system_allocator();
   constexpr int n = 64;
   auto *p = static_cast<int *>(a.allocate(sizeof(int) * n, 64));
   ASSERT_NE(p, nullptr);
@@ -295,15 +295,15 @@ TEST(Allocator, ReallocatePreservesData) {
   a.deallocate(q, sizeof(int) * n * 2, 64);
 }
 
-TEST(Allocator, ReallocateFromNullIsAllocate) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, ReallocateFromNullIsAllocate) {
+  AllocatorRef a = system_allocator();
   void *p = a.reallocate(nullptr, 0, 256, 64);
   ASSERT_NE(p, nullptr);
   EXPECT_TRUE(is_aligned(p, 64));
   a.deallocate(p, 256, 64);
 }
 
-TEST(Allocator, CompileTimeReallocateHandlesNullAndPreservesAlignment) {
+TEST(AllocatorRef, CompileTimeReallocateHandlesNullAndPreservesAlignment) {
   void *p = SystemAllocator::reallocate(nullptr, 0, 128);
   ASSERT_NE(p, nullptr);
   std::memset(p, 0x5A, 128);
@@ -321,8 +321,8 @@ TEST(Allocator, CompileTimeReallocateHandlesNullAndPreservesAlignment) {
   SystemAllocator::deallocate(aligned, 256, 64);
 }
 
-TEST(Allocator, ManyDistinctNonOverlapping) {
-  Allocator a = system_allocator();
+TEST(AllocatorRef, ManyDistinctNonOverlapping) {
+  AllocatorRef a = system_allocator();
   constexpr int kN = 256;
   std::vector<void *> ps;
   ps.reserve(kN);
@@ -348,7 +348,7 @@ struct TCounted {
 } // namespace
 
 TEST(AllocatorTyped, AllocateNAlignedAndWritable) {
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   int *p = a.allocate_n<int>(5);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % alignof(int), 0u);
@@ -359,7 +359,7 @@ TEST(AllocatorTyped, AllocateNAlignedAndWritable) {
 }
 
 TEST(AllocatorTyped, AllocateZeroedZeroes) {
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   int *p = a.allocate_zeroed<int>(8);
   ASSERT_NE(p, nullptr);
   for (int i = 0; i < 8; ++i)
@@ -368,7 +368,7 @@ TEST(AllocatorTyped, AllocateZeroedZeroes) {
 }
 
 TEST(AllocatorTyped, ArrayResizePreservesExplicitAlignmentAndContents) {
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   int *p = a.allocate_zeroed<int>(8, 64);
   ASSERT_NE(p, nullptr);
   EXPECT_TRUE(is_aligned(p, 64));
@@ -383,7 +383,7 @@ TEST(AllocatorTyped, ArrayResizePreservesExplicitAlignmentAndContents) {
 }
 
 TEST(AllocatorTyped, CountOverflowReturnsNull) {
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   constexpr std::size_t too_many = SIZE_MAX / sizeof(std::uint64_t) + 2;
   EXPECT_EQ(a.allocate_n<std::uint64_t>(too_many), nullptr);
   EXPECT_EQ(a.allocate_zeroed<std::uint64_t>(too_many), nullptr);
@@ -416,7 +416,7 @@ struct ThrowsInCtor {
 TEST(AllocatorTyped, ConstructorFailureReleasesStorage) {
   StatsAllocator tracked =
       StatsAllocator::create(system_allocator()).value();
-  Allocator a = tracked.get();
+  AllocatorRef a = tracked.get();
   EXPECT_THROW((void)a.construct<ThrowsInCtor>(), std::runtime_error);
   EXPECT_TRUE(tracked.balanced());
   EXPECT_EQ(tracked.snapshot().total_allocs, 1u);
@@ -425,7 +425,7 @@ TEST(AllocatorTyped, ConstructorFailureReleasesStorage) {
 
 TEST(AllocatorTyped, ConstructRunsCtorDestroyRunsDtor) {
   g_typed_live.store(0);
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   TCounted *c = a.construct<TCounted>(7);
   ASSERT_NE(c, nullptr);
   EXPECT_EQ(c->v, 7);
@@ -436,7 +436,7 @@ TEST(AllocatorTyped, ConstructRunsCtorDestroyRunsDtor) {
 
 TEST(AllocatorTyped, MakeUniqueAutoDestroys) {
   g_typed_live.store(0);
-  Allocator a = system_allocator();
+  AllocatorRef a = system_allocator();
   {
     auto u = a.make_unique<TCounted>(99);
     ASSERT_NE(u.get(), nullptr);
@@ -476,7 +476,7 @@ TEST(SystemSize, GoodSizeIsSafeRecommendedRequestNotUsablePrediction) {
 
 TEST(QuotaAllocator, EnforcesStrictRequestedByteLimit) {
   QuotaAllocator quota(system_allocator(), 128);
-  Allocator a = quota.get();
+  AllocatorRef a = quota.get();
   void *p = a.allocate(80, 16);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(quota.used(), 80u);
@@ -494,7 +494,7 @@ TEST(QuotaAllocator, EnforcesStrictRequestedByteLimit) {
 
 TEST(QuotaAllocator, ReallocateReservesAndRollsBackExactly) {
   QuotaAllocator quota(system_allocator(), 128);
-  Allocator a = quota.get();
+  AllocatorRef a = quota.get();
   auto *p = static_cast<unsigned char *>(a.allocate(64, 16));
   ASSERT_NE(p, nullptr);
   p[0] = 7;
@@ -512,7 +512,7 @@ TEST(QuotaAllocator, ReallocateReservesAndRollsBackExactly) {
 }
 
 TEST(QuotaAllocator, BackingOomRollsReservationBack) {
-  Allocator oom(&quota_oom_alloc, &quota_oom_free, &quota_oom_realloc, nullptr);
+  AllocatorRef oom(&quota_oom_alloc, &quota_oom_free, &quota_oom_realloc, nullptr);
   QuotaAllocator quota(oom, 1024);
   EXPECT_EQ(quota.get().allocate(100), nullptr);
   EXPECT_EQ(quota.used(), 0u);
@@ -521,10 +521,10 @@ TEST(QuotaAllocator, BackingOomRollsReservationBack) {
 
 TEST(QuotaAllocator, BackingReallocateFailurePreservesPointerAndAccounting) {
   QuotaReallocFailState state;
-  Allocator failing(&quota_fail_alloc, &quota_fail_free, &quota_fail_realloc,
+  AllocatorRef failing(&quota_fail_alloc, &quota_fail_free, &quota_fail_realloc,
                     &state);
   QuotaAllocator quota(failing, 1024);
-  Allocator alloc = quota.get();
+  AllocatorRef alloc = quota.get();
   auto *p = static_cast<unsigned char *>(alloc.allocate(64, 16));
   ASSERT_NE(p, nullptr);
   p[0] = 0x5a;
@@ -547,7 +547,7 @@ TEST(QuotaAllocator, ConcurrentAdmissionNeverExceedsHardLimit) {
   constexpr std::size_t kLimit = 512;
   constexpr std::size_t kRequest = 32;
   QuotaAllocator quota(system_allocator(), kLimit);
-  Allocator alloc = quota.get();
+  AllocatorRef alloc = quota.get();
   std::atomic<std::size_t> observed_max{0};
   std::vector<std::thread> threads;
   for (int thread = 0; thread < 8; ++thread) {
@@ -577,11 +577,11 @@ TEST(QuotaAllocator, ConcurrentAdmissionNeverExceedsHardLimit) {
 }
 
 TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
-  hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
+  hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 512);
   StatsAllocator stats =
       StatsAllocator::create(quota.get(), /*track_leaks=*/true).value();
-  Allocator alloc = stats.get();
+  AllocatorRef alloc = stats.get();
 
   auto *p = static_cast<unsigned char *>(alloc.allocate(32, 16));
   ASSERT_NE(p, nullptr);
@@ -613,12 +613,12 @@ TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
 }
 
 TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
-  hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
+  hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   StatsAllocator stats = StatsAllocator::create(
                              pool.as_allocator(), /*track_leaks=*/true)
                              .value();
   QuotaAllocator quota(stats.get(), 512);
-  Allocator alloc = quota.get();
+  AllocatorRef alloc = quota.get();
 
   void *p = alloc.reallocate(nullptr, 0, 64, 16);
   ASSERT_NE(p, nullptr);
@@ -634,7 +634,7 @@ TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
 }
 
 TEST(AllocatorComposition, PmrOverDecoratedSharedPoolReturnsCapacity) {
-  hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
+  hyle::mem::ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 128);
   StatsAllocator stats = StatsAllocator::create(quota.get()).value();
   hyle::mem::PmrResource resource(stats.get());

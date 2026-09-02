@@ -125,7 +125,7 @@ include graph 无环时，才可改为 `FROZEN`。后续 correctness 不得悄�
 | header / family | public types | ownership 与选择规则 |
 |---|---|---|
 | `allocator.h` | `AllocatorRef`, `SystemAllocator` | `AllocatorRef` 是四字以内的 borrowed host-byte allocator；无 runtime injection 时用零状态 `SystemAllocator` |
-| `heap.h` | `Heap`, `HeapOptions` | move-only owned growable host heap；owner-thread allocate/reallocate，允许 remote free；全量 release 要求无 live allocation |
+| `heap.h` | `Heap` | move-only owned growable host heap；owner-thread allocate/reallocate，允许 remote free；全量 release 要求无 live allocation |
 | `arena.h` | `Arena`, `FixedArena`, `PooledArena`, `StackArena` | 分别是 owned growable monotonic、caller-storage monotonic、borrowed-block monotonic 与 LIFO rewind；不伪装 individual free |
 | `pool.h` | `FixedHeap`, `ConcurrentBlockPool`, `BlockPoolCache`, `ObjectPool<T>`, `PreservingObjectPool<T>`, `GrowableObjectPool<T>`, `PoolLoan` | 名字分开 variable/fixed-size、external/owned、hard/shared/owner-cache、reconstruct/preserve；不提供 `fast/light` 档 |
 | `mapping.h` | `VirtualMapping`, `FileMapping`, `SharedMapping`, `MappingAdvice`, `ResidencyOptions` | 三种 owner 分开 constructor 和非法操作，共享 range/view/protect/advice/lock/flush vocabulary；async namespace/protocol 仍在 IO |
@@ -166,7 +166,7 @@ StackAllocator` 改为上表 arena 家族；`FixedPool` 改为 `FixedHeap`；`Sh
 
 | family | failure shape | concurrency | default / invalidation |
 |---|---|---|---|
-| allocator / heap / arena / pool | 冷 owner 构造返回 `Result<Owner>`；热 byte/slot allocation 返 null/empty loan | 按具名类型区分 owner-only 与 concurrent；`Heap` 只承诺 remote free | 无隐式 fallback；reset/release 显式使旧 allocation/view 失效 |
+| allocator / heap / arena / pool | 需要创建 backing/control 的 owner 使用 `Result<Owner>` 或可检查 `valid()`；纯 borrowed/external/lazy owner 由构造前置条件约束；热 byte/slot allocation 返 null/empty loan | 按具名类型区分 owner-only 与 concurrent；`Heap` 只承诺 remote free | 无隐式 fallback；reset/release 显式使旧 allocation/view 失效 |
 | mapping | factory/range OS failure 返 `Result/Status` 并保留 native error | control operation 外部同步；普通字节访问由保护和宿主同步决定 | 不自动 prefault/lock/grow file；未支持 advice 明确 `Unimplemented` |
 | resource / Buffer | provider/ref 非空、range/alignment 错误为 `InvalidArgument/OutOfRange`；OOM 为 `ResourceExhausted` | provider 必须支持独立 allocation 并发使用；同一 Buffer 的 mutation/map/control 外部同步 | `Buffer{}` 可作 invalid/moved-from；没有默认 resource，必须显式选 host/device/custom provider |
 | BufferPool | create/acquire 返 `Result`；capacity/pressure 可观察 | pool 是 thread-safe；lease 中 Buffer 的使用仍由 caller 同步 | lease 归还前必须无 in-flight operation；trim 不等待 Event |
@@ -174,7 +174,7 @@ StackAllocator` 改为上表 arena 家族；`FixedPool` 改为 `FixedHeap`；`Sh
 
 ### 五条 compile-only normal journey
 
-1. **host heap：**`Heap::create(options) -> Heap`，把 `heap.allocator()` 的 `AllocatorRef`
+1. **host heap：**`Heap::create() -> Heap`，把 `heap.allocator()` 的 `AllocatorRef`
    注入 HYLE container，所有 allocation 归还后 `collect/release`。
 2. **model mapping：**`FileMapping::open(path, ReadOnly)`，根据 loader 策略显式
    `advise(Sequential/WillNeed)` 与单调 `lock_prefix`，向 parser 传 `ConstBufferView`。
@@ -200,12 +200,12 @@ StackAllocator` 改为上表 arena 家族；`FixedPool` 改为 `FixedHeap`；`Sh
 
 ### freeze 未完成项
 
-- [ ] 上表类型关系全部落到 self-contained public headers，不泄漏 backend 类型；
-- [ ] 五条 journey 以正常 public API 编译，不借 test-only constructor/stub；
-- [ ] `sizeof(MemoryResourceRef) == 1 word`、`Buffer/View <= 4 words`、owner 无 wrapper pimpl allocation；
-- [ ] 头文件语法 include graph 与 CMake target graph 都满足上述无环方向；
+- [x] 上表类型关系全部落到 self-contained public headers，不泄漏 backend 类型；
+- [x] 五条 journey 以正常 public API 编译，不借 test-only constructor/stub；
+- [x] `sizeof(MemoryResourceRef) == 1 word`、`Buffer/View <= 4 words`、owner 无 wrapper pimpl allocation；
+- [x] 头文件语法 include graph 与 CMake target graph 都满足上述无环方向；
 - [ ] source/static/shared selected-component 均可发现同一 API；
-- [ ] `docs/user/mem.md` 在实现可用前仍只写当前产品；待 migration 后一次替换为上述选型表，不提前宣传。
+- [x] `docs/user/mem.md` 只写当前已落地产品，并已替换为 ownership/domain/lifetime/concurrency 选型表。
 
 ## Capability-family coverage map（AUDITED）
 
@@ -302,6 +302,14 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   验证 offset/range 没有被中间层丢失。Windows MSVC Host/CUDA/Vulkan 与 WSL GCC 14 Host
   correctness/header 通过。Compute/Graph 其余半成品能力未借本票重构；macOS、最终 selected
   package journeys 与相邻文档仍留在本轮后续票。
+- `MEM2-01/MEM2-02` 的 public taxonomy 已完成源码迁移：旧 `Allocator/Region/FixedRegion/
+  PooledRegion/StackAllocator/FixedPool/SharedPool/SharedPoolCache/GrowablePool/HugeRegion` 类型全部
+  删除且不留 alias；最终类型经 `arena.h` / `pool.h` façade 暴露，全库直接消费者、样例、测试和
+  benchmark source 一次迁移。五条 normal journey 分别由 owned Heap 注入 PodVector、只读模型
+  FileMapping、Compute resource + Mem nonzero subview kernel、BufferPool lease 与 LifetimePlan
+  instantiate 的 public-API 测试覆盖。Windows MSVC `all` 70/70、WSL GCC 14 selected
+  mem/container/compute 48/48 通过；现行 architecture/user 文档只使用新名称。API freeze 仍保持
+  `DRAFT`，唯一未完成门是 taxonomy 后的 source/static/shared selected-package 同形状验证。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

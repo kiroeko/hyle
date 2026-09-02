@@ -27,7 +27,7 @@ runtime：hyle_util（内部 compiled factor；严格收口波次 R2）
 ```
 
 Registry 是模板头，但公开形状直接使用 container 的 `StringView/FlatHashMap`，并借 mem allocator/
-Region；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util`，从而没有
+Arena；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util`，从而没有
 `container ↔ util` binary 环。demangle 只有 buffer entry 和服务 header-inline owning convenience 的
 internal sink 两个冷路径动态符号，本身不依赖 container；为它新增 binary component 会增加发布和
 消费选择而没有形成独立能力族，因此与 runtime 共用 target。
@@ -55,7 +55,7 @@ internal sink 两个冷路径动态符号，本身不依赖 container；为它�
 mutable startup
   mutex-protected register/reserve/read
   creator + visitor outside lock; reentrant
-  one Swiss index + transactional owned entry storage Region
+  one Swiss index + transactional owned entry storage Arena
              │ freeze(): O(1), zero allocation, idempotent
              ▼
 immutable service
@@ -66,9 +66,9 @@ immutable service
 
 旧形状若在 freeze 时复制/重建第二张表，会让启动延迟、峰值内存和 OOM surface 随注册规模增长；
 当前一表两阶段直接发布。lookup value 内联 creator，所以 create 不读取 Entry 的冷 help/priority；
-初次注册把 Entry、owned key 与 owned help 作为一个 Region allocation 提交，并在此前准备好唯一
+初次注册把 Entry、owned key 与 owned help 作为一个 Arena allocation 提交，并在此前准备好唯一
 仍可能分配的 Swiss capacity。这样 OOM 不会在单调 arena 留下不可达 key/help，普通 4--32 项
-startup 也只需一个小 storage Region，而不是预留两个独立 4 KiB arena。这些是正常
+startup 也只需一个小 storage Arena，而不是预留两个独立 4 KiB arena。这些是正常
 init-heavy/read-heavy 消费形状的架构优化，不是按 benchmark 的 key 数量或线程数特化。
 
 Registry 拥有 key/help，priority 保证显式组合顺序不成为隐式策略：更高覆盖、更低忽略、

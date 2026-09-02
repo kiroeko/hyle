@@ -18,7 +18,7 @@
 namespace {
 
 using hyle::Status;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::bulk_execute;
 using hyle::sched::BulkExecuteOptions;
@@ -97,7 +97,7 @@ TEST(BulkExecute, EmptyAndInvalidInputsAreTyped) {
                   .IsInvalidArgument());
 
   Status construction;
-  Scheduler invalid(1, hyle::mem::Allocator{}, 16, &construction);
+  Scheduler invalid(1, hyle::mem::AllocatorRef{}, 16, &construction);
   ASSERT_FALSE(invalid.valid());
   EXPECT_TRUE(bulk_execute(invalid, 0, 1, body).IsFailedPrecondition());
 
@@ -159,7 +159,7 @@ TEST(BulkExecute, CancellationIsSharedAndVisibleInsideBody) {
   scheduler.shutdown();
 }
 
-Task<int> run_on_fiber(hyle::mem::Allocator, Scheduler* scheduler,
+Task<int> run_on_fiber(hyle::mem::AllocatorRef, Scheduler* scheduler,
                        std::atomic<unsigned>* hits,
                        std::size_t count) noexcept {
   BulkExecuteOptions options;
@@ -191,7 +191,7 @@ TEST(BulkExecute, SchedulerFiberWaitsWithoutDeadlockingOneWorker) {
 }
 
 Task<int> probe_root_participation(
-    hyle::mem::Allocator, Scheduler* scheduler,
+    hyle::mem::AllocatorRef, Scheduler* scheduler,
     std::atomic<unsigned>* root_calls,
     std::atomic<unsigned>* total_calls) noexcept {
   Fiber* const root = Fiber::current();
@@ -347,7 +347,7 @@ void* counting_reallocate(void* raw, void* pointer, std::size_t old_size,
 
 TEST(BulkExecute, SubmissionPathDoesNotAllocateFromSchedulerAllocator) {
   AllocationCounter counter;
-  Allocator allocator(&counting_allocate, &counting_deallocate,
+  AllocatorRef allocator(&counting_allocate, &counting_deallocate,
                       &counting_reallocate, &counter);
   Scheduler scheduler(4, allocator, 64);
   std::atomic<std::uint64_t> total{0};

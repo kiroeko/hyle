@@ -15,7 +15,7 @@
 //   2. raw TCP echo (1 worker) moving the same bytes -- the transport floor; the
 //      1-worker HTTP row over this = the framing overhead multiplier.
 //   3. HYLE_HTTP_REGION_FOOTPRINT_VARIANT={capped,capped_collect,unbounded}
-//      selects an isolated long-connection Region/RSS certificate instead of
+//      selects an isolated long-connection Arena/RSS certificate instead of
 //      nanobench; scripts/http-region-footprint-stat.py drives fresh processes.
 //
 // Load: kConns keep-alive connections, each doing kReqRoundTrips request/response
@@ -77,7 +77,7 @@ using hyle::io::HttpServeOptions;
 using hyle::io::http_serve;
 using hyle::io::IoContext;
 using hyle::io::TcpStream;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::mem::system_collect;
 using hyle::sched::Fiber;
@@ -290,7 +290,7 @@ void configure_footprint_thread() noexcept {
 // ---- HYLE HTTP path --------------------------------------------------------
 // Server handler: GET / -> a small fixed "hello-hyle" body (the response whose
 // bytes kRawResp mirrors). ctx unused (stateless fixed response).
-Task<HttpResponse> bench_handler(Allocator, void*, const HttpRequest&) noexcept {
+Task<HttpResponse> bench_handler(AllocatorRef, void*, const HttpRequest&) noexcept {
   HttpResponse resp;
   resp.set_status(200);
   resp.add_header("Content-Type", "text/plain");
@@ -300,14 +300,14 @@ Task<HttpResponse> bench_handler(Allocator, void*, const HttpRequest&) noexcept 
 
 // Server side of one connection: run the keep-alive serve loop until the client
 // closes (its N requests done -> HttpClientConn drops -> socket close -> EOF).
-Task<int> http_server(Allocator alloc, TcpStream server_end) {
+Task<int> http_server(AllocatorRef alloc, TcpStream server_end) {
   co_await http_serve(alloc, std::move(server_end), &bench_handler, nullptr);
   co_return 0;
 }
 
 // Client side: kReqRoundTrips GET / requests on ONE keep-alive connection, then drop
 // (closing the socket, which ends the server's serve loop).
-Task<int> http_client(Allocator alloc, TcpStream client_end,
+Task<int> http_client(AllocatorRef alloc, TcpStream client_end,
                       BenchState* state) {
   HttpClientConn conn{alloc, std::move(client_end)};
   for (int i = 0; i < kReqRoundTrips; ++i) {
@@ -318,7 +318,7 @@ Task<int> http_client(Allocator alloc, TcpStream client_end,
   co_return 0;  // conn drops here -> client fd closed -> server sees EOF
 }
 
-// ---- request-Region footprint certificate --------------------------------
+// ---- request-Arena footprint certificate --------------------------------
 // This is a fresh-process mode of the same real HTTP path, selected through
 // HYLE_HTTP_REGION_FOOTPRINT_VARIANT. It keeps many connections alive while a
 // small request, a 1 MiB request-local spike, and another small request pass
@@ -381,8 +381,8 @@ void* tracked_reallocate(void* state, void* pointer, std::size_t old_bytes,
   return replacement;
 }
 
-Allocator tracked_allocator(BackingStats* stats) noexcept {
-  return Allocator(&tracked_allocate, &tracked_deallocate,
+AllocatorRef tracked_allocator(BackingStats* stats) noexcept {
+  return AllocatorRef(&tracked_allocate, &tracked_deallocate,
                    &tracked_reallocate, stats);
 }
 
@@ -407,7 +407,7 @@ void touch_pages(void* allocation, std::size_t bytes) noexcept {
   data[bytes - 1] = std::byte{0xa5};
 }
 
-Task<HttpResponse> footprint_handler(Allocator alloc, void* context,
+Task<HttpResponse> footprint_handler(AllocatorRef alloc, void* context,
                                      const HttpRequest& request) noexcept {
   auto* state = static_cast<FootprintState*>(context);
   HttpResponse response;
@@ -442,7 +442,7 @@ Task<HttpResponse> footprint_handler(Allocator alloc, void* context,
   co_return response;
 }
 
-Task<int> footprint_server(Allocator alloc, TcpStream server_end,
+Task<int> footprint_server(AllocatorRef alloc, TcpStream server_end,
                            FootprintState* state,
                            std::size_t retain_limit) {
   HttpServeOptions options;
@@ -453,7 +453,7 @@ Task<int> footprint_server(Allocator alloc, TcpStream server_end,
   co_return 0;
 }
 
-Task<int> footprint_client(Allocator alloc, TcpStream client_end,
+Task<int> footprint_client(AllocatorRef alloc, TcpStream client_end,
                            FootprintState* state) {
   HttpClientConn connection{alloc, std::move(client_end)};
   constexpr const char* paths[kFootprintPhases] = {"/small", "/spike",
@@ -468,12 +468,12 @@ Task<int> footprint_client(Allocator alloc, TcpStream client_end,
   co_return 0;
 }
 
-Task<int> footprint_coordinator(Allocator, FootprintState* state) {
+Task<int> footprint_coordinator(AllocatorRef, FootprintState* state) {
   for (int phase = 0; phase < kFootprintPhases; ++phase) {
     state->arrived[phase]->wait();
     // Client receive can win just before the corresponding server send
     // continuation. Parking (rather than runnable yielding) lets the worker poll
-    // every remaining completion and clear every request Region.
+    // every remaining completion and clear every request Arena.
     std::size_t previous = (std::numeric_limits<std::size_t>::max)();
     int stable_rounds = 0;
     for (int round = 0; round < 32 && stable_rounds < 4; ++round) {
@@ -635,7 +635,7 @@ int run_region_footprint(const char* variant) {
 // bytes. No parsing, no framing -- just shuttle the identical byte volume over the
 // SAME co_await TcpStream the HTTP path uses. Small messages over loopback/socketpair
 // arrive whole in one read (echo_bench relies on the same property).
-Task<int> raw_server(Allocator, TcpStream server_end) {
+Task<int> raw_server(AllocatorRef, TcpStream server_end) {
   char buf[256];
   for (int i = 0; i < kReqRoundTrips; ++i) {
     std::int64_t r = co_await server_end.read(buf, sizeof(buf));
@@ -645,7 +645,7 @@ Task<int> raw_server(Allocator, TcpStream server_end) {
   }
   co_return 0;
 }
-Task<int> raw_client(Allocator, TcpStream client_end, BenchState* state) {
+Task<int> raw_client(AllocatorRef, TcpStream client_end, BenchState* state) {
   char buf[256];
   for (int i = 0; i < kReqRoundTrips; ++i) {
     std::int64_t w = co_await client_end.write(kRawReq, kRawReqLen);

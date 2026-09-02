@@ -94,19 +94,19 @@ class HYLE_COMPUTE_API GgmlBackend {
 
  private:
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, const float*,
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef, const float*, const float*,
       float*, int, int, int) noexcept;
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator,
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef,
       const struct MatmulF32Job*, int) noexcept;
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_rms_norm_f32(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, float*, int, float) noexcept;
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef, const float*, float*, int, float) noexcept;
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_silu_f32(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, float*, int) noexcept;
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef, const float*, float*, int) noexcept;
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_add_f32(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, const float*, float*, int) noexcept;
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef, const float*, const float*, float*, int) noexcept;
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
-      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, const float*, float*, int) noexcept;
+      GgmlBackend&, sched::BlockingPool&, mem::AllocatorRef, const float*, const float*, float*, int) noexcept;
   explicit GgmlBackend(void* be, void* galloc) noexcept : be_(be), galloc_(galloc) {}
   void* raw_() const noexcept { return be_; }
   void* galloc_ptr_() const noexcept { return galloc_; }
@@ -138,7 +138,7 @@ class HYLE_COMPUTE_API GgmlBackend {
 // CONTRACT (caller bug -> fatal assert): be.valid(); a/b/c non-null; m/k/n > 0; a/b/c
 // point at host buffers of m·k / n·k / m·n floats.
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const float* a, const float* b, float* c, int m, int k, int n) noexcept;
 
 // BATCHING (finding 4, the performance lever): llama.cpp's real concurrency is NOT
@@ -160,7 +160,7 @@ struct MatmulF32Job {
 // CONTRACT: be.valid(); count in [1, 64]; every job's a/b/c non-null, dims > 0, and the
 // host buffers sized for m·k / n·k / m·n floats.
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const MatmulF32Job* jobs, int count) noexcept;
 
 // ---- ELEMENTWISE / NORM operators (compute-09 step-1: prove the op face is not a toy) ----
@@ -178,22 +178,22 @@ HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
 // (a single row). eps is the ggml_rms_norm epsilon. src/dst are host float[n]. (No weight
 // multiply here -- that is a separate ggml_mul with the norm weight, composed at the block level.)
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_rms_norm_f32(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const float* src, float* dst, int n, float eps) noexcept;
 
 // dst[i] = silu(src[i]) = src[i] / (1 + exp(-src[i])). FFN activation. Host float[n].
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_silu_f32(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const float* src, float* dst, int n) noexcept;
 
 // dst[i] = a[i] + b[i] (residual). Host float[n] each.
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_add_f32(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const float* a, const float* b, float* dst, int n) noexcept;
 
 // dst[i] = a[i] * b[i] (elementwise; norm-weight apply / FFN gate). Host float[n] each.
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
-    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    GgmlBackend& be, sched::BlockingPool& pool, mem::AllocatorRef alloc,
     const float* a, const float* b, float* dst, int n) noexcept;
 
 // ---- FFN block (compute-09 step-2): a REAL transformer FFN sub-block with RESIDENT weights ----
@@ -242,7 +242,7 @@ class HYLE_COMPUTE_API FfnBlock {
   // runs on `pool`; returns JoinHandle<Status>. x and out are HOST float buffers (rows·d each) and
   // must outlive the join. `alloc` backs the JoinState.
   //   CONTRACT: valid(); x/out non-null; rows>0.
-  sched::JoinHandle<Status> forward(sched::BlockingPool& pool, mem::Allocator alloc,
+  sched::JoinHandle<Status> forward(sched::BlockingPool& pool, mem::AllocatorRef alloc,
                                     const float* x, float* out, int rows) noexcept;
 
   bool valid() const noexcept { return be_ != nullptr; }

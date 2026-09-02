@@ -87,14 +87,14 @@ void apply_binary(std::uint64_t* destination, const std::uint64_t* source,
 
 DynamicBitSet::DynamicBitSet() noexcept : alloc_(mem::system_allocator()) {}
 
-DynamicBitSet::DynamicBitSet(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+DynamicBitSet::DynamicBitSet(mem::AllocatorRef alloc) noexcept : alloc_(alloc) {}
 
 DynamicBitSet::DynamicBitSet(size_type bit_count, bool value)
     : DynamicBitSet() {
   resize(bit_count, value);
 }
 
-DynamicBitSet::DynamicBitSet(mem::Allocator alloc, size_type bit_count,
+DynamicBitSet::DynamicBitSet(mem::AllocatorRef alloc, size_type bit_count,
                              bool value)
     : DynamicBitSet(alloc) {
   resize(bit_count, value);

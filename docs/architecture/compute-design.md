@@ -3,9 +3,16 @@
 > **V2 状态：`INCOMPLETE / NOT_REVIEWED`。** 本页是半成品阶段的调查与设计历史，不是冻结的
 > 产品架构或性能证书。真实推理消费者和前置模块可能改变其类型；只在 compute 轮次重写。
 
+> **Storage 边界更新（2026-09-02，Mem v2）：**下文 2026-07 的 Compute-owned `Buffer`/
+> `BufferType` 方案已被实际迁移取代。storage ownership、resource/property、`Buffer`/view、同步
+> range operation 与 transient reuse 统一归 `hyle::mem`；Compute 只提供 device/host-pinned/
+> managed `MemoryResourceRef` provider、Device identity、Stream/Event ordering 和 typed kernel/async
+> adapter。当前代码入口是 `hyle/compute/memory.h` + `hyle/mem/buffer.h`，不存在旧
+> `hyle/compute/buffer.h`。本页后续历史调查若仍提到“Compute Buffer”，以本段为准。
+
 > 本文档定下 HYLE `compute/` 模块（GPU/异构算力）的设计。上游约束见 [`hyle-scope.md`](hyle-scope.md)（不特化、贴硬件）、调度对接见 `sched/`。GPU 现状盘点见 [`clay-asset-liability.md`](clay-asset-liability.md) 第五节。
 
-> **当前收口原则（2026-07-22 审计）：**公开形状由可复述的消费者场景和跨后端合同决定，benchmark 只验证某个实现选择，不反向定义 API。`Stream/Event/Buffer/Kernel` 是稳定主轴；合批服务多算子链，record/replay 服务固定 bindings 的迭代负载，timing event 服务 profiling。一次 tiny-saxpy 的 `ns/op` 不能证明这些形状，更不能单独推出新抽象。当前 Vulkan 多个逻辑 Stream 仍共享一个 `VkQueue`，正确性成立但会保守跨 Stream 排队；真正独立并发需消费者工况 + timeline semaphore/多队列方案及端到端数据后再承诺。
+> **当前收口原则（2026-09-02 更新）：**公开形状由可复述的消费者场景和跨后端合同决定，benchmark 只验证某个实现选择，不反向定义 API。Compute 的主轴是 `Device/Stream/Event/Kernel`，storage 参数统一使用 Mem `Buffer/View`；合批服务多算子链，record/replay 服务固定 bindings 的迭代负载，timing event 服务 profiling。一次 tiny-saxpy 的 `ns/op` 不能证明这些形状，更不能单独推出新抽象。当前 Vulkan 多个逻辑 Stream 仍共享一个 `VkQueue`，正确性成立但会保守跨 Stream 排队；真正独立并发需消费者工况 + timeline semaphore/多队列方案及端到端数据后再承诺。
 
 ## 调查事实（真实数据）
 
@@ -20,7 +27,7 @@
 
 ### 1. 借 ggml 拿全平台后端 —— 但对接上游、用 adapter 隔离，不焊死在 vendored 快照上
 ggml-backend 已跑通 CUDA/HIP/Metal/Vulkan/SYCL，HYLE 不重造这个轮子。但 iron 里那份是 sd.cpp 的冻结旧快照（会一直变老、接口已演进），**不能直接依赖**。正确依赖方向：
-- HYLE `compute/` 上层抽象（device/stream/buffer/kernel）**自有且稳定，不暴露任何 ggml 类型**。
+- HYLE `compute/` 上层抽象（device/stream/event/kernel + Mem storage）**自有且稳定，不暴露任何 ggml 类型**。
 - ggml 降级为"**可替换的算子库供应商之一**"，只在一个 `ggml_bridge` adapter 文件里对接，且对接**上游 pin 的较新版本**（自己 vendor/submodule），不是 iron 那份。
 - ggml 升级、`ggml-backend.h` 接口变动（已在变），**只动 adapter 一个文件，不动 HYLE 地基**。
 - iron 那份只当"现在能立刻跑通验证"的参照物，非长期依赖。
@@ -28,14 +35,15 @@ ggml-backend 已跑通 CUDA/HIP/Metal/Vulkan/SYCL，HYLE 不重造这个轮子�
 教训：任何 vendored 快照都会变老（这份已老），所以降低耦合、把 ggml 当可换后端，而非把 HYLE 焊在它身上。
 
 ### 2. 但 ggml-backend 是"张量算子图"专用，HYLE 要更底层
-ggml 的调度单元是 `ggml_tensor` + 固定算子集，不是通用 GPU 计算。HYLE 要 **device/stream/buffer/kernel** 抽象，能跑任意 kernel。所以 `compute/` 分两层：
+ggml 的调度单元是 `ggml_tensor` + 固定算子集，不是通用 GPU 计算。HYLE 要
+**device/stream/event/kernel + provider-neutral Mem storage**，能跑任意 kernel。所以边界分两层：
 
 ```
 compute/
 ├─ 上层（HYLE 自有，平台无关）
 │   device   — 枚举/选择 GPU/CPU 设备
 │   stream   — 异步执行队列（= 可调度资源）
-│   buffer   — 设备内存 + host/device 传输 + pinned/unified
+│   memory   — 向 Mem 提供 device/pinned/managed resource；所有权/view 仍是 Mem 类型
 │   kernel   — 任意 kernel 的提交/启动抽象
 └─ 下层后端（复用 ggml 实现作起点 + 可直调原生 API）
     cuda / hip / metal / vulkan(compute) / sycl / cpu(simd fallback)
@@ -44,8 +52,11 @@ compute/
 
 > **校正（对照真实 ggml-backend.h）**：ggml-backend **已经有** device/stream/buffer/buffer_type/event/sched 全套抽象。所以 HYLE 真正"净新"的只有两处：**①任意 kernel 启动**（ggml 是固定算子集 + `graph_compute(cgraph)`，无 raw launch）；**②host 侧 completion→fiber 唤醒**（ggml 的 `synchronize` 是阻塞式，event 仅 GPU-GPU 跨后端同步，无"算完回调唤醒 host"）。device/buffer 枚举应**薄包 ggml-backend**，避免双层抽象税；只在 kernel-launch + fiber-completion 处真正自造。可直接照镜 ggml 的 `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` 能力查询结构。
 >
-> **深读补充（buffer_type 是 device buffer 的范本，归 compute/ 不归 mem/）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 是 HYLE **compute/ device buffer** 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。**一种内存模型 = 一个 buffer_type 实例**(不是 `switch(MemKind)`),这条洞见落在 **compute/ 的 device buffer**(自有所有权 + stream 绑定),**不是 mem/**:device 内存走显式 copy/command-submit,不经 mem/ 的 CPU allocator 抽象(mem/ 只管 host RAM,见下"内存模型"节 + mem-design)。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
-> **张力收口**："buffer 薄包 ggml"与"不暴露 ggml 类型"有张力：**枚举/能力查询薄包**（照镜 buft trait），**内存所有权 + stream 绑定自造**，bridge 只在算子边界做 tensor↔buffer 翻译。另注意 ggml sched 把 INPUT 强制落 CPU、末位 backend 必须是 CPU（`ggml-backend.cpp:903/1736` ASSERT）——这是 ggml 的兜底耦合，**HYLE 自有 stream 调度不要继承**。
+> **Mem v2 校正：**ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}`
+> 证明了“每个 storage provider 自报属性/上限”比闭合 kind enum 更自然。HYLE 把这条洞见落在
+> Mem `MemoryResource` 开放 provider 上：Compute 实现 backend provider，Mem `Buffer/View` 保留
+> ownership、domain 与 opaque handle；Stream/Event 仍由 Compute 负责 ordering。ggml 非标能力
+> 经 bridge 探测，不能把 ggml 类型泄漏到 Mem 或 Compute 公开头。
 
 ### 3. shader 计算是一等公民，不只绑 CUDA
 **只押 CUDA = 锁死 NVIDIA，违背 HYLE 通用定位。** Vulkan compute（SPIR-V）跨厂商——AMD/Intel/Apple(MoltenVK)/NVIDIA 全能跑，`ggml-kompute` 已用 `.comp` 示范。CUDA 与 Vulkan compute **平级**：CUDA 走成熟生态/性能上限，Vulkan compute 走"一份 SPIR-V 全平台"。
@@ -87,10 +98,10 @@ compute/
 | 跨后端"算子图"调度 | ✅ 借 ggml-backend | 现成跑通，封在 `ggml_bridge` adapter |
 | **CPU 算子执行所有权** | 🔧 adapter 分流 | `ggml_backend_cpu_set_threadpool` 只接受 ggml 自建 pool，不能注入 HYLE scheduler。不可合批小任务用 `n_threads=1` + HYLE 外层并发；合批大 graph 才用 ggml 自有并行，并从 HYLE blocking pool 隔离提交 |
 | **ggml 版本/接口隔离** | 🔧 自造 adapter | `ggml_bridge` 是唯一耦合点；ggml 升级/接口变只动这一文件 |
-| 通用 device/stream/buffer/kernel 抽象 | 🔧 自造 | ggml 没有的通用层，绑 HYLE sched，**不暴露 ggml 类型** |
+| 通用 device/stream/event/kernel + Mem storage seam | 🔧 自造 | ggml 没有的通用层，绑 HYLE sched；storage 统一用 Mem resource/Buffer，**不暴露 ggml 类型** |
 | GPU completion → fiber 唤醒 | 🔧 自造 | event/fence 接 sched，io/ 同款机制 |
 | Vulkan compute 自定义 kernel | 🔧 自造（参考 kompute）| 一等公民路径，slate vulkan 打底 |
-| 设备内存分配 | 🔧 compute/ 自有 | device/pinned/unified buffer 各立 ggml 式 buffer_type 实例,所有权+stream 绑定在 compute/;**不走 mem/ 的 CPU allocator 抽象**(host↔device 是显式 copy/command-submit)|
+| 设备内存分配 | 🔧 Compute provider + Mem owner | device/pinned/managed 各由 Compute 实现一个开放 `MemoryResource`；Mem `Buffer/View` 统一所有权与 range，Compute Stream/Event 保留 async ordering |
 
 **原则**：算子和跨后端调度借 ggml（别重造）、但**只通过 `ggml_bridge` adapter 对接上游 pin 版、不焊死 vendored 快照**；通用抽象层 + 与 sched 的 completion 统一自造（ggml 给不了），且 HYLE 抽象不暴露 ggml 类型。
 
@@ -100,7 +111,7 @@ compute/
 compute/
 ├─ device.h        设备枚举/能力查询/选择
 ├─ stream.h        异步执行队列（可调度资源，产生 completion）
-├─ buffer.h        设备 buffer:自管 device/pinned/unified 内存 + 绑 stream(ggml buft 式:枚举/能力查询薄包,所有权自造)。host↔device = 显式 copy(src,dst,stream),同 coherent 内存硬件无需拷贝。**不走 mem/ 的 allocator 抽象**(mem/ 只管 host RAM,见 mem-design「device 内存」节)
+├─ memory.h        为 Device 暴露 device/host-pinned/managed Mem resource provider
 ├─ kernel.h        任意 kernel 提交/启动抽象
 ├─ backend/
 │  ├─ cuda.cc      原生 or 桥 ggml-cuda
@@ -172,7 +183,12 @@ compute/
 
 1. **kernel 表示的统一**——device/stream/kernel 接口怎么同时容纳"原生 CUDA kernel"(`cuLaunchKernel` + PTX/cubin)和"SPIR-V compute shader"两种 kernel 表示(compute-04/06;compute-01 只做 stream/completion 脊,先不碰 launch 抽象)。
 2. ~~**GPU completion 接 sched**~~ **✅ 决策已定**（见上"compute-03 GPU completion 接 sched"节：方案 A 零改 sched 复用 Waker/IoOperation/net_timeout；方案 B seastar veto 协议为后续）+ compute-01 已把 event-poll 原语落地。
-3. **buffer 与 mem/ 的边界**——device VRAM、pinned/unified/mapped host memory 的所有权与同步均归 compute，普通 host RAM 分配归 mem。Buffer 现分别持有 opaque `native_handle()` 与可选 `host_data()`：CUDA/host 两值可相同，Vulkan 分别是 `VkMem*` 与 `VkMem::mapped`；非-coherent host memory 用按 `nonCoherentAtomSize` 扩边的范围 `flush_host()` / `invalidate_host()`。`copy_from()` 自动维护 mapped-cache visibility，但不等待 producer Stream；所有同步 copy/直接 host 访问前必须先完成相关 GPU 使用，异步 launch 引用的 Kernel/Buffer 必须存活至 completion。非 ReBAR Vulkan buffer 的同步 `set/get` 只在首次传输时创建 staging，容量按“历史最大单次传输”增长，不再为每个 device buffer 预留等大的 host allocation。它不是 async staging API；未来真实异步上传路径出现时，只用 HostBuffer + Device identity + Event 组成 `StagingRing`（free→filling→in-flight→event→free + backpressure），不提供裸 `SharedPool(cudaMallocHost)` 组合。显存仍 compute 自有、**不**走 mem。
+3. ~~**buffer 与 mem/ 的边界**~~ **✅ Mem v2 已统一**——storage ownership、resource identity、
+   `Buffer/View`、host mapping/coherence 与同步 range operation 归 Mem；device/pinned/managed allocation
+   artifact 由 Compute provider 实现，Stream/Event 保留 async ordering。非 ReBAR Vulkan 的同步
+   provider 路线可复用内部 staging，但不能把它冒充 async ring；未来真实异步上传仍需由 Compute
+   用 pinned Mem Buffer + Device identity + Event/backpressure 组成 `StagingRing`。所有 in-flight
+   kernel/copy 完成前 owner/view 不得失效。
 4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。**参考库 = kompute**(`C:\public\project-hyle\kompute`,见下"compute-06 kompute 映射"节已定该抄什么)。
 
 ## compute-05 借 ggml 算力：调研发现汇总（2026-07-06 深调研 ggml/llama.cpp/iron/CCCL 定案）
@@ -187,7 +203,7 @@ iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-dif
 
 **正确边界：借 ggml 算子 = host 内存归 HYLE（mem 喂入/取出），device 显存归 ggml（gallocr 自管），就像 llama.cpp。**
 - **device 侧归 ggml（CUDA 上必须）**：ggml 算子计算用的 tensor buffer（输入/中间/结果）由 `ggml_gallocr` 分配管理。CUDA 无公开 API 注册外部显存（`buffer_from_host_ptr=false`）；且 CUDA matmul 内核依赖 buffer 的 `context->device`/`buft` 元数据、图内复用、padding 一整套，是算子正确性的一部分。**不注入外部 `->data`、不造假 dummy buffer**（那在多算子 varied 形状必崩）。
-- **host 侧全程归 HYLE**：数据进出 ggml 显存的入口 `ggml_backend_tensor_set/get` 对 host 源指针**零约束**——当前使用普通 HYLE `mem::Allocator` 数据。compute HostBuffer 已有分离的 mapped pointer 与 flush/invalidate，但 ggml bridge 没有 async slot 生命周期，故不宣称 pinned overlap；StagingRing 待真实 async overlap 消费者。
+- **host 侧全程归 HYLE**：数据进出 ggml 显存的入口 `ggml_backend_tensor_set/get` 对 host 源指针**零约束**——当前可使用普通 HYLE `mem::AllocatorRef` 数据，或由 Compute host/pinned provider 创建并 map 的 Mem Buffer。Mem 已分离 native handle 与 host mapping 并显式提供 flush/invalidate，但 ggml bridge 没有 async slot 生命周期，故不宣称 pinned overlap；StagingRing 待真实 async overlap 消费者。
 - **落地形态**：`ggml_init({.no_alloc=true})` 建 tensor → `ggml_set_input`(输入)/`ggml_set_output`(结果) → `ggml_mul_mat` → `ggml_gallocr_alloc_graph`（device buffer 全归 ggml）→ `ggml_backend_tensor_set`(HYLE host 输入拷入) → `graph_compute` → `ggml_backend_tensor_get`(结果拷回 HYLE host)。合批同理（一图多算子、gallocr 一次分配）。
 - **权重常驻**：反复用同一批权重（推理）时，权重拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），非每次推理都拷。初始化成本，非热路径。
 - **HYLE 显存自管没名存实亡——只是划清了范围**：它在 **compute-04/06 自造 kernel**（真零拷贝跑在 HYLE Buffer 上，已三平台验证——服务一切非 AI 的通用 GPU 计算：普通 CUDA 数值 kernel + ② CAD/CAE 专用核）和其 **数据**（普通 compute buffer + KV-cache/网格/BVH/刚度矩阵）上完整成立；只在"借 ggml 算 AI"这条路上，device 侧让位给 ggml。这是**借 vs 造**的本质分工（呼应发现 5/7/9）。

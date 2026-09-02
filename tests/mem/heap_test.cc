@@ -18,7 +18,7 @@ TEST(Heap, IsolatedOwnerSupportsIndividualAndBulkRelease) {
   ASSERT_TRUE(heap.valid());
   static_assert(sizeof(Heap) == sizeof(void*));
 
-  Allocator allocator = heap.allocator();
+  AllocatorRef allocator = heap.allocator();
   ASSERT_TRUE(allocator.valid());
   void* first = allocator.allocate(80, 64);
   ASSERT_NE(first, nullptr);
@@ -39,7 +39,7 @@ TEST(Heap, IsolatedOwnerSupportsIndividualAndBulkRelease) {
 
 TEST(Heap, SupportsOwnerReallocationAndRemoteFree) {
   Heap heap = Heap::create().value();
-  Allocator allocator = heap.allocator();
+  AllocatorRef allocator = heap.allocator();
   void* pointer = allocator.allocate(32);
   ASSERT_NE(pointer, nullptr);
   pointer = allocator.reallocate(pointer, 32, 128);
@@ -53,14 +53,14 @@ TEST(Heap, SupportsOwnerReallocationAndRemoteFree) {
 
 TEST(Heap, MoveTransfersOwnerAndInvalidatesOldBorrows) {
   Heap source = Heap::create().value();
-  Allocator old_borrow = source.allocator();
+  AllocatorRef old_borrow = source.allocator();
   Heap destination = std::move(source);
 
   EXPECT_FALSE(source.valid());
   EXPECT_TRUE(destination.valid());
   EXPECT_EQ(old_borrow.allocate(8), nullptr);
 
-  Allocator current = destination.allocator();
+  AllocatorRef current = destination.allocator();
   void* pointer = current.allocate(8);
   ASSERT_NE(pointer, nullptr);
   current.deallocate(pointer, 8);

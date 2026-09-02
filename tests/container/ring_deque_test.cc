@@ -104,7 +104,7 @@ TEST(RingDeque, CopyMoveAndClearManageObjectLifetime) {
 }
 
 TEST(RingDeque, AllocationFailurePreservesExistingElements) {
-  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   RingDeque<int> ring(failing);
   EXPECT_FALSE(ring.try_reserve(8));
   EXPECT_FALSE(ring.try_push_back(1));

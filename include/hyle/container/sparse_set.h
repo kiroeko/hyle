@@ -25,16 +25,16 @@ class SparseSet {
   using const_iterator = const Id*;
 
   SparseSet() noexcept : SparseSet(mem::system_allocator()) {}
-  explicit SparseSet(mem::Allocator alloc) noexcept
+  explicit SparseSet(mem::AllocatorRef alloc) noexcept
       : sparse_(alloc), dense_(alloc) {}
   explicit SparseSet(size_type universe_size) : SparseSet() {
     reset_universe(universe_size);
   }
-  SparseSet(mem::Allocator alloc, size_type universe_size) : SparseSet(alloc) {
+  SparseSet(mem::AllocatorRef alloc, size_type universe_size) : SparseSet(alloc) {
     reset_universe(universe_size);
   }
 
-  mem::Allocator allocator() const noexcept { return sparse_.allocator(); }
+  mem::AllocatorRef allocator() const noexcept { return sparse_.allocator(); }
   size_type universe_size() const noexcept {
     return static_cast<size_type>(sparse_.size());
   }

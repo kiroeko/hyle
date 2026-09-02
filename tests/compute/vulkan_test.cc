@@ -863,7 +863,7 @@ using hyle::sched::Scheduler;
 // completion path is the same fiber-wake shape as CUDA (compute-03), not a blocking wait.
 struct AwaitArg { int result = -100; std::atomic<bool> done{false}; };
 
-sched::Task<int> vk_await_coro(mem::Allocator, int* out) {
+sched::Task<int> vk_await_coro(mem::AllocatorRef, int* out) {
   Device vk;
   if (!find_vulkan(vk)) { *out = 1; co_return 1; }  // skip-code (no device)
   auto s = Stream::create(vk);

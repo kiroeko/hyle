@@ -44,7 +44,7 @@
 #include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CaptureWaker;
 using hyle::sched::current_waker;
@@ -123,7 +123,7 @@ void raw_b(void* p) {
 }
 
 // -- coroutine spine (same shape; co_await replaces the bare calls) --
-Task<void> coro_a(Allocator, PingPong* s) {
+Task<void> coro_a(AllocatorRef, PingPong* s) {
   for (int i = 0; i < s->cycles; ++i) {
     s->a_waker = co_await CaptureWaker{};
     s->a_ready.store(true, std::memory_order_release);
@@ -133,7 +133,7 @@ Task<void> coro_a(Allocator, PingPong* s) {
     s->b_waker.wake();
   }
 }
-Task<void> coro_b(Allocator, PingPong* s) {
+Task<void> coro_b(AllocatorRef, PingPong* s) {
   for (int i = 0; i < s->cycles; ++i) {
     while (!s->a_ready.load(std::memory_order_acquire)) Fiber::yield();
     s->a_ready.store(false, std::memory_order_relaxed);
@@ -277,7 +277,7 @@ int main() {
     b.run("co_await SuspendFiber/CaptureWaker", [&] {
       PingPong s;
       s.cycles = kCycles;
-      Allocator a = system_allocator();
+      AllocatorRef a = system_allocator();
       auto da = std::make_unique<CoroDrive>();
       auto db = std::make_unique<CoroDrive>();
       da->task = coro_a(a, &s);

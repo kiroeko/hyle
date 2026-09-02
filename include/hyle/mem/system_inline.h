@@ -11,7 +11,7 @@
 #include "hyle/obs/trace.h"
 
 // system_inline.h -- the COMPILE-TIME-bound default allocator. SystemAllocator
-// is stateless/EBO-friendly and never pays the runtime Allocator vtable's
+// is stateless/EBO-friendly and never pays the runtime AllocatorRef vtable's
 // function-pointer dispatch. In a static/merged build its methods inline to a
 // direct mi_* call. A shared-library consumer instead makes one direct import
 // call to hyle_mem's backend seam: the vendor symbols remain private to the DLL
@@ -150,7 +150,7 @@ struct SystemAllocator {
     return result;
   }
 
-  // ---- typed convenience layer (mirrors mem::Allocator's, so containers that call
+  // ---- typed convenience layer (mirrors mem::AllocatorRef's, so containers that call
   // allocate_n<T>/allocate_zeroed/deallocate_n work uniformly with either
   // allocator). All inline. ----
   template <class T>

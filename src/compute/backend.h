@@ -8,7 +8,7 @@
 
 // INTERNAL header (src/compute only -- not shipped). The manual vtable that each
 // compute backend fills in. HYLE does NOT use virtual inheritance anywhere; a
-// backend is a plain function-pointer struct (same style as mem::Allocator),
+// backend is a plain function-pointer struct (same style as mem::AllocatorRef),
 // and EACH backend is an independent composition unit
 // (coding-conventions §10 "组合优于包含"): host_backend.cc defines host_vtable(),
 // cuda_backend.cu defines cuda_vtable() -- there is NO god-object switch(tag) on a

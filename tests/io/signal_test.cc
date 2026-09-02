@@ -27,7 +27,7 @@ using hyle::io::IoContext;
 using hyle::io::kSigInt;
 using hyle::io::kSigTerm;
 using hyle::io::SignalSet;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -48,14 +48,14 @@ struct SigR {
   std::atomic<bool> done{false};
 };
 // Waiter fiber: co_await the signal; record which bit fired.
-Task<int> wait_coro(Allocator, SigR* r, SignalSet* s) {
+Task<int> wait_coro(AllocatorRef, SigR* r, SignalSet* s) {
   int bit = co_await s->wait();
   r->got.store(bit, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
 }
 // Raiser fiber: fire SIGTERM (runs after the waiter has armed the pipe read).
-Task<int> raise_coro(Allocator) {
+Task<int> raise_coro(AllocatorRef) {
   ::raise(SIGTERM);
   co_return 0;
 }

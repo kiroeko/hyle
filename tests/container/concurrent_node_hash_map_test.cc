@@ -13,7 +13,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentNodeHashMap;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 static_assert(
@@ -22,7 +22,7 @@ static_assert(
 namespace {
 
 struct NodeToggleAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   std::atomic<bool> fail{false};
 };
 
@@ -165,10 +165,10 @@ TEST(ConcurrentNodeHashMap, ConcurrentMixedReadUpdateAndGrowth) {
 
 TEST(ConcurrentNodeHashMap, FallibleNodeAllocationLeavesMapUsable) {
   NodeToggleAllocatorState state;
-  Allocator allocator(&node_toggle_allocate, &node_toggle_deallocate,
+  AllocatorRef allocator(&node_toggle_allocate, &node_toggle_deallocate,
                       &node_toggle_reallocate, &state);
   using Map = ConcurrentNodeHashMap<int, int, hyle::container::Hash<int>,
-                                    std::equal_to<>, Allocator>;
+                                    std::equal_to<>, AllocatorRef>;
   Map map(16, allocator);
   ASSERT_TRUE(map.valid());
   state.fail.store(true);
@@ -181,10 +181,10 @@ TEST(ConcurrentNodeHashMap, FallibleNodeAllocationLeavesMapUsable) {
 
 TEST(ConcurrentNodeHashMap, TryReserveReportsFailureAndPreservesEntries) {
   NodeToggleAllocatorState state;
-  Allocator allocator(&node_toggle_allocate, &node_toggle_deallocate,
+  AllocatorRef allocator(&node_toggle_allocate, &node_toggle_deallocate,
                       &node_toggle_reallocate, &state);
   using Map = ConcurrentNodeHashMap<int, int, hyle::container::Hash<int>,
-                                    std::equal_to<>, Allocator>;
+                                    std::equal_to<>, AllocatorRef>;
   Map map(16, allocator);
   ASSERT_TRUE(map.valid());
   Map::Accessor inserted;

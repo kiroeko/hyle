@@ -11,21 +11,21 @@
 
 namespace hyle::mem {
 
-// Explicit single-owner front cache over a hard SharedPool.
+// Explicit single-owner front cache over a hard ConcurrentBlockPool.
 //
-// The SharedPool remains the thread-safe shared core. A worker owns one cache
+// The ConcurrentBlockPool remains the thread-safe shared core. A worker owns one cache
 // object and performs allocate/deallocate through it; free indices can remain
 // local until publish() or cache destruction, so visibility is intentionally
 // soft. The cache lifetime, storage, capacity and transfer batch are visible
 // product choices rather than hidden TLS policy.
 //
 // `pool` must outlive the cache and every block acquired through it. One cache
-// is owner-thread-only; different caches over the same SharedPool may be used
+// is owner-thread-only; different caches over the same ConcurrentBlockPool may be used
 // concurrently. Destroying a cache publishes its locally free blocks but does
 // not reclaim blocks that are still checked out by the user. Before resetting
 // the core pool, quiesce users and call publish() on every attached cache;
 // cached indices surviving a core reset would duplicate newly reset slots.
-class SharedPoolCache {
+class BlockPoolCache {
 public:
   static constexpr std::uint32_t kDefaultCapacity = 128;
   static constexpr std::uint32_t kDefaultTransferBatch = 32;
@@ -33,8 +33,8 @@ public:
   // Strict no-hidden-allocation construction. `storage` is caller-owned and
   // must outlive the cache. Its element count is the local soft-capacity
   // window; contents are opaque and must not be modified while attached.
-  SharedPoolCache(
-      SharedPool &pool, std::span<std::uint32_t> storage,
+  BlockPoolCache(
+      ConcurrentBlockPool &pool, std::span<std::uint32_t> storage,
       std::uint32_t transfer_batch = kDefaultTransferBatch) noexcept
       : pool_(&pool), indices_(storage.data()) {
     if (storage.empty() ||
@@ -47,8 +47,8 @@ public:
 
   // Owned metadata construction. Only the cache's uint32 index array uses
   // `metadata`; the slab and shared links continue to belong to `pool`.
-  SharedPoolCache(
-      SharedPool &pool, Allocator metadata,
+  BlockPoolCache(
+      ConcurrentBlockPool &pool, AllocatorRef metadata,
       std::uint32_t capacity = kDefaultCapacity,
       std::uint32_t transfer_batch = kDefaultTransferBatch) noexcept
       : pool_(&pool), metadata_(metadata), capacity_(capacity), owns_(true) {
@@ -65,21 +65,21 @@ public:
 
   // Common convenience; callers needing allocator-domain control use the
   // explicit metadata overload or caller-owned span above.
-  explicit SharedPoolCache(
-      SharedPool &pool, std::uint32_t capacity = kDefaultCapacity,
+  explicit BlockPoolCache(
+      ConcurrentBlockPool &pool, std::uint32_t capacity = kDefaultCapacity,
       std::uint32_t transfer_batch = kDefaultTransferBatch) noexcept
-      : SharedPoolCache(pool, system_allocator(), capacity, transfer_batch) {}
+      : BlockPoolCache(pool, system_allocator(), capacity, transfer_batch) {}
 
-  ~SharedPoolCache() {
+  ~BlockPoolCache() {
     publish();
     if (owns_ && indices_ != nullptr)
       metadata_.deallocate_n(indices_, capacity_);
   }
 
-  SharedPoolCache(const SharedPoolCache&) = delete;
-  SharedPoolCache& operator=(const SharedPoolCache&) = delete;
-  SharedPoolCache(SharedPoolCache&&) = delete;
-  SharedPoolCache& operator=(SharedPoolCache&&) = delete;
+  BlockPoolCache(const BlockPoolCache&) = delete;
+  BlockPoolCache& operator=(const BlockPoolCache&) = delete;
+  BlockPoolCache(BlockPoolCache&&) = delete;
+  BlockPoolCache& operator=(BlockPoolCache&&) = delete;
 
   bool valid() const noexcept { return valid_; }
   std::uint32_t capacity() const noexcept { return capacity_; }
@@ -120,8 +120,8 @@ public:
     count_ = 0;
   }
 
-  Allocator as_allocator() noexcept {
-    return Allocator(&cache_alloc, &cache_free, &cache_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&cache_alloc, &cache_free, &cache_realloc, this);
   }
 
 #if defined(HYLE_TESTING)
@@ -149,7 +149,7 @@ private:
 
   static void *cache_alloc(void *state, std::size_t size,
                            std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPoolCache *>(state);
+    auto *self = static_cast<BlockPoolCache *>(state);
     if (size == 0)
       return nullptr;
     // Construction OOM is a runtime allocation failure, not a caller bug.
@@ -164,13 +164,13 @@ private:
   static void cache_free(void *state, void *ptr, std::size_t,
                          std::size_t) noexcept {
     if (ptr != nullptr)
-      static_cast<SharedPoolCache *>(state)->deallocate(ptr);
+      static_cast<BlockPoolCache *>(state)->deallocate(ptr);
   }
 
   static void *cache_realloc(void *state, void *ptr, std::size_t old_size,
                              std::size_t new_size,
                              std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPoolCache *>(state);
+    auto *self = static_cast<BlockPoolCache *>(state);
     if (ptr == nullptr)
       return cache_alloc(state, new_size, alignment);
     HYLE_FATAL_ASSERT(self->valid_ &&
@@ -185,8 +185,8 @@ private:
     return ptr;
   }
 
-  SharedPool *pool_ = nullptr;
-  Allocator metadata_;
+  ConcurrentBlockPool *pool_ = nullptr;
+  AllocatorRef metadata_;
   std::uint32_t *indices_ = nullptr;
   std::uint32_t capacity_ = 0;
   std::uint32_t count_ = 0;

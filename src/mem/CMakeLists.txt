@@ -1,4 +1,4 @@
-# mem-01: Allocator vtable (+ alignment fix). mem-02: system backing = mimalloc,
+# mem-01: AllocatorRef vtable (+ alignment fix). mem-02: system backing = mimalloc,
 # wrapped behind the vtable so mi_* never leaks (mem-design §96/106).
 #
 # mimalloc is a HARD, UNCONDITIONAL dependency: there is deliberately NO off-switch

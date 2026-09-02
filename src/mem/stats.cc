@@ -12,10 +12,10 @@ namespace hyle::mem {
 
 // Nested Impl must be completed in this namespace (not an anon ns) for MSVC.
 struct LeakTracker::Impl {
-  explicit Impl(Allocator allocator)
+  explicit Impl(AllocatorRef allocator)
       : backing(allocator), resource(allocator), live(&resource) {}
 
-  Allocator backing;
+  AllocatorRef backing;
   // unordered_map insert/erase may allocate, rehash and walk buckets. This is
   // diagnostic code, not a few-instruction spin-lock critical section.
   mutable std::mutex lock;
@@ -29,13 +29,13 @@ namespace {
 // ---- StatsAllocator vtable state (TU-local) ---------------------------------
 
 struct StatsState {
-  StatsState(Allocator b, Allocator m, LeakTracker&& tracker,
+  StatsState(AllocatorRef b, AllocatorRef m, LeakTracker&& tracker,
              bool track) noexcept
       : backing(b), metadata(m), leaks(std::move(tracker)),
         track_leaks(track) {}
 
-  Allocator backing;
-  Allocator metadata;
+  AllocatorRef backing;
+  AllocatorRef metadata;
   AllocStats stats;
   LeakTracker leaks;
   bool track_leaks = false;
@@ -98,7 +98,7 @@ void* stats_realloc(void* st, void* ptr, std::size_t old_size,
 
 // ---- LeakTracker ------------------------------------------------------------
 
-Result<LeakTracker> LeakTracker::create(Allocator metadata) noexcept {
+Result<LeakTracker> LeakTracker::create(AllocatorRef metadata) noexcept {
   if (!metadata.valid()) {
     return std::unexpected(
         Status::InvalidArgument("LeakTracker create: invalid metadata"));
@@ -135,7 +135,7 @@ LeakTracker& LeakTracker::operator=(LeakTracker&& o) noexcept {
 
 void LeakTracker::destroy() noexcept {
   if (impl_ == nullptr) return;
-  const Allocator backing = impl_->backing;
+  const AllocatorRef backing = impl_->backing;
   impl_->~Impl();
   backing.deallocate(impl_, sizeof(Impl), alignof(Impl));
   impl_ = nullptr;
@@ -144,7 +144,7 @@ void LeakTracker::destroy() noexcept {
 void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
   if (impl_ == nullptr || p == nullptr || size == 0) return;
   std::lock_guard<std::mutex> lock(impl_->lock);
-  // Leak tracking is diagnostic and runs inside Allocator's noexcept vtable.
+  // Leak tracking is diagnostic and runs inside AllocatorRef's noexcept vtable.
   // Hash-table growth may throw on OOM; losing one debug record is preferable
   // to terminating an otherwise successful allocation.
   try {
@@ -205,9 +205,9 @@ void LeakTracker::clear() noexcept {
 // ---- StatsAllocator ---------------------------------------------------------
 
 // State_ pointer stores StatsState*.
-Result<StatsAllocator> StatsAllocator::create(Allocator backing,
+Result<StatsAllocator> StatsAllocator::create(AllocatorRef backing,
                                              bool track_leaks,
-                                             Allocator metadata) noexcept {
+                                             AllocatorRef metadata) noexcept {
   if (!backing.valid() || !metadata.valid()) {
     return std::unexpected(
         Status::InvalidArgument(
@@ -238,11 +238,11 @@ StatsAllocator::~StatsAllocator() { destroy(); }
 void StatsAllocator::destroy() noexcept {
   if (state_ == nullptr) return;
   auto* s = reinterpret_cast<StatsState*>(state_);
-  // Allocator handles returned by get() borrow this state. Destruction (also
+  // AllocatorRef handles returned by get() borrow this state. Destruction (also
   // the overwrite half of move assignment) while allocations remain live
   // would silently leave dangling vtable state, so treat it as a contract bug.
   HYLE_FATAL_ASSERT(s->stats.balanced());
-  const Allocator metadata = s->metadata;
+  const AllocatorRef metadata = s->metadata;
   s->~StatsState();
   metadata.deallocate(s, sizeof(StatsState), alignof(StatsState));
   state_ = nullptr;
@@ -261,9 +261,9 @@ StatsAllocator& StatsAllocator::operator=(StatsAllocator&& o) noexcept {
   return *this;
 }
 
-Allocator StatsAllocator::get() const noexcept {
+AllocatorRef StatsAllocator::get() const noexcept {
   HYLE_FATAL_ASSERT(state_ != nullptr);
-  return Allocator(&stats_alloc, &stats_free, &stats_realloc,
+  return AllocatorRef(&stats_alloc, &stats_free, &stats_realloc,
                    reinterpret_cast<StatsState*>(state_));
 }
 

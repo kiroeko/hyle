@@ -10,10 +10,10 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
-// Traditional C++ Allocator named-requirement adapter over hyle::mem::Allocator.
+// Traditional C++ AllocatorRef named-requirement adapter over hyle::mem::AllocatorRef.
 // PMR covers std::pmr consumers; this adapter covers allocator-template APIs such
 // as std::vector<T, A>, std::allocate_shared, and third-party containers that
-// rebind an allocator type. Like Allocator and PmrResource, it borrows the
+// rebind an allocator type. Like AllocatorRef and PmrResource, it borrows the
 // backing state: every container/control block using it must be destroyed before
 // that state.
 
@@ -22,7 +22,7 @@ namespace hyle::mem {
 // Stateless named-requirement adapter over SystemAllocator.  This is the
 // normal default-heap shape for allocator-template APIs: empty/EBO-friendly,
 // always equal, and compile-time bound.  StdAllocator<T> below deliberately
-// remains the runtime-injected shape and stores an Allocator handle.
+// remains the runtime-injected shape and stores an AllocatorRef handle.
 template <class T>
 class SystemStdAllocator {
   static_assert(!std::is_const_v<T> && !std::is_volatile_v<T> &&
@@ -105,7 +105,7 @@ class StdAllocator {
   // that case instead.
   StdAllocator() = delete;
 
-  explicit StdAllocator(Allocator allocator) noexcept : allocator_(allocator) {
+  explicit StdAllocator(AllocatorRef allocator) noexcept : allocator_(allocator) {
     HYLE_FATAL_ASSERT(allocator_.valid());
   }
 
@@ -134,17 +134,17 @@ class StdAllocator {
     return *this;
   }
 
-  Allocator allocator() const noexcept { return allocator_; }
+  AllocatorRef allocator() const noexcept { return allocator_; }
 
  private:
-  Allocator allocator_;
+  AllocatorRef allocator_;
 };
 
 template <class T, class U>
 bool operator==(const StdAllocator<T>& left,
                 const StdAllocator<U>& right) noexcept {
-  const Allocator a = left.allocator();
-  const Allocator b = right.allocator();
+  const AllocatorRef a = left.allocator();
+  const AllocatorRef b = right.allocator();
   return a.alloc_fn() == b.alloc_fn() && a.free_fn() == b.free_fn() &&
          a.realloc_fn() == b.realloc_fn() && a.state() == b.state();
 }

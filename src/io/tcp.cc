@@ -262,7 +262,7 @@ TcpStream tcp_socket(IoContext& io, unsigned owner_worker) noexcept {
   return tcp_socket(io, owner_worker, AddressFamily::kIpv4);
 }
 
-sched::Task<std::int64_t> tcp_read_exact(mem::Allocator, TcpStream& stream,
+sched::Task<std::int64_t> tcp_read_exact(mem::AllocatorRef, TcpStream& stream,
                                          void* buffer,
                                          std::uint32_t len) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
@@ -276,7 +276,7 @@ sched::Task<std::int64_t> tcp_read_exact(mem::Allocator, TcpStream& stream,
   co_return static_cast<std::int64_t>(done);
 }
 
-sched::Task<std::int64_t> tcp_write_all(mem::Allocator, TcpStream& stream,
+sched::Task<std::int64_t> tcp_write_all(mem::AllocatorRef, TcpStream& stream,
                                         const void* buffer,
                                         std::uint32_t len) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
@@ -291,7 +291,7 @@ sched::Task<std::int64_t> tcp_write_all(mem::Allocator, TcpStream& stream,
 }
 
 sched::Task<std::int64_t> tcp_read_exact_until(
-    mem::Allocator alloc, TcpStream& stream, void* buffer, std::uint32_t len,
+    mem::AllocatorRef alloc, TcpStream& stream, void* buffer, std::uint32_t len,
     std::uint64_t deadline_ns) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
   auto* bytes = static_cast<unsigned char*>(buffer);
@@ -306,7 +306,7 @@ sched::Task<std::int64_t> tcp_read_exact_until(
 }
 
 sched::Task<std::int64_t> tcp_write_all_until(
-    mem::Allocator alloc, TcpStream& stream, const void* buffer,
+    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
     std::uint32_t len, std::uint64_t deadline_ns) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
   const auto* bytes = static_cast<const unsigned char*>(buffer);
@@ -321,7 +321,7 @@ sched::Task<std::int64_t> tcp_write_all_until(
 }
 
 sched::Task<std::int64_t> tcp_read_exact_cancel(
-    mem::Allocator, TcpStream& stream, void* buffer, std::uint32_t len,
+    mem::AllocatorRef, TcpStream& stream, void* buffer, std::uint32_t len,
     const sched::CancelToken* token) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
   auto* bytes = static_cast<unsigned char*>(buffer);
@@ -336,7 +336,7 @@ sched::Task<std::int64_t> tcp_read_exact_cancel(
 }
 
 sched::Task<std::int64_t> tcp_write_all_cancel(
-    mem::Allocator, TcpStream& stream, const void* buffer, std::uint32_t len,
+    mem::AllocatorRef, TcpStream& stream, const void* buffer, std::uint32_t len,
     const sched::CancelToken* token) noexcept {
   HYLE_FATAL_ASSERT(buffer != nullptr || len == 0);
   const auto* bytes = static_cast<const unsigned char*>(buffer);

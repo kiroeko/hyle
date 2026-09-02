@@ -18,12 +18,12 @@ constexpr std::size_t kAllocPrefix =
     (sizeof(std::size_t) + kAllocAlign - 1) & ~(kAllocAlign - 1);
 
 struct ByteBuf {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint8_t* data = nullptr;
   std::uint32_t size = 0;
   std::uint32_t cap = 0;
 
-  explicit ByteBuf(mem::Allocator a) noexcept : alloc(a) {}
+  explicit ByteBuf(mem::AllocatorRef a) noexcept : alloc(a) {}
   ~ByteBuf() {
     if (data != nullptr) alloc.deallocate(data, cap, kAllocAlign);
   }
@@ -72,7 +72,7 @@ struct HeaderSlot {
 };
 
 struct Stream {
-  explicit Stream(mem::Allocator alloc) noexcept
+  explicit Stream(mem::AllocatorRef alloc) noexcept
       : header_bytes(alloc), body(alloc), outbound(alloc) {}
 
   ByteBuf header_bytes;
@@ -99,13 +99,13 @@ struct Stream {
 };
 
 struct SessionState {
-  explicit SessionState(mem::Allocator a, bool is_server) noexcept
+  explicit SessionState(mem::AllocatorRef a, bool is_server) noexcept
       : alloc(a), streams(a), input(a), server(is_server) {}
 
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   container::SwissTable<std::int32_t, Stream*,
                         container::Hash<std::int32_t>,
-                        std::equal_to<>, mem::Allocator>
+                        std::equal_to<>, mem::AllocatorRef>
       streams;
   ByteBuf input;
   nghttp2_session* session = nullptr;
@@ -151,12 +151,12 @@ struct SessionState {
   void release_current(const void*& current) noexcept;
 };
 
-Stream* allocate_stream(mem::Allocator alloc) noexcept {
+Stream* allocate_stream(mem::AllocatorRef alloc) noexcept {
   void* p = alloc.allocate(sizeof(Stream), alignof(Stream));
   return p == nullptr ? nullptr : new (p) Stream(alloc);
 }
 
-void destroy_stream(mem::Allocator alloc, Stream* stream) noexcept {
+void destroy_stream(mem::AllocatorRef alloc, Stream* stream) noexcept {
   if (stream == nullptr) return;
   stream->~Stream();
   alloc.deallocate(stream, sizeof(Stream), alignof(Stream));
@@ -598,7 +598,7 @@ bool submit_response_state(SessionState& state, std::int32_t stream_id,
   return true;
 }
 
-sched::Task<bool> write_all_h2(mem::Allocator alloc,
+sched::Task<bool> write_all_h2(mem::AllocatorRef alloc,
                                HttpTransport& transport,
                                const std::uint8_t* data,
                                std::size_t size) noexcept {
@@ -615,7 +615,7 @@ sched::Task<bool> write_all_h2(mem::Allocator alloc,
   co_return true;
 }
 
-sched::Task<bool> flush_session(mem::Allocator alloc, SessionState& state,
+sched::Task<bool> flush_session(mem::AllocatorRef alloc, SessionState& state,
                                 HttpTransport& transport) noexcept {
   for (;;) {
     const std::uint8_t* data = nullptr;
@@ -651,7 +651,7 @@ bool feed_session(SessionState& state, const std::uint8_t* data,
   return true;
 }
 
-sched::Task<bool> pump_once(mem::Allocator alloc, SessionState& state,
+sched::Task<bool> pump_once(mem::AllocatorRef alloc, SessionState& state,
                             HttpTransport& transport) noexcept {
   if (!(co_await flush_session(alloc, state, transport))) co_return false;
   const std::int64_t n = co_await http_transport_read(
@@ -665,7 +665,7 @@ sched::Task<bool> pump_once(mem::Allocator alloc, SessionState& state,
   co_return co_await flush_session(alloc, state, transport);
 }
 
-sched::Task<bool> flush_stream(mem::Allocator alloc, SessionState& state,
+sched::Task<bool> flush_stream(mem::AllocatorRef alloc, SessionState& state,
                                HttpTransport& transport,
                                Stream& stream) noexcept {
   if (!(co_await flush_session(alloc, state, transport))) co_return false;
@@ -695,11 +695,11 @@ bool submit_goaway(SessionState& state, Http2Error error) noexcept {
 }  // namespace
 
 struct Http2ServerConn::Impl : SessionState {
-  explicit Impl(mem::Allocator alloc) noexcept : SessionState(alloc, true) {}
+  explicit Impl(mem::AllocatorRef alloc) noexcept : SessionState(alloc, true) {}
 };
 
 struct Http2ClientConn::Impl : SessionState {
-  explicit Impl(mem::Allocator alloc) noexcept : SessionState(alloc, false) {}
+  explicit Impl(mem::AllocatorRef alloc) noexcept : SessionState(alloc, false) {}
 };
 
 std::int32_t Http2MessageView::stream_id() const noexcept {
@@ -760,7 +760,7 @@ StringView Http2MessageView::body() const noexcept {
 namespace {
 
 template <class Impl>
-Impl* make_impl(mem::Allocator alloc) noexcept {
+Impl* make_impl(mem::AllocatorRef alloc) noexcept {
   void* p = alloc.allocate(sizeof(Impl), alignof(Impl));
   if (p == nullptr) return nullptr;
   auto* impl = new (p) Impl(alloc);
@@ -774,7 +774,7 @@ Impl* make_impl(mem::Allocator alloc) noexcept {
 }
 
 template <class Impl>
-void free_impl(mem::Allocator alloc, Impl* impl) noexcept {
+void free_impl(mem::AllocatorRef alloc, Impl* impl) noexcept {
   if (impl == nullptr) return;
   impl->destroy();
   impl->~Impl();
@@ -783,13 +783,13 @@ void free_impl(mem::Allocator alloc, Impl* impl) noexcept {
 
 }  // namespace
 
-Http2ServerConn::Http2ServerConn(mem::Allocator alloc,
+Http2ServerConn::Http2ServerConn(mem::AllocatorRef alloc,
                                  TcpStream stream) noexcept
     : impl_(make_impl<Impl>(alloc)),
       transport_(std::move(stream)),
       alloc_(alloc) {}
 #if defined(HYLE_IO_TLS)
-Http2ServerConn::Http2ServerConn(mem::Allocator alloc,
+Http2ServerConn::Http2ServerConn(mem::AllocatorRef alloc,
                                  TlsStream stream) noexcept
     : impl_(stream.negotiated_protocol() == "h2" ? make_impl<Impl>(alloc)
                                                   : nullptr),
@@ -816,7 +816,7 @@ Http2ServerConn& Http2ServerConn::operator=(Http2ServerConn&& other) noexcept {
 }
 
 sched::Task<Http2MessageView*> http2_server_next(
-    mem::Allocator alloc, Http2ServerConn& conn) noexcept {
+    mem::AllocatorRef alloc, Http2ServerConn& conn) noexcept {
   if (!conn.valid() || conn.impl_->fatal) co_return nullptr;
   conn.impl_->release_current(conn.current_.stream_);
   for (;;) {
@@ -834,7 +834,7 @@ sched::Task<Http2MessageView*> Http2ServerConn::next_request() noexcept {
 }
 
 sched::Task<bool> http2_server_respond(
-    mem::Allocator alloc, Http2ServerConn& conn, std::int32_t stream_id,
+    mem::AllocatorRef alloc, Http2ServerConn& conn, std::int32_t stream_id,
     int status, const Http2Header* headers, std::size_t header_count,
     StringView body) noexcept {
   if (!conn.valid() ||
@@ -853,7 +853,7 @@ sched::Task<bool> Http2ServerConn::respond(
                               header_count, body);
 }
 
-sched::Task<bool> http2_server_reset(mem::Allocator alloc,
+sched::Task<bool> http2_server_reset(mem::AllocatorRef alloc,
                                      Http2ServerConn& conn,
                                      std::int32_t stream_id,
                                      Http2Error error) noexcept {
@@ -866,7 +866,7 @@ sched::Task<bool> Http2ServerConn::reset(std::int32_t stream_id,
                                          Http2Error error) noexcept {
   return http2_server_reset(alloc_, *this, stream_id, error);
 }
-sched::Task<bool> http2_server_shutdown(mem::Allocator alloc,
+sched::Task<bool> http2_server_shutdown(mem::AllocatorRef alloc,
                                         Http2ServerConn& conn,
                                         Http2Error error) noexcept {
   if (!conn.valid() || conn.impl_->fatal ||
@@ -880,13 +880,13 @@ sched::Task<bool> Http2ServerConn::shutdown(Http2Error error) noexcept {
   return http2_server_shutdown(alloc_, *this, error);
 }
 
-Http2ClientConn::Http2ClientConn(mem::Allocator alloc,
+Http2ClientConn::Http2ClientConn(mem::AllocatorRef alloc,
                                  TcpStream stream) noexcept
     : impl_(make_impl<Impl>(alloc)),
       transport_(std::move(stream)),
       alloc_(alloc) {}
 #if defined(HYLE_IO_TLS)
-Http2ClientConn::Http2ClientConn(mem::Allocator alloc,
+Http2ClientConn::Http2ClientConn(mem::AllocatorRef alloc,
                                  TlsStream stream) noexcept
     : impl_(stream.negotiated_protocol() == "h2" ? make_impl<Impl>(alloc)
                                                   : nullptr),
@@ -913,7 +913,7 @@ Http2ClientConn& Http2ClientConn::operator=(Http2ClientConn&& other) noexcept {
 }
 
 sched::Task<std::int32_t> http2_client_submit(
-    mem::Allocator alloc, Http2ClientConn& conn, StringView method,
+    mem::AllocatorRef alloc, Http2ClientConn& conn, StringView method,
     StringView scheme, StringView authority, StringView path,
     const Http2Header* headers, std::size_t header_count,
     StringView body) noexcept {
@@ -938,7 +938,7 @@ sched::Task<std::int32_t> Http2ClientConn::submit_request(
 }
 
 sched::Task<Http2MessageView*> http2_client_next(
-    mem::Allocator alloc, Http2ClientConn& conn) noexcept {
+    mem::AllocatorRef alloc, Http2ClientConn& conn) noexcept {
   if (!conn.valid() || conn.impl_->fatal) co_return nullptr;
   conn.impl_->release_current(conn.current_.stream_);
   for (;;) {
@@ -954,7 +954,7 @@ sched::Task<Http2MessageView*> Http2ClientConn::next_response() noexcept {
   return http2_client_next(alloc_, *this);
 }
 
-sched::Task<bool> http2_client_reset(mem::Allocator alloc,
+sched::Task<bool> http2_client_reset(mem::AllocatorRef alloc,
                                      Http2ClientConn& conn,
                                      std::int32_t stream_id,
                                      Http2Error error) noexcept {
@@ -967,7 +967,7 @@ sched::Task<bool> Http2ClientConn::reset(std::int32_t stream_id,
                                          Http2Error error) noexcept {
   return http2_client_reset(alloc_, *this, stream_id, error);
 }
-sched::Task<bool> http2_client_shutdown(mem::Allocator alloc,
+sched::Task<bool> http2_client_shutdown(mem::AllocatorRef alloc,
                                         Http2ClientConn& conn,
                                         Http2Error error) noexcept {
   if (!conn.valid() || conn.impl_->fatal ||

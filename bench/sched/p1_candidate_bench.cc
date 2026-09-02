@@ -17,7 +17,7 @@
 namespace {
 
 namespace p1 = hyle::bench::sched_p1;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::sched::CancelToken;
 using hyle::sched::Channel;
 using hyle::sched::JoinHandle;
@@ -53,7 +53,7 @@ struct RequestRun {
   std::uint64_t checksum = 0;
 };
 
-RequestRun run_request_replay(Scheduler& scheduler, Allocator allocator,
+RequestRun run_request_replay(Scheduler& scheduler, AllocatorRef allocator,
                               std::span<const std::uint64_t> input,
                               std::size_t count, p1::WorkerHits& hits) {
   Channel<std::uint64_t> results(allocator, count);
@@ -98,7 +98,7 @@ struct StructuredRun {
 };
 
 StructuredRun run_structured_body(
-    Scheduler& scheduler, Allocator allocator,
+    Scheduler& scheduler, AllocatorRef allocator,
     std::span<const std::uint64_t> input, std::size_t rounds,
     std::size_t fanout, p1::WorkerHits& hits) {
   std::vector<JoinHandle<std::uint64_t>> handles;
@@ -142,7 +142,7 @@ StructuredRun run_structured_body(
 
 struct StructuredContext {
   Scheduler* scheduler = nullptr;
-  Allocator allocator{};
+  AllocatorRef allocator{};
   std::span<const std::uint64_t> input{};
   std::size_t rounds = 0;
   std::size_t fanout = 0;
@@ -160,7 +160,7 @@ void structured_root(void* raw) {
 }
 
 StructuredRun run_structured_replay(
-    Scheduler& scheduler, Allocator allocator,
+    Scheduler& scheduler, AllocatorRef allocator,
     std::span<const std::uint64_t> input, std::size_t rounds,
     std::size_t fanout, p1::WorkerHits& hits) {
   StructuredContext context{&scheduler, allocator, input, rounds, fanout,
@@ -270,7 +270,7 @@ int main() {
   };
   options.worker_hook_context = &affinity;
 
-  const Allocator allocator = hyle::mem::system_allocator();
+  const AllocatorRef allocator = hyle::mem::system_allocator();
   hyle::Status scheduler_status;
   Scheduler scheduler(static_cast<unsigned>(p1::kWorkerCount), allocator,
                       32'768, options, &scheduler_status);

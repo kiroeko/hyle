@@ -206,7 +206,7 @@ inline std::size_t join_path(StringView a, StringView b,
 // Splits `path` into its elements (clay split_all). Allocates the array via
 // `alloc`; each element is a view INTO `path` (no string copies).
 HYLE_CONTAINER_API PodVector<StringView> split_all(StringView path,
-                                                   mem::Allocator alloc);
+                                                   mem::AllocatorRef alloc);
 
 // Replaces the extension: "test.jpg" + ".png" -> "test.png". If `path` has no
 // extension, `ext` is appended ("test" + ".png" -> "test.png" -- clay returned

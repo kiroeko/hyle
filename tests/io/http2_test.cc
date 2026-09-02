@@ -24,7 +24,7 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -54,7 +54,7 @@ void copy_ref(char* out, std::size_t cap, StringView value) noexcept {
   out[n] = '\0';
 }
 
-Task<int> server_task(Allocator alloc, TcpListener* listener,
+Task<int> server_task(AllocatorRef alloc, TcpListener* listener,
                       Result* result) noexcept {
   TcpStream stream = co_await listener->accept(kOwner);
   if (!stream.valid()) co_return 0;
@@ -87,7 +87,7 @@ Task<int> server_task(Allocator alloc, TcpListener* listener,
   co_return 0;
 }
 
-Task<int> client_task(Allocator alloc, IoContext* io, Result* result) noexcept {
+Task<int> client_task(AllocatorRef alloc, IoContext* io, Result* result) noexcept {
   TcpStream stream = tcp_socket(*io, kOwner);
   alignas(16) unsigned char address[128]{};
   std::uint32_t length = 0;
@@ -171,7 +171,7 @@ struct FlowResult {
   std::atomic<bool> ok{false};
 };
 
-Task<int> flow_server(Allocator alloc, TcpListener* listener,
+Task<int> flow_server(AllocatorRef alloc, TcpListener* listener,
                       FlowResult* result) noexcept {
   TcpStream stream = co_await listener->accept(kOwner);
   Http2ServerConn conn{alloc, std::move(stream)};
@@ -186,7 +186,7 @@ Task<int> flow_server(Allocator alloc, TcpListener* listener,
   co_return 0;
 }
 
-Task<int> flow_client(Allocator alloc, IoContext* io, std::uint16_t port,
+Task<int> flow_client(AllocatorRef alloc, IoContext* io, std::uint16_t port,
                       FlowResult* result) noexcept {
   TcpStream stream = tcp_socket(*io, kOwner);
   alignas(16) unsigned char address[128]{};

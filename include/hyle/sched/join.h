@@ -85,7 +85,7 @@ template <class T>
 struct JoinState {
   using DisposeFn = void (*)(JoinState*) noexcept;
 
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   DisposeFn dispose_fn = &JoinState::dispose_default;
   std::atomic<int> refcount{2};
   util::SpinLock mu;              // guards done/status/storage/group
@@ -178,7 +178,7 @@ struct JoinState {
   static void dispose_default(JoinState* state) noexcept {
     if (state->value_present)
       reinterpret_cast<T*>(state->storage)->~T();  // detached value
-    mem::Allocator allocator = state->alloc;
+    mem::AllocatorRef allocator = state->alloc;
     state->~JoinState();
     allocator.deallocate(state, sizeof(JoinState), alignof(JoinState));
   }
@@ -189,7 +189,7 @@ template <>
 struct JoinState<void> {
   using DisposeFn = void (*)(JoinState*) noexcept;
 
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   DisposeFn dispose_fn = &JoinState::dispose_default;
   std::atomic<int> refcount{2};
   util::SpinLock mu;
@@ -254,7 +254,7 @@ struct JoinState<void> {
   }
 
   static void dispose_default(JoinState* state) noexcept {
-    mem::Allocator allocator = state->alloc;
+    mem::AllocatorRef allocator = state->alloc;
     state->~JoinState();
     allocator.deallocate(state, sizeof(JoinState), alignof(JoinState));
   }
@@ -426,7 +426,7 @@ concept WorkerStackTask =
 template <class F, class R>
 struct ScheduledTaskCell final : JoinState<R> {
   template <class Fn>
-  ScheduledTaskCell(mem::Allocator allocator, Fn&& callable) noexcept
+  ScheduledTaskCell(mem::AllocatorRef allocator, Fn&& callable) noexcept
       : fn(std::in_place, std::forward<Fn>(callable)) {
     this->alloc = allocator;
     this->dispose_fn = &ScheduledTaskCell::destroy;
@@ -449,7 +449,7 @@ struct ScheduledTaskCell final : JoinState<R> {
 
   static void destroy(JoinState<R>* state) noexcept {
     auto* self = static_cast<ScheduledTaskCell*>(state);
-    mem::Allocator allocator = self->alloc;
+    mem::AllocatorRef allocator = self->alloc;
     self->~ScheduledTaskCell();
     allocator.deallocate(self, sizeof(ScheduledTaskCell),
                          alignof(ScheduledTaskCell));
@@ -461,7 +461,7 @@ struct ScheduledTaskCell final : JoinState<R> {
 template <class F>
 struct ScheduledTaskCell<F, void> final : JoinState<void> {
   template <class Fn>
-  ScheduledTaskCell(mem::Allocator allocator, Fn&& callable) noexcept
+  ScheduledTaskCell(mem::AllocatorRef allocator, Fn&& callable) noexcept
       : fn(std::in_place, std::forward<Fn>(callable)) {
     this->alloc = allocator;
     this->dispose_fn = &ScheduledTaskCell::destroy;
@@ -484,7 +484,7 @@ struct ScheduledTaskCell<F, void> final : JoinState<void> {
 
   static void destroy(JoinState<void>* state) noexcept {
     auto* self = static_cast<ScheduledTaskCell*>(state);
-    mem::Allocator allocator = self->alloc;
+    mem::AllocatorRef allocator = self->alloc;
     self->~ScheduledTaskCell();
     allocator.deallocate(self, sizeof(ScheduledTaskCell),
                          alignof(ScheduledTaskCell));
@@ -504,7 +504,7 @@ struct ScheduledTaskCell<F, void> final : JoinState<void> {
 template <class Fn>
   requires detail::WorkerStackTask<Fn>
 JoinHandle<detail::ScheduledResult<Fn>> schedule_task(
-    Scheduler& scheduler, mem::Allocator allocator, Fn&& fn) noexcept {
+    Scheduler& scheduler, mem::AllocatorRef allocator, Fn&& fn) noexcept {
   using Callable = detail::ScheduledCallable<Fn>;
   using R = detail::ScheduledResult<Fn>;
   using Cell = detail::ScheduledTaskCell<Callable, R>;
@@ -540,7 +540,7 @@ namespace detail {
 // the Fiber finish hook AFTER control has left the fiber (safe free point).
 template <class T>
 struct TaskDriver {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   Task<T> task;
   JoinState<T>* state;
   Fiber fiber;
@@ -575,7 +575,7 @@ struct TaskDriver {
   static void destroy(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
     JoinState<T>* st = d->state;
-    mem::Allocator a = d->alloc;
+    mem::AllocatorRef a = d->alloc;
     d->~TaskDriver();
     a.deallocate(d, sizeof(TaskDriver), alignof(TaskDriver));
     st->release();  // after driver is gone: last ref may free the state
@@ -584,7 +584,7 @@ struct TaskDriver {
 
 template <>
 struct TaskDriver<void> {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   Task<void> task;
   JoinState<void>* state;
   Fiber fiber;
@@ -613,7 +613,7 @@ struct TaskDriver<void> {
   static void destroy(void* p) noexcept {
     auto* d = static_cast<TaskDriver*>(p);
     JoinState<void>* st = d->state;
-    mem::Allocator a = d->alloc;
+    mem::AllocatorRef a = d->alloc;
     d->~TaskDriver();
     a.deallocate(d, sizeof(TaskDriver), alignof(TaskDriver));
     st->release();
@@ -623,7 +623,7 @@ struct TaskDriver<void> {
 }  // namespace detail
 
 template <class T>
-JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
+JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task,
                          std::size_t stack_size = kDefaultStackSize) noexcept {
   using detail::JoinState;
   using detail::TaskDriver;

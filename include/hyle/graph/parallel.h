@@ -77,7 +77,7 @@ namespace hyle::graph {
 // pass differs (benign, since same-level nodes are independent).
 //   CONTRACT: called from a worker fiber of `sched`; same-level nodes write disjoint memory.
 HYLE_GRAPH_API Status evaluate_parallel(TaskGraph& g, sched::Scheduler& sched,
-                                        mem::Allocator alloc) noexcept;
+                                        mem::AllocatorRef alloc) noexcept;
 
 // DATAFLOW-WAVEFRONT parallel evaluate (graph-01 step-3, the other half). Same result as
 // evaluate_parallel (all dirty nodes run once, clean skipped), but a FINER schedule: a
@@ -98,6 +98,6 @@ HYLE_GRAPH_API Status evaluate_parallel(TaskGraph& g, sched::Scheduler& sched,
 // (already fresh) and never run. Same failure/aliasing contract as evaluate_parallel.
 //   CONTRACT: called from a worker fiber of `sched`; concurrent nodes write disjoint memory.
 HYLE_GRAPH_API Status evaluate_parallel_wavefront(TaskGraph& g, sched::Scheduler& sched,
-                                                  mem::Allocator alloc) noexcept;
+                                                  mem::AllocatorRef alloc) noexcept;
 
 }  // namespace hyle::graph

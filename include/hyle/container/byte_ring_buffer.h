@@ -28,11 +28,11 @@ public:
   };
 
   ByteRingBuffer() noexcept : alloc_(mem::system_allocator()) {}
-  explicit ByteRingBuffer(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+  explicit ByteRingBuffer(mem::AllocatorRef alloc) noexcept : alloc_(alloc) {}
   explicit ByteRingBuffer(size_type capacity) : ByteRingBuffer() {
     reserve(capacity);
   }
-  ByteRingBuffer(mem::Allocator alloc, size_type capacity)
+  ByteRingBuffer(mem::AllocatorRef alloc, size_type capacity)
       : ByteRingBuffer(alloc) {
     reserve(capacity);
   }
@@ -71,7 +71,7 @@ public:
   }
   ~ByteRingBuffer() { release(); }
 
-  mem::Allocator allocator() const noexcept { return alloc_; }
+  mem::AllocatorRef allocator() const noexcept { return alloc_; }
   size_type size() const noexcept { return size_; }
   size_type capacity() const noexcept { return capacity_; }
   size_type free_space() const noexcept { return capacity_ - size_; }
@@ -187,7 +187,7 @@ private:
     size_ = 0;
   }
 
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   std::byte *storage_ = nullptr;
   size_type capacity_ = 0;
   size_type head_ = 0;

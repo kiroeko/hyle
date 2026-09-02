@@ -12,13 +12,13 @@
 // (read loop feeds the parser, body source separate from header parse, _done flag
 // governs keep-alive) -- see docs scope "HTTP 最终结论".
 //
-// The co_await layers are FREE coroutines taking mem::Allocator FIRST (a member
-// coroutine's promise operator new would bind `this`, not the Allocator -- the trap
+// The co_await layers are FREE coroutines taking mem::AllocatorRef FIRST (a member
+// coroutine's promise operator new would bind `this`, not the AllocatorRef -- the trap
 // tls.cc/dns.cc/file.cc all hit). The public members forward to them.
 
 namespace hyle::io {
 
-sched::Task<std::int64_t> http_transport_read(mem::Allocator alloc,
+sched::Task<std::int64_t> http_transport_read(mem::AllocatorRef alloc,
                                               HttpTransport& transport,
                                               void* buffer,
                                               std::uint32_t length) noexcept {
@@ -31,7 +31,7 @@ sched::Task<std::int64_t> http_transport_read(mem::Allocator alloc,
   co_return co_await transport.tcp_.read(buffer, length);
 }
 
-sched::Task<std::int64_t> http_transport_write(mem::Allocator alloc,
+sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef alloc,
                                                HttpTransport& transport,
                                                const void* buffer,
                                                std::uint32_t length) noexcept {
@@ -44,7 +44,7 @@ sched::Task<std::int64_t> http_transport_write(mem::Allocator alloc,
   co_return co_await transport.tcp_.write(buffer, length);
 }
 
-sched::Task<int> http_transport_shutdown(mem::Allocator alloc,
+sched::Task<int> http_transport_shutdown(mem::AllocatorRef alloc,
                                          HttpTransport& transport) noexcept {
 #if defined(HYLE_IO_TLS)
   if (transport.is_tls_)
@@ -103,17 +103,17 @@ bool parse_u64(StringView s, std::uint64_t& out) noexcept {
   return true;
 }
 
-// A small growable byte buffer allocated via mem::Allocator. Holds the read data
+// A small growable byte buffer allocated via mem::AllocatorRef. Holds the read data
 // for one connection; persists across keep-alive requests (leftover pipelined
 // bytes stay at the front after consume()). Not a general container -- just what
 // the HTTP read loop needs (append at tail, consume from front).
 struct GrowBuf {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   char* data = nullptr;
   std::uint32_t size = 0;   // bytes of valid data
   std::uint32_t cap = 0;
 
-  explicit GrowBuf(mem::Allocator a) noexcept : alloc(a) {}
+  explicit GrowBuf(mem::AllocatorRef a) noexcept : alloc(a) {}
   ~GrowBuf() {
     if (data != nullptr) alloc.deallocate(data, cap, alignof(std::max_align_t));
   }
@@ -154,7 +154,7 @@ struct GrowBuf {
 }  // namespace
 
 // ---- HttpServerConn::Impl --------------------------------------------------
-// Per-connection state that outlives individual requests (heap, via Allocator):
+// Per-connection state that outlives individual requests (heap, via AllocatorRef):
 // the growable read buffer + the parser scratch (header array + the last parsed
 // request views). Kept in an Impl so http.h needn't include picohttpparser.
 struct HttpServerConn::Impl {
@@ -163,7 +163,7 @@ struct HttpServerConn::Impl {
   GrowBuf body;  // decoded/collected body storage (views point here)
   phr_header headers[kHttpMaxHeaders];
   HttpRequest req;  // reused each next_request(); views point into head/body
-  explicit Impl(mem::Allocator a) noexcept : buf(a), head(a), body(a) {}
+  explicit Impl(mem::AllocatorRef a) noexcept : buf(a), head(a), body(a) {}
 };
 
 // ---- HttpRequest accessors -------------------------------------------------
@@ -214,12 +214,12 @@ StringView HttpResponseView::header(StringView name) const noexcept {
   return {};
 }
 
-// ---- server: read helpers (free coroutines, Allocator-first) ---------------
+// ---- server: read helpers (free coroutines, AllocatorRef-first) ---------------
 namespace {
 
 // co_await one read into buf's tail; grow first. Returns bytes read (0 = peer
 // closed, <0 = error). Appends to buf.size on success.
-sched::Task<std::int64_t> read_more(mem::Allocator alloc, GrowBuf& buf,
+sched::Task<std::int64_t> read_more(mem::AllocatorRef alloc, GrowBuf& buf,
                                     HttpTransport& transport) noexcept {
   if (!buf.reserve(buf.size + 4096)) co_return -1;
   std::int64_t n = co_await http_transport_read(
@@ -239,7 +239,7 @@ sched::Task<std::int64_t> read_more(mem::Allocator alloc, GrowBuf& buf,
 
 // Read exactly `need` total body bytes (already have `have`) appended after the
 // head. Returns false on eof/err.
-sched::Task<bool> fill_body(mem::Allocator alloc, GrowBuf& buf,
+sched::Task<bool> fill_body(mem::AllocatorRef alloc, GrowBuf& buf,
                             HttpTransport& transport,
                             std::uint32_t body_off, std::uint64_t need) noexcept {
   while (buf.size - body_off < need) {
@@ -262,7 +262,7 @@ sched::Task<bool> fill_body(mem::Allocator alloc, GrowBuf& buf,
 //
 // Returns decoded byte count on success (leaving trailing pipelined bytes at the
 // front of buf), or UINT64_MAX on error.
-sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
+sched::Task<std::uint64_t> decode_chunked(mem::AllocatorRef alloc, GrowBuf& buf,
                                           GrowBuf& out,
                                           HttpTransport& transport) noexcept {
   phr_chunked_decoder dec;
@@ -316,13 +316,13 @@ sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
 
 // ---- HttpServerConn lifetime -----------------------------------------------
 
-HttpServerConn::HttpServerConn(mem::Allocator alloc, TcpStream stream) noexcept
+HttpServerConn::HttpServerConn(mem::AllocatorRef alloc, TcpStream stream) noexcept
     : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
 }
 #if defined(HYLE_IO_TLS)
-HttpServerConn::HttpServerConn(mem::Allocator alloc, TlsStream stream) noexcept
+HttpServerConn::HttpServerConn(mem::AllocatorRef alloc, TlsStream stream) noexcept
     : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
@@ -353,7 +353,7 @@ HttpServerConn& HttpServerConn::operator=(HttpServerConn&& o) noexcept {
 
 // ---- server: next_request --------------------------------------------------
 
-sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
+sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef alloc,
                                            HttpServerConn& c) noexcept {
   HttpServerConn::Impl& im = *c.impl_;
   GrowBuf& buf = im.buf;
@@ -535,7 +535,7 @@ bool put_hex(GrowBuf& b, std::uint64_t v) noexcept {
 }
 
 // co_await-write the whole [p, p+n) to the stream (loop over partial writes).
-sched::Task<bool> write_all(mem::Allocator alloc, HttpTransport& transport,
+sched::Task<bool> write_all(mem::AllocatorRef alloc, HttpTransport& transport,
                             const char* p,
                             std::uint32_t n) noexcept {
   std::uint32_t off = 0;
@@ -550,7 +550,7 @@ sched::Task<bool> write_all(mem::Allocator alloc, HttpTransport& transport,
 
 }  // namespace
 
-sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
+sched::Task<bool> http_server_send(mem::AllocatorRef alloc, HttpServerConn& c,
                                    const HttpResponse& resp) noexcept {
   if (resp.status() < 100 || resp.status() > 999 ||
       contains_crlf(resp.reason_))
@@ -636,7 +636,7 @@ sched::Task<bool> HttpServerConn::send_response(const HttpResponse& resp) noexce
 namespace {
 
 template <class Stream>
-sched::Task<void> http_serve_impl(mem::Allocator alloc, Stream stream,
+sched::Task<void> http_serve_impl(mem::AllocatorRef alloc, Stream stream,
                                   HttpHandlerFn handler, void* ctx,
                                   HttpServeOptions options) noexcept {
   HttpServerConn conn{alloc, std::move(stream)};
@@ -645,7 +645,7 @@ sched::Task<void> http_serve_impl(mem::Allocator alloc, Stream stream,
   // handler-owned, request-lifetime work uses this region. Retain ordinary blocks
   // across keep-alive requests so a hot connection pays the backing allocation
   // cost once; clear after the response and handler frame are both gone.
-  mem::Region request_region{alloc, options.request_region};
+  mem::Arena request_region{alloc, options.request_region};
   for (;;) {
     HttpRequest* req = co_await conn.next_request();
     if (req == nullptr) break;
@@ -653,9 +653,9 @@ sched::Task<void> http_serve_impl(mem::Allocator alloc, Stream stream,
     bool sent = false;
     {
       // Destruction order is part of the contract: response, then handler Task
-      // (whose coroutine frame may own response views), then Region::clear().
+      // (whose coroutine frame may own response views), then Arena::clear().
       // This keeps body/header views and streaming state alive through the send.
-      mem::Allocator request_alloc = request_region.as_allocator();
+      mem::AllocatorRef request_alloc = request_region.as_allocator();
       sched::Task<HttpResponse> task = handler(request_alloc, ctx, *req);
       if (!task.valid()) break;
       HttpResponse response = co_await task;
@@ -671,14 +671,14 @@ sched::Task<void> http_serve_impl(mem::Allocator alloc, Stream stream,
 
 }  // namespace
 
-sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
+sched::Task<void> http_serve(mem::AllocatorRef alloc, TcpStream stream,
                              HttpHandlerFn handler, void* ctx,
                              HttpServeOptions options) noexcept {
   return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
 }
 
 #if defined(HYLE_IO_TLS)
-sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
+sched::Task<void> http_serve(mem::AllocatorRef alloc, TlsStream stream,
                              HttpHandlerFn handler, void* ctx,
                              HttpServeOptions options) noexcept {
   return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
@@ -693,16 +693,16 @@ struct HttpClientConn::Impl {
   GrowBuf body;  // collected body storage (views point here)
   phr_header headers[kHttpMaxHeaders];
   HttpResponseView resp;
-  explicit Impl(mem::Allocator a) noexcept : buf(a), head(a), body(a) {}
+  explicit Impl(mem::AllocatorRef a) noexcept : buf(a), head(a), body(a) {}
 };
 
-HttpClientConn::HttpClientConn(mem::Allocator alloc, TcpStream stream) noexcept
+HttpClientConn::HttpClientConn(mem::AllocatorRef alloc, TcpStream stream) noexcept
     : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
 }
 #if defined(HYLE_IO_TLS)
-HttpClientConn::HttpClientConn(mem::Allocator alloc, TlsStream stream) noexcept
+HttpClientConn::HttpClientConn(mem::AllocatorRef alloc, TlsStream stream) noexcept
     : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
@@ -731,7 +731,7 @@ HttpClientConn& HttpClientConn::operator=(HttpClientConn&& o) noexcept {
   return *this;
 }
 
-sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
+sched::Task<HttpResponseView*> http_client_request(mem::AllocatorRef alloc,
                                                    HttpClientConn& c,
                                                    StringView method,
                                                    StringView path, StringView host,

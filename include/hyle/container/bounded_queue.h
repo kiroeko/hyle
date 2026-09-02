@@ -35,7 +35,7 @@ namespace hyle::container {
 //
 // Alloc defaults to the compile-time SystemAllocator: [[no_unique_address]] makes it
 // ZERO bytes (the buffer is the only allocation, done once at construction). Pass a
-// runtime mem::Allocator (BoundedQueue<T,mem::Allocator>) to opt into injection -- the
+// runtime mem::AllocatorRef (BoundedQueue<T,mem::AllocatorRef>) to opt into injection -- the
 // scheduler does this for its run queues.
 template <class T, class Alloc = mem::SystemAllocator>
 class BoundedQueue {

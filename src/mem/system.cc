@@ -101,7 +101,7 @@ namespace {
 
 // mimalloc backing (mem-design decision: borrow a battle-tested general malloc;
 // self-rolling one is wasted effort and necessarily worse). Wrapped behind the
-// Allocator vtable so mi_* types never appear in any HYLE header -- swapping
+// AllocatorRef vtable so mi_* types never appear in any HYLE header -- swapping
 // the backing later touches only this file (same discipline as the ggml
 // bridge). mimalloc tracks each block's size, so realloc needs no manual
 // copy/old_size.
@@ -190,8 +190,8 @@ class SystemMemoryResource final : public std::pmr::memory_resource {
 
 } // namespace
 
-Allocator system_allocator() noexcept {
-  return Allocator(&system_alloc, &system_free, &system_realloc, nullptr);
+AllocatorRef system_allocator() noexcept {
+  return AllocatorRef(&system_alloc, &system_free, &system_realloc, nullptr);
 }
 
 std::pmr::memory_resource *system_memory_resource() noexcept {

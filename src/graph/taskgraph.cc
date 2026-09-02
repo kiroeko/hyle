@@ -12,7 +12,7 @@ inline std::uint32_t idx(NodeId n) noexcept { return static_cast<std::uint32_t>(
 // dep_off_ is the CSR row-pointer array: it holds num_nodes+1 entries, where node i's
 // deps occupy dep_pool_[dep_off_[i] .. dep_off_[i+1]). Seed it with a single 0 (the
 // start offset of the first node's deps) so add_node only ever appends the new END.
-TaskGraph::TaskGraph(mem::Allocator alloc) noexcept
+TaskGraph::TaskGraph(mem::AllocatorRef alloc) noexcept
     : fn_(alloc), ctx_(alloc), dirty_(alloc), dep_pool_(alloc), dep_off_(alloc),
       alloc_(alloc) {
   dep_off_.push_back(0u);
@@ -106,7 +106,7 @@ Status TaskGraph::evaluate_node(NodeId target) noexcept {
   //    (ids < i, visited later in this descending sweep) needed too. No recursion, no
   //    revisits. `needed` is scratch (this call only), sized to t+1 (ids > t can't be in a
   //    cone whose root is t -- they'd have larger ids than target, i.e. downstream).
-  container::SmallVector<bool, 64, mem::Allocator> needed(alloc_);
+  container::SmallVector<bool, 64, mem::AllocatorRef> needed(alloc_);
   needed.reserve(t + 1);
   for (std::uint32_t i = 0; i <= t; ++i) needed.push_back(false);
   needed[t] = true;

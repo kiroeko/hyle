@@ -24,7 +24,7 @@ template <class T> class ObjectPoolCache;
 // global new/delete (fixes clay bug #3, where slots were taken via the
 // allocator but freed with global delete -- an alloc/free mismatch = UB).
 //
-// ObjectPool<T> owns the hard-capacity SharedPool. Hot workers may explicitly
+// ObjectPool<T> owns the hard-capacity ConcurrentBlockPool. Hot workers may explicitly
 // attach an ObjectPoolCache<T>; cache lifetime, capacity, transfer batch and
 // publication are then visible in the object graph instead of hidden in TLS.
 //
@@ -41,7 +41,7 @@ public:
   static_assert(std::is_nothrow_destructible_v<T>,
                 "ObjectPool requires a non-throwing destructor");
 
-  BasicObjectPool(Allocator alloc, std::uint32_t capacity)
+  BasicObjectPool(AllocatorRef alloc, std::uint32_t capacity)
       : pool_(alloc, sizeof(T), capacity, alignof(T)) {}
 
   BasicObjectPool(const BasicObjectPool&) = delete;
@@ -90,8 +90,8 @@ public:
 private:
   template <class> friend class ObjectPoolCache;
 
-  SharedPool &shared_pool() noexcept
-    requires std::is_same_v<Pool, SharedPool>
+  ConcurrentBlockPool &shared_pool() noexcept
+    requires std::is_same_v<Pool, ConcurrentBlockPool>
   {
     return pool_;
   }
@@ -100,7 +100,7 @@ private:
 };
 
 // HARD-capacity typed pool (default, immediate cross-thread visibility).
-template <class T> using ObjectPool = BasicObjectPool<T, SharedPool>;
+template <class T> using ObjectPool = BasicObjectPool<T, ConcurrentBlockPool>;
 
 // Explicit owner-local typed cache over an ObjectPool<T>. The hard pool must
 // outlive this cache and every live object created through it. One cache is
@@ -112,20 +112,20 @@ public:
 
   ObjectPoolCache(ObjectPool<T> &pool, std::span<std::uint32_t> storage,
                   std::uint32_t transfer_batch =
-                      SharedPoolCache::kDefaultTransferBatch) noexcept
+                      BlockPoolCache::kDefaultTransferBatch) noexcept
       : cache_(pool.shared_pool(), storage, transfer_batch) {}
 
-  ObjectPoolCache(ObjectPool<T> &pool, Allocator metadata,
-                  std::uint32_t capacity = SharedPoolCache::kDefaultCapacity,
+  ObjectPoolCache(ObjectPool<T> &pool, AllocatorRef metadata,
+                  std::uint32_t capacity = BlockPoolCache::kDefaultCapacity,
                   std::uint32_t transfer_batch =
-                      SharedPoolCache::kDefaultTransferBatch) noexcept
+                      BlockPoolCache::kDefaultTransferBatch) noexcept
       : cache_(pool.shared_pool(), metadata, capacity, transfer_batch) {}
 
   explicit ObjectPoolCache(
       ObjectPool<T> &pool,
-      std::uint32_t capacity = SharedPoolCache::kDefaultCapacity,
+      std::uint32_t capacity = BlockPoolCache::kDefaultCapacity,
       std::uint32_t transfer_batch =
-          SharedPoolCache::kDefaultTransferBatch) noexcept
+          BlockPoolCache::kDefaultTransferBatch) noexcept
       : cache_(pool.shared_pool(), capacity, transfer_batch) {}
 
   ObjectPoolCache(const ObjectPoolCache&) = delete;
@@ -172,7 +172,7 @@ public:
   void publish() noexcept { cache_.publish(); }
 
 private:
-  SharedPoolCache cache_;
+  BlockPoolCache cache_;
 };
 
 // Fixed-capacity pool for expensive reusable objects. Every T is constructed
@@ -190,7 +190,7 @@ public:
                 "PreservingObjectPool requires a non-throwing destructor");
 
   template <class... Args>
-  BasicPreservingObjectPool(Allocator alloc, std::uint32_t capacity,
+  BasicPreservingObjectPool(AllocatorRef alloc, std::uint32_t capacity,
                             const Args &...args)
       : alloc_(alloc), pool_(alloc, sizeof(T), capacity, alignof(T)),
         capacity_(capacity) {
@@ -289,7 +289,7 @@ private:
     valid_ = false;
   }
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
   Pool pool_;
   T **all_ = nullptr;
   std::uint32_t capacity_ = 0;
@@ -299,6 +299,6 @@ private:
 };
 
 template <class T>
-using PreservingObjectPool = BasicPreservingObjectPool<T, SharedPool>;
+using PreservingObjectPool = BasicPreservingObjectPool<T, ConcurrentBlockPool>;
 
 } // namespace hyle::mem

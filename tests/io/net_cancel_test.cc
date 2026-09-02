@@ -40,7 +40,7 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CancelToken;
 using hyle::sched::Fiber;
@@ -66,13 +66,13 @@ struct CancelResult {
   CancelToken* tok = nullptr;
 };
 
-Task<int> cancel_server(Allocator, IoContext*, TcpListener* ls, CancelResult* r) {
+Task<int> cancel_server(AllocatorRef, IoContext*, TcpListener* ls, CancelResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   r->held = std::move(conn);  // hold open, send NOTHING -> client recv stalls
   co_return 0;
 }
 
-Task<int> cancel_client(Allocator, IoContext* io, CancelResult* r,
+Task<int> cancel_client(AllocatorRef, IoContext* io, CancelResult* r,
                         std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -98,7 +98,7 @@ Task<int> cancel_client(Allocator, IoContext* io, CancelResult* r,
 // (submit_cancel) and the recv's reap are single-threaded. It sleeps briefly (a real
 // timer wake, not a park-forever spin) to let the client fiber reach suspend on the
 // recv before cancelling.
-Task<int> canceller(Allocator, CancelResult* r) {
+Task<int> canceller(AllocatorRef, CancelResult* r) {
   while (!r->connected.load(std::memory_order_acquire)) {
     hyle::sched::sleep_for(std::chrono::milliseconds(1));
   }
@@ -155,7 +155,7 @@ struct PrecancelResult {
   std::atomic<bool> done{false};
   std::atomic<std::int64_t> rc{999};
 };
-Task<int> precancel_client(Allocator, IoContext* io, PrecancelResult* r,
+Task<int> precancel_client(AllocatorRef, IoContext* io, PrecancelResult* r,
                            CancelToken* tok, std::intptr_t fd) {
   char buf[16] = {};
   std::int64_t rc =
@@ -195,7 +195,7 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
 }
 
 namespace {
-Task<int> precancel_udp_send(Allocator, hyle::io::UdpSocket* socket,
+Task<int> precancel_udp_send(AllocatorRef, hyle::io::UdpSocket* socket,
                              PrecancelResult* result, CancelToken* token) {
   alignas(16) unsigned char address[128]{};
   std::uint32_t address_length = 0;

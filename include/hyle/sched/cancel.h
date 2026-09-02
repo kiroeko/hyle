@@ -54,8 +54,8 @@ class CancelToken {
   CancelToken() noexcept = default;
 
   HYLE_SCHED_API static Result<CancelToken> try_create_root(
-      mem::Allocator allocator) noexcept;
-  HYLE_SCHED_API static CancelToken root(mem::Allocator allocator) noexcept;
+      mem::AllocatorRef allocator) noexcept;
+  HYLE_SCHED_API static CancelToken root(mem::AllocatorRef allocator) noexcept;
 
   HYLE_SCHED_API Result<CancelToken> try_derive() const noexcept;
   HYLE_SCHED_API CancelToken derive() const noexcept;

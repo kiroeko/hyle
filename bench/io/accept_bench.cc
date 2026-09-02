@@ -55,7 +55,7 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -68,7 +68,7 @@ namespace nb = ankerl::nanobench;
 // The server accept loop: accept `n` connections, assigning each round-robin to a
 // worker, then drop each (close) -- we time setup only, not any echo. Pinned to the
 // listener's owner worker (0).
-Task<int> accept_loop(Allocator, TcpListener* ls, int n, unsigned workers,
+Task<int> accept_loop(AllocatorRef, TcpListener* ls, int n, unsigned workers,
                       std::atomic<int>* accepted) {
   for (int i = 0; i < n; ++i) {
     unsigned owner = static_cast<unsigned>(i) % workers;
@@ -80,7 +80,7 @@ Task<int> accept_loop(Allocator, TcpListener* ls, int n, unsigned workers,
 }
 
 // One client: connect once to the listener, then drop (close). Pinned to its worker.
-Task<int> client_connect(Allocator, IoContext* io, unsigned owner,
+Task<int> client_connect(AllocatorRef, IoContext* io, unsigned owner,
                          std::uint16_t port) {
   TcpStream s = tcp_socket(*io, owner);
   if (!s.valid()) co_return 0;

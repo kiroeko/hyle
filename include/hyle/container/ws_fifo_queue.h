@@ -38,7 +38,7 @@ namespace hyle::container {
 // always lock-free. Use a pointer or word-sized handle rather than embedding a
 // wide task object.
 // Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes; buf is
-// the only alloc, once at construction). Opt into mem::Allocator for injection (sched does).
+// the only alloc, once at construction). Opt into mem::AllocatorRef for injection (sched does).
 template <class T, class Alloc = mem::SystemAllocator>
 class WsFifoQueue {
   static_assert(std::is_trivially_copyable_v<T>,

@@ -15,7 +15,7 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::BoundedQueue;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -221,25 +221,25 @@ TEST(BoundedQueue, MoveAssignablePayloadUsesNaturalPopShape) {
 // Lock-free correctness gate (Windows stress; TSan deferred to Linux CI).
 // N producers each push a disjoint id range; N consumers drain. The union of
 // popped values must equal exactly the pushed set -- no loss, no duplication.
-// Uses the OPT-IN runtime mem::Allocator variant (covers the scheduler's path).
+// Uses the OPT-IN runtime mem::AllocatorRef variant (covers the scheduler's path).
 TEST(BoundedQueue, MpmcStressConservation) {
   constexpr int kProducers = 4;
   constexpr int kConsumers = 4;
   constexpr int kPerProducer = 100000;
   constexpr int kTotal = kProducers * kPerProducer;
 
-  BoundedQueue<std::uint64_t, Allocator> q(system_allocator(), 1024);
+  BoundedQueue<std::uint64_t, AllocatorRef> q(system_allocator(), 1024);
   std::atomic<int> produced_done{0};
   std::vector<std::vector<std::uint64_t>> got(kConsumers);
   std::atomic<int> popped_count{0};
 
   struct ProdArgs {
-    BoundedQueue<std::uint64_t, Allocator>* q;
+    BoundedQueue<std::uint64_t, AllocatorRef>* q;
     int base;
     std::atomic<int>* done;
   };
   struct ConsArgs {
-    BoundedQueue<std::uint64_t, Allocator>* q;
+    BoundedQueue<std::uint64_t, AllocatorRef>* q;
     std::vector<std::uint64_t>* out;
     std::atomic<int>* done_producers;
     std::atomic<int>* popped;
@@ -314,7 +314,7 @@ TEST(BoundedQueue, MoveOnlyMpmcStressBalancesLifetimeAndConservesValues) {
   constexpr int kTotal = kProducers * kPerProducer;
 
   ConcurrentMoveOnly::alive.store(0, std::memory_order_relaxed);
-  BoundedQueue<ConcurrentMoveOnly, Allocator> queue(system_allocator(), 1024);
+  BoundedQueue<ConcurrentMoveOnly, AllocatorRef> queue(system_allocator(), 1024);
   std::atomic<int> producers_done{0};
   std::atomic<int> popped_count{0};
   std::vector<std::vector<std::uint64_t>> received(kConsumers);

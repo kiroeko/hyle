@@ -3,7 +3,7 @@
 # docs/architecture/graph-design.md + docs/milestones/graph-01-incremental-recompute.md.
 #
 # step-1 (taskgraph.cc): the SERIAL incremental core -- depends only on error (Status) +
-# mem (Allocator) + container (SmallVector), builds ANYWHERE (no fiber asm needed).
+# mem (AllocatorRef) + container (SmallVector), builds ANYWHERE (no fiber asm needed).
 # step-2 (parallel_eval.cc): PARALLEL evaluate over the sched work-stealing pool -- added
 # only under HYLE_HAS_FCONTEXT (spawn_task/when_all/fiber suspend need sched), exactly as
 # compute's gpu_poller.cc is. The current public graph root exposes Scheduler in

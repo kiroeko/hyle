@@ -31,7 +31,7 @@ namespace {
 // (ASan-proven). So node results travel through an explicit per-node slot (the
 // GpuOp pattern, gpu_await.h:73), and the Task returns a POD. The slot lives in
 // the `outcome` array below, which outlives the join.
-sched::Task<bool> run_node_task(mem::Allocator, TaskGraph *g, std::uint32_t i,
+sched::Task<bool> run_node_task(mem::AllocatorRef, TaskGraph *g, std::uint32_t i,
                                 Status *out) {
   *out = g->run_node_(i);
   co_return out->ok();
@@ -58,7 +58,7 @@ sched::Task<bool> run_node_task(mem::Allocator, TaskGraph *g, std::uint32_t i,
 // before the wake, so wake() never touches this (possibly-freed) struct.
 struct WfState {
   TaskGraph *g;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   sched::Scheduler *sched; // the scheduler tasks spawn onto
   Status *outcome;         // per-node result slot (n Status, placement-new'd)
   std::atomic<std::uint32_t>
@@ -105,7 +105,7 @@ struct WfState {
   void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
   void drop_ref() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       std::uint32_t nn = n, ne = edges;
       Status *oc = outcome;
       std::atomic<std::uint32_t> *rem = remaining;
@@ -130,7 +130,7 @@ struct WfState {
 };
 
 // forward decl (task spawns successor tasks of the same kind)
-sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
+sched::Task<bool> wf_node_task(mem::AllocatorRef alloc, WfState *st,
                                std::uint32_t i);
 
 // Spawn node `i` NOW (it is known-ready: 0 dirty deps left). Bumps pending +
@@ -143,7 +143,7 @@ sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
 // therefore spawned exactly once. (The old racy `remaining==0` RE-READ here let
 // the seed loop and an early completion both observe 0 and double-spawn --
 // ASan/flaky-proven.)
-void wf_spawn(mem::Allocator alloc, WfState *st, std::uint32_t i) {
+void wf_spawn(mem::AllocatorRef alloc, WfState *st, std::uint32_t i) {
   st->pending.fetch_add(1, std::memory_order_acq_rel);
   st->add_ref(); // the new task holds a ref
   auto handle = spawn_task(*st->sched, alloc, wf_node_task(alloc, st, i));
@@ -169,7 +169,7 @@ void wf_spawn(mem::Allocator alloc, WfState *st, std::uint32_t i) {
 // successors: atomic-decrement each dirty successor's counter, spawn any that
 // reach 0 onto THIS worker. Finally decrement `pending`; the task that drives
 // it to 0 wakes the waiting fiber.
-sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
+sched::Task<bool> wf_node_task(mem::AllocatorRef alloc, WfState *st,
                                std::uint32_t i) {
   Status s = st->g->run_node_(i);
   st->outcome[i] = s;
@@ -207,24 +207,24 @@ sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
 }
 
 Status evaluate_parallel(TaskGraph &g, sched::Scheduler &sched,
-                         mem::Allocator alloc) noexcept {
+                         mem::AllocatorRef alloc) noexcept {
   const std::uint32_t n = g.node_count_();
   if (n == 0)
     return Status();
 
   // This function's level/handle/id/outcome storage has one exact phase
-  // lifetime: every spawned handle is joined before return. A Region expresses
+  // lifetime: every spawned handle is joined before return. A Arena expresses
   // that lifetime directly and amortizes the several arrays into growable
   // blocks. Coroutine frames still use `alloc`: their completion/deallocation
-  // may occur on worker threads and is not a Region contract.
-  mem::Region scratch(alloc);
-  mem::Allocator scratch_alloc = scratch.as_allocator();
+  // may occur on worker threads and is not a Arena contract.
+  mem::Arena scratch(alloc);
+  mem::AllocatorRef scratch_alloc = scratch.as_allocator();
 
   // 1. Compute each node's topological LEVEL = 1 + max(dep level); sources = 0.
   // One
   //    forward id-sweep suffices (deps have smaller ids -> already leveled).
   //    level[] is trivially-copyable (uint32), so SmallVector is fine here.
-  container::SmallVector<std::uint32_t, 64, mem::Allocator> level(
+  container::SmallVector<std::uint32_t, 64, mem::AllocatorRef> level(
       scratch_alloc);
   std::uint32_t max_level = 0;
   for (std::uint32_t i = 0; i < n; ++i) {
@@ -304,14 +304,14 @@ Status evaluate_parallel(TaskGraph &g, sched::Scheduler &sched,
 
   for (std::uint32_t i = 0; i < n; ++i)
     outcome[i].~Status();
-  // Region frees these arrays together on scope exit; individual deallocate is
+  // Arena frees these arrays together on scope exit; individual deallocate is
   // intentionally unnecessary. Non-trivial elements were explicitly destroyed
   // above.
   return first_err;
 }
 
 Status evaluate_parallel_wavefront(TaskGraph &g, sched::Scheduler &sched,
-                                   mem::Allocator alloc) noexcept {
+                                   mem::AllocatorRef alloc) noexcept {
   const std::uint32_t n = g.node_count_();
   if (n == 0)
     return Status();
@@ -339,7 +339,7 @@ Status evaluate_parallel_wavefront(TaskGraph &g, sched::Scheduler &sched,
       ++succ_off[g.dep_pool_at_(k) + 1];
   for (std::uint32_t i = 0; i < n; ++i)
     succ_off[i + 1] += succ_off[i]; // prefix sum
-  container::SmallVector<std::uint32_t, 64, mem::Allocator> fill(
+  container::SmallVector<std::uint32_t, 64, mem::AllocatorRef> fill(
       alloc); // transient write cursor
   for (std::uint32_t i = 0; i < n; ++i)
     fill.push_back(succ_off[i]);
@@ -366,7 +366,7 @@ Status evaluate_parallel_wavefront(TaskGraph &g, sched::Scheduler &sched,
   // list -- not a later re-read of remaining[] (which a running task may
   // already have decremented) -- is what keeps "spawned exactly once": seed
   // owns the initial-0 nodes, completions own the rest.
-  container::SmallVector<std::uint32_t, 64, mem::Allocator> seeds(alloc);
+  container::SmallVector<std::uint32_t, 64, mem::AllocatorRef> seeds(alloc);
   std::uint32_t dirty_total = 0;
   for (std::uint32_t i = 0; i < n; ++i) {
     std::uint32_t r = 0;

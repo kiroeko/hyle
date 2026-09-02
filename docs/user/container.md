@@ -234,9 +234,9 @@ release”。`StringId{0}` 表示空字符串，同时也是非空 acquire 的�
 
 `StringId` 可直接作为 HYLE hash key。ID 只在产生它的 pool 内有意义，不是持久 hash 或跨进程 ID。
 
-## Allocator、OOM 与异常
+## AllocatorRef、OOM 与异常
 
-不同模板按 hot-path 需要接受 `mem::Allocator` 或静态 allocator policy；以该头文件构造签名为准。
+不同模板按 hot-path 需要接受 `mem::AllocatorRef` 或静态 allocator policy；以该头文件构造签名为准。
 通用规则：
 
 - 需要恢复 OOM 时调用 `try_*`，检查返回值；

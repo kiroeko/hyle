@@ -11,7 +11,7 @@
 
 namespace {
 
-hyle::sched::Task<int> delayed_value(hyle::mem::Allocator,
+hyle::sched::Task<int> delayed_value(hyle::mem::AllocatorRef,
                                      int value) noexcept {
   hyle::sched::sleep_for(std::chrono::milliseconds(1));
   co_return value;

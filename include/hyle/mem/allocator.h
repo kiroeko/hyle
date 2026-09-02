@@ -53,14 +53,14 @@ using ReallocFn = void *(*)(void *state, void *ptr, std::size_t old_size,
 // every allocating API (charter: explicit injection, no hidden global heap).
 // Methods are inline pure-forwarders -- zero overhead, the wrapper never costs
 // a DLL call; only the backing fn lives in a TU.
-class Allocator {
+class AllocatorRef {
 public:
-  Allocator() noexcept = default; // null/invalid allocator
-  Allocator(AllocFn alloc, FreeFn free, ReallocFn realloc, void *state) noexcept
+  AllocatorRef() noexcept = default; // null/invalid allocator
+  AllocatorRef(AllocFn alloc, FreeFn free, ReallocFn realloc, void *state) noexcept
       : alloc_fn_(alloc), free_fn_(free), realloc_fn_(realloc), state_(state) {}
 
   // Complete vtable only (all three fn pointers). A partial/default-constructed
-  // Allocator is invalid -- checking all three (not just alloc) avoids a null
+  // AllocatorRef is invalid -- checking all three (not just alloc) avoids a null
   // deref in deallocate/reallocate on a hand-built partial vtable (followup
   // #5).
   bool valid() const noexcept {
@@ -69,7 +69,7 @@ public:
   }
 
   // These are logically const: they dispatch through the fn pointers without
-  // mutating the handle itself (so allocating from a `const Allocator&` is
+  // mutating the handle itself (so allocating from a `const AllocatorRef&` is
   // valid). Each forwards to the matching register-friendly entry -- no spill,
   // no dispatch branch.
   void *allocate(std::size_t size) const noexcept {
@@ -185,8 +185,8 @@ public:
   }
 
   // unique_ptr whose deleter destroys through this allocator. The deleter holds
-  // the raw free fn/state (NOT an Allocator by value): inside Allocator's own
-  // definition the type is incomplete, so a by-value Allocator member is
+  // the raw free fn/state (NOT an AllocatorRef by value): inside AllocatorRef's own
+  // definition the type is incomplete, so a by-value AllocatorRef member is
   // ill-formed (GCC rejects it; MSVC let it slide).
   template <class T> struct Deleter {
     FreeFn free;
@@ -220,10 +220,10 @@ private:
 
 // Process-wide SystemRAM allocator. mem-01: bare aligned malloc/free; mem-02
 // swaps mimalloc in behind this same handle with zero caller changes.
-HYLE_MEM_API Allocator system_allocator() noexcept;
+HYLE_MEM_API AllocatorRef system_allocator() noexcept;
 
 // ---- usable-size queries (SystemAllocator only) -----------------------------
-// HYLE's Allocator is a SIZED-FREE model (deallocate carries the size, like
+// HYLE's AllocatorRef is a SIZED-FREE model (deallocate carries the size, like
 // Rust GlobalAlloc / C++17 sized delete / jemalloc sdallocx) -- faster, no
 // per-block metadata forced on every backing. So there is no vtable
 // usable_size(): most backings (arena/pool/stack) don't store per-pointer size.
@@ -249,7 +249,7 @@ HYLE_MEM_API std::size_t system_good_size(std::size_t size) noexcept;
 // the OS and can be expensive; reserve it for explicit idle/pressure points,
 // never an allocation hot path. Long-lived worker pools should invoke this on
 // each worker whose heap needs collection. This is system_allocator-specific
-// and deliberately does not enlarge the hot three-function Allocator vtable.
+// and deliberately does not enlarge the hot three-function AllocatorRef vtable.
 HYLE_MEM_API void system_collect(bool force = false) noexcept;
 
 } // namespace hyle::mem

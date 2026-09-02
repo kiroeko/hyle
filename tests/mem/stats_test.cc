@@ -11,7 +11,7 @@
 
 using hyle::mem::AllocStats;
 using hyle::mem::AllocStatsSnapshot;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::LeakEntry;
 using hyle::mem::LeakTracker;
 using hyle::mem::StatsAllocator;
@@ -60,8 +60,8 @@ void* metadata_realloc(void* opaque, void* pointer, std::size_t old_size,
   return out;
 }
 
-hyle::mem::Allocator metadata_backing(MetadataBackingState* state) {
-  return hyle::mem::Allocator(&metadata_alloc, &metadata_free,
+hyle::mem::AllocatorRef metadata_backing(MetadataBackingState* state) {
+  return hyle::mem::AllocatorRef(&metadata_alloc, &metadata_free,
                               &metadata_realloc, state);
 }
 
@@ -161,7 +161,7 @@ TEST(StatsAllocator, StateAndLeakMapUseInjectedBacking) {
     EXPECT_GE(state.outstanding, 2u);  // LeakTracker::Impl + StatsState.
 
     const std::size_t calls_before_data = state.calls;
-    hyle::mem::Allocator measured = stats.get();
+    hyle::mem::AllocatorRef measured = stats.get();
     void* pointer = measured.allocate(64, 16);
     ASSERT_NE(pointer, nullptr);
     // The measured allocation uses the separate system backing. At least one
@@ -195,7 +195,7 @@ TEST(LeakTracker, MetadataOomMakesInventoryObservablyIncomplete) {
     // Fail the next metadata allocation: the measured allocation itself still
     // succeeds, counters remain exact, and the optional map reports its loss.
     state.fail_at = state.calls;
-    Allocator measured = stats.get();
+    AllocatorRef measured = stats.get();
     void* pointer = measured.allocate(64, 16);
     ASSERT_NE(pointer, nullptr);
     EXPECT_EQ(stats.snapshot().live_count, 1u);
@@ -292,7 +292,7 @@ TEST(StatsAllocator, ConcurrentNoLostCounts) {
 
 TEST(StatsAllocator, ConcurrentPeakCoversQuiescentHighWater) {
   StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
-  const Allocator allocator = sa.get();
+  const AllocatorRef allocator = sa.get();
   constexpr int kThreads = 8;
   constexpr std::size_t kBytes = 64;
   std::atomic<int> ready{0};
@@ -338,7 +338,7 @@ TEST(StatsAllocatorDeathTest, DestroyWithLiveAllocationTraps) {
   EXPECT_DEATH(
       {
         StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
-        Allocator allocator = stats.get();
+        AllocatorRef allocator = stats.get();
         (void)allocator.allocate(8);
       },
       ".*");
@@ -348,7 +348,7 @@ TEST(StatsAllocatorDeathTest, MoveOverwriteWithLiveAllocationTraps) {
   EXPECT_DEATH(
       {
         StatsAllocator target = StatsAllocator::create(system_allocator()).value();
-        Allocator allocator = target.get();
+        AllocatorRef allocator = target.get();
         (void)allocator.allocate(8);
         StatsAllocator source = StatsAllocator::create(system_allocator()).value();
         target = std::move(source);

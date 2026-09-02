@@ -69,7 +69,7 @@ struct ForState {
 // SPLIT: spawn the RIGHT half as a task (lands on this worker's local queue), recurse the LEFT
 // inline (co_await), then join the right. The join is the fork-join barrier + the lifetime
 // edge that keeps `st` (on the root fiber stack) alive across the whole subtree.
-sched::Task<bool> pf_rec(mem::Allocator alloc, sched::Scheduler* sched, ForState* st,
+sched::Task<bool> pf_rec(mem::AllocatorRef alloc, sched::Scheduler* sched, ForState* st,
                          std::size_t b, std::size_t e) {
   // Stop splitting once at/under grainsize OR once a sibling already failed (prune the tree).
   if (e - b <= st->grain || st->failed.load(std::memory_order_acquire)) {
@@ -101,7 +101,7 @@ sched::Task<bool> pf_rec(mem::Allocator alloc, sched::Scheduler* sched, ForState
 
 // Driver coroutine: run the whole recursion on ONE spawned fiber, then wake the caller. Same
 // trivial-return + caller-slot pattern; here the "slot" is ForState itself, on the caller stack.
-sched::Task<bool> pf_driver(mem::Allocator alloc, sched::Scheduler* sched, ForState* st,
+sched::Task<bool> pf_driver(mem::AllocatorRef alloc, sched::Scheduler* sched, ForState* st,
                             std::size_t b, std::size_t e) {
   auto root = pf_rec(alloc, sched, st, b, e);
   if (root.valid()) {
@@ -115,7 +115,7 @@ sched::Task<bool> pf_driver(mem::Allocator alloc, sched::Scheduler* sched, ForSt
 
 }  // namespace
 
-Status parallel_for(sched::Scheduler& sched, mem::Allocator alloc, BlockedRange range,
+Status parallel_for(sched::Scheduler& sched, mem::AllocatorRef alloc, BlockedRange range,
                     ForBodyFn body, void* ctx) noexcept {
   HYLE_FATAL_ASSERT(body != nullptr && range.begin <= range.end);
   if (range.begin == range.end) return Status();  // empty range -> nothing to do
@@ -175,7 +175,7 @@ struct RedState {
 // LEAF: body reduces the block into out. SPLIT: fork right into a SEPARATE slot, recurse left
 // into `out`, join right, then combine(out, right_slot). The right slot is a stack buffer in
 // THIS frame (alive across the join). Returns trivial bool; Status via record.
-sched::Task<bool> pr_rec(mem::Allocator alloc, sched::Scheduler* sched, RedState* st,
+sched::Task<bool> pr_rec(mem::AllocatorRef alloc, sched::Scheduler* sched, RedState* st,
                          std::size_t b, std::size_t e, void* out) {
   if (e - b <= st->grain || st->failed.load(std::memory_order_acquire)) {
     if (!st->failed.load(std::memory_order_acquire)) {
@@ -213,7 +213,7 @@ sched::Task<bool> pr_rec(mem::Allocator alloc, sched::Scheduler* sched, RedState
 
 }  // namespace
 
-Status parallel_reduce(sched::Scheduler& sched, mem::Allocator alloc, BlockedRange range,
+Status parallel_reduce(sched::Scheduler& sched, mem::AllocatorRef alloc, BlockedRange range,
                        std::size_t elem_size, ReduceBodyFn body, CombineFn combine,
                        IdentityFn identity, void* ctx, void* result) noexcept {
   HYLE_FATAL_ASSERT(body && combine && identity && result && elem_size > 0);

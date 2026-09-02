@@ -31,7 +31,7 @@ namespace hyle::platform {
 // "No NUMA constraint" for reserve/bind APIs.
 inline constexpr int kNumaAny = -1;
 
-// Placement policy for vm_bind_numa / HugeRegion.
+// Placement policy for vm_bind_numa / HugeMapping.
 enum class NumaPolicy : std::uint8_t {
   kPreferred = 0,   // MPOL_PREFERRED (soft)
   kBind = 1,        // MPOL_BIND (hard; Linux)

@@ -59,7 +59,7 @@ using hyle::io::MultishotRecvStream;
 using hyle::io::RecvBuf;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -96,7 +96,7 @@ struct Shared {
 
 // Client: send a datagram, read its echo, kMsgs times (drives the round-trips). Same
 // for both rows -- it just feeds the server.
-Task<int> client(Allocator, Shared* s) {
+Task<int> client(AllocatorRef, Shared* s) {
   static const char msg[kMsgLen] = "hyle-multishot-echo-bench-payload";
   char buf[kMsgLen];
   for (int i = 0; i < kMsgs; ++i) {
@@ -113,7 +113,7 @@ Task<int> client(Allocator, Shared* s) {
 // copy), await the send, THEN let b go out of scope (its dtor buf_ring_returns the
 // buffer -- correct ordering: the send has completed, so the kernel is done reading
 // the buffer before we hand it back).
-Task<int> srv_multishot(Allocator alloc, Shared* s) {
+Task<int> srv_multishot(AllocatorRef alloc, Shared* s) {
   auto stream = MultishotRecvStream{
       s->io->proactor_for_current().io_uring_extension(), s->srv_fd, kBgid,
       alloc};
@@ -131,7 +131,7 @@ Task<int> srv_multishot(Allocator alloc, Shared* s) {
 // Server B: one-shot copy echo. recv into a stack buffer (a submit per datagram), send
 // from that buffer. The extra vs A: a submit per recv + the recv lands in a caller
 // buffer (a copy at the kernel boundary that multishot's ring-select avoids).
-Task<int> srv_oneshot(Allocator, Shared* s) {
+Task<int> srv_oneshot(AllocatorRef, Shared* s) {
   char buf[kMsgLen];
   while (s->echoed < kMsgs) {
     std::int64_t n = co_await RecvOp{&s->io->proactor_for_current(), s->srv_fd,

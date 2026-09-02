@@ -10,7 +10,7 @@
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::is_cancel_requested;
 using hyle::sched::JoinHandle;
@@ -31,12 +31,12 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
 }
-Allocator failing_allocator() noexcept {
-  return Allocator(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+AllocatorRef failing_allocator() noexcept {
+  return AllocatorRef(&fail_alloc, &fail_free, &fail_realloc, nullptr);
 }
 
 struct AllocationCounter {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   std::atomic<std::size_t> allocations{0};
   std::atomic<std::size_t> frees{0};
 };
@@ -68,9 +68,9 @@ void* counted_realloc(void* raw, void* ptr, std::size_t old_size,
 
 namespace {
 
-Task<int> add_coro(Allocator, int a, int b) { co_return a + b; }
+Task<int> add_coro(AllocatorRef, int a, int b) { co_return a + b; }
 
-Task<void> bump_coro(Allocator, std::atomic<int>* c) {
+Task<void> bump_coro(AllocatorRef, std::atomic<int>* c) {
   c->fetch_add(1, std::memory_order_relaxed);
   co_return;
 }
@@ -89,11 +89,11 @@ struct MoveOnlyResult {
   std::atomic<int>* destroyed;
 };
 
-Task<MoveOnlyResult> move_only_coro(Allocator, std::atomic<int>* destroyed) {
+Task<MoveOnlyResult> move_only_coro(AllocatorRef, std::atomic<int>* destroyed) {
   co_return MoveOnlyResult(destroyed);
 }
 
-Task<int> throwing_coro(Allocator) {
+Task<int> throwing_coro(AllocatorRef) {
   throw 42;
   co_return 0;
 }
@@ -103,7 +103,7 @@ struct WaitBox {
   std::atomic<bool> ready{false};
   Waker waker;
 };
-Task<int> wait_then(Allocator, WaitBox* box, int ret) {
+Task<int> wait_then(AllocatorRef, WaitBox* box, int ret) {
   box->waker = co_await CaptureWaker{};
   box->ready.store(true, std::memory_order_release);
   co_await SuspendFiber{};
@@ -142,7 +142,7 @@ TEST(Join, ScheduledTaskRunsOnWorkerStackAndReturnsTypedValue) {
 
 TEST(Join, ScheduledTaskUsesOneOwnedCell) {
   AllocationCounter counter;
-  Allocator counted(&counted_alloc, &counted_free, &counted_realloc,
+  AllocatorRef counted(&counted_alloc, &counted_free, &counted_realloc,
                     &counter);
   Scheduler scheduler(1, system_allocator(), 64);
   {
@@ -426,7 +426,7 @@ TEST(Join, RuntimeSizedWhenAnyReturnsDynamicWinner) {
 // abort() sets the cooperative flag; a task that checks is_cancel_requested()
 // after being woken observes it and can return early (reported as Cancelled).
 namespace {
-Task<int> cancellable(Allocator, WaitBox* box) {
+Task<int> cancellable(AllocatorRef, WaitBox* box) {
   box->waker = co_await CaptureWaker{};
   box->ready.store(true, std::memory_order_release);
   co_await SuspendFiber{};              // parked until woken
@@ -456,7 +456,7 @@ TEST(Join, ManyTasksJoinAllComplete) {
   constexpr int kN = 200;
   // Exercise the shipping allocator. mimalloc's MI_TSAN instrumentation keeps
   // its free/reuse edges visible in sanitizer builds.
-  Allocator al = system_allocator();
+  AllocatorRef al = system_allocator();
   Scheduler sched(8, al, 1024);
   std::atomic<int> total{0};
   for (int i = 0; i < kN; ++i) {
@@ -481,7 +481,7 @@ TEST(Join, ManyTasksJoinAllComplete) {
 // rounds on 8 workers widen the window. The shipping allocator is deliberately
 // retained so the stress shape covers the production path as well as the race.
 TEST(Join, WhenAnyLoserCompletesConcurrently) {
-  Allocator al = system_allocator();
+  AllocatorRef al = system_allocator();
   Scheduler sched(8, al, 1024);
   constexpr int kRounds = 2000;
   for (int i = 0; i < kRounds; ++i) {

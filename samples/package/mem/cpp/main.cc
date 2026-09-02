@@ -13,7 +13,7 @@ int main() {
   if (values.back() != 4) return 1;
 
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128 * 1024);
-  hyle::mem::Region scratch(quota.get());
+  hyle::mem::Arena scratch(quota.get());
   auto* table = static_cast<std::uint32_t*>(
       scratch.allocate(1024 * sizeof(std::uint32_t), 64));
   if (table == nullptr || reinterpret_cast<std::uintptr_t>(table) % 64 != 0) {

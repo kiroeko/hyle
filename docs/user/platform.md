@@ -21,7 +21,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
-| 普通小对象、容器 backing | mem 的 `Allocator` / `Region` | platform VM | platform 不替代 malloc |
+| 普通小对象、容器 backing | mem 的 `AllocatorRef` / `Arena` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | `MappedFile` | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |

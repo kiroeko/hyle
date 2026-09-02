@@ -58,7 +58,7 @@ class UdpSocket {
                       kSockaddrCap};
   }
   TimedRecvFromOp recv_from_until(void* buf, std::uint32_t len, void* peer,
-                                  mem::Allocator alloc,
+                                  mem::AllocatorRef alloc,
                                   std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
@@ -87,7 +87,7 @@ class UdpSocket {
   }
   TimedSendToOp send_to_until(const void* buf, std::uint32_t len,
                               const void* dest, std::uint32_t destlen,
-                              mem::Allocator alloc,
+                              mem::AllocatorRef alloc,
                               std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));

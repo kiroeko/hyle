@@ -52,7 +52,7 @@ struct SmallVectorInlineStorage<T, N, true> {};
 // the zero-exception contract explicit. Copy construction may throw; normal C++
 // unwinding destroys the completed prefix.
 //
-// Alloc defaults to the zero-state SystemAllocator. Pass mem::Allocator for a
+// Alloc defaults to the zero-state SystemAllocator. Pass mem::AllocatorRef for a
 // runtime arena/mock/cross-DLL allocator. Allocation failure is available as a
 // bool through try_reserve()/try_emplace_back(); the std-shaped convenience
 // operations fail fast because they have no error return channel.

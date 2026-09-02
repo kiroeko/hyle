@@ -28,7 +28,7 @@ thread_local const void* tls_blocking_pool = nullptr;
 // tokio's blocking::pool, which also uses a parking_lot Mutex/Condvar, not its
 // async primitives.
 struct BlockingPool::Impl {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   const unsigned max_threads;
   const time::Duration keep_alive;
 
@@ -55,7 +55,7 @@ struct BlockingPool::Impl {
   // unbounded handle retention across repeated burst/idle cycles.
   std::vector<ThreadRecord*, mem::StdAllocator<ThreadRecord*>> threads;
 
-  Impl(mem::Allocator a, unsigned max_t, time::Duration keep_alive_duration)
+  Impl(mem::AllocatorRef a, unsigned max_t, time::Duration keep_alive_duration)
       : alloc(a),
         max_threads(max_t),
         keep_alive(keep_alive_duration > time::Duration::zero()
@@ -273,7 +273,7 @@ struct BlockingPool::Impl {
 
 // ---- BlockingPool public surface --------------------------------------------
 
-BlockingPool::BlockingPool(mem::Allocator alloc, unsigned max_threads,
+BlockingPool::BlockingPool(mem::AllocatorRef alloc, unsigned max_threads,
                            time::Duration keep_alive)
     : impl_(nullptr) {
   Status status;
@@ -283,14 +283,14 @@ BlockingPool::BlockingPool(mem::Allocator alloc, unsigned max_threads,
                     "when resource failure is recoverable");
 }
 
-BlockingPool::BlockingPool(mem::Allocator alloc, unsigned max_threads,
+BlockingPool::BlockingPool(mem::AllocatorRef alloc, unsigned max_threads,
                            time::Duration keep_alive,
                            Status* status) noexcept {
   HYLE_FATAL_ASSERT(status != nullptr);
   init_(alloc, max_threads, keep_alive, status);
 }
 
-void BlockingPool::init_(mem::Allocator alloc, unsigned max_threads,
+void BlockingPool::init_(mem::AllocatorRef alloc, unsigned max_threads,
                          time::Duration keep_alive, Status* status) noexcept {
   *status = Status{};
   if (!alloc.valid()) {
@@ -330,7 +330,7 @@ void BlockingPool::init_(mem::Allocator alloc, unsigned max_threads,
 BlockingPool::~BlockingPool() {
   if (impl_ == nullptr) return;
   impl_->shutdown();
-  const mem::Allocator allocator = impl_->alloc;
+  const mem::AllocatorRef allocator = impl_->alloc;
   impl_->~Impl();
   allocator.deallocate(impl_, sizeof(Impl), alignof(Impl));
 }

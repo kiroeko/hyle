@@ -92,7 +92,7 @@ using ForBodyFn = Status (*)(void* ctx, std::size_t begin, std::size_t end) noex
 // count. Must be called from a fiber on `sched`. Same-block memory disjointness is the body's
 // concern; distinct blocks are index-disjoint by construction.
 //   CONTRACT: called from a worker fiber of `sched`; body non-null; range.begin <= range.end.
-HYLE_GRAPH_API Status parallel_for(sched::Scheduler& sched, mem::Allocator alloc,
+HYLE_GRAPH_API Status parallel_for(sched::Scheduler& sched, mem::AllocatorRef alloc,
                                    BlockedRange range, ForBodyFn body, void* ctx) noexcept;
 
 // The per-block reduce body: fold [begin,end) into a partial result written to `*out` (a slot
@@ -115,7 +115,7 @@ using IdentityFn = void (*)(void* ctx, void* out) noexcept;   // out := identity
 //   CONTRACT: called from a worker fiber of `sched`; body/combine/identity non-null;
 //   result non-null; range.begin <= range.end; 0 < elem_size <= 256 (the partial-slot cap --
 //   a reduce value bigger than 256 bytes should reduce into a caller-owned handle instead).
-HYLE_GRAPH_API Status parallel_reduce(sched::Scheduler& sched, mem::Allocator alloc,
+HYLE_GRAPH_API Status parallel_reduce(sched::Scheduler& sched, mem::AllocatorRef alloc,
                                       BlockedRange range, std::size_t elem_size, ReduceBodyFn body,
                                       CombineFn combine, IdentityFn identity, void* ctx,
                                       void* result) noexcept;

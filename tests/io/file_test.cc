@@ -25,7 +25,7 @@ using hyle::io::File;
 using hyle::io::IoContext;
 using hyle::io::open_file;
 using hyle::io::Proactor;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -58,7 +58,7 @@ std::string temp_path() {
 
 // open (create+trunc+rw) -> write -> fsync -> read back at offset 0 -> stat ->
 // close. The message must round-trip and stat must report its size.
-Task<int> file_coro(Allocator, IoContext* io, const char* path, FileResult* r) {
+Task<int> file_coro(AllocatorRef, IoContext* io, const char* path, FileResult* r) {
   static const char kMsg[] = "hyle-file-io-roundtrip";
   File f = co_await open_file(*io, kOwner, path,
                               Proactor::kRead | Proactor::kWrite |
@@ -95,7 +95,7 @@ struct Drive {
 void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
 // Open a missing file WITHOUT create -> must fail (invalid File), not crash/hang.
-Task<int> open_missing_coro(Allocator, IoContext* io, FileResult* r) {
+Task<int> open_missing_coro(AllocatorRef, IoContext* io, FileResult* r) {
   File f = co_await open_file(*io, kOwner, "hyle_no_such_file_9d3f.tmp",
                               Proactor::kRead);
   r->opened.store(f.valid(), std::memory_order_release);
@@ -104,7 +104,7 @@ Task<int> open_missing_coro(Allocator, IoContext* io, FileResult* r) {
 }
 
 // Preallocate 4096 bytes, then stat must report the file is at least that big.
-Task<int> fallocate_coro(Allocator, IoContext* io, const char* path,
+Task<int> fallocate_coro(AllocatorRef, IoContext* io, const char* path,
                          FileResult* r, std::uint32_t mode) {
   File f = co_await open_file(*io, kOwner, path,
                               Proactor::kRead | Proactor::kWrite |

@@ -181,7 +181,7 @@ Status elementwise_blocking(ggml_backend_t be, ggml_gallocr_t galloc, const EwJo
 // already-extracted raw backend/gallocr handles (the public wrapper does the friend access +
 // contract checks) so this stays a plain TU-local helper, not a friend of GgmlBackend.
 sched::JoinHandle<Status> ew_spawn(void* be_raw, void* galloc, sched::BlockingPool& pool,
-                                   mem::Allocator alloc, const float* a, const float* b,
+                                   mem::AllocatorRef alloc, const float* a, const float* b,
                                    float* out, int n, float eps, EwOp op) noexcept {
   EwJob job{a, b, out, n, eps, op};
   return sched::spawn_blocking(pool, alloc, [be_raw, galloc, job]() noexcept {
@@ -246,7 +246,7 @@ Result<GgmlBackend> GgmlBackend::create(const Device& device, int n_threads) noe
 }
 
 sched::JoinHandle<Status> ggml_matmul_f32(GgmlBackend& be, sched::BlockingPool& pool,
-                                          mem::Allocator alloc, const float* a,
+                                          mem::AllocatorRef alloc, const float* a,
                                           const float* b, float* c, int m, int k,
                                           int n) noexcept {
   // Caller-contract checks (bug -> fatal assert, not silent -- contract-over-defense).
@@ -268,7 +268,7 @@ sched::JoinHandle<Status> ggml_matmul_f32(GgmlBackend& be, sched::BlockingPool& 
 
 sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend& be,
                                                   sched::BlockingPool& pool,
-                                                  mem::Allocator alloc,
+                                                  mem::AllocatorRef alloc,
                                                   const MatmulF32Job* jobs,
                                                   int count) noexcept {
   // Caller-contract checks (bug -> fatal assert). Cap 64 keeps matmul_batch_blocking's
@@ -301,7 +301,7 @@ sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend& be,
 // ---- elementwise / norm ops (compute-09 step-1): thin public wrappers over ew_spawn ----
 // Each does the contract checks + friend access (raw_/galloc_ptr_) then delegates.
 sched::JoinHandle<Status> ggml_rms_norm_f32(GgmlBackend& be, sched::BlockingPool& pool,
-                                            mem::Allocator alloc, const float* src,
+                                            mem::AllocatorRef alloc, const float* src,
                                             float* dst, int n, float eps) noexcept {
   HYLE_FATAL_ASSERT(be.valid() && src != nullptr && dst != nullptr && n > 0);
   HYLE_FATAL_ASSERT(eps >= 0.0f);  // ggml asserts this internally (ops.cpp:3805) -- fail-fast in
@@ -309,19 +309,19 @@ sched::JoinHandle<Status> ggml_rms_norm_f32(GgmlBackend& be, sched::BlockingPool
   return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, src, nullptr, dst, n, eps, EwOp::kRmsNorm);
 }
 sched::JoinHandle<Status> ggml_silu_f32(GgmlBackend& be, sched::BlockingPool& pool,
-                                        mem::Allocator alloc, const float* src,
+                                        mem::AllocatorRef alloc, const float* src,
                                         float* dst, int n) noexcept {
   HYLE_FATAL_ASSERT(be.valid() && src != nullptr && dst != nullptr && n > 0);
   return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, src, nullptr, dst, n, 0.0f, EwOp::kSilu);
 }
 sched::JoinHandle<Status> ggml_add_f32(GgmlBackend& be, sched::BlockingPool& pool,
-                                       mem::Allocator alloc, const float* a, const float* b,
+                                       mem::AllocatorRef alloc, const float* a, const float* b,
                                        float* dst, int n) noexcept {
   HYLE_FATAL_ASSERT(be.valid() && a != nullptr && b != nullptr && dst != nullptr && n > 0);
   return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, a, b, dst, n, 0.0f, EwOp::kAdd);
 }
 sched::JoinHandle<Status> ggml_mul_f32(GgmlBackend& be, sched::BlockingPool& pool,
-                                       mem::Allocator alloc, const float* a, const float* b,
+                                       mem::AllocatorRef alloc, const float* a, const float* b,
                                        float* dst, int n) noexcept {
   HYLE_FATAL_ASSERT(be.valid() && a != nullptr && b != nullptr && dst != nullptr && n > 0);
   return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, a, b, dst, n, 0.0f, EwOp::kMul);
@@ -485,7 +485,7 @@ Result<FfnBlock> FfnBlock::create(const Device& device, int d, int ffn, float ep
                   static_cast<void*>(wbuf), static_cast<void*>(w), d, ffn, eps);
 }
 
-sched::JoinHandle<Status> FfnBlock::forward(sched::BlockingPool& pool, mem::Allocator alloc,
+sched::JoinHandle<Status> FfnBlock::forward(sched::BlockingPool& pool, mem::AllocatorRef alloc,
                                             const float* x, float* out, int rows) noexcept {
   HYLE_FATAL_ASSERT(valid() && x != nullptr && out != nullptr && rows > 0);
   void* be_raw = be_;

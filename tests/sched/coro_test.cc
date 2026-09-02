@@ -10,7 +10,7 @@
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/waker.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CaptureWaker;
 using hyle::sched::Fiber;
@@ -23,7 +23,7 @@ using hyle::sched::Waker;
 namespace {
 
 // A Task coroutine: FIRST param must be the allocator (frame allocated from it).
-Task<int> add_coro(Allocator, int a, int b) { co_return a + b; }
+Task<int> add_coro(AllocatorRef, int a, int b) { co_return a + b; }
 
 // A coroutine that suspends its fiber once (via co_await), then returns. The
 // Waker it captures is published so a foreign thread can wake it.
@@ -32,7 +32,7 @@ struct WaitBox {
   Waker waker;
 };
 
-Task<int> waiting_coro(Allocator, WaitBox* box) {
+Task<int> waiting_coro(AllocatorRef, WaitBox* box) {
   // Two-step: capture the Waker (fiber not yet suspended), publish it, THEN
   // co_await SuspendFiber -> leaves the run loop until wake().
   box->waker = co_await CaptureWaker{};
@@ -64,7 +64,7 @@ void drive_int_entry(void* p) {
 
 }  // namespace
 
-// Frame allocated from mem::Allocator, plain co_return, no suspend.
+// Frame allocated from mem::AllocatorRef, plain co_return, no suspend.
 TEST(Coro, TaskReturnsValueFrameFromAllocator) {
   auto d = std::make_unique<DriveInt>();
   d->task = add_coro(system_allocator(), 20, 22);
@@ -105,7 +105,7 @@ TEST(Coro, CoAwaitSuspendsFiberResumedByForeignWake) {
 // suspends the fiber. Proves the allocator-backed coroutine-frame model composes (one fiber
 // suspend covers the whole await chain).
 namespace {
-Task<int> inner_coro(Allocator, WaitBox* box) {
+Task<int> inner_coro(AllocatorRef, WaitBox* box) {
   box->waker = co_await CaptureWaker{};
   box->waker_ready.store(true, std::memory_order_release);
   co_await SuspendFiber{};
@@ -113,7 +113,7 @@ Task<int> inner_coro(Allocator, WaitBox* box) {
 }
 // Outer runs inner to completion inline (same fiber) then adds to it. inner's
 // co_await suspends the shared fiber; outer resumes past it after wake.
-Task<int> outer_coro(Allocator alloc, WaitBox* box) {
+Task<int> outer_coro(AllocatorRef alloc, WaitBox* box) {
   Task<int> in = inner_coro(alloc, box);
   while (!in.done()) in.resume();  // drive inner; its co_await yields the fiber
   co_return in.result() + 35;      // 7 + 35 = 42

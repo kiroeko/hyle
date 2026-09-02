@@ -42,7 +42,7 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **契约**：经 `mem::system_allocator()`（mimalloc 后端）分配的内存，**可以在任意线程释放**——fiber 在 worker A 分配、迁移后在 worker B 释放是**安全且支持**的核心用例。
 
-**为什么安全**：当前 backing 锁定 mimalloc `v3.5.0`，分配器封在 `Allocator` vtable（函数指针）后、
+**为什么安全**：当前 backing 锁定 mimalloc `v3.5.0`，分配器封在 `AllocatorRef` vtable（函数指针）后、
 且实现跨 `.so` 边界（`hyle_mem`）。fiber 体调 `deallocate()` 是**不透明调用**——`-O3` 无法把
 `mi_free` 内部的 TLS heap 读提升/缓存到 fiber 体的 yield 之上，每次在**当前线程**重新解析。即第 1
 条的危险模式在分配器路径上天然不成立。E13/E17 的 **687 万次跨线程 free，rc=0** 是旧
@@ -57,14 +57,14 @@ allocator ownership/package contract 和 sanitizer 测试重新绑定。
 
 ### 2.1 共享固定池：硬容量与软容量必须按合同选
 
-**硬容量默认**：`SharedPool` / `ObjectPool<T>` 不把块藏在 TLS。一次 `deallocate()` 完成后，该块立即对所有线程可见；`allocate()` 通过稳定双快照排除分片扫描期间的假耗尽。容量紧贴工作集、跨线程 handoff 或固定 quota 必须用这组。
+**硬容量默认**：`ConcurrentBlockPool` / `ObjectPool<T>` 不把块藏在 TLS。一次 `deallocate()` 完成后，该块立即对所有线程可见；`allocate()` 通过稳定双快照排除分片扫描期间的假耗尽。容量紧贴工作集、跨线程 handoff 或固定 quota 必须用这组。
 
-**软容量 opt-in**：每个 worker 显式构造 `SharedPoolCache`（或 typed `ObjectPoolCache<T>`）并绑定一个 hard pool。cache storage、容量和 transfer batch 是构造参数，不是 TLS 常量。同 owner 的 free→alloc 是零原子快路，但 cache 中已 free 的块在 `publish()`/析构前，其他 cache 与 hard core 看不到；软窗口是所有活跃 cache 当前 `cached()` 的总和。
+**软容量 opt-in**：每个 worker 显式构造 `BlockPoolCache`（或 typed `ObjectPoolCache<T>`）并绑定一个 hard pool。cache storage、容量和 transfer batch 是构造参数，不是 TLS 常量。同 owner 的 free→alloc 是零原子快路，但 cache 中已 free 的块在 `publish()`/析构前，其他 cache 与 hard core 看不到；软窗口是所有活跃 cache 当前 `cached()` 的总和。
 
 **怎么调**：
-- 要 completed free 立即共享：直接用 `SharedPool` / `ObjectPool<T>`，无需 publish；
+- 要 completed free 立即共享：直接用 `ConcurrentBlockPool` / `ObjectPool<T>`，无需 publish；
 - 选择显式 cache 后要交接容量：owner 调 `publish()`；owner 退出作用域也会发布；
-- `SharedPool::reset()` 前要求无 live block、所有 cache 已 publish/销毁，并静默并发访问。
+- `ConcurrentBlockPool::reset()` 前要求无 live block、所有 cache 已 publish/销毁，并静默并发访问。
 
 cache 复用 hard pool 的 batch pop/push；正常走 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。不要把 cache 吞吐数据或软容量语义写成 hard core 合同。
 

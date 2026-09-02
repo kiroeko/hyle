@@ -38,7 +38,7 @@ using hyle::io::MultishotRecvStream;
 using hyle::io::RecvBuf;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -118,7 +118,7 @@ struct EchoState {
   std::int64_t received = 0;
 };
 
-Task<int> echo_coro(Allocator, EchoState* st) {
+Task<int> echo_coro(AllocatorRef, EchoState* st) {
   static const char kMsg[] = "co_await-socket-echo";
   const std::uint32_t len = sizeof(kMsg);
   st->sent = co_await SendOp{&st->io->proactor_for_current(), st->send_fd, kMsg, len};
@@ -187,7 +187,7 @@ struct EchoPair {
   std::int64_t client_recv = 0;
 };
 
-Task<int> server_coro(Allocator, EchoPair* c) {
+Task<int> server_coro(AllocatorRef, EchoPair* c) {
   c->server_recv =
       co_await RecvOp{&c->io->proactor_for_current(), c->server_fd, c->server_buf, 64};
   if (c->server_recv > 0) {
@@ -197,7 +197,7 @@ Task<int> server_coro(Allocator, EchoPair* c) {
   co_return 0;
 }
 
-Task<int> client_coro(Allocator, EchoPair* c) {
+Task<int> client_coro(AllocatorRef, EchoPair* c) {
   static const char kMsg[] = "two-fiber-echo";
   const std::uint32_t len = sizeof(kMsg);
   co_await SendOp{&c->io->proactor_for_current(), c->client_fd, kMsg, len};
@@ -313,12 +313,12 @@ struct DuplexState {
   std::int64_t recv_n = 0;
   std::int64_t send_n = 0;
 };
-Task<int> duplex_recv(Allocator, DuplexState* s) {
+Task<int> duplex_recv(AllocatorRef, DuplexState* s) {
   // Blocks until data arrives on `fd` (the peer end is written by the test).
   s->recv_n = co_await RecvOp{&s->io->proactor_for_current(), s->fd, s->recv_buf, 64};
   co_return 0;
 }
-Task<int> duplex_send(Allocator, DuplexState* s) {
+Task<int> duplex_send(AllocatorRef, DuplexState* s) {
   static const char kMsg[] = "duplex-write";
   s->send_n = co_await SendOp{&s->io->proactor_for_current(), s->fd, kMsg, sizeof(kMsg)};
   co_return 0;
@@ -380,7 +380,7 @@ struct MultishotState {
   std::uint32_t joined_len = 0;
   std::atomic<bool> saw_terminal{false};
 };
-Task<int> multishot_recv_coro(Allocator alloc, MultishotState* st) {
+Task<int> multishot_recv_coro(AllocatorRef alloc, MultishotState* st) {
   auto uring = st->io->proactor_for_current().io_uring_extension();
   auto stream = uring ? MultishotRecvStream{uring, st->recv_fd, st->bgid, alloc}
                       : MultishotRecvStream{};
@@ -454,7 +454,7 @@ TEST(IoNet, MultishotRecvAwaitable) {
 
 namespace {
 struct MultishotAllocState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   std::atomic<int> live{0};
   static void* alloc(void* p, std::size_t n, std::size_t a) noexcept {
     auto* s = static_cast<MultishotAllocState*>(p);
@@ -473,7 +473,7 @@ struct MultishotAllocState {
     return static_cast<MultishotAllocState*>(p)->backing.reallocate(
         q, old_n, new_n, a);
   }
-  Allocator handle() noexcept { return Allocator(&alloc, &free, &realloc, this); }
+  AllocatorRef handle() noexcept { return AllocatorRef(&alloc, &free, &realloc, this); }
 };
 }  // namespace
 
@@ -481,7 +481,7 @@ struct MultishotAllocState {
 // before that CQE must neither wake its stale Waker nor leak the heap slot.
 TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   MultishotAllocState state;
-  Allocator a = state.handle();
+  AllocatorRef a = state.handle();
   hyle::io::Proactor p;  // uninitialized is enough: early-drop cancel returns false
 
   auto make_slot = [&]() {

@@ -12,7 +12,7 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::ShardedQueue;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -154,7 +154,7 @@ TEST(ShardedQueue, MoveAssignablePayloadUsesNaturalPopShape) {
 // index); consumers round-robin-drain. The union of popped values must equal
 // exactly the pushed set -- no loss, no duplication. Mirrors the BoundedQueue
 // stress test but exercises the sharded fan-in/fan-out. Uses the OPT-IN runtime
-// mem::Allocator variant (covers the scheduler's global-inject-queue path).
+// mem::AllocatorRef variant (covers the scheduler's global-inject-queue path).
 TEST(ShardedQueue, MpmcStressConservation) {
   constexpr int kProducers = 4;
   constexpr int kConsumers = 4;
@@ -163,18 +163,18 @@ TEST(ShardedQueue, MpmcStressConservation) {
 
   // One shard per producer so producers never contend; cap small to force lots
   // of wrap-around + full/empty races between producers and consumers.
-  ShardedQueue<std::uint64_t, Allocator> q(system_allocator(), kProducers, 1024);
+  ShardedQueue<std::uint64_t, AllocatorRef> q(system_allocator(), kProducers, 1024);
   std::atomic<int> producers_done{0};
   std::vector<std::vector<std::uint64_t>> got(kConsumers);
 
   struct ProdArgs {
-    ShardedQueue<std::uint64_t, Allocator>* q;
+    ShardedQueue<std::uint64_t, AllocatorRef>* q;
     int hint;
     int base;
     std::atomic<int>* done;
   };
   struct ConsArgs {
-    ShardedQueue<std::uint64_t, Allocator>* q;
+    ShardedQueue<std::uint64_t, AllocatorRef>* q;
     std::vector<std::uint64_t>* out;
     std::atomic<int>* done_producers;
     int start_cursor;

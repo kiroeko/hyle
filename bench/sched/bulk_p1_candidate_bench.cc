@@ -14,7 +14,7 @@
 namespace {
 
 namespace p1 = hyle::bench::sched_p1;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::sched::BulkExecuteOptions;
 using hyle::sched::Scheduler;
 using hyle::sched::WaitGroup;
@@ -107,7 +107,7 @@ int main() {
   };
   options.worker_hook_context = &affinity;
 
-  const Allocator allocator = hyle::mem::system_allocator();
+  const AllocatorRef allocator = hyle::mem::system_allocator();
   hyle::Status scheduler_status;
   Scheduler scheduler(static_cast<unsigned>(p1::kWorkerCount), allocator,
                       32'768, options, &scheduler_status);

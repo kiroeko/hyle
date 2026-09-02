@@ -11,9 +11,11 @@
 
 #include "hyle/container/pod_vector.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/heap.h"
 
 using hyle::container::PodVector;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
+using hyle::mem::Heap;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -25,7 +27,7 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
 }
 
 struct ToggleAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   bool fail = false;
   std::size_t allocated_size = 0;
   std::size_t reallocate_old_size = 0;
@@ -156,7 +158,7 @@ TEST(PodVector, PushBackMayAliasElementAcrossGrowth) {
 
 TEST(PodVector, AllocationContainsOnlyElementStorage) {
   ToggleAllocatorState state;
-  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  AllocatorRef allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
   {
     PodVector<std::uint32_t> values(allocator);
     ASSERT_TRUE(values.try_reserve(4));
@@ -169,7 +171,7 @@ TEST(PodVector, AllocationContainsOnlyElementStorage) {
 }
 
 TEST(PodVector, FallibleGrowthPreservesStateOnFailure) {
-  hyle::mem::Allocator failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
+  hyle::mem::AllocatorRef failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
   PodVector<int> a(failing);
   EXPECT_FALSE(a.try_reserve(4));
   EXPECT_FALSE(a.try_push_back(7));
@@ -288,7 +290,7 @@ TEST(PodVector, AssignSwapAndComparisonMatchValueContainerShape) {
 
 TEST(PodVector, FailedShrinkPreservesStorageAndEmptyShrinkReleasesIt) {
   ToggleAllocatorState state;
-  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  AllocatorRef allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
   PodVector<int> values(allocator, 5, 7);
   values.reserve(16);
   int* const data_before = values.data();
@@ -320,4 +322,17 @@ TEST(PodVector, ByteRelocationDoesNotRequireCopyConstruction) {
   EXPECT_EQ(copy[0].value, 7);
   EXPECT_EQ(copy[1].value, 9);
   EXPECT_EQ(copy[2].value, 7);
+}
+
+// MEM2 normal journey: a consumer-owned isolated heap injects its borrowed
+// allocator directly into a normal HYLE container. The container is destroyed
+// before the heap is cleared, so neither side needs an adapter or hidden owner.
+TEST(PodVector, AcceptsBorrowFromOwnedHeap) {
+  Heap heap = Heap::create().value();
+  {
+    PodVector<std::uint32_t> values(heap.allocator());
+    values.assign({3, 5, 8, 13});
+    EXPECT_EQ(values.back(), 13u);
+  }
+  EXPECT_TRUE(heap.clear().ok());
 }

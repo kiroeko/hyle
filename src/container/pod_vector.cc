@@ -21,7 +21,7 @@ bool allocation_bytes(std::size_t capacity, std::size_t item_size,
 void* pod_vector_reallocate_internal(
     void* data, std::size_t old_capacity, std::size_t new_capacity,
     std::size_t item_size, std::size_t alignment,
-    mem::Allocator alloc) noexcept {
+    mem::AllocatorRef alloc) noexcept {
   HYLE_FATAL_ASSERT(alignment != 0 && (alignment & (alignment - 1)) == 0);
   HYLE_FATAL_ASSERT(data != nullptr || old_capacity == 0);
   HYLE_FATAL_ASSERT(new_capacity != 0);
@@ -39,7 +39,7 @@ void* pod_vector_reallocate_internal(
 
 void pod_vector_free_internal(void* data, std::size_t capacity,
                               std::size_t item_size, std::size_t alignment,
-                              mem::Allocator alloc) noexcept {
+                              mem::AllocatorRef alloc) noexcept {
   if (data == nullptr) return;
   std::size_t bytes = 0;
   HYLE_FATAL_ASSERT(allocation_bytes(capacity, item_size, &bytes));

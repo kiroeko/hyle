@@ -96,19 +96,19 @@ private:
 // never allocates, grows, frees individual objects, or falls back to another
 // allocator. The storage must outlive the region and everything allocated from
 // it.
-class FixedRegion {
+class FixedArena {
 public:
-  FixedRegion() noexcept = default;
-  explicit FixedRegion(std::span<std::byte> storage) noexcept
+  FixedArena() noexcept = default;
+  explicit FixedArena(std::span<std::byte> storage) noexcept
       : cursor_(storage.data(), storage.size()) {}
-  FixedRegion(void *data, std::size_t size) noexcept : cursor_(data, size) {}
+  FixedArena(void *data, std::size_t size) noexcept : cursor_(data, size) {}
 
   // A bitwise move would leave two active cursors over the same external
   // storage.
-  FixedRegion(const FixedRegion&) = delete;
-  FixedRegion& operator=(const FixedRegion&) = delete;
-  FixedRegion(FixedRegion&&) = delete;
-  FixedRegion& operator=(FixedRegion&&) = delete;
+  FixedArena(const FixedArena&) = delete;
+  FixedArena& operator=(const FixedArena&) = delete;
+  FixedArena(FixedArena&&) = delete;
+  FixedArena& operator=(FixedArena&&) = delete;
 
   bool valid() const noexcept { return cursor_.valid(); }
   void *allocate(std::size_t bytes,
@@ -120,14 +120,14 @@ public:
   std::size_t capacity() const noexcept { return cursor_.capacity(); }
   std::size_t remaining() const noexcept { return cursor_.remaining(); }
 
-  Allocator as_allocator() noexcept {
-    return Allocator(&fixed_alloc, &fixed_free, &fixed_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&fixed_alloc, &fixed_free, &fixed_realloc, this);
   }
 
 private:
   static void *fixed_alloc(void *state, std::size_t size,
                            std::size_t alignment) noexcept {
-    return static_cast<FixedRegion *>(state)->allocate(size, alignment);
+    return static_cast<FixedArena *>(state)->allocate(size, alignment);
   }
   static void fixed_free(void *, void *, std::size_t, std::size_t) noexcept {}
   static void *fixed_realloc(void *state, void *ptr, std::size_t old_size,
@@ -135,7 +135,7 @@ private:
                              std::size_t alignment) noexcept {
     if (new_size == 0)
       return nullptr;
-    auto *self = static_cast<FixedRegion *>(state);
+    auto *self = static_cast<FixedArena *>(state);
     void *out = self->allocate(new_size, alignment);
     if (out != nullptr && ptr != nullptr)
       std::memcpy(out, ptr, old_size < new_size ? old_size : new_size);
@@ -145,11 +145,11 @@ private:
   detail::BumpCursor cursor_;
 };
 
-struct RegionOptions {
-  // Ordinary-block backing allocation targets, including Region's internal
+struct ArenaOptions {
+  // Ordinary-block backing allocation targets, including Arena's internal
   // header and worst-case alignment padding. A single allocation may force a
   // larger block. Treating these as total backing bytes avoids crossing an
-  // allocator size-class boundary merely to store Region metadata.
+  // allocator size-class boundary merely to store Arena metadata.
   std::size_t initial_block_size = 64 * 1024;
   // Four MiB avoids backing-allocator page/segment amplification from many
   // one-MiB blocks on large request scratch, while keeping retained tail slack
@@ -163,11 +163,11 @@ struct RegionOptions {
 // individual free is a no-op. clear() bulk-releases logical allocations,
 // retains ordinary blocks for reuse, and returns dedicated large blocks.
 // release() returns every block to the backing allocator. size_limit is a
-// strict bound on backing bytes reserved by this Region (headers and alignment
+// strict bound on backing bytes reserved by this Arena (headers and alignment
 // padding included), not merely on requested payload bytes.
-class Region {
+class Arena {
 public:
-  explicit Region(Allocator backing, RegionOptions options = {}) noexcept
+  explicit Arena(AllocatorRef backing, ArenaOptions options = {}) noexcept
       : backing_(backing), options_(options),
         next_block_size_(options.initial_block_size) {
     HYLE_FATAL_ASSERT(backing_.valid());
@@ -176,11 +176,11 @@ public:
     HYLE_FATAL_ASSERT(options_.large_allocation_threshold != 0);
   }
 
-  ~Region() { release(); }
-  Region(const Region&) = delete;
-  Region& operator=(const Region&) = delete;
-  Region(Region &&other) noexcept { steal(other); }
-  Region &operator=(Region &&other) noexcept {
+  ~Arena() { release(); }
+  Arena(const Arena&) = delete;
+  Arena& operator=(const Arena&) = delete;
+  Arena(Arena &&other) noexcept { steal(other); }
+  Arena &operator=(Arena &&other) noexcept {
     if (this != &other) {
       release();
       steal(other);
@@ -260,14 +260,14 @@ public:
 
 #if defined(HYLE_TESTING)
   // TEST-ONLY: after clear(), each retained ordinary block is
-  // considered at most once before the Region grows again.
+  // considered at most once before the Arena grows again.
   std::size_t debug_reuse_candidates() const noexcept {
     return debug_reuse_candidates_;
   }
 #endif
 
-  Allocator as_allocator() noexcept {
-    return Allocator(&region_alloc, &region_free, &region_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&region_alloc, &region_free, &region_realloc, this);
   }
 
 private:
@@ -420,7 +420,7 @@ private:
 
   void *account(void *p, std::size_t bytes) noexcept {
     // Every successful request consumes at least `bytes` from finite retained
-    // backing, so used_ + bytes cannot overflow while Region invariants hold.
+    // backing, so used_ + bytes cannot overflow while Arena invariants hold.
     // Peak folding is deferred to clear/release/query to keep the bump path to
     // one dependent counter update.
     used_ += bytes;
@@ -434,7 +434,7 @@ private:
 
   static void *region_alloc(void *state, std::size_t size,
                             std::size_t alignment) noexcept {
-    return static_cast<Region *>(state)->allocate(size, alignment);
+    return static_cast<Arena *>(state)->allocate(size, alignment);
   }
   static void region_free(void *, void *, std::size_t, std::size_t) noexcept {}
   static void *region_realloc(void *state, void *ptr, std::size_t old_size,
@@ -442,14 +442,14 @@ private:
                               std::size_t alignment) noexcept {
     if (new_size == 0)
       return nullptr;
-    auto *self = static_cast<Region *>(state);
+    auto *self = static_cast<Arena *>(state);
     void *out = self->allocate(new_size, alignment);
     if (out != nullptr && ptr != nullptr)
       std::memcpy(out, ptr, old_size < new_size ? old_size : new_size);
     return out;
   }
 
-  void steal(Region &other) noexcept {
+  void steal(Arena &other) noexcept {
     backing_ = other.backing_;
     options_ = other.options_;
     blocks_ = other.blocks_;
@@ -474,8 +474,8 @@ private:
 #endif
   }
 
-  Allocator backing_;
-  RegionOptions options_;
+  AllocatorRef backing_;
+  ArenaOptions options_;
   Block *blocks_ = nullptr;
   Block *current_block_ = nullptr;
   std::byte *cursor_ = nullptr;

@@ -61,7 +61,7 @@ using hyle::io::MultishotRecvStream;
 using hyle::io::RecvBuf;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -111,7 +111,7 @@ struct Shared {
 
 // Sender fiber: kMsgs datagrams via co_await SendOp, in windows so the DGRAM buffer
 // (bounded) never fills faster than the receiver drains. Identical for both rows.
-Task<int> sender(Allocator, Shared* s) {
+Task<int> sender(AllocatorRef, Shared* s) {
   static const char kMsg[kMsgLen] = "hyle-multishot-clean-bench-payload";
   for (int i = 0; i < kMsgs; ++i) {
     std::int64_t w = co_await SendOp{&s->io->proactor_for_current(), s->send_fd,
@@ -126,7 +126,7 @@ Task<int> sender(Allocator, Shared* s) {
 }
 
 // ---- receiver: multishot ----
-Task<int> recv_multishot(Allocator alloc, Shared* s) {
+Task<int> recv_multishot(AllocatorRef alloc, Shared* s) {
   auto stream = MultishotRecvStream{
       s->io->proactor_for_current().io_uring_extension(), s->recv_fd, kBgid,
       alloc};
@@ -139,7 +139,7 @@ Task<int> recv_multishot(Allocator alloc, Shared* s) {
 }
 
 // ---- receiver: one-shot RecvOp (a submit per datagram) ----
-Task<int> recv_oneshot(Allocator, Shared* s) {
+Task<int> recv_oneshot(AllocatorRef, Shared* s) {
   char buf[kMsgLen];
   while (s->received < kMsgs) {
     std::int64_t n = co_await RecvOp{&s->io->proactor_for_current(), s->recv_fd,

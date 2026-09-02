@@ -168,7 +168,7 @@ class RefCounted {
  protected:
   ~RefCounted() = default;  // non-virtual: destroy through the Sub type
   // Default teardown: delete as the concrete type. Subclasses that allocate
-  // through a HYLE Allocator override this to free through the same allocator.
+  // through a HYLE AllocatorRef override this to free through the same allocator.
   // destroy() must not throw: it is reached from noexcept ownership release.
   void destroy() { delete static_cast<Sub*>(this); }
 

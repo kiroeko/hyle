@@ -1,4 +1,4 @@
-// HYLE Allocator(mimalloc-backed) overhead audit + OS-allocator comparison.
+// HYLE AllocatorRef(mimalloc-backed) overhead audit + OS-allocator comparison.
 // THREE rivals per workload:
 //   * raw mi_malloc/mi_free  -- the SOTA reference (set as the relative baseline,
 //     so HYLE's % reads DIRECTLY as the vtable-wrapper overhead: one non-inlinable
@@ -6,7 +6,7 @@
 //     few branches in system_realloc. In an EMPTY alloc/free loop (denominator
 //     ~7-8ns) this fixed cost shows as a large %; the "alloc + touch memory" row
 //     below is the honest read -- with any real work the wrapper cost amortizes.
-//   * HYLE system_allocator  -- our Allocator vtable over the same mimalloc.
+//   * HYLE system_allocator  -- our AllocatorRef vtable over the same mimalloc.
 //   * std::malloc/free       -- the OS allocator (weak baseline; shows mimalloc's win).
 // mimalloc is a hard vendored dep (third_party/mimalloc), so this needs no gate.
 
@@ -32,7 +32,7 @@
 #include "hyle/mem/std_allocator.h"
 #include "hyle/mem/system_inline.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -82,7 +82,7 @@ bool configure_apple_qos() {
 }
 
 // std::pmr::memory_resource over mimalloc -- the SAME-CLASS rival to HYLE's
-// runtime Allocator vtable. BOTH are runtime polymorphism over the same backing
+// runtime AllocatorRef vtable. BOTH are runtime polymorphism over the same backing
 // (mimalloc), so racing them isolates the DISPATCH cost (HYLE 3-fn fn-ptr vtable
 // vs std::pmr's virtual do_allocate). Racing the vtable against RAW mi (non-
 // polymorphic, inlined) measures "polymorphism vs none" -- not apples-to-apples;
@@ -102,7 +102,7 @@ class MiResource final : public std::pmr::memory_resource {
 // executable: on a shared build that would compare an executable-local static
 // mimalloc against a DLL call and attribute the different link shape to the
 // adapter.  BackendResource and PmrResource below both cross the same import
-// seam; their delta therefore isolates HYLE's extra runtime Allocator dispatch.
+// seam; their delta therefore isolates HYLE's extra runtime AllocatorRef dispatch.
 class BackendResource final : public std::pmr::memory_resource {
   void* do_allocate(std::size_t bytes, std::size_t alignment) override {
     void* pointer = hyle::mem::detail::system_backend_allocate(
@@ -121,7 +121,7 @@ class BackendResource final : public std::pmr::memory_resource {
 
 int main() {
   if (!configure_apple_qos()) return 2;
-  Allocator a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
+  AllocatorRef a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
 
 #if defined(HYLE_STATIC)
   std::puts("HYLE_MEM_LINKAGE static");
@@ -182,7 +182,7 @@ int main() {
         hyle::mem::SystemAllocator::deallocate(p, bytes);
       }
     });
-    run('A', "Allocator (same-link runtime)", [&] {
+    run('A', "AllocatorRef (same-link runtime)", [&] {
       for (int i = 0; i < kN; ++i) {
         const std::size_t bytes = bytes_at(i);
         void* p = a.allocate(bytes);
@@ -258,7 +258,7 @@ int main() {
         hyle::mem::SystemAllocator::deallocate(p, kReallocSizes.back());
       }
     });
-    run('G', "Allocator realloc (same-link runtime)", [&] {
+    run('G', "AllocatorRef realloc (same-link runtime)", [&] {
       for (int i = 0; i < kN; ++i) {
         void* p = a.allocate(kReallocSizes[0]);
         for (std::size_t index = 1; index < kReallocSizes.size(); ++index) {
@@ -490,12 +490,12 @@ int main() {
   }
 
   // ---- reallocate: grow an existing block (the COLD path, but still benched) --
-  // Allocator splits alloc/free/realloc (header rationale: register-friendly, no
+  // AllocatorRef splits alloc/free/realloc (header rationale: register-friendly, no
   // dispatch branch). The realloc path had no direct bench (PodVector growth exercises
   // it only indirectly). Grow a block through a sequence of sizes (16->1024 via
   // doubling) so realloc must sometimes copy. HYLE vtable reallocate vs raw
   // mi_realloc (SOTA) vs the compile-time SystemAllocator path vs the runtime
-  // Allocator vtable vs std::realloc (OS). Each iteration starts from a fresh
+  // AllocatorRef vtable vs std::realloc (OS). Each iteration starts from a fresh
   // small block so the grow chain is identical across rivals. Keeping the two
   // HYLE rows separate prevents runtime injection cost from being attributed to
   // the default compile-time path.
@@ -526,7 +526,7 @@ int main() {
         hyle::mem::SystemAllocator::deallocate(p, kSizes[6]);
       }
     });
-    b.run("HYLE Allocator::reallocate (vtable)", [&] {
+    b.run("HYLE AllocatorRef::reallocate (vtable)", [&] {
       for (int i = 0; i < kChains; ++i) {
         void* p = a.allocate(kSizes[0]);
         for (int s = 1; s < 7; ++s) p = a.reallocate(p, kSizes[s - 1], kSizes[s]);

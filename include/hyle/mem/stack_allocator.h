@@ -15,17 +15,17 @@ namespace hyle::mem {
 // saved point). Ideal for frame/temporary lifetimes (e.g. one taskgraph pass).
 //
 // Fixes clay bug #4 (stack_allocator.h:28,30,108): clay's copy ctor left
-// allocator_ uninitialized -> a copied StackAllocator dereferenced a wild
+// allocator_ uninitialized -> a copied StackArena dereferenced a wild
 // pointer on the heap-fallback path. Root-cause fix: this type OWNS a slab and
 // is non-copyable/non-movable (an allocator holding a resource should never be
 // value-copied). And there is NO heap-fallback path -- full returns nullptr.
 //
 // Single-threaded by design (stack/scratch lifetime is thread-local).
-class StackAllocator {
+class StackArena {
 public:
   using Marker = std::byte *; // a saved cursor position within the slab
 
-  StackAllocator(Allocator alloc, std::size_t size)
+  StackArena(AllocatorRef alloc, std::size_t size)
       : alloc_(alloc), size_(size) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     HYLE_FATAL_ASSERT(size_ >= 1);
@@ -38,19 +38,19 @@ public:
     cursor_.reset_storage(base_, base_ != nullptr ? size_ : 0);
   }
 
-  // False iff the ctor's slab allocation hit OOM. An invalid StackAllocator
+  // False iff the ctor's slab allocation hit OOM. An invalid StackArena
   // hands out nothing (allocate -> nullptr).
   bool valid() const noexcept { return base_ != nullptr; }
 
-  ~StackAllocator() {
+  ~StackArena() {
     if (base_ != nullptr)
       alloc_.deallocate(base_, size_, alignof(std::max_align_t));
   }
 
-  StackAllocator(const StackAllocator&) = delete;
-  StackAllocator& operator=(const StackAllocator&) = delete;
-  StackAllocator(StackAllocator&&) = delete;
-  StackAllocator& operator=(StackAllocator&&) = delete;
+  StackArena(const StackArena&) = delete;
+  StackArena& operator=(const StackArena&) = delete;
+  StackArena(StackArena&&) = delete;
+  StackArena& operator=(StackArena&&) = delete;
 
   // Bump `bytes` aligned to `alignment` (power of two). nullptr if it won't fit
   // (no heap fallback -- give a bigger slab instead).
@@ -81,19 +81,19 @@ public:
   // padding).
   std::size_t remaining() const noexcept { return cursor_.remaining(); }
 
-  // Adapt to the Allocator vtable so a StackAllocator can be injected
-  // downstream (like PooledRegion): allocate -> bump, deallocate -> no-op
+  // Adapt to the AllocatorRef vtable so a StackArena can be injected
+  // downstream (like PooledArena): allocate -> bump, deallocate -> no-op
   // (LIFO frees in bulk via reset()/rewind()), realloc -> bump a fresh slice +
-  // copy (can't grow in place). One StackAllocator is single-owner, so the
+  // copy (can't grow in place). One StackArena is single-owner, so the
   // vtable is single-threaded too.
-  Allocator as_allocator() noexcept {
-    return Allocator(&stack_alloc, &stack_free, &stack_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&stack_alloc, &stack_free, &stack_realloc, this);
   }
 
 private:
   static void *stack_alloc(void *state, std::size_t size,
                            std::size_t alignment) noexcept {
-    return static_cast<StackAllocator *>(state)->allocate(size, alignment);
+    return static_cast<StackArena *>(state)->allocate(size, alignment);
   }
   static void stack_free(void * /*state*/, void * /*ptr*/, std::size_t /*size*/,
                          std::size_t /*alignment*/) noexcept {
@@ -102,7 +102,7 @@ private:
   static void *stack_realloc(void *state, void *ptr, std::size_t old_size,
                              std::size_t new_size,
                              std::size_t alignment) noexcept {
-    auto *self = static_cast<StackAllocator *>(state);
+    auto *self = static_cast<StackArena *>(state);
     if (new_size == 0)
       return nullptr;
     void *p = self->allocate(new_size, alignment);
@@ -112,7 +112,7 @@ private:
     return p;
   }
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
   std::byte *base_ = nullptr;
   std::size_t size_;
   detail::BumpCursor cursor_;

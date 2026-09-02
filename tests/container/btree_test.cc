@@ -21,7 +21,7 @@ using hyle::container::BTreeMap;
 using hyle::container::BTreeSet;
 
 struct ToggleAllocatorState {
-  hyle::mem::Allocator backing = hyle::mem::system_allocator();
+  hyle::mem::AllocatorRef backing = hyle::mem::system_allocator();
   bool fail = false;
 };
 
@@ -426,9 +426,9 @@ TEST(BTreeMap, DuplicateTryEmplaceDoesNotConstructMappedValue) {
 
 TEST(BTreeMap, FallibleInsertPreservesContentsOnAllocationFailure) {
   ToggleAllocatorState state;
-  hyle::mem::Allocator allocator(toggle_allocate, toggle_deallocate,
+  hyle::mem::AllocatorRef allocator(toggle_allocate, toggle_deallocate,
                                  toggle_reallocate, &state);
-  using Map = BTreeMap<int, int, std::less<>, hyle::mem::Allocator>;
+  using Map = BTreeMap<int, int, std::less<>, hyle::mem::AllocatorRef>;
   Map map(std::less<>{}, allocator);
   state.fail = true;
   EXPECT_EQ(map.try_insert(1, 10), Map::InsertResult::kOutOfMemory);

@@ -100,7 +100,7 @@ void host_spin(const LaunchConfig&, const KernelArgs& args) noexcept {
 // first failure. Kernel launch (compute-04) is the async, stream-bound work the removed
 // raw memcpy_async used to provide -- Buffer set/get is synchronous so can't leave work
 // in flight to observe.
-Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
+Task<int> gpu_await_coro(mem::AllocatorRef, int* out_result) {
   Device d = default_device();
   const bool gpu = has_gpu();
   auto s = Stream::create(d);

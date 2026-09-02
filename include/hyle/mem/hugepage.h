@@ -19,7 +19,7 @@
 //   * NUMA: preferred / bind / interleave on large spans.
 //   * 1GiB OS pages: process-start reserve via mimalloc (opt-in, may need
 //   privileges).
-// Fiber stacks / small objects must NOT use HugeRegion.
+// Fiber stacks / small objects must NOT use HugeMapping.
 
 namespace hyle::mem {
 
@@ -34,7 +34,7 @@ HYLE_MEM_API Status reserve_huge_1g_pages(
     std::size_t pages, int numa_node = platform::kNumaAny,
     unsigned timeout_ms = 0) noexcept;
 
-// ---- HugeRegion -------------------------------------------------------------
+// ---- HugeMapping -------------------------------------------------------------
 
 enum class HugeFlags : std::uint8_t {
   kNone = 0,
@@ -70,47 +70,47 @@ HYLE_FORCE_INLINE constexpr bool valid_huge_flags(HugeFlags flags) noexcept {
   return (bits & ~known) == 0 && (bits & placement) != placement;
 }
 
-class HugeRegion {
+class HugeMapping {
 public:
-  HugeRegion() noexcept = default;
+  HugeMapping() noexcept = default;
 
   // Reserve+commit `bytes` (large-page aligned). NUMA:
   //   kNumaInterleave → stripe all nodes
   //   else reserve_numa(node) + preferred or kNumaBind
-  static Result<HugeRegion> allocate(
+  static Result<HugeMapping> allocate(
       std::size_t bytes, HugeFlags flags = HugeFlags::kDefault,
       int numa_node = platform::kNumaAny) noexcept {
-    HugeRegion r;
+    HugeMapping r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = numa_node;
     if (!valid_huge_flags(flags)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate: unknown or conflicting flags"));
+          "HugeMapping allocate: unknown or conflicting flags"));
     }
     if (bytes == 0) {
       return std::unexpected(
-          Status::InvalidArgument("HugeRegion allocate: size is zero"));
+          Status::InvalidArgument("HugeMapping allocate: size is zero"));
     }
     const std::size_t aligned = platform::large_page_align_up(bytes);
     if (aligned == 0) {
       return std::unexpected(
-          Status::OutOfRange("HugeRegion allocate: size overflow"));
+          Status::OutOfRange("HugeMapping allocate: size overflow"));
     }
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
     if (any(flags & HugeFlags::kNumaBind) &&
         numa_node == platform::kNumaAny) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate: hard bind requires an explicit NUMA node"));
+          "HugeMapping allocate: hard bind requires an explicit NUMA node"));
     }
     if (interleave && numa_node != platform::kNumaAny) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate: interleave requires NUMA-any"));
+          "HugeMapping allocate: interleave requires NUMA-any"));
     }
     if (!interleave && numa_node != platform::kNumaAny &&
         (numa_node < 0 ||
          !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
       return std::unexpected(Status::OutOfRange(
-          "HugeRegion allocate: NUMA node ID is unavailable"));
+          "HugeMapping allocate: NUMA node ID is unavailable"));
     }
     if (interleave) {
       HYLE_ASSIGN_OR_RETURN(
@@ -124,7 +124,7 @@ public:
       if (!status.ok()) {
         r.region_.release().IgnoreError();
         return std::unexpected(
-            std::move(status).WithContext("HugeRegion allocate commit"));
+            std::move(status).WithContext("HugeMapping allocate commit"));
       }
     }
     platform::NumaPlacement placement = r.region_.numa_placement();
@@ -144,7 +144,7 @@ public:
           Status error = std::move(placed).error();
           r.region_.release().IgnoreError();
           return std::unexpected(
-              std::move(error).WithContext("HugeRegion allocate hard bind"));
+              std::move(error).WithContext("HugeMapping allocate hard bind"));
         }
         placement = *placed;
       }
@@ -171,27 +171,27 @@ public:
     return r;
   }
 
-  static Result<HugeRegion>
+  static Result<HugeMapping>
   allocate_local(std::size_t bytes,
                  HugeFlags flags = HugeFlags::kDefault) noexcept {
     if (any(flags & HugeFlags::kNumaInterleave)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate_local: interleave is not local placement"));
+          "HugeMapping allocate_local: interleave is not local placement"));
     }
     auto current = platform::numa_current_node();
     if (!current) {
       return std::unexpected(std::move(current).error().WithContext(
-          "HugeRegion allocate_local current NUMA node"));
+          "HugeMapping allocate_local current NUMA node"));
     }
     if (*current > static_cast<unsigned>((std::numeric_limits<int>::max)())) {
       return std::unexpected(Status::OutOfRange(
-          "HugeRegion allocate_local: NUMA node does not fit int"));
+          "HugeMapping allocate_local: NUMA node does not fit int"));
     }
     return allocate(bytes, flags, static_cast<int>(*current));
   }
 
   // Shared multi-MB arena: interleave + THP.
-  static Result<HugeRegion>
+  static Result<HugeMapping>
   allocate_interleaved(std::size_t bytes,
                        HugeFlags flags = HugeFlags::kThpHint) noexcept {
     return allocate(bytes, flags | HugeFlags::kNumaInterleave,
@@ -202,26 +202,26 @@ public:
   // repeated IDs express weighted placement; an empty span means every
   // available node. bytes_per_chunk==0 means one OS page. The returned region
   // is already committed and writable.
-  static Result<HugeRegion> allocate_interleaved(
+  static Result<HugeMapping> allocate_interleaved(
       std::size_t bytes, std::span<const unsigned> nodes,
       std::size_t bytes_per_chunk = 0,
       HugeFlags flags = HugeFlags::kNone) noexcept {
     flags = flags | HugeFlags::kNumaInterleave;
     if (!valid_huge_flags(flags)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate interleaved: unknown or conflicting flags"));
+          "HugeMapping allocate interleaved: unknown or conflicting flags"));
     }
     if (bytes == 0) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeRegion allocate interleaved: size is zero"));
+          "HugeMapping allocate interleaved: size is zero"));
     }
     const std::size_t aligned = platform::large_page_align_up(bytes);
     if (aligned == 0) {
       return std::unexpected(
-          Status::OutOfRange("HugeRegion allocate interleaved: size overflow"));
+          Status::OutOfRange("HugeMapping allocate interleaved: size overflow"));
     }
 
-    HugeRegion r;
+    HugeMapping r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = platform::kNumaAny;
     HYLE_ASSIGN_OR_RETURN(
@@ -251,7 +251,7 @@ public:
     return r;
   }
 
-  HugeRegion(HugeRegion &&o) noexcept
+  HugeMapping(HugeMapping &&o) noexcept
       : region_(std::move(o.region_)), requested_flags_(o.requested_flags_),
         accepted_flags_(o.accepted_flags_),
         requested_numa_node_(o.requested_numa_node_),
@@ -263,7 +263,7 @@ public:
     o.interleave_chunk_size_ = 0;
     o.numa_placement_applied_ = false;
   }
-  HugeRegion &operator=(HugeRegion &&o) noexcept {
+  HugeMapping &operator=(HugeMapping &&o) noexcept {
     if (this != &o) {
       region_ = std::move(o.region_);
       requested_flags_ = o.requested_flags_;
@@ -279,8 +279,8 @@ public:
     }
     return *this;
   }
-  HugeRegion(const HugeRegion&) = delete;
-  HugeRegion& operator=(const HugeRegion&) = delete;
+  HugeMapping(const HugeMapping&) = delete;
+  HugeMapping& operator=(const HugeMapping&) = delete;
 
   bool valid() const noexcept { return region_.valid(); }
   explicit operator bool() const noexcept { return valid(); }
@@ -313,7 +313,7 @@ public:
 
   Status advise_hugepage() noexcept {
     if (!valid()) {
-      return Status::FailedPrecondition("HugeRegion advise: region is empty");
+      return Status::FailedPrecondition("HugeMapping advise: region is empty");
     }
     Status status =
         platform::vm_advise_hugepage(region_.data(), region_.size());

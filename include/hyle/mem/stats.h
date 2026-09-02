@@ -17,7 +17,7 @@
 // separate subtract of the known old size.
 //
 // Production hot path (system_allocator / SystemAllocator) is UNINSTRUMENTED.
-// Stats are opt-in via StatsAllocator wrapping any Allocator — tests and
+// Stats are opt-in via StatsAllocator wrapping any AllocatorRef — tests and
 // debug tooling pay the cost; release default does not.
 
 namespace hyle::mem {
@@ -89,7 +89,7 @@ class AllocStats {
     total_frees_.fetch_add(1, std::memory_order_relaxed);
   }
 
-  // Realloc accounting. Matches Allocator contract:
+  // Realloc accounting. Matches AllocatorRef contract:
   //   old==0, new>0  → new live block (does NOT bump total_allocs; that is for
   //                    allocate() only — reallocs_ counts this call)
   //   old>0,  new==0 → free
@@ -186,7 +186,7 @@ class HYLE_MEM_API LeakTracker {
   // Metadata and every hash-table node use `metadata`. Construction failure is
   // an operational resource error, not an exception from the mem API.
   static Result<LeakTracker> create(
-      Allocator metadata = system_allocator()) noexcept;
+      AllocatorRef metadata = system_allocator()) noexcept;
   ~LeakTracker();
   LeakTracker(const LeakTracker&) = delete;
   LeakTracker& operator=(const LeakTracker&) = delete;
@@ -225,7 +225,7 @@ class HYLE_MEM_API LeakTracker {
 };
 
 // Decorator: every allocate/free/realloc updates AllocStats (+ optional leaks).
-// Owns the vtable state; Allocator from get() is valid only while *this lives.
+// Owns the vtable state; AllocatorRef from get() is valid only while *this lives.
 class HYLE_MEM_API StatsAllocator {
  public:
   // track_leaks=true enables LeakTracker (slower; for leak tests). `backing`
@@ -234,9 +234,9 @@ class HYLE_MEM_API StatsAllocator {
   // StatsAllocator wrap a fixed-block/strict-quota allocator whose contract
   // cannot satisfy arbitrary control allocations. No global-new or exception
   // side channel is used for construction.
-  static Result<StatsAllocator> create(Allocator backing,
+  static Result<StatsAllocator> create(AllocatorRef backing,
                                        bool track_leaks = false,
-                                       Allocator metadata =
+                                       AllocatorRef metadata =
                                            system_allocator()) noexcept;
   ~StatsAllocator();
   StatsAllocator(const StatsAllocator&) = delete;
@@ -245,7 +245,7 @@ class HYLE_MEM_API StatsAllocator {
   StatsAllocator& operator=(StatsAllocator&& o) noexcept;
 
   bool valid() const noexcept { return state_ != nullptr; }
-  Allocator get() const noexcept;
+  AllocatorRef get() const noexcept;
   AllocStats& stats() noexcept;
   const AllocStats& stats() const noexcept;
   // Per-field atomic observation during mutation; coherent after callers

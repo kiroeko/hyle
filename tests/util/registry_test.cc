@@ -69,7 +69,7 @@ hyle::Status register_shapes(hyle::util::Registry<Shape*>* registry) noexcept {
 }
 
 struct FailingAllocatorState {
-  hyle::mem::Allocator backing = hyle::mem::system_allocator();
+  hyle::mem::AllocatorRef backing = hyle::mem::system_allocator();
   std::size_t calls = 0;
   std::size_t fail_after = 0;
   std::size_t last_allocation_size = 0;
@@ -97,8 +97,8 @@ void* failing_reallocate(void* context, void* pointer, std::size_t old_size,
   return state->backing.reallocate(pointer, old_size, new_size, alignment);
 }
 
-hyle::mem::Allocator failing_allocator(FailingAllocatorState* state) {
-  return hyle::mem::Allocator(&failing_allocate, &failing_deallocate,
+hyle::mem::AllocatorRef failing_allocator(FailingAllocatorState* state) {
+  return hyle::mem::AllocatorRef(&failing_allocate, &failing_deallocate,
                               &failing_reallocate, state);
 }
 

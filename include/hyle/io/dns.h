@@ -76,7 +76,7 @@ HYLE_IO_API void resolve_blocking(const char* host, std::uint16_t port,
 // string is COPIED into the job, so the caller's buffer need not outlive the await.
 // `alloc` backs the JoinState + the job (use the same allocator you join from).
 inline sched::JoinHandle<ResolveResult> resolve(sched::BlockingPool& pool,
-                                                mem::Allocator alloc,
+                                                mem::AllocatorRef alloc,
                                                 const char* host,
                                                 std::uint16_t port) noexcept {
   // A copyable POD job: owns its own host copy so nothing dangles when it runs on

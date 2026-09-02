@@ -143,7 +143,7 @@ class Registry {
     const void* index_;
   };
 
-  explicit Registry(mem::Allocator alloc = mem::system_allocator())
+  explicit Registry(mem::AllocatorRef alloc = mem::system_allocator())
       : alloc_(alloc), storage_(alloc, storage_region_options()),
         entries_(alloc) {}
   ~Registry() = default;
@@ -386,7 +386,7 @@ class Registry {
 
   using Table = container::FlatHashMap<
       container::StringView, IndexValue, container::Hash<container::StringView>,
-      std::equal_to<>, mem::Allocator>;
+      std::equal_to<>, mem::AllocatorRef>;
 
   static std::optional<EntryView> entry_view(
       const IndexValue* value) noexcept {
@@ -397,7 +397,7 @@ class Registry {
 
   class SnapshotStorage {
    public:
-    explicit SnapshotStorage(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+    explicit SnapshotStorage(mem::AllocatorRef alloc) noexcept : alloc_(alloc) {}
     ~SnapshotStorage() {
       if (data_ != nullptr) {
         alloc_.deallocate(data_, capacity_ * sizeof(EntryView),
@@ -430,7 +430,7 @@ class Registry {
     }
 
    private:
-    mem::Allocator alloc_;
+    mem::AllocatorRef alloc_;
     EntryView* data_ = nullptr;
     std::size_t size_ = 0;
     std::size_t capacity_ = 0;
@@ -441,8 +441,8 @@ class Registry {
            priority <= RegistryPriority::kPreferred;
   }
 
-  static constexpr mem::RegionOptions storage_region_options() noexcept {
-    mem::RegionOptions options;
+  static constexpr mem::ArenaOptions storage_region_options() noexcept {
+    mem::ArenaOptions options;
     options.initial_block_size = 4 * 1024;
     options.max_block_size = 64 * 1024;
     options.large_allocation_threshold = 16 * 1024;
@@ -569,14 +569,14 @@ class Registry {
     }
   }
 
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   mutable std::mutex mu_;
   // Each initial registration owns Entry+key+help in one allocation. This keeps
   // failure transactional and the normal 4--32-entry startup working set in one
   // small region instead of eagerly reserving two independent 4 KiB arenas.
   // Replacement help remains append-only so previously returned views stay
   // valid until Registry destruction.
-  mem::Region storage_;
+  mem::Arena storage_;
   Table entries_;
   mutable std::atomic<const Table*> frozen_index_{nullptr};
 };

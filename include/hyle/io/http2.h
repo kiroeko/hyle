@@ -80,30 +80,30 @@ class Http2MessageView {
   friend class Http2ServerConn;
   friend class Http2ClientConn;
   friend sched::Task<Http2MessageView*> http2_server_next(
-      mem::Allocator, Http2ServerConn&) noexcept;
+      mem::AllocatorRef, Http2ServerConn&) noexcept;
   friend sched::Task<Http2MessageView*> http2_client_next(
-      mem::Allocator, Http2ClientConn&) noexcept;
+      mem::AllocatorRef, Http2ClientConn&) noexcept;
   const void* stream_ = nullptr;
 };
 
 sched::Task<Http2MessageView*> http2_server_next(
-    mem::Allocator, Http2ServerConn&) noexcept;
+    mem::AllocatorRef, Http2ServerConn&) noexcept;
 sched::Task<bool> http2_server_respond(
-    mem::Allocator, Http2ServerConn&, std::int32_t, int, const Http2Header*,
+    mem::AllocatorRef, Http2ServerConn&, std::int32_t, int, const Http2Header*,
     std::size_t, StringView) noexcept;
-sched::Task<bool> http2_server_reset(mem::Allocator, Http2ServerConn&,
+sched::Task<bool> http2_server_reset(mem::AllocatorRef, Http2ServerConn&,
                                      std::int32_t, Http2Error) noexcept;
-sched::Task<bool> http2_server_shutdown(mem::Allocator, Http2ServerConn&,
+sched::Task<bool> http2_server_shutdown(mem::AllocatorRef, Http2ServerConn&,
                                         Http2Error) noexcept;
 
 // Server-side prior-knowledge HTTP/2 connection (h2c or TLS selected as "h2" by
 // the caller's protocol negotiation). The constructor queues the initial SETTINGS.
 class Http2ServerConn {
  public:
-  HYLE_IO_API Http2ServerConn(mem::Allocator alloc,
+  HYLE_IO_API Http2ServerConn(mem::AllocatorRef alloc,
                               TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API Http2ServerConn(mem::Allocator alloc,
+  HYLE_IO_API Http2ServerConn(mem::AllocatorRef alloc,
                               TlsStream stream) noexcept;
 #endif
   HYLE_IO_API ~Http2ServerConn();
@@ -131,39 +131,39 @@ class Http2ServerConn {
 
  private:
   friend sched::Task<Http2MessageView*> http2_server_next(
-      mem::Allocator, Http2ServerConn&) noexcept;
+      mem::AllocatorRef, Http2ServerConn&) noexcept;
   friend sched::Task<bool> http2_server_respond(
-      mem::Allocator, Http2ServerConn&, std::int32_t, int,
+      mem::AllocatorRef, Http2ServerConn&, std::int32_t, int,
       const Http2Header*, std::size_t, StringView) noexcept;
   friend sched::Task<bool> http2_server_reset(
-      mem::Allocator, Http2ServerConn&, std::int32_t, Http2Error) noexcept;
+      mem::AllocatorRef, Http2ServerConn&, std::int32_t, Http2Error) noexcept;
   friend sched::Task<bool> http2_server_shutdown(
-      mem::Allocator, Http2ServerConn&, Http2Error) noexcept;
+      mem::AllocatorRef, Http2ServerConn&, Http2Error) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;
   HttpTransport transport_{};
   Http2MessageView current_{};
-  mem::Allocator alloc_{};
+  mem::AllocatorRef alloc_{};
 };
 
 sched::Task<std::int32_t> http2_client_submit(
-    mem::Allocator, Http2ClientConn&, StringView, StringView, StringView,
+    mem::AllocatorRef, Http2ClientConn&, StringView, StringView, StringView,
     StringView, const Http2Header*, std::size_t, StringView) noexcept;
 sched::Task<Http2MessageView*> http2_client_next(
-    mem::Allocator, Http2ClientConn&) noexcept;
-sched::Task<bool> http2_client_reset(mem::Allocator, Http2ClientConn&,
+    mem::AllocatorRef, Http2ClientConn&) noexcept;
+sched::Task<bool> http2_client_reset(mem::AllocatorRef, Http2ClientConn&,
                                      std::int32_t, Http2Error) noexcept;
-sched::Task<bool> http2_client_shutdown(mem::Allocator, Http2ClientConn&,
+sched::Task<bool> http2_client_shutdown(mem::AllocatorRef, Http2ClientConn&,
                                         Http2Error) noexcept;
 
 // Client connection. submit_request() may be called repeatedly before
 // next_response(); returned positive stream IDs identify multiplexed requests.
 class Http2ClientConn {
  public:
-  HYLE_IO_API Http2ClientConn(mem::Allocator alloc,
+  HYLE_IO_API Http2ClientConn(mem::AllocatorRef alloc,
                               TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API Http2ClientConn(mem::Allocator alloc,
+  HYLE_IO_API Http2ClientConn(mem::AllocatorRef alloc,
                               TlsStream stream) noexcept;
 #endif
   HYLE_IO_API ~Http2ClientConn();
@@ -187,19 +187,19 @@ class Http2ClientConn {
 
  private:
   friend sched::Task<std::int32_t> http2_client_submit(
-      mem::Allocator, Http2ClientConn&, StringView, StringView, StringView,
+      mem::AllocatorRef, Http2ClientConn&, StringView, StringView, StringView,
       StringView, const Http2Header*, std::size_t, StringView) noexcept;
   friend sched::Task<Http2MessageView*> http2_client_next(
-      mem::Allocator, Http2ClientConn&) noexcept;
+      mem::AllocatorRef, Http2ClientConn&) noexcept;
   friend sched::Task<bool> http2_client_reset(
-      mem::Allocator, Http2ClientConn&, std::int32_t, Http2Error) noexcept;
+      mem::AllocatorRef, Http2ClientConn&, std::int32_t, Http2Error) noexcept;
   friend sched::Task<bool> http2_client_shutdown(
-      mem::Allocator, Http2ClientConn&, Http2Error) noexcept;
+      mem::AllocatorRef, Http2ClientConn&, Http2Error) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;
   HttpTransport transport_{};
   Http2MessageView current_{};
-  mem::Allocator alloc_{};
+  mem::AllocatorRef alloc_{};
 };
 
 }  // namespace hyle::io

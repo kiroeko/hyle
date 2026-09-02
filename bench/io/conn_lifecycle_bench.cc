@@ -59,7 +59,7 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -82,7 +82,7 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 // after co_return because final_suspend is suspend_always; but the fd is already closed
 // by then.) `conn` is the moved-in stream; moving it to the block-local `s` leaves the
 // parameter inert (fd_ = -1) so its later frame-teardown destruction closes nothing.
-Task<int> serve_conn(Allocator, TcpStream conn, int rounds,
+Task<int> serve_conn(AllocatorRef, TcpStream conn, int rounds,
                      std::atomic<int>* served) {
   bool complete = true;
   {
@@ -111,7 +111,7 @@ Task<int> serve_conn(Allocator, TcpStream conn, int rounds,
 // so service parallelizes across cores while accepts stay on core 0 (IOCP requirement).
 // Handler Drives/Fibers are stored in caller-owned vectors (reserved to N) that outlive
 // drain(); only this loop (core 0) mutates them, so no race.
-Task<int> accept_dispatch_loop(Allocator, Scheduler* sched, TcpListener* ls, int n,
+Task<int> accept_dispatch_loop(AllocatorRef, Scheduler* sched, TcpListener* ls, int n,
                                int rounds, unsigned workers,
                                std::atomic<int>* served,
                                std::vector<std::unique_ptr<Drive>>* hdrives,
@@ -132,7 +132,7 @@ Task<int> accept_dispatch_loop(Allocator, Scheduler* sched, TcpListener* ls, int
 }
 
 // One client: connect, do `rounds` request/response round-trips, then drop (close).
-Task<int> client_lifecycle(Allocator, IoContext* io, unsigned owner,
+Task<int> client_lifecycle(AllocatorRef, IoContext* io, unsigned owner,
                            std::uint16_t port, int rounds) {
   TcpStream s = tcp_socket(*io, owner);
   if (!s.valid()) co_return 0;

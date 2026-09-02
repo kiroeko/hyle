@@ -48,7 +48,7 @@ void complete_(Status s, T* val) noexcept {
 
 ```cpp
 TEST(Join, WhenAnyLoserCompletesConcurrently) {
-  Allocator al = tsan_visible_allocator();   // 见 §3.1
+  AllocatorRef al = tsan_visible_allocator();   // 见 §3.1
   Scheduler sched(8, al, 1024);
   constexpr int kRounds = 2000;
   for (int i = 0; i < kRounds; ++i) {

@@ -16,7 +16,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 一批短小、不挂起的 indexed/chunk work，只等整批结果 | `bulk_execute` | caller-owned result slots；一个 batch 首错/取消/完成；无逐项 handle |
 | 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；取消是协作式 |
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
-| 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `Allocator`；独立 guarded Fiber |
+| 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
@@ -141,13 +141,13 @@ consume(*result);
 只有任务确实会在 timer、I/O、channel 或其他 completion 上挂起时，才为它创建 coroutine 与 guarded
 Fiber：
 
-`Task<T>` coroutine frame 从函数的第一个 `mem::Allocator` 参数取得 storage。漏掉这个首参数会编译
+`Task<T>` coroutine frame 从函数的第一个 `mem::AllocatorRef` 参数取得 storage。漏掉这个首参数会编译
 失败；frame OOM 和 driver/stack OOM 会成为 `JoinHandle::join()` 返回的错误。
 
 ```cpp
 #include "hyle/sched/join.h"
 
-hyle::sched::Task<int> twice(hyle::mem::Allocator alloc, int value) noexcept {
+hyle::sched::Task<int> twice(hyle::mem::AllocatorRef alloc, int value) noexcept {
   co_return value * 2;
 }
 

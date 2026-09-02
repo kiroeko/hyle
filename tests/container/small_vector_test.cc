@@ -12,7 +12,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::SmallVector;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -46,7 +46,7 @@ struct ThrowingCopy {
 };
 
 struct ToggleAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   bool fail = false;
 };
 
@@ -117,9 +117,9 @@ TEST(SmallVector, ZeroInlineStartsEmptyAndAllocatesOnDemand) {
 TEST(SmallVector, ZeroInlineAllocationFailurePreservesEmptyState) {
   ToggleAllocatorState state;
   state.fail = true;
-  Allocator allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
+  AllocatorRef allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
                       &state);
-  SmallVector<int, 0, Allocator> values(allocator);
+  SmallVector<int, 0, AllocatorRef> values(allocator);
   EXPECT_FALSE(values.try_push_back(7));
   EXPECT_TRUE(values.empty());
   EXPECT_TRUE(values.inline_storage());
@@ -138,8 +138,8 @@ TEST(SmallVector, StaysInlineUnderN) {
 }
 
 TEST(SmallVector, SpillsToHeapPastN) {
-  // Runtime-injection path (opt-in mem::Allocator): exercises the vtable allocator + spill.
-  SmallVector<int, 4, Allocator> v(system_allocator());
+  // Runtime-injection path (opt-in mem::AllocatorRef): exercises the vtable allocator + spill.
+  SmallVector<int, 4, AllocatorRef> v(system_allocator());
   for (int i = 0; i < 100; ++i) v.push_back(i);
   EXPECT_EQ(v.size(), 100u);
   EXPECT_FALSE(v.inline_storage());  // spilled
@@ -390,9 +390,9 @@ TEST(SmallVector, ShrinkSwapAndComparisonMatchValueContainerShape) {
 
 TEST(SmallVector, FailedShrinkPreservesStorageAndValues) {
   ToggleAllocatorState state;
-  Allocator allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
+  AllocatorRef allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
                       &state);
-  SmallVector<int, 2, Allocator> values(allocator, 5, 7);
+  SmallVector<int, 2, AllocatorRef> values(allocator, 5, 7);
   values.reserve(16);
   int* const data_before = values.data();
   const std::size_t capacity_before = values.capacity();

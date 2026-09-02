@@ -21,7 +21,7 @@
 // and parks; cancelling the request root wakes them to observe cancellation, and a
 // when_all over the group returns once all have unwound.
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CancelScope;
 using hyle::sched::CancelToken;
@@ -47,7 +47,7 @@ struct SubBox {
   std::atomic<int> observed{-1};
 };
 
-Task<int> fanout_subtask(Allocator, SubBox* box) {
+Task<int> fanout_subtask(AllocatorRef, SubBox* box) {
   CancelScope scope{box->token};  // opt into the request's cancellation
   box->waker = co_await CaptureWaker{};
   box->ready.store(true, std::memory_order_release);

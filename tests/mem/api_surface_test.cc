@@ -8,6 +8,7 @@
 
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/arena.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/buffer_pool.h"
 #include "hyle/mem/fiber_stack.h"
@@ -19,6 +20,7 @@
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
+#include "hyle/mem/pool.h"
 #include "hyle/mem/pool_cache.h"
 #include "hyle/mem/pool_loan.h"
 #include "hyle/mem/quota_allocator.h"
@@ -38,8 +40,8 @@ using namespace hyle::mem;
 // Compile-time inventory for the current public C++ surface. It catches
 // accidental drift; before the first release, an intentional product-shape
 // change updates this inventory and is not a compatibility promise.
-static_assert(std::is_trivially_copyable_v<Allocator>);
-static_assert(sizeof(Allocator) == sizeof(void*) * 4);
+static_assert(std::is_trivially_copyable_v<AllocatorRef>);
+static_assert(sizeof(AllocatorRef) == sizeof(void*) * 4);
 static_assert(sizeof(MemoryResourceRef) == sizeof(void*));
 static_assert(sizeof(Heap) == sizeof(void*));
 static_assert(sizeof(Buffer) <= sizeof(void*) * 4);
@@ -58,8 +60,8 @@ static_assert(std::same_as<decltype(system_resource()), MemoryResourceRef>);
 static_assert(std::is_empty_v<SystemAllocator>);
 static_assert(std::is_empty_v<SystemStdAllocator<int>>);
 static_assert(std::allocator_traits<SystemStdAllocator<int>>::is_always_equal::value);
-static_assert(std::is_standard_layout_v<RegionOptions>);
-static_assert(RegionOptions{}.max_block_size == 4u * 1024u * 1024u);
+static_assert(std::is_standard_layout_v<ArenaOptions>);
+static_assert(ArenaOptions{}.max_block_size == 4u * 1024u * 1024u);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
 static_assert(std::is_standard_layout_v<SystemMemorySnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
@@ -86,17 +88,17 @@ concept AllocatorSurface = requires(A a, void* p, std::size_t n) {
   { a.deallocate(p, n, n) } -> std::same_as<void>;
   { a.reallocate(p, n, n, n) } -> std::same_as<void*>;
 };
-static_assert(AllocatorSurface<Allocator>);
+static_assert(AllocatorSurface<AllocatorRef>);
 
 template <class R>
 concept RegionSurface = requires(R r, std::size_t n) {
   { r.allocate(n, n) } -> std::same_as<void*>;
   { r.clear() } -> std::same_as<void>;
-  { r.as_allocator() } -> std::same_as<Allocator>;
+  { r.as_allocator() } -> std::same_as<AllocatorRef>;
 };
-static_assert(RegionSurface<FixedRegion>);
-static_assert(RegionSurface<Region>);
-static_assert(RegionSurface<PooledRegion>);
+static_assert(RegionSurface<FixedArena>);
+static_assert(RegionSurface<Arena>);
+static_assert(RegionSurface<PooledArena>);
 
 template <class P>
 concept FixedBlockPoolSurface = requires(P p, void* block) {
@@ -104,17 +106,17 @@ concept FixedBlockPoolSurface = requires(P p, void* block) {
   { p.allocate() } -> std::same_as<void*>;
   { p.deallocate(block) } -> std::same_as<void>;
   { p.capacity() } -> std::same_as<std::uint32_t>;
-  { p.as_allocator() } -> std::same_as<Allocator>;
+  { p.as_allocator() } -> std::same_as<AllocatorRef>;
 };
-static_assert(FixedBlockPoolSurface<SharedPool>);
+static_assert(FixedBlockPoolSurface<ConcurrentBlockPool>);
 
-static_assert(requires(SharedPoolCache cache, void* block) {
+static_assert(requires(BlockPoolCache cache, void* block) {
   { cache.valid() } -> std::same_as<bool>;
   { cache.allocate() } -> std::same_as<void*>;
   { cache.deallocate(block) } -> std::same_as<void>;
   { cache.publish() } -> std::same_as<void>;
   { cache.cached() } -> std::same_as<std::uint32_t>;
-  { cache.as_allocator() } -> std::same_as<Allocator>;
+  { cache.as_allocator() } -> std::same_as<AllocatorRef>;
 });
 
 template <class P>
@@ -125,33 +127,33 @@ concept ObjectPoolSurface = requires(P p, int* value) {
 };
 static_assert(ObjectPoolSurface<ObjectPool<int>>);
 static_assert(ObjectPoolSurface<ObjectPoolCache<int>>);
-static_assert(ObjectPoolSurface<GrowablePool<int>>);
+static_assert(ObjectPoolSurface<GrowableObjectPool<int>>);
 
-static_assert(requires(FixedPool p, void* ptr, std::size_t n) {
+static_assert(requires(FixedHeap p, void* ptr, std::size_t n) {
   { p.allocate(n, n) } -> std::same_as<void*>;
   { p.deallocate(ptr) } -> std::same_as<void>;
   { p.reallocate(ptr, n, n, n) } -> std::same_as<void*>;
   { p.reset() } -> std::same_as<void>;
   { p.peak() } -> std::same_as<std::size_t>;
-  { p.as_allocator() } -> std::same_as<Allocator>;
+  { p.as_allocator() } -> std::same_as<AllocatorRef>;
 });
 
 static_assert(requires(QuotaAllocator q) {
-  { q.get() } -> std::same_as<Allocator>;
+  { q.get() } -> std::same_as<AllocatorRef>;
   { q.used() } -> std::same_as<std::size_t>;
   { q.peak() } -> std::same_as<std::size_t>;
   { q.limit() } -> std::same_as<std::size_t>;
   { q.remaining() } -> std::same_as<std::size_t>;
 });
 
-static_assert(requires(FixedRegion r) {
+static_assert(requires(FixedArena r) {
   { r.remaining() } -> std::same_as<std::size_t>;
 });
 
 static_assert(requires(StatsAllocator s) {
   { StatsAllocator::create(system_allocator()) }
       -> std::same_as<hyle::Result<StatsAllocator>>;
-  { s.get() } -> std::same_as<Allocator>;
+  { s.get() } -> std::same_as<AllocatorRef>;
   { s.snapshot() } -> std::same_as<AllocStatsSnapshot>;
   { s.balanced() } -> std::same_as<bool>;
   { s.leaks() } -> std::same_as<LeakTracker*>;
@@ -163,12 +165,12 @@ static_assert(requires(LeakTracker tracker) {
   { tracker.complete() } -> std::same_as<bool>;
 });
 
-static_assert(std::is_move_constructible_v<Region>);
-static_assert(!std::is_copy_constructible_v<Region>);
-static_assert(!std::is_move_constructible_v<FixedRegion>);
-static_assert(!std::is_move_constructible_v<FixedPool>);
-static_assert(!std::is_move_constructible_v<SharedPool>);
-static_assert(!std::is_move_constructible_v<SharedPoolCache>);
+static_assert(std::is_move_constructible_v<Arena>);
+static_assert(!std::is_copy_constructible_v<Arena>);
+static_assert(!std::is_move_constructible_v<FixedArena>);
+static_assert(!std::is_move_constructible_v<FixedHeap>);
+static_assert(!std::is_move_constructible_v<ConcurrentBlockPool>);
+static_assert(!std::is_move_constructible_v<BlockPoolCache>);
 static_assert(std::is_move_constructible_v<FiberStack>);
 static_assert(requires(FiberStack stack, FiberStackPool pool) {
   { FiberStack::allocate(kFiberStackDefault) }
@@ -181,9 +183,9 @@ static_assert(requires(FiberStack stack, FiberStackPool pool) {
 });
 static_assert(requires {
   { reserve_huge_1g_pages(0) } -> std::same_as<hyle::Status>;
-  { HugeRegion::allocate_interleaved(
+  { HugeMapping::allocate_interleaved(
         4096, std::span<const unsigned>{}, 0, HugeFlags::kNone) }
-      -> std::same_as<hyle::Result<HugeRegion>>;
+      -> std::same_as<hyle::Result<HugeMapping>>;
 });
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
@@ -196,7 +198,7 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
 // Compile-checked user recipes. Keep these deliberately short and mirrored in
 // docs/guide/mem.md; they test the public shape rather than internal details.
 TEST(MemUsageRecipe, RequestRegion) {
-  Region request(system_allocator());
+  Arena request(system_allocator());
   ASSERT_NE(request.allocate(128, 64), nullptr);
   request.clear();
   EXPECT_EQ(request.bytes_used(), 0u);
@@ -218,7 +220,7 @@ TEST(MemUsageRecipe, TypedCachedPool) {
 TEST(MemUsageRecipe, QuotaAndStatsComposition) {
   StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
   QuotaAllocator quota(stats.get(), 256);
-  Allocator bounded = quota.get();
+  AllocatorRef bounded = quota.get();
   void* p = bounded.allocate(96, 16);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(quota.remaining(), 160u);

@@ -87,18 +87,18 @@ class HYLE_SCHED_API Scheduler {
  public:
   // Starts `num_workers` worker threads immediately. `queue_capacity` sizes each
   // local queue and the global injection queue (power of two).
-  Scheduler(unsigned num_workers, mem::Allocator alloc,
+  Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
             std::size_t queue_capacity);
-  Scheduler(unsigned num_workers, mem::Allocator alloc,
+  Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
             std::size_t queue_capacity, SchedulerOptions options);
   // Recoverable construction path for runtimes that treat allocation or
   // OS-thread creation failure as an operational error. On failure `status`
   // is non-OK and valid()==false; the object remains destructible but no other
   // operation may be called. The three-argument convenience constructor keeps
   // the native fail-fast contract and asserts construction succeeded.
-  Scheduler(unsigned num_workers, mem::Allocator alloc,
+  Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
             std::size_t queue_capacity, Status* status) noexcept;
-  Scheduler(unsigned num_workers, mem::Allocator alloc,
+  Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
             std::size_t queue_capacity, SchedulerOptions options,
             Status* status) noexcept;
   ~Scheduler();
@@ -262,7 +262,7 @@ class HYLE_SCHED_API Scheduler {
   void set_io_wake_(IoWakeFn fn, void* context) noexcept;
   struct Impl;
   Impl* impl_;
-  void init_(unsigned num_workers, mem::Allocator alloc,
+  void init_(unsigned num_workers, mem::AllocatorRef alloc,
              std::size_t queue_capacity, SchedulerOptions options,
              Status* status) noexcept;
   void* allocate_owned_callable_(std::size_t size,

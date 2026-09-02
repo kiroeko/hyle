@@ -11,7 +11,7 @@
 
 namespace hyle::container {
 
-// Allocator-aware, runtime-sized bit set for graph frontiers, masks and dense
+// AllocatorRef-aware, runtime-sized bit set for graph frontiers, masks and dense
 // integer membership. Padding bits are always zero, so block-wise set algebra,
 // count() and set-bit iteration share one canonical representation.
 class DynamicBitSet {
@@ -21,10 +21,10 @@ class DynamicBitSet {
   static constexpr size_type npos = static_cast<size_type>(-1);
 
   HYLE_CONTAINER_API DynamicBitSet() noexcept;
-  HYLE_CONTAINER_API explicit DynamicBitSet(mem::Allocator alloc) noexcept;
+  HYLE_CONTAINER_API explicit DynamicBitSet(mem::AllocatorRef alloc) noexcept;
   HYLE_CONTAINER_API explicit DynamicBitSet(size_type bit_count,
                                             bool value = false);
-  HYLE_CONTAINER_API DynamicBitSet(mem::Allocator alloc, size_type bit_count,
+  HYLE_CONTAINER_API DynamicBitSet(mem::AllocatorRef alloc, size_type bit_count,
                                    bool value = false);
   HYLE_CONTAINER_API DynamicBitSet(const DynamicBitSet& other);
   HYLE_CONTAINER_API DynamicBitSet& operator=(const DynamicBitSet& other);
@@ -32,7 +32,7 @@ class DynamicBitSet {
   HYLE_CONTAINER_API DynamicBitSet& operator=(DynamicBitSet&& other) noexcept;
   HYLE_CONTAINER_API ~DynamicBitSet();
 
-  mem::Allocator allocator() const noexcept { return alloc_; }
+  mem::AllocatorRef allocator() const noexcept { return alloc_; }
   size_type size() const noexcept { return size_bits_; }
   size_type capacity() const noexcept { return capacity_words_ * kBitsPerWord; }
   bool empty() const noexcept { return size_bits_ == 0; }
@@ -161,7 +161,7 @@ class DynamicBitSet {
   void sanitize_tail() noexcept;
   void release() noexcept;
 
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   block_type* words_ = nullptr;
   size_type size_bits_ = 0;
   size_type capacity_words_ = 0;

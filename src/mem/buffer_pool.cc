@@ -68,7 +68,7 @@ Result<std::size_t> allocation_size(std::size_t request,
 }
 
 Entry* make_entry(Buffer buffer) noexcept {
-  Allocator allocator = system_allocator();
+  AllocatorRef allocator = system_allocator();
   void* storage = allocator.allocate(sizeof(Entry), alignof(Entry));
   if (storage == nullptr) return nullptr;
   return ::new (storage) Entry{std::move(buffer), nullptr};
@@ -221,7 +221,7 @@ Result<BufferPool> BufferPool::create(MemoryResourceRef resource,
     return std::unexpected(Status::InvalidArgument(
         "buffer pool bounded scan must inspect at least one entry"));
   }
-  Allocator allocator = system_allocator();
+  AllocatorRef allocator = system_allocator();
   void* storage = allocator.allocate(sizeof(PoolImpl), alignof(PoolImpl));
   if (storage == nullptr) {
     return std::unexpected(

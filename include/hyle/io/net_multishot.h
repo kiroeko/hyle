@@ -120,7 +120,7 @@ class RecvBuf {
 // drop-newest (a correctness bug), so it's sized generously and asserted.
 struct MultishotSlot {
   IoOperation io{};          // landing pad: waker (result/flags used transiently)
-  mem::Allocator alloc;      // frees the slot at refcount 0
+  mem::AllocatorRef alloc;      // frees the slot at refcount 0
   IoUringExtension uring{};
   int bgid = -1;
   int refcount = 2;          // {kernel op, fiber}
@@ -172,7 +172,7 @@ struct MultishotSlot {
 
   void release() noexcept {
     if (--refcount == 0) {
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       this->~MultishotSlot();
       a.deallocate(this, sizeof(MultishotSlot), alignof(MultishotSlot));
     }
@@ -250,13 +250,13 @@ struct MultishotRecvStream {
   IoUringExtension uring{};
   std::intptr_t fd = -1;
   int bgid = -1;
-  mem::Allocator alloc{};
+  mem::AllocatorRef alloc{};
   MultishotSlot* slot_ = nullptr;
   bool ended_ = false;  // a terminal chunk was already returned
 
   MultishotRecvStream() noexcept = default;
   MultishotRecvStream(IoUringExtension uring, std::intptr_t fd, int bgid,
-                      mem::Allocator alloc) noexcept
+                      mem::AllocatorRef alloc) noexcept
       : uring(uring), fd(fd), bgid(bgid), alloc(alloc) {}
   MultishotRecvStream(const MultishotRecvStream&) = delete;
   MultishotRecvStream& operator=(const MultishotRecvStream&) = delete;

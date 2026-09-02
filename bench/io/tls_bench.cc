@@ -65,7 +65,7 @@ using hyle::io::TlsStream;
 using hyle::io::tls_handshake;
 using hyle::io::tls_read;
 using hyle::io::tls_write;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -145,7 +145,7 @@ struct HyleTls {
   std::atomic<int> client_units{0};
 };
 
-Task<int> hyle_server(Allocator alloc, TcpListener* ls, HyleTls* h) {
+Task<int> hyle_server(AllocatorRef alloc, TcpListener* ls, HyleTls* h) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) co_return 0;
   TlsStream tls(std::move(conn), *h->sctx, /*is_server=*/true);
@@ -162,7 +162,7 @@ Task<int> hyle_server(Allocator alloc, TcpListener* ls, HyleTls* h) {
   co_return 0;
 }
 
-Task<int> hyle_client(Allocator alloc, IoContext* io, HyleTls* h) {
+Task<int> hyle_client(AllocatorRef alloc, IoContext* io, HyleTls* h) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
   std::uint32_t len = 0;

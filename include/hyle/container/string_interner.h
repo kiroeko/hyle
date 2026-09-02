@@ -50,7 +50,7 @@ struct Hash<StringId> {
 class StringInterner {
  public:
   HYLE_CONTAINER_API explicit StringInterner(
-      mem::Allocator alloc = mem::system_allocator());
+      mem::AllocatorRef alloc = mem::system_allocator());
   HYLE_CONTAINER_API ~StringInterner();
   StringInterner(const StringInterner&) = delete;
   StringInterner& operator=(const StringInterner&) = delete;
@@ -108,13 +108,13 @@ class StringInterner {
 
   // The injected allocator (also used to free interned strings and the pool).
   // Inline (no DLL hop), so destroy_string_interner reaches it without a friend.
-  mem::Allocator allocator() const noexcept { return alloc_; }
+  mem::AllocatorRef allocator() const noexcept { return alloc_; }
 
  private:
   std::size_t intern_many_impl(std::span<const StringView> input,
                                std::span<StringView> output) noexcept;
   struct Impl;
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   Impl* impl_;
 };
 
@@ -124,7 +124,7 @@ class StringInterner {
 // The pool remembers its allocator, so destroy_string_interner needs only the
 // pointer.
 HYLE_CONTAINER_API StringInterner* make_string_interner(
-    mem::Allocator alloc = mem::system_allocator());
+    mem::AllocatorRef alloc = mem::system_allocator());
 HYLE_CONTAINER_API void destroy_string_interner(StringInterner* interner) noexcept;
 
 }  // namespace hyle::container

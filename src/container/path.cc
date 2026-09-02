@@ -129,7 +129,7 @@ std::size_t join_path(std::span<const StringView> parts,
   return out.finish();
 }
 
-PodVector<StringView> split_all(StringView path, mem::Allocator alloc) {
+PodVector<StringView> split_all(StringView path, mem::AllocatorRef alloc) {
   PodVector<StringView> out(alloc);
   StringView rest = path;
   while (rest.size() > 0) out.push_back(pop_first(&rest));

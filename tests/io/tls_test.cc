@@ -45,7 +45,7 @@ using hyle::io::TlsStream;
 using hyle::io::tls_handshake;
 using hyle::io::tls_read;
 using hyle::io::tls_write;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -128,7 +128,7 @@ struct TlsResult {
 };
 
 // Server: accept, wrap in server TlsStream, handshake, read plaintext, echo it back.
-Task<int> tls_server(Allocator alloc, TcpListener* ls, TlsContext* sctx,
+Task<int> tls_server(AllocatorRef alloc, TcpListener* ls, TlsContext* sctx,
                      TlsResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) { r->server_done.store(true); co_return 0; }
@@ -150,7 +150,7 @@ Task<int> tls_server(Allocator alloc, TcpListener* ls, TlsContext* sctx,
 }
 
 // Client: connect, wrap in client TlsStream, handshake, send, read echo, verify.
-Task<int> tls_client(Allocator alloc, IoContext* io, TlsContext* cctx,
+Task<int> tls_client(AllocatorRef alloc, IoContext* io, TlsContext* cctx,
                      TlsResult* r) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -245,7 +245,7 @@ struct HttpsResult {
   char body[32] = {};
 };
 
-Task<HttpResponse> https_handler(Allocator alloc, void* context,
+Task<HttpResponse> https_handler(AllocatorRef alloc, void* context,
                                  const hyle::io::HttpRequest&) noexcept {
   auto* result = static_cast<HttpsResult*>(context);
   result->handler_used_region.store(
@@ -263,7 +263,7 @@ Task<HttpResponse> https_handler(Allocator alloc, void* context,
   co_return response;
 }
 
-Task<int> https_server(Allocator alloc, IoContext*, TcpListener* listener,
+Task<int> https_server(AllocatorRef alloc, IoContext*, TcpListener* listener,
                        TlsContext* context, HttpsResult* result) {
   TcpStream socket = co_await listener->accept(kOwner);
   TlsStream tls(std::move(socket), *context, true);
@@ -275,7 +275,7 @@ Task<int> https_server(Allocator alloc, IoContext*, TcpListener* listener,
   co_return 0;
 }
 
-Task<int> https_client(Allocator alloc, IoContext* io, TlsContext* context,
+Task<int> https_client(AllocatorRef alloc, IoContext* io, TlsContext* context,
                        HttpsResult* result, std::uint16_t port) {
   TcpStream socket = tcp_socket(*io, kOwner);
   alignas(16) unsigned char address[128]{};
@@ -345,7 +345,7 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
 
 #if defined(HYLE_IO_HTTP2)
 namespace {
-Task<int> h2_tls_server(Allocator alloc, TcpListener* listener,
+Task<int> h2_tls_server(AllocatorRef alloc, TcpListener* listener,
                         TlsContext* context, HttpsResult* result) {
   TcpStream socket = co_await listener->accept(kOwner);
   result->server_stage.store(1);
@@ -371,7 +371,7 @@ Task<int> h2_tls_server(Allocator alloc, TcpListener* listener,
   co_return 0;
 }
 
-Task<int> h2_tls_client(Allocator alloc, IoContext* io, TlsContext* context,
+Task<int> h2_tls_client(AllocatorRef alloc, IoContext* io, TlsContext* context,
                         HttpsResult* result, std::uint16_t port) {
   TcpStream socket = tcp_socket(*io, kOwner);
   alignas(16) unsigned char address[128]{};

@@ -24,18 +24,18 @@ namespace hyle::mem {
 // free cursor keeps a recent return or split remainder on the active allocation
 // path. Boundary metadata gives O(1) adjacent coalescing. The storage must
 // outlive the pool and every live allocation.
-class FixedPool {
+class FixedHeap {
 public:
-  FixedPool() noexcept = default;
-  explicit FixedPool(std::span<std::byte> storage) noexcept {
+  FixedHeap() noexcept = default;
+  explicit FixedHeap(std::span<std::byte> storage) noexcept {
     init(storage.data(), storage.size());
   }
-  FixedPool(void *data, std::size_t size) noexcept { init(data, size); }
+  FixedHeap(void *data, std::size_t size) noexcept { init(data, size); }
 
-  FixedPool(const FixedPool&) = delete;
-  FixedPool& operator=(const FixedPool&) = delete;
-  FixedPool(FixedPool&&) = delete;
-  FixedPool& operator=(FixedPool&&) = delete;
+  FixedHeap(const FixedHeap&) = delete;
+  FixedHeap& operator=(const FixedHeap&) = delete;
+  FixedHeap(FixedHeap&&) = delete;
+  FixedHeap& operator=(FixedHeap&&) = delete;
 
   bool valid() const noexcept { return begin_ != nullptr; }
 
@@ -191,8 +191,8 @@ public:
   }
 #endif
 
-  Allocator as_allocator() noexcept {
-    return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&pool_alloc, &pool_free, &pool_realloc, this);
   }
 
 private:
@@ -601,16 +601,16 @@ private:
 
   static void *pool_alloc(void *state, std::size_t size,
                           std::size_t alignment) noexcept {
-    return static_cast<FixedPool *>(state)->allocate(size, alignment);
+    return static_cast<FixedHeap *>(state)->allocate(size, alignment);
   }
   static void pool_free(void *state, void *ptr, std::size_t,
                         std::size_t) noexcept {
-    static_cast<FixedPool *>(state)->deallocate(ptr);
+    static_cast<FixedHeap *>(state)->deallocate(ptr);
   }
   static void *pool_realloc(void *state, void *ptr, std::size_t old_size,
                             std::size_t new_size,
                             std::size_t alignment) noexcept {
-    return static_cast<FixedPool *>(state)->reallocate(ptr, old_size, new_size,
+    return static_cast<FixedHeap *>(state)->reallocate(ptr, old_size, new_size,
                                                        alignment);
   }
 

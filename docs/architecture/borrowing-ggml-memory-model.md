@@ -8,10 +8,10 @@
 
 | 数据 | 归谁管 | 怎么做 |
 |---|---|---|
-| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | 当前由 `mem::Allocator` 等普通 host storage 提供，再经 `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入；未来异步上传由 compute `HostBuffer` / `StagingRing` 持有 pinned slot 与 Event |
+| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | 当前由 `mem::AllocatorRef` 或 host/pinned `mem::Buffer` 提供，再经 `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入；未来异步上传由 Compute `StagingRing` 持有 pinned Mem slot 与 Event |
 | **ggml 算子计算用的 device 显存**（输入/中间/结果 tensor 的 buffer） | **ggml**（`ggml_gallocr` / backend buffer） | ggml 自己 cudaMalloc + 图内复用；HYLE 不碰 |
 | **ggml 算子的 host 输出** | **HYLE mem** | `ggml_backend_tensor_get(tensor, hyle_host_ptr, …)` 拷出 |
-| **HYLE 自造 kernel（compute-04 NVRTC / 06 SPIR-V）的显存** | **HYLE**（compute-02 Buffer / DevicePool / VMM） | HYLE cudaMalloc，kernel 直接在 HYLE 显存上算——**真零拷贝**（已三平台验证） |
+| **HYLE 自造 kernel（compute-04 NVRTC / 06 SPIR-V）的显存** | **HYLE**（Compute resource + Mem `Buffer/View`） | Compute provider 分配，kernel 直接接收 Mem view——**真零拷贝**（已验证 Host/CUDA/Vulkan） |
 | **非 ggml 的 device 数据**（KV-cache、CAD 网格、BVH、CAE 刚度矩阵） | **HYLE** | HYLE 显存管理，与 ggml 无关 |
 
 **要点**：借 ggml，就接受 ggml 管它算子用的那段显存。你的 mem 抽象在 **host 侧全程有效**（喂入/取出都是 HYLE mem 的地盘），在 **device 侧退让给 ggml**——但仅限"ggml 算子正在用的那段"。HYLE 显存自管在 compute-04/06（**一切非 AI 的通用 GPU 计算**：普通 CUDA vecadd/reduce/scan + ② CAD/CAE 几何/网格/SpMV）上完整成立——ggml 只是"AI 推理算子多"，不是通用 GPU 计算框架。
@@ -45,7 +45,11 @@ static void ggml_backend_cuda_buffer_set_tensor(..., const void * data, ...) {
     cudaMemcpyAsync((char*)tensor->data + offset, data, size, cudaMemcpyHostToDevice, ...);
 }
 ```
-那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host 指针都行，所以当前直接来自 HYLE `mem::Allocator` 即可。compute HostBuffer 已将 backend native handle 与 CPU mapped pointer 分开，并显式提供 flush/invalidate；它属于 compute，不伪装成通用 mem allocator。`tensor_get`（取出）同理。
+那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host
+指针都行，所以可以来自 HYLE `mem::AllocatorRef`，也可以来自 Compute
+`host_memory_resource(device)` 创建并显式 map 的 Mem `Buffer`。Mem view 将 backend native handle
+与 host mapping 分开并显式提供 flush/invalidate；provider artifact 属 Compute，storage owner/view
+语义属 Mem。`tensor_get`（取出）同理。
 
 **数据流（每段谁管，清清楚楚）**：
 ```
@@ -62,7 +66,10 @@ ggml 结果显存
 HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 ```
 
-**性能接口点**：pinned host RAM 只有在 copy 真异步、slot 保持到 Event completion、并有至少两个在途 slot 时才能形成 overlap。HostBuffer 的 native/mapped/coherence 合同已闭合，但当前 bridge 没有 staging ring；event-driven `StagingRing` 等真实 overlap 消费者出现后再接入，不用裸 host allocator 或 `SharedPool(cudaMallocHost)` 代替 completion ownership。
+**性能接口点**：pinned host RAM 只有在 copy 真异步、slot 保持到 Event completion、并有至少两个
+在途 slot 时才能形成 overlap。Mem Buffer 的 native/mapped/coherence 合同已闭合，但当前 bridge
+没有 staging ring；event-driven `StagingRing` 等真实 overlap 消费者出现后再接入，不用裸 host
+allocator 或 `ConcurrentBlockPool(cudaMallocHost)` 代替 completion ownership。
 
 ## 3. 边界不模糊——两种 kernel 来路对应两种显存归属
 
@@ -71,7 +78,7 @@ HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 | kernel 来路 | 显存归属 | 零拷贝? |
 |---|---|---|
 | **借 ggml 算子**（AI：matmul/attn/…） | device 归 ggml（gallocr），host 归 HYLE mem | device 侧否；host 侧是 HYLE mem |
-| **HYLE 自造 kernel**（compute-04 NVRTC / 06 SPIR-V：普通 CUDA 计算 + 几何核/网格/SpMV） | 全归 HYLE（Buffer/DevicePool/VMM） | **是**，kernel 直接在 HYLE 显存上算（已验证） |
+| **HYLE 自造 kernel**（compute-04 NVRTC / 06 SPIR-V：普通 CUDA 计算 + 几何核/网格/SpMV） | 全归 HYLE（Compute provider + Mem Buffer/View） | **是**，kernel 直接在 HYLE storage 上算（已验证） |
 
 **所以 HYLE 显存自管抽象没有名存实亡**——它在自造 kernel 路径完整成立（服务**一切非 AI 的通用 GPU 计算**：普通 CUDA 数值 kernel + 北极星② CAD/CAE 的几何/网格/求解核），只是在"借 ggml 算 AI"这条路上，device 侧让位给 ggml。这是**借 vs 造**的本质分工：借人家的 AI 算子，就用人家的显存规矩；要跑 ggml 给不了的任何 GPU 计算（哪怕只是 vecadd），就自造 kernel、显存全 HYLE 自管。
 

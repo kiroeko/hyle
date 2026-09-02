@@ -8,9 +8,9 @@
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 
-// std::pmr::memory_resource backed by a HYLE Allocator. Lets any pmr-aware std
+// std::pmr::memory_resource backed by a HYLE AllocatorRef. Lets any pmr-aware std
 // container (std::pmr::vector / string / unordered_map, ...) route allocations
-// through a HYLE Allocator. PMR erases the element type and is preferable when
+// through a HYLE AllocatorRef. PMR erases the element type and is preferable when
 // the consumer accepts memory_resource; StdAllocator<T> separately serves
 // legacy and third-party allocator-template APIs that PMR cannot satisfy.
 //
@@ -25,7 +25,7 @@ namespace hyle::mem {
 namespace detail {
 // memory_resource is an operator-new-like interface: even a zero-byte request
 // must not turn an otherwise healthy resource into an artificial bad_alloc.
-// HYLE's lower-level Allocator deliberately maps size zero to nullptr, so PMR
+// HYLE's lower-level AllocatorRef deliberately maps size zero to nullptr, so PMR
 // adapters reserve the smallest real backing block and pass that same size
 // back on deallocation. Normal non-zero calls are unchanged.
 inline constexpr std::size_t pmr_backing_size(std::size_t bytes) noexcept {
@@ -36,14 +36,14 @@ inline constexpr std::size_t pmr_backing_size(std::size_t bytes) noexcept {
 // Process-wide PMR over the compile-time SystemAllocator path.  Prefer this
 // for ordinary std::pmr containers that use HYLE's default host heap: it pays
 // PMR's required virtual dispatch and the shared-library import, but does not
-// stack an additional Allocator function-pointer dispatch on top.  The
+// stack an additional AllocatorRef function-pointer dispatch on top.  The
 // returned singleton is never null and has process lifetime; do not delete it.
 // Use PmrResource below when runtime backing injection is the actual need.
 HYLE_MEM_API std::pmr::memory_resource* system_memory_resource() noexcept;
 
 namespace detail {
-inline bool allocator_identity_equal(const Allocator& a,
-                                     const Allocator& b) noexcept {
+inline bool allocator_identity_equal(const AllocatorRef& a,
+                                     const AllocatorRef& b) noexcept {
   return a.alloc_fn() == b.alloc_fn() && a.free_fn() == b.free_fn() &&
          a.realloc_fn() == b.realloc_fn() && a.state() == b.state();
 }
@@ -51,11 +51,11 @@ inline bool allocator_identity_equal(const Allocator& a,
 
 class PmrResource : public std::pmr::memory_resource {
  public:
-  explicit PmrResource(Allocator alloc) noexcept : alloc_(alloc) {
+  explicit PmrResource(AllocatorRef alloc) noexcept : alloc_(alloc) {
     HYLE_FATAL_ASSERT(alloc_.valid());
   }
 
-  Allocator allocator() const noexcept { return alloc_; }
+  AllocatorRef allocator() const noexcept { return alloc_; }
 
  private:
   void* do_allocate(std::size_t bytes, std::size_t align) override {
@@ -68,7 +68,7 @@ class PmrResource : public std::pmr::memory_resource {
     alloc_.deallocate(p, detail::pmr_backing_size(bytes), align);
   }
 
-  // Conservative identity for the complete exposed Allocator backing
+  // Conservative identity for the complete exposed AllocatorRef backing
   // {alloc,free,realloc,state}. PMR itself only exercises alloc/free, so ignoring realloc
   // could be deallocation-safe, but false is permitted and safer than declaring two
   // observably different allocator() values to be the same resource.
@@ -78,7 +78,7 @@ class PmrResource : public std::pmr::memory_resource {
     return o != nullptr && detail::allocator_identity_equal(o->alloc_, alloc_);
   }
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
 };
 
 // PMR adapter that raises every allocation's BASE alignment to at least the
@@ -88,13 +88,13 @@ class PmrResource : public std::pmr::memory_resource {
 // callers that need per-element cache-line isolation must still pad the type.
 class AlignedPmrResource : public std::pmr::memory_resource {
  public:
-  AlignedPmrResource(Allocator alloc, std::size_t minimum_alignment) noexcept
+  AlignedPmrResource(AllocatorRef alloc, std::size_t minimum_alignment) noexcept
       : alloc_(alloc), minimum_alignment_(minimum_alignment) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     HYLE_FATAL_ASSERT(is_pow2(minimum_alignment_));
   }
 
-  Allocator allocator() const noexcept { return alloc_; }
+  AllocatorRef allocator() const noexcept { return alloc_; }
   std::size_t minimum_alignment() const noexcept { return minimum_alignment_; }
 
  private:
@@ -122,7 +122,7 @@ class AlignedPmrResource : public std::pmr::memory_resource {
            detail::allocator_identity_equal(o->alloc_, alloc_);
   }
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
   std::size_t minimum_alignment_;
 };
 

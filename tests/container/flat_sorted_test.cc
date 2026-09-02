@@ -26,7 +26,7 @@ using hyle::container::FlatSet;
 using hyle::container::sorted_unique;
 
 struct ToggleAllocatorState {
-  hyle::mem::Allocator backing = hyle::mem::system_allocator();
+  hyle::mem::AllocatorRef backing = hyle::mem::system_allocator();
   bool fail = false;
   std::size_t allocation_calls = 0;
   std::size_t live_allocations = 0;
@@ -67,8 +67,8 @@ void *toggle_reallocate(void *raw, void *pointer, std::size_t old_size,
   return result;
 }
 
-hyle::mem::Allocator toggle_allocator(ToggleAllocatorState &state) {
-  return hyle::mem::Allocator(toggle_allocate, toggle_deallocate,
+hyle::mem::AllocatorRef toggle_allocator(ToggleAllocatorState &state) {
+  return hyle::mem::AllocatorRef(toggle_allocate, toggle_deallocate,
                               toggle_reallocate, &state);
 }
 
@@ -215,7 +215,7 @@ TEST(FlatSorted, EmptyObjectDoesNotEmbedKeyOrMappedValue) {
 TEST(FlatSorted, IncrementalInsertUsesGeometricStorageGrowth) {
   ToggleAllocatorState state;
   {
-    FlatMap<int, int, std::less<>, hyle::mem::Allocator> map(
+    FlatMap<int, int, std::less<>, hyle::mem::AllocatorRef> map(
         std::less<>{}, toggle_allocator(state));
     for (int value = 0; value < 64; ++value)
       ASSERT_TRUE(map.insert(value, value).second);
@@ -471,7 +471,7 @@ TEST(FlatMap, GrowthPreservesAliasedMappedArguments) {
 TEST(FlatSorted, AllocationFailurePreservesExistingContainer) {
   ToggleAllocatorState state;
   {
-    FlatMap<int, int, std::less<>, hyle::mem::Allocator> singleton(
+    FlatMap<int, int, std::less<>, hyle::mem::AllocatorRef> singleton(
         std::less<>{}, toggle_allocator(state));
     state.fail = true;
     EXPECT_EQ(singleton.try_insert(1, 10), FlatInsertResult::kOutOfMemory);
@@ -482,7 +482,7 @@ TEST(FlatSorted, AllocationFailurePreservesExistingContainer) {
     EXPECT_EQ(singleton.size(), 1u);
   }
   {
-    FlatMap<int, int, std::less<>, hyle::mem::Allocator> map(
+    FlatMap<int, int, std::less<>, hyle::mem::AllocatorRef> map(
         std::less<>{}, toggle_allocator(state));
     ASSERT_TRUE(map.try_reserve(2));
     EXPECT_EQ(map.try_insert(1, 10), FlatInsertResult::kInserted);

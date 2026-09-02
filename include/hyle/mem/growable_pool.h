@@ -15,12 +15,12 @@
 // Growable single-threaded object pool (clay utils/memory_pool). Fast
 // create/destroy of many objects with slot reuse, growing on demand. The niche
 // it fills versus the other HYLE pools:
-//   * mem::ObjectPool : FIXED capacity, LOCK-FREE (over SharedPool). Use when
+//   * mem::ObjectPool : FIXED capacity, LOCK-FREE (over ConcurrentBlockPool). Use when
 //   the
 //     max is known and threads share the pool.
-//   * mem::GrowablePool : UNBOUNDED, SINGLE-THREADED (no atomics -> faster when
+//   * mem::GrowableObjectPool : UNBOUNDED, SINGLE-THREADED (no atomics -> faster when
 //     uncontended). Use for per-thread / per-fiber churn of unknown size.
-//   * mem::PooledRegion : bump, bulk free, no per-object reuse.
+//   * mem::PooledArena : bump, bulk free, no per-object reuse.
 //
 // Design: blocks of slots (geometric growth -> O(log n) allocations), an
 // intrusive free-list threads recycled slots (a freed slot stores the next-free
@@ -28,11 +28,11 @@
 // teardown reclaims them; each remembers its byte size (blocks differ in size
 // under geometric growth).
 //
-// Two layers (mirrors SharedPool <-> ObjectPool<T>):
-//   * GrowablePoolCore : NON-TEMPLATE runtime core. Hands out RAW uninitialized
+// Two layers (mirrors ConcurrentBlockPool <-> ObjectPool<T>):
+//   * GrowableObjectPoolCore : NON-TEMPLATE runtime core. Hands out RAW uninitialized
 //     slots (acquire/release), no ctor/dtor. Internal erased users must initialize
 //     a returned slot and clean it up before release.
-//   * GrowablePool<T> : thin TYPED wrapper. create()/destroy() run the
+//   * GrowableObjectPool<T> : thin TYPED wrapper. create()/destroy() run the
 //   ctor/dtor
 //     around the core's raw slots. This is the primary C++ product surface.
 //
@@ -49,10 +49,10 @@ namespace hyle::mem {
 
 namespace detail {
 
-// Non-template runtime core of GrowablePool: raw-slot churn (acquire/release) +
+// Non-template runtime core of GrowableObjectPool: raw-slot churn (acquire/release) +
 // geometric block growth + intrusive free-list. No T, no ctor/dtor. The typed
-// GrowablePool<T> wraps this to run ctor/dtor.
-class GrowablePoolCore {
+// GrowableObjectPool<T> wraps this to run ctor/dtor.
+class GrowableObjectPoolCore {
 public:
   // Validate the runtime shape before entering the fail-fast C++ constructor.
   // The typed C++ wrapper always supplies sizeof/alignof(T); erased internal
@@ -75,7 +75,7 @@ public:
   // `slot_size`/`slot_align` describe one raw slot. The stride is rounded up so
   // a slot can hold EITHER the user object OR the intrusive free-list link (a
   // void*), aligned to at least alignof(void*).
-  GrowablePoolCore(Allocator alloc, std::size_t slot_size,
+  GrowableObjectPoolCore(AllocatorRef alloc, std::size_t slot_size,
                    std::size_t slot_align, std::uint32_t initial_slots) noexcept
       : alloc_(alloc),
         slot_align_(slot_align < alignof(void *) ? alignof(void *)
@@ -89,14 +89,14 @@ public:
     stride_ = align_up(usable, slot_align_);
   }
 
-  ~GrowablePoolCore() {
+  ~GrowableObjectPoolCore() {
     free_blocks();
   }
 
-  GrowablePoolCore(const GrowablePoolCore&) = delete;
-  GrowablePoolCore& operator=(const GrowablePoolCore&) = delete;
-  GrowablePoolCore(GrowablePoolCore &&o) noexcept { steal(o); }
-  GrowablePoolCore &operator=(GrowablePoolCore &&o) noexcept {
+  GrowableObjectPoolCore(const GrowableObjectPoolCore&) = delete;
+  GrowableObjectPoolCore& operator=(const GrowableObjectPoolCore&) = delete;
+  GrowableObjectPoolCore(GrowableObjectPoolCore &&o) noexcept { steal(o); }
+  GrowableObjectPoolCore &operator=(GrowableObjectPoolCore &&o) noexcept {
     if (this != &o) {
       free_blocks();
       steal(o);
@@ -229,7 +229,7 @@ private:
     live_ = 0;
   }
 
-  void steal(GrowablePoolCore &o) noexcept {
+  void steal(GrowableObjectPoolCore &o) noexcept {
     alloc_ = o.alloc_;
     stride_ = o.stride_;
     slot_align_ = o.slot_align_;
@@ -248,7 +248,7 @@ private:
     o.capacity_ = 0;
   }
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
   std::size_t stride_ = 0;
   std::size_t slot_align_ = alignof(void *);
   Block *blocks_ = nullptr;      // all allocated blocks (for teardown)
@@ -263,23 +263,23 @@ private:
 
 } // namespace detail
 
-template <class T> class GrowablePool {
+template <class T> class GrowableObjectPool {
 public:
-  explicit GrowablePool(Allocator alloc,
+  explicit GrowableObjectPool(AllocatorRef alloc,
                         std::uint32_t initial_slots = 64) noexcept
       : core_(alloc, sizeof(T), alignof(T), initial_slots) {}
 
-  ~GrowablePool() {
+  ~GrowableObjectPool() {
     if constexpr (!std::is_trivially_destructible_v<T>) {
       // Leftover live objects mean their destructors won't run -- a leak bug.
       HYLE_FATAL_ASSERT(core_.live() == 0);
     }
   }
 
-  GrowablePool(const GrowablePool&) = delete;
-  GrowablePool& operator=(const GrowablePool&) = delete;
-  GrowablePool(GrowablePool &&o) noexcept : core_(std::move(o.core_)) {}
-  GrowablePool &operator=(GrowablePool &&o) noexcept {
+  GrowableObjectPool(const GrowableObjectPool&) = delete;
+  GrowableObjectPool& operator=(const GrowableObjectPool&) = delete;
+  GrowableObjectPool(GrowableObjectPool &&o) noexcept : core_(std::move(o.core_)) {}
+  GrowableObjectPool &operator=(GrowableObjectPool &&o) noexcept {
     if (this != &o) {
       if constexpr (!std::is_trivially_destructible_v<T>) {
         // Discarding this pool's live objects (their dtors won't run) is a bug.
@@ -317,8 +317,8 @@ public:
 
   void return_object(T *p) noexcept { destroy(p); }
 
-  template <class... Args> PoolLoan<T, GrowablePool> try_loan(Args &&...args) {
-    return PoolLoan<T, GrowablePool>(this, create(std::forward<Args>(args)...));
+  template <class... Args> PoolLoan<T, GrowableObjectPool> try_loan(Args &&...args) {
+    return PoolLoan<T, GrowableObjectPool>(this, create(std::forward<Args>(args)...));
   }
 
   // Number of live (created, not yet destroyed) objects.
@@ -328,7 +328,7 @@ public:
   void clear() noexcept { core_.clear(); }
 
 private:
-  detail::GrowablePoolCore core_;
+  detail::GrowableObjectPoolCore core_;
 };
 
 } // namespace hyle::mem

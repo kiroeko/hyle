@@ -12,7 +12,7 @@
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::BlockingPool;
 using hyle::sched::Fiber;
@@ -55,7 +55,7 @@ void* counting_realloc(void*, void* pointer, std::size_t old_size,
 
 TEST(Blocking, RecoverableConstructionRejectsInvalidOrMissingResources) {
   hyle::Status status;
-  BlockingPool invalid_allocator(Allocator{}, 1, std::chrono::seconds(1),
+  BlockingPool invalid_allocator(AllocatorRef{}, 1, std::chrono::seconds(1),
                                  &status);
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(invalid_allocator.valid());
@@ -70,7 +70,7 @@ TEST(Blocking, RecoverableConstructionRejectsInvalidOrMissingResources) {
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(negative_keep_alive.valid());
 
-  Allocator failing(
+  AllocatorRef failing(
       [](void*, std::size_t, std::size_t) noexcept -> void* { return nullptr; },
       [](void*, void*, std::size_t, std::size_t) noexcept {},
       [](void*, void*, std::size_t, std::size_t,
@@ -83,7 +83,7 @@ TEST(Blocking, RecoverableConstructionRejectsInvalidOrMissingResources) {
 
 TEST(Blocking, InjectedAllocatorOwnsPoolBookkeepingAndJobs) {
   AllocationCounts counts;
-  Allocator allocator(&counting_alloc, &counting_free, &counting_realloc,
+  AllocatorRef allocator(&counting_alloc, &counting_free, &counting_realloc,
                       &counts);
   {
     BlockingPool pool(allocator, 2, std::chrono::milliseconds(10));
@@ -129,7 +129,7 @@ TEST(Blocking, UserExceptionBecomesInternalStatus) {
 
 TEST(Blocking, AllocationFailureBecomesResourceExhausted) {
   BlockingPool pool(system_allocator(), 1);
-  auto fail = hyle::mem::Allocator(
+  auto fail = hyle::mem::AllocatorRef(
       [](void*, std::size_t, std::size_t) noexcept -> void* { return nullptr; },
       [](void*, void*, std::size_t, std::size_t) noexcept {},
       [](void*, void*, std::size_t, std::size_t,
@@ -335,7 +335,7 @@ TEST(Blocking, RetiredThreadHandlesStayBoundedAcrossBursts) {
 // this path remains visible to TSan without a test-only allocator shape.
 TEST(Blocking, ChurnStress) {
   constexpr int kN = 200;
-  Allocator al = system_allocator();
+  AllocatorRef al = system_allocator();
   BlockingPool pool(al, /*max_threads=*/8);
   std::atomic<int> total{0};
   for (int i = 0; i < kN; ++i) {

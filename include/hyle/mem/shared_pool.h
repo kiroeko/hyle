@@ -15,7 +15,7 @@
 
 // Shared fixed-size block pool plus an explicit owner-local cache layer.
 //
-//   SharedPool        HARD capacity. In normal tagged mode, the successful
+//   ConcurrentBlockPool        HARD capacity. In normal tagged mode, the successful
 //   home-shard
 //                     path and every deallocate use one CAS; allocate scans if
 //                     needed. A freed block is never hidden in TLS, so
@@ -23,9 +23,9 @@
 //                     default for a bounded quota that is drawn/returned across
 //                     threads (work-stealing handoff, N fixed slots). Pick this
 //                     unless a measured same-thread hot spot justifies an
-//                     explicit SharedPoolCache owned by that worker.
+//                     explicit BlockPoolCache owned by that worker.
 //
-// Both borrow slab + link array from the injected Allocator. Each shard uses a
+// Both borrow slab + link array from the injected AllocatorRef. Each shard uses a
 // 32-bit tagged 64-bit-CAS fast path; before the finite tag could wrap, that
 // shard permanently enters a serialized 64-bit-change-counter fallback, so
 // stale CAS can never become valid again. The free lists are sharded per core:
@@ -33,20 +33,20 @@
 // churn. The `next` links live in a PARALLEL index array, never intrusively in
 // user bytes.
 //
-// PooledRegion (bottom of file) is the single-threaded bump allocator over ONE
+// PooledArena (bottom of file) is the single-threaded bump allocator over ONE
 // borrowed pool block -- a different tool (bulk release, no per-object free),
 // kept here because it borrows from a pool.
 
 namespace hyle::mem {
 
-class SharedPoolCache;
+class BlockPoolCache;
 
 namespace detail {
 // ---- Sharded-slab core -----------------------------------------------------
 // Owns the slab + parallel next_[] link array + per-shard
 // cache-line-isolated Treiber heads and their tag-saturation fallback. NOT a
-// standalone type: SharedPool derives from it and exposes hard operations plus
-// narrow batch hooks to SharedPoolCache. No virtuals or hot-path indirection.
+// standalone type: ConcurrentBlockPool derives from it and exposes hard operations plus
+// narrow batch hooks to BlockPoolCache. No virtuals or hot-path indirection.
 class ShardedSlab {
 public:
   std::size_t block_size() const noexcept { return block_size_; }
@@ -73,7 +73,7 @@ protected:
   // `alignment` (power of two). Slab + link array + heads come from `alloc`. On
   // OOM: valid()==false (graceful, not abort; mem-audit-followup #2 arch B).
   // The dtor is null-safe.
-  ShardedSlab(Allocator alloc, std::size_t block_size,
+  ShardedSlab(AllocatorRef alloc, std::size_t block_size,
               std::uint32_t block_count, std::size_t alignment)
       : alloc_(alloc), block_size_(block_size),
         alignment_(alignment < alignof(std::max_align_t)
@@ -632,7 +632,7 @@ protected:
   }
 #endif
 
-  Allocator alloc_;
+  AllocatorRef alloc_;
   std::size_t block_size_;
   std::size_t stride_;
   std::size_t alignment_;
@@ -699,7 +699,7 @@ protected:
 };
 } // namespace detail
 
-// ---- SharedPool: HARD capacity, no off-shard cache
+// ---- ConcurrentBlockPool: HARD capacity, no off-shard cache
 // ------------------------------- The home-shard success path and deallocate
 // each use one CAS; allocate scans the other shards when home is empty. A
 // completed free is immediately visible because no block is parked in TLS (no
@@ -707,19 +707,19 @@ protected:
 // drawn/returned across threads (fixed slot count, work-stealing handoff) or
 // whenever deterministic capacity matters more than squeezing out the
 // same-thread fast path. Same-thread churn still pays one CAS/op; if that is a
-// measured hot spot and the pool is over-provisioned, attach SharedPoolCache.
+// measured hot spot and the pool is over-provisioned, attach BlockPoolCache.
 //
 // Lifetime contract: every live block is returned exactly once to the SAME pool
 // before destruction. reset() is a distinct quiescent bulk-invalidation
 // boundary: no concurrent operation may run, and no old pointer may be touched
-// or returned afterward. Every attached SharedPoolCache must first publish its
+// or returned afterward. Every attached BlockPoolCache must first publish its
 // locally free indices; otherwise reset would make the same slots visible twice.
 // Foreign/misaligned pointers fail-fast in every build. HYLE_TESTING adds
 // per-slot liveness, double-return and outstanding-allocation diagnostics;
 // shipping builds carry no per-slot diagnostic state or instructions.
-class SharedPool : public detail::ShardedSlab {
+class ConcurrentBlockPool : public detail::ShardedSlab {
 public:
-  SharedPool(Allocator alloc, std::size_t block_size, std::uint32_t block_count,
+  ConcurrentBlockPool(AllocatorRef alloc, std::size_t block_size, std::uint32_t block_count,
              std::size_t alignment = alignof(std::max_align_t))
       : detail::ShardedSlab(alloc, block_size, block_count, alignment) {}
 
@@ -792,15 +792,15 @@ public:
   }
 #endif
 
-  // Adapt to the complete Allocator contract. A live fixed block resizes in
+  // Adapt to the complete AllocatorRef contract. A live fixed block resizes in
   // place while the request still fits; an over-capacity grow fails without
   // releasing it. null/zero follow the universal allocate/free rules.
-  Allocator as_allocator() noexcept {
-    return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&pool_alloc, &pool_free, &pool_realloc, this);
   }
 
 private:
-  friend class SharedPoolCache;
+  friend class BlockPoolCache;
 
   // Explicit owner-local caches use these narrow batch hooks. Cached indices
   // are free (not checked out) while they live outside the shared shards; the
@@ -826,7 +826,7 @@ private:
 
   static void *pool_alloc(void *state, std::size_t size,
                           std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPool *>(state);
+    auto *self = static_cast<ConcurrentBlockPool *>(state);
     if (size == 0)
       return nullptr;
     if (!is_pow2(alignment) || size > self->block_size_ ||
@@ -837,12 +837,12 @@ private:
   static void pool_free(void *state, void *ptr, std::size_t,
                         std::size_t) noexcept {
     if (ptr != nullptr)
-      static_cast<SharedPool *>(state)->deallocate(ptr);
+      static_cast<ConcurrentBlockPool *>(state)->deallocate(ptr);
   }
   static void *pool_realloc(void *state, void *ptr, std::size_t old_size,
                             std::size_t new_size,
                             std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPool *>(state);
+    auto *self = static_cast<ConcurrentBlockPool *>(state);
     if (ptr == nullptr)
       return pool_alloc(state, new_size, alignment);
     HYLE_FATAL_ASSERT(is_pow2(alignment) && old_size > 0 &&
@@ -860,21 +860,21 @@ private:
 };
 
 // Bump (region) allocator over ONE borrowed pool block. Borrows a block from a
-// SharedPool, hands out aligned bump slices, returns the whole block on
+// ConcurrentBlockPool, hands out aligned bump slices, returns the whole block on
 // destruction. There is NO per-allocation free: release everything at once by
 // destroying the region (or clear()). Ideal for a transient phase (one
 // taskgraph pass, one request) backed by a reusable pool block. Borrows from
-// the HARD SharedPool: a single-block borrow gains nothing from a per-thread
+// the HARD ConcurrentBlockPool: a single-block borrow gains nothing from a per-thread
 // cache, and the hard pool's immediate visibility keeps block lifetime simple.
 //
 // SINGLE-THREADED bump (no atomics -- a bump cursor is inherently one serial
-// pointer). Concurrency = one PooledRegion PER THREAD/fiber (each over its own
+// pointer). Concurrency = one PooledArena PER THREAD/fiber (each over its own
 // pooled block), the per-core scratch model, not a contended shared cursor.
-// Explicitly named PooledRegion because it is neither owned nor growable: it
-// borrows exactly one block from a hard SharedPool.
-class PooledRegion {
+// Explicitly named PooledArena because it is neither owned nor growable: it
+// borrows exactly one block from a hard ConcurrentBlockPool.
+class PooledArena {
 public:
-  explicit PooledRegion(SharedPool *pool) : pool_(pool) {
+  explicit PooledArena(ConcurrentBlockPool *pool) : pool_(pool) {
     HYLE_FATAL_ASSERT(pool != nullptr);
     block_ = static_cast<std::byte *>(pool_->allocate());
     block_size_ = pool_->block_size();
@@ -887,12 +887,12 @@ public:
 
   bool valid() const noexcept { return block_ != nullptr; }
 
-  ~PooledRegion() { pool_->deallocate(block_); }
+  ~PooledArena() { pool_->deallocate(block_); }
 
-  PooledRegion(const PooledRegion&) = delete;
-  PooledRegion& operator=(const PooledRegion&) = delete;
-  PooledRegion(PooledRegion&&) = delete;
-  PooledRegion& operator=(PooledRegion&&) = delete;
+  PooledArena(const PooledArena&) = delete;
+  PooledArena& operator=(const PooledArena&) = delete;
+  PooledArena(PooledArena&&) = delete;
+  PooledArena& operator=(PooledArena&&) = delete;
 
   // Bump `bytes` aligned to `alignment`. nullptr if the block is full.
   void *allocate(std::size_t bytes,
@@ -920,7 +920,7 @@ public:
   }
 
   // Release everything (reuse the block from the start); only safe when no
-  // allocations are live. clear() is the common Region-family spelling.
+  // allocations are live. clear() is the common Arena-family spelling.
   void clear() noexcept { cur_ = block_; }
 
   std::size_t block_size() const noexcept { return block_size_; }
@@ -931,24 +931,24 @@ public:
     return valid() ? static_cast<std::size_t>(end_ - cur_) : 0;
   }
 
-  // Adapt to the Allocator vtable: allocate -> bump, deallocate -> no-op (bulk
+  // Adapt to the AllocatorRef vtable: allocate -> bump, deallocate -> no-op (bulk
   // release on destruction), realloc -> bump a fresh slice + copy (regions can't
   // grow in place).
-  Allocator as_allocator() noexcept {
-    return Allocator(&region_alloc, &region_free, &region_realloc, this);
+  AllocatorRef as_allocator() noexcept {
+    return AllocatorRef(&region_alloc, &region_free, &region_realloc, this);
   }
 
 private:
   static void *region_alloc(void *state, std::size_t size,
                             std::size_t alignment) noexcept {
-    return static_cast<PooledRegion *>(state)->allocate(size, alignment);
+    return static_cast<PooledArena *>(state)->allocate(size, alignment);
   }
   static void region_free(void *, void *, std::size_t, std::size_t) noexcept {
   } // bulk release
   static void *region_realloc(void *state, void *ptr, std::size_t old_size,
                               std::size_t new_size,
                               std::size_t alignment) noexcept {
-    auto *self = static_cast<PooledRegion *>(state);
+    auto *self = static_cast<PooledArena *>(state);
     if (new_size == 0)
       return nullptr;
     void *p = self->allocate(new_size, alignment);
@@ -957,7 +957,7 @@ private:
     return p;
   }
 
-  SharedPool *pool_;
+  ConcurrentBlockPool *pool_;
   std::byte *block_;
   std::size_t block_size_;
   std::byte *cur_ = nullptr;

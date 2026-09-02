@@ -21,7 +21,7 @@
 #include "hyle/simd/runtime.h"
 
 int main() {
-  hyle::mem::Allocator allocator = hyle::mem::system_allocator();
+  hyle::mem::AllocatorRef allocator = hyle::mem::system_allocator();
   auto* package_probe = allocator.allocate_n<std::uint64_t>(8);
   if (package_probe == nullptr) return 2;
   allocator.deallocate_n(package_probe, 8);

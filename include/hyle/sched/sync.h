@@ -592,7 +592,7 @@ template <detail::ChannelValue T> class Channel {
 public:
   enum class RecvStatus { kValue, kEmptyOrTimeout, kClosed };
 
-  Channel(mem::Allocator alloc, std::size_t capacity)
+  Channel(mem::AllocatorRef alloc, std::size_t capacity)
       : alloc_(alloc) {
     Status status;
     init_(capacity, &status);
@@ -602,7 +602,7 @@ public:
   // Recoverable construction for untrusted capacity or allocator exhaustion.
   // On failure status is non-OK and valid()==false; the object remains safely
   // destructible and operations return typed errors.
-  Channel(mem::Allocator alloc, std::size_t capacity, Status *status) noexcept
+  Channel(mem::AllocatorRef alloc, std::size_t capacity, Status *status) noexcept
       : alloc_(alloc) {
     init_(capacity, status);
   }
@@ -836,7 +836,7 @@ private:
     }
   }
 
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   util::SpinLock mu_;           // guards the ring + closed_ (short holds)
   ConditionVariable not_empty_; // consumers wait here
   ConditionVariable not_full_;  // producers wait here
@@ -1123,7 +1123,7 @@ private:
 // value (once), a Receiver receives it (once). The canonical "spawn a task, get
 // its one result back" primitive (pairs with JoinHandle) and a request/response
 // reply slot. Move-only Sender/Receiver over a refcounted shared state
-// (charter: from an injected Allocator, no hidden heap). Fiber-aware: recv()
+// (charter: from an injected AllocatorRef, no hidden heap). Fiber-aware: recv()
 // yields the fiber until the value arrives or the Sender is dropped.
 //
 // SEMANTICS (tokio oneshot, adopted):
@@ -1137,7 +1137,7 @@ private:
 namespace detail {
 
 template <class T> struct OneshotState {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   util::SpinLock mu;
   ConditionVariable cv;         // receiver blocks here for value/close
   ConditionVariable closed_cv;  // sender blocks here in closed() (rx gone)
@@ -1158,7 +1158,7 @@ template <class T> struct OneshotState {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       if (value_set)
         reinterpret_cast<T *>(storage)->~T(); // unreceived value
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       this->~OneshotState();
       a.deallocate(this, sizeof(OneshotState), alignof(OneshotState));
     }
@@ -1335,7 +1335,7 @@ private:
 // state.
 template <detail::OneshotValue T>
 Result<std::pair<OneshotSender<T>, OneshotReceiver<T>>>
-try_make_oneshot(mem::Allocator alloc) noexcept {
+try_make_oneshot(mem::AllocatorRef alloc) noexcept {
   using detail::OneshotState;
   if (!alloc.valid())
     return std::unexpected(
@@ -1353,7 +1353,7 @@ try_make_oneshot(mem::Allocator alloc) noexcept {
 
 template <detail::OneshotValue T>
 std::pair<OneshotSender<T>, OneshotReceiver<T>>
-make_oneshot(mem::Allocator alloc) noexcept {
+make_oneshot(mem::AllocatorRef alloc) noexcept {
   auto result = try_make_oneshot<T>(alloc);
   HYLE_FATAL_ASSERT(result.has_value());
   return std::move(*result);
@@ -1381,7 +1381,7 @@ make_oneshot(mem::Allocator alloc) noexcept {
 namespace detail {
 
 template <class T> struct WatchState {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   util::SpinLock mu;
   ConditionVariable cv;
   std::atomic<int> refcount{0}; // senders + receivers; last drop frees
@@ -1404,7 +1404,7 @@ template <class T> struct WatchState {
   void release() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       value().~T();
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       this->~WatchState();
       a.deallocate(this, sizeof(WatchState), alignof(WatchState));
     }
@@ -1654,7 +1654,7 @@ private:
 // subscriber / shutdown flag reads the current state without waiting.
 template <detail::WatchValue T>
 Result<std::pair<WatchSender<T>, WatchReceiver<T>>>
-try_make_watch(mem::Allocator alloc, T initial) noexcept {
+try_make_watch(mem::AllocatorRef alloc, T initial) noexcept {
   using detail::WatchState;
   if (!alloc.valid())
     return std::unexpected(
@@ -1675,7 +1675,7 @@ try_make_watch(mem::Allocator alloc, T initial) noexcept {
 }
 
 template <detail::WatchValue T>
-std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::Allocator alloc,
+std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::AllocatorRef alloc,
                                                        T initial) noexcept {
   auto result = try_make_watch<T>(alloc, std::move(initial));
   HYLE_FATAL_ASSERT(result.has_value());
@@ -1710,7 +1710,7 @@ std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::Allocator alloc,
 namespace detail {
 
 template <class T> struct BroadcastState {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   util::SpinLock mu;
   ConditionVariable cv;         // receivers block here for the next value
   std::atomic<int> refcount{0}; // senders + receivers; last drop frees
@@ -1735,7 +1735,7 @@ template <class T> struct BroadcastState {
       for (std::size_t i = 0; i < cap; ++i)
         if (occupied[i])
           buf[i].~T();
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       const std::size_t c = cap;
       T *b = buf;
       bool *o = occupied;
@@ -1975,7 +1975,7 @@ private:
 // Sender + one Receiver (subscribe() more from the Sender). capacity >= 1.
 template <detail::BroadcastValue T>
 Result<std::pair<BroadcastSender<T>, BroadcastReceiver<T>>>
-try_make_broadcast(mem::Allocator alloc, std::size_t capacity) noexcept {
+try_make_broadcast(mem::AllocatorRef alloc, std::size_t capacity) noexcept {
   using detail::BroadcastState;
   if (!alloc.valid())
     return std::unexpected(
@@ -2016,7 +2016,7 @@ try_make_broadcast(mem::Allocator alloc, std::size_t capacity) noexcept {
 
 template <detail::BroadcastValue T>
 std::pair<BroadcastSender<T>, BroadcastReceiver<T>>
-make_broadcast(mem::Allocator alloc, std::size_t capacity) noexcept {
+make_broadcast(mem::AllocatorRef alloc, std::size_t capacity) noexcept {
   auto result = try_make_broadcast<T>(alloc, capacity);
   HYLE_FATAL_ASSERT(result.has_value());
   return std::move(*result);

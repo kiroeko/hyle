@@ -115,8 +115,8 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 
 | ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
 |---|---|---|---|
-| `MEM-WATCH-01` | worker/request phase 希望每线程 arena、thread-exit 合并和全局 reclaim | `sched`/runtime 拥有 worker registry，Mem 提供 Region/backing | 隐藏 TLS 会引入 zombie、exit 和全局 teardown 状态；需 runtime 生命周期、内存压力和跨线程回收 trace |
-| `MEM-WATCH-02` | 多 producer 共享 caller-backed variable heap 或 pool | caller lock、标准 synchronized PMR，或具名 HYLE wrapper | 当前 FixedPool/PMR 组合已有路线；需第二消费者和 contention/ownership 证据，不能让单 owner 路径付锁成本 |
+| `MEM-WATCH-01` | worker/request phase 希望每线程 arena、thread-exit 合并和全局 reclaim | `sched`/runtime 拥有 worker registry，Mem 提供 Arena/backing | 隐藏 TLS 会引入 zombie、exit 和全局 teardown 状态；需 runtime 生命周期、内存压力和跨线程回收 trace |
+| `MEM-WATCH-02` | 多 producer 共享 caller-backed variable heap 或 pool | caller lock、标准 synchronized PMR，或具名 HYLE wrapper | 当前 FixedHeap/PMR 组合已有路线；需第二消费者和 contention/ownership 证据，不能让单 owner 路径付锁成本 |
 | `MEM-WATCH-03` | 多 socket/统一内存机器需要 host placement、迁移或跨 die 带宽策略 | Platform 提供机制，Mem 提供 owner，engine/sched 决策 | 当前只签单节点 NUMA；需真硬件、page residency/pressure 和 end-to-end tokens/s、tail、joules/token 证据 |
 | `MEM-WATCH-04` | GPU/NPU 需要 pinned/registered/coherent/unified buffer 与 staging lifetime | `compute` backend 拥有 device handle、mapping、completion；Mem 只在通用 host backing 成立时参与 | host allocator 不能猜 device coherence；需真实 backend、异步 completion、fallback 和 copy/overlap workload |
 | `MEM-WATCH-05` | KV page/cell、prefix sharing、fork/copy、evict/defrag 或 allocation planner | 推理引擎/compute/graph 策略消费 Mem 原语 | KV/token/sequence 是模型状态，不进入 Host Mem API；只有语义擦除后的通用 pool/backing 缺口才重开 Mem |

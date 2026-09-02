@@ -16,7 +16,7 @@
 
 namespace hyle::container {
 
-// Allocator-aware, single-threaded circular deque. The storage is a
+// AllocatorRef-aware, single-threaded circular deque. The storage is a
 // power-of-two ring so both-end mutation and random access are O(1). Normal
 // try_emplace_* operations grow on demand; the *_bounded forms never allocate
 // and provide fixed-capacity/backpressure semantics after reserve(). Growth or
@@ -137,9 +137,9 @@ public:
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   RingDeque() noexcept : alloc_(mem::system_allocator()) {}
-  explicit RingDeque(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+  explicit RingDeque(mem::AllocatorRef alloc) noexcept : alloc_(alloc) {}
   explicit RingDeque(size_type capacity) : RingDeque() { reserve(capacity); }
-  RingDeque(mem::Allocator alloc, size_type capacity) : RingDeque(alloc) {
+  RingDeque(mem::AllocatorRef alloc, size_type capacity) : RingDeque(alloc) {
     reserve(capacity);
   }
 
@@ -172,7 +172,7 @@ public:
   }
   ~RingDeque() { release(); }
 
-  mem::Allocator allocator() const noexcept { return alloc_; }
+  mem::AllocatorRef allocator() const noexcept { return alloc_; }
   size_type size() const noexcept { return tail_ - head_; }
   size_type capacity() const noexcept { return capacity_; }
   bool empty() const noexcept { return head_ == tail_; }
@@ -409,7 +409,7 @@ private:
     head_ = tail_ = 0;
   }
 
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   T *storage_ = nullptr;
   size_type capacity_ = 0;
   size_type head_ = 0;

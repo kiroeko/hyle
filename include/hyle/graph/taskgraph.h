@@ -100,7 +100,7 @@ using ComputeFn = Status (*)(void* ctx) noexcept;
 // (add_source) need no marker.
 class TaskGraph {
  public:
-  HYLE_GRAPH_API explicit TaskGraph(mem::Allocator alloc) noexcept;
+  HYLE_GRAPH_API explicit TaskGraph(mem::AllocatorRef alloc) noexcept;
   HYLE_GRAPH_API ~TaskGraph();
   TaskGraph(const TaskGraph&) = delete;
   TaskGraph& operator=(const TaskGraph&) = delete;
@@ -188,12 +188,12 @@ class TaskGraph {
   // node). All deps live flattened in `dep_pool_`; node i owns the slice
   // [dep_off_[i], dep_off_[i+1]). Since deps are known at add_node time and ids only
   // grow (decision ②), the CSR is built by plain append -- no back-patching.
-  container::SmallVector<ComputeFn, 8, mem::Allocator> fn_;    // node i's compute
-  container::SmallVector<void*, 8, mem::Allocator> ctx_;       // node i's closure ctx
-  container::SmallVector<bool, 8, mem::Allocator> dirty_;      // node i needs recompute
-  container::SmallVector<NodeId, 16, mem::Allocator> dep_pool_;      // flattened deps of all nodes
-  container::SmallVector<std::uint32_t, 8, mem::Allocator> dep_off_;  // node i's deps = dep_pool_[dep_off_[i]..dep_off_[i+1])
-  mem::Allocator alloc_;
+  container::SmallVector<ComputeFn, 8, mem::AllocatorRef> fn_;    // node i's compute
+  container::SmallVector<void*, 8, mem::AllocatorRef> ctx_;       // node i's closure ctx
+  container::SmallVector<bool, 8, mem::AllocatorRef> dirty_;      // node i needs recompute
+  container::SmallVector<NodeId, 16, mem::AllocatorRef> dep_pool_;      // flattened deps of all nodes
+  container::SmallVector<std::uint32_t, 8, mem::AllocatorRef> dep_off_;  // node i's deps = dep_pool_[dep_off_[i]..dep_off_[i+1])
+  mem::AllocatorRef alloc_;
 };
 
 }  // namespace hyle::graph

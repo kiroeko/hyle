@@ -64,7 +64,7 @@
 using hyle::io::IoContext;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -185,7 +185,7 @@ struct Conn {
   char sbuf[kMsgLen];
 };
 
-Task<int> client_task(Allocator, Conn* c) {
+Task<int> client_task(AllocatorRef, Conn* c) {
   static const char kMsg[kMsgLen] = "hyle-io-echo-bench-payload";
   for (int i = 0; i < c->round_trips; ++i) {
     std::int64_t w = co_await SendOp{&c->io->proactor_for_current(), c->client_fd,
@@ -199,7 +199,7 @@ Task<int> client_task(Allocator, Conn* c) {
   co_return 0;
 }
 
-Task<int> server_task(Allocator, Conn* c) {
+Task<int> server_task(AllocatorRef, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
     std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->server_fd,
                                      c->sbuf, kMsgLen};

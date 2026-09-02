@@ -9,21 +9,21 @@
 
 namespace hyle::mem {
 
-// Thread-safe strict byte-budget decorator over any sized-free Allocator.
+// Thread-safe strict byte-budget decorator over any sized-free AllocatorRef.
 //
 // The quota accounts REQUESTED live bytes, not the backing allocator's
 // usable-size or metadata overhead. A reservation is acquired before entering
 // the backing, so concurrent successful calls can never make used() exceed
-// limit(). Backing OOM rolls the reservation back. The Allocator returned by
+// limit(). Backing OOM rolls the reservation back. The AllocatorRef returned by
 // get() borrows this object and is valid only while *this remains alive.
 //
-// As with every HYLE Allocator, deallocate/reallocate must receive the original
+// As with every HYLE AllocatorRef, deallocate/reallocate must receive the original
 // requested size. Passing a different size is a caller contract violation and
 // corrupts accounting.
 class QuotaAllocator {
 public:
   explicit QuotaAllocator(
-      Allocator backing,
+      AllocatorRef backing,
       std::size_t limit = (std::numeric_limits<std::size_t>::max)()) noexcept
       : backing_(backing), limit_(limit) {
     HYLE_FATAL_ASSERT(backing_.valid());
@@ -39,8 +39,8 @@ public:
   QuotaAllocator(QuotaAllocator&&) = delete;
   QuotaAllocator& operator=(QuotaAllocator&&) = delete;
 
-  Allocator get() noexcept {
-    return Allocator(&quota_alloc, &quota_free, &quota_realloc, this);
+  AllocatorRef get() noexcept {
+    return AllocatorRef(&quota_alloc, &quota_free, &quota_realloc, this);
   }
 
   std::size_t used() const noexcept {
@@ -150,7 +150,7 @@ private:
     return out;
   }
 
-  Allocator backing_;
+  AllocatorRef backing_;
   const std::size_t limit_;
   // accounted_ includes live bytes plus reservations currently inside the
   // backing call; live_ includes only successful allocations and is what

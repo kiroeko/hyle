@@ -49,7 +49,7 @@ namespace hyle::container {
 // T has the same placement-lifetime and noexcept destruction/extraction contract
 // as the underlying BoundedQueue.
 // Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes); each
-// shard is a BoundedQueue<T,Alloc> so the choice propagates. Pass mem::Allocator to opt in
+// shard is a BoundedQueue<T,Alloc> so the choice propagates. Pass mem::AllocatorRef to opt in
 // (the scheduler does for its global inject queue).
 template <class T, class Alloc = mem::SystemAllocator>
 class ShardedQueue {
@@ -164,7 +164,7 @@ class ShardedQueue {
     shard_mask_ = (num_shards_ & (num_shards_ - 1)) == 0
                       ? num_shards_ - 1
                       : static_cast<std::size_t>(-1);
-    // Allocator-backed array of ring objects (NOT std::vector -- charter §1 forbids std
+    // AllocatorRef-backed array of ring objects (NOT std::vector -- charter §1 forbids std
     // owning types in a header that may cross the ABI boundary). BoundedQueue is
     // non-movable, so placement-new each shard in situ (sharing this queue's Alloc).
     void* mem = alloc_.allocate(sizeof(BoundedQueue<T, Alloc>) * num_shards_,

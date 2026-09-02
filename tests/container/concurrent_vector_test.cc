@@ -13,7 +13,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentVector;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 static_assert(std::random_access_iterator<ConcurrentVector<int>::iterator>);
@@ -30,7 +30,7 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
 }
 
 struct TrackingAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   std::size_t allocation_calls = 0;
   std::size_t fail_on_call = static_cast<std::size_t>(-1);
   std::size_t live_allocations = 0;
@@ -62,8 +62,8 @@ void* tracking_reallocate(void* raw, void* pointer, std::size_t old_size,
   return state->backing.reallocate(pointer, old_size, new_size, alignment);
 }
 
-Allocator tracking_allocator(TrackingAllocatorState& state) {
-  return Allocator(tracking_allocate, tracking_free, tracking_reallocate,
+AllocatorRef tracking_allocator(TrackingAllocatorState& state) {
+  return AllocatorRef(tracking_allocate, tracking_free, tracking_reallocate,
                    &state);
 }
 
@@ -92,7 +92,7 @@ TEST(ConcurrentVector, EmptyOnConstruction) {
 TEST(ConcurrentVector, SegmentTablePromotesOnlyAfterThreeSegments) {
   TrackingAllocatorState state;
   {
-    ConcurrentVector<int, Allocator> values(tracking_allocator(state), 1);
+    ConcurrentVector<int, AllocatorRef> values(tracking_allocator(state), 1);
     EXPECT_EQ(state.allocation_calls, 0u);
     ASSERT_TRUE(values.try_reserve(7));
     ASSERT_EQ(state.allocation_calls, 3u);
@@ -110,7 +110,7 @@ TEST(ConcurrentVector, SegmentTablePromotesOnlyAfterThreeSegments) {
 
 TEST(ConcurrentVector, FailedTablePromotionPreservesCapacityAndValues) {
   TrackingAllocatorState state;
-  ConcurrentVector<int, Allocator> values(tracking_allocator(state), 1);
+  ConcurrentVector<int, AllocatorRef> values(tracking_allocator(state), 1);
   ASSERT_TRUE(values.try_reserve(7));
   for (int value = 0; value < 7; ++value) values.emplace_back(value);
 
@@ -129,7 +129,7 @@ TEST(ConcurrentVector, ClearDestroysValuesAndRetainsReusableSegments) {
   ClearCounted::alive = 0;
   TrackingAllocatorState state;
   {
-    ConcurrentVector<ClearCounted, Allocator> values(tracking_allocator(state),
+    ConcurrentVector<ClearCounted, AllocatorRef> values(tracking_allocator(state),
                                                       1);
     for (int value = 0; value < 40; ++value) values.emplace_back(value);
     const std::size_t capacity = values.capacity();
@@ -238,8 +238,8 @@ TEST(ConcurrentVector, RandomAccessIterationAcrossSegments) {
 }
 
 TEST(ConcurrentVector, AllocationFailureDoesNotReserveAHole) {
-  Allocator failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
-  using FailingVector = ConcurrentVector<int, Allocator>;
+  AllocatorRef failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
+  using FailingVector = ConcurrentVector<int, AllocatorRef>;
   FailingVector v(failing, 1);
   EXPECT_EQ(v.try_emplace_back(1), FailingVector::npos);
   EXPECT_EQ(v.size(), 0u);
@@ -284,7 +284,7 @@ TEST(ConcurrentVector, ReturnedIndexIsUsableBeforeOtherWriterCompletes) {
 // Many concurrent readers while one writer appends: readers never see a torn or
 // uninitialized element. (TSan build is the real gate; this is the logic check.)
 TEST(ConcurrentVector, ConcurrentReadersOneWriter) {
-  ConcurrentVector<std::uint64_t, Allocator> v(system_allocator(), 8);
+  ConcurrentVector<std::uint64_t, AllocatorRef> v(system_allocator(), 8);
   constexpr int kPrefix = 2000;
   constexpr int kN = 20000;
   std::atomic<bool> stop{false};

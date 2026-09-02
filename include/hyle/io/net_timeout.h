@@ -68,7 +68,7 @@ namespace hyle::io {
 struct TimedSlot {
   IoOperation io{};          // the io op's landing pad (reaper fills result)
   time::TimerEntry timer{};  // armed on owner worker's queue; callback = arbiter
-  mem::Allocator alloc;      // frees the slot at refcount 0
+  mem::AllocatorRef alloc;      // frees the slot at refcount 0
   Proactor* p = nullptr;     // ring, for submit_cancel when the timer wins
   int refcount = 2;          // {kernel op, fiber}; non-atomic (owner-thread only)
   bool io_done = false;      // io completion arrived
@@ -76,7 +76,7 @@ struct TimedSlot {
 
   void release() noexcept {
     if (--refcount == 0) {
-      mem::Allocator a = alloc;
+      mem::AllocatorRef a = alloc;
       this->~TimedSlot();
       a.deallocate(this, sizeof(TimedSlot), alignof(TimedSlot));
     }
@@ -140,7 +140,7 @@ namespace detail {
 // Allocate + arm a timed op. Captures the fiber waker into the io slot, arms the
 // timer (callback = arbiter, so fire_due_timers routes through timed_on_fire, NOT the
 // blind sleep wake). Caller then submits the io op with to_timed_token(slot).
-inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
+inline TimedSlot* make_timed_slot(mem::AllocatorRef alloc, Proactor* p,
                                   std::uint64_t deadline_ns) noexcept {
   auto* s = static_cast<TimedSlot*>(
       alloc.allocate(sizeof(TimedSlot), alignof(TimedSlot)));
@@ -216,7 +216,7 @@ struct TimedRecvOp {
   std::intptr_t fd;
   void* buf;
   std::uint32_t len;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
 
   TimedSlot* slot_ = nullptr;
@@ -245,7 +245,7 @@ struct TimedSendOp {
   std::intptr_t fd;
   const void* buf;
   std::uint32_t len;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
   std::uint32_t flags = 0;
 
@@ -273,7 +273,7 @@ struct TimedSendOp {
 struct TimedAcceptOp {
   Proactor* p;
   std::intptr_t fd;  // listening socket
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
 
   TimedSlot* slot_ = nullptr;
@@ -303,7 +303,7 @@ struct TimedConnectOp {
   std::intptr_t fd;
   const void* addr;
   std::uint32_t addrlen;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
 
   TimedSlot* slot_ = nullptr;
@@ -332,7 +332,7 @@ struct TimedRecvFromOp {
   std::uint32_t len;
   void* addr;
   std::uint32_t addr_cap;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
 
   TimedSlot* slot_ = nullptr;
@@ -362,7 +362,7 @@ struct TimedSendToOp {
   std::uint32_t len;
   const void* addr;
   std::uint32_t addrlen;
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   std::uint64_t deadline_ns;
 
   TimedSlot* slot_ = nullptr;

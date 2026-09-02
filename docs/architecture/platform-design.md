@@ -120,7 +120,7 @@ portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复�
 `MappedFile` 是同步、单进程文件映射。普通顺序文件 I/O 用 `FileHandle`；异步 read/write、
 注册文件和 completion 归 `io`；跨进程 shared memory 的命名、权限和同步也不伪装成普通
 mapping。device VRAM、pinned host memory、coherence 与 GPU completion 归 `compute`，不能
-用 `VmRegion` 或 `mem::Allocator` 抹掉 backend 生命周期。
+用 `VmRegion` 或 `mem::AllocatorRef` 抹掉 backend 生命周期。
 
 对权重、索引和数据集，映射 owner 与访问策略分开：`Advice` 只给 kernel 访问模式提示，
 `prefetch` 是 will-need 便利入口，`lock/unlock` 才明确购买驻留。它们都作用于已有 mapping，

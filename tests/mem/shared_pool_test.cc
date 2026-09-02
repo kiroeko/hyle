@@ -20,9 +20,9 @@
 #  include <sched.h>
 #endif
 
-using hyle::mem::SharedPool;
-using hyle::mem::SharedPoolCache;
-using hyle::mem::Allocator;
+using hyle::mem::ConcurrentBlockPool;
+using hyle::mem::BlockPoolCache;
+using hyle::mem::AllocatorRef;
 using hyle::mem::QuotaAllocator;
 using hyle::mem::system_allocator;
 
@@ -81,8 +81,8 @@ void *recording_reallocate(void *, void *, std::size_t, std::size_t,
 #endif
 }  // namespace
 
-TEST(SharedPool, AllocateFreeRoundTrip) {
-  SharedPool pool(system_allocator(), 64, 4);
+TEST(ConcurrentBlockPool, AllocateFreeRoundTrip) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 4);
   EXPECT_EQ(pool.capacity(), 4u);
   void* a = pool.allocate();
   void* b = pool.allocate();
@@ -93,8 +93,8 @@ TEST(SharedPool, AllocateFreeRoundTrip) {
   pool.deallocate(b);
 }
 
-TEST(SharedPool, ExhaustionReturnsNull) {
-  SharedPool pool(system_allocator(), 32, 3);
+TEST(ConcurrentBlockPool, ExhaustionReturnsNull) {
+  ConcurrentBlockPool pool(system_allocator(), 32, 3);
   void* p0 = pool.allocate();
   void* p1 = pool.allocate();
   void* p2 = pool.allocate();
@@ -111,12 +111,12 @@ TEST(SharedPool, ExhaustionReturnsNull) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(SharedPool, DenseShardHeadsUseTargetFamilySpacing) {
+TEST(ConcurrentBlockPool, DenseShardHeadsUseTargetFamilySpacing) {
   RecordingBackingState state;
-  Allocator backing(&recording_allocate, &recording_deallocate,
+  AllocatorRef backing(&recording_allocate, &recording_deallocate,
                     &recording_reallocate, &state);
   {
-    SharedPool pool(backing, 64, 64);
+    ConcurrentBlockPool pool(backing, 64, 64);
     ASSERT_TRUE(pool.valid());
     ASSERT_EQ(state.allocation_calls, 3u);
     EXPECT_EQ(state.alignments[2],
@@ -148,7 +148,7 @@ TEST(SharedPool, DenseShardHeadsUseTargetFamilySpacing) {
   }
 }
 
-TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
+TEST(ConcurrentBlockPool, DefaultShardsFollowAvailableParallelism) {
 #if defined(_WIN32)
   if (::GetActiveProcessorGroupCount() != 1) GTEST_SKIP();
   DWORD_PTR original = 0, system = 0;
@@ -158,7 +158,7 @@ TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
   }
   const DWORD_PTR single = original & (~original + 1);
   if (!::SetProcessAffinityMask(::GetCurrentProcess(), single)) GTEST_SKIP();
-  SharedPool pool(system_allocator(), 64, 64);
+  ConcurrentBlockPool pool(system_allocator(), 64, 64);
   const BOOL restored = ::SetProcessAffinityMask(::GetCurrentProcess(), original);
   ASSERT_NE(restored, 0);
   ASSERT_TRUE(pool.valid());
@@ -179,7 +179,7 @@ TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
   CPU_ZERO(&single);
   CPU_SET(first, &single);
   if (::sched_setaffinity(0, sizeof(single), &single) != 0) GTEST_SKIP();
-  SharedPool pool(system_allocator(), 64, 64);
+  ConcurrentBlockPool pool(system_allocator(), 64, 64);
   const int restored = ::sched_setaffinity(0, sizeof(original), &original);
   ASSERT_EQ(restored, 0);
   ASSERT_TRUE(pool.valid());
@@ -190,10 +190,10 @@ TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
 }
 #endif
 
-TEST(SharedPool, BlocksAlignedAndNonOverlapping) {
+TEST(ConcurrentBlockPool, BlocksAlignedAndNonOverlapping) {
   constexpr std::size_t kAlign = 64;
   constexpr std::uint32_t kN = 16;
-  SharedPool pool(system_allocator(), 100, kN, kAlign);
+  ConcurrentBlockPool pool(system_allocator(), 100, kN, kAlign);
   std::vector<void*> ps;
   for (std::uint32_t i = 0; i < kN; ++i) {
     void* p = pool.allocate();
@@ -208,11 +208,11 @@ TEST(SharedPool, BlocksAlignedAndNonOverlapping) {
   for (void* p : ps) pool.deallocate(p);
 }
 
-TEST(SharedPool, AboveClay64SlotLimit) {
+TEST(ConcurrentBlockPool, AboveClay64SlotLimit) {
   // clay capped arena allocators at 64 static slots (bug #5). Ours takes a
   // block_count parameter -- prove well past 64 works.
   constexpr std::uint32_t kN = 1000;
-  SharedPool pool(system_allocator(), 16, kN);
+  ConcurrentBlockPool pool(system_allocator(), 16, kN);
   std::vector<void*> ps;
   for (std::uint32_t i = 0; i < kN; ++i) {
     void* p = pool.allocate();
@@ -223,10 +223,10 @@ TEST(SharedPool, AboveClay64SlotLimit) {
   for (void* p : ps) pool.deallocate(p);
 }
 
-TEST(SharedPoolCache, CallerStorageReusesLocallyAndPublishes) {
-  SharedPool pool(system_allocator(), 64, 8);
+TEST(BlockPoolCache, CallerStorageReusesLocallyAndPublishes) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 8);
   std::array<std::uint32_t, 4> storage{};
-  SharedPoolCache cache(pool, storage, 4);
+  BlockPoolCache cache(pool, storage, 4);
   ASSERT_TRUE(cache.valid());
   EXPECT_EQ(cache.capacity(), 4u);
   EXPECT_EQ(cache.transfer_batch(), 4u);
@@ -255,10 +255,10 @@ TEST(SharedPoolCache, CallerStorageReusesLocallyAndPublishes) {
     pool.deallocate(block);
 }
 
-TEST(SharedPoolCache, LocalFreeIsSoftUntilExplicitPublish) {
-  SharedPool pool(system_allocator(), 64, 4);
+TEST(BlockPoolCache, LocalFreeIsSoftUntilExplicitPublish) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 4);
   std::array<std::uint32_t, 4> storage{};
-  SharedPoolCache cache(pool, storage, 4);
+  BlockPoolCache cache(pool, storage, 4);
   std::array<void *, 4> held{};
 
   for (void *&p : held) {
@@ -280,11 +280,11 @@ TEST(SharedPoolCache, LocalFreeIsSoftUntilExplicitPublish) {
     pool.deallocate(p);
 }
 
-TEST(SharedPoolCache, DestructionPublishesCallerStorage) {
-  SharedPool pool(system_allocator(), 64, 4);
+TEST(BlockPoolCache, DestructionPublishesCallerStorage) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 4);
   std::array<std::uint32_t, 4> storage{};
   {
-    SharedPoolCache cache(pool, storage, 4);
+    BlockPoolCache cache(pool, storage, 4);
     void *p = cache.allocate();
     ASSERT_NE(p, nullptr);
     cache.deallocate(p);
@@ -312,11 +312,11 @@ TEST(SharedPoolCache, DestructionPublishesCallerStorage) {
     pool.deallocate(p);
 }
 
-TEST(SharedPoolCache, AllocatorViewKeepsFixedBlockContract) {
-  SharedPool pool(system_allocator(), 128, 2, 64);
+TEST(BlockPoolCache, AllocatorViewKeepsFixedBlockContract) {
+  ConcurrentBlockPool pool(system_allocator(), 128, 2, 64);
   std::array<std::uint32_t, 2> storage{};
-  SharedPoolCache cache(pool, storage, 2);
-  Allocator alloc = cache.as_allocator();
+  BlockPoolCache cache(pool, storage, 2);
+  AllocatorRef alloc = cache.as_allocator();
 
   EXPECT_EQ(alloc.allocate(129, 64), nullptr);
   EXPECT_EQ(alloc.allocate(1, 128), nullptr);
@@ -330,10 +330,10 @@ TEST(SharedPoolCache, AllocatorViewKeepsFixedBlockContract) {
   cache.publish();
 }
 
-TEST(SharedPoolCache, PublishMakesCoreResetSafe) {
-  SharedPool pool(system_allocator(), 64, 8);
+TEST(BlockPoolCache, PublishMakesCoreResetSafe) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 8);
   std::array<std::uint32_t, 4> storage{};
-  SharedPoolCache cache(pool, storage, 2);
+  BlockPoolCache cache(pool, storage, 2);
 
   void *p = cache.allocate();
   ASSERT_NE(p, nullptr);
@@ -356,14 +356,14 @@ TEST(SharedPoolCache, PublishMakesCoreResetSafe) {
     pool.deallocate(block);
 }
 
-TEST(SharedPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
-  SharedPool pool(system_allocator(), 64, 8);
+TEST(BlockPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 8);
   QuotaAllocator metadata(system_allocator(), 3 * sizeof(std::uint32_t));
-  SharedPoolCache cache(pool, metadata.get(), 4, 2);
+  BlockPoolCache cache(pool, metadata.get(), 4, 2);
 
   EXPECT_FALSE(cache.valid());
   EXPECT_EQ(cache.allocate(), nullptr);
-  Allocator alloc = cache.as_allocator();
+  AllocatorRef alloc = cache.as_allocator();
   EXPECT_TRUE(alloc.valid());
   EXPECT_EQ(alloc.allocate(32, 16), nullptr);
   EXPECT_EQ(alloc.reallocate(nullptr, 0, 32, 16), nullptr);
@@ -371,24 +371,24 @@ TEST(SharedPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
   EXPECT_EQ(metadata.used(), 0u);
 }
 
-TEST(SharedPoolCache, ZeroTransferBatchSelectsClampedDefault) {
-  SharedPool pool(system_allocator(), 64, 64);
+TEST(BlockPoolCache, ZeroTransferBatchSelectsClampedDefault) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 64);
   std::array<std::uint32_t, 8> storage{};
-  SharedPoolCache cache(pool, storage, 0);
+  BlockPoolCache cache(pool, storage, 0);
   EXPECT_TRUE(cache.valid());
   EXPECT_EQ(cache.transfer_batch(), storage.size());
 }
 
-TEST(SharedPoolCache, ConcurrentOwnersPreserveEveryBlock) {
+TEST(BlockPoolCache, ConcurrentOwnersPreserveEveryBlock) {
   constexpr int kThreads = 8;
   constexpr int kHold = 80;
   constexpr int kRounds = 500;
   constexpr std::uint32_t kBlocks = kThreads * (kHold + 8);
-  SharedPool pool(system_allocator(), 64, kBlocks);
+  ConcurrentBlockPool pool(system_allocator(), 64, kBlocks);
   std::atomic<bool> corrupt{false};
 
   struct Args {
-    SharedPool *pool;
+    ConcurrentBlockPool *pool;
     int tid;
     std::atomic<bool> *corrupt;
     std::array<std::uint32_t, 32> storage{};
@@ -402,7 +402,7 @@ TEST(SharedPoolCache, ConcurrentOwnersPreserveEveryBlock) {
     auto thread = hyle::platform::Thread::spawn(
         [](void *raw) {
           auto *a = static_cast<Args *>(raw);
-          SharedPoolCache cache(*a->pool, a->storage, 8);
+          BlockPoolCache cache(*a->pool, a->storage, 8);
           const unsigned char mark = static_cast<unsigned char>(0x40 + a->tid);
           std::array<void *, kHold> held{};
           for (int round = 0; round < kRounds; ++round) {
@@ -443,12 +443,12 @@ TEST(SharedPoolCache, ConcurrentOwnersPreserveEveryBlock) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(SharedPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
+TEST(BlockPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
   constexpr std::uint32_t kBlocks = 256;
-  SharedPool pool(system_allocator(), 64, kBlocks);
+  ConcurrentBlockPool pool(system_allocator(), 64, kBlocks);
   pool.testing_force_tag_saturation();
   std::array<std::uint32_t, 32> storage{};
-  SharedPoolCache cache(pool, storage, 8);
+  BlockPoolCache cache(pool, storage, 8);
   std::vector<void *> blocks;
 
   for (std::uint32_t i = 0; i < kBlocks; ++i) {
@@ -475,14 +475,14 @@ TEST(SharedPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
 // Lock-free correctness gate (WSL TSan). N threads each loop alloc -> write a
 // thread-unique marker -> verify it's still ours -> free. If two threads ever
 // hold the same block, the marker check fails. Also tracks that no block leaks.
-TEST(SharedPool, ConcurrentAllocFreeNoOverlap) {
+TEST(ConcurrentBlockPool, ConcurrentAllocFreeNoOverlap) {
   constexpr int kThreads = 8;
   constexpr int kItersPerThread = 100000;
   constexpr std::uint32_t kBlocks = 256;
-  SharedPool pool(system_allocator(), 64, kBlocks);
+  ConcurrentBlockPool pool(system_allocator(), 64, kBlocks);
 
   struct Args {
-    SharedPool* pool;
+    ConcurrentBlockPool* pool;
     int tid;
     std::atomic<bool>* corrupt;
   };
@@ -534,8 +534,8 @@ TEST(SharedPool, ConcurrentAllocFreeNoOverlap) {
 
 // reset() returns every block at once: exhaust the pool, reset (no live blocks),
 // then the full capacity must be allocatable again.
-TEST(SharedPool, ResetReturnsAllBlocks) {
-  SharedPool pool(system_allocator(), 64, 16);
+TEST(ConcurrentBlockPool, ResetReturnsAllBlocks) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 16);
   std::vector<void*> first;
   for (void* p = pool.allocate(); p != nullptr; p = pool.allocate())
     first.push_back(p);
@@ -552,11 +552,11 @@ TEST(SharedPool, ResetReturnsAllBlocks) {
 // A block allocated on one thread and freed on another migrates to the freeing
 // thread's shared home list and remains reclaimable. This is the producer/consumer
 // and work-stealing handoff shape used by mature pool tests.
-TEST(SharedPool, CrossThreadFreeMigratesAndReclaims) {
-  SharedPool pool(system_allocator(), 128, 64);
+TEST(ConcurrentBlockPool, CrossThreadFreeMigratesAndReclaims) {
+  ConcurrentBlockPool pool(system_allocator(), 128, 64);
   constexpr int kN = 64;
   std::vector<void*> ptrs(kN, nullptr);
-  struct Ctx { SharedPool* pool; std::vector<void*>* ptrs; };
+  struct Ctx { ConcurrentBlockPool* pool; std::vector<void*>* ptrs; };
   Ctx c{&pool, &ptrs};
   // Thread A allocates all blocks.
   auto alloc_t = hyle::platform::Thread::spawn(
@@ -584,13 +584,13 @@ TEST(SharedPool, CrossThreadFreeMigratesAndReclaims) {
 
 // Hard capacity: blocks freed by another still-live thread are immediately visible;
 // no publish/join barrier is needed and no false exhaustion is allowed.
-TEST(SharedPool, RemoteFreeImmediatelyVisibleWhileThreadLives) {
+TEST(ConcurrentBlockPool, RemoteFreeImmediatelyVisibleWhileThreadLives) {
   constexpr std::uint32_t kN = 32;
-  SharedPool pool(system_allocator(), 64, kN);
+  ConcurrentBlockPool pool(system_allocator(), 64, kN);
   std::vector<void*> ptrs(kN, nullptr);
   std::atomic<int> phase{0};
   struct Ctx {
-    SharedPool* pool;
+    ConcurrentBlockPool* pool;
     std::vector<void*>* ptrs;
     std::atomic<int>* phase;
   } c{&pool, &ptrs, &phase};
@@ -625,8 +625,8 @@ TEST(SharedPool, RemoteFreeImmediatelyVisibleWhileThreadLives) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(SharedPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
-  SharedPool pool(system_allocator(), 64, 2);  // exactly two one-block shards
+TEST(ConcurrentBlockPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 2);  // exactly two one-block shards
   void* held0 = pool.testing_pop_from_shard(0);
   ASSERT_NE(held0, nullptr);  // shard 0 empty, shard 1 still free
 
@@ -646,7 +646,7 @@ TEST(SharedPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
       &scan);
 
   struct Worker {
-    SharedPool* pool;
+    ConcurrentBlockPool* pool;
     void* result = nullptr;
   } worker{&pool};
   auto thread = hyle::platform::Thread::spawn(
@@ -675,9 +675,9 @@ TEST(SharedPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
   pool.deallocate(held1);
 }
 
-TEST(SharedPool, SaturatedTagFallbackPreservesCapacity) {
+TEST(ConcurrentBlockPool, SaturatedTagFallbackPreservesCapacity) {
   constexpr std::uint32_t kN = 64;
-  SharedPool pool(system_allocator(), 64, kN);
+  ConcurrentBlockPool pool(system_allocator(), 64, kN);
   pool.testing_force_tag_saturation();
   std::vector<void*> blocks;
   for (std::uint32_t i = 0; i < kN; ++i) {
@@ -696,14 +696,14 @@ TEST(SharedPool, SaturatedTagFallbackPreservesCapacity) {
   for (void* p : blocks) pool.deallocate(p);
 }
 
-TEST(SharedPool, SaturatedTagFallbackIsConcurrentSafe) {
+TEST(ConcurrentBlockPool, SaturatedTagFallbackIsConcurrentSafe) {
   constexpr int kThreads = 8;
   constexpr int kIters = 20000;
-  SharedPool pool(system_allocator(), 64, 256);
+  ConcurrentBlockPool pool(system_allocator(), 64, 256);
   pool.testing_force_tag_saturation();
   std::atomic<bool> corrupt{false};
   struct Args {
-    SharedPool* pool;
+    ConcurrentBlockPool* pool;
     int tid;
     std::atomic<bool>* corrupt;
   };
@@ -765,22 +765,22 @@ void* box_realloc(void* s, void* p, std::size_t o, std::size_t n,
 }
 }  // namespace
 
-TEST(SharedPool, LargeSlabHonorsInjectedBacking) {
+TEST(ConcurrentBlockPool, LargeSlabHonorsInjectedBacking) {
   constexpr std::size_t kBlockSize = 4096;
   constexpr std::uint32_t kBlocks = 1024;
   constexpr std::size_t kSlabBytes = kBlockSize * kBlocks;
   BackingBox box;
-  hyle::mem::Allocator backing(&box_alloc, &box_free, &box_realloc, &box);
+  hyle::mem::AllocatorRef backing(&box_alloc, &box_free, &box_realloc, &box);
   {
-    SharedPool pool(backing, kBlockSize, kBlocks);
+    ConcurrentBlockPool pool(backing, kBlockSize, kBlocks);
     ASSERT_TRUE(pool.valid());
     EXPECT_GE(box.largest_request.load(std::memory_order_relaxed), kSlabBytes);
   }
   EXPECT_EQ(box.live_allocs.load(std::memory_order_relaxed), 0);
 }
 
-TEST(SharedPool, AllocatorReallocateObeysCompleteContract) {
-  SharedPool pool(system_allocator(), 128, 1, 64);
+TEST(ConcurrentBlockPool, AllocatorReallocateObeysCompleteContract) {
+  ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   auto alloc = pool.as_allocator();
 
   EXPECT_EQ(alloc.allocate(129, 64), nullptr);
@@ -807,7 +807,7 @@ TEST(SharedPool, AllocatorReallocateObeysCompleteContract) {
 TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(
       {
-        SharedPool pool(system_allocator(), 64, 1);
+        ConcurrentBlockPool pool(system_allocator(), 64, 1);
         void* p = pool.allocate();
         pool.deallocate(p);
         pool.deallocate(p);
@@ -818,7 +818,7 @@ TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
 TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
   EXPECT_DEATH(
       {
-        SharedPool pool(system_allocator(), 64, 1);
+        ConcurrentBlockPool pool(system_allocator(), 64, 1);
         int foreign = 0;
         pool.deallocate(&foreign);
       },
@@ -828,15 +828,15 @@ TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
 TEST(SharedPoolDiagnosticsDeathTest, OutstandingBlockAtDestructionTraps) {
   EXPECT_DEATH(
       {
-        SharedPool pool(system_allocator(), 64, 1);
+        ConcurrentBlockPool pool(system_allocator(), 64, 1);
         (void)pool.allocate();
       },
       ".*");
 }
 #endif
 
-TEST(SharedPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
-  SharedPool pool(system_allocator(), 128, 1, 64);
+TEST(ConcurrentBlockPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
+  ConcurrentBlockPool pool(system_allocator(), 128, 1, 64);
   hyle::mem::QuotaAllocator quota(pool.as_allocator(), 128);
   auto alloc = quota.get();
 
@@ -860,12 +860,12 @@ TEST(SharedPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
   EXPECT_EQ(quota.used(), 0u);
 }
 
-// ---- PooledRegion (bump region over one pool block) -------------------------
-using hyle::mem::PooledRegion;
+// ---- PooledArena (bump region over one pool block) -------------------------
+using hyle::mem::PooledArena;
 
-TEST(PooledRegion, BumpAlignmentAndFull) {
-  SharedPool pool(system_allocator(), 256, 4);  // 256-byte blocks
-  PooledRegion a(&pool);
+TEST(PooledArena, BumpAlignmentAndFull) {
+  ConcurrentBlockPool pool(system_allocator(), 256, 4);  // 256-byte blocks
+  PooledArena a(&pool);
   EXPECT_EQ(a.block_size(), 256u);
   void* p = a.allocate(16, 16);
   void* q = a.allocate(16, 16);
@@ -876,26 +876,26 @@ TEST(PooledRegion, BumpAlignmentAndFull) {
   EXPECT_EQ(a.allocate(1000, 1), nullptr);  // won't fit the 256 block
 }
 
-TEST(PooledRegion, UnrepresentableAlignmentReturnsNull) {
-  SharedPool pool(system_allocator(), 256, 1);
-  PooledRegion region(&pool);
+TEST(PooledArena, UnrepresentableAlignmentReturnsNull) {
+  ConcurrentBlockPool pool(system_allocator(), 256, 1);
+  PooledArena region(&pool);
   constexpr std::size_t kHugeAlignment =
       std::size_t{1} << (sizeof(std::size_t) * 8 - 1);
   EXPECT_EQ(region.allocate(1, kHugeAlignment), nullptr);
   EXPECT_EQ(region.used(), 0u);
 }
 
-TEST(PooledRegion, ZeroSizeReturnsNullWithoutAdvancing) {
-  SharedPool pool(system_allocator(), 256, 1);
-  PooledRegion region(&pool);
+TEST(PooledArena, ZeroSizeReturnsNullWithoutAdvancing) {
+  ConcurrentBlockPool pool(system_allocator(), 256, 1);
+  PooledArena region(&pool);
   ASSERT_TRUE(region.valid());
   EXPECT_EQ(region.allocate(0), nullptr);
   EXPECT_EQ(region.used(), 0u);
 }
 
-TEST(PooledRegion, ClearReuses) {
-  SharedPool pool(system_allocator(), 128, 2);
-  PooledRegion a(&pool);
+TEST(PooledArena, ClearReuses) {
+  ConcurrentBlockPool pool(system_allocator(), 128, 2);
+  PooledArena a(&pool);
   void* p = a.allocate(64);
   ASSERT_NE(p, nullptr);
   a.clear();
@@ -903,16 +903,16 @@ TEST(PooledRegion, ClearReuses) {
   EXPECT_EQ(p, q);  // same region after reset
 }
 
-TEST(PooledRegion, ReturnsBlockToPoolOnDestruction) {
-  SharedPool pool(system_allocator(), 64, 1);  // single block
-  { PooledRegion a(&pool); EXPECT_NE(a.allocate(8), nullptr); }
-  // block returned -> a second PooledRegion can take it
-  { PooledRegion b(&pool); EXPECT_NE(b.allocate(8), nullptr); }
+TEST(PooledArena, ReturnsBlockToPoolOnDestruction) {
+  ConcurrentBlockPool pool(system_allocator(), 64, 1);  // single block
+  { PooledArena a(&pool); EXPECT_NE(a.allocate(8), nullptr); }
+  // block returned -> a second PooledArena can take it
+  { PooledArena b(&pool); EXPECT_NE(b.allocate(8), nullptr); }
 }
 
-TEST(PooledRegion, AsAllocatorBumpsDeallocNoop) {
-  SharedPool pool(system_allocator(), 256, 1);
-  PooledRegion a(&pool);
+TEST(PooledArena, AsAllocatorBumpsDeallocNoop) {
+  ConcurrentBlockPool pool(system_allocator(), 256, 1);
+  PooledArena a(&pool);
   auto alloc = a.as_allocator();
   void* p = alloc.allocate(32, 16);
   ASSERT_NE(p, nullptr);
@@ -922,18 +922,18 @@ TEST(PooledRegion, AsAllocatorBumpsDeallocNoop) {
   EXPECT_NE(p, q);  // deallocate did NOT free -> q is a fresh bump
 }
 
-// PooledRegion is single-threaded by design; concurrency = one region PER
+// PooledArena is single-threaded by design; concurrency = one region PER
 // THREAD. Each thread owns a distinct borrowed pool block and bump cursor.
-TEST(PooledRegion, PerThreadRegionsNoOverlap) {
+TEST(PooledArena, PerThreadRegionsNoOverlap) {
   constexpr int kThreads = 8;
   constexpr int kPerThread = 200;
   constexpr std::size_t kBytes = 16;
   // One pool block per thread, each big enough for kPerThread bumps.
-  SharedPool pool(system_allocator(), kPerThread * 64, kThreads);
+  ConcurrentBlockPool pool(system_allocator(), kPerThread * 64, kThreads);
   std::atomic<int> ready{0};
   std::atomic<bool> release{false};
   struct Args {
-    SharedPool* pool;
+    ConcurrentBlockPool* pool;
     std::atomic<int>* ready;
     std::atomic<bool>* release;
     std::vector<void*> got;
@@ -948,7 +948,7 @@ TEST(PooledRegion, PerThreadRegionsNoOverlap) {
     auto r = hyle::platform::Thread::spawn(
         [](void* p) {
           auto* x = static_cast<Args*>(p);
-          PooledRegion a(x->pool);
+          PooledArena a(x->pool);
           for (int i = 0; i < kPerThread; ++i) {
             void* q = a.allocate(kBytes, 16);
             if (q) x->got.push_back(q);
@@ -990,14 +990,14 @@ TEST(PooledRegion, PerThreadRegionsNoOverlap) {
   for (auto& th : ts) th.join();
 }
 
-// PooledRegion::allocate rejects alignment 0 or a non-power-of-2
+// PooledArena::allocate rejects alignment 0 or a non-power-of-2
 // -> wild pointer / silent misalignment). #1 added is_pow2(), which fail-fast traps
 // alignment 0.
 TEST(PooledRegionDeathTest, ZeroAlignmentTraps) {
   EXPECT_DEATH(
       {
-        SharedPool pool(system_allocator(), 4096, 2);
-        PooledRegion a(&pool);
+        ConcurrentBlockPool pool(system_allocator(), 4096, 2);
+        PooledArena a(&pool);
         (void)a.allocate(16, 0);
       },
       ".*");

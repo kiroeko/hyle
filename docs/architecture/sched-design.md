@@ -159,7 +159,7 @@ timed waiter 以 intrusive 双链 O(1) 摘除。
 copy 使用 RAII monitor guard，失败不锁死 channel 且不推进版本/cursor。Mutation callback 要求
 `noexcept`，否则“值已部分修改但是否发布”没有可维护的语义。
 
-## Allocator、Error 与依赖方向
+## AllocatorRef、Error 与依赖方向
 
 Sched 的 runtime metadata、worker-stack task cell、task driver、join state、blocking job 和 pooled stack
 都走显式 Mem allocator；

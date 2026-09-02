@@ -17,16 +17,16 @@
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/platform/thread.h"
 
-using hyle::mem::Allocator;
-using hyle::mem::FixedPool;
-using hyle::mem::FixedRegion;
-using hyle::mem::GrowablePool;
+using hyle::mem::AllocatorRef;
+using hyle::mem::FixedHeap;
+using hyle::mem::FixedArena;
+using hyle::mem::GrowableObjectPool;
 using hyle::mem::ObjectPool;
 using hyle::mem::ObjectPoolCache;
 using hyle::mem::PreservingObjectPool;
-using hyle::mem::Region;
-using hyle::mem::RegionOptions;
-using hyle::mem::StackAllocator;
+using hyle::mem::Arena;
+using hyle::mem::ArenaOptions;
+using hyle::mem::StackArena;
 using hyle::mem::system_allocator;
 
 // ---- ObjectPool: ctor/dtor balance (the bug #3 proof) -----------------------
@@ -98,25 +98,25 @@ void fail_free(void *opaque, void *ptr, std::size_t size,
 
 void *fail_realloc(void *, void *, std::size_t, std::size_t,
                    std::size_t) noexcept {
-  return nullptr; // Region never reallocates backing blocks.
+  return nullptr; // Arena never reallocates backing blocks.
 }
 } // namespace
 
 TEST(ObjectPool, ConstructionOomIsObservable) {
-  hyle::mem::Allocator oom(&oom_alloc, &oom_free, &oom_realloc, nullptr);
+  hyle::mem::AllocatorRef oom(&oom_alloc, &oom_free, &oom_realloc, nullptr);
   ObjectPool<int> hard(oom, 8);
   EXPECT_FALSE(hard.valid());
   EXPECT_EQ(hard.create(1), nullptr);
   EXPECT_FALSE(hard.try_loan(1));
 }
 
-TEST(SharedPool, EveryConstructorAllocationFailureIsLeakFree) {
+TEST(ConcurrentBlockPool, EveryConstructorAllocationFailureIsLeakFree) {
   for (std::size_t fail_at = 0; fail_at != 3; ++fail_at) {
     FailAllocatorState state;
     state.fail_at = fail_at;
-    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, &state);
     {
-      hyle::mem::SharedPool pool(failing, 64, 16, 64);
+      hyle::mem::ConcurrentBlockPool pool(failing, 64, 16, 64);
       EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
       EXPECT_EQ(pool.allocate(), nullptr);
     }
@@ -124,25 +124,25 @@ TEST(SharedPool, EveryConstructorAllocationFailureIsLeakFree) {
   }
 }
 
-TEST(StackAllocator, ConstructorAllocationFailureIsLeakFree) {
+TEST(StackArena, ConstructorAllocationFailureIsLeakFree) {
   FailAllocatorState state;
   state.fail_at = 0;
-  Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+  AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, &state);
   {
-    StackAllocator stack(failing, 4096);
+    StackArena stack(failing, 4096);
     EXPECT_FALSE(stack.valid());
     EXPECT_EQ(stack.allocate(32), nullptr);
   }
   EXPECT_EQ(state.outstanding, 0u);
 }
 
-TEST(GrowablePool, EveryGrowthAllocationFailureIsRecoverableAndLeakFree) {
+TEST(GrowableObjectPool, EveryGrowthAllocationFailureIsRecoverableAndLeakFree) {
   for (std::size_t fail_at = 0; fail_at != 5; ++fail_at) {
     FailAllocatorState state;
     state.fail_at = fail_at;
-    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, &state);
     {
-      GrowablePool<int> pool(failing, 1);
+      GrowableObjectPool<int> pool(failing, 1);
       std::vector<int *> live;
       bool observed_failure = false;
       for (int value = 0; value != 64; ++value) {
@@ -170,7 +170,7 @@ TEST(PreservingObjectPool, EveryBackingAllocationFailureIsLeakFree) {
   for (std::size_t fail_at = 0; fail_at != 4; ++fail_at) {
     FailAllocatorState state;
     state.fail_at = fail_at;
-    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, &state);
     {
       PreservingObjectPool<int> pool(failing, 4, 7);
       EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
@@ -376,10 +376,10 @@ TEST(PreservingObjectPoolDiagnosticsDeathTest, DuplicateReturnTraps) {
 }
 #endif
 
-// ---- StackAllocator ---------------------------------------------------------
+// ---- StackArena ---------------------------------------------------------
 
-TEST(StackAllocator, BumpOrderAndAlignment) {
-  StackAllocator sa(system_allocator(), 4096);
+TEST(StackArena, BumpOrderAndAlignment) {
+  StackArena sa(system_allocator(), 4096);
   void *a = sa.allocate(16, 16);
   void *b = sa.allocate(16, 16);
   ASSERT_NE(a, nullptr);
@@ -390,8 +390,8 @@ TEST(StackAllocator, BumpOrderAndAlignment) {
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(c) % 64, 0u); // honors alignment
 }
 
-TEST(StackAllocator, MarkRewindReleasesLifo) {
-  StackAllocator sa(system_allocator(), 1024);
+TEST(StackArena, MarkRewindReleasesLifo) {
+  StackArena sa(system_allocator(), 1024);
   sa.allocate(100);
   auto m = sa.mark();
   void *x = sa.allocate(200);
@@ -403,8 +403,8 @@ TEST(StackAllocator, MarkRewindReleasesLifo) {
   EXPECT_EQ(x, y);
 }
 
-TEST(StackAllocator, ResetClears) {
-  StackAllocator sa(system_allocator(), 256);
+TEST(StackArena, ResetClears) {
+  StackArena sa(system_allocator(), 256);
   sa.allocate(100);
   EXPECT_GT(sa.used(), 0u);
   sa.reset();
@@ -412,8 +412,8 @@ TEST(StackAllocator, ResetClears) {
   EXPECT_EQ(sa.capacity(), 256u);
 }
 
-TEST(StackAllocator, OverflowReturnsNull) {
-  StackAllocator sa(system_allocator(), 128);
+TEST(StackArena, OverflowReturnsNull) {
+  StackArena sa(system_allocator(), 128);
   // alignment 1 isolates pure size overflow (no alignment padding eating
   // space).
   EXPECT_NE(sa.allocate(100, 1), nullptr);
@@ -422,16 +422,16 @@ TEST(StackAllocator, OverflowReturnsNull) {
   EXPECT_NE(sa.allocate(28, 1), nullptr); // exact remainder still usable
 }
 
-TEST(StackAllocator, UnrepresentableAlignmentReturnsNull) {
-  StackAllocator sa(system_allocator(), 128);
+TEST(StackArena, UnrepresentableAlignmentReturnsNull) {
+  StackArena sa(system_allocator(), 128);
   constexpr std::size_t kHugeAlignment = std::size_t{1}
                                          << (sizeof(std::size_t) * 8 - 1);
   EXPECT_EQ(sa.allocate(1, kHugeAlignment), nullptr);
   EXPECT_EQ(sa.used(), 0u);
 }
 
-TEST(StackAllocator, RemainingTracksCursor) {
-  StackAllocator sa(system_allocator(), 256);
+TEST(StackArena, RemainingTracksCursor) {
+  StackArena sa(system_allocator(), 256);
   EXPECT_EQ(sa.remaining(), 256u);
   (void)sa.allocate(64, 1);
   EXPECT_EQ(sa.remaining(), 192u);
@@ -439,9 +439,9 @@ TEST(StackAllocator, RemainingTracksCursor) {
   EXPECT_EQ(sa.remaining(), 256u);
 }
 
-TEST(StackAllocator, AsAllocatorInjectsAndReallocCopies) {
-  StackAllocator sa(system_allocator(), 4096);
-  hyle::mem::Allocator a = sa.as_allocator();
+TEST(StackArena, AsAllocatorInjectsAndReallocCopies) {
+  StackArena sa(system_allocator(), 4096);
+  hyle::mem::AllocatorRef a = sa.as_allocator();
   ASSERT_TRUE(a.valid());
   auto *p =
       static_cast<unsigned char *>(a.allocate(32, 8)); // bump from the slab
@@ -459,21 +459,21 @@ TEST(StackAllocator, AsAllocatorInjectsAndReallocCopies) {
 
 // alignment 0 slipped the old `(a & (a-1)) == 0` guard (0 & SIZE_MAX == 0
 // passed) and yielded a wild pointer; #1 switched to is_pow2(), which fail-fast
-// traps it. Locks in #1 for StackAllocator::allocate.
+// traps it. Locks in #1 for StackArena::allocate.
 TEST(StackAllocatorDeathTest, ZeroAlignmentTraps) {
   EXPECT_DEATH(
       {
-        StackAllocator sa(system_allocator(), 4096);
+        StackArena sa(system_allocator(), 4096);
         (void)sa.allocate(16, 0);
       },
       ".*");
 }
 
-// ---- Region family ---------------------------------------------------------
+// ---- Arena family ---------------------------------------------------------
 
-TEST(FixedRegion, ExternalStorageHasNoFallbackAndResets) {
+TEST(FixedArena, ExternalStorageHasNoFallbackAndResets) {
   alignas(64) std::byte storage[256];
-  FixedRegion region(storage, sizeof(storage));
+  FixedArena region(storage, sizeof(storage));
   ASSERT_TRUE(region.valid());
   void *a = region.allocate(33, 32);
   ASSERT_NE(a, nullptr);
@@ -486,19 +486,19 @@ TEST(FixedRegion, ExternalStorageHasNoFallbackAndResets) {
   EXPECT_EQ(region.allocate(33, 32), a);
 }
 
-TEST(FixedRegion, RejectsUnrepresentableExternalAddressRange) {
+TEST(FixedArena, RejectsUnrepresentableExternalAddressRange) {
   std::byte storage{};
-  FixedRegion region(&storage, std::numeric_limits<std::size_t>::max());
+  FixedArena region(&storage, std::numeric_limits<std::size_t>::max());
   EXPECT_FALSE(region.valid());
 }
 
-TEST(Region, GrowsHonorsLimitAndBulkReuses) {
-  RegionOptions options;
+TEST(Arena, GrowsHonorsLimitAndBulkReuses) {
+  ArenaOptions options;
   options.initial_block_size = 128;
   options.max_block_size = 256;
   options.large_allocation_threshold = 192;
   options.size_limit = 2048;
-  Region region(system_allocator(), options);
+  Arena region(system_allocator(), options);
   void *a = region.allocate(80, 64);
   void *b = region.allocate(100, 32);
   ASSERT_NE(a, nullptr);
@@ -515,15 +515,15 @@ TEST(Region, GrowsHonorsLimitAndBulkReuses) {
   EXPECT_EQ(region.reserved(), 0u);
 }
 
-TEST(Region, OrdinaryBlockSizeTargetsTotalBackingBytes) {
+TEST(Arena, OrdinaryBlockSizeTargetsTotalBackingBytes) {
   FailAllocatorState state;
   {
-    Allocator counting(&fail_alloc, &fail_free, &fail_realloc, &state);
-    RegionOptions options;
+    AllocatorRef counting(&fail_alloc, &fail_free, &fail_realloc, &state);
+    ArenaOptions options;
     options.initial_block_size = 4096;
     options.max_block_size = 4096;
     options.large_allocation_threshold = 8192;
-    Region region(counting, options);
+    Arena region(counting, options);
 
     void *p = region.allocate(64, 512);
     ASSERT_NE(p, nullptr);
@@ -534,16 +534,16 @@ TEST(Region, OrdinaryBlockSizeTargetsTotalBackingBytes) {
   EXPECT_EQ(state.outstanding, 0u);
 }
 
-TEST(Region, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
+TEST(Arena, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
   FailAllocatorState state;
   {
-    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+    hyle::mem::AllocatorRef counting(&fail_alloc, &fail_free, &fail_realloc,
                                   &state);
-    RegionOptions options;
+    ArenaOptions options;
     options.initial_block_size = 128;
     options.max_block_size = 256;
     options.large_allocation_threshold = 4096;
-    Region region(counting, options);
+    Arena region(counting, options);
 
     constexpr int kAllocations = 12;
     for (int i = 0; i < kAllocations; ++i)
@@ -559,8 +559,8 @@ TEST(Region, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
   EXPECT_EQ(state.outstanding, 0u);
 }
 
-TEST(Region, PeakIsExactDuringAndAcrossEpochsWithoutHotPathPeakUpdates) {
-  Region region(system_allocator());
+TEST(Arena, PeakIsExactDuringAndAcrossEpochsWithoutHotPathPeakUpdates) {
+  Arena region(system_allocator());
   ASSERT_NE(region.allocate(80, 16), nullptr);
   EXPECT_EQ(region.bytes_used(), 80u);
   EXPECT_EQ(region.peak_used(), 80u);
@@ -578,19 +578,19 @@ TEST(Region, PeakIsExactDuringAndAcrossEpochsWithoutHotPathPeakUpdates) {
   EXPECT_EQ(region.peak_used(), 256u);
 }
 
-TEST(Region, LongLivedReuseExaminesEachRetainedBlockAtMostOncePerEpoch) {
+TEST(Arena, LongLivedReuseExaminesEachRetainedBlockAtMostOncePerEpoch) {
   FailAllocatorState state;
   {
-    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+    hyle::mem::AllocatorRef counting(&fail_alloc, &fail_free, &fail_realloc,
                                   &state);
-    RegionOptions options;
+    ArenaOptions options;
     options.initial_block_size = 128;
     options.max_block_size = 128;
     options.large_allocation_threshold = 4096;
-    Region region(counting, options);
+    Arena region(counting, options);
 
     // One 64-byte request fits in each 128-byte total backing target after the
-    // Region header/alignment allowance. A restart-from-head search would
+    // Arena header/alignment allowance. A restart-from-head search would
     // inspect roughly N*(N-1)/2 blocks on every reuse round; the monotonic
     // retained cursor must inspect exactly one block per transition instead.
     constexpr std::size_t kRetainedBlocks = 512;
@@ -614,23 +614,23 @@ TEST(Region, LongLivedReuseExaminesEachRetainedBlockAtMostOncePerEpoch) {
   EXPECT_EQ(state.outstanding, 0u);
 }
 
-TEST(Region, MoveTransfersCachedCursorWithoutOverlapOrBackingGrowth) {
+TEST(Arena, MoveTransfersCachedCursorWithoutOverlapOrBackingGrowth) {
   FailAllocatorState state;
   {
-    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+    hyle::mem::AllocatorRef counting(&fail_alloc, &fail_free, &fail_realloc,
                                   &state);
-    RegionOptions options;
+    ArenaOptions options;
     options.initial_block_size = 512;
     options.max_block_size = 512;
     options.large_allocation_threshold = 4096;
-    Region source(counting, options);
+    Arena source(counting, options);
 
     auto *first = static_cast<std::byte *>(source.allocate(96, 16));
     ASSERT_NE(first, nullptr);
     std::fill_n(first, 96, std::byte{0x5a});
     ASSERT_EQ(state.calls, 1u);
 
-    Region moved(std::move(source));
+    Arena moved(std::move(source));
     auto *second = static_cast<std::byte *>(moved.allocate(96, 16));
     ASSERT_NE(second, nullptr);
     EXPECT_NE(second, first);
@@ -641,29 +641,29 @@ TEST(Region, MoveTransfersCachedCursorWithoutOverlapOrBackingGrowth) {
   EXPECT_EQ(state.outstanding, 0u);
 }
 
-TEST(Region, HardReservedByteLimitReturnsNull) {
-  RegionOptions options;
+TEST(Arena, HardReservedByteLimitReturnsNull) {
+  ArenaOptions options;
   options.initial_block_size = 128;
   options.max_block_size = 128;
   options.large_allocation_threshold = 64;
   options.size_limit = 64; // smaller than payload + block header
-  Region region(system_allocator(), options);
+  Arena region(system_allocator(), options);
   EXPECT_EQ(region.allocate(64), nullptr);
   EXPECT_EQ(region.reserved(), 0u);
 }
 
-TEST(Region, EveryBackingAllocationFailureIsRecoverableAndLeakFree) {
+TEST(Arena, EveryBackingAllocationFailureIsRecoverableAndLeakFree) {
   for (std::size_t fail_at = 0; fail_at != 5; ++fail_at) {
     FailAllocatorState state;
     state.fail_at = fail_at;
-    hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc,
+    hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc,
                                  &state);
     {
-      RegionOptions options;
+      ArenaOptions options;
       options.initial_block_size = 128;
       options.max_block_size = 128;
       options.large_allocation_threshold = 96;
-      Region region(failing, options);
+      Arena region(failing, options);
       for (int i = 0; i < 5; ++i) {
         void *p = region.allocate(96, 64); // one dedicated block per request
         if (static_cast<std::size_t>(i) == fail_at)
@@ -676,18 +676,18 @@ TEST(Region, EveryBackingAllocationFailureIsRecoverableAndLeakFree) {
   }
 }
 
-TEST(PooledRegion, ExhaustionLeavesSecondRegionInvalid) {
-  hyle::mem::SharedPool pool(system_allocator(), 256, 1, 64);
-  hyle::mem::PooledRegion region(&pool);
+TEST(PooledArena, ExhaustionLeavesSecondRegionInvalid) {
+  hyle::mem::ConcurrentBlockPool pool(system_allocator(), 256, 1, 64);
+  hyle::mem::PooledArena region(&pool);
   ASSERT_TRUE(region.valid());
   EXPECT_NE(region.allocate(64, 64), nullptr);
-  hyle::mem::PooledRegion exhausted(&pool);
+  hyle::mem::PooledArena exhausted(&pool);
   EXPECT_FALSE(exhausted.valid());
 }
 
-TEST(PooledRegion, ClearUsesRegionFamilySpellingAndReusesBlock) {
-  hyle::mem::SharedPool pool(system_allocator(), 256, 1, 64);
-  hyle::mem::PooledRegion region(&pool);
+TEST(PooledArena, ClearUsesRegionFamilySpellingAndReusesBlock) {
+  hyle::mem::ConcurrentBlockPool pool(system_allocator(), 256, 1, 64);
+  hyle::mem::PooledArena region(&pool);
   void* first = region.allocate(64, 16);
   ASSERT_NE(first, nullptr);
   region.clear();
@@ -697,9 +697,9 @@ TEST(PooledRegion, ClearUsesRegionFamilySpellingAndReusesBlock) {
 
 // ---- external variable-size pool ------------------------------------------
 
-TEST(FixedPool, AllocatesAlignedReusesAndCoalescesExternalStorage) {
+TEST(FixedHeap, AllocatesAlignedReusesAndCoalescesExternalStorage) {
   alignas(64) std::byte storage[2048];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   ASSERT_TRUE(pool.valid());
   void *a = pool.allocate(100, 64);
   void *b = pool.allocate(200, 32);
@@ -714,9 +714,9 @@ TEST(FixedPool, AllocatesAlignedReusesAndCoalescesExternalStorage) {
   EXPECT_NE(pool.allocate(1200, 64), nullptr); // adjacent free blocks coalesced
 }
 
-TEST(FixedPool, ReallocatePreservesBytesAndAllocatorAdapterWorks) {
+TEST(FixedHeap, ReallocatePreservesBytesAndAllocatorAdapterWorks) {
   alignas(64) std::byte storage[2048];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   auto alloc = pool.as_allocator();
   auto *p = static_cast<unsigned char *>(alloc.allocate(64, 16));
   ASSERT_NE(p, nullptr);
@@ -730,9 +730,9 @@ TEST(FixedPool, ReallocatePreservesBytesAndAllocatorAdapterWorks) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
-TEST(FixedPool, ReallocateGrowsIntoAdjacentFreeBlockInPlace) {
+TEST(FixedHeap, ReallocateGrowsIntoAdjacentFreeBlockInPlace) {
   alignas(64) std::byte storage[4096];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   auto *first = static_cast<unsigned char *>(pool.allocate(256, 16));
   void *adjacent = pool.allocate(512, 16);
   void *barrier = pool.allocate(2400, 16);
@@ -758,9 +758,9 @@ TEST(FixedPool, ReallocateGrowsIntoAdjacentFreeBlockInPlace) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
-TEST(FixedPool, ReallocateShrinkRetainsSpanForConstantTimeRegrow) {
+TEST(FixedHeap, ReallocateShrinkRetainsSpanForConstantTimeRegrow) {
   alignas(64) std::byte storage[2048];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   void *p = pool.allocate(1400, 16);
   ASSERT_NE(p, nullptr);
   ASSERT_EQ(pool.allocate(800, 16), nullptr);
@@ -772,9 +772,9 @@ TEST(FixedPool, ReallocateShrinkRetainsSpanForConstantTimeRegrow) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
-TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
+TEST(FixedHeap, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   alignas(64) std::byte storage[4096];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   void *small = pool.allocate(64, 16);
   void *barrier = pool.allocate(64, 16);
   ASSERT_NE(small, nullptr);
@@ -792,9 +792,9 @@ TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   EXPECT_NE(pool.allocate(3000, 64), nullptr);
 }
 
-TEST(FixedPool, ResetBulkInvalidatesOutstandingAllocations) {
+TEST(FixedHeap, ResetBulkInvalidatesOutstandingAllocations) {
   alignas(64) std::byte storage[4096];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   void *first = pool.allocate(512, 64);
   void *second = pool.allocate(768, 32);
   ASSERT_NE(first, nullptr);
@@ -808,9 +808,9 @@ TEST(FixedPool, ResetBulkInvalidatesOutstandingAllocations) {
   EXPECT_NE(pool.allocate(3000, 64), nullptr);
 }
 
-TEST(FixedPool, SplitRemainderCursorCoalescesAcrossAdjacentReturns) {
+TEST(FixedHeap, SplitRemainderCursorCoalescesAcrossAdjacentReturns) {
   alignas(64) std::byte storage[4096];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   void *first = pool.allocate(256, 16);
   void *second = pool.allocate(64, 16);
   void *third = pool.allocate(64, 16);
@@ -829,15 +829,15 @@ TEST(FixedPool, SplitRemainderCursorCoalescesAcrossAdjacentReturns) {
   EXPECT_NE(pool.allocate(3000, 64), nullptr);
 }
 
-TEST(FixedPool, RejectsUnrepresentableExternalAddressRange) {
+TEST(FixedHeap, RejectsUnrepresentableExternalAddressRange) {
   std::byte storage{};
-  FixedPool pool(&storage, std::numeric_limits<std::size_t>::max());
+  FixedHeap pool(&storage, std::numeric_limits<std::size_t>::max());
   EXPECT_FALSE(pool.valid());
 }
 
-TEST(FixedPool, LargeAlignmentAndOverflowKeepIndexInvariant) {
+TEST(FixedHeap, LargeAlignmentAndOverflowKeepIndexInvariant) {
   alignas(4096) std::byte storage[64 * 1024];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   ASSERT_TRUE(pool.valid());
 
   void *page_aligned = pool.allocate(257, 4096);
@@ -859,9 +859,9 @@ TEST(FixedPool, LargeAlignmentAndOverflowKeepIndexInvariant) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
-TEST(FixedPool, RandomizedMixedSizeModelPreservesLiveAllocations) {
+TEST(FixedHeap, RandomizedMixedSizeModelPreservesLiveAllocations) {
   alignas(64) std::byte storage[64 * 1024];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   struct Live {
     unsigned char *ptr;
     std::size_t size;
@@ -912,9 +912,9 @@ TEST(FixedPool, RandomizedMixedSizeModelPreservesLiveAllocations) {
       << "all adjacent blocks should coalesce after randomized churn";
 }
 
-TEST(FixedPool, RandomizedReallocateModelPreservesDataAndAccounting) {
+TEST(FixedHeap, RandomizedReallocateModelPreservesDataAndAccounting) {
   alignas(64) std::byte storage[64 * 1024];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   struct Live {
     unsigned char *ptr;
     std::size_t size;
@@ -979,9 +979,9 @@ TEST(FixedPool, RandomizedReallocateModelPreservesDataAndAccounting) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(FixedPool, FragmentedLookupExaminesAtMostTwoCandidates) {
+TEST(FixedHeap, FragmentedLookupExaminesAtMostTwoCandidates) {
   alignas(64) std::byte storage[64 * 1024];
-  FixedPool pool(storage, sizeof(storage));
+  FixedHeap pool(storage, sizeof(storage));
   std::vector<void *> holes;
   std::vector<void *> barriers;
   holes.reserve(96);
@@ -1018,7 +1018,7 @@ TEST(FixedPoolDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(
       {
         alignas(64) std::byte storage[2048];
-        FixedPool pool(storage, sizeof(storage));
+        FixedHeap pool(storage, sizeof(storage));
         void *p = pool.allocate(64);
         pool.deallocate(p);
         pool.deallocate(p);
@@ -1030,7 +1030,7 @@ TEST(FixedPoolDeathTest, ForeignPointerTrapsBeforeDereference) {
   EXPECT_DEATH(
       {
         alignas(64) std::byte storage[2048];
-        FixedPool pool(storage, sizeof(storage));
+        FixedHeap pool(storage, sizeof(storage));
         int foreign = 0;
         pool.deallocate(&foreign);
       },

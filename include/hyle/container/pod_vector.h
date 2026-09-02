@@ -36,10 +36,10 @@ namespace detail {
 HYLE_CONTAINER_API void* pod_vector_reallocate_internal(
     void* data, std::size_t old_capacity, std::size_t new_capacity,
     std::size_t item_size, std::size_t alignment,
-    mem::Allocator alloc) noexcept;
+    mem::AllocatorRef alloc) noexcept;
 HYLE_CONTAINER_API void pod_vector_free_internal(
     void* data, std::size_t capacity, std::size_t item_size,
-    std::size_t alignment, mem::Allocator alloc) noexcept;
+    std::size_t alignment, mem::AllocatorRef alloc) noexcept;
 }  // namespace detail
 
 // ---- typed RAII shell -------------------------------------------------------
@@ -62,7 +62,7 @@ class PodVector {
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   PodVector() noexcept : alloc_(mem::system_allocator()) {}
-  explicit PodVector(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+  explicit PodVector(mem::AllocatorRef alloc) noexcept : alloc_(alloc) {}
   explicit PodVector(size_type count)
     requires std::is_default_constructible_v<T>
       : PodVector() {
@@ -71,12 +71,12 @@ class PodVector {
   PodVector(size_type count, const T& value) : PodVector() {
     resize(count, value);
   }
-  PodVector(mem::Allocator alloc, size_type count)
+  PodVector(mem::AllocatorRef alloc, size_type count)
     requires std::is_default_constructible_v<T>
       : PodVector(alloc) {
     resize(count);
   }
-  PodVector(mem::Allocator alloc, size_type count, const T& value)
+  PodVector(mem::AllocatorRef alloc, size_type count, const T& value)
       : PodVector(alloc) {
     resize(count, value);
   }
@@ -91,14 +91,14 @@ class PodVector {
     requires (std::constructible_from<T, std::iter_reference_t<It>> ||
               (std::contiguous_iterator<It> &&
                std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
-  PodVector(mem::Allocator alloc, It first, Sentinel last)
+  PodVector(mem::AllocatorRef alloc, It first, Sentinel last)
       : PodVector(alloc) {
     construct_with_cleanup([&] { append_range(first, last); });
   }
   PodVector(std::initializer_list<T> init) : PodVector() {
     append_range(init.begin(), init.end());
   }
-  PodVector(mem::Allocator alloc, std::initializer_list<T> init)
+  PodVector(mem::AllocatorRef alloc, std::initializer_list<T> init)
       : alloc_(alloc) {
     append_range(init.begin(), init.end());
   }
@@ -135,7 +135,7 @@ class PodVector {
     return *this;
   }
 
-  mem::Allocator allocator() const noexcept { return alloc_; }
+  mem::AllocatorRef allocator() const noexcept { return alloc_; }
 
   size_type size() const noexcept { return size_; }
   size_type capacity() const noexcept { return capacity_; }
@@ -506,7 +506,7 @@ class PodVector {
   }
 
   T* data_ = nullptr;
-  mem::Allocator alloc_;
+  mem::AllocatorRef alloc_;
   size_type size_ = 0;
   size_type capacity_ = 0;
 };

@@ -36,7 +36,7 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -93,9 +93,9 @@ void* counting_realloc(void* state, void* ptr, std::size_t old_size,
 }
 
 // ---- server handler: routes on method+path ---------------------------------
-// A Task<HttpResponse> handler (Allocator first, per the coroutine-frame rule).
+// A Task<HttpResponse> handler (AllocatorRef first, per the coroutine-frame rule).
 // Routing lives here (skeleton gives the loop; business is the layer above).
-Task<HttpResponse> handler(Allocator alloc, void* ctx,
+Task<HttpResponse> handler(AllocatorRef alloc, void* ctx,
                            const HttpRequest& req) noexcept {
   auto* r = static_cast<Result*>(ctx);
   const int call = r->handler_calls.fetch_add(1, std::memory_order_relaxed);
@@ -151,8 +151,8 @@ Task<HttpResponse> handler(Allocator alloc, void* ctx,
                            self->i < 3};
       }
     };
-    // The stream state deliberately lives in the request Region. This catches
-    // clearing the Region before send_response has drained the generator.
+    // The stream state deliberately lives in the request Arena. This catches
+    // clearing the Arena before send_response has drained the generator.
     Gen* g = alloc.construct<Gen>();
     if (g == nullptr) {
       resp.set_status(500);
@@ -169,19 +169,19 @@ Task<HttpResponse> handler(Allocator alloc, void* ctx,
   co_return resp;
 }
 
-Task<int> server_fiber(Allocator, IoContext*, TcpListener* ls,
+Task<int> server_fiber(AllocatorRef, IoContext*, TcpListener* ls,
                        Result* r) {
   // Accept up to 2 connections (one for the keep-alive test client, room for more).
   TcpStream conn = co_await ls->accept(kOwner);
   if (conn.valid()) {
-    Allocator counted(&counting_alloc, &counting_free, &counting_realloc, r);
+    AllocatorRef counted(&counting_alloc, &counting_free, &counting_realloc, r);
     co_await http_serve(counted, std::move(conn), &handler, r);
   }
   r->server_done.store(true, std::memory_order_release);
   co_return 0;
 }
 
-Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
+Task<int> client_fiber(AllocatorRef alloc, IoContext* io, Result* r) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
   std::uint32_t len = 0;
@@ -253,7 +253,7 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 struct SmuggleResult {
   std::atomic<int> reqs_served{0};  // times the handler ran (0 = rejected)
 };
-Task<HttpResponse> smuggle_handler(Allocator, void* ctx,
+Task<HttpResponse> smuggle_handler(AllocatorRef, void* ctx,
                                    const HttpRequest&) noexcept {
   static_cast<SmuggleResult*>(ctx)->reqs_served.fetch_add(1, std::memory_order_relaxed);
   HttpResponse resp;
@@ -261,13 +261,13 @@ Task<HttpResponse> smuggle_handler(Allocator, void* ctx,
   resp.set_body("ok");
   co_return resp;
 }
-Task<int> smuggle_server(Allocator alloc, IoContext*, TcpListener* ls,
+Task<int> smuggle_server(AllocatorRef alloc, IoContext*, TcpListener* ls,
                          SmuggleResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (conn.valid()) co_await http_serve(alloc, std::move(conn), &smuggle_handler, r);
   co_return 0;
 }
-Task<int> smuggle_client(Allocator, IoContext* io, const char* raw,
+Task<int> smuggle_client(AllocatorRef, IoContext* io, const char* raw,
                          std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -306,7 +306,7 @@ int smuggle_served(const char* raw, std::uint16_t port) {
 struct ResponseProbeResult {
   std::atomic<bool> accepted{false};
 };
-Task<int> raw_response_server(Allocator, TcpListener* ls, const char* raw) {
+Task<int> raw_response_server(AllocatorRef, TcpListener* ls, const char* raw) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) co_return 0;
   char request[1024];
@@ -320,7 +320,7 @@ Task<int> raw_response_server(Allocator, TcpListener* ls, const char* raw) {
   }
   co_return 0;
 }
-Task<int> raw_response_client(Allocator alloc, IoContext* io,
+Task<int> raw_response_client(AllocatorRef alloc, IoContext* io,
                               ResponseProbeResult* r, std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -362,7 +362,7 @@ struct CloseBodyResult {
   std::atomic<int> status{0};
   std::atomic<int> body_len{-1};
 };
-Task<int> closebody_server(Allocator, IoContext*, TcpListener* ls, int body_size) {
+Task<int> closebody_server(AllocatorRef, IoContext*, TcpListener* ls, int body_size) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) co_return 0;
   char rbuf[2048];
@@ -386,7 +386,7 @@ Task<int> closebody_server(Allocator, IoContext*, TcpListener* ls, int body_size
   }
   co_return 0;  // fiber returns -> conn closes -> client sees EOF (body terminator)
 }
-Task<int> closebody_client(Allocator alloc, IoContext* io, CloseBodyResult* r,
+Task<int> closebody_client(AllocatorRef alloc, IoContext* io, CloseBodyResult* r,
                            std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -443,7 +443,7 @@ TEST(IoHttp, GetKeepAlive) {
   // same connection -- must succeed and decode correctly.
   EXPECT_EQ(r->stream2_status.load(), 200);
   EXPECT_STREQ(r->stream2_body_got, "tok-A tok-B tok-C");
-  // The high-level server supplies a Region allocator, retains its backing block
+  // The high-level server supplies a Arena allocator, retains its backing block
   // on this keep-alive connection, and clears the logical request allocations.
   // Identical handler frames + first scratch allocation therefore reuse the same
   // addresses on every request instead of growing across the connection.
@@ -458,7 +458,7 @@ TEST(IoHttp, GetKeepAlive) {
     }
   }
   EXPECT_GT(r->backing_4k_frees_seen[4], r->backing_4k_frees_seen[3])
-      << "request Region high-water blocks were retained past the cap";
+      << "request Arena high-water blocks were retained past the cap";
 }
 
 // Request-smuggling defense (RFC 7230 §3.3.3, red-team fix 2026-07-05). The server

@@ -32,7 +32,7 @@ class Heap {
   explicit operator bool() const noexcept { return valid(); }
 
   // A four-word runtime allocator borrow. Invalid Heap -> invalid allocator.
-  HYLE_MEM_API Allocator allocator() noexcept;
+  HYLE_MEM_API AllocatorRef allocator() noexcept;
 
   // Destroy every allocation and replace the backing with a fresh isolated
   // heap. On replacement allocation failure the old heap and its allocations

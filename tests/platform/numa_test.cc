@@ -156,7 +156,7 @@ TEST(Numa, BindHardAndInterleave) {
   // Honest contract: on a single-node box every per-node policy is a genuine
   // no-op. On a real multi-node box, hard bind / interleave only work where the
   // OS exposes an API (Linux); elsewhere they return structured errors rather
-  // than pretending. Region stays usable, so the memset below always works.
+  // than pretending. Arena stays usable, so the memset below always works.
   const bool single_node = numa_node_count() <= 1u;
   auto hard = vm_bind_numa(base, p * 4,
                            static_cast<int>(numa_nodes().front()),

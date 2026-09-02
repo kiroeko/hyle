@@ -92,7 +92,7 @@ void observe_current_cpu(void* raw) {
 
 TEST(Scheduler, RecoverableConstructionReportsQueueOom) {
   hyle::Status status;
-  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  hyle::mem::AllocatorRef failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
   Scheduler sched(2, failing, 64, &status);
   EXPECT_FALSE(status.ok());
   EXPECT_TRUE(status.IsResourceExhausted());
@@ -101,7 +101,7 @@ TEST(Scheduler, RecoverableConstructionReportsQueueOom) {
 
 TEST(Scheduler, RecoverableConstructionRejectsInvalidShape) {
   hyle::Status status;
-  Scheduler no_allocator(2, hyle::mem::Allocator{}, 64, &status);
+  Scheduler no_allocator(2, hyle::mem::AllocatorRef{}, 64, &status);
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(no_allocator.valid());
 

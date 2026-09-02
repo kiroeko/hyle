@@ -34,7 +34,7 @@ using hyle::io::tcp_listen;
 using hyle::io::tcp_read_exact;
 using hyle::io::tcp_socket;
 using hyle::io::tcp_write_all;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -60,7 +60,7 @@ struct EchoResult {
 };
 
 // Server: accept one connection, read a message, echo it back, close.
-Task<int> server_coro(Allocator, IoContext*, TcpListener* ls, EchoResult* r) {
+Task<int> server_coro(AllocatorRef, IoContext*, TcpListener* ls, EchoResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) {
     r->server_done.store(true, std::memory_order_release);
@@ -84,7 +84,7 @@ Task<int> server_coro(Allocator, IoContext*, TcpListener* ls, EchoResult* r) {
 }
 
 // Client: connect, send a message, read the echo, verify.
-Task<int> client_coro(Allocator, IoContext* io, EchoResult* r) {
+Task<int> client_coro(AllocatorRef, IoContext* io, EchoResult* r) {
   TcpStream s = tcp_socket(*io, kOwner);
   if (!s.valid()) {
     r->client_done.store(true, std::memory_order_release);

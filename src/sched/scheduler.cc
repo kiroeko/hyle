@@ -67,12 +67,12 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
 }
 
 struct DetachedDriver {
-  mem::Allocator alloc;
+  mem::AllocatorRef alloc;
   Scheduler::DetachedFn fn;
   void* ctx;
   Fiber fiber;
 
-  DetachedDriver(mem::Allocator a, Scheduler::DetachedFn task, void* context,
+  DetachedDriver(mem::AllocatorRef a, Scheduler::DetachedFn task, void* context,
                  mem::FiberStack stack, mem::FiberStackPool* pool) noexcept
       : alloc(a),
         fn(task),
@@ -88,7 +88,7 @@ struct DetachedDriver {
 
   static void destroy(void* p) noexcept {
     auto* self = static_cast<DetachedDriver*>(p);
-    const mem::Allocator alloc = self->alloc;
+    const mem::AllocatorRef alloc = self->alloc;
     self->~DetachedDriver();
     alloc.deallocate(self, sizeof(DetachedDriver), alignof(DetachedDriver));
   }
@@ -179,7 +179,7 @@ constexpr int kInlineBatch = 8;
 
 struct Scheduler::Impl {
   struct Worker {
-    container::WsFifoQueue<Fiber*, mem::Allocator> local;
+    container::WsFifoQueue<Fiber*, mem::AllocatorRef> local;
     platform::Parker parker;  // non-movable -> Worker has a stable allocation
     // Per-worker timing queue (sched-04b). Owned and touched ONLY by this worker
     // thread on its park cold path -> no lock needed. Sleeping fibers arm here;
@@ -196,7 +196,7 @@ struct Scheduler::Impl {
     // separate from `local` (which IS stealable) precisely so stealing stays
     // untouched (no change to the anti-herd Dekker/CAS math). Checked before
     // `local` in find_task so a woken connection fiber resumes promptly.
-    container::BoundedQueue<Fiber*, mem::Allocator> pinned;
+    container::BoundedQueue<Fiber*, mem::AllocatorRef> pinned;
     ReadyOverflow pinned_overflow;
     std::uint64_t rng;
     unsigned idx;             // own worker index: shard hint + pop-cursor seed
@@ -224,7 +224,7 @@ struct Scheduler::Impl {
     // invalidate the worker-only cursors above it.
     alignas(core::kMaxDestructiveInterferenceSize)
         std::atomic<std::uint64_t> inline_outstanding{0};
-    Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed,
+    Worker(mem::AllocatorRef a, std::size_t cap, std::uint64_t seed,
            unsigned i) noexcept
         : local(a, cap),
           timers(time::monotonic_ns()),
@@ -249,16 +249,16 @@ struct Scheduler::Impl {
   // FIFO -- fine here: a work-stealing scheduler has no global order, it only needs
   // no-starvation + rough fairness. workers pop with their own round-robin cursor;
   // worker-context pushes hint to their own shard (locality), foreign pushes
-  // round-robin via inject_rr_. Uses the OPT-IN runtime mem::Allocator variant (the
+  // round-robin via inject_rr_. Uses the OPT-IN runtime mem::AllocatorRef variant (the
   // scheduler's public ctor injects an allocator; queues honor it).
-  container::ShardedQueue<Fiber*, mem::Allocator> global;
+  container::ShardedQueue<Fiber*, mem::AllocatorRef> global;
   ReadyOverflow global_overflow;
   // Worker-stack callbacks need no owning heap record: queue the type-erased
   // function/context pair plus an internal accounting-shard tag by value. The
   // admitted count keeps shutdown/drain correct while removing one malloc/free
   // pair per tiny task.
-  container::ShardedQueue<InlineJob, mem::Allocator> inline_jobs;
-  mem::Allocator allocator;
+  container::ShardedQueue<InlineJob, mem::AllocatorRef> inline_jobs;
+  mem::AllocatorRef allocator;
   std::vector<Worker*, mem::StdAllocator<Worker*>> workers;
   std::vector<Ctx, mem::StdAllocator<Ctx>> ctxs;
   std::vector<platform::Thread, mem::StdAllocator<platform::Thread>> threads;
@@ -361,7 +361,7 @@ struct Scheduler::Impl {
   SchedulerWorkerHook on_worker_stop = nullptr;
   void* worker_hook_context = nullptr;
 
-  Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap,
+  Impl(unsigned num_workers, mem::AllocatorRef alloc, std::size_t cap,
        SchedulerOptions options,
        Scheduler* sched)
       : global(alloc, num_workers, cap),
@@ -1299,7 +1299,7 @@ struct Scheduler::Impl {
 thread_local Scheduler::Impl* Scheduler::Impl::t_current = nullptr;
 thread_local int Scheduler::Impl::t_worker_idx = -1;
 
-Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+Scheduler::Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
                      std::size_t queue_capacity)
     : impl_(nullptr) {
   Status status;
@@ -1309,7 +1309,7 @@ Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
                     "when resource failure is recoverable");
 }
 
-Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+Scheduler::Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
                      std::size_t queue_capacity, SchedulerOptions options)
     : impl_(nullptr) {
   Status status;
@@ -1319,14 +1319,14 @@ Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
                     "when resource failure is recoverable");
 }
 
-Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+Scheduler::Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
                      std::size_t queue_capacity, Status* status) noexcept
     : impl_(nullptr) {
   HYLE_FATAL_ASSERT(status != nullptr);
   init_(num_workers, alloc, queue_capacity, {}, status);
 }
 
-Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+Scheduler::Scheduler(unsigned num_workers, mem::AllocatorRef alloc,
                      std::size_t queue_capacity, SchedulerOptions options,
                      Status* status) noexcept
     : impl_(nullptr) {
@@ -1334,7 +1334,7 @@ Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
   init_(num_workers, alloc, queue_capacity, options, status);
 }
 
-void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
+void Scheduler::init_(unsigned num_workers, mem::AllocatorRef alloc,
                       std::size_t queue_capacity, SchedulerOptions options,
                       Status* status) noexcept {
   *status = Status{};
@@ -1420,7 +1420,7 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
 Scheduler::~Scheduler() {
   if (impl_ == nullptr) return;
   impl_->shutdown();
-  const mem::Allocator allocator = impl_->allocator;
+  const mem::AllocatorRef allocator = impl_->allocator;
   impl_->~Impl();
   allocator.deallocate(impl_, sizeof(Impl), alignof(Impl));
 }

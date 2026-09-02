@@ -63,11 +63,11 @@ void hyle_hammer_body(void* p) {
   }
   if (h->done != nullptr) h->done->done();
 }
-Task<void> hyle_wg_task(hyle::mem::Allocator, hyle::sched::WaitGroup* wg) {
+Task<void> hyle_wg_task(hyle::mem::AllocatorRef, hyle::sched::WaitGroup* wg) {
   wg->done();
   co_return;
 }
-Task<void> hyle_noop_task(hyle::mem::Allocator) { co_return; }
+Task<void> hyle_noop_task(hyle::mem::AllocatorRef) { co_return; }
 void hyle_wg_done(void* p) {
   static_cast<hyle::sched::WaitGroup*>(p)->done();
 }

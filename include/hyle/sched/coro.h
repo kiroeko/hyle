@@ -15,11 +15,11 @@
 // Coroutine <-> fiber glue. A `co_await` inside a
 // fiber suspends the FIBER (fcontext stack switch), not just the coroutine, so a
 // deep call chain can await without every frame being a coroutine. The coroutine
-// frame lives in the supplied Allocator; the fiber owns the execution stack, so
+// frame lives in the supplied AllocatorRef; the fiber owns the execution stack, so
 // fiber suspend/resume naturally freezes/thaws the calling stack around it.
 //
 // Two pieces:
-//   - Task<T>: a coroutine whose frame is allocated through a HYLE mem::Allocator
+//   - Task<T>: a coroutine whose frame is allocated through a HYLE mem::AllocatorRef
 //     (not the default operator new -- charter: explicit allocation everywhere).
 //   - WakerAwaitable: `co_await` it to leave the run loop until a Waker fires.
 //     await_suspend captures current_waker() (so the awaiter can hand it to an
@@ -43,7 +43,7 @@ HYLE_SCHED_API Waker current_waker() noexcept;
 
 // ---- Task<T>: allocator-backed coroutine ------------------------------------
 // A lazily-started coroutine returning T (or void). The promise allocates the
-// coroutine frame from a mem::Allocator threaded through operator new/delete, so
+// coroutine frame from a mem::AllocatorRef threaded through operator new/delete, so
 // no hidden heap. Move-only handle; destroying it destroys the frame.
 //
 // Task remains the coroutine-frame/value primitive; spawn_task, JoinHandle and
@@ -53,34 +53,34 @@ class Task;
 
 namespace detail {
 
-// Shared promise machinery: frame allocation via mem::Allocator, plus the
+// Shared promise machinery: frame allocation via mem::AllocatorRef, plus the
 // final-suspend that hands control back so the driver can observe completion.
 struct PromiseAllocBase {
-  // Prefix bytes reserved before the frame to stash the Allocator, sized to
-  // preserve the frame's alignment (>= sizeof(mem::Allocator), a multiple of
+  // Prefix bytes reserved before the frame to stash the AllocatorRef, sized to
+  // preserve the frame's alignment (>= sizeof(mem::AllocatorRef), a multiple of
   // max_align_t so the returned pointer stays maximally aligned).
   static constexpr std::size_t kPrefix =
-      (sizeof(mem::Allocator) + alignof(std::max_align_t) - 1) &
+      (sizeof(mem::AllocatorRef) + alignof(std::max_align_t) - 1) &
       ~(alignof(std::max_align_t) - 1);
 
   // operator new: the coroutine-frame ABI passes the coroutine's call args after
-  // `size`. We require Task coroutines to take a mem::Allocator as their FIRST
+  // `size`. We require Task coroutines to take a mem::AllocatorRef as their FIRST
   // parameter, so the frame is allocated from it (the standard "allocator as
   // first coroutine parameter" idiom). No default operator new is provided, so a
   // Task coroutine that forgets the allocator param fails to compile.
-  static void* operator new(std::size_t n, mem::Allocator alloc,
+  static void* operator new(std::size_t n, mem::AllocatorRef alloc,
                             auto&&...) noexcept {
     if (!alloc.valid() ||
         n > (std::numeric_limits<std::size_t>::max)() - kPrefix)
       return nullptr;
     void* base = alloc.allocate(n + kPrefix, alignof(std::max_align_t));
     if (base == nullptr) return nullptr;
-    *static_cast<mem::Allocator*>(base) = alloc;
+    *static_cast<mem::AllocatorRef*>(base) = alloc;
     return static_cast<char*>(base) + kPrefix;  // aligned: kPrefix % maxalign==0
   }
   static void operator delete(void* p, std::size_t n) noexcept {
     void* base = static_cast<char*>(p) - kPrefix;
-    mem::Allocator alloc = *static_cast<mem::Allocator*>(base);
+    mem::AllocatorRef alloc = *static_cast<mem::AllocatorRef*>(base);
     alloc.deallocate(base, n + kPrefix, alignof(std::max_align_t));
   }
 };

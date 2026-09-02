@@ -8,7 +8,7 @@
       "role": "runtime-allocator-injection",
       "path": "src/container/dynamic_bitset.cc",
       "sha256": "26659dfe37d2bb76abe9254e26faace64c695f37c6e1a38ed87126986afb8b75",
-      "fact": "DynamicBitSet stores an injected mem::Allocator and routes growth and teardown through it."
+      "fact": "DynamicBitSet stores an injected mem::AllocatorRef and routes growth and teardown through it."
     },
     {
       "role": "request-region-owner",
@@ -32,7 +32,7 @@
       "role": "hard-slot-public-contract",
       "path": "include/hyle/mem/object_pool.h",
       "sha256": "fc77c6b403fc3248e51f689414b3185f85d1e81239b92c31024b09f85f2dcdef",
-      "fact": "ObjectPool exposes fixed hard capacity, non-blocking acquisition and move-only scoped return over the thread-safe SharedPool core."
+      "fact": "ObjectPool exposes fixed hard capacity, non-blocking acquisition and move-only scoped return over the thread-safe ConcurrentBlockPool core."
     },
     {
       "role": "north-star-boundary",
@@ -68,7 +68,7 @@
         "region_dedicated_threshold_bytes": 65536,
         "lifecycle": "bulk invalidate each epoch, retain ordinary blocks, return dedicated outlier"
       },
-      "honesty_boundary": "The owner lifecycle and Region policy are literal current HTTP behavior; allocation sizes are a frozen request/inference scratch distribution rather than a captured production trace."
+      "honesty_boundary": "The owner lifecycle and Arena policy are literal current HTTP behavior; allocation sizes are a frozen request/inference scratch distribution rather than a captured production trace."
     },
     {
       "id": "scheduler-fiber-lifecycle-16",

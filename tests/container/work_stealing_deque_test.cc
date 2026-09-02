@@ -10,7 +10,7 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::WorkStealingDeque;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using Status = hyle::container::StealStatus;
 
@@ -84,20 +84,20 @@ TEST(WorkStealingDeque, WrapsAroundManyLaps) {
 TEST(WorkStealingDeque, ConcurrentConservation) {
   constexpr std::uint64_t kN = 200000;
   constexpr int kThieves = 4;
-  WorkStealingDeque<std::uint64_t, Allocator> d(system_allocator(), 1024);
+  WorkStealingDeque<std::uint64_t, AllocatorRef> d(system_allocator(), 1024);
 
   std::atomic<bool> done_pushing{false};
   std::vector<std::uint64_t> owner_got;
   std::vector<std::vector<std::uint64_t>> thief_got(kThieves);
 
   struct OwnerArgs {
-    WorkStealingDeque<std::uint64_t, Allocator>* d;
+    WorkStealingDeque<std::uint64_t, AllocatorRef>* d;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   } oargs{&d, &done_pushing, &owner_got};
 
   struct ThiefArgs {
-    WorkStealingDeque<std::uint64_t, Allocator>* d;
+    WorkStealingDeque<std::uint64_t, AllocatorRef>* d;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   };

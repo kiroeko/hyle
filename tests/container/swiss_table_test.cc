@@ -22,7 +22,7 @@ using hyle::container::StringEqual;
 using hyle::container::StringHash;
 using hyle::container::SwissTable;
 using hyle::container::StringView;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 static_assert(std::forward_iterator<FlatHashMap<int, int>::iterator>);
@@ -105,7 +105,7 @@ struct ThrowingMapValue {
 };
 
 struct ToggleAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   bool fail = false;
 };
 
@@ -413,9 +413,9 @@ TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
 }
 
 TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
-  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  hyle::mem::AllocatorRef failing{fail_alloc, fail_free, fail_realloc, nullptr};
   SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<>,
-             hyle::mem::Allocator>
+             hyle::mem::AllocatorRef>
       table(failing);
   EXPECT_FALSE(table.try_prepare_insert());
   EXPECT_TRUE(table.empty());
@@ -431,9 +431,9 @@ TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
 
 TEST(SwissTable, ReserveReclaimsTombstonesForItsInsertionGuarantee) {
   ToggleAllocatorState state;
-  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  AllocatorRef allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
   using CollisionMap =
-      FlatHashMap<int, int, ConstantIntHash, std::equal_to<>, Allocator>;
+      FlatHashMap<int, int, ConstantIntHash, std::equal_to<>, AllocatorRef>;
   CollisionMap table(allocator, ConstantIntHash{}, std::equal_to<>{});
   ASSERT_TRUE(table.try_reserve(28));
   ASSERT_EQ(table.capacity(), 32u);
@@ -548,7 +548,7 @@ TEST(SwissTable, OwningStdStringHasADefaultHasher) {
 
 TEST(SwissTable, HardenedStringHasherSupportsOwningAndBorrowedKeys) {
   using Map = FlatHashMap<std::string, int, HardenedStringHash, StringEqual,
-                          Allocator>;
+                          AllocatorRef>;
   Map table(system_allocator(),
             HardenedStringHash{0x0123456789abcdefull,
                                0xfedcba9876543210ull},
@@ -563,10 +563,10 @@ TEST(SwissTable, HardenedStringHasherSupportsOwningAndBorrowedKeys) {
 }
 
 TEST(SwissTable, FallibleInsertReportsAllocationFailure) {
-  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  hyle::mem::AllocatorRef failing{fail_alloc, fail_free, fail_realloc, nullptr};
   using FallibleTable =
       SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<>,
-                 hyle::mem::Allocator>;
+                 hyle::mem::AllocatorRef>;
   FallibleTable table(failing);
   EXPECT_EQ(table.try_insert_or_assign(1, 2),
             FallibleTable::InsertResult::kOutOfMemory);
@@ -687,10 +687,10 @@ TEST(FlatHashSet, HeterogeneousLookupReturnsCanonicalStoredKey) {
 }
 
 TEST(FlatHashSet, FallibleInsertDoesNotChangeStateOnAllocationFailure) {
-  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  hyle::mem::AllocatorRef failing{fail_alloc, fail_free, fail_realloc, nullptr};
   using FallibleSet =
       FlatHashSet<int, hyle::container::Hash<int>, std::equal_to<>,
-                  hyle::mem::Allocator>;
+                  hyle::mem::AllocatorRef>;
   FallibleSet set(failing);
   EXPECT_FALSE(set.try_reserve(1));
   EXPECT_EQ(set.try_insert(1), FallibleSet::InsertResult::kOutOfMemory);

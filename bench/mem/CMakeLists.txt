@@ -34,7 +34,7 @@ endif()
 
 # mem-v1 P1 owner/consumer contract. The benchmark charges complete consumer
 # batches rather than sub-nanosecond allocator calls: runtime allocator
-# injection, request Region epochs and scheduler-owned guarded-stack lifecycle.
+# injection, request Arena epochs and scheduler-owned guarded-stack lifecycle.
 # Boost PMR and oneTBB are exact external peers; the direct system/fiber routes
 # are the compile-time/cold baselines of the same candidate implementation.
 if(HYLE_STATIC AND HYLE_HAS_FCONTEXT AND HYLE_BENCH_TBB AND HYLE_BENCH_BOOST)

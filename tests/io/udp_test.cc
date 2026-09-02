@@ -37,7 +37,7 @@ using hyle::io::resolve_addr;
 using hyle::io::udp_bind;
 using hyle::io::udp_socket;
 using hyle::io::UdpSocket;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -61,7 +61,7 @@ struct UdpResult {
 };
 
 // Server: recv one datagram (learn sender addr), echo it back to that addr.
-Task<int> server_coro(Allocator, UdpSocket* sock, UdpResult* r) {
+Task<int> server_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
 #if !defined(_WIN32)
   r->server_nonblocking.store(
       (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
@@ -82,7 +82,7 @@ Task<int> server_coro(Allocator, UdpSocket* sock, UdpResult* r) {
 }
 
 // Client: send a datagram to the server, then recv the echo and verify.
-Task<int> client_coro(Allocator, UdpSocket* sock, UdpResult* r) {
+Task<int> client_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
 #if !defined(_WIN32)
   r->client_nonblocking.store(
       (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,

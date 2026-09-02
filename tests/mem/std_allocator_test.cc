@@ -14,7 +14,7 @@
 
 namespace {
 
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::StatsAllocator;
 using hyle::mem::StdAllocator;
 using hyle::mem::SystemStdAllocator;
@@ -27,13 +27,13 @@ void* oom_reallocate(void*, void*, std::size_t, std::size_t,
   return nullptr;
 }
 
-Allocator oom_allocator() {
-  return Allocator(&oom_allocate, &oom_deallocate, &oom_reallocate, nullptr);
+AllocatorRef oom_allocator() {
+  return AllocatorRef(&oom_allocate, &oom_deallocate, &oom_reallocate, nullptr);
 }
 
 struct ToggleOomState {
   bool fail = false;
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
 };
 
 void* toggle_oom_allocate(void* opaque, std::size_t size,
@@ -148,7 +148,7 @@ TEST(StdAllocator, PreservesOverAlignment) {
 }
 
 TEST(StdAllocator, EqualityIsCompleteBackingIdentityAcrossRebind) {
-  const Allocator system = system_allocator();
+  const AllocatorRef system = system_allocator();
   StdAllocator<int> ints(system);
   StdAllocator<double> doubles(system);
   EXPECT_EQ(ints, doubles);
@@ -174,7 +174,7 @@ TEST(StdAllocator, OomAndCountOverflowUseStandardExceptions) {
   // backing fail so reserve exercises the portable container OOM contract.
   using OomVector = std::vector<int, StdAllocator<int>>;
   ToggleOomState state;
-  Allocator toggled(&toggle_oom_allocate, &toggle_oom_deallocate,
+  AllocatorRef toggled(&toggle_oom_allocate, &toggle_oom_deallocate,
                     &toggle_oom_reallocate, &state);
   OomVector values{StdAllocator<int>(toggled)};
   state.fail = true;

@@ -63,9 +63,9 @@ Heap& Heap::operator=(Heap&& other) noexcept {
 
 Heap::~Heap() { release(); }
 
-Allocator Heap::allocator() noexcept {
+AllocatorRef Heap::allocator() noexcept {
   if (!valid()) return {};
-  return Allocator(&Heap::allocate_erased, &Heap::deallocate_erased,
+  return AllocatorRef(&Heap::allocate_erased, &Heap::deallocate_erased,
                    &Heap::reallocate_erased, this);
 }
 

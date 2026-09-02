@@ -59,7 +59,7 @@ inline constexpr std::uint64_t kHttpMaxBodyBytes = 8ull * 1024 * 1024;
 // Header slots parsed per message (picohttpparser fills a fixed array).
 inline constexpr std::size_t kHttpMaxHeaders = 64;
 
-// Forward declarations: the co_await layers are FREE coroutines (Allocator-first);
+// Forward declarations: the co_await layers are FREE coroutines (AllocatorRef-first);
 // they need friend access to the message types' private view fields, so declare
 // them here before those types.
 class HttpServerConn;
@@ -68,18 +68,18 @@ class HttpRequest;
 class HttpResponse;
 class HttpResponseView;
 class HttpTransport;
-sched::Task<std::int64_t> http_transport_read(mem::Allocator,
+sched::Task<std::int64_t> http_transport_read(mem::AllocatorRef,
                                               HttpTransport&, void*,
                                               std::uint32_t) noexcept;
-sched::Task<std::int64_t> http_transport_write(mem::Allocator,
+sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef,
                                                HttpTransport&, const void*,
                                                std::uint32_t) noexcept;
-sched::Task<int> http_transport_shutdown(mem::Allocator,
+sched::Task<int> http_transport_shutdown(mem::AllocatorRef,
                                          HttpTransport&) noexcept;
-sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noexcept;
-sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef, HttpServerConn&) noexcept;
+sched::Task<bool> http_server_send(mem::AllocatorRef, HttpServerConn&,
                                    const HttpResponse&) noexcept;
-sched::Task<HttpResponseView*> http_client_request(mem::Allocator, HttpClientConn&,
+sched::Task<HttpResponseView*> http_client_request(mem::AllocatorRef, HttpClientConn&,
                                                    StringView, StringView,
                                                    StringView, StringView) noexcept;
 
@@ -117,10 +117,10 @@ class HttpTransport {
 
  private:
   friend sched::Task<std::int64_t> http_transport_read(
-      mem::Allocator, HttpTransport&, void*, std::uint32_t) noexcept;
+      mem::AllocatorRef, HttpTransport&, void*, std::uint32_t) noexcept;
   friend sched::Task<std::int64_t> http_transport_write(
-      mem::Allocator, HttpTransport&, const void*, std::uint32_t) noexcept;
-  friend sched::Task<int> http_transport_shutdown(mem::Allocator,
+      mem::AllocatorRef, HttpTransport&, const void*, std::uint32_t) noexcept;
+  friend sched::Task<int> http_transport_shutdown(mem::AllocatorRef,
                                                    HttpTransport&) noexcept;
   TcpStream tcp_{};
 #if defined(HYLE_IO_TLS)
@@ -155,7 +155,7 @@ class HttpRequest {
   bool keep_alive() const noexcept { return keep_alive_; }
 
  private:
-  friend sched::Task<HttpRequest*> http_server_next(mem::Allocator,
+  friend sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef,
                                                     HttpServerConn&) noexcept;
   StringView method_, target_, path_, query_, body_;
   // Header views are stored as offsets into the parser's phr_header array, exposed
@@ -216,7 +216,7 @@ class HttpResponse {
   bool streaming() const noexcept { return streaming_; }
 
  private:
-  friend sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+  friend sched::Task<bool> http_server_send(mem::AllocatorRef, HttpServerConn&,
                                             const HttpResponse&) noexcept;
   static constexpr std::size_t kMaxRespHeaders = 32;
   StringView reason_;
@@ -233,7 +233,7 @@ class HttpResponse {
 // ---- HttpServerConn (LOW-level primitive) ----------------------------------
 // Wraps one accepted TcpStream. Drives HTTP/1.1 over it: parse a request (headers +
 // body), let the caller build a response, write it, then loop for keep-alive. Owns
-// an internal growable read buffer (allocated via the given Allocator) that persists
+// an internal growable read buffer (allocated via the given AllocatorRef) that persists
 // across requests on the same connection (pipelined leftover bytes are preserved).
 //
 // Usage (low-level):
@@ -247,9 +247,9 @@ class HttpResponse {
 //   }
 class HttpServerConn {
  public:
-  HYLE_IO_API HttpServerConn(mem::Allocator alloc, TcpStream stream) noexcept;
+  HYLE_IO_API HttpServerConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API HttpServerConn(mem::Allocator alloc, TlsStream stream) noexcept;
+  HYLE_IO_API HttpServerConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
 #endif
   HYLE_IO_API ~HttpServerConn();
   HttpServerConn(HttpServerConn&&) noexcept;
@@ -263,8 +263,8 @@ class HttpServerConn {
   // co_await conn.next_request() reads + parses the next request. Yields
   // HttpRequest* (points into internal state, valid until the next call) or nullptr
   // on clean close / parse error / body too large. Implemented by forwarding to a
-  // free coroutine (Allocator-first) -- a MEMBER coroutine can't be used because the
-  // promise operator new would see `this` as its first arg, not the Allocator (the
+  // free coroutine (AllocatorRef-first) -- a MEMBER coroutine can't be used because the
+  // promise operator new would see `this` as its first arg, not the AllocatorRef (the
   // same trap TLS/dns/file hit; see tls.cc).
   HYLE_IO_API sched::Task<HttpRequest*> next_request() noexcept;
 
@@ -273,13 +273,13 @@ class HttpServerConn {
   HYLE_IO_API sched::Task<bool> send_response(const HttpResponse& resp) noexcept;
 
  private:
-  friend sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noexcept;
-  friend sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+  friend sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef, HttpServerConn&) noexcept;
+  friend sched::Task<bool> http_server_send(mem::AllocatorRef, HttpServerConn&,
                                             const HttpResponse&) noexcept;
   struct Impl;
-  Impl* impl_ = nullptr;   // read buffer + parser scratch (heap, via Allocator)
+  Impl* impl_ = nullptr;   // read buffer + parser scratch (heap, via AllocatorRef)
   HttpTransport transport_;
-  mem::Allocator alloc_{};
+  mem::AllocatorRef alloc_{};
 };
 
 // ---- high-level serve ------------------------------------------------------
@@ -288,30 +288,30 @@ class HttpServerConn {
 // handler is a type-erased fn producing a Task; routing lives inside it. This is the
 // thin llama.cpp-style wrapper built on the primitives above.
 //
-// The Allocator passed to each handler is a request-scoped mem::Region view. Its
+// The AllocatorRef passed to each handler is a request-scoped mem::Arena view. Its
 // ordinary blocks are reused by that keep-alive connection up to the configured
 // retention limit, while all logical allocations are cleared after the response has
 // been sent and the handler Task/coroutine frame has been destroyed. The connection
 // parser and transport keep using the long-lived `alloc` passed to http_serve. A
 // handler may therefore allocate response headers, body views, stream state, nested
-// Task frames, and other scratch directly from its Allocator without individual
+// Task frames, and other scratch directly from its AllocatorRef without individual
 // frees or cross-request retention. Anything that must survive the request must use
 // caller-owned storage instead.
 //
 // HttpResponse must be fully described by the time its Task completes. Body/header
 // views and stream ctx may point into the request allocator because it remains alive
-// through the subsequent send. Allocator is FIRST (the coroutine-frame allocation
+// through the subsequent send. AllocatorRef is FIRST (the coroutine-frame allocation
 // idiom -- a handler that IS a Task coroutine needs it first; see coro.h).
-using HttpHandlerFn = sched::Task<HttpResponse> (*)(mem::Allocator alloc, void* ctx,
+using HttpHandlerFn = sched::Task<HttpResponse> (*)(mem::AllocatorRef alloc, void* ctx,
                                                     const HttpRequest& req) noexcept;
 
 struct HttpServeOptions {
-  // HTTP starts much smaller than Region's general-purpose 64 KiB default: a
+  // HTTP starts much smaller than Arena's general-purpose 64 KiB default: a
   // keep-alive server may have thousands of mostly idle connections. Ordinary
   // blocks grow geometrically to 64 KiB; >=64 KiB allocations are dedicated and
-  // Region::clear() returns them immediately.
-  mem::RegionOptions request_region = []() constexpr {
-    mem::RegionOptions options;
+  // Arena::clear() returns them immediately.
+  mem::ArenaOptions request_region = []() constexpr {
+    mem::ArenaOptions options;
     options.initial_block_size = 4 * 1024;
     options.max_block_size = 64 * 1024;
     options.large_allocation_threshold = 64 * 1024;
@@ -325,11 +325,11 @@ struct HttpServeOptions {
   std::size_t request_region_retain_limit = 256 * 1024;
 };
 
-HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
+HYLE_IO_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TcpStream stream,
                                          HttpHandlerFn handler, void* ctx,
                                          HttpServeOptions options = {}) noexcept;
 #if defined(HYLE_IO_TLS)
-HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
+HYLE_IO_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TlsStream stream,
                                          HttpHandlerFn handler,
                                          void* ctx,
                                          HttpServeOptions options = {}) noexcept;
@@ -352,7 +352,7 @@ class HttpResponseView {
 
  private:
   friend sched::Task<HttpResponseView*> http_client_request(
-      mem::Allocator, HttpClientConn&, StringView, StringView, StringView,
+      mem::AllocatorRef, HttpClientConn&, StringView, StringView, StringView,
       StringView) noexcept;
   StringView reason_, body_;
   const phr_header* headers_ = nullptr;
@@ -363,9 +363,9 @@ class HttpResponseView {
 
 class HttpClientConn {
  public:
-  HYLE_IO_API HttpClientConn(mem::Allocator alloc, TcpStream stream) noexcept;
+  HYLE_IO_API HttpClientConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API HttpClientConn(mem::Allocator alloc, TlsStream stream) noexcept;
+  HYLE_IO_API HttpClientConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
 #endif
   HYLE_IO_API ~HttpClientConn();
   HttpClientConn(HttpClientConn&&) noexcept;
@@ -378,19 +378,19 @@ class HttpClientConn {
   // co_await conn.request(method, path, host, body) -> HttpResponseView* (valid
   // until the next request) or nullptr on error. Writes "METHOD path HTTP/1.1\r\n
   // Host: <host>\r\n" (+ Content-Length if body) + body, then parses the response.
-  // Forwards to a free coroutine (Allocator-first), same reason as the server conn.
+  // Forwards to a free coroutine (AllocatorRef-first), same reason as the server conn.
   HYLE_IO_API sched::Task<HttpResponseView*> request(StringView method, StringView path,
                                                      StringView host,
                                                      StringView body = {}) noexcept;
 
  private:
   friend sched::Task<HttpResponseView*> http_client_request(
-      mem::Allocator, HttpClientConn&, StringView, StringView, StringView,
+      mem::AllocatorRef, HttpClientConn&, StringView, StringView, StringView,
       StringView) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;
   HttpTransport transport_;
-  mem::Allocator alloc_{};
+  mem::AllocatorRef alloc_{};
 };
 
 }  // namespace hyle::io

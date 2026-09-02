@@ -21,7 +21,7 @@ using sched::Fiber;
 using sched::kDefaultStackSize;
 using sched::Scheduler;
 using sched::Task;
-using mem::Allocator;
+using mem::AllocatorRef;
 
 // Node ctx: writes value + counts runs, like the serial test. `peak` shared across a
 // level's nodes lets us observe concurrency (see WideLevelRunsConcurrently).
@@ -64,7 +64,7 @@ void drive_entry(void* p) {
 }
 
 // ---- correctness: parallel result == serial result (the oracle) --------------
-Task<int> diamond_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Add* b, Add* c,
+Task<int> diamond_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, Add* b, Add* c,
                        Add* e, int* out_val) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -103,7 +103,7 @@ TEST(GraphParallel, DiamondMatchesSerial) {
 }
 
 // ---- incremental: after a full eval, dirty one input -> only its subgraph re-runs ----
-Task<int> incr_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Source* b, Add* c,
+Task<int> incr_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, Source* b, Add* c,
                     int* out_val) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -172,7 +172,7 @@ Status spin_fn(void* p) noexcept {
   s->value = 1;
   return Status();
 }
-Task<int> wide_coro(mem::Allocator alloc, Scheduler* sched, SpinCell* cells, int nwide,
+Task<int> wide_coro(mem::AllocatorRef alloc, Scheduler* sched, SpinCell* cells, int nwide,
                     std::atomic<int>* peak) {
   TaskGraph g(alloc);
   for (int i = 0; i < nwide; ++i) (void)g.add_source(spin_fn, &cells[i]);
@@ -214,7 +214,7 @@ Status fail_fn(void* p) noexcept {
   ++f->runs;
   return f->fail ? Status::Internal("boom") : Status();
 }
-Task<int> fail_coro(mem::Allocator alloc, Scheduler* sched, FailCell* f, bool* was_err,
+Task<int> fail_coro(mem::AllocatorRef alloc, Scheduler* sched, FailCell* f, bool* was_err,
                     bool* still_dirty) {
   TaskGraph g(alloc);
   NodeId nf = g.add_source(fail_fn, f);
@@ -240,7 +240,7 @@ TEST(GraphParallel, FailingNodeSurfacesAndStaysDirty) {
 
 // A node failing in a MIDDLE level must STOP later levels from running (verifies the
 // break). Chain a(src) -> mid(fails, level 1) -> tail(level 2): tail must NOT run.
-Task<int> mid_fail_coro(mem::Allocator alloc, Scheduler* sched, Source* a, FailCell* mid,
+Task<int> mid_fail_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, FailCell* mid,
                         FailCell* tail, bool* mid_dirty, int* tail_runs) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -275,7 +275,7 @@ TEST(GraphParallel, MidLevelFailureStopsLaterLevels) {
 
 // A wide level with a MIX of dirty + clean nodes: only the dirty ones re-run in parallel;
 // clean siblings at the same level are skipped. Also a 3-level chain under parallel.
-Task<int> mixed_coro(mem::Allocator alloc, Scheduler* sched, Source* s0, Source* s1,
+Task<int> mixed_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* s0, Source* s1,
                      Add* mid, Add* tail, int* out) {
   TaskGraph g(alloc);
   NodeId i0 = g.add_source(source_fn, s0);   // level 0
@@ -316,7 +316,7 @@ TEST(GraphParallel, MixedDirtyCleanAndMultiLevel) {
 }
 
 // Empty graph + all-clean re-evaluate are both no-ops (no spawn, no crash).
-Task<int> empty_and_clean_coro(mem::Allocator alloc, Scheduler* sched, Source* a) {
+Task<int> empty_and_clean_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a) {
   TaskGraph empty(alloc);
   if (!evaluate_parallel(empty, *sched, alloc).ok()) co_return -1;  // n==0 early return
 
@@ -339,7 +339,7 @@ TEST(GraphParallel, EmptyAndAllCleanAreNoOps) {
   EXPECT_EQ(d->task.done() ? d->task.result() : -999, 1);  // ran exactly once
 }
 
-Task<int> admission_failure_coro(mem::Allocator alloc, Scheduler* sched,
+Task<int> admission_failure_coro(mem::AllocatorRef alloc, Scheduler* sched,
                                  Source* sources, int count, bool wavefront,
                                  int* ran, int* dirty) {
   TaskGraph g(alloc);
@@ -375,7 +375,7 @@ int run_admission_failure_case(bool wavefront, Source* sources, int count,
 }
 
 Task<int> successor_admission_failure_coro(
-    mem::Allocator alloc, Scheduler* sched, Source* root, Source* successors,
+    mem::AllocatorRef alloc, Scheduler* sched, Source* root, Source* successors,
     int count, int* ran, int* dirty) {
   TaskGraph g(alloc);
   const NodeId root_id = g.add_source(source_fn, root);
@@ -452,7 +452,7 @@ TEST(GraphParallel, BoundedQueueAdmissionFailureStaysStructured) {
 
 // Correctness oracle: wavefront gives the SAME result as the level-barrier path on a
 // diamond (a -> b,c -> e). Each node runs exactly once.
-Task<int> wf_diamond_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Add* b, Add* c,
+Task<int> wf_diamond_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, Add* b, Add* c,
                           Add* e, int* out_val) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -488,7 +488,7 @@ TEST(GraphParallel, WavefrontDiamondMatchesSerial) {
 }
 
 // Incremental under wavefront: after a full eval, dirty one input -> only its cone re-runs.
-Task<int> wf_incr_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Source* b, Add* c,
+Task<int> wf_incr_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, Source* b, Add* c,
                        int* out_val) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -543,7 +543,7 @@ Status timed_fn(void* p) noexcept {
   t->value = 1;
   return Status();
 }
-Task<int> wf_legs_coro(mem::Allocator alloc, Scheduler* sched, Timed* slow, Timed* f0,
+Task<int> wf_legs_coro(mem::AllocatorRef alloc, Scheduler* sched, Timed* slow, Timed* f0,
                        Timed* f1, Timed* f2) {
   TaskGraph g(alloc);
   (void)g.add_source(timed_fn, slow);          // level 0, SLOW
@@ -577,7 +577,7 @@ TEST(GraphParallel, WavefrontShortLegNotBlockedBySlowSibling) {
 
 // Failure under wavefront: a failing node surfaces its Status, stays dirty, and its
 // successors are never released (never run).
-Task<int> wf_fail_coro(mem::Allocator alloc, Scheduler* sched, FailCell* f, Add* down,
+Task<int> wf_fail_coro(mem::AllocatorRef alloc, Scheduler* sched, FailCell* f, Add* down,
                        Cell* dummy, bool* was_err, bool* f_dirty, int* down_runs) {
   TaskGraph g(alloc);
   NodeId nf = g.add_source(fail_fn, f);
@@ -630,7 +630,7 @@ Status leaf_fn(void* p) noexcept {
   l->cell.value = 1;
   return Status();
 }
-Task<int> wf_many_terminals_coro(mem::Allocator alloc, Scheduler* sched, Leaf* leaves,
+Task<int> wf_many_terminals_coro(mem::AllocatorRef alloc, Scheduler* sched, Leaf* leaves,
                                  int nleaves, std::atomic<int>* peak) {
   TaskGraph g(alloc);
   for (int i = 0; i < nleaves; ++i) (void)g.add_source(leaf_fn, &leaves[i]);  // all terminal
@@ -659,7 +659,7 @@ TEST(GraphParallel, WavefrontManyIndependentTerminalsNoUAF) {
 // A node with MIXED dirty + clean deps: only the dirty dep gates it (the clean dep is
 // already fresh). Full eval, then dirty ONE of two inputs; the sink recomputes with the
 // stale-but-clean input reused + the freshly recomputed one.
-Task<int> wf_mixed_deps_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Source* b,
+Task<int> wf_mixed_deps_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a, Source* b,
                              Add* sink, int* out) {
   TaskGraph g(alloc);
   NodeId ia = g.add_source(source_fn, a);
@@ -695,7 +695,7 @@ TEST(GraphParallel, WavefrontMixedDirtyCleanDeps) {
 }
 
 // Empty + all-clean wavefront are no-ops (dirty_total==0 early return).
-Task<int> wf_empty_clean_coro(mem::Allocator alloc, Scheduler* sched, Source* a) {
+Task<int> wf_empty_clean_coro(mem::AllocatorRef alloc, Scheduler* sched, Source* a) {
   TaskGraph empty(alloc);
   if (!evaluate_parallel_wavefront(empty, *sched, alloc).ok()) co_return -1;  // n==0
   TaskGraph g(alloc);

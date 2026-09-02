@@ -41,7 +41,7 @@ using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
 using hyle::io::tcp_socket;
 using hyle::io::TimedRecvOp;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
@@ -85,7 +85,7 @@ struct CountingAlloc {
     return std::realloc(p, nn);
 #endif
   }
-  static Allocator make() noexcept { return Allocator(&a, &f, &r, nullptr); }
+  static AllocatorRef make() noexcept { return AllocatorRef(&a, &f, &r, nullptr); }
 };
 std::atomic<long> CountingAlloc::live{0};
 
@@ -102,14 +102,14 @@ struct TimeoutResult {
   TcpStream held;  // keep the accepted server conn alive (so it doesn't RST)
 };
 
-Task<int> timeout_server(Allocator, IoContext*, TcpListener* ls,
+Task<int> timeout_server(AllocatorRef, IoContext*, TcpListener* ls,
                          TimeoutResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   r->held = std::move(conn);  // hold it open but send NOTHING -> client recv stalls
   co_return 0;
 }
 
-Task<int> timeout_client(Allocator alloc, IoContext* io, TimeoutResult* r,
+Task<int> timeout_client(AllocatorRef alloc, IoContext* io, TimeoutResult* r,
                          std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -137,14 +137,14 @@ struct IoWinResult {
   char got[64] = {};
 };
 
-Task<int> iowin_server(Allocator, IoContext*, TcpListener* ls, IoWinResult*) {
+Task<int> iowin_server(AllocatorRef, IoContext*, TcpListener* ls, IoWinResult*) {
   TcpStream conn = co_await ls->accept(kOwner);
   static const char kMsg[] = "prompt";
   co_await conn.write(kMsg, sizeof(kMsg));
   co_return 0;
 }
 
-Task<int> iowin_client(Allocator alloc, IoContext* io, IoWinResult* r,
+Task<int> iowin_client(AllocatorRef alloc, IoContext* io, IoWinResult* r,
                        std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];
@@ -223,7 +223,7 @@ struct AcceptResult {
   std::atomic<std::int64_t> rc{999};
 };
 
-Task<int> accept_timeout_client(Allocator alloc, IoContext* io, TcpListener* ls,
+Task<int> accept_timeout_client(AllocatorRef alloc, IoContext* io, TcpListener* ls,
                                 AcceptResult* r) {
   std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
   // No one connects; the timed accept must return -ETIMEDOUT.
@@ -256,7 +256,7 @@ TEST(IoTimeout, AcceptTimesOut) {
 }
 
 namespace {
-Task<int> udp_timeout_recv(Allocator alloc, hyle::io::UdpSocket* socket,
+Task<int> udp_timeout_recv(AllocatorRef alloc, hyle::io::UdpSocket* socket,
                            AcceptResult* result) {
   char buffer[32] = {};
   alignas(16) unsigned char peer[hyle::io::UdpSocket::kSockaddrCap]{};
@@ -340,7 +340,7 @@ struct BaseRecvState {
   char buf[64] = {};
   std::atomic<std::int64_t> rc{999};
 };
-Task<int> base_recv_server(Allocator, IoContext*, TcpListener* ls,
+Task<int> base_recv_server(AllocatorRef, IoContext*, TcpListener* ls,
                            TcpStream* held) {
   TcpStream conn = co_await ls->accept(kOwner);
   static const char kMsg[] = "base-recv-ok";
@@ -348,7 +348,7 @@ Task<int> base_recv_server(Allocator, IoContext*, TcpListener* ls,
   *held = std::move(conn);  // keep open
   co_return 0;
 }
-Task<int> base_recv_client(Allocator, IoContext* io, BaseRecvState* s,
+Task<int> base_recv_client(AllocatorRef, IoContext* io, BaseRecvState* s,
                            std::uint16_t port) {
   alignas(16) unsigned char ss[128]; std::uint32_t len = 0;
   resolve_addr("127.0.0.1", port, &ss, &len);

@@ -15,7 +15,7 @@
 
 using hyle::container::ConcurrentHashMap;
 using hyle::container::StringEqual;
-using hyle::mem::Allocator;
+using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 
 static_assert(
@@ -28,7 +28,7 @@ static_assert(
 namespace {
 
 struct ToggleAllocatorState {
-  Allocator backing = system_allocator();
+  AllocatorRef backing = system_allocator();
   std::atomic<bool> fail{false};
 };
 
@@ -75,10 +75,10 @@ TEST(ConcurrentHashMap, ValidatesPowerOfTwoShardCountAndAllocation) {
 
   ToggleAllocatorState state;
   state.fail.store(true);
-  Allocator failing(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
+  AllocatorRef failing(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
                     &state);
   ConcurrentHashMap<int, int, hyle::container::Hash<int>, std::equal_to<>,
-                    Allocator>
+                    AllocatorRef>
       no_memory(8, failing);
   EXPECT_FALSE(no_memory.valid());
 }
@@ -177,10 +177,10 @@ TEST(ConcurrentHashMap, ConcurrentDisjointInsertAndSharedUpdate) {
 
 TEST(ConcurrentHashMap, FallibleInsertDoesNotStrandLockOrEntry) {
   ToggleAllocatorState state;
-  Allocator allocator(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
+  AllocatorRef allocator(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
                       &state);
   using Map = ConcurrentHashMap<int, int, hyle::container::Hash<int>,
-                                std::equal_to<>, Allocator>;
+                                std::equal_to<>, AllocatorRef>;
   Map map(8, allocator);
   ASSERT_TRUE(map.valid());
   state.fail.store(true);
@@ -216,10 +216,10 @@ TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
 
 TEST(ConcurrentHashMap, TryReserveReportsFailureAndPreservesEntries) {
   ToggleAllocatorState state;
-  Allocator allocator(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
+  AllocatorRef allocator(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
                       &state);
   using Map = ConcurrentHashMap<int, int, hyle::container::Hash<int>,
-                                std::equal_to<>, Allocator>;
+                                std::equal_to<>, AllocatorRef>;
   Map map(8, allocator);
   ASSERT_TRUE(map.valid());
   Map::Accessor inserted;
