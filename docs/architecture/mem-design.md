@@ -1,7 +1,7 @@
 # HYLE Mem：统一 storage foundation
 
-> 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现仍以
-> [user/mem](../user/mem.md) 与活动 closure card 为准，不会因 architecture 写了目标就提前变成
+> 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现以
+> [user/mem](../user/mem.md) 与中央 registry 为准，不会因 architecture 写了目标就提前变成
 > shipping 能力。独立 `mem_reclaim` 仍未进入 Mem façade，其状态以自己的 closure card
 > 为准。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
 > C schema、bridge、动态导出和 fixture。机械收口状态见
@@ -22,7 +22,10 @@ Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
 - resource-aware transient pool/stats 与不含 Tensor 语义的 lifetime packing plan。
 
 语义拥有不等于 Mem 自己实现每个平台机制。Platform 保留 VM/file/NUMA/page/OS-handle
-机制；Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
+机制及供自定义基础设施组合的低层 RAII owner；Mem 在这些机制上拥有统一 storage-facing
+owner/view/resource 语义。需要 `BufferView`、跨 provider 组合或统一 residency 词汇的用户走 Mem，
+需要 guard page、原始 file handle 组合或自建 owner 的用户可以直接走 Platform，两层不是两套
+storage policy。Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
 namespace/handle transfer/async protocol；Graph 把 DAG/tensor 事实翻译成 Mem planner 不理解业务语义的
 interval/resource/alias 请求。依赖方向固定为：
 

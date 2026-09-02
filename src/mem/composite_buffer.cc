@@ -75,6 +75,32 @@ std::size_t piece_count(const CompositeImpl &impl, std::size_t offset,
   return last - first + 1;
 }
 
+Result<BufferView> mutable_piece_at(CompositeImpl &impl,
+                                    std::size_t view_offset,
+                                    std::size_t view_end,
+                                    std::size_t segment_index) noexcept {
+  CompositeSegment &segment = impl.segments[segment_index];
+  const std::size_t segment_end =
+      segment.logical_offset + segment.buffer.size();
+  const std::size_t begin = (std::max)(view_offset, segment.logical_offset);
+  const std::size_t end = (std::min)(view_end, segment_end);
+  return segment.buffer.view().subview(begin - segment.logical_offset,
+                                       end - begin);
+}
+
+Result<ConstBufferView> const_piece_at(const CompositeImpl &impl,
+                                       std::size_t view_offset,
+                                       std::size_t view_end,
+                                       std::size_t segment_index) noexcept {
+  const CompositeSegment &segment = impl.segments[segment_index];
+  const std::size_t segment_end =
+      segment.logical_offset + segment.buffer.size();
+  const std::size_t begin = (std::max)(view_offset, segment.logical_offset);
+  const std::size_t end = (std::min)(view_end, segment_end);
+  return segment.buffer.view().subview(begin - segment.logical_offset,
+                                       end - begin);
+}
+
 Result<BufferView> mutable_piece(CompositeImpl &impl, std::size_t view_offset,
                                  std::size_t view_size,
                                  std::size_t index) noexcept {
@@ -84,14 +110,8 @@ Result<BufferView> mutable_piece(CompositeImpl &impl, std::size_t view_offset,
         Status::OutOfRange("composite piece index is out of range"));
   }
   const std::size_t segment_index = first_segment(impl, view_offset) + index;
-  CompositeSegment &segment = impl.segments[segment_index];
-  const std::size_t view_end = view_offset + view_size;
-  const std::size_t segment_end =
-      segment.logical_offset + segment.buffer.size();
-  const std::size_t begin = (std::max)(view_offset, segment.logical_offset);
-  const std::size_t end = (std::min)(view_end, segment_end);
-  return segment.buffer.view().subview(begin - segment.logical_offset,
-                                       end - begin);
+  return mutable_piece_at(impl, view_offset, view_offset + view_size,
+                          segment_index);
 }
 
 Result<ConstBufferView> const_piece(const CompositeImpl &impl,
@@ -104,14 +124,8 @@ Result<ConstBufferView> const_piece(const CompositeImpl &impl,
         Status::OutOfRange("composite piece index is out of range"));
   }
   const std::size_t segment_index = first_segment(impl, view_offset) + index;
-  const CompositeSegment &segment = impl.segments[segment_index];
-  const std::size_t view_end = view_offset + view_size;
-  const std::size_t segment_end =
-      segment.logical_offset + segment.buffer.size();
-  const std::size_t begin = (std::max)(view_offset, segment.logical_offset);
-  const std::size_t end = (std::min)(view_end, segment_end);
-  return segment.buffer.view().subview(begin - segment.logical_offset,
-                                       end - begin);
+  return const_piece_at(impl, view_offset, view_offset + view_size,
+                        segment_index);
 }
 
 } // namespace
@@ -276,10 +290,16 @@ CompositeBufferView::write(std::span<const std::byte> source) const noexcept {
     return Status::InvalidArgument(
         "write size must equal composite buffer view size");
   }
+  if (size_ == 0)
+    return Status::Ok();
+  CompositeImpl &impl = *as_composite(impl_);
+  const std::size_t view_end = offset_ + size_;
+  std::size_t segment_index = first_segment(impl, offset_);
   std::size_t consumed = 0;
-  const std::size_t count = piece_count();
-  for (std::size_t index = 0; index < count; ++index) {
-    HYLE_ASSIGN_OR_RETURN(BufferView current, piece(index));
+  while (consumed < size_) {
+    HYLE_ASSIGN_OR_RETURN(
+        BufferView current,
+        mutable_piece_at(impl, offset_, view_end, segment_index++));
     HYLE_RETURN_IF_ERROR(
         current.write(source.subspan(consumed, current.size())));
     consumed += current.size();
@@ -295,10 +315,18 @@ CompositeBufferView::read(std::span<std::byte> destination) const noexcept {
 Status CompositeBufferView::fill(std::byte value) const noexcept {
   if (!valid())
     return Status::FailedPrecondition("composite buffer view is invalid");
-  const std::size_t count = piece_count();
-  for (std::size_t index = 0; index < count; ++index) {
-    HYLE_ASSIGN_OR_RETURN(BufferView current, piece(index));
+  if (size_ == 0)
+    return Status::Ok();
+  CompositeImpl &impl = *as_composite(impl_);
+  const std::size_t view_end = offset_ + size_;
+  std::size_t segment_index = first_segment(impl, offset_);
+  std::size_t filled = 0;
+  while (filled < size_) {
+    HYLE_ASSIGN_OR_RETURN(
+        BufferView current,
+        mutable_piece_at(impl, offset_, view_end, segment_index++));
     HYLE_RETURN_IF_ERROR(current.fill(value));
+    filled += current.size();
   }
   return Status::Ok();
 }
@@ -323,15 +351,26 @@ CompositeBufferView::copy_from(ConstCompositeBufferView source) const noexcept {
     }
   }
 
-  std::size_t destination_piece = 0;
-  std::size_t source_piece = 0;
+  if (size_ == 0)
+    return Status::Ok();
+
+  CompositeImpl &destination_impl = *as_composite(impl_);
+  const CompositeImpl &source_impl = *as_composite(source.impl_);
+  const std::size_t destination_end = offset_ + size_;
+  const std::size_t source_end = source.offset_ + source.size_;
+  std::size_t destination_piece = first_segment(destination_impl, offset_);
+  std::size_t source_piece = first_segment(source_impl, source.offset_);
   std::size_t destination_offset = 0;
   std::size_t source_offset = 0;
   std::size_t copied = 0;
   while (copied < size_) {
-    HYLE_ASSIGN_OR_RETURN(BufferView destination, piece(destination_piece));
-    HYLE_ASSIGN_OR_RETURN(ConstBufferView current_source,
-                          source.piece(source_piece));
+    HYLE_ASSIGN_OR_RETURN(
+        BufferView destination,
+        mutable_piece_at(destination_impl, offset_, destination_end,
+                         destination_piece));
+    HYLE_ASSIGN_OR_RETURN(
+        ConstBufferView current_source,
+        const_piece_at(source_impl, source.offset_, source_end, source_piece));
     const std::size_t destination_available =
         destination.size() - destination_offset;
     const std::size_t source_available = current_source.size() - source_offset;
@@ -402,10 +441,16 @@ Status ConstCompositeBufferView::read(
     return Status::InvalidArgument(
         "read size must equal composite buffer view size");
   }
+  if (size_ == 0)
+    return Status::Ok();
+  const CompositeImpl &impl = *as_composite(impl_);
+  const std::size_t view_end = offset_ + size_;
+  std::size_t segment_index = first_segment(impl, offset_);
   std::size_t consumed = 0;
-  const std::size_t count = piece_count();
-  for (std::size_t index = 0; index < count; ++index) {
-    HYLE_ASSIGN_OR_RETURN(ConstBufferView current, piece(index));
+  while (consumed < size_) {
+    HYLE_ASSIGN_OR_RETURN(
+        ConstBufferView current,
+        const_piece_at(impl, offset_, view_end, segment_index++));
     HYLE_RETURN_IF_ERROR(
         current.read(destination.subspan(consumed, current.size())));
     consumed += current.size();

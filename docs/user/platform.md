@@ -8,6 +8,11 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 每个系统调用都公开，也不因为 benchmark 有一行就制造一个类型。先按资源和生命周期选
 形状。
 
+Platform 的 VM/file RAII 类型是低层机制 owner；需要 guard page、已有 `FileHandle`、自建 allocator/JIT
+或自定义 storage owner 时直接使用。若需求是模型/storage 的统一 `BufferView`、跨 provider 组合、
+共享 mapping 词汇或 lifetime placement，优先使用 Mem 的 `VirtualMapping`、`FileMapping`、
+`SharedMapping` 与 `Buffer`。Mem 组合这里的同一机制，不重复 allocation 或 payload copy。
+
 macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；原因是地址等待/Parker 使用
 系统从 14.4 才公开的 `os_sync_wait_on_address*`。顶层构建未指定时 HYLE 默认 14.4；作为
 `add_subdirectory()` 子工程时由父工程明确设置，低于 14.4 会在 configure 阶段失败。
@@ -16,7 +21,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 
 | 需求 | 选择 | 不要选 | 关键合同 |
 |---|---|---|---|
-| 一块立即可读写的页内存 | `VmRegion::allocate_rw` | `reserve` 后立刻 `commit` | 一次 OS mapping；RAII 释放 |
+| 自建低层 owner 的立即可写页内存 | `VmRegion::allocate_rw` | `reserve` 后立刻 `commit` | 一次 OS mapping；统一 storage view 则选 Mem `VirtualMapping` |
 | 先占地址、以后分段提交 | `VmRegion::reserve` + `commit/decommit` | 普通 heap 分配 | 页粒度；地址空间与物理提交分离 |
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
@@ -26,7 +31,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
-| 大文件随机访问/共享映射 | `MappedFile::open`；已有 handle 用 `map(std::move(file))` | 小文件必然 mmap | RO/RW/COW；const bytes / checked writable bytes；range flush；Linux 小文件顺扫未必赢 read |
+| 低层大文件随机访问/已有 handle 映射 | `MappedFile::open`；已有 handle 用 `map(std::move(file))` | 小文件必然 mmap | RO/RW/COW；需要 `ConstBufferView` 与统一 storage 心智则选 Mem `FileMapping` |
 | 映射权重/数据集的显式 warm-up | `MappedFile::prefetch` / `advise` | `open()` 自动触碰全文件 | hint 不影响正确性；Windows 仅 will-need |
 | 整段映射必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
 | loader 逐步确认要驻留的映射前缀 | `lock_prefix(target)` + `locked_size()` | 每次重新锁 whole mapping | 单调增长、页粒度；失败保留旧前缀 |

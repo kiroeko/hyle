@@ -50,6 +50,11 @@ GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 
 pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；
 不理解 Tensor 的通用 placement/instantiate 机制归 Mem。
 
+Platform 的 `VmRegion`/`MappedFile` 仍是公开的低层 OS owner，适合 guard page、已有
+`FileHandle`、自定义 allocator/JIT 或实现自己的 storage owner；需要统一 `BufferView`、跨 provider
+组合和同一套 mapping/residency 心智时用本表的 Mem owner。两层共享同一 Platform 机制，Mem 不会
+在其上再做一次 payload allocation 或 copy。
+
 ## Resource 与 Buffer：什么时候不只用 allocator
 
 `AllocatorRef` 回答“从 host backing 取多少 raw bytes”；`MemoryResourceRef` + `Buffer`
@@ -607,15 +612,19 @@ selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能
 
 ## 如何看性能
 
-当前资格化 workload 由 `bench/contracts/mem-owner-consumer-v1.json` 和
-`bench/contracts/mem-handoff-consumer-v1.json` 冻结，并统一通过 `scripts/hyle-perf.py` 运行；旧的
+Mem v2 当前资格化 workload 由 `bench/contracts/mem-v2-consumer-v1.json` 冻结，并统一通过
+`scripts/hyle-perf.py` 运行；它只覆盖同合同的 Heap、FixedArena、BufferView 与 BufferPool 四条
+normal consumer 路线，不外推 mapping/planner、所有平台或端到端推理 SOTA。旧的
+`mem-owner-consumer-v1`、`mem-handoff-consumer-v1`、
 `HYLE_BENCH_SECTIONS=*` 与专用统计脚本只能作历史或机制诊断。正式工程性能表只维护在
-[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)，本指南不复制点值、
-win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同；表中未出现的
+[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)，本轮不可变
+candidate、peer、contract、manifest 和 aggregate verdict 记录在
+[`mem-v2-rebuild`](../implementation/tasks/mem/mem-v2-rebuild.md)。本指南不复制点值、win/loss
+或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同；表中未出现的
 类型也不等于功能缺失，只表示没有发布对应数值声明。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
-[`implementation/status.md`](../implementation/status.md)。
+[`module-status.json`](../implementation/module-status.json)。
 [`mem-close-plan`](../implementation/tasks/mem/mem-close-plan.md) 与 2026-07-26 的
 [`mem-mature-gap-audit`](../implementation/tasks/mem/mem-mature-gap-audit.md) 都是上一轮历史
 验收输入，不是依赖升级后工作树的自动分发证书。

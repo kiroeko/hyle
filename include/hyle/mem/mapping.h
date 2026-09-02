@@ -101,7 +101,7 @@ class VirtualMapping {
 
 // File-backed mapping owner for model weights, datasets and random-access
 // files. The file is never silently grown; length==0 maps through current EOF.
-// Read-only access is represented by ConstBufferView, while writable_view()
+// Read-only access is represented by ConstBufferView, while writable_bytes()
 // checks the mapping mode before exposing mutation.
 class FileMapping {
  public:
