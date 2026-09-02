@@ -273,3 +273,42 @@ margin 的正常 consumer 回退。
 `CANDIDATE -> VERIFIED` 的前态 registry 快照位于
 `C:\hyle-scratch\time-v3\transitions\module-status-before-verified.json`，SHA-256
 `A6FDF69D1C1E5FBF0E068ACD118B8F821CF5F5D3D472CDF25B26D55063348116`。
+
+## Closure decision
+
+本轮 `CLOSED`。capability/public-surface、architecture/dependency、correctness/sanitizer、
+source/static/shared delivery、C++ usability/docs、independent red team 和 P1 engineering performance
+七门全部 `PASS`；所有准入 `MUST` 已为 `COMPLETE` 或有明确上层 route。Formal 独立
+`PENDING`，不阻塞工程收口。
+
+可接受限制是：P1 只签 W1-WIN 的 64-phase host aggregate 对 source-equivalent precise
+steady-clock route；ManualClock 只是 relaxed atomic time value，不是 fence/waiter/scheduler；
+MonotonicClockRef 借用 source 并在显式选择时付一次间接调用；timezone/device/executor
+政策仍属其 owner；无 Native FFI/C API 或稳定 C++ ABI 承诺。完整 limitation 与 reopen
+trigger 已写入 `module-status.json`，没有以这些明示边界伪造未完成产品缺口。
+
+终态 end/registry anchor 是 VERIFIED commit
+`e8fb222bf975f76e45e777e5db3a7854db1d23e0`；product candidate 仍是
+`381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
+`a5d48a259161c1a60e19450e42b4a6eac9a1a712`，终态文档提交不冒充产品实现。
+`VERIFIED -> CLOSED` 的前态 registry 快照是
+`C:\hyle-scratch\time-v3\transitions\module-status-before-closed.json`，SHA-256
+`3AEE61B58E39C9A8F51C5B0022A52E791DB76C9D4AFC3D960478CB203F06F412`。
+
+四项 LOC 从 immutable candidate 执行：
+
+```powershell
+python scripts/loc-report.py --module time `
+  --module-path include/hyle/time/clock.h `
+  --module-path include/hyle/time/unix_timestamp.h `
+  --module-path src/time `
+  --commit 381eb4b195973ed35ed23ca63c05f9605a132f9b --self-check --json
+```
+
+`self_check=pass`；显式 owned-header 边界是因为 host 与 timer factor 为保持用户 include
+形状共享 `include/hyle/time`：
+
+1. 全库代码：420,468；
+2. 自实现包含测试：101,897；
+3. 自实现不包含测试：63,430；
+4. Time host 实现：1,192。

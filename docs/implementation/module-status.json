@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "TIME-FACTORIZATION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
       "round_id": "time-v3-host-clock-factor",
@@ -394,6 +394,8 @@
       "baseline_commit": "25b13f5a18a0164a5fa81d01c4ef5d1a32f85cf4",
       "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
       "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
+      "end_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
+      "registry_anchor_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -421,11 +423,33 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "time-v3 VERIFIED：host/system/manual/borrowed clock 能力、三平台正确性与 sanitizer、三种 C++ 交付、直接消费、文档/红队及 W1-WIN host normal-batch 5% P1 非劣门均已通过，待终态登记。"
+      "closure_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
+      "loc": {
+        "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+        "repository_code": 420468,
+        "self_with_tests": 101897,
+        "self_without_tests": 63430,
+        "module_implementation": 1192
+      },
+      "known_limitations": [
+        "The P1 PASS covers only W1-WIN and the frozen 64-phase host clock/deadline aggregate against the source-equivalent precise steady-clock route; cross-platform fixed nanoseconds, every Time operation, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "ManualClock owns only a relaxed lock-free time value: it is not a user-data publication fence, waiter service or scheduler, and write-side CAS retry is contention-dependent.",
+        "MonotonicClockRef is a two-word borrowed runtime-selection seam with one indirect now() call; the source must outlive it, while default and typed system routes do not pay that dispatch.",
+        "Timezone/calendar/protocol text, device clocks and timer execution, periodic, cancellation and cross-thread wake policy remain owned by standard/protocol, Compute or Sched/IO layers.",
+        "HYLE promises neither a Native FFI/C API nor stable C++ ABI for Time; matched C++23 headers and binaries are required, and the retained engineering bundle is local replayable evidence rather than a Formal artifact."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, clock-domain, conversion, lifetime, concurrency, API-usability, delivery or missing-capability defect within the host Time boundary.",
+        "The public API or layout, default/native clock mechanism, ManualClock atomic contract, direct dependency, factor graph or source/static/shared delivery shape changes materially.",
+        "A supported compiler, standard library or OS changes clock, sleep, atomic lock-free or timestamp-conversion semantics required by the frozen contract.",
+        "Renewing the engineering claim encounters a material change in candidate, peer, consumer provenance or ownership, workload/accounting, machine, instrument, compiler or retained evidence identity.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer/profile proves a reproducible regression beyond the frozen 5% margin."
+      ],
+      "summary": "time-v3 CLOSED：host Time 已与 timer node 存储解耦，system/manual/borrowed clock 与 deadline/Instant 组合完整；三平台正确性/sanitizer、三种 C++ 交付、直接消费、文档/红队及 W1-WIN 5% P1 host PARITY 门全部通过。"
     },
     {
       "module": "timer_queue",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "timer-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
       "scope": "Move caller-owned TimerEntry, TimerQueue and CommonTimeoutQueue ownership into the accepted header-only factor, compose the frozen injectable host-clock API, and revalidate current Sched/IO consumers and the hyle::time product facade.",
@@ -433,6 +457,8 @@
       "baseline_commit": "f342f8d92cebaae9f4870fe05e78afe6c6ca1391",
       "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
       "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
+      "end_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
+      "registry_anchor_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -460,7 +486,29 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "timer_queue v1 VERIFIED：caller-owned radix/common-timeout、provider 组合、三平台正确性/sanitizer、三种 C++ 交付、Sched/IO 直接消费、文档/红队及对当前 Seastar 的 8/8 P1 WIN 均已通过，待终态登记。"
+      "closure_evidence": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
+      "loc": {
+        "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+        "repository_code": 420468,
+        "self_with_tests": 101897,
+        "self_without_tests": 63430,
+        "module_implementation": 438
+      },
+      "known_limitations": [
+        "The P1 WIN covers only W1-WIN and the frozen N=64 Scheduler timer lifecycle against the pinned Seastar timer_set; other cardinalities, every timer operation, cross-platform performance, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "TimerEntry and both queues are caller-owned single-owner structures: linked addresses must remain stable, queues do not execute callbacks or wake waiters, and the consumer must drain detached delivery lists before rearm or destruction.",
+        "Cancelling the current radix minimum may preserve one conservative early wake to keep cancel O(1), and delivery across radix buckets is not promised to be globally ordered.",
+        "CommonTimeoutQueue has correctness and O(1) arm/cancel/next plus output-sensitive advance evidence but no current HYLE product performance consumer, so no P1 ranking is claimed for it.",
+        "The internal factor is header-only and does not create a binary or Native FFI/C API; ordinary users consume it through the hyle::time C++ product facade, with no stable C++ ABI promise."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, owner/lifetime, ordering, concurrency, API-usability, delivery or missing-capability defect within caller-owned timer queues.",
+        "TimerEntry or queue public API/layout, radix/common algorithm, complexity or normal metadata, direct dependency, factor ownership or hyle::time facade delivery changes materially.",
+        "Sched or IO admits callback execution, wait, periodic, cross-thread command or cancellation-budget semantics that cannot remain in its owning runtime state machine.",
+        "Renewing the engineering claim encounters a material candidate, Seastar peer, Scheduler provenance/ownership, workload/accounting, machine, instrument, compiler or retained evidence change.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer/profile proves a reproducible regression beyond the frozen 5% margin."
+      ],
+      "summary": "timer_queue v1 CLOSED：caller-owned radix/common-timeout 已成为独立 header-only factor，provider 组合与 Sched/IO 直接边正确；三平台正确性/sanitizer、三种 C++ 交付、文档/红队及对当前 Seastar 的 8/8 P1 WIN 全部通过。"
     },
     {
       "module": "platform",

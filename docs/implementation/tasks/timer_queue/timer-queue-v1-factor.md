@@ -200,3 +200,42 @@ consumer regression。
 `CANDIDATE -> VERIFIED` 的前态 registry 快照与 Time 共用
 `C:\hyle-scratch\time-v3\transitions\module-status-before-verified.json`，SHA-256
 `A6FDF69D1C1E5FBF0E068ACD118B8F821CF5F5D3D472CDF25B26D55063348116`。
+
+## Closure decision
+
+本轮 `CLOSED`。node/radix/common/provider 能力、factor/dependency、correctness/sanitizer、
+三交付与 Sched/IO 直接消费、C++ usability/docs、red team 和 P1 engineering performance
+七门全部 `PASS`。callback/wait/periodic/cross-thread 是已路由的 Sched/IO owning policy，不是
+timer data factor 遗漏。
+
+可接受限制是：queue/node 是 caller-owned single-owner 且不执行 callback；cancel minimum
+允许一次 conservative early wake，跨 radix bucket 不承诺全序；CommonTimeoutQueue 没有当前
+产品性能 consumer，所以只签 correctness/complexity；P1 WIN 只属 W1-WIN 冻结 Scheduler
+N=64 合同；header-only factor 无 binary/FFI 或稳定 C++ ABI 承诺。
+
+终态 end/registry anchor 是 VERIFIED commit
+`e8fb222bf975f76e45e777e5db3a7854db1d23e0`；product candidate 与 Time 共用
+`381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
+`a5d48a259161c1a60e19450e42b4a6eac9a1a712`。`VERIFIED -> CLOSED` 的前态 registry
+快照是 `C:\hyle-scratch\time-v3\transitions\module-status-before-closed.json`，SHA-256
+`3AEE61B58E39C9A8F51C5B0022A52E791DB76C9D4AFC3D960478CB203F06F412`。
+
+四项 LOC 从 immutable candidate 执行：
+
+```powershell
+python scripts/loc-report.py --module timer_queue `
+  --module-path include/hyle/time/common_timeout_queue.h `
+  --module-path include/hyle/time/timer_entry.h `
+  --module-path include/hyle/time/timer_queue.h `
+  --module-path src/timer_queue `
+  --commit 381eb4b195973ed35ed23ca63c05f9605a132f9b --self-check --json
+```
+
+`self_check=pass`：
+
+1. 全库代码：420,468；
+2. 自实现包含测试：101,897；
+3. 自实现不包含测试：63,430；
+4. timer_queue 实现：438。
+
+Time host 1,192 + timer_queue 438 与共享目录聚合值 1,630 完全一致。
