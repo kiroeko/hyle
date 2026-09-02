@@ -1,0 +1,279 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "mem-v2-consumer-v1",
+  "module": "mem",
+  "claim": "P1 engineering non-inferiority for four frozen Mem v2 source-consumer aggregates against same-contract current standard, vendored-mimalloc, lower-bound and oneTBB routes, including charged semantic adapters, execution order, allocation order and code placement",
+  "candidate": {
+    "target": "hyle_mem",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "mem",
+    "entrypoint": "hyle/mem/arena.h"
+  },
+  "peers": [
+    {
+      "id": "hyle-lower-bound",
+      "revision": "163b39dbdf9a554fccb3fadf5b07d3892c54aec8",
+      "configuration": {
+        "delivery_shape": "locked clean source snapshot",
+        "algorithm": "identical vendored mimalloc heap plus standard PMR and fused BufferView lower-bound routes",
+        "source_file": "bench/mem/v2_consumer_bench.cc",
+        "source": "clean HYLE snapshot whose relevant implementation bytes are checked at configure time"
+      }
+    },
+    {
+      "id": "onetbb",
+      "revision": "b03a694ee0fe4b188bc77daa8a567551e3e3ebfc",
+      "configuration": {
+        "delivery_shape": "supported shared libraries built from pinned source",
+        "algorithm": "oneTBB thread-safe variable-size memory_pool over scalable_allocator with the charged Mem-semantic adapter",
+        "source_file": "include/oneapi/tbb/memory_pool.h",
+        "source": "clean external checkout"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "mem-v2-resource", "kind": "resource", "parameters": {"validator_id": "mem-v2-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "isolated-heap-lifecycle-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/mem/isolated-runtime-heap",
+      "provenance": {"path": "samples/package/mem/cpp/main.cc", "sha256": "e9303134d7dc6749fd2345afd9bcec906d5bf42e536b9d4de0a2b65e8a8291bd"},
+      "ownership_topology": {
+        "candidate": "One move-only HYLE Heap owns a vendored mimalloc heap and lends one AllocatorRef runtime-erased handle",
+        "peer": "One std::pmr::memory_resource subclass owns a distinct heap from the identical vendored mimalloc binary and is held through a non-devirtualized base pointer",
+        "equivalence": "Both owners are created and warmed outside timing; the same owner thread performs the same 64 successful mixed-size/alignment allocations, endpoint touches and reverse frees"
+      },
+      "material_contribution": {"frequency": 64, "value": 1, "unit": "runtime-erased-allocation-lifecycle", "budget": 5, "denominator": "one isolated subsystem heap batch", "derivation": "The installed Mem journey injects Heap::allocator; 64 mixed requests lift the unchanged lifecycle above the timer floor and are a provisional ordinary batch, not a production trace frequency"},
+      "semantic_contract": "Allocate, touch and reverse-free 64 mixed aligned blocks through one runtime-erased isolated heap owner",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-lower-bound",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 deterministic 24 B to 3 KiB requests with 16/32/64-byte alignment", "scale": {"allocations_per_callback": 64}},
+      "setup": "Both isolated heap owners and erased handles are allocated in controlled order and warmed outside measurement",
+      "charged_phases": ["64 runtime-erased successful allocations", "first and last byte touches", "64 reverse-order runtime-erased frees"],
+      "pair": {"candidate": "HYLE Heap allocator lifecycle N=64", "peer": "std pmr erased mimalloc heap lifecycle N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "external-scratch-epoch-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/phase/external-scratch",
+      "provenance": {"path": "include/hyle/mem/region.h", "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf"},
+      "ownership_topology": {
+        "candidate": "One FixedArena borrows one caller-owned 128 KiB aligned buffer and rewinds it at every phase",
+        "peer": "One std::pmr::monotonic_buffer_resource borrows an equal caller buffer and is rebuilt in place at every phase because release does not rewind an initial buffer",
+        "equivalence": "Both have no fallback, one owner thread, equal storage, identical range touches and the required reusable epoch boundary charged"
+      },
+      "material_contribution": {"frequency": 64, "value": 1, "unit": "phase-scratch-allocation", "budget": 5, "denominator": "one external-buffer scratch epoch", "derivation": "External phase scratch is an admitted Mem journey and the deterministic 64-request batch measures its repeated allocation/reset mechanism above the timer floor"},
+      "semantic_contract": "Reset one fixed caller buffer and satisfy 64 mixed aligned scratch allocations with no fallback",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-lower-bound",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 deterministic 24 B to 768 B requests with 16/32/64-byte alignment", "scale": {"allocations_per_epoch": 64, "external_buffer_bytes": 131072}},
+      "setup": "Equal aligned caller buffers and owners are allocated in controlled order and warmed outside measurement",
+      "charged_phases": ["one reusable epoch boundary", "64 successful aligned allocations", "first and last byte touches"],
+      "pair": {"candidate": "HYLE FixedArena scratch epoch N=64", "peer": "std pmr monotonic scratch epoch N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "buffer-view-range-fill-64",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "compute/kernel/nonzero-buffer-view",
+      "provenance": {"path": "include/hyle/compute/kernel.h", "sha256": "23901a56949f18666a811ee838f4667e50b02271e91de062e98de4b50a7b4459"},
+      "ownership_topology": {
+        "candidate": "One HYLE Buffer owner lends checked BufferView subviews and the public view dispatches one synchronous fill to its resource",
+        "peer": "A fused lower-bound helper borrows the same owner and performs the same validity/range/overflow Status checks before the identical one resource fill dispatch",
+        "equivalence": "Owner, native handle, offsets, sizes, error categories, provider calls, touched bytes and teardown are identical; only materialization of the public view Result is under test"
+      },
+      "material_contribution": {"frequency": 64, "value": 1, "unit": "validated-buffer-range-operation", "budget": 5, "denominator": "one 256 KiB transient buffer range-fill batch", "derivation": "The typed Compute shell consumes Mem views with native handle/offset/size; 3-4 KiB ranges are an ordinary scratch-clear shape rather than a sub-nanosecond accessor microbenchmark"},
+      "semantic_contract": "Validate and synchronously fill 64 non-zero 3-4 KiB ranges of one warm resource Buffer",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-lower-bound",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 non-overlapping 3072 B to 4095 B ranges at 4096-byte strides", "scale": {"range_operations_per_callback": 64, "buffer_bytes": 262144}},
+      "setup": "The Buffer, resource and owner lifetime are shared and warmed outside measurement",
+      "charged_phases": ["64 validity/range/overflow checks", "64 single provider dispatches", "64 synchronous fills and status observations"],
+      "pair": {"candidate": "HYLE BufferView subview fill N=64", "peer": "direct MemoryResource range fill N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "transient-buffer-lifecycle-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/mem/transient-buffer-pool",
+      "provenance": {"path": "src/mem/buffer_pool.cc", "sha256": "aed34f6b1ee920ce85171f51996b877685bbf3a73ad7e4fa0136df67ea7e1440"},
+      "ownership_topology": {
+        "candidate": "One bounded HYLE BufferPool owns 64 warmed Buffers and returns Result<BufferLease> values carrying native resource views and exact lifecycle statistics",
+        "peer": "One current oneTBB memory_pool owns its warmed backing; a charged zero-allocation adapter adds matching Result, RAII lease, native view and thread-safe lifecycle counters",
+        "equivalence": "Both hold the same 64 variable-size blocks simultaneously, observe native handles, return in reverse, retain the working set and perform no provider allocation after warmup; provider allocation count is an observed algorithm result"
+      },
+      "material_contribution": {"frequency": 64, "value": 1, "unit": "transient-buffer-lifecycle", "budget": 5, "denominator": "one warmed transient storage batch", "derivation": "The installed Mem journey uses BufferPool reuse; 64 held variable-size blocks represent a small inference scratch working set and expose retention/resource behavior without inventing device latency"},
+      "semantic_contract": "Acquire, expose and RAII-return 64 warmed variable-size blocks through one thread-safe pool with exact observable lifecycle statistics",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 deterministic 256 B to 4 KiB max-align blocks", "scale": {"leases_per_callback": 64, "retained_buffers": 64, "growth_percent": 0}},
+      "setup": "Both pools allocate and return one complete working set in controlled order before measurement; their provider counters must remain stable thereafter",
+      "charged_phases": ["64 fallible thread-safe acquisitions and stat updates", "64 native-handle view observations", "64 reverse RAII returns and stat updates"],
+      "pair": {"candidate": "HYLE BufferPool warmed lifecycle N=64", "peer": "oneTBB memory_pool adapted lifecycle N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "mem-v2-resource"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract", "mem-v2-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "PROVISIONAL_ARCHETYPE",
+      "semantic_matrix": "bench/mem/consumer_shapes_v2.json",
+      "semantic_matrix_sha256": "85959bab834bf483f5b7b9506fcf6a7af79074819410be8ded78a1cd28edc4a8"
+    },
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_TBB": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "mem",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_MEM_V2_P1_BENCH": "ON",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {"hyle-lower-bound": "HYLE_MEM_V2_BASELINE_DIR", "onetbb": "HYLE_TBB_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "mem-v2-consumer-primary",
+          "target": "hyle_mem_v2_consumer_bench",
+          "stem": "hyle_mem_v2_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_MEM_V2_RUN "],
+          "workloads": [
+            {"id": "isolated-heap-lifecycle-64", "title": "isolated heap lifecycle aggregate N=64"},
+            {"id": "external-scratch-epoch-64", "title": "external scratch epoch aggregate N=64"},
+            {"id": "buffer-view-range-fill-64", "title": "buffer view range fill aggregate N=64"},
+            {"id": "transient-buffer-lifecycle-64", "title": "transient buffer lifecycle aggregate N=64"}
+          ]
+        },
+        {
+          "id": "mem-v2-consumer-placement",
+          "target": "hyle_mem_v2_consumer_bench_placement",
+          "stem": "hyle_mem_v2_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_MEM_V2_RUN "],
+          "workloads": [
+            {"id": "isolated-heap-lifecycle-64", "title": "isolated heap lifecycle aggregate N=64"},
+            {"id": "external-scratch-epoch-64", "title": "external scratch epoch aggregate N=64"},
+            {"id": "buffer-view-range-fill-64", "title": "buffer view range fill aggregate N=64"},
+            {"id": "transient-buffer-lifecycle-64", "title": "transient buffer lifecycle aggregate N=64"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_PEER_ALLOCATION_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "mem-v2-contract",
+          "kind": "command",
+          "command": ["{python}", "scripts/validate-mem-v2-consumer-bench.py", "--source", "{source}", "--build", "{build}", "--expected-shapes-sha256", "85959bab834bf483f5b7b9506fcf6a7af79074819410be8ded78a1cd28edc4a8"]
+        }
+      ]
+    }
+  }
+}
