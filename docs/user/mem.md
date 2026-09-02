@@ -17,6 +17,9 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
+| 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
+| 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
+| 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
 | 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
 | 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
@@ -77,6 +80,31 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
+
+## Mapping：模型加载、稀疏提交和跨进程共享
+
+`VirtualMapping` 是 anonymous address-space owner：`reserve()` 只占地址，随后显式
+`commit/decommit/protect`；`allocate_read_write()` 才是一步得到可写页。`advise`、`lock/unlock`
+都只对给定页区间执行一次 Platform/OS 操作，不隐藏逐页表、payload copy 或后台线程；不受支持的
+hint 返回 `Unimplemented`。
+
+```cpp
+#include "hyle/mem/mapping.h"
+
+HYLE_ASSIGN_OR_RETURN(
+    auto weights,
+    hyle::mem::FileMapping::open("model.gguf"));
+HYLE_RETURN_IF_ERROR(
+    weights.advise(hyle::mem::MappingAdvice::kSequential));
+auto model_bytes = weights.view();  // owner 必须长寿于 view
+```
+
+`FileMapping` 不会自动触碰或锁定全文件，也不会在 RW open 时扩展文件。只读路线返回
+`ConstBufferView`；修改文件必须先通过 `writable_bytes()`，持久化再显式调用
+`FileMapping::flush()`。`BufferView::flush()` 表达 host/device coherence，不等价于文件 durability。
+
+`SharedMapping` 只拥有命名共享 storage。它不内置 mutex、notification、crash recovery 或跨进程
+指针修复；共享数据结构保存 offset/POD，进程间同步和 handle-transfer protocol 由 IO/调用方组合。
 
 进程启动期若需要显式预留 1 GiB OS 大页，调用 `reserve_huge_1g_pages`。它是冷策略入口，
 返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是

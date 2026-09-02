@@ -1,7 +1,7 @@
 #include <hyle/io/capabilities.h>
 #include <hyle/io/http.h>
 #include <hyle/io/net.h>
-#include <hyle/io/shared_memory.h>
+#include <hyle/mem/mapping.h>
 
 #if HYLE_IO_HAS_COROUTINE_TRANSPORT != 1
 #  error "supported installed io package lost its coroutine-transport capability"
@@ -10,7 +10,7 @@
 int main() {
   // Public io headers expose Status and allocator-backed protocol values.  The
   // consumer deliberately links only hyle::io.
-  auto status = hyle::io::SharedMemory::unlink(nullptr);
+  auto status = hyle::mem::SharedMapping::unlink(nullptr);
   if (!status.IsInvalidArgument()) return 1;
 
   if (!hyle::mem::system_allocator().valid()) return 2;

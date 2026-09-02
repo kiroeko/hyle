@@ -3,6 +3,7 @@
 #include "virtual_memory_internal.h"
 
 #include <cstdio>
+#include <limits>
 
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
@@ -22,6 +23,10 @@
 #else
 #  include <errno.h>
 #  include <sys/mman.h>
+#  include <sys/resource.h>
+#  if HYLE_OS_LINUX
+#    include <sys/syscall.h>
+#  endif
 #  include <unistd.h>
 #endif
 
@@ -108,6 +113,87 @@ bool align_nonempty_size(std::size_t requested, std::size_t& aligned) noexcept {
   aligned = align_size(requested);
   return requested == 0 || aligned != 0;
 }
+
+bool valid_lock_options(VmLockOptions options) noexcept {
+  return (options.mode == VmLockMode::kEager ||
+          options.mode == VmLockMode::kOnFault) &&
+         (options.limit_policy == VmLockLimitPolicy::kPreserve ||
+          options.limit_policy == VmLockLimitPolicy::kAdjustIfNeeded);
+}
+
+#if HYLE_OS_WINDOWS
+constexpr std::size_t kLockLimitSlack = 1u << 20;
+
+Status adjust_lock_limit(std::size_t lock_bytes) noexcept {
+  SIZE_T minimum = 0;
+  SIZE_T maximum = 0;
+  HANDLE process = ::GetCurrentProcess();
+  if (!::GetProcessWorkingSetSize(process, &minimum, &maximum)) {
+    return native_status("GetProcessWorkingSetSize(vm lock)",
+                         ::GetLastError());
+  }
+  if (lock_bytes > (std::numeric_limits<std::size_t>::max)() -
+                       kLockLimitSlack) {
+    return Status::OutOfRange("vm lock: working-set increment overflows");
+  }
+  const std::size_t increment = lock_bytes + kLockLimitSlack;
+  if (minimum > (std::numeric_limits<SIZE_T>::max)() - increment ||
+      maximum > (std::numeric_limits<SIZE_T>::max)() - increment) {
+    return Status::OutOfRange("vm lock: working-set limit overflows");
+  }
+  if (!::SetProcessWorkingSetSize(process, minimum + increment,
+                                  maximum + increment)) {
+    return native_status("SetProcessWorkingSetSize(vm lock)",
+                         ::GetLastError());
+  }
+  return Status::Ok();
+}
+#else
+Status adjust_lock_limit(std::size_t lock_bytes) noexcept {
+#if defined(RLIMIT_MEMLOCK)
+  struct ::rlimit limit;
+  if (::getrlimit(RLIMIT_MEMLOCK, &limit) != 0) {
+    return native_status("getrlimit(RLIMIT_MEMLOCK)", errno);
+  }
+  if (limit.rlim_cur == RLIM_INFINITY) return Status::Ok();
+  if (lock_bytes > (std::numeric_limits<rlim_t>::max)()) {
+    return Status::OutOfRange("vm lock: memlock increment overflows");
+  }
+  const rlim_t increment = static_cast<rlim_t>(lock_bytes);
+  rlim_t desired = limit.rlim_cur;
+  if (desired > (std::numeric_limits<rlim_t>::max)() - increment) {
+    desired = RLIM_INFINITY;
+  } else {
+    desired += increment;
+  }
+  if (limit.rlim_max != RLIM_INFINITY && desired > limit.rlim_max) {
+    desired = limit.rlim_max;
+  }
+  if (desired <= limit.rlim_cur) return Status::Ok();
+  const struct ::rlimit updated{desired, limit.rlim_max};
+  if (::setrlimit(RLIMIT_MEMLOCK, &updated) != 0) {
+    return native_status("setrlimit(RLIMIT_MEMLOCK)", errno);
+  }
+  return Status::Ok();
+#else
+  (void)lock_bytes;
+  return Status::Unimplemented("vm lock limit is unavailable");
+#endif
+}
+
+int lock_pages(const void* address, std::size_t size,
+               VmLockMode mode) noexcept {
+  if (mode == VmLockMode::kEager) return ::mlock(address, size);
+#if HYLE_OS_LINUX && defined(SYS_mlock2)
+  return static_cast<int>(::syscall(SYS_mlock2, address, size, 0x01));
+#else
+  (void)address;
+  (void)size;
+  errno = ENOSYS;
+  return -1;
+#endif
+}
+#endif
 
 #if HYLE_OS_LINUX
 std::size_t linux_large_page_size() noexcept {
@@ -383,6 +469,152 @@ Status vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
   }
   return Status::Ok();
 #endif
+}
+
+Status vm_advise(void* ptr, std::size_t size, VmAdvice advice) noexcept {
+  if (advice < VmAdvice::kNormal || advice > VmAdvice::kNoHugePage) {
+    return Status::InvalidArgument("vm advise: invalid advice");
+  }
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm advise: pointer is null or not page-aligned");
+  }
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm advise: size overflow");
+  }
+  if (advice == VmAdvice::kHugePage) return vm_advise_hugepage(ptr, size);
+  if (advice == VmAdvice::kNoHugePage) {
+    return vm_advise_no_hugepage(ptr, size);
+  }
+  if (advice == VmAdvice::kNormal) return Status::Ok();
+#if HYLE_OS_WINDOWS
+  if (advice == VmAdvice::kWillNeed) {
+    struct MemoryRangeEntry {
+      void* virtual_address;
+      std::size_t number_of_bytes;
+    };
+    using PrefetchFn = BOOL(WINAPI*)(HANDLE, ULONG_PTR, MemoryRangeEntry*, ULONG);
+    static const PrefetchFn prefetch = []() noexcept -> PrefetchFn {
+      HMODULE kernel = ::GetModuleHandleW(L"kernel32.dll");
+      return kernel == nullptr
+                 ? nullptr
+                 : reinterpret_cast<PrefetchFn>(
+                       ::GetProcAddress(kernel, "PrefetchVirtualMemory"));
+    }();
+    if (prefetch == nullptr) {
+      return Status::Unimplemented(
+          "PrefetchVirtualMemory is unavailable on this Windows version");
+    }
+    MemoryRangeEntry range{ptr, size};
+    if (!prefetch(::GetCurrentProcess(), 1, &range, 0)) {
+      return native_status("PrefetchVirtualMemory", ::GetLastError());
+    }
+    return Status::Ok();
+  }
+  if (advice == VmAdvice::kDontNeed) {
+    using DiscardFn = DWORD(WINAPI*)(PVOID, SIZE_T);
+    static const DiscardFn discard = []() noexcept -> DiscardFn {
+      HMODULE kernel = ::GetModuleHandleW(L"kernel32.dll");
+      return kernel == nullptr
+                 ? nullptr
+                 : reinterpret_cast<DiscardFn>(
+                       ::GetProcAddress(kernel, "DiscardVirtualMemory"));
+    }();
+    if (discard == nullptr) {
+      return Status::Unimplemented(
+          "DiscardVirtualMemory is unavailable on this Windows version");
+    }
+    const DWORD code = discard(ptr, size);
+    return code == ERROR_SUCCESS
+               ? Status::Ok()
+               : native_status("DiscardVirtualMemory", code);
+  }
+  return Status::Unimplemented(
+      "random/sequential anonymous VM advice is unavailable on Windows");
+#else
+  int native = MADV_NORMAL;
+  switch (advice) {
+    case VmAdvice::kRandom:
+      native = MADV_RANDOM;
+      break;
+    case VmAdvice::kSequential:
+      native = MADV_SEQUENTIAL;
+      break;
+    case VmAdvice::kWillNeed:
+      native = MADV_WILLNEED;
+      break;
+    case VmAdvice::kDontNeed:
+      native = MADV_DONTNEED;
+      break;
+    default:
+      break;
+  }
+  if (::madvise(ptr, size, native) != 0) {
+    return native_status("madvise", errno);
+  }
+  return Status::Ok();
+#endif
+}
+
+Status vm_lock(void* ptr, std::size_t size, VmLockOptions options) noexcept {
+  if (!valid_lock_options(options)) {
+    return Status::InvalidArgument("vm lock: invalid options");
+  }
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm lock: pointer is null or not page-aligned");
+  }
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm lock: size overflow");
+  }
+#if HYLE_OS_WINDOWS
+  if (options.mode == VmLockMode::kOnFault) {
+    return Status::Unimplemented("on-fault VM locking is unavailable on Windows");
+  }
+  if (::VirtualLock(ptr, size)) return Status::Ok();
+  DWORD code = ::GetLastError();
+  if (options.limit_policy == VmLockLimitPolicy::kAdjustIfNeeded &&
+      code == ERROR_WORKING_SET_QUOTA) {
+    HYLE_RETURN_IF_ERROR(adjust_lock_limit(size));
+    if (::VirtualLock(ptr, size)) return Status::Ok();
+    code = ::GetLastError();
+  }
+  return native_status("VirtualLock", code);
+#else
+  if (lock_pages(ptr, size, options.mode) == 0) return Status::Ok();
+  int code = errno;
+  if (options.limit_policy == VmLockLimitPolicy::kAdjustIfNeeded &&
+      (code == ENOMEM || code == EPERM || code == EAGAIN)) {
+    HYLE_RETURN_IF_ERROR(adjust_lock_limit(size));
+    if (lock_pages(ptr, size, options.mode) == 0) return Status::Ok();
+    code = errno;
+  }
+  return native_status(options.mode == VmLockMode::kEager
+                           ? "mlock"
+                           : "mlock2(MLOCK_ONFAULT)",
+                       code);
+#endif
+}
+
+Status vm_unlock(void* ptr, std::size_t size) noexcept {
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm unlock: pointer is null or not page-aligned");
+  }
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm unlock: size overflow");
+  }
+#if HYLE_OS_WINDOWS
+  if (!::VirtualUnlock(ptr, size)) {
+    return native_status("VirtualUnlock", ::GetLastError());
+  }
+#else
+  if (::munlock(ptr, size) != 0) return native_status("munlock", errno);
+#endif
+  return Status::Ok();
 }
 
 // ---- VmRegion ---------------------------------------------------------------

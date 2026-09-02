@@ -110,14 +110,13 @@ include/hyle/io/
 ├─ tcp.h / udp.h / file.h    普通 C++ RAII facade
 ├─ dns.h / signal.h          blocking resolver / shutdown source
 ├─ tls.h / http*.h           加密 transport 与 HTTP/1.1/2 产品层
-└─ shared_memory.h           命名跨进程 mapping
+
 
 src/io/
 ├─ proactor.cc               四后端按平台条件编译；不跨 TU 暴露 OS 类型
 ├─ io_context.cc + net impl  sched 集成
 ├─ file.cc / dns.cc          capability-aware blocking offload
 ├─ tls.cc / http*.cc         transport + picohttpparser/nghttp2 protocol core
-├─ shared_memory.cc          Windows/POSIX mapping
 └─ http2.cc                  native H2 codec facade
 ```
 
@@ -154,7 +153,7 @@ src/io/
   定义。`release_fixed_file` 现在检查内核 `FILES_UPDATE` 结果。
 - **io-08 TLS(C9)✅**:OpenSSL 加密 socket over co_await stream，包含 SNI、DNS/IP identity verification、有界 shutdown；HTTP transport 已可持有已握手 TLS，真实 HTTPS loopback 覆盖。
 - **io-09 异步 DNS + signal ✅(C10)**:`resolve_addr`(tcp.h)只 `inet_pton` 解析 IPv4 字面量(连 getaddrinfo 都没有)——`dns.h/cc` 加 `resolve()` **经 sched-11 spawn_blocking 卸载 getaddrinfo**(抄 tokio 路线,不自造 DNS 协议),内部值拷贝 sockaddr + freeaddrinfo 不泄 addrinfo*,`JoinHandle<ResolveResult>` 回传;字面量 IP 走 getaddrinfo 同步快路径。**signal_set**(`signal.h/cc`)co_await `wait()`:POSIX self-pipe + sigaction(进程全局单例 + 引用计数;handler 只 async-signal-safe 写 pipe,免 signalfd 全线程 mask),Windows SetConsoleCtrlHandler(handler 独立线程 post 到 ring;CTRL_CLOSE/LOGOFF/SHUTDOWN handler 阻塞防提前杀,tokio 同款救命坑)。**单 waiter 模型**(优雅关闭单 fiber 用例,同 tokio Signal)。三后端真测(Win/io_uring/epoll)+ WSL TSan 净。signal 是 C4 优雅关闭的触发器。
-- **io-05 文件/shmem(C5)✅**:`proactor` 覆盖 open/close/stat/fsync/fallocate，`File` 按 capability 自动把非原生异步操作卸载到 `IoContext` blocking pool；命名 `SharedMemory` 已有 Windows file mapping / POSIX `shm_open` 的 C++ RAII 与 C opaque ABI。
+- **io-05 文件/shmem(C5)✅（历史）**：`proactor` 覆盖 open/close/stat/fsync/fallocate，`File` 按 capability 自动把非原生异步操作卸载到 `IoContext` blocking pool。旧 `io::SharedMemory` 曾实现 Windows file mapping / POSIX `shm_open`；Mem v2 已把 storage owner 迁为 `mem::SharedMapping`，Platform 保留 syscall mechanism，IO 只组合 IPC/async protocol，旧 C++ owner 与伪 C ABI 均不再是当前产品面。
 
 ## 参考
 

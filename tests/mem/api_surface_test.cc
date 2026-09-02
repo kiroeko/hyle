@@ -13,6 +13,7 @@
 #include "hyle/mem/fixed_pool.h"
 #include "hyle/mem/growable_pool.h"
 #include "hyle/mem/heap.h"
+#include "hyle/mem/mapping.h"
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"

@@ -12,7 +12,7 @@
 # only there. proactor.cc itself never depends on sched, but the current public
 # io component does; a standalone proactor would require a future real component
 # split rather than a conditional omission from the dependency graph.
-set(_io_sources proactor.cc shared_memory.cc)
+set(_io_sources proactor.cc)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
@@ -52,7 +52,8 @@ unset(_io_module_options)
 
 # Export the exact coroutine-transport product fact on hyle::io in both
 # source-embedded and installed-package use. net.h turns value 0 into an
-# actionable diagnostic while proactor/shared_memory remain available.
+# actionable diagnostic while the raw proactor remains available. Named mapped
+# storage is owned by mem::SharedMapping and reaches the same Platform mechanism.
 if(HYLE_HAS_FCONTEXT)
   target_compile_definitions(hyle_io
     PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=1)

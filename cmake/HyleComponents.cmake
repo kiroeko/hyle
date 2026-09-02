@@ -164,7 +164,7 @@ _hyle_declare_component(sched
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
   TRACE
-  PUBLIC_DEPS core error mem container time timer_queue sched)
+  PUBLIC_DEPS core mem container time timer_queue sched)
 # compute publicly exposes error/mem and sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute

@@ -264,6 +264,12 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   仍可用且不需要额外 control-block allocation；move/destruction 明确使 borrow 失效。Windows MSVC
   shared/static 和 WSL GCC 14 的 Mem header/test 通过。该票仍需完成 `AllocatorRef` 与 arena/pool
   taxonomy 迁移和固定接口后的同合同 P1，不能据此标成完成。
+- `MEM2-03` 的 owner/mechanism 主干已落地：Mem `VirtualMapping/FileMapping/SharedMapping` 分别
+  组合 Platform `VmRegion/MappedFile/SharedMemoryRegion`，匿名 mapping 新增通用 advice 与
+  eager/on-fault lock mechanism；FileMapping 提供 RO/RW/COW、range advice/flush、渐进 lock 与直接
+  `ConstBufferView` journey；SharedMapping 的 create/open/unlink、共享可见性和 flush 在 Windows/Linux
+  通过。旧 `io::SharedMemory` owner 已删除，IO 指南/样例/CI 改走 Mem。该票仍需 macOS、完整
+  Platform 文档迁移、sparse/residency edge 与最终 package journey 后才能完成。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

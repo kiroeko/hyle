@@ -14,6 +14,8 @@ namespace hyle::mem {
 class BufferView;
 class ConstBufferView;
 class HostMapping;
+class FileMapping;
+class SharedMapping;
 
 // One provider allocation. Buffer is move-only and keeps its complete wrapper
 // state inline: no HYLE pimpl/control-block allocation. The provider and its
@@ -105,6 +107,8 @@ class BufferView {
  private:
   friend class Buffer;
   friend class ConstBufferView;
+  friend class FileMapping;
+  friend class SharedMapping;
   constexpr BufferView(MemoryResourceRef resource, void* native_handle,
                        std::size_t offset, std::size_t size) noexcept
       : resource_(resource), native_handle_(native_handle), offset_(offset),
@@ -140,6 +144,8 @@ class ConstBufferView {
 
  private:
   friend class Buffer;
+  friend class FileMapping;
+  friend class SharedMapping;
   constexpr ConstBufferView(MemoryResourceRef resource, void* native_handle,
                             std::size_t offset, std::size_t size) noexcept
       : resource_(resource), native_handle_(native_handle), offset_(offset),

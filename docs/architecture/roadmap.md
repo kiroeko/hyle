@@ -58,7 +58,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container | core, mem | platform |
 | util | core, error, mem, container | — |
 | sched | core, container_intrusive, error, time, platform, mem, util_core | container, timer_queue |
-| io | core, error, mem, container, time, timer_queue, sched | — |
+| io | core, mem, container, time, timer_queue, sched | — |
 | compute | core, error, mem, sched | platform, simd |
 | graph | core, error, mem, container, sched | util_core |
 

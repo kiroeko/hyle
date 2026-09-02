@@ -149,7 +149,6 @@ file(WRITE "${_hyle_io_header_source}/raw_supported.cc"
 "CompleteFn raw_supported_complete = &hyle::io::complete;\n")
 file(WRITE "${_hyle_io_header_source}/no_transport_surfaces.cc"
 "#include <hyle/io/proactor.h>\n"
-"#include <hyle/io/shared_memory.h>\n"
 "#include <type_traits>\n"
 "using hyle::io::BackendKind;\n"
 "using hyle::io::Completion;\n"

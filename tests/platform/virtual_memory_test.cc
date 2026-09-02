@@ -15,12 +15,17 @@ using hyle::platform::large_page_size;
 using hyle::platform::page_align_up;
 using hyle::platform::page_size;
 using hyle::platform::Protect;
+using hyle::platform::VmAdvice;
+using hyle::platform::VmLockMode;
+using hyle::platform::VmLockOptions;
+using hyle::platform::vm_advise;
 using hyle::platform::vm_advise_hugepage;
 using hyle::platform::vm_advise_no_hugepage;
 using hyle::platform::vm_allocate_rw;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_decommit;
 using hyle::platform::vm_protect;
+using hyle::platform::vm_lock;
 using hyle::platform::vm_release;
 using hyle::platform::vm_reserve;
 using hyle::platform::VmRegion;
@@ -70,6 +75,22 @@ TEST(VirtualMemory, VmRegionAllocateRwOwnsCommittedMapping) {
   auto* bytes = static_cast<unsigned char*>(allocated->data());
   bytes[page_size()] = 0x55;
   EXPECT_EQ(bytes[page_size()], 0x55);
+}
+
+TEST(VirtualMemory, AnonymousResidencyControlsValidateAndApplyNormalAdvice) {
+  const std::size_t page = page_size();
+  VmRegion region = VmRegion::allocate_rw(page).value();
+  EXPECT_TRUE(vm_advise(region.data(), page, VmAdvice::kNormal).ok());
+  EXPECT_TRUE(vm_advise(region.data(), page,
+                        static_cast<VmAdvice>(255))
+                  .IsInvalidArgument());
+  EXPECT_TRUE(vm_advise(static_cast<std::byte*>(region.data()) + 1, page,
+                        VmAdvice::kNormal)
+                  .IsInvalidArgument());
+
+  VmLockOptions invalid;
+  invalid.mode = static_cast<VmLockMode>(255);
+  EXPECT_TRUE(vm_lock(region.data(), page, invalid).IsInvalidArgument());
 }
 
 TEST(VirtualMemory, ProtectNoneThenRestore) {

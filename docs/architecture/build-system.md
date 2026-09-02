@@ -148,7 +148,7 @@ simd        -> PUBLIC core platform
 container   -> PUBLIC core mem; PRIVATE platform
 util        -> PUBLIC core error mem container
 sched       -> PUBLIC core container_intrusive error time platform mem util_core; PRIVATE container timer_queue
-io          -> PUBLIC core error mem container time timer_queue sched
+io          -> PUBLIC core mem container time timer_queue sched
 compute     -> PUBLIC core error mem sched; PRIVATE platform simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```

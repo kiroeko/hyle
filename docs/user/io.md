@@ -73,8 +73,9 @@ co_await file.close();
 正常路径应 `co_await close()`。需要完全掌控 syscall/queue 形状的用户可直接
 调用低层 `Proactor::submit_*`，并自行承担 capability 与阻塞语义。
 
-命名共享内存使用 `SharedMemory::create/open/unlink`；跨进程数据结构只能保存
-offset/POD，不能保存本进程裸指针。
+命名共享 storage 属于 Mem：使用 `mem::SharedMapping::create/open/unlink`；IO 只负责建立在
+它之上的 namespace/handle transfer、notification 或异步协议。跨进程数据结构只能保存
+offset/POD，不能保存本进程裸指针。详见 [Mem 指南](mem.md)。
 
 ## 4. HTTP 与 HTTPS
 
