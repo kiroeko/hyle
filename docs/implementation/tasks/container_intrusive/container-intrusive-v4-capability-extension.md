@@ -2,8 +2,9 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；产品实现只能覆盖下列
-> 有限 `FIX` 集。权威状态是
+> 当前阶段：`CANDIDATE`。本页已冻结本轮用户任务、能力账本、预算与验证边界；不可变产品候选为
+> `d15b196f64dea5fda1671312a9b91adec77bd73e` / tree
+> `0e1c82ab4b6b7e2897a68e0f79e06d40ee94e8f1`。权威状态是
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -193,9 +194,9 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动已经
-按冻结边界实现，但尚未绑定不可变 candidate identity，因此还不能进入 P1 或把本轮写成已验证。旧 v3
-性能证据不能覆盖新增能力或变化后的产品 identity。
+`CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动已经
+按冻结边界实现，并绑定上述不可变 candidate identity。旧 v3 性能证据不能覆盖新增能力或变化后的
+产品 identity，本轮仍须完成 Mac correctness/交付与 W1-WIN P1 qualification 后才能验证或关闭。
 
 候选准备阶段已经完成以下非性能门：
 
@@ -207,5 +208,5 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
   `d74e37cf3f41f463ce39b766087c1df57ed96107b961563936ecabae999761c1`。
 
-下一步只允许提交当前实现、绑定 candidate commit/tree，然后在 clean candidate checkout 上执行 Mac
-correctness/交付与 W1-WIN P1 qualification；结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
+下一步只允许在 clean candidate checkout 上执行 Mac correctness/交付与 W1-WIN P1 qualification；
+结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
