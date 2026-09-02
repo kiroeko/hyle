@@ -1,0 +1,105 @@
+{
+  "schema": "hyle.mem.v2-consumer-shapes/v1",
+  "owner": "mem-v2",
+  "baseline_commit": "e7b3a5f2f6bc90b194821c1777542c3c47a27c7b",
+  "provenance_class": "PROVISIONAL_ARCHETYPE",
+  "comparison_class": "SAME_CONTRACT",
+  "material_margin_percent": 5,
+  "source_evidence": [
+    {
+      "role": "installed-mem-consumer",
+      "path": "samples/package/mem/cpp/main.cc",
+      "sha256": "e9303134d7dc6749fd2345afd9bcec906d5bf42e536b9d4de0a2b65e8a8291bd",
+      "fact": "The relocated C++ journey uses Heap allocator injection, BufferPool reuse, mapping and LifetimePlan through the public Mem facade."
+    },
+    {
+      "role": "compute-buffer-view-consumer",
+      "path": "include/hyle/compute/kernel.h",
+      "sha256": "23901a56949f18666a811ee838f4667e50b02271e91de062e98de4b50a7b4459",
+      "fact": "The typed kernel shell consumes Buffer, BufferView and ConstBufferView and preserves native handle, offset and size without owning storage."
+    },
+    {
+      "role": "fixed-external-scratch-product",
+      "path": "include/hyle/mem/region.h",
+      "sha256": "d2e83898337b974a8b70d8bdceff37d4644ef17eaa781a030420430813f64baf",
+      "fact": "FixedArena is a caller-buffer, single-owner, no-fallback bump allocator with explicit bulk reset."
+    },
+    {
+      "role": "transient-buffer-product",
+      "path": "src/mem/buffer_pool.cc",
+      "sha256": "aed34f6b1ee920ce85171f51996b877685bbf3a73ad7e4fa0136df67ea7e1440",
+      "fact": "BufferPool implements bounded thread-safe reuse, RAII leases and exact resource statistics over an open MemoryResource."
+    }
+  ],
+  "journeys": [
+    {
+      "id": "isolated-heap-lifecycle-64",
+      "consumer": "an isolated subsystem heap injected through a runtime-erased allocator",
+      "normal_shape": "64 mixed 24 B to 3 KiB aligned successful allocations, endpoint touches and reverse frees on one owner thread",
+      "candidate": "Heap::allocator() over the locked vendored mimalloc heap",
+      "peer": "std::pmr::memory_resource runtime erasure over a distinct heap from the identical vendored mimalloc build",
+      "excluded": "heap construction, final destruction, OOM injection and bulk clear",
+      "claim_boundary": "runtime-erased successful heap lifecycle only; not every mimalloc mode or concurrent allocation claim"
+    },
+    {
+      "id": "external-scratch-epoch-64",
+      "consumer": "caller-owned fixed scratch storage reset once per phase",
+      "normal_shape": "64 mixed aligned allocations and endpoint touches in a 128 KiB external buffer followed by one epoch reset",
+      "candidate": "FixedArena::clear plus allocate",
+      "peer": "std::pmr::monotonic_buffer_resource rebuilt in place because standard release does not rewind its initial caller buffer",
+      "excluded": "backing allocation, fallback, individual free and owner destruction outside the reset operation",
+      "claim_boundary": "single-owner external-buffer epochs only; not growable Arena retention"
+    },
+    {
+      "id": "buffer-view-range-fill-64",
+      "consumer": "Compute-shaped non-zero BufferView ranges over one warm resource allocation",
+      "normal_shape": "64 validated 3-4 KiB non-overlapping subviews of a 256 KiB host buffer, each synchronously filled",
+      "candidate": "public subview Result followed by BufferView::fill",
+      "peer": "fused lower-bound helper with the same validity/range/overflow Status checks and the same single MemoryResource fill dispatch",
+      "excluded": "Buffer allocation, backend queueing, staging, Event and Stream",
+      "claim_boundary": "public view abstraction overhead for a normal range operation; the lower bound is not an external provider SOTA claim"
+    },
+    {
+      "id": "transient-buffer-lifecycle-64",
+      "consumer": "a warmed thread-safe transient storage owner returning native-handle views and exact lifecycle statistics",
+      "normal_shape": "64 held 256 B to 4 KiB blocks, native-handle observation and reverse RAII return with the working set retained",
+      "candidate": "BufferPool over system_resource with 64-buffer/byte retention bounds, no growth slack and exact stats",
+      "peer": "current oneTBB memory_pool plus a charged zero-allocation Result/RAII/view/stats adapter over scalable_allocator",
+      "excluded": "pool construction, first working-set allocation, final trim/destruction and provider OOM injection",
+      "claim_boundary": "this steady-state variable-size lifecycle; provider allocation count and retained backing are algorithm results, not universal GPU allocation claims"
+    }
+  ],
+  "semantic_equivalence": [
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "work-result-granularity", "candidate": "64 successful runtime-erased allocate/touch/free lifecycles", "peer": "identical sizes, alignments, touches and reverse frees", "verdict": "EQUAL"},
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "ownership-lifetime-teardown", "candidate": "one isolated Heap owner outside timing", "peer": "one isolated mi_heap owner behind std PMR outside timing", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "failure-safety-diagnostics", "candidate": "successful steady state; nullptr OOM excluded", "peer": "successful steady state; bad_alloc OOM excluded", "verdict": "EQUAL"},
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "thread-progress-synchronization", "candidate": "one heap owner thread", "peer": "same", "verdict": "EQUAL"},
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "setup-steady-teardown-charging", "candidate": "owner setup/teardown and warmup excluded", "peer": "same", "verdict": "EQUAL"},
+    {"workload": "isolated-heap-lifecycle-64", "dimension": "resource-delivery-codegen", "candidate": "source/static Release, LTO off, AllocatorRef call in consumer TU", "peer": "same artifact/toolchain and a deliberately non-devirtualized PMR pointer", "verdict": "ADAPTER_EQUALIZED"},
+
+    {"workload": "external-scratch-epoch-64", "dimension": "work-result-granularity", "candidate": "64 ranges in one external buffer and one reusable epoch boundary", "peer": "identical", "verdict": "EQUAL"},
+    {"workload": "external-scratch-epoch-64", "dimension": "ownership-lifetime-teardown", "candidate": "caller buffer and owner persist; clear rewinds", "peer": "caller buffer persists; tiny PMR owner is rebuilt in place to rewind", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "external-scratch-epoch-64", "dimension": "failure-safety-diagnostics", "candidate": "nullptr on exhausted fixed storage", "peer": "bad_alloc is caught and translated to nullptr before the same success assertion", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "external-scratch-epoch-64", "dimension": "thread-progress-synchronization", "candidate": "single owner, no synchronization", "peer": "same", "verdict": "EQUAL"},
+    {"workload": "external-scratch-epoch-64", "dimension": "setup-steady-teardown-charging", "candidate": "clear and all allocations/touches charged", "peer": "required owner reset and all allocations/touches charged", "verdict": "EQUAL"},
+    {"workload": "external-scratch-epoch-64", "dimension": "resource-delivery-codegen", "candidate": "header-inline source/static route", "peer": "standard-library implementation in the same TU/toolchain", "verdict": "EQUAL"},
+
+    {"workload": "buffer-view-range-fill-64", "dimension": "work-result-granularity", "candidate": "64 validated subviews and 64 fills", "peer": "64 fused validations and the identical 64 fills", "verdict": "EQUAL"},
+    {"workload": "buffer-view-range-fill-64", "dimension": "ownership-lifetime-teardown", "candidate": "one Buffer owner outlives all borrowed views", "peer": "same Buffer, resource and lifetime", "verdict": "EQUAL"},
+    {"workload": "buffer-view-range-fill-64", "dimension": "failure-safety-diagnostics", "candidate": "validity, bounds and overflow produce typed Status", "peer": "the fused lower bound performs the same checks and returns the same Status categories", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "buffer-view-range-fill-64", "dimension": "thread-progress-synchronization", "candidate": "one externally synchronized allocation", "peer": "same", "verdict": "EQUAL"},
+    {"workload": "buffer-view-range-fill-64", "dimension": "setup-steady-teardown-charging", "candidate": "Buffer creation and warmup excluded; validation and fill charged", "peer": "same", "verdict": "EQUAL"},
+    {"workload": "buffer-view-range-fill-64", "dimension": "resource-delivery-codegen", "candidate": "header-inline view operations plus one provider virtual call", "peer": "same source/static artifact and one provider virtual call", "verdict": "EQUAL"},
+
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "work-result-granularity", "candidate": "64 Result acquisitions, native views and RAII returns", "peer": "charged adapter provides identical per-item result, view and return granularity", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "ownership-lifetime-teardown", "candidate": "pool owns retained Buffer entries and leases borrow pool", "peer": "oneTBB pool owns backing and adapter leases borrow pool", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "failure-safety-diagnostics", "candidate": "allocation failure is Result<ResourceExhausted>; exact stats updated under pool lock", "peer": "null/bad_alloc is translated to the same Result and charged relaxed counters provide the same observed fields", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "thread-progress-synchronization", "candidate": "thread-safe mutex-protected pool", "peer": "thread-safe oneTBB pool plus thread-safe adapter counters", "verdict": "ADAPTER_EQUALIZED"},
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "setup-steady-teardown-charging", "candidate": "64-block warm allocation excluded; every hot acquire/return and stat update charged", "peer": "same; adapter construction and every semantic operation remain charged", "verdict": "EQUAL"},
+    {"workload": "transient-buffer-lifecycle-64", "dimension": "resource-delivery-codegen", "candidate": "source/static HYLE Mem over vendored mimalloc", "peer": "source-pinned oneTBB memory_pool/scalable_allocator in the same artifact; upstream allocations are observed", "verdict": "ADAPTER_EQUALIZED"}
+  ],
+  "claim_boundary": {
+    "allowed": "W1-WIN 5% P1 non-inferiority for the four frozen normal source-consumer aggregates after every qualification control passes",
+    "forbidden": "blanket Mem SOTA, every allocation size, all thread counts, cross-platform timing, backend allocation latency, end-to-end inference throughput or Formal certification"
+  }
+}

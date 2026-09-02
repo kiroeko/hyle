@@ -32,6 +32,87 @@ if(TARGET hyle_mem_fiber_stack_bench)
   hyle_register_benches(mem hyle_mem_fiber_stack_bench)
 endif()
 
+# mem-v2 closure evidence.  This opt-in adapter keeps the four admitted hot
+# families in one source-consumer artifact: isolated Heap allocation, external
+# scratch epochs, BufferView range dispatch, and warmed transient BufferPool
+# reuse.  Mapping/residency and LifetimePlan construction remain P0
+# complexity/resource families and deliberately do not acquire timing rows.
+option(HYLE_MEM_V2_P1_BENCH
+  "build the Mem v2 source-consumer evidence adapter" OFF)
+if(HYLE_MEM_V2_P1_BENCH)
+  if(NOT HYLE_STATIC OR NOT HYLE_BENCH_TBB)
+    message(FATAL_ERROR
+      "HYLE_MEM_V2_P1_BENCH requires HYLE_STATIC and the oneTBB peer")
+  endif()
+
+  set(HYLE_MEM_V2_BASELINE_DIR "${HYLE_SOURCE_DIR}" CACHE PATH
+      "locked HYLE snapshot containing the Mem v2 direct/lower-bound routes")
+  foreach(_hyle_mem_v2_baseline_file IN ITEMS
+      third_party/mimalloc/include/mimalloc.h
+      include/hyle/mem/heap.h
+      include/hyle/mem/region.h
+      include/hyle/mem/buffer.h
+      include/hyle/mem/buffer_pool.h
+      src/mem/heap.cc
+      src/mem/resource.cc
+      src/mem/buffer_pool.cc)
+    if(NOT EXISTS
+        "${HYLE_MEM_V2_BASELINE_DIR}/${_hyle_mem_v2_baseline_file}")
+      message(FATAL_ERROR
+        "Mem v2 baseline lacks ${_hyle_mem_v2_baseline_file}: "
+        "${HYLE_MEM_V2_BASELINE_DIR}")
+    endif()
+    file(SHA256 "${HYLE_SOURCE_DIR}/${_hyle_mem_v2_baseline_file}"
+      _hyle_mem_v2_candidate_sha256)
+    file(SHA256
+      "${HYLE_MEM_V2_BASELINE_DIR}/${_hyle_mem_v2_baseline_file}"
+      _hyle_mem_v2_baseline_sha256)
+    if(NOT _hyle_mem_v2_candidate_sha256 STREQUAL
+       _hyle_mem_v2_baseline_sha256)
+      message(FATAL_ERROR
+        "Mem v2 lower-bound source drift: ${_hyle_mem_v2_baseline_file}")
+    endif()
+  endforeach()
+  unset(_hyle_mem_v2_baseline_file)
+  unset(_hyle_mem_v2_candidate_sha256)
+  unset(_hyle_mem_v2_baseline_sha256)
+
+  function(_hyle_configure_mem_v2_consumer_bench target)
+    target_link_libraries(${target} PRIVATE
+      hyle_mem
+      nanobench
+      mimalloc_static
+      TBB::tbbmalloc
+      TBB::tbb)
+    target_compile_definitions(${target} PRIVATE
+      TBB_PREVIEW_MEMORY_POOL=1)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_stage_tbb_benchmark_runtime(${target})
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_mem_v2_consumer_bench v2_consumer_bench.cc)
+  _hyle_configure_mem_v2_consumer_bench(hyle_mem_v2_consumer_bench)
+
+  add_executable(hyle_mem_v2_consumer_bench_placement v2_consumer_bench.cc)
+  _hyle_configure_mem_v2_consumer_bench(
+    hyle_mem_v2_consumer_bench_placement)
+  if(MSVC)
+    target_link_options(hyle_mem_v2_consumer_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_mem_v2_consumer_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "Mem v2 consumer placement perturbation is unsupported")
+  endif()
+
+  hyle_register_benches(mem
+    hyle_mem_v2_consumer_bench
+    hyle_mem_v2_consumer_bench_placement)
+endif()
+
 # mem-v1 P1 owner/consumer contract. The benchmark charges complete consumer
 # batches rather than sub-nanosecond allocator calls: runtime allocator
 # injection, request Arena epochs and scheduler-owned guarded-stack lifecycle.
