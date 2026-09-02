@@ -1,8 +1,11 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
+#include <concepts>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <type_traits>
 
 #include "hyle/core/compiler.h"
@@ -58,6 +61,143 @@ HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
   const auto value = monotonic_now().time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
+
+// Object clock sources let an owning runtime select real or deterministic time
+// without changing the global clock or adding a branch to the default hot path.
+// Generic owners should keep the source type: that route inlines exactly like a
+// direct monotonic_now() call. Compiled owners that must select at runtime can
+// explicitly store MonotonicClockRef and pay one indirect call per sample.
+template <class Source>
+concept MonotonicClockSource = requires(const Source& source) {
+  { source.now() } noexcept -> std::same_as<MonotonicTimePoint>;
+};
+
+class SystemMonotonicClock final {
+ public:
+  [[nodiscard]] HYLE_FORCE_INLINE MonotonicTimePoint now() const noexcept {
+    return monotonic_now();
+  }
+};
+
+// Thread-safe deterministic monotonic value for scheduler/timeout/retry tests.
+// It owns only time: advancing it does not sleep, poll a runtime, or wake
+// waiters. The owning runtime performs that policy after advancing the value.
+// Relaxed atomics publish the clock value but deliberately do not synchronize
+// unrelated user data.
+class ManualClock final {
+ private:
+  using Rep = Duration::rep;
+  static_assert(std::is_signed_v<Rep>);
+  static_assert(sizeof(Rep) == sizeof(std::int64_t));
+  static_assert(std::atomic<Rep>::is_always_lock_free);
+
+ public:
+  explicit ManualClock(
+      MonotonicTimePoint initial = MonotonicTimePoint{}) noexcept
+      : now_ns_(initial_count(initial)) {}
+  ManualClock(const ManualClock&) = delete;
+  ManualClock& operator=(const ManualClock&) = delete;
+  ManualClock(ManualClock&&) = delete;
+  ManualClock& operator=(ManualClock&&) = delete;
+
+  [[nodiscard]] HYLE_FORCE_INLINE MonotonicTimePoint now() const noexcept {
+    return make_time_point(now_ns_.load(std::memory_order_relaxed));
+  }
+
+  // Move to an absolute point without violating monotonicity. Equal succeeds;
+  // a negative or stale point returns false and leaves the clock unchanged.
+  [[nodiscard]] bool try_set(MonotonicTimePoint desired) noexcept {
+    const Rep desired_ns = desired.time_since_epoch().count();
+    if (desired_ns < 0) return false;
+    Rep current = now_ns_.load(std::memory_order_relaxed);
+    for (;;) {
+      if (desired_ns < current) return false;
+      if (desired_ns == current) return true;
+      if (now_ns_.compare_exchange_weak(current, desired_ns,
+                                        std::memory_order_relaxed,
+                                        std::memory_order_relaxed)) {
+        return true;
+      }
+    }
+  }
+
+  // Atomically add a non-negative duration and return the resulting point.
+  // Concurrent advances accumulate; overflow saturates at Duration::max().
+  [[nodiscard]] MonotonicTimePoint advance(Duration delta) noexcept {
+    const Rep delta_ns = delta.count();
+    HYLE_FATAL_ASSERT(delta_ns >= 0);
+    constexpr Rep kMax = (std::numeric_limits<Rep>::max)();
+    Rep current = now_ns_.load(std::memory_order_relaxed);
+    for (;;) {
+      const Rep next = delta_ns > kMax - current ? kMax : current + delta_ns;
+      if (now_ns_.compare_exchange_weak(current, next,
+                                        std::memory_order_relaxed,
+                                        std::memory_order_relaxed)) {
+        return make_time_point(next);
+      }
+    }
+  }
+
+ private:
+  static Rep initial_count(MonotonicTimePoint initial) noexcept {
+    const Rep value = initial.time_since_epoch().count();
+    HYLE_FATAL_ASSERT(value >= 0);
+    return value;
+  }
+  static MonotonicTimePoint make_time_point(Rep value) noexcept {
+    return MonotonicTimePoint(Duration(value));
+  }
+
+  std::atomic<Rep> now_ns_;
+};
+
+// Borrowed runtime selection seam. It never owns or allocates a source; the
+// source must outlive the reference. The default constructor selects the real
+// system monotonic clock without needing a global provider object.
+class MonotonicClockRef final {
+ public:
+  MonotonicClockRef() noexcept = default;
+  MonotonicClockRef(const MonotonicClockRef&) noexcept = default;
+  MonotonicClockRef& operator=(const MonotonicClockRef&) noexcept = default;
+  MonotonicClockRef(MonotonicClockRef&&) noexcept = default;
+  MonotonicClockRef& operator=(MonotonicClockRef&&) noexcept = default;
+
+  template <MonotonicClockSource Source>
+    requires (!std::same_as<std::remove_cv_t<Source>, MonotonicClockRef>)
+  explicit MonotonicClockRef(
+      const Source& source HYLE_LIFETIME_BOUND) noexcept
+      : context_(std::addressof(source)), now_(&source_now<Source>) {}
+
+  template <class Source>
+    requires (!std::is_lvalue_reference_v<Source>) &&
+             (!std::same_as<std::remove_cvref_t<Source>,
+                            MonotonicClockRef>) &&
+             MonotonicClockSource<std::remove_reference_t<Source>>
+  MonotonicClockRef(Source&&) = delete;
+
+  [[nodiscard]] HYLE_FORCE_INLINE MonotonicTimePoint now() const noexcept {
+    return now_(context_);
+  }
+
+ private:
+  using Now = MonotonicTimePoint (*)(const void*) noexcept;
+
+  static MonotonicTimePoint system_now(const void*) noexcept {
+    return monotonic_now();
+  }
+  template <class Source>
+  static MonotonicTimePoint source_now(const void* context) noexcept {
+    return static_cast<const Source*>(context)->now();
+  }
+
+  const void* context_ = nullptr;
+  Now now_ = &system_now;
+};
+
+static_assert(MonotonicClockSource<SystemMonotonicClock>);
+static_assert(MonotonicClockSource<ManualClock>);
+static_assert(MonotonicClockSource<MonotonicClockRef>);
+static_assert(sizeof(MonotonicClockRef) == 2 * sizeof(void*));
 
 // Profiling clock in scaled ns, read straight from a reviewed hardware counter
 // (invariant TSC on x86-64; the architected virtual counter on GCC/Clang
@@ -433,8 +573,21 @@ inline std::uint64_t deadline_after_ns(std::uint64_t timeout_ns) noexcept {
   return saturating_add_ns(monotonic_ns(), timeout_ns);
 }
 
+template <MonotonicClockSource Source>
+HYLE_FORCE_INLINE std::uint64_t deadline_after_ns(
+    const Source& source, std::uint64_t timeout_ns) noexcept {
+  return saturating_add_ns(to_monotonic_ns(source.now()), timeout_ns);
+}
+
 inline std::uint64_t remaining_ns(std::uint64_t deadline_ns) noexcept {
   const std::uint64_t now = monotonic_ns();
+  return deadline_ns > now ? deadline_ns - now : 0;
+}
+
+template <MonotonicClockSource Source>
+HYLE_FORCE_INLINE std::uint64_t remaining_ns(
+    const Source& source, std::uint64_t deadline_ns) noexcept {
+  const std::uint64_t now = to_monotonic_ns(source.now());
   return deadline_ns > now ? deadline_ns - now : 0;
 }
 
@@ -445,8 +598,23 @@ inline MonotonicTimePoint deadline_after(
       deadline_after_ns(duration_ns_saturated(timeout)));
 }
 
+template <MonotonicClockSource Source, class Rep, class Period>
+HYLE_FORCE_INLINE MonotonicTimePoint deadline_after(
+    const Source& source,
+    std::chrono::duration<Rep, Period> timeout) noexcept {
+  return monotonic_time_point(deadline_after_ns(
+      source, duration_ns_saturated(timeout)));
+}
+
 inline Duration remaining(MonotonicTimePoint deadline) noexcept {
   const MonotonicTimePoint now = monotonic_now();
+  return deadline > now ? deadline - now : Duration::zero();
+}
+
+template <MonotonicClockSource Source>
+HYLE_FORCE_INLINE Duration remaining(
+    const Source& source, MonotonicTimePoint deadline) noexcept {
+  const MonotonicTimePoint now = source.now();
   return deadline > now ? deadline - now : Duration::zero();
 }
 
@@ -457,16 +625,6 @@ inline void sleep_for(std::chrono::duration<Rep, Period> duration) noexcept {
 
 inline void sleep_until(MonotonicTimePoint deadline) noexcept {
   sleep_until_ns(to_monotonic_ns(deadline));
-}
-
-inline void sleep_for_us(std::uint64_t us) noexcept {
-  sleep_for_ns(
-      us > UINT64_MAX / 1'000ull ? UINT64_MAX : us * 1'000ull);
-}
-inline void sleep_for_ms(std::uint64_t ms) noexcept {
-  sleep_for_ns(ms > UINT64_MAX / 1'000'000ull
-                   ? UINT64_MAX
-                   : ms * 1'000'000ull);
 }
 
 namespace detail {
@@ -501,14 +659,26 @@ class Instant {
   explicit Instant(MonotonicTimePoint point) noexcept : point_(point) {}
 
   static Instant now() noexcept { return Instant(monotonic_now()); }
+  template <MonotonicClockSource Source>
+  static Instant now(const Source& source) noexcept {
+    return Instant(source.now());
+  }
   [[nodiscard]] MonotonicTimePoint time_point() const noexcept {
     return point_;
   }
   [[nodiscard]] Duration elapsed() const noexcept {
     return detail::nonnegative_instant_difference(monotonic_now(), point_);
   }
+  template <MonotonicClockSource Source>
+  [[nodiscard]] Duration elapsed(const Source& source) const noexcept {
+    return detail::nonnegative_instant_difference(source.now(), point_);
+  }
   [[nodiscard]] std::uint64_t elapsed_ns() const noexcept {
     return static_cast<std::uint64_t>(elapsed().count());
+  }
+  template <MonotonicClockSource Source>
+  [[nodiscard]] std::uint64_t elapsed_ns(const Source& source) const noexcept {
+    return static_cast<std::uint64_t>(elapsed(source).count());
   }
   [[nodiscard]] Duration until(Instant later) const noexcept {
     return detail::nonnegative_instant_difference(later.point_, point_);

@@ -35,7 +35,6 @@ using hyle::time::profiling_measurement_stop_ns;
 using hyle::time::realtime_ns;
 using hyle::time::remaining_ns;
 using hyle::time::saturating_add_ns;
-using hyle::time::sleep_for_ms;
 using hyle::time::sleep_for_ns;
 using hyle::time::sleep_until_ns;
 using hyle::time::ThreadCpuClock;
@@ -95,7 +94,7 @@ TEST(Clock, ArmProfilingCounterIsAvailableAndNonDecreasing) {
 
 TEST(Clock, MonotonicAdvancesOverSleep) {
   std::uint64_t a = monotonic_ns();
-  sleep_for_ms(5);
+  hyle::time::sleep_for(std::chrono::milliseconds(5));
   std::uint64_t b = monotonic_ns();
   EXPECT_GT(b, a);
   // Should have advanced by at least ~4ms (allow scheduler slack below request).
@@ -278,7 +277,7 @@ TEST(Clock, UnixTimestampConvertsToWindowsFiletimeCheckedAndFloored) {
 
 TEST(Clock, RealtimeAdvances) {
   std::uint64_t a = realtime_ns();
-  sleep_for_ms(5);
+  hyle::time::sleep_for(std::chrono::milliseconds(5));
   std::uint64_t b = realtime_ns();
   EXPECT_GT(b, a);
 }
@@ -353,7 +352,7 @@ TEST(Clock, CpuAccountingClocksAreTypedMonotonicAndExcludeSleep) {
 
   const std::uint64_t thread_before_sleep = current_thread_cpu_ns();
   const std::uint64_t process_before_sleep = process_cpu_ns();
-  sleep_for_ms(30);
+  hyle::time::sleep_for(std::chrono::milliseconds(30));
   const std::uint64_t thread_after_sleep = current_thread_cpu_ns();
   const std::uint64_t process_after_sleep = process_cpu_ns();
   ASSERT_GE(thread_after_sleep, thread_before_sleep);
@@ -393,7 +392,7 @@ TEST(Clock, SleepForNsSleepsAtLeastRequested) {
 
 TEST(Clock, InstantElapsed) {
   Instant start = Instant::now();
-  sleep_for_ms(5);
+  hyle::time::sleep_for(std::chrono::milliseconds(5));
   std::uint64_t e = start.elapsed_ns();
   EXPECT_GE(e, 3'000'000ull);
   EXPECT_LT(e, 1'000'000'000ull);  // sanity: under a second
@@ -401,7 +400,7 @@ TEST(Clock, InstantElapsed) {
 
 TEST(Clock, InstantUntil) {
   Instant a = Instant::now();
-  sleep_for_ms(2);
+  hyle::time::sleep_for(std::chrono::milliseconds(2));
   Instant b = Instant::now();
   EXPECT_GT(a.until_ns(b), 0u);
   EXPECT_EQ(b.until_ns(a), 0u);  // backwards -> 0, no underflow
@@ -595,7 +594,7 @@ TEST(Clock, ProfilingClockTracksMonotonicOverSleep) {
   // (a wrong tsc_hz would make the fast delta drift from the real one).
   std::uint64_t f0 = profiling_clock_ns();
   std::uint64_t m0 = monotonic_ns();
-  sleep_for_ms(50);
+  hyle::time::sleep_for(std::chrono::milliseconds(50));
   std::uint64_t f1 = profiling_clock_ns();
   std::uint64_t m1 = monotonic_ns();
   double fast_delta = static_cast<double>(f1 - f0);

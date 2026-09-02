@@ -52,6 +52,29 @@ TEST(CommonTimeoutQueue, FiresInArmOrder) {
   EXPECT_TRUE(q.empty());
 }
 
+TEST(CommonTimeoutQueue, ExplicitClockSourceSchedulesFixedDuration) {
+  using namespace std::chrono_literals;
+  hyle::time::ManualClock clock(
+      hyle::time::MonotonicTimePoint(hyle::time::Duration(10)));
+  CommonTimeoutQueue queue(25ns);
+  TimerEntry first = make_entry(1);
+  TimerEntry second = make_entry(2);
+
+  EXPECT_TRUE(queue.try_schedule_now(&first, clock));
+  EXPECT_EQ(first.deadline_ns(), 35u);
+  (void)clock.advance(5ns);
+  queue.schedule(&second, clock);
+  EXPECT_EQ(second.deadline_ns(), 40u);
+
+  TimerList due;
+  (void)clock.advance(20ns);
+  EXPECT_EQ(queue.advance(clock.now(), due), 1u);
+  EXPECT_EQ(due.pop_front(), &first);
+  (void)clock.advance(5ns);
+  EXPECT_EQ(queue.advance(clock.now(), due), 1u);
+  EXPECT_EQ(due.pop_front(), &second);
+}
+
 TEST(CommonTimeoutQueue, NormalScheduleSamplesClockAndTypedNextIsOptional) {
   using namespace std::chrono_literals;
   CommonTimeoutQueue q(2ms);

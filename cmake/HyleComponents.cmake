@@ -123,11 +123,13 @@ _hyle_declare_component(util_core
 _hyle_declare_component(error PUBLIC_DEPS core)
 _hyle_declare_component(obs TRACE PUBLIC_DEPS core error)
 _hyle_declare_component(math PUBLIC_DEPS core)
-_hyle_declare_component(time PUBLIC_DEPS core container_intrusive)
-# Registered factor ID only. Its dependency, source and product-root contract
-# stays intentionally absent while the new component is QUEUED; the Time v3
-# round must reach SCOPED/AUDITED before it can migrate product ownership.
-_hyle_declare_component(timer_queue)
+_hyle_declare_component(time PUBLIC_DEPS core)
+_hyle_declare_component(timer_queue
+  PUBLIC_DEPS core time container_intrusive
+  SPLIT_PUBLIC_HEADERS
+    hyle/time/common_timeout_queue.h
+    hyle/time/timer_entry.h
+    hyle/time/timer_queue.h)
 # fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
 # than a header made accidentally available by installing the whole tree.
 _hyle_declare_component(platform PUBLIC_DEPS core error time)
@@ -143,7 +145,7 @@ _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 # typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
   TRACE
-  PRIVATE_DEPS container
+  PRIVATE_DEPS container timer_queue
   PUBLIC_DEPS core error time platform mem util_core)
 # io's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
@@ -152,7 +154,7 @@ _hyle_declare_component(sched
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
   TRACE
-  PUBLIC_DEPS core error mem container time sched)
+  PUBLIC_DEPS core error mem container time timer_queue sched)
 # compute publicly exposes error/mem and sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
@@ -205,7 +207,7 @@ endfunction()
 set(HYLE_KNOWN_PRODUCTS "")
 _hyle_declare_product(core FACTORS core)
 _hyle_declare_product(error FACTORS error)
-_hyle_declare_product(time FACTORS time)
+_hyle_declare_product(time FACTORS time timer_queue)
 _hyle_declare_product(platform FACTORS platform)
 _hyle_declare_product(mem FACTORS mem)
 _hyle_declare_product(obs FACTORS obs)

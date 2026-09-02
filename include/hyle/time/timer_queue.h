@@ -44,6 +44,9 @@ class TimerQueue {
   explicit TimerQueue(std::uint64_t now_ns) noexcept : now_ns_(now_ns) {}
   explicit TimerQueue(MonotonicTimePoint now) noexcept
       : TimerQueue(to_monotonic_ns(now)) {}
+  template <MonotonicClockSource Source>
+  explicit TimerQueue(const Source& source) noexcept
+      : TimerQueue(source.now()) {}
   ~TimerQueue() noexcept { detach_remaining(); }
   TimerQueue(const TimerQueue&) = delete;
   TimerQueue& operator=(const TimerQueue&) = delete;
@@ -73,12 +76,26 @@ class TimerQueue {
     schedule(entry, saturating_add_ns(now_ns, timeout_ns));
   }
 
+  template <MonotonicClockSource Source>
+  HYLE_FORCE_INLINE void schedule_after(
+      TimerEntry* entry, std::uint64_t timeout_ns,
+      const Source& source) noexcept {
+    schedule(entry, deadline_after_ns(source, timeout_ns));
+  }
+
   template <class Rep, class Period>
   HYLE_FORCE_INLINE void schedule_after(
       TimerEntry* entry, std::chrono::duration<Rep, Period> timeout,
       MonotonicTimePoint now = monotonic_now()) noexcept {
     schedule(entry, saturating_add_ns(to_monotonic_ns(now),
                                      duration_ns_saturated(timeout)));
+  }
+
+  template <class Rep, class Period, MonotonicClockSource Source>
+  HYLE_FORCE_INLINE void schedule_after(
+      TimerEntry* entry, std::chrono::duration<Rep, Period> timeout,
+      const Source& source) noexcept {
+    schedule(entry, deadline_after(source, timeout));
   }
 
   // Returns whether an armed entry was detached. Passing an idle entry is an
@@ -164,6 +181,12 @@ class TimerQueue {
 
   std::size_t advance(MonotonicTimePoint now, EntryList& out) noexcept {
     return advance(to_monotonic_ns(now), out);
+  }
+
+  template <MonotonicClockSource Source>
+  HYLE_FORCE_INLINE std::size_t advance(
+      const Source& source, EntryList& out) noexcept {
+    return advance(source.now(), out);
   }
 
   // Conservative absolute wakeup. Cancelling the current minimum may leave an

@@ -1,7 +1,8 @@
 # HYLE time：什么情况选择什么
 
-`time` 面向 C++23 source/static/shared 用户，提供时钟、deadline、Unix 时间互操作、OS 线程 sleep
-和无分配 timer 容器。它不提供 C API/Native FFI，也不替 scheduler 执行 callback。
+`time` 面向 C++23 source/static/shared 用户，提供时钟、可注入的确定性 monotonic time、deadline、
+Unix 时间互操作、OS 线程 sleep 和无分配 timer 容器。内部拆成 host clock 与 timer queue 两个
+factor，但普通用户仍只链接 `hyle::time`。它不提供 C API/Native FFI，也不替 scheduler 执行 callback。
 
 ## 一页选择表
 
@@ -11,6 +12,9 @@
 | 日志、协议、Unix epoch | `realtime_now/timestamp` | 墙钟会因校时跳变 |
 | 普通 C++ duration/deadline | typed chrono 入口 | 不要手写 ns 乘法或 `now + timeout` |
 | 简单作用域耗时 | `Instant::now().elapsed()` | raw subtraction 可能为负 |
+| 可编译期注入真实/手动时间 | 保留具体 clock provider 类型 | 模板路线无动态分派 |
+| 运行时选择真实/手动时间 | `MonotonicClockRef` | 借用 source，后者必须更长寿 |
+| 确定性 timeout 测试 | `ManualClock` + owner 主动 poll | advance 不会自动唤醒 waiter |
 | 可接受粗分辨率的 rate-limit/event-loop time | `coarse_monotonic_*` | 先看 availability；多个 tick 可相同 |
 | 高频粗粒度日志 stamp | `coarse_realtime_*` | 仍是会跳变的墙钟 |
 | 高频局部 profiling sample | `profiling_clock_ns()` | 不能用于 timeout；raw read 不排序周围指令 |
@@ -54,6 +58,40 @@ ratio 换算，对正值向上取整到 ns 并饱和；NaN/非正值为 0，正�
 
 `Instant::elapsed()`/`until()` 是非负便利入口：反向为 0，过大的正差饱和。`later - earlier`
 保留 `std::chrono` 的有符号语义，可能为负；对外部或极值 time point 优先用便利入口。
+
+## 真实时间、手动时间与 runtime 选择
+
+普通代码继续使用无参数入口。需要让 scheduler、retry 或 timeout 测试完全不等待墙上时间时，把
+clock provider 作为 owner 的显式依赖：
+
+```cpp
+using namespace std::chrono_literals;
+
+hyle::time::ManualClock clock;
+const auto started = hyle::time::Instant::now(clock);
+const auto deadline = hyle::time::deadline_after(clock, 30s);
+
+(void)clock.advance(25s);
+const auto left = hyle::time::remaining(clock, deadline);  // 5s
+const auto elapsed = started.elapsed(clock);               // 25s
+```
+
+通用 owner 优先模板化其 `MonotonicClockSource`，system route 与直接读钟一样可内联。只有对象必须在
+运行时选择 provider 时才使用 borrowed type erasure：
+
+```cpp
+hyle::time::ManualClock manual;
+hyle::time::MonotonicClockRef selected(manual);
+const auto deadline = hyle::time::deadline_after(selected, 10ms);
+```
+
+`MonotonicClockRef` 不拥有 source、不开堆、大小为两个 pointer word；不能从 temporary 构造，source
+必须比它长寿。默认构造的 ref 选择真实 system monotonic clock，并有一次显式间接调用成本。
+`ManualClock` 不可 copy/move，只允许向前 `try_set` 或非负 `advance`，溢出饱和到最大 time point。
+其 relaxed atomic 只保证时间值自身的并发安全，不能充当发布其他数据的 happens-before fence。
+
+手动时间刻意没有 `sleep_for/until`：advance 只改变数值，不会 poll timer queue 或唤醒 fiber。测试
+runtime 应在 advance 后显式调用自己的 `advance/poll`；等待、取消和唤醒策略属于 Sched/IO owner。
 
 ## Coarse、profiling 与 CPU time
 
@@ -149,6 +187,16 @@ timers.advance(hyle::time::monotonic_now(), due);
 due.consume_all([](hyle::time::TimerEntry* timer) noexcept {
   if (auto fire = timer->fire_callback()) fire(timer);
 });
+```
+
+同一代码也可显式使用 provider，适合确定性 event-loop 测试：
+
+```cpp
+hyle::time::ManualClock clock;
+hyle::time::TimerQueue timers(clock);
+timers.schedule_after(&request_timer, 30s, clock);
+(void)clock.advance(30s);
+timers.advance(clock, due);
 ```
 
 一个 event-loop tick 批量 arm 时只采一次 `now`：

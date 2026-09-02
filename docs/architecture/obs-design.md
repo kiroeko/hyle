@@ -161,7 +161,8 @@ mem/sched/io/compute 反向链接 log runtime。
 typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需为了分配器引入
 `obs -> mem`。异步拥有型复制与队列由 application adapter 自己选择 allocator。
 区间控制使用标准 `steady_clock` 类型并提供 caller-supplied monotonic-ns seam，不引入
-`obs -> time -> container_intrusive`。选择 Time 的推理引擎可把同域的 `monotonic_now()` 或
+`obs -> time`。host-clock `time` 已独立于 `timer_queue/container_intrusive`，但 Obs 仍不为一个
+可由 caller 传值的读钟动作制造依赖。选择 Time 的推理引擎可把同域的 `monotonic_now()` 或
 `coarse_monotonic_ns()` 传入显式 limiter；只选择 Obs 的普通程序仍不承担额外 component closure。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是

@@ -31,7 +31,7 @@ header-only `hyle_container_intrusive` factor，不产生 runtime artifact，也
 
 | 消费者任务 | 使用形状 | 归属裁决 |
 |---|---|---|
-| `time::TimerQueue` / `CommonTimeoutQueue` 保存 caller-owned timer，O(1) cancel，并批量交付 ready prefix/list | safe hook；`remove`、range `splice`、`append`、`consume_all`、`for_each` | timer 必须在析构前显式撤销；deadline prefix 扫描留在 time，结构转移复用通用 range splice；`time -> PUBLIC container_intrusive` |
+| `time::TimerQueue` / `CommonTimeoutQueue` 保存 caller-owned timer，O(1) cancel，并批量交付 ready prefix/list | safe hook；`remove`、range `splice`、`append`、`consume_all`、`for_each` | timer 必须在析构前显式撤销；deadline prefix 扫描留在 timer_queue，结构转移复用通用 range splice；`timer_queue -> PUBLIC container_intrusive` |
 | 用户节点允许先于 list 析构，希望析构自动撤销 membership | auto hook；FIFO、任意摘链与批量 handoff | `IntrusiveListHook` / `IntrusiveList` |
 | 用户状态机要求在 owner lock 下显式摘链，漏摘必须被诊断 | safe hook；同一 list 操作面 | `SafeIntrusiveListHook` / `SafeIntrusiveList`；Release 不为析构检查付常态分支 |
 | sched ConditionVariable / Semaphore 的 stack waiter | 摘链后复用原 `next` 作锁外 wake chain | 保留 sched 专用链；通用 list 会增加 waiter footprint 和锁内写，且不能表达 link storage 的状态复用 |

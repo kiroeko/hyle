@@ -1,3 +1,4 @@
+// Qualified scheduler-lifecycle replay owned by the timer_queue factor.
 #include <nanobench.h>
 
 #include <array>
@@ -45,7 +46,7 @@ ThreadQosState configure_main_benchmark_thread() {
   } else if (requested != nullptr &&
              std::strcmp(requested, "interactive") != 0) {
     std::fprintf(stderr,
-                 "hyle_time_consumer_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "hyle_timer_queue_consumer_bench: HYLE_BENCH_APPLE_QOS must be "
                  "interactive or utility (got %s)\n",
                  requested);
     std::abort();
@@ -433,7 +434,7 @@ int main() {
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
   std::fprintf(
       stderr,
-      "# HYLE_TIME_CONSUMER_RUN execution_order=%s allocation_order=%s "
+      "# HYLE_TIMER_QUEUE_CONSUMER_RUN execution_order=%s allocation_order=%s "
       "apple_qos=%s qos_ok=%s affinity=external run_nonce=%s\n",
       rival_first ? "peer-first" : "candidate-first",
       peer_allocation_first ? "peer-first" : "candidate-first", qos.name,

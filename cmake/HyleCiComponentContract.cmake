@@ -510,8 +510,9 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
 endif()
 unset(_intrusive_factor_build)
 
-# time publicly exposes TimerList, so selecting time must carry the lightweight
-# intrusive target but must not pull the compiled container/mem/platform stack.
+# The user-facing Time product aggregates a host-clock factor and the
+# header-only timer_queue factor. The host artifact itself stays independent
+# from intrusive storage, while the timer factor declares every header edge.
 set(_time_source "${_hyle_contract_root}/time-source")
 file(MAKE_DIRECTORY "${_time_source}")
 file(WRITE "${_time_source}/CMakeLists.txt"
@@ -528,21 +529,26 @@ file(WRITE "${_time_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"missing time product hyle::\${_required_product}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_required_factor IN ITEMS core container_intrusive time)\n"
+"foreach(_required_factor IN ITEMS core container_intrusive time timer_queue)\n"
 "  if(NOT TARGET hyle_\${_required_factor})\n"
 "    message(FATAL_ERROR \"missing time factor hyle_\${_required_factor}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"if(TARGET hyle::container_intrusive)\n"
-"  message(FATAL_ERROR \"internal intrusive factor leaked as a product\")\n"
-"endif()\n"
+"foreach(_internal IN ITEMS container_intrusive timer_queue)\n"
+"  if(TARGET hyle::\${_internal})\n"
+"    message(FATAL_ERROR \"internal factor leaked as product hyle::\${_internal}\")\n"
+"  endif()\n"
+"endforeach()\n"
 "foreach(_forbidden IN ITEMS mem platform container)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected time-closure target hyle::\${_forbidden}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"hyle_contract_require_direct_public_edge(hyle_time hyle_container_intrusive)\n")
-_hyle_contract_run("time uses lightweight intrusive closure" TRUE
+"hyle_contract_require_direct_public_edge(hyle_time hyle_core)\n"
+"hyle_contract_require_direct_public_edge(hyle_timer_queue hyle_core)\n"
+"hyle_contract_require_direct_public_edge(hyle_timer_queue hyle_time)\n"
+"hyle_contract_require_direct_public_edge(hyle_timer_queue hyle_container_intrusive)\n")
+_hyle_contract_run("time separates host and timer factors" TRUE
   "${CMAKE_COMMAND}" -S "${_time_source}"
   -B "${_hyle_contract_root}/time-build"
   ${_hyle_generator_args}
@@ -593,7 +599,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _sanitizer_cached STREQUAL \"off\" OR NOT _sanitizer_effective STREQUAL \"off\")\n"
 "  message(FATAL_ERROR \"HYLE_SANITIZER cache/effective split: cache='\${_sanitizer_cached}', effective='\${_sanitizer_effective}'\")\n"
 "endif()\n"
-"foreach(_required_product IN ITEMS core error time platform mem container)\n"
+"foreach(_required_product IN ITEMS core error platform mem container)\n"
 "  if(NOT TARGET hyle::\${_required_product})\n"
 "    message(FATAL_ERROR \"missing selected product hyle::\${_required_product}\")\n"
 "  endif()\n"
@@ -608,7 +614,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"internal factor leaked as hyle::\${_internal_alias}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_forbidden IN ITEMS io compute graph simd)\n"
+"foreach(_forbidden IN ITEMS time io compute graph simd)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
@@ -710,6 +716,7 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "  message(FATAL_ERROR \"transport factor/product projection is invalid\")\n"
 "endif()\n"
 "hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
+"hyle_contract_require_direct_public_edge(hyle_io hyle_timer_queue)\n"
 "hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n")
 _hyle_contract_run("supported transport direct PUBLIC edges" TRUE
   "${CMAKE_COMMAND}" -S "${_transport_source}"

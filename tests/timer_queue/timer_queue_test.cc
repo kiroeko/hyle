@@ -57,6 +57,35 @@ TEST(TimerQueue, FiresAfterDeadline) {
   EXPECT_TRUE(w.empty());
 }
 
+TEST(TimerQueue, ExplicitClockSourceComposesWithoutBeingStored) {
+  using namespace std::chrono_literals;
+  hyle::time::ManualClock clock(
+      hyle::time::MonotonicTimePoint(hyle::time::Duration(100)));
+  TimerQueue queue(clock);
+  TimerEntry raw = make_entry(1);
+  TimerEntry typed = make_entry(2);
+
+  queue.schedule_after(&raw, 25u, clock);
+  queue.schedule_after(&typed, 40ns, clock);
+  EXPECT_EQ(queue.now_ns(), 100u);
+  EXPECT_EQ(raw.deadline_ns(), 125u);
+  EXPECT_EQ(typed.deadline_ns(), 140u);
+
+  (void)clock.advance(30ns);
+  TimerQueue::EntryList due;
+  EXPECT_EQ(queue.advance(clock, due), 1u);
+  ASSERT_FALSE(due.empty());
+  EXPECT_EQ(due.pop_front(), &raw);
+  EXPECT_TRUE(due.empty());
+  EXPECT_TRUE(typed.scheduled());
+
+  // The queue samples the source only at explicit calls; it never retains a
+  // source pointer or advances itself behind the consumer's back.
+  (void)clock.advance(10ns);
+  EXPECT_EQ(queue.advance(clock, due), 1u);
+  EXPECT_EQ(due.pop_front(), &typed);
+}
+
 TEST(TimerQueue, DefaultConstructionAndTypedNextDeadlineFitNormalUse) {
   using namespace std::chrono_literals;
   TimerQueue w;

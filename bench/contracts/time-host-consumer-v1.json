@@ -1,0 +1,175 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "time-host-consumer-v1",
+  "module": "time",
+  "claim": "P1 engineering non-inferiority of HYLE host-time phase sampling and saturated deadline arithmetic against the source-equivalent precise std::chrono::steady_clock route used by pinned Seastar, measured as a 64-phase normal runtime batch with dual execution orders and code-placement strata",
+  "candidate": {
+    "target": "hyle_time",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "time",
+    "entrypoint": "include/hyle/time/clock.h"
+  },
+  "peers": [
+    {
+      "id": "seastar",
+      "revision": "991cf9a908482a3f11ca2fc34a1b3970a06d8622",
+      "configuration": {
+        "delivery_shape": "faithful same-TU standard-clock route",
+        "algorithm": "Seastar steady_clock_type precise timer route, an alias of std::chrono::steady_clock, followed by equivalent typed conversion, elapsed and saturating deadline arithmetic",
+        "source_file": "include/seastar/core/timer.hh",
+        "source": "clean external checkout"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "host-phase-deadline-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "sched/runtime/host-phase-and-deadline",
+      "provenance": {
+        "path": "src/sched/scheduler.cc",
+        "sha256": "9fc1b77d51b70b701962418ca5b3003244b9828ac676fd5e9e33a49716842ba3"
+      },
+      "ownership_topology": {
+        "candidate": "One runtime thread performs 64 independent HYLE Instant begin/end samples and value-only saturated deadline/remaining calculations",
+        "peer": "The same thread performs 64 direct std::chrono::steady_clock begin/end samples and source-equivalent value-only calculations",
+        "equivalence": "Both routes use the same compiler, standard library, OS clock, number of reads, timeout sequence, arithmetic boundary contract, checksum sink and process; only the HYLE public inline vocabulary differs"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 2,
+        "unit": "host-clock-read",
+        "budget": 5,
+        "denominator": "one callback containing 64 runtime phase records with begin and end samples",
+        "derivation": "Scheduler deadline/remaining paths and inference phase accounting both read a precise monotonic clock; batching 64 phase records raises the workload above the instrument floor without inventing a different API shape"
+      },
+      "semantic_contract": "For each of 64 runtime phases, sample a precise monotonic begin and end, compute a non-negative elapsed duration, derive a 30-second-plus-index saturated absolute deadline from begin, compute remaining time at end, and consume every result",
+      "comparability": "COMPARABLE",
+      "peer_id": "seastar",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "64 consecutive phase records with timeout_ns = 30 seconds plus the record index",
+        "scale": {"phases": 64, "clock_reads": 128, "deadline_calculations": 64, "elapsed_calculations": 64}
+      },
+      "setup": "No heap allocation, clock registry, runtime object or timer node is created; both same-TU routes are warmed before measured epochs",
+      "charged_phases": ["128 precise steady-clock reads", "64 typed begin/end elapsed calculations", "64 saturated deadline calculations", "64 remaining-time calculations", "one checksum sink"],
+      "pair": {"candidate": "HYLE host phase batch N=64", "peer": "C++ steady_clock phase batch N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [15, 31],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": ["artifact-identity", "build-contract"]
+  },
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "time",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"seastar": "HYLE_SEASTAR_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "time-host-consumer-primary",
+          "target": "hyle_time_host_consumer_bench",
+          "stem": "hyle_time_host_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_TIME_HOST_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "host-phase-deadline-64", "title": "host phase timing and deadline aggregate N=64"}
+          ]
+        },
+        {
+          "id": "time-host-consumer-placement",
+          "target": "hyle_time_host_consumer_bench_placement",
+          "stem": "hyle_time_host_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_TIME_HOST_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "host-phase-deadline-64", "title": "host phase timing and deadline aggregate N=64"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

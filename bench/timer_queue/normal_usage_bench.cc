@@ -1,4 +1,4 @@
-// Normal public-entry benchmark for time. The algorithm-only N=4096/rival
+// Normal public-entry diagnostic for timer queues. The N=4096/rival
 // certificate stays in timer_queue_bench.cc; this executable covers the shapes
 // users actually write: embedded/scattered nodes, incremental event-loop work,
 // schedule_after including its clock read, and sleep latency.
@@ -56,14 +56,14 @@ void configure_main_benchmark_thread() {
   } else if (requested != nullptr &&
              std::strcmp(requested, "interactive") != 0) {
     std::fprintf(stderr,
-                 "hyle_time_normal_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "hyle_timer_queue_normal_bench: HYLE_BENCH_APPLE_QOS must be "
                  "interactive or utility (got %s)\n",
                  requested);
     std::abort();
   }
   const int rc = pthread_set_qos_class_self_np(qos, 0);
   std::fprintf(stderr,
-               "# HYLE_TIME_NORMAL_BENCH apple_main_qos=%s qos_ok=%d "
+               "# HYLE_TIMER_QUEUE_NORMAL_BENCH apple_main_qos=%s qos_ok=%d "
                "affinity=unsupported\n",
                name, rc == 0 ? 1 : 0);
   if (rc != 0) std::abort();

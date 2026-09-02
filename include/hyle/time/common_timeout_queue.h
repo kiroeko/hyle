@@ -61,6 +61,12 @@ class CommonTimeoutQueue {
     HYLE_FATAL_ASSERT(scheduled);
   }
 
+  template <MonotonicClockSource Source>
+  void schedule(TimerEntry* e, const Source& source) noexcept {
+    const bool scheduled = try_schedule_now(e, source);
+    HYLE_FATAL_ASSERT(scheduled);
+  }
+
   // Arm `e` to fire at absolute monotonic `deadline_ns`. O(1). Precondition (the
   // whole point of this structure): deadlines are armed in non-decreasing order,
   // which holds automatically when every entry uses the same duration over a
@@ -138,6 +144,12 @@ class CommonTimeoutQueue {
   // monotonic timestamp.
   bool try_schedule_now(TimerEntry* e) noexcept {
     return try_schedule_after(e, monotonic_ns());
+  }
+
+  template <MonotonicClockSource Source>
+  HYLE_FORCE_INLINE bool try_schedule_now(
+      TimerEntry* e, const Source& source) noexcept {
+    return try_schedule_after(e, source.now());
   }
 
   // O(1) unlink. No tombstone. No-op if not scheduled.

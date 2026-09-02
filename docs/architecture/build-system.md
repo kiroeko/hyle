@@ -34,7 +34,7 @@
   `hyle::_factor_<factor>` detail target。两者都不是普通用户入口。
 - 用户在源码树和安装树都只消费 `hyle::<product>` façade；`HYLE_COMPONENTS` 和
   `find_package(Hyle COMPONENTS ...)` 也只接受产品名。
-- 当前 `core` 与 `math` factor 是 `INTERFACE`；`container_intrusive`、`util_core` 也是
+- 当前 `core`、`math` 与 `timer_queue` factor 是 `INTERFACE`；`container_intrusive`、`util_core` 也是
   `INTERFACE` factor，但分别由公开的 `container`、`util` façade 聚合，不是独立用户产品。
 - 其余 factor 通常是编译型 target；product façade 始终是无运行时成本的 `INTERFACE` target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
@@ -63,8 +63,8 @@
 ### 双层投影合同
 
 Stage C 的 30 个 semantic factor 是源码 ownership、`module-status.json`、测试和 HYLE 直接依赖的
-目标粒度；当前已有 16 个 factor 接入完整构建，另有 `timer_queue` 只完成 `QUEUED` ID 登记。登记项在
-进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺；这些 factor 都不是用户产品。双层投影把旧
+目标粒度；当前已有 17 个 factor 接入完整构建。登记项在进入 `SCOPED/AUDITED` 前没有 target、依赖或
+product-root 承诺；这些 factor 都不是用户产品。双层投影把旧
 “component”承担的四种含义拆开：
 
 | layer | owns | may depend on | consumer-visible contract |
@@ -138,15 +138,15 @@ container_intrusive -> PUBLIC core
 util_core   -> PUBLIC core
 error       -> PUBLIC core
 obs         -> PUBLIC core error
-time        -> PUBLIC core container_intrusive
-timer_queue QUEUED (no target, dependency edge, or product root yet)
+time        -> PUBLIC core
+timer_queue -> PUBLIC core time container_intrusive
 platform    -> PUBLIC core error time
 mem         -> PUBLIC core error platform util_core
 simd        -> PUBLIC core platform
 container   -> PUBLIC core mem; PRIVATE platform
 util        -> PUBLIC core error mem container
-sched       -> PUBLIC core error platform mem container util_core; PRIVATE time
-io          -> PUBLIC core error mem container time sched
+sched       -> PUBLIC core error time platform mem util_core; PRIVATE container timer_queue
+io          -> PUBLIC core error mem container time timer_queue sched
 compute     -> PUBLIC core error mem sched; PRIVATE platform simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
@@ -157,7 +157,7 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 直接链接 build-only `hyle_highway_headers`，所以中央内部图没有 `container -> simd` 或其他虚构
 内部 header 边；来源与许可证由下节的外部依赖登记投影。这里记录的都是实际 target/link 契约。
 `container_intrusive` 证明 header-only 能力也应在公开类型穿过 factor 边界
-时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
+时拥有真实 target：`timer_queue` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
 `container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
 `platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform -> PUBLIC time` 是真实 SDK 边；sched 的 waiter 链因 detached wake-link 复用而保留私有特化，

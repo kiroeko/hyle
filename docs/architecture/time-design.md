@@ -1,8 +1,9 @@
 # time 模块架构
 
-`time` 统一 HYLE 内部和 C++ 用户的时钟域、deadline 算术、Unix 时间互操作、阻塞式线程等待，
-以及 event loop 所需的无分配 timer 容器。它不拥有 executor、线程间路由、周期任务策略、日历、
-时区或文本协议。
+Time 产品统一 HYLE 内部和 C++ 用户的时钟域、deadline 算术、Unix 时间互操作、阻塞式线程等待，
+以及 event loop 所需的无分配 timer 容器。实现上分为只依赖 Core 的 host-clock `time` factor 与
+caller-owned node/data-structure `timer_queue` factor；用户仍只选择 `hyle::time`。两者都不拥有
+executor、线程间路由、周期任务策略、日历、时区或文本协议。
 
 施工事实见 [`time-v1 closure`](../implementation/tasks/time/time-v1-closure.md)，当前工程性能证据见
 [`benchmarks-time`](../implementation/evidence/performance/benchmarks-time.md)，用户选型见
@@ -10,16 +11,21 @@
 
 ## 边界与依赖
 
-`time` 的直接公开依赖为 `core` 和 header-only `container_intrusive`：
+host-clock `time` 只直接公开依赖 `core`；header-only `timer_queue` 直接公开依赖 `core`、`time` 和
+`container_intrusive`：
 
 ```text
-core + container_intrusive ──► time ──► platform（文件时间值）
-                                  ├──► sched（deadline 与 TimerQueue）
-                                  └──► io（Unix 时间与 timeout 仲裁）
+core ──► time ───────────────► platform（文件时间值）
+           │
+           └──► timer_queue ◄── container_intrusive
+                    ├────────► sched（私有 timer data structure）
+                    └────────► io（公开 timeout node）
 ```
 
-- `TimerEntry` 的 private safe hook 和公开 `TimerList` 使 `container_intrusive` 成为真实 `PUBLIC`
-  target edge；不能依赖安装树偶然包含头文件。
+- `TimerEntry` 的 private safe hook 和公开 `TimerList` 使 `timer_queue -> PUBLIC
+  container_intrusive` 成为真实 target edge；只需要 timestamp 的消费者不再取得 intrusive 闭包。
+- `hyle::time` façade 聚合两个 factor，因此源码、静态和共享 SDK 用户的产品选择不因内部无环拆分而
+  改变；维护者可用 `HYLE_DEV_FACTORS=time|timer_queue` 分别验证。
 - `platform` 拥有 OS wait/resource mechanism，`time` 拥有 clock/deadline 语义。`platform::FileInfo`
   公开 `UnixTimestamp`，所以 `platform -> PUBLIC time` 是合法的值类型边。
 - `sched`/`io` 拥有 callback 执行、取消仲裁、跨线程命令和 virtual/periodic policy。time 容器只返回
@@ -40,6 +46,7 @@ handle、callback ABI 或稳定 C++ ABI 承诺；未来只有具名 foreign-runt
 | profiling counter | raw sample、有序 start/stop、availability | 局部热区诊断，不参与 timeout |
 | CPU accounting | `ThreadCpuClock`、`ProcessCpuClock` 与 compact ns | 区分执行时间和等待时间 |
 | duration/deadline | 精确向上取整、饱和 add、remaining、`Instant` | 安全 timeout 和 elapsed |
+| injectable monotonic time | `SystemMonotonicClock`、`ManualClock`、concept、两字 borrowed ref | 无真实等待的确定性 scheduler/timeout/retry 测试 |
 | Unix interchange | canonical signed seconds/nanoseconds + checked conversion | 文件、OS、持久化与协议边界 |
 | blocking sleep | relative/absolute、raw/chrono | 不在 scheduler 上的 OS 线程等待 |
 | arbitrary timers | `TimerEntry`、`TimerList`、`TimerQueue` | 混合 deadline、大量 cancel 的 event loop |
@@ -63,6 +70,11 @@ catch-up、bounded catch-up、fixed-delay 和 drift 也由 executor API 明示�
 默认 typed monotonic/realtime 直接 header-inline 到 `std::chrono`，compact 入口只是同一 domain 的
 明确 ns 表示。coarse availability 是策略信息，不是正确性条件：没有原生 coarse source 时保持 domain
 语义并回退 precise clock。
+
+需要确定性时间的 owner 保留满足 `MonotonicClockSource` 的具体 provider 类型，模板路线可完全内联；
+必须在运行时选择 real/manual 时才显式保存两字大小的 `MonotonicClockRef` 并支付一次间接调用。
+`ManualClock` 是 noncopyable、forward-only、饱和的线程安全时间值，relaxed atomic 只发布时刻，不是
+用户数据同步 fence。它不拥有 waiter；advance 后 poll 哪个 queue、唤醒谁仍由 Sched/IO runtime 决定。
 
 profiling 在 x86 invariant TSC 和支持的 ARM64 architected counter 上启用。raw 采样不序列化周围
 指令；有序 pair 阻止编译器/CPU 把普通指令或 load 穿过测量边界，但不代替设备 I/O、持久化或跨核
@@ -96,7 +108,7 @@ FILETIME 只有 100 ns 分辨率。timestamp 转 FILETIME 对纳秒部分向下�
 “不晚于原 timestamp”的明确策略。100 ns 对齐值精确 round-trip；无效或超范围输入返回
 `std::nullopt`，不能 wrap。`realtime_ns()` 只适合当前非负 epoch 的 compact 热路，不是通用存储格式。
 
-## TimerQueue
+## TimerQueue（`timer_queue` factor）
 
 `TimerQueue` 是与 Seastar `timer_set` 同类的 65-bucket radix queue。前 64 桶按
 `countl_zero(deadline ^ origin)` 分类，最后一桶保存已到期项：
@@ -110,7 +122,7 @@ FILETIME 只有 100 ns 分辨率。timestamp 转 FILETIME 对纳秒部分向下�
 大 bucket-head 常驻空间。`advance(now, out)` 只把 due 节点 splice 到 `TimerList`，不执行 callback，
 从而让 scheduler/IO completion spine 保持唯一的执行与重入 owner。
 
-## CommonTimeoutQueue
+## CommonTimeoutQueue（`timer_queue` factor）
 
 一个实例声明一个 duration。相同 duration 在 monotonic clock 上依次 arm 时，deadline 天然非递减，
 因此 tail append、cancel、next 均为 O(1)，advance 为 O(fired)。显式 deadline 的
@@ -142,7 +154,9 @@ one queue owns linked membership
 ## 性能与变更门禁
 
 - API 先由具名用户旅程和成熟实现确定；benchmark 不得发明产品类型、节点 metadata 或特殊入口。
-- scheduler timer 产品门使用 stable scattered nodes、真实 arm/cancel/advance/drain、约 70% cancel 的
+- host-clock 产品门使用 64 个真实 runtime phase 的 begin/end、elapsed 和饱和 deadline 批次，对照
+  同工具链、同 OS route 的标准 `steady_clock`；不使用单个 inline wrapper 的亚纳秒点值驱动实现。
+- timer_queue 产品门使用 stable scattered nodes、真实 arm/cancel/advance/drain、约 70% cancel 的
   deterministic replay；faithful Seastar peer 与 HYLE 保持相同 ownership 和计费边界。
 - 工程性能裁决固定 W1-WIN、5% non-inferiority、独立进程、双执行/分配顺序和 primary/placement；
   A/A、5%/10% known delta、timer floor、artifact/build/source identity 全部是前置门。

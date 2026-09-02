@@ -33,8 +33,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 17-component 登记现树**：16 个既有 factor 可构建，`timer_queue` 只完成
-`QUEUED` ID 登记，尚无 target、依赖或 product-root 承诺。下一版 30-factor DAG 的冻结边和波次保存在
+本节表格是**当前 17-factor 可构建现树**。下一版 30-factor DAG 的冻结边和波次保存在
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)；它不会
 再被逐项公开成 `find_package` component。双层 CMake 投影落地前，不得把两张图混写成已经实现的状态。
 
@@ -50,15 +49,15 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | error | core | — |
 | obs | core, error | — |
 | math | core | — |
-| time | core, container_intrusive | — |
-| timer_queue（QUEUED） | — | — |
+| time | core | — |
+| timer_queue | core, time, container_intrusive | — |
 | platform | core, error, time | — |
 | mem | core, error, platform, util_core | — |
 | simd | core, platform | — |
 | container | core, mem | platform |
 | util | core, error, mem, container | — |
-| sched | core, error, platform, mem, container, util_core | time |
-| io | core, error, mem, container, time, sched | — |
+| sched | core, error, time, platform, mem, util_core | container, timer_queue |
+| io | core, error, mem, container, time, timer_queue, sched | — |
 | compute | core, error, mem, sched | platform, simd |
 | graph | core, error, mem, container, sched | util_core |
 
@@ -69,8 +68,8 @@ SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Hi
 
 `container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
 `hyle::container`；内部 factor target 是 `hyle_container_intrusive`，普通用户由 `hyle::container`
-façade 取得该能力。`time` 的公开 `TimerEntry` 与 `TimerList` 暴露该类型，所以它保留真实 `PUBLIC`
-factor 依赖，但不会因此反向依赖完整 Container 产品。
+façade 取得该能力。Time 产品中的 `timer_queue` factor 公开 `TimerEntry` 与 `TimerList`，所以只有它
+保留真实 `PUBLIC container_intrusive` 边；host-clock `time` 不再因此取得 intrusive closure。
 sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假 direct edge。
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。

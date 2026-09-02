@@ -1,19 +1,19 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "time-source-consumer-v1",
-  "module": "time",
+  "id": "timer-queue-consumer-v1",
+  "module": "timer_queue",
   "claim": "P1 engineering non-inferiority of the HYLE TimerQueue in the current per-worker scheduler lifecycle against a faithful pinned Seastar timer_set port, with identical stable scattered nodes, metadata, event sequence, execution-order, allocation-order, and code-placement strata",
   "candidate": {
-    "target": "hyle_time",
+    "target": "hyle_timer_queue",
     "delivery_shape": "source",
     "revision": "runtime-bound",
-    "component": "time",
+    "component": "timer_queue",
     "entrypoint": "include/hyle/time/timer_queue.h"
   },
   "peers": [
     {
       "id": "seastar",
-      "revision": "fd71a5b4c71b91abd4e93c9d20f88e1fd7465976",
+      "revision": "991cf9a908482a3f11ca2fc34a1b3970a06d8622",
       "configuration": {
         "delivery_shape": "faithful same-TU port",
         "algorithm": "signed-int64 64-bucket timer_set with intrusive counted circular lists and set-bit iteration",
@@ -85,7 +85,7 @@
       "consumer_key": "sched/worker/timer-lifecycle",
       "provenance": {
         "path": "src/sched/scheduler.cc",
-        "sha256": "f3db97bd536954082200cde1e86966083c3542daba832d72e629877213170934"
+        "sha256": "9fc1b77d51b70b701962418ca5b3003244b9828ac676fd5e9e33a49716842ba3"
       },
       "ownership_topology": {
         "candidate": "One worker owns one HYLE TimerQueue; 64 separately allocated stable TimerEntry nodes remain caller-owned and carry callback, data, and source owner metadata until cancellation or delivery",
@@ -168,23 +168,23 @@
       },
       "executables": [
         {
-          "id": "time-source-consumer-primary",
-          "target": "hyle_time_consumer_bench",
-          "stem": "hyle_time_consumer_bench",
+          "id": "timer-queue-consumer-primary",
+          "target": "hyle_timer_queue_consumer_bench",
+          "stem": "hyle_timer_queue_consumer_bench",
           "target_variant": "primary",
           "measurement_batch": 64,
-          "telemetry_prefixes": ["# HYLE_TIME_CONSUMER_RUN "],
+          "telemetry_prefixes": ["# HYLE_TIMER_QUEUE_CONSUMER_RUN "],
           "workloads": [
             {"id": "scheduler-timer-lifecycle-64", "title": "scheduler timer lifecycle aggregate N=64"}
           ]
         },
         {
-          "id": "time-source-consumer-placement",
-          "target": "hyle_time_consumer_bench_placement",
-          "stem": "hyle_time_consumer_bench_placement",
+          "id": "timer-queue-consumer-placement",
+          "target": "hyle_timer_queue_consumer_bench_placement",
+          "stem": "hyle_timer_queue_consumer_bench_placement",
           "target_variant": "placement",
           "measurement_batch": 64,
-          "telemetry_prefixes": ["# HYLE_TIME_CONSUMER_RUN "],
+          "telemetry_prefixes": ["# HYLE_TIMER_QUEUE_CONSUMER_RUN "],
           "workloads": [
             {"id": "scheduler-timer-lifecycle-64", "title": "scheduler timer lifecycle aggregate N=64"}
           ]

@@ -1,4 +1,4 @@
-// General/fixed-duration timer-queue bench for the real
+// General/fixed-duration timer-queue diagnostic for the real
 // "arm >> cancel >> expire" server/runtime workload.
 //
 // SOTA rival = a min-heap of (deadline, id), the structure Go/libev/libuv pick
@@ -78,7 +78,7 @@ void configure_main_benchmark_thread() {
   }
   const int rc = pthread_set_qos_class_self_np(qos, 0);
   std::fprintf(stderr,
-               "# HYLE_TIME_BENCH apple_main_qos=%s qos_ok=%d "
+               "# HYLE_TIMER_QUEUE_BENCH apple_main_qos=%s qos_ok=%d "
                "affinity=unsupported\n",
                name, rc == 0 ? 1 : 0);
   if (rc != 0) std::abort();
