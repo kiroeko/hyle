@@ -40,7 +40,10 @@ struct IntrusiveForwardListHook {
   IntrusiveForwardListHook &operator=(IntrusiveForwardListHook &&) noexcept {
     return *this;
   }
-  ~IntrusiveForwardListHook() { HYLE_ASSUME(!linked()); }
+  ~IntrusiveForwardListHook() {
+    const bool is_linked = linked();
+    HYLE_ASSUME(!is_linked);
+  }
 
   bool linked() const noexcept { return link_.next != &link_; }
 

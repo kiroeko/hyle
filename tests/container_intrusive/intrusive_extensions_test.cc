@@ -136,6 +136,8 @@ TEST(IntrusiveSequences, AlgorithmsAreStableAllocationFreeShapes) {
   counted.sort([](const auto &left, const auto &right) {
     return left.value < right.value;
   });
+  const CountedNode absent_counted{99};
+  EXPECT_EQ(counted.remove(absent_counted), 0u);
   EXPECT_EQ(values(counted), (std::vector<int>{0, 1, 1, 2, 2, 3, 4, 5}));
   EXPECT_EQ(counted.unique([](const auto &left, const auto &right) {
     return left.value == right.value;
@@ -168,6 +170,8 @@ TEST(IntrusiveSequences, AlgorithmsAreStableAllocationFreeShapes) {
   forward.sort([](const auto &left, const auto &right) {
     return left.value < right.value;
   });
+  const ForwardNode absent_forward{99};
+  EXPECT_EQ(forward.remove(absent_forward), 0u);
   EXPECT_EQ(values(forward), (std::vector<int>{0, 1, 1, 2, 2, 3, 4, 5}));
   EXPECT_EQ(forward.unique([](const auto &left, const auto &right) {
     return left.value == right.value;

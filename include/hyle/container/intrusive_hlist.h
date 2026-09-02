@@ -172,20 +172,23 @@ public:
   iterator iterator_to(T *node) noexcept {
     HYLE_ASSUME(node != nullptr);
     const ChainPointer pointer = chain_of(node);
-    HYLE_ASSUME(previous_slot(pointer) != nullptr);
+    const ChainSlot slot = previous_slot(pointer);
+    HYLE_ASSUME(slot != nullptr);
     return iterator(pointer);
   }
   const_iterator iterator_to(const T *node) const noexcept {
     HYLE_ASSUME(node != nullptr);
     const ChainPointer pointer = chain_of(const_cast<T *>(node));
-    HYLE_ASSUME(previous_slot(pointer) != nullptr);
+    const ChainSlot slot = previous_slot(pointer);
+    HYLE_ASSUME(slot != nullptr);
     return const_iterator(pointer);
   }
 
   void push_front(T *node) noexcept {
     HYLE_ASSUME(node != nullptr);
     const ChainPointer pointer = chain_of(node);
-    HYLE_ASSUME(previous_slot(pointer) == nullptr);
+    const ChainSlot old_slot = previous_slot(pointer);
+    HYLE_ASSUME(old_slot == nullptr);
     set_next(pointer, head_);
     set_previous_slot(pointer, &head_);
     if (head_ != nullptr) set_previous_slot(head_, next_slot(pointer));
@@ -204,7 +207,8 @@ public:
     HYLE_ASSUME(position.pointer_ != nullptr && node != nullptr);
     const ChainPointer next = position.pointer_;
     const ChainPointer pointer = chain_of(node);
-    HYLE_ASSUME(previous_slot(pointer) == nullptr);
+    const ChainSlot old_slot = previous_slot(pointer);
+    HYLE_ASSUME(old_slot == nullptr);
     const ChainSlot slot = previous_slot(next);
     set_previous_slot(pointer, slot);
     set_next(pointer, next);
@@ -216,7 +220,8 @@ public:
     HYLE_ASSUME(position.pointer_ != nullptr && node != nullptr);
     const ChainPointer previous = position.pointer_;
     const ChainPointer pointer = chain_of(node);
-    HYLE_ASSUME(previous_slot(pointer) == nullptr);
+    const ChainSlot old_slot = previous_slot(pointer);
+    HYLE_ASSUME(old_slot == nullptr);
     const ChainPointer next = next_of(previous);
     set_next(pointer, next);
     set_previous_slot(pointer, next_slot(previous));
@@ -235,7 +240,8 @@ public:
   void remove(T *node) noexcept {
     HYLE_ASSUME(node != nullptr);
     const ChainPointer pointer = chain_of(node);
-    HYLE_ASSUME(previous_slot(pointer) != nullptr);
+    const ChainSlot slot = previous_slot(pointer);
+    HYLE_ASSUME(slot != nullptr);
     unlink_unchecked(pointer);
   }
   [[nodiscard]] T *pop_front() noexcept {
@@ -249,7 +255,8 @@ public:
     HYLE_ASSUME(position.pointer_ != nullptr && replacement != nullptr);
     const ChainPointer old_pointer = position.pointer_;
     const ChainPointer new_pointer = chain_of(replacement);
-    HYLE_ASSUME(previous_slot(new_pointer) == nullptr);
+    const ChainSlot old_replacement_slot = previous_slot(new_pointer);
+    HYLE_ASSUME(old_replacement_slot == nullptr);
     const ChainPointer next = next_of(old_pointer);
     const ChainSlot slot = previous_slot(old_pointer);
     set_next(new_pointer, next);

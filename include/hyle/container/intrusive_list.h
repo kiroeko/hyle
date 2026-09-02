@@ -776,7 +776,8 @@ private:
   }
   void decrement_count() noexcept {
     if constexpr (Counted) {
-      HYLE_ASSUME(count_state().value != 0);
+      const std::size_t count = count_state().value;
+      HYLE_ASSUME(count != 0);
       --count_state().value;
     }
   }
@@ -797,7 +798,8 @@ private:
   void transfer_one_count_from(IntrusiveListImpl &source) noexcept {
     if constexpr (Counted) {
       if (&source != this) {
-        HYLE_ASSUME(source.count_state().value != 0);
+        const std::size_t source_count = source.count_state().value;
+        HYLE_ASSUME(source_count != 0);
         --source.count_state().value;
         ++count_state().value;
       }
@@ -807,7 +809,8 @@ private:
                                  std::size_t range_count) noexcept {
     if constexpr (Counted) {
       if (&source != this) {
-        HYLE_ASSUME(source.count_state().value >= range_count);
+        const std::size_t source_count = source.count_state().value;
+        HYLE_ASSUME(source_count >= range_count);
         source.count_state().value -= range_count;
         count_state().value += range_count;
       }
