@@ -65,16 +65,14 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "CLOSED",
-      "round_id": "container-intrusive-v3",
-      "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
-      "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
-      "non_goals": "Full owning container, time/scheduler algorithms, reclamation or full intrusive policy matrix, C API/native FFI and Formal release certification.",
-      "baseline_commit": "a5c74e2be31d258c67e3d6244c8a24d3abeb21c0",
-      "candidate_commit": "b5816b810d536f2041520e4b370c1e17d3ac7a4a",
-      "candidate_tree": "3bf043c40dbb5e4b49aba563f23f71b3c2d7caf3",
-      "end_commit": "178112c7723540a032d3ef14d2cb26742138e642",
-      "registry_anchor_commit": "178112c7723540a032d3ef14d2cb26742138e642",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "INTR-CAPABILITY-EXTENSION-2026-09-02",
+      "reopen_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
+      "round_id": "container-intrusive-v4-capability-extension",
+      "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
+      "scope": "Audit and, after a finite API/cost freeze, add modular counted safe-list, one-pointer forward membership, hlist membership and admitted non-owning sequence algorithms without taxing the existing default list shape.",
+      "non_goals": "Owning storage, allocators, internal synchronization, lock-free publication or reclamation, intrusive tree/hash/heap and the full Boost policy matrix, Sched/IO policy, Native FFI/C API, Formal certification and common instrument redesign.",
+      "baseline_commit": "b4915574020cc7da857d2871c545a3489c75288b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -82,47 +80,16 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container-intrusive.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
-      "loc": {
-        "snapshot_commit": "b5816b810d536f2041520e4b370c1e17d3ac7a4a",
-        "repository_code": 292991,
-        "self_with_tests": 121955,
-        "self_without_tests": 82133,
-        "module_implementation": 564
-      },
-      "known_limitations": [
-        "The component is a 64-bit direct-member, stable-address primitive and fails closed for unsupported pointer-to-data-member representations.",
-        "It stores no owner, count, allocator, lock or reclamation metadata; callers own storage, synchronization and business-state mirrors.",
-        "Safe-link membership transfer, counted lists and the full Boost.Intrusive policy matrix remain outside the frozen consumer contract.",
-        "Engineering performance is qualified only for the frozen W1-WIN contract and retained live artifact bundle; Formal remains PENDING."
-      ],
-      "reopen_triggers": [
-        "A named consumer exposes a correctness, security or missing-capability defect within this primitive's ownership boundary.",
-        "The algorithm, public API, layout, supported compiler ABI, dependency edge or delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
-        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine or instrument identity changes and the claim must be renewed."
-      ],
-      "summary": "v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。"
+      }
     },
     {
       "module": "util_core",

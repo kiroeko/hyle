@@ -9,10 +9,10 @@
 [能力展开与组件质因数分解](capability-factorization.md)统计功能超集和自然形状，再由完整能力集合导出
 owner、组件因子和新依赖图。
 
-Stage C 已导出 30-factor 内部 DAG；后续用户决策又明确：该 DAG 服务源码 ownership、解环与并行施工，
-不等于用户组件菜单。Build/package v7 将从中央记录另外投影 Core/Error/Time/Platform/Mem/Obs/SIMD/
-Math/Container/Util/Sched/IO 等产品 façade。内部 factor 只能依赖 factor，用户只需选择产品域；详见
-[构建系统](build-system.md)的双层投影目标。
+Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
+CMake target。当前机器合同只登记 **17 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
+`module-status.json`、中央组件图和实际 target 的 factor 才算已经落地。Build/package v7 已实现这套
+双层投影。内部 factor 只能依赖 factor，用户只需选择产品域；详见[构建系统](build-system.md)。
 
 ## 1. 分层原则
 
@@ -33,9 +33,9 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 17-factor 可构建现树**。下一版 30-factor DAG 的冻结边和波次保存在
-[`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)；它不会
-再被逐项公开成 `find_package` component。双层 CMake 投影落地前，不得把两张图混写成已经实现的状态。
+本节表格是**当前 17-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+[`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
+逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
 下表是当前中央声明的直接边。`PUBLIC` 表示公开头/链接合同泄露该依赖；`PRIVATE` 只属于编译实现。
 当前 io、compute 与 graph 的公开面都暴露 sched 类型，因此它们无条件选择 sched；目标平台缺少
@@ -60,6 +60,30 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | io | core, error, mem, container, time, timer_queue, sched | — |
 | compute | core, error, mem, sched | platform, simd |
 | graph | core, error, mem, container, sched | util_core |
+
+用户看到的不是上述 17 个 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
+再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
+
+| Product façade | Factor roots |
+|---|---|
+| core | core |
+| error | error |
+| time | time, timer_queue |
+| platform | platform |
+| mem | mem |
+| obs | obs |
+| simd | simd |
+| math | math |
+| container | container_intrusive, container |
+| util | util_core, util |
+| sched | sched |
+| io | io |
+| compute | compute |
+| graph | graph |
+
+因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 17 个 factor；按普通用户可选择的问题域
+计算是 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，外部依赖 target 与 trace/testing
+target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
 声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
 SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only
@@ -96,6 +120,13 @@ primitive，因此同样声明真实 `PUBLIC core` 边。配置合同会把公�
 
 修一条底层边后，必须回审直接消费者，不做无界的全库顺手重构。若问题属于另一个模块，登记
 demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即跨边修复。
+
+依赖顺序不得成为复制实现的理由。较高 factor 需要较低 factor 时，登记真实直接边并复用；较低 factor
+若看似需要较高 factor，依次裁决 owner 是否放错、公开面是否泄漏机制类型，以及能否提取满足六项质因数
+判据的更小 factor。都不成立时，使用标准库/成熟依赖，或保留有明确状态机、layout、生命周期和成本理由
+的专用实现；不得只因“当前不能依赖”复制同义 error、clock、allocator、probe 或容器。`next/prev` 字段
+本身不证明语义重复，例如 freed-slot free-list 和摘链后复用 link 的 wake chain 可以合法特化；普通
+cancellation hlist、arena/deferred-work forward chain 等重复形状则应在其能力准入后回审公共质因数。
 
 ## 4. 全局功能展开顺序
 

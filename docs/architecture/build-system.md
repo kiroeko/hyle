@@ -62,9 +62,10 @@
 
 ### 双层投影合同
 
-Stage C 的 30 个 semantic factor 是源码 ownership、`module-status.json`、测试和 HYLE 直接依赖的
-目标粒度；当前已有 17 个 factor 接入完整构建。登记项在进入 `SCOPED/AUDITED` 前没有 target、依赖或
-product-root 承诺；这些 factor 都不是用户产品。双层投影把旧
+Stage C 能力账本中的 30 项是**候选 semantic factor**；当前只有 17 个已经同时进入
+`module-status.json`、中央 manifest 和实际 target，才构成源码 ownership、测试和 HYLE 直接依赖的
+真实粒度。其余候选在进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺。当前 17 个
+factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。双层投影把旧
 “component”承担的四种含义拆开：
 
 | layer | owns | may depend on | consumer-visible contract |
