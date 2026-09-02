@@ -69,3 +69,60 @@
   或引起普通路径膨胀/跨平台失败，则 `BLOCKED`，不升级为全局优化政策。
 
 `SCOPED` 只冻结上述合同；必须完成受影响 public trace、有限 `FIX` 集与 API freeze 后才可修改产品。
+
+## Capability / affected-surface audit（`AUDITED`）
+
+| Family / route | natural consumer | baseline code shape | coverage | action |
+|---|---|---|---|---|
+| `Instant::now()` default system clock | runtime/inference phase begin/end | MSVC phase 比 direct chrono 多两次外联 `steady_clock::now()` 壳 | `PARTIAL` | `FIX` |
+| `Instant::now(source)` | deterministic/selected clock | 一次 `source.now()`，typed route inline、ref route 显式间接 | `COMPLETE` | `KEEP` |
+| `Instant::elapsed[_ns]()` | ordinary elapsed convenience | 单次 HYLE 与 direct chrono probe 指令同形 | `COMPLETE` | `KEEP` |
+| `monotonic_now/ns` | raw deadline/runtime clock | 单次 HYLE 与 direct chrono probe 同形；在 phase 中可由调用者自然展开 | `COMPLETE` | `KEEP` |
+| realtime/coarse/profiling/CPU clocks | timestamp/diagnosis | 不经过 `Instant::now()`；单次 realtime 对照同形 | `COMPLETE` | `KEEP` |
+| timer queue/provider/value conversion/sleep | 已冻结 Time/timer factors | 无受影响调用边、布局或语义 | `COMPLETE` | `KEEP` |
+
+### Public trace、依赖与交付影响
+
+- 唯一待改公开声明是 header-inline `Instant::now()` 的函数体；签名、exception contract、返回布局、
+  overload resolution、clock domain 和 observable value 不变；
+- `Instant::elapsed()` 也调用 `monotonic_now()`，但同合同独立 probe 已证明它与 direct chrono 都保留
+  同一个标准库调用，因此没有 HYLE 额外壳。对它加 flatten 会改变而不是恢复 peer code shape；
+- 将 attribute 放进 `monotonic_now()` 的实验虽能修复 phase，却使单次 raw read 强制展开为较大 body，
+  与 direct chrono 单次调用不同；拒绝这个更宽的方案；
+- `realtime_now/ns` 在 MSVC 已自然到达 `_Xtime_get_ticks`，不受本缺陷影响；
+- 无产品 target、component graph、第三方依赖、installed header inventory 或 symbol surface 变化。
+  只在 `tests/time` 注册一个 maintenance-only object target 和 MSVC optimized audit；
+- source/static/shared 用户都在自己的 translation unit 实例化这个 inline body，因此必须使用匹配的
+  header/toolchain；现有三交付 consumer 足以验证可用性，Windows object probe 裁决具体 codegen。
+
+### 冻结有限 `FIX` 集
+
+1. `TIME4-CODEGEN-01`：仅在 MSVC 且 `HYLE_HAS_CPP_ATTRIBUTE(msvc::flatten)` 为真时，把
+   `[[msvc::flatten]]` 作用于 `Instant::now()` 的 return block；其他编译器保持原代码；
+2. `TIME4-REGRESSION-02`：增加不安装、不链接进产品的 phase probe；MSVC Release audit 必须证明
+   HYLE/direct 两个函数均无 HYLE/`steady_clock::now` wrapper edge，且规范化指令序列相同；
+3. `TIME4-DOC-03`：更新本轮 task、Time 性能事实、registry/status；API/guide 因用户形状未变无需改写。
+
+没有其他 `FIX`；新功能、其他 helper 的强制展开、全局 compiler policy 或新的计时姿势均越界。
+
+## API / usability freeze
+
+- 状态：`UNCHANGED/FROZEN`；公开名称、签名、include、layout、语义和错误模型全部不变；
+- C++ 消费者仍自然写 `const auto begin = hyle::time::Instant::now();`；不暴露 MSVC attribute、
+  fast/light 变体、宏或 backend 选择；
+- C ABI / Native FFI：仍为 `N/A/CLEAN`，本轮不创建跨语言 surface；
+- source/static/shared：该函数是 header-inline C++ API，三种交付都使用相同 header contract；
+- 陷阱仍是 v3 已记录的 clock-domain、ManualClock relaxed-value 和 borrowed ref lifetime；本修复不引入
+  新用户可见陷阱。
+
+## Owner 六问（`AUDITED` 直答）
+
+1. **能力：**v3 能力账本不变且没有新缺口；本轮只修已有 `Instant::now()` 的实现质量。
+2. **第三方/依赖：**无第三方产品依赖变化；标准库 chrono 是机制，Time 仍只依赖 Core。
+3. **性能：**同合同 consumer 已确认，基线仍在 5% 门内但存在明确额外调用机制；修复后以 codegen
+   equality 为主证据、冻结 P1 回放为非回退证据，不追求固定亚纳秒胜负。
+4. **C ABI/交付：**无伪 C ABI；不改变静态/动态/source 产品图，只新增 test-only object/audit。
+5. **C++ 易用性：**调用形状完全不变，且无需用户传宏或选择 fast API。
+6. **文档：**architecture/user guide 无产品决策变化；只更新可审计事实和性能 limitation。
+
+审计结论：只有 `TIME4-CODEGEN-01..03` 获准进入实现；接口与 workload 均冻结。
