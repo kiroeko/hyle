@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "TIME-MSVC-INSTANT-CODEGEN-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
       "round_id": "time-v4-msvc-instant-codegen",
@@ -409,7 +409,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v4 因支持的 MSVC /O2 /Ob2 在普通 Instant host-phase 路线保留两次额外 steady_clock 调用壳而定向重开；API 与能力边界不变。"
+      "summary": "time-v4 已冻结为一个局部 P1 修复：只消除 MSVC /O2 /Ob2 普通 Instant host-phase 中额外的 steady_clock 调用壳，并以现有 consumer 和独立结构 probe 回归。"
     },
     {
       "module": "timer_queue",

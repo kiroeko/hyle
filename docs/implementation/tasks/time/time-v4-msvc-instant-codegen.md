@@ -35,3 +35,37 @@
 
 当前仅登记足以击穿旧结论的新事实；closure card、完整受影响面与有限 `FIX` 集尚未冻结，
 因此不授权 canonical 产品代码修改。
+
+## Closure card（`SCOPED`）
+
+- component / owner / round / kind：`time` / Time /
+  `time-v4-msvc-instant-codegen` / `REOPEN`；baseline 与 trigger 同上；
+- 真实 consumer / normal workload：沿用已冻结且资格化的 `time-host-consumer-v1`，一个 runtime
+  phase batch 执行 64 次 begin/end monotonic sample、饱和 deadline、nonnegative elapsed、remaining
+  和 observable checksum；同合同 peer 是同一 translation unit 中直接拼写的
+  `std::chrono::steady_clock` 路线；
+- 范围：MSVC `/O2 /Ob2` 下无参 `Instant::now()` 的 default system-clock consumer codegen；
+  maintenance-only optimized object probe；既有 Time correctness、三交付和 P1 consumer 的定向回放；
+- 非目标：公开 API/layout/语义/能力、其他 clock helper、timer_queue、全局 compiler option/macro、
+  私有 Windows CRT/QPC 实现、跨模块重构、公共仪器、Native FFI/C API 与 Formal；
+- 依赖/消费者：产品依赖仍为 `time -> core`，没有新第三方或 target edge；公开 header 变化会由
+  Platform/Sched/IO 的既有 compile journey 和 source/static/shared Time consumer 覆盖；
+- tier / margin：`P1`，W1-WIN `closure-perf-v1` 仍使用 5% material margin。结构机制 gate 先于
+  计时，要求冻结 consumer 中 HYLE 与 direct route 都到达相同 native clock calls，且 HYLE 不多出
+  wrapper call；
+- 成本合同：不增加 allocation、lock、branch、dispatch、state、metadata 或额外 clock read；不得以
+  全局 `/Ob3` 换取该局部形状，也不得强制普通 `monotonic_ns()` 产生更大的展开 body；
+- 调查/实现预算：诊断已经结束；从 `SCOPED` 起最多一个局部产品修改、一个结构 probe、一次 focused
+  correctness/delivery 回放和一次冻结 P1 回放，不再扩展 benchmark 姿势；
+- machines：W1-WIN 为缺陷与 P1 主机；W1-WSL、M1-MAC 只验证特性保护后的编译/正确性/交付，
+  不制造 Windows codegen verdict；
+- correctness gates：公开 header self-containment，Instant now/elapsed 与 clock 单调/边界既有 suite，
+  MSVC Release object shape；无 allocation/OOM/cancellation/concurrency 新风险，均不因本轮改变；
+- delivery gates：Windows source/static/shared consumer、WSL/macOS focused compile/test；API 与 symbol
+  surface 负向 diff；
+- 预期输出：一个只在支持该 attribute 的 MSVC 上生效的局部 source hint、一个不进入安装产物的
+  codegen regression gate，以及同步的 task/performance/current-status 事实；
+- 停止条件：有限 `FIX` 完成即形成 candidate；若局部 hint 不能在默认 Release 工具链消除调用壳，
+  或引起普通路径膨胀/跨平台失败，则 `BLOCKED`，不升级为全局优化政策。
+
+`SCOPED` 只冻结上述合同；必须完成受影响 public trace、有限 `FIX` 集与 API freeze 后才可修改产品。
