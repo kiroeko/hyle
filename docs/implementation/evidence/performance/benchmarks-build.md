@@ -1,6 +1,7 @@
 # build/package system 历史性能证据
 
-> **2026-09-02 v9 current-tree structural replay：**v8 后 factor 图从 16 个迁移到 17 个，并新增
+> **2026-09-02 v9 current-tree structural replay：**candidate `ff5f6074`。v8 后 factor 图从 16 个
+> 迁移到 17 个，并新增
 > `timer_queue` 与通用 split-header ownership 投影。三平台 all-products Release/WERROR 构建通过：
 > Windows `70/70`、WSL `69/69`、Apple M4 `69/69`；中央 component/依赖/离线合同也在三平台通过。
 > Windows static/shared SDK 的整前缀搬迁、14 个 product consumer、完整 source package 脱离 Git 构建

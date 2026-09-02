@@ -1,12 +1,12 @@
 # Build/package v9：factor 迁移后的 current-tree 复检
 
-<!-- PROJECT UNIT REVIEW: VERIFYING -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 > Build/package 是横向开发单元，不伪造成可链接 factor，也不进入
 > `module-status.json`。本轮由 v8 关闭后中央 build/package boundary 与实际
 > factor/target 投影发生变化触发，只复检当前构建、依赖与交付合同，不替产品模块签功能或运行时性能。
 
-## Closure card（VERIFYING）
+## Closure card（CLOSED）
 
 - unit / owner / round / kind：`build-package` / build-package maintainers /
   `build-v9-current-tree-replay` / `REOPEN`；
@@ -87,7 +87,12 @@ workflow 的四个 checkout step 从 `actions/checkout@v6` 一致更新到当前
 `actions/cache@v5`。PR/main 仍只有一个 Linux 高信号门，Windows/macOS、交付和 feature 矩阵仍仅在
 `workflow_dispatch` 展开，没有借修复扩大额度。
 
-## Verification manifest（候选绑定前）
+## Candidate 与 Verification manifest
+
+不可变产品候选是 `ff5f6074d710a06625a325b36b965944d8e9e5e6` / tree
+`9f05cced44096984d4f3a594b015f87e0cbdfefa`。候选只包含本卡 task/evidence、workflow action freshness
+和零代码生成差异的 GCC 诊断修复；工作树中同期的 Mem/Container 性能实验没有进入候选。所有 terminal
+产品/交付门均在该候选或与其产品字节相同的三平台 scratch 上执行。
 
 | Gate | Verdict | Evidence / limit |
 |---|---|---|
@@ -98,12 +103,35 @@ workflow 的四个 checkout step 从 `actions/checkout@v6` 一致更新到当前
 | reconfigure / no-op / leaf invalidation | `PASS` | Windows/WSL Ninja 均 `no work to do`；M4 Make 零编译；`time/interop.cc` 只触发 1 compile + 1 link |
 | W1-WSL portability | `PASS` | GCC 14.2 Release/WERROR build；`69/69` 适用 tests；ASan Container `336/336` |
 | M1-MAC portability | `PASS` | Apple M4 / AppleClang 21 / deployment 14.4；Release/WERROR build；`69/69` tests |
-| docs / diff hygiene / LOC | `PENDING` | 等待不可变候选上的 docs/closure/diff 与 LOC |
+| docs / diff hygiene / LOC | `PASS` | candidate 上 closure `17`、docs `365/997`、diff hygiene 与 LOC self-check 全部通过 |
 | independent red team | `PASS` | hosted Linux 真实失败与 fresh 三平台 scratch 相互印证；未发现第二项 material finding |
 
 WSL 最初使用有意不携 `.git` 的源码副本，唯一失败是维护者专用 `hyle_loc_report_test` 无法解析
 `HEAD`；补入临时 Git metadata 后该项通过。全部 68 个不依赖仓库身份的测试在第一次运行已经通过，
 源码发行本来以 `HYLE_BUILD_TESTS=OFF` 构建，因此不把这个测试环境前置条件伪报成产品缺陷。
 
-当前处于 `VERIFYING`：下一步只绑定包含上述有限修复的不可变候选，重放 source-package 与最终
-项目检查，然后按 stop rule 裁决；不得继续扩张构建功能。
+候选上的 PackageSmoke 同时重建 shared/static 各 125-step all-products SDK，安装并搬迁完整前缀，
+运行各 `15/15` 总 consumer 以及全部 focused package consumer；SourcePackageSmoke 从上述 commit
+生成 clean zip，核对 manifest/digest/license，并在无 `.git` 的解包目录完成 125-step WERROR 构建。
+没有触发新的 hosted run，以免为已经由三平台本地等价门覆盖的复检消耗 GitHub Actions 额度；最近的
+hosted run `33598368691` 已精确提供修复前 Linux 失败证据，当前 runner `2.336.0` 满足 checkout v7
+要求，两个 action major ref 也已通过 GitHub API 核对。
+
+## LOC 与终态裁决
+
+candidate 的统一四项口径是：
+
+1. 全库代码：`424,576`；
+2. 自实现含测试：`103,923`；
+3. 自实现不含测试：`64,679`；
+4. Build/package 实现：`9,309`（49 文件）。
+
+结论：`CLOSED`。当前 17-factor / 14-product 双层图、真实 direct target edges、split header owner、
+source/static/shared 同名 façade、selected 安装、relocation、共享锁定源码缓存、strict offline、source
+package、option owner、增量失效与分层 CI 构成一致闭环。没有发现需要新增 option、target 或交付形状的
+能力缺口；Build/package 仍只证明组装与交付，不替 Compute/Graph 或任何产品模块签功能/运行时性能。
+
+只有以下新事实可以重开：factor/product/header owner/direct edge 改变；依赖 lock、option owner 或
+target-platform 投影改变；source/static/shared 无法保持同名 façade；新编译器造成当前 WERROR/ABI/
+relocation 复现；或真实 consumer 证明现有三种交付不能组装。泛化的“再审一遍”、未收口产品继续开发、
+单次 configure 点值与未运行的 hosted matrix 都不是重开理由。
