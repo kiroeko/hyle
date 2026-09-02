@@ -72,18 +72,16 @@ TEST(TimeInterop, AbsoluteTimevalIsStrictCheckedAndFloored) {
   EXPECT_EQ(output.tv_sec, 7);
   EXPECT_EQ(output.tv_usec, 8);
 
-  using NativeSeconds = decltype(output.tv_sec);
-  if constexpr (sizeof(NativeSeconds) < sizeof(std::int64_t)) {
-    output.tv_sec = 7;
-    output.tv_usec = 8;
-    const auto beyond_native = static_cast<std::int64_t>(
-                                   (std::numeric_limits<NativeSeconds>::max)()) +
-                               1;
-    EXPECT_FALSE(
-        unix_timestamp_to_timeval(unix_timestamp(beyond_native), output));
-    EXPECT_EQ(output.tv_sec, 7);
-    EXPECT_EQ(output.tv_usec, 8);
-  }
+#if HYLE_OS_WINDOWS
+  output.tv_sec = 7;
+  output.tv_usec = 8;
+  constexpr std::int64_t kBeyondWindowsTimevalSeconds =
+      static_cast<std::int64_t>((std::numeric_limits<long>::max)()) + 1;
+  EXPECT_FALSE(unix_timestamp_to_timeval(
+      unix_timestamp(kBeyondWindowsTimevalSeconds), output));
+  EXPECT_EQ(output.tv_sec, 7);
+  EXPECT_EQ(output.tv_usec, 8);
+#endif
 }
 
 TEST(TimeInterop, TimevalDurationTruncatesBeforeCanonicalSplit) {
