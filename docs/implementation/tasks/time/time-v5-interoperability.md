@@ -1,10 +1,10 @@
 # Time v5：系统时间互操作补全
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前阶段：`VERIFIED`。八项冻结 `FIX` 已落在不可变产品候选并通过三平台 correctness、delivery、
-> P0 code-shape、文档与红队验证；后续只允许 terminal receipt 与 registry anchor，不新增 API 或
-> benchmark。权威状态见
+> 终态：`CLOSED`。八项冻结 `FIX` 已落在不可变产品候选并通过三平台 correctness、delivery、P0
+> code-shape、文档与红队验证；本 task 只作历史证据，不再授权新增 API 或 benchmark。权威状态见
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -331,8 +331,10 @@ Terminal receipt：
   `C:\public\project-hyle\_validation\time-v5-win-delivery`；W1-WSL/M1-MAC 使用明确 temporary native
   checkout，命令与结果见本 task verification matrix；
 - candidate LOC：424,240 / 103,871 / 64,671 / 1,420，snapshot 为完整 product candidate；
-- end receipt identity：以首次保存本完整 terminal decision 的提交为准；下一次中央 registry 状态迁移
-  将记录其完整 40 位对象名，并建立首个真实 `CLOSED` registry anchor；
+- end receipt commit：`ea2d38ce287df0689e6e5be1d2d25f420b67a8f4`，这是首次保存本完整 terminal
+  decision 的提交；
+- registry anchor：本次状态迁移先以 end receipt 占位以满足非自引用记录；紧随其后的 evidence-only
+  提交会把它校准到首个实际保存本 `CLOSED` state/candidate 的 registry commit，产品与 verdict 不变；
 - 后续只按本节 reopen triggers 重开；Time v1-v4 与本轮候选前记录只作历史证据，不再授权施工。
 
 `VERIFIED -> CLOSED` 前态 registry snapshot 位于
