@@ -185,3 +185,7 @@ summary、controls、observations SHA-256 分别为
 
 红队未发现公开合同、correctness、lifetime、dependency、delivery 或未处置性能机制缺陷；没有理由扩大
 `TIME4-CODEGEN-01..03`。
+
+`CANDIDATE -> VERIFIED` 的前态 registry 快照位于
+`C:\hyle-scratch\time-v4-msvc-instant-codegen\module-status-before-verified.json`，SHA-256
+`DBCFBE7EBC3E28C65F6BB2FE659195FADF8B0BA796C2BCD0703AF8976FFD0652`。

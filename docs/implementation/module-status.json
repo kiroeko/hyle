@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "TIME-MSVC-INSTANT-CODEGEN-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
       "round_id": "time-v4-msvc-instant-codegen",
@@ -401,17 +401,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-time.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v4 candidate a9b9ff31：局部 MSVC flatten 已消除 Instant 普通 phase 的额外调用壳，Release 结构 probe 与 Time focused tests 通过；跨平台、三交付与冻结 P1 回放待签。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "time-v4 VERIFIED：局部 MSVC fix 已在 19.44/19.50 恢复 Instant/direct codegen 同形；三平台正确性、Windows 三交付、文档/红队和 W1-WIN 5% P1 非劣门全部通过，待终态登记。"
     },
     {
       "module": "timer_queue",
