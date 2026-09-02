@@ -3,7 +3,7 @@
 <!-- MODULE CLOSURE RECORD: HISTORICAL -->
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前阶段：`VERIFIED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
+> Terminal verdict：`CLOSED`。本页保存本轮用户任务、能力账本、预算、验证与关闭 receipt；不可变候选为
 > `58431ddbef6f54f9d4275b0fea2d317cba00b9f3` / tree
 > `8df2b7d7806918d03b5bb5c31611adb196f30c7f`。权威状态是
 > [`module-status.json`](../../module-status.json)。
@@ -193,9 +193,9 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 - 停止规则：审计后只允许一个有限 `FIX` 集；每族最多两个 strong peer；P1 异常只允许协议规定的一次
   复现、一次机制诊断和一个产品修改。公共仪器缺口单独阻塞，不在本模块扩建仪器。
 
-## 当前裁决
+## Verification verdict
 
-`VERIFIED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
+candidate 3 已完成 `VERIFIED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
 AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实现并绑定 candidate 3。旧 v3 性能证据
 不能覆盖新增能力或变化后的产品 identity。candidate 3 的新增能力资格已经完成，全部适用门为
 `PASS`；只剩 terminal receipt、限制/reopen trigger 和不可变 candidate LOC。
@@ -283,8 +283,8 @@ AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实�
   material correctness、复杂度、交付或 benchmark-shaped API finding。`check-module-closure.py`、
   `check-docs.py`、performance contract validation 与 `git diff --check` 全部通过。
 
-剩余动作只允许生成 candidate LOC、写 terminal receipt 与限制/reopen trigger，并按状态协议迁移
-`VERIFIED -> CLOSED`；不得借收尾重开产品代码或 API。
+验证完成后没有再修改产品代码或 API；以下 terminal receipt 只登记 candidate LOC、aggregate gates、
+接受限制与 reopen trigger。
 
 ## Candidate LOC
 
