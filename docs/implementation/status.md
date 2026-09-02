@@ -11,7 +11,7 @@
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-v5-assert-macro-contract.md) | core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。 |
-| container_intrusive | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v4-capability-extension.md) | container_intrusive v4 VERIFIED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。 |
+| container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v4-capability-extension.md) | container_intrusive v4 CLOSED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。 |
 | util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v2-capability-completion.md) | util-core-v2 CLOSED：RISC-V pause、FunctionRef、NotNull 与 thread-confined RefCounted 已补齐；三平台/sanitizer/RISC-V、三种 C++ 交付、直接消费者、易用性/文档、红队和 W1-WIN 两项 5% P1 工程门全部通过。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v5-capability-completion.md) | error-v5 CLOSED：WinSock、Result<T&>、bounded format_status 与 std::error_code adapter 已补齐；既有 Status/Result 无回归，三平台正确性和三种 C++ 交付、易用性/文档、红队及 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过。 |
 | obs | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/obs/obs-v3-closure.md) | obs-v3 CLOSED：Abseil-shaped 普通日志控制与 llama.cpp-shaped 推理进度能力、三平台 correctness/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部通过；Formal 独立 PENDING。 |
@@ -54,11 +54,11 @@ resume:  BLOCKED -> SCOPED
 reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
-`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round并进入 `CLOSED`。有限 ledger 的产品
-修复、correctness、三平台可移植性和 source/static/shared 交付均绑定 immutable candidate；统一
-`closure-perf-v1` 的 W1-WIN P1 工程证据通过 9×8 workload/strata 的冻结 5% non-inferiority gate，
-并经独立重放审计。旧 v2 task 保持历史事实，不被回写。`formal-release-v1` 的跨平台证书仍为独立
-`PENDING`，不能拿来替代或重复阻塞 P1 工程门。
+`container_intrusive` v4 已因真实能力缺口重开并再次进入 `CLOSED`。counted safe-list、一指针
+cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 均绑定 immutable candidate；
+三平台 correctness、三种 C++ 交付和 Sched 真实消费者通过，W1-WIN 四项正常 shape × 8 strata 全部
+通过冻结的 5% non-inferiority gate。旧 v2/v3 task 保持历史事实，不被回写；`formal-release-v1` 的
+跨平台证书仍为独立 `PENDING`。
 
 `util_core` 已按同一状态机关闭：最终候选修复 ScopeGuard 失败安全和 `Ref` 标准指针全序，三平台
 source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过 5%

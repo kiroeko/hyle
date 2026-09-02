@@ -65,7 +65,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "INTR-CAPABILITY-EXTENSION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
       "round_id": "container-intrusive-v4-capability-extension",
@@ -75,6 +75,8 @@
       "baseline_commit": "b4915574020cc7da857d2871c545a3489c75288b",
       "candidate_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
       "candidate_tree": "8df2b7d7806918d03b5bb5c31611adb196f30c7f",
+      "end_commit": "5bff39684e1e89f0ecdfeded5f694eed69ff93fe",
+      "registry_anchor_commit": "5bff39684e1e89f0ecdfeded5f694eed69ff93fe",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -102,7 +104,31 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container_intrusive v4 VERIFIED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。"
+      "loc": {
+        "snapshot_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
+        "repository_code": 423430,
+        "self_with_tests": 103452,
+        "self_without_tests": 64452,
+        "module_implementation": 1590
+      },
+      "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
+      "known_limitations": [
+        "The P1 claim covers only four frozen N=4096 W1-WIN consumer replays, MSVC 19.50 and locked Boost or pre-v4 Sched peers; cross-platform timing, all operations or scales, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "All intrusive containers are caller-owned stable-address thread-compatible primitives; external owners synchronize mutation, traversal, reclamation and lifetime, while wrong-owner iterators, ranges or verified counts are program-contract violations.",
+        "Safe and forward hooks require explicit retirement; forward membership has no arbitrary-node O(1) unlink, hlist is not a sorted or counted sequence, and ordinary counted range splice is O(k).",
+        "Concurrent publication or reclamation, intrusive tree, hash or heap and advanced base, value or fancy-pointer policies remain with a concurrency owner, mature peer or a future admitted consumer demand.",
+        "Sched cancellation uses the safe hlist, but waiter, pool and IOCP links retain specialized storage-reuse, publication or kernel-state contracts.",
+        "Pointer-to-member header templates expose neither Native FFI nor a stable cross-toolchain C++ ABI; retained performance artifacts are local engineering evidence and Formal remains PENDING."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a correctness, security, ownership, lifetime, concurrency, exception-safety, API-usability or missing common intrusive-capability defect.",
+        "The public API, layout, algorithm, complexity, Core-only factor dependency, selected-header ownership or source, static or shared delivery shape changes.",
+        "A supported compiler or ABI changes pointer-to-member recovery, hook layout, assumption or exception and no-exception code generation.",
+        "Time, Sched, Mem, IO or a future inference consumer proves that the current type boundary or a retained specialized link no longer matches its real contract.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen 5% margin.",
+        "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity."
+      ],
+      "summary": "container_intrusive v4 CLOSED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。"
     },
     {
       "module": "util_core",
