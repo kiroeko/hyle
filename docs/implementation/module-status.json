@@ -580,8 +580,30 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "QUEUED",
-      "summary": "已登记为 Mem 内部的并发回收质因数；尚未进入 SCOPED，当前 hyle::mem 产品门面不选择它。"
+      "product_state": "SCOPED",
+      "round_id": "mem-reclaim-v1",
+      "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
+      "scope": "Provide an explicit-domain, allocation-free read-side reclamation primitive with guarded publication reads, intrusive retire records, bounded nonblocking collection, blocking grace-period synchronization, draining and observable pending work for current HYLE concurrent-container and Obs ownership gaps.",
+      "non_goals": "Container membership or policy, logging policy, lock-free data structures, sched/executor callbacks, automatic object allocation, a complete hazard-pointer family, backend/GPU retirement, global C or Native FFI, stable C++ ABI, universal SOTA or Formal certification.",
+      "baseline_commit": "31b86dd809ec61cd1fb7c42ed986e2697d20cb91",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "mem_reclaim v1 已进入 SCOPED：以当前并发容器旧表回收和 Obs 快照生命周期为真实需求，先冻结显式 domain/guard/retire/grace-period 形状，再实现与计时。"
     },
     {
       "module": "mem",
