@@ -26,6 +26,36 @@ set(HYLE_COMPUTE_CUDA_ENABLED OFF)
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
 set(HYLE_COMPUTE_SHADER_TOOLS_ENABLED OFF)
 
+# enable_language() must execute in the directory scope shared by every target
+# that consumes the language. Keeping it inside the dependency function makes
+# detection appear to succeed, but its rule variables disappear before target
+# generation (notably CMAKE_CUDA_COMPILE_OBJECT). This file is included only for
+# a selected compute closure, so prepare the optional language here while OFF
+# still performs no Toolkit or CUDA compiler probe.
+set(_HYLE_COMPUTE_CUDA_TOOLKIT_AVAILABLE OFF)
+if(NOT HYLE_COMPUTE_CUDA STREQUAL "OFF")
+  find_package(CUDAToolkit QUIET)
+  if(CUDAToolkit_FOUND)
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR
+       CMAKE_CUDA_ARCHITECTURES STREQUAL "")
+      set(CMAKE_CUDA_ARCHITECTURES native CACHE STRING
+        "CUDA architectures for HYLE and fetched CUDA kernels")
+    endif()
+    if(HYLE_INSTALL AND "native" IN_LIST CMAKE_CUDA_ARCHITECTURES)
+      message(FATAL_ERROR
+        "A CUDA-enabled binary SDK cannot use CMAKE_CUDA_ARCHITECTURES=native; "
+        "that would bind the package to the build GPU. Set an explicit list "
+        "(for example 80;86;89) or all-major, or select HYLE_COMPUTE_CUDA=OFF.")
+    endif()
+    enable_language(CUDA)
+    set(_HYLE_COMPUTE_CUDA_TOOLKIT_AVAILABLE ON)
+  elseif(HYLE_COMPUTE_CUDA STREQUAL "ON")
+    message(FATAL_ERROR
+      "HYLE_COMPUTE_CUDA=ON requires CUDAToolkit, but it was not found. Set "
+      "CUDAToolkit_ROOT or CMAKE_TOOLCHAIN_FILE, or select HYLE_COMPUTE_CUDA=AUTO/OFF.")
+  endif()
+endif()
+
 function(hyle_configure_compute_dependencies)
   set(_hyle_compute_cuda_enabled OFF)
   set(_hyle_compute_vulkan_enabled OFF)
@@ -42,36 +72,17 @@ function(hyle_configure_compute_dependencies)
 
   # CUDA has a deterministic AUTO/ON/OFF contract. The distinct *_ENABLED
   # result prevents truth-testing a string option such as "OFF".
-  if(NOT HYLE_COMPUTE_CUDA STREQUAL "OFF")
-    find_package(CUDAToolkit QUIET)
-    if(CUDAToolkit_FOUND)
-      if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR
-         CMAKE_CUDA_ARCHITECTURES STREQUAL "")
-        set(CMAKE_CUDA_ARCHITECTURES native CACHE STRING
-          "CUDA architectures for HYLE and fetched CUDA kernels")
-      endif()
-      if(HYLE_INSTALL AND "native" IN_LIST CMAKE_CUDA_ARCHITECTURES)
-        message(FATAL_ERROR
-          "A CUDA-enabled binary SDK cannot use CMAKE_CUDA_ARCHITECTURES=native; "
-          "that would bind the package to the build GPU. Set an explicit list "
-          "(for example 80;86;89) or all-major, or select HYLE_COMPUTE_CUDA=OFF.")
-      endif()
-      enable_language(CUDA)
-      set(_hyle_compute_cuda_enabled ON)
-      hyle_register_package_dependency(
-        NAME cuda_toolkit
-        OWNER compute
-        FEATURES compute_cuda
-        STATIC_FIND_DEPENDENCIES CUDAToolkit)
-      message(STATUS
-        "HYLE: compute CUDA ${HYLE_COMPUTE_CUDA} -- enabled with Toolkit ${CUDAToolkit_VERSION}")
-    elseif(HYLE_COMPUTE_CUDA STREQUAL "ON")
-      message(FATAL_ERROR
-        "HYLE_COMPUTE_CUDA=ON requires CUDAToolkit, but it was not found. Set "
-        "CUDAToolkit_ROOT or CMAKE_TOOLCHAIN_FILE, or select HYLE_COMPUTE_CUDA=AUTO/OFF.")
-    else()
-      message(STATUS "HYLE: compute CUDA AUTO -- Toolkit not found, host backend only")
-    endif()
+  if(_HYLE_COMPUTE_CUDA_TOOLKIT_AVAILABLE)
+    set(_hyle_compute_cuda_enabled ON)
+    hyle_register_package_dependency(
+      NAME cuda_toolkit
+      OWNER compute
+      FEATURES compute_cuda
+      STATIC_FIND_DEPENDENCIES CUDAToolkit)
+    message(STATUS
+      "HYLE: compute CUDA ${HYLE_COMPUTE_CUDA} -- enabled with Toolkit ${CUDAToolkit_VERSION}")
+  elseif(HYLE_COMPUTE_CUDA STREQUAL "AUTO")
+    message(STATUS "HYLE: compute CUDA AUTO -- Toolkit not found, host backend only")
   else()
     message(STATUS
       "HYLE: compute CUDA OFF -- dependency probe and CUDA language skipped")

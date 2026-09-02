@@ -15,6 +15,7 @@
 - [Build/package v7 内部 factor / 外部产品 façade 投影（CLOSED）](build-system-v7-factor-facade-projection.md)
 - [Build/package v8 Core 编译合同隔离（CLOSED）](build-system-v8-core-contract-isolation.md)
 - [Build/package v9 factor 迁移后 current-tree 复检（CLOSED）](build-system-v9-current-tree-replay.md)
+- [Build/package v10 CUDA 语言作用域修复（CLOSED）](build-system-v10-cuda-language-scope.md)
 - [模块收口状态机与统一性能仪器 v1](closure-system-v1.md)
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 
