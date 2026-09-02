@@ -196,3 +196,7 @@ margin 外胜出。
 
 红队未发现未处置 `MUST`、correctness/security/ownership/delivery 缺陷或 material
 consumer regression。
+
+`CANDIDATE -> VERIFIED` 的前态 registry 快照与 Time 共用
+`C:\hyle-scratch\time-v3\transitions\module-status-before-verified.json`，SHA-256
+`A6FDF69D1C1E5FBF0E068ACD118B8F821CF5F5D3D472CDF25B26D55063348116`。

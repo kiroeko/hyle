@@ -269,3 +269,7 @@ non-inferiority limit 0.95238；因此准确声明是同合同 `PARITY`，不是
 
 红队未发现未处置 `MUST`、correctness/security/lifetime/delivery 缺陷或越过冻结 5%
 margin 的正常 consumer 回退。
+
+`CANDIDATE -> VERIFIED` 的前态 registry 快照位于
+`C:\hyle-scratch\time-v3\transitions\module-status-before-verified.json`，SHA-256
+`A6FDF69D1C1E5FBF0E068ACD118B8F821CF5F5D3D472CDF25B26D55063348116`。
