@@ -63,7 +63,8 @@
 ### 双层投影合同
 
 Stage C 的 30 个 semantic factor 是源码 ownership、`module-status.json`、测试和 HYLE 直接依赖的
-目标粒度；当前已有 16 个 factor 已接入该机制，它们不是 16 个用户产品。双层投影把旧
+目标粒度；当前已有 16 个 factor 接入完整构建，另有 `timer_queue` 只完成 `QUEUED` ID 登记。登记项在
+进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺；这些 factor 都不是用户产品。双层投影把旧
 “component”承担的四种含义拆开：
 
 | layer | owns | may depend on | consumer-visible contract |
@@ -138,6 +139,7 @@ util_core   -> PUBLIC core
 error       -> PUBLIC core
 obs         -> PUBLIC core error
 time        -> PUBLIC core container_intrusive
+timer_queue QUEUED (no target, dependency edge, or product root yet)
 platform    -> PUBLIC core error time
 mem         -> PUBLIC core error platform util_core
 simd        -> PUBLIC core platform

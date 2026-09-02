@@ -33,7 +33,8 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 16-component 可构建现树**。下一版 30-factor DAG 的冻结边和波次保存在
+本节表格是**当前 17-component 登记现树**：16 个既有 factor 可构建，`timer_queue` 只完成
+`QUEUED` ID 登记，尚无 target、依赖或 product-root 承诺。下一版 30-factor DAG 的冻结边和波次保存在
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)；它不会
 再被逐项公开成 `find_package` component。双层 CMake 投影落地前，不得把两张图混写成已经实现的状态。
 
@@ -50,6 +51,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | obs | core, error | — |
 | math | core | — |
 | time | core, container_intrusive | — |
+| timer_queue（QUEUED） | — | — |
 | platform | core, error, time | — |
 | mem | core, error, platform, util_core | — |
 | simd | core, platform | — |

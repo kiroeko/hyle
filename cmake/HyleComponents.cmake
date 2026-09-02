@@ -124,6 +124,10 @@ _hyle_declare_component(error PUBLIC_DEPS core)
 _hyle_declare_component(obs TRACE PUBLIC_DEPS core error)
 _hyle_declare_component(math PUBLIC_DEPS core)
 _hyle_declare_component(time PUBLIC_DEPS core container_intrusive)
+# Registered factor ID only. Its dependency, source and product-root contract
+# stays intentionally absent while the new component is QUEUED; the Time v3
+# round must reach SCOPED/AUDITED before it can migrate product ownership.
+_hyle_declare_component(timer_queue)
 # fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
 # than a header made accidentally available by installing the whole tree.
 _hyle_declare_component(platform PUBLIC_DEPS core error time)
