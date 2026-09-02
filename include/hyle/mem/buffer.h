@@ -16,6 +16,9 @@ class ConstBufferView;
 class HostMapping;
 class FileMapping;
 class SharedMapping;
+class CompositeBuffer;
+class CompositeBufferView;
+class ConstCompositeBufferView;
 
 // One provider allocation. Buffer is move-only and keeps its complete wrapper
 // state inline: no HYLE pimpl/control-block allocation. The provider and its
@@ -198,11 +201,117 @@ class HostMapping {
   HostAccess access_ = HostAccess::kRead;
 };
 
+// Owner for one logical byte range backed by multiple ordinary Buffers. This
+// is the explicit large/model-shard shape: ordinary Buffer remains four words,
+// while only this opt-in owner pays segment metadata. create() validates and
+// allocates metadata first, then moves every input Buffer on success; failure
+// leaves the input span unchanged.
+class CompositeBuffer {
+ public:
+  constexpr CompositeBuffer() noexcept = default;
+  CompositeBuffer(const CompositeBuffer&) = delete;
+  CompositeBuffer& operator=(const CompositeBuffer&) = delete;
+  HYLE_MEM_API CompositeBuffer(CompositeBuffer&& other) noexcept;
+  HYLE_MEM_API CompositeBuffer& operator=(CompositeBuffer&& other) noexcept;
+  HYLE_MEM_API ~CompositeBuffer();
+
+  HYLE_MEM_API static Result<CompositeBuffer> create(
+      std::span<Buffer> segments) noexcept;
+
+  bool valid() const noexcept { return impl_ != nullptr; }
+  explicit operator bool() const noexcept { return valid(); }
+  HYLE_MEM_API std::size_t size() const noexcept;
+  HYLE_MEM_API std::size_t segment_count() const noexcept;
+  HYLE_MEM_API Result<BufferView> segment(std::size_t index) noexcept;
+  HYLE_MEM_API Result<ConstBufferView> segment(
+      std::size_t index) const noexcept;
+  HYLE_MEM_API CompositeBufferView view() noexcept;
+  HYLE_MEM_API ConstCompositeBufferView view() const noexcept;
+  HYLE_MEM_API void reset() noexcept;
+
+ private:
+  explicit CompositeBuffer(void* impl) noexcept : impl_(impl) {}
+  void* impl_ = nullptr;
+};
+
+// Non-owning logical range over CompositeBuffer. piece() returns the clipped
+// physical segment intersecting this view. subview is O(1); piece_count() and
+// piece() are O(log S), and range operations are O(log S + touched segments).
+class CompositeBufferView {
+ public:
+  constexpr CompositeBufferView() noexcept = default;
+
+  constexpr bool valid() const noexcept { return impl_ != nullptr; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::size_t size() const noexcept { return size_; }
+  constexpr bool empty() const noexcept { return size_ == 0; }
+  constexpr std::size_t offset() const noexcept { return offset_; }
+
+  HYLE_MEM_API Result<CompositeBufferView> subview(
+      std::size_t offset,
+      std::size_t size = std::dynamic_extent) const noexcept;
+  HYLE_MEM_API std::size_t piece_count() const noexcept;
+  HYLE_MEM_API Result<BufferView> piece(std::size_t index) const noexcept;
+  HYLE_MEM_API Status write(std::span<const std::byte> source) const noexcept;
+  HYLE_MEM_API Status read(std::span<std::byte> destination) const noexcept;
+  HYLE_MEM_API Status fill(std::byte value) const noexcept;
+  HYLE_MEM_API Status copy_from(
+      ConstCompositeBufferView source) const noexcept;
+
+ private:
+  friend class CompositeBuffer;
+  friend class ConstCompositeBufferView;
+  constexpr CompositeBufferView(void* impl, std::size_t offset,
+                                std::size_t size) noexcept
+      : impl_(impl), offset_(offset), size_(size) {}
+
+  void* impl_ = nullptr;
+  std::size_t offset_ = 0;
+  std::size_t size_ = 0;
+};
+
+class ConstCompositeBufferView {
+ public:
+  constexpr ConstCompositeBufferView() noexcept = default;
+  constexpr ConstCompositeBufferView(CompositeBufferView view) noexcept
+      : impl_(view.impl_), offset_(view.offset_), size_(view.size_) {}
+
+  constexpr bool valid() const noexcept { return impl_ != nullptr; }
+  constexpr explicit operator bool() const noexcept { return valid(); }
+  constexpr std::size_t size() const noexcept { return size_; }
+  constexpr bool empty() const noexcept { return size_ == 0; }
+  constexpr std::size_t offset() const noexcept { return offset_; }
+
+  HYLE_MEM_API Result<ConstCompositeBufferView> subview(
+      std::size_t offset,
+      std::size_t size = std::dynamic_extent) const noexcept;
+  HYLE_MEM_API std::size_t piece_count() const noexcept;
+  HYLE_MEM_API Result<ConstBufferView> piece(
+      std::size_t index) const noexcept;
+  HYLE_MEM_API Status read(std::span<std::byte> destination) const noexcept;
+
+ private:
+  friend class CompositeBuffer;
+  friend class CompositeBufferView;
+  constexpr ConstCompositeBufferView(const void* impl, std::size_t offset,
+                                     std::size_t size) noexcept
+      : impl_(impl), offset_(offset), size_(size) {}
+
+  const void* impl_ = nullptr;
+  std::size_t offset_ = 0;
+  std::size_t size_ = 0;
+};
+
 static_assert(sizeof(Buffer) <= sizeof(void*) * 4);
 static_assert(sizeof(BufferView) == sizeof(void*) * 4);
 static_assert(sizeof(ConstBufferView) == sizeof(void*) * 4);
+static_assert(sizeof(CompositeBuffer) == sizeof(void*));
+static_assert(sizeof(CompositeBufferView) == sizeof(void*) * 3);
+static_assert(sizeof(ConstCompositeBufferView) == sizeof(void*) * 3);
 static_assert(std::is_trivially_copyable_v<BufferView>);
 static_assert(std::is_trivially_copyable_v<ConstBufferView>);
+static_assert(std::is_trivially_copyable_v<CompositeBufferView>);
+static_assert(std::is_trivially_copyable_v<ConstCompositeBufferView>);
 
 // Hot borrowed-view operations stay header-inline. A source/static consumer
 // can inline them completely; a shared consumer still performs only the one

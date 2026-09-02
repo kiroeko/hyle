@@ -287,6 +287,13 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   P0 cost review 确认 scratch 是与 N 成比例的固定数量 arrays、sort 原地、没有 per-request
   allocation 或 per-byte/page table，plan/instance 各只创建固定数量 metadata blocks 加每 resource
   一次 provider allocation。仍需 macOS 和 Graph adapter journey 后才能完成该票。
+- `MEM2-04` 的 multi-allocation owner/view 已落地：一字 move-only `CompositeBuffer` 只在 opt-in
+  shape 分配 segment/prefix metadata，普通四字 `Buffer/View` 不增加常态字段；factory 在移动输入前
+  完成全量 validation 与 metadata allocation，失败时输入保持不变。logical subview 为 O(1)，
+  piece discovery 为 O(log S)，跨段 read/write/fill/copy 为 O(log S + touched segments)，保留每段
+  resource/native identity，不 flatten、不分配 staging。Windows MSVC shared/static、WSL GCC 14 shared
+  correctness/header journey 与 WSL GCC 14 ASan correctness 已通过；macOS 与真实 Compute provider
+  journey 仍按本轮后续验证，故该票不在此处提前完成。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

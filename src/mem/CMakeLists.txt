@@ -6,7 +6,7 @@
 # trap -- if a mimalloc-dependent problem ever recurs, a fallback path lets a build
 # silently dodge it and be MIS-judged as "fine", hiding the real defect. mimalloc is
 # the shipping allocator; if something breaks with it on, we investigate it head-on.
-hyle_add_module(mem TRACE TESTING SOURCES buffer.cc buffer_pool.cc heap.cc lifetime_plan.cc mapping.cc resource.cc system.cc stats.cc)
+hyle_add_module(mem TRACE TESTING SOURCES buffer.cc buffer_pool.cc composite_buffer.cc heap.cc lifetime_plan.cc mapping.cc resource.cc system.cc stats.cc)
 
 set(_mi "${PROJECT_SOURCE_DIR}/third_party/mimalloc")
 # Whole library in one TU (mimalloc src/static.c #includes the rest). Static so

@@ -18,6 +18,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
+| 把多个独立 allocation/shard 暴露为一段逻辑 bytes | `CompositeBuffer::create(segments)` | 只 composite 支付 segment metadata；不 flatten、不隐藏 staging；输入在成功后才被 move |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
 | 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests)` -> `instantiate(resources)` | tensor-free；先量 peak/placement 再一次建 backing；alias/output facts 显式 |
 | 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
@@ -83,6 +84,34 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
+
+模型分片、超过单次 provider allocation 上限的 storage，或必须保留每段 provider identity 时，
+使用 `CompositeBuffer`，不要先拼成一个临时连续 buffer：
+
+```cpp
+std::array<hyle::mem::Buffer, 2> shards{
+    hyle::mem::Buffer::create(resource_a, bytes_a, alignment).value(),
+    hyle::mem::Buffer::create(resource_b, bytes_b, alignment).value(),
+};
+HYLE_ASSIGN_OR_RETURN(auto model,
+                      hyle::mem::CompositeBuffer::create(shards));
+HYLE_ASSIGN_OR_RETURN(auto window, model.view().subview(offset, length));
+for (std::size_t i = 0; i < window.piece_count(); ++i) {
+  HYLE_ASSIGN_OR_RETURN(auto physical_piece, window.piece(i));
+  consume(physical_piece);  // 保留原 resource/native handle 和精确 clipped range
+}
+```
+
+每个输入 segment 必须有效且非空；空 segment span 会生成一个有效的空 composite。factory 先验证并
+分配 metadata，只有成功时才 move 输入，因此失败不会半搬走 owner。`subview()` 是 O(1)，
+`piece_count()`/`piece()` 是 O(log S)，整段 read/write/fill/copy 是
+O(log S + touched segments)，不会 flatten 或分配 staging。普通 `Buffer` 的大小和热路径完全不受
+segment 支持影响。
+
+Composite view 与普通 view 一样不拥有 storage：owner move 后仍有效，owner reset/析构后失效。
+同一 composite 内重叠 copy 会拒绝并要求调用者显式 staging；跨 composite 的底层别名无法通用探测，
+仍遵守 provider 的 overlap 合同。跨多个 provider 的 range operation 逐 piece 执行；若后续 provider
+失败，前面已完成的 piece 不会回滚，因此需要事务语义的调用方必须自行预检或 staging。
 
 短寿命 buffer 反复创建/销毁时再加 `BufferPool`，不要让每个算子自己保留一组匿名缓存：
 
