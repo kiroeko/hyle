@@ -286,3 +286,55 @@ regression，三平台当前 shared targets 均通过；本轮没有越权迁移
 
 当前为 `VERIFIED`；下一步只写 terminal receipt、已知限制、reopen triggers 与 registry anchor，不再改变
 candidate 产品。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**：signed Unix integer units、absolute timeval、relative
+timespec/timeval、timeout rounding、direct FILETIME、header isolation 与三交付八项 `MUST/FIX` 均已
+`COMPLETE`；civil/timezone/text、device/filesystem clock、scheduling 与 Native FFI 都有完整 owner route。
+scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering-performance 七门全部
+`PASS`，没有 `PARTIAL + KEEP`、`INCONCLUSIVE`、未命名 blocker 或未执行的适用门。Formal 独立保持
+`PENDING`，不冒充工程收口 blocker。
+
+已知限制：
+
+- POSIX/Win32 native structs 只是 C++ 互操作机制，不是稳定 wire、C FFI 或跨 toolchain ABI；Windows
+  调用者在实际构造 native struct 前仍须 include 对应 OS header；
+- timeval 与 signed Unix units 的低精度路线会按公开的 floor/trunc/timeout-ceil 语义丢失精度；平台定义
+  seconds field 不可表示时 checked conversion 失败并保持 output 不变；
+- calendar/timezone/text protocol、filesystem/device clock、scheduler execution 和 Native FFI 继续由
+  std/protocol、Platform/Compute/IO、Sched/IO 与全局 FFI admission 所有；
+- P0 证书只证明冻结候选/工具链下的 fixed O(1)、零意外资源与 code shape；不续签 host-clock v4 P1，
+  不声明端到端推理影响、全平台 timing SOTA 或 Formal performance。
+
+只有下列新事实可以重开 Time：
+
+1. 具名真实 consumer 暴露 correctness、security、API 易用性或缺失 common system-time interop；
+2. 支持平台击穿 canonical range、negative epoch、rounding、native field、header isolation 或
+   output-unchanged 合同；
+3. public API/layout、正常成本、直接依赖、组件 ownership 或 source/static/shared delivery materially 改变；
+4. profile 证明 material hot-path regression，或 mature same-contract peer 证明更优复杂度档或可复现
+   material consumer advantage；
+5. 当前 routed 的 civil、device-clock、scheduling 或 Native FFI journey 被正式准入且证明存在共同
+   Time-owned value contract。
+
+新 peer/API 数、benchmark 点值、命名偏好、LOC、未改变产品输入的依赖下载或无新事实的“再看一遍”不
+构成重开理由。
+
+Terminal receipt：
+
+- product candidate / tree：`680c9941d7af787067afae904a8ba886c14ba851` /
+  `b09b704304d943adb8d6442c3790fbe02a3048de`；
+- final verification evidence commit：`2043b14f733b1d0cb21a402c08e74cc816ae7f86`；
+- raw engineering artifacts：W1-WIN 位于
+  `C:\public\project-hyle\_build\time-v5-{win,consumers-win}` 与
+  `C:\public\project-hyle\_validation\time-v5-win-delivery`；W1-WSL/M1-MAC 使用明确 temporary native
+  checkout，命令与结果见本 task verification matrix；
+- candidate LOC：424,240 / 103,871 / 64,671 / 1,420，snapshot 为完整 product candidate；
+- end receipt identity：以首次保存本完整 terminal decision 的提交为准；下一次中央 registry 状态迁移
+  将记录其完整 40 位对象名，并建立首个真实 `CLOSED` registry anchor；
+- 后续只按本节 reopen triggers 重开；Time v1-v4 与本轮候选前记录只作历史证据，不再授权施工。
+
+`VERIFIED -> CLOSED` 前态 registry snapshot 位于
+`C:\public\project-hyle\_validation\time-v5-state\module-status-verified.json`，SHA-256
+`3D76F9235657C03B1FFE58934BE37F73B7645E7CFFEBD035545CFADD7C64EDAB`。
