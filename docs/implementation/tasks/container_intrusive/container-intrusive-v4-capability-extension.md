@@ -1,6 +1,7 @@
 # container_intrusive v4 能力扩展
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 当前阶段：`VERIFIED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
 > `58431ddbef6f54f9d4275b0fea2d317cba00b9f3` / tree
@@ -284,3 +285,80 @@ AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实�
 
 剩余动作只允许生成 candidate LOC、写 terminal receipt 与限制/reopen trigger，并按状态协议迁移
 `VERIFIED -> CLOSED`；不得借收尾重开产品代码或 API。
+
+## Candidate LOC
+
+`scripts/loc-report.py` 的旧 canonical boundary 遗漏三个 v4 split header；独立工具任务
+[LOC 边界同步](../project/loc-report-container-intrusive-v4-boundary.md)只同步 CMake 已拥有的四个实现头，
+没有改变 candidate tree。随后执行：
+
+```text
+python scripts/loc-report.py --module container_intrusive \
+  --commit 58431ddbef6f54f9d4275b0fea2d317cba00b9f3 --self-check --json
+```
+
+cloc 2.08 从不可变 tree 复算并通过 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 423,430 |
+| 自实现包含测试 | 103,452 |
+| 自实现不包含测试 | 64,452 |
+| container_intrusive 实现 | 1,590 |
+
+最后一项只含 `intrusive_member.h`、`intrusive_list.h`、`intrusive_forward_list.h` 与
+`intrusive_hlist.h`；Sched consumer、tests、bench、docs 与 CMake 不混入产品实现行数。
+
+## Aggregate gates
+
+| Gate | state | evidence / limit |
+|---|---|---|
+| scope | `PASS` | 四族能力、八项有限 FIX；candidate 后产品零漂移 |
+| architecture | `PASS` | factor 只依赖 Core；Container 聚合；Sched 有真实直接公开边且无环 |
+| correctness | `PASS` | Windows/WSL/macOS、differential、异常/no-exception、ASan/UBSan、直接消费者 |
+| delivery | `PASS` | 精确 header-only factor；Container source/static/shared relocated journeys |
+| usability/docs | `PASS` | 按 cost/lifetime 选型；复杂度、前置条件、异常与 FFI 边界完整 |
+| red team | `PASS` | API/layout/lifetime/exception/dependency/delivery/perf 比较攻击；MEDIUM+ 0 |
+| engineering performance | `PASS` | W1-WIN 四项正常 consumer shape 的全部 strata 通过 5% P1 非劣门 |
+
+## 接受限制与重开条件
+
+接受限制：
+
+- P1 只覆盖 W1-WIN、冻结的四项 N=4096 正常 consumer replay、MSVC 19.50、锁定 Boost 与旧 Sched
+  baseline；跨平台 timing、全部操作/规模、端到端推理 KPI、普遍 SOTA 与 Formal 均未签署；
+- 所有 container 都是 caller-owned、stable-address、thread-compatible primitive；并发 mutation/traversal、
+  reclamation 和 lifetime transition 由外部 owner 同步。错误 list/iterator/range/count 是程序合同，不是
+  `Status` 失败；
+- safe/forward node 必须在析构前显式退休。forward 不提供任意已知 node O(1) unlink；hlist 不提供
+  back/count/range/sort；counted 普通 range splice 为 O(k)，只有 caller 已验证 count 的重载为 O(1)；
+- concurrent publication/reclamation、intrusive tree/hash/heap、base/value/fancy/offset-pointer policy 不在
+  本 primitive；由并发 owner、成熟 peer 或后续真实需求承担；
+- Sched cancellation 已自然迁移到 safe hlist；waiter、pool free-list 与 IOCP link 因 storage reuse、
+  publication 或内核状态机不同继续特化，不以“内部采用率”强行改写；
+- header template 与 pointer-to-member lifetime API 不提供 Native FFI 或稳定跨 toolchain C++ ABI；安装包
+  consumer 必须使用匹配 headers/toolchain。retained P1 bundle 是本机工程证据，Formal 保持 `PENDING`。
+
+只有以下新事实重开受影响能力族：
+
+1. 已命名真实 consumer 复现 correctness/security、ownership/lifetime、并发、异常安全、API 易用性或
+   缺失常用 intrusive capability 缺陷；
+2. public API/layout/算法/复杂度、Core-only factor dependency、header ownership 或 source/static/shared
+   delivery shape 改变；
+3. 支持 compiler/ABI 改变 pointer-to-member recovery、hook layout、assume 或异常/no-exception codegen；
+4. Time/Sched/Mem/IO 或未来推理 consumer 的实际采用证明当前类型边界或保留特化不再匹配；
+5. mature same-contract peer 证明更优复杂度档，或正常 consumer/profile 证明超过冻结 5% 门的可复现
+   material regression/advantage；
+6. 续签工程声明时 consumer provenance、peer、machine、instrument、compiler 或 retained bundle identity
+   发生 material 改变。
+
+新 benchmark、API/LOC 数、命名偏好、单次点值、order/address 翻转、亚纳秒差异、Formal 待办或没有上述
+新事实的“再看一遍”不构成产品重开理由。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：八项有限 FIX 全部完成，七项 aggregate gate 全 `PASS`，未处置 `MUST`、blocker
+与 medium-or-higher finding 均为 0。不可变候选保持
+`58431ddbef6f54f9d4275b0fea2d317cba00b9f3` /
+`8df2b7d7806918d03b5bb5c31611adb196f30c7f`；本 terminal receipt 与独立 LOC 工具修复均不改变产品
+identity。
