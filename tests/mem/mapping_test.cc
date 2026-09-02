@@ -124,7 +124,10 @@ TEST(SharedMapping, NamedOwnersObserveTheSameStorage) {
   ASSERT_TRUE(owner.view().fill(std::byte{0x39}).ok());
 
   std::array<std::byte, 128> observed{};
-  ASSERT_TRUE(static_cast<const SharedMapping&>(peer).view().read(observed).ok());
+  ASSERT_EQ(peer.size(), observed.size());
+  const Status read =
+      static_cast<const SharedMapping&>(peer).view().read(observed);
+  ASSERT_TRUE(read.ok()) << read.message();
   for (std::byte value : observed) EXPECT_EQ(value, std::byte{0x39});
   EXPECT_TRUE(owner.flush().ok());
 
