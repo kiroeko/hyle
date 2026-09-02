@@ -384,18 +384,14 @@
     },
     {
       "module": "time",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "TIME-FACTORIZATION-2026-09-02",
-      "reopen_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
-      "round_id": "time-v3-host-clock-factor",
-      "closure_task": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
-      "scope": "Separate the host-clock semantic factor from timer-node storage, complete the admitted injectable/manual clock vocabulary and revalidate affected consumers and C++ delivery without changing the public Time product facade.",
-      "non_goals": "Timer callback execution, periodic or cross-thread scheduling policy, device clocks, timezone databases or protocol formatting, Sched/IO redesign, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
-      "baseline_commit": "25b13f5a18a0164a5fa81d01c4ef5d1a32f85cf4",
-      "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
-      "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
-      "end_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
-      "registry_anchor_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "TIME-MSVC-INSTANT-CODEGEN-2026-09-02",
+      "reopen_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
+      "round_id": "time-v4-msvc-instant-codegen",
+      "closure_task": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
+      "scope": "Repair the reproduced MSVC Release call-shell regression in the ordinary Instant::now host-phase route and add a bounded structural regression gate without changing Time's public API, semantics or capability boundary.",
+      "non_goals": "Public API, layout, semantics or capability changes, timer_queue, global /Ob3, private CRT or QPC reimplementation, public compiler macros, build-system global policy, Native FFI/C API, instrumentation redesign and Formal certification.",
+      "baseline_commit": "03a14a91744697ce6b5c8803b651886afa82cef3",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -403,49 +399,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-time.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
-      "loc": {
-        "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
-        "repository_code": 420468,
-        "self_with_tests": 101897,
-        "self_without_tests": 63430,
-        "module_implementation": 1192
-      },
-      "known_limitations": [
-        "The P1 PASS covers only W1-WIN and the frozen 64-phase host clock/deadline aggregate against the source-equivalent precise steady-clock route; cross-platform fixed nanoseconds, every Time operation, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
-        "ManualClock owns only a relaxed lock-free time value: it is not a user-data publication fence, waiter service or scheduler, and write-side CAS retry is contention-dependent.",
-        "MonotonicClockRef is a two-word borrowed runtime-selection seam with one indirect now() call; the source must outlive it, while default and typed system routes do not pay that dispatch.",
-        "Timezone/calendar/protocol text, device clocks and timer execution, periodic, cancellation and cross-thread wake policy remain owned by standard/protocol, Compute or Sched/IO layers.",
-        "HYLE promises neither a Native FFI/C API nor stable C++ ABI for Time; matched C++23 headers and binaries are required, and the retained engineering bundle is local replayable evidence rather than a Formal artifact."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, clock-domain, conversion, lifetime, concurrency, API-usability, delivery or missing-capability defect within the host Time boundary.",
-        "The public API or layout, default/native clock mechanism, ManualClock atomic contract, direct dependency, factor graph or source/static/shared delivery shape changes materially.",
-        "A supported compiler, standard library or OS changes clock, sleep, atomic lock-free or timestamp-conversion semantics required by the frozen contract.",
-        "Renewing the engineering claim encounters a material change in candidate, peer, consumer provenance or ownership, workload/accounting, machine, instrument, compiler or retained evidence identity.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer/profile proves a reproducible regression beyond the frozen 5% margin."
-      ],
-      "summary": "time-v3 CLOSED：host Time 已与 timer node 存储解耦，system/manual/borrowed clock 与 deadline/Instant 组合完整；三平台正确性/sanitizer、三种 C++ 交付、直接消费、文档/红队及 W1-WIN 5% P1 host PARITY 门全部通过。"
+      "summary": "time-v4 因支持的 MSVC /O2 /Ob2 在普通 Instant host-phase 路线保留两次额外 steady_clock 调用壳而定向重开；API 与能力边界不变。"
     },
     {
       "module": "timer_queue",
