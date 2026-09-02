@@ -144,8 +144,10 @@ domain.drain();           // external quiescence; empties the retire queue
 
 ## Candidate freeze
 
-- candidate commit：`fc656855eae5e984b98c396817578c266e2a4491`；tree：
-  `3686af7b1abed59b30ef518f9bc55a4308959a2e`；
+- candidate commit：`66671c39197765623f581dd872f4e626958880db`；tree：
+  `dc17f2b62e30c72b020b868b4ee3961157a1603b`；首个冻结点
+  `fc656855eae5e984b98c396817578c266e2a4491` 在 W1-WSL/GCC WERROR 暴露测试 fixture 的
+  `-Wmissing-field-initializers` 后被替代，产品算法未改变；
 - 已实现 `MR-01` 的 public header、compiled cold path、默认/显式 domain、TLS 独占 reader slot、固定
   fallback stripes、intrusive retire record、grace-period collection 与 misuse fail-fast；
 - `W1-WIN` exact-factor shared/static WERROR 构建、header isolation、unit/death/stress tests 已通过；candidate
