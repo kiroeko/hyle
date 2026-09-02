@@ -294,6 +294,14 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   resource/native identity，不 flatten、不分配 staging。Windows MSVC shared/static、WSL GCC 14 shared
   correctness/header journey 与 WSL GCC 14 ASan correctness 已通过；macOS 与真实 Compute provider
   journey 仍按本轮后续验证，故该票不在此处提前完成。
+- `MEM2-05/MEM2-08` 的 storage seam 已落地：删除 Compute 私有 `BufferType/Buffer/BufferKind`
+  产品面，Compute 以 process-lifetime `MemoryResource` provider 提供 device、host/pinned 与可选
+  managed storage，kernel typed shell 直接接收 Mem owner/view；raw backend binding 显式保留
+  `{native_handle,offset,size}`。CUDA device/pinned/managed、Vulkan device/pinned（managed 明确
+  `Unimplemented`）和 Host 三类路径均通过真实运行；CPU/CUDA/Vulkan 的非零 subview kernel
+  验证 offset/range 没有被中间层丢失。Windows MSVC Host/CUDA/Vulkan 与 WSL GCC 14 Host
+  correctness/header 通过。Compute/Graph 其余半成品能力未借本票重构；macOS、最终 selected
+  package journeys 与相邻文档仍留在本轮后续票。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

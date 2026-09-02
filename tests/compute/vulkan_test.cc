@@ -5,13 +5,15 @@
 #include <cstdint>
 #include <cstdlib>   // getenv -- TEST-ONLY staging forcing
 #include <cstring>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/device_pool.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
+#include "hyle/mem/buffer.h"
 #include "hyle/platform/convenience.h"
 #include "hyle/platform/fs.h"
 // SPIR-V embedded as `inline constexpr SpirvBlob` by tools/hyle_shader.py (via
@@ -53,6 +55,48 @@ using namespace hyle::compute;
 
 namespace {
 
+using hyle::mem::Buffer;
+
+mem::MemoryResourceRef device_resource(const Device& device) {
+  return device_memory_resource(device).value();
+}
+
+mem::MemoryResourceRef host_resource(const Device& device) {
+  return host_memory_resource(device).value();
+}
+
+Status set_buffer(Buffer& buffer, std::size_t offset, const void* source,
+                  std::size_t size) {
+  return buffer.write(
+      offset, {static_cast<const std::byte*>(source), size});
+}
+
+Status get_buffer(const Buffer& buffer, std::size_t offset, void* destination,
+                  std::size_t size) {
+  return buffer.read(offset, {static_cast<std::byte*>(destination), size});
+}
+
+Status clear_buffer(Buffer& buffer, std::size_t offset, std::uint8_t value,
+                    std::size_t size) {
+  return buffer.fill(offset, size, static_cast<std::byte>(value));
+}
+
+Status copy_buffer(Buffer& destination, const Buffer& source,
+                   std::size_t destination_offset,
+                   std::size_t source_offset, std::size_t size) {
+  auto destination_view =
+      destination.view().subview(destination_offset, size);
+  if (!destination_view) return std::move(destination_view).error();
+  auto source_view = source.view().subview(source_offset, size);
+  if (!source_view) return std::move(source_view).error();
+  return destination_view->copy_from(*source_view);
+}
+
+BufferBinding binding(const Buffer& buffer) noexcept {
+  const mem::ConstBufferView view = buffer.view();
+  return BufferBinding{view.native_handle(), view.offset(), view.size()};
+}
+
 // Find the Vulkan-backed device among enumerated devices, or return false (no Vulkan
 // loader / backend disabled). Device::backend() names the owning backend ("vulkan").
 bool find_vulkan(Device& out) {
@@ -92,20 +136,23 @@ TEST(VulkanCompute, HostBufferSeparatesNativeHandleFromMappedData) {
   if (!find_vulkan(d)) GTEST_SKIP() << "no Vulkan compute device";
 
   constexpr std::size_t kBytes = 4096;
-  auto host = Buffer::create(host_buffer_type(d), kBytes);
+  auto host = Buffer::create(host_resource(d), kBytes);
   ASSERT_TRUE(host.has_value()) << host.error().message();
-  ASSERT_TRUE(host->is_host());
+  ASSERT_TRUE(
+      host->properties().has(mem::MemoryProperty::kHostAccessible));
   ASSERT_NE(host->native_handle(), nullptr);
-  ASSERT_NE(host->host_data(), nullptr);
-  EXPECT_NE(host->native_handle(), host->host_data());  // VkMem* versus VkMem::mapped
-
-  auto* mapped = static_cast<std::uint8_t*>(host->host_data());
+  auto mapping = host->view().map_host(mem::HostAccess::kReadWrite);
+  ASSERT_TRUE(mapping.has_value()) << mapping.error().message();
+  auto writable = mapping->writable_bytes();
+  ASSERT_TRUE(writable.has_value());
+  auto* mapped = reinterpret_cast<std::uint8_t*>(writable->data());
+  EXPECT_NE(host->native_handle(), mapped);  // VkMem* versus VkMem::mapped
   for (std::size_t i = 0; i < kBytes; ++i)
     mapped[i] = static_cast<std::uint8_t>(i & 0xFF);
-  ASSERT_TRUE(host->flush_host(0, kBytes).ok());
+  ASSERT_TRUE(mapping->flush().ok());
 
   std::vector<std::uint8_t> out(kBytes, 0);
-  ASSERT_TRUE(host->get(0, out.data(), kBytes).ok());
+  ASSERT_TRUE(get_buffer(*host, 0, out.data(), kBytes).ok());
   for (std::size_t i = 0; i < kBytes; ++i) EXPECT_EQ(out[i], mapped[i]);
 }
 
@@ -113,13 +160,13 @@ TEST(VulkanCompute, ZeroSizeBufferOperationsAreNoops) {
   Device d;
   if (!find_vulkan(d)) GTEST_SKIP() << "no Vulkan compute device";
 
-  auto a = Buffer::create(device_buffer_type(d), 0);
-  auto b = Buffer::create(device_buffer_type(d), 0);
+  auto a = Buffer::create(device_resource(d), 0);
+  auto b = Buffer::create(device_resource(d), 0);
   ASSERT_TRUE(a.has_value() && b.has_value());
-  EXPECT_TRUE(a->set(0, nullptr, 0).ok());
-  EXPECT_TRUE(a->get(0, nullptr, 0).ok());
-  EXPECT_TRUE(b->copy_from(*a, 0, 0, 0).ok());
-  EXPECT_TRUE(a->clear(0, 0xA5, 0).ok());
+  EXPECT_TRUE(set_buffer(*a, 0, nullptr, 0).ok());
+  EXPECT_TRUE(get_buffer(*a, 0, nullptr, 0).ok());
+  EXPECT_TRUE(copy_buffer(*b, *a, 0, 0, 0).ok());
+  EXPECT_TRUE(clear_buffer(*a, 0, 0xA5, 0).ok());
 }
 
 TEST(VulkanCompute, EventRerecordAndPendingDestructionAreSafe) {
@@ -163,19 +210,19 @@ TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
   constexpr std::size_t kBufferBytes = 1u << 20;
   constexpr std::size_t kTransferBytes = 64u << 10;
   constexpr std::size_t kOffset = 512u << 10;
-  auto buffer = Buffer::create(device_buffer_type(vk), kBufferBytes);
+  auto buffer = Buffer::create(device_resource(vk), kBufferBytes);
   ASSERT_TRUE(buffer.has_value()) << buffer.error().message();
   EXPECT_EQ(vk_staging_capacity_for_test(buffer->native_handle()), 0u);
 
   std::vector<std::uint8_t> input(kTransferBytes, 0xA5);
-  ASSERT_TRUE(buffer->set(kOffset, input.data(), input.size()).ok());
+  ASSERT_TRUE(set_buffer(*buffer, kOffset, input.data(), input.size()).ok());
   const std::size_t capacity =
       vk_staging_capacity_for_test(buffer->native_handle());
   EXPECT_GE(capacity, kTransferBytes);
   EXPECT_LT(capacity, kBufferBytes);
 
   std::vector<std::uint8_t> output(kTransferBytes, 0);
-  ASSERT_TRUE(buffer->get(kOffset, output.data(), output.size()).ok());
+  ASSERT_TRUE(get_buffer(*buffer, kOffset, output.data(), output.size()).ok());
   EXPECT_EQ(output, input);
   EXPECT_EQ(vk_staging_capacity_for_test(buffer->native_handle()), capacity);
 
@@ -183,8 +230,8 @@ TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
   // this unaligned range, so Vulkan must use its transfer-sized staging fallback.
   constexpr std::size_t kClearOffset = 3;
   constexpr std::size_t kClearBytes = 7;
-  ASSERT_TRUE(buffer->clear(kOffset + kClearOffset, 0x3C, kClearBytes).ok());
-  ASSERT_TRUE(buffer->get(kOffset, output.data(), output.size()).ok());
+  ASSERT_TRUE(clear_buffer(*buffer, kOffset + kClearOffset, 0x3C, kClearBytes).ok());
+  ASSERT_TRUE(get_buffer(*buffer, kOffset, output.data(), output.size()).ok());
   for (std::size_t i = 0; i < output.size(); ++i) {
     const std::uint8_t expected =
         i >= kClearOffset && i < kClearOffset + kClearBytes ? 0x3C : 0xA5;
@@ -213,21 +260,21 @@ TEST(VulkanCompute, TransferChainSetCopyGet) {
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
 
   constexpr std::size_t kBytes = 4096;
-  auto src = Buffer::create(device_buffer_type(vk), kBytes);
-  auto dst = Buffer::create(device_buffer_type(vk), kBytes);
+  auto src = Buffer::create(device_resource(vk), kBytes);
+  auto dst = Buffer::create(device_resource(vk), kBytes);
   ASSERT_TRUE(src.has_value() && dst.has_value());
   std::vector<std::uint8_t> input(kBytes);
   for (std::size_t i = 0; i < kBytes; ++i)
     input[i] = static_cast<std::uint8_t>((i * 29) & 0xFF);
-  ASSERT_TRUE(src->set(0, input.data(), kBytes).ok());
-  ASSERT_TRUE(dst->copy_from(*src, 0, 0, kBytes).ok());
+  ASSERT_TRUE(set_buffer(*src, 0, input.data(), kBytes).ok());
+  ASSERT_TRUE(copy_buffer(*dst, *src, 0, 0, kBytes).ok());
   std::vector<std::uint8_t> output(kBytes, 0);
-  ASSERT_TRUE(dst->get(0, output.data(), kBytes).ok());
+  ASSERT_TRUE(get_buffer(*dst, 0, output.data(), kBytes).ok());
   EXPECT_EQ(output, input);
 
-  ASSERT_TRUE(src->clear(0, 0x5A, kBytes).ok());
-  ASSERT_TRUE(dst->copy_from(*src, 0, 0, kBytes).ok());
-  ASSERT_TRUE(dst->get(0, output.data(), kBytes).ok());
+  ASSERT_TRUE(clear_buffer(*src, 0, 0x5A, kBytes).ok());
+  ASSERT_TRUE(copy_buffer(*dst, *src, 0, 0, kBytes).ok());
+  ASSERT_TRUE(get_buffer(*dst, 0, output.data(), kBytes).ok());
   for (std::uint8_t byte : output) EXPECT_EQ(byte, 0x5A);
 }
 
@@ -240,7 +287,7 @@ TEST(VulkanCompute, MappedRangeAlignsToNonCoherentAtom) {
   ASSERT_GT(atom, 0u);
   ASSERT_EQ(atom & (atom - 1), 0u);
   ASSERT_LE(atom, SIZE_MAX / 4);
-  auto host = Buffer::create(host_buffer_type(vk), atom * 4);
+  auto host = Buffer::create(host_resource(vk), atom * 4);
   ASSERT_TRUE(host.has_value()) << host.error().message();
 
   std::size_t offset = 0;
@@ -270,16 +317,16 @@ TEST(VulkanCompute, SaxpyEndToEnd) {
 
   constexpr int kN = 4096;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
-  auto bx = Buffer::create(bt, bytes);
-  auto by = Buffer::create(bt, bytes);
-  auto bo = Buffer::create(bt, bytes);
+  mem::MemoryResourceRef resource = device_resource(vk);
+  auto bx = Buffer::create(resource, bytes);
+  auto by = Buffer::create(resource, bytes);
+  auto bo = Buffer::create(resource, bytes);
   ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
 
   std::vector<float> hx(kN), hy(kN);
   for (int i = 0; i < kN; ++i) { hx[i] = float(i); hy[i] = float(100 + i); }
-  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
-  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*bx, 0, hx.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*by, 0, hy.data(), bytes).ok());
 
   SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
   LaunchConfig cfg;
@@ -290,10 +337,52 @@ TEST(VulkanCompute, SaxpyEndToEnd) {
   ASSERT_TRUE(s->sync().ok());
 
   std::vector<float> ho(kN, -1.0f);
-  ASSERT_TRUE(bo->get(0, ho.data(), bytes).ok());
+  ASSERT_TRUE(get_buffer(*bo, 0, ho.data(), bytes).ok());
   for (int i = 0; i < kN; ++i) {
     float expect = 2.0f * hx[i] + 3.0f * hy[i] + 0.5f;
     ASSERT_NEAR(ho[i], expect, 1e-2f) << "at " << i;
+  }
+}
+
+TEST(VulkanCompute, SaxpySubviewBindingsPreserveDescriptorRanges) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+  auto stream = Stream::create(vk);
+  auto kernel =
+      Kernel::load_spirv(vk, hyle_test_shaders::kSaxpySpirv, "main");
+  ASSERT_TRUE(stream.has_value() && kernel.has_value());
+
+  constexpr std::uint32_t kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  const mem::MemoryResourceRef resource = device_resource(vk);
+  const std::size_t offset = resource.properties().minimum_alignment;
+  auto x = Buffer::create(resource, offset + bytes);
+  auto y = Buffer::create(resource, offset + bytes);
+  auto output = Buffer::create(resource, offset + bytes);
+  ASSERT_TRUE(x.has_value() && y.has_value() && output.has_value());
+  auto xv = x->view().subview(offset, bytes);
+  auto yv = y->view().subview(offset, bytes);
+  auto ov = output->view().subview(offset, bytes);
+  ASSERT_TRUE(xv.has_value() && yv.has_value() && ov.has_value());
+
+  std::vector<float> host_x(kN), host_y(kN), observed(kN, 0.0f);
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    host_x[i] = static_cast<float>(i);
+    host_y[i] = static_cast<float>(1000 + i);
+  }
+  ASSERT_TRUE(xv->write(std::as_bytes(std::span(host_x))).ok());
+  ASSERT_TRUE(yv->write(std::as_bytes(std::span(host_y))).ok());
+
+  SaxpyParams params{kN, 1.5f, 2.0f, -3.0f};
+  LaunchConfig config;
+  config.grid = {blocks_for(kN, 256), 1, 1};
+  ASSERT_TRUE(launch(*stream, *kernel, config, *xv, *yv, *ov, params).ok());
+  ASSERT_TRUE(stream->sync().ok());
+  ASSERT_TRUE(ov->read(std::as_writable_bytes(std::span(observed))).ok());
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    EXPECT_NEAR(observed[i], 1.5f * host_x[i] + 2.0f * host_y[i] - 3.0f,
+                1e-2f)
+        << i;
   }
 }
 
@@ -312,7 +401,7 @@ TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
 
   constexpr std::uint32_t kN = 256;
   constexpr std::size_t kBytes = kN * sizeof(float);
-  BufferType host_type = host_buffer_type(vk);
+  mem::MemoryResourceRef host_type = host_resource(vk);
   auto bx = Buffer::create(host_type, kBytes);
   auto by = Buffer::create(host_type, kBytes);
   auto bo = Buffer::create(host_type, kBytes);
@@ -320,16 +409,26 @@ TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
   if (!vk_buffer_is_noncoherent_for_test(bx->native_handle()))
     GTEST_SKIP() << "device exposes no non-coherent host-visible memory type";
 
-  auto* x = static_cast<float*>(bx->host_data());
-  auto* y = static_cast<float*>(by->host_data());
-  auto* out = static_cast<float*>(bo->host_data());
+  auto x_mapping = bx->view().map_host(mem::HostAccess::kReadWrite);
+  auto y_mapping = by->view().map_host(mem::HostAccess::kReadWrite);
+  auto out_mapping = bo->view().map_host(mem::HostAccess::kReadWrite);
+  ASSERT_TRUE(x_mapping.has_value() && y_mapping.has_value() &&
+              out_mapping.has_value());
+  auto x_bytes = x_mapping->writable_bytes();
+  auto y_bytes = y_mapping->writable_bytes();
+  auto out_bytes = out_mapping->writable_bytes();
+  ASSERT_TRUE(x_bytes.has_value() && y_bytes.has_value() &&
+              out_bytes.has_value());
+  auto* x = reinterpret_cast<float*>(x_bytes->data());
+  auto* y = reinterpret_cast<float*>(y_bytes->data());
+  auto* out = reinterpret_cast<float*>(out_bytes->data());
   for (std::uint32_t i = 0; i < kN; ++i) {
     x[i] = static_cast<float>(i);
     y[i] = static_cast<float>(2 * i + 1);
     out[i] = -1.0f;
   }
-  ASSERT_TRUE(bx->flush_host(0, kBytes).ok());
-  ASSERT_TRUE(by->flush_host(0, kBytes).ok());
+  ASSERT_TRUE(x_mapping->flush().ok());
+  ASSERT_TRUE(y_mapping->flush().ok());
 
   auto s = Stream::create(vk);
   auto k = load_saxpy(vk);
@@ -339,7 +438,7 @@ TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
   cfg.grid = {blocks_for(kN, 256), 1, 1};
   ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, *bo, p).ok());
   ASSERT_TRUE(s->sync().ok());
-  ASSERT_TRUE(bo->invalidate_host(0, kBytes).ok());
+  ASSERT_TRUE(out_mapping->invalidate().ok());
 
   for (std::uint32_t i = 0; i < kN; ++i)
     ASSERT_NEAR(out[i], 2.0f * x[i] + 3.0f * y[i] + 0.5f, 1e-2f) << "at " << i;
@@ -360,13 +459,13 @@ TEST(VulkanCompute, BatchedSaxpy) {
   constexpr int kJobs = 3;
   constexpr int kN = 2048;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
 
   // Keep buffers + params alive across the batch (their pointers go into KernelArgs).
   std::vector<Buffer> bx, by, bo;
   std::vector<std::vector<float>> hx(kJobs), hy(kJobs);
   SaxpyParams params[kJobs];
-  void* bufptrs[kJobs][3];
+  BufferBinding bufptrs[kJobs][3];
   ScalarField fields[kJobs];
   BatchItem items[kJobs];
   bx.reserve(kJobs); by.reserve(kJobs); bo.reserve(kJobs);
@@ -378,10 +477,12 @@ TEST(VulkanCompute, BatchedSaxpy) {
     bx.push_back(std::move(*x)); by.push_back(std::move(*y)); bo.push_back(std::move(*o));
     hx[j].resize(kN); hy[j].resize(kN);
     for (int i = 0; i < kN; ++i) { hx[j][i] = float(i + j); hy[j][i] = float(2 * i + j); }
-    ASSERT_TRUE(bx[j].set(0, hx[j].data(), bytes).ok());
-    ASSERT_TRUE(by[j].set(0, hy[j].data(), bytes).ok());
+    ASSERT_TRUE(set_buffer(bx[j], 0, hx[j].data(), bytes).ok());
+    ASSERT_TRUE(set_buffer(by[j], 0, hy[j].data(), bytes).ok());
     params[j] = SaxpyParams{kN, 1.0f + j, 2.0f + j, float(j)};  // distinct scalars per job
-    bufptrs[j][0] = bx[j].native_handle(); bufptrs[j][1] = by[j].native_handle(); bufptrs[j][2] = bo[j].native_handle();
+    bufptrs[j][0] = binding(bx[j]);
+    bufptrs[j][1] = binding(by[j]);
+    bufptrs[j][2] = binding(bo[j]);
     fields[j] = ScalarField{0, sizeof(SaxpyParams)};
     items[j].kernel = &*k;
     items[j].config = LaunchConfig{};
@@ -394,7 +495,7 @@ TEST(VulkanCompute, BatchedSaxpy) {
 
   for (int j = 0; j < kJobs; ++j) {
     std::vector<float> ho(kN, -1.0f);
-    ASSERT_TRUE(bo[j].get(0, ho.data(), bytes).ok());
+    ASSERT_TRUE(get_buffer(bo[j], 0, ho.data(), bytes).ok());
     for (int i = 0; i < kN; ++i) {
       float expect = params[j].alpha * hx[j][i] + params[j].beta * hy[j][i] + params[j].bias;
       ASSERT_NEAR(ho[i], expect, 1e-1f) << "job " << j << " at " << i;
@@ -422,14 +523,14 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
 
   constexpr int kN = 4096;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes);
   auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
   std::vector<float> hx(kN, 1.0f), hy(kN, 2.0f);
-  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
-  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*bx, 0, hx.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*by, 0, hy.data(), bytes).ok());
 
   SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
   LaunchConfig cfg;
@@ -468,7 +569,7 @@ TEST(VulkanCompute, PipelineCachePersist) {
   ASSERT_TRUE(k.has_value()) << k.error().message();
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes);
   auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
@@ -517,15 +618,15 @@ TEST(VulkanCompute, SpecializationConstants) {
 
   constexpr int kN = 4096;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes);
   auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
   std::vector<float> hx(kN), hy(kN);
   for (int i = 0; i < kN; ++i) { hx[i] = float(i); hy[i] = float(100 + i); }
-  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
-  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*bx, 0, hx.data(), bytes).ok());
+  ASSERT_TRUE(set_buffer(*by, 0, hy.data(), bytes).ok());
 
   SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
   LaunchConfig cfg;
@@ -534,7 +635,7 @@ TEST(VulkanCompute, SpecializationConstants) {
   ASSERT_TRUE(s->sync().ok());
 
   std::vector<float> ho(kN, -1.0f);
-  ASSERT_TRUE(bo->get(0, ho.data(), bytes).ok());
+  ASSERT_TRUE(get_buffer(*bo, 0, ho.data(), bytes).ok());
   for (int i = 0; i < kN; ++i) {
     float expect = kScale * (2.0f * hx[i] + 3.0f * hy[i] + 0.5f);  // scaled by the SUPPLIED 3.0
     ASSERT_NEAR(ho[i], expect, 1e-1f) << "at " << i << " (spec SCALE not applied?)";
@@ -555,7 +656,7 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
 
   constexpr int kN = 2048;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes);
   auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
@@ -566,7 +667,7 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
   cfg.grid = {blocks_for(kN, 256), 1, 1};
 
   // Record once (bindings to bx/by/bo + push p + dispatch frozen). Buffers must outlive `rl`.
-  void* bufs[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
+  BufferBinding bufs[3] = {binding(*bx), binding(*by), binding(*bo)};
   ScalarField field{0, sizeof(p)};
   KernelArgs ka{bufs, 3, &p, sizeof(p), &field, 1};
   auto rl = RecordedLaunch::record(*s, *k, cfg, ka);
@@ -577,8 +678,8 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
   for (int iter = 1; iter <= 3; ++iter) {
     std::vector<float> hx(kN), hy(kN);
     for (int i = 0; i < kN; ++i) { hx[i] = float(i * iter); hy[i] = float(i + iter); }
-    ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
-    ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+    ASSERT_TRUE(set_buffer(*bx, 0, hx.data(), bytes).ok());
+    ASSERT_TRUE(set_buffer(*by, 0, hy.data(), bytes).ok());
 
     ASSERT_TRUE(rl->replay(*s).ok()) << "iter " << iter;
     // replay() is async. Submit the immutable command buffer again while the first replay
@@ -589,7 +690,7 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
     ASSERT_TRUE(s->sync().ok());
 
     std::vector<float> ho(kN, -1.0f);
-    ASSERT_TRUE(bo->get(0, ho.data(), bytes).ok());
+    ASSERT_TRUE(get_buffer(*bo, 0, ho.data(), bytes).ok());
     for (int i = 0; i < kN; ++i) {
       float expect = 2.0f * hx[i] + 3.0f * hy[i] + 1.0f;  // p.alpha/beta/bias from the recording
       ASSERT_NEAR(ho[i], expect, 1e-1f) << "iter " << iter << " at " << i;
@@ -613,7 +714,7 @@ TEST(VulkanCompute, BatchedDependentChain) {
   constexpr int kJobs = 4;
   constexpr int kN = 2048;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
 
   // kJobs+1 buffers b0..bkJobs chained: job j computes b[j+1] = 1*b[j] + 0*b[j] + bias_j
   // (alpha=1,beta=0 so it's b[j+1]=b[j]+bias_j -- a pure dependent accumulate). Each job's
@@ -626,17 +727,17 @@ TEST(VulkanCompute, BatchedDependentChain) {
     bufs.push_back(std::move(*b));
   }
   std::vector<float> seed(kN, 10.0f);
-  ASSERT_TRUE(bufs[0].set(0, seed.data(), bytes).ok());  // b0 = 10
+  ASSERT_TRUE(set_buffer(bufs[0], 0, seed.data(), bytes).ok());  // b0 = 10
 
   SaxpyParams params[kJobs];
-  void* bufptrs[kJobs][3];
+  BufferBinding bufptrs[kJobs][3];
   ScalarField fields[kJobs];
   BatchItem items[kJobs];
   for (int j = 0; j < kJobs; ++j) {
     params[j] = SaxpyParams{kN, 1.0f, 0.0f, float(j + 1)};  // b[j+1] = b[j] + (j+1)
-    bufptrs[j][0] = bufs[j].native_handle();       // x = b[j]  (shared read)
-    bufptrs[j][1] = bufs[j].native_handle();       // y = b[j]  (beta=0 so value irrelevant)
-    bufptrs[j][2] = bufs[j + 1].native_handle();   // o = b[j+1] (this job's write, next job's read)
+    bufptrs[j][0] = binding(bufs[j]);      // x = b[j]  (shared read)
+    bufptrs[j][1] = binding(bufs[j]);      // y = b[j]  (beta=0)
+    bufptrs[j][2] = binding(bufs[j + 1]);  // output becomes next input
     fields[j] = ScalarField{0, sizeof(SaxpyParams)};
     items[j].kernel = &*k;
     items[j].config = LaunchConfig{};
@@ -652,7 +753,7 @@ TEST(VulkanCompute, BatchedDependentChain) {
   float expect = 10.0f;
   for (int j = 0; j < kJobs; ++j) expect += float(j + 1);
   std::vector<float> ho(kN, -1.0f);
-  ASSERT_TRUE(bufs[kJobs].get(0, ho.data(), bytes).ok());
+  ASSERT_TRUE(get_buffer(bufs[kJobs], 0, ho.data(), bytes).ok());
   for (int i = 0; i < kN; ++i) ASSERT_NEAR(ho[i], expect, 1e-2f) << "at " << i;
 }
 
@@ -680,7 +781,7 @@ void vk_shape_freeze_buffer_count() {
   auto k = load_saxpy(vk);
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   SaxpyParams p{kN, 1.0f, 1.0f, 0.0f};
@@ -688,7 +789,7 @@ void vk_shape_freeze_buffer_count() {
   (void)launch(*s, *k, cfg, *bx, *by, *bo, p);  // first launch freezes {3 buffers, 16B push}
   (void)s->sync();
   // Relaunch with only 2 buffers (same push) -> buffer_count mismatch -> fatal (:665).
-  void* two[2] = {bx->native_handle(), by->native_handle()};
+  BufferBinding two[2] = {binding(*bx), binding(*by)};
   ScalarField f{0, sizeof(SaxpyParams)};
   KernelArgs bad{two, 2, &p, sizeof(SaxpyParams), &f, 1};
   (void)launch(*s, *k, cfg, bad);
@@ -702,7 +803,7 @@ void vk_grid_over_limit() {
   auto k = load_saxpy(vk);
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   SaxpyParams p{kN, 1.0f, 1.0f, 0.0f};
@@ -727,15 +828,14 @@ TEST(VulkanCompute, PushConstantSizeOverLimitReturnsStatus) {
   auto k = load_saxpy(vk);
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes);
   auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   ASSERT_TRUE(s.has_value() && k.has_value() && bx.has_value() &&
               by.has_value() && bo.has_value());
   alignas(16) unsigned char scalar = 0;
-  void* three[3] = {bx->native_handle(), by->native_handle(),
-                    bo->native_handle()};
+  BufferBinding three[3] = {binding(*bx), binding(*by), binding(*bo)};
   ScalarField f{0, UINT32_MAX};
   KernelArgs bad{three, 3, &scalar, UINT32_MAX, &f, 1};
   LaunchConfig cfg;
@@ -773,13 +873,13 @@ sched::Task<int> vk_await_coro(mem::Allocator, int* out) {
 
   constexpr int kN = 4096;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
+  mem::MemoryResourceRef bt = device_resource(vk);
   auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
   if (!bx.has_value() || !by.has_value() || !bo.has_value()) { *out = -3; co_return -3; }
   std::vector<float> hx(kN), hy(kN);
   for (int i = 0; i < kN; ++i) { hx[i] = float(i); hy[i] = float(i) + 1.0f; }
-  if (!bx->set(0, hx.data(), bytes).ok() || !by->set(0, hy.data(), bytes).ok()) { *out = -4; co_return -4; }
+  if (!set_buffer(*bx, 0, hx.data(), bytes).ok() || !set_buffer(*by, 0, hy.data(), bytes).ok()) { *out = -4; co_return -4; }
 
   SaxpyParams p{kN, 2.0f, 3.0f, 1.0f};
   LaunchConfig cfg; cfg.grid = {blocks_for(kN, 256), 1, 1};
@@ -789,7 +889,7 @@ sched::Task<int> vk_await_coro(mem::Allocator, int* out) {
   if (!st.ok()) { *out = -6; co_return -6; }
 
   std::vector<float> ho(kN, -1.0f);
-  if (!bo->get(0, ho.data(), bytes).ok()) { *out = -7; co_return -7; }
+  if (!get_buffer(*bo, 0, ho.data(), bytes).ok()) { *out = -7; co_return -7; }
   for (int i = 0; i < kN; ++i)
     if (std::abs(ho[i] - (2.0f * hx[i] + 3.0f * hy[i] + 1.0f)) > 1e-2f) { *out = -8; co_return -8; }
   *out = 0;

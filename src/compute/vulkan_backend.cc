@@ -1070,21 +1070,47 @@ Status invalidate_if_needed(const VkMem* m, std::size_t offset,
 }
 
 // ---- buffer traits + alloc (compute-02) --------------------------------------
-std::size_t vk_buffer_alignment(BufferKind) noexcept { return ctx().buf_alignment; }
-std::size_t vk_buffer_max_size(int, BufferKind) noexcept { return ctx().buf_max_size; }
-bool vk_buffer_is_host(BufferKind kind) noexcept { return kind == BufferKind::kHostPinned; }
+bool vk_buffer_supported(int, BackendMemoryKind kind) noexcept {
+  return kind != BackendMemoryKind::kManaged;
+}
+std::size_t vk_buffer_alignment(BackendMemoryKind) noexcept {
+  return ctx().buf_alignment;
+}
+std::size_t vk_buffer_max_size(int, BackendMemoryKind) noexcept {
+  return ctx().buf_max_size;
+}
+bool vk_buffer_is_host(BackendMemoryKind kind) noexcept {
+  return kind == BackendMemoryKind::kHostPinned;
+}
+// The selected host-visible type can be coherent or non-coherent. Advertise the
+// conservative contract and let flush/invalidate cheaply no-op for a coherent
+// allocation after inspecting its VkMem record.
+bool vk_buffer_is_coherent(BackendMemoryKind) noexcept { return false; }
 
-Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes,
+Status vk_buffer_alloc(int, BackendMemoryKind kind, std::size_t bytes,
                        void** out_native, void** out_host) noexcept {
+  if (kind == BackendMemoryKind::kManaged) {
+    return Status::Unimplemented(
+        "vulkan backend has no managed allocation provider");
+  }
   VkMem* m = nullptr;
-  Status s = make_mem(bytes, /*host_visible=*/kind == BufferKind::kHostPinned, &m);
+  Status s = make_mem(
+      bytes, /*host_visible=*/kind == BackendMemoryKind::kHostPinned, &m);
   if (!s.ok()) return s;
   *out_native = m;
-  *out_host = kind == BufferKind::kHostPinned ? m->mapped : nullptr;
-  HYLE_FATAL_ASSERT(kind != BufferKind::kHostPinned || *out_host != nullptr);
+  *out_host = kind == BackendMemoryKind::kHostPinned ? m->mapped : nullptr;
+  HYLE_FATAL_ASSERT(kind != BackendMemoryKind::kHostPinned ||
+                    *out_host != nullptr);
   return Status();
 }
-void vk_buffer_free(int, BufferKind, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+void vk_buffer_free(int, BackendMemoryKind, void* ptr) noexcept {
+  free_mem(static_cast<VkMem*>(ptr));
+}
+void* vk_buffer_host_data(BackendMemoryKind kind, void* ptr) noexcept {
+  if (kind != BackendMemoryKind::kHostPinned) return nullptr;
+  auto* memory = static_cast<VkMem*>(ptr);
+  return memory == nullptr ? nullptr : memory->mapped;
+}
 Status vk_buffer_flush_host(void* native, std::size_t offset,
                             std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(native);
@@ -1483,8 +1509,9 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
     std::vector<VkDescriptorBufferInfo> dbi(args->buffer_count);
     std::vector<VkWriteDescriptorSet> w(args->buffer_count);
     for (uint32_t i = 0; i < args->buffer_count; ++i) {
-      auto* m = static_cast<VkMem*>(args->buffers[i]);
-      dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
+      const BufferBinding binding = args->buffers[i];
+      auto* m = static_cast<VkMem*>(binding.native_handle);
+      dbi[i] = {m->buf, binding.offset, binding.size};
       w[i] = make_vk_info<VkWriteDescriptorSet>(
           VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
       w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
@@ -1615,7 +1642,7 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
   auto touches_pending = [&](const KernelArgs& a) noexcept {
     for (uint32_t b = 0; b < a.buffer_count; ++b)
       for (void* p : pending)
-        if (a.buffers[b] == p) return true;
+        if (a.buffers[b].native_handle == p) return true;
     return false;
   };
   for (unsigned i = 0; i < count; ++i) {
@@ -1650,8 +1677,9 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
       std::vector<VkDescriptorBufferInfo> dbi(a.buffer_count);
       std::vector<VkWriteDescriptorSet> w(a.buffer_count);
       for (uint32_t b = 0; b < a.buffer_count; ++b) {
-        auto* m = static_cast<VkMem*>(a.buffers[b]);
-        dbi[b] = {m->buf, 0, VK_WHOLE_SIZE};
+        const BufferBinding binding = a.buffers[b];
+        auto* m = static_cast<VkMem*>(binding.native_handle);
+        dbi[b] = {m->buf, binding.offset, binding.size};
         w[b] = make_vk_info<VkWriteDescriptorSet>(
             VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
         w[b].dstSet = dset; w[b].dstBinding = b; w[b].descriptorCount = 1;
@@ -1681,7 +1709,9 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
                       configs[i].grid.y <= ctx().max_wg_count[1] &&
                       configs[i].grid.z <= ctx().max_wg_count[2]);  // #20 device limit
     vkCmdDispatch(cb, configs[i].grid.x, configs[i].grid.y, configs[i].grid.z);
-    for (uint32_t b = 0; b < a.buffer_count; ++b) pending.push_back(a.buffers[b]);  // hazard set
+    for (uint32_t b = 0; b < a.buffer_count; ++b) {
+      pending.push_back(a.buffers[b].native_handle);  // conservative allocation hazard
+    }
   }
   // Terminal barrier (once): make ALL dispatch writes visible to a host readback (buffer_get
   // maps memory), a transfer (staging D2H), or a following submit's kernel. Only the FINAL
@@ -1764,8 +1794,9 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
     std::vector<VkDescriptorBufferInfo> dbi(args->buffer_count);
     std::vector<VkWriteDescriptorSet> w(args->buffer_count);
     for (uint32_t i = 0; i < args->buffer_count; ++i) {
-      auto* m = static_cast<VkMem*>(args->buffers[i]);
-      dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
+      const BufferBinding binding = args->buffers[i];
+      auto* m = static_cast<VkMem*>(binding.native_handle);
+      dbi[i] = {m->buf, binding.offset, binding.size};
       w[i] = make_vk_info<VkWriteDescriptorSet>(
           VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
       w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
@@ -1859,11 +1890,14 @@ constexpr ComputeBackend kVulkanBackend = {
     /*event_record=*/vk_event_record,
     /*event_query=*/vk_event_query,
     /*event_sync=*/vk_event_sync,
+    /*buffer_supported=*/vk_buffer_supported,
     /*buffer_alignment=*/vk_buffer_alignment,
     /*buffer_max_size=*/vk_buffer_max_size,
     /*buffer_is_host=*/vk_buffer_is_host,
+    /*buffer_is_coherent=*/vk_buffer_is_coherent,
     /*buffer_alloc=*/vk_buffer_alloc,
     /*buffer_free=*/vk_buffer_free,
+    /*buffer_host_data=*/vk_buffer_host_data,
     /*buffer_flush_host=*/vk_buffer_flush_host,
     /*buffer_invalidate_host=*/vk_buffer_invalidate_host,
     /*buffer_set=*/vk_buffer_set,

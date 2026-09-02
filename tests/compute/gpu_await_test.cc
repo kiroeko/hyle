@@ -5,13 +5,15 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/kernel.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/buffer.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
@@ -36,6 +38,7 @@
 // host path's job is only to prove the awaitable COMPILES + completes with no device.
 
 using hyle::mem::system_allocator;
+using hyle::mem::Buffer;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
@@ -83,7 +86,9 @@ extern "C" __global__ void spin(unsigned* out, int n, int iters) {
 // the host backend co_await completes WITHOUT suspending (event already ready) -- the
 // same path host took before, now via a kernel instead of the removed raw memcpy.
 void host_spin(const LaunchConfig&, const KernelArgs& args) noexcept {
-  auto* out = static_cast<unsigned*>(args.buffers[0]);
+  const BufferBinding binding = args.buffers[0];
+  auto* out = reinterpret_cast<unsigned*>(
+      static_cast<std::byte*>(binding.native_handle) + binding.offset);
   int n = *reinterpret_cast<const int*>(static_cast<const std::byte*>(args.scalars) +
                                         args.fields[0].offset);
   for (int i = 0; i < n; ++i) out[i] = static_cast<unsigned>(i);
@@ -103,7 +108,9 @@ Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
 
   constexpr int kN = 4096;
   const std::size_t bytes = kN * sizeof(unsigned);
-  auto out = Buffer::create(device_buffer_type(d), bytes);
+  auto resource = device_memory_resource(d);
+  if (!resource.has_value()) { *out_result = -2; co_return -2; }
+  auto out = Buffer::create(*resource, bytes);
   if (!out.has_value()) { *out_result = -2; co_return -2; }
 
   auto k = gpu ? Kernel::compile(d, kSpinKernel, "spin")
@@ -122,11 +129,7 @@ Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
   if (gpu) {
     if (!launch(*s, *k, cfg, *out, n, iters).ok()) { *out_result = -4; co_return -4; }
   } else {
-    // Host kernel reads buffers[0] + scalar n via a raw KernelArgs (matches host_spin).
-    void* bufs[] = {out->native_handle()};
-    ScalarField fields[] = {{0, sizeof(int)}};
-    KernelArgs ka{bufs, 1, &n, sizeof(int), fields, 1};
-    if (!launch(*s, *k, cfg, ka).ok()) { *out_result = -4; co_return -4; }
+    if (!launch(*s, *k, cfg, *out, n).ok()) { *out_result = -4; co_return -4; }
   }
 
   Status st = co_await StreamComplete{&*s};  // SUSPEND until GPU done (poller wakes us)
@@ -134,7 +137,10 @@ Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
 
   // The kernel wrote out[i] = i by the time we resume.
   std::vector<unsigned> host_out(kN, 0xFFFFFFFFu);
-  if (!out->get(0, host_out.data(), bytes).ok()) { *out_result = -6; co_return -6; }
+  if (!out->view().read(std::as_writable_bytes(std::span(host_out))).ok()) {
+    *out_result = -6;
+    co_return -6;
+  }
   for (int i = 0; i < kN; ++i) {
     if (host_out[i] != static_cast<unsigned>(i)) { *out_result = -7; co_return -7; }
   }

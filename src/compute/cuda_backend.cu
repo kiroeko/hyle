@@ -251,52 +251,65 @@ Status cuda_event_elapsed_ns(void* start_native, void* stop_native,
 }
 
 // ---- buffer (compute-02) ----------------------------------------------------
-// kDevice = cudaMalloc (VRAM, native handle only). kHostPinned = cudaMallocHost
+// kDevice = cudaMalloc (VRAM, native handle only), kHostPinned = cudaMallocHost,
+// and kManaged = cudaMallocManaged (host/device-visible unified allocation).
 // (page-locked host RAM; native handle and CPU mapping happen to be the same pointer).
 // set/get/copy/clear are synchronous. flush/invalidate are no-ops because CUDA pinned
 // host memory is coherent; async staging still requires a separate Event-owned ring.
 
-std::size_t cuda_buffer_alignment(BufferKind kind) noexcept {
+bool cuda_buffer_supported(int, BackendMemoryKind) noexcept { return true; }
+
+std::size_t cuda_buffer_alignment(BackendMemoryKind kind) noexcept {
   // Device: 128 (matches ggml cuda buffer_type, coalesced access + tensor-core
   // alignment). Pinned host: max_align is enough (CPU-side RAM).
-  return kind == BufferKind::kDevice ? 128 : alignof(std::max_align_t);
+  return kind == BackendMemoryKind::kHostPinned ? alignof(std::max_align_t)
+                                                : 128;
 }
 
-std::size_t cuda_buffer_max_size(int, BufferKind) noexcept {
+std::size_t cuda_buffer_max_size(int, BackendMemoryKind) noexcept {
   return SIZE_MAX;  // bounded only by free VRAM; ggml cuda buft is likewise SIZE_MAX
 }
 
-bool cuda_buffer_is_host(BufferKind kind) noexcept {
-  return kind == BufferKind::kHostPinned;  // pinned = host RAM; device = VRAM
+bool cuda_buffer_is_host(BackendMemoryKind kind) noexcept {
+  return kind != BackendMemoryKind::kDevice;
 }
 
-Status cuda_buffer_alloc(int ordinal, BufferKind kind, std::size_t bytes,
+bool cuda_buffer_is_coherent(BackendMemoryKind) noexcept { return true; }
+
+Status cuda_buffer_alloc(int ordinal, BackendMemoryKind kind,
+                         std::size_t bytes,
                          void** out_native, void** out_host) noexcept {
   cudaError_t e = set_device(ordinal);
   if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
   std::size_t n = bytes == 0 ? 1 : bytes;
   void* p = nullptr;
-  if (kind == BufferKind::kDevice) {
+  if (kind == BackendMemoryKind::kDevice) {
     e = cudaMalloc(&p, n);
     if (e != cudaSuccess) return from_cuda(e, "cudaMalloc");
-  } else {
+  } else if (kind == BackendMemoryKind::kHostPinned) {
     // Page-locked host memory. No silent fallback to malloc: the free path is fixed
     // by kind, so a malloc fallback would mismatch cudaFreeHost.
     e = cudaMallocHost(&p, n);
     if (e != cudaSuccess) return from_cuda(e, "cudaMallocHost");
+  } else {
+    e = cudaMallocManaged(&p, n, cudaMemAttachGlobal);
+    if (e != cudaSuccess) return from_cuda(e, "cudaMallocManaged");
   }
   *out_native = p;
-  *out_host = kind == BufferKind::kHostPinned ? p : nullptr;
+  *out_host = kind == BackendMemoryKind::kDevice ? nullptr : p;
   return Status();
 }
 
-void cuda_buffer_free(int, BufferKind kind, void* ptr) noexcept {
+void cuda_buffer_free(int, BackendMemoryKind kind, void* ptr) noexcept {
   if (ptr == nullptr) return;
-  if (kind == BufferKind::kDevice) {
+  if (kind != BackendMemoryKind::kHostPinned) {
     cudaFree(ptr);
   } else {
     cudaFreeHost(ptr);
   }
+}
+void* cuda_buffer_host_data(BackendMemoryKind kind, void* ptr) noexcept {
+  return kind == BackendMemoryKind::kDevice ? nullptr : ptr;
 }
 Status cuda_buffer_flush(void*, std::size_t, std::size_t) noexcept { return Status(); }
 Status cuda_buffer_invalidate(void*, std::size_t, std::size_t) noexcept { return Status(); }
@@ -794,13 +807,16 @@ Status cuda_kernel_launch(void* stream_native, void* /*module*/, void* func,
   // KernelArgs without it keep the original buffers-then-scalars convention.
   // Bounded stack array: total args = buffers + scalar fields (cap mirrors the shell).
   void* params[64];
+  void* buffer_values[64];
   unsigned np = 0;
   const unsigned total = args->buffer_count + args->scalar_count;
   if (total > 64) return Status::InvalidArgument("cuda launch: >64 kernel args");
   const auto* blob = static_cast<const std::byte*>(args->scalars);
   auto append_buffer = [&](unsigned i) {
-    params[np++] =
-        const_cast<void*>(static_cast<const void*>(&args->buffers[i]));
+    const BufferBinding binding = args->buffers[i];
+    buffer_values[i] = static_cast<std::byte*>(binding.native_handle) +
+                       binding.offset;
+    params[np++] = static_cast<void*>(&buffer_values[i]);
   };
   auto append_scalar = [&](unsigned i) {
     params[np++] = const_cast<void*>(static_cast<const void*>(
@@ -866,11 +882,14 @@ constexpr ComputeBackend kCudaBackend = {
     /*event_record=*/cuda_event_record,
     /*event_query=*/cuda_event_query,
     /*event_sync=*/cuda_event_sync,
+    /*buffer_supported=*/cuda_buffer_supported,
     /*buffer_alignment=*/cuda_buffer_alignment,
     /*buffer_max_size=*/cuda_buffer_max_size,
     /*buffer_is_host=*/cuda_buffer_is_host,
+    /*buffer_is_coherent=*/cuda_buffer_is_coherent,
     /*buffer_alloc=*/cuda_buffer_alloc,
     /*buffer_free=*/cuda_buffer_free,
+    /*buffer_host_data=*/cuda_buffer_host_data,
     /*buffer_flush_host=*/cuda_buffer_flush,
     /*buffer_invalidate_host=*/cuda_buffer_invalidate,
     /*buffer_set=*/cuda_buffer_set,

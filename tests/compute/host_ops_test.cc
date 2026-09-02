@@ -6,12 +6,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/kernel.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
+#include "hyle/mem/buffer.h"
 
 // compute-07 test: the CPU operator backend -- simd-backed host kernels driven through the
 // SAME compute-04 Kernel/Stream/launch abstraction as the GPU backends. Proves (a) the
@@ -24,6 +26,13 @@ using namespace hyle;
 using namespace hyle::compute;
 
 namespace {
+
+using hyle::mem::Buffer;
+
+template <class T>
+BufferBinding binding(std::vector<T>& values) noexcept {
+  return BufferBinding{values.data(), 0, values.size() * sizeof(T)};
+}
 
 // Pick a CPU/host device (the host backend is always present). enumerate() lists all;
 // default_device() is the host fallback when no GPU. compute-07 targets that CPU backend.
@@ -69,7 +78,7 @@ TEST(ComputeHostOps, SaxpyF32) {
   const float a = 2.5f;
   for (int i = 0; i < kN; ++i) ref[i] = a * x[i] + y[i];
 
-  void* bufs[] = {x.data(), y.data()};
+  BufferBinding bufs[] = {binding(x), binding(y)};
   Blob blob; blob.push<int>(kN); blob.push<float>(a);  // scalars: n (int), a (float)
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -88,7 +97,7 @@ TEST(ComputeHostOps, VecAddF32) {
   constexpr int kN = 4096;  // same size the CUDA NvrtcVecAddEndToEnd uses
   std::vector<float> a(kN), b(kN), c(kN, -1.0f);
   for (int i = 0; i < kN; ++i) { a[i] = float(i); b[i] = float(2 * i); }
-  void* bufs[] = {a.data(), b.data(), c.data()};
+  BufferBinding bufs[] = {binding(a), binding(b), binding(c)};
   Blob blob; blob.push<int>(kN);
   KernelArgs ka{bufs, 3, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -108,7 +117,7 @@ TEST(ComputeHostOps, DotF32) {
   std::vector<float> x(kN), y(kN), out(1, -1.0f);
   double ref = 0.0;
   for (int i = 0; i < kN; ++i) { x[i] = float(i % 7) * 0.25f; y[i] = float(i % 5) - 1.0f; ref += double(x[i]) * y[i]; }
-  void* bufs[] = {x.data(), y.data(), out.data()};
+  BufferBinding bufs[] = {binding(x), binding(y), binding(out)};
   Blob blob; blob.push<int>(kN);
   KernelArgs ka{bufs, 3, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -127,7 +136,7 @@ TEST(ComputeHostOps, ExpF32) {
   constexpr int kN = 513;
   std::vector<float> src(kN), dst(kN, -1.0f);
   for (int i = 0; i < kN; ++i) src[i] = float(i - 256) * 0.05f;  // [-12.8, 12.8]
-  void* bufs[] = {src.data(), dst.data()};
+  BufferBinding bufs[] = {binding(src), binding(dst)};
   Blob blob; blob.push<int>(kN);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -149,7 +158,7 @@ TEST(ComputeHostOps, SaxpyF64) {
   for (int i = 0; i < kN; ++i) { x[i] = double(i) * 0.5; y[i] = double(i) + 1.0; }
   const double a = 2.5;
   for (int i = 0; i < kN; ++i) ref[i] = a * x[i] + y[i];
-  void* bufs[] = {x.data(), y.data()};
+  BufferBinding bufs[] = {binding(x), binding(y)};
   Blob blob; blob.push<int>(kN); blob.push<double>(a);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -168,7 +177,7 @@ TEST(ComputeHostOps, DotF64) {
   std::vector<double> x(kN), y(kN), out(1, -1.0);
   long double ref = 0.0L;
   for (int i = 0; i < kN; ++i) { x[i] = double(i % 7) * 0.25; y[i] = double(i % 5) - 1.0; ref += (long double)x[i] * y[i]; }
-  void* bufs[] = {x.data(), y.data(), out.data()};
+  BufferBinding bufs[] = {binding(x), binding(y), binding(out)};
   Blob blob; blob.push<int>(kN);
   KernelArgs ka{bufs, 3, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -186,7 +195,7 @@ TEST(ComputeHostOps, ExpF64) {
   constexpr int kN = 513;
   std::vector<double> src(kN), dst(kN, -1.0);
   for (int i = 0; i < kN; ++i) src[i] = double(i - 256) * 0.05;
-  void* bufs[] = {src.data(), dst.data()};
+  BufferBinding bufs[] = {binding(src), binding(dst)};
   Blob blob; blob.push<int>(kN);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
@@ -209,14 +218,15 @@ TEST(ComputeHostOps, TypedShellSaxpyF32) {
 
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  auto bx = Buffer::create(device_buffer_type(d), bytes);
-  auto by = Buffer::create(device_buffer_type(d), bytes);
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto bx = Buffer::create(resource, bytes);
+  auto by = Buffer::create(resource, bytes);
   ASSERT_TRUE(bx.has_value() && by.has_value());
   std::vector<float> hx(kN), hy(kN), ref(kN);
   const float a = 3.0f;
   for (int i = 0; i < kN; ++i) { hx[i] = float(i); hy[i] = float(i) * 0.5f; ref[i] = a * hx[i] + hy[i]; }
-  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
-  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+  ASSERT_TRUE(bx->view().write(std::as_bytes(std::span(hx))).ok());
+  ASSERT_TRUE(by->view().write(std::as_bytes(std::span(hy))).ok());
 
   int n = kN;
   LaunchConfig cfg;
@@ -224,23 +234,23 @@ TEST(ComputeHostOps, TypedShellSaxpyF32) {
   ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, n, a).ok());
   ASSERT_TRUE(s->sync().ok());
   std::vector<float> got(kN);
-  ASSERT_TRUE(by->get(0, got.data(), bytes).ok());
+  ASSERT_TRUE(by->view().read(std::as_writable_bytes(std::span(got))).ok());
   for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(got[i], ref[i]) << "i=" << i;
 }
 
 // ---- contract death tests (caller-bug fail-fast, matching the GPU launch path) ----
-TEST(ComputeHostOpsDeath, NullBufferAsserts) {
+TEST(ComputeHostOps, NullBufferIsRejectedByRawAbiValidation) {
   Device d = host_device();
   auto k = Kernel::load_host(d, &host_saxpy_f32);
   ASSERT_TRUE(k.has_value());
   auto s = Stream::create(d);
   ASSERT_TRUE(s.has_value());
-  void* bufs[] = {nullptr, nullptr};  // null buffers -> contract violation
+  BufferBinding bufs[] = {{nullptr, 0, 32}, {nullptr, 0, 32}};
   int n = 8; float a = 1.0f;
   Blob blob; blob.push<int>(n); blob.push<float>(a);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
-  EXPECT_DEATH((void)launch(*s, *k, cfg, ka), "");
+  EXPECT_TRUE(launch(*s, *k, cfg, ka).IsInvalidArgument());
 }
 
 TEST(ComputeHostOpsDeath, NegativeNAsserts) {
@@ -250,7 +260,7 @@ TEST(ComputeHostOpsDeath, NegativeNAsserts) {
   auto s = Stream::create(d);
   ASSERT_TRUE(s.has_value());
   std::vector<float> x(8), y(8);
-  void* bufs[] = {x.data(), y.data()};
+  BufferBinding bufs[] = {binding(x), binding(y)};
   int n = -1; float a = 1.0f;  // negative n -> would scan ~2^63 elements without the assert
   Blob blob; blob.push<int>(n); blob.push<float>(a);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
@@ -265,7 +275,7 @@ TEST(ComputeHostOpsDeath, InsufficientBufferCountAsserts) {
   auto s = Stream::create(d);
   ASSERT_TRUE(s.has_value());
   std::vector<float> x(8), y(8);
-  void* bufs[] = {x.data(), y.data()};  // only 2, dot needs 3 (x,y,out)
+  BufferBinding bufs[] = {binding(x), binding(y)};  // dot needs x/y/out
   int n = 8;
   Blob blob; blob.push<int>(n);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};

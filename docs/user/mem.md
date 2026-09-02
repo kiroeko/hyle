@@ -1,13 +1,14 @@
 # HYLE mem：什么情况选择什么
 
 > 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及 Mem v2 已落地的
-> provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线。
-> device/managed provider 与相邻 Compute consumer 迁移仍在施工；这里不把 synthetic provider
-> 验证写成真实 GPU backend 承诺。
+> provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线；
+> Compute 还提供 host、pinned、device 与可选 managed provider。Host/CUDA/Vulkan 的实际支持
+> 以所选 `Device` 返回的 resource/property 为准，不把 synthetic provider 验证写成硬件承诺。
 > 适用于 C++23 source/static/shared 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)。
 
-mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
+mem 是 HYLE 的 storage foundation：host raw allocation 只是其中一层，跨 provider 的
+Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务猜生命周期，也不把某个 benchmark 的最优
 形状包装成通用 allocator；使用者先确定 ownership、并发、容量和释放方式，再选择类型。
 本文是 C++ 消费者的选型入口。
 
@@ -18,6 +19,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
+| 为 Compute kernel 创建 device/pinned/managed bytes | 从 `compute::device_memory_resource` / `host_memory_resource` / `managed_memory_resource` 取得 provider，再创建 `Buffer` | resource 与 Device identity 必须匹配；managed 可能明确返回 `Unimplemented`；owner 活到 in-flight completion 之后 |
 | 把多个独立 allocation/shard 暴露为一段逻辑 bytes | `CompositeBuffer::create(segments)` | 只 composite 支付 segment metadata；不 flatten、不隐藏 staging；输入在成功后才被 move |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
 | 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests)` -> `instantiate(resources)` | tensor-free；先量 peak/placement 再一次建 backing；alias/output facts 显式 |
@@ -52,8 +54,8 @@ pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、ali
 
 `Allocator` 回答“从 host backing 取多少 raw bytes”；`MemoryResourceRef` + `Buffer`
 回答“这块 storage 属于哪个 provider/domain，谁释放，可以怎样读写和切 view”。
-普通小对象和容器仍优先 allocator；只在需要 move-only byte owner、稳定 provider identity、
-opaque native handle 或未来跨 host/device provider 路由时使用 Buffer。
+普通小对象和容器仍优先 allocator；在需要 move-only byte owner、稳定 provider identity、
+opaque native handle 或跨 host/device provider 路由时使用 Buffer。
 
 ```cpp
 #include "hyle/mem/buffer.h"
@@ -84,6 +86,28 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
+
+设备 storage 由 Compute 提供 provider，但 ownership/view 仍只用 Mem 类型：
+
+```cpp
+#include "hyle/compute/memory.h"
+#include "hyle/mem/buffer.h"
+
+HYLE_ASSIGN_OR_RETURN(auto resource,
+                      hyle::compute::device_memory_resource(device));
+HYLE_ASSIGN_OR_RETURN(auto weights,
+                      hyle::mem::Buffer::create(resource, weight_bytes));
+HYLE_ASSIGN_OR_RETURN(auto layer,
+                      weights.view().subview(layer_offset, layer_bytes));
+HYLE_RETURN_IF_ERROR(hyle::compute::launch(stream, kernel, config, layer));
+// weights 必须活到 stream/event 表示该次使用完成以后。
+```
+
+`host_memory_resource(device)` 表示可被该 backend 使用的 host/pinned storage；
+`managed_memory_resource(device)` 在 backend 没有统一内存时返回 `Unimplemented`，不会偷偷退回普通
+host RAM。`memory_resource_belongs_to(resource, device)` 可在自定义 adapter 边界检查 identity。
+typed kernel shell 直接接收 `Buffer`、`BufferView` 或 `ConstBufferView`，并原样保留 view 的
+native handle、offset 与 size；不会额外分配、复制或把 subview 扩成整个 allocation。
 
 模型分片、超过单次 provider allocation 上限的 storage，或必须保留每段 provider identity 时，
 使用 `CompositeBuffer`，不要先拼成一个临时连续 buffer：

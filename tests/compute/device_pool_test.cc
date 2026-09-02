@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 
 // compute-02c: device (VRAM) sub-allocator pool -- ported from ggml (VMM + leg).

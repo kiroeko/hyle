@@ -6,13 +6,14 @@
 #include <type_traits>   // is_same_v / is_trivially_copyable_v (compile-time arg classify)
 #include <utility>       // forward
 
-#include "hyle/compute/buffer.h"  // Buffer -- the typed shell classifies args as Buffer vs scalar
 #include "hyle/compute/device.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"   // align_up (scalar blob field alignment)
+#include "hyle/mem/buffer.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -254,7 +255,7 @@ class RecordedLaunch {
 // The ergonomic launch: pass kernel arguments DIRECTLY and in source order, including
 // mixed pointer/scalar signatures such as `launch(s,k,cfg,a,n,b,alpha)`.
 // A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over an
-// out-of-line type-erased core): a `Buffer` -> its native_handle() appended to an
+// out-of-line type-erased core): a Mem `Buffer` or view -> its binding appended to an
 // ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
 // into a naturally-aligned byte blob (with a {offset,size} descriptor) and emits an
 // argument-order table so CUDA reconstructs the exact original signature. Vulkan pushes
@@ -265,11 +266,29 @@ class RecordedLaunch {
 // -- the consumer writes ONE launch call that works on every backend (compute-04 CUDA /
 // compute-06 Vulkan / compute-08 HIP), which is compute-04's "unified public interface".
 namespace detail {
-// A scalar arg is anything trivially-copyable that is NOT a Buffer.
+template <class T>
+inline constexpr bool is_kernel_buffer_v =
+    std::is_same_v<std::remove_cvref_t<T>, mem::Buffer> ||
+    std::is_same_v<std::remove_cvref_t<T>, mem::BufferView> ||
+    std::is_same_v<std::remove_cvref_t<T>, mem::ConstBufferView>;
+
+inline mem::ConstBufferView kernel_buffer_view(
+    const mem::Buffer& buffer) noexcept {
+  return buffer.view();
+}
+inline mem::ConstBufferView kernel_buffer_view(mem::BufferView view) noexcept {
+  return view;
+}
+inline mem::ConstBufferView kernel_buffer_view(
+    mem::ConstBufferView view) noexcept {
+  return view;
+}
+
+// A scalar arg is anything trivially-copyable that is not a Mem Buffer/view.
 template <class T>
 inline constexpr bool is_kernel_scalar_v =
     std::is_trivially_copyable_v<std::remove_cvref_t<T>> &&
-    !std::is_same_v<std::remove_cvref_t<T>, Buffer>;
+    !is_kernel_buffer_v<T>;
 // A bounded typed-shell scratch blob, not a portable Vulkan capability claim. The backend
 // checks the selected device's actual maxPushConstantsSize (Vulkan guarantees at least
 // 128 B) and returns InvalidArgument when this 256 B convenience ceiling is too large for
@@ -286,23 +305,35 @@ template <class... Args>
 Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
               Args&&... args) noexcept {
   constexpr std::size_t kN = sizeof...(Args);
-  void* buffers[kN == 0 ? 1 : kN];             // ordered native handles (stack)
+  BufferBinding buffers[kN == 0 ? 1 : kN];     // ordered Mem views (stack)
   alignas(16) std::byte blob[detail::kMaxScalarBlob];  // packed scalar bytes (stack)
   ScalarField fields[kN == 0 ? 1 : kN];        // per-scalar {offset,size} (stack)
   KernelArgRef order[kN == 0 ? 1 : kN];        // exact mixed source order (stack)
   unsigned nb = 0, nf = 0, na = 0, blob_off = 0;
+  Status validation = Status::Ok();
 
   // Fold over the arg pack: classify + pack each, in order (conventions §7 + the
   // renderer-Mesh-validated variadic-fold + byte-pack + descriptor-array pattern).
   auto pack_one = [&](auto&& a) noexcept {
     using A = std::remove_cvref_t<decltype(a)>;
-    if constexpr (std::is_same_v<A, Buffer>) {
-      HYLE_FATAL_ASSERT(a.valid() && a.belongs_to(stream.device()));
+    if constexpr (detail::is_kernel_buffer_v<A>) {
+      if constexpr (std::is_same_v<A, mem::Buffer>) {
+        static_assert(std::is_lvalue_reference_v<decltype(a)>,
+                      "an owning Buffer kernel argument must be an lvalue");
+      }
+      const mem::ConstBufferView view = detail::kernel_buffer_view(a);
+      if (!view.valid() || view.empty() ||
+          !memory_resource_belongs_to(view.resource(), stream.device())) {
+        validation = Status::InvalidArgument(
+            "kernel buffer must be a non-empty view from the stream device");
+        return;
+      }
       order[na++] = KernelArgRef{KernelArgKind::kBuffer, nb};
-      buffers[nb++] = a.native_handle();          // Buffer -> ordered buffer list
+      buffers[nb++] =
+          BufferBinding{view.native_handle(), view.offset(), view.size()};
     } else {
       static_assert(detail::is_kernel_scalar_v<A>,
-                    "launch arg must be a Buffer or a trivially-copyable scalar");
+                    "launch arg must be a Mem Buffer/view or a trivially-copyable scalar");
       static_assert(alignof(A) <= 16,
                     "over-aligned kernel values must be passed through a Buffer");
       // Preserve the C++ value's natural alignment. `sizeof(T)` is not an alignment
@@ -318,6 +349,7 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
     }
   };
   (pack_one(std::forward<Args>(args)), ...);
+  if (!validation.ok()) return validation;
 
   KernelArgs ka{buffers, nb, nf ? blob : nullptr, blob_off,
                 nf ? fields : nullptr, nf, na ? order : nullptr, na};

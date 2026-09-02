@@ -39,8 +39,21 @@ T scalar_at(const KernelArgs& args, unsigned i) noexcept {
 // Common buffer/count precondition for a kernel taking `nb` buffers (all non-null) + `n` >= 0.
 void require(const KernelArgs& args, unsigned nb, int n) noexcept {
   HYLE_FATAL_ASSERT(args.buffer_count >= nb && args.buffers != nullptr);
-  for (unsigned i = 0; i < nb; ++i) HYLE_FATAL_ASSERT(args.buffers[i] != nullptr);
+  for (unsigned i = 0; i < nb; ++i) {
+    HYLE_FATAL_ASSERT(args.buffers[i].native_handle != nullptr &&
+                      args.buffers[i].size != 0);
+  }
   HYLE_FATAL_ASSERT(n >= 0);
+}
+
+template <class T>
+T* buffer_at(const KernelArgs& args, unsigned index,
+             std::size_t elements) noexcept {
+  const BufferBinding binding = args.buffers[index];
+  HYLE_FATAL_ASSERT(elements <= binding.size / sizeof(T));
+  auto* bytes = static_cast<std::byte*>(binding.native_handle) + binding.offset;
+  HYLE_FATAL_ASSERT(reinterpret_cast<std::uintptr_t>(bytes) % alignof(T) == 0);
+  return reinterpret_cast<T*>(bytes);
 }
 
 }  // namespace
@@ -49,8 +62,8 @@ void host_saxpy_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   const float a = scalar_at<float>(args, 1);
   require(args, 2, n);
-  const float* x = static_cast<const float*>(args.buffers[0]);
-  float* y = static_cast<float*>(args.buffers[1]);
+  const float* x = buffer_at<float>(args, 0, static_cast<std::size_t>(n));
+  float* y = buffer_at<float>(args, 1, static_cast<std::size_t>(n));
   simd::saxpy(a, x, y, static_cast<std::size_t>(n));  // y[i] = a*x[i] + y[i]
 }
 
@@ -59,26 +72,26 @@ void host_vecadd_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   // (the elementwise-add primitive; no scalar copy + no double-write of the earlier saxpy hack).
   const int n = scalar_at<int>(args, 0);
   require(args, 3, n);
-  const float* a = static_cast<const float*>(args.buffers[0]);
-  const float* b = static_cast<const float*>(args.buffers[1]);
-  float* c = static_cast<float*>(args.buffers[2]);
+  const float* a = buffer_at<float>(args, 0, static_cast<std::size_t>(n));
+  const float* b = buffer_at<float>(args, 1, static_cast<std::size_t>(n));
+  float* c = buffer_at<float>(args, 2, static_cast<std::size_t>(n));
   simd::add(a, b, c, static_cast<std::size_t>(n));
 }
 
 void host_dot_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   require(args, 3, n);
-  const float* x = static_cast<const float*>(args.buffers[0]);
-  const float* y = static_cast<const float*>(args.buffers[1]);
-  float* out = static_cast<float*>(args.buffers[2]);
+  const float* x = buffer_at<float>(args, 0, static_cast<std::size_t>(n));
+  const float* y = buffer_at<float>(args, 1, static_cast<std::size_t>(n));
+  float* out = buffer_at<float>(args, 2, 1);
   out[0] = simd::dot(x, y, static_cast<std::size_t>(n));  // reduction -> out[0]
 }
 
 void host_exp_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   require(args, 2, n);
-  const float* src = static_cast<const float*>(args.buffers[0]);
-  float* dst = static_cast<float*>(args.buffers[1]);
+  const float* src = buffer_at<float>(args, 0, static_cast<std::size_t>(n));
+  float* dst = buffer_at<float>(args, 1, static_cast<std::size_t>(n));
   simd::exp_f32_batch(src, dst, static_cast<std::size_t>(n));
 }
 
@@ -86,25 +99,25 @@ void host_saxpy_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   const double a = scalar_at<double>(args, 1);
   require(args, 2, n);
-  const double* x = static_cast<const double*>(args.buffers[0]);
-  double* y = static_cast<double*>(args.buffers[1]);
+  const double* x = buffer_at<double>(args, 0, static_cast<std::size_t>(n));
+  double* y = buffer_at<double>(args, 1, static_cast<std::size_t>(n));
   simd::saxpy(a, x, y, static_cast<std::size_t>(n));
 }
 
 void host_dot_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   require(args, 3, n);
-  const double* x = static_cast<const double*>(args.buffers[0]);
-  const double* y = static_cast<const double*>(args.buffers[1]);
-  double* out = static_cast<double*>(args.buffers[2]);
+  const double* x = buffer_at<double>(args, 0, static_cast<std::size_t>(n));
+  const double* y = buffer_at<double>(args, 1, static_cast<std::size_t>(n));
+  double* out = buffer_at<double>(args, 2, 1);
   out[0] = simd::dot(x, y, static_cast<std::size_t>(n));
 }
 
 void host_exp_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
   const int n = scalar_at<int>(args, 0);
   require(args, 2, n);
-  const double* src = static_cast<const double*>(args.buffers[0]);
-  double* dst = static_cast<double*>(args.buffers[1]);
+  const double* src = buffer_at<double>(args, 0, static_cast<std::size_t>(n));
+  double* dst = buffer_at<double>(args, 1, static_cast<std::size_t>(n));
   simd::exp_f64_batch(src, dst, static_cast<std::size_t>(n));
 }
 

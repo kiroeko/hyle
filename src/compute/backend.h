@@ -29,6 +29,15 @@ namespace hyle::compute {
 
 class Device;
 
+// Backend-only allocation mechanism. Public users select open Mem resource
+// properties; this enum never leaves src/compute and therefore does not close
+// the public memory model around today's three implementations.
+enum class BackendMemoryKind : std::uint8_t {
+  kDevice = 0,
+  kHostPinned = 1,
+  kManaged = 2,
+};
+
 // One backend's operation table. All pointers are non-null for a valid backend
 // (host + cuda both fill every slot). Signatures use the public value types
 // (Device/DeviceCaps/EventStatus/Status) but never expose a backend-native type.
@@ -63,23 +72,32 @@ struct ComputeBackend {
   EventStatus (*event_query)(void* event_native) noexcept;  // cudaEventQuery
   void (*event_sync)(void* event_native) noexcept;          // cudaEventSynchronize
 
-  // ---- buffer (compute-02) --------------------------------------------------
-  // A Buffer owns one allocation of a given BufferKind on `ordinal`. The backend
+  // ---- storage provider mechanism ------------------------------------------
+  // A Mem Buffer owns one allocation of a BackendMemoryKind on `ordinal`. The backend
   // returns an opaque native handle plus a separate CPU mapping when host-visible.
   // CUDA may use the same pointer for both; Vulkan returns VkMem* + VkMem::mapped.
   //
   // buffer_type trait queries (per kind, cheap constants): alignment / max single-
   // allocation size / whether the memory is host-dereferenceable. Mirror ggml
   // buffer_type_i {get_alignment, get_max_size, is_host}.
-  std::size_t (*buffer_alignment)(BufferKind kind) noexcept;
-  std::size_t (*buffer_max_size)(int ordinal, BufferKind kind) noexcept;
-  bool (*buffer_is_host)(BufferKind kind) noexcept;
+  bool (*buffer_supported)(int ordinal, BackendMemoryKind kind) noexcept;
+  std::size_t (*buffer_alignment)(BackendMemoryKind kind) noexcept;
+  std::size_t (*buffer_max_size)(int ordinal,
+                                 BackendMemoryKind kind) noexcept;
+  bool (*buffer_is_host)(BackendMemoryKind kind) noexcept;
+  bool (*buffer_is_coherent)(BackendMemoryKind kind) noexcept;
 
   // Allocate `bytes` of `kind` memory on `ordinal`. `out_native` is always non-null
   // on success; `out_host` is the CPU mapping or null. free consumes out_native.
-  Status (*buffer_alloc)(int ordinal, BufferKind kind, std::size_t bytes,
+  Status (*buffer_alloc)(int ordinal, BackendMemoryKind kind,
+                         std::size_t bytes,
                          void** out_native, void** out_host) noexcept;
-  void (*buffer_free)(int ordinal, BufferKind kind, void* native) noexcept;
+  void (*buffer_free)(int ordinal, BackendMemoryKind kind,
+                      void* native) noexcept;
+  // Persistent host mapping returned at allocation, or null for a device-only
+  // allocation. Kept as a separate query so Mem's generic allocation token
+  // remains exactly {native,size,alignment}.
+  void* (*buffer_host_data)(BackendMemoryKind kind, void* native) noexcept;
   // Explicit non-coherent host-memory visibility for [offset, offset+size). No-op for
   // coherent CUDA/host memory; Vulkan expands to nonCoherentAtomSize as required.
   Status (*buffer_flush_host)(void* native, std::size_t offset,

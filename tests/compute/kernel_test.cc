@@ -3,13 +3,16 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/device_pool.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
+#include "hyle/mem/buffer.h"
 
 // compute-04 test: kernel launch. On a real GPU, NVRTC-compile a vecadd CUDA C source
 // -> PTX -> load -> launch -> verify (device/buffer/pool/kernel + runtime compile all
@@ -22,6 +25,20 @@ using namespace hyle;
 using namespace hyle::compute;
 
 namespace {
+
+using hyle::mem::Buffer;
+
+template <class T>
+BufferBinding binding(T* data, std::size_t count) noexcept {
+  return BufferBinding{data, 0, count * sizeof(T)};
+}
+
+template <class T>
+T* bound_pointer(const KernelArgs& args, unsigned index) noexcept {
+  const BufferBinding value = args.buffers[index];
+  return reinterpret_cast<T*>(static_cast<std::byte*>(value.native_handle) +
+                              value.offset);
+}
 
 bool has_gpu() {
   Device devs[8];
@@ -68,9 +85,9 @@ extern "C" __global__ void mixed_order(const float* a, int n, const float* b,
 // unified KernelArgs: buffers[0..2] = a/b/c device (here host) ptrs, scalar field 0 = n
 // (packed in the blob). Mirrors how a real host kernel would consume KernelArgs.
 void host_vecadd(const LaunchConfig&, const KernelArgs& args) noexcept {
-  const float* a = static_cast<const float*>(args.buffers[0]);
-  const float* b = static_cast<const float*>(args.buffers[1]);
-  float* c = static_cast<float*>(args.buffers[2]);
+  const float* a = bound_pointer<float>(args, 0);
+  const float* b = bound_pointer<float>(args, 1);
+  float* c = bound_pointer<float>(args, 2);
   int n = *reinterpret_cast<const int*>(static_cast<const std::byte*>(args.scalars) +
                                         args.fields[0].offset);
   for (int i = 0; i < n; ++i) c[i] = a[i] + b[i];
@@ -129,12 +146,13 @@ TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
   std::vector<float> ha(kN), hb(kN), hc(kN, -1.0f);
   for (int i = 0; i < kN; ++i) { ha[i] = float(i); hb[i] = float(2 * i); }
 
-  auto da = Buffer::create(device_buffer_type(d), bytes);
-  auto db = Buffer::create(device_buffer_type(d), bytes);
-  auto dc = Buffer::create(device_buffer_type(d), bytes);
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto da = Buffer::create(resource, bytes);
+  auto db = Buffer::create(resource, bytes);
+  auto dc = Buffer::create(resource, bytes);
   ASSERT_TRUE(da.has_value() && db.has_value() && dc.has_value());
-  ASSERT_TRUE(da->set(0, ha.data(), bytes).ok());
-  ASSERT_TRUE(db->set(0, hb.data(), bytes).ok());
+  ASSERT_TRUE(da->view().write(std::as_bytes(std::span(ha))).ok());
+  ASSERT_TRUE(db->view().write(std::as_bytes(std::span(hb))).ok());
 
   // Typed shell: pass kernel args DIRECTLY (Buffers + scalar), classified at compile
   // time. Buffers (a,b,c) -> device ptrs in order; scalar n -> push/void** entry. The
@@ -148,7 +166,7 @@ TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
   ASSERT_TRUE(launch(*s, *k, cfg, *da, *db, *dc, n).ok());
   ASSERT_TRUE(s->sync().ok());  // wait for the kernel (co_await path tested in gpu_await)
 
-  ASSERT_TRUE(dc->get(0, hc.data(), bytes).ok());
+  ASSERT_TRUE(dc->view().read(std::as_writable_bytes(std::span(hc))).ok());
   for (int i = 0; i < kN; ++i)
     EXPECT_FLOAT_EQ(hc[i], float(i) + float(2 * i)) << "at " << i;
 }
@@ -167,12 +185,13 @@ TEST(ComputeKernel, TypedShellPreservesMixedOrderOnCuda) {
     a[i] = static_cast<float>(i);
     b[i] = static_cast<float>(i + 1);
   }
-  auto da = Buffer::create(device_buffer_type(d), bytes);
-  auto db = Buffer::create(device_buffer_type(d), bytes);
-  auto dc = Buffer::create(device_buffer_type(d), bytes);
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto da = Buffer::create(resource, bytes);
+  auto db = Buffer::create(resource, bytes);
+  auto dc = Buffer::create(resource, bytes);
   ASSERT_TRUE(da.has_value() && db.has_value() && dc.has_value());
-  ASSERT_TRUE(da->set(0, a.data(), bytes).ok());
-  ASSERT_TRUE(db->set(0, b.data(), bytes).ok());
+  ASSERT_TRUE(da->view().write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(db->view().write(std::as_bytes(std::span(b))).ok());
 
   LaunchConfig cfg;
   cfg.block = {256, 1, 1};
@@ -180,17 +199,86 @@ TEST(ComputeKernel, TypedShellPreservesMixedOrderOnCuda) {
   const float scale = 2.5f;
   ASSERT_TRUE(launch(*s, *k, cfg, *da, kN, *db, *dc, scale).ok());
   ASSERT_TRUE(s->sync().ok());
-  ASSERT_TRUE(dc->get(0, out.data(), bytes).ok());
+  ASSERT_TRUE(dc->view().read(std::as_writable_bytes(std::span(out))).ok());
   for (int i = 0; i < kN; ++i)
     EXPECT_FLOAT_EQ(out[i], a[i] + scale * b[i]) << i;
+}
+
+TEST(ComputeKernel, TypedShellPreservesSubviewOffsetsOnCuda) {
+  Device d;
+  if (!find_cuda(&d)) GTEST_SKIP() << "no CUDA device";
+  auto k = Kernel::compile(d, kVecAddSrc, "vecadd");
+  auto s = Stream::create(d);
+  ASSERT_TRUE(k.has_value() && s.has_value());
+
+  constexpr int kN = 512;
+  constexpr std::size_t kOffset = 128;
+  const std::size_t bytes = kN * sizeof(float);
+  std::vector<float> a(kN), b(kN), out(kN, 0.0f);
+  for (int i = 0; i < kN; ++i) {
+    a[i] = static_cast<float>(i);
+    b[i] = static_cast<float>(2 * i + 1);
+  }
+
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto da = Buffer::create(resource, kOffset + bytes);
+  auto db = Buffer::create(resource, kOffset + bytes);
+  auto dc = Buffer::create(resource, kOffset + bytes);
+  ASSERT_TRUE(da.has_value() && db.has_value() && dc.has_value());
+  auto av = da->view().subview(kOffset, bytes);
+  auto bv = db->view().subview(kOffset, bytes);
+  auto cv = dc->view().subview(kOffset, bytes);
+  ASSERT_TRUE(av.has_value() && bv.has_value() && cv.has_value());
+  ASSERT_TRUE(av->write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(bv->write(std::as_bytes(std::span(b))).ok());
+
+  LaunchConfig cfg;
+  cfg.block = {256, 1, 1};
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  ASSERT_TRUE(launch(*s, *k, cfg, *av, *bv, *cv, kN).ok());
+  ASSERT_TRUE(s->sync().ok());
+  ASSERT_TRUE(cv->read(std::as_writable_bytes(std::span(out))).ok());
+  for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(out[i], a[i] + b[i]);
+}
+
+TEST(ComputeKernel, HostTypedShellPreservesSubviewOffsets) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_vecadd);
+  auto s = Stream::create(d);
+  ASSERT_TRUE(k.has_value() && s.has_value());
+
+  constexpr int kN = 64;
+  constexpr std::size_t kOffset = 3 * sizeof(float);
+  const std::size_t bytes = kN * sizeof(float);
+  std::vector<float> a(kN), b(kN), out(kN, 0.0f);
+  for (int i = 0; i < kN; ++i) {
+    a[i] = static_cast<float>(i + 2);
+    b[i] = static_cast<float>(i * 3);
+  }
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto da = Buffer::create(resource, kOffset + bytes);
+  auto db = Buffer::create(resource, kOffset + bytes);
+  auto dc = Buffer::create(resource, kOffset + bytes);
+  ASSERT_TRUE(da.has_value() && db.has_value() && dc.has_value());
+  auto av = da->view().subview(kOffset, bytes);
+  auto bv = db->view().subview(kOffset, bytes);
+  auto cv = dc->view().subview(kOffset, bytes);
+  ASSERT_TRUE(av.has_value() && bv.has_value() && cv.has_value());
+  ASSERT_TRUE(av->write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(bv->write(std::as_bytes(std::span(b))).ok());
+
+  ASSERT_TRUE(launch(*s, *k, LaunchConfig{}, *av, *bv, *cv, kN).ok());
+  ASSERT_TRUE(cv->read(std::as_writable_bytes(std::span(out))).ok());
+  for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(out[i], a[i] + b[i]);
 }
 
 TEST(ComputeKernel, TypedShellUsesNaturalAlignmentForTwelveByteValue) {
   Device d = host_device();
   auto k = Kernel::load_host(d, &host_mixed_order);
   auto s = Stream::create(d);
-  auto a = Buffer::create(device_buffer_type(d), 16);
-  auto b = Buffer::create(device_buffer_type(d), 16);
+  const mem::MemoryResourceRef resource = device_memory_resource(d).value();
+  auto a = Buffer::create(resource, 16);
+  auto b = Buffer::create(resource, 16);
   ASSERT_TRUE(k.has_value() && s.has_value() && a.has_value() && b.has_value());
 
   g_mixed_order_ok = false;
@@ -218,7 +306,7 @@ TEST(ComputeKernel, RawArgsRejectMalformedMetadata) {
   KernelArgs outside_blob{nullptr, 0, &scalar, sizeof(scalar), &outside, 1};
   EXPECT_FALSE(launch(*s, *k, LaunchConfig{}, outside_blob).ok());
 
-  void* buffers[1] = {&scalar};
+  BufferBinding buffers[1] = {binding(&scalar, 1)};
   KernelArgRef duplicate[2] = {{KernelArgKind::kBuffer, 0},
                                {KernelArgKind::kBuffer, 0}};
   KernelArgs duplicate_order{buffers, 1, &scalar, sizeof(scalar), &field, 1,
@@ -281,7 +369,9 @@ TEST(ComputeKernel, HostFallbackLaunch) {
   // Host test uses raw host pointers (not Buffer), so build KernelArgs explicitly and
   // call the type-erased core launch (the typed shell is for Buffer args; this exercises the
   // raw form + host_vecadd reading buffers[]/scalar blob).
-  void* bufs[] = {const_cast<float*>(pa), const_cast<float*>(pb), pc};
+  BufferBinding bufs[] = {binding(const_cast<float*>(pa), kN),
+                          binding(const_cast<float*>(pb), kN),
+                          binding(pc, kN)};
   ScalarField fields[] = {{0, sizeof(int)}};
   KernelArgs ka{bufs, 3, &n, sizeof(int), fields, 1};
 
@@ -321,7 +411,7 @@ Device host_device_for_kernel() {
 void expect_kernel_runs(Kernel& k, Stream& s) {
   constexpr int kN = 4;
   float a[kN] = {1, 2, 3, 4}, b[kN] = {10, 20, 30, 40}, c[kN] = {-1, -1, -1, -1};
-  void* bufs[] = {a, b, c};
+  BufferBinding bufs[] = {binding(a, kN), binding(b, kN), binding(c, kN)};
   int n = kN;
   ScalarField fields[] = {{0, sizeof(int)}};
   KernelArgs ka{bufs, 3, &n, sizeof(int), fields, 1};
@@ -386,13 +476,15 @@ TEST(ComputeKernel, HostLaunchBatch) {
   // Per-job storage MUST outlive launch_batch (its arrays are caller-owned): distinct
   // input/output arrays + arg descriptors per job.
   float a[kJobs][kN], b[kJobs][kN], c[kJobs][kN];
-  void* bufs[kJobs][3];
+  BufferBinding bufs[kJobs][3];
   int ns[kJobs];
   ScalarField fields[kJobs];
   BatchItem items[kJobs];
   for (int j = 0; j < kJobs; ++j) {
     for (int i = 0; i < kN; ++i) { a[j][i] = float(i + j); b[j][i] = float(2 * i - j); c[j][i] = -1.0f; }
-    bufs[j][0] = a[j]; bufs[j][1] = b[j]; bufs[j][2] = c[j];
+    bufs[j][0] = binding(a[j], kN);
+    bufs[j][1] = binding(b[j], kN);
+    bufs[j][2] = binding(c[j], kN);
     ns[j] = kN;
     fields[j] = ScalarField{0, sizeof(int)};
     items[j].kernel = &*k;

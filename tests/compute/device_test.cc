@@ -3,14 +3,16 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device_pool.h"
 #include "hyle/compute/kernel.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
+#include "hyle/mem/buffer.h"
 
 // compute-01 tests. Two layers:
 //   1. HOST fallback -- deterministic, runs on ANY platform (no GPU, CUDA not
@@ -320,7 +322,8 @@ extern "C" __global__ void spin(unsigned* out, int n, int iters) {
   ASSERT_TRUE(k.has_value()) << k.error().message();
 
   constexpr int kN = 4096;
-  auto out = Buffer::create(device_buffer_type(d), kN * sizeof(unsigned));
+  auto out = mem::Buffer::create(device_memory_resource(d).value(),
+                                 kN * sizeof(unsigned));
   ASSERT_TRUE(out.has_value()) << out.error().message();
 
   int n = kN, iters = 200000;
@@ -341,7 +344,8 @@ extern "C" __global__ void spin(unsigned* out, int n, int iters) {
 
   // The kernel actually ran: out[i] == i.
   std::vector<unsigned> host_out(kN, 0xFFFFFFFFu);
-  ASSERT_TRUE(out->get(0, host_out.data(), kN * sizeof(unsigned)).ok());
+  ASSERT_TRUE(
+      out->view().read(std::as_writable_bytes(std::span(host_out))).ok());
   for (int i = 0; i < kN; ++i) EXPECT_EQ(host_out[i], static_cast<unsigned>(i)) << "at " << i;
 }
 
@@ -425,7 +429,8 @@ extern "C" __global__ void spin(unsigned* out, int n, int iters) {
   ASSERT_TRUE(k.has_value()) << k.error().message();
 
   constexpr int kN = 4096;
-  auto out = Buffer::create(device_buffer_type(d), kN * sizeof(unsigned));
+  auto out = mem::Buffer::create(device_memory_resource(d).value(),
+                                 kN * sizeof(unsigned));
   ASSERT_TRUE(out.has_value()) << out.error().message();
 
   int n = kN, iters = 200000;

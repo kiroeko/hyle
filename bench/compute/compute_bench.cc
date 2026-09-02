@@ -22,12 +22,14 @@
 
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/kernel.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
+#include "hyle/mem/buffer.h"
 #include "saxpy.spv.h"  // hyle_test_shaders::kSaxpySpirv (shared with the test, embedded)
 
 using namespace hyle;
@@ -65,19 +67,23 @@ int main() {
   // end-to-end with queue drain; do not label the result as pure CPU time.
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
-  auto bx = Buffer::create(bt, bytes);
-  auto by = Buffer::create(bt, bytes);
-  auto bo = Buffer::create(bt, bytes);
+  const mem::MemoryResourceRef resource = device_memory_resource(vk).value();
+  auto bx = mem::Buffer::create(resource, bytes);
+  auto by = mem::Buffer::create(resource, bytes);
+  auto bo = mem::Buffer::create(resource, bytes);
   if (!bx.has_value() || !by.has_value() || !bo.has_value()) return 0;
   std::vector<float> hx(kN, 1.0f), hy(kN, 2.0f);
-  (void)bx->set(0, hx.data(), bytes);
-  (void)by->set(0, hy.data(), bytes);
+  (void)bx->view().write(std::as_bytes(std::span(hx)));
+  (void)by->view().write(std::as_bytes(std::span(hy)));
 
   SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
   LaunchConfig cfg;
   cfg.grid = {blocks_for(kN, 256), 1, 1};
-  void* bufs[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
+  BufferBinding bufs[3] = {
+      {bx->native_handle(), 0, bx->size()},
+      {by->native_handle(), 0, by->size()},
+      {bo->native_handle(), 0, bo->size()},
+  };
   ScalarField field{0, sizeof(p)};
   KernelArgs ka{bufs, 3, &p, sizeof(p), &field, 1};
 

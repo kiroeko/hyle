@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 // compute-01 shared POD types (device kind + capability flags + event status).
@@ -41,21 +42,6 @@ struct DeviceCaps {
 enum class EventStatus : std::uint8_t {
   kReady = 0,     // all stream work before the record() has completed
   kNotReady = 1,  // still running -- poll again later
-};
-
-// Which kind of memory a BufferType allocates (compute-02). Mirrors ggml's model
-// where host/device/pinned are DISTINCT buffer_type instances (not a switch): one
-// memory model = one BufferType. A Device exposes one of each it supports.
-//   kDevice     : device-local memory (VRAM on a GPU; cudaMalloc). NOT host-
-//                 dereferenceable. is_host()=false. On the host backend this is
-//                 plain RAM (there is no separate "device").
-//   kHostPinned : page-locked host RAM (cudaMallocHost) for fast DMA / async-copy
-//                 overlap -- the staging tier for H2D/D2H. is_host()=true. On a
-//                 GPU-less backend (or CUDA disabled) it falls back to plain host
-//                 RAM (same as ggml's GGML_CUDA_NO_PINNED fallback).
-enum class BufferKind : std::uint8_t {
-  kDevice = 0,
-  kHostPinned = 1,
 };
 
 // compute-04 kernel launch geometry (POD, kept here -- not in kernel.h -- so the CUDA
@@ -111,8 +97,18 @@ struct KernelArgRef {
   unsigned index;
 };
 
+// One type-erased Mem view lowered for a backend launch. Offset/size preserve
+// subview semantics without pointer arithmetic on opaque Vulkan-style handles.
+// The typed shell constructs this from mem::Buffer/View after checking provider
+// identity; raw users are responsible for the same ownership/domain contract.
+struct BufferBinding {
+  void* native_handle;
+  std::size_t offset;
+  std::size_t size;
+};
+
 struct KernelArgs {
-  void* const* buffers;         // ordered array of buffer device pointers (buffer_count)
+  const BufferBinding* buffers; // ordered buffer bindings (buffer_count)
   unsigned buffer_count;        // number of buffer arguments
   const void* scalars;          // packed scalar byte blob (push-constant data), or nullptr
   unsigned scalar_bytes;        // total size of the scalar blob, or 0

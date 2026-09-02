@@ -63,7 +63,7 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 | `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
 | `SharedPool` / `SharedPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
-| compute `Buffer` / `DevicePool` | 当前无生产创建点 | 作为 Mem v2 迁移输入；Mem 拥有 Buffer/View/pool 语义，Compute 保留 provider artifact 与 async ordering |
+| compute device/host/managed providers 与 `DevicePool` | 当前无生产创建点 | Mem 已拥有 Buffer/View/pool 语义；Compute 只提供 process-lifetime provider artifact、device identity、kernel binding 与 async ordering |
 
 内部系统已经坐实“通用 allocator + fiber stack”，但 HYLE 是公开 infra 库，其他能力是否保留必须再看成熟库的广泛用户形状，不能只按内部调用计数裁剪。
 

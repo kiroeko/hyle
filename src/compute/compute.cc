@@ -1,12 +1,18 @@
 #include "hyle/compute/device.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
+#include <new>
+#include <span>
+#include <string_view>
 
 #include "backend.h"
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device_pool.h"
 #include "hyle/compute/kernel.h"
+#include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
@@ -24,6 +30,258 @@
 namespace hyle::compute {
 namespace {
 
+class BackendMemoryResource final : public mem::MemoryResource {
+ public:
+  void initialize(const ComputeBackend* backend, int ordinal,
+                  BackendMemoryKind kind) noexcept {
+    HYLE_FATAL_ASSERT(vt_ == nullptr && backend != nullptr);
+    vt_ = backend;
+    ordinal_ = ordinal;
+    kind_ = kind;
+  }
+
+  bool supported() const noexcept {
+    return vt_ != nullptr && vt_->buffer_supported(ordinal_, kind_);
+  }
+
+  std::string_view name() const noexcept override {
+    switch (kind_) {
+      case BackendMemoryKind::kDevice:
+        return "hyle.compute.device";
+      case BackendMemoryKind::kHostPinned:
+        return "hyle.compute.host";
+      case BackendMemoryKind::kManaged:
+        return "hyle.compute.managed";
+    }
+    return "hyle.compute.invalid";
+  }
+
+  mem::MemoryProperties properties() const noexcept override {
+    HYLE_FATAL_ASSERT(vt_ != nullptr);
+    mem::MemoryProperty flags = mem::MemoryProperty::kDeviceAccessible;
+    if (vt_->buffer_is_host(kind_)) {
+      flags |= mem::MemoryProperty::kHostAccessible;
+      if (vt_->buffer_is_coherent(kind_)) {
+        flags |= mem::MemoryProperty::kHostDeviceCoherent;
+      }
+    }
+    if (kind_ == BackendMemoryKind::kHostPinned &&
+        vt_->device_caps(ordinal_).host_buffer) {
+      flags |= mem::MemoryProperty::kHostPinned;
+    }
+    if (kind_ == BackendMemoryKind::kManaged) {
+      flags |= mem::MemoryProperty::kManaged;
+    }
+    return mem::MemoryProperties{
+        .flags = flags,
+        .minimum_alignment = vt_->buffer_alignment(kind_),
+        .maximum_allocation = vt_->buffer_max_size(ordinal_, kind_),
+        .domain = mem::MemoryDomainId{
+            vt_, static_cast<std::uintptr_t>(ordinal_)},
+    };
+  }
+
+  Result<mem::ResourceAllocation> allocate(
+      std::size_t size, std::size_t alignment) noexcept override {
+    if (!supported()) {
+      return std::unexpected(Status::Unimplemented(
+          "compute backend does not support this memory provider"));
+    }
+    const std::size_t guaranteed = vt_->buffer_alignment(kind_);
+    if (alignment > guaranteed) {
+      return std::unexpected(Status::InvalidArgument(
+          "compute provider cannot guarantee the requested over-alignment"));
+    }
+    if (size == 0) {
+      return mem::ResourceAllocation{nullptr, 0, alignment};
+    }
+    void* native = nullptr;
+    void* host = nullptr;
+    Status status =
+        vt_->buffer_alloc(ordinal_, kind_, size, &native, &host);
+    if (!status.ok()) {
+      return std::unexpected(
+          std::move(status).WithContext("allocating compute memory"));
+    }
+    if (native == nullptr ||
+        (host != nullptr) != vt_->buffer_is_host(kind_) ||
+        host != vt_->buffer_host_data(kind_, native)) {
+      if (native != nullptr) vt_->buffer_free(ordinal_, kind_, native);
+      return std::unexpected(Status::Internal(
+          "compute backend returned an invalid allocation token"));
+    }
+    return mem::ResourceAllocation{native, size, alignment};
+  }
+
+  void deallocate(mem::ResourceAllocation allocation) noexcept override {
+    if (allocation.native_handle != nullptr) {
+      vt_->buffer_free(ordinal_, kind_, allocation.native_handle);
+    }
+  }
+
+  Status read(void* native_handle, std::size_t offset,
+              std::span<std::byte> destination) noexcept override {
+    if (destination.empty()) return Status::Ok();
+    return vt_->buffer_get(native_handle, offset, destination.data(),
+                           destination.size());
+  }
+
+  Status write(void* native_handle, std::size_t offset,
+               std::span<const std::byte> source) noexcept override {
+    if (source.empty()) return Status::Ok();
+    return vt_->buffer_set(native_handle, offset, source.data(), source.size());
+  }
+
+  Status fill(void* native_handle, std::size_t offset, std::size_t size,
+              std::byte value) noexcept override {
+    if (size == 0) return Status::Ok();
+    return vt_->buffer_clear(native_handle, offset,
+                             std::to_integer<std::uint8_t>(value), size);
+  }
+
+  Status copy(void* destination_handle, std::size_t destination_offset,
+              mem::MemoryResource& source_resource, void* source_handle,
+              std::size_t source_offset, std::size_t size) noexcept override {
+    if (size == 0) return Status::Ok();
+    if (destination_handle == source_handle) {
+      if (destination_offset == source_offset) return Status::Ok();
+      const std::size_t distance = destination_offset < source_offset
+                                       ? source_offset - destination_offset
+                                       : destination_offset - source_offset;
+      if (distance < size) {
+        return Status::InvalidArgument(
+            "overlapping compute buffer copy is unsupported");
+      }
+    }
+
+    auto* source = dynamic_cast<BackendMemoryResource*>(&source_resource);
+    if (source != nullptr && source->vt_ == vt_ &&
+        source->ordinal_ == ordinal_) {
+      if (source->vt_->buffer_is_host(source->kind_)) {
+        HYLE_RETURN_IF_ERROR(source->flush(source_handle, source_offset, size));
+      }
+      HYLE_RETURN_IF_ERROR(vt_->buffer_copy(
+          destination_handle, destination_offset, source_handle,
+          source_offset, size));
+      if (vt_->buffer_is_host(kind_)) {
+        return invalidate(destination_handle, destination_offset, size);
+      }
+      return Status::Ok();
+    }
+
+    if (!source_resource.properties().has(
+            mem::MemoryProperty::kHostAccessible)) {
+      return Status::Unimplemented(
+          "cross-domain compute copy requires a host-accessible source");
+    }
+    HYLE_RETURN_IF_ERROR(
+        source_resource.invalidate(source_handle, source_offset, size));
+    auto mapping = source_resource.map_host(
+        source_handle, source_offset, size, mem::HostAccess::kRead);
+    if (!mapping) return std::move(mapping).error();
+    if (mapping->data == nullptr) {
+      source_resource
+          .unmap_host(source_handle, mapping->token, source_offset, size,
+                      mem::HostAccess::kRead)
+          .IgnoreError();
+      return Status::Internal(
+          "source resource returned a null host mapping");
+    }
+    Status result =
+        vt_->buffer_set(destination_handle, destination_offset, mapping->data,
+                        size);
+    result.Update(source_resource.unmap_host(
+        source_handle, mapping->token, source_offset, size,
+        mem::HostAccess::kRead));
+    return result;
+  }
+
+  Result<mem::ResourceHostMapping> map_host(
+      void* native_handle, std::size_t offset, std::size_t size,
+      mem::HostAccess) noexcept override {
+    if (!vt_->buffer_is_host(kind_)) {
+      return std::unexpected(Status::FailedPrecondition(
+          "compute memory provider is not host accessible"));
+    }
+    void* base = vt_->buffer_host_data(kind_, native_handle);
+    if (size != 0 && base == nullptr) {
+      return std::unexpected(
+          Status::Internal("compute host mapping is unavailable"));
+    }
+    return mem::ResourceHostMapping{
+        size == 0 ? nullptr : static_cast<std::byte*>(base) + offset,
+        nullptr};
+  }
+
+  Status unmap_host(void*, void*, std::size_t, std::size_t,
+                    mem::HostAccess) noexcept override {
+    return Status::Ok();
+  }
+
+  Status flush(void* native_handle, std::size_t offset,
+               std::size_t size) noexcept override {
+    if (!vt_->buffer_is_host(kind_)) {
+      return Status::FailedPrecondition(
+          "device-only compute memory cannot be host-flushed");
+    }
+    if (size == 0) return Status::Ok();
+    return vt_->buffer_flush_host(native_handle, offset, size);
+  }
+
+  Status invalidate(void* native_handle, std::size_t offset,
+                    std::size_t size) noexcept override {
+    if (!vt_->buffer_is_host(kind_)) {
+      return Status::FailedPrecondition(
+          "device-only compute memory cannot be host-invalidated");
+    }
+    if (size == 0) return Status::Ok();
+    return vt_->buffer_invalidate_host(native_handle, offset, size);
+  }
+
+  Result<mem::ResourceStats> stats() const noexcept override {
+    if (kind_ != BackendMemoryKind::kDevice) {
+      return mem::ResourceStats{};
+    }
+    std::uint64_t free = 0;
+    std::uint64_t total = 0;
+    vt_->device_memory(ordinal_, &free, &total);
+    constexpr std::uint64_t kSizeMax =
+        static_cast<std::uint64_t>((std::numeric_limits<std::size_t>::max)());
+    const std::size_t capacity =
+        static_cast<std::size_t>((std::min)(total, kSizeMax));
+    const std::size_t available =
+        static_cast<std::size_t>((std::min)(free, kSizeMax));
+    return mem::ResourceStats{
+        .capacity_bytes = capacity,
+        .used_bytes = available <= capacity ? capacity - available : SIZE_MAX,
+        .reserved_bytes = SIZE_MAX,
+        .peak_used_bytes = SIZE_MAX,
+    };
+  }
+
+ private:
+  const ComputeBackend* vt_ = nullptr;
+  int ordinal_ = 0;
+  BackendMemoryKind kind_ = BackendMemoryKind::kDevice;
+};
+
+constexpr std::size_t memory_kind_index(BackendMemoryKind kind) noexcept {
+  return static_cast<std::size_t>(kind);
+}
+
+template <class T>
+class NoDestructor {
+ public:
+  NoDestructor() noexcept { ::new (storage_) T(); }
+  T& get() noexcept { return *reinterpret_cast<T*>(storage_); }
+  const T& get() const noexcept {
+    return *reinterpret_cast<const T*>(storage_);
+  }
+
+ private:
+  alignas(T) std::byte storage_[sizeof(T)];
+};
+
 // The process-wide device table, built once (Meyers singleton -- charter §, no
 // leaky global). Each entry maps a GLOBAL device index to {backend vtable, the
 // index LOCAL to that backend}. GPUs (CUDA) come first so default_device() prefers
@@ -33,10 +291,31 @@ struct DeviceEntry {
   int local;  // ordinal within vt's own device list
 };
 
+#if defined(HYLE_HAS_FCONTEXT)
+void probe_device_table(void* arg) noexcept;
+#endif
+
 struct DeviceTable {
   static constexpr std::size_t kMax = 32;
   DeviceEntry entries[kMax];
+  BackendMemoryResource resources[kMax][3];
   std::size_t count = 0;
+
+  DeviceTable() noexcept {
+#if defined(HYLE_HAS_FCONTEXT)
+    // Third-party GPU initialization can exceed the default fiber stack. Only
+    // the process-first probe is redirected to an ordinary OS thread.
+    if (sched::Fiber::current() != nullptr) {
+      platform::ThreadOpts opts;
+      opts.name = "hyle.gpu-init";
+      auto thread = platform::Thread::spawn(&probe_device_table, this, opts);
+      HYLE_FATAL_ASSERT(thread.has_value());
+      thread->join();
+      return;
+    }
+#endif
+    probe();
+  }
 
   void probe() noexcept {
     // GPUs first (CUDA backend), if compiled in and any device is present.
@@ -64,7 +343,15 @@ struct DeviceTable {
     const std::size_t limit = kMax - tail_reserve;
     std::size_t n = vt->device_count();
     for (std::size_t i = 0; i < n && count < limit; ++i) {
-      entries[count++] = DeviceEntry{vt, static_cast<int>(i)};
+      const int ordinal = static_cast<int>(i);
+      entries[count] = DeviceEntry{vt, ordinal};
+      resources[count][memory_kind_index(BackendMemoryKind::kDevice)]
+          .initialize(vt, ordinal, BackendMemoryKind::kDevice);
+      resources[count][memory_kind_index(BackendMemoryKind::kHostPinned)]
+          .initialize(vt, ordinal, BackendMemoryKind::kHostPinned);
+      resources[count][memory_kind_index(BackendMemoryKind::kManaged)]
+          .initialize(vt, ordinal, BackendMemoryKind::kManaged);
+      ++count;
     }
   }
 };
@@ -75,31 +362,12 @@ void probe_device_table(void* arg) noexcept {
 }
 #endif
 
-DeviceTable build_device_table() noexcept {
-  DeviceTable result;
-#if defined(HYLE_HAS_FCONTEXT)
-  // CUDA/Vulkan's first process-wide initialization is third-party runtime code
-  // with a substantially larger stack appetite than HYLE's 64 KiB default fiber
-  // (CUDA 13.3 on Windows faults during cudaGetDeviceCount from that stack).
-  // Preserve the cheap default fiber tier: only when the first compute call
-  // happens inside a fiber, perform the one-time cold probe on a normal OS thread.
-  // Later calls only read the immutable table and pay no thread/branch overhead.
-  if (sched::Fiber::current() != nullptr) {
-    platform::ThreadOpts opts;
-    opts.name = "hyle.gpu-init";
-    auto thread = platform::Thread::spawn(&probe_device_table, &result, opts);
-    HYLE_FATAL_ASSERT(thread.has_value());
-    thread->join();
-    return result;
-  }
-#endif
-  result.probe();
-  return result;
-}
-
 const DeviceTable& table() noexcept {
-  static const DeviceTable t = build_device_table();
-  return t;
+  // Providers are process-lifetime borrows. Deliberately do not destroy this
+  // table during global teardown, when user-owned static Buffers may still
+  // return allocations through it.
+  static NoDestructor<DeviceTable> t;
+  return t.get();
 }
 
 // Resolve a public Device (whose ordinal_ is the GLOBAL index) to its backend +
@@ -112,6 +380,15 @@ DeviceEntry resolve(const Device& d) noexcept {
   return t.entries[g];
 }
 
+BackendMemoryResource& resolve_resource(
+    const Device& device, BackendMemoryKind kind) noexcept {
+  DeviceEntry entry = resolve(device);
+  (void)entry;
+  DeviceTable& mutable_table = const_cast<DeviceTable&>(table());
+  return mutable_table.resources[static_cast<std::size_t>(device.ordinal())]
+                                [memory_kind_index(kind)];
+}
+
 // Validate the pointer-bearing raw ABI before any backend dereferences it. The typed shell
 // always produces this shape, but raw KernelArgs is public specifically for callers that
 // author offsets themselves; malformed metadata must return InvalidArgument, not become
@@ -119,6 +396,14 @@ DeviceEntry resolve(const Device& d) noexcept {
 Status validate_kernel_args(const KernelArgs& args) noexcept {
   if (args.buffer_count != 0 && args.buffers == nullptr)
     return Status::InvalidArgument("compute launch: null buffer argument array");
+  for (unsigned i = 0; i < args.buffer_count; ++i) {
+    const BufferBinding binding = args.buffers[i];
+    if (binding.native_handle == nullptr || binding.size == 0 ||
+        binding.offset > SIZE_MAX - binding.size) {
+      return Status::InvalidArgument(
+          "compute launch: invalid buffer binding");
+    }
+  }
   if (args.scalar_bytes != 0 && args.scalars == nullptr)
     return Status::InvalidArgument("compute launch: null scalar blob");
   if (args.scalar_count != 0 && (args.fields == nullptr || args.scalars == nullptr))
@@ -374,160 +659,58 @@ Result<std::uint64_t> elapsed_ns(const Event& start, const Event& stop) noexcept
   return ns;
 }
 
-// ---- BufferType -------------------------------------------------------------
+// ---- Device storage providers ------------------------------------------------
 
-BufferType device_buffer_type(const Device& device) noexcept {
-  DeviceEntry e = resolve(device);
-  return BufferType(e.vt, e.local, BufferKind::kDevice);
-}
-
-BufferType host_buffer_type(const Device& device) noexcept {
-  DeviceEntry e = resolve(device);
-  return BufferType(e.vt, e.local, BufferKind::kHostPinned);
-}
-
-std::size_t BufferType::alignment() const noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  return vt_->buffer_alignment(kind_);
-}
-
-std::size_t BufferType::max_size() const noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  return vt_->buffer_max_size(ordinal_, kind_);
-}
-
-bool BufferType::is_host() const noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  return vt_->buffer_is_host(kind_);
-}
-
-// ---- Buffer -----------------------------------------------------------------
-// Inline state {vt_, native_, host_, size_, ordinal_, kind_} -- no pimpl/heap.
-
-Buffer::Buffer(Buffer&& o) noexcept
-    : vt_(o.vt_),
-      native_(o.native_),
-      host_(o.host_),
-      size_(o.size_),
-      ordinal_(o.ordinal_),
-      kind_(o.kind_) {
-  o.vt_ = nullptr;
-  o.native_ = nullptr;
-  o.host_ = nullptr;
-}
-
-Buffer& Buffer::operator=(Buffer&& o) noexcept {
-  if (this != &o) {
-    if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, native_);
-    vt_ = o.vt_;
-    native_ = o.native_;
-    host_ = o.host_;
-    size_ = o.size_;
-    ordinal_ = o.ordinal_;
-    kind_ = o.kind_;
-    o.vt_ = nullptr;
-    o.native_ = nullptr;
-    o.host_ = nullptr;
-  }
-  return *this;
-}
-
-Buffer::~Buffer() {
-  if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, native_);
-}
-
-bool Buffer::belongs_to(const Device& device) const noexcept {
-  if (vt_ == nullptr || !device.valid()) return false;
-  const DeviceEntry e = resolve(device);
-  return vt_ == e.vt && ordinal_ == e.local;
-}
-
-Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcept {
-  if (!type.valid())
+Result<mem::MemoryResourceRef> device_memory_resource(
+    const Device& device) noexcept {
+  if (!device.valid()) {
     return std::unexpected(
-        Status::InvalidArgument("creating compute buffer from an invalid type"));
-  // Caller contract: a single Buffer must fit the backend's max single-allocation
-  // size; a larger logical buffer is the caller's split into multiple Buffers.
-  HYLE_FATAL_ASSERT(bytes <= type.vt_->buffer_max_size(type.ordinal_, type.kind_));
-  void* native = nullptr;
-  void* host = nullptr;
-  Status st = type.vt_->buffer_alloc(type.ordinal_, type.kind_, bytes,
-                                     &native, &host);
-  if (!st.ok())
-    return std::unexpected(std::move(st).WithContext("creating compute buffer"));
-  HYLE_FATAL_ASSERT(native != nullptr);
-  HYLE_FATAL_ASSERT((host != nullptr) == type.vt_->buffer_is_host(type.kind_));
-  Buffer b;
-  b.vt_ = type.vt_;
-  b.native_ = native;
-  b.host_ = host;
-  b.size_ = bytes;
-  b.ordinal_ = type.ordinal_;
-  b.kind_ = type.kind_;
-  return b;
-}
-
-Status Buffer::flush_host(std::size_t offset, std::size_t size) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
-  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
-  if (size == 0) return Status();
-  return vt_->buffer_flush_host(native_, offset, size);
-}
-
-Status Buffer::invalidate_host(std::size_t offset, std::size_t size) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
-  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
-  if (size == 0) return Status();
-  return vt_->buffer_invalidate_host(native_, offset, size);
-}
-
-Status Buffer::set(std::size_t offset, const void* src, std::size_t size) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  // Bounds (partial-write, KV-cache). Subtract-then-compare, NOT `offset + size <= size_`:
-  // the sum can wrap size_t (e.g. offset=SIZE_MAX-2, size=10 -> 7) and let an out-of-range
-  // write pass the check, then overrun in the backend memcpy. size_ - offset can't wrap
-  // once offset <= size_ holds.
-  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
-  if (size == 0) return Status();
-  return vt_->buffer_set(native_, offset, src, size);
-}
-
-Status Buffer::get(std::size_t offset, void* dst, std::size_t size) const noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
-  if (size == 0) return Status();
-  return vt_->buffer_get(native_, offset, dst, size);
-}
-
-Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
-                         std::size_t src_offset, std::size_t size) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr && src.vt_ != nullptr);
-  // Same-backend copy (cross-backend is a later concern). A cross-backend copy is a
-  // caller bug here, not a runtime fallback.
-  HYLE_FATAL_ASSERT(vt_ == src.vt_);
-  HYLE_FATAL_ASSERT(dst_offset <= size_ && size <= size_ - dst_offset &&      // wrap-safe
-                    src_offset <= src.size_ && size <= src.size_ - src_offset);
-  if (size == 0) return Status();
-  if (src.host_ != nullptr) {
-    Status visibility =
-        src.vt_->buffer_flush_host(src.native_, src_offset, size);
-    if (!visibility.ok())
-      return std::move(visibility).WithContext("flushing source buffer before copy");
+        Status::InvalidArgument("selecting memory for an invalid device"));
   }
-  Status copied =
-      vt_->buffer_copy(native_, dst_offset, src.native_, src_offset, size);
-  if (!copied.ok() || host_ == nullptr) return copied;
-  return vt_->buffer_invalidate_host(native_, dst_offset, size);
+  BackendMemoryResource& resource =
+      resolve_resource(device, BackendMemoryKind::kDevice);
+  HYLE_FATAL_ASSERT(resource.supported());
+  return mem::MemoryResourceRef(resource);
 }
 
-Status Buffer::clear(std::size_t offset, std::uint8_t value,
-                     std::size_t size) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
-  if (size == 0) return Status();
-  return vt_->buffer_clear(native_, offset, value, size);
+Result<mem::MemoryResourceRef> host_memory_resource(
+    const Device& device) noexcept {
+  if (!device.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("selecting memory for an invalid device"));
+  }
+  BackendMemoryResource& resource =
+      resolve_resource(device, BackendMemoryKind::kHostPinned);
+  HYLE_FATAL_ASSERT(resource.supported());
+  return mem::MemoryResourceRef(resource);
 }
 
+Result<mem::MemoryResourceRef> managed_memory_resource(
+    const Device& device) noexcept {
+  if (!device.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("selecting memory for an invalid device"));
+  }
+  BackendMemoryResource& resource =
+      resolve_resource(device, BackendMemoryKind::kManaged);
+  if (!resource.supported()) {
+    return std::unexpected(Status::Unimplemented(
+        "selected compute backend has no managed memory provider"));
+  }
+  return mem::MemoryResourceRef(resource);
+}
+
+bool memory_resource_belongs_to(mem::MemoryResourceRef resource,
+                                const Device& device) noexcept {
+  if (!resource.valid() || !device.valid()) return false;
+  return resource == mem::MemoryResourceRef(
+                         resolve_resource(device, BackendMemoryKind::kDevice)) ||
+         resource == mem::MemoryResourceRef(resolve_resource(
+                         device, BackendMemoryKind::kHostPinned)) ||
+         (resolve_resource(device, BackendMemoryKind::kManaged).supported() &&
+          resource == mem::MemoryResourceRef(resolve_resource(
+                          device, BackendMemoryKind::kManaged)));
+}
 // ---- DevicePool (compute-02c): VRAM sub-allocator dispatch -------------------
 // Forwards to the backend's stateful pool (VMM or leg, ported from ggml). The pool
 // handle is opaque; DevicePool holds {vt, handle, ordinal} inline.

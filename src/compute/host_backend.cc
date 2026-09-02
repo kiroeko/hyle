@@ -91,24 +91,28 @@ Status host_event_elapsed_ns(void*, void*, std::uint64_t* out_ns) noexcept {
 }
 
 // ---- buffer (compute-02) ----------------------------------------------------
-// On the host backend both BufferKinds are just plain RAM (there is no separate
+// On the host backend every memory kind is just plain RAM (there is no separate
 // device, and no page-locking benefit without a GPU DMA engine). is_host()=true for
 // both -- native handle and CPU mapping are the same plain-RAM pointer.
 // set/get/copy/clear are memcpy/memset; flush/invalidate are no-ops.
 
-std::size_t host_buffer_alignment(BufferKind) noexcept {
+bool host_buffer_supported(int, BackendMemoryKind) noexcept { return true; }
+
+std::size_t host_buffer_alignment(BackendMemoryKind) noexcept {
   return alignof(std::max_align_t);
 }
 
-std::size_t host_buffer_max_size(int, BufferKind) noexcept {
+std::size_t host_buffer_max_size(int, BackendMemoryKind) noexcept {
   return SIZE_MAX;  // bounded only by the system allocator
 }
 
-bool host_buffer_is_host(BufferKind) noexcept {
+bool host_buffer_is_host(BackendMemoryKind) noexcept {
   return true;  // plain RAM either way -- directly dereferenceable
 }
 
-Status host_buffer_alloc(int, BufferKind, std::size_t bytes,
+bool host_buffer_is_coherent(BackendMemoryKind) noexcept { return true; }
+
+Status host_buffer_alloc(int, BackendMemoryKind, std::size_t bytes,
                          void** out_native, void** out_host) noexcept {
   void* p = std::malloc(bytes == 0 ? 1 : bytes);
   if (p == nullptr) return Status::ResourceExhausted("host: buffer_alloc");
@@ -117,7 +121,12 @@ Status host_buffer_alloc(int, BufferKind, std::size_t bytes,
   return Status();
 }
 
-void host_buffer_free(int, BufferKind, void* ptr) noexcept { std::free(ptr); }
+void host_buffer_free(int, BackendMemoryKind, void* ptr) noexcept {
+  std::free(ptr);
+}
+void* host_buffer_host_data(BackendMemoryKind, void* ptr) noexcept {
+  return ptr;
+}
 Status host_buffer_flush(void*, std::size_t, std::size_t) noexcept { return Status(); }
 Status host_buffer_invalidate(void*, std::size_t, std::size_t) noexcept { return Status(); }
 
@@ -289,11 +298,14 @@ constexpr ComputeBackend kHostBackend = {
     /*event_record=*/host_event_record,
     /*event_query=*/host_event_query,
     /*event_sync=*/host_event_sync,
+    /*buffer_supported=*/host_buffer_supported,
     /*buffer_alignment=*/host_buffer_alignment,
     /*buffer_max_size=*/host_buffer_max_size,
     /*buffer_is_host=*/host_buffer_is_host,
+    /*buffer_is_coherent=*/host_buffer_is_coherent,
     /*buffer_alloc=*/host_buffer_alloc,
     /*buffer_free=*/host_buffer_free,
+    /*buffer_host_data=*/host_buffer_host_data,
     /*buffer_flush_host=*/host_buffer_flush,
     /*buffer_invalidate_host=*/host_buffer_invalidate,
     /*buffer_set=*/host_buffer_set,
