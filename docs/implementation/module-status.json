@@ -580,12 +580,14 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "mem-reclaim-v1",
       "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
       "scope": "Provide an explicit-domain, allocation-free read-side reclamation primitive with guarded publication reads, intrusive retire records, bounded nonblocking collection, blocking grace-period synchronization, draining and observable pending work for current HYLE concurrent-container and Obs ownership gaps.",
       "non_goals": "Container membership or policy, logging policy, lock-free data structures, sched/executor callbacks, automatic object allocation, a complete hazard-pointer family, backend/GPU retirement, global C or Native FFI, stable C++ ABI, universal SOTA or Formal certification.",
       "baseline_commit": "31b86dd809ec61cd1fb7c42ed986e2697d20cb91",
+      "candidate_commit": "fc656855eae5e984b98c396817578c266e2a4491",
+      "candidate_tree": "3686af7b1abed59b30ef518f9bc55a4308959a2e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -603,7 +605,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_reclaim v1 已完成能力/API 审计：冻结显式/默认 domain、分片 read guard、零分配 retire record 与 grace-period 回收；有限 FIX 为实现、Container 旧表迁移、三交付/文档和 P1 验证。"
+      "summary": "mem_reclaim v1 candidate 已冻结：显式/默认 domain、TLS 独占 reader slot、零分配 retire record 与 grace-period 回收已实现并通过 W1-WIN shared/static correctness；产品 façade、consumer migration、跨平台与 P1 verdict 尚未签署。"
     },
     {
       "module": "mem",

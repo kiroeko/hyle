@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（AUDITED）
+## Closure card（CANDIDATE）
 
 - component / product / round：`mem_reclaim` / Mem / `mem-reclaim-v1`；
 - task kind：`NEW`；baseline commit：`31b86dd809ec61cd1fb7c42ed986e2697d20cb91`；
@@ -141,3 +141,16 @@ domain.drain();           // external quiescence; empties the retire queue
 
 以上五项是本轮全部 FIX。Hazard slots/cohorts、executor、GPU fence、自动 owning node 和 Obs 重写不准在实现中
 顺手加入；新事实需要退回 `AUDITED`。本轮现在允许写产品代码，但 P1 计时仍须等 API/correctness candidate。
+
+## Candidate freeze
+
+- candidate commit：`fc656855eae5e984b98c396817578c266e2a4491`；tree：
+  `3686af7b1abed59b30ef518f9bc55a4308959a2e`；
+- 已实现 `MR-01` 的 public header、compiled cold path、默认/显式 domain、TLS 独占 reader slot、固定
+  fallback stripes、intrusive retire record、grace-period collection 与 misuse fail-fast；
+- `W1-WIN` exact-factor shared/static WERROR 构建、header isolation、unit/death/stress tests 已通过；candidate
+  之后只允许执行冻结卡已有验证或修复可复现 correctness 缺陷；
+- `MR-02`/`MR-03` 尚未完成：对 CLOSED Container 的试迁移已撤销，不能把未关闭 factor 偷渡进既有产品；
+  Mem façade 也未暴露本 factor；
+- Folly peer 在本机尚不能形成资格化 same-contract 构建；P1、三平台 sanitizer/交付、直接 consumer 和
+  user guide gate 仍未裁决，因此本记录还不是 terminal receipt。
