@@ -145,3 +145,43 @@
 `C:\hyle-scratch\time-v4-msvc-instant-codegen\module-status-before-candidate.json`，SHA-256
 `3344E69E501BFDEC2F0FF55DDFF8D0B78BDA7D0EB74F92BC13C878FC90FA91E8`。candidate 后若改变
 产品实现、公开合同或冻结 workload，必须退回 `AUDITED`；只补验证与事实记录不改变 candidate identity。
+
+## Verification manifest
+
+全部 verdict 绑定 immutable product candidate
+`a9b9ff3117ab647581a6b846318a8254a6cd148f` / tree
+`6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301`。
+
+| Gate / risk | Verdict | Evidence / limit |
+|---|---|---|
+| normal/header correctness | `PASS` | W1-WIN MSVC 19.50 与 19.44 Release/WERROR 各 3/3；W1-WSL GCC 14.2 与 M1-MAC AppleClang 21 各 2/2；非 MSVC 均真实编译 test-only probe |
+| MSVC optimized code shape | `PASS` | 19.50 与 19.44 `/O2 /Ob2`：Instant/direct 64-phase 均 143 条规范化指令、逐项相同，无 HYLE/chrono wrapper call edge |
+| P1 engineering performance | `PASS` | 原 `time-host-consumer-v1` contract/hash 未变；W1-WIN clean n=15 bundle `QUALIFIED`，4/4 strata 5% NI `PASS`；exact 为 3 `PARITY` + 1 `INCONCLUSIVE`，不签微观点值胜出 |
+| source/shared/static delivery | `PASS` | W1-WIN selected Time source consumer、relocated shared SDK consumer、relocated static SDK consumer 各 1/1；tests-off artifact 不含 probe/audit |
+| dependency/build impact | `PASS` | 产品 diff 只有 header-inline body；`time -> core` 与产品 factor graph、installed header inventory、target options 均不变；新增 target 仅位于 tests/time |
+| API/layout/symbol/FFI | `PASS / N/A` | 签名、overload、layout、语义不变；Windows DLL 仍为原 12 个 decorated C++ exports，无 C/Native FFI surface |
+| docs/usability | `PASS` | 用户调用与陷阱不变，故 user/architecture 无伪改写；performance 页记录 v4 结构机制、NI verdict 与 limitation，tool README 说明回归入口 |
+
+P1 retained bundle 位于 `C:\hyle-scratch\time-v4-perf-evidence\manifest.json`；contract、manifest、
+summary、controls、observations SHA-256 分别为
+`707029C26EB677DCECFC1478CCA207D6A2A5D64B305EB04C43391F14D0CB158E`、
+`4207D5E656E34C8017B3944CE7B908CC5D09D44EA06BBE4225F54A34227E125E`、
+`901508FC76615C5AD7471C8DB77793D49053DFC4622CECF7189A244EB1A24DC8`、
+`7B45ECD630A554A20CA15C184376743DAF34B73ADFAC819F137E47C13F589319`、
+`078EE44C7472D61FB25220917309FC079CBFD31A576C904D81A58DF9AA638F24`。deep verifier 返回
+`QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、`environment=CURRENT`。
+
+## Independent red team
+
+| Attack | Result / disposition |
+|---|---|
+| 把约 0.55 ns 点值当产品需求 | 拒绝；授权来自同合同对象中额外 call-shell 机制，P1 只签 5% NI，不创建 API |
+| 在 `monotonic_now()` 中统一 flatten | 实验会让单次 raw read 比 direct chrono 更激进地展开并增大 body；拒绝，改动只落在已复现的 `Instant::now()` |
+| 顺手处理 `elapsed/realtime/deadline` | 独立 probe 已证明 elapsed、raw monotonic、realtime 与 direct route 同形；无缺陷，不改 |
+| 用全局 `/Ob3` 或公共 macro | 拒绝；没有产品 target option 或 Core/build-system 改动，局部 attribute 不泄露给用户 |
+| 只在最新 MSVC 偶然成立 | MSVC 19.50 与支持范围内 19.44 的默认 Release gate 都通过；feature test 让其他/未知编译器安全保留原语义 |
+| test seam 进入 SDK 或改变组件图 | tests-off source/shared/static smoke 全通过；probe 是未安装 OBJECT target，脚本不是产品依赖 |
+| exact instruction gate 诱导未来盲改 | gate 只绑定这一支持编译器的冻结同源 consumer；未来 compiler/stdlib 变化时要求检查两边机制，不能自动授权 API/layout 修改 |
+
+红队未发现公开合同、correctness、lifetime、dependency、delivery 或未处置性能机制缺陷；没有理由扩大
+`TIME4-CODEGEN-01..03`。

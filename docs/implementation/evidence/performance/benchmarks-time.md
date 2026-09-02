@@ -1,29 +1,31 @@
 # Time / timer_queue 工程性能证据
 
-> **time-v3 / timer-queue-v1：`QUALIFIED / PASS`。** 当前 product candidate
+> **time-v4 / timer-queue-v1：`QUALIFIED / PASS`。** Time candidate
+> `a9b9ff3117ab647581a6b846318a8254a6cd148f` / tree
+> `6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301` 在 W1-WIN 上通过 host
+> phase/deadline 5% non-inferiority gate；timer_queue 仍绑定其独立 candidate
 > `381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
-> `a5d48a259161c1a60e19450e42b4a6eac9a1a712` 在 W1-WIN 上通过两个独立 P1
-> consumer 合同：host phase/deadline 路线与等价 `std::chrono::steady_clock`
-> 路线为 `PARITY`；scheduler timer lifecycle 对当前 Seastar peer 为 `WIN`。
+> `a5d48a259161c1a60e19450e42b4a6eac9a1a712`，scheduler lifecycle 对当前
+> Seastar peer 为 `WIN`。
 
 这是冻结 consumer、一台工程裁决机和 5% 非劣边界下的可复验结论，不是跨机器
 Formal 证书，也不外推为所有 clock、sleep、timer cardinality 或未消费能力全面 SOTA。
 设计、用户选型和施工事实分别见 [Time architecture](../../../architecture/time-design.md)、
-[Time guide](../../../user/time.md)、[time task](../../tasks/time/time-v3-host-clock-factor.md)
+[Time guide](../../../user/time.md)、[time task](../../tasks/time/time-v4-msvc-instant-codegen.md)
 和 [timer_queue task](../../tasks/timer_queue/timer-queue-v1-factor.md)。
 
 ## 两个不可混合的性能合同
 
 | Factor | 冻结正常形状 | peer | 本轮结论 |
 |---|---|---|---|
-| `time` | 64 个 runtime phase；每个两次 precise monotonic read，再做 elapsed、饱和 deadline 和 remaining | Seastar precise route 实际采用的同 TU `std::chrono::steady_clock` 等价路线 | 4/4 order/placement strata `PARITY`，5% NI 4/4 `PASS` |
+| `time` | 64 个 runtime phase；每个两次 precise monotonic read，再做 elapsed、饱和 deadline 和 remaining | Seastar precise route 实际采用的同 TU `std::chrono::steady_clock` 等价路线 | exact 为 3 `PARITY` + 1 `INCONCLUSIVE`；5% NI 4/4 `PASS` |
 | `timer_queue` | Scheduler N=64 完整 lifecycle：64 arm、45 cancel、64 advance tick、19 delivery/callback-state observation | Seastar `timer_set` faithful local port | 8/8 order/placement/allocation strata `WIN`，5% NI 8/8 `PASS` |
 
 host 合同不拿 HYLE 的包装形状对比一个减少读钟次数的假 peer；timer 合同也不拿完整
 owner/cancel/drain 语义对比轻量单操作。两者的 input construction 和分配在 epoch 外，但所有
 消费者必需的状态变换和 checksum sink 都计费。
 
-## Host Time：`PARITY`
+## Host Time：5% non-inferiority `PASS`
 
 - contract：`bench/contracts/time-host-consumer-v1.json`；SHA-256
   `707029c26eb677dcecfc1478cca207d6a2a5d64b305eb04c43391f14d0cb158e`；
@@ -34,15 +36,20 @@ owner/cancel/drain 语义对比轻量单操作。两者的 input construction �
 
 | Stratum | HYLE op/s | peer op/s | median ratio | 99.26% CI | exact / 5% NI |
 |---|---:|---:|---:|---:|---|
-| primary / candidate-first | 35.665 M | 36.397 M | 0.9798 | [0.9707, 0.9879] | PARITY / PASS |
-| primary / peer-first | 35.477 M | 36.257 M | 0.9778 | [0.9575, 0.9895] | PARITY / PASS |
-| placement / candidate-first | 35.686 M | 36.495 M | 0.9795 | [0.9582, 1.0059] | PARITY / PASS |
-| placement / peer-first | 35.643 M | 36.270 M | 0.9799 | [0.9731, 1.0045] | PARITY / PASS |
+| primary / candidate-first | 35.714 M | 35.632 M | 1.0016 | [0.9839, 1.0273] | PARITY / PASS |
+| primary / peer-first | 35.278 M | 35.513 M | 0.9869 | [0.9617, 1.0149] | PARITY / PASS |
+| placement / candidate-first | 35.307 M | 35.015 M | 1.0016 | [0.9789, 1.0562] | INCONCLUSIVE / PASS |
+| placement / peer-first | 35.470 M | 35.140 M | 1.0084 | [0.9915, 1.0306] | PARITY / PASS |
 
-HYLE 中位点约低 2.0%--2.2%，但四个独立 strata 的 CI lower 都高于 5% 非劣限制
-`1/1.05 = 0.95238`，而且区间在冻结等价带内，因此科学结论是 `PARITY`，不把这约
-0.55 ns/单 phase 的总体差距追成新 API 或 metadata。默认/templated system route 仍是直接
-inline 读取底层钟，无 allocation、lock、registry 或间接 dispatch。
+四个独立 strata 的 CI lower 都高于 5% 非劣限制 `1/1.05 = 0.95238`，因此产品 gate
+为 `PASS`。中位点随 order/placement 在 -1.3% 到 +0.8% 间翻转；其中一个 placement CI
+越过 exact 等价判定边界，所以聚合 exact ranking 是 `INCONCLUSIVE`，不能宣称固定胜出。
+
+v3 对象检查曾发现 MSVC `/O2 /Ob2` 的 `Instant::now()` phase 比直接 chrono 多两次
+外联 `steady_clock::now()` 壳；v4 用局部 `[[msvc::flatten]]` 消除了这个可复核机制。
+maintenance-only Release probe 现在证明两条 phase body 均为 143 条规范化指令、逐项相同且
+无 wrapper edge。这个结构事实与上述正常 consumer 的非劣结果共同支持修复；没有把亚纳秒点值
+变成新 API、常态 metadata、全局 `/Ob3` 或“全面 SOTA”声明。
 
 ## Timer queue：`WIN`
 
@@ -75,13 +82,13 @@ deep verifier 均返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`
 
 | Bundle | retained manifest | manifest / summary / controls / observations SHA-256 |
 |---|---|---|
-| host | `C:\hyle-scratch\time-v3-host-perf-evidence\manifest.json` | `F5A13CC5706F1E61FCC4E9B515416016FA34E0CAB7D368A1A1908E7F9209E65B` / `A40742ED8829F988993A2552F15631A5534DB2B5F3BB000BE9E7077E8CE13745` / `9D9A7CF4EC431536A8F4BEE60B94BFFFFF4B81325E6756B2AFEE013521BEAF45` / `C378A8D13AFB8D407BDC8C873BA2A130BC57B5148A9667AC89614CD106DE6E43` |
+| host | `C:\hyle-scratch\time-v4-perf-evidence\manifest.json` | `4207D5E656E34C8017B3944CE7B908CC5D09D44EA06BBE4225F54A34227E125E` / `901508FC76615C5AD7471C8DB77793D49053DFC4622CECF7189A244EB1A24DC8` / `7B45ECD630A554A20CA15C184376743DAF34B73ADFAC819F137E47C13F589319` / `078EE44C7472D61FB25220917309FC079CBFD31A576C904D81A58DF9AA638F24` |
 | timer | `C:\hyle-scratch\time-v3-timer-perf-evidence\manifest.json` | `B7D23B40DB8EE3D5B77CB0CD6EC7B6F5F5810F4BBA609A1B92BF605FBCE0FB90` / `2C2D986359FCB43725850EEBCF9F352D11465D7B4D9CDE3ADD1D22EDC33AF124` / `9BA1CF2D4DC6EADB478A5943A2DCE27079E1995F4484D34098BA887B78DCD2D5` / `5F36C2DBC4346F0765B2A9373313EA70F853E5ED773FEAF4C10BE8A445D2A52C` |
 
 ```powershell
 python scripts/hyle-perf.py verify `
   --contract bench/contracts/time-host-consumer-v1.json `
-  --manifest C:\hyle-scratch\time-v3-host-perf-evidence\manifest.json
+  --manifest C:\hyle-scratch\time-v4-perf-evidence\manifest.json
 
 python scripts/hyle-perf.py verify `
   --contract bench/contracts/timer-queue-consumer-v1.json `

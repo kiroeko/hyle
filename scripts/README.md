@@ -456,6 +456,24 @@ ctest --test-dir build --output-on-failure \
 whole-project cross-build entry. It never runs a target executable during configure; the SVE/RVV
 QEMU scripts below remain ISA-specific product tests rather than substitutes for CMake migration.
 
+## `time-codegen-audit.py` — MSVC Instant phase structural gate
+
+The Time test graph compiles one maintenance-only object containing the frozen
+64-phase `Instant::now()` consumer and its source-equivalent direct chrono
+route. In optimized MSVC builds this audit reuses Core's tested COFF parser,
+rejects any remaining HYLE or `steady_clock::now()` wrapper call edge, and
+requires the two normalized instruction sequences to match exactly. The object
+is never installed or linked into a product; non-MSVC platforms compile the
+probe to guard the feature-test branch but do not claim a Windows codegen
+verdict.
+
+Run it with the configured Release Time tests:
+
+```powershell
+cmake --build <build> --config Release --target hyle_time_tests --parallel 2
+ctest --test-dir <build> -C Release -R hyle_time_codegen --output-on-failure
+```
+
 ## `fetch-bench-vendors.{sh,ps1}` — fetch pinned SIMD benchmark rivals
 
 Every `HYLE_BUILD_BENCH=ON` configuration needs external, exact-revision
