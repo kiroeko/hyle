@@ -46,14 +46,94 @@
 
 | family | current HYLE | normal consumer need | preliminary verdict |
 |---|---|---|---|
-| read-side lifetime guard | Obs 私有、Container 无通用 owner | 短 guard 后安全读已发布 pointer | `MUST / AUDIT` |
-| intrusive deferred callback | 各模块私有保留/计数 | 不为每次 retire 分配，支持 allocator-aware owner callback | `MUST / AUDIT` |
-| grace-period synchronize | 私有 drain 或保留到析构 | 等待调用开始前已存在 readers | `MUST / AUDIT` |
-| nonblocking collection + pressure | 缺失 | writer 可尝试回收且观察 pending | `MUST / AUDIT` |
-| default process domain | 缺失 | 普通小型 publication 的便捷 route | `MAY / AUDIT`，需检查 image/lifetime 成本 |
+| read-side lifetime guard | Obs 私有、Container 无通用 owner | 短 guard 后安全读已发布 pointer | `MUST / FIX` |
+| intrusive deferred callback | 各模块私有保留/计数 | 不为每次 retire 分配，支持 allocator-aware owner callback | `MUST / FIX` |
+| grace-period synchronize | 私有 drain 或保留到析构 | 等待调用开始前已存在 readers | `MUST / FIX` |
+| nonblocking collection + pressure | 缺失 | writer 可尝试回收且观察 pending | `MUST / FIX` |
+| default process domain | 缺失 | 普通小型 publication 与共享容器无需各自携带大型 reader registry | `MUST / FIX` |
 | hazard pointer slots/cohorts | 缺失 | stalled reader 独立回收单对象 | `MAY / DEFER`，当前 consumer 未证明必须 |
 | async callback executor | 缺失 | 将析构移到指定线程 | `ROUTE` to Sched/owner composition |
 
-SCOPED 阶段只冻结问题、预算和候选 family。进入 `AUDITED` 前必须完成 public-surface/direct-consumer 反向
-追踪、peer borrow/reject 表、完整 API 草图、ownership/failure/concurrency/cost 合同和有限 FIX ledger；
-此时不得写产品实现或运行 P1 计时。
+## Public surface 与 consumer 反向追踪（AUDITED）
+
+- 当前 `include/hyle/mem/**` 没有 reclamation 类型；`container_intrusive` 只拥有 membership，并明确要求
+  外部 owner 负责 retirement；
+- `ConcurrentNodeHashMap` 的 accessor 在 bucket lock 内保护 node，但 reader 在 `current_` load 与 bucket
+  lock 之间仍可能落后于 rehash。当前通过把旧 `Table` 几何级数地保留到 map 析构消除 UAF，空间上界小于
+  当前 table，但长期 map 永远不能主动回收旧 bucket arrays；
+- Obs 的 `snapshot_state` 只保护两个固定 snapshot 的复制/复用，随后还有 slot-active 和 callback self-remove
+  协议。它不是任意对象 retirement；本轮 `REJECT` 强制迁移，避免通用 API 吸收日志特例；
+- llama.cpp/ggml 当前没有公开通用 RCU/hazptr owner，因此它们只证明推理 runtime 存在并发 publication，
+  不单独构成新增 API 的依据。真实直接消费由 HYLE Container 提供。
+
+## Peer borrow / reject
+
+| peer observation | decision |
+|---|---|
+| Folly `rcu_domain` 以 read guard、retire、synchronize 与 barrier 组成普通路线 | `BORROW` 语义分层和显式 domain；callback 在 grace period 后运行 |
+| Folly 默认 domain 让多个轻量 owner 共享 reader registry | `BORROW` 进程生命周期 convenience，但指南优先显式 domain 隔离长 reader；不承诺跨 DSO/plugin 单例 |
+| Folly read path 通过 thread-cached counters 避免一个全局 reader RMW | `BORROW PRINCIPLE`；HYLE 用固定、按线程稳定选择的 cache-line stripe，不引入 Folly TLS/Executor 依赖 |
+| Folly free-function retire 会分配 callback node，hazptr 还提供 holder/cohort/executor 全家族 | `REJECT FOR V1`；HYLE 当前 consumer 可嵌入 record，不能让每次 retire 隐藏分配或把 Sched 拉到底层 |
+| oneTBB concurrent containers 封装自己的 storage lifetime，没有独立 reclamation 产品 API | `BORROW` consumer-facing container 应隐藏机制；`REJECT` 以 oneTBB 缺少公开 API 证明 HYLE 不需要唯一内部 owner |
+| 当前 Obs 双 snapshot + self-removal | `KEEP SPECIALIZED`；这是 fixed-generation handoff，不是通用任意对象回收 |
+
+## API / usability freeze
+
+公开头固定为 `<hyle/mem/reclamation.h>`，命名空间为 `hyle::mem`：
+
+```cpp
+using ReclaimCallback = void (*)(void*) noexcept;
+
+class RetireRecord;       // one outstanding retire; reusable after callback
+class ReclamationGuard;   // move-only; protects pointer loads in one domain
+class ReclamationDomain;  // non-copyable, non-movable owner
+
+ReclamationDomain& default_reclamation_domain() noexcept;
+
+auto guard = domain.read();
+State* state = guard.protect(published); // acquire load from std::atomic<State*>
+domain.retire(record, state, reclaim_callback);
+domain.try_reclaim();     // never waits for a reader; may run callbacks here
+domain.synchronize();     // waits for pre-existing readers; runs eligible callbacks
+domain.drain();           // external quiescence; empties the retire queue
+```
+
+`ReclamationDomain` constructor接受 retire threshold；`0` 表示只显式 collect，默认值用于在持续 writer churn
+下周期性发起 nonblocking grace period。`pending()`、`reclaimed()` 与 threshold query 是 observation，不改变
+回收顺序。返回的计数都只描述调用时快照；callbacks 没有 FIFO 保证。
+
+### Ownership / lifetime / failure / concurrency
+
+- domain 长寿于全部 guard 和 pending record；显式 domain 析构要求外部停止新 reader/retire，并执行 drain；
+  process-default domain 不析构；
+- guard 只保护**在 guard 建立后**通过 `protect()` acquire-load 得到的 pointer；把裸 load 放在 guard 前是
+  contract violation。guard 可 move、可嵌套，不可跨 domain 保护；
+- record 与 callback state 长寿于 callback；同一 record pending 时再次 retire、析构 pending record、空
+  callback 或在本 domain read guard 内调用 blocking synchronize/drain 都是 fatal contract violation；
+- retire/try/synchronize 可由多个 writer 调用；同一 domain 同时只有一个 collector 执行 callbacks。
+  callback 在 collector 调用线程同步、`noexcept`、无顺序保证；可再次 retire，但不得递归 synchronize/drain；
+- API 无 OOM 返回：normal route 不分配。需要 owning callback storage 的用户把 record 嵌入 owner 或由自己的
+  allocator 管理；HYLE 不伪装一个可能分配的 `noexcept` convenience。
+
+### 冻结成本结构
+
+- reader：O(1)，无 allocation/lock/syscall；稳定线程 stripe 上一次 enter RMW、一次 epoch validation load、
+  一次 exit RMW，极少数 epoch flip 重试；不同 active threads 尽量不写同一 cache line；
+- retire：O(1) queue insertion 和 opt-in record metadata；达到 threshold 时只发起一次 bounded nonblocking
+  collect attempt；
+- try_reclaim：有未完成 grace period 时扫描固定 stripe 数，reader 未清空即 O(S) 返回；成功时 O(S+R)；
+- synchronize：O(S+R+等待 pre-existing readers)，epoch flip 后的新 reader 不延长本次等待；
+- drain：要求外部不再 retire，O(S+R+grace periods)。S 是编译期固定 stripe 数，R 是本次可回收 record 数。
+
+## 冻结 FIX ledger
+
+| ID | action | verification |
+|---|---|---|
+| `MR-01` | 实现 header/compiled cold path、两代 epoch、固定分片 reader counters、intrusive records 与默认 domain | boundary、nested/move、double-retire/death、delayed reader、多 writer、recursive retire、exact callback count |
+| `MR-02` | 让 `ConcurrentNodeHashMap` 用 guard 覆盖 table load→bucket-lock handoff，并在 rehash 后 retire 旧 table；析构完成自己的 grace period | forced interleaving、rehash/read stress、allocator balance、TSan/ASan；若 5% normal read gate失败则停止而非静默默认变慢 |
+| `MR-03` | 中央图加入真实 Container direct edge；Mem product façade 只在 factor 自身 candidate 后选择它 | exact-factor、Mem/Container source、static、shared、relocated header/target/symbol journey |
+| `MR-04` | 增加按“什么时候用 domain/什么时候继续用 lock/shared_ptr/什么时候需要 hazard pointer”组织的 user guide；更新 architecture/roadmap | compile-only normal recipe、误用诊断、docs checker、red team |
+| `MR-05` | 资格化 read-mostly pointer publication 与 Container rehash holdout；只对冻结 API 做一次 P1 裁决 | locked contract、order/allocation strata、5% non-inferiority、结构资源审计 |
+
+以上五项是本轮全部 FIX。Hazard slots/cohorts、executor、GPU fence、自动 owning node 和 Obs 重写不准在实现中
+顺手加入；新事实需要退回 `AUDITED`。本轮现在允许写产品代码，但 P1 计时仍须等 API/correctness candidate。

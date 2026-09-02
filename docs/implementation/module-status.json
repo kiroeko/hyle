@@ -580,7 +580,7 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "mem-reclaim-v1",
       "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
       "scope": "Provide an explicit-domain, allocation-free read-side reclamation primitive with guarded publication reads, intrusive retire records, bounded nonblocking collection, blocking grace-period synchronization, draining and observable pending work for current HYLE concurrent-container and Obs ownership gaps.",
@@ -603,7 +603,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_reclaim v1 已进入 SCOPED：以当前并发容器旧表回收和 Obs 快照生命周期为真实需求，先冻结显式 domain/guard/retire/grace-period 形状，再实现与计时。"
+      "summary": "mem_reclaim v1 已完成能力/API 审计：冻结显式/默认 domain、分片 read guard、零分配 retire record 与 grace-period 回收；有限 FIX 为实现、Container 旧表迁移、三交付/文档和 P1 验证。"
     },
     {
       "module": "mem",
