@@ -154,3 +154,45 @@
 `C:\hyle-scratch\time-v3-audited-before-candidate.json`，SHA-256
 `53B2350D98372F57D5DAB398BC24F02408EB26B96FF80170B008E1A78CD4F75A`。candidate 后若改变公开合同、
 产品实现、factor graph 或冻结 workload，必须退回 `AUDITED`。
+
+## Verification manifest
+
+验证绑定与 Time 共用的 immutable product candidate
+`381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
+`a5d48a259161c1a60e19450e42b4a6eac9a1a712`。candidate 后 `109cdfc4c` 只清理 Sched/IO test
+target 的重复 `hyle_time` archive link，timer_queue header/layout/algorithm/component graph 零变化。
+
+| Gate / risk | Verdict | Evidence / limit |
+|---|---|---|
+| owner/lifecycle/boundary/oracle | `PASS` | 三平台 timer_queue focused suite；wrong-owner/linked-delivery/decreasing advance death、reschedule/cancel/cancel-all、queue-first/entry-first、full 64-bit/radix boundary 和 million-operation oracle |
+| provider composition | `PASS` | system/manual/ref 的 construct/schedule-after/advance 与 common schedule-now tests；provider 只借用一次调用，object layout 零增长 |
+| sanitizer/concurrency | `PASS / N/A` | W1-WSL ASan/UBSan/TSan 各 2/2；queue operation 为明示 single-owner，不伪造 concurrent-success test |
+| factor/delivery/direct consumers | `PASS` | 中央 component contract，三平台 `hyle::time` 三交付，三平台 Sched/IO/timeout 各3/3；header-only factor 不制造 DLL |
+| P1 engineering performance | `PASS` | `timer-queue-consumer-v1` 对 Seastar 的8/8 strata 全部 `WIN` 且 5% NI `PASS`；deep verifier `QUALIFIED/EXACT/CURRENT` |
+| common-timeout performance | `NOT_APPLICABLE` | 有 libevent 成熟形状与 correctness/complexity 证据，但无当前 HYLE 产品 consumer，不伪造 P1 排名 |
+| fake C ABI/binary/stale owner | `PASS / N/A` | 负向扫描无 C/FFI，Windows Time DLL 只有 12 个 host-clock C++ decorated export，timer_queue 零 binary symbol |
+| docs/usability | `PASS` | guide 按 mixed/common/total-order/executor 选型，明示 stable-address/single-owner/delivery-drain/provider-not-stored 陷阱；性能页与当前 contract 同步 |
+
+P1 retained bundle 位于
+`C:\hyle-scratch\time-v3-timer-perf-evidence\manifest.json`；contract/manifest/summary SHA-256 分别是
+`48e636cb9e59d578b1148ef0af091cb04b6daeb38097581b6e315b9f1eb760fe`、
+`B7D23B40DB8EE3D5B77CB0CD6EC7B6F5F5810F4BBA609A1B92BF605FBCE0FB90`、
+`2C2D986359FCB43725850EEBCF9F352D11465D7B4D9CDE3ADD1D22EDC33AF124`。八个 strata 的 median
+advantage ratio 为 1.1293--1.1898，99.26% CI lower 最低 1.0911，全部在冻结 5%
+margin 外胜出。
+
+## Independent red team
+
+- callback pointer 仍只是 Sched 借用的 dispatch metadata，queue 实现零 invoke；未偷添 executor/
+  owning callable/waiter/lock；
+- cancel minimum 后的 conservative early wake 是保持 cancel O(1) 的明示取舍，不会漏发；无真实
+  consumer 需要 Seastar-style minimum-changed bool；
+- common-timeout 的 transactional reject 与 fail-fast wrong-owner 仍是两种不同 failure contract，没有为统一
+  API 破坏可恢复 ordering boundary；
+- 独立 factor 的 owned header、test、bench、public deps 和 product facade 均由中央合同验证，单选
+  host Time 不获得 intrusive node，普通用户链 `hyle::time` 仍得到完整产品；
+- 性能 WIN 在八个顺序/放置/分配 strata 中一致，不是单姿势或亚纳秒翻转；没有
+  为此结果增加第二套 node metadata 或 fast/light API。
+
+红队未发现未处置 `MUST`、correctness/security/ownership/delivery 缺陷或 material
+consumer regression。

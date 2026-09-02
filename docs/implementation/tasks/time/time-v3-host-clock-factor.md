@@ -226,3 +226,46 @@ poll/wake；periodic/cancellation budget 仍属 Sched/IO。这些不是 Time 本
 `53B2350D98372F57D5DAB398BC24F02408EB26B96FF80170B008E1A78CD4F75A`。candidate 后若改变公开合同、
 产品实现、factor graph 或冻结 workload，必须退回 `AUDITED`；只补验证与事实记录不改变
 candidate identity。
+
+## Verification manifest
+
+验证绑定 immutable product candidate `381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
+`a5d48a259161c1a60e19450e42b4a6eac9a1a712`。candidate 后提交
+`109cdfc4c` 只删除 Sched/IO 测试对已由产品 target 传递的 `hyle_time` 重复链接；
+`include/hyle/time`、`src/time`、产品 CMake graph、公开 layout 和性能实现相对 candidate
+零变化。
+
+| Gate / risk | Verdict | Evidence / limit |
+|---|---|---|
+| normal/zero/past/max/conversion/provider | `PASS` | W1-WIN MSVC 19.50、W1-WSL GCC 14.2、M1-MAC AppleClang 21 的 Time/timer_queue public-header + focused tests 各4/4 |
+| ManualClock ownership/concurrency | `PASS` | noncopy/move、negative fail-fast、stale set、saturation、concurrent advance accumulation 与 read/set/advance non-regression；W1-WSL ASan/UBSan/TSan 各 2/2 |
+| factor/header ownership | `PASS` | host-only factor 只解析 `core,time`；中央 component contract `PASS`；`timer_queue` 独立 owner，Container 不伪造不完整 Time facade |
+| source/shared/static delivery | `PASS` | W1-WIN/W1-WSL/M1-MAC 的 selected `time` source + relocated shared + relocated static consumer 全部通过，新 ManualClock/provider sample 真运行 |
+| Platform/Sched/IO direct consumers | `PASS` | 三平台 Sched/IO/timeout focused tests 各3/3；Mac 在 test-only 去重链接后重链 2/2，duplicate archive warning 消失 |
+| P1 engineering performance | `PASS` | host `time-host-consumer-v1` 在4/4 strata 为 `PARITY` 且 5% NI 全通过；deep verifier `QUALIFIED/EXACT/CURRENT` |
+| C ABI / stale surface | `PASS / N/A` | source/header/sample/CMake 对 `extern "C"`/Native FFI/`sleep_for_us/ms` 负向扫描为空；Windows DLL 12 个 export 全为 C++ decorated name |
+| usability/docs | `PASS` | architecture 划分 host/timer factor，guide 提供选择表、system/manual/ref 旅程和 lifetime/atomic/waiter/sleep 陷阱；性能页已删除 v1 过时证书 |
+
+P1 retained bundle 位于
+`C:\hyle-scratch\time-v3-host-perf-evidence\manifest.json`；contract/manifest/summary SHA-256 分别是
+`707029c26eb677dcecfc1478cca207d6a2a5d64b305eb04c43391f14d0cb158e`、
+`F5A13CC5706F1E61FCC4E9B515416016FA34E0CAB7D368A1A1908E7F9209E65B`、
+`A40742ED8829F988993A2552F15631A5534DB2B5F3BB000BE9E7077E8CE13745`。四个 strata 的 median
+advantage ratio 为 0.9778--0.9799，99.26% CI lower 最低 0.9575，高于 5%
+non-inferiority limit 0.95238；因此准确声明是同合同 `PARITY`，不是全面胜出。
+
+## Independent red team
+
+2026-09-02 在 candidate 和 qualification 后只攻击冻结 scope，不新增 API 或 benchmark 姿势。
+
+| Finding | Disposition |
+|---|---|
+| closure card 曾把 ManualClock write 写成至多一次 atomic | 修正为一个 lock-free state；read 一次 load，write 无竞争 O(1)、竞争 CAS retry 不承诺有界；实现不变 |
+| runtime ref 可能隐藏 owner/allocation/default dispatch | 反证：两 pointer word、temporary 编译期禁止、零 heap/registry；无参默认 API 不经 ref |
+| ManualClock 可能被误当 user-data fence 或 waiter service | 代码注释、architecture/guide/sample 全部明示 relaxed-value-only 和 owner-polls-after-advance |
+| 共享 `include/hyle/time` 让默认 LOC 边界把 timer 归入 host | 使用 `loc-report.py --module-path` 冻结 owned-header 清单；Time 1,192 + timer_queue 438 = 聚合 1,630，不修改公共工具 |
+| Mac 直接消费测试重复显式链接 Time archive | test-only `109cdfc4c` 删除出产品 target 已传递的冗余 DEPS，重链无 warning、测试 2/2 |
+| host 点值稳定约低 2% | 冻结 5% 正常 aggregate 的4/4 strata 均 `PARITY/PASS`，无机制级多读钟/间接调用；不用此差距扭曲 API/layout |
+
+红队未发现未处置 `MUST`、correctness/security/lifetime/delivery 缺陷或越过冻结 5%
+margin 的正常 consumer 回退。

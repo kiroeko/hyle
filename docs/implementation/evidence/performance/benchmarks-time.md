@@ -1,148 +1,107 @@
-# time 工程性能证据
+# Time / timer_queue 工程性能证据
 
-<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+> **time-v3 / timer-queue-v1：`QUALIFIED / PASS`。** 当前 product candidate
+> `381eb4b195973ed35ed23ca63c05f9605a132f9b` / tree
+> `a5d48a259161c1a60e19450e42b4a6eac9a1a712` 在 W1-WIN 上通过两个独立 P1
+> consumer 合同：host phase/deadline 路线与等价 `std::chrono::steady_clock`
+> 路线为 `PARITY`；scheduler timer lifecycle 对当前 Seastar peer 为 `WIN`。
 
-> **time-v1：`QUALIFIED / PASS`。** 当前 exact product candidate 在 W1-WIN 的真实 scheduler timer
-> 生命周期合同上，对 faithful Seastar peer 的 8 个 required strata 全部取得 `PARITY` 和 5%
-> non-inferiority `PASS`。这是具名消费者的 P1 engineering 结论，不是跨平台 Formal 证书，也不
-> 宣称每一种 clock、sleep、timer cardinality 或未消费能力都普遍更快。
+这是冻结 consumer、一台工程裁决机和 5% 非劣边界下的可复验结论，不是跨机器
+Formal 证书，也不外推为所有 clock、sleep、timer cardinality 或未消费能力全面 SOTA。
+设计、用户选型和施工事实分别见 [Time architecture](../../../architecture/time-design.md)、
+[Time guide](../../../user/time.md)、[time task](../../tasks/time/time-v3-host-clock-factor.md)
+和 [timer_queue task](../../tasks/timer_queue/timer-queue-v1-factor.md)。
 
-稳定设计、用户选型和施工事实分别见 [time architecture](../../../architecture/time-design.md)、
-[time guide](../../../user/time.md) 和 [time-v1 closure](../../tasks/time/time-v1-closure.md)。本页只保存
-当前可复验性能命题；旧 C ABI、旧 candidate、microbenchmark N sweep 和易腐点值可从历史 task/git
-追溯，不再冒充当前证书。
+## 两个不可混合的性能合同
 
-## 可证明命题
+| Factor | 冻结正常形状 | peer | 本轮结论 |
+|---|---|---|---|
+| `time` | 64 个 runtime phase；每个两次 precise monotonic read，再做 elapsed、饱和 deadline 和 remaining | Seastar precise route 实际采用的同 TU `std::chrono::steady_clock` 等价路线 | 4/4 order/placement strata `PARITY`，5% NI 4/4 `PASS` |
+| `timer_queue` | Scheduler N=64 完整 lifecycle：64 arm、45 cancel、64 advance tick、19 delivery/callback-state observation | Seastar `timer_set` faithful local port | 8/8 order/placement/allocation strata `WIN`，5% NI 8/8 `PASS` |
 
-`TimerQueue` 使用 65-bucket radix：
+host 合同不拿 HYLE 的包装形状对比一个减少读钟次数的假 peer；timer 合同也不拿完整
+owner/cancel/drain 语义对比轻量单操作。两者的 input construction 和分配在 epoch 外，但所有
+消费者必需的状态变换和 checksum sink 都计费。
 
-- arm/cancel/next 为 O(1)，正常路径零分配；
-- advance 为 O(触碰桶 + fired/rebucketed 节点)；
-- caller-owned stable node、single-owner thread、detached ready list；
-- callback/data/owner metadata 和完整 arm/cancel/advance/drain 生命周期都进入工作量。
+## Host Time：`PARITY`
 
-强 peer 固定为 Seastar commit `fd71a5b4c71b91abd4e93c9d20f88e1fd7465976`、tree
-`98e2e8095e099f52dea9bd70dc30b1e778679618` 的 `timer_set` 算法形状。benchmark 是对该成熟实现
-的 faithful local port，使双方具有相同 node ownership、deadline/cancel 序列、callback/data/owner
-状态和 ready-list drain；不是线性扫描、heap 或被削弱的假对手。
+- contract：`bench/contracts/time-host-consumer-v1.json`；SHA-256
+  `707029c26eb677dcecfc1478cca207d6a2a5d64b305eb04c43391f14d0cb158e`；
+- peer：Seastar `991cf9a908482a3f11ca2fc34a1b3970a06d8622`，其 precise timer clock 是
+  `std::chrono::steady_clock`；
+- W1-WIN，MSVC `19.50.35728.0`，x64 Release/static、portable ISA、LTO off、fresh build；
+- n=15 独立进程 paired samples 已能裁决，未升级到 n=31；advantage ratio > 1 有利于 HYLE。
 
-因此当前能成立的结论是：HYLE 已达到成熟 radix timer 的同一复杂度等级，并在下述真实消费者合同
-上通过冻结的 5% 非劣门。不能从该结论外推“所有 time API 都比所有库快”。
+| Stratum | HYLE op/s | peer op/s | median ratio | 99.26% CI | exact / 5% NI |
+|---|---:|---:|---:|---:|---|
+| primary / candidate-first | 35.665 M | 36.397 M | 0.9798 | [0.9707, 0.9879] | PARITY / PASS |
+| primary / peer-first | 35.477 M | 36.257 M | 0.9778 | [0.9575, 0.9895] | PARITY / PASS |
+| placement / candidate-first | 35.686 M | 36.495 M | 0.9795 | [0.9582, 1.0059] | PARITY / PASS |
+| placement / peer-first | 35.643 M | 36.270 M | 0.9799 | [0.9731, 1.0045] | PARITY / PASS |
 
-## 冻结消费者 workload
+HYLE 中位点约低 2.0%--2.2%，但四个独立 strata 的 CI lower 都高于 5% 非劣限制
+`1/1.05 = 0.95238`，而且区间在冻结等价带内，因此科学结论是 `PARITY`，不把这约
+0.55 ns/单 phase 的总体差距追成新 API 或 metadata。默认/templated system route 仍是直接
+inline 读取底层钟，无 allocation、lock、registry 或间接 dispatch。
 
-`scheduler-timer-lifecycle-64` 从当前 `src/sched/scheduler.cc` 的实际使用反向构造：
+## Timer queue：`WIN`
 
-1. 64 个独立分配、地址稳定且散布的 timer owner/node；
-2. 固定分布的 absolute deadline 和约 70% cancel；
-3. 每个 event-loop tick 逐步 advance，而不是一次把所有节点冲掉；
-4. 最终 drain ready list，观察 callback/data/owner 和 checksum；
-5. allocation/input construction 在 epoch 外，计费包含完整 queue 生命周期操作。
+- contract：`bench/contracts/timer-queue-consumer-v1.json`；SHA-256
+  `48e636cb9e59d578b1148ef0af091cb04b6daeb38097581b6e315b9f1eb760fe`；
+- peer：Seastar `991cf9a908482a3f11ca2fc34a1b3970a06d8622` 的 `timer_set`；
+- 同一 W1-WIN/toolchain/build 合同，n=15 已裁决；advantage ratio > 1 有利于 HYLE。
 
-这是一段 deterministic source-consumer replay，不冒充生产 trace。修改 replay、计费边界、consumer
-provenance、ownership topology 或首席 scheduler 使用形状，都必须使用新 contract ID 重签。
+| Placement / execution / allocation order | HYLE op/s | peer op/s | median ratio | 99.26% CI |
+|---|---:|---:|---:|---:|
+| primary / candidate-first / candidate-first | 62.797 M | 53.422 M | 1.1815 | [1.1308, 1.2328] |
+| primary / candidate-first / peer-first | 63.079 M | 55.924 M | 1.1293 | [1.0911, 1.1664] |
+| primary / peer-first / candidate-first | 63.099 M | 55.923 M | 1.1338 | [1.1045, 1.1597] |
+| primary / peer-first / peer-first | 63.594 M | 55.091 M | 1.1678 | [1.1305, 1.1878] |
+| placement / candidate-first / candidate-first | 64.625 M | 54.387 M | 1.1754 | [1.1310, 1.2195] |
+| placement / candidate-first / peer-first | 63.659 M | 54.389 M | 1.1898 | [1.1534, 1.2167] |
+| placement / peer-first / candidate-first | 63.167 M | 53.537 M | 1.1758 | [1.1478, 1.2163] |
+| placement / peer-first / peer-first | 63.746 M | 55.028 M | 1.1740 | [1.1353, 1.2026] |
 
-## time-v1 W1-WIN 结果
+八个 strata 全部在 5% margin 外胜出，中位优势约 12.9%--19.0%，最低 CI lower 仍为
+1.0911。结论只签当前 scheduler lifecycle：65-bucket radix queue 的 arm/cancel/next O(1)，
+advance 按 touched buckets + delivered/rebucketed nodes 计费，caller-owned node 且零分配/lock/atomic/syscall。
 
-- candidate commit `0ef2544ceece030bb522857854285d280e368d36`，tree
-  `104a4b6dc904e5b261010ace820ec2c474374c31`，clean；
-- contract `bench/contracts/time-source-consumer-v1.json`，semantic SHA-256
-  `ab4223b7066e8540f15bbc6ad586ef7e37cf678feb877f408162e7d08bec2356`；
-- benchmark source SHA-256
-  `9d345e9d3bd046cdaf79ef73b3c1c6e78902767e0685efd70cdea2d430783b90`；
-- W1-WIN，MSVC `19.50.35728.0`，Windows SDK `10.0.26100.0`，x64 Release/static、portable
-  ISA、LTO off，fresh build；
-- `closure-perf-v1`，5% equivalence/non-inferiority margin；primary/placement × candidate/peer
-  execution order × candidate/peer allocation order，共 8 strata；
-- fresh n=15 只因 exact/NI 的置信区间未能裁决而按冻结停止规则升级到一轮独立 n=31；两阶段不
-  合并，最终表只使用 n=31 的 independent-process paired samples。
+## 仪器、身份与可复验证据
 
-`advantage ratio > 1` 有利于 HYLE。每行的 98.93% distribution-free median CI 都落在冻结的
-equivalence band `[0.95238, 1.05]` 内，并且 CI lower 高于 5% non-inferiority limit。
+两份 bundle 的 A/A、预埋 5%/10% known delta、batch-matched timer floor、primary/placement、
+artifact identity、build contract、consumer provenance 和 semantic/resource validator 全部 `PASS`。
+deep verifier 均返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、
+`environment=CURRENT` 和 `current_certification_policy_eligible=true`。
 
-| Layout / execution / allocation order | Median advantage ratio | 98.93% CI | Exact | 5% NI |
-|---|---:|---:|---|---|
-| primary / candidate-first / candidate-allocation-first | 0.9784 | [0.9722, 0.9933] | PARITY | PASS |
-| primary / candidate-first / peer-allocation-first | 0.9761 | [0.9597, 0.9828] | PARITY | PASS |
-| primary / peer-first / candidate-allocation-first | 0.9798 | [0.9657, 1.0081] | PARITY | PASS |
-| primary / peer-first / peer-allocation-first | 0.9674 | [0.9572, 0.9765] | PARITY | PASS |
-| placement / candidate-first / candidate-allocation-first | 1.0119 | [0.9974, 1.0283] | PARITY | PASS |
-| placement / candidate-first / peer-allocation-first | 1.0070 | [0.9899, 1.0255] | PARITY | PASS |
-| placement / peer-first / candidate-allocation-first | 1.0116 | [1.0016, 1.0301] | PARITY | PASS |
-| placement / peer-first / peer-allocation-first | 1.0000 | [0.9888, 1.0129] | PARITY | PASS |
-
-主布局四种姿势的中位数约低 2.0%–3.3%，placement 从持平到约高 1.2%；因此“只跑一个地址姿势”
-会给出相反叙事。冻结判定没有把这种布局效应解释成产品缺陷，也没有用平均值掩盖某个姿势：8/8
-分别通过同一个门，combined exact 才是 `PARITY`。
-
-## 仪器资格控制
-
-| Control | 结果 | 关键观察 |
+| Bundle | retained manifest | manifest / summary / controls / observations SHA-256 |
 |---|---|---|
-| A/A，candidate-first | PASS / PARITY | ratio 0.9994，CI [0.9959, 1.0018] |
-| A/A，peer-first | PASS / PARITY | ratio 0.9992，CI [0.9960, 1.0019] |
-| known delta 5% | PASS | 两顺序 ratio 1.0489 / 1.0495，CI 正确包围预埋差异 |
-| known delta 10% | PASS | 两顺序 ratio 1.1003 / 1.0993，且与 5% 单调 |
-| batch-matched timer floor | PASS | workload 约为保守空白 floor 的 4,881x |
-| primary + placement | PASS | 两种 code/data placement 都实际执行 |
-| artifact/build/source identity | PASS | fresh build、candidate/peer/工具链/产物 hash 均锁定 |
-
-这些控制说明仪器既能把 A/A 判成平，也能识别 5%/10% 的已知差异；当前 PARITY 不是计时器分辨率
-不足。独立进程与双顺序的代价较高，但避免把地址布局、注册顺序和进程历史伪装成亚纳秒产品差异。
-n=31 是合同允许的唯一功效升级；完成后无论 PASS/FAIL/UNRESOLVED 都停止。
-
-## 可复验证据
-
-本机 retained engineering bundle：
-
-```text
-C:\hyle-scratch\time-v1-qualified-evidence\manifest.json
-```
-
-- manifest SHA-256:
-  `95621addc344f917e8d4b89a356cb89276b24897f380636bb9e6d1e8a755d2d6`
-- summary SHA-256:
-  `8ca6ee341b5490f85048c8fb0916f14dd795ce4aa0c3071775653a336cd724a8`
-- observations SHA-256:
-  `9c9a59a8a14224b9489d679dadc719106060b9960802412a282fc4d2ad5ac0bf`
+| host | `C:\hyle-scratch\time-v3-host-perf-evidence\manifest.json` | `F5A13CC5706F1E61FCC4E9B515416016FA34E0CAB7D368A1A1908E7F9209E65B` / `A40742ED8829F988993A2552F15631A5534DB2B5F3BB000BE9E7077E8CE13745` / `9D9A7CF4EC431536A8F4BEE60B94BFFFFF4B81325E6756B2AFEE013521BEAF45` / `C378A8D13AFB8D407BDC8C873BA2A130BC57B5148A9667AC89614CD106DE6E43` |
+| timer | `C:\hyle-scratch\time-v3-timer-perf-evidence\manifest.json` | `B7D23B40DB8EE3D5B77CB0CD6EC7B6F5F5810F4BBA609A1B92BF605FBCE0FB90` / `2C2D986359FCB43725850EEBCF9F352D11465D7B4D9CDE3ADD1D22EDC33AF124` / `9BA1CF2D4DC6EADB478A5943A2DCE27079E1995F4484D34098BA887B78DCD2D5` / `5F36C2DBC4346F0765B2A9373313EA70F853E5ED773FEAF4C10BE8A445D2A52C` |
 
 ```powershell
 python scripts/hyle-perf.py verify `
-  --contract bench/contracts/time-source-consumer-v1.json `
-  --manifest C:\hyle-scratch\time-v1-qualified-evidence\manifest.json
+  --contract bench/contracts/time-host-consumer-v1.json `
+  --manifest C:\hyle-scratch\time-v3-host-perf-evidence\manifest.json
+
+python scripts/hyle-perf.py verify `
+  --contract bench/contracts/timer-queue-consumer-v1.json `
+  --manifest C:\hyle-scratch\time-v3-timer-perf-evidence\manifest.json
 ```
 
-资格轮当时的 verifier 返回 `qualification=QUALIFIED`、`paths_verified=true`、
-`current_certification_policy_eligible=true`、`product_gate_policy=consumer-evidence-v1`。这是绑定
-当时 candidate 与 scheduler provenance 的本机工程证据，不是发布 artifact 或 Formal certificate。
+bundle 是本地可深重放工程证据，不是发布 artifact 或 Formal certificate。candidate、peer、consumer
+hash、workload/计费、toolchain、machine profile 或 instrument policy 变化而仍要续签声明时，必须新建
+合同或重新 qualification，不得抄旧点值。
 
-> **2026-08-29 freshness：**manifest 锁定的 `src/sched/scheduler.cc` SHA-256 为
-> `f3db97bd536954082200cde1e86966083c3542daba832d72e629877213170934`，当前文件为
-> `d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2`。逐项 diff 证明只有两处 Parker
-> API 注释改名和一处 `park_timeout(ns)`→`park_for(Duration)` 调用；它不在 replay/charged phases，
-> TimerQueue ownership、arm/cancel/advance/drain、metadata 与 contribution 均未变。独立
-> [provenance review](provenance-reviews/time-scheduler-timer-lifecycle-f3db-to-d7ff.md) 因而登记精确
-> `NON_MATERIAL / ENGINEERING_REPLAY_ONLY` 迁移。当前 CLI 报告
-> `provenance_compatibility=REVIEWED_NON_MATERIAL`、
-> `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、`paths_verified=true`、
-> `qualification=QUALIFIED`；旧 manifest 与 hash 均未修改。该 renewal 不处理 Time candidate 后另有的
-> 公开头产品身份变化，也不产生 Formal 资格。
+## 不使用 P1 排名的能力
 
-live bundle 丢失、consumer 语义/计费/贡献发生 material 变化，或需要 Formal/新声明时，必须冻结新的
-consumer identity 并重新 qualification，不能只从本页点值或 renewal 恢复证书。
-
-## 未进入产品聚合的能力
-
-| 能力 | 当前裁决边界 |
+| 能力 | 当前性能边界 |
 |---|---|
-| precise clock | header-inline 到对应 `std::chrono` primitive；以 code/semantic/correctness 门保证不多一层动态调用 |
-| coarse clock | native availability 与 fallback 语义已验证；没有具名产品 workload，不用旧点值签胜负 |
-| profiling clock | raw/ordered 是不同合同；只作 mechanism diagnostic，不与 std 双读混判 |
-| CPU accounting | 一次 native read、O(1)、零分配；busy-vs-sleep 和单调性属于正确性门 |
-| CommonTimeoutQueue | O(1) arm/cancel/next、O(fired) advance；尚无产品 consumer，不冒充 scheduler 收益 |
-| blocking sleep | 证明不早醒和 OS 路由；wake latency 受 OS/QoS 影响，不进入 timer 容器聚合 |
-| Unix/FILETIME conversion | O(1)、零分配、checked boundary；属于结构/正确性，不靠纳秒表证明 |
+| `ManualClock` | 一个 always-lock-free 64-bit atomic state；`now()` 一次 load，write 在无竞争时 O(1)，竞争时 CAS retry 次数随竞争而变；零 waiter/分配/系统调用 |
+| `MonotonicClockRef` | 两字借用引用、一次显式间接 `now()`、零分配；只在用户选择 runtime type erasure 时付费 |
+| coarse/profiling/CPU clock | 一次 native mechanism、O(1)、零分配；由 availability/monotonic/domain correctness 裁决，无具名正常 consumer 时不伪造排名 |
+| blocking sleep | 一次 native wait 并处理 interrupt；只签不早醒与路由，wake latency 受 OS/QoS 支配 |
+| Unix/FILETIME conversion | constexpr/O(1)、零分配、checked boundary；属正确性/结构门 |
+| `CommonTimeoutQueue` | arm/cancel/next O(1)、advance O(delivered)；目前无 HYLE 产品 consumer，只签 correctness/complexity，不冒充 scheduler 性能收益 |
 
-旧证书曾混入 C ABI 成本、不同 cardinality、clock/sleep 和不同语义 peer。它们对机制调查曾有价值，
-但不再是当前产品结论。任何新消费者、算法/API/layout、编译器、交付形状或直接依赖变化都重开；
+任何新 consumer、算法/API/layout、直接依赖或三种交付形状的 material 变化都是重开信号；
 单次点值、亚纳秒摆动或某一 placement/order 翻转不能单独驱动产品修改。
