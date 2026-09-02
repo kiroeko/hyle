@@ -1,6 +1,7 @@
 # Time v4：MSVC `Instant::now()` 代码形状修复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮不是重跑 benchmark 后追逐约 0.5 ns 的点值。Time v3 关闭后，对其冻结的普通 host-phase
 > consumer 做最终对象检查，发现支持的 MSVC Release 工具链违反了“默认路线不增加调用壳”的既有
@@ -189,3 +190,34 @@ summary、controls、observations SHA-256 分别为
 `CANDIDATE -> VERIFIED` 的前态 registry 快照位于
 `C:\hyle-scratch\time-v4-msvc-instant-codegen\module-status-before-verified.json`，SHA-256
 `DBCFBE7EBC3E28C65F6BB2FE659195FADF8B0BA796C2BCD0703AF8976FFD0652`。
+
+## Closure decision
+
+本轮 `CLOSED`。功能/API 边界未变；局部实现恢复了冻结普通 consumer 的无额外调用壳合同，
+19.44/19.50 结构 gate、三平台正确性、Windows source/static/shared、文档/红队和 W1-WIN 5%
+P1 non-inferiority 全部 `PASS`。exact 微观排名仍是 3 `PARITY` + 1 `INCONCLUSIVE`，因此关闭依据
+是“机制缺陷已消除且正常 consumer 非劣”，不是宣称固定纳秒胜出。Formal 继续独立 `PENDING`。
+
+终态 end/registry anchor 是 VERIFIED commit
+`77d40c89a6e187fded70408168caa2fee6dcde89`；product candidate 仍是
+`a9b9ff3117ab647581a6b846318a8254a6cd148f` / tree
+`6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301`。`VERIFIED -> CLOSED` 的前态 registry 快照是
+`C:\hyle-scratch\time-v4-msvc-instant-codegen\module-status-before-closed.json`，SHA-256
+`A76A7F2F23219CA48F8F46EA1DE19C98B03DA2889FE7CCC50D1A9C2A230525B9`。
+
+四项 LOC 从 immutable candidate 执行：
+
+```powershell
+python scripts/loc-report.py --module time `
+  --module-path include/hyle/time/clock.h `
+  --module-path include/hyle/time/unix_timestamp.h `
+  --module-path src/time `
+  --commit a9b9ff3117ab647581a6b846318a8254a6cd148f --self-check --json
+```
+
+`self_check=pass`：
+
+1. 全库代码：420,959；
+2. 自实现包含测试：101,976；
+3. 自实现不包含测试：63,439；
+4. Time host 实现：1,201。

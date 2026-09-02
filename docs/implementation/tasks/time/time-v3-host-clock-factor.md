@@ -1,6 +1,7 @@
 # Time v3：host-clock 质因数与可注入时间
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Reopen evidence（`REOPENED`）
 

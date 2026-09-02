@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "TIME-MSVC-INSTANT-CODEGEN-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
       "round_id": "time-v4-msvc-instant-codegen",
@@ -394,6 +394,8 @@
       "baseline_commit": "03a14a91744697ce6b5c8803b651886afa82cef3",
       "candidate_commit": "a9b9ff3117ab647581a6b846318a8254a6cd148f",
       "candidate_tree": "6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301",
+      "end_commit": "77d40c89a6e187fded70408168caa2fee6dcde89",
+      "registry_anchor_commit": "77d40c89a6e187fded70408168caa2fee6dcde89",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -421,7 +423,31 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "time-v4 VERIFIED：局部 MSVC fix 已在 19.44/19.50 恢复 Instant/direct codegen 同形；三平台正确性、Windows 三交付、文档/红队和 W1-WIN 5% P1 非劣门全部通过，待终态登记。"
+      "closure_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
+      "loc": {
+        "snapshot_commit": "a9b9ff3117ab647581a6b846318a8254a6cd148f",
+        "repository_code": 420959,
+        "self_with_tests": 101976,
+        "self_without_tests": 63439,
+        "module_implementation": 1201
+      },
+      "known_limitations": [
+        "The Time v4 P1 PASS covers only W1-WIN and the frozen 64-phase host clock/deadline aggregate at a 5% non-inferiority margin; exact ranking is three PARITY strata plus one INCONCLUSIVE stratum, and cross-platform fixed nanoseconds, every Time operation, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
+        "The local msvc::flatten mechanism is structurally verified on supported MSVC 19.44 and 19.50 Release builds; other compilers preserve the original source path, and future compiler or standard-library code-shape drift requires diagnosis rather than automatic product tuning.",
+        "ManualClock owns only a relaxed lock-free time value: it is not a user-data publication fence, waiter service or scheduler, and write-side CAS retry is contention-dependent.",
+        "MonotonicClockRef is a two-word borrowed runtime-selection seam with one indirect now() call; the source must outlive it, while default and typed system routes do not pay that dispatch.",
+        "Timezone/calendar/protocol text, device clocks and timer execution, periodic, cancellation and cross-thread wake policy remain owned by standard/protocol, Compute or Sched/IO layers.",
+        "HYLE promises neither a Native FFI/C API nor stable C++ ABI for Time; matched C++23 headers, binaries and toolchains are required, and retained engineering bundles are local replayable evidence rather than Formal artifacts."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, clock-domain, conversion, lifetime, concurrency, API-usability, delivery or missing-capability defect within the host Time boundary.",
+        "The public API or layout, default/native clock mechanism, ManualClock atomic contract, direct dependency, factor graph or source/static/shared delivery shape changes materially.",
+        "A supported compiler, standard library or OS invalidates the frozen Instant/default-clock code-shape, clock, sleep, atomic lock-free or timestamp-conversion contract.",
+        "The Time codegen probe fails on a newly supported toolchain after mechanism review, or a normal consumer reproduces an extra wrapper, clock read, allocation, dispatch or material regression.",
+        "Renewing the engineering claim encounters a material change in candidate, peer, consumer provenance or ownership, workload/accounting, machine, instrument, compiler or retained evidence identity.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer/profile proves a reproducible regression beyond the frozen 5% margin."
+      ],
+      "summary": "time-v4 CLOSED：MSVC 19.44/19.50 的 Instant 普通 phase 已恢复与 direct chrono 完全同形；API 不变，三平台正确性、Windows 三交付、文档/红队及 W1-WIN 5% P1 非劣门全部通过。"
     },
     {
       "module": "timer_queue",
