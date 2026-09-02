@@ -333,10 +333,15 @@ Terminal receipt：
 - candidate LOC：424,240 / 103,871 / 64,671 / 1,420，snapshot 为完整 product candidate；
 - end receipt commit：`ea2d38ce287df0689e6e5be1d2d25f420b67a8f4`，这是首次保存本完整 terminal
   decision 的提交；
-- registry anchor：本次状态迁移先以 end receipt 占位以满足非自引用记录；紧随其后的 evidence-only
-  提交会把它校准到首个实际保存本 `CLOSED` state/candidate 的 registry commit，产品与 verdict 不变；
+- registry anchor commit：`99bab28b5f4a9bb538841f9259714a5853727a01`，这是首个实际保存本
+  `CLOSED` state/candidate、terminal 字段与人读状态投影的中央 registry 快照；本次紧随的 evidence-only
+  提交只校准该非自引用 identity，产品、状态和 verdict 均未变化；
 - 后续只按本节 reopen triggers 重开；Time v1-v4 与本轮候选前记录只作历史证据，不再授权施工。
 
 `VERIFIED -> CLOSED` 前态 registry snapshot 位于
 `C:\public\project-hyle\_validation\time-v5-state\module-status-verified.json`，SHA-256
 `3D76F9235657C03B1FFE58934BE37F73B7645E7CFFEBD035545CFADD7C64EDAB`。
+
+Anchor 校准前态 snapshot 位于
+`C:\public\project-hyle\_validation\time-v5-state\module-status-before-anchor.json`，SHA-256
+`A1F2465DABD9B21BF860BF0E6DA75174D68C642A206DBF4C08B19173B2709888`。

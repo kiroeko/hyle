@@ -401,7 +401,7 @@
       "candidate_commit": "680c9941d7af787067afae904a8ba886c14ba851",
       "candidate_tree": "b09b704304d943adb8d6442c3790fbe02a3048de",
       "end_commit": "ea2d38ce287df0689e6e5be1d2d25f420b67a8f4",
-      "registry_anchor_commit": "ea2d38ce287df0689e6e5be1d2d25f420b67a8f4",
+      "registry_anchor_commit": "99bab28b5f4a9bb538841f9259714a5853727a01",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
