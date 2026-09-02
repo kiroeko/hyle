@@ -204,6 +204,9 @@ delivery、usability/docs 和 P1 engineering 为 `INCONCLUSIVE`。这不是产�
 `MR-P1-PEER-CONSUMER-01`——冻结的 P1 合同既没有可构建的 Folly same-contract peer，也没有经 owner
 授权的真实产品 consumer；因此不能签 non-inferiority，也不能把开发 factor 偷渡进 Mem façade。
 
+terminal receipt commit：`4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd`；首个保存 `BLOCKED` 状态与
+candidate identity 的 registry anchor：`60c68122cc3fe5c2ef0fc3e1ed65402febfcc396`。
+
 - blocker owner：Mem/Container capability owner 与 performance evidence owner；
 - resume condition：另建 `RESUME` round 从 `SCOPED` 开始，同时具备（1）可在锁定环境中按官方合同
   构建的 Folly RCU peer；（2）Container 的独立 reopen card 或另一个已准入真实 consumer，允许冻结
