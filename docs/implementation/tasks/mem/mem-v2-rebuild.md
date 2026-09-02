@@ -270,6 +270,13 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   `ConstBufferView` journey；SharedMapping 的 create/open/unlink、共享可见性和 flush 在 Windows/Linux
   通过。旧 `io::SharedMemory` owner 已删除，IO 指南/样例/CI 改走 Mem。该票仍需 macOS、完整
   Platform 文档迁移、sparse/residency edge 与最终 package journey 后才能完成。
+- `MEM2-06` 的通用 transient pool 已落地：一字 move-only `BufferPool`、RAII `BufferLease`、显式
+  take/reset、retention/slack/growth/bounded-scan options，以及 live/cached/peak/allocation/reuse/OOM-retry
+  stats。实现使用 64 个 size buckets、每桶有界 best-fit，常见复用为一次 mutex + O(1) bucket/有限
+  inspection；首次 allocation 才创建一块 Entry metadata，复用不再分配 wrapper/provider。provider OOM
+  只做一次释放 cache 后重试；pool 不包含 Event/Stream，completion 前归还是 caller contract。
+  Windows MSVC shared/static、WSL GCC 14 shared 与 WSL GCC 14 ASan correctness/并发 accounting
+  已通过；仍需 macOS、固定接口 P1 normal transient replay 和 Compute provider journey 后才能完成该票。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

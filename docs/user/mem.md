@@ -17,6 +17,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
+| 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
 | 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
 | 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
 | 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
@@ -80,6 +81,26 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 `system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。
+
+短寿命 buffer 反复创建/销毁时再加 `BufferPool`，不要让每个算子自己保留一组匿名缓存：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(
+    auto pool,
+    hyle::mem::BufferPool::create(device_resource, {
+        .max_cached_bytes = 512u << 20,
+        .max_cached_buffers = 128,
+    }));
+HYLE_ASSIGN_OR_RETURN(auto scratch, pool.acquire(bytes, alignment));
+submit_kernel(scratch.view());
+wait_for_completion();  // completion 之前绝不能 reset/析构 lease
+scratch.reset();
+```
+
+默认策略按 size bucket 做有界 best-fit，并给新分配保留 5% headroom；它是 inference backend
+已有实践的通用形状，不是 benchmark 档位。`stats()` 区分 live/cached bytes、provider allocation、reuse
+和 OOM trim retry；`trim()` 只释放 cached buffer，不等待或取消 in-flight operation。需要把 allocation
+永久带走时用 `lease.take()`。
 
 ## Mapping：模型加载、稀疏提交和跨进程共享
 
