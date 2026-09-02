@@ -49,3 +49,82 @@
 
 `SCOPED` 只冻结任务合同；在 capability/public-surface 反向追踪和有限 `FIX` 集完成前，
 不授权产品修改。
+
+## Capability-family coverage map（`AUDITED`）
+
+| Family | journeys / evidence | required variants / lifecycle | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| caller-owned node/list | Sched sleep、IO timed slot、event loop | stable address、exact owner、payload/callback hand-off、delivery list、entry/queue-first teardown | `TimerEntry/TimerList` | `COMPLETE` | callback 只是借用的 consumer dispatch metadata，queue 不执行 |
+| mixed arbitrary deadline | per-worker timer service，Seastar timer-set | arm/reschedule/cancel/advance/next/cancel-all，past/full-range、high cancel | radix `TimerQueue` | `COMPLETE` | cross-bucket total order 不承诺；需要时组合 sort/heap |
+| one-duration timeout | server idle timeout，libevent common timeout | fixed duration、nondecreasing arm、transactional reject、FIFO、cancel/drain/teardown | `CommonTimeoutQueue` | `COMPLETE` | duration router 由 IO/server 拥有 |
+| clock composition | deterministic timer tests/runtime | system/manual/ref 采样，批次只读一次 now | 只接受 explicit raw/typed now，convenience 固定 system | `PARTIAL` | 缺已冻结 `MonotonicClockSource` overload |
+| execution/wait/cancel policy | Sched/IO runtime | callback thread、wake exactly once、cross-thread command、periodic/budget propagation | Sched/IO | `ROUTED` | 不给 node/queue 增 lock、waiter 或 owning callable |
+| factor/delivery | host-only、timer-only、Time product users | independent header owner/test/bench，source/static/shared product closure | 当前混在 compiled `time` | `MISSING` | 缺 target/header/test/bench/direct-edge/facade 拆分 |
+
+### Capability / gap ledger
+
+| ID | class / source | normal shape / owner | ownership/failure/concurrency | complexity/resource | coverage | action / severity | verification / negative space |
+|---|---|---|---|---|---|---|---|
+| `TQ1-NODE-01` | MUST / Sched+IO | stable `TimerEntry` + detached `TimerList` / timer_queue | caller owns; one source; wrong owner/lifetime fail-fast; callback borrowed, never invoked here | fixed per-node metadata; zero allocation/atomic/lock | `COMPLETE` | `KEEP` | lifecycle/death/consumer tests; callback execution excluded |
+| `TQ1-RADIX-01` | MUST / Sched+Seastar | exact 65-bucket queue / timer_queue | single owner; reschedule/cancel idempotence; monotonic advance | O(1) arm/cancel/next; output-sensitive advance | `COMPLETE` | `KEEP` | million oracle + boundary suite + P1 replay |
+| `TQ1-COMMON-01` | GENERAL / libevent+serving | one-duration ordered intrusive queue / timer_queue | single owner; rejected reschedule preserves arm | O(1) arm/cancel/next; O(fired) advance | `COMPLETE` | `KEEP` | million oracle/order/lifetime; no production-speed claim |
+| `TQ1-CLOCK-01` | MUST / Time injection | provider overloads for construct/schedule/advance / timer_queue | provider borrowed for one call; same monotonic domain | template inline; no object/layout cost | `PARTIAL` | `FIX` / blocker | manual/system/ref compile+runtime tests |
+| `TQ1-FACTOR-01` | MUST / accepted graph | header-only `hyle_timer_queue`; `hyle::time` facade aggregates / build | public core/time/intrusive; actual Sched/IO edges | no binary; host-only closure drops intrusive | `MISSING` | `FIX` / blocker | selected factor/product, header ownership, direct-edge contract |
+| `TQ1-PERF-01` | MUST / current Scheduler | N=64 scheduler lifecycle vs Seastar / timer_queue | identical stable nodes/events/drain/accounting | 5% W1-WIN P1 | `PARTIAL` | `FIX` / blocker | renew current scheduler provenance and peer identity; qualified replay |
+| `TQ1-POLICY-01` | GENERAL / runtime | callback/wait/periodic/cross-thread / Sched+IO | owning runtime owns lifetime/race/failure | no policy cost in data factor | `ROUTED` | `DEFER` | negative dependency/API scan |
+
+### Public-surface 反向追踪与有限 `FIX`
+
+- `timer_entry.h`：`TimerEntry::{scheduled,deadline_ns,data,set_data,fire_callback,set_fire_callback}`、
+  `TimerList`；全部有 Sched/IO 的 storage/delivery 用途。callback pointer 不是 executor：只由 Sched drain
+  解释，queue 代码从不 invoke；在 Sched 未拥有自己 node wrapper 前删除它只会增加
+  container-of/side-table 成本，没有语义或复杂度收益；
+- `timer_queue.h`：三种构造、raw/typed schedule/schedule-after/cancel/advance/next/cancel-all/size/now；
+  每个入口映射 arbitrary-deadline lifecycle，没有 benchmark-only API；
+- `common_timeout_queue.h`：duration 构造、schedule/try variants/cancel/advance/next/cancel-all/size；
+  `try_schedule` 是真实 recoverable ordering boundary，不是快慢档；
+- 直接边：`timer_queue -> PUBLIC core,time,container_intrusive`；Sched 实现依赖 queue，
+  IO 公开 header 实体化 entry，故 IO 必须是直接 public edge；`hyle::time` 产品继续聚合 host + queue；
+- 成熟 peer 差异：Seastar `insert()` 返回是否刷新 minimum；HYLE 在 same-owner 进入 park 前统一
+  读 `next_deadline()`，而 cancel 刻意允许 conservative early wake 以保 O(1)。当前没有需要该 bool
+  才能成立的 consumer，不复制 peer 形状；
+- 本轮冻结 `FIX` 只有：
+  1. 新建 header-only target/test/bench owner，修正 target graph、product facade 和 Sched/IO 实际边；
+  2. 为 queue construct/schedule-after/advance 与 common schedule-now 添加已冻结 provider overload；
+  3. 分开 host clock 与 timer correctness/header tests，保持 product package sample 同时覆盖两个 factor；
+  4. 将 timer bench/contract 所有权迁到本 factor，绑定当前 scheduler SHA-256
+     `9fc1b77d51b70b701962418ca5b3003244b9828ac676fd5e9e33a49716842ba3` 与当前
+     Seastar，不改仪器/正常 workload；
+  5. 更新 architecture/user/performance/task，扫描旧 component 名和伪 FFI/binary 表述。
+
+## API / usability freeze
+
+- 状态：`FROZEN`；现有 node/queue/common 公开名、layout 和语义保持，用户仍 include
+  `<hyle/time/...>` 并 link `hyle::time`；只有 developer factor ID 变为 `timer_queue`；
+- provider 新形状：`TimerQueue(source)`、`schedule_after(entry, timeout, source)`、
+  `advance(source, out)`；`CommonTimeoutQueue::schedule(entry, source)` 与
+  `try_schedule_now(entry, source)`。source 必须满足 `MonotonicClockSource`，只在一次调用期间借用；
+- 批次路径仍推荐显式只采一次 `now`；provider convenience 不存入 queue，所以不会为
+  之后的 arm/advance 每次偷付 dispatch，也没有 source lifetime member；
+- wrong owner、linked delivery node、倒退 advance 继续 fail-fast；Common 显式顺序违反继续用
+  transactional `try_schedule=false`；这两种 failure 不合并；
+- 不因 P1 结果加入 fast/light queue、第二套 node metadata 或 peer-only minimum bool；
+- user guide 继续按 mixed/common/total-order/executor 四个任务选型，新增 manual/ref 示例和
+  “queue 不保存 clock”陷阱。
+
+## Owner 六问（`AUDITED` 直答）
+
+1. **第三方：**产品路径无第三方；直接 HYLE 依赖是 Core、Time、Container-intrusive。
+   Seastar/libevent 仅是绑定 peer，本地 faithful port 仅在 benchmark TU，不进入产品。
+2. **推理能力：**llama.cpp/ggml 不自带这一底层 public data structure，但 HYLE Sched/IO 是
+   构建推理 runtime 的真实消费者。arbitrary/common/total-order/execution 四档均为
+   `COMPLETE` 或完整 `ROUTED`；当前未处置 `MUST` 仅 `TQ1-CLOCK/FACTOR/PERF` 冻结 FIX。
+3. **性能：**`P1/PLANNED`；算法复杂度已与 Seastar/libevent 同档，但必须在 current
+   scheduler provenance、当前 candidate、八 strata 与 5% margin 下重签；此前不声称 SOTA。
+4. **C ABI/Native FFI：**`N/A/CLEAN`；全部是 C++ header/type/template，无 C schema/bridge/export/sample/
+   option/package metadata；header-only factor 不制造伪 DLL。
+5. **三交付：**当前 `MISSING`；独立 target 尚未存在。完成后 factor 本身 header-only，
+   而 `hyle::time` product 必须在 source/static/shared 都同时提供 host compiled artifact 和 queue headers。
+6. **C++ API/文档：**现有 mixed/common 选择、ownership、failure、single-owner、teardown 已自然；
+   provider 尚需手写 `.now()` 且构建形状尚错误，所以当前 `FAIL`。按冻结 overload 和
+   factor/user/architecture/performance 文档修复后再裁决。

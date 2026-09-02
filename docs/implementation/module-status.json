@@ -413,7 +413,7 @@
     },
     {
       "module": "timer_queue",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "timer-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
       "scope": "Move caller-owned TimerEntry, TimerQueue and CommonTimeoutQueue ownership into the accepted header-only factor, compose the frozen injectable host-clock API, and revalidate current Sched/IO consumers and the hyle::time product facade.",
@@ -436,7 +436,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "timer_queue v1 closure card 已冻结：迁移现有 caller-owned timer node/data structures 到独立 header-only factor，组合 Time provider，并以当前 Sched/IO 消费和 Seastar/libevent 语义为界。"
+      "summary": "timer_queue v1 已完成 node/radix/common-timeout 能力、全部公开面、Sched/IO 消费与 Seastar/libevent 审计；有限 FIX 是 provider 组合、独立 header-only factor/交付归属和当前 scheduler P1 重签。"
     },
     {
       "module": "platform",
