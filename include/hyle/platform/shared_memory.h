@@ -50,6 +50,7 @@ class SharedMemoryRegion {
   void* mapping_ = nullptr;
   void* data_ = nullptr;
   std::size_t size_ = 0;
+  std::size_t mapping_size_ = 0;
   std::intptr_t handle_ = -1;
 };
 
