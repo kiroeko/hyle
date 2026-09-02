@@ -390,7 +390,7 @@
     },
     {
       "module": "time",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "TIME-INTEROP-COMPLETENESS-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "round_id": "time-v5-interoperability",
@@ -413,7 +413,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v5 REOPENED：owner 与当前成熟库/真实网络 consumer 证明 timeval、relative POSIX conversion、signed Unix units 与 direct FILETIME 适配需要重新裁决；产品实现尚未开始。"
+      "summary": "time-v5 SCOPED：绝对时刻、一般 duration 与 timeout 三种真实互操作 journey、P0 成本、OS 头隔离、三平台/三交付和有限四小时预算已冻结；能力审计中。"
     },
     {
       "module": "timer_queue",
