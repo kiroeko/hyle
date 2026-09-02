@@ -1,6 +1,6 @@
 # Mem reclamation v1：显式 domain 的 reader-safe 回收
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 ## Closure card（CANDIDATE）
 
@@ -155,4 +155,68 @@ domain.drain();           // external quiescence; empties the retire queue
 - `MR-02`/`MR-03` 尚未完成：对 CLOSED Container 的试迁移已撤销，不能把未关闭 factor 偷渡进既有产品；
   Mem façade 也未暴露本 factor；
 - Folly peer 在本机尚不能形成资格化 same-contract 构建；P1、三平台 sanitizer/交付、直接 consumer 和
-  user guide gate 仍未裁决，因此本记录还不是 terminal receipt。
+  user guide gate 当时仍未裁决，因此该 candidate freeze 本身不是 terminal verdict。
+
+## Verification manifest
+
+验证全部绑定 immutable candidate `66671c39197765623f581dd872f4e626958880db` / tree
+`dc17f2b62e30c72b020b868b4ee3961157a1603b`。首个 candidate 只暴露了 GCC WERROR 测试夹具告警；
+`66671c39` 仅把聚合指定初始化改为显式默认构造和字段赋值，产品 header/source 与算法不变。
+
+| risk / journey | verdict | evidence |
+|---|---|---|
+| normal、empty、threshold、nested/move | `PASS` | Windows、WSL、Mac 的 exact-factor unit/header 2/2；显式 collect、自动 threshold、嵌套 guard 与 move/reset 均覆盖 |
+| lifetime / invalid use | `PASS` | double retire、pending record/domain teardown、live reader teardown death tests；callback recursive retire 与 collector re-entry 测试 |
+| concurrency / stress / fallback | `PASS` | 8 readers/512 records exact-once；72 simultaneous readers 覆盖 exclusive slots 之外的 fixed fallback |
+| OOM / overflow | `NOT_APPLICABLE` | read/retire/collect 路线不分配；固定 slot/stripe 无容量分配失败；depth 与非法 lifetime 为 fail-fast invariant |
+| W1-WIN | `PASS` | MSVC 19.50 Release WERROR；developer-factor shared 2/2、static 2/2 |
+| W1-WSL | `PASS` | GCC 14.2 Release shared 2/2；static ASan、UBSan、TSan 各 2/2；TSan 由 `setarch -R` 真运行 |
+| M1-MAC | `PASS` | AppleClang 21 arm64 Release shared/static 各 2/2；static ASan 2/2 |
+| exact factor build | `PASS` | `HYLE_DEV_FACTORS=mem_reclaim` 只解析 `core,mem_reclaim`，三平台 WERROR；公开头 self-contained |
+| product source/static/shared journey | `INCONCLUSIVE` | factor 尚未进入 Mem façade，且 maintainer factor 按合同不可 install/embed；未制造虚构 SDK PASS |
+| direct consumer | `INCONCLUSIVE` | 临时 Container 迁移已完全撤销；Container 为 CLOSED，必须由独立 reopen/resume card 授权后才能改变 |
+| usability / user guide | `INCONCLUSIVE` | header 与本卡已冻结 ownership/concurrency/misuse；未准入产品的能力不写入当前用户指南 |
+| P1 engineering | `INCONCLUSIVE` | Folly 官方 CMake 路线因本机缺完整 Boost Context/Filesystem/ProgramOptions/Regex 及后续依赖而不能形成 qualified same-contract peer；没有直接 consumer holdout 可以替代 |
+
+### 性能调查边界
+
+- candidate 的 warmed read route 保持 O(1)、allocation-free、lock-free：普通 live-thread 数内为 TLS route、
+  owner-local slot stores 与 epoch validation；第 65 个同时参与线程起才使用 fixed fallback RMW；
+- immutable snapshot 的一次非资格化 natural-route 诊断约为 HYLE `12.04–12.09 ns/read`、
+  `std::atomic<std::shared_ptr>` `13.79–13.92 ns/read`、unsafe raw atomic floor `1.28–1.29 ns/read`。
+  它只说明成本阶梯，不是 Folly same-contract verdict；
+- 临时 Container 试迁移的单次读数在 single/8-reader/mixed 之间既有改善也有 material 回退，且随后已
+  从 product tree 撤销；这些数字没有 immutable consumer candidate、重复采样或合格 peer，不进入 gate；
+- 不手抄一个“Folly-shaped”局部实现冒充 Folly，也不因 peer 构建缺依赖改换 benchmark 或放宽 5% margin。
+
+## Red-team result
+
+30 分钟边界内，候选前/验证中发现并修复四项真实 correctness/portability 问题：domain 在 pending=0
+但仍有 reader 时析构、callback recursive retire 进入 collector、grace-period 对 late reader 的错误稳定零
+断言、永久 reader-slot owner 导致线程 churn 耗尽；另修复 GCC WERROR 测试夹具。最终 candidate 的
+三平台测试与 sanitizers 均通过。未发现新的 API ownership、复杂度档、常态 per-record metadata、
+allocation/lock/syscall 或依赖环问题。红队不能消除缺失的 qualified peer 和 direct-consumer 事实。
+
+## Closure decision
+
+本轮从 `CANDIDATE` 终止为 **`BLOCKED`**。scope、architecture、correctness 与 red-team 为 `PASS`；
+delivery、usability/docs 和 P1 engineering 为 `INCONCLUSIVE`。这不是产品算法已证失败：阻塞原因是
+`MR-P1-PEER-CONSUMER-01`——冻结的 P1 合同既没有可构建的 Folly same-contract peer，也没有经 owner
+授权的真实产品 consumer；因此不能签 non-inferiority，也不能把开发 factor 偷渡进 Mem façade。
+
+- blocker owner：Mem/Container capability owner 与 performance evidence owner；
+- resume condition：另建 `RESUME` round 从 `SCOPED` 开始，同时具备（1）可在锁定环境中按官方合同
+  构建的 Folly RCU peer；（2）Container 的独立 reopen card 或另一个已准入真实 consumer，允许冻结
+  migration/holdout；随后在 `closure-perf-v1`、W1-WIN、5% margin 下完成 same-contract P1，且
+  source/static/shared 产品 journey 与“什么时候使用”指南均通过。只补依赖、重跑现有自然路线、手写
+  peer、放宽 margin 或擅自改 CLOSED Container 均不满足恢复条件；
+- known limitations：factor 当前只供顶层 maintainer exact-factor 构建，不属于 Mem 产品 façade/SDK；
+  显式 domain 约含 64 个 cache-line slot，适合共享或确有隔离需求的 owner；guard 必须同线程退出；
+  不提供 hazard-pointer cohort、异步 callback executor、GPU fence retirement、Native FFI 或稳定 C++ ABI；
+- reopen/resume triggers：上述有限恢复条件；或真实 consumer 证明 correctness/security/lifetime/API 缺陷、
+  需要 hazard/executor 等已 deferred family、依赖/平台改变语义，或强 peer 证明更优复杂度档。
+
+四项 LOC 由 candidate 运行
+`python scripts/loc-report.py --module mem_reclaim --module-path include/hyle/mem/reclamation.h --module-path src/mem_reclaim --commit 66671c39197765623f581dd872f4e626958880db --self-check --json`，
+self-check `PASS`：全库代码 425,583；自实现包含测试 104,614；自实现不包含测试 65,136；
+`mem_reclaim` 实现 457。
