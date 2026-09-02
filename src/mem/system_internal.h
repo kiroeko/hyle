@@ -2,6 +2,20 @@
 
 #include "hyle/mem/allocator.h"
 
+namespace hyle::mem::detail {
+
+// Intra-module system backing seam. Product TUs use these direct hidden calls
+// instead of bouncing through the shared-consumer import seam or the runtime
+// Allocator vtable. They preserve the exact mimalloc/alignment contract owned
+// by system.cc and are never installed as public headers.
+void* system_local_allocate(std::size_t size,
+                            std::size_t alignment) noexcept;
+void system_local_deallocate(void* pointer) noexcept;
+void* system_local_reallocate(void* pointer, std::size_t new_size,
+                              std::size_t alignment) noexcept;
+
+}  // namespace hyle::mem::detail
+
 #if defined(HYLE_TESTING)
 namespace hyle::mem {
 

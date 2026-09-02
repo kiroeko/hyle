@@ -8,17 +8,9 @@
 
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
+#include "hyle/mem/visibility.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#define HYLE_MEM_API
-#elif defined(HYLE_MEM_BUILD)
-#define HYLE_MEM_API HYLE_EXPORT
-#else
-#define HYLE_MEM_API HYLE_IMPORT
-#endif
 
 // Large-region hugepage + NUMA (mem-06b/06c) — complete standard-library
 // surface.

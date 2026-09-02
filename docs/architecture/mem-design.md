@@ -1,8 +1,10 @@
-# HYLE mem/ 设计
+# HYLE Mem：统一 storage foundation
 
-> 本页记录当前 host allocator `mem` factor。独立登记的 `mem_reclaim` 仍是未进入产品 façade 的开发
-> factor，其状态以自己的 closure card 为准；更大的 Mem v2 storage 重构同样以活动 card 为准。Mem 只提供 C++23 source/static/shared，Native FFI 为
-> `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。机械收口状态见
+> 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现仍以
+> [user/mem](../user/mem.md) 与活动 closure card 为准，不会因 architecture 写了目标就提前变成
+> shipping 能力。独立 `mem_reclaim` 仍未进入 Mem façade，其状态以自己的 closure card
+> 为准。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
+> C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
 > 用户当前选型见 [user/mem](../user/mem.md)，性能证据见
@@ -11,22 +13,32 @@
 
 ## 1. 边界
 
-当前 Mem 产品拥有普通 CPU-addressable host RAM 的分配原语：通用 allocator、region/stack、固定块池、
-对象池、fiber stack、NUMA/大页和诊断适配。`mem_reclaim` 候选不分配 payload，也不是并发容器；在它
-通过独立 P1 门并完成具名 consumer migration 前，本文不把它写成用户可依赖的 Mem 能力。
+Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
 
-以下能力由使用其完成语义的模块拥有：
+- host raw allocation、owned heap、arena、fixed/object/block pool、quota/stats；
+- anonymous/file/named shared mapping、range protection/advice/residency、NUMA/大页和 guarded stack；
+- host、pinned、device、managed/unified 与 custom storage 的开放 `MemoryResourceRef`；
+- move-only `Buffer`、mutable/const view、import/composite、host mapping 与 sync range operation；
+- resource-aware transient pool/stats 与不含 Tensor 语义的 lifetime packing plan。
 
-- device VRAM、unified/mapped/ReBAR memory 归 `compute/`；可见性、coherence、flush/invalidate、stream/event 生命周期不能伪装成 `mem::Allocator`。
-- pinned host buffer 的所有权与 DMA completion 也归 `compute/`。真正 staging slot 必须同时持有 backend handle、CPU mapped pointer、Device/ordinal、Event 和状态。
-- io_uring provided-buffer ring 归 `io/`；其注册、buffer id、worker issuer 和 completion 生命周期不是通用 mem 合同。
-- graph 的 liveness/worst-case reserve allocator 归 `graph/`；通用 mem 只提供它需要的底层 region/backing。
+语义拥有不等于 Mem 自己实现每个平台机制。Platform 保留 VM/file/NUMA/page/OS-handle
+机制；Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
+namespace/handle transfer/async protocol；Graph 把 DAG/tensor 事实翻译成 Mem planner 不理解业务语义的
+interval/resource/alias 请求。依赖方向固定为：
 
-mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 分开保存 opaque `native_handle()` 与可选 `host_data()`；CUDA/host 两值可相同，Vulkan 分别是 `VkMem*` 与 `VkMem::mapped`。CPU 直接访问用显式 `flush_host()` / `invalidate_host()` 表达非 coherent Vulkan 合同；同步 `copy_from()` 自动包住所需 visibility。未来 staging ring 只能组合 HostBuffer、Event 与 backpressure，不上架裸 host allocator 或 `SharedPool(cudaMallocHost)` 组合。
+```text
+compute | graph | io  --->  mem  --->  platform
+```
+
+Mem 不包含 Device/Stream/Event/Tensor/KV/model policy，也不把 device memory 塞进 host
+`AllocatorRef`。Compute 向 Mem 注入长寿命 provider，并以类型化 adapter 对 Mem `BufferView`
+做 async copy/submit；Mem 不用 `void* stream`、函数注册表或隐藏 staging 反向模拟 completion。
+`mem_reclaim` 不分配 payload，也不是并发容器；在通过独立 P1 门并完成具名 consumer
+migration 前，不是 Mem 用户能力。
 
 ### 1.1 依赖与构建边界
 
-中央 component graph 与真实 target 链接边一致：host factor
+中央 component graph 与真实 target 链接边一致：当前 aggregate factor
 `mem -> PUBLIC {core, error, platform, util_core}`；开发 factor `mem_reclaim -> PUBLIC {core}` 目前不在
 `hyle::mem` façade。`core` 提供 cache-layout/compiler 头合同，
 `error` 承担构造/VM/NUMA 冷失败，`platform` 承担 CPU、VM 和 NUMA 机制，`util_core` 承担
@@ -47,11 +59,11 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 | `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `Allocator` |
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
 | `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
-| graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | 明确的 phase lifetime，是通用 owned Region 的内部 workload；graph-aware liveness/reserve 仍归 graph |
+| graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | phase scratch 继续用 arena；Graph 产生 interval/alias 事实，通用 packing/placement 语义归 Mem planner |
 | `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
 | `SharedPool` / `SharedPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
-| compute `Buffer` / `DevicePool` | 当前无生产创建点 | 不归 mem；Buffer 已显式分开 native handle、host mapping 与 coherence 操作 |
+| compute `Buffer` / `DevicePool` | 当前无生产创建点 | 作为 Mem v2 迁移输入；Mem 拥有 Buffer/View/pool 语义，Compute 保留 provider artifact 与 async ordering |
 
 内部系统已经坐实“通用 allocator + fiber stack”，但 HYLE 是公开 infra 库，其他能力是否保留必须再看成熟库的广泛用户形状，不能只按内部调用计数裁剪。
 
@@ -67,7 +79,7 @@ C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮
 6. external fixed buffer：oneTBB `fixed_pool` 证明 embedded/realtime/调用方自有 storage 的需求，但它是可 individual free 的 variable-size pool，不能与 bump Region 混为一谈。
 7. strict byte limit 的强证据首先是 `Region(size_limit)`；通用 sized-free `QuotaAllocator` 是进一步外推，不能冒充成熟库共同基线。
 8. explicit NUMA/hugepage policy：capability query、失败降级或显式报错，不承诺自动迁移。
-9. graph-aware reserve/liveness allocator、GPU staging ring 都有真实需求，但属于拥有图或 completion 生命周期的模块，不进入通用 mem。
+9. tensor-free lifetime packing 进入 Mem，Graph 仍拥有 DAG 推导；GPU staging ring 属拥有 completion 生命周期的 Compute，不进入 Mem。
 
 ### 2.3 参考能力逐项处置
 
@@ -197,7 +209,9 @@ owned growable `Region` 已提供：
 - individual deallocate 明确 no-op；
 - 单线程默认，不偷偷加锁。
 
-`FixedRegion(span<byte>)` 是独立的 external-storage bump 类型：无隐藏 payload 分配、无增长、无 fallback。HYLE graph evaluation 的逐次 evaluate 临时数组是 phase-lifetime workload；graph-aware `measure/reserve/liveness` 仍归 graph。
+`FixedRegion(span<byte>)` 是当前 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback；
+Mem v2 将公开名移为 `FixedArena`。HYLE graph evaluation 的逐次 evaluate 临时数组是
+phase-lifetime workload；Graph 生成 liveness/alias facts，Mem planner 拥有通用 measure/placement。
 
 ### 7.3 `StackAllocator`
 
@@ -257,65 +271,44 @@ external 能力按 allocation model 分成两个类型：
 - `FiberStackPool` 保留且是当前内部刚需；capacity 是真实 clamp 后的 retention 上限，0 禁用
   cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
   这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。
-- graph 当前可直接消费通用 owned Region；`GraphArena::measure/reserve/allocate` 这类 graph-aware worst-case/liveness 策略等到对应消费者落地，归 `graph/`。
-- `Buffer(kHostPinned)` 的 native-handle/mapped-pointer 合同先在 P0 纠正；`StagingRing` 等到至少两个异步传输在途、slot 复用受 Event 约束时再落地，归 `compute/`。
+- graph 可直接消费通用 arena；它把 worst-case/liveness/alias/resource 翻译为
+  `LifetimeRequest`，Mem planner 负责 tensor-free measure/placement/instantiate，模型/KV 策略仍在上层。
+- pinned/device/managed 通过开放 `MemoryResourceRef` 进入 Mem `Buffer/View` 语义；
+  native-handle/mapped-pointer 不混同，non-coherent 路线显式 flush/invalidate。`StagingRing`
+  要同时持有 Event/backpressure，仍归 `compute/`。
 - io provided-buffer ring 归 `io/`。
-- generic `MemorySpace`、把 unified/device memory 塞进 mem allocator、自动 NUMA 迁移、soft limit 冒充 hard quota 均否决。
+- 闭合 `MemorySpace/BufferKind`、把 unified/device memory 塞进 host `AllocatorRef`、自动 NUMA
+  迁移、soft limit 冒充 hard quota 均否决。
 
-## 10. 公共能力矩阵
+## 10. 目标公共能力矩阵
 
-| 用户形状 | C++23 产品面 | Native FFI | 合同 |
-|---|---|---|---|
-| 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `N/A` | 默认 direct path；运行时注入保留 backing identity |
-| allocator-template adapter | `SystemStdAllocator<T>` / `StdAllocator<T>` | `N/A` | 默认 empty/always-equal 静态 system 形状；注入形状无默认构造，支持 rebind、完整 backing equality、借用生命周期；标准 OOM exception boundary |
-| heap size/pressure | `system_good_size/usable_size/collect`、`system_memory_snapshot()` | `N/A` | 显式查询/回收；冷 snapshot 报 allocator reserved/committed 与 process RSS/commit current+peak；不隐藏周期线程、不污染默认热路 |
-| byte admission | `QuotaAllocator` | `N/A` | strict live requested-byte budget |
-| 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `N/A` | opt-in；被测/诊断域分离；metadata OOM 的 dropped/complete 可观察；默认 system 热路零统计税 |
-| owned request scratch | `Region` | `N/A` | growable、bulk clear、可设 reserved-byte hard limit |
-| caller-buffer scratch | `FixedRegion` | `N/A` | no heap、no fallback、bulk reset |
-| borrowed/LIFO scratch | `PooledRegion`、`StackAllocator` | `N/A` | 单线程；borrowed block 或 owned slab |
-| external variable heap | `FixedPool` | `N/A` | caller storage、individual free/realloc + bulk reset、two-level bitmap O(1) fit/merge、no fallback；约 4 KiB 长寿命 control |
-| hard shared slots | `SharedPool`、`ObjectPool<T>` | `N/A` | remote free 立即可见、精确 hard capacity |
-| owner-local soft cache | `SharedPoolCache`、`ObjectPoolCache<T>` | `N/A` | 显式 owner/cache/publish，容量是 soft visibility window |
-| growable owner-local slots | `GrowablePool<T>` | `N/A` | 单线程、几何增长、Reconstruct |
-| preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | `N/A` | 能力可组合；不把 ctor/dtor/RAII 伪造成动态 ABI |
-| PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | `N/A` | 默认 system singleton 与运行时注入分型；零字节请求仍返回可成对释放的有效 allocation；Aligned 只提高 buffer base alignment，不保证 element 间隔 |
-| guarded fiber stack | `FiberStack`、`FiberStackPool` | `N/A` | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
-| THP/NUMA span | `HugeRegion` + policy/selected nodes/chunk、`reserve_huge_1g_pages` | `N/A` | system allocator 自动拓扑；启动前环境限制；显式 span 请求可观察 accepted/applied/chunk，冷预留失败返回同一 Status |
+| 用户形状 | Mem v2 C++23 产品面 | 关键合同 |
+|---|---|---|
+| 默认/注入 host allocation | `SystemAllocator`、`AllocatorRef`、`Heap` 与 std/PMR adapters | direct 与 runtime borrow 分型；owned heap 可 bulk release；backing 长寿 |
+| phase/external/LIFO scratch | `Arena`、`FixedArena`、`PooledArena`、`StackArena` | 单 owner；bulk/reset/rewind 失效化明示；无隐式 fallback |
+| variable/fixed/object pool | `FixedHeap`、`ConcurrentBlockPool`、`BlockPoolCache`、object-pool 家族 | size model、storage ownership、hard/soft/growable、reconstruct/preserve 都由类型表达 |
+| mapping/residency | `VirtualMapping`、`FileMapping`、`SharedMapping` | owner 在 Mem，OS/namespace 机制留 Platform/IO；不默认 prefault/lock/grow |
+| host/device/custom storage | `MemoryResource`、`MemoryResourceRef`、properties/domain/stats | provider 开放；不用闭合 kind；ref 一字且借用 provider |
+| persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
+| sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 Compute/IO typed adapter 组合 |
+| transient storage reuse | `BufferPool` / `BufferLease` | resource-aware reuse/trim/stats；lease 归还前已等待 completion |
+| worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；plan/instantiate 分开；O((N+E) log N) / O(N) scratch；无 Tensor |
+| quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
+| guarded/THP/NUMA | `FiberStack`、`HugeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
 
-## 11. 用户选型
-
-```text
-通用 host RAM                         → SystemAllocator
-运行时注入、mock                    → Allocator
-默认 system 的 std::pmr 容器          → system_memory_resource()
-运行时 backing 的 std::pmr 容器       → PmrResource
-默认 system 的 allocator 模板参数     → SystemStdAllocator<T>
-运行时 backing 的 allocator 模板参数  → StdAllocator<T>
-PMR buffer 需要显式 cache/page 对齐   → AlignedPmrResource
-request/frame 整批释放                → Region
-调用方外部 buffer 的 bulk scratch     → FixedRegion
-调用方外部 buffer 的变长 alloc/free/reset → FixedPool
-自增长 backing 的变长 alloc/free/release  → std::pmr pool_resource over system_memory_resource()
-固定 slab 上 LIFO scratch             → StackAllocator
-单线程同尺寸对象、按需增长            → GrowablePool<T>
-多线程固定 block/object、严格容量      → SharedPool / ObjectPool<T>
-owner-local 复用热点、容量有余量         → SharedPoolCache / ObjectPoolCache<T> over hard core
-昂贵对象保留状态                       → PreservingObjectPool
-phase 临时区严格 reserved-byte limit  → Region(size_limit)
-任意 backing 的严格 live-byte budget  → QuotaAllocator
-fiber guarded stack                   → FiberStackPool
-NUMA/THP 大块 host RAM                → HugeRegion + 显式 policy
-GPU pinned/mapped host RAM             → compute HostBuffer（native handle + host_data + flush/invalidate）
-异步 staging                          → compute StagingRing（待真实 async overlap 消费者）
-```
+当前 shipping 名称与可用路线仍由 [user/mem](../user/mem.md) 列出。活动 Mem v2
+将 `Allocator/Region/FixedRegion/PooledRegion/StackAllocator/FixedPool/SharedPool/SharedPoolCache/
+GrowablePool/HugeRegion` 分别迁到上表的借用、arena、heap、block-pool、object-pool 与
+mapping 命名；HYLE 未发布，迁移后删旧名，不留 deprecated alias。
 
 ## 12. 收口定义与重开边界
 
-mem 进入预发布冻结必须同时满足：
+Mem 进入预发布冻结必须同时满足：
 
-1. 常见 host-RAM ownership/concurrency/capacity/lifetime 形状已由上表覆盖，专用生命周期明确
-   归 compute/graph/io/sched；不再因 benchmark 参数新增 allocator 类型。
+1. host allocator/heap/arena/pool、mapping/residency、开放 resource、Buffer/View/import/
+   composite、sync operation、pool/stats 与 lifetime plan 全部有自然的用户路线；
+   Compute/Graph/IO 只保留本文明确的 mechanism/policy/completion 语义，不因 benchmark
+   参数新增 `fast/light` 类型。
 2. 保持 `Native FFI=N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略单独立项，
    不能在 mem 修改中顺手恢复旧 C schema。
 3. 最终候选 commit 通过 Windows/Linux/macOS、OOM/overflow 和适用的 ASan/UBSan/TSan，并验证
@@ -323,7 +316,8 @@ mem 进入预发布冻结必须同时满足：
 4. throughput-oriented 能力有正常 workload、同合同成熟 peer、throughput 与 whole-operation
    latency；空间型能力有 peak/retention/fragmentation 证据。没有同合同 peer 时只报告绝对成本
    和较弱合同参照，不制造 SOTA 结论。
-5. architecture、guide、performance 和 milestone 各守自己的文档职责，不复制相互的状态表。
+5. architecture、user guide、performance 与 implementation task 各守自己的文档职责，
+   不复制状态表；旧 host-only/Compute-owned Buffer/Graph-owned planner 文字已清理。
 
 五项通过即冻结。性能稳定性必须由多进程重复、paired sign/spread、长寿命 epoch 与结构复杂度
 门禁共同建立，不能靠一次很短的 microbenchmark；通过已定义证据后也不无限等待。冻结后只有 correctness/security、真实消费者
@@ -333,7 +327,10 @@ mem 进入预发布冻结必须同时满足：
 ## 13. 验证边界
 
 - allocator：typed count overflow、完整 backing identity、alignment、OOM、PMR throw boundary；下游消费者的 NULL/Status/fail-fast 另按各自公开合同审计。
-- Buffer host path：native handle 不得冒充 mapped pointer；CUDA/Vulkan/host 三后端都验证 `host_data()` 可写、kernel 参数仍拿正确 native handle。test-only 选择器穷举后确认 Win/Mac 物理设备只提供 coherent host-visible type，non-coherent driver round-trip 明确 skip；范围算术用真实 `nonCoherentAtomSize` synthetic 测试覆盖，不冒充硬件未提供的 driver 路径已执行。
+- resource/Buffer：provider/ref 生命、property/domain identity、alignment/max/OOM、零长度、
+  move/reset/import 与 range overflow；native handle 不得冒充 mapped pointer；host direct 与
+  non-coherent flush/invalidate 差分；CUDA/Vulkan/host 真实路线各自验证，硬件未提供的
+  driver 路径明确 skip，不用 synthetic 冒充硬件 PASS。
 - bump/region：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 证书防回归。
 - fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedPool 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。

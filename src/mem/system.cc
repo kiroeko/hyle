@@ -59,6 +59,24 @@ void *system_backend_reallocate_local(void *ptr, std::size_t new_size,
 
 } // namespace
 
+namespace detail {
+
+void* system_local_allocate(std::size_t size,
+                            std::size_t alignment) noexcept {
+  return system_backend_allocate_local(size, alignment);
+}
+
+void system_local_deallocate(void* pointer) noexcept {
+  system_backend_deallocate_local(pointer);
+}
+
+void* system_local_reallocate(void* pointer, std::size_t new_size,
+                              std::size_t alignment) noexcept {
+  return system_backend_reallocate_local(pointer, new_size, alignment);
+}
+
+}  // namespace detail
+
 #if !defined(HYLE_STATIC)
 namespace detail {
 

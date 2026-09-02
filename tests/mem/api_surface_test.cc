@@ -8,6 +8,7 @@
 
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/buffer.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/mem/fixed_pool.h"
 #include "hyle/mem/growable_pool.h"
@@ -18,6 +19,7 @@
 #include "hyle/mem/pool_loan.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/region.h"
+#include "hyle/mem/resource.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
@@ -34,6 +36,14 @@ using namespace hyle::mem;
 // change updates this inventory and is not a compatibility promise.
 static_assert(std::is_trivially_copyable_v<Allocator>);
 static_assert(sizeof(Allocator) == sizeof(void*) * 4);
+static_assert(sizeof(MemoryResourceRef) == sizeof(void*));
+static_assert(sizeof(Buffer) <= sizeof(void*) * 4);
+static_assert(sizeof(BufferView) == sizeof(void*) * 4);
+static_assert(sizeof(ConstBufferView) == sizeof(void*) * 4);
+static_assert(std::is_trivially_copyable_v<MemoryResourceRef>);
+static_assert(std::is_trivially_copyable_v<BufferView>);
+static_assert(std::is_trivially_copyable_v<ConstBufferView>);
+static_assert(std::same_as<decltype(system_resource()), MemoryResourceRef>);
 static_assert(std::is_empty_v<SystemAllocator>);
 static_assert(std::is_empty_v<SystemStdAllocator<int>>);
 static_assert(std::allocator_traits<SystemStdAllocator<int>>::is_always_equal::value);

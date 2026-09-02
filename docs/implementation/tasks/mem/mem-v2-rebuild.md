@@ -5,11 +5,12 @@
 > 当前轮由 [`mem-v1 capability replay`](mem-v1-capability-replay-2026-09.md) 的
 > `PRODUCT_TRIGGER` 启动。旧 `mem-v1` task/evidence 只作 baseline 证据，不是本轮待办。
 >
-> 项目级阶段门：[`全库能力展开与组件因子化 v1`](../project/capability-factorization-v1.md) 正在先统计
-> 13 个产品域的功能超集。Mem v2 的现有能力表和 FIX 集是该轮输入；在全局能力、owner、因子与依赖图
-> 完成前暂停产品实现。若全局裁决改变 Mem 边界，必须显式退回并更新本卡，不能沿本卡静默施工。
+> 项目级阶段门：[`全库能力展开与组件因子化 v1`](../project/capability-factorization-v1.md) 已完成，随后
+> [`build-system-v7 factor/façade projection`](../build/build-system-v7-factor-facade-projection.md) 已把内部
+> factor DAG 与外部产品 façade 分开。中央 registry 当前把本轮登记为 `AUDITED`，因此只授权下述
+> `MEM2-01`～`MEM2-09` 有限 FIX；历史 factor 清单或 bundle 文字若与 v7 投影冲突，不再构成施工合同。
 
-## Closure card（SCOPED）
+## Closure card（AUDITED）
 
 - component / owner / round ID：`mem` / Mem / `mem-v2`；
 - task kind：`REOPEN`；
@@ -96,8 +97,115 @@
    holdout。性能修复默认只换内部算法或零成本路由；只有 normal workload 的 material 机制证据证明
    public contract 本身有错，才退回 `AUDITED`。
 
-全局因子图完成并允许本卡恢复后，这四遍顺序才生效；届时相邻域只提供已经裁决的公开因子或私有机制，
-不会让 POSIX/Windows 某个 syscall benchmark 反向决定公共类型。
+全局因子图与 v7 façade 投影已经完成，因此这四遍顺序现在生效；相邻域只提供已经裁决的公开 factor
+或私有机制，不会让 POSIX/Windows 某个 syscall benchmark 反向决定公共类型。
+
+## API / usability freeze（DRAFT）
+
+本节是 `MEM2-01` 的唯一 public-shape 草案。`DRAFT` 期间允许用 compile-only journey
+发现类型关系不成立；只有下列全部被真实头文件表达、五条 journey 可编译且
+include graph 无环时，才可改为 `FROZEN`。后续 correctness 不得悄悄改名或恢复旧 alias。
+
+### 单一用户心智与依赖方向
+
+- 普通用户只看到 `hyle::mem`；`mem_core/mem_pool/mem_vm/mem_buffer` 是历史语义分解，
+  不是要求用户选择的 namespace 或产品 target。当前 Mem façade 仍只投影 `mem`。
+- Mem 拥有 storage 语义：host allocator/heap/arena/pool、mapping/residency、开放
+  memory resource、Buffer owner/view/import/composite、sync operation、resource pool/stats 与
+  tensor-free lifetime plan。
+- Platform 只实现 VM/file/NUMA/page/OS-handle 机制；Compute 实现 pinned/device/managed
+  provider 与有序 async operation；IO 实现 namespace/handle transfer/async protocol；Graph 只产生
+  lifetime facts。固定方向为 `compute | graph | io -> mem -> platform`。
+- Mem public header 不出现 `Device`/`Stream`/`Event`/Tensor、CUDA/Vulkan/ggml 类型。
+  provider-specific import/async 作为上层自然 C++ adapter，接收 Mem `Buffer/View`；Mem 不建第二套
+  queue/completion 抽象。
+
+### 最终 public taxonomy
+
+| header / family | public types | ownership 与选择规则 |
+|---|---|---|
+| `allocator.h` | `AllocatorRef`, `SystemAllocator` | `AllocatorRef` 是四字以内的 borrowed host-byte allocator；无 runtime injection 时用零状态 `SystemAllocator` |
+| `heap.h` | `Heap`, `HeapOptions` | move-only owned growable host heap；owner-thread allocate/reallocate，允许 remote free；全量 release 要求无 live allocation |
+| `arena.h` | `Arena`, `FixedArena`, `PooledArena`, `StackArena` | 分别是 owned growable monotonic、caller-storage monotonic、borrowed-block monotonic 与 LIFO rewind；不伪装 individual free |
+| `pool.h` | `FixedHeap`, `ConcurrentBlockPool`, `BlockPoolCache`, `ObjectPool<T>`, `PreservingObjectPool<T>`, `GrowableObjectPool<T>`, `PoolLoan` | 名字分开 variable/fixed-size、external/owned、hard/shared/owner-cache、reconstruct/preserve；不提供 `fast/light` 档 |
+| `mapping.h` | `VirtualMapping`, `FileMapping`, `SharedMapping`, `MappingAdvice`, `ResidencyOptions` | 三种 owner 分开 constructor 和非法操作，共享 range/view/protect/advice/lock/flush vocabulary；async namespace/protocol 仍在 IO |
+| `resource.h` | `MemoryResource`, `MemoryResourceRef`, `MemoryProperties`, `MemoryDomainId`, `ResourceAllocation`, `ResourceStats` | provider 是长寿命 polymorphic object；ref 是一字 borrow；通过属性表达 host/device accessibility、coherence、pinned/managed/exportable，不用闭合 kind enum |
+| `buffer.h` | `Buffer`, `BufferView`, `ConstBufferView`, `HostMapping`, `CompositeBuffer` | `Buffer` 四字 inline owner、经原 provider 释放；view 四字且不拥有；host map 显式表达 map/unmap/coherence；composite 才支付 segment metadata |
+| `buffer_pool.h` | `BufferPool`, `BufferLease`, `BufferPoolOptions`, `BufferPoolStats` | injected resource 上的 transient reuse owner；lease 自动归还；in-flight completion 前不得归还；不暗藏 Event |
+| `lifetime_plan.h` | `LifetimeRequest`, `LifetimePlanner`, `LifetimePlan`, `MemoryPlacement`, `PlannedBuffers` | consumer 给 `[begin,end)` interval/resource/size/alignment/alias facts；plan 与 instantiate 分开，不出现 Tensor/Graph 类型 |
+
+旧公开名称不是兼容负担：`Allocator` 改为 `AllocatorRef`；`Region/FixedRegion/PooledRegion/
+StackAllocator` 改为上表 arena 家族；`FixedPool` 改为 `FixedHeap`；`SharedPool/SharedPoolCache`
+改为 block-pool 家族；`GrowablePool<T>` 改为 `GrowableObjectPool<T>`。迁移完成后直接删除
+旧名称，不留 deprecated alias。
+
+### resource/provider 零成本边界
+
+- `MemoryResourceRef` 只持有 `MemoryResource*`，default 为 invalid sentinel，从 lvalue provider
+  显式构造，禁止绑定 temporary。provider 及其 backend/device state 必须比 ref、Buffer 和
+  in-flight use 长寿。资源 identity 是 provider object identity；`MemoryDomainId{authority,value}` 允许
+  同一 device/domain 的多个 resource 相关联，不声称跨进程稳定。
+- `MemoryProperties` 是可扩展 bit flags + alignment/max-allocation/domain facts，不存储
+  `Cpu/Gpu/IGpu` 类型。一个 provider 可同时 host/device accessible，pinned/managed 是属性而
+  不是互斥类别。
+- provider 同步 allocation 产生 `ResourceAllocation{native_handle,size,alignment}`。`Buffer`
+  inline 保存 resource ref 和这三个字，不为 HYLE wrapper 额外分配 control block；backend
+  原生 allocation 本身所需的 driver artifact 按 provider 合同计费。
+- `BufferView`/`ConstBufferView` 保存 `{resource, native_handle, offset, size}`，所以
+  `subview` 是 O(1)、zero allocation/copy，且不对 opaque handle 做 pointer arithmetic。owner reset/
+  destruction 使 view 失效；owner move 转移 allocation 但不使基于 provider handle 的 view 失效。
+- `read/write/fill/copy/flush/invalidate/map_host` 都以 view range 为边界并返回
+  `Status/Result`。同 resource 先走 provider native route；跨 resource 只在 provider 明确支持或
+  两端可 host-map 时执行，否则 `Unimplemented`，不偷做 hidden staging allocation/copy。
+  overlap 只在同一 allocation 的 provider 合同明确支持时允许。
+- 异步路线由 Compute/IO 提供类型化函数，例如 `compute::copy_async(Stream&, mem::BufferView,
+  mem::ConstBufferView)`；它们检查 resource/domain identity 后用 native handle，Mem 不引入
+  `void* stream` 或函数注册表。
+
+### ownership / failure / concurrency / default
+
+| family | failure shape | concurrency | default / invalidation |
+|---|---|---|---|
+| allocator / heap / arena / pool | 冷 owner 构造返回 `Result<Owner>`；热 byte/slot allocation 返 null/empty loan | 按具名类型区分 owner-only 与 concurrent；`Heap` 只承诺 remote free | 无隐式 fallback；reset/release 显式使旧 allocation/view 失效 |
+| mapping | factory/range OS failure 返 `Result/Status` 并保留 native error | control operation 外部同步；普通字节访问由保护和宿主同步决定 | 不自动 prefault/lock/grow file；未支持 advice 明确 `Unimplemented` |
+| resource / Buffer | provider/ref 非空、range/alignment 错误为 `InvalidArgument/OutOfRange`；OOM 为 `ResourceExhausted` | provider 必须支持独立 allocation 并发使用；同一 Buffer 的 mutation/map/control 外部同步 | `Buffer{}` 可作 invalid/moved-from；没有默认 resource，必须显式选 host/device/custom provider |
+| BufferPool | create/acquire 返 `Result`；capacity/pressure 可观察 | pool 是 thread-safe；lease 中 Buffer 的使用仍由 caller 同步 | lease 归还前必须无 in-flight operation；trim 不等待 Event |
+| lifetime plan | 溢出、非 2 次幂 alignment、非法 interval/alias/resource 返 typed Status | build/instantiate 外部同步；plan 不可变时可并发查询 | interval 为 `[begin,end)`；persistent/output 不复用；plan 不拥有 Tensor/Graph |
+
+### 五条 compile-only normal journey
+
+1. **host heap：**`Heap::create(options) -> Heap`，把 `heap.allocator()` 的 `AllocatorRef`
+   注入 HYLE container，所有 allocation 归还后 `collect/release`。
+2. **model mapping：**`FileMapping::open(path, ReadOnly)`，根据 loader 策略显式
+   `advise(Sequential/WillNeed)` 与单调 `lock_prefix`，向 parser 传 `ConstBufferView`。
+3. **persistent buffer：**从 Compute device 取 `MemoryResourceRef`，`Buffer::create`权重/KV，
+   `write` 上传并把 O(1) `subview` 传给 kernel adapter；owner 活到 Event completion 之后。
+4. **transient pool：**`BufferPool::create(resource, options)`，每次 `acquire` 得到
+   `BufferLease`，completion 后析构/归还，pressure point 显式 `trim` 并查 `stats`。
+5. **planner：**Graph/engine 构造无 Tensor 类型的 `LifetimeRequest` span，
+   `LifetimePlanner::build` 先得 `LifetimePlan`/per-resource peak，再 `instantiate(resources)`
+   一次建 backing，以 request ID 取 view。
+
+### 用户选型与误用诊断
+
+| 需求 | 应选 | 不应选 |
+|---|---|---|
+| 普通 host 小对象/容器 | `SystemAllocator` 或 `AllocatorRef` | `MemoryResourceRef`/`Buffer`；后者有跨域 owner 语义 |
+| phase scratch | arena 家族 | variable-size heap/pool；individual free 在 arena 无效 |
+| 固定尺寸并发 slot | `ConcurrentBlockPool` + 可选 cache | `FixedHeap`；它是单 owner 变长 external heap |
+| 跨 host/device 持久存储 | `MemoryResourceRef` + `Buffer/View` | 把 native handle 当 host pointer，或把 `AllocatorRef` 扩成 GPU allocator |
+| 映射模型 | `FileMapping` | 读入 heap 再伪称 zero-copy，或 open 时默认 prefault/lock 全文件 |
+| async transfer | Compute/IO typed adapter + Mem views | Mem sync operation 内部暗藏 stream/event/staging |
+| graph storage reuse | `LifetimePlan` | 让 Mem 理解 tensor/op/KV 业务策略 |
+
+### freeze 未完成项
+
+- [ ] 上表类型关系全部落到 self-contained public headers，不泄漏 backend 类型；
+- [ ] 五条 journey 以正常 public API 编译，不借 test-only constructor/stub；
+- [ ] `sizeof(MemoryResourceRef) == 1 word`、`Buffer/View <= 4 words`、owner 无 wrapper pimpl allocation；
+- [ ] 头文件语法 include graph 与 CMake target graph 都满足上述无环方向；
+- [ ] source/static/shared selected-component 均可发现同一 API；
+- [ ] `docs/user/mem.md` 在实现可用前仍只写当前产品；待 migration 后一次替换为上述选型表，不提前宣传。
 
 ## Capability-family coverage map（AUDITED）
 
@@ -134,6 +242,22 @@
 冻结规则：上述九票是本轮全部 `FIX` 集。新增 API 只有在某票的 normal journey、ownership、failure、
 concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新裁决。旧 API 不兼容不是限制：HYLE
 尚未发布，不保留只为兼容而存在的 alias、bridge 或 deprecated header。
+
+### 2026-09-02 增量实现记录（非 terminal verdict）
+
+- `MEM2-01/MEM2-04` 的第一段可运行基础已落地：一字 borrowed `MemoryResourceRef`、开放
+  property/domain provider、四字 move-only `Buffer` 与四字 mutable/const view、显式
+  `HostMapping`、sync read/write/fill/copy/flush/invalidate，以及 process-lifetime
+  `system_resource()`；不是 stub，也不泄漏 backend/Device/Stream/Event 类型。
+- hot view operation 为 header-inline，source/static consumer 可继续内联；shared consumer 只有一次所请求的
+  provider virtual dispatch，不额外穿越一层 `hyle_mem` DLL wrapper。generic 跨 resource copy 只在两端
+  可直接 host-map 时执行，不创建 hidden staging。
+- Windows MSVC shared/static 与 WSL GCC 14 shared 的 Mem header/test 通过；WSL GCC 14 ASan/UBSan
+  通过。synthetic non-coherent provider 只证明 provider contract/correctness，不冒充 CUDA/Vulkan 硬件
+  verdict；macOS 与真实 backend 尚未运行。
+- 本记录不完成 `MEM2-01` 或 `MEM2-04`：`CompositeBuffer`、完整 taxonomy 的其余 header、五条
+  compile-only journey、Compute provider/consumer migration 和 source/static/shared installed journey
+  仍按后续有限票处理。registry 保持 `AUDITED`，API freeze 保持 `DRAFT`。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

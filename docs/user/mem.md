@@ -1,7 +1,9 @@
 # HYLE mem：什么情况选择什么
 
-> 本页描述 `mem-v1` 当前 C++ 产品面，适用于 C++23 source/static/shared
-> 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
+> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及
+> Mem v2 第一步已落地的 provider-neutral resource/host Buffer 路线。device/managed provider、
+> mapping 迁移、BufferPool 和 lifetime planner 尚不是可用能力，不会在本页提前宣传。
+> 适用于 C++23 source/static/shared 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)。
 
 mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
@@ -13,6 +15,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 需求 | C++ 形状 | 关键合同 |
 |---|---|---|
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
+| 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
 | 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
 | 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
@@ -34,7 +37,45 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | fiber stack | `FiberStack` / `FiberStackPool` | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
-pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提供它消费的 Region。
+pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；
+不理解 Tensor 的通用 lifetime planner 归 Mem，但目前尚未实现，当前 graph 临时区仍消费 Region。
+
+## Resource 与 Buffer：什么时候不只用 allocator
+
+`Allocator` 回答“从 host backing 取多少 raw bytes”；`MemoryResourceRef` + `Buffer`
+回答“这块 storage 属于哪个 provider/domain，谁释放，可以怎样读写和切 view”。
+普通小对象和容器仍优先 allocator；只在需要 move-only byte owner、稳定 provider identity、
+opaque native handle 或未来跨 host/device provider 路由时使用 Buffer。
+
+```cpp
+#include "hyle/mem/buffer.h"
+
+auto result = hyle::mem::Buffer::create(
+    hyle::mem::system_resource(), 4096, 64);
+if (!result) return result.error();
+hyle::mem::Buffer storage = std::move(*result);
+
+auto header = storage.view().subview(0, 64);
+if (!header) return header.error();
+HYLE_RETURN_IF_ERROR(header->fill(std::byte{0}));
+```
+
+`MemoryResourceRef` 是一字、不拥有的 provider borrow；provider/backend/device state
+必须比 ref、Buffer、view 和所有 in-flight use 长寿。`Buffer` 和 `BufferView` 都是四字
+inline 形状；view 保存 provider + opaque allocation + offset/size，所以 owner move 不会让
+view 失效，owner reset/析构会。`native_handle()` 只能由已检查 resource/domain 的 typed
+provider adapter 解释，它不是通用 host pointer，不能解引用或做 pointer arithmetic。
+
+`subview` 越界返 `OutOfRange`。view 上的 `read/write/copy` 要求两端 span/range 等长；
+要操作部分数据先取 subview。`map_host()` 返回 move-only `HostMapping`；只读 mapping
+不会通过 `writable_bytes()` 泄漏可写 span。对 non-coherent provider，读 device 写入前显式
+`invalidate()`，host 写入后显式 `flush()`；`system_resource()` 是 coherent host route，两者均
+为 no-op。跨 resource copy 只走 provider native route 或两端可 host-map 的直接路线，不会暗中
+分配 staging buffer。
+
+`system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
+`std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
+适配标准 PMR 容器。
 
 进程启动期若需要显式预留 1 GiB OS 大页，调用 `reserve_huge_1g_pages`。它是冷策略入口，
 返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
