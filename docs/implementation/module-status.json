@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "TIME-MSVC-INSTANT-CODEGEN-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v4-msvc-instant-codegen.md",
       "round_id": "time-v4-msvc-instant-codegen",
@@ -392,6 +392,8 @@
       "scope": "Repair the reproduced MSVC Release call-shell regression in the ordinary Instant::now host-phase route and add a bounded structural regression gate without changing Time's public API, semantics or capability boundary.",
       "non_goals": "Public API, layout, semantics or capability changes, timer_queue, global /Ob3, private CRT or QPC reimplementation, public compiler macros, build-system global policy, Native FFI/C API, instrumentation redesign and Formal certification.",
       "baseline_commit": "03a14a91744697ce6b5c8803b651886afa82cef3",
+      "candidate_commit": "a9b9ff3117ab647581a6b846318a8254a6cd148f",
+      "candidate_tree": "6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -409,7 +411,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v4 审计完成：仅 Instant::now() 的 MSVC 普通 phase 路线为 PARTIAL；其他 clock/Instant 路线同形且保持不变，TIME4-CODEGEN/REGRESSION/DOC 三项有限 FIX 已冻结。"
+      "summary": "time-v4 candidate a9b9ff31：局部 MSVC flatten 已消除 Instant 普通 phase 的额外调用壳，Release 结构 probe 与 Time focused tests 通过；跨平台、三交付与冻结 P1 回放待签。"
     },
     {
       "module": "timer_queue",

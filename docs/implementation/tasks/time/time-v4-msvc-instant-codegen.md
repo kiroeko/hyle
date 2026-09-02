@@ -126,3 +126,22 @@
 6. **文档：**architecture/user guide 无产品决策变化；只更新可审计事实和性能 limitation。
 
 审计结论：只有 `TIME4-CODEGEN-01..03` 获准进入实现；接口与 workload 均冻结。
+
+## Candidate
+
+- product commit / tree：`a9b9ff3117ab647581a6b846318a8254a6cd148f` /
+  `6b5026fa1bbc0e916a0f81fa707ed6f8bbe75301`；
+- `TIME4-CODEGEN-01`：`Instant::now()` 仅在 MSVC 且 attribute 可用时对局部 return block 使用
+  `[[msvc::flatten]]`；没有改动 `monotonic_now()`、其他 clock helper、API、layout 或 target options；
+- `TIME4-REGRESSION-02`：test-only 64-phase object probe 与共享的成熟 COFF parser 已接入 Time
+  focused target；不进入安装或产品链接；
+- W1-WIN MSVC 19.50 Release/static、`HYLE_WERROR=ON`：Time header/runtime/codegen tests 3/3；
+  HYLE/direct chrono phase 均为 143 条规范化指令，逐项相同，且没有 HYLE 或
+  `steady_clock::now()` wrapper edge；
+- pending：冻结 P1 consumer 一次 qualification、W1-WSL/M1-MAC compile/correctness、Windows
+  source/shared/static delivery、最终 docs/red-team/aggregate gates。未运行项不写 `PASS`。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照位于
+`C:\hyle-scratch\time-v4-msvc-instant-codegen\module-status-before-candidate.json`，SHA-256
+`3344E69E501BFDEC2F0FF55DDFF8D0B78BDA7D0EB74F92BC13C878FC90FA91E8`。candidate 后若改变
+产品实现、公开合同或冻结 workload，必须退回 `AUDITED`；只补验证与事实记录不改变 candidate identity。
