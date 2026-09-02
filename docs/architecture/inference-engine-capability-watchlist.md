@@ -53,13 +53,15 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 
 ## Container Intrusive
 
+原 `INTR-WATCH-01` counted membership 与 `INTR-WATCH-05` one-pointer forward chain 已由
+`container-intrusive-v4-capability-extension` 合法提升并冻结为独立 opt-in 类型，不再是“尚未承诺”项；
+它们没有给默认双向 list 增加 metadata。剩余观察如下：
+
 | ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
 |---|---|---|---|
-| `INTR-WATCH-01` | graph/kernel cache、KV/LRU 或 completion 队列按稳定节点 membership 执行 O(1) 容量判断；当前 llama.cpp CANN graph cache 以 `std::list::size()` 驱动淘汰 | Container 内独立 counted safe-list 候选，或由 owning cache/queue 保存业务计数；容量与淘汰策略仍归 compute/runtime | 这是具名推理形状，但尚未证明 list 节点数等于 bytes/pages/发布状态等业务容量，也未证明 owner 计数路线不足；准入时不得给默认 list 增加一个 word/write，且需定义 range splice 的计数与复杂度合同 |
 | `INTR-WATCH-02` | safe-link 节点需要在保持业务对象身份时 O(1) replace/move | list-level `replace`，不能是绕过 owner 状态机的 hook swap | 当前节点要求 stable address；需真实 movable-safe 生命周期和异常/owner 转移合同 |
 | `INTR-WATCH-03` | 一个对象同时进入多种索引、使用 base/offset/function hook 或复杂 intrusive algorithm | 优先直接使用 Boost.Intrusive；稳定重复形状才考虑独立 HYLE 层 | peer 的完整 policy matrix 不是基础需求；需证明依赖路线不能满足交付/性能，且 HYLE 能保持窄类型 |
 | `INTR-WATCH-04` | 并发 free-list/ready-list 需要 reclamation、ABA 或多 waiter 进展保证 | `container`/`sched` owning concurrent structure | 当前组件有意不保存 owner、lock、epoch 或 reclamation metadata；不得把并发策略下沉到普通 link primitive |
-| `INTR-WATCH-05` | arena object chain、单 owner free-list 或 deferred-work chain 只需单向遍历/前端操作，希望每节点只保存一个 pointer；ggml `ggml_object::next` 与 Folly Arena intrusive slist 是现有形状 | Container 内一个 safe、non-owning 的 intrusive forward-list 候选；arena/free-list 的 allocation、并发与 bulk-release 策略仍归 Mem/owner | 单向 hook 不能同时承诺当前双链的任意已知节点 O(1) remove 与 auto-unlink；准入前需冻结 head/tail、before-iterator、splice、retirement 和外部同步合同，并证明通用 primitive 优于继续保留专用 append-only chain；tokenizer 的 owning `std::forward_list` 不构成 intrusive 需求 |
 
 ## Util Core
 

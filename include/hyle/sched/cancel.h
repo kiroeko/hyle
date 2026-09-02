@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+#include "hyle/container/intrusive_hlist.h"
 #include "hyle/core/compiler.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
@@ -37,8 +38,7 @@ struct CancelCallbackRecord {
   CancelTree* tree = nullptr;  // stable until owner unregisters
   Fn fn = nullptr;
   void* context = nullptr;
-  CancelCallbackRecord* next = nullptr;
-  CancelCallbackRecord** previous_link = nullptr;
+  container::SafeIntrusiveHListHook hook;
 };
 }  // namespace detail
 

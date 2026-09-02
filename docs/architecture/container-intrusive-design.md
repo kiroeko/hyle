@@ -1,197 +1,138 @@
-# container_intrusive 架构：零分配侵入式双向链表
+# container_intrusive 架构：稳定节点的零分配 membership
 
-> 本页记录该组件的长期边界，不是模块状态或签署证书。正确性、性能、交付与独立红队必须绑定
-> 对应 closure candidate；唯一施工状态见
-> [implementation/status](../implementation/status.md)。
+> 本页记录长期产品边界，不签署当前状态或性能。施工状态只看
+> [module-status](../implementation/module-status.json)，普通用法看
+> [Container intrusive 指南](../user/container-intrusive.md)。
 
-## 定位
+## 为什么是一个内部 factor
 
-`container_intrusive` 为已有稳定 storage 的节点提供最小的、non-owning 双向链接机制。公开入口是
-`<hyle/container/intrusive_list.h>`，公开成对入口是
-`IntrusiveListHook` / `IntrusiveList<T, &T::hook>` 与
-`SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`。它在内部是只依赖 Core factor 的
-header-only `hyle_container_intrusive` factor，不产生 runtime artifact，也不把完整 `container`、
-`mem`、`error` 或 `platform` 拉入 Time 等内部消费者。普通用户从 `hyle::container` 产品 façade
-取得该能力；`container_intrusive` 不是 `HYLE_COMPONENTS`/`find_package COMPONENTS` 产品名。
+Timer、scheduler callback、arena object chain、LRU/wait-set 等对象已经由别的 owner 持有；若只为排队
+再分配 owning list node，会增加 allocation、间接访问和失败面。`container_intrusive` 因而只管理
+caller-owned stable node 的 membership，不拥有 storage。
 
-每条同时存在的 membership 在 node 中嵌入一个 member hook。auto-unlink 与 safe-link hook 都只保存
-前后两个 raw pointer，list 只保存一个双向 sentinel；二者共享同一重链算法，区别只在 node 析构
-合同。这个选择服务 timer、waiter、completion batch 等地址本来就稳定、节点由其他对象拥有的场景。
-若用户只需要 owning sequence，应先选择 `std::list`、
-`std::vector` 或完整 container 中相应的 owning 类型，不应为了省一次 allocation 扩散生命周期责任。
+它是只依赖 Core 的 header-only 质因数 target `hyle_container_intrusive`。Time 的 `timer_queue` 和
+Sched 可以直接依赖它，不必反向引入完整 Container/Mem/Platform 闭包。普通用户不选择这个内部 target，
+而是链接聚合它的 `hyle::container` 产品。源码、installed static 和 installed shared 三种交付使用同一
+套 inline C++ API；模块没有 binary、注册表、Native FFI 或伪 C ABI。
 
-该模块明确没有以下常态状态或行为：
+公开能力分成三种拓扑、四种生命周期/metadata 选择：
 
-- 不拥有、分配、释放或延长 node storage；
-- 不保存 owner pointer 或元素 count；
-- 不提供锁、原子同步或跨线程 reclamation；
-- 不产生可恢复 OOM/系统错误，也没有 runtime registry、dispatcher 或动态符号。
+| 需求 | 类型 | node / list footprint（64-bit） | 关键保证 |
+|---|---|---:|---|
+| 双向遍历、两端操作、range splice、已知 node O(1) 摘链 | `IntrusiveListHook` + `IntrusiveList` | 2 / 2 pointer | auto-unlink |
+| 同上，但 membership 只能由 owner 显式退休 | `SafeIntrusiveListHook` + `SafeIntrusiveList` | 2 / 2 pointer | safe-link |
+| 双向 safe-link 且 mutation 后必须 O(1) 查询数量 | `SafeIntrusiveListHook` + `CountedIntrusiveList` | 2 / 3 pointer | 只给选择者增加 count word/write |
+| arena/FIFO/deferred chain，每 node 只肯支付一个 link | `IntrusiveForwardListHook` + `IntrusiveForwardList` | 1 / 2 pointer | explicit retirement；list 缓存 tail |
+| bucket/callback membership，head 要小且已知 node 要 O(1) 摘链 | auto/safe `IntrusiveHListHook` + `IntrusiveHList` | 2 / 1 pointer | `next + previous_next`；只前向遍历 |
 
-## 真实需求与消费者
+这不是按 benchmark 建立的 fast/light 层级。每种形状都对应不同的常态 metadata、可表达操作和生命周期；
+不需要其语义时不会为它付费。
 
-| 消费者任务 | 使用形状 | 归属裁决 |
+## 真实消费者与依赖
+
+| Consumer | 采用的公共 primitive | 为什么 |
 |---|---|---|
-| `time::TimerQueue` / `CommonTimeoutQueue` 保存 caller-owned timer，O(1) cancel，并批量交付 ready prefix/list | safe hook；`remove`、range `splice`、`append`、`consume_all`、`for_each` | timer 必须在析构前显式撤销；deadline prefix 扫描留在 timer_queue，结构转移复用通用 range splice；`timer_queue -> PUBLIC container_intrusive` |
-| 用户节点允许先于 list 析构，希望析构自动撤销 membership | auto hook；FIFO、任意摘链与批量 handoff | `IntrusiveListHook` / `IntrusiveList` |
-| 用户状态机要求在 owner lock 下显式摘链，漏摘必须被诊断 | safe hook；同一 list 操作面 | `SafeIntrusiveListHook` / `SafeIntrusiveList`；Release 不为析构检查付常态分支 |
-| sched ConditionVariable / Semaphore 的 stack waiter | 摘链后复用原 `next` 作锁外 wake chain | 保留 sched 专用链；通用 list 会增加 waiter footprint 和锁内写，且不能表达 link storage 的状态复用 |
-| Container 用户需要该能力 | 选择 `container` 产品 | `hyle::container` façade 已聚合 intrusive factor；用户不需要理解内部解环 target |
+| `time::TimerQueue` / `CommonTimeoutQueue` | safe 双向 list | deadline bucket 要 O(1) cancel、双端/range handoff；timer 必须显式退休 |
+| `sched::CancelCallback` | safe hlist | record 原来就是 `next + previous_link`；迁移后 record 与 head footprint、锁/reentrancy/fire 顺序均不变 |
+| arena/object/deferred-work 用户 | forward list | append、遍历、批量 release；node 只付一个 pointer，list 的 tail cache 使 append/整链 handoff O(1) |
+| wait-set/LRU/cache 用户 | counted safe list | mutation 后无需 O(n) traversal 就能读 membership count |
 
-语义重复不按“看见 next/prev 就迁移”处理。Windows IOCP `IoOp` 保留内部特化链：`OVERLAPPED`
-必须是对象首成员，完成时还要把同一个对象从 inflight 双链切换到 owner-thread free-list 并复用 link
-storage；该状态机与 Win32 completion/lifetime 绑定，换成公共 list 不会消除专用 reset、recycle 和
-kernel-lifetime 合同。Cancellation callback 的 `next + prev_next` hlist、pool free-list 等单链也不是
-本模块双向 member-hook 合同的绕过。
+并非看到 `next` 就强制迁移。以下专用结构继续合法：
 
-## 类型、所有权与生命周期
+- Mem free slot 把 next 覆盖到已经释放的 storage；公共 hook 会让 live object 也付字段成本；
+- Sched waiter 摘链后复用同一 link storage 形成锁外 wake chain；
+- IOCP object 在 kernel inflight、completion 与 owner-thread free state 间复用 storage；
+- atomic publish、ABA 与 reclamation 是 owning concurrent protocol，不是普通 intrusive hook。
 
-两种公开 hook 的选择是生命周期合同，不是性能开关：
+中央依赖图允许任何更高 factor 直接声明 `PUBLIC/PRIVATE container_intrusive`；不得仅因“依赖不上”复制
+同义 primitive。是否复用仍需同时满足语义、lifetime、metadata 与成本合同，而不是追求调用点数量。
 
-- `IntrusiveListHook` / `IntrusiveList` 是 auto-unlink：node 可以先析构，hook 析构会从当前 list 摘除；
-  `unlink()` 可在不知道 owner list 时幂等撤销 membership；
-- `SafeIntrusiveListHook` / `SafeIntrusiveList` 要求 node 析构前已由 owning state machine 显式
-  `remove/erase/pop/clear`；违反时 Debug fail-fast，Release 是前置条件违反而非隐式无锁摘链；
-- 两种 hook 的 default construction 均未链接，`linked()` 只表示“属于某条 list”，不能识别具体
-  owner；copy/move construction 创建新的未链接 hook，assignment 保留 destination membership，
-  不导入 source membership。
+## 生命周期与 member recovery
 
-hook 必须是 node 的直接非静态数据成员，但可以不是首成员；node 不要求 standard-layout。linked 期间
-hook 必须属于一个仍存活的完整 node，且 node 地址稳定。同一对象需要同时加入 ready、timeout 等多条
-list 时，必须为每条 membership 使用不同 hook。带 identity 的 node 通常应删除自身的 copy/move，
-避免“payload 已移动、原地址仍在链中”这种虽符合 hook 规则却不符合业务直觉的状态。形成 list alias
-的位置必须能访问 `&T::hook`；public hook 最直接，private hook 则由 node 给命名 list-adapter 授予
-friendship，`time::detail::TimerEntryListAccess` 是现有消费实例。
+所有 hook 都必须是完整 `T` 的直接非静态数据成员；linked 期间 node 地址稳定、storage 仍存活，外部
+同步覆盖 list mutation、遍历和 node/list 析构。一个 node 同时属于多种 membership 时，每种各嵌入一个
+hook。Hook copy/move construction 创建未链接 membership；assignment 保留 destination membership，
+不会暗中把 source 的链身份搬过来。
 
-从 member hook 恢复 enclosing `T` 没有标准 C++ 逆运算。候选只支持已登记的 MSVC data-member
-pointer ABI 与 GCC/Clang 使用的 Itanium 形状，并对未知或更复杂 representation 编译期 fail closed。
-支持与否由 pointer-to-data-member representation gate 决定，而不是由 `std::is_standard_layout_v<T>`
-替代判断；混合访问控制或 polymorphic node 只要满足 direct-member、完整对象、稳定地址与 ABI gate
-即可。三平台编译/sanitizer 证据必须在签署前保留；支持非 standard-layout 也绝不允许 relocation
-linked node。
+- auto 双向/hlist hook 可以在不知道 owner list 时 `unlink()`；hook 析构也会摘链；
+- safe 双向/hlist 与 forward hook 必须在 node 析构前由 list 显式摘除；Debug fail-fast，Release 是调用
+  前置条件，不增加 owner pointer；
+- list 析构会把尚存节点恢复为 unlinked，但不销毁 node。
 
-auto list 额外提供静态 typed `swap_nodes(T *left, T *right)`。两者都 linked 时交换该 list 类型所选
-hook 在同一条或不同链中的位置；仅一者 linked 时把该位置/membership 转移给另一 node 的同名 hook；
-两者都未链接或同一 node 自交换时不改变状态，且两个指针均有非 null 前置条件。操作不移动 payload，
-普通 hook/node move 仍不自动转移 membership。
+从 member hook 恢复 enclosing `T` 没有标准 C++ 逆运算。三类实现共用 factor-private
+`IntrusiveMemberAccess`：只接受已验证的 64-bit MSVC direct-member representation 或 GCC/Clang
+Itanium representation，遇到更丰富的 PMD ABI 编译期 fail closed。Node 不必是 standard-layout，hook
+也不必是首成员；direct member、完整对象、稳定地址和支持 ABI 才是真边界。
 
-入口属于 `IntrusiveList<T, Hook>` 而不是未类型化的 hook：例如
-`ReadyList::swap_nodes(&a, &b)` 在编译期把两个 operand 同时绑定为 `T` 和 `&T::ready_hook`，调用方没有
-办法把 `a.ready_hook` 与 `b.timeout_hook` 传入同一次交换。公开 hook-level swap 被拒绝，因为同一 node
-的不同 membership 使用相同 hook 类型，仅靠函数签名无法区分其业务合同。safe list 也刻意不提供
-typed swap，因为在 owner 状态机之外转移 membership 会绕过显式 retirement 合同；出现真实 safe
-consumer 后应先设计能同步 owner 状态的 list-level replace，而不是复制 auto API。
+## 双向与 counted 合同
 
-Typed surface 只证明 node/member contract 相同，不保存或修改 owner pointer、count、state、deadline
-等业务镜像。若上层维护这些状态，topology swap 与镜像更新必须在同一外部锁/事务中完成；因此本能力
-也不会被悄悄塞进通用 node move assignment。movable holder 必须由自身所有权合同明确处理旧
-destination membership 后再显式调用它。
+双向 list 是 circular sentinel。默认 auto/safe list 不保存 count，因此 list 和 hook 均保持两个 pointer；
+冷路径计数显式使用 `std::ranges::distance`。`CountedIntrusiveList` 复用 safe hook，只在 list 增加一个
+`size_t`，是 `sized_range`，`.size()` O(1)。Auto-unlink 不能安全维护隐藏 list count，所以没有 counted
+auto 组合。
 
-list 始终可以先销毁：析构会逐项清空 membership 而不销毁 node。只有 auto hook 的 node 可以在
-同步得到保证时先于 list 析构并自动摘链；safe hook 的 node 必须先显式摘链。任何 iterator/reference
-都不能越过实际 node storage lifetime。
+双向公共操作包括 iterator/range、front/back、push/pop、insert/erase/remove、`iterator_to`、单项/
+整链/range `splice`、append、swap/move、clear/consume 和
+`reverse/remove/remove_if/unique/merge/sort`。Auto list 另有 typed
+`List::swap_nodes(left,right)`；safe/count 不允许绕过 owner state machine 转移未知业务镜像。
 
-## 操作与复杂度
+| 操作 | 默认双向 | Counted |
+|---|---:|---:|
+| 已知 node/iterator mutation、single/whole transfer | O(1) | O(1) |
+| range splice | O(1) | 普通重载 O(k) 计数；verified-count 重载 O(1) |
+| size | O(n)，只通过 range distance | O(1) |
+| filter/reverse/merge | O(n) | O(n) |
+| stable sort | O(n log n) | O(n log n) |
 
-| 操作 | 复杂度 | 合同 |
-|---|---:|---|
-| `empty`、front/back、push/pop、单项 insert/erase/remove | O(1) | 不分配；front/back/pop 空表返回 null |
-| `iterator_to(node)` | O(1) | node 必须非 null、已链接且属于该 list；不做 owner scan |
-| 单节点、整链及 `[first,last)` range splice | O(1) | range 不访问 node；transferred-node iterator 保持有效 |
-| `append`、list move、`swap` | O(1) | 只重连 sentinel 与边界 hook |
-| auto list `swap_nodes(left,right)` | O(1) | 非 null nodes；只交换该 typed list 所选 membership；不移动 payload；safe list 不提供 |
-| iteration、`clear`、list destruction | O(n) | 离开 list 的每个 auto/safe hook 都恢复未链接状态 |
-| `consume_all(fn)` | O(n) | 当前 node 在 callback 前摘链；callback 必须 `noexcept`，可销毁或重链当前 node |
-| `for_each(fn)` | O(n) | 结构不变；callback 不得改变被遍历 node 的 membership/lifetime |
+verified-count 参数错误、错误 owner/range、重复 insertion 都是程序合同违反；不为 unchecked hot path 增加
+owner scan。`try_push_*` / `try_insert` 只处理 null 或 already-linked 这两种正常可恢复输入。
 
-Range splice 补的是不可由逐节点调用保持的复杂度档：在不保存 count 时，任意连续子链可以 O(1)
-转移。`CommonTimeoutQueue` 的 deadline prefix 选择属于 time policy：它在 time 内做 O(k) iterator
-扫描与 owner 更新，再用一次 range splice 完成 O(1) 重链。公共 container 因而不暴露只有单一
-消费者的 predicate/callback 组合算法。
+## Forward-list 合同
 
-## 前置条件、`try_*` 与失败
+Forward hook 的 self-next 表示 unlinked，linked tail 的 next 是 null。List 保存 before-head 与 cached tail，
+因此 node 一个 pointer、list 两个 pointer；这是 arena/FIFO 的实际空间取舍，不是“比双向更快”的名字。
 
-普通 `push_*`、`insert`、`erase`、`remove`、`iterator_to` 和 splice 是已经证明前置条件的低层入口。
-null node、重复插入、错误 owner/position、无效 range、把 position 放进同表转移 range 内部，或违反
-linked-address lifetime 都是调用方 bug；无 owner metadata 的候选不会为这些情况在每次热操作扫描
-整条 list。违反前置条件可能产生 UB 或链损坏，不能依靠 Release optimizer assumption 做输入验证。
+公开操作是 `before_begin/begin/end`、front/back、front/back push、`insert_after/erase_after/pop_front`、
+whole/single/range `splice_after`、append/swap/move、clear/consume，以及与双向相同的 sequence algorithms。
+已知 predecessor 的 single mutation 与 whole-list handoff O(1)；range 需要定位 range tail，为 O(k)。类型
+不声称 arbitrary-known-node O(1) unlink，也没有 auto-unlink：需要该合同就选择 hlist 或双向 list。
 
-Auto hook 的 `unlink()` 可用于 owner list 未知的幂等撤销；safe hook 刻意不提供该入口，必须经
-list 明确摘链，避免绕过 owning state machine。`try_push_front`、`try_push_back` 和 `try_insert`
-只处理两种正常可恢复输入：null node 与所选 hook
-already-linked。它们返回 false 且不修改 membership。`try_insert` 仍要求 position 属于 destination；
-`try_*` 不是通用 owner/range validator。若 untrusted input 需要精确诊断，应在拥有 owner、token 或
-业务状态的上层先验证，不能给每个 hook 增加常态 owner 税。
+## Hlist 合同
 
-模块自身没有 allocation 或系统调用，因此 OOM、partial progress 和 `Status/Result` 均不适用。
-Callback 是否可抛由具体入口表达：`for_each` 可以传播异常并保持链结构，批量 detach/move callback
-必须 `noexcept`，避免已经脱离 sentinel 的中间链失去可恢复 owner。
+Hlist node 保存 `next + previous_next`，list/head 只保存一个 pointer。它支持 forward iteration、front、
+push-front、known-position before/after insert、known-node erase/remove/replace、pop-front、clear/consume、
+swap/move。Known-node unlink/replace 是 O(1)，不会为了 predecessor 扫描。
 
-## Iterator 与失效矩阵
+它刻意没有 back、reverse iterator、count、range splice、sort/merge；需要 sequence 语义时选择 forward 或
+双向 list。Auto/safe 的含义与双向一致。`sched::CancelCallbackRecord` 使用 safe hlist，因为 record 的
+退休必须在 cancellation tree 的 recursive mutex 和 detach-before-callback 协议内完成。
 
-Iterator 是 bidirectional、一个 hook pointer 大小。下表中的“有效”包括可继续遍历；已经摘链的
-iterator 即使 node storage 尚在且偶然仍可解引用，也必须视为失效，因为其 next/prev 已清空。
+## Algorithms、异常与 iterator
 
-| 操作 / 事件 | 指向受影响 node 的 iterator | 其他 node iterator | `end()` iterator |
-|---|---|---|---|
-| push/insert | 新 iterator 有效；既有 iterator 不变 | 有效 | 仍绑定同一 sentinel |
-| erase/remove/pop/`hook.unlink()` | 被摘链者失效 | 有效 | 有效 |
-| auto `NodeList::swap_nodes(left,right)` | 该 list 所选 hook 对应的两个 node iterator 均失效 | 有效 | 各 list 的 end 仍绑定原 sentinel |
-| 单节点、整链、range splice/append | transferred-node iterator 有效，之后遍历进入 destination | 有效 | source/destination 的 end 各自仍绑定原 list，不随 node 转移 |
-| list move construction | transferred-node iterator 有效，之后遍历进入新 list | source 变空 | 旧 source end 与新 destination end 是不同 sentinel |
-| list move assignment | source node iterator 转入 destination；原 destination node iterator 转入 moved-from source | 两组 membership O(1) 交换；source 有效但不保证为空 | 两个 list 的 end 均不转移 |
-| `swap` | node iterator 有效，membership 随 node 链交换 | 有效 | 每个 list 的 end 仍属于该 list 对象 |
-| `clear` 或 list destruction | 所有 membership iterator 失效；caller-owned node 本身可继续存活 | — | list destruction 后 end 也失效 |
-| auto node destruction | 该 iterator/reference/pointer 随 storage lifetime 结束而失效；node destructor body 返回后，auto hook member 在自身析构时、storage lifetime 结束前摘链 | 其他 node 有效 | list 仍有效 |
-| safe node destruction | 前置条件是已经显式摘链；仍 linked 时 Debug fail-fast，Release 为合同违反 | 其他 node 有效 | 合同满足时 list 仍有效 |
+Sequence `sort/merge` 稳定且不分配；`remove_if/unique` 只使被摘除节点 iterator 失效，其他 node 的引用/
+iterator 继续有效。Predicate/comparator 抛出时原异常传播：已经完成的 filter/merge 步骤不回滚，但
+每个 node 仍恰属一条有效 list；sort 的临时 bins 在异常路径全部汇回当前 list，不遗失 membership。
+`consume_all` 则要求 `noexcept` callback，因为它先把 owner chain 整体 detach，再逐项交付。
 
-`consume_all` 在调用 callback 前使当前 membership iterator 失效，并允许 callback 销毁或重链当前
-node；callback 不得销毁尚未访问的链或 list 本身。`for_each` callback 不得摘链、销毁或重定位当前
-或后继 node。任何跨线程 iterator、hook 析构和 list mutation 都需要同一外部同步协议。
+双向 iterator 是 bidirectional；forward/hlist iterator 是 forward。Node iterator 随 splice/swap/move
+中的 node 保持有效，但每个 list 的 sentinel/end 身份不会随 node 转移。任何被 erase/remove/pop/unlink
+的 membership iterator 都失效；node storage 本身是否仍有效由 caller owner 决定。
 
-## 并发与进展保证
+## 并发、错误与负空间
 
-类型本身是 thread-compatible，不是 thread-safe。只读遍历也不能与另一线程的 insert/remove、
-auto-unlink destructor、safe hook retirement、clear 或 list destruction 无同步并发。模块没有
-lock-free 声明；类型的 thread compatibility 不会因 safe policy 而变成内部同步。
+所有类型 thread-compatible、不是 thread-safe；没有内部 lock/atomic/syscall/allocation/dynamic dispatch。
+模块没有 OOM 或系统失败，因此 `Status/Result` 不适用。Auto-unlink 也不是 concurrent reclamation：遍历
+与另一线程 node 析构无同步并发仍是 race/UAF。
 
-所有结构操作除线性 clear/drain 外都有确定的 O(1) pointer-relink 上界，不分配、不阻塞、不调用
-系统服务。Callback 的进展与重入属于调用方；文档允许的当前-node destroy/relink 之外，不支持在
-遍历 callback 中重入修改同一链。
+明确不自实现的能力：
 
-## 明确负空间
+- atomic publication、lock-free list、hazard/epoch reclamation：由 Container/Sched/Mem-reclaim 的拥有
+  protocol 提供；
+- intrusive tree/hash/heap、base/value/function traits、fancy/offset pointer、shared-memory model：直接
+  使用 Boost.Intrusive，除非至少两个真实 HYLE journey 证明现有依赖路线不足；
+- allocator/disposer ownership：由 node/storage owner 决定；
+- exact owner/`contains(node)`：会让所有 node 额外支付 owner metadata，当前不准入。
 
-| 未提供能力 | 裁决与理由 |
-|---|---|
-| `.size()`，包括 linear size | 不保存 count，也避免线性 member `size()` 让 C++23 range 错误建模为 amortized-O(1) `sized_range`；冷路径显式用 `std::ranges::distance` |
-| counted list | `TimerQueue` 的 count 跨 bucket，sched waiter count 属原子发布协议；`CommonTimeoutQueue` 的 count 虽等于单链 membership，却是 time 专用 `size()` 状态，不能独自确定 auto/safe、range splice 的通用 counted 合同。count 会令所有 list 增加一个 word 与 mutation 写，range splice 还需 scan 或 caller 提供 n，故 HYLE 自实现 `DEFER`。通用 O(1) intrusive count 可从类型定义时选择 Boost.Intrusive `constant_time_size<true>`；出现独立、不愿引入 Boost 的具名 HYLE consumer 时再设计单独 counted type，不给默认 list 加税 |
-| hook-level `swap_nodes` | `IntrusiveListHook` 同时可作为 ready、timeout 等不同 membership；裸 hook 参数不能在编译期阻止跨合同交换，故只公开绑定 `T` 与 member hook 的 auto-list static API |
-| normal-link / 任意 hook policy | auto 与 safe 已覆盖常见生命周期；无检查/不初始化的 normal link 及完整策略矩阵借用 Boost.Intrusive，直到出现独立任务 |
-| exact owner/`contains(node)` | 两指针 hook 无法 O(1) 回答具体 owner；不为罕见诊断向所有 node 加 owner pointer |
-| base hook、function/value traits、fancy/offset pointer | 当前需求只要求 direct member hook；node 可为 non-standard-layout，但不绕过已支持的 data-member-pointer ABI gate。base/function/shared-memory 等高级形状直接借用 Boost.Intrusive |
-| intrusive `slist` / hlist | 单指针 footprint、tail/cache 与 unlink 合同是另一算法；当前 cancellation/free-list 特化不证明一个公共 slist 产品 |
-| range erase convenience | safe/auto hook 都要逐项恢复未链接状态，循环 `erase` 已是相同 O(k)，没有复杂度缺口 |
-| sort/merge/reverse/unique/remove-if 全套 | 本模块是链接 primitive，不是 `std::list` replacement；需要完整 STL-like intrusive algorithms 时借用 Boost，owning 数据优先标准容器 |
-| disposer/allocator ownership | `consume_all(noexcept fn)` 已提供显式 handoff；allocator、delete policy 和异常恢复必须由 node owner 决定 |
-| 内部同步、并发 reclamation | 属 sched/container concurrency 或消费方；不能让单线程 timer/list 为未命名协议支付原子与 owner 税 |
-
-Folly 同时公开 auto `IntrusiveList` 与 safe `SafeIntrusiveList`，其 Semaphore/TimedMutex 等显式
-retirement waiter 使用 safe 形状；Boost.Intrusive 为两种 link mode 提供同一算法底座。两者共同
-构成生命周期合同与性能 peer。LLVM `simple_ilist` 的 range splice 与 node-to-iterator 用来检查
-通用能力形状；oneTBB 的 intrusive list 位于内部 detail，不构成 HYLE 公共 parity 目标。
-
-## Native FFI 与交付
-
-Native FFI 为 `N/A`。模板参数、pointer-to-member、caller-owned C++ object lifetime 和 inline
-iterator 都没有自然的窄 C ABI；当前也没有已命名外语消费者。若未来出现外语 timer/runtime
-任务，应由拥有 opaque node 与 callback lifetime 的上层模块按
-[Native FFI 准入策略](native-ffi-policy.md)建立 adapter，不导出 raw hook/list layout。
-
-源码、installed static 与 installed shared SDK 都通过 `hyle::container` 暴露同一套 intrusive C++
-API；static/shared 选择不会产生 intrusive DLL、导出符号或运行时 stage。安装包中的
-`hyle::_factor_container_intrusive` 只为 façade/传递闭包服务，不列入产品 catalog，也不是用户入口。
-`time` 通过真实 PUBLIC factor edge 使用轻量 factor，因此不会反向依赖完整 Container 产品或拉入
-mem/platform；sched 的专用 waiter 链仍不建立一条虚假的 direct dependency。
-
-只有真实消费者要求新 hook/link policy、受支持 compiler ABI 使 member recovery 不成立、发现
-lifetime/correctness 缺陷，或同合同 peer 证明 material 的复杂度/消费者性能优势时才重开产品
-形状。API 数量、LOC、另一个 list microbenchmark 或亚纳秒 pointer-store 差异不是重开理由。
+性能只对冻结的同合同 workload 签署：counted membership、cached-tail forward arena、hlist cancellation
+consumer 和 stable sequence algorithms。亚纳秒点值、地址/顺序翻转或不同语义容器不能改变上述 API、
+layout 与常态 metadata。

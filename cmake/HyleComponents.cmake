@@ -109,7 +109,11 @@ set(HYLE_KNOWN_COMPONENTS "")
 _hyle_declare_component(core)
 _hyle_declare_component(container_intrusive
   PUBLIC_DEPS core
-  SPLIT_PUBLIC_HEADERS hyle/container/intrusive_list.h)
+  SPLIT_PUBLIC_HEADERS
+    hyle/container/detail/intrusive_member.h
+    hyle/container/intrusive_forward_list.h
+    hyle/container/intrusive_hlist.h
+    hyle/container/intrusive_list.h)
 _hyle_declare_component(util_core
   PUBLIC_DEPS core
   SPLIT_PUBLIC_HEADERS
@@ -146,7 +150,7 @@ _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 _hyle_declare_component(sched
   TRACE
   PRIVATE_DEPS container timer_queue
-  PUBLIC_DEPS core error time platform mem util_core)
+  PUBLIC_DEPS core container_intrusive error time platform mem util_core)
 # io's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
 # consumer usage requirements, not only implementation closure: installed

@@ -146,7 +146,7 @@ mem         -> PUBLIC core error platform util_core
 simd        -> PUBLIC core platform
 container   -> PUBLIC core mem; PRIVATE platform
 util        -> PUBLIC core error mem container
-sched       -> PUBLIC core error time platform mem util_core; PRIVATE container timer_queue
+sched       -> PUBLIC core container_intrusive error time platform mem util_core; PRIVATE container timer_queue
 io          -> PUBLIC core error mem container time timer_queue sched
 compute     -> PUBLIC core error mem sched; PRIVATE platform simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
@@ -158,11 +158,13 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 直接链接 build-only `hyle_highway_headers`，所以中央内部图没有 `container -> simd` 或其他虚构
 内部 header 边；来源与许可证由下节的外部依赖登记投影。这里记录的都是实际 target/link 契约。
 `container_intrusive` 证明 header-only 能力也应在公开类型穿过 factor 边界
-时拥有真实 target：`timer_queue` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
+时拥有真实 target：`timer_queue` 暴露 `TimerList`，Sched cancel record 暴露 safe hlist hook，故不能把
+这些边藏成 include-path 偶然可见；完整
 `container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
 `platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform -> PUBLIC time` 是真实 SDK 边；sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
-不伪造一条未直接使用的依赖。io、compute 与 graph 的当前公开面都暴露 sched 类型，因此 sched
+但 cancel callback 已迁移 hlist 并形成真实 direct edge。io、compute 与 graph 的当前公开面都暴露 sched
+类型，因此 sched
 是无条件 `PUBLIC` 边；无 fcontext 平台会诚实拒绝这三个产品根。未来若要交付 raw proactor 或
 host-only compute，必须先拆成拥有独立公开头与 journey 的真实 factor，不能只从图上删边。
 

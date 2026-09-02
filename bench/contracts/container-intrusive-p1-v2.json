@@ -1,0 +1,269 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "container-intrusive-p1-v2",
+  "module": "container_intrusive",
+  "claim": "P1 engineering non-inferiority for the v4 counted, cached-tail forward, cancellation-hlist and stable sequence capabilities under consumer-shaped, allocation-free workloads",
+  "candidate": {
+    "target": "hyle_container_intrusive",
+    "delivery_shape": "header-only",
+    "revision": "runtime-bound",
+    "component": "container_intrusive",
+    "entrypoint": "hyle/container/intrusive_list.h"
+  },
+  "peers": [
+    {
+      "id": "boost",
+      "revision": "78505eab9b203e3e26e83893d0685f160133fa0f",
+      "configuration": {
+        "delivery_shape": "header-only",
+        "source": "clean external checkout",
+        "implementation": "Boost.Intrusive list and cached-tail slist with matching member hooks"
+      }
+    },
+    {
+      "id": "sched-manual-hlist",
+      "revision": "b4915574020cc7da857d2871c545a3489c75288b",
+      "configuration": {
+        "delivery_shape": "source baseline",
+        "source": "faithful copy of the pre-v4 Sched cancellation callback next plus previous-link topology",
+        "claim_boundary": "consumer cost regression only; not an external SOTA claim"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY": "1", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "counted-membership-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/container/intrusive-counted-membership",
+      "provenance": {"path": "samples/package/container/cpp/main.cc", "sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd"},
+      "ownership_topology": {
+        "candidate": "One caller-owned HYLE counted safe list links preallocated member-hook nodes and reads size after every insertion and arbitrary removal",
+        "peer": "One caller-owned Boost.Intrusive constant-time-size safe list performs the same operations on layout-matched nodes",
+        "equivalence": "Both lists own no nodes, allocate nothing, maintain one count word, and receive the same insertion and removal order"
+      },
+      "material_contribution": {"frequency": 4096, "value": 2, "unit": "membership-mutation-plus-size-read", "budget": 5, "denominator": "one callback containing 4096 inserts and 4096 arbitrary removes", "derivation": "The package consumer demonstrates the opt-in count contract; this replay charges its normal mutation and size-read cost"},
+      "semantic_contract": "Insert 4096 preallocated safe-link nodes, read the O(1) membership count after every insert, then remove in one deterministic permutation and read the count after every removal",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "contiguous layout-matched nodes and a fixed multiplicative removal permutation", "scale": {"nodes": 4096}},
+      "setup": "Backing allocations and removal permutation are prepared before epochs; each epoch starts with unlinked nodes",
+      "charged_phases": ["4096 push_back mutations and size reads", "one external storage-observation barrier", "4096 known-node removals and size reads", "checksum"],
+      "pair": {"candidate": "HYLE CountedIntrusiveList", "peer": "boost::intrusive counted list"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "forward-arena-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/container/intrusive-forward-arena-chain",
+      "provenance": {"path": "samples/package/container/cpp/main.cc", "sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd"},
+      "ownership_topology": {
+        "candidate": "A cached-tail HYLE forward list links caller-owned one-pointer nodes, traverses them, then detaches each node before a callback",
+        "peer": "A Boost.Intrusive cached-tail safe slist performs the same push, traversal and clear-and-dispose callback on layout-matched nodes",
+        "equivalence": "Both node arrays, list footprints, append order, callback work and explicit-retirement semantics match"
+      },
+      "material_contribution": {"frequency": 4096, "value": 1, "unit": "arena-chain-node", "budget": 5, "denominator": "one append-traverse-drain callback over 4096 nodes", "derivation": "The package consumer retains the one-link cached-tail shape used by arena and deferred-work chains"},
+      "semantic_contract": "Push back 4096 preallocated one-link nodes through a cached tail, traverse in FIFO order, then detach and consume the complete chain",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "contiguous layout-matched nodes with increasing values", "scale": {"nodes": 4096}},
+      "setup": "Backing allocations and values are prepared before epochs; each epoch starts with unlinked nodes",
+      "charged_phases": ["4096 cached-tail push_back mutations", "one external storage-observation barrier", "4096-node traversal", "4096-node detach-and-callback drain", "checksum"],
+      "pair": {"candidate": "HYLE IntrusiveForwardList", "peer": "boost::intrusive cached-tail slist"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "hlist-callbacks-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "sched/cancel-callback-registration-and-fire",
+      "provenance": {"path": "src/sched/cancel.cc", "sha256": "9d3138f5fcf8efb0e5790c202e77b2877055f081c56f435e3edbdc0730f25bcb"},
+      "ownership_topology": {
+        "candidate": "One HYLE safe hlist registers caller-owned callback records, unregisters known records, then detaches the remainder before firing",
+        "peer": "The exact pre-v4 Sched next plus previous-link topology performs the same register, known-record unregister and detach-before-fire sequence",
+        "equivalence": "Both heads use one pointer, records use next plus previous-link, allocation and synchronization are outside the list primitive, and ordering is identical"
+      },
+      "material_contribution": {"frequency": 4096, "value": 1, "unit": "callback-membership", "budget": 5, "denominator": "one callback registration, half-unregister and remainder-fire batch", "derivation": "Sched cancellation is the migrated real consumer; the comparison is a regression budget against its previous faithful implementation"},
+      "semantic_contract": "Register 4096 callback records at the head, unregister a fixed half by known node in O(1), then pop and consume every remaining record",
+      "comparability": "COMPARABLE",
+      "peer_id": "sched-manual-hlist",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "contiguous equal-footprint records and a fixed multiplicative unregister subset", "scale": {"records": 4096}},
+      "setup": "Backing allocations and unregister order are prepared before epochs; each epoch starts with unlinked records",
+      "charged_phases": ["4096 push_front registrations", "one external storage-observation barrier", "2048 known-node removals", "2048 pop-front detach-and-fire steps", "checksum"],
+      "pair": {"candidate": "HYLE SafeIntrusiveHList", "peer": "manual sched callback hlist"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "sequence-sort-merge-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/container/intrusive-stable-sequence",
+      "provenance": {"path": "samples/package/container/cpp/main.cc", "sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd"},
+      "ownership_topology": {
+        "candidate": "Two HYLE safe intrusive lists receive alternating preallocated nodes, sort each half stably, merge them stably and traverse the result",
+        "peer": "Two Boost.Intrusive safe lists perform the same stable sort, merge and traversal on layout-matched nodes",
+        "equivalence": "Both are allocation-free non-owning sequences with the same input values, comparator, partition, output order and checksum"
+      },
+      "material_contribution": {"frequency": 4096, "value": 1, "unit": "stable-sequence-node", "budget": 5, "denominator": "one two-list stable sort-and-merge callback", "derivation": "The package consumer exercises the public stable sort surface; the replay scales the same non-owning sequence contract"},
+      "semantic_contract": "Partition 4096 preallocated nodes across two safe intrusive lists, stable-sort both, stable-merge into one list, then traverse the ordered result",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "fixed multiplicative 31-bit values over contiguous layout-matched nodes", "scale": {"nodes": 4096}},
+      "setup": "Backing allocations and values are prepared before epochs; each epoch starts with unlinked nodes",
+      "charged_phases": ["4096 alternating push_back mutations", "one external storage-observation barrier", "two stable sorts", "one stable merge", "4096-node traversal and checksum"],
+      "pair": {"candidate": "HYLE SafeIntrusiveList sort + merge", "peer": "boost::intrusive list sort + merge"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows", "wsl2", "macos"],
+    "certification_platforms": ["windows", "macos"],
+    "requirements": {"machine_profiles": ["W1-WIN", "W1-WSL", "M1-MAC"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_BOOST": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "container_intrusive",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "boost": "HYLE_BOOST_DIR",
+          "sched-manual-hlist": "HYLE_SCHED_MANUAL_HLIST_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}},
+        "W1-WSL": {"generator": "Ninja", "compiler_id": "GNU", "compiler_version_prefix": "14", "cache": {"CMAKE_C_COMPILER": "gcc-14", "CMAKE_CXX_COMPILER": "g++-14"}},
+        "M1-MAC": {"generator": "Ninja", "compiler_id": "AppleClang", "compiler_version_prefix": "21", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "container-intrusive-primary",
+          "target": "hyle_container_intrusive_bench",
+          "stem": "hyle_container_intrusive_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_INTRUSIVE_RUN "],
+          "workloads": [
+            {"id": "counted-membership-4096", "title": "intrusive counted membership mutation + size N=4096"},
+            {"id": "forward-arena-4096", "title": "intrusive cached-tail arena append/traverse/drain N=4096"},
+            {"id": "hlist-callbacks-4096", "title": "intrusive hlist callback register/unregister/fire N=4096"},
+            {"id": "sequence-sort-merge-4096", "title": "intrusive stable sort + merge N=4096"}
+          ]
+        },
+        {
+          "id": "container-intrusive-placement",
+          "target": "hyle_container_intrusive_bench_placement",
+          "stem": "hyle_container_intrusive_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_INTRUSIVE_RUN "],
+          "workloads": [
+            {"id": "counted-membership-4096", "title": "intrusive counted membership mutation + size N=4096"},
+            {"id": "forward-arena-4096", "title": "intrusive cached-tail arena append/traverse/drain N=4096"},
+            {"id": "hlist-callbacks-4096", "title": "intrusive hlist callback register/unregister/fire N=4096"},
+            {"id": "sequence-sort-merge-4096", "title": "intrusive stable sort + merge N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_CONTAINER_INTRUSIVE_BENCH_FORMAL_ONLY", "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY", "HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_PEER_ALLOCATION_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

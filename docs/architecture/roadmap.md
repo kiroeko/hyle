@@ -56,7 +56,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | simd | core, platform | — |
 | container | core, mem | platform |
 | util | core, error, mem, container | — |
-| sched | core, error, time, platform, mem, util_core | container, timer_queue |
+| sched | core, container_intrusive, error, time, platform, mem, util_core | container, timer_queue |
 | io | core, error, mem, container, time, timer_queue, sched | — |
 | compute | core, error, mem, sched | platform, simd |
 | graph | core, error, mem, container, sched | util_core |
@@ -90,11 +90,13 @@ SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Hi
 `hyle_highway_headers` 外部实现 target，但 Container 不因此依赖、构建或安装 `hyle::simd`。Highway 的
 来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。
 
-`container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
+`container_intrusive` 的公开入口是 `<hyle/container/intrusive_list.h>`、
+`<hyle/container/intrusive_forward_list.h>` 与 `<hyle/container/intrusive_hlist.h>`，公开类型位于
 `hyle::container`；内部 factor target 是 `hyle_container_intrusive`，普通用户由 `hyle::container`
-façade 取得该能力。Time 产品中的 `timer_queue` factor 公开 `TimerEntry` 与 `TimerList`，所以只有它
-保留真实 `PUBLIC container_intrusive` 边；host-clock `time` 不再因此取得 intrusive closure。
-sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假 direct edge。
+façade 取得该能力。Time 产品中的 `timer_queue` factor 公开 `TimerEntry` 与 `TimerList`，保留真实
+`PUBLIC container_intrusive` 边；host-clock `time` 不因此取得 intrusive closure。Sched 的公开 cancel
+record 嵌入 safe hlist hook，因而同样声明真实 `PUBLIC container_intrusive`；waiter 在摘链后复用 link
+storage 作锁外 wake chain，仍保留专用实现。
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。
 

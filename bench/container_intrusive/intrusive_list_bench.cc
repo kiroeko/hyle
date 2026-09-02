@@ -13,26 +13,34 @@
 #include <vector>
 
 #if defined(__APPLE__)
-#include <pthread.h>
+#  include <pthread.h>
 #endif
 
+#include "../common/perf_process.h"
+#include "hyle/container/intrusive_forward_list.h"
+#include "hyle/container/intrusive_hlist.h"
 #include "hyle/container/intrusive_list.h"
 
-#include "../common/perf_process.h"
-
 #if defined(HYLE_BENCH_BOOST)
-#include <boost/intrusive/list.hpp>
+#  include <boost/intrusive/list.hpp>
+#  include <boost/intrusive/slist.hpp>
 #endif
 
 namespace {
 namespace nb = ankerl::nanobench;
+using hyle::container::CountedIntrusiveList;
+using hyle::container::IntrusiveForwardList;
+using hyle::container::IntrusiveForwardListHook;
 using hyle::container::IntrusiveList;
 using hyle::container::IntrusiveListHook;
+using hyle::container::SafeIntrusiveHList;
+using hyle::container::SafeIntrusiveHListHook;
 using hyle::container::SafeIntrusiveList;
 using hyle::container::SafeIntrusiveListHook;
 
-extern "C" std::uintptr_t hyle_container_intrusive_observe_storage_phase(
-    const void *storage, std::size_t byte_count) noexcept;
+extern "C" std::uintptr_t
+hyle_container_intrusive_observe_storage_phase(const void *storage,
+                                               std::size_t byte_count) noexcept;
 
 nb::Bench make_bench() {
   nb::Bench bench;
@@ -69,8 +77,7 @@ ThreadQosState configure_main_benchmark_thread() {
     std::abort();
   }
   const int result = pthread_set_qos_class_self_np(qos, 0);
-  if (result != 0)
-    std::abort();
+  if (result != 0) std::abort();
   return {name, "1"};
 #else
   return {"not-applicable", "not-applicable"};
@@ -96,8 +103,7 @@ bool peer_allocation_first_requested() {
   char *value = nullptr;
   std::size_t size = 0;
   const bool present =
-      _dupenv_s(&value, &size,
-                "HYLE_BENCH_PEER_ALLOCATION_FIRST") == 0 &&
+      _dupenv_s(&value, &size, "HYLE_BENCH_PEER_ALLOCATION_FIRST") == 0 &&
       value != nullptr;
   std::free(value);
   return present;
@@ -121,6 +127,22 @@ bool formal_only_requested() {
 #endif
 }
 
+bool capability_only_requested() {
+#if defined(_WIN32)
+  char *value = nullptr;
+  std::size_t size = 0;
+  const bool present =
+      _dupenv_s(&value, &size,
+                "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY") == 0 &&
+      value != nullptr;
+  std::free(value);
+  return present;
+#else
+  return std::getenv(
+             "HYLE_CONTAINER_INTRUSIVE_BENCH_CAPABILITY_ONLY") != nullptr;
+#endif
+}
+
 struct Node {
   int value = 0;
   IntrusiveListHook hook;
@@ -132,6 +154,55 @@ struct SafeNode {
   SafeIntrusiveListHook hook;
 };
 using SafeNodeList = SafeIntrusiveList<SafeNode, &SafeNode::hook>;
+
+struct CountedNode {
+  int value = 0;
+  SafeIntrusiveListHook hook;
+};
+using CountedNodeList = CountedIntrusiveList<CountedNode, &CountedNode::hook>;
+
+struct ForwardNode {
+  int value = 0;
+  IntrusiveForwardListHook hook;
+};
+using ForwardNodeList = IntrusiveForwardList<ForwardNode, &ForwardNode::hook>;
+
+struct HListNode {
+  int value = 0;
+  SafeIntrusiveHListHook hook;
+};
+using HList = SafeIntrusiveHList<HListNode, &HListNode::hook>;
+
+struct ManualHListNode {
+  int value = 0;
+  ManualHListNode *next = nullptr;
+  ManualHListNode **previous_next = nullptr;
+};
+
+struct ManualHList {
+  void push_front(ManualHListNode *node) noexcept {
+    node->next = head;
+    node->previous_next = &head;
+    if (head != nullptr) head->previous_next = &node->next;
+    head = node;
+  }
+  void remove(ManualHListNode *node) noexcept {
+    *node->previous_next = node->next;
+    if (node->next != nullptr) node->next->previous_next = node->previous_next;
+    node->next = nullptr;
+    node->previous_next = nullptr;
+  }
+  ManualHListNode *pop_front() noexcept {
+    if (head == nullptr) return nullptr;
+    ManualHListNode *node = head;
+    remove(node);
+    return node;
+  }
+  ManualHListNode *head = nullptr;
+};
+
+static_assert(sizeof(HListNode) == sizeof(ManualHListNode));
+static_assert(sizeof(HList) == sizeof(ManualHList));
 
 static_assert(sizeof(Node) == sizeof(SafeNode));
 static_assert(alignof(Node) == alignof(SafeNode));
@@ -159,6 +230,26 @@ using BoostSafeList = bi::list<
     bi::member_hook<BoostSafeNode, BoostSafeHook, &BoostSafeNode::hook>,
     bi::constant_time_size<false>>;
 
+struct BoostCountedNode {
+  int value = 0;
+  BoostSafeHook hook;
+};
+using BoostCountedList = bi::list<
+    BoostCountedNode,
+    bi::member_hook<BoostCountedNode, BoostSafeHook, &BoostCountedNode::hook>,
+    bi::constant_time_size<true>>;
+
+using BoostForwardHook = bi::slist_member_hook<bi::link_mode<bi::safe_link>>;
+struct BoostForwardNode {
+  int value = 0;
+  BoostForwardHook hook;
+};
+using BoostForwardList =
+    bi::slist<BoostForwardNode,
+              bi::member_hook<BoostForwardNode, BoostForwardHook,
+                              &BoostForwardNode::hook>,
+              bi::constant_time_size<false>, bi::cache_last<true>>;
+
 static_assert(sizeof(BoostNode) == sizeof(BoostSafeNode));
 static_assert(alignof(BoostNode) == alignof(BoostSafeNode));
 static_assert(sizeof(BoostList) == sizeof(BoostSafeList));
@@ -173,6 +264,10 @@ static_assert(sizeof(NodeList) == sizeof(BoostList));
 static_assert(alignof(NodeList) == alignof(BoostList));
 static_assert(sizeof(SafeNodeList) == sizeof(BoostSafeList));
 static_assert(alignof(SafeNodeList) == alignof(BoostSafeList));
+static_assert(sizeof(CountedNode) == sizeof(BoostCountedNode));
+static_assert(sizeof(CountedNodeList) == sizeof(BoostCountedList));
+static_assert(sizeof(ForwardNode) == sizeof(BoostForwardNode));
+static_assert(sizeof(ForwardNodeList) == sizeof(BoostForwardList));
 #endif
 
 template <class T> class RawNodeStorage {
@@ -240,8 +335,7 @@ struct AutoPolicy {
   using PeerList = BoostList;
 #endif
   static constexpr const char *label = "auto-unlink";
-  static constexpr const char *fifo_hyle =
-      "HYLE IntrusiveList::consume_all";
+  static constexpr const char *fifo_hyle = "HYLE IntrusiveList::consume_all";
   static constexpr const char *fifo_peer =
       "boost::intrusive auto_unlink clear_and_dispose";
   static constexpr const char *cancel_hyle = "HYLE IntrusiveList::remove";
@@ -292,8 +386,7 @@ void bench_fifo([[maybe_unused]] bool rival_first,
 #if defined(HYLE_BENCH_BOOST)
   using PeerNode = typename Policy::PeerNode;
   using PeerList = typename Policy::PeerList;
-  PairedNodeArrays<HyleNode, PeerNode> storage(Count,
-                                               peer_allocation_first);
+  PairedNodeArrays<HyleNode, PeerNode> storage(Count, peer_allocation_first);
   auto &nodes = storage.hyle;
   auto &boost_nodes = storage.peer;
 #else
@@ -377,8 +470,7 @@ void bench_unlink([[maybe_unused]] bool rival_first,
 #if defined(HYLE_BENCH_BOOST)
   using PeerNode = typename Policy::PeerNode;
   using PeerList = typename Policy::PeerList;
-  PairedNodeArrays<HyleNode, PeerNode> storage(Count,
-                                               peer_allocation_first);
+  PairedNodeArrays<HyleNode, PeerNode> storage(Count, peer_allocation_first);
   auto &nodes = storage.hyle;
   auto &boost_nodes = storage.peer;
 #else
@@ -442,8 +534,7 @@ void bench_iteration([[maybe_unused]] bool rival_first,
 #if defined(HYLE_BENCH_BOOST)
   using PeerNode = typename Policy::PeerNode;
   using PeerList = typename Policy::PeerList;
-  PairedNodeArrays<HyleNode, PeerNode> storage(Count,
-                                               peer_allocation_first);
+  PairedNodeArrays<HyleNode, PeerNode> storage(Count, peer_allocation_first);
   auto &nodes = storage.hyle;
   auto &boost_nodes = storage.peer;
 #else
@@ -502,8 +593,7 @@ void bench_splice([[maybe_unused]] bool rival_first,
 #if defined(HYLE_BENCH_BOOST)
   using PeerNode = typename Policy::PeerNode;
   using PeerList = typename Policy::PeerList;
-  PairedNodeArrays<HyleNode, PeerNode> storage(Count,
-                                               peer_allocation_first);
+  PairedNodeArrays<HyleNode, PeerNode> storage(Count, peer_allocation_first);
   auto &nodes = storage.hyle;
   auto &boost_nodes = storage.peer;
 #else
@@ -599,16 +689,14 @@ HYLE_NOINLINE void boost_auto_node_retirement_workload(
 #endif
 
 template <std::size_t Count>
-void bench_auto_node_retirement(
-    [[maybe_unused]] bool rival_first,
-    [[maybe_unused]] bool peer_allocation_first) {
+void bench_auto_node_retirement([[maybe_unused]] bool rival_first,
+                                [[maybe_unused]] bool peer_allocation_first) {
   static_assert((Count & (Count - 1)) == 0,
                 "multiplicative permutation requires a power of two");
   static_assert(std::is_nothrow_default_constructible_v<Node>);
 #if defined(HYLE_BENCH_BOOST)
   static_assert(std::is_nothrow_default_constructible_v<BoostNode>);
-  PairedRawNodeArrays<Node, BoostNode> storage(Count,
-                                               peer_allocation_first);
+  PairedRawNodeArrays<Node, BoostNode> storage(Count, peer_allocation_first);
   auto &nodes = *storage.hyle;
   auto &boost_nodes = *storage.peer;
 #else
@@ -685,8 +773,7 @@ void bench_discard([[maybe_unused]] bool rival_first,
 #if defined(HYLE_BENCH_BOOST)
   using PeerNode = typename Policy::PeerNode;
   using PeerList = typename Policy::PeerList;
-  PairedNodeArrays<HyleNode, PeerNode> storage(Count,
-                                               peer_allocation_first);
+  PairedNodeArrays<HyleNode, PeerNode> storage(Count, peer_allocation_first);
   auto &nodes = storage.hyle;
   auto &boost_nodes = storage.peer;
 #else
@@ -715,6 +802,276 @@ void bench_discard([[maybe_unused]] bool rival_first,
   }
 #else
   bench.run(Policy::discard_hyle, run_hyle);
+#endif
+}
+
+template <std::size_t Count>
+void bench_counted_membership([[maybe_unused]] bool rival_first,
+                              [[maybe_unused]] bool peer_allocation_first) {
+  static_assert((Count & (Count - 1)) == 0);
+#if defined(HYLE_BENCH_BOOST)
+  PairedNodeArrays<CountedNode, BoostCountedNode> storage(
+      Count, peer_allocation_first);
+  auto &nodes = storage.hyle;
+  auto &peer_nodes = storage.peer;
+#else
+  auto nodes = std::make_unique<CountedNode[]>(Count);
+#endif
+  std::vector<std::size_t> order(Count);
+  for (std::size_t index = 0; index < Count; ++index)
+    order[index] = (index * 2654435761u) & (Count - 1);
+
+  nb::Bench bench = make_bench();
+  bench
+      .title("intrusive counted membership mutation + size N=" +
+             std::to_string(Count))
+      .relative(true)
+      .batch(Count)
+      .minEpochIterations(1000);
+  auto run_hyle = [&] {
+    CountedNodeList list;
+    std::size_t checksum = 0;
+    for (std::size_t index = 0; index < Count; ++index) {
+      list.push_back(&nodes[index]);
+      checksum += list.size();
+    }
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        nodes.get(), Count * sizeof(CountedNode)));
+    for (std::size_t index : order) {
+      list.remove(&nodes[index]);
+      checksum += list.size();
+    }
+    nb::doNotOptimizeAway(checksum);
+  };
+#if defined(HYLE_BENCH_BOOST)
+  auto run_peer = [&] {
+    BoostCountedList list;
+    std::size_t checksum = 0;
+    for (std::size_t index = 0; index < Count; ++index) {
+      list.push_back(peer_nodes[index]);
+      checksum += list.size();
+    }
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        peer_nodes.get(), Count * sizeof(BoostCountedNode)));
+    for (std::size_t index : order) {
+      list.erase(BoostCountedList::s_iterator_to(peer_nodes[index]));
+      checksum += list.size();
+    }
+    nb::doNotOptimizeAway(checksum);
+  };
+  if (rival_first) {
+    bench.run("boost::intrusive counted list", run_peer);
+    bench.run("HYLE CountedIntrusiveList", run_hyle);
+  } else {
+    bench.run("HYLE CountedIntrusiveList", run_hyle);
+    bench.run("boost::intrusive counted list", run_peer);
+  }
+#else
+  bench.run("HYLE CountedIntrusiveList", run_hyle);
+#endif
+}
+
+template <std::size_t Count>
+void bench_forward_arena([[maybe_unused]] bool rival_first,
+                         [[maybe_unused]] bool peer_allocation_first) {
+#if defined(HYLE_BENCH_BOOST)
+  PairedNodeArrays<ForwardNode, BoostForwardNode> storage(
+      Count, peer_allocation_first);
+  auto &nodes = storage.hyle;
+  auto &peer_nodes = storage.peer;
+#else
+  auto nodes = std::make_unique<ForwardNode[]>(Count);
+#endif
+  for (std::size_t index = 0; index < Count; ++index)
+    nodes[index].value = static_cast<int>(index);
+#if defined(HYLE_BENCH_BOOST)
+  for (std::size_t index = 0; index < Count; ++index)
+    peer_nodes[index].value = static_cast<int>(index);
+#endif
+
+  nb::Bench bench = make_bench();
+  bench
+      .title("intrusive cached-tail arena append/traverse/drain N=" +
+             std::to_string(Count))
+      .relative(true)
+      .batch(Count)
+      .minEpochIterations(1000);
+  auto run_hyle = [&] {
+    ForwardNodeList list;
+    for (std::size_t index = 0; index < Count; ++index)
+      list.push_back(&nodes[index]);
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        nodes.get(), Count * sizeof(ForwardNode)));
+    std::size_t checksum = 0;
+    for (const ForwardNode &node : list)
+      checksum += static_cast<std::size_t>(node.value);
+    list.consume_all([&](ForwardNode *node) noexcept {
+      checksum += static_cast<std::size_t>(node->value);
+    });
+    nb::doNotOptimizeAway(checksum);
+  };
+#if defined(HYLE_BENCH_BOOST)
+  auto run_peer = [&] {
+    BoostForwardList list;
+    for (std::size_t index = 0; index < Count; ++index)
+      list.push_back(peer_nodes[index]);
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        peer_nodes.get(), Count * sizeof(BoostForwardNode)));
+    std::size_t checksum = 0;
+    for (const BoostForwardNode &node : list)
+      checksum += static_cast<std::size_t>(node.value);
+    list.clear_and_dispose([&](BoostForwardNode *node) noexcept {
+      checksum += static_cast<std::size_t>(node->value);
+    });
+    nb::doNotOptimizeAway(checksum);
+  };
+  if (rival_first) {
+    bench.run("boost::intrusive cached-tail slist", run_peer);
+    bench.run("HYLE IntrusiveForwardList", run_hyle);
+  } else {
+    bench.run("HYLE IntrusiveForwardList", run_hyle);
+    bench.run("boost::intrusive cached-tail slist", run_peer);
+  }
+#else
+  bench.run("HYLE IntrusiveForwardList", run_hyle);
+#endif
+}
+
+template <std::size_t Count>
+void bench_hlist_callbacks(bool rival_first, bool peer_allocation_first) {
+  static_assert((Count & (Count - 1)) == 0);
+  std::unique_ptr<HListNode[]> nodes;
+  std::unique_ptr<ManualHListNode[]> peer_nodes;
+  if (peer_allocation_first) {
+    peer_nodes = std::make_unique<ManualHListNode[]>(Count);
+    nodes = std::make_unique<HListNode[]>(Count);
+  } else {
+    nodes = std::make_unique<HListNode[]>(Count);
+    peer_nodes = std::make_unique<ManualHListNode[]>(Count);
+  }
+  std::vector<std::size_t> order(Count / 2);
+  for (std::size_t index = 0; index < order.size(); ++index)
+    order[index] = (index * 2654435761u) & (Count - 1);
+
+  nb::Bench bench = make_bench();
+  bench
+      .title("intrusive hlist callback register/unregister/fire N=" +
+             std::to_string(Count))
+      .relative(true)
+      .batch(Count)
+      .minEpochIterations(1000);
+  auto run_hyle = [&] {
+    HList list;
+    for (std::size_t index = 0; index < Count; ++index) {
+      nodes[index].value = static_cast<int>(index);
+      list.push_front(&nodes[index]);
+    }
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        nodes.get(), Count * sizeof(HListNode)));
+    for (std::size_t index : order)
+      list.remove(&nodes[index]);
+    std::size_t checksum = 0;
+    while (HListNode *node = list.pop_front())
+      checksum += static_cast<std::size_t>(node->value);
+    nb::doNotOptimizeAway(checksum);
+  };
+  auto run_peer = [&] {
+    ManualHList list;
+    for (std::size_t index = 0; index < Count; ++index) {
+      peer_nodes[index].value = static_cast<int>(index);
+      list.push_front(&peer_nodes[index]);
+    }
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        peer_nodes.get(), Count * sizeof(ManualHListNode)));
+    for (std::size_t index : order)
+      list.remove(&peer_nodes[index]);
+    std::size_t checksum = 0;
+    while (ManualHListNode *node = list.pop_front())
+      checksum += static_cast<std::size_t>(node->value);
+    nb::doNotOptimizeAway(checksum);
+  };
+  if (rival_first) {
+    bench.run("manual sched callback hlist", run_peer);
+    bench.run("HYLE SafeIntrusiveHList", run_hyle);
+  } else {
+    bench.run("HYLE SafeIntrusiveHList", run_hyle);
+    bench.run("manual sched callback hlist", run_peer);
+  }
+}
+
+template <std::size_t Count>
+void bench_sequence_sort_merge([[maybe_unused]] bool rival_first,
+                               [[maybe_unused]] bool peer_allocation_first) {
+#if defined(HYLE_BENCH_BOOST)
+  PairedNodeArrays<SafeNode, BoostSafeNode> storage(Count,
+                                                    peer_allocation_first);
+  auto &nodes = storage.hyle;
+  auto &peer_nodes = storage.peer;
+#else
+  auto nodes = std::make_unique<SafeNode[]>(Count);
+#endif
+  for (std::size_t index = 0; index < Count; ++index)
+    nodes[index].value = static_cast<int>((index * 2654435761u) & 0x7fffffffu);
+#if defined(HYLE_BENCH_BOOST)
+  for (std::size_t index = 0; index < Count; ++index)
+    peer_nodes[index].value =
+        static_cast<int>((index * 2654435761u) & 0x7fffffffu);
+#endif
+  auto compare_hyle = [](const SafeNode &left, const SafeNode &right) noexcept {
+    return left.value < right.value;
+  };
+#if defined(HYLE_BENCH_BOOST)
+  auto compare_peer = [](const BoostSafeNode &left,
+                         const BoostSafeNode &right) noexcept {
+    return left.value < right.value;
+  };
+#endif
+
+  nb::Bench bench = make_bench();
+  bench.title("intrusive stable sort + merge N=" + std::to_string(Count))
+      .relative(true)
+      .batch(Count)
+      .minEpochIterations(100);
+  auto run_hyle = [&] {
+    SafeNodeList left;
+    SafeNodeList right;
+    for (std::size_t index = 0; index < Count; ++index)
+      (index & 1u ? left : right).push_back(&nodes[index]);
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        nodes.get(), Count * sizeof(SafeNode)));
+    left.sort(compare_hyle);
+    right.sort(compare_hyle);
+    left.merge(right, compare_hyle);
+    std::size_t checksum = 0;
+    for (const SafeNode &node : left)
+      checksum += static_cast<std::size_t>(node.value);
+    nb::doNotOptimizeAway(checksum);
+  };
+#if defined(HYLE_BENCH_BOOST)
+  auto run_peer = [&] {
+    BoostSafeList left;
+    BoostSafeList right;
+    for (std::size_t index = 0; index < Count; ++index)
+      (index & 1u ? left : right).push_back(peer_nodes[index]);
+    nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
+        peer_nodes.get(), Count * sizeof(BoostSafeNode)));
+    left.sort(compare_peer);
+    right.sort(compare_peer);
+    left.merge(right, compare_peer);
+    std::size_t checksum = 0;
+    for (const BoostSafeNode &node : left)
+      checksum += static_cast<std::size_t>(node.value);
+    nb::doNotOptimizeAway(checksum);
+  };
+  if (rival_first) {
+    bench.run("boost::intrusive list sort + merge", run_peer);
+    bench.run("HYLE SafeIntrusiveList sort + merge", run_hyle);
+  } else {
+    bench.run("HYLE SafeIntrusiveList sort + merge", run_hyle);
+    bench.run("boost::intrusive list sort + merge", run_peer);
+  }
+#else
+  bench.run("HYLE SafeIntrusiveList sort + merge", run_hyle);
 #endif
 }
 
@@ -749,17 +1106,26 @@ int main() {
   const bool rival_first = rival_first_requested();
   const bool peer_allocation_first = peer_allocation_first_requested();
   const bool formal_only = formal_only_requested();
+  const bool capability_only = capability_only_requested();
   std::fprintf(
       stderr,
-      "# HYLE_CONTAINER_INTRUSIVE_RUN formal_only=%d execution_order=%s "
+      "# HYLE_CONTAINER_INTRUSIVE_RUN formal_only=%d capability_only=%d "
+      "execution_order=%s "
       "allocation_order=%s apple_qos=%s qos_ok=%s affinity=external "
       "run_nonce=%s\n",
-      formal_only ? 1 : 0, rival_first ? "peer-first" : "candidate-first",
-      peer_allocation_first ? "peer-first" : "candidate-first",
-      qos.name, qos.ok, hyle::bench::perf::run_nonce());
-  run_policy_benches<AutoPolicy>(rival_first, formal_only,
-                                 peer_allocation_first, true);
-  run_policy_benches<SafePolicy>(rival_first, formal_only,
-                                 peer_allocation_first, false);
-  bench_auto_node_retirement<4096>(rival_first, peer_allocation_first);
+      formal_only ? 1 : 0, capability_only ? 1 : 0,
+      rival_first ? "peer-first" : "candidate-first",
+      peer_allocation_first ? "peer-first" : "candidate-first", qos.name,
+      qos.ok, hyle::bench::perf::run_nonce());
+  if (!capability_only) {
+    run_policy_benches<AutoPolicy>(rival_first, formal_only,
+                                   peer_allocation_first, true);
+    run_policy_benches<SafePolicy>(rival_first, formal_only,
+                                   peer_allocation_first, false);
+    bench_auto_node_retirement<4096>(rival_first, peer_allocation_first);
+  }
+  bench_counted_membership<4096>(rival_first, peer_allocation_first);
+  bench_forward_arena<4096>(rival_first, peer_allocation_first);
+  bench_hlist_callbacks<4096>(rival_first, peer_allocation_first);
+  bench_sequence_sort_merge<4096>(rival_first, peer_allocation_first);
 }

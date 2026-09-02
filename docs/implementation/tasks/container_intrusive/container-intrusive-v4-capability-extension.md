@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`SCOPED`。本页先保存击穿 v3 negative space 的新事实，并冻结本轮用户任务、预算与
-> 验证边界；完成两遍能力审计和有限 `FIX` 集以前仍不写产品实现、不开始计时。权威状态是
+> 当前阶段：`AUDITED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；产品实现只能覆盖下列
+> 有限 `FIX` 集。权威状态是
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -193,6 +193,19 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；下一步只实现这些
-条目并完成 correctness/直接消费者/交付，形成 candidate 后才运行 P1。尚无 candidate，旧 v3 性能证据
-不能覆盖新增能力或变化后的产品 identity。
+`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动已经
+按冻结边界实现，但尚未绑定不可变 candidate identity，因此还不能进入 P1 或把本轮写成已验证。旧 v3
+性能证据不能覆盖新增能力或变化后的产品 identity。
+
+候选准备阶段已经完成以下非性能门：
+
+- Windows MSVC 19.50 精确 factor 的 header、unit/differential、异常保证、no-exception consumer 与旧
+  codegen gate 全部通过；Sched cancellation 真实消费者的 header/runtime 测试通过；
+- WSL GCC 14.2 Release 精确 factor 的同一组测试通过，ASan/UBSan 已在本轮实现 identity 上分别通过；
+- 中央 component contract 与 Container source/static/shared relocated consumer 通过，新头 owner、Sched
+  direct edge 和 installed header closure 得到验证；
+- `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
+  `d74e37cf3f41f463ce39b766087c1df57ed96107b961563936ecabae999761c1`。
+
+下一步只允许提交当前实现、绑定 candidate commit/tree，然后在 clean candidate checkout 上执行 Mac
+correctness/交付与 W1-WIN P1 qualification；结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。

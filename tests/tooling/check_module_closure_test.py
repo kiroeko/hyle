@@ -52,15 +52,20 @@ def main() -> None:
         if record["product_state"] == "CLOSED"
     )
     terminal_module = terminal_record["module"]
+    p1_terminal_record = next(
+        record for record in data["modules"]
+        if record["product_state"] == "CLOSED" and
+        record.get("performance_tier") == "P1"
+    )
+    p1_terminal_module = p1_terminal_record["module"]
 
     p1_engineering_close = copy.deepcopy(data)
-    intrusive = next(
+    p1_record = next(
         record for record in p1_engineering_close["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["product_state"] = "CLOSED"
-    intrusive["engineering_performance"]["verdict"] = "PASS"
-    intrusive["gate_verdicts"]["engineering_performance"] = "PASS"
-    intrusive["gate_verdicts"]["red_team"] = "PASS"
+        if record["module"] == p1_terminal_module)
+    p1_record["engineering_performance"]["verdict"] = "PASS"
+    p1_record["gate_verdicts"]["engineering_performance"] = "PASS"
+    p1_record["gate_verdicts"]["red_team"] = "PASS"
     errors = checker.validate_registry(p1_engineering_close, root)
     if errors:
         raise AssertionError(
@@ -68,13 +73,12 @@ def main() -> None:
             f"{errors!r}")
 
     p1_false_close = copy.deepcopy(data)
-    intrusive = next(
+    p1_record = next(
         record for record in p1_false_close["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["product_state"] = "CLOSED"
-    intrusive["engineering_performance"]["verdict"] = "PLANNED"
-    intrusive["gate_verdicts"]["engineering_performance"] = "INCONCLUSIVE"
-    intrusive["gate_verdicts"]["red_team"] = "PASS"
+        if record["module"] == p1_terminal_module)
+    p1_record["engineering_performance"]["verdict"] = "PLANNED"
+    p1_record["gate_verdicts"]["engineering_performance"] = "INCONCLUSIVE"
+    p1_record["gate_verdicts"]["red_team"] = "PASS"
     errors = checker.validate_registry(p1_false_close, root)
     require_error(errors, "CLOSED requires engineering verdict PASS")
     require_error(errors, "CLOSED has non-passing gates")
@@ -123,19 +127,19 @@ def main() -> None:
     require_error(errors, "P2 must use closure-perf-v1")
 
     verified_planned = copy.deepcopy(data)
-    intrusive = next(
+    p1_record = next(
         record for record in verified_planned["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["product_state"] = "VERIFIED"
-    intrusive["engineering_performance"]["verdict"] = "PLANNED"
+        if record["module"] == p1_terminal_module)
+    p1_record["product_state"] = "VERIFIED"
+    p1_record["engineering_performance"]["verdict"] = "PLANNED"
     errors = checker.validate_registry(verified_planned, root)
     require_error(errors, "cannot retain a PLANNED engineering verdict")
 
     closed_red_team_na = copy.deepcopy(p1_engineering_close)
-    intrusive = next(
+    p1_record = next(
         record for record in closed_red_team_na["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["gate_verdicts"]["red_team"] = "NOT_APPLICABLE"
+        if record["module"] == p1_terminal_module)
+    p1_record["gate_verdicts"]["red_team"] = "NOT_APPLICABLE"
     errors = checker.validate_registry(closed_red_team_na, root)
     require_error(errors, "CLOSED has non-passing gates: red_team")
 

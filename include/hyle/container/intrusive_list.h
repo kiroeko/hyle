@@ -1,14 +1,12 @@
 #pragma once
 
-#include <bit>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <iterator>
-#include <new>
 #include <type_traits>
 #include <utility>
 
+#include "hyle/container/detail/intrusive_member.h"
 #include "hyle/core/compiler.h"
 
 namespace hyle::container {
@@ -23,7 +21,8 @@ struct IntrusiveListLink {
   IntrusiveListLink *next = nullptr;
 };
 
-template <class T, auto Hook, class PublicList> class IntrusiveListImpl;
+template <class T, auto Hook, class PublicList, bool Counted>
+class IntrusiveListImpl;
 
 } // namespace detail
 
@@ -39,7 +38,9 @@ template <class T, auto Hook, class PublicList> class IntrusiveListImpl;
 // list owns no nodes and allocates nothing. Like folly::IntrusiveList's
 // auto-unlink hook, destroying a node detaches it. Construction by copy/move
 // always creates an unlinked hook; assignment deliberately preserves the
-// destination hook's membership and never imports the source membership.
+// destination hook's membership and never imports the source membership. The
+// hook and list are thread-compatible only; overlapping mutation, traversal
+// and lifetime transitions require external synchronization.
 struct IntrusiveListHook {
   IntrusiveListHook() noexcept = default;
   IntrusiveListHook(const IntrusiveListHook &) noexcept {}
@@ -52,8 +53,7 @@ struct IntrusiveListHook {
 
   bool linked() const noexcept { return link_.prev != nullptr; }
   void unlink() noexcept {
-    if (!linked())
-      return;
+    if (!linked()) return;
     detail::IntrusiveListLink *previous = link_.prev;
     detail::IntrusiveListLink *next = link_.next;
     previous->next = next;
@@ -63,18 +63,16 @@ struct IntrusiveListHook {
   }
 
 private:
-  template <class, auto, class> friend class detail::IntrusiveListImpl;
+  template <class, auto, class, bool> friend class detail::IntrusiveListImpl;
 
   // Raw link surgery is deliberately private. The typed IntrusiveList entry
   // point proves that both nodes use the same value type and selected hook.
   void swap_position_with(IntrusiveListHook &other) noexcept {
-    if (this == &other)
-      return;
+    if (this == &other) return;
 
     const bool this_linked = linked();
     const bool other_linked = other.linked();
-    if (!this_linked && !other_linked)
-      return;
+    if (!this_linked && !other_linked) return;
 
     if (!this_linked) {
       detail::IntrusiveListLink *previous = other.link_.prev;
@@ -160,7 +158,7 @@ struct SafeIntrusiveListHook {
   bool linked() const noexcept { return link_.prev != nullptr; }
 
 private:
-  template <class, auto, class> friend class detail::IntrusiveListImpl;
+  template <class, auto, class, bool> friend class detail::IntrusiveListImpl;
 
   detail::IntrusiveListLink link_;
 };
@@ -170,13 +168,19 @@ static_assert(std::is_standard_layout_v<SafeIntrusiveListHook>);
 
 template <class T, IntrusiveListHook T::*Hook> class IntrusiveList;
 template <class T, SafeIntrusiveListHook T::*Hook> class SafeIntrusiveList;
+template <class T, SafeIntrusiveListHook T::*Hook> class CountedIntrusiveList;
 
 namespace detail {
 
-template <class T, auto Hook, class PublicList> class IntrusiveListImpl {
+template <bool Counted> struct IntrusiveListCountState {};
+template <> struct IntrusiveListCountState<true> {
+  std::size_t value = 0;
+};
+
+template <class T, auto Hook, class PublicList, bool Counted>
+class IntrusiveListImpl : private IntrusiveListCountState<Counted> {
 public:
-  using HookType =
-      std::remove_reference_t<decltype(std::declval<T &>().*Hook)>;
+  using HookType = std::remove_reference_t<decltype(std::declval<T &>().*Hook)>;
   static_assert(std::is_same_v<HookType, IntrusiveListHook> ||
                     std::is_same_v<HookType, SafeIntrusiveListHook>,
                 "unsupported intrusive-list hook policy");
@@ -260,6 +264,11 @@ public:
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   bool empty() const noexcept { return sentinel_.next == &sentinel_; }
+  size_type size() const noexcept
+    requires Counted
+  {
+    return count_state().value;
+  }
 
   iterator begin() noexcept { return iterator(sentinel_.next); }
   const_iterator begin() const noexcept {
@@ -303,23 +312,23 @@ public:
     IntrusiveListLink *hook = hook_of(node);
     HYLE_ASSUME(hook->prev == nullptr);
     insert_before(&sentinel_, hook);
+    increment_count();
   }
   void push_front(T *node) noexcept {
     HYLE_ASSUME(node != nullptr);
     IntrusiveListLink *hook = hook_of(node);
     HYLE_ASSUME(hook->prev == nullptr);
     insert_before(sentinel_.next, hook);
+    increment_count();
   }
 
   [[nodiscard]] bool try_push_back(T *node) noexcept {
-    if (node == nullptr || hook_of(node)->prev != nullptr)
-      return false;
+    if (node == nullptr || hook_of(node)->prev != nullptr) return false;
     push_back(node);
     return true;
   }
   [[nodiscard]] bool try_push_front(T *node) noexcept {
-    if (node == nullptr || hook_of(node)->prev != nullptr)
-      return false;
+    if (node == nullptr || hook_of(node)->prev != nullptr) return false;
     push_front(node);
     return true;
   }
@@ -331,12 +340,12 @@ public:
     IntrusiveListLink *hook = hook_of(node);
     HYLE_ASSUME(hook->prev == nullptr);
     insert_before(mutable_hook(pos), hook);
+    increment_count();
     return iterator(hook);
   }
 
   [[nodiscard]] bool try_insert(const_iterator pos, T *node) noexcept {
-    if (node == nullptr || hook_of(node)->prev != nullptr)
-      return false;
+    if (node == nullptr || hook_of(node)->prev != nullptr) return false;
     (void)insert(pos, node);
     return true;
   }
@@ -352,8 +361,7 @@ public:
 
   [[nodiscard]] T *pop_front() noexcept {
     IntrusiveListLink *h = sentinel_.next;
-    if (h == &sentinel_)
-      return nullptr;
+    if (h == &sentinel_) return nullptr;
     // The predecessor is known to be sentinel_. Avoid the generic unlink()
     // load of h->prev; this is the dominant drain path for timer ready lists.
     IntrusiveListLink *next = h->next;
@@ -361,17 +369,18 @@ public:
     next->prev = &sentinel_;
     h->prev = nullptr;
     h->next = nullptr;
+    decrement_count();
     return node_of(h);
   }
   [[nodiscard]] T *pop_back() noexcept {
     IntrusiveListLink *h = sentinel_.prev;
-    if (h == &sentinel_)
-      return nullptr;
+    if (h == &sentinel_) return nullptr;
     IntrusiveListLink *prev = h->prev;
     sentinel_.prev = prev;
     prev->next = &sentinel_;
     h->prev = nullptr;
     h->next = nullptr;
+    decrement_count();
     return node_of(h);
   }
 
@@ -382,6 +391,7 @@ public:
     const_iterator next = pos;
     ++next;
     unlink_unchecked(mutable_hook(pos));
+    decrement_count();
     return iterator(mutable_hook(next));
   }
 
@@ -396,6 +406,7 @@ public:
     }
     sentinel_.next = &sentinel_;
     sentinel_.prev = &sentinel_;
+    reset_count();
   }
 
   // Detach and consume the complete list without updating the sentinel for
@@ -407,19 +418,18 @@ public:
     requires std::is_nothrow_invocable_v<Fn &, T *>
   std::size_t consume_all(Fn &&fn) noexcept {
     IntrusiveListLink *current = sentinel_.next;
-    if (current == &sentinel_)
-      return 0;
+    if (current == &sentinel_) return 0;
 
     sentinel_.prev = &sentinel_;
     sentinel_.next = &sentinel_;
-    std::size_t count = 0;
+    std::size_t count = take_count();
     while (current != &sentinel_) {
       IntrusiveListLink *next = current->next;
       current->prev = nullptr;
       current->next = nullptr;
       std::invoke(fn, node_of(current));
       current = next;
-      ++count;
+      if constexpr (!Counted) ++count;
     }
     return count;
   }
@@ -429,13 +439,13 @@ public:
   void splice(const_iterator pos, PublicList &source) noexcept {
     IntrusiveListImpl &source_impl = source;
     HYLE_ASSUME(&source_impl != this);
-    if (source.empty())
-      return;
+    if (source.empty()) return;
 
     IntrusiveListLink *first = source_impl.sentinel_.next;
     IntrusiveListLink *last = source_impl.sentinel_.prev;
     source_impl.sentinel_.prev = &source_impl.sentinel_;
     source_impl.sentinel_.next = &source_impl.sentinel_;
+    transfer_all_count_from(source_impl);
 
     IntrusiveListLink *position = mutable_hook(pos);
     IntrusiveListLink *before = position->prev;
@@ -471,6 +481,7 @@ public:
     hook->prev = before_position;
     hook->next = position;
     position->prev = hook;
+    transfer_one_count_from(source_impl);
     return iterator(hook);
   }
 
@@ -480,8 +491,33 @@ public:
   // same-list transfer, pos must not lie strictly inside [first, last).
   // Preconditions: pos belongs to this list and [first, last) is a valid range
   // in source. Returns the first transferred iterator, or pos for a no-op.
-  iterator splice(const_iterator pos, PublicList &source,
-                  const_iterator first, const_iterator last) noexcept {
+  iterator splice(const_iterator pos, PublicList &source, const_iterator first,
+                  const_iterator last) noexcept {
+    std::size_t range_count = 0;
+    if constexpr (Counted) {
+      IntrusiveListImpl &source_impl = source;
+      if (&source_impl != this) {
+        for (auto current = first; current != last; ++current)
+          ++range_count;
+      }
+    }
+    return splice_range(pos, source, first, last, range_count);
+  }
+
+  // Counted lists may supply a verified [first,last) size to keep a cross-list
+  // range transfer O(1). A wrong count violates the caller contract.
+  iterator splice(const_iterator pos, PublicList &source, const_iterator first,
+                  const_iterator last, std::size_t range_count) noexcept
+    requires Counted
+  {
+    return splice_range(pos, source, first, last, range_count);
+  }
+
+private:
+  iterator splice_range(const_iterator pos, PublicList &source,
+                        const_iterator first, const_iterator last,
+                        std::size_t range_count) noexcept {
+    IntrusiveListImpl &source_impl = source;
     IntrusiveListLink *position = mutable_hook(pos);
     IntrusiveListLink *range_first = mutable_hook(first);
     IntrusiveListLink *after_range = mutable_hook(last);
@@ -499,22 +535,23 @@ public:
     range_first->prev = before_position;
     range_last->next = position;
     position->prev = range_last;
-    (void)source;
+    transfer_range_count_from(source_impl, range_count);
     return iterator(range_first);
   }
 
+public:
   // Concatenate source onto this list in O(1). This is the radix/timing-wheel
   // bucket-splice primitive and is also useful for completion batches.
   void append(PublicList &source) noexcept {
     IntrusiveListImpl &source_impl = source;
     HYLE_ASSUME(&source_impl != this);
-    if (source.empty())
-      return;
+    if (source.empty()) return;
 
     IntrusiveListLink *first = source_impl.sentinel_.next;
     IntrusiveListLink *last = source_impl.sentinel_.prev;
     source_impl.sentinel_.prev = &source_impl.sentinel_;
     source_impl.sentinel_.next = &source_impl.sentinel_;
+    transfer_all_count_from(source_impl);
 
     IntrusiveListLink *destination_last = sentinel_.prev;
     destination_last->next = first;
@@ -525,8 +562,7 @@ public:
 
   void swap(PublicList &other) noexcept {
     IntrusiveListImpl &other_impl = other;
-    if (this == &other_impl)
-      return;
+    if (this == &other_impl) return;
 
     IntrusiveListLink *this_first = sentinel_.next;
     IntrusiveListLink *this_last = sentinel_.prev;
@@ -537,6 +573,7 @@ public:
     sentinel_.prev = other_last;
     other_impl.sentinel_.next = this_first;
     other_impl.sentinel_.prev = this_last;
+    swap_count(other_impl);
 
     if (other_first == &other_impl.sentinel_) {
       sentinel_.next = &sentinel_;
@@ -584,6 +621,112 @@ public:
     IntrusiveListLink *hook = hook_of(node);
     HYLE_ASSUME(hook->prev != nullptr);
     unlink_unchecked(hook);
+    decrement_count();
+  }
+
+  template <class Predicate> std::size_t remove_if(Predicate predicate) {
+    std::size_t removed = 0;
+    for (auto current = begin(); current != end();) {
+      auto next = current;
+      ++next;
+      if (std::invoke(predicate, *current)) {
+        erase(current);
+        ++removed;
+      }
+      current = next;
+    }
+    return removed;
+  }
+
+  std::size_t remove(const T &value) {
+    return remove_if([&](const T &candidate) { return candidate == value; });
+  }
+
+  template <class BinaryPredicate = std::equal_to<>>
+  std::size_t unique(BinaryPredicate equivalent = {}) {
+    if (empty()) return 0;
+    std::size_t removed = 0;
+    auto previous = begin();
+    auto current = previous;
+    ++current;
+    while (current != end()) {
+      auto next = current;
+      ++next;
+      if (std::invoke(equivalent, *previous, *current)) {
+        erase(current);
+        ++removed;
+      } else {
+        previous = current;
+      }
+      current = next;
+    }
+    return removed;
+  }
+
+  void reverse() noexcept {
+    IntrusiveListLink *current = &sentinel_;
+    do {
+      IntrusiveListLink *next = current->next;
+      std::swap(current->next, current->prev);
+      current = next;
+    } while (current != &sentinel_);
+  }
+
+  template <class Compare = std::less<>>
+  void merge(PublicList &source, Compare compare = {}) {
+    IntrusiveListImpl &source_impl = source;
+    HYLE_ASSUME(&source_impl != this);
+    auto destination = begin();
+    auto candidate = source.begin();
+    while (destination != end() && candidate != source.end()) {
+      if (std::invoke(compare, *candidate, *destination)) {
+        auto moving = candidate;
+        ++candidate;
+        splice(destination, source, moving);
+      } else {
+        ++destination;
+      }
+    }
+    if (candidate != source.end())
+      splice(end(), source, candidate, source.end());
+  }
+
+  template <class Compare = std::less<>> void sort(Compare compare = {}) {
+    if (empty() || sentinel_.next->next == &sentinel_) return;
+
+    PublicList carry;
+    PublicList bins[sizeof(std::size_t) * 8];
+    std::size_t fill = 0;
+    struct GatherGuard {
+      PublicList *destination;
+      PublicList *carry;
+      PublicList *bins;
+      bool active = true;
+
+      ~GatherGuard() {
+        if (!active) return;
+        destination->append(*carry);
+        for (std::size_t index = 0; index < sizeof(std::size_t) * 8; ++index)
+          destination->append(bins[index]);
+      }
+    };
+    GatherGuard guard{&static_cast<PublicList &>(*this), &carry, bins};
+
+    while (!empty()) {
+      carry.splice(carry.begin(), static_cast<PublicList &>(*this), begin());
+      std::size_t index = 0;
+      while (index < fill && !bins[index].empty()) {
+        bins[index].merge(carry, compare);
+        bins[index].swap(carry);
+        ++index;
+      }
+      carry.swap(bins[index]);
+      if (index == fill) ++fill;
+    }
+    for (std::size_t index = 1; index < fill; ++index)
+      bins[index].merge(bins[index - 1], compare);
+    bins[fill - 1].swap(static_cast<PublicList &>(*this));
+    guard.active = false;
   }
 
 private:
@@ -592,37 +735,15 @@ private:
   }
 
   static IntrusiveListLink *hook_of(T *node) noexcept {
-    return &(node->*Hook).link_;
+    return &IntrusiveMemberAccess<T, Hook>::member_of(node)->link_;
   }
   static const IntrusiveListLink *hook_of(const T *node) noexcept {
-    return &(node->*Hook).link_;
-  }
-
-  // C++ has no standard inverse for an arbitrary pointer-to-data-member.
-  // HYLE's supported compilers use one of the two documented direct data-member
-  // pointer ABIs below. Decode the representation without the traditional
-  // null-pointer member expression, which is UB. The size assertions fail
-  // closed if a compiler selects a richer inheritance representation; this is
-  // the actual ABI boundary, rather than an unnecessary standard-layout<T>
-  // restriction.
-  static std::ptrdiff_t hook_offset() noexcept {
-#if defined(_MSC_VER)
-    static_assert(sizeof(Hook) == sizeof(int),
-                  "unsupported MSVC data-member pointer representation");
-    return static_cast<std::ptrdiff_t>(std::bit_cast<int>(Hook));
-#elif defined(__GNUC__) || defined(__clang__)
-    static_assert(sizeof(Hook) == sizeof(std::ptrdiff_t),
-                  "unsupported Itanium data-member pointer representation");
-    return std::bit_cast<std::ptrdiff_t>(Hook);
-#else
-#error "IntrusiveList requires a supported data-member pointer ABI"
-#endif
+    return &IntrusiveMemberAccess<T, Hook>::member_of(node)->link_;
   }
 
   static T *node_of(IntrusiveListLink *h) noexcept {
-    const auto address = reinterpret_cast<std::uintptr_t>(h) -
-                         static_cast<std::uintptr_t>(hook_offset());
-    return std::launder(reinterpret_cast<T *>(address));
+    auto *hook = reinterpret_cast<HookType *>(h);
+    return IntrusiveMemberAccess<T, Hook>::owner_of(hook);
   }
   static const T *node_of(const IntrusiveListLink *h) noexcept {
     return node_of(const_cast<IntrusiveListLink *>(h));
@@ -646,9 +767,61 @@ private:
     hook->prev = nullptr;
   }
 
+  IntrusiveListCountState<Counted> &count_state() noexcept { return *this; }
+  const IntrusiveListCountState<Counted> &count_state() const noexcept {
+    return *this;
+  }
+  void increment_count() noexcept {
+    if constexpr (Counted) ++count_state().value;
+  }
+  void decrement_count() noexcept {
+    if constexpr (Counted) {
+      HYLE_ASSUME(count_state().value != 0);
+      --count_state().value;
+    }
+  }
+  void reset_count() noexcept {
+    if constexpr (Counted) count_state().value = 0;
+  }
+  std::size_t take_count() noexcept {
+    if constexpr (Counted) {
+      return std::exchange(count_state().value, 0);
+    } else {
+      return 0;
+    }
+  }
+  void transfer_all_count_from(IntrusiveListImpl &source) noexcept {
+    if constexpr (Counted)
+      count_state().value += std::exchange(source.count_state().value, 0);
+  }
+  void transfer_one_count_from(IntrusiveListImpl &source) noexcept {
+    if constexpr (Counted) {
+      if (&source != this) {
+        HYLE_ASSUME(source.count_state().value != 0);
+        --source.count_state().value;
+        ++count_state().value;
+      }
+    }
+  }
+  void transfer_range_count_from(IntrusiveListImpl &source,
+                                 std::size_t range_count) noexcept {
+    if constexpr (Counted) {
+      if (&source != this) {
+        HYLE_ASSUME(source.count_state().value >= range_count);
+        source.count_state().value -= range_count;
+        count_state().value += range_count;
+      }
+    }
+  }
+  void swap_count(IntrusiveListImpl &other) noexcept {
+    if constexpr (Counted)
+      std::swap(count_state().value, other.count_state().value);
+  }
+
 protected:
   static void swap_auto_nodes(T *left, T *right) noexcept
-      requires std::is_same_v<HookType, IntrusiveListHook> {
+    requires std::is_same_v<HookType, IntrusiveListHook>
+  {
     HYLE_ASSUME(left != nullptr);
     HYLE_ASSUME(right != nullptr);
     (left->*Hook).swap_position_with(right->*Hook);
@@ -672,8 +845,9 @@ private:
 // linked node detaches during destruction.
 template <class T, IntrusiveListHook T::*Hook>
 class IntrusiveList
-    : public detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>> {
-  using Base = detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>>;
+    : public detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>, false> {
+  using Base =
+      detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>, false>;
 
 public:
   // Exchange left's and right's membership and position in O(1). Both nodes
@@ -693,8 +867,7 @@ public:
   IntrusiveList &operator=(const IntrusiveList &) = delete;
   IntrusiveList(IntrusiveList &&other) noexcept { this->append(other); }
   IntrusiveList &operator=(IntrusiveList &&other) noexcept {
-    if (this != &other)
-      this->swap(other);
+    if (this != &other) this->swap(other);
     return *this;
   }
   ~IntrusiveList() = default;
@@ -708,26 +881,49 @@ public:
 // only be changed by the list. A linked node must not be destroyed.
 template <class T, SafeIntrusiveListHook T::*Hook>
 class SafeIntrusiveList
-    : public detail::IntrusiveListImpl<T, Hook, SafeIntrusiveList<T, Hook>> {
+    : public detail::IntrusiveListImpl<T, Hook, SafeIntrusiveList<T, Hook>,
+                                       false> {
   using Base =
-      detail::IntrusiveListImpl<T, Hook, SafeIntrusiveList<T, Hook>>;
+      detail::IntrusiveListImpl<T, Hook, SafeIntrusiveList<T, Hook>, false>;
 
 public:
   SafeIntrusiveList() noexcept = default;
   SafeIntrusiveList(const SafeIntrusiveList &) = delete;
   SafeIntrusiveList &operator=(const SafeIntrusiveList &) = delete;
-  SafeIntrusiveList(SafeIntrusiveList &&other) noexcept {
-    this->append(other);
-  }
+  SafeIntrusiveList(SafeIntrusiveList &&other) noexcept { this->append(other); }
   SafeIntrusiveList &operator=(SafeIntrusiveList &&other) noexcept {
-    if (this != &other)
-      this->swap(other);
+    if (this != &other) this->swap(other);
     return *this;
   }
   ~SafeIntrusiveList() = default;
 
-  friend void swap(SafeIntrusiveList &left,
-                   SafeIntrusiveList &right) noexcept {
+  friend void swap(SafeIntrusiveList &left, SafeIntrusiveList &right) noexcept {
+    left.swap(right);
+  }
+};
+
+// Safe-link list with an opt-in O(1) membership count. The node hook is shared
+// with SafeIntrusiveList; only this list object pays one size word and one
+// update per membership mutation.
+template <class T, SafeIntrusiveListHook T::*Hook>
+class CountedIntrusiveList
+    : public detail::IntrusiveListImpl<T, Hook, CountedIntrusiveList<T, Hook>,
+                                       true> {
+public:
+  CountedIntrusiveList() noexcept = default;
+  CountedIntrusiveList(const CountedIntrusiveList &) = delete;
+  CountedIntrusiveList &operator=(const CountedIntrusiveList &) = delete;
+  CountedIntrusiveList(CountedIntrusiveList &&other) noexcept {
+    this->append(other);
+  }
+  CountedIntrusiveList &operator=(CountedIntrusiveList &&other) noexcept {
+    if (this != &other) this->swap(other);
+    return *this;
+  }
+  ~CountedIntrusiveList() = default;
+
+  friend void swap(CountedIntrusiveList &left,
+                   CountedIntrusiveList &right) noexcept {
     left.swap(right);
   }
 };

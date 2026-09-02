@@ -17,13 +17,17 @@ struct CancelTree {
 };
 
 struct CancelNode {
+  using CallbackList =
+      container::SafeIntrusiveHList<CancelCallbackRecord,
+                                    &CancelCallbackRecord::hook>;
+
   CancelTree* tree = nullptr;
   CancelNode* parent = nullptr;
   CancelNode* first_child = nullptr;
   CancelNode* next_sibling = nullptr;
   CancelNode* previous_sibling = nullptr;
   CancelNode* next_pending = nullptr;
-  CancelCallbackRecord* first_callback = nullptr;
+  CallbackList callbacks;
   std::size_t handle_count = 1;
   std::atomic<bool> cancelled{false};
   bool pending_delete = false;
@@ -34,15 +38,9 @@ namespace {
 void cancel_subtree_locked(CancelNode* root) noexcept;
 
 void fire_callbacks_locked(CancelNode* node) noexcept {
-  while (node->first_callback != nullptr) {
-    CancelCallbackRecord* callback = node->first_callback;
-    node->first_callback = callback->next;
-    if (callback->next != nullptr) {
-      callback->next->previous_link = &node->first_callback;
-    }
+  while (!node->callbacks.empty()) {
+    CancelCallbackRecord* callback = node->callbacks.pop_front();
     callback->node = nullptr;
-    callback->next = nullptr;
-    callback->previous_link = nullptr;
     callback->fn(callback->context);
   }
 }
@@ -126,7 +124,7 @@ void unlink_node_locked(CancelNode* node) noexcept {
 void enqueue_delete_locked(CancelNode* node) noexcept {
   if (node->pending_delete) return;
   HYLE_FATAL_ASSERT(node->handle_count == 0);
-  HYLE_FATAL_ASSERT(node->first_callback == nullptr &&
+  HYLE_FATAL_ASSERT(node->callbacks.empty() &&
                     "CancelToken must outlive its CancelCallback objects");
   node->pending_delete = true;
   node->next_pending = node->tree->pending_delete;
@@ -325,12 +323,7 @@ CancelCallback::CancelCallback(const CancelToken& token, Fn fn,
   record_.tree = node->tree;
   record_.fn = fn;
   record_.context = context;
-  record_.next = node->first_callback;
-  record_.previous_link = &node->first_callback;
-  if (node->first_callback != nullptr) {
-    node->first_callback->previous_link = &record_.next;
-  }
-  node->first_callback = &record_;
+  node->callbacks.push_front(&record_);
 }
 
 CancelCallback::~CancelCallback() { unregister(); }
@@ -344,15 +337,10 @@ void CancelCallback::unregister() noexcept {
     record_.tree = nullptr;
     return;
   }
-  HYLE_FATAL_ASSERT(record_.previous_link != nullptr);
-  *record_.previous_link = record_.next;
-  if (record_.next != nullptr) {
-    record_.next->previous_link = record_.previous_link;
-  }
+  HYLE_FATAL_ASSERT(record_.hook.linked());
+  node->callbacks.remove(&record_);
   record_.node = nullptr;
   record_.tree = nullptr;
-  record_.next = nullptr;
-  record_.previous_link = nullptr;
 }
 
 }  // namespace hyle::sched

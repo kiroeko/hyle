@@ -5,7 +5,69 @@
 #include "hyle/container/circular_buffer.h"
 #include "hyle/container/dynamic_bitset.h"
 #include "hyle/container/flat_hash_map.h"
+#include "hyle/container/intrusive_forward_list.h"
+#include "hyle/container/intrusive_hlist.h"
+#include "hyle/container/intrusive_list.h"
 #include "hyle/container/string_algo.h"
+
+namespace {
+
+struct CountedNode {
+  int value;
+  hyle::container::SafeIntrusiveListHook hook;
+
+  CountedNode(int input) noexcept : value(input) {}
+};
+
+struct ForwardNode {
+  int value;
+  hyle::container::IntrusiveForwardListHook hook;
+
+  ForwardNode(int input) noexcept : value(input) {}
+};
+
+struct CallbackNode {
+  int value;
+  hyle::container::SafeIntrusiveHListHook hook;
+
+  CallbackNode(int input) noexcept : value(input) {}
+};
+
+bool intrusive_delivery_works() {
+  CountedNode counted_nodes[2]{{2}, {1}};
+  hyle::container::CountedIntrusiveList<CountedNode, &CountedNode::hook>
+      counted;
+  counted.push_back(&counted_nodes[0]);
+  counted.push_back(&counted_nodes[1]);
+  counted.sort([](const CountedNode &left,
+                  const CountedNode &right) noexcept {
+    return left.value < right.value;
+  });
+
+  ForwardNode forward_nodes[2]{{3}, {4}};
+  hyle::container::IntrusiveForwardList<ForwardNode, &ForwardNode::hook>
+      forward;
+  forward.push_back(&forward_nodes[0]);
+  forward.push_back(&forward_nodes[1]);
+
+  CallbackNode callbacks_storage[2]{{5}, {6}};
+  hyle::container::SafeIntrusiveHList<CallbackNode, &CallbackNode::hook>
+      callbacks;
+  callbacks.push_front(&callbacks_storage[0]);
+  callbacks.push_front(&callbacks_storage[1]);
+  callbacks.remove(&callbacks_storage[0]);
+
+  const bool result =
+      counted.size() == 2 && counted.front() == &counted_nodes[1] &&
+      forward.back() == &forward_nodes[1] &&
+      callbacks.front() == &callbacks_storage[1];
+  counted.clear();
+  forward.clear();
+  callbacks.clear();
+  return result;
+}
+
+} // namespace
 
 int main() {
   using hyle::container::FlatHashMap;
@@ -40,6 +102,8 @@ int main() {
     return 4;
   }
 
+  if (!intrusive_delivery_works()) return 5;
+
   using HardenedMap =
       FlatHashMap<std::string, int, HardenedStringHash, StringEqual>;
   // Fixed words make this package smoke reproducible. Production code must
@@ -53,5 +117,5 @@ int main() {
   untrusted.insert_or_assign(std::string("request-key"), 11);
   const int* hardened_value =
       untrusted.find(std::string_view("request-key"));
-  return hardened_value != nullptr && *hardened_value == 11 ? 0 : 5;
+  return hardened_value != nullptr && *hardened_value == 11 ? 0 : 6;
 }
