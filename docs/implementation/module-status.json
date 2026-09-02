@@ -645,7 +645,7 @@
     },
     {
       "module": "mem",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MEM-OWNER-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v1-capability-replay-2026-09.md",
       "round_id": "mem-v2",
@@ -655,6 +655,8 @@
       "baseline_commit": "e7b3a5f2f6bc90b194821c1777542c3c47a27c7b",
       "candidate_commit": "9eda54f9b36bfb0792ecf1544dc39d7ac9682265",
       "candidate_tree": "359c4832a91a498bb92e49b80766752a4ca9d9c6",
+      "end_commit": "4b6b9d581d62982ca01906576f51c56607459703",
+      "registry_anchor_commit": "4b6b9d581d62982ca01906576f51c56607459703",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -682,7 +684,28 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "mem-v2 VERIFIED：九项 FIX、三平台 correctness/sanitizer、三种 C++ 交付、真实 Host/CUDA/Vulkan provider、文档/红队及 W1-WIN 四项 5% P1 工程门全部通过；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/mem/mem-v2-rebuild.md",
+      "loc": {
+        "snapshot_commit": "9eda54f9b36bfb0792ecf1544dc39d7ac9682265",
+        "repository_code": 432497,
+        "self_with_tests": 109610,
+        "self_without_tests": 69085,
+        "module_implementation": 7653
+      },
+      "known_limitations": [
+        "P1 engineering PASS covers only four frozen W1-WIN same-contract workloads; it is not a claim that every Mem operation, platform or scale is fastest, nor a Formal certificate.",
+        "Mapping, CompositeBuffer and LifetimePlanner are signed by correctness, no-hidden-work and complexity/resource contracts where no qualified same-contract timing peer exists.",
+        "Multi-socket NUMA locality, end-to-end model loading and token throughput, cross-backend performance, KV/tensor/model policy and asynchronous queue/completion remain outside this round.",
+        "Native FFI/C API and stable C++ ABI are not admitted; current delivery is C++23 source, static SDK and shared SDK."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a Mem-owned ownership, lifetime, range, coherence, error, concurrency, OOM or API-usability defect.",
+        "A Mem public API/layout/algorithm, mimalloc or another direct dependency, provider seam, or source/static/shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material loss beyond the frozen 5% margin on a normal consumer workload.",
+        "A Graph lifetime adapter, multi-node locality, backend async route, KV/model policy or foreign-runtime slice is admitted through a separate capability decision.",
+        "The performance contract, peer, consumer provenance, machine, instrument or retained bundle changes while the current engineering claim must be renewed."
+      ],
+      "summary": "mem-v2 CLOSED：统一 storage foundation 的九项 FIX 已完成；三平台 correctness/sanitizer、三种 C++ 交付、真实 Host/CUDA/Vulkan provider、文档/红队及 W1-WIN 四项 5% P1 工程门全部通过，Formal 独立 PENDING。"
     },
     {
       "module": "simd",

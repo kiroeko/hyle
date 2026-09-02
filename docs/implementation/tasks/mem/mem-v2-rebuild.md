@@ -444,7 +444,7 @@ candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module 
   保持 `9eda54f9b36bfb0792ecf1544dc39d7ac9682265` / tree
   `359c4832a91a498bb92e49b80766752a4ca9d9c6`，candidate 后没有 Mem 产品源码变化。
 - registry 已保存 `AUDITED -> CANDIDATE -> VERIFIED` 的明确快照；本 receipt commit 作为 terminal
-  `end_commit` 与首个 terminal-state anchor，由随后一次 `VERIFIED -> CLOSED` registry 更新引用。
+  `end_commit`，随后一次 `VERIFIED -> CLOSED` 更新建立首个 terminal-state `registry_anchor_commit`。
 - raw local evidence：W1-WIN
   `C:\public\project-hyle\_validation\mem-v2-{win-build,win-delivery,backend-build,perf-build,perf-evidence}-9eda54f9`；
   W1-WSL `/root/hyle-scratch/mem-v2-{candidate,build,asan,ubsan,tsan,delivery}-9eda54f9*`；M1-MAC
