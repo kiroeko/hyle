@@ -65,7 +65,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "INTR-CAPABILITY-EXTENSION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
       "round_id": "container-intrusive-v4-capability-extension",

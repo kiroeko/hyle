@@ -101,6 +101,80 @@ symbol 或旧 benchmark 直接复制：
 cancellation hlist、arena/deferred-work forward chain 和普通 counted membership 必须在新类型成立后重新
 裁决，能自然迁移才增加真实直接边；不能为了证明新 API 有消费者而强行迁移状态机。
 
+## Capability-family coverage map（`AUDITED`）
+
+| Family | admitted journey / evidence | lifecycle / semantic variants | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| 双向 member membership | TimerQueue、FIFO/LRU、known-node cancel；v3 + Boost/Folly | auto/safe、same/cross-list transfer、node/list-first retirement | 两种现有 list | `COMPLETE` | 只做回归，不改默认 layout |
+| 可选 membership count | wait-set/LRU/cache 的 mutation 后 O(1) count；Folly counted + oneTBB runtime | safe-link；single/all/range transfer；count overflow 不可发生于可表示对象数 | 无公共路线 | `MISSING` | 默认 uncounted 不付 count word/write；auto-unlink 不可与隐藏 count 组合 |
+| 一指针 forward sequence | ggml object chain、Folly Arena cached-tail slist | explicit retirement；front/back、predecessor mutation、whole/range handoff、list/node teardown | 多个 owner 私有 next chain | `MISSING` | 不承诺 arbitrary-node O(1) unlink、auto-unlink、内部同步或 reclamation |
+| hlist membership | HYLE CancelCallback register/unregister/fire；成熟 kernel-style `next + prev_next` | auto/safe；head/known-node insert/remove/replace；detach-before-callback | Sched 手写 record links | `MISSING` | 不是 bidirectional/sorted sequence；不缓存 tail/count |
+| 非 owning sequence algorithms | 预分配节点稳定 sort/merge/filter/dedupe；Boost list/slist | stable sort/merge；throwing callback 后结构/ownership 有效；双链与 forward | `for_each/consume_all`，其余缺失 | `PARTIAL` | hlist 明确不取得这套算法；advanced disposer/policy route Boost |
+| atomic publish / concurrent reclamation | Folly atomic list、Sched remote publish | producer/consumer、ordering、ABA、retirement | owning concurrent owner | `ROUTED` | 本轮不准入普通 hook；未来由 Container/Sched/Mem-reclaim 独立类型拥有 |
+| base/value/fancy pointer 与 intrusive tree/hash/heap | Boost policy matrix | shared-memory pointer model、index/key/allocator policy | 直接使用成熟依赖或相邻 owner | `ROUTED` | 不为 API 数量复制 framework |
+| factor/product delivery | 低层 factor 独立构建，用户只选 Container | split header owner、source/static/shared、无 binary/FFI | 旧单头完整 | `PARTIAL` | 新头与 Sched direct edge 待实现 |
+
+### Public-surface 与语义重复反向追踪
+
+- 现有 `IntrusiveListHook`、`SafeIntrusiveListHook`、双向 iterator/mutation/splice/consume/typed swap 全部
+  归入第一族；没有 benchmark-only public 入口。
+- `TimerEntry` 继续使用 safe 双链；其跨 bucket count 是 timer owner 的业务计数，不迁移 counted list。
+- `ConditionVariable` 的 atomic waiter count 是无 waiter 时跳过锁的发布协议；waiter link 摘链后又复用为
+  锁外 wake chain，因此不是普通 counted membership，也不迁移。
+- `mem::GrowablePool` 把 next 覆盖到已释放 slot；`SharedPool` 使用 parallel atomic index；两者若改用
+  public hook 都会增加 live object/slot 成本，合法保留。
+- `CancelCallbackRecord` 的 `next + previous_link` 与新 hlist 完全同合同；Sched 可以依赖更低的
+  `container_intrusive`，本轮把该迁移列为直接消费者验证。
+- `CancelNode` sibling tree、pending-delete、Region block、IOCP inflight/free-state 同时带 parent、allocator、
+  kernel 或 storage-reuse policy；本轮只登记后续 owner 回审，不为了增加调用点改写。
+- ggml/llama.cpp 没有 counted/hlist 公共底座，但 ggml object chain 和推理 runtime 的稳定 node/callback
+  journey验证 forward/hlist 不含模型语义；Folly/oneTBB/Boost 用于通用性与算法档位，不做 symbol 并集。
+
+## Capability / gap ledger 与冻结 `FIX`
+
+| ID | class | source / normal shape | owner / contract | complexity / cost | current/action | verification / negative space |
+|---|---|---|---|---|---|---|
+| `INTR4-BIDI-01` | `MUST` | v3 TimerQueue 与普通双向 membership | `container_intrusive`；caller-owned、external sync | 旧 hook/list 各 2 pointer；已知 mutation O(1) | `COMPLETE/KEEP` | 旧 tests/codegen/P1 replay 回归；禁止默认 count |
+| `INTR4-COUNT-01` | `MUST` | Folly/oneTBB counted waiter/list | 独立 `CountedIntrusiveList<T,&T::safe_hook>` | list 额外 1 word；single/all O(1)；普通 range O(k)，verified-count overload O(1) | `MISSING/FIX` | count differential、move/swap/splice；不支持 auto hook |
+| `INTR4-FWD-01` | `MUST` | ggml object chain + Folly Arena | `IntrusiveForwardListHook/List`；一指针 safe explicit-retirement node；list 缓存 tail | node 1 pointer、list 2 pointer；front/back/known-predecessor/all-splice O(1) | `MISSING/FIX` | std::forward_list/Boost differential；arbitrary node remove 仅 O(n) 或不暴露 |
+| `INTR4-HLIST-01` | `MUST` | HYLE cancellation callback + stable hlist task | auto/safe hook/list；head owns membership，callback 前摘链 | node 2 pointer、head 1 pointer；known-node unlink/replace O(1) | `MISSING/FIX` | topology/random differential + Sched callback migration；无 tail/size/sort |
+| `INTR4-ALG-01` | `MUST` | Boost list/slist 与普通 non-owning sequence | 双链和 forward 提供 `reverse/remove/remove_if/unique/merge/sort` | filter/reverse/merge O(n)，stable sort O(n log n)，零分配 | `PARTIAL/FIX` | std/Boost oracle；用户 predicate exception 后全部 node 仍恰属一个有效 list，顺序可部分改变 |
+| `INTR4-ACCESS-01` | `MUST` | 三类 direct-member hook 共用 node recovery | factor-private helper；支持的 PMD ABI fail closed | compile-time/inline；无字段、分支或动态 dispatch | `PARTIAL/FIX` | 四编译器 header/codegen；不得扩成 public traits matrix |
+| `INTR4-SCHED-01` | `MUST` | `CancelCallbackRecord` register/unregister/fire | semantic owner Sched；artifact owner factor hook；delivery edge Sched | footprint 不增加；锁、reentrancy、fire ordering 不变 | `MISSING/FIX` | sched cancellation correctness/stress；只迁 callback list |
+| `INTR4-DELIVERY-01` | `MUST` | Container façade 三交付 | build/package delivery owner | header-only factor、无 binary | `PARTIAL/FIX` | split headers、exact factor、Container+Sched source/static/shared |
+| `INTR4-PERF-01` | `MUST` | closure card 四个 normal workload | module + performance evidence | 5% peer NI 或预冻结 hlist consumer budget | `MISSING/FIX` | v2 contract；先语义等价，禁止从点值改 API/layout |
+| `INTR4-ATOMIC-01` | `GENERAL` | Folly atomic publish | Container/Sched/Mem-reclaim future owner | 独立 atomic/reclamation cost | `ROUTED/DEFER` | 真实 producer/reclamation task 才重开 |
+| `INTR4-POLICY-01` | `GENERAL` | Boost advanced policy/index | Boost or future domain owner | 不给普通 hook 付费 | `ROUTED/REJECT` | 只有两独立 HYLE journeys 且依赖路线不足才准入 |
+
+本轮冻结 `FIX` 仅为 `COUNT/FWD/HLIST/ALG/ACCESS/SCHED/DELIVERY/PERF` 八项；任何 atomic、reclamation、
+heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现。
+
+## API / usability freeze
+
+- 状态：`FROZEN`；freeze identity：本 task 的 `AUDITED` 提交。
+- 现有双链名称、两 pointer layout、pointer-based normal mutation、auto/safe 生命周期和 list move/swap 不变。
+- counted 复用 `SafeIntrusiveListHook`，避免第三种 node hook；`.size()` O(1)。range splice 的普通重载扫描
+  `[first,last)` 更新 count，另有显式 `count` 参数的 O(1) 重载，参数错误是前置条件违反；类型不满足
+  `auto_unlink`，也不让 uncounted list 成为 `sized_range`。
+- forward hook 的 unlinked state 是 self-next，使 tail 的 null-next 仍可区分 linked；hook 析构要求已显式
+  退休。list 公开 `before_begin/begin/end/front/back`、front/back push、`insert_after/erase_after/pop_front`、
+  whole/single/range `splice_after`、append/swap/clear/consume 和 sequence algorithms；缓存 tail 只增加 list
+  一个 word，不增加 node 成本。
+- hlist 提供 auto/safe 两种 hook/list，公开 forward iteration、front、push-front、before/after insert、
+  known-node erase/remove/replace、pop-front、clear/consume/swap；head 只有一个 pointer。没有 back、reverse
+  iterator、range splice、count、sort/merge；需要这些语义就选双链/forward-list。
+- 双链/forward sequence algorithms 稳定地保留未删除节点和引用/iterator（只失效被删节点）；比较器/
+  predicate 抛出的异常原样传播，结构与 membership 保持有效，已发生的 filter/merge 顺序变化不回滚；
+  sort 必须在异常路径重新汇集所有临时链，不能让 node 静默变成 unlinked。
+- 默认路径无 allocation、lock、atomic、syscall、owner pointer 或 dynamic dispatch。所有类型要求 direct
+  member hook、64-bit 支持 ABI、linked 期间 stable address、外部同步；错误 owner/range/count 是程序合同，
+  nullable/already-linked 只由具名 `try_*` 入口处理。
+- 新公共头为 `<hyle/container/intrusive_forward_list.h>` 与
+  `<hyle/container/intrusive_hlist.h>`；counted 留在 `<hyle/container/intrusive_list.h>`。普通用户仍只
+  链接 `hyle::container`；维护者可精确构建 `container_intrusive` factor。
+- 冻结后只允许内部算法、无可观察 cost 的 member-access 去重和 provider-free codegen 修正；正常
+  consumer 的 material 证据若证明合同本身错误，必须退回 `AUDITED` 并更新有限 `FIX`。
+
 ## 已冻结的施工边界
 
 - 范围：上述四族的 capability map、自然 C++ API、header-only 实现、复杂度/layout、correctness、
@@ -119,6 +193,6 @@ cancellation hlist、arena/deferred-work forward chain 和普通 counted members
 
 ## 当前裁决
 
-`SCOPED`。允许的下一步只有：完成四族自顶向下 journey、现有 public surface 反向追踪、私有重复/
-直接消费者扫描，冻结 API/cost sketch、`FIX` 集、测试和性能 workload。尚无 candidate，旧 v3 性能
-证据不能覆盖新增能力或变化后的产品 identity。
+`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；下一步只实现这些
+条目并完成 correctness/直接消费者/交付，形成 candidate 后才运行 P1。尚无 candidate，旧 v3 性能证据
+不能覆盖新增能力或变化后的产品 identity。
