@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "TIME-FACTORIZATION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
       "round_id": "time-v3-host-clock-factor",
@@ -409,7 +409,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v3 由已接受的 factorization、缺失 injectable/manual clock 和当前产品身份漂移定向重开；现阶段只登记新事实，尚未冻结 closure card 或授权产品实现。"
+      "summary": "time-v3 closure card 已冻结：仅收口 host clock/value/conversion/sleep、可注入单调时钟 vocabulary 与必要的 factor 交付边；下一步完成 capability/public-surface 反向追踪并冻结有限 FIX 集。"
     },
     {
       "module": "timer_queue",
