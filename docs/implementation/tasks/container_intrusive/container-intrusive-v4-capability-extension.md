@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
+> 当前阶段：`VERIFIED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
 > `58431ddbef6f54f9d4275b0fea2d317cba00b9f3` / tree
 > `8df2b7d7806918d03b5bb5c31611adb196f30c7f`。权威状态是
 > [`module-status.json`](../../module-status.json)。
@@ -194,10 +194,10 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
+`VERIFIED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
 AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实现并绑定 candidate 3。旧 v3 性能证据
-不能覆盖新增能力或变化后的产品 identity。candidate 3 的新增能力资格现已完成，全部适用门具备
-`PASS` 证据；registry 尚未执行本段证据提交之后的 `CANDIDATE -> VERIFIED` 状态迁移。
+不能覆盖新增能力或变化后的产品 identity。candidate 3 的新增能力资格已经完成，全部适用门为
+`PASS`；只剩 terminal receipt、限制/reopen trigger 和不可变 candidate LOC。
 
 ### 撤回的 candidate 1
 
@@ -277,6 +277,10 @@ AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实�
   SHA-256 `EB3BF0A4BFED3CB39BF61A239487963FE6D889B13721CC5D996E7057F8DD4283`；992 observations、
   460 raw logs、6 artifacts；完整数表与边界见
   [性能证据](../../evidence/performance/benchmarks-container-intrusive.md)。
+- final red-team：按冻结预算复核默认双链成本、counted/forward/hlist 生命周期与 owner 前置条件、
+  throwing sort gather、Sched detach-before-fire、split-header owner、公开/内部依赖边和用户选择指南；未发现
+  material correctness、复杂度、交付或 benchmark-shaped API finding。`check-module-closure.py`、
+  `check-docs.py`、performance contract validation 与 `git diff --check` 全部通过。
 
-剩余动作只允许提交本证据、执行 closure/docs/red-team mechanical gates，并按状态协议迁移
-`CANDIDATE -> VERIFIED -> CLOSED`；不得借收尾重开产品代码或 API。
+剩余动作只允许生成 candidate LOC、写 terminal receipt 与限制/reopen trigger，并按状态协议迁移
+`VERIFIED -> CLOSED`；不得借收尾重开产品代码或 API。
