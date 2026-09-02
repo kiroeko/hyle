@@ -390,7 +390,7 @@
     },
     {
       "module": "time",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "TIME-INTEROP-COMPLETENESS-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "round_id": "time-v5-interoperability",
@@ -413,7 +413,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v5 SCOPED：绝对时刻、一般 duration 与 timeout 三种真实互操作 journey、P0 成本、OS 头隔离、三平台/三交付和有限四小时预算已冻结；能力审计中。"
+      "summary": "time-v5 AUDITED：现有互操作 public surface、成熟 peer 和 HYLE 重复实现已反向追踪；signed Unix units、absolute timeval、relative POSIX、timeout rounding、direct FILETIME 与交付共八项有限 FIX 已冻结。"
     },
     {
       "module": "timer_queue",
