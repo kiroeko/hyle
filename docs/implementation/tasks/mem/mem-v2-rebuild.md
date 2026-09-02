@@ -1,14 +1,15 @@
 # Mem v2：统一 storage foundation 重构
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 当前轮由 [`mem-v1 capability replay`](mem-v1-capability-replay-2026-09.md) 的
 > `PRODUCT_TRIGGER` 启动。旧 `mem-v1` task/evidence 只作 baseline 证据，不是本轮待办。
 >
 > 项目级阶段门：[`全库能力展开与组件因子化 v1`](../project/capability-factorization-v1.md) 已完成，随后
 > [`build-system-v7 factor/façade projection`](../build/build-system-v7-factor-facade-projection.md) 已把内部
-> factor DAG 与外部产品 façade 分开。中央 registry 已按本卡冻结的 `MEM2-01`～`MEM2-09` 有限 FIX
-> 产出候选并进入 `VERIFIED`；历史 factor 清单或 bundle 文字若与 v7 投影冲突，不再构成施工合同。
+> factor DAG 与外部产品 façade 分开。本轮已按本卡冻结的 `MEM2-01`～`MEM2-09` 有限 FIX 完成候选、
+> 验证和 terminal receipt；最终产品状态以中央 registry 为准。历史 factor 清单或 bundle 文字若与 v7
+> 投影冲突，不再构成施工合同。
 
 ## Closure card（AUDITED）
 
@@ -436,10 +437,19 @@ candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module 
 --self-check --json`）为：全库代码 **432,497**；自实现包含测试 **109,610**；自实现不包含测试
 **69,085**；Mem 实现 **7,653** 行。
 
-## Closure decision（VERIFIED，待 terminal receipt）
+## Closure decision
 
-验证事实已满足 `CLOSED` 条件，registry 已保存 `AUDITED -> CANDIDATE -> VERIFIED` 的明确快照；写入
-terminal receipt 后再执行最后一次 `VERIFIED -> CLOSED`，本节不提前宣告产品状态。
+- 本轮 `CLOSED`。九项冻结 `MUST` 已完成或正确路由，scope、architecture、correctness、delivery、
+  usability/docs、red-team 与 engineering-performance 七项 aggregate gate 全部 `PASS`；产品 candidate
+  保持 `9eda54f9b36bfb0792ecf1544dc39d7ac9682265` / tree
+  `359c4832a91a498bb92e49b80766752a4ca9d9c6`，candidate 后没有 Mem 产品源码变化。
+- registry 已保存 `AUDITED -> CANDIDATE -> VERIFIED` 的明确快照；本 receipt commit 作为 terminal
+  `end_commit` 与首个 terminal-state anchor，由随后一次 `VERIFIED -> CLOSED` registry 更新引用。
+- raw local evidence：W1-WIN
+  `C:\public\project-hyle\_validation\mem-v2-{win-build,win-delivery,backend-build,perf-build,perf-evidence}-9eda54f9`；
+  W1-WSL `/root/hyle-scratch/mem-v2-{candidate,build,asan,ubsan,tsan,delivery}-9eda54f9*`；M1-MAC
+  `/Users/kiro/hyle-scratch/mem-v2-{candidate,build,delivery}-9eda54f9`。这些是可丢弃、可重放 scratch，
+  不冒充长期签名 Formal 证书；Formal 独立保持 `PENDING`。
 
 - 可接受限制：P1 只签四个冻结 W1-WIN same-contract workload；mapping/planner/Composite 依 P0
   complexity/resource 证据；不签多 socket NUMA、端到端 model load/tokens/s、cross-backend performance、
