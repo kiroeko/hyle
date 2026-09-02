@@ -422,6 +422,14 @@ def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
 def validate_transitions(
         previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    before_order = [
+        record["module"] for record in previous.get("modules", [])
+        if isinstance(record, dict) and isinstance(record.get("module"), str)
+    ]
+    after_order = [
+        record["module"] for record in current.get("modules", [])
+        if isinstance(record, dict) and isinstance(record.get("module"), str)
+    ]
     before = {
         record["module"]: record for record in previous.get("modules", [])
         if isinstance(record, dict) and isinstance(record.get("module"), str)
@@ -430,10 +438,25 @@ def validate_transitions(
         record["module"]: record for record in current.get("modules", [])
         if isinstance(record, dict) and isinstance(record.get("module"), str)
     }
-    if set(before) != set(after):
-        errors.append("transition comparison requires the same component set")
-        return errors
-    for component in sorted(before):
+    removed = sorted(set(before) - set(after))
+    if removed:
+        errors.append(
+            "transition comparison does not allow component removal or rename: "
+            + ", ".join(removed))
+
+    surviving_after = [component for component in after_order if component in before]
+    if surviving_after != before_order:
+        errors.append(
+            "transition comparison does not allow reordering existing components")
+
+    added = [component for component in after_order if component not in before]
+    for component in added:
+        if after[component].get("product_state") != "QUEUED":
+            errors.append(
+                f"new component {component!r} must enter as 'QUEUED', got "
+                f"{after[component].get('product_state')!r}")
+
+    for component in sorted(set(before) & set(after)):
         old_state = before[component].get("product_state")
         new_state = after[component].get("product_state")
         allowed = ALLOWED_TRANSITIONS.get(old_state, set())

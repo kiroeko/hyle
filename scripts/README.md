@@ -128,6 +128,12 @@ use ordinary read-only Git commands in the module review. CMake dependency and
 delivery semantics stay with the real build/package contract tests rather than a
 second parser here.
 
+An explicit `--previous` comparison permits a newly declared component only
+when its first registry state is `QUEUED`. Existing component removal, rename or
+reordering remains invalid, as does introducing a new component directly in a
+later closure state. This makes the documented new-factor registration path
+mechanically usable without weakening ordinary state-transition checks.
+
 `scripts/hyle_perf/` is the shared schema/statistics/evidence/machine core for
 performance instrument v1. It owns contract locking, canonical observations,
 `advantage_ratio` (greater than one always favors HYLE), the independent

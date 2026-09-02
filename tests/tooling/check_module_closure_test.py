@@ -187,6 +187,35 @@ def main() -> None:
     errors = checker.validate_transitions(queued_before, queued_to_blocked)
     require_error(errors, "illegal transition 'QUEUED' -> 'BLOCKED'")
 
+    queued_addition = copy.deepcopy(data)
+    queued_addition["modules"].insert(
+        1,
+        {
+            "module": "new_factor",
+            "product_state": "QUEUED",
+            "summary": "Registered before its closure round starts.",
+        },
+    )
+    errors = checker.validate_transitions(data, queued_addition)
+    if errors:
+        raise AssertionError(f"legal QUEUED component addition rejected: {errors!r}")
+
+    scoped_addition = copy.deepcopy(queued_addition)
+    scoped_addition["modules"][1]["product_state"] = "SCOPED"
+    errors = checker.validate_transitions(data, scoped_addition)
+    require_error(errors, "new component 'new_factor' must enter as 'QUEUED'")
+
+    removed_component = copy.deepcopy(data)
+    removed_component["modules"].pop()
+    errors = checker.validate_transitions(data, removed_component)
+    require_error(errors, "does not allow component removal or rename")
+
+    reordered_components = copy.deepcopy(data)
+    reordered_components["modules"][0:2] = reversed(
+        reordered_components["modules"][0:2])
+    errors = checker.validate_transitions(data, reordered_components)
+    require_error(errors, "does not allow reordering existing components")
+
     drifted_status = status_path.read_text(encoding="utf-8").replace(
         f"| {terminal_module} | CLOSED |",
         f"| {terminal_module} | QUEUED |",
