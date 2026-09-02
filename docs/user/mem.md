@@ -1,8 +1,9 @@
 # HYLE mem：什么情况选择什么
 
-> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及
-> Mem v2 第一步已落地的 provider-neutral resource/host Buffer 路线。device/managed provider、
-> mapping 迁移、BufferPool 和 lifetime planner 尚不是可用能力，不会在本页提前宣传。
+> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及 Mem v2 已落地的
+> provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线。
+> device/managed provider 与相邻 Compute consumer 迁移仍在施工；这里不把 synthetic provider
+> 验证写成真实 GPU backend 承诺。
 > 适用于 C++23 source/static/shared 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)。
 
@@ -18,6 +19,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 独立 host heap，既要 individual free 又要整批作废 | `Heap::create()` 后取 `heap.allocator()` | owner-thread allocate/reallocate；允许 remote free；`clear/release` 使所有 live allocation 失效 |
 | 拥有一块可安全切 view 的 host bytes | `Buffer::create(system_resource(), bytes, alignment)` | move-only owner；view 不拥有；读写/填充/复制不隐藏 staging |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
+| 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests)` -> `instantiate(resources)` | tensor-free；先量 peak/placement 再一次建 backing；alias/output facts 显式 |
 | 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
 | 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
 | 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
@@ -43,7 +45,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
 pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；
-不理解 Tensor 的通用 lifetime planner 归 Mem，但目前尚未实现，当前 graph 临时区仍消费 Region。
+不理解 Tensor 的通用 placement/instantiate 机制归 Mem。
 
 ## Resource 与 Buffer：什么时候不只用 allocator
 
@@ -101,6 +103,46 @@ scratch.reset();
 已有实践的通用形状，不是 benchmark 档位。`stats()` 区分 live/cached bytes、provider allocation、reuse
 和 OOM trim retry；`trim()` 只释放 cached buffer，不等待或取消 in-flight operation。需要把 allocation
 永久带走时用 `lease.take()`。
+
+## Lifetime planner：已知整张执行图时先规划再分配
+
+`BufferPool` 适合运行时逐次 acquire/return；如果 consumer 已经知道各 temporary 的完整
+生命周期，应把业务语义擦除成 `LifetimeRequest`，一次得到可查询的 placement 和每个 resource
+的 peak，再实例化 backing：
+
+```cpp
+#include <array>
+#include "hyle/mem/lifetime_plan.h"
+
+std::array requests{
+    hyle::mem::LifetimeRequest{
+        .resource_slot = 0, .size = q_bytes, .alignment = 64,
+        .begin = 0, .end = 3},
+    hyle::mem::LifetimeRequest{
+        .resource_slot = 0, .size = logits_bytes, .alignment = 64,
+        .begin = 3, .end = 5,
+        .flags = hyle::mem::LifetimeFlag::kOutput},
+};
+HYLE_ASSIGN_OR_RETURN(auto plan,
+                      hyle::mem::LifetimePlanner::build(requests));
+report_peak(plan.resource_plan(0)->peak_bytes);
+
+std::array providers{device_resource};
+HYLE_ASSIGN_OR_RETURN(auto storage, plan.instantiate(providers));
+submit_q(storage.view(0).value());
+```
+
+request ID 就是输入 span 的稠密下标；resource slot 也必须从 0 稠密排列。interval 是
+`[begin,end)`，所以 `end == next.begin` 可以复用。`alias_of` 可指向任意 request，planner 会拒绝
+cycle、跨 resource alias、overflow 和无法满足的 alias alignment；`alias_offset` 是相对父 alias 的
+偏移。`kPersistent`、`kOutput` 和 `kNoReuse` 都表示该 placement 在本次 interval 后不再回收给
+后续 request，但它仍可安全继承更早已经结束的 storage。
+
+build 不持有 provider，也不认识 Tensor/Graph。它用活动 interval heap 与 indexed best-fit slot
+结构，复杂度 O((N+E) log N)、scratch O(N)，不会按 byte/page 建表。算法是确定性的通用
+packing heuristic，`peak_bytes` 是该 plan 的真实结果，不宣称全局最优。`instantiate` 要求 provider
+span 与 resource slot 一一对应并各自长寿于 `PlannedBuffers`、views 和 in-flight operation；每个
+resource 一次创建 backing，plan 销毁后 owner 仍可独立使用。
 
 ## Mapping：模型加载、稀疏提交和跨进程共享
 

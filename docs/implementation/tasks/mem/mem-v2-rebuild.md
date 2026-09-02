@@ -277,6 +277,16 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   只做一次释放 cache 后重试；pool 不包含 Event/Stream，completion 前归还是 caller contract。
   Windows MSVC shared/static、WSL GCC 14 shared 与 WSL GCC 14 ASan correctness/并发 accounting
   已通过；仍需 macOS、固定接口 P1 normal transient replay 和 Compute provider journey 后才能完成该票。
+- `MEM2-07` 的 tensor-free planner 主干已落地：dense request/resource IDs、`[begin,end)`、任意方向
+  acyclic alias chain/offset、persistent/output/no-reuse facts、不可变 `LifetimePlan`，以及每 resource
+  一次 backing allocation 的独立 `PlannedBuffers`。build 用 active min-heap、按 capacity/alignment
+  coordinate 压缩的 segment tree 和 reusable fixed slots，O((N+E) log N)、O(N) scratch，不按
+  byte/page 建表；best-fit 是确定性通用 heuristic，不冒充全局最优。Windows MSVC shared/static、
+  WSL GCC 14 shared 与 WSL GCC 14 ASan 的 correctness、随机 interval differential、
+  alias/overflow/failure、10k reverse-order deterministic scaling 与 self-contained header 已通过；
+  P0 cost review 确认 scratch 是与 N 成比例的固定数量 arrays、sort 原地、没有 per-request
+  allocation 或 per-byte/page table，plan/instance 各只创建固定数量 metadata blocks 加每 resource
+  一次 provider allocation。仍需 macOS 和 Graph adapter journey 后才能完成该票。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 
