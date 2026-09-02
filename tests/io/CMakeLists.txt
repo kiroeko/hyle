@@ -19,7 +19,7 @@ if(TARGET hyle_sched)
   hyle_add_test(io NAME file SOURCES file_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME dns SOURCES dns_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME signal SOURCES signal_test.cc DEPS hyle_sched)
-  hyle_add_test(io NAME timeout SOURCES timeout_test.cc DEPS hyle_sched hyle_time)
+  hyle_add_test(io NAME timeout SOURCES timeout_test.cc DEPS hyle_sched)
   # io-10 HTTP/1.1: server+client integration over loopback TCP (borrowed parser).
   hyle_add_test(io NAME http SOURCES http_test.cc DEPS hyle_sched)
   if(HYLE_IO_HTTP2)

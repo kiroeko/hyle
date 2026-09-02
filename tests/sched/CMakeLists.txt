@@ -13,5 +13,4 @@ hyle_add_test(sched
     blocking_test.cc
     shutdown_test.cc
     cancel_test.cc
-    bulk_test.cc
-  DEPS hyle_time)
+    bulk_test.cc)
