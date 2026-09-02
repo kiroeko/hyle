@@ -580,7 +580,11 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "MR-P1-PEER-CONSUMER-01: the frozen P1 contract has neither a qualified official Folly same-contract build nor an owner-authorized admitted direct consumer, so non-inferiority and product delivery cannot be adjudicated.",
+      "blocker_owner": "Mem/Container capability owner and performance evidence owner",
+      "resume_condition": "Start a RESUME round from SCOPED only after both an official Folly RCU same-contract peer can be built on the locked environment and a separate Container reopen card or another admitted real consumer authorizes a frozen migration/holdout; then pass closure-perf-v1 on W1-WIN at the 5% margin plus product source/static/shared and usage-guide gates.",
       "round_id": "mem-reclaim-v1",
       "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
       "scope": "Provide an explicit-domain, allocation-free read-side reclamation primitive with guarded publication reads, intrusive retire records, bounded nonblocking collection, blocking grace-period synchronization, draining and observable pending work for current HYLE concurrent-container and Obs ownership gaps.",
@@ -595,17 +599,49 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/tasks/mem/mem-reclaim-v1.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_reclaim v1 candidate 已冻结：显式/默认 domain、TLS 独占 reader slot、零分配 retire record 与 grace-period 回收已实现并通过 W1-WIN shared/static correctness；GCC WERROR fixture portability 已修复，产品 façade、consumer migration、跨平台与 P1 verdict 尚未签署。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "INCONCLUSIVE",
+        "usability_docs": "INCONCLUSIVE",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "end_commit": "4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd",
+      "registry_anchor_commit": "4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd",
+      "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
+      "loc": {
+        "snapshot_commit": "66671c39197765623f581dd872f4e626958880db",
+        "repository_code": 425583,
+        "self_with_tests": 104614,
+        "self_without_tests": 65136,
+        "module_implementation": 457
+      },
+      "known_limitations": [
+        "The factor is available only through the top-level HYLE_DEV_FACTORS maintenance route and is not part of the Mem product facade or installed SDK.",
+        "An explicit domain carries 64 cache-line reader slots plus fixed fallback stripes; use the process-default domain unless isolation justifies that owner cost.",
+        "A live guard must leave on its entering thread; hazard-pointer cohorts, asynchronous callback executors, GPU fence retirement, Native FFI and stable C++ ABI are not provided.",
+        "The immutable snapshot timings are natural-route diagnostics only; no qualified Folly same-contract or admitted direct-consumer P1 verdict exists."
+      ],
+      "reopen_triggers": [
+        "The finite resume condition supplies both a qualified official Folly peer and an owner-authorized admitted direct consumer.",
+        "A real consumer reproduces a correctness, security, lifetime, ownership or API-usability defect in the frozen factor.",
+        "A real consumer admits a deferred hazard-pointer, executor or backend-retirement family, or a dependency/platform change alters semantics.",
+        "A strong peer proves a better complexity class or a reproducible material advantage on a same-contract normal consumer workload."
+      ],
+      "summary": "mem_reclaim v1 BLOCKED：candidate 的三平台 correctness、WSL ASan/UBSan/TSan、Mac ASan 与 exact-factor shared/static 均通过；缺少 qualified Folly same-contract peer 和 owner 授权的直接 consumer，故产品交付/指南与 P1 为 INCONCLUSIVE，未进入 Mem façade。"
     },
     {
       "module": "mem",
