@@ -658,7 +658,20 @@ class Instant {
   Instant() noexcept = default;
   explicit Instant(MonotonicTimePoint point) noexcept : point_(point) {}
 
-  static Instant now() noexcept { return Instant(monotonic_now()); }
+  static Instant now() noexcept {
+#if HYLE_COMPILER_MSVC && HYLE_HAS_CPP_ATTRIBUTE(msvc::flatten)
+    // MSVC /O2 /Ob2 can inline this wrapper while leaving the nested STL
+    // steady_clock call out of line in ordinary phase loops.  Flatten only
+    // this convenience route: applying it to monotonic_now() also expands
+    // single raw reads where direct std::chrono keeps one library call.
+    [[msvc::flatten]]
+    {
+      return Instant(monotonic_now());
+    }
+#else
+    return Instant(monotonic_now());
+#endif
+  }
   template <MonotonicClockSource Source>
   static Instant now(const Source& source) noexcept {
     return Instant(source.now());
