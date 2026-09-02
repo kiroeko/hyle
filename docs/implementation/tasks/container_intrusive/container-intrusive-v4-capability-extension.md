@@ -2,8 +2,9 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；第二个候选已因性能合同的
-> factor 选择器错误撤回，当前只授权下文一个合同修复。权威状态是
+> 当前阶段：`CANDIDATE`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
+> `58431ddbef6f54f9d4275b0fea2d317cba00b9f3` / tree
+> `8df2b7d7806918d03b5bb5c31611adb196f30c7f`。权威状态是
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -193,9 +194,9 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动和
-AppleClang 有界修复已经按冻结边界实现。第二个候选在采样前被错误的 factor 选择器拒绝，未产生性能
-样本；旧 v3 性能证据不能覆盖新增能力或变化后的产品 identity。
+`CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
+AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实现并绑定 candidate 3。旧 v3 性能证据
+不能覆盖新增能力或变化后的产品 identity。
 
 ### 撤回的 candidate 1
 
@@ -230,6 +231,17 @@ AppleClang 有界修复已经按冻结边界实现。第二个候选在采样前
   `B5A2456F2D4434EF414D7C0DF03F6CA35271892494D8FA1ABCD66649F8EC2A1A`；
 - `CANDIDATE -> AUDITED` 后只允许替换该 CMake cache key、刷新合同 lock hash 并建立新 candidate。
 
+### Candidate 3 identity
+
+- commit/tree：`58431ddbef6f54f9d4275b0fea2d317cba00b9f3` /
+  `8df2b7d7806918d03b5bb5c31611adb196f30c7f`；
+- `AUDITED -> CANDIDATE` 前态 registry：
+  `%TEMP%/hyle-module-status-intrusive-v4-audited-3.json`，SHA-256
+  `453694CFD8C392FE2DE39694DC7C82A4E82B613E25F506069BCCC8207A5C265F`；
+- candidate 3 只相对 candidate 2 修正合同的 CMake factor selector；产品/API/算法/workload/peer、三平台
+  correctness 与三种交付 identity 不变。性能 qualification 必须从新 clean checkout 与空 build/output
+  开始，不能复用 candidate 2 的 configure 目录。
+
 候选准备阶段已经完成以下非性能门：
 
 - Windows MSVC 19.50 精确 factor 的 header、unit/differential、异常保证、no-exception consumer 与旧
@@ -240,6 +252,5 @@ AppleClang 有界修复已经按冻结边界实现。第二个候选在采样前
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
   `c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415`。
 
-下一步只允许完成上述合同修复并建立新 candidate；随后在 clean candidate checkout 上执行 W1-WIN P1
-qualification，并把固定门的结果写入 evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议
-退回。
+下一步只允许在 clean candidate checkout 上执行 W1-WIN P1 qualification，并把固定门的结果写入
+evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
