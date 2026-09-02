@@ -2,9 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。本页已冻结本轮用户任务、能力账本、预算与验证边界；不可变产品候选为
-> `d15b196f64dea5fda1671312a9b91adec77bd73e` / tree
-> `0e1c82ab4b6b7e2897a68e0f79e06d40ee94e8f1`。权威状态是
+> 当前阶段：`AUDITED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；首个候选已经撤回，
+> 当前只授权下文一个跨编译器 codegen 修复。权威状态是
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -194,9 +193,22 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动已经
-按冻结边界实现，并绑定上述不可变 candidate identity。旧 v3 性能证据不能覆盖新增能力或变化后的
-产品 identity，本轮仍须完成 Mac correctness/交付与 W1-WIN P1 qualification 后才能验证或关闭。
+`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动已经
+按冻结边界实现。首个候选在 Mac 可移植性门发现 Release optimizer contract 缺陷后撤回；旧 v3 性能证据
+不能覆盖新增能力或变化后的产品 identity。
+
+### 撤回的 candidate 1
+
+- commit/tree：`d15b196f64dea5fda1671312a9b91adec77bd73e` /
+  `0e1c82ab4b6b7e2897a68e0f79e06d40ee94e8f1`；
+- Windows MSVC 19.50、WSL GCC 14.2 与 Mac AppleClang 21 的精确 factor correctness 都通过；
+- AppleClang 21 对 `HYLE_ASSUME(function_call())` 发出 `-Wassume` 并忽略 optimizer assumption。受影响的
+  是 forward hook retirement、counted invariant 与 hlist 前置条件；这不改变 Debug fail-fast 或本次
+  correctness 结果，却不满足冻结的 Release codegen 合同；
+- 前态 registry 快照：`%TEMP%/hyle-module-status-intrusive-v4-candidate-1.json`，SHA-256
+  `F0FB6A532346129EF79E6EEEEDAA86D7F0FBBD30BC71087E398D31FC7CD2F3D4`；
+- `CANDIDATE -> AUDITED` 后只允许把函数调用结果保存为局部值再传给 `HYLE_ASSUME`，并消除本轮新增测试的
+  两个 unused equality warning。API、layout、算法、依赖、workload 与公共 Core 宏均不得改变。
 
 候选准备阶段已经完成以下非性能门：
 
@@ -208,5 +220,6 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
   `d74e37cf3f41f463ce39b766087c1df57ed96107b961563936ecabae999761c1`。
 
-下一步只允许在 clean candidate checkout 上执行 Mac correctness/交付与 W1-WIN P1 qualification；
-结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
+下一步只允许完成上述机械修复、重放三编译器精确 factor 并建立新 candidate；随后在 clean candidate
+checkout 上执行 Mac correctness/交付与 W1-WIN P1 qualification。结果只能导向 `VERIFIED`、具名
+`BLOCKED`，或按协议退回。

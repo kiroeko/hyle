@@ -65,7 +65,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "INTR-CAPABILITY-EXTENSION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
       "round_id": "container-intrusive-v4-capability-extension",
@@ -73,8 +73,6 @@
       "scope": "Audit and, after a finite API/cost freeze, add modular counted safe-list, one-pointer forward membership, hlist membership and admitted non-owning sequence algorithms without taxing the existing default list shape.",
       "non_goals": "Owning storage, allocators, internal synchronization, lock-free publication or reclamation, intrusive tree/hash/heap and the full Boost policy matrix, Sched/IO policy, Native FFI/C API, Formal certification and common instrument redesign.",
       "baseline_commit": "b4915574020cc7da857d2871c545a3489c75288b",
-      "candidate_commit": "d15b196f64dea5fda1671312a9b91adec77bd73e",
-      "candidate_tree": "0e1c82ab4b6b7e2897a68e0f79e06d40ee94e8f1",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
