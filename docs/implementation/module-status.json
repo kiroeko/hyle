@@ -390,7 +390,7 @@
     },
     {
       "module": "time",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "TIME-INTEROP-COMPLETENESS-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "round_id": "time-v5-interoperability",
@@ -407,15 +407,46 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/time/time-v5-interoperability.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v5 CANDIDATE：八项互操作 FIX 已落在 680c9941/b09b7043；signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME、header isolation 与交付进入三平台验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "closure_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
+      "loc": {
+        "snapshot_commit": "680c9941d7af787067afae904a8ba886c14ba851",
+        "repository_code": 424240,
+        "self_with_tests": 103871,
+        "self_without_tests": 64671,
+        "module_implementation": 1420
+      },
+      "known_limitations": [
+        "POSIX and Win32 native structs are C++ interoperability mechanisms, not stable wire, C FFI or cross-toolchain ABI types; Windows callers include the relevant OS header before constructing those structs.",
+        "timeval and signed Unix units lose sub-unit precision by their documented floor, truncation or timeout-ceiling route, and checked conversion can fail when a platform-defined seconds field cannot represent the value.",
+        "Calendar, timezone, text protocols, filesystem and device clocks, scheduler execution and Native FFI remain routed to their named owners rather than folded into Time interoperability.",
+        "The P0 certificate proves fixed O(1), zero unexpected resources and frozen-toolchain code shape; it does not claim universal timing SOTA, host-clock P1 renewal, end-to-end inference impact or Formal performance."
+      ],
+      "reopen_triggers": [
+        "A named real consumer exposes a correctness, security, API-usability or missing common system-time interoperability defect.",
+        "A supported platform invalidates canonical range, negative-epoch, rounding, native-field, header-isolation or output-unchanged semantics.",
+        "The public API, layout, normal cost, direct dependency, component ownership or source/static/shared delivery shape changes materially.",
+        "A profile proves a material hot-path regression, or a mature same-contract peer proves a better complexity class or reproducible material consumer advantage.",
+        "A currently routed civil, device-clock, scheduling or Native FFI journey is formally admitted with a common Time-owned value contract."
+      ],
+      "summary": "time-v5 VERIFIED：signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME 与 header isolation 已通过三平台正确性/WSL sanitizers、三种 C++ 交付、文档/红队和 P0 结构性能门；候选 680c9941/b09b7043 无产品漂移。"
     },
     {
       "module": "timer_queue",

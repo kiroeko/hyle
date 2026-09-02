@@ -2,8 +2,9 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。八项冻结 `FIX` 已落在不可变产品候选；后续只运行 closure card 预声明的
-> correctness、delivery、P0 code-shape、文档与红队验证，不新增 API 或 benchmark。权威状态见
+> 当前阶段：`VERIFIED`。八项冻结 `FIX` 已落在不可变产品候选并通过三平台 correctness、delivery、
+> P0 code-shape、文档与红队验证；后续只允许 terminal receipt 与 registry anchor，不新增 API 或
+> benchmark。权威状态见
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -173,6 +174,115 @@ algorithm、timezone/text、FFI、Platform/IO migration 或计时工作都不进
 候选前置验证只用于确认可进入验证阶段，不冒充最终 gate：W1-WIN MSVC 19.50 Release/Werror 的 Time 与
 timer_queue tests、header self-containment、macro composition、codegen audit 全部通过；selected Time 的
 source embedding、relocated shared/static consumer 各 1/1；当前 Platform/IO shared targets 重新编译通过。
-待完成 W1-WSL sanitizers、M1-MAC、最终三交付、P0 code-shape/符号与独立红队后才能进入 `VERIFIED`。
 
 任何 API/semantic/cost material 变化必须退回 `AUDITED`，不能在候选后静默修补。
+
+## Candidate verification
+
+验证绑定 product candidate `680c9941d7af787067afae904a8ba886c14ba851` / tree
+`b09b704304d943adb8d6442c3790fbe02a3048de`。候选后的 `4d8c01f5` 与 `9f159463` 只加固边界测试和修正
+test-only AppleClang 条件编译；candidate 到当前 `include/hyle/time`、`src/time`、Time package sample、
+architecture 与 user guide 的产品路径无 diff。
+
+锁定设计输入保持为 clean commits：Abseil
+`cc05267c15127e41d497ddfc985328e59992ea53`、Folly
+`176c088840724715b2c3c6211b2b347611676002`、Boost
+`78505eab9b203e3e26e83893d0685f160133fa0f`、libevent
+`d82464a277d0f42703702c4dfd9af6af38595a83`、llama.cpp
+`b96806d96061049a5b574269b049bf6241d63d46` 与 standalone ggml
+`d4716378882593333721eb33f153144b6885caf2`。它们只作需求/机制证据，不进入产品依赖。
+
+### Correctness risk matrix
+
+| Risk | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict / limitation |
+|---|---|---|---|---|
+| normal、epoch 两侧、zero | Release/Werror Time tests `PASS` | Release Time tests `PASS` | Release Time tests `PASS` | `PASS` |
+| unit capacity / overflow | INT64 与 timestamp range property `PASS` | 同一 test binary `PASS` | 同一 test binary `PASS` | `PASS`；失败返回空值，不饱和 |
+| invalid native subsecond / unchanged output | timespec/timeval/FILETIME 边界 `PASS` | POSIX routes `PASS` | POSIX routes `PASS` | `PASS` |
+| lossy rounding | absolute floor、duration trunc、timeout positive ceil/nonpositive poll `PASS` | 同左 | 同左 | `PASS` |
+| constexpr / public header / include order | header、Windows/Winsock isolation `PASS` | self-contained header `PASS` | self-contained header `PASS` | `PASS` |
+| lifetime / move / cancellation | value-only route | value-only route | value-only route | `NOT_APPLICABLE`；无 owner、挂起工作或 teardown |
+| concurrency / reentrancy | 无共享状态 | 无共享状态 | 无共享状态 | `PASS`；调用彼此独立 |
+| OOM / allocation failure | 无 allocation | 无 allocation | 无 allocation | `NOT_APPLICABLE` |
+| sanitizer | — | static ASan 与 UBSan 各 `PASS` | — | `PASS`；内存/整数边界由冻结 sanitizer 平台覆盖 |
+| real compiler / platform ABI | x64 `_FILETIME` + POSIX-compatible timeval declarations | x86-64 native POSIX structs | arm64 native POSIX structs | `PASS` |
+
+Time 与 timer_queue 的冻结回归、header self-containment、macro composition 和 codegen tests 在 W1-WIN
+为 `5/5 PASS`；候选产品在 W1-WSL Release/ASan/UBSan 各 `4/4 PASS`，最终加固后的 Time binary 也分别
+通过；M1-MAC 为 `4/4 PASS`，最终加固后的 Time binary通过。Platform/IO 只作 consumer compile
+regression，三平台当前 shared targets 均通过；本轮没有越权迁移其产品代码。
+
+### Delivery、symbol 与 P0 structural evidence
+
+| Journey | W1-WIN | W1-WSL | M1-MAC | Verdict |
+|---|---|---|---|---|
+| selected source embedding | `1/1` | `1/1` | `1/1` | `PASS` |
+| relocated installed static | `1/1` | `1/1` | `1/1` | `PASS` |
+| relocated installed shared | `1/1` | `1/1` | `1/1` | `PASS` |
+
+- Windows shared library exports七个 common/POSIX 与两个 Windows-only decorated C++ adapter symbols；Linux/
+  macOS 各只导出七个 common/POSIX symbols。没有未装饰 C export、C header/schema、managed sample、FFI
+  option 或 stable C++ ABI 承诺；
+- MSVC optimized adapter disassembly 显示 common conversion body 只有固定整数算术、比较和分支；直接
+  FILETIME wrapper 可 tail-jump 同组件既有 raw codec。没有外部 allocation、lock、atomic、syscall、
+  virtual/dynamic dispatch 或全局状态。header-only unit converters 可常量求值；
+- 因为这些 fixed-work value conversions 未被 profile 证明为热点，工程门按预声明的 `P0 STRUCTURAL`
+  裁决为 `PASS`，timing peer comparison 为 `NOT_APPLICABLE`。没有新增纳秒 benchmark，也不续签未修改
+  host clock 的 v4 P1 排名。
+
+### C++ usability、文档与独立红队
+
+- 用户按三种语义选择入口：绝对 timestamp 使用 floor、一般 duration 使用具名 `trunc`、等待 timeout
+  使用 positive ceil/nonpositive poll；checked extractor 与 output+`bool` 不隐藏 overflow，失败不修改
+  native output；
+- native adapter 是显式 opt-in header；普通 clock consumer 不承担 Windows/Winsock include-order 成本。
+  Windows 调用者只有实际构造 native struct 时才 include OS header；
+- architecture 记录 canonical value、owner 与负空间；user guide 用选择表说明 signed Unix units、POSIX/
+  Windows 路线、负 epoch、精度损失、realtime 不能作 deadline 等陷阱；package sample 调用真实 compiled
+  adapter，而不是只编译声明；
+- hostile review 攻击了负 epoch、INT64_MIN 中间溢出、noncanonical subsecond、output mutation、timeout
+  早醒、Windows field packing/header pollution、C ABI 误认和 Platform/IO 强制迁移。边界测试与实现修正后
+  未留下 medium-or-higher finding；Platform futex/IO sentinel 的不同 domain semantics 被保留，而不是
+  为提高内部采用率强行统一。
+
+### Aggregate gates 与六问
+
+| Aggregate gate | Verdict | Evidence / limitation |
+|---|---|---|
+| scope | `PASS` | 仅八项冻结 FIX；candidate 后产品路径无 drift |
+| architecture | `PASS` | `UnixTimestamp` 仍是唯一 canonical value；civil/device/scheduling/FFI owner 明确 |
+| correctness | `PASS` | 三平台边界/属性/header，WSL ASan/UBSan，Windows FILETIME |
+| delivery | `PASS` | 三平台 source/static/shared 各 1/1；Platform/IO compile regression |
+| usability/docs | `PASS` | 三种 rounding 语义、失败形状、header opt-in 与陷阱均有当前 guide/sample |
+| red team | `PASS` | 剩余 medium-or-higher finding 为 0 |
+| engineering performance | `PASS` | P0 fixed O(1)/零资源/code shape；timing comparison N/A |
+
+六问结论：Time 产品无第三方实现依赖；当前准入推理 host/普通系统互操作能力全部 `COMPLETE` 或
+`ROUTED`，没有未处置 `MUST`；性能只签 P0 结构成本，不伪称 timing SOTA；旧 C ABI/Native FFI 为
+`CLEAN/N/A`；三种 C++ 交付与组件闭包通过；公开入口、选择规则、failure/rounding/header 陷阱均已形成
+自然 C++ API 与当前文档。
+
+### Candidate LOC
+
+从不可变 candidate 运行 `scripts/loc-report.py` 并用明确 Time factor 路径执行 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 424,240 |
+| 自实现包含测试 | 103,871 |
+| 自实现不包含测试 | 64,671 |
+| 当前 Time factor 实现 | 1,420 |
+
+普通 `--module time` 会同时计入同目录下已经独立收口的 timer_queue 产品 factor，得到 1,858；本轮绑定
+的 1,420 只统计 `clock.h`、`unix_timestamp.h`、`native_interop.h` 与 `src/time`。LOC 只表示规模，不证明
+功能或性能。
+
+## Verification verdict
+
+八个 `MUST/FIX` 已全部 `COMPLETE`，七项 aggregate gate 全部 `PASS`，无未处置 blocker。保存的
+`CANDIDATE -> VERIFIED` 前态为
+`C:\public\project-hyle\_validation\time-v5-state\module-status-candidate.json`，SHA-256
+`8D8E75B6008BB30CC634C4F5F625B3825C92250C3A6D7D1BBECBE739A53928E4`。
+
+当前为 `VERIFIED`；下一步只写 terminal receipt、已知限制、reopen triggers 与 registry anchor，不再改变
+candidate 产品。
