@@ -7,8 +7,8 @@
 >
 > 项目级阶段门：[`全库能力展开与组件因子化 v1`](../project/capability-factorization-v1.md) 已完成，随后
 > [`build-system-v7 factor/façade projection`](../build/build-system-v7-factor-facade-projection.md) 已把内部
-> factor DAG 与外部产品 façade 分开。中央 registry 当前把本轮登记为 `AUDITED`，因此只授权下述
-> `MEM2-01`～`MEM2-09` 有限 FIX；历史 factor 清单或 bundle 文字若与 v7 投影冲突，不再构成施工合同。
+> factor DAG 与外部产品 façade 分开。中央 registry 已按本卡冻结的 `MEM2-01`～`MEM2-09` 有限 FIX
+> 产出候选并进入 `CANDIDATE`；历史 factor 清单或 bundle 文字若与 v7 投影冲突，不再构成施工合同。
 
 ## Closure card（AUDITED）
 
@@ -273,7 +273,8 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
   Platform 文档迁移、sparse/residency edge 与最终 package journey 后才能完成。
 - `MEM2-06` 的通用 transient pool 已落地：一字 move-only `BufferPool`、RAII `BufferLease`、显式
   take/reset、retention/slack/growth/bounded-scan options，以及 live/cached/peak/allocation/reuse/OOM-retry
-  stats。实现使用 64 个 size buckets、每桶有界 best-fit，常见复用为一次 mutex + O(1) bucket/有限
+  stats。实现使用 `sizeof(size_t) * 8 + 1` 个 size buckets（当前 64-bit 平台为 65 个）、每桶有界
+  best-fit，常见复用为一次 mutex + O(1) bucket/有限
   inspection；首次 allocation 才创建一块 Entry metadata，复用不再分配 wrapper/provider。provider OOM
   只做一次释放 cache 后重试；pool 不包含 Event/Stream，completion 前归还是 caller contract。
   Windows MSVC shared/static、WSL GCC 14 shared 与 WSL GCC 14 ASan correctness/并发 accounting
@@ -331,48 +332,121 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
 - IO：async file/network completion 与 registered-buffer protocol；
 - Native FFI：没有已准入 foreign-runtime consumer，保持 `N/A`。
 
-## Owner 六问当前审计答案
+## Owner 六问终态答案
 
 ### 1. 第三方产品路径
 
-- system/Heap mechanism 允许复用锁定 mimalloc；其他 peer 只作 shape/algorithm evidence；
-- public HYLE types 不泄漏 `mi_heap_t`、CUDA/Vulkan/ggml/CCCL types；
-- provider implementation 可由 Compute target 编译，Mem target 不反向链接 Compute。
+- Mem 的唯一直接第三方实现依赖是锁定的 mimalloc v3.5.0，用于 system/Heap backing；它由构建系统
+  统一登记并静态编入 Mem，不出现在 HYLE public type 或调用合同中。
+- oneTBB、标准 PMR、llama.cpp、ggml、Folly、Boost、CCCL 与 oneDNN 只提供 peer、consumer 或算法证据。
+  CUDA/Vulkan provider 由 Compute target 实现并向 Mem contract 适配；Mem 不反向链接 Compute，也不
+  泄漏 `mi_heap_t`、CUDA/Vulkan/ggml/CCCL 类型。
 
 ### 2. 推理引擎能力完整度
 
-- 当前存在未处置 MUST：`YES`，恰为 `MEM2-01`～`MEM2-09`；
-- 完成定义：llama/ggml 的 admitted storage journeys 均有自然 Mem route，不能只写“交给 Compute/Graph”；
-- 不承诺模型/KV policy，也不按 ggml API 名字逐函数复制。
+- `MEM2-01`～`MEM2-09` 九项 `MUST` 均已 `COMPLETE` 或由明确 owner `ROUTED`：host allocator/Heap、
+  arena/pool、匿名/文件/共享 mapping 与 residency、开放 resource/ref、Buffer owner/view/import/composite、
+  同步 copy/coherence、transient BufferPool/stats 和 tensor-free lifetime packing 都有自然公开路线。
+- Graph 当前只有 task/data-parallel facts，没有第二套 storage owner 或 planner，因此没有可迁移代码；未来
+  DAG 到 `LifetimeRequest` 的推导归 Graph。Tensor/KV/model placement、eviction、async queue/completion 和
+  backend kernel 继续归 Engine/Graph/Compute/IO，不是以“交给别处”掩盖 Mem 缺口。
 
 ### 3. 拟真、公平性能
 
-- 当前只有 v1 host 两份限定 P1 证据；它们不能证明 v2 resource/buffer/mapping/planner；
-- candidate 前不发布新 SOTA 结论；每票按 closure card 的 comparison class 和预算验证。
+- P0 证明常态结构与复杂度：view/subview O(1) 且不分配；Composite 首次 piece discovery O(log S)、
+  顺序遍历 touched segments；planner 为 O((N+E) log N)/O(N) scratch；BufferPool 为固定 bucket 选择加
+  每桶有界 scan；mapping 只转发所请求 OS range operation，不搬 payload 或隐藏 fallback。
+- P1 使用四个 normal consumer same-contract 形状。Heap 与 BufferView 八个 strata 全为 `PARITY`，
+  FixedArena 与 BufferPool 八个 strata 全为 `WIN`；全部通过 5% 非劣门和资格 controls。结论不外推为
+  “全部 Mem 操作/平台 SOTA”。
 
 ### 4. 旧 C ABI / Native FFI
 
-- 当前 policy 为 `N/A`；不得恢复旧 C schema/exports，也不为可能的 Java/C# consumer 预做 bridge。
+- `NOT_APPLICABLE`。当前产品只承诺 C++23 source/static/shared；Mem 没有历史 C schema、bridge、option 或
+  动态 C symbol。未来只有真实 foreign-runtime consumer 经运行时类型擦除准入后才另开 FFI slice。
 
 ### 5. Source / static / shared
 
-- baseline mem-v1 三形状曾通过；v2 headers、exports、provider seams 与相邻 component graph 改变后必须全部
-  重跑，旧 receipt 不能外推。
+- Windows、WSL 与 macOS 都从候选源完成 source embedding、relocated shared SDK 和 relocated static SDK
+  consumer；sample 实际运行 Heap、FileMapping、BufferPool 和 LifetimePlan，不是只检查 version symbol。
+- Mem header 自包含、中央 component closure、Windows import/export 与 Unix loader 均由这些旅程覆盖。
 
 ### 6. C++ API 易用性与文档
 
-- baseline host guide 很详细，但“host only、device/mapper 留相邻模块”已经过时；
-- v2 必须提供按 storage domain、ownership、lifetime、concurrency、failure 选型的一页表，以及模型加载、
-  persistent buffer、transient pool、planner 四条可编译 recipe；
-- 任何需要用户先理解 benchmark 名称、backend 私有 handle 或多 namespace 拼装 owner 的路线都判 `FAIL`。
+- public 类型按 ownership/domain/lifetime/concurrency 命名，没有 benchmark 名称、`fast/light` 档或 backend
+  私有 handle 迫使用户选型；普通 host、model mapping、persistent/device buffer、transient pool 与 planner
+  均有短的 compile/run recipe。
+- architecture 与 guide 已区分 Platform 的低层 OS mechanism owner 和 Mem 的统一 storage owner，说明
+  borrow/provider lifetime、view invalidation、pool completion 前提、mapping 页粒度与 unsupported 路径。
 
 ## Candidate
 
-尚未进入。产品代码只能按 `MEM2-01`～`MEM2-09` 顺序或显式无冲突的 ticket 边界施工；每票完成后记录
-公开合同、复杂度、直接消费者和适用测试，不能把未完成票写成 PASS。
+- 首个候选 `a7d7297e71d28214cf4b4c1d03665703c9f78822` 在独立 red-team P0 中被拒绝：
+  `CompositeBuffer` 的跨段 read/write/fill/copy 每段重复二分，实际为
+  O(touched segments * log S)，不满足公开的 O(log S + touched segments) 合同。
+- 最终产品 candidate / tree：`9eda54f9b36bfb0792ecf1544dc39d7ac9682265` /
+  `359c4832a91a498bb92e49b80766752a4ca9d9c6`。它只在首次 range lookup 二分，随后按 prefix 顺序遍历；
+  没有增加 API、layout、常态 metadata 或 benchmark-only branch。
+- candidate 后的 task、性能证据与 registry 维护不改 `include/hyle/mem`、`src/mem` 或直接 provider 产品
+  实现。Mac 使用该 commit 的确定性 Git archive；Windows 与 Mac 两端 archive SHA-256 同为
+  `230277064d2b516e5110a4f6b33b554483372880d2caa15ab260dcd7a09bbb68`。
 
 ## Verification manifest
 
-尚未进入。最终至少运行本卡预声明的三平台适用 correctness、sanitizer、selected component、source/static/
-shared package journey，以及改变的 P1 family；真实 backend 缺失必须写 `NOT_APPLICABLE`/`BLOCKED` 的准确
-原因，不能用 synthetic 路径冒充。
+| Gate | Verdict | 证据与边界 |
+|---|---|---|
+| scope / capability | `PASS` | 九项冻结 `MUST` 全部兑现；相邻 policy/async/backend-kernel 均有明确 owner，没有 `PARTIAL + KEEP` |
+| architecture / API | `PASS` | `compute | graph | io -> mem -> platform` 无环；storage owner、OS mechanism 和 typed async seam 分工清楚；无旧 alias、重复 owner 或 benchmark-shaped public type |
+| correctness / sanitizer | `PASS` | W1-WIN MSVC 19.50 Release 2/2（Mem 内部 242 tests）；W1-WSL GCC 14.2 Release、ASan、UBSan 各自 header+Mem PASS，`setarch x86_64 -R` TSan 242/242 且无 race；M1-MAC AppleClang 21 Release 2/2 |
+| real provider | `PASS` | 当前候选在 Windows 真实启用 CUDA 13.3 与 Vulkan 1.4.357：Compute 78 PASS/2 有明确非本票 skip，Vulkan 16/16；Host/CUDA/Vulkan 的 resource、Buffer、nonzero subview 与 native offset/range route 均运行，不用 synthetic 冒充硬件 |
+| delivery | `PASS` | Windows、WSL、macOS 的 selected Mem smoke 均通过 source、relocated shared、relocated static consumer；三种形状调用真实 owner/pool/planner 路线 |
+| usability / docs | `PASS` | architecture/user guide/选择表/recipes/陷阱、当前 P1 专页与脚本入口一致；Native FFI 明确 N/A |
+| red team | `PASS` | 下表 finding 均已修复、证伪或限界；没有 correctness、security、ownership、delivery、usability、复杂度或 material-performance blocker |
+| engineering performance | `PASS` | `mem-v2-consumer-v1` 在 W1-WIN、5% NI、n=15、八 strata 下四项全部 PASS；A/A、5/10% delta、timer floor、placement 与 resource oracle 全 PASS，deep verifier `QUALIFIED` |
+
+P1 retained bundle 位于
+`C:\public\project-hyle\_validation\mem-v2-perf-evidence-9eda54f9`。contract SHA-256 为
+`56083fe6817c74e010194aa96dae9f1f36d36698c4b5dd5206fd3d9ab31fd281`，语义矩阵 SHA-256 为
+`85959bab834bf483f5b7b9506fcf6a7af79074819410be8ded78a1cd28edc4a8`，manifest SHA-256 为
+`66919c54c9c61f696551c97c079e720eb6da8e89886bc6b8ecd3ad7a3588b983`，summary SHA-256 为
+`aa43e2ec0be62563dbfea1fb98df1834b9c39783a4e8f5755b9cdf5dc535f7bc`；verifier 报
+candidate eligible、environment current、paths verified、exact provenance 和 `QUALIFIED`。
+
+| workload | eight-strata result | advantage ratio | candidate throughput |
+|---|---|---:|---:|
+| isolated Heap lifecycle / equal mimalloc PMR owner | 8/8 `PARITY`, NI PASS | 0.999--1.029 | 91.3--94.0 M op/s |
+| FixedArena epoch / equal external PMR monotonic | 8/8 `WIN`, NI PASS | 1.196--1.223 | 546.9--552.3 M op/s |
+| checked BufferView range fill / equal fused lower bound | 8/8 `PARITY`, NI PASS | 0.999--1.007 | 22.83--22.95 M op/s |
+| BufferPool lifecycle / oneTBB memory_pool + charged semantic adapter | 8/8 `WIN`, NI PASS | 1.382--1.400 | 28.54--28.73 M op/s |
+
+### Final red-team
+
+| finding | severity | disposition / evidence |
+|---|---|---|
+| 首候选 Composite range operation 重复二分，复杂度合同不成立 | material complexity | `FIXED` at `9eda54f9`：一次二分后顺序 piece traversal；focused + 全 Mem 三平台复证 |
+| SharedMapping 曾把 OS mapping capacity 当 payload size 暴露 | correctness/range | `FIXED` at `38ed316a`：owner 保存并传播 logical payload size，page-rounded backing 不泄漏为可访问 payload |
+| SharedMapping read helper 曾吞掉源 range failure | error integrity | `FIXED` at `ee7277c8`：失败原样返回共享 Status，测试覆盖越界路径 |
+| Platform 仍公开 low-level mapping/VM owner，看似与 Mem 重复 | architecture ambiguity | `BOUNDED`：Platform 是可直接使用的 OS mechanism；Mem 组合它们提供统一 storage/resource/view semantics，文档给出选择规则 |
+| Graph 尚无 LifetimePlanner adapter | migration risk | `ROUTED`：当前 Graph 源没有 storage owner/planner 可迁移；未来 DAG/tensor facts 到 `LifetimeRequest` 的推导属于 Graph，不能反向塞入 Mem |
+| BufferPool 常见复用是否偷偷成为线性搜索 | material hot-path | `DISPROVED`：固定 65 buckets、每桶默认最多 8 次 inspection；cold trim 才与 cached buffers 成比例，合同和 stats 可见 |
+| CUDA/Vulkan seam 可能只由 synthetic provider 通过 | false hardware PASS | `DISPROVED`：最终候选在 RTX 路径真实构建并运行 CUDA/Vulkan resource、Buffer/subview tests；synthetic 只补 non-coherent differential |
+| 为 Java/C# 预留旧 C ABI 会扩大未消费 surface | maintenance/API | `REJECTED`：本轮无 C header/schema/bridge/option/symbol，只有未来具名 foreign consumer 才可重开类型擦除 FFI |
+
+candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module mem --commit 9eda54f9
+--self-check --json`）为：全库代码 **432,497**；自实现包含测试 **109,610**；自实现不包含测试
+**69,085**；Mem 实现 **7,653** 行。
+
+## Closure decision（待 registry 完成合法状态迁移）
+
+验证事实已满足 `CLOSED` 条件；registry 仍须按 `AUDITED -> CANDIDATE -> VERIFIED -> CLOSED` 保存明确
+快照。在该合法迁移完成并写入 terminal receipt 前，本节不提前宣告产品状态。
+
+- 可接受限制：P1 只签四个冻结 W1-WIN same-contract workload；mapping/planner/Composite 依 P0
+  complexity/resource 证据；不签多 socket NUMA、端到端 model load/tokens/s、cross-backend performance、
+  KV/tensor/model policy、async queue/completion、Native FFI、稳定 C++ ABI 或 Formal。
+- reopen triggers：
+  1. 具名 consumer 复现 Mem ownership、lifetime、range、coherence、error、concurrency、OOM 或易用性缺陷；
+  2. public API/layout/算法、mimalloc/direct dependency、provider seam 或 source/static/shared 交付变化；
+  3. 成熟 same-contract peer 给出更好复杂度档，或正常 consumer workload 上可复现超过 5% 的 material 劣势；
+  4. Graph adapter、multi-node locality、backend async、KV/model policy 或 foreign-runtime slice 经独立能力决策准入；
+  5. performance contract/peer/provenance/machine/instrument 或 retained bundle 改变且当前声明需要续签。

@@ -728,10 +728,11 @@ cargo run --release --config \
 
 The three helpers below reproduce pre-v1 diagnostic formats. They remain useful
 for local mechanism investigation, but they do **not** produce current module
-qualification evidence by themselves. Current mem engineering evidence is owned
-by `hyle-perf.py` plus `bench/contracts/mem-owner-consumer-v1.json` and
-`bench/contracts/mem-handoff-consumer-v1.json`; see
-`docs/implementation/evidence/performance/benchmarks-mem.md` for the exact replay.
+qualification evidence by themselves. Current Mem v2 engineering evidence is
+owned by `hyle-perf.py` plus `bench/contracts/mem-v2-consumer-v1.json`; see
+`docs/implementation/evidence/performance/benchmarks-mem-v2.md` for the exact
+claim and retained identities. The older owner/handoff contracts remain v1
+historical evidence and must not be used to renew the v2 verdict.
 
 ### `mem-cert-stat.py` — whole-request mem latency
 

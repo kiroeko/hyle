@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-09-02",
+  "updated_at": "2026-09-03",
   "modules": [
     {
       "module": "core",
@@ -645,7 +645,7 @@
     },
     {
       "module": "mem",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEM-OWNER-2026-09-01",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v1-capability-replay-2026-09.md",
       "round_id": "mem-v2",
@@ -653,6 +653,8 @@
       "scope": "Unify host allocators, heaps, arenas and pools with cross-domain memory resources, buffers/views, mappings/residency, resource pooling/stats and tensor-free lifetime packing; migrate provider adapters, consumers, delivery and documentation.",
       "non_goals": "Tensor/KV/model policy, graph lifetime inference, backend kernels, Device/Stream/Event scheduling, file formats and asynchronous IO protocols, full backend rewrites, stable C++ ABI, Native FFI/C API and Formal certification.",
       "baseline_commit": "e7b3a5f2f6bc90b194821c1777542c3c47a27c7b",
+      "candidate_commit": "9eda54f9b36bfb0792ecf1544dc39d7ac9682265",
+      "candidate_tree": "359c4832a91a498bb92e49b80766752a4ca9d9c6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -670,7 +672,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v2 能力超集、公开面反向追踪、语义所有权和 MEM2-01～09 有限 FIX 集已审定；下一步从产品 taxonomy 与无环 provider seam 开始实现。"
+      "summary": "mem-v2 产品候选 9eda54f9 已冻结；九项 FIX、三平台/三种交付、sanitizer、真实 provider、red-team 与 P1 证据已记录，正按合法状态机进入 VERIFIED。"
     },
     {
       "module": "simd",
