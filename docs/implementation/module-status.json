@@ -413,8 +413,30 @@
     },
     {
       "module": "timer_queue",
-      "product_state": "QUEUED",
-      "summary": "已按 Stage C 登记独立 timer-node/data-structure factor；等待 Time host-clock API 与依赖边界冻结后进入自己的收口轮。"
+      "product_state": "SCOPED",
+      "round_id": "timer-queue-v1-factor",
+      "closure_task": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
+      "scope": "Move caller-owned TimerEntry, TimerQueue and CommonTimeoutQueue ownership into the accepted header-only factor, compose the frozen injectable host-clock API, and revalidate current Sched/IO consumers and the hyle::time product facade.",
+      "non_goals": "Callback execution, blocking or suspension, periodic/cross-thread scheduling policy, total-order metadata, Sched/IO state-machine redesign, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
+      "baseline_commit": "f342f8d92cebaae9f4870fe05e78afe6c6ca1391",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "timer_queue v1 closure card 已冻结：迁移现有 caller-owned timer node/data structures 到独立 header-only factor，组合 Time provider，并以当前 Sched/IO 消费和 Seastar/libevent 语义为界。"
     },
     {
       "module": "platform",
