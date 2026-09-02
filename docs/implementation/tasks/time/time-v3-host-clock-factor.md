@@ -58,7 +58,8 @@
   ggml `ggml_time_us` 只作真实旅程来源而不把微秒精度冒充同合同 peer；holdout 为一次显式
   runtime clock-reference 采样加 deadline 计算；
 - 常态成本合同：默认/templated system route 无 allocation、lock、virtual dispatch、registry 或新 metadata，
-  不多于底层钟本身的读取；`ManualClock` 每次 now/set/advance 至多一个 64-bit atomic 操作，
+  不多于底层钟本身的读取；`ManualClock` 只有一个 lock-free 64-bit atomic state，
+  `now()` 一次 load，`try_set()/advance()` 在无竞争时 O(1)，竞争时 CAS 重试次数随竞争而变，
   不拥有 waiter；显式 runtime reference 为两字大小、一次间接调用、无分配，生命周期由 owning
   runtime 保证；
 - material margin / resource budget：W1-WIN 同合同 primary `5%`；默认路线代码形状不得多出
@@ -199,3 +200,29 @@ poll/wake；periodic/cancellation budget 仍属 Sched/IO。这些不是 Time 本
    当前因缺 injectable composition 和存在只由测试使用的 unit wrappers 为 `FAIL`，按上述
    API freeze 修复。architecture 将分开 host/timer factor 决策，user guide 将补默认/注入选型和
    lifetime/atomic-not-a-fence 陷阱，performance 页只放取证事实。
+
+## Candidate
+
+- product commit / tree：`381eb4b195973ed35ed23ca63c05f9605a132f9b` /
+  `a5d48a259161c1a60e19450e42b4a6eac9a1a712`；
+- 能力/API：`SystemMonotonicClock`、`ManualClock`、`MonotonicClockSource` 与两字借用型
+  `MonotonicClockRef` 已实现；deadline/remaining/Instant 已可组合 provider，默认 system route 不经
+  type erasure；无消费者的 `sleep_for_us/ms` 已删除；
+- correctness/resources：ManualClock 非 copy/move、非负 initial/delta、单调 set、饱和 advance、多线程
+  read/set/advance 和 provider deadline/elapsed 均有测试；实现固定一个 always-lock-free 64-bit atomic state，
+  无 allocation/lock/syscall/waiter/global registry；relaxed atomic 不是用户数据的 publication fence；
+- factor/delivery：host `time -> core`，timer node/queue 全部迁出到 `timer_queue`；`hyle::time`
+  仍是聚合两 factor 的 consumer-facing facade。W1-WIN MSVC 19.50 Release 的 Time/timer_queue
+  focused tests 4/4、host-only selected-factor closure、中央 component contract 与 Sched/IO direct-consumer
+  shared build 已通过；
+- P1 contract：新 host normal-batch contract SHA-256 为
+  `707029c26eb677dcecfc1478cca207d6a2a5d64b305eb04c43391f14d0cb158e`；一次未资格化 probe 的
+  HYLE/std 差约 2%，只证明未见明显机制退化，不是 closure verdict；
+- pending：W1-WIN 合格 P1 bundle、W1-WSL/M1-MAC correctness/sanitizer、最终 source/static/shared
+  relocated journey、docs/red-team/aggregate gates。未运行项不写 `PASS`。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照位于
+`C:\hyle-scratch\time-v3-audited-before-candidate.json`，SHA-256
+`53B2350D98372F57D5DAB398BC24F02408EB26B96FF80170B008E1A78CD4F75A`。candidate 后若改变公开合同、
+产品实现、factor graph 或冻结 workload，必须退回 `AUDITED`；只补验证与事实记录不改变
+candidate identity。

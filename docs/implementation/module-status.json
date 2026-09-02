@@ -384,7 +384,7 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "TIME-FACTORIZATION-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v3-host-clock-factor.md",
       "round_id": "time-v3-host-clock-factor",
@@ -392,6 +392,8 @@
       "scope": "Separate the host-clock semantic factor from timer-node storage, complete the admitted injectable/manual clock vocabulary and revalidate affected consumers and C++ delivery without changing the public Time product facade.",
       "non_goals": "Timer callback execution, periodic or cross-thread scheduling policy, device clocks, timezone databases or protocol formatting, Sched/IO redesign, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
       "baseline_commit": "25b13f5a18a0164a5fa81d01c4ef5d1a32f85cf4",
+      "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+      "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -409,16 +411,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v3 已完成能力超集、全部公开面、真实消费者和 peer 审计；唯一产品能力缺口是可注入/manual monotonic clock，有限 FIX 还包括 provider 组合、删除测试形 unit sleep wrapper 和 host/timer factor 交付拆分。"
+      "summary": "time-v3 候选已冻结：host clock 仅依赖 Core，system/manual/borrowed provider 与 deadline/Instant 组合已补齐，测试形 unit sleep wrapper 已删除；正在对候选执行三平台、三交付与 host P1 验证。"
     },
     {
       "module": "timer_queue",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "timer-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
       "scope": "Move caller-owned TimerEntry, TimerQueue and CommonTimeoutQueue ownership into the accepted header-only factor, compose the frozen injectable host-clock API, and revalidate current Sched/IO consumers and the hyle::time product facade.",
       "non_goals": "Callback execution, blocking or suspension, periodic/cross-thread scheduling policy, total-order metadata, Sched/IO state-machine redesign, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
       "baseline_commit": "f342f8d92cebaae9f4870fe05e78afe6c6ca1391",
+      "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+      "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -436,7 +440,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "timer_queue v1 已完成 node/radix/common-timeout 能力、全部公开面、Sched/IO 消费与 Seastar/libevent 审计；有限 FIX 是 provider 组合、独立 header-only factor/交付归属和当前 scheduler P1 重签。"
+      "summary": "timer_queue v1 候选已冻结：caller-owned radix/common-timeout 能力迁入独立 header-only factor，provider 组合与 Sched/IO 直接边已落地；正在执行三平台、三交付与当前 Seastar scheduler P1 重签。"
     },
     {
       "module": "platform",

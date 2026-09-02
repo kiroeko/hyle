@@ -128,3 +128,29 @@
 6. **C++ API/文档：**现有 mixed/common 选择、ownership、failure、single-owner、teardown 已自然；
    provider 尚需手写 `.now()` 且构建形状尚错误，所以当前 `FAIL`。按冻结 overload 和
    factor/user/architecture/performance 文档修复后再裁决。
+
+## Candidate
+
+- product commit / tree：`381eb4b195973ed35ed23ca63c05f9605a132f9b` /
+  `a5d48a259161c1a60e19450e42b4a6eac9a1a712`；
+- product/API：`TimerQueue` 的 provider construct/schedule-after/advance 与 `CommonTimeoutQueue` 的
+  provider schedule/try-schedule-now 已落地；provider 只在单次调用期间借用，queue/node layout
+  零增长，现有 raw/typed 明确-now 路线不变；
+- factor/delivery：公开 header 由新 header-only `timer_queue` factor 拥有，直接边为
+  `core,time,container_intrusive`；Sched 和 IO 已声明实际直接边，consumer-facing
+  `hyle::time` 继续聚合 host artifact 和 timer headers，单选 Container 不会伪造不完整 facade；
+- correctness/resources：新 provider tests 与原有 owner/lifecycle/radix/common-timeout 测试在 W1-WIN
+  MSVC 19.50 Release 共 4/4 通过；node/queue 仍为单 owner、零 allocation/lock/atomic/syscall，
+  arm/cancel/next 仍 O(1)，advance 仍按 touched/delivered/rebucketed 计费；
+- P1 contract：当前 scheduler lifecycle contract SHA-256 为
+  `48e636cb9e59d578b1148ef0af091cb04b6daeb38097581b6e315b9f1eb760fe`，已绑定当前
+  Scheduler consumer 与 Seastar `991cf9a908482a3f11ca2fc34a1b3970a06d8622`；未用旧 bundle
+  冒充新 candidate 证据；
+- pending：W1-WIN 合格 P1 bundle、W1-WSL/M1-MAC correctness/sanitizer、最终 source/static/shared
+  product journey、docs/red-team/aggregate gates。`CommonTimeoutQueue` 没有当前 HYLE 产品消费者，
+  本轮只签 correctness/complexity 而不伪造 P1 性能声明。
+
+`AUDITED -> CANDIDATE` 的前态 registry 快照与 Time 共用
+`C:\hyle-scratch\time-v3-audited-before-candidate.json`，SHA-256
+`53B2350D98372F57D5DAB398BC24F02408EB26B96FF80170B008E1A78CD4F75A`。candidate 后若改变公开合同、
+产品实现、factor graph 或冻结 workload，必须退回 `AUDITED`。
