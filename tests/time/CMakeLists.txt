@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(time)
-hyle_add_test(time SOURCES header_test.cc clock_test.cc manual_clock_test.cc
-  macro_composition_test.cc)
+hyle_add_test(time SOURCES header_test.cc clock_test.cc interop_test.cc
+  manual_clock_test.cc macro_composition_test.cc unix_timestamp_test.cc)
 target_include_directories(hyle_time_test PRIVATE "${PROJECT_SOURCE_DIR}/src/time")
 
 # Compile the frozen ordinary phase through both Instant and direct chrono.

@@ -5,8 +5,9 @@ Time 产品统一 HYLE 内部和 C++ 用户的时钟域、deadline 算术、Unix
 caller-owned node/data-structure `timer_queue` factor；用户仍只选择 `hyle::time`。两者都不拥有
 executor、线程间路由、周期任务策略、日历、时区或文本协议。
 
-施工事实见 [`time-v1 closure`](../implementation/tasks/time/time-v1-closure.md)，当前工程性能证据见
-[`benchmarks-time`](../implementation/evidence/performance/benchmarks-time.md)，用户选型见
+基础能力施工事实见 [`time-v1 closure`](../implementation/tasks/time/time-v1-closure.md)，原生互操作扩展
+见 [`time-v5 interoperability`](../implementation/tasks/time/time-v5-interoperability.md)，当前工程性能
+证据见 [`benchmarks-time`](../implementation/evidence/performance/benchmarks-time.md)，用户选型见
 [`guide/time`](../user/time.md)。本页只保存稳定设计与决策。
 
 ## 边界与依赖
@@ -47,7 +48,7 @@ handle、callback ABI 或稳定 C++ ABI 承诺；未来只有具名 foreign-runt
 | CPU accounting | `ThreadCpuClock`、`ProcessCpuClock` 与 compact ns | 区分执行时间和等待时间 |
 | duration/deadline | 精确向上取整、饱和 add、remaining、`Instant` | 安全 timeout 和 elapsed |
 | injectable monotonic time | `SystemMonotonicClock`、`ManualClock`、concept、两字 borrowed ref | 无真实等待的确定性 scheduler/timeout/retry 测试 |
-| Unix interchange | canonical signed seconds/nanoseconds + checked conversion | 文件、OS、持久化与协议边界 |
+| Unix interchange | canonical signed seconds/nanoseconds、signed Unix units、native structs | 文件、OS、持久化与协议边界 |
 | blocking sleep | relative/absolute、raw/chrono | 不在 scheduler 上的 OS 线程等待 |
 | arbitrary timers | `TimerEntry`、`TimerList`、`TimerQueue` | 混合 deadline、大量 cancel 的 event loop |
 | one-duration timers | `CommonTimeoutQueue` | 海量相同 duration timeout |
@@ -100,13 +101,27 @@ worker。
 
 ## Unix 时间互操作
 
-`UnixTimestamp{seconds, nanoseconds}` 是 canonical value：`seconds` 有符号，`nanoseconds` 必须在
-`[0, 1e9)`，因此能表示 pre-epoch 值。它具有自然默认值和 comparison，并与 system-clock
-time point、`time_t`、POSIX `timespec`、Windows FILETIME ticks 双向 checked 转换。
+`UnixTimestamp{seconds, nanoseconds}` 是唯一 canonical wide absolute value：`seconds` 有符号，
+`nanoseconds` 必须在 `[0, 1e9)`，因此能表示 pre-epoch 值。它具有自然默认值和 comparison，并与
+system-clock time point、`time_t`、POSIX `timespec/timeval`、signed Unix s/ms/us/ns、raw FILETIME
+ticks 以及 Win32 `FILETIME` 双向 checked 转换。低精度 absolute 提取向负无穷取整；因此 Unix -1ns
+导出为 -1us/-1ms/-1s，而不是向 epoch 截成 0。split value 比 signed ns 宽，导出整数单位可能溢出，
+所以返回 `optional`。
+
+`native_interop.h` 还负责 signed `Duration` 与 relative `timespec/timeval` 的 checked 转换。普通
+duration→timeval 明示 `trunc`，先向零丢弃 sub-microsecond；timeout route 则把非正值变成 poll 的
+`{0,0}`，正 fractional microsecond 向上取整，不能因格式转换提前唤醒。native 输入必须已经 canonical，
+invalid subsecond 不静默 normalize；output-reference 路线失败时保持输出不变。
 
 FILETIME 只有 100 ns 分辨率。timestamp 转 FILETIME 对纳秒部分向下取整到最近的 100 ns；这保留
-“不晚于原 timestamp”的明确策略。100 ns 对齐值精确 round-trip；无效或超范围输入返回
-`std::nullopt`，不能 wrap。`realtime_ns()` 只适合当前非负 epoch 的 compact 热路，不是通用存储格式。
+“不晚于原 timestamp”的明确策略。100 ns 对齐值精确 round-trip；无效或超范围输入不能 wrap。
+Windows 声明头只 forward-declare `_FILETIME/timeval`，不把 `windows.h/winsock2.h` 扩散进普通 Time
+消费者；实际构造 native struct 的 TU 自己取得对应 OS header。native structs 是进程内 C++ interop，
+不是稳定 wire/Native FFI layout。
+
+全部互操作转换为固定 O(1) 整数运算、零分配/锁/syscall/global state。signed unit converter 可
+constant-evaluate；native struct adapter 是普通 compiled C++ 调用，不进入读钟 hot path。`realtime_ns()`
+只适合当前非负 epoch 的 compact 热路，不是通用存储格式。
 
 ## TimerQueue（`timer_queue` factor）
 
@@ -161,5 +176,7 @@ one queue owns linked membership
 - 工程性能裁决固定 W1-WIN、5% non-inferiority、独立进程、双执行/分配顺序和 primary/placement；
   A/A、5%/10% known delta、timer floor、artifact/build/source identity 全部是前置门。
 - clock、sleep、Common queue 和极端 cardinality 可作 mechanism diagnostic，不能混成“time 总分”。
+- native/unit interop 以 P0 的 O(1)、零分配/锁/syscall、checked overflow 与 code shape 验证；没有 profile
+  证明其为热点时不为几个整数运算制造亚纳秒 benchmark，也不得据此改变 value layout。
 - 任何算法、公开 API、layout、直接依赖、source/static/shared delivery 或首席 consumer 改变都重开；
   单次点值、亚纳秒摆动或某一地址姿势翻转本身不能改变产品形状。

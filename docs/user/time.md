@@ -10,6 +10,11 @@ factor，但普通用户仍只链接 `hyle::time`。它不提供 C API/Native FF
 |---|---|---|
 | elapsed、timeout、deadline | `monotonic_now/ns` | 不要用 realtime |
 | 日志、协议、Unix epoch | `realtime_now/timestamp` | 墙钟会因校时跳变 |
+| DB/JSON/trace 的 signed Unix 整数 | `unix_timestamp_from/to_unix_*` | 导出低精度向负无穷取整且可能 overflow |
+| POSIX 绝对墙钟结构 | timestamp ↔ `timespec/timeval` | native subsecond 必须 canonical |
+| POSIX signed 相对时长 | `duration_from/to_timespec` 或 `duration_*_timeval` | timeval 的 `trunc` 会丢 sub-us |
+| `select`/libevent 风格 timeout | `timeout_to_timeval` | 正 fractional us 向上取整；非正值是 poll |
+| Win32 文件时间结构 | timestamp ↔ `FILETIME` | 100ns floor；TU 自己 include Windows header |
 | 普通 C++ duration/deadline | typed chrono 入口 | 不要手写 ns 乘法或 `now + timeout` |
 | 简单作用域耗时 | `Instant::now().elapsed()` | raw subtraction 可能为负 |
 | 可编译期注入真实/手动时间 | 保留具体 clock provider 类型 | 模板路线无动态分派 |
@@ -145,15 +150,50 @@ pre-1970 会 wrap，signed 64-bit ns 的范围也远窄于拆分表示。`nanose
 
 const hyle::time::UnixTimestamp stamp = hyle::time::realtime_timestamp();
 const auto chrono_value = hyle::time::unix_time_point(stamp);
+const auto unix_millis = hyle::time::unix_timestamp_to_unix_milliseconds(stamp);
+if (unix_millis) {
+  const auto restored =
+      hyle::time::unix_timestamp_from_unix_milliseconds(*unix_millis);
+  persist(restored);
+}
 const auto posix = hyle::time::unix_timestamp_to_timespec(stamp);
 const auto filetime_ticks =
     hyle::time::unix_timestamp_to_windows_filetime_ticks(stamp);
 ```
 
-system-clock time point、`time_t`、POSIX `timespec` 和 raw Windows FILETIME ticks 都有双向转换。
-不能表示或不 canonical 的输入返回 `std::nullopt`。FILETIME 只有 100 ns 分辨率：timestamp 转 ticks
-会把纳秒部分向下取整到 100 ns，只有 100 ns 对齐值精确 round-trip。`platform::FileInfo` 与
-`io::FileStat` 使用同一个 value type。
+system-clock time point、`time_t`、signed Unix s/ms/us/ns、POSIX `timespec/timeval` 和 raw/direct
+Windows FILETIME 都有双向转换。不能表示或不 canonical 的输入返回 `std::nullopt`/`false`。导出
+signed integer 低精度时向负无穷取整：Unix -1ns 是 -1us/-1ms/-1s，不是 0；返回 optional 是因为
+`UnixTimestamp` 的 split range 比任何一个 int64 unit 都宽。
+
+需要 native relative struct 时包含专门的头：
+
+```cpp
+#include "hyle/time/native_interop.h"
+
+using namespace std::chrono_literals;
+
+const auto relative = hyle::time::duration_to_timespec(-1ns);
+
+timeval timeout{};  // Windows TU 先 include <winsock2.h>
+if (!hyle::time::timeout_to_timeval(1501ns, timeout)) {
+  handle_native_seconds_range_error();
+}
+// timeout == {0, 2}: positive timeout never rounds down and wakes early.
+
+timeval signed_duration{};
+(void)hyle::time::duration_to_timeval_trunc(-1501ns, signed_duration);
+// signed_duration == {-1, 999999}: first truncates to -1us, then canonicalizes.
+```
+
+`duration_from_timespec/timeval` 接受 signed canonical 时长；`duration_to_timeval_trunc` 明示普通数值
+转换的向零截断。不要拿它做 timeout：timeout 的正确入口是 `timeout_to_timeval`，非正值变成 poll 的
+`{0,0}`，正 fractional microsecond 向上取整。失败的 output-reference 转换保证不修改输出。
+
+FILETIME 只有 100 ns 分辨率：timestamp 转 ticks/struct 会把纳秒部分向下取整到 100 ns，只有
+100 ns 对齐值精确 round-trip。Windows 上 `native_interop.h` 刻意不 include `winsock2.h/windows.h`；
+实际声明 `timeval`/`FILETIME` 对象的 TU 先按正常 Windows include 顺序取得这些头。`platform::FileInfo`
+与 `io::FileStat` 使用同一个 timestamp value type。
 
 `realtime_ns()` 适合当前非负 epoch 的 compact 热路，不是通用 wire/storage format。日历、时区和
 RFC3339/RFC1123 文本仍交给标准/协议层处理。

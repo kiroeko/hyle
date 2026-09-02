@@ -37,6 +37,103 @@ constexpr UnixTimestamp unix_timestamp(std::int64_t seconds,
   return UnixTimestamp{seconds, nanoseconds};
 }
 
+namespace unix_timestamp_detail {
+
+constexpr UnixTimestamp from_scaled_units(std::int64_t value,
+                                          std::int64_t units_per_second,
+                                          std::uint32_t nanos_per_unit) noexcept {
+  std::int64_t seconds = value / units_per_second;
+  std::int64_t remainder = value % units_per_second;
+  if (remainder < 0) {
+    --seconds;
+    remainder += units_per_second;
+  }
+  return unix_timestamp(
+      seconds,
+      static_cast<std::uint32_t>(remainder) * nanos_per_unit);
+}
+
+constexpr std::optional<std::int64_t> to_scaled_units(
+    UnixTimestamp value, std::int64_t units_per_second,
+    std::uint32_t nanos_per_unit) noexcept {
+  if (!unix_timestamp_valid(value)) return std::nullopt;
+
+  constexpr std::int64_t kMax = (std::numeric_limits<std::int64_t>::max)();
+  constexpr std::int64_t kMin = (std::numeric_limits<std::int64_t>::min)();
+  const std::uint64_t scale = static_cast<std::uint64_t>(units_per_second);
+  const std::uint64_t fraction = static_cast<std::uint64_t>(
+      value.nanoseconds / nanos_per_unit);
+  if (value.seconds >= 0) {
+    const std::uint64_t seconds =
+        static_cast<std::uint64_t>(value.seconds);
+    const std::uint64_t max = static_cast<std::uint64_t>(kMax);
+    if (seconds > (max - fraction) / scale) return std::nullopt;
+    return static_cast<std::int64_t>(seconds * scale + fraction);
+  }
+
+  // Avoid an overflowing negative intermediate at INT64_MIN. A canonical
+  // negative timestamp is -(abs(seconds + 1) * scale + (scale - fraction)).
+  const std::uint64_t preceding_seconds =
+      static_cast<std::uint64_t>(-(value.seconds + 1));
+  const std::uint64_t tail = scale - fraction;
+  const std::uint64_t max_magnitude =
+      static_cast<std::uint64_t>(kMax) + 1u;
+  if (preceding_seconds > (max_magnitude - tail) / scale) {
+    return std::nullopt;
+  }
+  const std::uint64_t magnitude = preceding_seconds * scale + tail;
+  if (magnitude == max_magnitude) return kMin;
+  return -static_cast<std::int64_t>(magnitude);
+}
+
+}  // namespace unix_timestamp_detail
+
+// Signed Unix-unit adapters keep common database, trace and protocol boundaries
+// out of ad-hoc arithmetic. Lower-precision extraction floors toward negative
+// infinity, matching the canonical seconds field: Unix -1ns is -1 in every
+// integer unit rather than zero. The wider split representation accepts every
+// int64 input; extraction can overflow and is therefore checked.
+constexpr UnixTimestamp unix_timestamp_from_unix_seconds(
+    std::int64_t value) noexcept {
+  return unix_timestamp(value);
+}
+
+constexpr UnixTimestamp unix_timestamp_from_unix_milliseconds(
+    std::int64_t value) noexcept {
+  return unix_timestamp_detail::from_scaled_units(value, 1'000,
+                                                   1'000'000u);
+}
+
+constexpr UnixTimestamp unix_timestamp_from_unix_microseconds(
+    std::int64_t value) noexcept {
+  return unix_timestamp_detail::from_scaled_units(value, 1'000'000, 1'000u);
+}
+
+constexpr UnixTimestamp unix_timestamp_from_unix_nanoseconds(
+    std::int64_t value) noexcept {
+  return unix_timestamp_detail::from_scaled_units(value, 1'000'000'000, 1u);
+}
+
+constexpr std::optional<std::int64_t> unix_timestamp_to_unix_seconds(
+    UnixTimestamp value) noexcept {
+  return unix_timestamp_detail::to_scaled_units(value, 1, 1'000'000'000u);
+}
+
+constexpr std::optional<std::int64_t> unix_timestamp_to_unix_milliseconds(
+    UnixTimestamp value) noexcept {
+  return unix_timestamp_detail::to_scaled_units(value, 1'000, 1'000'000u);
+}
+
+constexpr std::optional<std::int64_t> unix_timestamp_to_unix_microseconds(
+    UnixTimestamp value) noexcept {
+  return unix_timestamp_detail::to_scaled_units(value, 1'000'000, 1'000u);
+}
+
+constexpr std::optional<std::int64_t> unix_timestamp_to_unix_nanoseconds(
+    UnixTimestamp value) noexcept {
+  return unix_timestamp_detail::to_scaled_units(value, 1'000'000'000, 1u);
+}
+
 // Convert the finite range of std::chrono::nanoseconds to canonical floor
 // seconds.  Thus -1ns becomes {-1, 999999999}, matching POSIX timespec and
 // avoiding truncation-toward-zero surprises at the Unix epoch.

@@ -1,4 +1,5 @@
 #include "hyle/time/clock.h"
+#include "hyle/time/native_interop.h"
 #include "hyle/time/timer_queue.h"
 
 #include <chrono>
@@ -29,6 +30,11 @@ int main() {
   const auto stamp = hyle::time::realtime_timestamp();
   if (!hyle::time::unix_timestamp_valid(stamp))
     return 2;
+  const auto native_duration = hyle::time::duration_to_timespec(1ms);
+  if (!native_duration || native_duration->tv_sec != 0 ||
+      native_duration->tv_nsec != 1'000'000) {
+    return 6;
+  }
   const auto deadline = hyle::time::deadline_after(1ms);
   return deadline < hyle::time::monotonic_now() ? 3 : 0;
 }

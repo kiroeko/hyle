@@ -5,6 +5,7 @@
 #define max(a, b) hyle_time_max_macro_must_not_expand(a, b)
 
 #include "hyle/time/clock.h"
+#include "hyle/time/native_interop.h"
 #include "hyle/time/unix_timestamp.h"
 
 #undef max

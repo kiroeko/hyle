@@ -1,4 +1,5 @@
 #include "hyle/time/clock.h"
+#include "hyle/time/native_interop.h"
 #include "hyle/time/unix_timestamp.h"
 
 #include <gtest/gtest.h>
