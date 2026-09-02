@@ -258,6 +258,12 @@ concurrency 和 cost contract 内才允许；otherwise 退回 `AUDITED` 重新�
 - 本记录不完成 `MEM2-01` 或 `MEM2-04`：`CompositeBuffer`、完整 taxonomy 的其余 header、五条
   compile-only journey、Compute provider/consumer migration 和 source/static/shared installed journey
   仍按后续有限票处理。registry 保持 `AUDITED`，API freeze 保持 `DRAFT`。
+- `MEM2-02` 的 isolated owned-heap 机制已落地：一字 move-only `Heap` 直接复用 mimalloc
+  per-heap，支持 owner-thread allocate/reallocate、remote free、collect，以及会显式失效全部 live
+  allocation 的 bulk `clear/release`。allocator borrow 绑定 owner object，因此 successful `clear()` 后
+  仍可用且不需要额外 control-block allocation；move/destruction 明确使 borrow 失效。Windows MSVC
+  shared/static 和 WSL GCC 14 的 Mem header/test 通过。该票仍需完成 `AllocatorRef` 与 arena/pool
+  taxonomy 迁移和固定接口后的同合同 P1，不能据此标成完成。
 
 ### 相邻模块 backlog，而非 Mem 产品范围
 

@@ -12,6 +12,7 @@
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/mem/fixed_pool.h"
 #include "hyle/mem/growable_pool.h"
+#include "hyle/mem/heap.h"
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
@@ -37,6 +38,7 @@ using namespace hyle::mem;
 static_assert(std::is_trivially_copyable_v<Allocator>);
 static_assert(sizeof(Allocator) == sizeof(void*) * 4);
 static_assert(sizeof(MemoryResourceRef) == sizeof(void*));
+static_assert(sizeof(Heap) == sizeof(void*));
 static_assert(sizeof(Buffer) <= sizeof(void*) * 4);
 static_assert(sizeof(BufferView) == sizeof(void*) * 4);
 static_assert(sizeof(ConstBufferView) == sizeof(void*) * 4);
