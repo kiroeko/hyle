@@ -45,6 +45,9 @@ MODULE_BOUNDARIES = {
         "src/core",
     ),
     "container-intrusive": (
+        "include/hyle/container/detail/intrusive_member.h",
+        "include/hyle/container/intrusive_forward_list.h",
+        "include/hyle/container/intrusive_hlist.h",
         "include/hyle/container/intrusive_list.h",
     ),
     "util-core": (
@@ -497,6 +500,9 @@ def self_check(report: dict[str, object]) -> None:
         raise ReportError("the canonical core boundary has drifted")
 
     expected_container_intrusive = (
+        "include/hyle/container/detail/intrusive_member.h",
+        "include/hyle/container/intrusive_forward_list.h",
+        "include/hyle/container/intrusive_hlist.h",
         "include/hyle/container/intrusive_list.h",
     )
     if MODULE_BOUNDARIES["container-intrusive"] != expected_container_intrusive:

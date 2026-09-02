@@ -33,6 +33,20 @@ def main() -> None:
     if not selected:
         raise AssertionError("Core immutable module selection is empty")
 
+    intrusive_specs, intrusive_files = reporter.module_scope(
+        "container_intrusive", files)
+    if tuple(intrusive_specs) != reporter.MODULE_BOUNDARIES["container-intrusive"]:
+        raise AssertionError("container_intrusive canonical boundary drifted")
+    for header in (
+        "include/hyle/container/detail/intrusive_member.h",
+        "include/hyle/container/intrusive_forward_list.h",
+        "include/hyle/container/intrusive_hlist.h",
+        "include/hyle/container/intrusive_list.h",
+    ):
+        if header not in intrusive_files:
+            raise AssertionError(
+                f"container_intrusive boundary lost implementation header: {header}")
+
     util_core_specs, util_core_files = reporter.module_scope("util_core", files)
     if tuple(util_core_specs) != reporter.MODULE_BOUNDARIES["util-core"]:
         raise AssertionError("util_core canonical boundary drifted")
