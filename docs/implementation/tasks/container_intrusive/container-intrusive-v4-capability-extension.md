@@ -196,7 +196,8 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 `CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动、
 AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实现并绑定 candidate 3。旧 v3 性能证据
-不能覆盖新增能力或变化后的产品 identity。
+不能覆盖新增能力或变化后的产品 identity。candidate 3 的新增能力资格现已完成，全部适用门具备
+`PASS` 证据；registry 尚未执行本段证据提交之后的 `CANDIDATE -> VERIFIED` 状态迁移。
 
 ### 撤回的 candidate 1
 
@@ -252,5 +253,30 @@ AppleClang 有界修复和性能 factor 选择器修复已经按冻结边界实�
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
   `c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415`。
 
-下一步只允许在 clean candidate checkout 上执行 W1-WIN P1 qualification，并把固定门的结果写入
-evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
+### Candidate 3 verification
+
+- clean candidate checkout：
+  `C:\public\project-hyle\_validation\container-intrusive-v4-candidate3-58431ddb`；fresh performance build：
+  `C:\public\project-hyle\_validation\container-intrusive-v4-perf-build-58431ddb`；
+- correctness：W1-WIN MSVC 19.50 精确 factor 6/6、no-exception、exception guarantee、codegen、
+  differential/header 与 Sched cancellation 2/2 通过；W1-WSL GCC 14.2 精确 factor、ASan/UBSan 通过；
+  M1-MAC AppleClang 21 精确 factor 6/6 且无本轮新增 warning；
+- delivery：中央 component contract、Container source/static/shared relocated consumer，以及 M1-MAC
+  source/static/shared 产品 smoke 通过；`container_intrusive` 保持 header-only，不制造虚构 binary；
+- P1：`container-intrusive-p1-v2` 从空 build/output 执行；n=15 只因统计功效升级为完整 fresh n=31，
+  四项 workload × 八个 strata 全部通过 5% non-inferiority。counted combined exact
+  `INCONCLUSIVE`，forward `PARITY`，hlist 与 sequence 分别 `WIN`，但胜出只在合同 peer/consumer
+  边界内解释；
+- controls：A/A 双顺序、5%/10% known-delta、timer floor、placement、artifact identity 与 build
+  contract 全部 `PASS`；最终 `performance_gate=PASS`、`qualification_gate=PASS`；
+- verifier：`qualification=QUALIFIED`、`paths_verified=true`、
+  `product_gate_policy=consumer-evidence-v1`、`provenance_compatibility=EXACT`、
+  `current_certification_policy_eligible=true`；
+- retained manifest：
+  `C:\public\project-hyle\_validation\container-intrusive-v4-perf-evidence-58431ddb\manifest.json`，
+  SHA-256 `EB3BF0A4BFED3CB39BF61A239487963FE6D889B13721CC5D996E7057F8DD4283`；992 observations、
+  460 raw logs、6 artifacts；完整数表与边界见
+  [性能证据](../../evidence/performance/benchmarks-container-intrusive.md)。
+
+剩余动作只允许提交本证据、执行 closure/docs/red-team mechanical gates，并按状态协议迁移
+`CANDIDATE -> VERIFIED -> CLOSED`；不得借收尾重开产品代码或 API。
