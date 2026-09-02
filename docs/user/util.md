@@ -303,11 +303,14 @@ module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活�
 
 ## 分层与证据入口
 
-header-only util-core 仍作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；当前 v1 收口记录见
-[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)，新版完整性复检见
-[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)；Registry
-和 demangle 属于独立 runtime factor；v2 owning-text 任务见
-[`util-runtime-v2`](../implementation/tasks/util/util-runtime-v2-closure.md)。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
+header-only util-core 仍作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；当前结论见
+[`util-core v2`](../implementation/tasks/util/util-core-v2-capability-completion.md)。更早的
+[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md) 与
+[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md) 仅是历史输入；Registry
+和 demangle 属于独立 runtime factor，当前结论见
+[`util-runtime-v3`](../implementation/tasks/util/util-runtime-v3-rebuild.md)，更早的
+[`util-runtime-v2`](../implementation/tasks/util/util-runtime-v2-closure.md) 只作历史输入。`1b148ef`/`70fa4e8`
+只是在旧代码树上得到的历史输入，
 不代表当前 runtime 证书；唯一当前状态见
 [`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个
 运行时 Registry 反向链接 runtime factor。用户只看到一个 Util 产品不改变这条内部依赖。
