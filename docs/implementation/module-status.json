@@ -620,7 +620,7 @@
         "engineering_performance": "INCONCLUSIVE"
       },
       "end_commit": "4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd",
-      "registry_anchor_commit": "4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd",
+      "registry_anchor_commit": "60c68122cc3fe5c2ef0fc3e1ed65402febfcc396",
       "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
       "loc": {
         "snapshot_commit": "66671c39197765623f581dd872f4e626958880db",
