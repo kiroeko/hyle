@@ -390,7 +390,7 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "TIME-INTEROP-COMPLETENESS-2026-09-02",
       "reopen_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "round_id": "time-v5-interoperability",
@@ -398,6 +398,8 @@
       "scope": "Audit and complete common checked system-time interoperability while preserving UnixTimestamp as the canonical wide value and isolating POSIX, Winsock and Win32 header costs from ordinary clock consumers.",
       "non_goals": "Calendar, timezone, locale or text protocols, filesystem or device clocks, scheduler execution or cancellation, timer_queue changes, C or Native FFI, stable C++ ABI, host-clock retuning, benchmark-driven APIs, instrument redesign and Formal certification.",
       "baseline_commit": "1f18f8fc26298b39524420735c7cc4713b1ee729",
+      "candidate_commit": "680c9941d7af787067afae904a8ba886c14ba851",
+      "candidate_tree": "b09b704304d943adb8d6442c3790fbe02a3048de",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -413,7 +415,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v5 AUDITED：现有互操作 public surface、成熟 peer 和 HYLE 重复实现已反向追踪；signed Unix units、absolute timeval、relative POSIX、timeout rounding、direct FILETIME 与交付共八项有限 FIX 已冻结。"
+      "summary": "time-v5 CANDIDATE：八项互操作 FIX 已落在 680c9941/b09b7043；signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME、header isolation 与交付进入三平台验证。"
     },
     {
       "module": "timer_queue",

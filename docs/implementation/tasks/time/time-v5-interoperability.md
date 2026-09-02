@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本页已保存击穿 v4 能力边界的新事实，冻结决策合同、能力账本和有限 `FIX`
-> 集；产品实现只能按下述 API/cost freeze 施工，不新增 benchmark。权威状态见
+> 当前阶段：`CANDIDATE`。八项冻结 `FIX` 已落在不可变产品候选；后续只运行 closure card 预声明的
+> correctness、delivery、P0 code-shape、文档与红队验证，不新增 API 或 benchmark。权威状态见
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -157,4 +157,22 @@ algorithm、timezone/text、FFI、Platform/IO migration 或计时工作都不进
 - 新增头由 `time` factor 自动拥有，`timer_queue` split 清单不变；产品用户仍只链接 `hyle::time`。
   公开 value/API 只面向 C++23；Native FFI 保持 `N/A`。
 
-下一步按八项 `FIX` 实现；任何 API/semantic/cost material 变化先退回本 `AUDITED` 账本。
+## Product candidate
+
+- product commit：`680c9941d7af787067afae904a8ba886c14ba851`；
+- product tree：`b09b704304d943adb8d6442c3790fbe02a3048de`；
+- `TIME5-UNIT-01`：四种 signed Unix unit factory/extractor 已为 `constexpr`；extractor 使用无符号幅值
+  分解规避 `INT64_MIN` 的可表示最终值被中间乘法误判 overflow；
+- `TIME5-ABS-TV-01`、`DUR-TS-01`、`DUR-TV-01`、`TIMEOUT-01`：strict absolute、exact relative ns、
+  named trunc 与 positive ceil/nonpositive poll 已分成独立入口，失败不修改 output；
+- `TIME5-FT-01`、`HEADER-01`：Win32 `_FILETIME` 只做 field pack 后复用既有 raw codec；Windows public
+  header 只 forward-declare native structs，普通 Time include 不取得 Winsock/Windows headers；
+- `TIME5-DELIVERY-01`：新增 compiled source 由 `hyle_time` 拥有，sample 真实调用 native adapter；中央
+  factor/product graph 与依赖集合不变。
+
+候选前置验证只用于确认可进入验证阶段，不冒充最终 gate：W1-WIN MSVC 19.50 Release/Werror 的 Time 与
+timer_queue tests、header self-containment、macro composition、codegen audit 全部通过；selected Time 的
+source embedding、relocated shared/static consumer 各 1/1；当前 Platform/IO shared targets 重新编译通过。
+待完成 W1-WSL sanitizers、M1-MAC、最终三交付、P0 code-shape/符号与独立红队后才能进入 `VERIFIED`。
+
+任何 API/semantic/cost material 变化必须退回 `AUDITED`，不能在候选后静默修补。
