@@ -2,9 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。本页已冻结本轮用户任务、能力账本、预算与验证边界；当前不可变候选为
-> `c63490f5b3508242d07168b6c65b4028aad6c76a` / tree
-> `5e240cc3dc90fff1068f9d9580a4f9abba3e40e5`。权威状态是
+> 当前阶段：`AUDITED`。本页已冻结本轮用户任务、能力账本、预算与验证边界；第二个候选已因性能合同的
+> factor 选择器错误撤回，当前只授权下文一个合同修复。权威状态是
 > [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
@@ -194,9 +193,9 @@ heap/tree/hash、allocator 或 traits 需求进入下一轮，不得顺手实现
 
 ## 当前裁决
 
-`CANDIDATE`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动和
-AppleClang 有界修复已经按冻结边界实现并绑定 candidate 2。旧 v3 性能证据不能覆盖新增能力或变化后的
-产品 identity。
+`AUDITED`。能力 map、public-surface trace、owner、API/cost 与八项有限 `FIX` 已冻结；八项产品改动和
+AppleClang 有界修复已经按冻结边界实现。第二个候选在采样前被错误的 factor 选择器拒绝，未产生性能
+样本；旧 v3 性能证据不能覆盖新增能力或变化后的产品 identity。
 
 ### 撤回的 candidate 1
 
@@ -222,6 +221,15 @@ AppleClang 有界修复已经按冻结边界实现并绑定 candidate 2。旧 v3
   精确 factor；AppleClang 构建不再产生本轮新增 warning。候选后产品/API/CMake/workload 改动必须再次
   退回 `AUDITED`。
 
+### 撤回的 candidate 2
+
+- W1-WIN P1 在 configure、任何采样之前拒绝合同：`HYLE_COMPONENTS=container_intrusive` 把内部 factor
+  当成公开产品；合法选择器是 `HYLE_DEV_FACTORS=container_intrusive`；
+- 产品代码、API、算法、workload、peer 和统计门没有失败，也不得借此改变；
+- 前态 registry 快照：`%TEMP%/hyle-module-status-intrusive-v4-candidate-2.json`，SHA-256
+  `B5A2456F2D4434EF414D7C0DF03F6CA35271892494D8FA1ABCD66649F8EC2A1A`；
+- `CANDIDATE -> AUDITED` 后只允许替换该 CMake cache key、刷新合同 lock hash 并建立新 candidate。
+
 候选准备阶段已经完成以下非性能门：
 
 - Windows MSVC 19.50 精确 factor 的 header、unit/differential、异常保证、no-exception consumer 与旧
@@ -232,5 +240,6 @@ AppleClang 有界修复已经按冻结边界实现并绑定 candidate 2。旧 v3
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
   `d74e37cf3f41f463ce39b766087c1df57ed96107b961563936ecabae999761c1`。
 
-下一步只允许在 clean candidate checkout 上执行 Mac 交付与 W1-WIN P1 qualification，并把固定门的
-结果写入 evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议退回。
+下一步只允许完成上述合同修复并建立新 candidate；随后在 clean candidate checkout 上执行 W1-WIN P1
+qualification，并把固定门的结果写入 evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议
+退回。
