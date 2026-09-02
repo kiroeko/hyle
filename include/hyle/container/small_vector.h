@@ -701,8 +701,21 @@ private:
       size_ = 0;
       other.size_ = 0;
     } else if constexpr (std::is_trivially_copyable_v<T>) {
+      // inline_storage() implies size_ <= N. GCC's interprocedural
+      // -Warray-bounds analysis can lose that invariant when this path is
+      // inlined through the heap/inline swap, then diagnose the valid copy as
+      // if a spilled size could reach the fixed inline array. Keep the exact
+      // zero-overhead move and suppress only that proven false positive.
+#if HYLE_COMPILER_GCC
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Warray-bounds"
+#  pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
       if (other.size_ != 0)
         std::memcpy(data_, other.data_, other.size_ * sizeof(T));
+#if HYLE_COMPILER_GCC
+#  pragma GCC diagnostic pop
+#endif
       size_ = other.size_;
       other.size_ = 0;
     } else {

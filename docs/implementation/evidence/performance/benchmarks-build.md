@@ -1,5 +1,15 @@
 # build/package system 历史性能证据
 
+> **2026-09-02 v9 current-tree structural replay：**v8 后 factor 图从 16 个迁移到 17 个，并新增
+> `timer_queue` 与通用 split-header ownership 投影。三平台 all-products Release/WERROR 构建通过：
+> Windows `70/70`、WSL `69/69`、Apple M4 `69/69`；中央 component/依赖/离线合同也在三平台通过。
+> Windows static/shared SDK 的整前缀搬迁、14 个 product consumer、完整 source package 脱离 Git 构建
+> 均通过。Windows 与 WSL Ninja 紧接 no-op 都报告 `no work to do`（wrapper wall time 约 1.69s 与
+> 0.09s），M4 Make 为 0.91s target traversal、零编译；只触碰 `src/time/interop.cc` 时只有该 TU 编译
+> 和 `hyle_time` 重链两个 action。这里裁决的是 O(V+E) 图解析、O(S_selected) 扫描、零常态重编和
+> 有界失效，不把跨生成器 wall time 当作输赢。完整记录见
+> [`build-system-v9-current-tree-replay`](../../tasks/build/build-system-v9-current-tree-replay.md)。
+
 > **2026-08-28 v5 structural gate：**能力完整性回放发现 source configure 在 root 解析前读取全库
 > public/source text，使未选模块中间态也能阻断 selected root。candidate `83bfa556` 已先验证完整
 > manifest，再以单次拓扑反向传播解析闭包，并只扫描 `S_selected`；all-component 仍扫描全树。Windows、
