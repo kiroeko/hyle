@@ -24,7 +24,8 @@ void reclaim_value(void *state) noexcept {
 
 TEST(Reclamation, GuardProtectsPublishedPointerAndMoves) {
   ReclamationDomain domain(0);
-  RetiredValue value{.value = 42};
+  RetiredValue value{};
+  value.value = 42;
   std::atomic<RetiredValue *> published{&value};
 
   ReclamationGuard guard = domain.read();
@@ -40,7 +41,9 @@ TEST(Reclamation, GuardProtectsPublishedPointerAndMoves) {
 TEST(Reclamation, NonblockingCollectionWaitsForExistingReader) {
   ReclamationDomain domain(0);
   std::atomic<std::size_t> callbacks{0};
-  RetiredValue value{.value = 7, .callbacks = &callbacks};
+  RetiredValue value{};
+  value.value = 7;
+  value.callbacks = &callbacks;
 
   auto guard = domain.read();
   domain.retire(value.record, &value, &reclaim_value);
@@ -59,7 +62,8 @@ TEST(Reclamation, NonblockingCollectionWaitsForExistingReader) {
 TEST(Reclamation, NestedReadersKeepTheirOriginalEpoch) {
   ReclamationDomain domain(0);
   std::atomic<std::size_t> callbacks{0};
-  RetiredValue value{.callbacks = &callbacks};
+  RetiredValue value{};
+  value.callbacks = &callbacks;
   auto outer = domain.read();
   auto inner = domain.read();
   domain.retire(value.record, &value, &reclaim_value);
@@ -73,7 +77,8 @@ TEST(Reclamation, NestedReadersKeepTheirOriginalEpoch) {
 TEST(Reclamation, SynchronizeWaitsForExistingReader) {
   ReclamationDomain domain(0);
   std::atomic<std::size_t> callbacks{0};
-  RetiredValue value{.callbacks = &callbacks};
+  RetiredValue value{};
+  value.callbacks = &callbacks;
   auto preceding = domain.read();
   domain.retire(value.record, &value, &reclaim_value);
 
@@ -106,8 +111,10 @@ TEST(Reclamation, SynchronizeWaitsForExistingReader) {
 TEST(Reclamation, ThresholdStartsNonblockingGracePeriod) {
   ReclamationDomain domain(2);
   std::atomic<std::size_t> callbacks{0};
-  RetiredValue first{.callbacks = &callbacks};
-  RetiredValue second{.callbacks = &callbacks};
+  RetiredValue first{};
+  first.callbacks = &callbacks;
+  RetiredValue second{};
+  second.callbacks = &callbacks;
 
   domain.retire(first.record, &first, &reclaim_value);
   EXPECT_EQ(callbacks.load(std::memory_order_relaxed), 0u);
@@ -136,7 +143,8 @@ void reclaim_first(void *state) noexcept {
 
 TEST(Reclamation, DrainHandlesCallbackThatRetiresMoreWork) {
   ReclamationDomain domain(0);
-  RecursiveState state{.domain = &domain};
+  RecursiveState state{};
+  state.domain = &domain;
   domain.retire(state.first, &state, &reclaim_first);
   EXPECT_EQ(domain.drain(), 2u);
   EXPECT_EQ(state.callbacks.load(std::memory_order_relaxed), 2u);
@@ -145,7 +153,8 @@ TEST(Reclamation, DrainHandlesCallbackThatRetiresMoreWork) {
 
 TEST(Reclamation, ThresholdCollectionAllowsCallbackToRetireMoreWork) {
   ReclamationDomain domain(1);
-  RecursiveState state{.domain = &domain};
+  RecursiveState state{};
+  state.domain = &domain;
   domain.retire(state.first, &state, &reclaim_first);
   EXPECT_EQ(state.callbacks.load(std::memory_order_relaxed), 1u);
   EXPECT_EQ(domain.pending(), 1u);
@@ -196,7 +205,8 @@ TEST(Reclamation, MoreReadersThanExclusiveSlotsUseSafeFallback) {
       detail::kReclamationReaderSlots + detail::kReclamationFallbackStripes;
   ReclamationDomain domain(0);
   std::atomic<std::size_t> callbacks{0};
-  RetiredValue value{.callbacks = &callbacks};
+  RetiredValue value{};
+  value.callbacks = &callbacks;
   std::atomic<std::size_t> ready{0};
   std::atomic<bool> release{false};
   std::vector<std::thread> readers;
