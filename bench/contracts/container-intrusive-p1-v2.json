@@ -210,7 +210,7 @@
           "HYLE_BENCH_BOOST": "ON",
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
-          "HYLE_COMPONENTS": "container_intrusive",
+          "HYLE_DEV_FACTORS": "container_intrusive",
           "HYLE_INSTALL": "OFF",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",

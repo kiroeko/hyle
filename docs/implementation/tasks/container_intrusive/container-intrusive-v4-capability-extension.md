@@ -238,7 +238,7 @@ AppleClang 有界修复已经按冻结边界实现。第二个候选在采样前
 - 中央 component contract 与 Container source/static/shared relocated consumer 通过，新头 owner、Sched
   direct edge 和 installed header closure 得到验证；
 - `container-intrusive-p1-v2` 合同通过 schema/provenance 校验，lock hash 为
-  `d74e37cf3f41f463ce39b766087c1df57ed96107b961563936ecabae999761c1`。
+  `c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415`。
 
 下一步只允许完成上述合同修复并建立新 candidate；随后在 clean candidate checkout 上执行 W1-WIN P1
 qualification，并把固定门的结果写入 evidence。结果只能导向 `VERIFIED`、具名 `BLOCKED`，或按协议
