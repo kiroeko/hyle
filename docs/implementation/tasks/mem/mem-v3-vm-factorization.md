@@ -36,3 +36,29 @@
   docs/FFI scan/red team；
 - 停止条件：只执行本卡和后续审计冻结 FIX；若无法建立唯一 owner 或同交付无额外 cost，进入
   `BLOCKED`，不能保留两套 public storage。
+
+## 定向能力与 surface 审计（`AUDITED`）
+
+审计复用了 mem-v2 的完整 allocator/pool/resource/buffer/planner 账本，只重放所有 mapping、huge、
+fiber-stack public entries 和真实 consumers。最新 llama.cpp/ggml 增量需要同步 prefault 与可独立释放的
+model fragments；前者属于通用 mapping residency，后者不应破坏连续 `bytes()` owner，可由现有
+`open/map(offset,length)` 创建多个独立 mapping 表达。因此没有理由建立 holey view 或每页 metadata。
+
+| ID | class | frozen shape / ownership | cost target | action / verification |
+|---|---|---|---|---|
+| `MEM3-VM01` | `MUST` | `mem::VirtualMapping/FileMapping/SharedMapping/HugeMapping/FiberStack` 是唯一 public storage owners；删除公开 Platform MappedFile/SharedMemoryRegion | inline native state，无 pimpl/refcount/heap/额外 virtual call | `FIX` native-state migration、layout/lifetime/range tests |
+| `MEM3-VM02` | `MUST` | `FileMapping::populate(offset,length)` 同步触页；backing file 在 view lifetime 内不得 truncate | O(covered pages)，无 per-page metadata；不是 will-need hint | `FIX` range/empty/subrange/real page-fault journey |
+| `MEM3-VM03` | `MUST` | fragment 通过多个 offset/length mapping owners；`DontNeed` 只释放 residency，不制造 hole | 每个 fragment O(1) owner；不添加 hidden segment table | `KEEP/ROUTE` loader policy，guide 说明 |
+| `MEM3-VM04` | `MUST` | `mem_vm` 精确拥有 mapping/huge/guarded headers/source；Mem facade 聚合 `mem + mem_vm` | graph acyclic，旧普通 Mem consumer 不多取 fs/thread | `FIX` manifest、tests、direct Sched/IO edge、三交付 |
+| `MEM3-VM05` | `MUST` | 受影响 mapping normal journey 与未触及 Mem-v2 P1 rows 回归 | 5% non-inferiority；setup/touch/reset、bytes 全计费 | `FIX` qualification/replay；无同合同则限于结构结论 |
+| `MEM3-VM06` | `MUST` | architecture/user/performance/sample/FFI 清洁度跟随唯一 owner | 无 runtime cost | `FIX` docs/scans/red team/LOC |
+
+上述六票是全部 FIX。API freeze 当前 `DRAFT`；实现后必须以自然 compile-only journey 冻结：path 或
+owned FileHandle 映射、显式 advise/populate/lock、named shared create/open、anonymous NUMA mapping、
+guarded stack。失败继续使用共享 Status/Result，控制操作外部同步，byte access 的 data race 仍由 caller
+负责。没有 C/Native FFI、stable C++ ABI 或兼容 alias。
+
+六问当前结论：mimalloc 是未触及 Mem factor 的既有 direct product dependency，`mem_vm` 自身只用
+OS/Platform mechanisms；推理 mapping 能力在 VM02 落地后完整，partial-hole 被自然分段 owner 路由；
+性能等待 API freeze；旧 FFI 扫描干净；新 factor 的 source/static/shared 尚待 candidate；C++ taxonomy
+保持 mem-v2，用户不需要知道 factor 名。`AUDITED` 只授权以上六票。

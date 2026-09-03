@@ -20,3 +20,20 @@ facade 使用同一 `hyle::mem` namespace。当前仅登记，尚无 buildabilit
 - 常态成本：owner inline native state，无 wrapper pimpl allocation；view O(1)；mapping setup O(1) native
   calls，populate/lock/advice 与覆盖页/range 成正比；
 - API、完整 capability trace 与有限 FIX 集必须在 `AUDITED` 后才可实现。
+
+## Audit verdict（`AUDITED`）
+
+public/source reverse trace 证明当前 Platform `MappedFile/SharedMemoryRegion` 只被 Mem owner 与 Platform
+自身 tests/sample 使用；普通下游没有必须保留的独立 Platform storage journey。`VmRegion`、NUMA、
+FileHandle 则是可复用 raw mechanisms，继续由 Platform factors 拥有。最终边界与有限 FIX 直接采用
+Mem v3 的 `MEM3-VM01..06`：
+
+- `mem_vm` public headers 为 `mapping.h`、`hugepage.h`、`fiber_stack.h`，compiled source 直接实现
+  File/Shared mapping native state；
+- public deps 冻结为 `core,error,mem,platform,platform_fs`；普通用户仍只链接 `hyle::mem` facade；
+- `FileMapping::populate` 是唯一新增 public operation；fragment 用多个 mapping owner，不建洞状 owner；
+- API freeze 仍为 `DRAFT`，P1 计时必须等 correctness candidate；
+- 自身无第三方 product dependency、无 C/Native FFI、无稳定 C++ ABI；source/static/shared 和三平台
+  交付在 candidate 前都不能写 `PASS`。
+
+该结论授权实现，不授权修改其他 Mem-v2 family 或公共性能仪器。

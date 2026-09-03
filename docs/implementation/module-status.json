@@ -663,7 +663,7 @@
     },
     {
       "module": "mem",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -688,11 +688,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v3 SCOPED：限定为 mapping/residency/huge/guarded storage 唯一 owner、同步 populate 与受影响交付回归；其余 Mem v2 API/算法不重开。"
+      "summary": "mem-v3 AUDITED：冻结六项 VM/storage FIX；删除 Platform 重复 owner、Mem 直接 native state、新增同步 populate，并保持其余 Mem-v2 API/算法不变。"
     },
     {
       "module": "mem_vm",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "mem-vm-v1-factor",
       "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
       "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
@@ -715,7 +715,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_vm v1 SCOPED：冻结三类 mapping、residency、huge/guarded storage 的唯一 owner、依赖、零额外 wrapper cost、三平台/三交付与 5% P1 边界。"
+      "summary": "mem_vm v1 AUDITED：public/source 反向追踪完成，唯一 owner、三个 public headers、直接依赖、零额外 wrapper cost、populate 与分段 mapping 边界已冻结；API 仍为 DRAFT。"
     },
     {
       "module": "simd",
