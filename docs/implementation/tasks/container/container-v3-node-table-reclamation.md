@@ -178,5 +178,5 @@ Container family 继续服从自己的 trigger。
 
 immutable candidate 四项 LOC 为 `436,638 / 111,204 / 70,416 / 13,055`，由
 `loc-report.py --module container --commit 0f6ef8e83ee290ab565c0d53081a0acb75a46675 --self-check`
-重算通过。registry 将在下一提交绑定本 terminal receipt 与首个实际保存 `CLOSED` state/candidate 的
-anchor。
+重算通过。terminal receipt 固定于 `5a51b909031a3efd18288f84aa573549f5a4acaf`，首个实际保存本
+`CLOSED` state/candidate 的 registry anchor 为 `b9fdec1a404aa05f0e63cd214896b05c09c59444`。

@@ -88,5 +88,6 @@ material 改变，或本轮未触碰的 allocator/VM 族满足自己的独立 tr
 
 immutable candidate 四项 LOC 为 `436,638 / 111,204 / 70,416 / 7,403`，由
 `loc-report.py --module mem --commit 0f6ef8e83ee290ab565c0d53081a0acb75a46675 --self-check` 重算通过。
-该 conventional boundary 包含 `include/hyle/mem` 与 `src/mem`；registry 将在下一提交绑定 terminal
-receipt 与首个实际保存 `CLOSED` state/candidate 的 anchor。
+该 conventional boundary 包含 `include/hyle/mem` 与 `src/mem`；terminal receipt 固定于
+`5a51b909031a3efd18288f84aa573549f5a4acaf`，首个实际保存本 `CLOSED` state/candidate 的 registry
+anchor 为 `b9fdec1a404aa05f0e63cd214896b05c09c59444`。
