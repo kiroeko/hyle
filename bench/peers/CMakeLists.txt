@@ -172,34 +172,38 @@ if(HYLE_BENCH_FOLLY)
   target_link_libraries(hyle_bench_folly INTERFACE
     Folly::folly Boost::thread)
 
-  if(WIN32 AND EXISTS "${HYLE_FOLLY_PREFIX}/bin")
-    set(_hyle_folly_runtime_stamp
-      "${CMAKE_CURRENT_BINARY_DIR}/folly-runtime.stamp")
-    add_custom_command(
-      OUTPUT "${_hyle_folly_runtime_stamp}"
-      COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-      COMMAND "${CMAKE_COMMAND}" -E copy_directory
-              "${HYLE_FOLLY_PREFIX}/bin"
-              "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-      COMMAND "${CMAKE_COMMAND}" -E touch
-              "${_hyle_folly_runtime_stamp}"
-      COMMENT "Staging the prepared Folly runtime once"
-      VERBATIM)
-    add_custom_target(hyle_bench_folly_runtime
-      DEPENDS "${_hyle_folly_runtime_stamp}")
-  endif()
-
   function(hyle_stage_folly_benchmark_runtime target)
     if(NOT TARGET ${target})
       message(FATAL_ERROR
         "hyle_stage_folly_benchmark_runtime: unknown target '${target}'")
     endif()
+    if(WIN32 AND EXISTS "${HYLE_FOLLY_PREFIX}/bin" AND
+       NOT TARGET hyle_bench_folly_runtime)
+      # The first consumer supplies a generator-aware runtime directory. This
+      # is bin for single-config generators and bin/<CONFIG> for Visual Studio.
+      # One stamped target serializes the copy when primary and placement
+      # executables are built in parallel.
+      set(_hyle_folly_runtime_stamp
+        "${CMAKE_CURRENT_BINARY_DIR}/folly-runtime-$<CONFIG>.stamp")
+      add_custom_command(
+        OUTPUT "${_hyle_folly_runtime_stamp}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+                "$<TARGET_FILE_DIR:${target}>"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+                "${HYLE_FOLLY_PREFIX}/bin"
+                "$<TARGET_FILE_DIR:${target}>"
+        COMMAND "${CMAKE_COMMAND}" -E touch
+                "${_hyle_folly_runtime_stamp}"
+        COMMENT "Staging the prepared Folly runtime once"
+        VERBATIM)
+      add_custom_target(hyle_bench_folly_runtime
+        DEPENDS "${_hyle_folly_runtime_stamp}")
+      unset(_hyle_folly_runtime_stamp)
+    endif()
     if(TARGET hyle_bench_folly_runtime)
       add_dependencies(${target} hyle_bench_folly_runtime)
     endif()
   endfunction()
-  unset(_hyle_folly_runtime_stamp)
 endif()
 unset(_hyle_owner)
 unset(_hyle_owner_upper)
