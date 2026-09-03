@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（AUDITED）
+## Closure card（CANDIDATE）
 
 - component / owner / round：`container` / Container / `container-v3-node-table-reclamation`；
 - task kind：`REOPEN`；baseline：`444b02c01afe00f4cd3b44433204e58db3c24712`；
@@ -127,3 +127,10 @@ lookup，HYLE 默认 retained 路线对 oneTBB natural route 做 5% adoption non
 移动计时边界。
 
 Audit verdict：本轮仍只有四项有限 FIX；修正后的 API、默认值、负空间、performance class 和交付边冻结。
+
+## Candidate freeze
+
+产品候选为 `0f6ef8e83ee290ab565c0d53081a0acb75a46675`，tree
+`8cb5ba0024cdb20af65347144f09e16f26147632`。默认 retained policy 在编译期裁掉 reclamation guard；具名
+reclaiming policy 覆盖 table load 到 bucket-lock identity check，并在 unlock 后 retire。确定性交错、allocator
+balance、package journey 与 `container-node-table-p1-v1` 均已进入候选。

@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（AUDITED）
+## Closure card（CANDIDATE）
 
 - component / owner / round：`mem` / Mem / `mem-v4-reclamation-facade`；
 - task kind：`REOPEN`；baseline：`444b02c01afe00f4cd3b44433204e58db3c24712`；
@@ -52,3 +52,9 @@ FFI 为 `N/A/CLEAN`。source/static/shared 与 relocation 均为本轮硬门。�
 指南按 allocator/storage/reclamation 任务选型，不能把 internal factor target 暴露成产品菜单。
 
 Audit verdict：唯一能力缺口和所有交付投影已冻结，允许进入实现。
+
+## Candidate freeze
+
+产品候选为 `0f6ef8e83ee290ab565c0d53081a0acb75a46675`，tree
+`8cb5ba0024cdb20af65347144f09e16f26147632`。Mem product roots 已加入 `mem_reclaim`，installed sample
+执行真实 snapshot publication/retirement，用户指南给出选型与陷阱；base allocator/VM 实现未改。

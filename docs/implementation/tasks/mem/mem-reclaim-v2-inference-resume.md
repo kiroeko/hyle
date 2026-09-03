@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（AUDITED）
+## Closure card（CANDIDATE）
 
 - component / owner / round：`mem_reclaim` / Mem / `mem-reclaim-v2-inference-resume`；
 - task kind：`RESUME`；前一轮：`mem-reclaim-v1`；blocker：`MR-P1-PEER-CONSUMER-01`；
@@ -146,3 +146,10 @@ allocation/branch；Container 的 lifetime policy 属 Container card。冻结后
 | delivery/codegen | HYLE source/static；官方 Folly static peer | paired source benchmark，adapter link 不在 loop | `ADAPTER_EQUALIZED` |
 
 Audit verdict：全部 `MUST` 已是 `COMPLETE` 或有限 `FIX`，API/成本/peer/workload 已冻结，允许进入实现。
+
+## Candidate freeze
+
+产品候选为 `0f6ef8e83ee290ab565c0d53081a0acb75a46675`，tree
+`8cb5ba0024cdb20af65347144f09e16f26147632`。它完成 typed allocation-free retire、Container 旧表直接
+consumer、Mem façade 与 package journey，并冻结 `mem-reclaim-p1-v2`。候选之后只允许补验证记录、
+状态与文档事实；公开合同、算法或 normal workload 改动必须退回 `AUDITED`。
