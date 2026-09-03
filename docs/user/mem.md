@@ -1,6 +1,6 @@
 # HYLE mem：什么情况选择什么
 
-> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及 Mem v2 已落地的
+> 本页描述当前可编译的 C++ 产品面：已收口的 host allocator/pool 机制，以及当前
 > provider-neutral Buffer、mapping、transient BufferPool 和 tensor-free lifetime planner 路线；
 > Compute 还提供 host、pinned、device 与可选 managed provider。Host/CUDA/Vulkan 的实际支持
 > 以所选 `Device` 返回的 resource/property 为准，不把 synthetic provider 验证写成硬件承诺。
@@ -22,7 +22,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 为 Compute kernel 创建 device/pinned/managed bytes | 从 `compute::device_memory_resource` / `host_memory_resource` / `managed_memory_resource` 取得 provider，再创建 `Buffer` | resource 与 Device identity 必须匹配；managed 可能明确返回 `Unimplemented`；owner 活到 in-flight completion 之后 |
 | 把多个独立 allocation/shard 暴露为一段逻辑 bytes | `CompositeBuffer::create(segments)` | 只 composite 支付 segment metadata；不 flatten、不隐藏 staging；输入在成功后才被 move |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
-| 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests)` -> `instantiate(resources)` | tensor-free；先量 peak/placement 再一次建 backing；alias/output facts 显式 |
+| 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests, resources)` -> `instantiate(resources)` | tensor-free；先查 resource/backing/placement，再按 provider 单次分配上限建立一个或多个 backing；alias/output facts 显式 |
 | 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
 | 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
 | 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
@@ -205,8 +205,8 @@ scratch.reset();
 ## Lifetime planner：已知整张执行图时先规划再分配
 
 `BufferPool` 适合运行时逐次 acquire/return；如果 consumer 已经知道各 temporary 的完整
-生命周期，应把业务语义擦除成 `LifetimeRequest`，一次得到可查询的 placement 和每个 resource
-的 peak，再实例化 backing：
+生命周期，应把业务语义擦除成 `LifetimeRequest`，把将要使用的 provider 作为能力事实传给
+planner，一次得到可查询的 placement、每个 resource 的总 peak 和每个 physical backing 计划，再实例化：
 
 ```cpp
 #include <array>
@@ -221,11 +221,18 @@ std::array requests{
         .begin = 3, .end = 5,
         .flags = hyle::mem::LifetimeFlag::kOutput},
 };
-HYLE_ASSIGN_OR_RETURN(auto plan,
-                      hyle::mem::LifetimePlanner::build(requests));
-report_peak(plan.resource_plan(0)->peak_bytes);
-
 std::array providers{device_resource};
+HYLE_ASSIGN_OR_RETURN(
+    auto plan,
+    hyle::mem::LifetimePlanner::build(requests, providers));
+HYLE_ASSIGN_OR_RETURN(auto resource_plan, plan.resource_plan(0));
+report_peak(resource_plan.peak_bytes);
+for (std::size_t backing = 0; backing < resource_plan.backing_count;
+     ++backing) {
+  HYLE_ASSIGN_OR_RETURN(auto physical, plan.backing_plan(0, backing));
+  reserve_or_report(physical.size, physical.alignment);
+}
+
 HYLE_ASSIGN_OR_RETURN(auto storage, plan.instantiate(providers));
 submit_q(storage.view(0).value());
 ```
@@ -236,11 +243,19 @@ cycle、跨 resource alias、overflow 和无法满足的 alias alignment；`alia
 偏移。`kPersistent`、`kOutput` 和 `kNoReuse` 都表示该 placement 在本次 interval 后不再回收给
 后续 request，但它仍可安全继承更早已经结束的 storage。
 
-build 不持有 provider，也不认识 Tensor/Graph。它用活动 interval heap 与 indexed best-fit slot
-结构，复杂度 O((N+E) log N)、scratch O(N)，不会按 byte/page 建表。算法是确定性的通用
-packing heuristic，`peak_bytes` 是该 plan 的真实结果，不宣称全局最优。`instantiate` 要求 provider
-span 与 resource slot 一一对应并各自长寿于 `PlannedBuffers`、views 和 in-flight operation；每个
-resource 一次创建 backing，plan 销毁后 owner 仍可独立使用。
+build 只在调用期间借用 provider 并读取 `minimum_alignment` / `maximum_allocation`，plan 不持有
+provider，也不认识 Tensor/Graph。它用活动 interval heap 与 indexed best-fit slot 结构，复杂度
+O((N+E) log N)、scratch/metadata O(N)，不会按 byte/page 建表。新 physical slot 按确定性的
+next-fit backing 边界打包；单个 alias root 永不跨 backing，每个 backing 都不超过 provider 的
+单次分配上限。`peak_bytes` 是该 resource 所有 backing 的精确计划大小之和，不宣称全局最少
+backing 或最优 bin packing。
+
+`MemoryPlacement::backing_index` 是 resource-local 索引，`offset` 只相对此 backing；不要把多个
+opaque native handle 当成连续虚拟地址。`instantiate` 要求 provider span 与 resource slot 一一对应，
+但可以使用同一个或语义等价的 provider：更大的单次分配上限和更强 minimum alignment 合法，较小
+上限会在任何 backing 分配前返回 `OutOfRange`。实例化中途 OOM 会回滚已经创建的全部 backing。
+provider 必须长寿于 `PlannedBuffers`、views 和 in-flight operation；plan 销毁后 owner 仍可独立使用。
+零大小、但被显式选择的 resource 会保留一个 size-0 backing，从而使零长 view 仍带有 provider identity。
 
 ## Mapping：模型加载、稀疏提交和跨进程共享
 

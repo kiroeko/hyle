@@ -140,17 +140,21 @@ int main() {
                                  .end = 3,
                                  .flags = hyle::mem::LifetimeFlag::kOutput},
   };
-  auto plan_result = hyle::mem::LifetimePlanner::build(requests);
+  const std::array resources{hyle::mem::system_resource()};
+  auto plan_result = hyle::mem::LifetimePlanner::build(requests, resources);
   if (!plan_result) return 17;
   hyle::mem::LifetimePlan plan = std::move(*plan_result);
-  const std::array resources{hyle::mem::system_resource()};
+  if (plan.resource_plan(0)->backing_count != 1 ||
+      plan.backing_plan(0, 0)->size != 256) {
+    return 18;
+  }
   auto planned_result = plan.instantiate(resources);
-  if (!planned_result) return 18;
+  if (!planned_result) return 19;
   hyle::mem::PlannedBuffers planned = std::move(*planned_result);
   auto first_view = planned.view(0);
   auto second_view = planned.view(1);
   if (!first_view || !second_view || first_view->offset() != second_view->offset()) {
-    return 19;
+    return 20;
   }
 
   const auto memory = hyle::mem::system_memory_snapshot();
@@ -159,7 +163,7 @@ int main() {
     std::fputs("system_memory_snapshot failed: ", stderr);
     std::fwrite(message.data(), 1, message.size(), stderr);
     std::fputc('\n', stderr);
-    return 20;
+    return 21;
   }
   if (memory->allocator_peak_reserved_bytes <
           memory->allocator_reserved_bytes ||

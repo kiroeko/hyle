@@ -156,7 +156,13 @@ borrow 仍可用，move/destruction 则使 borrow 失效。allocate/reallocate �
 deallocate 允许 remote free；`collect()` 只回收空闲页，`clear()/release()` 是必须先 quiesce 所有
 allocation 的 bulk invalidation。它与 PMR pool 的区别是 ownership/lifetime，不以 benchmark 档位命名。
 
-通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/reallocate 在 dispatch 前验证非零 2 次幂。deallocate 的 size/alignment 必须与成功分配匹配，和 `std::pmr::memory_resource`/allocator-template 一样是调用方前置条件：Debug 诊断，Release 不在每次 free 上重复验证。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求只把 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 与 sized-free 仍记录原请求，over-aligned 才走 `mi_*_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30500` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
+通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/reallocate 在 dispatch 前验证非零 2 次幂。deallocate 的 size/alignment 必须与成功分配匹配，和 `std::pmr::memory_resource`/allocator-template 一样是调用方前置条件：Debug 诊断，Release 不在每次 free 上重复验证。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求把实际 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 保留原请求，传给 `mi_free_size` 的 size 则与实际 backing 请求一致；over-aligned 路线成对使用 `mi_*_aligned` / `mi_free_size_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30501` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
+
+mimalloc v3.5.1 把非 Android 的 `MI_DEFAULT_ALLOW_THP` 从 1 改为 2；后者同时把最小 purge
+粒度保持在 2 MiB，改变普通服务的 RSS retention。HYLE custom target 在非 Android 明确编译为 1，
+保留已审计的普通 THP baseline；Android 保持上游 0。部署仍可在进程启动前通过
+`MIMALLOC_ALLOW_THP=0/2` 选择禁用或 FULL retention。HYLE 不复制上游 CMake 的 host-native ISA
+开关，发布二进制继续服从 HYLE/toolchain 的可迁移 ISA 基线。
 
 ### 4.1 交付与 Native FFI 边界
 
@@ -317,7 +323,9 @@ Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupp
   cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
   这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。
 - graph 可直接消费通用 arena；它把 worst-case/liveness/alias/resource 翻译为
-  `LifetimeRequest`，Mem planner 负责 tensor-free measure/placement/instantiate，模型/KV 策略仍在上层。
+  `LifetimeRequest`，并在 build 时借给 planner 稠密 `MemoryResourceRef` 以读取 alignment 与单次 allocation
+  上限。Mem planner 负责 tensor-free measure/placement/instantiate，模型/KV 策略仍在上层；一个 alias
+  root 不跨 physical backing，placement 使用 resource-local backing index + local offset。
 - pinned/device/managed 通过开放 `MemoryResourceRef` 进入 Mem `Buffer/View` 语义；
   native-handle/mapped-pointer 不混同，non-coherent 路线显式 flush/invalidate。`StagingRing`
   要同时持有 Event/backpressure，仍归 `compute/`。
@@ -337,11 +345,11 @@ Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupp
 | persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
 | sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 Compute/IO typed adapter 组合 |
 | transient storage reuse | `BufferPool` / `BufferLease` | resource-aware reuse/trim/stats；lease 归还前已等待 completion |
-| worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；plan/instantiate 分开；O((N+E) log N) / O(N) scratch；无 Tensor |
+| worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；resource/backing/local-offset 三层；有限 provider allocation 上限可拆多个 backing；plan/instantiate 分开；O((N+E) log N) / O(N) scratch+metadata；无 Tensor |
 | quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
 | guarded/THP/NUMA | `FiberStack`、`HugeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
 
-当前 shipping 名称与可用路线由 [user/mem](../user/mem.md) 列出。Mem v2 已把
+当前 shipping 名称与可用路线由 [user/mem](../user/mem.md) 列出。当前产品已把
 `AllocatorRef/Arena/FixedArena/PooledArena/StackArena/FixedHeap/ConcurrentBlockPool/BlockPoolCache/
 GrowableObjectPool/HugeMapping` 固定到上表的借用、arena、heap、block-pool、object-pool 与
 mapping 心智；旧类型名已经删除，不留 deprecated alias。

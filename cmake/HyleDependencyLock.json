@@ -76,10 +76,10 @@
     },
     {
       "name": "mimalloc", "class": "in_tree",
-      "repository": "https://github.com/microsoft/mimalloc.git", "version": "v3.5.0",
-      "revision": "18b08671c9302247bfb682286e6bf3cc1773f801", "git_tree": "56cf91764ef04ff34a5adeda4ac8100e098e1f70",
-      "archive": { "url": "https://codeload.github.com/microsoft/mimalloc/tar.gz/18b08671c9302247bfb682286e6bf3cc1773f801", "sha256": "4948bab491bb960c726097e94583a3097354498f50bbf2acd3fa8f581bfeb5ba" },
-      "vendored": { "path": "third_party/mimalloc", "tree_sha256": "72e9fbb0a6b7e96907c78cc422443cec957591ddf4c1ede8a3ea9dc0c7d9156a" },
+      "repository": "https://github.com/microsoft/mimalloc.git", "version": "v3.5.1",
+      "revision": "34fbd7e7cd4627424490afe19b20f8066bfc537d", "git_tree": "e69ccc36d80961459810aed044247c6b69c549cd",
+      "archive": { "url": "https://codeload.github.com/microsoft/mimalloc/tar.gz/34fbd7e7cd4627424490afe19b20f8066bfc537d", "sha256": "bff20d5423e63d751858dcc4f6ca2d346e16a84f8410f868bc3a298996c1ea1e" },
+      "vendored": { "path": "third_party/mimalloc", "tree_sha256": "47755e1bd6cd52b17d0cb3a0041cbf207c73f2437614a436a13fff70ca024f13" },
       "license": { "expression": "MIT", "files": [
         { "root": "hyle", "path": "third_party/mimalloc/LICENSE", "sha256": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9" }
       ] }

@@ -21,8 +21,8 @@
 
 namespace hyle::mem {
 
-static_assert(MI_MALLOC_VERSION == 30500,
-              "HYLE's reviewed mimalloc contract requires v3.5.0");
+static_assert(MI_MALLOC_VERSION == 30501,
+              "HYLE's reviewed mimalloc contract requires v3.5.1");
 
 namespace {
 
@@ -35,24 +35,26 @@ void *system_backend_allocate_local(std::size_t size,
                                     std::size_t alignment) noexcept {
   alignment = detail::system_backend_checked_alignment(alignment);
   if (alignment <= detail::kMimallocV3NaturalAlignment) {
-    return mi_malloc(size < detail::kMimallocV3NaturalAlignment
-                         ? detail::kMimallocV3NaturalAlignment
-                         : size);
+    return mi_malloc(detail::system_backend_natural_size(size));
   }
   return mi_malloc_aligned(size, alignment);
 }
 
-void system_backend_deallocate_local(void *ptr) noexcept { mi_free(ptr); }
+void system_backend_deallocate_local(void* ptr, std::size_t size,
+                                     std::size_t alignment) noexcept {
+  HYLE_ASSUME(alignment != 0 && (alignment & (alignment - 1)) == 0);
+  if (alignment <= detail::kMimallocV3NaturalAlignment) {
+    mi_free_size(ptr, detail::system_backend_natural_size(size));
+  } else {
+    mi_free_size_aligned(ptr, size, alignment);
+  }
+}
 
 void *system_backend_reallocate_local(void *ptr, std::size_t new_size,
                                       std::size_t alignment) noexcept {
   alignment = detail::system_backend_checked_alignment(alignment);
   if (alignment <= detail::kMimallocV3NaturalAlignment) {
-    const std::size_t backing_size =
-        new_size < detail::kMimallocV3NaturalAlignment
-            ? detail::kMimallocV3NaturalAlignment
-            : new_size;
-    return mi_realloc(ptr, backing_size);
+    return mi_realloc(ptr, detail::system_backend_natural_size(new_size));
   }
   return mi_realloc_aligned(ptr, new_size, alignment);
 }
@@ -66,8 +68,9 @@ void* system_local_allocate(std::size_t size,
   return system_backend_allocate_local(size, alignment);
 }
 
-void system_local_deallocate(void* pointer) noexcept {
-  system_backend_deallocate_local(pointer);
+void system_local_deallocate(void* pointer, std::size_t size,
+                             std::size_t alignment) noexcept {
+  system_backend_deallocate_local(pointer, size, alignment);
 }
 
 void* system_local_reallocate(void* pointer, std::size_t new_size,
@@ -85,8 +88,9 @@ void *system_backend_allocate(std::size_t size,
   return system_backend_allocate_local(size, alignment);
 }
 
-void system_backend_deallocate(void *ptr) noexcept {
-  system_backend_deallocate_local(ptr);
+void system_backend_deallocate(void* ptr, std::size_t size,
+                               std::size_t alignment) noexcept {
+  system_backend_deallocate_local(ptr, size, alignment);
 }
 
 void *system_backend_reallocate(void *ptr, std::size_t new_size,
@@ -129,20 +133,20 @@ void *system_alloc(void * /*state*/, std::size_t size,
   return pointer;
 }
 
-void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
-                 std::size_t /*alignment*/) noexcept {
+void system_free(void* /*state*/, void* ptr, std::size_t size,
+                 std::size_t alignment) noexcept {
 #if defined(HYLE_TRACE)
   if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
 #endif
-  system_backend_deallocate_local(ptr);
+  system_backend_deallocate_local(ptr, size, alignment);
 }
 
-void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
+void *system_realloc(void * /*state*/, void *ptr, std::size_t old_size,
                      std::size_t new_size, std::size_t alignment) noexcept {
   if (HYLE_UNLIKELY(new_size == 0)) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-      system_backend_deallocate_local(ptr);
+      system_backend_deallocate_local(ptr, old_size, alignment);
     }
     return nullptr;
   }
@@ -171,13 +175,14 @@ class SystemMemoryResource final : public std::pmr::memory_resource {
     return pointer;
   }
 
-  void do_deallocate(void *pointer, std::size_t /*bytes*/,
-                     std::size_t /*alignment*/) override {
+  void do_deallocate(void* pointer, std::size_t bytes,
+                     std::size_t alignment) override {
     // memory_resource::deallocate requires a pointer/alignment pair previously
     // returned by this resource.  Rechecking those preconditions here duplicates
     // the PMR caller's contract on every normal container deallocation.
     HYLE_TRACE_FREE_NAMED(pointer, "hyle.system");
-    system_backend_deallocate_local(pointer);
+    system_backend_deallocate_local(pointer, detail::pmr_backing_size(bytes),
+                                    alignment);
   }
 
   bool do_is_equal(

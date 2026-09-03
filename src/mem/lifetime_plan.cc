@@ -85,6 +85,7 @@ struct Group {
   std::uint32_t root = 0;
   std::size_t size = 0;
   std::size_t alignment = 1;
+  std::uint32_t placement_backing = 0;
   std::size_t placement_offset = 0;
   std::uint64_t begin = (std::numeric_limits<std::uint64_t>::max)();
   std::uint64_t end = 0;
@@ -104,13 +105,24 @@ struct ComboKey {
 struct ResourceWork {
   bool seen = false;
   std::size_t peak = 0;
-  std::size_t alignment = alignof(std::max_align_t);
+  std::size_t minimum_alignment = alignof(std::max_align_t);
+  std::size_t maximum_allocation = SIZE_MAX;
+  std::uint32_t backing_count = 0;
+  std::uint32_t current_backing = kInvalidIndex;
   std::size_t capacity_begin = 0;
   std::size_t capacity_end = 0;
 };
 
+struct BackingWork {
+  std::uint32_t resource = 0;
+  std::uint32_t local_index = 0;
+  std::size_t size = 0;
+  std::size_t alignment = alignof(std::max_align_t);
+};
+
 struct Slot {
   std::uint32_t resource = 0;
+  std::uint32_t backing = 0;
   std::uint32_t combo = kInvalidIndex;
   std::uint32_t next_free = kInvalidIndex;
   std::size_t offset = 0;
@@ -123,22 +135,32 @@ struct ActiveSlot {
   std::uint32_t slot = 0;
 };
 
+struct ResourceRecord {
+  LifetimeResourcePlan plan{};
+  std::size_t backing_begin = 0;
+};
+
 struct PlanImpl {
   std::size_t request_count = 0;
   std::size_t resource_count = 0;
+  std::size_t backing_count = 0;
   MemoryPlacement* placements = nullptr;
-  LifetimeResourcePlan* resources = nullptr;
+  ResourceRecord* resources = nullptr;
+  LifetimeBackingPlan* backings = nullptr;
 };
 
 struct PlannedImpl {
   std::size_t request_count = 0;
   std::size_t resource_count = 0;
+  std::size_t backing_count = 0;
   MemoryPlacement* placements = nullptr;
+  ResourceRecord* resources = nullptr;
   Buffer* buffers = nullptr;
 };
 
 static_assert(std::is_trivially_copyable_v<MemoryPlacement>);
-static_assert(std::is_trivially_destructible_v<LifetimeResourcePlan>);
+static_assert(std::is_trivially_copyable_v<ResourceRecord>);
+static_assert(std::is_trivially_copyable_v<LifetimeBackingPlan>);
 
 bool is_power_of_two(std::size_t value) noexcept {
   return value != 0 && (value & (value - 1)) == 0;
@@ -299,8 +321,13 @@ void destroy_plan_impl(PlanImpl* impl) noexcept {
   }
   if (impl->resources != nullptr) {
     system_allocator().deallocate(
-        impl->resources, impl->resource_count * sizeof(LifetimeResourcePlan),
-        alignof(LifetimeResourcePlan));
+        impl->resources, impl->resource_count * sizeof(ResourceRecord),
+        alignof(ResourceRecord));
+  }
+  if (impl->backings != nullptr) {
+    system_allocator().deallocate(
+        impl->backings, impl->backing_count * sizeof(LifetimeBackingPlan),
+        alignof(LifetimeBackingPlan));
   }
   impl->~PlanImpl();
   system_allocator().deallocate(impl, sizeof(PlanImpl), alignof(PlanImpl));
@@ -309,12 +336,17 @@ void destroy_plan_impl(PlanImpl* impl) noexcept {
 void destroy_planned_impl(PlannedImpl* impl) noexcept {
   if (impl == nullptr) return;
   if (impl->buffers != nullptr) {
-    for (std::size_t index = impl->resource_count; index != 0; --index) {
+    for (std::size_t index = impl->backing_count; index != 0; --index) {
       impl->buffers[index - 1].~Buffer();
     }
     system_allocator().deallocate(impl->buffers,
-                                  impl->resource_count * sizeof(Buffer),
+                                  impl->backing_count * sizeof(Buffer),
                                   alignof(Buffer));
+  }
+  if (impl->resources != nullptr) {
+    system_allocator().deallocate(
+        impl->resources, impl->resource_count * sizeof(ResourceRecord),
+        alignof(ResourceRecord));
   }
   if (impl->placements != nullptr) {
     system_allocator().deallocate(
@@ -328,8 +360,10 @@ void destroy_planned_impl(PlannedImpl* impl) noexcept {
 
 Result<void*> make_plan_impl(
     std::size_t request_count, std::size_t resource_count,
+    std::size_t backing_count,
     RawArray<MemoryPlacement>& placements,
-    RawArray<LifetimeResourcePlan>& resources) noexcept {
+    RawArray<ResourceRecord>& resources,
+    RawArray<LifetimeBackingPlan>& backings) noexcept {
   void* storage =
       system_allocator().allocate(sizeof(PlanImpl), alignof(PlanImpl));
   if (storage == nullptr) {
@@ -337,14 +371,16 @@ Result<void*> make_plan_impl(
         "lifetime plan metadata allocation failed"));
   }
   auto* impl = ::new (storage) PlanImpl{
-      request_count, resource_count, placements.release(), resources.release()};
+      request_count, resource_count, backing_count, placements.release(),
+      resources.release(), backings.release()};
   return static_cast<void*>(impl);
 }
 
 }  // namespace
 
 Result<LifetimePlan> LifetimePlanner::build(
-    std::span<const LifetimeRequest> requests) noexcept {
+    std::span<const LifetimeRequest> requests,
+    std::span<const MemoryResourceRef> resources) noexcept {
   const std::size_t count = requests.size();
   if (count > kInvalidIndex) {
     return std::unexpected(
@@ -352,9 +388,15 @@ Result<LifetimePlan> LifetimePlanner::build(
   }
 
   RawArray<MemoryPlacement> placements;
-  RawArray<LifetimeResourcePlan> resource_plans;
+  RawArray<ResourceRecord> resource_records;
+  RawArray<LifetimeBackingPlan> backing_plans;
   if (count == 0) {
-    auto impl = make_plan_impl(0, 0, placements, resource_plans);
+    if (!resources.empty()) {
+      return std::unexpected(Status::InvalidArgument(
+          "an empty lifetime plan cannot name resources"));
+    }
+    auto impl = make_plan_impl(0, 0, 0, placements, resource_records,
+                               backing_plans);
     if (!impl) return std::unexpected(std::move(impl).error());
     return LifetimePlan(*impl);
   }
@@ -391,6 +433,10 @@ Result<LifetimePlan> LifetimePlanner::build(
   }
   const std::size_t resource_count =
       static_cast<std::size_t>(maximum_resource) + 1;
+  if (resources.size() != resource_count) {
+    return std::unexpected(Status::InvalidArgument(
+        "resource count does not match dense lifetime resource slots"));
+  }
 
   RawArray<std::uint32_t> roots;
   RawArray<std::size_t> relative_offsets;
@@ -399,11 +445,13 @@ Result<LifetimePlan> LifetimePlanner::build(
   RawArray<Group> groups;
   RawArray<std::uint32_t> order;
   RawArray<ResourceWork> resource_work;
+  RawArray<BackingWork> backing_work;
   RawArray<Slot> slots;
   RawArray<ActiveSlot> active;
   if (!allocate_all(count, roots, relative_offsets, states, path, groups,
                     order, slots, active) ||
-      !resource_work.allocate(resource_count)) {
+      !resource_work.allocate(resource_count) ||
+      !backing_work.allocate(count)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime planner scratch allocation failed"));
   }
@@ -416,6 +464,19 @@ Result<LifetimePlan> LifetimePlanner::build(
       return std::unexpected(Status::InvalidArgument(
           "lifetime resource slots must be dense"));
     }
+    if (!resources[resource].valid()) {
+      return std::unexpected(Status::InvalidArgument(
+          "lifetime plan resource is invalid"));
+    }
+    const MemoryProperties properties = resources[resource].properties();
+    if (!is_power_of_two(properties.minimum_alignment)) {
+      return std::unexpected(Status::InvalidArgument(
+          "memory resource reports an invalid minimum alignment"));
+    }
+    resource_work[resource].minimum_alignment =
+        properties.minimum_alignment;
+    resource_work[resource].maximum_allocation =
+        properties.maximum_allocation;
   }
 
   // Resolve arbitrary acyclic alias chains without recursion.
@@ -514,7 +575,10 @@ Result<LifetimePlan> LifetimePlanner::build(
   for (std::size_t ordered = 0; ordered < order_count; ++ordered) {
     const Group& group = groups[order[ordered]];
     ResourceWork& resource = resource_work[group.resource];
-    resource.alignment = (std::max)(resource.alignment, group.alignment);
+    if (group.size > resource.maximum_allocation) {
+      return std::unexpected(Status::OutOfRange(
+          "lifetime alias group exceeds resource maximum allocation"));
+    }
     if (group.size == 0 || group.no_reuse) continue;
     capacities[capacity_count++] = CapacityKey{group.resource, group.size};
     combos[combo_count++] =
@@ -635,6 +699,7 @@ Result<LifetimePlan> LifetimePlanner::build(
 
   std::size_t active_count = 0;
   std::size_t slot_count = 0;
+  std::size_t backing_count = 0;
   for (std::size_t ordered = 0; ordered < order_count; ++ordered) {
     Group& group = groups[order[ordered]];
     while (active_count != 0 && active[0].end <= group.begin) {
@@ -642,6 +707,7 @@ Result<LifetimePlan> LifetimePlanner::build(
     }
 
     if (group.size == 0) {
+      group.placement_backing = 0;
       group.placement_offset = 0;
       continue;
     }
@@ -652,24 +718,53 @@ Result<LifetimePlan> LifetimePlanner::build(
     if (selected == kInvalidIndex) {
       ResourceWork& resource = resource_work[group.resource];
       const std::size_t mask = group.alignment - 1;
-      if (resource.peak >
-          (std::numeric_limits<std::size_t>::max)() - mask) {
-        return std::unexpected(
-            Status::OutOfRange("lifetime placement alignment overflows"));
+      std::size_t offset = 0;
+      BackingWork* backing = nullptr;
+      if (resource.current_backing != kInvalidIndex) {
+        BackingWork& current = backing_work[resource.current_backing];
+        if (current.size <=
+            (std::numeric_limits<std::size_t>::max)() - mask) {
+          const std::size_t candidate = (current.size + mask) & ~mask;
+          if (candidate <= resource.maximum_allocation &&
+              group.size <= resource.maximum_allocation - candidate) {
+            offset = candidate;
+            backing = &current;
+          }
+        }
       }
-      const std::size_t offset = (resource.peak + mask) & ~mask;
-      if (group.size >
-          (std::numeric_limits<std::size_t>::max)() - offset) {
+      if (backing == nullptr) {
+        HYLE_FATAL_ASSERT(backing_count < count &&
+                          resource.backing_count < kInvalidIndex);
+        const std::uint32_t global_index =
+            static_cast<std::uint32_t>(backing_count++);
+        resource.current_backing = global_index;
+        BackingWork& created = backing_work[global_index];
+        created.resource = group.resource;
+        created.local_index = resource.backing_count++;
+        created.alignment = resource.minimum_alignment;
+        backing = &created;
+      }
+      HYLE_FATAL_ASSERT(backing->resource == group.resource &&
+                        offset <= resource.maximum_allocation &&
+                        group.size <= resource.maximum_allocation - offset);
+      const std::size_t old_backing_size = backing->size;
+      const std::size_t new_backing_size = offset + group.size;
+      backing->size = new_backing_size;
+      backing->alignment = (std::max)(backing->alignment, group.alignment);
+      const std::size_t growth = new_backing_size - old_backing_size;
+      if (growth > (std::numeric_limits<std::size_t>::max)() -
+                       resource.peak) {
         return std::unexpected(
             Status::OutOfRange("lifetime placement size overflows"));
       }
+      resource.peak += growth;
       selected = static_cast<std::uint32_t>(slot_count++);
       Slot& slot = slots[selected];
       slot.resource = group.resource;
+      slot.backing = backing->local_index;
       slot.offset = offset;
       slot.capacity = group.size;
       slot.alignment = group.alignment;
-      resource.peak = offset + group.size;
       if (!group.no_reuse) {
         slot.combo = find_combo(
             combos.data(), combo_count,
@@ -684,6 +779,7 @@ Result<LifetimePlan> LifetimePlanner::build(
     HYLE_FATAL_ASSERT(slot.resource == group.resource &&
                       slot.capacity >= group.size &&
                       slot.alignment >= group.alignment);
+    group.placement_backing = slot.backing;
     group.placement_offset = slot.offset;
     if (!group.no_reuse) {
       push_active(active.data(), active_count,
@@ -691,8 +787,25 @@ Result<LifetimePlan> LifetimePlanner::build(
     }
   }
 
+  // A zero-only dense resource still owns one zero-sized backing so its views
+  // preserve the explicitly selected provider identity.
+  for (std::size_t resource_index = 0; resource_index < resource_count;
+       ++resource_index) {
+    ResourceWork& resource = resource_work[resource_index];
+    if (resource.backing_count != 0) continue;
+    HYLE_FATAL_ASSERT(backing_count < count);
+    const std::uint32_t global_index =
+        static_cast<std::uint32_t>(backing_count++);
+    resource.current_backing = global_index;
+    resource.backing_count = 1;
+    backing_work[global_index] = BackingWork{
+        static_cast<std::uint32_t>(resource_index), 0, 0,
+        resource.minimum_alignment};
+  }
+
   if (!placements.allocate(count) ||
-      !resource_plans.allocate(resource_count)) {
+      !resource_records.allocate(resource_count) ||
+      !backing_plans.allocate(backing_count)) {
     return std::unexpected(Status::ResourceExhausted(
         "lifetime plan result allocation failed"));
   }
@@ -705,17 +818,32 @@ Result<LifetimePlan> LifetimePlanner::build(
                               relative_offsets[index]);
     placements[index] = MemoryPlacement{
         request.resource_slot,
+        group.placement_backing,
         group.placement_offset + relative_offsets[index],
         request.size,
         request.alignment,
     };
   }
+  std::size_t backing_begin = 0;
   for (std::size_t resource = 0; resource < resource_count; ++resource) {
-    resource_plans[resource] = LifetimeResourcePlan{
-        resource_work[resource].peak, resource_work[resource].alignment};
+    resource_records[resource] = ResourceRecord{
+        LifetimeResourcePlan{resource_work[resource].peak,
+                             resource_work[resource].backing_count},
+        backing_begin};
+    backing_begin += resource_work[resource].backing_count;
   }
-  auto impl =
-      make_plan_impl(count, resource_count, placements, resource_plans);
+  HYLE_FATAL_ASSERT(backing_begin == backing_count);
+  for (std::size_t index = 0; index < backing_count; ++index) {
+    const BackingWork& backing = backing_work[index];
+    const std::size_t flat_index =
+        resource_records[backing.resource].backing_begin +
+        backing.local_index;
+    HYLE_FATAL_ASSERT(flat_index < backing_count);
+    backing_plans[flat_index] =
+        LifetimeBackingPlan{backing.size, backing.alignment};
+  }
+  auto impl = make_plan_impl(count, resource_count, backing_count, placements,
+                             resource_records, backing_plans);
   if (!impl) return std::unexpected(std::move(impl).error());
   return LifetimePlan(*impl);
 }
@@ -768,7 +896,26 @@ Result<LifetimeResourcePlan> LifetimePlan::resource_plan(
     return std::unexpected(
         Status::OutOfRange("lifetime resource slot is out of range"));
   }
-  return plan.resources[resource_slot];
+  return plan.resources[resource_slot].plan;
+}
+
+Result<LifetimeBackingPlan> LifetimePlan::backing_plan(
+    std::size_t resource_slot, std::size_t backing_index) const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("lifetime plan is invalid"));
+  }
+  const PlanImpl& plan = *static_cast<PlanImpl*>(impl_);
+  if (resource_slot >= plan.resource_count) {
+    return std::unexpected(
+        Status::OutOfRange("lifetime resource slot is out of range"));
+  }
+  const ResourceRecord& resource = plan.resources[resource_slot];
+  if (backing_index >= resource.plan.backing_count) {
+    return std::unexpected(
+        Status::OutOfRange("lifetime backing index is out of range"));
+  }
+  return plan.backings[resource.backing_begin + backing_index];
 }
 
 Result<PlannedBuffers> LifetimePlan::instantiate(
@@ -782,10 +929,26 @@ Result<PlannedBuffers> LifetimePlan::instantiate(
     return std::unexpected(Status::InvalidArgument(
         "resource count does not match lifetime plan"));
   }
-  for (MemoryResourceRef resource : resources) {
+  for (std::size_t resource_index = 0;
+       resource_index < plan.resource_count; ++resource_index) {
+    const MemoryResourceRef resource = resources[resource_index];
     if (!resource.valid()) {
       return std::unexpected(Status::InvalidArgument(
           "lifetime plan resource is invalid"));
+    }
+    const MemoryProperties properties = resource.properties();
+    if (!is_power_of_two(properties.minimum_alignment)) {
+      return std::unexpected(Status::InvalidArgument(
+          "memory resource reports an invalid minimum alignment"));
+    }
+    const ResourceRecord& record = plan.resources[resource_index];
+    for (std::size_t backing = 0; backing < record.plan.backing_count;
+         ++backing) {
+      if (plan.backings[record.backing_begin + backing].size >
+          properties.maximum_allocation) {
+        return std::unexpected(Status::OutOfRange(
+            "lifetime backing exceeds resource maximum allocation"));
+      }
     }
   }
 
@@ -796,12 +959,15 @@ Result<PlannedBuffers> LifetimePlan::instantiate(
         "planned-buffer metadata allocation failed"));
   }
   auto* output = ::new (storage) PlannedImpl{
-      plan.request_count, plan.resource_count, nullptr, nullptr};
+      plan.request_count, plan.resource_count, plan.backing_count, nullptr,
+      nullptr, nullptr};
 
   RawArray<MemoryPlacement> copied_placements;
+  RawArray<ResourceRecord> copied_resources;
   RawArray<Buffer> buffers;
   if (!copied_placements.allocate(plan.request_count) ||
-      !buffers.allocate(plan.resource_count)) {
+      !copied_resources.allocate(plan.resource_count) ||
+      !buffers.allocate(plan.backing_count)) {
     output->~PlannedImpl();
     system_allocator().deallocate(output, sizeof(PlannedImpl),
                                   alignof(PlannedImpl));
@@ -812,19 +978,29 @@ Result<PlannedBuffers> LifetimePlan::instantiate(
     std::memcpy(copied_placements.data(), plan.placements,
                 plan.request_count * sizeof(MemoryPlacement));
   }
+  if (plan.resource_count != 0) {
+    std::memcpy(copied_resources.data(), plan.resources,
+                plan.resource_count * sizeof(ResourceRecord));
+  }
   for (std::size_t resource = 0; resource < plan.resource_count; ++resource) {
-    auto created = Buffer::create(resources[resource],
-                                  plan.resources[resource].peak_bytes,
-                                  plan.resources[resource].alignment);
-    if (!created) {
-      output->~PlannedImpl();
-      system_allocator().deallocate(output, sizeof(PlannedImpl),
-                                    alignof(PlannedImpl));
-      return std::unexpected(std::move(created).error());
+    const ResourceRecord& record = plan.resources[resource];
+    for (std::size_t backing = 0; backing < record.plan.backing_count;
+         ++backing) {
+      const std::size_t flat_index = record.backing_begin + backing;
+      const LifetimeBackingPlan& backing_plan = plan.backings[flat_index];
+      auto created = Buffer::create(resources[resource], backing_plan.size,
+                                    backing_plan.alignment);
+      if (!created) {
+        output->~PlannedImpl();
+        system_allocator().deallocate(output, sizeof(PlannedImpl),
+                                      alignof(PlannedImpl));
+        return std::unexpected(std::move(created).error());
+      }
+      buffers[flat_index] = std::move(*created);
     }
-    buffers[resource] = std::move(*created);
   }
   output->placements = copied_placements.release();
+  output->resources = copied_resources.release();
   output->buffers = buffers.release();
   return PlannedBuffers(output);
 }
@@ -850,6 +1026,20 @@ std::size_t PlannedBuffers::resource_count() const noexcept {
   return valid() ? static_cast<PlannedImpl*>(impl_)->resource_count : 0;
 }
 
+Result<std::size_t> PlannedBuffers::backing_count(
+    std::size_t resource_slot) const noexcept {
+  if (!valid()) {
+    return std::unexpected(
+        Status::FailedPrecondition("planned buffers are invalid"));
+  }
+  const PlannedImpl& buffers = *static_cast<PlannedImpl*>(impl_);
+  if (resource_slot >= buffers.resource_count) {
+    return std::unexpected(
+        Status::OutOfRange("lifetime resource slot is out of range"));
+  }
+  return buffers.resources[resource_slot].plan.backing_count;
+}
+
 Result<BufferView> PlannedBuffers::view(std::size_t request_id) noexcept {
   if (!valid()) {
     return std::unexpected(
@@ -861,7 +1051,10 @@ Result<BufferView> PlannedBuffers::view(std::size_t request_id) noexcept {
         Status::OutOfRange("lifetime request id is out of range"));
   }
   const MemoryPlacement& placement = buffers.placements[request_id];
-  return buffers.buffers[placement.resource_slot].view().subview(
+  const ResourceRecord& resource = buffers.resources[placement.resource_slot];
+  return buffers.buffers[resource.backing_begin + placement.backing_index]
+      .view()
+      .subview(
       placement.offset, placement.size);
 }
 
@@ -877,12 +1070,14 @@ Result<ConstBufferView> PlannedBuffers::view(
         Status::OutOfRange("lifetime request id is out of range"));
   }
   const MemoryPlacement& placement = buffers.placements[request_id];
-  const Buffer& backing = buffers.buffers[placement.resource_slot];
+  const ResourceRecord& resource = buffers.resources[placement.resource_slot];
+  const Buffer& backing =
+      buffers.buffers[resource.backing_begin + placement.backing_index];
   return backing.view().subview(placement.offset, placement.size);
 }
 
 Result<BufferView> PlannedBuffers::backing(
-    std::size_t resource_slot) noexcept {
+    std::size_t resource_slot, std::size_t backing_index) noexcept {
   if (!valid()) {
     return std::unexpected(
         Status::FailedPrecondition("planned buffers are invalid"));
@@ -892,11 +1087,16 @@ Result<BufferView> PlannedBuffers::backing(
     return std::unexpected(
         Status::OutOfRange("lifetime resource slot is out of range"));
   }
-  return buffers.buffers[resource_slot].view();
+  const ResourceRecord& resource = buffers.resources[resource_slot];
+  if (backing_index >= resource.plan.backing_count) {
+    return std::unexpected(
+        Status::OutOfRange("lifetime backing index is out of range"));
+  }
+  return buffers.buffers[resource.backing_begin + backing_index].view();
 }
 
 Result<ConstBufferView> PlannedBuffers::backing(
-    std::size_t resource_slot) const noexcept {
+    std::size_t resource_slot, std::size_t backing_index) const noexcept {
   if (!valid()) {
     return std::unexpected(
         Status::FailedPrecondition("planned buffers are invalid"));
@@ -906,7 +1106,13 @@ Result<ConstBufferView> PlannedBuffers::backing(
     return std::unexpected(
         Status::OutOfRange("lifetime resource slot is out of range"));
   }
-  const Buffer& backing = buffers.buffers[resource_slot];
+  const ResourceRecord& resource = buffers.resources[resource_slot];
+  if (backing_index >= resource.plan.backing_count) {
+    return std::unexpected(
+        Status::OutOfRange("lifetime backing index is out of range"));
+  }
+  const Buffer& backing =
+      buffers.buffers[resource.backing_begin + backing_index];
   return backing.view();
 }
 

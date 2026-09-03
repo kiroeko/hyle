@@ -42,12 +42,18 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **契约**：经 `mem::system_allocator()`（mimalloc 后端）分配的内存，**可以在任意线程释放**——fiber 在 worker A 分配、迁移后在 worker B 释放是**安全且支持**的核心用例。
 
-**为什么安全**：当前 backing 锁定 mimalloc `v3.5.0`，分配器封在 `AllocatorRef` vtable（函数指针）后、
+**为什么安全**：当前 backing 锁定 mimalloc `v3.5.1`，分配器封在 `AllocatorRef` vtable（函数指针）后、
 且实现跨 `.so` 边界（`hyle_mem`）。fiber 体调 `deallocate()` 是**不透明调用**——`-O3` 无法把
 `mi_free` 内部的 TLS heap 读提升/缓存到 fiber 体的 yield 之上，每次在**当前线程**重新解析。即第 1
 条的危险模式在分配器路径上天然不成立。E13/E17 的 **687 万次跨线程 free，rc=0** 是旧
 `v2.3.2` 的历史证据，不冒充 v3.5 当前性能证书；v3.5 的 release gate 由现行 mem/fiber 跨线程释放、
 allocator ownership/package contract 和 sanitizer 测试重新绑定。
+
+`AllocatorRef`、`SystemAllocator`、PMR adapter 与 `Heap::allocator()` 都是 sized-free 路线：成功分配
+后，deallocate/reallocate 必须带回原 logical size/alignment。实现会把普通 `<16B` 请求的 16B 实际
+backing 大小交给 `mi_free_size`，over-aligned 请求走 `mi_free_size_aligned`；这不增加 HYLE 的
+per-allocation metadata。`SystemAllocator::deallocate` 因而没有省略 size 的入口，错误 size/alignment
+属于与标准 allocator/PMR 相同的调用合同错误。
 
 **⚡ 性能注意事项**：
 - **对齐**：默认对齐（≤16B，`alignof(max_align_t)`）走 `mi_malloc` 快路径；**仅在真需要过对齐**（如 AVX512 的 64B）才传更大 alignment——过对齐路径有额外簿记，紧凑 alloc/free 循环里会变慢。

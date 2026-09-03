@@ -26,6 +26,13 @@ set_target_properties(mimalloc_static PROPERTIES EXPORT_NAME "_mimalloc")
 if(MSVC)
   set_source_files_properties("${_mi}/src/static.c" PROPERTIES LANGUAGE CXX)
 endif()
+# v3.5.1 changes its non-Android default from ordinary THP opt-in (1) to
+# FULL-style 2 MiB purge retention (2). Preserve HYLE's reviewed ordinary-host
+# RSS policy; deployments can still select 0 or 2 with MIMALLOC_ALLOW_THP
+# before process startup. Android retains mimalloc's platform default (0).
+if(NOT ANDROID)
+  target_compile_definitions(mimalloc_static PRIVATE MI_DEFAULT_ALLOW_THP=1)
+endif()
 # Third-party C: keep our -Werror/-Wall off it.
 if(MSVC)
   target_compile_options(mimalloc_static PRIVATE /w)

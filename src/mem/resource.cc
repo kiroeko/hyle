@@ -47,7 +47,8 @@ class SystemMemoryResource final : public MemoryResource {
       HYLE_TRACE_FREE_NAMED(allocation.native_handle, "hyle.system");
     }
 #endif
-    detail::system_local_deallocate(allocation.native_handle);
+    detail::system_local_deallocate(allocation.native_handle, allocation.size,
+                                    allocation.alignment);
   }
 
   Status read(void* native_handle, std::size_t offset,

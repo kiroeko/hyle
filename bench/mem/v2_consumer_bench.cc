@@ -138,8 +138,13 @@ class PmrHeapResource final : public std::pmr::memory_resource {
     return result;
   }
 
-  void do_deallocate(void* pointer, std::size_t, std::size_t) override {
-    mi_free(pointer);
+  void do_deallocate(void* pointer, std::size_t size,
+                     std::size_t alignment) override {
+    if (alignment <= 16) {
+      mi_free_size(pointer, size < 16 ? 16 : size);
+    } else {
+      mi_free_size_aligned(pointer, size, alignment);
+    }
   }
 
   bool do_is_equal(

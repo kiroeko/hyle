@@ -91,8 +91,8 @@ TEST(AllocatorRef, SystemAllocatorIsValid) {
 
 #if defined(HYLE_TESTING)
 TEST(AllocatorRef, ShippingBackendIsReviewedMimallocVersion) {
-  // mi_version uses major*10000 + minor*100 + patch: v3.5.0 == 30500.
-  EXPECT_EQ(system_backend_version_for_testing(), 30500);
+  // mi_version uses major*10000 + minor*100 + patch: v3.5.1 == 30501.
+  EXPECT_EQ(system_backend_version_for_testing(), 30501);
 }
 #endif
 
@@ -327,6 +327,10 @@ TEST(AllocatorRef, CompileTimeReallocateHandlesNullAndPreservesAlignment) {
   ASSERT_NE(aligned, nullptr);
   EXPECT_TRUE(is_aligned(aligned, 64));
   SystemAllocator::deallocate(aligned, 256, 64);
+
+  void* released = SystemAllocator::allocate(8, 1);
+  ASSERT_NE(released, nullptr);
+  EXPECT_EQ(SystemAllocator::reallocate(released, 8, 0, 1), nullptr);
 }
 
 TEST(AllocatorRef, ManyDistinctNonOverlapping) {

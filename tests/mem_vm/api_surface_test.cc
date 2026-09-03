@@ -52,6 +52,9 @@ static_assert(sizeof(CompositeBufferView) == sizeof(void*) * 3);
 static_assert(sizeof(ConstCompositeBufferView) == sizeof(void*) * 3);
 static_assert(sizeof(LifetimePlan) == sizeof(void*));
 static_assert(sizeof(PlannedBuffers) == sizeof(void*));
+static_assert(std::is_standard_layout_v<MemoryPlacement>);
+static_assert(std::is_standard_layout_v<LifetimeResourcePlan>);
+static_assert(std::is_standard_layout_v<LifetimeBackingPlan>);
 static_assert(sizeof(BufferView) == sizeof(void*) * 4);
 static_assert(sizeof(ConstBufferView) == sizeof(void*) * 4);
 static_assert(std::is_trivially_copyable_v<MemoryResourceRef>);
@@ -81,6 +84,25 @@ static_assert(std::same_as<decltype(system_memory_resource()),
                            std::pmr::memory_resource*>);
 static_assert(std::same_as<decltype(system_memory_snapshot()),
                            hyle::Result<SystemMemorySnapshot>>);
+
+static_assert(requires(LifetimePlan plan, PlannedBuffers buffers,
+                       std::span<const LifetimeRequest> requests,
+                       std::span<const MemoryResourceRef> resources,
+                       std::size_t index) {
+  { LifetimePlanner::build(requests, resources) }
+      -> std::same_as<hyle::Result<LifetimePlan>>;
+  { plan.placement(index) } -> std::same_as<hyle::Result<MemoryPlacement>>;
+  { plan.resource_plan(index) }
+      -> std::same_as<hyle::Result<LifetimeResourcePlan>>;
+  { plan.backing_plan(index, index) }
+      -> std::same_as<hyle::Result<LifetimeBackingPlan>>;
+  { plan.instantiate(resources) }
+      -> std::same_as<hyle::Result<PlannedBuffers>>;
+  { buffers.backing_count(index) }
+      -> std::same_as<hyle::Result<std::size_t>>;
+  { buffers.backing(index, index) }
+      -> std::same_as<hyle::Result<BufferView>>;
+});
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {

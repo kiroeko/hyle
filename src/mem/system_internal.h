@@ -10,7 +10,8 @@ namespace hyle::mem::detail {
 // by system.cc and are never installed as public headers.
 void* system_local_allocate(std::size_t size,
                             std::size_t alignment) noexcept;
-void system_local_deallocate(void* pointer) noexcept;
+void system_local_deallocate(void* pointer, std::size_t size,
+                             std::size_t alignment) noexcept;
 void* system_local_reallocate(void* pointer, std::size_t new_size,
                               std::size_t alignment) noexcept;
 

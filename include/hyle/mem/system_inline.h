@@ -17,7 +17,7 @@
 // call to hyle_mem's backend seam: the vendor symbols remain private to the DLL
 // and the public header is independently linkable.
 //
-// Static consumers do not include mimalloc.h: the five C functions below use
+// Static consumers do not include mimalloc.h: the six C functions below use
 // only void*/size_t, and the package carries their archive as a link-only
 // implementation dependency. Shared consumers do not name mi_* at all.
 //
@@ -26,7 +26,9 @@ extern "C" {
 HYLE_ALLOCATOR_RETURN(1) void* mi_malloc(std::size_t size) noexcept;
 HYLE_ALLOCATOR_RETURN(1) void* mi_malloc_aligned(
     std::size_t size, std::size_t alignment) noexcept;
-void mi_free(void* p) noexcept;
+void mi_free_size(void* p, std::size_t size) noexcept;
+void mi_free_size_aligned(void* p, std::size_t size,
+                          std::size_t alignment) noexcept;
 void* mi_realloc(void* p, std::size_t newsize) noexcept;
 void* mi_realloc_aligned(void* p, std::size_t newsize, std::size_t alignment) noexcept;
 }
@@ -42,6 +44,12 @@ namespace detail {
 // private implementation seam lets platforms with a wider max_align_t fall
 // back to mi_*_aligned instead of silently weakening HYLE's contract.
 inline constexpr std::size_t kMimallocV3NaturalAlignment = 16;
+
+HYLE_FORCE_INLINE constexpr std::size_t system_backend_natural_size(
+    std::size_t size) noexcept {
+  return size < kMimallocV3NaturalAlignment ? kMimallocV3NaturalAlignment
+                                             : size;
+}
 
 HYLE_FORCE_INLINE std::size_t system_backend_checked_alignment(
     std::size_t alignment) noexcept {
@@ -65,22 +73,24 @@ inline void* system_backend_allocate(std::size_t size,
     // mimalloc v3 gives blocks at least MI_MAX_ALIGN_SIZE alignment once the
     // requested size reaches that boundary. Padding only sub-default requests
     // preserves its plain small-allocation fast path.
-    return mi_malloc(size < kMimallocV3NaturalAlignment
-                         ? kMimallocV3NaturalAlignment
-                         : size);
+    return mi_malloc(system_backend_natural_size(size));
   }
   return mi_malloc_aligned(size, alignment);
 }
-inline void system_backend_deallocate(void* ptr) noexcept { mi_free(ptr); }
+inline void system_backend_deallocate(void* ptr, std::size_t size,
+                                      std::size_t alignment) noexcept {
+  HYLE_ASSUME(alignment != 0 && (alignment & (alignment - 1)) == 0);
+  if (alignment <= kMimallocV3NaturalAlignment) {
+    mi_free_size(ptr, system_backend_natural_size(size));
+  } else {
+    mi_free_size_aligned(ptr, size, alignment);
+  }
+}
 inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
                                        std::size_t alignment) noexcept {
   alignment = system_backend_checked_alignment(alignment);
   if (alignment <= kMimallocV3NaturalAlignment) {
-    const std::size_t backing_size =
-        new_size < kMimallocV3NaturalAlignment
-            ? kMimallocV3NaturalAlignment
-            : new_size;
-    return mi_realloc(ptr, backing_size);
+    return mi_realloc(ptr, system_backend_natural_size(new_size));
   }
   return mi_realloc_aligned(ptr, new_size, alignment);
 }
@@ -90,7 +100,8 @@ inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
 // into a shared SDK's consumer link contract.
 HYLE_MEM_API void* system_backend_allocate(std::size_t size,
                                            std::size_t alignment) noexcept;
-HYLE_MEM_API void system_backend_deallocate(void* ptr) noexcept;
+HYLE_MEM_API void system_backend_deallocate(
+    void* ptr, std::size_t size, std::size_t alignment) noexcept;
 HYLE_MEM_API void* system_backend_reallocate(
     void* ptr, std::size_t new_size, std::size_t alignment) noexcept;
 #endif
@@ -118,7 +129,7 @@ struct SystemAllocator {
     return pointer;
   }
   static void deallocate(
-      void* ptr, std::size_t /*size*/ = 0,
+      void* ptr, std::size_t size,
       std::size_t alignment = kSystemDefaultAlignment) noexcept {
     // Matching alignment is an allocator deallocation precondition. Preserve a
     // Debug diagnostic, but keep Release on the same direct-free shape as
@@ -127,15 +138,15 @@ struct SystemAllocator {
 #if defined(HYLE_TRACE)
     if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
 #endif
-    detail::system_backend_deallocate(ptr);
+    detail::system_backend_deallocate(ptr, size, alignment);
   }
-  static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
+  static void* reallocate(void* ptr, std::size_t old_size, std::size_t new_size,
                           std::size_t alignment = kSystemDefaultAlignment) noexcept {
     if (HYLE_UNLIKELY(new_size == 0)) {
       (void)detail::system_backend_checked_alignment(alignment);
       if (ptr != nullptr) {
         HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-        detail::system_backend_deallocate(ptr);
+        detail::system_backend_deallocate(ptr, old_size, alignment);
       }
       return nullptr;
     }

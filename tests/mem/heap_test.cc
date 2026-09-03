@@ -49,6 +49,10 @@ TEST(Heap, SupportsOwnerReallocationAndRemoteFree) {
     allocator.deallocate(pointer, 128);
   });
   remote.join();
+
+  void* released = allocator.allocate(8, 1);
+  ASSERT_NE(released, nullptr);
+  EXPECT_EQ(allocator.reallocate(released, 8, 0, 1), nullptr);
 }
 
 TEST(Heap, MoveTransfersOwnerAndInvalidatesOldBorrows) {

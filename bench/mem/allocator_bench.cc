@@ -110,8 +110,10 @@ class BackendResource final : public std::pmr::memory_resource {
     if (pointer == nullptr) throw std::bad_alloc{};
     return pointer;
   }
-  void do_deallocate(void* p, std::size_t, std::size_t) override {
-    hyle::mem::detail::system_backend_deallocate(p);
+  void do_deallocate(void* p, std::size_t bytes,
+                     std::size_t alignment) override {
+    hyle::mem::detail::system_backend_deallocate(
+        p, hyle::mem::detail::pmr_backing_size(bytes), alignment);
   }
   bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
     return this == &other;
@@ -171,7 +173,8 @@ int main() {
         void* p = hyle::mem::detail::system_backend_allocate(
             bytes, hyle::mem::kSystemDefaultAlignment);
         ankerl::nanobench::doNotOptimizeAway(p);
-        hyle::mem::detail::system_backend_deallocate(p);
+        hyle::mem::detail::system_backend_deallocate(
+            p, bytes, hyle::mem::kSystemDefaultAlignment);
       }
     });
     run('S', "SystemAllocator (same-link direct)", [&] {
@@ -244,7 +247,8 @@ int main() {
               p, kReallocSizes[index], hyle::mem::kSystemDefaultAlignment);
         }
         ankerl::nanobench::doNotOptimizeAway(p);
-        hyle::mem::detail::system_backend_deallocate(p);
+        hyle::mem::detail::system_backend_deallocate(
+            p, kReallocSizes.back(), hyle::mem::kSystemDefaultAlignment);
       }
     });
     run('F', "SystemAllocator realloc (same-link direct)", [&] {

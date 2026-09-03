@@ -39,6 +39,16 @@ void* heap_reallocate(mi_heap_t* heap, void* pointer, std::size_t new_size,
   return mi_heap_realloc_aligned(heap, pointer, new_size, alignment);
 }
 
+void heap_deallocate(void* pointer, std::size_t size,
+                     std::size_t alignment) noexcept {
+  HYLE_ASSUME(alignment != 0 && (alignment & (alignment - 1)) == 0);
+  if (alignment <= detail::kMimallocV3NaturalAlignment) {
+    mi_free_size(pointer, detail::system_backend_natural_size(size));
+  } else {
+    mi_free_size_aligned(pointer, size, alignment);
+  }
+}
+
 }  // namespace
 
 Result<Heap> Heap::create() noexcept {
@@ -103,21 +113,21 @@ void* Heap::allocate_erased(void* state, std::size_t size,
   return pointer;
 }
 
-void Heap::deallocate_erased(void*, void* pointer, std::size_t,
-                             std::size_t) noexcept {
+void Heap::deallocate_erased(void*, void* pointer, std::size_t size,
+                             std::size_t alignment) noexcept {
 #if defined(HYLE_TRACE)
   if (pointer != nullptr) HYLE_TRACE_FREE_NAMED(pointer, "hyle.heap");
 #endif
-  mi_free(pointer);
+  heap_deallocate(pointer, size, alignment);
 }
 
-void* Heap::reallocate_erased(void* state, void* pointer, std::size_t,
+void* Heap::reallocate_erased(void* state, void* pointer, std::size_t old_size,
                               std::size_t new_size,
                               std::size_t alignment) noexcept {
   auto* self = static_cast<Heap*>(state);
   if (!self->valid()) return nullptr;
   if (new_size == 0) {
-    deallocate_erased(state, pointer, 0, alignment);
+    deallocate_erased(state, pointer, old_size, alignment);
     return nullptr;
   }
   void* result = heap_reallocate(as_native(self->native_heap_), pointer,
