@@ -56,3 +56,6 @@ product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
 `c6429316279aaac1e0f5d7a7a71872a60cf967b6`。VM01--VM06、公开 owner/layout 与 mapping/residency normal
 workloads 已冻结；W1-WIN、GCC 14 `-Werror`、ASan/UBSan、公开头自含、Windows exact factor 及 Mem
 source/relocated shared/static journeys 已通过。M1-MAC、direct consumers、正式 P1 与最终红队仍待签署。
+
+首个共同 candidate 因 Platform host 的 Apple `getentropy` 声明缺失退回 `AUDITED`；Mem VM 本身没有
+授权产品改动，修复依赖后重放同一验证。

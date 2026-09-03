@@ -82,3 +82,6 @@ candidate；C++ taxonomy 保持 mem-v2，用户不需要知道 factor 名。`AUD
   source/relocated shared/static journeys 已通过；
 - M1-MAC、direct consumers、正式 P1、FFI/symbol scan 与最终红队仍待裁决；产品变更必须退回
   `AUDITED`。
+
+首个共同 candidate 因 Platform host 的 Apple `getentropy` 声明缺失退回 `AUDITED`；Mem API、layout
+与算法没有发现缺陷，也没有新增 FIX，修复依赖后重放同一验证。

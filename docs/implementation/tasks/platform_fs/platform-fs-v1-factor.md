@@ -67,3 +67,6 @@ product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
 `c6429316279aaac1e0f5d7a7a71872a60cf967b6`。F01--F02/D01、公开 API/一字 handle 与 warmed
 open-read-close normal workload 已冻结；W1-WIN、GCC 14 `-Werror`、ASan/UBSan、公开头自含、Windows
 exact factor 及 Platform 三交付已通过。M1-MAC、Mem/IO direct consumers、正式 P1 与最终红队仍待签署。
+
+首个共同 candidate 因 private Platform host entropy 的 Apple `getentropy` 声明缺失退回 `AUDITED`；
+本 factor 没有 API/算法改动，修复 host 后重放验证。

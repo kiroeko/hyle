@@ -177,3 +177,10 @@ SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer AP
   roots，以及 Platform product 的 source/relocated shared/static journeys；
 - 尚未裁决 M1-MAC、direct consumers、正式 P1、FFI/symbol 扫描与最终红队，故不能写 `VERIFIED` 或
   `CLOSED`。任何产品改动都必须依法退回 `AUDITED`。
+
+## 首个候选拒绝并退回（`AUDITED`）
+
+M1-MAC 在编译 `src/platform/random.cc` 时复现 `::getentropy` 未声明。Apple SDK 将该函数声明在
+`<sys/random.h>`，实现却只包含 `<unistd.h>`；这属于既有 H03 的跨平台正确性缺陷，不改变需求、API、
+算法或性能合同。首个 candidate 被拒绝；有限修复仅允许 Apple 路径包含正确 SDK 头并重放五个共同
+component 的 candidate gates，禁止借机改其他产品代码。
