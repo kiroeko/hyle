@@ -9,12 +9,16 @@ foreach(_internal_factor IN ITEMS container_intrusive util_core)
     message(FATAL_ERROR
       "Util package leaked internal factor '${_internal_factor}' as a product")
   endif()
-  if(NOT TARGET hyle::_factor_${_internal_factor})
-    message(FATAL_ERROR
-      "Util facade lacks detail factor '${_internal_factor}'")
-  endif()
 endforeach()
 unset(_internal_factor)
+
+if(NOT TARGET hyle::_factor_util_core)
+  message(FATAL_ERROR "Util facade lacks detail factor 'util_core'")
+endif()
+if(TARGET hyle::_factor_container_intrusive)
+  message(FATAL_ERROR
+    "Util facade unexpectedly selected detail factor 'container_intrusive'")
+endif()
 
 add_executable(hyle_util_cpp_package_probe main.cc)
 target_link_libraries(hyle_util_cpp_package_probe PRIVATE hyle::util)
