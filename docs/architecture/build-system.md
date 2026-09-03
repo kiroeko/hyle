@@ -4,8 +4,11 @@
 > Hyle 当前交付面是 C++：源码组装、静态 SDK、共享 SDK。早期公开 C/跨语言表面已经移除，
 > 不属于当前产品设计。
 >
-> 2026-09-01 起，当前实现采用“内部 factor DAG / 外部产品 façade”双层投影；本轮证据记录在
-> [`build-system-v7-factor-facade-projection`](../implementation/tasks/build/build-system-v7-factor-facade-projection.md)。
+> 2026-09-01 起，当前实现采用“内部 factor DAG / 外部产品 façade”双层投影；最近一次独立的
+> Build/package 复检记录在
+> [`build-system-v9-current-tree-replay`](../implementation/tasks/build/build-system-v9-current-tree-replay.md)。
+> 此后 Platform/Mem v3 又登记了 `platform_thread`、`platform_fs` 与 `mem_vm`；对应模块轮只证明其
+> 受影响 journey，不替 Build/package 横向开发单元签发新的整体收口结论。
 
 ## 设计目标
 
@@ -62,9 +65,9 @@
 
 ### 双层投影合同
 
-Stage C 能力账本中的 30 项是**候选 semantic factor**；当前只有 18 个已经同时进入
+Stage C 能力账本中的 30 项是**候选 semantic factor**；当前只有 21 个已经同时进入
 `module-status.json`、中央 manifest 和实际 target，才构成源码 ownership、测试和 HYLE 直接依赖的
-真实粒度。其余候选在进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺。当前 18 个
+真实粒度。其余候选在进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺。当前 21 个
 factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。双层投影把旧
 “component”承担的四种含义拆开：
 
@@ -141,15 +144,18 @@ error       -> PUBLIC core
 obs         -> PUBLIC core error
 time        -> PUBLIC core
 timer_queue -> PUBLIC core time container_intrusive
-platform    -> PUBLIC core error time
+platform    -> PUBLIC core error
+platform_thread -> PUBLIC core error time; PRIVATE platform
+platform_fs -> PUBLIC core error time; PRIVATE platform
 mem_reclaim -> PUBLIC core
-mem         -> PUBLIC core error platform util_core
+mem         -> PUBLIC core error platform
+mem_vm      -> PUBLIC core error mem platform platform_fs util_core
 simd        -> PUBLIC core platform
 container   -> PUBLIC core mem; PRIVATE platform
 util        -> PUBLIC core error mem container
-sched       -> PUBLIC core container_intrusive error time platform mem util_core; PRIVATE container timer_queue
+sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container timer_queue
 io          -> PUBLIC core mem container time timer_queue sched
-compute     -> PUBLIC core error mem sched; PRIVATE platform simd
+compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
 
@@ -163,7 +169,9 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 这些边藏成 include-path 偶然可见；完整
 `container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
 `platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
-`platform -> PUBLIC time` 是真实 SDK 边；sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
+`platform_fs -> PUBLIC time` 是真实 SDK 边；dependency-light 的 `platform` host factor 不再因此取得
+Time。Platform façade 聚合 `platform/platform_thread/platform_fs`，Mem façade 聚合 `mem/mem_vm`；
+内部 factor 仍只链接自己实际使用的 factor，不能链接 façade。sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
 但 cancel callback 已迁移 hlist 并形成真实 direct edge。io、compute 与 graph 的当前公开面都暴露 sched
 类型，因此 sched
 是无条件 `PUBLIC` 边；无 fcontext 平台会诚实拒绝这三个产品根。未来若要交付 raw proactor 或

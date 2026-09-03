@@ -10,7 +10,7 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同只登记 **18 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
+CMake target。当前机器合同登记 **21 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
 `module-status.json`、中央组件图和实际 target 的 factor 才算已经落地。Build/package v7 已实现这套
 双层投影。内部 factor 只能依赖 factor，用户只需选择产品域；详见[构建系统](build-system.md)。
 
@@ -33,7 +33,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 18-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+本节表格是**当前 21-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
 逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
@@ -51,18 +51,21 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | math | core | — |
 | time | core | — |
 | timer_queue | core, time, container_intrusive | — |
-| platform | core, error, time | — |
+| platform | core, error | — |
+| platform_thread | core, error, time | platform |
+| platform_fs | core, error, time | platform |
 | mem_reclaim | core | — |
-| mem | core, error, platform, util_core | — |
+| mem | core, error, platform | — |
+| mem_vm | core, error, mem, platform, platform_fs, util_core | — |
 | simd | core, platform | — |
 | container | core, mem | platform |
 | util | core, error, mem, container | — |
-| sched | core, container_intrusive, error, time, platform, mem, util_core | container, timer_queue |
+| sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, timer_queue |
 | io | core, mem, container, time, timer_queue, sched | — |
-| compute | core, error, mem, sched | platform, simd |
+| compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
-用户看到的不是上述 17 个 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
+用户看到的不是上述 21 个 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
 再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
 
 | Product façade | Factor roots |
@@ -70,8 +73,8 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | core | core |
 | error | error |
 | time | time, timer_queue |
-| platform | platform |
-| mem | mem |
+| platform | platform, platform_thread, platform_fs |
+| mem | mem, mem_vm |
 | obs | obs |
 | simd | simd |
 | math | math |
@@ -82,7 +85,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | compute | compute |
 | graph | graph |
 
-因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 18 个 factor；按普通用户可选择的问题域
+因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 21 个 factor；按普通用户可选择的问题域
 计算是 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，外部依赖 target 与 trace/testing
 target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
@@ -100,6 +103,12 @@ record 嵌入 safe hlist hook，因而同样声明真实 `PUBLIC container_intru
 storage 作锁外 wake chain，仍保留专用实现。
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。
+
+Platform 产品由 `platform`、`platform_thread`、`platform_fs` 三个 factor 聚合：host facts、CPU/NUMA、
+动态库和匿名 VM 留在 dependency-light 的 `platform`；线程/等待与同步文件系统分别只在需要时进入
+HYLE 内部闭包。Mem 产品由 `mem` 与 `mem_vm` 聚合：allocator/resource/pool/NUMA owner 属于 `mem`，
+mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `mem_vm`。这些拆分不改变普通
+用户选择 `hyle::platform` / `hyle::mem` 的产品心智，只让内部消费者取得精确依赖。
 
 `mem_reclaim` 是从下一版候选图登记的独立开发 factor。它只依赖 Core，拥有 read-side guard、intrusive
 retire record 和 grace-period callback；在其性能门与真实 consumer migration 完成前，不进入 Mem façade，

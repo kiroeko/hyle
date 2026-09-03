@@ -167,8 +167,10 @@ OS Thread 自身的系统资源属于 Platform 合同。便利构造可对可信
 提交必须返回 `Status`/`Result`。队列 full、timeout、shutdown 和 OOM 不能被压成同一个 bool，涉及
 未消费 value 时还必须返还 ownership。
 
-公开依赖是 Core、Error、Time、Platform、Mem 和 Util-core；Container 只支撑 compiled queue
-implementation，因此是 PRIVATE edge。IO 依赖 Sched，不允许反向 include IO。IoContext 通过不安装的
+当前直接公开 factor 依赖是 Core、Container-intrusive、Error、Time、Platform host/thread、Mem core/VM
+和 Util-core；完整 Container 与 Timer-queue 只支撑 compiled implementation，因此是 PRIVATE edge。
+普通用户不需要理解这些内部拆分，只选择 `hyle::sched`，其产品闭包由中央 manifest 解析。IO 依赖
+Sched，不允许反向 include IO。IoContext 通过不安装的
 build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改 Scheduler worker loop。
 
 ## 复杂度与性能合同
