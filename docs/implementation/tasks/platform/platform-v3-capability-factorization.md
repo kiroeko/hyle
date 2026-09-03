@@ -193,3 +193,65 @@ component 的 candidate gates，禁止借机改其他产品代码。
   `mem_vm` 五个直接测试 target，并通过 5 个公开头自含测试与 5 个实现测试；
 - API、layout、算法、normal workload 与有限 `FIX` 集均未改变。仍待裁决 M1-MAC sanitizer、direct
   consumers、正式 P1、FFI/symbol 扫描与最终红队，因此当前只进入第二个 `CANDIDATE`。
+
+## 最终验证矩阵（`VERIFIED`）
+
+验证绑定 immutable product candidate
+`b1a526d6fdb05b6bb42c4cb041788959e74511de` / tree
+`f808df6fcbd0b5549777e0c6939240a3feab9512`。从该候选到当前提交，Platform/Mem 的公开头与产品
+source、factor graph、API、layout 和算法无漂移；后续提交只增加冻结性能合同、取证 provenance、文档
+以及 Container 测试夹具隔离。P1 harness source 为
+`28987e3118c74cc04276300f8baa20764495793a` / tree
+`9242fc3d2dd31e2034a9d36d8f1d689cbc5f7eac`，不冒充产品候选。
+
+| Gate / journey | Verdict | Evidence / limit |
+|---|---|---|
+| W1-WIN factor correctness / headers | `PASS` | `platform`、`platform_thread`、`platform_fs` 三个实现测试与三个公开头自含测试 6/6；MSVC 19.50 Release |
+| W1-WSL correctness / sanitizers | `PASS` | clean candidate 的 Release 10/10；ASan 5/5、UBSan 5/5；TSan 五个实现 binary 均在 WSL 合同要求的 `setarch x86_64 -R` 下通过且无 race report |
+| M1-MAC correctness / sanitizer | `PASS` | clean candidate 的 AppleClang 21 arm64 Release 10/10，ASan 10/10；首候选的 `getentropy` 声明缺陷已由第二候选修复 |
+| product delivery | `PASS` | M1-MAC 与 W1-WIN 的 Platform source embedding、relocated shared、relocated static sample 全部运行通过；普通用户只选择 `hyle::platform` façade |
+| exact factors / graph | `PASS` | 三个 factor 精确 build/header ownership 通过；中央 scanner 确认 `platform -> core,error`、thread/fs 的显式 public/private 边与无环 product 聚合 |
+| direct consumers | `PASS` | 当前候选 Sched 2/2、IO 11/11；SIMD selected closure 构建成功；Container 测试夹具隔离后 selected `container` 的 header/implementation 2/2，通过时 factor 集不含 `platform_thread` |
+| engineering performance | `PASS` | [Platform v3 P1](../../evidence/performance/benchmarks-platform.md)：host 4/4 与 fs 8/8 为同合同 `PARITY`/NI PASS，Parker 8/8 为 `WIN`/NI PASS；全部 manifest 当前 deep replay 为 `QUALIFIED/EXACT/CURRENT` |
+| usability / docs / old FFI | `PASS` | architecture、user guide、sample、owner 与失败/并发陷阱一致；公开树无 C schema/header/bridge/FFI option 或未装饰 Native FFI export |
+
+WSL 的普通 TSan launcher 在进入 `main` 前触发已知高 ASLR `unexpected memory mapping`；这不是产品
+失败。按项目 WSL 合同禁用随机地址布局后，同一五个 binary 全部通过，记录该启动前提而不把它包装成
+跨 Linux 环境的普遍 TSan 结论。
+
+### 最终红队
+
+| Finding | Disposition |
+|---|---|
+| 首候选在 Apple SDK 缺 `<sys/random.h>` | `FIXED BEFORE FINAL CANDIDATE`：只修声明头；五组件的 macOS Release/ASan 与交付重签 |
+| Container tests 在 factor split 后仍用 `platform::Thread`，selected `container` 链接失败 | `FIXED IN TEST HARNESS`：`f46e0ae6` 改用 `std::thread`，没有把 Thread factor 错加到 Container 产品图；独立 product 2/2 通过 |
+| mapping/shared storage 可能仍有 Platform 双 owner | `DISPROVED`：公开/产品扫描只剩 Mem VM owner；历史 contract 不冒充当前产品 surface |
+| factor 拆分可能改变普通 C++ 用户心智 | `DISPROVED`：source/static/shared 都只选择 `hyle::platform`；factor ID 仅供内部精确开发与验证 |
+| 新 host/thread/fs wrapper 可能隐藏分配、轮询或额外 syscall | `DISPROVED`：源码复杂度门、layout tests 与三个同合同 P1 分族通过；未按一个混合总分裁决 |
+| 旧 C API / Native FFI 可能残留 | `DISPROVED`：public/install/export/sample/option 负向扫描干净；OS-private C boundary 不是公开 FFI |
+
+没有未处置 `MUST`、`PARTIAL + KEEP`、correctness/security/ownership/delivery 缺陷或 material P1
+regression；红队没有授权新的产品改动。
+
+## Owner 六问（`VERIFIED`）
+
+1. **第三方实现：**Platform 产品不直接或间接依赖第三方实现；C++23、compiler builtin 和 Windows/
+   Linux/macOS ABI 是机制。Folly、oneTBB、Boost、llama.cpp/ggml 只作为锁定需求或 peer。
+2. **能力完整度：**本轮准入的 topology、host-memory、secure entropy、affinity save/restore、thread ISA
+   state 与同步 fs factor 已全部 `COMPLETE`；device/kernel、async I/O、scheduler policy、process/JIT 有
+   明确 owner route，不伪装成 Platform 缺口。
+3. **性能：**host、Parker、filesystem 三个真实正常形状各自使用同语义强 peer；5% NI 全部通过。
+   只声明这些合同和结构复杂度，不声明“Platform 整体 SOTA”。
+4. **旧 C ABI / Native FFI：**公开产品为 `CLEAN/N/A`；只有 C++ API 与 private OS mechanism，没有
+   面向 C 用户的伪 API、动态符号承诺或稳定 C++ ABI。
+5. **构建与导入：**三个 factor 精确构建、产品 façade、三平台、source embedding、relocated static/
+   shared 与具名直接消费者全部通过；依赖边与公开 header owner 同时由中央 manifest 检查。
+6. **C++ API / 易用性 / 文档：**用户按任务选择 `hyle::platform`，在 `hyle::platform` namespace 使用
+   fallible snapshot、buffer-fill core、显式 owning convenience 与 move-only owner；guide 明确快照时效、
+   affinity restore、Parker 单 waiter、FileHandle 单 cursor 和 OS 失败边界。
+
+十一票冻结 FIX 均为 `COMPLETE`，scope、architecture、correctness、delivery、usability/docs、red-team、
+engineering-performance 七门全部 `PASS`。`CANDIDATE -> VERIFIED` 前态 registry snapshot 位于
+`C:\public\project-hyle\_validation\platform-v3\module-status-before-verified.json`，SHA-256
+`94928BBC6B3FA987F64DDCC748CB8B3C5E15E775FC8322FEE8D734924350FC8D`。当前只提升为
+`VERIFIED`；terminal receipt、限制、reopen triggers 与不可变 LOC 在下一步单独登记，不再修改产品。

@@ -78,3 +78,24 @@ product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
 `f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的公开头与实现测试已随五组件共同重放通过；
 T01--T03/D01、API、layout 与 Parker workload 未改变。sanitizer、Sched direct consumer、正式 P1 与
 最终红队仍待裁决。
+
+## 最终验证与六问（`VERIFIED`）
+
+本 factor 与 Platform v3 共用 immutable product candidate
+`b1a526d6fdb05b6bb42c4cb041788959e74511de` / tree
+`f808df6fcbd0b5549777e0c6939240a3feab9512`，完整矩阵、红队与前态 snapshot 见
+[Platform v3 主记录](../platform/platform-v3-capability-factorization.md)。W1-WIN 实现/公开头、W1-WSL
+Release/ASan/UBSan/TSan、M1-MAC Release/ASan、Platform 三交付、Sched 2/2 direct consumer、动态符号/
+旧 FFI 扫描均 `PASS`。WSL TSan 按已记录的 `setarch x86_64 -R` 启动合同执行。
+
+[Platform P1 报告](../../evidence/performance/benchmarks-platform.md)中的 Parker 行 8/8 strata 均为
+`WIN` 且 5% NI `PASS`，median advantage ratio 20.189201--25.202667，最低 confidence lower
+17.180837；该结论只属于 persistent cross-physical-core single-waiter mailbox，不外推到 counting
+semaphore、multi-waiter fairness 或 same-logical-CPU ping-pong。Thread create/affinity/state enable 属
+控制面，结构门确认没有 per-operation refcount、hidden scheduler policy、轮询或每次 wait 分配。
+
+Owner 六问：产品只用 C++23/compiler/OS ABI，无第三方实现；native lifecycle、affinity save/restore、
+current-thread scalable/matrix state 与 address wait/Parker 均完整，pool/task/cancel/placement 路由到 Sched；
+公开 Native FFI/C ABI 为 `N/A/CLEAN`；内部 factor 可精确构建但普通用户只选择 `hyle::platform`；自然
+C++ API 与单 waiter、外部同步、显式 restore 等陷阱已写入 guide。T01--T03/D01 全部 `COMPLETE`，七项
+aggregate gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`，不在本节提前写 terminal verdict。

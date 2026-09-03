@@ -1,6 +1,7 @@
 # Timer queue v1：Time 产品的 node/data-structure 因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（`SCOPED`）
 

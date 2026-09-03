@@ -77,3 +77,24 @@ exact factor 及 Platform 三交付已通过。M1-MAC、Mem/IO direct consumers�
 `f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的公开头与实现测试已随五组件共同重放通过；
 F01--F02/D01、API、一字 handle 与 warmed open-read-close workload 未改变。sanitizer、Mem/IO direct
 consumers、正式 P1 与最终红队仍待裁决。
+
+## 最终验证与六问（`VERIFIED`）
+
+本 factor 与 Platform v3 共用 immutable product candidate
+`b1a526d6fdb05b6bb42c4cb041788959e74511de` / tree
+`f808df6fcbd0b5549777e0c6939240a3feab9512`，完整矩阵、红队与前态 snapshot 见
+[Platform v3 主记录](../platform/platform-v3-capability-factorization.md)。W1-WIN 实现/公开头、W1-WSL
+Release/ASan/UBSan/TSan、M1-MAC Release/ASan、Platform 三交付、Mem 与 IO 直接消费者、动态符号/旧
+FFI 扫描均 `PASS`；mapping/shared-storage 公开 owner 已从本 factor 清除。
+
+[Platform P1 报告](../../evidence/performance/benchmarks-platform.md)中的 warmed 4 MiB
+open/read/checksum/close 行 8/8 strata 为 `PARITY` 且 5% NI `PASS`，median ratio
+0.996192--1.010228，最低 confidence lower 0.966165。合同完整计费 setup/bytes/teardown；不与 cached
+scalar、mapping 或无 durability 的不同语义混比。结构门确认 FileHandle 一字、short I/O 至多一次 native
+operation、exact/all 为 O(bytes/native limit)、visitor 常态不收集 owning list。
+
+Owner 六问：产品只用 C++23/compiler/OS ABI，Folly/Boost 只是需求与 peer；当前 portable synchronous
+namespace/FileHandle/temp/replace 能力完整，lexical path 与 async/direct/vectored/watch 有明确 owner；没有
+公开 C/Native FFI 或稳定 C++ ABI；factor 精确构建及 façade 三交付全部通过；普通用户只选择
+`hyle::platform`，guide 明确 UTF-8、short transfer、单 cursor、symlink/race 与 durability 边界。F01--F02/
+D01 全部 `COMPLETE`，七项 aggregate gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`。

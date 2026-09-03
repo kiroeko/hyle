@@ -94,3 +94,58 @@ candidate；C++ taxonomy 保持 mem-v2，用户不需要知道 factor 名。`AUD
   factor 也通过；
 - Mem API、layout、算法、mapping/residency workloads 与 VM01--VM06 均未改变。仍待 sanitizer、
   direct consumers、正式 P1、FFI/symbol scan 与最终红队裁决。
+
+## 最终验证矩阵（`VERIFIED`）
+
+验证绑定 immutable product candidate
+`b1a526d6fdb05b6bb42c4cb041788959e74511de` / tree
+`f808df6fcbd0b5549777e0c6939240a3feab9512`。候选后的合同、文档与测试夹具提交没有修改 Mem/Mem VM
+公开头、source、factor graph、API、layout 或算法。
+
+| Gate / journey | Verdict | Evidence / limit |
+|---|---|---|
+| W1-WIN correctness / headers | `PASS` | 当前 exact roots 的 Mem 与 Mem VM 实现/公开头 4/4；既有 VM/range/lifetime/populate 与未触及 Mem-v2 tests 通过 |
+| W1-WSL correctness / sanitizers | `PASS` | 五组件 Release 10/10；ASan 与 UBSan 各 5/5；TSan 在 `setarch x86_64 -R` 下五个实现 binary 均通过且无 race report |
+| M1-MAC correctness / sanitizer | `PASS` | AppleClang 21 arm64 Release 10/10、ASan 10/10；依赖的 host entropy 声明修复已包含于最终候选 |
+| product delivery | `PASS` | W1-WIN/M1-MAC Mem source embedding、relocated shared、relocated static sample 全部运行通过；普通用户只链接 `hyle::mem` |
+| exact factor / direct consumer | `PASS` | `mem_vm` 精确 factor、header owner 与 product 聚合通过；Sched 2/2、IO 11/11；Container 独立 product header/implementation 2/2，未被错误拉入 VM/thread factor |
+| engineering performance | `PASS` | [Mem VM P1](../../evidence/performance/benchmarks-mem-vm.md)：mapping 4/4、residency 8/8 均 `PARITY` 且 5% NI `PASS`；manifest 当前为 `QUALIFIED/EXACT/CURRENT` |
+| usability / docs / FFI | `PASS` | architecture/user/performance/sample 只给 Mem 一个 storage owner；无旧 Platform alias、C schema/bridge/option/managed sample 或公开 Native FFI export |
+
+### 最终红队
+
+- Platform 公开 storage owner 与旧 convenience 已从产品树清除；历史 benchmark contract 只作历史事实，
+  不恢复双 owner；
+- `FileMapping::populate` 是显式 O(pages) 同步操作，普通 map 不偷偷 prefault；fragment 用多个 O(1)
+  owner，不为 benchmark 建 hole table 或每页常态 metadata；
+- `mem_vm` 直接实现只用 OS 与 Platform mechanisms；mimalloc 仍只属于未触及的 base Mem allocator 路径，
+  版本/许可/离线锁由 build/package owner 管理；
+- source/static/shared 与直接消费者确认 factor 名没有泄露为用户必选项，失败仍统一走 Error；
+- candidate 后产品 boundary diff 为空，P1 没有反向改变 API/layout/常态 metadata；
+- public/install/export 扫描没有旧 C API 或 Native FFI，private mimalloc `extern "C"` 边界不是 HYLE FFI。
+
+没有未处置的 VM `MUST`、correctness/security/ownership/delivery finding 或 material P1 regression。
+
+## Owner 六问（`VERIFIED`）
+
+1. **第三方实现：**base Mem 直接使用锁定 mimalloc；Mem VM 自身没有第三方实现，只经 Platform/OS
+   mechanisms。Folly/Boost/llama.cpp 是锁定 peer/consumer，不链接入 VM 产品。
+2. **能力完整度：**本轮 mapping/residency/huge/shared/guarded storage、同步 populate 与 fragment route
+   均 `COMPLETE`；allocator/pool/resource/buffer/planner 保持 Mem-v2 已冻结能力，async/direct/backend
+   policy 有明确 owner。
+3. **性能：**受影响的完整 mapping 与 progressive residency 正常旅程在同语义强 peer 下通过 5% NI；
+   wrapper 无 pimpl/refcount/heap/virtual dispatch，setup O(1)、populate/lock/advice O(covered pages/range)。
+   不借此重签未触及 Mem-v2 families 或宣称整个 Mem 无条件 SOTA。
+4. **旧 C ABI / Native FFI：**公开 surface 为 `CLEAN/N/A`；private mimalloc C linkage 是依赖实现 seam，
+   不是 HYLE 外语运行时合同。
+5. **构建与导入：**`mem`/`mem_vm` 精确 factor、`hyle::mem` façade、三平台、source/static/shared、
+   relocation 与 Sched/IO/Container direct slices 均通过；中央 manifest 保证无环和真实 public edges。
+6. **C++ API / 易用性 / 文档：**用户只面对 `hyle::mem` taxonomy；move-only owners、显式
+   advise/populate/lock、path/FileHandle mapping、shared create/open、NUMA/huge/guarded journeys 与 lifetime/
+   external synchronization/truncate 陷阱已在 guide 中按场景说明。
+
+VM01--VM06 全部 `COMPLETE`，scope、architecture、correctness、delivery、usability/docs、red-team、
+engineering-performance 七门全部 `PASS`。`CANDIDATE -> VERIFIED` 使用与 Platform 共用的前态 registry
+snapshot：`C:\public\project-hyle\_validation\platform-v3\module-status-before-verified.json`，SHA-256
+`94928BBC6B3FA987F64DDCC748CB8B3C5E15E775FC8322FEE8D734924350FC8D`。当前只提升为
+`VERIFIED`；terminal receipt 与 LOC 在下一步单独登记。

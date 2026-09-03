@@ -22,3 +22,8 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 
 “同合同不劣”“复杂度同档”“某个 workload 获胜”和“模块整体 SOTA”不是同一个命题。最后一项
 通常没有可证定义，文档不得使用它代替逐能力结论。
+
+当前因子化收口报告：
+
+- [Platform v3](benchmarks-platform.md)：host、native thread/wait 与同步 filesystem；
+- [Mem VM](benchmarks-mem-vm.md)：file mapping 与 progressive residency。

@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -531,22 +531,32 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v3 CANDIDATE：Apple getentropy 声明缺失的有限修复已在 M1-MAC 重放通过；第二候选冻结为 b1a526d6/f808df6f，等待 sanitizer、direct consumers、P1 与最终红队裁决。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "platform-v3 VERIFIED：host/thread/fs 十一票能力与因子边界完成；三平台、sanitizer、source/static/shared、direct consumers、文档/易用性、红队和三族同语义 P1 全部通过。"
     },
     {
       "module": "platform_thread",
-      "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "round_id": "platform-thread-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
       "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
@@ -560,22 +570,32 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v1 CANDIDATE：host entropy 的有限修复已在 M1-MAC 重放通过；thread API/算法不变，第二候选等待 sanitizer、Sched consumer、P1 与红队裁决。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "platform_thread v1 VERIFIED：native thread/affinity/current ISA state/address wait 能力完成；三平台、sanitizer、Platform 三交付、Sched direct consumer、文档/红队与 Parker P1 全部通过。"
     },
     {
       "module": "platform_fs",
-      "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "round_id": "platform-fs-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
       "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
@@ -589,18 +609,28 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v1 CANDIDATE：private host entropy 的有限修复已在 M1-MAC 重放通过；fs API/算法不变，第二候选等待 sanitizer、Mem/IO consumers、P1 与红队裁决。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "platform_fs v1 VERIFIED：同步 namespace/FileHandle/temp/replace 因子边界完成；三平台、sanitizer、Platform 三交付、Mem/IO consumers、文档/红队与同语义 filesystem P1 全部通过。"
     },
     {
       "module": "mem_reclaim",
@@ -669,7 +699,7 @@
     },
     {
       "module": "mem",
-      "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -685,22 +715,32 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v3 CANDIDATE：Platform host 的有限 Apple 头修复已在 M1-MAC 重放通过；Mem API/算法不变，第二候选等待 sanitizer、direct consumers、P1 与红队裁决。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "mem-v3 VERIFIED：VM/storage 唯一 owner 迁移和同步 populate 完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队与受影响 mapping/residency P1 全部通过。"
     },
     {
       "module": "mem_vm",
-      "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "round_id": "mem-vm-v1-factor",
       "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
       "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
@@ -714,18 +754,28 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_vm v1 CANDIDATE：Platform host 的有限 Apple 头修复已在 M1-MAC 重放通过；VM API/算法不变，第二候选等待 sanitizer、direct consumers、P1 与红队裁决。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "mem_vm v1 VERIFIED：mapping/residency/huge/shared/guarded storage 因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队与两族同语义 P1 全部通过。"
     },
     {
       "module": "simd",

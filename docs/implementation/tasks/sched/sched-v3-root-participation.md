@@ -1,6 +1,7 @@
 # Sched v3 根参与批执行恢复记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `sched-v3` 的 `RESUME` 施工记录。权威状态是
 > [`module-status.json`](../../module-status.json)；已经终止的

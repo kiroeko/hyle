@@ -66,3 +66,23 @@ source/relocated shared/static journeys 已通过。M1-MAC、direct consumers、
 `f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的 `mem_vm` 公开头与实现测试已随五组件共同重放
 通过；VM01--VM06、owner、layout 与 mapping/residency workloads 未改变。sanitizer、direct consumers、
 正式 P1 与最终红队仍待裁决。
+
+## 最终验证与六问（`VERIFIED`）
+
+本 factor 与 Mem v3 共用 immutable product candidate
+`b1a526d6fdb05b6bb42c4cb041788959e74511de` / tree
+`f808df6fcbd0b5549777e0c6939240a3feab9512`，完整验证矩阵、红队与前态 snapshot 见
+[Mem v3 主记录](../mem/mem-v3-vm-factorization.md)。W1-WIN 实现/公开头、W1-WSL Release/ASan/UBSan/
+TSan、M1-MAC Release/ASan、Mem source/static/shared、exact factor、Sched/IO/Container direct slices 与旧
+FFI/owner 负向扫描全部 `PASS`。
+
+[Mem VM P1 报告](../../evidence/performance/benchmarks-mem-vm.md)中完整 file mapping 4/4 strata 的
+median ratio 为 0.977834--1.005194、最低 confidence lower 0.963487；progressive residency 8/8 strata
+的 median ratio 为 0.991597--1.001353、最低 lower 0.965027。两族均为 `PARITY` 且 5% NI `PASS`，只
+支持冻结 loader 旅程，不外推 partial unmap、异步 I/O、多 NUMA socket 带宽或端到端 token latency。
+
+Owner 六问：自身无第三方 product implementation，base Mem 的 mimalloc 不由本 factor 重导出；VM
+storage 超集与自然 fragment route 完整；inline native owner 与 O(1)/O(pages) 结构成本及两项同语义 P1
+通过；无公开 C/Native FFI；factor 精确构建但用户只选 `hyle::mem`；guide 已覆盖 truncate、residency
+quota、共享名、NUMA fallback、guard page 与外部同步陷阱。VM01--VM06 全部 `COMPLETE`，七项 aggregate
+gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`。
