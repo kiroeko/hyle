@@ -7,10 +7,10 @@
 产品收口与 Formal 性能声明是两条轴：`CLOSED` 表示本轮工程上应停止，不表示取得发布级性能
 证书；反之，“产品形状冻结”只说明 candidate 不再随意变化，不足以越过 P1 工程性能或最终红队门。
 
-当前执行优先级是 **Mem 全产品只读 replay**：它复核 `mem/mem_vm/mem_reclaim` 的累积产品形状、
-依赖、第三方输入、功能超集、C++ 易用性、交付与性能证据。Mem 在产生合法
-`PRODUCT_TRIGGER` 前仍保持下表的 `CLOSED`；这不是第二套产品状态。IO 已冻结的 v1 scope 暂停在
-`SCOPED`，尚未进入 `AUDITED` 或修改产品，不是当前施工对象。
+当前执行优先级是 **Mem v5 定向完成**：全产品只读 replay 已裁决 `PRODUCT_TRIGGER`，Mem 因
+maximum-allocation-aware multi-chunk lifetime planning 缺口与 shipping mimalloc v3.5.1 material
+输入进入 `REOPENED`。本轮只重开这两个受影响能力族；`mem_vm/mem_reclaim` 和普通 allocator/pool
+能力保持冻结。IO 已冻结的 v1 scope 继续暂停在 `SCOPED`，尚未进入 `AUDITED` 或修改产品。
 
 <!-- BEGIN GENERATED MODULE STATUS -->
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
@@ -27,7 +27,7 @@
 | platform_thread | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform_thread/platform-thread-v1-factor.md) | platform_thread v1 CLOSED：native thread/affinity/current ISA state/address wait 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Sched consumer、文档/红队和 Parker P1 全部通过。 |
 | platform_fs | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform_fs/platform-fs-v1-factor.md) | platform_fs v1 CLOSED：同步 namespace/FileHandle/temp/replace 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Mem/IO consumers、文档/红队和同语义 filesystem P1 全部通过。 |
 | mem_reclaim | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-reclaim-v2-inference-resume.md) | mem_reclaim v2 CLOSED：推理 read-mostly snapshot 回收、零分配 typed retire 与 Container 直接 consumer 完成；三平台正确性/sanitizer/三交付、文档/红队及官方 Folly 同合同 P1 全部通过。 |
-| mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v4-reclamation-facade.md) | mem-v4 CLOSED：read-mostly reclamation 已自然进入 Mem façade；三平台 source/shared/static、依赖闭包、package journey、用户选型、FFI 清洁与同 candidate P1 全部通过，allocator/VM 保持冻结。 |
+| mem | REOPENED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v5-multichunk-mimalloc-351.md) | mem-v5 REOPENED：当前全产品回放确认 lifetime planner 缺少 resource max-aware multi-chunk backing，且 shipping mimalloc v3.5.0 到 v3.5.1 是 material dependency input；只重开这两个受影响能力族。 |
 | mem_vm | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem_vm/mem-vm-v1-factor.md) | mem_vm v1 CLOSED：mapping/residency/huge/shared/guarded storage 独立因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和两族同语义 P1 全部通过。 |
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v3-node-table-reclamation.md) | container-v3 CLOSED：默认 retained 与显式 reclaiming table lifetime 完成；安全 hand-off、三平台正确性/sanitizer/三交付、依赖/文档/红队及 oneTBB natural-route P1 全部通过。 |
@@ -57,9 +57,10 @@ build/package 回放也已发现
 closure，并经三平台 current contract 与 Core 三种交付复签后 `CLOSED`。
 这项只读审计不会批量改写上表状态，只有发现真实 `PRODUCT_TRIGGER` 的单元才依法重开。`time` 已
 直接使用新格式；后续 Platform/Mem/Obs 等产品轮也留下了自己的 terminal 记录，但窄 reopen round
-不能自动替整个累积产品回答今天的新问题。当前 Mem 因 owner 要求执行
-[`全产品 replay`](tasks/mem/mem-current-product-replay-2026-09.md)，先裁决
-`CONFIRMED/METHOD_GAP/PRODUCT_TRIGGER`，不预先改写其 `CLOSED` 结论。
+不能自动替整个累积产品回答今天的新问题。当前 Mem
+[`全产品 replay`](tasks/mem/mem-current-product-replay-2026-09.md)已以 `PRODUCT_TRIGGER`
+终止，并建立 [`mem-v5`](tasks/mem/mem-v5-multichunk-mimalloc-351.md) 定向轮；registry 的
+`REOPENED` 只授权随后冻结 closure card，不表示产品源码已经改变。
 
 产品状态流固定为：
 

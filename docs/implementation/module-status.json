@@ -762,65 +762,32 @@
     },
     {
       "module": "mem",
-    "product_state": "CLOSED",
-      "reopen_trigger_id": "MEM-RECLAIM-FACADE-2026-09-03",
-      "reopen_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
-      "round_id": "mem-v4-reclamation-facade",
-      "closure_task": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
-      "scope": "Make a successfully resumed mem_reclaim factor naturally available through the Mem product facade and all three C++ delivery shapes, with an installed consumer and scenario-based guidance.",
-      "non_goals": "Reopening allocator, PMR, pool, arena, buffer, NUMA, mapping or VM algorithms; changing mimalloc; Native FFI/C API; stable C++ ABI; Compute/Graph; common instrument redesign; Formal certification.",
-    "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
-    "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-    "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
-    "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
-    "registry_anchor_commit": "b9fdec1a404aa05f0e63cd214896b05c09c59444",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
+      "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
+      "round_id": "mem-v5-multichunk-mimalloc-351",
+      "closure_task": "docs/implementation/tasks/mem/mem-v5-multichunk-mimalloc-351.md",
+      "scope": "Complete maximum-allocation-aware multi-chunk lifetime planning and upgrade the private shipping allocator to mimalloc v3.5.1, then requalify only the affected API, host-allocation performance and C++ delivery boundaries.",
+      "non_goals": "Mem VM or reclamation redesign; ordinary Buffer layout changes; Tensor, Graph, Compute backend usage, reset or host-pointer-import policy; async completion; hazard pointers; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
+      "baseline_commit": "ae01203b35d7f6d0b9c76117a1a50fc837c07772",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
-    "engineering_performance": {
-      "verdict": "PASS",
-      "mode": "P1_ENGINEERING",
-      "material_margin_pct": 5,
-      "machine_profile": "W1-WIN",
-      "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md"
-    },
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
-    "loc": {
-      "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-      "repository_code": 436638,
-      "self_with_tests": 111204,
-      "self_without_tests": 70416,
-      "module_implementation": 7403
-    },
-    "known_limitations": [
-      "The facade inherits mem_reclaim's short-guard, borrowed-domain and record, synchronous-callback and stalled-reader contracts; allocator and VM families were not reopened in this round.",
-      "Mem provides C++23 source/static/shared delivery but no Native FFI, stable cross-toolchain C++ ABI or Formal performance certificate.",
-      "This round's P1 evidence covers reclamation read-side and Container table consumers, not every allocator, pool, NUMA or mapping family."
-    ],
-    "reopen_triggers": [
-      "The Mem facade, selected headers or installed target no longer deliver the admitted reclamation journey.",
-      "A named Mem consumer reproduces a reclamation selection, ownership, lifetime or C++ API-usability defect.",
-      "The underlying reclamation factor, public API, direct dependency, normal cost or source/static/shared delivery changes materially.",
-      "An allocator, VM or other untouched Mem family independently satisfies one of its own registered reopen triggers."
-    ],
-      "summary": "mem-v4 CLOSED：read-mostly reclamation 已自然进入 Mem façade；三平台 source/shared/static、依赖闭包、package journey、用户选型、FFI 清洁与同 candidate P1 全部通过，allocator/VM 保持冻结。"
+      "summary": "mem-v5 REOPENED：当前全产品回放确认 lifetime planner 缺少 resource max-aware multi-chunk backing，且 shipping mimalloc v3.5.0 到 v3.5.1 是 material dependency input；只重开这两个受影响能力族。"
     },
     {
       "module": "mem_vm",
