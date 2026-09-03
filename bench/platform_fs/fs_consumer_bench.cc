@@ -200,7 +200,7 @@ int main() {
   nb::Bench bench;
   bench.title("warmed model file complete sequential read")
       .relative(true)
-      .batch(kFileBytes)
+      .batch(1)
       .minEpochTime(std::chrono::milliseconds(8));
   run_pair(bench, peer_first, "HYLE FileHandle 4MiB", [&] { model.hyle_read(); },
            "direct OS file 4MiB", [&] { model.raw_read(); });
