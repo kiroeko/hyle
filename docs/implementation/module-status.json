@@ -766,14 +766,14 @@
     },
     {
       "module": "mem",
-    "product_state": "CLOSED",
-      "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
-      "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
-      "round_id": "mem-v3-vm-factorization",
-      "closure_task": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
-      "scope": "Migrate mapping, residency, huge-page and guarded-stack ownership into one mem_vm factor while preserving the Mem-v2 storage semantics and natural hyle::mem product facade.",
-      "non_goals": "Reopening unrelated allocator/pool/buffer/planner algorithms, backend async policy, tensor or model policy, Platform host/thread/fs redesign beyond the required mechanism edges, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "f077a34c73fba624cbcfaedd2b5cf8dd31655847",
+    "product_state": "REOPENED",
+      "reopen_trigger_id": "MEM-RECLAIM-FACADE-2026-09-03",
+      "reopen_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
+      "round_id": "mem-v4-reclamation-facade",
+      "closure_task": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
+      "scope": "Make a successfully resumed mem_reclaim factor naturally available through the Mem product facade and all three C++ delivery shapes, with an installed consumer and scenario-based guidance.",
+      "non_goals": "Reopening allocator, PMR, pool, arena, buffer, NUMA, mapping or VM algorithms; changing mimalloc; Native FFI/C API; stable C++ ABI; Compute/Graph; common instrument redesign; Formal certification.",
+      "baseline_commit": "13117568b9496b0b6db29235ece0bf6e35ae16db",
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
@@ -785,7 +785,7 @@
         "M1-MAC"
       ],
     "engineering_performance": {
-      "verdict": "PASS",
+      "verdict": "PLANNED",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
       "machine_profile": "W1-WIN",
@@ -827,7 +827,7 @@
       "A mature same-contract peer proves a better complexity class, or a normal loader or scheduler profile reproduces a material regression.",
       "An asynchronous, direct, backend-policy or sparse-storage journey is formally admitted and multiple natural owners cannot express the common Mem-owned contract."
     ],
-    "summary": "mem-v3 CLOSED：VM/storage 唯一 owner 迁移与同步 populate 完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和受影响 mapping/residency P1 全部通过。"
+      "summary": "mem-v4 REOPENED：推理 snapshot reclamation 已准入，窄范围复检 Mem façade、三种 C++ 交付、package sample 与用户选型；allocator/VM 等既有算法不重开。"
     },
     {
       "module": "mem_vm",
@@ -957,12 +957,14 @@
     },
     {
       "module": "container",
-      "product_state": "CLOSED",
-      "round_id": "container-v2",
-      "closure_task": "docs/implementation/tasks/container/container-v2-rebuild.md",
-      "scope": "Fresh current-source review of the complete non-intrusive C++ Container product: capability families, every public surface, algorithms/resources, direct dependencies and consumers, source/static/shared delivery, usability/docs and bounded P1 engineering evidence.",
-      "non_goals": "The independently closed container_intrusive component, model/tensor/KV/serving policy, scheduler wait/cancel/backpressure services, cache/eviction or persistence policy, full std/Boost parity, device memory, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
-      "baseline_commit": "5cebdddf8dd40f48218b5eb15c03dc8d9910b8ef",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "CONTAINER-NODE-TABLE-RECLAIM-2026-09-03",
+      "reopen_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
+      "round_id": "container-v3-node-table-reclamation",
+      "closure_task": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
+      "scope": "Bound ConcurrentNodeHashMap retired-table lifetime for a long-lived, growing inference registry, preserving accessor/node semantics and offering an explicit no-reclamation-cost lifetime route when the owner can retain tables to destruction.",
+      "non_goals": "Reopening any other Container family, changing node/accessor semantics, adding a lock-free map, benchmark-named APIs, Native FFI/C API, Compute/Graph, common instrument redesign or Formal certification.",
+      "baseline_commit": "13117568b9496b0b6db29235ece0bf6e35ae16db",
       "candidate_commit": "336793d63dd7cf08fde9c1be74c6439472335381",
       "candidate_tree": "968d169bafe0eab270d397ab1614f80c1a98079f",
       "end_commit": "390a3ce477bc3d0677541bb9fe70c3f12a7b7ffe",
@@ -974,7 +976,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
@@ -1015,7 +1017,7 @@
         "A qualified same-contract normal workload proves a material regression or a mature peer proves a better complexity class or material consumer advantage.",
         "An updated llama.cpp/ggml journey or a second independent mature demand admits a common capability that the current HYLE, standard-library or higher-layer route cannot completely carry."
       ],
-      "summary": "container-v2 CLOSED：exact overwrite ring、semantic composite hash、flat filtering、真实 StringView 与 const interner 已完成不兼容收束；三平台 correctness/sanitizer/ISA、直接消费者、source/static/shared、文档/红队和 W1-WIN 五项 5% P1 非劣门全部通过。"
+      "summary": "container-v3 REOPENED：只处理 ConcurrentNodeHashMap 在长寿命增长 registry 中无法及时归还旧 bucket table 的寿命缺口；其他 Container 能力保持冻结。"
     },
     {
       "module": "util",
