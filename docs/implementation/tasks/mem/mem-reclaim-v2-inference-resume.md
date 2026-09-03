@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（CANDIDATE）
+## Closure card（VERIFIED）
 
 - component / owner / round：`mem_reclaim` / Mem / `mem-reclaim-v2-inference-resume`；
 - task kind：`RESUME`；前一轮：`mem-reclaim-v1`；blocker：`MR-P1-PEER-CONSUMER-01`；

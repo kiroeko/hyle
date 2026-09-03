@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（CANDIDATE）
+## Closure card（VERIFIED）
 
 - component / owner / round：`container` / Container / `container-v3-node-table-reclamation`；
 - task kind：`REOPEN`；baseline：`444b02c01afe00f4cd3b44433204e58db3c24712`；
