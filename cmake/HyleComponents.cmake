@@ -149,6 +149,10 @@ _hyle_declare_component(mem_reclaim
   PUBLIC_DEPS core
   SPLIT_PUBLIC_HEADERS hyle/mem/reclamation.h)
 _hyle_declare_component(mem TRACE PUBLIC_DEPS core error platform util_core)
+# Registered independently before the Platform-v3 storage-owner migration.
+# Dependencies, sources, headers and the Mem product root remain absent until
+# mem-vm-v1 reaches SCOPED/AUDITED; QUEUED is not a buildability claim.
+_hyle_declare_component(mem_vm)
 _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # Container headers expose mem types; platform is used only by compiled
 # implementation paths such as runtime ISA/topology support.

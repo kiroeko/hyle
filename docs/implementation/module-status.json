@@ -663,18 +663,14 @@
     },
     {
       "module": "mem",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "MEM-OWNER-2026-09-01",
-      "reopen_evidence": "docs/implementation/tasks/mem/mem-v1-capability-replay-2026-09.md",
-      "round_id": "mem-v2",
-      "closure_task": "docs/implementation/tasks/mem/mem-v2-rebuild.md",
-      "scope": "Unify host allocators, heaps, arenas and pools with cross-domain memory resources, buffers/views, mappings/residency, resource pooling/stats and tensor-free lifetime packing; migrate provider adapters, consumers, delivery and documentation.",
-      "non_goals": "Tensor/KV/model policy, graph lifetime inference, backend kernels, Device/Stream/Event scheduling, file formats and asynchronous IO protocols, full backend rewrites, stable C++ ABI, Native FFI/C API and Formal certification.",
-      "baseline_commit": "e7b3a5f2f6bc90b194821c1777542c3c47a27c7b",
-      "candidate_commit": "9eda54f9b36bfb0792ecf1544dc39d7ac9682265",
-      "candidate_tree": "359c4832a91a498bb92e49b80766752a4ca9d9c6",
-      "end_commit": "4b6b9d581d62982ca01906576f51c56607459703",
-      "registry_anchor_commit": "f8cbff00f8df8a398537b98cdf4c73ea47abe9e6",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
+      "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
+      "round_id": "mem-v3-vm-factorization",
+      "closure_task": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
+      "scope": "Migrate mapping, residency, huge-page and guarded-stack ownership into one mem_vm factor while preserving the Mem-v2 storage semantics and natural hyle::mem product facade.",
+      "non_goals": "Reopening unrelated allocator/pool/buffer/planner algorithms, backend async policy, tensor or model policy, Platform host/thread/fs redesign beyond the required mechanism edges, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "f077a34c73fba624cbcfaedd2b5cf8dd31655847",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -682,48 +678,22 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v2.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/mem/mem-v2-rebuild.md",
-      "loc": {
-        "snapshot_commit": "9eda54f9b36bfb0792ecf1544dc39d7ac9682265",
-        "repository_code": 432497,
-        "self_with_tests": 109610,
-        "self_without_tests": 69085,
-        "module_implementation": 7653
-      },
-      "known_limitations": [
-        "P1 engineering PASS covers only four frozen W1-WIN same-contract workloads; it is not a claim that every Mem operation, platform or scale is fastest, nor a Formal certificate.",
-        "Mapping, CompositeBuffer and LifetimePlanner are signed by correctness, no-hidden-work and complexity/resource contracts where no qualified same-contract timing peer exists.",
-        "Multi-socket NUMA locality, end-to-end model loading and token throughput, cross-backend performance, KV/tensor/model policy and asynchronous queue/completion remain outside this round.",
-        "Native FFI/C API and stable C++ ABI are not admitted; current delivery is C++23 source, static SDK and shared SDK."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a Mem-owned ownership, lifetime, range, coherence, error, concurrency, OOM or API-usability defect.",
-        "A Mem public API/layout/algorithm, mimalloc or another direct dependency, provider seam, or source/static/shared delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material loss beyond the frozen 5% margin on a normal consumer workload.",
-        "A Graph lifetime adapter, multi-node locality, backend async route, KV/model policy or foreign-runtime slice is admitted through a separate capability decision.",
-        "The performance contract, peer, consumer provenance, machine, instrument or retained bundle changes while the current engineering claim must be renewed."
-      ],
-      "summary": "mem-v2 CLOSED：统一 storage foundation 的九项 FIX 已完成；三平台 correctness/sanitizer、三种 C++ 交付、真实 Host/CUDA/Vulkan provider、文档/红队及 W1-WIN 四项 5% P1 工程门全部通过，Formal 独立 PENDING。"
+      "summary": "mem-v3 REOPENED：Platform 三因子迁移揭示公开 mapping/storage 重复 owner 与 Mem dependency/layout 变化；仅登记定向 trigger，SCOPED/AUDITED 前不改产品。"
+    },
+    {
+      "module": "mem_vm",
+      "product_state": "QUEUED",
+      "summary": "已登记 mapping/residency/guarded-storage 内部 factor；尚未 SCOPED，不声称 target/API 可交付。"
     },
     {
       "module": "simd",
