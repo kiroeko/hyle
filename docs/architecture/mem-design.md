@@ -56,6 +56,28 @@ FiberStack。面向用户的 `hyle::mem` product facade 聚合两者；内部 co
 安装后消费由 `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)` + `hyle::mem` 表达；selected-component 的
 C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮蔽导出/传递依赖缺口。
 
+### 1.2 `mem_reclaim` 的产品边界与恢复协议
+
+Registry 当前把 `mem_reclaim` 记录为独立 `BLOCKED` factor。其 candidate 已有显式
+`ReclamationDomain`、move-only read guard、allocation-free intrusive retire record、非阻塞 reclaim、
+grace-period synchronize/drain 与计数观测；三平台 correctness、适用 sanitizer、exact-factor
+shared/static 和红队已通过。这些事实只证明候选机制存在，不使它成为 `hyle::mem` 用户能力。
+
+剩余问题不是继续补 API，而是同时取得两把产品钥匙：
+
+1. 锁定环境可按官方路线构建并资格化 Folly RCU same-contract peer；
+2. Container 独立 reopen card 或另一个已准入真实 consumer 授权冻结 migration/holdout。
+
+本轮在 `timer_queue` 当前 consumer provenance 完成有限裁决后立即检查这两个条件：先做 Container 并发 map
+生命周期的有界只读审计和 Folly 构建资格化；两者成立才从 `SCOPED` 开始 `RESUME`，完成 5% P1、
+具名 consumer、Mem product source/static/shared 和使用指南。任一条件不成立就保持 `BLOCKED`，不修改
+shipping Mem、不用手写 peer 或放宽门槛，也不阻塞后续模块。完整恢复条件和候选身份以
+[`module-status.json`](../implementation/module-status.json)及
+[`mem-reclaim-v1`](../implementation/tasks/mem/mem-reclaim-v1.md)为准。
+
+因此 Mem v3 的 `CLOSED` 与 `mem_reclaim` 的 `BLOCKED` 是两个并存事实：前者是当前可交付产品，后者是
+尚未准入 façade/SDK 的候选 factor。只有恢复轮通过后，才更新用户指南并裁决 Mem façade 是否聚合它。
+
 ## 2. 需求基线
 
 ### 2.1 HYLE 内部真实消费者
@@ -329,6 +351,9 @@ GrowableObjectPool/HugeMapping` 固定到上表的借用、arena、heap、block-
 mapping 心智；旧类型名已经删除，不留 deprecated alias。
 
 ## 11. 收口定义与重开边界
+
+本节裁决当前 shipping Mem façade；独立 `mem_reclaim` 不继承这些结论，也不反向使 Mem v3 自动重开。
+它只按 §1.2 和自己的 closure card 恢复。
 
 Mem 进入预发布冻结必须同时满足：
 

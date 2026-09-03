@@ -1,7 +1,9 @@
 # HYLE 架构方向与模块顺序
 
-本文只记录长期模块边界、依赖原则和审查顺序。当前状态、任务和历史结果分别见
-[implementation/status](../implementation/status.md) 与 [implementation/tasks](../implementation/tasks/README.md)。
+本文只记录长期模块边界、依赖原则和审查顺序。唯一当前状态见
+[`module-status.json`](../implementation/module-status.json)，任务和历史结果见
+[implementation/tasks](../implementation/tasks/README.md)。叙述性 status、architecture 或 task 都不能覆盖
+中央 registry 的状态。
 组件图的机器真相是 [`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake)；本页解释它，
 不另建一份可手工漂移的 manifest。
 
@@ -114,6 +116,25 @@ mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `me
 retire record 和 grace-period callback；在其性能门与真实 consumer migration 完成前，不进入 Mem façade，
 也不改变已经关闭的 Container/Obs。具体可交付状态只以 registry 与该 factor 的 closure card 为准。
 
+### 2.1 `mem_reclaim` 的有限恢复位置
+
+`mem_reclaim` 既不是当前 shipping Mem 的隐藏缺口，也不能等到所有上层模块结束后再遗忘处理。本轮
+质因数施工按以下有限协议推进：
+
+1. 先完成 `timer_queue` 对当前 Sched consumer provenance 的有限裁决；若变动与冻结 timer lifecycle
+   无关，只按统一仪器规则记录 non-material renewal，不默认重开产品；
+2. 随后只读审计 Container 并发 map 的 table publication/rehash 生命周期，判断它是否仍是自然、可冻结的
+   reclamation consumer；这不是提前重构整个 Container；
+3. 同时尝试在锁定环境中通过官方构建路线资格化 Folly RCU same-contract peer，不手写局部 peer；
+4. 只有 consumer owner 授权 migration/holdout 且 Folly peer 可资格化这两个条件同时成立，才为
+   `mem_reclaim` 新建 `RESUME` round，并从 `SCOPED` 重新进入；随后完成 5% P1、具名 consumer、
+   source/static/shared 产品交付和使用指南；
+5. 任一条件不成立时维持 registry 的 `BLOCKED`，停止改产品和 benchmark，继续 Obs、Math/SIMD、Container、
+   Util-runtime、Sched、IO 的正常轮次。后续完整 Container 轮若产生合法 consumer trigger，再按同一条件恢复。
+
+因此该 factor 的最早处理点是 **Timer-queue 当前来源裁决之后、Obs 之前的有界恢复检查**；是否真正进入
+实现轮由 registry 已记录的两个恢复条件决定。Shipping `hyle::mem` 不因这次检查重开。
+
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol
@@ -166,6 +187,10 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 这一遍必须先完成每个问题域的 ggml 能力、llama.cpp 真实需要、成熟库通用能力、定义性能力和现有 HYLE
 承诺的超集，再统一做跨域去重、归属和质因数分解。不得边统计边实现，也不得以当前依赖冲突删除能力。
 新组件图完成后，实际施工顺序只由它的拓扑序决定。
+
+上述列表是能力统计顺序，不是状态表。只读新方法回放可以给出 `CONFIRMED`、`METHOD_GAP` 或
+`PRODUCT_TRIGGER` 结论，但这些是审计事实，不是第二套产品状态；是否 `CLOSED/BLOCKED/QUEUED`、能否
+进入产品修改，始终由中央 registry 与其所指 closure card 裁决。
 
 SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 边界仍需
 独立裁决。Compute 与 Graph 保持 `QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理

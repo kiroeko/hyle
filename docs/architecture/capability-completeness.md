@@ -149,6 +149,11 @@ Mem API，也不能沿用旧版性能证据。
 应记为 `METHOD_GAP`；发现真实缺失旅程、错误 owner、半项公开能力或更好的复杂度档时，才形成
 `PRODUCT_TRIGGER`。这样既不让旧结论永久免检，也不把标准升级变成全库无限返工。
 
+`CONFIRMED/METHOD_GAP/PRODUCT_TRIGGER` 只描述一次具名、定界、只读回放的结果，不是模块生命周期
+状态。`CLOSED/BLOCKED/QUEUED` 的唯一真相仍是 `module-status.json`；回放只有形成合法 trigger 并建立
+新 closure card 后，才授权改变产品。不得另维护一张“按新方法完成的模块”状态表，也不得把历史
+`CLOSED` 自动写成 `CONFIRMED`。推进顺序可以写入 roadmap，但每一步开始前仍需读取 registry。
+
 ## 防止审计无限化
 
 完整性不是逐行复刻所有参考库。每个能力族最多预选两个 strong peers；先枚举公共任务和算法档，再只读
