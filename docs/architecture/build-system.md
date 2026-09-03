@@ -65,10 +65,12 @@
 
 ### 双层投影合同
 
-Stage C 能力账本中的 30 项是**候选 semantic factor**；当前只有 21 个已经同时进入
-`module-status.json`、中央 manifest 和实际 target，才构成源码 ownership、测试和 HYLE 直接依赖的
-真实粒度。其余候选在进入 `SCOPED/AUDITED` 前没有 target、依赖或 product-root 承诺。当前 21 个
-factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。双层投影把旧
+Stage C 能力账本中的 30 项是**候选 semantic factor**。当前有 25 个 identity 同时进入
+`module-status.json` 与中央 manifest：21 个已经拥有实际 target、源码 ownership、测试和 HYLE 直接
+依赖，`io_tls/io_http/io_http2/io_transfer` 4 个则只是 `QUEUED` 身份保留项。保留项在自己的
+`SCOPED/AUDITED` 轮次前没有 target、依赖、公开头或 product-root 承诺，也不会被 `all` 选择。
+其余候选尚未登记。所有 factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。
+双层投影把旧
 “component”承担的四种含义拆开：
 
 | layer | owns | may depend on | consumer-visible contract |
@@ -158,6 +160,11 @@ io          -> PUBLIC core mem container time timer_queue sched
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
+
+`io_tls`、`io_http`、`io_http2` 与 `io_transfer` 已登记为 `QUEUED`，但不属于上述可构建图。现有机器 ID
+`io` 在后续拆分中承载 IO core（completion/file/net/IPC）语义，避免为概念改名制造状态身份迁移；
+`hyle::io` façade 在各因子分别收口前仍只投影现有 `io` 根。保留项禁止 target metadata 和产品根，
+`HYLE_DEV_FACTORS=all` 只选择 `HYLE_IMPLEMENTED_COMPONENTS`，显式选择保留项会以可诊断错误失败。
 
 `PUBLIC` 表示消费者编译或链接本 factor 时也需要该 factor 依赖；`PRIVATE` 表示只服务本 factor 实现。
 `BUILD_PRIVATE` 保留给确有真实 `$<BUILD_INTERFACE:...>` target 边、但不扩大安装闭包的 HYLE 内部
@@ -398,9 +405,12 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 | 手工 locked feature/package | 锁定归档、可选适配器、static/shared SDK 和 trace smoke |
 | 手工/发布证据 | sanitizer、真实 TLS/CUDA/Vulkan 设备、SVE/RVV 运行和性能认证 |
 
-当前仍沿用历史内部变量名 `HYLE_KNOWN_COMPONENTS` 存放 factor 构造序；基线遍历它，所以新 factor
-自动进入 all-product build，开启测试时缺少 factor 测试目录会机械失败。该变量不是用户 component
-catalog。PR 与 main push 都故意只保留高信号 Linux 门以控制额度；Windows、macOS、
+当前仍沿用历史内部变量名 `HYLE_KNOWN_COMPONENTS` 存放全部已登记 factor identity 与拓扑序，另由
+`HYLE_IMPLEMENTED_COMPONENTS` 保存已有 target 的集合。product `all` 只取 façade roots；maintainer
+`HYLE_DEV_FACTORS=all` 只取 implemented 集合，因此 `QUEUED` 身份保留项不会要求虚构源码或测试目录。
+某个因子从 `QUEUED` 进入实际施工后，只有在真实 target/ownership/测试合同就位并移除 manifest 的
+`QUEUED` 标记后，才进入维护者 all-factor 构建。两者都不是用户 component catalog。PR 与 main push
+都故意只保留高信号 Linux 门以控制额度；Windows、macOS、
 交叉编译、完整交付和 locked feature 由 `workflow_dispatch` 展开。package smoke 自动发现安装消费
 样例。更严格的 production roots 仍是显式列表，只能在对应模块通过收口后扩展。CI 绿灯只覆盖
 该 job 明示的形状，不能外推硬件、性能或未运行配置。

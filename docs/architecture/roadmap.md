@@ -12,9 +12,11 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同登记 **21 个真实 factor**，并从中投影 **14 个用户产品 façade**；只有进入
-`module-status.json`、中央组件图和实际 target 的 factor 才算已经落地。Build/package v7 已实现这套
-双层投影。内部 factor 只能依赖 factor，用户只需选择产品域；详见[构建系统](build-system.md)。
+CMake target。当前机器合同登记 **25 个 factor identity**：其中 **21 个已有实现/target**，另有
+`io_tls/io_http/io_http2/io_transfer` **4 个 `QUEUED` 身份保留项**；它们尚无源码 ownership、依赖、
+target 或产品根。中央 manifest 从 21 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
+已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
+产品域；详见[构建系统](build-system.md)。
 
 ## 1. 分层原则
 
@@ -35,7 +37,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节表格是**当前 21-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+本节第一张表是**当前 21-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
 逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
@@ -67,7 +69,17 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
-用户看到的不是上述 21 个 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
+另有以下机器登记项。它们只是为独立施工预留稳定 ID，不在当前依赖图或任何产品闭包中；只有自己的
+closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真实 target 后，才可移除 `QUEUED`：
+
+| Reserved factor ID | Intended semantic owner | Current build contract |
+|---|---|---|
+| io_tls | TLS transport/configuration/session lifecycle | not selectable; no target |
+| io_http | HTTP/1 framing/client-server semantics | not selectable; no target |
+| io_http2 | HTTP/2 connection/stream semantics | not selectable; no target |
+| io_transfer | bounded model/artifact transfer workflow | not selectable; no target |
+
+用户看到的不是上述内部 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
 再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
 
 | Product façade | Factor roots |
@@ -87,9 +99,9 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | compute | compute |
 | graph | graph |
 
-因此，“真正的模块”按开发、源码 ownership、状态和依赖计算是 21 个 factor；按普通用户可选择的问题域
-计算是 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，外部依赖 target 与 trace/testing
-target 是 build-only mechanism，二者都不增加产品或 factor 数量。
+因此，按状态机可独立施工的是 25 个已登记 factor identity；其中当前真正拥有源码、target 与可验证
+依赖边的是 21 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
+外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
 声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
 SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only

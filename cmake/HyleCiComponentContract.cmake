@@ -517,6 +517,47 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
 endif()
 unset(_intrusive_factor_build)
 
+# A newly registered factor must remain a non-buildable identity reservation
+# until its own closure round supplies real ownership, dependencies and a
+# target. Maintainer `all` selects implemented factors only; an explicit typo-
+# resistant request for a known reservation fails for the lifecycle reason.
+_hyle_contract_run("maintainer all excludes queued factor reservations" TRUE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_hyle_contract_root}/implemented-factors-all"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release
+  -DHYLE_DEV_FACTORS=all
+  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_INSTALL=OFF
+  -DHYLE_IO_TLS=OFF
+  -DHYLE_IO_HTTP2=OFF
+  -DHYLE_COMPUTE_CUDA=OFF
+  -DHYLE_COMPUTE_VULKAN=OFF
+  -DHYLE_COMPUTE_GGML=OFF)
+if(HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "resolved='[^']*(io_tls|io_http|io_http2|io_transfer)")
+  message(FATAL_ERROR
+    "maintainer all selected a QUEUED factor reservation:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+_hyle_contract_run("queued factor has no build target" FALSE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_hyle_contract_root}/queued-factor-request"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release
+  -DHYLE_DEV_FACTORS=io_tls
+  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_INSTALL=OFF)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "factor 'io_tls'.*registered but QUEUED" OR
+   NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "target yet")
+  message(FATAL_ERROR
+    "queued factor request failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 # The user-facing Time product aggregates a host-clock factor and the
 # header-only timer_queue factor. The host artifact itself stays independent
 # from intrusive storage, while the timer factor declares every header edge.
@@ -606,12 +647,12 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _sanitizer_cached STREQUAL \"off\" OR NOT _sanitizer_effective STREQUAL \"off\")\n"
 "  message(FATAL_ERROR \"HYLE_SANITIZER cache/effective split: cache='\${_sanitizer_cached}', effective='\${_sanitizer_effective}'\")\n"
 "endif()\n"
-"foreach(_required_product IN ITEMS core error platform mem container)\n"
+"foreach(_required_product IN ITEMS core error container)\n"
 "  if(NOT TARGET hyle::\${_required_product})\n"
 "    message(FATAL_ERROR \"missing selected product hyle::\${_required_product}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_required_factor IN ITEMS core error container_intrusive time platform util_core mem container)\n"
+"foreach(_required_factor IN ITEMS core container_intrusive error platform mem_reclaim mem container)\n"
 "  if(NOT TARGET hyle_\${_required_factor})\n"
 "    message(FATAL_ERROR \"missing selected factor hyle_\${_required_factor}\")\n"
 "  endif()\n"
@@ -621,7 +662,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"internal factor leaked as hyle::\${_internal_alias}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_forbidden IN ITEMS time io compute graph simd)\n"
+"foreach(_forbidden IN ITEMS time platform mem obs simd math util sched io compute graph)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"

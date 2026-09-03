@@ -1138,6 +1138,26 @@
       "summary": "现有实现只作输入；尚未启动 v1 收口。"
     },
     {
+      "module": "io_tls",
+      "product_state": "QUEUED",
+      "summary": "IO/TLS 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+    },
+    {
+      "module": "io_http",
+      "product_state": "QUEUED",
+      "summary": "IO/HTTP 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+    },
+    {
+      "module": "io_http2",
+      "product_state": "QUEUED",
+      "summary": "IO/HTTP2 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+    },
+    {
+      "module": "io_transfer",
+      "product_state": "QUEUED",
+      "summary": "IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+    },
+    {
       "module": "compute",
       "product_state": "QUEUED",
       "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"

@@ -16,7 +16,7 @@ set(_HYLE_SPLIT_PUBLIC_HEADERS "")
 set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS "")
 
 function(_hyle_declare_component name)
-  cmake_parse_arguments(ARG "TRACE" ""
+  cmake_parse_arguments(ARG "TRACE;QUEUED" ""
     "PRIVATE_DEPS;PUBLIC_DEPS;PUBLIC_TYPE_DEPS;PRIVATE_BUILD_DEPS;SPLIT_PUBLIC_HEADERS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
@@ -28,6 +28,15 @@ function(_hyle_declare_component name)
     message(FATAL_ERROR
       "HYLE component '${name}' has manifest keywords missing values: "
       "${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
+  if(ARG_QUEUED)
+    if(ARG_TRACE OR ARG_PRIVATE_DEPS OR ARG_PUBLIC_DEPS OR
+       ARG_PUBLIC_TYPE_DEPS OR ARG_PRIVATE_BUILD_DEPS OR
+       ARG_SPLIT_PUBLIC_HEADERS)
+      message(FATAL_ERROR
+        "HYLE QUEUED component '${name}' is an identity reservation only and "
+        "cannot declare target metadata before its own closure round")
+    endif()
   endif()
   if(name IN_LIST HYLE_KNOWN_COMPONENTS)
     message(FATAL_ERROR "HYLE component '${name}' is declared more than once")
@@ -93,6 +102,7 @@ function(_hyle_declare_component name)
       "${_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_DEPS_${_component_upper} "${_all}" PARENT_SCOPE)
   set(_HYLE_TRACE_${_component_upper} "${ARG_TRACE}" PARENT_SCOPE)
+  set(_HYLE_QUEUED_${_component_upper} "${ARG_QUEUED}" PARENT_SCOPE)
   set(_HYLE_SPLIT_PUBLIC_HEADERS
       "${_all_split_public_headers}" PARENT_SCOPE)
   set(_HYLE_SPLIT_PUBLIC_HEADER_OWNERS
@@ -100,9 +110,16 @@ function(_hyle_declare_component name)
   set(_known_components ${HYLE_KNOWN_COMPONENTS})
   list(APPEND _known_components "${name}")
   set(HYLE_KNOWN_COMPONENTS "${_known_components}" PARENT_SCOPE)
+  if(NOT ARG_QUEUED)
+    set(_implemented_components ${HYLE_IMPLEMENTED_COMPONENTS})
+    list(APPEND _implemented_components "${name}")
+    set(HYLE_IMPLEMENTED_COMPONENTS
+        "${_implemented_components}" PARENT_SCOPE)
+  endif()
 endfunction()
 
 set(HYLE_KNOWN_COMPONENTS "")
+set(HYLE_IMPLEMENTED_COMPONENTS "")
 
 # Declaration order is construction order and must remain topological.  The
 # visibility here is the visibility of the real hyle_<module> target edge.
@@ -188,6 +205,14 @@ _hyle_declare_component(sched
 _hyle_declare_component(io
   TRACE
   PUBLIC_DEPS core mem container time timer_queue sched)
+# These names reserve independently closable IO factors before product work
+# starts. QUEUED reservations deliberately have no source directory, target,
+# dependencies, public headers or product-root membership. Their own closure
+# rounds must remove QUEUED only after those contracts exist.
+_hyle_declare_component(io_tls QUEUED)
+_hyle_declare_component(io_http QUEUED)
+_hyle_declare_component(io_http2 QUEUED)
+_hyle_declare_component(io_transfer QUEUED)
 # compute publicly exposes error/mem and sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
@@ -227,6 +252,12 @@ function(_hyle_declare_product name)
     if(NOT _factor IN_LIST HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
         "HYLE product '${name}' names unknown factor '${_factor}'")
+    endif()
+    string(TOUPPER "${_factor}" _factor_upper)
+    if(_HYLE_QUEUED_${_factor_upper})
+      message(FATAL_ERROR
+        "HYLE product '${name}' cannot name QUEUED factor '${_factor}'; "
+        "implement and audit the factor before adding it to a product facade")
     endif()
   endforeach()
 
@@ -305,7 +336,7 @@ if("all" IN_LIST _hyle_requested)
       "use 'all' alone or list only the requested product roots")
   endif()
   if(_hyle_selection_mode STREQUAL "factor")
-    set(_hyle_requested_roots ${HYLE_KNOWN_COMPONENTS})
+    set(_hyle_requested_roots ${HYLE_IMPLEMENTED_COMPONENTS})
     set(_hyle_requested_products "")
   else()
     set(_hyle_requested_products ${HYLE_KNOWN_PRODUCTS})
@@ -339,6 +370,12 @@ else()
           "Unknown HYLE internal factor '${_factor}'. Known factors: "
           "${_hyle_known_text}")
       endif()
+      string(TOUPPER "${_factor}" _factor_upper)
+      if(_HYLE_QUEUED_${_factor_upper})
+        message(FATAL_ERROR
+          "HYLE internal factor '${_factor}' is registered but QUEUED and has "
+          "no build target yet")
+      endif()
       list(APPEND _hyle_requested_roots "${_factor}")
     endforeach()
   else()
@@ -364,6 +401,11 @@ endif()
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
   list(FIND HYLE_KNOWN_COMPONENTS "${_component}" _component_index)
+  if(_HYLE_QUEUED_${_component_upper} AND
+     _HYLE_DEPS_${_component_upper})
+    message(FATAL_ERROR
+      "HYLE QUEUED component '${_component}' cannot declare dependencies")
+  endif()
   foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
     if(NOT _dependency IN_LIST HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
@@ -374,6 +416,12 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
         "HYLE component order is not topological: '${_component}' depends on "
         "'${_dependency}', which is not listed before it")
+    endif()
+    string(TOUPPER "${_dependency}" _dependency_upper)
+    if(_HYLE_QUEUED_${_dependency_upper})
+      message(FATAL_ERROR
+        "HYLE implemented component '${_component}' cannot depend on QUEUED "
+        "component '${_dependency}'")
     endif()
   endforeach()
 endforeach()
