@@ -15,8 +15,10 @@
 #  include <bcrypt.h>
 #elif HYLE_OS_LINUX
 #  include <sys/random.h>
+#elif HYLE_OS_MACOS
+#  include <sys/random.h>
 #else
-#  include <unistd.h>
+#  error "secure_random is not implemented for this target OS"
 #endif
 
 namespace hyle::platform {
