@@ -1,6 +1,7 @@
 # Mem VM v1：mapping、residency 与 guarded storage factor
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Registration（`QUEUED`）
 
@@ -86,3 +87,20 @@ storage 超集与自然 fragment route 完整；inline native owner 与 O(1)/O(p
 通过；无公开 C/Native FFI；factor 精确构建但用户只选 `hyle::mem`；guide 已覆盖 truncate、residency
 quota、共享名、NUMA fallback、guard page 与外部同步陷阱。VM01--VM06 全部 `COMPLETE`，七项 aggregate
 gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本 factor **`CLOSED`**：VM01--VM06 与七项 aggregate gate 全部通过。已知限制是 backing lifetime/
+truncate 与 byte concurrency 由调用者负责，populate/lock 是显式 O(pages) 且受 OS quota，fragment 使用
+多个 owner，NUMA/huge/guard 受平台能力约束；P1 只覆盖 W1-WIN 两个冻结 loader journey。Mem VM 没有
+第三方实现、Native FFI 或稳定 C++ ABI，base Mem 的 mimalloc 不算入本 factor。
+
+只有真实 consumer 的 VM/storage correctness、lifetime、易用性缺陷，支持 OS 击穿合同，公开 API/
+layout/owner/dependency/delivery 改变，material 正常负载回归，或正式准入且现有 owner 无法表达的共同
+storage journey 可以重开。
+
+immutable candidate 四项 LOC 为 `434,612 / 110,971 / 70,261 / 1,215`，由
+`loc-report.py --module mem_vm --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check`
+重算通过。`1,215` 只计 factor-owned `src/mem_vm`；共享公开头统一计入 Mem conventional boundary。
+前态 snapshot/hash 与 Mem 主 receipt 相同；后续 registry 绑定本 terminal receipt 的真实提交与首个
+`CLOSED` anchor。

@@ -1,6 +1,7 @@
 # Platform v3：推理 host 能力补全与质因数迁移
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Reopen evidence（`REOPENED`）
 
@@ -255,3 +256,55 @@ engineering-performance 七门全部 `PASS`。`CANDIDATE -> VERIFIED` 前态 reg
 `C:\public\project-hyle\_validation\platform-v3\module-status-before-verified.json`，SHA-256
 `94928BBC6B3FA987F64DDCC748CB8B3C5E15E775FC8322FEE8D734924350FC8D`。当前只提升为
 `VERIFIED`；terminal receipt、限制、reopen triggers 与不可变 LOC 在下一步单独登记，不再修改产品。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。十一票 `MUST/FIX` 全部 `COMPLETE`，三因子图和唯一 storage
+owner 已落地；scope、architecture、correctness、delivery、usability/docs、red-team 与
+engineering-performance 七门全部 `PASS`，没有 `PARTIAL + KEEP`、未执行的适用门或未命名 blocker。
+Formal 保持独立 `PENDING`，不冒充工程收口门。
+
+已知限制：
+
+- process topology 和 host-memory 是调用时 process-view snapshot；权限、cpuset、热插拔或 OS 信息缺失
+  可以使字段 unknown/unsupported，调用者不能把旧快照当永久机器真相；
+- Platform 只提供 host/OS facts 与 mechanisms，不聚合 GPU/device budget，不选择 kernel、worker placement、
+  async I/O 或 backend policy；这些仍由 Compute/SIMD/Sched/IO/引擎拥有；
+- Parker 是一个 atomic word 的 single-waiter mailbox mechanism，不是 counting semaphore 或 multi-waiter
+  fairness primitive；thread affinity/ISA state 改变仍需调用者保存、恢复并协调线程生命周期；
+- filesystem factor 是同步、one-cursor owner；lexical Path、watch、positional/vectored/direct/async I/O、
+  process/JIT/plugin policy 不在本轮；
+- P1 只证明 W1-WIN 上冻结 host/Parker/warmed-file 三个同语义合同的 5% NI；不声明所有 topology、OS、
+  文件系统、线程姿势或端到端推理的 universal SOTA，Formal 仍待独立发布。
+
+只有下列新事实可以重开受影响的 Platform factor：
+
+1. 具名真实 consumer 复现 CPU/topology/memory/entropy/thread/wait/fs correctness、security、ownership 或
+   C++ 易用性缺陷，或证明缺少一个已准入的共同 host mechanism；
+2. 支持 OS/compiler/CPU topology 击穿 snapshot、ISA state、affinity restore、wait/wake、UTF-8 fs 或
+   failure taxonomy 合同；
+3. 公开 API/layout、factor dependency、header owner、正常成本、source/static/shared delivery 或锁定 OS
+   mechanism materially 改变；
+4. mature same-contract peer 证明更优复杂度档，或正常 consumer profile 复现超过 material margin 的回归；
+5. 当前 routed 的 device/process/JIT/async journey 被正式准入，并证明存在应由 Platform 拥有的共同事实
+   或 mechanism，而不是上层 policy。
+
+新 peer/API 数、命名偏好、LOC、单次微观点值、未改变产品输入的下载位置或无新事实的“再看一遍”不
+构成重开条件。
+
+Terminal receipt：
+
+- product candidate/tree：`b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+  `f808df6fcbd0b5549777e0c6939240a3feab9512`；
+- final verification evidence commit：`10fbb9ef`；P1 harness source 为 `28987e31`；Container 测试隔离
+  evidence fix 为 `f46e0ae6`，三者均未改变候选 Platform 产品 boundary；
+- 四项 LOC 由
+  `python scripts/loc-report.py --module platform --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check --json`
+  从 immutable candidate 重算并通过 self-check：全库 `434,612`、自实现含测试 `110,971`、自实现不含
+  测试 `70,261`、Platform 实现 `4,806`；该 conventional boundary 统一计入
+  `include/hyle/platform` 与 `src/platform`；
+- `VERIFIED -> CLOSED` 前态 snapshot 位于
+  `C:\public\project-hyle\_validation\platform-v3\module-status-before-closed.json`，SHA-256
+  `BD58D0F5CECAF1067330E4731B2F67CC2F090B609F9AAFD41B1AFCB1A3131B30`；
+- 后续中央 registry 以本 receipt 的实际提交 hash 登记 `end_commit`，再以第一个保存 `CLOSED` state/
+  candidate 的提交登记 `registry_anchor_commit`；本页不伪造自身尚未知的 hash。

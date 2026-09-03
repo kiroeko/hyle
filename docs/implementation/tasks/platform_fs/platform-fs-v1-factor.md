@@ -1,6 +1,7 @@
 # Platform fs v1：同步 namespace 与 FileHandle 因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（`SCOPED`）
 
@@ -98,3 +99,20 @@ namespace/FileHandle/temp/replace 能力完整，lexical path 与 async/direct/v
 公开 C/Native FFI 或稳定 C++ ABI；factor 精确构建及 façade 三交付全部通过；普通用户只选择
 `hyle::platform`，guide 明确 UTF-8、short transfer、单 cursor、symlink/race 与 durability 边界。F01--F02/
 D01 全部 `COMPLETE`，七项 aggregate gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本 factor **`CLOSED`**：F01--F02/D01、七项 aggregate gate 与所有适用验证均通过。已知限制是同步
+one-cursor owner、调用者负责并发和 symlink/race threat model，且 P1 只覆盖 W1-WIN warm regular-file
+完整读取；lexical Path、watch、positional/vectored/direct/async I/O 与 mapping storage 有各自 owner，
+没有 Native FFI 或稳定 C++ ABI 承诺。
+
+只有真实 consumer 的 fs correctness/security/ownership/易用性缺陷、支持 OS 击穿 UTF-8/offset/short
+transfer/durability 合同、公开 API/layout/dependency/delivery 改变、material 正常负载回归，或正式准入
+一个应由同步 fs 拥有的共同 mechanism 才能重开。
+
+immutable candidate 的四项 LOC 为 `434,612 / 110,971 / 70,261 / 2,061`，由
+`loc-report.py --module platform_fs --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check`
+重算通过。`2,061` 是 factor-owned `src/platform_fs`；共享公开头计入 Platform conventional boundary。
+前态 snapshot/hash 与 Platform 主 receipt 相同；后续 registry 绑定本 terminal receipt 的真实提交与首个
+`CLOSED` anchor。

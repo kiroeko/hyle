@@ -1,6 +1,7 @@
 # Platform thread v1：native thread、current state 与 address wait 因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（`SCOPED`）
 
@@ -99,3 +100,20 @@ current-thread scalable/matrix state 与 address wait/Parker 均完整，pool/ta
 公开 Native FFI/C ABI 为 `N/A/CLEAN`；内部 factor 可精确构建但普通用户只选择 `hyle::platform`；自然
 C++ API 与单 waiter、外部同步、显式 restore 等陷阱已写入 guide。T01--T03/D01 全部 `COMPLETE`，七项
 aggregate gate 全为 `PASS`，无 blocker；当前进入 `VERIFIED`，不在本节提前写 terminal verdict。
+
+## Closure decision 与 terminal receipt
+
+本 factor **`CLOSED`**：T01--T03/D01、七项 aggregate gate 与所有适用验证均通过。已知限制是
+single-waiter Parker、调用者负责 affinity/state restore 和外部生命周期协调，且 P1 只覆盖 W1-WIN
+persistent cross-physical-core mailbox；thread pool、task/cancel/placement 与多 waiter policy 仍由 Sched
+拥有，没有 Native FFI 或稳定 C++ ABI 承诺。
+
+只有真实 consumer 的 thread/wait/state correctness 或易用性缺陷、支持平台/编译器击穿机制、公开
+API/layout/dependency/delivery 改变、material 正常负载回归或 formally admitted 的共同 thread mechanism
+可以重开；API 数、单点 benchmark 或命名偏好不能。
+
+immutable candidate 的四项 LOC 为 `434,612 / 110,971 / 70,261 / 833`，由
+`loc-report.py --module platform_thread --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check`
+重算通过。`833` 是 factor-owned `src/platform_thread`；共享公开头统一计入 Platform conventional
+boundary，不能把两个数相加冒充去重产品总量。前态 snapshot/hash 与 Platform 主 receipt 相同；后续
+registry 绑定本 terminal receipt 的真实提交与首个 `CLOSED` anchor。

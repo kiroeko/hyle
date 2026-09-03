@@ -1,6 +1,7 @@
 # Mem v3：VM/storage owner 定向迁移
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Reopen evidence（`REOPENED`）
 
@@ -149,3 +150,50 @@ engineering-performance 七门全部 `PASS`。`CANDIDATE -> VERIFIED` 使用与 
 snapshot：`C:\public\project-hyle\_validation\platform-v3\module-status-before-verified.json`，SHA-256
 `94928BBC6B3FA987F64DDCC748CB8B3C5E15E775FC8322FEE8D734924350FC8D`。当前只提升为
 `VERIFIED`；terminal receipt 与 LOC 在下一步单独登记。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。VM01--VM06、唯一 storage ownership 与所有适用工程门已
+`COMPLETE/PASS`；没有重开或偷偷改写 Mem-v2 未触及的 allocator/pool/resource/buffer/planner 产品
+合同。Formal 保持 `PENDING`。
+
+已知限制：
+
+- mapping owner 要求 backing file 在 view lifetime 内不被不安全 truncate；byte access 的 data race、
+  control-operation sequencing 与 shared-name 权限仍由调用者协调；
+- `populate` 是显式同步 O(pages) 触页，residency/lock 受 OS quota 与调度影响；ordinary map 不隐式
+  prefault，fragment 由多个 owner 表达而非一个 holey mapping；
+- huge page、NUMA 与 guarded stack 受 OS/hardware/privilege 能力约束；单节点测试不证明跨 socket
+  remote/local 带宽；
+- base Mem 仍直接依赖锁定 mimalloc，升级若影响算法、ABI/codegen、license 或交付必须定向重开；
+  Mem VM 自身不引入该依赖；
+- 当前 P1 只证明 W1-WIN 冻结 mapping 与 progressive-residency loader journeys 的 5% NI，不续签所有
+  Mem-v2 family、不比较 async/direct I/O，也不声明端到端 token latency 或 universal SOTA。
+
+只有下列新事实可以重开 Mem/Mem VM 的受影响部分：
+
+1. 具名真实 consumer 复现 mapping/residency/shared/huge/NUMA/guarded storage 的 correctness、security、
+   lifetime、OOM/failure 或 C++ 易用性缺陷；
+2. 支持 OS/compiler 击穿 offset/range/EOF/move/reset/populate/lock/flush/advice/guard 合同；
+3. public API/layout、唯一 owner、factor dependency、正常成本或 source/static/shared delivery materially
+   改变，或 mimalloc/Platform 依赖改变实际产品语义；
+4. mature same-contract peer 证明更优复杂度档，或真实 loader/scheduler profile 复现 material regression；
+5. async/direct/backend policy 或 sparse/holey storage 被正式准入，并证明当前多个自然 owner 无法表达
+   共同 Mem-owned journey。
+
+新 API 数、单次页缓存点值、命名偏好、LOC、未改变产品输入的下载位置或无新事实复检不构成重开。
+
+Terminal receipt：
+
+- product candidate/tree：`b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+  `f808df6fcbd0b5549777e0c6939240a3feab9512`；final verification evidence commit 为 `10fbb9ef`，
+  P1 harness source 为 `28987e31`；
+- immutable candidate 的四项 LOC 由
+  `python scripts/loc-report.py --module mem --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check --json`
+  重算通过：全库 `434,612`、自实现含测试 `110,971`、自实现不含测试 `70,261`、Mem conventional
+  boundary `7,392`；该数统一计入 `include/hyle/mem` 与 `src/mem`；
+- `VERIFIED -> CLOSED` 前态 snapshot 位于
+  `C:\public\project-hyle\_validation\platform-v3\module-status-before-closed.json`，SHA-256
+  `BD58D0F5CECAF1067330E4731B2F67CC2F090B609F9AAFD41B1AFCB1A3131B30`；
+- 后续 registry 用本 receipt 的实际提交 hash 登记 end，再用第一个真实保存 `CLOSED` state/candidate
+  的提交登记 anchor；本页不写不可实现的自引用 hash。
