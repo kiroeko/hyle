@@ -306,5 +306,9 @@ Terminal receipt：
 - `VERIFIED -> CLOSED` 前态 snapshot 位于
   `C:\public\project-hyle\_validation\platform-v3\module-status-before-closed.json`，SHA-256
   `BD58D0F5CECAF1067330E4731B2F67CC2F090B609F9AAFD41B1AFCB1A3131B30`；
-- 后续中央 registry 以本 receipt 的实际提交 hash 登记 `end_commit`，再以第一个保存 `CLOSED` state/
-  candidate 的提交登记 `registry_anchor_commit`；本页不伪造自身尚未知的 hash。
+- end receipt commit：`865413af2255cc58061943b556efe7d98d39a7ac`；registry anchor commit：
+  `9c18057bc9e895558594f2b7f61cfeaafefc6548`，后者是第一个实际保存五组件 `CLOSED` state、candidate、
+  terminal fields 与人读投影的中央快照；本 evidence-only 校准不改变产品、状态或 verdict；
+- anchor 校准前态 snapshot 位于
+  `C:\public\project-hyle\_validation\platform-v3\module-status-before-anchor.json`，SHA-256
+  `7946752F902F797CFA17A9C6C5A9E698827AFD71F656D47CC1AEE9EC8F3B435D`。

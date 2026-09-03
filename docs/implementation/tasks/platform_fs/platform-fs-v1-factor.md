@@ -114,5 +114,6 @@ transfer/durability 合同、公开 API/layout/dependency/delivery 改变、mate
 immutable candidate 的四项 LOC 为 `434,612 / 110,971 / 70,261 / 2,061`，由
 `loc-report.py --module platform_fs --commit b1a526d6fdb05b6bb42c4cb041788959e74511de --self-check`
 重算通过。`2,061` 是 factor-owned `src/platform_fs`；共享公开头计入 Platform conventional boundary。
-前态 snapshot/hash 与 Platform 主 receipt 相同；后续 registry 绑定本 terminal receipt 的真实提交与首个
-`CLOSED` anchor。
+前态 snapshot/hash 与 Platform 主 receipt 相同；registry 已绑定 terminal receipt
+`865413af2255cc58061943b556efe7d98d39a7ac` 与首个实际保存 `CLOSED` state/candidate 的 anchor
+`9c18057bc9e895558594f2b7f61cfeaafefc6548`；本次 evidence-only 校准不改变产品或 verdict。

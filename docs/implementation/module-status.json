@@ -526,7 +526,7 @@
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -588,7 +588,7 @@
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -649,7 +649,7 @@
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -777,7 +777,7 @@
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -840,7 +840,7 @@
     "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
     "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
     "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
