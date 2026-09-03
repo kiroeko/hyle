@@ -130,7 +130,8 @@ if(HYLE_BENCH_FOLLY)
   if(HYLE_FOLLY_PREFIX STREQUAL "")
     get_filename_component(_hyle_folly_parent "${HYLE_FOLLY_DIR}" DIRECTORY)
     set(HYLE_FOLLY_PREFIX
-      "${_hyle_folly_parent}/folly-vcpkg-prefix/x64-windows")
+      "${_hyle_folly_parent}/folly-vcpkg-prefix/x64-windows"
+      CACHE PATH "prepared Folly package prefix" FORCE)
     unset(_hyle_folly_parent)
   endif()
   cmake_path(ABSOLUTE_PATH HYLE_FOLLY_PREFIX NORMALIZE)
