@@ -167,6 +167,14 @@ protocol；升级或 ISA 路由后它可以改变。
 - `ShardedQueue` 的 hint 必须是 caller 稳定的 producer 身份，不是随机数。
 - work-stealing 类型区分 owner 端和 thief 端；不要让多个线程调用 owner-only 操作。
 - concurrent map 的回调/guard 决定引用有效期；不要把内部 value pointer 带出保护范围。
+- `ConcurrentFlatHashMap` 适合不要求 value 地址跨 grow 稳定的紧凑 registry；
+  `ConcurrentNodeHashMap` 的 node 在 accessor guard 内跨 rehash 保持稳定，但不提供无 guard 的永久引用。
+- `ConcurrentNodeHashMap` 用析构前保留旧 bucket arrays 换取 lookup 不进入全局 reclamation domain。
+  bucket 容量按二次幂增长，retired bucket storage 的几何和小于当前 array；强内存预算场景应在并发阶段前
+  `reserve()` 到预计容量。持续增长且必须及时归还旧 table 的应用目前没有 shipping HYLE 路线，不要
+  把 `mem_reclaim` 开发 factor 当作已交付能力。
+- `reserve/clear/for_each` 是 management operation；不要在同一线程仍持有该 map accessor 时调用，
+  map 析构前必须保证全部访问已静止。
 - `ConcurrentVector` 适合并行 append，不是可并行 erase/insert 的 `std::vector`。
 
 timeout、cancel、blocking wait、close 和 backpressure policy 属于 scheduler/runtime。需要这些语义时，

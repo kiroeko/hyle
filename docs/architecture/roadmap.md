@@ -137,7 +137,10 @@ retire record 和 grace-period callback；在其性能门与真实 consumer migr
 
 本轮 Timer-queue 检查已对精确的 `9fc1b77d... -> 32ec5084...` Sched 来源变化完成
 [`NON_MATERIAL` 裁决](../implementation/evidence/performance/provenance-reviews/timer-queue-scheduler-lifecycle-9fc1-to-32ec.md)；
-它只完成上述第 1 步，且只覆盖该 hash 边。下一步是第 2、3 步的两个 `mem_reclaim` 恢复前提检查。
+它只覆盖该 hash 边。紧接的
+[`mem_reclaim` 有限恢复检查](../implementation/tasks/mem/mem-reclaim-resume-check-2026-09-03.md)
+确认当前 Container 没有获准的真实 consumer，且 W1-WIN 的官方 Folly 配置缺 required FastFloat；两个
+恢复钥匙均未取得，因此没有建立 `RESUME`，施工队列按第 5 步转入 Obs。
 
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include

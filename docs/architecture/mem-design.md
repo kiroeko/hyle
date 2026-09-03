@@ -77,6 +77,9 @@ shipping Mem、不用手写 peer 或放宽门槛，也不阻塞后续模块。�
 
 因此 Mem v3 的 `CLOSED` 与 `mem_reclaim` 的 `BLOCKED` 是两个并存事实：前者是当前可交付产品，后者是
 尚未准入 façade/SDK 的候选 factor。只有恢复轮通过后，才更新用户指南并裁决 Mem façade 是否聚合它。
+2026-09-03 的
+[`有限恢复检查`](../implementation/tasks/mem/mem-reclaim-resume-check-2026-09-03.md)确认当前 Container
+没有已准入生产实例，且官方 Folly 配置尚缺 required FastFloat；因此本轮没有开始 `RESUME`。
 
 ## 2. 需求基线
 
