@@ -2,8 +2,8 @@
 
 > 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现以
 > [user/mem](../user/mem.md) 与中央 registry 为准，不会因 architecture 写了目标就提前变成
-> shipping 能力。`mem_reclaim` 的当前交付状态仍以自己的 closure card 为准；通过恢复轮后由普通
-> Mem façade 聚合，而不是公开内部 factor target。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
+> shipping 能力。`mem_reclaim` 由普通 Mem façade 聚合，而不是公开内部 factor target；它的机械
+> 收口状态仍只读中央 registry。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
 > C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 

@@ -58,3 +58,18 @@ Audit verdict：唯一能力缺口和所有交付投影已冻结，允许进入�
 产品候选为 `0f6ef8e83ee290ab565c0d53081a0acb75a46675`，tree
 `8cb5ba0024cdb20af65347144f09e16f26147632`。Mem product roots 已加入 `mem_reclaim`，installed sample
 执行真实 snapshot publication/retirement，用户指南给出选型与陷阱；base allocator/VM 实现未改。
+
+## 候选验证结果
+
+W1-WIN、W1-WSL GCC 14 与 M1-MAC AppleClang 21 均通过 Mem source embedding、可重定位 shared SDK、
+可重定位 static SDK 的 installed consumer；sample 实际完成 snapshot protect、publish、typed retire 与
+synchronize。selected roots 同时验证 `mem,mem_vm,mem_reclaim`，公开头和传递依赖没有由源码树或测试
+target 遮蔽。base allocator/VM 相对 candidate 前未发生实现漂移。
+
+算法/correctness/sanitizer 与 P1 由同一 candidate 的
+[mem_reclaim 记录](mem-reclaim-v2-inference-resume.md)承担；性能结果集中在
+[reclamation evidence](../../evidence/performance/benchmarks-mem-reclamation.md)。用户文档已把
+reclamation 放入 allocator/storage/lifetime 的任务选型，解释 short guard、显式 domain、callback
+线程、record/allocator lifetime、`try_reclaim/synchronize/drain` 和 lock/shared_ptr/hazard 的边界。
+FFI 负向扫描没有发现伪 C ABI。scope、architecture、correctness、delivery、usability/docs、red-team、
+engineering performance 七项均可判 `PASS`，可以进入 `VERIFIED`。

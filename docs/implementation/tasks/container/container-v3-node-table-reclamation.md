@@ -134,3 +134,25 @@ Audit verdict：本轮仍只有四项有限 FIX；修正后的 API、默认值�
 `8cb5ba0024cdb20af65347144f09e16f26147632`。默认 retained policy 在编译期裁掉 reclamation guard；具名
 reclaiming policy 覆盖 table load 到 bucket-lock identity check，并在 unlock 后 retire。确定性交错、allocator
 balance、package journey 与 `container-node-table-p1-v1` 均已进入候选。
+
+## 候选验证结果
+
+- correctness：W1-WIN Release、W1-WSL GCC 14 Release/ASan/UBSan/TSan、M1-MAC AppleClang 21 arm64
+  全部通过定向 node-map suite；强制 stale-reader 证明旧表不会早释放，`domain.synchronize()` 后按
+  table+buckets 两次 deallocation 精确回收；retained policy 延迟到析构且 allocator balance；
+- stress：WSL 的 mixed read/update/growth 与 forced stale-reader 各重复 50 轮；无 race、UAF、double
+  free 或 conservation 失败；
+- delivery：三平台 Container source embedding、relocated shared/static consumer 全部通过；package
+  sample 只链接 `hyle::container`，并核对真实内部 factors `container_intrusive,mem_reclaim`；
+- P1：[reclamation evidence](../../evidence/performance/benchmarks-mem-reclamation.md) 的 oneTBB
+  natural-route 四个 strata 均为 `WIN / PASS`，median advantage 1.3911--1.4028，最低 99.26% CI
+  lower 为 1.3539。它只签稳定 node registry 完整路线，不冒充同算法 SOTA；
+- 红队：guard 覆盖 table acquire-load 到 bucket lock + current identity check；成功取得 current bucket
+  后先靠 bucket lock 保活再退出 guard；rehash publish 后先释放全部旧 bucket lock，再 retire table；
+  map 析构要求外部静止并先 synchronize pending callbacks。显式 domain 必须长寿于 map，默认 domain
+  为 process-image lifetime。retained 模板实例没有 runtime domain branch、guard、allocation 或常态
+  metadata；没有 benchmark-only API 或伪 C ABI。
+
+一次 delivery 复核发现 sample 错把无关 `util_core` 当成 Container factor；`f457babf` 已改为真实的
+`container_intrusive,mem_reclaim` 并在 Windows/WSL/Mac 三交付重放通过。七项 aggregate gate 均有
+`PASS` 证据，可以进入 `VERIFIED`。

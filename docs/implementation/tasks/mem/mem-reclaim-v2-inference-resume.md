@@ -153,3 +153,23 @@ Audit verdict：全部 `MUST` 已是 `COMPLETE` 或有限 `FIX`，API/成本/pee
 `8cb5ba0024cdb20af65347144f09e16f26147632`。它完成 typed allocation-free retire、Container 旧表直接
 consumer、Mem façade 与 package journey，并冻结 `mem-reclaim-p1-v2`。候选之后只允许补验证记录、
 状态与文档事实；公开合同、算法或 normal workload 改动必须退回 `AUDITED`。
+
+## 候选验证结果
+
+- W1-WIN：MSVC Release 的 `hyle_mem_reclaim_test` 与 `hyle_container_test` 通过；Mem、Container
+  selected-component 的 source、relocated shared、relocated static consumer 全部通过；
+- W1-WSL：GCC 14 Release 全量 Mem-reclaim 13/13、Container 339/339；ASan、UBSan、TSan 下
+  Mem-reclaim 13/13 与 node-map 9/9；两个并发/回收测试各重复 50 轮；Mem/Container 三交付通过；
+- M1-MAC：AppleClang 21 arm64 下 Mem-reclaim 13/13、node-map 9/9；Mem/Container 三交付通过；
+- delivery/FFI：`hyle_mem_reclaim.dll` 导出 7 个 MSVC 修饰的同工具链 C++ 符号，无未修饰 HYLE C
+  symbol、C schema、bridge 或 managed fixture；公开头由三种消费者独立编译；
+- P1：[reclamation evidence](../../evidence/performance/benchmarks-mem-reclamation.md) 的 Folly
+  same-contract read 四个 strata 均为 `WIN / PASS`，median advantage 1.3649--1.3812，最低
+  99.26% CI lower 为 1.3358；A/A、5%/10% known delta、timer floor、placement、身份与 provenance
+  全部通过；这是 W1-WIN 工程结论，不是 Formal；
+- 红队：复核 epoch flip/late reader、nested guard、callback reentrancy、record reuse、domain teardown、
+  默认 domain image lifetime、超过 64 reader 的 fallback 与 Container load→lock hand-off。没有发现
+  blocker；性能元数据未进入 payload/record/read path，typed convenience 只生成 compile-time thunk。
+
+候选到采样 harness `c2ccc06f` 的产品路径无差异；之后 `f457babf` 只修正 Container package sample
+对真实 factor 的断言。七项 aggregate gate 均已有 `PASS` 证据，可以进入 `VERIFIED`。
