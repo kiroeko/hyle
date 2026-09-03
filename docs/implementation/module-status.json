@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -540,17 +540,61 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v3 因已接受的能力超集和 factorization 定向重开：缺少 inference host topology/memory、affinity restoration、thread ISA state 与 secure entropy，且单一 Platform factor 无法保持最小内部依赖；当前仅登记事实，尚未授权产品实现。"
+      "summary": "platform-v3 SCOPED：冻结 host topology/memory/entropy 能力、三因子边界、真实消费者、5% P1 和六小时总预算；完成双向审计与有限 FIX 集前不修改产品实现。"
     },
     {
       "module": "platform_thread",
-      "product_state": "QUEUED",
-      "summary": "已按接受的 Platform factorization 登记 native thread/current-thread ISA/wait 因子；等待 Platform v3 冻结 API、依赖、成本和交付合同。"
+      "product_state": "SCOPED",
+      "round_id": "platform-thread-v1-factor",
+      "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
+      "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
+      "non_goals": "Thread pools, task/fiber scheduling, placement policy, process priority, owning cancellation, device/kernel dispatch, Native FFI/C API, stable C++ ABI, benchmark-driven fast/light APIs, common instrument redesign and Formal certification.",
+      "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "platform_thread v1 SCOPED：冻结 native thread/current-affinity/extended-ISA/wait 的语义、依赖、成本、Parker P1 与三交付合同；审计前不迁移源码。"
     },
     {
       "module": "platform_fs",
-      "product_state": "QUEUED",
-      "summary": "已按接受的 Platform factorization 登记同步 filesystem/namespace/FileHandle 因子；等待 Platform v3 冻结 API、依赖、成本和交付合同。"
+      "product_state": "SCOPED",
+      "round_id": "platform-fs-v1-factor",
+      "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
+      "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
+      "non_goals": "Mapped or shared storage ownership, lexical path algorithms, watchers, async/positional/direct/scatter I/O, network or transfer policy, process sandboxing, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
+      "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "platform_fs v1 SCOPED：冻结同步 namespace/FileHandle/temp/replace 的语义、依赖、loader P1 与三交付合同；审计前不迁移源码。"
     },
     {
       "module": "mem_reclaim",
