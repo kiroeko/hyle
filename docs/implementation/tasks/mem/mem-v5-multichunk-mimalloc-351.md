@@ -230,3 +230,35 @@ HYLE_ASSIGN_OR_RETURN(auto temporary, buffers.view(request_id));
 全部受影响 `MUST` 已是 `COMPLETE` 或上述八个有限 `FIX`；public trace、API/owner/failure/concurrency、
 complexity/resource、dependency/config、normal workload 与停止条件已冻结。允许进入实现；不得借本轮重开
 `mem_vm/mem_reclaim`、其他 Mem family、公共仪器或 Compute/Graph。
+
+## Candidate
+
+- product commit：`90ffc8499e199fb675c9c704c3cd7e1b2b91768d`；tree：
+  `d5385c47214ab71cb29f14f2b5e47aa48c8dae85`；
+- 公开合同与 user journey：`LifetimePlanner::build` 现在必须同时接收 dense resource span；placement
+  公开 resource-local `backing_index`，plan/buffers 提供双索引 backing 查询；`SystemAllocator::deallocate`
+  必须显式给 size。旧入口全部移除，不保留兼容 overload；
+- ownership / lifetime / failure：build 只借用 provider properties；plan 可在同一或等价 provider 上实例化；
+  `PlannedBuffers` 独占所有 physical `Buffer`，较小 maximum-allocation 在分配前失败，任一中途 OOM 回滚
+  已创建的全部 backing；零大小 dense resource 仍创建一个 resource-bound size-0 backing；
+- 算法 / 复杂度 / 常态成本：保留 indexed best-fit lifetime-slot reuse，在创建新 slot 时按 resource 的
+  maximum-allocation 使用 deterministic next-fit backing boundary；build 仍为 O((N+E) log N)、O(N)
+  scratch/metadata，query/view O(1)，instantiate 恰为每 backing 一次 provider allocation；没有 byte/page
+  table、常态 request metadata、lock、atomic 或 syscall；
+- allocator mechanism：vendored/lock 升至 mimalloc v3.5.1 commit
+  `34fbd7e7cd4627424490afe19b20f8066bfc537d` / tree
+  `e69ccc36d80961459810aed044247c6b69c549cd`；54/54 tracked snapshot 文件与 tag 相同，codeload SHA-256
+  `bff20d5423e63d751858dcc4f6ca2d346e16a84f8410f868bc3a298996c1ea1e`，vendored normalized tree
+  `47755e1bd6cd52b17d0cb3a0041cbf207c73f2437614a436a13fff70ca024f13`，license hash 不变；non-Android
+  target 明确 `MI_DEFAULT_ALLOW_THP=1`，不继承 upstream host-native ISA flags；
+- sized-free：System compile-time/shared/intra-module seam、runtime AllocatorRef、system resource、PMR 和 Heap
+  都把已知 logical size/alignment 路由到 `mi_free_size` / `mi_free_size_aligned`；普通 `<16B` 请求给 vendor
+  返回实际 16B backing size，reallocate-to-zero 不再丢 old size；P1 peer 同样使用 sized-free；
+- 直接消费者迁移：Mem package sample 和 lifetime tests 已迁移；public API inventory 编译锁定新 shape。
+  `mem_vm` API surface 只消费公开头，无产品算法变化；其他消费者没有直接调用旧 planner/backing 入口；
+- candidate preflight：W1-WSL GCC 14 Release 的完整 Mem product/factor closure 103 targets 编译成功，16/16
+  依赖、Mem 与 header-self-contained tests 通过；Release/Debug base Mem tests 通过；dependency audit、
+  module-closure checker 与 394-page docs checker 通过。这些只用于候选形成，正式三平台/sanitizer/delivery/P1
+  verdict 在下方 verification manifest 记录；
+- harness/tool identity：planner P0 使用 candidate tests/structural assertions；host P1 继续使用冻结的
+  `closure-perf-v1` 与 `isolated-heap-lifecycle-64`，不因候选结果改 workload、margin 或公共仪器。

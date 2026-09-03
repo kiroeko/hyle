@@ -762,7 +762,7 @@
     },
     {
       "module": "mem",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
       "round_id": "mem-v5-multichunk-mimalloc-351",
@@ -770,6 +770,8 @@
       "scope": "Complete maximum-allocation-aware multi-chunk lifetime planning and upgrade the private shipping allocator to mimalloc v3.5.1, then requalify only the affected API, host-allocation performance and C++ delivery boundaries.",
       "non_goals": "Mem VM or reclamation redesign; ordinary Buffer layout changes; Tensor, Graph, Compute backend usage, reset or host-pointer-import policy; async completion; hazard pointers; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
       "baseline_commit": "ae01203b35d7f6d0b9c76117a1a50fc837c07772",
+      "candidate_commit": "90ffc8499e199fb675c9c704c3cd7e1b2b91768d",
+      "candidate_tree": "d5385c47214ab71cb29f14f2b5e47aa48c8dae85",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -787,7 +789,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v5 AUDITED：resource-aware multi-backing API、O((N+E) log N) 算法/资源合同、mimalloc v3.5.1/THP/ISA/sized-free 决策与八项有限 FIX 已冻结，允许实现。"
+      "summary": "mem-v5 CANDIDATE：90ffc849/d5385c47 冻结 resource-aware multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free；进入三平台、sanitizer、三交付和冻结 P1 验证。"
     },
     {
       "module": "mem_vm",

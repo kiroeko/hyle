@@ -9,8 +9,8 @@
 
 当前执行优先级是 **Mem v5 定向完成**：全产品只读 replay 已裁决 `PRODUCT_TRIGGER`，Mem 的
 maximum-allocation-aware multi-backing lifetime plan 与 mimalloc v3.5.1 两项范围现已进入
-`AUDITED`。自然 C++ API、八项有限 FIX、复杂度/资源预算、5% P1、三平台/三交付 gates 及硬停止条件
-已冻结，允许实现；`mem_vm/mem_reclaim` 和普通 allocator/pool 能力保持冻结。IO 已冻结的 v1 scope 继续
+`CANDIDATE`。产品 commit/tree 已冻结为 `90ffc849`/`d5385c47`，现在只执行 5% P1、三平台、sanitizer、
+三交付和红队 gates；`mem_vm/mem_reclaim` 和普通 allocator/pool 能力保持冻结。IO 已冻结的 v1 scope 继续
 暂停在 `SCOPED`，尚未进入 `AUDITED` 或修改产品。
 
 <!-- BEGIN GENERATED MODULE STATUS -->
@@ -28,7 +28,7 @@ maximum-allocation-aware multi-backing lifetime plan 与 mimalloc v3.5.1 两项�
 | platform_thread | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform_thread/platform-thread-v1-factor.md) | platform_thread v1 CLOSED：native thread/affinity/current ISA state/address wait 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Sched consumer、文档/红队和 Parker P1 全部通过。 |
 | platform_fs | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform_fs/platform-fs-v1-factor.md) | platform_fs v1 CLOSED：同步 namespace/FileHandle/temp/replace 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Mem/IO consumers、文档/红队和同语义 filesystem P1 全部通过。 |
 | mem_reclaim | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-reclaim-v2-inference-resume.md) | mem_reclaim v2 CLOSED：推理 read-mostly snapshot 回收、零分配 typed retire 与 Container 直接 consumer 完成；三平台正确性/sanitizer/三交付、文档/红队及官方 Folly 同合同 P1 全部通过。 |
-| mem | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v5-multichunk-mimalloc-351.md) | mem-v5 AUDITED：resource-aware multi-backing API、O((N+E) log N) 算法/资源合同、mimalloc v3.5.1/THP/ISA/sized-free 决策与八项有限 FIX 已冻结，允许实现。 |
+| mem | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v5-multichunk-mimalloc-351.md) | mem-v5 CANDIDATE：90ffc849/d5385c47 冻结 resource-aware multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free；进入三平台、sanitizer、三交付和冻结 P1 验证。 |
 | mem_vm | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem_vm/mem-vm-v1-factor.md) | mem_vm v1 CLOSED：mapping/residency/huge/shared/guarded storage 独立因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和两族同语义 P1 全部通过。 |
 | simd | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/simd/simd-v4-expert-sdk.md) | simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。 |
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v3-node-table-reclamation.md) | container-v3 CLOSED：默认 retained 与显式 reclaiming table lifetime 完成；安全 hand-off、三平台正确性/sanitizer/三交付、依赖/文档/红队及 oneTBB natural-route P1 全部通过。 |
