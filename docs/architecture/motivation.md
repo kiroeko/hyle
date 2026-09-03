@@ -78,6 +78,41 @@ Apple 专有形状，但 workload 矩阵必须包含“模型超过普通离散�
 档位。规格来源见 Apple 的
 [M6 与 M5 Ultra 公告](https://www.apple.com/newsroom/2026/08/apple-introduces-m6-and-m5-ultra-for-a-big-leap-in-performance-and-ai-compute/)。
 
+### 2026-09 的模型架构信号：推理深度可能与输出长度解耦
+
+截至 2026-09-03，OpenAI 已确认 Astra 是即将发布、相对 GPT-5.6 Sol 能用更少输出 token 完成更强
+网络安全任务的模型，并表示完整 system card 将在发布时提供；官方材料尚未公开网络结构。因此，外界
+关于 Astra 使用 recurrent depth 的说法只能作为**待确认的架构报道**，不能写成 HYLE 已验证的产品
+事实。事实边界以 OpenAI 的
+[Astra 官方说明](https://openai.com/index/path-to-astra/)为准。
+
+recurrent-depth Transformer 的一般机制已有公开研究：前置层把输入映射到隐空间，一个共享参数的
+计算块在深度方向重复若干次，最后由输出层映射到 token。推理时增加循环次数，可以增加隐空间计算而
+不同比例增加参数量或必须先生成更多思维 token。这不是 2026 年才出现的概念：
+[Universal Transformer](https://arxiv.org/abs/1807.03819) 已探索跨深度共享与动态停止，
+[Huginn recurrent-depth 研究](https://arxiv.org/abs/2502.05171)进一步把可变推理深度扩展到
+3.5B 参数、800B 训练 token 的概念验证模型。若同类机制在前沿产品中成立，新的系统轴将不只是
+“更大模型 / 更多输出 token / 更多候选搜索”，还包括“同一隐状态经过多少轮共享计算”。
+
+中文评论作者**风音**从雅可布森的语内、语际与符际翻译区分出发，指出把模型高维内部计算转成自然
+语言解释本身是一种有损的符际转译，而常见 CoT 监控主要处理模型已经外化成语言的部分；若更多推理
+留在 latent workspace，自然语言记录不能自动等同于完整内部过程。该观点适合作为可观察性与安全边界
+的风险提示，不是 Astra 架构或效率数据的第一手证据。出处：
+[风音，知乎回答](https://www.zhihu.com/question/2078440102733337893/answer/2078609210632413968)；
+转载与使用遵守原作者标注的授权条件。
+
+这一方向可能提高参数复用和局部性、减少为了“思考更久”而产生的中间 token、词表投影与部分 KV
+增长，但并不自动提高效率：共享块若不能驻留在更近的存储中，每一轮仍会读取权重；循环引入串行延迟，
+量化误差可能累积，按 token 选择不同深度还会破坏 batch 规整性。latent 推理也不会让可解释性问题
+消失，只会要求行为监控、状态探针和授权边界承认自然语言 CoT 不是完整内部状态。
+
+HYLE 将 recurrent/hybrid decode 作为 Compute/推理引擎的一个**泛化压力形状**，而不是新闻驱动的
+feature list 或重开已关闭底层模块的理由。执行层应允许已编译计算区域低开销重复、循环不变量常驻、
+loop-carried state 复用和动态 active-set 整理；具体模型的循环次数、停止策略与 latent-state 语义仍由
+推理引擎拥有。只有真实模型或至少两个独立成熟消费者证明通用形状后，相应机制才可通过语义擦除进入
+公共基础 API。具体 workload 与模块边界见
+[推理引擎北极星](inference-engine-north-star.md#31-固定深度之外的执行形状)。
+
 模型格式、tokenizer、sampling、KV/prefix-cache 策略、continuous batching 和 serving policy
 属于推理引擎。HYLE 只下沉去掉模型语义后仍自然的通用机制。详细边界见
 [inference engine north star](inference-engine-north-star.md)。

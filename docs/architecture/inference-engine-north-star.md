@@ -77,6 +77,29 @@ source/static/shared 交付本身不要求制造 FFI parity。
 - KV-cache 是推理状态管理策略。mem 可以提供适合它的 backing、pool、NUMA 和 lifetime 原语，
   但不得公开 `KVCache`、sequence 或 token 形状。
 
+### 3.1 固定深度之外的执行形状
+
+北极星不能假定所有模型都按固定数量、互不共享参数的 Transformer 层顺序执行。recurrent-depth、
+looped、hybrid 和其他 adaptive-compute 模型可能重复同一参数块、携带跨轮状态，并让不同请求或 token
+使用不同计算深度。当前没有已锁定的 Astra 公开架构或 HYLE 真实 recurrent 模型消费者，因此这项的
+provenance 是 `PROVISIONAL_ARCHETYPE`，需求等级是 `GENERALIZATION_GATE`：它约束 Compute/引擎
+设计不得封死，但不授权重开底层模块或立即增加公共 API。背景与证据边界见
+[`motivation`](motivation.md#2026-09-的模型架构信号推理深度可能与输出长度解耦)。
+
+| Concern | HYLE / engine 必须保留的能力 | 不能提前下沉的策略 |
+|---|---|---|
+| 重复执行 | Compute/引擎能把计算区域编译一次并低开销重复；可用 backend 上避免逐轮 host rebuild/round-trip | 模型的循环次数、停止判据和训练时 depth schedule |
+| 数据寿命 | 区分循环不变量、loop-carried owner state 与单轮临时值；重复期间不做无关 allocation/copy | `token`、具体 recurrent-state/KV cell 布局与模型专用压缩 |
+| 权重局部性 | backend 能表达常驻/复用意图并测量真实 residency、搬运和 working set | 假定共享参数一定留在 cache，或把某台设备的 storage mode 变成通用 API |
+| 动态深度 | Sched/引擎能对仍活跃的工作重聚批、压缩 active set，并维持取消和 deadline | batch/admission/fairness 及逐模型计算预算策略 |
+| 可观察性 | Obs seam 能承载迭代分布、阶段耗时、资源与停止原因；安全边界不把可见 CoT 当完整内部状态 | 模型专用 probe 名称、推理内容解释器和产品监控策略 |
+| 图边界 | inference operator loop 暂归 Compute/引擎的执行计划；若出现独立通用消费者，再审可复用 region/control-flow primitive | 仅因存在循环就让当前面向 CAD/CAE 的 Graph 产品接管推理拓扑 |
+
+性能比较必须锁定模型/checkpoint、量化、输入、输出质量、backend、batch、深度策略和计费边界。
+`tokens/s` 不能单独裁决 recurrent 与固定深度模型；至少同时报告 loops/token 或等价计算预算、
+TTFT/ITL、质量、bytes/token、峰值/常驻状态、batch 利用率和 joules/token。共享权重只有在驻留与搬运
+证据成立时才能形成带宽收益声明，减少可见 reasoning token 也不能自动推导出端到端延迟更低。
+
 ## 4. 版本化 workload 矩阵
 
 稳定文档只规定维度和资格；具体模型 hash、量化格式、prompt/token 序列、规模、线程数、backend、
@@ -87,6 +110,7 @@ source/static/shared 交付本身不要求制造 FFI parity。
 | 模型加载 | 冷/暖文件页；mapped/read；成功、损坏、OOM；适用时单/多 NUMA node | load-to-ready、page fault、峰值 RSS、复制字节、失败清理 | platform/mem/io/error |
 | Prefill | 短/中/长 prompt；小/大 batch 与 ubatch；CPU 和可用 GPU backend | prompt tokens/s、TTFT、峰值临时内存、带宽/算力利用率 | compute/simd/mem |
 | Decode | 单序列与并行序列；浅/深 context；短/长生成 | generation tokens/s、TPOT/ITL 的中位与 tail、内存带宽 | compute/mem/sched |
+| Recurrent/hybrid decode | 固定/自适应循环深度；共享计算块；同批不同 active depth；循环取消 | 质量—时间/能耗曲线、loops/token、bytes/token、状态峰值、batch 利用率 | compute/mem/sched/obs |
 | 连续批处理 | 混合 prompt/output 长度；稳态与突发到达；不同并发度 | requests/s、tokens/s、TTFT/ITL tail、公平性、deferred/backpressure | sched/mem/compute |
 | KV 生命周期 replay | 会话加入/退出、共享前缀、fork/copy、回收、容量不足 | bytes/token、峰值 committed、碎片、分配/回收 tail、泄漏 | 引擎策略消费 mem 原语 |
 | Backend handoff | CPU-only、部分/全部 offload；同步与可重叠传输 | copy bytes、同步次数、overlap、CPU busy、device idle | compute/sched/platform |
