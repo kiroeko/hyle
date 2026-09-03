@@ -3,7 +3,7 @@
 <!-- MODULE CLOSURE RECORD: HISTORICAL -->
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-## Closure card（VERIFIED）
+## Closure card（CLOSED）
 
 - component / owner / round：`container` / Container / `container-v3-node-table-reclamation`；
 - task kind：`REOPEN`；baseline：`444b02c01afe00f4cd3b44433204e58db3c24712`；

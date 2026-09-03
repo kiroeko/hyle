@@ -701,7 +701,7 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "mem-reclaim-v2-inference-resume",
       "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
       "scope": "Resume the allocation-free read-side reclamation factor for an owner-authorized inference snapshot journey, migrate ConcurrentNodeHashMap table retirement, enter the Mem facade, and qualify official Folly same-contract P1 evidence.",
@@ -709,6 +709,8 @@
       "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
       "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
+      "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
+      "registry_anchor_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -736,11 +738,31 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "mem_reclaim v2 VERIFIED：零分配 read-mostly reclamation、typed retire、Container 直接 consumer、三平台 sanitizer/正确性与三种 C++ 交付、文档/红队及官方 Folly 同合同 P1 全部通过。"
+      "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
+      "loc": {
+        "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
+        "repository_code": 436638,
+        "self_with_tests": 111204,
+        "self_without_tests": 70416,
+        "module_implementation": 227
+      },
+      "known_limitations": [
+        "Domain, payload and intrusive record are caller-owned; the domain outlives guards and pending records, guards exit on their entry thread, and drain or destruction requires external quiescence.",
+        "A stalled reader delays its whole domain; callbacks run synchronously on the collector thread, and the 65th concurrent live thread onward shares bounded fallback stripes.",
+        "The P1 claim covers one W1-WIN short immutable-read contract; writer-side, long-reader, fallback-contention, end-to-end token-latency, cross-platform ranking and Formal performance remain unclaimed."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces reader, retire, lifetime, callback, ownership or C++ API-usability failure.",
+        "A supported compiler, atomic-wait or TLS implementation invalidates the epoch, route or teardown contract.",
+        "The public API or layout, algorithm, direct dependency, normal cost or source/static/shared delivery changes materially.",
+        "A qualified same-contract peer or normal consumer profile proves a material regression or promotes the path to P2.",
+        "A real consumer formally admits stalled-reader-independent hazard, GPU-fence or executor-affine reclamation that has no natural existing owner."
+      ],
+      "summary": "mem_reclaim v2 CLOSED：推理 read-mostly snapshot 回收、零分配 typed retire 与 Container 直接 consumer 完成；三平台正确性/sanitizer/三交付、文档/红队及官方 Folly 同合同 P1 全部通过。"
     },
     {
       "module": "mem",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "reopen_trigger_id": "MEM-RECLAIM-FACADE-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
       "round_id": "mem-v4-reclamation-facade",
@@ -750,6 +772,8 @@
     "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
     "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
     "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
+    "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
+    "registry_anchor_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -777,7 +801,26 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-      "summary": "mem-v4 VERIFIED：reclamation 已进入 Mem façade；三平台 source/shared/static 消费者、依赖闭包、选型文档、FFI 清洁与同 candidate P1 全部通过，allocator/VM 未重开。"
+    "closure_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
+    "loc": {
+      "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
+      "repository_code": 436638,
+      "self_with_tests": 111204,
+      "self_without_tests": 70416,
+      "module_implementation": 7403
+    },
+    "known_limitations": [
+      "The facade inherits mem_reclaim's short-guard, borrowed-domain and record, synchronous-callback and stalled-reader contracts; allocator and VM families were not reopened in this round.",
+      "Mem provides C++23 source/static/shared delivery but no Native FFI, stable cross-toolchain C++ ABI or Formal performance certificate.",
+      "This round's P1 evidence covers reclamation read-side and Container table consumers, not every allocator, pool, NUMA or mapping family."
+    ],
+    "reopen_triggers": [
+      "The Mem facade, selected headers or installed target no longer deliver the admitted reclamation journey.",
+      "A named Mem consumer reproduces a reclamation selection, ownership, lifetime or C++ API-usability defect.",
+      "The underlying reclamation factor, public API, direct dependency, normal cost or source/static/shared delivery changes materially.",
+      "An allocator, VM or other untouched Mem family independently satisfies one of its own registered reopen triggers."
+    ],
+      "summary": "mem-v4 CLOSED：read-mostly reclamation 已自然进入 Mem façade；三平台 source/shared/static、依赖闭包、package journey、用户选型、FFI 清洁与同 candidate P1 全部通过，allocator/VM 保持冻结。"
     },
     {
       "module": "mem_vm",
@@ -907,7 +950,7 @@
     },
     {
       "module": "container",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "CONTAINER-NODE-TABLE-RECLAIM-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
       "round_id": "container-v3-node-table-reclamation",
@@ -917,6 +960,8 @@
       "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
       "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
+      "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
+      "registry_anchor_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -943,7 +988,26 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container-v3 VERIFIED：默认 retained 与显式 reclaiming table lifetime 均通过三平台正确性/sanitizer、三种 C++ 交付、依赖/文档/红队及 oneTBB natural-route P1。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
+      "loc": {
+        "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
+        "repository_code": 436638,
+        "self_with_tests": 111204,
+        "self_without_tests": 70416,
+        "module_implementation": 13055
+      },
+      "known_limitations": [
+        "The zero-read-tax default retains geometrically grown old tables until map destruction; the explicit reclaiming route pays a domain guard and a stalled domain reader delays table release.",
+        "Accessor lifetime still owns node and value safety; management operations and destruction require documented external quiescence, and an explicit domain must outlive the map.",
+        "The implementation is not a lock-free or shrinking map; the oneTBB P1 result is natural-route adoption evidence, not same-algorithm, whole-Container or Formal SOTA proof."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces table or node UAF, double free, rehash, accessor, allocator or C++ API-usability failure.",
+        "The public API or layout, default lifetime policy, algorithm, direct dependency, normal cost or source/static/shared delivery changes materially.",
+        "The qualified node-registry consumer shows a material regression against its locked peer or profile.",
+        "A real workload formally requires shrink, another progress guarantee or a table-lifetime tier that current retained and reclaiming routes cannot express."
+      ],
+      "summary": "container-v3 CLOSED：默认 retained 与显式 reclaiming table lifetime 完成；安全 hand-off、三平台正确性/sanitizer/三交付、依赖/文档/红队及 oneTBB natural-route P1 全部通过。"
     },
     {
       "module": "util",
