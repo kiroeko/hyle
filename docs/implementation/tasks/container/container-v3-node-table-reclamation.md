@@ -1,6 +1,7 @@
 # Container v3：并发 node map 的旧表寿命
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（VERIFIED）
 
@@ -156,3 +157,26 @@ balance、package journey 与 `container-node-table-p1-v1` 均已进入候选。
 一次 delivery 复核发现 sample 错把无关 `util_core` 当成 Container factor；`f457babf` 已改为真实的
 `container_intrusive,mem_reclaim` 并在 Windows/WSL/Mac 三交付重放通过。七项 aggregate gate 均有
 `PASS` 证据，可以进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本窄 Container round **`CLOSED`**：CNTR3-01--CNTR3-03 均为 `COMPLETE`，CNTR3-04 保持明确
+`REJECT`，七项 aggregate gate 全为 `PASS`。默认 retained route 服务 reserve/有界增长、零 guard 热读；
+显式 reclaiming route 服务长寿命持续增长、要求运行期归还旧 bucket table 的 registry。它们是两个真实
+资源合同，不是 benchmark 的 fast/slow 变体。
+
+已知限制：默认路线把几何增长产生的旧 table 留到 map 析构；reclaiming 路线每次 table hand-off 支付
+domain guard，stalled domain reader 会延后旧表释放。accessor 仍决定 node/value lifetime；management
+operation 与析构需要文档所述外部静止，显式 domain 必须长寿于 map。本实现不是 lock-free map，不提供
+shrink、永久无 guard pointer 或 hazard-pointer progress。oneTBB 结果是 natural-route adoption 证据，
+不是底层算法 same-contract 或整个 Container 的 Formal/SOTA 声明。
+
+只有 table/node UAF、double-free、rehash/accessor/allocator correctness 或易用性缺陷，公开 API/layout/
+默认策略、direct dependency、算法或三交付改变，锁定 node-registry consumer 出现 material regression，
+或真实 workload 证明需要 shrink、不同 progress 或另一 table lifetime 档位时重开本能力族；其他
+Container family 继续服从自己的 trigger。
+
+immutable candidate 四项 LOC 为 `436,638 / 111,204 / 70,416 / 13,055`，由
+`loc-report.py --module container --commit 0f6ef8e83ee290ab565c0d53081a0acb75a46675 --self-check`
+重算通过。registry 将在下一提交绑定本 terminal receipt 与首个实际保存 `CLOSED` state/candidate 的
+anchor。

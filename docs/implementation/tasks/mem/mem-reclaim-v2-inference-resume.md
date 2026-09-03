@@ -1,6 +1,7 @@
 # Mem reclamation v2：推理 snapshot 与 Container consumer 恢复轮
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（VERIFIED）
 
@@ -173,3 +174,26 @@ consumer、Mem façade 与 package journey，并冻结 `mem-reclaim-p1-v2`。候
 
 候选到采样 harness `c2ccc06f` 的产品路径无差异；之后 `f457babf` 只修正 Container package sample
 对真实 factor 的断言。七项 aggregate gate 均已有 `PASS` 证据，可以进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本 factor **`CLOSED`**：MR2-01--MR2-04 均为 `COMPLETE`，七项 aggregate gate 全为 `PASS`，无
+blocker。保留而不删除它的理由是已经准入的推理 snapshot journey：模型/backend/request-routing/config
+等 immutable metadata 极热读取、低频替换时，读侧无需 shared ownership RMW，writer 仍能在 grace
+period 后释放旧版本；Container 的长期增长 node registry 也已成为直接产品 consumer。
+
+已知限制：domain、payload 与 intrusive record 均由调用者拥有；domain 必须长寿于 guard/pending record，
+guard 同线程退出，`drain`/析构需要外部静止。一个 stalled reader 会延迟同 domain 的回收；callback 在
+collector 线程同步执行且必须 `noexcept`/短小；第 65 个并发 live thread 起使用固定共享 stripe。P1 只
+签 W1-WIN 的短 immutable read，同步写侧、长 reader、fallback contention、跨平台与端到端 token latency
+没有排名或 Formal 声明。
+
+只有可复现的 reader/retire/lifetime/callback correctness 或易用性缺陷，支持 compiler/atomic/TLS 使
+合同失效，公开 API/layout、算法、direct edge 或三交付改变，锁定同合同正常 consumer 出现 material
+regression，或真实消费者正式要求 stalled-reader-independent hazard/GPU-fence/executor-affine 回收时
+重开相应能力族。
+
+immutable candidate 四项 LOC 为 `436,638 / 111,204 / 70,416 / 227`，由
+`loc-report.py --module mem_reclaim --commit 0f6ef8e83ee290ab565c0d53081a0acb75a46675 --self-check`
+重算通过。`227` 只计 factor-owned `src/mem_reclaim`；共享公开头计入 Mem conventional boundary。
+registry 将在下一提交绑定本 terminal receipt 与首个实际保存 `CLOSED` state/candidate 的 anchor。

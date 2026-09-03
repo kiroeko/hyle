@@ -1,6 +1,7 @@
 # Mem v4：reclamation 产品聚合与交付
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Closure card（VERIFIED）
 
@@ -73,3 +74,19 @@ reclamation 放入 allocator/storage/lifetime 的任务选型，解释 short gua
 线程、record/allocator lifetime、`try_reclaim/synchronize/drain` 和 lock/shared_ptr/hazard 的边界。
 FFI 负向扫描没有发现伪 C ABI。scope、architecture、correctness、delivery、usability/docs、red-team、
 engineering performance 七项均可判 `PASS`，可以进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本窄 façade round **`CLOSED`**：`hyle::mem` 产品已自然聚合 `mem_reclaim`，用户无需知道内部 factor
+target；source/static/shared、relocation、sample、指南、FFI-clean 与同 candidate P1 均通过。base Mem
+allocator/resource/pool/NUMA 和 `mem_vm` 本轮没有实现、API、依赖或性能漂移。
+
+限制继承 underlying reclamation factor 的短 guard、borrowed domain/record、同步 callback 与 stalled
+reader 合同；Mem 仍没有 Native FFI、稳定跨工具链 C++ ABI或 Formal 性能证书。只有 façade/header/install
+不再交付该能力，真实 Mem consumer 暴露选型或 lifetime 缺陷，underlying factor/API/direct dependency
+material 改变，或本轮未触碰的 allocator/VM 族满足自己的独立 trigger 时重开对应边界。
+
+immutable candidate 四项 LOC 为 `436,638 / 111,204 / 70,416 / 7,403`，由
+`loc-report.py --module mem --commit 0f6ef8e83ee290ab565c0d53081a0acb75a46675 --self-check` 重算通过。
+该 conventional boundary 包含 `include/hyle/mem` 与 `src/mem`；registry 将在下一提交绑定 terminal
+receipt 与首个实际保存 `CLOSED` state/candidate 的 anchor。
