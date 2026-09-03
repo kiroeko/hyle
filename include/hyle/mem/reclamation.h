@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/core/assert.h"
@@ -216,6 +217,20 @@ public:
   // borrowed until invocation. A threshold-triggered collection never waits.
   HYLE_MEM_RECLAIM_API void retire(RetireRecord &record, void *state,
                                    ReclaimCallback callback) noexcept;
+
+  // Typed, allocation-free convenience for the common intrusive-owner shape.
+  // Callback is a compile-time value so RetireRecord does not need to store a
+  // second erased function pointer or allocate a deleter object.
+  template <auto Callback, class T>
+  void retire(RetireRecord &record, T *state) noexcept {
+    static_assert(!std::is_const_v<T>,
+                  "retired callback state must be mutable storage");
+    static_assert(std::is_nothrow_invocable_r_v<void, decltype(Callback), T *>,
+                  "retired callback must be callable as noexcept void(T*)");
+    retire(
+        record, static_cast<void *>(state),
+        +[](void *raw) noexcept { Callback(static_cast<T *>(raw)); });
+  }
 
   // Return callbacks invoked by this call. try_reclaim() never waits for a
   // reader; synchronize() waits only for readers preceding its epoch flips.

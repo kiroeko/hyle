@@ -6,9 +6,11 @@
 #include <hyle/mem/pmr.h>
 #include <hyle/mem/pool.h>
 #include <hyle/mem/quota_allocator.h>
+#include <hyle/mem/reclamation.h>
 #include <hyle/mem/stats.h>
 
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdio>
 #include <cstdint>
@@ -18,10 +20,38 @@
 #include <utility>
 #include <vector>
 
+namespace {
+
+struct PublishedSnapshot {
+  std::uint64_t value = 0;
+  bool* reclaimed = nullptr;
+  hyle::mem::RetireRecord retirement;
+};
+
+void reclaim_snapshot(PublishedSnapshot* snapshot) noexcept {
+  *snapshot->reclaimed = true;
+}
+
+} // namespace
+
 int main() {
   std::pmr::vector<int> values(hyle::mem::system_memory_resource());
   values.assign({1, 2, 3, 4});
   if (values.back() != 4) return 1;
+
+  bool reclaimed = false;
+  PublishedSnapshot old_snapshot{.value = 41, .reclaimed = &reclaimed};
+  PublishedSnapshot next_snapshot{.value = 42, .reclaimed = &reclaimed};
+  std::atomic<PublishedSnapshot*> published{&old_snapshot};
+  hyle::mem::ReclamationDomain reclamation(0);
+  {
+    auto guard = reclamation.read();
+    if (guard.protect(published)->value != 41) return 22;
+  }
+  PublishedSnapshot* retired =
+      published.exchange(&next_snapshot, std::memory_order_acq_rel);
+  reclamation.retire<&reclaim_snapshot>(retired->retirement, retired);
+  if (reclamation.synchronize() != 1 || !reclaimed) return 23;
 
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128 * 1024);
   hyle::mem::Arena scratch(quota.get());

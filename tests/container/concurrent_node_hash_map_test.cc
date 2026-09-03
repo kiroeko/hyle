@@ -26,6 +26,47 @@ struct NodeToggleAllocatorState {
   std::atomic<bool> fail{false};
 };
 
+struct TrackingAllocatorState {
+  AllocatorRef backing = system_allocator();
+  std::atomic<std::size_t> allocations{0};
+  std::atomic<std::size_t> deallocations{0};
+};
+
+void *tracking_allocate(void *raw, std::size_t size,
+                        std::size_t alignment) noexcept {
+  auto *state = static_cast<TrackingAllocatorState *>(raw);
+  void *result = state->backing.allocate(size, alignment);
+  if (result != nullptr)
+    state->allocations.fetch_add(1, std::memory_order_relaxed);
+  return result;
+}
+
+void tracking_deallocate(void *raw, void *pointer, std::size_t size,
+                         std::size_t alignment) noexcept {
+  auto *state = static_cast<TrackingAllocatorState *>(raw);
+  state->deallocations.fetch_add(1, std::memory_order_relaxed);
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void *tracking_reallocate(void *, void *, std::size_t, std::size_t,
+                          std::size_t) noexcept {
+  return nullptr;
+}
+
+#if defined(HYLE_TESTING)
+struct PausedTableLoad {
+  std::atomic<bool> loaded{false};
+  std::atomic<bool> release{false};
+};
+
+void pause_after_table_load(void *raw) noexcept {
+  auto *pause = static_cast<PausedTableLoad *>(raw);
+  pause->loaded.store(true, std::memory_order_release);
+  while (!pause->release.load(std::memory_order_acquire))
+    std::this_thread::yield();
+}
+#endif
+
 void *node_toggle_allocate(void *raw, std::size_t size,
                            std::size_t alignment) noexcept {
   auto *state = static_cast<NodeToggleAllocatorState *>(raw);
@@ -220,4 +261,65 @@ TEST(ConcurrentNodeHashMap, ForEachVisitsEveryStableNode) {
   EXPECT_EQ(sum, 999u * 1000u / 2u);
   map.clear();
   EXPECT_TRUE(map.empty());
+}
+
+#if defined(HYLE_TESTING)
+TEST(ConcurrentNodeHashMap, RetiredTableWaitsForProtectedStaleReader) {
+  TrackingAllocatorState state;
+  AllocatorRef allocator(&tracking_allocate, &tracking_deallocate,
+                         &tracking_reallocate, &state);
+  hyle::mem::ReclamationDomain domain(0);
+  using Map = hyle::container::ReclaimingTableConcurrentNodeHashMap<
+      int, int, hyle::container::Hash<int>, std::equal_to<>, AllocatorRef>;
+  {
+    Map map(domain, 16, allocator);
+    ASSERT_TRUE(map.valid());
+    Map::Accessor inserted;
+    ASSERT_TRUE(map.emplace(inserted, 7, 70));
+    inserted.release();
+
+    PausedTableLoad pause;
+    map.set_table_load_hook_for_testing(&pause_after_table_load, &pause);
+    std::atomic<bool> found{false};
+    std::thread reader([&] {
+      Map::ConstAccessor value;
+      found.store(map.find(value, 7), std::memory_order_release);
+    });
+    while (!pause.loaded.load(std::memory_order_acquire))
+      std::this_thread::yield();
+
+    const std::size_t before =
+        state.deallocations.load(std::memory_order_relaxed);
+    ASSERT_TRUE(map.try_reserve(128));
+    EXPECT_EQ(state.deallocations.load(std::memory_order_relaxed), before);
+
+    pause.release.store(true, std::memory_order_release);
+    reader.join();
+    EXPECT_TRUE(found.load(std::memory_order_acquire));
+    map.set_table_load_hook_for_testing(nullptr);
+    EXPECT_EQ(domain.synchronize(), 1u);
+    EXPECT_EQ(state.deallocations.load(std::memory_order_relaxed), before + 2);
+  }
+  EXPECT_EQ(state.allocations.load(std::memory_order_relaxed),
+            state.deallocations.load(std::memory_order_relaxed));
+}
+#endif
+
+TEST(ConcurrentNodeHashMap, RetainedPolicyDefersOldTableUntilDestruction) {
+  TrackingAllocatorState state;
+  AllocatorRef allocator(&tracking_allocate, &tracking_deallocate,
+                         &tracking_reallocate, &state);
+  using Map = hyle::container::RetainedTableConcurrentNodeHashMap<
+      int, int, hyle::container::Hash<int>, std::equal_to<>, AllocatorRef>;
+  {
+    Map map(16, allocator);
+    ASSERT_TRUE(map.valid());
+    Map::Accessor inserted;
+    ASSERT_TRUE(map.emplace(inserted, 7, 70));
+    inserted.release();
+    ASSERT_TRUE(map.try_reserve(128));
+    EXPECT_EQ(state.deallocations.load(std::memory_order_relaxed), 0u);
+  }
+  EXPECT_EQ(state.allocations.load(std::memory_order_relaxed),
+            state.deallocations.load(std::memory_order_relaxed));
 }

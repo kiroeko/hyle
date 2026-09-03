@@ -60,7 +60,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | mem | core, error, platform | — |
 | mem_vm | core, error, mem, platform, platform_fs, util_core | — |
 | simd | core, platform | — |
-| container | core, mem | platform |
+| container | core, mem, mem_reclaim | platform |
 | util | core, error, mem, container | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, timer_queue |
 | io | core, mem, container, time, timer_queue, sched | — |
@@ -76,7 +76,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | error | error |
 | time | time, timer_queue |
 | platform | platform, platform_thread, platform_fs |
-| mem | mem, mem_vm |
+| mem | mem, mem_vm, mem_reclaim |
 | obs | obs |
 | simd | simd |
 | math | math |
@@ -108,39 +108,26 @@ storage 作锁外 wake chain，仍保留专用实现。
 
 Platform 产品由 `platform`、`platform_thread`、`platform_fs` 三个 factor 聚合：host facts、CPU/NUMA、
 动态库和匿名 VM 留在 dependency-light 的 `platform`；线程/等待与同步文件系统分别只在需要时进入
-HYLE 内部闭包。Mem 产品由 `mem` 与 `mem_vm` 聚合：allocator/resource/pool/NUMA owner 属于 `mem`，
-mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `mem_vm`。这些拆分不改变普通
+HYLE 内部闭包。Mem 产品由 `mem`、`mem_vm` 与 `mem_reclaim` 聚合：allocator/resource/pool/NUMA owner 属于 `mem`，
+mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `mem_vm`，read-mostly publication
+的 reader lifetime 属于 `mem_reclaim`。这些拆分不改变普通
 用户选择 `hyle::platform` / `hyle::mem` 的产品心智，只让内部消费者取得精确依赖。
 
-`mem_reclaim` 是从下一版候选图登记的独立开发 factor。它只依赖 Core，拥有 read-side guard、intrusive
-retire record 和 grace-period callback；在其性能门与真实 consumer migration 完成前，不进入 Mem façade，
-也不改变已经关闭的 Container/Obs。具体可交付状态只以 registry 与该 factor 的 closure card 为准。
+`mem_reclaim` 是只依赖 Core 的独立 factor，拥有 read-side guard、intrusive retire record 和 grace-period
+callback。Container 的 node map 以真实 `PUBLIC` 边复用它，Mem façade 只负责聚合，不复制实现或状态。
+具体可交付状态只以 registry 与该 factor 的 closure card 为准。
 
-### 2.1 `mem_reclaim` 的有限恢复位置
+### 2.1 `mem_reclaim` 的恢复轮位置
 
-`mem_reclaim` 既不是当前 shipping Mem 的隐藏缺口，也不能等到所有上层模块结束后再遗忘处理。本轮
-质因数施工按以下有限协议推进：
+历史 v1 因没有获准 consumer 和可构建 Folly peer 而 `BLOCKED`。2026-09-03 后两项新事实同时成立：owner
+准入 inference read-mostly snapshot journey；官方 vcpkg Folly RCU 构建、语义 smoke 与 peer 身份完成
+资格化。因此 registry 已依法建立 v2 `RESUME`，并用两个窄 reopen card 分别约束 Mem façade 与 Container
+旧表寿命，历史检查仍只作审计记录。
 
-1. 先完成 `timer_queue` 对当前 Sched consumer provenance 的有限裁决；若变动与冻结 timer lifecycle
-   无关，只按统一仪器规则记录 non-material renewal，不默认重开产品；
-2. 随后只读审计 Container 并发 map 的 table publication/rehash 生命周期，判断它是否仍是自然、可冻结的
-   reclamation consumer；这不是提前重构整个 Container；
-3. 同时尝试在锁定环境中通过官方构建路线资格化 Folly RCU same-contract peer，不手写局部 peer；
-4. 只有 consumer owner 授权 migration/holdout 且 Folly peer 可资格化这两个条件同时成立，才为
-   `mem_reclaim` 新建 `RESUME` round，并从 `SCOPED` 重新进入；随后完成 5% P1、具名 consumer、
-   source/static/shared 产品交付和使用指南；
-5. 任一条件不成立时维持 registry 的 `BLOCKED`，停止改产品和 benchmark，继续 Obs、Math/SIMD、Container、
-   Util-runtime、Sched、IO 的正常轮次。后续完整 Container 轮若产生合法 consumer trigger，再按同一条件恢复。
-
-因此该 factor 的最早处理点是 **Timer-queue 当前来源裁决之后、Obs 之前的有界恢复检查**；是否真正进入
-实现轮由 registry 已记录的两个恢复条件决定。Shipping `hyle::mem` 不因这次检查重开。
-
-本轮 Timer-queue 检查已对精确的 `9fc1b77d... -> 32ec5084...` Sched 来源变化完成
-[`NON_MATERIAL` 裁决](../implementation/evidence/performance/provenance-reviews/timer-queue-scheduler-lifecycle-9fc1-to-32ec.md)；
-它只覆盖该 hash 边。紧接的
-[`mem_reclaim` 有限恢复检查](../implementation/tasks/mem/mem-reclaim-resume-check-2026-09-03.md)
-确认当前 Container 没有获准的真实 consumer，且 W1-WIN 的官方 Folly 配置缺 required FastFloat；两个
-恢复钥匙均未取得，因此没有建立 `RESUME`，施工队列按第 5 步转入 Obs。
+这一恢复轮只允许 typed retire convenience、Container table hand-off、Mem 产品交付、文档和预冻结 P1；
+不能借机重开 allocator、其它 Container family、Obs 或公共仪器。达到门后依次关闭三个 card，再回到
+全局功能展开顺序中的最低层未完成 factor；若性能、sanitizer 或交付失败，则按 card 进入 `BLOCKED`，不以
+继续研究替代状态。
 
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include

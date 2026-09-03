@@ -151,7 +151,7 @@ mem_reclaim -> PUBLIC core
 mem         -> PUBLIC core error platform
 mem_vm      -> PUBLIC core error mem platform platform_fs util_core
 simd        -> PUBLIC core platform
-container   -> PUBLIC core mem; PRIVATE platform
+container   -> PUBLIC core mem mem_reclaim; PRIVATE platform
 util        -> PUBLIC core error mem container
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container timer_queue
 io          -> PUBLIC core mem container time timer_queue sched
@@ -170,7 +170,8 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 `container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
 `platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform_fs -> PUBLIC time` 是真实 SDK 边；dependency-light 的 `platform` host factor 不再因此取得
-Time。Platform façade 聚合 `platform/platform_thread/platform_fs`，Mem façade 聚合 `mem/mem_vm`；
+Time。Platform façade 聚合 `platform/platform_thread/platform_fs`，Mem façade 聚合
+`mem/mem_vm/mem_reclaim`；
 内部 factor 仍只链接自己实际使用的 factor，不能链接 façade。sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
 但 cancel callback 已迁移 hlist 并形成真实 direct edge。io、compute 与 graph 的当前公开面都暴露 sched
 类型，因此 sched

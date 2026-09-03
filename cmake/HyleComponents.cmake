@@ -153,9 +153,9 @@ _hyle_declare_component(platform_fs
     hyle/platform/fs.h
     hyle/platform/fs_convenience.h
     hyle/platform/fs_visibility.h)
-# Registered independently before source migration. The Mem product facade does
-# not select this factor until its own closure round reaches a deliverable
-# candidate.
+# Reader-safe retirement is an internal factor aggregated by the consumer-facing
+# Mem product. Container names it directly because its public concurrent-node
+# map exposes the explicit reclamation-domain constructor.
 _hyle_declare_component(mem_reclaim
   PUBLIC_DEPS core
   SPLIT_PUBLIC_HEADERS hyle/mem/reclamation.h)
@@ -171,7 +171,7 @@ _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # implementation paths such as runtime ISA/topology support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
-  PUBLIC_DEPS core mem)
+  PUBLIC_DEPS core mem mem_reclaim)
 _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 # SchedulerOptions and the public timer/synchronization APIs name platform and
 # typed time values, so both are real transitive SDK requirements.
@@ -242,7 +242,7 @@ _hyle_declare_product(core FACTORS core)
 _hyle_declare_product(error FACTORS error)
 _hyle_declare_product(time FACTORS time timer_queue)
 _hyle_declare_product(platform FACTORS platform platform_thread platform_fs)
-_hyle_declare_product(mem FACTORS mem mem_vm)
+_hyle_declare_product(mem FACTORS mem mem_vm mem_reclaim)
 _hyle_declare_product(obs FACTORS obs)
 _hyle_declare_product(simd FACTORS simd)
 _hyle_declare_product(math FACTORS math)

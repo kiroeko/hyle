@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include "hyle/container/circular_buffer.h"
+#include "hyle/container/concurrent_node_hash_map.h"
 #include "hyle/container/dynamic_bitset.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/intrusive_forward_list.h"
@@ -117,5 +118,14 @@ int main() {
   untrusted.insert_or_assign(std::string("request-key"), 11);
   const int* hardened_value =
       untrusted.find(std::string_view("request-key"));
-  return hardened_value != nullptr && *hardened_value == 11 ? 0 : 6;
+  if (hardened_value == nullptr || *hardened_value != 11) return 6;
+
+  hyle::container::ConcurrentNodeHashMap<int, int> registry(16);
+  decltype(registry)::Accessor writer;
+  if (!registry.emplace(writer, 7, 70)) return 7;
+  writer.release();
+  if (!registry.try_reserve(128)) return 8;
+  decltype(registry)::ConstAccessor reader;
+  if (!registry.find(reader, 7) || *reader != 70) return 9;
+  return 0;
 }

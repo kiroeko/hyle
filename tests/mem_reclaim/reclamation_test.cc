@@ -22,6 +22,10 @@ void reclaim_value(void *state) noexcept {
   value->callbacks->fetch_add(1, std::memory_order_relaxed);
 }
 
+void reclaim_typed_value(RetiredValue *value) noexcept {
+  value->callbacks->fetch_add(1, std::memory_order_relaxed);
+}
+
 TEST(Reclamation, GuardProtectsPublishedPointerAndMoves) {
   ReclamationDomain domain(0);
   RetiredValue value{};
@@ -57,6 +61,17 @@ TEST(Reclamation, NonblockingCollectionWaitsForExistingReader) {
   EXPECT_FALSE(value.record.pending());
   EXPECT_EQ(domain.pending(), 0u);
   EXPECT_EQ(domain.reclaimed(), 1u);
+}
+
+TEST(Reclamation, TypedRetireUsesCompileTimeCallbackWithoutAllocation) {
+  ReclamationDomain domain(0);
+  std::atomic<std::size_t> callbacks{0};
+  RetiredValue value{};
+  value.callbacks = &callbacks;
+
+  domain.retire<&reclaim_typed_value>(value.record, &value);
+  EXPECT_EQ(domain.synchronize(), 1u);
+  EXPECT_EQ(callbacks.load(std::memory_order_relaxed), 1u);
 }
 
 TEST(Reclamation, NestedReadersKeepTheirOriginalEpoch) {

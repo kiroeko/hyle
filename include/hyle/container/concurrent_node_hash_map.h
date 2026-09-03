@@ -13,27 +13,42 @@
 #include "hyle/container/hash.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/reclamation.h"
 #include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
+
+// Old bucket tables may either be deliberately retained until map destruction
+// or returned after every pre-publication reader leaves. Retention is the
+// zero-read-tax default; reclamation is an explicit memory/latency trade-off
+// for long-lived registries that continue to grow during service.
+enum class RetiredTableLifetime : std::uint8_t {
+  kAfterReaders,
+  kMapDestruction,
+};
 
 // Fine-grained node hash map for read-heavy shared registries and long-lived
 // accessors. Each bucket owns an independent reader/writer lock; values remain
 // at stable addresses across rehash. This is the oneTBB concurrent_hash_map
 // family, complementary to ConcurrentHashMap's compact sharded-flat family.
 //
-// Rehash is a cold stop-the-table phase: it drains each
-// bucket lock, relinks stable nodes, then publishes a new bucket array. Retired
-// bucket arrays stay allocated until map destruction (geometric growth keeps
-// their total below the current array size); this removes a global reader
-// refcount/hazard write from the hot path. Alloc/Hash/Eq must be safe for
-// concurrent calls. Destruction requires quiescence. Management operations
+// Rehash is a cold stop-the-table phase: it drains each bucket lock, relinks
+// stable nodes, then publishes a new bucket array. The default retains old
+// arrays until destruction; geometric growth bounds their total capacity to
+// less than twice the current table. The explicit reclaiming-table alias uses
+// an allocation-free read-side guard and returns arrays after preceding readers
+// leave. Alloc/Hash/Eq must be safe for concurrent calls. Destruction requires
+// quiescence. Management operations
 // reserve/clear/for_each must not be called while the same thread holds an
 // accessor. Keep at most one live accessor from this map per thread and release
 // it before another lookup (lookup automatically releases a reused accessor).
 template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
-          class Alloc = mem::SystemAllocator>
+          class Alloc = mem::SystemAllocator,
+          RetiredTableLifetime TableLifetime =
+              RetiredTableLifetime::kMapDestruction>
 class ConcurrentNodeHashMap {
+  static constexpr bool kReclaimAfterReaders =
+      TableLifetime == RetiredTableLifetime::kAfterReaders;
   static_assert(std::is_nothrow_move_constructible_v<K> &&
                     std::is_nothrow_move_constructible_v<V> &&
                     std::is_nothrow_destructible_v<K> &&
@@ -64,16 +79,70 @@ class ConcurrentNodeHashMap {
     Node *head = nullptr;
   };
 
+  struct Table;
+
+  struct ReclaimedTableState {
+    mem::RetireRecord record;
+    ConcurrentNodeHashMap *owner = nullptr;
+  };
+
+  struct RetainedTableState {
+    Table *next = nullptr;
+  };
+
+  using TableRetirementState =
+      std::conditional_t<kReclaimAfterReaders, ReclaimedTableState,
+                         RetainedTableState>;
+
   struct Table {
     Bucket *buckets = nullptr;
     std::size_t bucket_count = 0;
     std::size_t mask = 0;
     std::atomic<std::size_t> size{0};
-    Table *retired_next = nullptr;
+    HYLE_NO_UNIQUE_ADDRESS TableRetirementState retirement;
+  };
+
+  struct ReclamationLifetimeState {
+    mem::ReclamationDomain *domain = nullptr;
+  };
+
+  struct RetainedLifetimeState {
+    Table *retired = nullptr;
+  };
+
+  using LifetimeState =
+      std::conditional_t<kReclaimAfterReaders, ReclamationLifetimeState,
+                         RetainedLifetimeState>;
+
+  class TableReadGuard final {
+  public:
+    explicit TableReadGuard(const ConcurrentNodeHashMap &owner) noexcept {
+      if constexpr (kReclaimAfterReaders)
+        guard_ = owner.reclamation_domain().read();
+    }
+
+    [[nodiscard]] Table *
+    protect(const std::atomic<Table *> &published) const noexcept {
+      if constexpr (kReclaimAfterReaders)
+        return guard_.protect(published);
+      return published.load(std::memory_order_acquire);
+    }
+
+    void reset() noexcept {
+      if constexpr (kReclaimAfterReaders)
+        guard_.reset();
+    }
+
+  private:
+    struct EmptyGuard {};
+    HYLE_NO_UNIQUE_ADDRESS
+    std::conditional_t<kReclaimAfterReaders, mem::ReclamationGuard, EmptyGuard>
+        guard_;
   };
 
 public:
   static constexpr std::size_t kDefaultBucketCount = 64;
+  static constexpr RetiredTableLifetime kRetiredTableLifetime = TableLifetime;
 
   enum class InsertResult : std::uint8_t {
     kInserted,
@@ -191,7 +260,19 @@ public:
   explicit ConcurrentNodeHashMap(std::size_t bucket_count,
                                  Alloc alloc = Alloc{}, Hash hash = Hash{},
                                  Eq eq = Eq{})
-      : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)) {
+      : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)),
+        lifetime_(default_lifetime_state()) {
+    current_.store(allocate_table(normalize_bucket_count(bucket_count)),
+                   std::memory_order_relaxed);
+  }
+
+  explicit ConcurrentNodeHashMap(mem::ReclamationDomain &domain,
+                                 std::size_t bucket_count = kDefaultBucketCount,
+                                 Alloc alloc = Alloc{}, Hash hash = Hash{},
+                                 Eq eq = Eq{})
+    requires(kReclaimAfterReaders)
+      : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)),
+        lifetime_(ReclamationLifetimeState{&domain}) {
     current_.store(allocate_table(normalize_bucket_count(bucket_count)),
                    std::memory_order_relaxed);
   }
@@ -207,14 +288,29 @@ public:
   }
 
   std::size_t size() const noexcept {
-    Table *table = current_.load(std::memory_order_acquire);
+    TableReadGuard guard(*this);
+    Table *table = guard.protect(current_);
     return table == nullptr ? 0 : table->size.load(std::memory_order_relaxed);
   }
   bool empty() const noexcept { return size() == 0; }
   std::size_t bucket_count() const noexcept {
-    Table *table = current_.load(std::memory_order_acquire);
+    TableReadGuard guard(*this);
+    Table *table = guard.protect(current_);
     return table == nullptr ? 0 : table->bucket_count;
   }
+
+#if defined(HYLE_TESTING)
+  using TableLoadHook = void (*)(void *) noexcept;
+
+  // TEST-ONLY: pause a lookup after it protects the current table but before
+  // it acquires that table's bucket lock, making the reclamation race
+  // deterministic without exposing table internals in the shipped API.
+  void set_table_load_hook_for_testing(TableLoadHook hook,
+                                       void *state = nullptr) noexcept {
+    table_load_hook_state_.store(state, std::memory_order_relaxed);
+    table_load_hook_.store(hook, std::memory_order_release);
+  }
+#endif
 
   template <class Q>
     requires(
@@ -225,13 +321,16 @@ public:
     HYLE_FATAL_ASSERT(valid());
     const std::uint64_t hash = hash_(key);
     for (;;) {
-      Table *table = acquire_open_table();
+      TableReadGuard table_guard(*this);
+      Table *table = table_guard.protect(current_);
+      notify_table_loaded_for_testing();
       Bucket &bucket = table->buckets[hash & table->mask];
       bucket.lock.lock_shared();
       if (current_.load(std::memory_order_acquire) != table) {
         bucket.lock.unlock_shared();
         continue;
       }
+      table_guard.reset();
       const Node *node = find_node(bucket, key, hash);
       if (node == nullptr) {
         bucket.lock.unlock_shared();
@@ -251,13 +350,16 @@ public:
     HYLE_FATAL_ASSERT(valid());
     const std::uint64_t hash = hash_(key);
     for (;;) {
-      Table *table = acquire_open_table();
+      TableReadGuard table_guard(*this);
+      Table *table = table_guard.protect(current_);
+      notify_table_loaded_for_testing();
       Bucket &bucket = table->buckets[hash & table->mask];
       bucket.lock.lock();
       if (current_.load(std::memory_order_acquire) != table) {
         bucket.lock.unlock();
         continue;
       }
+      table_guard.reset();
       Node *node = find_node(bucket, key, hash);
       if (node == nullptr) {
         bucket.lock.unlock();
@@ -281,13 +383,16 @@ public:
     const std::uint64_t hash = hash_(key);
     bool growth_checked = false;
     for (;;) {
-      Table *table = acquire_open_table();
+      TableReadGuard table_guard(*this);
+      Table *table = table_guard.protect(current_);
+      notify_table_loaded_for_testing();
       Bucket &bucket = table->buckets[hash & table->mask];
       bucket.lock.lock();
       if (current_.load(std::memory_order_acquire) != table) {
         bucket.lock.unlock();
         continue;
       }
+      table_guard.reset();
       if (Node *existing = find_node(bucket, key, hash)) {
         result.bind(&bucket, existing);
         return InsertResult::kAlreadyPresent;
@@ -327,13 +432,16 @@ public:
     const std::uint64_t hash = hash_(key);
     bool growth_checked = false;
     for (;;) {
-      Table *table = acquire_open_table();
+      TableReadGuard table_guard(*this);
+      Table *table = table_guard.protect(current_);
+      notify_table_loaded_for_testing();
       Bucket &bucket = table->buckets[hash & table->mask];
       bucket.lock.lock();
       if (current_.load(std::memory_order_acquire) != table) {
         bucket.lock.unlock();
         continue;
       }
+      table_guard.reset();
       if (Node *existing = find_node(bucket, key, hash)) {
         existing->value = std::move(value);
         result.bind(&bucket, existing);
@@ -370,13 +478,16 @@ public:
     HYLE_FATAL_ASSERT(valid());
     const std::uint64_t hash = hash_(key);
     for (;;) {
-      Table *table = acquire_open_table();
+      TableReadGuard table_guard(*this);
+      Table *table = table_guard.protect(current_);
+      notify_table_loaded_for_testing();
       Bucket &bucket = table->buckets[hash & table->mask];
       bucket.lock.lock();
       if (current_.load(std::memory_order_acquire) != table) {
         bucket.lock.unlock();
         continue;
       }
+      table_guard.reset();
       Node **link = &bucket.head;
       while (*link != nullptr &&
              ((*link)->hash != hash || !eq_((*link)->key, key)))
@@ -449,6 +560,29 @@ public:
   }
 
 private:
+  [[nodiscard]] static LifetimeState default_lifetime_state() noexcept {
+    if constexpr (kReclaimAfterReaders) {
+      return ReclamationLifetimeState{&mem::default_reclamation_domain()};
+    } else {
+      return RetainedLifetimeState{};
+    }
+  }
+
+  [[nodiscard]] mem::ReclamationDomain &reclamation_domain() const noexcept
+    requires(kReclaimAfterReaders)
+  {
+    HYLE_FATAL_ASSERT(lifetime_.domain != nullptr);
+    return *lifetime_.domain;
+  }
+
+  void notify_table_loaded_for_testing() const noexcept {
+#if defined(HYLE_TESTING)
+    if (TableLoadHook hook = table_load_hook_.load(std::memory_order_acquire)) {
+      hook(table_load_hook_state_.load(std::memory_order_relaxed));
+    }
+#endif
+  }
+
   static std::size_t normalize_bucket_count(std::size_t requested) noexcept {
     if (requested == 0)
       requested = kDefaultBucketCount;
@@ -480,6 +614,8 @@ private:
       ::new (static_cast<void *>(table->buckets + i)) Bucket;
     table->bucket_count = count;
     table->mask = count - 1;
+    if constexpr (kReclaimAfterReaders)
+      table->retirement.owner = this;
     return table;
   }
 
@@ -507,15 +643,28 @@ private:
     Table *current = current_.load(std::memory_order_relaxed);
     if (current == nullptr)
       return;
+    if constexpr (kReclaimAfterReaders)
+      static_cast<void>(reclamation_domain().synchronize());
     free_table(current, true);
-    Table *retired = retired_;
-    while (retired != nullptr) {
-      Table *next = retired->retired_next;
-      free_table(retired, false);
-      retired = next;
+    if constexpr (!kReclaimAfterReaders) {
+      Table *retired = lifetime_.retired;
+      while (retired != nullptr) {
+        Table *next = retired->retirement.next;
+        free_table(retired, false);
+        retired = next;
+      }
+      lifetime_.retired = nullptr;
     }
     current_.store(nullptr, std::memory_order_relaxed);
-    retired_ = nullptr;
+  }
+
+  static void reclaim_retired_table(void *raw) noexcept
+    requires(kReclaimAfterReaders)
+  {
+    Table *table = static_cast<Table *>(raw);
+    HYLE_FATAL_ASSERT(table != nullptr);
+    HYLE_FATAL_ASSERT(table->retirement.owner != nullptr);
+    table->retirement.owner->free_table(table, false);
   }
 
   template <class... Args>
@@ -542,16 +691,16 @@ private:
     return nullptr;
   }
 
-  Table *acquire_open_table() const noexcept {
-    return current_.load(std::memory_order_acquire);
-  }
-
   void maybe_grow() {
-    Table *table = current_.load(std::memory_order_acquire);
-    if (table->size.load(std::memory_order_relaxed) < table->bucket_count)
-      return;
+    {
+      TableReadGuard guard(*this);
+      Table *observed = guard.protect(current_);
+      if (observed->size.load(std::memory_order_relaxed) <
+          observed->bucket_count)
+        return;
+    }
     std::lock_guard lock(rehash_mutex_);
-    table = current_.load(std::memory_order_acquire);
+    Table *table = current_.load(std::memory_order_acquire);
     if (table->size.load(std::memory_order_relaxed) < table->bucket_count ||
         table->bucket_count > static_cast<std::size_t>(-1) / 2)
       return;
@@ -586,19 +735,42 @@ private:
     replacement->size.store(old_table->size.load(std::memory_order_relaxed),
                             std::memory_order_relaxed);
     current_.store(replacement, std::memory_order_release);
-    old_table->retired_next = retired_;
-    retired_ = old_table;
     for (std::size_t i = old_table->bucket_count; i != 0; --i)
       old_table->buckets[i - 1].lock.unlock();
+    if constexpr (kReclaimAfterReaders) {
+      mem::ReclamationDomain &domain = reclamation_domain();
+      domain.retire(old_table->retirement.record, old_table,
+                    &ConcurrentNodeHashMap::reclaim_retired_table);
+      static_cast<void>(domain.try_reclaim());
+    } else {
+      old_table->retirement.next = lifetime_.retired;
+      lifetime_.retired = old_table;
+    }
     return true;
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   HYLE_NO_UNIQUE_ADDRESS Hash hash_{};
   HYLE_NO_UNIQUE_ADDRESS Eq eq_{};
+  HYLE_NO_UNIQUE_ADDRESS LifetimeState lifetime_{};
   mutable std::mutex rehash_mutex_;
   std::atomic<Table *> current_{nullptr};
-  Table *retired_ = nullptr;
+#if defined(HYLE_TESTING)
+  std::atomic<TableLoadHook> table_load_hook_{nullptr};
+  std::atomic<void *> table_load_hook_state_{nullptr};
+#endif
 };
+
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
+          class Alloc = mem::SystemAllocator>
+using RetainedTableConcurrentNodeHashMap =
+    ConcurrentNodeHashMap<K, V, Hash, Eq, Alloc,
+                          RetiredTableLifetime::kMapDestruction>;
+
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
+          class Alloc = mem::SystemAllocator>
+using ReclaimingTableConcurrentNodeHashMap =
+    ConcurrentNodeHashMap<K, V, Hash, Eq, Alloc,
+                          RetiredTableLifetime::kAfterReaders>;
 
 } // namespace hyle::container

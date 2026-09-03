@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（SCOPED）
+## Closure card（AUDITED）
 
 - component / owner / round：`container` / Container / `container-v3-node-table-reclamation`；
 - task kind：`REOPEN`；baseline：`444b02c01afe00f4cd3b44433204e58db3c24712`；
@@ -35,29 +35,30 @@
 
 | 档位 | 用户前提 | table 生命周期 | 常态读成本 |
 |---|---|---|---|
-| `RetiredTableLifetime::kAfterReaders`（默认） | 长寿命/持续增长，要求运行期归还旧表 | publish 后，在进入 hand-off 的旧 reader 离开后回收 | 每次 table hand-off 进入/退出一次 domain；取得 bucket lock 且确认 current 后立刻退出 |
-| `RetiredTableLifetime::kMapDestruction` | 启动期已 reserve 或增长次数有界，owner 接受旧表保留 | 旧表随 map 析构释放 | 编译期移除 reclamation guard；保留现有 lookup 形状 |
+| `RetiredTableLifetime::kMapDestruction`（默认） | 启动期已 reserve 或增长次数有界，owner 接受旧表保留 | 旧表随 map 析构释放 | 编译期移除 reclamation guard；保留现有 lookup 形状 |
+| `RetiredTableLifetime::kAfterReaders` | 长寿命/持续增长，要求运行期归还旧表 | publish 后，在进入 hand-off 的旧 reader 离开后回收 | 每次 table hand-off 进入/退出一次 domain；取得 bucket lock 且确认 current 后立刻退出 |
 
 两档的 node stability、accessor、failure、bucket lock、rehash stop-the-table 和析构外部 quiescence合同一致；
-差异是明确的 memory lifetime/resource contract，不使用 `fast/light` 名称。默认构造使用进程默认 domain；
-要求隔离长 reader 或确定 teardown 的用户显式传入 `ReclamationDomain&`。每个 table 可支付一份冷
+差异是明确的 memory lifetime/resource contract，不使用 `fast/light` 名称。显式 reclaiming alias 默认
+使用进程 default domain；要求隔离长 reader、确定 teardown，或用外层 read region 摊薄一批 lookup 的
+用户显式传入 `ReclamationDomain&`。每个 table 可支付一份冷
 retire metadata；不能给每个 node、bucket 或 lookup 分配 callback storage。
 
 ## Capability / gap ledger（待 AUDITED 冻结）
 
 | ID | requirement | current | action | verification |
 |---|---|---|---|---|
-| `CNTR3-01` | growing registry 可及时释放旧 table | `MISSING` | `FIX`：默认 reader-safe retirement | 强制交错、allocator balance、stress/sanitizer |
-| `CNTR3-02` | 已 reserve/有界增长可拒绝 read tax | `PARTIAL`：只有隐式默认 | `FIX`：显式 compile-time lifetime route | codegen、同一 correctness suite |
-| `CNTR3-03` | domain ownership/teardown 可发现 | `MISSING` | `FIX`：默认与显式 domain 构造、指南 | compile-only/package journey |
+| `CNTR3-01` | growing registry 可及时释放旧 table | `MISSING` | `FIX`：explicit reader-safe type | 强制交错、allocator balance、stress/sanitizer |
+| `CNTR3-02` | 已 reserve/有界增长可拒绝 read tax | `COMPLETE`：现有默认 | `KEEP` + 显式 retained alias | codegen、同一 correctness suite |
+| `CNTR3-03` | domain ownership/teardown 可发现 | `MISSING` | `FIX`：reclaiming default/explicit domain 构造、指南 | compile-only/package journey |
 | `CNTR3-04` | 其他 Container 能力 | v2 `COMPLETE/ROUTED` | `REJECT` 重开 | v2 identity 不变 |
 
 ## P1 预声明
 
 - primary normal task：4096 warmed successful lookups，读者取得同样的稳定 value、setup/teardown 不计时；
-  HYLE 默认回收路线对 oneTBB `NATURAL_ROUTE` 验证 5% adoption non-inferiority；两者算法/资源合同
+  HYLE 默认 retained 路线对 oneTBB `NATURAL_ROUTE` 验证 5% adoption non-inferiority；两者算法/资源合同
   不同，不得冒充 same-contract SOTA；
-- holdout：默认 `kAfterReaders` 对 `kMapDestruction`，只报告运行期内存回收换来的 guard 成本；它是
+- holdout：`kAfterReaders` 对默认 `kMapDestruction`，只报告运行期内存回收换来的 guard 成本；它是
   产品取舍诊断，不决定 public API 是否存在；
 - resource telemetry：table allocations/frees、live/peak bytes、lookup allocations、lock/atomic 路线；
 - A/A、known-delta、timer floor、candidate/peer order 与 placement 必须通过统一仪器。
@@ -79,13 +80,13 @@ for_each/Accessor 全部公开面；只有 table publication lifetime 受影响�
 |---|---|---|---|---|
 | stable-node concurrent registry | lookup/update/erase + accessor | bucket RW lock | `COMPLETE` | `KEEP` |
 | growth publication hand-off | reader load table 后等待 bucket lock | 旧表保留到析构 | `PARTIAL` | `FIX` guard 覆盖 load→lock→identity check |
-| runtime old-table release | 长寿命增长 registry | 无 | `MISSING` | `FIX` default `kAfterReaders` |
-| bounded-growth no-guard route | 启动期 reserve/接受旧表保留 | 只有隐式默认 | `PARTIAL` | `FIX` explicit `kMapDestruction` |
+| runtime old-table release | 长寿命增长 registry | 无 | `MISSING` | `FIX` explicit `kAfterReaders` alias |
+| bounded-growth no-guard route | 启动期 reserve/接受旧表保留 | 隐式默认 | `COMPLETE` | `KEEP` + named alias |
 | shrink/lock-free/snapshot transaction | 不属于本次 registry task | 无 | `OUT_OF_SCOPE` | higher owner/future demand |
 
-API freeze：模板最后增加 `RetiredTableLifetime` 非类型参数，默认 `kAfterReaders`；提供
-`RetainedTableConcurrentNodeHashMap` alias 表达析构期回收。默认构造借用 process default domain；
-`kAfterReaders` 可显式以 `ReclamationDomain&` 构造。policy 在编译期裁剪，retained route 不执行 guard/
+API freeze：模板最后增加 `RetiredTableLifetime` 非类型参数，默认 `kMapDestruction`；提供
+`RetainedTableConcurrentNodeHashMap` 与 `ReclaimingTableConcurrentNodeHashMap` 两个具名 alias。
+`kAfterReaders` 的普通构造借用 process default domain，也可显式以 `ReclamationDomain&` 构造。policy 在编译期裁剪，retained route 不执行 guard/
 domain branch；node/accessor/failure 公开形状不变。每张 table 最多一份 retire record 与 owner callback
 状态，不能给 node/bucket/lookup 增加 allocation 或 metadata。
 
@@ -105,15 +106,24 @@ symbol 不改。
 4. **FFI：**`N/A/CLEAN`；header template 无 C surface，shared C++ decorated symbol 不等于 C ABI；
 5. **交付：**新增 direct `PUBLIC mem_reclaim` 后必须重跑 source/static/shared/relocation、selected-header 和
    internal-factor alias leak；
-6. **C++/文档：**默认是内存寿命安全的普通路线；只有明确接受 retain-to-destruction 的用户拼 alias。
-   guide 必须说明 reserve、domain isolation、accessor release 和析构外部 quiescence。
+6. **C++/文档：**默认保留既有零 guard 热路；只有持续增长且要求服务期回收的用户选择 reclaiming alias。
+   guide 必须说明 reserve、domain isolation/outer batching、accessor release 和析构外部 quiescence。
 
 ### Performance comparison freeze
 
 oneTBB 的 segment allocation、lazy bucket rehash 与 caller/accessor participation 和 HYLE 的
 stop-the-table swap 不同，故不是 `SAME_CONTRACT`。normal task 固定为 4096-entry warmed successful
-lookup，HYLE 默认路线对 oneTBB natural route 做 5% adoption non-inferiority；retained policy 是同 HYLE
-API/result 下的 resource holdout，但 lifecycle 有意不同，只报告 guard cost 与旧表 live bytes。任何
+lookup，HYLE 默认 retained 路线对 oneTBB natural route 做 5% adoption non-inferiority；reclaiming policy
+是同 HYLE API/result 下的 resource holdout，但 lifecycle 有意不同，只报告 guard cost 与旧表 live bytes。任何
 结果都不得外推整个 Container 或全平台 SOTA。
 
-Audit verdict：本轮仅四项有限 FIX，API、默认值、负空间、performance class 和交付边均已冻结。
+### 实现反馈后的 audit amendment
+
+首次同二进制机制分解得到稳定且 material 的结果：retained HYLE lookup 约 10.3 ns，oneTBB natural route
+约 14.9 ns，而每次 lookup 独立进入 HYLE domain 后约 21.5 ns。约 11 ns 是服务期回收的真实 guard 成本，
+不是地址/顺序噪声；把它设为所有用户默认会让普通 bounded/reserved registry 无条件付费。候选形成前因此
+把默认值改回 `kMapDestruction`，并以具名 reclaiming alias 表达强 lifetime 需求；workload、5% margin、
+两档实现和 direct consumer 均未删除。该 amendment 是产品语义反馈，不是为 benchmark 增加 metadata 或
+移动计时边界。
+
+Audit verdict：本轮仍只有四项有限 FIX；修正后的 API、默认值、负空间、performance class 和交付边冻结。

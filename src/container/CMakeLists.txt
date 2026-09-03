@@ -34,7 +34,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
   list(APPEND _container_arch_sources bitset_ops_neon.cc)
 endif()
-hyle_add_module(container
+hyle_add_module(container TESTING
   SOURCES hash.cc pod_vector.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
           string_view.cc dynamic_bitset.cc ${_container_arch_sources})
 # probe.h exposes an SSSE3 inline route on x86 GCC/Clang-family targets. Keep

@@ -78,6 +78,10 @@ capacity change 是允许分配的冷路径；已声明 bounded 或 steady-state
 - contiguous grow 会使旧地址失效；不要跨 grow 保存 `data()`、iterator 或 reference。
 - open-addressed table 的 rehash 会使 slot 地址失效；key 不可通过 iterator 修改。
 - `ConcurrentNodeHashMap` 的 node 稳定性仍受 guard/lifetime 合同保护，不等于无锁永久引用。
+- `ConcurrentNodeHashMap` 默认保留旧 table 到析构，以服务期旧表内存换取零 read-side reclamation tax；
+  显式 `ReclaimingTableConcurrentNodeHashMap` 才通过 `mem_reclaim` 保护 table load，取得并确认 bucket
+  lock 后立即退出 read region。publish 后必须先释放全部旧 bucket lock，再 retire 旧表，避免同步
+  callback 销毁仍持有的 lock storage。
 - `StringView` 永不拥有字节；`StringInterner::lookup` 返回的 view 受对应 ID 的生命周期约束。
 - `CircularBuffer` 满时 push 会销毁一端元素；指向被覆盖元素的引用立即失效。
 

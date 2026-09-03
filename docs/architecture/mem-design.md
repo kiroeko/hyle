@@ -2,8 +2,8 @@
 
 > 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现以
 > [user/mem](../user/mem.md) 与中央 registry 为准，不会因 architecture 写了目标就提前变成
-> shipping 能力。独立 `mem_reclaim` 仍未进入 Mem façade，其状态以自己的 closure card
-> 为准。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
+> shipping 能力。`mem_reclaim` 的当前交付状态仍以自己的 closure card 为准；通过恢复轮后由普通
+> Mem façade 聚合，而不是公开内部 factor target。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
 > C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
@@ -32,22 +32,23 @@ interval/resource/alias 请求。依赖方向固定为：
 ```text
 compute | graph | io  --->  Mem product
                               |-- mem ----> platform
-                              +-- mem_vm -> mem + platform + platform_fs + util_core
+                              |-- mem_vm -> mem + platform + platform_fs + util_core
+                              +-- mem_reclaim -> core
 ```
 
 Mem 不包含 Device/Stream/Event/Tensor/KV/model policy，也不把 device memory 塞进 host
 `AllocatorRef`。Compute 向 Mem 注入长寿命 provider，并以类型化 adapter 对 Mem `BufferView`
 做 async copy/submit；Mem 不用 `void* stream`、函数注册表或隐藏 staging 反向模拟 completion。
-`mem_reclaim` 不分配 payload，也不是并发容器；在通过独立 P1 门并完成具名 consumer
-migration 前，不是 Mem 用户能力。
+`mem_reclaim` 不分配 payload，也不是并发容器；它负责 read-mostly publication 的 reader lifetime，
+Container 负责把该机制组合进自己的旧 table 生命周期。
 
 ### 1.1 依赖与构建边界
 
 中央 component graph 与真实 target 链接边一致。base factor
 `mem -> PUBLIC {core, error, platform}` 拥有 allocator/resource/buffer/pool/planner；storage factor
 `mem_vm -> PUBLIC {core, error, mem, platform, platform_fs, util_core}` 拥有 mapping、HugeMapping 与
-FiberStack。面向用户的 `hyle::mem` product facade 聚合两者；内部 consumer 直接链接实际 factor。
-开发 factor `mem_reclaim -> PUBLIC {core}` 目前不在该 facade。`core` 提供 cache-layout/compiler 头合同，
+FiberStack。面向用户的 `hyle::mem` product facade 聚合三者；内部 consumer 直接链接实际 factor。
+factor `mem_reclaim -> PUBLIC {core}` 由该 facade 聚合。`core` 提供 cache-layout/compiler 头合同，
 `error` 承担构造/VM/NUMA 冷失败，`platform/platform_fs` 承担 OS 机制与 file handle，`util_core`
 承担 fiber stack pool 的 SpinLock；mem 不自造第二套错误。`obs/trace.h` 只是由
 `HYLE_TRACE` 控制的跨切 trace seam，不让普通 mem binary 反向依赖 obs runtime。HYLE 的模块和同
@@ -56,30 +57,22 @@ FiberStack。面向用户的 `hyle::mem` product facade 聚合两者；内部 co
 安装后消费由 `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)` + `hyle::mem` 表达；selected-component 的
 C++23 shared/static SDK consumer 不能用源码树 include 或测试 target 遮蔽导出/传递依赖缺口。
 
-### 1.2 `mem_reclaim` 的产品边界与恢复协议
+### 1.2 `mem_reclaim` 的产品边界
 
-Registry 当前把 `mem_reclaim` 记录为独立 `BLOCKED` factor。其 candidate 已有显式
-`ReclamationDomain`、move-only read guard、allocation-free intrusive retire record、非阻塞 reclaim、
-grace-period synchronize/drain 与计数观测；三平台 correctness、适用 sanitizer、exact-factor
-shared/static 和红队已通过。这些事实只证明候选机制存在，不使它成为 `hyle::mem` 用户能力。
+该 factor 提供显式 `ReclamationDomain`、move-only read guard、caller-owned intrusive retire record、
+非阻塞 collection、grace-period synchronize/drain 和 pressure observation。普通读路径不分配；前 64 个
+并发参与线程使用每 domain 独占 cache-line slot，超出后进入固定 fallback stripe。typed retire 只生成
+编译期 raw callback thunk，不改变 record/domain layout。
 
-剩余问题不是继续补 API，而是同时取得两把产品钥匙：
+准入的首个真实产品组合是 `ReclaimingTableConcurrentNodeHashMap` 的旧 bucket table hand-off。普通
+`ConcurrentNodeHashMap` 保持零 guard 的有界 retained 路线；持续增长 consumer 显式选择服务期回收，
+避免把内存与 latency 取舍伪装成唯一合同。RCU 与 Container 分别拥有 reader lifetime 和 table/node
+语义，形成真实直接依赖而不互相复制。
 
-1. 锁定环境可按官方路线构建并资格化 Folly RCU same-contract peer；
-2. Container 独立 reopen card 或另一个已准入真实 consumer 授权冻结 migration/holdout。
-
-本轮在 `timer_queue` 当前 consumer provenance 完成有限裁决后立即检查这两个条件：先做 Container 并发 map
-生命周期的有界只读审计和 Folly 构建资格化；两者成立才从 `SCOPED` 开始 `RESUME`，完成 5% P1、
-具名 consumer、Mem product source/static/shared 和使用指南。任一条件不成立就保持 `BLOCKED`，不修改
-shipping Mem、不用手写 peer 或放宽门槛，也不阻塞后续模块。完整恢复条件和候选身份以
-[`module-status.json`](../implementation/module-status.json)及
-[`mem-reclaim-v1`](../implementation/tasks/mem/mem-reclaim-v1.md)为准。
-
-因此 Mem v3 的 `CLOSED` 与 `mem_reclaim` 的 `BLOCKED` 是两个并存事实：前者是当前可交付产品，后者是
-尚未准入 façade/SDK 的候选 factor。只有恢复轮通过后，才更新用户指南并裁决 Mem façade 是否聚合它。
-2026-09-03 的
-[`有限恢复检查`](../implementation/tasks/mem/mem-reclaim-resume-check-2026-09-03.md)确认当前 Container
-没有已准入生产实例，且官方 Folly 配置尚缺 required FastFloat；因此本轮没有开始 `RESUME`。
+明确负空间包括 hazard pointer、executor/GPU-fence affine callback、自动分配 retire node 和业务 snapshot
+schema。一个 stalled reader 必须不能阻塞无关回收时，才以真实 consumer 另开 hazard-pointer 能力轮；
+GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢复过程保留在 closure task，当前状态
+只读 [`module-status.json`](../implementation/module-status.json)。
 
 ## 2. 需求基线
 
@@ -355,8 +348,8 @@ mapping 心智；旧类型名已经删除，不留 deprecated alias。
 
 ## 11. 收口定义与重开边界
 
-本节裁决当前 shipping Mem façade；独立 `mem_reclaim` 不继承这些结论，也不反向使 Mem v3 自动重开。
-它只按 §1.2 和自己的 closure card 恢复。
+本节裁决完整 Mem façade；`mem_reclaim` 仍由独立 factor/card 对自己的算法与性能负责，Mem 聚合轮只证明
+用户入口和 source/static/shared 交付，不替它代签。
 
 Mem 进入预发布冻结必须同时满足：
 

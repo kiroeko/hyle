@@ -561,19 +561,30 @@ Product builds have no external benchmark dependency. Any `HYLE_BUILD_BENCH=ON` 
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
 | `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_intrusive_bench` |
 | `-DHYLE_BENCH_WYHASH=ON` | hash_bytes vs wyhash | `hyle_hash_bench` |
+| `-DHYLE_BENCH_FOLLY=ON` | immutable snapshot reads vs official Folly RCU | `hyle_mem_reclaim_consumer_bench` |
 
-**10 gates total.** Highway and xsimd are **pinned external** rivals rooted at
+**11 gates total.** Highway and xsimd are **pinned external** rivals rooted at
 `HYLE_BENCH_VENDOR_DIR`; their gates only toggle comparison rows after the
-mandatory bench checkout is available. SIMDUTF remains **vendored**. The other
-7 are **clone** rivals (ABSL/MOODYCAMEL/TBB/RIGTORP/MARL/BOOST/WYHASH — each
+mandatory bench checkout is available. SIMDUTF remains **vendored**. Seven are
+**clone** rivals (ABSL/MOODYCAMEL/TBB/RIGTORP/MARL/BOOST/WYHASH — each
 needs its sibling clone + a `HYLE_<LIB>_DIR` path variable, defaulting to
-`$repo/../<lib>`). All gates are B-category dev/bench controls and never affect
-the shipped library.
+`$repo/../<lib>`). Folly uses a clean source checkout only for provenance and a
+separately prepared official package prefix for its dependency closure. All
+gates are B-category dev/bench controls and never affect the shipped library.
+
+On Windows, install Folly with vcpkg into a persistent prefix, pass the clean
+tag-matched checkout as `HYLE_FOLLY_DIR`, and pass the installed triplet root
+(`.../installed/x64-windows`) as `HYLE_FOLLY_PREFIX`. If the latter is omitted,
+CMake looks for `folly-vcpkg-prefix/x64-windows` beside the source checkout.
+The prefix is prepared once and reused by fresh evidence build trees; it is not
+a product dependency and must not be placed inside the clean peer checkout.
 
 ### One command for ALL rivals — the `bench-all-sota` CMake preset
 
 After fetching the SIMD vendors and cloning the sibling rivals, the
-`bench-all-sota` preset flips every gate ON at once:
+`bench-all-sota` flips the ten shared/source-only gates on at once. The heavy
+Folly package gate remains explicit so an ordinary all-rivals build does not
+silently require a machine-specific prepared vcpkg prefix:
 
 ```sh
 # Windows/macOS use their documented vendor defaults.

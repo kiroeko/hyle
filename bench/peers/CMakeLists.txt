@@ -105,6 +105,102 @@ endif()
 
 unset(_hyle_bench_tbb_owner)
 unset(_hyle_bench_absl_owner)
+
+# Folly RCU is the same-contract reader-side peer for mem_reclaim. The official
+# Windows package has a large dependency closure, so the benchmark consumes a
+# separately prepared vcpkg prefix rather than rebuilding Folly in every fresh
+# evidence tree. HYLE_FOLLY_DIR remains the clean source identity bound by the
+# common runner; by default its parent contains a `folly-vcpkg-prefix` directory
+# or junction so the clean source checkout itself needs no ignored artifacts.
+if(HYLE_BUILD_MEM_RECLAIM)
+  option(HYLE_BENCH_FOLLY "build mem_reclaim benchmark vs official Folly RCU" OFF)
+else()
+  set(HYLE_BENCH_FOLLY OFF)
+endif()
+if(HYLE_BENCH_FOLLY)
+  set(HYLE_FOLLY_DIR "${HYLE_SOURCE_DIR}/../folly" CACHE PATH
+      "clean Folly source snapshot used for benchmark provenance")
+  set(HYLE_FOLLY_PREFIX "" CACHE PATH
+      "prepared Folly package prefix; defaults under HYLE_FOLLY_DIR")
+  if(NOT EXISTS "${HYLE_FOLLY_DIR}/folly/synchronization/Rcu.h")
+    message(FATAL_ERROR
+      "HYLE_BENCH_FOLLY=ON but no Folly source snapshot exists at "
+      "${HYLE_FOLLY_DIR}")
+  endif()
+  if(HYLE_FOLLY_PREFIX STREQUAL "")
+    get_filename_component(_hyle_folly_parent "${HYLE_FOLLY_DIR}" DIRECTORY)
+    set(HYLE_FOLLY_PREFIX
+      "${_hyle_folly_parent}/folly-vcpkg-prefix/x64-windows")
+    unset(_hyle_folly_parent)
+  endif()
+  cmake_path(ABSOLUTE_PATH HYLE_FOLLY_PREFIX NORMALIZE)
+  if(NOT EXISTS "${HYLE_FOLLY_PREFIX}/share/folly/folly-config.cmake")
+    message(FATAL_ERROR
+      "HYLE_BENCH_FOLLY=ON requires an official prepared package at "
+      "${HYLE_FOLLY_PREFIX}; see the mem_reclaim closure card")
+  endif()
+
+  set(_hyle_saved_prefix_path "${CMAKE_PREFIX_PATH}")
+  list(PREPEND CMAKE_PREFIX_PATH "${HYLE_FOLLY_PREFIX}")
+  if(WIN32)
+    # Libevent's upstream package config asks find_library() for a shared
+    # component but searches the import-library directory. vcpkg's toolchain
+    # normally supplies this suffix correction; reproduce only that discovery
+    # rule when an already prepared prefix is consumed without the toolchain.
+    set(_hyle_saved_find_library_suffixes "${CMAKE_FIND_LIBRARY_SUFFIXES}")
+    set(_hyle_saved_shared_library_suffix "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
+    set(CMAKE_SHARED_LIBRARY_SUFFIX ".lib")
+  endif()
+  find_package(folly CONFIG REQUIRED)
+  # The current vcpkg Folly target does not carry Boost.Thread through its
+  # static Windows link interface. Keep this untimed adapter explicit.
+  find_package(Boost CONFIG REQUIRED COMPONENTS thread)
+  if(WIN32)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES "${_hyle_saved_find_library_suffixes}")
+    set(CMAKE_SHARED_LIBRARY_SUFFIX "${_hyle_saved_shared_library_suffix}")
+    unset(_hyle_saved_find_library_suffixes)
+    unset(_hyle_saved_shared_library_suffix)
+  endif()
+  set(CMAKE_PREFIX_PATH "${_hyle_saved_prefix_path}")
+  unset(_hyle_saved_prefix_path)
+
+  # Imported package targets are directory scoped. Project them through one
+  # ordinary benchmark-only target so sibling module benchmark directories do
+  # not depend on CMake's imported-target lookup scope.
+  add_library(hyle_bench_folly INTERFACE)
+  target_link_libraries(hyle_bench_folly INTERFACE
+    Folly::folly Boost::thread)
+
+  if(WIN32 AND EXISTS "${HYLE_FOLLY_PREFIX}/bin")
+    set(_hyle_folly_runtime_stamp
+      "${CMAKE_CURRENT_BINARY_DIR}/folly-runtime.stamp")
+    add_custom_command(
+      OUTPUT "${_hyle_folly_runtime_stamp}"
+      COMMAND "${CMAKE_COMMAND}" -E make_directory
+              "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+      COMMAND "${CMAKE_COMMAND}" -E copy_directory
+              "${HYLE_FOLLY_PREFIX}/bin"
+              "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+      COMMAND "${CMAKE_COMMAND}" -E touch
+              "${_hyle_folly_runtime_stamp}"
+      COMMENT "Staging the prepared Folly runtime once"
+      VERBATIM)
+    add_custom_target(hyle_bench_folly_runtime
+      DEPENDS "${_hyle_folly_runtime_stamp}")
+  endif()
+
+  function(hyle_stage_folly_benchmark_runtime target)
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR
+        "hyle_stage_folly_benchmark_runtime: unknown target '${target}'")
+    endif()
+    if(TARGET hyle_bench_folly_runtime)
+      add_dependencies(${target} hyle_bench_folly_runtime)
+    endif()
+  endfunction()
+  unset(_hyle_folly_runtime_stamp)
+endif()
 unset(_hyle_owner)
 unset(_hyle_owner_upper)
 

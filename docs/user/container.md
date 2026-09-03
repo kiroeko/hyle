@@ -169,10 +169,13 @@ protocol；升级或 ISA 路由后它可以改变。
 - concurrent map 的回调/guard 决定引用有效期；不要把内部 value pointer 带出保护范围。
 - `ConcurrentFlatHashMap` 适合不要求 value 地址跨 grow 稳定的紧凑 registry；
   `ConcurrentNodeHashMap` 的 node 在 accessor guard 内跨 rehash 保持稳定，但不提供无 guard 的永久引用。
-- `ConcurrentNodeHashMap` 用析构前保留旧 bucket arrays 换取 lookup 不进入全局 reclamation domain。
-  bucket 容量按二次幂增长，retired bucket storage 的几何和小于当前 array；强内存预算场景应在并发阶段前
-  `reserve()` 到预计容量。持续增长且必须及时归还旧 table 的应用目前没有 shipping HYLE 路线，不要
-  把 `mem_reclaim` 开发 factor 当作已交付能力。
+- 默认 `ConcurrentNodeHashMap` 面向启动期 `reserve()` 或增长次数有界的高频查询：旧 bucket table 保留到
+  析构，二次幂增长使其容量几何和小于当前表，lookup 不支付 reclamation guard。需要名称显式表达该
+  取舍时可用等价的 `RetainedTableConcurrentNodeHashMap` alias。
+- 长寿命、持续增长且必须在服务期归还旧 table 的场景，使用
+  `ReclaimingTableConcurrentNodeHashMap`。普通短读者可用 process default domain；隔离长读者、需要确定
+  teardown，或想在一个外层 read region 中摊薄多次 lookup 时，把 `ReclamationDomain&` 作为第一个构造
+  参数显式传入。两种类型的 node/accessor/rehash 语义相同，区别只是可见的生命周期与读成本合同。
 - `reserve/clear/for_each` 是 management operation；不要在同一线程仍持有该 map accessor 时调用，
   map 析构前必须保证全部访问已静止。
 - `ConcurrentVector` 适合并行 append，不是可并行 erase/insert 的 `std::vector`。

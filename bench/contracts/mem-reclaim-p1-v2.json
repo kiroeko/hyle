@@ -1,0 +1,153 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "mem-reclaim-p1-v2",
+  "module": "mem_reclaim",
+  "claim": "P1 engineering non-inferiority for allocation-free immutable-snapshot reads against official Folly RCU on the admitted inference metadata publication journey",
+  "candidate": {
+    "target": "hyle_mem_reclaim",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "mem_reclaim",
+    "entrypoint": "include/hyle/mem/reclamation.h"
+  },
+  "peers": [
+    {
+      "id": "folly",
+      "revision": "46afdbec8f58fc21445741278f14d53ec7144676",
+      "configuration": {
+        "delivery_shape": "official vcpkg static package",
+        "version": "2026.02.23.00#2",
+        "package_abi": "6e9bfde81815e7e7f7bf7b5cc94944c9d2ac2452403aede371ee3d7db892b418",
+        "adapter": "explicit Boost::thread link omitted by the package target; no adapter work occurs in the timed loop",
+        "source": "clean tag-matched source worktree plus prepared official package prefix"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "environment": {"HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "environment": {"HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY": "1", "HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "immutable-snapshot-read-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/mem/immutable-snapshot-publication",
+      "provenance": {
+        "path": "samples/package/mem/cpp/main.cc",
+        "sha256": "010e2780457acae9059e0685a7587b81bee0fa97c12217da4cd286602c3b9588"
+      },
+      "ownership_topology": {
+        "candidate": "One explicit HYLE domain protects a caller-owned atomic pointer to one immutable snapshot",
+        "peer": "One explicit Folly rcu_domain protects the same atomic pointer and immutable snapshot",
+        "equivalence": "Both routes enter one short read region, acquire-load the same pointer, read the same payload, and leave before the next iteration; TLS registration, publication, retirement, and teardown are outside timing"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "guarded-snapshot-read",
+        "budget": 5,
+        "denominator": "one callback containing 4096 warmed metadata reads",
+        "derivation": "Inference request routing and backend/model metadata may read a stable snapshot at many hot decision points while replacement remains rare"
+      },
+      "semantic_contract": "Enter a short same-thread read region, acquire-load one published immutable snapshot pointer, consume one payload word, and leave, repeated 4096 times",
+      "comparability": "COMPARABLE",
+      "peer_id": "folly",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "one warmed 64-byte immutable snapshot", "scale": {"reads_per_callback": 4096}},
+      "setup": "Both explicit domains, the snapshot, atomic pointer, and first thread registration are created and warmed before measurement",
+      "charged_phases": ["4096 read-region entries", "4096 acquire pointer loads", "4096 payload reads and checksum additions", "4096 read-region exits"],
+      "pair": {"candidate": "HYLE ReclamationDomain read guard", "peer": "Folly rcu_domain read guard"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_FOLLY": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "mem_reclaim",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"folly": "HYLE_FOLLY_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "mem-reclaim-primary",
+          "target": "hyle_mem_reclaim_consumer_bench",
+          "stem": "hyle_mem_reclaim_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_MEM_RECLAIM_RUN "],
+          "workloads": [{"id": "immutable-snapshot-read-4096", "title": "immutable snapshot: warmed single-reader batch"}]
+        },
+        {
+          "id": "mem-reclaim-placement",
+          "target": "hyle_mem_reclaim_consumer_bench_placement",
+          "stem": "hyle_mem_reclaim_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_MEM_RECLAIM_RUN "],
+          "workloads": [{"id": "immutable-snapshot-read-4096", "title": "immutable snapshot: warmed single-reader batch"}]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY", "HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [{"id": "artifact-identity", "kind": "artifact-identity"}, {"id": "build-contract", "kind": "build-contract"}]
+    }
+  }
+}

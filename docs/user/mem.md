@@ -31,6 +31,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
 | 进程级 system heap / RSS 压力快照 | `system_memory_snapshot()` | 冷查询；allocator reserved/committed 与 process RSS/commit current+peak；不冒充精确 requested-live |
+| 极热读、低频替换的不可变 snapshot | `ReclamationDomain` + `ReclamationGuard` + caller-owned `RetireRecord` | 读侧不分配；短 guard；旧对象在先前读者退出后由 collector 线程同步回调 |
 | request/frame/graph phase 临时对象 | `Arena` | owned、单线程、growable、bulk `clear()` |
 | 调用方 buffer 中的临时对象 | `FixedArena` | external、单线程、bump、无 fallback |
 | 从共享硬池借一个 scratch block | `PooledArena` | 单线程、固定容量、整体归还 |
@@ -54,6 +55,45 @@ Platform 的 `VmRegion` 仍是公开的低层 anonymous-address owner，适合�
 自建 storage owner；file/shared/anonymous storage mapping 则只有本表中的 Mem owner。已有
 Platform `FileHandle` 可直接 move 给 `FileMapping::map`，不做第二次 path lookup、payload allocation
 或 copy。普通用户因此不需要在两套 mapping 类型之间选择。
+
+## Read-mostly snapshot：何时使用 reclamation
+
+模型、backend、路由表或运行配置若满足“读非常频繁、更新很少、读者只需一个很短的不可变 view”，可用
+`ReclamationDomain` 避免每次读取都修改 `shared_ptr` 引用计数：
+
+```cpp
+#include "hyle/mem/reclamation.h"
+
+struct Snapshot {
+  ModelRoutes routes;
+  hyle::mem::RetireRecord retirement;
+};
+
+void delete_snapshot(Snapshot* value) noexcept { delete value; }
+
+hyle::mem::ReclamationDomain domain;
+std::atomic<Snapshot*> published{load_initial_snapshot()};
+
+{
+  auto guard = domain.read();
+  const Snapshot* current = guard.protect(published);
+  dispatch(current->routes, request);
+}  // guard 必须在同一线程、尽快退出
+
+Snapshot* old = published.exchange(build_snapshot(),
+                                   std::memory_order_acq_rel);
+domain.retire<&delete_snapshot>(old->retirement, old);
+```
+
+普通短读区可共享 `default_reclamation_domain()`；一个长读者不能拖延无关 owner，或 owner 需要可预测
+teardown 时，应使用显式 domain。`try_reclaim()` 从不等待，`synchronize()` 等待调用前已经进入的读者，
+`drain()` 只可在没有新 guard/retire 进入的外部静止点调用。callback 在执行 collection 的线程同步运行，
+所以只能做 `noexcept` 的短释放工作，不能在同一 domain 的 guard 内调用 blocking collection。
+
+它不替代所有生命周期方案：对象更新同样频繁时用 mutex/并发容器；读者需要独立延长对象生命时用
+`shared_ptr`；停顿读者绝不能阻塞其它对象回收时需要 hazard-pointer family。domain 必须长寿于所有 guard
+和 pending record；record 在 callback 开始前不能销毁或再次 retire，callback 也必须理解对象真正使用的
+allocator。`ConcurrentNodeHashMap` 已把这种 table hand-off 封装起来，普通 map 用户无需手写 record。
 
 ## Resource 与 Buffer：什么时候不只用 allocator
 
