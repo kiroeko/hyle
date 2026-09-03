@@ -663,7 +663,7 @@
     },
     {
       "module": "mem",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -688,12 +688,34 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v3 REOPENED：Platform 三因子迁移揭示公开 mapping/storage 重复 owner 与 Mem dependency/layout 变化；仅登记定向 trigger，SCOPED/AUDITED 前不改产品。"
+      "summary": "mem-v3 SCOPED：限定为 mapping/residency/huge/guarded storage 唯一 owner、同步 populate 与受影响交付回归；其余 Mem v2 API/算法不重开。"
     },
     {
       "module": "mem_vm",
-      "product_state": "QUEUED",
-      "summary": "已登记 mapping/residency/guarded-storage 内部 factor；尚未 SCOPED，不声称 target/API 可交付。"
+      "product_state": "SCOPED",
+      "round_id": "mem-vm-v1-factor",
+      "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
+      "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
+      "non_goals": "Allocator, pool, generic Buffer or lifetime-planner redesign, holey or segmented mapping policy, async/direct IO, backend/device policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "5fe4f72d6dff8b307a1271a1f51e7e5b6fc0fed2",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "mem_vm v1 SCOPED：冻结三类 mapping、residency、huge/guarded storage 的唯一 owner、依赖、零额外 wrapper cost、三平台/三交付与 5% P1 边界。"
     },
     {
       "module": "simd",
