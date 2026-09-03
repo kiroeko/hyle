@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -523,8 +523,10 @@
       "scope": "Complete the admitted inference host facts and current-thread mechanisms, split thread/wait and synchronous filesystem ownership from the host factor, and revalidate the natural C++ Platform product and its direct consumers.",
       "non_goals": "Mapped-file or shared-memory ownership migration before the Mem factor round, async/direct/scatter I/O, scheduler policy, device facts or kernels, JIT/process/plugin policy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "6bf023c90b6ec3d62e9892028e172a385671de1e",
-      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -552,18 +554,41 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "platform-v3 VERIFIED：host/thread/fs 十一票能力与因子边界完成；三平台、sanitizer、source/static/shared、direct consumers、文档/易用性、红队和三族同语义 P1 全部通过。"
+    "closure_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
+    "loc": {
+      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "repository_code": 434612,
+      "self_with_tests": 110971,
+      "self_without_tests": 70261,
+      "module_implementation": 4806
+    },
+    "known_limitations": [
+      "Topology and host-memory results are fallible process-view snapshots; callers cannot treat an old snapshot or an unknown field as permanent whole-machine truth.",
+      "Platform owns host and OS facts and mechanisms, not device-budget aggregation, kernel choice, scheduler placement, asynchronous IO or backend policy.",
+      "Parker is a single-waiter mailbox mechanism, filesystem ownership is synchronous and one-cursor, and callers retain affinity-state restoration, external synchronization and lifecycle duties.",
+      "The P1 certificate covers only the frozen W1-WIN host, cross-physical-core Parker and warm-file contracts; it is not universal platform, topology, filesystem, end-to-end inference or Formal SOTA evidence."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces a Platform correctness, security, ownership, failure-taxonomy or C++ API-usability defect, or proves a missing admitted common host mechanism.",
+      "A supported OS, compiler or CPU topology invalidates the snapshot, ISA-state, affinity-restore, wait/wake or UTF-8 filesystem contract.",
+      "The public API or layout, factor dependency, header ownership, normal cost, source/static/shared delivery or locked OS mechanism changes materially.",
+      "A mature same-contract peer proves a better complexity class, or a normal consumer profile reproduces a regression beyond the material margin.",
+      "A routed device, process, JIT or asynchronous journey is formally admitted and proves a common Platform-owned fact or mechanism rather than upper-layer policy."
+    ],
+    "summary": "platform-v3 CLOSED：host/thread/fs 十一票能力与质因数边界完成；三平台、sanitizer、source/static/shared、direct consumers、文档/易用性、红队和三族同语义 P1 全部通过。"
     },
     {
       "module": "platform_thread",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "round_id": "platform-thread-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
       "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Thread pools, task/fiber scheduling, placement policy, process priority, owning cancellation, device/kernel dispatch, Native FFI/C API, stable C++ ABI, benchmark-driven fast/light APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
-      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -591,18 +616,40 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "platform_thread v1 VERIFIED：native thread/affinity/current ISA state/address wait 能力完成；三平台、sanitizer、Platform 三交付、Sched direct consumer、文档/红队与 Parker P1 全部通过。"
+    "closure_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
+    "loc": {
+      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "repository_code": 434612,
+      "self_with_tests": 110971,
+      "self_without_tests": 70261,
+      "module_implementation": 833
+    },
+    "known_limitations": [
+      "Parker is a single-waiter mailbox mechanism rather than a counting semaphore or multi-waiter fairness primitive.",
+      "Callers own thread lifetime coordination and explicit affinity or scalable-matrix state restoration; Platform does not supply scheduler policy.",
+      "The P1 claim covers the frozen W1-WIN persistent cross-physical-core handoff only and does not rank same-logical-CPU, every topology or Formal performance."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces a native-thread, affinity, ISA-state, address-wait or Parker correctness, ownership or usability defect.",
+      "A supported OS, compiler or architecture invalidates the frozen mechanism or header contract.",
+      "The public API or layout, factor dependency, normal cost or source/static/shared delivery changes materially.",
+      "A mature same-contract peer or normal consumer profile proves a better complexity class or material regression.",
+      "A formally admitted common thread mechanism cannot be naturally owned by Platform or Sched under the current boundary."
+    ],
+    "summary": "platform_thread v1 CLOSED：native thread/affinity/current ISA state/address wait 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Sched consumer、文档/红队和 Parker P1 全部通过。"
     },
     {
       "module": "platform_fs",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "round_id": "platform-fs-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
       "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Mapped or shared storage ownership, lexical path algorithms, watchers, async/positional/direct/scatter I/O, network or transfer policy, process sandboxing, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
-      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -630,7 +677,27 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "platform_fs v1 VERIFIED：同步 namespace/FileHandle/temp/replace 因子边界完成；三平台、sanitizer、Platform 三交付、Mem/IO consumers、文档/红队与同语义 filesystem P1 全部通过。"
+    "closure_evidence": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
+    "loc": {
+      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "repository_code": 434612,
+      "self_with_tests": 110971,
+      "self_without_tests": 70261,
+      "module_implementation": 2061
+    },
+    "known_limitations": [
+      "FileHandle is a synchronous one-cursor owner; callers own external synchronization and the documented symlink, race and durability threat model.",
+      "Lexical paths, watching, positional, vectored, direct or asynchronous IO and mapping storage remain with their named owners.",
+      "The P1 claim covers one frozen W1-WIN warm regular-file lifecycle and is not a universal filesystem, durability or Formal performance ranking."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces a filesystem correctness, security, ownership, failure or C++ API-usability defect.",
+      "A supported OS invalidates the UTF-8, offset, short-transfer, namespace, temporary-file or durability contract.",
+      "The public API or layout, factor dependency, normal cost or source/static/shared delivery changes materially.",
+      "A mature same-contract peer or normal consumer profile proves a better complexity class or material regression.",
+      "A formally admitted common synchronous filesystem mechanism has no natural owner under the current boundary."
+    ],
+    "summary": "platform_fs v1 CLOSED：同步 namespace/FileHandle/temp/replace 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Mem/IO consumers、文档/红队和同语义 filesystem P1 全部通过。"
     },
     {
       "module": "mem_reclaim",
@@ -699,7 +766,7 @@
     },
     {
       "module": "mem",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -707,8 +774,10 @@
       "scope": "Migrate mapping, residency, huge-page and guarded-stack ownership into one mem_vm factor while preserving the Mem-v2 storage semantics and natural hyle::mem product facade.",
       "non_goals": "Reopening unrelated allocator/pool/buffer/planner algorithms, backend async policy, tensor or model policy, Platform host/thread/fs redesign beyond the required mechanism edges, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f077a34c73fba624cbcfaedd2b5cf8dd31655847",
-      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -736,18 +805,42 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "mem-v3 VERIFIED：VM/storage 唯一 owner 迁移和同步 populate 完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队与受影响 mapping/residency P1 全部通过。"
+    "closure_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
+    "loc": {
+      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "repository_code": 434612,
+      "self_with_tests": 110971,
+      "self_without_tests": 70261,
+      "module_implementation": 7392
+    },
+    "known_limitations": [
+      "Mapping users must preserve backing lifetime and safe truncation, and callers own byte-level data-race and control-operation synchronization.",
+      "Populate and residency are explicit page-proportional operations subject to OS quota; ordinary mapping does not prefault and fragments use multiple owners rather than hidden hole metadata.",
+      "Huge pages, NUMA placement and guarded stacks depend on OS, hardware and privilege; single-node validation does not prove remote-NUMA bandwidth.",
+      "Base Mem directly depends on the locked mimalloc implementation, while Mem VM does not; a material mimalloc input change requires directed review.",
+      "The current P1 evidence covers only the affected W1-WIN mapping and progressive-residency journeys, not every Mem-v2 family, asynchronous IO, end-to-end token latency or Formal SOTA."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces a mapping, residency, shared, huge, NUMA or guarded-storage correctness, security, lifetime, OOM, failure or C++ API-usability defect.",
+      "A supported OS or compiler invalidates the offset, range, EOF, move, reset, populate, lock, flush, advice or guard contract.",
+      "The public API or layout, unique ownership, factor dependency, normal cost or source/static/shared delivery changes materially, or mimalloc or Platform changes actual product semantics.",
+      "A mature same-contract peer proves a better complexity class, or a normal loader or scheduler profile reproduces a material regression.",
+      "An asynchronous, direct, backend-policy or sparse-storage journey is formally admitted and multiple natural owners cannot express the common Mem-owned contract."
+    ],
+    "summary": "mem-v3 CLOSED：VM/storage 唯一 owner 迁移与同步 populate 完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和受影响 mapping/residency P1 全部通过。"
     },
     {
       "module": "mem_vm",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "round_id": "mem-vm-v1-factor",
       "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
       "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
       "non_goals": "Allocator, pool, generic Buffer or lifetime-planner redesign, holey or segmented mapping policy, async/direct IO, backend/device policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "5fe4f72d6dff8b307a1271a1f51e7e5b6fc0fed2",
-      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
+    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
+    "registry_anchor_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -775,7 +868,27 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "mem_vm v1 VERIFIED：mapping/residency/huge/shared/guarded storage 因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队与两族同语义 P1 全部通过。"
+    "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
+    "loc": {
+      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "repository_code": 434612,
+      "self_with_tests": 110971,
+      "self_without_tests": 70261,
+      "module_implementation": 1215
+    },
+    "known_limitations": [
+      "Callers own backing lifetime, safe truncation, byte-level concurrency and control-operation synchronization.",
+      "Populate and lock are explicit page-proportional operations subject to OS quota; fragments use multiple owners and NUMA, huge-page or guard behavior depends on platform capability.",
+      "The P1 claim covers the frozen W1-WIN mapping and progressive-residency loader journeys only; Mem VM has no Native FFI, stable C++ ABI or Formal performance claim."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces a VM-storage correctness, security, lifetime, failure or C++ API-usability defect.",
+      "A supported OS invalidates the mapping, range, residency, shared-name, huge-page, NUMA or guard contract.",
+      "The public API or layout, owner boundary, factor dependency, normal cost or source/static/shared delivery changes materially.",
+      "A mature same-contract peer or normal loader or scheduler profile proves a better complexity class or material regression.",
+      "A formally admitted common storage journey cannot be expressed by the current natural owner model."
+    ],
+    "summary": "mem_vm v1 CLOSED：mapping/residency/huge/shared/guarded storage 独立因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和两族同语义 P1 全部通过。"
     },
     {
       "module": "simd",
