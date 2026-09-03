@@ -135,6 +135,10 @@ retire record 和 grace-period callback；在其性能门与真实 consumer migr
 因此该 factor 的最早处理点是 **Timer-queue 当前来源裁决之后、Obs 之前的有界恢复检查**；是否真正进入
 实现轮由 registry 已记录的两个恢复条件决定。Shipping `hyle::mem` 不因这次检查重开。
 
+本轮 Timer-queue 检查已对精确的 `9fc1b77d... -> 32ec5084...` Sched 来源变化完成
+[`NON_MATERIAL` 裁决](../implementation/evidence/performance/provenance-reviews/timer-queue-scheduler-lifecycle-9fc1-to-32ec.md)；
+它只完成上述第 1 步，且只覆盖该 hash 边。下一步是第 2、3 步的两个 `mem_reclaim` 恢复前提检查。
+
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol

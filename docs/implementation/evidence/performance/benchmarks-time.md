@@ -80,6 +80,14 @@ artifact identity、build contract、consumer provenance 和 semantic/resource v
 deep verifier 均返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、
 `environment=CURRENT` 和 `current_certification_policy_eligible=true`。
 
+Timer-queue retained manifest 仍对自己的 immutable candidate source 返回 `EXACT`。当前 canonical
+Sched consumer 相对冻结 provenance 只有 17 处 `mem::Allocator` → `mem::AllocatorRef` 词汇迁移；
+timer ownership、arm/cancel/advance/drain、全部 charged phases、算法和 delivery 均未改变。该精确
+`9fc1b77d... -> 32ec5084...` 边已由
+[`Timer-queue provenance review`](provenance-reviews/timer-queue-scheduler-lifecycle-9fc1-to-32ec.md)
+裁决为 `NON_MATERIAL / ENGINEERING_REPLAY_ONLY` 并登记到中央 renewal ledger。因此既有工程结论仍
+表示同一消费命题，不重跑采样，也不把它升级为当前 Sched 性能或 Formal 结论。
+
 | Bundle | retained manifest | manifest / summary / controls / observations SHA-256 |
 |---|---|---|
 | host | `C:\hyle-scratch\time-v4-perf-evidence\manifest.json` | `4207D5E656E34C8017B3944CE7B908CC5D09D44EA06BBE4225F54A34227E125E` / `901508FC76615C5AD7471C8DB77793D49053DFC4622CECF7189A244EB1A24DC8` / `7B45ECD630A554A20CA15C184376743DAF34B73ADFAC819F137E47C13F589319` / `078EE44C7472D61FB25220917309FC079CBFD31A576C904D81A58DF9AA638F24` |

@@ -19,6 +19,25 @@
         "callback, data, owner metadata and all charged phases are unchanged",
         "the changed Parker wait call is outside the replay and its charged phases"
       ]
+    },
+    {
+      "contract_id": "timer-queue-consumer-v1",
+      "contract_sha256": "48e636cb9e59d578b1148ef0af091cb04b6daeb38097581b6e315b9f1eb760fe",
+      "workload_id": "scheduler-timer-lifecycle-64",
+      "path": "src/sched/scheduler.cc",
+      "from_sha256": "9fc1b77d51b70b701962418ca5b3003244b9828ac676fd5e9e33a49716842ba3",
+      "to_sha256": "32ec50841311ca5db0a67f735582bcf1a49c4abdc605ae460b4d636808700ef8",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/timer-queue-scheduler-lifecycle-9fc1-to-32ec.md",
+      "review_task_sha256": "cbdc28ea968989c0e10c2703779588883b6fcba7ff6dda780213f4bc72436829",
+      "reason": "The only scheduler consumer drift is the semantics-preserving public allocator vocabulary migration from Allocator to AllocatorRef; the frozen timer ownership, lifecycle, charged phases, algorithm and delivery remain unchanged.",
+      "reviewed_contract_facts": [
+        "one single-owner TimerQueue remains owned directly by each scheduler worker",
+        "stable TimerEntry ownership, metadata, arm, cancel, monotonic advance and detached ready-list drain are unchanged",
+        "all charged phases and the frozen material-contribution accounting are unchanged",
+        "timer_queue headers, algorithm, direct component edges and Time product facade are unchanged"
+      ]
     }
   ]
 }
