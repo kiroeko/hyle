@@ -762,7 +762,7 @@
     },
     {
       "module": "mem",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
       "round_id": "mem-v5-multichunk-mimalloc-351",
@@ -787,7 +787,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v5 SCOPED：只重开 resource max-aware multi-backing lifetime plan 与 mimalloc v3.5.1；normal workload、5% P1、复杂度/资源预算、三平台/三交付 gate、一个工程日预算和硬停止条件已冻结。"
+      "summary": "mem-v5 AUDITED：resource-aware multi-backing API、O((N+E) log N) 算法/资源合同、mimalloc v3.5.1/THP/ISA/sized-free 决策与八项有限 FIX 已冻结，允许实现。"
     },
     {
       "module": "mem_vm",
