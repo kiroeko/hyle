@@ -85,3 +85,12 @@ candidate；C++ taxonomy 保持 mem-v2，用户不需要知道 factor 名。`AUD
 
 首个共同 candidate 因 Platform host 的 Apple `getentropy` 声明缺失退回 `AUDITED`；Mem API、layout
 与算法没有发现缺陷，也没有新增 FIX，修复依赖后重放同一验证。
+
+## 第二候选（`CANDIDATE`）
+
+- product commit/tree：`b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+  `f808df6fcbd0b5549777e0c6939240a3feab9512`；
+- M1-MAC 已重新构建并通过 `mem` / `mem_vm` 的公开头自含与实现测试，同时共同依赖的三个 Platform
+  factor 也通过；
+- Mem API、layout、算法、mapping/residency workloads 与 VM01--VM06 均未改变。仍待 sanitizer、
+  direct consumers、正式 P1、FFI/symbol scan 与最终红队裁决。

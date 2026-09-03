@@ -70,3 +70,10 @@ exact factor 及 Platform 三交付已通过。M1-MAC、Mem/IO direct consumers�
 
 首个共同 candidate 因 private Platform host entropy 的 Apple `getentropy` 声明缺失退回 `AUDITED`；
 本 factor 没有 API/算法改动，修复 host 后重放验证。
+
+## 第二候选（`CANDIDATE`）
+
+共同 product commit/tree 是 `b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+`f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的公开头与实现测试已随五组件共同重放通过；
+F01--F02/D01、API、一字 handle 与 warmed open-read-close workload 未改变。sanitizer、Mem/IO direct
+consumers、正式 P1 与最终红队仍待裁决。

@@ -184,3 +184,12 @@ M1-MAC 在编译 `src/platform/random.cc` 时复现 `::getentropy` 未声明。A
 `<sys/random.h>`，实现却只包含 `<unistd.h>`；这属于既有 H03 的跨平台正确性缺陷，不改变需求、API、
 算法或性能合同。首个 candidate 被拒绝；有限修复仅允许 Apple 路径包含正确 SDK 头并重放五个共同
 component 的 candidate gates，禁止借机改其他产品代码。
+
+## 第二候选（`CANDIDATE`）
+
+- product commit/tree：`b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+  `f808df6fcbd0b5549777e0c6939240a3feab9512`；
+- M1-MAC 已在该提交上重新配置、构建 `platform`、`platform_thread`、`platform_fs`、`mem`、
+  `mem_vm` 五个直接测试 target，并通过 5 个公开头自含测试与 5 个实现测试；
+- API、layout、算法、normal workload 与有限 `FIX` 集均未改变。仍待裁决 M1-MAC sanitizer、direct
+  consumers、正式 P1、FFI/symbol 扫描与最终红队，因此当前只进入第二个 `CANDIDATE`。

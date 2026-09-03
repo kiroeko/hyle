@@ -59,3 +59,10 @@ source/relocated shared/static journeys 已通过。M1-MAC、direct consumers、
 
 首个共同 candidate 因 Platform host 的 Apple `getentropy` 声明缺失退回 `AUDITED`；Mem VM 本身没有
 授权产品改动，修复依赖后重放同一验证。
+
+## 第二候选（`CANDIDATE`）
+
+共同 product commit/tree 是 `b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+`f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的 `mem_vm` 公开头与实现测试已随五组件共同重放
+通过；VM01--VM06、owner、layout 与 mapping/residency workloads 未改变。sanitizer、direct consumers、
+正式 P1 与最终红队仍待裁决。

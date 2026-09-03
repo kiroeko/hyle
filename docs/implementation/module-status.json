@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -523,6 +523,8 @@
       "scope": "Complete the admitted inference host facts and current-thread mechanisms, split thread/wait and synchronous filesystem ownership from the host factor, and revalidate the natural C++ Platform product and its direct consumers.",
       "non_goals": "Mapped-file or shared-memory ownership migration before the Mem factor round, async/direct/scatter I/O, scheduler policy, device facts or kernels, JIT/process/plugin policy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "6bf023c90b6ec3d62e9892028e172a385671de1e",
+      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -540,16 +542,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v3 AUDITED：首个候选被 M1-MAC 拒绝，因为 secure_random 的 Apple 路径引用 getentropy 却未包含其声明头；有限修复仅补正确 SDK 头并重放同一 API/算法验证。"
+      "summary": "platform-v3 CANDIDATE：Apple getentropy 声明缺失的有限修复已在 M1-MAC 重放通过；第二候选冻结为 b1a526d6/f808df6f，等待 sanitizer、direct consumers、P1 与最终红队裁决。"
     },
     {
       "module": "platform_thread",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-thread-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
       "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Thread pools, task/fiber scheduling, placement policy, process priority, owning cancellation, device/kernel dispatch, Native FFI/C API, stable C++ ABI, benchmark-driven fast/light APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -567,16 +571,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v1 AUDITED：共享候选因 host secure_random 的 M1-MAC 编译缺陷被拒绝；thread API/算法不变，等待修复后以新共同 tree 重新候选。"
+      "summary": "platform_thread v1 CANDIDATE：host entropy 的有限修复已在 M1-MAC 重放通过；thread API/算法不变，第二候选等待 sanitizer、Sched consumer、P1 与红队裁决。"
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-fs-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
       "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Mapped or shared storage ownership, lexical path algorithms, watchers, async/positional/direct/scatter I/O, network or transfer policy, process sandboxing, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -594,7 +600,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v1 AUDITED：共享候选因其 private host entropy 依赖在 M1-MAC 缺声明头而被拒绝；fs API/算法不变，等待有限修复后重新候选。"
+      "summary": "platform_fs v1 CANDIDATE：private host entropy 的有限修复已在 M1-MAC 重放通过；fs API/算法不变，第二候选等待 sanitizer、Mem/IO consumers、P1 与红队裁决。"
     },
     {
       "module": "mem_reclaim",
@@ -663,7 +669,7 @@
     },
     {
       "module": "mem",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -671,6 +677,8 @@
       "scope": "Migrate mapping, residency, huge-page and guarded-stack ownership into one mem_vm factor while preserving the Mem-v2 storage semantics and natural hyle::mem product facade.",
       "non_goals": "Reopening unrelated allocator/pool/buffer/planner algorithms, backend async policy, tensor or model policy, Platform host/thread/fs redesign beyond the required mechanism edges, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f077a34c73fba624cbcfaedd2b5cf8dd31655847",
+      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -688,16 +696,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v3 AUDITED：共享候选的 Platform host 依赖在 M1-MAC 编译失败；Mem API/算法不变，等待有限 platform header 修复后用新共同 tree 重签。"
+      "summary": "mem-v3 CANDIDATE：Platform host 的有限 Apple 头修复已在 M1-MAC 重放通过；Mem API/算法不变，第二候选等待 sanitizer、direct consumers、P1 与红队裁决。"
     },
     {
       "module": "mem_vm",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "mem-vm-v1-factor",
       "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
       "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
       "non_goals": "Allocator, pool, generic Buffer or lifetime-planner redesign, holey or segmented mapping policy, async/direct IO, backend/device policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "5fe4f72d6dff8b307a1271a1f51e7e5b6fc0fed2",
+      "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
+      "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -715,7 +725,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_vm v1 AUDITED：共享候选的 Platform host 依赖在 M1-MAC 编译失败；VM API/算法不变，等待有限 platform header 修复后用新共同 tree 重签。"
+      "summary": "mem_vm v1 CANDIDATE：Platform host 的有限 Apple 头修复已在 M1-MAC 重放通过；VM API/算法不变，第二候选等待 sanitizer、direct consumers、P1 与红队裁决。"
     },
     {
       "module": "simd",

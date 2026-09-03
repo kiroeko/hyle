@@ -71,3 +71,10 @@ product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
 
 首个共同 candidate 因 Platform host 的 Apple `getentropy` 声明缺失退回 `AUDITED`；本 factor 没有
 产品缺陷或授权改动，修复 host 后只重放同一 tree 的验证。
+
+## 第二候选（`CANDIDATE`）
+
+共同 product commit/tree 是 `b1a526d6fdb05b6bb42c4cb041788959e74511de` /
+`f808df6fcbd0b5549777e0c6939240a3feab9512`。M1-MAC 的公开头与实现测试已随五组件共同重放通过；
+T01--T03/D01、API、layout 与 Parker workload 未改变。sanitizer、Sched direct consumer、正式 P1 与
+最终红队仍待裁决。
