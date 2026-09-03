@@ -59,5 +59,12 @@ queue。产品路径只用 OS API/C++23，无第三方实现和 Native FFI；公
 - T01--T03 与 D01 的产品实现、测试、target/header ownership 和 user/architecture 文档已经落地；
 - W1-WIN 为 `42 PASS + 1` 个需要第二 processor group 的硬件跳过；GCC 14 `-Werror` 为 `44/44`；公开头
   自含通过；
-- M1-MAC、sanitizer、Platform product 三交付、Sched direct consumer、P1 与红队仍待 candidate，当前
-  registry 继续是 `AUDITED`。
+- 在该检查点 M1-MAC、sanitizer、Platform product 三交付、Sched direct consumer、P1 与红队尚未
+  裁决；后续进度以紧接的 Candidate 节为准。
+
+## Candidate（`CANDIDATE`）
+
+product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
+`c6429316279aaac1e0f5d7a7a71872a60cf967b6`。T01--T03/D01、公开 API/layout 和 Parker normal workload
+均已冻结；W1-WIN、GCC 14 `-Werror`、ASan/UBSan、公开头自含、Windows exact factor 及 Platform 三交付
+已通过。M1-MAC、Sched direct consumer、正式 P1 与最终红队仍待签署。

@@ -58,5 +58,12 @@ preallocate/watch/direct/positional/vectored/async 与 lexical Path 保持明确
 - F01--F02 与 D01 的 source/header/convenience 分离、精确 target、测试、sample 和文档已经落地；
 - W1-WIN `51/51`、GCC 14 `-Werror` `58/58`，公开头自含通过；GCC 隔离构建还发现并修复了私有测试
   seam 错用 host visibility macro 的真实 factor 缺陷；
-- M1-MAC、sanitizer、Platform product 三交付、Mem/IO direct consumers、P1 与红队仍待 candidate，
-  当前 registry 继续是 `AUDITED`。
+- 在该检查点 M1-MAC、sanitizer、Platform product 三交付、Mem/IO direct consumers、P1 与红队尚未
+  裁决；后续进度以紧接的 Candidate 节为准。
+
+## Candidate（`CANDIDATE`）
+
+product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
+`c6429316279aaac1e0f5d7a7a71872a60cf967b6`。F01--F02/D01、公开 API/一字 handle 与 warmed
+open-read-close normal workload 已冻结；W1-WIN、GCC 14 `-Werror`、ASan/UBSan、公开头自含、Windows
+exact factor 及 Platform 三交付已通过。M1-MAC、Mem/IO direct consumers、正式 P1 与最终红队仍待签署。

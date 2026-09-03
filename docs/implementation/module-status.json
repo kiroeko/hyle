@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -523,6 +523,8 @@
       "scope": "Complete the admitted inference host facts and current-thread mechanisms, split thread/wait and synchronous filesystem ownership from the host factor, and revalidate the natural C++ Platform product and its direct consumers.",
       "non_goals": "Mapped-file or shared-memory ownership migration before the Mem factor round, async/direct/scatter I/O, scheduler policy, device facts or kernels, JIT/process/plugin policy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "6bf023c90b6ec3d62e9892028e172a385671de1e",
+      "candidate_commit": "e9b9a43d4782c60d84badc02b1a41fbe21207a00",
+      "candidate_tree": "c6429316279aaac1e0f5d7a7a71872a60cf967b6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -540,16 +542,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v3 AUDITED：36 项能力已双向追踪，冻结 topology、host memory、entropy、三因子交付与 Mem-VM 唯一 owner 等十一项 FIX；API 仍为 DRAFT，P1 计时须等待实现及接口冻结。"
+      "summary": "platform-v3 CANDIDATE：host topology/memory/entropy、thread 与同步 fs 三因子、Mem-VM 唯一 owner 和自然 C++ API 已冻结于 e9b9a43d/c6429316；进入三平台、交付、P1 与红队验证。"
     },
     {
       "module": "platform_thread",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-thread-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
       "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Thread pools, task/fiber scheduling, placement policy, process priority, owning cancellation, device/kernel dispatch, Native FFI/C API, stable C++ ABI, benchmark-driven fast/light APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "candidate_commit": "e9b9a43d4782c60d84badc02b1a41fbe21207a00",
+      "candidate_tree": "c6429316279aaac1e0f5d7a7a71872a60cf967b6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -567,16 +571,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v1 AUDITED：现有 Thread/wait/Parker 保留，只补 affinity 保存恢复、current-thread scalable/matrix ISA state 与精确 factor 交付；API 仍为 DRAFT。"
+      "summary": "platform_thread v1 CANDIDATE：Thread/wait/Parker、affinity 保存恢复与 current-thread ISA state 已按独立 factor 和冻结 API 落地于 e9b9a43d/c6429316；进入剩余验证。"
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-fs-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
       "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
       "non_goals": "Mapped or shared storage ownership, lexical path algorithms, watchers, async/positional/direct/scatter I/O, network or transfer policy, process sandboxing, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
+      "candidate_commit": "e9b9a43d4782c60d84badc02b1a41fbe21207a00",
+      "candidate_tree": "c6429316279aaac1e0f5d7a7a71872a60cf967b6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -594,7 +600,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v1 AUDITED：同步 FileHandle/namespace/temp/replace 能力无新增缺口，冻结 source/header/convenience 拆分、secure entropy 复用、同合同 loader P1 与三交付 FIX。"
+      "summary": "platform_fs v1 CANDIDATE：同步 FileHandle/namespace/temp/replace 已独立成 factor，storage owner 已移出且 API 冻结于 e9b9a43d/c6429316；进入剩余验证。"
     },
     {
       "module": "mem_reclaim",
@@ -663,7 +669,7 @@
     },
     {
       "module": "mem",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEM-VM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
       "round_id": "mem-v3-vm-factorization",
@@ -671,6 +677,8 @@
       "scope": "Migrate mapping, residency, huge-page and guarded-stack ownership into one mem_vm factor while preserving the Mem-v2 storage semantics and natural hyle::mem product facade.",
       "non_goals": "Reopening unrelated allocator/pool/buffer/planner algorithms, backend async policy, tensor or model policy, Platform host/thread/fs redesign beyond the required mechanism edges, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f077a34c73fba624cbcfaedd2b5cf8dd31655847",
+      "candidate_commit": "e9b9a43d4782c60d84badc02b1a41fbe21207a00",
+      "candidate_tree": "c6429316279aaac1e0f5d7a7a71872a60cf967b6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -688,16 +696,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v3 AUDITED：冻结六项 VM/storage FIX；删除 Platform 重复 owner、Mem 直接 native state、新增同步 populate，并保持其余 Mem-v2 API/算法不变。"
+      "summary": "mem-v3 CANDIDATE：VM/storage 唯一 owner、直接 native state、同步 populate 与 Mem façade 已冻结于 e9b9a43d/c6429316；未触及其余 Mem-v2 算法，进入定向回归。"
     },
     {
       "module": "mem_vm",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "mem-vm-v1-factor",
       "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
       "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
       "non_goals": "Allocator, pool, generic Buffer or lifetime-planner redesign, holey or segmented mapping policy, async/direct IO, backend/device policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "5fe4f72d6dff8b307a1271a1f51e7e5b6fc0fed2",
+      "candidate_commit": "e9b9a43d4782c60d84badc02b1a41fbe21207a00",
+      "candidate_tree": "c6429316279aaac1e0f5d7a7a71872a60cf967b6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -715,7 +725,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_vm v1 AUDITED：public/source 反向追踪完成，唯一 owner、三个 public headers、直接依赖、零额外 wrapper cost、populate 与分段 mapping 边界已冻结；API 仍为 DRAFT。"
+      "summary": "mem_vm v1 CANDIDATE：三个 public headers、直接 native owners、populate、分段 mapping 边界与精确依赖已冻结于 e9b9a43d/c6429316；进入三平台、交付、P1 与红队验证。"
     },
     {
       "module": "simd",

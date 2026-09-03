@@ -69,5 +69,16 @@ candidate；C++ taxonomy 保持 mem-v2，用户不需要知道 factor 名。`AUD
   Mem 类型直接持有 native state，`FileMapping::populate` 是唯一新增操作；
 - W1-WIN 精确 mem_vm 根下 Mem `223/223`、VM `60/60`；GCC 14 `-Werror` 同为 `223/223` 与 `60/60`，
   两个 factor 的公开头自含通过；
-- 这不续签未触及 Mem-v2 families 的新性能冠军结论，也不提前宣称 `CANDIDATE`。M1-MAC、sanitizer、
-  source/static/shared、direct consumers、P1 与红队仍待执行。
+- 该检查点不续签未触及 Mem-v2 families 的新性能冠军结论；当时 M1-MAC、sanitizer、source/static/
+  shared、direct consumers、P1 与红队尚未裁决，后续进度以紧接的 Candidate 节为准。
+
+## Candidate（`CANDIDATE`）
+
+- product commit/tree：`e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
+  `c6429316279aaac1e0f5d7a7a71872a60cf967b6`；
+- VM01--VM06、唯一 storage owner、公开 layout/API 和 mapping/residency normal workloads 已冻结；其余
+  Mem-v2 allocator/pool/resource/buffer/planner 算法不是本 candidate 的产品改动；
+- W1-WIN、GCC 14 `-Werror`、ASan/UBSan、Mem/VM 公开头自含、Windows exact mem_vm factor 与 Mem
+  source/relocated shared/static journeys 已通过；
+- M1-MAC、direct consumers、正式 P1、FFI/symbol scan 与最终红队仍待裁决；产品变更必须退回
+  `AUDITED`。

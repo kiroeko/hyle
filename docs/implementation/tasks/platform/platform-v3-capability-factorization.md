@@ -164,5 +164,16 @@ SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer AP
 - D01 的 architecture/user/build graph 已随最终边界更新，性能证据与 terminal record 仍待 candidate；
 - W1-WIN 最新单元结果为 host `89/89`、thread `42 PASS + 1 hardware skip`、fs `51/51`；GCC 14
   `-Werror` 为 host `88/88`、thread `44/44`、fs `58/58`，公开头自含均通过；
-- 这些是 candidate 前事实，不是 `CANDIDATE/VERIFIED/CLOSED` verdict。M1-MAC、sanitizer、三种产品交付、
-  direct-consumer replay、P1 qualification 与红队仍按本卡执行。
+- 以上只记录进入 candidate 前的事实；该检查点尚未裁决 M1-MAC、sanitizer、三种产品交付、
+  direct-consumer replay、P1 qualification 与红队，后续进度以紧接的 Candidate 节为准。
+
+## Candidate（`CANDIDATE`）
+
+- product commit/tree：`e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
+  `c6429316279aaac1e0f5d7a7a71872a60cf967b6`；
+- 十一票均已实现，公开合同、算法、layout、三 factor 图与 host snapshot / Parker handoff / warmed
+  regular-file 三个彼此独立的 normal P1 workload 同时冻结；
+- candidate 前已通过 W1-WIN、GCC 14 `-Werror`、ASan、UBSan、公开头自含、三个 Windows exact-factor
+  roots，以及 Platform product 的 source/relocated shared/static journeys；
+- 尚未裁决 M1-MAC、direct consumers、正式 P1、FFI/symbol 扫描与最终红队，故不能写 `VERIFIED` 或
+  `CLOSED`。任何产品改动都必须依法退回 `AUDITED`。

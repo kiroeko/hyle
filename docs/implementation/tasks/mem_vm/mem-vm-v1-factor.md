@@ -47,5 +47,12 @@ Mem v3 的 `MEM3-VM01..06`：
   精确 factor 与 Mem façade/documentation；未触及 allocator/pool/resource/buffer/planner；
 - W1-WIN 精确根下 Mem `223/223`、mem_vm `60/60`；GCC 14 `-Werror` 同为 `223/223` 与 `60/60`，公开头
   自含通过；
-- VM05 的正式 P1、M1-MAC、sanitizer、三种产品交付、direct consumers 与红队仍待 candidate；当前
-  registry 继续是 `AUDITED`。
+- 在该检查点 VM05 的正式 P1、M1-MAC、sanitizer、三种产品交付、direct consumers 与红队尚未
+  裁决；后续进度以紧接的 Candidate 节为准。
+
+## Candidate（`CANDIDATE`）
+
+product commit/tree 是 `e9b9a43d4782c60d84badc02b1a41fbe21207a00` /
+`c6429316279aaac1e0f5d7a7a71872a60cf967b6`。VM01--VM06、公开 owner/layout 与 mapping/residency normal
+workloads 已冻结；W1-WIN、GCC 14 `-Werror`、ASan/UBSan、公开头自含、Windows exact factor 及 Mem
+source/relocated shared/static journeys 已通过。M1-MAC、direct consumers、正式 P1 与最终红队仍待签署。
