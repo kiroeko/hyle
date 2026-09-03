@@ -515,18 +515,14 @@
     },
     {
       "module": "platform",
-      "product_state": "CLOSED",
-      "round_id": "platform-v2",
-      "closure_task": "docs/implementation/tasks/platform/platform-v2-inference-residency.md",
-      "scope": "Inference-driven mapped-file residency controls plus a bounded audit of the adjacent CPU-topology and NUMA-placement routes; affected C++ API, implementation, tests, delivery, performance and documentation only.",
-      "non_goals": "Whole-Platform redesign, model-specific policy, async/direct/scatter I/O, device/pinned memory, scheduler policy, AMX/SME kernels, JIT/shared-memory/process/plugin policy, Native FFI/C API, stable C++ ABI and Formal certification.",
-      "baseline_commit": "4053c9fd6c4961df98c96ad3c6bdc45e39f2f108",
-      "candidate_commit": "88085b671ac7dfb4d41e2819ceda0925d1ac0147",
-      "candidate_tree": "01f2183f4cb5c029293ba6c52b15dfbc40d27e13",
-      "end_commit": "1be5fb582b4fccb7ce5ddbd55de84b3cc01a682c",
-      "registry_anchor_commit": "1be5fb582b4fccb7ce5ddbd55de84b3cc01a682c",
-      "reopen_trigger_id": "PLATFORM-INF-RESIDENCY-01",
-      "reopen_evidence": "docs/implementation/tasks/project/core-obs-llama-consumer-scan-2026-08.md",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
+      "round_id": "platform-v3-capability-factorization",
+      "closure_task": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
+      "scope": "Complete the admitted inference host facts and current-thread mechanisms, split thread/wait and synchronous filesystem ownership from the host factor, and revalidate the natural C++ Platform product and its direct consumers.",
+      "non_goals": "Mapped-file or shared-memory ownership migration before the Mem factor round, async/direct/scatter I/O, scheduler policy, device facts or kernels, JIT/process/plugin policy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
+      "baseline_commit": "6bf023c90b6ec3d62e9892028e172a385671de1e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -534,49 +530,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v2-inference-residency.md",
-      "loc": {
-        "snapshot_commit": "88085b671ac7dfb4d41e2819ceda0925d1ac0147",
-        "repository_code": 312046,
-        "self_with_tests": 125130,
-        "self_without_tests": 83707,
-        "module_implementation": 6864
-      },
-      "known_limitations": [
-        "P1 engineering PASS covers only the frozen W1-WIN progressive eager-residency replay; it is not a Linux on-fault, end-to-end model-load, token-throughput, cross-platform or Formal SOTA certificate.",
-        "Only single-node NUMA API routes, complexity, error behavior and fallback are signed; multi-socket locality and local/remote bandwidth are not certified.",
-        "Partial unmap, synchronous prefault/THP collapse, exact physical-core/cache-domain placement, AMX/SME enablement, direct/async I/O and JIT/shared-memory/process/plugin policy remain routed or deferred.",
-        "LockLimitPolicy::kAdjustIfNeeded has an explicit process-global soft-limit/working-set side effect that unlock and destruction do not roll back; the default policy preserves process limits.",
-        "Native FFI/C API and stable C++ ABI are not admitted; the current product delivery contract is C++23 source, static SDK and shared SDK."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a Platform-owned residency, topology or NUMA correctness, security, ownership or API-usability defect.",
-        "MappedFile public API/layout/algorithm, a supported OS primitive, direct dependency or source/static/shared delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material loss beyond the frozen 5% margin on a normal loader workload.",
-        "Multi-node placement, partial unmap/prefault, exact placement, AMX/SME, foreign runtime or another deferred family is admitted through a separate capability decision.",
-        "The performance contract, peer, consumer provenance, machine, instrument or retained bundle changes while the current engineering claim must be renewed."
-      ],
-      "summary": "platform-v2 CLOSED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部签署；Formal 独立 PENDING。"
+      "summary": "platform-v3 因已接受的能力超集和 factorization 定向重开：缺少 inference host topology/memory、affinity restoration、thread ISA state 与 secure entropy，且单一 Platform factor 无法保持最小内部依赖；当前仅登记事实，尚未授权产品实现。"
+    },
+    {
+      "module": "platform_thread",
+      "product_state": "QUEUED",
+      "summary": "已按接受的 Platform factorization 登记 native thread/current-thread ISA/wait 因子；等待 Platform v3 冻结 API、依赖、成本和交付合同。"
+    },
+    {
+      "module": "platform_fs",
+      "product_state": "QUEUED",
+      "summary": "已按接受的 Platform factorization 登记同步 filesystem/namespace/FileHandle 因子；等待 Platform v3 冻结 API、依赖、成本和交付合同。"
     },
     {
       "module": "mem_reclaim",

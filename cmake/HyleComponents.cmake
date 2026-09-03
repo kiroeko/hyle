@@ -137,6 +137,11 @@ _hyle_declare_component(timer_queue
 # fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
 # than a header made accidentally available by installing the whole tree.
 _hyle_declare_component(platform PUBLIC_DEPS core error time)
+# Registered factor IDs only. Their dependency, source and product-root
+# contracts stay intentionally absent while the factors are QUEUED; Platform
+# v3 must reach SCOPED/AUDITED before it may migrate product ownership.
+_hyle_declare_component(platform_thread)
+_hyle_declare_component(platform_fs)
 # Registered independently before source migration. The Mem product facade does
 # not select this factor until its own closure round reaches a deliverable
 # candidate.
