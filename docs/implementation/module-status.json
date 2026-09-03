@@ -701,18 +701,12 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "BLOCKED",
-      "blocked_from": "CANDIDATE",
-      "blocker": "MR-P1-PEER-CONSUMER-01: the frozen P1 contract has neither a qualified official Folly same-contract build nor an owner-authorized admitted direct consumer, so non-inferiority and product delivery cannot be adjudicated.",
-      "blocker_owner": "Mem/Container capability owner and performance evidence owner",
-      "resume_condition": "Start a RESUME round from SCOPED only after both an official Folly RCU same-contract peer can be built on the locked environment and a separate Container reopen card or another admitted real consumer authorizes a frozen migration/holdout; then pass closure-perf-v1 on W1-WIN at the 5% margin plus product source/static/shared and usage-guide gates.",
-      "round_id": "mem-reclaim-v1",
-      "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
-      "scope": "Provide an explicit-domain, allocation-free read-side reclamation primitive with guarded publication reads, intrusive retire records, bounded nonblocking collection, blocking grace-period synchronization, draining and observable pending work for current HYLE concurrent-container and Obs ownership gaps.",
-      "non_goals": "Container membership or policy, logging policy, lock-free data structures, sched/executor callbacks, automatic object allocation, a complete hazard-pointer family, backend/GPU retirement, global C or Native FFI, stable C++ ABI, universal SOTA or Formal certification.",
-      "baseline_commit": "31b86dd809ec61cd1fb7c42ed986e2697d20cb91",
-      "candidate_commit": "66671c39197765623f581dd872f4e626958880db",
-      "candidate_tree": "dc17f2b62e30c72b020b868b4ee3961157a1603b",
+      "product_state": "SCOPED",
+      "round_id": "mem-reclaim-v2-inference-resume",
+      "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
+      "scope": "Resume the allocation-free read-side reclamation factor for an owner-authorized inference snapshot journey, migrate ConcurrentNodeHashMap table retirement, enter the Mem facade, and qualify official Folly same-contract P1 evidence.",
+      "non_goals": "Hazard-pointer cohorts, async executors, GPU fence retirement, allocating retire nodes, lock-free containers, Obs migration, Native FFI/C API, Compute/Graph, common instrument redesign and Formal certification.",
+      "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -720,64 +714,29 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/tasks/mem/mem-reclaim-v1.md"
+        "evidence": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "INCONCLUSIVE",
-        "usability_docs": "INCONCLUSIVE",
-        "red_team": "PASS",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "end_commit": "4ee7ccd075f3888bdd36dbe4bdfa79b1684f09fd",
-      "registry_anchor_commit": "60c68122cc3fe5c2ef0fc3e1ed65402febfcc396",
-      "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v1.md",
-      "loc": {
-        "snapshot_commit": "66671c39197765623f581dd872f4e626958880db",
-        "repository_code": 425583,
-        "self_with_tests": 104614,
-        "self_without_tests": 65136,
-        "module_implementation": 457
-      },
-      "known_limitations": [
-        "The factor is available only through the top-level HYLE_DEV_FACTORS maintenance route and is not part of the Mem product facade or installed SDK.",
-        "An explicit domain carries 64 cache-line reader slots plus fixed fallback stripes; use the process-default domain unless isolation justifies that owner cost.",
-        "A live guard must leave on its entering thread; hazard-pointer cohorts, asynchronous callback executors, GPU fence retirement, Native FFI and stable C++ ABI are not provided.",
-        "The immutable snapshot timings are natural-route diagnostics only; no qualified Folly same-contract or admitted direct-consumer P1 verdict exists."
-      ],
-      "reopen_triggers": [
-        "The finite resume condition supplies both a qualified official Folly peer and an owner-authorized admitted direct consumer.",
-        "A real consumer reproduces a correctness, security, lifetime, ownership or API-usability defect in the frozen factor.",
-        "A real consumer admits a deferred hazard-pointer, executor or backend-retirement family, or a dependency/platform change alters semantics.",
-        "A strong peer proves a better complexity class or a reproducible material advantage on a same-contract normal consumer workload."
-      ],
-      "summary": "mem_reclaim v1 BLOCKED：candidate 的三平台 correctness、WSL ASan/UBSan/TSan、Mac ASan 与 exact-factor shared/static 均通过；缺少 qualified Folly same-contract peer 和 owner 授权的直接 consumer，故产品交付/指南与 P1 为 INCONCLUSIVE，未进入 Mem façade。"
+      "summary": "mem_reclaim v2 SCOPED：官方 Folly RCU peer 与 owner 授权的推理/Container consumer 两把恢复钥匙均已取得；有限轮将完成产品交付、直接消费和 5% P1。"
     },
     {
       "module": "mem",
-    "product_state": "REOPENED",
+    "product_state": "SCOPED",
       "reopen_trigger_id": "MEM-RECLAIM-FACADE-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
       "round_id": "mem-v4-reclamation-facade",
       "closure_task": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
       "scope": "Make a successfully resumed mem_reclaim factor naturally available through the Mem product facade and all three C++ delivery shapes, with an installed consumer and scenario-based guidance.",
       "non_goals": "Reopening allocator, PMR, pool, arena, buffer, NUMA, mapping or VM algorithms; changing mimalloc; Native FFI/C API; stable C++ ABI; Compute/Graph; common instrument redesign; Formal certification.",
-      "baseline_commit": "13117568b9496b0b6db29235ece0bf6e35ae16db",
-    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
-    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
+      "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -790,44 +749,13 @@
       "material_margin_pct": 5,
       "machine_profile": "W1-WIN",
       "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm.md"
+      "evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md"
     },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/mem/mem-v3-vm-factorization.md",
-    "loc": {
-      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "repository_code": 434612,
-      "self_with_tests": 110971,
-      "self_without_tests": 70261,
-      "module_implementation": 7392
-    },
-    "known_limitations": [
-      "Mapping users must preserve backing lifetime and safe truncation, and callers own byte-level data-race and control-operation synchronization.",
-      "Populate and residency are explicit page-proportional operations subject to OS quota; ordinary mapping does not prefault and fragments use multiple owners rather than hidden hole metadata.",
-      "Huge pages, NUMA placement and guarded stacks depend on OS, hardware and privilege; single-node validation does not prove remote-NUMA bandwidth.",
-      "Base Mem directly depends on the locked mimalloc implementation, while Mem VM does not; a material mimalloc input change requires directed review.",
-      "The current P1 evidence covers only the affected W1-WIN mapping and progressive-residency journeys, not every Mem-v2 family, asynchronous IO, end-to-end token latency or Formal SOTA."
-    ],
-    "reopen_triggers": [
-      "A named real consumer reproduces a mapping, residency, shared, huge, NUMA or guarded-storage correctness, security, lifetime, OOM, failure or C++ API-usability defect.",
-      "A supported OS or compiler invalidates the offset, range, EOF, move, reset, populate, lock, flush, advice or guard contract.",
-      "The public API or layout, unique ownership, factor dependency, normal cost or source/static/shared delivery changes materially, or mimalloc or Platform changes actual product semantics.",
-      "A mature same-contract peer proves a better complexity class, or a normal loader or scheduler profile reproduces a material regression.",
-      "An asynchronous, direct, backend-policy or sparse-storage journey is formally admitted and multiple natural owners cannot express the common Mem-owned contract."
-    ],
-      "summary": "mem-v4 REOPENED：推理 snapshot reclamation 已准入，窄范围复检 Mem façade、三种 C++ 交付、package sample 与用户选型；allocator/VM 等既有算法不重开。"
+      "summary": "mem-v4 SCOPED：只复检 reclamation 的 Mem façade、三种 C++ 交付、package sample 与用户选型；allocator/VM 等既有算法不重开。"
     },
     {
       "module": "mem_vm",
@@ -957,18 +885,14 @@
     },
     {
       "module": "container",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "CONTAINER-NODE-TABLE-RECLAIM-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
       "round_id": "container-v3-node-table-reclamation",
       "closure_task": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
       "scope": "Bound ConcurrentNodeHashMap retired-table lifetime for a long-lived, growing inference registry, preserving accessor/node semantics and offering an explicit no-reclamation-cost lifetime route when the owner can retain tables to destruction.",
       "non_goals": "Reopening any other Container family, changing node/accessor semantics, adding a lock-free map, benchmark-named APIs, Native FFI/C API, Compute/Graph, common instrument redesign or Formal certification.",
-      "baseline_commit": "13117568b9496b0b6db29235ece0bf6e35ae16db",
-      "candidate_commit": "336793d63dd7cf08fde9c1be74c6439472335381",
-      "candidate_tree": "968d169bafe0eab270d397ab1614f80c1a98079f",
-      "end_commit": "390a3ce477bc3d0677541bb9fe70c3f12a7b7ffe",
-      "registry_anchor_commit": "390a3ce477bc3d0677541bb9fe70c3f12a7b7ffe",
+      "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -981,43 +905,12 @@
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
+        "evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/container/container-v2-rebuild.md",
-      "loc": {
-        "snapshot_commit": "1199a9edbffef46a1c76bdee2f2e722f76371532",
-        "repository_code": 404562,
-        "self_with_tests": 96940,
-        "self_without_tests": 60339,
-        "module_implementation": 11871
-      },
-      "known_limitations": [
-        "The P1 engineering claim is limited to five frozen normal W1-WIN source-consumer tasks; other operations retain structural and correctness verdicts, cross-platform timing and all-operation SOTA are not claimed, and Formal is NONE.",
-        "StringView is a caller-owned borrow with an explicit 32-bit length bound; ordinary containers are caller-synchronized unless their type explicitly documents concurrency.",
-        "Blocking, cancellation, timeout/backpressure, tokenizer automata, graph slot policy, cache/eviction, model/KV semantics and device lifetime remain with their named higher-layer owners.",
-        "Real ISA differential execution covered scalar/SSE4/AVX2 on W1-WIN and scalar/NEON on M1-MAC; unsupported AVX-512, SVE and RVV paths were not marked PASS.",
-        "The product is C++23 source/static/shared delivery without a Native FFI or stable cross-toolchain C++ ABI; retained qualified performance artifacts are local engineering evidence."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, OOM, ownership, lifetime, concurrency, usability or missing common-container defect within this boundary.",
-        "A public API, layout, algorithm, component edge, source/static/shared delivery shape or supported compiler/ISA contract changes.",
-        "Highway, xxHash, wyhash, simdutf or a direct HYLE dependency changes product semantics, algorithms, dispatch, code generation, licensing or delivery inputs.",
-        "A qualified same-contract normal workload proves a material regression or a mature peer proves a better complexity class or material consumer advantage.",
-        "An updated llama.cpp/ggml journey or a second independent mature demand admits a common capability that the current HYLE, standard-library or higher-layer route cannot completely carry."
-      ],
-      "summary": "container-v3 REOPENED：只处理 ConcurrentNodeHashMap 在长寿命增长 registry 中无法及时归还旧 bucket table 的寿命缺口；其他 Container 能力保持冻结。"
+      "summary": "container-v3 SCOPED：只处理 ConcurrentNodeHashMap 在长寿命增长 registry 中无法及时归还旧 bucket table 的寿命缺口，并保留显式析构期回收档位；其他 Container 能力保持冻结。"
     },
     {
       "module": "util",
