@@ -36,3 +36,19 @@
 
 本轮只承担 semantic/delivery owner 的窄复检。`mem_reclaim` 自己承担算法、correctness、性能和限制，
 Container 自己承担默认 table-lifetime 改动；任何一方失败都不能由 Mem v3 历史 PASS 代签。
+
+## Audit 与交付 freeze（AUDITED）
+
+Mem façade 当前 roots 为 `mem,mem_vm`，因此 `<hyle/mem/reclamation.h>` 不会随普通 Mem package 交付；
+这正是唯一 public/delivery gap。冻结 FIX 为：加入 `mem_reclaim` root、更新中央 component contract、在
+Mem installed sample 执行一次 typed snapshot retire/synchronize、更新 Mem user/architecture 指南，并
+回放 Container product closure。base `mem` 与 `mem_vm` 的源码、mimalloc identity、allocator/VM API 和
+性能证据均不得改变。
+
+六问直答：产品闭包中既有 mimalloc 仍由 base Mem 直接拥有且本轮不变；新 reclamation factor 无第三方
+产品依赖，Folly 只是 benchmark peer。llama.cpp/ggml 身份和推理 journey 记录在 resume card。性能只
+聚合同 candidate 的 reclamation P1 与 Container natural-route verdict，不另造 Mem benchmark。Native
+FFI 为 `N/A/CLEAN`。source/static/shared 与 relocation 均为本轮硬门。用户 API 从 `hyle::mem` 正常发现，
+指南按 allocator/storage/reclamation 任务选型，不能把 internal factor target 暴露成产品菜单。
+
+Audit verdict：唯一能力缺口和所有交付投影已冻结，允许进入实现。

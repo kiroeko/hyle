@@ -84,3 +84,65 @@ domain.retire(old->retire_record, old, &delete_snapshot);
 
 前一 blocker 的两把恢复钥匙均已取得，允许从 `BLOCKED -> SCOPED`。下一状态只在完整 public-surface
 trace、六问、语义等价矩阵和有限 FIX 集冻结后进入 `AUDITED`；此前不改产品代码。
+
+## Audit 与 API / usability freeze（AUDITED）
+
+### Capability-family map
+
+| Family | admitted journey | current route | coverage | frozen action / negative space |
+|---|---|---|---|---|
+| guarded immutable publication | 短读区加载模型/backend/request metadata | `read()` + `protect(atomic<T*>)` | `COMPLETE` | `KEEP`；不拥有或复制 payload |
+| allocation-free deferred reclaim | owner 内嵌 record，allocator-aware callback | `RetireRecord` + raw callback | `PARTIAL` | `FIX` typed compile-time callback convenience；不增加 allocating free-function route |
+| nonblocking pressure collection | writer 不等待 reader | `try_reclaim()` + threshold | `COMPLETE` | `KEEP`；无进度/FIFO 保证 |
+| blocking grace period / teardown | 等待 pre-existing readers 并清空 owner work | `synchronize()` / quiescent `drain()` | `COMPLETE` | `KEEP`；guard 内调用 blocking route 是合同错误 |
+| default / isolated domains | 普通短 reader；隔离长 reader/确定 teardown | default domain / explicit domain | `COMPLETE` | `KEEP`；不承诺跨 DSO 单例 |
+| stalled-reader-independent reclaim | 一个停顿 reader 不阻塞无关对象 | 无 | `OUT_OF_SCOPE` | hazard pointer：真实触发后另立能力轮 |
+| executor/GPU-affine retirement | 指定线程或 fence 后析构 | 无 | `ROUTED` | Sched/backend owner 组合，不下沉到本 factor |
+
+### Public-surface trace 与有限 FIX
+
+现有公开面只有 `ReclaimCallback`、`RetireRecord`、`ReclamationGuard`、`ReclamationDomain` 和
+`default_reclamation_domain()`；每个入口均映射到上表，`pending/reclaimed/retire_threshold` 是 owner
+pressure observation。没有 benchmark-only symbol。冻结 FIX 只有：
+
+1. `MR2-01` 增加 `domain.retire<callback>(record, T*)` 的零分配 typed convenience，raw `void*` 路线继续
+   服务 allocator-aware/internal owner；
+2. `MR2-02` 完成 Container table hand-off consumer；
+3. `MR2-03` 完成 Mem façade、三交付、package sample 与指南；
+4. `MR2-04` 完成官方 Folly same-contract P1。
+
+API freeze：typed overload 只在编译期生成 raw thunk，不改变 record/domain layout，不存 deleter，不增加
+allocation/branch；Container 的 lifetime policy 属 Container card。冻结后只允许原子顺序、内部 route、
+冷队列和无公开 layout 的实现优化。
+
+### Owner 六问
+
+1. **第三方：**产品路径无第三方；只用 C++ atomics/mutex/TLS。Folly vcpkg 身份仅为 `peer`，不会链接
+   到 HYLE 产品或泄漏其类型；
+2. **推理能力：**2026-09-03 远端确认 llama.cpp
+   `67a17c17caa95742186f8b1ecadd1b5abd6d5ebb`、standalone ggml
+   `d4716378882593333721eb33f153144b6885caf2`；llama 随仓 ggml tree 为
+   `b91bd1c0eadf24e7d56143f36942e1a838c1dd8b`（最近同步 commit
+   `159b741427337a2e9a58b08121001545d66b5825`）。它们提供 backend/model registry 与长寿命 metadata
+   的真实形状，但没有通用 RCU API；本能力是 `NORTH_STAR_JOURNEY`，不是伪称现有 production trace；
+3. **性能：**P1，冻结的短 snapshot read，与官方 Folly 同语义；5% non-inferiority；retire/synchronize
+   只做复杂度与资源 telemetry，不外推 universal SOTA；
+4. **FFI：**`N/A/CLEAN`；无 C header/schema、bridge、未装饰 export 或 managed sample；DLL 导出的是
+   同工具链 C++ 方法；
+5. **交付：**当前 exact factor 已验证，但 Mem product source/static/shared 为缺口，列入 `MR2-03`；
+6. **C++/文档：**RAII guard、显式 domain、intrusive record 的 ownership 自然；typed overload 修掉常见
+   `void*` cast 摩擦。指南必须解释 RCU vs lock/shared_ptr/hazard、短 guard、domain/record lifetime、
+   callback 执行线程和 blocking self-wait。
+
+### Same-contract equivalence freeze
+
+| Dimension | HYLE | Folly adapter | verdict |
+|---|---|---|---|
+| work/result | guard 内 acquire-load immutable pointer 并读同 payload | 相同 | `EQUAL` |
+| ownership/lifetime | caller owns pointer/domain；reader 阻塞 retire | 相同 | `EQUAL` |
+| failure/cancel | warmed read 不分配、无结果失败/取消 | 首次 TLS 分配移出 timed phase | `ADAPTER_EQUALIZED` |
+| ordering/progress | reader 不阻塞 writer publication；stalled reader 延后 reclaim | 相同 | `EQUAL` |
+| setup/teardown | registration warm-up、retire/sync 不计入 read phase | 相同 | `EQUAL` |
+| delivery/codegen | HYLE source/static；官方 Folly static peer | paired source benchmark，adapter link 不在 loop | `ADAPTER_EQUALIZED` |
+
+Audit verdict：全部 `MUST` 已是 `COMPLETE` 或有限 `FIX`，API/成本/peer/workload 已冻结，允许进入实现。

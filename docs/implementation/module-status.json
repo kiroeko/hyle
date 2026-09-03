@@ -701,7 +701,7 @@
     },
     {
       "module": "mem_reclaim",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "mem-reclaim-v2-inference-resume",
       "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
       "scope": "Resume the allocation-free read-side reclamation factor for an owner-authorized inference snapshot journey, migrate ConcurrentNodeHashMap table retirement, enter the Mem facade, and qualify official Folly same-contract P1 evidence.",
@@ -725,11 +725,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem_reclaim v2 SCOPED：官方 Folly RCU peer 与 owner 授权的推理/Container consumer 两把恢复钥匙均已取得；有限轮将完成产品交付、直接消费和 5% P1。"
+      "summary": "mem_reclaim v2 AUDITED：公开面、推理 journey、官方 Folly 同合同、typed convenience、Container consumer 和四项有限 FIX 已冻结，允许实现。"
     },
     {
       "module": "mem",
-    "product_state": "SCOPED",
+    "product_state": "AUDITED",
       "reopen_trigger_id": "MEM-RECLAIM-FACADE-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v4-reclamation-facade.md",
       "round_id": "mem-v4-reclamation-facade",
@@ -755,7 +755,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v4 SCOPED：只复检 reclamation 的 Mem façade、三种 C++ 交付、package sample 与用户选型；allocator/VM 等既有算法不重开。"
+      "summary": "mem-v4 AUDITED：唯一缺口是把完成的 reclamation factor 投影到 Mem façade、三种 C++ 交付、sample 与选型指南；allocator/VM 保持冻结。"
     },
     {
       "module": "mem_vm",
@@ -885,7 +885,7 @@
     },
     {
       "module": "container",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CONTAINER-NODE-TABLE-RECLAIM-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
       "round_id": "container-v3-node-table-reclamation",
@@ -910,7 +910,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v3 SCOPED：只处理 ConcurrentNodeHashMap 在长寿命增长 registry 中无法及时归还旧 bucket table 的寿命缺口，并保留显式析构期回收档位；其他 Container 能力保持冻结。"
+      "summary": "container-v3 AUDITED：默认读者后回收与显式析构期回收两种寿命档位、hand-off 算法、direct edge、交付和 natural-route P1 已冻结。"
     },
     {
       "module": "util",
