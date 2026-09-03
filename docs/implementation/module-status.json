@@ -515,7 +515,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
       "round_id": "platform-v3-capability-factorization",
@@ -540,11 +540,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v3 SCOPED：冻结 host topology/memory/entropy 能力、三因子边界、真实消费者、5% P1 和六小时总预算；完成双向审计与有限 FIX 集前不修改产品实现。"
+      "summary": "platform-v3 AUDITED：36 项能力已双向追踪，冻结 topology、host memory、entropy、三因子交付与 Mem-VM 唯一 owner 等十一项 FIX；API 仍为 DRAFT，P1 计时须等待实现及接口冻结。"
     },
     {
       "module": "platform_thread",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "platform-thread-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
       "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
@@ -567,11 +567,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v1 SCOPED：冻结 native thread/current-affinity/extended-ISA/wait 的语义、依赖、成本、Parker P1 与三交付合同；审计前不迁移源码。"
+      "summary": "platform_thread v1 AUDITED：现有 Thread/wait/Parker 保留，只补 affinity 保存恢复、current-thread scalable/matrix ISA state 与精确 factor 交付；API 仍为 DRAFT。"
     },
     {
       "module": "platform_fs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "platform-fs-v1-factor",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
       "scope": "Own synchronous filesystem namespace operations, one-cursor FileHandle I/O, safe temporary-file and atomic-replacement mechanisms as an independently buildable internal factor selected by the Platform product.",
@@ -594,7 +594,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v1 SCOPED：冻结同步 namespace/FileHandle/temp/replace 的语义、依赖、loader P1 与三交付合同；审计前不迁移源码。"
+      "summary": "platform_fs v1 AUDITED：同步 FileHandle/namespace/temp/replace 能力无新增缺口，冻结 source/header/convenience 拆分、secure entropy 复用、同合同 loader P1 与三交付 FIX。"
     },
     {
       "module": "mem_reclaim",

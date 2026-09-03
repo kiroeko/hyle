@@ -34,3 +34,21 @@
 - 非目标与 registry 一致；API、复杂度和 `FIX` 必须在 `AUDITED` 冻结后才可实现。
 
 当前状态仅为 `SCOPED`，不授权移动 `thread.cc/wait.cc` 或新增产品 API。
+
+## Audit verdict（`AUDITED`）
+
+正向证据是 llama.cpp 的 affinity save/pin/restore 与 ggml 的 SVE/RVV width、Linux AMX permission；
+反向追踪覆盖 `thread.h`、`wait.h`、两份 source、Platform/Sched/Compute 消费与 tests。现有 native
+Thread、required/best-effort config、address wait 与单 waiter Parker 均 `COMPLETE/KEEP`；缺口只有：
+
+| FIX | frozen shape | cost / boundary | verification |
+|---|---|---|---|
+| `PLAT3-T01` | `this_thread` affinity count/fill + owning snapshot，可原样传给现有 set | O(mask words)，Mac 诚实 `Unimplemented`；不建 scheduler placement policy | save/set/restore、sparse/large mask、failure preserving original |
+| `PLAT3-T02` | current-thread scalable/streaming vector byte facts与显式 AMX tile permission request | O(1) native query；SMSTART/kernel dispatch 仍属 SIMD | synthetic decode + available real ISA/QEMU + unsupported paths |
+| `PLAT3-T03` | `platform_thread` 精确拥有 Thread/wait sources/headers并 direct-link host/time | Parker 保持一 word/一次 OS wait，不增加常态 metadata | exact factor、Sched consumer、三交付、旧 P1 replay |
+| `PLAT3-D01` | thread guide/architecture/error traps 与六问 | 无 product cost | docs/scans/red team |
+
+API freeze 当前为 `DRAFT`；实现通过 compile-only normal journeys 后才 `FROZEN`。不新增 detach、process
+priority、线程池、cancel queue 或按 benchmark 命名的 light/fast 档。产品路径只用 OS API/C++23，无
+第三方实现和 Native FFI；公开 namespace 仍为 `hyle::platform`，普通消费者选择 Platform product，
+`platform_thread` 只是内部精确开发/交付 factor。

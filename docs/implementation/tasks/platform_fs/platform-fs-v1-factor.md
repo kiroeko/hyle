@@ -33,3 +33,21 @@
 - 非目标与 registry 一致；完整 capability map/public trace/有限 `FIX` 和 API freeze 前不得迁移源码。
 
 当前状态仅为 `SCOPED`。
+
+## Audit verdict（`AUDITED`）
+
+正向证据覆盖 llama.cpp model/config/cache 的同步 open/read/stat/temp/replace，peer 为 Folly File 与
+Boost Filesystem；反向追踪覆盖 `fs.h/fs.cc`、混合 convenience、MappedFile 调用方、package sample
+与 IO/Compute/Mem 消费。现有 FileHandle、namespace、visitor、安全递归删除、temp 与 rename 组合已
+形成完整 portable subset；本轮没有缺失文件操作需要新增。冻结票只有：
+
+| FIX | frozen shape | cost / boundary | verification |
+|---|---|---|---|
+| `PLAT3-F01` | `platform_fs` 独立拥有同步 fs；environment 与 CPU owning helper 从混合 convenience 拆开；Windows temp 使用 host secure entropy | FileHandle 一字；普通 read/write 至多一次 syscall；不携带 mapping/async/path owner | exact factor/header isolation/direct IO-Mem edge |
+| `PLAT3-F02` | warmed regular file 的 open + complete sequential read + close 同合同 P1；temp write/sync/rename 为 holdout budget | 计入 setup/bytes/teardown，不与 cached scalar 或无 durability route 混比 | W1-WIN 5% gate + A/A qualification |
+| `PLAT3-D01` | guide/sample/architecture/performance 与 source/static/shared relocation | 无 product cost | docs/scans/red team |
+
+API freeze 当前为 `DRAFT`，实现后再冻结。MappedFile/SharedMemory 不能临时归入本 factor；它们必须由
+依法审计的 `mem_vm` 唯一拥有。file lock/preallocate/watch/direct/positional/vectored/async 与 lexical
+Path 都保持明确 `DEFER/ROUTED`。产品无第三方实现依赖、无 Native FFI；公开 namespace 仍是
+`hyle::platform`，factor 名只服务内部独立构建。

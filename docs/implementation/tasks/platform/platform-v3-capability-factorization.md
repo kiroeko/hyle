@@ -80,3 +80,77 @@ API freeze 与有限 `FIX` 集尚未完成，因此不授权产品实现。
 
 `SCOPED` 只冻结问题、预算、机器、性能等级和交付边界；完整 capability/public-surface trace、所有
 `MUST` 的 owner 与有限 `FIX` 集完成前，仍不授权产品实现。
+
+## 双向能力审计（`AUDITED`）
+
+审计绑定 SCOPED baseline 与 2026-09-03 clean references。正向检查了最新 llama.cpp 的物理核
+计数/线程亲和恢复、ggml 的 host-memory/device planning、SVE/RVV vector width 与 Linux AMX
+permission；peer 只使用 Folly CacheLocality/Random/File 与 oneTBB info/NUMA 的同能力部分。反向追踪
+覆盖当前十个 Platform public headers、全部 Platform sources/tests、package sample，以及
+SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer API 求并集：只有下表 `MUST`
+进入本轮，成熟库中没有当前消费或定义性基础合同的 process/JIT/file-lock 能力保持触发器。
+
+### Capability-family coverage map
+
+| Family | normal journey | baseline | audit verdict / owner |
+|---|---|---|---|
+| CPU/ISA/cache facts | fat binary 安全选择、cache hint | feature/tier/单份 cache 完整 | `PARTIAL`：补 AMX/SME 静态事实；per-thread state 归 `platform_thread` |
+| process-available topology | 物理核 sizing、避开 SMT、按 LLC/NUMA/强弱核放 worker | sparse available ids 与 rank 有，缺 core/cache domain | `PARTIAL`：host factor 补 process-view location 与 aggregate counts |
+| host memory budget | 分配/层拟合前取得当前可用预算 | `MISSING` | host factor 补 fallible snapshot；device/UMA 聚合仍归 Compute/引擎 |
+| NUMA/raw VM/guard | preferred/bind/interleave、reserve/commit/protect | `COMPLETE` | `KEEP` host mechanism；storage owner 归 Mem |
+| native thread/wait | configured worker、address wait、Parker | lifecycle/wait 完整，affinity set-only | `PARTIAL`：查询/恢复与 extended ISA 归 `platform_thread` |
+| synchronous filesystem | model/config/cache cursor I/O、namespace/temp/replace | 当前 portable journey 完整 | `COMPLETE`；迁到 `platform_fs`，不加 benchmark-only operation |
+| mapped/shared storage | model mapping/residency、named shared pages | Platform mechanism + Mem wrapper 双层公开 | `PARTIAL`：唯一 public owner 迁 `mem_vm`；prefault/fragment 由 Mem round 裁决 |
+| DynLib/environment/entropy | backend discovery、startup env、secure seed | loader/env 完整，entropy 缺失 | `PARTIAL`：host 补 OS entropy；env 从 fs source/header 拆出 |
+| advanced process/JIT/fs/device | subprocess、W^X、lock/preallocate、GPU facts | 无或上层已有 | `ROUTED/OUT_OF_SCOPE`；不进入本轮 |
+| C++ delivery | source/static/shared 与 baseline probe isolation | 单 target 已通过，精确 factor 不存在 | `PARTIAL`：三 factor、facade、direct edge 和 relocation 必须重签 |
+
+### 冻结 capability / gap ledger
+
+| ID | class | frozen normal shape | owner / boundary | complexity/resource target | action / verification |
+|---|---|---|---|---|---|
+| `PLAT3-H01` | `MUST` | process-available `CpuInfo` 同时给 package/core/SMT/NUMA/L2/L3 domain；aggregate 给 physical-core/package/cache-domain count | `platform` host facts；Sched 选 policy | snapshot O(available CPUs + OS relations)，buffer-fill core；unknown 不猜 | `FIX` 三平台 topology tests + llama physical-core journey |
+| `PLAT3-H02` | `MUST` | `HostMemoryInfo` 给 physical total/available、可用时的 commit/process limit 与保守 effective available | `platform` host；Compute 聚合 device budget | O(1) 有界 native/file queries，无 payload allocation | `FIX` synthetic parser/limit 边界 + real-host smoke |
+| `PLAT3-H03` | `MUST` | `secure_random(span<byte>) -> Status`；empty 成功，partial/EINTR 完整填满或失败 | `platform` host mechanism | O(bytes/native chunk)，无 TLS PRNG/hidden fallback | `FIX` OS path、failure taxonomy、temp-file reuse |
+| `PLAT3-H04` | `MUST` | CPU/NUMA/raw VM/DynLib/env/entropy 组成可独立链接 host factor | `platform` ID 保留为 host | CPU probe 仍 baseline/LTO-off；不携带 Time/thread/fs | `FIX` source/header ownership、`hardware_concurrency` 迁移、exact-factor build |
+| `PLAT3-T01` | `MUST` | caller affinity buffer-fill + owning convenience，返回值可原样交给 set 完成 save/set/restore | `platform_thread` | O(mask words)，只有 convenience 分配 | `FIX` sparse/large mask、restore、unsupported tests |
+| `PLAT3-T02` | `MUST` | current-thread scalable/streaming vector bytes 与 AMX tile permission 是窄机制；SIMD 仍唯一选 kernel | host static fact + `platform_thread` state | O(1) syscall/register query；enable 只显式调用 | `FIX` Linux SVE/SME/AMX 与 RVV route、其他平台诚实 unsupported/zero |
+| `PLAT3-T03` | `MUST` | Thread/wait/Parker 独立 factor 并由 Platform facade 聚合 | `platform_thread -> core,error,time,platform` | wait 仍一次 native primitive；Parker 一个 atomic word | `FIX` target/headers/direct Sched edge + existing P1 replay |
+| `PLAT3-F01` | `MUST` | FileHandle/namespace/temp/replace 独立 factor；env 不再藏在 fs | `platform_fs -> core,error,time`，private host entropy | FileHandle 一字；普通 read/write 至多一次 syscall | `FIX` source/header/convenience split、exact-factor build |
+| `PLAT3-F02` | `MUST` | warmed regular file open + complete sequential read + close | `platform_fs` | 同语义 5% non-inferiority；setup/bytes/teardown全计费 | `FIX` frozen consumer P1 + holdout temp/sync/rename budget |
+| `PLAT3-X01` | `MUST` | mapping/residency/shared storage 只有一个 Mem public owner，不留 Platform facade 双 owner | `mem_vm` over host/fs mechanisms | 不增加 pimpl、copy 或常态 dispatch | `FIX` 先登记并审计 Mem factor，再迁 owner和 package journey |
+| `PLAT3-D01` | `MUST` | architecture/user/performance docs 与 source/static/shared/direct consumers 跟随最终图 | 各文档/Build owner | 不制造 C/Native FFI 或稳定 C++ ABI | `FIX` scans、三平台、package relocation、六问与红队 |
+
+以上十一票是本轮完整 `FIX` 集。`PLAT-A-16` detach、`A-18` process priority、`A-26` lock/preallocate
+保持 `GENERAL/DEFER`；`A-13/A-35` 保持 `OUT_OF_SCOPE`；没有这些功能不能被描述为当前推理闭包缺陷。
+
+### API / usability freeze
+
+- 当前状态：`DRAFT`，允许按上述票实现但尚未允许 P1 计时；实现后的 compile-only journey、类型大小、
+  failure/concurrency/default 与 factor 可发现性全部通过后才改为 `FROZEN`。
+- host 日常路线保持 `cpu_features/cpu_topology/available_cpu_info/host_memory_info/secure_random`；动态
+  topology 与 memory 是显式 snapshot，不把 syscall 偷藏进已缓存的 scalar getter。
+- thread 日常路线是 `this_thread::affinity()` owning snapshot 或 buffer-fill core，配合现有
+  `set_affinity`；extended state 的名字描述事实或显式 request，不叫“fast mode”。
+- fs 日常路线仍为 `FileHandle` 与 buffer-fill core；owning convenience 拆成 factor-owned opt-in headers，
+  不再用一个 `convenience.h` 把 CPU、env 与 filesystem 强耦合。
+- public namespace 仍为 `hyle::platform`，内部 factor target 不成为用户必须理解的新产品。HYLE 尚未发布，
+  不保留旧 convenience/mapping alias；迁移在同一 candidate 完成。
+
+### Owner 六问（AUDITED）
+
+1. **第三方路径：**产品实现没有第三方库；只有 C++23/compiler builtin/Windows、Linux、macOS ABI。
+   Folly/oneTBB/llama.cpp/ggml 是锁定需求与 peer，不链接进产品。
+2. **推理能力：**现有 36 行账本中本轮准入的未处置 `MUST` 正是 H01/H02/T01/T02/X01；完成前答案为
+   `NO`，其余 device/kernel/async/policy 均已路由。
+3. **性能：**当前只有旧单 target 证据，不能续签新 factor。API freeze 后按 host snapshot、Parker、
+   warmed file 三个不同合同裁决；禁止给出“Platform 全部 SOTA”的混合结论。
+4. **旧 ABI：**扫描无 C header/schema/bridge/未装饰 C export/managed sample/FFI option；decorated C++
+   export 与 OS-private boundary 不构成 Native FFI，当前 verdict `CLEAN`。
+5. **交付：**旧 Platform product 三形状曾通过；三个精确 factor、facade 聚合与迁移后的 relocated
+   source/static/shared 尚未运行，当前 `BLOCKED-UNTIL-CANDIDATE` 而不是伪 `PASS`。
+6. **易用性/文档：**既有 owner/Result/buffer-fill + opt-in owning 方向自然；缺口在 topology/memory/
+   affinity/state 和混合 convenience。architecture/user/sample/performance 必须随 candidate 更新。
+
+`AUDITED` 授权且只授权十一票产品修改。`PLAT3-X01` 要求先给 `mem_vm` 建立合法 closure card；在此
+之前不得通过临时 cycle、重复 owner 或把 mapping 塞进 fs 来完成 target 拆分。
