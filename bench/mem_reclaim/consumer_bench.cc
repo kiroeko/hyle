@@ -97,9 +97,13 @@ int main() {
   const bool rival_first = std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
   const bool formal_only =
       std::getenv("HYLE_MEM_RECLAIM_BENCH_FORMAL_ONLY") != nullptr;
+  const char *run_nonce = std::getenv("HYLE_PERF_RUN_NONCE");
   std::fprintf(
-      stderr, "# HYLE_MEM_RECLAIM_RUN execution_order=%s formal_only=%d\n",
-      rival_first ? "peer-first" : "candidate-first", formal_only ? 1 : 0);
+      stderr,
+      "# HYLE_MEM_RECLAIM_RUN execution_order=%s formal_only=%d "
+      "run_nonce=%s\n",
+      rival_first ? "peer-first" : "candidate-first", formal_only ? 1 : 0,
+      run_nonce != nullptr ? run_nonce : "");
   if (rival_first) {
 #if defined(HYLE_BENCH_FOLLY)
     bench.run("Folly rcu_domain read guard", folly_read);

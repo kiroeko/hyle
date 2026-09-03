@@ -108,9 +108,12 @@ int main() {
   const bool peer_first = std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
   const bool formal_only =
       std::getenv("HYLE_NODE_TABLE_BENCH_FORMAL_ONLY") != nullptr;
+  const char *run_nonce = std::getenv("HYLE_PERF_RUN_NONCE");
   std::fprintf(
-      stderr, "# HYLE_NODE_TABLE_RUN execution_order=%s formal_only=%d\n",
-      peer_first ? "peer-first" : "candidate-first", formal_only ? 1 : 0);
+      stderr,
+      "# HYLE_NODE_TABLE_RUN execution_order=%s formal_only=%d run_nonce=%s\n",
+      peer_first ? "peer-first" : "candidate-first", formal_only ? 1 : 0,
+      run_nonce != nullptr ? run_nonce : "");
 
   nb::Bench primary;
   primary.title("node registry protected hit aggregate N=4096")
