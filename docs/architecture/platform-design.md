@@ -11,52 +11,61 @@
 ## 1. 定位与依赖
 
 platform 把 Windows、Linux 和 macOS 的不同系统调用收敛成可组合的**机制**，供 HYLE
-内部地基层和需要直接控制 OS 资源的库用户共同使用。它位于共享 `error` 之上、
-`mem/simd/container/sched/io/compute` 之下；公开文件元数据复用 `time::UnixTimestamp`，因此
-中央图与真实 target 都声明 `platform -> PUBLIC {core, error, time}`：
+内部地基层和需要直接控制 OS 资源的库用户共同使用。面向用户只有一个 Platform 产品；内部按
+依赖成本和生命周期拆成三个质因数，namespace 仍统一为 `hyle::platform`：
 
 ```text
-core + error + time
-          |
-       platform  -- CPU/OS facts, thread, wait, VM, file, dynlib
-          |\
-          | +------ simd/container  runtime ISA and cache facts
-          +-------- mem            VM, huge page, NUMA, guarded stack backing
-          +-------- sched          thread/wait mechanisms
-          +-------- io/compute     native file/plugin/backend foundations
+core + error
+     |
+     +-- platform -------- host facts, raw VM/NUMA, dynlib, env, entropy
+     |      |\
+     |      | +-- platform_thread -- PUBLIC core/error/time; thread + wait
+     |      +---- platform_fs ----- PUBLIC core/error/time; synchronous fs
+     |
+     +-- Platform product facade = all three factors (consumer only)
+
+platform + platform_fs + mem
+     |
+     +-- mem_vm --------- mapping/residency/guarded storage owner
 ```
 
-platform 不拥有调度策略、通用堆、异步 completion 或设备内存。它回答“OS 能做什么、怎样
-可靠地做”，上层回答“何时做、为哪个 workload 做”。这是避免底层 API 被某个 benchmark
-或单一内部消费者扭曲的首要边界。`Parker::park_for(time::Duration)` 提供等待机制，但 clock/sleep 与
-deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `FileInfo::modified_time` 类型产生，
-不授权 platform 接管 clock、sleep、deadline 或 timer 行为。
+host factor 公开依赖 `core/error`；`platform_thread` 与 `platform_fs` 各自公开依赖
+`core/error/time`，并只为实现复用私有依赖 host factor。`Parker::park_for(time::Duration)` 和
+`FileInfo::modified_time` 分别形成真实的 public Time 边。内部模块链接自己直接使用的 factor，绝不
+链接产品 facade；source/static/shared 用户选择 Platform 产品时 facade 再聚合三者。这样既允许并行
+开发和最小依赖，又不把内部拆分泄漏成普通用户的选型负担。
+
+platform 不拥有调度策略、通用堆、storage mapping、异步 completion 或设备内存。它回答“OS 能
+做什么、怎样可靠地做”，上层回答“何时做、为哪个 workload 做”。这是避免底层 API 被某个
+benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadline 的时间语义仍归 time/sched，
+文件 mapping/residency 生命周期归 Mem；依赖 Time 或 Mem 不授权 Platform 接管它们的策略。
 
 `<hyle/core/environment.h>` 的 `HYLE_OS_*` 等数值宏只描述当前 translation unit 的编译目标，
 归 header-only Core；包含它不等于链接 platform binary。Platform 只拥有运行时 OS/CPU/cache/NUMA
 事实与资源机制，不再与根级“platform”宏头共享一个容易误解的名字。
 `FileInfo::modified_time` 复用 time 的 `UnixTimestamp`，以免 OS metadata 与时间转换产生两种表示；
-这既是公开 header include，也是 `hyle_platform -> hyle_time` 的真实 `PUBLIC` target 边。
-只有直接调用本模块符号的实现才声明 private 依赖，公开头若命名 `CpuOrder`、`ThreadPriority`、
-`VmRegion` 等 platform 类型则声明 public 依赖。不得依靠 mem/sched 的传递链接掩盖直接消费，
-也不得因一个预处理宏虚构二进制依赖。
+这既是公开 header include，也是 `hyle_platform_fs -> hyle_time` 的真实 `PUBLIC` target 边。
+只有直接调用某 factor 符号的实现才声明 private 依赖；公开头命名另一个 factor 的类型时声明 public
+依赖。不得依靠 product facade 或上层模块的传递链接掩盖直接消费，也不得因一个预处理宏虚构
+二进制依赖。
 
 ## 2. 功能面与公共形状
 
 | 能力族 | C++ 公共形状 | 常用场景 | 关键合同 |
 |---|---|---|---|
-| CPU 与 cache | `CpuFeatures`、`Isa`、`CacheInfo`、`CpuTopology`、`CpuInfo` | ISA 派发、false-sharing 对齐、runtime 初始化、异构核选择 | 静态硬件事实可缓存；进程可用 CPU 动态查询；未知不猜测 |
+| CPU、cache 与 topology | `CpuFeatures`、`Isa`、`CacheInfo`、`CpuInfo`、`available_cpu_topology` | ISA 派发、false-sharing 对齐、物理核/SMT/cache-domain worker placement | 静态 facts 可缓存；process-available topology 动态、可失败；未知不猜测 |
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
-| 文件系统与环境 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写与 exact/all 并存；单 cursor seek；显式 sync/close；打开 owner 不阻塞原子替换路径 |
-| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock_prefix` | 大文件随机访问、权重/数据集、COW、显式 warm-up/渐进驻留 | path 或消费已打开 owner；RO const view、checked writable view、range flush；hint 与 residency 不隐式发生；已应用锁定前缀可查询 |
+| Host memory | `HostMemoryInfo`、`host_memory_info` | model/KV allocation 前的 host budget | 动态 fallible snapshot；optional constraint 不用 0 冒充 unknown；不是 reservation |
+| 文件系统 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件 | UTF-8 路径；短读写与 exact/all 并存；单 cursor seek；显式 sync/close；打开 owner 不阻塞原子替换路径 |
+| 环境与 OS entropy | `get/set/unset_env_var`、`secure_random` | 启动配置、不可预测 seed/nonce | unset 与 empty 分开；环境写只在同步控制面；entropy 完整填满或失败 |
 | 动态库 | `DynLib` | 插件、可选系统库、用户 native backend | open/get/current 语义分开；`get` 持有 loader 引用；显式 close 可观察错误；符号签名由调用方承担 |
 
 这些能力共同遵循“窄机制 + 明确 owner + 可恢复错误”的形状。platform 不提供一个巨型
-`PlatformApi` 对象，也不把无关系统调用堆进单一 namespace facade；能力按头文件和资源类型
-模块化，调用方只引入所需合同。
+`PlatformApi` 对象；能力按 factor、头文件和资源类型模块化，调用方只引入所需合同。文件、匿名
+VM 和线程 owner 在 Platform；file/shared/anonymous storage mapping 的唯一用户级 owner 在 Mem。
 
 ## 3. 系统事实、进程事实与策略必须分开
 
@@ -66,14 +75,32 @@ CPU API 有三类不同生命周期，不能混用：
    OS 扩展寄存器保存能力；探测 TU 必须保持 baseline ISA。构建系统把该 TU 独立放入关闭 IPO
    的 private object target，其余 platform 源仍可接受父工程 LTO，不能用 target-wide 关 LTO
    换取探测安全。
-2. `cache_info()` / `cpu_topology()` 是缓存的系统硬件视图，适合诊断、容量提示和长期策略。
-   它们不等于容器/cgroup 给当前进程的 CPU 配额。
-3. `available_cpu_count/ids/info()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
-   Windows CPU Sets。返回 id 可能稀疏，调用方不得用 `[0, count)` 推导。
+2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合容量提示与诊断；后者
+   不等于容器/cgroup 给当前进程的 CPU 配额。
+3. `available_cpu_count/ids/info/topology()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
+   Windows CPU Sets。返回 id 可能稀疏，topology domain 只在一次 snapshot 内有效；调用方不得用
+   `[0, count)` 或旧 snapshot 推导当前 placement。
 
 `performance_rank` 只采用 OS 提供的可信 CPU-id 映射。没有证据时返回 unknown，不按频率、
 编号或营销名称猜 P/E 核。`CpuOrder` 只对完整可用集合排序，不偷偷删核；“只用强核”、
 worker 数、轮转、超订和 NUMA-aware stealing 都是 sched 或应用策略。
+
+系统级 AMX/SME/SVE/RVV feature 与调用线程实际可用状态也必须分开。`this_thread::isa_state()`
+返回动态 vector width/permission，`request_amx_tile_permission()` 是显式线程配置；两者都不选择 SIMD
+kernel，也不把失败静默改成较弱语义。临时 affinity 调整通过 query + set 保存和恢复调用线程的
+真实 mask，不能用 process-wide available set 猜原值。
+
+### Host resource snapshot 与 entropy
+
+`host_memory_info()` 是动态、fallible、刻意不缓存的 planning snapshot。物理量在成功时存在；
+commit/swap/process-or-container limit 使用 optional 表达 OS 是否提供可信值，合法 0 不充当 sentinel。
+`effective_available_bytes()` 取已知约束的保守下界，但不预留资源，也不把 UMA device budget 与 host
+budget 重复相加。真正的 allocation failure 仍必须由 Mem/Compute consumer 处理。
+
+`secure_random()` 是无隐藏 PRNG state 的 OS entropy mechanism，成本与输出 bytes/native chunk 成
+正比；partial read 与 interrupt 在实现内完成，只有完整填充或错误两种外部结果。它不替代 Util 的
+可复现统计 RNG。environment 查询和 mutation 与 filesystem source 分离：环境属于 host process
+state，unset 与 empty 有不同结果，mutation 只适合已同步的启动/重配控制面。
 
 ## 4. Thread 只表达 OS 线程机制
 
@@ -117,32 +144,17 @@ portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复�
 - `reserve_guarded`：显式 guard page，供 fiber stack 等越界必须尽早失败的资源。
 - 裸 `vm_*`：供实现自有 owner 的基础设施；普通用户优先 RAII，避免 base/size 配错。
 
-`MappedFile` 是同步、单进程文件映射。普通顺序文件 I/O 用 `FileHandle`；异步 read/write、
-注册文件和 completion 归 `io`；跨进程 shared memory 的命名、权限和同步也不伪装成普通
-mapping。device VRAM、pinned host memory、coherence 与 GPU completion 归 `compute`，不能
-用 `VmRegion` 或 `mem::AllocatorRef` 抹掉 backend 生命周期。
+普通顺序文件 I/O 用 Platform `FileHandle`；异步 read/write、注册文件和 completion 归 `io`。
+模型权重、索引、anonymous/shared storage 的 mapping、advice、populate、residency 与 range flush
+由 `mem_vm` 的 `VirtualMapping/FileMapping/SharedMapping` 唯一公开拥有。`FileMapping::map` 消费
+Platform `FileHandle`，因此实现可直接复用 native handle，但 Platform 不再保留一份同义 owner。
+这个单 owner 边界避免两套 mode/advice/lock enum、两份文档和无法判断该选谁的 API。
 
-对权重、索引和数据集，映射 owner 与访问策略分开：`Advice` 只给 kernel 访问模式提示，
-`prefetch` 是 will-need 便利入口，`lock/unlock` 才明确购买驻留。它们都作用于已有 mapping，
-不在 `open()` 时暗中 fault 全文件或消耗 memlock 配额。一次性驻留用 `lock()`；模型 loader 等
-逐步确认 CPU-resident 数据的调用者用 monotonic `lock_prefix(target, options)`，它只对新覆盖的
-OS page 发一次 native lock，失败仍保留此前成功的前缀。`locked_size()` 报告页粒度实际覆盖的
-public prefix，可能大于调用者传入的 target，但不会超过 mapping size。任意重叠 range lock 没有
-清晰的 owner/refcount 语义，因此不为“更通用”引入区间 metadata。
-
-`LockMode::kEager` 在调用返回前按 OS `mlock/VirtualLock` 语义购买驻留；Linux 还可显式选择
-`kOnFault`，通过 `mlock2(MLOCK_ONFAULT)` 把未 resident page 的实际锁定推迟到 first fault。
-Windows/macOS 不会悄悄退化为 eager，而是返回 `Unimplemented`。默认
-`LockLimitPolicy::kPreserve` 不修改进程全局资源；只有调用方显式选择 `kAdjustIfNeeded`，quota
-failure 后才允许一次 POSIX soft `RLIMIT_MEMLOCK` 或 Windows working-set limit 增长和一次重试。
-调整成功后是进程级状态，不由 `unlock` 回滚。hard limit、权限或第二次 native failure 仍以共享
-`Status` 返回。
-
-POSIX advice 使用 `madvise`；Windows 只对 `WillNeed` 有 `PrefetchVirtualMemory` 对等能力，其它
-hint 诚实返回 `Unimplemented`，residency 使用 `VirtualLock`。unsupported hint 不影响 mapping
-的正确性。POSIX partial `munmap` 会把洞打进 `MappedFile::bytes()` 的连续 view，Windows 又无法
-等价实现，因此不成为公共方法；调用者用精确 subrange mapping、独立 owner 或
-`Advice::kDontNeed` 表达 unused physical pages。
+Platform 仍提供 `vm_reserve/commit/protect/advise/lock` 等 raw anonymous-address mechanisms 和
+`VmRegion`，供 Mem 与自定义 arena/JIT owner 组合；它不提供 file/shared mapping 生命周期。
+mapping 的访问策略、同步 populate、monotonic residency prefix、fragment-by-multiple-owners 等合同见
+[Mem 设计](mem-design.md)。device VRAM、pinned host memory、coherence 与 GPU completion 归
+`compute`，不能用 `VmRegion` 或 `mem::AllocatorRef` 抹掉 backend 生命周期。
 
 NUMA preferred 与 huge-page advice 是策略提示，返回值必须让用户看见是否 applied、not
 needed 或 unavailable。Linux bind 是严格节点集合；interleave/selected interleave 表示 OS 已
@@ -182,8 +194,9 @@ decommit/recommit 子区间，因为 Windows 重新提交会丢失 placement；�
 
 ## 7. 文件系统只提供跨平台基础资源
 
-platform 文件面覆盖真实基础库常用需求：stat/存在性、目录与文件变更、权限的可移植子集、
-link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临时文件。
+platform filesystem factor 覆盖真实基础库常用需求：stat/存在性、目录与文件变更、权限的可移植
+子集、link、目录 visitor、cwd/temp/home、同步 open/read/write 和原子临时文件。进程环境属于 host
+factor，mapping 属于 Mem。
 
 设计约束如下：
 
@@ -213,8 +226,9 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
   `read_exact/write_all`，共享 cursor 的位置使用 `seek/position`。durability 需要显式 `sync`，
   需要观察关闭失败时显式 `close`。并发 positional/async I/O 归 `io::File`，不在一字 owner 中
   加隐式锁或 OVERLAPPED 状态。
-- Windows `FileHandle`/`MappedFile` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX
-  一样只替换目录项、已有 owner 继续持有文件对象；这也是原子模型/缓存更新的必要合同。
+- Windows `FileHandle` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX 一样只替换目录项、
+  已有 owner 继续持有文件对象；消费 handle 的 Mem `FileMapping` 保留该文件对象生命周期。这也是
+  原子模型/缓存更新的必要合同。
 
 platform 不拥有 path 字符串算法、glob、watcher、高层 directory object、async stream 或虚拟
 文件系统。纯词法 path 操作属于 container/string，变化通知和异步数据流属于 io。
@@ -225,7 +239,7 @@ platform 可以依赖最底层 error。资源创建和有值查询返回 `Result
 `Status`；错误保存 HYLE code、operation 和原生系统诊断。成功热路径不分配，模块不维护
 私有 TLS last-error，也不让 errno/GetLastError 越过调用边界后才被读取。
 
-POSIX fs、MappedFile、VM 与 NUMA 的 generic errno code 必须来自 error 的
+POSIX fs、VM 与 NUMA 的 generic errno code 必须来自 error 的
 `status_from_errno`；Win32 generic OS code 必须来自 error 的 `status_from_win32`，COM/WinRT
 返回值必须来自 `status_from_hresult`。Windows CRT 直接返回 errno 值的 API（例如 `_wputenv_s`）
 仍走 errno 入口。只有系统调用
@@ -233,10 +247,10 @@ POSIX fs、MappedFile、VM 与 NUMA 的 generic errno code 必须来自 error �
 SDK-specific recovery，仍由 compute owner 保留 translator；不能硬套 errno，也不能让 platform
 再次复制通用 Win32 taxonomy/message table。
 
-C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib`）均为 move-only
-RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
-使用显式 release/close 语义。`MappedFile::map(FileHandle, ...)` 消费已验证的 file owner，避免
-第二次 path lookup；只读访问始终是 const span，只有 RW/COW mapping 能取得 checked writable span。
+C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`DynLib`）均为 move-only RAII；借出的
+pointer、symbol 或 native handle 不得活过 owner。需要转移回收责任时必须使用显式 release/close
+语义。Mem `FileMapping::map(FileHandle, ...)` 消费已验证的 file owner，避免第二次 path lookup；
+mapping 的 view 与 access-mode 合同由 Mem 拥有。
 `DynLib::get` 在每个平台都取得/pin 一份 loader reference，避免借用 handle 与并发 unload 竞争。
 
 platform 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax schema、bridge、
@@ -246,21 +260,24 @@ platform 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C
 [Native FFI 准入策略](native-ffi-policy.md)后，才按任务设计窄的 runtime 类型擦除 adapter；不为
 C++ API parity 预埋 POD、callback 或资源句柄 schema。
 
-C++ 在同一个无分配 core 上提供两种显式便利形状：`Thread::spawn(callable, opts)` 拥有 capturing/
-move-only callable；`platform/convenience.h` 以 header-only overload 返回 owning
-`std::string/std::vector`。后者负责 count/fill、动态视图重试与 STL 分配异常到 `Status` 的
-adapter 转换，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通 C++ 使用不重复样板，
+C++ 在同一个 buffer-fill/allocation-minimal core 上提供显式便利形状：`Thread::spawn(callable,
+opts)` 拥有 capturing/move-only callable；factor-owned 的 `cpu_convenience.h`、
+`thread_convenience.h`、`fs_convenience.h` 与 `environment_convenience.h` 用 header-only overload
+返回 owning `std::vector/std::string`。adapter 负责 count/fill、动态视图重试与 STL 分配异常到
+`Status` 的转换，也不让核心 header 被迫引入 owning 类型或其它 factor。普通 C++ 不重复样板，
 allocator/arena 与热调用者仍能控制每次分配。
 
 ## 9. 性能架构
 
 platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不引入可避免的额外工作：
 
-- `cpu_features/cache/topology/page_size` 等稳定事实探测一次后 O(1) 读取。
-- 动态 CPU availability 保持 O(N) OS 查询，不能为 O(1) 缓存而返回过时 cpuset；只用于
-  初始化/重配控制面，不进入每 task 热路径。Windows 默认 CPU Set membership 先排序默认 id，
-  再对每个系统 set 二分查找，时间 O(D log D + N log D)、空间 O(D)，避免旧的 O(ND) 嵌套扫描，
-  也不按可能稀疏且很大的 opaque id 分配 bitmap。
+- `cpu_features/cache/page_size` 等稳定事实探测一次后 O(1) 读取。
+- 动态 CPU availability/topology 保持 O(N + R) OS 查询，不能为 O(1) 缓存而返回过时 cpuset；只用于
+  初始化/重配控制面，不进入每 task 热路径。Windows 把 OS relation 一次索引到 process-available
+  CPU，避免对每颗 CPU 重扫全部关系；Linux 从同一次 affinity view 读取 per-CPU sysfs topology，
+  不为每个字段重复枚举 mask。聚合 distinct domain 使用有界 scratch，不引入树或常态 metadata。
+- host-memory snapshot 是 O(1) 个有界 OS/file 查询；`secure_random` 是 O(bytes/native chunk)，不维护
+  TLS PRNG state。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
   主成本，runtime/sched 继续使用 allocation-minimal `entry + void*` core。
@@ -268,18 +285,15 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - `allocate_rw` 使用最少 OS mapping 操作；staged reserve+commit 的额外 syscall 是不同合同，
   不能拿来宣称普通分配性能。
 - directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询。
-- VM、MappedFile、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
+- VM、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
-- `MappedFile::advise`、`lock`、`lock_prefix`、`unlock` 是 O(1) 参数检查、零 heap；prefix 未跨新
-  native page 时没有 syscall，正常增长/解锁至多一个 native residency call。只有显式
-  `kAdjustIfNeeded` 的 quota failure 路允许 limit query/set 和一次重试；成本由 range 大小导致的
-  kernel page work 决定，不伪装成纳秒用户态原语。
 
-基准必须比较相同语义。当前 P1 合同冻结为持久 scheduler worker 的 Parker request/response
-handoff 对 oneTBB production binary semaphore；caller/worker 按真实 worker placement 固定在两颗
-同级但不同 physical core，并机械回报角色落点，因为同核等待是另一个性能合同。第二族是模型 loader
-的 open/map/64 固定页探测/close 对 Boost mapped_region；双执行顺序、双 allocation order、代码
-placement 和 A/A/delta/floor 共同裁决。raw OS 和旧微基准只可解释机制，不能替代消费者结论。点值、样本和平台输赢只维护在
+基准必须比较相同语义。host primary 是一次 process-available topology + host-memory snapshot，
+只与完成同一动态事实合同的 direct-OS/peer route 比较；cached scalar getter 只能作为独立 holdout。
+thread primary 是持久 worker 的 Parker request/response handoff，对等 peer 必须同样保留 token、
+使用同样两颗物理核和恢复 affinity。filesystem primary 是 warmed regular-file open + 完整顺序 read +
+close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁到 Mem。raw OS 和微基准只可
+解释机制，不能替代消费者结论。点值、样本和平台输赢只维护在
 [`../performance/benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)。
 
 ## 10. 平台差异必须显式保留

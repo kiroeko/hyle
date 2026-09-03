@@ -15,7 +15,8 @@ facade 使用同一 `hyle::mem` namespace。当前仅登记，尚无 buildabilit
 - demand：`PLAT3-X01` 与全局 `B-F12`；consumer/范围/预算/machines/peers/gates 与 Mem v3 协同卡一致；
 - 本 factor 唯一拥有 `VirtualMapping/FileMapping/SharedMapping`、mapping residency、HugeMapping 与
   FiberStack public storage semantics；Platform 只保留 raw VM/NUMA/FileHandle/OS mechanism；
-- 预期 public deps：`core,error,mem,platform,platform_fs`；不允许依赖 platform product façade、SIMD、
+- 预期 public deps：`core,error,mem,platform,platform_fs,util_core`；`util_core` 只承载既有 FiberStackPool
+  的 SpinLock；不允许依赖 platform product façade、SIMD、
   Container、Sched、IO、Compute 或 Graph；
 - 常态成本：owner inline native state，无 wrapper pimpl allocation；view O(1)；mapping setup O(1) native
   calls，populate/lock/advice 与覆盖页/range 成正比；
@@ -30,10 +31,21 @@ Mem v3 的 `MEM3-VM01..06`：
 
 - `mem_vm` public headers 为 `mapping.h`、`hugepage.h`、`fiber_stack.h`，compiled source 直接实现
   File/Shared mapping native state；
-- public deps 冻结为 `core,error,mem,platform,platform_fs`；普通用户仍只链接 `hyle::mem` facade；
+- public deps 冻结为 `core,error,mem,platform,platform_fs,util_core`；普通用户仍只链接
+  `hyle::mem` facade；
 - `FileMapping::populate` 是唯一新增 public operation；fragment 用多个 mapping owner，不建洞状 owner；
-- API freeze 仍为 `DRAFT`，P1 计时必须等 correctness candidate；
+- API freeze 为 `FROZEN`（2026-09-03）：path/FileHandle mapping、advise/populate/lock、named shared、
+  anonymous NUMA 与 guarded-stack journeys、公开头自含及 Windows/WSL 精确 factor 均已通过；
 - 自身无第三方 product dependency、无 C/Native FFI、无稳定 C++ ABI；source/static/shared 和三平台
   交付在 candidate 前都不能写 `PASS`。
 
 该结论授权实现，不授权修改其他 Mem-v2 family 或公共性能仪器。
+
+## 候选前实现检查点
+
+- VM01--VM04 与 VM06 已落地：三个 public headers、直接 native owners、同步 populate、唯一 ownership、
+  精确 factor 与 Mem façade/documentation；未触及 allocator/pool/resource/buffer/planner；
+- W1-WIN 精确根下 Mem `223/223`、mem_vm `60/60`；GCC 14 `-Werror` 同为 `223/223` 与 `60/60`，公开头
+  自含通过；
+- VM05 的正式 P1、M1-MAC、sanitizer、三种产品交付、direct consumers 与红队仍待 candidate；当前
+  registry 继续是 `AUDITED`。

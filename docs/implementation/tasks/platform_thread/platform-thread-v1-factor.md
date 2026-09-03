@@ -15,7 +15,7 @@
   current-thread scalable-vector/matrix state、32-bit address wait/wake 与 single-waiter Parker；
 - 语义边界：Platform 提供事实与 mechanism，SIMD 唯一选择 kernel route，Sched 拥有 pool/task/fiber/
   cancellation/placement policy；current-thread state 不变成第二套 dispatcher；
-- 预期依赖：`PUBLIC core,error,time,platform`；普通用户仍只选择 `hyle::platform`，factor 名仅供内部
+- 预期依赖：`PUBLIC core,error,time`、`PRIVATE platform`；普通用户仍只选择 `hyle::platform`，factor 名仅供内部
   target、测试与维护；
 - tier / workload：`P1`，沿用 persistent Scheduler worker 的 Parker request/response handoff 对
   oneTBB production binary semaphore，W1-WIN 5% non-inferiority；thread create/configure 和 ISA enable
@@ -45,10 +45,19 @@ Thread、required/best-effort config、address wait 与单 waiter Parker 均 `CO
 |---|---|---|---|
 | `PLAT3-T01` | `this_thread` affinity count/fill + owning snapshot，可原样传给现有 set | O(mask words)，Mac 诚实 `Unimplemented`；不建 scheduler placement policy | save/set/restore、sparse/large mask、failure preserving original |
 | `PLAT3-T02` | current-thread scalable/streaming vector byte facts与显式 AMX tile permission request | O(1) native query；SMSTART/kernel dispatch 仍属 SIMD | synthetic decode + available real ISA/QEMU + unsupported paths |
-| `PLAT3-T03` | `platform_thread` 精确拥有 Thread/wait sources/headers并 direct-link host/time | Parker 保持一 word/一次 OS wait，不增加常态 metadata | exact factor、Sched consumer、三交付、旧 P1 replay |
+| `PLAT3-T03` | `platform_thread` 精确拥有 Thread/wait sources/headers，public-link time、private-link host facts | Parker 保持一 word/一次 OS wait，不增加常态 metadata | exact factor、Sched consumer、三交付、旧 P1 replay |
 | `PLAT3-D01` | thread guide/architecture/error traps 与六问 | 无 product cost | docs/scans/red team |
 
-API freeze 当前为 `DRAFT`；实现通过 compile-only normal journeys 后才 `FROZEN`。不新增 detach、process
-priority、线程池、cancel queue 或按 benchmark 命名的 light/fast 档。产品路径只用 OS API/C++23，无
-第三方实现和 Native FFI；公开 namespace 仍为 `hyle::platform`，普通消费者选择 Platform product，
-`platform_thread` 只是内部精确开发/交付 factor。
+API freeze 为 `FROZEN`（2026-09-03）：公开头自含、affinity save/set/restore、current ISA state、Thread
+与 Parker normal journeys，以及 Windows/WSL 精确 factor 已通过。此后 P1 不得反向增加 light/fast 档、
+改变 Parker layout 或削弱 required/best-effort 语义。不新增 detach、process priority、线程池或 cancel
+queue。产品路径只用 OS API/C++23，无第三方实现和 Native FFI；公开 namespace 仍为
+`hyle::platform`，普通消费者选择 Platform product，`platform_thread` 只服务内部精确开发/交付。
+
+## 候选前实现检查点
+
+- T01--T03 与 D01 的产品实现、测试、target/header ownership 和 user/architecture 文档已经落地；
+- W1-WIN 为 `42 PASS + 1` 个需要第二 processor group 的硬件跳过；GCC 14 `-Werror` 为 `44/44`；公开头
+  自含通过；
+- M1-MAC、sanitizer、Platform product 三交付、Sched direct consumer、P1 与红队仍待 candidate，当前
+  registry 继续是 `AUDITED`。

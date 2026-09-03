@@ -14,7 +14,7 @@
 #include "hyle/compute/memory.h"
 #include "hyle/compute/stream.h"
 #include "hyle/mem/buffer.h"
-#include "hyle/platform/convenience.h"
+#include "hyle/platform/environment_convenience.h"
 #include "hyle/platform/fs.h"
 // SPIR-V embedded as `inline constexpr SpirvBlob` by tools/hyle_shader.py (via
 // hyle_embed_shader in tests/compute/CMakeLists.txt). Namespace hyle_test_shaders keeps the symbols from

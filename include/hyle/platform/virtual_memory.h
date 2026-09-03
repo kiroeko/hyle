@@ -7,15 +7,6 @@
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
 #include "hyle/platform/numa.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#  define HYLE_PLATFORM_API
-#elif defined(HYLE_PLATFORM_BUILD)
-#  define HYLE_PLATFORM_API HYLE_EXPORT
-#else
-#  define HYLE_PLATFORM_API HYLE_IMPORT
-#endif
 
 // Host virtual memory: reserve/commit/decommit/release + protect.
 // Real consumers include guarded fiber stacks and large allocator backing.

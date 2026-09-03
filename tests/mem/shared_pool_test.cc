@@ -5,13 +5,16 @@
 #include <cstdint>
 #include <cstring>
 #include <unordered_set>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pool_cache.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/shared_pool.h"
-#include "hyle/platform/thread.h"
+#include "test_thread.h"
+
+using hyle::mem::test_support::Thread;
 
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
@@ -394,12 +397,12 @@ TEST(BlockPoolCache, ConcurrentOwnersPreserveEveryBlock) {
     std::array<std::uint32_t, 32> storage{};
   };
   std::vector<Args> args(kThreads);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<Thread> threads;
   for (int t = 0; t < kThreads; ++t) {
     args[t].pool = &pool;
     args[t].tid = t;
     args[t].corrupt = &corrupt;
-    auto thread = hyle::platform::Thread::spawn(
+    auto thread = Thread::spawn(
         [](void *raw) {
           auto *a = static_cast<Args *>(raw);
           BlockPoolCache cache(*a->pool, a->storage, 8);
@@ -488,18 +491,18 @@ TEST(ConcurrentBlockPool, ConcurrentAllocFreeNoOverlap) {
   };
   std::vector<Args> args(kThreads);
   std::atomic<bool> corrupt{false};
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<Thread> threads;
 
   for (int t = 0; t < kThreads; ++t) {
     args[t] = Args{&pool, t, &corrupt};
-    auto r = hyle::platform::Thread::spawn(
+    auto r = Thread::spawn(
         [](void* a) {
           auto* x = static_cast<Args*>(a);
           const unsigned char mark = static_cast<unsigned char>(0x40 + x->tid);
           for (int i = 0; i < kItersPerThread; ++i) {
             void* p = x->pool->allocate();
             if (p == nullptr) {  // transient exhaustion under contention: retry
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
               continue;
             }
             auto* bytes = static_cast<unsigned char*>(p);
@@ -559,7 +562,7 @@ TEST(ConcurrentBlockPool, CrossThreadFreeMigratesAndReclaims) {
   struct Ctx { ConcurrentBlockPool* pool; std::vector<void*>* ptrs; };
   Ctx c{&pool, &ptrs};
   // Thread A allocates all blocks.
-  auto alloc_t = hyle::platform::Thread::spawn(
+  auto alloc_t = Thread::spawn(
       [](void* p) {
         auto* x = static_cast<Ctx*>(p);
         for (auto& s : *x->ptrs) s = x->pool->allocate();
@@ -568,7 +571,7 @@ TEST(ConcurrentBlockPool, CrossThreadFreeMigratesAndReclaims) {
   std::move(*alloc_t).join();
   for (void* q : ptrs) ASSERT_NE(q, nullptr);
   // Thread B frees them all into its shared home shard.
-  auto free_t = hyle::platform::Thread::spawn(
+  auto free_t = Thread::spawn(
       [](void* p) {
         auto* x = static_cast<Ctx*>(p);
         for (void* q : *x->ptrs) x->pool->deallocate(q);
@@ -599,18 +602,18 @@ TEST(ConcurrentBlockPool, RemoteFreeImmediatelyVisibleWhileThreadLives) {
     p = pool.allocate();
     ASSERT_NE(p, nullptr);
   }
-  auto free_t = hyle::platform::Thread::spawn(
+  auto free_t = Thread::spawn(
       [](void* p) {
         auto* x = static_cast<Ctx*>(p);
         for (void* block : *x->ptrs) x->pool->deallocate(block);
         x->phase->store(1, std::memory_order_release);
         while (x->phase->load(std::memory_order_acquire) < 2)
-          hyle::platform::this_thread::yield();
+          std::this_thread::yield();
       },
       &c);
   ASSERT_TRUE(free_t.has_value());
   while (phase.load(std::memory_order_acquire) < 1)
-    hyle::platform::this_thread::yield();
+    std::this_thread::yield();
 
   std::vector<void*> held;
   for (std::uint32_t i = 0; i < kN; ++i) {
@@ -640,7 +643,7 @@ TEST(ConcurrentBlockPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
         if (shard == 0 && s->phase.compare_exchange_strong(
                               expected, 1, std::memory_order_acq_rel)) {
           while (s->phase.load(std::memory_order_acquire) < 2)
-            hyle::platform::this_thread::yield();
+            std::this_thread::yield();
         }
       },
       &scan);
@@ -649,7 +652,7 @@ TEST(ConcurrentBlockPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
     ConcurrentBlockPool* pool;
     void* result = nullptr;
   } worker{&pool};
-  auto thread = hyle::platform::Thread::spawn(
+  auto thread = Thread::spawn(
       [](void* raw) {
         auto* w = static_cast<Worker*>(raw);
         w->result = w->pool->testing_allocate_from_home(0);
@@ -657,7 +660,7 @@ TEST(ConcurrentBlockPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
       &worker);
   ASSERT_TRUE(thread.has_value());
   while (scan.phase.load(std::memory_order_acquire) < 1)
-    hyle::platform::this_thread::yield();
+    std::this_thread::yield();
 
   // The worker already observed shard 0 empty. Move the sole free block behind its
   // scan: publish held0 to shard 0, then remove shard 1's block.
@@ -708,10 +711,10 @@ TEST(ConcurrentBlockPool, SaturatedTagFallbackIsConcurrentSafe) {
     std::atomic<bool>* corrupt;
   };
   std::vector<Args> args(kThreads);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<Thread> threads;
   for (int t = 0; t < kThreads; ++t) {
     args[t] = Args{&pool, t, &corrupt};
-    auto thread = hyle::platform::Thread::spawn(
+    auto thread = Thread::spawn(
         [](void* raw) {
           auto* a = static_cast<Args*>(raw);
           const unsigned char mark = static_cast<unsigned char>(0x60 + a->tid);
@@ -940,13 +943,13 @@ TEST(PooledArena, PerThreadRegionsNoOverlap) {
     std::vector<void*> got;
   };
   std::vector<Args> args(kThreads);
-  std::vector<hyle::platform::Thread> ts;
+  std::vector<Thread> ts;
   bool spawn_failed = false;
   for (int t = 0; t < kThreads; ++t) {
     args[t].pool = &pool;
     args[t].ready = &ready;
     args[t].release = &release;
-    auto r = hyle::platform::Thread::spawn(
+    auto r = Thread::spawn(
         [](void* p) {
           auto* x = static_cast<Args*>(p);
           PooledArena a(x->pool);

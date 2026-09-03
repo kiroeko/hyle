@@ -1,5 +1,5 @@
 #if !defined(_WIN32)
-#  error "platform residency qualification currently has a W1-WIN contract"
+#  error "mem_vm residency qualification currently has a W1-WIN contract"
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -20,7 +20,7 @@
 #include <string_view>
 #include <utility>
 
-#include "hyle/platform/mapped_file.h"
+#include "hyle/mem/mapping.h"
 
 #include "../common/perf_process.h"
 
@@ -32,7 +32,7 @@ constexpr std::size_t kFileBytes = 16u * kMiB;
 constexpr std::size_t kStepBytes = 4u * kMiB;
 
 [[noreturn]] void fail(const char* operation) {
-  std::fprintf(stderr, "hyle_platform_residency_bench: %s failed (%lu)\n",
+  std::fprintf(stderr, "hyle_mem_vm_residency_bench: %s failed (%lu)\n",
                operation, static_cast<unsigned long>(::GetLastError()));
   std::abort();
 }
@@ -126,7 +126,7 @@ class ResidencyPair {
  public:
   explicit ResidencyPair(bool peer_allocation_first) {
     path_ = std::filesystem::temp_directory_path() /
-            ("hyle_platform_residency_" +
+             ("hyle_mem_vm_residency_" +
              std::to_string(reinterpret_cast<std::uintptr_t>(this)) +
              ".bin");
     std::ofstream output(path_, std::ios::binary | std::ios::trunc);
@@ -171,7 +171,7 @@ class ResidencyPair {
   }
 
   void hyle_replay() noexcept {
-    hyle::platform::MappedFile::LockOptions options;
+    hyle::mem::ResidencyOptions options;
     for (std::size_t target = kStepBytes; target <= kFileBytes;
          target += kStepBytes) {
       if (!hyle_->lock_prefix(target, options).ok()) std::abort();
@@ -185,13 +185,13 @@ class ResidencyPair {
  private:
   void open_hyle() {
     const std::string utf8 = path_.string();
-    auto mapping = hyle::platform::MappedFile::open(utf8.c_str());
+    auto mapping = hyle::mem::FileMapping::open(utf8.c_str());
     if (!mapping || mapping->size() != kFileBytes) std::abort();
     hyle_.emplace(std::move(*mapping));
   }
 
   std::filesystem::path path_;
-  std::optional<hyle::platform::MappedFile> hyle_;
+  std::optional<hyle::mem::FileMapping> hyle_;
   std::optional<RawMapping> peer_;
 };
 
@@ -205,7 +205,7 @@ int main() {
       "HYLE_PERF_CALLER_CPU");
   std::fprintf(
       stderr,
-      "# HYLE_PLATFORM_RESIDENCY_RUN execution_order=%s allocation_order=%s "
+      "# HYLE_MEM_VM_RESIDENCY_RUN execution_order=%s allocation_order=%s "
       "affinity_topology=%s caller_cpu=%s affinity_ok=%s run_nonce=%s\n",
       peer_first ? "peer-first" : "candidate-first",
       peer_allocation_first ? "peer-first" : "candidate-first",

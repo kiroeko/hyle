@@ -134,25 +134,38 @@ _hyle_declare_component(timer_queue
     hyle/time/common_timeout_queue.h
     hyle/time/timer_entry.h
     hyle/time/timer_queue.h)
-# fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
-# than a header made accidentally available by installing the whole tree.
-_hyle_declare_component(platform PUBLIC_DEPS core error time)
-# Registered factor IDs only. Their dependency, source and product-root
-# contracts stay intentionally absent while the factors are QUEUED; Platform
-# v3 must reach SCOPED/AUDITED before it may migrate product ownership.
-_hyle_declare_component(platform_thread)
-_hyle_declare_component(platform_fs)
+# Host facts and raw OS memory/loader mechanisms are the dependency-light
+# Platform prime. Thread/wait and synchronous filesystem remain separate
+# factors while the consumer-facing Platform product aggregates all three.
+_hyle_declare_component(platform PUBLIC_DEPS core error)
+_hyle_declare_component(platform_thread
+  PRIVATE_DEPS platform
+  PUBLIC_DEPS core error time
+  SPLIT_PUBLIC_HEADERS
+    hyle/platform/thread.h
+    hyle/platform/thread_convenience.h
+    hyle/platform/thread_visibility.h
+    hyle/platform/wait.h)
+_hyle_declare_component(platform_fs
+  PRIVATE_DEPS platform
+  PUBLIC_DEPS core error time
+  SPLIT_PUBLIC_HEADERS
+    hyle/platform/fs.h
+    hyle/platform/fs_convenience.h
+    hyle/platform/fs_visibility.h)
 # Registered independently before source migration. The Mem product facade does
 # not select this factor until its own closure round reaches a deliverable
 # candidate.
 _hyle_declare_component(mem_reclaim
   PUBLIC_DEPS core
   SPLIT_PUBLIC_HEADERS hyle/mem/reclamation.h)
-_hyle_declare_component(mem TRACE PUBLIC_DEPS core error platform util_core)
-# Registered independently before the Platform-v3 storage-owner migration.
-# Dependencies, sources, headers and the Mem product root remain absent until
-# mem-vm-v1 reaches SCOPED/AUDITED; QUEUED is not a buildability claim.
-_hyle_declare_component(mem_vm)
+_hyle_declare_component(mem TRACE PUBLIC_DEPS core error platform)
+_hyle_declare_component(mem_vm
+  PUBLIC_DEPS core error mem platform platform_fs util_core
+  SPLIT_PUBLIC_HEADERS
+    hyle/mem/fiber_stack.h
+    hyle/mem/hugepage.h
+    hyle/mem/mapping.h)
 _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # Container headers expose mem types; platform is used only by compiled
 # implementation paths such as runtime ISA/topology support.
@@ -165,7 +178,8 @@ _hyle_declare_component(util PUBLIC_DEPS core error mem container)
 _hyle_declare_component(sched
   TRACE
   PRIVATE_DEPS container timer_queue
-  PUBLIC_DEPS core container_intrusive error time platform mem util_core)
+  PUBLIC_DEPS core container_intrusive error time platform platform_thread
+              mem mem_vm util_core)
 # io's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
 # consumer usage requirements, not only implementation closure: installed
@@ -178,7 +192,7 @@ _hyle_declare_component(io
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
   TRACE
-  PRIVATE_DEPS platform simd
+  PRIVATE_DEPS platform platform_thread platform_fs simd
   PUBLIC_DEPS core error mem sched)
 _hyle_declare_component(graph
   PRIVATE_DEPS util_core
@@ -227,8 +241,8 @@ set(HYLE_KNOWN_PRODUCTS "")
 _hyle_declare_product(core FACTORS core)
 _hyle_declare_product(error FACTORS error)
 _hyle_declare_product(time FACTORS time timer_queue)
-_hyle_declare_product(platform FACTORS platform)
-_hyle_declare_product(mem FACTORS mem)
+_hyle_declare_product(platform FACTORS platform platform_thread platform_fs)
+_hyle_declare_product(mem FACTORS mem mem_vm)
 _hyle_declare_product(obs FACTORS obs)
 _hyle_declare_product(simd FACTORS simd)
 _hyle_declare_product(math FACTORS math)

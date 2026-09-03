@@ -44,7 +44,7 @@
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
-#include "hyle/platform/convenience.h"
+#include "hyle/platform/environment_convenience.h"
 #include "hyle/platform/fs.h"
 #if defined(HYLE_TESTING)
 #  include "hyle/visibility.h"  // HYLE_EXPORT -- export the #1 cache-flush test hook across the DLL

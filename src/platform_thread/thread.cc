@@ -8,7 +8,9 @@
 #include <new>
 #include <type_traits>
 
+#include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
+#include "hyle/platform/cpu.h"
 
 // Verified on three platforms: Windows MSVC, WSL Linux (GCC14), and macOS arm64
 // (Apple clang) -- spawn/join, name, affinity, stack size, and priority all
@@ -300,14 +302,6 @@ void Thread::join() {
   handle_ = 0;
 }
 
-unsigned hardware_concurrency() noexcept {
-  const DWORD all = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-  if (all != 0) return static_cast<unsigned>(all);
-  SYSTEM_INFO si;
-  ::GetSystemInfo(&si);
-  return si.dwNumberOfProcessors ? si.dwNumberOfProcessors : 1u;
-}
-
 namespace this_thread {
 std::uint64_t get_id() noexcept { return ::GetCurrentThreadId(); }
 void yield() noexcept { ::SwitchToThread(); }
@@ -321,6 +315,55 @@ Status set_affinity(CpuAffinity affinity) noexcept {
 Status set_priority(ThreadPriority priority) noexcept {
   return set_priority_impl(priority);
 }
+Result<std::size_t> affinity(unsigned* dst, std::size_t cap) noexcept {
+  GROUP_AFFINITY native{};
+  if (!::GetThreadGroupAffinity(::GetCurrentThread(), &native)) {
+    return std::unexpected(
+        thread_os_error("GetThreadGroupAffinity", ::GetLastError()));
+  }
+  unsigned group_begin = 0;
+  for (WORD group = 0; group < native.Group; ++group) {
+    group_begin += ::GetActiveProcessorCount(group);
+  }
+  std::size_t count = 0;
+  for (unsigned bit = 0; bit < sizeof(KAFFINITY) * 8u; ++bit) {
+    if ((native.Mask & (KAFFINITY{1} << bit)) == 0) continue;
+    if (count < cap && dst != nullptr) dst[count] = group_begin + bit;
+    ++count;
+  }
+  if (count == 0) {
+    return std::unexpected(
+        Status::FailedPrecondition("thread affinity mask is empty"));
+  }
+  return count;
+}
+
+Result<ThreadIsaState> isa_state() noexcept {
+  ThreadIsaState state;
+#  if HYLE_ARCH_X64
+  if (cpu_features().amx_tile) {
+    constexpr DWORD64 kXfeatureTileData = DWORD64{1} << 18;
+    state.amx_tile_permitted =
+        (::GetEnabledXStateFeatures() & kXfeatureTileData) != 0;
+  }
+#  endif
+  return state;
+}
+
+Status request_amx_tile_permission() noexcept {
+#  if HYLE_ARCH_X64
+  if (!cpu_features().amx_tile) {
+    return Status::Unimplemented("AMX tile data is unavailable on this CPU");
+  }
+  auto state = isa_state();
+  if (!state) return std::move(state).error();
+  if (state->amx_tile_permitted) return Status::Ok();
+  return Status::Unimplemented(
+      "Windows does not expose per-thread AMX permission through this API");
+#  else
+  return Status::Unimplemented("AMX is unavailable on this architecture");
+#  endif
+}
 }  // namespace this_thread
 
 }  // namespace hyle::platform
@@ -331,6 +374,7 @@ Status set_priority(ThreadPriority priority) noexcept {
 #  include <sys/resource.h>  // setpriority (best-effort thread nice)
 #  include <unistd.h>
 #  if HYLE_OS_LINUX
+#    include <sys/prctl.h>
 #    include <sys/syscall.h>
 #  elif HYLE_OS_MACOS
 #    include <pthread/qos.h>
@@ -540,11 +584,6 @@ void Thread::join() {
   handle_ = 0;
 }
 
-unsigned hardware_concurrency() noexcept {
-  long n = ::sysconf(_SC_NPROCESSORS_ONLN);
-  return n > 0 ? static_cast<unsigned>(n) : 1u;
-}
-
 namespace this_thread {
 std::uint64_t get_id() noexcept {
   // Cache the OS thread id in thread_local storage: it is INVARIANT for a thread's
@@ -577,6 +616,136 @@ Status set_affinity(CpuAffinity affinity) noexcept {
 }
 Status set_priority(ThreadPriority priority) noexcept {
   return set_priority_impl(priority);
+}
+
+Result<std::size_t> affinity(unsigned* dst, std::size_t cap) noexcept {
+#  if HYLE_OS_LINUX
+  auto copy_set = [dst, cap](const cpu_set_t* set, std::size_t bytes,
+                             std::size_t bits) noexcept
+      -> Result<std::size_t> {
+    std::size_t count = 0;
+    for (std::size_t cpu = 0; cpu < bits; ++cpu) {
+      if (!CPU_ISSET_S(cpu, bytes, set)) continue;
+      if (count < cap && dst != nullptr) dst[count] = static_cast<unsigned>(cpu);
+      ++count;
+    }
+    if (count == 0) {
+      return std::unexpected(
+          Status::FailedPrecondition("thread affinity mask is empty"));
+    }
+    return count;
+  };
+
+  cpu_set_t fixed;
+  CPU_ZERO(&fixed);
+  if (::sched_getaffinity(0, sizeof(fixed), &fixed) == 0) {
+    return copy_set(&fixed, sizeof(fixed), CPU_SETSIZE);
+  }
+  int error = errno;
+  if (error != EINVAL) {
+    return std::unexpected(thread_os_error("sched_getaffinity", error));
+  }
+  for (std::size_t bits = CPU_SETSIZE * 2u;
+       bits <= (std::size_t{1} << 20); bits *= 2u) {
+    cpu_set_t* set = CPU_ALLOC(bits);
+    if (set == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "thread affinity mask allocation failed"));
+    }
+    const std::size_t bytes = CPU_ALLOC_SIZE(bits);
+    CPU_ZERO_S(bytes, set);
+    if (::sched_getaffinity(0, bytes, set) == 0) {
+      auto result = copy_set(set, bytes, bits);
+      CPU_FREE(set);
+      return result;
+    }
+    error = errno;
+    CPU_FREE(set);
+    if (error != EINVAL) {
+      return std::unexpected(thread_os_error("sched_getaffinity", error));
+    }
+  }
+  return std::unexpected(Status::OutOfRange(
+      "thread affinity CPU id space exceeds supported limit"));
+#  else
+  (void)dst;
+  (void)cap;
+  return std::unexpected(
+      Status::Unimplemented("hard thread affinity is unavailable on macOS"));
+#  endif
+}
+
+#  if HYLE_OS_LINUX && HYLE_ARCH_RISCV64
+HYLE_NOINLINE std::size_t read_rvv_vector_bytes() noexcept {
+  std::size_t bytes = 0;
+  __asm__ volatile(".option push\n\t"
+                   ".option arch, +v\n\t"
+                   "csrr %0, vlenb\n\t"
+                   ".option pop"
+                   : "=r"(bytes));
+  return bytes;
+}
+#  endif
+
+Result<ThreadIsaState> isa_state() noexcept {
+  ThreadIsaState state;
+  const CpuFeatures& features = cpu_features();
+#  if HYLE_OS_LINUX && HYLE_ARCH_ARM64
+  constexpr int kPrSveGetVl = 51;
+  constexpr int kPrSmeGetVl = 64;
+  constexpr int kVlLengthMask = 0xffff;
+  if (features.sve) {
+    const int value = ::prctl(kPrSveGetVl, 0, 0, 0, 0);
+    if (value < 0) {
+      return std::unexpected(status_from_errno(errno, "prctl(PR_SVE_GET_VL)"));
+    }
+    state.scalable_vector_bytes =
+        static_cast<std::size_t>(value & kVlLengthMask);
+  }
+  if (features.sme) {
+    const int value = ::prctl(kPrSmeGetVl, 0, 0, 0, 0);
+    if (value < 0) {
+      return std::unexpected(status_from_errno(errno, "prctl(PR_SME_GET_VL)"));
+    }
+    state.streaming_vector_bytes =
+        static_cast<std::size_t>(value & kVlLengthMask);
+  }
+#  elif HYLE_OS_LINUX && HYLE_ARCH_X64
+  if (features.amx_tile) {
+    constexpr unsigned long kArchGetXcompPerm = 0x1022;
+    constexpr unsigned kXfeatureTileData = 18;
+    unsigned long mask = 0;
+    if (::syscall(SYS_arch_prctl, kArchGetXcompPerm, &mask) != 0) {
+      return std::unexpected(
+          status_from_errno(errno, "arch_prctl(ARCH_GET_XCOMP_PERM)"));
+    }
+    state.amx_tile_permitted =
+        (mask & (1ul << kXfeatureTileData)) != 0;
+  }
+#  elif HYLE_OS_LINUX && HYLE_ARCH_RISCV64
+  if (features.rvv) state.scalable_vector_bytes = read_rvv_vector_bytes();
+#  else
+  (void)features;
+#  endif
+  return state;
+}
+
+Status request_amx_tile_permission() noexcept {
+#  if HYLE_OS_LINUX && HYLE_ARCH_X64
+  if (!cpu_features().amx_tile) {
+    return Status::Unimplemented("AMX tile data is unavailable on this CPU");
+  }
+  constexpr unsigned long kArchRequestXcompPerm = 0x1023;
+  constexpr unsigned long kXfeatureTileData = 18;
+  if (::syscall(SYS_arch_prctl, kArchRequestXcompPerm,
+                kXfeatureTileData) != 0) {
+    return status_from_errno(errno, "arch_prctl(ARCH_REQ_XCOMP_PERM)");
+  }
+  return Status::Ok();
+#  else
+  return Status::Unimplemented(
+      "per-thread AMX permission is unavailable on this platform");
+#  endif
 }
 }  // namespace this_thread
 

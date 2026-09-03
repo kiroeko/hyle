@@ -3,15 +3,16 @@
 > platform 当前只提供 C++23 source/static/shared 产品面；没有 C API 或跨语言调用层。
 > 本页按实际资源生命周期说明选择、错误与平台差异。
 
-platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部模块需要稳定、可组合的
-线程/等待/页内存地基；库用户需要在 Windows、Linux、macOS 上表达同一资源合同。它不把
-每个系统调用都公开，也不因为 benchmark 有一行就制造一个类型。先按资源和生命周期选
-形状。
+platform 是 HYLE 的跨 OS 原语产品。它服务两类调用者：HYLE 内部模块需要稳定、可组合的
+host、线程、等待和文件机制；库用户需要在 Windows、Linux、macOS 上表达同一资源合同。
+它不把每个系统调用都公开，也不因为 benchmark 有一行就制造一个类型。先按资源和生命周期
+选择形状。
 
-Platform 的 VM/file RAII 类型是低层机制 owner；需要 guard page、已有 `FileHandle`、自建 allocator/JIT
-或自定义 storage owner 时直接使用。若需求是模型/storage 的统一 `BufferView`、跨 provider 组合、
-共享 mapping 词汇或 lifetime placement，优先使用 Mem 的 `VirtualMapping`、`FileMapping`、
-`SharedMapping` 与 `Buffer`。Mem 组合这里的同一机制，不重复 allocation 或 payload copy。
+用户只需选择 Platform 产品；构建系统内部把它分成 host、thread、filesystem 三个可独立构建的
+质因数，使只需要 CPU facts 的模块不会被迫链接线程和文件代码。匿名地址空间仍由 Platform 的
+`VmRegion` 拥有；模型权重、共享区和其它 storage mapping 则只有 Mem 的 `VirtualMapping`、
+`FileMapping`、`SharedMapping` 一个公开 owner。两层通过低层机制组合，不复制 allocation 或
+payload。
 
 macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；原因是地址等待/Parker 使用
 系统从 14.4 才公开的 `os_sync_wait_on_address*`。顶层构建未指定时 HYLE 默认 14.4；作为
@@ -27,40 +28,47 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `AllocatorRef` / `Arena` | platform VM | platform 不替代 malloc |
-| 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | `MappedFile` | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
+| 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | 默认直接 mapping | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
-| 低层大文件随机访问/已有 handle 映射 | `MappedFile::open`；已有 handle 用 `map(std::move(file))` | 小文件必然 mmap | RO/RW/COW；需要 `ConstBufferView` 与统一 storage 心智则选 Mem `FileMapping` |
-| 映射权重/数据集的显式 warm-up | `MappedFile::prefetch` / `advise` | `open()` 自动触碰全文件 | hint 不影响正确性；Windows 仅 will-need |
-| 整段映射必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
+| 大文件随机访问或已有 handle 映射 | Mem `FileMapping::open/map` | 小文件必然 mmap | RO/RW/COW；`map` 消费 `FileHandle` owner |
+| 映射权重/数据集的异步提示或同步 warm-up | Mem `FileMapping::prefetch` / `populate` | `open()` 自动触碰全文件 | hint 不保证 page-in；`populate` 同步触页且与范围成正比 |
+| 整段映射必须驻留以压低 fault 尾延迟 | Mem `FileMapping::lock`，检查 `Status` | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
 | loader 逐步确认要驻留的映射前缀 | `lock_prefix(target)` + `locked_size()` | 每次重新锁 whole mapping | 单调增长、页粒度；失败保留旧前缀 |
-| 大映射只在 first fault 时锁页 | `LockMode::kOnFault` | 悄悄把 unsupported 当 eager | Linux-only；其它平台返回 `Unimplemented` |
-| 查询 cwd/temp/home | `convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
+| 大映射只在 first fault 时锁页 | Mem `ResidencyMode::kOnFault` | 悄悄把 unsupported 当 eager | Linux-only；其它平台返回 `Unimplemented` |
+| 查询 cwd/temp/home | `fs_convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
+| 推理装载前估算 host budget | `host_memory_info()` | 只看物理总量 | 返回 fallible 动态快照；`effective_available_bytes` 保守合并已知约束 |
+| 密钥、nonce 或随机种子 | `secure_random(span<byte>)` | 统计 RNG / 时间戳 | 使用 OS entropy；完整填满或返回错误；空 span 成功 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
 | token 不丢失的线程 park/unpark | `Parker` / `park_for(Duration)` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token；一个 Parker 只有一个等待者 |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `get` 会 pin；symbol 借用不活过 owner；显式 close 可观察错误 |
 | 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
-| 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
-| cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
+| 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
+| 按 package/core/SMT/NUMA/cache domain 放置 worker | `available_cpu_topology()` | 假定 CPU id 连续或 cache 独占 | 返回当前进程可用 CPU 的动态快照；未知 domain 使用 sentinel |
+| 保存并恢复调用线程 affinity | `this_thread::affinity()` + `set_affinity()` | 猜测原 mask | buffer-fill/owning 两层；macOS 无硬 pin 时明确不支持 |
+| 查询线程可用的 SVE/SME/RVV width 或 AMX 状态 | `this_thread::isa_state()` | 只看系统级 feature bit | system capability 与 per-thread enabled state 分开 |
+| cache 容量提示 | `cache_info()` | 假定探测值永远存在 | 未知 cache 为 0；不替代 topology 的 sharing domain |
 
 ## C++ 的 owning 与 caller-owned 输出两层
 
 platform 对变长查询提供两层，不让一种形状勉强服务所有用户：
 
-- 日常控制面包含 `hyle/platform/convenience.h`，直接取得 owning
-  `std::string` / `std::vector`，自动处理 count、分配、变化后的重试和截断；分配失败仍是
-  `ResourceExhausted`，不会从这个边界抛出。
+- 日常控制面按能力包含 `cpu_convenience.h`、`thread_convenience.h`、
+  `fs_convenience.h` 或 `environment_convenience.h`，直接取得 owning `std::vector` /
+  `std::string`。这些 header-only adapter 自动处理 count、分配、动态变化后的重试和截断；
+  分配失败仍是 `ResourceExhausted`，不会从这个边界抛出。
 - allocator/arena、需要控制**结果存储**，或正在实现真实 binding wrapper 的代码包含
-  `fs.h` / `cpu.h`，使用
+  `fs.h` / `cpu.h` / `thread.h` / `environment.h`，使用
   buffer-fill core。它不返回 owning STL 对象，但长路径、UTF 转码和 OS 查询仍可能申请有检查的
   临时 scratch，OOM 会成为 `ResourceExhausted`；buffer-fill 不代表实现绝无内部 allocation。
 
 ```cpp
-#include "hyle/platform/convenience.h"
+#include "hyle/platform/cpu_convenience.h"
+#include "hyle/platform/fs_convenience.h"
 
 HYLE_ASSIGN_OR_RETURN(std::string cache_dir, temp_directory());
 HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
@@ -68,8 +76,8 @@ HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
 ```
 
 owning 查询是初始化/重配路径的易用入口，不应放进每 task 热路径；需要复用存储时直接用
-buffer-fill core。`convenience.h` 是显式 opt-in，原有 platform 头不会因此拉入 owning STL
-类型或改变核心调用路径。
+buffer-fill core。各 convenience header 都是显式 opt-in；核心 header 不会因此拉入 owning STL
+类型或改变调用路径，也不会因为需要一种便利查询而引入另一个 factor。
 
 ## 页内存
 
@@ -121,13 +129,12 @@ read 返回 0 才是 EOF；read/write 返回短计数仍是成功。已知必须
 合同内，应使用 `io::File` 或独立 handle。close 不等于 durability，只有显式 `sync` 才请求落到
 OS storage boundary。
 
-`MappedFile` 适合映射本身带来价值的
-场景，例如大模型权重、随机访问、共享页和 COW；不要假设 64 KiB 顺序全扫也会比缓冲 read
-快。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有 profile 已确认这层成为瓶颈，
-才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
+不要假设大文件必然适合 mapping：普通顺序 I/O 先用 `FileHandle`，需要随机访问、共享页或
+COW 时改用 Mem 的 `FileMapping`。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有
+profile 已确认这层成为瓶颈，才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
 需要转移时使用 `release()`。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
 visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
-合成的 POSIX mode 当真实 ACL。普通 C++ 代码可从 `convenience.h` 直接取得 owning
+合成的 POSIX mode 当真实 ACL。普通 C++ 代码可从 `fs_convenience.h` 直接取得 owning
 cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` buffer-fill，值是完整
 长度，可先用 `dst=nullptr` 查询。环境变量未设置是 `NotFound`，已设置为空是成功的 0。
 `temp_directory` 只发现 OS/环境配置的路径，不额外探测可写性；需要真正可用且无 TOCTOU
@@ -169,65 +176,9 @@ native iterator frame 做后序 DFS，不让目录深度增长进程调用栈：
 `O(depth + max_path)`，与目录宽度无关；极深树若命中 frame 分配或进程 handle/fd 上限则明确返回
 `ResourceExhausted`。
 
-模型/数据集需要 warm-up 时对已经打开的 mapping 显式调用，而不是让所有 open 承担 page
-fault：
-
-```cpp
-HYLE_ASSIGN_OR_RETURN(auto file,
-                      open_file("weights.bin", kOpenRead));
-// map() 消费 owner；成功和失败都不会把 handle 留给调用方。
-HYLE_ASSIGN_OR_RETURN(auto weights,
-                      MappedFile::map(std::move(file),
-                                      MappedFile::Mode::kReadOnly));
-HYLE_RETURN_IF_ERROR(weights.prefetch());
-// 只有尾延迟确实要求常驻时才购买这一资源合同。
-HYLE_RETURN_IF_ERROR(weights.lock());
-for (std::byte value : weights.bytes()) { /* read-only model access */ }
-HYLE_RETURN_IF_ERROR(weights.unlock());
-```
-
-`Advice` 是性能 hint：POSIX 支持 normal/random/sequential/will-need/dont-need；Windows 只有
-will-need 可对等实现，其余返回 `Unimplemented`，调用方可选择忽略 hint 继续使用 mapping。
-`lock` 则是明确请求，失败通常表示权限或进程 quota，不应静默当成功。打开的 FileHandle/
-MappedFile 在三平台都不会阻止 rename/delete，因此可先原子替换路径，让旧 owner 自然读完。
-`bytes()` 始终只读；只有 `kReadWrite`/`kCopyOnWrite` mapping 的 `writable_bytes()` 成功。
-`flush(offset,length)` 只对 read-write shared mapping 请求回写，`length==0` 表示直到末尾；COW/RO
-没有需要落回原文件的 dirty data。offset/length 越界会显式失败，不会把错误 range 对齐成别处。
-
-模型 loader 往往只在解析后才知道哪些权重留在 CPU。不要为了这个生命周期反复 whole-lock；按
-已完成的 public byte prefix 增长：
-
-```cpp
-using LockMode = MappedFile::LockMode;
-using LockLimitPolicy = MappedFile::LockLimitPolicy;
-
-MappedFile::LockOptions residency;
-residency.mode = LockMode::kEager;
-// 只有应用明确接受进程级 soft limit / working-set 改变时才打开。
-residency.limit_policy = LockLimitPolicy::kAdjustIfNeeded;
-
-for (std::size_t loaded_end : cpu_weight_prefixes) {
-  Status status = weights.lock_prefix(loaded_end, residency);
-  if (!status.ok()) {
-    // weights.locked_size() 仍是此前成功的前缀；应用可记录并降级。
-    report_residency_fallback(status, weights.locked_size());
-    break;
-  }
-}
-HYLE_RETURN_IF_ERROR(weights.unlock());
-```
-
-`locked_size()` 是 OS page 向前取整后的实际覆盖，可能超过最后一个 target；它不是“已经读取了
-多少模型数据”。锁定模式在非空前缀期间不能切换，先 `unlock()` 才能用另一模式重建合同。
-Linux 上 `kOnFault` 避免调用本身同步 fault 全段；Windows/macOS 明确返回 `Unimplemented`。
-`kAdjustIfNeeded` 只在 quota failure 后查询并尝试提升一次既有进程 soft limit，然后重试一次；
-它不能越过 POSIX hard limit 或系统权限，且成功调整不会被 `unlock()`/析构恢复。默认
-`kPreserve` 没有这项全局副作用。
-
-释放 offload 后不用的物理页可组合 `advise(Advice::kDontNeed, offset, length)`；它是 hint，Windows
-没有对等实现。`MappedFile` 不提供 partial unmap，因为打洞后 `bytes()` 将不再是有效连续 view，
-而 Windows 也不能提供同一合同。需要真正缩小虚拟映射时，在 loader 设计阶段建立精确 subrange
-或多个独立 mapping owner。
+文件和 shared-memory mapping 的完整选择、warm-up、residency、flush 与陷阱统一见
+[Mem 使用指南](mem.md)。Platform 不再提供第二套 mapping owner；`FileMapping::map` 直接消费这里的
+`FileHandle`，所以调用方仍可避免第二次 path lookup，并且不会增加 payload copy。
 
 ## 等待与线程
 
@@ -285,12 +236,28 @@ Windows 的硬 affinity mask 一次只能属于一个 processor group，跨组�
 按 group 拆成多个 worker。`this_thread::set_affinity(cpu_or_set)` 提供同样的单核/集合形状。
 “从集合中轮转选一个”“超订 worker 如何放置”属于 sched placement，不放进 platform。
 
+临时 pin 做校准、NUMA first-touch 或性能测量时，先保存调用线程自己的 mask，再原样恢复；不要
+用整个进程的 available set 猜原状态：
+
+```cpp
+#include "hyle/platform/thread_convenience.h"
+
+HYLE_ASSIGN_OR_RETURN(auto previous, hyle::platform::this_thread::affinity());
+HYLE_RETURN_IF_ERROR(hyle::platform::this_thread::set_affinity(worker_cpu));
+HYLE_RETURN_IF_ERROR(run_calibration());
+HYLE_RETURN_IF_ERROR(hyle::platform::this_thread::set_affinity(previous));
+```
+
+`this_thread::isa_state()` 查询当前线程的动态执行状态，而非第二套 CPU feature detector：
+SVE/RVV 的当前 vector length、SME streaming vector length，以及 AMX tile 是否已获许可。Linux AMX
+需要每个使用线程显式 `request_amx_tile_permission()`；请求失败不得进入 AMX kernel。这个机制只为
+SIMD dispatcher 提供事实，不选择 kernel，也不会替调用方进入或退出 SME streaming mode。
+
 ## CPU、cache 与 NUMA
 
-`cpu_features()` 回答“本进程现在能安全执行什么指令”；`cache_info()` 的 L1/L2/L3 是容量
-提示，未知项为 0。`cpu_topology()` 是缓存的系统在线硬件视图：
-`system_logical_cpus` 与 OS 明确报告的 P/E 总数，适合诊断和粗粒度硬件策略；它不回答容器
-或当前进程能开多少 worker。
+`cpu_features()` 回答“这个进程的 CPU/OS 能安全执行什么指令”；`cache_info()` 的 L1/L2/L3
+是缓存的容量提示，未知项为 0。`hardware_concurrency()` 是 OS-online 的粗略诊断值，不遵守
+当前 affinity/cgroup，因此不要拿它决定 worker 数。
 
 `available_cpu_count()` / `available_cpu_ids(...)` 才是进程视图：前者是创建 worker、
 选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
@@ -302,7 +269,7 @@ task 的热路径。
 
 需要优先使用强核时，不要假设“大编号/小编号就是 P-core”。`available_cpu_info()` 返回当前
 进程可用 CPU 的 `id / performance_rank / kind`：rank 越大表示 OS 在本机报告的能力档越强，
-0 表示无法建立可信的 CPU-id 映射。普通 C++ 初始化代码用 `convenience.h` 的 owning 有序
+0 表示无法建立可信的 CPU-id 映射。普通 C++ 初始化代码用 `cpu_convenience.h` 的 owning 有序
 重载；复用调用方数组时使用三参数 buffer-fill 重载：
 
 ```cpp
@@ -325,8 +292,14 @@ logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核�
 `SchedulerOptions::worker_priority = ThreadPriority::kHigh/kHighest` 对应的系统 QoS，而不是
 猜 CPU id。该 priority 选项同样是显式 opt-in；默认不改变 OS 调度优先级。
 
+需要按物理核、SMT sibling、package、NUMA、L2 或 LLC sharing domain 分组时调用
+`available_cpu_topology()`。它聚合与 `available_cpu_info()` **同一个动态进程视图**；每颗
+`CpuInfo` 上的 domain id 只在该次 snapshot 内比较，`kUnknownCpuTopologyId` 表示 OS 没有给出
+可信关系。`physical_cores == 0` 是“未知”，不是没有物理核。查询成本与可用 CPU/OS relation 数
+成正比，应在初始化或重配点调用，不放进每个 task。
+
 `cache_info()` 仍只是容量提示，不猜 cache sharing。NUMA/cache-aware stealing 属于 sched
-策略；platform 只提供可组合的 CPU 事实、排序与 affinity 机制。
+策略；platform 只提供可组合的 CPU 事实、排序、topology 与 affinity 机制。
 
 `numa_current_node()` 与 `numa_node_of_cpu(cpu)` 返回 `Result<unsigned>`。查询失败、无效 CPU、
 或 OS 不提供可信映射都不是节点 0；必须处理错误后再决定是否显式退化到 `kNumaAny`。如果 worker
@@ -372,6 +345,32 @@ macOS 当前只有逻辑 node 0。policy 成功不是物理页
 永久驻留证明；需要托管生命周期时优先 `VmRegion`；裸
 `vm_allocate_numa_interleaved` 返回 page-rounded size，只与整段 `vm_release` 配对。selected
 region 的 `decommit` 会以 `FailedPrecondition` 拒绝，防止 recommit 静默丢掉 placement。
+
+## Host memory、环境与安全随机数
+
+`host_memory_info()` 返回一次动态、可失败的快照。物理总量/可用量在成功时总是存在；commit、
+swap、cgroup/job/process limit 在 OS 无法诚实报告时是 `std::nullopt`，合法的 0 不会被当作未知。
+装载模型或建立 KV cache 前，通常以 `effective_available_bytes()` 作为保守上限，再留出应用自己的
+headroom：
+
+```cpp
+#include "hyle/platform/host_memory.h"
+
+HYLE_ASSIGN_OR_RETURN(auto host, hyle::platform::host_memory_info());
+const std::uint64_t planning_budget = host.effective_available_bytes();
+```
+
+这只是快照而非 reservation，下一次 allocation 仍可能因竞争失败。统一内存机器上也不能把 host
+与 device budget 当成两个可相加的池；Compute/推理引擎必须结合 backend 的实时预算和 coherence
+模型重新裁决。
+
+环境变量的 buffer-fill core 在 `environment.h`，普通 owning 查询在
+`environment_convenience.h`。unset 返回 `NotFound`，已设置为空字符串是成功；修改进程环境不是
+并发配置机制，只应在程序启动或已同步的重配阶段进行。
+
+`secure_random(span<byte>)` 使用 OS entropy，承诺完整填满或返回 `Status`，空 span 直接成功。
+它适合 nonce、密钥材料和不可预测 seed；统计采样与可复现实验仍使用 Util 的显式 seed RNG，不能
+因为接口相似而互换。
 
 ## 错误与所有权
 

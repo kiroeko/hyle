@@ -11,7 +11,7 @@ namespace hyle::platform::detail {
 using ReadSymlinkFunctionForTesting = std::ptrdiff_t (*)(
     const char* path, char* buffer, std::size_t capacity,
     int* error_number) noexcept;
-HYLE_PLATFORM_API void set_read_symlink_function_for_testing(
+HYLE_PLATFORM_FS_API void set_read_symlink_function_for_testing(
     ReadSymlinkFunctionForTesting function) noexcept;
 
 }  // namespace hyle::platform::detail

@@ -115,7 +115,7 @@ SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer AP
 | `PLAT3-H04` | `MUST` | CPU/NUMA/raw VM/DynLib/env/entropy 组成可独立链接 host factor | `platform` ID 保留为 host | CPU probe 仍 baseline/LTO-off；不携带 Time/thread/fs | `FIX` source/header ownership、`hardware_concurrency` 迁移、exact-factor build |
 | `PLAT3-T01` | `MUST` | caller affinity buffer-fill + owning convenience，返回值可原样交给 set 完成 save/set/restore | `platform_thread` | O(mask words)，只有 convenience 分配 | `FIX` sparse/large mask、restore、unsupported tests |
 | `PLAT3-T02` | `MUST` | current-thread scalable/streaming vector bytes 与 AMX tile permission 是窄机制；SIMD 仍唯一选 kernel | host static fact + `platform_thread` state | O(1) syscall/register query；enable 只显式调用 | `FIX` Linux SVE/SME/AMX 与 RVV route、其他平台诚实 unsupported/zero |
-| `PLAT3-T03` | `MUST` | Thread/wait/Parker 独立 factor 并由 Platform facade 聚合 | `platform_thread -> core,error,time,platform` | wait 仍一次 native primitive；Parker 一个 atomic word | `FIX` target/headers/direct Sched edge + existing P1 replay |
+| `PLAT3-T03` | `MUST` | Thread/wait/Parker 独立 factor 并由 Platform facade 聚合 | `platform_thread -> PUBLIC core,error,time; PRIVATE platform` | wait 仍一次 native primitive；Parker 一个 atomic word | `FIX` target/headers/direct Sched edge + existing P1 replay |
 | `PLAT3-F01` | `MUST` | FileHandle/namespace/temp/replace 独立 factor；env 不再藏在 fs | `platform_fs -> core,error,time`，private host entropy | FileHandle 一字；普通 read/write 至多一次 syscall | `FIX` source/header/convenience split、exact-factor build |
 | `PLAT3-F02` | `MUST` | warmed regular file open + complete sequential read + close | `platform_fs` | 同语义 5% non-inferiority；setup/bytes/teardown全计费 | `FIX` frozen consumer P1 + holdout temp/sync/rename budget |
 | `PLAT3-X01` | `MUST` | mapping/residency/shared storage 只有一个 Mem public owner，不留 Platform facade 双 owner | `mem_vm` over host/fs mechanisms | 不增加 pimpl、copy 或常态 dispatch | `FIX` 先登记并审计 Mem factor，再迁 owner和 package journey |
@@ -126,9 +126,10 @@ SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer AP
 
 ### API / usability freeze
 
-- 当前状态：`DRAFT`，允许按上述票实现但尚未允许 P1 计时；实现后的 compile-only journey、类型大小、
-  failure/concurrency/default 与 factor 可发现性全部通过后才改为 `FROZEN`。
-- host 日常路线保持 `cpu_features/cpu_topology/available_cpu_info/host_memory_info/secure_random`；动态
+- 当前状态：`FROZEN`（2026-09-03）。公开头自含、自然 compile/use journeys、类型与默认值、失败边界，
+  以及 Windows/WSL 的三个精确 factor 构建均已通过；从此只有正确性缺陷可以令本轮退回 `AUDITED`，
+  P1 不能再反向改 API、layout 或常态 metadata。
+- host 日常路线保持 `cpu_features/available_cpu_topology/available_cpu_info/host_memory_info/secure_random`；动态
   topology 与 memory 是显式 snapshot，不把 syscall 偷藏进已缓存的 scalar getter。
 - thread 日常路线是 `this_thread::affinity()` owning snapshot 或 buffer-fill core，配合现有
   `set_affinity`；extended state 的名字描述事实或显式 request，不叫“fast mode”。
@@ -154,3 +155,14 @@ SIMD/Container/Mem/Sched/IO 的直接 include/link 边。结论不是按 peer AP
 
 `AUDITED` 授权且只授权十一票产品修改。`PLAT3-X01` 要求先给 `mem_vm` 建立合法 closure card；在此
 之前不得通过临时 cycle、重复 owner 或把 mapping 塞进 fs 来完成 target 拆分。
+
+## 候选前实现检查点
+
+- H01--H04 已落地：process-available topology、host-memory budget、OS entropy 与 host-only factor；
+- T01--T03、F01--F02 已落地：affinity save/restore、current ISA state、独立 thread/wait 与同步 fs factor；
+- X01 已通过合法 Mem v3/mem_vm round 完成唯一 owner 迁移，Platform 不再公开 storage owner；
+- D01 的 architecture/user/build graph 已随最终边界更新，性能证据与 terminal record 仍待 candidate；
+- W1-WIN 最新单元结果为 host `89/89`、thread `42 PASS + 1 hardware skip`、fs `51/51`；GCC 14
+  `-Werror` 为 host `88/88`、thread `44/44`、fs `58/58`，公开头自含均通过；
+- 这些是 candidate 前事实，不是 `CANDIDATE/VERIFIED/CLOSED` verdict。M1-MAC、sanitizer、三种产品交付、
+  direct-consumer replay、P1 qualification 与红队仍按本卡执行。

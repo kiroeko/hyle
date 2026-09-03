@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "hyle/mem/hugepage.h"
+#include "hyle/mem/hugepage_reservation.h"
 #include "hyle/core/environment.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"

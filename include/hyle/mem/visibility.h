@@ -9,3 +9,11 @@
 #else
 #  define HYLE_MEM_API HYLE_IMPORT
 #endif
+
+#if defined(HYLE_STATIC)
+#  define HYLE_MEM_VM_API
+#elif defined(HYLE_MEM_VM_BUILD)
+#  define HYLE_MEM_VM_API HYLE_EXPORT
+#else
+#  define HYLE_MEM_VM_API HYLE_IMPORT
+#endif

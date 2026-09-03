@@ -107,18 +107,18 @@ if(HYLE_BUILD_MEM)
   enable_language(C)
 endif()
 
-if(APPLE AND HYLE_BUILD_PLATFORM)
+if(APPLE AND HYLE_BUILD_PLATFORM_THREAD)
   if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR
      CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "")
     message(FATAL_ERROR
-      "HYLE's platform component requires an explicit macOS deployment target "
+      "HYLE's platform_thread factor requires an explicit macOS deployment target "
       "of ${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN} or newer. An embedding "
       "parent must set "
       "CMAKE_OSX_DEPLOYMENT_TARGET before adding HYLE.")
   elseif(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS
          "${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN}")
     message(FATAL_ERROR
-      "HYLE's platform component requires macOS "
+      "HYLE's platform_thread factor requires macOS "
       "${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN}+ for the public "
       "os_sync_wait_on_address backend; got "
       "CMAKE_OSX_DEPLOYMENT_TARGET='${CMAKE_OSX_DEPLOYMENT_TARGET}'.")

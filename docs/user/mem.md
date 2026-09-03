@@ -50,10 +50,10 @@ GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 
 pinned pool”猜测。Graph 负责把 tensor/DAG 语义转换成 interval、alias 与 resource facts；
 不理解 Tensor 的通用 placement/instantiate 机制归 Mem。
 
-Platform 的 `VmRegion`/`MappedFile` 仍是公开的低层 OS owner，适合 guard page、已有
-`FileHandle`、自定义 allocator/JIT 或实现自己的 storage owner；需要统一 `BufferView`、跨 provider
-组合和同一套 mapping/residency 心智时用本表的 Mem owner。两层共享同一 Platform 机制，Mem 不会
-在其上再做一次 payload allocation 或 copy。
+Platform 的 `VmRegion` 仍是公开的低层 anonymous-address owner，适合自定义 allocator/JIT 或其它
+自建 storage owner；file/shared/anonymous storage mapping 则只有本表中的 Mem owner。已有
+Platform `FileHandle` 可直接 move 给 `FileMapping::map`，不做第二次 path lookup、payload allocation
+或 copy。普通用户因此不需要在两套 mapping 类型之间选择。
 
 ## Resource 与 Buffer：什么时候不只用 allocator
 
@@ -217,17 +217,33 @@ HYLE_ASSIGN_OR_RETURN(
     hyle::mem::FileMapping::open("model.gguf"));
 HYLE_RETURN_IF_ERROR(
     weights.advise(hyle::mem::MappingAdvice::kSequential));
+// prefetch 是异步/提示语义；启动阶段必须完成 warm-up 时显式同步触页。
+HYLE_RETURN_IF_ERROR(weights.populate());
 auto model_bytes = weights.view();  // owner 必须长寿于 view
 ```
 
 `FileMapping` 不会自动触碰或锁定全文件，也不会在 RW open 时扩展文件。只读路线返回
 `ConstBufferView`；修改文件必须先通过 `writable_bytes()`，持久化再显式调用
 `FileMapping::flush()`。`BufferView::flush()` 表达 host/device coherence，不等价于文件 durability。
+`prefetch()`/`MappingAdvice::kWillNeed` 是 OS hint，成功不保证页面已经 resident；`populate()` 则在
+返回前同步触碰请求范围覆盖的每一页，成本与覆盖页数成正比。两者都接受 offset/length，length 0
+表示到 mapping 末尾；并发 truncate 或替换 backing 不在合同内，loader 必须先稳定文件生命周期。
+
+residency 是更强且可能受 quota 限制的合同。`lock()` 锁整段；loader 逐步确认 CPU-resident 前缀时
+用 monotonic `lock_prefix()`，失败后 `locked_size()` 仍报告此前成功覆盖。默认
+`ResidencyLimitPolicy::kPreserve` 不修改进程级 limit；只有应用明确接受该副作用时才选择
+`kAdjustIfNeeded`。`ResidencyMode::kOnFault` 仅 Linux 有真实对等机制，其它平台返回
+`Unimplemented`，不会静默变成 eager。
+
+`FileMapping` 刻意不提供 partial unmap：打洞会破坏 `bytes()/view()` 的连续合同，Windows 也没有
+同形状机制。需要只保留离散权重片段时，在 loader 设计阶段创建多个精确 subrange mapping owner；
+片段数和生命周期 metadata 只由确实需要 fragment 的调用方承担。
 
 `SharedMapping` 只拥有命名共享 storage。它不内置 mutex、notification、crash recovery 或跨进程
 指针修复；共享数据结构保存 offset/POD，进程间同步和 handle-transfer protocol 由 IO/调用方组合。
 
-进程启动期若需要显式预留 1 GiB OS 大页，调用 `reserve_huge_1g_pages`。它是冷策略入口，
+进程启动期若需要显式预留 1 GiB OS 大页，包含 `hyle/mem/hugepage_reservation.h` 并调用
+`reserve_huge_1g_pages`。它是冷策略入口，
 返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
 `ResourceExhausted`；失败后仍可继续使用普通页。不要在请求热路反复调用。
 

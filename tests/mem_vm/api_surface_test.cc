@@ -18,6 +18,7 @@
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/mem/mapping.h"
 #include "hyle/mem/hugepage.h"
+#include "hyle/mem/hugepage_reservation.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/pool.h"

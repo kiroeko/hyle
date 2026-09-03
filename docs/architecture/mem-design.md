@@ -21,16 +21,18 @@ Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
 - move-only `Buffer`、mutable/const view、import/composite、host mapping 与 sync range operation；
 - resource-aware transient pool/stats 与不含 Tensor 语义的 lifetime packing plan。
 
-语义拥有不等于 Mem 自己实现每个平台机制。Platform 保留 VM/file/NUMA/page/OS-handle
-机制及供自定义基础设施组合的低层 RAII owner；Mem 在这些机制上拥有统一 storage-facing
-owner/view/resource 语义。需要 `BufferView`、跨 provider 组合或统一 residency 词汇的用户走 Mem，
-需要 guard page、原始 file handle 组合或自建 owner 的用户可以直接走 Platform，两层不是两套
-storage policy。Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
+语义拥有不等于 Mem 自己实现每个平台机制。Platform 保留 raw VM/NUMA/page、同步
+`FileHandle` 与其它 OS mechanism；Mem 唯一拥有 anonymous/file/shared storage mapping 及统一
+owner/view/resource 语义。需要 `BufferView`、跨 provider 组合或 residency 的用户走 Mem；自建
+allocator/JIT owner 才直接组合 Platform `VmRegion`，已有 `FileHandle` 可 move 给 Mem
+`FileMapping`。两层不是两套 storage policy。Compute 保留 Device/Stream/Event、backend allocation artifact 和有序 async operation；IO 保留
 namespace/handle transfer/async protocol；Graph 把 DAG/tensor 事实翻译成 Mem planner 不理解业务语义的
 interval/resource/alias 请求。依赖方向固定为：
 
 ```text
-compute | graph | io  --->  mem  --->  platform
+compute | graph | io  --->  Mem product
+                              |-- mem ----> platform
+                              +-- mem_vm -> mem + platform + platform_fs + util_core
 ```
 
 Mem 不包含 Device/Stream/Event/Tensor/KV/model policy，也不把 device memory 塞进 host
@@ -41,11 +43,13 @@ migration 前，不是 Mem 用户能力。
 
 ### 1.1 依赖与构建边界
 
-中央 component graph 与真实 target 链接边一致：当前 aggregate factor
-`mem -> PUBLIC {core, error, platform, util_core}`；开发 factor `mem_reclaim -> PUBLIC {core}` 目前不在
-`hyle::mem` façade。`core` 提供 cache-layout/compiler 头合同，
-`error` 承担构造/VM/NUMA 冷失败，`platform` 承担 CPU、VM 和 NUMA 机制，`util_core` 承担
-fiber stack pool 的 SpinLock；mem 不直接散落 OS 分支，也不自造第二套错误。`obs/trace.h` 只是由
+中央 component graph 与真实 target 链接边一致。base factor
+`mem -> PUBLIC {core, error, platform}` 拥有 allocator/resource/buffer/pool/planner；storage factor
+`mem_vm -> PUBLIC {core, error, mem, platform, platform_fs, util_core}` 拥有 mapping、HugeMapping 与
+FiberStack。面向用户的 `hyle::mem` product facade 聚合两者；内部 consumer 直接链接实际 factor。
+开发 factor `mem_reclaim -> PUBLIC {core}` 目前不在该 facade。`core` 提供 cache-layout/compiler 头合同，
+`error` 承担构造/VM/NUMA 冷失败，`platform/platform_fs` 承担 OS 机制与 file handle，`util_core`
+承担 fiber stack pool 的 SpinLock；mem 不自造第二套错误。`obs/trace.h` 只是由
 `HYLE_TRACE` 控制的跨切 trace seam，不让普通 mem binary 反向依赖 obs runtime。HYLE 的模块和同
 工具链消费者直接使用 C++ `AllocatorRef`/`Result`/owner 类型。
 
@@ -253,6 +257,20 @@ external 能力按 allocation model 分成两个类型：
 `std::pmr::unsynchronized_pool_resource(system_memory_resource())`，跨线程则用 synchronized 版本；
 需要 quota/stats/region 等运行时 upstream 才构造 `PmrResource`。Native FFI 当前为 `N/A`；是否
 需要面向 foreign runtime 的 growable variable-size pool，只能由未来已命名的消费任务裁决。
+
+### 8.1 Mapping factor 与 warm-up 语义
+
+`mem_vm` 是 storage mapping 的唯一 public owner；Platform 只提供 raw anonymous VM 和
+`FileHandle` mechanism。`VirtualMapping` 组合 `VmRegion`，`FileMapping` 与 `SharedMapping` 直接拥有
+native mapping state；所有 owner 都 move-only，不增加 pimpl allocation、payload copy 或常态
+dispatch。普通 Mem product 自动聚合该 factor，用户不需要认识 target 拆分。
+
+`FileMapping::prefetch` 是 `WillNeed` hint，成功不证明 page 已 resident；`populate` 是同步触页，工作
+与覆盖页数成正比。open 不默认执行任何一个，避免让只需 lazy mapping 的消费者支付全文件 fault。
+residency 只保存一个单调 public prefix，不为任意重叠 interval 增加常态树/refcount metadata；需要
+离散片段时由 loader 建多个精确 mapping owner。partial unmap 被拒绝，因为它会破坏连续 view 且
+Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupported advice/mode 返回共享
+`Status`，不隐藏 fallback。
 
 ## 9. NUMA、大页与专用模块
 

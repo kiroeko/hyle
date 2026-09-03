@@ -1,4 +1,4 @@
-#include "hyle/platform/mapped_file.h"
+#include "hyle/mem/mapping.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -25,16 +25,16 @@
 #  include <unistd.h>
 #endif
 
-namespace hyle::platform {
+namespace hyle::mem {
 
 namespace {
 
-bool valid_lock_options(MappedFile::LockOptions options) noexcept {
-  return (options.mode == MappedFile::LockMode::kEager ||
-          options.mode == MappedFile::LockMode::kOnFault) &&
-         (options.limit_policy == MappedFile::LockLimitPolicy::kPreserve ||
+bool valid_lock_options(ResidencyOptions options) noexcept {
+  return (options.mode == ResidencyMode::kEager ||
+          options.mode == ResidencyMode::kOnFault) &&
+         (options.limit_policy == ResidencyLimitPolicy::kPreserve ||
           options.limit_policy ==
-              MappedFile::LockLimitPolicy::kAdjustIfNeeded);
+              ResidencyLimitPolicy::kAdjustIfNeeded);
 }
 
 bool checked_add(std::size_t a, std::size_t b,
@@ -93,17 +93,17 @@ Status adjust_working_set_limit(std::size_t lock_bytes) noexcept {
 
 }  // namespace
 
-Result<MappedFile> MappedFile::open(const char* path, Mode mode,
+Result<FileMapping> FileMapping::open(const char* path, MappingAccess mode,
                                     std::size_t offset,
                                     std::size_t length) noexcept {
-  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
-      mode != Mode::kCopyOnWrite) {
+  if (mode != MappingAccess::kReadOnly && mode != MappingAccess::kReadWrite &&
+      mode != MappingAccess::kCopyOnWrite) {
     return std::unexpected(
         Status::InvalidArgument("mapped file open: invalid mode"));
   }
-  const unsigned flags = mode == Mode::kReadWrite ? kOpenRead | kOpenWrite
-                                                   : kOpenRead;
-  auto file = open_file(path, flags);
+  const unsigned flags = mode == MappingAccess::kReadWrite ? platform::kOpenRead | platform::kOpenWrite
+                                                   : platform::kOpenRead;
+  auto file = platform::open_file(path, flags);
   if (!file) {
     return std::unexpected(
         std::move(file).error().WithContext("mapped file open"));
@@ -111,16 +111,17 @@ Result<MappedFile> MappedFile::open(const char* path, Mode mode,
   return map(std::move(*file), mode, offset, length);
 }
 
-Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
+Result<FileMapping> FileMapping::map(platform::FileHandle file,
+                                     MappingAccess mode,
                                    std::size_t offset,
                                    std::size_t length) noexcept {
-  MappedFile m;
+  FileMapping m;
   if (!file.valid()) {
     return std::unexpected(
         Status::FailedPrecondition("mapped file map: handle is closed"));
   }
-  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
-      mode != Mode::kCopyOnWrite) {
+  if (mode != MappingAccess::kReadOnly && mode != MappingAccess::kReadWrite &&
+      mode != MappingAccess::kCopyOnWrite) {
     return std::unexpected(
         Status::InvalidArgument("mapped file map: invalid mode"));
   }
@@ -153,8 +154,8 @@ Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
         Status::FailedPrecondition("mapped file map: mapping is empty"));
   }
 
-  const DWORD prot = (mode == Mode::kReadWrite)      ? PAGE_READWRITE
-                     : (mode == Mode::kCopyOnWrite)  ? PAGE_WRITECOPY
+  const DWORD prot = (mode == MappingAccess::kReadWrite)      ? PAGE_READWRITE
+                     : (mode == MappingAccess::kCopyOnWrite)  ? PAGE_WRITECOPY
                                                      : PAGE_READONLY;
   // CreateFileMapping size = offset+len (max size the mapping can address).
   const std::uint64_t max_size = offset + map_len;
@@ -166,8 +167,8 @@ Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
         win32_mapping_error("CreateFileMappingW", ::GetLastError()));
   }
 
-  const DWORD view = (mode == Mode::kReadWrite)     ? FILE_MAP_WRITE
-                     : (mode == Mode::kCopyOnWrite) ? FILE_MAP_COPY
+  const DWORD view = (mode == MappingAccess::kReadWrite)     ? FILE_MAP_WRITE
+                     : (mode == MappingAccess::kCopyOnWrite) ? FILE_MAP_COPY
                                                     : FILE_MAP_READ;
   // MapViewOfFile's file offset must be a multiple of the allocation granularity
   // (64 KiB), NOT the page size. Round the offset DOWN to it, map the extra
@@ -198,11 +199,11 @@ Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
   m.map_len_ = map_len + delta;
   m.h0_ = file.release();
   m.h1_ = reinterpret_cast<std::intptr_t>(mapping);
-  m.mode_ = mode;
+  m.access_ = mode;
   return m;
 }
 
-Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
+Status FileMapping::flush(std::size_t offset, std::size_t length) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file flush: mapping is not open");
   }
@@ -211,7 +212,7 @@ Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
   }
   const std::size_t span = length != 0 ? length : size_ - offset;
   if (span == 0) return Status{};
-  if (mode_ != Mode::kReadWrite) return Status();
+  if (access_ != MappingAccess::kReadWrite) return Status();
   if (::FlushViewOfFile(static_cast<char*>(addr_) + offset, span) == 0) {
     return win32_mapping_error("FlushViewOfFile", ::GetLastError());
   }
@@ -221,21 +222,26 @@ Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
   return Status();
 }
 
-Status MappedFile::advise(Advice advice, std::size_t offset,
+Status FileMapping::advise(MappingAdvice advice, std::size_t offset,
                           std::size_t length) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file advise: mapping is not open");
   }
-  if (advice < Advice::kNormal || advice > Advice::kDontNeed) {
+  if (advice == MappingAdvice::kHugePage ||
+      advice == MappingAdvice::kNoHugePage) {
+    return Status::Unimplemented(
+        "huge-page advice is not a portable file-mapping contract");
+  }
+  if (advice < MappingAdvice::kNormal || advice > MappingAdvice::kDontNeed) {
     return Status::InvalidArgument("mapped file advise: invalid advice");
   }
   if (offset > size_ || (length != 0 && length > size_ - offset)) {
     return Status::OutOfRange("mapped file advise: range is outside mapping");
   }
   const std::size_t span = length != 0 ? length : size_ - offset;
-  if (span == 0 || advice == Advice::kNormal) return Status{};
+  if (span == 0 || advice == MappingAdvice::kNormal) return Status{};
 
-  if (advice != Advice::kWillNeed) {
+  if (advice != MappingAdvice::kWillNeed) {
     return Status::Unimplemented(
         "mapped file advice is not available on Windows");
   }
@@ -266,8 +272,8 @@ Status MappedFile::advise(Advice advice, std::size_t offset,
   return Status{};
 }
 
-Status MappedFile::lock_prefix(std::size_t length,
-                               LockOptions options) noexcept {
+Status FileMapping::lock_prefix(std::size_t length,
+                               ResidencyOptions options) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file lock: mapping is not open");
   }
@@ -282,7 +288,7 @@ Status MappedFile::lock_prefix(std::size_t length,
     return Status::FailedPrecondition(
         "mapped file lock: cannot change mode while a prefix is locked");
   }
-  if (options.mode == LockMode::kOnFault) {
+  if (options.mode == ResidencyMode::kOnFault) {
     return Status::Unimplemented(
         "mapped file on-fault locking is unavailable on Windows");
   }
@@ -305,7 +311,7 @@ Status MappedFile::lock_prefix(std::size_t length,
   const std::size_t delta = native_target - locked_native_size_;
   if (!::VirtualLock(start, delta)) {
     DWORD code = ::GetLastError();
-    if (options.limit_policy == LockLimitPolicy::kAdjustIfNeeded &&
+    if (options.limit_policy == ResidencyLimitPolicy::kAdjustIfNeeded &&
         code == ERROR_WORKING_SET_QUOTA) {
       Status adjusted = adjust_working_set_limit(delta);
       if (!adjusted.ok()) return adjusted;
@@ -324,7 +330,7 @@ Status MappedFile::lock_prefix(std::size_t length,
   return Status{};
 }
 
-Status MappedFile::unlock() noexcept {
+Status FileMapping::unlock() noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file unlock: mapping is not open");
   }
@@ -333,11 +339,11 @@ Status MappedFile::unlock() noexcept {
     return win32_mapping_error("VirtualUnlock", ::GetLastError());
   }
   locked_native_size_ = 0;
-  locked_mode_ = LockMode::kEager;
+  locked_mode_ = ResidencyMode::kEager;
   return Status{};
 }
 
-void MappedFile::reset() noexcept {
+void FileMapping::reset() noexcept {
   if (map_base_ != nullptr) ::UnmapViewOfFile(map_base_);
   if (h1_ != -1) ::CloseHandle(reinterpret_cast<HANDLE>(h1_));
   if (h0_ != -1) ::CloseHandle(reinterpret_cast<HANDLE>(h0_));
@@ -348,7 +354,7 @@ void MappedFile::reset() noexcept {
   h0_ = -1;
   h1_ = -1;
   locked_native_size_ = 0;
-  locked_mode_ = LockMode::kEager;
+  locked_mode_ = ResidencyMode::kEager;
 }
 
 #else
@@ -403,8 +409,8 @@ Status adjust_memlock_limit(std::size_t lock_bytes, bool* changed) noexcept {
 }
 
 int lock_pages(const void* address, std::size_t length,
-               MappedFile::LockMode mode) noexcept {
-  if (mode == MappedFile::LockMode::kEager) {
+               ResidencyMode mode) noexcept {
+  if (mode == ResidencyMode::kEager) {
     return ::mlock(address, length);
   }
 #if HYLE_OS_LINUX && defined(SYS_mlock2)
@@ -421,17 +427,17 @@ int lock_pages(const void* address, std::size_t length,
 
 }  // namespace
 
-Result<MappedFile> MappedFile::open(const char* path, Mode mode,
+Result<FileMapping> FileMapping::open(const char* path, MappingAccess mode,
                                     std::size_t offset,
                                     std::size_t length) noexcept {
-  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
-      mode != Mode::kCopyOnWrite) {
+  if (mode != MappingAccess::kReadOnly && mode != MappingAccess::kReadWrite &&
+      mode != MappingAccess::kCopyOnWrite) {
     return std::unexpected(
         Status::InvalidArgument("mapped file open: invalid mode"));
   }
-  const unsigned flags = mode == Mode::kReadWrite ? kOpenRead | kOpenWrite
-                                                   : kOpenRead;
-  auto file = open_file(path, flags);
+  const unsigned flags = mode == MappingAccess::kReadWrite ? platform::kOpenRead | platform::kOpenWrite
+                                                   : platform::kOpenRead;
+  auto file = platform::open_file(path, flags);
   if (!file) {
     return std::unexpected(
         std::move(file).error().WithContext("mapped file open"));
@@ -439,16 +445,17 @@ Result<MappedFile> MappedFile::open(const char* path, Mode mode,
   return map(std::move(*file), mode, offset, length);
 }
 
-Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
+Result<FileMapping> FileMapping::map(platform::FileHandle file,
+                                     MappingAccess mode,
                                    std::size_t offset,
                                    std::size_t length) noexcept {
-  MappedFile m;
+  FileMapping m;
   if (!file.valid()) {
     return std::unexpected(
         Status::FailedPrecondition("mapped file map: handle is closed"));
   }
-  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
-      mode != Mode::kCopyOnWrite) {
+  if (mode != MappingAccess::kReadOnly && mode != MappingAccess::kReadWrite &&
+      mode != MappingAccess::kCopyOnWrite) {
     return std::unexpected(
         Status::InvalidArgument("mapped file map: invalid mode"));
   }
@@ -479,9 +486,9 @@ Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
         Status::FailedPrecondition("mapped file map: mapping is empty"));
   }
 
-  const int prot = (mode == Mode::kReadOnly) ? PROT_READ
+  const int prot = (mode == MappingAccess::kReadOnly) ? PROT_READ
                                              : (PROT_READ | PROT_WRITE);
-  const int flags = (mode == Mode::kReadWrite) ? MAP_SHARED : MAP_PRIVATE;
+  const int flags = (mode == MappingAccess::kReadWrite) ? MAP_SHARED : MAP_PRIVATE;
   // mmap requires a page-aligned offset. Round DOWN, map the extra leading bytes,
   // and hand back a pointer to the exact requested offset (uniform with Windows).
   const long native_page = ::sysconf(_SC_PAGESIZE);
@@ -508,11 +515,11 @@ Result<MappedFile> MappedFile::map(FileHandle file, Mode mode,
   m.size_ = map_len;
   m.map_base_ = base;
   m.map_len_ = map_len + delta;
-  m.mode_ = mode;
+  m.access_ = mode;
   return m;
 }
 
-Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
+Status FileMapping::flush(std::size_t offset, std::size_t length) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file flush: mapping is not open");
   }
@@ -521,7 +528,7 @@ Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
   }
   const std::size_t span = length != 0 ? length : size_ - offset;
   if (span == 0) return Status{};
-  if (mode_ != Mode::kReadWrite) return Status();
+  if (access_ != MappingAccess::kReadWrite) return Status();
   // msync needs a page-aligned start. Include only the leading fragment of the
   // first page; the kernel rounds the tail as required.
   const long native_page = ::sysconf(_SC_PAGESIZE);
@@ -539,12 +546,17 @@ Status MappedFile::flush(std::size_t offset, std::size_t length) noexcept {
   return Status();
 }
 
-Status MappedFile::advise(Advice advice, std::size_t offset,
+Status FileMapping::advise(MappingAdvice advice, std::size_t offset,
                           std::size_t length) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file advise: mapping is not open");
   }
-  if (advice < Advice::kNormal || advice > Advice::kDontNeed) {
+  if (advice == MappingAdvice::kHugePage ||
+      advice == MappingAdvice::kNoHugePage) {
+    return Status::Unimplemented(
+        "huge-page advice is not a portable file-mapping contract");
+  }
+  if (advice < MappingAdvice::kNormal || advice > MappingAdvice::kDontNeed) {
     return Status::InvalidArgument("mapped file advise: invalid advice");
   }
   if (offset > size_ || (length != 0 && length > size_ - offset)) {
@@ -555,11 +567,15 @@ Status MappedFile::advise(Advice advice, std::size_t offset,
 
   int native = MADV_NORMAL;
   switch (advice) {
-    case Advice::kNormal: native = MADV_NORMAL; break;
-    case Advice::kRandom: native = MADV_RANDOM; break;
-    case Advice::kSequential: native = MADV_SEQUENTIAL; break;
-    case Advice::kWillNeed: native = MADV_WILLNEED; break;
-    case Advice::kDontNeed: native = MADV_DONTNEED; break;
+    case MappingAdvice::kNormal: native = MADV_NORMAL; break;
+    case MappingAdvice::kRandom: native = MADV_RANDOM; break;
+    case MappingAdvice::kSequential: native = MADV_SEQUENTIAL; break;
+    case MappingAdvice::kWillNeed: native = MADV_WILLNEED; break;
+    case MappingAdvice::kDontNeed: native = MADV_DONTNEED; break;
+    case MappingAdvice::kHugePage:
+    case MappingAdvice::kNoHugePage:
+      return Status::Unimplemented(
+          "huge-page advice is not a portable file-mapping contract");
   }
 
   // madvise requires a page-aligned start. Mapping an unaligned file offset
@@ -578,8 +594,8 @@ Status MappedFile::advise(Advice advice, std::size_t offset,
   return Status{};
 }
 
-Status MappedFile::lock_prefix(std::size_t length,
-                               LockOptions options) noexcept {
+Status FileMapping::lock_prefix(std::size_t length,
+                               ResidencyOptions options) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file lock: mapping is not open");
   }
@@ -616,13 +632,13 @@ Status MappedFile::lock_prefix(std::size_t length,
   const std::size_t delta = native_target - locked_native_size_;
   if (lock_pages(start, delta, options.mode) != 0) {
     int code = errno;
-    if (options.mode == LockMode::kOnFault &&
+    if (options.mode == ResidencyMode::kOnFault &&
         (code == ENOSYS || code == EINVAL)) {
       Status native = posix_mapping_error("mlock2(MLOCK_ONFAULT)", code);
       return Status::FromNative(StatusCode::Unimplemented,
                                 native.native_error(), native.message());
     }
-    if (options.limit_policy == LockLimitPolicy::kAdjustIfNeeded &&
+    if (options.limit_policy == ResidencyLimitPolicy::kAdjustIfNeeded &&
         (code == ENOMEM || code == EAGAIN)) {
       bool changed = false;
       Status adjusted = adjust_memlock_limit(delta, &changed);
@@ -634,7 +650,7 @@ Status MappedFile::lock_prefix(std::size_t length,
       }
     }
     if (code != 0) {
-      return posix_mapping_error(options.mode == LockMode::kEager
+      return posix_mapping_error(options.mode == ResidencyMode::kEager
                                      ? "mlock"
                                      : "mlock2(MLOCK_ONFAULT)",
                                  code);
@@ -645,7 +661,7 @@ Status MappedFile::lock_prefix(std::size_t length,
   return Status{};
 }
 
-Status MappedFile::unlock() noexcept {
+Status FileMapping::unlock() noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file unlock: mapping is not open");
   }
@@ -654,45 +670,100 @@ Status MappedFile::unlock() noexcept {
     return posix_mapping_error("munlock", errno);
   }
   locked_native_size_ = 0;
-  locked_mode_ = LockMode::kEager;
+  locked_mode_ = ResidencyMode::kEager;
   return Status{};
 }
 
-void MappedFile::reset() noexcept {
+void FileMapping::reset() noexcept {
   if (map_base_ != nullptr) ::munmap(map_base_, map_len_);
   addr_ = nullptr;
   size_ = 0;
   map_base_ = nullptr;
   map_len_ = 0;
   locked_native_size_ = 0;
-  locked_mode_ = LockMode::kEager;
+  locked_mode_ = ResidencyMode::kEager;
 }
 
 #endif
 
 // ---- portable ---------------------------------------------------------------
 
-Status MappedFile::lock(LockOptions options) noexcept {
+Status FileMapping::populate(std::size_t offset,
+                             std::size_t length) noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition(
+        "mapped file populate: mapping is not open");
+  }
+  if (offset > size_ || (length != 0 && length > size_ - offset)) {
+    return Status::OutOfRange(
+        "mapped file populate: range is outside mapping");
+  }
+  const std::size_t span = length != 0 ? length : size_ - offset;
+  if (span == 0) return Status::Ok();
+
+#if HYLE_OS_WINDOWS
+  SYSTEM_INFO info;
+  ::GetSystemInfo(&info);
+  const std::size_t page = info.dwPageSize;
+#else
+  const long native_page = ::sysconf(_SC_PAGESIZE);
+  if (native_page <= 0) {
+    return Status::Unavailable(
+        "mapped file populate: page size is unavailable");
+  }
+  const std::size_t page = static_cast<std::size_t>(native_page);
+#endif
+  if (page == 0) {
+    return Status::Unavailable(
+        "mapped file populate: page size is unavailable");
+  }
+
+  // Volatile byte loads make completion a synchronous residency guarantee,
+  // unlike MADV_WILLNEED/PrefetchVirtualMemory which are merely hints. Start
+  // at the exact requested byte, then touch each native page boundary covered
+  // by the range. The backing file must remain untruncated by contract.
+  const std::uintptr_t begin =
+      reinterpret_cast<std::uintptr_t>(addr_) + offset;
+  if (span > (std::numeric_limits<std::uintptr_t>::max)() - begin) {
+    return Status::OutOfRange(
+        "mapped file populate: address range overflows");
+  }
+  const std::uintptr_t end = begin + span;
+  std::uintptr_t cursor = begin;
+  unsigned char observed = 0;
+  for (;;) {
+    observed ^= *reinterpret_cast<volatile const unsigned char*>(cursor);
+    const std::uintptr_t page_begin = cursor - cursor % page;
+    if (page_begin > (std::numeric_limits<std::uintptr_t>::max)() - page) break;
+    const std::uintptr_t next = page_begin + page;
+    if (next >= end) break;
+    cursor = next;
+  }
+  (void)observed;
+  return Status::Ok();
+}
+
+Status FileMapping::lock(ResidencyOptions options) noexcept {
   return lock_prefix(size_, options);
 }
 
-Result<std::span<std::byte>> MappedFile::writable_bytes() noexcept {
+Result<std::span<std::byte>> FileMapping::writable_bytes() noexcept {
   if (!valid()) {
     return std::unexpected(Status::FailedPrecondition(
         "mapped file writable bytes: mapping is not open"));
   }
-  if (mode_ == Mode::kReadOnly) {
+  if (access_ == MappingAccess::kReadOnly) {
     return std::unexpected(Status::FailedPrecondition(
         "mapped file writable bytes: mapping is read-only"));
   }
   return std::span<std::byte>{static_cast<std::byte*>(addr_), size_};
 }
 
-MappedFile::~MappedFile() { reset(); }
+FileMapping::~FileMapping() { reset(); }
 
-MappedFile::MappedFile(MappedFile&& o) noexcept
+FileMapping::FileMapping(FileMapping&& o) noexcept
     : addr_(o.addr_), size_(o.size_), map_base_(o.map_base_),
-      map_len_(o.map_len_), h0_(o.h0_), h1_(o.h1_), mode_(o.mode_),
+      map_len_(o.map_len_), h0_(o.h0_), h1_(o.h1_), access_(o.access_),
       locked_native_size_(o.locked_native_size_),
       locked_mode_(o.locked_mode_) {
   o.addr_ = nullptr;
@@ -702,10 +773,10 @@ MappedFile::MappedFile(MappedFile&& o) noexcept
   o.h0_ = -1;
   o.h1_ = -1;
   o.locked_native_size_ = 0;
-  o.locked_mode_ = LockMode::kEager;
+  o.locked_mode_ = ResidencyMode::kEager;
 }
 
-MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
+FileMapping& FileMapping::operator=(FileMapping&& o) noexcept {
   if (this != &o) {
     reset();
     addr_ = o.addr_;
@@ -714,7 +785,7 @@ MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
     map_len_ = o.map_len_;
     h0_ = o.h0_;
     h1_ = o.h1_;
-    mode_ = o.mode_;
+    access_ = o.access_;
     locked_native_size_ = o.locked_native_size_;
     locked_mode_ = o.locked_mode_;
     o.addr_ = nullptr;
@@ -724,9 +795,9 @@ MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
     o.h0_ = -1;
     o.h1_ = -1;
     o.locked_native_size_ = 0;
-    o.locked_mode_ = LockMode::kEager;
+    o.locked_mode_ = ResidencyMode::kEager;
   }
   return *this;
 }
 
-}  // namespace hyle::platform
+}  // namespace hyle::mem

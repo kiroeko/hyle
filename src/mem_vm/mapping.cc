@@ -7,67 +7,6 @@
 namespace hyle::mem {
 namespace {
 
-Result<platform::MappedFile::Mode> file_mode(MappingAccess access) noexcept {
-  switch (access) {
-    case MappingAccess::kReadOnly:
-      return platform::MappedFile::Mode::kReadOnly;
-    case MappingAccess::kReadWrite:
-      return platform::MappedFile::Mode::kReadWrite;
-    case MappingAccess::kCopyOnWrite:
-      return platform::MappedFile::Mode::kCopyOnWrite;
-  }
-  return std::unexpected(Status::InvalidArgument("invalid mapping access"));
-}
-
-Result<platform::MappedFile::Advice> file_advice(
-    MappingAdvice advice) noexcept {
-  switch (advice) {
-    case MappingAdvice::kNormal:
-      return platform::MappedFile::Advice::kNormal;
-    case MappingAdvice::kRandom:
-      return platform::MappedFile::Advice::kRandom;
-    case MappingAdvice::kSequential:
-      return platform::MappedFile::Advice::kSequential;
-    case MappingAdvice::kWillNeed:
-      return platform::MappedFile::Advice::kWillNeed;
-    case MappingAdvice::kDontNeed:
-      return platform::MappedFile::Advice::kDontNeed;
-    case MappingAdvice::kHugePage:
-    case MappingAdvice::kNoHugePage:
-      return std::unexpected(Status::Unimplemented(
-          "huge-page advice is not a portable file-mapping contract"));
-  }
-  return std::unexpected(Status::InvalidArgument("invalid mapping advice"));
-}
-
-Result<platform::MappedFile::LockOptions> file_lock_options(
-    ResidencyOptions options) noexcept {
-  platform::MappedFile::LockOptions out;
-  switch (options.mode) {
-    case ResidencyMode::kEager:
-      out.mode = platform::MappedFile::LockMode::kEager;
-      break;
-    case ResidencyMode::kOnFault:
-      out.mode = platform::MappedFile::LockMode::kOnFault;
-      break;
-    default:
-      return std::unexpected(Status::InvalidArgument("invalid residency mode"));
-  }
-  switch (options.limit_policy) {
-    case ResidencyLimitPolicy::kPreserve:
-      out.limit_policy = platform::MappedFile::LockLimitPolicy::kPreserve;
-      break;
-    case ResidencyLimitPolicy::kAdjustIfNeeded:
-      out.limit_policy =
-          platform::MappedFile::LockLimitPolicy::kAdjustIfNeeded;
-      break;
-    default:
-      return std::unexpected(
-          Status::InvalidArgument("invalid residency limit policy"));
-  }
-  return out;
-}
-
 Result<platform::VmLockOptions> vm_lock_options(
     ResidencyOptions options) noexcept {
   platform::VmLockOptions out;
@@ -253,77 +192,10 @@ Status VirtualMapping::unlock(std::size_t offset, std::size_t size) noexcept {
 
 Status VirtualMapping::release() noexcept { return region_.release(); }
 
-Result<FileMapping> FileMapping::open(const char* path, MappingAccess access,
-                                      std::size_t offset,
-                                      std::size_t length) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::MappedFile::Mode mode, file_mode(access));
-  HYLE_ASSIGN_OR_RETURN(platform::MappedFile mapping,
-                        platform::MappedFile::open(path, mode, offset, length));
-  return FileMapping(std::move(mapping), access);
-}
-
-Result<FileMapping> FileMapping::map(platform::FileHandle file,
-                                     MappingAccess access,
-                                     std::size_t offset,
-                                     std::size_t length) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::MappedFile::Mode mode, file_mode(access));
-  HYLE_ASSIGN_OR_RETURN(
-      platform::MappedFile mapping,
-      platform::MappedFile::map(std::move(file), mode, offset, length));
-  return FileMapping(std::move(mapping), access);
-}
-
 ConstBufferView FileMapping::view() const noexcept {
   if (!valid()) return {};
   return ConstBufferView(mapped_resource(false), const_cast<void*>(data()), 0,
                          size());
-}
-
-Result<std::span<std::byte>> FileMapping::writable_bytes() noexcept {
-  return mapping_.writable_bytes();
-}
-
-Status FileMapping::flush(std::size_t offset, std::size_t length) noexcept {
-  return mapping_.flush(offset, length);
-}
-
-Status FileMapping::advise(MappingAdvice advice, std::size_t offset,
-                           std::size_t length) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::MappedFile::Advice native,
-                        file_advice(advice));
-  return mapping_.advise(native, offset, length);
-}
-
-Status FileMapping::lock_prefix(std::size_t length,
-                                ResidencyOptions options) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::MappedFile::LockOptions native,
-                        file_lock_options(options));
-  return mapping_.lock_prefix(length, native);
-}
-
-Status FileMapping::lock(ResidencyOptions options) noexcept {
-  return lock_prefix(size(), options);
-}
-
-Status FileMapping::unlock() noexcept { return mapping_.unlock(); }
-
-void FileMapping::reset() noexcept { mapping_.reset(); }
-
-Result<SharedMapping> SharedMapping::create(const char* name,
-                                            std::size_t size) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::SharedMemoryRegion mapping,
-                        platform::SharedMemoryRegion::create(name, size));
-  return SharedMapping(std::move(mapping));
-}
-
-Result<SharedMapping> SharedMapping::open(const char* name) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::SharedMemoryRegion mapping,
-                        platform::SharedMemoryRegion::open(name));
-  return SharedMapping(std::move(mapping));
-}
-
-Status SharedMapping::unlink(const char* name) noexcept {
-  return platform::SharedMemoryRegion::unlink(name);
 }
 
 BufferView SharedMapping::view() noexcept {
@@ -336,9 +208,5 @@ ConstBufferView SharedMapping::view() const noexcept {
   return ConstBufferView(mapped_resource(false), const_cast<void*>(data()), 0,
                          size());
 }
-
-Status SharedMapping::flush() noexcept { return mapping_.flush(); }
-
-Status SharedMapping::reset() noexcept { return mapping_.reset(); }
 
 }  // namespace hyle::mem

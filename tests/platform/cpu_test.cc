@@ -26,7 +26,7 @@ using hyle::platform::available_cpu_count;
 using hyle::platform::best_isa;
 using hyle::platform::cache_line_size;
 using hyle::platform::cache_info;
-using hyle::platform::cpu_topology;
+using hyle::platform::available_cpu_topology;
 using hyle::platform::cpu_features;
 using hyle::platform::CpuInfo;
 using hyle::platform::CpuKind;
@@ -66,11 +66,21 @@ TEST(Cpu, CacheCapacityIsCachedAndHierarchicalWhenKnown) {
 }
 
 TEST(Cpu, TopologyHasConsistentLogicalCounts) {
-  const auto& t = cpu_topology();
-  EXPECT_GE(t.system_logical_cpus, 1u);
-  EXPECT_EQ(t.performance_cpus + t.efficiency_cpus,
-            t.system_logical_cpus);
+  auto topology = available_cpu_topology();
+  ASSERT_TRUE(topology.has_value()) << topology.error().message();
+  const auto& t = *topology;
+  EXPECT_GE(t.logical_cpus, 1u);
+  EXPECT_LE(t.physical_cores, t.logical_cpus);
+  EXPECT_LE(t.performance_cpus + t.efficiency_cpus, t.logical_cpus);
   EXPECT_EQ(t.hybrid, t.efficiency_cpus != 0 && t.performance_cpus != 0);
+#if defined(_WIN32)
+  // Windows relation records are variable-sized: a Group record can be
+  // smaller than sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX). Rejecting
+  // that valid prefix used to stop the scan before every core/package record.
+  EXPECT_GE(t.physical_cores, 1u);
+  EXPECT_GE(t.packages, 1u);
+  EXPECT_GE(t.numa_nodes, 1u);
+#endif
 }
 
 TEST(Cpu, AvailableCpuIdsRespectBufferFillAndAreUnique) {
@@ -81,7 +91,9 @@ TEST(Cpu, AvailableCpuIdsRespectBufferFillAndAreUnique) {
   ASSERT_TRUE(convenient_count.has_value())
       << convenient_count.error().message();
   EXPECT_EQ(*convenient_count, *count);
-  EXPECT_LE(*count, cpu_topology().system_logical_cpus);
+  auto topology = available_cpu_topology();
+  ASSERT_TRUE(topology.has_value()) << topology.error().message();
+  EXPECT_EQ(*count, topology->logical_cpus);
 
   unsigned first = ~0u;
   auto truncated = available_cpu_ids(&first, 1);
@@ -120,6 +132,13 @@ TEST(Cpu, AvailableCpuInfoMatchesIdsAndClassifiesKnownRanks) {
       EXPECT_EQ(cpu.kind, CpuKind::kEfficiency);
     }
   }
+  CpuInfo prefix{};
+  auto truncated = hyle::platform::available_cpu_info(&prefix, 1);
+  ASSERT_TRUE(truncated.has_value()) << truncated.error().message();
+  ASSERT_EQ(*truncated, info.size());
+  EXPECT_EQ(prefix.id, info.front().id);
+  EXPECT_EQ(prefix.performance_rank, info.front().performance_rank);
+  EXPECT_EQ(prefix.kind, info.front().kind);
 #if defined(__APPLE__)
   EXPECT_TRUE(std::all_of(info.begin(), info.end(), [](const CpuInfo& cpu) {
     return cpu.performance_rank == 0 && cpu.kind == CpuKind::kUnknown;
@@ -200,11 +219,16 @@ TEST(Cpu, AvailableCpuIdsTracksRuntimeAffinityChange) {
   const DWORD_PTR single = original & (~original + 1);
   if (!::SetProcessAffinityMask(::GetCurrentProcess(), single)) GTEST_SKIP();
   auto restricted = available_cpu_ids(nullptr, 0);
+  auto restricted_topology = available_cpu_topology();
   const BOOL restored =
       ::SetProcessAffinityMask(::GetCurrentProcess(), original);
   ASSERT_NE(restored, 0);
   ASSERT_TRUE(restricted.has_value()) << restricted.error().message();
   EXPECT_EQ(*restricted, 1u);
+  ASSERT_TRUE(restricted_topology.has_value())
+      << restricted_topology.error().message();
+  EXPECT_EQ(restricted_topology->logical_cpus, 1u);
+  EXPECT_EQ(restricted_topology->physical_cores, 1u);
 #elif defined(__linux__)
   cpu_set_t original;
   CPU_ZERO(&original);
@@ -222,10 +246,14 @@ TEST(Cpu, AvailableCpuIdsTracksRuntimeAffinityChange) {
   CPU_SET(first, &single);
   if (::sched_setaffinity(0, sizeof(single), &single) != 0) GTEST_SKIP();
   auto restricted = available_cpu_ids(nullptr, 0);
+  auto restricted_topology = available_cpu_topology();
   const int restored = ::sched_setaffinity(0, sizeof(original), &original);
   ASSERT_EQ(restored, 0);
   ASSERT_TRUE(restricted.has_value()) << restricted.error().message();
   EXPECT_EQ(*restricted, 1u);
+  ASSERT_TRUE(restricted_topology.has_value())
+      << restricted_topology.error().message();
+  EXPECT_EQ(restricted_topology->logical_cpus, 1u);
 #else
   GTEST_SKIP() << "platform has no process affinity API";
 #endif

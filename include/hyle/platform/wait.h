@@ -4,16 +4,8 @@
 #include <cstdint>
 
 #include "hyle/core/compiler.h"
+#include "hyle/platform/thread_visibility.h"
 #include "hyle/time/clock.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#  define HYLE_PLATFORM_API
-#elif defined(HYLE_PLATFORM_BUILD)
-#  define HYLE_PLATFORM_API HYLE_EXPORT
-#else
-#  define HYLE_PLATFORM_API HYLE_IMPORT
-#endif
 
 namespace hyle::platform {
 
@@ -28,7 +20,7 @@ namespace hyle::platform {
 //  - Spurious wakeups ARE allowed; callers MUST re-check their condition in a
 //    loop. (The Parker below does exactly that; prefer Parker for app code.)
 namespace detail {
-HYLE_PLATFORM_API void wait_on_address(const std::atomic<std::uint32_t>* addr,
+HYLE_PLATFORM_THREAD_API void wait_on_address(const std::atomic<std::uint32_t>* addr,
                                        std::uint32_t expected) noexcept;
 // Timed variant: block until woken or `timeout_ns` elapses. Returns false iff it
 // returned because the timeout expired (best-effort: the OS may wake slightly
@@ -36,11 +28,11 @@ HYLE_PLATFORM_API void wait_on_address(const std::atomic<std::uint32_t>* addr,
 // timeout_ns == 0 is a non-blocking poll. Backs an event loop's timer-queue
 // deadline: the owner computes the next-expiry duration and hands it to
 // futex/WaitOnAddress so the worker sleeps without periodic polling.
-HYLE_PLATFORM_API bool wait_on_address_for(
+HYLE_PLATFORM_THREAD_API bool wait_on_address_for(
     const std::atomic<std::uint32_t>* addr, std::uint32_t expected,
     std::uint64_t timeout_ns) noexcept;
-HYLE_PLATFORM_API void wake_one(const std::atomic<std::uint32_t>* addr) noexcept;
-HYLE_PLATFORM_API void wake_all(const std::atomic<std::uint32_t>* addr) noexcept;
+HYLE_PLATFORM_THREAD_API void wake_one(const std::atomic<std::uint32_t>* addr) noexcept;
+HYLE_PLATFORM_THREAD_API void wake_all(const std::atomic<std::uint32_t>* addr) noexcept;
 }  // namespace detail
 
 // ---- Parker / Unparker (portable, built on wait_on_address) -----------------
@@ -63,7 +55,7 @@ class Parker {
 
   // Block until a token is available, then consume it. Re-checks state in a
   // loop, so a spurious low-level wake just re-sleeps (never a false return).
-  HYLE_PLATFORM_API void park() noexcept;
+  HYLE_PLATFORM_THREAD_API void park() noexcept;
 
   // Timed park: block until a token is available OR `timeout` elapses.
   // Returns true if a token was consumed, false otherwise (timeout OR a spurious
@@ -73,11 +65,11 @@ class Parker {
   // std's park_timeout). A non-positive timeout is a non-blocking check. This is the
   // worker's "sleep until next timer" call: its timer queue supplies the
   // deadline, and the worker's loop re-checks + recomputes the bound each pass.
-  HYLE_PLATFORM_API bool park_for(time::Duration timeout) noexcept;
+  HYLE_PLATFORM_THREAD_API bool park_for(time::Duration timeout) noexcept;
 
   // Make a token available; wake a parked thread if one is waiting. Idempotent:
   // repeated unparks without an intervening park collapse to a single token.
-  HYLE_PLATFORM_API void unpark() noexcept;
+  HYLE_PLATFORM_THREAD_API void unpark() noexcept;
 
  private:
   // State values chosen for the proven futex-Parker scheme (Rust std):

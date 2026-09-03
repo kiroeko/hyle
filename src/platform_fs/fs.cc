@@ -9,7 +9,6 @@
 // portable, so opt out of the CRT deprecation nag (no global override exists).
 #if defined(_WIN32)
 #  define _CRT_SECURE_NO_WARNINGS 1
-#  define _CRT_RAND_S  // expose rand_s (RtlGenRandom-backed) for temp file names
 #endif
 
 #include "hyle/platform/fs.h"
@@ -26,6 +25,8 @@
 #include "hyle/core/environment.h"  // HYLE_OS_* for the branches below (the _GNU_SOURCE/_CRT
                             // feature macros above MUST stay raw -- they precede ALL
                             // includes, before platform.h is parsed).
+#include "hyle/platform/environment.h"
+#include "hyle/platform/random.h"
 
 #if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -58,10 +59,6 @@ std::size_t fill(char* dst, std::size_t cap, const char* src,
 
 void clear_output(char* dst, std::size_t cap) noexcept {
   if (dst != nullptr && cap != 0) dst[0] = '\0';
-}
-
-bool valid_env_name(const char* name) noexcept {
-  return name != nullptr && name[0] != '\0' && std::strchr(name, '=') == nullptr;
 }
 
 // `create_temp_file(dir, prefix, ...)` promises that the result stays directly
@@ -602,71 +599,6 @@ Result<std::size_t> home_directory(char* dst, std::size_t cap) noexcept {
   return get_env_var("USERPROFILE", dst, cap);
 }
 
-Result<std::size_t> get_env_var(const char* name, char* dst,
-                                std::size_t cap) noexcept {
-  clear_output(dst, cap);
-  if (!valid_env_name(name)) {
-    return std::unexpected(Status::InvalidArgument(
-        "get environment variable: name is null, empty, or contains '='"));
-  }
-  WidePath wn(name, /*extended_path=*/false);
-  if (wn.w() == nullptr) {
-    if (wn.allocation_failed()) {
-      return std::unexpected(Status::ResourceExhausted(
-          "environment variable name conversion allocation failed"));
-    }
-    return std::unexpected(Status::InvalidArgument(
-        "get environment variable: name is not valid UTF-8"));
-  }
-  wchar_t stackw[512];
-  for (int attempt = 0; attempt != 4; ++attempt) {
-    ::SetLastError(ERROR_SUCCESS);
-    const DWORD need = GetEnvironmentVariableW(wn.w(), nullptr, 0);
-    if (need == 0) {
-      const DWORD code = ::GetLastError();
-      if (code == ERROR_ENVVAR_NOT_FOUND) {
-        return std::unexpected(Status::NotFound(
-            "get environment variable: variable is not set"));
-      }
-      if (code == ERROR_SUCCESS) return std::size_t{0};
-      return std::unexpected(
-          win32_fs_status("GetEnvironmentVariableW(size)", code));
-    }
-    wchar_t* heapw = nullptr;
-    wchar_t* wbuf = stackw;
-    if (need > sizeof(stackw) / sizeof(stackw[0])) {
-      heapw = static_cast<wchar_t*>(
-          std::malloc(static_cast<std::size_t>(need) * sizeof(wchar_t)));
-      if (heapw == nullptr) {
-        return std::unexpected(Status::ResourceExhausted(
-            "environment variable: UTF-16 buffer allocation failed"));
-      }
-      wbuf = heapw;
-    }
-    ::SetLastError(ERROR_SUCCESS);
-    const DWORD got = GetEnvironmentVariableW(wn.w(), wbuf, need);
-    const DWORD code = ::GetLastError();
-    if (got == 0) {
-      std::free(heapw);
-      if (code == ERROR_ENVVAR_NOT_FOUND) {
-        return std::unexpected(Status::NotFound(
-            "get environment variable: variable is not set"));
-      }
-      if (code == ERROR_SUCCESS) return std::size_t{0};
-      return std::unexpected(win32_fs_status("GetEnvironmentVariableW", code));
-    }
-    if (got >= need) {
-      std::free(heapw);
-      continue;  // the process-global value grew between the two calls
-    }
-    auto result = fill_w(dst, cap, wbuf, static_cast<int>(got));
-    std::free(heapw);
-    return result;
-  }
-  return std::unexpected(Status::Aborted(
-      "environment variable kept changing while it was being read"));
-}
-
 Result<bool> directory_iterate(const char* path,
                                bool (*visit)(const char*, FileType, void*),
                                void* ctx) noexcept {
@@ -1114,18 +1046,18 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   constexpr int kMaxTries = 128;
   const wchar_t kHex[] = L"0123456789abcdef";
   for (int attempt = 0; attempt < kMaxTries; ++attempt) {
-    // 64 random bits -> 16 hex chars (rand_s is RtlGenRandom-backed, unpredictable).
+    // One OS entropy request supplies 64 unpredictable bits for 16 hex chars.
     std::size_t w = random_offset;
-    for (int word = 0; word < 2; ++word) {
-      unsigned r = 0;
-      if (rand_s(&r) != 0) {
-        return std::unexpected(Status::Unavailable(
-            "create temp file: system random generator failed"));
-      }
-      for (int i = 0; i < 8; ++i) {
-        wpath.data()[w++] = kHex[r & 0xF];
-        r >>= 4;
-      }
+    std::uint64_t random = 0;
+    Status entropy = secure_random(std::span<std::byte>(
+        reinterpret_cast<std::byte*>(&random), sizeof(random)));
+    if (!entropy.ok()) {
+      return std::unexpected(
+          std::move(entropy).WithContext("create temp file name"));
+    }
+    for (int i = 0; i < 16; ++i) {
+      wpath.data()[w++] = kHex[random & 0xF];
+      random >>= 4;
     }
 
     HANDLE h = CreateFileW(wpath.data(), GENERIC_READ | GENERIC_WRITE, 0,
@@ -1150,43 +1082,6 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   }
   return std::unexpected(Status::AlreadyExists(
       "create temp file: exhausted unique-name retries"));
-}
-
-Status set_env_var(const char* name, const char* value) noexcept {
-  if (!valid_env_name(name) || value == nullptr) {
-    return Status::InvalidArgument(
-        "set environment variable: invalid name or null value");
-  }
-  WidePath wn(name, /*extended_path=*/false);
-  WidePath wv(value, /*extended_path=*/false);
-  if (wn.w() == nullptr || wv.w() == nullptr) {
-    if (wn.allocation_failed() || wv.allocation_failed()) {
-      return Status::ResourceExhausted(
-          "environment variable UTF-16 conversion allocation failed");
-    }
-    return Status::InvalidArgument(
-        "set environment variable: name or value is not valid UTF-8");
-  }
-  const int code = _wputenv_s(wn.w(), wv.w());
-  return status_from_errno(code, "_wputenv_s(set environment variable)");
-}
-
-Status unset_env_var(const char* name) noexcept {
-  if (!valid_env_name(name)) {
-    return Status::InvalidArgument(
-        "unset environment variable: invalid name");
-  }
-  WidePath wn(name, /*extended_path=*/false);
-  if (wn.w() == nullptr) {
-    if (wn.allocation_failed()) {
-      return Status::ResourceExhausted(
-          "environment variable name conversion allocation failed");
-    }
-    return Status::InvalidArgument(
-        "unset environment variable: name is not valid UTF-8");
-  }
-  const int code = _wputenv_s(wn.w(), L"");
-  return status_from_errno(code, "_wputenv_s(unset environment variable)");
 }
 
 #else
@@ -1534,21 +1429,6 @@ Result<std::size_t> home_directory(char* dst, std::size_t cap) noexcept {
   }
 }
 
-Result<std::size_t> get_env_var(const char* name, char* dst,
-                                std::size_t cap) noexcept {
-  clear_output(dst, cap);
-  if (!valid_env_name(name)) {
-    return std::unexpected(Status::InvalidArgument(
-        "get environment variable: name is null, empty, or contains '='"));
-  }
-  const char* v = std::getenv(name);
-  if (v == nullptr) {
-    return std::unexpected(
-        Status::NotFound("get environment variable: variable is not set"));
-  }
-  return fill(dst, cap, v, std::strlen(v));
-}
-
 namespace {
 Status close_raw(std::intptr_t raw) noexcept {
   if (raw == FileHandle::kInvalid) return Status::Ok();
@@ -1855,24 +1735,6 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   const std::size_t path_size = std::strlen(tmpl.data());
   fill(dst, cap, tmpl.data(), path_size);
   return CreatedTempFile{FileHandle{static_cast<std::intptr_t>(fd)}, path_size};
-}
-
-Status set_env_var(const char* name, const char* value) noexcept {
-  if (!valid_env_name(name) || value == nullptr) {
-    return Status::InvalidArgument(
-        "set environment variable: invalid name or null value");
-  }
-  if (::setenv(name, value, 1) == 0) return Status::Ok();
-  return posix_fs_status("setenv", errno);
-}
-
-Status unset_env_var(const char* name) noexcept {
-  if (!valid_env_name(name)) {
-    return Status::InvalidArgument(
-        "unset environment variable: invalid name");
-  }
-  if (::unsetenv(name) == 0) return Status::Ok();
-  return posix_fs_status("unsetenv", errno);
 }
 
 Result<bool> directory_iterate(const char* path,

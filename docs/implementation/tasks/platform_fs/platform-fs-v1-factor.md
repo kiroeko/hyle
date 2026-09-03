@@ -47,7 +47,16 @@ Boost Filesystem；反向追踪覆盖 `fs.h/fs.cc`、混合 convenience、Mapped
 | `PLAT3-F02` | warmed regular file 的 open + complete sequential read + close 同合同 P1；temp write/sync/rename 为 holdout budget | 计入 setup/bytes/teardown，不与 cached scalar 或无 durability route 混比 | W1-WIN 5% gate + A/A qualification |
 | `PLAT3-D01` | guide/sample/architecture/performance 与 source/static/shared relocation | 无 product cost | docs/scans/red team |
 
-API freeze 当前为 `DRAFT`，实现后再冻结。MappedFile/SharedMemory 不能临时归入本 factor；它们必须由
-依法审计的 `mem_vm` 唯一拥有。file lock/preallocate/watch/direct/positional/vectored/async 与 lexical
-Path 都保持明确 `DEFER/ROUTED`。产品无第三方实现依赖、无 Native FFI；公开 namespace 仍是
-`hyle::platform`，factor 名只服务内部独立构建。
+API freeze 为 `FROZEN`（2026-09-03）：公开头自含、FileHandle/namespace/temp/replace normal journeys 与
+Windows/WSL 精确 factor 已通过；P1 不能反向改变一字 handle、把 setup/teardown 移出 normal workload，
+或增加 benchmark-only 入口。MappedFile/SharedMemory 已由依法审计的 `mem_vm` 唯一拥有。file lock/
+preallocate/watch/direct/positional/vectored/async 与 lexical Path 保持明确 `DEFER/ROUTED`。产品无第三方
+实现依赖、无 Native FFI；公开 namespace 仍是 `hyle::platform`，factor 名只服务内部独立构建。
+
+## 候选前实现检查点
+
+- F01--F02 与 D01 的 source/header/convenience 分离、精确 target、测试、sample 和文档已经落地；
+- W1-WIN `51/51`、GCC 14 `-Werror` `58/58`，公开头自含通过；GCC 隔离构建还发现并修复了私有测试
+  seam 错用 host visibility macro 的真实 factor 缺陷；
+- M1-MAC、sanitizer、Platform product 三交付、Mem/IO direct consumers、P1 与红队仍待 candidate，
+  当前 registry 继续是 `AUDITED`。

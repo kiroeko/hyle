@@ -143,6 +143,35 @@ TEST(ThisThread, IdAndHelpers) {
   SUCCEED();
 }
 
+TEST(ThisThread, ReportsCurrentAffinityWithoutChangingIt) {
+  auto count = this_thread::affinity(nullptr, 0);
+#if defined(__APPLE__)
+  ASSERT_FALSE(count.has_value());
+  EXPECT_TRUE(count.error().IsUnimplemented());
+#else
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  ASSERT_GT(*count, 0u);
+  std::vector<unsigned> cpus(*count);
+  auto filled = this_thread::affinity(cpus.data(), cpus.size());
+  ASSERT_TRUE(filled.has_value()) << filled.error().message();
+  EXPECT_EQ(*filled, cpus.size());
+  for (std::size_t i = 1; i < cpus.size(); ++i) {
+    EXPECT_LT(cpus[i - 1], cpus[i]);
+  }
+#endif
+}
+
+TEST(ThisThread, ReportsDynamicIsaState) {
+  auto state = this_thread::isa_state();
+  ASSERT_TRUE(state.has_value()) << state.error().message();
+  if (state->scalable_vector_bytes != 0) {
+    EXPECT_EQ(state->scalable_vector_bytes % 16u, 0u);
+  }
+  if (state->streaming_vector_bytes != 0) {
+    EXPECT_EQ(state->streaming_vector_bytes % 16u, 0u);
+  }
+}
+
 TEST(ThisThread, DistinctThreadsHaveDistinctIds) {
   std::atomic<std::uint64_t> child_id{0};
   auto r = Thread::spawn(

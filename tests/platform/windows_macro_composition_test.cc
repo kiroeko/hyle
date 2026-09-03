@@ -4,7 +4,10 @@
 #define min(a, b) hyle_windows_min_macro_must_not_expand(a, b)
 #define max(a, b) hyle_windows_max_macro_must_not_expand(a, b)
 
-#include "hyle/platform/convenience.h"
+#include "hyle/platform/cpu_convenience.h"
+#include "hyle/platform/environment_convenience.h"
+#include "hyle/platform/fs_convenience.h"
+#include "hyle/platform/thread_convenience.h"
 #include "hyle/time/clock.h"
 
 #undef max

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -15,7 +16,9 @@
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
-#include "hyle/platform/thread.h"
+#include "test_thread.h"
+
+using hyle::mem::test_support::Thread;
 
 using hyle::mem::AllocatorRef;
 using hyle::mem::FixedHeap;
@@ -254,15 +257,15 @@ TEST(ObjectPool, ConcurrentCreateDestroyBalances) {
   struct Args {
     ObjectPool<Counted> *pool;
   } a{&pool};
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<Thread> threads;
   for (int t = 0; t < kThreads; ++t) {
-    auto r = hyle::platform::Thread::spawn(
+    auto r = Thread::spawn(
         [](void *p) {
           auto *x = static_cast<Args *>(p);
           for (int i = 0; i < kIters; ++i) {
             Counted *c = x->pool->create(i);
             if (c == nullptr) {
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
               continue;
             }
             x->pool->destroy(c);

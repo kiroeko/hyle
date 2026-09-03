@@ -23,17 +23,6 @@
 
 namespace hyle::mem {
 
-// Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
-//   numa_node == platform::kNumaAny → interleave across nodes
-//   otherwise → pin to that node
-// timeout_ms: 0 = HYLE's short default wait. Returns OK if reservation
-// succeeded (or pages==0), OutOfRange for an invalid node/size, and
-// ResourceExhausted when mimalloc cannot reserve the requested contiguous host
-// RAM. The process remains usable with normal pages after a failed reservation.
-HYLE_MEM_API Status reserve_huge_1g_pages(
-    std::size_t pages, int numa_node = platform::kNumaAny,
-    unsigned timeout_ms = 0) noexcept;
-
 // ---- HugeMapping -------------------------------------------------------------
 
 enum class HugeFlags : std::uint8_t {

@@ -2,18 +2,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 #include "hyle/error/result.h"
 #include "hyle/core/environment.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#  define HYLE_PLATFORM_API
-#elif defined(HYLE_PLATFORM_BUILD)
-#  define HYLE_PLATFORM_API HYLE_EXPORT
-#else
-#  define HYLE_PLATFORM_API HYLE_IMPORT
-#endif
+#include "hyle/platform/visibility.h"
 
 // Runtime CPU-feature detection (CPUID + XGETBV on x86). Lives in platform/ --
 // the layer below both simd/ and container/ -- because "what can this CPU run"
@@ -58,6 +51,12 @@ struct CpuFeatures {
   bool avx512bf16 = false; // bf16 dot product (AI)
   bool avx512fp16 = false; // native fp16 arithmetic
   bool avx10_2 = false;    // AVX10.2 (leaf 0x24 version >= 2), OS-ZMM gated for HYLE's 512-bit TU
+  // AMX CPUID facts deliberately are not permission facts. Linux grants tile
+  // state per thread; query/request that state through platform_thread before
+  // entering an AMX kernel.
+  bool amx_tile = false;
+  bool amx_int8 = false;
+  bool amx_bf16 = false;
   // ---- arm (read false on non-ARM) ----
   bool neon = false;       // baseline on aarch64 (always true there)
   bool sve = false;        // scalable vectors (runtime-length; see vec.h Lanes())
@@ -70,6 +69,8 @@ struct CpuFeatures {
   bool sve_bf16 = false;   // SVE bf16 arithmetic / convert
   bool arm_i8mm = false;   // non-SVE Arm int8 matrix multiply
   bool arm_bf16 = false;   // non-SVE Arm bf16 arithmetic / convert
+  bool sme = false;        // Scalable Matrix Extension hardware/OS support
+  bool sme2 = false;       // SME2; implies SME
   // ---- RISC-V (read false on non-RISC-V) ----
   bool rvv = false;          // V extension; runtime VLEN is queried by the backend
   bool rvv_zvbb = false;     // vector bit-manipulation
@@ -162,7 +163,23 @@ struct CpuInfo {
   unsigned id = 0;
   unsigned performance_rank = 0;
   CpuKind kind = CpuKind::kUnknown;
+
+  // Topology ids describe one live process-available snapshot. package/die/
+  // core form a hierarchy; cache-domain ids are snapshot-local equivalence
+  // classes. kUnknownCpuTopologyId means that the OS cannot map a logical id
+  // honestly (not that every CPU belongs to domain zero).
+  unsigned package_id = (std::numeric_limits<unsigned>::max)();
+  unsigned die_id = (std::numeric_limits<unsigned>::max)();
+  unsigned core_id = (std::numeric_limits<unsigned>::max)();
+  unsigned smt_index = (std::numeric_limits<unsigned>::max)();
+  unsigned smt_count = 0;
+  unsigned numa_node = (std::numeric_limits<unsigned>::max)();
+  unsigned l2_cache_domain = (std::numeric_limits<unsigned>::max)();
+  unsigned l3_cache_domain = (std::numeric_limits<unsigned>::max)();
 };
+
+inline constexpr unsigned kUnknownCpuTopologyId =
+    (std::numeric_limits<unsigned>::max)();
 
 enum class CpuOrder : std::uint8_t {
   kOsDefault = 0,
@@ -182,17 +199,28 @@ HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
 // likewise dynamic; avoids making callers spell a dummy buffer-fill request.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_count() noexcept;
 
-// OS-online SYSTEM topology. Process availability is a separate, dynamic query
-// above. If a platform cannot report a
-// trustworthy P/E distinction, all CPUs are conservatively classified as
-// performance; frequency-based guessing is deliberately avoided.
+// Aggregate of the same live process-available view returned by
+// available_cpu_info(). Counts never invent dense CPU ids and physical_cores
+// may be unknown (zero) when the OS exposes a logical count but no trustworthy
+// logical-to-core mapping. If a platform cannot report a P/E distinction, kind
+// stays unknown rather than frequency-based guessing.
 struct CpuTopology {
-  unsigned system_logical_cpus = 1;
-  unsigned performance_cpus = 1;
+  unsigned logical_cpus = 0;
+  unsigned physical_cores = 0;
+  unsigned packages = 0;
+  unsigned numa_nodes = 0;
+  unsigned l2_cache_domains = 0;
+  unsigned l3_cache_domains = 0;
+  unsigned performance_cpus = 0;
   unsigned efficiency_cpus = 0;
   bool hybrid = false;
 };
 
-HYLE_PLATFORM_API const CpuTopology& cpu_topology() noexcept;
+HYLE_PLATFORM_API Result<CpuTopology> available_cpu_topology() noexcept;
+
+// OS-online logical processor count (>=1). Placement and worker sizing should
+// normally use available_cpu_count()/available_cpu_topology(), which respect
+// the current process/thread restrictions.
+HYLE_PLATFORM_API unsigned hardware_concurrency() noexcept;
 
 }  // namespace hyle::platform

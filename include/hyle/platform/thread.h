@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "hyle/error/result.h"
-#include "hyle/platform/wait.h"  // HYLE_PLATFORM_API
+#include "hyle/platform/wait.h"  // HYLE_PLATFORM_THREAD_API
 
 namespace hyle::platform {
 
@@ -65,6 +65,15 @@ class CpuAffinity {
   std::size_t count_ = 0;
 };
 
+// Current-thread execution state which is not a process-wide CPU fact. A zero
+// byte width means the architecture/OS does not expose that state; it is not a
+// guessed fixed width. Static feature presence remains in cpu_features().
+struct ThreadIsaState {
+  std::size_t scalable_vector_bytes = 0;  // SVE or RVV VL
+  std::size_t streaming_vector_bytes = 0; // SME streaming VL
+  bool amx_tile_permitted = false;        // current thread may use XTILEDATA
+};
+
 struct ThreadOpts {
   // Natural C++ configuration value. It has no cross-toolchain layout/version
   // contract and is not a foreign-runtime ABI record.
@@ -81,7 +90,7 @@ struct ThreadOpts {
 // the public representation), and lets spawn honor stack_size/affinity via
 // native CreateThread / pthread_attr. ~Thread fails-fast if still joinable
 // (charter: forgotten join is a bug, surface it -- mirrors std::thread).
-class HYLE_PLATFORM_API Thread {
+class HYLE_PLATFORM_THREAD_API Thread {
  public:
   Thread() noexcept = default;
   Thread(Thread&& other) noexcept : handle_(other.handle_) { other.handle_ = 0; }
@@ -143,20 +152,31 @@ class HYLE_PLATFORM_API Thread {
 
 // ---- small helpers ----------------------------------------------------------
 
-// Logical core count (>=1; 0 from the OS is normalized to 1).
-HYLE_PLATFORM_API unsigned hardware_concurrency() noexcept;
-
 namespace this_thread {
 // Opaque OS thread id of the caller (for logging / assertions).
-HYLE_PLATFORM_API std::uint64_t get_id() noexcept;
+HYLE_PLATFORM_THREAD_API std::uint64_t get_id() noexcept;
 // Hint to the OS scheduler to relinquish the rest of this time slice.
-HYLE_PLATFORM_API void yield() noexcept;
+HYLE_PLATFORM_THREAD_API void yield() noexcept;
 // Configure the calling thread. Unlike best-effort ThreadOpts, these return the
 // native failure through the shared error model. Ignoring a failure must be
 // explicit with Status::IgnoreError(). affinity uses available_cpu_ids().
-HYLE_PLATFORM_API Status set_name(std::string_view name) noexcept;
-HYLE_PLATFORM_API Status set_affinity(CpuAffinity affinity) noexcept;
-HYLE_PLATFORM_API Status set_priority(ThreadPriority priority) noexcept;
+HYLE_PLATFORM_THREAD_API Status set_name(std::string_view name) noexcept;
+HYLE_PLATFORM_THREAD_API Status set_affinity(CpuAffinity affinity) noexcept;
+HYLE_PLATFORM_THREAD_API Status set_priority(ThreadPriority priority) noexcept;
+
+// Query the calling thread's hard-affinity mask using the same flattened CPU
+// id space accepted by set_affinity(). Returns the full count and writes at
+// most cap ids; dst may be null for a count-only query. macOS has no public
+// hard-affinity API and reports Unimplemented.
+HYLE_PLATFORM_THREAD_API Result<std::size_t> affinity(unsigned* dst,
+                                               std::size_t cap) noexcept;
+
+// Query dynamic ISA state for the calling thread. This does not select a SIMD
+// backend or enter SME streaming mode; it only reports the native state needed
+// by a dispatcher. Explicitly request Linux AMX tile permission before an AMX
+// kernel; unsupported CPUs/OSes report Unimplemented without a fallback.
+HYLE_PLATFORM_THREAD_API Result<ThreadIsaState> isa_state() noexcept;
+HYLE_PLATFORM_THREAD_API Status request_amx_tile_permission() noexcept;
 }  // namespace this_thread
 
 }  // namespace hyle::platform

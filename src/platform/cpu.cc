@@ -24,7 +24,7 @@
 #include <limits>
 #include <new>
 
-#include "hyle/platform/thread.h"
+#include "hyle/platform/numa.h"
 
 #if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -37,8 +37,10 @@
 
 #if HYLE_OS_MACOS
 #include <sys/sysctl.h>  // sysctlbyname("hw.cachelinesize")
+#include <unistd.h>
 #endif
 #if HYLE_OS_LINUX
+#include <dirent.h>
 #include <sched.h>
 #include <unistd.h>  // sysconf(_SC_LEVEL1_DCACHE_LINESIZE)
 #endif
@@ -155,6 +157,9 @@ CpuFeatures detect_x86() noexcept {
     cpu_avx512vl = bit(ebx7, 31);
     f.avx512vnni = bit(ecx7, 11);
     f.avx512fp16 = bit(edx7, 23);
+    f.amx_bf16 = bit(edx7, 22);
+    f.amx_tile = bit(edx7, 24);
+    f.amx_int8 = bit(edx7, 25);
 
     cpuid(7, 1, abcd);
     // AVX-VNNI (VEX encoding, 256-bit): leaf 7,1 EAX bit 4 — independent of AVX-512.
@@ -195,6 +200,12 @@ CpuFeatures detect_x86() noexcept {
   // AVX10.2 fp8 converts operate on ZMM (512-bit), so require OS ZMM save just like AVX-512.
   f.avx10_2 = cpu_avx10_2 && avx512_ok;
   f.avx512fp16 = f.avx512fp16 && avx512_ok;
+
+  // AMX tile state is enabled independently from XCR0 and, on Linux, must be
+  // requested for each thread. Keep these as static CPUID facts; the thread
+  // factor owns the permission query/request mechanism.
+  f.amx_int8 = f.amx_tile && f.amx_int8;
+  f.amx_bf16 = f.amx_tile && f.amx_bf16;
 
   return f;
 }
@@ -259,6 +270,8 @@ CpuFeatures detect() noexcept {
   constexpr unsigned long kHwcap2SveBf16 = 1ul << 12;
   constexpr unsigned long kHwcap2I8mm = 1ul << 13;
   constexpr unsigned long kHwcap2Bf16 = 1ul << 14;
+  constexpr unsigned long kHwcap2Sme = 1ul << 23;
+  constexpr unsigned long kHwcap2Sme2 = 1ull << 37;
 
   const unsigned long caps = getauxval(AT_HWCAP);
   const unsigned long caps2 = getauxval(kAtHwcap2);
@@ -275,6 +288,24 @@ CpuFeatures detect() noexcept {
   f.sve_bf16 = f.sve && (caps2 & kHwcap2SveBf16) != 0;
   f.arm_i8mm = (caps2 & kHwcap2I8mm) != 0;
   f.arm_bf16 = (caps2 & kHwcap2Bf16) != 0;
+  f.sme = (caps2 & kHwcap2Sme) != 0;
+  f.sme2 = f.sme && (caps2 & kHwcap2Sme2) != 0;
+#elif HYLE_OS_MACOS
+  auto sysctl_feature = [](const char* name) noexcept {
+    int present = 0;
+    std::size_t size = sizeof(present);
+    return ::sysctlbyname(name, &present, &size, nullptr, 0) == 0 &&
+           present != 0;
+  };
+  f.sme = sysctl_feature("hw.optional.arm.FEAT_SME");
+  f.sme2 = f.sme && sysctl_feature("hw.optional.arm.FEAT_SME2");
+#elif HYLE_OS_WINDOWS
+  // These numeric values are the stable Windows processor-feature ABI. Keep
+  // local fallbacks so older SDKs can still build for newer ARM64 hosts.
+  constexpr DWORD kPfArmSme = 70;
+  constexpr DWORD kPfArmSme2 = 71;
+  f.sme = ::IsProcessorFeaturePresent(kPfArmSme) != 0;
+  f.sme2 = f.sme && ::IsProcessorFeaturePresent(kPfArmSme2) != 0;
 #endif
   return f;
 #elif HYLE_ARCH_RISCV64
@@ -355,10 +386,12 @@ unsigned detect_cache_line() noexcept {
   const unsigned line = ((abcd[1] >> 8) & 0xffu) * 8u;
   return line ? line : 64u;
 #elif HYLE_OS_WINDOWS
+  constexpr DWORD kRelationHeader = static_cast<DWORD>(
+      offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
   DWORD bytes = 0;
   if (::GetLogicalProcessorInformationEx(RelationCache, nullptr, &bytes) ||
       ::GetLastError() != ERROR_INSUFFICIENT_BUFFER ||
-      bytes < sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)) {
+      bytes < kRelationHeader) {
     return 64u;
   }
   auto *storage = new (std::nothrow) std::byte[bytes];
@@ -373,15 +406,20 @@ unsigned detect_cache_line() noexcept {
 
   unsigned detected = 0;
   DWORD offset = 0;
-  while (offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) <= bytes) {
+  while (offset + kRelationHeader <= bytes) {
     const auto *info =
         reinterpret_cast<const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *>(
             storage + offset);
-    if (info->Size < sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) ||
+    if (info->Size < kRelationHeader ||
         info->Size > bytes - offset) {
       break;
     }
-    if (info->Relationship == RelationCache && info->Cache.Level == 1 &&
+    const std::size_t cache_header =
+        offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
+        offsetof(CACHE_RELATIONSHIP, GroupMasks);
+    if (info->Relationship == RelationCache &&
+        info->Size >= cache_header + sizeof(GROUP_AFFINITY) &&
+        info->Cache.Level == 1 &&
         (info->Cache.Type == CacheData ||
          info->Cache.Type == CacheUnified)) {
       const unsigned line = info->Cache.LineSize;
@@ -495,8 +533,9 @@ Status cpu_query_status(const char* operation, unsigned long code) noexcept {
 }
 #endif
 
-Result<std::size_t> query_available_cpu_ids(unsigned* dst,
-                                            std::size_t cap) noexcept {
+Result<std::size_t> query_available_cpu_ids(
+    unsigned* dst, std::size_t cap,
+    unsigned* performance_ranks = nullptr) noexcept {
   if (dst == nullptr) cap = 0;
 #if HYLE_OS_WINDOWS
   HANDLE process = ::GetCurrentProcess();
@@ -550,7 +589,7 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
     return std::unexpected(
         cpu_query_status("GetSystemCpuSetInformation(size)", code));
   }
-  unsigned char storage_stack[4096];
+  alignas(SYSTEM_CPU_SET_INFORMATION) unsigned char storage_stack[4096];
   unsigned char* storage = nullptr;
   bool storage_heap = false;
   if (bytes <= sizeof(storage_stack)) {
@@ -597,7 +636,15 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
           for (WORD group = 0; group < set.Group; ++group) {
             flat += ::GetActiveProcessorCount(group);
           }
-          if (count < cap) dst[count] = flat;
+          if (count < cap) {
+            dst[count] = flat;
+            if (performance_ranks != nullptr) {
+              // Zero is the portable "unknown" sentinel, so shift Windows'
+              // native 0-based EfficiencyClass into a positive rank.
+              performance_ranks[count] =
+                  static_cast<unsigned>(set.EfficiencyClass) + 1u;
+            }
+          }
           ++count;
         }
       }
@@ -612,6 +659,7 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
   }
   return count;
 #elif HYLE_OS_LINUX
+  (void)performance_ranks;
   auto copy_set = [dst, cap](const cpu_set_t* set, std::size_t bytes,
                              std::size_t bits) noexcept
       -> Result<std::size_t> {
@@ -668,6 +716,7 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
   return std::unexpected(Status::OutOfRange(
       "available CPU ids: kernel CPU id space exceeds supported limit"));
 #else
+  (void)performance_ranks;
   const std::size_t count = hardware_concurrency();
   const std::size_t written = count < cap ? count : cap;
   for (std::size_t i = 0; i < written; ++i) {
@@ -681,48 +730,10 @@ void fill_cpu_performance_ranks(const unsigned* ids, std::size_t count,
                                 unsigned* ranks) noexcept {
   std::memset(ranks, 0, count * sizeof(*ranks));
 #if HYLE_OS_WINDOWS
-  const std::size_t system_count = hardware_concurrency();
-  unsigned rank_stack[256]{};
-  unsigned* rank_by_id = system_count <= 256
-                             ? rank_stack
-                             : new (std::nothrow) unsigned[system_count]{};
-  if (rank_by_id == nullptr) return;
-
-  DWORD bytes = 0;
-  (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
-                                     ::GetCurrentProcess(), 0);
-  unsigned char storage_stack[4096];
-  unsigned char* storage = bytes <= sizeof(storage_stack)
-                               ? storage_stack
-                               : new (std::nothrow) unsigned char[bytes];
-  if (bytes != 0 && storage != nullptr &&
-      ::GetSystemCpuSetInformation(
-          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
-          &bytes, ::GetCurrentProcess(), 0)) {
-    for (DWORD offset = 0; offset < bytes;) {
-      auto* info =
-          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
-      if (info->Size == 0 || info->Size > bytes - offset) break;
-      if (info->Type == CpuSetInformation) {
-        const auto& set = info->CpuSet;
-        unsigned flat = set.LogicalProcessorIndex;
-        for (WORD group = 0; group < set.Group; ++group) {
-          flat += ::GetActiveProcessorCount(group);
-        }
-        if (flat < system_count) {
-          // Zero is the portable "unknown" sentinel, so shift Windows' native
-          // 0-based EfficiencyClass into a positive monotonic rank.
-          rank_by_id[flat] = static_cast<unsigned>(set.EfficiencyClass) + 1u;
-        }
-      }
-      offset += info->Size;
-    }
-    for (std::size_t i = 0; i < count; ++i) {
-      if (ids[i] < system_count) ranks[i] = rank_by_id[ids[i]];
-    }
-  }
-  if (storage != storage_stack) delete[] storage;
-  if (rank_by_id != rank_stack) delete[] rank_by_id;
+  // Windows writes ranks while scanning the same CPU-set snapshot as ids.
+  // A second query here used to double the dominant native work and could
+  // classify a different process-affinity snapshot.
+  (void)ids;
 #elif HYLE_OS_LINUX
   for (std::size_t i = 0; i < count; ++i) {
     char path[96];
@@ -735,20 +746,343 @@ void fill_cpu_performance_ranks(const unsigned* ids, std::size_t count,
 #endif
 }
 
+void clear_cpu_location(CpuInfo& info) noexcept {
+  info.package_id = kUnknownCpuTopologyId;
+  info.die_id = kUnknownCpuTopologyId;
+  info.core_id = kUnknownCpuTopologyId;
+  info.smt_index = kUnknownCpuTopologyId;
+  info.smt_count = 0;
+  info.numa_node = kUnknownCpuTopologyId;
+  info.l2_cache_domain = kUnknownCpuTopologyId;
+  info.l3_cache_domain = kUnknownCpuTopologyId;
+}
+
+#if HYLE_OS_WINDOWS
+void fill_cpu_locations(CpuInfo* info, std::size_t count) noexcept {
+  for (std::size_t i = 0; i < count; ++i) clear_cpu_location(info[i]);
+  if (count == 0) return;
+
+  unsigned maximum_id = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    maximum_id = (std::max)(maximum_id, info[i].id);
+  }
+  const std::size_t lookup_count = static_cast<std::size_t>(maximum_id) + 1u;
+  CpuInfo* lookup_stack[256];
+  CpuInfo** lookup = lookup_count <= std::size(lookup_stack)
+                         ? lookup_stack
+                         : new (std::nothrow) CpuInfo*[lookup_count];
+  if (lookup == nullptr) return;
+  std::fill(lookup, lookup + lookup_count, nullptr);
+  for (std::size_t i = 0; i < count; ++i) lookup[info[i].id] = &info[i];
+
+  const WORD group_count = ::GetActiveProcessorGroupCount();
+  unsigned group_begin_stack[65]{};
+  unsigned* group_begin = group_count < std::size(group_begin_stack)
+                              ? group_begin_stack
+                              : new (std::nothrow) unsigned[
+                                    static_cast<std::size_t>(group_count) + 1u];
+  if (group_begin == nullptr) {
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  for (WORD group = 0; group < group_count; ++group) {
+    group_begin[group + 1u] =
+        group_begin[group] + ::GetActiveProcessorCount(group);
+  }
+
+  auto for_each_mask = [&](const GROUP_AFFINITY& mask, auto&& fn) noexcept {
+    if (mask.Group >= group_count) return;
+    for (unsigned bit = 0; bit < sizeof(KAFFINITY) * 8u; ++bit) {
+      if ((mask.Mask & (KAFFINITY{1} << bit)) == 0) continue;
+      const std::size_t id =
+          static_cast<std::size_t>(group_begin[mask.Group]) + bit;
+      if (id < lookup_count && lookup[id] != nullptr) fn(*lookup[id]);
+    }
+  };
+
+  DWORD bytes = 0;
+  if (::GetLogicalProcessorInformationEx(RelationAll, nullptr, &bytes) ||
+      ::GetLastError() != ERROR_INSUFFICIENT_BUFFER || bytes == 0) {
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  auto* storage = new (std::nothrow) std::byte[bytes];
+  if (storage == nullptr) {
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  auto* first = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+      storage);
+  if (!::GetLogicalProcessorInformationEx(RelationAll, first, &bytes)) {
+    delete[] storage;
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+
+  unsigned package_id = 0;
+  unsigned die_id = 0;
+  unsigned core_id = 0;
+  unsigned l2_id = 0;
+  unsigned l3_id = 0;
+  constexpr DWORD kRelationHeader = static_cast<DWORD>(
+      offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
+  for (DWORD offset = 0; offset + kRelationHeader <= bytes;) {
+    auto* relation =
+        reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(storage +
+                                                                    offset);
+    if (relation->Size < kRelationHeader || relation->Size > bytes - offset) {
+      break;
+    }
+    if (relation->Relationship == RelationProcessorPackage ||
+        relation->Relationship == RelationProcessorDie ||
+        relation->Relationship == RelationProcessorCore) {
+      const auto& processor = relation->Processor;
+      const std::size_t processor_header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor) +
+          offsetof(PROCESSOR_RELATIONSHIP, GroupMask);
+      if (relation->Size < processor_header ||
+          processor.GroupCount >
+              (relation->Size - processor_header) / sizeof(GROUP_AFFINITY)) {
+        offset += relation->Size;
+        continue;
+      }
+      unsigned available_siblings = 0;
+      if (relation->Relationship == RelationProcessorCore) {
+        for (WORD group = 0; group < processor.GroupCount; ++group) {
+          for_each_mask(processor.GroupMask[group],
+                        [&](CpuInfo&) noexcept { ++available_siblings; });
+        }
+      }
+      unsigned sibling_index = 0;
+      for (WORD group = 0; group < processor.GroupCount; ++group) {
+        for_each_mask(processor.GroupMask[group], [&](CpuInfo& cpu) noexcept {
+              if (relation->Relationship == RelationProcessorPackage) {
+                cpu.package_id = package_id;
+              } else if (relation->Relationship == RelationProcessorDie) {
+                cpu.die_id = die_id;
+              } else {
+                cpu.core_id = core_id;
+                cpu.smt_index = sibling_index++;
+                cpu.smt_count = available_siblings;
+              }
+            });
+      }
+      if (relation->Relationship == RelationProcessorPackage) ++package_id;
+      else if (relation->Relationship == RelationProcessorDie) ++die_id;
+      else ++core_id;
+    } else if (relation->Relationship == RelationNumaNode ||
+               relation->Relationship == RelationNumaNodeEx) {
+      const auto& node = relation->NumaNode;
+      const WORD masks = node.GroupCount == 0 ? 1 : node.GroupCount;
+      const std::size_t node_header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, NumaNode) +
+          offsetof(NUMA_NODE_RELATIONSHIP, GroupMasks);
+      if (relation->Size < node_header ||
+          masks > (relation->Size - node_header) / sizeof(GROUP_AFFINITY)) {
+        offset += relation->Size;
+        continue;
+      }
+      for (WORD group = 0; group < masks; ++group) {
+        for_each_mask(node.GroupMasks[group], [&](CpuInfo& cpu) noexcept {
+            cpu.numa_node = node.NodeNumber;
+          });
+      }
+    } else if (relation->Relationship == RelationCache &&
+               (relation->Cache.Level == 2 || relation->Cache.Level == 3)) {
+      const bool l2 = relation->Cache.Level == 2;
+      const unsigned domain = l2 ? l2_id++ : l3_id++;
+      const WORD masks =
+          relation->Cache.GroupCount == 0 ? 1 : relation->Cache.GroupCount;
+      const std::size_t cache_header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
+          offsetof(CACHE_RELATIONSHIP, GroupMasks);
+      if (relation->Size < cache_header ||
+          masks > (relation->Size - cache_header) / sizeof(GROUP_AFFINITY)) {
+        offset += relation->Size;
+        continue;
+      }
+      for (WORD group = 0; group < masks; ++group) {
+        for_each_mask(relation->Cache.GroupMasks[group],
+                      [&](CpuInfo& cpu) noexcept {
+            (l2 ? cpu.l2_cache_domain : cpu.l3_cache_domain) = domain;
+          });
+      }
+    }
+    offset += relation->Size;
+  }
+  delete[] storage;
+  if (group_begin != group_begin_stack) delete[] group_begin;
+  if (lookup != lookup_stack) delete[] lookup;
+}
+#elif HYLE_OS_LINUX
+bool read_sysfs_first_unsigned(const char* path, unsigned& value) noexcept {
+  return read_sysfs_unsigned(path, value);
+}
+
+bool cpu_list_metrics(const char* path, const unsigned* available,
+                      std::size_t available_count, unsigned target,
+                      unsigned& first, unsigned& index,
+                      unsigned& count) noexcept {
+  std::FILE* file = std::fopen(path, "r");
+  if (file == nullptr) return false;
+  char text[4096];
+  const bool read = std::fgets(text, sizeof(text), file) != nullptr;
+  std::fclose(file);
+  if (!read) return false;
+  first = kUnknownCpuTopologyId;
+  index = kUnknownCpuTopologyId;
+  count = 0;
+  const char* cursor = text;
+  while (*cursor != '\0') {
+    char* end = nullptr;
+    const unsigned long begin = std::strtoul(cursor, &end, 10);
+    if (end == cursor || begin > (std::numeric_limits<unsigned>::max)()) {
+      return false;
+    }
+    unsigned long finish = begin;
+    cursor = end;
+    if (*cursor == '-') {
+      ++cursor;
+      finish = std::strtoul(cursor, &end, 10);
+      if (end == cursor || finish < begin ||
+          finish > (std::numeric_limits<unsigned>::max)()) {
+        return false;
+      }
+      cursor = end;
+    }
+    // Linux affinity enumeration is ascending. Intersect each reported range
+    // with the process-visible ids by binary search instead of rescanning all
+    // CPUs for every sibling range.
+    const auto* range_begin =
+        std::lower_bound(available, available + available_count,
+                         static_cast<unsigned>(begin));
+    const auto* range_end =
+        std::upper_bound(range_begin, available + available_count,
+                         static_cast<unsigned>(finish));
+    if (range_begin != range_end) {
+      if (first == kUnknownCpuTopologyId || *range_begin < first) {
+        first = *range_begin;
+      }
+      const auto* target_it =
+          std::lower_bound(range_begin, range_end, target);
+      if (target_it != range_end && *target_it == target) {
+        index = count + static_cast<unsigned>(target_it - range_begin);
+      }
+      count += static_cast<unsigned>(range_end - range_begin);
+    }
+    if (*cursor == ',') ++cursor;
+    else if (*cursor == '\n' || *cursor == '\r' || *cursor == '\0') break;
+    else return false;
+  }
+  return count != 0 && index != kUnknownCpuTopologyId;
+}
+
+bool linux_cpu_numa_node(unsigned cpu, unsigned& node) noexcept {
+  const auto nodes = numa_nodes();
+  if (nodes.size() == 1u) {
+    node = nodes.front();
+    return true;
+  }
+  char path[96];
+  std::snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%u", cpu);
+  DIR* directory = ::opendir(path);
+  if (directory == nullptr) return false;
+  bool found = false;
+  while (const dirent* entry = ::readdir(directory)) {
+    if (std::strncmp(entry->d_name, "node", 4) != 0) continue;
+    char* end = nullptr;
+    errno = 0;
+    const unsigned long parsed = std::strtoul(entry->d_name + 4, &end, 10);
+    if (errno != 0 || end == entry->d_name + 4 || *end != '\0' ||
+        parsed > (std::numeric_limits<unsigned>::max)()) {
+      continue;
+    }
+    const unsigned candidate = static_cast<unsigned>(parsed);
+    if (!numa_node_available(candidate)) continue;
+    node = candidate;
+    found = true;
+    break;
+  }
+  ::closedir(directory);
+  return found;
+}
+
+void fill_cpu_locations(CpuInfo* info, std::size_t count) noexcept {
+  unsigned ids_stack[256];
+  unsigned* ids = count <= std::size(ids_stack)
+                      ? ids_stack
+                      : new (std::nothrow) unsigned[count];
+  if (ids == nullptr) {
+    for (std::size_t i = 0; i < count; ++i) clear_cpu_location(info[i]);
+    return;
+  }
+  for (std::size_t i = 0; i < count; ++i) ids[i] = info[i].id;
+
+  for (std::size_t i = 0; i < count; ++i) {
+    CpuInfo& cpu = info[i];
+    clear_cpu_location(cpu);
+    char path[160];
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/topology/physical_package_id",
+                  cpu.id);
+    (void)read_sysfs_unsigned(path, cpu.package_id);
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/topology/die_id", cpu.id);
+    (void)read_sysfs_unsigned(path, cpu.die_id);
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/topology/thread_siblings_list",
+                  cpu.id);
+    unsigned first = 0;
+    if (cpu_list_metrics(path, ids, count, cpu.id, first, cpu.smt_index,
+                         cpu.smt_count)) {
+      cpu.core_id = first;  // globally unique equivalence-class representative
+    }
+    (void)linux_cpu_numa_node(cpu.id, cpu.numa_node);
+    for (unsigned cache = 0; cache != 16; ++cache) {
+      unsigned level = 0;
+      std::snprintf(path, sizeof(path),
+                    "/sys/devices/system/cpu/cpu%u/cache/index%u/level", cpu.id,
+                    cache);
+      if (!read_sysfs_unsigned(path, level)) break;
+      if (level != 2 && level != 3) continue;
+      unsigned domain = 0;
+      std::snprintf(
+          path, sizeof(path),
+          "/sys/devices/system/cpu/cpu%u/cache/index%u/shared_cpu_list", cpu.id,
+          cache);
+      if (!read_sysfs_first_unsigned(path, domain)) continue;
+      if (level == 2) cpu.l2_cache_domain = domain;
+      else cpu.l3_cache_domain = domain;
+    }
+  }
+  if (ids != ids_stack) delete[] ids;
+}
+#else
+void fill_cpu_locations(CpuInfo* info, std::size_t count) noexcept {
+  for (std::size_t i = 0; i < count; ++i) clear_cpu_location(info[i]);
+}
+#endif
+
 Result<std::size_t> query_available_cpu_info(CpuInfo* dst,
                                              std::size_t cap) noexcept {
-  if (dst == nullptr) return query_available_cpu_ids(nullptr, 0);
+  if (dst == nullptr || cap == 0) {
+    return query_available_cpu_ids(nullptr, 0);
+  }
 
-  for (unsigned attempt = 0; attempt < 4; ++attempt) {
-    auto count_result = query_available_cpu_ids(nullptr, 0);
-    if (!count_result) return std::unexpected(std::move(count_result).error());
-    const std::size_t capacity = *count_result;
+  // A caller-provided buffer is already the bounded output workspace. Query
+  // the available set once, return the full count, and enrich only the prefix
+  // that fits. The former count/fill/retry layering took two independent
+  // affinity snapshots before doing any useful work.
+  std::size_t capacity = hardware_concurrency();
+  for (unsigned attempt = 0; attempt != 4; ++attempt) {
     if (capacity > (std::numeric_limits<std::size_t>::max() /
                     (2u * sizeof(unsigned)))) {
       return std::unexpected(
-          Status::OutOfRange("available CPU info count overflows storage"));
+          Status::OutOfRange("available CPU info capacity overflows storage"));
     }
-
     unsigned stack[512];
     unsigned* storage = capacity <= 256
                             ? stack
@@ -759,23 +1093,30 @@ Result<std::size_t> query_available_cpu_info(CpuInfo* dst,
     }
     unsigned* ids = storage;
     unsigned* ranks = storage + capacity;
+#if HYLE_OS_WINDOWS
+    std::memset(ranks, 0, capacity * sizeof(*ranks));
+    auto filled = query_available_cpu_ids(ids, capacity, ranks);
+#else
     auto filled = query_available_cpu_ids(ids, capacity);
+#endif
     if (!filled) {
       if (storage != stack) delete[] storage;
       return std::unexpected(std::move(filled).error());
     }
     if (*filled > capacity) {
+      capacity = *filled;
       if (storage != stack) delete[] storage;
-      continue;  // affinity expanded between the count and fill snapshots
+      continue;
     }
-
     const std::size_t count = *filled;
+#if !HYLE_OS_WINDOWS
     fill_cpu_performance_ranks(ids, count, ranks);
+#endif
     unsigned max_rank = 0;
     for (std::size_t i = 0; i < count; ++i) {
       if (ranks[i] > max_rank) max_rank = ranks[i];
     }
-    const std::size_t written = std::min(cap, count);
+    const std::size_t written = (std::min)(cap, count);
     for (std::size_t i = 0; i < written; ++i) {
       dst[i].id = ids[i];
       dst[i].performance_rank = ranks[i];
@@ -784,125 +1125,252 @@ Result<std::size_t> query_available_cpu_info(CpuInfo* dst,
                         : (ranks[i] == max_rank ? CpuKind::kPerformance
                                                 : CpuKind::kEfficiency);
     }
+    fill_cpu_locations(dst, written);
     if (storage != stack) delete[] storage;
     return count;
   }
   return std::unexpected(Status::Unavailable(
-      "available CPU info changed repeatedly during snapshot"));
+      "available CPU set expanded repeatedly during snapshot"));
 }
 
-CpuTopology detect_topology() noexcept {
-  CpuTopology out;
-  out.system_logical_cpus = hardware_concurrency();
-  if (out.system_logical_cpus == 0) out.system_logical_cpus = 1;
-  out.performance_cpus = out.system_logical_cpus;
+unsigned count_distinct(const CpuInfo* info, std::size_t count,
+                        unsigned CpuInfo::*field, unsigned* table,
+                        std::size_t table_capacity) noexcept {
+  std::fill(table, table + table_capacity, kUnknownCpuTopologyId);
+  unsigned result = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    const unsigned value = info[i].*field;
+    if (value == kUnknownCpuTopologyId) continue;
+    std::size_t slot =
+        (static_cast<std::size_t>(value) * std::size_t{2654435761u}) &
+        (table_capacity - 1u);
+    while (table[slot] != kUnknownCpuTopologyId && table[slot] != value) {
+      slot = (slot + 1u) & (table_capacity - 1u);
+    }
+    if (table[slot] == kUnknownCpuTopologyId) {
+      table[slot] = value;
+      ++result;
+    }
+  }
+  return result;
+}
 
 #if HYLE_OS_WINDOWS
+Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
+  std::size_t capacity = hardware_concurrency();
+  unsigned stack[512];
+  unsigned* storage = nullptr;
+  Result<std::size_t> filled = std::unexpected(
+      Status::Unavailable("CPU topology query did not run"));
+  for (unsigned attempt = 0; attempt != 4; ++attempt) {
+    if (capacity > (std::numeric_limits<std::size_t>::max)() /
+                       (2u * sizeof(unsigned))) {
+      return std::unexpected(
+          Status::OutOfRange("available CPU count exceeds topology limits"));
+    }
+    storage = capacity <= 256
+                  ? stack
+                  : new (std::nothrow) unsigned[capacity * 2u];
+    if (storage == nullptr) {
+      return std::unexpected(
+          Status::ResourceExhausted("CPU topology allocation failed"));
+    }
+    unsigned* ranks = storage + capacity;
+    std::memset(ranks, 0, capacity * sizeof(*ranks));
+    filled = query_available_cpu_ids(storage, capacity, ranks);
+    if (!filled) {
+      if (storage != stack) delete[] storage;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled <= capacity) break;
+    if (storage != stack) delete[] storage;
+    storage = nullptr;
+    capacity = *filled;
+  }
+  if (storage == nullptr || *filled > capacity) {
+    if (storage != nullptr && storage != stack) delete[] storage;
+    return std::unexpected(Status::Unavailable(
+        "available CPU set expanded repeatedly during topology query"));
+  }
+
+  const std::size_t count = *filled;
+  const unsigned* ids = storage;
+  const unsigned* ranks = storage + capacity;
+  unsigned maximum_id = 0;
+  unsigned maximum_rank = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    maximum_id = (std::max)(maximum_id, ids[i]);
+    maximum_rank = (std::max)(maximum_rank, ranks[i]);
+  }
+  const std::size_t selected_count = static_cast<std::size_t>(maximum_id) + 1u;
+  unsigned char selected_stack[4096];
+  unsigned char* selected =
+      selected_count <= std::size(selected_stack)
+          ? selected_stack
+          : new (std::nothrow) unsigned char[selected_count];
+  if (selected == nullptr) {
+    if (storage != stack) delete[] storage;
+    return std::unexpected(Status::ResourceExhausted(
+        "CPU topology visibility allocation failed"));
+  }
+  std::memset(selected, 0, selected_count);
+
+  CpuTopology out;
+  out.logical_cpus = static_cast<unsigned>(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    selected[ids[i]] = 1;
+    if (ranks[i] == 0) continue;
+    if (ranks[i] == maximum_rank) ++out.performance_cpus;
+    else ++out.efficiency_cpus;
+  }
+  out.hybrid = out.performance_cpus != 0 && out.efficiency_cpus != 0;
+
+  const WORD group_count = ::GetActiveProcessorGroupCount();
+  if (group_count == 0 || group_count > 64) {
+    if (selected != selected_stack) delete[] selected;
+    if (storage != stack) delete[] storage;
+    return std::unexpected(
+        Status::Unavailable("active processor group count is invalid"));
+  }
+  unsigned group_begin[65]{};
+  for (WORD group = 0; group < group_count; ++group) {
+    group_begin[group + 1u] =
+        group_begin[group] + ::GetActiveProcessorCount(group);
+  }
+  auto intersects = [&](const GROUP_AFFINITY& mask) noexcept {
+    if (mask.Group >= group_count) return false;
+    for (unsigned bit = 0; bit < sizeof(KAFFINITY) * 8u; ++bit) {
+      if ((mask.Mask & (KAFFINITY{1} << bit)) == 0) continue;
+      const std::size_t id =
+          static_cast<std::size_t>(group_begin[mask.Group]) + bit;
+      if (id < selected_count && selected[id] != 0) return true;
+    }
+    return false;
+  };
+
   DWORD bytes = 0;
-  (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
-                                     ::GetCurrentProcess(), 0);
-  auto* storage = new (std::nothrow) unsigned char[bytes];
-  if (!storage || bytes == 0) {
-    delete[] storage;
-    return out;
+  const BOOL sized =
+      ::GetLogicalProcessorInformationEx(RelationAll, nullptr, &bytes);
+  const DWORD size_code = ::GetLastError();
+  if (sized) {
+    if (selected != selected_stack) delete[] selected;
+    if (storage != stack) delete[] storage;
+    return std::unexpected(Status::DataLoss(
+        "CPU topology sizing unexpectedly returned relation data"));
   }
-  if (!::GetSystemCpuSetInformation(
-          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
-          &bytes, ::GetCurrentProcess(), 0)) {
-    delete[] storage;
-    return out;
-  }
-  unsigned min_class = 255, max_class = 0, count = 0;
-  for (DWORD offset = 0; offset < bytes;) {
-    auto* info =
-        reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
-    if (info->Size == 0 || info->Size > bytes - offset) break;
-    if (info->Type == CpuSetInformation) {
-      const unsigned cls = info->CpuSet.EfficiencyClass;
-      if (cls < min_class) min_class = cls;
-      if (cls > max_class) max_class = cls;
-      ++count;
+  if (size_code != ERROR_INSUFFICIENT_BUFFER || bytes == 0) {
+    if (selected != selected_stack) delete[] selected;
+    if (storage != stack) delete[] storage;
+    if (size_code == ERROR_INSUFFICIENT_BUFFER) {
+      return std::unexpected(
+          Status::DataLoss("CPU topology relation size is zero"));
     }
-    offset += info->Size;
+    return std::unexpected(cpu_query_status(
+        "GetLogicalProcessorInformationEx(size)", size_code));
   }
-  if (count == out.system_logical_cpus && min_class < max_class) {
-    unsigned performance = 0;
-    for (DWORD offset = 0; offset < bytes;) {
-      auto* info =
-          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
-      if (info->Size == 0 || info->Size > bytes - offset) break;
-      if (info->Type == CpuSetInformation &&
-          info->CpuSet.EfficiencyClass == max_class) {
-        ++performance;
+  auto* relations = new (std::nothrow) std::byte[bytes];
+  if (relations == nullptr) {
+    if (selected != selected_stack) delete[] selected;
+    if (storage != stack) delete[] storage;
+    return std::unexpected(Status::ResourceExhausted(
+        "CPU topology relation allocation failed"));
+  }
+  auto* first = reinterpret_cast<
+      PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(relations);
+  if (!::GetLogicalProcessorInformationEx(RelationAll, first, &bytes)) {
+    const DWORD code = ::GetLastError();
+    delete[] relations;
+    if (selected != selected_stack) delete[] selected;
+    if (storage != stack) delete[] storage;
+    return std::unexpected(
+        cpu_query_status("GetLogicalProcessorInformationEx", code));
+  }
+
+  constexpr DWORD kRelationHeader = static_cast<DWORD>(
+      offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
+  for (DWORD offset = 0; offset + kRelationHeader <= bytes;) {
+    const auto* relation = reinterpret_cast<
+        const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(relations + offset);
+    if (relation->Size < kRelationHeader || relation->Size > bytes - offset) {
+      delete[] relations;
+      if (selected != selected_stack) delete[] selected;
+      if (storage != stack) delete[] storage;
+      return std::unexpected(
+          Status::DataLoss("CPU topology relation record is malformed"));
+    }
+    bool visible = false;
+    if (relation->Relationship == RelationProcessorCore ||
+        relation->Relationship == RelationProcessorPackage) {
+      const std::size_t header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor) +
+          offsetof(PROCESSOR_RELATIONSHIP, GroupMask);
+      const auto masks = relation->Processor.GroupCount;
+      if (relation->Size < header ||
+          masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        delete[] relations;
+        if (selected != selected_stack) delete[] selected;
+        if (storage != stack) delete[] storage;
+        return std::unexpected(
+            Status::DataLoss("CPU processor relation is malformed"));
       }
-      offset += info->Size;
-    }
-    if (performance != 0 && performance != count) {
-      out.performance_cpus = performance;
-      out.efficiency_cpus = count - performance;
-      out.hybrid = true;
-    }
-  }
-  delete[] storage;
-#elif HYLE_OS_MACOS
-  int levels = 0;
-  std::size_t levels_size = sizeof(levels);
-  if (::sysctlbyname("hw.nperflevels", &levels, &levels_size, nullptr, 0) ==
-          0 &&
-      levels > 1) {
-    unsigned performance = 0, efficiency = 0;
-    for (int level = 0; level < levels; ++level) {
-      char name[48];
-      std::snprintf(name, sizeof(name), "hw.perflevel%d.logicalcpu", level);
-      unsigned count = 0;
-      std::size_t size = sizeof(count);
-      if (::sysctlbyname(name, &count, &size, nullptr, 0) != 0) {
-        performance = efficiency = 0;
-        break;
+      for (WORD group = 0; group < masks; ++group) {
+        visible = visible || intersects(relation->Processor.GroupMask[group]);
       }
-      if (level == 0) performance += count;
-      else efficiency += count;
+      if (visible && relation->Relationship == RelationProcessorCore) {
+        ++out.physical_cores;
+      } else if (visible) {
+        ++out.packages;
+      }
+    } else if (relation->Relationship == RelationNumaNode ||
+               relation->Relationship == RelationNumaNodeEx) {
+      const WORD masks = relation->NumaNode.GroupCount == 0
+                             ? 1
+                             : relation->NumaNode.GroupCount;
+      const std::size_t header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, NumaNode) +
+          offsetof(NUMA_NODE_RELATIONSHIP, GroupMasks);
+      if (relation->Size < header ||
+          masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        delete[] relations;
+        if (selected != selected_stack) delete[] selected;
+        if (storage != stack) delete[] storage;
+        return std::unexpected(
+            Status::DataLoss("CPU NUMA relation is malformed"));
+      }
+      for (WORD group = 0; group < masks; ++group) {
+        visible = visible || intersects(relation->NumaNode.GroupMasks[group]);
+      }
+      if (visible) ++out.numa_nodes;
+    } else if (relation->Relationship == RelationCache &&
+               (relation->Cache.Level == 2 || relation->Cache.Level == 3)) {
+      const WORD masks = relation->Cache.GroupCount == 0
+                             ? 1
+                             : relation->Cache.GroupCount;
+      const std::size_t header =
+          offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
+          offsetof(CACHE_RELATIONSHIP, GroupMasks);
+      if (relation->Size < header ||
+          masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        delete[] relations;
+        if (selected != selected_stack) delete[] selected;
+        if (storage != stack) delete[] storage;
+        return std::unexpected(
+            Status::DataLoss("CPU cache relation is malformed"));
+      }
+      for (WORD group = 0; group < masks; ++group) {
+        visible = visible || intersects(relation->Cache.GroupMasks[group]);
+      }
+      if (visible && relation->Cache.Level == 2) ++out.l2_cache_domains;
+      else if (visible) ++out.l3_cache_domains;
     }
-    if (performance != 0 && efficiency != 0 &&
-        performance + efficiency == out.system_logical_cpus) {
-      out.performance_cpus = performance;
-      out.efficiency_cpus = efficiency;
-      out.hybrid = true;
-    }
+    offset += relation->Size;
   }
-#elif HYLE_OS_LINUX
-  // Linux exposes scheduler capacity on heterogeneous ARM systems. Only trust
-  // it when every process-visible logical CPU has a value and capacities differ.
-  unsigned capacities[4096];
-  unsigned found = 0, min_capacity = ~0u, max_capacity = 0;
-  for (unsigned cpu = 0; cpu < 4096 && found < out.system_logical_cpus; ++cpu) {
-    char path[96];
-    std::snprintf(path, sizeof(path),
-                  "/sys/devices/system/cpu/cpu%u/online", cpu);
-    unsigned online = 1;
-    if (read_sysfs_unsigned(path, online) && online == 0) continue;
-    std::snprintf(path, sizeof(path),
-                  "/sys/devices/system/cpu/cpu%u/cpu_capacity", cpu);
-    unsigned capacity = 0;
-    if (!read_sysfs_unsigned(path, capacity)) continue;
-    capacities[found++] = capacity;
-    if (capacity < min_capacity) min_capacity = capacity;
-    if (capacity > max_capacity) max_capacity = capacity;
-  }
-  if (found == out.system_logical_cpus && min_capacity < max_capacity) {
-    unsigned performance = 0;
-    for (unsigned i = 0; i < found; ++i) {
-      if (capacities[i] == max_capacity) ++performance;
-    }
-    if (performance != 0 && performance != found) {
-      out.performance_cpus = performance;
-      out.efficiency_cpus = found - performance;
-      out.hybrid = true;
-    }
-  }
-#endif
+  delete[] relations;
+  if (selected != selected_stack) delete[] selected;
+  if (storage != stack) delete[] storage;
   return out;
 }
+#endif
 
 }  // namespace
 
@@ -1004,9 +1472,123 @@ Result<std::size_t> available_cpu_count() noexcept {
   return query_available_cpu_ids(nullptr, 0);
 }
 
-const CpuTopology& cpu_topology() noexcept {
-  static const CpuTopology topology = detect_topology();
-  return topology;
+Result<CpuTopology> available_cpu_topology() noexcept {
+#if HYLE_OS_WINDOWS
+  // Aggregates can be counted directly from the visibility set and native
+  // relation records. Building a complete CpuInfo array and hashing its domain
+  // ids is necessary for the per-CPU API, but needless work for this value API.
+  return query_windows_available_cpu_topology();
+#else
+  CpuInfo stack[256];
+  CpuInfo* info = stack;
+  std::size_t capacity = std::size(stack);
+  auto filled = query_available_cpu_info(info, capacity);
+  if (!filled) {
+    return std::unexpected(std::move(filled).error());
+  }
+  if (*filled > capacity) {
+    capacity = *filled;
+    if (capacity > (std::numeric_limits<unsigned>::max)()) {
+      return std::unexpected(
+          Status::OutOfRange("available CPU count exceeds topology limits"));
+    }
+    info = new (std::nothrow) CpuInfo[capacity];
+    if (info == nullptr) {
+      return std::unexpected(
+          Status::ResourceExhausted("CPU topology allocation failed"));
+    }
+    filled = query_available_cpu_info(info, capacity);
+    if (!filled) {
+      delete[] info;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled > capacity) {
+      delete[] info;
+      return std::unexpected(Status::Unavailable(
+          "available CPU set expanded during topology query"));
+    }
+  }
+  const std::size_t count = *filled;
+  std::size_t distinct_capacity = 1;
+  const std::size_t needed_capacity = count * 2u;
+  while (distinct_capacity < needed_capacity) {
+    if (distinct_capacity >
+        (std::numeric_limits<std::size_t>::max)() / 2u) {
+      if (info != stack) delete[] info;
+      return std::unexpected(
+          Status::OutOfRange("CPU topology set capacity overflows"));
+    }
+    distinct_capacity *= 2u;
+  }
+  unsigned distinct_stack[512];
+  unsigned* distinct = distinct_capacity <= std::size(distinct_stack)
+                           ? distinct_stack
+                           : new (std::nothrow) unsigned[distinct_capacity];
+  if (distinct == nullptr) {
+    if (info != stack) delete[] info;
+    return std::unexpected(
+        Status::ResourceExhausted("CPU topology set allocation failed"));
+  }
+  CpuTopology out;
+  out.logical_cpus = static_cast<unsigned>(count);
+  out.physical_cores = count_distinct(info, count, &CpuInfo::core_id,
+                                      distinct, distinct_capacity);
+  out.packages = count_distinct(info, count, &CpuInfo::package_id,
+                                distinct, distinct_capacity);
+  out.numa_nodes = count_distinct(info, count, &CpuInfo::numa_node,
+                                  distinct, distinct_capacity);
+  out.l2_cache_domains =
+      count_distinct(info, count, &CpuInfo::l2_cache_domain, distinct,
+                     distinct_capacity);
+  out.l3_cache_domains =
+      count_distinct(info, count, &CpuInfo::l3_cache_domain, distinct,
+                     distinct_capacity);
+  for (std::size_t i = 0; i < count; ++i) {
+    if (info[i].kind == CpuKind::kPerformance) ++out.performance_cpus;
+    else if (info[i].kind == CpuKind::kEfficiency) ++out.efficiency_cpus;
+  }
+  out.hybrid = out.performance_cpus != 0 && out.efficiency_cpus != 0;
+  if (distinct != distinct_stack) delete[] distinct;
+  if (info != stack) delete[] info;
+
+#if HYLE_OS_MACOS
+  // macOS reports trustworthy aggregate physical/performance counts but no
+  // public logical-id affinity map. Preserve those facts without inventing a
+  // CpuInfo mapping.
+  auto sysctl_unsigned = [](const char* name, unsigned& value) noexcept {
+    std::size_t size = sizeof(value);
+    return ::sysctlbyname(name, &value, &size, nullptr, 0) == 0;
+  };
+  unsigned physical = 0;
+  if (sysctl_unsigned("hw.physicalcpu", physical)) {
+    out.physical_cores = physical;
+  }
+  unsigned performance = 0, efficiency = 0;
+  if (sysctl_unsigned("hw.perflevel0.logicalcpu", performance) &&
+      sysctl_unsigned("hw.perflevel1.logicalcpu", efficiency) &&
+      performance + efficiency == out.logical_cpus) {
+    out.performance_cpus = performance;
+    out.efficiency_cpus = efficiency;
+    out.hybrid = performance != 0 && efficiency != 0;
+  }
+  out.packages = out.logical_cpus == 0 ? 0 : 1;
+  out.numa_nodes = out.logical_cpus == 0 ? 0 : 1;
+#endif
+  return out;
+#endif
+}
+
+unsigned hardware_concurrency() noexcept {
+#if HYLE_OS_WINDOWS
+  const DWORD all = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+  if (all != 0) return static_cast<unsigned>(all);
+  SYSTEM_INFO info;
+  ::GetSystemInfo(&info);
+  return info.dwNumberOfProcessors != 0 ? info.dwNumberOfProcessors : 1u;
+#else
+  const long count = ::sysconf(_SC_NPROCESSORS_ONLN);
+  return count > 0 ? static_cast<unsigned>(count) : 1u;
+#endif
 }
 
 Isa best_isa() noexcept {

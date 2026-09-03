@@ -6,17 +6,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
 #include <memory>
-#include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
-#include <vector>
-
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
 
 // oneTBB's concurrent_monitor is the production consumer of this private
 // binary semaphore. Qualification pins and links the exact oneTBB checkout;
@@ -24,19 +17,14 @@
 // condition variable or standard-library policy.
 #include "semaphore.h"
 
-#include "hyle/platform/mapped_file.h"
 #include "hyle/platform/wait.h"
 
 #include "../common/perf_process.h"
 
 namespace {
-namespace bip = boost::interprocess;
 namespace nb = ankerl::nanobench;
 
 constexpr std::size_t kBatch = 64;
-constexpr std::size_t kPage = 4096;
-constexpr std::size_t kPages = 4096;
-constexpr std::size_t kFileBytes = kPage * kPages;
 
 bool environment_present(const char* name) {
 #if defined(_WIN32)
@@ -153,71 +141,6 @@ struct HandoffPair {
   }
 };
 
-class ModelFile {
- public:
-  ModelFile() {
-    path_ = (std::filesystem::temp_directory_path() /
-             ("hyle_platform_consumer_" +
-              std::to_string(reinterpret_cast<std::uintptr_t>(this)) +
-              ".bin"))
-                .string();
-    std::ofstream output(path_, std::ios::binary | std::ios::trunc);
-    if (!output) std::abort();
-    std::vector<char> chunk(64u * 1024u);
-    for (std::size_t index = 0; index < chunk.size(); ++index) {
-      chunk[index] = static_cast<char>(index & 0x7f);
-    }
-    for (std::size_t written = 0; written < kFileBytes;
-         written += chunk.size()) {
-      output.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
-    }
-    if (!output) std::abort();
-    output.close();
-
-    offsets_.reserve(kBatch);
-    for (std::size_t index = 0; index < kBatch; ++index) {
-      offsets_.push_back(((index * 4051u) & (kPages - 1u)) * kPage +
-                         (index & 63u));
-      expected_ += offsets_.back() & 0x7fu;
-    }
-  }
-
-  ~ModelFile() {
-    std::error_code error;
-    std::filesystem::remove(path_, error);
-  }
-
-  std::uint64_t hyle_replay() const noexcept {
-    auto mapping = hyle::platform::MappedFile::open(path_.c_str());
-    if (!mapping || mapping->size() != kFileBytes) std::abort();
-    const auto bytes = mapping->bytes();
-    std::uint64_t sum = 0;
-    for (const std::size_t offset : offsets_) {
-      sum += std::to_integer<unsigned char>(bytes[offset]);
-    }
-    if (sum != expected_) std::abort();
-    nb::doNotOptimizeAway(sum);
-    return sum;
-  }
-
-  std::uint64_t boost_replay() const {
-    bip::file_mapping file(path_.c_str(), bip::read_only);
-    bip::mapped_region mapping(file, bip::read_only);
-    if (mapping.get_size() != kFileBytes) std::abort();
-    const auto* bytes = static_cast<const unsigned char*>(mapping.get_address());
-    std::uint64_t sum = 0;
-    for (const std::size_t offset : offsets_) sum += bytes[offset];
-    if (sum != expected_) std::abort();
-    nb::doNotOptimizeAway(sum);
-    return sum;
-  }
-
- private:
-  std::string path_;
-  std::vector<std::size_t> offsets_;
-  std::uint64_t expected_ = 0;
-};
-
 nb::Bench make_bench(const char* title) {
   nb::Bench bench;
   bench.title(title)
@@ -240,7 +163,7 @@ int main() {
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
   std::fprintf(
       stderr,
-      "# HYLE_PLATFORM_CONSUMER_RUN execution_order=%s allocation_order=%s "
+      "# HYLE_PLATFORM_THREAD_RUN execution_order=%s allocation_order=%s "
       "apple_qos=%s qos_ok=%s affinity_topology=%s caller_cpu=%s "
       "worker_cpu=%s affinity_ok=%s run_nonce=%s\n",
       peer_first ? "peer-first" : "candidate-first",
@@ -258,12 +181,4 @@ int main() {
            [&] { handoffs.hyle->run(); }, "oneTBB binary semaphore handoff N=64",
            [&] { handoffs.tbb->run(); });
 
-  ModelFile model;
-  (void)model.hyle_replay();
-  (void)model.boost_replay();
-  nb::Bench mapping = make_bench("model loader mapped probe aggregate N=64");
-  run_pair(mapping, peer_first, "HYLE MappedFile loader probe N=64",
-           [&] { (void)model.hyle_replay(); },
-           "Boost mapped_region loader probe N=64",
-           [&] { (void)model.boost_replay(); });
 }

@@ -1,4 +1,4 @@
-#include "hyle/platform/shared_memory.h"
+#include "hyle/mem/mapping.h"
 
 #include <limits>
 #include <string_view>
@@ -19,7 +19,7 @@
 #  include <unistd.h>
 #endif
 
-namespace hyle::platform {
+namespace hyle::mem {
 namespace {
 
 struct MappingHeader {
@@ -66,7 +66,7 @@ Result<std::size_t> normalize_name(const char* name, char* output,
 
 }  // namespace
 
-Result<SharedMemoryRegion> SharedMemoryRegion::create(
+Result<SharedMapping> SharedMapping::create(
     const char* name, std::size_t size) noexcept {
   if (size == 0) {
     return std::unexpected(
@@ -77,7 +77,7 @@ Result<SharedMemoryRegion> SharedMemoryRegion::create(
         Status::OutOfRange("shared mapping size overflows"));
   }
   const std::size_t native_size = size + sizeof(MappingHeader);
-  SharedMemoryRegion output;
+  SharedMapping output;
 #if HYLE_OS_WINDOWS
   wchar_t wide[260];
   HYLE_ASSIGN_OR_RETURN(auto parsed_name, wide_name(name, wide, 260));
@@ -155,8 +155,8 @@ Result<SharedMemoryRegion> SharedMemoryRegion::create(
   return output;
 }
 
-Result<SharedMemoryRegion> SharedMemoryRegion::open(const char* name) noexcept {
-  SharedMemoryRegion output;
+Result<SharedMapping> SharedMapping::open(const char* name) noexcept {
+  SharedMapping output;
 #if HYLE_OS_WINDOWS
   wchar_t wide[260];
   HYLE_ASSIGN_OR_RETURN(auto parsed_name, wide_name(name, wide, 260));
@@ -253,7 +253,7 @@ Result<SharedMemoryRegion> SharedMemoryRegion::open(const char* name) noexcept {
   return output;
 }
 
-Status SharedMemoryRegion::unlink(const char* name) noexcept {
+Status SharedMapping::unlink(const char* name) noexcept {
 #if HYLE_OS_WINDOWS
   if (name == nullptr || *name == '\0') {
     return Status::InvalidArgument("shared mapping name is empty");
@@ -271,15 +271,15 @@ Status SharedMemoryRegion::unlink(const char* name) noexcept {
 #endif
 }
 
-SharedMemoryRegion::SharedMemoryRegion(SharedMemoryRegion&& other) noexcept
+SharedMapping::SharedMapping(SharedMapping&& other) noexcept
     : mapping_(std::exchange(other.mapping_, nullptr)),
       data_(std::exchange(other.data_, nullptr)),
       size_(std::exchange(other.size_, 0)),
       mapping_size_(std::exchange(other.mapping_size_, 0)),
       handle_(std::exchange(other.handle_, -1)) {}
 
-SharedMemoryRegion& SharedMemoryRegion::operator=(
-    SharedMemoryRegion&& other) noexcept {
+SharedMapping& SharedMapping::operator=(
+    SharedMapping&& other) noexcept {
   if (this != &other) {
     reset().IgnoreError();
     mapping_ = std::exchange(other.mapping_, nullptr);
@@ -291,9 +291,9 @@ SharedMemoryRegion& SharedMemoryRegion::operator=(
   return *this;
 }
 
-SharedMemoryRegion::~SharedMemoryRegion() { reset().IgnoreError(); }
+SharedMapping::~SharedMapping() { reset().IgnoreError(); }
 
-Status SharedMemoryRegion::flush() noexcept {
+Status SharedMapping::flush() noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("shared mapping is invalid");
   }
@@ -309,7 +309,7 @@ Status SharedMemoryRegion::flush() noexcept {
   return Status::Ok();
 }
 
-Status SharedMemoryRegion::reset() noexcept {
+Status SharedMapping::reset() noexcept {
   if (!valid()) return Status::Ok();
   Status result = Status::Ok();
 #if HYLE_OS_WINDOWS
@@ -333,4 +333,4 @@ Status SharedMemoryRegion::reset() noexcept {
   return result;
 }
 
-}  // namespace hyle::platform
+}  // namespace hyle::mem

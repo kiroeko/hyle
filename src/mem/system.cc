@@ -1,5 +1,5 @@
 #include "hyle/mem/allocator.h"
-#include "hyle/mem/hugepage.h"
+#include "hyle/mem/hugepage_reservation.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/stats.h"
 

@@ -22,12 +22,12 @@ set_target_properties(hyle_platform_cpu_probe PROPERTIES
   FOLDER "hyle/modules/private")
 
 hyle_add_module(platform TESTING SOURCES
-  wait.cc thread.cc dynlib.cc fs.cc virtual_memory.cc numa.cc mapped_file.cc shared_memory.cc
+  dynlib.cc environment.cc host_memory.cc numa.cc random.cc virtual_memory.cc
   $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
 
-# WaitOnAddress / WakeByAddress* are exported from Synchronization.lib (API set).
 if(WIN32)
-  target_link_libraries(hyle_platform PRIVATE Synchronization)
+  # BCryptGenRandom is the host factor's cryptographic OS entropy mechanism.
+  target_link_libraries(hyle_platform PRIVATE bcrypt)
 endif()
 
 # dlopen/dlsym live in libdl on Linux (folded into libc on macOS/BSD).

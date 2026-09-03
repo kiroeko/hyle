@@ -1,9 +1,9 @@
-// Real-filesystem tests for platform::MappedFile (RO / RW / COW mapping).
+// Real-filesystem tests for mem::FileMapping (RO / RW / COW mapping).
 #if defined(_WIN32)
 #  define _CRT_SECURE_NO_WARNINGS 1
 #endif
 
-#include "hyle/platform/mapped_file.h"
+#include "hyle/mem/mapping.h"
 
 #include <gtest/gtest.h>
 
@@ -20,7 +20,7 @@
 #include "hyle/core/environment.h"
 #include "hyle/platform/virtual_memory.h"  // page_size()
 
-using hyle::platform::MappedFile;
+using hyle::mem::FileMapping;
 using hyle::platform::page_size;
 using hyle::Status;
 namespace fs = hyle::platform;
@@ -59,12 +59,12 @@ class MapTest : public ::testing::Test {
     return out;
   }
 
-  MappedFile open_map(MappedFile::Mode mode = MappedFile::Mode::kReadOnly,
+  FileMapping open_map(hyle::mem::MappingAccess mode = hyle::mem::MappingAccess::kReadOnly,
                       std::size_t offset = 0, std::size_t length = 0) {
-    auto result = MappedFile::open(path.c_str(), mode, offset, length);
+    auto result = FileMapping::open(path.c_str(), mode, offset, length);
     EXPECT_TRUE(result.has_value())
         << (result ? "" : result.error().message());
-    return result ? *std::move(result) : MappedFile{};
+    return result ? *std::move(result) : FileMapping{};
   }
 };
 
@@ -74,10 +74,10 @@ TEST_F(MapTest, ReadOnlyMapsContent) {
   const char* msg = "hello mapped world";
   write_file(msg, std::strlen(msg));
 
-  MappedFile m = open_map();
+  FileMapping m = open_map();
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), std::strlen(msg));
-  EXPECT_EQ(m.mode(), MappedFile::Mode::kReadOnly);
+  EXPECT_EQ(m.access(), hyle::mem::MappingAccess::kReadOnly);
   EXPECT_EQ(m.bytes().size(), std::strlen(msg));
   EXPECT_EQ(std::memcmp(m.bytes().data(), msg, std::strlen(msg)), 0);
   EXPECT_TRUE(m.writable_bytes().error().IsFailedPrecondition());
@@ -90,7 +90,7 @@ TEST_F(MapTest, ConsumesExistingFileHandle) {
   auto file = fs::open_file(path.c_str(), fs::kOpenRead);
   ASSERT_TRUE(file.has_value()) << file.error().message();
 
-  auto mapped = MappedFile::map(std::move(*file));
+  auto mapped = FileMapping::map(std::move(*file));
   ASSERT_TRUE(mapped.has_value()) << mapped.error().message();
   EXPECT_FALSE(file->valid());
   EXPECT_EQ(std::memcmp(mapped->bytes().data(), msg, std::strlen(msg)), 0);
@@ -100,8 +100,8 @@ TEST_F(MapTest, MapConsumesHandleOnFailure) {
   write_file("x", 1);
   auto file = fs::open_file(path.c_str(), fs::kOpenRead);
   ASSERT_TRUE(file.has_value()) << file.error().message();
-  auto mapped = MappedFile::map(
-      std::move(*file), static_cast<MappedFile::Mode>(255));
+  auto mapped = FileMapping::map(
+      std::move(*file), static_cast<hyle::mem::MappingAccess>(255));
   EXPECT_FALSE(mapped.has_value());
   EXPECT_TRUE(mapped.error().IsInvalidArgument());
   EXPECT_FALSE(file->valid());
@@ -110,7 +110,7 @@ TEST_F(MapTest, MapConsumesHandleOnFailure) {
 TEST_F(MapTest, OpenMappingDoesNotBlockAtomicRenameOrDelete) {
   const char* msg = "replaceable mapped content";
   write_file(msg, std::strlen(msg));
-  MappedFile m = open_map();
+  FileMapping m = open_map();
   ASSERT_TRUE(m.valid());
 
   const std::string renamed = path + ".renamed";
@@ -122,28 +122,33 @@ TEST_F(MapTest, OpenMappingDoesNotBlockAtomicRenameOrDelete) {
 TEST_F(MapTest, AdviceCoversWholeAndBoundedRanges) {
   std::string init(page_size() * 2, 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map();
+  FileMapping m = open_map();
 
-  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal).ok());
+  EXPECT_TRUE(m.advise(hyle::mem::MappingAdvice::kNormal).ok());
   EXPECT_TRUE(
-      m.advise(MappedFile::Advice::kNormal, 7, page_size()).ok());
-  Status sequential = m.advise(MappedFile::Advice::kSequential);
+      m.advise(hyle::mem::MappingAdvice::kNormal, 7, page_size()).ok());
+  Status sequential = m.advise(hyle::mem::MappingAdvice::kSequential);
   EXPECT_TRUE(sequential.ok() || sequential.IsUnimplemented());
   Status prefetch = m.prefetch();
   EXPECT_TRUE(prefetch.ok() || prefetch.IsUnimplemented());
-  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size(), 0).ok());
-  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size() + 1, 0)
+  EXPECT_TRUE(m.populate().ok());
+  EXPECT_TRUE(m.populate(7, page_size()).ok());
+  EXPECT_TRUE(m.populate(m.size(), 0).ok());
+  EXPECT_TRUE(m.populate(m.size() + 1, 0).IsOutOfRange());
+  EXPECT_TRUE(m.populate(m.size() - 1, 2).IsOutOfRange());
+  EXPECT_TRUE(m.advise(hyle::mem::MappingAdvice::kNormal, m.size(), 0).ok());
+  EXPECT_TRUE(m.advise(hyle::mem::MappingAdvice::kNormal, m.size() + 1, 0)
                   .IsOutOfRange());
-  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size() - 1, 2)
+  EXPECT_TRUE(m.advise(hyle::mem::MappingAdvice::kNormal, m.size() - 1, 2)
                   .IsOutOfRange());
-  EXPECT_TRUE(m.advise(static_cast<MappedFile::Advice>(255))
+  EXPECT_TRUE(m.advise(static_cast<hyle::mem::MappingAdvice>(255))
                   .IsInvalidArgument());
 }
 
 TEST_F(MapTest, PageLockGrowsMonotonicallyAndMovesWhenAvailable) {
   std::string init(page_size() * 3, 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map();
+  FileMapping m = open_map();
   EXPECT_FALSE(m.locked());
   EXPECT_EQ(m.locked_size(), 0u);
   EXPECT_TRUE(m.lock_prefix(0).ok());
@@ -174,11 +179,11 @@ TEST_F(MapTest, PageLockGrowsMonotonicallyAndMovesWhenAvailable) {
       }
     }
 
-    MappedFile::LockOptions different_mode;
-    different_mode.mode = MappedFile::LockMode::kOnFault;
+    hyle::mem::ResidencyOptions different_mode;
+    different_mode.mode = hyle::mem::ResidencyMode::kOnFault;
     EXPECT_TRUE(m.lock_prefix(1, different_mode).IsFailedPrecondition());
 
-    MappedFile moved = std::move(m);
+    FileMapping moved = std::move(m);
     EXPECT_FALSE(m.locked());
     EXPECT_EQ(m.locked_size(), 0u);
     EXPECT_TRUE(moved.locked());
@@ -199,11 +204,11 @@ TEST_F(MapTest, PageLockSupportsEveryAccessModeAndResetClearsState) {
   std::string init(page_size(), 'A');
   write_file(init.data(), init.size());
 
-  constexpr MappedFile::Mode kModes[] = {
-      MappedFile::Mode::kReadOnly, MappedFile::Mode::kReadWrite,
-      MappedFile::Mode::kCopyOnWrite};
-  for (MappedFile::Mode mode : kModes) {
-    MappedFile m = open_map(mode);
+  constexpr hyle::mem::MappingAccess kModes[] = {
+      hyle::mem::MappingAccess::kReadOnly, hyle::mem::MappingAccess::kReadWrite,
+      hyle::mem::MappingAccess::kCopyOnWrite};
+  for (hyle::mem::MappingAccess mode : kModes) {
+    FileMapping m = open_map(mode);
     Status locked = m.lock_prefix(1);
     if (locked.ok()) {
       EXPECT_TRUE(m.locked());
@@ -222,7 +227,7 @@ TEST_F(MapTest, PageLockSupportsEveryAccessModeAndResetClearsState) {
 TEST_F(MapTest, WholeLockRemainsTheNaturalConvenience) {
   std::string init(page_size(), 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map();
+  FileMapping m = open_map();
   Status locked = m.lock();
   if (locked.ok()) {
     EXPECT_EQ(m.locked_size(), m.size());
@@ -237,7 +242,7 @@ TEST_F(MapTest, PrefixLockAccountsForUnalignedMappingOffset) {
   const std::size_t pg = page_size();
   std::string init(pg * 2, 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map(MappedFile::Mode::kReadOnly, 100, pg);
+  FileMapping m = open_map(hyle::mem::MappingAccess::kReadOnly, 100, pg);
   Status locked = m.lock_prefix(1);
   if (locked.ok()) {
     EXPECT_GE(m.locked_size(), 1u);
@@ -252,9 +257,9 @@ TEST_F(MapTest, PrefixLockAccountsForUnalignedMappingOffset) {
 TEST_F(MapTest, OnFaultLockIsExplicitlySupportedOrRejected) {
   std::string init(page_size(), 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map();
-  MappedFile::LockOptions options;
-  options.mode = MappedFile::LockMode::kOnFault;
+  FileMapping m = open_map();
+  hyle::mem::ResidencyOptions options;
+  options.mode = hyle::mem::ResidencyMode::kOnFault;
   Status locked = m.lock_prefix(1, options);
 #if HYLE_OS_LINUX
   if (locked.ok()) {
@@ -276,9 +281,9 @@ TEST_F(MapTest, OnFaultLockIsExplicitlySupportedOrRejected) {
 TEST_F(MapTest, ExplicitLimitAdjustmentPreservesStateOnFailure) {
   std::string init(page_size() * 512, 'A');
   write_file(init.data(), init.size());
-  MappedFile m = open_map();
-  MappedFile::LockOptions options;
-  options.limit_policy = MappedFile::LockLimitPolicy::kAdjustIfNeeded;
+  FileMapping m = open_map();
+  hyle::mem::ResidencyOptions options;
+  options.limit_policy = hyle::mem::ResidencyLimitPolicy::kAdjustIfNeeded;
   Status locked = m.lock(options);
   if (locked.ok()) {
     EXPECT_EQ(m.locked_size(), m.size());
@@ -296,7 +301,7 @@ TEST_F(MapTest, ReadWriteFlushPersists) {
   write_file(init.data(), init.size());
 
   {
-    MappedFile m = open_map(MappedFile::Mode::kReadWrite);
+    FileMapping m = open_map(hyle::mem::MappingAccess::kReadWrite);
     ASSERT_TRUE(m.valid());
     ASSERT_EQ(m.size(), 64u);
     auto bytes = m.writable_bytes();
@@ -321,7 +326,7 @@ TEST_F(MapTest, CopyOnWriteDoesNotTouchFile) {
   write_file(init.data(), init.size());
 
   {
-    MappedFile m = open_map(MappedFile::Mode::kCopyOnWrite);
+    FileMapping m = open_map(hyle::mem::MappingAccess::kCopyOnWrite);
     ASSERT_TRUE(m.valid());
     auto bytes = m.writable_bytes();
     ASSERT_TRUE(bytes.has_value()) << bytes.error().message();
@@ -342,7 +347,7 @@ TEST_F(MapTest, LargeFileMultiPage) {
   for (std::size_t i = 0; i < n; ++i) init[i] = static_cast<char>(i & 0x7F);
   write_file(init.data(), n);
 
-  MappedFile m = open_map();
+  FileMapping m = open_map();
   ASSERT_TRUE(m.valid());
   ASSERT_EQ(m.size(), n);
   EXPECT_EQ(std::memcmp(m.data(), init.data(), n), 0);
@@ -355,7 +360,7 @@ TEST_F(MapTest, OffsetMapping) {
   write_file(init.data(), init.size());
 
   // Map starting at page 1 (page-aligned offset), to end.
-  MappedFile m = open_map(MappedFile::Mode::kReadOnly, pg, 0);
+  FileMapping m = open_map(hyle::mem::MappingAccess::kReadOnly, pg, 0);
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), pg);
   EXPECT_EQ(static_cast<const char*>(m.data())[0], 'M');
@@ -373,7 +378,7 @@ TEST_F(MapTest, UnalignedOffsetToEnd) {
   write_file(init.data(), n);
 
   const std::size_t off = 100;  // deliberately unaligned (not a page/granularity)
-  MappedFile m = open_map(MappedFile::Mode::kReadOnly, off, 0);
+  FileMapping m = open_map(hyle::mem::MappingAccess::kReadOnly, off, 0);
   ASSERT_TRUE(m.valid()) << "unaligned offset must map (rounded internally)";
   EXPECT_EQ(m.size(), n - off);  // length 0 => exactly [off, EOF)
   auto* p = static_cast<const unsigned char*>(m.data());
@@ -395,14 +400,14 @@ TEST_F(MapTest, UnalignedOffsetExplicitLength) {
 
   const std::size_t off = pg + 50;  // unaligned, and past the first page
   const std::size_t len = 200;      // within EOF (pg+250 < 2*pg)
-  MappedFile m = open_map(MappedFile::Mode::kReadOnly, off, len);
+  FileMapping m = open_map(hyle::mem::MappingAccess::kReadOnly, off, len);
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), len);
   EXPECT_EQ(std::memcmp(m.data(), init.data() + off, len), 0);
 }
 
 TEST_F(MapTest, InvalidPathIsInvalid) {
-  auto m = MappedFile::open((path + "_nope").c_str());
+  auto m = FileMapping::open((path + "_nope").c_str());
   ASSERT_FALSE(m.has_value());
   EXPECT_TRUE(m.error().IsNotFound());
 #if defined(_WIN32)
@@ -418,10 +423,10 @@ TEST_F(MapTest, InvalidPathIsInvalid) {
 }
 
 TEST_F(MapTest, InvalidArgumentsAndEmptyMappingReturnStatus) {
-  auto empty_path = MappedFile::open("");
-  auto null_path = MappedFile::open(nullptr);
-  auto invalid_mode = MappedFile::open(
-      path.c_str(), static_cast<MappedFile::Mode>(255));
+  auto empty_path = FileMapping::open("");
+  auto null_path = FileMapping::open(nullptr);
+  auto invalid_mode = FileMapping::open(
+      path.c_str(), static_cast<hyle::mem::MappingAccess>(255));
   ASSERT_FALSE(empty_path.has_value());
   ASSERT_FALSE(null_path.has_value());
   ASSERT_FALSE(invalid_mode.has_value());
@@ -430,28 +435,29 @@ TEST_F(MapTest, InvalidArgumentsAndEmptyMappingReturnStatus) {
   EXPECT_TRUE(invalid_mode.error().IsInvalidArgument());
 
   write_file("", 0);
-  auto empty_file = MappedFile::open(path.c_str());
+  auto empty_file = FileMapping::open(path.c_str());
   ASSERT_FALSE(empty_file.has_value());
   EXPECT_TRUE(empty_file.error().IsFailedPrecondition());
 
-  MappedFile unopened;
+  FileMapping unopened;
   EXPECT_TRUE(unopened.flush().IsFailedPrecondition());
-  EXPECT_TRUE(unopened.advise(MappedFile::Advice::kNormal)
+  EXPECT_TRUE(unopened.advise(hyle::mem::MappingAdvice::kNormal)
                   .IsFailedPrecondition());
+  EXPECT_TRUE(unopened.populate().IsFailedPrecondition());
   EXPECT_TRUE(unopened.lock().IsFailedPrecondition());
   EXPECT_TRUE(unopened.lock_prefix(1).IsFailedPrecondition());
   EXPECT_TRUE(unopened.unlock().IsFailedPrecondition());
 
   write_file("abcd", 4);
-  MappedFile mapped = open_map();
+  FileMapping mapped = open_map();
   EXPECT_TRUE(mapped.lock_prefix(mapped.size() + 1).IsOutOfRange());
-  MappedFile::LockOptions invalid_lock_mode;
-  invalid_lock_mode.mode = static_cast<MappedFile::LockMode>(255);
+  hyle::mem::ResidencyOptions invalid_lock_mode;
+  invalid_lock_mode.mode = static_cast<hyle::mem::ResidencyMode>(255);
   EXPECT_TRUE(
       mapped.lock_prefix(1, invalid_lock_mode).IsInvalidArgument());
-  MappedFile::LockOptions invalid_limit;
+  hyle::mem::ResidencyOptions invalid_limit;
   invalid_limit.limit_policy =
-      static_cast<MappedFile::LockLimitPolicy>(255);
+      static_cast<hyle::mem::ResidencyLimitPolicy>(255);
   EXPECT_TRUE(mapped.lock_prefix(1, invalid_limit).IsInvalidArgument());
 }
 
@@ -460,14 +466,14 @@ TEST_F(MapTest, LengthPastEofRejected) {
   write_file(init.data(), init.size());
   // An explicit length beyond the file must be refused (no silent file growth
   // on RW, no past-EOF SIGBUS region). File is 64 bytes; ask for 4096.
-  auto rw = MappedFile::open(path.c_str(), MappedFile::Mode::kReadWrite, 0,
+  auto rw = FileMapping::open(path.c_str(), hyle::mem::MappingAccess::kReadWrite, 0,
                              4096);
   ASSERT_FALSE(rw.has_value());
   EXPECT_TRUE(rw.error().IsOutOfRange());
   // The file must NOT have been grown by the rejected request.
   EXPECT_EQ(read_file().size(), 64u);
   // offset past EOF is likewise rejected.
-  auto ro = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, 4096, 0);
+  auto ro = FileMapping::open(path.c_str(), hyle::mem::MappingAccess::kReadOnly, 4096, 0);
   ASSERT_FALSE(ro.has_value());
   EXPECT_TRUE(ro.error().IsOutOfRange());
 }
@@ -476,17 +482,17 @@ TEST_F(MapTest, MoveTransfersMapping) {
   const char* msg = "movable";
   write_file(msg, std::strlen(msg));
 
-  MappedFile a = open_map();
+  FileMapping a = open_map();
   ASSERT_TRUE(a.valid());
   const void* addr = a.data();
-  MappedFile b = std::move(a);
+  FileMapping b = std::move(a);
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.data(), addr);
   EXPECT_EQ(std::memcmp(b.data(), msg, std::strlen(msg)), 0);
 }
 
-// Move-ASSIGN (operator=(MappedFile&&)) onto an already-live mapping: the target
+// Move-ASSIGN (operator=(FileMapping&&)) onto an already-live mapping: the target
 // must drop its previous mapping and take over the source's. Two distinct files
 // so the transfer of content is observable; the source is left !valid().
 TEST_F(MapTest, MoveAssignReleasesPrevious) {
@@ -503,10 +509,10 @@ TEST_F(MapTest, MoveAssignReleasesPrevious) {
     std::fclose(f);
   }
 
-  MappedFile src = open_map();
-  auto dst_result = MappedFile::open(dst_path.c_str());
+  FileMapping src = open_map();
+  auto dst_result = FileMapping::open(dst_path.c_str());
   ASSERT_TRUE(dst_result.has_value());
-  MappedFile dst = *std::move(dst_result);
+  FileMapping dst = *std::move(dst_result);
   ASSERT_TRUE(src.valid());
   ASSERT_TRUE(dst.valid());
   const void* src_addr = src.data();
@@ -541,9 +547,9 @@ TEST(MapDeathTest, ReadOnlyWriteFaults) {
   }
   EXPECT_DEATH(
       {
-        auto result = MappedFile::open(p.c_str(), MappedFile::Mode::kReadOnly);
+        auto result = FileMapping::open(p.c_str(), hyle::mem::MappingAccess::kReadOnly);
         if (!result) std::abort();
-        MappedFile m = *std::move(result);
+        FileMapping m = *std::move(result);
         volatile auto* d = static_cast<volatile char*>(
             const_cast<void*>(m.data()));
         d[0] = 'X';  // write to a PROT_READ / PAGE_READONLY mapping -> trap

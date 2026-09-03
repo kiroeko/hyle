@@ -5,6 +5,7 @@
 #endif
 
 #include "hyle/platform/fs.h"
+#include "hyle/platform/environment.h"
 #include "fs_internal.h"
 
 #include <gtest/gtest.h>
@@ -889,19 +890,10 @@ TEST(FsEnv, SetEmptyValueSemantics) {
   ASSERT_TRUE(set_env_var(kName, "").ok());
   char buf[8];
   auto n = get_env_var(kName, buf, sizeof(buf));
-#if defined(_WIN32)
-  // PLATFORM DIFFERENCE: Windows _wputenv_s(name,"") DELETES the variable
-  // (there is no "set to empty" -- an empty value IS removal), so a get reports
-  // unset.
-  ASSERT_FALSE(n.has_value());
-  EXPECT_TRUE(n.error().IsNotFound());
-#else
-  // POSIX setenv(name,"",1) keeps the variable present with a zero-length
-  // value, distinct from unset. This is the "set-but-empty vs unset"
-  // distinction.
+  // The public contract deliberately normalizes Windows and POSIX: a present
+  // empty value remains distinct from an unset variable.
   ASSERT_TRUE(n.has_value());
   EXPECT_EQ(*n, 0u);
-#endif
   EXPECT_TRUE(unset_env_var(kName).ok());
   EXPECT_TRUE(get_env_var(kName, buf, sizeof(buf)).error().IsNotFound());
 }

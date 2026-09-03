@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "hyle/container/spsc_queue.h"
-#include "hyle/platform/convenience.h"
+#include "hyle/platform/cpu_convenience.h"
 #include "hyle/platform/thread.h"
 
 namespace {

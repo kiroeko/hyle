@@ -53,12 +53,21 @@ model fragments；前者属于通用 mapping residency，后者不应破坏连�
 | `MEM3-VM05` | `MUST` | 受影响 mapping normal journey 与未触及 Mem-v2 P1 rows 回归 | 5% non-inferiority；setup/touch/reset、bytes 全计费 | `FIX` qualification/replay；无同合同则限于结构结论 |
 | `MEM3-VM06` | `MUST` | architecture/user/performance/sample/FFI 清洁度跟随唯一 owner | 无 runtime cost | `FIX` docs/scans/red team/LOC |
 
-上述六票是全部 FIX。API freeze 当前 `DRAFT`；实现后必须以自然 compile-only journey 冻结：path 或
-owned FileHandle 映射、显式 advise/populate/lock、named shared create/open、anonymous NUMA mapping、
-guarded stack。失败继续使用共享 Status/Result，控制操作外部同步，byte access 的 data race 仍由 caller
-负责。没有 C/Native FFI、stable C++ ABI 或兼容 alias。
+上述六票是全部 FIX。API freeze 为 `FROZEN`（2026-09-03）：path 或 owned FileHandle 映射、显式
+advise/populate/lock、named shared create/open、anonymous NUMA mapping 与 guarded stack 的自然 journeys
+和公开头自含均已通过。失败继续使用共享 Status/Result，控制操作外部同步，byte access 的 data race
+仍由 caller 负责。没有 C/Native FFI、stable C++ ABI 或兼容 alias；P1 不得反向改变 owner/layout。
 
 六问当前结论：mimalloc 是未触及 Mem factor 的既有 direct product dependency，`mem_vm` 自身只用
 OS/Platform mechanisms；推理 mapping 能力在 VM02 落地后完整，partial-hole 被自然分段 owner 路由；
-性能等待 API freeze；旧 FFI 扫描干净；新 factor 的 source/static/shared 尚待 candidate；C++ taxonomy
-保持 mem-v2，用户不需要知道 factor 名。`AUDITED` 只授权以上六票。
+性能已在 API freeze 后进入候选取证；旧 FFI 扫描干净；新 factor 的 source/static/shared 尚待
+candidate；C++ taxonomy 保持 mem-v2，用户不需要知道 factor 名。`AUDITED` 只授权以上六票。
+
+## 候选前实现检查点
+
+- VM01--VM04/VM06 已完成，VM05 进入候选取证；Platform storage owners 与旧 convenience 已删除，
+  Mem 类型直接持有 native state，`FileMapping::populate` 是唯一新增操作；
+- W1-WIN 精确 mem_vm 根下 Mem `223/223`、VM `60/60`；GCC 14 `-Werror` 同为 `223/223` 与 `60/60`，
+  两个 factor 的公开头自含通过；
+- 这不续签未触及 Mem-v2 families 的新性能冠军结论，也不提前宣称 `CANDIDATE`。M1-MAC、sanitizer、
+  source/static/shared、direct consumers、P1 与红队仍待执行。
