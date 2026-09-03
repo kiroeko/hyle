@@ -198,6 +198,11 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 `PRODUCT_TRIGGER` 结论，但这些是审计事实，不是第二套产品状态；是否 `CLOSED/BLOCKED/QUEUED`、能否
 进入产品修改，始终由中央 registry 与其所指 closure card 裁决。
 
+施工优先级也不是产品状态：owner 可以要求先对某个 `CLOSED` 产品执行不改产品的定向 replay；这不会
+把它伪装成 `QUEUED/SCOPED`，也不会授权跳过 `PRODUCT_TRIGGER -> REOPENED -> SCOPED`。某个较后组件
+已经进入 `SCOPED` 但尚未 `AUDITED` 时，也不能据此覆盖 owner 新指定的 replay 顺序；当前执行对象只在
+[`implementation/status`](../implementation/status.md)说明。
+
 SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 边界仍需
 独立裁决。Compute 与 Graph 保持 `QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理
 consumer slice 成立前不做产品重构，也不为旧 benchmark 形状优化。

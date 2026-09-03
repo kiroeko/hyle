@@ -93,5 +93,8 @@ ownership/target 删除，新 factor 的独立 `AUDITED` 卡授权新增 owner/A
 
 ## Current decision
 
-`SCOPED`。本卡尚未声明任何 capability `COMPLETE`、API `FROZEN`、candidate 或性能结论；下一步是只读
-审计并进入 `AUDITED`，不是修改产品代码。
+`SCOPED / OWNER-DEFERRED`。本卡尚未声明任何 capability `COMPLETE`、API `FROZEN`、candidate 或性能
+结论，也没有修改产品代码。2026-09-03 owner 纠正了施工优先级：先执行 Mem 全产品只读 replay，
+因此本卡停在已经合法进入的 `SCOPED`，不得继续 IO 审计或进入 `AUDITED`。这不是产品 blocker，也
+不伪造 `BLOCKED`；恢复条件是 owner 明确恢复 IO 顺序，并重新确认 baseline、reference identity 和预算
+是否仍有效。

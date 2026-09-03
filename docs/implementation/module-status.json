@@ -1157,7 +1157,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io-v1 SCOPED：冻结 scheduler-bound IO core 与四个协议/workflow 因子的 ownership、预算和停止规则；尚未修改产品或宣称能力/性能完成。"
+      "summary": "io-v1 SCOPED 但已按 owner 决定暂停：scope、baseline 与预算已冻结，尚未进入 AUDITED、未修改产品；当前先执行 Mem 全产品只读 replay，IO 只有在 owner 恢复该顺序后继续。"
     },
     {
       "module": "io_tls",

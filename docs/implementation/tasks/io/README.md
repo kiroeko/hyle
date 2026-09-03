@@ -1,9 +1,12 @@
 # IO 任务索引
 
-当前多轮导航见 [`io-v1-rebuild-epic.md`](io-v1-rebuild-epic.md)。模块状态只见
+已冻结但由 owner 暂停的多轮导航见 [`io-v1-rebuild-epic.md`](io-v1-rebuild-epic.md)。模块状态只见
 [`module-status.json`](../../module-status.json)；本目录其他记录是旧实现阶段的事实输入，不是当前授权。
 
-## 当前规划
+2026-09-03 当前执行优先级已移回 Mem 全产品只读 replay。IO v1 保持 `SCOPED`，但未进入
+`AUDITED`、未修改产品；本目录没有“继续 IO”的当前授权。
+
+## 已冻结、待恢复的规划
 
 - [`io-v1-rebuild-epic.md`](io-v1-rebuild-epic.md)：按 IO core、TLS、HTTP/1、HTTP/2、transfer 五个内部
   因子依次建立能力超集、自然 API、依赖和验证。

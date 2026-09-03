@@ -1,10 +1,12 @@
 # IO v1 重构 Epic：能力超集、因子化与逐轮收口
 
-<!-- PLANNING RECORD: CURRENT -->
+<!-- PLANNING RECORD: OWNER-DEFERRED -->
 
 > 本页是多轮施工导航，不是模块状态或产品修改授权。每个 factor 只有在
 > [`module-status.json`](../../module-status.json) 指向自己的 closure card 并依法进入相应阶段后才能
 > 修改；历史 `io-01` 至 `io-11` 记录只作输入，不能代替本轮审计。
+> 2026-09-03 owner 已把当前执行优先级移回 Mem 全产品 replay；IO core 仅保留已冻结的 `SCOPED`
+> 输入，尚未进入 `AUDITED`，本 epic 不再表示当前施工对象。
 
 ## 为什么拆成多轮
 
@@ -14,7 +16,7 @@ TLS/HTTP 可选依赖、底层 completion 性能和高层传输 workflow 相互�
 
 | Order | Machine ID | Capability boundary | Initial state |
 |---|---|---|---|
-| 1 | `io` | scheduler-bound IO core：internal completion backend、file、network、local IPC 与统一 cancellation/error seam | active coordinator/core round |
+| 1 | `io` | scheduler-bound IO core：internal completion backend、file、network、local IPC 与统一 cancellation/error seam | `SCOPED`；owner-deferred，未进入审计/实现 |
 | 2 | `io_tls` | TLS config、transport、session、deadline/cancellation | reserved `QUEUED` |
 | 3 | `io_http` | HTTP/1 framing、bounded bodies、client/server lifecycle | reserved `QUEUED` |
 | 4 | `io_http2` | HTTP/2 connection/stream/flow-control lifecycle | reserved `QUEUED` |
