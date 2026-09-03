@@ -28,7 +28,7 @@
 | container | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | NONE | [task](tasks/container/container-v3-node-table-reclamation.md) | container-v3 CLOSED：默认 retained 与显式 reclaiming table lifetime 完成；安全 hand-off、三平台正确性/sanitizer/三交付、依赖/文档/红队及 oneTBB natural-route P1 全部通过。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
 | sched | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/sched/sched-v3-root-participation.md) | sched-v3 CLOSED：same-Scheduler root participation 与 bounded sibling activation 消除了 v2 的 oneTBB batch gap；三平台 correctness/sanitizer、三种 C++ 交付、符号/FFI 清洁、直接消费者、文档/红队与 W1-WIN 5% P1 engineering gate 全部通过，Formal 保持 PENDING。 |
-| io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
+| io | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io-v1 SCOPED：冻结 scheduler-bound IO core 与四个协议/workflow 因子的 ownership、预算和停止规则；尚未修改产品或宣称能力/性能完成。 |
 | io_tls | QUEUED | — | — | — | — | IO/TLS 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | io_http | QUEUED | — | — | — | — | IO/HTTP 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | io_http2 | QUEUED | — | — | — | — | IO/HTTP2 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |

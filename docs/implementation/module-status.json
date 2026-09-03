@@ -1134,8 +1134,30 @@
     },
     {
       "module": "io",
-      "product_state": "QUEUED",
-      "summary": "现有实现只作输入；尚未启动 v1 收口。"
+      "product_state": "SCOPED",
+      "round_id": "io-v1-core-factorization",
+      "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
+      "scope": "Refactor the existing aggregate IO component into the scheduler-bound async IO core, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the aggregate no longer contains unaudited higher-layer code.",
+      "non_goals": "TLS, HTTP1, HTTP2 or transfer semantic closure in this card; changes to closed lower factors without a named trigger; Compute or Graph work; Native FFI or C API; benchmark-shaped entry points; cross-platform or all-operation SOTA claims.",
+      "baseline_commit": "2e4b0606b08f57ac15a3717f8b0e9be82db16123",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "io-v1 SCOPED：冻结 scheduler-bound IO core 与四个协议/workflow 因子的 ownership、预算和停止规则；尚未修改产品或宣称能力/性能完成。"
     },
     {
       "module": "io_tls",

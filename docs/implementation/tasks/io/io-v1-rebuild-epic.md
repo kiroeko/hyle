@@ -14,13 +14,15 @@ TLS/HTTP 可选依赖、底层 completion 性能和高层传输 workflow 相互�
 
 | Order | Machine ID | Capability boundary | Initial state |
 |---|---|---|---|
-| 1 | `io` | IO core：completion、file、network、local IPC 与统一 cancellation/error seam | existing `QUEUED` input |
+| 1 | `io` | scheduler-bound IO core：internal completion backend、file、network、local IPC 与统一 cancellation/error seam | active coordinator/core round |
 | 2 | `io_tls` | TLS config、transport、session、deadline/cancellation | reserved `QUEUED` |
 | 3 | `io_http` | HTTP/1 framing、bounded bodies、client/server lifecycle | reserved `QUEUED` |
 | 4 | `io_http2` | HTTP/2 connection/stream/flow-control lifecycle | reserved `QUEUED` |
 | 5 | `io_transfer` | resumable/bounded artifact and model transfer workflow | reserved `QUEUED` |
 
-现有 `io` ID 承担语义上的 `io_core`，避免无收益的状态身份改名。内部因子对 HYLE 开放精确依赖，对
+现有 `io` ID 承担语义上的 `io_core`，避免无收益的状态身份改名。当前 raw Proactor 是 backend-shaped
+内部候选，不再预设为独立公开因子；只有本轮审计证明真实独立 consumer 与自然完整合同才保留 expert
+公开路径。内部因子对 HYLE 开放精确依赖，对
 普通用户封闭；用户仍从同一个 `hyle::io` façade 获得已经实现并收口的完整产品根集合。
 
 ## 每轮必须回答的合同
@@ -34,7 +36,9 @@ TLS/HTTP 可选依赖、底层 completion 性能和高层传输 workflow 相互�
 4. correctness 与 source/static/shared 通过后，P0 查成本结构，P1/P2 才在同语义 normal workload 上
    测量；不能用协议层与裸机制、同步与异步、无取消与有取消做苹果/橘子比较；
 5. 回答第三方路径、推理能力、性能、FFI 清洁、三种交付、C++ 易用性/文档六问，并执行独立红队；
-6. 当前 factor `CLOSED` 后才推进下一项；底层 API/依赖变更只对已关闭直接消费者做有限回放。
+6. `io` 先完成全量 ownership/API 审计并保持活动；每次只再打开一个待提取 factor。新 owner 关闭后
+   才进入下一项，全部高层 ownership 移出后 `io` 才绑定 candidate；底层 API/依赖变更只对已关闭直接
+   消费者做有限回放。
 
 ## 当前 reference 与 capability 输入
 
@@ -61,9 +65,9 @@ alignment 与 socket 修复属于正确性/成本审计项。llama.cpp 的 remot
 | Milestone | Product work allowed | Exit condition |
 |---|---|---|
 | Build v11 identity registration | no | four reservations are unreachable and existing product builds unchanged |
-| `io` SCOPED → AUDITED | audit only until FIX freeze | IO-core capability/API/dependency ledger frozen |
-| `io` candidate → CLOSED/BLOCKED | bounded IO-core fixes | all applicable gates adjudicated |
-| TLS → HTTP → HTTP2 → transfer rounds | only current factor | each factor independently reaches terminal state |
+| `io` SCOPED → AUDITED | audit only until FIX freeze | core API/ownership/dependency ledger frozen; no candidate yet |
+| TLS → HTTP → HTTP2 → transfer rounds | `io` removal seam + only current new owner | each factor independently reaches terminal state; no duplicate owner |
+| `io` candidate → CLOSED/BLOCKED | bounded IO-core fixes after extraction | aggregate contains no unaudited higher-layer code and all applicable gates adjudicated |
 | IO façade integration | build/package projection only after roots close | source/static/shared product reports exact built features |
 
 Compute 与 Graph 保持 `QUEUED`，不会作为本 epic 的消费者验证或修改对象。任何一轮达到预算、需要新
