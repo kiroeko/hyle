@@ -2,12 +2,12 @@
 
 #include <atomic>
 #include <cstdint>
+#include <thread>
 #include <unordered_set>
 #include <vector>
 
 #include "hyle/container/work_stealing_deque.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform/thread.h"
 
 using hyle::container::WorkStealingDeque;
 using hyle::mem::AllocatorRef;
@@ -102,12 +102,11 @@ TEST(WorkStealingDeque, ConcurrentConservation) {
     std::vector<std::uint64_t>* got;
   };
   std::vector<ThiefArgs> targs(kThieves);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<std::thread> threads;
 
   // Owner: push 1..kN; when full, pop one (record it) to make room. Then drain.
-  auto owner_r = hyle::platform::Thread::spawn(
-      [](void* p) {
-        auto* a = static_cast<OwnerArgs*>(p);
+  threads.emplace_back(
+      [](OwnerArgs* a) {
         for (std::uint64_t id = 1; id <= kN; ++id) {
           while (!a->d->try_push_bottom(id)) {
             std::uint64_t value = 0;
@@ -126,14 +125,11 @@ TEST(WorkStealingDeque, ConcurrentConservation) {
         }
       },
       &oargs);
-  ASSERT_TRUE(owner_r.has_value());
-  threads.push_back(std::move(*owner_r));
 
   for (int i = 0; i < kThieves; ++i) {
     targs[i] = ThiefArgs{&d, &done_pushing, &thief_got[i]};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* p) {
-          auto* a = static_cast<ThiefArgs*>(p);
+    threads.emplace_back(
+        [](ThiefArgs* a) {
           for (;;) {
             std::uint64_t value = 0;
             const Status status = a->d->try_steal_top(value);
@@ -153,13 +149,11 @@ TEST(WorkStealingDeque, ConcurrentConservation) {
               }
               if (!more) break;
             } else {
-              hyle::platform::this_thread::yield();  // kRetry or transient empty
+              std::this_thread::yield();  // kRetry or transient empty
             }
           }
         },
         &targs[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (auto& t : threads) t.join();

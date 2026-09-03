@@ -3,13 +3,13 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <thread>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "hyle/container/sharded_queue.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform/thread.h"
 
 using hyle::container::ShardedQueue;
 using hyle::mem::AllocatorRef;
@@ -182,31 +182,27 @@ TEST(ShardedQueue, MpmcStressConservation) {
 
   std::vector<ProdArgs> pa(kProducers);
   std::vector<ConsArgs> ca(kConsumers);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<std::thread> threads;
 
   for (int i = 0; i < kProducers; ++i) {
     pa[i] = ProdArgs{&q, i, 1 + i * kPerProducer, &producers_done};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* a) {
-          auto* x = static_cast<ProdArgs*>(a);
+    threads.emplace_back(
+        [](ProdArgs* x) {
           for (int k = 0; k < kPerProducer; ++k) {
             std::uint64_t id = static_cast<std::uint64_t>(x->base + k);
             while (!x->q->try_push(static_cast<std::size_t>(x->hint), id))
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
           }
           x->done->fetch_add(1, std::memory_order_acq_rel);
         },
         &pa[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (int i = 0; i < kConsumers; ++i) {
     got[i].reserve(kTotal / kConsumers + kPerProducer);
     ca[i] = ConsArgs{&q, &got[i], &producers_done, i};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* a) {
-          auto* x = static_cast<ConsArgs*>(a);
+    threads.emplace_back(
+        [](ConsArgs* x) {
           std::size_t cursor = static_cast<std::size_t>(x->start_cursor);
           for (;;) {
             std::uint64_t v = 0;
@@ -216,13 +212,11 @@ TEST(ShardedQueue, MpmcStressConservation) {
                        kProducers) {
               break;  // all produced and every shard read empty -> drained
             } else {
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
             }
           }
         },
         &ca[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (auto& t : threads) t.join();

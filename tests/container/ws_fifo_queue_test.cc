@@ -2,12 +2,12 @@
 
 #include <atomic>
 #include <cstdint>
+#include <thread>
 #include <unordered_set>
 #include <vector>
 
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform/thread.h"
 
 using hyle::container::WsFifoQueue;
 using hyle::mem::AllocatorRef;
@@ -109,11 +109,10 @@ TEST(WsFifoQueue, ConcurrentConservation) {
     std::vector<std::uint64_t>* got;
   };
   std::vector<ThiefArgs> targs(kThieves);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<std::thread> threads;
 
-  auto owner_r = hyle::platform::Thread::spawn(
-      [](void* p) {
-        auto* a = static_cast<OwnerArgs*>(p);
+  threads.emplace_back(
+      [](OwnerArgs* a) {
         for (std::uint64_t id = 1; id <= kN; ++id) {
           while (!a->q->try_push_back(id)) {
             std::uint64_t value = 0;
@@ -132,14 +131,11 @@ TEST(WsFifoQueue, ConcurrentConservation) {
         }
       },
       &oargs);
-  ASSERT_TRUE(owner_r.has_value());
-  threads.push_back(std::move(*owner_r));
 
   for (int i = 0; i < kThieves; ++i) {
     targs[i] = ThiefArgs{&q, &done_pushing, &thief_got[i]};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* p) {
-          auto* a = static_cast<ThiefArgs*>(p);
+    threads.emplace_back(
+        [](ThiefArgs* a) {
           WsFifoQueue<std::uint64_t, AllocatorRef> local(system_allocator(), 256);
           // Record a successful steal: the directly-returned task + everything
           // it dumped into our local queue. (One helper so no return value is
@@ -166,13 +162,11 @@ TEST(WsFifoQueue, ConcurrentConservation) {
               }
               if (!more) break;
             } else {
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
             }
           }
         },
         &targs[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (auto& t : threads) t.join();

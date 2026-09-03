@@ -12,7 +12,6 @@
 
 #include "hyle/container/bounded_queue.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform/thread.h"
 
 using hyle::container::BoundedQueue;
 using hyle::mem::AllocatorRef;
@@ -247,31 +246,27 @@ TEST(BoundedQueue, MpmcStressConservation) {
 
   std::vector<ProdArgs> pa(kProducers);
   std::vector<ConsArgs> ca(kConsumers);
-  std::vector<hyle::platform::Thread> threads;
+  std::vector<std::thread> threads;
 
   for (int i = 0; i < kProducers; ++i) {
     // ids in [1 + i*kPerProducer, ...] -- disjoint, nonzero.
     pa[i] = ProdArgs{&q, 1 + i * kPerProducer, &produced_done};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* a) {
-          auto* x = static_cast<ProdArgs*>(a);
+    threads.emplace_back(
+        [](ProdArgs* x) {
           for (int k = 0; k < kPerProducer; ++k) {
             std::uint64_t id = static_cast<std::uint64_t>(x->base + k);
-            while (!x->q->try_push(id)) hyle::platform::this_thread::yield();
+            while (!x->q->try_push(id)) std::this_thread::yield();
           }
           x->done->fetch_add(1, std::memory_order_acq_rel);
         },
         &pa[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (int i = 0; i < kConsumers; ++i) {
     got[i].reserve(kTotal / kConsumers + kPerProducer);
     ca[i] = ConsArgs{&q, &got[i], &produced_done, &popped_count};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* a) {
-          auto* x = static_cast<ConsArgs*>(a);
+    threads.emplace_back(
+        [](ConsArgs* x) {
           for (;;) {
             std::uint64_t v = 0;
             if (x->q->try_pop(v)) {
@@ -282,13 +277,11 @@ TEST(BoundedQueue, MpmcStressConservation) {
                        x->popped->load(std::memory_order_acquire) >= kTotal) {
               break;  // all produced and all drained
             } else {
-              hyle::platform::this_thread::yield();
+              std::this_thread::yield();
             }
           }
         },
         &ca[i]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
   }
 
   for (auto& t : threads) t.join();
