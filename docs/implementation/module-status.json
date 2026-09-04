@@ -296,16 +296,14 @@
     },
     {
       "module": "obs",
-      "product_state": "CLOSED",
-      "round_id": "obs-v3",
-      "closure_task": "docs/implementation/tasks/obs/obs-v3-closure.md",
-      "scope": "Add consumer-driven call-site controls and an explicit request/slot-owned interval limiter for ordinary services and long-running inference progress; correct host-adapter hand-off guidance and replace synthetic multi-sink product provenance with one-adapter ordinary/inference P1 workloads.",
-      "non_goals": "Category/config trees, async logging services, file/network export, metrics/OTLP, owning records, copying every peer macro permutation, registry/quiescence redesign, 4/16-sink product claims, Native FFI/C API, stable C++ ABI, downstream engine implementation and Formal certification.",
-      "baseline_commit": "1028b056501c4fc07e45924c5da8b8222cd86414",
-      "candidate_commit": "21c07d15c4eac477c7b9a768b6475850af87f463",
-      "candidate_tree": "3db40042b12c25a5f9cf562d92de42caa077c057",
-      "end_commit": "f44dc174b3a1d69e0b1e1ea29f2fc8b95ae5d9b0",
-      "registry_anchor_commit": "f44dc174b3a1d69e0b1e1ea29f2fc8b95ae5d9b0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "OBS-STRUCTURED-EVENT-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
+      "round_id": "obs-v4-structured-event",
+      "closure_task": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
+      "scope": "Complete the admitted logger-neutral structured event schema, resolve typed Time interoperability and the now-available Mem-reclaim reuse decision, then requalify the affected C++ delivery and normal one-adapter performance contracts.",
+      "non_goals": "Metrics, asynchronous logging, queue/persistence/network exporters, category configuration trees, automatic task-context propagation, GPU/lock/async-flow tracing, crash reporting, Native FFI/C API, stable C++ ABI, Compute/Graph, adjacent-module closure, common instrumentation redesign and Formal certification.",
+      "baseline_commit": "067c3a5060390a8c592fdde38dd095f04fd68603",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -313,49 +311,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/obs/obs-v3-closure.md",
-      "loc": {
-        "snapshot_commit": "21c07d15c4eac477c7b9a768b6475850af87f463",
-        "repository_code": 311423,
-        "self_with_tests": 124788,
-        "self_without_tests": 83467,
-        "module_implementation": 1235
-      },
-      "known_limitations": [
-        "Engineering PASS covers only W1-WIN and the frozen ordinary one-adapter Abseil aggregate plus llama.cpp-shaped inference progress replay; it is not a cross-platform, all-operation, asynchronous-logger or Formal SOTA certificate.",
-        "Approximate count controls may lose or duplicate sequence numbers under contention; exact first-N and interval controls use contention-dependent CAS retry, and the target standard library owns the atomic progress guarantee.",
-        "Records, views and sink state remain synchronously borrowed; asynchronous ownership, category/config, persistence, network export, metrics/OTLP, durability and model policy belong to the host adapter or a future admitted module.",
-        "High independent-sink fan-out remains a capacity/contention diagnostic without a named normal consumer; Native FFI, a C API and stable C++ ABI are not promised.",
-        "The retained performance bundle is local replayable engineering evidence; Formal signing and long-term artifact custody remain separate work."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, borrowed-lifetime, concurrency, API-usability, delivery or missing-capability defect within the Obs boundary.",
-        "The public API or layout, registry/control algorithm, direct dependency, Tracy seam or source/static/shared delivery shape changes materially.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material regression beyond the frozen 5% margin on a normal consumer workload.",
-        "A real multi-independent-sink, asynchronous ownership, telemetry or Native FFI journey is formally admitted.",
-        "The performance contract, peer, consumer provenance, machine, instrument or retained bundle changes while the engineering claim must be renewed."
-      ],
-      "summary": "obs-v3 CLOSED：Abseil-shaped 普通日志控制与 llama.cpp-shaped 推理进度能力、三平台 correctness/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部通过；Formal 独立 PENDING。"
+      "summary": "obs-v4 REOPENED：全局能力因子化在 v3 后确认 structured event 的 typed value、stable event/category identity 与 correlation attributes 是 Obs 自有 MUST，并要求裁决 Time/Mem-reclaim 的真实依赖复用；其余已关闭能力不重做。"
     },
     {
       "module": "math",
