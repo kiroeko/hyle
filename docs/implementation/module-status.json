@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-09-04",
+  "updated_at": "2026-09-05",
   "modules": [
     {
       "module": "core",
@@ -426,6 +426,14 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
+      "freeze_confirmation": {
+        "id": "time-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "54ddb99fe43e4e45664f0150c4f1d84c95166b8e",
+        "reviewed_tree": "19b813b2b999390f6677ce211d8ef88015b35e1b",
+        "evidence": "docs/implementation/tasks/time/time-freeze-confirmation-2026-09-05.md"
+      },
       "loc": {
         "snapshot_commit": "680c9941d7af787067afae904a8ba886c14ba851",
         "repository_code": 424240,
@@ -488,6 +496,14 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
+      "freeze_confirmation": {
+        "id": "timer-queue-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "54ddb99fe43e4e45664f0150c4f1d84c95166b8e",
+        "reviewed_tree": "19b813b2b999390f6677ce211d8ef88015b35e1b",
+        "evidence": "docs/implementation/tasks/timer_queue/timer-queue-freeze-confirmation-2026-09-05.md"
+      },
       "loc": {
         "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
         "repository_code": 420468,

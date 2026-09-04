@@ -1,6 +1,6 @@
 # 当前模块施工状态
 
-> 更新时间：2026-09-04。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
+> 更新时间：2026-09-05。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
 > `python scripts/check-module-closure.py` 校验的人读投影。历史任务、architecture、user 或性能页中的
 > `SIGNED/AUDITED/CANDIDATE/PRODUCT LOCKED` 字样都不是当前模块状态。
 
