@@ -48,13 +48,13 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | Component | Public deps | Private deps |
 |---|---|---|
 | core | — | — |
+| error | core | — |
 | container_intrusive | core | — |
 | util_core | core | — |
-| error | core | — |
-| obs | core, error | — |
-| math | core | — |
 | time | core | — |
 | timer_queue | core, time, container_intrusive | — |
+| obs | core, error | — |
+| math | core | — |
 | platform | core, error | — |
 | platform_thread | core, error, time | platform |
 | platform_fs | core, error, time | platform |
