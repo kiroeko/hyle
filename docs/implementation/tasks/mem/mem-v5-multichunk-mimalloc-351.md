@@ -1,6 +1,7 @@
 # Mem v5：multi-chunk lifetime 与 mimalloc 3.5.1 定向完成
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Reopen evidence（`REOPENED`）
 
@@ -414,3 +415,22 @@ shipping mechanism，THP 由进程启动前环境选择，HYLE 不承诺 stable 
 
 无新 consumer 的 feature 愿望、API/LOC 数量、旧 task 命令、亚纳秒点值、Formal `PENDING` 或 blanket
 “再看一遍”不构成 reopen trigger。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：`MLP-01..04` 完成 resource-aware bounded multi-backing planner、公开检查与事务化
+实例化；`MIM-01..04` 完成 mimalloc 3.5.1 精确升级、THP/ISA baseline、端到端 sized-free 和三种交付
+复签。全部八个 `MUST` 均为 `COMPLETE`，没有 `PARTIAL + KEEP`、未运行的适用 gate 或 blocker。
+
+不可变 product candidate 保持
+`90ffc8499e199fb675c9c704c3cd7e1b2b91768d` / tree
+`d5385c47214ab71cb29f14f2b5e47aa48c8dae85`。它已经通过三平台正确性、WSL ASan/UBSan/TSan、macOS
+ASan、三平台 source/static/shared、精确依赖/vendor/archive/license、offline selected Mem、private symbols、
+only-selected C language、package/Container/mem_vm consumers、文档/易用性、有限红队、planner P0 和
+W1-WIN 5% P1 engineering non-inferiority。combined exact performance verdict 仍诚实保留
+`INCONCLUSIVE`，不会从工程非劣推导 blanket SOTA；Formal 独立保持 `PENDING`。
+
+本 terminal receipt 只增加历史证据，不改变 public API、算法、layout、依赖、normal workload 或产品
+tree。四项 LOC 绑定 candidate：全库 438,512；自实现含测试 111,779；自实现不含测试 70,651；Mem
+实现 7,638。后续 registry commit 只记录本 receipt commit 的完整 end/anchor identity 与相同限制、触发器，
+不再重开产品。
