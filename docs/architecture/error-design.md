@@ -308,10 +308,11 @@ error 签署必须同时具备：C++ correctness/三平台、同合同性能 non
 shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
 
 error-v4 的 `error-source-consumer-v1` 曾在 W1-WIN 对四个 source-primary workload 取得 5% P1
-engineering `PASS`；它只绑定旧 candidate/peer。error-v5 改变公开面后必须在新 candidate 上重放这
-四行，并增加 registry non-null borrow 的同合同 consumer；完成前 registry 保持 `PLANNED`，不得从旧
-证据宣称 v5 已通过。旧 fixed-backing shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变
-Status 的正常产品形状。
+engineering `PASS`；它只绑定旧 candidate/peer。error-v5 已在新 candidate 上重放这四行，并增加
+registry non-null borrow 的同合同 consumer；当前资格、原始证据身份与有限结论见
+[error 性能证据](../implementation/evidence/performance/benchmarks-error.md)。以后任何公开面、正常成本或
+消费者 provenance 的 material 改变都必须产生新的 qualification，不能从 v4/v5 旧证据外推。旧
+fixed-backing shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变 Status 的正常产品形状。
 
 签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
 性能落后，或发布形状改变而局部重开。
