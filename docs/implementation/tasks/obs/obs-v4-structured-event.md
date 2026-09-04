@@ -251,3 +251,28 @@ logger、owning record、category config、task context、metrics、crash、trac
   `b35d0c0d81980ba39bc59a8c70048962fd9625fe179632ca801ed34f310594f0`、
   `3d527efed8d509b18207b80a7c0f556f908a11fb4ee9f23ffde0df000b32eb34`；资格结果只在 immutable
   candidate 后填写。
+
+## Candidate
+
+- product commit / tree：`14c82a18f8f00b892479ae16abba4d8320d5915c` /
+  `7594a2f13271ba7956c3e685e24c6302a91f015b`；
+- 公开合同变化：`LogField` 与 raw timestamp/source 字段被新的 `LogValue`、`LogAttribute`、
+  category/event、correlation span、`LogSourceLocation` 与 optional `time::UnixTimestamp` 完整替换；项目
+  未发布，不保留旧别名。普通 format/message/macro、rate-control 与 trace 表面保持；
+- ownership / failure / concurrency：record 仍同步借用，string owner 左值可自然借用而 rvalue/raw pointer
+  被编译拒绝；invalid timestamp/wrong value getter fail-fast；sink registration 失败仍走 Error。registry
+  guard 只覆盖 snapshot-copy handoff，callback 继续由 per-sink active ref 排空；
+- 算法 / 常态成本：disabled/plain message 不增加 clock、heap、schema lookup 或 owning metadata；显式
+  structured record 支付固定 descriptor 与 adapter 实际遍历；registry read 从一个全局 RMW reader count
+  改为已冻结 `mem_reclaim` 的 thread-route guard；
+- 直接 consumer：package sample 已迁移到完整 typed event；当前 llama.cpp model-load 形状由新的
+  structured replay 消费；ordinary 与 registry replay 分别锁定当前 Abseil 与 pre-v4 HYLE；
+- candidate 前已通过：Windows/MSVC 19.50 与 WSL/GCC 14.2 selected shared Obs tests，各 3/3；WSL
+  ASan/UBSan/TSan 各 3/3；Windows/WSL source + relocated shared/static consumer；Windows/WSL trace ON
+  tests；component contract 与三份 benchmark semantic/contract validator；
+- harness / product identity：benchmark、consumer manifest、validator 与 build-v12 task 在同一提交中，
+  但性能 runner 会分别记录 contract/harness 与 product commit/tree；手工单次点值不进入裁决。
+
+`AUDITED -> CANDIDATE` 前的 registry 快照是
+`C:\hyle-scratch\obs-v4-structured-event\transitions\module-status-before-candidate.json`，SHA-256
+`F1B3426FDB56BEB9DEF1C805D4ED0A3A50B8CB474BDF1935A6D7AD947C6F356E`。

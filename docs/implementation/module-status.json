@@ -296,7 +296,7 @@
     },
     {
       "module": "obs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "OBS-STRUCTURED-EVENT-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
       "round_id": "obs-v4-structured-event",
@@ -304,6 +304,8 @@
       "scope": "Complete the admitted logger-neutral structured event schema, resolve typed Time interoperability and the now-available Mem-reclaim reuse decision, then requalify the affected C++ delivery and normal one-adapter performance contracts.",
       "non_goals": "Metrics, asynchronous logging, queue/persistence/network exporters, category configuration trees, automatic task-context propagation, GPU/lock/async-flow tracing, crash reporting, Native FFI/C API, stable C++ ABI, Compute/Graph, adjacent-module closure, common instrumentation redesign and Formal certification.",
       "baseline_commit": "067c3a5060390a8c592fdde38dd095f04fd68603",
+      "candidate_commit": "14c82a18f8f00b892479ae16abba4d8320d5915c",
+      "candidate_tree": "7594a2f13271ba7956c3e685e24c6302a91f015b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -321,7 +323,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v4 AUDITED：结构化 value/attribute/event/correlation/source/typed timestamp API 与十一项有限 FIX 已冻结；registry 短快照 epoch 复用新 FROZEN 的 mem_reclaim，per-sink callback quiescence 保持 Obs 所有。"
+      "summary": "obs-v4 CANDIDATE：typed borrowed event、Time/Error 组合、mem_reclaim snapshot guard、自然 C++ API、三份真实性能合同及拓扑构造修复已绑定 14c82a18/7594a2f1；正在对不可变候选执行三平台、三交付、P1 与红队验证。"
     },
     {
       "module": "math",
