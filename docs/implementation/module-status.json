@@ -296,7 +296,7 @@
     },
     {
       "module": "obs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "OBS-STRUCTURED-EVENT-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
       "round_id": "obs-v4-structured-event",
@@ -321,7 +321,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v4 REOPENED：全局能力因子化在 v3 后确认 structured event 的 typed value、stable event/category identity 与 correlation attributes 是 Obs 自有 MUST，并要求裁决 Time/Mem-reclaim 的真实依赖复用；其余已关闭能力不重做。"
+      "summary": "obs-v4 SCOPED：只补齐 logger-neutral structured event vocabulary，并有限裁决 Time 互操作与 Mem-reclaim 复用；旧 v3 logging control、sink lifecycle 和 Tracy seam 只做受影响回归。"
     },
     {
       "module": "math",
