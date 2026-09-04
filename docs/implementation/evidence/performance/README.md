@@ -26,4 +26,6 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 当前因子化收口报告：
 
 - [Platform v3](benchmarks-platform.md)：host、native thread/wait 与同步 filesystem；
+- [Mem v5](benchmarks-mem-v5.md)：bounded lifetime planner 的 P0 结构门与 mimalloc 3.5.1 host lifecycle
+  的同合同 P1 工程非劣门；
 - [Mem VM](benchmarks-mem-vm.md)：file mapping 与 progressive residency。

@@ -262,3 +262,155 @@ complexity/resource、dependency/config、normal workload 与停止条件已冻�
   verdict 在下方 verification manifest 记录；
 - harness/tool identity：planner P0 使用 candidate tests/structural assertions；host P1 继续使用冻结的
   `closure-perf-v1` 与 `isolated-heap-lifecycle-64`，不因候选结果改 workload、margin 或公共仪器。
+
+## Verification manifest
+
+所有结果都绑定 immutable candidate `90ffc8499e199fb675c9c704c3cd7e1b2b91768d` / tree
+`d5385c47214ab71cb29f14f2b5e47aa48c8dae85`。Windows 在 clean detached worktree
+`C:\public\project-hyle\_validation\mem-v5-candidate-90ffc849`；WSL 只把该 Windows candidate 作为只读
+source view，build 位于 `/root/hyle-builds`；macOS 从 origin 建立 exact detached native worktree
+`/Users/kiro/hyle-scratch/mem-v5-candidate-90ffc849`。远程/WSL artifact 没有回写产品源码。
+
+### Correctness risk matrix
+
+| Risk | Verdict | Evidence / limitation |
+|---|---|---|
+| normal | `PASS` | single/multiple resource/backing、inspect→instantiate→view、system/Heap/PMR allocation 与三平台 normal suite |
+| empty / zero | `PASS` | empty request/resource、zero-only dense resource、size-0 backing/provider identity |
+| capacity / boundary / overflow | `PASS` | exact max、alignment gap split、oversized alias/root、offset/extent/peak/index overflow 与 10k request stress |
+| OOM / system failure / invalid input | `PASS` | invalid provider/property/dense slot、smaller replay max、metadata failure 与 partial backing OOM 全回滚 |
+| move / destroy / lifetime | `PASS` | plan/buffer move/reset/destruction、plan 先销毁、provider property replay、borrow invalidation 合同 |
+| concurrency / reentrancy | `PASS` | planner/plan immutable query 合同；mimalloc cross-thread free 与 WSL TSan 19/19；mutation 仍由 caller 同步 |
+| cancellation / close | `NOT_APPLICABLE` | 本轮没有 async operation、queue、wait、cancel 或 close surface；不能虚构 cancellation test |
+| property / differential / stress | `PASS` | randomized non-overlap/property replay、10k requests、deterministic backing/local-index assertions |
+| ASan / UBSan / TSan | `PASS` | WSL GCC 14 ASan/UBSan/TSan 各 19/19；macOS AppleClang 21 ASan 19/19；TSan 使用项目规定 `setarch x86_64 -R` |
+| real ISA / backend | `PASS` | Windows x64、Linux x86-64、macOS arm64 的真实 host allocator/provider；device backend 明确不在本轮 |
+
+三平台结果：
+
+| Platform / toolchain | Release correctness | Sanitizer | selected delivery | Verdict |
+|---|---:|---:|---:|---|
+| W1-WIN / MSVC 19.50 | 19/19 | 由 WSL + macOS 覆盖本轮 sanitizer 风险 | source/shared/static 各 1/1 | `PASS` |
+| W1-WSL / GCC 14.2 | 19/19 | ASan 19/19、UBSan 19/19、TSan 19/19 | source/shared/static 各 1/1 | `PASS` |
+| M1-MAC / AppleClang 21 arm64 | 19/19 | ASan 19/19，平台不支持的 leak detector 以 `detect_leaks=0` 运行 | source/shared/static 各 1/1 | `PASS` |
+
+WSL 从 Windows Git worktree 跑全部 34 tests 时只有 maintenance-only `hyle_loc_report_test` 无法解释
+`.git` 文件中的 Windows path；冻结的 19 个产品/头文件测试全部通过。该跨 OS worktree 工具限制不被
+伪记为产品失败，也没有借本轮修改公共工具。candidate 的原生 Windows/macOS Git checkout 和最终
+canonical docs/closure checker 另行通过。
+
+### Build、dependency 与直接消费者
+
+- `cmake -P cmake/HyleDependencyVersions.cmake` 通过；本地 upstream Git object 再次证明锁定 commit/tree。
+  candidate 的 54 个 vendored paths 与 upstream `34fbd7e7...` 对应 blob **54/54 完全一致**；重新下载的
+  codeload archive SHA-256 为
+  `bff20d5423e63d751858dcc4f6ca2d346e16a84f8410f868bc3a298996c1ea1e`；
+- clean candidate 生成 complete-source archive，SHA-256 为
+  `9009fcbd8268256196cf5c1479ff1c6cd9ea906ee296ee7da94870cacbc1b52c`。解包后在
+  `FETCHCONTENT_FULLY_DISCONNECTED=ON`、空 shared source cache 下 selected Mem configure/build 通过；
+  `SOURCE-MANIFEST.txt` 绑定 candidate，HYLE、third-party notice 与 mimalloc license 均存在；
+- Windows fresh selected configure 证明 `HYLE_COMPONENTS=core` 的 C compiler record 为 0，而
+  `HYLE_COMPONENTS=mem` 恰启用一个 C compiler record；未选择 Mem 不因仓库含 mimalloc 而要求 C；
+- relocated static/shared 安装树均包含 `mimalloc-LICENSE` 与 third-party notice。Windows `dumpbin`、Linux
+  `nm -D`、macOS `nm -gU` 分别观察 130/161/152 行 HYLE Mem export，`mi_*` 动态 export 均为 0；static
+  package 的 `mimalloc_static` link-only archive 是设计内实现依赖，不是 HYLE FFI；
+- WSL clean selected Container 构建并运行 `hyle_container_test` 1/1 PASS；该测试直接覆盖默认
+  `SystemAllocator`、opt-in `AllocatorRef`、owned `Heap`、sized deallocation/reallocation 与 OOM injection。
+  三平台 19-test closure 同时编译运行 `mem_vm` public API surface，因此既不漏 consumer migration，也不
+  替 Container/Mem-VM 的整体产品状态重新签名。
+
+### P0 / P1 engineering performance
+
+planner 的 P0 结构门通过：indexed best-fit + active min-heap 保持 `O((N+E) log N)` build、`O(N)`
+scratch/result metadata、`O(1)` query/view；每个 non-zero alias group 不超过 provider maximum，zero-only
+resource 保留一个 zero backing，instantiate 的 provider call 数精确等于 planned backing 数。没有
+byte/page-proportional table、全局 bin-packing 搜索、常态锁/atomic/syscall 或 per-allocation HYLE metadata。
+
+W1-WIN P1 使用新增的窄合同
+[`mem-v5-host-allocation-v1.json`](../../../../bench/contracts/mem-v5-host-allocation-v1.json)；合同只采样
+`isolated-heap-lifecycle-64`，没有把 retained adapter 中的旧 Mem 行带入本轮 gate。八个 strata 的 median
+advantage ratio 为 1.0380--1.0710，全部 5% non-inferiority `PASS`；一行 exact `WIN`、七行因 CI 穿过
+5% decision boundary 为 `INCONCLUSIVE`，所以 combined exact 为 `INCONCLUSIVE`、combined NI 为
+`PASS`。A/A、5%/10% known delta、timer floor、placement、artifact/build/source/provenance validator
+全部 `PASS`；deep verify 为 `QUALIFIED`、environment `CURRENT`、paths verified、source `EXACT`。
+
+完整有限结论与八行数据见
+[`benchmarks-mem-v5.md`](../../evidence/performance/benchmarks-mem-v5.md)。关键身份：contract
+`b98c1edd2e7aeaf71b4b9138887d80f3a4d719dce5b941789aaf23d4bc3a0999`，manifest
+`bd45bff8097348cf4dff273b2f68df3db76a500d24852ea169e5873af0ffaf50`，summary
+`c7b8c8dae2c14746df45edd26f502195acfabaf966b8eb0a685e54c3d72f897c`。这只证明冻结 normal
+host lifecycle 的 5% 工程非劣，不宣称 blanket SOTA。
+
+### Aggregate gates
+
+| Aggregate gate | Verdict | Evidence / limitation |
+|---|---|---|
+| scope | `PASS` | 只有 `MLP-01..04`、`MIM-01..04`；candidate 后无产品/API/算法/workload 漂移 |
+| architecture | `PASS` | resource-aware static plan 与动态 Arena/Pool/CompositeBuffer 分档；Mem semantic owner、mimalloc mechanism owner 和 Build artifact owner 分离 |
+| correctness / sanitizer | `PASS` | 三平台 Release、WSL 三 sanitizer、macOS ASan 与风险矩阵 |
+| component / source / static / shared | `PASS` | 三平台三 delivery、完整源码离线 selected build、license、private symbols 与 C-language selection |
+| direct consumer | `PASS` | package Mem、Container allocator 1/1、mem_vm API surface；不为未收口上层签整体结论 |
+| P0/P1 engineering performance | `PASS` | planner structural PASS；host lifecycle 8/8 NI PASS，combined exact 诚实保留 INCONCLUSIVE |
+| usability / docs | `PASS` | build→inspect→instantiate→view recipe、场景选择、owner/OOM/zero/alias/provider/THP/ISA 陷阱已对齐 architecture/guide/sample |
+| independent red team | `PASS` | 下节有限 hostile review；无未处置 medium-or-higher finding |
+
+## 独立红队
+
+- 审查者 / 日期 / 时间预算：Codex post-candidate hostile pass / 2026-09-04 / 30 分钟上限；
+- capability / contract / complexity：反查 frozen gap ledger、ggml multi-chunk shape、public API、10k stress、
+  index/size overflow 与 no-global-optimum 边界；
+- correctness / lifetime / concurrency：反查 alias chain、resource-local flattening、zero backing、partial OOM、
+  move/reset、sized-free 与 cross-thread allocator；
+- dependency / build / delivery：反查 54 blobs、archive/lock/license、C language selection、三平台 symbols、
+  source/static/shared/offline 和 direct consumers；
+- engineering performance validity：反查 P1 只含一个冻结 workload、相同 binary/owner/charging、双顺序/布局、
+  A/A/known delta/floor 和 5% margin。
+
+| 问题 | severity | Verdict | 证据 |
+|---|---|---|---|
+| retained benchmark adapter 仍编译 oneTBB，可能把无关行算进 v5 | medium | `DISPROVED` | 新合同只声明/采样一个 workload；summary 只有 `isolated-heap-lifecycle-64` |
+| static SDK 公开头声明 `mi_*` 是否构成 HYLE C ABI/vendor 泄漏 | medium | `DISPROVED` | 声明只在 `HYLE_STATIC` link-only seam；三平台 DSO 的 `mi_*` export 为 0，ordinary API 无 vendor type |
+| next-fit 不保证全局最少 backing | low | `ACCEPTED` | NP-hard global bin packing 已冻结为 non-goal；correctness/复杂度/API 从未承诺最优 packing |
+| WSL 全测试有一个 LOC 工具失败 | low | `ACCEPTED` | Windows worktree `.git` 路径的跨 OS 限制；19/19 产品门与 native checkout checker 独立通过 |
+| macOS ASan 关闭 leak detector | low | `ACCEPTED` | Apple sanitizer 不支持该选项；allocation owner/OOM/destruction 仍由 ASan、WSL sanitizers 与计数测试覆盖 |
+
+没有发现需要产品修复的 correctness/security/ownership、复杂度、API、dependency、delivery 或 P1 finding；
+因此 candidate identity 保持不变，不退回 `AUDITED`。
+
+### Candidate LOC
+
+`python scripts/loc-report.py --module mem --commit 90ffc8499e199fb675c9c704c3cd7e1b2b91768d
+--self-check --json` 由 cloc 2.08 从 immutable tree 复算并通过：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 438,512 |
+| 自实现包含测试 | 111,779 |
+| 自实现不包含测试 | 70,651 |
+| Mem 实现 | 7,638 |
+
+## Verification verdict
+
+全部适用 aggregate gate 为 `PASS`，八个冻结 `MUST` 均已完成，没有 `PARTIAL + KEEP`、未裁决工程门或
+blocker。P1 combined exact 胜负保持 `INCONCLUSIVE`，但 closure 要求的 5% non-inferiority 为八个 strata
+全部 `PASS`；这不会被改写成模块级 SOTA。当前可依法进入 `VERIFIED`，下一步只写 terminal receipt、
+限制与 registry anchor，不再改变 candidate product。
+
+## 接受限制与重开条件
+
+接受限制：planner 是已知 whole-graph lifetime 的 cold static plan，不做实时动态图、全局最优 bin packing、
+device policy、async completion 或 buffer usage/reset；provider 可以在等价实例上重放，但更大 maximum 不会
+自动重新合并冻结 plan。host P1 只覆盖 W1-WIN 的一个普通 64-item isolated-heap batch；跨平台计时、全部
+size/thread/NUMA、RSS、device latency、端到端 tokens/s 与 Formal certificate 未声明。mimalloc 仍是 private
+shipping mechanism，THP 由进程启动前环境选择，HYLE 不承诺 stable C++ ABI 或 Native FFI。
+
+只有下列新事实重开 Mem：
+
+1. 真实 consumer 复现 allocator/planner correctness、OOM、ownership、并发、NUMA、交付或易用性缺陷；
+2. llama.cpp/ggml 或另一具名 consumer 需要当前 Mem 能力账本没有 owner/routed path 的 memory semantic；
+3. mimalloc、直接 HYLE dependency、compiler、OS/provider/backend 改变实际语义、codegen、artifact 或 license；
+4. public API/layout、复杂度、常态 metadata、组件依赖、source/static/shared delivery 或正常 workload 改变；
+5. mature same-contract peer 证明更优复杂度档，或冻结 normal consumer 复现 material 性能回归/优势。
+
+无新 consumer 的 feature 愿望、API/LOC 数量、旧 task 命令、亚纳秒点值、Formal `PENDING` 或 blanket
+“再看一遍”不构成 reopen trigger。

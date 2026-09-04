@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-09-03",
+  "updated_at": "2026-09-04",
   "modules": [
     {
       "module": "core",
@@ -762,7 +762,7 @@
     },
     {
       "module": "mem",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
       "round_id": "mem-v5-multichunk-mimalloc-351",
@@ -778,18 +778,28 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PLANNED",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v5.md"
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "summary": "mem-v5 CANDIDATE：90ffc849/d5385c47 冻结 resource-aware multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free；进入三平台、sanitizer、三交付和冻结 P1 验证。"
+    "formal_performance": {
+      "state": "PENDING",
+      "instrument_profile": "formal-release-v1"
+    },
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "mem-v5 VERIFIED：90ffc849/d5385c47 的 resource-aware multi-backing、mimalloc v3.5.1、THP/ISA policy 与端到端 sized-free 已通过三平台正确性、sanitizer、三交付、离线/依赖/符号、直接消费者、文档/红队和 W1-WIN 5% P1 工程非劣门。"
     },
     {
       "module": "mem_vm",

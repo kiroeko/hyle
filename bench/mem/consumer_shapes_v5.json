@@ -1,0 +1,59 @@
+{
+  "schema": "hyle.mem.v5-host-consumer-shapes/v1",
+  "comparison_class": "SAME_CONTRACT",
+  "provenance_class": "PROVISIONAL_ARCHETYPE",
+  "material_margin_percent": 5,
+  "source_evidence": [
+    {
+      "role": "installed-mem-consumer",
+      "path": "samples/package/mem/cpp/main.cc",
+      "sha256": "0bc93989ac5bb5ee30e44d3a5ab0e3a8b61ba13b881130802280ea74e9572e20",
+      "fact": "The relocated Mem C++ journey injects an isolated Heap through AllocatorRef and exercises the same public owner used by the host-allocation aggregate."
+    }
+  ],
+  "journeys": [
+    {
+      "id": "isolated-heap-lifecycle-64",
+      "consumer": "an isolated subsystem heap injected through a runtime-erased allocator",
+      "work": "allocate, touch and reverse sized-free 64 deterministic 24 B to 3 KiB blocks with 16/32/64-byte alignment"
+    }
+  ],
+  "semantic_equivalence": [
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "work-result-granularity",
+      "verdict": "EQUAL",
+      "reason": "Both routes perform the same 64 successful allocations, endpoint touches and reverse frees."
+    },
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "ownership-lifetime-teardown",
+      "verdict": "ADAPTER_EQUALIZED",
+      "reason": "Each route owns one distinct heap from the same mimalloc 3.5.1 binary; owner construction, warmup and destruction are outside timing."
+    },
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "failure-safety-diagnostics",
+      "verdict": "EQUAL",
+      "reason": "The timed steady state contains successful allocations only; OOM behavior is covered by correctness tests."
+    },
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "thread-progress-synchronization",
+      "verdict": "EQUAL",
+      "reason": "The same owner thread executes both single-threaded heap lifecycles."
+    },
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "setup-steady-teardown-charging",
+      "verdict": "EQUAL",
+      "reason": "Owner creation and warmup are excluded; all allocation, touch and deallocation operations are charged."
+    },
+    {
+      "workload": "isolated-heap-lifecycle-64",
+      "dimension": "resource-delivery-codegen",
+      "verdict": "ADAPTER_EQUALIZED",
+      "reason": "Both routes are in one static artifact, use the same mimalloc 3.5.1 implementation and exact sized-free calls, with LTO disabled."
+    }
+  ]
+}
