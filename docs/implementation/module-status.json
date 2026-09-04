@@ -195,6 +195,14 @@
         "module_implementation": 967
       },
       "closure_evidence": "docs/implementation/tasks/util/util-core-v2-capability-completion.md",
+      "freeze_confirmation": {
+        "id": "util-core-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "bb79f6f4986bfb9ad26509b7a60e98d4a3d7e223",
+        "reviewed_tree": "a699943f3c17f7f518904e68dbb2ae0dff431b24",
+        "evidence": "docs/implementation/tasks/util/util-core-freeze-confirmation-2026-09-05.md"
+      },
       "known_limitations": [
         "The P1 certificate covers only the two frozen W1-WIN consumers, locked Boost and oneTBB identities and MSVC 19.50; cross-platform performance, sustained or high-contention locking, all util_core operations, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
         "FunctionRef is a non-null synchronous call-only borrow; storing, returning or asynchronously queueing it can dangle, so optional or owning callbacks require a semantically matching owner.",
