@@ -1,6 +1,7 @@
 # Obs v4 结构化事件与底层复用
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由旧 `obs-v3 CLOSED` 之后形成的新架构事实定向触发，不重做已经签署的调用点控制、同步 sink
 > 生命周期或 Tracy seam。当前唯一状态真相仍是
@@ -405,3 +406,58 @@ registry 点估计更快约 4.6–5.4%，但 exact CI 跨决策边界，只签 n
 `PENDING`。`CANDIDATE -> VERIFIED` 使用前态快照
 `C:\hyle-scratch\obs-v4-structured-event\transitions\module-status-before-verified.json`，SHA-256
 `BF40E4536B8D00F4EE2E2B0AFBA47E2A45A14587821C2F3168BFE5BC09FDACFB`。
+
+## 接受限制与重开条件
+
+接受限制：
+
+- P1 工程证据只覆盖 W1-WIN、冻结的 ordinary/structured/one-adapter-registry 三类正常 journey、锁定
+  peer/consumer/baseline 与 MSVC 19.50 source/static benchmark 形状；跨平台性能、所有事件组合、4/16 sink、
+  async backend、端到端 token latency、全面 SOTA 与 Formal 均未签署；
+- record、span、source、message 与 string value 都是同步借用。需要异步 queue、文件、网络或持久化时，
+  host adapter 必须在 callback 返回前复制；Obs 不提供 owning record、后台线程、durability receipt、
+  category configuration tree 或 metrics registry；
+- registry 固定 64 sink，emit 无锁但 add/remove/flush 是 O(S) 冷控制路径；callback 必须并发安全、`noexcept`、
+  同 OS thread 返回且不可 suspend。quiescent remove 可能等待其他 callback，callback 内只允许自注销；
+- default sink 是尽力 stderr/debugger 诊断，不报告 I/O durability；它为一行安全渲染拿专用 mutex并执行
+  syscall。正常高频应用应注册一个自己的 adapter，而不是把默认 sink 的 I/O 成本当 producer seam；
+- Trace ON 引入锁定 Tracy backend；其 listener/discovery 网络边界、动态名字 lifetime、static 多 image 限制
+  由 guide 明示。Trace OFF 宏才有参数不求值/零 backend 合同；
+- HYLE 不承诺稳定 C++ ABI 或 Native FFI。source/static/shared 都要求 matched headers/toolchain binary；
+  retained P1 bundle 是本机工程证据，不进入发布包，Formal 独立保持 `PENDING`。
+
+只有以下新事实才重开受影响能力族：
+
+1. 真实普通或推理 consumer 复现 correctness/security、borrow/teardown、callback quiescence、OOM/no-throw、
+   API 易用性或缺失能力缺陷；
+2. public record/sink/control/trace API、layout、registry algorithm、正常成本、直接依赖、selected header、
+   source/static/shared delivery 或 Tracy product identity 发生 material 改变；
+3. Mem-reclaim、Time、Error、Core、compiler/stdlib 或 OS 改变 Obs 实际 reclamation、timestamp、status、format、
+   atomic 或 terminal/debugger 语义；
+4. 续签工程性能声明时，冻结的 consumer provenance、peer/baseline、comparison class、machine、instrument、
+   compiler 或 retained evidence identity 发生 material 变化；
+5. mature same-contract peer 证明更优复杂度档，或正常 consumer/profile 复现超过 5% 的 material regression；
+6. metrics、async export 或 task-context factor 经自己的能力准入后证明必须改变 Obs 的公共 producer seam，
+   而不是只在 host adapter 外组合。
+
+新 benchmark/API/LOC 数、命名偏好、单次点值、address/order 摆动、5% 内等价差、Formal 待办或无新事实的
+“再看一遍”都不构成产品重开理由。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：十一项冻结 FIX 全部完成，准入 `MUST` 与 blocker 均为 0。不可变 candidate 在三个
+支持平台通过 correctness、最终 WSL ASan/UBSan/TSan、source/relocated shared/relocated static、Trace
+OFF/ON、内部复用、C++ 易用性/文档和独立红队；三份 W1-WIN P1 正常 workload 的全部 required strata
+通过预声明 5% non-inferiority。候选保持
+`14c82a18f8f00b892479ae16abba4d8320d5915c` /
+`7594a2f13271ba7956c3e685e24c6302a91f015b`，本 terminal receipt 不改变产品 identity。
+
+`python scripts/loc-report.py --module obs --commit
+14c82a18f8f00b892479ae16abba4d8320d5915c --self-check --json` 从不可变 candidate 复算并通过
+cloc 2.08 self-check：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 441,812 |
+| 自实现不含测试 | 70,870 |
+| Obs 实现 | 1,454 |
