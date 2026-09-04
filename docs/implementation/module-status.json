@@ -120,6 +120,14 @@
         "module_implementation": 1590
       },
       "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
+      "freeze_confirmation": {
+        "id": "container-intrusive-freeze-2026-09-04",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-04",
+        "reviewed_commit": "5f39c898b6e6680ec0ea8208ad27f125ee51552c",
+        "reviewed_tree": "4982a0a87bdabd7ef6bdcaa99db3542d5d343b08",
+        "evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-freeze-confirmation-2026-09-04.md"
+      },
       "known_limitations": [
         "The P1 claim covers only four frozen N=4096 W1-WIN consumer replays, MSVC 19.50 and locked Boost or pre-v4 Sched peers; cross-platform timing, all operations or scales, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
         "All intrusive containers are caller-owned stable-address thread-compatible primitives; external owners synchronize mutation, traversal, reclamation and lifetime, while wrong-owner iterators, ranges or verified counts are program-contract violations.",
