@@ -124,11 +124,18 @@ Math 是否独立、哪些标量能力定义上不属于 SIMD，必须在第一�
 - private mechanism edge：实现使用但不泄漏给消费者；
 - build-only vendor edge：第三方源码、生成器或工具链资产；
 - consumer edge：谁提供了能力需求和正常 workload；
+- reuse/acceleration edge：本 factor 需要的机制由哪个既有 factor/标准/成熟依赖承载，哪些加速设施经
+  语义与成本比较后适用或明确不适用；
 - decision authority：同一运行时选择由谁唯一裁决。
 
 出现环时按顺序处理：先检查 owner 放错；再检查公开面是否泄漏机制类型；再寻找同时被双方需要且符合
 上述六项判据的更小因子；最后才考虑 internal seam。不得用 forward declaration、隐藏 include 或重复
 实现掩盖语义环。
+
+每个保留的 factor-local 机制还必须解释为什么不能复用已有低层能力；“当前没有依赖边”不是理由，因为
+依赖图本来就是本阶段的输出。如果候选设施会倒置依赖、引入循环、改变 ownership/失败语义、增加常态
+metadata/dynamic dispatch，或对 pointer-chasing/冷路径没有可用加速，则明确记录 `LOCAL/NOT_APPLICABLE`
+而不强行复用。
 
 最终实现顺序由新因子图的拓扑序导出，不沿用现有目录顺序。每个因子随后仍按“能力/API 冻结 →
 correctness/迁移 → candidate → 性能与交付”的模块方法施工。

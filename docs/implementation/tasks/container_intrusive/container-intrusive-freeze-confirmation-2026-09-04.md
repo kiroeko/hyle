@@ -73,6 +73,29 @@ lock、atomic、syscall、dynamic dispatch、常态 benchmark metadata、fast/sl
 Native FFI option 或隐藏 recoverable failure。Wrong owner/range/count 与失效 lifetime 是程序合同，模块没有
 需要 `Status/Result` 的运行时失败面。
 
+## 现有模块与加速设施复用裁决
+
+> 2026-09-05 按通用 closure 第 3 问增补；复核基线为
+> `59d8046b38d580081a716f166a496c4a13c5986d`，frozen candidate 到该提交的四个 product headers、模块
+> tests/benchmark 与专门 package sample 仍为 zero diff。本节不修改产品或替换原冻结身份。
+
+| Needed mechanism | Existing candidate | Verdict | Reason |
+|---|---|---|---|
+| hot-path compiler assumption | Core | `REUSE` | 全部 topology 直接使用 `HYLE_ASSUME`/Core compiler contract |
+| pointer-to-member owner recovery | Core | `LOCAL` | Core 没有标准 C++ 所缺少的 member inverse；实现留在唯一需要它的 factor-private helper，并对不支持 ABI 编译期 fail closed |
+| iterator、invoke、comparison、pointer traits | C++ standard library | `REUSE` | 复用标准 iterator/ranges 心智、`std::invoke` 与 comparator；没有自造 callable wrapper |
+| callback delivery | Util-core `FunctionRef` | `NOT_APPLICABLE` | algorithms 是可内联、保留具体 predicate/comparator 类型与约束的模板；类型擦除会增加依赖和间接调用，且没有存储 callback 的需求 |
+| allocation与 owning storage | Mem/Container | `NOT_APPLICABLE` | factor 的定义性任务就是 caller-owned、零分配 membership；引入 allocator 会改变语义和常态成本 |
+| recoverable error | Error | `NOT_APPLICABLE` | null/already-linked 有显式 try 路线；wrong owner/range/lifetime 是程序合同，不是运行时失败 |
+| atomic publication/ABA/reclamation | Mem-reclaim/Container/Sched | `BORROW/ROUTED` | 并发 owner 必须共同拥有同步与 retirement；普通 hook 不重复这套 protocol |
+| tree/hash/heap、base/fancy/offset policy | Boost.Intrusive | `BORROW/ROUTED` | 成熟 policy 路线完整，未出现两个真实 HYLE journey 证明需要复制 framework |
+| SIMD、CPU/topology/NUMA dispatch | SIMD/Platform | `NOT_APPLICABLE` | link surgery 是依赖地址的 pointer-chasing，比较器由用户定义；没有可跨任务向量化的数据布局或 runtime target 决策 |
+
+源码/include、中央闭包与现有 HYLE factor 反查没有发现重复 allocator、error、clock、CPU probe、wait、
+reclamation 或 dispatch。Factor-private member recovery 是 C++ pointer-to-member ABI 边界，Core 没有同义
+primitive；把它上移不会减少任何依赖。当前只依赖 Core 是语义/成本审计的结果，不是追求最少引用；没有
+遗漏的 material 加速设施或第二 runtime decision authority。该项 verdict 为 `PASS`。
+
 ## 质因数与构建裁决
 
 Container-intrusive 是当前内部依赖图中的**质因数 factor**。中央图声明

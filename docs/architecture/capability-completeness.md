@@ -56,6 +56,7 @@ owner。它不等于 HYLE 自己实现所有功能，也不等于与任一参考
 - zero/empty/min/max/overflow/OOM/system-failure 等边界；
 - ownership、borrow invalidation、线程安全、重入和进展保证；
 - 时间/空间复杂度，以及常态 allocation/copy/syscall/lock/metadata；
+- 可复用的现有 HYLE/标准库/compiler/OS/成熟依赖机制、加速设施适用性和唯一 decision authority；
 - source/static/shared 交付、可发现性、默认值和用户陷阱。
 
 不适用的维度必须说明原因。随后再做一次自底向上的 public-surface trace，把每个现有公开入口映射回
@@ -88,11 +89,16 @@ owner。它不等于 HYLE 自己实现所有功能，也不等于与任一参考
 2. 语义、精度、失败、ownership、lifetime 和 concurrency 合同明确；
 3. 常见边界不会静默改变结果、泄漏资源或要求未记录的调用顺序；
 4. 算法复杂度与成熟档位一致，默认路径没有无关成本；热点再接受真实 consumer/replay 性能门；
-5. 依赖方向和 source/static/shared 交付成立；
-6. correctness、用户指南和 negative space 能共同验证“支持什么、不支持什么”。
+5. 已有同合同且依赖方向合法的机制优先复用；保留本地实现或判定某项加速设施不适用时，有明确的
+   语义、ownership、复杂度、常态成本、codegen、平台或交付理由，且没有重复 runtime decision authority；
+6. 依赖方向和 source/static/shared 交付成立；
+7. correctness、用户指南和 negative space 能共同验证“支持什么、不支持什么”。
 
 标准库或成熟依赖已经给出更自然路线时，HYLE 文档应直接指向组合方式，不为“功能数量”再造包装。
 相反，若组合需要用户重复写易错的 overflow、lifetime、dispatch 或平台分支，这通常说明基础能力仍不完整。
+“尽量复用”也不是最大化 target/include 数量：最低层 factor、冷失败路径、pointer-chasing、用户 callback
+或不同 ownership/lifetime 合同可能没有可用加速路线。关键是逐项比较并留下可审计裁决，而不是默认手写，
+也不是为了形式统一制造依赖环、额外 metadata 或动态分派。
 
 ### 成熟依赖、适配边界与唯一决策权威
 

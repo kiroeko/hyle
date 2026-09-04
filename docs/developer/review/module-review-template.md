@@ -21,6 +21,7 @@
 - 真实 consumer task / normal workload：
 - 范围 / 非目标：
 - 直接依赖 / 直接消费者：
+- 待复用的现有 HYLE/standard/peer mechanisms 与待判定加速设施：
 - tier 与理由：`P0 / P1 / P2`
 - material margin / resource budget：
 - 总调查预算 / 性能预算：
@@ -77,7 +78,7 @@ lifecycle 必须记为 `PARTIAL`。
 P1/P2 计时只能在本节为 `FROZEN`、correctness 实现已绑定 candidate 后开始。benchmark 不得成为新增
 public 入口或常态 metadata 的需求来源。
 
-## Owner 六问直答
+## Owner 七问直答
 
 ### 1. 第三方产品路径
 
@@ -99,7 +100,19 @@ public 入口或常态 metadata 的需求来源。
 - 当前证据下是否存在未处置 `MUST`：`YES / NO / BLOCKED`
 - 结论边界：这里只回答已准入常用旅程，不承诺未来永不新增，也不按 ggml API 求并集。
 
-### 3. 拟真、公平性能
+### 3. 内部复用与加速设施
+
+| Needed mechanism / task | existing HYLE / standard / locked-peer candidate | actual route | semantic/cost/dependency equivalence | `REUSE/BORROW/LOCAL/NOT_APPLICABLE` | evidence / reason / owner |
+|---|---|---|---|---|---|
+
+- semantic duplicate / private hand-roll scan：
+- SIMD、allocator/pool、Container、reclamation、CPU/topology/NUMA、clock、wait/synchronization、hash/text
+  等设施适用性：
+- 单一 runtime decision authority / dispatch ownership：
+- 合法但未采用的候选及其具体语义、成本、codegen、平台、依赖或交付理由：
+- verdict：`PASS / FAIL / BLOCKED`
+
+### 4. 拟真、公平性能
 
 - tier / normal consumer task / delivery shape：
 - candidate / machine / instrument / peer / resource accounting / margin：
@@ -108,7 +121,7 @@ public 入口或常态 metadata 的需求来源。
 - 可以公开的有限 claim：
 - 明确禁止外推的 SOTA / 全平台 / 全操作 claim：
 
-### 4. 旧 C ABI / Native FFI 清洁度
+### 5. 旧 C ABI / Native FFI 清洁度
 
 - 当前 FFI policy / 是否有已准入 slice：
 - public C headers/schema、bridge sources、未装饰 C exports：
@@ -117,7 +130,7 @@ public 入口或常态 metadata 的需求来源。
 - shared C++ decorated exports 与允许的 symbol evidence：
 - verdict：`CLEAN / ADMITTED_FFI_PASS / FAIL / BLOCKED`
 
-### 5. Source / static / shared 构建与导入
+### 6. Source / static / shared 构建与导入
 
 | Journey | `PASS/FAIL/NOT_APPLICABLE/BLOCKED` | component/artifact/import evidence | relocation/runtime/known limit |
 |---|---|---|---|
@@ -130,7 +143,7 @@ public 入口或常态 metadata 的需求来源。
 - shared export/import / Windows staging 或 Unix loader lookup：
 - exact package discovery / relocation：
 
-### 6. C++ API 易用性与文档
+### 7. C++ API 易用性与文档
 
 | User journey | natural public route | ownership/lifetime/failure/concurrency | misuse/compile diagnostics | guide/example evidence | verdict |
 |---|---|---|---|---|---|
@@ -175,6 +188,7 @@ public 入口或常态 metadata 的需求来源。
 | correctness / sanitizer |  |  |  |
 | component / source / static / shared |  |  |  |
 | direct consumer |  |  |  |
+| existing-capability reuse / acceleration applicability |  |  |  |
 | P0/P1/P2 engineering performance |  |  |  |
 | usability / docs |  |  |  |
 | independent red team |  |  |  |
@@ -210,6 +224,7 @@ P1/P2 补充：
 - capability / contract / complexity：
 - correctness / lifetime / concurrency：
 - dependency / build / delivery：
+- existing-capability reuse / acceleration applicability / decision authority：
 - engineering performance validity：
 - comparison class / semantic-equivalence validity：
 

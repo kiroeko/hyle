@@ -51,6 +51,27 @@ unload、OOM/no-throw、截断与传播宏陷阱都在 [`user/error`](../../../u
 benchmark/fast-vs-slow seam、常态 benchmark metadata、旧 C header/schema/bridge、managed sample 或 Native
 FFI option。
 
+## 现有模块与加速设施复用裁决
+
+> 2026-09-05 按通用 closure 第 3 问增补；复核基线为
+> `59d8046b38d580081a716f166a496c4a13c5986d`，Error candidate 到该提交的 product/test/benchmark/package
+> sample 仍为 zero diff。本节不修改产品或替换原冻结身份。
+
+| Needed mechanism | Existing candidate | Verdict | Reason |
+|---|---|---|---|
+| fail-fast、compiler attributes、macro hygiene | Core | `REUSE` | `HYLE_FATAL_ASSERT`、`HYLE_FORCE_INLINE` 与 preprocessor contract 已直接复用 |
+| value error / expected-shaped transport | Error / C++ standard library | `LOCAL + REUSE` | Error 是该语义 owner；`Result<T>` 复用 `std::expected`，format/char conversion 复用标准库，不再造通用 engine |
+| Status heap/COW/refcount | Mem、Util-core `RefCounted` | `LOCAL` | Mem/Platform 位于 Error 上层；Status 是 8B tagged value、可变长单块 allocation 与 specialized COW，不能套用 CRTP object ownership 而不改变 layout/teardown |
+| errno/Win32/WinSock/HRESULT 文本边界 | Platform | `LOCAL` | Platform 公开依赖 Error；这里的私有 OS call 是 bootstrap adapter，反向依赖会成环 |
+| UTF-8 验证与短文本复制 | SIMD/simdutf/Container | `NOT_APPLICABLE` | 只处于冷 native/custom-error translation；上层 SIMD/Container 会成环并扩大所有 Error consumer，`memcpy` 由 compiler/CRT 提供平台优化 |
+| clock、container、reclamation、scheduler | 相邻 HYLE 模块 | `NOT_APPLICABLE` | Error 的已准入任务不拥有这些机制或 runtime decision |
+
+源码/include 与中央闭包反查没有发现 Error 私造已有 clock、allocator、container、CPU/topology、wait、hash
+或 dispatch 机制。唯一看似可复用的 atomic refcount 与 UTF-8 路径都因产品表示、冷路径和依赖方向不等价；
+不存在遗漏的 material 加速设施或第二 runtime decision authority。该项 verdict 为 `PASS`。这里的“尽量
+复用”不要求最底层 Error 为提高引用数依赖其消费者；未来出现合法更低 factor 或 profile 证明冷路径成为
+P2 时，才按既有 dependency/performance trigger 局部重开。
+
 ## 质因数裁决
 
 Error 是当前内部依赖图中的**质因数 factor**。中央图声明

@@ -35,7 +35,7 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 | `SCOPED` | 决策合同冻结 | baseline、真实需求/缺陷、范围/非目标、P0/P1/P2、预算、机器与仪器 ID、适用门 |
 | `AUDITED` | 能力覆盖与差距已裁决 | capability-family map、现有 public-surface trace、覆盖状态与 capability/gap ledger；本轮 `FIX` 集冻结 |
 | `CANDIDATE` | 产品形状冻结 | product commit/tree、合同与复杂度变化、直接消费者迁移、候选测试 |
-| `VERIFIED` | 本轮适用工程门完成 | correctness、delivery、docs/usability、red-team 与分级工程性能 verdict |
+| `VERIFIED` | 本轮适用工程门完成 | correctness、delivery、docs/usability、内部复用/加速适用性、red-team 与分级工程性能 verdict |
 | `CLOSED` | 工程上应停止 | 无未决 blocker，限制与 reopen trigger 明确，结束 receipt、registry anchor 和四项 LOC 齐全 |
 | `BLOCKED` | 已停止但不能签 | 一个可点名的 blocker、owner、恢复所需的新证据；不得用“继续研究”代替 blocker |
 | `REOPENED` | 新事实击穿已关闭结论 | trigger ID、复现证据、受影响范围；随后只对受影响部分重新 `SCOPED` |
@@ -161,7 +161,8 @@ capability-family map 至少记录：
 
 ```text
 family | admitted user journeys | semantic variants | lifecycle/boundaries
-current route | COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE | missing edge
+current route | existing-facility/acceleration route
+COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE | missing edge
 ```
 
 覆盖状态描述“当前做到了多少”；施工动作描述“本轮怎么办”。两者不得合并。随后每项 ledger 至少记录：
@@ -186,14 +187,23 @@ verification | negative space
   消费者。
 - 一个能力跨边界时分别登记 semantic owner（语义决策）、artifact owner（代码/二进制所在）与
   delivery owner（组件图、安装和装载）；不得用“归某模块”掩盖这些边界不同的事实。
-- 同时扫描语法消费者、语义重复和直接依赖边，但只修本模块与必要直接边。
+- 同时扫描语法消费者、语义重复、直接依赖边，以及当前实现是否绕开了已有 HYLE/标准库/compiler/OS/
+  已锁定成熟依赖的同合同机制。每个本地机制必须裁决为 `REUSE/BORROW/LOCAL/NOT_APPLICABLE`；选择
+  `LOCAL` 必须留下 ownership、语义、复杂度、常态成本、依赖方向或交付方面的具体理由，不能以“更快”
+  或“更简单”代替证据。
+- 对 SIMD、allocator/pool、Container、reclamation、CPU/topology/NUMA、clock、wait/synchronization、
+  hash/text codec 等加速设施逐项检查适用性。存在某个设施不等于必须引用：不连续的 pointer chasing、
+  冷路径、用户定义 callback、依赖倒置/成环或更重常态 metadata 都可以形成
+  `NOT_APPLICABLE/LOCAL`，但必须写清原因。反之，同合同且依赖方向合法的已有设施不得重复实现。
+- 复用审计只修本模块与必要直接边；发现 owner/因子图错误时按相邻任务或全局 factorization 流程处理，
+  不在模块轮内顺手重排全图。
 - 优先检查错误复杂度档、额外 allocation/copy/syscall/lock、错误 ownership 和交付断边，再看常数。
 
 审计结束必须冻结有限 `FIX` 集，并留下 capability-family map、public-surface trace 和每个
 `PARTIAL/MISSING` 的明确去向。发现相邻模块问题时登记任务；只有 correctness/security 或当前构建
 阻断允许越界修复。
 
-### 3.1 Owner 逐模块六问
+### 3.1 Owner 逐模块七问
 
 每个模块在 `AUDITED` 和终止时都必须给 owner 留下一份直答，不得只给聚合绿色状态：
 
@@ -207,28 +217,36 @@ verification | negative space
    不把漂移的 `master`/`main` 当证据身份。每个差异必须落到本模块、具名相邻模块、推理引擎策略或
    `MISSING/BLOCKED`，不能以 API 数量对齐代替 owner 裁决。“没有可再加的”只允许解释为当前证据下
    没有未处置的 `MUST`；不承诺未来不存在新能力，也不要求复制 ggml 的 tensor/backend/模型策略。
-3. **性能：**该模块的正常用户任务属于哪一级，是否在冻结 candidate、相同语义/资源计费和真实交付
+3. **内部复用与加速设施：**模块需要的 error、allocation、container、reclamation、clock、OS/CPU/
+   topology、synchronization、SIMD/hash/text 等机制，是否优先复用了依赖方向合法且同合同的现有能力？
+   逐项记录候选设施、实际路线和 `REUSE/BORROW/LOCAL/NOT_APPLICABLE`。本地保留必须说明为什么已有路线
+   在语义、ownership、复杂度、常态 metadata、codegen、平台或交付上不等价；不得用模块引用数量作为
+   KPI，也不得以“避免依赖”为由复制本应抽成更低因子的通用能力。运行时 dispatch/ISA/topology 等
+   决策只能有一个 authority。存在未裁决的 material 重复机制或漏用加速设施时，本项为
+   `FAIL/BLOCKED`，不能冻结。
+4. **性能：**该模块的正常用户任务属于哪一级，是否在冻结 candidate、相同语义/资源计费和真实交付
    形状下得到有效 verdict？`P0` 必须直答“timing peer comparison `NOT_APPLICABLE`，结构成本
    `PASS/FAIL`”，不得改写成“平或更快/SOTA”；`P1/P2` 只有在合格仪器、拟真 consumer/replay、同合同
    strong peer（若存在）和预声明 margin 下才能回答 non-inferior 或 better。没有同合同 peer 时只能
    回答 consumer budget，不得产生 SOTA 声明。
-4. **旧 C ABI / Native FFI：**当前全局策略为 `N/A` 时，确认产品树没有公开 C schema/header、bridge
+5. **旧 C ABI / Native FFI：**当前全局策略为 `N/A` 时，确认产品树没有公开 C schema/header、bridge
    source、未装饰 C export、C/managed sample、专用 option/target/package metadata 或只为 FFI 支付的
    layout/indirection。内部 OS/第三方/汇编边界的 C 或 `extern "C"` 必须标为 private，不能仅凭存在就
    判成产品 FFI；shared library 导出的 C++ decorated symbols 也不是 C ABI。若未来某个窄 FFI slice
    已通过准入，则改为验证其具名语言 journey、符号白名单、ownership/version/unload，而不是要求清空。
-5. **构建与导入：**真实验证组件根的 source embedding、installed static 和 installed shared consumer；
+6. **构建与导入：**真实验证组件根的 source embedding、installed static 和 installed shared consumer；
    核对中央组件闭包、selected headers、static compile definitions、shared export/import、Windows runtime
    staging 或 Unix loader-relative lookup、relocation 和 exact package discovery。header-only 或平台上
    确实无该 artifact 时写 `NOT_APPLICABLE`，不能制造虚构 binary，也不能把 producer build 成功当作
    consumer 导入成功。
-6. **C++ API 与文档：**从正常用户任务而不是 symbol 清单验证构造、操作、组合、失败、ownership、
+7. **C++ API 与文档：**从正常用户任务而不是 symbol 清单验证构造、操作、组合、失败、ownership、
    lifetime、concurrency 和 teardown 是否自然；合理默认值与 opt-in 成本是否清楚，编译错误和类型
    形状是否不会迫使用户接触 internal/benchmark seam。architecture 只解释长期边界和决策，user guide
    必须按“什么情况选什么”给出可复制 journey 与陷阱，implementation/performance 只保存事实和证据；
    当前 user 文档不得宣传历史 API、已删除 C ABI 或尚未准入的能力。
 
-六问分别裁决依赖风险、能力完整性、性能证据、遗留产品面、交付闭包与实际使用质量，不能互相代替。
+七问分别裁决依赖风险、能力完整性、内部复用/加速适用性、性能证据、遗留产品面、交付闭包与实际使用
+质量，不能互相代替。
 依赖为零不证明功能完整；功能路线完整不证明性能；shared library 可运行不证明存在或需要 C ABI；
 producer build 成功不证明安装后的 consumer 能导入；API 能编译不证明用户能自然发现和正确使用；
 `CLOSED` 也不把 `P0` 变成计时冠军。owner 可以据此逐模块亲自签署，而不必从 task 全文猜测结论。
@@ -381,7 +399,8 @@ product-identity anchor 由 reviewer 从 Git 打开 registry，核对当时确�
 ## 9. 终止输出与四项 LOC
 
 只有所有适用工程门有 verdict、所有 `MUST` 能力为 `COMPLETE` 或完整 `ROUTED`、不存在
-`PARTIAL + KEEP`、P1/P2 工程性能为 `PASS`、没有 blocker，且限制/reopen trigger 写明时才能
+`PARTIAL + KEEP`、内部复用/加速设施审计为 `PASS`、P1/P2 工程性能为 `PASS`、没有 blocker，且
+限制/reopen trigger 写明时才能
 `CLOSED`。每轮在 `CLOSED` 或 `BLOCKED` 终止时仍必须运行：
 
 ```text
@@ -408,6 +427,8 @@ LOC 只用于规模与过程复盘，不是完成度、优先级或重开依据�
 
 - 可复现 correctness/security、OOM、取消、并发生命周期或交付缺陷；
 - 真实消费者暴露缺失能力、错误 ownership、难用接口或重复机制；
+- 新的或原先漏审的低层 HYLE/标准/成熟依赖路线成为同合同可用设施，证明当前存在 material 重复机制、
+  重复 runtime decision authority 或漏用加速；
 - 锁定同合同正常 workload 出现 material regression，或 profile 将模块提升为 P2；
 - 直接依赖、compiler、平台、ISA/backend 改变实际语义、算法或 codegen；
 - 公开 API、组件依赖或交付形状改变；

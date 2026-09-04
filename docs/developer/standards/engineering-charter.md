@@ -37,6 +37,10 @@ HYLE 是 C++23 基础加速库，服务 AI 推理和工程计算。它提供可�
 - 中央组件声明同时投影选择闭包和真实 target link edge；模块不得维护第二份依赖表。
 - 外部依赖由 owner module 一处登记，再投影到获取、构建、install、offline、license 与 CI。
 - 下游不得私造已有的 error、clock、allocator、CPU/topology probe 等同义机制。
+- 每轮模块审计都要反查已有 HYLE/标准库/compiler/OS/锁定成熟依赖的同合同机制，并逐项裁决可用的
+  SIMD、allocator/pool、Container、reclamation、topology/NUMA、clock/wait、hash/text 等加速设施。
+- “尽量复用”不以依赖数量计分；本地实现或不采用候选设施必须有语义、ownership、复杂度、常态成本、
+  codegen、平台、依赖方向或交付理由。不得为了形式复用制造环，也不得绕开合法低层能力重复实现。
 - 修改底层合同必须回审直接消费者与三种交付闭包。
 
 ## 4. API 与实现形状
