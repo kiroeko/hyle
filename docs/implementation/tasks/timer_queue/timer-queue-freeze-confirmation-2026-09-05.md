@@ -95,6 +95,25 @@ headers；timer_queue 本身是 INTERFACE factor，static/shared journey 的 art
 stored、delivery drain、queue-first teardown、wrong-owner fail-fast 和 conservative wake 均就近说明。
 公共面没有 benchmark-only batch、`fast/light` 分叉、额外索引 metadata 或 internal factor 名泄漏。
 
+## 独立红队终审
+
+`PASS`。本次只攻击 caller-owned timer factor 的既定合同：
+
+- wrong-owner、entry-first destruction、linked-delivery rearm/destroy、倒退 advance、full-range radix、
+  cancel/reschedule/cancel-all 与 queue-first teardown 已由三平台 focused suite、death cases 和两组
+  million-operation oracle 覆盖；产品头/算法从候选到 reviewed commit 为 zero diff；
+- callback 仍只是借用的 hand-off metadata，queue 零 invoke、零 waiter、零 owning callable、零 lock；
+  periodic、cross-thread command 与 cancellation propagation 没有偷进低层 factor；
+- minimum cancel 的一次 conservative early wake 是换取 O(1) cancel 的明示成本，不会漏发；
+  CommonTimeoutQueue 没有真实性能 consumer，故没有把复杂度证据冒充 SOTA 排名；
+- P1 的八个 execution/placement/allocation strata 全部在 5% margin 外胜出；公开 API、node layout 和
+  metadata 没有为 benchmark 分叉或膨胀；
+- TimerEntry 直接复用 Container-intrusive 的 safe list，deadline/provider 直接复用 Time，compiler 与
+  fail-fast 直接复用 Core；精确 factor 与安装包没有泄漏内部产品名或制造 header-only DLL。
+
+剩余 medium-or-higher finding、未处置 `MUST`、security/correctness/ownership/delivery blocker 和
+material consumer regression 均为 0。
+
 ## 当前快照验证
 
 | Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |

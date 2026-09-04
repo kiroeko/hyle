@@ -128,6 +128,26 @@ native-header 陷阱；[`time design`](../../../architecture/time-design.md) 记
 只保存冻结命题。默认 typed chrono 路线自然，raw compact 与 profiling route 都是显式选择，没有
 `fast/light/bench` 公共分叉、测试专用入口或 internal seam 泄漏。
 
+## 独立红队终审
+
+`PASS`。本次只攻击冻结范围，不借红队增加 API、benchmark 姿势或产品元数据：
+
+- 重新攻击了负 epoch、极值换算、clock-domain 混用、timeout rounding、native output 失败后修改、
+  ManualClock 借用/lifetime 与 profiling fallback；既有边界、属性、death/stress 和 sanitizer 证据仍覆盖，
+  且对应产品路径从候选到 reviewed commit 为 zero diff；
+- 公开面负向扫描没有 `fast/light/bench` 分叉。`clock.cc` 的 forced calibration 仅在
+  `HYLE_TESTING` 下存在，三种实际交付均显示 instrumentation 关闭并从 shipped library 编译消失；
+- Time 已复用 Core 的 compiler/environment/fail-fast 合同。Error、Util-core、Container-intrusive、
+  Platform 和 Mem 在 host clock/value 路径没有同语义机制可复用，强接只会增加错误依赖或第二决策源；
+  timer ordering 已路由到独立 `timer_queue`；
+- retained host P1 仍是正常 64-phase consumer、source-equivalent peer 与四种放置/顺序形状；约 2% 差异
+  在冻结 5% margin 内，未据此改变 API、layout、读钟次数或正常路径；
+- source/static/shared relocated consumer、精确 factor closure、安装头集合和 C/FFI 负向扫描均未发现
+  泄漏、遗漏或伪 binary。
+
+剩余 medium-or-higher finding、未处置 `MUST`、security/correctness/lifetime blocker 和 material
+consumer regression 均为 0。
+
 ## 当前快照验证
 
 Windows 权威工作树中的无关既有 Container/performance 文档改动没有进入 reviewed commit；WSL/macOS
