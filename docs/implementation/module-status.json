@@ -42,6 +42,14 @@
           "engineering_performance": "PASS"
         },
         "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+        "freeze_confirmation": {
+          "id": "core-freeze-2026-09-04",
+          "marker": "FROZEN",
+          "confirmed_at": "2026-09-04",
+          "reviewed_commit": "8f42e57c00df77b07528c55541d406b6fc8d78c8",
+          "reviewed_tree": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
+          "evidence": "docs/implementation/tasks/core/core-freeze-confirmation-2026-09-04.md"
+        },
         "loc": {
           "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
           "repository_code": 414925,
