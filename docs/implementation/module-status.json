@@ -762,7 +762,7 @@
     },
     {
       "module": "mem",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
       "round_id": "mem-v5-multichunk-mimalloc-351",
@@ -772,6 +772,8 @@
       "baseline_commit": "ae01203b35d7f6d0b9c76117a1a50fc837c07772",
       "candidate_commit": "90ffc8499e199fb675c9c704c3cd7e1b2b91768d",
       "candidate_tree": "d5385c47214ab71cb29f14f2b5e47aa48c8dae85",
+      "end_commit": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
+      "registry_anchor_commit": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -799,7 +801,28 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "mem-v5 VERIFIED：90ffc849/d5385c47 的 resource-aware multi-backing、mimalloc v3.5.1、THP/ISA policy 与端到端 sized-free 已通过三平台正确性、sanitizer、三交付、离线/依赖/符号、直接消费者、文档/红队和 W1-WIN 5% P1 工程非劣门。"
+    "closure_evidence": "docs/implementation/tasks/mem/mem-v5-multichunk-mimalloc-351.md",
+    "loc": {
+      "snapshot_commit": "90ffc8499e199fb675c9c704c3cd7e1b2b91768d",
+      "repository_code": 438512,
+      "self_with_tests": 111779,
+      "self_without_tests": 70651,
+      "module_implementation": 7638
+    },
+    "known_limitations": [
+      "LifetimePlanner owns cold static whole-graph placement with deterministic next-fit backing boundaries; it does not promise globally minimal bin packing, dynamic-graph growth, device policy, usage/reset or asynchronous completion.",
+      "The P1 claim is limited to the frozen W1-WIN 64-item isolated-heap lifecycle and 5% engineering non-inferiority; cross-platform timing, every size/thread/NUMA shape, RSS, device latency, end-to-end inference and blanket SOTA are not claimed.",
+      "mimalloc 3.5.1 remains a private locked shipping mechanism; THP policy is selected before process startup, while Native FFI, a stable C++ ABI and allocator-vendor policy APIs remain outside the admitted product surface.",
+      "Formal performance certification remains independently PENDING and does not weaken the completed engineering gates."
+    ],
+    "reopen_triggers": [
+      "A named real consumer reproduces an allocator or planner correctness, security, OOM, ownership, concurrency, NUMA, delivery or C++ usability defect.",
+      "A current llama.cpp, ggml or other named consumer requires a memory semantic with no complete or routed owner in the Mem capability ledger.",
+      "mimalloc, a direct HYLE dependency, compiler, OS, provider or backend changes actual semantics, code generation, artifact identity or licensing.",
+      "The public API, layout, complexity, normal metadata, component dependency, source/static/shared delivery shape or frozen normal workload changes.",
+      "A mature same-contract peer proves a better complexity class, or a normal consumer workload reproduces a material performance regression or advantage."
+    ],
+    "summary": "mem-v5 CLOSED：resource-aware bounded multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free 已完成；三平台正确性/sanitizer、三交付、依赖/离线/符号、直接消费者、文档/红队、planner P0 和 W1-WIN 5% P1 工程非劣门全部通过。"
     },
     {
       "module": "mem_vm",
