@@ -2,14 +2,16 @@
 
 <!-- MODULE CLOSURE RECORD: CURRENT -->
 
-> **obs-v4：candidate 前验证中。** 本页不再把 obs-v3 的 `16 slots x 256 ticks / 3-second`
-> 合成 replay 冒充 llama.cpp 当前真实消费。v4 只接受当前 Abseil 普通调用点、当前 llama.cpp
-> model-load state callback，以及受 `mem_reclaim` 迁移影响的一个 host-adapter registry 回归。
+> **obs-v4：不可变 candidate 的 P1 工程资格已完成。** 本页不再把 obs-v3 的
+> `16 slots x 256 ticks / 3-second` 合成 replay 冒充 llama.cpp 当前真实消费。v4 只接受当前
+> Abseil 普通调用点、当前 llama.cpp model-load state callback，以及受 `mem_reclaim` 迁移影响的一个
+> host-adapter registry 回归。
 
 稳定边界、用户选型和本轮施工事实分别见
 [Obs architecture](../../../architecture/obs-design.md)、[Obs guide](../../../user/obs.md) 与
-[obs-v4 task](../../tasks/obs/obs-v4-structured-event.md)。本页在 immutable candidate 资格化完成前
-不签发 `PASS`，也不从手工单次运行推导性能结论。
+[obs-v4 task](../../tasks/obs/obs-v4-structured-event.md)。以下结论只绑定 candidate
+`14c82a18f8f00b892479ae16abba4d8320d5915c` / tree
+`7594a2f13271ba7956c3e685e24c6302a91f015b` 和三份 retained bundle；不从手工单次运行推导结论。
 
 ## 复杂度与资源合同
 
@@ -60,7 +62,11 @@ adapter 进入宿主 logger，后续队列、文件与网络 fan-out 不属于 H
 自然 API 格式化并投给一个 synchronous adapter。HYLE 使用 `HYLE_LOG_INFO_EVERY_N`；Abseil 使用
 `ABSL_LOG_EVERY_N(...).ToSinkOnly`。这是 natural-route aggregate，不是孤立原子排名。
 
-当前状态：`PENDING QUALIFICATION`。
+资格结果：`PASS`。15 个独立进程样本下，四个 execution-order/placement strata 的 combined exact
+verdict 全为 `WIN`，5% non-inferiority 全为 `PASS`。HYLE process median 为
+`345.69–349.60 M op/s`，Abseil 为 `61.85–63.24 M op/s`；candidate/peer median ratio 为
+`5.5077–5.6112`，四层 99.26% CI 的最低下界为 `5.4030`。这证明冻结的自然 repeated-diagnostic
+journey 明显胜出，不外推其他 Abseil logging 能力。
 
 ### 2. 推理 model-load structured progress
 
@@ -74,8 +80,12 @@ value、一个 host correlation、source、canonical wall timestamp；经过相�
 gate。llama.cpp 只提供真实 consumer control，并不被宣传为 structured logger 性能 peer；完整路径同时
 受绝对 consumer budget 与 5% gate 保护，不能用 getter/union 微基准改变 API。
 
-当前状态：semantic validator `PASS`（两条路线各 195 条、390 次完整消费，primary/placement artifact
-不同）；正式资格为 `PENDING QUALIFICATION`。
+资格结果：`PASS`。semantic validator 确认两条路线各 195 条输出、390 次完整消费，且
+primary/placement artifact 不同。结果因接近边界按计划扩展到 31 个独立进程样本；四层 combined exact
+verdict 均为 `PARITY`，5% non-inferiority 均为 `PASS`。HYLE process median 为
+`7.4185–7.4309 M op/s`，source-derived control 为 `7.5758–7.6304 M op/s`；median ratio 为
+`0.9715–0.9821`，全部 98.93% CI 落在预声明等价带内。点值约慢 `1.8–2.85%`，属于完整 typed
+record、registry 与 adapter 都相同之后 limiter 实现的非 material 差异，不触发产品改写。
 
 ### 3. Registry 机制回归
 
@@ -84,7 +94,26 @@ Obs v4 把重复的 snapshot reader epoch 换为已冻结的 `mem_reclaim` guard
 p99，peer 是相同源码、相同编译器链接的 immutable pre-v4 HYLE registry。4/16 independent sinks 仍可
 在 executable 中运行以观察容量/争用，却是 `DIAGNOSTIC`，不进入 v4 contract，也不能阻挡或签发产品。
 
-当前状态：`PENDING QUALIFICATION`。
+资格结果：`PASS`。31 个独立进程样本下，两种 execution order 的 throughput 与 chunk-p99 rate 均通过
+5% non-inferiority；combined exact verdict 均为 `INCONCLUSIVE`，不宣传确定胜出。throughput 的 HYLE
+median 为 `16.34–16.62 M op/s`，pre-v4 为 `15.38–15.42 M op/s`，median ratio
+`1.0519–1.0536`；chunk-p99 rate 分别为 `1.572–1.610 M op/s` 与 `1.505–1.537 M op/s`，ratio
+`1.0460–1.0475`。置信区间跨越 exact-win 决策边界，但没有暴露 `mem_reclaim` 迁移造成的 material 回退。
+
+### Retained bundle identity
+
+三份 manifest 均由 `hyle-perf verify` 深验证为 `QUALIFIED`、`EXACT`、`CURRENT`，且
+`paths_verified=true`：
+
+| Contract | manifest SHA-256 | summary SHA-256 | controls SHA-256 | observations SHA-256 |
+|---|---|---|---|---|
+| ordinary | `54381e39ed8a390146aea4bd9761f51bfa33d6c4284c01430e93ade6a7ec0681` | `f36d99bb3bf345aafc765e18b92a2553d927586d0ea7e8f3edbe83eb6e8d2af1` | `236926f56256698f88b651c2534048f2dba33503d2b4c4b5985d24a85422de0e` | `c513b740e3b9c3babd37329b77b96721b3339edf5a757be03df6c4e42c423b71` |
+| structured | `22bb9d5416f0f0947318e4bd1ce045dfafc4ed6c48c228d6fbdb5d15e65e6d01` | `7cbf305d6ba7603e9eb5e0921accd9ed8e77db9bcc18e671367962b2c4073475` | `9b8c4d406c8500592e29899084da0c1e38fcfee31a47dcfbe8491e058c753a5d` | `fd26298c5aa6b0cd1bf51d6860c6341690f35cc1a73c116a71a83b20ac24f16b` |
+| concurrent | `cd42b1879493007a0dc7a8027c3e882847dce06e89197f9c35a0a889710b0b0c` | `8ca4ce843068d9e9a87538236ad7496bc2acca5fca6156e7d92323909d63fb14` | `7430713a523c3566caae2b66650a57308e7113bb200fc8d874323db75dac14d3` | `f55b016e368a7bf0299ab6c501d945978cd51d6c94d46702acfd0556c49b78ce` |
+
+本机 retained roots 分别为 `C:\hyle-scratch\obs-v4-qual-ordinary-evidence`、
+`C:\hyle-scratch\obs-v4-qual-structured-evidence` 与
+`C:\hyle-scratch\obs-v4-qual-concurrent-evidence`。它们是工程审计输入，不是发布包内容。
 
 ## v3 证据如何保留
 
@@ -99,6 +128,7 @@ p99，peer 是相同源码、相同编译器链接的 immutable pre-v4 HYLE regi
 
 ## 当前可声明与禁止外推
 
-candidate 资格化前只能声明复杂度、资源合同与 semantic validator 结果。不得声明 obs-v4 P1 已通过、
-全面 SOTA、跨平台固定纳秒、异步 logger 性能、所有 sink fan-out 或 end-to-end token latency。最终页面
-只会记录 runner 深验证过的 process-median/CI 和 bundle identity；Formal 认证独立保持 `PENDING`。
+可以声明 obs-v4 candidate 在上述三个冻结的正常 journey 上通过 W1-WIN 5% P1 工程门：ordinary
+Abseil 路线明确胜出，完整 structured progress 路线等价，受影响 registry 路线非劣。不得据此声明全面
+SOTA、跨平台固定纳秒、异步 logger 性能、所有 sink fan-out 或 end-to-end token latency；4/16 sink
+仍只是诊断。Formal 认证独立保持 `PENDING`。

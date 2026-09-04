@@ -1,6 +1,6 @@
 # Build/package v12：只追加身份与拓扑构造解耦
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 > Build/package 是横向开发单元，不进入 `module-status.json`。本轮由 Obs v4 对已冻结
 > `mem_reclaim` 的真实复用边触发；Obs 状态仍只由
@@ -33,11 +33,29 @@
 - budget / stop：一个线性拓扑算法、一个正向 fixture、一轮受影响交付。若环检测不能
   fail closed，或者未选因子会被构建，则 `BLOCKED`；不增加第二套 graph truth。
 
-## 待验证候选
+## 候选
 
 `HyleComponents.cmake` 已将 identity ledger 与稳定 DFS 拓扑序分开，并将 list 形式保存为
 `HYLE_RESOLVED_COMPONENT_LIST`；根 `CMakeLists.txt` 按该 list 构造 target。新 component-contract fixture
 选择 Obs，要求精确闭包/target 顺序为 `core;error;mem_reclaim;time;obs`，因而无需改写
 component 历史顺序。
 
-当前状态：`ACTIVE`。只有上述适用门全部通过后才可写入 `CLOSED` 裁决。
+## Verification 与裁决
+
+| Gate | Result | Evidence |
+|---|---|---|
+| current component contract | `PASS` | W1-WIN、W1-WSL/GCC 14.2、M1-MAC/AppleClang 21 的完整 fresh child-project 正负合同 |
+| backward identity edge | `PASS` | 选择 Obs 精确得到 product `core,error,obs`、factor/target order `core,error,mem_reclaim,time,obs` |
+| unknown / QUEUED / cycle | `PASS` | resolver fail closed；正向 graph fixture 与既有负向 fixture 全通过 |
+| Obs source/shared/static | `PASS` | Windows、WSL、macOS 的 source embedding 与 relocated installed shared/static consumer |
+| portable CMake semantics | `PASS` | Windows VS 18、WSL Ninja、macOS Unix Makefiles；没有依赖 generator-specific 排序副作用 |
+| all-product feature-OFF | `PASS` | Windows MSVC 19.50 从 immutable Obs candidate 完整构造并链接 14 product / 21 implemented factor |
+
+全产品构建只验证 target graph 可构造，不替未冻结的 Compute/Graph 或其他上层模块签发功能/性能结论。
+稳定 DFS 在 configure time 每个 factor/edge 至多访问一次，仍为 O(V+E)，不生成运行时状态。append-only
+`HYLE_KNOWN_COMPONENTS` 继续只是历史稳定 identity ledger；唯一构造 authority 是从同一 manifest 解析出的
+`HYLE_RESOLVED_COMPONENT_LIST`，selected closure 与真实 target link 没有第二套顺序真相。
+
+终态裁决：`CLOSED`。五项有限 FIX 全部完成且无产品运行时改动。只有中央 manifest 与真实 target 顺序
+再次分叉、合法旧 identity→新低层 factor 边无法构造、环/QUEUED 未 fail closed，或 selected source/static/
+shared consumer 出现可复现断裂时，才重开本 build/package task。

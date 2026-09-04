@@ -276,3 +276,132 @@ logger、owning record、category config、task context、metrics、crash、trac
 `AUDITED -> CANDIDATE` 前的 registry 快照是
 `C:\hyle-scratch\obs-v4-structured-event\transitions\module-status-before-candidate.json`，SHA-256
 `F1B3426FDB56BEB9DEF1C805D4ED0A3A50B8CB474BDF1935A6D7AD947C6F356E`。
+
+## Verification manifest
+
+验证全部绑定 immutable product candidate
+`14c82a18f8f00b892479ae16abba4d8320d5915c` / tree
+`7594a2f13271ba7956c3e685e24c6302a91f015b`。candidate 后 `include/hyle/obs`、
+`src/obs`、Obs component edge 与 package sample 的 product diff 为零；随后提交只保存状态与证据。
+
+| Risk / journey | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| selected Obs Release/shared tests | 3/3 | 3/3 | 3/3 | `PASS` |
+| public-header self-contained | `PASS` | `PASS` | `PASS` | `PASS` |
+| final candidate ASan / UBSan / TSan | n/a | 3/3 each | n/a | `PASS` |
+| source-embedded consumer | 1/1 | 1/1 | 1/1 | `PASS` |
+| relocated installed shared consumer | 1/1 | 1/1 | 1/1 | `PASS` |
+| relocated installed static consumer | 1/1 | 1/1 | 1/1 | `PASS` |
+| locked Tracy trace-ON Obs tests | 3/3 | 3/3 | 3/3 | `PASS` |
+| complete component contract | `PASS` | `PASS` | `PASS` | `PASS` |
+
+Windows 还从同一 candidate 通过 `HYLE_COMPONENTS=all`、tests/bench/install/trace/TLS/HTTP2/CUDA/ggml/
+Vulkan 全 OFF 的完整 shared 构建；这只验证 Build v12 的全图构造，不替未冻结的 Compute/Graph 签收产品。
+三平台 selected closure 都是 product `core,error,obs`、factor
+`core,error,mem_reclaim,time,obs`。macOS 初次验证只发现机器没有 Ninja，随后用受支持的 Unix Makefiles
+在新目录通过；没有为环境差异修改项目。
+
+测试覆盖五种 scalar、全部准入整数宽度、exact bytes/NUL、wrong-kind 与 invalid timestamp fail-fast、
+empty/duplicate attributes、source/correlation/status recipe、format failure/truncation、default rendering、
+registry capacity/duplicate/not-found、并发 emit/mutation、自注销/跨注销、callback 排空、recursion、flush、
+compiled/runtime gate 和 trace OFF no-evaluation。WSL sanitizer 是 candidate 最终 API（包括 string lvalue
+借用与 rvalue 拒绝）的 fresh build，不继承 candidate 前的旧 object。
+
+### W1-WIN P1 engineering qualification
+
+三份 contract 都使用 clean candidate、fresh MSVC 19.50 Release/static、portable ISA、LTO OFF 和
+`closure-perf-v1`；A/A、5%/10% known-delta、timer-floor、build/artifact identity 与适用 semantic/resource
+validator 全部通过：
+
+| Journey | Samples | Exact verdict | 5% NI | Conservative result |
+|---|---:|---|---|---|
+| ordinary every-N one adapter vs Abseil | 15 x 4 strata | `WIN` | `PASS` | ratio `5.5077–5.6112`；最低 CI lower `5.4030` |
+| complete typed model-load progress vs source-derived llama gate | 31 x 4 strata | `PARITY` | `PASS` | ratio `0.9715–0.9821`；全部 CI 在等价带内 |
+| 8 producers / 1 adapter throughput vs pre-v4 registry | 31 x 2 strata | `INCONCLUSIVE` | `PASS` | ratio `1.0519–1.0536`；不宣称确定胜出 |
+| same registry replay, 256-emit chunk p99 rate | 31 x 2 strata | `INCONCLUSIVE` | `PASS` | ratio `1.0460–1.0475`；不宣称确定胜出 |
+
+ordinary manifest/summary SHA-256 为
+`54381e39ed8a390146aea4bd9761f51bfa33d6c4284c01430e93ade6a7ec0681` /
+`f36d99bb3bf345aafc765e18b92a2553d927586d0ea7e8f3edbe83eb6e8d2af1`；structured 为
+`22bb9d5416f0f0947318e4bd1ce045dfafc4ed6c48c228d6fbdb5d15e65e6d01` /
+`7cbf305d6ba7603e9eb5e0921accd9ed8e77db9bcc18e671367962b2c4073475`；concurrent 为
+`cd42b1879493007a0dc7a8027c3e882847dce06e89197f9c35a0a889710b0b0c` /
+`8ca4ce843068d9e9a87538236ad7496bc2acca5fca6156e7d92323909d63fb14`。三者经
+`hyle-perf verify` 返回 `QUALIFIED / EXACT / CURRENT`、`paths_verified=true`。完整 controls/
+observations identity 与禁止外推见 [`benchmarks-obs`](../../evidence/performance/benchmarks-obs.md)。
+
+结构化路线的 HYLE 点值约慢 source-derived manual limiter `1.8–2.85%`，但两侧构造并完整消费相同 typed
+record，且四层 CI 均在预声明 5% 等价带内；按冻结停止规则不为这个非 material 差异修改 API/实现。
+registry 点估计更快约 4.6–5.4%，但 exact CI 跨决策边界，只签 non-inferiority。两者都不是全面 SOTA
+或端到端推理性能声明。
+
+## Owner 七问终答
+
+1. **第三方产品路径：`PASS`。**Trace OFF 的 Obs 产品闭包没有第三方实现；Trace ON 直接编译并链接锁定
+   Tracy v0.14.1 / `30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c`，类别为 optional product/build backend，
+   由中央 dependency lock、license 与单 client owner 管理。Abseil 是 benchmark peer，Folly 是 architecture
+   reference，llama.cpp/ggml 是 consumer provenance，均不进入 Obs 产品。C++ standard library 与
+   Windows/POSIX terminal/debugger API 是平台机制，不冒充第三方库。
+2. **功能超集与推理消费：`PASS`。**Level/message、同步 sink、RAII/quiescent unregister、format、六类
+   call-site control 与 Tracy seam 保持完整；v4 补齐 category/event、五种 typed scalar、普通/关联属性、
+   source column、typed optional Unix timestamp 和 Error status recipe。当前 llama.cpp model-load 与
+   slot/decode identity/rate/depth/status 可自然表达；当前 ggml level/text callback 也被普通路线覆盖。异步
+   queue/export、metrics 与自动 task context 已完整路由给 host/future factor，未处置 `MUST` 为 0。
+3. **内部复用与加速设施：`PASS`。**Core 的 compiler/environment/fatal contract、Error 的 Status/Result、
+   Time 的 UnixTimestamp、Mem-reclaim 的短 snapshot grace period 均为 `REUSE`；Tracy 为 feature-ON
+   `BORROW`。per-sink active ref 是 callback quiescence 的 Obs-owned `LOCAL`，与任意对象 reclamation 不同
+   合同；固定 snapshot/slot arrays 避免常态 allocation，通用 Mem/Container 不适用。terminal/debugger
+   输出直接借 OS API，因为冻结 Platform 没有同合同 console seam；不存在第二套 runtime clock、error、
+   reclamation 或 trace authority，也没有为增加引用数量而制造依赖。
+4. **拟真、公平性能：`PASS`。**普通公开路线对当前 Abseil 明确 `WIN`；完整 typed model-load consumer 为
+   `PARITY/PASS`；受影响 registry 对 immutable pre-v4 为 `INCONCLUSIVE/PASS`。三者均比较相同语义、资源
+   计费和 source/static 实际形状；4/16 sink 只作诊断。只签 W1-WIN P1 工程范围，不宣称所有操作、所有
+   平台、异步 logger、end-to-end token latency 或 Formal SOTA。
+5. **旧 C ABI / Native FFI：`CLEAN`。**产品树没有 C header/schema/bridge、managed sample、专用 option/
+   target/package metadata或只为 FFI 支付的 layout/indirection。Windows DLL 的 24 个导出与 macOS dylib
+   exports 全为 C++ decorated symbols；`detail::log_record_unchecked` 是 public header format template 必需的
+   compiled C++ seam，不是未装饰 C ABI。
+6. **构建与导入：`PASS`。**中央图唯一声明 public `core,error,time`、private `mem_reclaim`，稳定 O(V+E)
+   拓扑构造允许旧 component identity 合法依赖后来拆出的低层 factor。三平台 exact selected closure、source
+   embedding、relocated shared/static import 与 Trace ON 均通过；Windows 全产品 feature-OFF 和三平台完整
+   component contract 通过。未选模块不会因这条边被构建。
+7. **C++ API 与文档：`PASS`。**正常用户从 macro/message/structured record/typed RAII sink/explicit state/
+   trace 五种任务进入；borrow、temporary rejection、callback concurrency、remove/flush、默认 sink、status
+   脱敏与 async-copy 陷阱均可发现。API 没有 benchmark/internal mode、`fast/light` 分叉或 legacy alias。
+   [`obs-design`](../../../architecture/obs-design.md) 只保存长期边界和原因，
+   [`user/obs`](../../../user/obs.md) 按“什么情况用什么”给出 recipe，task/performance 分别保存施工事实与点值。
+
+## 独立红队终审
+
+`PASS`。红队先复核 comparison class，再攻击 product：
+
+- 逐步检查 publish 前 inactive snapshot、publish 后旧 reader、active-reference handoff、external/self remove、
+  cross-remove、last releaser、slot reuse 与 callback recursion；第二次 `snapshot_domain.synchronize()` 关闭旧
+  snapshot 到 active ref 的窗口，guard 在 callback 前释放，不会让慢 callback 或自注销阻塞全域 grace period；
+- `LogValue` 的 string owner 只接受左值，临时 string/raw pointer/enum/long double 在编译期拒绝；record 的
+  span/view 仍明确同步借用。timestamp 能表示 absent、epoch 0 与 pre-epoch，非法 fraction fail-fast；
+- 默认 sink 对 message/category/event/source/key/string value 的控制字节逐字转义，numeric 转换使用固定栈
+  buffer；它仍是 I/O 冷后端，不把 mutex/syscall 成本藏进普通自定义 adapter 路线；
+- candidate 后产品 diff 为零；三平台 sanitizer/交付、Trace ON、完整 component contract、DLL/dylib symbol、
+  consumer semantic matrix 与三份 retained bundle 没有暴露合同或证据身份漂移；
+- candidate 前发现并修复的三个真实问题——临时/左值 string 易用性边界、伪装成当前 llama.cpp 的旧 replay、
+  component identity 顺序与 target 构造顺序耦合——均在冻结前解决，没有以文档解释替代实现或测试。
+
+剩余 medium-or-higher finding、未处置 `MUST`、material 性能 FAIL、重复内部 authority 与交付 blocker 均为 0。
+
+## Aggregate verification verdict
+
+| Gate | Verdict | Boundary |
+|---|---|---|
+| scope | `PASS` | 十一项冻结 FIX 完成；candidate 后产品不变 |
+| architecture | `PASS` | Obs 仍为同步 producer seam；metrics/async/task context owner 清楚 |
+| correctness | `PASS` | 三平台、最终 WSL ASan/UBSan/TSan 与并发生命周期矩阵 |
+| delivery | `PASS` | 三平台 source/relocated shared/relocated static、Trace OFF/ON |
+| usability/docs | `PASS` | 自然 typed borrowed API、完整选型 recipe 与陷阱 |
+| red team | `PASS` | ownership/reclamation/FFI/build/comparison/product-diff；MEDIUM+ 为 0 |
+| engineering performance | `PASS` | 三份 W1-WIN P1 合同的所有 required strata 均通过 5% NI |
+
+七项 gate 全部 `PASS`，所有准入 `MUST` 为 `COMPLETE` 或完整 `ROUTED`，没有 blocker；Formal 独立保持
+`PENDING`。`CANDIDATE -> VERIFIED` 使用前态快照
+`C:\hyle-scratch\obs-v4-structured-event\transitions\module-status-before-verified.json`，SHA-256
+`BF40E4536B8D00F4EE2E2B0AFBA47E2A45A14587821C2F3168BFE5BC09FDACFB`。

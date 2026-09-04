@@ -296,7 +296,7 @@
     },
     {
       "module": "obs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "OBS-STRUCTURED-EVENT-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
       "round_id": "obs-v4-structured-event",
@@ -313,17 +313,34 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v4 CANDIDATE：typed borrowed event、Time/Error 组合、mem_reclaim snapshot guard、自然 C++ API、三份真实性能合同及拓扑构造修复已绑定 14c82a18/7594a2f1；正在对不可变候选执行三平台、三交付、P1 与红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "loc": {
+        "snapshot_commit": "14c82a18f8f00b892479ae16abba4d8320d5915c",
+        "repository_code": 441812,
+        "self_with_tests": 112186,
+        "self_without_tests": 70870,
+        "module_implementation": 1454
+      },
+      "summary": "obs-v4 VERIFIED：typed borrowed event、Time/Error 组合和 mem_reclaim snapshot guard 已在三平台 correctness/sanitizer、三种 C++ 交付、Trace OFF/ON、内部复用、文档/红队及三份 W1-WIN 5% P1 正常消费合同全部通过；候选保持 14c82a18/7594a2f1。"
     },
     {
       "module": "math",
