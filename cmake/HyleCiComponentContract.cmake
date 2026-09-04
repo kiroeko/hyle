@@ -558,6 +558,38 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "factor 'io_tls'.*registered but QUEUED
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# Component identity order is append-only audit history, not a dependency
+# schedule. Obs predates the later mem_reclaim factor in that ledger but may
+# still acquire it as a natural private dependency. Prove that the selected
+# closure is constructed in stable topological order without moving either ID.
+set(_append_only_topology_source
+  "${_hyle_contract_root}/append-only-topology-source")
+file(MAKE_DIRECTORY "${_append_only_topology_source}")
+file(WRITE "${_append_only_topology_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_append_only_topology LANGUAGES CXX)\n"
+"set(HYLE_COMPONENTS obs)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"set(_expected core error mem_reclaim time obs)\n"
+"get_directory_property(_resolved DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_RESOLVED_COMPONENT_LIST)\n"
+"if(NOT _resolved STREQUAL _expected)\n"
+"  message(FATAL_ERROR \"obs topology is '\${_resolved}'\")\n"
+"endif()\n"
+"foreach(_factor IN LISTS _expected)\n"
+"  if(NOT TARGET hyle_\${_factor})\n"
+"    message(FATAL_ERROR \"missing topological target hyle_\${_factor}\")\n"
+"  endif()\n"
+"endforeach()\n")
+_hyle_contract_run("append-only identity has topological construction" TRUE
+  "${CMAKE_COMMAND}" -S "${_append_only_topology_source}"
+  -B "${_hyle_contract_root}/append-only-topology-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+unset(_append_only_topology_source)
+
 # The user-facing Time product aggregates a host-clock factor and the
 # header-only timer_queue factor. The host artifact itself stays independent
 # from intrusive storage, while the timer factor declares every header edge.

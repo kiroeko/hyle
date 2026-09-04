@@ -17,6 +17,7 @@
 - [Build/package v9 factor 迁移后 current-tree 复检（CLOSED）](build-system-v9-current-tree-replay.md)
 - [Build/package v10 CUDA 语言作用域修复（CLOSED）](build-system-v10-cuda-language-scope.md)
 - [Build/package v11 IO 因子身份登记（CLOSED）](build-system-v11-io-factor-registration.md)
+- [Build/package v12 只追加身份与拓扑构造解耦（ACTIVE）](build-system-v12-append-only-topological-construction.md)
 - [模块收口状态机与统一性能仪器 v1](closure-system-v1.md)
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 

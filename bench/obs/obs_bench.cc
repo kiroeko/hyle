@@ -105,7 +105,7 @@ std::uint64_t parallel_emit(std::size_t thread_count, std::size_t iterations) {
 
 int main() {
   configure_main_benchmark_thread();
-  using hyle::obs::LogField;
+  using hyle::obs::LogAttribute;
   using hyle::obs::LogLevel;
   using hyle::obs::LogRecord;
 
@@ -149,19 +149,27 @@ int main() {
   hyle::obs::set_level(LogLevel::Info);
 
   {
-    constexpr LogField fields[] = {
-        {"request_id", "a7f2"},
-        {"peer", "10.0.0.8"},
-        {"method", "GET"},
-        {"route", "/models"},
+    constexpr LogAttribute attributes[] = {
+        {"model", "qwen"},
+        {"backend", "gpu0"},
+        {"tokens_per_second", 71.5},
+        {"queue_depth", std::uint32_t{3}},
+    };
+    constexpr LogAttribute correlations[] = {
+        {"request_id", std::uint64_t{0xa7f2}},
+        {"slot", std::uint32_t{2}},
     };
     const LogRecord structured{
         .level = LogLevel::Info,
-        .message = "request complete",
-        .fields = fields,
-        .file = "server.cc",
-        .function = "serve",
-        .line = 42,
+        .category = "inference.decode",
+        .event = "slot.progress",
+        .message = "decode progress",
+        .attributes = attributes,
+        .correlation_attributes = correlations,
+        .source = {.file = "server.cc",
+                   .function = "serve",
+                   .line = 42,
+                   .column = 7},
     };
     nb::Bench bench;
     bench.title("obs normal single-sink production")
@@ -171,7 +179,7 @@ int main() {
     bench.run("native preformatted", [] {
       nb::doNotOptimizeAway(hyle::obs::log_message(LogLevel::Info, "ready"));
     });
-    bench.run("native structured 4 fields", [&] {
+    bench.run("native structured descriptor dispatch", [&] {
       nb::doNotOptimizeAway(hyle::obs::log_record(structured));
     });
     bench.run("native std::format macro", [] {

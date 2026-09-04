@@ -408,7 +408,10 @@ if(HYLE_BUILD_SCHED)
   endif()
 endif()
 
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+# The append-only catalog is an identity ledger, not a construction schedule.
+# Build the selected closure in its resolved topological order so natural new
+# lower-level edges do not require forbidden component-history reordering.
+foreach(_component IN LISTS HYLE_RESOLVED_COMPONENT_LIST)
   string(TOUPPER "${_component}" _component_upper)
   if(HYLE_BUILD_${_component_upper})
     add_subdirectory("src/${_component}")

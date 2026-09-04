@@ -26,6 +26,7 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
                     |                     |
           level gate + immutable     one shared
           snapshot + active refs     hyle_tracy_client
+          + mem_reclaim epoch
                     |                     |
           +---------+---------+       mem / sched / io / compute
           |                   |
@@ -43,10 +44,15 @@ DLL/plugin 各自静态链接 trace-on SDK，它们必然各有 Tracy singleton�
 
 ## 2. 日志数据流与生命周期
 
-`LogRecord` 的消息和字段都是同步借用。message 与 field key/value 都使用 exact
-`std::string_view`，已有 slice 不必复制或扫描，也能保留内嵌 NUL；字段集合以
-`std::span<const LogField>` 表达。可选 source file/function 来自 `source_location`，仍是 NUL 结尾的
-稳定字符串。调用方必须让全部借用数据活过同步 dispatch；sink 需要异步保存时自行复制。
+`LogRecord` 是同步借用的 logger-neutral event。category、event、message、attribute key、string value
+与 source file/function 都是 exact `std::string_view`，已有 slice 不必复制或扫描，也能保留内嵌 NUL；
+普通属性和 correlation 属性分别用两个 `std::span<const LogAttribute>`，保序并允许重复/空 key。
+`LogValue` 是 trivially-copyable tagged scalar，覆盖 string、signed/unsigned 64-bit integer、double 与
+bool，不引入 variant allocation 或 runtime schema；拥有型 `std::basic_string<char>` 只接受左值借用，
+临时值在编译期拒绝。source 用 `LogSourceLocation` 表达，既可从
+`std::source_location` 捕获，也可由 logger bridge 显式构造；wall timestamp 是可选的 canonical
+`time::UnixTimestamp`，因此 absent、Unix epoch 0 和 pre-epoch 不再混淆。调用方必须让全部借用数据活过
+同步 dispatch；sink 需要异步保存时自行复制。
 
 ```text
 caller builds record
@@ -55,7 +61,7 @@ caller builds record
 threshold gate -- dropped --> return false / emitted=0（正常，不是错误）
         |
         v
-short reader epoch: copy immutable published snapshot
+short mem_reclaim guard: copy immutable published snapshot
                     + acquire per-sink active references
         |
         v
@@ -65,15 +71,14 @@ invoke callbacks synchronously（producer 不拿 registry mutex）
 release active references, wake unregister waiter
 ```
 
-registry 固定 64 槽，不在 emit 热路径分配。add/remove 在 mutation mutex 下改 live
-slot，再发布两代 in-place immutable snapshot；producer 只做原子 reader epoch、复制
-snapshot 和 active-reference，不拿 registry mutex。snapshot reader-count 与多 waiter-count、
-active refcount 与 remover waiter bit 分别位于一个原子状态字，release 的一次 RMW 同时决定
-是否唤醒；不存在独立 waiter flag 的 missed-wake 窗口。remove 在发布不含目标的新一代后
-排空旧 snapshot reader 与目标 active callback，因此 `remove_sink` 成功返回后，其他线程不可能
-仍在旧 callback 中，调用方可安全
-释放 state。两代 snapshot 复用前先排空短 reader epoch，既没有无界 retired-list，也
-没有 emit 分配。
+registry 固定 64 槽，不在 emit 热路径分配。add/remove 在 mutation mutex 下改 live slot，再发布两代
+in-place immutable snapshot；producer 用独立 `mem::ReclamationDomain` 的短 guard 保护“读取 published
+pointer、复制 snapshot、取得全部 per-sink active refs”这一小段，不拿 registry mutex。writer 在覆写
+inactive snapshot 前等一个 grace period；remove 发布不含目标的新一代后再等一个 grace period，关闭
+旧 snapshot 到 active ref 的 hand-off race，然后才排空目标 callback。guard **不覆盖 callback**：任意
+sink 的执行期仍由该 slot 的 active count + waiter bit 所有，避免 stalled sink 把整个 reclamation domain
+绑死，也保留 self-remove/cross-remove 语义。`remove_sink` 成功返回后，其他线程不可能仍在旧 callback
+中，调用方可安全释放 state。这样复用了已冻结的 epoch primitive，又不把两个不同生命周期强行合并。
 
 C++ 默认用 move-only `SinkRegistration` 持有一次 registry membership。它的析构执行
 quiescent unregister，消除 early return/异常路径遗漏 remove 后留下悬空 callback 的风险；
@@ -100,12 +105,13 @@ recursion guard 与 Flush、Folly 的同步 handler + flush 合同。
 registry 采用 process-lifetime `NoDestructor`：它第一次真正使用时构造但不参与静态
 析构。这样比 registry 更晚析构的全局对象仍可记录或查询，不会访问已经销毁的 mutex。
 
-默认 sink 用 stderr；只有 stderr 真连 TTY 时才输出 ANSI 色码，重定向到文件/CI
-不会污染 escape sequence。默认 sink 自带串行锁，避免多线程 record 的多个
-`fprintf` 片段互相穿插。source/message/field 中的换行、TAB、NUL、ESC 和其他 ASCII control 会
-转义成可见文本，使一条 record 始终只占一个物理行，也不能借用户数据注入终端控制码。
-Windows debugger mirror 输出同一份 level/source/message/fields，并用固定 4 KiB 缓冲；过长
-记录显式写入 `...[truncated]`，不会静默截断或为诊断路径分配。
+默认 sink 用 stderr；只有 stderr 真连 TTY 时才输出 ANSI 色码，重定向到文件/CI 不会污染 escape
+sequence。默认 sink 自带串行锁，避免多线程 record 的多个 I/O 片段互相穿插。identity、source、
+message、key 与 string value 中的换行、TAB、NUL、ESC 和其他 ASCII control 都转义成可见文本；整数、
+浮点与 bool 用固定栈缓冲的 `to_chars` 渲染，不分配。correlation key 以 `correlation.` 前缀区分；时间戳
+输出独立的 `timestamp.seconds`/`timestamp.nanoseconds`，不会把 canonical pre-epoch pair 错写成误导性
+小数。一条 record 始终只占一个物理行，也不能借用户数据注入终端控制码。Windows debugger mirror
+输出同一语义并用固定 4 KiB 缓冲；过长记录显式写入 `...[truncated]`。
 
 ## 3. 日志调用面与控制状态
 
@@ -118,7 +124,7 @@ ABI 或进程全局配置；动态 level 仍由 `set_level` 控制。并发修�
 configuration：已经通过一次门控的 record 可以完成本次同步 dispatch。超长文本
 显式以 `...[truncated]` 结尾，避免静默截断；需要完整大 payload 时应直接构造 record，
 或让应用自己的日志系统管理拥有型缓冲。
-`log_record` 则适合已有结构化字段，`log_message(std::string_view)` 适合已有 byte view；
+`log_record` 则适合已有 typed event descriptors，`log_message(std::string_view)` 适合已有 byte view；
 `const char*` 便利重载会先扫描 NUL，长度已知时直接使用 view。
 
 重复诊断有两种状态所有权，不能用一种 static 勉强覆盖：
@@ -152,32 +158,35 @@ HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**
 
 ## 4. 依赖、消费者与负空间
 
-`hyle_obs` 在中央 component graph 中 `PUBLIC` 依赖 `core` 与 `error`：core 提供 compiler、fatal
-invariant 与 visibility 基础，sink 注册的可恢复失败使用 error 的 `Status/Result`。默认
+`hyle_obs` 在中央 component graph 中 `PUBLIC` 依赖 `core`、`error` 与 `time`：core 提供 compiler、fatal
+invariant 与 visibility 基础，sink 注册的可恢复失败使用 error 的 `Status/Result`，公开 record 直接
+命名 `time::UnixTimestamp`。它 `PRIVATE` 依赖 `mem_reclaim`，只复用 registry 短 snapshot grace period；
+该实现依赖不泄漏到公开 header。默认
 stderr/debugger writer 直接拥有 TTY 和 debugger OS 交互，因为
 platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/O 职责，不能为消除一个
 局部 syscall 制造 `obs -> platform` 依赖。trace gate 是 header/CMake 横切 seam，不让
 mem/sched/io/compute 反向链接 log runtime。
-typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需为了分配器引入
-`obs -> mem`。异步拥有型复制与队列由 application adapter 自己选择 allocator。
-区间控制使用标准 `steady_clock` 类型并提供 caller-supplied monotonic-ns seam，不引入
-`obs -> time`。host-clock `time` 已独立于 `timer_queue/container_intrusive`，但 Obs 仍不为一个
-可由 caller 传值的读钟动作制造依赖。选择 Time 的推理引擎可把同域的 `monotonic_now()` 或
-`coarse_monotonic_ns()` 传入显式 limiter；只选择 Obs 的普通程序仍不承担额外 component closure。
+typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需依赖完整 Mem 产品或
+分配器；异步拥有型复制与队列由 application adapter 自己选择 allocator。区间控制仍使用标准
+`steady_clock` 类型并提供 caller-supplied monotonic-ns seam；Time 依赖来自公开 wall timestamp value，
+不是让 Obs 自动读钟。推理引擎可以把同域的 `monotonic_now()` 或 `coarse_monotonic_ns()` 传入显式
+limiter，但普通 message path 不读取 wall/monotonic clock，也不自动捕获 thread/context。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
 属于不可恢复合同失败，io benchmark stats 只属于显式 benchmark 输出，均不应迁移成普通
 log。trace 的真实消费者仍是 mem/sched/io/compute。
 
-与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry、
-作用域注册与调用点采样形状；llama.cpp 的一个全局 callback + 上层 writer 和每 slot 三秒 progress
-证明正常 product shape 是一个宿主 adapter 加对象持有的 interval state，不是 4/16 个独立原子 sink。
-没有真实消费者支持 category hierarchy、per-sink routing policy、异步
-线程/队列、文件轮转、上传、聚合/查询/告警、fatal 控制流、owning async record 或 profiler
-viewer。这些能力应在 adapter/application 层组合，不给所有基础 record 添加 category、线程
-ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时，同步 adapter sink 可在
-复制入上层系统时补齐。
+与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry、作用域
+注册与调用点采样，并补齐 logger-neutral category/event、typed scalar、correlation、显式 source 与
+typed timestamp。当前 llama.cpp server 的 model-load state callback 使用三个 stage-owned throttle，
+按首条、每 200 ms 与末条提交 `stages/current/value`；slot 日志则仍把 task/rate/queue/status 拼进文本。
+两者共同证明正常 product shape 是一个宿主 adapter 加对象持有的 interval state，不是 4/16 个独立
+原子 sink，也给出上述 typed fields 的真实来源。历史 v3 的 `16 slots x 256 ticks` 只能保留为合成诊断，
+不得继续声称它精确来自 llama.cpp。没有真实消费者支持 category 配置树、per-sink
+filter policy、异步线程/队列、文件轮转、上传、聚合/查询/告警、fatal 控制流、owning async record、
+自动 task context 或 profiler viewer。这些能力应在 adapter/application 层组合，不给所有基础 record
+添加 thread ID、refcount 或拥有型字符串。
 
 ## 5. Trace 双面与零成本边界
 
@@ -233,4 +242,4 @@ v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时�
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
 当前模块任务见
-[`obs-v3-closure`](../implementation/tasks/obs/obs-v3-closure.md)。
+[`obs-v4-structured-event`](../implementation/tasks/obs/obs-v4-structured-event.md)。

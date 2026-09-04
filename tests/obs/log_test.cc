@@ -9,9 +9,11 @@
 #include <cstdint>
 #include <limits>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 struct ThrowingFormatValue {};
@@ -136,9 +138,9 @@ TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
     std::uint32_t line = 0;
     static void write(void *state, const LogRecord &record) noexcept {
       auto *capture = static_cast<SourceCapture *>(state);
-      capture->file = record.file != nullptr ? record.file : "";
-      capture->function = record.function != nullptr ? record.function : "";
-      capture->line = record.line;
+      capture->file.assign(record.source.file);
+      capture->function.assign(record.source.function);
+      capture->line = record.source.line;
     }
   } source;
   LogSink sink{&source, &SourceCapture::write};
@@ -152,51 +154,220 @@ TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
   EXPECT_EQ(source.line, expected_line);
 }
 
-TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
+TEST(LogValue, PreservesTheFrozenScalarKinds) {
+  static_assert(std::is_standard_layout_v<LogValue>);
+  static_assert(std::is_trivially_copyable_v<LogValue>);
+  static_assert(std::is_constructible_v<LogValue, std::int8_t>);
+  static_assert(std::is_constructible_v<LogValue, std::uint8_t>);
+  static_assert(std::is_constructible_v<LogValue, std::int16_t>);
+  static_assert(std::is_constructible_v<LogValue, std::uint16_t>);
+  static_assert(std::is_constructible_v<LogValue, std::int32_t>);
+  static_assert(std::is_constructible_v<LogValue, std::uint32_t>);
+  static_assert(std::is_constructible_v<LogValue, std::int64_t>);
+  static_assert(std::is_constructible_v<LogValue, std::uint64_t>);
+  static_assert(!std::is_constructible_v<LogValue, long double>);
+  static_assert(!std::is_constructible_v<LogValue, const char *>);
+  enum class Identity : std::uint8_t { One = 1 };
+  static_assert(!std::is_constructible_v<LogValue, Identity>);
+  static_assert(std::is_constructible_v<LogValue, std::string &>);
+  static_assert(std::is_constructible_v<LogValue, const std::string &>);
+  static_assert(!std::is_constructible_v<LogValue, std::string &&>);
+
+  static constexpr char exact[] = {'a', '\0', 'b'};
+  constexpr LogValue string{exact};
+  constexpr LogValue literal{"abc"};
+  static_assert(string.kind() == LogValueKind::String);
+  static_assert(string.as_string().size() == sizeof(exact));
+  static_assert(string.as_string()[1] == '\0');
+  static_assert(literal.as_string() == "abc");
+
+  const std::string owned{"dynamic\0bytes", 13};
+  const LogValue borrowed_owned{owned};
+  EXPECT_EQ(borrowed_owned.as_string(), std::string_view(owned));
+
+  constexpr LogValue signed_value{std::int8_t{-7}};
+  constexpr LogValue unsigned_value{std::uint32_t{42}};
+  constexpr LogValue floating_value{3.25F};
+  constexpr LogValue boolean_value{true};
+  static_assert(signed_value.as_signed_integer() == -7);
+  static_assert(unsigned_value.as_unsigned_integer() == 42);
+  static_assert(floating_value.as_floating_point() == 3.25);
+  static_assert(boolean_value.as_boolean());
+}
+
+TEST(LogValue, WrongKindAccessFailsFast) {
+  const LogValue value{std::uint64_t{42}};
+  EXPECT_DEATH(static_cast<void>(value.as_string()), "");
+}
+
+TEST_F(LogTest, StructuredRecordCarriesTypedEventMetadata) {
   constexpr char exact_key[] = {'r', 'e', 'q', '\0', 'i', 'd'};
   constexpr char exact_value[] = {'a', 'b', 'c', '\0', 'x'};
-  LogField fields[] = {
+  LogAttribute attributes[] = {
       {std::string_view(exact_key, sizeof(exact_key)),
        std::string_view(exact_value, sizeof(exact_value))},
-      {"peer", "127.0.0.1"},
+      {"queue_depth", std::int32_t{-3}},
+      {"tokens", std::uint64_t{4096}},
+      {"tokens_per_second", 71.5},
+      {"cached", true},
+      {"duplicate", "first"},
+      {"duplicate", "second"},
   };
+  LogAttribute correlation[] = {{"request_id", std::uint64_t{73}},
+                                {"slot", std::uint32_t{2}}};
   struct StructuredCapture {
-    std::size_t fields = 0;
+    std::string category;
+    std::string event;
+    std::size_t attributes = 0;
+    std::size_t correlations = 0;
     std::string first_key;
     std::string first_value;
     std::string file;
+    std::string function;
     std::uint32_t line = 0;
-    std::uint64_t timestamp = 0;
+    std::uint32_t column = 0;
+    hyle::time::UnixTimestamp timestamp{};
+    bool has_timestamp = false;
+    std::int64_t queue_depth = 0;
+    std::uint64_t request_id = 0;
+    std::string first_duplicate;
+    std::string second_duplicate;
     static void write(void *state, const LogRecord &record) noexcept {
       auto *capture = static_cast<StructuredCapture *>(state);
-      capture->fields = record.fields.size();
-      capture->first_key.assign(record.fields.front().key);
-      capture->first_value.assign(record.fields.front().value);
-      capture->file = record.file != nullptr ? record.file : "";
-      capture->line = record.line;
-      capture->timestamp = record.timestamp_ns;
+      capture->category.assign(record.category);
+      capture->event.assign(record.event);
+      capture->attributes = record.attributes.size();
+      capture->correlations = record.correlation_attributes.size();
+      capture->first_key.assign(record.attributes.front().key);
+      capture->first_value.assign(record.attributes.front().value.as_string());
+      capture->queue_depth = record.attributes[1].value.as_signed_integer();
+      capture->request_id =
+          record.correlation_attributes.front().value.as_unsigned_integer();
+      capture->first_duplicate.assign(record.attributes[5].value.as_string());
+      capture->second_duplicate.assign(record.attributes[6].value.as_string());
+      capture->file.assign(record.source.file);
+      capture->function.assign(record.source.function);
+      capture->line = record.source.line;
+      capture->column = record.source.column;
+      capture->has_timestamp = record.timestamp.has_value();
+      if (record.timestamp.has_value())
+        capture->timestamp = *record.timestamp;
     }
   } structured;
   LogSink sink{&structured, &StructuredCapture::write};
   ASSERT_TRUE(add_sink(sink).ok());
   LogRecord record{
       .level = LogLevel::Warn,
+      .category = "inference.decode",
+      .event = "slot.progress",
       .message = "slow request",
-      .fields = fields,
-      .file = "server.cc",
-      .function = "serve",
-      .line = 42,
-      .timestamp_ns = 123,
+      .attributes = attributes,
+      .correlation_attributes = correlation,
+      .source = {.file = "server.cc",
+                 .function = "serve",
+                 .line = 42,
+                 .column = 7},
+      .timestamp = hyle::time::unix_timestamp(-1, 999'999'999),
   };
   EXPECT_TRUE(log_record(record));
   EXPECT_TRUE(remove_sink(sink).ok());
-  EXPECT_EQ(structured.fields, 2u);
+  EXPECT_EQ(structured.category, "inference.decode");
+  EXPECT_EQ(structured.event, "slot.progress");
+  EXPECT_EQ(structured.attributes, 7u);
+  EXPECT_EQ(structured.correlations, 2u);
   EXPECT_EQ(structured.first_key, std::string(exact_key, sizeof(exact_key)));
   EXPECT_EQ(structured.first_value,
             std::string(exact_value, sizeof(exact_value)));
+  EXPECT_EQ(structured.queue_depth, -3);
+  EXPECT_EQ(structured.request_id, 73u);
+  EXPECT_EQ(structured.first_duplicate, "first");
+  EXPECT_EQ(structured.second_duplicate, "second");
   EXPECT_EQ(structured.file, "server.cc");
+  EXPECT_EQ(structured.function, "serve");
   EXPECT_EQ(structured.line, 42u);
-  EXPECT_EQ(structured.timestamp, 123u);
+  EXPECT_EQ(structured.column, 7u);
+  EXPECT_TRUE(structured.has_timestamp);
+  EXPECT_EQ(structured.timestamp, hyle::time::unix_timestamp(-1, 999'999'999));
+}
+
+TEST_F(LogTest, StatusRecipePreservesPortableAndNativeIdentity) {
+  const hyle::Status native_status = hyle::Status::FromNative(
+      hyle::StatusCode::Unavailable, {hyle::NativeErrorDomain::WinSock, 10054},
+      "connection reset");
+  const hyle::NativeError native = native_status.native_error();
+  const LogAttribute native_attributes[] = {
+      {"status.code", hyle::status_code_name(native_status.code())},
+      {"status.message", native_status.message()},
+      {"status.native_domain", hyle::native_error_domain_name(native.domain)},
+      {"status.native_code", native.code},
+  };
+  const hyle::Status code_only = hyle::Status::NotFound();
+  const LogAttribute code_only_attributes[] = {
+      {"status.code", hyle::status_code_name(code_only.code())},
+  };
+
+  struct StatusCapture {
+    std::size_t calls = 0;
+    std::string code;
+    std::string message;
+    std::string native_domain;
+    std::int64_t native_code = 0;
+    std::string code_only;
+    static void write(void *state, const LogRecord &record) noexcept {
+      auto *capture = static_cast<StatusCapture *>(state);
+      if (capture->calls++ == 0) {
+        capture->code.assign(record.attributes[0].value.as_string());
+        capture->message.assign(record.attributes[1].value.as_string());
+        capture->native_domain.assign(record.attributes[2].value.as_string());
+        capture->native_code = record.attributes[3].value.as_signed_integer();
+      } else {
+        capture->code_only.assign(record.attributes[0].value.as_string());
+      }
+    }
+  } status_capture;
+  LogSink sink{&status_capture, &StatusCapture::write};
+  ASSERT_TRUE(add_sink(sink).ok());
+  EXPECT_TRUE(log_record(LogRecord{
+      .level = LogLevel::Error,
+      .event = "transport.failed",
+      .attributes = native_attributes,
+  }));
+  EXPECT_TRUE(log_record(LogRecord{
+      .level = LogLevel::Warn,
+      .event = "model.missing",
+      .attributes = code_only_attributes,
+  }));
+  EXPECT_TRUE(remove_sink(sink).ok());
+
+  EXPECT_EQ(status_capture.calls, 2u);
+  EXPECT_EQ(status_capture.code, "Unavailable");
+  EXPECT_EQ(status_capture.message, "connection reset");
+  EXPECT_EQ(status_capture.native_domain, "WinSock");
+  EXPECT_EQ(status_capture.native_code, 10054);
+  EXPECT_EQ(status_capture.code_only, "NotFound");
+}
+
+TEST_F(LogTest, TimestampDistinguishesAbsentFromTheUnixEpoch) {
+  struct TimestampCapture {
+    std::vector<std::optional<hyle::time::UnixTimestamp>> values;
+    static void write(void *state, const LogRecord &record) noexcept {
+      static_cast<TimestampCapture *>(state)->values.push_back(
+          record.timestamp);
+    }
+  } timestamps;
+  LogSink sink{&timestamps, &TimestampCapture::write};
+  ASSERT_TRUE(add_sink(sink).ok());
+  EXPECT_TRUE(log_record(LogRecord{.message = "absent"}));
+  EXPECT_TRUE(log_record(LogRecord{
+      .message = "epoch",
+      .timestamp = hyle::time::unix_timestamp(0),
+  }));
+  EXPECT_TRUE(remove_sink(sink).ok());
+
+  ASSERT_EQ(timestamps.values.size(), 2u);
+  EXPECT_FALSE(timestamps.values[0].has_value());
+  ASSERT_TRUE(timestamps.values[1].has_value());
+  EXPECT_EQ(*timestamps.values[1], hyle::time::unix_timestamp(0));
 }
 
 TEST_F(LogTest, LogFmtSkipsFormattingWhenGated) {
@@ -769,6 +940,10 @@ TEST(LogContracts, InvalidNativeInputsFailFast) {
   EXPECT_DEATH(set_level(static_cast<LogLevel>(99)), "");
   EXPECT_DEATH(log_message(LogLevel::Info, static_cast<const char *>(nullptr)),
                "");
+  EXPECT_DEATH(log_record(LogRecord{
+                   .timestamp = hyle::time::unix_timestamp(0, 1'000'000'000),
+               }),
+               "");
 }
 
 TEST(LogContracts, NullSinkCallbackIsARecoverableInvalidArgument) {
@@ -790,21 +965,44 @@ TEST(LogDefaultSink, EscapesControlsAndKeepsOnePhysicalRecord) {
   set_level(LogLevel::Info);
   constexpr char message[] = {'l', 'i', 'n',  'e',    '1', '\n', 'l', 'i', 'n',
                               'e', '2', '\0', '\x1b', '[', '3',  '1', 'm'};
-  LogField field{"key\t", "value\r"};
+  LogAttribute attributes[] = {
+      {"key\t", "value\r"},
+      {"signed", std::int64_t{-7}},
+      {"unsigned", std::uint64_t{9}},
+      {"floating", 2.5},
+      {"boolean", true},
+  };
+  LogAttribute correlation{"request\n", std::uint64_t{17}};
   LogRecord record{
       .level = LogLevel::Info,
+      .category = "inference\tdecode",
+      .event = "slot\rprogress",
       .message = std::string_view(message, sizeof(message)),
-      .fields = std::span<const LogField>(&field, 1),
-      .file = "source\nfile\x1b",
-      .line = 9,
+      .attributes = attributes,
+      .correlation_attributes = std::span<const LogAttribute>(&correlation, 1),
+      .source = {.file = "source\nfile\x1b",
+                 .function = "serve\trequest",
+                 .line = 9,
+                 .column = 4},
+      .timestamp = hyle::time::unix_timestamp(-1, 999'999'999),
   };
 
   testing::internal::CaptureStderr();
   EXPECT_TRUE(log_record(record));
   const std::string output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(output.find("source\\nfile\\x1b:9"), std::string::npos);
+  EXPECT_NE(output.find("category=inference\\tdecode"), std::string::npos);
+  EXPECT_NE(output.find("event=slot\\rprogress"), std::string::npos);
+  EXPECT_NE(output.find("source\\nfile\\x1b:9:4"), std::string::npos);
   EXPECT_NE(output.find("line1\\nline2\\x00\\x1b[31m"), std::string::npos);
   EXPECT_NE(output.find("key\\t=value\\r"), std::string::npos);
+  EXPECT_NE(output.find("signed=-7"), std::string::npos);
+  EXPECT_NE(output.find("unsigned=9"), std::string::npos);
+  EXPECT_NE(output.find("floating=2.5"), std::string::npos);
+  EXPECT_NE(output.find("boolean=true"), std::string::npos);
+  EXPECT_NE(output.find("correlation.request\\n=17"), std::string::npos);
+  EXPECT_NE(output.find("source.function=serve\\trequest"), std::string::npos);
+  EXPECT_NE(output.find("timestamp.seconds=-1"), std::string::npos);
+  EXPECT_NE(output.find("timestamp.nanoseconds=999999999"), std::string::npos);
   EXPECT_EQ(output.find('\x1b'), std::string::npos);
   EXPECT_EQ(output.find('\n'), output.size() - 1);
 }

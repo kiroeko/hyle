@@ -20,9 +20,9 @@
   Tracy。该图本身不授权实现，因此本轮只把上述差距变成有限产品审计；
 - 普通 consumer journey：宿主 logger 在一个同步 callback 中接收可路由的 event/category、typed
   scalar attributes、可选 correlation 与类型安全 wall timestamp，不再解析 message 文本；
-- 推理 consumer journey：model load/decode/slot progress 将 slot/request/model/backend identity 与
-  token rate、队列深度、状态码等 typed values 交给宿主 adapter；异步复制、排队、持久化和 exporter
-  仍由宿主拥有；
+- 推理 consumer journey：model load/decode/slot progress 将 stage/current/progress、slot/request/model/
+  backend identity、token rate、队列深度与状态码等 typed values 交给宿主 adapter；异步复制、排队、
+  持久化和 exporter 仍由宿主拥有；
 - 内部复用新事实：`mem_reclaim` 已在本轮 baseline 前独立关闭，并在
   [`mem-reclaim-freeze-confirmation-2026-09-05`](../mem/mem-reclaim-freeze-confirmation-2026-09-05.md)
   通过新标准复检、取得 registry `FROZEN` 标记。现有 Obs registry 仍有自有双快照 reader epoch；必须
@@ -30,8 +30,10 @@
   已通过 benchmark 就自动保留；
 - 初步受影响面：`LogRecord` / attribute vocabulary、Time 互操作、registry snapshot reclamation、
   Obs factor dependency、正确性、source/static/shared 交付、用户/架构文档与现有 P1 正常 workload；
-- 暂定 tier：`P1`，material margin 5%。旧 normal one-adapter 与 inference progress aggregate 必须保持；
-  structured event 增量按一个真实 adapter 的完整消费成本裁决，不用孤立 getter/union 微基准塑造 API；
+- 暂定 tier：`P1`，material margin 5%。普通 one-adapter Abseil 路线必须重新资格化；registry mechanism
+  变化以八 producer/一个 adapter 对 immutable pre-v4 HYLE 做回归门。structured event 增量按当前
+  llama.cpp model-load callback 的完整记录与一个真实 adapter 消费成本裁决，不用孤立 getter/union
+  微基准塑造 API；
 - 暂定 non-goals：metrics/counter/histogram、异步 logger、队列/持久化/网络 exporter、category config
   tree、automatic TLS/task context propagation、GPU/lock/async-flow tracing、crash reporter、Native FFI/C
   API、稳定 C++ ABI、Compute/Graph、相邻模块重开、公共仪器重写和 Formal 认证。
@@ -64,9 +66,11 @@
 - dependencies / ownership：Obs 保持一个质因数；Core 提供 compiler/assert/source 基础，Error 提供
   registry failure，Time 唯一拥有 typed Unix timestamp；Mem-reclaim 只是待裁决的 private mechanism，
   不进入公开 type。Tracy v0.14.1 仍是 trace-ON build-only backend；Metrics 保持独立未来 factor；
-- tier / margin：`P1` / 5%。旧 v3 的 ordinary one-adapter Abseil aggregate 与 llama-shaped inference
-  progress 是回归门；新增 structured journey 只测完整 record -> one adapter -> typed consume，不为
-  单个 variant/getter 建 benchmark，也不把异步 queue 或 category tree 塞给 peer；
+- tier / margin：`P1` / 5%。ordinary one-adapter 对当前 Abseil 是自然公开路线门；受影响 registry
+  dispatch 以八 producer/一个 adapter 对 immutable pre-v4 HYLE 做同源回归。structured journey 使用
+  当前 llama.cpp `load_progress_callback` 的三 stage、first/every-200-ms/final cadence 与字段，只测完整
+  record -> one adapter -> typed consume，不为单个 variant/getter 建 benchmark，也不把异步 queue 或
+  category tree 塞给 peer；
 - normal metadata / cost：关闭 level 与 compile floor 仍不求值、不构造 record；普通 message emit 不得
   新增 allocation、clock read、global lookup、mutex 或 runtime type registry；typed record 只为显式选择的
   metadata 支付常数大小 borrowed descriptors，dispatch 保持 O(number of sinks + attributes consumed)；
@@ -108,9 +112,11 @@
 
 普通服务只注册一个同步 adapter。producer 构造 borrowed record，adapter 在 callback 返回前按类型读取
 category/event、普通 attributes、correlation attributes、source 与可选 wall timestamp；若上层异步，
-它在这一处复制。推理原型是 `slot.progress`：category=`inference.decode`，correlation 里是 request/slot，
-普通 attributes 里是 model/backend、token rate、queue depth 与 status fields。关闭 level 时不构造
-record；开启时只为 caller 显式给出的 descriptors 付费。
+它在这一处复制。锁定推理原型是 `model.load_progress`：category=`inference.model`，普通 attributes
+按原 consumer 顺序保留重复的 stage 列表、current stage 与 floating progress，host correlation 可附
+model-load identity。decode slot 的 request/slot、model/backend、token rate、queue depth 与 status fields
+使用同一 vocabulary 自然组合，但不冒充本轮锁定的计时来源。关闭 level 时不构造 record；开启时只为
+caller 显式给出的 descriptors 付费。
 
 - Abseil `9e15d3d6cc19ae4703f3ad7fa413a789580ec1fc` 的 `LogEntry` 是同步 borrowed sink record，带 typed
   timestamp/thread/source；其 structured 路线把 scalar 编码为尚未公开 schema 的 protobuf field-number
@@ -119,10 +125,12 @@ record；开启时只为 caller 显式给出的 descriptors 付费。
 - Folly `dea9962e1a7d7cbbbeab5d6d4fe12d72b72ddabb` 的 `LogMessage/LogHandler` 提供 category、typed
   timestamp/thread、同步 handler 与 flush，但 message/context 是 owning string。它证明 category +
   synchronous adapter 的正常形状，不证明所有 HYLE record 都应分配或捕获 thread/time；
-- llama.cpp `8b4b3558f1459c13e4aa38d5c94d306a00dc6acd` 仍通过一个全局 callback 输出 text，server 的
-  `SLT_*` 宏把 slot/task identity 与 token/s 拼入字符串；ggml
-  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` 同样只暴露 level/text callback。它们是真实字段和 cadence
-  证据，不是结构化同合同 timing peer；HYLE 的价值是让 host 不再反向解析这些文本。
+- llama.cpp `8b4b3558f1459c13e4aa38d5c94d306a00dc6acd` 的一般日志仍由全局 callback 输出 text，server 的
+  `SLT_*` 宏把 slot/task identity 与 token/s 拼入字符串；但同一 server 的 `load_progress_callback`
+  已直接向 host state callback 提交 `stages/current/value`，三个 stage 各自持有 `t_last`，首条、末条和
+  每 200 ms 的中间条通过。ggml `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` 仍只暴露 level/text
+  log callback。它们给出真实字段、ownership 与 cadence，不是现成的 structured logging timing peer；
+  HYLE record 让同一类 host adapter 不必解析日志文本。
 
 ### 能力图
 
@@ -184,9 +192,10 @@ logger、owning record、category config、task context、metrics、crash、trac
   unsigned integer、`float/double` 与 `bool`；不接受隐式 enum 或 `long double` 丢精度。按 kind 调用
   `as_string/as_signed_integer/as_unsigned_integer/as_floating_point/as_boolean`；错 kind 是 programmer
   contract violation 并 fail-fast，不返回伪默认值；
-- `LogAttribute { string_view key; LogValue value; }` 取代 `LogField`。两个 span 都是同步借用、保序且允许
-  duplicate/empty key；`attributes` 表示事件事实，`correlation_attributes` 表示跨记录关联 identity，
-  HYLE 不按 key 建索引或复制；
+- `LogAttribute { string_view key; LogValue value; }` 取代 `LogField`。`LogValue` 自然借用 string literal、
+  `string_view` 和 `std::basic_string<char>` 左值，拒绝临时 string、raw pointer、enum 与 long double；
+  两个 span 都是同步借用、保序且允许 duplicate/empty key；`attributes` 表示事件事实，
+  `correlation_attributes` 表示跨记录关联 identity，HYLE 不按 key 建索引或复制；
 - `LogSourceLocation { string_view file; string_view function; uint32_t line; uint32_t column; }` 提供
   `from(std::source_location)`；宏仍捕获 caller。显式 struct 让 bridge 可以表达外来 source，而不是被
   不可伪造的 `std::source_location` 构造限制；
@@ -217,3 +226,28 @@ logger、owning record、category config、task context、metrics、crash、trac
 `SCOPED -> AUDITED` 前的 registry 快照是
 `C:\hyle-scratch\obs-v4-structured-event\transitions\module-status-before-audited.json`，SHA-256
 `977328A23182F97888A9FB212424A32448C24FA4C07341C3D654D94BF7C1AB94`。
+
+## 实现与性能输入纠正（candidate 前）
+
+- 十一项冻结 `FIX` 已实现：公开 record 改为 typed borrowed event；Time timestamp 能区分 absent/epoch/
+  pre-epoch；默认 sink 分配-free 地渲染并转义全部 scalar；Error status 有无损 recipe；registry 的短
+  snapshot grace period 复用 `mem_reclaim`，callback quiescence 仍由 per-sink active ref 所有；
+- `std::string` 易用性红队发现“左值也必须手写 string_view”不自然，因此在 `OBS4-VALUE-01` 内补入
+  lvalue-only 借用重载，并在编译期拒绝 rvalue，既不放宽生命周期也不新增 benchmark 形状；
+- Obs 获得后来登记的 `mem_reclaim` 边后，构建系统暴露出把 append-only component identity 顺序误当
+  target 构造顺序的真实缺陷。修复由独立
+  [`build-system-v12`](../build/build-system-v12-append-only-topological-construction.md) task 所有：中央图
+  以登记顺序作稳定 tie-breaker 做 O(V+E) 拓扑解析，identity 历史不重排，target 与 closure 使用同一
+  解析结果；component contract 已加入“旧 Obs 依赖后来低层 factor”的回归 fixture；
+- v3 文档把 `16 slots x 256 ticks / 3-second` 合成 replay 写成 llama.cpp 当前 inference provenance；逐行
+  检查锁定 commit 后确认这不成立，旧点值只保留为历史诊断，不能续签 v4。v4 重新锁定三份输入：
+  当前 Abseil ordinary every-N；当前 llama.cpp 三 stage model-load（first/every 200 ms/final，字段
+  `stages/current/value`）；八 producer/一个 host adapter 对 pre-v4 registry。4/16 独立 sink 只运行为
+  capacity/contention 诊断，不得决定产品 gate；
+- consumer manifest 是 `bench/obs/consumer_shapes_v2.json`，SHA-256
+  `317d984ccddd0692e604bab733d5491fc7e5d597c36f55c229342f2eec67f652`。普通、structured 与 concurrent
+  三份新合同的 immutable lock 分别为
+  `5d2d7210782f1bae55c14bd42246f2485ce02ce6b74cf2e1f5bd8e20c8a33759`、
+  `b35d0c0d81980ba39bc59a8c70048962fd9625fe179632ca801ed34f310594f0`、
+  `3d527efed8d509b18207b80a7c0f556f908a11fb4ee9f23ffde0df000b32eb34`；资格结果只在 immutable
+  candidate 后填写。

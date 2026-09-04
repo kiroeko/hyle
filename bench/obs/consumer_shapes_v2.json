@@ -1,0 +1,50 @@
+{
+  "schema": "hyle.obs.consumer-shapes/v2",
+  "owner": "obs-v4-structured-event",
+  "journeys": [
+    {
+      "id": "ordinary-callsite-every-n",
+      "consumer": "ordinary C++ service or command-line application",
+      "topology": "one process logger adapter; one repeated source call site; 4096 level and frequency checks; every 64th call formats and emits",
+      "ownership": "the macro owns one hidden call-site counter; the application owns the synchronous adapter",
+      "peer": "Abseil ABSL_LOG_EVERY_N(INFO, 64).ToSinkOnly(adapter)",
+      "abseil_revision": "9e15d3d6cc19ae4703f3ad7fa413a789580ec1fc",
+      "reason": "conditional and count-limited diagnostic output is common library and service behavior independent of inference"
+    },
+    {
+      "id": "concurrent-one-adapter-dispatch",
+      "consumer": "inference runtime whose worker threads synchronously enter one process logger adapter",
+      "topology": "eight persistent producer roles emit one preformatted borrowed record to one registered adapter; setup and teardown stay outside the measured steady state",
+      "ownership": "the application owns one process logger adapter; HYLE owns only immutable registry publication and callback quiescence",
+      "peer": "the immutable pre-v4 HYLE registry on the identical source workload",
+      "baseline_revision": "f305b9d3fed87a065d300145e5d9e8de3f5a77a0",
+      "reason": "the mem_reclaim reuse changes dispatch publication mechanics, so the normal one-adapter multi-producer route needs a regression gate; four and sixteen adapters remain capacity diagnostics"
+    },
+    {
+      "id": "inference-model-load-progress",
+      "consumer": "llama.cpp-shaped model loader with a host state/telemetry callback",
+      "topology": "three independently owned model stages each receive 256 progress callbacks at 50 ms; first, every 200 ms and final observations produce 65 records per stage and 195 records total",
+      "ownership": "each text/mmproj/spec load_progress_data owns its throttle state; the host owns the synchronous state callback and any copying or fan-out after it",
+      "peer": "llama.cpp server-context load_progress_callback manual t_last_load_progress_ms gate",
+      "llama_cpp_revision": "8b4b3558f1459c13e4aa38d5c94d306a00dc6acd",
+      "sources": [
+        {
+          "path": "common/log.h",
+          "sha256": "759fe1a5d1fcf4006f1f6b3a3a488f66c12b6cce2721c0c1b997bf1c07cc8667"
+        },
+        {
+          "path": "tools/server/server-context.cpp",
+          "sha256": "c347b2403b0f7e314960b9170f39e27fe67049420fe9ae272852d98028955ce7"
+        }
+      ],
+      "record_projection": "event model.load_progress carries the ordered stage list as repeated stage attributes, current stage and floating progress value; the host may attach one model-load correlation, source and wall timestamp",
+      "reason": "this exact current consumer replaces the stale v3 synthetic 16-slot/3-second replay; repeated keys preserve the source stage array without adding an owning or schema-specific container value"
+    }
+  ],
+  "negative_space": {
+    "multi_sink": "2, 4 and 16 independent HYLE sinks are registry capacity/contention diagnostics, not the normal product topology",
+    "async_fanout": "queueing, copying, file rotation, network export and application logger fan-out live behind the one synchronous adapter",
+    "timing": "the replay starts at a nonzero process time, injects deterministic monotonic and wall time, and forces the final observation exactly as llama.cpp does; clock acquisition is measured by Time rather than hidden inside Obs",
+    "peer_boundary": "llama.cpp supplies the real progress fields and cadence but not an equivalent public typed event schema; it is not presented as a structured-logging SOTA implementation"
+  }
+}

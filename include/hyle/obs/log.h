@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <cstring>
 #include <format>
+#include <optional>
 #include <source_location>
 #include <span>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -15,6 +17,7 @@
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/obs/log_control.h"
+#include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -45,21 +48,160 @@ enum class LogLevel : int {
   Off = 5, // threshold-only sentinel; never a record level
 };
 
-struct LogField {
-  std::string_view key{};
-  std::string_view value{};
+enum class LogValueKind : std::uint8_t {
+  String,
+  SignedInteger,
+  UnsignedInteger,
+  FloatingPoint,
+  Boolean,
 };
 
-// Borrowed for the synchronous duration of log_record(). Message and field
-// slices are exact bytes: they need not be NUL-terminated and may contain NUL.
+// Allocation-free scalar vocabulary for logger-neutral structured events.
+// String values are exact borrowed bytes; the numeric alternatives normalize
+// common C++ scalar widths so sinks do not need a runtime type registry.
+class LogValue final {
+public:
+  constexpr LogValue() noexcept = default;
+  constexpr LogValue(std::string_view value) noexcept : storage_(value) {}
+
+  template <std::size_t N>
+  constexpr LogValue(const char (&value)[N]) noexcept
+      : storage_(std::string_view(value, N != 0 && value[N - 1] == '\0' ? N - 1
+                                                                        : N)) {}
+
+  template <class Traits, class Allocator>
+  constexpr LogValue(
+      const std::basic_string<char, Traits, Allocator> &value) noexcept
+      : storage_(std::string_view(value.data(), value.size())) {}
+  template <class Traits, class Allocator>
+  LogValue(std::basic_string<char, Traits, Allocator> &&) = delete;
+  template <class Traits, class Allocator>
+  LogValue(const std::basic_string<char, Traits, Allocator> &&) = delete;
+
+  template <std::signed_integral Integer>
+    requires(!std::same_as<std::remove_cv_t<Integer>, bool> &&
+             sizeof(Integer) <= sizeof(std::int64_t))
+  constexpr LogValue(Integer value) noexcept
+      : kind_(LogValueKind::SignedInteger),
+        storage_(static_cast<std::int64_t>(value)) {}
+
+  template <std::unsigned_integral Integer>
+    requires(!std::same_as<std::remove_cv_t<Integer>, bool> &&
+             sizeof(Integer) <= sizeof(std::uint64_t))
+  constexpr LogValue(Integer value) noexcept
+      : kind_(LogValueKind::UnsignedInteger),
+        storage_(static_cast<std::uint64_t>(value)) {}
+
+  constexpr LogValue(float value) noexcept
+      : kind_(LogValueKind::FloatingPoint),
+        storage_(static_cast<double>(value)) {}
+  constexpr LogValue(double value) noexcept
+      : kind_(LogValueKind::FloatingPoint), storage_(value) {}
+  constexpr LogValue(bool value) noexcept
+      : kind_(LogValueKind::Boolean), storage_(value) {}
+
+  LogValue(long double) = delete;
+  LogValue(std::nullptr_t) = delete;
+  template <class Enum>
+    requires std::is_enum_v<Enum>
+  LogValue(Enum) = delete;
+  template <class Pointer>
+    requires std::is_pointer_v<Pointer>
+  LogValue(Pointer) = delete;
+
+  [[nodiscard]] constexpr LogValueKind kind() const noexcept { return kind_; }
+
+  [[nodiscard]] constexpr std::string_view as_string() const noexcept {
+    HYLE_FATAL_ASSERT(kind_ == LogValueKind::String);
+    return storage_.string;
+  }
+  [[nodiscard]] constexpr std::int64_t as_signed_integer() const noexcept {
+    HYLE_FATAL_ASSERT(kind_ == LogValueKind::SignedInteger);
+    return storage_.signed_integer;
+  }
+  [[nodiscard]] constexpr std::uint64_t as_unsigned_integer() const noexcept {
+    HYLE_FATAL_ASSERT(kind_ == LogValueKind::UnsignedInteger);
+    return storage_.unsigned_integer;
+  }
+  [[nodiscard]] constexpr double as_floating_point() const noexcept {
+    HYLE_FATAL_ASSERT(kind_ == LogValueKind::FloatingPoint);
+    return storage_.floating_point;
+  }
+  [[nodiscard]] constexpr bool as_boolean() const noexcept {
+    HYLE_FATAL_ASSERT(kind_ == LogValueKind::Boolean);
+    return storage_.boolean;
+  }
+
+private:
+  union Storage {
+    constexpr Storage() noexcept : string{} {}
+    constexpr explicit Storage(std::string_view value) noexcept
+        : string(value) {}
+    constexpr explicit Storage(std::int64_t value) noexcept
+        : signed_integer(value) {}
+    constexpr explicit Storage(std::uint64_t value) noexcept
+        : unsigned_integer(value) {}
+    constexpr explicit Storage(double value) noexcept : floating_point(value) {}
+    constexpr explicit Storage(bool value) noexcept : boolean(value) {}
+
+    std::string_view string;
+    std::int64_t signed_integer;
+    std::uint64_t unsigned_integer;
+    double floating_point;
+    bool boolean;
+  };
+
+  LogValueKind kind_ = LogValueKind::String;
+  Storage storage_{};
+};
+
+static_assert(std::is_standard_layout_v<LogValue>);
+static_assert(std::is_trivially_copyable_v<LogValue>);
+
+struct LogAttribute {
+  std::string_view key{};
+  LogValue value{};
+};
+
+static_assert(std::is_standard_layout_v<LogAttribute>);
+static_assert(std::is_trivially_copyable_v<LogAttribute>);
+
+// A separate value type keeps standard C++ call-site capture convenient while
+// allowing bridges to supply source locations from another logger/runtime.
+struct LogSourceLocation {
+  std::string_view file{};
+  std::string_view function{};
+  std::uint32_t line = 0;
+  std::uint32_t column = 0;
+
+  [[nodiscard]] static constexpr LogSourceLocation
+  from(std::source_location source) noexcept {
+    return LogSourceLocation{
+        .file = source.file_name(),
+        .function = source.function_name(),
+        .line = source.line(),
+        .column = source.column(),
+    };
+  }
+};
+
+static_assert(std::is_standard_layout_v<LogSourceLocation>);
+static_assert(std::is_trivially_copyable_v<LogSourceLocation>);
+
+// Borrowed for the synchronous duration of log_record(). Every string and span
+// is an exact byte view: it need not be NUL-terminated and may contain NUL.
+// Attributes preserve order and duplicate/empty keys. Correlation attributes
+// use the same scalar vocabulary but remain semantically distinct so a host
+// adapter can index request/slot/trace identity without parsing ordinary data.
 struct LogRecord {
   LogLevel level = LogLevel::Info;
+  std::string_view category{};
+  std::string_view event{};
   std::string_view message{};
-  std::span<const LogField> fields{};
-  const char *file = nullptr;     // optional source path
-  const char *function = nullptr; // optional source function
-  std::uint32_t line = 0;
-  std::uint64_t timestamp_ns = 0; // optional Unix ns; 0 = not supplied
+  std::span<const LogAttribute> attributes{};
+  std::span<const LogAttribute> correlation_attributes{};
+  LogSourceLocation source{};
+  std::optional<time::UnixTimestamp> timestamp{};
 };
 
 template <class Backend>
@@ -227,9 +369,7 @@ void log_fmt_unchecked_at(LogLevel log_level, std::source_location source,
   LogRecord record{
       .level = log_level,
       .message = message,
-      .file = source.file_name(),
-      .function = source.function_name(),
-      .line = source.line(),
+      .source = LogSourceLocation::from(source),
   };
   (void)log_record_unchecked(record);
 }

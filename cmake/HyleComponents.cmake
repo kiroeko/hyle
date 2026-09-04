@@ -121,8 +121,12 @@ endfunction()
 set(HYLE_KNOWN_COMPONENTS "")
 set(HYLE_IMPLEMENTED_COMPONENTS "")
 
-# Declaration order is construction order and must remain topological.  The
-# visibility here is the visibility of the real hyle_<module> target edge.
+# Declaration order is the append-only component identity order mirrored by
+# module-status.json. Target construction uses HYLE_RESOLVED_COMPONENT_LIST,
+# whose dependency closure is topologically sorted, so an older factor may
+# acquire a newly admitted lower-level dependency without rewriting registry
+# history.
+# The visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
 _hyle_declare_component(container_intrusive
   PUBLIC_DEPS core
@@ -142,7 +146,9 @@ _hyle_declare_component(util_core
     hyle/util/spin_lock.h
     hyle/util/type_name.h)
 _hyle_declare_component(error PUBLIC_DEPS core)
-_hyle_declare_component(obs TRACE PUBLIC_DEPS core error)
+_hyle_declare_component(obs TRACE
+  PRIVATE_DEPS mem_reclaim
+  PUBLIC_DEPS core error time)
 _hyle_declare_component(math PUBLIC_DEPS core)
 _hyle_declare_component(time PUBLIC_DEPS core)
 _hyle_declare_component(timer_queue
@@ -395,12 +401,10 @@ else()
   endif()
 endif()
 
-# HYLE_KNOWN_COMPONENTS is also construction order. Validate every manifest
-# edge even for an unselected component: this is bounded manifest metadata work
-# and does not read unrelated product source.
+# Validate every manifest edge even for an unselected component: this is
+# bounded manifest metadata work and does not read unrelated product source.
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
-  list(FIND HYLE_KNOWN_COMPONENTS "${_component}" _component_index)
   if(_HYLE_QUEUED_${_component_upper} AND
      _HYLE_DEPS_${_component_upper})
     message(FATAL_ERROR
@@ -411,12 +415,6 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
       message(FATAL_ERROR
         "HYLE component '${_component}' names unknown dependency '${_dependency}'")
     endif()
-    list(FIND HYLE_KNOWN_COMPONENTS "${_dependency}" _dependency_index)
-    if(_dependency_index GREATER_EQUAL _component_index)
-      message(FATAL_ERROR
-        "HYLE component order is not topological: '${_component}' depends on "
-        "'${_dependency}', which is not listed before it")
-    endif()
     string(TOUPPER "${_dependency}" _dependency_upper)
     if(_HYLE_QUEUED_${_dependency_upper})
       message(FATAL_ERROR
@@ -425,17 +423,54 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
     endif()
   endforeach()
 endforeach()
-unset(_component_index)
-unset(_dependency_index)
 
-# The manifest has just been proven topological. A single reverse pass reaches
-# every transitive dependency, avoiding a fixed-point rescan of the growing
-# selected set.
+# Component identity order is append-only audit history, so it cannot also be
+# the mutable dependency order. Compute a stable topological order with a DFS;
+# catalog order remains the tie-breaker. The same walk rejects cycles before
+# any product source is inspected.
+function(_hyle_visit_component component)
+  string(TOUPPER "${component}" _visit_upper)
+  get_property(_visit_state GLOBAL
+    PROPERTY "_HYLE_COMPONENT_VISIT_${_visit_upper}")
+  if(_visit_state STREQUAL "DONE")
+    return()
+  endif()
+  if(_visit_state STREQUAL "VISITING")
+    message(FATAL_ERROR
+      "HYLE component dependency cycle reaches '${component}'")
+  endif()
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_VISIT_${_visit_upper}" "VISITING")
+  foreach(_visit_dependency IN LISTS _HYLE_DEPS_${_visit_upper})
+    _hyle_visit_component("${_visit_dependency}")
+  endforeach()
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_VISIT_${_visit_upper}" "DONE")
+  get_property(_visit_order GLOBAL PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER)
+  list(APPEND _visit_order "${component}")
+  set_property(GLOBAL PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER
+    "${_visit_order}")
+endfunction()
+
+set_property(GLOBAL PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER "")
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_VISIT_${_component_upper}" "")
+endforeach()
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  _hyle_visit_component("${_component}")
+endforeach()
+get_property(_hyle_topological_components GLOBAL
+  PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER)
+
+# A single reverse topological pass reaches every transitive dependency,
+# avoiding a fixed-point rescan of the growing selected set.
 foreach(_component IN LISTS _hyle_requested_roots)
   string(TOUPPER "${_component}" _component_upper)
   set(_HYLE_SELECTED_${_component_upper} TRUE)
 endforeach()
-set(_hyle_resolution_order ${HYLE_KNOWN_COMPONENTS})
+set(_hyle_resolution_order ${_hyle_topological_components})
 list(REVERSE _hyle_resolution_order)
 foreach(_component IN LISTS _hyle_resolution_order)
   string(TOUPPER "${_component}" _component_upper)
@@ -447,10 +482,10 @@ foreach(_component IN LISTS _hyle_resolution_order)
   endif()
 endforeach()
 
-# Preserve architectural/topological order for target construction, audit and
+# Preserve the computed topological order for target construction, audit and
 # configure diagnostics.
 set(_hyle_resolved "")
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+foreach(_component IN LISTS _hyle_topological_components)
   string(TOUPPER "${_component}" _component_upper)
   if(_HYLE_SELECTED_${_component_upper})
     set(HYLE_BUILD_${_component_upper} TRUE)
@@ -498,6 +533,7 @@ foreach(_component IN LISTS _hyle_resolved)
   endif()
 endforeach()
 
+set(HYLE_RESOLVED_COMPONENT_LIST "${_hyle_resolved}")
 list(JOIN _hyle_resolved "," HYLE_RESOLVED_COMPONENTS)
 list(JOIN HYLE_RESOLVED_PRODUCT_LIST "," HYLE_RESOLVED_PRODUCTS)
 if(_hyle_selection_mode STREQUAL "factor")
@@ -513,7 +549,10 @@ endif()
 foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
   string(TOUPPER "${_component}" _component_upper)
   unset(_HYLE_SELECTED_${_component_upper})
+  set_property(GLOBAL PROPERTY
+    "_HYLE_COMPONENT_VISIT_${_component_upper}" "")
 endforeach()
+set_property(GLOBAL PROPERTY _HYLE_COMPONENT_TOPOLOGICAL_ORDER "")
 unset(_hyle_requested)
 unset(_hyle_requested_count)
 unset(_hyle_requested_products)
@@ -521,6 +560,7 @@ unset(_hyle_requested_roots)
 unset(_hyle_selection_input)
 unset(_hyle_selection_mode)
 unset(_hyle_resolution_order)
+unset(_hyle_topological_components)
 unset(_hyle_known_text)
 unset(_component)
 unset(_component_upper)

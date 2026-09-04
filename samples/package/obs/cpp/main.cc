@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -9,9 +11,20 @@ namespace {
 
 struct Capture {
   std::vector<std::string> messages;
+  std::uint64_t request_id = 0;
+  double tokens_per_second = 0.0;
+  bool saw_progress = false;
 
   void write(const hyle::obs::LogRecord &record) noexcept {
     messages.emplace_back(record.message.data(), record.message.size());
+    if (record.category == "inference.decode" &&
+        record.event == "slot.progress" && record.attributes.size() == 1 &&
+        record.correlation_attributes.size() == 1) {
+      tokens_per_second = record.attributes.front().value.as_floating_point();
+      request_id =
+          record.correlation_attributes.front().value.as_unsigned_integer();
+      saw_progress = record.timestamp.has_value();
+    }
   }
 };
 
@@ -38,10 +51,32 @@ int main() {
         capture.messages.front() != "loaded 3 kernels") {
       return 4;
     }
+
+    const hyle::obs::LogAttribute attributes[] = {
+        {"tokens_per_second", 72.5},
+    };
+    const hyle::obs::LogAttribute correlation[] = {
+        {"request_id", std::uint64_t{17}},
+    };
+    const hyle::obs::LogRecord progress{
+        .level = LogLevel::Info,
+        .category = "inference.decode",
+        .event = "slot.progress",
+        .message = "decode progress",
+        .attributes = attributes,
+        .correlation_attributes = correlation,
+        .source =
+            hyle::obs::LogSourceLocation::from(std::source_location::current()),
+        .timestamp = hyle::time::unix_timestamp(1'700'000'000, 123),
+    };
+    if (!hyle::obs::log_record(progress) || !capture.saw_progress ||
+        capture.request_id != 17 || capture.tokens_per_second != 72.5) {
+      return 5;
+    }
   }
 
   (void)hyle::obs::log_message(LogLevel::Info, "after scope");
   if (!hyle::obs::set_default_sink_enabled(true).ok())
-    return 5;
-  return capture.messages.size() == 1 ? 0 : 6;
+    return 6;
+  return capture.messages.size() == 2 ? 0 : 7;
 }

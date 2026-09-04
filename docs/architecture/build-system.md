@@ -107,7 +107,7 @@ INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可�
 
 | 位置 | 唯一职责 |
 |---|---|
-| `cmake/HyleComponents.cmake` | 组件全集、构造顺序、Hyle 内部 `PUBLIC`/`PRIVATE` 依赖 |
+| `cmake/HyleComponents.cmake` | 组件全集、append-only 身份顺序、Hyle 内部 `PUBLIC`/`PRIVATE` 依赖；构造顺序由图计算 |
 | `src/<module>/CMakeLists.txt` | 本模块源码、公开头、编译属性和外部实现 target |
 | `tests/<module>/CMakeLists.txt` | 本模块测试；被选组件缺少该文件会配置失败 |
 | `bench/<module>/CMakeLists.txt` | 可选 benchmark，不参与正确性证明 |
@@ -130,10 +130,13 @@ INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可�
 从该记录派生，不得分别维护路径名单。
 
 配置结束时 `hyle_validate_final_module_graph()` 再核对 target 的 `LINK_LIBRARIES` 和
-`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。factor schema、名称与拓扑始终按完整
-manifest 做轻量元数据验证，依赖闭包按已验证的拓扑单次反向传播；随后只对本次 selected closure
-读取公开头和实现源码。这样 all-product CI 仍审完整树，而单产品源码消费者不会被另一个未选 factor
-的施工中状态阻断，include audit 成本也从全库 `S_all` 收束到 `S_selected`。
+`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。中央登记顺序与
+`module-status.json` 一样是不可改写的 component identity 历史，不兼任依赖顺序：配置先对完整 manifest
+做一次稳定 DFS，拒绝 unknown/QUEUED edge 与 cycle，并以登记顺序作为无依赖关系节点的 tie-breaker
+得到拓扑；依赖闭包再按该拓扑单次反向传播，target 也严格按解析结果构造。这样旧 factor 可以自然依赖
+后来拆出的低层质因数，而不用重排状态历史或复制实现，整体仍为 O(V+E)。随后只对本次 selected closure
+读取公开头和实现源码；all-product CI 仍审完整树，单产品源码消费者不会被另一个未选 factor 的施工中
+状态阻断，include audit 成本也从全库 `S_all` 收束到 `S_selected`。
 
 当前图的关键关系是：
 
@@ -143,7 +146,7 @@ math        -> PUBLIC core
 container_intrusive -> PUBLIC core
 util_core   -> PUBLIC core
 error       -> PUBLIC core
-obs         -> PUBLIC core error
+obs         -> PUBLIC core error time; PRIVATE mem_reclaim
 time        -> PUBLIC core
 timer_queue -> PUBLIC core time container_intrusive
 platform    -> PUBLIC core error
@@ -196,8 +199,8 @@ include root 或复制整棵 include tree 都不能使未登记依赖合法。
 
 该 include-owner 检查只裁决正在组装的 selected closure，不把未选模块重新耦合进 source journey。
 选择某产品时，它的全部传递 factor 都会被检查；CI 的 `HYLE_COMPONENTS=all` 因而仍机械覆盖每个 factor。
-factor manifest 自身的 unknown edge、重复、PUBLIC/PRIVATE 冲突和非拓扑顺序无论选择什么 root 都会
-失败，因为这些属于轻量全局 schema，而不是未选源码内容。
+factor manifest 自身的 unknown edge、cycle、重复和 PUBLIC/PRIVATE 冲突无论选择什么 root 都会失败，
+因为这些属于轻量全局 schema，而不是未选源码内容。登记顺序不再被误当成拓扑约束。
 
 `<hyle/version.h>` 是 build/package 拥有的 checked-in 产品元数据，并由 Core include contract
 交付；Core 本身不拥有 linked version query。`<hyle/visibility.h>` 的 export/import policy 也由
@@ -405,7 +408,9 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 | 手工 locked feature/package | 锁定归档、可选适配器、static/shared SDK 和 trace smoke |
 | 手工/发布证据 | sanitizer、真实 TLS/CUDA/Vulkan 设备、SVE/RVV 运行和性能认证 |
 
-当前仍沿用历史内部变量名 `HYLE_KNOWN_COMPONENTS` 存放全部已登记 factor identity 与拓扑序，另由
+当前仍沿用历史内部变量名 `HYLE_KNOWN_COMPONENTS` 存放全部已登记 factor identity 的
+只追加审计顺序；实际 target 构造顺序由中央依赖图稳定拓扑解析，不要为了新依赖边
+改写历史 identity 顺序。另由
 `HYLE_IMPLEMENTED_COMPONENTS` 保存已有 target 的集合。product `all` 只取 façade roots；maintainer
 `HYLE_DEV_FACTORS=all` 只取 implemented 集合，因此 `QUEUED` 身份保留项不会要求虚构源码或测试目录。
 某个因子从 `QUEUED` 进入实际施工后，只有在真实 target/ownership/测试合同就位并移除 manifest 的
@@ -440,7 +445,8 @@ wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提
 以下协议中的“模块”指 factor；中央 product catalog 另行决定它被哪些 façade 聚合。factor task
 不得自行创建、命名或链接 façade。
 
-1. 在 `HyleComponents.cmake` 登记 factor、构造顺序和全部 factor `PUBLIC`/`PRIVATE` 边；公开头若位于
+1. 在 `HyleComponents.cmake` 末尾登记 factor identity 和全部 factor `PUBLIC`/`PRIVATE` 边；不要为了
+   依赖顺序移动既有登记，构造拓扑由 manifest 自动解析。公开头若位于
    另一个 factor 的产品 namespace，同时在这一次声明中登记 `SPLIT_PUBLIC_HEADERS`。若仅借用另一
    模块的实现 header 且不形成交付需求，登记受审的 `PRIVATE_BUILD_DEPS` seam，不得伪造成产品边。
 2. 用 `hyle_add_module()` 创建 `src/<module>` target，只列本模块源码和外部实现 target。

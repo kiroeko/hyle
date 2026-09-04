@@ -2,16 +2,14 @@
 
 <!-- MODULE CLOSURE RECORD: CURRENT -->
 
-> **obs-v3：`QUALIFIED / PASS`。** 当前 candidate
-> `21c07d15c4eac477c7b9a768b6475850af87f463` / tree
-> `3db40042b12c25a5f9cf562d92de42caa077c057` 在 W1-WIN 的普通限频日志和完整推理进度路径上通过
-> 5% P1 engineering non-inferiority gate。结论只覆盖下述一个宿主 adapter 的真实消费形状，不是
-> Formal 证书，也不宣称异步 logger、4/16 独立 sink 或所有未消费组合全面 SOTA。
+> **obs-v4：candidate 前验证中。** 本页不再把 obs-v3 的 `16 slots x 256 ticks / 3-second`
+> 合成 replay 冒充 llama.cpp 当前真实消费。v4 只接受当前 Abseil 普通调用点、当前 llama.cpp
+> model-load state callback，以及受 `mem_reclaim` 迁移影响的一个 host-adapter registry 回归。
 
 稳定边界、用户选型和本轮施工事实分别见
 [Obs architecture](../../../architecture/obs-design.md)、[Obs guide](../../../user/obs.md) 与
-[obs-v3 task](../../tasks/obs/obs-v3-closure.md)。obs-v2 的多 sink 聚合结论已经成为历史压力诊断，
-不再冒充普通推理拓扑或当前 blocker。
+[obs-v4 task](../../tasks/obs/obs-v4-structured-event.md)。本页在 immutable candidate 资格化完成前
+不签发 `PASS`，也不从手工单次运行推导性能结论。
 
 ## 复杂度与资源合同
 
@@ -24,116 +22,83 @@
 | first-N | 无竞争 O(1)；relaxed CAS 在竞争下重试，单次重试次数不承诺有界；到达上限后退化为 load |
 | injected-time interval | 无竞争 O(1)；一个 relaxed load，边界时 CAS；竞争下重试次数不承诺有界；无 clock、heap、产品 mutex、syscall |
 | clock-owning interval | 上述判断加一次 `steady_clock::now()`；CAS 复杂度边界相同 |
-| `log_record` / exact `string_view` | O(S)，S 为同步 sink 数且 S≤64；不扫描 view、不分配、不拿 mutation mutex |
+| `log_record` / exact `string_view` | producer dispatch O(S)，S 为同步 sink 数且 S<=64；短 `mem_reclaim` guard、每 sink active ref；不扫描 view、不分配、不拿 mutation mutex |
+| typed adapter consumption | O(S+A)，A 为 adapter 实际读取的 attributes/correlation/value bytes；HYLE 不做隐藏 schema lookup 或 copy |
 | `log_message(const char*)` / format | O(M+S) / O(formatted bytes+S)；format 使用固定 1 KiB caller 栈缓冲 |
-| add/remove/flush | O(S) 控制路径；remove 等待旧 reader/callback 排空 |
+| add/remove/flush | O(S) 冷控制路径；snapshot publish 等短 grace period，remove 再等目标 callback 排空 |
 | trace ON | 直接展开为相同 Tracy native event，无 HYLE runtime adapter |
 
-控制状态只在使用对应宏或显式对象时存在；没有给每条 `LogRecord`、sink snapshot 或普通 emit 增加
-metadata。emit 的 O(S) 是逐 callback fan-out 的必要下界；正常应用和 llama.cpp 都通过一个 process
-adapter 进入自己的 logger，后续队列/文件/网络 fan-out 不属于 HYLE producer 热路。
+`LogValue` 是 constant-size、trivially-copyable tagged scalar；普通 record 不自动捕获 clock、thread、
+task context 或 owning string。typed descriptor 只在调用方显式选择 structured record 时存在。
+emit 的 O(S) 是同步 callback fan-out 的必要下界；普通应用和当前参考 consumer 都通过一个 process
+adapter 进入宿主 logger，后续队列、文件与网络 fan-out 不属于 HYLE producer 热路。
 
-## 冻结消费合同
+## v4 冻结性能输入
 
-- contract：`bench/contracts/obs-control-p1-v1.json`，SHA-256
-  `e97c70dc41b63dfc0c3e238db746fccd15cba43f4ecc45c03f4ac6945116e9cc`；
-- consumer manifest：`bench/obs/consumer_shapes_v1.json`，SHA-256
-  `c614a48f792237b7ae243f8ae645969548fb6906539fbdb6816dc113b24fb514`；
-- benchmark source：`bench/obs/control_bench.cc`，SHA-256
-  `d5725d8bf3b50adae62428461c1676379ad5b82b1dcbb4e94482c9385743e004`；
-- ordinary peer：Abseil `81c993af4fb88b3a51829a796df02251fa27102f`；
-- inference consumer/control：llama.cpp `7584430716ee229751771ed0d6bbcb780d105eeb`；
+- consumer manifest：`bench/obs/consumer_shapes_v2.json`，SHA-256
+  `317d984ccddd0692e604bab733d5491fc7e5d597c36f55c229342f2eec67f652`；
+- ordinary contract：`bench/contracts/obs-ordinary-p1-v1.json`，lock
+  `5d2d7210782f1bae55c14bd42246f2485ce02ce6b74cf2e1f5bd8e20c8a33759`；
+- structured contract：`bench/contracts/obs-structured-p1-v1.json`，lock
+  `b35d0c0d81980ba39bc59a8c70048962fd9625fe179632ca801ed34f310594f0`；
+- concurrent registry contract：`bench/contracts/obs-concurrent-p1-v2.json`，lock
+  `3d527efed8d509b18207b80a7c0f556f908a11fb4ee9f23ffde0df000b32eb34`；
+- benchmark sources：ordinary `bench/obs/control_bench.cc` SHA-256
+  `d5725d8bf3b50adae62428461c1676379ad5b82b1dcbb4e94482c9385743e004`；structured
+  `bench/obs/structured_bench.cc` SHA-256
+  `958099d25f88219e6b1c4b817dc2a74555500f55aaabe623209fafc138e1c1d0`；
+- current peers/consumer：Abseil `9e15d3d6cc19ae4703f3ad7fa413a789580ec1fc`；llama.cpp
+  `8b4b3558f1459c13e4aa38d5c94d306a00dc6acd`；registry baseline
+  `f305b9d3fed87a065d300145e5d9e8de3f5a77a0`；
 - W1-WIN，MSVC 19.50、Windows SDK 10.0.26100.0、x64 Release/static、LTO OFF、portable ISA、fresh
-  build；每个 stratum 15 个独立进程样本；
-- primary/placement × candidate-first/peer-first 四个 strata；A/A、5%/10% known delta、timer floor、
-  artifact/build identity、consumer provenance 与 semantic/resource oracle 全部 `PASS`。
+  build；点值不与 WSL/macOS 池化。每项必须经过 runner 的独立进程样本、A/A、known-delta、timer-floor、
+  build/artifact identity 与对应 semantic/resource validator。
 
-### 普通调用点：4096 次 check，64 次自然格式化和一个 adapter
+### 1. 普通调用点
 
-双方都使用自己的公开自然形状：HYLE `HYLE_LOG_INFO_EVERY_N`，Abseil
-`ABSL_LOG_EVERY_N(...).ToSinkOnly`。数字是每次 check 的绝对中位数；ratio > 1 有利于 HYLE。
+同一 repeated diagnostic journey：双方执行 4096 次 level/frequency check，每第 64 次按自己的公开
+自然 API 格式化并投给一个 synchronous adapter。HYLE 使用 `HYLE_LOG_INFO_EVERY_N`；Abseil 使用
+`ABSL_LOG_EVERY_N(...).ToSinkOnly`。这是 natural-route aggregate，不是孤立原子排名。
 
-| Stratum | HYLE ns/check | Abseil ns/check | ratio | 98.93% CI | 5% NI |
-|---|---:|---:|---:|---:|---|
-| primary / candidate-first | 2.6947 | 16.0670 | 5.9526 | [5.9009, 6.0029] | `PASS` |
-| primary / peer-first | 2.6794 | 15.6439 | 5.8361 | [5.7518, 6.0125] | `PASS` |
-| placement / candidate-first | 2.7045 | 16.1370 | 5.9789 | [5.9292, 5.9951] | `PASS` |
-| placement / peer-first | 2.6872 | 15.8233 | 5.8891 | [5.8660, 5.9903] | `PASS` |
+当前状态：`PENDING QUALIFICATION`。
 
-这是同语义 aggregate 的工程非劣/优势证据，不外推到 Abseil 的 category/configuration、fatal 或异步
-能力。差距主要包含双方自然 record/format 实现，不是孤立原子指令排名。
+### 2. 推理 model-load structured progress
 
-### 推理进度：16 slots × 256 ticks，80 次实际输出到一个 adapter
+锁定 llama.cpp commit 的 `load_progress_callback` 有三个 owner：`text_model`、`mmproj_model`、
+`spec_model`。每个 owner 首条、每 200 ms 和末条必发，并向 host state callback 提供
+`stages/current/value`。冻结 replay 为每 stage 256 个 50 ms callback，共 768 次判断与 195 条输出。
 
-每个 slot 自己持有状态；每轮调度共享一次注入的 50 ms monotonic tick，三秒 cadence 共 4096 次判断
-与 80 条 preformatted record。peer 是 llama.cpp 当前手写 per-slot elapsed-time gate；输出路径、adapter
-与观察计数完全共享，只比较把手写状态换成 HYLE 精确 limiter 后的完整消费者成本。
+两条路线构造完全相同的 HYLE typed record：category/event、三个重复 stage attribute、current、double
+value、一个 host correlation、source、canonical wall timestamp；经过相同 registry，再由同一个 adapter
+遍历所有字段和 value kind。唯一差异是 HYLE `LogIntervalLimiter` 与 source-derived single-owner manual
+gate。llama.cpp 只提供真实 consumer control，并不被宣传为 structured logger 性能 peer；完整路径同时
+受绝对 consumer budget 与 5% gate 保护，不能用 getter/union 微基准改变 API。
 
-| Stratum | HYLE ns/check | manual ns/check | ratio | 98.93% CI | 5% NI |
-|---|---:|---:|---:|---:|---|
-| primary / candidate-first | 1.3501 | 1.3482 | 1.0032 | [0.9916, 1.0143] | `PASS` |
-| primary / peer-first | 1.3444 | 1.3481 | 1.0020 | [0.9902, 1.0206] | `PASS` |
-| placement / candidate-first | 1.3741 | 1.4542 | 1.0612 | [1.0244, 1.0899] | `PASS` |
-| placement / peer-first | 1.3611 | 1.4494 | 1.0635 | [1.0381, 1.0898] | `PASS` |
+当前状态：semantic validator `PASS`（两条路线各 195 条、390 次完整消费，primary/placement artifact
+不同）；正式资格为 `PENDING QUALIFICATION`。
 
-最慢 HYLE stratum 约 5.63 us/完整 4096-check replay，已经**包含** 80 条 adapter record，仍远低于冻结
-的 100 us aggregate budget。四种姿势全部通过 5% NI，故不是靠一个执行顺序或地址布局挑出的胜负。
+### 3. Registry 机制回归
 
-## 绝对成本诊断，不参与 SOTA 排名
+Obs v4 把重复的 snapshot reader epoch 换为已冻结的 `mem_reclaim` guard，但 per-sink active ref 仍保护
+任意 callback。性能门只取正常的八 producer/一个 host adapter，分别裁决 throughput 和 256-emit chunk
+p99，peer 是相同源码、相同编译器链接的 immutable pre-v4 HYLE registry。4/16 independent sinks 仍可
+在 executable 中运行以观察容量/争用，却是 `DIAGNOSTIC`，不进入 v4 contract，也不能阻挡或签发产品。
 
-`LogIntervalLimiter` 提供的精确并发 at-most-one 语义比 llama.cpp 单 owner 的普通 bool/time state 更强；
-二者单独判断的成本又落在亚纳秒量级，因此 limiter-only 行在合同中预先标成
-`NOT_COMPARABLE / diagnostic`，不能改变 API 或决定产品 performance gate。
+当前状态：`PENDING QUALIFICATION`。
 
-| 诊断 | W1-WIN 观察 | 冻结预算 | 裁决 |
-|---|---:|---:|---|
-| injected-time exact limiter，4096 checks | 0.5034–0.5536 ns/check；2.06–2.27 us/aggregate | ≤25 ns/check；≤100 us/aggregate | `PASS` |
-| clock-owning suppressed limiter | 5 个独立进程 12.59–12.98 ns/check | ≤100 ns/check | `PASS` |
-| 同一 probe 的 `steady_clock::now()` | 11.85–12.05 ns/read | 仅解释成本来源 | diagnostic |
+## v3 证据如何保留
 
-clock-owning probe 使用 candidate public header、4096-call batch 和 nanobench；source / executable
-SHA-256 分别为
-`BA27389CA244DB999818B3365E17541E8F3DD790325AD34B463E27BD69C20C2B` /
-`B5991ECA7832D62FD19683BA2A0E1EFBED0A3443403328FC772C137A49948DC5`。它证明宽松绝对预算，未经过
-P1 相对 peer qualification，因而不用于“更快”宣传。
+- v3 ordinary Abseil 与 limiter 结果是历史事实；v4 改了 record layout、registry 与直接依赖，必须用
+  新 candidate 重跑，不能靠旧 tree 自动续证；
+- v3 `16 slots x 256 ticks / 3-second` 并非锁定 llama.cpp 的精确 source journey，现降级为历史合成
+  诊断。它不再出现在当前 contract、当前结论或 user/architecture 的性能声明中；
+- 4/16 independent sink 仍是固定 registry 容量与 contention 诊断；没有 named normal consumer 时不
+  升为产品门；
+- `trace.h` 与 direct Tracy seam 未在 v4 修改；它的旧同事件结构证据可支持“无 runtime adapter”这个
+  结构结论，trace ON/OFF correctness 仍需在当前三平台交付复验。它不证明所有 Tracy 事件全面 SOTA。
 
-## 未变化路径的 retained 证据
+## 当前可声明与禁止外推
 
-obs-v3 没有修改 `src/obs`、registry/record layout、基础 `HYLE_LOG_<LEVEL>` 展开或 `trace.h`。因此下列
-exact implementation identity 证据仍支持这些路径，但不会替代上面的 v3 新能力合同：
-
-- W1-WIN 单 adapter preformatted 42.6–43.9 ns/emit（≤100 ns）、`std::format` 93.8–97.8 ns/emit
-  （≤150 ns），相对冻结 HYLE baseline 的双顺序 5% NI `PASS`；
-- direct Tracy v0.14.1 counter/named-zone/annotation 共 12 个 strata 全部 5% NI `PASS`；HYLE 只宣称
-  native seam 无材料级 adapter tax，不宣称比 Tracy event 更快；
-- 8 producer × 1 sink 的 throughput/tail 5% NI `PASS`。旧 4/16 sink 的 n=31 区间未决仍保留为容量/
-  contention 事实，但 consumer manifest 已证明它不是普通 HYLE/llama.cpp 产品拓扑，所以不进入 v3
-  product gate。若出现真实多独立 sink 消费者，必须用新 round 和它自己的贡献/KPI 重开。
-
-历史 bundle 与完整点值保留在 `obs-v1`/`obs-v2` task，不在本页重复易腐表格。
-
-## 可复验证据与当前裁决
-
-资格化 bundle：
-
-```text
-C:\hyle-scratch\obs-v3\qual-evidence-21c07d15\manifest.json
-```
-
-- manifest SHA-256：`77A4DBAC0E8883046759D36585B6CA8631E14517CA63D35FC27639D5072CE547`；
-- summary SHA-256：`0A5B04FFE639243AC0C5BB8646F1A88EF399339FBC02584E118AC40C7723CB9E`；
-- controls SHA-256：`CC92B4DFABB24D6A372E1F7471C67736FD0C385C985B22C517EEC73EEB4D6EAC`；
-- observations SHA-256：`017F3D7AAB47C7F63D6A5C2C0405DEE6B5EED243CC7493920BE0478FDFD67650`。
-
-```powershell
-python scripts/hyle-perf.py verify `
-  --contract bench/contracts/obs-control-p1-v1.json `
-  --manifest C:\hyle-scratch\obs-v3\qual-evidence-21c07d15\manifest.json
-```
-
-当前 verifier 返回 `qualification=QUALIFIED`、`paths_verified=true`、
-`provenance_compatibility=EXACT`、`environment_policy_compatibility=CURRENT`、
-`current_certification_policy_eligible=true`；qualification gate 与 product performance gate 都是
-`PASS`。因此 obs-v3 的 P1 engineering performance 可签 `PASS`。Formal 仍为 `PENDING`；candidate、
-consumer/provenance、peer、工具链、算法/API/layout 或直接依赖发生 material 变化时必须重新资格化，
-不能从本页点值自动续证。
+candidate 资格化前只能声明复杂度、资源合同与 semantic validator 结果。不得声明 obs-v4 P1 已通过、
+全面 SOTA、跨平台固定纳秒、异步 logger 性能、所有 sink fan-out 或 end-to-end token latency。最终页面
+只会记录 runner 深验证过的 process-median/CI 和 bundle identity；Formal 认证独立保持 `PENDING`。

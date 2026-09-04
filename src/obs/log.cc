@@ -1,13 +1,16 @@
 #include "hyle/obs/log.h"
 
 #include <atomic>
+#include <charconv>
 #include <cstdio>
 #include <mutex>
 #include <new>
+#include <string_view>
 #include <utility>
 
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
+#include "hyle/mem/reclamation.h"
 
 #if HYLE_OS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -24,10 +27,6 @@ constexpr std::size_t kMaxSinks = 64;
 constexpr std::size_t kActiveWaiterBit = std::size_t{1}
                                          << (sizeof(std::size_t) * 8 - 1);
 constexpr std::size_t kActiveCountMask = kActiveWaiterBit - 1;
-constexpr std::size_t kSnapshotWaiterOne = std::size_t{1}
-                                           << (sizeof(std::size_t) * 4);
-constexpr std::size_t kSnapshotReaderMask = kSnapshotWaiterOne - 1;
-static_assert(sizeof(std::size_t) >= 4);
 
 struct SinkSlot {
   LogSink sink{};
@@ -77,10 +76,9 @@ struct RegistryState {
   std::size_t count = 0;
   SinkSnapshot snapshots[2];
   std::atomic<SinkSnapshot *> published{nullptr};
-  // Low half = readers copying a published snapshot; high half = mutations
-  // waiting for a zero-reader epoch. A single word supports multiple removers
-  // without the missed wake possible with one shared boolean waiter flag.
-  std::atomic<std::size_t> snapshot_state{0};
+  // Protects only the short immutable-snapshot copy. Arbitrary callback
+  // lifetime remains owned by each SinkSlot::active reference below.
+  mem::ReclamationDomain snapshot_domain{0};
 };
 
 // Logging is valid from process-lifetime destructors. A normal function-local
@@ -179,6 +177,48 @@ void write_escaped(FILE *stream, std::string_view text) noexcept {
   }
 }
 
+template <class Number> void write_number(FILE *stream, Number value) noexcept {
+  char bytes[128];
+  const auto result = std::to_chars(bytes, bytes + sizeof(bytes), value);
+  HYLE_FATAL_ASSERT(result.ec == std::errc{});
+  static_cast<void>(std::fwrite(
+      bytes, 1, static_cast<std::size_t>(result.ptr - bytes), stream));
+}
+
+void write_value(FILE *stream, const LogValue &value) noexcept {
+  switch (value.kind()) {
+  case LogValueKind::String:
+    write_escaped(stream, value.as_string());
+    return;
+  case LogValueKind::SignedInteger:
+    write_number(stream, value.as_signed_integer());
+    return;
+  case LogValueKind::UnsignedInteger:
+    write_number(stream, value.as_unsigned_integer());
+    return;
+  case LogValueKind::FloatingPoint:
+    write_number(stream, value.as_floating_point());
+    return;
+  case LogValueKind::Boolean:
+    std::fputs(value.as_boolean() ? "true" : "false", stream);
+    return;
+  }
+  HYLE_UNREACHABLE();
+}
+
+void write_attributes(FILE *stream, std::span<const LogAttribute> attributes,
+                      std::string_view prefix = {}) noexcept {
+  for (const LogAttribute &attribute : attributes) {
+    std::fputc(' ', stream);
+    if (!prefix.empty()) {
+      static_cast<void>(std::fwrite(prefix.data(), 1, prefix.size(), stream));
+    }
+    write_escaped(stream, attribute.key);
+    std::fputc('=', stream);
+    write_value(stream, attribute.value);
+  }
+}
+
 #if HYLE_OS_WINDOWS
 // OutputDebugStringA has no length-taking form. Mirror the same escaped logical
 // record as stderr into one bounded buffer so hostile control bytes cannot
@@ -216,12 +256,49 @@ public:
     }
   }
 
-  void append_line(std::uint32_t line) noexcept {
-    char digits[16];
-    const int count = std::snprintf(digits, sizeof(digits), "%u",
-                                    static_cast<unsigned>(line));
-    if (count > 0)
-      append(digits);
+  void append_raw(std::string_view text) noexcept {
+    for (unsigned char value : text)
+      append_byte(value);
+  }
+
+  template <class Number> void append_number(Number value) noexcept {
+    char bytes[128];
+    const auto result = std::to_chars(bytes, bytes + sizeof(bytes), value);
+    HYLE_FATAL_ASSERT(result.ec == std::errc{});
+    append_raw(
+        std::string_view(bytes, static_cast<std::size_t>(result.ptr - bytes)));
+  }
+
+  void append_value(const LogValue &value) noexcept {
+    switch (value.kind()) {
+    case LogValueKind::String:
+      append_escaped(value.as_string());
+      return;
+    case LogValueKind::SignedInteger:
+      append_number(value.as_signed_integer());
+      return;
+    case LogValueKind::UnsignedInteger:
+      append_number(value.as_unsigned_integer());
+      return;
+    case LogValueKind::FloatingPoint:
+      append_number(value.as_floating_point());
+      return;
+    case LogValueKind::Boolean:
+      append(value.as_boolean() ? "true" : "false");
+      return;
+    }
+    HYLE_UNREACHABLE();
+  }
+
+  void append_attributes(std::span<const LogAttribute> attributes,
+                         std::string_view prefix = {}) noexcept {
+    for (const LogAttribute &attribute : attributes) {
+      append(" ");
+      append_raw(prefix);
+      append_escaped(attribute.key);
+      append("=");
+      append_value(attribute.value);
+    }
   }
 
   void emit() noexcept {
@@ -264,16 +341,40 @@ void default_write(void *, const LogRecord &record) noexcept {
   const char *color = color_enabled ? level_color(record.level) : "";
   const char *reset = color_enabled ? "\x1b[0m" : "";
   std::fprintf(stderr, "%s[%s]%s ", color, level_name(record.level), reset);
-  if (record.file != nullptr && record.line != 0) {
-    write_escaped(stderr, record.file);
-    std::fprintf(stderr, ":%u ", static_cast<unsigned>(record.line));
+  if (!record.category.empty()) {
+    std::fputs("category=", stderr);
+    write_escaped(stderr, record.category);
+    std::fputc(' ', stderr);
+  }
+  if (!record.event.empty()) {
+    std::fputs("event=", stderr);
+    write_escaped(stderr, record.event);
+    std::fputc(' ', stderr);
+  }
+  if (!record.source.file.empty()) {
+    write_escaped(stderr, record.source.file);
+    if (record.source.line != 0) {
+      std::fputc(':', stderr);
+      write_number(stderr, record.source.line);
+      if (record.source.column != 0) {
+        std::fputc(':', stderr);
+        write_number(stderr, record.source.column);
+      }
+    }
+    std::fputc(' ', stderr);
   }
   write_escaped(stderr, record.message);
-  for (const LogField &field : record.fields) {
-    std::fputc(' ', stderr);
-    write_escaped(stderr, field.key);
-    std::fputc('=', stderr);
-    write_escaped(stderr, field.value);
+  write_attributes(stderr, record.attributes);
+  write_attributes(stderr, record.correlation_attributes, "correlation.");
+  if (!record.source.function.empty()) {
+    std::fputs(" source.function=", stderr);
+    write_escaped(stderr, record.source.function);
+  }
+  if (record.timestamp.has_value()) {
+    std::fputs(" timestamp.seconds=", stderr);
+    write_number(stderr, record.timestamp->seconds);
+    std::fputs(" timestamp.nanoseconds=", stderr);
+    write_number(stderr, record.timestamp->nanoseconds);
   }
   std::fputc('\n', stderr);
   std::fflush(stderr);
@@ -282,18 +383,40 @@ void default_write(void *, const LogRecord &record) noexcept {
   debug.append("[");
   debug.append(level_name(record.level));
   debug.append("] ");
-  if (record.file != nullptr && record.line != 0) {
-    debug.append_escaped(record.file);
-    debug.append(":");
-    debug.append_line(record.line);
+  if (!record.category.empty()) {
+    debug.append("category=");
+    debug.append_escaped(record.category);
+    debug.append(" ");
+  }
+  if (!record.event.empty()) {
+    debug.append("event=");
+    debug.append_escaped(record.event);
+    debug.append(" ");
+  }
+  if (!record.source.file.empty()) {
+    debug.append_escaped(record.source.file);
+    if (record.source.line != 0) {
+      debug.append(":");
+      debug.append_number(record.source.line);
+      if (record.source.column != 0) {
+        debug.append(":");
+        debug.append_number(record.source.column);
+      }
+    }
     debug.append(" ");
   }
   debug.append_escaped(record.message);
-  for (const LogField &field : record.fields) {
-    debug.append(" ");
-    debug.append_escaped(field.key);
-    debug.append("=");
-    debug.append_escaped(field.value);
+  debug.append_attributes(record.attributes);
+  debug.append_attributes(record.correlation_attributes, "correlation.");
+  if (!record.source.function.empty()) {
+    debug.append(" source.function=");
+    debug.append_escaped(record.source.function);
+  }
+  if (record.timestamp.has_value()) {
+    debug.append(" timestamp.seconds=");
+    debug.append_number(record.timestamp->seconds);
+    debug.append(" timestamp.nanoseconds=");
+    debug.append_number(record.timestamp->nanoseconds);
   }
   debug.emit();
 #endif
@@ -321,23 +444,12 @@ SinkSlot *find_locked(RegistryState &state, LogSink sink,
   return nullptr;
 }
 
-void wait_for_snapshot_readers(RegistryState &state) noexcept {
-  std::size_t snapshot = state.snapshot_state.fetch_add(
-      kSnapshotWaiterOne, std::memory_order_seq_cst);
-  snapshot += kSnapshotWaiterOne;
-  while ((snapshot & kSnapshotReaderMask) != 0) {
-    state.snapshot_state.wait(snapshot, std::memory_order_seq_cst);
-    snapshot = state.snapshot_state.load(std::memory_order_seq_cst);
-  }
-  state.snapshot_state.fetch_sub(kSnapshotWaiterOne, std::memory_order_seq_cst);
-}
-
 // Caller holds state.mutex. Two in-place immutable snapshots are enough: wait
 // until no emitter is copying the inactive generation, fill it, then publish.
 // A remover performs one more reader drain after publication before waiting on
 // the target slot, closing the old-snapshot -> active-reference handoff race.
 void publish_locked(RegistryState &state) noexcept {
-  wait_for_snapshot_readers(state);
+  static_cast<void>(state.snapshot_domain.synchronize());
   SinkSnapshot *current = state.published.load(std::memory_order_relaxed);
   SinkSnapshot *next = current == &state.snapshots[0] ? &state.snapshots[1]
                                                       : &state.snapshots[0];
@@ -408,20 +520,15 @@ void finish_retire(RegistryState &state, SinkSlot *slot) noexcept {
 
 std::size_t snapshot_sinks(RegistryState &state,
                            Dispatch (&snapshot)[kMaxSinks]) noexcept {
-  state.snapshot_state.fetch_add(1, std::memory_order_seq_cst);
-  const SinkSnapshot *published =
-      state.published.load(std::memory_order_acquire);
+  auto guard = state.snapshot_domain.read();
+  const SinkSnapshot *published = guard.protect(state.published);
   const std::size_t count = published->count;
   for (std::size_t i = 0; i < count; ++i) {
     SinkSlot *slot = published->entries[i].slot;
     slot->active.fetch_add(1, std::memory_order_relaxed);
     snapshot[i] = published->entries[i];
   }
-  const std::size_t prior =
-      state.snapshot_state.fetch_sub(1, std::memory_order_seq_cst);
-  if ((prior & ~kSnapshotReaderMask) != 0) {
-    state.snapshot_state.notify_all();
-  }
+  guard.reset();
   return count;
 }
 
@@ -491,7 +598,9 @@ Status remove_sink(LogSink sink) noexcept {
     }
     publish_locked(state);
   }
-  wait_for_snapshot_readers(state);
+  // Close the old-snapshot -> active-reference handoff before inspecting the
+  // target's callback references. This grace period does not cover callbacks.
+  static_cast<void>(state.snapshot_domain.synchronize());
   wait_for_other_callbacks(slot);
   if (!self_removal)
     finish_retire(state, slot);
@@ -613,6 +722,8 @@ bool detail::log_record_unchecked(const LogRecord &record) noexcept {
 }
 
 bool log_record(const LogRecord &record) noexcept {
+  HYLE_FATAL_ASSERT(!record.timestamp.has_value() ||
+                    time::unix_timestamp_valid(*record.timestamp));
   if (!should_log(record.level))
     return false;
   return detail::log_record_unchecked(record);

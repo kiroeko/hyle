@@ -17,7 +17,7 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 | 重复 warning/progress 需要防刷屏 | `HYLE_LOG_*_EVERY_N/FIRST_N/EVERY` | 每个调用点独立状态；被抑制时不格式化 |
 | 多个 request/slot 各自维护进度周期 | `LogIntervalLimiter` | 状态跟随对象，而不是把所有实例混入一个调用点 static |
 | 已有字符串或 byte slice，不想再格式化 | `log_message(std::string_view)` | 同步借用 exact bytes，不扫描、不复制，可保留内嵌 NUL |
-| 有字段、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured record |
+| 有 category/event、typed 属性、关联 ID、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured event |
 | 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
 | 进程期或 callback 内特殊控制 registry | `add_sink/remove_sink` | 高级显式路径；调用方自行证明配对和 state 生命周期 |
 | 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；shared 或单最终 image 的 static 构建汇入一个 Tracy client |
@@ -57,26 +57,48 @@ translation unit 的编译期 floor：
 `HYLE_LOG_*` 宏。运行期仍用 `set_level` 动态调节剩余等级。并发收紧 level 时，已经通过
 唯一一次 relaxed gate 的 record 可以完成本次同步投递，这是配置的 eventual 语义。
 
-已有文本或结构化字段时不必绕经 format：
+已有文本或结构化事件时不必绕经 format。下面是推理 slot progress 的正常形状：
 
 ```cpp
-hyle::obs::LogField fields[] = {
-    {"request_id", "a7f2"},
-    {"device", "gpu0"},
+hyle::obs::LogAttribute attributes[] = {
+    {"model", "qwen"},
+    {"backend", "gpu0"},
+    {"tokens_per_second", 72.5},
+    {"queue_depth", std::uint32_t{3}},
+};
+hyle::obs::LogAttribute correlation[] = {
+    {"request_id", std::uint64_t{0xa7f2}},
+    {"slot", std::uint32_t{2}},
 };
 hyle::obs::LogRecord record{
     .level = LogLevel::Warn,
-    .message = "submission delayed",
-    .fields = fields,
-    .timestamp_ns = unix_time_ns,  // 0 表示调用方未提供
+    .category = "inference.decode",
+    .event = "slot.progress",
+    .message = "decode progress",
+    .attributes = attributes,
+    .correlation_attributes = correlation,
+    .source = hyle::obs::LogSourceLocation::from(
+        std::source_location::current()),
+    .timestamp = hyle::time::unix_timestamp(1'700'000'000, 123),
 };
 bool delivered = hyle::obs::log_record(record);
 ```
 
-message、field key/value 都是 exact byte view；例如
+`LogValue` 接受 exact `string_view`/字符串字面量、借用的 `std::basic_string<char>` 左值、≤64-bit
+signed/unsigned integer、`float/double` 和 `bool`。临时 `std::string` 被拒绝，避免 record dispatch 前
+view 已经悬空；enum 必须由调用方明确决定转成整数还是名字，`long double` 不会被静默降精度；sink 先看
+`kind()`，再调用对应的 `as_string/as_signed_integer/as_unsigned_integer/as_floating_point/as_boolean`，
+错 kind 是 programmer contract violation。attributes 与 correlation attributes 都保序，允许重复或空
+key；前者是事件事实，后者是 request/slot/trace 等跨记录 identity，Obs 不复制、索引或解释 key。
+
+category、event、message、key 和 string value 都是 exact byte view；例如
 `log_message(level, std::string_view(data, size))` 不需要 NUL 结尾并保留内嵌 NUL。
-`const char*` 便利重载会寻找结尾 NUL。record、span 和所有 view 都只在同步调用期间借用；悬空或
-无效 view 是 C++ 前置条件违反。`false` 表示被 gate 或没有 sink，不是错误。从不可信来源构造
+`log_message(const char*)` 便利重载会寻找结尾 NUL；`LogValue` 有意不接收任意 raw pointer，已知长度的
+字符指针应显式传 `string_view`。`std::string` 等拥有者必须以活过本次调用的左值传入。record、span 和
+所有 view 都只在同步调用期间借用；悬空或
+无效 view 是 C++ 前置条件违反。timestamp 未设置才表示 absent，Unix epoch `{0,0}` 和 pre-epoch 都是
+有效值；`nanoseconds >= 1'000'000'000` 会 fail-fast。Obs 不自动读钟，只有调用方选择 timestamp 才付费。
+`false` 表示被 gate 或没有 sink，不是错误。从不可信来源构造
 record 的上层代码必须先验证 pointer/length，再进入 obs 核心。`true` 只表示至少一个同步 sink
 callback 被调用，不是文件落盘、网络送达或 `stderr` I/O 成功的 durability receipt；需要这类保证时
 由上层 sink 自己的 flush/ack 协议负责。
@@ -87,6 +109,35 @@ callback 被调用，不是文件落盘、网络送达或 `stderr` I/O 成功的
 
 默认 sink 写 stderr。只有终端才加 HYLE 自己的 level 色码；source/message/field 中的换行、
 TAB、ESC 等控制字符会转义，所以一条 record 不会伪造额外物理行或注入 ANSI 序列。
+typed 数值使用固定栈缓冲渲染；correlation key 带 `correlation.` 前缀，pre-epoch timestamp 分成
+`timestamp.seconds` 与 `timestamp.nanoseconds`，避免错误的小数解释。
+
+`Status` 不常驻每条 record。只有错误事件需要时，按宿主 schema 组合普通 typed attributes：
+`status.code` 放稳定 code name，`status.message` 放确认可外发的消息，原生错误再加
+`status.native_domain` 和 signed `status.native_code`。业务控制流仍传播 `Status/Result`；日志只是边界
+诊断，不能通过解析 message 恢复错误类型。
+
+```cpp
+const hyle::Status status = get_model();
+if (!status.ok() && status.has_native_error()) {
+  const hyle::NativeError native = status.native_error();
+  hyle::obs::LogAttribute attributes[] = {
+      {"status.code", hyle::status_code_name(status.code())},
+      {"status.message", status.message()}, // 只在确认可外发时放入
+      {"status.native_domain", hyle::native_error_domain_name(native.domain)},
+      {"status.native_code", native.code},
+  };
+  hyle::obs::log_record({
+      .level = hyle::obs::LogLevel::Error,
+      .category = "model.loader",
+      .event = "model.load_failed",
+      .attributes = attributes,
+  });
+}
+```
+
+没有 native error 时不要伪造 `None/0`；只提供 `status.code`，有实际 message 且符合脱敏
+策略时再加 `status.message`。
 
 ## 3. 条件、采样和推理进度
 
@@ -139,9 +190,10 @@ for (DecodeSlot& slot : active_slots) {
 }
 ```
 
-需要更低分辨率、更便宜且已经选择 Time 组件的 consumer，也可把
+需要更低分辨率、更便宜的 consumer，也可把
 `hyle::time::coarse_monotonic_ns()` 和同单位 interval 传给整数 `should_log_at`；Obs 本身不因此依赖
-Time。首个 check 通过，之后一个 interval 内最多一个并发调用通过。时间回退会抑制到追上上次值；
+Time 的读钟实现；Obs 的 Time 组件依赖来自公开 wall timestamp value。首个 check 通过，之后一个
+interval 内最多一个并发调用通过。时间回退会抑制到追上上次值；
 只能传 monotonic clock，不能传 Unix/realtime。interval<=0 表示关闭限流、每次通过。`reset()` 用于
 请求生命周期重新开始；它本身无数据竞争，但与 check 并发可能额外放行一次，所以应在 slot 停止后调用。
 
@@ -265,6 +317,10 @@ native trace seam。
 - 不要在 sink callback 内 yield/suspend stackful fiber 或迁移 OS thread；复制并 enqueue 后先返回。
 - 不要在 callback 返回后保存 borrowed record 指针；异步 sink 必须复制。
 - 不要把 `record.message.data()` 当 C string；它按 `size()` 定界并可能包含 NUL。
+- 不要把 `LogValue` 的 string 当 owning storage，或按错误 kind 读取；异步 adapter 必须连同两个 attribute span 一起复制。
+- 不要用空 timestamp 或整数 0 猜测“未提供”；检查 `record.timestamp.has_value()`，epoch 0 是真实时间。
+- 不要把 correlation identity 混入普通 attributes 后再靠 key 前缀猜；使用独立 `correlation_attributes` span。
+- 不要把 enum 或 `long double` 隐式塞进 `LogValue`；明确选择稳定整数/name，或先做有意的精度转换。
 - 不要让 `SinkRegistration` 比其 callback state 活得更久，或同时手工 remove 同一 sink。
 - 不要把 obs 当信号处理器日志：mutex、stdio、format 和任意 callback 都不是 async-signal-safe。
 - 不要为每个模块创建一套 logger/category 树；已有应用 logger 时用一个 adapter sink。

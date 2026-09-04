@@ -53,12 +53,12 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | util_core | core | — |
 | time | core | — |
 | timer_queue | core, time, container_intrusive | — |
-| obs | core, error | — |
+| mem_reclaim | core | — |
+| obs | core, error, time | mem_reclaim |
 | math | core | — |
 | platform | core, error | — |
 | platform_thread | core, error, time | platform |
 | platform_fs | core, error, time | platform |
-| mem_reclaim | core | — |
 | mem | core, error, platform | — |
 | mem_vm | core, error, mem, platform, platform_fs, util_core | — |
 | simd | core, platform | — |
@@ -103,7 +103,9 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 依赖边的是 21 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
 外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
-声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
+factor identity 按首次登记顺序只追加，不能为后来出现的自然低层边改写历史；构造顺序由中央图稳定
+拓扑解析，闭包必须无环，unknown/QUEUED edge 与 cycle 都 fail closed。外部第三方依赖由所属模块登记，
+不出现在内部组件图中。
 SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only
 `hyle_highway_headers` 外部实现 target，但 Container 不因此依赖、构建或安装 `hyle::simd`。Highway 的
 来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。
