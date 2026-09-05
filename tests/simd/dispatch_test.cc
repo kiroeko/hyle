@@ -29,7 +29,9 @@ void ExpectFeatureFromEnvironment(const char* name, CpuFeature feature) {
   const bool valid = (expected[0] == '0' || expected[0] == '1') &&
                      expected[1] == '\0';
   EXPECT_TRUE(valid) << name;
-  if (valid) EXPECT_EQ(cpu_features().has(feature), expected[0] == '1') << name;
+  if (valid) {
+    EXPECT_EQ(cpu_features().has(feature), expected[0] == '1') << name;
+  }
 #if defined(_WIN32)
   std::free(expected);
 #endif
