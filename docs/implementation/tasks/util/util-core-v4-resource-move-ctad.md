@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态：`AUDITED`。候选红队命中既有 `UC4-UR-03`，依法从 `CANDIDATE` 退回；只允许修正
-> checked-sentinel 完整布尔判定的异常合同并重建候选，不增加能力或修改 benchmark。
+> 当前状态：`CANDIDATE`。红队纠正已经形成新的 immutable product commit/tree；只重放本卡既定门，
+> 不增加能力或修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -104,7 +104,7 @@ Core-only header-only factor。所有 `MUST` 已落入上述六项有限 FIX，�
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-audited-10962013.json`，SHA-256
 `778A6D46F874DD69AD01B9C3B326E639B818688BBD5AE47D2720A1429BA490E2`。
 
-## 产品候选（`CANDIDATE`）
+## 第一产品候选（已由红队退回）
 
 - candidate commit / tree：
   `2f53239c0cc2a3f15b717f7910e6b809d42f42b8` /
@@ -138,3 +138,17 @@ Core-only header-only factor。所有 `MUST` 已落入上述六项有限 FIX，�
 `CANDIDATE -> AUDITED` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-correction-c8eee384.json`，
 SHA-256 `62C93ED70BA1E5B4FE85C38009D323983449D1A819E3F88B1E491282B8876633`。
+
+## 纠正后产品候选（`CANDIDATE`）
+
+- candidate commit / tree：
+  `af2e432f6c9025b6d398f0d4ba207005392cc8aa` /
+  `d009cc1945f6d77622622df0c8a6c5ac8e19f21c`；
+- `NothrowSentinelComparable` 继续接受 bool-like equality result，但把完整的显式 `bool` 转换纳入
+  compile-time nothrow requirement；factory 不新增 catch、runtime mode、branch 或 metadata；
+- throwing-conversion proxy 由 compile-negative test 固定。W1-WIN fresh factor 在该产品树等价工作树上
+  20/20 通过；其余 exact-candidate、三平台、交付和 P1 门待本段重放。
+
+进入纠正后 `CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-correction-af2e432f.json`，
+SHA-256 `DD57F5A64B0451381002E8436DCC969DA82876645B7FE6CDB3DCE745661B9BF2`。
