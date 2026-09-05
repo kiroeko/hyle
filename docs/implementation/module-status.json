@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -599,15 +599,25 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v6 CANDIDATE：显式五档 process-startup priority/QoS 已实现，三平台、exact factor、三交付与只读消费者入口验证通过；产品 commit/tree 与 P0 合同已冻结。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform v6 VERIFIED：显式五档 process-startup priority/QoS 已完成三平台正确性、sanitizer、exact factor、三交付、下游只读回放、文档/红队与 P0 结构性能验证。"
     },
     {
       "module": "platform_thread",
@@ -672,7 +682,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -689,15 +699,25 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v3 CANDIDATE：已打开 handle 的 size/resize/preallocate 与 whole-file shared/exclusive lock 已实现，三平台、exact factor、三交付与下游只读入口验证通过。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform_fs v3 VERIFIED：handle size/resize/preallocate 与 whole-file locking 已完成三平台正确性、sanitizer、exact factor、三交付、下游回放、文档/红队与 P0 结构性能验证。"
     },
     {
       "module": "mem_reclaim",

@@ -1,11 +1,12 @@
 # Platform current performance evidence
 
-Platform v5 只改变三条 P0 控制/正确性路线：Windows 显式 thread priority 多一个原生 QoS control，
-`for_each_entry` 在 caller TU 提供异常清理桥，recursive mkdir 仅在超过 4095 bytes 时从栈 scratch
-转 checked heap。未配置 priority、address wait/Parker、host snapshot、`directory_iterate` compiled
-core、FileHandle open/read/close 和普通短路径均未改变。因此下列 v3 P1 receipts 继续描述其各自
-immutable product path；它们不能被外推为新增 v5 路线的计时结果。v5 的结构门与三平台结果记录在
-[`platform-v5-normal-consumer-contract.md`](../../tasks/platform/platform-v5-normal-consumer-contract.md)。
+Platform v6 新增两组显式 P0 控制路线：process-startup priority/QoS，以及已打开 `FileHandle` 上的
+size/resize/preallocate/whole-file locking。它们没有给一字 `FileHandle` 增加字段，也没有改变
+未调用时的 process 初始化、CPU facts、thread/Parker、FileHandle open/read/write/close 或 directory
+路径。下列 v3 P1 receipts 因而继续描述各自未变的 normal lifecycle；它们不能被外推为新增 v6
+控制路线的计时结果。v6 candidate 为 `246bd182042f02c2b37457c21cea4ceebd8739c7`，tree
+`28c386bd62fd0c619202fbcf4993e267a0fe54c8`；结构门、三平台结果和比较前置条件记录在
+[`platform-v6-file-control-and-process-policy.md`](../../tasks/platform/platform-v6-file-control-and-process-policy.md)。
 
 This report is the current engineering-performance evidence for the factorized
 Platform product. It covers only the host, native-thread/wait, and synchronous
@@ -27,10 +28,12 @@ and
 
 ## Current verdict
 
-`PASS` for all three frozen W1-WIN P1 engineering contracts. This is not a
-Formal, cross-machine, all-topology, or module-wide SOTA certificate. Every row
-has its own same-contract statement and 5% non-inferiority gate; rows are never
-pooled into a Platform score.
+`PASS` for the v6 P0 structural contract and all three retained W1-WIN P1
+engineering contracts. This is not a Formal, cross-machine, all-topology, or
+module-wide SOTA certificate. Every numeric row has its own same-contract
+statement and 5% non-inferiority gate; rows are never pooled into a Platform
+score. New control calls are signed structurally because their useful work is
+the OS operation itself and their physical/wait cost is workload-dependent.
 
 | factor | same-contract normal lifecycle | pinned peer | strata | result |
 | --- | --- | --- | --- | --- |
@@ -46,7 +49,7 @@ post-result escalation or API/layout change was made.
 
 ## Qualified receipts
 
-The product candidate is
+The v3 P1 evidence product candidate was
 `b1a526d6fdb05b6bb42c4cb041788959e74511de`, tree
 `f808df6fcbd0b5549777e0c6939240a3feab9512`. The clean evidence source is
 `28987e3118c74cc04276300f8baa20764495793a`, tree
@@ -88,6 +91,10 @@ latency.
 | C++ visitor exception bridge | normal path keeps one callback per entry and no owning allocation; exceptional path closes then rethrows | exception crossing the compiled noexcept iterator or per-entry exception allocation |
 | recursive mkdir path scratch | 4096-byte stack first; at most one checked allocation for a longer input | a library-fixed 4095-byte ceiling or per-component heap allocation |
 | explicit Windows thread priority | two bounded native controls at thread setup; unconfigured route unchanged | per-task QoS work or changing all threads by default |
+| explicit process-startup priority | POSIX one scheduling control; Windows one QoS plus one priority-class control; no default call or library state | realtime, silent privilege fallback, worker/task hot-path work or hidden auto-configuration |
+| handle `size` / `resize` | one native query or EOF control; existing one-word owner and cursor unchanged | path re-resolution, hidden allocation/lock or data copy |
+| handle `preallocate` | one size query plus bounded native allocation/EOF controls; physical cost may scale with requested growth/filesystem | calling sparse resize and claiming backing, per-write bookkeeping or permanent HYLE metadata |
+| whole-file lock / try / unlock | one corresponding native lock operation per attempt, except documented interrupt retry; no HYLE lock state | polling, lock-file allocation, in-process mutex or per-I/O branch |
 
 ## Interpretation limits
 
@@ -105,6 +112,15 @@ latency.
 - Thread creation, affinity configuration, entropy, directory mutation, and
   durability are control paths covered structurally and by correctness tests;
   they are not inferred from the three numeric rows.
+- Handle-vs-path resize, sparse resize-vs-preallocation, blocking-vs-try lock,
+  advisory-vs-mandatory/distributed locking, and process-vs-thread priority are
+  different contracts. They are `NOT_COMPARABLE`, even when the final byte
+  count or enum looks alike; no such pair is used to claim a win or loss.
+- Preallocation time includes filesystem allocation policy and requested
+  growth; blocking lock time includes contention. Nanosecond ranking would
+  measure those external semantics, not avoidable HYLE overhead. Correctness,
+  native-call count, object shape and absence from old hot paths are the P0
+  evidence for v6.
 - W1-WIN is the engineering verdict machine. Linux and macOS correctness and
   sanitizer results are not averaged into Windows timing.
 

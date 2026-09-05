@@ -196,3 +196,54 @@
 
 此身份冻结公开合同、实现、复杂度和 P0 tier。下一状态只允许在同一 candidate 上完成独立文档/红队、
 P0 结构 receipt 与最终状态检查；产品代码若再变更必须退回 `AUDITED`。
+
+## 验证与独立红队（`VERIFIED`）
+
+候选 `246bd182/28c386bd` 上的预声明矩阵全部完成；候选后只增加只读权限失败测试、receipt 与状态，
+没有产品源码、公开头、target、算法或 normal workload 漂移。
+
+### P0 结构性能 receipt
+
+| route | candidate structure | verdict |
+|---|---|---|
+| 未调用新 API 的旧路径 | baseline→candidate diff 没有删除/改写 `FileHandle` open/read/write/seek/sync/close、CPU facts、Parker 或 thread 实现 | `PASS` |
+| owner layout | `FileHandle` 仍只有一个 `intptr_t raw_`，没有 lock/size/policy cache | `PASS` |
+| process policy | POSIX 一次 `setpriority`；Windows 一次 `SetProcessInformation` + 一次 `SetPriorityClass`；无默认初始化或全局 registry | `PASS` |
+| size / resize | 各一次对应 native query/EOF control；不重新解析 path、不 copy payload | `PASS` |
+| preallocate | 一次 size query 加有界 allocation/EOF controls；physical work 明确由 growth/filesystem 决定 | `PASS` |
+| lock / try / unlock | 每次一个 native lock control，POSIX 只对 `EINTR` 重试；无轮询、heap、lock-file 或 HYLE metadata | `PASS` |
+
+这不是新增操作的纳秒或“全平台 SOTA”声明。path-vs-handle、sparse-vs-backed、blocking-vs-try、
+advisory-vs-mandatory/distributed、process-vs-thread 任何一项语义不同都为 `NOT_COMPARABLE`；外部 filesystem
+分配工作和 contention 时间不得记成 HYLE 算法胜负。旧 host/thread/fs 三项 P1 正常消费 receipt 的
+产品路径未变，继续有效但不外推到新增 control。
+
+### 红队处置
+
+| finding | disposition |
+|---|---|
+| path 被原子替换后 path API 操作错误对象 | `FIXED`：全部 control 直接消费已打开 handle |
+| resize 被误解为物理预留 | `FIXED`：独立 API、实现和用户陷阱；比较门显式 `NOT_COMPARABLE` |
+| allocation 成功、EOF 更新失败 | `ACCEPTED`：OS 无统一事务；保留首错并文档化可能的不可见 allocation |
+| lock 被误解为线程 mutex/mandatory/distributed | `FIXED`：公共合同只承诺 cooperating whole-file coordination；OS 强度差异保留 |
+| invalid/closed/overflow/contention/permission 变成 sentinel | `FIXED`：`Result<bool>` 只以 false 表示明确竞争，其余均为共享 Error；三平台测试覆盖 |
+| process policy 默认污染 embedding host 或引入 realtime | `DISPROVED`：唯一显式 setter、无初始化副作用、enum 无 realtime |
+| Linux 已有 workers 未随“process”调用变化 | `FIXED`：startup-before-workers 是公共合同，已有 worker 路由逐线程 API |
+| Windows 两项 policy control 或 preallocation 两阶段失败 | `ACCEPTED`：明确非事务且返回首个失败，不宣传 rollback |
+| macOS 分支携带 Linux-only local | `FIXED`：AppleClang Werror 首轮发现并在 candidate 前修复，三平台全量回放通过 |
+| 新 API 迫使 Mem/Sched/IO 或 frozen factor 改产品 | `DISPROVED`：三产品只读构建通过，`platform_thread` 无产品变化 |
+
+### Gate verdicts
+
+| gate | verdict | evidence |
+|---|---|---|
+| scope | `PASS` | 两项已准入能力、六个 FIX；未吸收 async/direct/watch/mapping/process lifecycle |
+| architecture | `PASS` | base/fs factor 与 Core/Error/Time 边不变；无新第三方或常态 metadata |
+| correctness | `PASS` | W1-WIN、W1-WSL、M1-MAC；WSL ASan/UBSan；失败/权限/锁/EOF 路线 |
+| delivery | `PASS` | exact factors；Platform source、relocated shared、relocated static consumers |
+| usability/docs | `PASS` | architecture、user choice/陷阱、watchlist、历史 ledger 注记与 current performance 已同步 |
+| red team | `PASS` | 上表无未处置 medium/high finding |
+| engineering performance | `PASS` | `P0 / STRUCTURAL / closure-correctness-v1`；旧路径不变、新入口最少 native controls |
+
+Formal 保持 `PENDING`；它不阻挡本轮工程 closure。已知限制与 reopen trigger 在 terminal record 中固定，
+下一步只允许签署 `CLOSED` receipt 与新的 Platform 三 factor freeze confirmation。
