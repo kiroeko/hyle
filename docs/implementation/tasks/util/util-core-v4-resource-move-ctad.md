@@ -2,7 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态：`CANDIDATE`。产品形状已冻结；只执行本卡声明的固定验证，不再增加能力或修改 benchmark。
+> 当前状态：`AUDITED`。候选红队命中既有 `UC4-UR-03`，依法从 `CANDIDATE` 退回；只允许修正
+> checked-sentinel 完整布尔判定的异常合同并重建候选，不增加能力或修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -122,3 +123,18 @@ Core-only header-only factor。所有 `MUST` 已落入上述六项有限 FIX，�
 进入 `CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-2f53239c.json`，SHA-256
 `3F4A003A1518F31E306030EAB347D7ABF5A57E6627CAF8BA23F5C59BBC83DB01`。
+
+## 候选红队纠正（退回 `AUDITED`）
+
+- candidate `2f53239c` 的 direct/checked ownership、move-only deleter 与 FunctionRef 固定门均通过；冻结的
+  FunctionRef P1 qualification 也在 exact source/peer 上通过，但这些结果只属于旧 candidate；
+- 敌意 sentinel 类型可以让 `resource == invalid` 本身为 `noexcept`，却让结果 proxy 到 `bool` 的转换
+  抛异常。旧 requires 接受该类型，factory 的 `noexcept` 又只计算 owner construction，实际执行
+  `!(resource == invalid)` 时会 terminate；
+- 该 finding 直接属于既有 `UC4-UR-03`“checked factory 精确传播 comparison 与 owner construction
+  合同”，不扩展 FIX 集、能力族或 benchmark。纠正必须让完整布尔判定具备不抛合同并以 compile-negative
+  probe 固定；随后为新 commit/tree 重放全部既定门。
+
+`CANDIDATE -> AUDITED` 的前态快照保存在 canonical checkout 外：
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-correction-c8eee384.json`，
+SHA-256 `62C93ED70BA1E5B4FE85C38009D323983449D1A819E3F88B1E491282B8876633`。
