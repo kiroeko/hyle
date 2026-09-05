@@ -152,9 +152,9 @@ class [[nodiscard("discarding a UniqueResource immediately releases it")]]
   template <class R>
     requires (!kNothrowResourceTransfer<R>)
   static void construct_acquired_resource(ResourceStorage& storage,
-                                          Deleter& deleter,
+                                          [[maybe_unused]] Deleter& deleter,
                                           R&& resource,
-                                          bool allocated) {
+                                          [[maybe_unused]] bool allocated) {
 #if HYLE_HAS_EXCEPTIONS
     try {
       std::construct_at(
