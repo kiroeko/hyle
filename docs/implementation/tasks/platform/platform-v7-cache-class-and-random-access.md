@@ -297,3 +297,9 @@ candidate LOC self-check（snapshot `e892977bd2012841b3ee8a217c33fdd7ebdad260`�
 LOC 只记录规模，不证明功能或性能。`VERIFIED -> CLOSED` 前态 registry snapshot 为
 `C:\hyle-scratch\platform-v7\module-status-before-closed.json`，SHA-256
 `2250232052F3DD0DAB34C065D58FC086E446F049000B8E08F083CD725C39C580`。
+
+end receipt commit 为 `236a8233f12edb81f6415c49df1d5290d2f3c124`；registry anchor commit 为
+`c585dd3a386ce88f7f65a210a9d1f8392090601d`，即首个保存 `platform/platform_fs` 本轮 `CLOSED/FROZEN`、
+candidate、LOC、限制与 reopen trigger 的机器状态快照。anchor 校准前 registry snapshot SHA-256 为
+`3CA10269E1258F93B49E82F02232C6FDEA90A2957B414BAEEFC9E3E2B730556B`；本次只写回非自引用 Git identity，
+不改变产品、状态、证据或 verdict。
