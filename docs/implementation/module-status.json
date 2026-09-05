@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
       "round_id": "platform-v4-cpu-fact-boundary",
@@ -590,6 +590,8 @@
       "scope": "Separate immutable CPU and OS feature facts from SIMD or provider execution-target policy, complete the finite inference-relevant runtime feature facts, and migrate direct target selectors without reopening unrelated Platform families.",
       "non_goals": "Thread, wait, filesystem, topology, memory, VM or NUMA redesign; device inventory; kernel algorithms or provider winners; scheduler or async-IO policy; Native FFI/C API; stable C++ ABI; common performance-instrument redesign and Formal certification.",
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
+      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -605,11 +607,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v4 AUDITED：CpuFeatureSet、三平台有限 feature facts、旧 target API 删除与 F01--F04 已冻结；允许实施，不重开其他 Platform 能力族。"
+      "summary": "platform-v4 CANDIDATE：无顺序 CpuFeatureSet、有限三平台 feature facts 与旧 target policy API 删除已落入候选 d015b0de；等待完整交付和跨平台验证。"
     },
     {
       "module": "platform_thread",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
       "round_id": "platform-thread-v2-cpu-feature-consumer",
@@ -617,6 +619,8 @@
       "scope": "Migrate the direct SVE, RVV and AMX host-feature queries to Platform v4's unordered CpuFeatureSet without changing platform-thread semantics or public API.",
       "non_goals": "Thread, affinity, wait, Parker or ISA-state mechanism changes; new CPU facts; public API or layout changes; P1 retiming; Native FFI/C API; common tooling and Formal certification.",
       "baseline_commit": "749e67a58bd87efcfb6b1b836dc7cfeaaf0fdfd0",
+      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -632,7 +636,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-thread-v2 AUDITED：唯一 PTHR2-F01 是六处 SVE/RVV/AMX feature 查询迁移；公开线程/状态/Parker 与 P1 不变。"
+      "summary": "platform-thread-v2 CANDIDATE：六处 SVE/RVV/AMX feature 查询已迁到 Platform facts；公开线程/状态/Parker 与 P1 路径不变，等待跨平台交付验证。"
     },
     {
       "module": "platform_fs",
@@ -891,7 +895,7 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
       "round_id": "simd-v5-target-ownership",
@@ -899,6 +903,8 @@
       "scope": "Give SIMD sole ownership of the public compiled-kernel target type and migrate ordinary, exact and source-fat target reporting away from the Platform host-fact type without changing algorithm or provider decisions.",
       "non_goals": "New SIMD capabilities, operation semantics, provider winners, kernel algorithms, the 387-operation route ledger, vendor revisions, VQSort, a public register DSL, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
+      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -914,11 +920,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v5 AUDITED：KernelTarget ownership、canonical requirements、runtime/provider/manifest 迁移 F01--F04/D01 已冻结；算法和 387-operation winner 不重开。"
+      "summary": "simd-v5 CANDIDATE：KernelTarget ownership、canonical requirements 与 runtime/provider/manifest 迁移已落入 d015b0de；387/422 route 终态未改变，等待完整交付和跨平台验证。"
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
       "round_id": "container-v4-cpu-feature-migration",
@@ -926,6 +932,8 @@
       "scope": "Migrate the private StringView, hash and DynamicBitset variant selectors from the provider-shaped Platform ISA tier to explicit raw CPU feature requirements while preserving public APIs and kernel bodies.",
       "non_goals": "New container capabilities or APIs, node-table lifetime, hash/string/bitset algorithm optimization, redesigning historical P1 evidence, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
+      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -940,7 +948,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v4 AUDITED：三个私有 selector 的 Highway/XXH3 不同 requirements 与 F01--F02/D01 已冻结；公开 API、kernel body 和 P1 不变。"
+      "summary": "container-v4 CANDIDATE：三个私有 selector 已按各自 Highway/XXH3 TU requirements 迁移；公开 API、kernel body 和 P1 不变，等待完整交付和跨平台验证。"
     },
     {
       "module": "util",

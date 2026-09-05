@@ -48,3 +48,12 @@ Thread/Parker/wait、affinity、OS state transition 与 Sched 调用均不依赖
 `PTHR2-F01`：迁到 `CpuFeatureSet::has()` 并更新局部类型名/注释。set 已由 Platform 缓存，查询 O(1)、
 无新增状态或控制流；旧 Parker P1 不被本 diff 续签或重跑。API freeze 为 `FROZEN`（2026-09-05），没有
 未处置 `MUST`、第三方、FFI、公开 API 或 build graph 变化。
+
+## Candidate（`CANDIDATE`）
+
+product commit/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`。W1-WIN 完整 Platform façade 的 host/thread/fs 实现与
+公开头测试 6/6 通过；本 factor 的唯一产品 diff 仍是六处 cached fact membership，不触碰 Parker、thread
+state transition 或旧 P1 路径。前态 registry snapshot 与 Platform 主轮共用 SHA-256
+`1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`。跨平台与三交付未完成，当前
+只允许 `CANDIDATE`。

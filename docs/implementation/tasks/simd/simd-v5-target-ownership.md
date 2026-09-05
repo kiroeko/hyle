@@ -77,3 +77,16 @@ CPU 的最高能力，也不在不同架构间排序；Platform facts 只作为 
 实现期 route generator 回放仍为 387 个 operation、422 个终态 scope、0 pending；仅把 route key 的 enum
 owner 从 `provider::Target` 迁到 `KernelTarget`，没有重签任何 provider winner。集成 VQSort 的唯一 diff
 是 target 字段注释随类型改名，依赖锁中的 integrated-source content hash 因而同步刷新，算法字节未改。
+
+## Candidate（`CANDIDATE`）
+
+- product commit/tree：`d015b0de1cf6d5899da8336fef94104974bcd90e` /
+  `1456eea7575fa72ce48626a9db13a80f0aa31c09`；
+- W1-WIN MSVC 19.50 shared 的 SIMD correctness、Platform header、provider route/codegen/winner 与 AVX2
+  ordering 为 7/7 PASS；生成器为 387/422/0，未改变任何 winner；
+- 公开 current-TU 常量在 candidate 前经交付语义红队删除；唯一真实诊断入口是运行库
+  `selected_target()`，exact/fat 的 current target 只留在编译期内部；
+- 前态 registry snapshot SHA-256 为
+  `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；
+- source/relocated static/shared expert journey、exact artifact、WSL/macOS/scalable 与最终红队仍待验证，
+  因此不声明算法性能或 `VERIFIED/CLOSED`。

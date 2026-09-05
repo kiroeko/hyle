@@ -106,3 +106,16 @@ HWCAP/HWCAP2 位；macOS ARM 用 `hw.optional.arm.FEAT_*`，macOS x86 以 Apple 
 API freeze 为 `FROZEN`（2026-09-05）：Platform 公开事实没有跨架构排序、best/score/provider 或 kernel
 概念；用户按名字查单项或把 requirements 构造成 set。没有未处置 `MUST`，无第三方产品依赖，无
 Native FFI slice；本轮 P0 timing 不适用。实现只能执行 F01--F04，发现新的能力族或 OS 机制即退回审计。
+
+## Candidate（`CANDIDATE`）
+
+- product commit/tree：`d015b0de1cf6d5899da8336fef94104974bcd90e` /
+  `1456eea7575fa72ce48626a9db13a80f0aa31c09`；公开 facts、纯 decoder、OS probes、测试与文档同树冻结；
+- W1-WIN MSVC 19.50 shared 候选预验证：独立 SIMD 闭包的 Platform/SIMD 7/7、Container 闭包的
+  Platform/Container 11/11、完整 Platform façade 6/6 全部通过，包含公开头自含；
+- route verifier 为 387 operation / 422 scope / 0 pending；documentation 411 Markdown / 1155 links 与
+  module closure 25 components 均通过；这只证明 P0 结构和候选完整性，不重签旧 Platform P1 数字；
+- `AUDITED -> CANDIDATE` 前 registry snapshot 位于外部验证目录
+  `platform-v4-target-boundary/module-status-before-candidate.json`，SHA-256
+  `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；
+- W1-WSL、M1-MAC、三种交付、exact/fat artifact 与最终红队尚未完成，因此不得写 `VERIFIED/CLOSED`。

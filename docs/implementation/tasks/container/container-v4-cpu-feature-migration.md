@@ -63,3 +63,12 @@ BMI1/LZCNT requirements。synthetic tests 对每个必要 fact 做 missing-one �
 API freeze 为 `FROZEN`（2026-09-05）：Container 不公开 target/feature facade，不依赖 SIMD；私有 selector
 只对其实际 compiled TU 负责。无功能、layout、算法或 P1 comparison-class 变化，本轮没有未处置
 `MUST`，仅 P0 结构与正确性验证。
+
+## Candidate（`CANDIDATE`）
+
+product commit/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`。W1-WIN MSVC 19.50 shared 的 Platform/Container/Intrusive
+实现、公开头、hash seed 与既有 codegen/tooling 共 11/11 PASS；synthetic missing-one tests 证明三种
+selector 使用各自的完整 requirement class。公开 Container API、kernel body 与旧 P1 workload 没有 diff。
+前态 registry snapshot SHA-256 为
+`1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；三交付和跨平台尚待验证。
