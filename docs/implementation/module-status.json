@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -590,6 +590,8 @@
       "scope": "Expose truthful heterogeneous CPU cache-class facts without changing target selection, and preserve the existing conservative global cache convenience.",
       "non_goals": "SIMD/provider target policy, CPU placement or scheduler policy, guessed associativity, device inventory, Thread/NUMA/VM redesign, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
+      "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+      "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -605,7 +607,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v7 AUDITED：异构 cache-class 缺口已追到三平台事实源并冻结为 P7-CPU-01/T/B/D/R 有限 FIX；现在允许实现。"
+      "summary": "platform v7 CANDIDATE：异构 cache-class snapshot 已在不改 target policy 与旧 cached convenience 的前提下冻结；三平台、三交付与直接消费预验证已完成。"
     },
     {
       "module": "platform_thread",
@@ -678,7 +680,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -686,6 +688,8 @@
       "scope": "Complete already-open synchronous file ownership with portable duplication, opened-object metadata and a separate explicit-offset owner whose cursor is not observable.",
       "non_goals": "Path abstraction, filesystem-capacity wrappers, mapping or residency, directory watch, async, direct or vectored IO, concurrent Windows offset execution, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
+      "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+      "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -701,7 +705,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v4 AUDITED：owner duplicate/info/random-access 三个缺口与跨平台陷阱已冻结为 P7-FS-01..03/T/B/D/R 有限 FIX。"
+      "summary": "platform_fs v4 CANDIDATE：opened-object duplicate/info 与一字同步 random-access owner 已冻结；跨平台失败语义、三交付与下游预验证已完成。"
     },
     {
       "module": "mem_reclaim",

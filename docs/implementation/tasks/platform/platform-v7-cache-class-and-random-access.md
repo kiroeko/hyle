@@ -190,3 +190,27 @@ implementation/peer/build/doc 红队并冻结 FIX 后进入 `AUDITED`。
 
 只读审计没有发现需要新增 factor、内部依赖、第三方包、常态字段或额外 public family。有限 FIX 集冻结为
 上表八项；现在允许实现，任何公共合同变化必须退回本节重新裁决。
+
+## Product candidate（`CANDIDATE`）
+
+- product commit/tree：`e892977bd2012841b3ee8a217c33fdd7ebdad260` /
+  `e585215602a3430906201edd7a10726b74498158`；公开合同、layout、算法、依赖边与文档在该树冻结；
+- `P7-CPU-01`、`P7-FS-01..03`、`P7-T01`、`P7-B01`、`P7-D01`、`P7-R01` 均已实现。
+  旧 `FileHandle` 热路径无布局或分支漂移；新 random-access owner 仍为一字、无堆、无锁；
+- candidate archive：`C:\hyle-scratch\platform-v7\hyle-e892977b.tar.gz`，SHA-256
+  `121C9D2C3857BAD8BAD4C2DCB9DACC669143D5B421C233B2651159E199E0BF3A`。所有跨平台与交付回放均从该
+  immutable source archive 完成，不从 macOS/WSL 临时 checkout 反向取产品改动；
+- candidate 预验证已完成：W1-WIN MSVC 19.50 Release/Werror `platform + platform_fs` 4/4；
+  W1-WSL GCC 14.2 Release/ASan/UBSan 各 4/4；M2-MAC AppleClang 21 Release/Werror source-archive
+  suite 25/25；Platform source embedding、relocated shared/static SDK 各 1/1；Mem/Sched/IO downstream
+  build-only 回放通过；
+- M2-MAC 真机精确断言得到两条 class：P class 4 logical / 4 physical、16 MiB L2 / 4 CPUs per
+  L2，E class 6 logical / 6 physical、4 MiB L2 / 6 CPUs per L2；类别结果与
+  `hw.perflevelN.*` 官方事实直接对照；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot 为
+  `C:\hyle-scratch\platform-v7\module-status-before-candidate.json`，SHA-256
+  `72C27E03BE4AC1A0C4980626183CFD6BB57FD950A2AC6FB4216935D023E15051`。
+
+这些结果固定了候选产品，但本状态尚未将七项 aggregate gate、最终红队发现与 P0
+engineering-performance 正式签为 `PASS`，因此不写 `VERIFIED/CLOSED`。候选后若改公开合同、算法、
+layout 或 normal-path cost，必须退回 `AUDITED`。
