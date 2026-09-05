@@ -43,12 +43,12 @@
         },
         "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
         "freeze_confirmation": {
-          "id": "core-freeze-2026-09-04",
+          "id": "core-freeze-replay-2026-09-05",
           "marker": "FROZEN",
-          "confirmed_at": "2026-09-04",
-          "reviewed_commit": "8f42e57c00df77b07528c55541d406b6fc8d78c8",
-          "reviewed_tree": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
-          "evidence": "docs/implementation/tasks/core/core-freeze-confirmation-2026-09-04.md"
+          "confirmed_at": "2026-09-05",
+          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
         },
         "loc": {
           "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
@@ -121,12 +121,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
       "freeze_confirmation": {
-        "id": "container-intrusive-freeze-2026-09-04",
+        "id": "container-intrusive-freeze-replay-2026-09-05",
         "marker": "FROZEN",
-        "confirmed_at": "2026-09-04",
-        "reviewed_commit": "5f39c898b6e6680ec0ea8208ad27f125ee51552c",
-        "reviewed_tree": "4982a0a87bdabd7ef6bdcaa99db3542d5d343b08",
-        "evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-freeze-confirmation-2026-09-04.md"
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "The P1 claim covers only four frozen N=4096 W1-WIN consumer replays, MSVC 19.50 and locked Boost or pre-v4 Sched peers; cross-platform timing, all operations or scales, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
@@ -195,14 +195,14 @@
         "self_without_tests": 73155,
         "module_implementation": 1549
       },
-      "freeze_confirmation": {
-        "id": "util-core-v4-freeze-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
-        "reviewed_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
-        "evidence": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md"
-      },
+        "freeze_confirmation": {
+          "id": "util-core-freeze-replay-2026-09-05",
+          "marker": "FROZEN",
+          "confirmed_at": "2026-09-05",
+          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
+        },
       "known_limitations": [
         "FunctionRef remains a synchronous non-owning call-only view; storage, return and asynchronous use require an owning callable or an owner-defined function-plus-context shape.",
         "If a resource is only potentially-throwing copyable and its deleter is move-only, failed owner move cleans the token through the transferred deleter and disarms the source; it prevents leak and double release but does not preserve source ownership after the exception.",
@@ -269,12 +269,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "freeze_confirmation": {
-        "id": "error-freeze-2026-09-04",
+        "id": "error-freeze-replay-2026-09-05",
         "marker": "FROZEN",
-        "confirmed_at": "2026-09-04",
-        "reviewed_commit": "94acc0c260a899980b690aa96b5dbfbe57ea07c7",
-        "reviewed_tree": "457daeb77df3915f6ae969b41e8cadd1edfb41d7",
-        "evidence": "docs/implementation/tasks/error/error-freeze-confirmation-2026-09-04.md"
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "The P1 certificate covers only the frozen five W1-WIN consumer workloads, Abseil identity and MSVC 19.50 source/static benchmark delivery; cross-platform performance, all Error operations, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
@@ -342,12 +342,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
       "freeze_confirmation": {
-        "id": "obs-freeze-2026-09-05",
+        "id": "obs-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "080753874828f5bb8d973b665c27df77d9eaa269",
-        "reviewed_tree": "bd89b1dd9cc78d1b7017a3c79b92b4012277bddf",
-        "evidence": "docs/implementation/tasks/obs/obs-freeze-confirmation-2026-09-05.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "The P1 engineering verdict covers only the frozen W1-WIN ordinary, structured model-load and one-adapter registry journeys; cross-platform performance, all event combinations, 4/16-sink diagnostics, async logging, end-to-end inference, universal SOTA and Formal are not claimed.",
@@ -406,12 +406,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
       "freeze_confirmation": {
-        "id": "math-freeze-2026-09-05",
+        "id": "math-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
-        "reviewed_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
-        "evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "loc": {
         "snapshot_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
@@ -476,12 +476,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "freeze_confirmation": {
-        "id": "time-freeze-2026-09-05",
+        "id": "time-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "54ddb99fe43e4e45664f0150c4f1d84c95166b8e",
-        "reviewed_tree": "19b813b2b999390f6677ce211d8ef88015b35e1b",
-        "evidence": "docs/implementation/tasks/time/time-freeze-confirmation-2026-09-05.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "loc": {
         "snapshot_commit": "680c9941d7af787067afae904a8ba886c14ba851",
@@ -546,12 +546,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
       "freeze_confirmation": {
-        "id": "timer-queue-freeze-2026-09-05",
+        "id": "timer-queue-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "54ddb99fe43e4e45664f0150c4f1d84c95166b8e",
-        "reviewed_tree": "19b813b2b999390f6677ce211d8ef88015b35e1b",
-        "evidence": "docs/implementation/tasks/timer_queue/timer-queue-freeze-confirmation-2026-09-05.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "loc": {
         "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
@@ -624,12 +624,12 @@
         "module_implementation": 5659
       },
       "freeze_confirmation": {
-        "id": "platform-v7-freeze-2026-09-05",
+        "id": "platform-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-        "reviewed_tree": "e585215602a3430906201edd7a10726b74498158",
-        "evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "Cache classes are dynamic process-view snapshots: unavailable OS facts are zero, macOS has no stable logical-CPU-to-performance-level mapping, and HYLE does not guess associativity or complete CPU membership.",
@@ -694,12 +694,12 @@
         "module_implementation": 857
       },
       "freeze_confirmation": {
-        "id": "platform-thread-v6-replay-freeze-2026-09-05",
+        "id": "platform-thread-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
-        "reviewed_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
-        "evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "ThreadPriority is a portable scheduling and QoS hint, not hard affinity, realtime service or process-wide policy; Linux elevation may require privilege and macOS exposes no public hard-affinity API.",
@@ -763,12 +763,12 @@
         "module_implementation": 2639
       },
       "freeze_confirmation": {
-        "id": "platform-fs-v4-freeze-2026-09-05",
+        "id": "platform-fs-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-        "reviewed_tree": "e585215602a3430906201edd7a10726b74498158",
-        "evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "known_limitations": [
         "FileHandle duplication creates another owner for the same opened object but shares native cursor and lock associations; it is not an independent file position.",
@@ -827,12 +827,12 @@
       },
       "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
       "freeze_confirmation": {
-        "id": "mem-reclaim-freeze-2026-09-05",
+        "id": "mem-reclaim-freeze-replay-2026-09-05",
         "marker": "FROZEN",
         "confirmed_at": "2026-09-05",
-        "reviewed_commit": "aeb1156f6a973f37b1745434e5b5c146a3635794",
-        "reviewed_tree": "859593f66e2a277607921de6ec8ea1a54485a028",
-        "evidence": "docs/implementation/tasks/mem/mem-reclaim-freeze-confirmation-2026-09-05.md"
+        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
       },
       "loc": {
         "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
