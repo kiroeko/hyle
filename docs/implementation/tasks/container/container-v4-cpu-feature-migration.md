@@ -112,3 +112,8 @@ missing-one 反证和三平台三交付均 `PASS`；公开 layout、kernel body 
 material 性能回归。candidate LOC self-check（`d015b0de...`）：全库 443,000；自实现包含测试 112,489；
 自实现不包含测试 71,135；Container 实现 13,094 行。product candidate/tree 为 `d015b0de...` /
 `1456eea7...`；final verification evidence commit 为 `206864ad`。后续只按本节 triggers 重开。
+
+end receipt commit 为 `c3a8b0beb24a9bfce95f9117fc7df6f194b0e966`；registry anchor commit 为
+`195aa9a3d2ce90db1ddb249a5319edb351224988`。`VERIFIED -> CLOSED` 与 anchor 校准前态分别绑定
+SHA-256 `144E9E3536B48F05F556C529F037E5399F1A9782254CDA8FF7C60BE1988B1C86` 和
+`AEE21C072A7FBFC02FF3D13C865E5B0A4CFA4199CD90E1B5EB50CB4D45F08E7A`；本次 identity 校准无产品漂移。

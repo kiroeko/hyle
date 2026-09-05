@@ -202,3 +202,10 @@ candidate LOC self-check（snapshot `d015b0de1cf6d5899da8336fef94104974bcd90e`�
 不证明功能或性能。product candidate/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
 `1456eea7575fa72ce48626a9db13a80f0aa31c09`；final verification evidence commit 为
 `206864ad`。后续只按本节 triggers 重开。
+
+end receipt commit 为 `c3a8b0beb24a9bfce95f9117fc7df6f194b0e966`；registry anchor commit 为
+`195aa9a3d2ce90db1ddb249a5319edb351224988`，即首个保存本 `CLOSED` state/candidate 与全部 terminal
+registry 字段的人读/机器快照。`VERIFIED -> CLOSED` 前态 SHA-256 为
+`144E9E3536B48F05F556C529F037E5399F1A9782254CDA8FF7C60BE1988B1C86`；anchor 校准前态 SHA-256 为
+`AEE21C072A7FBFC02FF3D13C865E5B0A4CFA4199CD90E1B5EB50CB4D45F08E7A`。本次校准只记录非自引用 Git
+identity，不改变产品、状态或 verdict。

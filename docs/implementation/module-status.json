@@ -593,7 +593,7 @@
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -653,7 +653,7 @@
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -966,7 +966,7 @@
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1026,7 +1026,7 @@
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
       "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
