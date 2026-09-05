@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态：`AUDITED`。产品纠正保持冻结；macOS WERROR 发现 compile-negative probe 的可移植性问题，
-> 只允许等价改写该测试并重建候选，不增加能力或修改 benchmark。
+> 当前状态：`CANDIDATE`。最终 immutable product commit/tree 已形成；只重放本卡既定门，不增加能力或
+> 修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -166,3 +166,17 @@ SHA-256 `DD57F5A64B0451381002E8436DCC969DA82876645B7FE6CDB3DCE745661B9BF2`。
 本次 `CANDIDATE -> AUDITED` 的前态 registry 快照为
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-mac-probe-cd06f973.json`，SHA-256
 `3EE762A9CC4F52298E742D39D17D772BB97B8999070220345E47DFD7870F3477`。
+
+## 最终产品候选（`CANDIDATE`）
+
+- candidate commit / tree：
+  `439b8915e2c63a6a15545324444b594a25c62a62` /
+  `a7891b8d6a3dab26599e443f9e03150a195b3ba9`；
+- 相比 `af2e432f` 只把敌意 sentinel equality 从匿名 friend 改为等价 member，产品 header、测试语义、
+  codegen probe、公开 API、layout、复杂度、workload、peer 与 margin 均未变化；
+- 等价工作树已通过 W1-WIN 20/20 与 M1-MAC AppleClang 21 + WERROR/UBSan 18/18；最终 exact
+  commit/tree 仍按固定清单重放。
+
+进入最终 `CANDIDATE` 的前态 registry 快照为
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-final-candidate-439b8915.json`，SHA-256
+`CAA1791CD8A7F8D0802D2EDDEA4BE0D47682C5B8A539CF33659163AABA215F71`。

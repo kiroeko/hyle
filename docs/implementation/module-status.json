@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
       "round_id": "util-core-v4-resource-move-ctad",
@@ -156,6 +156,8 @@
       "scope": "Repair the reproduced move-only deleter transfer, checked-factory exception specification and unambiguous nontype bound-callable deduction defects without changing Util-core's capability families or Core-only header-only boundary.",
       "non_goals": "New utility families, nullable or owning callbacks, asynchronous storage, pointer-like or default UniqueResource policy, typed domain owners, Util-runtime, downstream migration, Native FFI, benchmark-shaped APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
+      "candidate_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
+      "candidate_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -173,7 +175,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "Util-core v4 AUDITED：产品异常合同纠正已通过 Windows/WSL，macOS WERROR 仅发现敌意 compile-negative probe 的内部 friend 警告；退回做等价测试可移植性纠正，产品/API/性能合同不变。"
+      "summary": "Util-core v4 CANDIDATE：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已形成最终候选；两字 FunctionRef、对象 layout、复杂度、Core-only 边界和固定性能合同不变。"
     },
     {
       "module": "error",
