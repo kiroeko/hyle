@@ -55,3 +55,50 @@
 进入 `SCOPED` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-scoped-1f8829c5.json`。
 SHA-256：`BDD4366DD0F6FFEDA53BB0DBD6D79A3E1A4D7641ECF35D4789C134812841C4D8`。
+
+## Capability 与 public-surface 审计（`AUDITED`）
+
+| family / journey | current route | coverage | decision |
+|---|---|---|---|
+| value-like token + copyable nonthrow deleter | direct/checked `UniqueResource` | `COMPLETE` | `KEEP` |
+| value-like token + move-only nonthrow deleter | class assertion 和 constructor constraint 拒绝 | `MISSING` | `FIX` |
+| resource transfer 失败安全 | deleter 先安全复制，resource 再 move-or-copy | `PARTIAL` | 扩成 deleter 的 compile-time move-or-copy，不加 runtime state |
+| checked factory exception contract | 运行语义正确，但 public function 未传播可证明的 `noexcept` | `PARTIAL` | `FIX` |
+| runtime/compile-time free 与显式 member FunctionRef | 两字非 owning view | `COMPLETE` | `KEEP` |
+| 可唯一推出 signature 的 bound-member CTAD | explicit signature 可用，CTAD 失败 | `PARTIAL` | `FIX` |
+| nullable/owning/async callback、typed resource owner | higher semantic owners | `ROUTED/OUT_OF_SCOPE` | 不进入本轮 |
+
+### Public API 与依赖反查
+
+- move-only deleter 是普通 ownership 输入，不来自 benchmark；实现只放宽合法 constructor/move source，
+  不增加对象字段、runtime mode 或“fast”入口；
+- bound-member deduction 的 result/arguments/cv/`noexcept` 已完整编码在成员函数类型中，因此 CTAD 不需要
+  猜测。overload set 和 ref-qualified member 保持显式 signature/不支持，避免悄悄选择错误合同；
+- `FunctionRef` 的 4096-record benchmark 没有任何参数进入 public 类型。mutable-view 到 const-signature
+  view 的 GCC hostile probe 与直接调用及 Abseil 都降为同一 indirect tail call，故不改该路线；
+- 全库产品扫描没有 v3 新入口的既有语法 consumer，也没有因 v3 additive API 而失效的调用。Mem/Sched
+  继续通过显式 `util_core` edge 使用既有 Ref/SpinLock；本轮没有 breaking rename/layout，故无需迁移冻结
+  consumer；
+- Math 新整数策略与 Time 的 wide rational conversion、Platform 的 OS parser/status policy、Obs 的 atomic
+  sentinel transition 并非完整同合同 owner。若仅为隐藏一至两条 guard 而增加 public include/组件边，
+  不会获得更好复杂度或 codegen；本 replay 将其记为 owner-local，而不以“采用率”重开冻结模块。未来某个
+  owner 修改同一公式时必须重新比较 Math route。
+
+## 冻结 FIX ledger 与 API freeze
+
+| ID | exact action | cost / safety contract | verification |
+|---|---|---|---|
+| `UC4-UR-01` | deleter transfer 从“必须 nothrow copy”改为 compile-time “nothrow move 优先，否则 nothrow copy” | 对象 layout 不变；零 branch/allocation；resource construction 失败仍 exactly-once cleanup | move-only/copy-only、valid/invalid、throwing resource copy、owner move |
+| `UC4-UR-02` | owner move 在潜在 resource-copy failure 时保留 source responsibility；若 deleter 必须先 move，则失败时由已构造 deleter cleanup 并 disarm source | 无 leak/double-free；成功 move 后 source inactive | adversarial state/counter tests |
+| `UC4-UR-03` | checked factory 与 internal construction helper 传播条件 `noexcept` | 编译期属性，无 runtime cost | positive/negative static assertions |
+| `UC4-FR-04` | 为受支持、非 ref-qualified member-function type 增加 bound-member deduction guide | 只改变合法 overload resolution；仍走现有 nontype invoker和两字 layout | mutable/const × throwing/noexcept、object/pointer、negative compile traits |
+| `UC4-DOC-05` | 修正文档、installed sample 与 P0 probe | 不引入 peer/benchmark 词汇到用户 API | choice/pitfall、三交付 |
+| `UC4-P1-06` | 在不改 contract/workload/peer/margin 的条件下对新 candidate 重跑现有 FunctionRef P1 | 只裁决原三条正常同步 traversal | fresh qualification + verifier |
+
+API freeze：继续使用同一 `UniqueResource`、checked factory、`FunctionRef` 和 `nontype` 名称；不新增对象
+metadata、动态 dispatch、nullable state、pointer convenience 或 benchmark-only overload。Util-core 保持
+Core-only header-only factor。所有 `MUST` 已落入上述六项有限 FIX，才允许进入实现。
+
+`SCOPED -> AUDITED` 的前态快照为
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-audited-10962013.json`，SHA-256
+`778A6D46F874DD69AD01B9C3B326E639B818688BBD5AE47D2720A1429BA490E2`。

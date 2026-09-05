@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
       "round_id": "util-core-v4-resource-move-ctad",
@@ -173,7 +173,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "Util-core v4 SCOPED：只修 move-only deleter 安全转移、checked factory noexcept 与可唯一推出的 nontype bound-callable CTAD；API、性能和交付合同已冻结。"
+      "summary": "Util-core v4 AUDITED：六项有限 FIX 已冻结；只放宽安全 deleter transfer、补 checked factory noexcept 与无歧义 bound-member CTAD，不改变两字 FunctionRef、对象 layout 或 Core-only 边界。"
     },
     {
       "module": "error",
