@@ -27,6 +27,8 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 
 - [新 FROZEN 模块固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)：
   不论幅度复核所有必需 strata 点值固定不利于 HYLE 的当前行及 retained `LOSE`；
+- [Math v3](benchmarks-math-v3.md)：checked/saturating integer policy 的三工具链 P0 结构成本；
+- [Util-core v3](benchmarks-util-core-v3.md)：FunctionRef qualifier/nontype consumer 对 Abseil 的同合同 P1；
 - [Platform v3](benchmarks-platform.md)：host、native thread/wait 与同步 filesystem；
 - [Mem v5](benchmarks-mem-v5.md)：bounded lifetime planner 的 P0 结构门与 mimalloc 3.5.1 host lifecycle
   的同合同 P1 工程非劣门；

@@ -337,7 +337,9 @@ module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活�
 ## 分层与证据入口
 
 header-only util-core 仍作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；当前结论见
-[`util-core v2`](../implementation/tasks/util/util-core-v2-capability-completion.md)。更早的
+[`util-core v3`](../implementation/tasks/util/util-core-v3-foundation-utility-superset.md)，当前性能边界见
+[`util-core v3 evidence`](../implementation/evidence/performance/benchmarks-util-core-v3.md)。更早的
+[`util-core v2`](../implementation/tasks/util/util-core-v2-capability-completion.md)、
 [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md) 与
 [`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md) 仅是历史输入；Registry
 和 demangle 属于独立 runtime factor，当前结论见

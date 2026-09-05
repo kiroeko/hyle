@@ -19,10 +19,10 @@ scope 继续
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-v5-assert-macro-contract.md) | core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v4-capability-extension.md) | container_intrusive v4 CLOSED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。 |
-| util_core | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v3-foundation-utility-superset.md) | util-core-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 候选前正确性与交付已过，等待 W1-WIN 同合同 Abseil 5% P1、M1-MAC、最终文档与红队签发。 |
+| util_core | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v3-foundation-utility-superset.md) | util-core-v3 VERIFIED：七项有限 FIX、三平台正确性/no-exceptions/三交付、新 API 安装样例、文档与红队通过；W1-WIN 三项同合同 Abseil FunctionRef 5% P1 全部 PASS。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v5-capability-completion.md) | error-v5 CLOSED：WinSock、Result<T&>、bounded format_status 与 std::error_code adapter 已补齐；既有 Status/Result 无回归，三平台正确性和三种 C++ 交付、易用性/文档、红队及 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过。 |
 | obs | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/obs/obs-v4-structured-event.md) | obs-v4 CLOSED：logger-neutral typed borrowed event、Time/Error 组合与 mem_reclaim snapshot guard 已完成；三平台 correctness/sanitizer、三种 C++ 交付、Trace OFF/ON、内部复用、易用性/文档、红队及三份 W1-WIN 5% P1 正常消费合同全部通过。 |
-| math | CANDIDATE | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/math/math-v3-integer-policy-superset.md) | math-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 正确性、P0 code shape 与 Windows 三交付已过，等待 M1-MAC、最终文档与红队签发。 |
+| math | VERIFIED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/math/math-v3-integer-policy-superset.md) | math-v3 VERIFIED：整数策略超集、三平台边界/UBSan/逐头测试、source/shared/static 交付、文档与红队通过；P0 为 scalar O(1)、aggregate O(n)、零动态资源，timing N/A。 |
 | time | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/time/time-v5-interoperability.md) | time-v5 CLOSED：signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME 与 header isolation 已通过三平台正确性/WSL sanitizers、三种 C++ 交付、文档/红队和 P0 结构性能门；候选 680c9941/b09b7043 无产品漂移。 |
 | timer_queue | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/timer_queue/timer-queue-v1-factor.md) | timer_queue v1 CLOSED：caller-owned radix/common-timeout 已成为独立 header-only factor，provider 组合与 Sched/IO 直接边正确；三平台正确性/sanitizer、三种 C++ 交付、文档/红队及对当前 Seastar 的 8/8 P1 WIN 全部通过。 |
 | platform | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/platform/platform-v7-cache-class-and-random-access.md) | platform v7 CLOSED/FROZEN：异构 cache-class snapshot 与旧 coarse facts 边界已完成；三平台、三交付、下游回放、文档/红队和 P0 结构性能全部通过。 |
@@ -79,11 +79,13 @@ cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 均绑�
 通过冻结的 5% non-inferiority gate。旧 v2/v3 task 保持历史事实，不被回写；`formal-release-v1` 的
 跨平台证书仍为独立 `PENDING`。
 
-`util_core` 已按同一状态机关闭：最终候选修复 ScopeGuard 失败安全和 `Ref` 标准指针全序，三平台
-source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过 5%
-工程非劣门。util runtime 随后已按自己的 P0 startup/diagnostic 合同独立关闭；它没有真实 profile
+`util_core` 的 v2 轮曾按同一状态机关闭：当时的候选修复 ScopeGuard 失败安全和 `Ref` 标准指针全序，
+三平台 source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过
+5% 工程非劣门。当前 v3 因 owner 准入 FunctionRef qualifier/nontype、conditional scope 与 generic
+resource 能力而定向重开，实际状态与新证据只以上表和当前 task 为准。util runtime 随后已按自己的 P0
+startup/diagnostic 合同独立关闭；它没有真实 profile
 证明进入 token/kernel 热路，因此不继承 util-core 的 P1 计时声明，也不把旧 lookup 微基准冒充当前
-SOTA 证书。util-core 的新版能力回放已 `CONFIRMED`：五个 primitive 没有半项 `MUST`，只校准
+SOTA 证书。v3 之前的 util-core 能力回放曾为 `CONFIRMED`：当时五个 primitive 没有半项 `MUST`，只校准
 throwing factory/TLS seed/type hash 等合同陷阱；同样不把 order-confounded 的 Mac 超短诊断或 RNG
 diagnostic 冒充跨平台证书。
 

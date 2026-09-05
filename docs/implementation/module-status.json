@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "UTILCORE-FOUNDATION-UTILITY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
       "round_id": "util-core-v3-foundation-utility-superset",
@@ -165,17 +165,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v3.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 候选前正确性与交付已过，等待 W1-WIN 同合同 Abseil 5% P1、M1-MAC、最终文档与红队签发。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "util-core-v3 VERIFIED：七项有限 FIX、三平台正确性/no-exceptions/三交付、新 API 安装样例、文档与红队通过；W1-WIN 三项同合同 Abseil FunctionRef 5% P1 全部 PASS。"
     },
     {
       "module": "error",
@@ -326,7 +336,7 @@
     },
     {
       "module": "math",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "MATH-INTEGER-POLICY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
       "round_id": "math-v3-integer-policy-superset",
@@ -343,14 +353,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-math-v3.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 正确性、P0 code shape 与 Windows 三交付已过，等待 M1-MAC、最终文档与红队签发。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "math-v3 VERIFIED：整数策略超集、三平台边界/UBSan/逐头测试、source/shared/static 交付、文档与红队通过；P0 为 scalar O(1)、aggregate O(n)、零动态资源，timing N/A。"
     },
     {
       "module": "time",

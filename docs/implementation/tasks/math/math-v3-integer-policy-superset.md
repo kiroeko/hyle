@@ -209,3 +209,73 @@ edges, common instruments, or add heterogeneous arithmetic, parsing, big integer
 `AUDITED -> CANDIDATE` uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-candidate-ff203194.json`, SHA-256
 `2D7AF7A58485E7F52F92D9D39711BB5CBF775088D1D1E5DB2BA0D4D5AB991177`.
+
+## Verification（`VERIFIED`）
+
+Candidate identity remains
+`ff20319408372013fec6818c35f4ba7a7c79440c` / tree
+`3aba9d8c9eb06c927f7d29228b925668150bf0a6`. A post-candidate product-path diff against current HEAD is empty;
+documentation and registry work did not silently refresh Math.
+
+### Correctness and risk matrix
+
+| risk | verdict | evidence / boundary |
+|---|---|---|
+| normal, zero, min/max and signedness | `PASS` | exhaustive 8-bit oracle plus standard-width boundaries on all three toolchains |
+| conversion and character integral domain | `PASS` | signed/unsigned/width/character positive and negative compile/runtime matrix |
+| divide/remainder UB boundary | `PASS` | zero divisor and signed minimum / `-1`; exact remainder zero is separately asserted |
+| compound/aggregate overflow | `PASS` | checked intermediate, empty/single/range cases, single-pass short circuit and constexpr |
+| saturation policy | `PASS` | both clamp directions, conversion, multiply and min/-1 divide; zero-divisor death contract |
+| property/differential and sanitizer | `PASS` | small exact oracle/property checks; W1-WSL GCC 14 UBSan |
+| ownership, OOM, concurrency, cancellation | `NOT_APPLICABLE` | value-only, allocation-free synchronous arithmetic owns no resource or lifecycle |
+
+Exact candidate worktrees passed the Math unit and per-header self-contained tests with MSVC 19.50 Release/WERROR,
+GCC 14.2 Release/WERROR+UBSan and AppleClang 21 Release/WERROR. W1-WIN, W1-WSL and M1-MAC each passed source
+embedding plus relocated installed shared/static `hyle::math` consumers.
+
+### P0 structure and red team
+
+The release probe on x64 MSVC, x86-64 GCC and arm64 AppleClang retains direct range/overflow predicates, native
+full-width multiply, one guarded hardware divide and conditional-select saturation. Scalar operations are O(1);
+span aggregation is one-pass O(n), which matches the input-read lower bound. No allocation, lock, syscall, runtime
+dispatch, hidden cache or normal metadata was found. Timing peer comparison remains `NOT_APPLICABLE`; details and
+object identities are in
+[`benchmarks-math-v3`](../../evidence/performance/benchmarks-math-v3.md).
+
+The final hostile pass attacked integer promotion, character types, min/-1 UB, cancellation after an overflowing
+intermediate, empty identities, fail-fast zero division, header closure, fake binary/FFI artifacts and benchmark-shaped
+surface. The character-domain defect had already been fixed before candidate freeze; no remaining medium-or-higher
+finding was reproduced. Not adding fused-wide cancellation semantics is deliberate: the public operation is frozen as
+exact left-to-right fixed-width composition.
+
+### Aggregate gates
+
+| gate | verdict | basis |
+|---|---|---|
+| scope | `PASS` | exactly `MATH3-CONVERT-01..DOC-07`; no downstream migration or extra numeric family |
+| architecture | `PASS` | Core-only header factor; scalar control-plane boundary remains distinct from SIMD/Compute |
+| correctness | `PASS` | three-toolchain boundary/property/constexpr/UBSan matrix above |
+| delivery | `PASS` | three platforms × source/relocated shared/relocated static consumer |
+| usability/docs | `PASS` | checked/saturating/trusted choice, type/zero/empty/intermediate traps and examples documented |
+| red team | `PASS` | candidate drift zero; medium-or-higher remaining finding count is zero |
+| engineering performance | `PASS` | P0 structural; scalar O(1), aggregate O(n), zero dynamic resource; timing N/A |
+
+### Owner seven questions（terminal answer）
+
+1. **Third party:** no third-party product path. C++23 facilities, compiler builtins/intrinsics and OS-independent
+   integer rules are mechanisms; Folly/WG21/ggml/llama.cpp are pinned design evidence only.
+2. **Capability:** every admitted generic integer-policy family is `COMPLETE`; floating, vector, tensor, parsing,
+   arbitrary precision and model policy are explicitly routed to their semantic owners rather than copied.
+3. **Internal reuse:** Math reuses Core only for trusted fail-fast invariants and its own checked primitives for compound
+   and saturation paths. No lower frozen HYLE facility offers an equivalent faster route; downstream adoption remains
+   a separately authorized owner change.
+4. **Performance:** `P0 STRUCTURAL PASS`; timing peer comparison is `NOT_APPLICABLE`. No broad SOTA claim is made.
+5. **C/Native FFI:** none exists in the public/install tree. Maintenance-only `extern "C"` probe names are not shipped.
+6. **Build/import:** central graph and real target agree on `math -> PUBLIC core`; INTERFACE headers work through source,
+   static-product and shared-product journeys without manufacturing a Math binary.
+7. **C++ API/docs:** operation policy is explicit in verb and return type, normal journeys are copyable, and ownership,
+   failure and common misuse are documented without exposing benchmark or internal seams.
+
+There is no unhandled blocker. The `CANDIDATE -> VERIFIED` comparison uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-verified-f6c8639b.json`, SHA-256
+`123DB9BC1D744624309ED67C111F5BB66812008941F28452DAC6AFBE0C865527`.

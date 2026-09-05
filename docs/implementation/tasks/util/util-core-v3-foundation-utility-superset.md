@@ -244,3 +244,87 @@ no public API, algorithm, layout, normal workload or exceptions-enabled code sha
 The refresh uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-util-candidate-refresh-76357476.json`, SHA-256
 `DB909B898A7DD2217958A19C0BD77CCF36EA8F106BCED9969651FD02FC26EAC7`.
+
+## Verification（`VERIFIED`）
+
+Candidate identity remains
+`763574765d22f8b3f6dbd6046aee124d1117eea3` / tree
+`9ccc0e7a932f7ec4a7345fe56f3525e747587606`. A post-candidate diff over Util-core product, tests, sample and component
+inventory is empty.
+
+### Correctness and risk matrix
+
+| risk | verdict | evidence / boundary |
+|---|---|---|
+| callable cv/noexcept/result forms | `PASS` | positive/negative compile matrix and runtime void/reference/value invocation |
+| runtime/nontype free/member binding | `PASS` | free, unbound member, object and pointer binding; dynamic null/dead callable death cases |
+| borrow lifetime | `PASS` | synchronous temporary parameter journey; guide forbids storage/return/async use |
+| conditional scope state | `PASS` | normal/exceptional/nested-caught exits, dismiss, move, construction failure and once-only behavior |
+| unique resource ownership | `PASS` | valid/invalid sentinel, release/reset, move assignment/construction and exactly-once deletion |
+| construction/transfer failure | `PASS` | valid acquisition is reclaimed; inactive sentinel is not deleted; throwing-copy fallback retains owner |
+| exceptions-disabled build | `PASS` | MSVC, GCC and AppleClang compile probes; ScopeFail's unreachable runtime condition is documented |
+| sanitizer / allocation / cancellation | `PASS / NOT_APPLICABLE` | GCC 14 UBSan passes; new value types allocate and schedule nothing and own no cancellation protocol |
+
+Exact candidate worktrees passed the Util-core unit and per-header self-contained tests on W1-WIN/MSVC 19.50
+Release/WERROR, W1-WSL/GCC 14.2 Release/WERROR+UBSan and M1-MAC/AppleClang 21 Release/WERROR. The no-exceptions
+object compiled on all three. The Util product's source embedding and relocated installed shared/static journeys pass on
+all three; the new installed sample explicitly exercises const/nontype FunctionRef, conditional guards and checked
+UniqueResource against both relocated SDK shapes.
+
+### P1 qualification and P0 structure
+
+The final clean qualification is bound to the refreshed candidate, Abseil
+`989c696cd131fdaba300c44eb86e1c00fd3a4b56`, contract lock
+`b6d0c63217540f630bdd3a422d8938cb151cc48281f006e94c84104ca1702b37` and unchanged semantic matrix hash
+`f3ce0ece50863825dad54120b535baa88e03a6aa066df74ec1a6afaa3a305031`. Artifact/build identity, provenance,
+A/A, known 5%/10% deltas, timer floor and placement controls all pass; the independent verifier reports `QUALIFIED`,
+exact provenance and current environment/policy eligibility.
+
+Const borrow and nontype free FunctionRef are `PARITY/PASS` in all four order/placement strata. Bound-member is
+`WIN/PASS` in all four, with median advantage ratios `1.24769..1.25504`. The few sub-1 point estimates in the parity
+families reverse with order/placement and every interval crosses 1, so there is no fixed-direction hidden loss. Full
+values and retained manifest hashes are in
+[`benchmarks-util-core-v3`](../../evidence/performance/benchmarks-util-core-v3.md).
+
+Release inspection on MSVC/GCC/AppleClang preserves the two-word erased FunctionRef route; GCC/AppleClang fold the
+nontype free target directly into the observable caller. Scope/resource additions remain O(1), stack-only and
+allocation/lock/dispatch-free. Performance data did not add an overload, layout field, metadata or alternate “fast” API.
+
+### Final red team and aggregate gates
+
+The bounded hostile pass attacked dangling borrow, const escape, noexcept mismatch, null function/member/object,
+throwing callable storage, moved-from ownership, invalid-sentinel cleanup, exceptions-disabled warnings, fake binary/
+FFI surface, selected-header omission and apples-vs-oranges comparison. The two construction failures and the
+AppleClang warning were fixed before the final candidate identity; no remaining medium-or-higher finding was reproduced.
+
+| gate | verdict | basis |
+|---|---|---|
+| scope | `PASS` | exactly `UC3-CALLABLE-01..DOC-07`; no async, serving, typed-resource or instrument expansion |
+| architecture | `PASS` | Core-only header factor; generic fallback does not replace domain RAII owners |
+| correctness | `PASS` | three-toolchain compile/runtime/UBSan/exception/no-exception matrix above |
+| delivery | `PASS` | three platforms × source/relocated shared/relocated static plus new installed sample |
+| usability/docs | `PASS` | use-when table and borrow, exception, sentinel, deleter and typed-owner traps are explicit |
+| red team | `PASS` | candidate drift zero; medium-or-higher remaining finding count is zero |
+| engineering performance | `PASS` | P1 same-contract 5% NI passes; P0 additions keep bounded structural cost |
+
+### Owner seven questions（terminal answer）
+
+1. **Third party:** no third-party product path. Abseil is the clean benchmark peer; Folly/Boost/WG21 are design
+   evidence. Standard/compiler facilities are implementation mechanisms, not delivered dependencies.
+2. **Capability:** synchronous borrowed callable qualifiers/static binding, conditional lexical cleanup and bounded
+   generic unique-resource ownership are `COMPLETE`; owning async callbacks, typed resource failures and serving policy
+   are routed to higher owners.
+3. **Internal reuse:** implementations reuse Core macros/fail-fast, `std::invoke`, exception count and existing guard
+   storage rules. No container/SIMD/runtime facility is semantically applicable, and no duplicate dispatch authority exists.
+4. **Performance:** `P1 ENGINEERING PASS` for the three frozen same-contract FunctionRef journeys at 5% NI; new
+   Scope/UniqueResource surfaces are `P0 STRUCTURAL PASS`. Cross-platform timing and universal SOTA are not claimed.
+5. **C/Native FFI:** no schema/header/bridge/export/sample/option or FFI-only layout exists; maintenance probe C names
+   are uninstalled.
+6. **Build/import:** central graph, real INTERFACE edge and header inventory agree on `util_core -> PUBLIC core`;
+   `hyle::util` source/static/shared consumers receive the same templates after relocation.
+7. **C++ API/docs:** types name borrow/condition/ownership, defaults do not hide cost, installed examples compile, and
+   lifetime/failure/teardown traps are explicit without benchmark seams.
+
+There is no unhandled blocker. The `CANDIDATE -> VERIFIED` comparison uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-verified-f6c8639b.json`, SHA-256
+`123DB9BC1D744624309ED67C111F5BB66812008941F28452DAC6AFBE0C865527`.
