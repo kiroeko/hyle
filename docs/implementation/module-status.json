@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
       "round_id": "platform-v4-cpu-fact-boundary",
@@ -605,11 +605,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v4 SCOPED：冻结 raw CpuFeatureSet、删除 provider-shaped Platform Isa、补齐有限推理 feature facts，并以 P0 迁移 SIMD/Container 直接消费者；尚未授权产品实现。"
+      "summary": "platform-v4 AUDITED：CpuFeatureSet、三平台有限 feature facts、旧 target API 删除与 F01--F04 已冻结；允许实施，不重开其他 Platform 能力族。"
     },
     {
       "module": "platform_thread",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
       "round_id": "platform-thread-v2-cpu-feature-consumer",
@@ -632,7 +632,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-thread-v2 SCOPED：只迁移 SVE/RVV/AMX 三种 CpuFeatureSet 查询并回放交付；公开线程、状态与 Parker 机制不重开。"
+      "summary": "platform-thread-v2 AUDITED：唯一 PTHR2-F01 是六处 SVE/RVV/AMX feature 查询迁移；公开线程/状态/Parker 与 P1 不变。"
     },
     {
       "module": "platform_fs",
@@ -891,7 +891,7 @@
     },
     {
       "module": "simd",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
       "round_id": "simd-v5-target-ownership",
@@ -914,11 +914,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v5 SCOPED：冻结 SIMD 自有 KernelTarget、单一 compile-target taxonomy 与 raw-feature requirements；算法、provider route 和 387-operation 证据不重开。"
+      "summary": "simd-v5 AUDITED：KernelTarget ownership、canonical requirements、runtime/provider/manifest 迁移 F01--F04/D01 已冻结；算法和 387-operation winner 不重开。"
     },
     {
       "module": "container",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
       "round_id": "container-v4-cpu-feature-migration",
@@ -940,7 +940,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v4 SCOPED：冻结三个私有一次性 selector 的 raw-feature requirements 迁移；公开 Container API、kernel body 与既有 P1 证据不重开。"
+      "summary": "container-v4 AUDITED：三个私有 selector 的 Highway/XXH3 不同 requirements 与 F01--F02/D01 已冻结；公开 API、kernel body 和 P1 不变。"
     },
     {
       "module": "util",

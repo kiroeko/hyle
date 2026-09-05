@@ -42,3 +42,20 @@
   稳定 raw facts 表达则 `BLOCKED`，不能恢复 `best_isa` 兼容层。
 
 进入 `SCOPED` 只授权完成双向审计；有限迁移 FIX 集冻结前不改产品。
+
+## Audit verdict（`AUDITED`）
+
+反向扫描确认唯一产品消费者是 `string_view.cc`、`dynamic_bitset.cc` 与 `hash.cc`；公开 Container header、
+layout 和 kernel body 均不出现 Platform tier。前两族的 generated TU 直接实例化 Highway，必须匹配
+HYLE 实际 Highway target group；XXH3 TU 使用普通 `hyle_set_isa(AVX2)`，需求集合更窄。把二者继续用
+同一“AVX2”排序比较会再次形成苹果对橘子。
+
+| FIX | frozen implementation | P0 evidence |
+|---|---|---|
+| `CONT4-F01` | 私有 `cpu_dispatch_internal.h` 声明 direct-Highway SSE4/AVX2/AVX512/NEON requirements 与普通 XXH3 AVX2 requirements | 与 `HyleIsa.cmake` flags/Highway group 逐项对照 |
+| `CONT4-F02` | StringView/DynamicBitset selector 由最强到最弱显式 `has_all`，每进程缓存一次；Hash 只用自己的 matcher | synthetic complete/missing-one tests；无 per-item branch |
+| `CONT4-D01` | 更新注释、variant tests 与旧 `best_isa/Isa/supports` 反证；公开 API 和旧 P1 数字不变 | 三平台 correctness、三交付与 header scan |
+
+API freeze 为 `FROZEN`（2026-09-05）：Container 不公开 target/feature facade，不依赖 SIMD；私有 selector
+只对其实际 compiled TU 负责。无功能、layout、算法或 P1 comparison-class 变化，本轮没有未处置
+`MUST`，仅 P0 结构与正确性验证。

@@ -51,3 +51,23 @@
   立即出本轮，不得用它延长 target-ownership 施工。
 
 进入 `SCOPED` 只冻结以上迁移合同，尚不授权产品实现。
+
+## Audit verdict（`AUDITED`）
+
+反向扫描覆盖 SIMD 公开 headers、runtime table、fat/exact helpers、target manifest、provider route 生成器、
+387-operation generated ledger、tests 与 CMake。算法 body 和 winner 没有依赖旧 Platform tier；问题只在
+同一概念存在三份类型/名字：公开 `simd::Isa` 是 Platform alias，runtime 用它表示 compiled body，
+provider 又有第二个 `Target`。Highway 的 raw feature/group 分层证明新边界与成熟实现一致。
+
+| FIX | frozen implementation | P0 evidence |
+|---|---|---|
+| `SIMD5-F01` | `target.h` 独占无顺序 `KernelTarget`、`kernel_target_name()`、`kCompiledTarget`；export 宏迁 `visibility.h`，删除 `dispatch.h` | public-header/symbol/old-include scan |
+| `SIMD5-F02` | SIMD 声明 canonical SSE4/AVX2/AVX512/NEON/SVE/RVV 的完整 raw-feature requirements 与 `kernel_target_supported()` | 每项缺一 fact 必降级；exact 路径不探测 |
+| `SIMD5-F03` | Runtime/Module/SelectedTarget/fat helper 全部改用 `.target`；实际 family fallback 如 classic-cl sort 仍诚实报告较低 target | table/fat/exact fixtures + link/disassembly |
+| `SIMD5-F04` | 删除 `provider::Target`，route template/generator/generated specializations 直接用 `KernelTarget` | generator `--check`、provider compile probes；无 runtime layer |
+| `SIMD5-D01` | target manifest 把 SSE4 token 从 `Sse42` 校正为 `Sse4`，更新 user/architecture/CMake 注释和 tests | source/static/shared、ordinary/expert/fixed/fat journeys |
+
+API freeze 为 `FROZEN`（2026-09-05）。`KernelTarget` 只表示 HYLE 已编译/实际选择的 kernel body，不表示
+CPU 的最高能力，也不在不同架构间排序；Platform facts 只作为 SIMD-owned requirements 的输入。
+`HYLE_SIMD_EXACT_TARGET`、`hyle_target_simd(... ISA ...)` 和 fat-kernel CMake 调用拼写保持不变，含义明确为
+编译目标。无 operation/provider/loop/body 或 P1 winner 改动，故仅 P0；本轮没有未处置 `MUST`。

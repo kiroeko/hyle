@@ -40,3 +40,11 @@
 - 停止：三种事实查询迁移且验证通过；不以该轮重新声明 Parker 性能结论。
 
 进入 `SCOPED` 后只允许完成上述字段消费的双向审计；有限 FIX ledger 签署前不改产品。
+
+## Audit verdict（`AUDITED`）
+
+反向扫描确认只有 `thread.cc` 四个 AMX 检查、一个 SVE 检查和一个 RVV 检查读取旧字段；公开 header、
+Thread/Parker/wait、affinity、OS state transition 与 Sched 调用均不依赖字段 layout。唯一冻结项是
+`PTHR2-F01`：迁到 `CpuFeatureSet::has()` 并更新局部类型名/注释。set 已由 Platform 缓存，查询 O(1)、
+无新增状态或控制流；旧 Parker P1 不被本 diff 续签或重跑。API freeze 为 `FROZEN`（2026-09-05），没有
+未处置 `MUST`、第三方、FFI、公开 API 或 build graph 变化。

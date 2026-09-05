@@ -26,8 +26,8 @@
   raw CPUID feature bits 与 target groups 分开。该证据支持分离事实与策略，不授权把 Highway 的完整
   API 并集复制进 Platform；
 - 初步受影响面：`include/hyle/platform/cpu.h`、隔离 probe TU、CPU tests、Platform 用户/架构文档，
-  以及直接使用旧 `Isa/best_isa/supports` 的 SIMD 与 Container；`platform_thread/platform_fs` 的产品
-  源码不受影响，只回放 Platform façade 交付；
+  以及直接使用旧字段或 `Isa/best_isa/supports` 的 platform-thread、SIMD 与 Container；platform-fs
+  产品源码不受影响，只回放 Platform façade 交付；
 - 初步性能级别：`P0`。探测仍只允许一次有界初始化，随后 feature query/membership 为 O(1)；本轮
   不改变 Parker、filesystem、topology、memory、VM 或 NUMA 算法，也不重跑与 diff 无关的 P1 数字合同；
 - 初步非目标：新增 kernel 或 SIMD provider、修改现有算法 winner、device inventory、scheduler
@@ -72,3 +72,35 @@
   topology/memory/VM/NUMA 的旧 P1 证据因产品路径无 diff 只做 provenance replay，不重新计时。
 
 进入 `SCOPED` 后只能完成以上边界的双向审计；完整 capability map 与有限 `FIX` 集冻结前仍不得改产品。
+
+## Audit verdict（`AUDITED`）
+
+正向能力源绑定本机 clean Highway、llama.cpp/随仓 ggml 与 Windows 26100 SDK 的实际 feature ABI；
+反向扫描覆盖全部公开 CPU 入口、`cpu.cc/cpu_internal.h`、platform-thread、SIMD、Container、测试、CMake
+注释和两层当前文档。结果不是“Platform 和 SIMD 都应提供 ISA”，而是两个不可互换的值域：
+
+| Family | admitted journey | current | verdict / owner |
+|---|---|---|---|
+| immutable host facts | 自定义 kernel/backend 判断本进程能否执行单项扩展 | 字段式 bool 可用但不可组合、缺事实 | `PARTIAL/FIX`，Platform |
+| OS-safe wide state | x86 YMM/ZMM 与 ARM OS capability | x86 主干已有，若干子事实未统一 gate；ARM 三 OS 不齐 | `PARTIAL/FIX`，Platform |
+| execution target | HYLE family 报告/选择实际 compiled body | `platform::Isa` 混入 Highway group 和排序 | `ROUTED/FIX`，SIMD v5 |
+| thread ISA state | SVE/RVV width、AMX permission | 机制完整但读取旧字段 | `COMPLETE/FIX`，platform-thread v2 |
+| non-CPU Platform | topology/cache/NUMA/VM/fs/thread/wait | 本轮无产品 diff | `COMPLETE/KEEP`，旧 receipt |
+
+公开 `CpuFeatures` 的 49 个旧字段逐项追踪后全部迁入新 set；新增 12 个 x86 与 4 个 ARM 推理相关
+事实，不复制 APX 或完整 CPU catalog。x86 decoder 以 CPUID registers + XCR0 为纯输入，保证 FMA/F16C/
+AVX 家族及 AVX-512 子扩展按相应 OS state gate；AMX 四项明确为 hardware fact。ARM Linux 用稳定
+HWCAP/HWCAP2 位；macOS 用 `hw.optional.arm.FEAT_*`；Windows 用稳定 `PF_*` 数值，未知查询诚实 absent。
+
+本轮冻结 FIX 集：
+
+| FIX | frozen implementation | cost / verification |
+|---|---|---|
+| `PLAT4-F01` | `CpuFeature` + 两个 `uint64_t` 的 `CpuFeatureSet`；`has/has_all/has_any/set`；删除 `Isa/best_isa/supports/isa_name` | constexpr O(1)、16-byte、无动态状态；header/algebra/invalid tests |
+| `PLAT4-F02` | x86 纯 decoder 与完整旧/新增 feature mapping、YMM/ZMM gate、AMX hardware 命名 | 一次固定 CPUID/XGETBV；synthetic register/masked-XCR0 tests |
+| `PLAT4-F03` | ARM Linux/macOS/Windows 与现有 RISC-V facts 迁入 set；补 AES/PMULL/DotProd/FP16 和稳定 OS queries | 一次固定 auxv/sysctl/PF 查询；synthetic Linux + 三真机 invariants |
+| `PLAT4-F04` | `cpu_feature_name()`、cache、公开指南/架构与旧符号扫描 | cached access/set query O(1)；三交付与 docs |
+
+API freeze 为 `FROZEN`（2026-09-05）：Platform 公开事实没有跨架构排序、best/score/provider 或 kernel
+概念；用户按名字查单项或把 requirements 构造成 set。没有未处置 `MUST`，无第三方产品依赖，无
+Native FFI slice；本轮 P0 timing 不适用。实现只能执行 F01--F04，发现新的能力族或 OS 机制即退回审计。
