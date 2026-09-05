@@ -54,3 +54,106 @@
 `CLOSED -> REOPENED` 前的 registry snapshot 为
 `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-reopened.json`，
 SHA-256 `04E557C22D8D4225C9E0B3449A2E7F7C40AB2B9948E1E9AD6326A1310C44046D`。
+
+## Closure card（`SCOPED`）
+
+- component / owner / round：`platform + platform_thread + platform_fs` / Platform /
+  `platform-v8-os-resource-contract`；产品 baseline 仍为 `f679026d3dc7fe3e8f68df005df90637dd29bebd`；
+- locked peer snapshots：oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`、Folly
+  `65749da412d92fe27d87ae45a8ef670720712858`、Highway
+  `63f4b16cda024e2adff8a18dee81e067f8a87d61`；消费证据固定为 llama.cpp
+  `4d9176092d00586775af140581bb0b558ddc4389` 与 ggml
+  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226`。这些本地 checkout 均 clean；最多只让 oneTBB/Folly
+  进入数值 peer，Highway 只用于 OS-fact 实现审计；
+- public delivery：C++23 source embedding、static SDK、shared SDK；没有 C/Native FFI 或稳定 C++ ABI。
+
+### 冻结的公开形状与语义
+
+1. `available_cpu_ids/count/topology` 只表示当前进程/调用线程的 **placement**，不再宣称是 worker 数。
+   新增 `CpuQuota { capacity, period }` 与 `ProcessCpuCapacity`：包含 placement logical CPU 数和可选的
+   ancestor-folded hard quota；`parallelism_ceiling()` 只做 `min(placement, ceil(capacity/period))` 的
+   明确整数推导。Linux 读取 cgroup v2 `cpu.max` 或 v1 quota/period；Windows 只接受 Job Object hard-cap
+   或 max-rate；weight/share 没有 hard ceiling，macOS 无公开 hard quota 时为 absent。调度/线程数 policy
+   仍由 Sched/engine 决定。
+2. 新增 `CpuFrequencyInfo { id, hardware_max_hz, policy_max_hz, current_hz }` 与 caller-buffered
+   `available_cpu_frequencies(dst, cap)`，并在 convenience header 提供 `vector` overload。记录与当前
+   available CPU id 对齐，0 表示 OS 没有可信事实；Windows 使用 documented processor-power records，
+   Linux 使用 CPUFreq sysfs（kHz 经 checked conversion），Apple 只使用公开且实际存在的 sysctl key，
+   不按型号或计时猜测 Apple Silicon 频率。
+3. `cache_info()/cache_line_size()` 保留 cached coarse convenience，但改为 OS-first：Windows processor
+   relation、Linux cache sysfs、Apple documented sysctl/performance-level；coarse capacity 取 process-view
+   各 class 的保守非零下界，line size 取所见最大值并保留 64-byte unavailable fallback。CPUID 不再抢在
+   OS cache hierarchy 前；动态 `available_cpu_cache_classes()` 仍是调优入口。
+4. `HostMemoryInfo` layout 不变；Linux process limit 由 mountinfo-aware cgroup resolver 找到真实 v1/v2
+   controller path，并把从 leaf 到可见 mount root 的每一层 hard `limit - usage` 取最小。`memory.high`、
+   shares 与 pressure 不是 hard capacity；`max`/v1 unlimited 不伪造成 0。
+5. 现有稳定 `numa_nodes()` span 不改 ABI 形状；Linux 初始化时按 `get_mempolicy`、
+   `/proc/self/status:Mems_allowed_list`、resolved cgroup `cpuset.mems.effective` 的可信进程视图收窄。
+   查询失败时不得把 system-online nodes 宣称为 process-available；unsupported/unknown 仍诚实退化为 `{0}`。
+6. Platform-fs 只对 POSIX 明确 restart-safe、且尚未产生可观察副作用的 open/stat/fstat/ftruncate/
+   fsync/fdatasync/fcntl/opendir/readdir/closedir 等调用统一处理 `EINTR`。`close` 不重试；可能已经完成部分
+   transfer 的调用继续使用既有 short-transfer contract；不吞掉非 `EINTR` native status。
+7. Parker 算法、layout、memory order 与对象 bytes 全部不改。Rust std 1.94.1 commit
+   `e408947bfd200af42db322daf0fadfe7e26d3bd1` 的 origin/selected license 被登记为 integrated source，
+   完整 license text、文件注释、dependency lock、package registry、installed notice 必须一致。
+8. 修正文档与实现分歧：VM misalignment 是 recoverable `InvalidArgument`；OS fact 的 unknown、动态性、
+   placement/capacity、P/E/cache/frequency 选择和容器陷阱都在 architecture 与 user guide 中直说。
+
+### 有限 FIX budget
+
+| ID | factor | frozen work |
+|---|---|---|
+| `P8-CG-01` | platform | 一个 mountinfo-aware、安全规范化的 Linux cgroup v1/v2 resolver；memory/quota/cpuset 共用 |
+| `P8-CPU-01` | platform | `ProcessCpuCapacity`、hard quota 祖先折叠与 placement/capacity 文档边界 |
+| `P8-CPU-02` | platform | OS-published per-available-CPU frequency snapshot 与 convenience overload |
+| `P8-CPU-03` | platform | OS-first coarse cache；Windows group prefix map 从 O(CPU×group) 降为 O(CPU+group) |
+| `P8-NUMA-01` | platform | Linux process-allowed NUMA fallback 链；禁止 system-online 假可用 |
+| `P8-FS-01` | platform_fs | 可安全重启 POSIX controls 的 EINTR 一致性与故障测试 seam |
+| `P8-TH-01` | platform_thread | Rust parker provenance/license/lock/package projection；产品算法零改动 |
+| `P8-API-01` | platform | VM 注释、错误诊断与新增 API 的 null/truncation/overflow/unknown 合同 |
+| `P8-T01` | all three | parser fixtures、边界/失败/复杂度、三平台与 sanitizer 测试 |
+| `P8-B01` | all three | target links、逐头、exact factor、source/static/shared、relocated install 与 notice 验证 |
+| `P8-P01` | platform/fs | 修正 direct-peer apples/oranges；续签 host planning 与 warm 4 MiB file 的 5% P1 门 |
+| `P8-R01` | all three | Mem/Mem-vm/SIMD/Container/Sched/IO 直接消费者只读回放，不顺手重构冻结模块 |
+| `P8-D01` | all three | architecture、guide、capability、performance、dependency/license 当前真相 |
+
+FIX 外的新产品能力、公共仪器扩建或相邻 frozen 模块产品修改都退回 `AUDITED` 重新裁决；不能用“顺便”
+扩大本轮。
+
+### 比较合同、预算与停止条件
+
+- `platform` 为 P1：W1-WIN host planning 的 candidate 与 direct OS peer 必须构造相同字段、错误路径和
+  process/job limit；两边 common host 均不得在 timed call 自造 heap。5% margin 只裁决该正常 planning
+  journey，不把 Linux parser、frequency getter 或冷 discovery 微基准塑造成 API；
+- `platform_fs` 为 P1：沿用 4 MiB warm open/read/checksum/close，同 flags、buffer、bytes、durability、
+  EOF/error accounting；EINTR synthetic fixture 只裁决 correctness，不和无信号 peer 排名；
+- `platform_thread` 为 P0：integrated-source bytes 未变则以 source hash、memory-order/layout diff、原测试和
+  三交付证明没有成本变化；只有产品 bytes 改变才需要重新资格化 Parker P1；
+- P0 结构门：cgroup resolver 对 mount/ancestor 输入 O(lines+depth)，Windows CPU mapping O(CPU+group)，
+  frequency/cache discovery O(available CPU × exposed OS records)，warm cached coarse cache O(1)，无常态
+  scheduler metadata 或热路径 syscall；
+- apples-vs-oranges 禁令：placement 不与 quota、cached 不与 fresh discovery、完整 Status 不与 unchecked
+  scalar、cursor IO 不与 explicit-offset、signal-free 不与 injected-EINTR 路线排名；不能用较强 HYLE 语义的
+  劣势冒充同合同 FAIL，也不能用较弱 peer 的胜利冒充 SOTA；
+- 若 supported OS 无法诚实表达某字段则返回 0/absent，不猜测；若实现要求 Sched/Mem/IO policy、私有 OS
+  接口、常态 heap/lock/metadata、或无法在有限 FIX 内消除 false resource facts，则退回 `AUDITED` 或
+  `BLOCKED`，不得继续研究代替状态。
+
+### 预声明验证
+
+- W1-WIN：MSVC Release/WERROR，三个 exact factor，Platform product，unit tests；CPU Sets/group mapping、
+  Job quota、processor power/cache；source/static/shared + relocated package；host/file P1 qualification；
+- W1-WSL：GCC 14 Release + UBSan/WERROR，cgroup v1/v2/mountinfo/ancestor/cpuset fixtures、真实 process
+  snapshot、NUMA fallback、EINTR seam；三个 exact factor与三交付；
+- M1-MAC：AppleClang Release + UBSan/WERROR，public sysctl/cache/perflevel/frequency unknown 合同、thread/fs
+  路线、三个 exact factor与三交付；远端只接收 exact candidate archive，不向 Windows 回传产品改动；
+- all：header self-containment、no Native FFI/C symbols、component contract、dependency lock/license hash、
+  installed `THIRD_PARTY_NOTICES` 与 Rust license、直接消费者 compile/test、`check-module-closure.py`、
+  `check-docs.py`、candidate tree/LOC 自检和独立红队。
+
+本卡只冻结边界。下一阶段必须完成实现/peer/consumer/source-license 审计，把每个 FIX 定为具体处置后进入
+`AUDITED`；此前仍不修改产品源码。
+
+`REOPENED -> SCOPED` 前的 registry snapshot 为
+`C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-scoped.json`，
+SHA-256 `F2CBBFAF6040DCA6B10436A91247206948CB2D3B012FEAE31A8E5216A3D7C281`。

@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -603,11 +603,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v8 REOPENED：已有具体 OS-resource truth、Linux cgroup/NUMA、Windows topology complexity 与缺失 CPU capacity/frequency 触发；尚未冻结 API/FIX，不授权产品改动。"
+      "summary": "platform v8 SCOPED：process CPU placement/capacity/frequency、OS-first cache、Linux cgroup memory/NUMA 与 Windows topology complexity 的自然 API、有限 FIX 和验证矩阵已冻结；待审计后实现。"
     },
     {
       "module": "platform_thread",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -630,11 +630,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v8 REOPENED：Parker 源代码来源、许可证、dependency lock 与安装包投影不完整；算法和既有性能声明尚未重开。"
+      "summary": "platform_thread v8 SCOPED：只修 Rust-std-derived Parker 的 provenance/license/lock/package projection，算法、layout、memory order 与性能 bytes 均冻结不改。"
     },
     {
       "module": "platform_fs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-FS-EINTR-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -659,7 +659,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v8 REOPENED：POSIX restart-safe controls 对 EINTR 的处理不一致；本轮将冻结可安全重试边界并续签自然文件路径。"
+      "summary": "platform_fs v8 SCOPED：可安全重启 POSIX controls 的 EINTR 边界、故障测试、三交付与同合同 warm-file P1 续签已冻结；待审计后实现。"
     },
     {
       "module": "mem_reclaim",
