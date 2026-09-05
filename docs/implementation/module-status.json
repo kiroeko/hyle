@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -605,7 +605,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v7 REOPENED：Apple M4 已复现全局 cache_info 丢失异构 performance-class cache facts；只重开受影响的 host-fact 表面。"
+      "summary": "platform v7 SCOPED：cache-class snapshot 的事实/unknown/order、三平台来源、P0 成本和有限验证矩阵已冻结；尚未授权实现。"
     },
     {
       "module": "platform_thread",
@@ -678,7 +678,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -701,7 +701,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v4 REOPENED：opened owner 缺少 duplicate/metadata，且同步显式 offset 访问不能由现有 single-cursor FileHandle 或 coroutine IO 自然表达。"
+      "summary": "platform_fs v4 SCOPED：duplicate、opened metadata 与独立 random-access owner 的跨平台语义、P0 成本和有限验证矩阵已冻结。"
     },
     {
       "module": "mem_reclaim",

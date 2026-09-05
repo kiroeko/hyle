@@ -60,3 +60,75 @@ Build/package test-selection 缺陷，不属于 Platform 产品 candidate；另�
 
 只有在自然 API、失败语义、跨平台差异、有限 FIX、依赖/交付和验证矩阵冻结后进入 `SCOPED`；只有完成
 implementation/peer/build/doc 红队并冻结 FIX 后进入 `AUDITED`。
+
+## Closure card（`SCOPED`）
+
+- component / product / round / kind：`platform + platform_fs` / Platform /
+  `platform-v7-cache-class-and-random-access` / `REOPEN`；`platform_thread` 保持只读；
+- baseline / trigger：`984eab5da3cae715984fd3a68a8e9299e23c0045` /
+  `PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05`；
+- locked peer snapshots：Folly `65749da412d92fe27d87ae45a8ef670720712858`、llama.cpp
+  `4d9176092d00586775af140581bb0b558ddc4389`、ggml
+  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226`；三者均已 fetch 并确认本地 HEAD 等于 upstream；
+- authoritative OS contracts：Apple “Determining system capabilities” 明确 `hw.nperflevels`、
+  `hw.perflevelN.*` 且较小 N 表示更强 class，并明确全局 cache key 等价于最低性能 class；Windows
+  `GetLogicalProcessorInformationEx(RelationCache)` 提供共享 cache 关系；Linux 使用稳定 sysfs
+  `cpu*/cache/index*` 事实；
+- normal consumers：推理 worker/cache blocking 在 CPU class 粒度取得容量与共享宽度；模型、权重、
+  cache/index 通过 already-open owner 做 identity-stable metadata、owner cloning 和 caller-synchronized
+  blocking explicit-offset transfer；
+- public delivery：仅 C++23 source/static/shared；无 C/Native FFI、稳定 C++ ABI 或兼容层。
+
+### 冻结 API 与语义
+
+1. 新增 `CpuCacheClassInfo`：`performance_rank`、`CpuKind`、当前 process view 的
+   `logical_cpus/physical_cores`、`cache_line_size`、`logical_cpus_per_l2/l3` 与 `CacheInfo`；未知事实为 0。
+   `available_cpu_cache_classes(dst, cap)` 使用现有 buffer-fill 合同，返回完整记录数并按已知 rank 从强到弱
+   排列；同 rank 但 cache 容量/共享宽度不同的记录不得合并。便利头提供同名 `vector` overload。
+2. `cache_info()` 保留 cached coarse convenience；在 Apple 上它按官方合同是最低性能 class，不再被文档
+   描述为整机每个 CPU 的 cache。需要调度/tiling 的调用者必须选择 class snapshot；不把 class 事实变成
+   SIMD/provider winner。
+3. `FileHandle::duplicate() const -> Result<FileHandle>` 创建独立 RAII owner。POSIX `dup`/`fcntl` 与
+   Windows `DuplicateHandle` 都共享底层 open-file cursor/lock state；duplicate 不是独立 file position。
+4. `FileHandle::info() const -> Result<FileInfo>` 对 already-open object 查询，不解析 path；`is_symlink=false`
+   （handle 指向打开后的 object），类型、size、mtime 使用与 path `stat` 相同值域。
+5. 新增 move-only、一字 owner `RandomAccessFile` 与 `open_random_access_file(path, flags)`；禁止
+   `kOpenAppend`。它暴露 `read_at/write_at`、span overload、`read_exact_at/write_all_at`，以及完整 owner
+   生命周期和 already-open controls：`valid/get/close/duplicate/info/size/resize/preallocate/sync/lock/
+   try_lock/unlock`。不暴露 seek/position；raw handle 只作借用 escape hatch。
+6. POSIX 使用 `pread/pwrite`，不移动 native cursor；Windows 使用同步 handle 的 offset `OVERLAPPED`
+   `ReadFile/WriteFile`，其 native file pointer 可能移动，但该状态不在类型合同中可观察。每个 owner 及其
+   duplicate aliases 均须由调用者同步；真正 concurrent/async/direct/vectored 访问继续归 IO，独立重新
+   open 的 random-access owners 可由应用分配给不同 worker。
+
+### Ownership、依赖与性能
+
+- `platform` 继续只公开依赖 Core/Error；`platform_fs` 继续公开依赖 Core/Error/Time、私有依赖
+  Platform；全部失败继续走共享 `Status/Result` 与 native-error adapters，不引入 Container/Mem/第三方；
+- `FileHandle` layout 与旧 open/read/write/seek/sync 控制流不变；`RandomAccessFile` 以组合复用
+  `FileHandle`，不保存 offset、mode、mutex 或 heap；
+- tier 固定 `P0 / STRUCTURAL`：cache-class discovery 是显式动态 snapshot，复杂度为 OS topology/cache
+  输入规模；common small-host scratch 有界，必要时失败可见地分配。duplicate/info/一次 at-transfer 各为
+  固定次数 native control；exact/all 只按 short transfer 前进，不自造 payload copy；
+- 性能比较硬门要求 owner、blocking、offset、EOF、short transfer、cursor observability、并发和 durability
+  全同。不同项一律 `NOT_COMPARABLE`；不得为了点值给常态对象增加 metadata 或把 IO 能力吸入 Platform。
+
+### 预算、停止条件与预声明验证
+
+- finite FIX budget：`P7-CPU-01` class snapshot；`P7-FS-01` duplicate；`P7-FS-02` handle info；
+  `P7-FS-03` random-access owner；`P7-T01` 三平台/失败语义测试；`P7-B01` header/exact factor/三交付；
+  `P7-D01` architecture/user/capability/performance evidence；`P7-R01` Mem/Sched/IO 只读回放；
+- correctness：W1-WIN MSVC Release/Werror；W1-WSL GCC Release/ASan/UBSan；M2-MAC AppleClang
+  Release/Werror。覆盖 count/truncation/order/unknown、M4 双 class、closed/invalid/null/overflow/EOF/
+  short transfer、offset 不依赖公开 cursor、duplicate lifetime/shared cursor、metadata path replacement；
+- delivery：exact `platform`/`platform_fs` factors；Platform source embedding、relocated static/shared SDK；
+  package sample 直接消费新增 API；header self-contained；
+- architecture/red team：检查 no dependency drift、无 C symbols、Apple least-class trap、Windows cursor trap、
+  duplicate aliasing、append、symlink/rename identity、special-file metadata、offset overflow、concurrent misuse；
+- performance：旧 hot-path baseline diff、layout static assertions、新入口 syscall/code-shape 审计；只有发现
+  HYLE 自造 material work 才升级有限 P1，不扩建公共仪器；
+- stop：若 supported OS 无法诚实表达 frozen contract、需要常态 lock/heap/metadata、或必须修改 frozen
+  Thread/Mem/IO 产品，退回 `AUDITED`/`BLOCKED`；不得用猜测填 unknown。
+
+本卡已冻结产品边界。下一步只允许只读实现/peer/consumer 审计并形成上述有限 FIX 的具体处置；在
+`AUDITED` 前仍不得修改产品源码。
