@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-09-05",
+  "updated_at": "2026-09-06",
   "modules": [
     {
       "module": "core",
@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -586,6 +586,8 @@
       "scope": "Audit and repair process-scoped OS resource truth for CPU placement/capacity/frequency/cache, Linux cgroup memory and NUMA, and Windows large-CPU topology complexity without adding scheduler policy.",
       "non_goals": "Scheduler or inference-engine worker policy, SIMD target dispatch, device inventory, private OS interfaces or model/timing guesses, Mem/IO redesign, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
+      "candidate_commit": "e2a0ce9ddeb39d319591e5231f88112c06c75ef2",
+      "candidate_tree": "f1c4bf59e432cd283b8318ca2eaaf4d12a6580f5",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -603,11 +605,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v8 AUDITED：capacity/frequency、OS-first cache、共享 cgroup ancestor resolver、process NUMA 与 O(CPU+group) FIX 已冻结，可按有限 ledger 实现。"
+      "summary": "platform v8 CANDIDATE：OS resource truth 修复已冻结在 e2a0ce9d；Windows/WSL 正确性与 host/file P1 资格门已通过，待 macOS、三交付、直接消费者与最终红队。"
     },
     {
       "module": "platform_thread",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -615,6 +617,8 @@
       "scope": "Restore complete source provenance, license, dependency-lock and installed-package projection for the existing Rust-std-derived futex parker without changing its algorithm.",
       "non_goals": "Parker algorithm redesign, new wait or thread capability, CPU/FS ownership, scheduler policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
+      "candidate_commit": "e2a0ce9ddeb39d319591e5231f88112c06c75ef2",
+      "candidate_tree": "f1c4bf59e432cd283b8318ca2eaaf4d12a6580f5",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -630,11 +634,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v8 AUDITED：Rust parker MIT provenance、integrated-source lock、package owner/notice 已精确冻结；算法、layout、memory order 与产品 bytes 不改。"
+      "summary": "platform_thread v8 CANDIDATE：Rust parker 产品 bytes 未改，MIT provenance、lock、license 与 package projection 已冻结在 e2a0ce9d；待 macOS 与最终交付复核。"
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-FS-EINTR-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -642,6 +646,8 @@
       "scope": "Make restart-safe POSIX synchronous filesystem controls consistently absorb EINTR while preserving native operation count, ownership, EOF, short-transfer and durability semantics.",
       "non_goals": "Retrying close or non-restart-safe operations, async/direct/vectored IO, mapping/residency, path abstraction, IO redesign, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
+      "candidate_commit": "e2a0ce9ddeb39d319591e5231f88112c06c75ef2",
+      "candidate_tree": "f1c4bf59e432cd283b8318ca2eaaf4d12a6580f5",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -659,7 +665,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v8 AUDITED：restart-safe/idempotent EINTR call-site 集与 close-like/side-effect 禁区已冻结，可按共享 tested retry primitive 实现。"
+      "summary": "platform_fs v8 CANDIDATE：POSIX EINTR 语义与调用点修复已冻结在 e2a0ce9d；Windows/WSL 正确性与 warm-file P1 资格门已通过，待 macOS、三交付与最终红队。"
     },
     {
       "module": "mem_reclaim",

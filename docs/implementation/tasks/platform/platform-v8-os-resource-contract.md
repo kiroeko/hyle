@@ -322,3 +322,31 @@ Rust 上游校验归档使用 `rustc 1.94.1` 对应 archive
 `SCOPED -> AUDITED` 前的 registry snapshot 为
 `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-audited.json`，
 SHA-256 `9FEA589026C3DA8544927EE4CBECC279572FF833F2AFA85BB9AA01F9259A603D`。
+
+## Product candidate（`CANDIDATE`）
+
+- product commit/tree：`e2a0ce9ddeb39d319591e5231f88112c06c75ef2` /
+  `f1c4bf59e432cd283b8318ca2eaaf4d12a6580f5`；公开合同、算法、依赖、license 与正常路径成本在该树冻结；
+- exact source archive：
+  `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\candidate\hyle-e2a0ce9d.tar.gz`，
+  SHA-256 `AAFBE2A7284F1C355655C457AD85C6E9D834225288989B33AC19B616F108E6DC`；
+- W1-WIN MSVC static/shared 与 W1-WSL GCC 14 static/shared、UBSan 的 Platform 实现测试已通过；三个
+  exact factor 的完整回放也已通过。这些是 candidate 前验证，不代替尚待完成的 macOS、
+  relocated package、direct-consumer 与最终红队；
+- W1-WIN host P1 bundle
+  `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-r3` 为 `QUALIFIED/PASS`；31 个独立样本下四个
+  strata 全部 `PARITY` 且 NI `PASS`，A/A、5%/10% known-delta、timer-floor、placement 全部
+  `PASS`，contract SHA-256
+  `9561919627816e603e2ae6c42a8a2ccf38b5366929a2eff485651e00ec5db3bf`；
+- W1-WIN warm-file P1 bundle
+  `C:\public\project-hyle\_validation\platform-v8-perf-fs-evidence-r2` 为 `QUALIFIED/PASS`；预先冻结的
+  15 -> 31 样本升级后，8 个 execution/allocation/placement strata 全部 `PARITY` 且 NI
+  `PASS`，五项 controls 全部 `PASS`，provenance `EXACT`，contract SHA-256
+  `c72d5c879273dffcb805892bc0acc746af61b1841a45e57d332411bf82e83adc`。首个 r1 bundle 的产品行同样全为
+  `PARITY/PASS`，但 5% control 的一个顺序未通过资格门，故仅保留为 diagnostic，不用来裁决产品；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot 为
+  `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-candidate.json`，
+  SHA-256 `1442FE58A10203418F6D108DE93732C8DF5092EAC0D74891E24659EE49DC7CE9`。
+
+本状态只冻结候选产品身份；工程性能、交付、文档和红队的 aggregate gate 要在完成全部预声明回放后才能写
+`PASS`。候选后若修改产品 API、layout、算法、依赖或正常路径成本，必须退回 `AUDITED`。
