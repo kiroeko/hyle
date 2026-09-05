@@ -642,7 +642,7 @@
     },
     {
       "module": "platform_thread",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-THREAD-WINDOWS-QOS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -665,11 +665,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v3 SCOPED：冻结 Windows 显式 priority 的 EcoQoS/system-managed/HighQoS 映射、P0 成本与有限跨平台回放。"
+      "summary": "platform_thread v3 AUDITED：唯一 FIX 是完成既有 Windows priority/QoS 语义并验证显式与默认路线；API、依赖和 Parker 不变。"
     },
     {
       "module": "platform_fs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-FS-CPP-VISITOR-LONG-PATH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -692,7 +692,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 SCOPED：冻结 const/异常安全 C++ visitor 与 stack-first 可增长 recursive-mkdir scratch，底层同步 I/O 不变。"
+      "summary": "platform_fs v2 AUDITED：冻结 const/异常安全 visitor、stack-first 可增长 mkdir 与定向验证；FileHandle/I/O/因子图不变。"
     },
     {
       "module": "mem_reclaim",

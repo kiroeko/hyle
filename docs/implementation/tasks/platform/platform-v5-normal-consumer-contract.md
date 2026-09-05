@@ -134,3 +134,37 @@
 
 当前状态为 `SCOPED`。下一步只允许完成现有 public surface 双向追踪、签署有限 `FIX` 和 API freeze；
 在 `AUDITED` 前仍不修改产品源码。
+
+## Audit verdict（`AUDITED`）
+
+双向追踪覆盖三个 factor 的全部公开 headers/compiled sources/tests、中央组件图、Platform product façade、
+Sched/Mem/IO/SIMD/Container 直接引用，以及 latest llama.cpp/ggml 的 host/thread/fs 调用。没有发现另一套
+CPU detector、target selector、NUMA/VM owner、thread wait、filesystem mapping owner 或错误系统；host
+factor 因此维持 `CONFIRMED`。两个受影响 factor 的有限 ledger 如下：
+
+| ID | class | exact defect / demand | frozen natural shape | complexity / cost | action / verification |
+|---|---|---|---|---|---|
+| `PLAT5-T01` | `MUST` | Windows explicit priority 没有 execution QoS，performance-oriented worker 语义不完整 | optional 未设置保持继承；low 两档 EcoQoS，normal 恢复 system-managed，high 两档 HighQoS，并保留对应 native thread priority | 显式 cold setup 固定两个 native controls；无常态 metadata/allocation；默认零新增调用 | `FIX` 实现 + 子线程 native readback + invalid/required/best-effort |
+| `PLAT5-F01` | `MUST` | const callback compile failure；throwing callback 穿越 noexcept core | caller-TU context 保留 cv；异常启用时捕获、停止 iterator、完成 close 后原样重抛；异常关闭时只保留 no-throw route | 每项仍一个 callback，无 heap/entry collection/额外 stat；exception path 冷 | `FIX` compile/runtime tests + early-stop/error precedence |
+| `PLAT5-F02` | `MUST` | recursive mkdir 的 4095-byte HYLE ceiling 低于 Windows extended-path mechanism | 4096-byte stack first，超长 checked malloc；OS 限制通过 Status 可观察 | O(path bytes + ancestors)，短路径零 heap；长路径一次 fallible allocation | `FIX` >4095 Windows path + short/invalid/OOM boundary |
+| `PLAT5-D01` | `MUST` | 行为合同变化后旧 guide/delivery receipt 不可直接继承 | architecture/user/performance 边界同步；两个 exact factor、Platform 三交付和直接 consumers | 无产品热路成本 | `FIX` docs/scans/builds/red team |
+
+全部现有 public entries 反向分类为 `COMPLETE`、`ROUTED` 或以上三个 `PARTIAL -> FIX`；不存在
+`MISSING + KEEP`。`PLAT-A-16` detach 保持 lifecycle safety 非目标；`PLAT-A-18` process priority 仍是
+application-wide policy/general backlog：Windows process class、Linux current-thread nice 与 macOS process
+行为不能伪装成同一 scope，本轮持久 worker 已由逐 thread API 完整承载；`PLAT-A-26` file
+lock/preallocate/resize 在当前 north-star 同步基础旅程没有缺口，positional/direct/async 继续归 IO。
+
+### API / usability freeze
+
+- 状态：`FROZEN`（2026-09-05）；公开函数、类型、对象 layout、target/include path 均不新增或改名；
+- `ThreadPriority` 表示显式的 portable scheduling/quality hint，而不是 CPU hard pin。缺省 optional 才是
+  完全继承；`kNormal` 明确恢复系统管理，high/low 是显式 performance/efficiency QoS；
+- `directory_iterate` 保持 allocation-free、noexcept type-erased core，直接 callback 不得抛；普通 C++
+  用户首选 `for_each_entry`，它在 caller TU 内提供标准 callable 异常传播，且不会把异常编码成 Status；
+- recursive mkdir 仍是同一个 `Status` API；allocation failure 是 `ResourceExhausted`，native path/component
+  上限是带 OS detail 的 Status，不暴露 scratch owner；
+- 性能只能在以上接口冻结后验证。若修复要求 thread/process policy 新类型、FileHandle state、额外 factor
+  dependency、每项 allocation/syscall 或 benchmark-only API，必须退回 `AUDITED` 重新裁决，本轮不得做。
+
+冻结 `FIX` 集只有 `T01/F01/F02/D01`。从现在起授权这些产品改动；其余 Platform 产品面保持关闭。
