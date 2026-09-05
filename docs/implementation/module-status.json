@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
       "round_id": "util-core-v4-resource-move-ctad",
@@ -158,6 +158,8 @@
       "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
       "candidate_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
       "candidate_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
+      "end_commit": "1b4ae13e8c82ea6bfd314dfc7e64f4b8fe927df6",
+      "registry_anchor_commit": "1b4ae13e8c82ea6bfd314dfc7e64f4b8fe927df6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -193,6 +195,14 @@
         "self_without_tests": 73155,
         "module_implementation": 1549
       },
+      "freeze_confirmation": {
+        "id": "util-core-v4-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
+        "reviewed_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
+        "evidence": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md"
+      },
       "known_limitations": [
         "FunctionRef remains a synchronous non-owning call-only view; storage, return and asynchronous use require an owning callable or an owner-defined function-plus-context shape.",
         "If a resource is only potentially-throwing copyable and its deleter is move-only, failed owner move cleans the token through the transferred deleter and disarms the source; it prevents leak and double release but does not preserve source ownership after the exception.",
@@ -207,7 +217,7 @@
         "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage beyond the frozen 5% margin.",
         "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity."
       ],
-      "summary": "Util-core v4 VERIFIED：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已完成三平台正确性、三种 C++ 交付、文档/易用性、红队、中央组件合同及固定 FunctionRef 5% P1 工程门验证。"
+      "summary": "Util-core v4 CLOSED/FROZEN：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已完成三平台正确性、三种 C++ 交付、文档/易用性、红队、中央组件合同及固定 FunctionRef 5% P1 工程门验证。"
     },
     {
       "module": "error",
