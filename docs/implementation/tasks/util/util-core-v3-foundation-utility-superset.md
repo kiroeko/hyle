@@ -231,3 +231,16 @@ authorized.
 `AUDITED -> CANDIDATE` uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-candidate-ff203194.json`, SHA-256
 `2D7AF7A58485E7F52F92D9D39711BB5CBF775088D1D1E5DB2BA0D4D5AB991177`.
+
+### Candidate refresh after M1-MAC compile gate
+
+M1-MAC/AppleClang 21 `-fno-exceptions -Werror` found that the exception-only deleter/ownership parameters in the
+resource construction helper were unused when exceptions are disabled. Commit
+`763574765d22f8b3f6dbd6046aee124d1117eea3` (tree
+`9ccc0e7a932f7ec4a7345fe56f3525e747587606`) adds only `[[maybe_unused]]` to those two private parameters. It changes
+no public API, algorithm, layout, normal workload or exceptions-enabled code shape, so the legal transition is
+`CANDIDATE -> CANDIDATE` with a refreshed identity rather than a return to `AUDITED`.
+
+The refresh uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-util-candidate-refresh-76357476.json`, SHA-256
+`DB909B898A7DD2217958A19C0BD77CCF36EA8F106BCED9969651FD02FC26EAC7`.
