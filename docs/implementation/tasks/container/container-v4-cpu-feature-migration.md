@@ -25,3 +25,20 @@
 
 只读 replay verdict 为 `PRODUCT_TRIGGER`。完成 `SCOPED/AUDITED` 前不修改 Container 产品源码。
 
+## Closure card（`SCOPED`）
+
+- 冻结实现形状：Container 不公开 target enum；StringView/DynamicBitset 的 direct-Highway variants 用
+  Container 私有、constexpr 的 SSE4/AVX2/AVX512/NEON requirement matcher，XXH3 AVX2 用与自身
+  `hyle_set_isa(AVX2)` flags 相符的较窄 matcher；都读取同一 `platform::cpu_features()` cache；
+- 语义与 API：所有公开 Container header、类型、layout、异常/alias/lifetime 和 kernel body保持不变；
+  不把 SIMD `KernelTarget` 或 Highway 类型引入 Container public/private dependency graph；
+- tier / P0 gate：selector 只在函数局部静态初始化时运行一次，set membership 为 O(1)，没有 allocation、
+  lock、syscall、第二层 dispatch 或 per-element branch；synthetic masked-feature tests 必须证明每个
+  compiled target 缺任一必要 fact 时正确降级；
+- machines / delivery：W1-WIN、W1-WSL、M1-MAC 的受影响 StringView/DynamicBitset/hash correctness，
+  WSL ASan/UBSan，Container source/static/shared 和公开头；原 node-table P1 路径无 diff，不重计时；
+- dependency：仍为 `container -> PUBLIC core,mem,mem_reclaim; PRIVATE platform`；不新增 SIMD 边；
+- 预算与停止：与 Platform v4 共享四小时总预算、最多一次 consumer 修正。若真实 compile flags 无法由
+  稳定 raw facts 表达则 `BLOCKED`，不能恢复 `best_isa` 兼容层。
+
+进入 `SCOPED` 只授权完成双向审计；有限迁移 FIX 集冻结前不改产品。

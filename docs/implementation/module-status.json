@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
       "round_id": "platform-v4-cpu-fact-boundary",
@@ -605,7 +605,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v4 REOPENED：公开 best_isa 把 Highway target group 伪装成主机 ISA 事实，且当前推理所需的若干 CPU feature 探测缺失；等待冻结有限 CPU fact/target 分离轮。"
+      "summary": "platform-v4 SCOPED：冻结 raw CpuFeatureSet、删除 provider-shaped Platform Isa、补齐有限推理 feature facts，并以 P0 迁移 SIMD/Container 直接消费者；尚未授权产品实现。"
     },
     {
       "module": "platform_thread",
@@ -925,7 +925,7 @@
     },
     {
       "module": "simd",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
       "round_id": "simd-v5-target-ownership",
@@ -948,11 +948,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v5 REOPENED：公开 Isa 别名混合主机能力与实际 compiled family target；等待冻结 KernelTarget 所有权迁移，既有算法和 provider route 不重开。"
+      "summary": "simd-v5 SCOPED：冻结 SIMD 自有 KernelTarget、单一 compile-target taxonomy 与 raw-feature requirements；算法、provider route 和 387-operation 证据不重开。"
     },
     {
       "module": "container",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
       "round_id": "container-v4-cpu-feature-migration",
@@ -974,7 +974,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v4 REOPENED：三个私有 selector 依赖即将移除的 provider-shaped Platform ISA authority；等待冻结 raw-feature 迁移，公开 API 与 kernel 不重开。"
+      "summary": "container-v4 SCOPED：冻结三个私有一次性 selector 的 raw-feature requirements 迁移；公开 Container API、kernel body 与既有 P1 证据不重开。"
     },
     {
       "module": "util",

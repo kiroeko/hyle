@@ -36,3 +36,39 @@
 只读 replay verdict 为 `PRODUCT_TRIGGER`。下一步必须冻结 CPU feature-set 的自然公开形状、有限特征
 清单、三平台探测合同、直接 consumer 迁移和验证预算，再进入 `SCOPED`；当前没有产品修改授权。
 
+## Closure card（`SCOPED`）
+
+- 真实用户任务：推理 backend、自定义 kernel、Container/SIMD dispatcher 在不知道最终客户 CPU 时，
+  取得本进程可以安全执行的单项 CPU/OS facts，再由能力 owner 对照自己实际编译 TU 的 requirements；
+- 冻结公开形状：`CpuFeature` 是无顺序的具名事实；`CpuFeatureSet` 是可值传递的固定小型 set，提供
+  `has/has_all/has_any` 与显式构造，不含 provider、target、score 或“最好”概念；
+  `cpu_features()` 返回一次探测后缓存的 immutable set，`cpu_feature_name()` 只供诊断；删除
+  `platform::Isa/best_isa/supports(Isa)/isa_name`，不保留 alias 或 deprecated bridge；
+- 冻结语义：普通向量事实表示 CPU 声明且 OS 已启用必要扩展状态后，本进程可安全执行该指令族；AMX
+  使用带 `Hardware` 后缀的事实，仅表示 CPUID hardware capability，per-thread permission 仍唯一归
+  `platform_thread`；未知/无稳定 OS ABI 的事实返回 absent，不猜测；
+- 有限新增 facts：x86 的 SSE3、AES、PCLMULQDQ、AVX512-VBMI/VBMI2/BITALG/VPOPCNTDQ、GFNI、
+  VAES、VPCLMULQDQ 与 AMX-FP16 hardware；ARM 的 AES、PMULL、DotProd、FP16，以及 macOS/Windows
+  对已经承诺的 SVE/SVE2/I8MM/SME/SME2 的稳定 OS 查询。现有 AVX/VNNI/BF16/FP16/AMX、SVE
+  subfeatures 与 RVV facts 全部迁移，不能静默丢失；APX/全量 CPU catalog 没有当前准入，不进入本轮；
+- 直接依赖不变：`platform -> PUBLIC core,error`；没有新第三方产品依赖。参考只绑定 clean llama.cpp
+  `427291b5b34cd914a31b3fd3b61a68f6184f4b9f`/ggml tree
+  `9bf0d932917ba3ccfe7e3d9fd1723390dc870ec0`、Highway
+  `63f4b16cda024e2adff8a18dee81e067f8a87d61` 与 standalone ggml
+  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226`；它们不是产品链接依赖；
+- tier / normal cost：`P0 / closure-correctness-v1`。probe 一次 O(number of fixed CPUID/sysctl/
+  auxv queries)，cached access O(1)，set membership/all/any O(1)、零 allocation/lock/syscall；类型不携带
+  normal-path metadata 之外的动态存储；
+- correctness：bit-set algebra、invalid enum、feature-name totality、synthetic x86 CPUID/XCR0 gating、
+  synthetic ARM Linux bits、当前真机 invariants、concurrent cache initialization；三平台 build/test，
+  WSL ASan/UBSan，AArch64 compile，public-header self-contained；
+- delivery / direct consumers：精确 `platform` factor 与完整 Platform façade的 source、relocated
+  static/shared；SIMD/Container 必须在自己的合法轮中迁移，随后回放 Mem/Sched 的 selected closure；
+- 易用性与文档：Platform guide 以“查单项事实”和“让 owner 匹配完整 requirements”为主，不再教用户
+  对不同架构 enum 数值排序；SIMD guide 单独解释 host fact 与 selected kernel target；
+- 总预算：本三模块协同轮最多四个 engineering hours；只允许一次 API 实现、一次跨平台机制修正和一次
+  direct-consumer 修正。任一适用平台/交付门在预算内不可裁决则进入 `BLOCKED`，不扩建公共仪器；
+- 停止条件：有限 facts、三平台探测、无 target policy 的 Platform API 与全部直接迁移通过；Parker/fs/
+  topology/memory/VM/NUMA 的旧 P1 证据因产品路径无 diff 只做 provenance replay，不重新计时。
+
+进入 `SCOPED` 后只能完成以上边界的双向审计；完整 capability map 与有限 `FIX` 集冻结前仍不得改产品。

@@ -28,3 +28,26 @@
 只读 replay verdict 为 `PRODUCT_TRIGGER`。本轮只迁移 target ownership 和相应 direct-consumer/build
 合同；完成 `SCOPED/AUDITED` 前没有产品修改授权。
 
+## Closure card（`SCOPED`）
+
+- 冻结公开形状：SIMD 自有无跨架构顺序的 `KernelTarget {Scalar,Sse4,Avx2,Avx512,Neon,Sve,Rvv}`；
+  `SelectedTarget::target` 报告 family 实际 compiled target，`kernel_target_name()` 供诊断；删除公开
+  `simd::Isa` 和只有该 alias/export 宏的旧 `dispatch.h`，export policy 迁独立 `visibility.h`；
+- exact/source 形状：`target.h` 的常量改为 `kCompiledTarget`；`provider::Target` 不再形成第二个枚举，
+  route key 直接使用 `KernelTarget` 表示正在编译的 provider-coherent body；
+- target requirements：SIMD 自己声明每个 canonical target 所需的 Platform raw feature set。x86
+  Highway-compatible SSE4/AVX2/AVX512 group 必须逐项匹配，NEON/SVE/RVV 匹配各自事实；specialty
+  feature 继续由 family 私有 matcher 处理；Platform 不知道这些 group；
+- runtime：ordinary unknown-CPU build 初始化一次不可变 Runtime table；每个 whole-buffer 调用仍最多
+  一次缓存函数指针；exact/fixed 仍直接绑定；`selected_target` 只诊断、不允许 pin；
+- direct/expert consumer：`hyle::simd_expert`、`hyle_target_simd()`、`hyle_add_fat_kernel()` 的三种交付
+  拼写和 target flags 不变，用户源码只把类型名迁到 `KernelTarget`；
+- tier / P0 gate：不得改变 operation body、provider route、compiled variant 集或循环 codegen；用 synthetic
+  target matching、exact/fat fixtures、symbol/reference scan 与 release disassembly/链接图证明没有新增
+  runtime layer；无需重跑与本 diff 无关的 387-operation P1 数据；
+- machines / delivery：W1-WIN、W1-WSL、M1-MAC；SIMD source/static/shared、ordinary/expert/fixed/fat
+  samples，WSL ASan/UBSan，适用的 scalable compile/smoke；
+- 预算与停止：与 Platform v4 共享四小时总预算、最多一次 SIMD 迁移修正；任何算法或 route 胜负问题
+  立即出本轮，不得用它延长 target-ownership 施工。
+
+进入 `SCOPED` 只冻结以上迁移合同，尚不授权产品实现。
