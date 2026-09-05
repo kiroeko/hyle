@@ -225,6 +225,23 @@ struct CpuInfo {
   unsigned l3_cache_domain = (std::numeric_limits<unsigned>::max)();
 };
 
+// One process-visible CPU performance/cache class. Records with different
+// capacities or cache-sharing widths stay separate even when the OS assigns
+// the same performance rank. Rank is machine-local (larger is stronger); all
+// zero-valued facts are honestly unknown. logical_cpus counts CPUs currently
+// available to this process, while logical_cpus_per_l2/l3 describe the native
+// sharing domain and may include CPUs outside a restricted process view.
+struct CpuCacheClassInfo {
+  unsigned performance_rank = 0;
+  CpuKind kind = CpuKind::kUnknown;
+  unsigned logical_cpus = 0;
+  unsigned physical_cores = 0;
+  unsigned cache_line_size = 0;
+  unsigned logical_cpus_per_l2 = 0;
+  unsigned logical_cpus_per_l3 = 0;
+  CacheInfo cache{};
+};
+
 inline constexpr unsigned kUnknownCpuTopologyId =
     (std::numeric_limits<unsigned>::max)();
 
@@ -239,6 +256,13 @@ enum class CpuOrder : std::uint8_t {
 // first. If ranks are unavailable it preserves the OS order instead of guessing.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_info(
     CpuInfo* dst, std::size_t cap) noexcept;
+
+// Dynamic buffer-fill snapshot of the available CPU cache classes. Returns
+// the full record count and writes up to cap records, strongest known rank
+// first. Unlike coarse cached cache_info(), this is the tuning input for
+// heterogeneous hosts; it never guesses missing cache or CPU-id facts.
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_cache_classes(
+    CpuCacheClassInfo* dst, std::size_t cap) noexcept;
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
     CpuOrder order, unsigned* dst, std::size_t cap) noexcept;
 

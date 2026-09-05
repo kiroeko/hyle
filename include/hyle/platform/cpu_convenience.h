@@ -53,4 +53,12 @@ inline Result<std::vector<CpuInfo>> available_cpu_info() noexcept {
       });
 }
 
+inline Result<std::vector<CpuCacheClassInfo>>
+available_cpu_cache_classes() noexcept {
+  return cpu_convenience_detail::query_vector<CpuCacheClassInfo>(
+      [](CpuCacheClassInfo* dst, std::size_t cap) {
+        return available_cpu_cache_classes(dst, cap);
+      });
+}
+
 }  // namespace hyle::platform

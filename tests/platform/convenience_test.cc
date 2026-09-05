@@ -25,9 +25,12 @@ TEST(PlatformConvenience, ReturnsOwnedEnvironmentSnapshots) {
 TEST(PlatformConvenience, ReturnsCompleteOwnedCpuViews) {
   auto ids = available_cpu_ids();
   auto info = available_cpu_info();
+  auto cache_classes = available_cpu_cache_classes();
   ASSERT_TRUE(ids.has_value()) << ids.error().message();
   ASSERT_TRUE(info.has_value()) << info.error().message();
+  ASSERT_TRUE(cache_classes.has_value()) << cache_classes.error().message();
   ASSERT_FALSE(ids->empty());
+  ASSERT_FALSE(cache_classes->empty());
   ASSERT_EQ(info->size(), ids->size());
   for (std::size_t i = 0; i < ids->size(); ++i) {
     EXPECT_EQ((*info)[i].id, (*ids)[i]);

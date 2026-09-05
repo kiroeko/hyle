@@ -7,6 +7,7 @@
 #include <memory>
 #include <span>
 #include <type_traits>
+#include <utility>
 
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
@@ -36,6 +37,40 @@ enum class SeekOrigin : std::uint8_t {
 enum class FileLockMode : std::uint8_t {
   kShared = 0,
   kExclusive = 1,
+};
+
+// ---- query metadata ---------------------------------------------------------
+// Portable file kinds. Directory iteration reports the entry itself (so a
+// symlink is kSymlink); stat() follows a symlink and reports its target kind.
+// kUnknown is a real fallback for platform/filesystem kinds without a portable
+// representation, not a missing-path sentinel.
+enum class FileType : std::uint8_t {
+  kUnknown = 0,
+  kRegular = 1,
+  kDirectory = 2,
+  kSymlink = 3,
+  kBlockDevice = 4,
+  kCharacterDevice = 5,
+  kFifo = 6,
+  kSocket = 7,
+};
+
+// Snapshot of one existing filesystem object. stat() also reports whether the
+// path itself is a symlink; FileHandle::info() addresses the already-open
+// object and therefore leaves is_symlink false. Absence and OS failures are
+// carried by Result, so no redundant `exists` bit can disagree with them.
+struct FileInfo {
+  FileType type = FileType::kUnknown;
+  bool is_symlink = false;
+  std::uint64_t size = 0;  // bytes for regular files; 0 for directories
+  time::UnixTimestamp modified_time{};
+
+  constexpr bool is_regular() const noexcept {
+    return type == FileType::kRegular;
+  }
+  constexpr bool is_directory() const noexcept {
+    return type == FileType::kDirectory;
+  }
 };
 
 // ---- FileHandle
@@ -74,6 +109,16 @@ public:
   // the destructor, this reports close failures. Call sync() before close when
   // durability matters. The handle is empty even when close reports failure.
   HYLE_PLATFORM_FS_API Status close() noexcept;
+
+  // Create a second RAII owner for the same opened file object. The duplicate
+  // is non-inheritable, but it shares native open-file state such as the cursor
+  // with this handle; it is not an independently positioned open().
+  HYLE_PLATFORM_FS_API Result<FileHandle> duplicate() const noexcept;
+
+  // Query the opened object without resolving its former path again. The
+  // returned is_symlink bit is false because this handle already names the
+  // opened target; rename/unlink of its directory entry does not retarget it.
+  HYLE_PLATFORM_FS_API Result<FileInfo> info() const noexcept;
 
   // Read up to `n` bytes; 0 is EOF and a short read is normal. EINTR is
   // retried.
@@ -148,37 +193,84 @@ private:
   std::intptr_t raw_ = kInvalid;
 };
 
-// ---- query (stat) -----------------------------------------------------------
-// Portable file kinds. Directory iteration reports the entry itself (so a
-// symlink is kSymlink); stat() follows a symlink and reports its target kind.
-// kUnknown is a real fallback for platform/filesystem kinds without a portable
-// representation, not a missing-path sentinel.
-enum class FileType : std::uint8_t {
-  kUnknown = 0,
-  kRegular = 1,
-  kDirectory = 2,
-  kSymlink = 3,
-  kBlockDevice = 4,
-  kCharacterDevice = 5,
-  kFifo = 6,
-  kSocket = 7,
-};
+// Caller-synchronized blocking explicit-offset owner. Unlike FileHandle, this
+// type deliberately exposes no shared-cursor operation, so every payload
+// transfer names its offset. POSIX implements it with pread/pwrite. Windows
+// uses synchronous offset ReadFile/WriteFile; that OS may update an internal
+// native cursor, but the cursor is not observable through this type. Use IO for
+// concurrent, asynchronous, direct or vectored access rather than adding a
+// hidden mutex/event to this one-word owner.
+class RandomAccessFile {
+ public:
+  RandomAccessFile() noexcept = default;
+  RandomAccessFile(RandomAccessFile&&) noexcept = default;
+  RandomAccessFile& operator=(RandomAccessFile&&) noexcept = default;
+  RandomAccessFile(const RandomAccessFile&) = delete;
+  RandomAccessFile& operator=(const RandomAccessFile&) = delete;
 
-// Result of stat(): a snapshot of one existing path. Absence and OS failures
-// are carried by Result, so redundant `exists` state cannot disagree with it.
-struct FileInfo {
-  FileType type = FileType::kUnknown; // target kind (stat follows symlinks)
-  bool is_symlink = false; // path itself is a symbolic link (lstat semantics)
-  std::uint64_t size = 0;  // bytes (regular files); 0 for directories
-  time::UnixTimestamp
-      modified_time{}; // signed Unix mtime, nanosecond precision
+  bool valid() const noexcept { return file_.valid(); }
+  explicit operator bool() const noexcept { return valid(); }
+  std::intptr_t get() const noexcept { return file_.get(); }
+  Status close() noexcept { return file_.close(); }
 
-  constexpr bool is_regular() const noexcept {
-    return type == FileType::kRegular;
+  HYLE_PLATFORM_FS_API Result<RandomAccessFile> duplicate() const noexcept;
+  Result<FileInfo> info() const noexcept { return file_.info(); }
+  Result<std::uint64_t> size() const noexcept { return file_.size(); }
+  Status resize(std::uint64_t size) noexcept { return file_.resize(size); }
+  Status preallocate(std::uint64_t minimum_size) noexcept {
+    return file_.preallocate(minimum_size);
   }
-  constexpr bool is_directory() const noexcept {
-    return type == FileType::kDirectory;
+  Status sync(bool data_only = false) noexcept {
+    return file_.sync(data_only);
   }
+  Status lock(FileLockMode mode = FileLockMode::kExclusive) noexcept {
+    return file_.lock(mode);
+  }
+  Result<bool> try_lock(
+      FileLockMode mode = FileLockMode::kExclusive) noexcept {
+    return file_.try_lock(mode);
+  }
+  Status unlock() noexcept { return file_.unlock(); }
+
+  // Basic operations preserve ordinary short-transfer semantics; zero is EOF
+  // for read_at. Offsets are absolute bytes from the beginning of the file.
+  HYLE_PLATFORM_FS_API Result<std::size_t>
+  read_at(std::uint64_t offset, void* buf, std::size_t n) noexcept;
+  HYLE_PLATFORM_FS_API Result<std::size_t>
+  write_at(std::uint64_t offset, const void* buf, std::size_t n) noexcept;
+  Result<std::size_t> read_at(std::uint64_t offset,
+                              std::span<std::byte> buffer) noexcept {
+    return read_at(offset, buffer.data(), buffer.size());
+  }
+  Result<std::size_t> write_at(
+      std::uint64_t offset, std::span<const std::byte> buffer) noexcept {
+    return write_at(offset, buffer.data(), buffer.size());
+  }
+
+  // Complete transfers without changing the public offset. read_exact_at
+  // reports DataLoss on early EOF; write_all_at reports DataLoss if the OS
+  // reports success without progress. Both check offset arithmetic.
+  HYLE_PLATFORM_FS_API Status
+  read_exact_at(std::uint64_t offset, void* buf, std::size_t n) noexcept;
+  HYLE_PLATFORM_FS_API Status
+  write_all_at(std::uint64_t offset, const void* buf, std::size_t n) noexcept;
+  Status read_exact_at(std::uint64_t offset,
+                       std::span<std::byte> buffer) noexcept {
+    return read_exact_at(offset, buffer.data(), buffer.size());
+  }
+  Status write_all_at(std::uint64_t offset,
+                      std::span<const std::byte> buffer) noexcept {
+    return write_all_at(offset, buffer.data(), buffer.size());
+  }
+
+ private:
+  explicit RandomAccessFile(FileHandle&& file) noexcept
+      : file_(std::move(file)) {}
+
+  FileHandle file_;
+
+  friend HYLE_PLATFORM_FS_API Result<RandomAccessFile>
+  open_random_access_file(const char* path, unsigned flags) noexcept;
 };
 
 // Stat `path`, following symlinks for target type/size while retaining whether
@@ -318,6 +410,12 @@ enum OpenFlags {
 // primitive the module was missing (read a config without mmap, etc).
 HYLE_PLATFORM_FS_API Result<FileHandle> open_file(const char *path,
                                                unsigned flags) noexcept;
+
+// Open a caller-synchronized blocking explicit-offset owner. kOpenAppend is
+// rejected because append and an explicit write offset are contradictory.
+// Other validation and create/truncate/access semantics match open_file().
+HYLE_PLATFORM_FS_API Result<RandomAccessFile>
+open_random_access_file(const char* path, unsigned flags) noexcept;
 
 // ---- temporary files --------------------------------------------------------
 // Atomically create a uniquely-named file under `dir` (NULL =>

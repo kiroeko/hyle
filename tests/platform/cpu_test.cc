@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <limits>
 #include <thread>
 #include <type_traits>
@@ -21,10 +22,13 @@
 #  include <windows.h>
 #elif defined(__linux__)
 #  include <sched.h>
+#elif defined(__APPLE__)
+#  include <sys/sysctl.h>
 #endif
 
 using hyle::platform::available_cpu_ids;
 using hyle::platform::available_cpu_count;
+using hyle::platform::available_cpu_cache_classes;
 using hyle::platform::cache_line_size;
 using hyle::platform::cache_info;
 using hyle::platform::available_cpu_topology;
@@ -33,6 +37,7 @@ using hyle::platform::cpu_features;
 using hyle::platform::CpuFeature;
 using hyle::platform::CpuFeatureSet;
 using hyle::platform::CpuInfo;
+using hyle::platform::CpuCacheClassInfo;
 using hyle::platform::CpuKind;
 using hyle::platform::CpuOrder;
 
@@ -65,6 +70,74 @@ TEST(Cpu, CacheCapacityIsCachedAndHierarchicalWhenKnown) {
   if (a.l1d && a.l2) { EXPECT_LE(a.l1d, a.l2); }
   if (a.l1i && a.l2) { EXPECT_LE(a.l1i, a.l2); }
   if (a.l2 && a.l3) { EXPECT_LE(a.l2, a.l3); }
+}
+
+TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
+  auto count = available_cpu_cache_classes(nullptr, 0);
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  ASSERT_GE(*count, 1u);
+  std::vector<CpuCacheClassInfo> classes(*count);
+  auto filled = available_cpu_cache_classes(classes.data(), classes.size());
+  ASSERT_TRUE(filled.has_value()) << filled.error().message();
+  ASSERT_EQ(*filled, classes.size());
+
+  CpuCacheClassInfo prefix{};
+  auto truncated = available_cpu_cache_classes(&prefix, 1);
+  ASSERT_TRUE(truncated.has_value()) << truncated.error().message();
+  EXPECT_EQ(*truncated, classes.size());
+  EXPECT_EQ(prefix.performance_rank, classes.front().performance_rank);
+
+  auto topology = available_cpu_topology();
+  ASSERT_TRUE(topology.has_value()) << topology.error().message();
+  std::size_t logical = 0;
+  unsigned previous_rank = (std::numeric_limits<unsigned>::max)();
+  for (const auto& cpu_class : classes) {
+    EXPECT_GE(cpu_class.logical_cpus, 1u);
+    EXPECT_LE(cpu_class.physical_cores, cpu_class.logical_cpus);
+    EXPECT_LE(cpu_class.performance_rank, previous_rank);
+    previous_rank = cpu_class.performance_rank;
+    logical += cpu_class.logical_cpus;
+    if (cpu_class.cache_line_size != 0) {
+      EXPECT_GE(cpu_class.cache_line_size, 16u);
+      EXPECT_EQ(cpu_class.cache_line_size & (cpu_class.cache_line_size - 1u),
+                0u);
+    }
+    if (cpu_class.cache.l1d && cpu_class.cache.l2) {
+      EXPECT_LE(cpu_class.cache.l1d, cpu_class.cache.l2);
+    }
+    if (cpu_class.cache.l1i && cpu_class.cache.l2) {
+      EXPECT_LE(cpu_class.cache.l1i, cpu_class.cache.l2);
+    }
+    if (cpu_class.cache.l2 && cpu_class.cache.l3) {
+      EXPECT_LE(cpu_class.cache.l2, cpu_class.cache.l3);
+    }
+  }
+  EXPECT_EQ(logical, topology->logical_cpus);
+
+#if defined(__APPLE__)
+  unsigned levels = 0;
+  std::size_t bytes = sizeof(levels);
+  if (::sysctlbyname("hw.nperflevels", &levels, &bytes, nullptr, 0) == 0 &&
+      levels > 1) {
+    EXPECT_GE(classes.size(), 2u);
+    for (unsigned level = 0; level < levels; ++level) {
+      char name[64];
+      std::uint64_t expected_l2 = 0;
+      bytes = sizeof(expected_l2);
+      std::snprintf(name, sizeof(name), "hw.perflevel%u.l2cachesize", level);
+      if (::sysctlbyname(name, &expected_l2, &bytes, nullptr, 0) != 0) {
+        continue;
+      }
+      const unsigned rank = levels - level;
+      const auto found = std::find_if(
+          classes.begin(), classes.end(), [rank](const auto& cpu_class) {
+            return cpu_class.performance_rank == rank;
+          });
+      ASSERT_NE(found, classes.end());
+      EXPECT_EQ(found->cache.l2, expected_l2);
+    }
+  }
+#endif
 }
 
 TEST(Cpu, TopologyHasConsistentLogicalCounts) {

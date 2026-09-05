@@ -1010,6 +1010,112 @@ TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   (void)remove_file(p.c_str());
 }
 
+TEST_F(FsTest, FileHandleDuplicateSharesCursorButOwnsItsLifetime) {
+  static_assert(sizeof(FileHandle) == sizeof(std::intptr_t));
+  static_assert(!std::is_copy_constructible_v<FileHandle>);
+  const std::string file_path = path("duplicate.bin");
+  auto opened = open_file(file_path.c_str(),
+                          kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+  ASSERT_TRUE(opened.has_value()) << opened.error().message();
+  ASSERT_TRUE(opened->write_all("abcd", 4).ok());
+  ASSERT_EQ(opened->seek(0).value(), 0u);
+  auto duplicate = opened->duplicate();
+  ASSERT_TRUE(duplicate.has_value()) << duplicate.error().message();
+
+#if !defined(_WIN32)
+  const int descriptor_flags = ::fcntl(static_cast<int>(duplicate->get()), F_GETFD);
+  ASSERT_NE(descriptor_flags, -1);
+  EXPECT_NE(descriptor_flags & FD_CLOEXEC, 0);
+#endif
+
+  char byte = '\0';
+  ASSERT_TRUE(opened->read_exact(&byte, 1).ok());
+  EXPECT_EQ(byte, 'a');
+  ASSERT_TRUE(duplicate->read_exact(&byte, 1).ok());
+  EXPECT_EQ(byte, 'b');
+  ASSERT_TRUE(opened->close().ok());
+  ASSERT_TRUE(duplicate->read_exact(&byte, 1).ok());
+  EXPECT_EQ(byte, 'c');
+}
+
+TEST_F(FsTest, FileHandleInfoStaysBoundToRenamedAndUnlinkedObject) {
+  const std::string original = path("identity.bin");
+  const std::string renamed = path("identity-renamed.bin");
+  auto opened = open_file(original.c_str(),
+                          kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+  ASSERT_TRUE(opened.has_value()) << opened.error().message();
+  ASSERT_TRUE(opened->write_all("identity", 8).ok());
+  const FileInfo before = opened->info().value();
+  EXPECT_TRUE(before.is_regular());
+  EXPECT_FALSE(before.is_symlink);
+  EXPECT_EQ(before.size, 8u);
+
+  ASSERT_TRUE(rename_path(original.c_str(), renamed.c_str()).ok());
+  ASSERT_TRUE(remove_file(renamed.c_str()).ok());
+  EXPECT_FALSE(exists(original.c_str()).value());
+  EXPECT_FALSE(exists(renamed.c_str()).value());
+  const FileInfo after = opened->info().value();
+  EXPECT_EQ(after.type, before.type);
+  EXPECT_EQ(after.size, before.size);
+  EXPECT_FALSE(after.is_symlink);
+}
+
+TEST_F(FsTest, RandomAccessFileTransfersByExplicitOffset) {
+  static_assert(sizeof(RandomAccessFile) == sizeof(std::intptr_t));
+  static_assert(std::is_move_constructible_v<RandomAccessFile>);
+  static_assert(!std::is_copy_constructible_v<RandomAccessFile>);
+  const std::string file_path = path("random-access.bin");
+  auto file = open_random_access_file(
+      file_path.c_str(),
+      kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+  ASSERT_TRUE(file.has_value()) << file.error().message();
+
+  ASSERT_TRUE(file->write_all_at(4, "ef", 2).ok());
+  ASSERT_TRUE(file->write_all_at(0, "abcd", 4).ok());
+  EXPECT_EQ(file->size().value(), 6u);
+  std::array<std::byte, 4> middle{};
+  ASSERT_TRUE(file->read_exact_at(1, middle).ok());
+  EXPECT_EQ(std::memcmp(middle.data(), "bcde", middle.size()), 0);
+
+  auto duplicate = file->duplicate();
+  ASSERT_TRUE(duplicate.has_value()) << duplicate.error().message();
+  std::array<char, 2> tail{};
+  ASSERT_TRUE(duplicate->read_exact_at(4, tail.data(), tail.size()).ok());
+  EXPECT_EQ(std::memcmp(tail.data(), "ef", tail.size()), 0);
+  EXPECT_EQ(duplicate->info()->size, 6u);
+  ASSERT_TRUE(file->close().ok());
+  ASSERT_TRUE(duplicate->read_exact_at(0, tail.data(), tail.size()).ok());
+  EXPECT_EQ(std::memcmp(tail.data(), "ab", tail.size()), 0);
+
+  char byte = '\0';
+  auto eof = duplicate->read_at(6, &byte, 1);
+  ASSERT_TRUE(eof.has_value()) << eof.error().message();
+  EXPECT_EQ(*eof, 0u);
+  EXPECT_TRUE(duplicate->read_exact_at(6, &byte, 1).IsDataLoss());
+  EXPECT_TRUE(duplicate->read_at(
+      (std::numeric_limits<std::uint64_t>::max)(), &byte, 1)
+                  .error()
+                  .IsOutOfRange());
+}
+
+TEST(RandomAccessFile, InvalidInputsRemainStructuredErrors) {
+  RandomAccessFile empty;
+  char byte = '\0';
+  EXPECT_TRUE(empty.read_at(0, &byte, 1).error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.write_at(0, &byte, 1).error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.duplicate().error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.info().error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.read_at(0, nullptr, 1).error().IsInvalidArgument());
+  EXPECT_TRUE(empty.write_at(0, nullptr, 1).error().IsInvalidArgument());
+  EXPECT_TRUE(empty.read_exact_at(0, nullptr, 1).IsInvalidArgument());
+  EXPECT_TRUE(empty.write_all_at(0, nullptr, 1).IsInvalidArgument());
+  EXPECT_TRUE(empty.read_exact_at(0, nullptr, 0).ok());
+  EXPECT_TRUE(empty.write_all_at(0, nullptr, 0).ok());
+  EXPECT_TRUE(open_random_access_file("unused", kOpenWrite | kOpenAppend)
+                  .error()
+                  .IsInvalidArgument());
+}
+
 TEST_F(FsTest, FileHandleCompleteTransferSeekAndSync) {
   const std::string file_path = path("cursor.bin");
   auto opened = open_file(file_path.c_str(),
@@ -1118,6 +1224,8 @@ TEST_F(FsTest, FileHandleWholeFileLocksCoordinateAndReleaseOnClose) {
 
 TEST(FileHandle, ClosedAndInvalidControlOperationsRemainStructuredErrors) {
   FileHandle empty;
+  EXPECT_TRUE(empty.duplicate().error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.info().error().IsFailedPrecondition());
   EXPECT_TRUE(empty.size().error().IsFailedPrecondition());
   EXPECT_TRUE(empty.resize(0).IsFailedPrecondition());
   EXPECT_TRUE(empty.preallocate(0).IsFailedPrecondition());

@@ -15,6 +15,7 @@
 // anything beyond it here.
 
 #include <algorithm>
+#include <bit>
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
@@ -1369,6 +1370,475 @@ Result<std::size_t> available_cpu_ids(unsigned* dst,
 Result<std::size_t> available_cpu_info(CpuInfo* dst,
                                        std::size_t cap) noexcept {
   return query_available_cpu_info(dst, cap);
+}
+
+namespace {
+
+struct CpuCacheObservation {
+  CpuInfo cpu{};
+  CacheInfo cache{};
+  unsigned line_size = 0;
+  unsigned cpus_per_l2 = 0;
+  unsigned cpus_per_l3 = 0;
+};
+
+bool same_cache_profile(const CpuCacheObservation& left,
+                        const CpuCacheObservation& right) noexcept {
+  return left.cpu.performance_rank == right.cpu.performance_rank &&
+         left.cpu.kind == right.cpu.kind &&
+         left.line_size == right.line_size &&
+         left.cpus_per_l2 == right.cpus_per_l2 &&
+         left.cpus_per_l3 == right.cpus_per_l3 &&
+         left.cache.l1d == right.cache.l1d &&
+         left.cache.l1i == right.cache.l1i &&
+         left.cache.l2 == right.cache.l2 &&
+         left.cache.l3 == right.cache.l3;
+}
+
+bool cache_profile_less(const CpuCacheObservation& left,
+                        const CpuCacheObservation& right) noexcept {
+  if (left.cpu.performance_rank != right.cpu.performance_rank) {
+    return left.cpu.performance_rank > right.cpu.performance_rank;
+  }
+  if (left.cpu.kind != right.cpu.kind) {
+    return static_cast<unsigned>(left.cpu.kind) >
+           static_cast<unsigned>(right.cpu.kind);
+  }
+#define HYLE_CACHE_PROFILE_DESCENDING(field) \
+  if (left.field != right.field) return left.field > right.field
+  HYLE_CACHE_PROFILE_DESCENDING(cache.l1d);
+  HYLE_CACHE_PROFILE_DESCENDING(cache.l1i);
+  HYLE_CACHE_PROFILE_DESCENDING(cache.l2);
+  HYLE_CACHE_PROFILE_DESCENDING(cache.l3);
+  HYLE_CACHE_PROFILE_DESCENDING(line_size);
+  HYLE_CACHE_PROFILE_DESCENDING(cpus_per_l2);
+  HYLE_CACHE_PROFILE_DESCENDING(cpus_per_l3);
+#undef HYLE_CACHE_PROFILE_DESCENDING
+  if (left.cpu.core_id != right.cpu.core_id) {
+    return left.cpu.core_id < right.cpu.core_id;
+  }
+  return left.cpu.id < right.cpu.id;
+}
+
+#if HYLE_OS_WINDOWS
+void fill_cache_observations(CpuCacheObservation* observations,
+                             std::size_t count) noexcept {
+  if (count == 0) return;
+  unsigned maximum_id = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    maximum_id = (std::max)(maximum_id, observations[i].cpu.id);
+  }
+  const std::size_t lookup_count = static_cast<std::size_t>(maximum_id) + 1u;
+  CpuCacheObservation* lookup_stack[256];
+  CpuCacheObservation** lookup =
+      lookup_count <= std::size(lookup_stack)
+          ? lookup_stack
+          : new (std::nothrow) CpuCacheObservation*[lookup_count];
+  if (lookup == nullptr) return;
+  std::fill(lookup, lookup + lookup_count, nullptr);
+  for (std::size_t i = 0; i < count; ++i) {
+    lookup[observations[i].cpu.id] = observations + i;
+  }
+
+  const WORD group_count = ::GetActiveProcessorGroupCount();
+  unsigned group_begin_stack[65]{};
+  unsigned* group_begin =
+      group_count < std::size(group_begin_stack)
+          ? group_begin_stack
+          : new (std::nothrow) unsigned[static_cast<std::size_t>(group_count) +
+                                         1u];
+  if (group_begin == nullptr) {
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  for (WORD group = 0; group < group_count; ++group) {
+    group_begin[group + 1u] =
+        group_begin[group] + ::GetActiveProcessorCount(group);
+  }
+
+  DWORD bytes = 0;
+  if (::GetLogicalProcessorInformationEx(RelationCache, nullptr, &bytes) ||
+      ::GetLastError() != ERROR_INSUFFICIENT_BUFFER || bytes == 0) {
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  auto* storage = new (std::nothrow) std::byte[bytes];
+  if (storage == nullptr) {
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+  auto* first = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+      storage);
+  if (!::GetLogicalProcessorInformationEx(RelationCache, first, &bytes)) {
+    delete[] storage;
+    if (group_begin != group_begin_stack) delete[] group_begin;
+    if (lookup != lookup_stack) delete[] lookup;
+    return;
+  }
+
+  constexpr DWORD kRelationHeader = static_cast<DWORD>(
+      offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
+  for (DWORD offset = 0; offset + kRelationHeader <= bytes;) {
+    const auto* relation = reinterpret_cast<
+        const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(storage + offset);
+    if (relation->Size < kRelationHeader || relation->Size > bytes - offset) {
+      break;
+    }
+    if (relation->Relationship != RelationCache) {
+      offset += relation->Size;
+      continue;
+    }
+    const WORD masks = relation->Cache.GroupCount == 0
+                           ? 1
+                           : relation->Cache.GroupCount;
+    const std::size_t header =
+        offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
+        offsetof(CACHE_RELATIONSHIP, GroupMasks);
+    if (relation->Size < header ||
+        masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+      offset += relation->Size;
+      continue;
+    }
+    unsigned sharing = 0;
+    for (WORD group = 0; group < masks; ++group) {
+      sharing += static_cast<unsigned>(std::popcount(
+          static_cast<std::uint64_t>(relation->Cache.GroupMasks[group].Mask)));
+    }
+    auto assign = [&](CpuCacheObservation& observation) noexcept {
+      observation.line_size =
+          (std::max)(observation.line_size,
+                     static_cast<unsigned>(relation->Cache.LineSize));
+      const auto capacity =
+          static_cast<std::uint64_t>(relation->Cache.CacheSize);
+      if (relation->Cache.Level == 1) {
+        if (relation->Cache.Type == CacheData ||
+            relation->Cache.Type == CacheUnified) {
+          observation.cache.l1d =
+              (std::max)(observation.cache.l1d, capacity);
+        }
+        if (relation->Cache.Type == CacheInstruction ||
+            relation->Cache.Type == CacheUnified) {
+          observation.cache.l1i =
+              (std::max)(observation.cache.l1i, capacity);
+        }
+      } else if (relation->Cache.Level == 2) {
+        observation.cache.l2 = (std::max)(observation.cache.l2, capacity);
+        observation.cpus_per_l2 =
+            (std::max)(observation.cpus_per_l2, sharing);
+      } else if (relation->Cache.Level == 3) {
+        observation.cache.l3 = (std::max)(observation.cache.l3, capacity);
+        observation.cpus_per_l3 =
+            (std::max)(observation.cpus_per_l3, sharing);
+      }
+    };
+    for (WORD group = 0; group < masks; ++group) {
+      const auto& mask = relation->Cache.GroupMasks[group];
+      if (mask.Group >= group_count) continue;
+      for (unsigned bit = 0; bit < sizeof(KAFFINITY) * 8u; ++bit) {
+        if ((mask.Mask & (KAFFINITY{1} << bit)) == 0) continue;
+        const std::size_t id =
+            static_cast<std::size_t>(group_begin[mask.Group]) + bit;
+        if (id < lookup_count && lookup[id] != nullptr) assign(*lookup[id]);
+      }
+    }
+    offset += relation->Size;
+  }
+  delete[] storage;
+  if (group_begin != group_begin_stack) delete[] group_begin;
+  if (lookup != lookup_stack) delete[] lookup;
+}
+#elif HYLE_OS_LINUX
+bool read_linux_cache_size(const char* path, std::uint64_t& value) noexcept {
+  std::FILE* file = std::fopen(path, "r");
+  if (file == nullptr) return false;
+  char text[64];
+  const bool read = std::fgets(text, sizeof(text), file) != nullptr;
+  std::fclose(file);
+  if (!read) return false;
+  char* end = nullptr;
+  errno = 0;
+  const unsigned long long parsed = std::strtoull(text, &end, 10);
+  if (errno != 0 || end == text) return false;
+  std::uint64_t multiplier = 1;
+  if (*end == 'K' || *end == 'k') {
+    multiplier = 1024u;
+    ++end;
+  } else if (*end == 'M' || *end == 'm') {
+    multiplier = 1024u * 1024u;
+    ++end;
+  } else if (*end == 'G' || *end == 'g') {
+    multiplier = std::uint64_t{1024} * 1024u * 1024u;
+    ++end;
+  }
+  while (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r') ++end;
+  if (*end != '\0' || parsed >
+          (std::numeric_limits<std::uint64_t>::max)() / multiplier) {
+    return false;
+  }
+  value = static_cast<std::uint64_t>(parsed) * multiplier;
+  return true;
+}
+
+bool read_linux_cpu_list_count(const char* path, unsigned& count) noexcept {
+  std::FILE* file = std::fopen(path, "r");
+  if (file == nullptr) return false;
+  char text[4096];
+  const bool read = std::fgets(text, sizeof(text), file) != nullptr;
+  std::fclose(file);
+  if (!read) return false;
+  std::uint64_t total = 0;
+  const char* cursor = text;
+  while (*cursor != '\0' && *cursor != '\n' && *cursor != '\r') {
+    char* end = nullptr;
+    errno = 0;
+    const unsigned long begin = std::strtoul(cursor, &end, 10);
+    if (errno != 0 || end == cursor) return false;
+    unsigned long finish = begin;
+    cursor = end;
+    if (*cursor == '-') {
+      ++cursor;
+      errno = 0;
+      finish = std::strtoul(cursor, &end, 10);
+      if (errno != 0 || end == cursor || finish < begin) return false;
+      cursor = end;
+    }
+    total += static_cast<std::uint64_t>(finish - begin) + 1u;
+    if (total > (std::numeric_limits<unsigned>::max)()) return false;
+    if (*cursor == ',') ++cursor;
+    else if (*cursor != '\0' && *cursor != '\n' && *cursor != '\r') return false;
+  }
+  count = static_cast<unsigned>(total);
+  return count != 0;
+}
+
+void fill_cache_observations(CpuCacheObservation* observations,
+                             std::size_t count) noexcept {
+  for (std::size_t i = 0; i < count; ++i) {
+    auto& observation = observations[i];
+    for (unsigned index = 0; index != 16; ++index) {
+      char path[192];
+      unsigned level = 0;
+      std::snprintf(path, sizeof(path),
+                    "/sys/devices/system/cpu/cpu%u/cache/index%u/level",
+                    observation.cpu.id, index);
+      if (!read_sysfs_unsigned(path, level)) break;
+
+      char type[32]{};
+      std::snprintf(path, sizeof(path),
+                    "/sys/devices/system/cpu/cpu%u/cache/index%u/type",
+                    observation.cpu.id, index);
+      std::FILE* type_file = std::fopen(path, "r");
+      if (type_file != nullptr) {
+        const bool have_type =
+            std::fgets(type, sizeof(type), type_file) != nullptr;
+        std::fclose(type_file);
+        if (!have_type) type[0] = '\0';
+      }
+      std::uint64_t capacity = 0;
+      std::snprintf(path, sizeof(path),
+                    "/sys/devices/system/cpu/cpu%u/cache/index%u/size",
+                    observation.cpu.id, index);
+      (void)read_linux_cache_size(path, capacity);
+      unsigned line = 0;
+      std::snprintf(
+          path, sizeof(path),
+          "/sys/devices/system/cpu/cpu%u/cache/index%u/coherency_line_size",
+          observation.cpu.id, index);
+      if (read_sysfs_unsigned(path, line)) {
+        observation.line_size = (std::max)(observation.line_size, line);
+      }
+      unsigned sharing = 0;
+      std::snprintf(
+          path, sizeof(path),
+          "/sys/devices/system/cpu/cpu%u/cache/index%u/shared_cpu_list",
+          observation.cpu.id, index);
+      (void)read_linux_cpu_list_count(path, sharing);
+
+      if (level == 1) {
+        if (std::strncmp(type, "Data", 4) == 0 ||
+            std::strncmp(type, "Unified", 7) == 0) {
+          observation.cache.l1d =
+              (std::max)(observation.cache.l1d, capacity);
+        }
+        if (std::strncmp(type, "Instruction", 11) == 0 ||
+            std::strncmp(type, "Unified", 7) == 0) {
+          observation.cache.l1i =
+              (std::max)(observation.cache.l1i, capacity);
+        }
+      } else if (level == 2) {
+        observation.cache.l2 = (std::max)(observation.cache.l2, capacity);
+        observation.cpus_per_l2 =
+            (std::max)(observation.cpus_per_l2, sharing);
+      } else if (level == 3) {
+        observation.cache.l3 = (std::max)(observation.cache.l3, capacity);
+        observation.cpus_per_l3 =
+            (std::max)(observation.cpus_per_l3, sharing);
+      }
+    }
+  }
+}
+#else
+void fill_cache_observations(CpuCacheObservation* observations,
+                             std::size_t count) noexcept {
+  const CacheInfo coarse = cache_info();
+  const unsigned line = cache_line_size();
+  for (std::size_t i = 0; i < count; ++i) {
+    observations[i].cache = coarse;
+    observations[i].line_size = line;
+  }
+}
+#endif
+
+[[maybe_unused]] Result<std::size_t> generic_cache_class(
+    CpuCacheClassInfo* dst, std::size_t cap) noexcept {
+  if (dst != nullptr && cap != 0) {
+    CpuCacheClassInfo out;
+    auto topology = available_cpu_topology();
+    if (!topology) return std::unexpected(std::move(topology).error());
+    out.logical_cpus = topology->logical_cpus;
+    out.physical_cores = topology->physical_cores;
+    out.cache_line_size = cache_line_size();
+    out.cache = cache_info();
+    dst[0] = out;
+  }
+  return std::size_t{1};
+}
+
+#if HYLE_OS_MACOS
+bool mac_sysctl_unsigned(const char* name, unsigned& value) noexcept {
+  std::size_t size = sizeof(value);
+  return ::sysctlbyname(name, &value, &size, nullptr, 0) == 0;
+}
+
+std::uint64_t mac_sysctl_u64(const char* name) noexcept {
+  std::uint64_t value = 0;
+  std::size_t size = sizeof(value);
+  return ::sysctlbyname(name, &value, &size, nullptr, 0) == 0 ? value : 0;
+}
+
+Result<std::size_t> mac_cache_classes(CpuCacheClassInfo* dst,
+                                     std::size_t cap) noexcept {
+  unsigned levels = 0;
+  if (!mac_sysctl_unsigned("hw.nperflevels", levels) || levels == 0) {
+    return generic_cache_class(dst, cap);
+  }
+  std::size_t count = 0;
+  for (unsigned level = 0; level < levels; ++level) {
+    char name[96];
+    CpuCacheClassInfo out;
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.logicalcpu", level);
+    if (!mac_sysctl_unsigned(name, out.logical_cpus) ||
+        out.logical_cpus == 0) {
+      continue;
+    }
+    out.performance_rank = levels - level;
+    out.kind = level == 0 ? CpuKind::kPerformance : CpuKind::kEfficiency;
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.physicalcpu", level);
+    (void)mac_sysctl_unsigned(name, out.physical_cores);
+    out.cache_line_size = cache_line_size();
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.cpusperl2", level);
+    (void)mac_sysctl_unsigned(name, out.logical_cpus_per_l2);
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.cpusperl3", level);
+    (void)mac_sysctl_unsigned(name, out.logical_cpus_per_l3);
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.l1dcachesize", level);
+    out.cache.l1d = mac_sysctl_u64(name);
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.l1icachesize", level);
+    out.cache.l1i = mac_sysctl_u64(name);
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.l2cachesize", level);
+    out.cache.l2 = mac_sysctl_u64(name);
+    std::snprintf(name, sizeof(name), "hw.perflevel%u.l3cachesize", level);
+    out.cache.l3 = mac_sysctl_u64(name);
+    if (dst != nullptr && count < cap) dst[count] = out;
+    ++count;
+  }
+  return count == 0 ? generic_cache_class(dst, cap)
+                    : Result<std::size_t>{count};
+}
+#endif
+
+}  // namespace
+
+Result<std::size_t> available_cpu_cache_classes(
+    CpuCacheClassInfo* dst, std::size_t cap) noexcept {
+  if (dst == nullptr) cap = 0;
+#if HYLE_OS_MACOS
+  return mac_cache_classes(dst, cap);
+#else
+  for (unsigned attempt = 0; attempt != 4; ++attempt) {
+    auto count_result = query_available_cpu_info(nullptr, 0);
+    if (!count_result) return std::unexpected(std::move(count_result).error());
+    const std::size_t capacity = *count_result;
+    CpuInfo info_stack[256];
+    CpuCacheObservation observation_stack[256];
+    CpuInfo* info = capacity <= std::size(info_stack)
+                        ? info_stack
+                        : new (std::nothrow) CpuInfo[capacity];
+    CpuCacheObservation* observations =
+        capacity <= std::size(observation_stack)
+            ? observation_stack
+            : new (std::nothrow) CpuCacheObservation[capacity];
+    if (info == nullptr || observations == nullptr) {
+      if (info != nullptr && info != info_stack) delete[] info;
+      if (observations != nullptr && observations != observation_stack) {
+        delete[] observations;
+      }
+      return std::unexpected(Status::ResourceExhausted(
+          "CPU cache-class snapshot allocation failed"));
+    }
+    auto filled = query_available_cpu_info(info, capacity);
+    if (!filled) {
+      if (info != info_stack) delete[] info;
+      if (observations != observation_stack) delete[] observations;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled > capacity) {
+      if (info != info_stack) delete[] info;
+      if (observations != observation_stack) delete[] observations;
+      continue;
+    }
+    const std::size_t count = *filled;
+    for (std::size_t i = 0; i < count; ++i) observations[i].cpu = info[i];
+    fill_cache_observations(observations, count);
+    std::sort(observations, observations + count, cache_profile_less);
+
+    std::size_t classes = 0;
+    for (std::size_t begin = 0; begin < count;) {
+      std::size_t end = begin + 1;
+      while (end < count &&
+             same_cache_profile(observations[begin], observations[end])) {
+        ++end;
+      }
+      if (classes < cap) {
+        CpuCacheClassInfo out;
+        out.performance_rank = observations[begin].cpu.performance_rank;
+        out.kind = observations[begin].cpu.kind;
+        out.logical_cpus = static_cast<unsigned>(end - begin);
+        out.cache_line_size = observations[begin].line_size;
+        out.logical_cpus_per_l2 = observations[begin].cpus_per_l2;
+        out.logical_cpus_per_l3 = observations[begin].cpus_per_l3;
+        out.cache = observations[begin].cache;
+        unsigned previous_core = kUnknownCpuTopologyId;
+        for (std::size_t i = begin; i < end; ++i) {
+          const unsigned core = observations[i].cpu.core_id;
+          if (core != kUnknownCpuTopologyId && core != previous_core) {
+            ++out.physical_cores;
+            previous_core = core;
+          }
+        }
+        dst[classes] = out;
+      }
+      ++classes;
+      begin = end;
+    }
+    if (info != info_stack) delete[] info;
+    if (observations != observation_stack) delete[] observations;
+    return classes;
+  }
+  return std::unexpected(Status::Unavailable(
+      "available CPU set changed repeatedly during cache-class snapshot"));
+#endif
 }
 
 Result<std::size_t> available_cpu_ids(CpuOrder order, unsigned* dst,

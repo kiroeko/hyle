@@ -18,9 +18,11 @@ int main() {
   using namespace hyle::platform;
 
   auto cpus = available_cpu_ids();
+  auto cache_classes = available_cpu_cache_classes();
   auto temp = temp_directory();
   auto memory = host_memory_info();
-  if (!cpus || cpus->empty() || !temp || temp->empty() || !memory ||
+  if (!cpus || cpus->empty() || !cache_classes || cache_classes->empty() ||
+      !temp || temp->empty() || !memory ||
       memory->physical_total_bytes == 0) {
     return 1;
   }
@@ -50,6 +52,24 @@ int main() {
   if (!set_process_priority(static_cast<ProcessPriority>(99))
            .IsInvalidArgument()) {
     return 8;
+  }
+
+  char path[4096];
+  auto created = create_temp_file(nullptr, "hyle-platform-", path,
+                                  sizeof(path));
+  if (!created) return 9;
+  auto owner_copy = created->file.duplicate();
+  if (!owner_copy || !owner_copy->info()) return 10;
+  if (!created->file.close().ok() || !owner_copy->close().ok()) return 11;
+
+  auto random = open_random_access_file(path, kOpenRead | kOpenWrite);
+  if (!random || !random->write_all_at(0, "ok", 2).ok()) return 12;
+  auto random_copy = random->duplicate();
+  std::array<std::byte, 2> payload{};
+  if (!random_copy || !random_copy->read_exact_at(0, payload).ok()) return 13;
+  if (!random->close().ok() || !random_copy->close().ok() ||
+      !remove_file(path).ok()) {
+    return 14;
   }
 
   return 0;

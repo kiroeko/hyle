@@ -85,6 +85,15 @@ bool checked_size_add(std::size_t left, std::size_t right,
   return true;
 }
 
+bool checked_offset_add(std::uint64_t offset, std::size_t delta,
+                        std::uint64_t& result) noexcept {
+  if (delta > (std::numeric_limits<std::uint64_t>::max)() - offset) {
+    return false;
+  }
+  result = offset + static_cast<std::uint64_t>(delta);
+  return true;
+}
+
 template <class T>
 class MallocArray {
  public:
@@ -182,12 +191,18 @@ bool join_path(char* dst, std::size_t cap, const char* a,
 
 // Raw file-handle operations. Defined once per OS and shared by FileHandle.
 Status close_raw(std::intptr_t raw) noexcept;
+Result<std::intptr_t> duplicate_raw(std::intptr_t raw) noexcept;
+Result<FileInfo> info_raw(std::intptr_t raw) noexcept;
 // Raw read/write on an fd/HANDLE (per-OS defs below), declared for the
 // platform-agnostic FileHandle::read/write tail.
 Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
                              std::size_t n) noexcept;
 Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
                               std::size_t n) noexcept;
+Result<std::size_t> read_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                void* buf, std::size_t n) noexcept;
+Result<std::size_t> write_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                 const void* buf, std::size_t n) noexcept;
 Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
                                SeekOrigin origin) noexcept;
 Status sync_raw(std::intptr_t raw, bool data_only) noexcept;
@@ -709,6 +724,54 @@ Status close_raw(std::intptr_t raw) noexcept {
   if (::CloseHandle(reinterpret_cast<HANDLE>(raw))) return Status::Ok();
   return win32_fs_status("CloseHandle", ::GetLastError());
 }
+Result<std::intptr_t> duplicate_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file duplicate: handle is closed"));
+  }
+  HANDLE duplicate = INVALID_HANDLE_VALUE;
+  if (!::DuplicateHandle(::GetCurrentProcess(), reinterpret_cast<HANDLE>(raw),
+                         ::GetCurrentProcess(), &duplicate, 0, FALSE,
+                         DUPLICATE_SAME_ACCESS)) {
+    return std::unexpected(
+        win32_fs_status("DuplicateHandle", ::GetLastError()));
+  }
+  return reinterpret_cast<std::intptr_t>(duplicate);
+}
+Result<FileInfo> info_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file info: handle is closed"));
+  }
+  const HANDLE handle = reinterpret_cast<HANDLE>(raw);
+  BY_HANDLE_FILE_INFORMATION native{};
+  if (!::GetFileInformationByHandle(handle, &native)) {
+    return std::unexpected(win32_fs_status(
+        "GetFileInformationByHandle(file info)", ::GetLastError()));
+  }
+
+  FileInfo out;
+  const DWORD native_type = ::GetFileType(handle);
+  if (native_type == FILE_TYPE_DISK) {
+    out.type = (native.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0
+                   ? FileType::kDirectory
+                   : FileType::kRegular;
+  } else if (native_type == FILE_TYPE_CHAR) {
+    out.type = FileType::kCharacterDevice;
+  } else if (native_type == FILE_TYPE_PIPE) {
+    out.type = FileType::kFifo;
+  }
+  if (out.is_regular()) {
+    out.size = (static_cast<std::uint64_t>(native.nFileSizeHigh) << 32) |
+               native.nFileSizeLow;
+  }
+  const std::uint64_t ticks =
+      (static_cast<std::uint64_t>(native.ftLastWriteTime.dwHighDateTime)
+       << 32) |
+      native.ftLastWriteTime.dwLowDateTime;
+  out.modified_time = time::unix_timestamp_from_windows_filetime_ticks(ticks);
+  return out;
+}
 Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
                              std::size_t n) noexcept {
   if (raw == FileHandle::kInvalid) {
@@ -732,6 +795,53 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
   DWORD put = 0;
   if (!WriteFile(reinterpret_cast<HANDLE>(raw), buf, want, &put, nullptr)) {
     return std::unexpected(win32_fs_status("WriteFile", ::GetLastError()));
+  }
+  return static_cast<std::size_t>(put);
+}
+Result<std::size_t> read_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                void* buf, std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file read at: handle is closed"));
+  }
+  if (offset > static_cast<std::uint64_t>(
+                   (std::numeric_limits<std::int64_t>::max)())) {
+    return std::unexpected(
+        Status::OutOfRange("file read at: offset exceeds native range"));
+  }
+  OVERLAPPED overlapped{};
+  overlapped.Offset = static_cast<DWORD>(offset);
+  overlapped.OffsetHigh = static_cast<DWORD>(offset >> 32);
+  const DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
+  DWORD got = 0;
+  if (!::ReadFile(reinterpret_cast<HANDLE>(raw), buf, want, &got,
+                  &overlapped)) {
+    const DWORD code = ::GetLastError();
+    if (code == ERROR_HANDLE_EOF) return std::size_t{0};
+    return std::unexpected(win32_fs_status("ReadFile(offset)", code));
+  }
+  return static_cast<std::size_t>(got);
+}
+Result<std::size_t> write_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                 const void* buf, std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file write at: handle is closed"));
+  }
+  if (offset > static_cast<std::uint64_t>(
+                   (std::numeric_limits<std::int64_t>::max)())) {
+    return std::unexpected(
+        Status::OutOfRange("file write at: offset exceeds native range"));
+  }
+  OVERLAPPED overlapped{};
+  overlapped.Offset = static_cast<DWORD>(offset);
+  overlapped.OffsetHigh = static_cast<DWORD>(offset >> 32);
+  const DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
+  DWORD put = 0;
+  if (!::WriteFile(reinterpret_cast<HANDLE>(raw), buf, want, &put,
+                   &overlapped)) {
+    return std::unexpected(
+        win32_fs_status("WriteFile(offset)", ::GetLastError()));
   }
   return static_cast<std::size_t>(put);
 }
@@ -1556,6 +1666,64 @@ Status close_raw(std::intptr_t raw) noexcept {
   if (::close(static_cast<int>(raw)) == 0) return Status::Ok();
   return posix_fs_status("close", errno);
 }
+Result<std::intptr_t> duplicate_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file duplicate: handle is closed"));
+  }
+  const int source = static_cast<int>(raw);
+  int duplicate = -1;
+#ifdef F_DUPFD_CLOEXEC
+  do {
+    duplicate = ::fcntl(source, F_DUPFD_CLOEXEC, 0);
+  } while (duplicate < 0 && errno == EINTR);
+  if (duplicate < 0) {
+    return std::unexpected(posix_fs_status("fcntl(F_DUPFD_CLOEXEC)", errno));
+  }
+#else
+  do {
+    duplicate = ::dup(source);
+  } while (duplicate < 0 && errno == EINTR);
+  if (duplicate < 0) {
+    return std::unexpected(posix_fs_status("dup", errno));
+  }
+  if (::fcntl(duplicate, F_SETFD, FD_CLOEXEC) != 0) {
+    const int code = errno;
+    (void)::close(duplicate);
+    return std::unexpected(posix_fs_status("fcntl(FD_CLOEXEC)", code));
+  }
+#endif
+  return static_cast<std::intptr_t>(duplicate);
+}
+Result<FileInfo> info_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file info: handle is closed"));
+  }
+  struct ::stat native {};
+  if (::fstat(static_cast<int>(raw), &native) != 0) {
+    return std::unexpected(posix_fs_status("fstat(file info)", errno));
+  }
+  FileInfo out;
+  out.type = file_type_from_mode(native.st_mode);
+  if (out.is_regular()) {
+    if (native.st_size < 0) {
+      return std::unexpected(
+          Status::DataLoss("fstat returned a negative file size"));
+    }
+    out.size = static_cast<std::uint64_t>(native.st_size);
+  }
+#if HYLE_OS_MACOS
+  out.modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(native.st_mtimespec.tv_sec),
+      static_cast<std::uint32_t>(native.st_mtimespec.tv_nsec));
+#else
+  out.modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(native.st_mtim.tv_sec),
+      static_cast<std::uint32_t>(native.st_mtim.tv_nsec));
+#endif
+  return out;
+}
 Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
                              std::size_t n) noexcept {
   if (raw == FileHandle::kInvalid) {
@@ -1584,6 +1752,52 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
     const ssize_t moved = ::write(static_cast<int>(raw), buf, want);
     if (moved >= 0) return static_cast<std::size_t>(moved);
     if (errno != EINTR) return std::unexpected(posix_fs_status("write", errno));
+  }
+}
+Result<std::size_t> read_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                void* buf, std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file read at: handle is closed"));
+  }
+  if (offset > static_cast<std::uint64_t>(
+                   (std::numeric_limits<std::int64_t>::max)())) {
+    return std::unexpected(
+        Status::OutOfRange("file read at: offset exceeds native range"));
+  }
+  const std::size_t max_io =
+      static_cast<std::size_t>(std::numeric_limits<ssize_t>::max());
+  const std::size_t want = n < max_io ? n : max_io;
+  for (;;) {
+    const ssize_t moved = ::pread(static_cast<int>(raw), buf, want,
+                                  static_cast<off_t>(offset));
+    if (moved >= 0) return static_cast<std::size_t>(moved);
+    if (errno != EINTR) {
+      return std::unexpected(posix_fs_status("pread", errno));
+    }
+  }
+}
+Result<std::size_t> write_at_raw(std::intptr_t raw, std::uint64_t offset,
+                                 const void* buf, std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file write at: handle is closed"));
+  }
+  if (offset > static_cast<std::uint64_t>(
+                   (std::numeric_limits<std::int64_t>::max)())) {
+    return std::unexpected(
+        Status::OutOfRange("file write at: offset exceeds native range"));
+  }
+  const std::size_t max_io =
+      static_cast<std::size_t>(std::numeric_limits<ssize_t>::max());
+  const std::size_t want = n < max_io ? n : max_io;
+  for (;;) {
+    const ssize_t moved = ::pwrite(static_cast<int>(raw), buf, want,
+                                   static_cast<off_t>(offset));
+    if (moved >= 0) return static_cast<std::size_t>(moved);
+    if (errno != EINTR) {
+      return std::unexpected(posix_fs_status("pwrite", errno));
+    }
   }
 }
 Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
@@ -2018,6 +2232,19 @@ Result<bool> directory_iterate(const char* path,
 
 // ---- portable (built on the primitives above) -------------------------------
 
+Result<RandomAccessFile> open_random_access_file(const char* path,
+                                                  unsigned flags) noexcept {
+  if ((flags & kOpenAppend) != 0) {
+    return std::unexpected(Status::InvalidArgument(
+        "open random access file: append conflicts with explicit offsets"));
+  }
+  auto opened = open_file(path, flags);
+  if (!opened) {
+    return std::unexpected(std::move(opened).error());
+  }
+  return RandomAccessFile{std::move(*opened)};
+}
+
 // FileHandle: platform-agnostic RAII; close_raw() is the per-OS close (defined in
 // each section above, declared at the top of the file).
 FileHandle::~FileHandle() { (void)close_raw(raw_); }
@@ -2035,6 +2262,16 @@ Status FileHandle::close() noexcept {
   Status status = close_raw(raw_);
   raw_ = kInvalid;
   return status;
+}
+
+Result<FileHandle> FileHandle::duplicate() const noexcept {
+  auto copy = duplicate_raw(raw_);
+  if (!copy) return std::unexpected(std::move(copy).error());
+  return FileHandle{*copy};
+}
+
+Result<FileInfo> FileHandle::info() const noexcept {
+  return info_raw(raw_);
 }
 
 Result<std::size_t> FileHandle::read(void* buf, std::size_t n) noexcept {
@@ -2130,6 +2367,80 @@ Result<bool> FileHandle::try_lock(FileLockMode mode) noexcept {
 
 Status FileHandle::unlock() noexcept {
   return unlock_raw(raw_);
+}
+
+Result<RandomAccessFile> RandomAccessFile::duplicate() const noexcept {
+  auto copy = file_.duplicate();
+  if (!copy) return std::unexpected(std::move(copy).error());
+  return RandomAccessFile{std::move(*copy)};
+}
+
+Result<std::size_t> RandomAccessFile::read_at(
+    std::uint64_t offset, void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return std::unexpected(Status::InvalidArgument(
+        "file read at: null buffer for nonzero length"));
+  }
+  return read_at_raw(file_.get(), offset, buf, n);
+}
+
+Result<std::size_t> RandomAccessFile::write_at(
+    std::uint64_t offset, const void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return std::unexpected(Status::InvalidArgument(
+        "file write at: null buffer for nonzero length"));
+  }
+  return write_at_raw(file_.get(), offset, buf, n);
+}
+
+Status RandomAccessFile::read_exact_at(
+    std::uint64_t offset, void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return Status::InvalidArgument(
+        "file read exact at: null buffer for nonzero length");
+  }
+  auto* bytes = static_cast<std::byte*>(buf);
+  std::size_t done = 0;
+  while (done != n) {
+    std::uint64_t current = 0;
+    if (!checked_offset_add(offset, done, current)) {
+      return Status::OutOfRange("file read exact at: offset overflow");
+    }
+    auto moved = read_at_raw(file_.get(), current, bytes + done, n - done);
+    if (!moved) {
+      return std::move(moved).error().WithContext("file read exact at");
+    }
+    if (*moved == 0) {
+      return Status::DataLoss("file read exact at: unexpected end of file");
+    }
+    done += *moved;
+  }
+  return Status::Ok();
+}
+
+Status RandomAccessFile::write_all_at(
+    std::uint64_t offset, const void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return Status::InvalidArgument(
+        "file write all at: null buffer for nonzero length");
+  }
+  const auto* bytes = static_cast<const std::byte*>(buf);
+  std::size_t done = 0;
+  while (done != n) {
+    std::uint64_t current = 0;
+    if (!checked_offset_add(offset, done, current)) {
+      return Status::OutOfRange("file write all at: offset overflow");
+    }
+    auto moved = write_at_raw(file_.get(), current, bytes + done, n - done);
+    if (!moved) {
+      return std::move(moved).error().WithContext("file write all at");
+    }
+    if (*moved == 0) {
+      return Status::DataLoss("file write all at: write made no progress");
+    }
+    done += *moved;
+  }
+  return Status::Ok();
 }
 
 Result<bool> exists(const char* path) noexcept {
