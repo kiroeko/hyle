@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -1038,6 +1039,89 @@ TEST_F(FsTest, FileHandleCompleteTransferSeekAndSync) {
   ASSERT_TRUE(opened->close().ok());
   EXPECT_TRUE(opened->sync().IsFailedPrecondition());
   EXPECT_TRUE(opened->seek(0).error().IsFailedPrecondition());
+}
+
+TEST_F(FsTest, FileHandleSizeResizeAndPreallocatePreserveTheirContracts) {
+  const std::string file_path = path("controlled.bin");
+  auto opened = open_file(file_path.c_str(),
+                          kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+  ASSERT_TRUE(opened.has_value()) << opened.error().message();
+
+  constexpr char payload[] = "abcdef";
+  ASSERT_TRUE(opened->write_all(payload, sizeof(payload) - 1).ok());
+  ASSERT_EQ(opened->size().value(), 6u);
+  ASSERT_EQ(opened->seek(2).value(), 2u);
+
+  ASSERT_TRUE(opened->resize(12).ok());
+  EXPECT_EQ(opened->size().value(), 12u);
+  EXPECT_EQ(opened->position().value(), 2u);
+
+  ASSERT_TRUE(opened->preallocate(64).ok());
+  EXPECT_EQ(opened->size().value(), 64u);
+  // minimum_size is a lower bound, not a truncating request.
+  ASSERT_TRUE(opened->preallocate(4).ok());
+  EXPECT_EQ(opened->size().value(), 64u);
+
+  ASSERT_TRUE(opened->resize(3).ok());
+  EXPECT_EQ(opened->size().value(), 3u);
+  ASSERT_EQ(opened->seek(0).value(), 0u);
+  std::array<char, 3> prefix{};
+  ASSERT_TRUE(opened->read_exact(prefix.data(), prefix.size()).ok());
+  EXPECT_EQ(std::memcmp(prefix.data(), "abc", prefix.size()), 0);
+
+  constexpr std::uint64_t kTooLarge =
+      (std::numeric_limits<std::uint64_t>::max)();
+  EXPECT_TRUE(opened->resize(kTooLarge).IsOutOfRange());
+  EXPECT_TRUE(opened->preallocate(kTooLarge).IsOutOfRange());
+}
+
+TEST_F(FsTest, FileHandleWholeFileLocksCoordinateAndReleaseOnClose) {
+  const std::string file_path = path("cooperative.lock");
+  ASSERT_TRUE(touch(file_path.c_str()).ok());
+  auto first = open_file(file_path.c_str(), kOpenRead | kOpenWrite);
+  auto second = open_file(file_path.c_str(), kOpenRead | kOpenWrite);
+  auto third = open_file(file_path.c_str(), kOpenRead | kOpenWrite);
+  ASSERT_TRUE(first.has_value()) << first.error().message();
+  ASSERT_TRUE(second.has_value()) << second.error().message();
+  ASSERT_TRUE(third.has_value()) << third.error().message();
+
+  ASSERT_TRUE(first->lock().ok());
+  auto blocked_shared = second->try_lock(FileLockMode::kShared);
+  ASSERT_TRUE(blocked_shared.has_value()) << blocked_shared.error().message();
+  EXPECT_FALSE(*blocked_shared);
+  ASSERT_TRUE(first->unlock().ok());
+
+  ASSERT_TRUE(first->lock(FileLockMode::kShared).ok());
+  auto second_shared = second->try_lock(FileLockMode::kShared);
+  ASSERT_TRUE(second_shared.has_value()) << second_shared.error().message();
+  EXPECT_TRUE(*second_shared);
+  auto blocked_exclusive = third->try_lock(FileLockMode::kExclusive);
+  ASSERT_TRUE(blocked_exclusive.has_value())
+      << blocked_exclusive.error().message();
+  EXPECT_FALSE(*blocked_exclusive);
+  ASSERT_TRUE(second->unlock().ok());
+  ASSERT_TRUE(first->unlock().ok());
+
+  ASSERT_TRUE(first->lock().ok());
+  ASSERT_TRUE(first->close().ok());
+  auto after_close = second->try_lock();
+  ASSERT_TRUE(after_close.has_value()) << after_close.error().message();
+  EXPECT_TRUE(*after_close);
+  ASSERT_TRUE(second->unlock().ok());
+}
+
+TEST(FileHandle, ClosedAndInvalidControlOperationsRemainStructuredErrors) {
+  FileHandle empty;
+  EXPECT_TRUE(empty.size().error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.resize(0).IsFailedPrecondition());
+  EXPECT_TRUE(empty.preallocate(0).IsFailedPrecondition());
+  EXPECT_TRUE(empty.lock().IsFailedPrecondition());
+  EXPECT_TRUE(empty.try_lock().error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.unlock().IsFailedPrecondition());
+  EXPECT_TRUE(empty.lock(static_cast<FileLockMode>(99)).IsInvalidArgument());
+  EXPECT_TRUE(empty.try_lock(static_cast<FileLockMode>(99))
+                  .error()
+                  .IsInvalidArgument());
 }
 
 TEST(FileHandle, EmptyPathAndNullCompleteTransfersAreRejected) {

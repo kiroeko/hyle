@@ -54,12 +54,13 @@ benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadli
 | 能力族 | C++ 公共形状 | 常用场景 | 关键合同 |
 |---|---|---|---|
 | CPU、cache 与 topology | `CpuFeature`、`CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`available_cpu_topology` | implementation-owned target matching、false-sharing 对齐、物理核/SMT/cache-domain worker placement | facts 无顺序；静态 facts 可缓存；process-available topology 动态、可失败；未知不猜测 |
+| 进程启动策略 | `ProcessPriority`、`set_process_priority` | 服务/推理进程在创建 workers 前显式选择节能或性能倾向 | 五档、无 realtime；默认不调用；提升可能因权限失败；Windows 两项 control 非事务 |
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
 | Host memory | `HostMemoryInfo`、`host_memory_info` | model/KV allocation 前的 host budget | 动态 fallible snapshot；optional constraint 不用 0 冒充 unknown；不是 reservation |
-| 文件系统 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件 | UTF-8 路径；短读写与 exact/all 并存；单 cursor seek；显式 sync/close；打开 owner 不阻塞原子替换路径 |
+| 文件系统 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、缓存/索引控制 | UTF-8 路径；短读写与 exact/all 并存；已打开 handle 可 size/resize/preallocate/whole-file lock；显式 sync/close |
 | 环境与 OS entropy | `get/set/unset_env_var`、`secure_random` | 启动配置、不可预测 seed/nonce | unset 与 empty 分开；环境写只在同步控制面；entropy 完整填满或失败 |
 | 动态库 | `DynLib` | 插件、可选系统库、用户 native backend | open/get/current 语义分开；`get` 持有 loader 引用；显式 close 可观察错误；符号签名由调用方承担 |
 
@@ -133,6 +134,13 @@ execution-speed throttling（EcoQoS），高两档显式关闭该 throttling（H
 大量短任务、worker placement 和结构化并发归 `sched`。platform 不提供第二个线程池，也不把
 “performance first”偷设为所有用户的默认行为。macOS 没有公开的硬 CPU pin，必须诚实返回
 不支持；强核软偏好使用 OS QoS/priority，而不是伪造 affinity。
+
+进程策略与线程策略是两个真实作用域，不合并成一个含糊 enum。`set_process_priority` 是应用启动期
+显式机制：Windows 同时设置 process priority class 与 execution-speed QoS，macOS 使用 process nice，
+Linux 的 `setpriority(PRIO_PROCESS, 0, ...)` 实际作用于调用线程并由随后创建的线程继承，因此完整
+进程效果要求在创建 workers 前调用。`kNormal` 表示回到 HYLE 的普通/system-managed 档，不是保存并
+恢复任意宿主原始 native policy 的事务。持久 worker 的逐线程配置仍使用 `ThreadPriority`；提升档位
+可能因权限失败，库不会静默降级，也有意不提供可能饿死系统工作的 realtime 档。
 
 ## 5. 等待层：最小原语与可直接使用的 Parker
 
@@ -244,6 +252,14 @@ factor，mapping 属于 Mem。
   `read_exact/write_all`，共享 cursor 的位置使用 `seek/position`。durability 需要显式 `sync`，
   需要观察关闭失败时显式 `close`。并发 positional/async I/O 归 `io::File`，不在一字 owner 中
   加隐式锁或 OVERLAPPED 状态。
+- `FileHandle::size/resize/preallocate` 作用于已经打开的文件对象，不重新解析 path；这在目标名字被
+  原子替换时比 path API 更诚实。`resize` 只改变 logical EOF，扩容可以是 sparse；`preallocate`
+  只在文件小于 minimum 时请求 backing 并增长 EOF，不缩小、不去稀疏化既有大文件，也不承诺连续
+  extent。预留与 EOF 更新在所有 OS 上都不是统一事务，后一步失败可能留下不可见的已分配空间。
+- `lock/try_lock/unlock` 是 cooperating processes/handles 的 whole-file shared/exclusive coordination。
+  POSIX `flock` 是 advisory，Windows full-range `LockFileEx` 对冲突 I/O 更强；公共合同取两者交集，
+  不是线程 mutex、record/range lock 或 distributed-filesystem consensus。一个 `FileHandle` 的并发调用
+  仍由 caller 同步，close/析构依 OS 释放锁，HYLE 不为追踪锁状态增加常态 metadata。
 - Windows `FileHandle` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX 一样只替换目录项、
   已有 owner 继续持有文件对象；消费 handle 的 Mem `FileMapping` 保留该文件对象生命周期。这也是
   原子模型/缓存更新的必要合同。
@@ -299,6 +315,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - Windows 显式 priority 固定调用一次 QoS control 和一次 native priority control；未请求 priority
   仍是零调用。两者都是线程创建/重配冷路径，不混入 Parker 或 task dispatch。
+- 显式 process priority 同样只在调用时做固定次数 native control；默认路线没有初始化、查询或
+  全局状态。Windows 的 QoS 与 priority class 是两次 OS 调用，不能为追求一个点值假装成事务。
 - callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
   主成本，runtime/sched 继续使用 allocation-minimal `entry + void*` core。
 - `wait_on_address` 直接落 OS 原语，Parker 只加一个原子状态机，不增 mutex/heap allocation。
@@ -308,6 +326,9 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   callback 真正抛出时进入冷失败路，正常每项仍只有原有一次 callback。
 - VM、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
+- `FileHandle::size/resize/lock/unlock` 是固定次数 OS control；`try_lock` 只把明确竞争映射为
+  `false`。`preallocate` 的物理工作由 requested growth 与 filesystem 决定，阻塞 lock 的时间由
+  contention 决定，二者都不能用纳秒点值冒充算法 SOTA。
 
 基准必须比较相同语义。host primary 是一次 process-available topology + host-memory snapshot，
 只与完成同一动态事实合同的 direct-OS/peer route 比较；cached scalar getter 只能作为独立 holdout。
@@ -327,6 +348,9 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
   component 时 deployment target 必须 ≥14.4；HYLE 顶层原生 macOS 构建未显式指定时默认 14.4，
   被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
 - Linux process availability 受调用线程 affinity/cpuset 影响，新线程继承该视图。
+- process priority 的 portable contract 是显式启动期五档 hint：Windows 同时调整 class/QoS，
+  macOS 调整 process nice，Linux 调整调用线程 nice 并依赖随后创建的线程继承；不是跨 OS 完全相同
+  的 scheduling guarantee。
 - Linux 独有 `MLOCK_ONFAULT`；macOS/Windows 对该 lock mode 返回 `Unimplemented`。允许调整锁页
   限额时，POSIX 只提升 soft `RLIMIT_MEMLOCK` 到既有 hard limit 内，Windows 调整当前进程
   working-set minimum/maximum；两者都不会在 unlock 时自动恢复。
@@ -347,7 +371,7 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 | async file/network、watcher、shared-memory channel | `io` | completion、backpressure 与跨进程同步 |
 | VRAM/pinned/staging/coherence | `compute` | device/backend/event 生命周期 |
 | path lexical/string owner | `container` | 不需要 OS，且 platform 不能反向依赖容器 |
-| process/subprocess sandbox | 独立未来模块或真实消费者驱动 | 不能因“OS 也有”就无限扩大基础面 |
+| subprocess lifecycle、sandbox 与 IPC channel | 独立未来模块或真实消费者驱动 | 当前进程启动 priority 已是窄机制；spawn/wait/kill/quoting/sandbox 是另一套生命周期 |
 
 最后一行是扩展纪律：platform 可以很强，但不能成为“所有和 OS 有关东西”的杂物间。只有
 多个基础库用户反复需要、能形成跨平台诚实合同、且归不到已有高层生命周期 owner 的机制，
@@ -364,6 +388,9 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 4. 新调用是否给默认热路径增加 syscall、分配、握手或间接层？
 5. Windows/Linux/macOS 的能力差异是显式结果，还是被静默吞掉？
 6. 是否有真实内部或外部消费者，而非只为 benchmark 制造形状？
+7. 性能证据是否完整对齐作用对象、logical/physical effect、blocking、cleanup 与 failure？path 与
+   handle、sparse resize 与 preallocation、try 与 blocking 等不同合同必须标 `NOT_COMPARABLE`，不得
+   进行苹果对橘子式排名。
 
 稳定设计更新本页；用户选择和坑更新 guide；实测更新 performance；一次性验收和提交记录
 更新 implementation task/evidence。

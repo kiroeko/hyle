@@ -333,6 +333,11 @@ Filesystem/Interprocess 中至多两个；标准 OS/C++23 合同不计作额外 
 | `PLAT-A-35` | subprocess、signal/crash、sandbox、process handle 与 IPC lifecycle | spawn/exec quoting/env/fd inheritance、wait/kill/cancel、signal safety、privilege/sandbox | 独立 Process/IO/Obs factor，在具名 consumer 下设计；不建巨型 Platform facade | `OUT_OF_SCOPE`（当前 Platform） | llama tools 有 subproc，但 HYLE 基础加速闭包无当前 consumer；`GENERAL` journey保留 trigger |
 | `PLAT-A-36` | source/static/shared C++ consumer 选择 Platform mechanism 且不接受伪 C ABI | component closure、CPU probe baseline/LTO isolation、visibility、OS libraries、header self-containment、relocation | compiled `hyle::platform` + typed C++ owners；未来 foreign runtime只为具名 opaque runtime adapter | `COMPLETE`：三种 C++ delivery 和 probe isolation 已闭合 | build/package contract；交付 `MUST` |
 
+> 后续事实（2026-09-05）：本表冻结时的 `PLAT-A-18 PARTIAL` 与 `PLAT-A-26 MISSING` 已由
+> `platform-v6-file-control-and-process-policy` 合法重开并提升。当前产品拥有显式五档 process-startup
+> policy，以及已打开 `FileHandle` 上的 size/resize/preallocate/whole-file shared/exclusive locking；
+> 原行保留的是 v1 基线审计事实，不应再被解释为当前缺口。
+
 public-surface 反向追踪覆盖 `<hyle/platform/{cpu,thread,wait,virtual_memory,numa,fs,mapped_file,
 dynlib,convenience}.h>`、`hyle::platform` target 和所有直接产品消费者。第一遍得到七个跨域候选：
 

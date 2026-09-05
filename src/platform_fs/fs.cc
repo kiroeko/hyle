@@ -37,6 +37,7 @@
 #  include <dirent.h>
 #  include <fcntl.h>
 #  include <pwd.h>
+#  include <sys/file.h>
 #  include <sys/stat.h>
 #  include <unistd.h>
 #endif
@@ -190,6 +191,13 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
 Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
                                SeekOrigin origin) noexcept;
 Status sync_raw(std::intptr_t raw, bool data_only) noexcept;
+Result<std::uint64_t> size_raw(std::intptr_t raw) noexcept;
+Status resize_raw(std::intptr_t raw, std::uint64_t size) noexcept;
+Status preallocate_raw(std::intptr_t raw,
+                       std::uint64_t minimum_size) noexcept;
+Status lock_raw(std::intptr_t raw, FileLockMode mode) noexcept;
+Result<bool> try_lock_raw(std::intptr_t raw, FileLockMode mode) noexcept;
+Status unlock_raw(std::intptr_t raw) noexcept;
 
 }  // namespace
 
@@ -767,6 +775,119 @@ Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
   }
   if (!::FlushFileBuffers(reinterpret_cast<HANDLE>(raw))) {
     return win32_fs_status("FlushFileBuffers", ::GetLastError());
+  }
+  return Status::Ok();
+}
+Result<std::uint64_t> size_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file size: handle is closed"));
+  }
+  LARGE_INTEGER size{};
+  if (!::GetFileSizeEx(reinterpret_cast<HANDLE>(raw), &size)) {
+    return std::unexpected(
+        win32_fs_status("GetFileSizeEx", ::GetLastError()));
+  }
+  if (size.QuadPart < 0) {
+    return std::unexpected(
+        Status::DataLoss("GetFileSizeEx returned a negative size"));
+  }
+  return static_cast<std::uint64_t>(size.QuadPart);
+}
+Status resize_raw(std::intptr_t raw, std::uint64_t size) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file resize: handle is closed");
+  }
+  if (size > static_cast<std::uint64_t>(
+                 (std::numeric_limits<std::int64_t>::max)())) {
+    return Status::OutOfRange("file resize exceeds native offset range");
+  }
+  FILE_END_OF_FILE_INFO end{};
+  end.EndOfFile.QuadPart = static_cast<LONGLONG>(size);
+  if (!::SetFileInformationByHandle(reinterpret_cast<HANDLE>(raw),
+                                    FileEndOfFileInfo, &end, sizeof(end))) {
+    return win32_fs_status("SetFileInformationByHandle(end of file)",
+                           ::GetLastError());
+  }
+  return Status::Ok();
+}
+Status preallocate_raw(std::intptr_t raw,
+                       std::uint64_t minimum_size) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file preallocate: handle is closed");
+  }
+  if (minimum_size > static_cast<std::uint64_t>(
+                         (std::numeric_limits<std::int64_t>::max)())) {
+    return Status::OutOfRange("file preallocate exceeds native offset range");
+  }
+  FILE_STANDARD_INFO current{};
+  if (!::GetFileInformationByHandleEx(reinterpret_cast<HANDLE>(raw),
+                                      FileStandardInfo, &current,
+                                      sizeof(current))) {
+    return win32_fs_status(
+        "GetFileInformationByHandleEx(preallocate)", ::GetLastError());
+  }
+  const LONGLONG target = static_cast<LONGLONG>(minimum_size);
+  if (current.EndOfFile.QuadPart >= target) return Status::Ok();
+
+  if (current.AllocationSize.QuadPart < target) {
+    FILE_ALLOCATION_INFO allocation{};
+    allocation.AllocationSize.QuadPart = target;
+    if (!::SetFileInformationByHandle(reinterpret_cast<HANDLE>(raw),
+                                      FileAllocationInfo, &allocation,
+                                      sizeof(allocation))) {
+      return win32_fs_status("SetFileInformationByHandle(allocation)",
+                             ::GetLastError());
+    }
+  }
+  FILE_END_OF_FILE_INFO end{};
+  end.EndOfFile.QuadPart = target;
+  if (!::SetFileInformationByHandle(reinterpret_cast<HANDLE>(raw),
+                                    FileEndOfFileInfo, &end, sizeof(end))) {
+    return win32_fs_status(
+        "SetFileInformationByHandle(preallocate end of file)",
+        ::GetLastError());
+  }
+  return Status::Ok();
+}
+Status lock_raw(std::intptr_t raw, FileLockMode mode) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file lock: handle is closed");
+  }
+  DWORD flags = mode == FileLockMode::kExclusive
+                    ? LOCKFILE_EXCLUSIVE_LOCK
+                    : 0;
+  OVERLAPPED overlapped{};
+  if (!::LockFileEx(reinterpret_cast<HANDLE>(raw), flags, 0, MAXDWORD,
+                    MAXDWORD, &overlapped)) {
+    return win32_fs_status("LockFileEx", ::GetLastError());
+  }
+  return Status::Ok();
+}
+Result<bool> try_lock_raw(std::intptr_t raw, FileLockMode mode) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file try lock: handle is closed"));
+  }
+  DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
+  if (mode == FileLockMode::kExclusive) flags |= LOCKFILE_EXCLUSIVE_LOCK;
+  OVERLAPPED overlapped{};
+  if (::LockFileEx(reinterpret_cast<HANDLE>(raw), flags, 0, MAXDWORD,
+                   MAXDWORD, &overlapped)) {
+    return true;
+  }
+  const DWORD code = ::GetLastError();
+  if (code == ERROR_LOCK_VIOLATION) return false;
+  return std::unexpected(win32_fs_status("LockFileEx(try)", code));
+}
+Status unlock_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file unlock: handle is closed");
+  }
+  OVERLAPPED overlapped{};
+  if (!::UnlockFileEx(reinterpret_cast<HANDLE>(raw), 0, MAXDWORD, MAXDWORD,
+                      &overlapped)) {
+    return win32_fs_status("UnlockFileEx", ::GetLastError());
   }
   return Status::Ok();
 }
@@ -1507,6 +1628,115 @@ Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
   if (rc != 0) return posix_fs_status("file sync", errno);
   return Status::Ok();
 }
+Result<std::uint64_t> size_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file size: handle is closed"));
+  }
+  struct stat info {};
+  if (::fstat(static_cast<int>(raw), &info) != 0) {
+    return std::unexpected(posix_fs_status("fstat(file size)", errno));
+  }
+  if (!S_ISREG(info.st_mode)) {
+    return std::unexpected(
+        Status::FailedPrecondition("file size: handle is not a regular file"));
+  }
+  if (info.st_size < 0) {
+    return std::unexpected(
+        Status::DataLoss("fstat returned a negative file size"));
+  }
+  return static_cast<std::uint64_t>(info.st_size);
+}
+Status resize_raw(std::intptr_t raw, std::uint64_t size) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file resize: handle is closed");
+  }
+  if (size > static_cast<std::uint64_t>(
+                 (std::numeric_limits<std::int64_t>::max)())) {
+    return Status::OutOfRange("file resize exceeds native offset range");
+  }
+  static_assert(sizeof(off_t) >= sizeof(std::int64_t));
+  if (::ftruncate(static_cast<int>(raw), static_cast<off_t>(size)) != 0) {
+    return posix_fs_status("ftruncate(file resize)", errno);
+  }
+  return Status::Ok();
+}
+Status preallocate_raw(std::intptr_t raw,
+                       std::uint64_t minimum_size) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file preallocate: handle is closed");
+  }
+  if (minimum_size > static_cast<std::uint64_t>(
+                         (std::numeric_limits<std::int64_t>::max)())) {
+    return Status::OutOfRange("file preallocate exceeds native offset range");
+  }
+  auto current = size_raw(raw);
+  if (!current) return std::move(current).error();
+  if (*current >= minimum_size) return Status::Ok();
+
+  static_assert(sizeof(off_t) >= sizeof(std::int64_t));
+  const off_t begin = static_cast<off_t>(*current);
+  const off_t length = static_cast<off_t>(minimum_size - *current);
+#if HYLE_OS_MACOS
+  fstore_t store{};
+  store.fst_flags = F_ALLOCATECONTIG;
+  store.fst_posmode = F_PEOFPOSMODE;
+  store.fst_offset = 0;
+  store.fst_length = length;
+  if (::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store) != 0) {
+    store.fst_flags = F_ALLOCATEALL;
+    if (::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store) != 0) {
+      return posix_fs_status("fcntl(F_PREALLOCATE)", errno);
+    }
+  }
+  if (::ftruncate(static_cast<int>(raw),
+                  static_cast<off_t>(minimum_size)) != 0) {
+    return posix_fs_status("ftruncate(file preallocate)", errno);
+  }
+#else
+  const int allocated =
+      ::posix_fallocate(static_cast<int>(raw), begin, length);
+  if (allocated != 0) {
+    return posix_fs_status("posix_fallocate", allocated);
+  }
+#endif
+  return Status::Ok();
+}
+Status lock_raw(std::intptr_t raw, FileLockMode mode) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file lock: handle is closed");
+  }
+  const int operation =
+      mode == FileLockMode::kExclusive ? LOCK_EX : LOCK_SH;
+  for (;;) {
+    if (::flock(static_cast<int>(raw), operation) == 0) return Status::Ok();
+    if (errno != EINTR) return posix_fs_status("flock", errno);
+  }
+}
+Result<bool> try_lock_raw(std::intptr_t raw, FileLockMode mode) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file try lock: handle is closed"));
+  }
+  const int operation =
+      (mode == FileLockMode::kExclusive ? LOCK_EX : LOCK_SH) | LOCK_NB;
+  for (;;) {
+    if (::flock(static_cast<int>(raw), operation) == 0) return true;
+    const int code = errno;
+    if (code == EINTR) continue;
+    if (code == EWOULDBLOCK || code == EAGAIN) return false;
+    return std::unexpected(posix_fs_status("flock(try)", code));
+  }
+}
+Status unlock_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file unlock: handle is closed");
+  }
+  for (;;) {
+    if (::flock(static_cast<int>(raw), LOCK_UN) == 0) return Status::Ok();
+    if (errno != EINTR) return posix_fs_status("flock(unlock)", errno);
+  }
+}
 }  // namespace
 
 Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
@@ -1869,6 +2099,37 @@ Result<std::uint64_t> FileHandle::seek(std::int64_t offset,
 
 Status FileHandle::sync(bool data_only) noexcept {
   return sync_raw(raw_, data_only);
+}
+
+Result<std::uint64_t> FileHandle::size() const noexcept {
+  return size_raw(raw_);
+}
+
+Status FileHandle::resize(std::uint64_t size) noexcept {
+  return resize_raw(raw_, size);
+}
+
+Status FileHandle::preallocate(std::uint64_t minimum_size) noexcept {
+  return preallocate_raw(raw_, minimum_size);
+}
+
+Status FileHandle::lock(FileLockMode mode) noexcept {
+  if (mode != FileLockMode::kShared && mode != FileLockMode::kExclusive) {
+    return Status::InvalidArgument("file lock: invalid mode");
+  }
+  return lock_raw(raw_, mode);
+}
+
+Result<bool> FileHandle::try_lock(FileLockMode mode) noexcept {
+  if (mode != FileLockMode::kShared && mode != FileLockMode::kExclusive) {
+    return std::unexpected(Status::InvalidArgument(
+        "file try lock: invalid mode"));
+  }
+  return try_lock_raw(raw_, mode);
+}
+
+Status FileHandle::unlock() noexcept {
+  return unlock_raw(raw_);
 }
 
 Result<bool> exists(const char* path) noexcept {

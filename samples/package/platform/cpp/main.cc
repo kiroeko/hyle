@@ -3,6 +3,7 @@
 #include <hyle/platform/fs_convenience.h>
 #include <hyle/platform/fs.h>
 #include <hyle/platform/host_memory.h>
+#include <hyle/platform/process.h>
 #include <hyle/platform/random.h>
 #include <hyle/platform/thread.h>
 #include <hyle/platform/thread_convenience.h>
@@ -43,6 +44,13 @@ int main() {
 
   auto current = DynLib::current();
   if (!current || !current->valid()) return 7;
+
+  // Exercise the compiled process-policy symbol without changing the host
+  // application's scheduling policy in this delivery-contract sample.
+  if (!set_process_priority(static_cast<ProcessPriority>(99))
+           .IsInvalidArgument()) {
+    return 8;
+  }
 
   return 0;
 }

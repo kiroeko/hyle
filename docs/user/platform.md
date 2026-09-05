@@ -29,6 +29,9 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `AllocatorRef` / `Arena` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | 默认直接 mapping | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
+| 查询/改变已打开文件的 logical size | `FileHandle::size/resize` | 对原 path 再 `stat/resize` | 不二次解析名字；扩容可能 sparse；不移动 cursor |
+| 写大模型/cache 前保证增长空间 | `FileHandle::preallocate(minimum)` | 用 `resize` 冒充物理预留 | 小于 minimum 才预留并增长；不缩小；可能部分成功，不承诺连续 extent |
+| cooperating processes 协调整文件 writer | `lock/try_lock/unlock` | 线程 mutex、lock-file 名字或分布式锁 | shared/exclusive；portable 承诺是 advisory coordination；close 释放 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
@@ -42,6 +45,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 推理装载前估算 host budget | `host_memory_info()` | 只看物理总量 | 返回 fallible 动态快照；`effective_available_bytes` 保守合并已知约束 |
 | 密钥、nonce 或随机种子 | `secure_random(span<byte>)` | 统计 RNG / 时间戳 | 使用 OS entropy；完整填满或返回错误；空 span 成功 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
+| 为整个应用选择启动期节能/性能倾向 | workers 创建前 `set_process_priority` | realtime 或拿 thread priority 冒充 process policy | 显式五档；提升可能失败；Linux 靠后续线程继承；normal 不是任意 native snapshot restore |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
 | token 不丢失的线程 park/unpark | `Parker` / `park_for(Duration)` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token；一个 Parker 只有一个等待者 |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
@@ -129,6 +133,38 @@ read 返回 0 才是 EOF；read/write 返回短计数仍是成功。已知必须
 合同内，应使用 `io::File` 或独立 handle。close 不等于 durability，只有显式 `sync` 才请求落到
 OS storage boundary。
 
+同一已打开对象的控制不要退回 path API：名字可能已经被另一个进程 rename/replace，`file.size()`
+和 `file.resize(n)` 仍操作 caller 真正拥有的文件。扩大的 `resize` 只承诺 logical EOF，可能产生
+sparse holes；真正需要在写入前请求磁盘空间时用 `preallocate(minimum)`：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto current, file.size());
+if (current < model_bytes) {
+  HYLE_RETURN_IF_ERROR(file.preallocate(model_bytes));
+}
+```
+
+`preallocate` 不缩小较大文件，也不把既有 sparse 文件重新物理化。allocation 与 EOF update 不是
+跨平台事务；后一步失败时可能已有空间被预留，所以错误后应重新查询文件并按应用协议决定 cleanup。
+不要在仍有 Mem `FileMapping` view 时 resize 同一文件：截短会使已有 view 的访问语义依 OS 而异，
+应先结束 mapping 生命周期。`resize/preallocate` 需要 writable handle；权限或 filesystem 不支持时
+返回共享 `Status`。
+
+多进程 cache/index writer 只需合作式整文件协调时，可锁住同一个 `FileHandle` owner：
+
+```cpp
+#include "hyle/util/scope_guard.h"
+
+HYLE_RETURN_IF_ERROR(file.lock());  // 默认 exclusive
+hyle::util::ScopeGuard unlock{[&]() noexcept { (void)file.unlock(); }};
+HYLE_RETURN_IF_ERROR(update_cache(file));
+```
+
+shared readers 使用 `FileLockMode::kShared`；`try_lock` 的值 `false` 只表示明确竞争，权限/I/O/closed
+handle 仍是错误。portable 合同是 advisory cooperation：POSIX 进程若完全忽略协议仍可 I/O，Windows
+对冲突 I/O 更强，network filesystem 还有自身限制。它不是 in-process mutex、range lock 或可靠的
+distributed lock。同一个 handle 上的并发调用仍需 caller 同步；close/析构会让 OS 释放锁。
+
 不要假设大文件必然适合 mapping：普通顺序 I/O 先用 `FileHandle`，需要随机访问、共享页或
 COW 时改用 Mem 的 `FileMapping`。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有
 profile 已确认这层成为瓶颈，才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
@@ -200,6 +236,24 @@ native iterator frame 做后序 DFS，不让目录深度增长进程调用栈：
 spawn/config 失败时销毁而不调用。未捕获异常与 `std::thread` 相同会 fail-fast。内部 runtime、
 或需要自己管理 context 的 C++ 代码仍可使用零额外 callable 分配的 `entry + void*` core；它不是
 跨语言 ABI。
+
+应用想让随后创建的全部 workers 继承统一节能/性能倾向时，在任何 worker 创建前显式设置进程
+启动策略：
+
+```cpp
+#include "hyle/platform/process.h"
+
+HYLE_RETURN_IF_ERROR(
+    hyle::platform::set_process_priority(
+        hyle::platform::ProcessPriority::kHigh));
+```
+
+Windows 会分别设置 priority class 和 execution QoS，二者没有事务 rollback；Linux 修改调用线程
+nice，效果通过随后创建的线程继承；macOS 使用 process nice。提高优先级通常需要权限。HYLE 不提供
+realtime 档，也不会在初始化时自动改变宿主。`kNormal` 返回普通/system-managed 档，不是恢复任意
+调用前 native state；需要精确保存宿主专有策略的应用应在自身 OS adapter 中完成。已经存在的 worker
+仍用 `this_thread::set_priority` 或 `ThreadOpts::priority` 逐线程管理。
+
 确实依赖设置（隔离核、基准控制线程、实时服务线程）时改成 required：
 
 ```cpp

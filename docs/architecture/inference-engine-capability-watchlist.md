@@ -110,7 +110,11 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 | `PLATFORM-WATCH-05` | direct/scatter-gather/positional async 模型读取 | `io::File` 或专用 loader | 把 OVERLAPPED/proactor 状态塞进同步 `FileHandle` 会破坏形状；需真实 loader、alignment/fallback 和 cancellation 合同 |
 | `PLATFORM-WATCH-06` | JIT kernel、named shared memory、process sandbox 或 plugin 隔离装载 | 分别归 compute/JIT、io protocol、tooling/process；Platform 仅提供必要 OS mechanism | executable permission、跨进程 ownership 和 loader search policy 都有独立安全边界；需具名产品旅程再单独设计 |
 | `PLATFORM-WATCH-07` | 动态 backend 需要 lazy/global/deep-bind/nodelete 或隔离 search path | Platform DynLib + backend owner | 当前固定 eager+local；需实际依赖解析/冲突复现，并先定义相对路径信任边界 |
-| `PLATFORM-WATCH-08` | 应用希望一次设置整个进程的 priority class/nice 并可恢复 | application startup policy；持久 runtime worker 继续逐线程使用 Platform priority | Windows process class、Linux per-thread nice 与 macOS process policy 作用域不同；需具名 engine lifecycle、调用时点、权限/restore/realtime 风险合同，不能把 llama app helper 伪装成 portable 同语义 API |
+
+`PLATFORM-WATCH-08` 已由 `platform-v6-file-control-and-process-policy` 提升：Platform 现在提供不含
+realtime 的显式五档 startup policy，并诚实保留 Windows process class/QoS、Linux 调用线程继承与
+macOS process nice 的作用域差异。它不承诺保存任意 native policy 后精确恢复；有该需求的宿主仍在
+自己的 OS adapter 中拥有 snapshot/restore。
 
 ## Mem
 

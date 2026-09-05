@@ -29,6 +29,15 @@ enum class SeekOrigin : std::uint8_t {
   kEnd = 2,
 };
 
+// Whole-file coordination between cooperating handles/processes. POSIX uses
+// advisory flock locks; Windows uses the corresponding full-range LockFileEx
+// lock, whose conflicting I/O enforcement is stronger. This is not an
+// in-process mutex or a distributed-filesystem consensus primitive.
+enum class FileLockMode : std::uint8_t {
+  kShared = 0,
+  kExclusive = 1,
+};
+
 // ---- FileHandle
 // -------------------------------------------------------------- Zero-cost
 // owning wrapper over a raw OS file descriptor / HANDLE (folly::File / seastar
@@ -111,6 +120,29 @@ public:
   // their ordinary full-file flush. This is explicit because close alone is
   // not a durability request.
   HYLE_PLATFORM_FS_API Status sync(bool data_only = false) noexcept;
+
+  // Query or change the logical end-of-file through this already-open owner,
+  // avoiding a second path lookup. resize() may grow a sparse file and does not
+  // move the shared cursor.
+  HYLE_PLATFORM_FS_API Result<std::uint64_t> size() const noexcept;
+  HYLE_PLATFORM_FS_API Status resize(std::uint64_t size) noexcept;
+
+  // When the file is smaller than minimum_size, request backing storage before
+  // growing its logical size. A file already at least this large is unchanged;
+  // this does not de-sparsify it or promise a contiguous extent. Allocation and
+  // EOF update are not an atomic transaction on every OS.
+  HYLE_PLATFORM_FS_API Status
+  preallocate(std::uint64_t minimum_size) noexcept;
+
+  // Blocking/nonblocking whole-file coordination. try_lock() returns false
+  // only for lock contention; OS/permission failures remain Status errors.
+  // close()/destruction releases locks. Converting an already-held mode is not
+  // promised atomic, and callers must externally synchronize one FileHandle.
+  HYLE_PLATFORM_FS_API Status
+  lock(FileLockMode mode = FileLockMode::kExclusive) noexcept;
+  HYLE_PLATFORM_FS_API Result<bool>
+  try_lock(FileLockMode mode = FileLockMode::kExclusive) noexcept;
+  HYLE_PLATFORM_FS_API Status unlock() noexcept;
 
 private:
   std::intptr_t raw_ = kInvalid;

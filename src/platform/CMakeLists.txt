@@ -22,7 +22,7 @@ set_target_properties(hyle_platform_cpu_probe PROPERTIES
   FOLDER "hyle/modules/private")
 
 hyle_add_module(platform TESTING SOURCES
-  dynlib.cc environment.cc host_memory.cc numa.cc random.cc virtual_memory.cc
+  dynlib.cc environment.cc host_memory.cc numa.cc process.cc random.cc virtual_memory.cc
   $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
 
 if(WIN32)
