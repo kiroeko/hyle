@@ -1,9 +1,10 @@
 # Platform v7：异构缓存事实与同步随机访问文件
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 本轮只处理一次可复现的异构 CPU 事实丢失和三个 already-open file owner 缺口。
-> `SCOPED/AUDITED` 前不修改产品源码；历史 Platform task 只作证据，不构成继续施工授权。
+> 终态：`CLOSED`。前段 `REOPENED/SCOPED/AUDITED/CANDIDATE/VERIFIED` 是按时序保留的事实，
+> 不再授权继续修改；当前状态只认 [`module-status.json`](../../module-status.json)。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -255,3 +256,44 @@ engineering-performance 七门全部 `PASS`，无未命名 blocker。Formal 仍�
 `C:\hyle-scratch\platform-v7\module-status-before-verified.json`，SHA-256
 `E8D7D18E6E9FBE2BDB69EA9D0795246205D4C75F67774CFB4B80E45AB9CD8D77`。terminal receipt、限制、reopen triggers
 与 LOC 将在下一状态单独登记；现在只提升为 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本轮 verdict 为 **`CLOSED`**。八项有限 `MUST/FIX` 全部 `COMPLETE`，七项 aggregate gate、三平台、
+WSL ASan/UBSan、exact factors、三种 C++ 交付与 Mem/Sched/IO 下游回放均为 `PASS`，没有未处置
+blocker。`platform` 与 `platform_fs` 在同一候选 `e892977b/e5852156` 上重新签发
+`FROZEN`；`platform_thread` 仍使用 v6 的有效 freeze，本轮只读回放、无产品改动。
+
+已知限制：
+
+- cache-class API 是当前 process view 的动态冷路径快照；权限、affinity/cpuset、热插拔或 OS 信息缺失
+  可以使字段为 0。macOS 不提供稳定的 logical-ID-to-performance-level mapping，HYLE 因此不伪造 hard
+  affinity 对应；
+- Platform 不承诺 cache associativity、所有 CPU-to-cache membership 或 kernel/provider 选择策略；全局
+  `cache_info()` 是 cached coarse convenience，在 Apple 上按官方合同对应最低性能 class；
+- `FileHandle::duplicate()` 创建新 RAII owner，但同一 opened object 的 native cursor 与 lock 关联仍按 OS
+  语义共享；它不是独立 file position；
+- `RandomAccessFile` 只承诺 caller-synchronized blocking explicit-offset I/O。Windows 的 native cursor 可能被
+  offset control 移动，但该状态不在公开类型中可观察；append 被拒绝；
+- concurrent/async/direct/vectored completion 仍由 IO 拥有，mapping/advice/residency 仍由 Mem 拥有；本轮不为
+  底层 Platform 倒置引入上层依赖；
+- 新入口签发的是 P0 结构性能；旧 host/Parker/warm-file P1 receipt 只覆盖未变的同合同路径。
+  Formal、全机器/全文件系统的普遍 SOTA 和端到端 inference 均未声明。
+
+只有以下新事实可以重开：
+
+1. 具名真实 consumer 证明现有 Platform-owned host/cache/file mechanism 无法表达必需且稳定的通用合同；
+2. 支持 OS/filesystem 复现 cache-class、duplicate/info、offset/EOF/short-transfer、错误翻译或 owner lifetime
+   的 correctness/security 缺陷；
+3. 公开 API/layout/语义、factor owner/依赖、正常复杂度或 source/static/shared delivery materially 改变；
+4. HYLE 相邻模块重复实现本应由 Platform 拥有的同步 OS mechanism，或 Platform 越界吸收 Mem/IO/
+   Sched/SIMD policy；
+5. 成熟 same-contract peer 证明更优复杂度档，或真实 inference profile 复现了可归因于 HYLE 的 material
+   正常路径退化。
+
+candidate LOC self-check（snapshot `e892977bd2012841b3ee8a217c33fdd7ebdad260`）：全库代码 445,969；
+自实现不含测试 72,413；canonical host/public Platform boundary 5,659，`platform_fs` 实现 2,639，
+本轮两者互斥合计 8,298 行；加上未改的 `platform_thread` 857 行后，完整 Platform product 为 9,155 行。
+LOC 只记录规模，不证明功能或性能。`VERIFIED -> CLOSED` 前态 registry snapshot 为
+`C:\hyle-scratch\platform-v7\module-status-before-closed.json`，SHA-256
+`2250232052F3DD0DAB34C065D58FC086E446F049000B8E08F083CD725C39C580`。
