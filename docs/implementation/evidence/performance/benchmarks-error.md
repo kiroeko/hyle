@@ -44,6 +44,15 @@ ratio 大于 1 有利于 HYLE，5% NI 下限为 `1/1.05 = 0.95238`。部分 Abse
 execution-order 摆动，所以本轮只采用四 strata 全通过和最保守 CI 下限，不把最大倍数宣传成稳定产品
 加速比；placement、A/A 和 known-delta 全通过也不授权这种外推。
 
+2026-09-05 的跨冻结固定方向复核专门检查了 success 四个都低于 1 的点值：精确 ratio 为
+`0.9986028 / 0.9923150 / 0.9985339 / 0.9929537`，名义落后 `0.14%–0.77%`，但全部 CI 跨过 1；A/A 为
+`0.9999113 / 1.0009608`。retained MSVC object 中 HYLE/Abseil 的 noinline success node 与 64-node
+evaluate 热路逐指令相同，OK 都是同一 one-word 编码；外层成功清理只剩未执行的析构目标和代码布局
+差异。上一版同一 source-consumer success 的四 strata 又跨过 1（`0.9984–1.0018`）。因此没有找到
+复杂度、资源或热路 codegen 的产品机制钥匙，本行保持 `PARITY`，分类为“代码布局/运行分辨率内无
+机制”，而不是把固定点值方向藏起来。完整横向记录见
+[固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)。
+
 retained engineering bundle 位于 `C:/hyle-scratch/error-v5/qualify-v2-output`；manifest、summary 与
 contract-lock SHA-256 分别为
 `12685d8f398d4f55c9f05c71d54a3f5054ee3b99f21147778dfe91644f8b7eff`、
@@ -139,6 +148,15 @@ artifact/build identity 与 error-codegen controls 通过，统一 verifier 返�
 cache-hot backing，HYLE/peer allocation 顺序固定，合同没有记录 heap address/cache-line/page offset；
 它只能提出 heap size-class/data-placement 或产品机制的归因问题。candidate 的 mature low-bit tag 和
 真实 TaskGraph ownership transfer 仍是合理产品修复，不因证据分类错误而回滚。
+
+固定方向复核还检查了 retained object，而不只看源码：HYLE 与 Abseil 的 copy lambda 在 retain、sink、
+heap-tag branch 上逐指令相同；唯一不同是析构调用目标。两侧 release 都是 acquire load 后在非末次引用上
+做 acq_rel `lock xadd`，而 HYLE 非末次路径甚至没有 Abseil `Unref` 的 stack prologue/epilogue。旧结果
+因而缺少能解释 7.5%–8.0% 落后的实现机制；A/A 又只有约 0.1%–0.2%，所以也不能把它简单称作随机噪声。
+结合未分层的固定 backing/address 与后续三平台自然 owning-copy 已反向得到 HYLE
+`1.038x / 1.045x / 1.314x`，该行保留为“未归因 data/code-placement diagnostic”，不形成当前产品
+`LOSE` 或重开。只有地址分层的同合同诊断或真实 copy-heavy consumer 同时给出机制和 material 影响时
+才恢复调查。
 
 更严重的是 `result-message-error`：HYLE 从临时 `Result` move error，peer 却从命名 lvalue 调用
 `result.status()`，即使固定 Abseil 已有 `status() &&`。absolute/raw samples retained；原合同 computed

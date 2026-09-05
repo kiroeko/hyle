@@ -297,6 +297,11 @@ workload。registry 中每个 instrument ID 必须在 `scripts/perf-machines.jso
 可传播到正常 consumer 的 material 影响。只有亚纳秒 microbench、顺序/地址翻转或总体 profile 不可见
 的差异不允许改变 API、layout 或常态 metadata。
 
+`PARITY/PASS` 也不能让稳定同方向点值从报告中消失。若全部必需 strata 的 HYLE
+`advantage_ratio < 1`，本轮必须按[性能证据标准 §6.1](../performance/benchmark-evidence-standard.md#61-固定方向点值复核)
+完成一次有界复核并留下分类；该复核本身不是 reopen trigger，仍须满足上述两把钥匙和第 10 节的真实
+产品事实。这样既不会用 5% margin 遮住可解释的系统性问题，也不会为无机制的 0.1% 点值重写产品。
+
 ### 5.1 比较类型与语义等价前置门
 
 证据来源的 `consumer/replay/mechanism` 与比较类型是两个正交维度。每个有 peer 的 workload 必须在

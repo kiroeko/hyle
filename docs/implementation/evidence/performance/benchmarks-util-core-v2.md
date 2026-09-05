@@ -43,6 +43,14 @@ Ref handoff 的四个 strata 都在约 1.10×，所以 combined exact verdict �
 5% 差异测得 1.0528 / 1.0431，10% 差异测得 1.0996 / 1.1015，且保持单调；两个 workload 的 timer-floor
 multiple 均远高于 20×。因此本轮在 n=15 已取得资格，没有触发 n=31 扩展。
 
+2026-09-05 的跨冻结固定方向复核没有忽略这四个都略低于 1 的点值：精确范围为
+`0.9986145–0.9999718`，即名义上慢 `0.0028%–0.1385%`。同一 bundle 的 A/A 已出现
+`0.9982764 / 0.9999371`，足以覆盖这个方向和数量级；四个产品 CI 也全部跨过 1。对 retained MSVC object
+的反汇编进一步确认：本 workload 实际经过的无争用 TTAS load、`xchg`、状态更新与 release store
+指令骨架相同；两者只在本 workload 不走的争用 backoff loop 有计数方向差异。因此这里没有可复核的
+产品机制钥匙，分类为“仪器/代码布局分辨率内无机制”，不是被 5% margin 遮住的 SpinLock 缺陷。
+完整横向记录见[固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)。
+
 ## 新能力的结构成本
 
 v2 新增能力不建立新的亚纳秒性能表：当前尚无 material consumer contribution，benchmark 不能反向定义

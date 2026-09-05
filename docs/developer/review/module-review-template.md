@@ -220,6 +220,9 @@ P1/P2 补充：
 - machine / instrument profile：
 - A/A 与 known-delta qualification：
 - 正常 consumer/replay verdict：
+- 固定方向点值复核：逐项列出全部必需 strata 均 `advantage_ratio < 1` 的 HYLE 行（不论幅度或
+  `PARITY/PASS`），并记录 comparison class、A/A/order/placement、一次机制检查、历史/holdout 方向、
+  “产品机制 / 额外语义 / 分辨率内无机制 / 未归因 diagnostic”分类及是否满足产品两把钥匙：
 - 异常后唯一复现、机制诊断和产品重跑：
 - Formal 状态（不阻塞本轮）：`NONE/PENDING/CERTIFIED/FAILED/EXPIRED`
 

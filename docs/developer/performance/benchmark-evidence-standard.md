@@ -219,6 +219,20 @@ non-inferiority 是独立单边门，固定为 `PASS | FAIL | UNRESOLVED | N/A`�
 才 `PASS`；任一 material `FAIL` 即失败；功效不足为 `UNRESOLVED`。`NOT_COMPARABLE`、
 `DIAGNOSTIC` 和 `INCONCLUSIVE` 各留在自己的轴上，不能被平局或单边门覆盖。
 
+### 6.1 固定方向点值复核
+
+若一个 HYLE/peer 行在全部必需 order/placement/allocation strata 的中位 `advantage_ratio` 都小于 1，
+人读报告必须复核并解释该固定方向，**不论幅度多小、exact verdict 是否仍为 `PARITY`、单边门是否为
+`PASS`**。这是一项防止 margin 掩盖系统性问题的审计触发器，不是新的统计 verdict，也不能把“全部点值
+小于 1”直接改写成 `LOSE`。
+
+复核严格有界为：先重验 comparison class 与语义等价矩阵，再对照 A/A、order/placement、历史或
+holdout 方向，最后做一次复杂度、资源账单或相关热路 codegen/trace 机制检查。报告必须把结论归入以下
+一种可读类别：同合同且找到产品机制、自然路线承担额外语义、仪器/代码或数据布局分辨率内未找到机制、
+或保留的未归因 diagnostic。只有[第 7 节](#7-哪些结果可以改产品)的机制钥匙和消费钥匙同时成立，
+才触发产品修改或重开；否则保留点值与调查事实，不通过追加样本、第五种姿势或 benchmark 专用 API
+追逐方向。
+
 旧工具的 `RIVAL/BASELINE` throughput ratio 小于 1 才有利于 HYLE；它属于 legacy raw 格式，必须
 由 adapter 取倒数并标注来源，不能与当前 `advantage_ratio` 混列。
 
