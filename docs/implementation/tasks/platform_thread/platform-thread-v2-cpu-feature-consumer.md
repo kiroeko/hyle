@@ -22,3 +22,21 @@
   Native FFI、通用仪器及 Formal certification。
 
 只读 replay verdict 为 `PRODUCT_TRIGGER`。进入 `SCOPED/AUDITED` 前不修改 platform-thread 产品源码。
+
+## Closure card（`SCOPED`）
+
+- 真实 consumer：`query_current_thread_isa_state()` 与 `request_current_thread_amx_tile()`；
+- 冻结 FIX 边界：只把 `amx_tile/sve/rvv` 三种字段读取替换为
+  `cpu_features().has(CpuFeature::...)`，必要的局部类型名迁移一并完成；公开头、函数、状态结构、错误和
+  OS 调用不变；
+- dependency：仍为 `platform_thread -> core,error,time` 并私有消费 Platform host facts；不新增第三方、
+  Container、SIMD 或 target-policy 依赖；
+- tier / normal cost：`P0 / closure-correctness-v1`；每次检查是固定两次整数运算，无 allocation、lock、
+  syscall、分支层或常态 metadata 变化；Parker/Thread 路径没有产品 diff，不重计时；
+- gates：三平台 thread correctness、WSL sanitizer、精确 factor 与 Platform source/static/shared、Sched
+  direct consumer、旧字段/旧 target symbol scan；
+- 预算：共享 Platform v4 四小时预算中的一次 direct-consumer 修正；发现 API、控制流或 OS 机制需要变化
+  则 `BLOCKED`，不得顺手重构；
+- 停止：三种事实查询迁移且验证通过；不以该轮重新声明 Parker 性能结论。
+
+进入 `SCOPED` 后只允许完成上述字段消费的双向审计；有限 FIX ledger 签署前不改产品。

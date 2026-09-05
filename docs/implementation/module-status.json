@@ -609,7 +609,7 @@
     },
     {
       "module": "platform_thread",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
       "round_id": "platform-thread-v2-cpu-feature-consumer",
@@ -632,7 +632,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-thread-v2 REOPENED：Platform v4 删除字段式 CpuFeatures 后，SVE/RVV/AMX 直接 consumer 必须迁到 CpuFeatureSet；线程与 Parker 机制不重开。"
+      "summary": "platform-thread-v2 SCOPED：只迁移 SVE/RVV/AMX 三种 CpuFeatureSet 查询并回放交付；公开线程、状态与 Parker 机制不重开。"
     },
     {
       "module": "platform_fs",
