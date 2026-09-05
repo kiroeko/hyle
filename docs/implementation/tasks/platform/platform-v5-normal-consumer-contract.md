@@ -295,3 +295,9 @@ candidate LOC self-check（snapshot `5818a7ac9b143b980ac43eb39e2a01dac1e5b108`�
 `VERIFIED -> CLOSED` 前 registry snapshot 位于
 `C:\public\project-hyle\_validation\platform-v5-replay\module-status-before-closed.json`，SHA-256
 `2E30C11CB61733471B4460840EAC1D669201863F5FD399F23F0EE6323782C000`。
+
+end receipt commit 为 `3fd758953e978ba36374bf69647335de36a52a68`；registry anchor commit 为
+`c02e4e7582c322879863f85474d9f85a8828c9e0`，即首个保存两个 factor 的 `CLOSED` state、candidate、
+LOC、限制和 trigger 的机器状态快照。anchor 校准前 registry snapshot SHA-256 为
+`D5B74F9792697F308229E312F1AA18951895EF3C173F66712AE2E25BBBF66D49`；本次校准只把非自引用 Git
+identity 写回 registry 和 task，不改变产品、状态、证据或 verdict。
