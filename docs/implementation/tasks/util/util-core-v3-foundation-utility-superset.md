@@ -115,3 +115,93 @@
 `REOPENED -> SCOPED` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-math-util-scoped-68398f1e.json`，SHA-256
 `FEFC5C89EBC242AC9447EFC87342137B1E7B37E37D75751290CE19E130CABE5D`。
+
+## Capability-family coverage map（`AUDITED`）
+
+| family | admitted normal journey | variants/lifetime contract | current route | coverage | decision |
+|---|---|---|---|---|---|
+| synchronous borrowed callable | per-node visitor/predicate within one stack call | mutable/const × throwing/noexcept; runtime callable/function and compile-time free/member binding | two mutable-signature `FunctionRef` forms | `PARTIAL` | `FIX` qualifier matrix + nontype binding |
+| all-exit lexical cleanup | rollback and C API cleanup across early returns | once, move, dismiss/invoke, constructor failure | `ScopeGuard` / `HYLE_DEFER` | `COMPLETE` | `KEEP` |
+| exception-conditioned cleanup | transaction commit/failure action | run only on a newly escaping exception or only when none is added; once/move/dismiss | user guide points at unavailable MSVC `<scope>` | `MISSING` | `FIX` `ScopeFail` / `ScopeSuccess` |
+| generic value-like exclusive resource | one-off fd/HANDLE-like token lacking a domain owner | explicit ownership bit, invalid checked factory, move, get/deleter, release/reset, acquisition safety | ad-hoc guard/capture | `MISSING` | promote to `MUST`; `FIX` bounded `UniqueResource` |
+| owning/nullable/asynchronous/fixed-capacity callable | stored/cancelled work | owner controls storage, allocation, cancellation and lifetime | `std::move_only_function` or Sched/IO owner | `ROUTED` | no second callable family |
+| typed resources and memory ownership | files, mappings, allocations, sockets, threads | domain errors and teardown | Platform/Mem/IO typed RAII | `ROUTED` | generic owner is fallback, never preferred replacement |
+| containers, secure entropy, parking/fair locks, weak ownership | different semantic owners | domain-specific | existing factors/standard | `OUT_OF_SCOPE` | no Util-core union |
+
+### Public-surface, consumer and duplicate trace
+
+- Existing `borrow.h`, `random.h`, `ref_counted.h`, `spin_lock.h`, `type_name.h` and their contracts are unaffected.
+  Existing `ScopeGuard` remains the all-exit class; conditional guards do not replace it or add a hidden branch to it.
+- Ordinary `FunctionRef<R(Args...)>` invokes an object as mutable `F&`; its const-signature counterpart accepts/invokes
+  only `const F&`. Both throwing and `noexcept` forms remain non-null, trivially copyable two-word views. A temporary is
+  legal only through the containing full-expression synchronous call; storage/return/async use remains a lifetime bug.
+- `NontypeTag<F>` and the `nontype<F>` variable template bind a compile-time free/member function. An unbound callable
+  stores no runtime function pointer; a bound member stores only the object address. Both still cross exactly one erased
+  invoker and do not add a second indirect function call.
+- `ScopeFail` runs only when `std::uncaught_exceptions()` increased since construction; `ScopeSuccess` runs otherwise.
+  Both are move-only, dismissible and always terminate if a destructor-time action throws, matching HYLE's existing
+  destructor safety policy. Failure while storing a `ScopeFail` action invokes the original cleanup; failed
+  `ScopeSuccess` construction does not run a success action.
+- `UniqueResource<Resource,Deleter>` is a small fallback owner with a separate ownership bit. Direct construction owns
+  even a sentinel-shaped value; `make_unique_resource_checked(resource, invalid, deleter)` is the route for acquisition
+  APIs with an invalid result. `release()` only disarms, `reset()` deletes at most once, and `get()` lets a caller copy a
+  value-like token before release. It does not surface resource errors or replace typed owners.
+- Current `mem_vm`/Sched/Graph dependencies consume other Util-core headers. No frozen consumer is migrated merely to
+  manufacture adoption, and no new component edge is required.
+
+## Capability / gap ledger and frozen `FIX` set
+
+| ID | class | exact action | cost/complexity contract | verification / negative space |
+|---|---|---|---|---|
+| `UC3-FREF-QUAL-01` | `MUST` | add const and const-noexcept signature specializations | two words, trivial copy, O(1), one erased invocation, zero ownership/allocation/lock | compile matrix and ordinary/const/mutable rejection |
+| `UC3-FREF-NTTP-02` | `MUST` | add HYLE tag and compile-time free/unbound/bound-member constructors | no stored runtime function pointer for static target; no second indirect call | behavior, null object, CTAD where unambiguous, optimized probe |
+| `UC3-SCOPE-COND-03` | `MUST` | add `ScopeFail` and `ScopeSuccess` in `scope_guard.h` | O(1), callable + one count/active state, zero allocation/lock | normal/throw/nested/move/dismiss/construction failure/no-exception compile |
+| `UC3-RESOURCE-04` | `MUST` | add `unique_resource.h`, `UniqueResource`, checked factory | O(1), resource+deleter+ownership state, zero allocation/dispatch | valid/invalid/move/release/reset/deleter/construction and throwing paths |
+| `UC3-P1-05` | `MUST` | add only the frozen Abseil same-contract traversal and nontype holdout | 4096 prebuilt records, setup excluded, 5% W1-WIN non-inferiority | qualification matrix, reverse order, one diagnosis/rerun maximum |
+| `UC3-DELIVERY-06` | `MUST` | add the new header to factor inventory and recheck Util source/static/shared | header-only factor, Core-only real edge | exact-factor/header/relocated SDK; no binary/FFI artifact |
+| `UC3-DOC-07` | `MUST` | update architecture and user selection/pitfall guide | current behavior only | borrow/own, exit/fail/success and typed/generic decisions |
+
+These seven entries are the entire product batch. Weak references, optional borrowed callables, async storage, generic
+error-carrying teardown, resource traits/pointer syntax/swap, consumer migration and common-instrument changes are not
+authorized.
+
+## API / usability freeze
+
+- Public callable forms are `FunctionRef<R(Args...)>`, `FunctionRef<R(Args...) noexcept>`,
+  `FunctionRef<R(Args...) const>` and `FunctionRef<R(Args...) const noexcept>`. Nontype use is explicit at the call
+  boundary, e.g. `FunctionRef<int(int)>{nontype<&transform>}` or a bound member form with an lvalue/object pointer.
+- All four FunctionRef forms stay non-defaultable and non-null. Const is a target-invocation contract, not a claim that
+  the two-word view itself was previously mutable. Nontype binding does not introduce ownership or extend object life.
+- Conditional scope types use class CTAD and the same discoverable `dismiss()` / `active()` control as `ScopeGuard`;
+  no macro-only API or dependency on experimental `<scope>` is introduced.
+- `UniqueResource` requires a copy-constructible deleter and a resource that is nothrow-movable or copyable so failed
+  transfer cannot leak or silently steal ownership. Move assignment/reset-to-new-resource are available only when their
+  storage operations satisfy the required nonthrow transfer. The deleter is expected to be nonthrowing; throwing during
+  destruction terminates.
+- The generic resource minimum is `allocated`/explicit bool, `get`, `get_deleter`, `release`, `reset()` and checked
+  construction. Dereference operators, resource traits, default invalid construction, swap and error propagation remain
+  outside this batch; use a domain owner where those semantics matter.
+- Util-core remains header-only, `PUBLIC core`, selected directly by maintainers and aggregated for users by
+  `hyle::util`. There is no C API, Native FFI or stable cross-toolchain C++ ABI.
+
+## Owner seven questions（`AUDITED`）
+
+1. **Third-party product path:** none. Abseil/Folly/Boost and WG21 documents are pinned evidence and benchmark-only
+   peers, never public/product dependencies.
+2. **Capability completeness:** callable qualifiers/static binding, conditional scope and bounded generic resource are
+   the admitted gaps. Serving policy, async work and typed resource errors remain with higher owners.
+3. **Internal reuse/acceleration:** implementation reuses Core macros, `std::invoke`, existing ScopeGuard storage rules
+   and C++ exception count. No lower factor or SIMD/container facility improves these value objects; no fake consumer
+   migration is permitted.
+4. **Performance:** FunctionRef remains P1 and unverified until the frozen same-contract Abseil workloads run. Scope and
+   resource are P0 O(1)/zero-allocation structural claims; no universal SOTA claim is made.
+5. **C ABI/build:** no old C/Native FFI exists. The new header must enter the split-header inventory; factor stays
+   INTERFACE and source/static/shared Util products must expose identical C++ behavior without a fake archive.
+6. **C++ usability:** names expose borrow, exit condition and ownership; the guide must make forbidden lifetimes,
+   invalid sentinels and throwing deleters explicit rather than requiring users to infer them from templates.
+7. **Docs/red team:** architecture/user/performance/task updates, cross-toolchain behavior, package relocation and an
+   independent red-team pass remain candidate gates and are not predeclared PASS.
+
+`SCOPED -> AUDITED` uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-audited-ff6b5daf.json`, SHA-256
+`27C669D4B93877DB3F5E07909374948388CB66E92FF491EB9C77BDBFDFA4F6D4`.

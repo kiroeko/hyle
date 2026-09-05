@@ -108,3 +108,83 @@
 `REOPENED -> SCOPED` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-math-util-scoped-68398f1e.json`，SHA-256
 `FEFC5C89EBC242AC9447EFC87342137B1E7B37E37D75751290CE19E130CABE5D`。
+
+## Capability-family coverage map（`AUDITED`）
+
+| family | admitted normal journey | required semantics | current route | coverage | decision |
+|---|---|---|---|---|---|
+| exact checked binary arithmetic | untrusted extent/offset/byte composition | same-type non-bool integer；no UB；exact value or failure | `try_add/subtract/multiply` | `COMPLETE` | `KEEP` |
+| representability-checked conversion | signed model/file dimensions to `size_t` or backend-width fields | source and destination are non-bool integers；no implicit promotion；exact value or failure | caller repeats `std::in_range` + cast | `MISSING` | `FIX` as `try_integer_cast<To>(value)` |
+| checked division/remainder | block counts、strides and partition calculations | zero rejected；signed minimum / `-1` never evaluated with built-in `/` or `%` | no Math route | `MISSING` | `FIX` as `try_divide` / `try_remainder` |
+| checked compound/aggregate arithmetic | `base + count * stride` and shape product/sum | left-to-right exact steps；first unrepresentable step fails；empty sum/product identities are 0/1 | callers compose helpers or hand-write loops | `PARTIAL` | `FIX` as multiply-add plus span sum/product |
+| saturating integer policy | fixed-width counters/signal-like values whose contract is clamp, not reject or wrap | nearest representable value；division by zero remains a violated precondition；signed min / `-1` clamps high | no route before C++26 library availability | `MISSING` | `FIX` as five explicitly named helpers |
+| bit operations, ordinary trusted scalar arithmetic | normal language/standard-library work | standard semantics | C++23 | `ROUTED` | do not wrap |
+| wide/carry arithmetic、parsing、floating、activation、quant/tensor/SIMD math | different precision, syntax or backend contracts | domain-owned | standard/SIMD/Compute/consumer | `ROUTED/OUT_OF_SCOPE` | no Math-v3 API |
+
+### Public-surface reverse trace and duplicate scan
+
+- The seven existing entries in `scalar.h` map only to checked same-type add/subtract/multiply and non-negative
+  ceil/round. They remain natural, have no benchmark-only parameters or metadata, and receive no semantic change.
+- `std::in_range` is the primitive used by the new conversion helper, not a complete user journey: repeating the
+  predicate and cast lets the checked branch accidentally retain the original value or choose a different target type.
+  A named optional-returning conversion therefore closes a real composition boundary instead of wrapping for branding.
+- Folly's multiply-add and checked divide/modulo establish the compound family, but HYLE does not copy its arity
+  overload union. `try_multiply_add(a,b,c)` means checked `a*b` followed by checked addition of `c`; an intermediate
+  outside `T` fails even if later cancellation could make the mathematical final value representable.
+- `try_remainder(min,-1)` returns exact zero without executing `%`; `try_divide(min,-1)` fails. Both reject a zero
+  divisor. This distinguishes an exactly representable remainder from an unrepresentable quotient.
+- `try_sum(span)` and `try_product(span)` are single-pass views over caller storage, short-circuit on the first failure,
+  and define empty identities as `T{0}` and `T{1}`. Initializer-list ownership, variadic folds and tensor shape types are
+  deliberately absent.
+- Saturation uses HYLE's existing readable verb convention:
+  `saturating_add/subtract/multiply/divide/cast`. It follows current C++ saturation semantics but does not claim a
+  standard ABI or import the standard's abbreviated spelling. Untrusted divisors must use `try_divide`; the trusted
+  saturating divide entry fail-fast checks nonzero.
+
+## Capability / gap ledger and frozen `FIX` set
+
+| ID | class | exact action | complexity/resource contract | verification / negative space |
+|---|---|---|---|---|
+| `MATH3-CONVERT-01` | `MUST` | add `try_integer_cast<To>(From)` | constexpr O(1), zero resource; use `std::in_range` | all signedness/width boundaries; bool and enum rejected |
+| `MATH3-DIVREM-02` | `MUST` | add checked quotient and remainder | constexpr O(1), no UB or dispatch | zero and min/-1 matrix; remainder exact-zero case |
+| `MATH3-COMPOUND-03` | `MUST` | add checked multiply-add, span sum and span product | scalar O(1); aggregate O(n), one pass, early exit, no allocation | empty/single/boundary/property/constexpr; no arbitrary folds |
+| `MATH3-SATURATE-04` | `MUST` | add saturating add/subtract/multiply/divide/cast | constexpr O(1), zero resource; compiler-native lowering where available | exhaustive small domains + boundaries; zero divisor is fail-fast |
+| `MATH3-CODEGEN-05` | `MUST` | extend release probes for representative 32/64-bit paths | no allocation, exception, indirect call, runtime dispatch or division fallback for add/sub/cast | MSVC/GCC/AppleClang inspection; timing is N/A |
+| `MATH3-DELIVERY-06` | `MUST` | expose the unchanged header-only factor through source/static/shared Math journeys | Core-only INTERFACE component | exact factor and relocated SDK smoke; no binary/FFI symbol |
+| `MATH3-DOC-07` | `MUST` | update architecture and user choice/pitfall guide | current behavior only | checked vs saturating vs trusted and type/zero/empty traps |
+
+The finite product batch is exactly these seven entries. It may not change Core, downstream frozen products, component
+edges, common instruments, or add heterogeneous arithmetic, parsing, big integers, model operators or SIMD kernels.
+
+## API / usability freeze
+
+- All public templates accept only standard non-`bool` integral types. Conversion is the only heterogeneous entry and
+  names its result type explicitly as `try_integer_cast<To>(from)` / `saturating_cast<To>(from)`.
+- Checked operations return `std::optional<T>` and never return a wrapped, partial or saturated value. Saturating
+  operations return `T` and never use `optional`; trusted built-in arithmetic remains the shortest route.
+- `try_divide` and `try_remainder` are for untrusted divisors. `saturating_divide` has a nonzero precondition enforced by
+  the existing Core fatal assertion, because there is no mathematically meaningful clamp for division by zero.
+- Aggregate APIs accept `std::span<const T>` by value, allocate nothing and do not retain it. Empty identities are part
+  of the contract, not an implementation accident.
+- The factor remains `<hyle/math/scalar.h>` plus `hyle::math`, header-only and `PUBLIC core`. There is no C API, Native
+  FFI, stable cross-toolchain C++ ABI or peer type in the public surface.
+
+## Owner seven questions（`AUDITED`）
+
+1. **Third-party product path:** none; standards, Folly and ggml/llama.cpp are evidence only.
+2. **Capability completeness:** the four admitted generic integer-policy families are the only concrete gaps; model,
+   vector, text and arbitrary-precision work stays with its semantic owner.
+3. **Internal reuse/acceleration:** all new compound/saturation helpers reuse existing checked primitives or C++23
+   primitives; no lower frozen HYLE module has a faster missing route. Downstream migration is owner-controlled.
+4. **Performance:** P0 only. Best possible complexity is O(1) scalar and O(n) aggregate; the candidate still owes
+   three-toolchain code shape and must not claim timing SOTA.
+5. **C ABI/build:** no legacy C/Native FFI surface exists. The component graph and actual target both remain Core-only
+   INTERFACE; source/static/shared users get the same templates from matched headers.
+6. **C++ usability:** policy is visible in the verb and return type; no out-parameter, hidden promotion, tensor wrapper
+   or benchmark seam is admitted.
+7. **Docs/red team:** architecture/user/performance/task roles and boundary/UB traps are frozen but not yet updated or
+   verified, so no gate is pre-marked PASS.
+
+`SCOPED -> AUDITED` uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-audited-ff6b5daf.json`, SHA-256
+`27C669D4B93877DB3F5E07909374948388CB66E92FF491EB9C77BDBFDFA4F6D4`.
