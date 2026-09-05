@@ -1,6 +1,6 @@
 # Math / Util-core v3 关闭后回放（2026-09-05）
 
-<!-- MODULE REPLAY RECORD: ACTIVE -->
+<!-- MODULE REPLAY RECORD: HISTORICAL -->
 
 > 本任务只读回放已经 `CLOSED/FROZEN` 的 Math v3 与 Util-core v3。回放本身不修改产品；只有下述
 > 可复现 finding 命中既有 reopen trigger 后，受影响组件才进入独立产品轮。
@@ -77,3 +77,20 @@ provenance 均能严格验证，但 verifier 返回
   conditional `noexcept`、可唯一推出的 nontype bound-callable CTAD，以及相邻 tests/sample/docs/P0
   code shape；其余 Util-core 能力、依赖和旧 v2 性能合同不重开。
 
+## 最终回放裁决
+
+- **Math：`CONFIRMED`。** 从 v3 candidate 到最终回放提交，Math 产品路径和 P0 算法未漂移；公开形状
+  没有 benchmark N、地址、顺序、peer 或 fast-mode seam。scalar O(1)、span aggregate O(n) 单遍，显式
+  `std::span` 是 caller-storage/lifetime 合同而非测试偏好；mixed-type policy 保持显式 destination cast；
+- Math 在 W1-WIN、W1-WSL/GCC 14 + UBSan、M1-MAC/AppleClang 21 + UBSan 的 exact/current source 上
+  通过 factor/逐头/三种 C++ 交付回放。`math -> PUBLIC core` 仍是完整且最小依赖；没有完整同合同的
+  Util-core helper 可在不倒置边界的情况下改善复杂度或 codegen。v3 P0 结构证据继续有效，Math 保持
+  `CLOSED/FROZEN`，不制造无事实 reopen；
+- **Util-core：`PRODUCT_TRIGGER -> RESOLVED`。** 两个原 finding 已进入独立
+  [`util-core v4`](../util/util-core-v4-resource-move-ctad.md)，并在红队追加发现 throwing sentinel-result
+  conversion 后修复。最终候选完成三平台、三交付、中央 CMake、接口污染复核、P0 与固定同合同 P1
+  全部门，随后独立关闭；
+- 当前下游扫描未发现因本轮 additive API 而过时的调用。Mem/Sched 已正确显式依赖 util_core 的既有
+  Ref/SpinLock；其他冻结 owner 没有应机械改写的完整同合同重复实现。
+
+本 replay 至此成为历史输入；它不继续授权打开 Math、Util-core 或其他冻结模块。

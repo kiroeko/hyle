@@ -1,9 +1,10 @@
 # Util-core v4：UniqueResource move-only transfer 与 FunctionRef CTAD
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前状态：`VERIFIED`。最终 immutable product commit/tree 和全部既定工程门已通过；下一步只签署
-> terminal receipt 与 registry anchor，不增加能力或修改 benchmark。
+> 终态：`CLOSED`。前段状态和候选纠正按时序保留为历史事实，不再授权继续修改；当前状态只认
+> [`module-status.json`](../../module-status.json)。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -225,3 +226,42 @@ SHA-256 `DD57F5A64B0451381002E8436DCC969DA82876645B7FE6CDB3DCE745661B9BF2`。
 | engineering performance | `PASS` | P0 结构门 + 固定同合同 P1 三项 5% non-inferiority |
 
 没有工程 blocker；Formal 仍独立 `PENDING`，不阻止本产品轮从 `CANDIDATE` 进入 `VERIFIED`。
+
+## Closure decision 与 terminal receipt
+
+本轮 verdict 为 **`CLOSED`**。六项有限 FIX 全部 `COMPLETE`，scope、architecture、correctness、
+delivery、usability/docs、red-team 与 engineering-performance 七项 aggregate gate 全部 `PASS`；最终
+候选保持 `439b8915e2c63a6a15545324444b594a25c62a62` / tree
+`a7891b8d6a3dab26599e443f9e03150a195b3ba9`，验证后没有 Util-core 产品漂移。
+
+红队证明本轮不是为 benchmark 修接口：move-only deleter 是普通 native-token ownership 合同；member
+CTAD 只消除可由类型唯一推出的重复签名；sentinel 修复关闭的是异常安全漏洞。公开形状没有固定 N、
+placement、地址、执行顺序、peer、fast/slow mode 或 benchmark-only metadata。性能仪器只裁决冻结形状，
+未反向改变 API、layout 或算法。
+
+可接受限制：
+
+- FunctionRef 只借用一次同步调用，不拥有、存储或延长 callable 生命周期；异步/返回/保存必须使用
+  owning callable 或 owner-defined fn+ctx；
+- 对 potentially-throwing copy resource + move-only deleter，owner move 失败会 exactly-once cleanup 并
+  disarm source，而不是保证 source 继续持有 token；
+- UniqueResource 不替代 Platform/Mem/IO typed owner，也不承担通用 error channel；
+- P1 只签 W1-WIN 上三个冻结同合同 FunctionRef consumer；跨平台 timing、全部 utility/signature、端到端
+  inference、universal SOTA 与 Formal 未声明。
+
+只有以下新事实可以重开：
+
+1. 具名真实 consumer 复现 correctness、exception safety、ownership/lifetime、concurrency、基础能力或
+   自然 C++ 易用性缺陷；
+2. public API/layout/算法/复杂度、Core-only dependency、header ownership 或 source/static/shared
+   delivery materially 改变；
+3. 支持编译器/目标推翻 conditional-noexcept、move-or-copy transfer、member deduction、FunctionRef
+   两字/codegen、no-exceptions 或逐头合同；
+4. 冻结下游证明 helper 使用合同错误，或存在应经明确依赖边替代的完整同合同重复实现；
+5. 成熟 same-contract peer 证明更优复杂度档，或正常 consumer workload 复现超过冻结 5% margin 的
+   material 劣势；性能 peer/provenance/machine/instrument 改变且当前声明需要续签。
+
+exact candidate LOC：全库代码 449,005；自实现不含测试 73,155；Util-core 实现 1,549 行。LOC 只记录
+规模，不证明功能或性能。`VERIFIED -> CLOSED` 前态 registry snapshot 为
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-closed-277b508b.json`，SHA-256
+`4D2DDE6A40B5C04D7A78956B440C1AC7C9D498318B0BFC7A24DD94783146963B`。
