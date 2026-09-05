@@ -148,18 +148,14 @@
     },
     {
       "module": "util_core",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "UTILCORE-FOUNDATION-UTILITY-SUPERSET-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
-      "round_id": "util-core-v3-foundation-utility-superset",
-      "closure_task": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
-      "scope": "Complete the cross-toolchain synchronous callable and scope-lifecycle utility families, and audit a generic value-like unique-resource owner, while preserving Util-core's Core-only header-only boundary.",
-      "non_goals": "Inference or serving policy, owning asynchronous callback policy, scheduler cancellation, containers, weak ownership, fair or parking synchronization, secure entropy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
-      "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
-      "candidate_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
-      "candidate_tree": "9ccc0e7a932f7ec4a7345fe56f3525e747587606",
-      "end_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
-      "registry_anchor_commit": "1825727c5326138126ac222e121e7386539b5cab",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
+      "round_id": "util-core-v4-resource-move-ctad",
+      "closure_task": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md",
+      "scope": "Repair the reproduced move-only deleter transfer, checked-factory exception specification and unambiguous nontype bound-callable deduction defects without changing Util-core's capability families or Core-only header-only boundary.",
+      "non_goals": "New utility families, nullable or owning callbacks, asynchronous storage, pointer-like or default UniqueResource policy, typed domain owners, Util-runtime, downstream migration, Native FFI, benchmark-shaped APIs, common instrument redesign and Formal certification.",
+      "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -167,56 +163,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v3.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
-      "freeze_confirmation": {
-        "id": "util-core-freeze-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
-        "reviewed_tree": "9ccc0e7a932f7ec4a7345fe56f3525e747587606",
-        "evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md"
-      },
-      "loc": {
-        "snapshot_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
-        "repository_code": 448099,
-        "self_with_tests": 115258,
-        "self_without_tests": 73078,
-        "module_implementation": 1472
-      },
-      "known_limitations": [
-        "FunctionRef is a non-null synchronous call-only borrow; the caller owns referent lifetime and must not store, return or enqueue the view.",
-        "ScopeFail observes language exceptions only, no-exception builds cannot trigger it, and a throwing destructor cleanup or resource deleter terminates.",
-        "UniqueResource is a bounded fallback for value-like tokens without a typed owner; it deliberately has no domain error, dereference, resource traits, unload or quiescence protocol.",
-        "The P1 claim covers three frozen W1-WIN same-contract FunctionRef journeys only; arbitrary signatures, cross-platform timing, end-to-end inference, universal SOTA and Formal certification are not claimed."
-      ],
-      "reopen_triggers": [
-        "A named synchronous consumer reproduces a borrow, cv/noexcept, nontype-binding, scope-lifecycle, resource-ownership, correctness, security or C++ API-usability defect.",
-        "A supported compiler or standard library changes lifetime-bound, function-pointer round-trip, exception-count, no-unique-address or normal code-generation semantics.",
-        "The public API, layout, normal cost, Core-only dependency, selected-header inventory or source, static or shared delivery shape changes.",
-        "A real consumer proves a model-independent foundation utility MUST that does not belong to Core, Container, Mem, Platform, Sched or runtime Util.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen margin."
-      ],
-      "summary": "util-core-v3 CLOSED/FROZEN：FunctionRef qualifier/nontype、conditional scope 与 bounded UniqueResource 已补齐；三平台正确性/no-exceptions/三交付、新 API 样例、文档/红队和 W1-WIN 三项 Abseil 5% P1 全部通过。"
+      "summary": "Util-core v4 REOPENED：关闭后回放复现 move-only deleter、checked factory noexcept 与 unambiguous nontype bound-callable CTAD 缺口；尚未进入实现。"
     },
     {
       "module": "error",
