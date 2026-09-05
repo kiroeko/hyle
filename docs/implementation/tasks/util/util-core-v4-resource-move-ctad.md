@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前只登记 `REOPENED`。完成 `SCOPED/AUDITED`、冻结有限 FIX 集以前不修改产品源码。
+> 当前状态：`CANDIDATE`。产品形状已冻结；只执行本卡声明的固定验证，不再增加能力或修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -102,3 +102,23 @@ Core-only header-only factor。所有 `MUST` 已落入上述六项有限 FIX，�
 `SCOPED -> AUDITED` 的前态快照为
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-audited-10962013.json`，SHA-256
 `778A6D46F874DD69AD01B9C3B326E639B818688BBD5AE47D2720A1429BA490E2`。
+
+## 产品候选（`CANDIDATE`）
+
+- candidate commit / tree：
+  `2f53239c0cc2a3f15b717f7910e6b809d42f42b8` /
+  `26cc24958d7cc917c9e740152ba72a8bf7592f62`；
+- `UniqueResource` 继续保持 deleter/resource/ownership-bit 的既有 layout。构造期和 owner move 的
+  deleter 路线由异常属性在编译期选择：nothrow move 优先，可能抛的 resource transfer 且存在 nothrow
+  deleter copy 时先保留 source deleter；只有 move-only deleter 时，resource transfer 失败由已转移的
+  deleter exactly-once 回收 source token 并 disarm source；
+- checked factory 现在精确传播 owner construction 的条件 `noexcept`；valid/invalid、direct/checked、
+  copy fallback、两类 owner-move failure 和 no-exceptions 路径都有独立测试；
+- `FunctionRef{nontype<&Owner::member>, owner}` 只对现有四种非 ref-qualified signature 做 CTAD，直接复用
+  原 bound invoker；两个机器字布局和旧三项 benchmark 路线没有改变；
+- installed sample 同时编译使用 move-only deleter 与 bound-member CTAD；用户/架构文档补充了选择边界和
+  resource-copy failure 陷阱。
+
+进入 `CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-2f53239c.json`，SHA-256
+`3F4A003A1518F31E306030EAB347D7ABF5A57E6627CAF8BA23F5C59BBC83DB01`。
