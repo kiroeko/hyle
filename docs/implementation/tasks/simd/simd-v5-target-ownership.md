@@ -90,3 +90,31 @@ owner 从 `provider::Target` 迁到 `KernelTarget`，没有重签任何 provider
   `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；
 - source/relocated static/shared expert journey、exact artifact、WSL/macOS/scalable 与最终红队仍待验证，
   因此不声明算法性能或 `VERIFIED/CLOSED`。
+
+## Candidate verification（`VERIFIED`）
+
+产品身份仍为 `d015b0de1cf6d5899da8336fef94104974bcd90e` / tree
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`；最终 replay commit/tree 为
+`9070a3cdeefdff437451bf5af0003fcc3fd5318c` / `64039b8101c44271cb92f44c0373505bd371b6b5`。
+两者产品路径无 diff，后者只含 registry/task 证据与 test-only braces。
+
+| Gate | W1-WIN | W1-WSL | M1-MAC | Verdict |
+|---|---|---|---|---|
+| affected correctness | SIMD/provider/order `7/7` | selected closure `45/45`；ASan/UBSan affected 各 `5/5` | arm64/NEON selected closure `45/45` | `PASS` |
+| source expert/provider/fat journey | `1/1` | `1/1` | `1/1` | `PASS` |
+| relocated shared SDK | `1/1` | `1/1` | `1/1` | `PASS` |
+| relocated static SDK | `1/1` | `1/1` | `1/1`（仅正常 archive-order warning） | `PASS` |
+| exact AVX2 artifact | 单一 AVX2 manifest/variant，无 runtime feature/target import，无 AVX-512 object instruction | N/A | N/A | `PASS` |
+
+三种交付都使用同一 `hyle::simd_expert` 拼写，直接 Highway/xsimd provider、fixed target 与 custom
+fat-kernel helper 可用；vendor headers/licenses 被安装而 internal provider 目录不泄漏。route verifier
+仍为 387 operations / 422 scopes / 0 pending，provider winner、operation body、compiled variant 集与 normal
+whole-buffer dispatch 次数均未改变。因而工程性能只签 P0 structural `PASS`：ordinary runtime init-once，
+每个 buffer 至多一次缓存函数指针调用；exact/fixed 无 runtime selection；本轮不伪称重测了 387-op P1。
+
+最终 hostile scan 证明公开/实现/测试/sample/CMake/current docs 中旧 `simd::Isa`、Platform target alias、
+旧 `dispatch.h` 和 `provider::Target` 为 0。公开头不暴露一个会在 source/static/shared 三种消费形状下说谎
+的 current-TU 常量；用户只能读取运行库真实 `selected_target()`，自定义 TU requirements 则由其真实
+编译 flags/provider 决定。七项 aggregate gate 全部 `PASS`；SVE/RVV 真机性能明确不在本 P0 claim。
+前态 snapshot SHA-256 为
+`AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。

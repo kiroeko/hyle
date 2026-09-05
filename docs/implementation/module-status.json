@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
       "round_id": "platform-v4-cpu-fact-boundary",
@@ -599,19 +599,29 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v4 CANDIDATE：无顺序 CpuFeatureSet、有限三平台 feature facts 与旧 target policy API 删除已落入候选 d015b0de；等待完整交付和跨平台验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform-v4 VERIFIED：无顺序 CpuFeatureSet、三平台 feature facts、旧 target policy 删除、三平台正确性/sanitizer/三交付、直接消费者、文档/红队与 P0 结构门全部通过。"
     },
     {
       "module": "platform_thread",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
       "round_id": "platform-thread-v2-cpu-feature-consumer",
@@ -628,15 +638,25 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-thread-v2 CANDIDATE：六处 SVE/RVV/AMX feature 查询已迁到 Platform facts；公开线程/状态/Parker 与 P1 路径不变，等待跨平台交付验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform-thread-v2 VERIFIED：六处 SVE/RVV/AMX fact 查询已迁移；三平台正确性/sanitizer、Platform 三交付、Sched consumer、文档/红队与 P0 结构门全部通过，Parker 路径未改。"
     },
     {
       "module": "platform_fs",
@@ -895,7 +915,7 @@
     },
     {
       "module": "simd",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
       "round_id": "simd-v5-target-ownership",
@@ -912,19 +932,29 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v5 CANDIDATE：KernelTarget ownership、canonical requirements 与 runtime/provider/manifest 迁移已落入 d015b0de；387/422 route 终态未改变，等待完整交付和跨平台验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "simd-v5 VERIFIED：KernelTarget 成为唯一执行目标 authority；三平台 correctness/sanitizer/source-static-shared、exact artifact、387/422/0 route、文档/红队与 P0 结构门全部通过，算法 winner 未改。"
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
       "round_id": "container-v4-cpu-feature-migration",
@@ -941,14 +971,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "container-v4 CANDIDATE：三个私有 selector 已按各自 Highway/XXH3 TU requirements 迁移；公开 API、kernel body 和 P1 不变，等待完整交付和跨平台验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container-v4 VERIFIED：三个私有 selector 已按 Highway/XXH3 的真实 TU requirements 迁移；三平台 correctness/sanitizer/三交付、无 SIMD 依赖、文档/红队与 P0 结构门全部通过。"
     },
     {
       "module": "util",

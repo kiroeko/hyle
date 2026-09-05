@@ -57,3 +57,19 @@ product commit/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
 state transition 或旧 P1 路径。前态 registry snapshot 与 Platform 主轮共用 SHA-256
 `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`。跨平台与三交付未完成，当前
 只允许 `CANDIDATE`。
+
+## Candidate verification（`VERIFIED`）
+
+产品身份仍为 `d015b0de1cf6d5899da8336fef94104974bcd90e` / tree
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`；最终 replay 使用 test-only 修正后的
+`9070a3cdeefdff437451bf5af0003fcc3fd5318c`。Windows selected Platform façade `6/6`，WSL immutable
+archive selected closure `45/45`，macOS arm64 selected closure `45/45`；WSL affected ASan/UBSan 各
+`5/5`。Platform source、relocated shared/static 三平台各 `1/1`，Sched selected consumer 也在完整
+closure 内通过。
+
+本轮六处读取仍只是 cached `CpuFeatureSet::has()`，固定 O(1)、零 allocation/lock/syscall，未改
+Parker、affinity、thread-state transition、SVE/RVV width 或 AMX permission 算法；P0 structural 为
+`PASS`，旧 Parker P1 不续签。旧字段扫描为 0，依赖仍是 `platform_thread -> core,error,time` 并私有读取
+Platform facts，没有 SIMD target policy、第三方或公开 API 泄漏。七项 aggregate gate 全部 `PASS`，无
+未决 red-team finding。前态 snapshot 与 Platform 主轮相同，SHA-256
+`AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。

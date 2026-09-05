@@ -119,3 +119,53 @@ Native FFI slice；本轮 P0 timing 不适用。实现只能执行 F01--F04，�
   `platform-v4-target-boundary/module-status-before-candidate.json`，SHA-256
   `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；
 - W1-WSL、M1-MAC、三种交付、exact/fat artifact 与最终红队尚未完成，因此不得写 `VERIFIED/CLOSED`。
+
+## Candidate verification（`VERIFIED`）
+
+验证仍绑定 product candidate `d015b0de1cf6d5899da8336fef94104974bcd90e` / tree
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`。候选后的
+`a47f7c769a4ec553958e7ba58295c3191dd805fb` 与
+`9070a3cdeefdff437451bf5af0003fcc3fd5318c` 只给两个 GoogleTest 条件分支补花括号，消除 GCC/
+AppleClang `dangling-else`；candidate 到最终验证提交的 CMake、公开头、实现、sample 与 script 产品路径
+无 diff。最终验证提交/tree 为 `9070a3cdeefdff437451bf5af0003fcc3fd5318c` /
+`64039b8101c44271cb92f44c0373505bd371b6b5`，验证 source archive SHA-256 为
+`42AEB10865510981AD5D040CD9C92F54C3A6783CC22358CFC3185FBB38DE9AD9`。
+
+### Correctness、delivery 与 P0 evidence
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| selected Release/Werror | Platform façade `6/6`；相关 SIMD `7/7`、Container `11/11` | immutable archive，排除只依赖 `.git` 的 LOC tooling 后 `45/45` | immutable archive，同样排除 LOC tooling 后 `45/45` | `PASS` |
+| sanitizer | Windows 产品回归通过 | affected Platform/Platform-thread/SIMD/provider/Container：ASan `5/5`、UBSan `5/5` | Release 真机覆盖 arm64/NEON | `PASS` |
+| source embedding | Platform `1/1` | Platform `1/1` | Platform `1/1` | `PASS` |
+| relocated shared SDK | Platform `1/1` | Platform `1/1` | Platform `1/1` | `PASS` |
+| relocated static SDK | Platform `1/1` | Platform `1/1` | Platform `1/1` | `PASS` |
+
+source archive 没有 `.git`，所以历史对象型 `hyle_loc_report_test` 明确为 `NOT_APPLICABLE`，不是产品
+失败；candidate LOC 已从 Windows canonical Git tree 独立复算并 self-check。SIMD、Container 各自的
+三平台三交付也全部通过，因而本轮不是只证明 Platform 单库能编译。
+
+P0 structural verdict 为 `PASS`：探测只在函数局部 static 初始化中执行一次固定数量的 CPUID/XGETBV、
+auxv、sysctl 或 processor-feature 查询；缓存读取、单项 membership、all/any 都是固定两个 64-bit word
+的 O(1) 运算，无 allocation、normal-path syscall、虚调用或 target 排序。产品候选没有触碰 Platform
+原有 wait/topology/cache/VM/NUMA/fs/Parker 算法，故不把旧 P1 点值冒充本轮新证书。
+
+### Usability、依赖与红队
+
+- 用户只有两个问题：查询具名 host/OS fact，或把自己真实编译 TU 的 requirements 组成 set；Platform
+  不再回答“哪套 kernel 最好”；SIMD target、Container 私有 requirement 与 per-thread ISA state 均有
+  唯一 owner；
+- `platform -> PUBLIC core,error` 没有新增产品或第三方边。Platform-thread、SIMD、Container 均真实读取
+  同一 Platform cache；Mem/Sched 的 selected closure 通过中央回归，没有错误引入 SIMD/Container 反向边；
+- hostile scan 未发现旧 `platform::Isa`、`best_isa()`、`supports(Isa)`、旧 `simd/dispatch.h`、
+  `provider::Target` 或跨架构 enum 排序；x86 parent/OS-state、CPUID 7.1/24、Apple lazy AVX-512/
+  Rosetta、ARM stable OS queries 与未知 feature/enum 均有边界覆盖；
+- 当前没有 SVE/RVV 真机，故本轮不签 scalable-vector timing 或新算法结论；既有编译/正确性资格不被
+  夸大为本轮真机性能。macOS static SIMD consumer 的重复 `libhyle_platform.a` warning 来自静态 archive
+  正确链接顺序，consumer 成功且无依赖环/运行成本，裁决为 `ACCEPTED/NON_BLOCKING`。
+
+七项 aggregate gate（scope、architecture、correctness、delivery、usability/docs、red-team、engineering
+performance）均为 `PASS`，无 medium-or-higher 未决 finding。`CANDIDATE -> VERIFIED` 前 registry
+snapshot 位于
+`C:\public\project-hyle\_validation\platform-v4-target-boundary\module-status-before-verified.json`，
+SHA-256 `AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。

@@ -72,3 +72,23 @@ product commit/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
 selector 使用各自的完整 requirement class。公开 Container API、kernel body 与旧 P1 workload 没有 diff。
 前态 registry snapshot SHA-256 为
 `1A7715C50BC342F5DA90469E3C92A3ACA862AAD91EB7E3FF030259886386AF6F`；三交付和跨平台尚待验证。
+
+## Candidate verification（`VERIFIED`）
+
+产品身份仍为 `d015b0de1cf6d5899da8336fef94104974bcd90e` / tree
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`，最终 validation replay 为
+`9070a3cdeefdff437451bf5af0003fcc3fd5318c`。Windows affected closure `11/11`；WSL selected Release
+`45/45` 且 affected ASan/UBSan 各 `5/5`；macOS arm64 selected Release `45/45`。Container source、
+relocated shared、relocated static 三平台九种组合全部 `1/1`，安装后 closure 明确为
+`core,container_intrusive,error,mem_reclaim,platform,mem,container`，没有 SIMD 产品依赖。
+
+synthetic missing-one tests 对 direct-Highway target group 的每项 requirement 逐一降级，并反证 XXH3
+普通 AVX2 TU 不继承 Highway 的 BMI1/LZCNT group。selector 每进程/函数族只初始化一次，之后不增加
+per-element probe、allocation、lock、syscall 或 dispatch layer；公开类型/layout/kernel body、node-table
+与旧 P1 workload 均无 diff，所以 P0 structural 为 `PASS`，不重签算法点值。
+
+红队扫描未发现旧 Platform target API、SIMD target 泄漏、公开 feature facade 或苹果/橘子式共用
+“AVX2” matcher。三种实际 TU 各自拥有私有 requirement，恰好对应编译 flags；公开 API 和 guide 无需
+新增 benchmark-shaped 入口。七项 aggregate gate全部 `PASS`，无未决 medium-or-higher finding。
+`CANDIDATE -> VERIFIED` 前态 snapshot SHA-256 为
+`AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。
