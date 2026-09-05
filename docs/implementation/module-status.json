@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -605,7 +605,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v7 SCOPED：cache-class snapshot 的事实/unknown/order、三平台来源、P0 成本和有限验证矩阵已冻结；尚未授权实现。"
+      "summary": "platform v7 AUDITED：异构 cache-class 缺口已追到三平台事实源并冻结为 P7-CPU-01/T/B/D/R 有限 FIX；现在允许实现。"
     },
     {
       "module": "platform_thread",
@@ -678,7 +678,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -701,7 +701,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v4 SCOPED：duplicate、opened metadata 与独立 random-access owner 的跨平台语义、P0 成本和有限验证矩阵已冻结。"
+      "summary": "platform_fs v4 AUDITED：owner duplicate/info/random-access 三个缺口与跨平台陷阱已冻结为 P7-FS-01..03/T/B/D/R 有限 FIX。"
     },
     {
       "module": "mem_reclaim",

@@ -30,7 +30,7 @@
 
 | family | natural owner / shape | disposition |
 |---|---|---|
-| heterogeneous cache class facts | base Platform 的 allocation-free buffer-fill snapshot | `MUST`；保留现有全局 conservative convenience |
+| heterogeneous cache class facts | base Platform 的 caller-buffered snapshot | `MUST`；保留现有全局 coarse convenience |
 | owner duplication | `FileHandle::duplicate()` | `MUST`；新 owner，共享 native open-file cursor/lock state 的 OS 语义须显式说明 |
 | opened-object metadata | `FileHandle::info()` | `MUST`；查询打开对象，不重新解析 path |
 | synchronous explicit-offset file | 独立 move-only random-access owner + exact/all helpers | `MUST`；禁止 append，接口不暴露 cursor |
@@ -132,3 +132,61 @@ implementation/peer/build/doc 红队并冻结 FIX 后进入 `AUDITED`。
 
 本卡已冻结产品边界。下一步只允许只读实现/peer/consumer 审计并形成上述有限 FIX 的具体处置；在
 `AUDITED` 前仍不得修改产品源码。
+
+## Audit 与冻结 FIX ledger（`AUDITED`）
+
+### Public-surface / consumer trace
+
+- `cpu.h -> cpu.cc`：`CacheInfo/cache_info()` 只有一份 cached value；Apple 官方合同证明它等价于最低性能
+  class。`CpuInfo` 已有 rank/kind 与 cache-domain identity，却没有 class cache capacity/sharing facts；
+  SIMD 只读取 feature facts，新增 snapshot 不改变 target authority；
+- Windows 已在同一 baseline 中正确解析 variable-size `RelationAll` 与 CPU Sets；本轮只从
+  `RelationCache` 提取 size/type/line/share mask，并与 process-available CPU/rank 相交；Linux 从既有
+  `cpu_capacity`、topology 路径旁的 stable cache sysfs 读取；macOS 直接使用官方 `hw.nperflevels` 与
+  `hw.perflevelN.*`，不伪造 logical-id affinity mapping；
+- `fs.h -> fs.cc`：`FileHandle` 已是 move-only one-word owner，所有控制都落在 raw helper；duplicate/info
+  可沿同一 seam 添加而不触碰旧 read/write。path `stat` 已有完整 `FileInfo` 转换逻辑，可与 handle query
+  共享但不能二次解析 path；
+- Folly 当前 `File::dup/dupCloseOnExec` 和 `pread/pwrite` 证明 owner/offset family；其 free-function shape
+  不要求 HYLE 复制，因为 HYLE 的 structured Error 与 RAII owner 更适合 member API。Rust Windows
+  `FileExt` 与 Microsoft 原生合同证明 synchronous offset call 会影响 native file pointer，支持独立 type；
+- llama.cpp 当前 model loader 以 opened fd 做 `fstat`，并有分片/offset 读取；ggml 不提供更低层的
+  portable owner。新增能力服务普通文件消费者和推理，不把某条 benchmark 变成 API；
+- Mem `FileMapping` 消费 generic `FileHandle`；它无需改动。需要从 random access 转 mapping 的调用者应在
+ 设计时选择 owner，不增加双向转换；Sched/IO 也不需要新 public 类型。
+
+### Capability / gap ledger
+
+| ID | requirement | baseline | frozen disposition |
+|---|---|---|---|
+| `P7-CPU-01` | 不能丢失异构 class cache 容量与共享宽度 | `MISSING` | `FIX`：新增 snapshot；unknown 为 0，不改 target dispatch |
+| `P7-FS-01` | 保留同一打开对象的第二个 owner | `MISSING` | `FIX`：native duplicate，non-inheritable；明确 shared open-file state |
+| `P7-FS-02` | metadata 查询绑定 opened identity | `MISSING` | `FIX`：handle `info()`，不回退 path；symlink bit 为 false |
+| `P7-FS-03` | caller-synchronized blocking explicit-offset transfer | `MISSING` | `FIX`：独立 `RandomAccessFile`；无 seek、无常态 metadata |
+| `P7-T01` | 正确性与跨平台 failure contract | `PARTIAL` | `FIX`：新增 unit/integration tests 与 M4 双 class 真实断言 |
+| `P7-B01` | factor/header/source/static/shared delivery | `PARTIAL` | `FIX`：exact roots、sample 与三交付回放 |
+| `P7-D01` | architecture/user/current capability/performance 真相 | `STALE` | `FIX`：选择表、陷阱、owner/复杂度/NOT_COMPARABLE 同步 |
+| `P7-R01` | frozen direct consumers 不被非法修改 | `UNPROVEN` | `FIX`：Mem/Sched/IO build-only replay |
+| filesystem space/watch/direct/vectored/async/mapping | 相邻或标准能力 | `ROUTED` | `KEEP`：分别 std、IO、Mem；不进入本轮 |
+| associativity、macOS per-id class mapping | 不稳定/不可得事实 | `UNAVAILABLE` | `KEEP`：返回 unknown 或不建字段，不做推断 |
+
+### 实现约束与红队预判
+
+- cache profile key 是 rank/kind + capacities + line/share widths；同 key 聚合 count，不同 key 不合并。
+  Windows/Linux common <=256 CPU 使用 stack scratch，较大 process view 允许一次可失败 heap；排序
+  O(P log P)，OS cache enumeration O(P*C) 或 O(relation bytes)，不在 warm fact query 中发生；
+- Apple profile index 由官方定义决定 rank，`hw.nperflevels` 缺失时诚实回退一条 unknown/coarse record；
+- POSIX duplicate 首选 `F_DUPFD_CLOEXEC`，fallback 必须在返回前设置 close-on-exec；Windows
+  `DuplicateHandle(..., FALSE, DUPLICATE_SAME_ACCESS)`。公共承诺是同一 opened object 与 shared cursor；
+  duplicate aliases 不能作为独立 lock contender，具体 lock association 保留 native 语义；
+- handle info 在 Windows 区分 disk/directory/character/pipe，在 POSIX 映射完整 `st_mode`；regular size 与
+  signed timestamp 做 checked conversion。rename/unlink 后仍查询 original opened object；
+- `RandomAccessFile` 内部只含一个 `FileHandle`。POSIX `pread/pwrite`；Windows 同步 `ReadFile/WriteFile`
+  传 offset `OVERLAPPED`，EOF 的 `ERROR_HANDLE_EOF` 映射 0。offset 超过 signed native 64-bit 为
+  `OutOfRange`；exact/all 的 offset addition checked；append open 在 syscall 前拒绝；
+- basic at-transfer 保留 short success，exact EOF 为 `DataLoss`，zero-progress write 为 `DataLoss`；对象及
+  duplicate aliases caller-synchronized。若测试要求并发，必须路由 IO 或独立重新打开 owner，不能添加
+  mutex/event/cache 来迎合测试。
+
+只读审计没有发现需要新增 factor、内部依赖、第三方包、常态字段或额外 public family。有限 FIX 集冻结为
+上表八项；现在允许实现，任何公共合同变化必须退回本节重新裁决。
