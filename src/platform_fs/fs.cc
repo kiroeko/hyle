@@ -1377,7 +1377,8 @@ Result<FileInfo> stat(const char* path) noexcept {
   }
   struct ::stat s;
   FileInfo r;
-  if (::stat(path, &s) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::stat(path, &s); }) != 0) {
     return std::unexpected(posix_fs_status("stat", errno));
   }
   r.type = file_type_from_mode(s.st_mode);
@@ -1394,7 +1395,11 @@ Result<FileInfo> stat(const char* path) noexcept {
   // stat() follows symlinks; an extra lstat tells us if the path ITSELF is a link
   // (a symlink to a directory therefore has type=kDirectory + is_symlink=true).
   struct ::stat ls;
-  if (::lstat(path, &ls) == 0 && S_ISLNK(ls.st_mode)) r.is_symlink = true;
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::lstat(path, &ls); }) == 0 &&
+      S_ISLNK(ls.st_mode)) {
+    r.is_symlink = true;
+  }
   return r;
 }
 
@@ -1452,10 +1457,13 @@ Status copy_file(const char* from, const char* to) noexcept {
   // O_NONBLOCK prevents a path concurrently replaced by a FIFO/device from
   // hanging this synchronous regular-file API before fstat can reject it. It
   // has no effect on regular-file reads.
-  int in = ::open(from, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
+  int in = detail::retry_eintr_negative([&]() noexcept {
+    return ::open(from, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
+  });
   if (in < 0) return posix_fs_status("open copy source", errno);
   struct ::stat in_stat;
-  if (::fstat(in, &in_stat) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::fstat(in, &in_stat); }) != 0) {
     const int code = errno;
     ::close(in);
     return posix_fs_status("fstat copy source", code);
@@ -1469,15 +1477,18 @@ Status copy_file(const char* from, const char* to) noexcept {
   // Open without O_TRUNC, then compare the opened descriptors. Checking paths
   // before open has a TOCTOU race and misses hard-link aliases; truncating first
   // would destroy the source before we discover that both fds name one inode.
-  int out = ::open(to, O_WRONLY | O_CREAT | O_CLOEXEC | O_NONBLOCK,
-                   in_stat.st_mode & 0777);
+  int out = detail::retry_eintr_negative([&]() noexcept {
+    return ::open(to, O_WRONLY | O_CREAT | O_CLOEXEC | O_NONBLOCK,
+                  in_stat.st_mode & 0777);
+  });
   if (out < 0) {
     const int code = errno;
     ::close(in);
     return posix_fs_status("open copy destination", code);
   }
   struct ::stat out_stat;
-  if (::fstat(out, &out_stat) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::fstat(out, &out_stat); }) != 0) {
     const int code = errno;
     ::close(in);
     ::close(out);
@@ -1495,7 +1506,8 @@ Status copy_file(const char* from, const char* to) noexcept {
     status.Update(close_raw(out));
     return status;
   }
-  if (::ftruncate(out, 0) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::ftruncate(out, 0); }) != 0) {
     const int code = errno;
     ::close(in);
     ::close(out);
@@ -1687,20 +1699,20 @@ Result<std::intptr_t> duplicate_raw(std::intptr_t raw) noexcept {
   const int source = static_cast<int>(raw);
   int duplicate = -1;
 #ifdef F_DUPFD_CLOEXEC
-  do {
-    duplicate = ::fcntl(source, F_DUPFD_CLOEXEC, 0);
-  } while (duplicate < 0 && errno == EINTR);
+  duplicate = detail::retry_eintr_negative(
+      [&]() noexcept { return ::fcntl(source, F_DUPFD_CLOEXEC, 0); });
   if (duplicate < 0) {
     return std::unexpected(posix_fs_status("fcntl(F_DUPFD_CLOEXEC)", errno));
   }
 #else
-  do {
-    duplicate = ::dup(source);
-  } while (duplicate < 0 && errno == EINTR);
+  duplicate = detail::retry_eintr_negative(
+      [&]() noexcept { return ::dup(source); });
   if (duplicate < 0) {
     return std::unexpected(posix_fs_status("dup", errno));
   }
-  if (::fcntl(duplicate, F_SETFD, FD_CLOEXEC) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::fcntl(duplicate, F_SETFD, FD_CLOEXEC);
+      }) != 0) {
     const int code = errno;
     (void)::close(duplicate);
     return std::unexpected(posix_fs_status("fcntl(FD_CLOEXEC)", code));
@@ -1714,7 +1726,9 @@ Result<FileInfo> info_raw(std::intptr_t raw) noexcept {
         Status::FailedPrecondition("file info: handle is closed"));
   }
   struct ::stat native {};
-  if (::fstat(static_cast<int>(raw), &native) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::fstat(static_cast<int>(raw), &native);
+      }) != 0) {
     return std::unexpected(posix_fs_status("fstat(file info)", errno));
   }
   FileInfo out;
@@ -1833,8 +1847,9 @@ Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
         Status::OutOfRange("file seek: negative absolute position"));
   }
   static_assert(sizeof(off_t) >= sizeof(std::int64_t));
-  const off_t position = ::lseek(static_cast<int>(raw),
-                                 static_cast<off_t>(offset), whence);
+  const off_t position = detail::retry_eintr_negative([&]() noexcept {
+    return ::lseek(static_cast<int>(raw), static_cast<off_t>(offset), whence);
+  });
   if (position < 0) {
     return std::unexpected(posix_fs_status("lseek", errno));
   }
@@ -1847,10 +1862,13 @@ Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
   int rc = -1;
 #if HYLE_OS_MACOS
   (void)data_only;
-  rc = ::fsync(static_cast<int>(raw));
+  rc = detail::retry_eintr_negative(
+      [&]() noexcept { return ::fsync(static_cast<int>(raw)); });
 #else
-  rc = data_only ? ::fdatasync(static_cast<int>(raw))
-                 : ::fsync(static_cast<int>(raw));
+  rc = detail::retry_eintr_negative([&]() noexcept {
+    return data_only ? ::fdatasync(static_cast<int>(raw))
+                     : ::fsync(static_cast<int>(raw));
+  });
 #endif
   if (rc != 0) return posix_fs_status("file sync", errno);
   return Status::Ok();
@@ -1861,7 +1879,9 @@ Result<std::uint64_t> size_raw(std::intptr_t raw) noexcept {
         Status::FailedPrecondition("file size: handle is closed"));
   }
   struct stat info {};
-  if (::fstat(static_cast<int>(raw), &info) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::fstat(static_cast<int>(raw), &info);
+      }) != 0) {
     return std::unexpected(posix_fs_status("fstat(file size)", errno));
   }
   if (!S_ISREG(info.st_mode)) {
@@ -1883,7 +1903,9 @@ Status resize_raw(std::intptr_t raw, std::uint64_t size) noexcept {
     return Status::OutOfRange("file resize exceeds native offset range");
   }
   static_assert(sizeof(off_t) >= sizeof(std::int64_t));
-  if (::ftruncate(static_cast<int>(raw), static_cast<off_t>(size)) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::ftruncate(static_cast<int>(raw), static_cast<off_t>(size));
+      }) != 0) {
     return posix_fs_status("ftruncate(file resize)", errno);
   }
   return Status::Ok();
@@ -1909,20 +1931,27 @@ Status preallocate_raw(std::intptr_t raw,
   store.fst_posmode = F_PEOFPOSMODE;
   store.fst_offset = 0;
   store.fst_length = length;
-  if (::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store);
+      }) != 0) {
     store.fst_flags = F_ALLOCATEALL;
-    if (::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store) != 0) {
+    if (detail::retry_eintr_negative([&]() noexcept {
+          return ::fcntl(static_cast<int>(raw), F_PREALLOCATE, &store);
+        }) != 0) {
       return posix_fs_status("fcntl(F_PREALLOCATE)", errno);
     }
   }
-  if (::ftruncate(static_cast<int>(raw),
-                  static_cast<off_t>(minimum_size)) != 0) {
+  if (detail::retry_eintr_negative([&]() noexcept {
+        return ::ftruncate(static_cast<int>(raw),
+                           static_cast<off_t>(minimum_size));
+      }) != 0) {
     return posix_fs_status("ftruncate(file preallocate)", errno);
   }
 #else
   const off_t begin = static_cast<off_t>(*current);
-  const int allocated =
-      ::posix_fallocate(static_cast<int>(raw), begin, length);
+  const int allocated = detail::retry_eintr_error_code([&]() noexcept {
+    return ::posix_fallocate(static_cast<int>(raw), begin, length);
+  });
   if (allocated != 0) {
     return posix_fs_status("posix_fallocate", allocated);
   }
@@ -1985,7 +2014,9 @@ Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
   if (flags & kOpenTruncate) f |= O_TRUNC;
   if (flags & kOpenAppend) f |= O_APPEND;
   f |= O_CLOEXEC;
-  int fd = (flags & kOpenCreate) ? ::open(path, f, 0644) : ::open(path, f);
+  int fd = detail::retry_eintr_negative([&]() noexcept {
+    return (flags & kOpenCreate) ? ::open(path, f, 0644) : ::open(path, f);
+  });
   if (fd < 0) return std::unexpected(posix_fs_status("open", errno));
   return FileHandle{static_cast<std::intptr_t>(fd)};
 }
@@ -1996,7 +2027,8 @@ Result<std::uint32_t> get_permissions(const char* path) noexcept {
         "get permissions: path is null"));
   }
   struct ::stat s;
-  if (::stat(path, &s) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::stat(path, &s); }) != 0) {
     return std::unexpected(posix_fs_status("stat permissions", errno));
   }
   return static_cast<std::uint32_t>(s.st_mode & 0777);
@@ -2022,7 +2054,8 @@ Status set_readonly(const char* path, bool readonly) noexcept {
     return Status::InvalidArgument("set readonly: path is null");
   }
   struct ::stat s;
-  if (::stat(path, &s) != 0) {
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::stat(path, &s); }) != 0) {
     return posix_fs_status("stat readonly", errno);
   }
   mode_t m = readonly ? (s.st_mode & ~static_cast<mode_t>(0222))
@@ -2055,7 +2088,10 @@ Result<bool> is_symlink(const char* path) noexcept {
     return std::unexpected(Status::InvalidArgument("is symlink: path is null"));
   }
   struct ::stat ls;
-  if (::lstat(path, &ls) == 0) return S_ISLNK(ls.st_mode);
+  if (detail::retry_eintr_negative(
+          [&]() noexcept { return ::lstat(path, &ls); }) == 0) {
+    return S_ISLNK(ls.st_mode);
+  }
   if (errno == ENOENT || errno == ENOTDIR) return false;
   return std::unexpected(posix_fs_status("lstat symlink", errno));
 }
@@ -2172,14 +2208,13 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   // macOS has no mkostemp. Close the inheritance window as soon as possible,
   // and remove the newly-created file if descriptor setup fails.
   int descriptor_flags;
-  do {
-    descriptor_flags = ::fcntl(fd, F_GETFD);
-  } while (descriptor_flags < 0 && errno == EINTR);
+  descriptor_flags = detail::retry_eintr_negative(
+      [&]() noexcept { return ::fcntl(fd, F_GETFD); });
   int close_on_exec_result = -1;
   if (descriptor_flags >= 0) {
-    do {
-      close_on_exec_result = ::fcntl(fd, F_SETFD, descriptor_flags | FD_CLOEXEC);
-    } while (close_on_exec_result < 0 && errno == EINTR);
+    close_on_exec_result = detail::retry_eintr_negative([&]() noexcept {
+      return ::fcntl(fd, F_SETFD, descriptor_flags | FD_CLOEXEC);
+    });
   }
   if (descriptor_flags < 0 || close_on_exec_result < 0) {
     const int code = errno;
@@ -2201,15 +2236,16 @@ Result<bool> directory_iterate(const char* path,
     return std::unexpected(
         Status::InvalidArgument("directory iterate: invalid argument"));
   }
-  DIR* d = ::opendir(path);
+  DIR* d = detail::retry_eintr_null(
+      [&]() noexcept { return ::opendir(path); });
   if (d == nullptr) {
     return std::unexpected(posix_fs_status("opendir", errno));
   }
   bool stopped = false;
   Status status = Status::Ok();
   for (;;) {
-    errno = 0;
-    struct dirent* de = ::readdir(d);
+    struct dirent* de = detail::retry_eintr_null(
+        [&]() noexcept { return ::readdir(d); });
     if (de == nullptr) {
       if (errno != 0) status = posix_fs_status("readdir", errno);
       break;
@@ -2225,7 +2261,8 @@ Result<bool> directory_iterate(const char* path,
       char child[4096];
       struct ::stat st;
       if (join_path(child, sizeof(child), path, name) &&
-          ::lstat(child, &st) == 0) {
+          detail::retry_eintr_negative(
+              [&]() noexcept { return ::lstat(child, &st); }) == 0) {
         type = file_type_from_mode(st.st_mode);
       }
     }
@@ -2733,7 +2770,8 @@ Status rm_open_frame(const char* path, std::size_t path_size,
   frame->first_pending = true;
   return Status::Ok();
 #else
-  DIR* iterator = ::opendir(path);
+  DIR* iterator = detail::retry_eintr_null(
+      [&]() noexcept { return ::opendir(path); });
   if (iterator == nullptr) return posix_fs_status("opendir recursive remove", errno);
   frame->iterator = iterator;
   frame->path_size = path_size;
@@ -2797,11 +2835,10 @@ Status rm_next_entry(RmFrame* frame, char* name, std::size_t name_capacity,
   }
 #else
   for (;;) {
-    errno = 0;
-    struct dirent* entry = ::readdir(frame->iterator);
+    struct dirent* entry = detail::retry_eintr_null(
+        [&]() noexcept { return ::readdir(frame->iterator); });
     if (entry == nullptr) {
       const int code = errno;
-      if (code == EINTR) continue;
       return code == 0 ? Status::Ok()
                        : posix_fs_status("readdir recursive remove", code);
     }
@@ -2820,8 +2857,10 @@ Status rm_next_entry(RmFrame* frame, char* name, std::size_t name_capacity,
     *type = file_type_from_dirent(entry->d_type);
     if (*type == FileType::kUnknown) {
       struct ::stat metadata;
-      if (::fstatat(::dirfd(frame->iterator), entry_name, &metadata,
-                    AT_SYMLINK_NOFOLLOW) != 0) {
+      if (detail::retry_eintr_negative([&]() noexcept {
+            return ::fstatat(::dirfd(frame->iterator), entry_name, &metadata,
+                             AT_SYMLINK_NOFOLLOW);
+          }) != 0) {
         return posix_fs_status("fstatat recursive remove entry", errno);
       }
       *type = file_type_from_mode(metadata.st_mode);

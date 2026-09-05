@@ -44,7 +44,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 大映射只在 first fault 时锁页 | Mem `ResidencyMode::kOnFault` | 悄悄把 unsupported 当 eager | Linux-only；其它平台返回 `Unimplemented` |
 | 查询 cwd/temp/home | `fs_convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
-| 推理装载前估算 host budget | `host_memory_info()` | 只看物理总量 | 返回 fallible 动态快照；`effective_available_bytes` 保守合并已知约束 |
+| 推理装载前估算 host budget | `host_memory_info()` | 只看物理总量 | 返回 fallible 动态快照；Linux 合并 namespace 内全部祖先 hard cgroup limit；`effective_available_bytes` 保守合并已知约束 |
 | 密钥、nonce 或随机种子 | `secure_random(span<byte>)` | 统计 RNG / 时间戳 | 使用 OS entropy；完整填满或返回错误；空 span 成功 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
 | 为整个应用选择启动期节能/性能倾向 | workers 创建前 `set_process_priority` | realtime 或拿 thread priority 冒充 process policy | 显式五档；提升可能失败；Linux 靠后续线程继承；normal 不是任意 native snapshot restore |
@@ -53,9 +53,11 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `get` 会 pin；symbol 借用不活过 owner；显式 close 可观察错误 |
 | 自定义 kernel 的运行时 feature gate | `cpu_features().has_all(requirements)` | 把 Platform facts 当“最佳 ISA”，或只检查一个营销级 feature | kernel owner 声明其生成 TU 的完整 requirements；Platform 不替它选择 target |
-| 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
+| 决定 work 可放在哪些 CPU/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏；只表达 placement |
+| 选择 CPU-bound 默认 worker 上限 | `process_cpu_capacity()` + `parallelism_ceiling()` | 把 placement 数直接当获准 CPU 带宽 | 独立保留 placement 和可选 hard quota；weight/share 不伪造成上限；最终策略仍由调用方决定 |
 | 按 package/core/SMT/NUMA/cache domain 放置 worker | `available_cpu_topology()` | 假定 CPU id 连续或 cache 独占 | 返回当前进程可用 CPU 的动态快照；未知 domain 使用 sentinel |
 | 按异构 CPU class 选择 tile/working set | `available_cpu_cache_classes()` | 在 Apple 上把 `cache_info()` 当 P-core cache | 动态 class snapshot；强 class 排前；同 rank 的不同 cache profile 不合并；未知为 0 |
+| 诊断/调优 OS 公布的逐 CPU 频率 | owning `available_cpu_frequencies()` 或 buffer-fill core | 用频率猜 P/E、可运行 ISA 或未来吞吐 | Hz；hardware/policy/current 分开；0=unknown；current 只是瞬时报告；不按型号或计时猜测 |
 | 保存并恢复调用线程 affinity | `this_thread::affinity()` + `set_affinity()` | 猜测原 mask | buffer-fill/owning 两层；macOS 无硬 pin 时明确不支持 |
 | 查询线程可用的 SVE/SME/RVV width 或 AMX 状态 | `this_thread::isa_state()` | 只看系统级 feature bit | system capability 与 per-thread enabled state 分开 |
 | 只需保守的整机 cache 容量提示 | `cache_info()` | 用它做异构 class tuning | cached/O(1)，未知为 0；Apple 返回最低性能 class 的全局值 |
@@ -414,13 +416,29 @@ for (const CpuCacheClassInfo& cpu_class : classes) {
 `hardware_concurrency()` 是 OS-online 的粗略诊断值，不遵守当前 affinity/cgroup，因此不要拿它决定
 worker 数。
 
-`available_cpu_count()` / `available_cpu_ids(...)` 才是进程视图：前者是创建 worker、
-选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
+`available_cpu_count()` / `available_cpu_ids(...)` 是当前 **placement** 视图：前者是 count-only
+便利形状；后者返回完整可用数，最多写 `cap` 个可直接交给
 `ThreadOpts::affinity` / `CpuAffinity` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
 affinity/cgroup/cpuset 和 Windows CPU Sets 可在进程运行时改变；Linux 具体读取调用线程的
 mask，新线程会继承它。常见 Windows / Linux
 拓扑不分配；时间是读取 OS CPU 记录必需的 O(N)，用于 runtime 初始化/重配，不应塞进每个
 task 的热路径。
+
+placement 数不等于进程获准的 CPU 时间。容器可能允许在 32 个 logical CPU 上迁移，却通过 cgroup
+只给 1.5 CPU 的持续带宽。CPU-bound runtime 的默认上限应读取两者，但不能把这个上限误当硬绑核策略：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto capacity, process_cpu_capacity());
+const std::size_t default_workers = capacity.parallelism_ceiling();
+// capacity.placement_logical_cpus: work 能放置到多少 CPU；
+// capacity.hard_quota: OS 有可信 hard bandwidth limit 时才有值。
+```
+
+Linux 会解析当前 cgroup namespace 的 mountinfo，折叠 leaf 到可见 mount root 的全部 v1/v2 hard
+quota。Windows 的公开 API 只能查询 immediate Job，而嵌套 Job 的 rate 相对父级；没有祖先 Job handles
+就无法证明进程的有效 hard quota，所以 Windows 当前保持 empty。shares/weight 是竞争权重，不是 hard
+capacity，也保持 empty。`parallelism_ceiling()` 只做保守的
+`min(placement, ceil(quota))`；IO overlap、SMT、能效或 latency policy 仍由 Sched/推理引擎决定。
 
 需要优先使用强核时，不要假设“大编号/小编号就是 P-core”。`available_cpu_info()` 返回当前
 进程可用 CPU 的 `id / performance_rank / kind`：rank 越大表示 OS 在本机报告的能力档越强，
@@ -457,10 +475,21 @@ logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核�
 worker policy。NUMA/cache-aware stealing 属于 sched 策略；platform 只提供可组合的 CPU 事实、排序、
 topology 与 affinity 机制。
 
+频率同样只是一组 OS facts。`available_cpu_frequencies()` 与当前 available id space 对齐，分别报告
+hardware maximum、当前 policy maximum 和 current observation；任一未知字段为 0。Windows 使用
+processor-power records，Linux 使用 CPUFreq sysfs，macOS 只读取存在的公开全局 sysctl（Apple
+Silicon 通常可能全部为 0）。它不参与 `performance_rank`、ISA gate 或默认 worker 数：DVFS/turbo 会
+让 current 值立刻变化，频率也不能代表不同微架构的每时钟工作量。
+
 `numa_current_node()` 与 `numa_node_of_cpu(cpu)` 返回 `Result<unsigned>`。查询失败、无效 CPU、
 或 OS 不提供可信映射都不是节点 0；必须处理错误后再决定是否显式退化到 `kNumaAny`。如果 worker
 已 required-pin 到某 CPU，先用 `numa_node_of_cpu` 选 arena node；没有硬 affinity 时 current-node
 只是瞬时事实，不应缓存成线程永久归属。
+
+`numa_nodes()` 是首次查询时固定的 process-lifetime placement 视图：Windows 仅从
+当前 process-available CPU Sets/affinity 归纳 node；Linux 依次使用 mempolicy、
+`/proc/self/status` 和 cgroup cpuset。它不是全机 inventory。若嵌入宿主在首次调用后
+动态改变进程 CPU/cpuset，需重建该 native runtime/process，不能把旧 span 当成新快照。
 
 NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。Linux
 bind 是严格节点集合；interleave/selected interleave 的 `Applied` 只说明 OS 接受 policy，
@@ -505,7 +534,11 @@ region 的 `decommit` 会以 `FailedPrecondition` 拒绝，防止 recommit 静�
 ## Host memory、环境与安全随机数
 
 `host_memory_info()` 返回一次动态、可失败的快照。物理总量/可用量在成功时总是存在；commit、
-swap、cgroup/job/process limit 在 OS 无法诚实报告时是 `std::nullopt`，合法的 0 不会被当作未知。
+swap、cgroup/process limit 在 OS 无法诚实报告时是 `std::nullopt`，合法的 0 不会被当作未知。
+Linux 不假定 `/sys/fs/cgroup` 或只看 leaf：它按 `/proc/self/mountinfo` 解析 cgroup namespace，沿可见
+祖先合并最严格的 `limit` 与 `limit-current`。这会正确考虑父组中其它进程占用的预算。
+Windows 的公开查询只能看到 immediate Job，不能证明嵌套父 Job 的更紧内存限制或父级其它进程占用，
+所以当前 `process_limit_bytes/process_available_bytes` 保持 empty；不要从 empty 推断“没有 Job 限制”。
 装载模型或建立 KV cache 前，通常以 `effective_available_bytes()` 作为保守上限，再留出应用自己的
 headroom：
 
@@ -534,6 +567,11 @@ const std::uint64_t planning_budget = host.effective_available_bytes();
 convenience 的分配是调用形状本身的显式选择，完整原生诊断只在失败路构造。
 `exists/is_directory/is_symlink` 把不存在表达为成功的 false，但不会吞掉权限或
 I/O 错误。platform 的公开可恢复失败全部直接携带共享 error，不存在另一套 TLS last-error。
+
+POSIX 信号可能让系统调用返回 `EINTR`。Platform-fs 会重启尚未产生可观察副作用、且可安全重启的
+查询/control；不会盲目重试 `close/closedir` 或可能已经完成 rename/link/unlink/symlink 的调用。
+因此收到后一类错误时，调用方必须按业务协议重新观察资源状态，不能假定操作一定未发生。短
+read/write 仍遵守已有短传输合同，由 exact/all helper 继续剩余部分。
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker
 视图不得活过 owner；`release()` 明确把回收责任转给调用方。文件 `duplicate()` 只复制 native

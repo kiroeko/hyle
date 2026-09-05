@@ -26,23 +26,26 @@
 #  include <sys/sysctl.h>
 #endif
 
-using hyle::platform::available_cpu_ids;
-using hyle::platform::available_cpu_count;
 using hyle::platform::available_cpu_cache_classes;
-using hyle::platform::cache_line_size;
-using hyle::platform::cache_info;
+using hyle::platform::available_cpu_count;
+using hyle::platform::available_cpu_ids;
 using hyle::platform::available_cpu_topology;
+using hyle::platform::cache_info;
+using hyle::platform::cache_line_size;
 using hyle::platform::cpu_feature_name;
 using hyle::platform::cpu_features;
+using hyle::platform::CpuCacheClassInfo;
 using hyle::platform::CpuFeature;
 using hyle::platform::CpuFeatureSet;
 using hyle::platform::CpuInfo;
-using hyle::platform::CpuCacheClassInfo;
 using hyle::platform::CpuKind;
 using hyle::platform::CpuOrder;
+using hyle::platform::CpuQuota;
+using hyle::platform::ProcessCpuCapacity;
 
 // cpu_features() is a cached Meyers singleton: repeated calls return the SAME
-// object (same address, identical bits), never re-probe into a different answer.
+// object (same address, identical bits), never re-probe into a different
+// answer.
 TEST(Cpu, FeaturesCachedIdempotent) {
   const CpuFeatureSet& a = cpu_features();
   const CpuFeatureSet& b = cpu_features();
@@ -92,6 +95,12 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
   std::size_t logical = 0;
   std::size_t physical = 0;
   bool all_physical_counts_known = true;
+  hyle::platform::CacheInfo conservative{};
+  unsigned maximum_line = 0;
+  const auto merge_min = [](std::uint64_t& output,
+                            std::uint64_t value) noexcept {
+    if (value != 0 && (output == 0 || value < output)) output = value;
+  };
   unsigned previous_rank = (std::numeric_limits<unsigned>::max)();
   for (const auto& cpu_class : classes) {
     EXPECT_GE(cpu_class.logical_cpus, 1u);
@@ -102,6 +111,11 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
     physical += cpu_class.physical_cores;
     all_physical_counts_known =
         all_physical_counts_known && cpu_class.physical_cores != 0;
+    merge_min(conservative.l1d, cpu_class.cache.l1d);
+    merge_min(conservative.l1i, cpu_class.cache.l1i);
+    merge_min(conservative.l2, cpu_class.cache.l2);
+    merge_min(conservative.l3, cpu_class.cache.l3);
+    maximum_line = (std::max)(maximum_line, cpu_class.cache_line_size);
     if (cpu_class.cache_line_size != 0) {
       EXPECT_GE(cpu_class.cache_line_size, 16u);
       EXPECT_EQ(cpu_class.cache_line_size & (cpu_class.cache_line_size - 1u),
@@ -121,6 +135,24 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
   if (all_physical_counts_known && topology->physical_cores != 0) {
     EXPECT_EQ(physical, topology->physical_cores);
   }
+  const auto& coarse = cache_info();
+  if (conservative.l1d != 0) {
+    EXPECT_NE(coarse.l1d, 0u);
+    EXPECT_LE(coarse.l1d, conservative.l1d);
+  }
+  if (conservative.l1i != 0) {
+    EXPECT_NE(coarse.l1i, 0u);
+    EXPECT_LE(coarse.l1i, conservative.l1i);
+  }
+  if (conservative.l2 != 0) {
+    EXPECT_NE(coarse.l2, 0u);
+    EXPECT_LE(coarse.l2, conservative.l2);
+  }
+  if (conservative.l3 != 0) {
+    EXPECT_NE(coarse.l3, 0u);
+    EXPECT_LE(coarse.l3, conservative.l3);
+  }
+  if (maximum_line != 0) { EXPECT_GE(cache_line_size(), maximum_line); }
 
 #if defined(__APPLE__)
   unsigned levels = 0;
@@ -192,6 +224,73 @@ TEST(Cpu, AvailableCpuIdsRespectBufferFillAndAreUnique) {
   EXPECT_EQ(std::adjacent_find(ids.begin(), ids.end()), ids.end());
 }
 
+TEST(Cpu, ProcessCapacitySeparatesPlacementFromHardQuota) {
+  auto placement = available_cpu_count();
+  auto capacity = hyle::platform::process_cpu_capacity();
+  ASSERT_TRUE(placement.has_value()) << placement.error().message();
+  ASSERT_TRUE(capacity.has_value()) << capacity.error().message();
+  EXPECT_EQ(capacity->placement_logical_cpus, *placement);
+  EXPECT_GE(capacity->parallelism_ceiling(), 1u);
+  EXPECT_LE(capacity->parallelism_ceiling(), *placement);
+#if defined(_WIN32)
+  // Public Windows APIs expose only the immediate Job rate. Nested effective
+  // quota cannot be proven without ancestor handles, so unknown stays absent.
+  EXPECT_FALSE(capacity->hard_quota.has_value());
+#endif
+
+  EXPECT_EQ((ProcessCpuCapacity{8, std::nullopt}.parallelism_ceiling()), 8u);
+  EXPECT_EQ(
+      (ProcessCpuCapacity{8, CpuQuota{150000, 100000}}.parallelism_ceiling()),
+      2u);
+  EXPECT_EQ(
+      (ProcessCpuCapacity{2, CpuQuota{800000, 100000}}.parallelism_ceiling()),
+      2u);
+}
+
+TEST(Cpu, LinuxQuotaParsersUseExactHardLimitSemantics) {
+  CpuQuota quota;
+  EXPECT_TRUE(
+      hyle::platform::detail::parse_linux_cpu_max("150000 100000\n", quota));
+  EXPECT_EQ(quota, (CpuQuota{150000, 100000}));
+  EXPECT_FALSE(
+      hyle::platform::detail::parse_linux_cpu_max("max 100000\n", quota));
+  EXPECT_FALSE(
+      hyle::platform::detail::parse_linux_cpu_max("0 100000\n", quota));
+  EXPECT_FALSE(
+      hyle::platform::detail::parse_linux_cpu_max("100000 0\n", quota));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_cpu_max("100000\n", quota));
+
+  EXPECT_TRUE(hyle::platform::detail::parse_linux_cpu_quota("250000\n",
+                                                            "100000\n", quota));
+  EXPECT_EQ(quota, (CpuQuota{250000, 100000}));
+  EXPECT_FALSE(
+      hyle::platform::detail::parse_linux_cpu_quota("-1\n", "100000\n", quota));
+  EXPECT_TRUE(hyle::platform::detail::cpu_quota_tighter(CpuQuota{1, 3},
+                                                        CpuQuota{2, 3}));
+  EXPECT_FALSE(hyle::platform::detail::cpu_quota_tighter(CpuQuota{4, 6},
+                                                         CpuQuota{2, 3}));
+}
+
+TEST(Cpu, FrequencySnapshotMatchesAvailableCpuIdSpace) {
+  auto count = hyle::platform::available_cpu_frequencies(nullptr, 0);
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  ASSERT_GE(*count, 1u);
+  std::vector<hyle::platform::CpuFrequencyInfo> frequencies(*count);
+  auto filled = hyle::platform::available_cpu_frequencies(frequencies.data(),
+                                                          frequencies.size());
+  ASSERT_TRUE(filled.has_value()) << filled.error().message();
+  ASSERT_EQ(*filled, frequencies.size());
+  std::vector<unsigned> ids(*count);
+  ASSERT_TRUE(available_cpu_ids(ids.data(), ids.size()).has_value());
+  constexpr std::uint64_t kSaneUpperBoundHz = 100000000000000ull;
+  for (std::size_t i = 0; i < frequencies.size(); ++i) {
+    EXPECT_EQ(frequencies[i].id, ids[i]);
+    EXPECT_LT(frequencies[i].hardware_max_hz, kSaneUpperBoundHz);
+    EXPECT_LT(frequencies[i].policy_max_hz, kSaneUpperBoundHz);
+    EXPECT_LT(frequencies[i].current_hz, kSaneUpperBoundHz);
+  }
+}
+
 TEST(Cpu, AvailableCpuInfoMatchesIdsAndClassifiesKnownRanks) {
   auto count = hyle::platform::available_cpu_info(nullptr, 0);
   ASSERT_TRUE(count.has_value()) << count.error().message();
@@ -205,7 +304,8 @@ TEST(Cpu, AvailableCpuInfoMatchesIdsAndClassifiesKnownRanks) {
   for (std::size_t i = 0; i < info.size(); ++i) EXPECT_EQ(info[i].id, ids[i]);
 
   unsigned max_rank = 0;
-  for (const auto& cpu : info) max_rank = std::max(max_rank, cpu.performance_rank);
+  for (const auto& cpu : info)
+    max_rank = std::max(max_rank, cpu.performance_rank);
   for (const auto& cpu : info) {
     if (cpu.performance_rank == 0) {
       EXPECT_EQ(cpu.kind, CpuKind::kUnknown);
@@ -234,12 +334,13 @@ TEST(Cpu, OrderedAvailableIdsPreferKnownRanksWithoutDroppingCpus) {
   ASSERT_TRUE(count.has_value()) << count.error().message();
   std::vector<CpuInfo> info(*count);
   ASSERT_TRUE(hyle::platform::available_cpu_info(info.data(), info.size()));
-  std::vector<unsigned> natural(*count), performance(*count), efficiency(*count);
+  std::vector<unsigned> natural(*count), performance(*count),
+      efficiency(*count);
   ASSERT_TRUE(available_cpu_ids(natural.data(), natural.size()));
-  ASSERT_TRUE(available_cpu_ids(CpuOrder::kPerformanceFirst,
-                                performance.data(), performance.size()));
-  ASSERT_TRUE(available_cpu_ids(CpuOrder::kEfficiencyFirst,
-                                efficiency.data(), efficiency.size()));
+  ASSERT_TRUE(available_cpu_ids(CpuOrder::kPerformanceFirst, performance.data(),
+                                performance.size()));
+  ASSERT_TRUE(available_cpu_ids(CpuOrder::kEfficiencyFirst, efficiency.data(),
+                                efficiency.size()));
 
   auto sorted_natural = natural;
   auto sorted_performance = performance;
@@ -251,8 +352,9 @@ TEST(Cpu, OrderedAvailableIdsPreferKnownRanksWithoutDroppingCpus) {
   EXPECT_EQ(sorted_efficiency, sorted_natural);
 
   auto rank_of = [&info](unsigned id) {
-    auto found = std::find_if(info.begin(), info.end(),
-                              [id](const CpuInfo& cpu) { return cpu.id == id; });
+    auto found =
+        std::find_if(info.begin(), info.end(),
+                     [id](const CpuInfo& cpu) { return cpu.id == id; });
     return found == info.end() ? 0u : found->performance_rank;
   };
   bool unknown_seen = false;
@@ -278,10 +380,9 @@ TEST(Cpu, OrderedAvailableIdsPreferKnownRanksWithoutDroppingCpus) {
     }
   }
 
-  const bool all_unknown = std::all_of(info.begin(), info.end(),
-                                       [](const CpuInfo& cpu) {
-                                         return cpu.performance_rank == 0;
-                                       });
+  const bool all_unknown =
+      std::all_of(info.begin(), info.end(),
+                  [](const CpuInfo& cpu) { return cpu.performance_rank == 0; });
   if (all_unknown) {
     EXPECT_EQ(performance, natural);
     EXPECT_EQ(efficiency, natural);
@@ -347,10 +448,10 @@ TEST(Cpu, FeatureSetAlgebraAndInvalidValues) {
   EXPECT_TRUE(features.has(CpuFeature::kX86Sse2));
   EXPECT_FALSE(features.has(CpuFeature::kX86Avx2));
   EXPECT_TRUE(features.has_all(CpuFeatureSet{CpuFeature::kX86Sse2}));
-  EXPECT_FALSE(features.has_all(CpuFeatureSet{
-      CpuFeature::kX86Sse2, CpuFeature::kX86Avx2}));
-  EXPECT_TRUE(features.has_any(CpuFeatureSet{
-      CpuFeature::kArmNeon, CpuFeature::kX86Avx}));
+  EXPECT_FALSE(features.has_all(
+      CpuFeatureSet{CpuFeature::kX86Sse2, CpuFeature::kX86Avx2}));
+  EXPECT_TRUE(features.has_any(
+      CpuFeatureSet{CpuFeature::kArmNeon, CpuFeature::kX86Avx}));
   features.set(CpuFeature::kX86Avx, false);
   EXPECT_FALSE(features.has(CpuFeature::kX86Avx));
 
@@ -363,8 +464,8 @@ TEST(Cpu, FeatureSetAlgebraAndInvalidValues) {
 }
 
 TEST(Cpu, FeatureNamesCoverTheDeclaredSet) {
-  for (std::uint16_t i = 0;
-       i < static_cast<std::uint16_t>(CpuFeature::kCount); ++i) {
+  for (std::uint16_t i = 0; i < static_cast<std::uint16_t>(CpuFeature::kCount);
+       ++i) {
     const char* name = cpu_feature_name(static_cast<CpuFeature>(i));
     ASSERT_NE(name, nullptr);
     EXPECT_NE(name[0], '\0');
@@ -387,44 +488,38 @@ TEST(Cpu, CurrentHostFeatureImplicationsHold) {
   const CpuFeatureSet& f = cpu_features();
 #if HYLE_ARCH_X64
   EXPECT_TRUE(f.has(CpuFeature::kX86Sse2));
-  if (f.has(CpuFeature::kX86Avx2)) {
-    EXPECT_TRUE(f.has(CpuFeature::kX86Avx));
-  }
+  if (f.has(CpuFeature::kX86Avx2)) { EXPECT_TRUE(f.has(CpuFeature::kX86Avx)); }
   const CpuFeatureSet avx512_children{
-      CpuFeature::kX86Avx512Bw, CpuFeature::kX86Avx512Vl,
-      CpuFeature::kX86Avx512Dq, CpuFeature::kX86Avx512Cd,
-      CpuFeature::kX86Avx512Vnni, CpuFeature::kX86Avx512Vbmi,
-      CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Avx512Bitalg,
+      CpuFeature::kX86Avx512Bw,        CpuFeature::kX86Avx512Vl,
+      CpuFeature::kX86Avx512Dq,        CpuFeature::kX86Avx512Cd,
+      CpuFeature::kX86Avx512Vnni,      CpuFeature::kX86Avx512Vbmi,
+      CpuFeature::kX86Avx512Vbmi2,     CpuFeature::kX86Avx512Bitalg,
       CpuFeature::kX86Avx512Vpopcntdq, CpuFeature::kX86Avx512Bf16,
       CpuFeature::kX86Avx512Fp16};
   if (f.has_any(avx512_children)) {
     EXPECT_TRUE(f.has(CpuFeature::kX86Avx512F));
   }
-  if (f.has_any(CpuFeatureSet{
-          CpuFeature::kX86AmxInt8Hardware,
-          CpuFeature::kX86AmxBf16Hardware,
-          CpuFeature::kX86AmxFp16Hardware})) {
+  if (f.has_any(CpuFeatureSet{CpuFeature::kX86AmxInt8Hardware,
+                              CpuFeature::kX86AmxBf16Hardware,
+                              CpuFeature::kX86AmxFp16Hardware})) {
     EXPECT_TRUE(f.has(CpuFeature::kX86AmxTileHardware));
   }
 #elif HYLE_ARCH_ARM64
   EXPECT_TRUE(f.has(CpuFeature::kArmNeon));
-  if (f.has(CpuFeature::kArmSve2)) {
-    EXPECT_TRUE(f.has(CpuFeature::kArmSve));
-  }
-  if (f.has_any(CpuFeatureSet{CpuFeature::kArmSveAes,
-                              CpuFeature::kArmSvePmull})) {
+  if (f.has(CpuFeature::kArmSve2)) { EXPECT_TRUE(f.has(CpuFeature::kArmSve)); }
+  if (f.has_any(
+          CpuFeatureSet{CpuFeature::kArmSveAes, CpuFeature::kArmSvePmull})) {
     EXPECT_TRUE(f.has(CpuFeature::kArmSve2));
   }
-  if (f.has_any(CpuFeatureSet{
-          CpuFeature::kArmSveI8mm, CpuFeature::kArmSveF32mm,
-          CpuFeature::kArmSveF64mm, CpuFeature::kArmSveBf16})) {
+  if (f.has_any(CpuFeatureSet{CpuFeature::kArmSveI8mm, CpuFeature::kArmSveF32mm,
+                              CpuFeature::kArmSveF64mm,
+                              CpuFeature::kArmSveBf16})) {
     EXPECT_TRUE(f.has(CpuFeature::kArmSve));
   }
 #elif HYLE_ARCH_RISCV64
-  if (f.has_any(CpuFeatureSet{
-          CpuFeature::kRiscvZvbb, CpuFeature::kRiscvZvbc,
-          CpuFeature::kRiscvZvkned, CpuFeature::kRiscvZvfh,
-          CpuFeature::kRiscvZvfhmin})) {
+  if (f.has_any(CpuFeatureSet{CpuFeature::kRiscvZvbb, CpuFeature::kRiscvZvbc,
+                              CpuFeature::kRiscvZvkned, CpuFeature::kRiscvZvfh,
+                              CpuFeature::kRiscvZvfhmin})) {
     EXPECT_TRUE(f.has(CpuFeature::kRiscvV));
   }
 #endif
@@ -434,12 +529,10 @@ TEST(Cpu, SyntheticX86DecodeAppliesOsStateAndHardwareBoundaries) {
   using hyle::platform::detail::X86FeatureRegisters;
   auto b = [](unsigned bit) { return std::uint32_t{1} << bit; };
   X86FeatureRegisters r;
-  r.leaf1_ecx = b(0) | b(1) | b(9) | b(12) | b(19) | b(20) |
-                  b(25) | b(27) | b(28) | b(29);
-  r.leaf7_0_ebx = b(3) | b(5) | b(8) | b(16) | b(17) | b(28) |
-                  b(30) | b(31);
-  r.leaf7_0_ecx = b(1) | b(6) | b(8) | b(9) | b(10) | b(11) |
-                  b(12) | b(14);
+  r.leaf1_ecx = b(0) | b(1) | b(9) | b(12) | b(19) | b(20) | b(25) | b(27) |
+                b(28) | b(29);
+  r.leaf7_0_ebx = b(3) | b(5) | b(8) | b(16) | b(17) | b(28) | b(30) | b(31);
+  r.leaf7_0_ecx = b(1) | b(6) | b(8) | b(9) | b(10) | b(11) | b(12) | b(14);
   r.leaf7_0_edx = b(22) | b(23) | b(24) | b(25);
   r.leaf7_1_eax = b(4) | b(5) | b(21);
   r.leaf7_1_edx = b(19);
@@ -449,22 +542,20 @@ TEST(Cpu, SyntheticX86DecodeAppliesOsStateAndHardwareBoundaries) {
 
   const auto all = hyle::platform::detail::decode_x86_features(r);
   EXPECT_TRUE(all.has_all(CpuFeatureSet{
-      CpuFeature::kX86Sse3, CpuFeature::kX86Aes,
-      CpuFeature::kX86Pclmulqdq, CpuFeature::kX86Avx2,
-      CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Gfni,
+      CpuFeature::kX86Sse3, CpuFeature::kX86Aes, CpuFeature::kX86Pclmulqdq,
+      CpuFeature::kX86Avx2, CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Gfni,
       CpuFeature::kX86Vaes, CpuFeature::kX86Vpclmulqdq,
-       CpuFeature::kX86Avx10_2_512,
-       CpuFeature::kX86AmxFp16Hardware}));
+      CpuFeature::kX86Avx10_2_512, CpuFeature::kX86AmxFp16Hardware}));
 
   r.xcr0 = b(1);  // OSXSAVE is advertised, but neither YMM nor ZMM is enabled.
   const auto narrow = hyle::platform::detail::decode_x86_features(r);
-  EXPECT_TRUE(narrow.has_all(CpuFeatureSet{
-      CpuFeature::kX86Sse3, CpuFeature::kX86Aes,
-      CpuFeature::kX86AmxTileHardware}));
+  EXPECT_TRUE(
+      narrow.has_all(CpuFeatureSet{CpuFeature::kX86Sse3, CpuFeature::kX86Aes,
+                                   CpuFeature::kX86AmxTileHardware}));
   EXPECT_FALSE(narrow.has_any(CpuFeatureSet{
       CpuFeature::kX86Avx, CpuFeature::kX86Fma, CpuFeature::kX86F16c,
-      CpuFeature::kX86Avx2, CpuFeature::kX86Avx512F,
-       CpuFeature::kX86Gfni, CpuFeature::kX86Avx10_2_512}));
+      CpuFeature::kX86Avx2, CpuFeature::kX86Avx512F, CpuFeature::kX86Gfni,
+      CpuFeature::kX86Avx10_2_512}));
 
   r.xcr0 = b(1) | b(2) | b(5) | b(6) | b(7);
   r.leaf7_1_edx = 0;
@@ -479,10 +570,8 @@ TEST(Cpu, SyntheticX86DecodeAppliesOsStateAndHardwareBoundaries) {
   r.leaf7_0_edx &= ~b(24);
   const auto no_tile = hyle::platform::detail::decode_x86_features(r);
   EXPECT_FALSE(no_tile.has_any(CpuFeatureSet{
-      CpuFeature::kX86AmxTileHardware,
-      CpuFeature::kX86AmxInt8Hardware,
-      CpuFeature::kX86AmxBf16Hardware,
-      CpuFeature::kX86AmxFp16Hardware}));
+      CpuFeature::kX86AmxTileHardware, CpuFeature::kX86AmxInt8Hardware,
+      CpuFeature::kX86AmxBf16Hardware, CpuFeature::kX86AmxFp16Hardware}));
 }
 
 TEST(Cpu, SyntheticArmLinuxDecodeRequiresParentFeatures) {
@@ -490,24 +579,22 @@ TEST(Cpu, SyntheticArmLinuxDecodeRequiresParentFeatures) {
   const std::uint64_t hw = d::kArmHwcapAes | d::kArmHwcapPmull |
                            d::kArmHwcapFphp | d::kArmHwcapAsimdhp |
                            d::kArmHwcapAsimddp | d::kArmHwcapSve;
-  const std::uint64_t hw2 = d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes |
-                            d::kArmHwcap2SvePmull | d::kArmHwcap2SveI8mm |
-                            d::kArmHwcap2SveF32mm | d::kArmHwcap2SveF64mm |
-                            d::kArmHwcap2SveBf16 | d::kArmHwcap2I8mm |
-                            d::kArmHwcap2Bf16 | d::kArmHwcap2Sme |
-                            d::kArmHwcap2Sme2;
+  const std::uint64_t hw2 =
+      d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes | d::kArmHwcap2SvePmull |
+      d::kArmHwcap2SveI8mm | d::kArmHwcap2SveF32mm | d::kArmHwcap2SveF64mm |
+      d::kArmHwcap2SveBf16 | d::kArmHwcap2I8mm | d::kArmHwcap2Bf16 |
+      d::kArmHwcap2Sme | d::kArmHwcap2Sme2;
   const auto all = d::decode_arm_linux_features(hw, hw2);
   EXPECT_TRUE(all.has_all(CpuFeatureSet{
       CpuFeature::kArmNeon, CpuFeature::kArmAes, CpuFeature::kArmPmull,
       CpuFeature::kArmDotProd, CpuFeature::kArmFp16, CpuFeature::kArmSve2,
-      CpuFeature::kArmSveAes, CpuFeature::kArmSvePmull,
-      CpuFeature::kArmI8mm, CpuFeature::kArmBf16, CpuFeature::kArmSme2}));
+      CpuFeature::kArmSveAes, CpuFeature::kArmSvePmull, CpuFeature::kArmI8mm,
+      CpuFeature::kArmBf16, CpuFeature::kArmSme2}));
 
   const auto malformed = d::decode_arm_linux_features(
-      d::kArmHwcapFphp, d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes |
-                            d::kArmHwcap2Sme2);
+      d::kArmHwcapFphp,
+      d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes | d::kArmHwcap2Sme2);
   EXPECT_FALSE(malformed.has_any(CpuFeatureSet{
-      CpuFeature::kArmFp16, CpuFeature::kArmSve,
-      CpuFeature::kArmSve2, CpuFeature::kArmSveAes,
-      CpuFeature::kArmSme2}));
+      CpuFeature::kArmFp16, CpuFeature::kArmSve, CpuFeature::kArmSve2,
+      CpuFeature::kArmSveAes, CpuFeature::kArmSme2}));
 }

@@ -25,11 +25,10 @@ Result<std::vector<T>> query_vector(Query query) noexcept {
       }
       count = *filled;
     } catch (const std::bad_alloc&) {
-      return std::unexpected(Status::ResourceExhausted(
-          "CPU snapshot allocation failed"));
-    } catch (const std::length_error&) {
       return std::unexpected(
-          Status::OutOfRange("CPU snapshot is too large"));
+          Status::ResourceExhausted("CPU snapshot allocation failed"));
+    } catch (const std::length_error&) {
+      return std::unexpected(Status::OutOfRange("CPU snapshot is too large"));
     }
   }
   return std::unexpected(
@@ -58,6 +57,14 @@ available_cpu_cache_classes() noexcept {
   return cpu_convenience_detail::query_vector<CpuCacheClassInfo>(
       [](CpuCacheClassInfo* dst, std::size_t cap) {
         return available_cpu_cache_classes(dst, cap);
+      });
+}
+
+inline Result<std::vector<CpuFrequencyInfo>>
+available_cpu_frequencies() noexcept {
+  return cpu_convenience_detail::query_vector<CpuFrequencyInfo>(
+      [](CpuFrequencyInfo* dst, std::size_t cap) {
+        return available_cpu_frequencies(dst, cap);
       });
 }
 

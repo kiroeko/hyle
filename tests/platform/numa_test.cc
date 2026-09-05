@@ -10,16 +10,16 @@
 #include "hyle/platform/virtual_memory.h"
 #include "numa_internal.h"
 
-using hyle::platform::kNumaAny;
 using hyle::platform::has_numa_capability;
-using hyle::platform::NumaCapability;
-using hyle::platform::NumaPolicy;
+using hyle::platform::kNumaAny;
 using hyle::platform::numa_capabilities;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_available;
 using hyle::platform::numa_node_count;
 using hyle::platform::numa_node_of_cpu;
 using hyle::platform::numa_nodes;
+using hyle::platform::NumaCapability;
+using hyle::platform::NumaPolicy;
 using hyle::platform::page_size;
 using hyle::platform::vm_allocate_numa_interleaved;
 using hyle::platform::vm_bind_numa;
@@ -37,11 +37,33 @@ TEST(Numa, NodeCountAtLeastOne) {
   unsigned previous = 0;
   for (std::size_t i = 0; i < numa_nodes().size(); ++i) {
     EXPECT_TRUE(numa_node_available(numa_nodes()[i]));
-    if (i != 0) {
-      EXPECT_LT(previous, numa_nodes()[i]);
-    }
+    if (i != 0) { EXPECT_LT(previous, numa_nodes()[i]); }
     previous = numa_nodes()[i];
   }
+}
+
+TEST(Numa, LinuxNodeListParserRejectsAmbiguousOrUnboundedInput) {
+  unsigned ids[16]{};
+  std::size_t count = 99;
+  ASSERT_TRUE(hyle::platform::detail::parse_linux_node_list(
+      "0-2, 7,9-10\n", 15, ids, std::size(ids), count));
+  ASSERT_EQ(count, 6u);
+  EXPECT_EQ(ids[0], 0u);
+  EXPECT_EQ(ids[1], 1u);
+  EXPECT_EQ(ids[2], 2u);
+  EXPECT_EQ(ids[3], 7u);
+  EXPECT_EQ(ids[4], 9u);
+  EXPECT_EQ(ids[5], 10u);
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_list(
+      "2-1", 15, ids, std::size(ids), count));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_list(
+      "0-3,3", 15, ids, std::size(ids), count));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_list(
+      "0,16", 15, ids, std::size(ids), count));
+  EXPECT_FALSE(
+      hyle::platform::detail::parse_linux_node_list("0-15", 15, ids, 8, count));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_list(
+      "0,,2", 15, ids, std::size(ids), count));
 }
 
 TEST(Numa, CurrentNodeInRange) {
@@ -61,9 +83,7 @@ TEST(Numa, NodeOfCpuInRange) {
   EXPECT_TRUE(numa_node_available(*node));
   EXPECT_TRUE(numa_node_of_cpu(1u << 20).error().IsOutOfRange());
   // On a single-node box every valid CPU belongs to the sole available node.
-  if (count == 1u) {
-    EXPECT_EQ(*node, numa_nodes().front());
-  }
+  if (count == 1u) { EXPECT_EQ(*node, numa_nodes().front()); }
 }
 
 TEST(Numa, BindAnyIsNoOp) {
@@ -80,8 +100,8 @@ TEST(Numa, BindNodeZero) {
   void* base = vm_reserve(p * 4).value();
   ASSERT_TRUE(vm_commit(base, p * 4).ok());
   // Soft preferred bind to an available node must not crash; may be a no-op.
-  EXPECT_TRUE(vm_bind_numa(base, p * 4,
-                           static_cast<int>(numa_nodes().front())).has_value());
+  EXPECT_TRUE(vm_bind_numa(base, p * 4, static_cast<int>(numa_nodes().front()))
+                  .has_value());
   std::memset(base, 0x7E, p);
   EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x7E);
   ASSERT_TRUE(vm_release(base, p * 4).ok());
@@ -122,8 +142,7 @@ TEST(Numa, ReserveNumaAnyEqualsPlain) {
   std::size_t p = page_size();
   auto reservation = vm_reserve_numa(p, kNumaAny).value();
   ASSERT_NE(reservation.data, nullptr);
-  EXPECT_EQ(reservation.placement,
-            hyle::platform::NumaPlacement::kNotNeeded);
+  EXPECT_EQ(reservation.placement, hyle::platform::NumaPlacement::kNotNeeded);
   ASSERT_TRUE(vm_release(reservation.data, p).ok());
 }
 
@@ -158,8 +177,7 @@ TEST(Numa, BindHardAndInterleave) {
   // OS exposes an API (Linux); elsewhere they return structured errors rather
   // than pretending. Arena stays usable, so the memset below always works.
   const bool single_node = numa_node_count() <= 1u;
-  auto hard = vm_bind_numa(base, p * 4,
-                           static_cast<int>(numa_nodes().front()),
+  auto hard = vm_bind_numa(base, p * 4, static_cast<int>(numa_nodes().front()),
                            NumaPolicy::kBind);
   auto inter = vm_bind_numa_interleave(base, p * 4);
   if (single_node) {
@@ -184,8 +202,7 @@ TEST(Numa, CapabilitiesDescribeSelectedInterleavePrimitive) {
   const auto capabilities = numa_capabilities();
   EXPECT_EQ(capabilities, numa_capabilities());
   if (numa_nodes().size() > 1u) {
-    EXPECT_TRUE(has_numa_capability(
-        capabilities, NumaCapability::kTopology));
+    EXPECT_TRUE(has_numa_capability(capabilities, NumaCapability::kTopology));
   }
 }
 
@@ -194,8 +211,7 @@ TEST(Numa, WindowsSelectedInterleaveRequiresSingleOwnerCommitPrimitive) {
   using hyle::platform::detail::
       windows_selected_interleave_supported_for_testing;
 
-  EXPECT_FALSE(
-      windows_selected_interleave_supported_for_testing(false, false));
+  EXPECT_FALSE(windows_selected_interleave_supported_for_testing(false, false));
   // VirtualAlloc2 placeholder replacement splits one address range into
   // independently released allocations, so it cannot back the public
   // one-vm_release owner contract by itself.

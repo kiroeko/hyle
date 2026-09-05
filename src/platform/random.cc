@@ -32,7 +32,14 @@ Status secure_random(std::span<std::byte> output) noexcept {
     const NTSTATUS code = ::BCryptGenRandom(
         nullptr, reinterpret_cast<PUCHAR>(output.data()),
         static_cast<ULONG>(chunk), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-    if (code < 0) return Status::Unavailable("BCryptGenRandom failed");
+    if (code < 0) {
+      return Status::FromNative(
+          StatusCode::Unavailable,
+          NativeError{NativeErrorDomain::Unknown,
+                      static_cast<std::int64_t>(
+                          static_cast<std::int32_t>(code))},
+          "BCryptGenRandom failed");
+    }
     output = output.subspan(chunk);
   }
   return Status::Ok();

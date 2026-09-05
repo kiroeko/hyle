@@ -21,13 +21,32 @@ set_target_properties(hyle_platform_cpu_probe PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   FOLDER "hyle/modules/private")
 
+# The Linux cgroup line/path parser is platform-neutral and private. Keep one
+# compiled object in the product while also linking that exact object into the
+# fixture tests; exporting parser-only C++ symbols from the shared SDK would
+# turn a test seam into accidental product surface.
+add_library(hyle_platform_cgroup_parser OBJECT linux_cgroup.cc)
+target_include_directories(hyle_platform_cgroup_parser PRIVATE
+  "${PROJECT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_features(hyle_platform_cgroup_parser PRIVATE cxx_std_23)
+target_link_libraries(hyle_platform_cgroup_parser PRIVATE hyle_build_contract)
+hyle_apply_warnings(hyle_platform_cgroup_parser)
+hyle_apply_sanitizer(hyle_platform_cgroup_parser)
+set_target_properties(hyle_platform_cgroup_parser PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  FOLDER "hyle/modules/private")
+
 hyle_add_module(platform TESTING SOURCES
-  dynlib.cc environment.cc host_memory.cc numa.cc process.cc random.cc virtual_memory.cc
+  cpu_resource.cc dynlib.cc environment.cc host_memory.cc numa.cc
+  process.cc random.cc virtual_memory.cc
+  $<TARGET_OBJECTS:hyle_platform_cgroup_parser>
   $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
 
 if(WIN32)
   # BCryptGenRandom is the host factor's cryptographic OS entropy mechanism.
-  target_link_libraries(hyle_platform PRIVATE bcrypt)
+  # ProcessorInformation is the documented per-CPU frequency snapshot.
+  target_link_libraries(hyle_platform PRIVATE bcrypt PowrProf)
 endif()
 
 # dlopen/dlsym live in libdl on Linux (folded into libc on macOS/BSD).

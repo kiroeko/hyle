@@ -587,6 +587,17 @@ Result<std::size_t> query_available_cpu_ids(
   }
 
   const WORD groups = ::GetActiveProcessorGroupCount();
+  if (groups == 0 || groups > 64) {
+    if (storage_heap) delete[] storage;
+    if (default_ids_heap) delete[] default_ids;
+    return std::unexpected(
+        Status::Unavailable("active processor group count is invalid"));
+  }
+  unsigned group_begin[65]{};
+  for (WORD group = 0; group < groups; ++group) {
+    group_begin[group + 1u] =
+        group_begin[group] + ::GetActiveProcessorCount(group);
+  }
   DWORD_PTR process_mask = 0, system_mask = 0;
   const bool use_affinity_mask =
       groups == 1 &&
@@ -598,17 +609,21 @@ Result<std::size_t> query_available_cpu_ids(
     if (info->Size == 0 || info->Size > bytes - offset) break;
     if (info->Type == CpuSetInformation) {
       const auto& set = info->CpuSet;
+      const bool valid_group = set.Group < groups;
+      const bool valid_index =
+          valid_group && set.LogicalProcessorIndex <
+                             group_begin[set.Group + 1u] -
+                                 group_begin[set.Group];
       const bool selected =
           default_count == 0 ||
           std::binary_search(default_ids, default_ids + default_count, set.Id);
-      if (selected && (!set.Allocated || set.AllocatedToTargetProcess)) {
+      if (valid_index && selected &&
+          (!set.Allocated || set.AllocatedToTargetProcess)) {
         if (!use_affinity_mask ||
             (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&
              (process_mask & (DWORD_PTR{1} << set.LogicalProcessorIndex)))) {
-          unsigned flat = set.LogicalProcessorIndex;
-          for (WORD group = 0; group < set.Group; ++group) {
-            flat += ::GetActiveProcessorCount(group);
-          }
+          const unsigned flat =
+              group_begin[set.Group] + set.LogicalProcessorIndex;
           if (count < cap) {
             dst[count] = flat;
             if (performance_ranks != nullptr) {
@@ -1241,7 +1256,12 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
     return std::unexpected(cpu_query_status(
         "GetLogicalProcessorInformationEx(size)", size_code));
   }
-  auto* relations = new (std::nothrow) std::byte[bytes];
+  alignas(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
+      std::byte relation_stack[64 * 1024];
+  auto* relations =
+      bytes <= std::size(relation_stack)
+          ? relation_stack
+          : new (std::nothrow) std::byte[bytes];
   if (relations == nullptr) {
     if (selected != selected_stack) delete[] selected;
     if (storage != stack) delete[] storage;
@@ -1252,7 +1272,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(relations);
   if (!::GetLogicalProcessorInformationEx(RelationAll, first, &bytes)) {
     const DWORD code = ::GetLastError();
-    delete[] relations;
+    if (relations != relation_stack) delete[] relations;
     if (selected != selected_stack) delete[] selected;
     if (storage != stack) delete[] storage;
     return std::unexpected(
@@ -1265,7 +1285,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
     const auto* relation = reinterpret_cast<
         const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(relations + offset);
     if (relation->Size < kRelationHeader || relation->Size > bytes - offset) {
-      delete[] relations;
+      if (relations != relation_stack) delete[] relations;
       if (selected != selected_stack) delete[] selected;
       if (storage != stack) delete[] storage;
       return std::unexpected(
@@ -1280,7 +1300,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       const auto masks = relation->Processor.GroupCount;
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
-        delete[] relations;
+        if (relations != relation_stack) delete[] relations;
         if (selected != selected_stack) delete[] selected;
         if (storage != stack) delete[] storage;
         return std::unexpected(
@@ -1304,7 +1324,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
           offsetof(NUMA_NODE_RELATIONSHIP, GroupMasks);
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
-        delete[] relations;
+        if (relations != relation_stack) delete[] relations;
         if (selected != selected_stack) delete[] selected;
         if (storage != stack) delete[] storage;
         return std::unexpected(
@@ -1324,7 +1344,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
           offsetof(CACHE_RELATIONSHIP, GroupMasks);
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
-        delete[] relations;
+        if (relations != relation_stack) delete[] relations;
         if (selected != selected_stack) delete[] selected;
         if (storage != stack) delete[] storage;
         return std::unexpected(
@@ -1338,7 +1358,7 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
     }
     offset += relation->Size;
   }
-  delete[] relations;
+  if (relations != relation_stack) delete[] relations;
   if (selected != selected_stack) delete[] selected;
   if (storage != stack) delete[] storage;
   return out;
@@ -1352,14 +1372,207 @@ const CpuFeatureSet& cpu_features() noexcept {
   return f;
 }
 
+namespace {
+
+struct CoarseCacheFacts {
+  CacheInfo info{};
+  unsigned line_size = 0;
+};
+
+void merge_cache_min(std::uint64_t& output,
+                     std::uint64_t observed) noexcept {
+  if (observed != 0 && (output == 0 || observed < output)) {
+    output = observed;
+  }
+}
+
+#if HYLE_OS_LINUX
+bool read_linux_cache_size(const char* path, std::uint64_t& value) noexcept;
+#endif
+
+CoarseCacheFacts detect_os_first_coarse_cache() noexcept {
+  CoarseCacheFacts out;
+  bool observed = false;
+#if HYLE_OS_WINDOWS
+  DWORD bytes = 0;
+  if (!::GetLogicalProcessorInformationEx(RelationCache, nullptr, &bytes) &&
+      ::GetLastError() == ERROR_INSUFFICIENT_BUFFER && bytes != 0) {
+    alignas(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
+        std::byte stack[64 * 1024];
+    std::byte* storage = bytes <= std::size(stack)
+                             ? stack
+                             : new (std::nothrow) std::byte[bytes];
+    if (storage != nullptr) {
+      auto* first = reinterpret_cast<
+          PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(storage);
+      if (::GetLogicalProcessorInformationEx(RelationCache, first, &bytes)) {
+        constexpr DWORD kHeader = static_cast<DWORD>(
+            offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
+            offsetof(CACHE_RELATIONSHIP, GroupMasks) +
+            sizeof(GROUP_AFFINITY));
+        for (DWORD offset = 0; offset + kHeader <= bytes;) {
+          const auto* relation = reinterpret_cast<const
+              SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(storage + offset);
+          if (relation->Size < kHeader || relation->Size > bytes - offset) {
+            break;
+          }
+          if (relation->Relationship == RelationCache) {
+            const auto capacity =
+                static_cast<std::uint64_t>(relation->Cache.CacheSize);
+            if (relation->Cache.Level == 1) {
+              if (relation->Cache.Type == CacheData ||
+                  relation->Cache.Type == CacheUnified) {
+                merge_cache_min(out.info.l1d, capacity);
+              }
+              if (relation->Cache.Type == CacheInstruction ||
+                  relation->Cache.Type == CacheUnified) {
+                merge_cache_min(out.info.l1i, capacity);
+              }
+            } else if (relation->Cache.Level == 2) {
+              merge_cache_min(out.info.l2, capacity);
+            } else if (relation->Cache.Level == 3) {
+              merge_cache_min(out.info.l3, capacity);
+            }
+            const unsigned line = relation->Cache.LineSize;
+            if (line >= 16u && line <= 256u &&
+                (line & (line - 1u)) == 0) {
+              out.line_size = (std::max)(out.line_size, line);
+            }
+          }
+          offset += relation->Size;
+        }
+      }
+      if (storage != stack) delete[] storage;
+    }
+  }
+  observed = out.line_size != 0 || out.info.l1d != 0 || out.info.l1i != 0 ||
+             out.info.l2 != 0 || out.info.l3 != 0;
+#elif HYLE_OS_LINUX
+  DIR* cpus = ::opendir("/sys/devices/system/cpu");
+  if (cpus != nullptr) {
+    while (dirent* entry = ::readdir(cpus)) {
+      if (std::strncmp(entry->d_name, "cpu", 3) != 0 ||
+          entry->d_name[3] < '0' || entry->d_name[3] > '9') {
+        continue;
+      }
+      char* end = nullptr;
+      errno = 0;
+      const unsigned long parsed = std::strtoul(entry->d_name + 3, &end, 10);
+      if (errno != 0 || *end != '\0' ||
+          parsed > (std::numeric_limits<unsigned>::max)()) {
+        continue;
+      }
+      const unsigned cpu = static_cast<unsigned>(parsed);
+      for (unsigned index = 0; index != 16; ++index) {
+        char path[192];
+        unsigned level = 0;
+        std::snprintf(path, sizeof(path),
+                      "/sys/devices/system/cpu/cpu%u/cache/index%u/level",
+                      cpu, index);
+        if (!read_sysfs_unsigned(path, level)) break;
+        char type[32]{};
+        std::snprintf(path, sizeof(path),
+                      "/sys/devices/system/cpu/cpu%u/cache/index%u/type",
+                      cpu, index);
+        std::FILE* type_file = std::fopen(path, "r");
+        if (type_file != nullptr) {
+          if (std::fgets(type, sizeof(type), type_file) == nullptr) {
+            type[0] = '\0';
+          }
+          std::fclose(type_file);
+        }
+        std::uint64_t capacity = 0;
+        std::snprintf(path, sizeof(path),
+                      "/sys/devices/system/cpu/cpu%u/cache/index%u/size",
+                      cpu, index);
+        (void)read_linux_cache_size(path, capacity);
+        unsigned line = 0;
+        std::snprintf(
+            path, sizeof(path),
+            "/sys/devices/system/cpu/cpu%u/cache/index%u/coherency_line_size",
+            cpu, index);
+        if (read_sysfs_unsigned(path, line) && line >= 16u && line <= 256u &&
+            (line & (line - 1u)) == 0) {
+          out.line_size = (std::max)(out.line_size, line);
+        }
+        if (level == 1) {
+          if (std::strncmp(type, "Data", 4) == 0 ||
+              std::strncmp(type, "Unified", 7) == 0) {
+            merge_cache_min(out.info.l1d, capacity);
+          }
+          if (std::strncmp(type, "Instruction", 11) == 0 ||
+              std::strncmp(type, "Unified", 7) == 0) {
+            merge_cache_min(out.info.l1i, capacity);
+          }
+        } else if (level == 2) {
+          merge_cache_min(out.info.l2, capacity);
+        } else if (level == 3) {
+          merge_cache_min(out.info.l3, capacity);
+        }
+      }
+    }
+    (void)::closedir(cpus);
+  }
+  observed = out.line_size != 0 || out.info.l1d != 0 || out.info.l1i != 0 ||
+             out.info.l2 != 0 || out.info.l3 != 0;
+#elif HYLE_OS_MACOS
+  auto read_u64 = [](const char* name) noexcept {
+    std::uint64_t value = 0;
+    std::size_t size = sizeof(value);
+    return ::sysctlbyname(name, &value, &size, nullptr, 0) == 0 ? value : 0;
+  };
+  std::size_t line = 0;
+  std::size_t line_bytes = sizeof(line);
+  if (::sysctlbyname("hw.cachelinesize", &line, &line_bytes, nullptr, 0) == 0 &&
+      line >= 16u && line <= 256u && (line & (line - 1u)) == 0) {
+    out.line_size = static_cast<unsigned>(line);
+    observed = true;
+  }
+  unsigned levels = 0;
+  std::size_t levels_bytes = sizeof(levels);
+  if (::sysctlbyname("hw.nperflevels", &levels, &levels_bytes, nullptr, 0) ==
+          0 &&
+      levels != 0) {
+    for (unsigned level = 0; level < levels; ++level) {
+      char key[96];
+      std::snprintf(key, sizeof(key), "hw.perflevel%u.l1dcachesize", level);
+      merge_cache_min(out.info.l1d, read_u64(key));
+      std::snprintf(key, sizeof(key), "hw.perflevel%u.l1icachesize", level);
+      merge_cache_min(out.info.l1i, read_u64(key));
+      std::snprintf(key, sizeof(key), "hw.perflevel%u.l2cachesize", level);
+      merge_cache_min(out.info.l2, read_u64(key));
+      std::snprintf(key, sizeof(key), "hw.perflevel%u.l3cachesize", level);
+      merge_cache_min(out.info.l3, read_u64(key));
+    }
+  }
+  if (out.info.l1d == 0) out.info.l1d = read_u64("hw.l1dcachesize");
+  if (out.info.l1i == 0) out.info.l1i = read_u64("hw.l1icachesize");
+  if (out.info.l2 == 0) out.info.l2 = read_u64("hw.l2cachesize");
+  if (out.info.l3 == 0) out.info.l3 = read_u64("hw.l3cachesize");
+  observed = observed || out.info.l1d != 0 || out.info.l1i != 0 ||
+             out.info.l2 != 0 || out.info.l3 != 0;
+#endif
+  if (!observed) {
+    out.info = detect_cache_info();
+    out.line_size = detect_cache_line();
+  }
+  if (out.line_size == 0) out.line_size = 64;
+  return out;
+}
+
+const CoarseCacheFacts& coarse_cache_facts() noexcept {
+  static const CoarseCacheFacts facts = detect_os_first_coarse_cache();
+  return facts;
+}
+
+}  // namespace
+
 unsigned cache_line_size() noexcept {
-  static const unsigned v = detect_cache_line();  // Meyers: probe once, cache
-  return v;
+  return coarse_cache_facts().line_size;
 }
 
 const CacheInfo& cache_info() noexcept {
-  static const CacheInfo info = detect_cache_info();
-  return info;
+  return coarse_cache_facts().info;
 }
 
 Result<std::size_t> available_cpu_ids(unsigned* dst,

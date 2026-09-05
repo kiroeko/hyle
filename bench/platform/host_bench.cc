@@ -7,14 +7,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <new>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
-#include <psapi.h>
 
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/host_memory.h"
@@ -60,11 +59,41 @@ struct HostSnapshot {
   std::uint64_t effective_available = 0;
 };
 
+template <class T, std::size_t StackCount>
+class StackFirstBuffer {
+ public:
+  StackFirstBuffer() = default;
+  ~StackFirstBuffer() {
+    if (data_ != stack_) delete[] data_;
+  }
+  StackFirstBuffer(const StackFirstBuffer&) = delete;
+  StackFirstBuffer& operator=(const StackFirstBuffer&) = delete;
+
+  void resize(std::size_t size) {
+    require(size_ == 0, "stack-first buffer resized twice");
+    size_ = size;
+    if (size > StackCount) {
+      data_ = new (std::nothrow) T[size];
+      require(data_ != nullptr, "stack-first buffer allocation");
+    }
+  }
+  [[nodiscard]] T* data() noexcept { return data_; }
+  [[nodiscard]] const T* data() const noexcept { return data_; }
+  [[nodiscard]] T* begin() noexcept { return data_; }
+  [[nodiscard]] T* end() noexcept { return data_ + size_; }
+  [[nodiscard]] std::size_t size() const noexcept { return size_; }
+
+ private:
+  T stack_[StackCount];
+  T* data_ = stack_;
+  std::size_t size_ = 0;
+};
+
 struct RawBuffers {
-  std::vector<ULONG> default_cpu_sets;
-  std::vector<std::byte> cpu_sets;
-  std::vector<std::byte> relations;
-  std::vector<unsigned char> selected;
+  StackFirstBuffer<ULONG, 256> default_cpu_sets;
+  StackFirstBuffer<std::byte, 64 * 1024> cpu_sets;
+  StackFirstBuffer<std::byte, 64 * 1024> relations;
+  StackFirstBuffer<unsigned char, 4096> selected;
 
   RawBuffers() {
     const DWORD logical = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
@@ -87,10 +116,6 @@ struct RawBuffers {
     relations.resize(bytes);
   }
 };
-
-std::uint64_t remaining(std::uint64_t limit, std::uint64_t used) noexcept {
-  return used < limit ? limit - used : 0;
-}
 
 HostSnapshot raw_snapshot(RawBuffers& buffers) {
   HostSnapshot out;
@@ -288,42 +313,6 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
   out.effective_available =
       (std::min)(memory.ullAvailPhys, memory.ullAvailPageFile);
 
-  BOOL in_job = FALSE;
-  if (::IsProcessInJob(process, nullptr, &in_job) && in_job) {
-    std::uint64_t process_commit = 0;
-    PROCESS_MEMORY_COUNTERS_EX counters{};
-    counters.cb = sizeof(counters);
-    if (::GetProcessMemoryInfo(
-            process, reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
-            sizeof(counters))) {
-      process_commit = counters.PrivateUsage;
-    }
-    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits{};
-    if (::QueryInformationJobObject(nullptr, JobObjectExtendedLimitInformation,
-                                    &limits, sizeof(limits), nullptr)) {
-      const DWORD flags = limits.BasicLimitInformation.LimitFlags;
-      if ((flags & JOB_OBJECT_LIMIT_PROCESS_MEMORY) != 0) {
-        const auto used = process_commit != 0
-                              ? process_commit
-                              : limits.PeakProcessMemoryUsed;
-        out.effective_available =
-            (std::min)(out.effective_available,
-                       remaining(limits.ProcessMemoryLimit, used));
-      }
-      if ((flags & JOB_OBJECT_LIMIT_JOB_MEMORY) != 0) {
-        std::uint64_t used = limits.PeakJobMemoryUsed;
-        JOBOBJECT_LIMIT_VIOLATION_INFORMATION_2 live{};
-        if (::QueryInformationJobObject(
-                nullptr, JobObjectLimitViolationInformation2, &live,
-                sizeof(live), nullptr)) {
-          used = live.JobMemory;
-        }
-        out.effective_available =
-            (std::min)(out.effective_available,
-                       remaining(limits.JobMemoryLimit, used));
-      }
-    }
-  }
   return out;
 }
 

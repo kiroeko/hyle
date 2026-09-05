@@ -53,7 +53,7 @@ benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadli
 
 | 能力族 | C++ 公共形状 | 常用场景 | 关键合同 |
 |---|---|---|---|
-| CPU、cache 与 topology | `CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`CpuCacheClassInfo`、动态 topology/cache-class snapshot | implementation-owned target matching、false-sharing 对齐、异构 class tiling、物理核/SMT/cache-domain worker placement | 静态/coarse facts 可缓存；process-available topology 与 cache class 动态、可失败；未知不猜测 |
+| CPU、cache、capacity 与 topology | `CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`CpuCacheClassInfo`、`CpuFrequencyInfo`、`ProcessCpuCapacity`、动态 topology/cache/frequency snapshot | implementation-owned target matching、false-sharing 对齐、异构 class tiling、物理核/SMT/cache-domain placement、quota-aware worker planning | 静态/coarse facts 可缓存；placement、hard bandwidth、P/E class 与瞬时频率是不同事实；动态查询可失败；未知不猜测 |
 | 进程启动策略 | `ProcessPriority`、`set_process_priority` | 服务/推理进程在创建 workers 前显式选择节能或性能倾向 | 五档、无 realtime；默认不调用；提升可能因权限失败；Windows 两项 control 非事务 |
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
@@ -77,9 +77,11 @@ CPU API 有三类不同生命周期，不能混用：
    Container 或用户 kernel 各自由唯一实现 owner 把 facts 与其生成 TU 的完整 requirements 匹配。
    构建系统把探测 TU 独立放入关闭 IPO 的 private object target，其余 platform 源仍可接受父工程
    LTO，不能用 target-wide 关 LTO 换取探测安全。
-2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合通用容量提示与诊断；后者
-   不等于容器/cgroup 给当前进程的 CPU 配额。Apple 官方全局 cache key 表示最低性能 class，不能拿来
-   调整 performance-core working set。
+2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合通用容量提示与诊断。cache
+   初始化优先聚合 OS 公布的 system cache hierarchy；异构 class 取各已知 level 的保守非零下界，只有
+   OS view 整体不可用才退回 architecture probe。不能从首次调用时的动态 affinity/cpuset view 生成终身
+   缓存，否则后续 placement 扩大时可能高估。后者也不等于 affinity/cpuset placement 或 cgroup/job
+   CPU 配额。Apple 官方全局 cache key 表示最低性能 class，不能拿来调整 performance-core working set。
 3. `available_cpu_cache_classes()` 是动态异构 cache-class 视图，保留 class 的 rank/kind、L1/L2/L3
    容量、line size、共享宽度和当前 process-visible CPU/core 数。它按可信 rank 从强到弱返回，同 rank
    但 cache profile 不同也不合并；未知字段为 0。它提供 tiling/sharding 的事实，但不选择 SIMD target
@@ -87,6 +89,13 @@ CPU API 有三类不同生命周期，不能混用：
 4. `available_cpu_count/ids/info/topology()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
    Windows CPU Sets。返回 id 可能稀疏，topology domain 只在一次 snapshot 内有效；调用方不得用
    `[0, count)` 或旧 snapshot 推导当前 placement。
+5. `process_cpu_capacity()` 把 placement logical CPU 数与可选 hard bandwidth quota 保持为两个字段。
+   Linux 解析 cgroup namespace/mount root 并折叠全部可见祖先 quota；shares/weight 不具 hard ceiling，
+   不能换算成虚假 CPU 数。Windows 的公开查询只暴露 immediate Job，而嵌套 CPU rate 相对父 Job，缺少
+   ancestor handles 时无法证明最终有效上限，因而保持 absent。`parallelism_ceiling()` 是 O(1) 的保守
+   事实推导，不拥有 Sched/engine policy。
+6. `available_cpu_frequencies()` 只转录 OS 对当前 available id 公布的 hardware/policy/current Hz。
+   current 是瞬时值，0 是 unknown；频率不用于猜 P/E kind、ISA availability 或跨微架构强弱。
 
 `performance_rank` 只采用 OS 提供的可信 CPU-id 映射。没有证据时返回 unknown，不按频率、
 编号或营销名称猜 P/E 核。`CpuOrder` 只对完整可用集合排序，不偷偷删核；“只用强核”、
@@ -105,10 +114,17 @@ kernel，也不把失败静默改成较弱语义。临时 affinity 调整通过 
 
 ### Host resource snapshot 与 entropy
 
-`host_memory_info()` 是动态、fallible、刻意不缓存的 planning snapshot。物理量在成功时存在；
+`host_memory_info()` 是动态、fallible、刻意不缓存的 planning snapshot。Linux cgroup 位置来自
+`/proc/self/mountinfo` 与 `/proc/self/cgroup`，不能硬编码 mount；从 leaf 到 visible mount root 的每个
+hard memory limit/current 都参与保守下界。物理量在成功时存在；
 commit/swap/process-or-container limit 使用 optional 表达 OS 是否提供可信值，合法 0 不充当 sentinel。
 `effective_available_bytes()` 取已知约束的保守下界，但不预留资源，也不把 UMA device budget 与 host
 budget 重复相加。真正的 allocation failure 仍必须由 Mem/Compute consumer 处理。
+
+Windows 的公开 Job query 只有 immediate Job，父 Job 可能施加更紧的 process/job commit limit，并把
+同级进程占用计入父级预算。没有 ancestor handles 时，Platform 不把 immediate 值冒充 effective budget，
+所以 `process_limit_bytes/process_available_bytes` 在 Windows 当前保持 absent；系统 physical/commit facts
+仍正常返回。将来若 owner 显式持有完整 Job chain，可另行准入带 handle 的查询形状。
 
 `secure_random()` 是无隐藏 PRNG state 的 OS entropy mechanism，成本与输出 bytes/native chunk 成
 正比；partial read 与 interrupt 在实现内完成，只有完整填充或错误两种外部结果。它不替代 Util 的
@@ -319,7 +335,9 @@ allocator/arena 与热调用者仍能控制每次分配。
 
 platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不引入可避免的额外工作：
 
-- `cpu_features/cache/page_size` 等稳定事实探测一次后 O(1) 读取。
+- `cpu_features/cache/page_size` 等稳定事实探测一次后 O(1) 读取；coarse cache 优先一次聚合 system-wide
+  OS cache hierarchy，只有 OS facts 整体不可用才退回 architecture probe。Windows 为
+  O(relation bytes)，Linux 为 O(system CPUs × exposed cache indices)，且都只发生一次。
 - 动态 CPU availability/topology 保持 O(N + R) OS 查询，不能为 O(1) 缓存而返回过时 cpuset；只用于
   初始化/重配控制面，不进入每 task 热路径。Windows 把 OS relation 一次索引到 process-available
   CPU，避免对每颗 CPU 重扫全部关系；Linux 从同一次 affinity view 读取 per-CPU sysfs topology，
@@ -328,8 +346,12 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   relations/sysfs profile，并按 profile 排序聚合：O(P log P + relation bytes) 或 O(P*C + P log P)。
   常见不超过 256 CPU 的主机使用 stack scratch，更大 view 允许一次可失败 allocation；macOS 直接枚举
   `hw.nperflevels`，O(classes)。既有 `cache_info()` 仍是初始化一次、随后 O(1)。
-- host-memory snapshot 是 O(1) 个有界 OS/file 查询；`secure_random` 是 O(bytes/native chunk)，不维护
-  TLS PRNG state。
+- process capacity 的 placement 查询为既有 O(N) 动态视图；Linux hard quota 只沿 cgroup 可见祖先深度
+  O(depth)。Windows 不为一个无法证明的嵌套 Job 有效值增加伪查询。frequency discovery 为
+  O(available CPUs)，属于初始化/诊断，不缓存 DVFS observation，也不进入 task dispatch。
+- host-memory snapshot 在 Linux 是 O(1 + cgroup visible depth) 个有界 OS/file 查询；Windows 不做无法
+  证明有效值的 Job 查询。`secure_random` 是
+  O(bytes/native chunk)，不维护 TLS PRNG state。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - Windows 显式 priority 固定调用一次 QoS control 和一次 native priority control；未请求 priority
   仍是零调用。两者都是线程创建/重配冷路径，不混入 Parker 或 task dispatch。
@@ -349,6 +371,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   contention 决定，二者都不能用纳秒点值冒充算法 SOTA。
 - handle duplicate/info 和一次 random-access transfer 各只做一个对应 native control；exact/all 仅在
   native short transfer 后继续，没有 payload copy、隐式 seek、mutex 或 allocation。
+- POSIX restart-safe filesystem controls 的无信号成功路径仍只有一次 syscall；`EINTR` 才通过同一
+  private helper 重启。close-like 或可能已经产生外部副作用的 path mutation 明确不重试。
 
 基准必须比较相同语义。host primary 是一次 process-available topology + host-memory snapshot，
 只与完成同一动态事实合同的 direct-OS/peer route 比较；cached scalar getter 只能作为独立 holdout。
@@ -363,13 +387,21 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 统一 API 不等于虚构相同 OS：
 
 - Windows affinity 集合的硬 mask 受 processor group 限制；跨组 placement 由上层拆 worker。
+  `numa_nodes()` 也只从当前 process-available CPU ids 归纳 node，不把全机不可达
+  node 当成可用 placement。
+- Windows processor-power records 提供 MHz 级 OS observation，但只在返回记录编号与 available CPU id
+  一致时采用。公开 Job 查询只返回 immediate Job，无法折叠嵌套的相对 CPU rate，因此 Windows quota
+  当前始终 absent；CPU Set placement 仍独立、可信。
 - macOS 无公开硬 pin；priority 是 QoS 软偏好。逐 logical CPU 的 P/E 映射未知时保持 unknown；
   `hw.perflevelN.*` 仍可诚实提供 class-level cache facts。全局 `hw.l*cache*` 是最低性能 class，
-  `cache_info()` 因而不能替代 `available_cpu_cache_classes()` 做异构 tuning。
+  `cache_info()` 因而不能替代 `available_cpu_cache_classes()` 做异构 tuning。公开 frequency sysctl
+  不存在时逐 CPU 频率保持 0，不能维护 Apple 型号表。
 - macOS 的公开 address-wait 实现依赖 14.4 起可用的 `os_sync_wait_on_address*`。构建 platform
   component 时 deployment target 必须 ≥14.4；HYLE 顶层原生 macOS 构建未显式指定时默认 14.4，
   被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
-- Linux process availability 受调用线程 affinity/cpuset 影响，新线程继承该视图。
+- Linux CPU placement 受调用线程 affinity/cpuset 影响，新线程继承该视图；CPU quota 与 memory budget
+  还必须解析 cgroup namespace mount 并折叠可见祖先。NUMA 只采用 mempolicy、process status 或 cgroup
+  cpuset 的 process-allowed view；这些都失败时不能退回 system-online nodes 冒充可用。
 - process priority 的 portable contract 是显式启动期五档 hint：Windows 同时调整 class/QoS，
   macOS 调整 process nice，Linux 调整调用线程 nice 并依赖随后创建的线程继承；不是跨 OS 完全相同
   的 scheduling guarantee。

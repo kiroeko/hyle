@@ -28,8 +28,11 @@ struct HostMemoryInfo {
   // device/UMA budget instead of treating the two as independent pools.
   std::uint64_t effective_available_bytes() const noexcept {
     std::uint64_t value = physical_available_bytes;
-    if (commit_available_bytes) value = (std::min)(value, *commit_available_bytes);
-    if (process_available_bytes) value = (std::min)(value, *process_available_bytes);
+    if (commit_available_bytes)
+      value = (std::min)(value, *commit_available_bytes);
+    if (process_limit_bytes) value = (std::min)(value, *process_limit_bytes);
+    if (process_available_bytes)
+      value = (std::min)(value, *process_available_bytes);
     return value;
   }
 
@@ -39,9 +42,10 @@ struct HostMemoryInfo {
 };
 
 // Dynamic, fallible and intentionally uncached: physical availability and
-// cgroup/job/process limits may change between calls. The snapshot is internally
-// coherent enough for planning but is not a reservation; allocation may still
-// race another process and fail.
+// cgroup/process limits may change between calls. Windows leaves process_*
+// empty because documented APIs cannot fold an unknown nested Job chain. The
+// snapshot is internally coherent enough for planning but is not a reservation;
+// allocation may still race another process and fail.
 HYLE_PLATFORM_API Result<HostMemoryInfo> host_memory_info() noexcept;
 
 }  // namespace hyle::platform

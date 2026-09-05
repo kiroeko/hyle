@@ -1,7 +1,6 @@
 if(WIN32 AND HYLE_STATIC)
   function(_hyle_configure_platform_host_bench target)
     target_link_libraries(${target} PRIVATE hyle_platform nanobench)
-    target_link_libraries(${target} PRIVATE psapi)
     set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
     hyle_apply_warnings(${target})
   endfunction()

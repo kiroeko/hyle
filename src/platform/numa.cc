@@ -1,7 +1,9 @@
 #include "hyle/platform/numa.h"
 
 #include "numa_internal.h"
+#include "linux_cgroup_internal.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstring>
@@ -39,10 +41,8 @@ Status numa_native_status(const char* operation, int code) noexcept {
 
 #if HYLE_OS_WINDOWS
 
-using PGetNumaHighestNodeNumber = BOOL(WINAPI*)(PULONG);
 using PGetCurrentProcessorNumberEx = void(WINAPI*)(PROCESSOR_NUMBER*);
 using PGetNumaProcessorNodeEx = BOOL(WINAPI*)(PPROCESSOR_NUMBER, PUSHORT);
-using PGetNumaAvailableMemoryNodeEx = BOOL(WINAPI*)(USHORT, PULONGLONG);
 using PVirtualAllocExNuma = LPVOID(WINAPI*)(HANDLE, LPVOID, SIZE_T, DWORD,
                                             DWORD, DWORD);
 
@@ -69,10 +69,8 @@ using PVirtualAlloc2 = PVOID(WINAPI*)(HANDLE, PVOID, SIZE_T, ULONG, ULONG,
                                       HyleMemExtendedParameter*, ULONG);
 
 struct WinNumaFns {
-  PGetNumaHighestNodeNumber get_highest = nullptr;
   PGetCurrentProcessorNumberEx get_cpu_ex = nullptr;
   PGetNumaProcessorNodeEx get_node_ex = nullptr;
-  PGetNumaAvailableMemoryNodeEx get_memory_ex = nullptr;
   PVirtualAllocExNuma virtual_alloc_ex_numa = nullptr;
   PVirtualAlloc2 virtual_alloc2 = nullptr;
 };
@@ -82,18 +80,12 @@ WinNumaFns& win_fns() {
     WinNumaFns x;
     HMODULE k32 = ::GetModuleHandleW(L"kernel32.dll");
     if (k32) {
-      x.get_highest =
-          reinterpret_cast<PGetNumaHighestNodeNumber>(reinterpret_cast<void*>(
-              ::GetProcAddress(k32, "GetNumaHighestNodeNumber")));
       x.get_cpu_ex = reinterpret_cast<PGetCurrentProcessorNumberEx>(
           reinterpret_cast<void*>(
               ::GetProcAddress(k32, "GetCurrentProcessorNumberEx")));
       x.get_node_ex =
           reinterpret_cast<PGetNumaProcessorNodeEx>(reinterpret_cast<void*>(
               ::GetProcAddress(k32, "GetNumaProcessorNodeEx")));
-      x.get_memory_ex = reinterpret_cast<PGetNumaAvailableMemoryNodeEx>(
-          reinterpret_cast<void*>(
-              ::GetProcAddress(k32, "GetNumaAvailableMemoryNodeEx")));
       x.virtual_alloc_ex_numa = reinterpret_cast<PVirtualAllocExNuma>(
           reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAllocExNuma")));
       x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
@@ -209,6 +201,63 @@ void append_node(NumaTopology& topology, unsigned node) noexcept {
   topology.ids[topology.count++] = node;
 }
 
+#if HYLE_OS_WINDOWS
+bool windows_processor_number(unsigned flat,
+                              PROCESSOR_NUMBER& output) noexcept {
+  const WORD groups = ::GetActiveProcessorGroupCount();
+  for (WORD group = 0; group < groups; ++group) {
+    const DWORD active = ::GetActiveProcessorCount(group);
+    if (flat < active) {
+      if (flat > (std::numeric_limits<BYTE>::max)()) return false;
+      output.Group = group;
+      output.Number = static_cast<BYTE>(flat);
+      output.Reserved = 0;
+      return true;
+    }
+    flat -= active;
+  }
+  return false;
+}
+
+bool read_windows_allowed_nodes(NumaTopology& topology) noexcept {
+  auto& f = win_fns();
+  if (f.get_node_ex == nullptr) return false;
+
+  unsigned stack[256];
+  for (unsigned attempt = 0; attempt != 4; ++attempt) {
+    auto count = available_cpu_ids(nullptr, 0);
+    if (!count || *count == 0) return false;
+    unsigned* ids = *count <= std::size(stack)
+                        ? stack
+                        : new (std::nothrow) unsigned[*count];
+    if (ids == nullptr) return false;
+    auto filled = available_cpu_ids(ids, *count);
+    if (!filled) {
+      if (ids != stack) delete[] ids;
+      return false;
+    }
+    if (*filled > *count) {
+      if (ids != stack) delete[] ids;
+      continue;
+    }
+
+    for (std::size_t i = 0; i < *filled; ++i) {
+      PROCESSOR_NUMBER processor{};
+      USHORT node = (std::numeric_limits<USHORT>::max)();
+      if (windows_processor_number(ids[i], processor) &&
+          f.get_node_ex(&processor, &node) &&
+          node != (std::numeric_limits<USHORT>::max)()) {
+        append_node(topology, static_cast<unsigned>(node));
+      }
+    }
+    if (ids != stack) delete[] ids;
+    std::sort(topology.ids.begin(), topology.ids.begin() + topology.count);
+    return topology.count != 0;
+  }
+  return false;
+}
+#endif
+
 #if HYLE_OS_LINUX
 bool read_linux_allowed_nodes(NumaTopology& topology) noexcept {
 #  if defined(SYS_get_mempolicy)
@@ -230,103 +279,95 @@ bool read_linux_allowed_nodes(NumaTopology& topology) noexcept {
 #  endif
 }
 
-bool read_linux_online_nodes(NumaTopology& topology) noexcept {
-  int fd = ::open("/sys/devices/system/node/online", O_RDONLY);
-  if (fd < 0) return false;
-  char text[4096]{};
-  const ssize_t length = ::read(fd, text, sizeof(text) - 1);
-  ::close(fd);
-  if (length <= 0) return false;
+bool append_linux_node_list(const char* text, NumaTopology& topology) noexcept {
+  std::array<unsigned, kMaxNumaNodes> nodes{};
+  std::size_t count = 0;
+  if (!detail::parse_linux_node_list(text,
+                                     static_cast<unsigned>(kMaxNumaNodes - 1u),
+                                     nodes.data(), nodes.size(), count)) {
+    return false;
+  }
+  for (std::size_t i = 0; i < count; ++i) append_node(topology, nodes[i]);
+  return topology.count != 0;
+}
 
-  const char* cursor = text;
-  const char* end = text + length;
-  while (cursor < end) {
-    while (cursor < end && (*cursor == ',' || *cursor == ' ' ||
-                            *cursor == '\n' || *cursor == '\t')) {
-      ++cursor;
+bool read_linux_node_list_file(const char* path,
+                               NumaTopology& topology) noexcept {
+  std::FILE* file = std::fopen(path, "r");
+  if (file == nullptr) return false;
+  char text[32768]{};
+  const bool read = std::fgets(text, sizeof(text), file) != nullptr;
+  const bool complete =
+      read && (std::strchr(text, '\n') != nullptr || std::feof(file));
+  const bool failed = std::ferror(file) != 0;
+  std::fclose(file);
+  return complete && !failed && append_linux_node_list(text, topology);
+}
+
+bool read_linux_status_allowed_nodes(NumaTopology& topology) noexcept {
+  std::FILE* file = std::fopen("/proc/self/status", "r");
+  if (file == nullptr) return false;
+  constexpr char kPrefix[] = "Mems_allowed_list:";
+  char line[8192];
+  bool found = false;
+  while (std::fgets(line, sizeof(line), file) != nullptr) {
+    if (std::strchr(line, '\n') == nullptr && !std::feof(file)) {
+      int ch = 0;
+      do { ch = std::fgetc(file); } while (ch != '\n' && ch != EOF);
+      continue;
     }
-    if (cursor == end) break;
-    if (*cursor < '0' || *cursor > '9') return false;
-    unsigned first = 0;
-    while (cursor < end && *cursor >= '0' && *cursor <= '9') {
-      const unsigned digit = static_cast<unsigned>(*cursor++ - '0');
-      if (first > (std::numeric_limits<unsigned>::max() - digit) / 10u) {
-        return false;
-      }
-      first = first * 10u + digit;
-    }
-    unsigned last = first;
-    if (cursor < end && *cursor == '-') {
-      ++cursor;
-      if (cursor == end || *cursor < '0' || *cursor > '9') return false;
-      last = 0;
-      while (cursor < end && *cursor >= '0' && *cursor <= '9') {
-        const unsigned digit = static_cast<unsigned>(*cursor++ - '0');
-        if (last > (std::numeric_limits<unsigned>::max() - digit) / 10u) {
-          return false;
-        }
-        last = last * 10u + digit;
-      }
-      if (last < first) return false;
-    }
-    if (last >= kMaxNumaNodes ||
-        last - first >= kMaxNumaNodes - topology.count) {
-      return false;
-    }
-    for (unsigned node = first;; ++node) {
-      append_node(topology, node);
-      if (node == last) break;
-    }
-    if (cursor < end && *cursor != ',' && *cursor != ' ' && *cursor != '\n' &&
-        *cursor != '\t') {
-      return false;
+    if (std::strncmp(line, kPrefix, sizeof(kPrefix) - 1u) == 0) {
+      found = append_linux_node_list(line + sizeof(kPrefix) - 1u, topology);
+      break;
     }
   }
-  return topology.count != 0;
+  std::fclose(file);
+  return found;
+}
+
+bool read_linux_cgroup_allowed_nodes(NumaTopology& topology) noexcept {
+  detail::LinuxCgroupPath path;
+  if (!detail::read_linux_cgroup_path("cpuset", path)) return false;
+  char directory[detail::kLinuxCgroupPathCapacity];
+  std::memcpy(directory, path.leaf, sizeof(directory));
+  for (;;) {
+    const char* name = path.version == detail::LinuxCgroupVersion::kV2
+                           ? "cpuset.mems.effective"
+                           : "cpuset.mems";
+    char file[detail::kLinuxCgroupPathCapacity + 32];
+    const int written =
+        std::snprintf(file, sizeof(file), "%s/%s", directory, name);
+    if (written >= 0 && static_cast<std::size_t>(written) < sizeof(file)) {
+      NumaTopology candidate;
+      if (read_linux_node_list_file(file, candidate)) {
+        topology = candidate;
+        return true;
+      }
+    }
+    if (!detail::linux_cgroup_parent(directory, path.mount_point)) break;
+  }
+  return false;
 }
 #endif
 
 NumaTopology discover_topology() noexcept {
   NumaTopology topology;
 #if HYLE_OS_WINDOWS
-  ULONG highest = 0;
-  auto& f = win_fns();
-  if (f.get_highest && f.get_highest(&highest)) {
-    const ULONG limit =
-        highest < static_cast<ULONG>((std::numeric_limits<USHORT>::max)())
-            ? highest
-            : static_cast<ULONG>((std::numeric_limits<USHORT>::max)());
-    for (ULONG node = 0; node <= limit && topology.count < kMaxNumaNodes;
-         ++node) {
-      ULONGLONG available = 0;
-      if (!f.get_memory_ex ||
-          f.get_memory_ex(static_cast<USHORT>(node), &available)) {
-        append_node(topology, static_cast<unsigned>(node));
-      }
-    }
-    topology.native = topology.count != 0;
-  }
+  // Derive nodes from the current process placement set. Enumerating the
+  // machine-wide highest node would advertise nodes that a Job/CPU-set
+  // restricted process cannot reach and would make preferred allocation lie.
+  topology.native = read_windows_allowed_nodes(topology);
 #elif HYLE_OS_LINUX
   // Prefer the process' current cpuset/mempolicy view. This avoids advertising
   // a system node that the process cannot legally target inside a container.
   topology.native = read_linux_allowed_nodes(topology);
   if (!topology.native) {
     topology = NumaTopology{};
-    topology.native = read_linux_online_nodes(topology);
+    topology.native = read_linux_status_allowed_nodes(topology);
   }
   if (!topology.native) {
-    // A malformed/truncated online list may have appended a valid prefix.
-    // Discard it before the independent directory-scan fallback.
     topology = NumaTopology{};
-    // Conservative fallback for restricted containers without the `online`
-    // file. Do not stop at the first hole: NUMA IDs need not be dense.
-    for (unsigned node = 0; node < kMaxNumaNodes; ++node) {
-      char path[96];
-      std::snprintf(path, sizeof(path), "/sys/devices/system/node/node%u",
-                    node);
-      if (path_exists(path)) append_node(topology, node);
-    }
-    topology.native = topology.count != 0;
+    topology.native = read_linux_cgroup_allowed_nodes(topology);
   }
 #endif
   if (topology.count == 0) append_node(topology, 0);
@@ -359,8 +400,8 @@ Result<bool> process_cpu_available(unsigned cpu) noexcept {
 
     auto* ids = new (std::nothrow) unsigned[*count];
     if (ids == nullptr) {
-      return std::unexpected(Status::ResourceExhausted(
-          "NUMA CPU lookup allocation failed"));
+      return std::unexpected(
+          Status::ResourceExhausted("NUMA CPU lookup allocation failed"));
     }
     auto filled = available_cpu_ids(ids, *count);
     if (!filled) {
@@ -403,7 +444,7 @@ namespace detail {
 bool windows_selected_interleave_supported_for_testing(
     bool has_virtual_alloc_ex_numa, bool has_virtual_alloc2) noexcept {
   return win_selected_interleave_supported(has_virtual_alloc_ex_numa,
-                                            has_virtual_alloc2);
+                                           has_virtual_alloc2);
 }
 }  // namespace detail
 #endif
@@ -494,8 +535,8 @@ Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept {
 #if HYLE_OS_WINDOWS
   auto& f = win_fns();
   if (!f.get_node_ex) {
-    return std::unexpected(Status::Unimplemented(
-        "CPU NUMA node query is unavailable on Windows"));
+    return std::unexpected(
+        Status::Unimplemented("CPU NUMA node query is unavailable on Windows"));
   }
   WORD target_group = 0;
   unsigned number_in_group = cpu;
@@ -511,16 +552,15 @@ Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept {
     number_in_group -= active;
   }
   if (!found || number_in_group > 0xFFu) {
-    return std::unexpected(
-        Status::OutOfRange("NUMA CPU is not online"));
+    return std::unexpected(Status::OutOfRange("NUMA CPU is not online"));
   }
   PROCESSOR_NUMBER pnum{};
   pnum.Group = target_group;
   pnum.Number = static_cast<BYTE>(number_in_group);
   USHORT node = 0;
   if (!f.get_node_ex(&pnum, &node)) {
-    return std::unexpected(numa_native_status(
-        "GetNumaProcessorNodeEx", ::GetLastError()));
+    return std::unexpected(
+        numa_native_status("GetNumaProcessorNodeEx", ::GetLastError()));
   }
   const unsigned result = static_cast<unsigned>(node);
   if (!numa_node_available(result)) {
@@ -691,10 +731,9 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
 #endif
 }
 
-Result<NumaAllocation>
-vm_allocate_numa_interleaved(std::size_t size,
-                             std::span<const unsigned> requested_nodes,
-                             std::size_t bytes_per_chunk) noexcept {
+Result<NumaAllocation> vm_allocate_numa_interleaved(
+    std::size_t size, std::span<const unsigned> requested_nodes,
+    std::size_t bytes_per_chunk) noexcept {
   const std::size_t aligned = page_align_up(size);
   if (aligned == 0) {
     return std::unexpected(
@@ -726,8 +765,7 @@ vm_allocate_numa_interleaved(std::size_t size,
   bool strictly_increasing = true;
   for (std::size_t i = 1; i < selected.size(); ++i) {
     all_same = all_same && selected[i - 1] == selected[i];
-    strictly_increasing =
-        strictly_increasing && selected[i - 1] < selected[i];
+    strictly_increasing = strictly_increasing && selected[i - 1] < selected[i];
   }
 
   // No placement machinery is needed when every usable page has the same
@@ -757,10 +795,9 @@ vm_allocate_numa_interleaved(std::size_t size,
     auto max_node = make_numa_mask(one_node, mask);
     if (!max_node || sys_mbind(data, aligned, MPOL_BIND, mask.data(),
                                max_node ? *max_node : 0u, 0) != 0) {
-      Status error =
-          max_node
-              ? numa_native_status("mbind(MPOL_BIND)", errno)
-              : static_cast<Status>(std::move(max_node).error());
+      Status error = max_node
+                         ? numa_native_status("mbind(MPOL_BIND)", errno)
+                         : static_cast<Status>(std::move(max_node).error());
       (void)vm_release(data, aligned);
       return std::unexpected(std::move(error));
     }
@@ -841,9 +878,9 @@ vm_allocate_numa_interleaved(std::size_t size,
           target_nodes[i] = static_cast<int>(
               selected[(page_offset / chunk) % selected.size()]);
         }
-        const long rc = sys_move_pages(static_cast<unsigned long>(count),
-                                       pages.data(), target_nodes.data(),
-                                       statuses.data(), 0);
+        const long rc =
+            sys_move_pages(static_cast<unsigned long>(count), pages.data(),
+                           target_nodes.data(), statuses.data(), 0);
         if (rc < 0) {
           Status error = numa_native_status("move_pages(NUMA batch)", errno);
           (void)vm_release(data, aligned);
@@ -851,8 +888,8 @@ vm_allocate_numa_interleaved(std::size_t size,
         }
         for (std::size_t i = 0; i < count; ++i) {
           if (statuses[i] < 0) {
-            Status error = numa_native_status("move_pages(NUMA page)",
-                                              -statuses[i]);
+            Status error =
+                numa_native_status("move_pages(NUMA page)", -statuses[i]);
             (void)vm_release(data, aligned);
             return std::unexpected(std::move(error));
           }
@@ -881,8 +918,7 @@ vm_allocate_numa_interleaved(std::size_t size,
         "selected-node NUMA interleaved allocation requires "
         "VirtualAllocExNuma on Windows"));
   }
-  void* data =
-      ::VirtualAlloc(nullptr, aligned, MEM_RESERVE, PAGE_NOACCESS);
+  void* data = ::VirtualAlloc(nullptr, aligned, MEM_RESERVE, PAGE_NOACCESS);
   if (data == nullptr) {
     return std::unexpected(numa_native_status(
         "VirtualAlloc(MEM_RESERVE NUMA interleave)", ::GetLastError()));
@@ -891,9 +927,8 @@ vm_allocate_numa_interleaved(std::size_t size,
   auto* base = static_cast<std::byte*>(data);
   const std::size_t placement_chunk = all_same ? aligned : chunk;
   for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
-    const std::size_t length = placement_chunk < aligned - offset
-                                   ? placement_chunk
-                                   : aligned - offset;
+    const std::size_t length =
+        placement_chunk < aligned - offset ? placement_chunk : aligned - offset;
     const DWORD node = static_cast<DWORD>(selected[stripe % selected.size()]);
     void* committed = commit_numa(GetCurrentProcess(), base + offset, length,
                                   MEM_COMMIT, PAGE_READWRITE, node);

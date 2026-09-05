@@ -4,16 +4,18 @@
 #include <cstdint>
 #include <span>
 
-#include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
+#include "hyle/error/result.h"
 #include "hyle/platform/numa.h"
 
 // Host virtual memory: reserve/commit/decommit/release + protect.
 // Real consumers include guarded fiber stacks and large allocator backing.
-// Not device/VRAM, not general malloc (mimalloc), not cross-process shmem (io-05).
+// Not device/VRAM, not general malloc (mimalloc), not cross-process shmem
+// (io-05).
 //
 // Windows: VirtualAlloc MEM_RESERVE / MEM_COMMIT / MEM_DECOMMIT / MEM_RELEASE +
-// VirtualProtect. POSIX: mmap PROT_NONE + mprotect + munmap (+ madvise for decommit).
+// VirtualProtect. POSIX: mmap PROT_NONE + mprotect + munmap (+ madvise for
+// decommit).
 
 namespace hyle::platform {
 
@@ -30,11 +32,13 @@ HYLE_PLATFORM_API std::size_t large_page_size() noexcept;
 // Smallest multiple of page_size() that is >= n. n==0 -> 0.
 HYLE_FORCE_INLINE std::size_t page_align_up(std::size_t n) noexcept {
   std::size_t p = page_size();
-  if (n > SIZE_MAX - (p - 1)) return 0;  // round-up would overflow -> 0 (caller treats as fail)
+  if (n > SIZE_MAX - (p - 1))
+    return 0;  // round-up would overflow -> 0 (caller treats as fail)
   return (n + (p - 1)) & ~(p - 1);
 }
 
-// Align up to large_page_size() when known; otherwise to page_size(). n==0 -> 0.
+// Align up to large_page_size() when known; otherwise to page_size(). n==0 ->
+// 0.
 HYLE_FORCE_INLINE std::size_t large_page_align_up(std::size_t n) noexcept {
   if (n == 0) return 0;
   std::size_t lp = large_page_size();
@@ -46,7 +50,8 @@ HYLE_FORCE_INLINE std::size_t large_page_align_up(std::size_t n) noexcept {
 // ---- protection -------------------------------------------------------------
 
 // Access rights for a committed (or reserved) range. kNone is the permanent
-// guard-page mode (PAGE_NOACCESS / PROT_NONE) -- NOT Windows PAGE_GUARD (one-shot).
+// guard-page mode (PAGE_NOACCESS / PROT_NONE) -- NOT Windows PAGE_GUARD
+// (one-shot).
 enum class Protect : std::uint8_t {
   kNone = 0,       // no access (overflow guard)
   kRead = 1,       // read-only
@@ -83,8 +88,9 @@ struct VmLockOptions {
 };
 
 // ---- free-function primitives -----------------------------------------------
-// Thin OS wrappers. Sizes are rounded UP to page_size(); pointers with size>0
-// must already be page-aligned (caller contract: HYLE_FATAL_ASSERT).
+// Thin OS wrappers. Sizes are rounded UP to page_size(). Non-empty range
+// operations validate that their pointer is page-aligned and return
+// InvalidArgument when it is not; size/alignment overflow is OutOfRange.
 // Recoverable failures return Status/Result. OK and successful Result states do
 // not allocate; native diagnostics are built only on the failure path.
 
@@ -152,8 +158,8 @@ class VmRegion {
       std::size_t size) noexcept;
 
   // Like reserve(), but soft-prefer NUMA `node` (see numa.h; kNumaAny = plain).
-  HYLE_PLATFORM_API static Result<VmRegion> reserve_numa(
-      std::size_t size, int node) noexcept;
+  HYLE_PLATFORM_API static Result<VmRegion> reserve_numa(std::size_t size,
+                                                         int node) noexcept;
 
   // Allocate a committed RW span striped over all or selected NUMA nodes.
   // See numa.h for node/chunk validation and platform capability semantics.
@@ -185,10 +191,12 @@ class VmRegion {
   explicit operator bool() const noexcept { return valid(); }
 
   void* data() const noexcept { return base_; }
-  std::size_t size() const noexcept { return size_; }  // reserved bytes (page-aligned)
+  std::size_t size() const noexcept {
+    return size_;
+  }  // reserved bytes (page-aligned)
 
-  // Guarded layout (only meaningful after reserve_guarded). usable() is the first
-  // RW byte; the page at data() is the permanent no-access guard.
+  // Guarded layout (only meaningful after reserve_guarded). usable() is the
+  // first RW byte; the page at data() is the permanent no-access guard.
   void* usable() const noexcept {
     return guarded_ ? static_cast<std::byte*>(base_) + page_size() : base_;
   }
@@ -204,8 +212,7 @@ class VmRegion {
   // recommitting could lose its placement. Release the whole region instead.
   // offset+len are rounded (offset down / end up) only via the free functions'
   // size round-up; offset must be page-aligned when len>0.
-  HYLE_PLATFORM_API Status commit(std::size_t offset,
-                                  std::size_t len) noexcept;
+  HYLE_PLATFORM_API Status commit(std::size_t offset, std::size_t len) noexcept;
   HYLE_PLATFORM_API Status decommit(std::size_t offset,
                                     std::size_t len) noexcept;
   HYLE_PLATFORM_API Status protect(std::size_t offset, std::size_t len,

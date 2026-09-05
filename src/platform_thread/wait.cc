@@ -160,8 +160,12 @@ void wake_all(const std::atomic<std::uint32_t>* addr) noexcept {
 #endif
 
 // ---- portable Parker (one copy, over wait_on_address) -----------------------
-// Ported from Rust std's futex thread parker (proven correct). The fetch_sub(1)
-// trick encodes the EMPTY<->PARKED<->NOTIFIED transitions in one RMW.
+// Parker's EMPTY/PARKED/NOTIFIED state machine is adapted from
+// rust-lang/rust library/std/src/sys/sync/thread_parking/futex.rs at Rust
+// 1.94.1 commit e408947bfd200af42db322daf0fadfe7e26d3bd1. HYLE supplies its
+// own OS wait backends and bool timeout shape. Rust's MIT option is selected;
+// see third_party/ported/LICENSE-RUST. The fetch_sub(1) trick encodes the
+// EMPTY<->PARKED<->NOTIFIED transitions in one RMW.
 
 namespace hyle::platform {
 

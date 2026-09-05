@@ -4,10 +4,10 @@
 #include <cstddef>
 #include <cstring>
 
+#include "host_memory_internal.h"
 #include "hyle/platform/environment.h"
 #include "hyle/platform/host_memory.h"
 #include "hyle/platform/random.h"
-#include "host_memory_internal.h"
 
 namespace hyle::platform {
 namespace {
@@ -17,8 +17,7 @@ TEST(HostMemory, SnapshotHasCoherentPhysicalBounds) {
   ASSERT_TRUE(info.has_value()) << info.error().message();
   EXPECT_GT(info->physical_total_bytes, 0u);
   EXPECT_LE(info->physical_available_bytes, info->physical_total_bytes);
-  EXPECT_LE(info->effective_available_bytes(),
-            info->physical_available_bytes);
+  EXPECT_LE(info->effective_available_bytes(), info->physical_available_bytes);
   if (info->process_available_bytes && info->process_limit_bytes) {
     EXPECT_LE(*info->process_available_bytes, *info->process_limit_bytes);
   }
@@ -38,21 +37,49 @@ TEST(HostMemory, EffectiveBudgetUsesEveryAvailableConstraint) {
   info.process_available_bytes.reset();
   EXPECT_EQ(info.effective_available_bytes(), 900u);
   EXPECT_FALSE(info.constrained());
+  info.process_limit_bytes = 600;
+  EXPECT_EQ(info.effective_available_bytes(), 600u);
+  EXPECT_TRUE(info.constrained());
+#if defined(_WIN32)
+  auto current = host_memory_info();
+  ASSERT_TRUE(current.has_value()) << current.error().message();
+  EXPECT_FALSE(current->process_limit_bytes.has_value());
+  EXPECT_FALSE(current->process_available_bytes.has_value());
+#endif
 }
 
 TEST(HostMemory, LinuxMeminfoParserRejectsWrongUnitsAndOverflow) {
   std::uint64_t bytes = 0;
-  EXPECT_TRUE(detail::parse_linux_meminfo_kib(
-      "MemTotal:       123 kB\n", "MemTotal", bytes));
+  EXPECT_TRUE(detail::parse_linux_meminfo_kib("MemTotal:       123 kB\n",
+                                              "MemTotal", bytes));
   EXPECT_EQ(bytes, 123u * 1024u);
-  EXPECT_FALSE(detail::parse_linux_meminfo_kib(
-      "MemFree: 123 kB\n", "MemTotal", bytes));
-  EXPECT_FALSE(detail::parse_linux_meminfo_kib(
-      "MemTotal: 123 MB\n", "MemTotal", bytes));
+  EXPECT_FALSE(
+      detail::parse_linux_meminfo_kib("MemFree: 123 kB\n", "MemTotal", bytes));
+  EXPECT_FALSE(
+      detail::parse_linux_meminfo_kib("MemTotal: 123 MB\n", "MemTotal", bytes));
   EXPECT_FALSE(detail::parse_linux_meminfo_kib(
       "MemTotal: 18446744073709551615 kB\n", "MemTotal", bytes));
-  EXPECT_FALSE(detail::parse_linux_meminfo_kib(
-      "MemTotal: 12 kB trailing\n", "MemTotal", bytes));
+  EXPECT_FALSE(detail::parse_linux_meminfo_kib("MemTotal: 12 kB trailing\n",
+                                               "MemTotal", bytes));
+}
+
+TEST(HostMemory, LinuxCgroupScalarParserDistinguishesUnlimited) {
+  std::uint64_t value = 99;
+  bool unlimited = false;
+  EXPECT_TRUE(detail::parse_linux_cgroup_u64("max\n", value, unlimited));
+  EXPECT_TRUE(unlimited);
+  EXPECT_EQ(value, 0u);
+  EXPECT_TRUE(detail::parse_linux_cgroup_u64("1048576\n", value, unlimited));
+  EXPECT_FALSE(unlimited);
+  EXPECT_EQ(value, 1048576u);
+  EXPECT_FALSE(detail::parse_linux_cgroup_u64("maximum\n", value, unlimited));
+  EXPECT_FALSE(detail::parse_linux_cgroup_u64("-1\n", value, unlimited));
+  EXPECT_FALSE(
+      detail::parse_linux_cgroup_u64("12 trailing\n", value, unlimited));
+  EXPECT_TRUE(detail::linux_v1_memory_limit_is_unlimited(
+      static_cast<std::uint64_t>((std::numeric_limits<std::int64_t>::max)())));
+  EXPECT_FALSE(
+      detail::linux_v1_memory_limit_is_unlimited(std::uint64_t{1} << 40));
 }
 
 TEST(SecureRandom, FillsCallerStorageAndAcceptsEmptySpans) {

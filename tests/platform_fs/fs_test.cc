@@ -1,12 +1,12 @@
 // The test writes files with std::fopen to check sizes/contents; opt out of
 // MSVC's C4996 CRT deprecation (the uses here are safe).
 #if defined(_WIN32)
-#define _CRT_SECURE_NO_WARNINGS 1
+#  define _CRT_SECURE_NO_WARNINGS 1
 #endif
 
-#include "hyle/platform/fs.h"
-#include "hyle/platform/environment.h"
 #include "fs_internal.h"
+#include "hyle/platform/environment.h"
+#include "hyle/platform/fs.h"
 
 #include <gtest/gtest.h>
 
@@ -19,21 +19,54 @@
 #include <vector>
 
 #if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h> // WriteFile to prove the temp-file handle is writable
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>  // WriteFile to prove the temp-file handle is writable
 #else
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h> // symlink() + write() to prove the temp-file fd is writable
+#  include <fcntl.h>
+#  include <sys/stat.h>
+#  include <unistd.h>  // symlink() + write() to prove the temp-file fd is writable
 #endif
 
 using namespace hyle::platform;
 
 namespace {
+
+TEST(FsInternal, RetryEINTRStopsOnlyAfterARealResult) {
+  unsigned calls = 0;
+  const int value = detail::retry_eintr_negative([&]() noexcept {
+    ++calls;
+    if (calls < 3) {
+      errno = EINTR;
+      return -1;
+    }
+    return 17;
+  });
+  EXPECT_EQ(value, 17);
+  EXPECT_EQ(calls, 3u);
+
+  calls = 0;
+  const int failure = detail::retry_eintr_negative([&]() noexcept {
+    ++calls;
+    errno = EIO;
+    return -1;
+  });
+  EXPECT_EQ(failure, -1);
+  EXPECT_EQ(errno, EIO);
+  EXPECT_EQ(calls, 1u);
+
+  calls = 0;
+  const int direct_code = detail::retry_eintr_error_code([&]() noexcept {
+    ++calls;
+    return calls < 3 ? EINTR : ENOSPC;
+  });
+  EXPECT_EQ(direct_code, ENOSPC);
+  EXPECT_EQ(calls, 3u);
+}
+
 // Write `n` bytes through a raw OS fd/HANDLE (from create_temp_file). Returns
 // true if all bytes were written -- proves the handle is genuinely open for
 // write.
-bool write_all_fd(std::intptr_t fd, const void *data, std::size_t n) {
+bool write_all_fd(std::intptr_t fd, const void* data, std::size_t n) {
 #if defined(_WIN32)
   DWORD wrote = 0;
   return WriteFile(reinterpret_cast<HANDLE>(fd), data, static_cast<DWORD>(n),
@@ -44,14 +77,13 @@ bool write_all_fd(std::intptr_t fd, const void *data, std::size_t n) {
 #endif
 }
 
-bool set_one_tick_before_unix_epoch(const char *path) {
+bool set_one_tick_before_unix_epoch(const char* path) {
 #if defined(_WIN32)
   HANDLE file =
       ::CreateFileA(path, FILE_WRITE_ATTRIBUTES,
                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                     nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (file == INVALID_HANDLE_VALUE)
-    return false;
+  if (file == INVALID_HANDLE_VALUE) return false;
   constexpr std::uint64_t kUnixEpochTicks = 116'444'736'000'000'000ull;
   const std::uint64_t raw = kUnixEpochTicks - 1;
   FILETIME value{static_cast<DWORD>(raw), static_cast<DWORD>(raw >> 32)};
@@ -65,27 +97,25 @@ bool set_one_tick_before_unix_epoch(const char *path) {
 }
 
 #if defined(HYLE_TESTING) && !defined(_WIN32)
-const char *g_injected_symlink_target = nullptr;
+const char* g_injected_symlink_target = nullptr;
 std::size_t g_injected_symlink_target_size = 0;
 std::size_t g_injected_readlink_calls = 0;
 
-std::ptrdiff_t injected_readlink(const char *, char *buffer,
+std::ptrdiff_t injected_readlink(const char*, char* buffer,
                                  std::size_t capacity,
-                                 int *error_number) noexcept {
+                                 int* error_number) noexcept {
   ++g_injected_readlink_calls;
   *error_number = 0;
-  const std::size_t copied =
-      g_injected_symlink_target_size < capacity
-          ? g_injected_symlink_target_size
-          : capacity;
-  if (copied != 0)
-    std::memcpy(buffer, g_injected_symlink_target, copied);
+  const std::size_t copied = g_injected_symlink_target_size < capacity
+                                 ? g_injected_symlink_target_size
+                                 : capacity;
+  if (copied != 0) std::memcpy(buffer, g_injected_symlink_target, copied);
   return static_cast<std::ptrdiff_t>(copied);
 }
 
 class ScopedInjectedReadlink {
-public:
-  explicit ScopedInjectedReadlink(const std::string &target) noexcept {
+ public:
+  explicit ScopedInjectedReadlink(const std::string& target) noexcept {
     g_injected_symlink_target = target.data();
     g_injected_symlink_target_size = target.size();
     g_injected_readlink_calls = 0;
@@ -102,7 +132,7 @@ public:
   ScopedInjectedReadlink& operator=(ScopedInjectedReadlink&&) = delete;
 };
 #endif
-} // namespace
+}  // namespace
 
 namespace {
 
@@ -110,7 +140,7 @@ namespace {
 // test and recursively removed on teardown -- so the suite touches the real
 // filesystem (the whole point) without leaking state between runs.
 class FsTest : public ::testing::Test {
-protected:
+ protected:
   std::string root;
 
   void SetUp() override {
@@ -123,15 +153,15 @@ protected:
     // possibly-truncated since tmp can be up to 4096 chars).
     root = std::string(tmp, *temp) + "/hyle_fs_test_" +
            std::to_string(reinterpret_cast<std::uintptr_t>(this));
-    (void)remove_directory_recursive(root.c_str()); // clear any stale leftover
+    (void)remove_directory_recursive(root.c_str());  // clear any stale leftover
     ASSERT_TRUE(make_directory(root.c_str()).ok());
   }
   void TearDown() override { (void)remove_directory_recursive(root.c_str()); }
 
-  std::string path(const char *rel) const { return root + "/" + rel; }
+  std::string path(const char* rel) const { return root + "/" + rel; }
 };
 
-} // namespace
+}  // namespace
 
 TEST(FsBoundary, NullInputsAndInvalidOpenFlagsFailSafely) {
   EXPECT_TRUE(make_directory_recursive(nullptr).IsInvalidArgument());
@@ -197,7 +227,7 @@ TEST_F(FsTest, StatPreservesPreEpochTimeAndSubsecondPrecision) {
 TEST_F(FsTest, MakeDirectoryIdempotent) {
   std::string d = path("sub");
   EXPECT_TRUE(make_directory(d.c_str()).ok());
-  EXPECT_TRUE(make_directory(d.c_str()).ok()); // already exists -> still OK
+  EXPECT_TRUE(make_directory(d.c_str()).ok());  // already exists -> still OK
   EXPECT_TRUE(is_directory(d.c_str()).value_or(false));
 }
 
@@ -211,7 +241,7 @@ TEST_F(FsTest, MakeDirectoryRecursive) {
 
 TEST_F(FsTest, FileSizeReflectsWrite) {
   std::string f = path("data.bin");
-  std::FILE *fp = std::fopen(f.c_str(), "wb");
+  std::FILE* fp = std::fopen(f.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   const char payload[] = "0123456789";
   std::fwrite(payload, 1, 10, fp);
@@ -238,7 +268,7 @@ TEST_F(FsTest, RenameAndRemoveFile) {
 
 TEST_F(FsTest, CopyFile) {
   std::string a = path("src.txt"), b = path("dst.txt");
-  std::FILE *fp = std::fopen(a.c_str(), "wb");
+  std::FILE* fp = std::fopen(a.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   std::fwrite("hello", 1, 5, fp);
   std::fclose(fp);
@@ -247,7 +277,7 @@ TEST_F(FsTest, CopyFile) {
   char got[8] = {0};
   fp = std::fopen(b.c_str(), "rb");
   ASSERT_NE(fp, nullptr);
-  EXPECT_EQ(std::fread(got, 1, 5, fp), 5u); // also silences warn_unused_result
+  EXPECT_EQ(std::fread(got, 1, 5, fp), 5u);  // also silences warn_unused_result
   std::fclose(fp);
   EXPECT_STREQ(got, "hello");
 }
@@ -259,7 +289,7 @@ TEST_F(FsTest, CopyFileSamePathStillValidatesTheSource) {
   EXPECT_TRUE(copy_file(root.c_str(), root.c_str()).IsFailedPrecondition());
 
   const std::string regular = path("same-regular");
-  std::FILE *fp = std::fopen(regular.c_str(), "wb");
+  std::FILE* fp = std::fopen(regular.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   ASSERT_EQ(std::fwrite("keep", 1, 4, fp), 4u);
   std::fclose(fp);
@@ -269,7 +299,7 @@ TEST_F(FsTest, CopyFileSamePathStillValidatesTheSource) {
 
 TEST_F(FsTest, CopyFileHardLinkAliasIsNoOp) {
   std::string a = path("hardlink_src.txt"), b = path("hardlink_dst.txt");
-  std::FILE *fp = std::fopen(a.c_str(), "wb");
+  std::FILE* fp = std::fopen(a.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   ASSERT_EQ(std::fwrite("keep me", 1, 7, fp), 7u);
   std::fclose(fp);
@@ -294,7 +324,7 @@ TEST_F(FsTest, CopyFileRejectsNonRegularSource) {
 TEST_F(FsTest, CopyFilePreservesDestinationFifoOpenFailure) {
   const std::string source = path("fifo-source");
   const std::string destination = path("fifo-destination");
-  std::FILE *fp = std::fopen(source.c_str(), "wb");
+  std::FILE* fp = std::fopen(source.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   ASSERT_EQ(std::fwrite("x", 1, 1, fp), 1u);
   std::fclose(fp);
@@ -317,7 +347,7 @@ TEST_F(FsTest, CopyFileStreamsZeroSizeVirtualRegularFileToEof) {
   ASSERT_EQ(source_stat.st_size, 0);
 
   std::vector<unsigned char> expected(16 * 1024);
-  std::FILE *source = std::fopen(kSource, "rb");
+  std::FILE* source = std::fopen(kSource, "rb");
   ASSERT_NE(source, nullptr);
   const std::size_t expected_size =
       std::fread(expected.data(), 1, expected.size(), source);
@@ -330,7 +360,7 @@ TEST_F(FsTest, CopyFileStreamsZeroSizeVirtualRegularFileToEof) {
   ASSERT_TRUE(copy_file(kSource, destination.c_str()).ok());
   EXPECT_EQ(file_size(destination.c_str()).value(), expected_size);
   std::vector<unsigned char> actual(expected_size);
-  std::FILE *copied = std::fopen(destination.c_str(), "rb");
+  std::FILE* copied = std::fopen(destination.c_str(), "rb");
   ASSERT_NE(copied, nullptr);
   EXPECT_EQ(std::fread(actual.data(), 1, actual.size(), copied), actual.size());
   std::fclose(copied);
@@ -343,11 +373,11 @@ TEST_F(FsTest, CopyFileStreamsZeroSizeVirtualRegularFileToEof) {
 // file, then verifies the bytes survive intact.
 TEST_F(FsTest, CopyFileLargeContentIntact) {
   std::string a = path("big_src.bin"), b = path("big_dst.bin");
-  constexpr std::size_t kN = 300 * 1024; // > 64 KiB buffer, > 1 page
+  constexpr std::size_t kN = 300 * 1024;  // > 64 KiB buffer, > 1 page
   std::vector<unsigned char> data(kN);
   for (std::size_t i = 0; i < kN; ++i)
     data[i] = static_cast<unsigned char>(i * 31 + 7);
-  std::FILE *fp = std::fopen(a.c_str(), "wb");
+  std::FILE* fp = std::fopen(a.c_str(), "wb");
   ASSERT_NE(fp, nullptr);
   ASSERT_EQ(std::fwrite(data.data(), 1, kN, fp), kN);
   std::fclose(fp);
@@ -371,11 +401,9 @@ TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
   // Keep the callable named: forwarding-reference deduction makes this an
   // lvalue, which the type-erased trampoline must accept without forming a
   // pointer-to-reference type.
-  auto visitor = [&](const char *name, FileType type) {
-    if (type == FileType::kDirectory)
-      dirs.emplace_back(name);
-    else
-      files.emplace_back(name);
+  auto visitor = [&](const char* name, FileType type) {
+    if (type == FileType::kDirectory) dirs.emplace_back(name);
+    else files.emplace_back(name);
   };
   auto completed = for_each_entry(root.c_str(), visitor);
   ASSERT_TRUE(completed.has_value());
@@ -383,17 +411,15 @@ TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
   EXPECT_EQ(files.size(), 2u);
   EXPECT_EQ(dirs.size(), 1u);
   // "." / ".." must be excluded.
-  for (const auto &n : files)
-    EXPECT_NE(n, ".");
-  for (const auto &n : dirs)
-    EXPECT_EQ(n, "d1");
+  for (const auto& n : files) EXPECT_NE(n, ".");
+  for (const auto& n : dirs) EXPECT_EQ(n, "d1");
 }
 
 TEST_F(FsTest, ForEachEntryAcceptsConstCallable) {
   ASSERT_TRUE(touch(path("const-visitor").c_str()).ok());
   struct Visitor {
-    int *seen;
-    void operator()(const char *, FileType) const { ++*seen; }
+    int* seen;
+    void operator()(const char*, FileType) const { ++*seen; }
   };
   int seen = 0;
   const Visitor visitor{&seen};
@@ -407,11 +433,10 @@ TEST_F(FsTest, ForEachEntryAcceptsConstCallable) {
 TEST_F(FsTest, ForEachEntryRethrowsAfterIteratorCleanup) {
   ASSERT_TRUE(touch(path("throwing-visitor").c_str()).ok());
   struct VisitorError {};
-  EXPECT_THROW(
-      (void)for_each_entry(root.c_str(), [](const char *, FileType) -> void {
-        throw VisitorError{};
-      }),
-      VisitorError);
+  EXPECT_THROW((void)for_each_entry(
+                   root.c_str(),
+                   [](const char*, FileType) -> void { throw VisitorError{}; }),
+               VisitorError);
 
   // The native iterator was closed before the exception crossed the public
   // wrapper, so the directory remains immediately mutable on every platform.
@@ -426,9 +451,9 @@ TEST_F(FsTest, ForEachEntryEarlyStop) {
     ASSERT_TRUE(touch(path(("e" + std::to_string(i)).c_str()).c_str()).ok());
   int seen = 0;
   auto completed =
-      for_each_entry(root.c_str(), [&](const char *, FileType) -> bool {
+      for_each_entry(root.c_str(), [&](const char*, FileType) -> bool {
         ++seen;
-        return seen < 2; // stop after the second entry
+        return seen < 2;  // stop after the second entry
       });
   ASSERT_TRUE(completed.has_value());
   EXPECT_FALSE(*completed);
@@ -437,7 +462,7 @@ TEST_F(FsTest, ForEachEntryEarlyStop) {
 
 TEST_F(FsTest, IterateMissingDirReturnsNotFound) {
   auto result = for_each_entry(
-      path("ghost").c_str(), [](const char *, FileType) { /* never called */ });
+      path("ghost").c_str(), [](const char*, FileType) { /* never called */ });
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().IsNotFound());
 }
@@ -457,8 +482,7 @@ TEST_F(FsTest, RemoveDirectoryRecursiveHandlesHundredsOfNestedDirectories) {
   // The implementation deliberately keeps one resumable OS iterator per
   // depth. Stay below macOS's common 256-descriptor soft limit while still
   // exercising a depth that must not consume the process call stack.
-  for (int i = 0; i < 200; ++i)
-    deep += "/d";
+  for (int i = 0; i < 200; ++i) deep += "/d";
   ASSERT_TRUE(make_directory_recursive(deep.c_str()).ok());
   ASSERT_TRUE(touch((deep + "/leaf.txt").c_str()).ok());
 
@@ -484,8 +508,7 @@ TEST_F(FsTest, RemoveDirectoryRecursiveHandlesWideFileDirectory) {
 // legal but the cumulative path is long, then creates/stats/removes it.
 TEST_F(FsTest, LongPathBeyondMaxPath) {
   std::string deep = path("L");
-  while (deep.size() < 320)
-    deep += "/abcdefgh"; // push well past 260
+  while (deep.size() < 320) deep += "/abcdefgh";  // push well past 260
   ASSERT_LT(deep.size(), 1024u);
   ASSERT_TRUE(make_directory_recursive(deep.c_str()).ok());
   EXPECT_TRUE(is_directory(deep.c_str()).value_or(false));
@@ -502,8 +525,7 @@ TEST_F(FsTest, LongPathBeyondMaxPath) {
 #if defined(_WIN32)
 TEST_F(FsTest, RecursiveDirectorySupportsPathBeyondStackScratch) {
   std::string deep = path("XL");
-  while (deep.size() <= 4300)
-    deep += "/abcdefgh";
+  while (deep.size() <= 4300) deep += "/abcdefgh";
   ASSERT_GT(deep.size(), 4095u);
   ASSERT_LT(deep.size(), 32700u);
   ASSERT_TRUE(make_directory_recursive(deep.c_str()).ok());
@@ -572,9 +594,9 @@ TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
 
 TEST(FsEnv, HomeDirectorySupportsLongEnvironmentValue) {
 #if defined(_WIN32)
-  const char *name = "USERPROFILE";
+  const char* name = "USERPROFILE";
 #else
-  const char *name = "HOME";
+  const char* name = "HOME";
 #endif
   char old[4096];
   auto old_len = get_env_var(name, old, sizeof(old));
@@ -593,18 +615,18 @@ TEST(FsEnv, HomeDirectorySupportsLongEnvironmentValue) {
 // mis-decode under the active code page). The directory name mixes CJK + emoji.
 TEST_F(FsTest, Utf8NonAsciiPath) {
   std::string dir =
-      path("\xE6\xB5\x8B\xE8\xAF\x95_\xF0\x9F\x9A\x80"); // 测试_🚀
+      path("\xE6\xB5\x8B\xE8\xAF\x95_\xF0\x9F\x9A\x80");  // 测试_🚀
   ASSERT_TRUE(make_directory(dir.c_str()).ok());
   EXPECT_TRUE(is_directory(dir.c_str()).value_or(false));
 
-  std::string file = dir + "/\xE6\x96\x87\xE4\xBB\xB6.txt"; // 文件.txt
+  std::string file = dir + "/\xE6\x96\x87\xE4\xBB\xB6.txt";  // 文件.txt
   ASSERT_TRUE(touch(file.c_str()).ok());
   EXPECT_TRUE(exists(file.c_str()).value_or(false));
 
   // The non-ASCII entry name comes back intact through the visitor (UTF-8).
   bool found = false;
   auto completed =
-      for_each_entry(dir.c_str(), [&](const char *name, FileType type) {
+      for_each_entry(dir.c_str(), [&](const char* name, FileType type) {
         if (type == FileType::kRegular &&
             std::strcmp(name, "\xE6\x96\x87\xE4\xBB\xB6.txt") == 0)
           found = true;
@@ -622,7 +644,7 @@ TEST_F(FsTest, ChangeDirectoryRoundTrip) {
   ASSERT_GT(current_directory(now, sizeof(now)).value(), 0u);
   // cwd now ends with our scratch dir's base name.
   EXPECT_NE(std::strstr(now, "hyle_fs_test_"), nullptr);
-  EXPECT_TRUE(change_directory(before).ok()); // restore for other tests
+  EXPECT_TRUE(change_directory(before).ok());  // restore for other tests
 }
 
 TEST_F(FsTest, ChangeDirectoryMissingIsNotFound) {
@@ -646,7 +668,7 @@ TEST(FsEnv, BufferFillTruncates) {
   // current_directory into a tiny buffer: NUL-terminated, returns full length.
   char tiny[4];
   std::size_t full = current_directory(tiny, sizeof(tiny)).value();
-  EXPECT_EQ(std::strlen(tiny), 3u); // 3 chars + NUL
+  EXPECT_EQ(std::strlen(tiny), 3u);  // 3 chars + NUL
   EXPECT_GE(full, std::strlen(tiny));
 }
 
@@ -710,11 +732,11 @@ TEST_F(FsTest, PermissionsReadWriteRoundTrip) {
 
   // get/set_permissions round-trip (POSIX exact; Windows synthesizes RO/RW).
   std::uint32_t p = get_permissions(f.c_str()).value();
-  EXPECT_NE(p, 0u); // file exists
+  EXPECT_NE(p, 0u);  // file exists
 #if !defined(_WIN32)
   EXPECT_TRUE(set_permissions(f.c_str(), 0640).ok());
   EXPECT_EQ(get_permissions(f.c_str()).value() & 0777u, 0640u);
-  (void)set_permissions(f.c_str(), 0644); // restore so cleanup can delete
+  (void)set_permissions(f.c_str(), 0644);  // restore so cleanup can delete
 #endif
 }
 
@@ -741,14 +763,14 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   EXPECT_FALSE(is_symlink(target.c_str()).value_or(true));
   FileInfo link_info = stat(link.c_str()).value();
   EXPECT_TRUE(link_info.is_symlink);
-  EXPECT_EQ(link_info.type, FileType::kRegular); // stat follows the link
+  EXPECT_EQ(link_info.type, FileType::kRegular);  // stat follows the link
 
   bool saw_link = false;
   auto iterated =
-      for_each_entry(root.c_str(), [&](const char *name, FileType type) {
+      for_each_entry(root.c_str(), [&](const char* name, FileType type) {
         if (std::strcmp(name, "link.txt") == 0) {
           saw_link = true;
-          EXPECT_EQ(type, FileType::kSymlink); // iteration does not follow it
+          EXPECT_EQ(type, FileType::kSymlink);  // iteration does not follow it
         }
       });
   ASSERT_TRUE(iterated.has_value());
@@ -766,8 +788,8 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   // (>= cap => truncated) and NUL-terminates what it did write.
   char tiny[4];
   std::size_t need = read_symlink(link.c_str(), tiny, sizeof(tiny)).value();
-  EXPECT_EQ(need, n);               // full length reported regardless of cap
-  EXPECT_EQ(std::strlen(tiny), 3u); // 3 bytes + NUL
+  EXPECT_EQ(need, n);                // full length reported regardless of cap
+  EXPECT_EQ(std::strlen(tiny), 3u);  // 3 bytes + NUL
 }
 
 #if defined(HYLE_TESTING) && !defined(_WIN32)
@@ -836,8 +858,8 @@ TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
   EXPECT_NE(a_descriptor_flags & FD_CLOEXEC, 0);
   EXPECT_NE(b_descriptor_flags & FD_CLOEXEC, 0);
 #endif
-  EXPECT_STRNE(p1, p2);                    // unique names
-  EXPECT_TRUE(exists(p1).value_or(false)); // the file really exists on disk
+  EXPECT_STRNE(p1, p2);                     // unique names
+  EXPECT_TRUE(exists(p1).value_or(false));  // the file really exists on disk
   EXPECT_TRUE(exists(p2).value_or(false));
   EXPECT_NE(a.get(), FileHandle::kInvalid);
   // Prove the returned handle is genuinely OPEN FOR WRITE (not just a path):
@@ -845,7 +867,7 @@ TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
   const char msg[] = "hyle-temp";
   ASSERT_TRUE(write_all_fd(a.get(), msg, sizeof(msg) - 1));
   EXPECT_TRUE(a.close().ok());
-  std::FILE *f = std::fopen(p1, "rb");
+  std::FILE* f = std::fopen(p1, "rb");
   ASSERT_NE(f, nullptr);
   char buf[16] = {0};
   std::size_t got = std::fread(buf, 1, sizeof(buf) - 1, f);
@@ -872,8 +894,7 @@ TEST_F(FsTest, CreateTempFilePreservesLongPrefix) {
 #if !defined(__APPLE__)
 TEST_F(FsTest, CreateTempFileSupportsDirectoryPathsBeyondOldScratchCeilings) {
   std::string directory = path("long_temp_directory");
-  while (directory.size() < 1200)
-    directory += "/abcdefgh";
+  while (directory.size() < 1200) directory += "/abcdefgh";
   ASSERT_TRUE(make_directory_recursive(directory.c_str()).ok());
 
   std::vector<char> created_path(directory.size() + 128);
@@ -903,8 +924,8 @@ TEST_F(FsTest, CreateTempFileRejectsPrefixPathTraversal) {
       << backward.error().message();
   EXPECT_STREQ(created_path, "");
 
-  auto empty_directory = create_temp_file("", "hyle", created_path,
-                                          sizeof(created_path));
+  auto empty_directory =
+      create_temp_file("", "hyle", created_path, sizeof(created_path));
   EXPECT_FALSE(empty_directory.has_value());
   EXPECT_TRUE(empty_directory.error().IsInvalidArgument())
       << empty_directory.error().message();
@@ -916,7 +937,7 @@ TEST_F(FsTest, HardLinkSharesData) {
   std::string target = root + "/orig.txt";
   std::string link = root + "/hardlink.txt";
   {
-    std::FILE *f = std::fopen(target.c_str(), "wb");
+    std::FILE* f = std::fopen(target.c_str(), "wb");
     ASSERT_NE(f, nullptr);
     std::fputs("shared", f);
     std::fclose(f);
@@ -933,7 +954,7 @@ TEST_F(FsTest, HardLinkSharesData) {
 }
 
 TEST(FsEnv, SetEmptyValueSemantics) {
-  const char *kName = "HYLE_FS_EMPTY_VAR";
+  const char* kName = "HYLE_FS_EMPTY_VAR";
   ASSERT_TRUE(set_env_var(kName, "").ok());
   char buf[8];
   auto n = get_env_var(kName, buf, sizeof(buf));
@@ -954,12 +975,12 @@ TEST(FileHandle, MoveAndRelease) {
   ASSERT_TRUE(a.valid());
   std::intptr_t raw = a.get();
 
-  FileHandle b = std::move(a); // move transfers ownership
+  FileHandle b = std::move(a);  // move transfers ownership
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.get(), raw);
 
-  std::intptr_t released = b.release(); // give up ownership without closing
+  std::intptr_t released = b.release();  // give up ownership without closing
   EXPECT_FALSE(b.valid());
   EXPECT_EQ(released, raw);
   // We now own `released`; hand it to a fresh handle so it is closed.
@@ -975,7 +996,7 @@ TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   ASSERT_NE(*temp, 0u);
   std::string p = std::string(dir) + "/hyle_openfile_test.txt";
   const char msg[] = "hello platform io";
-  const std::size_t len = sizeof(msg) - 1; // exclude NUL
+  const std::size_t len = sizeof(msg) - 1;  // exclude NUL
   {
     auto opened =
         open_file(p.c_str(), kOpenWrite | kOpenCreate | kOpenTruncate);
@@ -1023,7 +1044,8 @@ TEST_F(FsTest, FileHandleDuplicateSharesCursorButOwnsItsLifetime) {
   ASSERT_TRUE(duplicate.has_value()) << duplicate.error().message();
 
 #if !defined(_WIN32)
-  const int descriptor_flags = ::fcntl(static_cast<int>(duplicate->get()), F_GETFD);
+  const int descriptor_flags =
+      ::fcntl(static_cast<int>(duplicate->get()), F_GETFD);
   ASSERT_NE(descriptor_flags, -1);
   EXPECT_NE(descriptor_flags & FD_CLOEXEC, 0);
 #endif
@@ -1085,8 +1107,7 @@ TEST_F(FsTest, RandomAccessFileTransfersByExplicitOffset) {
   static_assert(!std::is_copy_constructible_v<RandomAccessFile>);
   const std::string file_path = path("random-access.bin");
   auto file = open_random_access_file(
-      file_path.c_str(),
-      kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+      file_path.c_str(), kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
   ASSERT_TRUE(file.has_value()) << file.error().message();
 
   ASSERT_TRUE(file->write_all_at(4, "ef", 2).ok());
@@ -1111,10 +1132,10 @@ TEST_F(FsTest, RandomAccessFileTransfersByExplicitOffset) {
   ASSERT_TRUE(eof.has_value()) << eof.error().message();
   EXPECT_EQ(*eof, 0u);
   EXPECT_TRUE(duplicate->read_exact_at(6, &byte, 1).IsDataLoss());
-  EXPECT_TRUE(duplicate->read_at(
-      (std::numeric_limits<std::uint64_t>::max)(), &byte, 1)
-                  .error()
-                  .IsOutOfRange());
+  EXPECT_TRUE(
+      duplicate->read_at((std::numeric_limits<std::uint64_t>::max)(), &byte, 1)
+          .error()
+          .IsOutOfRange());
 }
 
 TEST(RandomAccessFile, InvalidInputsRemainStructuredErrors) {
@@ -1158,9 +1179,8 @@ TEST_F(FsTest, FileHandleCompleteTransferSeekAndSync) {
   EXPECT_TRUE(opened->read_exact(tail.data(), 1).IsDataLoss());
 
   EXPECT_TRUE(opened->seek(-1).error().IsOutOfRange());
-  EXPECT_TRUE(opened->seek(0, static_cast<SeekOrigin>(99))
-                  .error()
-                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      opened->seek(0, static_cast<SeekOrigin>(99)).error().IsInvalidArgument());
   ASSERT_TRUE(opened->close().ok());
   EXPECT_TRUE(opened->sync().IsFailedPrecondition());
   EXPECT_TRUE(opened->seek(0).error().IsFailedPrecondition());
@@ -1285,7 +1305,7 @@ TEST(FileHandle, OpenHandleDoesNotBlockAtomicRenameOrDelete) {
 // ---- v4: environment write --------------------------------------------------
 
 TEST(FsEnv, SetGetUnsetRoundTrip) {
-  const char *kName = "HYLE_FS_TEST_VAR";
+  const char* kName = "HYLE_FS_TEST_VAR";
   EXPECT_TRUE(set_env_var(kName, "hello-42").ok());
   char buf[64];
   auto n = get_env_var(kName, buf, sizeof(buf));
@@ -1296,8 +1316,8 @@ TEST(FsEnv, SetGetUnsetRoundTrip) {
 }
 
 TEST(FsEnv, Utf8NameAndValueRoundTrip) {
-  const char *kName = "HYLE_\xE7\x8E\xAF\xE5\xA2\x83";  // HYLE_环境
-  const char *kValue = "\xE5\x80\xBC_\xF0\x9F\x9A\x80"; // 值_🚀
+  const char* kName = "HYLE_\xE7\x8E\xAF\xE5\xA2\x83";   // HYLE_环境
+  const char* kValue = "\xE5\x80\xBC_\xF0\x9F\x9A\x80";  // 值_🚀
   ASSERT_TRUE(set_env_var(kName, kValue).ok());
   char buf[64];
   auto size = get_env_var(kName, buf, sizeof(buf));

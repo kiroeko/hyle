@@ -146,6 +146,18 @@
       ] }
     },
     {
+      "name": "rust_parker", "class": "integrated_source",
+      "repository": "https://github.com/rust-lang/rust.git", "version": "1.94.1-futex-parker-origin",
+      "revision": "e408947bfd200af42db322daf0fadfe7e26d3bd1", "git_tree": "b0ddb99197bbc990f1abf224afe329f4d3197e08",
+      "archive": { "url": "https://codeload.github.com/rust-lang/rust/tar.gz/e408947bfd200af42db322daf0fadfe7e26d3bd1", "sha256": "063f7b364a2f0dee6d8f6733486ea7b6510c79682129448b2e6bd4ffc3e2a8fe" },
+      "integrated": { "paths": [
+        "src/platform_thread/wait.cc"
+      ], "content_sha256": "597f1231192d49941558d1ca69b2b6c01e3231d5ccc711cc9bdb4616f63d9cf0" },
+      "license": { "expression": "MIT", "files": [
+        { "root": "hyle", "path": "third_party/ported/LICENSE-RUST", "sha256": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1" }
+      ] }
+    },
+    {
       "name": "highway_port", "class": "integrated_source",
       "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-06-25-port-origin",
       "revision": "83eff39371e5e6494b305b253f8a3c06f831faf4", "git_tree": "d39e0609201e1f1361c24da7075272a157177925",

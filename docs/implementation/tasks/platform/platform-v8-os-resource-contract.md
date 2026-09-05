@@ -29,7 +29,7 @@
 - complexity trigger：Windows CPU Set logical-id 映射在每条记录中重复扫描 processor groups，当前为
   O(CPU×group)，而同文件已有 prefix-map 形状可以做到 O(CPU+group)；
 - authoritative contracts：Linux cgroup v2 hierarchy、CPUFreq sysfs 与 CPU topology sysfs；Windows
-  `GetLogicalProcessorInformationEx`、CPU Sets、Job Object CPU rate 与
+  `GetLogicalProcessorInformationEx`、CPU Sets、Job Object CPU rate/nesting limits 与
   `CallNtPowerInformation(ProcessorInformation)`；Apple `sysctlbyname` 的 system capability/performance
   level keys。OS 没有公开的事实必须保持 unknown，不用型号表、计时或私有接口猜测；
 - real consumers：通用线程池/分片器区分“能放在哪些 CPU”与“进程实际获准多少 CPU 带宽”；推理引擎
@@ -72,18 +72,20 @@ SHA-256 `04E557C22D8D4225C9E0B3449A2E7F7C40AB2B9948E1E9AD6326A1310C44046D`。
 1. `available_cpu_ids/count/topology` 只表示当前进程/调用线程的 **placement**，不再宣称是 worker 数。
    新增 `CpuQuota { capacity, period }` 与 `ProcessCpuCapacity`：包含 placement logical CPU 数和可选的
    ancestor-folded hard quota；`parallelism_ceiling()` 只做 `min(placement, ceil(capacity/period))` 的
-   明确整数推导。Linux 读取 cgroup v2 `cpu.max` 或 v1 quota/period；Windows 只接受 Job Object hard-cap
-   或 max-rate；weight/share 没有 hard ceiling，macOS 无公开 hard quota 时为 absent。调度/线程数 policy
-   仍由 Sched/engine 决定。
+   明确整数推导。Linux 读取 cgroup v2 `cpu.max` 或 v1 quota/period；weight/share 没有 hard ceiling。
+   Windows documented query 只暴露 immediate Job，而嵌套 rate 相对父 Job，调用方没有 ancestor handles
+   时无法证明最终有效 quota，因此 Windows 与 macOS 都为 absent。调度/线程数 policy 仍由
+   Sched/engine 决定。
 2. 新增 `CpuFrequencyInfo { id, hardware_max_hz, policy_max_hz, current_hz }` 与 caller-buffered
    `available_cpu_frequencies(dst, cap)`，并在 convenience header 提供 `vector` overload。记录与当前
    available CPU id 对齐，0 表示 OS 没有可信事实；Windows 使用 documented processor-power records，
    Linux 使用 CPUFreq sysfs（kHz 经 checked conversion），Apple 只使用公开且实际存在的 sysctl key，
    不按型号或计时猜测 Apple Silicon 频率。
 3. `cache_info()/cache_line_size()` 保留 cached coarse convenience，但改为 OS-first：Windows processor
-   relation、Linux cache sysfs、Apple documented sysctl/performance-level；coarse capacity 取 process-view
-   各 class 的保守非零下界，line size 取所见最大值并保留 64-byte unavailable fallback。CPUID 不再抢在
-   OS cache hierarchy 前；动态 `available_cpu_cache_classes()` 仍是调优入口。
+   relation、Linux cache sysfs、Apple documented sysctl/performance-level；coarse capacity 取 system-wide
+   各 class 的保守非零下界，line size 取所见最大值并保留 64-byte unavailable fallback。不能用首次调用
+   的动态 process affinity view 生成终身缓存；CPUID 不再抢在 OS cache hierarchy 前；动态
+   `available_cpu_cache_classes()` 仍是调优入口。
 4. `HostMemoryInfo` layout 不变；Linux process limit 由 mountinfo-aware cgroup resolver 找到真实 v1/v2
    controller path，并把从 leaf 到可见 mount root 的每一层 hard `limit - usage` 取最小。`memory.high`、
    shares 与 pressure 不是 hard capacity；`max`/v1 unlimited 不伪造成 0。
@@ -123,16 +125,18 @@ FIX 外的新产品能力、公共仪器扩建或相邻 frozen 模块产品修�
 
 ### 比较合同、预算与停止条件
 
-- `platform` 为 P1：W1-WIN host planning 的 candidate 与 direct OS peer 必须构造相同字段、错误路径和
-  process/job limit；两边 common host 均不得在 timed call 自造 heap。5% margin 只裁决该正常 planning
+- `platform` 为 P1：W1-WIN host planning 的 candidate 与 direct OS peer 必须构造相同 topology、memory
+  字段和错误路径；两边 common host 均不得在 timed call 自造 heap。Windows immediate Job CPU rate 不能
+  证明嵌套 effective quota，不进入数值排名。5% margin 只裁决该正常 planning
   journey，不把 Linux parser、frequency getter 或冷 discovery 微基准塑造成 API；
 - `platform_fs` 为 P1：沿用 4 MiB warm open/read/checksum/close，同 flags、buffer、bytes、durability、
   EOF/error accounting；EINTR synthetic fixture 只裁决 correctness，不和无信号 peer 排名；
 - `platform_thread` 为 P0：integrated-source bytes 未变则以 source hash、memory-order/layout diff、原测试和
   三交付证明没有成本变化；只有产品 bytes 改变才需要重新资格化 Parker P1；
 - P0 结构门：cgroup resolver 对 mount/ancestor 输入 O(lines+depth)，Windows CPU mapping O(CPU+group)，
-  frequency/cache discovery O(available CPU × exposed OS records)，warm cached coarse cache O(1)，无常态
-  scheduler metadata 或热路径 syscall；
+  frequency discovery O(available CPU)，dynamic cache class 为 O(available CPU × exposed OS records)，
+  cold coarse cache 为 O(system CPU × exposed OS records)，warm cached coarse cache O(1)，无常态 scheduler
+  metadata 或热路径 syscall；
 - apples-vs-oranges 禁令：placement 不与 quota、cached 不与 fresh discovery、完整 Status 不与 unchecked
   scalar、cursor IO 不与 explicit-offset、signal-free 不与 injected-EINTR 路线排名；不能用较强 HYLE 语义的
   劣势冒充同合同 FAIL，也不能用较弱 peer 的胜利冒充 SOTA；
@@ -143,7 +147,7 @@ FIX 外的新产品能力、公共仪器扩建或相邻 frozen 模块产品修�
 ### 预声明验证
 
 - W1-WIN：MSVC Release/WERROR，三个 exact factor，Platform product，unit tests；CPU Sets/group mapping、
-  Job quota、processor power/cache；source/static/shared + relocated package；host/file P1 qualification；
+  Job quota absent honesty、processor power/cache；source/static/shared + relocated package；host/file P1 qualification；
 - W1-WSL：GCC 14 Release + UBSan/WERROR，cgroup v1/v2/mountinfo/ancestor/cpuset fixtures、真实 process
   snapshot、NUMA fallback、EINTR seam；三个 exact factor与三交付；
 - M1-MAC：AppleClang Release + UBSan/WERROR，public sysctl/cache/perflevel/frequency unknown 合同、thread/fs
@@ -203,13 +207,63 @@ SHA-256 `F2CBBFAF6040DCA6B10436A91247206948CB2D3B012FEAE31A8E5216A3D7C281`。
 - `secure_random()` 的 NTSTATUS 当前被丢为纯文本；不重开 Error enum，而用已冻结
   `NativeErrorDomain::Unknown` 保存 signed 32-bit native value与 canonical `Unavailable`。POSIX `dlerror`
   只有 loader text，无可移植数值域，保持现状。
+- audit amendment `P8-WIN-JOB-SEMANTICS-2026-09-05`：Microsoft 的公开合同说明 nested Job CPU rate
+  相对 immediate parent，且 `QueryInformationJobObject(nullptr, ...)` 只查询进程所在的 immediate Job。
+  没有父 Job handles 就不能折叠有效 hard ceiling。原卡中“接受当前 Job hard/max rate”的假设会在嵌套
+  Job 中高估容量，故在仍处于 `AUDITED` 且尚未候选化时修正为 Windows `hard_quota=absent`；不采用私有
+  NT API，不把错误字段带入 host benchmark。processor-power record 也必须校验返回 `number` 与目标 id
+  一致，否则该 CPU 的频率字段保持 unknown。
+- 同一 documented immediate-only 限制也击中 Windows host memory：父 Job 可以施加更紧的 process/job
+  commit limit，父级 job usage 还包含当前 immediate Job 看不到的同级进程。原实现把 immediate
+  `ExtendedLimitInformation` 与 usage 当成 effective process budget，会遗漏父级约束；本轮一并修正为
+  Windows `process_limit_bytes/process_available_bytes=absent`。Linux cgroup 的完整可见祖先链仍逐层合并；
+  已读到 finite hard limit 但瞬时读不到 current 时，limit 本身仍进入 `effective_available_bytes()`。
+- cache lifetime red-team：原审计方案让 cached `cache_info()` 从首次调用时的 process-available class
+  snapshot 聚合；临时只绑 P-core 后再开放 E-core 会把 P-core 容量永久缓存为全局 coarse fact。处置改为
+  Windows system `RelationCache`、Linux system CPU sysfs 与 Apple system/perflevel keys 的一次性保守聚合；
+  动态 process view 仅留给 `available_cpu_cache_classes()`。这仍属于 `P8-CPU-03` 的 OS-first FIX。
+- audit amendment `P8-CGROUP-MOUNT-ROOT-2026-09-06`：cgroup namespace 可把 membership `/`
+  映射到 non-root mountinfo root，但 non-root membership 若不在该 mount root 下，两条记录就不是
+  同一可见树。resolver 现在仅对 namespace `/` 取 mount point；其余路径必须是 root 的
+  component-boundary descendant，否则拒绝。mountinfo 也只解码内核文档定义的
+  `\\040/\\011/\\012/\\134`，不接受任意八进制字节绕过 canonical-path 检查。fixture
+  已覆盖非交叉 root、namespace root、非法 escape 和 bounded parent walk。
+- audit amendment `P8-WIN-NUMA-PROCESS-VIEW-2026-09-06`：Windows 原路线从
+  `GetNumaHighestNodeNumber` 枚举全机 node，在 CPU Set/Job 限制进程中会广告不可达
+  node。现在仅枚举 `available_cpu_ids()` 的当前 process placement，用
+  `GetNumaProcessorNodeEx` 得到、去重并排序 node id。这与 Linux 的 mempolicy/status/cpuset
+  fallback 是同一个语义：公开的是进程可用事实，不是 machine inventory。
+
+### 成熟库与真实消费对照
+
+- oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f` 已把 Linux cgroup CPU quota 用于
+  default concurrency，证明 capacity 与 placement 分离是成熟需求；但它的当前路线仍固定
+  `/sys/fs/cgroup` 根，没有 HYLE 本轮所需的 mountinfo namespace/ancestor 合并；
+- Highway `63f4b16cda024e2adff8a18dee81e067f8a87d61` 在 Windows 使用
+  `GetLogicalProcessorInformationEx(RelationCache)`，在 macOS 使用 `hw.perflevelN.*` 的
+  cache/core facts，与 HYLE 的 OS-first topology/cache 路线一致。Highway 为其 thread-pool
+  tuning 可偏向 perflevel0；HYLE 的 coarse API 则取所有已知 class 的保守值，并另提供
+  class snapshot，两者是不同公开合同；
+- llama.cpp `4d9176092d00586775af140581bb0b558ddc4389` 在 macOS 查
+  `hw.perflevel0.physicalcpu`，Windows 查 processor-core relation；ggml
+  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` 还以 `hw.nperflevels`/
+  `cpusperl2` 选 kernel 配置，并用 NUMA 事实改变 chunking。这些是 HYLE
+  topology/cache/NUMA 能力的实际推理消费证据；ggml 当前 Linux NUMA 初始化先扫全系统
+  node/CPU 再保存 affinity，HYLE 不复制这个全局/进程事实混合。
+- 结论是复用同一类公开 OS 事实，但不照抄 peer 中较弱的 namespace、restriction
+  或 owner 语义。本轮没有用型号表、微基准猜测 P/E、cache、频率或 NUMA。
+
+Rust 上游校验归档使用 `rustc 1.94.1` 对应 archive
+`rust-e408947b.tar.gz`，archive SHA-256
+`063f7b364a2f0dee6d8f6733486ea7b6510c79682129448b2e6bd4ffc3e2a8fe`；选用 MIT，
+不改 Parker 产品算法。
 
 ### Capability / disposition ledger
 
 | ID | baseline | audited disposition |
 |---|---|---|
 | `P8-CG-01` | hard-coded leaf-only mount | `FIX`：共享 resolver + bounded ancestor walk；三 consumer 不各写一套 |
-| `P8-CPU-01` | placement 被误作文档 worker count、无 quota | `FIX`：独立 capacity value；placement API/layout 不变 |
+| `P8-CPU-01` | placement 被误作文档 worker count、无 quota | `FIX`：独立 capacity value；Linux cgroup quota；Windows nested effective quota 不可证明则 absent；placement API/layout 不变 |
 | `P8-CPU-02` | 无 OS frequency surface | `FIX`：动态 per-id snapshot；unknown=0；Mac 不猜 |
 | `P8-CPU-03` | x86 cache 绕 OS；Windows O(CPU×group) | `FIX`：复用 OS class truth；prefix map；cached warm O(1) |
 | `P8-NUMA-01` | syscall fail 后宣称 system online | `FIX`：status/cgroup process view；未知 `{0}` 且 native=false |
@@ -231,7 +285,7 @@ SHA-256 `F2CBBFAF6040DCA6B10436A91247206948CB2D3B012FEAE31A8E5216A3D7C281`。
   race 只能让 optional constraint unknown，不能越过 mount root或把未验证值当硬上限；
 - FS retry 不改变成功调用的 syscall 数；只有 `EINTR` 才重试，错误转换使用最后一次 errno。synthetic
   fault route 与正常 warm-file timing 分离；Parker product bytes 不变，避免为 provenance 重跑无关微计时；
-- direct peer 必须构造 HYLE 同样的 host fields与 job/cgroup semantics；peer 若省略 error、ancestor、allocation
+- direct peer 必须构造 HYLE 同样的 host fields与 cgroup/unknown semantics；peer 若省略 error、ancestor、allocation
   或 process limit，只能是 diagnostic/natural-route，不得生成 non-inferiority verdict；
 - 没有固定 benchmark N、地址、顺序、peer、fast/slow 开关、常态 metadata 或额外 dispatch。公开 shape 来自
   系统资源 consumer；复杂度优化不改变布局；unknown 与 error 不被“便于 benchmark”抹掉。

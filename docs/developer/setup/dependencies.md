@@ -50,6 +50,9 @@ simdutf `v9.1.0`、xxHash dev HEAD `c0b5ea995d66`、wyhash snapshot、nanobench 
 Boost.Context `boost-1.92.0` fcontext）会在其实际 component/benchmark 闭包被选择时审计规范化内容树和
 许可证；core-only 不因此要求未消费 vendor。`cmake -P cmake/HyleDependencyVersions.cmake` 与完整源码包
 target 仍强制全量审计，防止发布介质夹带未复证快照。
+已经改写并并入 HYLE 源码的部分同样进入中央 lock，而不是因为“不下载”就消失：
+`platform_thread` 的 Parker 记录 Rust std 1.94.1 commit `e408947b…`、原始 tree/archive、adapted HYLE
+content hash 和选择的 MIT 文本；安装包同时携带 `rust-parker-LICENSE-MIT` 与第三方 notices。
 普通 `-DHYLE_DEPENDENCY_LOCK_FILE=...` 不能替换这份中央账本；否则攻击者可同时重写 URL、hash 与预期
 源码身份，使后续校验只证明一份自带的恶意账本。刻意损坏 lock 的合同夹具只能由已执行的受信 CMake
 代码以 GLOBAL property 证明一个精确测试路径；能注入 toolchain/top-level include 的代码本来就在构建

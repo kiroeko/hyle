@@ -1,13 +1,15 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 
-#include "hyle/error/result.h"
 #include "hyle/core/environment.h"
+#include "hyle/error/result.h"
 #include "hyle/platform/visibility.h"
 
 // Runtime CPU-feature detection (CPUID + XGETBV on x86). Lives in platform/ --
@@ -17,19 +19,21 @@
 // match these facts against the complete requirements of the implementation
 // body they own. Platform deliberately does not choose either module's target.
 //
-// PROBE ISOLATION (llama.cpp's hard-won bug, conventions §10): the code that runs
-// CPUID to answer "do we have AVX512?" must itself be compiled for the BASELINE
-// ISA, in its own TU, with LTO OFF. Otherwise LTO inlines an advanced-ISA
-// instruction INTO the detector, and the detector SIGILLs on an old CPU before it
-// can report that the CPU is old. cpu.cc is that isolated, LTO-disabled TU.
+// PROBE ISOLATION (llama.cpp's hard-won bug, conventions §10): the code that
+// runs CPUID to answer "do we have AVX512?" must itself be compiled for the
+// BASELINE ISA, in its own TU, with LTO OFF. Otherwise LTO inlines an
+// advanced-ISA instruction INTO the detector, and the detector SIGILLs on an
+// old CPU before it can report that the CPU is old. cpu.cc is that isolated,
+// LTO-disabled TU.
 
 namespace hyle::platform {
 
 // Unordered CPU/OS facts. These are inputs to an implementation owner's target
-// requirements, never a cross-architecture score. Ordinary vector facts mean the
-// process may execute that extension (including the required x86 XCR0 state).
-// AMX is different: Linux tile permission is per-thread, so its explicitly named
-// Hardware facts must be combined with platform-thread's permission API.
+// requirements, never a cross-architecture score. Ordinary vector facts mean
+// the process may execute that extension (including the required x86 XCR0
+// state). AMX is different: Linux tile permission is per-thread, so its
+// explicitly named Hardware facts must be combined with platform-thread's
+// permission API.
 enum class CpuFeature : std::uint16_t {
   // x86-64
   kX86Sse2,
@@ -136,12 +140,9 @@ class CpuFeatureSet final {
                                bool enabled = true) noexcept {
     const std::size_t index = static_cast<std::size_t>(feature);
     if (index >= kFeatureCount) return *this;
-    const std::uint64_t mask =
-        std::uint64_t{1} << (index % kBitsPerWord);
-    if (enabled)
-      words_[index / kBitsPerWord] |= mask;
-    else
-      words_[index / kBitsPerWord] &= ~mask;
+    const std::uint64_t mask = std::uint64_t{1} << (index % kBitsPerWord);
+    if (enabled) words_[index / kBitsPerWord] |= mask;
+    else words_[index / kBitsPerWord] &= ~mask;
     return *this;
   }
 
@@ -168,11 +169,12 @@ HYLE_PLATFORM_API const CpuFeatureSet& cpu_features() noexcept;
 HYLE_PLATFORM_API const char* cpu_feature_name(CpuFeature feature) noexcept;
 
 // Best-effort L1 data cache line observation in bytes (typically 64 on
-// x86/ARM, 128 on Apple Silicon). Probed once (CPUID leaf 1 on x86,
-// RelationCache on Windows non-x86, sysctl on macOS, sysconf on Linux), cached;
-// falls back to 64 when the query is unavailable. Do not use the fallback-able
-// result to define public ABI or safety-critical false-sharing padding; use
-// core's compile-time layout contract for that purpose.
+// x86/ARM, 128 on Apple Silicon). Probed once from OS-published cache facts
+// (Windows cache relations, Linux cache sysfs, or macOS sysctl) and cached;
+// lower-level architecture queries are only a fallback when the OS view is
+// unavailable. Falls back to 64 when no trustworthy query succeeds. Do not use
+// this fallback-able result to define public ABI or safety-critical
+// false-sharing padding; use core's compile-time layout contract for that.
 HYLE_PLATFORM_API unsigned cache_line_size() noexcept;
 
 // Cache capacity visible to a logical processor, in bytes. Zero means unknown.
@@ -186,12 +188,13 @@ struct CacheInfo {
 HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
 
 // CPU ids on which the current process may run, in the same id space accepted
-// by ThreadOpts::affinity / CpuAffinity. Buffer-fill: returns the full count and
-// writes up to cap ids; dst may be null for a count-only query. This is intentionally NOT
-// cached because affinity/cpuset restrictions can change while a process runs.
-// Unlike hardware_concurrency(), this respects Linux sched affinity/cgroups and
-// Windows process CPU Sets / single-group affinity masks. On Linux the affinity
-// mask belongs to the calling thread and is inherited by threads it creates.
+// by ThreadOpts::affinity / CpuAffinity. Buffer-fill: returns the full count
+// and writes up to cap ids; dst may be null for a count-only query. This is
+// intentionally NOT cached because affinity/cpuset restrictions can change
+// while a process runs. Unlike hardware_concurrency(), this respects Linux
+// sched affinity/cgroups and Windows process CPU Sets / single-group affinity
+// masks. On Linux the affinity mask belongs to the calling thread and is
+// inherited by threads it creates.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
     unsigned* dst, std::size_t cap) noexcept;
 
@@ -253,7 +256,8 @@ enum class CpuOrder : std::uint8_t {
 
 // Same buffer-fill contract as available_cpu_ids(). The ordered overload keeps
 // all process-available CPUs, merely ordering known stronger/weaker classes
-// first. If ranks are unavailable it preserves the OS order instead of guessing.
+// first. If ranks are unavailable it preserves the OS order instead of
+// guessing.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_info(
     CpuInfo* dst, std::size_t cap) noexcept;
 
@@ -266,9 +270,73 @@ HYLE_PLATFORM_API Result<std::size_t> available_cpu_cache_classes(
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
     CpuOrder order, unsigned* dst, std::size_t cap) noexcept;
 
-// Common worker/shard sizing shape. Equivalent to a count-only ids query and
-// likewise dynamic; avoids making callers spell a dummy buffer-fill request.
+// Convenience count for the current placement set. Equivalent to a count-only
+// ids query and likewise dynamic; it does not include a cgroup/job
+// CPU-bandwidth quota. Use process_cpu_capacity() when selecting a default
+// worker ceiling.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_count() noexcept;
+
+// One hard CPU-bandwidth limit represented as an exact ratio of CPU time to
+// wall/scheduling period. Both fields are positive. For example, 150000/100000
+// permits 1.5 logical CPUs worth of sustained execution; it does not restrict
+// placement to any particular CPU id.
+struct CpuQuota {
+  std::uint64_t capacity = 0;
+  std::uint64_t period = 0;
+
+  friend constexpr bool operator==(CpuQuota, CpuQuota) noexcept = default;
+};
+
+// A live process capacity snapshot. placement_logical_cpus is the number of
+// CPUs on which work may be placed. hard_quota is absent when the OS publishes
+// no trustworthy hard bandwidth ceiling; weights/shares are deliberately not
+// converted into a fictitious limit.
+struct ProcessCpuCapacity {
+  std::size_t placement_logical_cpus = 0;
+  std::optional<CpuQuota> hard_quota;
+
+  // Conservative upper bound for a default CPU-bound worker count. This is a
+  // fact-derived convenience, not a scheduling policy: consumers may choose a
+  // lower or workload-specific value. Always in [1, placement] on success.
+  std::size_t parallelism_ceiling() const noexcept {
+    if (!hard_quota || hard_quota->period == 0 || hard_quota->capacity == 0) {
+      return placement_logical_cpus;
+    }
+    const std::uint64_t rounded =
+        hard_quota->capacity / hard_quota->period +
+        (hard_quota->capacity % hard_quota->period != 0 ? 1u : 0u);
+    const std::size_t quota_ceiling =
+        rounded > static_cast<std::uint64_t>(
+                      (std::numeric_limits<std::size_t>::max)())
+            ? (std::numeric_limits<std::size_t>::max)()
+            : static_cast<std::size_t>(rounded);
+    return (std::min)(placement_logical_cpus,
+                      quota_ceiling == 0 ? std::size_t{1} : quota_ceiling);
+  }
+};
+
+// Dynamic and uncached because affinity/cpuset and cgroup hard limits can
+// change. Placement-query failure is an error; an unavailable hard limit is
+// represented by an empty optional rather than by zero. In particular,
+// documented Windows APIs cannot prove the effective rate of nested Jobs, so
+// Windows currently leaves hard_quota absent.
+HYLE_PLATFORM_API Result<ProcessCpuCapacity> process_cpu_capacity() noexcept;
+
+// OS-published frequency facts for one process-available logical CPU. Values
+// are hertz; zero means unavailable/unknown. current_hz is an observation or
+// OS policy report, not a promise about the frequency during later work.
+struct CpuFrequencyInfo {
+  unsigned id = 0;
+  std::uint64_t hardware_max_hz = 0;
+  std::uint64_t policy_max_hz = 0;
+  std::uint64_t current_hz = 0;
+};
+
+// Same dynamic caller-buffer contract as available_cpu_ids(): returns the full
+// process-available count and writes up to cap records in OS-default id order.
+// The query never estimates frequency from elapsed time or a CPU model table.
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_frequencies(
+    CpuFrequencyInfo* dst, std::size_t cap) noexcept;
 
 // Aggregate of the same live process-available view returned by
 // available_cpu_info(). Counts never invent dense CPU ids and physical_cores
@@ -290,8 +358,8 @@ struct CpuTopology {
 HYLE_PLATFORM_API Result<CpuTopology> available_cpu_topology() noexcept;
 
 // OS-online logical processor count (>=1). Placement and worker sizing should
-// normally use available_cpu_count()/available_cpu_topology(), which respect
-// the current process/thread restrictions.
+// normally use available_cpu_ids()/available_cpu_topology() for placement and
+// process_cpu_capacity() for a hard CPU-bandwidth-aware planning ceiling.
 HYLE_PLATFORM_API unsigned hardware_concurrency() noexcept;
 
 }  // namespace hyle::platform
