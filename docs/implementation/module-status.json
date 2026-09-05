@@ -609,64 +609,30 @@
     },
     {
       "module": "platform_thread",
-    "product_state": "CLOSED",
-      "round_id": "platform-thread-v1-factor",
-      "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
-      "scope": "Own native thread lifecycle, caller affinity inspection/restoration, current-thread scalable or matrix ISA state, and address-wait/Parker mechanisms as an independently buildable internal factor selected by the Platform product.",
-      "non_goals": "Thread pools, task/fiber scheduling, placement policy, process priority, owning cancellation, device/kernel dispatch, Native FFI/C API, stable C++ ABI, benchmark-driven fast/light APIs, common instrument redesign and Formal certification.",
-      "baseline_commit": "f0662cdee82dd72d5813d17a4765f0fea0f16d87",
-    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
-    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
-      "performance_tier": "P1",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
+      "round_id": "platform-thread-v2-cpu-feature-consumer",
+      "closure_task": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
+      "scope": "Migrate the direct SVE, RVV and AMX host-feature queries to Platform v4's unordered CpuFeatureSet without changing platform-thread semantics or public API.",
+      "non_goals": "Thread, affinity, wait, Parker or ISA-state mechanism changes; new CPU facts; public API or layout changes; P1 retiming; Native FFI/C API; common tooling and Formal certification.",
+      "baseline_commit": "749e67a58bd87efcfb6b1b836dc7cfeaaf0fdfd0",
+      "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
-    "engineering_performance": {
-      "verdict": "PASS",
-      "mode": "P1_ENGINEERING",
-      "material_margin_pct": 5,
-      "machine_profile": "W1-WIN",
-      "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
-    },
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "STRUCTURAL",
+        "instrument_profile": "closure-correctness-v1"
+      },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v1-factor.md",
-    "loc": {
-      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "repository_code": 434612,
-      "self_with_tests": 110971,
-      "self_without_tests": 70261,
-      "module_implementation": 833
-    },
-    "known_limitations": [
-      "Parker is a single-waiter mailbox mechanism rather than a counting semaphore or multi-waiter fairness primitive.",
-      "Callers own thread lifetime coordination and explicit affinity or scalable-matrix state restoration; Platform does not supply scheduler policy.",
-      "The P1 claim covers the frozen W1-WIN persistent cross-physical-core handoff only and does not rank same-logical-CPU, every topology or Formal performance."
-    ],
-    "reopen_triggers": [
-      "A named real consumer reproduces a native-thread, affinity, ISA-state, address-wait or Parker correctness, ownership or usability defect.",
-      "A supported OS, compiler or architecture invalidates the frozen mechanism or header contract.",
-      "The public API or layout, factor dependency, normal cost or source/static/shared delivery changes materially.",
-      "A mature same-contract peer or normal consumer profile proves a better complexity class or material regression.",
-      "A formally admitted common thread mechanism cannot be naturally owned by Platform or Sched under the current boundary."
-    ],
-    "summary": "platform_thread v1 CLOSED：native thread/affinity/current ISA state/address wait 能力与独立因子完成；三平台、sanitizer、Platform 三交付、Sched consumer、文档/红队和 Parker P1 全部通过。"
+      "summary": "platform-thread-v2 REOPENED：Platform v4 删除字段式 CpuFeatures 后，SVE/RVV/AMX 直接 consumer 必须迁到 CpuFeatureSet；线程与 Parker 机制不重开。"
     },
     {
       "module": "platform_fs",
