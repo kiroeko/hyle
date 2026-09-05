@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -590,6 +590,8 @@
       "scope": "Add an explicit process-startup priority and QoS mechanism to the base Platform factor without changing existing host facts, topology, NUMA, VM, dynamic-library, environment or entropy contracts.",
       "non_goals": "Thread-priority redesign, realtime policy, scheduler policy, process lifecycle management, device inventory, Native FFI or C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "cba7392499c1eca2f0e961e0e2a45a89a2d6d88b",
+      "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+      "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -605,7 +607,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v6 AUDITED：进程启动 priority/QoS 的跨平台语义、失败与 P0 成本已红队化，六项有限 FIX 已冻结并授权实现。"
+      "summary": "platform v6 CANDIDATE：显式五档 process-startup priority/QoS 已实现，三平台、exact factor、三交付与只读消费者入口验证通过；产品 commit/tree 与 P0 合同已冻结。"
     },
     {
       "module": "platform_thread",
@@ -670,7 +672,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -678,6 +680,8 @@
       "scope": "Complete the synchronous FileHandle control journey with handle size, exact logical resize, portable preallocation and whole-file advisory shared/exclusive locking.",
       "non_goals": "Mapping or shared-storage ownership, path abstraction, directory watch, async, direct, positional or vectored IO, range or mandatory locks, Native FFI or C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "cba7392499c1eca2f0e961e0e2a45a89a2d6d88b",
+      "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+      "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -693,7 +697,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v3 AUDITED：同步 handle 控制面已按 TOCTOU、sparse、partial effect、锁强度和 network filesystem 差异完成红队，有限 FIX 已冻结。"
+      "summary": "platform_fs v3 CANDIDATE：已打开 handle 的 size/resize/preallocate 与 whole-file shared/exclusive lock 已实现，三平台、exact factor、三交付与下游只读入口验证通过。"
     },
     {
       "module": "mem_reclaim",

@@ -165,3 +165,34 @@
 
 审计 finding 均已进入上述六项；无未处置 medium/high finding。FIX 集从此冻结并授权实现；出现范围外
 产品需求必须退回 `AUDITED`，不能顺手添加。
+
+## Product candidate（`CANDIDATE`）
+
+- candidate commit / tree：`246bd182042f02c2b37457c21cea4ceebd8739c7` /
+  `28c386bd62fd0c619202fbcf4993e267a0fe54c8`；
+- `P6-P01/P6-F01`：五档显式 process-startup policy 与 `FileHandle`
+  size/resize/preallocate/whole-file locking 已按冻结形状实现；旧 owner layout、read/write、thread、CPU
+  facts 与 mapping API 未改；
+- `P6-T01`：closed/invalid/overflow、grow/shrink/no-shrink/cursor、shared/exclusive/try/close-release 与
+  安全 process policy 路线已有测试；
+- `P6-B01`：`process.h` 已进入 header-self-contained 与 install；Platform package sample 消费新增
+  compiled symbol；exact `platform`、exact `platform_fs`、source embedding、relocated shared/static SDK
+  均已实际构建和运行；
+- `P6-D01`：architecture/user/watchlist/global capability ledger 已同步；旧 v1 账本保留基线事实并明确
+  标出 v6 后续提升，不把历史审计改写成当时已完成；
+- `P6-R01`：Mem、Sched、IO 三个产品根在同一 Windows Release 配置中只读编译通过；这只证明
+  Platform 边未破坏消费者，不认证三个上层产品收口。
+
+候选入口验证：
+
+| route | result |
+|---|---|
+| W1-WIN MSVC 19.50 Release/Werror | `hyle_platform_test`、`hyle_platform_fs_test` 2/2 PASS；exact factors 各 1/1 PASS |
+| W1-WSL GCC 14.2 Release/Werror | 2/2 PASS |
+| W1-WSL GCC 14.2 ASan / UBSan | 各 2/2 PASS |
+| M1-MAC AppleClang 21 Release/Werror | 2/2 PASS；首轮发现 macOS 未使用 Linux-only `begin`，在 candidate 前收窄分支并全平台重放 |
+| Platform delivery | source/shared/static 三条各 1/1 consumer PASS；shared/static 均在 install tree relocation 后消费 |
+| downstream build replay | `hyle_mem`、`hyle_sched`、`hyle_io` PASS |
+
+此身份冻结公开合同、实现、复杂度和 P0 tier。下一状态只允许在同一 candidate 上完成独立文档/红队、
+P0 结构 receipt 与最终状态检查；产品代码若再变更必须退回 `AUDITED`。
