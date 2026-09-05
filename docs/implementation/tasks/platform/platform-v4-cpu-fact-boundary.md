@@ -1,6 +1,7 @@
 # Platform v4：CPU 事实与执行 target 权威分离
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由已关闭 Platform 的新产品事实触发。当前仅登记 `REOPENED` 证据；完成有限能力审计和
 > closure card 以前，不授权修改产品源码。
@@ -169,3 +170,35 @@ performance）均为 `PASS`，无 medium-or-higher 未决 finding。`CANDIDATE -
 snapshot 位于
 `C:\public\project-hyle\_validation\platform-v4-target-boundary\module-status-before-verified.json`，
 SHA-256 `AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。Platform 现在只拥有无顺序、可组合、OS-safe 的 host facts；
+SIMD target policy、Container TU requirements 与 thread-local ISA state 全部有独立 owner。四项 FIX、七项
+aggregate gate 和所有适用三平台/三交付验证均为 `PASS`，没有 `PARTIAL + KEEP`、`INCONCLUSIVE` 或
+未执行的适用门。Formal 保持独立 `PENDING`。
+
+已知限制：
+
+- `CpuFeature` 是当前已准入的有限事实集，不是通用 CPU catalog；没有稳定 OS 查询的 feature 诚实返回
+  absent，而不是猜测；
+- AMX `Hardware` facts 不代表当前线程已经取得 tile permission；SVE/RVV 当前 vector length 仍由
+  Platform-thread 所有；
+- facts 没有强弱顺序，也不回答哪个 kernel/provider 最快；custom TU 必须声明与真实 flags 一致的完整
+  requirements；
+- 本轮只签一次有界 probe、O(1) cache/set 的 P0 结构成本；未重签 Platform 旧 P1、scalable-vector
+  真机性能、端到端推理或普遍 SOTA。
+
+只有以下新事实可以重开：
+
+1. 具名真实 consumer 需要属于 Platform 且有稳定 OS ABI 的 host fact，但当前集合无法表达；
+2. 支持 OS/CPU/虚拟化环境证明某 feature 的 parent、extended-state 或查询 gate 不安全/错误；
+3. 公开 fact API/layout/语义、直接依赖、probe 正常成本或 source/static/shared delivery materially 改变；
+4. Platform 再次开始选择/排序 SIMD、backend 或 provider，形成第二个 target authority；
+5. profile 或 mature same-contract peer 证明 probe/query 存在更优复杂度档或 material normal-path 回归。
+
+candidate LOC self-check（snapshot `d015b0de1cf6d5899da8336fef94104974bcd90e`）：全库代码
+443,000；自实现包含测试 112,489；自实现不包含测试 71,135；Platform 实现 4,982 行。LOC 只记录规模，
+不证明功能或性能。product candidate/tree 为 `d015b0de1cf6d5899da8336fef94104974bcd90e` /
+`1456eea7575fa72ce48626a9db13a80f0aa31c09`；final verification evidence commit 为
+`206864ad`。后续只按本节 triggers 重开。

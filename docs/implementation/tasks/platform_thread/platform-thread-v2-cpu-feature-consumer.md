@@ -1,6 +1,7 @@
 # Platform-thread v2：CPU feature consumer 迁移
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮只处理 Platform v4 删除旧 `CpuFeatures` 字段形状后，platform-thread 对 SVE/RVV/AMX
 > 主机事实的直接消费迁移；不重开线程、affinity、Parker 或 ISA-state 机制。
@@ -73,3 +74,21 @@ Parker、affinity、thread-state transition、SVE/RVV width 或 AMX permission �
 Platform facts，没有 SIMD target policy、第三方或公开 API 泄漏。七项 aggregate gate 全部 `PASS`，无
 未决 red-team finding。前态 snapshot 与 Platform 主轮相同，SHA-256
 `AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。唯一 FIX 与七项 aggregate gate 全部 `PASS`；产品只把六处
+host-fact 读取迁到新的唯一 authority，没有改变公开 API、thread state、Parker 或 OS transition。
+
+已知限制：
+
+- host hardware fact 不等于当前线程 permission 或 vector length；调用者仍使用现有 Platform-thread
+  API 查询/申请动态状态；
+- 本轮 P0 只证明 cached membership 没有新的资源和复杂度，未续签 Parker/affinity 的 P1 点值；
+- SVE/RVV 真机性能不在本轮声明内，Formal 保持 `PENDING`。
+
+重新打开只允许：Platform fact 语义变化导致本 consumer 错误；真实 consumer 暴露 SVE/RVV/AMX
+permission/state correctness；公开 API/layout、控制流、依赖、正常成本或三交付 materially 变化；或同合同
+证据证明 material regression。candidate LOC self-check（`d015b0de...`）：全库 443,000；自实现包含测试
+112,489；自实现不包含测试 71,135；Platform-thread 实现 834 行。product candidate/tree 同 Platform
+主轮；final verification evidence commit 为 `206864ad`。后续只按本节 triggers 重开。

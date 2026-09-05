@@ -1,6 +1,7 @@
 # Container v4：CPU feature 路由迁移
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮只处理 Platform 删除 provider-shaped `Isa` 后的直接消费者迁移。当前仅登记 `REOPENED`；不重开
 > Container 能力超集、容器 API、算法或既有 P1 比较。
@@ -92,3 +93,22 @@ per-element probe、allocation、lock、syscall 或 dispatch layer；公开类�
 新增 benchmark-shaped 入口。七项 aggregate gate全部 `PASS`，无未决 medium-or-higher finding。
 `CANDIDATE -> VERIFIED` 前态 snapshot SHA-256 为
 `AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。三个私有 selector 分别匹配其真实 Highway/XXH3 TU，公开
+Container API 不吸收 target/feature 概念，也不新增 SIMD 依赖。三项 FIX、七项 aggregate gate、
+missing-one 反证和三平台三交付均 `PASS`；公开 layout、kernel body 与旧 P1 路径没有产品 diff。
+
+已知限制：
+
+- requirements 是 Container 私有 implementation detail，不是用户可 pin 的 target API；
+- 本轮只签 init-once selector 与 O(1) membership 的 P0 结构成本，不续签 StringView/hash/bitset 或
+  node-table 的算法排名；
+- 新 compiler flags、Highway/XXH3 target group 或 variant body 会使当前证据失效；Formal 为 `NONE`。
+
+重新打开只允许：实际 TU flags/provider group 改变；真实 consumer 发现错误 dispatch/illegal instruction；
+公开 API/layout、kernel、依赖、normal dispatch cost 或三交付 materially 改变；或同合同 consumer 证明
+material 性能回归。candidate LOC self-check（`d015b0de...`）：全库 443,000；自实现包含测试 112,489；
+自实现不包含测试 71,135；Container 实现 13,094 行。product candidate/tree 为 `d015b0de...` /
+`1456eea7...`；final verification evidence commit 为 `206864ad`。后续只按本节 triggers 重开。

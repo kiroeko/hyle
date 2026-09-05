@@ -1,6 +1,7 @@
 # SIMD v5：Kernel target 所有权迁移
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮是 Platform CPU fact/target 权威缺陷的直接消费者迁移。当前仅登记 `REOPENED`；在 closure
 > card 与有限 FIX 集冻结前不修改 SIMD 产品源码，也不重开 387-operation provider 胜负裁决。
@@ -118,3 +119,31 @@ whole-buffer dispatch 次数均未改变。因而工程性能只签 P0 structura
 编译 flags/provider 决定。七项 aggregate gate 全部 `PASS`；SVE/RVV 真机性能明确不在本 P0 claim。
 前态 snapshot SHA-256 为
 `AD5A05627E04D1C734CA8F160CAD834FC29565639CFEF3A45A3ABFA7EFBA3A5E`。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。`KernelTarget` 是 HYLE compiled/selected kernel 的唯一公开
+authority；Platform 只提供 facts，provider 不再复制 enum。六项 FIX、七项 aggregate gate、387/422/0
+route consistency、exact artifact 和三平台三交付全部 `PASS`；本轮没有改变或重新裁决任何算法 winner。
+
+已知限制：
+
+- `KernelTarget` 是粗粒度 product family，不承诺包含每个 specialty feature，也不表示 host 的最高 ISA；
+  不同 family 可以在同一机器选择不同 target；
+- 为保持 source/static/shared 语义一致，公开 SDK 不提供“当前调用者 TU target”常量；custom kernel 由其
+  CMake flags/provider 形成真实 requirements，运行库诊断使用 `selected_target()`；
+- 本轮 P0 只证明 ownership/dispatch layer 没有新增正常成本，不续签 387 个 operation 的 P1 胜负；
+- 本轮没有 SVE/RVV 真机性能结论、稳定 C++ ABI、Native FFI 或 Formal 证书。
+
+只有以下新事实可以重开：
+
+1. provider/compiler/target flags 或 vendor 版本变化，使 canonical requirements 或 compiled body identity
+   改变；
+2. 真实 consumer 发现 selected target、fallback、exact/fat artifact 或三种交付报告不诚实；
+3. 公开 target API/layout、runtime dispatch、variant 集、直接依赖或正常 buffer 调用成本 materially 改变；
+4. route winner/operation body 被修改，或 P1/P2 consumer 证明 material regression；
+5. 新架构 target 正式准入而现有无顺序值域不能自然表达。
+
+candidate LOC self-check（`d015b0de...`）：全库 443,000；自实现包含测试 112,489；自实现不包含测试
+71,135；SIMD 实现 14,260 行。product candidate/tree 为 `d015b0de...` / `1456eea7...`；final
+verification evidence commit 为 `206864ad`。后续只按本节 triggers 重开。
