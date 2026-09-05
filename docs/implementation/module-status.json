@@ -582,67 +582,30 @@
     },
     {
       "module": "platform",
-    "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-FACTORIZATION-2026-09-03",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
-      "round_id": "platform-v3-capability-factorization",
-      "closure_task": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
-      "scope": "Complete the admitted inference host facts and current-thread mechanisms, split thread/wait and synchronous filesystem ownership from the host factor, and revalidate the natural C++ Platform product and its direct consumers.",
-      "non_goals": "Mapped-file or shared-memory ownership migration before the Mem factor round, async/direct/scatter I/O, scheduler policy, device facts or kernels, JIT/process/plugin policy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
-      "baseline_commit": "6bf023c90b6ec3d62e9892028e172a385671de1e",
-    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
-    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
-      "performance_tier": "P1",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
+      "round_id": "platform-v4-cpu-fact-boundary",
+      "closure_task": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
+      "scope": "Separate immutable CPU and OS feature facts from SIMD or provider execution-target policy, complete the finite inference-relevant runtime feature facts, and migrate direct target selectors without reopening unrelated Platform families.",
+      "non_goals": "Thread, wait, filesystem, topology, memory, VM or NUMA redesign; device inventory; kernel algorithms or provider winners; scheduler or async-IO policy; Native FFI/C API; stable C++ ABI; common performance-instrument redesign and Formal certification.",
+      "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
+      "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
-    "engineering_performance": {
-      "verdict": "PASS",
-      "mode": "P1_ENGINEERING",
-      "material_margin_pct": 5,
-      "machine_profile": "W1-WIN",
-      "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
-    },
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "STRUCTURAL",
+        "instrument_profile": "closure-correctness-v1"
+      },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
-    "loc": {
-      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "repository_code": 434612,
-      "self_with_tests": 110971,
-      "self_without_tests": 70261,
-      "module_implementation": 4806
-    },
-    "known_limitations": [
-      "Topology and host-memory results are fallible process-view snapshots; callers cannot treat an old snapshot or an unknown field as permanent whole-machine truth.",
-      "Platform owns host and OS facts and mechanisms, not device-budget aggregation, kernel choice, scheduler placement, asynchronous IO or backend policy.",
-      "Parker is a single-waiter mailbox mechanism, filesystem ownership is synchronous and one-cursor, and callers retain affinity-state restoration, external synchronization and lifecycle duties.",
-      "The P1 certificate covers only the frozen W1-WIN host, cross-physical-core Parker and warm-file contracts; it is not universal platform, topology, filesystem, end-to-end inference or Formal SOTA evidence."
-    ],
-    "reopen_triggers": [
-      "A named real consumer reproduces a Platform correctness, security, ownership, failure-taxonomy or C++ API-usability defect, or proves a missing admitted common host mechanism.",
-      "A supported OS, compiler or CPU topology invalidates the snapshot, ISA-state, affinity-restore, wait/wake or UTF-8 filesystem contract.",
-      "The public API or layout, factor dependency, header ownership, normal cost, source/static/shared delivery or locked OS mechanism changes materially.",
-      "A mature same-contract peer proves a better complexity class, or a normal consumer profile reproduces a regression beyond the material margin.",
-      "A routed device, process, JIT or asynchronous journey is formally admitted and proves a common Platform-owned fact or mechanism rather than upper-layer policy."
-    ],
-    "summary": "platform-v3 CLOSED：host/thread/fs 十一票能力与质因数边界完成；三平台、sanitizer、source/static/shared、direct consumers、文档/易用性、红队和三族同语义 P1 全部通过。"
+      "summary": "platform-v4 REOPENED：公开 best_isa 把 Highway target group 伪装成主机 ISA 事实，且当前推理所需的若干 CPU feature 探测缺失；等待冻结有限 CPU fact/target 分离轮。"
     },
     {
       "module": "platform_thread",
@@ -962,18 +925,14 @@
     },
     {
       "module": "simd",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "SIMD-V4-DELIVERY-01",
-      "reopen_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
-      "round_id": "simd-v4-expert-sdk",
-      "closure_task": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
-      "scope": "Make the locked Highway/xsimd header expert capability, fixed-target helper and source-fat helper available through one relocatable CMake contract in source, installed static and installed shared C++ delivery.",
-      "non_goals": "Mirroring the complete vendor register API under hyle::simd, changing ordinary SIMD semantics, the 387-operation/422-scope route ledger, algorithms or runtime dispatch, packaging upstream compiled contrib libraries, compatibility with the old source-only target spelling, Native FFI/C API, stable cross-toolchain ABI and Formal certification.",
-      "baseline_commit": "38dd0be938a19d7989e80daeb859139ebad14e52",
-      "candidate_commit": "1e543dec85ad6cef411f4499f7449294a2507b1c",
-      "candidate_tree": "4e4e82e5e22e09f55c7af165b45de9d4dfbb4896",
-      "end_commit": "184610788421fe83c5c5e176a4875e530aebe2e3",
-      "registry_anchor_commit": "184610788421fe83c5c5e176a4875e530aebe2e3",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
+      "round_id": "simd-v5-target-ownership",
+      "closure_task": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
+      "scope": "Give SIMD sole ownership of the public compiled-kernel target type and migrate ordinary, exact and source-fat target reporting away from the Platform host-fact type without changing algorithm or provider decisions.",
+      "non_goals": "New SIMD capabilities, operation semantics, provider winners, kernel algorithms, the 387-operation route ledger, vendor revisions, VQSort, a public register DSL, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -981,110 +940,41 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
-      "loc": {
-        "snapshot_commit": "1e543dec85ad6cef411f4499f7449294a2507b1c",
-        "repository_code": 402821,
-        "self_with_tests": 96041,
-        "self_without_tests": 59898,
-        "module_implementation": 14211
-      },
-      "known_limitations": [
-        "Formal performance certification remains PENDING; current engineering performance covers only the frozen W1-WIN P1 contract.",
-        "SVE and RVV are correctness and code-generation qualified under QEMU, without real-silicon performance claims.",
-        "Classic cl.exe direct Highway target bodies remain capped at AVX2 by the upstream AVX3 blocklist; direct AVX-512 uses clang-cl.",
-        "SIMD provides no Native FFI, C ABI or stable cross-toolchain C++ ABI.",
-        "The integrated Highway VQSort adaptation must be rebased and re-audited when its upstream source changes.",
-        "The expert SDK intentionally delivers header-only Highway/xsimd surfaces; upstream products requiring compiled .cc files need a separate owner and admission.",
-        "Expert code uses provider-native types inside consumer translation units and must be rebuilt when the locked provider version or target toolchain changes."
-      ],
-      "reopen_triggers": [
-        "A locked Highway or xsimd upgrade, or an integrated VQSort upgrade, changes an affected route or contract.",
-        "A real inference consumer demonstrates an unowned reusable SIMD primitive or a reproducible correctness defect.",
-        "Qualified same-contract evidence shows a material route reversal on a supported compiler and ISA scope.",
-        "New hardware or compiler support materially changes the finite target matrix, especially SVE or RVV silicon or classic-MSVC AVX3 support.",
-        "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
-      ],
-      "summary": "simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。"
+      "summary": "simd-v5 REOPENED：公开 Isa 别名混合主机能力与实际 compiled family target；等待冻结 KernelTarget 所有权迁移，既有算法和 provider route 不重开。"
     },
     {
       "module": "container",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "CONTAINER-NODE-TABLE-RECLAIM-2026-09-03",
-      "reopen_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
-      "round_id": "container-v3-node-table-reclamation",
-      "closure_task": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
-      "scope": "Bound ConcurrentNodeHashMap retired-table lifetime for a long-lived, growing inference registry, preserving accessor/node semantics and offering an explicit no-reclamation-cost lifetime route when the owner can retain tables to destruction.",
-      "non_goals": "Reopening any other Container family, changing node/accessor semantics, adding a lock-free map, benchmark-named APIs, Native FFI/C API, Compute/Graph, common instrument redesign or Formal certification.",
-      "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
-      "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-      "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
-      "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
-      "registry_anchor_commit": "b9fdec1a404aa05f0e63cd214896b05c09c59444",
-      "performance_tier": "P1",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
+      "round_id": "container-v4-cpu-feature-migration",
+      "closure_task": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
+      "scope": "Migrate the private StringView, hash and DynamicBitset variant selectors from the provider-shaped Platform ISA tier to explicit raw CPU feature requirements while preserving public APIs and kernel bodies.",
+      "non_goals": "New container capabilities or APIs, node-table lifetime, hash/string/bitset algorithm optimization, redesigning historical P1 evidence, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
+      "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md"
+        "verdict": "PLANNED",
+        "mode": "STRUCTURAL",
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/container/container-v3-node-table-reclamation.md",
-      "loc": {
-        "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-        "repository_code": 436638,
-        "self_with_tests": 111204,
-        "self_without_tests": 70416,
-        "module_implementation": 13055
-      },
-      "known_limitations": [
-        "The zero-read-tax default retains geometrically grown old tables until map destruction; the explicit reclaiming route pays a domain guard and a stalled domain reader delays table release.",
-        "Accessor lifetime still owns node and value safety; management operations and destruction require documented external quiescence, and an explicit domain must outlive the map.",
-        "The implementation is not a lock-free or shrinking map; the oneTBB P1 result is natural-route adoption evidence, not same-algorithm, whole-Container or Formal SOTA proof."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces table or node UAF, double free, rehash, accessor, allocator or C++ API-usability failure.",
-        "The public API or layout, default lifetime policy, algorithm, direct dependency, normal cost or source/static/shared delivery changes materially.",
-        "The qualified node-registry consumer shows a material regression against its locked peer or profile.",
-        "A real workload formally requires shrink, another progress guarantee or a table-lifetime tier that current retained and reclaiming routes cannot express."
-      ],
-      "summary": "container-v3 CLOSED：默认 retained 与显式 reclaiming table lifetime 完成；安全 hand-off、三平台正确性/sanitizer/三交付、依赖/文档/红队及 oneTBB natural-route P1 全部通过。"
+      "summary": "container-v4 REOPENED：三个私有 selector 依赖即将移除的 provider-shaped Platform ISA authority；等待冻结 raw-feature 迁移，公开 API 与 kernel 不重开。"
     },
     {
       "module": "util",
