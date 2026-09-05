@@ -38,6 +38,222 @@
         "all charged phases and the frozen material-contribution accounting are unchanged",
         "timer_queue headers, algorithm, direct component edges and Time product facade are unchanged"
       ]
+    },
+    {
+      "contract_id": "error-source-consumer-v2",
+      "contract_sha256": "61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0",
+      "workload_id": "taskgraph-source-success-64",
+      "path": "src/graph/taskgraph.cc",
+      "from_sha256": "9adb3f42e9cf9fd11c4edf961f2d121fe06341f6b6417b79ee4c8ecb9a2078f5",
+      "to_sha256": "81ac9b6a6637521343f2e387fb1f6afa3388feb9a3af4226c3e364d91be10b59",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Only the public allocator vocabulary changed to the equivalent borrowed AllocatorRef; the frozen 64-node success evaluation and Status work are unchanged.",
+      "reviewed_contract_facts": [
+        "the 64 indirect calls, fresh success carriers, checks and trace effects are unchanged",
+        "ownership, destruction, charged phases and observable work are unchanged",
+        "the allocator vocabulary change does not enter or alter the frozen Status operation"
+      ]
+    },
+    {
+      "contract_id": "error-source-consumer-v2",
+      "contract_sha256": "61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0",
+      "workload_id": "taskgraph-source-owning-last-failure-64",
+      "path": "src/graph/taskgraph.cc",
+      "from_sha256": "9adb3f42e9cf9fd11c4edf961f2d121fe06341f6b6417b79ee4c8ecb9a2078f5",
+      "to_sha256": "81ac9b6a6637521343f2e387fb1f6afa3388feb9a3af4226c3e364d91be10b59",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Only the public allocator vocabulary changed to the equivalent borrowed AllocatorRef; the frozen last-node owning-error route is unchanged.",
+      "reviewed_contract_facts": [
+        "the 63 successes and final owning failure occur in the same order",
+        "error allocation, construction, move propagation and destruction are unchanged",
+        "work amount, charged phases and delivery are unchanged"
+      ]
+    },
+    {
+      "contract_id": "error-source-consumer-v2",
+      "contract_sha256": "61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0",
+      "workload_id": "parallel-source-first-error-handoff",
+      "path": "src/graph/parallel_eval.cc",
+      "from_sha256": "5a4888eab4a46f670f81f8a112587cc5c2f5b0872592b5b132f1a2e8ee0f7fb4",
+      "to_sha256": "bdd1536724f5d29d2aa68e8b9f38cd3895a4c7d683f701605b6d9ca78288a92f",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Allocator and arena vocabulary changed, while the frozen Status outcome-to-waiter owning handoff remains unchanged.",
+      "reviewed_contract_facts": [
+        "outcome copy, record parameter copy, first-error move and waiter assignment are unchanged",
+        "the allocator and scratch arena edits are outside the isolated error-carrier handoff",
+        "ownership, synchronization, charged phases and destruction are unchanged"
+      ]
+    },
+    {
+      "contract_id": "error-source-consumer-v2",
+      "contract_sha256": "61993b4c19750f6d19b9906c06216f4453de10335e8788e13397a23683a526e0",
+      "workload_id": "join-source-failed-owning-handoff",
+      "path": "include/hyle/sched/join.h",
+      "from_sha256": "be10fceda9516727094ef030454d95d3934eb13ebdf07aa6db2af6b60862e8b9",
+      "to_sha256": "5abe87d1a4fb42c62a256c71fe05371064b2ed9f60d7c0373dc7347f992f9f7b",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Join storage only adopted the equivalent borrowed AllocatorRef spelling; the frozen locked Status copy and Result move handoff is unchanged.",
+      "reviewed_contract_facts": [
+        "producer and consumer noinline boundaries and uncontended locks are unchanged",
+        "Status copy, Result move, query and destruction topology are unchanged",
+        "allocator storage is outside the frozen carrier comparison and has equal semantics"
+      ]
+    },
+    {
+      "contract_id": "container-intrusive-p1-v2",
+      "contract_sha256": "c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415",
+      "workload_id": "counted-membership-4096",
+      "path": "samples/package/container/cpp/main.cc",
+      "from_sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd",
+      "to_sha256": "47522da4f537d07f75dc82cfba42050f946126fcab1c4b84e4afcb00c1a0b1cd",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "A later unrelated ConcurrentNodeHashMap sample was appended after all intrusive journeys; the counted-list sample is unchanged.",
+      "reviewed_contract_facts": [
+        "4096 inserts, arbitrary known-node removals and count reads are unchanged",
+        "node ownership, layout, ordering and observable checksum are unchanged",
+        "the appended sample executes only after the frozen intrusive journey"
+      ]
+    },
+    {
+      "contract_id": "container-intrusive-p1-v2",
+      "contract_sha256": "c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415",
+      "workload_id": "forward-arena-4096",
+      "path": "samples/package/container/cpp/main.cc",
+      "from_sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd",
+      "to_sha256": "47522da4f537d07f75dc82cfba42050f946126fcab1c4b84e4afcb00c1a0b1cd",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "A later unrelated ConcurrentNodeHashMap sample was appended; the cached-tail forward-list journey is unchanged.",
+      "reviewed_contract_facts": [
+        "append, traversal and detach-before-callback phases are unchanged",
+        "one-link caller-owned node topology and FIFO order are unchanged",
+        "the appended sample is outside all charged phases"
+      ]
+    },
+    {
+      "contract_id": "container-intrusive-p1-v2",
+      "contract_sha256": "c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415",
+      "workload_id": "sequence-sort-merge-4096",
+      "path": "samples/package/container/cpp/main.cc",
+      "from_sha256": "12af08374ca2b304e160a9b1865ef188ce5341d92d5c78ff314579206cc9b1dd",
+      "to_sha256": "47522da4f537d07f75dc82cfba42050f946126fcab1c4b84e4afcb00c1a0b1cd",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "A later unrelated ConcurrentNodeHashMap sample was appended; the intrusive stable sort and merge journey is unchanged.",
+      "reviewed_contract_facts": [
+        "partition, two stable sorts, stable merge and traversal are unchanged",
+        "caller-owned allocation-free sequence semantics and comparator are unchanged",
+        "the appended sample is outside all charged phases"
+      ]
+    },
+    {
+      "contract_id": "container-intrusive-p1-v2",
+      "contract_sha256": "c10b5e062cb944f06ccb880a7ac1ff454f810cf28906d2b3afad84a0a3efe415",
+      "workload_id": "hlist-callbacks-4096",
+      "path": "src/sched/cancel.cc",
+      "from_sha256": "9d3138f5fcf8efb0e5790c202e77b2877055f081c56f435e3edbdc0730f25bcb",
+      "to_sha256": "634465e979b8978dc2c54a5d8b2c2e93ec302d2652f406d0aaf88aa98f559b8e",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Only cancellation-tree allocator vocabulary changed to AllocatorRef; callback hlist operations and layout are unchanged.",
+      "reviewed_contract_facts": [
+        "registration, known-node unlink and detach-before-fire are unchanged",
+        "head and node pointer topology, ordering and work amount are unchanged",
+        "allocation and synchronization remain outside the intrusive primitive comparison"
+      ]
+    },
+    {
+      "contract_id": "time-host-consumer-v1",
+      "contract_sha256": "707029c26eb677dcecfc1478cca207d6a2a5d64b305eb04c43391f14d0cb158e",
+      "workload_id": "host-phase-deadline-64",
+      "path": "src/sched/scheduler.cc",
+      "from_sha256": "9fc1b77d51b70b701962418ca5b3003244b9828ac676fd5e9e33a49716842ba3",
+      "to_sha256": "32ec50841311ca5db0a67f735582bcf1a49c4abdc605ae460b4d636808700ef8",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "The scheduler only migrated allocator vocabulary; the frozen precise-clock phase and deadline workload is unchanged.",
+      "reviewed_contract_facts": [
+        "128 clock reads and 64 elapsed, deadline and remaining calculations are unchanged",
+        "clock source, timeout distribution, checksum and charged phases are unchanged",
+        "allocator fields and queue template spellings are outside the frozen Time operations"
+      ]
+    },
+    {
+      "contract_id": "mem-reclaim-p1-v2",
+      "contract_sha256": "8935256a3d9cfcab6319aa442d6904db4189dc5d9c8192147c3f4a593653d340",
+      "workload_id": "immutable-snapshot-read-4096",
+      "path": "samples/package/mem/cpp/main.cc",
+      "from_sha256": "010e2780457acae9059e0685a7587b81bee0fa97c12217da4cd286602c3b9588",
+      "to_sha256": "0bc93989ac5bb5ee30e44d3a5ab0e3a8b61ba13b881130802280ea74e9572e20",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "Only a later LifetimePlanner sample was extended; the warmed reclamation read journey is unchanged.",
+      "reviewed_contract_facts": [
+        "4096 short guards, acquire pointer loads and payload reads are unchanged",
+        "domain registration, publication, retirement and teardown remain outside timing",
+        "the new planner assertions execute after and independently of the reclamation sample"
+      ]
+    },
+    {
+      "contract_id": "platform-host-p1-v1",
+      "contract_sha256": "489d628076eb9703d21ed8c59b67aec8baa55f2d7cc77acc87ebc42cd89ddfa4",
+      "workload_id": "inference-host-planning-snapshot",
+      "path": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md",
+      "from_sha256": "664ad1c653d02a19bde33bc3055a263dc8f7b6241c84f7b8e0c7789956a9ffcb",
+      "to_sha256": "48c06e3b49c92f626bfde51bea07db758651d830f9ac6d1d39c7b238c9f21161",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "The task only gained terminal verification and receipt text after qualification; the frozen host-planning workload and implementation did not change.",
+      "reviewed_contract_facts": [
+        "topology and memory queries, native scratch lifecycle and aggregation are unchanged",
+        "semantic contract, work amount, charged phases and delivery are unchanged",
+        "all added text records post-benchmark verification, limits and immutable identities"
+      ]
+    },
+    {
+      "contract_id": "platform-fs-p1-v1",
+      "contract_sha256": "f6816dab82a38e2a259cd1ba7484fa7cfd98b16220fedcefaf9ae7081ef39d56",
+      "workload_id": "model-file-open-read-close-4mib",
+      "path": "docs/implementation/tasks/platform_fs/platform-fs-v1-factor.md",
+      "from_sha256": "2c48209881ed05494e5ac300dfedbd43bbe54960abeedc3227511d0fe447960a",
+      "to_sha256": "c05ecd52805a727b9212a00c4ef31e1ddeb0e655462ab0daec9685864679a9f8",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/frozen-foundation-current-source-2026-09.md",
+      "review_task_sha256": "1b5c0b7ac8933f0a92bcb6aa79964960abf95fdc5b00b2dae80cfe9c23761d4b",
+      "reason": "The task only gained terminal verification and receipt text after qualification; the frozen synchronous file workload and implementation did not change.",
+      "reviewed_contract_facts": [
+        "open, complete read, full checksum and close phases are unchanged",
+        "file size, sharing, caller buffers, short-read loop and delivery are unchanged",
+        "all added text records post-benchmark verification, limits and immutable identities"
+      ]
     }
   ]
 }

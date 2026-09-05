@@ -62,11 +62,14 @@ adapter 进入宿主 logger，后续队列、文件与网络 fan-out 不属于 H
 自然 API 格式化并投给一个 synchronous adapter。HYLE 使用 `HYLE_LOG_INFO_EVERY_N`；Abseil 使用
 `ABSL_LOG_EVERY_N(...).ToSinkOnly`。这是 natural-route aggregate，不是孤立原子排名。
 
-资格结果：`PASS`。15 个独立进程样本下，四个 execution-order/placement strata 的 combined exact
-verdict 全为 `WIN`，5% non-inferiority 全为 `PASS`。HYLE process median 为
+retained runner 结果为 `QUALIFIED`：15 个独立进程样本下，四个 execution-order/placement strata 的
+combined exact verdict 全为 `WIN`，历史 5% non-inferiority 计算全为 `PASS`。HYLE process median 为
 `345.69–349.60 M op/s`，Abseil 为 `61.85–63.24 M op/s`；candidate/peer median ratio 为
-`5.5077–5.6112`，四层 99.26% CI 的最低下界为 `5.4030`。这证明冻结的自然 repeated-diagnostic
-journey 明显胜出，不外推其他 Abseil logging 能力。
+`5.5077–5.6112`，四层 99.26% CI 的最低下界为 `5.4030`。这些点值证明冻结的自然
+repeated-diagnostic 路线明显更轻；但 Abseil 的自然 `LogEntry` 强制构造时间、线程、source 等记录
+语义，HYLE ordinary record 刻意不隐式捕获这些字段，而当前 output oracle 只核对 adapter 调用次数。
+因此它是 `NATURAL_ROUTE`，不能签同合同 peer non-inferiority 或把差距归因于某个底层算法，也不外推
+其他 Abseil logging 能力。
 
 ### 2. 推理 model-load structured progress
 
@@ -122,11 +125,12 @@ median 为 `16.34–16.62 M op/s`，pre-v4 为 `15.38–15.42 M op/s`，median r
 | structured | `22bb9d5416f0f0947318e4bd1ce045dfafc4ed6c48c228d6fbdb5d15e65e6d01` | `7cbf305d6ba7603e9eb5e0921accd9ed8e77db9bcc18e671367962b2c4073475` | `9b8c4d406c8500592e29899084da0c1e38fcfee31a47dcfbe8491e058c753a5d` | `fd26298c5aa6b0cd1bf51d6860c6341690f35cc1a73c116a71a83b20ac24f16b` |
 | concurrent | `cd42b1879493007a0dc7a8027c3e882847dce06e89197f9c35a0a889710b0b0c` | `8ca4ce843068d9e9a87538236ad7496bc2acca5fca6156e7d92323909d63fb14` | `7430713a523c3566caae2b66650a57308e7113bb200fc8d874323db75dac14d3` | `f55b016e368a7bf0299ab6c501d945978cd51d6c94d46702acfd0556c49b78ce` |
 
-structured v1 contract 是不可变 retained artifact，其中的 `comparison_class=SAME_CONTRACT` 是本轮复核
-发现的分类错误：它忽略了 concurrent-safe exact admission 与 single-owner scalar gate 的保证差异。为保持
-manifest/hash 的历史真实性，这里不回写 contract 或 raw bundle；自本段起其 same-contract `PARITY/NI`
-解释作废，只保留上述 candidate-stronger `NATURAL_ROUTE` 用户预算结论。以后续签必须建立新 contract，
-不得从 v1 标签继承同合同声明。
+ordinary/structured v1 contract 都是不可变 retained artifact，其中的 `comparison_class=SAME_CONTRACT`
+是本轮复核发现的分类错误。ordinary 忽略了 Abseil mandatory record metadata 与 HYLE opt-in lean record
+的差异；structured 忽略了 concurrent-safe exact admission 与 single-owner scalar gate 的保证差异。为保持
+manifest/hash 的历史真实性，这里不回写 contract 或 raw bundle；自本段起二者的 same-contract
+`WIN/PARITY/NI` 解释作废，只保留上述 `NATURAL_ROUTE` 点值与用户预算结论。以后续签必须建立新
+contract，不得从 v1 标签继承同合同声明。
 
 本机 retained roots 分别为 `C:\hyle-scratch\obs-v4-qual-ordinary-evidence`、
 `C:\hyle-scratch\obs-v4-qual-structured-evidence` 与
@@ -145,8 +149,8 @@ manifest/hash 的历史真实性，这里不回写 contract 或 raw bundle；自
 
 ## 当前可声明与禁止外推
 
-可以声明 obs-v4 candidate 在上述三个冻结的正常 journey 上通过 W1-WIN 5% P1 工程门：ordinary
-Abseil 路线明确胜出，完整 structured progress 的 candidate-stronger 自然路线落在用户预算内，受影响
-registry 路线非劣。不得据此声明两个 limiter 同合同等价、全面
-SOTA、跨平台固定纳秒、异步 logger 性能、所有 sink fan-out 或 end-to-end token latency；4/16 sink
-仍只是诊断。Formal 认证独立保持 `PENDING`。
+可以声明 obs-v4 candidate 在上述三个冻结的正常 journey 上通过受限 W1-WIN P1 工程门：ordinary
+自然路线明显更轻，完整 structured progress 的 candidate-stronger 自然路线落在预声明 5% 用户预算内，
+受影响 registry 的同实现回归路线通过 5% non-inferiority。不得把前两项写成 peer same-contract
+non-inferiority，不得据此声明两个 limiter 同合同等价、全面 SOTA、跨平台固定纳秒、异步 logger 性能、
+所有 sink fan-out 或 end-to-end token latency；4/16 sink 仍只是诊断。Formal 认证独立保持 `PENDING`。
