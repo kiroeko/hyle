@@ -58,3 +58,58 @@
 
 只有在 closure card 冻结真实 consumers、自然 API/失败语义、跨平台差异、依赖/交付、有限 FIX 和验证矩阵
 后进入 `SCOPED`；只有完成 implementation/peer/文档/构建红队并冻结 FIX 后进入 `AUDITED`。
+
+## Closure card（`SCOPED`）
+
+- component / product / round / kind：`platform + platform_fs` / Platform /
+  `platform-v6-file-control-and-process-policy` / `REOPEN`；
+- baseline / trigger：`cba7392499c1eca2f0e961e0e2a45a89a2d6d88b` /
+  `PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05`；
+- consumers：推理程序在创建 workers 前显式设置 process policy；模型、缓存、索引与数据库控制面通过一个
+  已打开 owner 查询/调整文件、预留空间并协调多个 cooperating processes；
+- API 冻结候选：
+  1. `enum class ProcessPriority : int8_t { kLowest, kLow, kNormal, kHigh, kHighest }` 与
+     `Status set_process_priority(ProcessPriority)`，独立于 thread enum，避免 base factor 反向依赖
+     `platform_thread`；不提供 realtime；
+  2. `FileHandle::size() const`、`resize(size)`、`preallocate(size)`；size 为逻辑字节数，resize 只改变
+     EOF，preallocate 保证文件至少达到 `size` 且请求 `[0,size)` storage、绝不缩小较大文件；
+  3. `FileLockMode::{kShared,kExclusive}` 与 `lock(mode)`、`try_lock(mode)`、`unlock()`；锁随 handle
+     close/析构释放，mode conversion 不承诺原子；
+- 跨平台合同：
+  - Windows process ladder 同时设置 priority class 与 execution-speed QoS；normal 恢复 system-managed
+    QoS；两个 OS controls 不具备事务原子性；
+  - Linux/macOS 使用 `setpriority(PRIO_PROCESS, 0, nice)`；Linux 的该调用作用于调用线程，故完整
+    process-startup 效果要求在创建 workers 前调用；已有 workers 继续逐线程使用 Platform Thread；
+  - POSIX lock 使用 `flock` 的 open-file-description/last-close 语义并重试阻塞调用的 `EINTR`；Windows
+    使用从 offset 0 覆盖可表达全范围的 `LockFileEx`。前者是 advisory，后者会被内核 I/O 强制；公共
+    承诺只有 cooperating processes 的互斥/共享协调；
+  - POSIX resize 使用 `ftruncate`；Linux preallocate 使用 `posix_fallocate`；macOS 先
+    `F_PREALLOCATE`（contiguous 失败后 all）再按需 `ftruncate`；Windows 分别使用
+    `FileEndOfFileInfo` 与 `FileAllocationInfo` 后按需调整 EOF；超过 signed native offset 的值返回
+    `OutOfRange`；preallocate 的 allocation 成功、EOF 更新失败可能留下不可见的已分配空间，明确为
+    非事务操作；
+- ownership / dependency：不改变一字 `FileHandle` layout，不保存 lock state；`platform` 仍公开依赖
+  `core/error`，`platform_fs` 仍公开依赖 `core/error/time` 且私有依赖 `platform`；实现统一走已冻结
+  Error 的 `status_from_errno/status_from_win32`；不引入 Container/Mem/第三方产品依赖；
+- public delivery：C++23 source、static、shared 三种；Native FFI/C API 继续 `N/A`；新增头必须自包含、
+  安装，并由 Platform package sample 消费；
+- performance：`P0`。保持所有旧热路径字节/控制流不变；每个新方法只在显式调用时落最少 native
+  control。禁止对不同 EOF/allocation/locking/QoS 语义做苹果对橘子计时；
+- budget：一个 base source/header、现有 fs source/header、两套 factor tests、Platform sample、
+  architecture/user/capability evidence、组件/三交付验证；不扩建统一性能仪器；
+- stop：出现无法诚实统一的 supported-OS 语义、需要常态对象 metadata/新依赖、或必须改变 frozen
+  Thread/Mem/IO 产品合同，退回 `AUDITED` 或 `BLOCKED`，不得用模糊文档掩盖。
+
+### 预声明验证矩阵
+
+| gate | 验证 |
+|---|---|
+| correctness | Windows Release + Werror；WSL GCC Release/ASan/UBSan；macOS AppleClang Release；closed handle、invalid enum/mode、offset overflow、grow/shrink/no-shrink、shared/exclusive/try/close-release |
+| architecture | public-header closure；component graph/exact factors；无新 third-party；Platform/FS 只使用 Core/Error/Time 合法边 |
+| delivery | Platform product source embedding、relocated static SDK、relocated shared SDK；安装 sample 编译/运行；C++ symbols only |
+| consumers | Mem mapping、Sched、IO 只读构建回放；不因存在相邻同类 syscall 就非法重开其产品 |
+| usability/docs | architecture 与 user guide 给出选择表、失败/权限、startup timing、lock/resize/preallocate 陷阱；过时 negative-space 清理 |
+| performance | P0 structural/codegen：`sizeof(FileHandle)` 不变、旧 hot path 无 diff、新入口固定 native calls；任何 peer timing 先过完整语义等价表 |
+| red team | path replacement、sparse≠preallocation、lock advisory/mandatory 差异、same-process/duplicate handle、close release、partial side effects、permissions/network filesystem、Windows two-control partial failure |
+
+本卡已冻结边界；下一步只允许只读审计并形成有限 `FIX` 集，不能先写产品代码。

@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -605,7 +605,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v6 REOPENED：既有能力账本和 llama.cpp 启动旅程证明缺少显式 process priority/QoS；owner 已准入该通用控制面。"
+      "summary": "platform v6 SCOPED：进程启动 priority/QoS 的自然 API、跨平台差异、P0 成本和有限验证矩阵已冻结；尚未授权产品实现。"
     },
     {
       "module": "platform_thread",
@@ -670,7 +670,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -693,7 +693,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v3 REOPENED：能力账本已确认同步 handle 缺少 size/resize/preallocate 与整文件建议锁，owner 已准入完整自然工作流。"
+      "summary": "platform_fs v3 SCOPED：handle size/resize/preallocate 与整文件 cooperative lock 的语义、owner、P0 成本和有限验证矩阵已冻结。"
     },
     {
       "module": "mem_reclaim",
