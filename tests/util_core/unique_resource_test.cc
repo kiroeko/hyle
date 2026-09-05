@@ -76,6 +76,28 @@ struct ThrowingCopyTokenDeleter {
   }
 };
 
+struct ThrowingBoolConversion final {
+  operator bool() const noexcept(false) { throw 7; }
+};
+
+struct ThrowingBoolSentinelToken final {
+  friend ThrowingBoolConversion operator==(const ThrowingBoolSentinelToken&,
+                                           int) noexcept {
+    return {};
+  }
+};
+
+struct ThrowingBoolSentinelDeleter final {
+  void operator()(ThrowingBoolSentinelToken&) const noexcept {}
+};
+
+template <class Resource, class Invalid, class Deleter>
+concept HasCheckedUniqueResourceFactory =
+    requires(Resource&& resource, const Invalid& invalid, Deleter&& deleter) {
+      make_unique_resource_checked(std::forward<Resource>(resource), invalid,
+                                   std::forward<Deleter>(deleter));
+    };
+
 struct MoveOnlyThrowingCopyTokenDeleter {
   explicit MoveOnlyThrowingCopyTokenDeleter(int* deleted)
       : deleted(deleted), state(std::make_unique<int>(1)) {}
@@ -108,6 +130,9 @@ static_assert(noexcept(make_unique_resource_checked(
 static_assert(!noexcept(make_unique_resource_checked(
     std::declval<ThrowingCopyToken&>(), std::declval<const int&>(),
     std::declval<ThrowingCopyTokenDeleter&&>())));
+static_assert(!HasCheckedUniqueResourceFactory<
+              ThrowingBoolSentinelToken, int,
+              ThrowingBoolSentinelDeleter>);
 
 TEST(UniqueResource, DeletesValidTokenExactlyOnce) {
   int deleted = 0;

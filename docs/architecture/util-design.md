@@ -104,7 +104,8 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
 
 - Scope guards、UniqueResource、Ref copy/drop/cast、FunctionRef/NotNull 构造与调用路由、SpinLock 无争用和 RNG
   scalar draw 是 O(1)。UniqueResource 的 deleter move-or-copy 是编译期选择，不增加 mode 字段、runtime
-  branch、allocation 或 dispatch；checked factory 的 `noexcept` 精确传播比较与 owner construction 合同。
+  branch、allocation 或 dispatch；checked factory 只接收完整布尔判定不抛的 sentinel，并精确传播 owner
+  construction 的异常合同，避免 acquisition 与 owner construction 之间出现无人回收的异常窗口。
 - RNG bounded draw 期望 O(1)，`discard(n)` O(n)，`jump/long_jump` 固定 O(256)，shuffle O(n)。
 - type-name 在常量求值切片；hash 是 O(类型名长度) 的 constexpr 工作，不在运行期热路。
 - Registry `find/create` 是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销

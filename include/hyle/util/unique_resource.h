@@ -34,6 +34,14 @@ concept NothrowTransferConstructible =
     noexcept(Stored(move_or_copy_for_transfer<Stored>(
         std::declval<Source&&>())));
 
+template <class Resource, class Invalid>
+concept NothrowSentinelComparable =
+    requires(const std::remove_reference_t<Resource>& resource,
+             const Invalid& invalid) {
+      { resource == invalid } -> std::convertible_to<bool>;
+      requires noexcept(static_cast<bool>(resource == invalid));
+    };
+
 }  // namespace detail
 
 // Exclusive ownership for a value-like native token that has no domain RAII
@@ -284,16 +292,13 @@ UniqueResource(Resource&&, Deleter&&)
 // construction always means "owned"; this factory is the explicit checked
 // route that starts inactive when resource == invalid.
 template <class Resource, class Invalid, class Deleter>
-  requires requires(const std::remove_reference_t<Resource>& resource,
-                    const Invalid& invalid) {
-    { resource == invalid } noexcept -> std::convertible_to<bool>;
-  }
+  requires detail::NothrowSentinelComparable<Resource, Invalid>
 [[nodiscard]] auto make_unique_resource_checked(Resource&& resource,
                                                 const Invalid& invalid,
                                                 Deleter&& deleter) noexcept(
     noexcept(detail::UniqueResourceAccess::make_checked(
         false, std::declval<Resource&&>(), std::declval<Deleter&&>()))) {
-  const bool allocated = !(resource == invalid);
+  const bool allocated = !static_cast<bool>(resource == invalid);
   return detail::UniqueResourceAccess::make_checked(
       allocated, std::forward<Resource>(resource),
       std::forward<Deleter>(deleter));

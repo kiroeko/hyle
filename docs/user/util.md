@@ -174,7 +174,9 @@ use(fd.get());
 ```
 
 直接构造 `UniqueResource{token, deleter}` 总是表示拥有 token，即使值看起来像 invalid sentinel；只有
-`make_unique_resource_checked(token, invalid, deleter)` 会比较 sentinel 并从 inactive 状态开始。
+`make_unique_resource_checked(token, invalid, deleter)` 会比较 sentinel 并从 inactive 状态开始。比较
+结果到 `bool` 的完整判定必须保证不抛异常；不满足这个 acquisition-safety 合同的自定义 sentinel 会在
+编译期被拒绝，而不是在接管 native token 之前留下异常窗口。
 `allocated()`/显式 bool 只表示是否持有回收责任，不检查 token 的真值。`release()` 只 disarm；需要转交
 value-like token 时先复制 `get()`，再 release。`reset()` 立即回收且至多一次，`reset(new_token)` 在存储
 可无异常赋值时接管新 token。
