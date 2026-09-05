@@ -1374,6 +1374,7 @@ Result<std::size_t> available_cpu_info(CpuInfo* dst,
 
 namespace {
 
+#if !HYLE_OS_MACOS
 struct CpuCacheObservation {
   CpuInfo cpu{};
   CacheInfo cache{};
@@ -1689,6 +1690,7 @@ void fill_cache_observations(CpuCacheObservation* observations,
     observations[i].line_size = line;
   }
 }
+#endif
 #endif
 
 [[maybe_unused]] Result<std::size_t> generic_cache_class(
