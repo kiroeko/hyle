@@ -168,3 +168,19 @@ lock/preallocate/resize 在当前 north-star 同步基础旅程没有缺口，po
   dependency、每项 allocation/syscall 或 benchmark-only API，必须退回 `AUDITED` 重新裁决，本轮不得做。
 
 冻结 `FIX` 集只有 `T01/F01/F02/D01`。从现在起授权这些产品改动；其余 Platform 产品面保持关闭。
+
+## Candidate（`CANDIDATE`）
+
+- product commit / tree：`5818a7ac9b143b980ac43eb39e2a01dac1e5b108` /
+  `e0c2a9e25b49350965d1bfb3a39789ece976569e`；
+- `T01`：Windows 显式 priority 同时配置 thread priority 与 execution QoS；optional 缺省路径代码未变；
+- `F01`：`for_each_entry` 使用 caller-owned context 保留 const，并在异常启用 TU 中捕获、关闭、重抛；
+- `F02`：recursive mkdir 改为 4096-byte stack-first + 单次 checked malloc fallback；
+- `D01`：architecture/user/performance/watchlist 已同步；CMake factor graph、公开函数与 layout 未改；
+- W1-WIN Release：host/thread/fs 三个 test binary `3/3 PASS`；新增 native QoS readback、const callback、
+  exception cleanup 与 4.3KB recursive path 全部通过；MSVC const-callback exception/no-exception
+  compile-only 均通过；
+- P0 结构检查：未配置 priority 零新增调用；显式 priority 固定两次 native control；visitor 每项仍一次
+  callback、无 entry allocation/collection/额外 stat；短 mkdir 零 heap、长路径一次 allocation；
+- 当前尚未完成 WSL/macOS、sanitizer、exact factor、Platform 三交付、直接 consumers、FFI/symbol scan 与
+  最终红队，所以只允许 `CANDIDATE`，不能写 `VERIFIED/CLOSED`。

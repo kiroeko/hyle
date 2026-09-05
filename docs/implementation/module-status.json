@@ -642,7 +642,7 @@
     },
     {
       "module": "platform_thread",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-THREAD-WINDOWS-QOS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -650,6 +650,8 @@
       "scope": "Complete the existing portable thread-priority contract on Windows with explicit execution QoS while preserving the unconfigured OS-default route.",
       "non_goals": "CPU facts, topology, affinity, wait/Parker, current ISA state, process-wide or realtime priority, scheduler policy, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "1cb204e79e11532252053971dd5ff97dfe9648d7",
+      "candidate_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
+      "candidate_tree": "e0c2a9e25b49350965d1bfb3a39789ece976569e",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -665,11 +667,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v3 AUDITED：唯一 FIX 是完成既有 Windows priority/QoS 语义并验证显式与默认路线；API、依赖和 Parker 不变。"
+      "summary": "platform_thread v3 CANDIDATE：Windows 显式 priority 已完成 native priority + execution QoS，等待跨平台、三交付与直接 consumer 终验。"
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-FS-CPP-VISITOR-LONG-PATH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -677,6 +679,8 @@
       "scope": "Repair the natural C++ directory-visitor exception and const-callable contract and remove the internal recursive-mkdir ceiling on supported long paths without changing synchronous FileHandle IO.",
       "non_goals": "FileHandle IO, mapping or shared-storage ownership, lexical paths, lock/preallocate/resize/watch/async/positional/direct/scatter IO, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
       "baseline_commit": "1cb204e79e11532252053971dd5ff97dfe9648d7",
+      "candidate_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
+      "candidate_tree": "e0c2a9e25b49350965d1bfb3a39789ece976569e",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -692,7 +696,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 AUDITED：冻结 const/异常安全 visitor、stack-first 可增长 mkdir 与定向验证；FileHandle/I/O/因子图不变。"
+      "summary": "platform_fs v2 CANDIDATE：const/异常安全 visitor 与可增长 recursive-mkdir 已落地，等待跨平台、三交付与直接 consumer 终验。"
     },
     {
       "module": "mem_reclaim",
