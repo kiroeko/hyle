@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-CPU-FACT-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
       "round_id": "platform-v4-cpu-fact-boundary",
@@ -592,6 +592,8 @@
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
+      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -617,11 +619,30 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform-v4 VERIFIED：无顺序 CpuFeatureSet、三平台 feature facts、旧 target policy 删除、三平台正确性/sanitizer/三交付、直接消费者、文档/红队与 P0 结构门全部通过。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v4-cpu-fact-boundary.md",
+      "loc": {
+        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+        "repository_code": 443000,
+        "self_with_tests": 112489,
+        "self_without_tests": 71135,
+        "module_implementation": 4982
+      },
+      "known_limitations": [
+        "CpuFeature is a finite admitted host-fact set rather than a universal CPU catalog; a feature without a stable supported-OS query is reported absent rather than guessed.",
+        "AMX Hardware facts do not grant per-thread tile permission, SVE/RVV vector length remains owned by Platform-thread, and unordered facts do not select or rank kernels/providers.",
+        "The P0 claim covers bounded initialization and O(1) cached set queries only; old Platform P1 paths, scalable-vector true-machine timing, end-to-end inference, universal SOTA and Formal remain unclaimed."
+      ],
+      "reopen_triggers": [
+        "A named real consumer requires a Platform-owned host fact with a stable OS ABI that the finite set cannot express, or reproduces a CPU/OS/virtualization safety or correctness defect in a feature gate.",
+        "The public fact API or layout, feature semantics, direct dependency, normal probe cost or source/static/shared delivery changes materially.",
+        "Platform begins selecting or ordering SIMD, backend or provider targets again, creating a second target authority.",
+        "A mature same-contract peer or normal profile proves a better complexity class or material probe/query regression."
+      ],
+      "summary": "platform-v4 CLOSED：无顺序 CpuFeatureSet 与有限三平台 host facts 成为唯一 Platform authority；target policy 删除，三平台正确性/sanitizer/三交付、直接消费者、文档/红队与 P0 结构门全部通过。"
     },
     {
       "module": "platform_thread",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-THREAD-CPU-FEATURE-CONSUMER-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
       "round_id": "platform-thread-v2-cpu-feature-consumer",
@@ -631,6 +652,8 @@
       "baseline_commit": "749e67a58bd87efcfb6b1b836dc7cfeaaf0fdfd0",
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
+      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -656,7 +679,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform-thread-v2 VERIFIED：六处 SVE/RVV/AMX fact 查询已迁移；三平台正确性/sanitizer、Platform 三交付、Sched consumer、文档/红队与 P0 结构门全部通过，Parker 路径未改。"
+      "closure_evidence": "docs/implementation/tasks/platform_thread/platform-thread-v2-cpu-feature-consumer.md",
+      "loc": {
+        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+        "repository_code": 443000,
+        "self_with_tests": 112489,
+        "self_without_tests": 71135,
+        "module_implementation": 834
+      },
+      "known_limitations": [
+        "A cached host hardware fact is not current-thread permission or vector length; dynamic SVE, RVV and AMX state remains exposed through the existing Platform-thread mechanisms.",
+        "This P0 migration does not renew Parker or affinity P1 timing, scalable-vector true-machine performance, end-to-end inference or Formal claims."
+      ],
+      "reopen_triggers": [
+        "Platform host-fact semantics change in a way that invalidates this consumer, or a named consumer reproduces SVE, RVV or AMX permission/state correctness failure.",
+        "The public API or layout, state transition, dependency, normal cost or source/static/shared delivery changes materially.",
+        "A same-contract consumer or peer proves a material normal-path regression."
+      ],
+      "summary": "platform-thread-v2 CLOSED：六处 SVE/RVV/AMX fact 查询已迁到唯一 Platform authority；三平台正确性/sanitizer、Platform 三交付、Sched consumer、文档/红队与 P0 结构门全部通过，Parker 路径未改。"
     },
     {
       "module": "platform_fs",
@@ -915,7 +955,7 @@
     },
     {
       "module": "simd",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
       "round_id": "simd-v5-target-ownership",
@@ -925,6 +965,8 @@
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
+      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -950,11 +992,30 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "simd-v5 VERIFIED：KernelTarget 成为唯一执行目标 authority；三平台 correctness/sanitizer/source-static-shared、exact artifact、387/422/0 route、文档/红队与 P0 结构门全部通过，算法 winner 未改。"
+      "closure_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
+      "loc": {
+        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+        "repository_code": 443000,
+        "self_with_tests": 112489,
+        "self_without_tests": 71135,
+        "module_implementation": 14260
+      },
+      "known_limitations": [
+        "KernelTarget is a coarse compiled product family rather than the host maximum or a catalog of every specialty feature; different families may legitimately select different targets.",
+        "The public SDK intentionally has no current-caller-TU target constant across source/static/shared delivery; custom kernels derive requirements from their actual build flags/provider and runtime diagnosis uses selected_target().",
+        "The P0 claim covers unchanged init-once/one-cached-call dispatch structure only; operation winner timing, SVE/RVV true-machine performance, stable C++ ABI, Native FFI and Formal remain unclaimed."
+      ],
+      "reopen_triggers": [
+        "A provider, compiler, target flag or vendor revision changes canonical requirements or compiled-body identity.",
+        "A named consumer reproduces dishonest selected-target, fallback, exact/fat artifact or source/static/shared reporting.",
+        "The public target API or layout, runtime dispatch, compiled variant set, direct dependency or normal whole-buffer cost changes materially.",
+        "An operation body or route winner changes, a P1/P2 consumer proves material regression, or a new architecture target is formally admitted."
+      ],
+      "summary": "simd-v5 CLOSED：KernelTarget 成为唯一 compiled/selected target authority，Platform 只提供 facts；三平台 correctness/sanitizer/三交付、exact artifact、387/422/0 route、文档/红队与 P0 结构门全部通过，算法 winner 未改。"
     },
     {
       "module": "container",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
       "round_id": "container-v4-cpu-feature-migration",
@@ -964,6 +1025,8 @@
       "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
       "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
       "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
+      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
+      "registry_anchor_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -988,7 +1051,25 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container-v4 VERIFIED：三个私有 selector 已按 Highway/XXH3 的真实 TU requirements 迁移；三平台 correctness/sanitizer/三交付、无 SIMD 依赖、文档/红队与 P0 结构门全部通过。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
+      "loc": {
+        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
+        "repository_code": 443000,
+        "self_with_tests": 112489,
+        "self_without_tests": 71135,
+        "module_implementation": 13094
+      },
+      "known_limitations": [
+        "The Highway and XXH3 feature requirements are private implementation details rather than a public target-pinning API.",
+        "This P0 round covers init-once selectors and O(1) membership only; it does not renew StringView, hash, DynamicBitset, node-table, end-to-end inference or Formal performance rankings.",
+        "A compiler-flag, Highway/XXH3 target-group or variant-body change invalidates the current structural evidence."
+      ],
+      "reopen_triggers": [
+        "The actual generated-TU flags or provider target group changes, or a named consumer reproduces wrong dispatch or an illegal instruction.",
+        "The public API or layout, kernel body, dependency, normal dispatch cost or source/static/shared delivery changes materially.",
+        "A same-contract normal consumer proves material performance regression."
+      ],
+      "summary": "container-v4 CLOSED：三个私有 selector 各自匹配 Highway/XXH3 的真实 TU requirements；三平台 correctness/sanitizer/三交付、无 SIMD 依赖、文档/红队与 P0 结构门全部通过，公开 API/kernel body 未改。"
     },
     {
       "module": "util",
