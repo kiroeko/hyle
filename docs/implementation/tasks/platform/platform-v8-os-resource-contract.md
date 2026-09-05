@@ -364,3 +364,23 @@ P1 evidence 与未改产品路径的关系将在第二候选明示记录，不�
 `CANDIDATE -> AUDITED` 前态 registry snapshot 为
 `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-candidate-withdrawal.json`，
 SHA-256 `7DCD67D13E9EB55C4D8C53AC26DEC4CBA0715B5C273C8799839856B3C429046D`。
+
+## 第二 Product candidate（`CANDIDATE`）
+
+- product commit/tree：`c39df6f94c636ab8fa94cb700dd263763a42d680` /
+  `37889346564f3a5cdc895f26c9d610883076ba02`；
+- exact source archive：
+  `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\candidate\hyle-c39df6f9.tar.gz`，
+  SHA-256 `4C0A0D30B75D97B020253765621F244FDFD111A1799E4E45159E8BEA04B70A32`；
+- 首候选暴露的不是运行路径缺陷，而是 OS 私有 helper 的编译 ownership 缺陷。修复将
+  `line_is_complete`、Linux quota/frequency 文件 helper 与 Linux-only memory-budget merge helper
+  收入 `HYLE_OS_LINUX`；Linux 预处理输出与运行算法不变，Windows/macOS 删除从未被调用的 private
+  definition，公开 API、layout、依赖和正常路径成本不变；
+- 候选化前，W1-WIN MSVC Release、W1-WSL GCC 14 Release/UBSan/WERROR、M1-MAC AppleClang 21
+  Release/UBSan/WERROR 的三个 exact factor 与逐头测试均已通过。候选后仍须从本 archive 重放三交付、
+  direct consumers、性能证据关系和最终红队，不能把首候选结果静默继承；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot 为
+  `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-candidate-2.json`，
+  SHA-256 `2B711855F1C7EE2B698D2563C72BF42A4445023AF022F9F15D46806C8AE08484`。
+
+第二候选只冻结新的 product identity；aggregate gate 在全部候选精确回放完成前仍为 `PLANNED`。
