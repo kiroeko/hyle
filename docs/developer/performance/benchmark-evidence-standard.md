@@ -55,7 +55,7 @@ peer/SOTA 声明。P1/P2 工程 `PASS` 是产品进入 `CLOSED` 的硬门。Form
 | Comparison class | Contract | 合法结论 |
 |---|---|---|
 | `NATURAL_ROUTE` | 同一用户任务；各库采用自身自然、公开、正确的最佳路线，允许产品语义不同 | route-level 用户收益或产品形状缺口；不能签 same-contract peer/SOTA 结论 |
-| `SAME_CONTRACT` | minimum semantics、lifecycle、progress 和计费边界全部等价，或由公开记录的 adapter 对齐 | 同合同 non-inferiority/better 与资源取舍 |
+| `SAME_CONTRACT` | minimum semantics、lifecycle、progress 和计费边界全部等价，或由公开记录的 adapter 对齐；任一侧不得额外承担 material 工作或保证 | 同合同 non-inferiority/better 与资源取舍 |
 | `MECHANISM_DIAGNOSTIC` | 刻意隔离一个实现机制 | 归因；不能单独形成产品 gate |
 
 因此 consumer-shaped replay 不自动获得 `SAME_CONTRACT` 身份。`NATURAL_ROUTE` 的输赢仍然重要：它
@@ -165,6 +165,18 @@ minimum detectable effect（MDE）。预计差异小于 MDE 时，先扩大真�
 “功能更少所以更快”写成 SOTA，也不要强迫 HYLE 模拟 peer 的怪异 API；可以建立 HYLE 内部语义成本
 阶梯和机制 microbench 解释必要语义税。adapter 的构造、分配、同步和 teardown 全部进入 peer 计费，
 不能只模拟返回类型而漏掉产品语义。
+
+**禁止“苹果对橘子”的硬门：**相同输入、输出数量或最终 checksum 只是必要条件，不是
+`SAME_CONTRACT` 的充分条件。若一侧额外提供或实际执行 material 的线程安全、精确一次、失败传播、
+取消、排序、生命周期、安全检查、allocation、同步、clock、metadata 或销毁保证，即使更强的一侧是
+HYLE，也必须把对应矩阵格写成 `INTENTIONALLY_DIFFERENT` 并注明方向，整行降为 `NATURAL_ROUTE` 或
+另建 adapter 对齐实验。候选更强且仍落在预声明预算内，只能表述为“自然产品路线的额外保证未超出用户
+预算”；不得把统计带内结果称为底层 primitive 的 `PARITY`、peer non-inferiority 或 SOTA。候选更弱、
+两侧各有不同保证，或额外工作无法防御地计量时同理，且不能用结果签 correctness 缺口。
+
+该门在采样前由合同作者和独立 reviewer 分别签一次；若 retained bundle 之后才发现不等价，raw samples、
+artifact identity 与仪器资格仍可作为历史事实，但必须立即撤销错误的 same-contract 解释并显式记录新的
+route-level 边界。精密统计不能把错误命题变正确，也不能因为修正证据分类就自动触发产品代码改写。
 
 强 peer 应是相同问题域中成熟、当前且配置合理的实现。`std` 可作为常识基线，但当 oneTBB、folly、
 mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完成证据门。

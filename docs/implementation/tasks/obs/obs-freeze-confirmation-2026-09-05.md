@@ -24,6 +24,12 @@ Obs 是低层同步 observability producer **质因数**：公开依赖 Core/Err
 Trace ON 借用中央锁定 Tracy。它拥有 typed borrowed log record、同步 sink lifecycle、call-site control 和
 native trace seam，不拥有 metrics、异步队列、持久化、配置树、任务上下文或 crash reporting。
 
+本确认之后的证据复核发现 structured v1 contract 把 concurrent-safe exact limiter 与 single-owner scalar
+gate 错标为 `SAME_CONTRACT`。原始样本与仪器资格保留，但该行已降为 candidate-stronger
+`NATURAL_ROUTE`：只证明完整 HYLE 路线的额外保证落在预声明 5% 用户预算内，不再证明两个 limiter
+`PARITY` 或 peer non-inferiority。产品 candidate 未变，Obs 的工程 `PASS/FROZEN` 由纠正后的 route-level
+预算继续支撑；详情见 [`benchmarks-obs`](../../evidence/performance/benchmarks-obs.md)。
+
 ## 七问冻结直答
 
 ### 1. 第三方产品路径
@@ -51,10 +57,12 @@ guard 均已复用；Tracy 为 feature-ON borrow。callback quiescence 的 per-s
 ### 4. 拟真、公平性能
 
 `PASS`。W1-WIN `closure-perf-v1` 的三份 retained contract 均为 `QUALIFIED/EXACT/CURRENT`：ordinary
-every-N 对 Abseil 四层 `WIN`，ratio `5.5077–5.6112`；完整 typed model-load progress 四层 `PARITY`，
-ratio `0.9715–0.9821`；八 producer/一个 adapter registry throughput/chunk-p99 对 pre-v4 两层
-`INCONCLUSIVE`，ratio `1.0460–1.0536`。全部 required strata 通过预声明 5% non-inferiority。只签上述
-normal journeys，不外推全面或跨平台 SOTA。
+every-N 对 Abseil 四层 `WIN`，ratio `5.5077–5.6112`；完整 typed model-load progress 的 retained runner
+输出为四层 `PARITY`、ratio `0.9715–0.9821`，当前只作为 candidate-stronger 自然路线的 5% 用户预算；
+八 producer/一个 adapter registry throughput/chunk-p99 对 pre-v4 两层
+`INCONCLUSIVE`，ratio `1.0460–1.0536`。三份 runner 的 required strata 和数值门均通过；当前只为
+ordinary 保留已限定的 aggregate route 结论、为 registry 签同合同 peer verdict、为 structured 签 5%
+route-level 用户预算，不外推全面或跨平台 SOTA。
 
 ### 5. 旧 C ABI / Native FFI
 
@@ -82,7 +90,8 @@ registry seam 泄漏。
 
 `PASS`。终态红队检查了 snapshot publication→active-reference handoff、self/cross remove、slot reuse、
 callback recursion、borrowed string/span、timestamp、default renderer、Trace OFF/ON、三平台 sanitizer/交付、
-component topology、动态符号与三份性能 comparison class。guard 在 callback 前退出，第二个 grace period
+component topology、动态符号与三份性能 comparison class；终态后复核纠正了上述 structured comparison
+class，但没有发现产品缺陷或 material 用户预算失败。guard 在 callback 前退出，第二个 grace period
 关闭旧 snapshot handoff；因此没有自等待或用慢 callback 阻塞 Mem-reclaim。candidate 后产品为 zero diff，
 剩余 medium-or-higher finding、material 性能 FAIL、未处置 `MUST`、重复 authority 与交付 blocker 均为 0。
 

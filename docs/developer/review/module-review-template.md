@@ -211,6 +211,11 @@ P1/P2 补充：
 | setup / steady-state / teardown charging |  |  |  |  |
 | memory-resource / delivery / codegen |  |  |  |  |
 
+- 额外工作/保证方向（`none / candidate / peer / both-different`）及对应矩阵格：
+- “苹果对橘子”前置门：若上项不是 `none`，是否已撤销 `SAME_CONTRACT` 与 primitive
+  `PARITY/non-inferiority/SOTA`，只保留自然路线用户预算，或已用计费 adapter 真正对齐：
+- comparison class 独立 reviewer / 日期（必须在采样前）：
+
 - 资源结果：per-item/per-batch allocation/bytes、queue entries、atomic/lock、wake/context-switch、syscall、working set：
 - machine / instrument profile：
 - A/A 与 known-delta qualification：

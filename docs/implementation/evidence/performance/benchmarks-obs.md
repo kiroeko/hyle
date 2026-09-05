@@ -77,15 +77,26 @@ journey 明显胜出，不外推其他 Abseil logging 能力。
 两条路线构造完全相同的 HYLE typed record：category/event、三个重复 stage attribute、current、double
 value、一个 host correlation、source、canonical wall timestamp；经过相同 registry，再由同一个 adapter
 遍历所有字段和 value kind。唯一差异是 HYLE `LogIntervalLimiter` 与 source-derived single-owner manual
-gate。llama.cpp 只提供真实 consumer control，并不被宣传为 structured logger 性能 peer；完整路径同时
-受绝对 consumer budget 与 5% gate 保护，不能用 getter/union 微基准改变 API。
+gate。前者在每次判断做 relaxed atomic load，并在放行时用 CAS 提供 racing caller 下的精确至多一次；
+后者只因每个 llama stage 保证单 owner，才可以普通标量 load/store。两侧输出相同并不消除这个 material
+线程合同差异，因此它是 candidate-stronger 的 `NATURAL_ROUTE`，不是严格 `SAME_CONTRACT`。llama.cpp
+只提供真实 consumer control，并不被宣传为 structured logger 性能 peer；完整路径只按采样前冻结的 5%
+route-level 用户开销预算解释，不能用 getter/union 微基准改变 API。
 
 资格结果：`PASS`。semantic validator 确认两条路线各 195 条输出、390 次完整消费，且
 primary/placement artifact 不同。结果因接近边界按计划扩展到 31 个独立进程样本；四层 combined exact
-verdict 均为 `PARITY`，5% non-inferiority 均为 `PASS`。HYLE process median 为
+verdict 在 retained runner 中均计算为 `PARITY`，5% gate 均计算为 `PASS`。HYLE process median 为
 `7.4185–7.4309 M op/s`，source-derived control 为 `7.5758–7.6304 M op/s`；median ratio 为
-`0.9715–0.9821`，全部 98.93% CI 落在预声明等价带内。点值约慢 `1.8–2.85%`，属于完整 typed
-record、registry 与 adapter 都相同之后 limiter 实现的非 material 差异，不触发产品改写。
+`0.9715–0.9821`，全部 98.93% CI 落在预声明 5% 带内。当前解释只允许说：HYLE 自然路线在完成相同
+record/registry/adapter 工作并额外提供并发精确 limiter 时，route-level 点值约慢 `1.8–2.85%`，没有超出
+用户预算；不能说两个 limiter 本身 `PARITY` 或 HYLE 对 manual gate 通过 peer non-inferiority。
+
+源码差分只有上述 gate。执行产物的 MSVC 反汇编也在 HYLE stage/tick 循环中确认了
+`lock cmpxchg`，并与紧邻的 final-tick `0xFF` 判断对应；manual gate 没有该原子合同。因本实验不是隔离的
+limiter mechanism microbench，不能把聚合的 `1.8–2.85%` 精确量化成一条 CAS 的单独成本，但它与唯一的
+额外同步机制一致。完整 replay 中两侧各做 768 次 gate check、输出 195 条记录；HYLE 有 768 次 atomic
+load 和 192 次成功 CAS，另三条 final record 在 limiter 拒绝后由 `done` 强制输出。没有证据指向 typed
+record、registry 或 adapter 回退。
 
 ### 3. Registry 机制回归
 
@@ -111,6 +122,12 @@ median 为 `16.34–16.62 M op/s`，pre-v4 为 `15.38–15.42 M op/s`，median r
 | structured | `22bb9d5416f0f0947318e4bd1ce045dfafc4ed6c48c228d6fbdb5d15e65e6d01` | `7cbf305d6ba7603e9eb5e0921accd9ed8e77db9bcc18e671367962b2c4073475` | `9b8c4d406c8500592e29899084da0c1e38fcfee31a47dcfbe8491e058c753a5d` | `fd26298c5aa6b0cd1bf51d6860c6341690f35cc1a73c116a71a83b20ac24f16b` |
 | concurrent | `cd42b1879493007a0dc7a8027c3e882847dce06e89197f9c35a0a889710b0b0c` | `8ca4ce843068d9e9a87538236ad7496bc2acca5fca6156e7d92323909d63fb14` | `7430713a523c3566caae2b66650a57308e7113bb200fc8d874323db75dac14d3` | `f55b016e368a7bf0299ab6c501d945978cd51d6c94d46702acfd0556c49b78ce` |
 
+structured v1 contract 是不可变 retained artifact，其中的 `comparison_class=SAME_CONTRACT` 是本轮复核
+发现的分类错误：它忽略了 concurrent-safe exact admission 与 single-owner scalar gate 的保证差异。为保持
+manifest/hash 的历史真实性，这里不回写 contract 或 raw bundle；自本段起其 same-contract `PARITY/NI`
+解释作废，只保留上述 candidate-stronger `NATURAL_ROUTE` 用户预算结论。以后续签必须建立新 contract，
+不得从 v1 标签继承同合同声明。
+
 本机 retained roots 分别为 `C:\hyle-scratch\obs-v4-qual-ordinary-evidence`、
 `C:\hyle-scratch\obs-v4-qual-structured-evidence` 与
 `C:\hyle-scratch\obs-v4-qual-concurrent-evidence`。它们是工程审计输入，不是发布包内容。
@@ -129,6 +146,7 @@ median 为 `16.34–16.62 M op/s`，pre-v4 为 `15.38–15.42 M op/s`，median r
 ## 当前可声明与禁止外推
 
 可以声明 obs-v4 candidate 在上述三个冻结的正常 journey 上通过 W1-WIN 5% P1 工程门：ordinary
-Abseil 路线明确胜出，完整 structured progress 路线等价，受影响 registry 路线非劣。不得据此声明全面
+Abseil 路线明确胜出，完整 structured progress 的 candidate-stronger 自然路线落在用户预算内，受影响
+registry 路线非劣。不得据此声明两个 limiter 同合同等价、全面
 SOTA、跨平台固定纳秒、异步 logger 性能、所有 sink fan-out 或 end-to-end token latency；4/16 sink
 仍只是诊断。Formal 认证独立保持 `PENDING`。

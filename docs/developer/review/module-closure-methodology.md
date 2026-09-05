@@ -316,6 +316,12 @@ blocking/suspension、affinity/stealing、setup/steady-state/teardown 计费、m
 `NATURAL_ROUTE` 或 diagnostic。实际 allocation 次数、bytes、atomic、wake 和 context-switch 是应当
 报告的结果，不要求数值相等；必须相等的是谁拥有资源、何时创建/销毁以及是否计费。
 
+相同用户任务、输出条数或 checksum 不足以证明同合同。任一侧实际承担 material 的额外工作或保证——
+包括线程安全、精确一次、失败/取消、排序、生命周期、安全检查、allocation、同步、clock、metadata 或
+teardown——都必须写成有方向的 `INTENTIONALLY_DIFFERENT`；候选更强也不能例外。这样的“苹果对橘子”
+对比只能签自然路线的用户预算，不能签底层实现 `PARITY`、peer non-inferiority 或 SOTA。完整机械规则见
+[性能证据标准 §5](../performance/benchmark-evidence-standard.md#5-同合同对拍)。
+
 `NATURAL_ROUTE` 的额外语义成本仍由选择它的产品承担：如果 HYLE 只提供明显更重的自然路线而输给
 peer，这可以形成“缺少合适产品档位”的 capability/performance finding，但不能写成 scheduler、queue
 或 allocator 实现本身慢同样幅度。若 peer 没有可防御的同合同路线，写 `NOT_COMPARABLE`，使用预冻结

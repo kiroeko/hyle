@@ -7,6 +7,12 @@
 > 生命周期或 Tracy seam。当前唯一状态真相仍是
 > [`module-status.json`](../../module-status.json)。
 
+> **终态后证据解释纠正（2026-09-05）：**structured v1 retained contract 把 concurrent-safe exact
+> limiter 与 single-owner scalar gate 错标为 `SAME_CONTRACT`。原始样本、artifact identity 和仪器资格仍是
+> 历史事实，但该行只能作为 candidate-stronger `NATURAL_ROUTE` 的 5% 用户预算，不再产生 limiter
+> `PARITY` 或 peer non-inferiority 结论。当前解释见
+> [`benchmarks-obs`](../../evidence/performance/benchmarks-obs.md)。这不是产品缺陷，不改 candidate。
+
 ## Reopen evidence（`REOPENED`）
 
 - component / owner / round / kind：`obs` / Obs / `obs-v4-structured-event` / `REOPEN`；
@@ -314,7 +320,7 @@ compiled/runtime gate 和 trace OFF no-evaluation。WSL sanitizer 是 candidate 
 `closure-perf-v1`；A/A、5%/10% known-delta、timer-floor、build/artifact identity 与适用 semantic/resource
 validator 全部通过：
 
-| Journey | Samples | Exact verdict | 5% NI | Conservative result |
+| Journey | Samples | Retained runner verdict | 5% runner gate | Conservative result |
 |---|---:|---|---|---|
 | ordinary every-N one adapter vs Abseil | 15 x 4 strata | `WIN` | `PASS` | ratio `5.5077–5.6112`；最低 CI lower `5.4030` |
 | complete typed model-load progress vs source-derived llama gate | 31 x 4 strata | `PARITY` | `PASS` | ratio `0.9715–0.9821`；全部 CI 在等价带内 |
@@ -331,8 +337,10 @@ ordinary manifest/summary SHA-256 为
 `hyle-perf verify` 返回 `QUALIFIED / EXACT / CURRENT`、`paths_verified=true`。完整 controls/
 observations identity 与禁止外推见 [`benchmarks-obs`](../../evidence/performance/benchmarks-obs.md)。
 
-结构化路线的 HYLE 点值约慢 source-derived manual limiter `1.8–2.85%`，但两侧构造并完整消费相同 typed
-record，且四层 CI 均在预声明 5% 等价带内；按冻结停止规则不为这个非 material 差异修改 API/实现。
+结构化路线的 HYLE 点值约慢 source-derived manual limiter `1.8–2.85%`，且四层 CI 均在预声明 5% 带内；
+但 HYLE 还承担 concurrent-safe exact admission，不能从相同 typed record 数量推导 limiter 同合同。表中
+`PARITY/PASS` 只忠实保留 v1 runner 输出，当前只签 candidate-stronger 自然路线没有超出 5% 用户预算；
+按冻结停止规则不为该非 material route-level 差异修改 API/实现。
 registry 点估计更快约 4.6–5.4%，但 exact CI 跨决策边界，只签 non-inferiority。两者都不是全面 SOTA
 或端到端推理性能声明。
 
@@ -354,10 +362,12 @@ registry 点估计更快约 4.6–5.4%，但 exact CI 跨决策边界，只签 n
    合同；固定 snapshot/slot arrays 避免常态 allocation，通用 Mem/Container 不适用。terminal/debugger
    输出直接借 OS API，因为冻结 Platform 没有同合同 console seam；不存在第二套 runtime clock、error、
    reclamation 或 trace authority，也没有为增加引用数量而制造依赖。
-4. **拟真、公平性能：`PASS`。**普通公开路线对当前 Abseil 明确 `WIN`；完整 typed model-load consumer 为
-   `PARITY/PASS`；受影响 registry 对 immutable pre-v4 为 `INCONCLUSIVE/PASS`。三者均比较相同语义、资源
-   计费和 source/static 实际形状；4/16 sink 只作诊断。只签 W1-WIN P1 工程范围，不宣称所有操作、所有
-   平台、异步 logger、end-to-end token latency 或 Formal SOTA。
+4. **拟真、公平性能：`PASS`。**普通公开路线对当前 Abseil 明确 `WIN`；完整 typed model-load consumer
+   的 candidate-stronger 自然路线落在 5% 用户预算内；受影响 registry 对 immutable pre-v4 为
+   `INCONCLUSIVE/PASS`。ordinary 保留限定的 aggregate route 结论，registry 的同合同与计费边界成立；
+   structured 两侧 record 工作相同但 limiter 线程保证不同，不签 primitive peer verdict。4/16 sink 只作
+   诊断。只签 W1-WIN P1 工程范围，不宣称所有操作、所有平台、异步 logger、end-to-end token latency
+   或 Formal SOTA。
 5. **旧 C ABI / Native FFI：`CLEAN`。**产品树没有 C header/schema/bridge、managed sample、专用 option/
    target/package metadata或只为 FFI 支付的 layout/indirection。Windows DLL 的 24 个导出与 macOS dylib
    exports 全为 C++ decorated symbols；`detail::log_record_unchecked` 是 public header format template 必需的
@@ -448,7 +458,8 @@ registry 点估计更快约 4.6–5.4%，但 exact CI 跨决策边界，只签 n
 本轮裁决为 `CLOSED`：十一项冻结 FIX 全部完成，准入 `MUST` 与 blocker 均为 0。不可变 candidate 在三个
 支持平台通过 correctness、最终 WSL ASan/UBSan/TSan、source/relocated shared/relocated static、Trace
 OFF/ON、内部复用、C++ 易用性/文档和独立红队；三份 W1-WIN P1 正常 workload 的全部 required strata
-通过预声明 5% non-inferiority。候选保持
+与数值门通过。structured 行按终态后纠正只签 5% route-level 用户预算，其余合法 peer verdict 保持。
+候选保持
 `14c82a18f8f00b892479ae16abba4d8320d5915c` /
 `7594a2f13271ba7956c3e685e24c6302a91f015b`，本 terminal receipt 不改变产品 identity。
 
