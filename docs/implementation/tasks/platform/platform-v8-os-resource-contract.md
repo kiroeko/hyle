@@ -350,3 +350,17 @@ SHA-256 `9FEA589026C3DA8544927EE4CBECC279572FF833F2AFA85BB9AA01F9259A603D`。
 
 本状态只冻结候选产品身份；工程性能、交付、文档和红队的 aggregate gate 要在完成全部预声明回放后才能写
 `PASS`。候选后若修改产品 API、layout、算法、依赖或正常路径成本，必须退回 `AUDITED`。
+
+### 首候选撤回（`CANDIDATE -> AUDITED`）
+
+M1-MAC 从上述 exact archive 进行 AppleClang 21 Release/UBSan/WERROR 编译时，
+`src/platform/linux_cgroup.cc` 的 `line_is_complete()` 在非 Linux 路径成为 unused private function，
+`-Werror,-Wunused-function` 正确拒绝候选。该 helper 只为 `read_linux_cgroup_path()` 的 Linux
+`fgets` 生产路径服务，纯 parser fixtures 和其他 OS 不消费它；处置固定为将它收入
+`HYLE_OS_LINUX` 条件编译，不改公开 API、Linux 算法、layout、依赖或正常路径成本。修复后必须重新生成
+candidate identity，并至少重放 M1-MAC WERROR/UBSan、Windows/WSL exact factors 及三交付。已完成的
+P1 evidence 与未改产品路径的关系将在第二候选明示记录，不默认继承。
+
+`CANDIDATE -> AUDITED` 前态 registry snapshot 为
+`C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-candidate-withdrawal.json`，
+SHA-256 `7DCD67D13E9EB55C4D8C53AC26DEC4CBA0715B5C273C8799839856B3C429046D`。
