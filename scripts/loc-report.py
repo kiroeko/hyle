@@ -58,6 +58,7 @@ MODULE_BOUNDARIES = {
         "include/hyle/util/scope_guard.h",
         "include/hyle/util/spin_lock.h",
         "include/hyle/util/type_name.h",
+        "include/hyle/util/unique_resource.h",
     ),
     "util-runtime": (
         "include/hyle/util/demangle.h",
