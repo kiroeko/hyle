@@ -184,3 +184,70 @@ lock/preallocate/resize 在当前 north-star 同步基础旅程没有缺口，po
   callback、无 entry allocation/collection/额外 stat；短 mkdir 零 heap、长路径一次 allocation；
 - 当前尚未完成 WSL/macOS、sanitizer、exact factor、Platform 三交付、直接 consumers、FFI/symbol scan 与
   最终红队，所以只允许 `CANDIDATE`，不能写 `VERIFIED/CLOSED`。
+
+## Candidate verification（`VERIFIED`）
+
+验证绑定 product candidate `5818a7ac9b143b980ac43eb39e2a01dac1e5b108` / tree
+`e0c2a9e25b49350965d1bfb3a39789ece976569e`。candidate 后到本节记录前，Platform 的公开头、实现、
+测试、sample、CMake 与 package 路径均无 diff。只读 reference 仓在终验时已 fast-forward 到上述
+llama.cpp/embedded ggml、standalone ggml `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226`、Folly
+`65749da412d92fe27d87ae45a8ef670720712858` 和 oneTBB
+`e00c68dcac0e83947c9b54f6d5304c0616c9639f`；新增提交只涉及 SYCL、AsyncSocket zero-copy drain 与
+TCM Windows 脚本，没有新的 host/thread/synchronous-fs 产品触发。
+
+### Correctness、sanitizer、consumer 与 delivery
+
+| gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | verdict |
+|---|---|---|---|---|
+| selected Release + Werror | exact thread `2/2`、exact fs `2/2`；聚合及新增原生 readback/4.3KB path 通过 | host/thread/fs `6/6` | host/thread/fs `6/6` | `PASS` |
+| exception / no-exception header route | const visitor 两种形状均 compile-only 通过 | 两种形状均通过 | `-fno-exceptions` 实例化通过 | `PASS` |
+| sanitizer | 本轮 Windows 原生语义机通过 | affected tests：ASan `2/2`、UBSan `2/2` | Release 真机覆盖 arm64 | `PASS` |
+| source embedding | Platform `1/1` | Release 聚合闭包通过 | Platform `1/1` | `PASS` |
+| relocated shared SDK | Platform `1/1` | 不重复外推 Windows/macOS receipt | Platform `1/1` | `PASS` |
+| relocated static SDK | Platform `1/1` | 不重复外推 Windows/macOS receipt | Platform `1/1` | `PASS` |
+| direct consumers | `mem_vm + sched + io` 共 `17/17` | Platform 聚合闭包通过 | Platform 聚合闭包通过 | `PASS` |
+
+macOS 真机为 26.6.2 build 25G83，较登记 profile 的操作系统 patch 前移；硬件与 AppleClang contract
+仍匹配。本轮没有采集 macOS 性能点值，只用它验证条件实现、公开头、deployment floor 与交付，因此将
+该 drift 明示记录而不据此签发新的性能结论。安装后的 dylib `minos=14.4`、依赖均为 `@rpath` 或系统库。
+
+Windows shared SDK 的 `hyle_platform_thread.dll` 只有 22 个 MSVC C++ decorated exports，
+`hyle_platform_fs.dll` 只有 36 个 decorated exports；macOS `nm -gU` 同样只有 C++ mangled product
+symbols。Platform 产品路径没有 C header/schema/bridge/FFI option 或未装饰 C export，故旧 C ABI / Native
+FFI 门为 `CLEAN`。exact factor configure 分别只解析
+`core,error,time,platform,platform_thread|platform_fs`；聚合 target 和安装头与中央 manifest 一致。
+
+### Engineering performance
+
+两个 factor 的本轮 tier 均为 `P0 / closure-correctness-v1`，结构门 `PASS`：
+
+- 未设置 `ThreadOpts::priority` 时 `has_priority=false`，不会进入 priority/QoS setter；显式设置只在
+  thread cold setup 执行两个有界 OS controls，没有 per-task state、allocation 或热路检查；
+- `for_each_entry` 正常路线维持每项一个 type-erased callback；caller-owned context 不收集 entry、不做
+  `stat`、不拥有 heap allocation。只有 callback 已经抛异常时才持有 `exception_ptr`，native iterator
+  关闭后原样重抛；
+- recursive mkdir 仍为 O(path bytes + ancestors)；4096 bytes 以内只用栈，超出时恰好一次 checked
+  allocation，不按 component 重复分配；
+- host cache、Parker、compiled `directory_iterate`、FileHandle open/read/close 和普通短路径未改变。三份
+  v3 P1 manifest 重新 deep-verify 为 `QUALIFIED`、provenance `EXACT`、environment policy `CURRENT`，
+  仅继续约束各自未改变的同合同路线，不冒充 v5 新控制路径的计时证书。
+
+### Final red team 与七问
+
+- invalid priority 在任何 OS call 前返回；显式 Windows low/normal/high 的 native priority 与
+  throttle control/state 都由子线程 readback 证明。OS 不提供两项 policy 的事务式更新；required
+  spawn 在任一失败时禁止 entry，best-effort 保持显式软失败语义，未伪称原子更新；
+- callback context 只活在同步调用栈，指针不逸出；异常由 noexcept trampoline 截获，底层完成 native
+  close 后才越过 C++ wrapper。callback exception 优先于同时发生的 close Status，符合普通 C++
+  callback failure 的可观察语义；bool early-stop 仍是成功的 `Result(false)`；
+- length `+1` 先做 overflow 检查，heap 失败为 `ResourceExhausted`，OS path/component 上限仍通过共享
+  Error Status 返回；没有用 Container/Mem allocator 倒置底层依赖；
+- 第三方路径、推理能力、内部复用、性能、FFI 清洁、三交付、易用性/文档七问均为 `PASS`。公开 API
+  没有为了 benchmark 增加类型或 metadata；四项 `MUST` 全部 `COMPLETE`，无 `PARTIAL + KEEP` 或
+  medium-or-higher finding。
+
+七项 aggregate gate（scope、architecture、correctness、delivery、usability/docs、red-team、engineering
+performance）全部 `PASS`。`CANDIDATE -> VERIFIED` 前 registry snapshot 位于
+`C:\public\project-hyle\_validation\platform-v5-replay\module-status-before-verified.json`，SHA-256
+`3E8167F0E16139F39C59C3C494D3B1B1A9B98F672E70DB3F295885DA83AAD1ED`。当前阶段为 `VERIFIED`；
+Formal 仍独立 `PENDING`，不阻止 P0 工程收口。
