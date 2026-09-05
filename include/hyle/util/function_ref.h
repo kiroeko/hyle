@@ -75,6 +75,23 @@ inline constexpr bool kValidNontypeCallable = [] {
   return false;
 }();
 
+template <class Signature>
+inline constexpr bool kSupportedFunctionRefSignature = false;
+
+template <class R, class... Args>
+inline constexpr bool kSupportedFunctionRefSignature<R(Args...)> = true;
+
+template <class R, class... Args>
+inline constexpr bool kSupportedFunctionRefSignature<R(Args...) noexcept> =
+    true;
+
+template <class R, class... Args>
+inline constexpr bool kSupportedFunctionRefSignature<R(Args...) const> = true;
+
+template <class R, class... Args>
+inline constexpr bool
+    kSupportedFunctionRefSignature<R(Args...) const noexcept> = true;
+
 }  // namespace detail
 
 template <class Signature>
@@ -485,5 +502,13 @@ template <auto Function>
            std::is_function_v<std::remove_pointer_t<decltype(Function)>>)
 FunctionRef(NontypeTag<Function>)
     -> FunctionRef<std::remove_pointer_t<decltype(Function)>>;
+
+// A member-function pointer already carries its complete result, argument,
+// cv, and noexcept signature. Deduce only the four signatures implemented by
+// FunctionRef; ref-qualified or volatile members remain explicit rejections.
+template <class Member, class Owner, Member Owner::*Callable, class Object>
+  requires(std::is_function_v<Member> &&
+           detail::kSupportedFunctionRefSignature<Member>)
+FunctionRef(NontypeTag<Callable>, Object&&) -> FunctionRef<Member>;
 
 }  // namespace hyle::util

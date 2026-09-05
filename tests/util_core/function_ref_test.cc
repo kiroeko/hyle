@@ -37,12 +37,21 @@ struct NoexceptCallable {
 
 struct MemberCallable {
   int add(int input) const { return value + input; }
+  int add_noexcept(int input) const noexcept { return value + input; }
+  int mutate(int input) { return ++value + input; }
+  int mutate_noexcept(int input) noexcept { return ++value + input; }
+  int ref_qualified(int input) const& { return value + input; }
   int value;
 };
 
 struct MutableOnlyCallable {
   int operator()(int input) { return ++calls + input; }
   int calls = 0;
+};
+
+template <auto Callable, class Object>
+concept HasBoundFunctionRefCtad = requires(Object&& object) {
+  FunctionRef{nontype<Callable>, std::forward<Object>(object)};
 };
 
 static_assert(sizeof(FunctionRef<int(int)>) == 2 * sizeof(void*));
@@ -55,7 +64,8 @@ static_assert(!std::constructible_from<FunctionRef<int(int) noexcept>,
                                        ThrowingCallable&>);
 static_assert(noexcept(std::declval<FunctionRef<int(int) noexcept>>()(1)));
 static_assert(sizeof(FunctionRef<int(int) const>) == 2 * sizeof(void*));
-static_assert(sizeof(FunctionRef<int(int) const noexcept>) == 2 * sizeof(void*));
+static_assert(sizeof(FunctionRef<int(int) const noexcept>) ==
+              2 * sizeof(void*));
 static_assert(std::is_trivially_copyable_v<FunctionRef<int(int) const>>);
 static_assert(std::constructible_from<FunctionRef<int(int) const>,
                                       const NoexceptCallable&>);
@@ -67,6 +77,24 @@ static_assert(!std::constructible_from<FunctionRef<int(int) const noexcept>,
                                        const ThrowingCallable&>);
 static_assert(
     noexcept(std::declval<FunctionRef<int(int) const noexcept>>()(1)));
+static_assert(
+    std::same_as<decltype(FunctionRef{nontype<&MemberCallable::add>,
+                                      std::declval<MemberCallable&>()}),
+                 FunctionRef<int(int) const>>);
+static_assert(
+    std::same_as<decltype(FunctionRef{nontype<&MemberCallable::add_noexcept>,
+                                      std::declval<const MemberCallable*>()}),
+                 FunctionRef<int(int) const noexcept>>);
+static_assert(
+    std::same_as<decltype(FunctionRef{nontype<&MemberCallable::mutate>,
+                                      std::declval<MemberCallable&>()}),
+                 FunctionRef<int(int)>>);
+static_assert(
+    std::same_as<decltype(FunctionRef{nontype<&MemberCallable::mutate_noexcept>,
+                                      std::declval<MemberCallable*>()}),
+                 FunctionRef<int(int) noexcept>>);
+static_assert(
+    !HasBoundFunctionRefCtad<&MemberCallable::ref_qualified, MemberCallable&>);
 
 TEST(FunctionRef, InvokesFunctionPointerWithoutPointerVariableIndirection) {
   FunctionRef function{&increment};
@@ -155,8 +183,27 @@ TEST(FunctionRef, NontypeBindingAvoidsStoredRuntimeCallablePointer) {
 
   const MemberCallable* owner_pointer = &owner;
   FunctionRef<int(int) const> bound_pointer{nontype<&MemberCallable::add>,
-                                             owner_pointer};
+                                            owner_pointer};
   EXPECT_EQ(bound_pointer(8), 15);
+}
+
+TEST(FunctionRef, DeducesUnambiguousBoundMemberSignature) {
+  MemberCallable owner{7};
+  FunctionRef const_call{nontype<&MemberCallable::add>, owner};
+  EXPECT_EQ(const_call(4), 11);
+
+  const MemberCallable* owner_pointer = &owner;
+  FunctionRef no_throw_call{nontype<&MemberCallable::add_noexcept>,
+                            owner_pointer};
+  static_assert(noexcept(no_throw_call(1)));
+  EXPECT_EQ(no_throw_call(5), 12);
+
+  FunctionRef mutable_call{nontype<&MemberCallable::mutate>, owner};
+  EXPECT_EQ(mutable_call(3), 11);
+  FunctionRef mutable_no_throw{nontype<&MemberCallable::mutate_noexcept>,
+                               &owner};
+  static_assert(noexcept(mutable_no_throw(1)));
+  EXPECT_EQ(mutable_no_throw(4), 13);
 }
 
 TEST(FunctionRefDeathTest, RejectsDynamicNullFunctionPointer) {

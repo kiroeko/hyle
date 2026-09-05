@@ -2,18 +2,52 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 
 namespace {
 
-using hyle::util::UniqueResource;
 using hyle::util::make_unique_resource_checked;
+using hyle::util::UniqueResource;
 
 struct TokenDeleter {
   int* deleted = nullptr;
 
   void operator()(int token) const noexcept { *deleted += token; }
+};
+
+struct MoveOnlyTokenDeleter {
+  MoveOnlyTokenDeleter(int* deleted, int weight)
+      : deleted(deleted), weight(std::make_unique<int>(weight)) {}
+  MoveOnlyTokenDeleter(MoveOnlyTokenDeleter&&) noexcept = default;
+  MoveOnlyTokenDeleter& operator=(MoveOnlyTokenDeleter&&) noexcept = default;
+  MoveOnlyTokenDeleter(const MoveOnlyTokenDeleter&) = delete;
+  MoveOnlyTokenDeleter& operator=(const MoveOnlyTokenDeleter&) = delete;
+
+  void operator()(int token) const noexcept { *deleted += token * *weight; }
+
+  int* deleted;
+  std::unique_ptr<int> weight;
+};
+
+struct CopyFallbackDeleter {
+  CopyFallbackDeleter(int* deleted, int* copies, int* moves) noexcept
+      : deleted(deleted), copies(copies), moves(moves) {}
+  CopyFallbackDeleter(const CopyFallbackDeleter& other) noexcept
+      : deleted(other.deleted), copies(other.copies), moves(other.moves) {
+    ++*copies;
+  }
+  CopyFallbackDeleter(CopyFallbackDeleter&& other) noexcept(false)
+      : deleted(other.deleted), copies(other.copies), moves(other.moves) {
+    ++*moves;
+  }
+
+  void operator()(int token) const noexcept { *deleted += token; }
+
+  int* deleted;
+  int* copies;
+  int* moves;
 };
 
 struct ThrowingCopyToken {
@@ -30,8 +64,7 @@ struct ThrowingCopyToken {
       : value(other.value), throw_on_copy(other.throw_on_copy) {}
   ThrowingCopyToken& operator=(ThrowingCopyToken&&) noexcept = default;
 
-  friend bool operator==(const ThrowingCopyToken& token,
-                         int invalid) noexcept {
+  friend bool operator==(const ThrowingCopyToken& token, int invalid) noexcept {
     return token.value == invalid;
   }
 };
@@ -43,8 +76,38 @@ struct ThrowingCopyTokenDeleter {
   }
 };
 
+struct MoveOnlyThrowingCopyTokenDeleter {
+  explicit MoveOnlyThrowingCopyTokenDeleter(int* deleted)
+      : deleted(deleted), state(std::make_unique<int>(1)) {}
+  MoveOnlyThrowingCopyTokenDeleter(
+      MoveOnlyThrowingCopyTokenDeleter&&) noexcept = default;
+  MoveOnlyThrowingCopyTokenDeleter& operator=(
+      MoveOnlyThrowingCopyTokenDeleter&&) noexcept = default;
+  MoveOnlyThrowingCopyTokenDeleter(const MoveOnlyThrowingCopyTokenDeleter&) =
+      delete;
+  MoveOnlyThrowingCopyTokenDeleter& operator=(
+      const MoveOnlyThrowingCopyTokenDeleter&) = delete;
+
+  void operator()(ThrowingCopyToken& token) const noexcept {
+    *deleted += token.value * *state;
+  }
+
+  int* deleted;
+  std::unique_ptr<int> state;
+};
+
 static_assert(!std::copy_constructible<UniqueResource<int, TokenDeleter>>);
 static_assert(std::move_constructible<UniqueResource<int, TokenDeleter>>);
+static_assert(
+    std::move_constructible<UniqueResource<int, MoveOnlyTokenDeleter>>);
+static_assert(noexcept(UniqueResource<int, MoveOnlyTokenDeleter>(
+    std::declval<int&&>(), std::declval<MoveOnlyTokenDeleter&&>())));
+static_assert(noexcept(make_unique_resource_checked(
+    std::declval<int&&>(), std::declval<const int&>(),
+    std::declval<MoveOnlyTokenDeleter&&>())));
+static_assert(!noexcept(make_unique_resource_checked(
+    std::declval<ThrowingCopyToken&>(), std::declval<const int&>(),
+    std::declval<ThrowingCopyTokenDeleter&&>())));
 
 TEST(UniqueResource, DeletesValidTokenExactlyOnce) {
   int deleted = 0;
@@ -61,16 +124,14 @@ TEST(UniqueResource, DeletesValidTokenExactlyOnce) {
 TEST(UniqueResource, CheckedFactoryDoesNotOwnInvalidSentinel) {
   int deleted = 0;
   {
-    auto invalid = make_unique_resource_checked(-1, -1,
-                                                TokenDeleter{&deleted});
+    auto invalid = make_unique_resource_checked(-1, -1, TokenDeleter{&deleted});
     EXPECT_FALSE(invalid.allocated());
     EXPECT_EQ(invalid.get(), -1);
   }
   EXPECT_EQ(deleted, 0);
 
   {
-    auto valid = make_unique_resource_checked(5, -1,
-                                              TokenDeleter{&deleted});
+    auto valid = make_unique_resource_checked(5, -1, TokenDeleter{&deleted});
     EXPECT_TRUE(valid.allocated());
   }
   EXPECT_EQ(deleted, 5);
@@ -111,6 +172,93 @@ TEST(UniqueResource, MoveTransfersTheSingleCleanup) {
   EXPECT_EQ(deleted, 11);
 }
 
+TEST(UniqueResource, SupportsMoveOnlyNothrowDeleter) {
+  int deleted = 0;
+  {
+    UniqueResource source{9, MoveOnlyTokenDeleter{&deleted, 2}};
+    UniqueResource moved{std::move(source)};
+    EXPECT_FALSE(source);  // NOLINT(bugprone-use-after-move)
+    EXPECT_TRUE(moved);
+    EXPECT_EQ(moved.get(), 9);
+  }
+  EXPECT_EQ(deleted, 18);
+
+  auto invalid =
+      make_unique_resource_checked(-1, -1, MoveOnlyTokenDeleter{&deleted, 3});
+  EXPECT_FALSE(invalid);
+  EXPECT_EQ(deleted, 18);
+}
+
+TEST(UniqueResource, CopiesDeleterWhenItsMoveCanThrow) {
+  int deleted = 0;
+  int copies = 0;
+  int moves = 0;
+  {
+    UniqueResource source{5, CopyFallbackDeleter{&deleted, &copies, &moves}};
+    UniqueResource moved{std::move(source)};
+    EXPECT_FALSE(source);  // NOLINT(bugprone-use-after-move)
+    EXPECT_TRUE(moved);
+  }
+  EXPECT_EQ(deleted, 5);
+  EXPECT_EQ(copies, 2);
+  EXPECT_EQ(moves, 0);
+}
+
+TEST(UniqueResource, FailedOwnerMoveWithMovedDeleterReclaimsSource) {
+  int deleted = 0;
+  bool throw_on_copy = false;
+  ThrowingCopyToken token{17, &throw_on_copy};
+  UniqueResource<ThrowingCopyToken, MoveOnlyThrowingCopyTokenDeleter> source{
+      token, MoveOnlyThrowingCopyTokenDeleter{&deleted}};
+
+  throw_on_copy = true;
+  EXPECT_THROW(
+      ([&] {
+        UniqueResource<ThrowingCopyToken, MoveOnlyThrowingCopyTokenDeleter>
+            moved{std::move(source)};
+        (void)moved;
+      }()),
+      int);
+  EXPECT_FALSE(source);  // NOLINT(bugprone-use-after-move)
+  EXPECT_EQ(deleted, 17);
+}
+
+TEST(UniqueResource, FailedOwnerMoveWithCopiedDeleterLeavesSourceOwning) {
+  int deleted = 0;
+  bool throw_on_copy = false;
+  ThrowingCopyToken token{19, &throw_on_copy};
+  {
+    UniqueResource<ThrowingCopyToken, ThrowingCopyTokenDeleter> source{
+        token, ThrowingCopyTokenDeleter{&deleted}};
+
+    throw_on_copy = true;
+    EXPECT_THROW(
+        ([&] {
+          UniqueResource<ThrowingCopyToken, ThrowingCopyTokenDeleter> moved{
+              std::move(source)};
+          (void)moved;
+        }()),
+        int);
+    EXPECT_TRUE(source);  // NOLINT(bugprone-use-after-move)
+    EXPECT_EQ(deleted, 0);
+  }
+  EXPECT_EQ(deleted, 19);
+}
+
+TEST(UniqueResource, FailedAcquisitionWithMovedDeleterReclaimsToken) {
+  int deleted = 0;
+  bool throw_on_copy = true;
+  ThrowingCopyToken token{23, &throw_on_copy};
+  EXPECT_THROW(
+      ([&] {
+        UniqueResource<ThrowingCopyToken, MoveOnlyThrowingCopyTokenDeleter>
+            owner{token, MoveOnlyThrowingCopyTokenDeleter{&deleted}};
+        (void)owner;
+      }()),
+      int);
+  EXPECT_EQ(deleted, 23);
+}
+
 TEST(UniqueResource, FailedStorageConstructionReclaimsTheAcquisition) {
   int deleted = 0;
   bool throw_on_copy = true;
@@ -129,13 +277,12 @@ TEST(UniqueResource, InvalidSentinelIsNotDeletedWhenStorageCopyThrows) {
   int deleted = 0;
   bool throw_on_copy = true;
   ThrowingCopyToken invalid{-1, &throw_on_copy};
-  EXPECT_THROW(
-      ([&] {
-        auto owner = make_unique_resource_checked(
-            invalid, -1, ThrowingCopyTokenDeleter{&deleted});
-        (void)owner;
-      }()),
-      int);
+  EXPECT_THROW(([&] {
+                 auto owner = make_unique_resource_checked(
+                     invalid, -1, ThrowingCopyTokenDeleter{&deleted});
+                 (void)owner;
+               }()),
+               int);
   EXPECT_EQ(deleted, 0);
 }
 

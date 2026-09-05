@@ -145,14 +145,19 @@ record。
 
 普通 signature 接受 mutable callable；后缀 `const` 的 signature 只通过 `const F&` 调用目标。两者各有
 `noexcept` 版本，只接受 nothrow callable 并让调用表达式保持 `noexcept`。已知 free/member function 可用
-`hyle::util::nontype<&function>` 绑定，避免再保存一个 runtime function pointer；bound member 仍要求对象
-活过同步调用：
+`hyle::util::nontype<&function>` 绑定，避免再保存一个 runtime function pointer；可唯一确定完整
+signature 的普通成员函数会从成员指针直接推导 result、参数、`const` 和 `noexcept`，bound member 仍要求
+对象活过同步调用：
 
 ```cpp
-hyle::util::FunctionRef<int(int)> direct{hyle::util::nontype<&transform>};
-hyle::util::FunctionRef<int(int) const> bound{
+hyle::util::FunctionRef direct{hyle::util::nontype<&transform>};
+hyle::util::FunctionRef bound{
     hyle::util::nontype<&Decoder::score>, decoder};
 ```
+
+overload set 需要先显式选择成员指针；ref-qualified 或 `volatile` member 不参与上述推导，改用一个普通
+lambda adapter，或在确实匹配现有四种 signature 时显式写出 `FunctionRef<Sig>`。这条限制避免 CTAD 猜测
+调用对象类别或静默丢掉限定符。
 
 FunctionRef 没有默认/NULL 状态：callback 真正可选时显式用两个入口、optional owner，或一个语义清楚的
 nullable fn+ctx，而不是让每次调用隐式猜测。
@@ -174,9 +179,15 @@ use(fd.get());
 value-like token 时先复制 `get()`，再 release。`reset()` 立即回收且至多一次，`reset(new_token)` 在存储
 可无异常赋值时接管新 token。
 
-deleter 必须可无异常复制，并且实际调用应 `noexcept`；析构中的 deleter 抛异常会终止进程。文件、映射、
-内存、socket 等已有 Platform/Mem/IO typed owner 时始终优先 typed owner，因为它们还表达错误域、合法操作
-和生命周期。UniqueResource 不提供通用 error channel、pointer dereference、resource traits 或动态 dispatch。
+deleter 必须至少有一条无异常 transfer 路线：可无异常移动，或可无异常复制；因此捕获 move-only 状态的
+deleter 可以直接传入。实际 cleanup 调用仍应 `noexcept`，析构中的 deleter 抛异常会终止进程。若 resource
+只能通过可能抛异常的复制转移、deleter 又只能移动，owner move 构造失败时，已经转移的 deleter 会立即
+回收原 token 并把 source 置为 inactive；需要“异常后 source 仍拥有”的强保证时，让 resource 可无异常移动，
+或让 deleter 可无异常复制。
+
+文件、映射、内存、socket 等已有 Platform/Mem/IO typed owner 时始终优先 typed owner，因为它们还表达
+错误域、合法操作和生命周期。UniqueResource 不提供通用 error channel、pointer dereference、resource
+traits 或动态 dispatch。
 
 ## NotNull：required pointer，不是 owner
 

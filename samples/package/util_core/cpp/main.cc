@@ -23,6 +23,23 @@ int apply(hyle::util::FunctionRef<int(int) const> function, int value) {
 
 int increment(int value) noexcept { return value + 1; }
 
+struct Decoder {
+  int score(int input) const noexcept { return input + bias; }
+  int bias;
+};
+
+struct MoveOnlyDeleter {
+  MoveOnlyDeleter(int* released, int weight) noexcept
+      : released(released), weight(weight) {}
+  MoveOnlyDeleter(MoveOnlyDeleter&&) noexcept = default;
+  MoveOnlyDeleter(const MoveOnlyDeleter&) = delete;
+
+  void operator()(int token) const noexcept { *released += token * weight; }
+
+  int* released;
+  int weight;
+};
+
 }  // namespace
 
 int main() {
@@ -34,11 +51,16 @@ int main() {
   std::unordered_set<hyle::util::Ref<Item>> owners{item};
   if (!owners.contains(item)) return 2;
   hyle::util::NotNull<Item*> required = item.get();
-  if (apply([required](int input) { return input + required->value; }, 4) != 7) {
+  if (apply([required](int input) { return input + required->value; }, 4) !=
+      7) {
     return 3;
   }
   hyle::util::FunctionRef static_call{hyle::util::nontype<&increment>};
   if (static_call(7) != 8) return 4;
+  Decoder decoder{3};
+  hyle::util::FunctionRef bound_call{hyle::util::nontype<&Decoder::score>,
+                                     decoder};
+  if (bound_call(8) != 11) return 4;
 
   hyle::util::SpinLock lock;
   lock.lock();
@@ -54,11 +76,10 @@ int main() {
 
   int released = 0;
   {
-    hyle::util::UniqueResource token{
-        6, [&released](int value) noexcept { released += value; }};
+    hyle::util::UniqueResource token{6, MoveOnlyDeleter{&released, 1}};
   }
   auto invalid = hyle::util::make_unique_resource_checked(
-      -1, -1, [&released](int value) noexcept { released += value; });
+      -1, -1, MoveOnlyDeleter{&released, 2});
   if (released != 6 || invalid.allocated()) return 6;
   return 0;
 }

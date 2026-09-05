@@ -39,10 +39,10 @@ internal sink 两个冷路径动态符号，本身不依赖 container；为它�
 |---|---|---|---|
 | `ScopeGuard` / `HYLE_DEFER` | rollback、C API cleanup、多个早退 | Abseil/Folly：栈内、move-only、一次执行、dismiss/invoke | 代替已有资源 RAII；析构期异常恢复 |
 | `ScopeFail` / `ScopeSuccess` | 只在新增异常逃逸或正常离开 scope 时执行 | Library Fundamentals/Folly：construction-time exception count、move-only、dismiss | 把 `Status` failure 猜成异常；no-exception 构建中期待 fail 路线运行 |
-| `UniqueResource<R,D>` | 没有领域 owner 的一次性 value-like native token | TS/Boost：显式 ownership、checked invalid、move/release/reset/get | 替代 Platform/Mem/IO typed owner；在 deleter 中隐藏错误处理 |
+| `UniqueResource<R,D>` | 没有领域 owner 的一次性 value-like native token | TS/Boost：显式 ownership、checked invalid、nothrow move-or-copy deleter transfer、move/release/reset/get | 替代 Platform/Mem/IO typed owner；在 deleter 中隐藏错误处理 |
 | `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy；明确 thread-confined 对象免原子 RMW | Boost 同形 safe/unsafe counter policy；retain/release、比较/hash/casts；普通 `make_ref` 可抛 | weak ref、环检测、aliasing control block；owner-specific fallible allocation factory |
 | `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、显式 jump 拆流；TLS 仅 best-effort convenience | 密码学安全随机；默认 TLS 流的唯一/不重叠保证 |
-| `FunctionRef<Sig>` | 同步 API 在一次调用期间借用任意 callable | 两机器字 call-only view；mutable/const × throwing/noexcept；runtime 或 nontype free/member binding | callback storage、return、异步排队；这些必须使用 owning callable 或 owner fn+ctx |
+| `FunctionRef<Sig>` | 同步 API 在一次调用期间借用任意 callable | 两机器字 call-only view；mutable/const × throwing/noexcept；runtime 或 nontype free/member binding；普通 member signature 可 CTAD | callback storage、return、异步排队；这些必须使用 owning callable 或 owner fn+ctx |
 | `NotNull<T*>` | required 且需要 rebinding/pointer interop 的借用 | 一机器字、构造期 fail-fast、const/base 转换、identity/hash | ownership/lifetime extension、nullable/optional/fallible semantics；分别用 `T*`/`Result<T&>` |
 | `type_name/hash` | 编译期诊断、受控构建内标签 | pretty-function constexpr probe；hash 允许碰撞 | 持久/唯一 correctness ID、跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
@@ -103,7 +103,8 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
 ## 复杂度与布局合同
 
 - Scope guards、UniqueResource、Ref copy/drop/cast、FunctionRef/NotNull 构造与调用路由、SpinLock 无争用和 RNG
-  scalar draw 是 O(1)。
+  scalar draw 是 O(1)。UniqueResource 的 deleter move-or-copy 是编译期选择，不增加 mode 字段、runtime
+  branch、allocation 或 dispatch；checked factory 的 `noexcept` 精确传播比较与 owner construction 合同。
 - RNG bounded draw 期望 O(1)，`discard(n)` O(n)，`jump/long_jump` 固定 O(256)，shuffle O(n)。
 - type-name 在常量求值切片；hash 是 O(类型名长度) 的 constexpr 工作，不在运行期热路。
 - Registry `find/create` 是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销
@@ -113,7 +114,9 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
   profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
 - `FunctionRef` 保持 callable/function-or-bound-object 地址与 invoker 两个机器字，不复制/分配 callable；
   nontype target 不保存 runtime function/member pointer，仍只经过一个 erased invoker；大或非平凡
-  by-value 参数以引用穿过 erased invoker，避免中间层额外 move。`NotNull<T*>` 保持一个 pointer，
+  by-value 参数以引用穿过 erased invoker，避免中间层额外 move。bound-member CTAD 只读取成员函数类型
+  已编码的参数/cv/`noexcept`，不新增调用路线；ref-qualified、`volatile` 或 overload set 不猜测。
+  `NotNull<T*>` 保持一个 pointer，
   动态值只在构造时检查；`ThreadUnsafeRefCounted<T>` 的 retain/drop 是 plain integer 且没有运行时
   mode branch，但跨线程使用是合同违反。
 - SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
