@@ -1,6 +1,6 @@
 # Build/package v13：源码归档测试选择
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 > Build/package 是横向开发单元，不进入 `module-status.json`。本轮由 Platform v7 的真实
 > Git-less 源码归档验证触发，不改变 Platform 的产品范围或替它签发状态。
@@ -32,8 +32,21 @@
 
 ## 候选
 
-尚未生成。
+候选 `fd396d0fba5531866064cae13d88b18332e6f647` 只改测试登记条件和两处交付文档：真正的
+Git checkout 且 Git 可用时照常注册 LOC contract；有意不携 `.git` 的完整源码归档显示明确
+skip 消息，同时保留其余测试。没有产品 target、API、编译定义或二进制改动。
 
 ## Verification 与裁决
 
-尚未裁决。
+| Gate | Result | Evidence |
+|---|---|---|
+| Git checkout LOC contract | `PASS` | Windows canonical checkout 重新 configure 后 `hyle_loc_report_test` 注册并通过 `1/1` |
+| Git-less source archive selection | `PASS` | `git archive fd396d0f` 在 M4/macOS 26.6.2 配置时明确跳过唯一 Git-only LOC test；`ctest -N` 无该名称 |
+| archive remaining tests | `PASS` | AppleClang 21、Release/WERROR、精确 `platform;platform_fs` factor，构建 `hyle_tests` 后其余 `25/25` 通过 |
+| source/shared/static Platform consumer | `PASS` | Windows fresh selected-component smoke；源码嵌入与 relocated shared/static SDK consumer 各 `1/1` |
+| product/runtime cost | `PASS` | diff 只含 `tests/CMakeLists.txt` 与文档；运行时 target graph、符号和 layout 未变 |
+| docs / closure | `PASS` | `check-docs.py` 与 `check-module-closure.py` 通过；源码交付的维护测试边界已有 architecture/user 双侧说明 |
+
+终态裁决：`CLOSED`。三项有限 FIX 全部完成。只有 Git-less 官方源码归档再次注册依赖 repository
+identity 的维护测试、Git checkout 不再执行该合同，或为解决相同问题而屏蔽产品/模块测试时，才重开
+本 build/package task。
