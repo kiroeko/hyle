@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -599,15 +599,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v7 CANDIDATE：异构 cache-class snapshot 已在不改 target policy 与旧 cached convenience 的前提下冻结；三平台、三交付与直接消费预验证已完成。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
+      "summary": "platform v7 VERIFIED：异构 cache-class snapshot 已在不改 target policy 与旧 cached convenience 的前提下完成；三平台、三交付、直接消费、红队与 P0 结构性能七门通过。"
     },
     {
       "module": "platform_thread",
@@ -680,7 +691,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -697,15 +708,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v4 CANDIDATE：opened-object duplicate/info 与一字同步 random-access owner 已冻结；跨平台失败语义、三交付与下游预验证已完成。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
+      "summary": "platform_fs v4 VERIFIED：opened-object duplicate/info 与一字同步 random-access owner 已完成；三平台、三交付、下游、红队与 P0 结构性能七门通过。"
     },
     {
       "module": "mem_reclaim",

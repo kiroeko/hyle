@@ -3,9 +3,9 @@
 Platform v7 新增异构 cache-class snapshot、opened-file duplicate/info 和同步 explicit-offset
 `RandomAccessFile`。这些路线按 `P0 / STRUCTURAL` 验收：cache discovery 是显式冷路径，file owner
 仍是一字，单次 duplicate/info/read_at/write_at 各直接落一个 native control；旧 cached facts、
-FileHandle 顺序 I/O 与其它未调用路径没有新增 branch、lock、heap 或 metadata。产品实现 identity 为
-`eb4ce5e652c67b6cc0453773763648f3b41ffbe1`，tree
-`067e4c1a4807f6d3693cbdbae0854cb5263fb8cd`；同合同规则和三平台证据记录在
+FileHandle 顺序 I/O 与其它未调用路径没有新增 branch、lock、heap 或 metadata。不可变产品候选 identity 为
+`e892977bd2012841b3ee8a217c33fdd7ebdad260`，tree
+`e585215602a3430906201edd7a10726b74498158`；同合同规则和三平台证据记录在
 [`platform-v7-cache-class-and-random-access.md`](../../tasks/platform/platform-v7-cache-class-and-random-access.md)。
 
 Platform v6 新增两组显式 P0 控制路线：process-startup priority/QoS，以及已打开 `FileHandle` 上的

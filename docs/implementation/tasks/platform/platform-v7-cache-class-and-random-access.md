@@ -214,3 +214,44 @@ implementation/peer/build/doc 红队并冻结 FIX 后进入 `AUDITED`。
 这些结果固定了候选产品，但本状态尚未将七项 aggregate gate、最终红队发现与 P0
 engineering-performance 正式签为 `PASS`，因此不写 `VERIFIED/CLOSED`。候选后若改公开合同、算法、
 layout 或 normal-path cost，必须退回 `AUDITED`。
+
+## Candidate verification（`VERIFIED`）
+
+验证继续绑定 immutable product candidate
+`e892977bd2012841b3ee8a217c33fdd7ebdad260` / tree
+`e585215602a3430906201edd7a10726b74498158`；本节只补验证裁决和说明，没有产品代码、API、layout、算法、
+依赖或 normal workload 漂移。
+
+| Gate / journey | Verdict | Evidence / boundary |
+|---|---|---|
+| W1-WIN correctness / headers | `PASS` | MSVC 19.50 Release/Werror；`platform`/`platform_fs` 实现与公开头 4/4 |
+| W1-WSL correctness / sanitizers | `PASS` | GCC 14.2 Release、ASan、UBSan 各 4/4；exact `platform;platform_fs` selection |
+| M2-MAC correctness / source archive | `PASS` | AppleClang 21 arm64 Release/Werror 25/25；无 `.git` 归档；M4 两条 cache class 与 sysctl 精确一致 |
+| source/static/shared delivery | `PASS` | W1-WIN Platform source embedding、relocated shared SDK、relocated static SDK 各 1/1；sample 直接消费新 API |
+| factor graph / direct consumers | `PASS` | 依赖边不变；`platform_thread` 未重开；Mem/Sched/IO 在 candidate archive 上 Release/Werror build-only 通过 |
+| usability / documentation | `PASS` | architecture/user/watchlist/performance 同步 class 选择、owner、cursor、concurrency、unknown/error 与 Platform/IO/Mem 边界 |
+| engineering performance | `PASS / P0 STRUCTURAL` | 旧 cached facts 与 `FileHandle` 热路径无新 branch/field/lock/heap；新 owner 一字；每个基本操作一个 native control；不同 cursor/concurrency 合同不排名 |
+
+### 最终红队
+
+| Finding | Disposition |
+|---|---|
+| AppleClang 会编译非 Apple cache aggregation helper | `FIXED BEFORE CANDIDATE`：按 OS 守卫，M2-MAC archive 25/25 回放 |
+| Linux range parser 的第二次 `strtoul` 可能继承旧 `errno` | `FIXED BEFORE CANDIDATE`：第二次 parse 前清零，Release/ASan/UBSan 通过 |
+| Windows `FileHandle::info()` 先查 disk metadata 会误拒 pipe/character owner | `FIXED BEFORE CANDIDATE`：先查 `GetFileType`，新增 `CreatePipe` 真实句柄测试 |
+| Linux 多 socket 上 `core_id` 可重复 | `FIXED BEFORE CANDIDATE`：physical core identity 使用 `(package_id, die_id, core_id)`，新增 class 总数与 topology 对照 |
+| duplicate 可能被误用为独立 cursor/lock contender | `DOCUMENTED / TESTED`：合同明确共享 native open-file state，共享 cursor lifetime 测试通过 |
+| Windows offset I/O 可能被夸大为并发 `pread` | `DISPROVED BY TYPE BOUNDARY`：无公开 cursor，但仍 caller-synchronized；并发/async/direct/vectored 明确路由 IO |
+| 候选可能引入伪 C ABI、第三方或 factor drift | `DISPROVED`：scoped public/install/source 无 C/Native FFI marker，无新第三方与 component edge |
+| source archive 无 `.git` 时 LOC test 失败 | `FIXED IN INDEPENDENT BUILD/PACKAGE v13`：只跳过 Git-only test，归档其余 25/25；不冒充 Platform 产品修复 |
+
+新能力是异构调度/分块与 opened-file 真实 consumer 形状，不是由 benchmark 行逆推 API。已冻结的
+Core/Error/Time 用于公共状态、失败和文件时间；没有把 Container/Mem/IO 拉入底层形成倒置依赖。所有准入
+`MUST/FIX` 已 `COMPLETE`，scope、architecture、correctness、delivery、usability/docs、red-team 和
+engineering-performance 七门全部 `PASS`，无未命名 blocker。Formal 仍为独立 `PENDING`，不冒充 SOTA
+证书。
+
+`CANDIDATE -> VERIFIED` 前态 registry snapshot 为
+`C:\hyle-scratch\platform-v7\module-status-before-verified.json`，SHA-256
+`E8D7D18E6E9FBE2BDB69EA9D0795246205D4C75F67774CFB4B80E45AB9CD8D77`。terminal receipt、限制、reopen triggers
+与 LOC 将在下一状态单独登记；现在只提升为 `VERIFIED`。
