@@ -124,6 +124,12 @@ portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复�
 - `this_thread::set_*` 用于已进入线程后的逐项控制，失败直接返回共享 `Status`。
 - 析构仍 joinable 是生命周期 bug，fail-fast；platform 不把忘记 join 静默变成 detach。
 
+priority 是显式 portable scheduling/quality hint，而不是硬核型选择。Windows 的低两档同时启用
+execution-speed throttling（EcoQoS），高两档显式关闭该 throttling（HighQoS），`kNormal` 把 QoS
+控制交还系统；macOS 映射原生 QoS，Linux 映射当前线程 nice。`ThreadOpts::priority` 为空时完全不做
+这些调用，因此嵌入宿主的策略不会被默认覆盖。这个映射让 performance-oriented 推理 worker 真正
+表达其需求，但仍不承诺 OS 必须把它放到某颗 P-core。
+
 大量短任务、worker placement 和结构化并发归 `sched`。platform 不提供第二个线程池，也不把
 “performance first”偷设为所有用户的默认行为。macOS 没有公开的硬 CPU pin，必须诚实返回
 不支持；强核软偏好使用 OS QoS/priority，而不是伪造 affinity。
@@ -212,7 +218,9 @@ factor，mapping 属于 Mem。
 - 变长字符串使用 buffer-fill：返回完整长度，允许先 count-only，再由调用方选择 allocator。
 - 目录遍历使用 callback + context，不构造 owning entry；普通路径无逐 entry heap allocation，
   但无界路径/编码 scratch 允许 checked allocation 并以 `ResourceExhausted` 失败。C++ lambda 只是
-  inline trampoline。
+  inline trampoline。compiled `directory_iterate` 是 noexcept、allocation-free core，直接 callback
+  不得抛；`for_each_entry` 在 consumer TU 捕获 callback exception、让 native iterator 先关闭，再
+  原样重抛，并保留 callable 的 const qualification。
 - entry type 描述目录项自身且不跟随 symlink；`stat` 报 target 信息并另外保留 path 是否 link。
 - 递归删除在调用方拥有且遍历期间不被并发替换的目录树中绝不跟随 symlink/junction；这是数据
   安全合同，不是实现细节。普通 path API 无法把逐项检查与后续删除做成跨平台原子事务，敌对方
@@ -226,6 +234,9 @@ factor，mapping 属于 Mem。
   窗口和静默名称替换。显式目录不能为空；dynamic checked scratch 避免库自身的 MAX_PATH/1024
   ceiling，native filesystem 上限仍是最终边界。POSIX `read_symlink` 把
   `n==scratch capacity` 视为可能截断并扩容重试，保持 buffer-fill 的完整长度合同。
+- recursive mkdir 与 recursive remove 同样采用 stack-first 可增长 path scratch；普通 4096-byte 内
+  路径不分配，Windows extended path 不再被 HYLE 固定 ceiling 提前拒绝，最终仍以 native path 和
+  component 限制为准。
 - `copy_file` 只把 regular-file copy 作为成功合同。POSIX 在 open 后按 descriptor 分类并按 EOF
   驱动，不能依赖 `st_size`；若 non-regular destination 在 open 阶段先以 `ENXIO` 等失败则保留
   native error。Windows 的 reparse follow/replace 行为由 `CopyFileW` 定义，不伪造 POSIX 等价。
@@ -286,12 +297,15 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - host-memory snapshot 是 O(1) 个有界 OS/file 查询；`secure_random` 是 O(bytes/native chunk)，不维护
   TLS PRNG state。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
+- Windows 显式 priority 固定调用一次 QoS control 和一次 native priority control；未请求 priority
+  仍是零调用。两者都是线程创建/重配冷路径，不混入 Parker 或 task dispatch。
 - callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
   主成本，runtime/sched 继续使用 allocation-minimal `entry + void*` core。
 - `wait_on_address` 直接落 OS 原语，Parker 只加一个原子状态机，不增 mutex/heap allocation。
 - `allocate_rw` 使用最少 OS mapping 操作；staged reserve+commit 的额外 syscall 是不同合同，
   不能拿来宣称普通分配性能。
-- directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询。
+- directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询；C++ 异常桥只在
+  callback 真正抛出时进入冷失败路，正常每项仍只有原有一次 callback。
 - VM、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
 

@@ -60,6 +60,59 @@ TEST(Thread, SpawnWithNameAndAffinity) {
   EXPECT_TRUE(ran.load());
 }
 
+#if defined(_WIN32)
+namespace {
+struct PriorityProbe {
+  BOOL queried = FALSE;
+  DWORD control = 0;
+  DWORD state = 0;
+  int native_priority = THREAD_PRIORITY_ERROR_RETURN;
+};
+
+void priority_probe_entry(void* arg) {
+  auto* probe = static_cast<PriorityProbe*>(arg);
+  THREAD_POWER_THROTTLING_STATE qos{};
+  qos.Version = THREAD_POWER_THROTTLING_CURRENT_VERSION;
+  probe->queried = ::GetThreadInformation(
+      ::GetCurrentThread(), ThreadPowerThrottling, &qos, sizeof(qos));
+  probe->control = qos.ControlMask;
+  probe->state = qos.StateMask;
+  probe->native_priority = ::GetThreadPriority(::GetCurrentThread());
+}
+}  // namespace
+
+TEST(Thread, ExplicitPriorityConfiguresWindowsExecutionQos) {
+  struct Case {
+    ThreadPriority priority;
+    int native_priority;
+    bool throttled;
+    bool system_managed;
+  };
+  constexpr Case cases[] = {
+      {ThreadPriority::kLow, THREAD_PRIORITY_BELOW_NORMAL, true, false},
+      {ThreadPriority::kNormal, THREAD_PRIORITY_NORMAL, false, true},
+      {ThreadPriority::kHigh, THREAD_PRIORITY_ABOVE_NORMAL, false, false},
+  };
+  for (const Case& test : cases) {
+    PriorityProbe probe;
+    ThreadOpts opts;
+    opts.priority = test.priority;
+    opts.config_policy = ThreadConfigPolicy::kRequired;
+    auto thread = Thread::spawn(&priority_probe_entry, &probe, opts);
+    ASSERT_TRUE(thread.has_value()) << thread.error().message();
+    std::move(*thread).join();
+    ASSERT_TRUE(probe.queried);
+    EXPECT_EQ(probe.native_priority, test.native_priority);
+    const bool controls_speed =
+        (probe.control & THREAD_POWER_THROTTLING_EXECUTION_SPEED) != 0;
+    const bool throttles_speed =
+        (probe.state & THREAD_POWER_THROTTLING_EXECUTION_SPEED) != 0;
+    EXPECT_EQ(controls_speed, !test.system_managed);
+    EXPECT_EQ(throttles_speed, test.throttled);
+  }
+}
+#endif
+
 #if !defined(_WIN32)
 // Verify name/affinity actually TAKE EFFECT (not just "spawn didn't crash"), by
 // reading them back from INSIDE the spawned thread. POSIX only: Linux + macOS

@@ -1,4 +1,11 @@
-# Platform v3 performance evidence
+# Platform current performance evidence
+
+Platform v5 只改变三条 P0 控制/正确性路线：Windows 显式 thread priority 多一个原生 QoS control，
+`for_each_entry` 在 caller TU 提供异常清理桥，recursive mkdir 仅在超过 4095 bytes 时从栈 scratch
+转 checked heap。未配置 priority、address wait/Parker、host snapshot、`directory_iterate` compiled
+core、FileHandle open/read/close 和普通短路径均未改变。因此下列 v3 P1 receipts 继续描述其各自
+immutable product path；它们不能被外推为新增 v5 路线的计时结果。v5 的结构门与三平台结果记录在
+[`platform-v5-normal-consumer-contract.md`](../../tasks/platform/platform-v5-normal-consumer-contract.md)。
 
 This report is the current engineering-performance evidence for the factorized
 Platform product. It covers only the host, native-thread/wait, and synchronous
@@ -78,6 +85,9 @@ latency.
 | `FileHandle` short I/O | one-word owner and at most one native operation | hidden lock, heap, or second I/O |
 | exact/all I/O | O(bytes/native transfer limit), caller-owned buffer | intermediate owning copy |
 | directory visitor | O(entries), zero owning entry allocation on the common path | unconditional `stat` or collected path list |
+| C++ visitor exception bridge | normal path keeps one callback per entry and no owning allocation; exceptional path closes then rethrows | exception crossing the compiled noexcept iterator or per-entry exception allocation |
+| recursive mkdir path scratch | 4096-byte stack first; at most one checked allocation for a longer input | a library-fixed 4095-byte ceiling or per-component heap allocation |
+| explicit Windows thread priority | two bounded native controls at thread setup; unconfigured route unchanged | per-task QoS work or changing all threads by default |
 
 ## Interpretation limits
 

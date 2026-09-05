@@ -3,6 +3,8 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <memory>
 #include <span>
 #include <type_traits>
 
@@ -342,7 +344,10 @@ HYLE_PLATFORM_FS_API Result<std::size_t> home_directory(char *dst,
 // Result(false), not an enumeration failure. Compiled once in fs.cc (no
 // per-callback-type code). Result value is true when every entry was visited,
 // false when the visitor stopped normally. Opening/enumerating failures are
-// Status errors.
+// Status errors. A callback passed directly to this allocation-free core must
+// not throw because the compiled iterator is a noexcept resource-cleanup
+// boundary. Ordinary C++ callers should use for_each_entry(), which preserves
+// callback exceptions after the native iterator has been closed.
 HYLE_PLATFORM_FS_API Result<bool>
 directory_iterate(const char *path,
                   bool (*visit)(const char *name, FileType type, void *ctx),
@@ -353,8 +358,24 @@ directory_iterate(const char *path,
 // lambda body inlines into the trampoline.
 template <class Fn> Result<bool> for_each_entry(const char *path, Fn &&fn) {
   using Callable = std::remove_reference_t<Fn>;
-  auto trampoline = [](const char *name, FileType type, void *ctx) -> bool {
-    Callable &f = *static_cast<Callable *>(ctx);
+  struct Context {
+    Callable *callable;
+#if HYLE_HAS_EXCEPTIONS
+    std::exception_ptr exception;
+#endif
+  };
+  Context context{std::addressof(fn)
+#if HYLE_HAS_EXCEPTIONS
+                  , {}
+#endif
+  };
+  auto trampoline = [](const char *name, FileType type,
+                       void *opaque) noexcept -> bool {
+    auto &context = *static_cast<Context *>(opaque);
+#if HYLE_HAS_EXCEPTIONS
+    try {
+#endif
+    Callable &f = *context.callable;
     if constexpr (requires {
                     { f(name, type) } -> std::same_as<bool>;
                   }) {
@@ -363,8 +384,18 @@ template <class Fn> Result<bool> for_each_entry(const char *path, Fn &&fn) {
       f(name, type);
       return true;
     }
+#if HYLE_HAS_EXCEPTIONS
+    } catch (...) {
+      context.exception = std::current_exception();
+      return false;
+    }
+#endif
   };
-  return directory_iterate(path, trampoline, &fn);
+  auto result = directory_iterate(path, trampoline, &context);
+#if HYLE_HAS_EXCEPTIONS
+  if (context.exception) std::rethrow_exception(context.exception);
+#endif
+  return result;
 }
 
 } // namespace hyle::platform

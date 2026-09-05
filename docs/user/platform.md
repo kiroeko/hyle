@@ -146,7 +146,10 @@ cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` 
 `dirent` / `FindFirstFile` 已有元数据，只有 POSIX 文件系统返回 `DT_UNKNOWN` 才补一次 `lstat`。
 这是一条不制造 owning entry 的快速原语；普通路径不做逐 entry heap allocation，长 Windows
 search pattern 可能申请一次 checked scratch。确实需要 size/mtime 时由调用方只对选中的 entry
-调 `stat`，platform 不制造持有字符串和分配器策略的高层 directory object。
+调 `stat`，platform 不制造持有字符串和分配器策略的高层 directory object。`for_each_entry`
+接受 const、mutable、返回 `void` 或 `bool` 的 callable；`bool=false` 是正常提前结束。异常启用时，
+callable 抛出的异常会在 native iterator 完成关闭后原样重抛。只有实现 allocation-minimal adapter
+时才直接调用 `directory_iterate`；它是 `noexcept` core，传入的 function-pointer callback 不得抛。
 `modified_time` 使用共享的 `time::UnixTimestamp{seconds,nanoseconds}`，保留 1970 年前的
 有符号值和文件系统亚秒精度；它不是会 wrap 的 `uint64_t mtime_ns`。需要 chrono/time_t/
 timespec 互转时包含 `hyle/time/unix_timestamp.h`，checked 转换不会静默饱和为另一个时刻。
@@ -162,6 +165,8 @@ process exec 继承；prefix 必须是单个 basename 片段（不能含路径�
 `path_size` 遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿
 半条路径删除。显式 `dir` 不能为空；实现用 checked dynamic scratch 拼接路径，不再额外施加
 Windows `MAX_PATH` 或 POSIX 1024-byte ceiling（文件系统自身的 component/path 上限仍生效）。
+`make_directory_recursive` 同样先用 4096-byte 栈 scratch，只有更长输入才做一次 checked allocation；
+因此 Windows extended path 不会被 HYLE 自己截在 4095 bytes，POSIX 仍以实际内核路径上限为准。
 POSIX `read_symlink` 在 `readlink` 恰好填满 scratch 时会扩容重试；`n==capacity` 不会被误报成
 完整 target。
 Windows 创建 symlink 时必须编码 file/directory：已有 target 可用 `SymlinkKind::kAuto`；创建
@@ -213,8 +218,10 @@ HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn([state = std::move(state)] {
 ```
 
 已在线程入口内、需要逐项处理错误时，直接用 `this_thread::set_name/set_affinity/set_priority`；
-三者返回共享 `Status`，不另造 errno/TLS 通道。Linux priority 提升通常需要权限；macOS
-priority 映射到系统 QoS，且没有公开的硬 CPU pin API，所以 required affinity 返回
+三者返回共享 `Status`，不另造 errno/TLS 通道。Linux priority 提升通常需要权限；Windows 和 macOS
+priority 也映射 execution QoS：低两档请求节能执行，高两档请求 performance-oriented 执行，
+`kNormal` 恢复系统管理。只有 optional priority 未设置才完全继承 embedding process 的现有策略；
+Windows QoS 是软调度提示，不等于硬选 P-core。macOS 没有公开的硬 CPU pin API，所以 required affinity 返回
 `Unimplemented`。best-effort 会显式忽略这些失败并继续运行。绑核 id 必须取自
 `available_cpu_ids()`；Linux cpuset 可能产生 `{2, 6}` 这种稀疏 id，不能拿 `[0, count)` 猜。
 

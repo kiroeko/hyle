@@ -1936,10 +1936,22 @@ Status make_directory_recursive(const char* path) noexcept {
   auto already_directory = is_directory(path);
   if (!already_directory) return std::move(already_directory).error();
   if (*already_directory) return Status::Ok();
-  char buf[4096];
   std::size_t n = std::strlen(path);
-  if (n >= sizeof(buf)) {
-    return Status::OutOfRange("make directories: path exceeds 4095 bytes");
+  std::size_t required = 0;
+  if (!checked_size_add(n, 1, required)) {
+    return Status::OutOfRange("make directories: path size overflows");
+  }
+  char stack[4096];
+  char* buf = stack;
+  MallocArray<char> heap;
+  if (required > sizeof(stack)) {
+    if (!heap.resize(required)) {
+      return heap.overflowed()
+                 ? Status::OutOfRange("make directories: path is too long")
+                 : Status::ResourceExhausted(
+                       "make directories: path allocation failed");
+    }
+    buf = heap.data();
   }
   std::memcpy(buf, path, n + 1);
   // Create each ancestor in turn by temporarily terminating at each separator.

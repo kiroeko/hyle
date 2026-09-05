@@ -22,8 +22,11 @@ namespace hyle::platform {
 // caller only needs to keep the backing buffer alive through the call.
 // Portable 5-level priority. OS priority models diverge wildly (Windows discrete
 // levels vs POSIX nice vs SCHED_FIFO), so we expose a small portable ladder and
-// map it per-OS. Best-effort: a level the OS won't grant without privilege is a
-// soft no-op (the thread still runs at default), never a failure.
+// map it per-OS. On Windows and macOS the explicit low/high levels also select
+// the corresponding execution QoS; kNormal returns to system-managed QoS.
+// Leaving ThreadOpts::priority empty preserves inherited OS policy. Best-effort:
+// a level the OS won't grant without privilege is a soft no-op (the thread still
+// runs at default), never a failure.
 enum class ThreadPriority : std::int8_t {
   kLowest = -2, kLow = -1, kNormal = 0, kHigh = 1, kHighest = 2,
 };

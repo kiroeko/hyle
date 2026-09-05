@@ -388,6 +388,38 @@ TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
     EXPECT_EQ(n, "d1");
 }
 
+TEST_F(FsTest, ForEachEntryAcceptsConstCallable) {
+  ASSERT_TRUE(touch(path("const-visitor").c_str()).ok());
+  struct Visitor {
+    int *seen;
+    void operator()(const char *, FileType) const { ++*seen; }
+  };
+  int seen = 0;
+  const Visitor visitor{&seen};
+  auto completed = for_each_entry(root.c_str(), visitor);
+  ASSERT_TRUE(completed.has_value());
+  EXPECT_TRUE(*completed);
+  EXPECT_EQ(seen, 1);
+}
+
+#if HYLE_HAS_EXCEPTIONS
+TEST_F(FsTest, ForEachEntryRethrowsAfterIteratorCleanup) {
+  ASSERT_TRUE(touch(path("throwing-visitor").c_str()).ok());
+  struct VisitorError {};
+  EXPECT_THROW(
+      (void)for_each_entry(root.c_str(), [](const char *, FileType) -> void {
+        throw VisitorError{};
+      }),
+      VisitorError);
+
+  // The native iterator was closed before the exception crossed the public
+  // wrapper, so the directory remains immediately mutable on every platform.
+  EXPECT_TRUE(remove_file(path("throwing-visitor").c_str()).ok());
+  EXPECT_TRUE(remove_directory(root.c_str()).ok());
+  ASSERT_TRUE(make_directory(root.c_str()).ok());
+}
+#endif
+
 TEST_F(FsTest, ForEachEntryEarlyStop) {
   for (int i = 0; i < 5; ++i)
     ASSERT_TRUE(touch(path(("e" + std::to_string(i)).c_str()).c_str()).ok());
@@ -465,6 +497,20 @@ TEST_F(FsTest, LongPathBeyondMaxPath) {
   EXPECT_TRUE(remove_directory_recursive(path("L").c_str()).ok());
   EXPECT_FALSE(exists(path("L").c_str()).value_or(true));
 }
+
+#if defined(_WIN32)
+TEST_F(FsTest, RecursiveDirectorySupportsPathBeyondStackScratch) {
+  std::string deep = path("XL");
+  while (deep.size() <= 4300)
+    deep += "/abcdefgh";
+  ASSERT_GT(deep.size(), 4095u);
+  ASSERT_LT(deep.size(), 32700u);
+  ASSERT_TRUE(make_directory_recursive(deep.c_str()).ok());
+  EXPECT_TRUE(is_directory(deep.c_str()).value_or(false));
+  EXPECT_TRUE(remove_directory_recursive(path("XL").c_str()).ok());
+  EXPECT_FALSE(exists(path("XL").c_str()).value_or(true));
+}
+#endif
 
 #if !defined(_WIN32)
 // Recursive delete must NOT follow a symlink-to-directory and delete the target

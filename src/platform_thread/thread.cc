@@ -203,13 +203,41 @@ Status set_affinity_impl(const unsigned* cpus, std::size_t cpu_count,
 Status set_priority_impl(ThreadPriority priority,
                          HANDLE thread = ::GetCurrentThread()) noexcept {
   int native = THREAD_PRIORITY_NORMAL;
+  THREAD_POWER_THROTTLING_STATE qos{};
+  qos.Version = THREAD_POWER_THROTTLING_CURRENT_VERSION;
   switch (priority) {
-    case ThreadPriority::kLowest:  native = THREAD_PRIORITY_LOWEST; break;
-    case ThreadPriority::kLow:     native = THREAD_PRIORITY_BELOW_NORMAL; break;
-    case ThreadPriority::kNormal:  native = THREAD_PRIORITY_NORMAL; break;
-    case ThreadPriority::kHigh:    native = THREAD_PRIORITY_ABOVE_NORMAL; break;
-    case ThreadPriority::kHighest: native = THREAD_PRIORITY_HIGHEST; break;
+    case ThreadPriority::kLowest:
+      native = THREAD_PRIORITY_LOWEST;
+      qos.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      qos.StateMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      break;
+    case ThreadPriority::kLow:
+      native = THREAD_PRIORITY_BELOW_NORMAL;
+      qos.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      qos.StateMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      break;
+    case ThreadPriority::kNormal:
+      native = THREAD_PRIORITY_NORMAL;
+      // A zero ControlMask returns this policy to Windows' system heuristics.
+      break;
+    case ThreadPriority::kHigh:
+      native = THREAD_PRIORITY_ABOVE_NORMAL;
+      qos.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      break;
+    case ThreadPriority::kHighest:
+      native = THREAD_PRIORITY_HIGHEST;
+      qos.ControlMask = THREAD_POWER_THROTTLING_EXECUTION_SPEED;
+      break;
     default: return Status::InvalidArgument("thread priority is invalid");
+  }
+  // Thread priority alone does not prevent Windows 11 from applying
+  // execution-speed throttling/core parking. Keep this policy explicit instead
+  // of changing every thread by default: an empty ThreadOpts::priority still
+  // inherits the embedding application's OS policy unchanged.
+  if (!::SetThreadInformation(thread, ThreadPowerThrottling, &qos,
+                              sizeof(qos))) {
+    return thread_os_error("SetThreadInformation(ThreadPowerThrottling)",
+                           ::GetLastError());
   }
   if (!::SetThreadPriority(thread, native)) {
     return thread_os_error("SetThreadPriority", ::GetLastError());
