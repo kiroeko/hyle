@@ -378,6 +378,11 @@ Core-only shared SDK 同样没有 Core DSO/DLL 和 runtime staging；`HYLE_STATI
 
 顶层 Git checkout 提供 `hyle_source_package`：它审计全部 in-tree/integrated dependency，拒绝 dirty 或 untracked 工作树，以 `git archive` 打包当前提交，并生成源码清单和 SHA256。产物包含已跟踪源码与法律材料，不包含构建缓存或 FetchContent checkout。
 
+源码归档可以正常设置 `HYLE_BUILD_TESTS=ON` 并运行所选产品/因子的测试。只有需要 Git checkout
+identity 的维护者合同（当前为 LOC ownership/revision self-test）不会在缺少 `.git` 时注册；构建系统
+不得为让它通过而伪造 `HEAD`，也不得连带关闭模块、header、文档或 closure 测试。在真正的 Git
+checkout 中且 Git 可用时，该维护测试仍必须注册并通过。
+
 离线依赖包是独立输入。推荐在联网准备机把 `HYLE_DEP_SOURCE_CACHE` 指向一个空目录并执行
 `HYLE_DEP_ACTION=sync`，然后完整搬运该带 marker 的 cache；离线机把同一变量指向解包位置并设置
 `FETCHCONTENT_FULLY_DISCONNECTED=ON`。configure 会重新验证源码 identity，但不会访问网络。

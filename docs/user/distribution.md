@@ -55,6 +55,11 @@ cmake --build <build-dir> --target hyle_source_package
 tree，并先审计依赖版本；它不会把 `.git`、build cache 或未提交文件带给客户。制作方仍须按授权
 核对第三方许可证与接收者范围。
 
+接收者可以在解包目录设置 `HYLE_BUILD_TESTS=ON`，运行所选组件的产品与模块测试。因为归档刻意
+不含 `.git`，只服务于维护者 Git revision/LOC ownership 的自检不会注册；这不影响 header、模块、
+文档和 closure 合同。若需要运行该项维护自检，应使用真正的 Git checkout，而不是给归档伪造
+repository metadata。
+
 ## 2. 安装 headers + static libraries
 
 ```bash

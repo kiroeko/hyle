@@ -172,11 +172,20 @@ add_test(NAME hyle_module_closure_registry_test
                  "${HYLE_SOURCE_DIR}/scripts/check-module-closure.py")
 set_tests_properties(hyle_module_closure_registry_test PROPERTIES
   LABELS "tooling;documentation;closure")
-add_test(NAME hyle_loc_report_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/loc_report_test.py")
-set_tests_properties(hyle_loc_report_test PROPERTIES
-  LABELS "tooling;closure")
+# LOC ownership/revision checks are maintainer contracts over a Git checkout,
+# not product tests. Complete source archives intentionally omit .git, so do
+# not register a test there that cannot possibly resolve the audited revision.
+find_package(Git QUIET)
+if(Git_FOUND AND EXISTS "${HYLE_SOURCE_DIR}/.git")
+  add_test(NAME hyle_loc_report_test
+           COMMAND "${Python3_EXECUTABLE}"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/tooling/loc_report_test.py")
+  set_tests_properties(hyle_loc_report_test PROPERTIES
+    LABELS "tooling;closure")
+else()
+  message(STATUS
+    "HYLE tests: skipping Git-only LOC reporter outside a Git checkout")
+endif()
 # Every module owns its test registration beside its test sources. A real
 # subdirectory gives each module independent source/binary/variable scope while
 # target names and the common output directory remain stable.
