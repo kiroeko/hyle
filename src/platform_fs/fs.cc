@@ -1675,7 +1675,6 @@ Status preallocate_raw(std::intptr_t raw,
   if (*current >= minimum_size) return Status::Ok();
 
   static_assert(sizeof(off_t) >= sizeof(std::int64_t));
-  const off_t begin = static_cast<off_t>(*current);
   const off_t length = static_cast<off_t>(minimum_size - *current);
 #if HYLE_OS_MACOS
   fstore_t store{};
@@ -1694,6 +1693,7 @@ Status preallocate_raw(std::intptr_t raw,
     return posix_fs_status("ftruncate(file preallocate)", errno);
   }
 #else
+  const off_t begin = static_cast<off_t>(*current);
   const int allocated =
       ::posix_fallocate(static_cast<int>(raw), begin, length);
   if (allocated != 0) {
