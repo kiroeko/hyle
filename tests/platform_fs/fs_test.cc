@@ -1073,6 +1073,12 @@ TEST_F(FsTest, FileHandleSizeResizeAndPreallocatePreserveTheirContracts) {
       (std::numeric_limits<std::uint64_t>::max)();
   EXPECT_TRUE(opened->resize(kTooLarge).IsOutOfRange());
   EXPECT_TRUE(opened->preallocate(kTooLarge).IsOutOfRange());
+
+  ASSERT_TRUE(opened->close().ok());
+  auto read_only = open_file(file_path.c_str(), kOpenRead);
+  ASSERT_TRUE(read_only.has_value()) << read_only.error().message();
+  EXPECT_FALSE(read_only->resize(2).ok());
+  EXPECT_FALSE(read_only->preallocate(128).ok());
 }
 
 TEST_F(FsTest, FileHandleWholeFileLocksCoordinateAndReleaseOnClose) {
