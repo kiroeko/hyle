@@ -1,0 +1,96 @@
+{
+  "schema": "hyle.util-core.function-ref-consumer-shapes/v1",
+  "owner": "util-core-v3-foundation-utility-superset",
+  "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
+  "baseline_tree": "776df28438cf17a3cc7353e03635724e31d6de20",
+  "provenance_class": "PROVISIONAL_ARCHETYPE",
+  "comparison_class": "SAME_CONTRACT",
+  "journeys": [
+    {
+      "id": "const-borrowed-record-traversal-4096",
+      "consumer": "synchronous inference metadata or ordinary record traversal",
+      "topology": "one prebuilt array of 4096 records and one caller-owned const predicate are passed through a noinline traversal boundary",
+      "candidate": "hyle::util::FunctionRef<bool(const Record &) const>",
+      "peer": "absl::FunctionRef<bool(const Record &) const>",
+      "reason": "a const borrowed visitor is a normal callback boundary independent of any benchmark API"
+    },
+    {
+      "id": "nontype-free-record-traversal-4096",
+      "consumer": "synchronous traversal whose free-function target is known at compile time",
+      "topology": "the same prebuilt records cross the same noinline traversal; each two-word view binds the identical noexcept free function through its public nontype route",
+      "candidate": "hyle::util::nontype<&score_record>",
+      "peer": "absl::nontype_t<&score_record>",
+      "reason": "compile-time binding must remove the stored runtime target pointer without changing ownership or invocation semantics"
+    },
+    {
+      "id": "nontype-bound-member-record-traversal-4096",
+      "consumer": "synchronous traversal with caller-owned immutable scoring state",
+      "topology": "the same prebuilt records cross the same noinline traversal; each view borrows the same const scorer and binds the same noexcept member function at compile time",
+      "candidate": "hyle::util::nontype<&Scorer::score> plus a const lvalue",
+      "peer": "absl::nontype_t<&Scorer::score> plus the same const lvalue",
+      "reason": "bound member state is the nontype form that still needs one stored object pointer"
+    }
+  ],
+  "source_evidence": [
+    {
+      "role": "installed-util-core-journey",
+      "path": "samples/package/util_core/cpp/main.cc",
+      "sha256": "2ff8132f438b97cd2f5e679e26e5164a6258a7860635a8872aed2c38fd5b6304",
+      "fact": "the public package sample uses both a const borrowed callable and compile-time free-function binding"
+    },
+    {
+      "role": "candidate-product",
+      "path": "include/hyle/util/function_ref.h",
+      "sha256": "3c728b4b2d066110d281e496ee4238ddf00f1204ddbeeb06bf33670592a38189",
+      "fact": "the candidate exposes the same four qualifier forms and explicit nontype binding without ownership"
+    }
+  ],
+  "peer_evidence": {
+    "repository": "abseil-cpp",
+    "revision": "989c696cd131fdaba300c44eb86e1c00fd3a4b56",
+    "header": "absl/functional/function_ref.h",
+    "header_sha256": "0d656ab97b6bc78ba374bd34ece11c7d982021b91b83e11d27899be84b557793"
+  },
+  "semantic_equivalence": [
+    {
+      "dimension": "input-and-work-result",
+      "candidate": "4096 identical immutable records, identical predicate/scorer arithmetic and one observable checksum",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "ownership-and-lifetime",
+      "candidate": "a two-word non-owning view; callable/object storage is caller-owned and outlives traversal",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "qualification-and-exception",
+      "candidate": "const target contract; the free/member targets are noexcept but traversal itself uses the throwing signature in both routes",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "allocation-lock-and-dispatch",
+      "candidate": "zero allocation and lock; one erased invoker per record; nontype target is compile-time and stores no runtime target pointer",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "setup-and-charging",
+      "candidate": "record generation and view construction are outside; traversal, invocation, predicate/scorer work and checksum are charged",
+      "peer": "identical",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "delivery-and-codegen",
+      "candidate": "header-only Release static benchmark TU, LTO off and portable ISA",
+      "peer": "header-only in the same TU with the same compiler flags",
+      "verdict": "EQUAL"
+    }
+  ],
+  "claim_boundary": {
+    "allowed": "W1-WIN 5% engineering non-inferiority for these three synchronous borrowed callback traversals after full qualification",
+    "forbidden": "all callable types, owning or asynchronous callbacks, end-to-end inference throughput, cross-platform timing or universal SOTA"
+  }
+}

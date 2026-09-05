@@ -1,7 +1,9 @@
 #include "hyle/math/scalar.h"
 
+#include <array>
 #include <cstdint>
 #include <limits>
+#include <span>
 
 int main() {
   constexpr std::uint64_t kMax = std::numeric_limits<std::uint64_t>::max();
@@ -18,5 +20,12 @@ int main() {
           .has_value()) {
     return 8;
   }
+  if (hyle::math::try_integer_cast<std::uint32_t>(std::int64_t{-1})) return 9;
+  if (hyle::math::try_divide<std::int64_t>(21, -3) != -7) return 10;
+  if (hyle::math::try_multiply_add<std::uint64_t>(4, 16, 1) != 65) return 11;
+  constexpr std::array<std::uint32_t, 3> shape{2, 3, 4};
+  if (hyle::math::try_product(std::span{shape}) != 24) return 12;
+  if (hyle::math::saturating_add<std::uint8_t>(255, 1) != 255) return 13;
+  if (hyle::math::saturating_cast<std::uint8_t>(-1) != 0) return 14;
   return 0;
 }

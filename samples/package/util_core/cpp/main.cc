@@ -8,6 +8,7 @@
 #include "hyle/util/scope_guard.h"
 #include "hyle/util/spin_lock.h"
 #include "hyle/util/type_name.h"
+#include "hyle/util/unique_resource.h"
 
 namespace {
 
@@ -16,9 +17,11 @@ struct Item : hyle::util::RefCounted<Item> {
   int value;
 };
 
-int apply(hyle::util::FunctionRef<int(int)> function, int value) {
+int apply(hyle::util::FunctionRef<int(int) const> function, int value) {
   return function(value);
 }
+
+int increment(int value) noexcept { return value + 1; }
 
 }  // namespace
 
@@ -34,15 +37,28 @@ int main() {
   if (apply([required](int input) { return input + required->value; }, 4) != 7) {
     return 3;
   }
+  hyle::util::FunctionRef static_call{hyle::util::nontype<&increment>};
+  if (static_call(7) != 8) return 4;
 
   hyle::util::SpinLock lock;
   lock.lock();
   lock.unlock();
 
   bool cleaned = false;
+  bool succeeded = false;
   {
     hyle::util::ScopeGuard cleanup{[&]() noexcept { cleaned = true; }};
+    hyle::util::ScopeSuccess success{[&]() noexcept { succeeded = true; }};
   }
-  if (!cleaned || hyle::util::type_name<Item>().empty()) return 4;
+  if (!cleaned || !succeeded || hyle::util::type_name<Item>().empty()) return 5;
+
+  int released = 0;
+  {
+    hyle::util::UniqueResource token{
+        6, [&released](int value) noexcept { released += value; }};
+  }
+  auto invalid = hyle::util::make_unique_resource_checked(
+      -1, -1, [&released](int value) noexcept { released += value; });
+  if (released != 6 || invalid.allocated()) return 6;
   return 0;
 }

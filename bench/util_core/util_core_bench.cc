@@ -17,9 +17,15 @@
 
 #include "../common/perf_process.h"
 #include "hyle/core/compiler.h"
+#include "hyle/util/function_ref.h"
 #include "hyle/util/random.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
+
+#if defined(HYLE_BENCH_ABSL)
+#include <absl/functional/function_ref.h>
+#include <absl/utility/utility.h>
+#endif
 
 #if defined(HYLE_BENCH_BOOST)
 #include <boost/intrusive_ptr.hpp>
@@ -116,6 +122,54 @@ struct HyleWidget : hyle::util::RefCounted<HyleWidget> {
   std::uint64_t value;
 };
 
+struct CallbackRecord {
+  std::uint32_t value;
+  std::uint32_t mask;
+};
+
+struct ConstRecordPredicate {
+  std::uint32_t salt;
+
+  bool operator()(const CallbackRecord &record) const noexcept {
+    return ((record.value + salt) & record.mask) != 0;
+  }
+};
+
+struct RecordScorer {
+  std::uint32_t salt;
+
+  std::uint64_t score(const CallbackRecord &record) const noexcept {
+    return (static_cast<std::uint64_t>(record.value ^ salt) << 1) |
+           static_cast<std::uint64_t>((record.value & record.mask) != 0);
+  }
+};
+
+std::uint64_t score_record(const CallbackRecord &record) noexcept {
+  return (static_cast<std::uint64_t>(record.value) << 1) |
+         static_cast<std::uint64_t>((record.value & record.mask) != 0);
+}
+
+template <class Callback>
+HYLE_NOINLINE std::uint64_t traverse_records(
+    const std::array<CallbackRecord, kAggregate> &records,
+    Callback callback) {
+  std::uint64_t checksum = 0;
+  for (const CallbackRecord &record : records) {
+    checksum += static_cast<std::uint64_t>(callback(record));
+  }
+  return checksum;
+}
+
+std::array<CallbackRecord, kAggregate> make_callback_records() {
+  std::array<CallbackRecord, kAggregate> records{};
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    records[index] = CallbackRecord{
+        static_cast<std::uint32_t>(index * 2654435761u),
+        static_cast<std::uint32_t>(1u << (index & 31))};
+  }
+  return records;
+}
+
 #if defined(HYLE_BENCH_BOOST)
 struct BoostWidget
     : boost::intrusive_ref_counter<BoostWidget, boost::thread_safe_counter> {
@@ -169,6 +223,63 @@ bool is_permutation(const std::array<std::uint32_t, kShuffleCount> &values) {
   return true;
 }
 
+#if defined(HYLE_BENCH_ABSL)
+void bench_function_ref_const(bool peer_first) {
+  const auto records = make_callback_records();
+  const ConstRecordPredicate predicate{17};
+  hyle::util::FunctionRef<bool(const CallbackRecord &) const> candidate_ref =
+      predicate;
+  absl::FunctionRef<bool(const CallbackRecord &) const> peer_ref = predicate;
+  nb::Bench bench = make_bench(
+      "util-core const borrowed callback traversal N=4096", kAggregate);
+  const auto candidate = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, candidate_ref));
+  };
+  const auto peer = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, peer_ref));
+  };
+  run_pair(bench, peer_first, "HYLE FunctionRef const", candidate,
+           "Abseil FunctionRef const", peer);
+}
+
+void bench_function_ref_nontype(bool peer_first) {
+  const auto records = make_callback_records();
+  hyle::util::FunctionRef<std::uint64_t(const CallbackRecord &)> candidate_ref{
+      hyle::util::nontype<&score_record>};
+  absl::FunctionRef<std::uint64_t(const CallbackRecord &)> peer_ref{
+      absl::nontype_t<&score_record>{}};
+  nb::Bench bench = make_bench(
+      "util-core nontype free callback traversal N=4096", kAggregate);
+  const auto candidate = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, candidate_ref));
+  };
+  const auto peer = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, peer_ref));
+  };
+  run_pair(bench, peer_first, "HYLE FunctionRef nontype", candidate,
+           "Abseil FunctionRef nontype", peer);
+}
+
+void bench_function_ref_bound_member(bool peer_first) {
+  const auto records = make_callback_records();
+  const RecordScorer scorer{23};
+  hyle::util::FunctionRef<std::uint64_t(const CallbackRecord &) const>
+      candidate_ref{hyle::util::nontype<&RecordScorer::score>, scorer};
+  absl::FunctionRef<std::uint64_t(const CallbackRecord &) const> peer_ref{
+      absl::nontype_t<&RecordScorer::score>{}, scorer};
+  nb::Bench bench = make_bench(
+      "util-core nontype bound-member callback traversal N=4096", kAggregate);
+  const auto candidate = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, candidate_ref));
+  };
+  const auto peer = [&] {
+    nb::doNotOptimizeAway(traverse_records(records, peer_ref));
+  };
+  run_pair(bench, peer_first, "HYLE FunctionRef bound member", candidate,
+           "Abseil FunctionRef bound member", peer);
+}
+#endif
+
 int validate_contract() {
   bool rng_equal = true;
   hyle::util::Rng hyle_rng{7};
@@ -201,36 +312,67 @@ int validate_contract() {
   const bool hyle_spin =
       short_state_transition(hyle_lock, hyle_state) == hyle_state;
 
-  bool boost_ref = false;
+  bool peers = true;
+  bool boost_ref = true;
   std::uint64_t boost_owner_value = 0;
 #if defined(HYLE_BENCH_BOOST)
   boost::intrusive_ptr<BoostWidget> boost_owner(new BoostWidget(13));
   boost_owner_value = owning_handoff(boost_owner);
   boost_ref = boost_owner_value == 13 && boost_owner->use_count() == 1;
+  peers = peers && boost_ref;
 #endif
 
-  bool tbb_spin = false;
-  std::uint64_t tbb_state = 1;
+  bool tbb_spin = true;
 #if defined(HYLE_BENCH_TBB)
+  std::uint64_t tbb_state = 1;
   oneapi::tbb::spin_mutex tbb_lock;
   tbb_spin = short_state_transition(tbb_lock, tbb_state) == tbb_state;
+  peers = peers && tbb_spin;
+#endif
+
+  bool function_ref = true;
+#if defined(HYLE_BENCH_ABSL)
+  const auto records = make_callback_records();
+  const ConstRecordPredicate predicate{17};
+  hyle::util::FunctionRef<bool(const CallbackRecord &) const> hyle_const =
+      predicate;
+  absl::FunctionRef<bool(const CallbackRecord &) const> absl_const = predicate;
+
+  hyle::util::FunctionRef<std::uint64_t(const CallbackRecord &)> hyle_free{
+      hyle::util::nontype<&score_record>};
+  absl::FunctionRef<std::uint64_t(const CallbackRecord &)> absl_free{
+      absl::nontype_t<&score_record>{}};
+
+  const RecordScorer scorer{23};
+  hyle::util::FunctionRef<std::uint64_t(const CallbackRecord &) const>
+      hyle_member{hyle::util::nontype<&RecordScorer::score>, scorer};
+  absl::FunctionRef<std::uint64_t(const CallbackRecord &) const> absl_member{
+      absl::nontype_t<&RecordScorer::score>{}, scorer};
+  function_ref = traverse_records(records, hyle_const) ==
+                     traverse_records(records, absl_const) &&
+                 traverse_records(records, hyle_free) ==
+                     traverse_records(records, absl_free) &&
+                 traverse_records(records, hyle_member) ==
+                     traverse_records(records, absl_member);
+  peers = peers && function_ref;
 #endif
 
   const bool layout = sizeof(hyle::util::Rng) == 32 &&
                       sizeof(hyle::util::Ref<HyleWidget>) == sizeof(void *) &&
                       sizeof(hyle::util::SpinLock) == 1;
-  const bool peers = boost_ref && tbb_spin;
   const bool passed = rng_equal && bounded && shuffle && hyle_ref &&
-                      hyle_spin && peers && layout;
+                       hyle_spin && peers && layout;
   std::printf(
       "# HYLE_UTIL_CORE_CONTRACT schema=1 rng=%s bounded=%s shuffle=%s "
-      "hyle_ref=%s boost_ref=%s hyle_spin=%s tbb_spin=%s layout=%s "
+      "hyle_ref=%s boost_ref=%s hyle_spin=%s tbb_spin=%s function_ref=%s "
+      "layout=%s "
       "hyle_owner=%" PRIu64 " boost_owner=%" PRIu64 " verdict=%s\n",
       rng_equal ? "PASS" : "FAIL", bounded ? "PASS" : "FAIL",
       shuffle ? "PASS" : "FAIL", hyle_ref ? "PASS" : "FAIL",
       boost_ref ? "PASS" : "FAIL", hyle_spin ? "PASS" : "FAIL",
-      tbb_spin ? "PASS" : "FAIL", layout ? "PASS" : "FAIL", hyle_owner_value,
-      boost_owner_value, passed ? "PASS" : "FAIL");
+      tbb_spin ? "PASS" : "FAIL", function_ref ? "PASS" : "FAIL",
+      layout ? "PASS" : "FAIL", hyle_owner_value, boost_owner_value,
+      passed ? "PASS" : "FAIL");
   return passed ? 0 : 2;
 }
 
@@ -405,6 +547,11 @@ int main(int argc, char **argv) {
     bench_rng_bounded(peer_first);
     bench_rng_shuffle(peer_first);
   }
+#if defined(HYLE_BENCH_ABSL)
+  bench_function_ref_const(peer_first);
+  bench_function_ref_nontype(peer_first);
+  bench_function_ref_bound_member(peer_first);
+#endif
 #if defined(HYLE_BENCH_BOOST)
   bench_ref(peer_first);
 #endif

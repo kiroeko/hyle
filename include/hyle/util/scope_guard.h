@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <exception>
 #include <type_traits>
 #include <utility>
 
@@ -24,6 +25,71 @@ concept ScopeGuardSource =
     !std::same_as<std::remove_cvref_t<Source>, ScopeGuard<Stored>> &&
     std::constructible_from<Stored, Source> && std::invocable<Source&>;
 
+template <class Fn, bool ExecuteOnFailure>
+class ConditionalScopeGuard {
+  static_assert(!std::is_reference_v<Fn>);
+  static_assert(std::invocable<Fn&>);
+
+ public:
+#if HYLE_HAS_EXCEPTIONS
+  template <class F>
+    requires std::constructible_from<Fn, F> && std::invocable<F&>
+  explicit ConditionalScopeGuard(F&& fn) noexcept(
+      std::is_nothrow_constructible_v<Fn, F&>)
+  try : fn_(fn) {
+  } catch (...) {
+    // A failure guard has already accepted cleanup responsibility when its
+    // callable storage fails. A success action must never run on this path.
+    if constexpr (ExecuteOnFailure) fn();
+  }
+#else
+  template <class F>
+    requires std::constructible_from<Fn, F> && std::invocable<F&>
+  explicit ConditionalScopeGuard(F&& fn) noexcept(
+      std::is_nothrow_constructible_v<Fn, F&>)
+      : fn_(fn) {}
+#endif
+
+  template <class F>
+    requires std::constructible_from<Fn, F> && std::invocable<F&> &&
+             (!std::is_lvalue_reference_v<F>) &&
+             std::is_nothrow_constructible_v<Fn, F>
+  explicit ConditionalScopeGuard(F&& fn) noexcept
+      : fn_(std::forward<F>(fn)) {}
+
+  ConditionalScopeGuard(ConditionalScopeGuard&& other) noexcept
+    requires std::is_nothrow_move_constructible_v<Fn>
+      : fn_(std::move(other.fn_)),
+        exception_count_(other.exception_count_),
+        active_(std::exchange(other.active_, false)) {}
+
+  ConditionalScopeGuard(ConditionalScopeGuard&& other) noexcept(
+      std::is_nothrow_copy_constructible_v<Fn>)
+    requires (!std::is_nothrow_move_constructible_v<Fn>) &&
+             std::copy_constructible<Fn>
+      : fn_(other.fn_),
+        exception_count_(other.exception_count_),
+        active_(std::exchange(other.active_, false)) {}
+
+  ~ConditionalScopeGuard() noexcept {
+    const bool new_exception =
+        std::uncaught_exceptions() > exception_count_;
+    if (active_ && new_exception == ExecuteOnFailure) fn_();
+  }
+
+  void dismiss() noexcept { active_ = false; }
+  [[nodiscard]] bool active() const noexcept { return active_; }
+
+  ConditionalScopeGuard(const ConditionalScopeGuard&) = delete;
+  ConditionalScopeGuard& operator=(const ConditionalScopeGuard&) = delete;
+  ConditionalScopeGuard& operator=(ConditionalScopeGuard&&) = delete;
+
+ private:
+  HYLE_NO_UNIQUE_ADDRESS Fn fn_;
+  int exception_count_ = std::uncaught_exceptions();
+  bool active_ = true;
+};
+
 }  // namespace detail
 
 // Owns a callable and invokes it once at destruction unless dismissed. Move-only
@@ -38,6 +104,7 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
   static_assert(std::invocable<Fn&>,
                 "ScopeGuard callable must be invocable with no arguments");
  public:
+#if HYLE_HAS_EXCEPTIONS
   template <class F>
     requires detail::ScopeGuardSource<Fn, F>
   explicit ScopeGuard(F&& fn) noexcept(
@@ -48,6 +115,13 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
     // cleanup, failure to store it must not silently leak the resource.
     fn();
   }
+#else
+  template <class F>
+    requires detail::ScopeGuardSource<Fn, F>
+  explicit ScopeGuard(F&& fn) noexcept(
+      std::is_nothrow_constructible_v<Fn, F&>)
+      : fn_(fn) {}
+#endif
 
   template <class F>
     requires detail::ScopeGuardSource<Fn, F> &&
@@ -93,6 +167,37 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
 
 template <class F>
 ScopeGuard(F&&) -> ScopeGuard<std::decay_t<F>>;  // deduce stored type by value
+
+// Execute only when a new exception leaves this lexical scope.
+template <class Fn>
+class [[nodiscard("a temporary ScopeFail cannot observe the later scope exit")]]
+    ScopeFail final : private detail::ConditionalScopeGuard<Fn, true> {
+  using Base = detail::ConditionalScopeGuard<Fn, true>;
+
+ public:
+  using Base::Base;
+  using Base::active;
+  using Base::dismiss;
+};
+
+template <class F>
+ScopeFail(F&&) -> ScopeFail<std::decay_t<F>>;
+
+// Execute only when no new exception leaves this lexical scope.
+template <class Fn>
+class [[nodiscard(
+    "a temporary ScopeSuccess cannot observe the later scope exit")]]
+    ScopeSuccess final : private detail::ConditionalScopeGuard<Fn, false> {
+  using Base = detail::ConditionalScopeGuard<Fn, false>;
+
+ public:
+  using Base::Base;
+  using Base::active;
+  using Base::dismiss;
+};
+
+template <class F>
+ScopeSuccess(F&&) -> ScopeSuccess<std::decay_t<F>>;
 
 }  // namespace hyle::util
 

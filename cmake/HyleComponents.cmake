@@ -144,7 +144,8 @@ _hyle_declare_component(util_core
     hyle/util/ref_counted.h
     hyle/util/scope_guard.h
     hyle/util/spin_lock.h
-    hyle/util/type_name.h)
+    hyle/util/type_name.h
+    hyle/util/unique_resource.h)
 _hyle_declare_component(error PUBLIC_DEPS core)
 _hyle_declare_component(obs TRACE
   PRIVATE_DEPS mem_reclaim

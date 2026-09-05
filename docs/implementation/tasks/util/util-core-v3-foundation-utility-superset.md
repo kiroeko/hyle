@@ -174,7 +174,7 @@ authorized.
   the two-word view itself was previously mutable. Nontype binding does not introduce ownership or extend object life.
 - Conditional scope types use class CTAD and the same discoverable `dismiss()` / `active()` control as `ScopeGuard`;
   no macro-only API or dependency on experimental `<scope>` is introduced.
-- `UniqueResource` requires a copy-constructible deleter and a resource that is nothrow-movable or copyable so failed
+- `UniqueResource` requires a nothrow-copy-constructible deleter and a resource that is nothrow-movable or copyable so failed
   transfer cannot leak or silently steal ownership. Move assignment/reset-to-new-resource are available only when their
   storage operations satisfy the required nonthrow transfer. The deleter is expected to be nonthrowing; throwing during
   destruction terminates.

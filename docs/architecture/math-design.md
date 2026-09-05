@@ -14,24 +14,28 @@ HYLE simd 承载，少量没有进入 SIMD 的标量/bit/numeric helper 留在�
 能防止溢出/输入边界重复出错的值计算。它不是通用数学伞头，也不是 SIMD 的 scalar
 fallback 目录。
 
-当前准入两类能力：一类是非负整数的 ceiling division 与可表示 multiple round-up；另一类是
-不可信 integral shape、stride、offset 与 byte-count 的 checked add/subtract/multiply。它们在
+当前准入三类能力：非负整数的 ceiling division 与可表示 multiple round-up；不可信 integral
+shape、stride、offset 与 byte-count 的 exact checked conversion/arithmetic/aggregation；以及明确选择
+clamp policy 的 saturating integer operation/conversion。它们在
 tensor/block/launch shape、allocation sizing 和 layout validation 中反复出现，C++23 又没有统一的
 自然 C++ 返回形状。ceil/round 的正常入口把
 非负值、正除数和可表示结果当作程序不变量并 fail-fast；`try_` 入口用 `std::optional`
 处理不可信 shape/count。同一调用只允许一个非 bool integral 类型，避免隐式 signed/unsigned
 promotion 改变结果。
 
-checked arithmetic 只提供 `try_add`、`try_subtract`、`try_multiply`。成功值是精确数学结果，overflow/
-underflow 返回 `nullopt`，不返回 wrapped 或 saturated value。可信且已经验证的算术直接用语言
-`+/-/*`；Math 不增加 fail-fast operator wrapper。binary primitive 可以显式组合出 tensor element count、
-byte size 和 end offset，而不把 mixed-type promotion、variadic fold 或某个模型 layout 固化进 API。
-跨宽度或 signedness 的输入先用 C++23 `std::in_range` 验证、显式转换到调用者选定的共同类型；标准设施
-已经完整拥有这项语义，因此 Math 不再包装一个 `checked_cast`。
+Exact checked 路线提供 add/subtract/multiply/divide/remainder、multiply-add、span sum/product 与显式
+destination 的 `try_integer_cast`。成功值是逐步精确结果；overflow/underflow、不可表示 conversion 或
+非法 divisor 返回 `nullopt`，不返回 wrapped/saturated value。`try_remainder(min,-1)` 特判返回数学上的
+精确零而不执行 UB；对应 quotient 不可表示，`try_divide` 失败。可信且已经验证的普通算术仍直接用语言
+operator。
+
+Saturating 路线使用 `saturating_add/subtract/multiply/divide/cast`，返回最近的可表示值；它不是 checked
+失败的替代品。除零没有可定义的 clamp，因此 trusted saturating divide 以 Core invariant fail-fast，
+不可信 divisor 必须先走 `try_divide`。名称遵循 HYLE 可读 verb，不冒充尚未由 C++23 提供的标准 ABI。
 
 ## 依赖与组合
 
-`math` 是一个不可再拆的 header-only factor。当前唯一 HYLE 依赖是 `core`：普通 `try_` 入口只依赖
+`math` 是一个不可再拆的 header-only factor。当前唯一 HYLE 依赖是 `core`：普通 `try_`/saturating 入口只依赖
 C++ 标准库和编译器 overflow primitive，fail-fast 的 `ceil_div`/`round_up_to_multiple` 复用 Core 的
 release-surviving assert。编译器 intrinsic 是实现机制，不是产品组件或可选第三方依赖。因此中央图的
 完整产品边就是 `math -> PUBLIC core`；Math 不依赖 SIMD、Platform、Mem 或外部数值库。
@@ -69,7 +73,8 @@ scalar 合同，应声明直接依赖并复用，而不是因为模块边界再�
 
 ## 成本与交付
 
-所有入口均为 `constexpr` inline value function，O(1)、零分配、零锁、零常态 metadata。
+所有 scalar 入口均为 `constexpr` inline value function，O(1)、零分配、零锁、零常态 metadata；span
+sum/product 是 O(n) 单遍、短路、零分配，empty identities 分别为 0/1。
 ceil/round 使用 quotient/remainder 形状，避免 `(a + b - 1)` 的先行溢出；round-up 在加法前
 检查结果是否可表示。checked add/sub 在 unsigned bit domain 判定 carry/sign overflow；runtime checked
 multiply 使用工具链 overflow primitive 或高半积，constant evaluation 使用先判界再乘，均不执行

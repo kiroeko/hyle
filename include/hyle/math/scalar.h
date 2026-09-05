@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <span>
 #include <type_traits>
+#include <utility>
 
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_ARM64))
 #  include <intrin.h>
@@ -32,6 +34,57 @@ constexpr bool is_non_negative(T value) noexcept {
 
 template <NonBooleanIntegral T>
 using Unsigned = std::make_unsigned_t<T>;
+
+template <class T>
+inline constexpr bool kCharacterInteger =
+    std::same_as<std::remove_cv_t<T>, char> ||
+    std::same_as<std::remove_cv_t<T>, wchar_t> ||
+    std::same_as<std::remove_cv_t<T>, char8_t> ||
+    std::same_as<std::remove_cv_t<T>, char16_t> ||
+    std::same_as<std::remove_cv_t<T>, char32_t>;
+
+// std::in_range deliberately rejects the character integer types even though
+// they satisfy std::integral. Keep its standard implementation for ordinary
+// integer types and extend the identical value-range rule to characters.
+template <NonBooleanIntegral To, NonBooleanIntegral From>
+constexpr bool integer_in_range(From value) noexcept {
+  using Destination = std::remove_cv_t<To>;
+  using Source = std::remove_cv_t<From>;
+  if constexpr (!kCharacterInteger<Destination> &&
+                !kCharacterInteger<Source>) {
+    return std::in_range<Destination>(value);
+  } else if constexpr (std::is_signed_v<Source> ==
+                       std::is_signed_v<Destination>) {
+    if constexpr (std::numeric_limits<Destination>::digits >=
+                  std::numeric_limits<Source>::digits) {
+      return true;
+    } else {
+      return value >= static_cast<Source>(
+                          (std::numeric_limits<Destination>::min)()) &&
+             value <= static_cast<Source>(
+                          (std::numeric_limits<Destination>::max)());
+    }
+  } else if constexpr (std::is_signed_v<Source>) {
+    if (value < Source{0}) return false;
+    using UnsignedSource = std::make_unsigned_t<Source>;
+    if constexpr (std::numeric_limits<Destination>::digits >=
+                  std::numeric_limits<UnsignedSource>::digits) {
+      return true;
+    } else {
+      return static_cast<UnsignedSource>(value) <=
+             static_cast<UnsignedSource>(
+                 (std::numeric_limits<Destination>::max)());
+    }
+  } else {
+    if constexpr (std::numeric_limits<Destination>::digits >=
+                  std::numeric_limits<Source>::digits) {
+      return true;
+    } else {
+      return value <=
+             static_cast<Source>((std::numeric_limits<Destination>::max)());
+    }
+  }
+}
 
 template <NonBooleanIntegral T>
 constexpr T from_unsigned_bits(Unsigned<T> value) noexcept {
@@ -201,6 +254,139 @@ template <detail::NonBooleanIntegral T>
   }
 #endif
   return detail::multiply_portable(lhs, rhs);
+}
+
+// Converts an integral value only when the destination can represent it. Both
+// types are explicit in the signature so the checked branch cannot accidentally
+// retain a wider or differently-signed source value.
+template <detail::NonBooleanIntegral To, detail::NonBooleanIntegral From>
+[[nodiscard]] constexpr std::optional<To> try_integer_cast(
+    From value) noexcept {
+  if (!detail::integer_in_range<To>(value)) return std::nullopt;
+  return static_cast<To>(value);
+}
+
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr std::optional<T> try_divide(T dividend,
+                                                     T divisor) noexcept {
+  if (divisor == T{0}) return std::nullopt;
+  if constexpr (std::signed_integral<T>) {
+    if (dividend == (std::numeric_limits<T>::min)() && divisor == T{-1}) {
+      return std::nullopt;
+    }
+  }
+  return static_cast<T>(dividend / divisor);
+}
+
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr std::optional<T> try_remainder(T dividend,
+                                                        T divisor) noexcept {
+  if (divisor == T{0}) return std::nullopt;
+  if constexpr (std::signed_integral<T>) {
+    // The mathematical remainder is exactly zero, but evaluating the built-in
+    // expression is undefined when the quotient is not representable.
+    if (dividend == (std::numeric_limits<T>::min)() && divisor == T{-1}) {
+      return T{0};
+    }
+  }
+  return static_cast<T>(dividend % divisor);
+}
+
+// Exact left-to-right `multiplicand * multiplier + addend`. An intermediate
+// outside T is a failure even when later cancellation could make the final
+// mathematical value representable.
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr std::optional<T> try_multiply_add(
+    T multiplicand, T multiplier, T addend) noexcept {
+  const auto product = try_multiply(multiplicand, multiplier);
+  if (!product) return std::nullopt;
+  return try_add(*product, addend);
+}
+
+template <detail::NonBooleanIntegral T, std::size_t Extent>
+[[nodiscard]] constexpr std::optional<std::remove_cv_t<T>> try_sum(
+    std::span<T, Extent> values) noexcept {
+  using Value = std::remove_cv_t<T>;
+  Value result{0};
+  for (const Value value : values) {
+    const auto next = try_add(result, value);
+    if (!next) return std::nullopt;
+    result = *next;
+  }
+  return result;
+}
+
+template <detail::NonBooleanIntegral T, std::size_t Extent>
+[[nodiscard]] constexpr std::optional<std::remove_cv_t<T>> try_product(
+    std::span<T, Extent> values) noexcept {
+  using Value = std::remove_cv_t<T>;
+  Value result{1};
+  for (const Value value : values) {
+    const auto next = try_multiply(result, value);
+    if (!next) return std::nullopt;
+    result = *next;
+  }
+  return result;
+}
+
+// Saturating operations are a distinct policy from the checked helpers above:
+// they clamp to the nearest representable value instead of reporting failure.
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr T saturating_add(T lhs, T rhs) noexcept {
+  const auto result = try_add(lhs, rhs);
+  if (result) return *result;
+  if constexpr (std::unsigned_integral<T>) {
+    return (std::numeric_limits<T>::max)();
+  } else {
+    return rhs < T{0} ? (std::numeric_limits<T>::min)()
+                      : (std::numeric_limits<T>::max)();
+  }
+}
+
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr T saturating_subtract(T lhs, T rhs) noexcept {
+  const auto result = try_subtract(lhs, rhs);
+  if (result) return *result;
+  if constexpr (std::unsigned_integral<T>) {
+    return T{0};
+  } else {
+    return rhs < T{0} ? (std::numeric_limits<T>::max)()
+                      : (std::numeric_limits<T>::min)();
+  }
+}
+
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr T saturating_multiply(T lhs, T rhs) noexcept {
+  const auto result = try_multiply(lhs, rhs);
+  if (result) return *result;
+  if constexpr (std::unsigned_integral<T>) {
+    return (std::numeric_limits<T>::max)();
+  } else {
+    return (lhs < T{0}) != (rhs < T{0})
+               ? (std::numeric_limits<T>::min)()
+               : (std::numeric_limits<T>::max)();
+  }
+}
+
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr T saturating_divide(T dividend, T divisor) noexcept {
+  HYLE_FATAL_ASSERT(divisor != T{0});
+  if constexpr (std::signed_integral<T>) {
+    if (dividend == (std::numeric_limits<T>::min)() && divisor == T{-1}) {
+      return (std::numeric_limits<T>::max)();
+    }
+  }
+  return static_cast<T>(dividend / divisor);
+}
+
+template <detail::NonBooleanIntegral To, detail::NonBooleanIntegral From>
+[[nodiscard]] constexpr To saturating_cast(From value) noexcept {
+  const auto result = try_integer_cast<To>(value);
+  if (result) return *result;
+  if constexpr (std::signed_integral<From>) {
+    if (value < From{0}) return (std::numeric_limits<To>::min)();
+  }
+  return (std::numeric_limits<To>::max)();
 }
 
 // Ceiling of value/divisor for a non-negative value and positive divisor.

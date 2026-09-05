@@ -5,6 +5,8 @@
 #include "hyle/util/scope_guard.h"
 
 using hyle::util::ScopeGuard;
+using hyle::util::ScopeFail;
+using hyle::util::ScopeSuccess;
 
 using EmptyGuard = ScopeGuard<decltype([]() noexcept {})>;
 static_assert(std::is_nothrow_destructible_v<EmptyGuard>);
@@ -156,4 +158,81 @@ TEST(ScopeGuard, DeferFiresOnEarlyReturn) {
   EXPECT_EQ(cleaned, 1);
   fn(false);
   EXPECT_EQ(cleaned, 2);
+}
+
+TEST(ConditionalScopeGuard, SelectsNormalOrExceptionalExit) {
+  int failures = 0;
+  int successes = 0;
+  const auto run = [&](bool fail) {
+    ScopeFail on_fail{[&] noexcept { ++failures; }};
+    ScopeSuccess on_success{[&] noexcept { ++successes; }};
+    if (fail) throw 7;
+  };
+
+  EXPECT_NO_THROW(run(false));
+  EXPECT_EQ(failures, 0);
+  EXPECT_EQ(successes, 1);
+  EXPECT_THROW(run(true), int);
+  EXPECT_EQ(failures, 1);
+  EXPECT_EQ(successes, 1);
+}
+
+TEST(ConditionalScopeGuard, MoveAndDismissRemainOnceOnly) {
+  int failures = 0;
+  int successes = 0;
+  EXPECT_THROW(
+      ([&] {
+        ScopeFail source{[&] noexcept { ++failures; }};
+        auto moved = std::move(source);
+        EXPECT_FALSE(source.active());  // NOLINT(bugprone-use-after-move)
+        EXPECT_TRUE(moved.active());
+        throw 1;
+      }()),
+      int);
+  {
+    ScopeSuccess success{[&] noexcept { ++successes; }};
+    success.dismiss();
+  }
+  EXPECT_EQ(failures, 1);
+  EXPECT_EQ(successes, 0);
+}
+
+TEST(ConditionalScopeGuard, NestedCaughtExceptionIsSuccessForOuterScope) {
+  int failures = 0;
+  int successes = 0;
+  {
+    ScopeFail on_fail{[&] noexcept { ++failures; }};
+    ScopeSuccess on_success{[&] noexcept { ++successes; }};
+    try {
+      throw 3;
+    } catch (int) {
+    }
+  }
+  EXPECT_EQ(failures, 0);
+  EXPECT_EQ(successes, 1);
+}
+
+TEST(ConditionalScopeGuard, ConstructionFailureRunsOnlyFailureCleanup) {
+  int fail_runs = 0;
+  int success_runs = 0;
+  int copies = 0;
+  bool throw_on_copy = true;
+  CopyFallbackAction fail_action{&fail_runs, &copies, &throw_on_copy};
+  EXPECT_THROW(
+      ([&] {
+        ScopeFail guard{fail_action};
+        (void)guard;
+      }()),
+      int);
+  EXPECT_EQ(fail_runs, 1);
+
+  copies = 0;
+  CopyFallbackAction success_action{&success_runs, &copies, &throw_on_copy};
+  EXPECT_THROW(
+      ([&] {
+        ScopeSuccess guard{success_action};
+        (void)guard;
+      }()),
+      int);
+  EXPECT_EQ(success_runs, 0);
 }

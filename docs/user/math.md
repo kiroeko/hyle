@@ -10,7 +10,7 @@
 | 你要做的事 | 使用 |
 |---|---|
 | 普通标量三角、指数、常量或 bit primitive | C++ 标准库 |
-| 检查单个整数 shape/count/stride/offset/byte-size 是否可表示 | `hyle::math` |
+| 检查或饱和处理整数 shape/count/stride/offset/byte-size | `hyle::math` |
 | 对 lane、row 或 buffer 做 dtype、packing、activation 或向量数学 | `hyle::simd` |
 | tensor/model 算子、layout 或融合 | Compute/消费层 |
 
@@ -39,27 +39,41 @@ if (!end) return invalid_shape();
 `std::nullopt`；不会返回 wrapped 或 saturated value。三个函数都不分配、不抛异常。可信且已经由
 程序结构验证的普通算术继续直接写 `+/-/*`，不需要为了使用 HYLE 改成包装函数。
 
-模型格式常用 signed 维度，而分配接口通常接收 `std::size_t`。先用 C++23 的 `std::in_range` 选择
-共同结果类型，再逐维检查 product；不需要依赖隐式 signed/unsigned promotion，也不需要一个固定维数的
-专用 helper：
+模型格式常用 signed 维度，而分配接口通常接收 `std::size_t`。用显式目标类型的 checked conversion，
+再用 span product 或逐步 helper 检查，不依赖隐式 signed/unsigned promotion：
 
 ```cpp
 #include <cstddef>
 #include <cstdint>
-#include <utility>
+#include <span>
+#include <vector>
 
-std::size_t elements = 1;
+std::vector<std::size_t> checked_dimensions;
 for (std::int64_t dimension : dimensions) {
-  if (!std::in_range<std::size_t>(dimension)) return invalid_shape();
-  auto next = hyle::math::try_multiply(
-      elements, static_cast<std::size_t>(dimension));
-  if (!next) return invalid_shape();
-  elements = *next;
+  auto checked = hyle::math::try_integer_cast<std::size_t>(dimension);
+  if (!checked) return invalid_shape();
+  checked_dimensions.push_back(*checked);
 }
+auto elements = hyle::math::try_product(std::span{checked_dimensions});
+if (!elements) return invalid_shape();
 ```
 
-这里的每一步都拒绝第一个不可表示的中间结果。需要计算 `base + count * stride` 时，同样先
-`try_multiply(count, stride)`，成功后再 `try_add(base, product)`；不要用 unchecked 中间值换取更短代码。
+`try_sum` 的 empty identity 是 0，`try_product` 是 1；两者单遍且不保留 span。需要计算
+`base + count * stride` 时，可用 `try_multiply_add(count, stride, base)`；它先检查乘积，再检查加法，
+不会让 unchecked intermediate 漏过。
+
+普通除法和余数的 checked 形状是 `try_divide` / `try_remainder`。两者都拒绝零 divisor；signed
+minimum / `-1` 的 quotient 不可表示而失败，remainder 的数学结果为零并安全返回零。
+
+当业务明确要求“达到边界后保持边界”而不是拒绝输入时，才选择 saturating 路线：
+
+```cpp
+auto level = hyle::math::saturating_add(current_level, delta);
+auto byte = hyle::math::saturating_cast<std::uint8_t>(sample);
+```
+
+`saturating_add/subtract/multiply/divide/cast` 返回 clamp 后的值，不返回 optional。除零不是 saturation，
+`saturating_divide` 要求 divisor 非零；外部输入先用 `try_divide`。
 
 分块与 padding 使用 ceil/round：
 
@@ -87,8 +101,8 @@ if (!blocks || !padded) {
 
 ## 不要这样用
 
-- 两个 operand 必须是同一个非 `bool` integral 类型。需要组合 `uint32_t` shape 与 `size_t` element
-  size 时，先用 `std::in_range` 验证并显式转换到共同类型；不要依赖 implicit signed/unsigned
+- 两个 arithmetic operand 必须是同一个非 `bool` integral 类型。需要组合 `uint32_t` shape 与
+  `size_t` element size 时，先用 `try_integer_cast` 转到共同类型；不要依赖 implicit signed/unsigned
   promotion。整数 literal 也应写成目标类型，例如 `std::size_t{1}`。
 - 不要在 overflow 后继续使用原输入计算，或把 `nullopt` 当作零。多维 shape product 应逐步检查每次
   `try_multiply`，这样能准确拒绝第一个不可表示的中间结果。
@@ -97,6 +111,8 @@ if (!blocks || !padded) {
   alignment 能力。
 - 不要把 signed 负值当成“向上整除”输入；负数的 rounding direction 是另一种合同，
   math 不隐式猜测。
+- 不要把 checked 与 saturating 结果混用：前者保持“精确或失败”，后者明确接受 clamp；饱和除法也
+  不会为零 divisor 发明数值。
 - 浮点 approximate equality 和死区 sign 不是公共 math 能力。请在消费算法中明确选择
   absolute/relative/ULP tolerance 及 NaN/infinity/zero 政策，或使用领域数值库。
 

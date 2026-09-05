@@ -42,4 +42,30 @@ HYLE_MATH_CHECKED_PROBE(try_multiply_i64, std::int64_t, try_multiply)
 
 #undef HYLE_MATH_CHECKED_PROBE
 
+HYLE_NOINLINE bool hyle_math_probe_cast_i64_u32(
+    std::int64_t value, std::uint32_t* output) noexcept {
+  const auto result = hyle::math::try_integer_cast<std::uint32_t>(value);
+  if (!result) return false;
+  *output = *result;
+  return true;
+}
+
+HYLE_NOINLINE bool hyle_math_probe_divide_i64(
+    std::int64_t lhs, std::int64_t rhs, std::int64_t* output) noexcept {
+  const auto result = hyle::math::try_divide(lhs, rhs);
+  if (!result) return false;
+  *output = *result;
+  return true;
+}
+
+HYLE_NOINLINE std::int64_t hyle_math_probe_saturating_add_i64(
+    std::int64_t lhs, std::int64_t rhs) noexcept {
+  return hyle::math::saturating_add(lhs, rhs);
+}
+
+HYLE_NOINLINE std::int64_t hyle_math_probe_saturating_multiply_i64(
+    std::int64_t lhs, std::int64_t rhs) noexcept {
+  return hyle::math::saturating_multiply(lhs, rhs);
+}
+
 }  // extern "C"

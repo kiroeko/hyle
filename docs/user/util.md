@@ -1,6 +1,6 @@
 # util：什么情况选什么
 
-> **当前边界（2026-09-02）：**`util_core` v2 与 `util` runtime 均为 `CLOSED`；当前 Registry lookup/create
+> **当前边界：**当前 Registry lookup/create
 > 合同和 demangle owning/buffer 形状的签证状态只看中央
 > [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
@@ -24,6 +24,8 @@ target_link_libraries(my_target PRIVATE hyle::util)
 |---|---|---|
 | 已经有明确资源类型 | 该类型自己的 RAII / `unique_ptr` | 为了少写一行给每个对象套 ScopeGuard |
 | 临时 rollback、多个早退共享一段 cleanup | `ScopeGuard` 或 `HYLE_DEFER` | cleanup 抛异常；guard 捕获比自己活得短的对象 |
+| 只在异常逃逸 / 正常离开时执行 | `ScopeFail` / `ScopeSuccess` | 把返回的错误码误认为异常；在 no-exception 构建期待 ScopeFail 运行 |
+| 没有领域 RAII 类型的一次性整数/opaque token | `UniqueResource`；有 invalid sentinel 时用 checked factory | 已有 typed owner 时仍退化成通用 token；deleter 抛异常 |
 | 单指针、对象内计数的共享所有权 | `RefCounted<T>` + `Ref<T>` | 需要 weak observer/打破环时仍强行用 Ref |
 | 生命周期完全限制在一个线程的侵入式共享所有权 | `ThreadUnsafeRefCounted<T>` + 同一个 `Ref<T>` | owner 或借用裸指针可能跨线程时省掉 atomic |
 | 同步函数只在本次调用期间执行任意 callable | 参数按值接收 `FunctionRef<Sig>` | 把 FunctionRef 存进对象、返回或塞进异步队列 |
@@ -65,10 +67,10 @@ ScopeGuard/Folly/Abseil 同类合同终止进程，因此析构 cleanup 通常�
 只有目标构造成功后源 guard 才失效，失败时 cleanup 仍由源对象持有。不可复制且 move 可能抛异常
 的 callable 会在编译期被拒绝；不要用“先 dismiss 再 move”绕过 ownership 合同。
 
-HYLE 的运营失败通常用 `Status/Result` 表达，因此 failure-only cleanup 的自然写法是先建立 guard，
-成功提交后 `dismiss()`；exception-only 的 `scope_fail/scope_success` 可直接选工具链可用的标准
-`<scope>` 设施。文件、锁、内存等已有明确资源类型时，仍使用其 owning RAII；`ScopeGuard` 不替代
-`unique_resource` 或领域 handle。
+HYLE 的运营失败通常用 `Status/Result` 表达，因此错误返回的 cleanup 仍应先建立 `ScopeGuard`，成功提交
+后 `dismiss()`。只有语言异常的控制流才用 `ScopeFail` / `ScopeSuccess`：它们比较构造与析构时的
+`std::uncaught_exceptions()`，只观察新增的逃逸异常。二者支持 move、`dismiss()`、`active()`，析构动作
+抛异常会终止进程；在关闭语言异常的 TU 中可以编译，但 `ScopeFail` 不可能被触发。
 
 ## Ref：侵入式共享所有权
 
@@ -141,9 +143,40 @@ for_each_token(tokens, [&](int token) { consume(token); });
 `std::function`、标准库实现可用时的 `std::move_only_function`，或 owning module 已定义的 fn+ctx
 record。
 
-普通 signature 接受可抛 callable；`FunctionRef<R(Args...) noexcept>` 只接受 nothrow callable，并让
-调用表达式保持 `noexcept`。FunctionRef 没有默认/NULL 状态：callback 真正可选时显式用两个入口、
-optional owner，或一个语义清楚的 nullable fn+ctx，而不是让每次调用隐式猜测。
+普通 signature 接受 mutable callable；后缀 `const` 的 signature 只通过 `const F&` 调用目标。两者各有
+`noexcept` 版本，只接受 nothrow callable 并让调用表达式保持 `noexcept`。已知 free/member function 可用
+`hyle::util::nontype<&function>` 绑定，避免再保存一个 runtime function pointer；bound member 仍要求对象
+活过同步调用：
+
+```cpp
+hyle::util::FunctionRef<int(int)> direct{hyle::util::nontype<&transform>};
+hyle::util::FunctionRef<int(int) const> bound{
+    hyle::util::nontype<&Decoder::score>, decoder};
+```
+
+FunctionRef 没有默认/NULL 状态：callback 真正可选时显式用两个入口、optional owner，或一个语义清楚的
+nullable fn+ctx，而不是让每次调用隐式猜测。
+
+## UniqueResource：没有 typed owner 时的窄 fallback
+
+```cpp
+#include "hyle/util/unique_resource.h"
+
+auto fd = hyle::util::make_unique_resource_checked(
+    open(path, flags), -1, [](int value) noexcept { close(value); });
+if (!fd) return open_failed();
+use(fd.get());
+```
+
+直接构造 `UniqueResource{token, deleter}` 总是表示拥有 token，即使值看起来像 invalid sentinel；只有
+`make_unique_resource_checked(token, invalid, deleter)` 会比较 sentinel 并从 inactive 状态开始。
+`allocated()`/显式 bool 只表示是否持有回收责任，不检查 token 的真值。`release()` 只 disarm；需要转交
+value-like token 时先复制 `get()`，再 release。`reset()` 立即回收且至多一次，`reset(new_token)` 在存储
+可无异常赋值时接管新 token。
+
+deleter 必须可无异常复制，并且实际调用应 `noexcept`；析构中的 deleter 抛异常会终止进程。文件、映射、
+内存、socket 等已有 Platform/Mem/IO typed owner 时始终优先 typed owner，因为它们还表达错误域、合法操作
+和生命周期。UniqueResource 不提供通用 error channel、pointer dereference、resource traits 或动态 dispatch。
 
 ## NotNull：required pointer，不是 owner
 

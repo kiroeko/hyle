@@ -12,6 +12,7 @@
 namespace {
 
 using hyle::util::FunctionRef;
+using hyle::util::nontype;
 
 int increment(int value) { return value + 1; }
 int increment_noexcept(int value) noexcept { return value + 1; }
@@ -39,6 +40,11 @@ struct MemberCallable {
   int value;
 };
 
+struct MutableOnlyCallable {
+  int operator()(int input) { return ++calls + input; }
+  int calls = 0;
+};
+
 static_assert(sizeof(FunctionRef<int(int)>) == 2 * sizeof(void*));
 static_assert(std::is_trivially_copyable_v<FunctionRef<int(int)>>);
 static_assert(!std::default_initializable<FunctionRef<int(int)>>);
@@ -48,6 +54,19 @@ static_assert(
 static_assert(!std::constructible_from<FunctionRef<int(int) noexcept>,
                                        ThrowingCallable&>);
 static_assert(noexcept(std::declval<FunctionRef<int(int) noexcept>>()(1)));
+static_assert(sizeof(FunctionRef<int(int) const>) == 2 * sizeof(void*));
+static_assert(sizeof(FunctionRef<int(int) const noexcept>) == 2 * sizeof(void*));
+static_assert(std::is_trivially_copyable_v<FunctionRef<int(int) const>>);
+static_assert(std::constructible_from<FunctionRef<int(int) const>,
+                                      const NoexceptCallable&>);
+static_assert(!std::constructible_from<FunctionRef<int(int) const>,
+                                       MutableOnlyCallable&>);
+static_assert(std::constructible_from<FunctionRef<int(int) const noexcept>,
+                                      const NoexceptCallable&>);
+static_assert(!std::constructible_from<FunctionRef<int(int) const noexcept>,
+                                       const ThrowingCallable&>);
+static_assert(
+    noexcept(std::declval<FunctionRef<int(int) const noexcept>>()(1)));
 
 TEST(FunctionRef, InvokesFunctionPointerWithoutPointerVariableIndirection) {
   FunctionRef function{&increment};
@@ -109,6 +128,37 @@ TEST(FunctionRef, PreservesNoexceptSignature) {
   EXPECT_EQ(invoke_twice_noexcept(callable, 9), 9);
 }
 
+TEST(FunctionRef, ConstSignatureRejectsMutationAndInvokesConstTarget) {
+  const NoexceptCallable callable;
+  FunctionRef<int(int) const> throwing_contract = callable;
+  FunctionRef<int(int) const noexcept> no_throw_contract = callable;
+  EXPECT_EQ(throwing_contract(7), 7);
+  EXPECT_EQ(no_throw_contract(9), 9);
+
+  MutableOnlyCallable mutable_only;
+  FunctionRef<int(int)> mutable_contract = mutable_only;
+  EXPECT_EQ(mutable_contract(4), 5);
+  EXPECT_EQ(mutable_only.calls, 1);
+}
+
+TEST(FunctionRef, NontypeBindingAvoidsStoredRuntimeCallablePointer) {
+  FunctionRef direct{nontype<&increment>};
+  EXPECT_EQ(direct(4), 5);
+
+  MemberCallable owner{7};
+  FunctionRef<int(const MemberCallable&, int)> unbound{
+      nontype<&MemberCallable::add>};
+  EXPECT_EQ(unbound(owner, 5), 12);
+
+  FunctionRef<int(int) const> bound{nontype<&MemberCallable::add>, owner};
+  EXPECT_EQ(bound(6), 13);
+
+  const MemberCallable* owner_pointer = &owner;
+  FunctionRef<int(int) const> bound_pointer{nontype<&MemberCallable::add>,
+                                             owner_pointer};
+  EXPECT_EQ(bound_pointer(8), 15);
+}
+
 TEST(FunctionRefDeathTest, RejectsDynamicNullFunctionPointer) {
   EXPECT_DEATH(([] {
                  int (*function)(int) = nullptr;
@@ -134,6 +184,16 @@ TEST(FunctionRefDeathTest, RejectsNullMemberPointer) {
                  };
                  int (Owner::*member)(int) = nullptr;
                  FunctionRef<int(Owner&, int)> reference(member);
+                 (void)reference;
+               }()),
+               "");
+}
+
+TEST(FunctionRefDeathTest, RejectsNullNontypeBoundObject) {
+  EXPECT_DEATH(([] {
+                 const MemberCallable* owner = nullptr;
+                 FunctionRef<int(int) const> reference{
+                     nontype<&MemberCallable::add>, owner};
                  (void)reference;
                }()),
                "");
