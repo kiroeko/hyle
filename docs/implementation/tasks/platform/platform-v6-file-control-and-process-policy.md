@@ -36,7 +36,7 @@
 |---|---|---|
 | 已打开文件大小 | `Result<uint64_t> FileHandle::size()` | `MUST`；避免 path TOCTOU，并闭合 handle 控制旅程 |
 | 精确逻辑大小 | `Status FileHandle::resize(uint64_t)` | `MUST`；只承诺 EOF，不假装物理分配 |
-| 空间预留 | `Status FileHandle::preallocate(uint64_t)` | `MUST`；至少覆盖 `[0,size)`、不缩小较大文件 |
+| 空间预留 | `Status FileHandle::preallocate(uint64_t)` | `MUST`；为增长到 minimum size 预留并按需增长，不缩小较大文件 |
 | 进程间整文件锁 | shared/exclusive `lock`、`try_lock`、`unlock` | `MUST`；建议锁、随 handle close 释放；不冒充线程 mutex |
 | 进程启动 priority/QoS | 独立 `ProcessPriority` 与显式 setter | `MUST`；无 realtime；不自动改变应用策略 |
 | async/direct/positional/vectored/watch/mapping | IO / Mem owner | `ROUTED`；本轮禁止吸收 |
@@ -71,8 +71,9 @@
   1. `enum class ProcessPriority : int8_t { kLowest, kLow, kNormal, kHigh, kHighest }` 与
      `Status set_process_priority(ProcessPriority)`，独立于 thread enum，避免 base factor 反向依赖
      `platform_thread`；不提供 realtime；
-  2. `FileHandle::size() const`、`resize(size)`、`preallocate(size)`；size 为逻辑字节数，resize 只改变
-     EOF，preallocate 保证文件至少达到 `size` 且请求 `[0,size)` storage、绝不缩小较大文件；
+  2. `FileHandle::size() const`、`resize(size)`、`preallocate(minimum_size)`；size 为逻辑字节数，
+     resize 只改变 EOF；preallocate 在当前 EOF 小于 minimum 时先请求 backing 再增长 EOF，当前文件
+     已经足够大则成功 no-op。它不缩小、不去稀疏化既有大文件，也不承诺连续 extent；
   3. `FileLockMode::{kShared,kExclusive}` 与 `lock(mode)`、`try_lock(mode)`、`unlock()`；锁随 handle
      close/析构释放，mode conversion 不承诺原子；
 - 跨平台合同：
@@ -113,3 +114,54 @@
 | red team | path replacement、sparse≠preallocation、lock advisory/mandatory 差异、same-process/duplicate handle、close release、partial side effects、permissions/network filesystem、Windows two-control partial failure |
 
 本卡已冻结边界；下一步只允许只读审计并形成有限 `FIX` 集，不能先写产品代码。
+
+## 审计与冻结 FIX（`AUDITED`）
+
+审计覆盖当前 Platform/FS 公开头与实现、中央组件图、package sample、三交付检查、Mem/Sched/IO
+直接边；并复核 llama.cpp/ggml、Folly、Boost/std、TLPI/APUE/Windows Internals 与支持 OS 的官方合同。
+没有发现需要第三个 factor、第三方产品依赖、对象 metadata 或公共性能仪器改动的理由。
+
+### 语义与红队裁决
+
+1. `size/resize/preallocate` 必须在已打开 handle 上工作，避免 path 二次解析；closed handle 为
+   `FailedPrecondition`，超过 native signed offset 上限为 `OutOfRange`；resize 不移动 shared cursor；
+2. preallocate 只在 `size() < minimum_size` 时工作：先请求 backing，再增长 EOF；OS 第二步失败可能
+   保留已预留但不可见的空间。它不是 rollback transaction、不是 `resize` 的性能别名，也不承诺物理
+   连续或消除已经存在的大 sparse file；
+3. public lock 只承诺 cooperating handles/processes 的 shared/exclusive coordination。POSIX `flock`
+   是 advisory/open-file-description lock；Windows `LockFileEx` 是 byte-range kernel lock，可能直接阻止
+   冲突 I/O。network/distributed filesystem 可返回不支持或具有远端特有语义，不能宣传普遍分布式锁；
+4. `try_lock` 只把明确的 would-block/lock-violation 映射为值 `false`，其它权限、I/O、closed-handle
+   失败保留为 `Status`；`unlock` 不凭 HYLE metadata 猜测 ownership，close/destructor 由 OS 释放；
+5. process ladder 不含 realtime。Windows normal 显式恢复 system-managed execution QoS；两个 Windows
+   controls 任一失败都返回首个错误，但无法承诺原子 rollback。POSIX 提升优先级可能需要权限；Linux
+   只有 startup-before-workers 才形成进程级效果；
+6. 新 API 是用户/consumer 工作流，不进入现有 FileHandle read/write、Parker、CPU fact 或 scheduler
+   hot path；`sizeof(FileHandle)` 必须保持一字。
+
+### 同语义比较前置门
+
+| candidate | 表面相似但不同合同的路线 | disposition |
+|---|---|---|
+| handle `resize` | `std::filesystem::resize_file(path)` | `NOT_COMPARABLE`：path lookup/replace race 与已打开 owner 不同；只作能力 shape 参考 |
+| `preallocate` | sparse `resize`、Linux-only keep-size fallocate | `NOT_COMPARABLE`：physical-space、EOF 与 portability 不同 |
+| blocking `lock` | `try_lock`、线程 mutex、lock-file creation | `NOT_COMPARABLE`：等待、进程范围、crash cleanup 不同 |
+| process startup ladder | per-thread priority、realtime policy、只设 Windows class | `NOT_COMPARABLE`：scope/QoS/risk 不同 |
+| whole-file cooperative lock | Folly whole-file shared/exclusive lock | shape/ownership 可比；本轮直接落同级 OS primitive，无额外算法层，故 P0 结构裁决足够 |
+
+相同 checksum、最终文件大小或 enum 数量都不构成同合同。没有一行不同语义结果可以签 peer/SOTA
+胜负；因此也没有为了赢 timing 增加 metadata、专用 overload 或 benchmark-only route。
+
+### 冻结 FIX 集
+
+| ID | factor | finite change |
+|---|---|---|
+| `P6-P01` | platform | 新增自包含 `process.h` 与 `process.cc`，实现五档显式 process startup priority/QoS，使用共享 Error translator |
+| `P6-F01` | platform_fs | 在一字 `FileHandle` 上增加 size/resize/preallocate 和 shared/exclusive lock/try/unlock；三平台 native 实现，无状态字段 |
+| `P6-T01` | tests | 补 invalid/closed/overflow、grow/shrink/no-shrink、cursor、shared/exclusive/try/close-release、process enum/安全 native 路线测试 |
+| `P6-B01` | build/package | 登记 source 与 header-closure；Platform package sample 引用两个新增产品面；复放 exact factor 与 source/static/shared |
+| `P6-D01` | docs | 更新 architecture、user guide、能力账本/watchlist/performance negative space，记录书籍与官方 ABI 依据及跨平台陷阱 |
+| `P6-R01` | replay | 只读编译 Mem mapping、Sched、IO；若需要改 frozen consumer 产品，停止并形成独立 reopen trigger |
+
+审计 finding 均已进入上述六项；无未处置 medium/high finding。FIX 集从此冻结并授权实现；出现范围外
+产品需求必须退回 `AUDITED`，不能顺手添加。
