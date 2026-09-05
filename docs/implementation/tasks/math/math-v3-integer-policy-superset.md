@@ -188,3 +188,24 @@ edges, common instruments, or add heterogeneous arithmetic, parsing, big integer
 `SCOPED -> AUDITED` uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-audited-ff6b5daf.json`, SHA-256
 `27C669D4B93877DB3F5E07909374948388CB66E92FF491EB9C77BDBFDFA4F6D4`.
+
+## Product candidate（`CANDIDATE`）
+
+- candidate commit：`ff20319408372013fec6818c35f4ba7a7c79440c`；tree：
+  `3aba9d8c9eb06c927f7d29228b925668150bf0a6`；
+- the seven frozen FIX entries are implemented without a new component edge, binary artifact, third-party product path
+  or C/Native FFI surface. `scalar.h` now owns checked conversion/division/remainder/compound/span aggregation and the
+  explicitly named saturating policy;
+- candidate red-team found and fixed one real boundary defect before identity freeze: standard `std::in_range` rejects
+  character integer types even though they satisfy `std::integral`. The candidate preserves `std::in_range` for its
+  admitted standard-integer domain and applies the same signedness/range rule to character integers; Windows and
+  WSL/GCC tests now cover this boundary;
+- pre-candidate checks passed on W1-WIN/MSVC 19.50 WERROR and W1-WSL/GCC 14.2 WERROR+UBSan. The exact Math unit/header
+  tests passed on both; Windows `hyle::math` source/relocated shared/static journeys passed. GCC optimized probes show
+  direct flag-based add/sub/multiply, one guarded hardware divide, and no allocation/lock/indirect dispatch;
+- final M1-MAC, candidate-identity replay, full documentation/red-team receipts and terminal state remain pending. These
+  preliminary results are not a `VERIFIED` or `CLOSED` claim.
+
+`AUDITED -> CANDIDATE` uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-candidate-ff203194.json`, SHA-256
+`2D7AF7A58485E7F52F92D9D39711BB5CBF775088D1D1E5DB2BA0D4D5AB991177`.

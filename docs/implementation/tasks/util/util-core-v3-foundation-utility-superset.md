@@ -205,3 +205,29 @@ authorized.
 `SCOPED -> AUDITED` uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-audited-ff6b5daf.json`, SHA-256
 `27C669D4B93877DB3F5E07909374948388CB66E92FF491EB9C77BDBFDFA4F6D4`.
+
+## Product candidate（`CANDIDATE`）
+
+- candidate commit：`ff20319408372013fec6818c35f4ba7a7c79440c`；tree：
+  `3aba9d8c9eb06c927f7d29228b925668150bf0a6`；
+- the seven frozen FIX entries are implemented. FunctionRef has all four cv/noexcept forms and explicit nontype
+  free/unbound/bound-member routes; conditional guards and the bounded generic resource owner remain Core-only,
+  header-only value facilities; the new header is in the central split-header inventory;
+- candidate red-team fixed two in-scope defects before identity freeze: the GCC/WERROR no-exception compile probe now
+  has no unused test symbol, and checked invalid-sentinel construction no longer invokes the deleter if copying an
+  inactive resource value throws. Valid acquisition construction failure still reclaims exactly once;
+- the same-contract matrix is
+  `bench/util_core/function_ref_consumer_shapes_v1.json` (SHA-256
+  `f3ce0ece50863825dad54120b535baa88e03a6aa066df74ec1a6afaa3a305031`). The frozen performance contract is
+  `util-core-function-ref-p1-v1` (lock SHA-256
+  `b6d0c63217540f630bdd3a422d8938cb151cc48281f006e94c84104ca1702b37`); it admits only the three 4096-record
+  synchronous borrowed callback traversals and explicitly forbids universal or inference-wide SOTA claims;
+- pre-candidate correctness passed on W1-WIN/MSVC 19.50 WERROR and W1-WSL/GCC 14.2 WERROR+UBSan. Windows Util
+  source/relocated shared/static products passed, and the new Util-core installed sample ran against both relocated SDKs.
+  GCC codegen retains one erased tail invocation for the runtime const view and directly lowers the nontype free target;
+- final qualified W1-WIN P1 replay, M1-MAC, candidate-identity replay, documentation/red-team receipts and terminal state
+  remain pending. These preliminary results are not a `VERIFIED` or `CLOSED` claim.
+
+`AUDITED -> CANDIDATE` uses the prior registry snapshot
+`C:\public\project-hyle\_validation\registry-before-math-util-candidate-ff203194.json`, SHA-256
+`2D7AF7A58485E7F52F92D9D39711BB5CBF775088D1D1E5DB2BA0D4D5AB991177`.

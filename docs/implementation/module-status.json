@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "UTILCORE-FOUNDATION-UTILITY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
       "round_id": "util-core-v3-foundation-utility-superset",
@@ -156,6 +156,8 @@
       "scope": "Complete the cross-toolchain synchronous callable and scope-lifecycle utility families, and audit a generic value-like unique-resource owner, while preserving Util-core's Core-only header-only boundary.",
       "non_goals": "Inference or serving policy, owning asynchronous callback policy, scheduler cancellation, containers, weak ownership, fair or parking synchronization, secure entropy, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
+      "candidate_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
+      "candidate_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -173,7 +175,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v3 AUDITED：七项有限 FIX 已冻结；补齐 FunctionRef const/noexcept 与 nontype、ScopeFail/ScopeSuccess、bounded UniqueResource，再按同合同 Abseil 5% P1 和 P0/三交付门验证。"
+      "summary": "util-core-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 候选前正确性与交付已过，等待 W1-WIN 同合同 Abseil 5% P1、M1-MAC、最终文档与红队签发。"
     },
     {
       "module": "error",
@@ -324,7 +326,7 @@
     },
     {
       "module": "math",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MATH-INTEGER-POLICY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
       "round_id": "math-v3-integer-policy-superset",
@@ -332,6 +334,8 @@
       "scope": "Complete model-independent checked conversion, division/remainder, compound or extent aggregation and saturating integral policy while preserving scalar Math's Core-only header-only boundary.",
       "non_goals": "Floating transcendental math, activation or quantization kernels, SIMD or tensor types, arbitrary precision, parsing, Compute policy, downstream frozen-module migration, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
       "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
+      "candidate_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
+      "candidate_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -346,7 +350,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v3 AUDITED：七项有限 FIX 与自然 API 已冻结；补齐 checked conversion/div-rem/compound/span aggregation 和 saturating integer policy，再按三工具链 P0 code shape 与三交付门验证。"
+      "summary": "math-v3 CANDIDATE：七项有限 FIX 已在唯一 commit/tree 冻结；Windows/WSL 正确性、P0 code shape 与 Windows 三交付已过，等待 M1-MAC、最终文档与红队签发。"
     },
     {
       "module": "time",
