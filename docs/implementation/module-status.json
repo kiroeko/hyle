@@ -642,7 +642,7 @@
     },
     {
       "module": "platform_thread",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-THREAD-WINDOWS-QOS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -652,6 +652,8 @@
       "baseline_commit": "1cb204e79e11532252053971dd5ff97dfe9648d7",
       "candidate_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
       "candidate_tree": "e0c2a9e25b49350965d1bfb3a39789ece976569e",
+      "end_commit": "3fd758953e978ba36374bf69647335de36a52a68",
+      "registry_anchor_commit": "3fd758953e978ba36374bf69647335de36a52a68",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -677,11 +679,31 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform_thread v3 VERIFIED：Windows 显式 priority 的 native priority + execution QoS 已通过三平台正确性、sanitizer、三交付、直接消费者、文档/红队与 P0 结构门。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
+      "loc": {
+        "snapshot_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
+        "repository_code": 443621,
+        "self_with_tests": 112651,
+        "self_without_tests": 71198,
+        "module_implementation": 857
+      },
+      "known_limitations": [
+        "ThreadPriority is a portable scheduling and QoS hint, not hard affinity, realtime service or process-wide policy; Linux elevation may require privilege and macOS exposes no public hard-affinity API.",
+        "Windows native priority and execution QoS are two OS controls without transactional atomicity; required spawn prevents entry on failure while best-effort only promises an attempted configuration.",
+        "Process-wide priority, realtime policy and detach remain application-policy or lifecycle non-goals.",
+        "The v5 P0 claim covers explicit cold setup only; the unchanged Parker P1 workload, cross-machine Formal and end-to-end inference remain separately bounded or pending."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-thread-owned mechanism with stable supported-platform semantics that the current thread, affinity, priority, ISA-state and wait surface cannot express.",
+        "A supported OS reproduces a priority, QoS, required-entry gate, affinity, wait or current-thread-state correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, cold setup complexity or source/static/shared delivery changes materially.",
+        "A mature same-contract peer or real inference profile proves a better complexity class or a repeatable material normal-path regression."
+      ],
+      "summary": "platform_thread v3 CLOSED：Windows 显式 priority 的 native priority + execution QoS 已通过三平台正确性、sanitizer、三交付、直接消费者、文档/红队与 P0 结构门。"
     },
     {
       "module": "platform_fs",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-FS-CPP-VISITOR-LONG-PATH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -691,6 +713,8 @@
       "baseline_commit": "1cb204e79e11532252053971dd5ff97dfe9648d7",
       "candidate_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
       "candidate_tree": "e0c2a9e25b49350965d1bfb3a39789ece976569e",
+      "end_commit": "3fd758953e978ba36374bf69647335de36a52a68",
+      "registry_anchor_commit": "3fd758953e978ba36374bf69647335de36a52a68",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -716,7 +740,27 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform_fs v2 VERIFIED：const/异常安全 visitor 与可增长 recursive-mkdir 已通过三平台正确性、sanitizer、三交付、直接消费者、文档/红队与 P0 结构门。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
+      "loc": {
+        "snapshot_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
+        "repository_code": 443621,
+        "self_with_tests": 112651,
+        "self_without_tests": 71198,
+        "module_implementation": 2073
+      },
+      "known_limitations": [
+        "for_each_entry prioritizes a thrown callback exception after cleanup; callbacks passed directly to the allocation-free directory_iterate core must not throw.",
+        "The synchronous filesystem factor does not own mapping, async, direct, positional or vectored IO, file watching, locking, preallocation or resizing.",
+        "Recursive mkdir uses stack scratch through 4096 bytes and one fallible allocation above it; native filesystem component and path limits still apply and remain observable as Status.",
+        "The v5 P0 claim covers the visitor bridge and path scratch only; the unchanged warm-file P1 workload, universal filesystem SOTA and Formal remain separately bounded or pending."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-fs-owned synchronous handle or namespace mechanism with stable supported-platform semantics that the current surface cannot express.",
+        "A supported filesystem reproduces a callback cleanup or exception, long-path, ownership, traversal or error-translation correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, normal visitor or path complexity, or source/static/shared delivery changes materially.",
+        "A mature same-contract peer or real model-loading profile proves a better complexity class or a repeatable material normal-path regression."
+      ],
+      "summary": "platform_fs v2 CLOSED：const/异常安全 visitor 与可增长 recursive-mkdir 已通过三平台正确性、sanitizer、三交付、直接消费者、文档/红队与 P0 结构门。"
     },
     {
       "module": "mem_reclaim",

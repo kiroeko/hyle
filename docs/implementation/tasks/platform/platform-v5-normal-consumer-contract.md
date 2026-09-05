@@ -291,3 +291,7 @@ candidate LOC self-check（snapshot `5818a7ac9b143b980ac43eb39e2a01dac1e5b108`�
 `platform_thread` 实现 857、`platform_fs` 实现 2,073，三者互斥合计 7,940 行。LOC 只记录规模，不证明
 功能或性能。product candidate/tree 保持 `5818a7ac9b143b980ac43eb39e2a01dac1e5b108` /
 `e0c2a9e25b49350965d1bfb3a39789ece976569e`；后续只按本节 trigger 重开。
+
+`VERIFIED -> CLOSED` 前 registry snapshot 位于
+`C:\public\project-hyle\_validation\platform-v5-replay\module-status-before-closed.json`，SHA-256
+`2E30C11CB61733471B4460840EAC1D669201863F5FD399F23F0EE6323782C000`。
