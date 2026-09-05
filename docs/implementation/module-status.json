@@ -414,6 +414,14 @@
         "self_without_tests": 60061,
         "module_implementation": 222
       },
+      "freeze_confirmation": {
+        "id": "math-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "ed39ba8df2202fa55d577241e5abf40871d92ad9",
+        "reviewed_tree": "2fbb9e7fade1c54bf06d2c29440fb1caa666c6f9",
+        "evidence": "docs/implementation/tasks/math/math-freeze-confirmation-2026-09-05.md"
+      },
       "known_limitations": [
         "The component accepts same-type non-boolean native integral operands; callers own validated mixed-width and signed/unsigned conversion.",
         "Failure returns nullopt; wrapped, saturated, clamped, variadic-product and mul-add policies are not part of this contract.",
