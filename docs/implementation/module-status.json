@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "UTILCORE-FOUNDATION-UTILITY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
       "round_id": "util-core-v3-foundation-utility-superset",
@@ -158,6 +158,8 @@
       "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
       "candidate_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
       "candidate_tree": "9ccc0e7a932f7ec4a7345fe56f3525e747587606",
+      "end_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
+      "registry_anchor_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -185,7 +187,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "util-core-v3 VERIFIED：七项有限 FIX、三平台正确性/no-exceptions/三交付、新 API 安装样例、文档与红队通过；W1-WIN 三项同合同 Abseil FunctionRef 5% P1 全部 PASS。"
+      "closure_evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md",
+      "freeze_confirmation": {
+        "id": "util-core-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
+        "reviewed_tree": "9ccc0e7a932f7ec4a7345fe56f3525e747587606",
+        "evidence": "docs/implementation/tasks/util/util-core-v3-foundation-utility-superset.md"
+      },
+      "loc": {
+        "snapshot_commit": "763574765d22f8b3f6dbd6046aee124d1117eea3",
+        "repository_code": 448099,
+        "self_with_tests": 115258,
+        "self_without_tests": 73078,
+        "module_implementation": 1472
+      },
+      "known_limitations": [
+        "FunctionRef is a non-null synchronous call-only borrow; the caller owns referent lifetime and must not store, return or enqueue the view.",
+        "ScopeFail observes language exceptions only, no-exception builds cannot trigger it, and a throwing destructor cleanup or resource deleter terminates.",
+        "UniqueResource is a bounded fallback for value-like tokens without a typed owner; it deliberately has no domain error, dereference, resource traits, unload or quiescence protocol.",
+        "The P1 claim covers three frozen W1-WIN same-contract FunctionRef journeys only; arbitrary signatures, cross-platform timing, end-to-end inference, universal SOTA and Formal certification are not claimed."
+      ],
+      "reopen_triggers": [
+        "A named synchronous consumer reproduces a borrow, cv/noexcept, nontype-binding, scope-lifecycle, resource-ownership, correctness, security or C++ API-usability defect.",
+        "A supported compiler or standard library changes lifetime-bound, function-pointer round-trip, exception-count, no-unique-address or normal code-generation semantics.",
+        "The public API, layout, normal cost, Core-only dependency, selected-header inventory or source, static or shared delivery shape changes.",
+        "A real consumer proves a model-independent foundation utility MUST that does not belong to Core, Container, Mem, Platform, Sched or runtime Util.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen margin."
+      ],
+      "summary": "util-core-v3 CLOSED/FROZEN：FunctionRef qualifier/nontype、conditional scope 与 bounded UniqueResource 已补齐；三平台正确性/no-exceptions/三交付、新 API 样例、文档/红队和 W1-WIN 三项 Abseil 5% P1 全部通过。"
     },
     {
       "module": "error",
@@ -336,7 +367,7 @@
     },
     {
       "module": "math",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MATH-INTEGER-POLICY-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
       "round_id": "math-v3-integer-policy-superset",
@@ -346,6 +377,8 @@
       "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
       "candidate_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
       "candidate_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
+      "end_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
+      "registry_anchor_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -370,7 +403,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "math-v3 VERIFIED：整数策略超集、三平台边界/UBSan/逐头测试、source/shared/static 交付、文档与红队通过；P0 为 scalar O(1)、aggregate O(n)、零动态资源，timing N/A。"
+      "closure_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
+      "freeze_confirmation": {
+        "id": "math-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
+        "reviewed_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
+        "evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md"
+      },
+      "loc": {
+        "snapshot_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
+        "repository_code": 448054,
+        "self_with_tests": 115258,
+        "self_without_tests": 73078,
+        "module_implementation": 382
+      },
+      "known_limitations": [
+        "Math covers fixed-width non-Boolean integral control-plane values; ordinary binary and aggregate operations use one explicit type and only cast is heterogeneous.",
+        "Multiply-add and aggregate operations use exact left-to-right fixed-width intermediates rather than arbitrary-wide fused cancellation semantics.",
+        "Saturating division has a nonzero-divisor precondition; floating, SIMD, tensor, parsing, arbitrary precision and model policy remain with their semantic owners.",
+        "The P0 claim covers structural cost on the frozen compilers and delivery shapes; timing peers, end-to-end inference, universal SOTA and Formal performance are not claimed."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces an incorrect result, undefined behavior, missing common scalar integer policy or natural C++ API-usability defect.",
+        "A supported compiler or target changes overflow-intrinsic, integer-representation, constexpr or normal-path code-generation semantics.",
+        "The public API, algorithm, complexity, component dependency, header closure or source, static or shared delivery shape changes.",
+        "A locked llama.cpp or ggml journey, or two mature independent peers, prove a new model-independent scalar control-plane MUST.",
+        "A same-contract mechanism proves a better complexity class, or a real consumer or profile proves a reproducible material regression or advantage."
+      ],
+      "summary": "math-v3 CLOSED/FROZEN：checked conversion/divide/compound/aggregate 与 saturating integer policy 已补齐；三平台正确性/UBSan/逐头/三交付、文档/红队和 P0 原生结构成本全部通过。"
     },
     {
       "module": "time",
