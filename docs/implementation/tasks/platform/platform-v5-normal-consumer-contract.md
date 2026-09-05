@@ -1,9 +1,9 @@
 # Platform v5：正常消费者合同复检
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 本轮按当前七问、能力超集、质因数依赖和“先冻结自然 API、再看性能”的标准回放整个
-> Platform 产品。当前只登记只读复检和重开证据；进入 `SCOPED/AUDITED` 前不授权修改产品源码。
+> 本页按状态机顺序记录本轮七问、能力超集、质因数依赖和“先冻结自然 API、再看性能”的完整回放；
+> 前段的只读、`SCOPED`、`AUDITED` 与 `CANDIDATE` 文字是当时阶段事实，最终裁决以文末 receipt 为准。
 
 ## 只读 replay
 
@@ -251,3 +251,43 @@ performance）全部 `PASS`。`CANDIDATE -> VERIFIED` 前 registry snapshot 位�
 `C:\public\project-hyle\_validation\platform-v5-replay\module-status-before-verified.json`，SHA-256
 `3E8167F0E16139F39C59C3C494D3B1B1A9B98F672E70DB3F295885DA83AAD1ED`。当前阶段为 `VERIFIED`；
 Formal 仍独立 `PENDING`，不阻止 P0 工程收口。
+
+## Closure decision 与 terminal receipt
+
+本轮 terminal verdict 为 **`CLOSED`**。Platform 的三个内部 factor 现在各有单一职责：host prime 提供
+CPU/拓扑/内存预算/NUMA/raw VM/DynLib/environment/entropy，thread factor 提供 native thread、affinity、
+priority/QoS、current-thread ISA state 与 wait/Parker，fs factor 提供同步 handle 与 namespace 操作。
+SIMD target policy、Mem storage mapping 和 IO async/positional/direct 能力仍由各自 owner 承担。四项
+`FIX`、七项 aggregate gate、三平台及适用的三交付/直接 consumer 均为 `PASS`；没有未决 blocker。
+
+已知限制：
+
+- `ThreadPriority` 是 portable scheduling/QoS hint，不是 CPU hard pin、实时保证或 process-wide policy；
+  Linux 提升 nice 可能需要权限，macOS 没有公开 hard-affinity API，Windows process priority class 由应用
+  所有；
+- Windows native priority 与 execution QoS 是两个 OS control，不具备事务式原子更新；required spawn
+  保证配置失败时不进入用户 entry，best-effort 只承诺尽力应用；
+- `for_each_entry` 在 callback 抛异常时优先重抛该异常；直接调用 allocation-free
+  `directory_iterate` 的 callback 不得抛。同步 filesystem 不承诺 lock/preallocate/resize/watch 或
+  async/direct/positional/vectored I/O；
+- 本轮 P0 只签冷配置、异常桥与长路径 scratch 的结构成本。v3 P1 只继续约束未改变的 host/Parker/
+  warm-file workload；跨机器 Formal、端到端推理和所有 OS/filesystem 的普遍 SOTA 均未声明。
+
+只有以下新事实可以重开：
+
+1. 具名真实 consumer 证明当前 Platform-owned host/thread/fs 能力无法表达必需且有稳定跨平台或具名平台
+   语义的机制；
+2. 支持 OS/CPU/filesystem 上复现 priority/QoS、callback cleanup/exception、长路径或现有 host/VM/NUMA
+   能力的 correctness/security 缺陷；
+3. 公开 API/layout/语义、factor ownership/依赖、正常复杂度或 source/static/shared delivery materially
+   改变；
+4. HYLE 其他模块重复实现本应由 Platform 拥有的机制，或 Platform 再次开始选择 SIMD/provider、拥有
+   mapping storage 或吸收 async IO；
+5. 成熟 same-contract peer 或真实 inference profile 证明存在更优复杂度档，或出现超过 5% 且可复现的
+   normal-path material regression。
+
+candidate LOC self-check（snapshot `5818a7ac9b143b980ac43eb39e2a01dac1e5b108`）：全库代码
+443,621；自实现包含测试 112,651；自实现不包含测试 71,198；host/public Platform boundary 5,010、
+`platform_thread` 实现 857、`platform_fs` 实现 2,073，三者互斥合计 7,940 行。LOC 只记录规模，不证明
+功能或性能。product candidate/tree 保持 `5818a7ac9b143b980ac43eb39e2a01dac1e5b108` /
+`e0c2a9e25b49350965d1bfb3a39789ece976569e`；后续只按本节 trigger 重开。
