@@ -1,9 +1,10 @@
 # Platform v6：同步文件控制与进程启动策略
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 本轮只把已经登记、且经 owner 明确准入的通用 Platform 缺口变成有限产品工作。
-> 进入 `SCOPED`、完成 `AUDITED` 并冻结 FIX 集之前，不授权修改产品源码。
+> 终态：`CLOSED`。前段 `REOPENED/SCOPED/AUDITED/CANDIDATE/VERIFIED` 是按时序保留的事实，
+> 不再授权继续修改；当前状态只认 [`module-status.json`](../../module-status.json)。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -247,3 +248,42 @@ advisory-vs-mandatory/distributed、process-vs-thread 任何一项语义不同�
 
 Formal 保持 `PENDING`；它不阻挡本轮工程 closure。已知限制与 reopen trigger 在 terminal record 中固定，
 下一步只允许签署 `CLOSED` receipt 与新的 Platform 三 factor freeze confirmation。
+
+## Closure decision 与 terminal receipt
+
+本轮 verdict 为 **`CLOSED`**。`PLAT-A-18` 与 `PLAT-A-26` 的已准入通用缺口已经完成，六项有限 FIX、
+七项 aggregate gate、三平台、两种 sanitizer、两个 exact factor、三种 C++ 交付和三个下游只读构建
+均为 `PASS`；没有未处置 blocker。Platform、Platform-thread、Platform-fs 三个 factor 在同一候选
+`246bd182/28c386bd` 上重新签发 `FROZEN`，其中 thread 只读确认、无产品变化。
+
+已知限制：
+
+- process priority 是五档 startup hint，不是硬 CPU placement、realtime 或跨 OS 完全相同的保证；
+  Linux 依赖调用线程到后续 worker 的继承，提升 nice 可能需要权限；`kNormal` 不保存/恢复任意宿主
+  native snapshot；Windows class 与 QoS 两项 control 非事务；
+- file lock 的 portable 承诺只有 cooperating whole-file shared/exclusive coordination；POSIX 是 advisory，
+  Windows 对冲突 I/O 更强，network/distributed filesystem 有自身语义；不提供 range、mandatory、lease
+  或 in-process mutex；
+- `resize` 只改变 logical EOF，增长可 sparse；`preallocate` 不缩小、不去稀疏化既有文件、不保证连续
+  extent，且 allocation/EOF update 可能部分成功。已有 mapping view 存活时不得随意截短 backing；
+- `FileHandle` 仍是 caller-synchronized 单 cursor owner；async/direct/positional/vectored/watch 归 IO，
+  mapping/residency 归 Mem，subprocess lifecycle/sandbox 不是本轮能力；
+- 新入口只有 P0 结构证明；旧 host/Parker/warm-file P1 receipt 继续约束未变路径。Formal、跨所有
+  filesystem/机器的普遍 SOTA 与端到端 inference 仍未声明。
+
+只有以下新事实可以重开：
+
+1. 具名真实 consumer 证明现有 Platform-owned process/file mechanism 无法表达必需且稳定的通用合同；
+2. 支持 OS/filesystem 复现 priority/QoS、EOF/allocation、locking、错误翻译或生命周期 correctness/security
+   缺陷；
+3. 公开 API/layout/语义、factor owner/依赖、正常复杂度或 source/static/shared delivery materially 改变；
+4. HYLE 相邻模块重复实现本应由 Platform 拥有的同步 OS mechanism，或 Platform 越界吸收 mapping、async
+   IO、scheduler/kernel policy；
+5. 成熟 same-contract peer 或真实 inference profile 证明更优复杂度档，或可重复的 material 正常路径退化。
+
+candidate LOC self-check（snapshot `246bd182042f02c2b37457c21cea4ceebd8739c7`）：全库代码
+444,434；自实现包含测试 113,133；自实现不包含测试 71,548；canonical host/public Platform boundary
+5,107、`platform_thread` 实现 857、`platform_fs` 实现 2,326，三者互斥合计 8,290 行。LOC 只记录规模，
+不证明功能或性能。`VERIFIED -> CLOSED` 前 registry snapshot 位于
+`C:\public\project-hyle\_validation\platform-v6\module-status-before-closed.json`，SHA-256
+`A33310E672537B33FABE6349256A33FC43DD1AF7CA2C83156FEA1318A6A0F1B3`。
