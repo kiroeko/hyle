@@ -82,6 +82,12 @@ class StackFirstBuffer {
   [[nodiscard]] T* begin() noexcept { return data_; }
   [[nodiscard]] T* end() noexcept { return data_ + size_; }
   [[nodiscard]] std::size_t size() const noexcept { return size_; }
+  [[nodiscard]] T& operator[](std::size_t index) noexcept {
+    return data_[index];
+  }
+  [[nodiscard]] const T& operator[](std::size_t index) const noexcept {
+    return data_[index];
+  }
 
  private:
   T stack_[StackCount];
