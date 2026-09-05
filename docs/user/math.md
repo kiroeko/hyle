@@ -39,6 +39,28 @@ if (!end) return invalid_shape();
 `std::nullopt`；不会返回 wrapped 或 saturated value。三个函数都不分配、不抛异常。可信且已经由
 程序结构验证的普通算术继续直接写 `+/-/*`，不需要为了使用 HYLE 改成包装函数。
 
+模型格式常用 signed 维度，而分配接口通常接收 `std::size_t`。先用 C++23 的 `std::in_range` 选择
+共同结果类型，再逐维检查 product；不需要依赖隐式 signed/unsigned promotion，也不需要一个固定维数的
+专用 helper：
+
+```cpp
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+
+std::size_t elements = 1;
+for (std::int64_t dimension : dimensions) {
+  if (!std::in_range<std::size_t>(dimension)) return invalid_shape();
+  auto next = hyle::math::try_multiply(
+      elements, static_cast<std::size_t>(dimension));
+  if (!next) return invalid_shape();
+  elements = *next;
+}
+```
+
+这里的每一步都拒绝第一个不可表示的中间结果。需要计算 `base + count * stride` 时，同样先
+`try_multiply(count, stride)`，成功后再 `try_add(base, product)`；不要用 unchecked 中间值换取更短代码。
+
 分块与 padding 使用 ceil/round：
 
 ```cpp
@@ -66,7 +88,8 @@ if (!blocks || !padded) {
 ## 不要这样用
 
 - 两个 operand 必须是同一个非 `bool` integral 类型。需要组合 `uint32_t` shape 与 `size_t` element
-  size 时，先显式验证并转换到共同类型；不要依赖 implicit signed/unsigned promotion。
+  size 时，先用 `std::in_range` 验证并显式转换到共同类型；不要依赖 implicit signed/unsigned
+  promotion。整数 literal 也应写成目标类型，例如 `std::size_t{1}`。
 - 不要在 overflow 后继续使用原输入计算，或把 `nullopt` 当作零。多维 shape product 应逐步检查每次
   `try_multiply`，这样能准确拒绝第一个不可表示的中间结果。
 - `try_subtract` 的 unsigned `lhs < rhs` 是 underflow，返回 `nullopt`；它不是绝对差。

@@ -26,6 +26,8 @@ checked arithmetic 只提供 `try_add`、`try_subtract`、`try_multiply`。成�
 underflow 返回 `nullopt`，不返回 wrapped 或 saturated value。可信且已经验证的算术直接用语言
 `+/-/*`；Math 不增加 fail-fast operator wrapper。binary primitive 可以显式组合出 tensor element count、
 byte size 和 end offset，而不把 mixed-type promotion、variadic fold 或某个模型 layout 固化进 API。
+跨宽度或 signedness 的输入先用 C++23 `std::in_range` 验证、显式转换到调用者选定的共同类型；标准设施
+已经完整拥有这项语义，因此 Math 不再包装一个 `checked_cast`。
 
 ## 依赖与组合
 
