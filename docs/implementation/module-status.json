@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
       "round_id": "util-core-v4-resource-move-ctad",
@@ -156,8 +156,6 @@
       "scope": "Repair the reproduced move-only deleter transfer, checked-factory exception specification and unambiguous nontype bound-callable deduction defects without changing Util-core's capability families or Core-only header-only boundary.",
       "non_goals": "New utility families, nullable or owning callbacks, asynchronous storage, pointer-like or default UniqueResource policy, typed domain owners, Util-runtime, downstream migration, Native FFI, benchmark-shaped APIs, common instrument redesign and Formal certification.",
       "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
-      "candidate_commit": "af2e432f6c9025b6d398f0d4ba207005392cc8aa",
-      "candidate_tree": "d009cc1945f6d77622622df0c8a6c5ac8e19f21c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -175,7 +173,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "Util-core v4 CANDIDATE：完整 sentinel 布尔判定现由编译期不抛约束守住 acquisition safety；move-only deleter、bound-member CTAD、两字 FunctionRef、对象 layout、复杂度与 Core-only 边界保持冻结，重放固定门。"
+      "summary": "Util-core v4 AUDITED：产品异常合同纠正已通过 Windows/WSL，macOS WERROR 仅发现敌意 compile-negative probe 的内部 friend 警告；退回做等价测试可移植性纠正，产品/API/性能合同不变。"
     },
     {
       "module": "error",

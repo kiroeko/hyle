@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态：`CANDIDATE`。红队纠正已经形成新的 immutable product commit/tree；只重放本卡既定门，
-> 不增加能力或修改 benchmark。
+> 当前状态：`AUDITED`。产品纠正保持冻结；macOS WERROR 发现 compile-negative probe 的可移植性问题，
+> 只允许等价改写该测试并重建候选，不增加能力或修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -152,3 +152,17 @@ SHA-256 `62C93ED70BA1E5B4FE85C38009D323983449D1A819E3F88B1E491282B8876633`。
 进入纠正后 `CANDIDATE` 的前态 registry 快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-candidate-correction-af2e432f.json`，
 SHA-256 `DD57F5A64B0451381002E8436DCC969DA82876645B7FE6CDB3DCE745661B9BF2`。
+
+### macOS probe correction（退回 `AUDITED`）
+
+- exact candidate `af2e432f` 在 W1-WIN 20/20、W1-WSL GCC 14 + UBSan 19/19 以及两平台 Util
+  source/relocated shared/static consumer 全部通过；W1-WSL 默认 GCC 13 也按最低版本合同正确 fail-closed；
+- M1-MAC 编译到敌意 sentinel 测试时，AppleClang 21 将匿名命名空间内、只在 requires 中使用的 friend
+  `operator==` 报为 `-Wunneeded-internal-declaration`。产品 header 未报错；这是 test probe 形状的
+  portability defect；
+- 等价纠正只把比较写成 token 的成员操作，继续证明 throwing bool conversion 被 factory 约束拒绝；
+  不改 public header、算法、对象布局、normal workload、peer、margin 或 tier。
+
+本次 `CANDIDATE -> AUDITED` 的前态 registry 快照为
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-mac-probe-cd06f973.json`，SHA-256
+`3EE762A9CC4F52298E742D39D17D772BB97B8999070220345E47DFD7870F3477`。
