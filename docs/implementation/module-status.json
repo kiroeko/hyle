@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -592,6 +592,8 @@
       "baseline_commit": "cba7392499c1eca2f0e961e0e2a45a89a2d6d88b",
       "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
       "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
+      "end_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
+      "registry_anchor_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -617,7 +619,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform v6 VERIFIED：显式五档 process-startup priority/QoS 已完成三平台正确性、sanitizer、exact factor、三交付、下游只读回放、文档/红队与 P0 结构性能验证。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
+      "loc": {
+        "snapshot_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+        "repository_code": 444434,
+        "self_with_tests": 113133,
+        "self_without_tests": 71548,
+        "module_implementation": 5107
+      },
+      "freeze_confirmation": {
+        "id": "platform-v6-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+        "reviewed_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
+        "evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md"
+      },
+      "known_limitations": [
+        "ProcessPriority is an explicit five-level startup hint, not hard CPU placement, realtime or an identical cross-OS guarantee; Linux relies on calling-thread inheritance, elevation may require privilege, and kNormal is not arbitrary native-policy snapshot restoration.",
+        "Windows process priority class and execution QoS are two controls without transactional atomicity; a failure can leave the first control applied.",
+        "The base factor does not own subprocess lifecycle, sandbox, scheduler or kernel policy, device inventory, mapping storage, async IO, Native FFI or a stable C++ ABI.",
+        "The new process control has P0 structural evidence only; retained host/Parker/warm-file P1 evidence covers unchanged workloads, while Formal and end-to-end inference remain pending or unclaimed."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-owned process or host mechanism with stable supported-platform semantics that the current facts, VM, NUMA, loader, environment, entropy and startup-policy surface cannot express.",
+        "A supported OS reproduces a process-priority, QoS, native-error, ownership, correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, normal complexity, or source/static/shared delivery changes materially.",
+        "HYLE duplicates a synchronous OS mechanism that belongs here, or Platform starts absorbing mapping, async IO, scheduler or kernel policy.",
+        "A mature same-contract peer or real inference profile proves a better complexity class or a reproducible material normal-path regression."
+      ],
+      "summary": "platform v6 CLOSED/FROZEN：五档 process-startup priority/QoS 与既有 host mechanism 已完成三平台、sanitizer、exact factor、三交付、下游回放、文档/红队及 P0 结构性能收口。"
     },
     {
       "module": "platform_thread",
@@ -666,10 +697,18 @@
         "self_without_tests": 71198,
         "module_implementation": 857
       },
+      "freeze_confirmation": {
+        "id": "platform-thread-v6-replay-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+        "reviewed_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
+        "evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md"
+      },
       "known_limitations": [
         "ThreadPriority is a portable scheduling and QoS hint, not hard affinity, realtime service or process-wide policy; Linux elevation may require privilege and macOS exposes no public hard-affinity API.",
         "Windows native priority and execution QoS are two OS controls without transactional atomicity; required spawn prevents entry on failure while best-effort only promises an attempted configuration.",
-        "Process-wide priority, realtime policy and detach remain application-policy or lifecycle non-goals.",
+        "Process-wide startup priority now belongs to the base Platform factor; realtime policy and detach remain application-policy or lifecycle non-goals for platform_thread.",
         "The v5 P0 claim covers explicit cold setup only; the unchanged Parker P1 workload, cross-machine Formal and end-to-end inference remain separately bounded or pending."
       ],
       "reopen_triggers": [
@@ -678,11 +717,11 @@
         "The public API or layout, factor ownership or dependencies, cold setup complexity or source/static/shared delivery changes materially.",
         "A mature same-contract peer or real inference profile proves a better complexity class or a repeatable material normal-path regression."
       ],
-      "summary": "platform_thread v3 CLOSED：Windows 显式 priority 的 native priority + execution QoS 已通过三平台正确性、sanitizer、三交付、直接消费者、文档/红队与 P0 结构门。"
+      "summary": "platform_thread v3 CLOSED/FROZEN：既有 native thread/priority/wait 能力保持不变，并在 Platform v6 候选上完成三平台、三交付与下游只读复核。"
     },
     {
       "module": "platform_fs",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-COMMON-CONTROL-SUPERSET-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
       "round_id": "platform-v6-file-control-and-process-policy",
@@ -692,6 +731,8 @@
       "baseline_commit": "cba7392499c1eca2f0e961e0e2a45a89a2d6d88b",
       "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
       "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
+      "end_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
+      "registry_anchor_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -717,7 +758,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform_fs v3 VERIFIED：handle size/resize/preallocate 与 whole-file locking 已完成三平台正确性、sanitizer、exact factor、三交付、下游回放、文档/红队与 P0 结构性能验证。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md",
+      "loc": {
+        "snapshot_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+        "repository_code": 444434,
+        "self_with_tests": 113133,
+        "self_without_tests": 71548,
+        "module_implementation": 2326
+      },
+      "freeze_confirmation": {
+        "id": "platform-fs-v3-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
+        "reviewed_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
+        "evidence": "docs/implementation/tasks/platform/platform-v6-file-control-and-process-policy.md"
+      },
+      "known_limitations": [
+        "Whole-file locking only promises cooperating shared/exclusive coordination; POSIX is advisory, Windows can enforce conflicting IO more strongly, and network or distributed filesystems retain native semantics.",
+        "resize changes logical EOF and growth may be sparse; preallocate neither shrinks nor de-sparsifies an existing file, promises no contiguous extent, and allocation plus EOF update is not transactional.",
+        "The one-word FileHandle remains a caller-synchronized single-cursor owner; range or mandatory locks, mapping/residency, watch, async, direct, positional and vectored IO belong elsewhere.",
+        "The new controls have P0 structural evidence only; retained warm-file P1 evidence covers unchanged open/read/close, while universal filesystem SOTA and Formal remain unclaimed or pending."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-fs-owned synchronous handle or namespace mechanism with stable supported-platform semantics that the current surface cannot express.",
+        "A supported filesystem reproduces an EOF, allocation, locking, permission, ownership, traversal, callback cleanup or error-translation correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, normal complexity, or source/static/shared delivery changes materially.",
+        "HYLE duplicates synchronous namespace or FileHandle control in an adjacent module, or Platform-fs starts owning mapping or async policy.",
+        "A mature same-contract peer or real model-loading profile proves a better complexity class or a reproducible material normal-path regression."
+      ],
+      "summary": "platform_fs v3 CLOSED/FROZEN：handle size/resize/preallocate 与 whole-file locking 已完成三平台、sanitizer、exact factor、三交付、下游回放、文档/红队及 P0 结构性能收口。"
     },
     {
       "module": "mem_reclaim",
