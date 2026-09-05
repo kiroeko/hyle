@@ -112,6 +112,7 @@ bool path_prefix(const char *path, const char *prefix) noexcept {
   return length == 1 || path[length] == '\0' || path[length] == '/';
 }
 
+#if HYLE_OS_LINUX
 bool line_is_complete(std::FILE *file, const char *line) noexcept {
   if (std::strchr(line, '\n') != nullptr || std::feof(file))
     return true;
@@ -123,6 +124,7 @@ bool line_is_complete(std::FILE *file, const char *line) noexcept {
   } while (ch != '\n' && ch != EOF);
   return false;
 }
+#endif
 
 } // namespace
 

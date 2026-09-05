@@ -34,7 +34,7 @@ std::uint64_t remaining(std::uint64_t limit, std::uint64_t used) noexcept {
 }
 
 void merge_process_budget(HostMemoryInfo& info, std::uint64_t limit,
-                          std::uint64_t available) noexcept {
+                           std::uint64_t available) noexcept {
   if (!info.process_limit_bytes || limit < *info.process_limit_bytes) {
     info.process_limit_bytes = limit;
   }
@@ -44,6 +44,7 @@ void merge_process_budget(HostMemoryInfo& info, std::uint64_t limit,
   }
 }
 
+#if HYLE_OS_LINUX
 void merge_process_limit(HostMemoryInfo& info, std::uint64_t limit) noexcept {
   if (!info.process_limit_bytes || limit < *info.process_limit_bytes) {
     info.process_limit_bytes = limit;
@@ -57,6 +58,7 @@ void merge_process_available(HostMemoryInfo& info,
     info.process_available_bytes = available;
   }
 }
+#endif
 
 #if HYLE_OS_LINUX
 

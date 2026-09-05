@@ -26,6 +26,7 @@
 namespace hyle::platform {
 namespace {
 
+#if HYLE_OS_LINUX
 bool parse_u64(const char *text, std::uint64_t &value) noexcept {
   if (text == nullptr)
     return false;
@@ -77,7 +78,6 @@ bool make_child_path(char *output, std::size_t capacity, const char *directory,
   return written >= 0 && static_cast<std::size_t>(written) < capacity;
 }
 
-#if HYLE_OS_LINUX
 bool read_linux_quota_file(const char *path, CpuQuota &quota) noexcept {
   char text[192]{};
   if (!read_text_file(path, text, sizeof(text)))
