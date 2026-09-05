@@ -578,88 +578,43 @@
     },
     {
       "module": "platform",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "round_id": "platform-v7-cache-class-and-random-access",
-      "closure_task": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "scope": "Expose truthful heterogeneous CPU cache-class facts without changing target selection, and preserve the existing conservative global cache convenience.",
-      "non_goals": "SIMD/provider target policy, CPU placement or scheduler policy, guessed associativity, device inventory, Thread/NUMA/VM redesign, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
-      "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
-      "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-      "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
-      "end_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
-      "registry_anchor_commit": "c585dd3a386ce88f7f65a210a9d1f8392090601d",
-      "performance_tier": "P0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "round_id": "platform-v8-os-resource-contract",
+      "closure_task": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "scope": "Audit and repair process-scoped OS resource truth for CPU placement/capacity/frequency/cache, Linux cgroup memory and NUMA, and Windows large-CPU topology complexity without adding scheduler policy.",
+      "non_goals": "Scheduler or inference-engine worker policy, SIMD target dispatch, device inventory, private OS interfaces or model/timing guesses, Mem/IO redesign, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
+      "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "loc": {
-        "snapshot_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-        "repository_code": 445969,
-        "self_with_tests": 114197,
-        "self_without_tests": 72413,
-        "module_implementation": 5659
-      },
-      "freeze_confirmation": {
-        "id": "platform-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "known_limitations": [
-        "Cache classes are dynamic process-view snapshots: unavailable OS facts are zero, macOS has no stable logical-CPU-to-performance-level mapping, and HYLE does not guess associativity or complete CPU membership.",
-        "The cached cache_info convenience remains coarse and on Apple reflects the least-performance class; scheduling, placement, tiling and SIMD or kernel policy remain consumer or owning-module responsibilities.",
-        "Platform does not own device inventory, mapping or residency, concurrent or asynchronous IO, scheduler policy, Native FFI or a stable C++ ABI.",
-        "The v7 additions have P0 structural evidence; retained host, Parker and warm-file P1 receipts cover only unchanged same-contract workloads, while Formal and end-to-end inference remain pending or unclaimed."
-      ],
-      "reopen_triggers": [
-        "A named real consumer needs a Platform-owned host or cache mechanism with stable supported-platform semantics that the current facts and snapshots cannot express.",
-        "A supported OS reproduces a cache-class, native-error, ownership, correctness or security defect.",
-        "The public API or layout, factor ownership or dependencies, normal complexity, or source/static/shared delivery changes materially.",
-        "HYLE duplicates a synchronous OS mechanism that belongs here, or Platform starts absorbing Mem, IO, Sched, SIMD or kernel policy.",
-        "A mature same-contract peer proves a better complexity class, or a real inference profile proves a reproducible material normal-path regression."
-      ],
-      "summary": "platform v7 CLOSED/FROZEN：异构 cache-class snapshot 与旧 coarse facts 边界已完成；三平台、三交付、下游回放、文档/红队和 P0 结构性能全部通过。"
+      "summary": "platform v8 REOPENED：已有具体 OS-resource truth、Linux cgroup/NUMA、Windows topology complexity 与缺失 CPU capacity/frequency 触发；尚未冻结 API/FIX，不授权产品改动。"
     },
     {
       "module": "platform_thread",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-THREAD-WINDOWS-QOS-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
-      "round_id": "platform-v5-normal-consumer-contract",
-      "closure_task": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
-      "scope": "Complete the existing portable thread-priority contract on Windows with explicit execution QoS while preserving the unconfigured OS-default route.",
-      "non_goals": "CPU facts, topology, affinity, wait/Parker, current ISA state, process-wide or realtime priority, scheduler policy, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
-      "baseline_commit": "1cb204e79e11532252053971dd5ff97dfe9648d7",
-      "candidate_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
-      "candidate_tree": "e0c2a9e25b49350965d1bfb3a39789ece976569e",
-      "end_commit": "3fd758953e978ba36374bf69647335de36a52a68",
-      "registry_anchor_commit": "c02e4e7582c322879863f85474d9f85a8828c9e0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "round_id": "platform-v8-os-resource-contract",
+      "closure_task": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "scope": "Restore complete source provenance, license, dependency-lock and installed-package projection for the existing Rust-std-derived futex parker without changing its algorithm.",
+      "non_goals": "Parker algorithm redesign, new wait or thread capability, CPU/FS ownership, scheduler policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -667,124 +622,44 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
-      "loc": {
-        "snapshot_commit": "5818a7ac9b143b980ac43eb39e2a01dac1e5b108",
-        "repository_code": 443621,
-        "self_with_tests": 112651,
-        "self_without_tests": 71198,
-        "module_implementation": 857
-      },
-      "freeze_confirmation": {
-        "id": "platform-thread-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "known_limitations": [
-        "ThreadPriority is a portable scheduling and QoS hint, not hard affinity, realtime service or process-wide policy; Linux elevation may require privilege and macOS exposes no public hard-affinity API.",
-        "Windows native priority and execution QoS are two OS controls without transactional atomicity; required spawn prevents entry on failure while best-effort only promises an attempted configuration.",
-        "Process-wide startup priority now belongs to the base Platform factor; realtime policy and detach remain application-policy or lifecycle non-goals for platform_thread.",
-        "The v5 P0 claim covers explicit cold setup only; the unchanged Parker P1 workload, cross-machine Formal and end-to-end inference remain separately bounded or pending."
-      ],
-      "reopen_triggers": [
-        "A named real consumer needs a Platform-thread-owned mechanism with stable supported-platform semantics that the current thread, affinity, priority, ISA-state and wait surface cannot express.",
-        "A supported OS reproduces a priority, QoS, required-entry gate, affinity, wait or current-thread-state correctness or security defect.",
-        "The public API or layout, factor ownership or dependencies, cold setup complexity or source/static/shared delivery changes materially.",
-        "A mature same-contract peer or real inference profile proves a better complexity class or a repeatable material normal-path regression."
-      ],
-      "summary": "platform_thread v3 CLOSED/FROZEN：既有 native thread/priority/wait 能力保持不变，并在 Platform v6 候选上完成三平台、三交付与下游只读复核。"
+      "summary": "platform_thread v8 REOPENED：Parker 源代码来源、许可证、dependency lock 与安装包投影不完整；算法和既有性能声明尚未重开。"
     },
     {
       "module": "platform_fs",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "round_id": "platform-v7-cache-class-and-random-access",
-      "closure_task": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "scope": "Complete already-open synchronous file ownership with portable duplication, opened-object metadata and a separate explicit-offset owner whose cursor is not observable.",
-      "non_goals": "Path abstraction, filesystem-capacity wrappers, mapping or residency, directory watch, async, direct or vectored IO, concurrent Windows offset execution, Native FFI/C API, stable C++ ABI, common performance-instrument redesign and Formal certification.",
-      "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
-      "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-      "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
-      "end_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
-      "registry_anchor_commit": "c585dd3a386ce88f7f65a210a9d1f8392090601d",
-      "performance_tier": "P0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-FS-EINTR-2026-09-05",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "round_id": "platform-v8-os-resource-contract",
+      "closure_task": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "scope": "Make restart-safe POSIX synchronous filesystem controls consistently absorb EINTR while preserving native operation count, ownership, EOF, short-transfer and durability semantics.",
+      "non_goals": "Retrying close or non-restart-safe operations, async/direct/vectored IO, mapping/residency, path abstraction, IO redesign, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
+      "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
+      "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "loc": {
-        "snapshot_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
-        "repository_code": 445969,
-        "self_with_tests": 114197,
-        "self_without_tests": 72413,
-        "module_implementation": 2639
-      },
-      "freeze_confirmation": {
-        "id": "platform-fs-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "known_limitations": [
-        "FileHandle duplication creates another owner for the same opened object but shares native cursor and lock associations; it is not an independent file position.",
-        "RandomAccessFile is caller-synchronized blocking explicit-offset IO; Windows may move an unobservable native cursor and append opens are rejected.",
-        "Concurrent, asynchronous, direct and vectored IO remain owned by IO; mapping, advice and residency remain owned by Mem, and filesystem capacity uses the standard library.",
-        "Unknown file facts and platform-native errors remain explicit Status results; handle info describes the opened object after symlink resolution and does not re-resolve a path.",
-        "The v7 additions have P0 structural evidence rather than universal syscall timing, filesystem, cross-machine, Formal or end-to-end inference SOTA claims."
-      ],
-      "reopen_triggers": [
-        "A named real consumer needs a Platform-fs-owned synchronous opened-file mechanism with stable supported-platform semantics that duplicate, metadata, cursor and offset owners cannot express.",
-        "A supported OS or filesystem reproduces an owner lifetime, duplicate, metadata identity, offset, EOF, short-transfer, overflow, error-translation, correctness or security defect.",
-        "The public API or layout, factor ownership or dependencies, native-operation complexity, or source/static/shared delivery changes materially.",
-        "HYLE duplicates this synchronous file mechanism elsewhere, or Platform-fs starts absorbing Mem mapping or IO concurrency and asynchronous policy.",
-        "A mature same-contract peer proves a better complexity class, or a real inference profile proves a reproducible material normal-path regression."
-      ],
-      "summary": "platform_fs v4 CLOSED/FROZEN：opened-object duplicate/info 与一字同步 random-access owner 已完成；三平台、三交付、下游回放、文档/红队和 P0 结构性能全部通过。"
+      "summary": "platform_fs v8 REOPENED：POSIX restart-safe controls 对 EINTR 的处理不一致；本轮将冻结可安全重试边界并续签自然文件路径。"
     },
     {
       "module": "mem_reclaim",
