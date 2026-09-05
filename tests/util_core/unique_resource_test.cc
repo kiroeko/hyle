@@ -81,10 +81,7 @@ struct ThrowingBoolConversion final {
 };
 
 struct ThrowingBoolSentinelToken final {
-  friend ThrowingBoolConversion operator==(const ThrowingBoolSentinelToken&,
-                                           int) noexcept {
-    return {};
-  }
+  ThrowingBoolConversion operator==(int) const noexcept { return {}; }
 };
 
 struct ThrowingBoolSentinelDeleter final {
