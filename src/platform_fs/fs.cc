@@ -744,22 +744,35 @@ Result<FileInfo> info_raw(std::intptr_t raw) noexcept {
         Status::FailedPrecondition("file info: handle is closed"));
   }
   const HANDLE handle = reinterpret_cast<HANDLE>(raw);
+  ::SetLastError(ERROR_SUCCESS);
+  const DWORD native_type = ::GetFileType(handle);
+  if (native_type == FILE_TYPE_UNKNOWN) {
+    const DWORD code = ::GetLastError();
+    if (code != ERROR_SUCCESS) {
+      return std::unexpected(win32_fs_status("GetFileType(file info)", code));
+    }
+    return FileInfo{};
+  }
+
+  FileInfo out;
+  if (native_type == FILE_TYPE_CHAR) {
+    out.type = FileType::kCharacterDevice;
+    return out;
+  }
+  if (native_type == FILE_TYPE_PIPE) {
+    out.type = FileType::kFifo;
+    return out;
+  }
+
   BY_HANDLE_FILE_INFORMATION native{};
   if (!::GetFileInformationByHandle(handle, &native)) {
     return std::unexpected(win32_fs_status(
         "GetFileInformationByHandle(file info)", ::GetLastError()));
   }
-
-  FileInfo out;
-  const DWORD native_type = ::GetFileType(handle);
   if (native_type == FILE_TYPE_DISK) {
     out.type = (native.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0
                    ? FileType::kDirectory
                    : FileType::kRegular;
-  } else if (native_type == FILE_TYPE_CHAR) {
-    out.type = FileType::kCharacterDevice;
-  } else if (native_type == FILE_TYPE_PIPE) {
-    out.type = FileType::kFifo;
   }
   if (out.is_regular()) {
     out.size = (static_cast<std::uint64_t>(native.nFileSizeHigh) << 32) |

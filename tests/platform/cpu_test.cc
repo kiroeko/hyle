@@ -90,6 +90,8 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
   auto topology = available_cpu_topology();
   ASSERT_TRUE(topology.has_value()) << topology.error().message();
   std::size_t logical = 0;
+  std::size_t physical = 0;
+  bool all_physical_counts_known = true;
   unsigned previous_rank = (std::numeric_limits<unsigned>::max)();
   for (const auto& cpu_class : classes) {
     EXPECT_GE(cpu_class.logical_cpus, 1u);
@@ -97,6 +99,9 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
     EXPECT_LE(cpu_class.performance_rank, previous_rank);
     previous_rank = cpu_class.performance_rank;
     logical += cpu_class.logical_cpus;
+    physical += cpu_class.physical_cores;
+    all_physical_counts_known =
+        all_physical_counts_known && cpu_class.physical_cores != 0;
     if (cpu_class.cache_line_size != 0) {
       EXPECT_GE(cpu_class.cache_line_size, 16u);
       EXPECT_EQ(cpu_class.cache_line_size & (cpu_class.cache_line_size - 1u),
@@ -113,6 +118,9 @@ TEST(Cpu, CacheClassesPreserveProcessCountsAndKnownHierarchy) {
     }
   }
   EXPECT_EQ(logical, topology->logical_cpus);
+  if (all_physical_counts_known && topology->physical_cores != 0) {
+    EXPECT_EQ(physical, topology->physical_cores);
+  }
 
 #if defined(__APPLE__)
   unsigned levels = 0;

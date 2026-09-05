@@ -1060,6 +1060,25 @@ TEST_F(FsTest, FileHandleInfoStaysBoundToRenamedAndUnlinkedObject) {
   EXPECT_FALSE(after.is_symlink);
 }
 
+#if defined(_WIN32)
+TEST(FileHandle, InfoClassifiesWindowsPipeWithoutDiskMetadata) {
+  HANDLE read_handle = INVALID_HANDLE_VALUE;
+  HANDLE write_handle = INVALID_HANDLE_VALUE;
+  ASSERT_TRUE(::CreatePipe(&read_handle, &write_handle, nullptr, 0));
+  FileHandle read_owner{reinterpret_cast<std::intptr_t>(read_handle)};
+  FileHandle write_owner{reinterpret_cast<std::intptr_t>(write_handle)};
+
+  auto read_info = read_owner.info();
+  ASSERT_TRUE(read_info.has_value()) << read_info.error().message();
+  EXPECT_EQ(read_info->type, FileType::kFifo);
+  EXPECT_EQ(read_info->size, 0u);
+
+  auto write_info = write_owner.info();
+  ASSERT_TRUE(write_info.has_value()) << write_info.error().message();
+  EXPECT_EQ(write_info->type, FileType::kFifo);
+}
+#endif
+
 TEST_F(FsTest, RandomAccessFileTransfersByExplicitOffset) {
   static_assert(sizeof(RandomAccessFile) == sizeof(std::intptr_t));
   static_assert(std::is_move_constructible_v<RandomAccessFile>);

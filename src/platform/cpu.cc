@@ -1415,6 +1415,12 @@ bool cache_profile_less(const CpuCacheObservation& left,
   HYLE_CACHE_PROFILE_DESCENDING(cpus_per_l2);
   HYLE_CACHE_PROFILE_DESCENDING(cpus_per_l3);
 #undef HYLE_CACHE_PROFILE_DESCENDING
+  if (left.cpu.package_id != right.cpu.package_id) {
+    return left.cpu.package_id < right.cpu.package_id;
+  }
+  if (left.cpu.die_id != right.cpu.die_id) {
+    return left.cpu.die_id < right.cpu.die_id;
+  }
   if (left.cpu.core_id != right.cpu.core_id) {
     return left.cpu.core_id < right.cpu.core_id;
   }
@@ -1821,12 +1827,22 @@ Result<std::size_t> available_cpu_cache_classes(
         out.logical_cpus_per_l2 = observations[begin].cpus_per_l2;
         out.logical_cpus_per_l3 = observations[begin].cpus_per_l3;
         out.cache = observations[begin].cache;
+        unsigned previous_package = kUnknownCpuTopologyId;
+        unsigned previous_die = kUnknownCpuTopologyId;
         unsigned previous_core = kUnknownCpuTopologyId;
+        bool have_previous_core = false;
         for (std::size_t i = begin; i < end; ++i) {
+          const unsigned package = observations[i].cpu.package_id;
+          const unsigned die = observations[i].cpu.die_id;
           const unsigned core = observations[i].cpu.core_id;
-          if (core != kUnknownCpuTopologyId && core != previous_core) {
+          if (core != kUnknownCpuTopologyId &&
+              (!have_previous_core || package != previous_package ||
+               die != previous_die || core != previous_core)) {
             ++out.physical_cores;
+            previous_package = package;
+            previous_die = die;
             previous_core = core;
+            have_previous_core = true;
           }
         }
         dst[classes] = out;
