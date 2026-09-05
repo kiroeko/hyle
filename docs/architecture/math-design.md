@@ -27,6 +27,30 @@ underflow 返回 `nullopt`，不返回 wrapped 或 saturated value。可信且�
 `+/-/*`；Math 不增加 fail-fast operator wrapper。binary primitive 可以显式组合出 tensor element count、
 byte size 和 end offset，而不把 mixed-type promotion、variadic fold 或某个模型 layout 固化进 API。
 
+## 依赖与组合
+
+`math` 是一个不可再拆的 header-only factor。当前唯一 HYLE 依赖是 `core`：普通 `try_` 入口只依赖
+C++ 标准库和编译器 overflow primitive，fail-fast 的 `ceil_div`/`round_up_to_multiple` 复用 Core 的
+release-surviving assert。编译器 intrinsic 是实现机制，不是产品组件或可选第三方依赖。因此中央图的
+完整产品边就是 `math -> PUBLIC core`；Math 不依赖 SIMD、Platform、Mem 或外部数值库。
+
+Math 与 SIMD 在产品能力图上互补，在构建图上相互独立：
+
+| 计算层级 | 语义 | owner |
+|---|---|---|
+| control plane | 单个整数 shape/count/stride/offset/byte-size 的可表示性 | Math |
+| data plane | lane、row、buffer 的 dtype、rounding、packing、activation 与向量数学 | SIMD |
+| model plane | tensor layout、模型算子、图级策略与融合 | Compute 或消费层 |
+
+这不是“SIMD 没有的函数都放进 Math”的差集规则。普通标量数学仍直接使用标准库；只属于某个 wire
+layout、容器或 kernel 的计算仍由其 owner 持有。反过来，较高层若真实需要 Math 已公开的通用 checked
+scalar 合同，应声明直接依赖并复用，而不是因为模块边界再写一份。只有公式本身定义领域 layout、失败
+状态或成本合同（例如 bitpack 的 packed-size 分解）时，专用实现才继续留在 owner 模块。
+
+新增候选进入 Math 前必须同时回答：它是否是单值 integral control-plane 计算；C++23 是否缺少自然
+等价物；失败语义是否跨 consumer 稳定；它是否至少有真实消费或多个成熟 peer 的重复证据。缺少任一项，
+不能仅凭 SIMD/peer 有同名函数或 benchmark 方便性扩大 Math。
+
 ## 与其他 owner 的边界
 
 | 能力性质 | 默认 owner |

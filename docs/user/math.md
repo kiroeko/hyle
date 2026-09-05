@@ -5,6 +5,19 @@
 `<cmath>/<numbers>/<bit>`；一段数组、lane 或 dtype 需要向量化时用
 [`hyle::simd`](simd-usage.md)。
 
+快速选择：
+
+| 你要做的事 | 使用 |
+|---|---|
+| 普通标量三角、指数、常量或 bit primitive | C++ 标准库 |
+| 检查单个整数 shape/count/stride/offset/byte-size 是否可表示 | `hyle::math` |
+| 对 lane、row 或 buffer 做 dtype、packing、activation 或向量数学 | `hyle::simd` |
+| tensor/model 算子、layout 或融合 | Compute/消费层 |
+
+Math 和 SIMD 不要求一起链接。`hyle::math` 当前只传递依赖 `hyle::core`；它不拉入 SIMD、Platform 或
+第三方数值后端。若一个 SIMD/容器/内存实现需要这里的通用 checked scalar 合同，它应显式依赖 Math；
+只定义该模块 layout 的专用 sizing 公式仍留在对应模块。
+
 ## 何时用
 
 来自模型、文件或网络的尺寸先做 checked arithmetic，再分配或建立 tensor view：

@@ -205,8 +205,10 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 已经进入 `SCOPED` 但尚未 `AUDITED` 时，也不能据此覆盖 owner 新指定的 replay 顺序；当前执行对象只在
 [`implementation/status`](../implementation/status.md)说明。
 
-SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 边界仍需
-独立裁决。Compute 与 Graph 保持 `QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理
+SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 与 SIMD
+的现行边界由 [Scalar math 边界](math-design.md)裁决：前者承载 scalar integer control-plane 安全，
+后者承载 lane/row/buffer data-plane 计算；新候选仍需按该边界逐项准入。Compute 与 Graph 保持
+`QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理
 consumer slice 成立前不做产品重构，也不为旧 benchmark 形状优化。
 
 ## 5. 每轮架构输出
