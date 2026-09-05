@@ -593,7 +593,7 @@
       "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
       "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
       "end_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
-      "registry_anchor_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
+      "registry_anchor_commit": "91002415bcf4d70a4e07a5f940e66394e5f2e035",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -732,7 +732,7 @@
       "candidate_commit": "246bd182042f02c2b37457c21cea4ceebd8739c7",
       "candidate_tree": "28c386bd62fd0c619202fbcf4993e267a0fe54c8",
       "end_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
-      "registry_anchor_commit": "d45dc91f82b033d6651667b7fcb783f5602faf82",
+      "registry_anchor_commit": "91002415bcf4d70a4e07a5f940e66394e5f2e035",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
