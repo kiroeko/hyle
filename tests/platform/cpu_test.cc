@@ -306,8 +306,9 @@ TEST(Cpu, CurrentHostFeatureImplicationsHold) {
   const CpuFeatureSet& f = cpu_features();
 #if HYLE_ARCH_X64
   EXPECT_TRUE(f.has(CpuFeature::kX86Sse2));
-  if (f.has(CpuFeature::kX86Avx2))
+  if (f.has(CpuFeature::kX86Avx2)) {
     EXPECT_TRUE(f.has(CpuFeature::kX86Avx));
+  }
   const CpuFeatureSet avx512_children{
       CpuFeature::kX86Avx512Bw, CpuFeature::kX86Avx512Vl,
       CpuFeature::kX86Avx512Dq, CpuFeature::kX86Avx512Cd,
@@ -315,30 +316,36 @@ TEST(Cpu, CurrentHostFeatureImplicationsHold) {
       CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Avx512Bitalg,
       CpuFeature::kX86Avx512Vpopcntdq, CpuFeature::kX86Avx512Bf16,
       CpuFeature::kX86Avx512Fp16};
-  if (f.has_any(avx512_children))
+  if (f.has_any(avx512_children)) {
     EXPECT_TRUE(f.has(CpuFeature::kX86Avx512F));
+  }
   if (f.has_any(CpuFeatureSet{
           CpuFeature::kX86AmxInt8Hardware,
           CpuFeature::kX86AmxBf16Hardware,
-          CpuFeature::kX86AmxFp16Hardware}))
+          CpuFeature::kX86AmxFp16Hardware})) {
     EXPECT_TRUE(f.has(CpuFeature::kX86AmxTileHardware));
+  }
 #elif HYLE_ARCH_ARM64
   EXPECT_TRUE(f.has(CpuFeature::kArmNeon));
-  if (f.has(CpuFeature::kArmSve2))
+  if (f.has(CpuFeature::kArmSve2)) {
     EXPECT_TRUE(f.has(CpuFeature::kArmSve));
+  }
   if (f.has_any(CpuFeatureSet{CpuFeature::kArmSveAes,
-                              CpuFeature::kArmSvePmull}))
+                              CpuFeature::kArmSvePmull})) {
     EXPECT_TRUE(f.has(CpuFeature::kArmSve2));
+  }
   if (f.has_any(CpuFeatureSet{
           CpuFeature::kArmSveI8mm, CpuFeature::kArmSveF32mm,
-          CpuFeature::kArmSveF64mm, CpuFeature::kArmSveBf16}))
+          CpuFeature::kArmSveF64mm, CpuFeature::kArmSveBf16})) {
     EXPECT_TRUE(f.has(CpuFeature::kArmSve));
+  }
 #elif HYLE_ARCH_RISCV64
   if (f.has_any(CpuFeatureSet{
           CpuFeature::kRiscvZvbb, CpuFeature::kRiscvZvbc,
           CpuFeature::kRiscvZvkned, CpuFeature::kRiscvZvfh,
-          CpuFeature::kRiscvZvfhmin}))
+          CpuFeature::kRiscvZvfhmin})) {
     EXPECT_TRUE(f.has(CpuFeature::kRiscvV));
+  }
 #endif
 }
 
