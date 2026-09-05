@@ -1,5 +1,13 @@
 # Platform current performance evidence
 
+Platform v7 新增异构 cache-class snapshot、opened-file duplicate/info 和同步 explicit-offset
+`RandomAccessFile`。这些路线按 `P0 / STRUCTURAL` 验收：cache discovery 是显式冷路径，file owner
+仍是一字，单次 duplicate/info/read_at/write_at 各直接落一个 native control；旧 cached facts、
+FileHandle 顺序 I/O 与其它未调用路径没有新增 branch、lock、heap 或 metadata。产品实现 identity 为
+`eb4ce5e652c67b6cc0453773763648f3b41ffbe1`，tree
+`067e4c1a4807f6d3693cbdbae0854cb5263fb8cd`；同合同规则和三平台证据记录在
+[`platform-v7-cache-class-and-random-access.md`](../../tasks/platform/platform-v7-cache-class-and-random-access.md)。
+
 Platform v6 新增两组显式 P0 控制路线：process-startup priority/QoS，以及已打开 `FileHandle` 上的
 size/resize/preallocate/whole-file locking。它们没有给一字 `FileHandle` 增加字段，也没有改变
 未调用时的 process 初始化、CPU facts、thread/Parker、FileHandle open/read/write/close 或 directory
@@ -28,12 +36,18 @@ and
 
 ## Current verdict
 
-`PASS` for the v6 P0 structural contract and all three retained W1-WIN P1
+`PASS` for the v7/v6 P0 structural contracts and all three retained W1-WIN P1
 engineering contracts. This is not a Formal, cross-machine, all-topology, or
 module-wide SOTA certificate. Every numeric row has its own same-contract
 statement and 5% non-inferiority gate; rows are never pooled into a Platform
 score. New control calls are signed structurally because their useful work is
 the OS operation itself and their physical/wait cost is workload-dependent.
+
+| v7 capability | tier / same-contract evidence | result |
+| --- | --- | --- |
+| heterogeneous cache classes | `P0`; OS class/relation/sysfs facts, M4 exact `hw.perflevelN.*` replay, bounded caller-buffered snapshot | `PASS`; M4 preserved P-core 16 MiB and E-core 4 MiB L2 where coarse getter returned 4 MiB |
+| opened owner duplicate/info | `P0`; one native duplicate/query, one-word owners, rename/unlink identity and shared-cursor tests | `PASS` |
+| blocking explicit-offset owner | `P0`; one native `pread/pwrite` or Windows offset `ReadFile/WriteFile`, caller buffer, no public cursor/lock/heap | `PASS` |
 
 | factor | same-contract normal lifecycle | pinned peer | strata | result |
 | --- | --- | --- | --- | --- |
@@ -81,12 +95,16 @@ latency.
 | --- | --- | --- |
 | cached CPU/ISA/cache facts | one bounded initialization, then O(1) reads | repeated probing or target-wide unsafe ISA |
 | live topology snapshot | O(available CPUs + reported relations), buffer-fill core | stale affinity/cpuset cache or nested O(ND) reconstruction |
+| heterogeneous cache-class snapshot | macOS O(classes); Windows/Linux O(P log P + relation/cache input), stack-first scratch | flattening unlike profiles, guessing unknown facts, stale cache or per-task discovery |
 | host-memory snapshot | O(1) bounded native/file queries | payload-sized allocation or scanning memory ranges |
 | secure entropy | O(bytes/native chunk), complete fill or error | TLS PRNG state or silent insecure fallback |
 | native thread and affinity | one native owner; snapshot O(mask words) | per-operation refcount or scheduler policy |
 | address wait / Parker | O(1), one atomic word, one corresponding native wait/wake | polling or per-wait allocation |
 | `FileHandle` short I/O | one-word owner and at most one native operation | hidden lock, heap, or second I/O |
-| exact/all I/O | O(bytes/native transfer limit), caller-owned buffer | intermediate owning copy |
+| handle `duplicate` / `info` | one native owner/query control; original and duplicate stay one word | reopen-by-path, copied cursor metadata, refcount or hidden synchronization |
+| `RandomAccessFile` short offset I/O | one-word owner and one native positional/offset operation | implicit seek+restore, payload copy, mutex/event/heap or exposed false cursor promise |
+| random-access exact/all I/O | O(bytes/native transfer limit), checked offset progression | intermediate owning buffer or unchecked wraparound |
+| `FileHandle` exact/all I/O | O(bytes/native transfer limit), caller-owned buffer | intermediate owning copy |
 | directory visitor | O(entries), zero owning entry allocation on the common path | unconditional `stat` or collected path list |
 | C++ visitor exception bridge | normal path keeps one callback per entry and no owning allocation; exceptional path closes then rethrows | exception crossing the compiled noexcept iterator or per-entry exception allocation |
 | recursive mkdir path scratch | 4096-byte stack first; at most one checked allocation for a longer input | a library-fixed 4095-byte ceiling or per-component heap allocation |
@@ -120,7 +138,13 @@ latency.
   growth; blocking lock time includes contention. Nanosecond ranking would
   measure those external semantics, not avoidable HYLE overhead. Correctness,
   native-call count, object shape and absence from old hot paths are the P0
-  evidence for v6.
+  evidence for v6/v7.
+- `FileHandle::read` and `RandomAccessFile::read_at` are different cursor contracts and are not ranked against
+  each other. POSIX `pread` and Windows synchronous offset I/O also differ in native cursor effects; the public
+  random-access owner removes cursor observability but does not claim cross-OS concurrent completion semantics.
+- Cache-class discovery is compared to the same OS facts, not to cached `cache_info()`. The M4 16 MiB/4 MiB
+  distinction is a correctness result, not a nanosecond win; caching the dynamic process view to manufacture an
+  O(1) benchmark would return stale affinity/class counts and violate the product contract.
 - W1-WIN is the engineering verdict machine. Linux and macOS correctness and
   sanitizer results are not averaged into Windows timing.
 

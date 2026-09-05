@@ -53,14 +53,14 @@ benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadli
 
 | 能力族 | C++ 公共形状 | 常用场景 | 关键合同 |
 |---|---|---|---|
-| CPU、cache 与 topology | `CpuFeature`、`CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`available_cpu_topology` | implementation-owned target matching、false-sharing 对齐、物理核/SMT/cache-domain worker placement | facts 无顺序；静态 facts 可缓存；process-available topology 动态、可失败；未知不猜测 |
+| CPU、cache 与 topology | `CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`CpuCacheClassInfo`、动态 topology/cache-class snapshot | implementation-owned target matching、false-sharing 对齐、异构 class tiling、物理核/SMT/cache-domain worker placement | 静态/coarse facts 可缓存；process-available topology 与 cache class 动态、可失败；未知不猜测 |
 | 进程启动策略 | `ProcessPriority`、`set_process_priority` | 服务/推理进程在创建 workers 前显式选择节能或性能倾向 | 五档、无 realtime；默认不调用；提升可能因权限失败；Windows 两项 control 非事务 |
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
 | Host memory | `HostMemoryInfo`、`host_memory_info` | model/KV allocation 前的 host budget | 动态 fallible snapshot；optional constraint 不用 0 冒充 unknown；不是 reservation |
-| 文件系统 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、缓存/索引控制 | UTF-8 路径；短读写与 exact/all 并存；已打开 handle 可 size/resize/preallocate/whole-file lock；显式 sync/close |
+| 文件系统 | `FileInfo`、`FileHandle`、`RandomAccessFile`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、顺序/显式 offset 读取、目录扫描、临时文件、缓存/索引控制 | UTF-8 路径；opened-object identity、duplicate alias 与 cursor 语义显式；短读写与 exact/all 并存；显式 sync/close |
 | 环境与 OS entropy | `get/set/unset_env_var`、`secure_random` | 启动配置、不可预测 seed/nonce | unset 与 empty 分开；环境写只在同步控制面；entropy 完整填满或失败 |
 | 动态库 | `DynLib` | 插件、可选系统库、用户 native backend | open/get/current 语义分开；`get` 持有 loader 引用；显式 close 可观察错误；符号签名由调用方承担 |
 
@@ -77,9 +77,14 @@ CPU API 有三类不同生命周期，不能混用：
    Container 或用户 kernel 各自由唯一实现 owner 把 facts 与其生成 TU 的完整 requirements 匹配。
    构建系统把探测 TU 独立放入关闭 IPO 的 private object target，其余 platform 源仍可接受父工程
    LTO，不能用 target-wide 关 LTO 换取探测安全。
-2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合容量提示与诊断；后者
-   不等于容器/cgroup 给当前进程的 CPU 配额。
-3. `available_cpu_count/ids/info/topology()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
+2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合通用容量提示与诊断；后者
+   不等于容器/cgroup 给当前进程的 CPU 配额。Apple 官方全局 cache key 表示最低性能 class，不能拿来
+   调整 performance-core working set。
+3. `available_cpu_cache_classes()` 是动态异构 cache-class 视图，保留 class 的 rank/kind、L1/L2/L3
+   容量、line size、共享宽度和当前 process-visible CPU/core 数。它按可信 rank 从强到弱返回，同 rank
+   但 cache profile 不同也不合并；未知字段为 0。它提供 tiling/sharding 的事实，但不选择 SIMD target
+   或 worker policy。
+4. `available_cpu_count/ids/info/topology()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
    Windows CPU Sets。返回 id 可能稀疏，topology domain 只在一次 snapshot 内有效；调用方不得用
    `[0, count)` 或旧 snapshot 推导当前 placement。
 
@@ -165,7 +170,8 @@ Linux 的 `setpriority(PRIO_PROCESS, 0, ...)` 实际作用于调用线程并由�
 - `reserve_guarded`：显式 guard page，供 fiber stack 等越界必须尽早失败的资源。
 - 裸 `vm_*`：供实现自有 owner 的基础设施；普通用户优先 RAII，避免 base/size 配错。
 
-普通顺序文件 I/O 用 Platform `FileHandle`；异步 read/write、注册文件和 completion 归 `io`。
+普通顺序文件 I/O 用 Platform `FileHandle`；caller-synchronized 的 blocking explicit-offset 访问用
+`RandomAccessFile`；并发/异步 read/write、注册文件、direct/vectored I/O 和 completion 归 `io`。
 模型权重、索引、anonymous/shared storage 的 mapping、advice、populate、residency 与 range flush
 由 `mem_vm` 的 `VirtualMapping/FileMapping/SharedMapping` 唯一公开拥有。`FileMapping::map` 消费
 Platform `FileHandle`，因此实现可直接复用 native handle，但 Platform 不再保留一份同义 owner。
@@ -250,8 +256,16 @@ factor，mapping 属于 Mem。
   native error。Windows 的 reparse follow/replace 行为由 `CopyFileW` 定义，不伪造 POSIX 等价。
 - `FileHandle::read/write` 的短传输是成功；普通完整传输使用零分配的
   `read_exact/write_all`，共享 cursor 的位置使用 `seek/position`。durability 需要显式 `sync`，
-  需要观察关闭失败时显式 `close`。并发 positional/async I/O 归 `io::File`，不在一字 owner 中
-  加隐式锁或 OVERLAPPED 状态。
+  需要观察关闭失败时显式 `close`。
+- `FileHandle::duplicate()` 创建同一 opened object 的第二个 RAII owner，而不是重新 open path。
+  duplicate 在 POSIX/Windows 都共享 native open-file cursor，并可能共享/关联锁状态；它解决 owner
+  lifetime，不提供独立 position，也不能当作两个并发 lock contender。`FileHandle::info()` 直接查询
+  opened identity，rename/unlink 后仍描述原对象；因为 handle 已经解析 link，`is_symlink` 为 false。
+- `RandomAccessFile` 是一字、move-only、caller-synchronized 的 blocking explicit-offset owner。
+  `read_at/write_at` 保留短传输，`read_exact_at/write_all_at` 完成传输并检查 offset 加法；它不公开
+  seek/position，也不接受 append。POSIX 使用 `pread/pwrite`；Windows offset I/O 可能更新底层 native
+  cursor，但该状态在此类型中不可观察。多线程并发、async、direct 或 vectored 访问仍归 `io::File`，
+  不为迎合测试在 owner 内加入 mutex、event 或 heap state。
 - `FileHandle::size/resize/preallocate` 作用于已经打开的文件对象，不重新解析 path；这在目标名字被
   原子替换时比 path API 更诚实。`resize` 只改变 logical EOF，扩容可以是 sparse；`preallocate`
   只在文件小于 minimum 时请求 backing 并增长 EOF，不缩小、不去稀疏化既有大文件，也不承诺连续
@@ -281,7 +295,7 @@ POSIX fs、VM 与 NUMA 的 generic errno code 必须来自 error 的
 SDK-specific recovery，仍由 compute owner 保留 translator；不能硬套 errno，也不能让 platform
 再次复制通用 Win32 taxonomy/message table。
 
-C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`DynLib`）均为 move-only RAII；借出的
+C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`RandomAccessFile`、`DynLib`）均为 move-only RAII；借出的
 pointer、symbol 或 native handle 不得活过 owner。需要转移回收责任时必须使用显式 release/close
 语义。Mem `FileMapping::map(FileHandle, ...)` 消费已验证的 file owner，避免第二次 path lookup；
 mapping 的 view 与 access-mode 合同由 Mem 拥有。
@@ -310,6 +324,10 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   初始化/重配控制面，不进入每 task 热路径。Windows 把 OS relation 一次索引到 process-available
   CPU，避免对每颗 CPU 重扫全部关系；Linux 从同一次 affinity view 读取 per-CPU sysfs topology，
   不为每个字段重复枚举 mask。聚合 distinct domain 使用有界 scratch，不引入树或常态 metadata。
+- cache-class snapshot 在 Windows/Linux 复用同一次 process-available CPU view，再读取 OS cache
+  relations/sysfs profile，并按 profile 排序聚合：O(P log P + relation bytes) 或 O(P*C + P log P)。
+  常见不超过 256 CPU 的主机使用 stack scratch，更大 view 允许一次可失败 allocation；macOS 直接枚举
+  `hw.nperflevels`，O(classes)。既有 `cache_info()` 仍是初始化一次、随后 O(1)。
 - host-memory snapshot 是 O(1) 个有界 OS/file 查询；`secure_random` 是 O(bytes/native chunk)，不维护
   TLS PRNG state。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
@@ -324,11 +342,13 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   不能拿来宣称普通分配性能。
 - directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询；C++ 异常桥只在
   callback 真正抛出时进入冷失败路，正常每项仍只有原有一次 callback。
-- VM、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
+- VM、DynLib、FileHandle 与 RandomAccessFile 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
 - `FileHandle::size/resize/lock/unlock` 是固定次数 OS control；`try_lock` 只把明确竞争映射为
   `false`。`preallocate` 的物理工作由 requested growth 与 filesystem 决定，阻塞 lock 的时间由
   contention 决定，二者都不能用纳秒点值冒充算法 SOTA。
+- handle duplicate/info 和一次 random-access transfer 各只做一个对应 native control；exact/all 仅在
+  native short transfer 后继续，没有 payload copy、隐式 seek、mutex 或 allocation。
 
 基准必须比较相同语义。host primary 是一次 process-available topology + host-memory snapshot，
 只与完成同一动态事实合同的 direct-OS/peer route 比较；cached scalar getter 只能作为独立 holdout。
@@ -343,7 +363,9 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 统一 API 不等于虚构相同 OS：
 
 - Windows affinity 集合的硬 mask 受 processor group 限制；跨组 placement 由上层拆 worker。
-- macOS 无公开硬 pin；priority 是 QoS 软偏好。逐 logical CPU 的 P/E 映射未知时保持 unknown。
+- macOS 无公开硬 pin；priority 是 QoS 软偏好。逐 logical CPU 的 P/E 映射未知时保持 unknown；
+  `hw.perflevelN.*` 仍可诚实提供 class-level cache facts。全局 `hw.l*cache*` 是最低性能 class，
+  `cache_info()` 因而不能替代 `available_cpu_cache_classes()` 做异构 tuning。
 - macOS 的公开 address-wait 实现依赖 14.4 起可用的 `os_sync_wait_on_address*`。构建 platform
   component 时 deployment target 必须 ≥14.4；HYLE 顶层原生 macOS 构建未显式指定时默认 14.4，
   被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
@@ -355,6 +377,9 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
   限额时，POSIX 只提升 soft `RLIMIT_MEMLOCK` 到既有 hard limit 内，Windows 调整当前进程
   working-set minimum/maximum；两者都不会在 unlock 时自动恢复。
 - POSIX permission bits 与 Windows readonly attribute 只能提供一个诚实的可移植子集。
+- POSIX `pread/pwrite` 不移动 file offset；Windows 在同步 handle 上带 `OVERLAPPED` offset 的
+  `ReadFile/WriteFile` 仍可能更新 native file pointer。`RandomAccessFile` 通过不公开 cursor 给出共同
+  语义，而不是承诺 Windows 不移动它；需要可并发 completion 的调用者使用 IO owner。
 - 环境变量的空值行为、symlink 权限和 huge-page/NUMA 能力存在系统差异，返回值与 guide 必须
   讲明，而不是静默伪装成功。
 

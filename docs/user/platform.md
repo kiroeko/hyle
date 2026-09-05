@@ -29,13 +29,15 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `AllocatorRef` / `Arena` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | 默认直接 mapping | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
-| 查询/改变已打开文件的 logical size | `FileHandle::size/resize` | 对原 path 再 `stat/resize` | 不二次解析名字；扩容可能 sparse；不移动 cursor |
+| 同步读取固定 offset 的模型/header/index | `RandomAccessFile`；完整传输用 `read_exact_at/write_all_at` | `seek+read`、默认上 coroutine IO | blocking、caller-synchronized、无公开 cursor；append 被拒绝；并发/async/direct/vectored 才选 IO |
+| 保留同一 opened object 的第二个 owner | `FileHandle::duplicate()` / `RandomAccessFile::duplicate()` | 再按 path open | 生命周期独立，但 duplicate aliases 共享 native cursor/lock state；不是独立 position |
+| 查询/改变已打开文件的 identity/size | `FileHandle::info/size/resize` | 对原 path 再 `stat/resize` | 不二次解析名字；rename/unlink 后仍指原对象；扩容可能 sparse |
 | 写大模型/cache 前保证增长空间 | `FileHandle::preallocate(minimum)` | 用 `resize` 冒充物理预留 | 小于 minimum 才预留并增长；不缩小；可能部分成功，不承诺连续 extent |
 | cooperating processes 协调整文件 writer | `lock/try_lock/unlock` | 线程 mutex、lock-file 名字或分布式锁 | shared/exclusive；portable 承诺是 advisory coordination；close 释放 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
-| 大文件随机访问或已有 handle 映射 | Mem `FileMapping::open/map` | 小文件必然 mmap | RO/RW/COW；`map` 消费 `FileHandle` owner |
+| 大文件共享页/COW/零拷贝 view 或已有 handle 映射 | Mem `FileMapping::open/map` | 把一次 fixed-offset read 当成必须 mmap | RO/RW/COW；`map` 消费 `FileHandle` owner；显式 offset blocking I/O 选 `RandomAccessFile` |
 | 映射权重/数据集的异步提示或同步 warm-up | Mem `FileMapping::prefetch` / `populate` | `open()` 自动触碰全文件 | hint 不保证 page-in；`populate` 同步触页且与范围成正比 |
 | 整段映射必须驻留以压低 fault 尾延迟 | Mem `FileMapping::lock`，检查 `Status` | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
 | loader 逐步确认要驻留的映射前缀 | `lock_prefix(target)` + `locked_size()` | 每次重新锁 whole mapping | 单调增长、页粒度；失败保留旧前缀 |
@@ -53,9 +55,10 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 自定义 kernel 的运行时 feature gate | `cpu_features().has_all(requirements)` | 把 Platform facts 当“最佳 ISA”，或只检查一个营销级 feature | kernel owner 声明其生成 TU 的完整 requirements；Platform 不替它选择 target |
 | 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | 按 package/core/SMT/NUMA/cache domain 放置 worker | `available_cpu_topology()` | 假定 CPU id 连续或 cache 独占 | 返回当前进程可用 CPU 的动态快照；未知 domain 使用 sentinel |
+| 按异构 CPU class 选择 tile/working set | `available_cpu_cache_classes()` | 在 Apple 上把 `cache_info()` 当 P-core cache | 动态 class snapshot；强 class 排前；同 rank 的不同 cache profile 不合并；未知为 0 |
 | 保存并恢复调用线程 affinity | `this_thread::affinity()` + `set_affinity()` | 猜测原 mask | buffer-fill/owning 两层；macOS 无硬 pin 时明确不支持 |
 | 查询线程可用的 SVE/SME/RVV width 或 AMX 状态 | `this_thread::isa_state()` | 只看系统级 feature bit | system capability 与 per-thread enabled state 分开 |
-| cache 容量提示 | `cache_info()` | 假定探测值永远存在 | 未知 cache 为 0；不替代 topology 的 sharing domain |
+| 只需保守的整机 cache 容量提示 | `cache_info()` | 用它做异构 class tuning | cached/O(1)，未知为 0；Apple 返回最低性能 class 的全局值 |
 
 ## C++ 的 owning 与 caller-owned 输出两层
 
@@ -77,6 +80,8 @@ platform 对变长查询提供两层，不让一种形状勉强服务所有用�
 HYLE_ASSIGN_OR_RETURN(std::string cache_dir, temp_directory());
 HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
                       available_cpu_ids(CpuOrder::kPerformanceFirst));
+HYLE_ASSIGN_OR_RETURN(std::vector<CpuCacheClassInfo> cache_classes,
+                      available_cpu_cache_classes());
 ```
 
 owning 查询是初始化/重配路径的易用入口，不应放进每 task 热路径；需要复用存储时直接用
@@ -129,12 +134,44 @@ HYLE_RETURN_IF_ERROR(file.close());
 
 read 返回 0 才是 EOF；read/write 返回短计数仍是成功。已知必须完整的普通文件传输直接使用
 `read_exact/write_all`：前者提前 EOF 返回 `DataLoss`，后者处理短写，两者都不分配。`seek` 返回
-移动后的绝对位置，`position()` 查询当前共享 cursor；同一 handle 的并发 positional I/O 不在该
-合同内，应使用 `io::File` 或独立 handle。close 不等于 durability，只有显式 `sync` 才请求落到
-OS storage boundary。
+移动后的绝对位置，`position()` 查询当前共享 cursor。只需要 caller-synchronized、blocking 的显式
+offset 读取（例如读取模型 header、tensor shard 或索引块）时，直接选择 `RandomAccessFile`，不要把
+`seek+read` 拼成会受共享 cursor 干扰的序列：
 
-同一已打开对象的控制不要退回 path API：名字可能已经被另一个进程 rename/replace，`file.size()`
-和 `file.resize(n)` 仍操作 caller 真正拥有的文件。扩大的 `resize` 只承诺 logical EOF，可能产生
+```cpp
+HYLE_ASSIGN_OR_RETURN(
+    auto weights,
+    hyle::platform::open_random_access_file(
+        "model.bin", hyle::platform::kOpenRead));
+
+std::byte header[4096]{};
+HYLE_RETURN_IF_ERROR(weights.read_exact_at(0, header));
+constexpr std::uint64_t tensor_offset = 64u * 1024u;
+std::byte tensor_chunk[4096]{};
+HYLE_ASSIGN_OR_RETURN(std::size_t got,
+                      weights.read_at(tensor_offset, tensor_chunk));
+// got 可能短于 buffer；0 是 EOF。需要完整 tensor 时用 read_exact_at。
+```
+
+`RandomAccessFile` 不公开 cursor，`read_at/write_at` 保留短传输，exact/all 版本检查 offset overflow；
+`kOpenAppend` 会在 open 时返回 `InvalidArgument`。一个 owner 及其 duplicate aliases 仍由 caller
+同步；需要多个线程同时提交、取消、direct/vectored I/O 或 completion 时使用 `io::File`。Windows
+原生 offset call 可能移动其内部 file pointer，但这个不可移植状态不会通过该类型暴露。close 不等于
+durability，只有显式 `sync` 才请求落到 OS storage boundary。
+
+同一已打开对象的控制不要退回 path API：名字可能已经被另一个进程 rename/replace，`file.info()`、
+`file.size()` 和 `file.resize(n)` 仍操作 caller 真正拥有的文件。`info()` 返回与 path `stat` 同值域的
+type/size/mtime，但 `is_symlink=false`，因为 handle 已经指向解析后的对象；unlink 后查询仍有效。
+需要把同一 opened object 的生命周期交给另一个 owner 时调用 `duplicate()`，不要按旧 path 再 open：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto mapping_owner, file.duplicate());
+HYLE_ASSIGN_OR_RETURN(auto opened_identity, mapping_owner.info());
+```
+
+两个 owner 生命周期独立，但不是两个独立 file positions：POSIX 和 Windows duplicate 都共享 native
+open-file cursor，并可能共享/关联锁状态。若 worker 需要互不影响的 cursor，应分别重新 open；若需要
+explicit offset，则优先 `RandomAccessFile`。扩大的 `resize` 只承诺 logical EOF，可能产生
 sparse holes；真正需要在写入前请求磁盘空间时用 `preallocate(minimum)`：
 
 ```cpp
@@ -164,9 +201,11 @@ shared readers 使用 `FileLockMode::kShared`；`try_lock` 的值 `false` 只表
 handle 仍是错误。portable 合同是 advisory cooperation：POSIX 进程若完全忽略协议仍可 I/O，Windows
 对冲突 I/O 更强，network filesystem 还有自身限制。它不是 in-process mutex、range lock 或可靠的
 distributed lock。同一个 handle 上的并发调用仍需 caller 同步；close/析构会让 OS 释放锁。
+duplicate aliases 不能作为两个可移植的独立 lock contender；要测试进程/owner 间竞争，应独立 open。
 
-不要假设大文件必然适合 mapping：普通顺序 I/O 先用 `FileHandle`，需要随机访问、共享页或
-COW 时改用 Mem 的 `FileMapping`。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有
+不要假设大文件必然适合 mapping：普通顺序 I/O 用 `FileHandle`，blocking explicit-offset I/O 用
+`RandomAccessFile`，需要共享页、COW 或长期 zero-copy view 时才改用 Mem 的 `FileMapping`。默认优先
+使用返回 `Result<size_t>` 的安全 read/write；只有
 profile 已确认这层成为瓶颈，才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
 需要转移时使用 `release()`。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
 visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
@@ -351,8 +390,29 @@ flags/provider 合同**导出。`hyle_target_simd(... ISA AVX2)` 同时允许 FM
 `cpu_feature_name()` 只用于诊断。AMX 的 `*Hardware` facts 仅说明 CPUID hardware capability；Linux
 线程进入 AMX kernel 前还必须通过 `this_thread::request_amx_tile_permission()` 获得本线程许可。
 
-`cache_info()` 的 L1/L2/L3 是缓存的容量提示，未知项为 0。`hardware_concurrency()` 是 OS-online
-的粗略诊断值，不遵守当前 affinity/cgroup，因此不要拿它决定 worker 数。
+`cache_info()` 的 L1/L2/L3 是 cached、O(1) 的保守容量提示，未知项为 0。异构机器不能把它当成
+每类 CPU 的 cache：Apple 的全局 `hw.l*cache*` 按系统合同表示最低性能 class。需要为 P/E 核选择
+tile、working set 或 shard 时，在初始化/重配点取得动态 class snapshot：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto classes, available_cpu_cache_classes());
+for (const CpuCacheClassInfo& cpu_class : classes) {
+  // 已知 performance_rank 从强到弱；0 表示未知。
+  // cpu_class.cache.l2、logical_cpus_per_l2 等未知字段同样为 0。
+  configure_tiling(cpu_class.performance_rank,
+                   cpu_class.cache.l2,
+                   cpu_class.logical_cpus_per_l2);
+}
+```
+
+同 rank 但容量或 sharing width 不同的 profile 会保留为不同记录。`logical_cpus/physical_cores` 是
+当前 process view 中该 class 的数量；`logical_cpus_per_l2/l3` 是 native sharing domain 宽度，可能
+包含 process affinity 之外的 CPU。macOS 能给出准确 class profile，却仍没有公开、可信的 per-logical-ID
+硬绑映射；因此 class tuning 与 worker pin 是两个问题。该查询涉及 OS topology/cache enumeration，
+不应进入每 task 热路径，也不选择 SIMD/provider winner。
+
+`hardware_concurrency()` 是 OS-online 的粗略诊断值，不遵守当前 affinity/cgroup，因此不要拿它决定
+worker 数。
 
 `available_cpu_count()` / `available_cpu_ids(...)` 才是进程视图：前者是创建 worker、
 选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
@@ -393,8 +453,9 @@ logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核�
 可信关系。`physical_cores == 0` 是“未知”，不是没有物理核。查询成本与可用 CPU/OS relation 数
 成正比，应在初始化或重配点调用，不放进每个 task。
 
-`cache_info()` 仍只是容量提示，不猜 cache sharing。NUMA/cache-aware stealing 属于 sched
-策略；platform 只提供可组合的 CPU 事实、排序、topology 与 affinity 机制。
+`cache_info()` 仍只是保守容量提示；cache-class snapshot 也只报告 OS facts，不替用户决定 tile 或
+worker policy。NUMA/cache-aware stealing 属于 sched 策略；platform 只提供可组合的 CPU 事实、排序、
+topology 与 affinity 机制。
 
 `numa_current_node()` 与 `numa_node_of_cpu(cpu)` 返回 `Result<unsigned>`。查询失败、无效 CPU、
 或 OS 不提供可信映射都不是节点 0；必须处理错误后再决定是否显式退化到 `kNumaAny`。如果 worker
@@ -475,7 +536,9 @@ convenience 的分配是调用形状本身的显式选择，完整原生诊断�
 I/O 错误。platform 的公开可恢复失败全部直接携带共享 error，不存在另一套 TLS last-error。
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker
-视图不得活过 owner；`release()` 明确把回收责任转给调用方。
+视图不得活过 owner；`release()` 明确把回收责任转给调用方。文件 `duplicate()` 只复制 native
+ownership，不复制 cursor/lock state；`RandomAccessFile` 的无 cursor 公共形状也不意味着 duplicate
+aliases 自动线程安全。
 
 `DynLib::open(path)` 加载新引用；`get(path)` 只附着到已经加载的 image，但成功后同样持有/pin
 一份 loader reference，所以不会与另一个 owner 的 unload 竞争。`symbol_as<Pointer>` 只接受指针

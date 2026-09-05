@@ -103,11 +103,11 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 
 | ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
 |---|---|---|---|
-| `PLATFORM-WATCH-01` | worker 每 physical core 一个线程、cache-domain shard、P/E/SMT 精确 placement | Platform 提供事实，`sched`/引擎拥有放置策略 | 当前 cache/topology 是 best-effort；需 engine placement trace、跨 OS 可映射 ID 和相对默认策略的 material 收益 |
+| `PLATFORM-WATCH-01` | worker 每 physical core 一个线程、cache-domain shard、P/E/SMT 精确 per-logical-ID placement | Platform 提供 class/cache/topology 事实，`sched`/引擎拥有放置策略 | class-level cache 容量/共享宽度已完成；macOS 仍无公开硬 pin 和可信 class-to-logical-ID 映射。需 engine placement trace、跨 OS 可映射 ID 和相对默认策略的 material 收益 |
 | `PLATFORM-WATCH-02` | AMX、SME/SME2 kernel 需要探测、per-thread permission/enable 和 dispatch | Platform + `simd` backend 同轮；具体 kernel dispatch 只有一个 authority | 只有 capability bool 不能完成旅程；需已准入真 kernel、真 ISA 机器和 thread enable/fallback/codegen 门 |
 | `PLATFORM-WATCH-03` | 大模型在多 socket/多 die 主机上做权重、KV 或 worker locality | Platform mechanism + mem/sched/engine policy | 当前只签单节点 API/rollback/复杂度；需多节点真机、local/remote bandwidth、migration 和 pressure workload |
 | `PLATFORM-WATCH-04` | specialized model loader 可能还需要 partial unmap 或同步 prefault/THP collapse | 连续 mapping 保持 Platform owner；洞状 tensor partition 优先 loader 私有 owner；direct/async route 归 IO | progressive prefix residency、Linux on-fault 和显式 process-limit adjustment 已由 `PLATFORM-INF-RESIDENCY-01` 提升到 `platform-v2`；剩余 partial unmap 会破坏连续 `bytes()` 且 Windows 无对等合同，prefault/collapse 仍需 load-to-ready/RSS/page-fault material 证据 |
-| `PLATFORM-WATCH-05` | direct/scatter-gather/positional async 模型读取 | `io::File` 或专用 loader | 把 OVERLAPPED/proactor 状态塞进同步 `FileHandle` 会破坏形状；需真实 loader、alignment/fallback 和 cancellation 合同 |
+| `PLATFORM-WATCH-05` | direct/scatter-gather/并发或 async positional 模型读取 | `io::File` 或专用 loader | caller-synchronized blocking explicit-offset 已由 Platform `RandomAccessFile` 完成；把 OVERLAPPED/proactor 状态塞进该同步一字 owner 会破坏形状。剩余路线需真实 loader、alignment/fallback、并发和 cancellation 合同 |
 | `PLATFORM-WATCH-06` | JIT kernel、named shared memory、process sandbox 或 plugin 隔离装载 | 分别归 compute/JIT、io protocol、tooling/process；Platform 仅提供必要 OS mechanism | executable permission、跨进程 ownership 和 loader search policy 都有独立安全边界；需具名产品旅程再单独设计 |
 | `PLATFORM-WATCH-07` | 动态 backend 需要 lazy/global/deep-bind/nodelete 或隔离 search path | Platform DynLib + backend owner | 当前固定 eager+local；需实际依赖解析/冲突复现，并先定义相对路径信任边界 |
 
@@ -115,6 +115,11 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 realtime 的显式五档 startup policy，并诚实保留 Windows process class/QoS、Linux 调用线程继承与
 macOS process nice 的作用域差异。它不承诺保存任意 native policy 后精确恢复；有该需求的宿主仍在
 自己的 OS adapter 中拥有 snapshot/restore。
+
+`PLATFORM-WATCH-09` 已由 `platform-v7-cache-class-and-random-access` 提升：Platform 现在保留异构
+cache class 的容量/共享宽度，提供 opened-object `duplicate/info` 与 caller-synchronized blocking
+explicit-offset owner。class-to-logical-ID 硬 placement、direct/vectored/concurrent/async I/O 仍分别
+留在上面的 WATCH-01/WATCH-05，不把已完成机制和仍缺策略混成一项。
 
 ## Mem
 
