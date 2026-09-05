@@ -153,10 +153,10 @@ if (current < model_bytes) {
 多进程 cache/index writer 只需合作式整文件协调时，可锁住同一个 `FileHandle` owner：
 
 ```cpp
-#include "hyle/util/scope_guard.h"
+#include <scope>
 
 HYLE_RETURN_IF_ERROR(file.lock());  // 默认 exclusive
-hyle::util::ScopeGuard unlock{[&]() noexcept { (void)file.unlock(); }};
+std::scope_exit unlock{[&]() noexcept { (void)file.unlock(); }};
 HYLE_RETURN_IF_ERROR(update_cache(file));
 ```
 
