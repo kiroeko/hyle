@@ -582,7 +582,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -592,6 +592,8 @@
       "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
       "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
       "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
+      "end_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
+      "registry_anchor_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -618,7 +620,35 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "summary": "platform v7 VERIFIED：异构 cache-class snapshot 已在不改 target policy 与旧 cached convenience 的前提下完成；三平台、三交付、直接消费、红队与 P0 结构性能七门通过。"
+      "loc": {
+        "snapshot_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+        "repository_code": 445969,
+        "self_with_tests": 114197,
+        "self_without_tests": 72413,
+        "module_implementation": 5659
+      },
+      "freeze_confirmation": {
+        "id": "platform-v7-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+        "reviewed_tree": "e585215602a3430906201edd7a10726b74498158",
+        "evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md"
+      },
+      "known_limitations": [
+        "Cache classes are dynamic process-view snapshots: unavailable OS facts are zero, macOS has no stable logical-CPU-to-performance-level mapping, and HYLE does not guess associativity or complete CPU membership.",
+        "The cached cache_info convenience remains coarse and on Apple reflects the least-performance class; scheduling, placement, tiling and SIMD or kernel policy remain consumer or owning-module responsibilities.",
+        "Platform does not own device inventory, mapping or residency, concurrent or asynchronous IO, scheduler policy, Native FFI or a stable C++ ABI.",
+        "The v7 additions have P0 structural evidence; retained host, Parker and warm-file P1 receipts cover only unchanged same-contract workloads, while Formal and end-to-end inference remain pending or unclaimed."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-owned host or cache mechanism with stable supported-platform semantics that the current facts and snapshots cannot express.",
+        "A supported OS reproduces a cache-class, native-error, ownership, correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, normal complexity, or source/static/shared delivery changes materially.",
+        "HYLE duplicates a synchronous OS mechanism that belongs here, or Platform starts absorbing Mem, IO, Sched, SIMD or kernel policy.",
+        "A mature same-contract peer proves a better complexity class, or a real inference profile proves a reproducible material normal-path regression."
+      ],
+      "summary": "platform v7 CLOSED/FROZEN：异构 cache-class snapshot 与旧 coarse facts 边界已完成；三平台、三交付、下游回放、文档/红队和 P0 结构性能全部通过。"
     },
     {
       "module": "platform_thread",
@@ -691,7 +721,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-HETERO-CACHE-RANDOM-ACCESS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
       "round_id": "platform-v7-cache-class-and-random-access",
@@ -701,6 +731,8 @@
       "baseline_commit": "984eab5da3cae715984fd3a68a8e9299e23c0045",
       "candidate_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
       "candidate_tree": "e585215602a3430906201edd7a10726b74498158",
+      "end_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
+      "registry_anchor_commit": "236a8233f12edb81f6415c49df1d5290d2f3c124",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -727,7 +759,36 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md",
-      "summary": "platform_fs v4 VERIFIED：opened-object duplicate/info 与一字同步 random-access owner 已完成；三平台、三交付、下游、红队与 P0 结构性能七门通过。"
+      "loc": {
+        "snapshot_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+        "repository_code": 445969,
+        "self_with_tests": 114197,
+        "self_without_tests": 72413,
+        "module_implementation": 2639
+      },
+      "freeze_confirmation": {
+        "id": "platform-fs-v4-freeze-2026-09-05",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-05",
+        "reviewed_commit": "e892977bd2012841b3ee8a217c33fdd7ebdad260",
+        "reviewed_tree": "e585215602a3430906201edd7a10726b74498158",
+        "evidence": "docs/implementation/tasks/platform/platform-v7-cache-class-and-random-access.md"
+      },
+      "known_limitations": [
+        "FileHandle duplication creates another owner for the same opened object but shares native cursor and lock associations; it is not an independent file position.",
+        "RandomAccessFile is caller-synchronized blocking explicit-offset IO; Windows may move an unobservable native cursor and append opens are rejected.",
+        "Concurrent, asynchronous, direct and vectored IO remain owned by IO; mapping, advice and residency remain owned by Mem, and filesystem capacity uses the standard library.",
+        "Unknown file facts and platform-native errors remain explicit Status results; handle info describes the opened object after symlink resolution and does not re-resolve a path.",
+        "The v7 additions have P0 structural evidence rather than universal syscall timing, filesystem, cross-machine, Formal or end-to-end inference SOTA claims."
+      ],
+      "reopen_triggers": [
+        "A named real consumer needs a Platform-fs-owned synchronous opened-file mechanism with stable supported-platform semantics that duplicate, metadata, cursor and offset owners cannot express.",
+        "A supported OS or filesystem reproduces an owner lifetime, duplicate, metadata identity, offset, EOF, short-transfer, overflow, error-translation, correctness or security defect.",
+        "The public API or layout, factor ownership or dependencies, native-operation complexity, or source/static/shared delivery changes materially.",
+        "HYLE duplicates this synchronous file mechanism elsewhere, or Platform-fs starts absorbing Mem mapping or IO concurrency and asynchronous policy.",
+        "A mature same-contract peer proves a better complexity class, or a real inference profile proves a reproducible material normal-path regression."
+      ],
+      "summary": "platform_fs v4 CLOSED/FROZEN：opened-object duplicate/info 与一字同步 random-access owner 已完成；三平台、三交付、下游回放、文档/红队和 P0 结构性能全部通过。"
     },
     {
       "module": "mem_reclaim",
