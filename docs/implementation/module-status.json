@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -603,11 +603,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v8 SCOPED：process CPU placement/capacity/frequency、OS-first cache、Linux cgroup memory/NUMA 与 Windows topology complexity 的自然 API、有限 FIX 和验证矩阵已冻结；待审计后实现。"
+      "summary": "platform v8 AUDITED：capacity/frequency、OS-first cache、共享 cgroup ancestor resolver、process NUMA 与 O(CPU+group) FIX 已冻结，可按有限 ledger 实现。"
     },
     {
       "module": "platform_thread",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -630,11 +630,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v8 SCOPED：只修 Rust-std-derived Parker 的 provenance/license/lock/package projection，算法、layout、memory order 与性能 bytes 均冻结不改。"
+      "summary": "platform_thread v8 AUDITED：Rust parker MIT provenance、integrated-source lock、package owner/notice 已精确冻结；算法、layout、memory order 与产品 bytes 不改。"
     },
     {
       "module": "platform_fs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-FS-EINTR-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -659,7 +659,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v8 SCOPED：可安全重启 POSIX controls 的 EINTR 边界、故障测试、三交付与同合同 warm-file P1 续签已冻结；待审计后实现。"
+      "summary": "platform_fs v8 AUDITED：restart-safe/idempotent EINTR call-site 集与 close-like/side-effect 禁区已冻结，可按共享 tested retry primitive 实现。"
     },
     {
       "module": "mem_reclaim",

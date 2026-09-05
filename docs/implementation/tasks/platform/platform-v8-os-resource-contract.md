@@ -90,8 +90,9 @@ SHA-256 `04E557C22D8D4225C9E0B3449A2E7F7C40AB2B9948E1E9AD6326A1310C44046D`。
 5. 现有稳定 `numa_nodes()` span 不改 ABI 形状；Linux 初始化时按 `get_mempolicy`、
    `/proc/self/status:Mems_allowed_list`、resolved cgroup `cpuset.mems.effective` 的可信进程视图收窄。
    查询失败时不得把 system-online nodes 宣称为 process-available；unsupported/unknown 仍诚实退化为 `{0}`。
-6. Platform-fs 只对 POSIX 明确 restart-safe、且尚未产生可观察副作用的 open/stat/fstat/ftruncate/
-   fsync/fdatasync/fcntl/opendir/readdir/closedir 等调用统一处理 `EINTR`。`close` 不重试；可能已经完成部分
+6. Platform-fs 只对 POSIX 明确 restart-safe、且尚未产生可观察副作用或重复执行幂等的
+   open/stat/lstat/fstat/fstatat/ftruncate/fsync/fdatasync/fcntl/posix_fallocate/opendir/readdir 等调用统一处理
+   `EINTR`。`close/closedir` 不重试；可能已经完成部分
    transfer 的调用继续使用既有 short-transfer contract；不吞掉非 `EINTR` native status。
 7. Parker 算法、layout、memory order 与对象 bytes 全部不改。Rust std 1.94.1 commit
    `e408947bfd200af42db322daf0fadfe7e26d3bd1` 的 origin/selected license 被登记为 integrated source，
@@ -157,3 +158,87 @@ FIX 外的新产品能力、公共仪器扩建或相邻 frozen 模块产品修�
 `REOPENED -> SCOPED` 前的 registry snapshot 为
 `C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-scoped.json`，
 SHA-256 `F2CBBFAF6040DCA6B10436A91247206948CB2D3B012FEAE31A8E5216A3D7C281`。
+
+## Audit 与冻结 FIX ledger（`AUDITED`）
+
+### 实现与依赖追踪
+
+- `cpu.h -> cpu.cc`：placement、per-CPU topology、cache class 与 feature facts 已有同一 id space；新增
+  capacity/frequency 可以复用其 buffer-fill 和 unknown 合同，但不能把动态频率塞入 cached `CpuInfo`，也
+  不能让 quota 过滤 placement ids。实现拆到普通 `cpu_resource.cc`，不扩大 LTO-off feature-probe TU；
+- 当前 x86 `detect_cache_line()/detect_cache_info()` 的预处理顺序确实先命中 CPUID，绕过 Windows/Linux
+  OS hierarchy。Windows/Linux 现有动态 cache-class 路线已经分别读取 RelationCache/sysfs；coarse facts
+  应聚合这一路而非再建第三套探测。macOS 继续直接读取官方 sysctl/perflevel；
+- Windows `query_available_cpu_ids()` 在每条 CPU Set 记录内累加前序 group；同文件 topology path 已有一次
+  prefix-map。修复固定为先构造 group prefix，再 O(1) 映射每条记录；不改变公开 CPU id space；
+- `host_memory.cc`、`cpu_resource.cc` 与 `numa.cc` 需要同一 cgroup resolver。固定一个 Platform-private
+  `linux_cgroup_internal.{h,cc}`：逐行解析 `/proc/self/cgroup` 和 `/proc/self/mountinfo`，只接受 exact
+  controller token，解码 mountinfo 的 `\\040/\\011/\\012/\\134`，拒绝 `..`/截断/越界，保存 leaf 与
+  visible mount root，并提供不会越过 mount root 的 parent walk。生产路径不依赖 libnuma/hwloc/容器库；
+- cgroup memory 每层配对读取 hard limit/current；CPU quota 比较用整数有理数而非浮点，选择最严格祖先；
+  cpuset 优先 syscall 与 `/proc/self/status`，再使用 resolver 的 effective/继承值。解析器用纯 fixture
+  覆盖 v1/v2、combined controllers、non-default mount、namespace root、escaped mount、ancestor、unlimited、
+  malformed 与 traversal；
+- `string_buf`/`shared_pool` 的 shard 是 CPU/cache placement partition，继续使用 placement count 合同合理；
+  Sched affinity 使用 ids 也正确。未来推理 engine 的默认 worker 数应读取 `process_cpu_capacity()`；本轮不
+  伪造下游修改。Mem/Mem-vm 只需回放 cgroup/NUMA 行为，无 public source change；
+- Platform-fs inventory 显示 read/write/pread/pwrite/flock/readlink 与 recursive readdir 已重试，但
+  open/stat/lstat/fstat/fstatat/ftruncate/fsync/fdatasync/ordinary readdir 等不一致。固定一个 private generic
+  `retry_eintr` helper，使 synthetic lambda 能精确证明 retry count；现有每个 call site 显式使用该 helper。
+  `close/closedir` 的结果后 descriptor/DIR 状态不确定，`rename/unlink/link/symlink/mkstemp` 可能已产生外部
+  副作用，均明确 `KEEP` 为单次调用；
+- `wait.cc` Parker 状态机与 Rust std 1.94.1 的 `EMPTY/PARKED/NOTIFIED`、fetch-sub、CAS、swap 和
+  release/acquire 合同同源，HYLE 只增加 bool timeout 结果和三个 OS wait backend。本轮选择 Rust 的 MIT
+  option；central lock 固定 repository `rust-lang/rust`、revision
+  `e408947bfd200af42db322daf0fadfe7e26d3bd1`、tree
+  `b0ddb99197bbc990f1abf224afe329f4d3197e08` 与原始 futex source SHA-256
+  `13617a66b7684288ef3c81e582d17f83948d3016f8210b857cfe15b12fd7ce86`。adapted HYLE content hash 在
+  candidate 上由现有 integrated-source 计算器签署；
+- package owner 固定为 `platform_thread`，安装独立 `rust-parker-LICENSE-MIT` 并由锁哈希/registry
+  multiset、source/static/shared package smoke 检查；`THIRD_PARTY_NOTICES.md` 与 `wait.cc` 保留 origin、
+  revision、selected license，不把 HYLE 的 backend 代码误称为 Rust 原样文件；
+- Windows frequency 需要 `PowrProf` 私有系统链接；static export 的 link-only 系统依赖和 shared library
+  都由三交付验证。其余 component graph 不变：base 公开 Core/Error，Thread/FS 公开 Core/Error/Time 并
+  私有 base；
+- `secure_random()` 的 NTSTATUS 当前被丢为纯文本；不重开 Error enum，而用已冻结
+  `NativeErrorDomain::Unknown` 保存 signed 32-bit native value与 canonical `Unavailable`。POSIX `dlerror`
+  只有 loader text，无可移植数值域，保持现状。
+
+### Capability / disposition ledger
+
+| ID | baseline | audited disposition |
+|---|---|---|
+| `P8-CG-01` | hard-coded leaf-only mount | `FIX`：共享 resolver + bounded ancestor walk；三 consumer 不各写一套 |
+| `P8-CPU-01` | placement 被误作文档 worker count、无 quota | `FIX`：独立 capacity value；placement API/layout 不变 |
+| `P8-CPU-02` | 无 OS frequency surface | `FIX`：动态 per-id snapshot；unknown=0；Mac 不猜 |
+| `P8-CPU-03` | x86 cache 绕 OS；Windows O(CPU×group) | `FIX`：复用 OS class truth；prefix map；cached warm O(1) |
+| `P8-NUMA-01` | syscall fail 后宣称 system online | `FIX`：status/cgroup process view；未知 `{0}` 且 native=false |
+| `P8-FS-01` | restart-safe calls 不一致 | `FIX`：同一 tested retry primitive + audited call-site set；close-like/side-effect calls不重试 |
+| `P8-TH-01` | source comment 有 origin，交付链无登记 | `FIX`：MIT text、integrated lock、package owner/notice/hash；algorithm bytes frozen |
+| `P8-API-01` | VM 注释错误、NTSTATUS 丢失 | `FIX`：recoverable contract + machine-readable Unknown native code |
+| `P8-T01/B01/P01/R01/D01` | 新合同无证据 | `FIX`：严格执行 scope 中预声明矩阵和同合同 P1；不扩建仪器 |
+| scheduler policy、pressure budget、device inventory、async/direct IO | 相邻 owner | `ROUTED`：不以“基础库尽量多”破坏职责边界 |
+| cache associativity、Apple Silicon per-core Hz/id mapping | public OS facts不足 | `UNAVAILABLE`：0/absent，不建型号表或微基准猜测 |
+
+### API、性能与红队冻结结论
+
+- `ProcessCpuCapacity` 是 value snapshot，不是 scheduler；quota rational 保留原始最严格 hard contract，
+  `parallelism_ceiling()` O(1)、无浮点/溢出。`available_cpu_frequencies` 遵循既有 null=count/truncation
+  buffer-fill；查询失败的单个频率字段为 0，placement 查询整体失败才返回 Status；
+- coarse cache 的 conservative rule 为每个 level 对所有已知 class 取最小非零 capacity，line size 取最大
+  可信值；没有任何已知值则 capacity 0/line 64。它不代表每核精确值，不能替代 class snapshot；
+- cgroup 输入规模有硬路径/行长/node 上限，所有乘法、ratio、Hz 与 path join checked；symlink 与 mount
+  race 只能让 optional constraint unknown，不能越过 mount root或把未验证值当硬上限；
+- FS retry 不改变成功调用的 syscall 数；只有 `EINTR` 才重试，错误转换使用最后一次 errno。synthetic
+  fault route 与正常 warm-file timing 分离；Parker product bytes 不变，避免为 provenance 重跑无关微计时；
+- direct peer 必须构造 HYLE 同样的 host fields与 job/cgroup semantics；peer 若省略 error、ancestor、allocation
+  或 process limit，只能是 diagnostic/natural-route，不得生成 non-inferiority verdict；
+- 没有固定 benchmark N、地址、顺序、peer、fast/slow 开关、常态 metadata 或额外 dispatch。公开 shape 来自
+  系统资源 consumer；复杂度优化不改变布局；unknown 与 error 不被“便于 benchmark”抹掉。
+
+审计没有发现需要扩大 scope 的相邻产品缺口；上述 FIX 集现已冻结，允许开始产品实现。若实现证明 API
+语义在任一 supported OS 不成立、需要修改 frozen 相邻模块或 close-like retry，则退回本阶段重新裁决。
+
+`SCOPED -> AUDITED` 前的 registry snapshot 为
+`C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-audited.json`，
+SHA-256 `9FEA589026C3DA8544927EE4CBECC279572FF833F2AFA85BB9AA01F9259A603D`。
