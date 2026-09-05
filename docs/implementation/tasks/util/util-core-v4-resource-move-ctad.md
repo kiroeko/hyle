@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态：`CANDIDATE`。最终 immutable product commit/tree 已形成；只重放本卡既定门，不增加能力或
-> 修改 benchmark。
+> 当前状态：`VERIFIED`。最终 immutable product commit/tree 和全部既定工程门已通过；下一步只签署
+> terminal receipt 与 registry anchor，不增加能力或修改 benchmark。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -180,3 +180,48 @@ SHA-256 `DD57F5A64B0451381002E8436DCC969DA82876645B7FE6CDB3DCE745661B9BF2`。
 进入最终 `CANDIDATE` 的前态 registry 快照为
 `C:\public\project-hyle\_validation\registry-before-util-core-v4-final-candidate-439b8915.json`，SHA-256
 `CAA1791CD8A7F8D0802D2EDDEA4BE0D47682C5B8A539CF33659163AABA215F71`。
+
+## 最终候选验证与独立红队
+
+- W1-WIN：clean exact source、MSVC 19.50、Release/WERROR，factor 20/20；Util source embedding、搬迁后
+  shared/static installed consumer 全部通过；
+- W1-WSL：clean exact Git source、GCC 14.2 + UBSan/WERROR，factor 19/19；Util source/shared/static
+  consumer 全部通过。系统默认 GCC 13 被项目最低 GCC 14 合同正确拒绝，不记为候选失败；
+- M1-MAC：exact archive、AppleClang 21 + UBSan/WERROR，18/18 applicable；Git-only LOC probe 因 archive
+  无 `.git` 正确跳过；Util source/shared/static consumer 全部通过；
+- build/package：中央 component contract `PASS`；`util_core -> PUBLIC core` 的 header-only factor、Util
+  product 聚合、source/static/shared 交付和无 Native FFI/C ABI 边界均未漂移；
+- dependency/reuse：全库没有需要迁移的新 v4 语法 consumer。Mem/Sched 对既有 Ref/SpinLock 的显式
+  `util_core` edge 正确；Math/Time/Platform/Obs 的相邻 guard 不是完整同合同 owner，为隐藏单条表达式而
+  新增依赖既不降低复杂度也不改善 codegen，故不机械替换；
+- interface red team：公开 API 不含 benchmark 长度、地址、执行顺序、peer 或“fast mode”；move-or-copy
+  只由类型异常保证编译期选择，member CTAD 不猜重载/ref-qualified/volatile signature。新对象字段、
+  allocation、动态 dispatch 和 runtime route 均为零；
+- adversarial red team：第一候选被 throwing sentinel-result conversion 击中并退回修复；第二候选的
+  匿名 friend probe 被 AppleClang WERROR 击中并等价修正。最终候选没有未决 correctness、lifetime、
+  exception、portability 或易用性 finding；
+- P0：UniqueResource/FunctionRef 均保持 O(1)、零分配，FunctionRef 两字布局和一次 erased invocation
+  不变；三编译器 codegen probe 通过，详见
+  [`benchmarks-util-core-v4`](../../evidence/performance/benchmarks-util-core-v4.md)；
+- P1：固定 `util-core-function-ref-p1-v1`、同一 Abseil revision、三 workload、四 strata、n=15 和 5%
+  margin 的 qualification 为 `QUALIFIED`。const/free 为 `PARITY`，bound-member 为约 1.245--1.264×
+  `WIN`，三项 non-inferiority gate 全部 `PASS`；未为结果修改 benchmark 或 public shape；
+- exact candidate LOC：全库 449,005；自实现不含测试 73,155；Util-core 实现 1,549 行。`self_with_tests`
+  仅为 registry schema 保留 115,561，不作为面向 owner 的常规统计。
+
+进入 `VERIFIED` 的前态 registry 快照为
+`C:\public\project-hyle\_validation\registry-before-util-core-v4-verified-b1377ec4.json`，SHA-256
+`148A5D8EA5893327FF93C16F12E80EB2C5E6353063ACC0F1061B6FCB91D91DB6`。
+
+### Gate verdict
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | `PASS` | 六项冻结 FIX 全部关闭；Core-only factor 与产品边界不变 |
+| correctness | `PASS` | 三平台、UBSan、no-exceptions、敌意 failure/cleanup probes |
+| delivery | `PASS` | source + relocated shared/static × 三平台；component contract |
+| usability / docs | `PASS` | move-only deleter 与无歧义 member CTAD 可自然调用；选择/陷阱已写入 user guide |
+| red team | `PASS` | 两次候选纠正后无 material finding |
+| engineering performance | `PASS` | P0 结构门 + 固定同合同 P1 三项 5% non-inferiority |
+
+没有工程 blocker；Formal 仍独立 `PENDING`，不阻止本产品轮从 `CANDIDATE` 进入 `VERIFIED`。

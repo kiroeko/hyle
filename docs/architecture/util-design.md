@@ -6,7 +6,7 @@
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
 
 > 用户当前选型见 [user/util](../user/util.md)，current util-core 证据见
-> [util-core v3 performance evidence](../implementation/evidence/performance/benchmarks-util-core-v3.md)，
+> [util-core v4 performance evidence](../implementation/evidence/performance/benchmarks-util-core-v4.md)，
 > runtime/历史证据见 [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
 > [util tasks](../implementation/tasks/util/)。
 
@@ -127,7 +127,7 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
   这些旧能力的身份、点值与 freshness 只见
   [`benchmarks-util-core-v2`](../implementation/evidence/performance/benchmarks-util-core-v2.md)。v3 新增
   FunctionRef qualifier/nontype 路线的当前同合同结果见
-  [`benchmarks-util-core-v3`](../implementation/evidence/performance/benchmarks-util-core-v3.md)。
+  [`benchmarks-util-core-v4`](../implementation/evidence/performance/benchmarks-util-core-v4.md)。
 - 两种 demangle 形状都是 O(input+output)，一次 public 调用只执行一次平台 demangler（Windows 因
   DbgHelp 不返回 required size，超长 decorated symbol 可能做有界容量重试）。owning shape 另有一个
   caller-owned string，buffer shape 不增加 API-owned storage。

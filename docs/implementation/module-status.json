@@ -148,7 +148,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
       "round_id": "util-core-v4-resource-move-ctad",
@@ -165,17 +165,49 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v4.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "Util-core v4 CANDIDATE：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已形成最终候选；两字 FunctionRef、对象 layout、复杂度、Core-only 边界和固定性能合同不变。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "closure_evidence": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md",
+      "loc": {
+        "snapshot_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
+        "repository_code": 449005,
+        "self_with_tests": 115561,
+        "self_without_tests": 73155,
+        "module_implementation": 1549
+      },
+      "known_limitations": [
+        "FunctionRef remains a synchronous non-owning call-only view; storage, return and asynchronous use require an owning callable or an owner-defined function-plus-context shape.",
+        "If a resource is only potentially-throwing copyable and its deleter is move-only, failed owner move cleans the token through the transferred deleter and disarms the source; it prevents leak and double release but does not preserve source ownership after the exception.",
+        "UniqueResource is a narrow fallback for value-like native tokens, not a replacement for typed Platform, Mem or IO owners and not a general error channel.",
+        "The P1 claim covers three frozen W1-WIN FunctionRef consumer workloads against locked Abseil; cross-platform timing, all utilities or signatures, end-to-end inference, universal SOTA and Formal are not claimed."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a Util-core correctness, exception-safety, ownership, lifetime, concurrency, missing-foundation or natural C++ API-usability defect.",
+        "The public API, layout, algorithm, complexity, Core-only dependency, selected-header ownership or source, static or shared delivery shape changes.",
+        "A supported compiler or target invalidates conditional-noexcept, move-or-copy transfer, member-function deduction, two-word FunctionRef, no-exceptions or public-header code generation.",
+        "A frozen downstream owner proves an existing helper is being used with the wrong semantic contract, or a complete same-contract duplicate should be replaced through an explicit dependency edge.",
+        "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage beyond the frozen 5% margin.",
+        "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity."
+      ],
+      "summary": "Util-core v4 VERIFIED：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已完成三平台正确性、三种 C++ 交付、文档/易用性、红队、中央组件合同及固定 FunctionRef 5% P1 工程门验证。"
     },
     {
       "module": "error",
