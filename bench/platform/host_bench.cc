@@ -99,7 +99,7 @@ struct RawBuffers {
   StackFirstBuffer<ULONG, 256> default_cpu_sets;
   StackFirstBuffer<std::byte, 64 * 1024> cpu_sets;
   StackFirstBuffer<std::byte, 64 * 1024> relations;
-  StackFirstBuffer<unsigned char, 4096> selected;
+  StackFirstBuffer<std::uint16_t, 4096> selected;
 
   RawBuffers() {
     const DWORD logical = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
@@ -196,7 +196,7 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
             group_begin[set.Group] + set.LogicalProcessorIndex;
         if (flat < buffers.selected.size()) {
           buffers.selected[flat] =
-              static_cast<unsigned char>(set.EfficiencyClass + 1u);
+              static_cast<std::uint16_t>(set.EfficiencyClass) + 1u;
           maximum_rank = (std::max)(
               maximum_rank,
               static_cast<unsigned>(set.EfficiencyClass) + 1u);
@@ -208,7 +208,7 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
   }
   require(out.topology.logical_cpus != 0, "usable CPU set");
 
-  for (unsigned char rank : buffers.selected) {
+  for (std::uint16_t rank : buffers.selected) {
     if (rank == 0) continue;
     if (rank == maximum_rank) ++out.topology.performance_cpus;
     else ++out.topology.efficiency_cpus;

@@ -34,7 +34,7 @@
       "tier": "replay",
       "gate_role": "product",
       "consumer_key": "inference/host/planning-snapshot",
-      "provenance": {"path": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md", "sha256": "664ad1c653d02a19bde33bc3055a263dc8f7b6241c84f7b8e0c7789956a9ffcb"},
+      "provenance": {"path": "docs/implementation/tasks/platform/platform-v3-capability-factorization.md", "sha256": "48c06e3b49c92f626bfde51bea07db758651d830f9ac6d1d39c7b238c9f21161"},
       "ownership_topology": {
         "candidate": "Two fallible one-shot HYLE queries return process-visible topology and documented Windows physical/commit availability in owned value records",
         "peer": "One direct Win32 adapter performs the same discovery and returns the same value fields",

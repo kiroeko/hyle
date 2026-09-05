@@ -281,14 +281,40 @@ Rust 上游校验归档使用 `rustc 1.94.1` 对应 archive
   buffer-fill；查询失败的单个频率字段为 0，placement 查询整体失败才返回 Status；
 - coarse cache 的 conservative rule 为每个 level 对所有已知 class 取最小非零 capacity，line size 取最大
   可信值；没有任何已知值则 capacity 0/line 64。它不代表每核精确值，不能替代 class snapshot；
-- cgroup 输入规模有硬路径/行长/node 上限，所有乘法、ratio、Hz 与 path join checked；symlink 与 mount
-  race 只能让 optional constraint unknown，不能越过 mount root或把未验证值当硬上限；
+- cgroup 输入规模有硬路径/行长/node 上限，所有乘法、ratio、Hz 与 path join checked；
+  resolver 的字符串路径运算不会越过 mount root，OS 视图/文件在查询间变化则让 optional
+  constraint unknown，不把未完整验证值当硬上限；
 - FS retry 不改变成功调用的 syscall 数；只有 `EINTR` 才重试，错误转换使用最后一次 errno。synthetic
   fault route 与正常 warm-file timing 分离；Parker product bytes 不变，避免为 provenance 重跑无关微计时；
 - direct peer 必须构造 HYLE 同样的 host fields与 cgroup/unknown semantics；peer 若省略 error、ancestor、allocation
   或 process limit，只能是 diagnostic/natural-route，不得生成 non-inferiority verdict；
 - 没有固定 benchmark N、地址、顺序、peer、fast/slow 开关、常态 metadata 或额外 dispatch。公开 shape 来自
   系统资源 consumer；复杂度优化不改变布局；unknown 与 error 不被“便于 benchmark”抹掉。
+
+### 实现期 P1 诊断与有限修复
+
+- Windows 首次 v2 host diagnostic（产品 `6b69d8d1`，15 独立进程）的 A/A、10%
+  known-delta、timer-floor 与 placement 控制通过；5% known-delta 的 peer-first 置信区间
+  越界，所以该 bundle 只是 diagnostic，不是资格证据。四个产品 strata 却一致显示
+  HYLE 约慢 7.8--8.4%，不能当计时器幽灵忽略；
+- same-contract 调用追踪先发现 HYLE aggregate API 物化 `ids+ranks` 后再转
+  topology visibility table，raw aggregate 直接在 CPU-set stream 上聚合。去除这段可避免的 O(P)
+  memory traffic 后，本地同形回放仍慢约 7--11%，因此没有把一次合理优化冒充
+  根因修复；
+- 唯一一次 phase profile 将差距定位为 processor-group prefix：CPU-set visitor 内已调用
+  `GetActiveProcessorGroupCount/GetActiveProcessorCount` 构造该快照，topology relation 段又做
+  一次。raw 路线复用了第一份 prefix。重复段约 1,760 cycles，与实测约 0.6 us
+  差距一致；这也是两次 OS snapshot 可能不一致的 correctness 问题；
+- 有限修复把 Windows CPU-set 解析收敛为一个 template private visitor：
+  `available_cpu_ids/info` 仍写 caller buffer，`available_cpu_topology` 则直接聚合可见 mask
+  和 rank counts，不产生中间 ids/ranks；visitor 同时回传本次快照的 group prefix，
+  relation 段不再重读 OS。修复后三次本地完整回放为约 0.0--0.8% 差异；正式结论仍只由
+  新合同独立进程资格证据给出。同时把 malformed CPU-set record 从“返回有效前缀”
+  修正为 `DataLoss`，并保证 native `EfficiencyClass=255` 的 `+1` rank 不在 byte 中
+  溢出。公开 API、OS 调用数、输入与结果合同不变。
+- v2 合同原误用历史 task 的旧整文件 hash，会在采样后才将真实消费证据排除。
+  候选化前已把 host/fs 各自更正为当前历史文件的实际 SHA-256，不使用
+  renewal 绕过新合同的 pre-sampling gate。
 
 审计没有发现需要扩大 scope 的相邻产品缺口；上述 FIX 集现已冻结，允许开始产品实现。若实现证明 API
 语义在任一 supported OS 不成立、需要修改 frozen 相邻模块或 close-like retry，则退回本阶段重新裁决。

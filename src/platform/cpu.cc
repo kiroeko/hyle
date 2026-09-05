@@ -25,6 +25,7 @@
 #include <limits>
 #include <new>
 
+#include "hyle/core/compiler.h"
 #include "hyle/platform/numa.h"
 
 #if HYLE_OS_WINDOWS
@@ -506,18 +507,52 @@ Status cpu_query_status(const char* operation, unsigned long code) noexcept {
 }
 #endif
 
-Result<std::size_t> query_available_cpu_ids(
-    unsigned* dst, std::size_t cap,
-    unsigned* performance_ranks = nullptr) noexcept {
-  if (dst == nullptr) cap = 0;
 #if HYLE_OS_WINDOWS
+struct WindowsCpuOutputVisitor {
+  unsigned* ids = nullptr;
+  unsigned* ranks = nullptr;
+  std::size_t capacity = 0;
+
+  HYLE_FORCE_INLINE void operator()(std::size_t index, unsigned flat,
+                                    unsigned rank) const noexcept {
+    if (index >= capacity) return;
+    ids[index] = flat;
+    if (ranks != nullptr) ranks[index] = rank;
+  }
+};
+
+struct WindowsTopologyVisitor {
+  unsigned char* selected = nullptr;
+  unsigned* rank_counts = nullptr;
+  std::size_t capacity = 0;
+  unsigned* maximum_id = nullptr;
+  unsigned* maximum_rank = nullptr;
+  bool* expanded = nullptr;
+
+  HYLE_FORCE_INLINE void operator()(std::size_t, unsigned flat,
+                                    unsigned rank) const noexcept {
+    *maximum_id = (std::max)(*maximum_id, flat);
+    *maximum_rank = (std::max)(*maximum_rank, rank);
+    if (flat < capacity) {
+      selected[flat] = 1;
+    } else {
+      *expanded = true;
+    }
+    ++rank_counts[rank];
+  }
+};
+
+template <class Visitor>
+Result<std::size_t> visit_available_windows_cpus(
+    Visitor&& visitor, WORD* output_group_count = nullptr,
+    unsigned* output_group_begin = nullptr) noexcept {
   HANDLE process = ::GetCurrentProcess();
 
   // A process may explicitly select CPU Set ids. Empty means no CPU-Set
   // restriction; exclusive sets allocated to another process remain unusable.
   ULONG default_count = 0;
   ::SetLastError(ERROR_SUCCESS);
-  BOOL defaults_ok =
+  const BOOL defaults_ok =
       ::GetProcessDefaultCpuSets(process, nullptr, 0, &default_count);
   DWORD code = defaults_ok ? ERROR_SUCCESS : ::GetLastError();
   if (!defaults_ok && code != ERROR_INSUFFICIENT_BUFFER) {
@@ -528,7 +563,7 @@ Result<std::size_t> query_available_cpu_ids(
   ULONG* default_ids = nullptr;
   bool default_ids_heap = false;
   if (default_count != 0) {
-    if (default_count <= sizeof(default_stack) / sizeof(default_stack[0])) {
+    if (default_count <= std::size(default_stack)) {
       default_ids = default_stack;
     } else {
       default_ids = new (std::nothrow) ULONG[default_count];
@@ -548,9 +583,7 @@ Result<std::size_t> query_available_cpu_ids(
     }
     default_count = actual;
     // CPU-set ids are opaque ULONG values and need not be dense. Sorting the
-    // caller-owned snapshot keeps membership O(log D) without a max-id bitmap;
-    // the previous nested scan was O(system_sets * default_sets), quadratic on
-    // large explicitly partitioned Windows hosts.
+    // caller-owned snapshot keeps membership O(log D) without a max-id bitmap.
     std::sort(default_ids, default_ids + default_count);
   }
 
@@ -563,19 +596,15 @@ Result<std::size_t> query_available_cpu_ids(
         cpu_query_status("GetSystemCpuSetInformation(size)", code));
   }
   alignas(SYSTEM_CPU_SET_INFORMATION) unsigned char storage_stack[4096];
-  unsigned char* storage = nullptr;
-  bool storage_heap = false;
-  if (bytes <= sizeof(storage_stack)) {
-    storage = storage_stack;
-  } else {
-    storage = new (std::nothrow) unsigned char[bytes];
-    storage_heap = true;
-    if (storage == nullptr) {
-      if (default_ids_heap) delete[] default_ids;
-      return std::unexpected(Status::ResourceExhausted(
-          "available CPU ids: CPU-set allocation failed"));
-    }
+  unsigned char* storage = bytes <= sizeof(storage_stack)
+                               ? storage_stack
+                               : new (std::nothrow) unsigned char[bytes];
+  if (storage == nullptr) {
+    if (default_ids_heap) delete[] default_ids;
+    return std::unexpected(Status::ResourceExhausted(
+        "available CPU ids: CPU-set allocation failed"));
   }
+  const bool storage_heap = storage != storage_stack;
   if (!::GetSystemCpuSetInformation(
           reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
           &bytes, process, 0)) {
@@ -598,15 +627,25 @@ Result<std::size_t> query_available_cpu_ids(
     group_begin[group + 1u] =
         group_begin[group] + ::GetActiveProcessorCount(group);
   }
-  DWORD_PTR process_mask = 0, system_mask = 0;
+  if (output_group_count != nullptr) *output_group_count = groups;
+  if (output_group_begin != nullptr) {
+    std::copy(group_begin, group_begin + groups + 1u, output_group_begin);
+  }
+  DWORD_PTR process_mask = 0;
+  DWORD_PTR system_mask = 0;
   const bool use_affinity_mask =
       groups == 1 &&
       ::GetProcessAffinityMask(process, &process_mask, &system_mask) != 0;
   std::size_t count = 0;
   for (DWORD offset = 0; offset < bytes;) {
-    auto* info =
-        reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
-    if (info->Size == 0 || info->Size > bytes - offset) break;
+    const auto* info =
+        reinterpret_cast<const SYSTEM_CPU_SET_INFORMATION*>(storage + offset);
+    if (info->Size == 0 || info->Size > bytes - offset) {
+      if (storage_heap) delete[] storage;
+      if (default_ids_heap) delete[] default_ids;
+      return std::unexpected(
+          Status::DataLoss("available CPU-set record is malformed"));
+    }
     if (info->Type == CpuSetInformation) {
       const auto& set = info->CpuSet;
       const bool valid_group = set.Group < groups;
@@ -618,23 +657,17 @@ Result<std::size_t> query_available_cpu_ids(
           default_count == 0 ||
           std::binary_search(default_ids, default_ids + default_count, set.Id);
       if (valid_index && selected &&
-          (!set.Allocated || set.AllocatedToTargetProcess)) {
-        if (!use_affinity_mask ||
-            (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&
-             (process_mask & (DWORD_PTR{1} << set.LogicalProcessorIndex)))) {
-          const unsigned flat =
-              group_begin[set.Group] + set.LogicalProcessorIndex;
-          if (count < cap) {
-            dst[count] = flat;
-            if (performance_ranks != nullptr) {
-              // Zero is the portable "unknown" sentinel, so shift Windows'
-              // native 0-based EfficiencyClass into a positive rank.
-              performance_ranks[count] =
-                  static_cast<unsigned>(set.EfficiencyClass) + 1u;
-            }
-          }
-          ++count;
-        }
+          (!set.Allocated || set.AllocatedToTargetProcess) &&
+          (!use_affinity_mask ||
+           (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&
+            (process_mask &
+             (DWORD_PTR{1} << set.LogicalProcessorIndex)) != 0))) {
+        const unsigned flat =
+            group_begin[set.Group] + set.LogicalProcessorIndex;
+        // Zero is the portable unknown sentinel, hence the positive shift.
+        visitor(count, flat,
+                static_cast<unsigned>(set.EfficiencyClass) + 1u);
+        ++count;
       }
     }
     offset += info->Size;
@@ -646,6 +679,16 @@ Result<std::size_t> query_available_cpu_ids(
         "available CPU ids: process has no usable CPU set"));
   }
   return count;
+}
+#endif
+
+Result<std::size_t> query_available_cpu_ids(
+    unsigned* dst, std::size_t cap,
+    unsigned* performance_ranks = nullptr) noexcept {
+  if (dst == nullptr) cap = 0;
+#if HYLE_OS_WINDOWS
+  return visit_available_windows_cpus(
+      WindowsCpuOutputVisitor{dst, performance_ranks, cap});
 #elif HYLE_OS_LINUX
   (void)performance_ranks;
   auto copy_set = [dst, cap](const cpu_set_t* set, std::size_t bytes,
@@ -1145,86 +1188,58 @@ unsigned count_distinct(const CpuInfo* info, std::size_t count,
 
 #if HYLE_OS_WINDOWS
 Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
-  std::size_t capacity = hardware_concurrency();
-  unsigned stack[512];
-  unsigned* storage = nullptr;
+  // Windows supports at most 64 processor groups of 64 logical processors.
+  // Aggregate the CPU-set stream directly into a flat visibility/rank table;
+  // materializing ids+ranks and then copying them into that table is needless
+  // O(P) work for this value-only API.
+  constexpr std::size_t kMaximumFlatCpus = 64u * 64u;
+  unsigned char selected[kMaximumFlatCpus];
+  unsigned rank_counts[257];
+  static_assert((std::numeric_limits<BYTE>::max)() + 1u <
+                std::size(rank_counts));
+  std::size_t selected_capacity = hardware_concurrency();
+  if (selected_capacity == 0 || selected_capacity > std::size(selected)) {
+    return std::unexpected(
+        Status::OutOfRange("available CPU count exceeds topology limits"));
+  }
+
   Result<std::size_t> filled = std::unexpected(
       Status::Unavailable("CPU topology query did not run"));
+  unsigned maximum_id = 0;
+  unsigned maximum_rank = 0;
+  bool expanded = false;
+  WORD group_count = 0;
+  unsigned group_begin[65]{};
   for (unsigned attempt = 0; attempt != 4; ++attempt) {
-    if (capacity > (std::numeric_limits<std::size_t>::max)() /
-                       (2u * sizeof(unsigned))) {
+    std::memset(selected, 0, selected_capacity);
+    std::fill(rank_counts, rank_counts + std::size(rank_counts), 0u);
+    maximum_id = 0;
+    maximum_rank = 0;
+    expanded = false;
+    filled = visit_available_windows_cpus(
+        WindowsTopologyVisitor{selected, rank_counts, selected_capacity,
+                               &maximum_id, &maximum_rank, &expanded},
+        &group_count, group_begin);
+    if (!filled) return std::unexpected(std::move(filled).error());
+    if (!expanded) break;
+    selected_capacity = static_cast<std::size_t>(maximum_id) + 1u;
+    if (selected_capacity > std::size(selected)) {
       return std::unexpected(
-          Status::OutOfRange("available CPU count exceeds topology limits"));
+          Status::OutOfRange("available CPU id exceeds topology limits"));
     }
-    storage = capacity <= 256
-                  ? stack
-                  : new (std::nothrow) unsigned[capacity * 2u];
-    if (storage == nullptr) {
-      return std::unexpected(
-          Status::ResourceExhausted("CPU topology allocation failed"));
-    }
-    unsigned* ranks = storage + capacity;
-    std::memset(ranks, 0, capacity * sizeof(*ranks));
-    filled = query_available_cpu_ids(storage, capacity, ranks);
-    if (!filled) {
-      if (storage != stack) delete[] storage;
-      return std::unexpected(std::move(filled).error());
-    }
-    if (*filled <= capacity) break;
-    if (storage != stack) delete[] storage;
-    storage = nullptr;
-    capacity = *filled;
   }
-  if (storage == nullptr || *filled > capacity) {
-    if (storage != nullptr && storage != stack) delete[] storage;
+  if (expanded) {
     return std::unexpected(Status::Unavailable(
         "available CPU set expanded repeatedly during topology query"));
   }
-
-  const std::size_t count = *filled;
-  const unsigned* ids = storage;
-  const unsigned* ranks = storage + capacity;
-  unsigned maximum_id = 0;
-  unsigned maximum_rank = 0;
-  for (std::size_t i = 0; i < count; ++i) {
-    maximum_id = (std::max)(maximum_id, ids[i]);
-    maximum_rank = (std::max)(maximum_rank, ranks[i]);
-  }
-  const std::size_t selected_count = static_cast<std::size_t>(maximum_id) + 1u;
-  unsigned char selected_stack[4096];
-  unsigned char* selected =
-      selected_count <= std::size(selected_stack)
-          ? selected_stack
-          : new (std::nothrow) unsigned char[selected_count];
-  if (selected == nullptr) {
-    if (storage != stack) delete[] storage;
-    return std::unexpected(Status::ResourceExhausted(
-        "CPU topology visibility allocation failed"));
-  }
-  std::memset(selected, 0, selected_count);
-
+  const std::size_t selected_count =
+      static_cast<std::size_t>(maximum_id) + 1u;
   CpuTopology out;
-  out.logical_cpus = static_cast<unsigned>(count);
-  for (std::size_t i = 0; i < count; ++i) {
-    selected[ids[i]] = 1;
-    if (ranks[i] == 0) continue;
-    if (ranks[i] == maximum_rank) ++out.performance_cpus;
-    else ++out.efficiency_cpus;
-  }
+  out.logical_cpus = static_cast<unsigned>(*filled);
+  out.performance_cpus = rank_counts[maximum_rank];
+  out.efficiency_cpus = out.logical_cpus - out.performance_cpus;
   out.hybrid = out.performance_cpus != 0 && out.efficiency_cpus != 0;
 
-  const WORD group_count = ::GetActiveProcessorGroupCount();
-  if (group_count == 0 || group_count > 64) {
-    if (selected != selected_stack) delete[] selected;
-    if (storage != stack) delete[] storage;
-    return std::unexpected(
-        Status::Unavailable("active processor group count is invalid"));
-  }
-  unsigned group_begin[65]{};
-  for (WORD group = 0; group < group_count; ++group) {
-    group_begin[group + 1u] =
-        group_begin[group] + ::GetActiveProcessorCount(group);
-  }
   auto intersects = [&](const GROUP_AFFINITY& mask) noexcept {
     if (mask.Group >= group_count) return false;
     for (unsigned bit = 0; bit < sizeof(KAFFINITY) * 8u; ++bit) {
@@ -1241,14 +1256,10 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       ::GetLogicalProcessorInformationEx(RelationAll, nullptr, &bytes);
   const DWORD size_code = ::GetLastError();
   if (sized) {
-    if (selected != selected_stack) delete[] selected;
-    if (storage != stack) delete[] storage;
     return std::unexpected(Status::DataLoss(
         "CPU topology sizing unexpectedly returned relation data"));
   }
   if (size_code != ERROR_INSUFFICIENT_BUFFER || bytes == 0) {
-    if (selected != selected_stack) delete[] selected;
-    if (storage != stack) delete[] storage;
     if (size_code == ERROR_INSUFFICIENT_BUFFER) {
       return std::unexpected(
           Status::DataLoss("CPU topology relation size is zero"));
@@ -1263,8 +1274,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
           ? relation_stack
           : new (std::nothrow) std::byte[bytes];
   if (relations == nullptr) {
-    if (selected != selected_stack) delete[] selected;
-    if (storage != stack) delete[] storage;
     return std::unexpected(Status::ResourceExhausted(
         "CPU topology relation allocation failed"));
   }
@@ -1273,12 +1282,9 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
   if (!::GetLogicalProcessorInformationEx(RelationAll, first, &bytes)) {
     const DWORD code = ::GetLastError();
     if (relations != relation_stack) delete[] relations;
-    if (selected != selected_stack) delete[] selected;
-    if (storage != stack) delete[] storage;
     return std::unexpected(
         cpu_query_status("GetLogicalProcessorInformationEx", code));
   }
-
   constexpr DWORD kRelationHeader = static_cast<DWORD>(
       offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
   for (DWORD offset = 0; offset + kRelationHeader <= bytes;) {
@@ -1286,8 +1292,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
         const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(relations + offset);
     if (relation->Size < kRelationHeader || relation->Size > bytes - offset) {
       if (relations != relation_stack) delete[] relations;
-      if (selected != selected_stack) delete[] selected;
-      if (storage != stack) delete[] storage;
       return std::unexpected(
           Status::DataLoss("CPU topology relation record is malformed"));
     }
@@ -1301,8 +1305,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
         if (relations != relation_stack) delete[] relations;
-        if (selected != selected_stack) delete[] selected;
-        if (storage != stack) delete[] storage;
         return std::unexpected(
             Status::DataLoss("CPU processor relation is malformed"));
       }
@@ -1325,8 +1327,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
         if (relations != relation_stack) delete[] relations;
-        if (selected != selected_stack) delete[] selected;
-        if (storage != stack) delete[] storage;
         return std::unexpected(
             Status::DataLoss("CPU NUMA relation is malformed"));
       }
@@ -1345,8 +1345,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
       if (relation->Size < header ||
           masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
         if (relations != relation_stack) delete[] relations;
-        if (selected != selected_stack) delete[] selected;
-        if (storage != stack) delete[] storage;
         return std::unexpected(
             Status::DataLoss("CPU cache relation is malformed"));
       }
@@ -1359,8 +1357,6 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
     offset += relation->Size;
   }
   if (relations != relation_stack) delete[] relations;
-  if (selected != selected_stack) delete[] selected;
-  if (storage != stack) delete[] storage;
   return out;
 }
 #endif
