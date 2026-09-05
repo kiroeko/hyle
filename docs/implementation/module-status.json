@@ -642,7 +642,7 @@
     },
     {
       "module": "platform_thread",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-THREAD-WINDOWS-QOS-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -665,11 +665,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v3 REOPENED：真实 ggml Windows worker 路线暴露既有 priority 只改调度优先级、没有完成 execution QoS 的产品缺口。"
+      "summary": "platform_thread v3 SCOPED：冻结 Windows 显式 priority 的 EcoQoS/system-managed/HighQoS 映射、P0 成本与有限跨平台回放。"
     },
     {
       "module": "platform_fs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-FS-CPP-VISITOR-LONG-PATH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v5-normal-consumer-contract.md",
       "round_id": "platform-v5-normal-consumer-contract",
@@ -692,7 +692,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 REOPENED：公开 C++ visitor 的 const/异常合同可复现失效，recursive mkdir 还保留 Windows OS 不要求的 4095-byte 内部上限。"
+      "summary": "platform_fs v2 SCOPED：冻结 const/异常安全 C++ visitor 与 stack-first 可增长 recursive-mkdir scratch，底层同步 I/O 不变。"
     },
     {
       "module": "mem_reclaim",

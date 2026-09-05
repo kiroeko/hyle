@@ -90,3 +90,47 @@
 
 下一步只允许为上述两个 factor 冻结 closure card、有限 `FIX` 与验证矩阵；host factor 保持
 `CLOSED`，不得借本轮重写 v4 CPU/target 边界或扩建性能仪器。
+
+## Closure card（`SCOPED`）
+
+- component / owner / round / kind：`platform_thread + platform_fs` / Platform product /
+  `platform-v5-normal-consumer-contract` / `REOPEN`；
+- baseline 与 trigger：沿用上述 immutable baseline 及两个 trigger ID；host factor 只回放、不变更；
+- 真实消费者：显式选择 performance-oriented worker 的 CPU inference runtime；以普通 const/throwing
+  callable 扫描 model/cache directory 的 C++ loader；Windows 合法 extended UTF-8 cache/model path；
+- 范围：
+  1. Windows `ThreadPriority` 在调用者显式配置时，同时设置 native scheduling priority 与 execution QoS：
+     `kLowest/kLow -> EcoQoS`，`kNormal -> system-managed`，`kHigh/kHighest -> HighQoS`；optional 未设置
+     时完全不调用；
+  2. `for_each_entry` 使用 caller-TU trampoline context 支持 const callable；启用异常时捕获 callback
+     exception、令 noexcept compiled iterator 完成清理，再原样重抛；无异常 TU 和 low-level core 保持
+     no-throw；
+  3. recursive mkdir 以 4096-byte stack scratch 为常用路线，只有更长输入才 checked heap；OS 自身的
+     component/path failure 原样转 Status，不再由 HYLE 固定拒绝；
+- 非目标：registry 中两个 factor 的 non-goals；尤其不新增 process priority、realtime、detach、文件
+  lock/preallocate/resize、path owner、mapping/async IO，也不改 CPU facts、Parker 或 FileHandle I/O；
+- 直接依赖 / consumer：依赖保持 thread `PRIVATE platform; PUBLIC core,error,time`、fs
+  `PRIVATE platform; PUBLIC core,error,time`；直接回放 Platform 聚合、Sched priority、Mem/IO fs consumer；
+- 内部设施：使用现有 Error `Status/Result`、Core environment facts 和现有 stack-first malloc scratch；
+  不需要 Container/Mem allocator（否则会倒置底层依赖），不引入第三方产品库；
+- tier：两个 factor 都是 `P0 / closure-correctness-v1`。QoS 只在显式 cold setup 多一个 native call；
+  callback 每项仍一次 indirect call且零 owning allocation，异常分支为冷路；4096-byte 内短路径没有 heap；
+- 性能边界：不重跑未改变的 host/Parker/open-read-close P1。若编译器显示 visitor 正常路径增加 allocation、
+  额外 directory syscall 或每项额外动态派发，则不得进入 candidate；
+- machine：`W1-WIN / W1-WSL / M1-MAC`；Windows 是 QoS 与 >4095-byte path 的语义机，另两平台证明
+  conditional code/header 和既有行为；
+- peers / authority：Windows supported API contract、current ggml worker route；标准 C++ exception/callable
+  语义和三平台 OS filesystem ABI。Folly/oneTBB 只回放未改 families；
+- provenance：`REAL_CONSUMER`（QoS）、`NORTH_STAR_JOURNEY`（visitor/long model path）、`STANDARD`
+  （C++ callback semantics）；
+- correctness gates：normal/invalid enum、required/best-effort、configured/unconfigured、const/void/bool/throwing
+  visitor、early stop、cleanup、short/long/OOM path、三平台 tests、WSL ASan/UBSan；
+- delivery gates：两个 exact factor + Platform source/static/shared relocation，公开头自含，Sched/Mem/IO
+  selected direct consumers，旧 C/FFI symbol/header/option scan；
+- investigation budget：90 分钟；验证预算 60 分钟；最多一次机制诊断、两次产品修正；若需改公开
+  ownership、因子依赖、Parker/FileHandle 热路或通用仪器则本轮 `BLOCKED`，不得扩大；
+- 预期输出：两个小型实现修复、定向测试、architecture/user guide 校准、完整七问/红队与 terminal receipt；
+- 停止条件：有限 `FIX` 全通过即关闭；跨平台 OS 不支持本来就不可能成立的相同值不构成 blocker。
+
+当前状态为 `SCOPED`。下一步只允许完成现有 public surface 双向追踪、签署有限 `FIX` 和 API freeze；
+在 `AUDITED` 前仍不修改产品源码。
