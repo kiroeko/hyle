@@ -34,7 +34,7 @@ struct ProbeCandidate<Provider::kXsimd> final {
 // Use an impossible product key so this test cannot collide with a later
 // generated real-lane route specialization.
 template <>
-struct RouteFor<RouteKey<Operation::kAdd>, ProbeLane, Target::kScalar,
+struct RouteFor<RouteKey<Operation::kAdd>, ProbeLane, KernelTarget::kScalar,
                 Compiler::kOther, 0> final {
   inline static constexpr Route value{Provider::kHighway,
                                       Decision::kRouteHighway};
@@ -44,10 +44,10 @@ namespace {
 
 static_assert(kOperationCount == 387);
 static_assert(static_cast<std::size_t>(Operation::kCount) == 387);
-static_assert(kRouteFor<Operation::kAbs, LaneVariant<float>, Target::kScalar,
+static_assert(kRouteFor<Operation::kAbs, LaneVariant<float>, KernelTarget::kScalar,
                         Compiler::kOther, 0>
                   .qualified());
-static_assert(kRouteFor<Operation::kAbs, LaneVariant<float>, Target::kScalar,
+static_assert(kRouteFor<Operation::kAbs, LaneVariant<float>, KernelTarget::kScalar,
                         Compiler::kOther, 0>
                   .provider == Provider::kHighway);
 
@@ -55,32 +55,32 @@ static_assert(kRouteFor<Operation::kAbs, LaneVariant<float>, Target::kScalar,
 // operation immediately falls back to Highway outside the signed selector.
 static_assert(
     kRouteFor<Operation::kBitShuffle, LaneVariant<std::uint64_t>,
-              Target::kAvx2, Compiler::kMsvc, 195000000>
+              KernelTarget::kAvx2, Compiler::kMsvc, 195000000>
         .provider == Provider::kHyle);
 static_assert(
     kRouteFor<Operation::kBitShuffle, LaneVariant<std::uint64_t>,
-              Target::kAvx2, Compiler::kClang, 210000>
+              KernelTarget::kAvx2, Compiler::kClang, 210000>
         .provider == Provider::kHighway);
 
 // Stream is the sole type-agnostic material exception: the current Apple
 // NEON compiler retains HYLE's plain store, while tied AVX2 and every other
 // compiler/target follow the Highway default.
-static_assert(kRouteFor<Operation::kStream, AnyVariant, Target::kNeon,
+static_assert(kRouteFor<Operation::kStream, AnyVariant, KernelTarget::kNeon,
                         Compiler::kAppleClang, 210000>
                   .provider == Provider::kHyle);
-static_assert(kRouteFor<Operation::kStream, AnyVariant, Target::kNeon,
+static_assert(kRouteFor<Operation::kStream, AnyVariant, KernelTarget::kNeon,
                         Compiler::kClang, 210000>
                   .provider == Provider::kHighway);
-static_assert(kRouteFor<Operation::kStream, AnyVariant, Target::kAvx2,
+static_assert(kRouteFor<Operation::kStream, AnyVariant, KernelTarget::kAvx2,
                         Compiler::kMsvc, 195000000>
                   .provider == Provider::kHighway);
 
 static_assert(
-    kRouteFor<Family::kTanhF32Batch, LaneVariant<float>, Target::kAvx2,
+    kRouteFor<Family::kTanhF32Batch, LaneVariant<float>, KernelTarget::kAvx2,
               Compiler::kMsvc, 195000000>
         .provider == Provider::kXsimd);
 static_assert(
-    kRouteFor<Family::kTanhF32Batch, LaneVariant<float>, Target::kAvx2,
+    kRouteFor<Family::kTanhF32Batch, LaneVariant<float>, KernelTarget::kAvx2,
               Compiler::kGcc, 140200>
         .provider == Provider::kHighway);
 
@@ -100,7 +100,7 @@ TEST(SimdProviderRoute, ExplicitCandidateSelectionIsCompileTime) {
 
 TEST(SimdProviderRoute, QualifiedRouteSelectsOneCandidate) {
   constexpr Provider selected =
-      kQualifiedProviderFor<Operation::kAdd, ProbeLane, Target::kScalar,
+      kQualifiedProviderFor<Operation::kAdd, ProbeLane, KernelTarget::kScalar,
                             Compiler::kOther, 0>;
   EXPECT_EQ((HYLE_SIMD_INVOKE_CANDIDATE(selected, ProbeCandidate, 10)), 12);
 }

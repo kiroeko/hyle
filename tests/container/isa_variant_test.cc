@@ -9,14 +9,12 @@
 
 #include "hyle/platform/cpu.h"
 #include "src/container/bitset_ops.h"
+#include "src/container/cpu_dispatch_internal.h"
 #include "src/container/str_search.h"
 
 namespace {
 
 namespace detail = hyle::container::detail;
-using hyle::platform::Isa;
-using hyle::platform::supports;
-
 using StringFn = std::uint32_t (*)(const char*, std::uint32_t, char) noexcept;
 using CaseFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
                                 std::uint32_t) noexcept;
@@ -55,8 +53,9 @@ Variant scalar_variant() {
 
 std::vector<Variant> supported_variants() {
   std::vector<Variant> result{scalar_variant()};
+  const auto& features = hyle::platform::cpu_features();
 #if HYLE_ARCH_X64
-  if (supports(Isa::kSse42)) {
+  if (detail::supports_highway_sse4(features)) {
     result.push_back({"sse4",
                       &detail::str_count_sse4,
                       &detail::str_rfind_char_sse4,
@@ -69,7 +68,7 @@ std::vector<Variant> supported_variants() {
                       &detail::bitset_not_sse4,
                       &detail::bitset_count_sse4});
   }
-  if (supports(Isa::kAvx2)) {
+  if (detail::supports_highway_avx2(features)) {
     result.push_back({"avx2",
                       &detail::str_count_avx2,
                       &detail::str_rfind_char_avx2,
@@ -83,7 +82,7 @@ std::vector<Variant> supported_variants() {
                       &detail::bitset_count_avx2});
   }
 #elif HYLE_ARCH_ARM64
-  if (supports(Isa::kNeon)) {
+  if (detail::supports_highway_neon(features)) {
     result.push_back({"neon",
                       &detail::str_count_neon,
                       &detail::str_rfind_char_neon,
@@ -98,6 +97,48 @@ std::vector<Variant> supported_variants() {
   }
 #endif
   return result;
+}
+
+TEST(ContainerCpuDispatch, GeneratedTuRequirementsAreExplicit) {
+  using hyle::platform::CpuFeature;
+
+  EXPECT_TRUE(detail::supports_highway_sse4(
+      detail::kHighwaySse4Requirements));
+  for (CpuFeature required : {
+           CpuFeature::kX86Sse2, CpuFeature::kX86Sse3,
+           CpuFeature::kX86Ssse3, CpuFeature::kX86Sse41,
+           CpuFeature::kX86Sse42}) {
+    auto masked = detail::kHighwaySse4Requirements;
+    masked.set(required, false);
+    EXPECT_FALSE(detail::supports_highway_sse4(masked));
+  }
+
+  EXPECT_TRUE(detail::supports_highway_avx2(
+      detail::kHighwayAvx2Requirements));
+  for (CpuFeature required : {
+           CpuFeature::kX86Sse2, CpuFeature::kX86Sse3,
+           CpuFeature::kX86Ssse3, CpuFeature::kX86Sse41,
+           CpuFeature::kX86Sse42, CpuFeature::kX86Avx,
+           CpuFeature::kX86Avx2, CpuFeature::kX86Fma,
+           CpuFeature::kX86F16c, CpuFeature::kX86Lzcnt,
+           CpuFeature::kX86Bmi1, CpuFeature::kX86Bmi2}) {
+    auto masked = detail::kHighwayAvx2Requirements;
+    masked.set(required, false);
+    EXPECT_FALSE(detail::supports_highway_avx2(masked));
+  }
+
+  EXPECT_TRUE(detail::supports_xxh3_avx2(detail::kXxh3Avx2Requirements));
+  auto without_bmi1 = detail::kXxh3Avx2Requirements;
+  without_bmi1.set(CpuFeature::kX86Bmi1, false);
+  EXPECT_TRUE(detail::supports_xxh3_avx2(without_bmi1));
+  for (CpuFeature required : {
+           CpuFeature::kX86Avx, CpuFeature::kX86Avx2,
+           CpuFeature::kX86Fma, CpuFeature::kX86F16c,
+           CpuFeature::kX86Bmi2}) {
+    auto masked = detail::kXxh3Avx2Requirements;
+    masked.set(required, false);
+    EXPECT_FALSE(detail::supports_xxh3_avx2(masked));
+  }
 }
 
 TEST(ContainerIsaVariants, StringKernelsMatchScalar) {

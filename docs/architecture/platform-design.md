@@ -53,7 +53,7 @@ benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadli
 
 | 能力族 | C++ 公共形状 | 常用场景 | 关键合同 |
 |---|---|---|---|
-| CPU、cache 与 topology | `CpuFeatures`、`Isa`、`CacheInfo`、`CpuInfo`、`available_cpu_topology` | ISA 派发、false-sharing 对齐、物理核/SMT/cache-domain worker placement | 静态 facts 可缓存；process-available topology 动态、可失败；未知不猜测 |
+| CPU、cache 与 topology | `CpuFeature`、`CpuFeatureSet`、`CacheInfo`、`CpuInfo`、`available_cpu_topology` | implementation-owned target matching、false-sharing 对齐、物理核/SMT/cache-domain worker placement | facts 无顺序；静态 facts 可缓存；process-available topology 动态、可失败；未知不猜测 |
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
@@ -71,10 +71,11 @@ VM 和线程 owner 在 Platform；file/shared/anonymous storage mapping 的唯�
 
 CPU API 有三类不同生命周期，不能混用：
 
-1. `cpu_features()` / `best_isa()` 是当前进程可安全执行的指令能力。x86 同时检查 CPU 位和
-   OS 扩展寄存器保存能力；探测 TU 必须保持 baseline ISA。构建系统把该 TU 独立放入关闭 IPO
-   的 private object target，其余 platform 源仍可接受父工程 LTO，不能用 target-wide 关 LTO
-   换取探测安全。
+1. `cpu_features()` 返回当前进程可安全执行的无顺序具名 facts。x86 同时检查 CPU 位和 OS
+   扩展寄存器保存能力；探测 TU 必须保持 baseline ISA。Platform 不提供 `best target`：SIMD、
+   Container 或用户 kernel 各自由唯一实现 owner 把 facts 与其生成 TU 的完整 requirements 匹配。
+   构建系统把探测 TU 独立放入关闭 IPO 的 private object target，其余 platform 源仍可接受父工程
+   LTO，不能用 target-wide 关 LTO 换取探测安全。
 2. `cache_info()` / `hardware_concurrency()` 是缓存的粗粒度系统事实，适合容量提示与诊断；后者
    不等于容器/cgroup 给当前进程的 CPU 配额。
 3. `available_cpu_count/ids/info/topology()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
@@ -84,6 +85,12 @@ CPU API 有三类不同生命周期，不能混用：
 `performance_rank` 只采用 OS 提供的可信 CPU-id 映射。没有证据时返回 unknown，不按频率、
 编号或营销名称猜 P/E 核。`CpuOrder` 只对完整可用集合排序，不偷偷删核；“只用强核”、
 worker 数、轮转、超订和 NUMA-aware stealing 都是 sched 或应用策略。
+
+x86 子扩展只有在其父扩展与所需 OS state 同时成立时才进入 set；例如 AVX-512 子项不能脱离
+AVX-512F/ZMM，`kX86Avx10_2_512` 同时编码 version、512-bit width 与 ZMM 可用性。macOS x86 的
+AVX-512 还采用系统规定的 `hw.optional.avx512f` 处理 lazy XCR0 与 Rosetta 边界。ARM/RISC-V 只使用
+各 OS 的稳定 capability ABI；未知键或旧 OS 返回 absent，不依据 CPU 名称、编译器宏或参考库 target
+表猜测。
 
 系统级 AMX/SME/SVE/RVV feature 与调用线程实际可用状态也必须分开。`this_thread::isa_state()`
 返回动态 vector width/permission，`request_amx_tile_permission()` 是显式线程配置；两者都不选择 SIMD

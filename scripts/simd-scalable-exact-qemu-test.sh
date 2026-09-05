@@ -122,7 +122,7 @@ printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n
   "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/bitpack_${SUFFIX}.o"
 
 if nm -u "$OUT/runtime.o" "$OUT/"*_dispatch.o |
-    grep -Eq 'cpu_features|best_isa|supports'; then
+    grep -Eq 'cpu_features|kernel_target_supported'; then
   echo "ERROR: exact dispatch retains a CPU probe" >&2
   exit 1
 fi

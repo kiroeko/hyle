@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/visibility.h"
 #include "hyle/simd/dtype.h"
 
 // Discoverable whole-buffer conversion graph for HYLE's numeric storage types. Every unequal

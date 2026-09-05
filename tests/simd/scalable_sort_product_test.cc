@@ -190,14 +190,14 @@ TEST(ScalableSortProduct, U128EntryPoints) {
 
 TEST(ScalableSortProduct, RuntimeAndPublicApiUseScalableTier) {
 #if defined(HYLE_SIMD_TARGET_RVV)
-  constexpr hs::Isa kExpected = hs::Isa::kRvv;
+  constexpr hs::KernelTarget kExpected = hs::KernelTarget::kRvv;
 #else
-  constexpr hs::Isa kExpected = hs::Isa::kSve;
+  constexpr hs::KernelTarget kExpected = hs::KernelTarget::kSve;
 #endif
-  EXPECT_EQ(hs::runtime().sort.isa, kExpected);
+  EXPECT_EQ(hs::runtime().sort.target, kExpected);
   const hs::Runtime* exact = hs::runtime_for(kExpected);
   ASSERT_NE(exact, nullptr);
-  EXPECT_EQ(exact->sort.isa, kExpected);
+  EXPECT_EQ(exact->sort.target, kExpected);
 
   auto values = make_values<std::uint32_t>(1000, 0);
   hs::sort(values.data(), values.size(), hs::SortOrder::kAscending);

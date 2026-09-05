@@ -48,7 +48,8 @@
   使用带 `Hardware` 后缀的事实，仅表示 CPUID hardware capability，per-thread permission 仍唯一归
   `platform_thread`；未知/无稳定 OS ABI 的事实返回 absent，不猜测；
 - 有限新增 facts：x86 的 SSE3、AES、PCLMULQDQ、AVX512-VBMI/VBMI2/BITALG/VPOPCNTDQ、GFNI、
-  VAES、VPCLMULQDQ 与 AMX-FP16 hardware；ARM 的 AES、PMULL、DotProd、FP16，以及 macOS/Windows
+  VAES、VPCLMULQDQ 与 AMX-FP16 hardware；旧 AVX10.2 字段收紧为 version ≥ 2、512-bit width 和
+  OS ZMM 均成立的 `kX86Avx10_2_512`。ARM 新增 AES、PMULL、DotProd、FP16，以及 macOS/Windows
   对已经承诺的 SVE/SVE2/I8MM/SME/SME2 的稳定 OS 查询。现有 AVX/VNNI/BF16/FP16/AMX、SVE
   subfeatures 与 RVV facts 全部迁移，不能静默丢失；APX/全量 CPU catalog 没有当前准入，不进入本轮；
 - 直接依赖不变：`platform -> PUBLIC core,error`；没有新第三方产品依赖。参考只绑定 clean llama.cpp
@@ -87,10 +88,11 @@
 | thread ISA state | SVE/RVV width、AMX permission | 机制完整但读取旧字段 | `COMPLETE/FIX`，platform-thread v2 |
 | non-CPU Platform | topology/cache/NUMA/VM/fs/thread/wait | 本轮无产品 diff | `COMPLETE/KEEP`，旧 receipt |
 
-公开 `CpuFeatures` 的 49 个旧字段逐项追踪后全部迁入新 set；新增 12 个 x86 与 4 个 ARM 推理相关
+公开 `CpuFeatures` 的 43 个旧字段逐项追踪后全部迁入新 set；新增 11 个 x86 与 4 个 ARM 推理相关
 事实，不复制 APX 或完整 CPU catalog。x86 decoder 以 CPUID registers + XCR0 为纯输入，保证 FMA/F16C/
 AVX 家族及 AVX-512 子扩展按相应 OS state gate；AMX 四项明确为 hardware fact。ARM Linux 用稳定
-HWCAP/HWCAP2 位；macOS 用 `hw.optional.arm.FEAT_*`；Windows 用稳定 `PF_*` 数值，未知查询诚实 absent。
+HWCAP/HWCAP2 位；macOS ARM 用 `hw.optional.arm.FEAT_*`，macOS x86 以 Apple 指定的
+`hw.optional.avx512f` 修正 lazy XCR0/Rosetta 边界；Windows 用稳定 `PF_*` 数值，未知查询诚实 absent。
 
 本轮冻结 FIX 集：
 

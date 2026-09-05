@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hyle/platform/cpu.h"
 #include "hyle/simd/target.h"
 
 namespace hyle::simd {
@@ -8,16 +9,12 @@ namespace detail {
 
 #if HYLE_ARCH_X64
 template <class Fn>
-inline Fn select_x86_fat_kernel_for_isa(Isa isa, Fn scalar, Fn sse4, Fn avx2,
-                                         Fn avx512) noexcept {
-  // best_isa() has honest detection-only tiers (SSE2/SSSE3/AVX) for which HYLE
-  // intentionally does not build a separate kernel. Use the ordered ladder so
-  // an AVX-only host takes the SSE4 kernel instead of accidentally falling all
-  // the way back to scalar.
-  const auto tier = static_cast<std::uint32_t>(isa);
-  if (tier >= static_cast<std::uint32_t>(Isa::kAvx512)) return avx512;
-  if (tier >= static_cast<std::uint32_t>(Isa::kAvx2)) return avx2;
-  if (tier >= static_cast<std::uint32_t>(Isa::kSse42)) return sse4;
+inline Fn select_x86_fat_kernel_for_features(
+    const platform::CpuFeatureSet& features, Fn scalar, Fn sse4, Fn avx2,
+    Fn avx512) noexcept {
+  if (kernel_target_supported(KernelTarget::kAvx512, features)) return avx512;
+  if (kernel_target_supported(KernelTarget::kAvx2, features)) return avx2;
+  if (kernel_target_supported(KernelTarget::kSse4, features)) return sse4;
   return scalar;
 }
 #endif
@@ -51,8 +48,8 @@ inline Fn select_fat_kernel(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexcept {
   (void)avx512;
   return scalar;
 #else
-  return detail::select_x86_fat_kernel_for_isa(
-      ::hyle::platform::best_isa(), scalar, sse4, avx2, avx512);
+  return detail::select_x86_fat_kernel_for_features(
+      ::hyle::platform::cpu_features(), scalar, sse4, avx2, avx512);
 #endif
 }
 #elif HYLE_ARCH_ARM64
@@ -71,9 +68,8 @@ inline Fn select_fat_kernel(Fn scalar, Fn neon, Fn sve = nullptr) noexcept {
   (void)sve;
   return scalar;
 #else
-  const Isa isa = ::hyle::platform::best_isa();
-  if (isa == Isa::kSve && sve != nullptr) return sve;
-  return isa == Isa::kNeon ? neon : scalar;
+  if (sve != nullptr && kernel_target_supported(KernelTarget::kSve)) return sve;
+  return kernel_target_supported(KernelTarget::kNeon) ? neon : scalar;
 #endif
 }
 #elif HYLE_ARCH_RISCV64
@@ -86,7 +82,7 @@ inline Fn select_fat_kernel(Fn scalar, Fn rvv) noexcept {
   (void)rvv;
   return scalar;
 #else
-  return ::hyle::platform::best_isa() == Isa::kRvv ? rvv : scalar;
+  return kernel_target_supported(KernelTarget::kRvv) ? rvv : scalar;
 #endif
 }
 #else

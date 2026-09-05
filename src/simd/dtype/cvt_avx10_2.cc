@@ -1,6 +1,7 @@
 // AVX10.2 f16 -> fp8 conversion (compiled -mavx10.2-512; ONLY clang-20+ supports that flag today
 // -- GCC-14 stops at avx10.1, MSVC has none). Gated at BUILD time (HYLE_HAVE_AVX10_2, set by CMake
-// when the compiler accepts -mavx10.2-512) AND at RUNTIME (cpu_features().avx10_2). When the flag
+// when the compiler accepts -mavx10.2-512) and at runtime (the explicit
+// CpuFeature::kX86Avx10_2_512 requirement). When the flag
 // is unavailable the whole TU compiles to nothing and dispatch falls back to the scalar core.
 //
 // AVX10.2's fp8 converts only take an f16 source (vcvtph2hf8 / vcvtph2bf8) -- there is NO direct

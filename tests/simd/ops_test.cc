@@ -7,20 +7,19 @@
 #include <vector>
 
 #include "hyle/core/environment.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
 #include "hyle/simd/ops.h"
 #include "src/simd/runtime_internal.h"
 
 // ops_test -- validates the RUNTIME-DISPATCHED ops (simd-04). Unlike vec_test (compiled
-// per-ISA), this links the ONE dispatcher and checks: (1) results match a naive scalar
-// reference regardless of which variant the host selected; (2) runtime().isa really
-// picked the host's best compiled tier -- proving best_isa() is now LIVE (consumed to
-// select a kernel), not the dead detector the simd-01 audit flagged.
+// per-target), this links the one dispatcher and checks: (1) results match a
+// naive scalar reference regardless of which variant the host selected; and
+// (2) the runtime selected the best compiled target whose explicit feature
+// requirements are satisfied.
 
 using hyle::simd::add;
-using hyle::platform::best_isa;
 using hyle::simd::dot;
-using hyle::simd::Isa;
+using hyle::simd::KernelTarget;
 using hyle::simd::runtime;
 using hyle::simd::saxpy;
 
@@ -50,10 +49,10 @@ long double ref_dot_d(const std::vector<double>& x, const std::vector<double>& y
 
 std::vector<const hyle::simd::Runtime*> available_runtimes() {
   std::vector<const hyle::simd::Runtime*> out;
-  for (hyle::simd::Isa isa : {hyle::simd::Isa::kScalar, hyle::simd::Isa::kSse42,
-                              hyle::simd::Isa::kAvx2, hyle::simd::Isa::kAvx512,
-                              hyle::simd::Isa::kNeon, hyle::simd::Isa::kSve,
-                              hyle::simd::Isa::kRvv}) {
+  for (hyle::simd::KernelTarget isa : {hyle::simd::KernelTarget::kScalar, hyle::simd::KernelTarget::kSse4,
+                              hyle::simd::KernelTarget::kAvx2, hyle::simd::KernelTarget::kAvx512,
+                              hyle::simd::KernelTarget::kNeon, hyle::simd::KernelTarget::kSve,
+                              hyle::simd::KernelTarget::kRvv}) {
     if (const auto* table = hyle::simd::runtime_for(isa)) out.push_back(table);
   }
   return out;
@@ -171,12 +170,12 @@ TEST(Ops, MixedPrecisionDotsMatchReferenceOnEveryRuntimeTier) {
 
     for (const auto* table : available_runtimes()) {
       EXPECT_NEAR(table->ops.dot_bf16_bf16(bf0.data(), bf1.data(), n),
-                  bf_ref, bf_tol) << "bf16 tier=" << static_cast<int>(table->isa) << " n=" << n;
+                  bf_ref, bf_tol) << "bf16 tier=" << static_cast<int>(table->target) << " n=" << n;
       EXPECT_NEAR(table->ops.dot_f32_bf16(f32.data(), bf1.data(), n),
                   mixed_ref, mixed_tol)
-          << "mixed tier=" << static_cast<int>(table->isa) << " n=" << n;
+          << "mixed tier=" << static_cast<int>(table->target) << " n=" << n;
       EXPECT_NEAR(table->ops.dot_f16_f16(f16a.data(), f16b.data(), n),
-                  f16_ref, f16_tol) << "f16 tier=" << static_cast<int>(table->isa) << " n=" << n;
+                  f16_ref, f16_tol) << "f16 tier=" << static_cast<int>(table->target) << " n=" << n;
     }
   }
 }
@@ -216,7 +215,7 @@ TEST(Ops, I16DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
   EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
   for (const auto* table : available_runtimes())
     EXPECT_EQ(table->ops.dot_i16_i16(x.data(), y.data(), x.size()), expected)
-        << "tier=" << static_cast<int>(table->isa);
+        << "tier=" << static_cast<int>(table->target);
 
   EXPECT_EQ(dot(static_cast<const std::int16_t*>(nullptr),
                 static_cast<const std::int16_t*>(nullptr), 0), 0);
@@ -235,7 +234,7 @@ TEST(Ops, I8DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
   EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
   for (const auto* table : available_runtimes())
     EXPECT_EQ(table->ops.dot_i8_i8(x.data(), y.data(), x.size()), expected)
-        << "tier=" << static_cast<int>(table->isa);
+        << "tier=" << static_cast<int>(table->target);
 
   EXPECT_EQ(dot(static_cast<const std::int8_t*>(nullptr),
                 static_cast<const std::int8_t*>(nullptr), 0), 0);
@@ -368,57 +367,61 @@ TEST(Ops, CompleteF64RowAlgebraAndZeroContract) {
 // Fat artifacts select the best compiled host tier. Exact artifacts deliberately
 // contain one builder-selected tier and must not reintroduce host probing.
 TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
-  const Isa active = runtime().isa;
+  const KernelTarget active = runtime().target;
 #if defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
-  EXPECT_EQ(active, Isa::kScalar);
+  EXPECT_EQ(active, KernelTarget::kScalar);
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
-  EXPECT_EQ(active, Isa::kSse42);
+  EXPECT_EQ(active, KernelTarget::kSse4);
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
-  EXPECT_EQ(active, Isa::kAvx2);
+  EXPECT_EQ(active, KernelTarget::kAvx2);
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-  EXPECT_EQ(active, Isa::kAvx512);
+  EXPECT_EQ(active, KernelTarget::kAvx512);
 #elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
-  EXPECT_EQ(active, Isa::kNeon);
+  EXPECT_EQ(active, KernelTarget::kNeon);
 #elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
-  EXPECT_EQ(active, Isa::kSve);
+  EXPECT_EQ(active, KernelTarget::kSve);
 #elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
-  EXPECT_EQ(active, Isa::kRvv);
+  EXPECT_EQ(active, KernelTarget::kRvv);
 #elif HYLE_ARCH_X64
-  const auto best = static_cast<std::uint32_t>(best_isa());
-  Isa expect;
-  if (best >= static_cast<std::uint32_t>(Isa::kAvx512)) expect = Isa::kAvx512;
-  else if (best >= static_cast<std::uint32_t>(Isa::kAvx2)) expect = Isa::kAvx2;
-  else if (best >= static_cast<std::uint32_t>(Isa::kSse42)) expect = Isa::kSse42;
-  else expect = Isa::kScalar;
+  const auto& features = hyle::platform::cpu_features();
+  const KernelTarget expect =
+      hyle::simd::kernel_target_supported(KernelTarget::kAvx512, features)
+          ? KernelTarget::kAvx512
+      : hyle::simd::kernel_target_supported(KernelTarget::kAvx2, features)
+          ? KernelTarget::kAvx2
+      : hyle::simd::kernel_target_supported(KernelTarget::kSse4, features)
+          ? KernelTarget::kSse4
+          : KernelTarget::kScalar;
   EXPECT_EQ(active, expect);
-  // On any modern x86-64 dev box this should be a real SIMD tier, not the floor.
-  EXPECT_GE(static_cast<std::uint32_t>(active), static_cast<std::uint32_t>(Isa::kSse42));
 #elif HYLE_ARCH_ARM64
   // Linux aarch64 may additionally ship the SVE scalable variant. The active
   // Runtime must match the highest variant actually compiled into this binary.
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-  if (best_isa() == Isa::kSve) {
-    EXPECT_EQ(active, Isa::kSve);
-  } else if (best_isa() == Isa::kNeon) {
-    EXPECT_EQ(active, Isa::kNeon);
+  if (hyle::simd::kernel_target_supported(KernelTarget::kSve)) {
+    EXPECT_EQ(active, KernelTarget::kSve);
+  } else if (hyle::simd::kernel_target_supported(KernelTarget::kNeon)) {
+    EXPECT_EQ(active, KernelTarget::kNeon);
   } else {
-    EXPECT_EQ(active, Isa::kScalar);
+    EXPECT_EQ(active, KernelTarget::kScalar);
   }
 #else
-  if (best_isa() == Isa::kNeon) {
-    EXPECT_EQ(active, Isa::kNeon);
+  if (hyle::simd::kernel_target_supported(KernelTarget::kNeon)) {
+    EXPECT_EQ(active, KernelTarget::kNeon);
   } else {
-    EXPECT_EQ(active, Isa::kScalar);
+    EXPECT_EQ(active, KernelTarget::kScalar);
   }
 #endif
 #elif HYLE_ARCH_RISCV64
 #if defined(HYLE_SIMD_HAS_RVV_VARIANT)
-  EXPECT_EQ(active, best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar);
+  EXPECT_EQ(active,
+            hyle::simd::kernel_target_supported(KernelTarget::kRvv)
+                ? KernelTarget::kRvv
+                : KernelTarget::kScalar);
 #else
-  EXPECT_EQ(active, Isa::kScalar);
+  EXPECT_EQ(active, KernelTarget::kScalar);
 #endif
 #else
-  EXPECT_EQ(active, Isa::kScalar);  // unknown arch: portable floor only
+  EXPECT_EQ(active, KernelTarget::kScalar);  // unknown arch: portable floor only
 #endif
 }
 

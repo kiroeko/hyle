@@ -23,8 +23,8 @@ bool have_avx2_math() noexcept {
 #elif defined(HYLE_SIMD_EXACT)
   return false;
 #else
-  return runtime().math.isa == Isa::kAvx2 ||
-         runtime().math.isa == Isa::kAvx512;
+  return runtime().math.target == KernelTarget::kAvx2 ||
+         runtime().math.target == KernelTarget::kAvx512;
 #endif
 }
 #endif
@@ -37,7 +37,7 @@ bool have_avx512_math() noexcept {
 #elif defined(HYLE_SIMD_EXACT)
   return false;
 #else
-  return runtime().math.isa == Isa::kAvx512;
+  return runtime().math.target == KernelTarget::kAvx512;
 #endif
 }
 #endif
@@ -49,7 +49,7 @@ bool have_sve_math() noexcept {
 #elif defined(HYLE_SIMD_EXACT)
   return false;
 #else
-  return runtime().math.isa == Isa::kSve;
+  return runtime().math.target == KernelTarget::kSve;
 #endif
 }
 #endif
@@ -61,7 +61,7 @@ bool have_rvv_math() noexcept {
 #elif defined(HYLE_SIMD_EXACT)
   return false;
 #else
-  return runtime().math.isa == Isa::kRvv;
+  return runtime().math.target == KernelTarget::kRvv;
 #endif
 }
 #endif

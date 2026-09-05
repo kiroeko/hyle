@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+#include "hyle/simd/visibility.h"
 
 // Whole-buffer real/complex mathematics and model-independent activations.
 //

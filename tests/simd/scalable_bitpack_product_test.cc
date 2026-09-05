@@ -15,10 +15,10 @@ namespace bt = hyle::simd::test;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_sve
-constexpr hs::Isa kExpectedBitpackIsa = hs::Isa::kSve;
+constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kSve;
 #elif defined(HYLE_SIMD_TARGET_RVV)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_rvv
-constexpr hs::Isa kExpectedBitpackIsa = hs::Isa::kRvv;
+constexpr hs::KernelTarget kExpectedBitpackIsa = hs::KernelTarget::kRvv;
 #endif
 
 namespace {
@@ -97,7 +97,7 @@ void check_golden(const std::array<std::uint64_t, N> &expected) {
 
 TEST(ScalableBitpackProduct, RuntimeTableOwnsDirectScalableEntries) {
   const hs::Runtime &active = hs::runtime();
-  EXPECT_EQ(active.bitpack.isa, kExpectedBitpackIsa);
+  EXPECT_EQ(active.bitpack.target, kExpectedBitpackIsa);
   EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128,
             0u);
   const hs::Runtime *exact = hs::runtime_for(kExpectedBitpackIsa);

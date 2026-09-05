@@ -129,10 +129,10 @@ int main() {
 
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
-  const char* active = hyle::platform::isa_name(
-      hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
-  const char* ordering = hyle::platform::isa_name(
-      hyle::simd::selected_target(hyle::simd::KernelFamily::kSort).isa);
+  const char* active = hyle::simd::kernel_target_name(
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).target);
+  const char* ordering = hyle::simd::kernel_target_name(
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kSort).target);
   if (active == nullptr || active[0] == '\0' || ordering == nullptr ||
       ordering[0] == '\0')
     return 13;

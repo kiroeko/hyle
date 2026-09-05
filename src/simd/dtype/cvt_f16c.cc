@@ -1,5 +1,6 @@
 // F16C hardware fp16 batch conversion (compiled -mf16c -mavx2 / MSVC /arch:AVX2). Only
-// REACHED when cpu_features().f16c is true (the dispatcher gates it), so vcvtph2ps /
+// Reached when the explicit F16C translation-unit requirements are satisfied
+// (the dispatcher gates them), so vcvtph2ps /
 // vcvtps2ph never execute on a CPU lacking F16C. 8-wide; scalar tail via dtype.h inline
 // (so the tail matches the scalar oracle exactly).
 //

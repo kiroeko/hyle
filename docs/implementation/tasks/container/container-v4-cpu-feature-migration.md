@@ -56,6 +56,10 @@ HYLE 实际 Highway target group；XXH3 TU 使用普通 `hyle_set_isa(AVX2)`，�
 | `CONT4-F02` | StringView/DynamicBitset selector 由最强到最弱显式 `has_all`，每进程缓存一次；Hash 只用自己的 matcher | synthetic complete/missing-one tests；无 per-item branch |
 | `CONT4-D01` | 更新注释、variant tests 与旧 `best_isa/Isa/supports` 反证；公开 API 和旧 P1 数字不变 | 三平台 correctness、三交付与 header scan |
 
+实现期核对确认 direct-Highway SSE4/AVX2/AVX512 集合与 `hyle_highway_isa_flags()` 一致；XXH3 的普通
+AVX2 TU 则只要求 `hyle_set_isa(AVX2)` 允许的 AVX/AVX2/FMA/F16C/BMI2，不错误继承 Highway 的
+BMI1/LZCNT requirements。synthetic tests 对每个必要 fact 做 missing-one 降级，并反证 XXH3 不要求 BMI1。
+
 API freeze 为 `FROZEN`（2026-09-05）：Container 不公开 target/feature facade，不依赖 SIMD；私有 selector
 只对其实际 compiled TU 负责。无功能、layout、算法或 P1 comparison-class 变化，本轮没有未处置
 `MUST`，仅 P0 结构与正确性验证。

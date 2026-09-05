@@ -15,9 +15,9 @@ namespace hs = hyle::simd;
 namespace {
 
 #if HYLE_ARCH_ARM64
-constexpr hs::Isa kExpectedIsa = hs::Isa::kSve;
+constexpr hs::KernelTarget kExpectedIsa = hs::KernelTarget::kSve;
 #elif HYLE_ARCH_RISCV64
-constexpr hs::Isa kExpectedIsa = hs::Isa::kRvv;
+constexpr hs::KernelTarget kExpectedIsa = hs::KernelTarget::kRvv;
 #endif
 
 template <class T>
@@ -29,13 +29,13 @@ void ExpectNearRelative(T actual, T expected, T tolerance) {
 }  // namespace
 
 TEST(ScalableMathDispatch, RuntimeSelectsScalableProductTier) {
-  EXPECT_EQ(hs::runtime().isa, kExpectedIsa);
-  EXPECT_EQ(hs::runtime().math.isa, kExpectedIsa);
+  EXPECT_EQ(hs::runtime().target, kExpectedIsa);
+  EXPECT_EQ(hs::runtime().math.target, kExpectedIsa);
 
   const hs::Runtime* exact = hs::runtime_for(kExpectedIsa);
   ASSERT_NE(exact, nullptr);
-  EXPECT_EQ(exact->isa, kExpectedIsa);
-  EXPECT_EQ(exact->math.isa, kExpectedIsa);
+  EXPECT_EQ(exact->target, kExpectedIsa);
+  EXPECT_EQ(exact->math.target, kExpectedIsa);
 }
 
 TEST(ScalableMathDispatch, PublicBatchApiUsesScalableCoreAndTail) {

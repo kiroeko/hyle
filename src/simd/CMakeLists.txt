@@ -17,10 +17,10 @@ if(NOT HYLE_SIMD_EXACT_TARGET)
   set(HYLE_SIMD_BUILD_FAT TRUE)
 endif()
 
-# The CPUID probe belongs to platform/ (platform/cpu.{h,cc}). SIMD calls that owner
-# explicitly; its public dispatch header only aliases the shared Isa value type and
-# does not create a second detector namespace. The component manifest keeps platform
-# as a PUBLIC link because public target diagnostics expose that value type.
+# The CPUID probe belongs to platform/ (platform/cpu.{h,cc}). SIMD consumes its
+# unordered facts, while owning KernelTarget and every compiled-target requirement.
+# The component manifest keeps platform as a PUBLIC link because target.h exposes
+# the feature-set interoperability overload.
 #
 # simd-04 adds runtime-dispatched ops: dispatch_ops.cc (baseline dispatcher) + one kernel
 # TU per ISA variant, each compiled at its own -march. LTO stays OFF for the whole module
@@ -275,7 +275,8 @@ if(HYLE_SIMD_X64)
     hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
   endif()
   # AVX10.2 fp8 TU: only present when the compiler flag probed OK. -mavx10.2-512 implies the full
-  # AVX-512 + AVX10.2 vector face; runtime-gated on cpu_features().avx10_2 so it never runs on a
+  # AVX-512 + AVX10.2 vector face; runtime-gated on the explicit AVX10.2-512
+  # Platform fact so it never runs on a
   # CPU lacking it. HYLE_HAVE_AVX10_2 lights up the header decls + dispatch branch everywhere.
   if(HYLE_SIMD_BUILD_FAT AND HYLE_CXX_HAS_AVX10_2_INTRINSICS)
     set_source_files_properties(dtype/cvt_avx10_2.cc PROPERTIES

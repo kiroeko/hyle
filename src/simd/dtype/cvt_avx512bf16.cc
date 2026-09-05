@@ -1,5 +1,6 @@
 // AVX-512-BF16 f32->bf16 conversion (compiled -mavx512f -mavx512bw -mavx512vl -mavx512dq
-// -mavx512bf16 / MSVC /arch:AVX512). Only REACHED when cpu_features().avx512bf16 is true
+// -mavx512bf16 / MSVC /arch:AVX512). Only reached when the explicit
+// AVX-512 BF16 translation-unit requirements are satisfied
 // (the dispatcher gates it, and avx512bf16 is XGETBV/ZMM-gated in dispatch.cc), so no
 // AVX-512 instruction executes on a CPU lacking it.
 //

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
 
 #include "hyle/error/result.h"
@@ -11,10 +13,9 @@
 // Runtime CPU-feature detection (CPUID + XGETBV on x86). Lives in platform/ --
 // the layer below both simd/ and container/ -- because "what can this CPU run"
 // is a platform capability, not a SIMD-module concept. Any module can query it
-// WITHOUT depending on the (heavy) simd module: simd/ borrows it for its ISA
-// dispatch, and container/ uses it to safely opt into AVX2 kernels beyond the
-// SSE2 baseline (its probe.h / StringView.cc SIMD is compile-time-gated SSE2;
-// crossing to AVX2 needs THIS runtime check or an old CPU SIGILLs).
+// WITHOUT depending on the (heavy) simd module: simd/ and container/ each
+// match these facts against the complete requirements of the implementation
+// body they own. Platform deliberately does not choose either module's target.
 //
 // PROBE ISOLATION (llama.cpp's hard-won bug, conventions §10): the code that runs
 // CPUID to answer "do we have AVX512?" must itself be compiled for the BASELINE
@@ -24,101 +25,147 @@
 
 namespace hyle::platform {
 
-// Individual CPU instruction-set features, as probed once at startup. One bool per
-// feature so callers can ask precise questions ("do we have F16C for fp16 convert?")
-// independent of the coarse `Isa` tier below. x86 fields are meaningful on x86; arm
-// fields on ARM; the rest read false. POD: trivially copyable, no vtable.
-struct CpuFeatures {
-  // ---- x86 (read false on non-x86) ----
-  bool sse2 = false;       // baseline on x86-64 (always true there)
-  bool ssse3 = false;      // _mm_shuffle_epi8 / _mm_sign_epi8
-  bool sse41 = false;
-  bool sse42 = false;
-  bool avx = false;        // 256-bit float; needs OS YMM save (checked via XGETBV)
-  bool avx2 = false;       // 256-bit integer
-  bool fma = false;        // fused multiply-add (FMA3)
-  bool f16c = false;       // fp16 <-> fp32 hardware convert
-  bool lzcnt = false;      // leading-zero count (leaf 0x80000001); part of AVX2 group
-  bool bmi1 = false;
-  bool bmi2 = false;
-  bool avx512f = false;    // AVX-512 foundation; needs OS ZMM save (XGETBV)
-  bool avx512bw = false;   // byte/word
-  bool avx512vl = false;   // 128/256-bit AVX-512 ops
-  bool avx512dq = false;   // doubleword/quadword
-  bool avx512cd = false;   // conflict detection
-  bool avx512vnni = false; // int8/int16 dot product (AI), EVEX
-  bool avx_vnni = false;   // AVX-VNNI (Alder Lake+): VEX 256-bit vpdpbusd, not AVX-512
-  bool avx512bf16 = false; // bf16 dot product (AI)
-  bool avx512fp16 = false; // native fp16 arithmetic
-  bool avx10_2 = false;    // AVX10.2 (leaf 0x24 version >= 2), OS-ZMM gated for HYLE's 512-bit TU
-  // AMX CPUID facts deliberately are not permission facts. Linux grants tile
-  // state per thread; query/request that state through platform_thread before
-  // entering an AMX kernel.
-  bool amx_tile = false;
-  bool amx_int8 = false;
-  bool amx_bf16 = false;
-  // ---- arm (read false on non-ARM) ----
-  bool neon = false;       // baseline on aarch64 (always true there)
-  bool sve = false;        // scalable vectors (runtime-length; see vec.h Lanes())
-  bool sve2 = false;       // second-generation SVE instruction set
-  bool sve_aes = false;    // SVE2 AES round instructions
-  bool sve_pmull = false;  // SVE2 polynomial multiply
-  bool sve_i8mm = false;   // SVE int8 matrix multiply
-  bool sve_f32mm = false;  // SVE fp32 matrix multiply
-  bool sve_f64mm = false;  // SVE fp64 matrix multiply
-  bool sve_bf16 = false;   // SVE bf16 arithmetic / convert
-  bool arm_i8mm = false;   // non-SVE Arm int8 matrix multiply
-  bool arm_bf16 = false;   // non-SVE Arm bf16 arithmetic / convert
-  bool sme = false;        // Scalable Matrix Extension hardware/OS support
-  bool sme2 = false;       // SME2; implies SME
-  // ---- RISC-V (read false on non-RISC-V) ----
-  bool rvv = false;          // V extension; runtime VLEN is queried by the backend
-  bool rvv_zvbb = false;     // vector bit-manipulation
-  bool rvv_zvbc = false;     // vector carryless multiply
-  bool rvv_zvkned = false;   // vector AES block cipher
-  bool rvv_zvfh = false;     // full vector fp16
-  bool rvv_zvfhmin = false;  // minimum vector fp16 convert support
+// Unordered CPU/OS facts. These are inputs to an implementation owner's target
+// requirements, never a cross-architecture score. Ordinary vector facts mean the
+// process may execute that extension (including the required x86 XCR0 state).
+// AMX is different: Linux tile permission is per-thread, so its explicitly named
+// Hardware facts must be combined with platform-thread's permission API.
+enum class CpuFeature : std::uint16_t {
+  // x86-64
+  kX86Sse2,
+  kX86Sse3,
+  kX86Ssse3,
+  kX86Sse41,
+  kX86Sse42,
+  kX86Aes,
+  kX86Pclmulqdq,
+  kX86Avx,
+  kX86Avx2,
+  kX86Fma,
+  kX86F16c,
+  kX86Lzcnt,
+  kX86Bmi1,
+  kX86Bmi2,
+  kX86Avx512F,
+  kX86Avx512Bw,
+  kX86Avx512Vl,
+  kX86Avx512Dq,
+  kX86Avx512Cd,
+  kX86Avx512Vnni,
+  kX86Avx512Vbmi,
+  kX86Avx512Vbmi2,
+  kX86Avx512Bitalg,
+  kX86Avx512Vpopcntdq,
+  kX86Gfni,
+  kX86Vaes,
+  kX86Vpclmulqdq,
+  kX86AvxVnni,
+  kX86Avx512Bf16,
+  kX86Avx512Fp16,
+  kX86Avx10_2_512,
+  kX86AmxTileHardware,
+  kX86AmxInt8Hardware,
+  kX86AmxBf16Hardware,
+  kX86AmxFp16Hardware,
+
+  // AArch64
+  kArmNeon,
+  kArmAes,
+  kArmPmull,
+  kArmDotProd,
+  kArmFp16,
+  kArmSve,
+  kArmSve2,
+  kArmSveAes,
+  kArmSvePmull,
+  kArmSveI8mm,
+  kArmSveF32mm,
+  kArmSveF64mm,
+  kArmSveBf16,
+  kArmI8mm,
+  kArmBf16,
+  kArmSme,
+  kArmSme2,
+
+  // RISC-V
+  kRiscvV,
+  kRiscvZvbb,
+  kRiscvZvbc,
+  kRiscvZvkned,
+  kRiscvZvfh,
+  kRiscvZvfhmin,
+
+  kCount,
 };
 
-// Coarse ISA tiers, ORDERED so a larger value is a strictly more capable variant on
-// the same arch. This ordering IS the score: the variant selector (simd dispatch)
-// picks the highest tier whose features are all present. Values are explicit and
-// gap-spaced per arch so x86 and ARM tiers never compare across arches by accident.
-enum class Isa : std::uint32_t {
-  kScalar = 0,  // portable floor; always available, every arch
+// Fixed-size value set: cheap to copy into a target-requirements constant and
+// free of allocation, provider state, architecture ordering or dynamic storage.
+class CpuFeatureSet final {
+ public:
+  constexpr CpuFeatureSet() noexcept = default;
 
-  // x86 tiers (each implies all lower x86 tiers' features)
-  kSse2 = 10,
-  kSsse3 = 11,
-  kSse42 = 12,
-  kAvx = 15,     // 256-bit FLOAT only (Sandy/Ivy Bridge): AVX without AVX2's 256-bit int
-  kAvx2 = 20,    // implies FMA + F16C in practice (Highway's kGroupAVX2)
-  kAvx512 = 30,  // AVX-512 F+BW+VL+DQ+CD (Highway's kGroupAVX3)
+  constexpr explicit CpuFeatureSet(
+      std::initializer_list<CpuFeature> features) noexcept {
+    for (CpuFeature feature : features) set(feature);
+  }
 
-  // arm tiers
-  kNeon = 110,
-  kSve = 120,
+  [[nodiscard]] constexpr bool has(CpuFeature feature) const noexcept {
+    const std::size_t index = static_cast<std::size_t>(feature);
+    return index < kFeatureCount &&
+           (words_[index / kBitsPerWord] &
+            (std::uint64_t{1} << (index % kBitsPerWord))) != 0;
+  }
 
-  // RISC-V tiers
-  kRvv = 210,
+  [[nodiscard]] constexpr bool has_all(
+      const CpuFeatureSet& required) const noexcept {
+    for (std::size_t i = 0; i < words_.size(); ++i) {
+      if ((words_[i] & required.words_[i]) != required.words_[i]) return false;
+    }
+    return true;
+  }
+
+  [[nodiscard]] constexpr bool has_any(
+      const CpuFeatureSet& candidates) const noexcept {
+    for (std::size_t i = 0; i < words_.size(); ++i) {
+      if ((words_[i] & candidates.words_[i]) != 0) return true;
+    }
+    return false;
+  }
+
+  constexpr CpuFeatureSet& set(CpuFeature feature,
+                               bool enabled = true) noexcept {
+    const std::size_t index = static_cast<std::size_t>(feature);
+    if (index >= kFeatureCount) return *this;
+    const std::uint64_t mask =
+        std::uint64_t{1} << (index % kBitsPerWord);
+    if (enabled)
+      words_[index / kBitsPerWord] |= mask;
+    else
+      words_[index / kBitsPerWord] &= ~mask;
+    return *this;
+  }
+
+  [[nodiscard]] friend constexpr bool operator==(
+      const CpuFeatureSet&, const CpuFeatureSet&) noexcept = default;
+
+ private:
+  static constexpr std::size_t kBitsPerWord = 64;
+  static constexpr std::size_t kFeatureCount =
+      static_cast<std::size_t>(CpuFeature::kCount);
+  static constexpr std::size_t kWordCount = 2;
+  static_assert(kFeatureCount <= kWordCount * kBitsPerWord,
+                "CpuFeatureSet exhausted its audited fixed capacity");
+
+  std::array<std::uint64_t, kWordCount> words_{};
 };
 
-// The probed feature set for THIS process's CPU. Detected once (CPUID + XGETBV on
-// x86), cached, thread-safe (Meyers singleton inside). Cheap to call repeatedly.
-HYLE_PLATFORM_API const CpuFeatures& cpu_features() noexcept;
+// The probed fact set for this process. Detection is cached and thread-safe;
+// subsequent calls and set membership are O(1) and perform no system call.
+HYLE_PLATFORM_API const CpuFeatureSet& cpu_features() noexcept;
 
-// The highest ISA tier this CPU can actually run, accounting for BOTH the CPU's CPUID
-// bits AND the OS having enabled the wide register state (XGETBV) -- a CPU may report
-// AVX while a stale OS never saves YMM across context switches, which would corrupt
-// state, so such a CPU scores below AVX. This is the score the variant selector ranks.
-HYLE_PLATFORM_API Isa best_isa() noexcept;
-
-// Whether `isa` is supported on this CPU (best_isa() >= isa within the same arch).
-// Convenience for "can I dlopen the AVX2 variant?" style checks.
-HYLE_PLATFORM_API bool supports(Isa isa) noexcept;
-
-// Human-readable tier name ("scalar", "avx2", ...). For logging/diagnostics only.
-HYLE_PLATFORM_API const char* isa_name(Isa isa) noexcept;
+// Stable diagnostic spelling for every declared feature; invalid values return
+// "unknown". This is not a target name or dispatch recommendation.
+HYLE_PLATFORM_API const char* cpu_feature_name(CpuFeature feature) noexcept;
 
 // Best-effort L1 data cache line observation in bytes (typically 64 on
 // x86/ARM, 128 on Apple Silicon). Probed once (CPUID leaf 1 on x86,

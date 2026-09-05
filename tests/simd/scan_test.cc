@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
 #include "hyle/simd/scan.h"
 #include "src/simd/runtime_internal.h"
 
@@ -156,9 +156,9 @@ TEST(Scan, PublicCoreAndConveniencesCoverAllTypes) {
 }
 
 TEST(Scan, EverySupportedRuntimeVariant) {
-  for (const hs::Isa isa : {hs::Isa::kScalar, hs::Isa::kSse42,
-                            hs::Isa::kAvx2, hs::Isa::kAvx512,
-                            hs::Isa::kNeon, hs::Isa::kSve, hs::Isa::kRvv}) {
+  for (const hs::KernelTarget isa : {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4,
+                            hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
+                            hs::KernelTarget::kNeon, hs::KernelTarget::kSve, hs::KernelTarget::kRvv}) {
     const hs::Runtime* runtime = hs::runtime_for(isa);
     if (runtime == nullptr) continue;
 
@@ -185,7 +185,7 @@ TEST(Scan, EverySupportedRuntimeVariant) {
 TEST(Scan, SelectedTargetDescribesActualKernelTable) {
   const auto& runtime = hs::runtime();
   const hs::SelectedTarget target = hs::selected_target(hs::KernelFamily::kScan);
-  EXPECT_EQ(target.isa, runtime.scan.isa);
+  EXPECT_EQ(target.target, runtime.scan.target);
   EXPECT_EQ(target.features, runtime.scan.features);
   EXPECT_NE(runtime.scan_ops.inclusive_scan_u32, nullptr);
   EXPECT_NE(runtime.scan_ops.exclusive_scan_f64, nullptr);

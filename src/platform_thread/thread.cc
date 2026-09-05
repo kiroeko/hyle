@@ -341,7 +341,7 @@ Result<std::size_t> affinity(unsigned* dst, std::size_t cap) noexcept {
 Result<ThreadIsaState> isa_state() noexcept {
   ThreadIsaState state;
 #  if HYLE_ARCH_X64
-  if (cpu_features().amx_tile) {
+  if (cpu_features().has(CpuFeature::kX86AmxTileHardware)) {
     constexpr DWORD64 kXfeatureTileData = DWORD64{1} << 18;
     state.amx_tile_permitted =
         (::GetEnabledXStateFeatures() & kXfeatureTileData) != 0;
@@ -352,7 +352,7 @@ Result<ThreadIsaState> isa_state() noexcept {
 
 Status request_amx_tile_permission() noexcept {
 #  if HYLE_ARCH_X64
-  if (!cpu_features().amx_tile) {
+  if (!cpu_features().has(CpuFeature::kX86AmxTileHardware)) {
     return Status::Unimplemented("AMX tile data is unavailable on this CPU");
   }
   auto state = isa_state();
@@ -689,12 +689,12 @@ HYLE_NOINLINE std::size_t read_rvv_vector_bytes() noexcept {
 
 Result<ThreadIsaState> isa_state() noexcept {
   ThreadIsaState state;
-  const CpuFeatures& features = cpu_features();
+  const CpuFeatureSet& features = cpu_features();
 #  if HYLE_OS_LINUX && HYLE_ARCH_ARM64
   constexpr int kPrSveGetVl = 51;
   constexpr int kPrSmeGetVl = 64;
   constexpr int kVlLengthMask = 0xffff;
-  if (features.sve) {
+  if (features.has(CpuFeature::kArmSve)) {
     const int value = ::prctl(kPrSveGetVl, 0, 0, 0, 0);
     if (value < 0) {
       return std::unexpected(status_from_errno(errno, "prctl(PR_SVE_GET_VL)"));
@@ -702,7 +702,7 @@ Result<ThreadIsaState> isa_state() noexcept {
     state.scalable_vector_bytes =
         static_cast<std::size_t>(value & kVlLengthMask);
   }
-  if (features.sme) {
+  if (features.has(CpuFeature::kArmSme)) {
     const int value = ::prctl(kPrSmeGetVl, 0, 0, 0, 0);
     if (value < 0) {
       return std::unexpected(status_from_errno(errno, "prctl(PR_SME_GET_VL)"));
@@ -711,7 +711,7 @@ Result<ThreadIsaState> isa_state() noexcept {
         static_cast<std::size_t>(value & kVlLengthMask);
   }
 #  elif HYLE_OS_LINUX && HYLE_ARCH_X64
-  if (features.amx_tile) {
+  if (features.has(CpuFeature::kX86AmxTileHardware)) {
     constexpr unsigned long kArchGetXcompPerm = 0x1022;
     constexpr unsigned kXfeatureTileData = 18;
     unsigned long mask = 0;
@@ -723,7 +723,8 @@ Result<ThreadIsaState> isa_state() noexcept {
         (mask & (1ul << kXfeatureTileData)) != 0;
   }
 #  elif HYLE_OS_LINUX && HYLE_ARCH_RISCV64
-  if (features.rvv) state.scalable_vector_bytes = read_rvv_vector_bytes();
+  if (features.has(CpuFeature::kRiscvV))
+    state.scalable_vector_bytes = read_rvv_vector_bytes();
 #  else
   (void)features;
 #  endif
@@ -732,7 +733,7 @@ Result<ThreadIsaState> isa_state() noexcept {
 
 Status request_amx_tile_permission() noexcept {
 #  if HYLE_OS_LINUX && HYLE_ARCH_X64
-  if (!cpu_features().amx_tile) {
+  if (!cpu_features().has(CpuFeature::kX86AmxTileHardware)) {
     return Status::Unimplemented("AMX tile data is unavailable on this CPU");
   }
   constexpr unsigned long kArchRequestXcompPerm = 0x1023;

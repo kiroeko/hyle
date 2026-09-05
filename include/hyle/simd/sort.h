@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+#include "hyle/simd/visibility.h"
 #include "hyle/simd/types.h"
 
 // In-place whole-buffer sort / partial_sort / select. Accelerated target TUs use the licensed,

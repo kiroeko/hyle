@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
+#include "hyle/simd/visibility.h"
 
 namespace hyle::simd {
 
@@ -25,7 +26,7 @@ enum class KernelFamily : std::uint8_t {
 enum class TargetFeature : std::uint64_t {
   kF16c = 1ull << 0,
   kAvx512Bf16 = 1ull << 1,
-  kAvx10_2 = 1ull << 2,
+  kAvx10_2_512 = 1ull << 2,
   kAvxVnni = 1ull << 3,
   kAvx512Vnni = 1ull << 4,
   kMathExactLibmScalar = 1ull << 16,
@@ -40,7 +41,7 @@ constexpr std::uint64_t target_feature_bits(TargetFeature feature) noexcept {
 }
 
 struct SelectedTarget {
-  Isa isa = Isa::kScalar;
+  KernelTarget target = KernelTarget::kScalar;
   std::uint64_t features = 0;
 
   constexpr bool has(TargetFeature feature) const noexcept {

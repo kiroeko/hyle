@@ -14,11 +14,11 @@
 
 HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制一套平行 Highway DSL。应用通常只应
 调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
-可用的 scalar、SSE4、AVX2、AVX-512 或 NEON 实现。
+可用的 scalar、SSE4、AVX2、AVX-512、NEON、SVE 或 RVV 实现。
 
 ## 先选择使用层
 
-| 需求 | 应选层 | 是否运行时选 ISA | 稳定性 |
+| 需求 | 应选层 | 是否运行时选 target | 稳定性 |
 |---|---|---:|---|
 | C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 进程内解析一次；每个整批调用一次间接调用 | 同受支持工具链的 C++ source contract |
 | C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 同上 | 原生 source API，不承诺跨工具链 ABI |
@@ -35,7 +35,7 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
               +-------------------+-------------------+
               |                                       |
        未知客户 CPU                            已知目标的 HYLE 构建
-   首次取得并缓存最佳实现                    HYLE_SIMD_EXACT_TARGET
+   首次解析并缓存实际 family 实现             HYLE_SIMD_EXACT_TARGET
               |                                       |
  scalar / SSE4 / AVX2 / AVX-512 / NEON          直接绑定一个实现
               \                                       /
@@ -59,13 +59,15 @@ pointer/count API 不给用户内存增加路由 metadata。调用很小的数�
 #include "hyle/simd/runtime.h"
 
 const auto math = hyle::simd::selected_target(hyle::simd::KernelFamily::kMath);
-std::printf("math target: %s\n", hyle::platform::isa_name(math.isa));
+std::printf("math target: %s\n", hyle::simd::kernel_target_name(math.target));
 const auto dtype = hyle::simd::selected_target(hyle::simd::KernelFamily::kDtype);
 bool has_f16c = dtype.has(hyle::simd::TargetFeature::kF16c);
 ```
 
-`hyle::platform::best_isa()` 报告主机事实，`selected_target()` 报告某个 HYLE family 实际采用的
-compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier winner 不同。诊断 API 不能 pin 实现。
+Platform 只公开无顺序的单项 `CpuFeature` facts，不存在一个诚实的“主机最佳 ISA”。
+`selected_target()` 报告某个 HYLE family 实际采用的 compiled target；不同 family 可能因编译器
+blocklist、可选扩展或已认证的 lower-target winner 而不同。`KernelTarget` 也不能跨架构排序，诊断
+API 不能 pin 实现。
 
 ## 常用能力速查
 

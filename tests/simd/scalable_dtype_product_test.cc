@@ -15,10 +15,10 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_DTYPE(name) hs::detail::name##_sve
-constexpr hs::Isa kExpectedDtypeIsa = hs::Isa::kSve;
+constexpr hs::KernelTarget kExpectedDtypeIsa = hs::KernelTarget::kSve;
 #elif defined(HYLE_SIMD_TARGET_RVV)
 #define HYLE_SCALABLE_DTYPE(name) hs::detail::name##_rvv
-constexpr hs::Isa kExpectedDtypeIsa = hs::Isa::kRvv;
+constexpr hs::KernelTarget kExpectedDtypeIsa = hs::KernelTarget::kRvv;
 #endif
 
 namespace {
@@ -70,10 +70,10 @@ void CheckConversions(bool public_api) {
 TEST(ScalableDtypeProduct, DirectKernelsMatchScalarOracle) { CheckConversions(false); }
 
 TEST(ScalableDtypeProduct, RuntimeAndPublicApiUseScalableTier) {
-  EXPECT_EQ(hs::runtime().dtype.isa, kExpectedDtypeIsa);
+  EXPECT_EQ(hs::runtime().dtype.target, kExpectedDtypeIsa);
   const hs::Runtime* exact = hs::runtime_for(kExpectedDtypeIsa);
   ASSERT_NE(exact, nullptr);
-  EXPECT_EQ(exact->dtype.isa, kExpectedDtypeIsa);
+  EXPECT_EQ(exact->dtype.target, kExpectedDtypeIsa);
   CheckConversions(true);
 }
 

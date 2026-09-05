@@ -15,7 +15,8 @@ void f16_to_f32_f16c(const float16_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_f16_f16c(const float* src, float16_t* dst, std::size_t n) noexcept;
 
 // bf16 f32->bf16 native AVX-512-BF16 (VCVTNEPS2BF16, 16-wide hardware RNE). Only reached
-// when cpu_features().avx512bf16. Folds the AVX2 path's ~7-op RNE into one instruction.
+// when CpuFeature::kX86Avx512Bf16 is present. Folds the AVX2 path's
+// ~7-op RNE into one instruction.
 // (bf16->f32 has no AVX-512-BF16 win: it's a pure <<16 shift the AVX2 path already does
 // optimally, so no avx512 variant for that direction.)
 void f32_to_bf16_avx512bf16(const float* src, bfloat16_t* dst, std::size_t n) noexcept;

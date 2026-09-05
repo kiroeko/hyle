@@ -162,7 +162,7 @@ struct Runtime {
   };
 
   struct Module {
-    Isa isa;
+    KernelTarget target;
     std::uint64_t features;
   };
 
@@ -170,8 +170,8 @@ struct Runtime {
       target_feature_bits(TargetFeature::kF16c);
   static constexpr std::uint64_t kFeatureAvx512Bf16 =
       target_feature_bits(TargetFeature::kAvx512Bf16);
-  static constexpr std::uint64_t kFeatureAvx10_2 =
-      target_feature_bits(TargetFeature::kAvx10_2);
+  static constexpr std::uint64_t kFeatureAvx10_2_512 =
+      target_feature_bits(TargetFeature::kAvx10_2_512);
   static constexpr std::uint64_t kFeatureAvxVnni =
       target_feature_bits(TargetFeature::kAvxVnni);
   static constexpr std::uint64_t kFeatureAvx512Vnni =
@@ -189,7 +189,7 @@ struct Runtime {
 
   std::uint32_t table_version;
   std::uint32_t table_size;
-  Isa isa;
+  KernelTarget target;
   Ops ops;
   Random random;
   Search search;
@@ -216,7 +216,8 @@ struct Runtime {
 #endif
 
 HYLE_SIMD_INTERNAL_TEST_API const Runtime& runtime() noexcept;
-HYLE_SIMD_INTERNAL_TEST_API const Runtime* runtime_for(Isa isa) noexcept;
+HYLE_SIMD_INTERNAL_TEST_API const Runtime* runtime_for(
+    KernelTarget target) noexcept;
 
 #undef HYLE_SIMD_INTERNAL_TEST_API
 

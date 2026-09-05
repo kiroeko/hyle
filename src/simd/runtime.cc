@@ -92,48 +92,48 @@ namespace {
    HYLE_SORT_RUNTIME_ONE(KeyValue32, kv32, suffix)                              \
    HYLE_SORT_RUNTIME_ONE(KeyValue64, kv64, suffix)}
 
-Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
+Runtime::Sort sort_ops_for_product_target(KernelTarget target) noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SCALAR) || defined(HYLE_SIMD_EXACT_TARGET_SSE4)
-  (void)isa;
+  (void)target;
   return HYLE_SORT_RUNTIME(scalar);
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
-  (void)isa;
+  (void)target;
   return HYLE_SORT_RUNTIME(avx2);
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-  (void)isa;
+  (void)target;
 #if HYLE_COMPILER_MSVC
   return HYLE_SORT_RUNTIME(avx2);
 #else
   return HYLE_SORT_RUNTIME(avx512);
 #endif
 #elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
-  (void)isa;
+  (void)target;
   return HYLE_SORT_RUNTIME(neon);
 #elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
-  (void)isa;
+  (void)target;
   return HYLE_SORT_RUNTIME(sve);
 #elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
-  (void)isa;
+  (void)target;
   return HYLE_SORT_RUNTIME(rvv);
 #else
-  switch (isa) {
+  switch (target) {
 #if HYLE_ARCH_X64
-    case Isa::kAvx512:
+    case KernelTarget::kAvx512:
 #if HYLE_COMPILER_MSVC
       return HYLE_SORT_RUNTIME(avx2);
 #else
       return HYLE_SORT_RUNTIME(avx512);
 #endif
-    case Isa::kAvx2: return HYLE_SORT_RUNTIME(avx2);
+    case KernelTarget::kAvx2: return HYLE_SORT_RUNTIME(avx2);
     // The bounded adaptation has no separate SSE4 body.
-    case Isa::kSse42: return HYLE_SORT_RUNTIME(scalar);
+    case KernelTarget::kSse4: return HYLE_SORT_RUNTIME(scalar);
 #elif HYLE_ARCH_ARM64
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-    case Isa::kSve: return HYLE_SORT_RUNTIME(sve);
+    case KernelTarget::kSve: return HYLE_SORT_RUNTIME(sve);
 #endif
-    case Isa::kNeon: return HYLE_SORT_RUNTIME(neon);
+    case KernelTarget::kNeon: return HYLE_SORT_RUNTIME(neon);
 #elif HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_HAS_RVV_VARIANT)
-    case Isa::kRvv: return HYLE_SORT_RUNTIME(rvv);
+    case KernelTarget::kRvv: return HYLE_SORT_RUNTIME(rvv);
 #endif
     default: return HYLE_SORT_RUNTIME(scalar);
   }
@@ -142,19 +142,19 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
 
 #if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
 #define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                           \
-  value.ops_module.isa = Isa::kAvx2;                                          \
+  value.ops_module.target = KernelTarget::kAvx2;                              \
   value.ops_module.features |= Runtime::kFeaturePerOpLowerTier;                \
-  value.narrow_module.isa = Isa::kAvx2;                                       \
+  value.narrow_module.target = KernelTarget::kAvx2;                           \
   value.narrow_module.features |= Runtime::kFeaturePerOpLowerTier;             \
-  value.search_module.isa = Isa::kAvx2;                                       \
+  value.search_module.target = KernelTarget::kAvx2;                           \
   value.search_module.features |= Runtime::kFeaturePerOpLowerTier;             \
-  value.scan.isa = Isa::kAvx2;                                                \
+  value.scan.target = KernelTarget::kAvx2;                                    \
   value.scan.features |= Runtime::kFeaturePerOpLowerTier;                      \
-  value.random_module.isa = Isa::kAvx2;                                       \
+  value.random_module.target = KernelTarget::kAvx2;                           \
   value.random_module.features |= Runtime::kFeaturePerOpLowerTier;             \
-  value.bitpack.isa = Isa::kAvx2;                                             \
+  value.bitpack.target = KernelTarget::kAvx2;                                 \
   value.bitpack.features |= Runtime::kFeaturePerOpLowerTier;                   \
-  value.dtype.isa = Isa::kAvx2;                                               \
+  value.dtype.target = KernelTarget::kAvx2;                                   \
   value.dtype.features |= Runtime::kFeaturePerOpLowerTier;
 #else
 #define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)
@@ -181,7 +181,7 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
          &detail::bf16_to_f32_##suffix, &detail::f32_to_bf16_##suffix,             \
          &detail::f16_to_bf16_##suffix, &detail::bf16_to_f16_##suffix},            \
         HYLE_BITPACK_RUNTIME(suffix),                                              \
-        sort_ops_for_product_isa(tier),                                            \
+        sort_ops_for_product_target(tier),                                         \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
@@ -191,27 +191,27 @@ Runtime::Sort sort_ops_for_product_isa(Isa isa) noexcept {
         {tier, Runtime::kFeatureMathExactLibmScalar},                               \
         {tier, 0},                                                                  \
         {tier, Runtime::kFeatureBitpackLogical128}};                                \
-    if constexpr (tier == Isa::kSse42) {                                            \
-      value.math.isa = value.sort.isa = Isa::kScalar;                               \
-    } else if constexpr (tier == Isa::kAvx2) {                                      \
+    if constexpr (tier == KernelTarget::kSse4) {                                    \
+      value.math.target = value.sort.target = KernelTarget::kScalar;                \
+    } else if constexpr (tier == KernelTarget::kAvx2) {                             \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
-    } else if constexpr (tier == Isa::kAvx512) {                                    \
+    } else if constexpr (tier == KernelTarget::kAvx512) {                           \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
       value.math.features |= Runtime::kFeaturePerOpLowerTier;                       \
-      value.sort.isa = detail::sort_isa_for_product_isa(tier);                      \
-      if constexpr (detail::sort_isa_for_product_isa(tier) != tier)                 \
+      value.sort.target = detail::sort_target_for_product_target(tier);             \
+      if constexpr (detail::sort_target_for_product_target(tier) != tier)           \
         value.sort.features |= Runtime::kFeaturePerOpLowerTier;                     \
       /* Official Highway has no classic-cl AVX3 target. */                         \
       /* The generated avx512-named ops leg is then an AVX2 body. */                 \
       HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                                  \
-    } else if constexpr (tier == Isa::kSve) {                                       \
+    } else if constexpr (tier == KernelTarget::kSve) {                              \
       value.sort.features |= Runtime::kFeatureSortCappedNetwork;                    \
     }                                                                               \
     return value;                                                                   \
   }()
 
-#define HYLE_DEFINE_RUNTIME(pretty, suffix, isa) \
-  HYLE_RUNTIME_TABLE(k##pretty##Runtime, Isa::k##isa, suffix);
+#define HYLE_DEFINE_RUNTIME(pretty, suffix, target) \
+  HYLE_RUNTIME_TABLE(k##pretty##Runtime, KernelTarget::k##target, suffix);
 HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_DEFINE_RUNTIME
 
@@ -229,10 +229,10 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_SEARCH_RUNTIME
 #undef HYLE_SEARCH_RUNTIME_ONE
 
-const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
-  switch (isa) {
-#define HYLE_RUNTIME_CASE(pretty, suffix, isa_token) \
-    case Isa::k##isa_token: return &k##pretty##Runtime;
+const Runtime* runtime_for_supported_target(KernelTarget target) noexcept {
+  switch (target) {
+#define HYLE_RUNTIME_CASE(pretty, suffix, target_token) \
+    case KernelTarget::k##target_token: return &k##pretty##Runtime;
     HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_RUNTIME_CASE)
 #undef HYLE_RUNTIME_CASE
     default: return nullptr;
@@ -240,8 +240,8 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
 }
 
 Runtime selected_runtime() noexcept {
-  const Isa tier = detail::default_dispatched_isa();
-  const Runtime* base = runtime_for_supported_isa(tier);
+  const KernelTarget tier = detail::default_dispatched_target();
+  const Runtime* base = runtime_for_supported_target(tier);
 #if defined(HYLE_SIMD_EXACT)
   Runtime result = base != nullptr ? *base : HYLE_SIMD_EXACT_RUNTIME;
 #else
@@ -250,12 +250,13 @@ Runtime selected_runtime() noexcept {
 
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   result.math.features |= Runtime::kFeaturePerOpLowerTier;
-  result.sort.isa = detail::sort_isa_for_product_isa(Isa::kAvx512);
-  if (result.sort.isa != result.isa)
+  result.sort.target =
+      detail::sort_target_for_product_target(KernelTarget::kAvx512);
+  if (result.sort.target != result.target)
     result.sort.features |= Runtime::kFeaturePerOpLowerTier;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
-  result.math.isa = Isa::kScalar;
-  result.sort.isa = Isa::kScalar;
+  result.math.target = KernelTarget::kScalar;
+  result.sort.target = KernelTarget::kScalar;
 #elif defined(HYLE_SIMD_EXACT)
   // The generated table already describes the sole compiled Highway target.
 #elif HYLE_ARCH_X64
@@ -277,50 +278,53 @@ Runtime selected_runtime() noexcept {
   // genuine feature capability not representable by the canonical ladder.
   if (specialty.f16c) {
     result.dtype.features |= Runtime::kFeatureF16c;
-    if (result.isa != Isa::kAvx2 && result.isa != Isa::kAvx512) {
+    if (result.target != KernelTarget::kAvx2 &&
+        result.target != KernelTarget::kAvx512) {
       result.dtype_convert.f16_to_f32 = &detail::f16_to_f32_f16c;
       result.dtype_convert.f32_to_f16 = &detail::f32_to_f16_f16c;
     }
   }
   if (specialty.avx512_bf16) {
     result.dtype_convert.f32_to_bf16 = &detail::f32_to_bf16_avx512bf16;
-    if (result.dtype.isa != Isa::kAvx512) {
-      result.dtype.isa = Isa::kAvx512;
+    if (result.dtype.target != KernelTarget::kAvx512) {
+      result.dtype.target = KernelTarget::kAvx512;
       result.dtype.features |= Runtime::kFeaturePerOpLowerTier;
     }
     result.dtype.features |= Runtime::kFeatureAvx512Bf16;
   }
   if (specialty.avx10_2)
-    result.dtype.features |= Runtime::kFeatureAvx10_2;
-  const Isa product_tier =
-      result.isa == Isa::kAvx512 ? Isa::kAvx512
-      : result.isa == Isa::kAvx2 ? Isa::kAvx2
-                                 : Isa::kScalar;
-  result.math.isa = product_tier;
-  result.sort.isa = detail::sort_isa_for_product_isa(product_tier);
-  if (product_tier == Isa::kAvx512)
+    result.dtype.features |= Runtime::kFeatureAvx10_2_512;
+  const KernelTarget product_target =
+      result.target == KernelTarget::kAvx512 ? KernelTarget::kAvx512
+      : result.target == KernelTarget::kAvx2 ? KernelTarget::kAvx2
+                                             : KernelTarget::kScalar;
+  result.math.target = product_target;
+  result.sort.target = detail::sort_target_for_product_target(product_target);
+  if (product_target == KernelTarget::kAvx512)
     result.math.features |= Runtime::kFeaturePerOpLowerTier;
-  if (result.sort.isa != product_tier)
+  if (result.sort.target != product_target)
     result.sort.features |= Runtime::kFeaturePerOpLowerTier;
 #elif HYLE_ARCH_ARM64
-  result.dtype.isa = Isa::kNeon;
+  result.dtype.target = KernelTarget::kNeon;
 #endif
 
 #if HYLE_ARCH_ARM64
   // Math, common dtype conversions, canonical bitpack and sort have SVE product TUs.
-  if (result.isa == Isa::kSve) {
-    result.dtype.isa = Isa::kSve;
-    result.math.isa = Isa::kSve;
-    result.sort.isa = Isa::kSve;
+  if (result.target == KernelTarget::kSve) {
+    result.dtype.target = KernelTarget::kSve;
+    result.math.target = KernelTarget::kSve;
+    result.sort.target = KernelTarget::kSve;
     result.sort.features |= Runtime::kFeatureSortCappedNetwork;
-    result.bitpack.isa = Isa::kSve;
+    result.bitpack.target = KernelTarget::kSve;
   }
 #elif HYLE_ARCH_RISCV64
   // RVV math, common dtype conversions and canonical bitpack have product TUs.
-  result.dtype.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
-  result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
-  result.sort.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
-  result.bitpack.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
+  result.dtype.target = result.target == KernelTarget::kRvv
+                            ? KernelTarget::kRvv
+                            : KernelTarget::kScalar;
+  result.math.target = result.dtype.target;
+  result.sort.target = result.dtype.target;
+  result.bitpack.target = result.dtype.target;
 #endif
   return result;
 }
@@ -332,51 +336,54 @@ const Runtime& runtime() noexcept {
   return selected;
 }
 
-const Runtime* runtime_for(Isa isa) noexcept {
-  const Runtime* result = runtime_for_supported_isa(isa);
+const Runtime* runtime_for(KernelTarget target) noexcept {
+  const Runtime* result = runtime_for_supported_target(target);
 #if defined(HYLE_SIMD_EXACT)
   // Exact deployment is an assertion by the builder. Do not reintroduce CPU probing through the
   // diagnostic table; only the one compiled canonical tier exists.
   return result;
 #else
-  if (result == nullptr || isa == Isa::kScalar) return result;
+  if (result == nullptr || target == KernelTarget::kScalar) return result;
 #if HYLE_ARCH_X64
-  if (isa != Isa::kSse42 && isa != Isa::kAvx2 && isa != Isa::kAvx512) return nullptr;
+  if (target != KernelTarget::kSse4 && target != KernelTarget::kAvx2 &&
+      target != KernelTarget::kAvx512)
+    return nullptr;
 #elif HYLE_ARCH_ARM64
-  if (isa != Isa::kNeon && isa != Isa::kSve) return nullptr;
+  if (target != KernelTarget::kNeon && target != KernelTarget::kSve)
+    return nullptr;
 #elif HYLE_ARCH_RISCV64
-  if (isa != Isa::kRvv) return nullptr;
+  if (target != KernelTarget::kRvv) return nullptr;
 #else
   return nullptr;
 #endif
-  return platform::supports(isa) ? result : nullptr;
+  return kernel_target_supported(target) ? result : nullptr;
 #endif
 }
 
 SelectedTarget selected_target(KernelFamily family) noexcept {
   const Runtime& selected = runtime();
   switch (family) {
-    case KernelFamily::kOverall: return {selected.isa, 0};
+    case KernelFamily::kOverall: return {selected.target, 0};
     case KernelFamily::kOps:
-      return {selected.ops_module.isa, selected.ops_module.features};
+      return {selected.ops_module.target, selected.ops_module.features};
     case KernelFamily::kRandom:
-      return {selected.random_module.isa, selected.random_module.features};
+      return {selected.random_module.target, selected.random_module.features};
     case KernelFamily::kSearch:
-      return {selected.search_module.isa, selected.search_module.features};
+      return {selected.search_module.target, selected.search_module.features};
     case KernelFamily::kNarrow:
-      return {selected.narrow_module.isa, selected.narrow_module.features};
+      return {selected.narrow_module.target, selected.narrow_module.features};
     case KernelFamily::kScan:
-      return {selected.scan.isa, selected.scan.features};
+      return {selected.scan.target, selected.scan.features};
     case KernelFamily::kDtype:
-      return {selected.dtype.isa, selected.dtype.features};
+      return {selected.dtype.target, selected.dtype.features};
     case KernelFamily::kMath:
-      return {selected.math.isa, selected.math.features};
+      return {selected.math.target, selected.math.features};
     case KernelFamily::kSort:
-      return {selected.sort.isa, selected.sort.features};
+      return {selected.sort.target, selected.sort.features};
     case KernelFamily::kBitpack:
-      return {selected.bitpack.isa, selected.bitpack.features};
+      return {selected.bitpack.target, selected.bitpack.features};
   }
-  return {selected.isa, 0};
+  return {selected.target, 0};
 }
 
 }  // namespace hyle::simd

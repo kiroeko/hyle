@@ -26,7 +26,7 @@ using hyle::simd::convert;
 using hyle::simd::f32_to_bf16;
 using hyle::simd::f32_to_f16;
 using hyle::simd::float16_t;
-using hyle::simd::Isa;
+using hyle::simd::KernelTarget;
 using hyle::simd::f8e4m3_to_f32;
 using hyle::simd::f32_to_f8e4m3;
 using hyle::simd::float8_e4m3_t;
@@ -331,13 +331,14 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if HYLE_ARCH_X64
 #if defined(HYLE_SIMD_EXACT)
-  const bool tier_owns_f16c = hyle::simd::runtime().isa == Isa::kAvx2 ||
-                              hyle::simd::runtime().isa == Isa::kAvx512;
+  const bool tier_owns_f16c = hyle::simd::runtime().target == KernelTarget::kAvx2 ||
+                              hyle::simd::runtime().target == KernelTarget::kAvx512;
   EXPECT_EQ((hyle::simd::runtime().dtype.features &
              hyle::simd::Runtime::kFeatureF16c) != 0,
             tier_owns_f16c);
 #else
-  if (hyle::platform::cpu_features().f16c) {
+  if (hyle::platform::cpu_features().has(
+          hyle::platform::CpuFeature::kX86F16c)) {
     EXPECT_NE(hyle::simd::runtime().dtype.features &
                   hyle::simd::Runtime::kFeatureF16c,
               0u);
@@ -350,12 +351,12 @@ TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #elif HYLE_ARCH_ARM64
   // AArch64 always has the NEON floor. A fat SVE artifact promotes the common
   // conversion graph to its selected scalable tier instead of stopping at NEON.
-  EXPECT_EQ(hyle::simd::runtime().dtype.isa, hyle::simd::runtime().isa);
+  EXPECT_EQ(hyle::simd::runtime().dtype.target, hyle::simd::runtime().target);
 #elif HYLE_ARCH_RISCV64
   // A compiled RVV product owns the common conversion graph directly.
-  EXPECT_EQ(hyle::simd::runtime().dtype.isa, hyle::simd::runtime().isa);
+  EXPECT_EQ(hyle::simd::runtime().dtype.target, hyle::simd::runtime().target);
 #else
-  EXPECT_EQ(hyle::simd::runtime().dtype.isa, Isa::kScalar);
+  EXPECT_EQ(hyle::simd::runtime().dtype.target, KernelTarget::kScalar);
 #endif
 }
 
@@ -406,8 +407,8 @@ TEST(DtypeGraph, CommonConversionsMatchScalarOnEveryRuntimeTier) {
   std::vector<bfloat16_t> f32_bf16_out(bf16.size());
   std::vector<bfloat16_t> bf16_out(f16.size());
   std::vector<float16_t> f16_out(bf16.size());
-  for (const Isa isa : {Isa::kScalar, Isa::kSse42, Isa::kAvx2,
-                         Isa::kAvx512, Isa::kNeon, Isa::kSve, Isa::kRvv}) {
+  for (const KernelTarget isa : {KernelTarget::kScalar, KernelTarget::kSse4, KernelTarget::kAvx2,
+                         KernelTarget::kAvx512, KernelTarget::kNeon, KernelTarget::kSve, KernelTarget::kRvv}) {
     const hyle::simd::Runtime* runtime = hyle::simd::runtime_for(isa);
     if (runtime == nullptr) continue;
     SCOPED_TRACE(static_cast<int>(isa));

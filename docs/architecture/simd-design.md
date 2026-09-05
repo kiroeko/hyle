@@ -98,7 +98,7 @@ scope 上证明 HYLE 或 xsimd 有可复现的 material 优势时，才为该有
 
 未知 CPU 的预编译库在进程内只解析一次 Platform facts、已编译 target 和 family policy，并构造一张私有
 不可变函数表。这里必须区分“解析”和“调用”：CPU/target **解析只发生一次**；之后每个 whole-buffer API
-调用只经过一次已缓存的 ISA-target 间接函数调用。provider 不在运行时选择，也不增加第二个间接层。元素循环内禁止再次探测、callback、第二层
+调用只经过一次已缓存的 kernel-target 间接函数调用。provider 不在运行时选择，也不增加第二个间接层。元素循环内禁止再次探测、callback、第二层
 `HWY_DYNAMIC_DISPATCH`、allocation 或 buffer copy。若采用 Highway dynamic dispatch，它就是唯一
 decision authority，不能先由 HYLE 选一次再进入会二次选择的 vendor 入口。`selected_target(family)` 只报告
 实际产品选择，不用于用户自行派发。
@@ -124,9 +124,15 @@ consumer 通过 fixed/exact seam 融合；HYLE 的 source seam 只暴露经准�
 
 ## Target 与探测 ownership
 
-Platform 是 CPU/OS facts 的唯一 owner；SIMD 不复制或转发其 detector。Highway 拥有实现 target、编译器
-blocklist 和寄存器 lowering。SIMD family 选择二者与产品 policy 的交集，所以主机最高 ISA 与某个 family
-实际 target 可以不同。
+Platform 是 CPU/OS facts 的唯一 owner；SIMD 不复制或转发其 detector，也不要求 Platform 给出一个
+“最高 ISA”。SIMD 独占公开的无顺序 `KernelTarget`，它只表示 HYLE 实际编译或选择的 body；每个
+canonical target 的完整 feature requirements 也由 SIMD 声明。Highway/xsimd 拥有各自的寄存器 lowering
+和编译器适用边界，SIMD family 选择 host facts、已编译 body、provider blocklist 与产品 policy 的交集，
+所以同一主机上的不同 family 可以诚实报告不同 target。
+
+公开面不提供“当前 consumer TU 编译 target”常量：源码嵌入、static SDK 与 shared SDK 对这种常量没有
+统一语义。fixed/fat helper 的 per-TU target 只在内部/provider 编译期存在；普通用户通过
+`selected_target(family)` 读取运行库实际选择，通过 `cpu_features()` 读取原始主机事实，不能把二者互换。
 
 支持矩阵以 scalar 为兜底，包括 x86 SSE4/AVX2/AVX-512、AArch64 NEON/SVE 和 RVV；VNNI、BF16、F16C、
 AES 等正交 feature 只由需要它的 specialty kernel 单独探测。canonical x86 tier 不偷偷提高 AES/PCLMUL

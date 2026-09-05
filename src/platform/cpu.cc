@@ -98,116 +98,68 @@ std::uint32_t read_xcr0() noexcept {
 #  endif
 }
 
-inline bool bit(std::uint32_t reg, int idx) noexcept {
-  return (reg & (std::uint32_t{1} << idx)) != 0;
-}
-
-constexpr bool has_avx10_2(std::uint32_t leaf24_ebx) noexcept {
-  const std::uint32_t version = leaf24_ebx & 0xFFu;
-  return version >= 2;
-}
-static_assert(!has_avx10_2(1));
-static_assert(has_avx10_2(2));
-
-CpuFeatures detect_x86() noexcept {
-  CpuFeatures f;
+CpuFeatureSet detect_x86() noexcept {
+  detail::X86FeatureRegisters input;
   std::uint32_t abcd[4];
 
   cpuid(0, 0, abcd);
   const std::uint32_t max_leaf = abcd[0];
 
-  f.sse2 = true;  // guaranteed on x86-64
-
-  // leaf 1: legacy + AVX/F16C/OSXSAVE
+  // Leaf 1: legacy + AVX/F16C/OSXSAVE.
   cpuid(1, 0, abcd);
-  const std::uint32_t ecx1 = abcd[2];
-  f.ssse3 = bit(ecx1, 9);
-  f.sse41 = bit(ecx1, 19);
-  f.sse42 = bit(ecx1, 20);
-  f.fma = bit(ecx1, 12);
-  f.f16c = bit(ecx1, 29);
-  const bool cpu_avx = bit(ecx1, 28);
-  const bool osxsave = bit(ecx1, 27);
+  input.leaf1_ecx = abcd[2];
 
-  // leaf 0x80000001 (extended): LZCNT. Part of Highway's AVX2 feature group, so the
-  // AVX2 tier (compute_best) requires it alongside avx2+fma+f16c+bmi.
+  // Leaf 0x80000001 (extended): LZCNT.
   cpuid(0x80000000u, 0, abcd);  // max EXTENDED leaf
   if (abcd[0] >= 0x80000001u) {
     cpuid(0x80000001u, 0, abcd);
-    f.lzcnt = bit(abcd[2], 5);  // ECX bit 5
+    input.extended1_ecx = abcd[2];
   }
 
-  // leaf 7,0 and 7,1: AVX2 / BMI / AVX-512 family
-  bool cpu_avx2 = false;
-  bool cpu_avx512f = false, cpu_avx512bw = false, cpu_avx512vl = false;
-  bool cpu_avx512dq = false, cpu_avx512cd = false;
-  bool cpu_avx10_2 = false;
+  // Leaf 7,0 and 7,1: AVX2/BMI, AVX-512, AMX and AVX10 advertisement.
   if (max_leaf >= 7) {
     cpuid(7, 0, abcd);
-    const std::uint32_t ebx7 = abcd[1];
-    const std::uint32_t ecx7 = abcd[2];
-    const std::uint32_t edx7 = abcd[3];
-    f.bmi1 = bit(ebx7, 3);
-    cpu_avx2 = bit(ebx7, 5);
-    f.bmi2 = bit(ebx7, 8);
-    cpu_avx512f = bit(ebx7, 16);
-    cpu_avx512dq = bit(ebx7, 17);
-    cpu_avx512cd = bit(ebx7, 28);
-    cpu_avx512bw = bit(ebx7, 30);
-    cpu_avx512vl = bit(ebx7, 31);
-    f.avx512vnni = bit(ecx7, 11);
-    f.avx512fp16 = bit(edx7, 23);
-    f.amx_bf16 = bit(edx7, 22);
-    f.amx_tile = bit(edx7, 24);
-    f.amx_int8 = bit(edx7, 25);
+    const std::uint32_t max_subleaf7 = abcd[0];
+    input.leaf7_0_ebx = abcd[1];
+    input.leaf7_0_ecx = abcd[2];
+    input.leaf7_0_edx = abcd[3];
 
-    cpuid(7, 1, abcd);
-    // AVX-VNNI (VEX encoding, 256-bit): leaf 7,1 EAX bit 4 — independent of AVX-512.
-    f.avx_vnni = bit(abcd[0], 4);
-    f.avx512bf16 = bit(abcd[0], 5);
-    // AVX10: leaf 7,1 EDX bit 19 advertises AVX10 support; leaf 0x24
-    // subleaf 0 reports the version in EBX[7:0]. Current Intel SDM revisions
-    // reserve EBX[18:16] (always 111b): every AVX10 processor supports all
-    // vector widths, so they must not be interpreted as width capability bits.
-    const bool avx10_supported = bit(abcd[3], 19);
-    if (avx10_supported && max_leaf >= 0x24) {
-      cpuid(0x24u, 0, abcd);
-      cpu_avx10_2 = has_avx10_2(abcd[1]);
+    if (max_subleaf7 >= 1) {
+      cpuid(7, 1, abcd);
+      input.leaf7_1_eax = abcd[0];
+      input.leaf7_1_edx = abcd[3];
+      // AVX10: leaf 7,1 EDX bit 19 advertises the feature; leaf 0x24
+      // reports its version and supported vector widths.
+      if (detail::feature_bit(input.leaf7_1_edx, 19) &&
+          max_leaf >= 0x24) {
+        cpuid(0x24u, 0, abcd);
+        input.leaf24_ebx = abcd[1];
+      }
     }
   }
 
-  // Gate everything that uses YMM/ZMM on the OS actually saving those registers.
-  // CPUID alone is not enough (see read_xcr0 comment).
-  bool os_ymm = false, os_zmm = false;
-  if (osxsave) {
-    const std::uint32_t xcr0 = read_xcr0();
-    os_ymm = bit(xcr0, 1) && bit(xcr0, 2);                       // XMM + YMM state
-    os_zmm = os_ymm && bit(xcr0, 5) && bit(xcr0, 6) && bit(xcr0, 7);  // + opmask/ZMM
+  // XGETBV is legal only after OSXSAVE. The pure decoder applies the YMM/ZMM
+  // gates uniformly to every extension that can require that state.
+  if (detail::feature_bit(input.leaf1_ecx, 27)) {
+    input.xcr0 = read_xcr0();
+#  if HYLE_OS_MACOS
+    // macOS may lazily leave the ZMM XCR0 bits clear until first use. Apple
+    // documents hw.optional.avx512f as the process-availability query (and it
+    // is false under Rosetta, which cannot execute AVX-512), so let a
+    // successful query authoritatively set or clear the ZMM state bits.
+    int avx512_available = 0;
+    std::size_t size = sizeof(avx512_available);
+    if (::sysctlbyname("hw.optional.avx512f", &avx512_available, &size,
+                       nullptr, 0) == 0) {
+      constexpr std::uint32_t kZmmState = (1u << 5) | (1u << 6) | (1u << 7);
+      if (avx512_available != 0)
+        input.xcr0 |= kZmmState;
+      else
+        input.xcr0 &= ~kZmmState;
+    }
+#  endif
   }
-
-  f.avx = cpu_avx && os_ymm;
-  f.avx2 = cpu_avx2 && os_ymm;
-  const bool avx512_ok = os_zmm;
-  f.avx512f = cpu_avx512f && avx512_ok;
-  f.avx512bw = cpu_avx512bw && avx512_ok;
-  f.avx512vl = cpu_avx512vl && avx512_ok;
-  f.avx512dq = cpu_avx512dq && avx512_ok;
-  f.avx512cd = cpu_avx512cd && avx512_ok;
-  // AVX-512 VNNI/BF16/FP16 need OS ZMM save; AVX-VNNI only needs YMM (same as avx2).
-  f.avx512vnni = f.avx512vnni && avx512_ok;
-  f.avx_vnni = f.avx_vnni && os_ymm;
-  f.avx512bf16 = f.avx512bf16 && avx512_ok;
-  // AVX10.2 fp8 converts operate on ZMM (512-bit), so require OS ZMM save just like AVX-512.
-  f.avx10_2 = cpu_avx10_2 && avx512_ok;
-  f.avx512fp16 = f.avx512fp16 && avx512_ok;
-
-  // AMX tile state is enabled independently from XCR0 and, on Linux, must be
-  // requested for each thread. Keep these as static CPUID facts; the thread
-  // factor owns the permission query/request mechanism.
-  f.amx_int8 = f.amx_tile && f.amx_int8;
-  f.amx_bf16 = f.amx_tile && f.amx_bf16;
-
-  return f;
+  return detail::decode_x86_features(input);
 }
 
 #endif  // HYLE_ARCH_X64
@@ -222,97 +174,149 @@ constexpr std::uint64_t kRiscvExtZvfh = std::uint64_t{1} << 30;
 constexpr std::uint64_t kRiscvExtZvfhmin = std::uint64_t{1} << 31;
 
 constexpr void apply_riscv_hwprobe(std::uint64_t bits,
-                                   CpuFeatures& f) noexcept {
-  f.rvv = f.rvv || (bits & kRiscvExtV) != 0;
-  f.rvv_zvbb = f.rvv && (bits & kRiscvExtZvbb) != 0;
-  f.rvv_zvbc = f.rvv && (bits & kRiscvExtZvbc) != 0;
-  f.rvv_zvkned = f.rvv && (bits & kRiscvExtZvkned) != 0;
-  f.rvv_zvfh = f.rvv && (bits & kRiscvExtZvfh) != 0;
-  f.rvv_zvfhmin = f.rvv && (bits & kRiscvExtZvfhmin) != 0;
+                                   CpuFeatureSet& features) noexcept {
+  const bool vector = features.has(CpuFeature::kRiscvV) ||
+                      (bits & kRiscvExtV) != 0;
+  features.set(CpuFeature::kRiscvV, vector);
+  if (!vector) return;
+  detail::set_if(features, CpuFeature::kRiscvZvbb,
+                 (bits & kRiscvExtZvbb) != 0);
+  detail::set_if(features, CpuFeature::kRiscvZvbc,
+                 (bits & kRiscvExtZvbc) != 0);
+  detail::set_if(features, CpuFeature::kRiscvZvkned,
+                 (bits & kRiscvExtZvkned) != 0);
+  detail::set_if(features, CpuFeature::kRiscvZvfh,
+                 (bits & kRiscvExtZvfh) != 0);
+  detail::set_if(features, CpuFeature::kRiscvZvfhmin,
+                 (bits & kRiscvExtZvfhmin) != 0);
 }
 
 // Compile-time synthetic decoding keeps every stable Linux UABI bit covered
 // even when qemu-linux-user cannot emulate riscv_hwprobe optional extensions.
 static_assert([] {
-  CpuFeatures f;
+  CpuFeatureSet f;
   apply_riscv_hwprobe(kRiscvExtV | kRiscvExtZvbb | kRiscvExtZvbc |
                           kRiscvExtZvkned | kRiscvExtZvfh |
                           kRiscvExtZvfhmin,
                       f);
-  return f.rvv && f.rvv_zvbb && f.rvv_zvbc && f.rvv_zvkned &&
-         f.rvv_zvfh && f.rvv_zvfhmin;
+  return f.has_all(CpuFeatureSet{
+      CpuFeature::kRiscvV, CpuFeature::kRiscvZvbb,
+      CpuFeature::kRiscvZvbc, CpuFeature::kRiscvZvkned,
+      CpuFeature::kRiscvZvfh, CpuFeature::kRiscvZvfhmin});
 }());
 static_assert([] {
-  CpuFeatures f;
+  CpuFeatureSet f;
   apply_riscv_hwprobe(kRiscvExtZvbb | kRiscvExtZvbc, f);
-  return !f.rvv && !f.rvv_zvbb && !f.rvv_zvbc;
+  return !f.has_any(CpuFeatureSet{
+      CpuFeature::kRiscvV, CpuFeature::kRiscvZvbb,
+      CpuFeature::kRiscvZvbc});
 }());
 
 #endif
 
-CpuFeatures detect() noexcept {
+CpuFeatureSet detect() noexcept {
 #if HYLE_ARCH_X64
   return detect_x86();
 #elif HYLE_ARCH_ARM64
-  CpuFeatures f;
-  f.neon = true;  // mandatory on aarch64
 #if HYLE_OS_LINUX
-  // Keep the constants local instead of including asm/hwcap.h: old deployment
-  // sysroots may not name newer bits, but the stable Linux userspace ABI does.
-  constexpr unsigned long kHwcapSve = 1ul << 22;
+  // Keep numeric bits in cpu_internal.h instead of relying on a new sysroot.
   constexpr unsigned long kAtHwcap2 = 26;
-  constexpr unsigned long kHwcap2Sve2 = 1ul << 1;
-  constexpr unsigned long kHwcap2SveAes = 1ul << 2;
-  constexpr unsigned long kHwcap2SvePmull = 1ul << 3;
-  constexpr unsigned long kHwcap2SveI8mm = 1ul << 9;
-  constexpr unsigned long kHwcap2SveF32mm = 1ul << 10;
-  constexpr unsigned long kHwcap2SveF64mm = 1ul << 11;
-  constexpr unsigned long kHwcap2SveBf16 = 1ul << 12;
-  constexpr unsigned long kHwcap2I8mm = 1ul << 13;
-  constexpr unsigned long kHwcap2Bf16 = 1ul << 14;
-  constexpr unsigned long kHwcap2Sme = 1ul << 23;
-  constexpr unsigned long kHwcap2Sme2 = 1ull << 37;
-
-  const unsigned long caps = getauxval(AT_HWCAP);
-  const unsigned long caps2 = getauxval(kAtHwcap2);
-  f.sve = (caps & kHwcapSve) != 0;
-  f.sve2 = f.sve && (caps2 & kHwcap2Sve2) != 0;
-  // SVE AES/PMULL instructions are SVE2 subextensions. Requiring both bits makes
-  // the implication explicit and prevents a malformed auxv from selecting a
-  // +sve2-aes TU on an SVE1-only process.
-  f.sve_aes = f.sve2 && (caps2 & kHwcap2SveAes) != 0;
-  f.sve_pmull = f.sve2 && (caps2 & kHwcap2SvePmull) != 0;
-  f.sve_i8mm = f.sve && (caps2 & kHwcap2SveI8mm) != 0;
-  f.sve_f32mm = f.sve && (caps2 & kHwcap2SveF32mm) != 0;
-  f.sve_f64mm = f.sve && (caps2 & kHwcap2SveF64mm) != 0;
-  f.sve_bf16 = f.sve && (caps2 & kHwcap2SveBf16) != 0;
-  f.arm_i8mm = (caps2 & kHwcap2I8mm) != 0;
-  f.arm_bf16 = (caps2 & kHwcap2Bf16) != 0;
-  f.sme = (caps2 & kHwcap2Sme) != 0;
-  f.sme2 = f.sme && (caps2 & kHwcap2Sme2) != 0;
+  return detail::decode_arm_linux_features(
+      static_cast<std::uint64_t>(getauxval(AT_HWCAP)),
+      static_cast<std::uint64_t>(getauxval(kAtHwcap2)));
 #elif HYLE_OS_MACOS
+  CpuFeatureSet f{CpuFeature::kArmNeon};
   auto sysctl_feature = [](const char* name) noexcept {
     int present = 0;
     std::size_t size = sizeof(present);
     return ::sysctlbyname(name, &present, &size, nullptr, 0) == 0 &&
            present != 0;
   };
-  f.sme = sysctl_feature("hw.optional.arm.FEAT_SME");
-  f.sme2 = f.sme && sysctl_feature("hw.optional.arm.FEAT_SME2");
+  const bool crypto = sysctl_feature("hw.optional.arm.FEAT_AES");
+  f.set(CpuFeature::kArmAes, crypto);
+  // Apple exposes FEAT_AES as the Arm AES/PMULL extension group.
+  f.set(CpuFeature::kArmPmull, crypto);
+  f.set(CpuFeature::kArmDotProd,
+        sysctl_feature("hw.optional.arm.FEAT_DotProd"));
+  f.set(CpuFeature::kArmFp16,
+        sysctl_feature("hw.optional.arm.FEAT_FP16"));
+  f.set(CpuFeature::kArmI8mm,
+        sysctl_feature("hw.optional.arm.FEAT_I8MM"));
+  f.set(CpuFeature::kArmBf16,
+        sysctl_feature("hw.optional.arm.FEAT_BF16"));
+  const bool sve = sysctl_feature("hw.optional.arm.FEAT_SVE");
+  const bool sve2 = sve && sysctl_feature("hw.optional.arm.FEAT_SVE2");
+  f.set(CpuFeature::kArmSve, sve);
+  f.set(CpuFeature::kArmSve2, sve2);
+  f.set(CpuFeature::kArmSveAes,
+        sve2 && sysctl_feature("hw.optional.arm.FEAT_SVE_AES"));
+  f.set(CpuFeature::kArmSvePmull,
+        sve2 && sysctl_feature("hw.optional.arm.FEAT_SVE_PMULL128"));
+  f.set(CpuFeature::kArmSveI8mm,
+        sve && sysctl_feature("hw.optional.arm.FEAT_SVE_I8MM"));
+  f.set(CpuFeature::kArmSveF32mm,
+        sve && sysctl_feature("hw.optional.arm.FEAT_SVE_F32MM"));
+  f.set(CpuFeature::kArmSveF64mm,
+        sve && sysctl_feature("hw.optional.arm.FEAT_SVE_F64MM"));
+  f.set(CpuFeature::kArmSveBf16,
+        sve && sysctl_feature("hw.optional.arm.FEAT_SVE_BF16"));
+  const bool sme = sysctl_feature("hw.optional.arm.FEAT_SME");
+  f.set(CpuFeature::kArmSme, sme);
+  f.set(CpuFeature::kArmSme2,
+        sme && sysctl_feature("hw.optional.arm.FEAT_SME2"));
+  return f;
 #elif HYLE_OS_WINDOWS
-  // These numeric values are the stable Windows processor-feature ABI. Keep
-  // local fallbacks so older SDKs can still build for newer ARM64 hosts.
+  CpuFeatureSet f{CpuFeature::kArmNeon};
+  // Stable Windows processor-feature ABI values. Local numbers keep old SDKs
+  // buildable for newer ARM64 hosts.
+  constexpr DWORD kPfArmCrypto = 30;
+  constexpr DWORD kPfArmDotProd = 43;
+  constexpr DWORD kPfArmSve = 46;
+  constexpr DWORD kPfArmSve2 = 47;
+  constexpr DWORD kPfArmSveAes = 49;
+  constexpr DWORD kPfArmSvePmull = 50;
+  constexpr DWORD kPfArmSveBf16 = 52;
+  constexpr DWORD kPfArmSveI8mm = 57;
+  constexpr DWORD kPfArmSveF32mm = 58;
+  constexpr DWORD kPfArmSveF64mm = 59;
+  constexpr DWORD kPfArmI8mm = 66;
+  constexpr DWORD kPfArmFp16 = 67;
+  constexpr DWORD kPfArmBf16 = 68;
   constexpr DWORD kPfArmSme = 70;
   constexpr DWORD kPfArmSme2 = 71;
-  f.sme = ::IsProcessorFeaturePresent(kPfArmSme) != 0;
-  f.sme2 = f.sme && ::IsProcessorFeaturePresent(kPfArmSme2) != 0;
-#endif
+  const auto present = [](DWORD feature) noexcept {
+    return ::IsProcessorFeaturePresent(feature) != 0;
+  };
+  const bool crypto = present(kPfArmCrypto);
+  f.set(CpuFeature::kArmAes, crypto);
+  f.set(CpuFeature::kArmPmull, crypto);
+  f.set(CpuFeature::kArmDotProd, present(kPfArmDotProd));
+  f.set(CpuFeature::kArmFp16, present(kPfArmFp16));
+  f.set(CpuFeature::kArmI8mm, present(kPfArmI8mm));
+  f.set(CpuFeature::kArmBf16, present(kPfArmBf16));
+  const bool sve = present(kPfArmSve);
+  const bool sve2 = sve && present(kPfArmSve2);
+  f.set(CpuFeature::kArmSve, sve);
+  f.set(CpuFeature::kArmSve2, sve2);
+  f.set(CpuFeature::kArmSveAes, sve2 && present(kPfArmSveAes));
+  f.set(CpuFeature::kArmSvePmull, sve2 && present(kPfArmSvePmull));
+  f.set(CpuFeature::kArmSveI8mm, sve && present(kPfArmSveI8mm));
+  f.set(CpuFeature::kArmSveF32mm, sve && present(kPfArmSveF32mm));
+  f.set(CpuFeature::kArmSveF64mm, sve && present(kPfArmSveF64mm));
+  f.set(CpuFeature::kArmSveBf16, sve && present(kPfArmSveBf16));
+  const bool sme = present(kPfArmSme);
+  f.set(CpuFeature::kArmSme, sme);
+  f.set(CpuFeature::kArmSme2, sme && present(kPfArmSme2));
   return f;
+#else
+  return CpuFeatureSet{CpuFeature::kArmNeon};
+#endif
 #elif HYLE_ARCH_RISCV64
-  CpuFeatures f;
+  CpuFeatureSet f;
 #if HYLE_OS_LINUX
   constexpr unsigned long kHwcapIsaV = 1ul << ('V' - 'A');
-  f.rvv = (getauxval(AT_HWCAP) & kHwcapIsaV) != 0;
+  f.set(CpuFeature::kRiscvV,
+        (getauxval(AT_HWCAP) & kHwcapIsaV) != 0);
 
   // riscv_hwprobe (Linux 6.4+) is the architecture's precise extension ABI.
   // Use a private copy of the stable two-word pair so this baseline detector
@@ -339,39 +343,7 @@ CpuFeatures detect() noexcept {
 #endif
   return f;
 #else
-  return CpuFeatures{};  // scalar-only platform
-#endif
-}
-
-Isa compute_best(const CpuFeatures& f) noexcept {
-#if HYLE_ARCH_X64
-  // Mirror Highway's group gating (targets.cc kGroupAVX2 / kGroupAVX3): a tier needs
-  // ALL of its group's features, AND each tier's group SUBSUMES the lower tier's, so
-  // a higher Isa genuinely implies every lower one (the enum's contract).
-  // kGroupAVX2 = AVX2 + FMA + F16C + LZCNT + BMI1 + BMI2 (+ SSE4 below it).
-  const auto groups = detail::x86_isa_groups(f);
-  // kGroupAVX3 = AVX-512 F+BW+VL+DQ+CD on TOP of the full AVX2 group.
-  if (groups.avx512) return Isa::kAvx512;
-  if (groups.avx2) return Isa::kAvx2;
-  // Pure AVX (256-bit FLOAT) without the full AVX2 integer group: Sandy/Ivy Bridge. f.avx
-  // already AND's in the OS-YMM-save check (read_xcr0), so reporting kAvx here is SIGILL-
-  // safe. This is a DETECTION tier -- best_isa() tells the truth about the CPU; there is no
-  // avx-only KERNEL, so selected_tier() (dispatch_ops.cc) clamps an AVX host down to the
-  // sse4 variant. The two layers are deliberately separate (probe honesty vs shipped code).
-  if (f.avx) return Isa::kAvx;
-  if (f.sse42) return Isa::kSse42;
-  if (f.ssse3) return Isa::kSsse3;
-  if (f.sse2) return Isa::kSse2;
-  return Isa::kScalar;
-#elif HYLE_ARCH_ARM64
-  if (f.sve) return Isa::kSve;
-  if (f.neon) return Isa::kNeon;
-  return Isa::kScalar;
-#elif HYLE_ARCH_RISCV64
-  return f.rvv ? Isa::kRvv : Isa::kScalar;
-#else
-  (void)f;
-  return Isa::kScalar;
+  return CpuFeatureSet{};  // scalar-only platform
 #endif
 }
 
@@ -1374,8 +1346,8 @@ Result<CpuTopology> query_windows_available_cpu_topology() noexcept {
 
 }  // namespace
 
-const CpuFeatures& cpu_features() noexcept {
-  static const CpuFeatures f = detect();  // Meyers: thread-safe init-once (C++11+)
+const CpuFeatureSet& cpu_features() noexcept {
+  static const CpuFeatureSet f = detect();  // thread-safe init-once
   return f;
 }
 
@@ -1591,39 +1563,33 @@ unsigned hardware_concurrency() noexcept {
 #endif
 }
 
-Isa best_isa() noexcept {
-  static const Isa isa = compute_best(cpu_features());
-  return isa;
-}
-
-bool supports(Isa isa) noexcept {
-  if (isa == Isa::kScalar) return true;
-#if HYLE_ARCH_X64
-  if (isa < Isa::kSse2 || isa > Isa::kAvx512) return false;
-#elif HYLE_ARCH_ARM64
-  if (isa != Isa::kNeon && isa != Isa::kSve) return false;
-#elif HYLE_ARCH_RISCV64
-  if (isa != Isa::kRvv) return false;
-#else
-  return false;
-#endif
-  return static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(isa);
-}
-
-const char* isa_name(Isa isa) noexcept {
-  switch (isa) {
-    case Isa::kScalar: return "scalar";
-    case Isa::kSse2: return "sse2";
-    case Isa::kSsse3: return "ssse3";
-    case Isa::kSse42: return "sse4.2";
-    case Isa::kAvx: return "avx";
-    case Isa::kAvx2: return "avx2";
-    case Isa::kAvx512: return "avx512";
-    case Isa::kNeon: return "neon";
-    case Isa::kSve: return "sve";
-    case Isa::kRvv: return "rvv";
-  }
-  return "unknown";
+const char* cpu_feature_name(CpuFeature feature) noexcept {
+  static constexpr const char* kNames[] = {
+      "x86.sse2",          "x86.sse3",          "x86.ssse3",
+      "x86.sse4.1",        "x86.sse4.2",        "x86.aes",
+      "x86.pclmulqdq",     "x86.avx",           "x86.avx2",
+      "x86.fma",           "x86.f16c",          "x86.lzcnt",
+      "x86.bmi1",          "x86.bmi2",          "x86.avx512f",
+      "x86.avx512bw",      "x86.avx512vl",      "x86.avx512dq",
+      "x86.avx512cd",      "x86.avx512vnni",    "x86.avx512vbmi",
+      "x86.avx512vbmi2",   "x86.avx512bitalg",  "x86.avx512vpopcntdq",
+      "x86.gfni",          "x86.vaes",          "x86.vpclmulqdq",
+      "x86.avx-vnni",      "x86.avx512bf16",    "x86.avx512fp16",
+      "x86.avx10.2-512",   "x86.amx-tile-hw",   "x86.amx-int8-hw",
+      "x86.amx-bf16-hw",   "x86.amx-fp16-hw",   "arm.neon",
+      "arm.aes",           "arm.pmull",         "arm.dotprod",
+      "arm.fp16",          "arm.sve",           "arm.sve2",
+      "arm.sve-aes",       "arm.sve-pmull",     "arm.sve-i8mm",
+      "arm.sve-f32mm",     "arm.sve-f64mm",     "arm.sve-bf16",
+      "arm.i8mm",          "arm.bf16",          "arm.sme",
+      "arm.sme2",          "riscv.v",           "riscv.zvbb",
+      "riscv.zvbc",        "riscv.zvkned",      "riscv.zvfh",
+      "riscv.zvfhmin",
+  };
+  static_assert(sizeof(kNames) / sizeof(*kNames) ==
+                static_cast<std::size_t>(CpuFeature::kCount));
+  const std::size_t index = static_cast<std::size_t>(feature);
+  return index < sizeof(kNames) / sizeof(*kNames) ? kNames[index] : "unknown";
 }
 
 }  // namespace hyle::platform

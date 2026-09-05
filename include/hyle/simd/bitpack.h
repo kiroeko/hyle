@@ -7,7 +7,7 @@
 #include <type_traits>
 
 #include "hyle/core/compiler.h"  // HYLE_FATAL_ASSERT
-#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+#include "hyle/simd/visibility.h"
 
 // bitpack.h -- canonical fixed-width integer bit packing / unpacking. Each compiled target
 // instantiates the locked Highway Pack8/Pack16/Pack32 mechanism directly; the ordinary API

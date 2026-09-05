@@ -5,7 +5,8 @@
 #include "hyle/container/string_algo.h"
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
-#include "hyle/platform/cpu.h"  // best_isa() -> pick the widest compiled count/rfind kernel
+#include "hyle/platform/cpu.h"
+#include "src/container/cpu_dispatch_internal.h"
 #include "src/container/str_search.h"  // per-ISA str_count/str_rfind_char variant symbols
 
 // Out-of-line SIMD cores for StringView's search family. Compiled once here and
@@ -21,7 +22,8 @@
 
 namespace hyle::container::detail {
 
-// --- count/rfind: pick the widest compiled kernel by best_isa(), cached once ------------
+// Pick the widest compiled kernel whose complete requirements are present;
+// each public operation caches the resulting pointer once.
 namespace {
 using CountFn = std::uint32_t (*)(const char*, std::uint32_t, char) noexcept;
 using RfindFn = std::uint32_t (*)(const char*, std::uint32_t, char) noexcept;
@@ -30,16 +32,15 @@ using TransformFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
 
 CountFn resolve_count() noexcept {
 #if HYLE_ARCH_X64
-  const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+  const auto& features = ::hyle::platform::cpu_features();
 #if defined(HYLE_CONTAINER_HAS_AVX512)
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_count_avx512;
+  if (supports_highway_avx512(features)) return &str_count_avx512;
 #endif
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_count_avx2;
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_count_sse4;
+  if (supports_highway_avx2(features)) return &str_count_avx2;
+  if (supports_highway_sse4(features)) return &str_count_sse4;
   return &str_count_scalar;
 #elif HYLE_ARCH_ARM64
-  if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
-      static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
+  if (supports_highway_neon(::hyle::platform::cpu_features()))
     return &str_count_neon;
   return &str_count_scalar;
 #else
@@ -48,16 +49,15 @@ CountFn resolve_count() noexcept {
 }
 RfindFn resolve_rfind() noexcept {
 #if HYLE_ARCH_X64
-  const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+  const auto& features = ::hyle::platform::cpu_features();
 #if defined(HYLE_CONTAINER_HAS_AVX512)
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512)) return &str_rfind_char_avx512;
+  if (supports_highway_avx512(features)) return &str_rfind_char_avx512;
 #endif
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2)) return &str_rfind_char_avx2;
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42)) return &str_rfind_char_sse4;
+  if (supports_highway_avx2(features)) return &str_rfind_char_avx2;
+  if (supports_highway_sse4(features)) return &str_rfind_char_sse4;
   return &str_rfind_char_scalar;
 #elif HYLE_ARCH_ARM64
-  if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
-      static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
+  if (supports_highway_neon(::hyle::platform::cpu_features()))
     return &str_rfind_char_neon;
   return &str_rfind_char_scalar;
 #else
@@ -66,19 +66,18 @@ RfindFn resolve_rfind() noexcept {
 }
 TransformFn resolve_transform(bool lower) noexcept {
 #if HYLE_ARCH_X64
-  const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+  const auto& features = ::hyle::platform::cpu_features();
 #if defined(HYLE_CONTAINER_HAS_AVX512)
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512))
+  if (supports_highway_avx512(features))
     return lower ? &str_ascii_lower_avx512 : &str_ascii_upper_avx512;
 #endif
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2))
+  if (supports_highway_avx2(features))
     return lower ? &str_ascii_lower_avx2 : &str_ascii_upper_avx2;
-  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42))
+  if (supports_highway_sse4(features))
     return lower ? &str_ascii_lower_sse4 : &str_ascii_upper_sse4;
   return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
 #elif HYLE_ARCH_ARM64
-  if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
-      static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
+  if (supports_highway_neon(::hyle::platform::cpu_features()))
     return lower ? &str_ascii_lower_neon : &str_ascii_upper_neon;
   return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
 #else

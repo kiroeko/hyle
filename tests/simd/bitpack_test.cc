@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "hyle/simd/bitpack.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
 #include "src/simd/runtime_internal.h"
 #include "tests/simd/bitpack_golden.h"
 
@@ -98,9 +98,9 @@ template <> struct RuntimeBitpack<std::uint32_t> {
 
 std::vector<const hs::Runtime *> available_runtimes() {
   std::vector<const hs::Runtime *> runtimes;
-  for (hs::Isa isa :
-       {hs::Isa::kScalar, hs::Isa::kSse42, hs::Isa::kAvx2, hs::Isa::kAvx512,
-        hs::Isa::kNeon, hs::Isa::kSve, hs::Isa::kRvv}) {
+  for (hs::KernelTarget isa :
+       {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4, hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
+        hs::KernelTarget::kNeon, hs::KernelTarget::kSve, hs::KernelTarget::kRvv}) {
     if (const hs::Runtime *runtime = hs::runtime_for(isa)) {
       runtimes.push_back(runtime);
     }
@@ -134,13 +134,13 @@ template <typename T> void check_cross_tier_bytes() {
                                            bits);
         ASSERT_EQ(actual, expected)
             << "lane=" << W << " bits=" << bits << " count=" << count
-            << " tier=" << static_cast<unsigned>(runtime->isa);
+            << " tier=" << static_cast<unsigned>(runtime->target);
         RuntimeBitpack<T>::unpack (*runtime)(expected.data(), count,
                                              decoded.data(), bits);
         for (std::size_t i = 0; i < count; ++i) {
           ASSERT_EQ(decoded[i], static_cast<T>(raw[i] & mask))
               << "lane=" << W << " bits=" << bits << " count=" << count
-              << " i=" << i << " tier=" << static_cast<unsigned>(runtime->isa);
+              << " i=" << i << " tier=" << static_cast<unsigned>(runtime->target);
         }
       }
     }
@@ -257,9 +257,9 @@ TEST(BitPack, WireFormatVersionAndGoldenDigests) {
 
 TEST(BitPack, ActiveVariantMetadataIsSane) {
   const auto target = hs::selected_target(hs::KernelFamily::kBitpack);
-  EXPECT_TRUE(target.isa == hs::Isa::kScalar || target.isa == hs::Isa::kSse42 ||
-              target.isa == hs::Isa::kAvx2 || target.isa == hs::Isa::kAvx512 ||
-              target.isa == hs::Isa::kNeon || target.isa == hs::Isa::kSve ||
-              target.isa == hs::Isa::kRvv);
+  EXPECT_TRUE(target.target == hs::KernelTarget::kScalar || target.target == hs::KernelTarget::kSse4 ||
+              target.target == hs::KernelTarget::kAvx2 || target.target == hs::KernelTarget::kAvx512 ||
+              target.target == hs::KernelTarget::kNeon || target.target == hs::KernelTarget::kSve ||
+              target.target == hs::KernelTarget::kRvv);
   EXPECT_TRUE(target.has(hs::TargetFeature::kBitpackLogical128));
 }

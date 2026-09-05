@@ -158,7 +158,7 @@
         "src/simd/sort/vqsort_hyle_neon.cc",
         "src/simd/sort/vqsort_hyle_rvv.cc",
         "src/simd/sort/vqsort_hyle_sve.cc"
-      ], "content_sha256": "ce2a4185775362f4617caf5fe67dd358d61517e596641e89c9553beffb59ac1f" },
+      ], "content_sha256": "79121c06ae2b4dc96142d53036b753ff64ff4d61995817d366599e6537c4c9bb" },
       "license": { "expression": "Apache-2.0", "files": [
         { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" }
       ] }

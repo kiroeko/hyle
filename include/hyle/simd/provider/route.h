@@ -6,6 +6,7 @@
 
 #include "hyle/core/compiler.h"
 #include "hyle/simd/provider/operation_manifest.h"
+#include "hyle/simd/target.h"
 
 // Source-only compile-time provider selection. This header owns no register
 // facade: each Candidate specialization keeps Highway, xsimd, or HYLE native
@@ -28,16 +29,6 @@ enum class Decision : std::uint8_t {
   kRouteHighway,
   kRouteXsimd,
   kRemoveRedundant,
-};
-
-enum class Target : std::uint8_t {
-  kScalar,
-  kSse4,
-  kAvx2,
-  kAvx512,
-  kNeon,
-  kSve,
-  kRvv,
 };
 
 enum class Compiler : std::uint8_t {
@@ -66,31 +57,31 @@ static_assert(static_cast<std::size_t>(Operation::kCount) == kOperationCount);
 // observable for classic cl.exe exact-AVX512 artifacts whose Highway math leg
 // is intentionally an AVX2 body.
 #if defined(HYLE_SIMD_TARGET_AVX512)
-inline constexpr Target kCurrentTarget = Target::kAvx512;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kAvx512;
 #elif defined(HYLE_SIMD_TARGET_AVX2)
-inline constexpr Target kCurrentTarget = Target::kAvx2;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kAvx2;
 #elif defined(HYLE_SIMD_TARGET_SSE4)
-inline constexpr Target kCurrentTarget = Target::kSse4;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kSse4;
 #elif defined(HYLE_SIMD_TARGET_SVE)
-inline constexpr Target kCurrentTarget = Target::kSve;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kSve;
 #elif defined(HYLE_SIMD_TARGET_NEON)
-inline constexpr Target kCurrentTarget = Target::kNeon;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kNeon;
 #elif defined(HYLE_SIMD_TARGET_RVV)
-inline constexpr Target kCurrentTarget = Target::kRvv;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kRvv;
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-inline constexpr Target kCurrentTarget = Target::kAvx512;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kAvx512;
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
-inline constexpr Target kCurrentTarget = Target::kAvx2;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kAvx2;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
-inline constexpr Target kCurrentTarget = Target::kSse4;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kSse4;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
-inline constexpr Target kCurrentTarget = Target::kSve;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kSve;
 #elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
-inline constexpr Target kCurrentTarget = Target::kNeon;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kNeon;
 #elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
-inline constexpr Target kCurrentTarget = Target::kRvv;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kRvv;
 #else
-inline constexpr Target kCurrentTarget = Target::kScalar;
+inline constexpr KernelTarget kCurrentTarget = KernelTarget::kScalar;
 #endif
 
 #if defined(__clang__) && defined(_MSC_VER)
@@ -183,7 +174,7 @@ struct RouteKey final {};
 // specializations and may split one operation by lane type, ISA, compiler kind
 // and compiler version.
 template <typename Key, typename Variant = AnyVariant,
-          Target kTarget = kCurrentTarget,
+          KernelTarget kTarget = kCurrentTarget,
           Compiler kCompiler = kCurrentCompiler,
           std::uint32_t kCompilerVersion = kCurrentCompilerVersion>
 struct RouteFor final {
@@ -196,7 +187,7 @@ struct RouteFor final {
 #include "hyle/simd/provider/routes_generated.h"
 
 template <auto kOperation, typename Variant = AnyVariant,
-          Target kTarget = kCurrentTarget,
+          KernelTarget kTarget = kCurrentTarget,
           Compiler kCompiler = kCurrentCompiler,
           std::uint32_t kCompilerVersion = kCurrentCompilerVersion>
 inline constexpr Route kRouteFor =
@@ -208,7 +199,7 @@ inline constexpr Route kRouteFor =
 // no wrapper function for a compiler to outline and no register value crosses
 // the selection boundary.
 template <auto kOperation, typename Variant = AnyVariant,
-          Target kTarget = kCurrentTarget,
+          KernelTarget kTarget = kCurrentTarget,
           Compiler kCompiler = kCurrentCompiler,
           std::uint32_t kCompilerVersion = kCurrentCompilerVersion>
 struct QualifiedProviderFor final {
@@ -224,7 +215,7 @@ struct QualifiedProviderFor final {
 };
 
 template <auto kOperation, typename Variant = AnyVariant,
-          Target kTarget = kCurrentTarget,
+          KernelTarget kTarget = kCurrentTarget,
           Compiler kCompiler = kCurrentCompiler,
           std::uint32_t kCompilerVersion = kCurrentCompilerVersion>
 inline constexpr Provider kQualifiedProviderFor =

@@ -155,13 +155,13 @@ TEST(Search, FloatingNaNContract) {
 
 TEST(Search, FloatingExtremaKeepFirstTieAndFirstNaNAcrossBlocks) {
   for (const hs::Runtime* runtime : {
-           hs::runtime_for(hs::Isa::kScalar),
-           hs::runtime_for(hs::Isa::kSse42),
-           hs::runtime_for(hs::Isa::kAvx2),
-           hs::runtime_for(hs::Isa::kAvx512),
-           hs::runtime_for(hs::Isa::kNeon),
-           hs::runtime_for(hs::Isa::kSve),
-           hs::runtime_for(hs::Isa::kRvv)}) {
+           hs::runtime_for(hs::KernelTarget::kScalar),
+           hs::runtime_for(hs::KernelTarget::kSse4),
+           hs::runtime_for(hs::KernelTarget::kAvx2),
+           hs::runtime_for(hs::KernelTarget::kAvx512),
+           hs::runtime_for(hs::KernelTarget::kNeon),
+           hs::runtime_for(hs::KernelTarget::kSve),
+           hs::runtime_for(hs::KernelTarget::kRvv)}) {
     if (runtime == nullptr) continue;
     std::vector<float> data(513, 4.0f);
     data[9] = -17.0f;
@@ -222,9 +222,9 @@ TEST(Search, ExtremaIndexKeepsFirstTieAcrossCounterSegments) {
 
 TEST(Search, EverySupportedRuntimeVariant) {
   const std::int32_t data[] = {4, 1, 4, -3, 9, 4, 8};
-  for (const hs::Isa isa : {hs::Isa::kScalar, hs::Isa::kSse42,
-                            hs::Isa::kAvx2, hs::Isa::kAvx512,
-                            hs::Isa::kNeon, hs::Isa::kSve, hs::Isa::kRvv}) {
+  for (const hs::KernelTarget isa : {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4,
+                            hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
+                            hs::KernelTarget::kNeon, hs::KernelTarget::kSve, hs::KernelTarget::kRvv}) {
     const hs::Runtime* rt = hs::runtime_for(isa);
     if (rt == nullptr) continue;
     EXPECT_EQ(rt->search.count_equal_i32(data, 7, 4), 3u);
@@ -246,7 +246,7 @@ TEST(Search, SelectedTargetDescribesActualKernelTable) {
   const auto& runtime = hs::runtime();
   const hs::SelectedTarget target =
       hs::selected_target(hs::KernelFamily::kSearch);
-  EXPECT_EQ(target.isa, runtime.search_module.isa);
+  EXPECT_EQ(target.target, runtime.search_module.target);
   EXPECT_EQ(target.features, runtime.search_module.features);
   EXPECT_NE(runtime.search.count_equal_i8, nullptr);
   EXPECT_NE(runtime.search.index_of_max_f64, nullptr);

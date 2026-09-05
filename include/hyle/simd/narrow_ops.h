@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/visibility.h"
 #include "hyle/simd/dtype.h"
 
 // Runtime-dispatched whole-range operations for f16/bf16 storage. The public

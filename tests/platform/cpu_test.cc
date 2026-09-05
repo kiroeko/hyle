@@ -1,5 +1,5 @@
-// Functional tests for runtime CPU-feature detection. These assert INVARIANTS
-// that must hold on ANY machine (feature implications, tier ordering, cache
+// Functional tests for runtime CPU-feature detection. These assert invariants
+// that must hold on any machine (feature implications, OS-state gating, cache
 // idempotence) rather than "this box has AVX2" -- the suite runs on unknown
 // hardware, so it checks the logic of the probe, not a specific CPU.
 #include "hyle/platform/cpu.h"
@@ -9,8 +9,10 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <cstring>
+#include <array>
 #include <limits>
+#include <thread>
+#include <type_traits>
 #include <vector>
 
 #if defined(_WIN32)
@@ -23,26 +25,26 @@
 
 using hyle::platform::available_cpu_ids;
 using hyle::platform::available_cpu_count;
-using hyle::platform::best_isa;
 using hyle::platform::cache_line_size;
 using hyle::platform::cache_info;
 using hyle::platform::available_cpu_topology;
+using hyle::platform::cpu_feature_name;
 using hyle::platform::cpu_features;
+using hyle::platform::CpuFeature;
+using hyle::platform::CpuFeatureSet;
 using hyle::platform::CpuInfo;
 using hyle::platform::CpuKind;
 using hyle::platform::CpuOrder;
-using hyle::platform::CpuFeatures;
-using hyle::platform::Isa;
-using hyle::platform::isa_name;
-using hyle::platform::supports;
 
 // cpu_features() is a cached Meyers singleton: repeated calls return the SAME
 // object (same address, identical bits), never re-probe into a different answer.
 TEST(Cpu, FeaturesCachedIdempotent) {
-  const CpuFeatures& a = cpu_features();
-  const CpuFeatures& b = cpu_features();
+  const CpuFeatureSet& a = cpu_features();
+  const CpuFeatureSet& b = cpu_features();
   EXPECT_EQ(&a, &b);  // same cached instance
-  EXPECT_EQ(std::memcmp(&a, &b, sizeof(CpuFeatures)), 0);
+  EXPECT_EQ(a, b);
+  static_assert(sizeof(CpuFeatureSet) == 2 * sizeof(std::uint64_t));
+  static_assert(std::is_trivially_copyable_v<CpuFeatureSet>);
 }
 
 // cache_line_size(): a sane power-of-two in [16, 256] (commonly 64; Apple
@@ -259,177 +261,165 @@ TEST(Cpu, AvailableCpuIdsTracksRuntimeAffinityChange) {
 #endif
 }
 
-// scalar is the portable floor: always supported, on every arch.
-TEST(Cpu, ScalarAlwaysSupported) {
-  EXPECT_TRUE(supports(Isa::kScalar));
+TEST(Cpu, FeatureSetAlgebraAndInvalidValues) {
+  CpuFeatureSet features{CpuFeature::kX86Sse2, CpuFeature::kX86Avx};
+  EXPECT_TRUE(features.has(CpuFeature::kX86Sse2));
+  EXPECT_FALSE(features.has(CpuFeature::kX86Avx2));
+  EXPECT_TRUE(features.has_all(CpuFeatureSet{CpuFeature::kX86Sse2}));
+  EXPECT_FALSE(features.has_all(CpuFeatureSet{
+      CpuFeature::kX86Sse2, CpuFeature::kX86Avx2}));
+  EXPECT_TRUE(features.has_any(CpuFeatureSet{
+      CpuFeature::kArmNeon, CpuFeature::kX86Avx}));
+  features.set(CpuFeature::kX86Avx, false);
+  EXPECT_FALSE(features.has(CpuFeature::kX86Avx));
+
+  const auto invalid = static_cast<CpuFeature>(
+      static_cast<std::uint16_t>(CpuFeature::kCount) + 7u);
+  const auto before = features;
+  EXPECT_FALSE(features.has(invalid));
+  features.set(invalid);
+  EXPECT_EQ(features, before);
 }
 
-// best_isa() must itself be supported, and be a fixed answer across calls.
-TEST(Cpu, BestIsaSupportedAndStable) {
-  Isa best = best_isa();
-  EXPECT_EQ(best, best_isa());       // stable
-  EXPECT_TRUE(supports(best));       // the best tier is, tautologically, supported
-}
-
-// isa_name covers every tier with a non-empty, distinct-ish string.
-TEST(Cpu, IsaNameNonEmpty) {
-  const Isa tiers[] = {Isa::kScalar, Isa::kSse2, Isa::kSsse3, Isa::kSse42,
-                       Isa::kAvx,    Isa::kAvx2, Isa::kAvx512, Isa::kNeon,
-                       Isa::kSve,    Isa::kRvv};
-  for (Isa t : tiers) {
-    const char* n = isa_name(t);
-    ASSERT_NE(n, nullptr);
-    EXPECT_GT(std::strlen(n), 0u);
+TEST(Cpu, FeatureNamesCoverTheDeclaredSet) {
+  for (std::uint16_t i = 0;
+       i < static_cast<std::uint16_t>(CpuFeature::kCount); ++i) {
+    const char* name = cpu_feature_name(static_cast<CpuFeature>(i));
+    ASSERT_NE(name, nullptr);
+    EXPECT_NE(name[0], '\0');
+    EXPECT_STRNE(name, "unknown");
   }
-  EXPECT_STREQ(isa_name(Isa::kScalar), "scalar");
+  EXPECT_STREQ(cpu_feature_name(static_cast<CpuFeature>(0xffffu)), "unknown");
 }
 
-// Feature-implication invariants: a higher capability logically REQUIRES the
-// lower ones the tiers/groups are built on. These hold regardless of the host.
-TEST(Cpu, FeatureImplicationsHold) {
-  const CpuFeatures& f = cpu_features();
+TEST(Cpu, FeatureCacheIsSafeForConcurrentReaders) {
+  std::array<const CpuFeatureSet*, 8> observed{};
+  std::array<std::thread, 8> readers;
+  for (std::size_t i = 0; i < readers.size(); ++i) {
+    readers[i] = std::thread([&, i] { observed[i] = &cpu_features(); });
+  }
+  for (auto& reader : readers) reader.join();
+  for (const CpuFeatureSet* value : observed) EXPECT_EQ(value, &cpu_features());
+}
 
+TEST(Cpu, CurrentHostFeatureImplicationsHold) {
+  const CpuFeatureSet& f = cpu_features();
 #if HYLE_ARCH_X64
-  // x86-64 baseline: SSE2 is mandatory.
-  EXPECT_TRUE(f.sse2);
-
-  // AVX-512 foundation implies the AVX2 group beneath it (Highway kGroupAVX3
-  // subsumes kGroupAVX2). If the box has AVX-512 it must also report AVX2 + FMA.
-  if (f.avx512f) {
-    EXPECT_TRUE(f.avx2);
-    EXPECT_TRUE(f.fma);
-  }
-  // AVX-512 sub-features ride on the foundation.
-  if (f.avx512bw || f.avx512vl || f.avx512dq || f.avx512cd || f.avx512vnni ||
-      f.avx512bf16 || f.avx512fp16) {
-    EXPECT_TRUE(f.avx512f);
-  }
-  // AVX2 (256-bit int) implies AVX (256-bit float) is available.
-  if (f.avx2) { EXPECT_TRUE(f.avx); }
-  // SSE ladder is cumulative.
-  if (f.sse42) { EXPECT_TRUE(f.sse41); }
-  if (f.sse41) { EXPECT_TRUE(f.ssse3); }
-  if (f.ssse3) { EXPECT_TRUE(f.sse2); }
+  EXPECT_TRUE(f.has(CpuFeature::kX86Sse2));
+  if (f.has(CpuFeature::kX86Avx2))
+    EXPECT_TRUE(f.has(CpuFeature::kX86Avx));
+  const CpuFeatureSet avx512_children{
+      CpuFeature::kX86Avx512Bw, CpuFeature::kX86Avx512Vl,
+      CpuFeature::kX86Avx512Dq, CpuFeature::kX86Avx512Cd,
+      CpuFeature::kX86Avx512Vnni, CpuFeature::kX86Avx512Vbmi,
+      CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Avx512Bitalg,
+      CpuFeature::kX86Avx512Vpopcntdq, CpuFeature::kX86Avx512Bf16,
+      CpuFeature::kX86Avx512Fp16};
+  if (f.has_any(avx512_children))
+    EXPECT_TRUE(f.has(CpuFeature::kX86Avx512F));
+  if (f.has_any(CpuFeatureSet{
+          CpuFeature::kX86AmxInt8Hardware,
+          CpuFeature::kX86AmxBf16Hardware,
+          CpuFeature::kX86AmxFp16Hardware}))
+    EXPECT_TRUE(f.has(CpuFeature::kX86AmxTileHardware));
 #elif HYLE_ARCH_ARM64
-  // aarch64 baseline: NEON is mandatory.
-  EXPECT_TRUE(f.neon);
-  // SVE2 implies SVE; SVE sub-features imply SVE2 / SVE.
-  if (f.sve2) { EXPECT_TRUE(f.sve); }
-  if (f.sve_aes || f.sve_pmull) { EXPECT_TRUE(f.sve2); }
-  if (f.sve_i8mm || f.sve_f32mm || f.sve_f64mm || f.sve_bf16) {
-    EXPECT_TRUE(f.sve);
-  }
+  EXPECT_TRUE(f.has(CpuFeature::kArmNeon));
+  if (f.has(CpuFeature::kArmSve2))
+    EXPECT_TRUE(f.has(CpuFeature::kArmSve));
+  if (f.has_any(CpuFeatureSet{CpuFeature::kArmSveAes,
+                              CpuFeature::kArmSvePmull}))
+    EXPECT_TRUE(f.has(CpuFeature::kArmSve2));
+  if (f.has_any(CpuFeatureSet{
+          CpuFeature::kArmSveI8mm, CpuFeature::kArmSveF32mm,
+          CpuFeature::kArmSveF64mm, CpuFeature::kArmSveBf16}))
+    EXPECT_TRUE(f.has(CpuFeature::kArmSve));
 #elif HYLE_ARCH_RISCV64
-  // Every vector sub-extension implies the V extension.
-  if (f.rvv_zvbb || f.rvv_zvbc || f.rvv_zvkned || f.rvv_zvfh || f.rvv_zvfhmin) {
-    EXPECT_TRUE(f.rvv);
-  }
+  if (f.has_any(CpuFeatureSet{
+          CpuFeature::kRiscvZvbb, CpuFeature::kRiscvZvbc,
+          CpuFeature::kRiscvZvkned, CpuFeature::kRiscvZvfh,
+          CpuFeature::kRiscvZvfhmin}))
+    EXPECT_TRUE(f.has(CpuFeature::kRiscvV));
 #endif
 }
 
-// best_isa() must AGREE with the feature bits: the reported tier's whole group
-// must be present, and the next tier up must NOT be fully present.
-TEST(Cpu, BestIsaAgreesWithFeatures) {
-  const CpuFeatures& f = cpu_features();
-  Isa best = best_isa();
+TEST(Cpu, SyntheticX86DecodeAppliesOsStateAndHardwareBoundaries) {
+  using hyle::platform::detail::X86FeatureRegisters;
+  auto b = [](unsigned bit) { return std::uint32_t{1} << bit; };
+  X86FeatureRegisters r;
+  r.leaf1_ecx = b(0) | b(1) | b(9) | b(12) | b(19) | b(20) |
+                  b(25) | b(27) | b(28) | b(29);
+  r.leaf7_0_ebx = b(3) | b(5) | b(8) | b(16) | b(17) | b(28) |
+                  b(30) | b(31);
+  r.leaf7_0_ecx = b(1) | b(6) | b(8) | b(9) | b(10) | b(11) |
+                  b(12) | b(14);
+  r.leaf7_0_edx = b(22) | b(23) | b(24) | b(25);
+  r.leaf7_1_eax = b(4) | b(5) | b(21);
+  r.leaf7_1_edx = b(19);
+  r.extended1_ecx = b(5);
+  r.leaf24_ebx = 2 | b(18);
+  r.xcr0 = b(1) | b(2) | b(5) | b(6) | b(7);
 
-#if HYLE_ARCH_X64
-  const auto groups = hyle::platform::detail::x86_isa_groups(f);
-  if (best == Isa::kAvx512) {
-    EXPECT_TRUE(groups.avx512);
-  } else if (best == Isa::kAvx2) {
-    EXPECT_TRUE(groups.avx2);
-    EXPECT_FALSE(groups.avx512);  // else it would have scored higher
-  }
-  // Whatever the tier, scalar/sse2 remain supported on x86-64.
-  EXPECT_TRUE(supports(Isa::kSse2));
-#elif HYLE_ARCH_ARM64
-  if (best == Isa::kSve) {
-    EXPECT_TRUE(f.sve);
-  }
-  EXPECT_TRUE(supports(Isa::kNeon));  // mandatory on aarch64
-#elif HYLE_ARCH_RISCV64
-  if (best == Isa::kRvv) {
-    EXPECT_TRUE(f.rvv);
-  }
-#endif
+  const auto all = hyle::platform::detail::decode_x86_features(r);
+  EXPECT_TRUE(all.has_all(CpuFeatureSet{
+      CpuFeature::kX86Sse3, CpuFeature::kX86Aes,
+      CpuFeature::kX86Pclmulqdq, CpuFeature::kX86Avx2,
+      CpuFeature::kX86Avx512Vbmi2, CpuFeature::kX86Gfni,
+      CpuFeature::kX86Vaes, CpuFeature::kX86Vpclmulqdq,
+       CpuFeature::kX86Avx10_2_512,
+       CpuFeature::kX86AmxFp16Hardware}));
+
+  r.xcr0 = b(1);  // OSXSAVE is advertised, but neither YMM nor ZMM is enabled.
+  const auto narrow = hyle::platform::detail::decode_x86_features(r);
+  EXPECT_TRUE(narrow.has_all(CpuFeatureSet{
+      CpuFeature::kX86Sse3, CpuFeature::kX86Aes,
+      CpuFeature::kX86AmxTileHardware}));
+  EXPECT_FALSE(narrow.has_any(CpuFeatureSet{
+      CpuFeature::kX86Avx, CpuFeature::kX86Fma, CpuFeature::kX86F16c,
+      CpuFeature::kX86Avx2, CpuFeature::kX86Avx512F,
+       CpuFeature::kX86Gfni, CpuFeature::kX86Avx10_2_512}));
+
+  r.xcr0 = b(1) | b(2) | b(5) | b(6) | b(7);
+  r.leaf7_1_edx = 0;
+  EXPECT_FALSE(hyle::platform::detail::decode_x86_features(r).has(
+      CpuFeature::kX86Avx10_2_512));
+  r.leaf7_1_edx = b(19);
+  r.leaf24_ebx = 2;  // AVX10.2, but no 512-bit width.
+  EXPECT_FALSE(hyle::platform::detail::decode_x86_features(r).has(
+      CpuFeature::kX86Avx10_2_512));
+  r.leaf24_ebx = 2 | b(18);
+
+  r.leaf7_0_edx &= ~b(24);
+  const auto no_tile = hyle::platform::detail::decode_x86_features(r);
+  EXPECT_FALSE(no_tile.has_any(CpuFeatureSet{
+      CpuFeature::kX86AmxTileHardware,
+      CpuFeature::kX86AmxInt8Hardware,
+      CpuFeature::kX86AmxBf16Hardware,
+      CpuFeature::kX86AmxFp16Hardware}));
 }
 
-#if HYLE_ARCH_X64
-TEST(Cpu, SyntheticIsaGroupsRequireEveryCompiledTierFeature) {
-  CpuFeatures f;
-  f.avx = true;
-  f.avx2 = true;
-  f.fma = true;
-  f.f16c = true;
-  f.lzcnt = true;
-  f.bmi1 = true;
-  f.bmi2 = true;
-  f.sse42 = true;
+TEST(Cpu, SyntheticArmLinuxDecodeRequiresParentFeatures) {
+  namespace d = hyle::platform::detail;
+  const std::uint64_t hw = d::kArmHwcapAes | d::kArmHwcapPmull |
+                           d::kArmHwcapFphp | d::kArmHwcapAsimdhp |
+                           d::kArmHwcapAsimddp | d::kArmHwcapSve;
+  const std::uint64_t hw2 = d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes |
+                            d::kArmHwcap2SvePmull | d::kArmHwcap2SveI8mm |
+                            d::kArmHwcap2SveF32mm | d::kArmHwcap2SveF64mm |
+                            d::kArmHwcap2SveBf16 | d::kArmHwcap2I8mm |
+                            d::kArmHwcap2Bf16 | d::kArmHwcap2Sme |
+                            d::kArmHwcap2Sme2;
+  const auto all = d::decode_arm_linux_features(hw, hw2);
+  EXPECT_TRUE(all.has_all(CpuFeatureSet{
+      CpuFeature::kArmNeon, CpuFeature::kArmAes, CpuFeature::kArmPmull,
+      CpuFeature::kArmDotProd, CpuFeature::kArmFp16, CpuFeature::kArmSve2,
+      CpuFeature::kArmSveAes, CpuFeature::kArmSvePmull,
+      CpuFeature::kArmI8mm, CpuFeature::kArmBf16, CpuFeature::kArmSme2}));
 
-  EXPECT_TRUE(hyle::platform::detail::x86_isa_groups(f).avx2);
-  for (bool CpuFeatures::*required : {
-           &CpuFeatures::avx,
-           &CpuFeatures::avx2,
-           &CpuFeatures::fma,
-           &CpuFeatures::f16c,
-           &CpuFeatures::lzcnt,
-           &CpuFeatures::bmi1,
-           &CpuFeatures::bmi2,
-           &CpuFeatures::sse42,
-       }) {
-    auto masked = f;
-    masked.*required = false;
-    EXPECT_FALSE(hyle::platform::detail::x86_isa_groups(masked).avx2);
-  }
-
-  f.avx512f = true;
-  f.avx512bw = true;
-  f.avx512vl = true;
-  f.avx512dq = true;
-  f.avx512cd = true;
-  EXPECT_TRUE(hyle::platform::detail::x86_isa_groups(f).avx512);
-  for (bool CpuFeatures::*required : {
-           &CpuFeatures::avx,
-           &CpuFeatures::avx2,
-           &CpuFeatures::fma,
-           &CpuFeatures::f16c,
-           &CpuFeatures::lzcnt,
-           &CpuFeatures::bmi1,
-           &CpuFeatures::bmi2,
-           &CpuFeatures::sse42,
-           &CpuFeatures::avx512f,
-           &CpuFeatures::avx512bw,
-           &CpuFeatures::avx512vl,
-           &CpuFeatures::avx512dq,
-           &CpuFeatures::avx512cd,
-       }) {
-    auto masked = f;
-    masked.*required = false;
-    EXPECT_FALSE(hyle::platform::detail::x86_isa_groups(masked).avx512);
-  }
-}
-#endif
-
-// supports() is monotone in the tier order within an arch: everything <= best
-// is supported, everything > best is not.
-TEST(Cpu, SupportsIsMonotone) {
-  Isa best = best_isa();
-  const std::uint32_t bv = static_cast<std::uint32_t>(best);
-
-#if HYLE_ARCH_X64
-  const Isa arch_tiers[] = {Isa::kSse2, Isa::kSsse3, Isa::kSse42,
-                            Isa::kAvx2, Isa::kAvx512};
-#elif HYLE_ARCH_ARM64
-  const Isa arch_tiers[] = {Isa::kNeon, Isa::kSve};
-#elif HYLE_ARCH_RISCV64
-  const Isa arch_tiers[] = {Isa::kRvv};
-#else
-  const Isa arch_tiers[] = {Isa::kScalar};
-#endif
-  for (Isa t : arch_tiers) {
-    const bool le = static_cast<std::uint32_t>(t) <= bv;
-    EXPECT_EQ(supports(t), le)
-        << "tier " << isa_name(t) << " vs best " << isa_name(best);
-  }
+  const auto malformed = d::decode_arm_linux_features(
+      d::kArmHwcapFphp, d::kArmHwcap2Sve2 | d::kArmHwcap2SveAes |
+                            d::kArmHwcap2Sme2);
+  EXPECT_FALSE(malformed.has_any(CpuFeatureSet{
+      CpuFeature::kArmFp16, CpuFeature::kArmSve,
+      CpuFeature::kArmSve2, CpuFeature::kArmSveAes,
+      CpuFeature::kArmSme2}));
 }

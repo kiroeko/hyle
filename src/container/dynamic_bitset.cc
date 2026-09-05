@@ -7,6 +7,7 @@
 
 #include "hyle/platform/cpu.h"
 #include "src/container/bitset_ops.h"
+#include "src/container/cpu_dispatch_internal.h"
 
 namespace hyle::container {
 namespace {
@@ -27,27 +28,26 @@ struct BitsetOps {
 
 BitsetOps resolve_ops() noexcept {
 #if HYLE_ARCH_X64
-  const auto isa = static_cast<std::uint32_t>(platform::best_isa());
+  const auto& features = platform::cpu_features();
 #if defined(HYLE_CONTAINER_HAS_AVX512)
-  if (isa >= static_cast<std::uint32_t>(platform::Isa::kAvx512))
+  if (detail::supports_highway_avx512(features))
     return {&detail::bitset_and_avx512, &detail::bitset_or_avx512,
             &detail::bitset_xor_avx512, &detail::bitset_and_not_avx512,
             &detail::bitset_not_avx512,
             &detail::bitset_count_avx512};
 #endif
-  if (isa >= static_cast<std::uint32_t>(platform::Isa::kAvx2))
+  if (detail::supports_highway_avx2(features))
     return {&detail::bitset_and_avx2, &detail::bitset_or_avx2,
             &detail::bitset_xor_avx2, &detail::bitset_and_not_avx2,
             &detail::bitset_not_avx2,
             &detail::bitset_count_avx2};
-  if (isa >= static_cast<std::uint32_t>(platform::Isa::kSse42))
+  if (detail::supports_highway_sse4(features))
     return {&detail::bitset_and_sse4, &detail::bitset_or_sse4,
             &detail::bitset_xor_sse4, &detail::bitset_and_not_sse4,
             &detail::bitset_not_sse4,
             &detail::bitset_count_sse4};
 #elif HYLE_ARCH_ARM64
-  if (static_cast<std::uint32_t>(platform::best_isa()) >=
-      static_cast<std::uint32_t>(platform::Isa::kNeon))
+  if (detail::supports_highway_neon(platform::cpu_features()))
     return {&detail::bitset_and_neon, &detail::bitset_or_neon,
             &detail::bitset_xor_neon, &detail::bitset_and_not_neon,
             &detail::bitset_not_neon,

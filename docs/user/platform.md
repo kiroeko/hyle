@@ -46,7 +46,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | token 不丢失的线程 park/unpark | `Parker` / `park_for(Duration)` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token；一个 Parker 只有一个等待者 |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `get` 会 pin；symbol 借用不活过 owner；显式 close 可观察错误 |
-| 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
+| 自定义 kernel 的运行时 feature gate | `cpu_features().has_all(requirements)` | 把 Platform facts 当“最佳 ISA”，或只检查一个营销级 feature | kernel owner 声明其生成 TU 的完整 requirements；Platform 不替它选择 target |
 | 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | 按 package/core/SMT/NUMA/cache domain 放置 worker | `available_cpu_topology()` | 假定 CPU id 连续或 cache 独占 | 返回当前进程可用 CPU 的动态快照；未知 domain 使用 sentinel |
 | 保存并恢复调用线程 affinity | `this_thread::affinity()` + `set_affinity()` | 猜测原 mask | buffer-fill/owning 两层；macOS 无硬 pin 时明确不支持 |
@@ -250,14 +250,48 @@ HYLE_RETURN_IF_ERROR(hyle::platform::this_thread::set_affinity(previous));
 
 `this_thread::isa_state()` 查询当前线程的动态执行状态，而非第二套 CPU feature detector：
 SVE/RVV 的当前 vector length、SME streaming vector length，以及 AMX tile 是否已获许可。Linux AMX
-需要每个使用线程显式 `request_amx_tile_permission()`；请求失败不得进入 AMX kernel。这个机制只为
-SIMD dispatcher 提供事实，不选择 kernel，也不会替调用方进入或退出 SME streaming mode。
+需要每个使用线程显式 `request_amx_tile_permission()`；请求失败不得进入 AMX kernel。这个机制为
+SIMD、自定义 kernel 与诊断代码提供线程事实，不选择 kernel，也不会替调用方进入或退出 SME streaming
+mode。
 
 ## CPU、cache 与 NUMA
 
-`cpu_features()` 回答“这个进程的 CPU/OS 能安全执行什么指令”；`cache_info()` 的 L1/L2/L3
-是缓存的容量提示，未知项为 0。`hardware_concurrency()` 是 OS-online 的粗略诊断值，不遵守
-当前 affinity/cgroup，因此不要拿它决定 worker 数。
+`cpu_features()` 返回无顺序的 `CpuFeatureSet`，回答“这个进程的 CPU/OS 能安全执行哪些具名
+扩展”。它不是最高档位，也不能跨架构比较。已有 HYLE SIMD 算法应直接调用 SIMD API；只有自建
+kernel/backend 时，才由该实现的 owner 写出其生成 TU **全部**允许使用的 feature：
+
+```cpp
+#include "hyle/platform/cpu.h"
+
+using hyle::platform::CpuFeature;
+using hyle::platform::CpuFeatureSet;
+
+// 这份 body 使用 hyle_target_simd(... ISA AVX2)，因此 requirements
+// 与 HYLE canonical direct-Highway AVX2 的编译 flags 完全一致。
+constexpr CpuFeatureSet kHyleAvx2Body{
+    CpuFeature::kX86Sse2, CpuFeature::kX86Sse3,
+    CpuFeature::kX86Ssse3, CpuFeature::kX86Sse41,
+    CpuFeature::kX86Sse42, CpuFeature::kX86Avx,
+    CpuFeature::kX86Avx2, CpuFeature::kX86Fma,
+    CpuFeature::kX86F16c, CpuFeature::kX86Lzcnt,
+    CpuFeature::kX86Bmi1, CpuFeature::kX86Bmi2};
+
+if (hyle::platform::cpu_features().has_all(kHyleAvx2Body)) {
+  run_my_avx2_body();
+} else {
+  run_my_portable_body();
+}
+```
+
+不要只检查营销名称 `kX86Avx2`，也不要机械复制上例：requirements 必须从**这份 TU 实际使用的编译
+flags/provider 合同**导出。`hyle_target_simd(... ISA AVX2)` 同时允许 FMA、F16C、BMI 等指令，编译器
+可在整份 TU 中使用它们，所以示例逐项检查；只用另一组 flags 的实现应声明它自己的集合。
+`CpuFeatureSet::has/has_all/has_any/set` 都是固定两个机器字上的 O(1) 操作，不分配；
+`cpu_feature_name()` 只用于诊断。AMX 的 `*Hardware` facts 仅说明 CPUID hardware capability；Linux
+线程进入 AMX kernel 前还必须通过 `this_thread::request_amx_tile_permission()` 获得本线程许可。
+
+`cache_info()` 的 L1/L2/L3 是缓存的容量提示，未知项为 0。`hardware_concurrency()` 是 OS-online
+的粗略诊断值，不遵守当前 affinity/cgroup，因此不要拿它决定 worker 数。
 
 `available_cpu_count()` / `available_cpu_ids(...)` 才是进程视图：前者是创建 worker、
 选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给

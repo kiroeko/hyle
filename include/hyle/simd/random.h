@@ -5,7 +5,7 @@
 #include <span>
 #include <type_traits>
 
-#include "hyle/simd/dispatch.h"  // HYLE_SIMD_API
+#include "hyle/simd/visibility.h"
 
 // Runtime-safe random generation. This header exposes no target-dependent vector type:
 // RandomState has one fixed layout and the fill functions have a pointer/POD boundary, so a

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/visibility.h"
 
 // Target-neutral contiguous-range search and reduction operations. A prebuilt
 // HYLE library resolves these pointer/count entry points to the best compiled

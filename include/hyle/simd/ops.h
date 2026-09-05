@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/visibility.h"
 #include "hyle/simd/dtype.h"
 
 // Target-neutral numeric row operations. A prebuilt HYLE runtime performs at most one

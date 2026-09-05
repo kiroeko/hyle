@@ -10,133 +10,133 @@ enum class Family : std::uint8_t {
   kGeluTanhF32Batch,
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESInvMixColumns>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESKeyGenAssist>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESLastRound>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESLastRoundInv>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESRound>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAESRoundInv>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAbs>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAbsDiff>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAddSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAllBits0>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAllBits1>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAllFalse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAllTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAnd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAndNot>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAndXor>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kApproximateReciprocal>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kApproximateReciprocalSqrt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kAverageRound>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBitCast>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBitShuffle>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -145,7 +145,7 @@ struct RouteFor<RouteKey<Operation::kBitShuffle>, Variant, kTarget, kCompiler, k
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kBitShuffle>, LaneVariant<std::uint64_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kBitShuffle>, LaneVariant<std::uint64_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -153,78 +153,78 @@ struct RouteFor<RouteKey<Operation::kBitShuffle>, LaneVariant<std::uint64_t>, Ta
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kBitShuffle>, LaneVariant<std::uint64_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kBitShuffle>, LaneVariant<std::uint64_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBitsFromMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBitwiseIfThenElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBlendedStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBroadcast>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBroadcastBlock>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBroadcastLane>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kBroadcastSignBit>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCLMulLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCLMulUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCeil>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCeilInt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -233,7 +233,7 @@ struct RouteFor<RouteKey<Operation::kCeilInt>, Variant, kTarget, kCompiler, kCom
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kCeilInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kCeilInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -241,66 +241,66 @@ struct RouteFor<RouteKey<Operation::kCeilInt>, ConversionVariant<float, std::int
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kCeilInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kCeilInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kClamp>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCombine>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCombineMasks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCombineShiftRightBytes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCombineShiftRightLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kComplexConj>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompress>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressBits>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressBitsStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressBlendedStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -309,24 +309,24 @@ struct RouteFor<RouteKey<Operation::kCompressBlendedStore>, Variant, kTarget, kC
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kCompressBlendedStore>, LaneVariant<std::int32_t>, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kCompressBlendedStore>, LaneVariant<std::int32_t>, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressBlocksNot>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressEmulated>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressNot>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -335,66 +335,66 @@ struct RouteFor<RouteKey<Operation::kCompressNot>, Variant, kTarget, kCompiler, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kCompressNot>, LaneVariant<std::uint64_t>, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kCompressNot>, LaneVariant<std::uint64_t>, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressNotNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCompressStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatLowerLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatLowerUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatOdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatUpperLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConcatUpperUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConvertInRangeTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kConvertTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -403,7 +403,7 @@ struct RouteFor<RouteKey<Operation::kConvertTo>, Variant, kTarget, kCompiler, kC
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -411,42 +411,42 @@ struct RouteFor<RouteKey<Operation::kConvertTo>, ConversionVariant<float, std::i
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCopySign>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCopySignToAbs>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kCountTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteInRangeTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteMaskTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -455,7 +455,7 @@ struct RouteFor<RouteKey<Operation::kDemoteTo>, Variant, kTarget, kCompiler, kCo
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -463,7 +463,7 @@ struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -471,30 +471,30 @@ struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kDemoteTo>, ConversionVariant<std::int32_t, std::int16_t, ConversionContract::kTwoInputSaturating>, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteToNearestInt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteToNearestIntInRange>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDemoteToNearestIntNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDiv>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -503,7 +503,7 @@ struct RouteFor<RouteKey<Operation::kDiv>, Variant, kTarget, kCompiler, kCompile
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kDiv>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kDiv>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -511,60 +511,60 @@ struct RouteFor<RouteKey<Operation::kDiv>, InvariantDivisorVariant<std::int32_t>
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kDiv>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kDiv>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDup128MaskFromMaskBits>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDup128VecFromValues>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDupEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kDupOdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kEq>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kEq128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kEq128Upper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kExclusiveNeither>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kExpand>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -573,7 +573,7 @@ struct RouteFor<RouteKey<Operation::kExpand>, Variant, kTarget, kCompiler, kComp
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -581,7 +581,7 @@ struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, Target:
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -589,60 +589,60 @@ struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, Target:
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kExpand>, LaneVariant<std::int32_t>, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kExtractBlock>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kExtractLane>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFindFirstTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFindKnownFirstTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFindKnownLastTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFindLastTrue>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFirstN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFloor>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kFloorInt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -651,7 +651,7 @@ struct RouteFor<RouteKey<Operation::kFloorInt>, Variant, kTarget, kCompiler, kCo
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kFloorInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kFloorInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -659,90 +659,90 @@ struct RouteFor<RouteKey<Operation::kFloorInt>, ConversionVariant<float, std::in
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kFloorInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kFloorInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGatherIndex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGatherIndexEmulated>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGatherIndexN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGatherIndexNOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGatherOffset>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGe>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGetBiasedExponent>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGetExponent>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGetLane>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kGt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kHighestSetBitIndex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kHighestSetBitIndexNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfNegativeThenElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -751,7 +751,7 @@ struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, Variant, kTarget, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -759,18 +759,18 @@ struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, LaneVariant<float>
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kIfNegativeThenElseZero>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfNegativeThenNegOrUndefIfZero>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -779,7 +779,7 @@ struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, Variant, kTarget, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -787,192 +787,192 @@ struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, LaneVariant<float>
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kIfNegativeThenZeroElse>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfThenElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfThenElseZero>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfThenZeroElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIfVecThenElse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIndicesFromVec>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInf>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInsertBlock>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInsertIntoUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInsertLane>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveEvenBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveLowerBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveOdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveOddBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveUpperBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveWholeLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kInterleaveWholeUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIota>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIsEitherNaN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIsFinite>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIsInf>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIsNaN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kIsNegative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLe>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLeadingZeroCount>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoad>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadDup128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadExpand>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -981,7 +981,7 @@ struct RouteFor<RouteKey<Operation::kLoadExpand>, Variant, kTarget, kCompiler, k
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -989,7 +989,7 @@ struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, Tar
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -997,36 +997,36 @@ struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, Tar
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kLoadExpand>, LaneVariant<std::int32_t>, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadInterleaved2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadInterleaved3>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadInterleaved4>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadMaskBits>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1035,7 +1035,7 @@ struct RouteFor<RouteKey<Operation::kLoadN>, Variant, kTarget, kCompiler, kCompi
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kLoadN>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kLoadN>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1043,90 +1043,90 @@ struct RouteFor<RouteKey<Operation::kLoadN>, LaneVariant<std::int32_t>, Target::
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kLoadN>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kLoadN>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadNOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLoadU>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLowerHalf>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLowerHalfOfMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLt128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLt128Upper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kLt128Vec>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskFalse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskFromNormalizedVec>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskFromVec>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedApproximateReciprocal>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedApproximateReciprocalSqrt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1135,7 +1135,7 @@ struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, Variant, kTarget, kCompil
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1143,48 +1143,48 @@ struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, ConversionVariant<float, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedConvertTo>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedGatherIndex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedGatherIndexOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedIsNaN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedLeadingZeroCount>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedLoad>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedLoadOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedModOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1193,7 +1193,7 @@ struct RouteFor<RouteKey<Operation::kMaskedModOr>, Variant, kTarget, kCompiler, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMaskedModOr>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedModOr>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1201,24 +1201,24 @@ struct RouteFor<RouteKey<Operation::kMaskedModOr>, InvariantDivisorVariant<std::
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMaskedModOr>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedModOr>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulAddOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1227,7 +1227,7 @@ struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, Variant, kTarget, kCompi
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1235,18 +1235,18 @@ struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, LaneVariant<float>, Targ
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedMulComplex>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulComplexAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1255,7 +1255,7 @@ struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, Variant, kTarget, kC
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1263,222 +1263,222 @@ struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, LaneVariant<float>, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMaskedMulComplexConj>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulComplexConjAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulComplexOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedMulFixedPoint15>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedNegMulAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedReduceMax>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedReduceMin>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedReduceSum>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedSatAddOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedSatSubOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedScatterIndex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedSet>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedSetOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShiftLeft>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShiftLeftOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShiftRight>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShiftRightOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShl>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShlOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedShrOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaskedWidenMulPairwiseAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMax>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMax128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMax128Upper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaxMagnitude>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaxNumber>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaxOfLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMaxOfLanesNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMin>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMin128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMin128Upper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMinMagnitude>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMinNumber>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMinOfLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMinOfLanesNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMod>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1487,7 +1487,7 @@ struct RouteFor<RouteKey<Operation::kMod>, Variant, kTarget, kCompiler, kCompile
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMod>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMod>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1495,42 +1495,42 @@ struct RouteFor<RouteKey<Operation::kMod>, InvariantDivisorVariant<std::int32_t>
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMod>, InvariantDivisorVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMod>, InvariantDivisorVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMul>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulAddSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulByFloorPow2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulByPow2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulComplex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1539,7 +1539,7 @@ struct RouteFor<RouteKey<Operation::kMulComplex>, Variant, kTarget, kCompiler, k
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMulComplex>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMulComplex>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1547,18 +1547,18 @@ struct RouteFor<RouteKey<Operation::kMulComplex>, LaneVariant<float>, Target::kA
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMulComplex>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMulComplex>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulComplexAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulComplexConj>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1567,7 +1567,7 @@ struct RouteFor<RouteKey<Operation::kMulComplexConj>, Variant, kTarget, kCompile
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kMulComplexConj>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMulComplexConj>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1575,120 +1575,120 @@ struct RouteFor<RouteKey<Operation::kMulComplexConj>, LaneVariant<float>, Target
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kMulComplexConj>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kMulComplexConj>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulComplexConjAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulEvenAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulFixedPoint15>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulHigh>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulHighLow>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulOdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulOddAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulRound>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMulSubAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kMultiRotateRight>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNaN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNativeGatherOffset32>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNativeMaskedGatherOr32>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNe>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNe128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNe128Upper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNearestInt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1697,7 +1697,7 @@ struct RouteFor<RouteKey<Operation::kNearestInt>, Variant, kTarget, kCompiler, k
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kNearestInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kNearestInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1705,108 +1705,108 @@ struct RouteFor<RouteKey<Operation::kNearestInt>, ConversionVariant<float, std::
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kNearestInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kNearestInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNeg>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNegMulAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNegMulSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kNot>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOddEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOddEvenBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOr3>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrAnd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrderedDemote2MasksTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrderedDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrderedRoundingShiftRightAndDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrderedShiftRightAndDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kOrderedTruncate2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPairwiseAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPairwiseAdd128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPairwiseSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1815,7 +1815,7 @@ struct RouteFor<RouteKey<Operation::kPairwiseSub>, Variant, kTarget, kCompiler, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kPairwiseSub>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPairwiseSub>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1823,12 +1823,12 @@ struct RouteFor<RouteKey<Operation::kPairwiseSub>, LaneVariant<std::int32_t>, Ta
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kPairwiseSub>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPairwiseSub>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPairwiseSub128>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1837,7 +1837,7 @@ struct RouteFor<RouteKey<Operation::kPairwiseSub128>, Variant, kTarget, kCompile
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kPairwiseSub128>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPairwiseSub128>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1845,18 +1845,18 @@ struct RouteFor<RouteKey<Operation::kPairwiseSub128>, LaneVariant<std::int32_t>,
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kPairwiseSub128>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPairwiseSub128>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPer4LaneBlockShuffle>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPopulationCount>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -1865,7 +1865,7 @@ struct RouteFor<RouteKey<Operation::kPopulationCount>, Variant, kTarget, kCompil
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kPopulationCount>, LaneVariant<std::uint32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPopulationCount>, LaneVariant<std::uint32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -1873,198 +1873,198 @@ struct RouteFor<RouteKey<Operation::kPopulationCount>, LaneVariant<std::uint32_t
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kPopulationCount>, LaneVariant<std::uint32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kPopulationCount>, LaneVariant<std::uint32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteEvenTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteInRangeEvenTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteInRangeLowerTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteInRangeOddTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteInRangeUpperTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteLowerTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteMaskTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteOddTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kPromoteUpperTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRearrangeToOddPlusEven>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRebindMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReciprocalNewton>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReciprocalNewtonNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReciprocalSqrtNewton>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReciprocalSqrtNewtonNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceAnd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceMax>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceMin>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceMul>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceOr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReduceSum>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReorderDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReorderRoundingShiftRightAndDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReorderShiftRightAndDemote2To>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReorderWidenMulAccumulate>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kResizeBitCast>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverse>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverse2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverse4>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverse8>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverseBits>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2073,7 +2073,7 @@ struct RouteFor<RouteKey<Operation::kReverseBits>, Variant, kTarget, kCompiler, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kReverseBits>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kReverseBits>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2081,66 +2081,66 @@ struct RouteFor<RouteKey<Operation::kReverseBits>, LaneVariant<std::int32_t>, Ta
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kReverseBits>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kReverseBits>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverseBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kReverseLaneBytes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRol>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRor>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRotateLeft>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRotateLeftSame>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRotateRight>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRotateRightSame>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRound>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRoundToInt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2149,7 +2149,7 @@ struct RouteFor<RouteKey<Operation::kRoundToInt>, Variant, kTarget, kCompiler, k
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kRoundToInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kRoundToInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2157,30 +2157,30 @@ struct RouteFor<RouteKey<Operation::kRoundToInt>, ConversionVariant<float, std::
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kRoundToInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kRoundToInt>, ConversionVariant<float, std::int32_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRoundingShiftRight>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRoundingShiftRightAndDemoteTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRoundingShiftRightSame>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kRoundingShr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2189,7 +2189,7 @@ struct RouteFor<RouteKey<Operation::kRoundingShr>, Variant, kTarget, kCompiler, 
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kRoundingShr>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kRoundingShr>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2197,330 +2197,330 @@ struct RouteFor<RouteKey<Operation::kRoundingShr>, LaneVariant<std::int32_t>, Ta
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kRoundingShr>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kRoundingShr>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSafeCopyN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSafeFillN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSatWidenMulAccumFixedPoint>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSatWidenMulAccumFixedPointNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSatWidenMulPairwiseAccumulate>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSatWidenMulPairwiseAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSaturatedAbs>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSaturatedAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSaturatedNeg>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSaturatedSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kScatterIndex>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kScatterIndexN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kScatterOffset>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSet>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetAtOrAfterFirst>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetAtOrBeforeFirst>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetBeforeFirst>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetOnlyFirst>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSetTableIndices>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftLeft>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftLeftBytes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftLeftLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftLeftSame>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRight>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRightAndDemoteTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRightBytes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRightLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRightSame>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShiftRightUniform>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShl>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShr>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle01>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle0123>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle0321>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle1032>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle2103>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kShuffle2301>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSignBit>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlide1Down>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlide1Up>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideDownBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideDownLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideMask1Down>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideMask1Up>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideMaskDownLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideMaskUpLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideUpBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSlideUpLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSqrt>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreInterleaved2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreInterleaved3>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2529,7 +2529,7 @@ struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, Variant, kTarget, kComp
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2537,18 +2537,18 @@ struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, LaneVariant<float>, Tar
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kStoreInterleaved4>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreMaskBits>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreN>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2557,7 +2557,7 @@ struct RouteFor<RouteKey<Operation::kStoreN>, Variant, kTarget, kCompiler, kComp
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kStoreN>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kStoreN>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2565,18 +2565,18 @@ struct RouteFor<RouteKey<Operation::kStoreN>, LaneVariant<std::int32_t>, Target:
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kStoreN>, LaneVariant<std::int32_t>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kStoreN>, LaneVariant<std::int32_t>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStoreU>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kStream>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2585,66 +2585,66 @@ struct RouteFor<RouteKey<Operation::kStream>, Variant, kTarget, kCompiler, kComp
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 210000u &&
             kCompilerVersion <= 210099u)
-struct RouteFor<RouteKey<Operation::kStream>, AnyVariant, Target::kNeon,
+struct RouteFor<RouteKey<Operation::kStream>, AnyVariant, KernelTarget::kNeon,
                 Compiler::kAppleClang, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSub>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumOfLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumOfLanesNative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumOfMulQuadAccumulate>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOf2>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOf4>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOf8>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOf8AbsDiff>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOfAdjQuadAbsDiff>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2653,7 +2653,7 @@ struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, Variant, kTarge
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, ConversionVariant<std::uint8_t, std::uint16_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, ConversionVariant<std::uint8_t, std::uint16_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
@@ -2661,174 +2661,174 @@ struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, ConversionVaria
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 140200u &&
             kCompilerVersion <= 140299u)
-struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, ConversionVariant<std::uint8_t, std::uint16_t, ConversionContract::kDefault>, Target::kAvx2,
+struct RouteFor<RouteKey<Operation::kSumsOfShuffledQuadAbsDiff>, ConversionVariant<std::uint8_t, std::uint16_t, ConversionContract::kDefault>, KernelTarget::kAvx2,
                 Compiler::kGcc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHyle, Decision::kKeepHyle};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kSwapAdjacentBlocks>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTableLookupBytes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTableLookupBytesInRange>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTableLookupBytesOr0>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTableLookupLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTestBit>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTrailingZeroCount>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTrunc>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTruncateStore>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTruncateTo>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kTwoTablesLookupLanes>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kU8FromU32>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kUndefined>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kUpperHalf>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kUpperHalfOfMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kVecFromMask>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kWidenMulAccumulate>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kWidenMulPairwiseAdd>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kXor>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kXor3>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kXorAndNot>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZero>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZeroExtendResizeBitCast>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZeroExtendVector>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZeroIfNegative>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZipLower>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Operation::kZipUpper>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kNone, Decision::kRemoveRedundant};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Family::kTanhF32Batch>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2837,12 +2837,12 @@ struct RouteFor<RouteKey<Family::kTanhF32Batch>, Variant, kTarget, kCompiler, kC
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Family::kTanhF32Batch>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Family::kTanhF32Batch>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kXsimd, Decision::kRouteXsimd};
 };
 
-template <typename Variant, Target kTarget, Compiler kCompiler,
+template <typename Variant, KernelTarget kTarget, Compiler kCompiler,
           std::uint32_t kCompilerVersion>
 struct RouteFor<RouteKey<Family::kGeluTanhF32Batch>, Variant, kTarget, kCompiler, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kHighway, Decision::kRouteHighway};
@@ -2851,7 +2851,7 @@ struct RouteFor<RouteKey<Family::kGeluTanhF32Batch>, Variant, kTarget, kCompiler
 template <std::uint32_t kCompilerVersion>
   requires (kCompilerVersion >= 195000000u &&
             kCompilerVersion <= 195099999u)
-struct RouteFor<RouteKey<Family::kGeluTanhF32Batch>, LaneVariant<float>, Target::kAvx2,
+struct RouteFor<RouteKey<Family::kGeluTanhF32Batch>, LaneVariant<float>, KernelTarget::kAvx2,
                 Compiler::kMsvc, kCompilerVersion> final {
   inline static constexpr Route value{Provider::kXsimd, Decision::kRouteXsimd};
 };

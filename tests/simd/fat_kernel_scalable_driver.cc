@@ -37,11 +37,13 @@ int main() {
   const FatFn fn = HYLE_SIMD_SELECT_FAT_KERNEL(
       missing_scalar_symbol, missing_neon_symbol,
       &hyle_test_fat_add_one_sve);
-  constexpr std::uint32_t kExpectedTier = 120;
+  constexpr std::uint32_t kExpectedTier =
+      static_cast<std::uint32_t>(hyle::simd::KernelTarget::kSve);
 #else
   const FatFn fn = HYLE_SIMD_SELECT_FAT_KERNEL(
       missing_scalar_symbol, &hyle_test_fat_add_one_rvv);
-  constexpr std::uint32_t kExpectedTier = 210;
+  constexpr std::uint32_t kExpectedTier =
+      static_cast<std::uint32_t>(hyle::simd::KernelTarget::kRvv);
 #endif
 
   constexpr std::size_t kCount = 517;

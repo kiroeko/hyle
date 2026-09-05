@@ -59,10 +59,11 @@ void convert(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept {
   detail::f8e5m2_to_f32_scalar(src, dst, n);
 }
 
-// AVX10.2 gate: build has -mavx10.2-512 (clang-20) AND the CPU advertises avx10_2 (+ZMM).
+// AVX10.2 gate: build has -mavx10.2-512 (clang-20) AND Platform reports
+// process-safe AVX10.2 with the 512-bit width enabled.
 #if HYLE_ARCH_X64 && defined(HYLE_HAVE_AVX10_2)
 bool use_avx10_2() noexcept {
-  return (runtime().dtype.features & Runtime::kFeatureAvx10_2) != 0;
+  return (runtime().dtype.features & Runtime::kFeatureAvx10_2_512) != 0;
 }
 #endif
 

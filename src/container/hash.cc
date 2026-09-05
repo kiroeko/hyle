@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include "hyle/platform/cpu.h"
+#include "src/container/cpu_dispatch_internal.h"
 
 // XXH3 lives entirely here: XXH_INLINE_ALL pulls the whole (header-only) xxHash
 // implementation into this one translation unit, so the 7490-line header never
@@ -58,7 +59,7 @@ std::uint64_t hash_bytes_long(const void* data, std::size_t len,
   // once; the branch and out-of-line call are amortized by the platform-tuned
   // long-input crossover.
   static const bool has_avx2 =
-      platform::supports(platform::Isa::kAvx2);
+      supports_xxh3_avx2(platform::cpu_features());
   if (len >= kWideHashThreshold && has_avx2) {
     return hash_bytes_xxh3_avx2(data, len, seed);
   }

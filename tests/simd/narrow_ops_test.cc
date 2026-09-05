@@ -23,7 +23,7 @@ std::array<T, 9> sample(FromFloat from_float, std::uint16_t nan_bits) {
 
 template <typename T, typename FromFloat, typename NarrowTable>
 void check_table(const NarrowTable &table, FromFloat from_float,
-                  std::uint16_t nan_bits, hs::Isa isa) {
+                  std::uint16_t nan_bits, hs::KernelTarget isa) {
   const auto values = sample<T>(from_float, nan_bits);
   const T plus_zero = T::from_bits(0x0000u);
   const T nan = T::from_bits(nan_bits);
@@ -173,9 +173,9 @@ TEST(NarrowOps, PublicDispatchedSurface) {
 }
 
 TEST(NarrowOps, EverySupportedRuntimeVariant) {
-  for (const hs::Isa isa :
-       {hs::Isa::kScalar, hs::Isa::kSse42, hs::Isa::kAvx2, hs::Isa::kAvx512,
-        hs::Isa::kNeon, hs::Isa::kSve, hs::Isa::kRvv}) {
+  for (const hs::KernelTarget isa :
+       {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4, hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
+        hs::KernelTarget::kNeon, hs::KernelTarget::kSve, hs::KernelTarget::kRvv}) {
     const hs::Runtime *rt = hs::runtime_for(isa);
     if (rt == nullptr)
       continue;

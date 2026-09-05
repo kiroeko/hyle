@@ -53,17 +53,17 @@ int fat_rvv() noexcept { return 1; }
 
 TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   const hs::Runtime &active = hs::runtime();
-  EXPECT_EQ(hs::selected_target().isa, active.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kOps).isa,
-            active.ops_module.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kRandom).isa,
-            active.random_module.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kNarrow).isa,
-            active.narrow_module.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kSearch).isa,
-            active.search_module.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kScan).isa, active.scan.isa);
-  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).isa, active.math.isa);
+  EXPECT_EQ(hs::selected_target().target, active.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kOps).target,
+            active.ops_module.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kRandom).target,
+            active.random_module.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kNarrow).target,
+            active.narrow_module.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kSearch).target,
+            active.search_module.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kScan).target, active.scan.target);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).target, active.math.target);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kDtype).features,
             active.dtype.features);
   EXPECT_EQ(active.table_version, hs::Runtime::kTableVersion);
@@ -101,22 +101,22 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar,
             0u);
   EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
-  if (active.sort.isa == hs::Isa::kSve) {
+  if (active.sort.target == hs::KernelTarget::kSve) {
     EXPECT_NE(active.sort.features & hs::Runtime::kFeatureSortCappedNetwork,
               0u);
   }
   EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128,
             0u);
 #if HYLE_ARCH_X64
-  if (active.isa == hs::Isa::kAvx512) {
-    EXPECT_EQ(active.sort.isa,
-              hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512));
-    if (active.sort.isa != active.isa) {
+  if (active.target == hs::KernelTarget::kAvx512) {
+    EXPECT_EQ(active.sort.target,
+              hs::detail::sort_target_for_product_target(hs::KernelTarget::kAvx512));
+    if (active.sort.target != active.target) {
       EXPECT_NE(active.sort.features & hs::Runtime::kFeaturePerOpLowerTier, 0u);
     }
   }
 #endif
-  const hs::Runtime *exact = hs::runtime_for(active.isa);
+  const hs::Runtime *exact = hs::runtime_for(active.target);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(active.ops.dot_f32, exact->ops.dot_f32);
   if ((active.ops_module.features &
@@ -128,14 +128,14 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(active.random.fill_u64, exact->random.fill_u64);
   EXPECT_EQ(active.random.advance, exact->random.advance);
   EXPECT_EQ(active.bitpack_ops.pack_u16, exact->bitpack_ops.pack_u16);
-  const hs::Runtime *scalar = hs::runtime_for(hs::Isa::kScalar);
+  const hs::Runtime *scalar = hs::runtime_for(hs::KernelTarget::kScalar);
   if (scalar == nullptr) {
     // A non-scalar exact artifact intentionally contains one canonical tier
     // only.
-    EXPECT_NE(active.isa, hs::Isa::kScalar);
-    EXPECT_EQ(active.scan.isa, active.isa);
+    EXPECT_NE(active.target, hs::KernelTarget::kScalar);
+    EXPECT_EQ(active.scan.target, active.target);
   } else {
-    EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
+    EXPECT_EQ(scalar->target, hs::KernelTarget::kScalar);
 #if HYLE_ARCH_X64 && !defined(HYLE_SIMD_EXACT)
     const auto specialty =
         hs::detail::x86_specialty_support(hyle::platform::cpu_features());
@@ -149,35 +149,35 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
                 0u);
     }
 #endif
-    EXPECT_EQ(active.scan.isa, active.search_module.isa);
+    EXPECT_EQ(active.scan.target, active.search_module.target);
   }
 
 #if HYLE_ARCH_X64
-  EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
-  if (const hs::Runtime *sse = hs::runtime_for(hs::Isa::kSse42)) {
-    EXPECT_EQ(sse->math.isa, hs::Isa::kScalar);
-    EXPECT_EQ(sse->dtype.isa, hs::Isa::kSse42);
+  EXPECT_EQ(hs::runtime_for(hs::KernelTarget::kNeon), nullptr);
+  if (const hs::Runtime *sse = hs::runtime_for(hs::KernelTarget::kSse4)) {
+    EXPECT_EQ(sse->math.target, hs::KernelTarget::kScalar);
+    EXPECT_EQ(sse->dtype.target, hs::KernelTarget::kSse4);
   }
 #elif HYLE_ARCH_ARM64
-  EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
+  EXPECT_EQ(hs::runtime_for(hs::KernelTarget::kAvx2), nullptr);
 #elif HYLE_ARCH_RISCV64
-  EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
-  EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
+  EXPECT_EQ(hs::runtime_for(hs::KernelTarget::kAvx2), nullptr);
+  EXPECT_EQ(hs::runtime_for(hs::KernelTarget::kNeon), nullptr);
 #endif
 }
 
 #if HYLE_ARCH_X64
 TEST(SimdRuntime, SortCompilerTierContract) {
-  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx2),
-            hs::Isa::kAvx2);
+  EXPECT_EQ(hs::detail::sort_target_for_product_target(hs::KernelTarget::kAvx2),
+            hs::KernelTarget::kAvx2);
 #if HYLE_COMPILER_MSVC
-  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512),
-            hs::Isa::kAvx2);
+  EXPECT_EQ(hs::detail::sort_target_for_product_target(hs::KernelTarget::kAvx512),
+            hs::KernelTarget::kAvx2);
 #else
   // In particular, clang-cl defines _MSC_VER but is not subject to the cl.exe
   // fallback and must retain the supported AVX-512 vqsort implementation.
-  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512),
-            hs::Isa::kAvx512);
+  EXPECT_EQ(hs::detail::sort_target_for_product_target(hs::KernelTarget::kAvx512),
+            hs::KernelTarget::kAvx512);
 #endif
 }
 #endif
@@ -186,20 +186,20 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
 #if HYLE_ARCH_X64
   const auto fn =
       hs::select_fat_kernel(&fat_scalar, &fat_sse4, &fat_avx2, &fat_avx512);
-  const int expected = hs::runtime().isa == hs::Isa::kAvx512  ? 3
-                       : hs::runtime().isa == hs::Isa::kAvx2  ? 2
-                       : hs::runtime().isa == hs::Isa::kSse42 ? 1
+  const int expected = hs::runtime().target == hs::KernelTarget::kAvx512  ? 3
+                       : hs::runtime().target == hs::KernelTarget::kAvx2  ? 2
+                       : hs::runtime().target == hs::KernelTarget::kSse4 ? 1
                                                               : 0;
   EXPECT_EQ(fn(), expected);
 #elif HYLE_ARCH_ARM64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_neon, &fat_sve);
-  const int expected = hs::runtime().isa == hs::Isa::kSve    ? 2
-                       : hs::runtime().isa == hs::Isa::kNeon ? 1
+  const int expected = hs::runtime().target == hs::KernelTarget::kSve    ? 2
+                       : hs::runtime().target == hs::KernelTarget::kNeon ? 1
                                                              : 0;
   EXPECT_EQ(fn(), expected);
 #elif HYLE_ARCH_RISCV64
   const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_rvv);
-  EXPECT_EQ(fn(), hs::runtime().isa == hs::Isa::kRvv ? 1 : 0);
+  EXPECT_EQ(fn(), hs::runtime().target == hs::KernelTarget::kRvv ? 1 : 0);
 #else
   EXPECT_EQ(hs::select_fat_kernel(&fat_scalar)(), 0);
 #endif
@@ -231,86 +231,89 @@ TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
   fn(src.data(), dst.data(), src.size(), &selected);
   for (std::size_t i = 0; i < src.size(); ++i)
     EXPECT_FLOAT_EQ(dst[i], src[i] + 1.0f);
-  auto expected_selected = static_cast<std::uint32_t>(hs::runtime().isa);
+  auto expected_selected = static_cast<std::uint32_t>(hs::runtime().target);
 #if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
-  if (hs::runtime().isa == hs::Isa::kAvx512)
-    expected_selected = static_cast<std::uint32_t>(hs::Isa::kAvx2);
+  if (hs::runtime().target == hs::KernelTarget::kAvx512)
+    expected_selected = static_cast<std::uint32_t>(hs::KernelTarget::kAvx2);
 #endif
   EXPECT_EQ(selected, expected_selected);
 }
 
 #if HYLE_ARCH_X64
 TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
-  hyle::platform::CpuFeatures f;
-  f.avx2 = true;
+  using hyle::platform::CpuFeature;
+  using hyle::platform::CpuFeatureSet;
+  using enum CpuFeature;
+
+  CpuFeatureSet f{kX86Avx2};
   EXPECT_FALSE(hs::detail::x86_specialty_support(f).avx2_int);
-  f.f16c = true;
+  f.set(kX86F16c);
   EXPECT_FALSE(hs::detail::x86_specialty_support(f).f16c);
-  f.avx = true;
+  f.set(kX86Avx);
   EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx2_int);
   EXPECT_TRUE(hs::detail::x86_specialty_support(f).f16c);
 
-  f.avx_vnni = true;
-  f.avx2 = false;
+  f.set(kX86AvxVnni).set(kX86Avx2, false);
   EXPECT_FALSE(hs::detail::x86_specialty_support(f).avx_vnni);
-  f.avx2 = true;
+  f.set(kX86Avx2);
   EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx_vnni);
 
-  f.avx512vnni = true;
-  f.avx512bf16 = true;
-  f.fma = true;
-  f.f16c = true;
-  f.avx512f = true;
-  f.avx512bw = true;
-  f.avx512vl = true;
-  f.avx512dq = true;
+  f.set(kX86Avx512Vnni)
+      .set(kX86Avx512Bf16)
+      .set(kX86Fma)
+      .set(kX86Avx512F)
+      .set(kX86Avx512Bw)
+      .set(kX86Avx512Vl)
+      .set(kX86Avx512Dq);
   auto specialty = hs::detail::x86_specialty_support(f);
   EXPECT_TRUE(specialty.avx512_vnni);
   EXPECT_TRUE(specialty.avx512_bf16);
 
-  for (bool hyle::platform::CpuFeatures::*required : {
-           &hyle::platform::CpuFeatures::avx,
-           &hyle::platform::CpuFeatures::avx2,
-           &hyle::platform::CpuFeatures::fma,
-           &hyle::platform::CpuFeatures::f16c,
-           &hyle::platform::CpuFeatures::avx512f,
-           &hyle::platform::CpuFeatures::avx512bw,
-           &hyle::platform::CpuFeatures::avx512vl,
-           &hyle::platform::CpuFeatures::avx512dq,
-       }) {
+  for (CpuFeature required : {
+           kX86Avx, kX86Avx2, kX86Fma, kX86F16c, kX86Avx512F,
+           kX86Avx512Bw, kX86Avx512Vl, kX86Avx512Dq}) {
     auto masked = f;
-    masked.*required = false;
+    masked.set(required, false);
     specialty = hs::detail::x86_specialty_support(masked);
     EXPECT_FALSE(specialty.avx512_vnni);
     EXPECT_FALSE(specialty.avx512_bf16);
   }
 
-  // The detector folds AVX10.2 version + OS ZMM state into avx10_2. Current
-  // AVX10 supports all vector widths; runtime still insists on the AVX2/YMM
-  // prerequisite so a masked VM cannot select the -mavx10.2-512 TU.
-  f.avx10_2 = true;
+  // Platform exposes the precise AVX10.2 512-bit + OS-state fact; runtime also
+  // insists on the AVX2/FMA/F16C prerequisites permitted by this specialty TU.
+  f.set(kX86Avx10_2_512);
   EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx10_2);
-  for (bool hyle::platform::CpuFeatures::*required : {
-           &hyle::platform::CpuFeatures::avx,
-           &hyle::platform::CpuFeatures::avx2,
-           &hyle::platform::CpuFeatures::fma,
-           &hyle::platform::CpuFeatures::f16c,
-       }) {
+  for (CpuFeature required : {kX86Avx, kX86Avx2, kX86Fma, kX86F16c}) {
     auto masked = f;
-    masked.*required = false;
+    masked.set(required, false);
     EXPECT_FALSE(hs::detail::x86_specialty_support(masked).avx10_2);
   }
 }
 
-TEST(SimdRuntime, DetectionOnlyAvxTierUsesSse4FatKernel) {
-  EXPECT_EQ(hs::detail::select_x86_fat_kernel_for_isa(hs::Isa::kAvx,
-                                                      &fat_scalar, &fat_sse4,
-                                                      &fat_avx2, &fat_avx512)(),
-            1);
-  EXPECT_EQ(hs::detail::select_x86_fat_kernel_for_isa(hs::Isa::kSsse3,
-                                                      &fat_scalar, &fat_sse4,
-                                                      &fat_avx2, &fat_avx512)(),
-            0);
+TEST(SimdRuntime, PartialCanonicalRequirementsFallBackSafely) {
+  using hyle::platform::CpuFeature;
+  using hyle::platform::CpuFeatureSet;
+
+  auto select = [](const CpuFeatureSet& features) {
+    return hs::detail::select_x86_fat_kernel_for_features(
+        features, &fat_scalar, &fat_sse4, &fat_avx2, &fat_avx512)();
+  };
+
+  auto sse4 = hs::kernel_target_requirements(hs::KernelTarget::kSse4);
+  sse4.set(CpuFeature::kX86Sse42, false);
+  EXPECT_EQ(select(sse4), 0);
+  EXPECT_EQ(select(hs::kernel_target_requirements(hs::KernelTarget::kSse4)), 1);
+
+  auto avx2 = hs::kernel_target_requirements(hs::KernelTarget::kAvx2);
+  avx2.set(CpuFeature::kX86Bmi1, false);
+  EXPECT_EQ(select(avx2), 1);
+  EXPECT_EQ(select(hs::kernel_target_requirements(hs::KernelTarget::kAvx2)), 2);
+
+  auto avx512 = hs::kernel_target_requirements(hs::KernelTarget::kAvx512);
+  avx512.set(CpuFeature::kX86Avx512Cd, false);
+  EXPECT_EQ(select(avx512), 2);
+  EXPECT_EQ(select(hs::kernel_target_requirements(hs::KernelTarget::kAvx512)),
+            3);
 }
 #endif
 
@@ -322,7 +325,7 @@ TEST(SimdRuntime, RandomSequenceIgnoresIsaWidth) {
   std::array<std::uint64_t, kCount> scalar{};
 
   hs::runtime().random.fill_u64(&active_state, active.data(), active.size());
-  const hs::Runtime *scalar_runtime = hs::runtime_for(hs::Isa::kScalar);
+  const hs::Runtime *scalar_runtime = hs::runtime_for(hs::KernelTarget::kScalar);
   if (scalar_runtime != nullptr) {
     scalar_runtime->random.fill_u64(&scalar_state, scalar.data(),
                                     scalar.size());
@@ -346,9 +349,9 @@ TEST(SimdRuntime, EveryAvailableRandomTierPreservesSequenceAndAdvance) {
   hs::random_fill(reference_f32, expected_f32.data(), expected_f32.size());
   hs::random_fill(reference_f64, expected_f64.data(), expected_f64.size());
 
-  for (hs::Isa isa :
-       {hs::Isa::kScalar, hs::Isa::kSse42, hs::Isa::kAvx2, hs::Isa::kAvx512,
-        hs::Isa::kNeon, hs::Isa::kSve, hs::Isa::kRvv}) {
+  for (hs::KernelTarget isa :
+       {hs::KernelTarget::kScalar, hs::KernelTarget::kSse4, hs::KernelTarget::kAvx2, hs::KernelTarget::kAvx512,
+        hs::KernelTarget::kNeon, hs::KernelTarget::kSve, hs::KernelTarget::kRvv}) {
     const hs::Runtime *runtime = hs::runtime_for(isa);
     if (runtime == nullptr)
       continue;

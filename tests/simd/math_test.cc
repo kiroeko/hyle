@@ -13,7 +13,7 @@
 #include <tuple>
 #include <vector>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
 #include "hyle/simd/math.h"
 #include "src/simd/runtime_internal.h"
 
@@ -22,7 +22,7 @@
 // semantic floor. The public result must satisfy the same complete-domain contract either way.
 
 using hyle::simd::exp_f32_batch;
-using hyle::simd::Isa;
+using hyle::simd::KernelTarget;
 using hyle::simd::log_f32_batch;
 using hyle::simd::tanh_f32_batch;
 
@@ -500,15 +500,15 @@ TEST(Math, TailSizes) {
 // Active-tier sanity. Correctness is proved independently above; this property ensures the
 // runtime diagnostic names the fixed target actually compiled for the host.
 TEST(Math, ActiveVariantReported) {
-  const Isa v = hyle::simd::runtime().math.isa;
+  const KernelTarget v = hyle::simd::runtime().math.target;
 #if HYLE_ARCH_X64
   // x86: scalar floor, or locked-Highway AVX2 / AVX-512 target when available.
-  EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2 || v == Isa::kAvx512);
+  EXPECT_TRUE(v == KernelTarget::kScalar || v == KernelTarget::kAvx2 || v == KernelTarget::kAvx512);
 #elif HYLE_ARCH_ARM64
   // aarch64: Highway NEON cores are always compiled (ARMv8 baseline) -> kNeon.
-  EXPECT_EQ(v, Isa::kNeon);
+  EXPECT_EQ(v, KernelTarget::kNeon);
 #else
-  EXPECT_EQ(v, Isa::kScalar);
+  EXPECT_EQ(v, KernelTarget::kScalar);
 #endif
 }
 

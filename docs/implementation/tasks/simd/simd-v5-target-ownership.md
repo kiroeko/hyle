@@ -33,8 +33,9 @@
 - 冻结公开形状：SIMD 自有无跨架构顺序的 `KernelTarget {Scalar,Sse4,Avx2,Avx512,Neon,Sve,Rvv}`；
   `SelectedTarget::target` 报告 family 实际 compiled target，`kernel_target_name()` 供诊断；删除公开
   `simd::Isa` 和只有该 alias/export 宏的旧 `dispatch.h`，export policy 迁独立 `visibility.h`；
-- exact/source 形状：`target.h` 的常量改为 `kCompiledTarget`；`provider::Target` 不再形成第二个枚举，
-  route key 直接使用 `KernelTarget` 表示正在编译的 provider-coherent body；
+- exact/source 形状：不公开跨交付会失真的“当前 TU target”常量；`provider::Target` 不再形成第二个
+  枚举，内部 route key 的 `kCurrentTarget` 直接使用 `KernelTarget` 表示正在编译的 provider-coherent
+  body；普通运行库只通过 `selected_target()` 报告实际选择；
 - target requirements：SIMD 自己声明每个 canonical target 所需的 Platform raw feature set。x86
   Highway-compatible SSE4/AVX2/AVX512 group 必须逐项匹配，NEON/SVE/RVV 匹配各自事实；specialty
   feature 继续由 family 私有 matcher 处理；Platform 不知道这些 group；
@@ -61,13 +62,18 @@ provider 又有第二个 `Target`。Highway 的 raw feature/group 分层证明�
 
 | FIX | frozen implementation | P0 evidence |
 |---|---|---|
-| `SIMD5-F01` | `target.h` 独占无顺序 `KernelTarget`、`kernel_target_name()`、`kCompiledTarget`；export 宏迁 `visibility.h`，删除 `dispatch.h` | public-header/symbol/old-include scan |
+| `SIMD5-F01` | `target.h` 独占无顺序 `KernelTarget` 与 `kernel_target_name()`；不公开交付语义不一致的 current-TU 常量；export 宏迁 `visibility.h`，删除 `dispatch.h` | public-header/symbol/old-include scan |
 | `SIMD5-F02` | SIMD 声明 canonical SSE4/AVX2/AVX512/NEON/SVE/RVV 的完整 raw-feature requirements 与 `kernel_target_supported()` | 每项缺一 fact 必降级；exact 路径不探测 |
 | `SIMD5-F03` | Runtime/Module/SelectedTarget/fat helper 全部改用 `.target`；实际 family fallback 如 classic-cl sort 仍诚实报告较低 target | table/fat/exact fixtures + link/disassembly |
 | `SIMD5-F04` | 删除 `provider::Target`，route template/generator/generated specializations 直接用 `KernelTarget` | generator `--check`、provider compile probes；无 runtime layer |
 | `SIMD5-D01` | target manifest 把 SSE4 token 从 `Sse42` 校正为 `Sse4`，更新 user/architecture/CMake 注释和 tests | source/static/shared、ordinary/expert/fixed/fat journeys |
+| `SIMD5-D02` | 公开 specialty diagnostic 精确命名为 `TargetFeature::kAvx10_2_512`；删除 manifest 中已无消费者的 exact token | compile/old-symbol scan；不改 kernel body |
 
 API freeze 为 `FROZEN`（2026-09-05）。`KernelTarget` 只表示 HYLE 已编译/实际选择的 kernel body，不表示
 CPU 的最高能力，也不在不同架构间排序；Platform facts 只作为 SIMD-owned requirements 的输入。
 `HYLE_SIMD_EXACT_TARGET`、`hyle_target_simd(... ISA ...)` 和 fat-kernel CMake 调用拼写保持不变，含义明确为
 编译目标。无 operation/provider/loop/body 或 P1 winner 改动，故仅 P0；本轮没有未处置 `MUST`。
+
+实现期 route generator 回放仍为 387 个 operation、422 个终态 scope、0 pending；仅把 route key 的 enum
+owner 从 `provider::Target` 迁到 `KernelTarget`，没有重签任何 provider winner。集成 VQSort 的唯一 diff
+是 target 字段注释随类型改名，依赖锁中的 integrated-source content hash 因而同步刷新，算法字节未改。

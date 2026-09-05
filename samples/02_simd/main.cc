@@ -1,9 +1,9 @@
 // Sample 02 -- simd: two levels of the SIMD pillar.
 //
 //  (A) DISPATCHED OPS (ops.h) -- the easy, portable path. dot()/saxpy() pick the
-//      best ISA kernel at RUNTIME from the host's CPUID (scalar/SSE4.2/AVX2). One binary
+//      best supported compiled target at runtime from Platform facts. One binary
 //      runs fast everywhere; an old CPU never executes an instruction it lacks. This is
-//      what most consumers want. selected_target().isa reports the selected kernel tier.
+//      what most consumers want. selected_target().target reports the selected kernel body.
 //
 //  (B) EXACT-TARGET KERNEL -- users can bind this TU to one ISA and use the centrally
 //      locked Highway register API directly. There is no CPUID or indirect call; the resulting
@@ -80,10 +80,11 @@ static float sum_of_squares(const float* x, std::size_t n) {
 #endif
 
 int main() {
-  // What ISA did the runtime dispatcher choose on THIS machine?
-  std::printf("host best ISA: %s | dispatched kernels run as: %s\n",
-              hyle::platform::isa_name(hyle::platform::best_isa()),
-              hyle::platform::isa_name(hyle::simd::selected_target().isa));
+  // Which compiled target did the runtime dispatcher choose on this machine?
+  // Platform facts are intentionally not collapsed into a cross-arch score.
+  std::printf("dispatched kernels run as: %s\n",
+              hyle::simd::kernel_target_name(
+                  hyle::simd::selected_target().target));
 
   constexpr std::size_t n = 1000;
   std::vector<float> x(n), y(n);

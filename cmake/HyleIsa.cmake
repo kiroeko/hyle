@@ -20,7 +20,7 @@ include_guard(GLOBAL)
 #              ask for just -mavx2.
 #   AVX512   : AVX-512 F+BW+VL+DQ plus BMI2 (512-bit zmm and the inherited mask helper).
 #              MSVC /arch:AVX512; GCC/Clang use the matching explicit flags. ONLY entered
-#              when best_isa() >= kAvx512 (the AVX3 group is runtime-gated), so the zmm
+#              when SIMD's AVX-512 requirements pass, so the zmm
 #              codegen never runs on a non-AVX512 CPU.
 #   AVX512_BF16 : AVX512 + the bf16 convert extension (VCVTNEPS2BF16). MSVC's /arch:AVX512
 #              already enables the bf16 intrinsics (probe-verified, CL 19.50); GCC/Clang add
@@ -209,7 +209,7 @@ endfunction()
 #     silently downgrades (same trap as hyle_set_highway_isa, now one tier wider).
 # So this is the AVX2 highway baseline + the full AVX-512 group (f/bw/vl/dq/cd). MSVC's
 # /arch:AVX512 already implies the whole set (probe-verified, CL 19.50). Only reached when
-# best_isa() >= kAvx512 (runtime-gated in math_dispatch), so the zmm never runs on a non-512 CPU.
+# SIMD's AVX-512 requirements pass (runtime-gated in math_dispatch), so the zmm never runs on a non-512 CPU.
 function(hyle_set_avx512_math_isa src)
   hyle_set_highway_target_isa("${src}" AVX512)
 endfunction()

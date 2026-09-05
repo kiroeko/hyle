@@ -138,7 +138,7 @@ def check_imports_and_instructions(binary: Path, build: Path, isa: str) -> None:
         [str(dumpbin), "/nologo", "/imports", str(binary)],
         check=True, capture_output=True, text=True, errors="replace",
     ).stdout.lower()
-    for forbidden in ("cpu_features", "best_isa", "supports@simd"):
+    for forbidden in ("cpu_features", "kernel_target_supported"):
         if forbidden in imports:
             fail(f"exact artifact imports runtime CPU probe symbol containing {forbidden!r}")
 

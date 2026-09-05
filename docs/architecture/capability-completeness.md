@@ -111,9 +111,10 @@ owner。它不等于 HYLE 自己实现所有功能，也不等于与任一参考
 
 同一运行时决策只能有一个 authority。两个模块可以观察不同层次的事实，但不能各自根据近似相同的
 探测结果控制同一 hot path。例如 platform 可以拥有 OS、CPU、topology、NUMA 和 affinity 等通用
-机器事实；若 SIMD 借用 Highway，具体可执行 target 与 kernel dispatch 由 Highway/HYLE SIMD adapter
-唯一裁决，其他模块不能再读取一套 `CpuFeatures` 自行选择同一 kernel。面向诊断的重复展示只有在来源、
-时点和可能不一致的语义写明后才可保留，不能成为第二条决策路径。
+机器事实，但不能给出跨架构“最佳 ISA”。SIMD、Container 或其它 kernel owner 可以分别读取同一个
+`CpuFeatureSet`，只为**自己拥有的**生成 TU 声明完整 requirements 并作唯一选择；不能再由第二个模块
+根据近似 facts 选择同一 kernel。面向诊断的重复展示只有在来源、时点和可能不一致的语义写明后才可
+保留，不能成为第二条决策路径。
 
 第三方类型、allocator handle、错误枚举和配置宏不得无意泄漏为 HYLE 的通用公开合同。HYLE 可以把
 算法机制交给成熟依赖，但仍拥有稳定、自然的 C++ 任务形状和完整的依赖交付路线；依赖为可选项或目标

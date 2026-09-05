@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/visibility.h"
 
 // Contiguous inclusive and exclusive prefix sums. The exported core accepts
 // distinct source/destination ranges or exact in-place aliasing; partial

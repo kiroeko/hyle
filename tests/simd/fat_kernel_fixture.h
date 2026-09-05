@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/simd/target.h"
 #include "hwy/highway.h"
 
 #if defined(HWY_COMPILE_ONLY_SCALAR) && HWY_STATIC_TARGET != HWY_SCALAR
@@ -26,19 +27,26 @@
 #define HYLE_TEST_FAT_CAT(a, b) HYLE_TEST_FAT_CAT_I(a, b)
 
 #if defined(HYLE_SIMD_TARGET_AVX512)
-#  define HYLE_TEST_FAT_TIER 30u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kAvx512;
 #elif defined(HYLE_SIMD_TARGET_AVX2)
-#  define HYLE_TEST_FAT_TIER 20u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kAvx2;
 #elif defined(HYLE_SIMD_TARGET_SSE4)
-#  define HYLE_TEST_FAT_TIER 12u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kSse4;
 #elif defined(HYLE_SIMD_TARGET_SVE)
-#  define HYLE_TEST_FAT_TIER 120u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kSve;
 #elif defined(HYLE_SIMD_TARGET_NEON)
-#  define HYLE_TEST_FAT_TIER 110u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kNeon;
 #elif defined(HYLE_SIMD_TARGET_RVV)
-#  define HYLE_TEST_FAT_TIER 210u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kRvv;
 #else
-#  define HYLE_TEST_FAT_TIER 0u
+inline constexpr auto kHyleTestCompiledTarget =
+    ::hyle::simd::KernelTarget::kScalar;
 #endif
 
 void HYLE_TEST_FAT_CAT(hyle_test_fat_add_one_,
@@ -54,9 +62,8 @@ void HYLE_TEST_FAT_CAT(hyle_test_fat_add_one_,
     hn::StoreU(hn::Add(hn::LoadU(d, src + i), one), d, dst + i);
   }
   for (; i < n; ++i) dst[i] = src[i] + 1.0f;
-  *selected_tier = HYLE_TEST_FAT_TIER;
+  *selected_tier = static_cast<std::uint32_t>(kHyleTestCompiledTarget);
 }
 
-#undef HYLE_TEST_FAT_TIER
 #undef HYLE_TEST_FAT_CAT
 #undef HYLE_TEST_FAT_CAT_I

@@ -444,9 +444,9 @@ _TYPE_CPP = {
 }
 
 _TARGET_CPP = {
-    "SCALAR": "Target::kScalar", "SSE4": "Target::kSse4",
-    "AVX2": "Target::kAvx2", "AVX512": "Target::kAvx512",
-    "NEON": "Target::kNeon", "SVE": "Target::kSve", "RVV": "Target::kRvv",
+    "SCALAR": "KernelTarget::kScalar", "SSE4": "KernelTarget::kSse4",
+    "AVX2": "KernelTarget::kAvx2", "AVX512": "KernelTarget::kAvx512",
+    "NEON": "KernelTarget::kNeon", "SVE": "KernelTarget::kSve", "RVV": "KernelTarget::kRvv",
 }
 
 _COMPILER_CPP = {
@@ -505,7 +505,7 @@ def _variant_cpp(selector):
 def _render_default_route(key, decision, provider):
     provider_cpp, decision_cpp = _route_cpp(decision, provider)
     return [
-        "template <typename Variant, Target kTarget, Compiler kCompiler,",
+        "template <typename Variant, KernelTarget kTarget, Compiler kCompiler,",
         "          std::uint32_t kCompilerVersion>",
         f"struct RouteFor<RouteKey<{key}>, Variant, kTarget, kCompiler, kCompilerVersion> final {{",
         f"  inline static constexpr Route value{{{provider_cpp}, {decision_cpp}}};",

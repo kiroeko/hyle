@@ -10,7 +10,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/target.h"
 #include "hyle/simd/sort.h"
 #include "src/simd/runtime_internal.h"
 
@@ -27,7 +27,7 @@
 // (recursion), with distributions: random, all-equal, already-sorted, reverse-sorted, few-unique
 // (heavy duplicates -- stresses the partition).
 
-using hyle::simd::Isa;
+using hyle::simd::KernelTarget;
 using hyle::simd::partial_sort;
 using hyle::simd::select;
 using hyle::simd::sort;
@@ -512,9 +512,9 @@ TEST(Sort, SmallKKeyValue64) {
 // expected tiers -- a smoke check that the shared runtime metadata is wired.
 TEST(Sort, ActiveVariantIsSane) {
   const auto& active = hyle::simd::runtime();
-  const Isa v = active.sort.isa;
-  EXPECT_TRUE(v == Isa::kAvx512 || v == Isa::kAvx2 || v == Isa::kSve ||
-              v == Isa::kNeon || v == Isa::kRvv || v == Isa::kScalar);
+  const KernelTarget v = active.sort.target;
+  EXPECT_TRUE(v == KernelTarget::kAvx512 || v == KernelTarget::kAvx2 || v == KernelTarget::kSve ||
+              v == KernelTarget::kNeon || v == KernelTarget::kRvv || v == KernelTarget::kScalar);
   const auto* owner = hyle::simd::runtime_for(v);
   if (owner != nullptr) {
     EXPECT_EQ(active.sort_ops.sort_u32, owner->sort_ops.sort_u32);
@@ -526,8 +526,8 @@ TEST(Sort, ActiveVariantIsSane) {
     // body and legally binds its fields to the separately compiled scalar
     // implementation; it must not manufacture a second incomplete table. The
     // preceding behavioral cases execute all three public operation families.
-    EXPECT_EQ(active.isa, Isa::kSse42);
-    EXPECT_EQ(v, Isa::kScalar);
+    EXPECT_EQ(active.target, KernelTarget::kSse4);
+    EXPECT_EQ(v, KernelTarget::kScalar);
     EXPECT_NE(active.sort_ops.sort_u32, nullptr);
     EXPECT_NE(active.sort_ops.partial_sort_f32, nullptr);
     EXPECT_NE(active.sort_ops.select_kv64, nullptr);
