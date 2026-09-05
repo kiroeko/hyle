@@ -1,6 +1,7 @@
 # Util-core v3：基础 callable、scope 与 resource 工具补全
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮只扩充 Core-only、header-only、去掉模型名后仍成立的基础工具。推理 serving、请求指标、
 > backend 错误聚合、调度策略和容器能力不属于 Util-core；`SCOPED/AUDITED` 前不修改产品源码。
@@ -328,3 +329,48 @@ AppleClang warning were fixed before the final candidate identity; no remaining 
 There is no unhandled blocker. The `CANDIDATE -> VERIFIED` comparison uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-verified-f6c8639b.json`, SHA-256
 `123DB9BC1D744624309ED67C111F5BB66812008941F28452DAC6AFBE0C865527`.
+
+## Candidate LOC
+
+`python scripts/loc-report.py --module util_core --commit
+763574765d22f8b3f6dbd6046aee124d1117eea3 --self-check --json` 由 cloc 2.08 从不可变 candidate tree 复算并
+通过 self-check。终止前发现 v2 的显式 factor boundary 漏列新 `unique_resource.h`；维护提交
+`8058acd5` 只补 LOC 路径清单，复算后的当前边界是：
+
+| metric | code |
+|---|---:|
+| 全库代码 | 448,099 |
+| 自实现包含测试 | 115,258 |
+| 自实现不包含测试 | 73,078 |
+| Util-core 实现 | 1,472 |
+
+## 接受限制与重开条件
+
+接受限制：FunctionRef 是非空、同步、call-only borrow，不能 storage/return/async；caller 保证 referent
+活到调用结束。ScopeFail/ScopeSuccess 只观察语言异常，不把 `Status` 当异常；关闭异常时 failure 路线不会
+触发。析构 cleanup/deleter 抛异常会 terminate。UniqueResource 只服务没有 typed owner 的 value-like
+token，受 nonthrow transfer/deleter-storage 约束，不提供 domain error、dereference、traits 或 unload
+quiescence。P1 timing 只签三个 W1-WIN 同合同 FunctionRef journey；Formal、跨平台 timing、任意 signature、
+端到端推理和 universal SOTA 均未签。
+
+只有以下新事实重开 Util-core：
+
+1. 具名同步 consumer 复现 borrow、cv/noexcept、nontype binding、scope 或 resource ownership correctness/
+   usability 缺陷；
+2. 支持 compiler/standard library 改变 lifetime-bound、function-pointer round trip、exception-count、EBO/
+   no-unique-address 或 codegen 合同；
+3. public API、layout、正常成本、Core-only dependency、selected-header inventory 或三种 C++ 交付变化；
+4. 真实 consumer 证明一个去掉领域名后仍成立的 foundation utility `MUST`，且不属于 Core/Container/Mem/
+   Platform/Sched 或 runtime Util；
+5. 成熟 same-contract peer 证明更优复杂度档，或正常 consumer/profile 证明可复现 material regression。
+
+新 benchmark、API/LOC 数量、命名偏好、亚纳秒点值、Formal 单独过期或没有新事实的“再看一遍”不构成
+trigger。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：`UC3-CALLABLE-01..DOC-07` 全部完成，所有适用 correctness、delivery、API/docs、
+内部复用、红队和 P1/P0 engineering gate 为 `PASS`，剩余 blocker 与 medium-or-higher finding 为 0。终止
+receipt 保持产品身份
+`763574765d22f8b3f6dbd6046aee124d1117eea3` / `9ccc0e7a932f7ec4a7345fe56f3525e747587606`，不修改
+候选实现。

@@ -1,6 +1,7 @@
 # Math v3：通用整数策略能力补全
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由 owner 明确要求扩充通用基础能力。它不把模型算子、tensor 类型或 SIMD 数学下沉到
 > scalar Math；`SCOPED/AUDITED` 前不修改产品源码。
@@ -279,3 +280,42 @@ exact left-to-right fixed-width composition.
 There is no unhandled blocker. The `CANDIDATE -> VERIFIED` comparison uses the prior registry snapshot
 `C:\public\project-hyle\_validation\registry-before-math-util-verified-f6c8639b.json`, SHA-256
 `123DB9BC1D744624309ED67C111F5BB66812008941F28452DAC6AFBE0C865527`.
+
+## Candidate LOC
+
+`python scripts/loc-report.py --module math --commit
+ff20319408372013fec6818c35f4ba7a7c79440c --self-check --json` 由 cloc 2.08 从不可变 candidate tree 复算并
+通过 self-check：
+
+| metric | code |
+|---|---:|
+| 全库代码 | 448,054 |
+| 自实现包含测试 | 115,258 |
+| 自实现不包含测试 | 73,078 |
+| Math 实现 | 382 |
+
+## 接受限制与重开条件
+
+接受限制：Math 只处理 fixed-width、非 `bool` integral control-plane 值；binary/aggregate operands 除显式
+cast 外保持同类型。Multiply-add 与 aggregate 按固定宽度左到右检查，不提供 arbitrary-wide 中间结果或
+取消溢出的 fused policy。Saturating division 不为零 divisor 发明数值。P0 只证明冻结工具链与交付形状的
+结构成本，不覆盖浮点、SIMD、tensor、模型算子、端到端 KPI、任意平台 timing 或 universal SOTA。
+
+只有以下新事实重开 Math：
+
+1. 具名消费者复现错误结果、UB、缺失的通用 scalar integer policy 或自然 C++ API 缺陷；
+2. 支持 compiler/target 改变 overflow intrinsic、integer representation、constexpr 或正常 codegen 合同；
+3. public API、算法、复杂度、组件依赖、header closure 或 source/static/shared 交付形状变化；
+4. 当前锁定的 llama.cpp/ggml journey 或两个成熟 peer 共同证明新的模型无关 scalar control-plane `MUST`；
+5. 同合同机制证明更优复杂度档，或真实 consumer/profile 证明可传播的 material regression。
+
+新 benchmark、API/LOC 数量、命名偏好、单个纳秒点值、SIMD 的同名能力、Formal 状态或没有新事实的
+“再看一遍”均不构成 trigger。
+
+## Closure decision
+
+本轮裁决为 `CLOSED`：`MATH3-CONVERT-01..DOC-07` 全部完成，所有适用 correctness、delivery、API/docs、
+内部复用、红队和 P0 structural gate 为 `PASS`，剩余 blocker 与 medium-or-higher finding 为 0。终止
+receipt 保持产品身份
+`ff20319408372013fec6818c35f4ba7a7c79440c` / `3aba9d8c9eb06c927f7d29228b925668150bf0a6`，不修改
+候选实现。
