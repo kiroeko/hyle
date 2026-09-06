@@ -1,6 +1,6 @@
 # Obs v5：推理运行时指标聚合原语
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 本轮由已冻结模块的真实推理消费者回放触发。closure card 已冻结；本页继续保存能力账本、公开面
 > 反向追踪和有限 `FIX`。只有进入 `AUDITED` 后才修改 Obs 产品源码。
@@ -330,3 +330,16 @@ SHA-256 `0E1F82823380794D58005378490CC43379CA17C978D7E52514D55F89DF7720EB`。
 上述 correctness、delivery、usability/docs、red-team 与 qualified P1 证据使七个 gate 全部为 `PASS`；
 registry 依法进入 `VERIFIED`。这一步只签发候选证据，不改变冻结的产品 commit/tree，也不提前宣称
 terminal `CLOSED/FROZEN`。
+
+## Terminal receipt（`CLOSED/FROZEN`）
+
+- `VERIFIED -> CLOSED` 前 registry 快照：
+  `C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-closed.json`；
+  SHA-256 `2D69AED7D262ABC4025400A615BB64899EEB04C67BAF58E284AA584A8E2DA1A3`；
+- end/registry anchor：`bc3c5b38b5cd3ee794331af7a29bf767edce67ab`；产品 candidate/tree 保持
+  `47a9e03a6bfd4d2d299d26d1d32739bb84541166` / `093836f0791f304deb521e86be8ba5a9c94b5913`；
+- 七个 gate 全部 `PASS`；Formal 性能仍为独立 `PENDING`；
+- immutable candidate LOC：全库 `461132`，自实现含测试 `119996`，自实现不含测试 `75879`，Obs 实现
+  `1829` 行。LOC 只是规模事实，不是质量或完成度代理；
+- freeze marker：`obs-v5-metrics-freeze-2026-09-06`。此后只有 registry 中列明的 reopen trigger 新事实才可
+  重开；本页转为历史证据，不再授权继续研究或修改产品。

@@ -294,7 +294,7 @@
     },
     {
       "module": "obs",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "round_id": "obs-v5-metrics-primitives",
@@ -331,7 +331,37 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "obs v5 VERIFIED：counter、gauge 与 fixed histogram 候选已通过三平台正确性/sanitizer、三种 C++ 交付、API/docs、依赖与红队；W1-WIN owner-thread 4/4 WIN、shared relaxed-atomic 4/4 PARITY，5% 非劣门全部通过，等待 terminal freeze。"
+      "end_commit": "bc3c5b38b5cd3ee794331af7a29bf767edce67ab",
+      "registry_anchor_commit": "bc3c5b38b5cd3ee794331af7a29bf767edce67ab",
+      "closure_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
+      "freeze_confirmation": {
+        "id": "obs-v5-metrics-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
+        "reviewed_tree": "093836f0791f304deb521e86be8ba5a9c94b5913",
+        "evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md"
+      },
+      "loc": {
+        "snapshot_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
+        "repository_code": 461132,
+        "self_with_tests": 119996,
+        "self_without_tests": 75879,
+        "module_implementation": 1829
+      },
+      "known_limitations": [
+        "FixedHistogram boundary count is a compile-time constant while boundary values are supplied at construction; dynamic bucket schemas remain an exporter or application concern.",
+        "Concurrent metric types require an always-lock-free atomic representation, expose weakly consistent running snapshots and require quiescence for exact reset or destruction.",
+        "Counts and integral values must remain representable for the metric lifetime, floating sums follow IEEE arithmetic, and this factor provides no hidden sharding, labels, registry, exporter, time window or quantile sketch.",
+        "The engineering timing claim covers the frozen W1-WIN scheduler aggregate and a 5 percent margin; cross-platform timing and Formal certification remain pending."
+      ],
+      "reopen_triggers": [
+        "A named inference or general C++ consumer proves that a model-independent numeric metric primitive, ownership contract or natural aggregation journey belonging in Obs cannot be expressed without an adapter-local reimplementation.",
+        "A reproducible correctness, concurrency, lifetime, numeric, security or C++ usability defect is demonstrated in the frozen metric, log or trace surface.",
+        "The public API, algorithm, complexity, resource contract, dependency graph, selected-header inventory or source, static or shared delivery shape changes.",
+        "Qualified same-contract evidence proves a reproducible material regression, or a mature peer demonstrates a better complexity class without weakening the admitted semantics."
+      ],
+      "summary": "obs v5 CLOSED/FROZEN：生产级 counter、gauge、fixed histogram、batch observe、snapshot merge 与 bucket quantile 已完成三平台 correctness/sanitizer、三种 C++ 交付、易用性/docs、依赖和红队；W1-WIN owner 4/4 WIN、shared 4/4 PARITY 且 5% 非劣门全过。"
     },
     {
       "module": "math",
