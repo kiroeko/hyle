@@ -1,6 +1,6 @@
 # 已冻结模块的真实推理消费者回放（2026-09）
 
-<!-- READ-ONLY CROSS-MODULE CONSUMER REPLAY: ACTIVE -->
+<!-- READ-ONLY CROSS-MODULE CONSUMER REPLAY: HISTORICAL -->
 
 > 本任务把最新真实推理引擎的消费形状回放到已经 `CLOSED + FROZEN` 的 HYLE 单元。它是发现任务，
 > 不是第二套模块状态，也不因“参考库有更多 API”自动授权改产品。只有具名事实满足既有 reopen trigger，
@@ -39,7 +39,7 @@
 | standalone ggml | `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` | CPU/backend 基础机制、model-independent reference |
 | llama.cpp | `73a43d1f69345aee8bb186ef4b3172cef892f2e5` | 模型加载、CPU/统一内存推理、采样与单机服务 journey |
 | ds4 | `9ab705347c1775e7599ede7eb81a6255ec7dccb5` | 紧凑量化 CPU/统一内存引擎及直接热循环 |
-| vLLM | `569adb5a9780f9c02d22a6b29826acf711512356` | batching、KV block/offload、runtime 与 custom-op journey |
+| vLLM | `808f8cd3ac6751278d8b7be97f6fde5295ca4653` | batching、KV block/offload、runtime 与 custom-op journey |
 | SGLang | `5bebe7a033ab57751fac3c9d8db219da62ca8c72` | serving、MoE/kernel、调度、KV/cache 与观测 journey |
 
 Python、Rust、CUDA、Triton 或 vendor kernel 中的业务对象不会按名字下沉为 C++ 基础 API。它们仍可证明
@@ -213,21 +213,133 @@ Python、Rust、CUDA、Triton 或 vendor kernel 中的业务对象不会按名�
 fresh `HyleCiComponentContract.cmake` 于 2026-09-06 返回 `HYLE component contracts passed`；docs 与
 module-closure validators 同轮通过。
 
+## Wave C：storage、metrics 与 scalar sizing differential
+
+### Math
+
+- exact sources：llama.cpp `src/llama-model.cpp` 的 model split/granularity `std::lcm`；ds4
+  `ds4.c:align_up`、`next_pow2`；vLLM `csrc/cpu/cpu_fused_moe.cpp` 的 buffer-size
+  `cpu_utils::round_up<64>` 与 `vllm/utils/math_utils.py:next_power_of_2`；SGLang
+  `python/sglang/srt/utils/common.py:{ceil_div,next_power_of_2}` 及 quant padding callers；
+- task/contract：这些是 model-independent non-negative count、byte size、tile/block granularity 的
+  `CONTROL_PATH` 或 kernel-launch sizing。来自文件/模型的值要求 overflow-safe failure；已经由 kernel
+  invariant 保证的值可直接走标准/局部 constexpr 算术；
+- route/cost：Math 已有 checked add/subtract/multiply/multiply-add/divide/remainder/cast/sum/product、
+  `try_ceil_div`、`try_round_up_to_multiple`、`try_lcm` 和 `try_bit_ceil`，而普通 trusted 算术继续
+  `ROUTED` 到 C++23。地址/页面 alignment 仍由 Mem/Platform，lane/device sizing 仍由 SIMD/Compute；所有
+  scalar primitive constexpr/inline、O(1)，aggregate 是不可改进的 O(n)，没有 allocation/lock/dispatch；
+- drift/result：Math v4 锁定的 llama.cpp revision 到本轮 revision 之间，与该 owner 有关的变化只在
+  CUDA/Metal backend 文件，没有新的 host scalar policy；standalone ggml identity 未变。verdict
+  `CONFIRMED`，不因 Python/Triton 或 device-local helper 的名字复制 API。
+
+### Mem
+
+- exact sources：standalone ggml `src/ggml-alloc.c:{ggml_dyn_tallocr,ggml_vbuffer_alloc}` 的多 backing
+  tensor lifetime/reuse；llama.cpp `src/llama-context.cpp:{sched_reserve,output_reserve}` 和
+  `src/llama-model-loader.cpp` 的 long-lived weight、temporary staging、host/device resource selection；vLLM
+  `vllm/v1/kv_offload/cpu/manager.py:CPUOffloadingManager` 的 fixed-block host pool；SGLang
+  `python/sglang/srt/mem_cache/memory_pool_host.py:{LogicalHostPool,HostKVCache}` 的 host page pool；ds4
+  `ds4.c` 的 model allocation、scratch 与 aligned host storage；
+- task/contract：底层任务是 allocator/resource、byte owner/view、phase arena、fixed/typed/growable pool、
+  quota、retained transient buffer 与 static lifetime placement。KV key/LRU/ARC/page-id、tensor layout、GPU
+  stream/fence、eviction/offload policy 是 engine/Container/Sched/Compute owner，不是 Mem byte allocator；
+- route/cost：Mem v6 的九族对这些底层任务为 `COMPLETE/ROUTED`：`MemoryResource`/`Buffer` 提供开放 provider
+  与 host map/copy/fill/coherence，pool/arena/heap 提供三类 lifetime，`BufferPool` 提供 bounded retained
+  storage，`LifetimePlan` 提供 multi-backing interval placement；VM 与 reclamation 分别由独立 factor 聚合。
+  fixed-block allocate/free 保持 O(1)，variable heap O(log n)，lifetime planning 与已冻结算法合同一致；新
+  consumer 没有证明额外 copy/allocation/lock/dispatch 或更优复杂度档；
+- drift/result：Mem v6 锁定的 llama.cpp 到本轮 revision 没有 memory/allocator/mapping 文件变化。vLLM 与
+  SGLang 的新 policy-rich pools 证明现有 substrate 的消费价值，但不能把 tensor/page policy下沉；
+  device-pinned provider 通过 `MemoryProperty::kHostPinned` 表达，具体 CUDA/ROCm registration 仍由
+  Compute/provider 创建。verdict `CONFIRMED`，没有新的 Mem 产品 trigger。
+
+### Mem-VM
+
+- exact sources：llama.cpp `src/llama-model-loader.cpp:init_mappings` 的 file map/prefetch/lock 与 unused-range
+  unmap；vLLM `vllm/v1/kv_offload/cpu/shared_offload_region.py:SharedOffloadRegion` 的 `/dev/shm` shared
+  file、map/unlink、page-aligned populate；SGLang
+  `python/sglang/srt/utils/host_shared_memory.py:HostSharedMemoryManager` 的 named shared storage，以及
+  `python/sglang/srt/mem_cache/kv_vmm_backing.py:KvVmmArena` 的 CUDA virtual-address reservation/commit；
+- route/cost：`FileMapping` 已有 RO/RW/COW、offset/range、prefetch/populate/lock、hole-aware partial release；
+  `SharedMapping` 已有 headerless create/open/unlink 与 external publication protocol；`LargeMapping` 与
+  Platform VM 提供 anonymous/large-page/NUMA host mapping。CUDA host registration 和 device VMM 明确
+  `ROUTED` 到 Compute/backend，因为它们需要 device context、stream/fence、driver handle 和 tensor owner；
+- comparability/result：host map/unmap/populate 仍是 O(1) OS setup + O(pages) fault/populate，partial release
+  O(ranges)；当前 consumer 没有证明 HYLE 多一次 syscall/traversal 或缺失的 host lifecycle。vLLM 的 barrier
+  和 SGLang 的 tensor readiness 属于跨进程/engine protocol，不应藏进 mapping。verdict `CONFIRMED`。
+
+### Obs
+
+- exact sources：llama.cpp `tools/server/server-common.h:server_metrics` 与
+  `server-task.cpp:server_task_result_metrics::to_metrics`；vLLM
+  `vllm/v1/metrics/loggers.py:PrometheusStatLogger.record`；SGLang
+  `python/sglang/srt/observability/metrics_collector.py:SchedulerMetricsCollector`；
+- finding/result：三条独立 serving journey 都在生产路径直接累积 counter、gauge、fixed histogram，再由
+  exporter 转换。Obs v4 只有 structured log/trace，不能保留这些数值语义，故为第二个
+  `PRODUCT_TRIGGER`（`OBS-METRICS-PRIMITIVES-2026-09-06`）；
+- resolution：Obs v5 已补入 owner-thread 与 explicit concurrent counter/gauge/fixed histogram、batch
+  observe、snapshot merge 和 bucket quantile。三平台 correctness/sanitizer、三种 C++ 交付、红队与同合同
+  P1 已通过；owner workload 4/4 `WIN`，shared relaxed-atomic workload 4/4 `PARITY`，5% NI 全过。当前
+  registry 已重新 `CLOSED/FROZEN`。
+
+### Wave C dependency / build replay
+
+Math 保持 Core-only header factor；Mem 的公开边保持 Core/Error/Platform，Mem-VM 继续由 Mem product 聚合并
+使用 Platform/Platform-FS/Util-core；Obs 继续公开 Core/Error/Time、私有 Mem-reclaim。只有 Obs 新增 public
+header，且已实际通过 selected source、relocated static/shared 三平台消费；其 DLL/runtime symbol 和 Native
+FFI 面没有扩大。其余三个 factor 产品未变，当前 reference differential 没有使既有 package receipt 失效。
+
+## Wave S：SIMD reference drift differential
+
+- baseline/current：SIMD v6 已锁定 standalone ggml
+  `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226`、ds4
+  `9ab705347c1775e7599ede7eb81a6255ec7dccb5`；两者本轮未漂移。llama.cpp 从
+  `7620399f58aebfd2196b74021f9581bcf7218cb9` 到
+  `73a43d1f69345aee8bb186ef4b3172cef892f2e5` 的相关变化只有
+  `ggml/src/ggml-cuda/fattn-vec.cuh`；vLLM 从
+  `a1541f5742a29864a80087af313ad460066a1524` 到
+  `808f8cd3ac6751278d8b7be97f6fde5295ca4653` 只命中 CPU KV-offload ARC policy；SGLang 从
+  `6cee9285a3dd43e1f0270818aef7bf01a0568863` 到
+  `5bebe7a033ab57751fac3c9d8db219da62ca8c72` 的相关变化是 DSA/KDA attention 和 DeepGEMM GPU 路线；
+- owner/result：这些变化没有新增 CPU contiguous-row algebra、dtype conversion、activation/gated
+  activation、norm、softmax、top-k/order、scan/search 或 random primitive。GPU attention/MoE fusion 留在
+  Compute/backend，ARC 留在 engine policy；不把 device/Triton kernel 伪装成 ordinary SIMD 缺口；
+- providers/build：本地 Highway HEAD 与中央 lock 同为
+  `18e449b642599b8f51c03ca10173fdc59864e4f2`，xsimd HEAD/lock 同为
+  `3b3151ff665514a00a437cc985f47b7de99b772b`；没有 provider drift。v6 的 ordinary/exact/fixed/fat 四条
+  route、compile-time/expert zero-extra-dispatch 边界与 source/static/shared 交付未被新事实否定。verdict
+  `CONFIRMED`；不重跑无产品变化的 422-scope 全矩阵。
+
 ## 执行账本
 
 | wave / factor | exact consumer paths | capability/hot-path result | performance method | verdict / next action |
 |---|---|---|---|---|
-| references | five clean commits above | remote identities locked | N/A | `COMPLETE` |
+| references | five clean commits above | remote identities locked；vLLM identity corrected to `808f8cd3` | N/A | `COMPLETE` |
 | A / core | ggml vec-dot contract；vLLM RVV/dtype；ds4 HIP trap | compile/assert/cache facts `COMPLETE` | P0 inline/codegen | `CONFIRMED` |
 | A / error | llama load；gguf errno；ds4 buffers；vLLM fs/Torch boundary | value/native/context/borrow `COMPLETE` | v5 success/failure P1 + cold P0 | `CONFIRMED` |
 | A / container_intrusive | vLLM KV free queue + BlockPool | counted stable-node free-list `COMPLETE` | existing counted membership P1 same mechanism | `CONFIRMED` |
 | A / util_core | ds4/llama scalar sampling RNG；HYLE Mem/Sched resource paths | scalar RNG/resource/borrow `COMPLETE` | RNG P0；existing Ref/Spin/FunctionRef P1 | `CONFIRMED` |
 | A / time | ds4/vLLM deadlines；SGLang stage/CPU clocks | clocks/deadlines `COMPLETE`；correlation `WATCH` | existing phase/deadline P1 + clock P0 | `CONFIRMED`；`TIME-WATCH-05` |
 | B / timer_queue | vLLM P2P pending lookup；SGLang deferred KV release | absolute monotonic arm/cancel/advance `COMPLETE`；callback/periodic policy stays Sched/IO | existing Seastar same-contract P1 | `CONFIRMED` |
-| B / platform | vLLM per-node CPU memory budget/usage；SGLang rank/node binding | node id/placement `COMPLETE`；per-node memory fact `MISSING` | new query P0 + old host-planning P1 holdout | `PRODUCT_TRIGGER`；Platform v10 |
+| B / platform | vLLM per-node CPU memory budget/usage；SGLang rank/node binding | node id/placement `COMPLETE`；per-node memory fact was `MISSING` | new query P0 + qualified host-planning P1 | `PRODUCT_TRIGGER` resolved by Platform v10/v11；`CLOSED/FROZEN` |
 | B / platform_thread | vLLM CPU worker placement；SGLang CPU affinity/name process setup | affinity/name/priority/wait `COMPLETE`；GPU-to-node policy routed Compute/engine | Parker P0 unchanged | `CONFIRMED` |
 | B / platform_fs | vLLM direct vectored disk offload；ds4/llama temp publish/model mapping | sync buffered/path primitives `COMPLETE`；direct/async routed IO，mapping routed Mem-VM | current warm-file P1 | `CONFIRMED` |
 | B / mem_reclaim | vLLM scheduler fence frees；SGLang GPU-event/deferred release；HYLE Obs snapshots | host read-mostly grace period `COMPLETE`；device/scheduler fences routed owners | current Folly RCU P1 | `CONFIRMED` |
-| C | pending | pending | pending | pending |
+| C / math | llama LCM；ds4/vLLM/SGLang round-up/pow2/ceil-div | checked scalar sizing `COMPLETE`；device/lane arithmetic routed | P0 constexpr/codegen | `CONFIRMED` |
+| C / mem | ggml lifetime allocator；llama reserve/staging；vLLM/SGLang host pools | nine substrate families `COMPLETE/ROUTED`；KV/tensor/device policy stays owners | v6 complexity + same-contract P1 remains applicable | `CONFIRMED` |
+| C / mem_vm | llama mapping；vLLM shared offload；SGLang shared host + CUDA VMM | host file/shared/large mapping `COMPLETE`；device mapping routed Compute | OS complexity + current host-mapping P1 | `CONFIRMED` |
+| C / obs | llama/vLLM/SGLang production metric aggregation | counter/gauge/histogram was `MISSING`，now `COMPLETE` | v5 owner/shared same-contract P1 | `PRODUCT_TRIGGER` resolved by Obs v5；`CLOSED/FROZEN` |
 | excluded / container, util, sched | 不在本 goal | 尚未按本轮标准冻结 | N/A | 后续独立重构，不在此偷渡 |
-| S / simd drift | pending | pending | pending | pending |
+| S / simd drift | llama CUDA fattn；vLLM ARC；SGLang GPU DSA/KDA/DeepGEMM delta | no new ordinary host SIMD family；provider locks unchanged | no product drift, no 422-scope rerun | `CONFIRMED` |
+
+## Terminal adjudication
+
+本轮 15 个 factor 已各有合法 verdict：13 个 differential 为 `CONFIRMED`，Platform 与 Obs 出现两个独立
+`PRODUCT_TRIGGER`，并分别通过自己的状态机修复、验证和重新冻结。这里的“两个”只表示**本次最新推理
+消费者回放新增发现**，不抹掉 Math v4、Mem v6、SIMD v6 以及其他先前 closure 轮已经发现并修复的能力、
+接口、性能或交付缺口。
+
+截至本记录终止时，15 个 factor 在唯一 registry 中均为 `CLOSED` 且拥有新的 `FROZEN` confirmation；
+没有把 Container、Util-runtime、Sched、IO、Compute 或 Graph 偷渡为已复核。未来 reference commit 自身的
+变化不是重开理由；只有精确 consumer path 满足 registry reopen trigger 才建立下一张产品卡。本页转为
+历史发现账本，不再授权继续研究产品。
