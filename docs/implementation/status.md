@@ -36,9 +36,9 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | io_transfer | QUEUED | — | — | — | — | — | IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | compute | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
-| container_concurrent | QUEUED | — | — | — | — | — | Container concurrent 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
-| container_queue | QUEUED | — | — | — | — | — | Container queue 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
-| text | QUEUED | — | — | — | — | — | Container text 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
+| container_concurrent | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-concurrent-v1-factor.md) | container_concurrent v1 SCOPED：现有并发 map/vector、准入 set、reclamation 和独立 target 边界已冻结；完整 public trace 与有限 FIX 集前不修改产品。 |
+| container_queue | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-queue-v1-factor.md) | container_queue v1 SCOPED：try-only queue storage、unbounded/priority 裁决、Sched direct edge 和独立 target 边界已冻结；完整审计前不修改产品。 |
+| text | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/text-v1-factor.md) | text v1 SCOPED：borrowed text/path/interner、typed Unicode codec、私有 provider 与独立 target 边界已冻结；完整审计前不修改产品。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：
