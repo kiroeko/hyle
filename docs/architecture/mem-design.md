@@ -1,6 +1,6 @@
 # HYLE Mem：统一 storage foundation
 
-> 本页记录 Mem v2 的长期产品边界与设计理由；当前已可依赖的实现以
+> 本页记录 Mem 的长期产品边界与设计理由；当前已可依赖的实现以
 > [user/mem](../user/mem.md) 与中央 registry 为准，不会因 architecture 写了目标就提前变成
 > shipping 能力。`mem_reclaim` 由普通 Mem façade 聚合，而不是公开内部 factor target；它的机械
 > 收口状态仍只读中央 registry。Mem 只提供 C++23 source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧
@@ -46,7 +46,7 @@ Container 负责把该机制组合进自己的旧 table 生命周期。
 
 中央 component graph 与真实 target 链接边一致。base factor
 `mem -> PUBLIC {core, error, platform}` 拥有 allocator/resource/buffer/pool/planner；storage factor
-`mem_vm -> PUBLIC {core, error, mem, platform, platform_fs, util_core}` 拥有 mapping、HugeMapping 与
+`mem_vm -> PUBLIC {core, error, mem, platform, platform_fs, util_core}` 拥有 mapping、LargeMapping 与
 FiberStack。面向用户的 `hyle::mem` product facade 聚合三者；内部 consumer 直接链接实际 factor。
 factor `mem_reclaim -> PUBLIC {core}` 由该 facade 聚合。`core` 提供 cache-layout/compiler 头合同，
 `error` 承担构造/VM/NUMA 冷失败，`platform/platform_fs` 承担 OS 机制与 file handle，`util_core`
@@ -83,7 +83,7 @@ GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢�
 | `AllocatorRef` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
 | `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `AllocatorRef` |
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
-| `HugeMapping` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
+| `LargeMapping` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
 | graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | phase scratch 继续用 arena；Graph 产生 interval/alias 事实，通用 packing/placement 语义归 Mem planner |
 | `PooledArena` / `StackArena` / `GrowableObjectPool` | 无生产调用 | 面向外部 infra 用户的 C++ 公开能力；Native FFI 为 `N/A` |
 | `ConcurrentBlockPool` / `BlockPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
@@ -172,7 +172,7 @@ schema、bridge、动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI 
 opaque C handle。未来只有已命名的 foreign-runtime allocator/buffer 任务通过全局
 [Native FFI 准入策略](native-ffi-policy.md)后，才另行设计窄的 runtime 类型擦除边界。
 
-mem 不维护私有 TLS error；C++ 冷路径直接复用 P0 `Status/Result`。HugeMapping 直接传递 platform
+mem 不维护私有 TLS error；C++ 冷路径直接复用 P0 `Status/Result`。LargeMapping 直接传递 platform
 VM/NUMA 的 C++ Status，成功零分配，热分配路径不构造 Status。FixedArena 按值、FixedHeap
 提供 caller-owned in-place control；StatsAllocator 作为 opt-in 产品能力导出 POD snapshot
 与返回 Status 的 bounded leak copy；metadata OOM 不阻断被测 allocation，但 dropped count /
@@ -180,7 +180,8 @@ complete bit 使不完整 inventory 可观察。PMR、typed ctor/dtor 与 fiber 
 自然 C 形状，不为追求符号 1:1 而导出。
 
 进程级 pressure observation 由 `system_memory_snapshot()` 提供稳定 POD：allocator
-reserved/committed 与 process RSS/commit 各有 current/peak。它在实现内部读取锁定的 mimalloc
+reserved/committed 与 process RSS 各有 current/peak；private commit 只在 OS 能证明时出现为 optional。
+它在实现内部读取锁定的 mimalloc
 统计/进程查询，不导出 vendor struct、option registry 或 reset；这是冷 O(number of allocator
 heaps) 查询，默认 allocation/free 热路不增加 requested-byte 计数。需要精确 owner-local
 requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充。
@@ -284,41 +285,60 @@ external 能力按 allocation model 分成两个类型：
 
 ### 8.1 Mapping factor 与 warm-up 语义
 
-`mem_vm` 是 storage mapping 的唯一 public owner；Platform 只提供 raw anonymous VM 和
-`FileHandle` mechanism。`VirtualMapping` 组合 `VmRegion`，`FileMapping` 与 `SharedMapping` 直接拥有
-native mapping state；所有 owner 都 move-only，不增加 pimpl allocation、payload copy 或常态
-dispatch。普通 Mem product 自动聚合该 factor，用户不需要认识 target 拆分。
+`mem_vm` 是 file/shared storage mapping 的唯一 public owner；Platform 提供 raw anonymous VM 和
+`FileHandle` mechanism。`VirtualMapping` 是 `VmRegion` 的零开销别名，避免两套 enum、wrapper 和
+OS decision authority；`FileMapping` 与 `SharedMapping` 直接拥有 native mapping state。所有 owner
+都 move-only，不增加 pimpl allocation、payload copy 或常态 dispatch。普通 Mem product 自动聚合
+该 factor，用户不需要认识 target 拆分。
 
 `FileMapping::prefetch` 是 `WillNeed` hint，成功不证明 page 已 resident；`populate` 是同步触页，工作
 与覆盖页数成正比。open 不默认执行任何一个，避免让只需 lazy mapping 的消费者支付全文件 fault。
-residency 只保存一个单调 public prefix，不为任意重叠 interval 增加常态树/refcount metadata；需要
-离散片段时由 loader 建多个精确 mapping owner。partial unmap 被拒绝，因为它会破坏连续 view 且
-Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupported advice/mode 返回共享
+residency 只保存一个单调 public prefix，不为任意重叠 interval 增加常态树/refcount metadata。
+连续 `FileMapping` 不分配 fragment metadata；POSIX/macOS 第一次有效 partial release 才建立惰性
+survivor 表，checked range/view 不能跨 hole。已知一批 loader ranges 的路线先排序、合并，再与 live
+fragments 一次相交，bookkeeping 为 `O(R log R + F)`；逐项入口保留便利性，但不宣称一串逐项调用也有
+同样总复杂度。Windows whole-view primitive 没有安全同合同，明确返回 `Unimplemented`，调用方改用
+多个精确 mapping owners。所有 range 先做 overflow/bounds 检查，unsupported advice/mode 返回共享
 `Status`，不隐藏 fallback。
+FileMapping 还必须按 backing 裁决 advice：Windows `DiscardVirtualMemory` 的 PAGE_READWRITE/内容未定义
+合同不等价于 file-backed `MADV_DONTNEED`，所以该组合明确 `Unimplemented`，绝不能因 Platform 提供
+anonymous/private mechanism 就直接套用到 RO/RW/COW 文件视图。
+
+`SharedMapping` 不再在 payload 前嵌入 size header：这样数据从 native mapping base 开始，满足 page/
+cache-line alignment，也消除 opener 观察半初始化 header 的窗口。size/access/readiness 因而明确属于
+IPC protocol。实现用 native capacity 拒绝超界：Linux shm 的 `fstat` 保留精确 `ftruncate` size；
+Darwin shm 与 Windows section capacity 按 native page boundary 向上取整（Windows allocation
+granularity 只约束 view offset/base）。后两者不能恢复精确 logical size，双方必须外部协商；不能用
+第二个隐藏 header 假装解决。
+shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/`，长度和字符约束由 syscall
+权威裁决并翻译为 HYLE Status；实现不能通过静默截断或 hash 引入碰撞/跨进程不一致。
 
 ## 9. NUMA、大页与专用模块
 
-- `HugeMapping`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
+- `LargeMapping`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
 - system allocator 的 mimalloc backing 默认自动探测 NUMA。它在 loader 阶段、进入用户代码前缓存
   node count；因此运行期 `enable_allocator_numa` 形状无法履行并已移除。部署级 node cap 只能由
-  进程启动前的 `MIMALLOC_USE_NUMA_NODES` 提供，运行期 placement 必须走 HugeMapping/platform，
+  进程启动前的 `MIMALLOC_USE_NUMA_NODES` 提供，运行期 placement 必须走 LargeMapping/platform，
   不能用一个调用成功但实际无效的 setter 冒充能力。
 - system allocator 的 THP/large-page 默认同样由启动前的 `MIMALLOC_ALLOW_THP` /
   `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。large-page capability 在 Windows loader 初始化时缓存，
   而 Linux 会对未来 mmap 动态读 option；旧的组合 runtime setter 因而跨平台语义不一致并已移除。
-  HugeMapping 继续拥有可移植的 per-span policy，1GiB 显式 reserve 继续是真 runtime API。
+  LargeMapping 继续拥有可移植的 per-span policy；process-global allocator arena reserve 仍是真
+  runtime API，但其 GiB 请求单位不再冒充物理页粒度。
 - selected-node set + `bytes_per_chunk` 由 platform 统一拥有跨 OS 机制，mem 只以
-  `HugeMapping::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
+  `LargeMapping::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
   表示全部可用节点；顺序、重复 id 的 weighted placement、page 粒度和能力失败沿用 platform
   合同；`interleave_chunk_size()` 可观察实际条带。typed node span 保持 platform→mem 的单一表示，
   调用方不需要手写有符号 cast。
   要保持自定义条带 policy 粒度时默认不请求 THP；显式叠加 THP 仍只是 advice，物理大页粒度
   可能覆盖更小条带。Linux 极细自定义布局会在构造期 first-touch，以常量 scratch 和有界 VMA
   policy 换掉无界 kernel metadata；普通大 chunk 仍保留 demand paging。
-- `reserve_huge_1g_pages` 是进程启动期冷控制面，返回 `Status`，不得把 bool 重新猜成错误原因。
-  mimalloc 当前只暴露 ENOMEM，映射
-  `ResourceExhausted` 并通过 `PosixErrno` detail 保留 native value，非法 node/溢出为 `OutOfRange`。
+- `reserve_large_page_arena` 是进程启动期冷控制面，返回 GiB-sized arena 请求/实际成功容量、placement
+  可信度、不可验证的物理页粒度与 outcome。mimalloc 可能从 1 GiB huge pages 回退到 2 MiB/native
+  large pages，而其 arena API 只证明容量，不能证明最终 page size；参数/溢出在 vendor call 前走
+  `Result` error，partial success 无法 rollback，不能把 vendor bool、请求单位或 arena bytes 猜成
+  1 GiB OS page 成功。
 - `FiberStackPool` 保留且是当前内部刚需；capacity 是真实 clamp 后的 retention 上限，0 禁用
   cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
   这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。
@@ -335,7 +355,7 @@ Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupp
 
 ## 10. 目标公共能力矩阵
 
-| 用户形状 | Mem v2 C++23 产品面 | 关键合同 |
+| 用户形状 | Mem C++23 产品面 | 关键合同 |
 |---|---|---|
 | 默认/注入 host allocation | `SystemAllocator`、`AllocatorRef`、`Heap` 与 std/PMR adapters | direct 与 runtime borrow 分型；owned heap 可 bulk release；backing 长寿 |
 | phase/external/LIFO scratch | `Arena`、`FixedArena`、`PooledArena`、`StackArena` | 单 owner；bulk/reset/rewind 失效化明示；无隐式 fallback |
@@ -347,11 +367,11 @@ Windows 无同合同机制。所有 range 先做 overflow/bounds 检查，unsupp
 | transient storage reuse | `BufferPool` / `BufferLease` | resource-aware reuse/trim/stats；lease 归还前已等待 completion |
 | worst-case lifetime packing | `LifetimeRequest/Planner/Plan/PlannedBuffers` | `[begin,end)` interval；resource/backing/local-offset 三层；有限 provider allocation 上限可拆多个 backing；plan/instantiate 分开；O((N+E) log N) / O(N) scratch+metadata；无 Tensor |
 | quota/pressure/diagnostics | allocator/resource stats、quota、leak tracker、system snapshot | opt-in 热路税；partial inventory 可观察；soft retention 不冒充 hard admission |
-| guarded/THP/NUMA | `FiberStack`、`HugeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
+| guarded/THP/NUMA | `FiberStack`、`LargeMapping`、显式 placement policy | requested/accepted/applied 分开；失败可观察；不自动迁移 |
 
 当前 shipping 名称与可用路线由 [user/mem](../user/mem.md) 列出。当前产品已把
 `AllocatorRef/Arena/FixedArena/PooledArena/StackArena/FixedHeap/ConcurrentBlockPool/BlockPoolCache/
-GrowableObjectPool/HugeMapping` 固定到上表的借用、arena、heap、block-pool、object-pool 与
+GrowableObjectPool/LargeMapping` 固定到上表的借用、arena、heap、block-pool、object-pool 与
 mapping 心智；旧类型名已经删除，不留 deprecated alias。
 
 ## 11. 收口定义与重开边界

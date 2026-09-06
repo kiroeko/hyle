@@ -3,8 +3,8 @@
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
 > 本轮与 `mem_vm-v2` 协同，但 `mem` 与 `mem_vm` 仍是两个独立组件、两份候选和两项终局裁决。
-> Closure card 已冻结，当前状态为 `SCOPED`。能力账本、API freeze 和有限 `FIX` 集尚未完成，
-> 因此仍不授权产品源码修改。
+> 当前状态为 `AUDITED`。下方能力账本、API freeze 与五项有限 `FIX` 已冻结；产品修改只限该
+> ledger，完成候选验证前不得扩面或提前写成 `CLOSED`。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -109,7 +109,7 @@ symbol 数量归并如下：
 | resource / byte ownership | property-bearing resource ref、move-only Buffer、host map、adopt、views、composite、sync copy/fill/coherence | 足以承载未来 host/device provider，Mem 不反向依赖 Compute | `COMPLETE` |
 | transient resource pool | bounded retained bytes/count/slack/growth、lease/take/trim/OOM retry | 能力完整；`max_entries_scanned_per_bucket` 泄漏内部 bucket/benchmark 形状 | `COMPLETE + API FIX` |
 | lifetime planning | tensor-free size/alignment/interval/alias、多 backing、deterministic placement 与 peak facts | static graph scratch/model planning 任务完整；dynamic graph/eviction 是上层策略 | `COMPLETE` |
-| explicit allocator huge-page reserve | process-start 1 GiB mimalloc reserve、可选 NUMA preference | 当前 `Status` 丢失 partial side effect；vendor 忽略 Linux bind error 仍可成功 | `PARTIAL -> FIX` |
+| explicit allocator large-page arena | process-start GiB-sized mimalloc arena、可选 NUMA preference | 旧 API 丢失 partial side effect，并把 vendor 的 1 GiB→2 MiB fallback 误报成 1 GiB OS pages | `PARTIAL -> FIX` |
 | VM/reclamation | anonymous/file/shared/large/guarded mapping；read-mostly reclamation | 分别由 `mem_vm`/`mem_reclaim` 独立因子拥有，Mem product 聚合 | `ROUTED` |
 
 没有准入新的 base-Mem owner family：自己增长且 individual-free 的通用可变池由
@@ -129,29 +129,33 @@ std::optional<std::uint64_t> process_peak_private_committed_bytes;
 
 旧的必填 `process_committed_bytes/process_peak_committed_bytes` 删除；它们不能再混入 mimalloc 统计。
 
-1 GiB reserve 改为可观察 partial outcome：
+large-page arena reserve 改为可观察 partial outcome，并把容量单位与 OS page granularity 分开：
 
 ```cpp
-enum class HugePagePlacement : std::uint8_t {
+enum class LargePagePlacement : std::uint8_t {
   kUnconstrained,
   kPreferenceUnverified,
 };
 
-struct HugePageReservationReport {
-  std::size_t requested_pages;
-  std::size_t reserved_pages;
+enum class LargePageGranularity : std::uint8_t { kUnverified };
+
+struct LargePageArenaReservationReport {
+  std::size_t requested_gib;
+  std::size_t reserved_gib;
   int requested_numa_node;
-  HugePagePlacement placement;
+  LargePagePlacement placement;
+  LargePageGranularity page_granularity;
   Status outcome;
   bool complete() const noexcept;
 };
 
-Result<HugePageReservationReport> reserve_huge_1g_pages(...);
+Result<LargePageArenaReservationReport> reserve_large_page_arena(...);
 ```
 
 参数/溢出是 `Result` error；调用 vendor 后即使只完成一部分也返回 report，`outcome` 仅在全部完成时 OK。
-process-global arena 不能 rollback；selected-node 只是 mimalloc/OS preference 且明确 unverified。默认
-`kNumaAny` 不再虚称 interleave。
+process-global arena 不能 rollback；selected-node 只是 mimalloc/OS preference 且明确 unverified。GiB
+只是 request chunk/容量单位：vendor 会回退到 2 MiB/native large pages，公开 arena API 不能证明最终
+物理页粒度，因此也明确 unverified。默认 `kNumaAny` 不再虚称 interleave。
 
 `BufferPoolOptions` 删除 `max_entries_scanned_per_bucket`；固定有界 search 是实现复杂度而非消费策略。
 retention、reuse slack、growth 和 allocation granularity 保留，因为它们直接决定真实资源预算与复用语义。
@@ -161,7 +165,7 @@ retention、reuse slack、growth 和 allocation granularity 保留，因为它�
 | FIX | 修改 | 成本/复杂度 | 证据 |
 |---|---|---|---|
 | `MEM6-F01` | 组合 Platform whole-process facts，改 optional/private commit 字段和 sample/tests | 冷查询；默认 allocation/free 热路零变化 | 三平台 process allocation-domain fixture |
-| `MEM6-F02` | 以 mimalloc `*_at_ex` + `mi_arena_area` 报告实际页数和 partial outcome；移除虚假 interleave/placement guarantee | 启动期 O(1) vendor call；无常态 metadata | zero/invalid/partial-capable contract tests，base Mem 自己覆盖 |
+| `MEM6-F02` | 以 mimalloc `*_at_ex` + `mi_arena_area` 报告实际 arena 容量和 partial outcome；移除虚假 1 GiB page/interleave/placement guarantee | 启动期 O(1) vendor call；无常态 metadata | zero/invalid/partial-capable/granularity-honesty contract tests，base Mem 自己覆盖 |
 | `MEM6-F03` | 删除 BufferPool bucket scan 公共 knob，内部固定 bounded scan；改掉 benchmark/proven 注释 | acquire 仍 O(word bits × fixed bound)，对象 layout 只删策略 byte/padding | existing pool property/stress + API surface |
 | `MEM6-F04` | 修正 CMake 依赖注释、architecture/user/API docs 和 source/static/shared sample | 不新增依赖；继续 `mem PUBLIC core error platform` | selected factor + 三交付实调用 |
 | `MEM6-F05` | 仅运行冻结的 isolated Heap same-contract P1；其它变更签 P0/资源事实 | 5% NI，same mimalloc binary/runtime erasure | `closure-perf-v1` W1-WIN |

@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <utility>
 
 #include "hyle/error/result.h"
 #include "hyle/mem/buffer.h"
@@ -13,95 +12,35 @@
 
 namespace hyle::mem {
 
+// Mem is the storage-product facade; Platform remains the sole anonymous-VM
+// mechanism and type authority. These aliases add no wrapper, dispatch or
+// second enum contract.
+using VirtualMapping = platform::VmRegion;
+using MappingProtection = platform::Protect;
+using MappingAdvice = platform::VmAdvice;
+using ResidencyMode = platform::VmLockMode;
+using ResidencyLimitPolicy = platform::VmLockLimitPolicy;
+using ResidencyOptions = platform::VmLockOptions;
+
 enum class MappingAccess : std::uint8_t {
   kReadOnly = 0,
   kReadWrite = 1,
   kCopyOnWrite = 2,
 };
 
-enum class MappingProtection : std::uint8_t {
-  kNone = 0,
-  kRead = 1,
-  kReadWrite = 2,
+struct MappingRange {
+  std::size_t offset = 0;
+  std::size_t size = 0;
 };
 
-enum class MappingAdvice : std::uint8_t {
-  kNormal = 0,
-  kRandom = 1,
-  kSequential = 2,
-  kWillNeed = 3,
-  kDontNeed = 4,
-  kHugePage = 5,
-  kNoHugePage = 6,
-};
+namespace detail {
+struct FileMappingFragment;
+}
 
-enum class ResidencyMode : std::uint8_t {
-  kEager = 0,
-  kOnFault = 1,
-};
-
-enum class ResidencyLimitPolicy : std::uint8_t {
-  kPreserve = 0,
-  kAdjustIfNeeded = 1,
-};
-
-struct ResidencyOptions {
-  ResidencyMode mode = ResidencyMode::kEager;
-  ResidencyLimitPolicy limit_policy = ResidencyLimitPolicy::kPreserve;
-};
-
-// Anonymous virtual-address owner. reserve() creates inaccessible address
-// space; allocate_read_write() creates an immediately usable mapping. Control
-// ranges are page-granular and externally synchronized. No operation performs
-// an implicit payload copy or hidden fallback allocation.
-class VirtualMapping {
- public:
-  HYLE_MEM_VM_API static Result<VirtualMapping> reserve(
-      std::size_t size) noexcept;
-  HYLE_MEM_VM_API static Result<VirtualMapping> allocate_read_write(
-      std::size_t size) noexcept;
-  HYLE_MEM_VM_API static Result<VirtualMapping> reserve_numa(
-      std::size_t size, int node) noexcept;
-  HYLE_MEM_VM_API static Result<VirtualMapping> allocate_numa_interleaved(
-      std::size_t size, std::span<const unsigned> nodes = {},
-      std::size_t bytes_per_chunk = 0) noexcept;
-
-  VirtualMapping() noexcept = default;
-  VirtualMapping(const VirtualMapping&) = delete;
-  VirtualMapping& operator=(const VirtualMapping&) = delete;
-  VirtualMapping(VirtualMapping&&) noexcept = default;
-  VirtualMapping& operator=(VirtualMapping&&) noexcept = default;
-
-  bool valid() const noexcept { return region_.valid(); }
-  explicit operator bool() const noexcept { return valid(); }
-  void* data() const noexcept { return region_.data(); }
-  std::size_t size() const noexcept { return region_.size(); }
-
-  HYLE_MEM_VM_API Status commit(std::size_t offset,
-                             std::size_t size) noexcept;
-  HYLE_MEM_VM_API Status decommit(std::size_t offset,
-                               std::size_t size) noexcept;
-  HYLE_MEM_VM_API Status protect(std::size_t offset, std::size_t size,
-                              MappingProtection protection) noexcept;
-  HYLE_MEM_VM_API Status advise(MappingAdvice advice, std::size_t offset = 0,
-                             std::size_t size = 0) noexcept;
-  HYLE_MEM_VM_API Status lock(std::size_t offset = 0, std::size_t size = 0,
-                           ResidencyOptions options = {}) noexcept;
-  HYLE_MEM_VM_API Status unlock(std::size_t offset = 0,
-                             std::size_t size = 0) noexcept;
-  HYLE_MEM_VM_API Status release() noexcept;
-
- private:
-  explicit VirtualMapping(platform::VmRegion region) noexcept
-      : region_(std::move(region)) {}
-
-  platform::VmRegion region_;
-};
-
-// File-backed mapping owner for model weights, datasets and random-access
-// files. The file is never silently grown; length==0 maps through current EOF.
-// Read-only access is represented by ConstBufferView, while writable_bytes()
-// checks the mapping mode before exposing mutation.
+// Move-only file storage for model weights, datasets and random-access files.
+// The logical [0,size()) extent is stable, while POSIX release_range(s) may
+// remove complete native pages from it. Accessors are checked so a hole can
+// never be represented as one contiguous span/view by accident.
 class FileMapping {
  public:
   HYLE_MEM_VM_API static Result<FileMapping> open(
@@ -119,46 +58,62 @@ class FileMapping {
   HYLE_MEM_VM_API FileMapping(FileMapping&&) noexcept;
   HYLE_MEM_VM_API FileMapping& operator=(FileMapping&&) noexcept;
 
-  bool valid() const noexcept { return addr_ != nullptr; }
+  bool valid() const noexcept { return size_ != 0; }
   explicit operator bool() const noexcept { return valid(); }
-  const void* data() const noexcept { return addr_; }
   std::size_t size() const noexcept { return size_; }
+  std::size_t mapped_size() const noexcept { return mapped_size_; }
+  HYLE_MEM_VM_API std::size_t fragment_count() const noexcept;
   MappingAccess access() const noexcept { return access_; }
-  std::span<const std::byte> bytes() const noexcept {
-    return {static_cast<const std::byte*>(addr_), size_};
-  }
 
-  HYLE_MEM_VM_API ConstBufferView view() const noexcept;
-  HYLE_MEM_VM_API Result<std::span<std::byte>> writable_bytes() noexcept;
-  HYLE_MEM_VM_API Status flush(std::size_t offset = 0,
-                            std::size_t length = 0) noexcept;
-  HYLE_MEM_VM_API Status advise(MappingAdvice advice, std::size_t offset = 0,
-                             std::size_t length = 0) noexcept;
+  HYLE_MEM_VM_API bool contains(
+      std::size_t offset,
+      std::size_t length = std::dynamic_extent) const noexcept;
+  HYLE_MEM_VM_API Result<const void*> address(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) const noexcept;
+  HYLE_MEM_VM_API Result<void*> writable_address(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
+  HYLE_MEM_VM_API Result<std::span<const std::byte>> bytes(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) const noexcept;
+  HYLE_MEM_VM_API Result<std::span<std::byte>> writable_bytes(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
+  HYLE_MEM_VM_API Result<ConstBufferView> view(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) const noexcept;
+  HYLE_MEM_VM_API Result<BufferView> writable_view(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
+
+  HYLE_MEM_VM_API Status flush(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
+  HYLE_MEM_VM_API Status advise(
+      MappingAdvice advice, std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
   Status prefetch(std::size_t offset = 0,
-                  std::size_t length = 0) noexcept {
+                  std::size_t length = std::dynamic_extent) noexcept {
     return advise(MappingAdvice::kWillNeed, offset, length);
   }
-  // Synchronously fault every covered page into this process. Unlike
-  // prefetch(), success means each page was actually touched before return.
-  HYLE_MEM_VM_API Status populate(std::size_t offset = 0,
-                                  std::size_t length = 0) noexcept;
+  HYLE_MEM_VM_API Status populate(
+      std::size_t offset = 0,
+      std::size_t length = std::dynamic_extent) noexcept;
+
+  HYLE_MEM_VM_API Result<std::size_t> release_range(
+      std::size_t offset, std::size_t length) noexcept;
+  HYLE_MEM_VM_API Result<std::size_t> release_ranges(
+      std::span<const MappingRange> ranges) noexcept;
+
   HYLE_MEM_VM_API Status lock_prefix(
       std::size_t length, ResidencyOptions options = {}) noexcept;
   HYLE_MEM_VM_API Status lock(ResidencyOptions options = {}) noexcept;
   HYLE_MEM_VM_API Status unlock() noexcept;
-  std::size_t locked_size() const noexcept {
-    if (locked_native_size_ == 0 || addr_ == nullptr || map_base_ == nullptr) {
-      return 0;
-    }
-    const std::uintptr_t visible = reinterpret_cast<std::uintptr_t>(addr_);
-    const std::uintptr_t native = reinterpret_cast<std::uintptr_t>(map_base_);
-    const std::size_t leading = static_cast<std::size_t>(visible - native);
-    if (locked_native_size_ <= leading) return 0;
-    const std::size_t covered = locked_native_size_ - leading;
-    return covered < size_ ? covered : size_;
-  }
-  bool locked() const noexcept { return locked_size() != 0; }
-  HYLE_MEM_VM_API void reset() noexcept;
+  std::size_t locked_size() const noexcept { return locked_prefix_size_; }
+  bool locked() const noexcept { return locked_prefix_size_ != 0; }
+
+  HYLE_MEM_VM_API Status reset() noexcept;
 
  private:
   void* addr_ = nullptr;
@@ -168,19 +123,29 @@ class FileMapping {
   std::intptr_t h0_ = -1;
   std::intptr_t h1_ = -1;
   MappingAccess access_ = MappingAccess::kReadOnly;
-  std::size_t locked_native_size_ = 0;
+  std::size_t locked_prefix_size_ = 0;
   ResidencyMode locked_mode_ = ResidencyMode::kEager;
+  detail::FileMappingFragment* fragments_ = nullptr;
+  std::size_t fragment_count_ = 0;
+  std::size_t fragment_capacity_ = 0;
+  std::size_t mapped_size_ = 0;
 };
 
-// Named process-shared storage. The name/OS handle is a Platform mechanism;
-// this Mem owner exposes the bytes through the same BufferView vocabulary as
-// other host-accessible storage. Interprocess synchronization is deliberately
-// not invented here and remains the caller/IPC protocol's responsibility.
+// Named process-shared storage. Size and access are explicit external protocol
+// facts; HYLE adds no hidden payload header and therefore preserves native page
+// alignment. HYLE checks the native capacity reported by the OS: Linux shm
+// preserves the requested ftruncate size, while Darwin and Win32 round capacity
+// to a native page boundary. Those rounded platforms cannot recover an exact
+// logical payload size through the mapping API, so peers must agree on it.
+// Publication/readiness and interprocess synchronization remain the caller's
+// protocol.
 class SharedMapping {
  public:
   HYLE_MEM_VM_API static Result<SharedMapping> create(
       const char* name, std::size_t size) noexcept;
-  HYLE_MEM_VM_API static Result<SharedMapping> open(const char* name) noexcept;
+  HYLE_MEM_VM_API static Result<SharedMapping> open(
+      const char* name, std::size_t size,
+      MappingAccess access = MappingAccess::kReadOnly) noexcept;
   HYLE_MEM_VM_API static Status unlink(const char* name) noexcept;
 
   SharedMapping() noexcept = default;
@@ -190,28 +155,26 @@ class SharedMapping {
   HYLE_MEM_VM_API SharedMapping(SharedMapping&&) noexcept;
   HYLE_MEM_VM_API SharedMapping& operator=(SharedMapping&&) noexcept;
 
-  bool valid() const noexcept { return data_ != nullptr; }
+  bool valid() const noexcept { return mapping_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  void* data() noexcept { return data_; }
-  const void* data() const noexcept { return data_; }
+  const void* data() const noexcept { return mapping_; }
+  HYLE_MEM_VM_API Result<void*> writable_data() noexcept;
   std::size_t size() const noexcept { return size_; }
-  std::span<std::byte> bytes() noexcept {
-    return {static_cast<std::byte*>(data()), size()};
-  }
+  MappingAccess access() const noexcept { return access_; }
   std::span<const std::byte> bytes() const noexcept {
     return {static_cast<const std::byte*>(data()), size()};
   }
-  HYLE_MEM_VM_API BufferView view() noexcept;
+  HYLE_MEM_VM_API Result<std::span<std::byte>> writable_bytes() noexcept;
   HYLE_MEM_VM_API ConstBufferView view() const noexcept;
+  HYLE_MEM_VM_API Result<BufferView> writable_view() noexcept;
   HYLE_MEM_VM_API Status flush() noexcept;
   HYLE_MEM_VM_API Status reset() noexcept;
 
  private:
   void* mapping_ = nullptr;
-  void* data_ = nullptr;
   std::size_t size_ = 0;
-  std::size_t mapping_size_ = 0;
   std::intptr_t handle_ = -1;
+  MappingAccess access_ = MappingAccess::kReadOnly;
 };
 
 }  // namespace hyle::mem

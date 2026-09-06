@@ -188,14 +188,14 @@ Linux 的 `setpriority(PRIO_PROCESS, 0, ...)` 实际作用于调用线程并由�
 
 普通顺序文件 I/O 用 Platform `FileHandle`；caller-synchronized 的 blocking explicit-offset 访问用
 `RandomAccessFile`；并发/异步 read/write、注册文件、direct/vectored I/O 和 completion 归 `io`。
-模型权重、索引、anonymous/shared storage 的 mapping、advice、populate、residency 与 range flush
-由 `mem_vm` 的 `VirtualMapping/FileMapping/SharedMapping` 唯一公开拥有。`FileMapping::map` 消费
-Platform `FileHandle`，因此实现可直接复用 native handle，但 Platform 不再保留一份同义 owner。
-这个单 owner 边界避免两套 mode/advice/lock enum、两份文档和无法判断该选谁的 API。
+模型权重、索引和 shared storage 的 mapping、advice、populate、residency、partial release 与 range
+flush 由 `mem_vm` 的 `FileMapping/SharedMapping` 唯一公开拥有；其 `VirtualMapping` 名字直接 alias
+Platform `VmRegion`，不是第二个 owner。`FileMapping::map` 消费 Platform `FileHandle`，因此实现可
+直接复用 native handle。这个边界避免两套 mode/advice/lock enum、两份实现和无法判断该选谁的 API。
 
 Platform 仍提供 `vm_reserve/commit/protect/advise/lock` 等 raw anonymous-address mechanisms 和
 `VmRegion`，供 Mem 与自定义 arena/JIT owner 组合；它不提供 file/shared mapping 生命周期。
-mapping 的访问策略、同步 populate、monotonic residency prefix、fragment-by-multiple-owners 等合同见
+mapping 的访问策略、同步 populate、monotonic residency prefix、惰性 hole/fragment metadata 等合同见
 [Mem 设计](mem-design.md)。device VRAM、pinned host memory、coherence 与 GPU completion 归
 `compute`，不能用 `VmRegion` 或 `mem::AllocatorRef` 抹掉 backend 生命周期。
 

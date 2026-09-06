@@ -188,7 +188,7 @@ _hyle_declare_component(mem_vm
   PUBLIC_DEPS core error mem platform platform_fs util_core
   SPLIT_PUBLIC_HEADERS
     hyle/mem/fiber_stack.h
-    hyle/mem/hugepage.h
+    hyle/mem/large_mapping.h
     hyle/mem/mapping.h)
 _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # Container headers expose mem types; platform is used only by compiled

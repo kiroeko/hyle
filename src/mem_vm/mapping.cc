@@ -1,50 +1,7 @@
 #include "hyle/mem/mapping.h"
 
-#include <utility>
-
-#include "hyle/platform/fs.h"
-
 namespace hyle::mem {
 namespace {
-
-Result<platform::VmLockOptions> vm_lock_options(
-    ResidencyOptions options) noexcept {
-  platform::VmLockOptions out;
-  switch (options.mode) {
-    case ResidencyMode::kEager:
-      out.mode = platform::VmLockMode::kEager;
-      break;
-    case ResidencyMode::kOnFault:
-      out.mode = platform::VmLockMode::kOnFault;
-      break;
-    default:
-      return std::unexpected(Status::InvalidArgument("invalid residency mode"));
-  }
-  switch (options.limit_policy) {
-    case ResidencyLimitPolicy::kPreserve:
-      out.limit_policy = platform::VmLockLimitPolicy::kPreserve;
-      break;
-    case ResidencyLimitPolicy::kAdjustIfNeeded:
-      out.limit_policy = platform::VmLockLimitPolicy::kAdjustIfNeeded;
-      break;
-    default:
-      return std::unexpected(
-          Status::InvalidArgument("invalid residency limit policy"));
-  }
-  return out;
-}
-
-bool mapping_range(const void* data, std::size_t total, std::size_t offset,
-                   std::size_t requested, void** begin,
-                   std::size_t* size) noexcept {
-  if (data == nullptr || offset > total ||
-      (requested != 0 && requested > total - offset)) {
-    return false;
-  }
-  *begin = static_cast<std::byte*>(const_cast<void*>(data)) + offset;
-  *size = requested != 0 ? requested : total - offset;
-  return true;
-}
 
 class BorrowedMappedResource final : public MemoryResource {
  public:
@@ -75,13 +32,12 @@ class BorrowedMappedResource final : public MemoryResource {
       HostAccess access) noexcept override {
     if (!writable_ && access != HostAccess::kRead) {
       return std::unexpected(
-          Status::PermissionDenied("file mapping is read-only"));
+          Status::PermissionDenied("mapping is read-only"));
     }
     return ResourceHostMapping{
-        size == 0
-            ? nullptr
-            : static_cast<void*>(static_cast<std::byte*>(native_handle) +
-                                 offset),
+        size == 0 ? nullptr
+                  : static_cast<void*>(
+                        static_cast<std::byte*>(native_handle) + offset),
         nullptr};
   }
 
@@ -96,117 +52,36 @@ MemoryResourceRef mapped_resource(bool writable) noexcept {
                                     : static_cast<MemoryResource&>(read_only));
 }
 
+std::size_t resolved_length(std::size_t total, std::size_t offset,
+                            std::size_t length) noexcept {
+  return length == std::dynamic_extent ? total - offset : length;
+}
+
 }  // namespace
 
-Result<VirtualMapping> VirtualMapping::reserve(std::size_t size) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::VmRegion region,
-                        platform::VmRegion::reserve(size));
-  return VirtualMapping(std::move(region));
+Result<ConstBufferView> FileMapping::view(std::size_t offset,
+                                          std::size_t length) const noexcept {
+  HYLE_ASSIGN_OR_RETURN(const void* pointer, address(offset, length));
+  const std::size_t span = resolved_length(size_, offset, length);
+  return ConstBufferView(mapped_resource(false), const_cast<void*>(pointer), 0,
+                         span);
 }
 
-Result<VirtualMapping> VirtualMapping::allocate_read_write(
-    std::size_t size) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::VmRegion region,
-                        platform::VmRegion::allocate_rw(size));
-  return VirtualMapping(std::move(region));
-}
-
-Result<VirtualMapping> VirtualMapping::reserve_numa(std::size_t size,
-                                                    int node) noexcept {
-  HYLE_ASSIGN_OR_RETURN(platform::VmRegion region,
-                        platform::VmRegion::reserve_numa(size, node));
-  return VirtualMapping(std::move(region));
-}
-
-Result<VirtualMapping> VirtualMapping::allocate_numa_interleaved(
-    std::size_t size, std::span<const unsigned> nodes,
-    std::size_t bytes_per_chunk) noexcept {
-  HYLE_ASSIGN_OR_RETURN(
-      platform::VmRegion region,
-      platform::VmRegion::allocate_numa_interleaved(size, nodes,
-                                                    bytes_per_chunk));
-  return VirtualMapping(std::move(region));
-}
-
-Status VirtualMapping::commit(std::size_t offset, std::size_t size) noexcept {
-  return region_.commit(offset, size);
-}
-
-Status VirtualMapping::decommit(std::size_t offset, std::size_t size) noexcept {
-  return region_.decommit(offset, size);
-}
-
-Status VirtualMapping::protect(std::size_t offset, std::size_t size,
-                               MappingProtection protection) noexcept {
-  platform::Protect native;
-  switch (protection) {
-    case MappingProtection::kNone:
-      native = platform::Protect::kNone;
-      break;
-    case MappingProtection::kRead:
-      native = platform::Protect::kRead;
-      break;
-    case MappingProtection::kReadWrite:
-      native = platform::Protect::kReadWrite;
-      break;
-    default:
-      return Status::InvalidArgument("invalid mapping protection");
-  }
-  return region_.protect(offset, size, native);
-}
-
-Status VirtualMapping::advise(MappingAdvice advice, std::size_t offset,
-                              std::size_t size) noexcept {
-  void* begin = nullptr;
-  std::size_t span = 0;
-  if (!mapping_range(data(), this->size(), offset, size, &begin, &span)) {
-    return valid() ? Status::OutOfRange("mapping advice range is out of bounds")
-                   : Status::FailedPrecondition("mapping is invalid");
-  }
-  return platform::vm_advise(begin, span,
-                             static_cast<platform::VmAdvice>(advice));
-}
-
-Status VirtualMapping::lock(std::size_t offset, std::size_t size,
-                            ResidencyOptions options) noexcept {
-  void* begin = nullptr;
-  std::size_t span = 0;
-  if (!mapping_range(data(), this->size(), offset, size, &begin, &span)) {
-    return valid() ? Status::OutOfRange("mapping lock range is out of bounds")
-                   : Status::FailedPrecondition("mapping is invalid");
-  }
-  HYLE_ASSIGN_OR_RETURN(platform::VmLockOptions native,
-                        vm_lock_options(options));
-  return platform::vm_lock(begin, span, native);
-}
-
-Status VirtualMapping::unlock(std::size_t offset, std::size_t size) noexcept {
-  void* begin = nullptr;
-  std::size_t span = 0;
-  if (!mapping_range(data(), this->size(), offset, size, &begin, &span)) {
-    return valid() ? Status::OutOfRange("mapping unlock range is out of bounds")
-                   : Status::FailedPrecondition("mapping is invalid");
-  }
-  return platform::vm_unlock(begin, span);
-}
-
-Status VirtualMapping::release() noexcept { return region_.release(); }
-
-ConstBufferView FileMapping::view() const noexcept {
-  if (!valid()) return {};
-  return ConstBufferView(mapped_resource(false), const_cast<void*>(data()), 0,
-                         size());
-}
-
-BufferView SharedMapping::view() noexcept {
-  if (!valid()) return {};
-  return BufferView(mapped_resource(true), data(), 0, size());
+Result<BufferView> FileMapping::writable_view(std::size_t offset,
+                                              std::size_t length) noexcept {
+  HYLE_ASSIGN_OR_RETURN(void* pointer, writable_address(offset, length));
+  const std::size_t span = resolved_length(size_, offset, length);
+  return BufferView(mapped_resource(true), pointer, 0, span);
 }
 
 ConstBufferView SharedMapping::view() const noexcept {
   if (!valid()) return {};
-  return ConstBufferView(mapped_resource(false), const_cast<void*>(data()), 0,
-                         size());
+  return ConstBufferView(mapped_resource(false), mapping_, 0, size_);
+}
+
+Result<BufferView> SharedMapping::writable_view() noexcept {
+  HYLE_ASSIGN_OR_RETURN(void* pointer, writable_data());
+  return BufferView(mapped_resource(true), pointer, 0, size_);
 }
 
 }  // namespace hyle::mem

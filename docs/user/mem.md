@@ -23,14 +23,14 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 把多个独立 allocation/shard 暴露为一段逻辑 bytes | `CompositeBuffer::create(segments)` | 只 composite 支付 segment metadata；不 flatten、不隐藏 staging；输入在成功后才被 move |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
 | 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests, resources)` -> `instantiate(resources)` | tensor-free；先查 resource/backing/placement，再按 provider 单次分配上限建立一个或多个 backing；alias/output facts 显式 |
-| 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | 页粒度；无隐式 commit、prefault 或 fallback |
-| 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；只读可直接给 `ConstBufferView`；advice/lock/flush 显式 |
-| 命名跨进程共享 bytes | `SharedMapping::create/open/unlink` | shared owner + Buffer view；同步与 IPC protocol 由调用方/IO 提供 |
+| 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | `VirtualMapping` 是 Platform `VmRegion` 的零开销别名；页粒度，无隐式 commit、prefault 或 fallback |
+| 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；checked range/view；advice/lock/flush 显式；POSIX/macOS 可批量释放已知页区间 |
+| 命名跨进程共享 bytes | `SharedMapping::create/open(name,size,access)` | payload 保持原生页对齐；size/access 是外部协议；同步由调用方/IO 提供 |
 | 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
 | 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `AllocatorRef` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
-| 进程级 system heap / RSS 压力快照 | `system_memory_snapshot()` | 冷查询；allocator reserved/committed 与 process RSS/commit current+peak；不冒充精确 requested-live |
+| 进程级 system heap / RSS 压力快照 | `system_memory_snapshot()` | 冷查询；allocator reserved/committed 与 process RSS；private commit 仅在 OS 可证明时为 optional；不冒充精确 requested-live |
 | 极热读、低频替换的不可变 snapshot | `ReclamationDomain` + `ReclamationGuard` + caller-owned `RetireRecord` | 读侧不分配；短 guard；旧对象在先前读者退出后由 collector 线程同步回调 |
 | request/frame/graph phase 临时对象 | `Arena` | owned、单线程、growable、bulk `clear()` |
 | 调用方 buffer 中的临时对象 | `FixedArena` | external、单线程、bump、无 fallback |
@@ -44,7 +44,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | return 不销毁内部状态；pool 析构时统一 cleanup |
 | 单线程 typed 对象、容量可增长 | `GrowableObjectPool<T>` | 指针稳定，按需增加 chunks |
 | 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | owner 必须比 loan/slot 长寿 |
-| 大块、THP/NUMA placement | `HugeMapping` | requested 与 accepted policy 可分别查询 |
+| 大块、THP/NUMA placement | `LargeMapping` | large 表示 owner 尺寸，不把 THP hint 冒充显式 huge-page guarantee；requested 与 accepted policy 可分别查询 |
 | fiber stack | `FiberStack` / `FiberStackPool` | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
@@ -259,10 +259,10 @@ provider 必须长寿于 `PlannedBuffers`、views 和 in-flight operation；plan
 
 ## Mapping：模型加载、稀疏提交和跨进程共享
 
-`VirtualMapping` 是 anonymous address-space owner：`reserve()` 只占地址，随后显式
-`commit/decommit/protect`；`allocate_read_write()` 才是一步得到可写页。`advise`、`lock/unlock`
-都只对给定页区间执行一次 Platform/OS 操作，不隐藏逐页表、payload copy 或后台线程；不受支持的
-hint 返回 `Unimplemented`。
+`VirtualMapping` 是 `platform::VmRegion` 的零开销别名：`reserve()` 只占地址，随后显式
+`commit/decommit/protect`；`allocate_rw()` 才是一步得到可写页。页级 advice 和 lock 使用
+`platform::vm_advise/vm_lock/vm_unlock`。Mem 不复制类型、enum 或 OS decision authority；这些调用
+不隐藏逐页表、payload copy 或后台线程，不受支持的机制返回 `Unimplemented`。
 
 ```cpp
 #include "hyle/mem/mapping.h"
@@ -274,15 +274,18 @@ HYLE_RETURN_IF_ERROR(
     weights.advise(hyle::mem::MappingAdvice::kSequential));
 // prefetch 是异步/提示语义；启动阶段必须完成 warm-up 时显式同步触页。
 HYLE_RETURN_IF_ERROR(weights.populate());
-auto model_bytes = weights.view();  // owner 必须长寿于 view
+HYLE_ASSIGN_OR_RETURN(auto model_bytes, weights.view());
+// owner 必须长寿于 view；释放与 view 重叠的页之前先让该 view 失效。
 ```
 
 `FileMapping` 不会自动触碰或锁定全文件，也不会在 RW open 时扩展文件。只读路线返回
 `ConstBufferView`；修改文件必须先通过 `writable_bytes()`，持久化再显式调用
 `FileMapping::flush()`。`BufferView::flush()` 表达 host/device coherence，不等价于文件 durability。
 `prefetch()`/`MappingAdvice::kWillNeed` 是 OS hint，成功不保证页面已经 resident；`populate()` 则在
-返回前同步触碰请求范围覆盖的每一页，成本与覆盖页数成正比。两者都接受 offset/length，length 0
-表示到 mapping 末尾；并发 truncate 或替换 backing 不在合同内，loader 必须先稳定文件生命周期。
+返回前同步触碰请求范围覆盖的每一页，成本与覆盖页数成正比。`open/map` 的 `length == 0`
+表示映射到当前 EOF；已经建立 mapping 后的 `bytes/view/advise/populate/flush` 默认 length 是
+`std::dynamic_extent`（直到 mapping 末尾），显式传 `0` 是空操作/空 view。并发 truncate 或替换
+backing 不在合同内，loader 必须先稳定文件生命周期。
 
 residency 是更强且可能受 quota 限制的合同。`lock()` 锁整段；loader 逐步确认 CPU-resident 前缀时
 用 monotonic `lock_prefix()`，失败后 `locked_size()` 仍报告此前成功覆盖。默认
@@ -290,17 +293,46 @@ residency 是更强且可能受 quota 限制的合同。`lock()` 锁整段；loa
 `kAdjustIfNeeded`。`ResidencyMode::kOnFault` 仅 Linux 有真实对等机制，其它平台返回
 `Unimplemented`，不会静默变成 eager。
 
-`FileMapping` 刻意不提供 partial unmap：打洞会破坏 `bytes()/view()` 的连续合同，Windows 也没有
-同形状机制。需要只保留离散权重片段时，在 loader 设计阶段创建多个精确 subrange mapping owner；
-片段数和生命周期 metadata 只由确实需要 fragment 的调用方承担。
+POSIX/macOS 的模型加载器可用 `release_range`，已知一批 range 时应优先
+`release_ranges(span<MappingRange>)`。它向内取整，只释放完全落在请求内且仍存活的原生页；重复、重叠
+或只覆盖半页的输入是安全的，返回实际释放的 logical bytes。连续 mapping 不分配 fragment metadata，
+第一次有效 release 才建立片段表；批量路线的 bookkeeping 为 `O(R log R + F)`，避免逐个释放时反复
+重建片段列表。片段表按地址有序，checked access 为 `O(log F)`，局部 advice/populate/flush 为
+`O(log F + K)`（`K` 是相交片段数），不会为每个 tensor 线扫整张 survivor 表。Windows 的
+whole-view primitive 没有同合同的安全 partial release；有效整页请求在 `O(R)` 校验后直接返回
+`Unimplemented` 且 owner 不变，不分配 fragment metadata，调用方可改用多个精确 subrange owner。
 
-`SharedMapping` 只拥有命名共享 storage。它不内置 mutex、notification、crash recovery 或跨进程
+release 后 `size()` 仍是稳定 logical extent，`mapped_size()` 是仍存活的 logical bytes，
+`fragment_count()` 是 native survivor 数。`address/bytes/view` 只在所请求范围完全落于一个 live
+fragment 时成功；跨 hole 返回 `FailedPrecondition`。先前取得且与 release 重叠的 pointer/span/view
+立即失效，不能靠 checked accessor 追踪借用。advice/populate/flush 会对请求与所有 live fragment 的
+交集执行；完全落在 hole 中则失败。锁定前缀与 release 互斥：先 `unlock()` 再释放其覆盖页。
+Windows 的 `DiscardVirtualMemory` 会让 PAGE_READWRITE 内容未定义，并不是 file-backed cache eviction；
+因此 `FileMapping::advise(kDontNeed)` 在 Windows 对 RO/RW/COW 都明确返回 `Unimplemented`。Linux/macOS
+才沿用各自 file-backed `madvise` 语义，不能跨平台把 `kDontNeed` 理解为同一 persistence 保证。
+
+`SharedMapping` 只拥有命名共享 storage。创建者得到 RW owner；打开者必须显式传相同 payload size，
+默认是 RO，也可请求 RW。实现不放私有 header，因此 payload 从 OS mapping base 开始并保持页对齐；
+代价是 size/readiness 必须属于外部 IPC protocol。HYLE 会用 OS 报告的 native capacity 拒绝超界：
+Linux shm 保留精确 `ftruncate` size；Darwin shm 与 Windows section capacity 按 native page boundary
+向上取整（Windows allocation granularity 约束的是 view offset/base，不是这里的 capacity）。后两者
+无法恢复精确 logical size，所以错误的、但仍落在同一 page rounding 区间内的较大 size 可能映射成功。
+双方必须先协商 size，并在读取前用自己的
+ready/version 字段或同步原语发布初始化完成。它不内置 mutex、notification、crash recovery 或跨进程
 指针修复；共享数据结构保存 offset/POD，进程间同步和 handle-transfer protocol 由 IO/调用方组合。
+名称直接进入 native namespace：HYLE 只为 POSIX 补前导 `/`，不会截断或哈希。为了让同一协议跨
+Linux/macOS/Windows 工作，应使用短 basename；interior `/` 或超过本机 POSIX shm 上限会返回结构化
+`InvalidArgument`，不会创建一个“近似名称”的对象。
 
-进程启动期若需要显式预留 1 GiB OS 大页，包含 `hyle/mem/hugepage_reservation.h` 并调用
-`reserve_huge_1g_pages`。它是冷策略入口，
-返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
-`ResourceExhausted`；失败后仍可继续使用普通页。不要在请求热路反复调用。
+进程启动期若要给 system allocator 显式预留 pinned large-page arena，包含
+`hyle/mem/large_page_reservation.h` 并调用 `reserve_large_page_arena(gib, ...)`。`gib` 是 arena
+容量的 GiB 请求单位，**不是**物理页粒度承诺。mimalloc 会先尝试 1 GiB huge pages，但可回退到
+2 MiB/native large pages；它的公开 API 不能区分最终粒度，因此 report 的
+`page_granularity` 固定为 `kUnverified`。入口返回
+`Result<LargePageArenaReservationReport>`：参数错误发生在调用 vendor 以前；开始尝试后，即使只保留
+部分容量也返回 report，调用方必须同时看 `reserved_gib`、`outcome` 和 `complete()`。成功部分会立即
+发布为 process-global arena，无法 rollback；NUMA node 也只是不可验证的 placement preference。
+不要在请求热路调用，更不能把 arena request unit 写成“已获得 1 GiB OS pages”。
 
 ## 通用 allocator、typed array、标准 adapter 与 PMR
 
@@ -542,7 +574,7 @@ invalidation：调用前必须停止并发访问；调用后所有旧指针都�
 
 ## Quota、统计与失败
 
-长寿推理进程若只需要回答“system allocator 预留/提交了多少地址空间、整个进程的 RSS/commit
+长寿推理进程若只需要回答“system allocator 预留/提交了多少地址空间、整个进程的 RSS/private commit
 是多少”，使用冷路径 `system_memory_snapshot()`：
 
 ```cpp
@@ -556,7 +588,9 @@ report(memory.allocator_committed_bytes,
 ```
 
 这是进程级时间切片：并发分配时 current 字段不保证来自同一个原子瞬间；process 字段还包括
-非 HYLE allocation domain。它刻意不报告精确 requested-live，因为在默认分配热路维护该数会
+非 HYLE allocation domain。`process_private_committed_bytes` 及其 peak 是 optional：OS 没有公开
+准确概念时保持空值，不能拿某个 allocator committed、virtual size 或 host commit 代填。它刻意不
+报告精确 requested-live，因为在默认分配热路维护该数会
 增加常态计数成本。需要 owner-local 精确 live bytes 时，显式给该 owner 套
 `StatsAllocator`。
 
@@ -628,13 +662,13 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 所有借用 allocator 和 allocation 必须先失效。交换 wrapper 顺序会改变“被 quota 拒绝的尝试”
 是否进入统计，必须由调用者按观测目标选择。
 
-## HugeMapping：请求不等于承诺
+## LargeMapping：请求不等于承诺
 
-`HugeMapping::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
+`LargeMapping::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
 接受的 THP/prefault/placement policy。THP advice 被接受不代表每一物理页已经提升；同样，
 interleave policy 被接受也不是每页永久驻留目标节点的证明。
 `numa_placement_applied()` 单独说明 placement 调用结果。`allocate*` 返回
-`Result<HugeMapping>`：hard bind 或 interleave policy 无法安装时返回带原因的 Status；preferred
+`Result<LargeMapping>`：hard bind 或 interleave policy 无法安装时返回带原因的 Status；preferred
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
 bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
 
@@ -643,13 +677,13 @@ bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `
 mimalloc 会在进入 `main` / 用户构造器之前由 loader 初始化并缓存该值，因此 HYLE 有意不提供一个
 实际上来不及生效的运行期 setter。这个环境变量属于 system allocator 的进程启动配置，不是某次
 分配的 placement。运行中需要对特定 span 显式选择 node、bind 或 interleave 时使用
-`HugeMapping` / platform NUMA API。
+`LargeMapping` / platform NUMA API。
 
 system allocator 的 THP / large-page 默认策略也必须在启动进程前通过
 `MIMALLOC_ALLOW_THP` / `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。Windows 会在 loader 阶段缓存
 large-page capability；因此 HYLE 不提供一个跨平台语义不一致、在 Windows 用户代码中实际太晚的
-runtime setter。运行中对特定 span 的 THP/prefault/NUMA 策略用 `HugeMapping` flags，显式 1GiB
-arena 预留用 `reserve_huge_1g_pages`。
+runtime setter。运行中对特定 span 的 THP/prefault/NUMA 策略用 `LargeMapping` flags；进程启动期
+large-page arena 预留用 `reserve_large_page_arena`，其 GiB request unit 不证明物理页粒度。
 
 需要一个连续的大块 owner、但只在选定节点间按自定义 chunk 条带时，使用 selected overload：
 
@@ -658,10 +692,10 @@ constexpr std::size_t kMiB = 1024u * 1024u;
 const auto available = hyle::platform::numa_nodes();
 const unsigned chosen[] = {available.front(), available.back()};
 HYLE_ASSIGN_OR_RETURN(
-    hyle::mem::HugeMapping region,
-    hyle::mem::HugeMapping::allocate_interleaved(
+    hyle::mem::LargeMapping region,
+    hyle::mem::LargeMapping::allocate_interleaved(
         256u * kMiB, chosen, 2u * kMiB,
-        hyle::mem::HugeFlags::kPrefault));
+        hyle::mem::LargeMappingFlags::kPrefault));
 assert(region.interleave_chunk_size() == 2u * kMiB);
 ```
 
@@ -683,16 +717,14 @@ selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能
 
 ## 如何看性能
 
-Mem v2 当前资格化 workload 由 `bench/contracts/mem-v2-consumer-v1.json` 冻结，并统一通过
-`scripts/hyle-perf.py` 运行；它只覆盖同合同的 Heap、FixedArena、BufferView 与 BufferPool 四条
-normal consumer 路线，不外推 mapping/planner、所有平台或端到端推理 SOTA。旧的
-`mem-owner-consumer-v1`、`mem-handoff-consumer-v1`、
-`HYLE_BENCH_SECTIONS=*` 与专用统计脚本只能作历史或机制诊断。正式工程性能表只维护在
-[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)，本轮不可变
-candidate、peer、contract、manifest 和 aggregate verdict 记录在
-[`mem-v2-rebuild`](../implementation/tasks/mem/mem-v2-rebuild.md)。本指南不复制点值、win/loss
-或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同；表中未出现的
-类型也不等于功能缺失，只表示没有发布对应数值声明。
+Mem v6 的 host hot-path 只用同一 mimalloc binary 上的 isolated `Heap` 与 runtime-erased PMR owner
+比较；Mem-VM v2 另用 Linux model-loader 的相同 mmap、64 次 lazy advice、64 次 partial munmap 和
+相同 survivor teardown 比较批量片段 bookkeeping。两者统一经 `scripts/hyle-perf.py` 运行，合同分别在
+`bench/contracts/mem-v6-host-allocation-p1-v1.json` 与
+`bench/contracts/mem-vm-model-loader-p1-v2.json`。后者的 WSL 结果只属于 Linux guest engineering
+证据，不能冒充 native-Linux 正式认证；Windows progressive residency 是另一合同，也不与 POSIX
+partial release 数字池化。性能结果只回答列出的 ownership/charged-phase 语义，不外推 planner、所有
+OS 或端到端推理 SOTA，更不能用更少 syscall/更弱持久化保证做苹果对橘子排名。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
 [`module-status.json`](../implementation/module-status.json)。

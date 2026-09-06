@@ -9,10 +9,9 @@ host、线程、等待和文件机制；库用户需要在 Windows、Linux、mac
 选择形状。
 
 用户只需选择 Platform 产品；构建系统内部把它分成 host、thread、filesystem 三个可独立构建的
-质因数，使只需要 CPU facts 的模块不会被迫链接线程和文件代码。匿名地址空间仍由 Platform 的
-`VmRegion` 拥有；模型权重、共享区和其它 storage mapping 则只有 Mem 的 `VirtualMapping`、
-`FileMapping`、`SharedMapping` 一个公开 owner。两层通过低层机制组合，不复制 allocation 或
-payload。
+质因数，使只需要 CPU facts 的模块不会被迫链接线程和文件代码。匿名地址空间由 Platform 的
+`VmRegion` 拥有，Mem 的 `VirtualMapping` 只是同一类型的发现别名；模型权重和共享区则由 Mem 的
+`FileMapping`、`SharedMapping` 拥有。两层通过低层机制组合，不复制 allocation、enum 或 payload。
 
 macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；原因是地址等待/Parker 使用
 系统从 14.4 才公开的 `os_sync_wait_on_address*`。顶层构建未指定时 HYLE 默认 14.4；作为
@@ -22,7 +21,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 
 | 需求 | 选择 | 不要选 | 关键合同 |
 |---|---|---|---|
-| 自建低层 owner 的立即可写页内存 | `VmRegion::allocate_rw` | `reserve` 后立刻 `commit` | 一次 OS mapping；统一 storage view 则选 Mem `VirtualMapping` |
+| 自建低层 owner 的立即可写页内存 | `VmRegion::allocate_rw`（Mem 用户可拼作 `VirtualMapping`） | `reserve` 后立刻 `commit` | 同一类型、一次 OS mapping；别名没有 wrapper 或额外 dispatch |
 | 先占地址、以后分段提交 | `VmRegion::reserve` + `commit/decommit` | 普通 heap 分配 | 页粒度；地址空间与物理提交分离 |
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
@@ -41,6 +40,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 映射权重/数据集的异步提示或同步 warm-up | Mem `FileMapping::prefetch` / `populate` | `open()` 自动触碰全文件 | hint 不保证 page-in；`populate` 同步触页且与范围成正比 |
 | 整段映射必须驻留以压低 fault 尾延迟 | Mem `FileMapping::lock`，检查 `Status` | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
 | loader 逐步确认要驻留的映射前缀 | `lock_prefix(target)` + `locked_size()` | 每次重新锁 whole mapping | 单调增长、页粒度；失败保留旧前缀 |
+| POSIX/macOS loader 批量丢弃已复制的映射页 | Mem `FileMapping::release_ranges` | 在 Windows 假装同样能打洞 | 向内整页释放；checked view 不跨 hole；Windows 明确 `Unimplemented` |
 | 大映射只在 first fault 时锁页 | Mem `ResidencyMode::kOnFault` | 悄悄把 unsupported 当 eager | Linux-only；其它平台返回 `Unimplemented` |
 | 查询 cwd/temp/home | `fs_convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
@@ -258,8 +258,8 @@ native iterator frame 做后序 DFS，不让目录深度增长进程调用栈：
 `O(depth + max_path)`，与目录宽度无关；极深树若命中 frame 分配或进程 handle/fd 上限则明确返回
 `ResourceExhausted`。
 
-文件和 shared-memory mapping 的完整选择、warm-up、residency、flush 与陷阱统一见
-[Mem 使用指南](mem.md)。Platform 不再提供第二套 mapping owner；`FileMapping::map` 直接消费这里的
+文件和 shared-memory mapping 的完整选择、warm-up、residency、partial release、flush 与陷阱统一见
+[Mem 使用指南](mem.md)。Platform 不提供第二套 file/shared mapping owner；`FileMapping::map` 直接消费这里的
 `FileHandle`，所以调用方仍可避免第二次 path lookup，并且不会增加 payload copy。
 
 ## 等待与线程

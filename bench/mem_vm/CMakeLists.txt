@@ -55,3 +55,27 @@ if(WIN32 AND HYLE_STATIC)
     hyle_mem_vm_residency_bench
     hyle_mem_vm_residency_bench_placement)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND HYLE_STATIC)
+  function(_hyle_configure_mem_vm_model_loader_bench target)
+    target_link_libraries(${target} PRIVATE hyle_mem_vm nanobench)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_mem_vm_model_loader_bench
+    model_loader_mapping_bench.cc)
+  _hyle_configure_mem_vm_model_loader_bench(
+    hyle_mem_vm_model_loader_bench)
+
+  add_executable(hyle_mem_vm_model_loader_bench_placement
+    model_loader_mapping_bench.cc)
+  _hyle_configure_mem_vm_model_loader_bench(
+    hyle_mem_vm_model_loader_bench_placement)
+  target_compile_options(hyle_mem_vm_model_loader_bench_placement PRIVATE
+    -falign-functions=64)
+
+  hyle_register_benches(mem_vm
+    hyle_mem_vm_model_loader_bench
+    hyle_mem_vm_model_loader_bench_placement)
+endif()

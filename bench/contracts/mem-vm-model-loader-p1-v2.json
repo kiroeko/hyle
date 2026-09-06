@@ -1,0 +1,201 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "mem-vm-model-loader-p1-v2",
+  "module": "mem_vm",
+  "claim": "P1 engineering non-inferiority for source-primary Linux model-loader lazy-range advice and batched partial release against the pinned llama.cpp mechanism with identical native mapping work and final fragment state",
+  "candidate": {
+    "target": "hyle_mem_vm",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "mem_vm",
+    "entrypoint": "include/hyle/mem/mapping.h"
+  },
+  "peers": [
+    {
+      "id": "llama",
+      "revision": "74a7c897f049c17e7080423aa2111776eff6ebbf",
+      "configuration": {
+        "delivery_shape": "pinned source mechanism replay",
+        "algorithm": "llama_mmap POSIX lazy-range advice and unmap_fragment vector rebuild",
+        "source_file": "src/llama-mmap.cpp",
+        "source": "clean external checkout; the adapter reproduces the charged POSIX calls and fragment update without model policy or logging"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "model-loader-lazy-release-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/mem/model-loader-batched-lazy-release",
+      "provenance": {
+        "path": "samples/package/mem/cpp/main.cc",
+        "sha256": "f878b90beeefc7fd5c3844f3af713825ecc7c336b0eadf00bb00fbab6ba4049d"
+      },
+      "ownership_topology": {
+        "candidate": "One move-only HYLE FileMapping owns one fresh 4 MiB read-only mapping, records 64 lazy ranges, releases those known ranges in one batch, then tears down the 65 remaining fragments",
+        "peer": "One llama_mmap-shaped owner covers the identical file, records the same 64 lazy ranges, calls the current unmap_fragment algorithm for each range, then tears down the same 65 remaining fragments",
+        "equivalence": "Both routes perform one open, one fstat, one mmap, one close, 64 POSIX_MADV_RANDOM calls, 64 munmap calls, the same release validation and 65 remaining munmap calls; only fragment bookkeeping and the public batch route differ"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 32768,
+        "unit": "released-lazy-range-byte",
+        "budget": 5,
+        "denominator": "one model-loader mapping lifecycle with 64 known discard ranges",
+        "derivation": "A model loader knows a set of copied or otherwise discardable weight ranges and can batch them before continuing with the surviving mapped weights"
+      },
+      "semantic_contract": "Map one sparse 4 MiB model file read-only, apply random-access advice to 64 deterministic eight-page ranges, release every complete page in those ranges, expose 65 live fragments and the exact remaining byte count, then unmap every survivor",
+      "comparability": "COMPARABLE",
+      "peer_id": "llama",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "64 page-aligned eight-page ranges beginning four pages into successive sixteen-page strides",
+        "scale": {
+          "file_pages": 1024,
+          "release_ranges": 64,
+          "pages_per_range": 8,
+          "remaining_fragments": 65
+        }
+      },
+      "setup": "Create one sparse file and deterministic ranges once, then warm both complete routes before timing; each callback creates and destroys its own complete owner",
+      "charged_phases": [
+        "file open and fstat",
+        "read-only shared mmap and file close",
+        "64 lazy-range POSIX_MADV_RANDOM calls",
+        "64 page-range munmap calls",
+        "fragment and released-byte validation",
+        "65 remaining-fragment munmap calls and owner teardown"
+      ],
+      "pair": {
+        "candidate": "HYLE FileMapping release_ranges N=64",
+        "peer": "llama fragment vector unmap N=64"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["wsl2", "native-linux"],
+    "certification_platforms": ["native-linux"],
+    "requirements": {
+      "machine_profiles": ["W1-WSL", "L1-LINUX"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "mem_vm",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"llama": "HYLE_LLAMA_DIR"}
+      },
+      "profiles": {
+        "W1-WSL": {
+          "generator": "Ninja",
+          "compiler_id": "GNU",
+          "compiler_version_prefix": "14",
+          "cache": {"CMAKE_C_COMPILER": "gcc-14", "CMAKE_CXX_COMPILER": "g++-14"}
+        },
+        "L1-LINUX": {
+          "generator": "Ninja",
+          "compiler_id": "GNU",
+          "compiler_version_prefix": "14",
+          "cache": {"CMAKE_C_COMPILER": "gcc-14", "CMAKE_CXX_COMPILER": "g++-14"}
+        }
+      },
+      "executables": [
+        {
+          "id": "mem-vm-model-loader-primary",
+          "target": "hyle_mem_vm_model_loader_bench",
+          "stem": "hyle_mem_vm_model_loader_bench",
+          "target_variant": "primary",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_MEM_VM_MODEL_LOADER_RUN "],
+          "workloads": [{"id": "model-loader-lazy-release-64", "title": "model loader lazy release aggregate N=64"}]
+        },
+        {
+          "id": "mem-vm-model-loader-placement",
+          "target": "hyle_mem_vm_model_loader_bench_placement",
+          "stem": "hyle_mem_vm_model_loader_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 64,
+          "telemetry_prefixes": ["# HYLE_MEM_VM_MODEL_LOADER_RUN "],
+          "workloads": [{"id": "model-loader-lazy-release-64", "title": "model loader lazy release aggregate N=64"}]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

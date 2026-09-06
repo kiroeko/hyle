@@ -93,9 +93,10 @@ class ModelFile {
     auto mapping = hyle::mem::FileMapping::open(path_.c_str());
     if (!mapping || mapping->size() != kFileBytes) std::abort();
     const auto bytes = mapping->bytes();
+    if (!bytes) std::abort();
     std::uint64_t sum = 0;
     for (const std::size_t offset : offsets_) {
-      sum += std::to_integer<unsigned char>(bytes[offset]);
+      sum += std::to_integer<unsigned char>((*bytes)[offset]);
     }
     if (sum != expected_) std::abort();
     nb::doNotOptimizeAway(sum);

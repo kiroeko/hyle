@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> Closure card 已冻结，当前状态为 `SCOPED`。进入 `AUDITED` 并冻结 API、成本和有限 `FIX` 集以前，
-> 本页仍不授权修改 Mem-VM 产品源码。
+> 当前状态为 `AUDITED`。下方 API、成本与七项有限 `FIX` 已冻结；产品修改只限该 ledger，完成
+> 候选验证前不得扩面或提前写成 `CLOSED`。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -121,14 +121,17 @@ IO、persistent-memory flush 和 IPC synchronization 没有当前具名通用 co
   `fragment_count()` 可观察当前 live logical storage；
 - `release_range`/`release_ranges` 返回实际释放的完整页字节数。POSIX/macOS inward-round 到完整页并
   O(R log R + F) 合并 range/fragment；Windows 当前 whole-view primitive 无安全等价，返回
-  `Unimplemented` 且不改变 owner；普通连续 owner 不分配 fragment metadata；
+  `Unimplemented` 且不改变 owner；Windows 在 O(R) bounds/page 校验后早退，不分配临时表；普通连续
+  owner 不分配 fragment metadata；
 - partial release 后 owner 仍持有 logical extent；checked access 跨 hole 失败，teardown 只释放剩余
-  fragments。advice/populate/flush/lock-prefix 遍历 live intersections；release 不得穿过已锁 prefix；
+  fragments。重复释放 fully-hole owner 是无分配的幂等 0；有序 fragments 让 checked access 为
+  O(log F)、局部控制为 O(log F + K)，而非对每个 tensor 线扫 O(F)；release 不得穿过已锁 prefix；
 - `FileMapping::flush` 只对 RW shared mapping 成功，RO/COW 返回 `FailedPrecondition`；`reset()` 返回
   teardown Status，析构只 best-effort；offset/native cast/overflow 显式检查；
 - `SharedMapping::open(name,size,access=kReadOnly)` 显式映射请求大小，底层对象至少要有这些字节；移除
   header，payload 从 mapping base 开始并保持 OS page alignment。create 返回 RW；只读 owner 不暴露 mutable
-  pointer/span/view；POSIX size 尚未 publish 时返回 retryable `Unavailable`，初始化同步仍归 IPC 协议；
+  pointer/span/view；native capacity 小于请求时返回 retryable `Unavailable`。Linux shm 保留精确 size，
+  Darwin/Windows page-round capacity；初始化同步仍归 IPC 协议；
 - `HugeMapping/HugeFlags` 改名 `LargeMapping/LargeMappingFlags`；accepted THP 表示 OS 接受 hint，不表示
   已获得物理巨页，NUMA applied 仍遵守 Platform 定义。
 
@@ -137,9 +140,9 @@ IO、persistent-memory flush 和 IPC synchronization 没有当前具名通用 co
 | FIX | 产品修改 | 复杂度/常态成本 | 验证 |
 |---|---|---|---|
 | `MEMVM2-F01` | 用 Platform aliases/机制删除 VirtualMapping wrapper、enum cast 与重复 advice/lock/unlock | anonymous 路线零中间层；file control syscall 数不增 | API compile + three-OS range tests |
-| `MEMVM2-F02` | FileMapping checked ranges、lazy fragment metadata、single/batch partial release、hole-aware teardown/control | 连续 owner 零额外分配；首个 release 才分配；batch O(R log R + F + syscalls) | property/range/partial failure/move/destroy + llama-shaped replay |
-| `MEMVM2-F03` | 修复 flush/access/native size/cast 和 lock/release 交互 | 无热路常态税 | boundary/OOM/OS-failure tests |
-| `MEMVM2-F04` | SharedMapping 去 header、显式 size/access、动态 Windows UTF-8 name、POSIX name/size/race 校验 | payload page aligned；create/open 各一 view，无 header probe/remap | two-process/read-only/name/size/alignment tests |
+| `MEMVM2-F02` | FileMapping checked ranges、lazy ordered fragment metadata、single/batch partial release、hole-aware teardown/control | 连续 owner 零额外分配；首个 release 才分配；batch O(R log R + F + syscalls)，lookup O(log F) | property/range/repeat/partial failure/move/destroy + llama-shaped replay |
+| `MEMVM2-F03` | 修复 flush/access/native size/cast、lock/release 与 backing-specific advice；Windows file mapping 禁止危险 `DiscardVirtualMemory` | 无热路常态税；Windows kDontNeed 一次分支后诚实失败 | boundary/OOM/OS-failure/access-mode tests |
+| `MEMVM2-F04` | SharedMapping 去 header、显式 size/access、动态 Windows UTF-8 name、native name/capacity/race 校验 | payload page aligned；Linux exact size，Darwin/Windows page-round capacity；create/open 各一 view | two-process/read-only/name/size/alignment tests |
 | `MEMVM2-F05` | `LargeMapping` taxonomy、THP/NUMA observability 文档和 tests；不新增 explicit hard owner | header-only 路线仍直接 Platform call | capability-aware three-platform tests |
 | `MEMVM2-F06` | CMake/selected headers、Mem product aggregation、Sched/sample、architecture/user/performance 文档 | 依赖图不新增边 | source/static/shared + direct consumer |
 | `MEMVM2-F07` | 冻结 WSL model-loader mapping/advice/release/teardown same-contract P1 和 Windows whole-map holdout | 5% NI；相同 ranges/pages/syscalls；不跨 OS 池化 | `closure-perf-v1` |

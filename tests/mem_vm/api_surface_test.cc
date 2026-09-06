@@ -17,8 +17,8 @@
 #include "hyle/mem/heap.h"
 #include "hyle/mem/lifetime_plan.h"
 #include "hyle/mem/mapping.h"
-#include "hyle/mem/hugepage.h"
-#include "hyle/mem/hugepage_reservation.h"
+#include "hyle/mem/large_mapping.h"
+#include "hyle/mem/large_page_reservation.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/pool.h"
@@ -84,6 +84,26 @@ static_assert(std::same_as<decltype(system_memory_resource()),
                            std::pmr::memory_resource*>);
 static_assert(std::same_as<decltype(system_memory_snapshot()),
                            hyle::Result<SystemMemorySnapshot>>);
+static_assert(std::same_as<VirtualMapping, hyle::platform::VmRegion>);
+static_assert(std::same_as<MappingProtection, hyle::platform::Protect>);
+static_assert(std::same_as<MappingAdvice, hyle::platform::VmAdvice>);
+static_assert(std::is_standard_layout_v<MappingRange>);
+static_assert(requires(FileMapping mapping, SharedMapping shared,
+                       std::span<const MappingRange> ranges,
+                       std::size_t offset, std::size_t size) {
+  { mapping.address(offset, size) } -> std::same_as<hyle::Result<const void*>>;
+  { mapping.bytes(offset, size) }
+      -> std::same_as<hyle::Result<std::span<const std::byte>>>;
+  { mapping.writable_bytes(offset, size) }
+      -> std::same_as<hyle::Result<std::span<std::byte>>>;
+  { mapping.release_ranges(ranges) }
+      -> std::same_as<hyle::Result<std::size_t>>;
+  { mapping.reset() } -> std::same_as<hyle::Status>;
+  { shared.writable_data() } -> std::same_as<hyle::Result<void*>>;
+  { shared.writable_bytes() }
+      -> std::same_as<hyle::Result<std::span<std::byte>>>;
+  { shared.reset() } -> std::same_as<hyle::Status>;
+});
 
 static_assert(requires(LifetimePlan plan, PlannedBuffers buffers,
                        std::span<const LifetimeRequest> requests,
@@ -205,10 +225,11 @@ static_assert(requires(FiberStack stack, FiberStackPool pool) {
   { stack.reset() } -> std::same_as<hyle::Status>;
 });
 static_assert(requires {
-  { reserve_huge_1g_pages(0) } -> std::same_as<hyle::Status>;
-  { HugeMapping::allocate_interleaved(
-        4096, std::span<const unsigned>{}, 0, HugeFlags::kNone) }
-      -> std::same_as<hyle::Result<HugeMapping>>;
+  { reserve_large_page_arena(0) }
+      -> std::same_as<hyle::Result<LargePageArenaReservationReport>>;
+  { LargeMapping::allocate_interleaved(
+        4096, std::span<const unsigned>{}, 0, LargeMappingFlags::kNone) }
+      -> std::same_as<hyle::Result<LargeMapping>>;
 });
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {

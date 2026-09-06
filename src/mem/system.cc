@@ -1,5 +1,5 @@
 #include "hyle/mem/allocator.h"
-#include "hyle/mem/hugepage_reservation.h"
+#include "hyle/mem/large_page_reservation.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/stats.h"
 
@@ -251,25 +251,25 @@ Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
 int system_backend_version_for_testing() noexcept { return mi_version(); }
 #endif
 
-Result<HugePageReservationReport> reserve_huge_1g_pages(
-    std::size_t pages, int numa_node, unsigned timeout_ms) noexcept {
-  HugePageReservationReport report;
-  report.requested_pages = pages;
+Result<LargePageArenaReservationReport> reserve_large_page_arena(
+    std::size_t gib, int numa_node, unsigned timeout_ms) noexcept {
+  LargePageArenaReservationReport report;
+  report.requested_gib = gib;
   report.requested_numa_node = numa_node;
   report.placement = numa_node == platform::kNumaAny
-                         ? HugePagePlacement::kUnconstrained
-                         : HugePagePlacement::kPreferenceUnverified;
-  if (pages == 0) return report;
-  constexpr std::size_t kHuge1GiB = std::size_t{1} << 30;
-  if (pages > (std::numeric_limits<std::size_t>::max)() / kHuge1GiB) {
+                         ? LargePagePlacement::kUnconstrained
+                         : LargePagePlacement::kPreferenceUnverified;
+  if (gib == 0) return report;
+  constexpr std::size_t kGiB = std::size_t{1} << 30;
+  if (gib > (std::numeric_limits<std::size_t>::max)() / kGiB) {
     return std::unexpected(Status::OutOfRange(
-        "reserve_huge_1g_pages: requested byte size overflows size_t"));
+        "reserve_large_page_arena: requested byte size overflows size_t"));
   }
   if (numa_node != platform::kNumaAny &&
       (numa_node < 0 ||
        !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
     return std::unexpected(Status::OutOfRange(
-        "reserve_huge_1g_pages: NUMA node ID is unavailable"));
+        "reserve_large_page_arena: NUMA node ID is unavailable"));
   }
   // mimalloc: 0 success, non-zero error. timeout 0 → use a short default so a
   // fragmented box does not hang the process for minutes.
@@ -277,27 +277,27 @@ Result<HugePageReservationReport> reserve_huge_1g_pages(
       timeout_ms == 0 ? static_cast<std::size_t>(100) : timeout_ms;
   mi_arena_id_t arena = nullptr;
   const int rc = mi_reserve_huge_os_pages_at_ex(
-      pages, numa_node, t, false, &arena);
+      gib, numa_node, t, false, &arena);
   if (arena != nullptr) {
     std::size_t arena_size = 0;
     void* area = mi_arena_area(arena, &arena_size);
-    if (area == nullptr || arena_size % kHuge1GiB != 0) {
+    if (area == nullptr || arena_size % kGiB != 0) {
       report.outcome = Status::Internal(
-          "mimalloc huge-page arena has an invalid observable size");
+          "mimalloc large-page arena has an invalid observable size");
       return report;
     }
-    report.reserved_pages = arena_size / kHuge1GiB;
+    report.reserved_gib = arena_size / kGiB;
   }
 
   char context[160];
   std::snprintf(context, sizeof(context),
-                "mimalloc reserve huge 1GiB pages (pages=%zu, numa_node=%d)",
-                pages, numa_node);
+                "mimalloc reserve large-page arena (gib=%zu, numa_node=%d)",
+                gib, numa_node);
   if (rc != 0) {
     report.outcome = status_from_errno(rc, context);
-  } else if (report.reserved_pages != pages) {
+  } else if (report.reserved_gib != gib) {
     report.outcome = Status::ResourceExhausted(
-        "mimalloc reserved only part of the requested 1GiB pages");
+        "mimalloc reserved only part of the requested GiB-sized arena");
   }
   return report;
 }

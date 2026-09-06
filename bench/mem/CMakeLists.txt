@@ -1,5 +1,66 @@
 hyle_add_bench(mem SOURCES allocator_bench.cc DEPS mimalloc_static)
 
+# The current host-allocation closure compares only the ordinary isolated-heap
+# consumer contract. Keep it independent of the historical multi-family/TBB
+# adapter so an unrelated pool or arena API change cannot make Heap evidence
+# impossible to build.
+if(HYLE_STATIC)
+  set(HYLE_MEM_V6_BASELINE_DIR "${HYLE_SOURCE_DIR}" CACHE PATH
+      "locked HYLE snapshot for the Mem v6 Heap/mimalloc comparison")
+  foreach(_hyle_mem_v6_baseline_file IN ITEMS
+      third_party/mimalloc/include/mimalloc.h
+      include/hyle/mem/heap.h
+      src/mem/heap.cc)
+    if(NOT EXISTS
+        "${HYLE_MEM_V6_BASELINE_DIR}/${_hyle_mem_v6_baseline_file}")
+      message(FATAL_ERROR
+        "Mem v6 baseline lacks ${_hyle_mem_v6_baseline_file}: "
+        "${HYLE_MEM_V6_BASELINE_DIR}")
+    endif()
+    file(SHA256 "${HYLE_SOURCE_DIR}/${_hyle_mem_v6_baseline_file}"
+      _hyle_mem_v6_candidate_sha256)
+    file(SHA256
+      "${HYLE_MEM_V6_BASELINE_DIR}/${_hyle_mem_v6_baseline_file}"
+      _hyle_mem_v6_baseline_sha256)
+    if(NOT _hyle_mem_v6_candidate_sha256 STREQUAL
+       _hyle_mem_v6_baseline_sha256)
+      message(FATAL_ERROR
+        "Mem v6 Heap comparison source drift: "
+        "${_hyle_mem_v6_baseline_file}")
+    endif()
+  endforeach()
+  unset(_hyle_mem_v6_baseline_file)
+  unset(_hyle_mem_v6_candidate_sha256)
+  unset(_hyle_mem_v6_baseline_sha256)
+
+  function(_hyle_configure_mem_heap_consumer_bench target)
+    target_link_libraries(${target} PRIVATE hyle_mem nanobench mimalloc_static)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_mem_heap_consumer_bench heap_consumer_bench.cc)
+  _hyle_configure_mem_heap_consumer_bench(hyle_mem_heap_consumer_bench)
+
+  add_executable(hyle_mem_heap_consumer_bench_placement
+    heap_consumer_bench.cc)
+  _hyle_configure_mem_heap_consumer_bench(
+    hyle_mem_heap_consumer_bench_placement)
+  if(MSVC)
+    target_link_options(hyle_mem_heap_consumer_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_mem_heap_consumer_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "mem Heap placement perturbation is unsupported")
+  endif()
+  hyle_register_benches(mem
+    hyle_mem_heap_consumer_bench
+    hyle_mem_heap_consumer_bench_placement)
+endif()
+
 # arena/pool/stack specialized-allocator cluster vs std::pmr (std's arena/pool, no
 # external clone) + raw mimalloc. Own exe (allocator_bench.cc already owns main()).
 add_executable(hyle_mem_scenarios_bench scenario_bench.cc)

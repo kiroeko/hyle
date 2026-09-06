@@ -8,6 +8,7 @@
 #include <hyle/mem/quota_allocator.h>
 #include <hyle/mem/reclamation.h>
 #include <hyle/mem/stats.h>
+#include <hyle/platform/virtual_memory.h>
 
 #include <array>
 #include <atomic>
@@ -75,14 +76,18 @@ int main() {
   if (!heap.clear().ok()) return 6;
 
   constexpr const char* kMappingPath = "hyle_mem_package_probe.bin";
-  constexpr char kModelBytes[] = "package model mapping";
+  const std::size_t page = hyle::platform::page_size();
+  if (page == 0) return 7;
+  std::vector<char> model_bytes(page * 3);
+  for (std::size_t index = 0; index < model_bytes.size(); ++index) {
+    model_bytes[index] = static_cast<char>(index & 0x7f);
+  }
   std::remove(kMappingPath);
   {
     std::FILE* file = std::fopen(kMappingPath, "wb");
     if (file == nullptr) return 7;
-    const bool seeded =
-        std::fwrite(kModelBytes, 1, sizeof(kModelBytes), file) ==
-        sizeof(kModelBytes);
+    const bool seeded = std::fwrite(model_bytes.data(), 1, model_bytes.size(),
+                                    file) == model_bytes.size();
     std::fclose(file);
     if (!seeded) {
       std::remove(kMappingPath);
@@ -96,14 +101,28 @@ int main() {
     }
     hyle::mem::FileMapping mapping = std::move(*opened);
     const hyle::Status advice =
-        mapping.advise(hyle::mem::MappingAdvice::kSequential);
+        mapping.advise(hyle::mem::MappingAdvice::kSequential, page, page);
     if (!advice.ok() && !advice.IsUnimplemented()) {
       std::remove(kMappingPath);
       return 10;
     }
-    std::array<std::byte, sizeof(kModelBytes)> copied{};
-    if (!mapping.view().read(copied).ok() ||
-        std::memcmp(copied.data(), kModelBytes, sizeof(kModelBytes)) != 0) {
+    auto whole = mapping.bytes();
+    if (!whole || whole->size() != model_bytes.size() ||
+        std::memcmp(whole->data(), model_bytes.data(), model_bytes.size()) !=
+            0) {
+      std::remove(kMappingPath);
+      return 11;
+    }
+    auto released = mapping.release_range(page, page);
+    if (released) {
+      if (*released != page || mapping.mapped_size() != page * 2 ||
+          mapping.contains(page, page) || mapping.contains(0, page * 3) ||
+          !mapping.contains(0, page) || !mapping.contains(page * 2, page)) {
+        std::remove(kMappingPath);
+        return 11;
+      }
+    } else if (!released.error().IsUnimplemented() ||
+               !mapping.contains(0, page * 3)) {
       std::remove(kMappingPath);
       return 11;
     }

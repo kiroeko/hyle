@@ -6,26 +6,26 @@
 #include <span>
 #include <utility>
 
-#include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
+#include "hyle/error/result.h"
 #include "hyle/mem/visibility.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 
-// Large-region hugepage + NUMA (mem-06b/06c) — complete standard-library
-// surface.
+// Large anonymous regions with explicit THP/prefault/NUMA policy.
 //
 //   * TLB: large-page align + THP hint (access walk ~ N/2MiB).
 //   * NUMA: preferred / bind / interleave on large spans.
-//   * 1GiB OS pages: process-start reserve via mimalloc (opt-in, may need
-//   privileges).
-// Fiber stacks / small objects must NOT use HugeMapping.
+//   * Process-global allocator arena: reserve via
+//     reserve_large_page_arena() (opt-in, may need privileges; GiB request
+//     chunks do not prove the resulting OS page granularity).
+// Fiber stacks / small objects must NOT use LargeMapping.
 
 namespace hyle::mem {
 
-// ---- HugeMapping -------------------------------------------------------------
+// ---- LargeMapping ----------------------------------------------------------
 
-enum class HugeFlags : std::uint8_t {
+enum class LargeMappingFlags : std::uint8_t {
   kNone = 0,
   kThpHint = 1u << 0,
   kPrefault = 1u << 1,
@@ -36,70 +36,75 @@ enum class HugeFlags : std::uint8_t {
   kDefault = kThpHint,
 };
 
-HYLE_FORCE_INLINE HugeFlags operator|(HugeFlags a, HugeFlags b) noexcept {
-  return static_cast<HugeFlags>(static_cast<std::uint8_t>(a) |
-                                static_cast<std::uint8_t>(b));
+HYLE_FORCE_INLINE LargeMappingFlags operator|(LargeMappingFlags a,
+                                               LargeMappingFlags b) noexcept {
+  return static_cast<LargeMappingFlags>(static_cast<std::uint8_t>(a) |
+                                        static_cast<std::uint8_t>(b));
 }
-HYLE_FORCE_INLINE HugeFlags operator&(HugeFlags a, HugeFlags b) noexcept {
-  return static_cast<HugeFlags>(static_cast<std::uint8_t>(a) &
-                                static_cast<std::uint8_t>(b));
+HYLE_FORCE_INLINE LargeMappingFlags operator&(LargeMappingFlags a,
+                                               LargeMappingFlags b) noexcept {
+  return static_cast<LargeMappingFlags>(static_cast<std::uint8_t>(a) &
+                                        static_cast<std::uint8_t>(b));
 }
-HYLE_FORCE_INLINE bool any(HugeFlags f) noexcept {
+HYLE_FORCE_INLINE bool any(LargeMappingFlags f) noexcept {
   return static_cast<std::uint8_t>(f) != 0;
 }
 
-HYLE_FORCE_INLINE constexpr bool valid_huge_flags(HugeFlags flags) noexcept {
-  constexpr auto known = static_cast<std::uint8_t>(HugeFlags::kThpHint) |
-                         static_cast<std::uint8_t>(HugeFlags::kPrefault) |
-                         static_cast<std::uint8_t>(HugeFlags::kNumaBind) |
-                         static_cast<std::uint8_t>(HugeFlags::kNumaInterleave);
+HYLE_FORCE_INLINE constexpr bool valid_large_mapping_flags(
+    LargeMappingFlags flags) noexcept {
+  constexpr auto known =
+      static_cast<std::uint8_t>(LargeMappingFlags::kThpHint) |
+      static_cast<std::uint8_t>(LargeMappingFlags::kPrefault) |
+      static_cast<std::uint8_t>(LargeMappingFlags::kNumaBind) |
+      static_cast<std::uint8_t>(LargeMappingFlags::kNumaInterleave);
   const auto bits = static_cast<std::uint8_t>(flags);
-  const auto placement = static_cast<std::uint8_t>(HugeFlags::kNumaBind) |
-                         static_cast<std::uint8_t>(HugeFlags::kNumaInterleave);
+  const auto placement =
+      static_cast<std::uint8_t>(LargeMappingFlags::kNumaBind) |
+      static_cast<std::uint8_t>(LargeMappingFlags::kNumaInterleave);
   return (bits & ~known) == 0 && (bits & placement) != placement;
 }
 
-class HugeMapping {
+class LargeMapping {
 public:
-  HugeMapping() noexcept = default;
+  LargeMapping() noexcept = default;
 
   // Reserve+commit `bytes` (large-page aligned). NUMA:
   //   kNumaInterleave → stripe all nodes
   //   else reserve_numa(node) + preferred or kNumaBind
-  static Result<HugeMapping> allocate(
-      std::size_t bytes, HugeFlags flags = HugeFlags::kDefault,
+  static Result<LargeMapping> allocate(
+      std::size_t bytes, LargeMappingFlags flags = LargeMappingFlags::kDefault,
       int numa_node = platform::kNumaAny) noexcept {
-    HugeMapping r;
+    LargeMapping r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = numa_node;
-    if (!valid_huge_flags(flags)) {
+    if (!valid_large_mapping_flags(flags)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate: unknown or conflicting flags"));
+          "LargeMapping allocate: unknown or conflicting flags"));
     }
     if (bytes == 0) {
       return std::unexpected(
-          Status::InvalidArgument("HugeMapping allocate: size is zero"));
+          Status::InvalidArgument("LargeMapping allocate: size is zero"));
     }
     const std::size_t aligned = platform::large_page_align_up(bytes);
     if (aligned == 0) {
       return std::unexpected(
-          Status::OutOfRange("HugeMapping allocate: size overflow"));
+          Status::OutOfRange("LargeMapping allocate: size overflow"));
     }
-    const bool interleave = any(flags & HugeFlags::kNumaInterleave);
-    if (any(flags & HugeFlags::kNumaBind) &&
+    const bool interleave = any(flags & LargeMappingFlags::kNumaInterleave);
+    if (any(flags & LargeMappingFlags::kNumaBind) &&
         numa_node == platform::kNumaAny) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate: hard bind requires an explicit NUMA node"));
+          "LargeMapping allocate: hard bind requires an explicit NUMA node"));
     }
     if (interleave && numa_node != platform::kNumaAny) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate: interleave requires NUMA-any"));
+          "LargeMapping allocate: interleave requires NUMA-any"));
     }
     if (!interleave && numa_node != platform::kNumaAny &&
         (numa_node < 0 ||
          !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
       return std::unexpected(Status::OutOfRange(
-          "HugeMapping allocate: NUMA node ID is unavailable"));
+          "LargeMapping allocate: NUMA node ID is unavailable"));
     }
     if (interleave) {
       HYLE_ASSIGN_OR_RETURN(
@@ -113,14 +118,14 @@ public:
       if (!status.ok()) {
         r.region_.release().IgnoreError();
         return std::unexpected(
-            std::move(status).WithContext("HugeMapping allocate commit"));
+            std::move(status).WithContext("LargeMapping allocate commit"));
       }
     }
     platform::NumaPlacement placement = r.region_.numa_placement();
     if (interleave) {
-      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
+      r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kNumaInterleave;
     } else if (numa_node != platform::kNumaAny) {
-      const auto pol = any(flags & HugeFlags::kNumaBind)
+      const auto pol = any(flags & LargeMappingFlags::kNumaBind)
                            ? platform::NumaPolicy::kBind
                            : platform::NumaPolicy::kPreferred;
       // reserve_numa only requests preferred placement. A hard bind must still
@@ -133,57 +138,57 @@ public:
           Status error = std::move(placed).error();
           r.region_.release().IgnoreError();
           return std::unexpected(
-              std::move(error).WithContext("HugeMapping allocate hard bind"));
+              std::move(error).WithContext("LargeMapping allocate hard bind"));
         }
         placement = *placed;
       }
       if (pol == platform::NumaPolicy::kBind) {
-        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaBind;
+        r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kNumaBind;
       }
     }
     r.numa_placement_applied_ =
         placement == platform::NumaPlacement::kApplied;
-    if (any(flags & HugeFlags::kThpHint)) {
+    if (any(flags & LargeMappingFlags::kThpHint)) {
       Status status =
           platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
       if (status.ok())
-        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
+        r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kThpHint;
     }
-    if (any(flags & HugeFlags::kPrefault)) {
+    if (any(flags & LargeMappingFlags::kPrefault)) {
       auto *p = static_cast<volatile char *>(r.region_.data());
       const std::size_t step = platform::page_size();
       const std::size_t n = r.region_.size();
       for (std::size_t off = 0; off < n; off += step)
         p[off] = p[off];
-      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kPrefault;
+      r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kPrefault;
     }
     return r;
   }
 
-  static Result<HugeMapping>
-  allocate_local(std::size_t bytes,
-                 HugeFlags flags = HugeFlags::kDefault) noexcept {
-    if (any(flags & HugeFlags::kNumaInterleave)) {
+  static Result<LargeMapping> allocate_local(
+      std::size_t bytes,
+      LargeMappingFlags flags = LargeMappingFlags::kDefault) noexcept {
+    if (any(flags & LargeMappingFlags::kNumaInterleave)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate_local: interleave is not local placement"));
+          "LargeMapping allocate_local: interleave is not local placement"));
     }
     auto current = platform::numa_current_node();
     if (!current) {
       return std::unexpected(std::move(current).error().WithContext(
-          "HugeMapping allocate_local current NUMA node"));
+          "LargeMapping allocate_local current NUMA node"));
     }
     if (*current > static_cast<unsigned>((std::numeric_limits<int>::max)())) {
       return std::unexpected(Status::OutOfRange(
-          "HugeMapping allocate_local: NUMA node does not fit int"));
+          "LargeMapping allocate_local: NUMA node does not fit int"));
     }
     return allocate(bytes, flags, static_cast<int>(*current));
   }
 
   // Shared multi-MB arena: interleave + THP.
-  static Result<HugeMapping>
-  allocate_interleaved(std::size_t bytes,
-                       HugeFlags flags = HugeFlags::kThpHint) noexcept {
-    return allocate(bytes, flags | HugeFlags::kNumaInterleave,
+  static Result<LargeMapping> allocate_interleaved(
+      std::size_t bytes,
+      LargeMappingFlags flags = LargeMappingFlags::kThpHint) noexcept {
+    return allocate(bytes, flags | LargeMappingFlags::kNumaInterleave,
                     platform::kNumaAny);
   }
 
@@ -191,26 +196,26 @@ public:
   // repeated IDs express weighted placement; an empty span means every
   // available node. bytes_per_chunk==0 means one OS page. The returned region
   // is already committed and writable.
-  static Result<HugeMapping> allocate_interleaved(
+  static Result<LargeMapping> allocate_interleaved(
       std::size_t bytes, std::span<const unsigned> nodes,
       std::size_t bytes_per_chunk = 0,
-      HugeFlags flags = HugeFlags::kNone) noexcept {
-    flags = flags | HugeFlags::kNumaInterleave;
-    if (!valid_huge_flags(flags)) {
+      LargeMappingFlags flags = LargeMappingFlags::kNone) noexcept {
+    flags = flags | LargeMappingFlags::kNumaInterleave;
+    if (!valid_large_mapping_flags(flags)) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate interleaved: unknown or conflicting flags"));
+          "LargeMapping allocate interleaved: unknown or conflicting flags"));
     }
     if (bytes == 0) {
       return std::unexpected(Status::InvalidArgument(
-          "HugeMapping allocate interleaved: size is zero"));
+          "LargeMapping allocate interleaved: size is zero"));
     }
     const std::size_t aligned = platform::large_page_align_up(bytes);
     if (aligned == 0) {
       return std::unexpected(
-          Status::OutOfRange("HugeMapping allocate interleaved: size overflow"));
+          Status::OutOfRange("LargeMapping allocate interleaved: size overflow"));
     }
 
-    HugeMapping r;
+    LargeMapping r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = platform::kNumaAny;
     HYLE_ASSIGN_OR_RETURN(
@@ -218,41 +223,41 @@ public:
                        aligned, nodes, bytes_per_chunk));
     r.interleave_chunk_size_ =
         bytes_per_chunk == 0 ? platform::page_size() : bytes_per_chunk;
-    r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
+    r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kNumaInterleave;
     r.numa_placement_applied_ =
         r.region_.numa_placement() == platform::NumaPlacement::kApplied;
 
-    if (any(flags & HugeFlags::kThpHint)) {
+    if (any(flags & LargeMappingFlags::kThpHint)) {
       Status status =
           platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
       if (status.ok()) {
-        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
+        r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kThpHint;
       }
     }
-    if (any(flags & HugeFlags::kPrefault)) {
+    if (any(flags & LargeMappingFlags::kPrefault)) {
       auto* p = static_cast<volatile char*>(r.region_.data());
       const std::size_t step = platform::page_size();
       for (std::size_t off = 0; off < r.region_.size(); off += step) {
         p[off] = p[off];
       }
-      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kPrefault;
+      r.accepted_flags_ = r.accepted_flags_ | LargeMappingFlags::kPrefault;
     }
     return r;
   }
 
-  HugeMapping(HugeMapping &&o) noexcept
+  LargeMapping(LargeMapping&& o) noexcept
       : region_(std::move(o.region_)), requested_flags_(o.requested_flags_),
         accepted_flags_(o.accepted_flags_),
         requested_numa_node_(o.requested_numa_node_),
         interleave_chunk_size_(o.interleave_chunk_size_),
         numa_placement_applied_(o.numa_placement_applied_) {
-    o.accepted_flags_ = HugeFlags::kNone;
-    o.requested_flags_ = HugeFlags::kNone;
+    o.accepted_flags_ = LargeMappingFlags::kNone;
+    o.requested_flags_ = LargeMappingFlags::kNone;
     o.requested_numa_node_ = platform::kNumaAny;
     o.interleave_chunk_size_ = 0;
     o.numa_placement_applied_ = false;
   }
-  HugeMapping &operator=(HugeMapping &&o) noexcept {
+  LargeMapping& operator=(LargeMapping&& o) noexcept {
     if (this != &o) {
       region_ = std::move(o.region_);
       requested_flags_ = o.requested_flags_;
@@ -260,28 +265,28 @@ public:
       requested_numa_node_ = o.requested_numa_node_;
       interleave_chunk_size_ = o.interleave_chunk_size_;
       numa_placement_applied_ = o.numa_placement_applied_;
-      o.accepted_flags_ = HugeFlags::kNone;
-      o.requested_flags_ = HugeFlags::kNone;
+      o.accepted_flags_ = LargeMappingFlags::kNone;
+      o.requested_flags_ = LargeMappingFlags::kNone;
       o.requested_numa_node_ = platform::kNumaAny;
       o.interleave_chunk_size_ = 0;
       o.numa_placement_applied_ = false;
     }
     return *this;
   }
-  HugeMapping(const HugeMapping&) = delete;
-  HugeMapping& operator=(const HugeMapping&) = delete;
+  LargeMapping(const LargeMapping&) = delete;
+  LargeMapping& operator=(const LargeMapping&) = delete;
 
   bool valid() const noexcept { return region_.valid(); }
   explicit operator bool() const noexcept { return valid(); }
 
-  void *data() const noexcept { return region_.data(); }
+  void* data() const noexcept { return region_.data(); }
   std::size_t size() const noexcept { return region_.size(); }
 
-  HugeFlags requested_flags() const noexcept { return requested_flags_; }
+  LargeMappingFlags requested_flags() const noexcept { return requested_flags_; }
   // Policies accepted by the OS-facing calls. For THP this means the advice
   // call was accepted, not that the kernel has already promoted every physical
   // page.
-  HugeFlags accepted_flags() const noexcept { return accepted_flags_; }
+  LargeMappingFlags accepted_flags() const noexcept { return accepted_flags_; }
   int requested_numa_node() const noexcept { return requested_numa_node_; }
   // Effective stripe size for an interleaved region; 0 otherwise.
   std::size_t interleave_chunk_size() const noexcept {
@@ -294,7 +299,9 @@ public:
   Status reset() noexcept {
     Status status = region_.release();
     if (!status.ok()) return status;
-    accepted_flags_ = HugeFlags::kNone;
+    accepted_flags_ = LargeMappingFlags::kNone;
+    requested_flags_ = LargeMappingFlags::kNone;
+    requested_numa_node_ = platform::kNumaAny;
     interleave_chunk_size_ = 0;
     numa_placement_applied_ = false;
     return Status::Ok();
@@ -302,32 +309,23 @@ public:
 
   Status advise_hugepage() noexcept {
     if (!valid()) {
-      return Status::FailedPrecondition("HugeMapping advise: region is empty");
+      return Status::FailedPrecondition("LargeMapping advise: region is empty");
     }
+    requested_flags_ = requested_flags_ | LargeMappingFlags::kThpHint;
     Status status =
         platform::vm_advise_hugepage(region_.data(), region_.size());
     if (status.ok())
-      accepted_flags_ = accepted_flags_ | HugeFlags::kThpHint;
+      accepted_flags_ = accepted_flags_ | LargeMappingFlags::kThpHint;
     return status;
   }
 
-private:
+ private:
   platform::VmRegion region_;
-  HugeFlags requested_flags_ = HugeFlags::kNone;
-  HugeFlags accepted_flags_ = HugeFlags::kNone;
+  LargeMappingFlags requested_flags_ = LargeMappingFlags::kNone;
+  LargeMappingFlags accepted_flags_ = LargeMappingFlags::kNone;
   int requested_numa_node_ = platform::kNumaAny;
   std::size_t interleave_chunk_size_ = 0;
   bool numa_placement_applied_ = false;
 };
 
-HYLE_FORCE_INLINE Status advise_hugepage_range(void *ptr,
-                                               std::size_t size) noexcept {
-  return platform::vm_advise_hugepage(ptr, size);
-}
-
-HYLE_FORCE_INLINE std::size_t hugepage_region_threshold() noexcept {
-  std::size_t lp = platform::large_page_size();
-  return lp != 0 ? lp : (static_cast<std::size_t>(2u) * 1024u * 1024u);
-}
-
-} // namespace hyle::mem
+}  // namespace hyle::mem
