@@ -62,6 +62,87 @@ namespace hyle::container {
 namespace {
 
 #if defined(HYLE_SIMD_SIMDUTF)
+using UtfProvider = simdutf::implementation;
+
+// Resolve the private runtime-dispatch provider once per public operation. A
+// safe conversion performs validation, sizing and conversion; routing every
+// stage through simdutf's free functions would reload the same atomic active
+// implementation three times. Keeping the pointer operation-local observes a
+// provider change on the next call without adding global/TLS state.
+HYLE_FORCE_INLINE const UtfProvider* active_utf_provider() noexcept {
+  return simdutf::get_active_implementation();
+}
+
+HYLE_FORCE_INLINE simdutf::result provider_validate_utf16(
+    const UtfProvider* provider, const char16_t* input,
+    std::size_t size) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->validate_utf16be_with_errors(input, size);
+#  else
+  return provider->validate_utf16le_with_errors(input, size);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_convert_utf8_to_utf16(
+    const UtfProvider* provider, const char* input, std::size_t size,
+    char16_t* output) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->convert_valid_utf8_to_utf16be(input, size, output);
+#  else
+  return provider->convert_valid_utf8_to_utf16le(input, size, output);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_utf8_length_from_utf16(
+    const UtfProvider* provider, const char16_t* input,
+    std::size_t size) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->utf8_length_from_utf16be(input, size);
+#  else
+  return provider->utf8_length_from_utf16le(input, size);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_convert_utf16_to_utf8(
+    const UtfProvider* provider, const char16_t* input, std::size_t size,
+    char* output) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->convert_valid_utf16be_to_utf8(input, size, output);
+#  else
+  return provider->convert_valid_utf16le_to_utf8(input, size, output);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_utf32_length_from_utf16(
+    const UtfProvider* provider, const char16_t* input,
+    std::size_t size) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->utf32_length_from_utf16be(input, size);
+#  else
+  return provider->utf32_length_from_utf16le(input, size);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_convert_utf16_to_utf32(
+    const UtfProvider* provider, const char16_t* input, std::size_t size,
+    char32_t* output) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->convert_valid_utf16be_to_utf32(input, size, output);
+#  else
+  return provider->convert_valid_utf16le_to_utf32(input, size, output);
+#  endif
+}
+
+HYLE_FORCE_INLINE std::size_t provider_convert_utf32_to_utf16(
+    const UtfProvider* provider, const char32_t* input, std::size_t size,
+    char16_t* output) noexcept {
+#  if SIMDUTF_IS_BIG_ENDIAN
+  return provider->convert_valid_utf32_to_utf16be(input, size, output);
+#  else
+  return provider->convert_valid_utf32_to_utf16le(input, size, output);
+#  endif
+}
+
 UtfStatus from_simdutf(simdutf::error_code error) noexcept {
   switch (error) {
     case simdutf::SUCCESS: return UtfStatus::kSuccess;
@@ -80,6 +161,12 @@ UtfStatus from_simdutf(simdutf::error_code error) noexcept {
 UtfResult validation_result(simdutf::result result) noexcept {
   return {from_simdutf(result.error), result.count, 0};
 }
+#else
+struct UtfProvider {};
+
+HYLE_FORCE_INLINE const UtfProvider* active_utf_provider() noexcept {
+  return nullptr;
+}
 #endif
 
 template <class T>
@@ -94,7 +181,8 @@ UtfResult output_result(std::size_t input_size, std::size_t required,
   return {UtfStatus::kSuccess, input_size, required};
 }
 
-HYLE_FORCE_INLINE UtfResult validate_utf8_core(StringView input) noexcept {
+HYLE_FORCE_INLINE UtfResult validate_utf8_core(
+    StringView input, const UtfProvider* provider) noexcept {
   if (input.data() == nullptr) {
     return input.empty()
                ? UtfResult{}
@@ -102,8 +190,9 @@ HYLE_FORCE_INLINE UtfResult validate_utf8_core(StringView input) noexcept {
   }
 #if defined(HYLE_SIMD_SIMDUTF)
   return validation_result(
-      simdutf::validate_utf8_with_errors(input.data(), input.size()));
+      provider->validate_utf8_with_errors(input.data(), input.size()));
 #else
+  (void)provider;
   Utf8Decoder decoder(input);
   while (!decoder.is_end()) {
     decoder.next();
@@ -114,12 +203,13 @@ HYLE_FORCE_INLINE UtfResult validate_utf8_core(StringView input) noexcept {
 }
 
 HYLE_FORCE_INLINE UtfResult validate_utf16_core(
-    std::span<const char16_t> input) noexcept {
+    std::span<const char16_t> input, const UtfProvider* provider) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
 #if defined(HYLE_SIMD_SIMDUTF)
   return validation_result(
-      simdutf::validate_utf16_with_errors(input.data(), input.size()));
+      provider_validate_utf16(provider, input.data(), input.size()));
 #else
+  (void)provider;
   for (std::size_t i = 0; i < input.size(); ++i) {
     const char16_t value = input[i];
     if (value >= 0xD800 && value <= 0xDBFF) {
@@ -134,12 +224,13 @@ HYLE_FORCE_INLINE UtfResult validate_utf16_core(
 }
 
 HYLE_FORCE_INLINE UtfResult validate_utf32_core(
-    std::span<const char32_t> input) noexcept {
+    std::span<const char32_t> input, const UtfProvider* provider) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
 #if defined(HYLE_SIMD_SIMDUTF)
   return validation_result(
-      simdutf::validate_utf32_with_errors(input.data(), input.size()));
+      provider->validate_utf32_with_errors(input.data(), input.size()));
 #else
+  (void)provider;
   for (std::size_t i = 0; i < input.size(); ++i) {
     const char32_t value = input[i];
     if (value > 0x10FFFF) return {UtfStatus::kTooLarge, i, 0};
@@ -153,30 +244,31 @@ HYLE_FORCE_INLINE UtfResult validate_utf32_core(
 }  // namespace
 
 UtfResult utf8_validate_detailed(StringView input) noexcept {
-  return validate_utf8_core(input);
+  return validate_utf8_core(input, active_utf_provider());
 }
 
 UtfResult utf16_validate(std::span<const char16_t> input) noexcept {
-  return validate_utf16_core(input);
+  return validate_utf16_core(input, active_utf_provider());
 }
 
 UtfResult utf32_validate(std::span<const char32_t> input) noexcept {
-  return validate_utf32_core(input);
+  return validate_utf32_core(input, active_utf_provider());
 }
 
 UtfResult utf8_to_utf16(StringView input,
                         std::span<char16_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf8_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf8_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf16_length_from_utf8(input.data(), input.size());
+      provider->utf16_length_from_utf8(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf8_to_utf16(
-        input.data(), input.size(), output.data());
+    result.output_count = provider_convert_utf8_to_utf16(
+        provider, input.data(), input.size(), output.data());
   }
   return result;
 #else
@@ -188,15 +280,16 @@ UtfResult utf8_to_utf16(StringView input,
 UtfResult utf8_to_utf32(StringView input,
                         std::span<char32_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf8_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf8_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf32_length_from_utf8(input.data(), input.size());
+      provider->utf32_length_from_utf8(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf8_to_utf32(
+    result.output_count = provider->convert_valid_utf8_to_utf32(
         input.data(), input.size(), output.data());
   }
   return result;
@@ -209,16 +302,17 @@ UtfResult utf8_to_utf32(StringView input,
 UtfResult utf16_to_utf8(std::span<const char16_t> input,
                         std::span<char> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf16_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf16_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf8_length_from_utf16(input.data(), input.size());
+      provider_utf8_length_from_utf16(provider, input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf16_to_utf8(
-        input.data(), input.size(), output.data());
+    result.output_count = provider_convert_utf16_to_utf8(
+        provider, input.data(), input.size(), output.data());
   }
   return result;
 #else
@@ -230,16 +324,17 @@ UtfResult utf16_to_utf8(std::span<const char16_t> input,
 UtfResult utf16_to_utf32(std::span<const char16_t> input,
                          std::span<char32_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf16_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf16_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf32_length_from_utf16(input.data(), input.size());
+      provider_utf32_length_from_utf16(provider, input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf16_to_utf32(
-        input.data(), input.size(), output.data());
+    result.output_count = provider_convert_utf16_to_utf32(
+        provider, input.data(), input.size(), output.data());
   }
   return result;
 #else
@@ -251,15 +346,16 @@ UtfResult utf16_to_utf32(std::span<const char16_t> input,
 UtfResult utf32_to_utf8(std::span<const char32_t> input,
                         std::span<char> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf32_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf32_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf8_length_from_utf32(input.data(), input.size());
+      provider->utf8_length_from_utf32(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf32_to_utf8(
+    result.output_count = provider->convert_valid_utf32_to_utf8(
         input.data(), input.size(), output.data());
   }
   return result;
@@ -272,16 +368,17 @@ UtfResult utf32_to_utf8(std::span<const char32_t> input,
 UtfResult utf32_to_utf16(std::span<const char32_t> input,
                          std::span<char16_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = validate_utf32_core(input);
+  const UtfProvider* provider = active_utf_provider();
+  UtfResult validation = validate_utf32_core(input, provider);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
-      simdutf::utf16_length_from_utf32(input.data(), input.size());
+      provider->utf16_length_from_utf32(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
   if (!result) return result;
   if (required != 0) {
-    result.output_count = simdutf::convert_valid_utf32_to_utf16(
-        input.data(), input.size(), output.data());
+    result.output_count = provider_convert_utf32_to_utf16(
+        provider, input.data(), input.size(), output.data());
   }
   return result;
 #else
