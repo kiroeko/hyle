@@ -195,6 +195,10 @@ LOC 绑定 candidate `c39df6f94c636ab8fa94cb700dd263763a42d680`；`loc-report.py
 自实现不含测试 74,308；本 factor 实现 2,712 行。公开共享头由 Platform conventional boundary 计数，
 本数只统计 `src/platform_fs`，不能与 base 数值相加冒充互斥拆分。
 
-本提交保存 terminal task、receipt 与 candidate identity；它的完整 commit 将作为 registry 的
-`end_commit`。后续第一个真实保存 `platform_fs=CLOSED` 的提交作为 `registry_anchor_commit`，不在本页
-伪造尚未生成的自身 hash。
+terminal task、receipt 与 candidate identity 由 end commit
+`adf82306eee363f1a5f44ee48d556fc0fcc784bb` 保存；第一个真实保存 `platform_fs=CLOSED` 及同一 candidate
+identity 的 registry anchor 是 `485ceb0558277f42ee18f5d7a4dae5a59cb7db66`，随后由
+`1ce44b7d104df82f0a45530cfd6f72ee7d53a2f6` 回填该 anchor。`VERIFIED -> CLOSED` 前态 registry snapshot
+SHA-256 为 `4D56A2C5F504C0F51DADF91F9212FB8ED24A8BF75CB7119A9FBD1780F757C65B`；anchor 回填前 snapshot
+SHA-256 为 `D670619E2C841DBEE3FC2771ACF7073562523C39944A3CEFA270CA562A1219EA`。本段只是补记已生成的 Git
+身份，不改变产品、证据或 terminal verdict。
