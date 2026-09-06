@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "platform-v11-perf-control-resume",
       "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
       "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
@@ -593,17 +593,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v11 RESUME / CANDIDATE：重新绑定未改的 3c1ef239/63b58d10 产品身份；v10 correctness/delivery/API/red-team 继续有效，现在只等待一次 fresh W1-WIN qualification。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform v11 VERIFIED：未改的 NUMA-memory candidate 已取得唯一 fresh W1-WIN qualified receipt；全部 controls 与 4/4 host-planning NI 通过，三平台 correctness、三交付、API/docs 和红队继续绑定同一产品身份。"
     },
     {
       "module": "platform_thread",

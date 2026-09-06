@@ -65,3 +65,28 @@ SHA-256 `227D8562BFE74706B7C85657A2DF5FCE1F91524178188A120D427CAD42DE7583`。
 - `AUDITED -> CANDIDATE` 前态 registry snapshot：
   `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-candidate.json`，
   SHA-256 `CE7586A0B8B896593F2445981122482330784709B626189A8444FDF9D3A4988A`。
+
+## Verification（`VERIFIED`）
+
+- clean harness/source identity：`85c666626f6e83517450ee36d26a2a0e5011c16f`；产品与 benchmark/contract
+  path 相对 product candidate 无 diff；oneTBB clean/exact；fresh build/output 均在本 round 的 validation
+  目录；
+- 唯一 `qualify-platform` 在 n=15 已通过全部 controls，因此按规则没有不必要地进入 n=31。A/A、5%/
+  10% known-delta、timer floor、placement、artifact/build、host/input stability 与 consumer provenance
+  全部 `PASS`；qualification 为 `QUALIFIED`；
+- 四个 same-contract host-planning strata 的 5% NI 均 `PASS`。median advantage ratio 为
+  `1.015725 / 1.025350 / 1.024989 / 1.037168`，四个点值都偏向 HYLE；由于 99.26% CI 穿过 exact
+  equivalence 上界或同时覆盖 1，exact verdict 均为 `INCONCLUSIVE`，这不影响预冻结的 non-inferiority
+  工程门，也不宣称 material WIN；
+- `hyle-perf.py verify`：`paths_verified=true`、qualification `QUALIFIED`、environment policy
+  `CURRENT`、provenance `EXACT`、certification policy eligible；live 与 replay verdict 一致；
+- raw bundle：`C:\public\project-hyle\_validation\platform-v11-perf-control-resume\perf-evidence`；
+  contract-lock / manifest / summary SHA-256：
+  `2714905D56EA9CCED7132A5EA55FE44C2925AACEF45B14A774EEDE4EF987C420` /
+  `3BA2589D00AC079B6A9366F7D12F49CAF1DC95E6199CB33895533EE5A9E8F0F8` /
+  `353ED5BFF2C576DC6E35B019ABAB863C4992509781DA8729F79473B5E93D8764`；
+- v10 的三平台 correctness、source/static/shared、API/docs、dependency 与 red-team gates 因 product
+  identity 未漂移继续 `PASS`。本轮全部适用 gate 已通过；
+- `CANDIDATE -> VERIFIED` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-verified.json`，
+  SHA-256 `9D43237076C767C0AEFDA15C02579668AF1701B07EBC8F16FD2D07C76FB293EA`。

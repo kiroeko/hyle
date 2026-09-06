@@ -1,5 +1,15 @@
 # Platform current performance evidence
 
+> **Platform v11 current adjudication（2026-09-06）：**未改变的 NUMA-memory product candidate
+> `3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c` / tree
+> `63b58d1051d86c4aecb1bf736ae84265e359a5f5` 已取得唯一 fresh `platform-host-p1-v3` 资格包。
+> n=15 的 A/A、5%/10% known-delta、timer floor、placement 与全部 build/artifact/host/provenance
+> controls 均 `PASS`，无需 n=31；4/4 product NI `PASS`。四个 median advantage ratio 为
+> `1.015725--1.037168`，均偏向 HYLE，但 exact CI 未形成 material win，故只签 5% engineering
+> non-inferiority，不宣称普遍 SOTA。deep verify 为 `QUALIFIED / EXACT / CURRENT / paths_verified`。
+> 完整恢复记录与 hashes 见
+> [`platform-v11-perf-control-resume`](../../tasks/platform/platform-v11-perf-control-resume.md)。
+
 > **Platform v10 terminal adjudication（2026-09-06）：**candidate
 > `3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c` / tree
 > `63b58d1051d86c4aecb1bf736ae84265e359a5f5` 新增 NUMA node memory fact。该 query 是低频控制路径，
@@ -62,11 +72,11 @@ and
 
 ## Current verdict
 
-The current factor-specific verdict is `platform=BLOCKED`,
+The current factor-specific verdict is `platform=PASS`,
 `platform_thread=PASS`, and `platform_fs=PASS`. Platform v10's product and
-all four host non-inferiority rows passed, but its evidence bundle was not
-qualified by the frozen 5% known-delta control; it therefore has no renewed P1
-PASS. The older v8/v7/v6
+all four host non-inferiority rows already passed; Platform v11 now supplies a
+qualified current receipt for that unchanged product. The older v10 diagnostic
+and v8/v7/v6
 structural results and v3 P1 receipts below remain supporting history; they are
 not silently rebound to the new candidate. This is not a Formal, cross-machine,
 all-topology, or module-wide SOTA certificate. Every numeric row has its own
@@ -75,11 +85,14 @@ a Platform score.
 
 | current factor | contract / evidence | result |
 | --- | --- | --- |
-| host / Platform v10 | `platform-host-p1-v3`; `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\perf-evidence` | bundle `DIAGNOSTIC`; product 4/4 NI `PASS` and ratios 1.020066--1.022953, but `delta5 FAIL`; engineering `INCONCLUSIVE` |
+| host / Platform v11 | `platform-host-p1-v3`; `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\perf-evidence` | exact `QUALIFIED`; all controls and 4/4 NI `PASS`; ratios 1.015725--1.037168 favor HYLE without a material-win claim |
 | thread | `P0 / closure-correctness-v1`; unchanged Parker state machine plus exact source/license/package audit | structural `PASS`; no new timing claim |
 | filesystem | `platform-fs-p1-v2`; `C:\public\project-hyle\_validation\platform-fs-v2-resume-evidence-r1` | exact `QUALIFIED`; 8/8 `PARITY` and NI `PASS`; all controls `PASS`; ratios 0.987503--1.012026 flip with order/allocation/placement and do not show fixed loss |
 
-The previous v8 host receipt at
+The v10 diagnostic bundle at
+`C:\public\project-hyle\_validation\platform-v10-numa-node-memory\perf-evidence`
+keeps its 4/4 NI rows and failed n=15 delta5 control as immutable history; it is
+not merged with v11. The previous v8 host receipt at
 `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-v3-r1`
 was exact `QUALIFIED`, with 4/4 NI `PASS` and all controls `PASS`; its medians
 favored HYLE by 1.48%--3.79%. It describes the unchanged host route, but remains
