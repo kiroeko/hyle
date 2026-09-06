@@ -84,7 +84,7 @@ def product_observations(peer_value=100_000_000.0):
 
 
 class CpuControlsTest(unittest.TestCase):
-    def test_only_boundary_crossing_aa_can_escalate(self):
+    def test_precision_only_aa_and_known_delta_can_escalate(self):
         inconclusive = {
             "id": "aa",
             "gate": "FAIL",
@@ -109,9 +109,54 @@ class CpuControlsTest(unittest.TestCase):
             verdict="LOSE", reason="confidence-interval-below-equivalence-band")
         self.assertFalse(control_allows_sample_escalation(directional))
 
-        known_delta = copy.deepcopy(inconclusive)
-        known_delta["details"]["kind"] = "known-delta"
-        self.assertFalse(control_allows_sample_escalation(known_delta))
+        estimate = {
+            "confidence_interval": [0.99, 1.07],
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.04,
+            "sample_count": 15,
+        }
+        known_delta = {
+            "id": "delta5",
+            "gate": "FAIL",
+            "details": {
+                "kind": "known-delta",
+                "accepted_median_band": [1.025, 1.075],
+                "monotonic_5_to_10": True,
+                "orders": {
+                    "candidate-first": copy.deepcopy(estimate),
+                    "peer-first": copy.deepcopy(estimate),
+                },
+            },
+        }
+        self.assertTrue(control_allows_sample_escalation(known_delta))
+
+        outside_band = copy.deepcopy(known_delta)
+        outside_band["details"]["orders"]["candidate-first"][
+            "median_advantage_ratio"] = 1.01
+        self.assertFalse(control_allows_sample_escalation(outside_band))
+
+        non_monotonic = copy.deepcopy(known_delta)
+        non_monotonic["details"]["monotonic_5_to_10"] = False
+        self.assertFalse(control_allows_sample_escalation(non_monotonic))
+
+        too_few = copy.deepcopy(known_delta)
+        too_few["details"]["orders"]["candidate-first"]["sample_count"] = 14
+        self.assertFalse(control_allows_sample_escalation(too_few))
+
+        malformed = copy.deepcopy(known_delta)
+        malformed["details"]["orders"]["candidate-first"][
+            "confidence_interval"] = [0.99]
+        self.assertFalse(control_allows_sample_escalation(malformed))
+
+        non_finite = copy.deepcopy(known_delta)
+        non_finite["details"]["orders"]["candidate-first"][
+            "median_advantage_ratio"] = float("nan")
+        self.assertFalse(control_allows_sample_escalation(non_finite))
+
+        already_resolved = copy.deepcopy(known_delta)
+        for order in already_resolved["details"]["orders"].values():
+            order["confidence_interval"][0] = 1.001
+        self.assertFalse(control_allows_sample_escalation(already_resolved))
 
     def test_replay_passes_all_fixed_controls(self):
         results = evaluate_cpu_controls(

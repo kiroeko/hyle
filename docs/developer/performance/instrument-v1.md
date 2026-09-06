@@ -220,10 +220,14 @@ CMakeCache、compiler/linker 和 product artifact
 `QUALIFIED`，后两项仍明确为 `false` / `INCONCLUSIVE`。
 
 n=1 probe 不读取合同的 n=15 作为缩小版统计，也不会因结果好看升级资格。`qualify-platform` 固定先跑
-完整 n=15；升级 n=31 只允许合同预声明、n=15 全部 required controls 已通过，而且 comparable
-`gate_role=product` workload 的 non-inferiority gates 至少一个为统计功效 `UNRESOLVED`、其余均为
-`PASS`（不存在 material `FAIL` 或其他门失败）。`mechanism` 和其他 diagnostic 行仍完整采样、保存和
-报告，但它们的 verdict 与专属 controls 不触发 n=31，也不进入产品 `performance_gate`。n=31
+完整 n=15；升级 n=31 只允许合同预声明，而且 comparable `gate_role=product` workload 的
+non-inferiority gates 至少一个为统计功效 `UNRESOLVED`、或一个 required common control 只缺 n=15
+precision，其余 product gates 与 required controls 均为 `PASS`。precision-only control 仅包括：（1）
+A/A 没有方向性，只因 CI 穿过预冻结等价边界；（2）known-delta 的两个 order median 均在预冻结接受带、
+5%→10% 响应单调、样本/区间完整，但至少一个 CI 下界尚未证明大于 1。median 越界、响应不单调、
+directional A/A、timer/placement/delegated failure 或畸形数据仍是 hard stop；不能借 n=31 重试。
+`mechanism` 和其他 diagnostic 行仍完整采样、保存和报告，但它们的 verdict 与专属 controls 不触发
+n=31，也不进入产品 `performance_gate`。n=31
 必须重新运行完整产品 strata 与 controls，并以新 31 个样本替代统计输入；不得向原 15 个追加、挑样或
 跑到刚好通过。证据仍保留 n=15 完整原始阶段；`verify` 会独立重算 n=15 controls、summary 与
 内建 build/artifact gates，并把 command validator 的日志 hash、整数 exit code 和 gate 绑定后重放

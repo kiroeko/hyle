@@ -13,14 +13,17 @@
 - owner / start date：Codex / 2026-09-06；
 - 目标：逐项确认真实模型加载、prefill、decode、KV 生命周期、continuous batching、取消/关闭和
   serving 观测是否暴露已有冻结单元的能力、自然接口、内部复用、性能 workload 或交付缺口；
+- 本 goal 的唯一产品范围是 15 个真正冻结 factor：`core`、`error`、`container_intrusive`、
+  `util_core`、`time`、`timer_queue`、`mem_reclaim`、`obs`、`math`、`platform`、`platform_thread`、
+  `platform_fs`、`mem`、`mem_vm`、`simd`；
 - 有新能力时，先通过语义擦除、owner、生命周期和准入门，再尽量在正确模块实现；不能复制模型、tensor、
   token、backend 或服务策略；
 - 性能方向由真实热路径和成本结构确定。推理仓库用于确定 workload/provenance，不自动成为同合同 peer；
   计时前必须先冻结接口、语义、工作量、ownership、并发、计费边界和 delivery shape；
 - `simd` 已由 v6 对同一四组 consumer 完成逐能力回放，本任务只做 reference drift 差异和直接消费者回放，
   不重跑 422-scope 全矩阵；
-- `io` 保持现有 `SCOPED` 且暂停，`compute/graph` 保持 `QUEUED`。三者只作为需求和 owner 反例，不在本
-  项目回放中修改；
+- `container`、`util`、`sched` 尚未按本轮标准冻结，明确排除；`io` 保持现有 `SCOPED` 且暂停，
+  `compute/graph` 保持 `QUEUED`。这些模块只作为需求和 owner 反例，不在本项目回放中修改；
 - Build/package 作为每一波的横向交付合同复查，不伪造一个可链接模块状态。
 
 建立任务时存在的 Container/Mem/Util performance replay、`roadmap.md` 与 `status.md` 未提交改动均为
@@ -93,7 +96,6 @@ Python、Rust、CUDA、Triton 或 vendor kernel 中的业务对象不会按名�
 | A | core, error, container_intrusive, util_core, time | 热循环编译合同、错误传播、stable-node/queue 链、RNG/resource、clock/deadline | header ownership、source/static/shared 与零/最小依赖 |
 | B | timer_queue, platform, platform_thread, platform_fs, mem_reclaim | timeout/cancel、topology/ISA、placement、mapping/read、read-mostly reclamation | factor façade、OS 条件源码、传递系统库 |
 | C | mem, mem_vm, obs, math | allocation/pool/quota、large mapping/load-to-ready、structured hot observation、scalar sizing | mimalloc/Tracy/OS/vendor lock、三交付 |
-| D | container, util, sched | KV/index/storage shape、registry/runtime utility、continuous batching/wait/wake | 聚合 façade、可选依赖、直接 consumer |
 | S | simd delta only | ggml/ds4/vLLM/SGLang 新增 dtype、row/kernel primitive 与 fixed-ISA consumer | Highway/xsimd lock、target flags、无成本路由 |
 
 波内每个 factor 的合法结果只能是：
@@ -110,7 +112,7 @@ Python、Rust、CUDA、Triton 或 vendor kernel 中的业务对象不会按名�
 - 每波交付：reference identity、consumer-path ledger、能力差异、hot-path map、性能 comparability、
   dependency/reuse/build 复核和逐 factor verdict；
 - 每个合法 trigger 单独拥有 FIX 集、candidate、验证、红队、三交付和文档，不共享模糊“全库候选”；
-- 项目停止条件：18 个既有 `CLOSED` factor 均取得当前 reference identity 下的一个合法 verdict，所有
+- 项目停止条件：上述 15 个 frozen factor 均取得当前 reference identity 下的一个合法 verdict，所有
   `PRODUCT_TRIGGER` 已转入各自状态机；SIMD drift 已明确为 confirmed 或独立 trigger；
 - 全轮仍执行 `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。只有实际改变
   `module-status.json` 的子轮才保存 previous registry 并用 `--previous` 校验。
@@ -227,5 +229,5 @@ module-closure validators 同轮通过。
 | B / platform_fs | vLLM direct vectored disk offload；ds4/llama temp publish/model mapping | sync buffered/path primitives `COMPLETE`；direct/async routed IO，mapping routed Mem-VM | current warm-file P1 | `CONFIRMED` |
 | B / mem_reclaim | vLLM scheduler fence frees；SGLang GPU-event/deferred release；HYLE Obs snapshots | host read-mostly grace period `COMPLETE`；device/scheduler fences routed owners | current Folly RCU P1 | `CONFIRMED` |
 | C | pending | pending | pending | pending |
-| D | pending | pending | pending | pending |
+| excluded / container, util, sched | 不在本 goal | 尚未按本轮标准冻结 | N/A | 后续独立重构，不在此偷渡 |
 | S / simd drift | pending | pending | pending | pending |

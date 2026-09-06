@@ -254,9 +254,14 @@ For contracts eligible for current qualification, `qualify-platform` requires cl
 candidate and peer checkouts, an absent/empty
 fresh build tree, Release, all required controls/strata, stable inputs/host/
 artifacts and passing validators. It always starts with n=15. A complete n=31
-replacement run occurs only when the contract predeclares it, every required
-control passed, at least one comparable non-inferiority gate is `UNRESOLVED`
-solely for statistical power, and all other such gates are `PASS`.
+replacement run occurs only when the contract predeclares it and either a
+comparable non-inferiority gate or an A/A/known-delta required control is
+unresolved solely for n=15 statistical precision. All other product gates and
+controls must pass. A known-delta row is precision-only only when both medians
+remain in the frozen band, 5% to 10% response is monotonic, sample/interval
+records are complete, and at least one confidence lower bound has not yet
+proved a positive delta. Wrong medians, non-monotonic response, directional
+A/A, timer/placement/delegated failures, and malformed evidence are hard stops.
 
 Do not run `qualify-platform` with `error-p1-v1.json`: it is not eligible for a
 new current qualification. Use the reviewed source-consumer contract with clean

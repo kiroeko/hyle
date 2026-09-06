@@ -215,8 +215,9 @@ SHA-256 `B2DD4B9A72671F32D03830513539AB1C108B9F6A7CCBDDCE75C289007556970D`。
   `1.020066--1.022953`，即点值约快 2.0%--2.3%。3 行 exact `PARITY`，1 行只因 CI 穿过等价带上界而
   `INCONCLUSIVE`；没有产品 loss；
 - A/A、10% known delta、timer floor 与 placement control 均通过。5% known-delta 的两个 median
-  `1.034243/1.042137` 落在预冻结 `1.025--1.075` 接受带内，但 99.26% CI 下界
-  `0.993802/1.017608` 穿过下界，因此 control 为 `FAIL`，整包只能是 `DIAGNOSTIC`；
+  `1.034243/1.042137` 落在预冻结 `1.025--1.075` 接受带内且响应单调，但其中一个 99.26% CI 下界
+  `0.993802` 尚未证明大于 `1.0`（另一 order 为 `1.017608`），因此 control 为 `FAIL`，整包只能是
+  `DIAGNOSTIC`；
 - raw bundle：
   `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\perf-evidence`。contract-lock /
   manifest / summary SHA-256 分别为

@@ -1,6 +1,6 @@
 # closure-perf-v1：control precision escalation
 
-<!-- INSTRUMENT TASK: ACTIVE -->
+<!-- INSTRUMENT TASK: CLOSED -->
 
 ## 触发与边界
 
@@ -42,3 +42,14 @@
 - tooling suite、docs contract 和 module closure contract 必须通过；
 - 规则实现并经 synthetic canary 证明后停止。Platform 只能另建 `RESUME` round，使用 clean candidate、
   clean peer 和 fresh paths 运行一次；本任务不裁决 Platform。
+
+## 结果
+
+- `scripts/hyle_perf/controls.py` 的纯函数现在严格实现上述两类 precision-only control；live runner 与
+  evidence verifier 继续共享它，没有第二套停止逻辑；
+- canary 覆盖允许的 known-delta uncertainty，以及 median 越界、响应不单调、样本不足、已经 resolved
+  却伪报 FAIL、directional A/A 和 malformed state；live/replay escalation 对同一输入给出相同结果；
+- `python -m unittest tests.tooling.hyle_perf_controls_test tests.tooling.hyle_perf_runner_test
+  tests.tooling.hyle_perf_evidence_runner_test`：49/49 `PASS`；docs/module-closure checker `PASS`；
+- 阈值、统计量、n=15/n=31、产品合同与 Platform 产品均未改变。本任务完成并停止；后续只允许 Platform
+  独立 resume 消费该规则。

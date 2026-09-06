@@ -143,17 +143,65 @@ def _estimate_details(values: Mapping[str, list[float]]) -> dict[str, Any]:
 def control_allows_sample_escalation(result: Mapping[str, Any]) -> bool:
     """Whether a required control is ready or only lacks n=15 precision.
 
-    A/A is itself an estimator. If one fixed order's interval merely crosses
-    the already-frozen equivalence boundary, the predeclared n=31 stage is the
-    correct next observation. Actual A/A direction, known-delta, timer,
-    placement, delegated or malformed failures remain hard stops.
+    A/A and known-delta are estimators.  If one fixed order's interval merely
+    leaves the already-frozen decision statistically unresolved, the
+    predeclared n=31 stage is the correct next observation.  Directional A/A,
+    wrong or non-monotonic known-delta response, timer, placement, delegated,
+    and malformed failures remain hard stops.
     """
     if result.get("gate") == "PASS":
         return True
     if result.get("gate") != "FAIL":
         return False
     details = result.get("details")
-    if not isinstance(details, Mapping) or details.get("kind") != "aa":
+    if not isinstance(details, Mapping):
+        return False
+    if details.get("kind") == "known-delta":
+        band = details.get("accepted_median_band")
+        if (not isinstance(band, list) or len(band) != 2 or
+                any(isinstance(value, bool) or
+                    not isinstance(value, (int, float)) or
+                    not math.isfinite(float(value)) for value in band)):
+            return False
+        band_lower, band_upper = map(float, band)
+        if band_lower > band_upper or details.get("monotonic_5_to_10") is not True:
+            return False
+        orders = details.get("orders")
+        if not isinstance(orders, Mapping) or set(orders) != set(CONTROL_ORDERS):
+            return False
+
+        needs_more_samples = False
+        for order in CONTROL_ORDERS:
+            estimate = orders[order]
+            if not isinstance(estimate, Mapping):
+                return False
+            median = estimate.get("median_advantage_ratio")
+            interval = estimate.get("confidence_interval")
+            sample_count = estimate.get("sample_count")
+            independent = estimate.get("independent_clusters")
+            if (isinstance(median, bool) or
+                    not isinstance(median, (int, float)) or
+                    not math.isfinite(float(median)) or
+                    not isinstance(interval, list) or len(interval) != 2 or
+                    any(isinstance(value, bool) or
+                        not isinstance(value, (int, float)) or
+                        not math.isfinite(float(value)) for value in interval) or
+                    isinstance(sample_count, bool) or
+                    not isinstance(sample_count, int) or
+                    sample_count < MINIMUM_CONTROL_RUNS or
+                    isinstance(independent, bool) or
+                    not isinstance(independent, int) or
+                    independent < MINIMUM_CONTROL_RUNS):
+                return False
+            median = float(median)
+            interval_lower, interval_upper = map(float, interval)
+            if (interval_lower > median or median > interval_upper or
+                    not band_lower <= median <= band_upper):
+                return False
+            needs_more_samples |= interval_lower <= 1.0
+        return needs_more_samples
+
+    if details.get("kind") != "aa":
         return False
     orders = details.get("orders")
     if not isinstance(orders, Mapping) or set(orders) != set(CONTROL_ORDERS):

@@ -402,6 +402,46 @@ class RunnerControlsTest(unittest.TestCase):
         self.assertFalse(_replay_sample_escalation(
             summary, controls, closure_contract))
 
+    def test_known_delta_precision_uncertainty_uses_prefrozen_second_stage(self):
+        closure_contract = {
+            "workloads": [gate_workload("product", "delta5")],
+        }
+        estimate = {
+            "confidence_interval": [0.99, 1.07],
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.04,
+            "sample_count": 15,
+        }
+        controls = [{
+            "id": "delta5",
+            "gate": "FAIL",
+            "details": {
+                "kind": "known-delta",
+                "accepted_median_band": [1.025, 1.075],
+                "monotonic_5_to_10": True,
+                "orders": {
+                    "candidate-first": copy.deepcopy(estimate),
+                    "peer-first": copy.deepcopy(estimate),
+                },
+            },
+        }]
+        summary = {"workloads": [{
+            "id": "product",
+            "comparability": "COMPARABLE",
+            "combined_noninferiority_gate": "PASS",
+        }]}
+        self.assertTrue(_eligible_for_sample_escalation(
+            summary, controls, closure_contract))
+        self.assertTrue(_replay_sample_escalation(
+            summary, controls, closure_contract))
+
+        controls[0]["details"]["orders"]["candidate-first"][
+            "median_advantage_ratio"] = 1.01
+        self.assertFalse(_eligible_for_sample_escalation(
+            summary, controls, closure_contract))
+        self.assertFalse(_replay_sample_escalation(
+            summary, controls, closure_contract))
+
     def test_mechanism_rows_do_not_drive_escalation(self):
         closure_contract = {"workloads": [
             gate_workload("product", "aa"),

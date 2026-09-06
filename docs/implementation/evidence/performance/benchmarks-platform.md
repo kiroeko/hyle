@@ -5,8 +5,9 @@
 > `63b58d1051d86c4aecb1bf736ae84265e359a5f5` 新增 NUMA node memory fact。该 query 是低频控制路径，
 > 三平台 correctness、结构复杂度与 source/static/shared 交付均 `PASS`。预冻结的旧 host-planning P1
 > holdout 数值上 4/4 non-inferiority `PASS`，median ratio `1.020066--1.022953` 均有利于 HYLE；但 n=15
-> 下 5% known-delta 的 median 虽在接受带内，其 99.26% CI 未完整落入接受带，导致 qualification
-> `FAIL`。因此本轮 `platform=BLOCKED / engineering performance=INCONCLUSIVE`，不能把 diagnostic
+> 下 5% known-delta 的 median 虽在接受带内且响应单调，一个 order 的 99.26% CI 下界仍未证明大于
+> 1，导致 qualification `FAIL`。因此本轮
+> `platform=BLOCKED / engineering performance=INCONCLUSIVE`，不能把 diagnostic
 > bundle 写成 current P1 PASS，也不能称为产品回退。旧 v8 qualified receipt 只保留为未变 host 路线的
 > supporting history，不自动重绑定到 v10 candidate。完整解释、raw hashes 与精确恢复条件见
 > [`platform-v10-numa-node-memory-facts`](../../tasks/platform/platform-v10-numa-node-memory-facts.md)。
