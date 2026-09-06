@@ -384,3 +384,102 @@ SHA-256 `7DCD67D13E9EB55C4D8C53AC26DEC4CBA0715B5C273C8799839856B3C429046D`。
   SHA-256 `2B711855F1C7EE2B698D2563C72BF42A4445023AF022F9F15D46806C8AE08484`。
 
 第二候选只冻结新的 product identity；aggregate gate 在全部候选精确回放完成前仍为 `PLANNED`。
+
+## 第二候选验证记录
+
+以下结果全部绑定 product commit
+`c39df6f94c636ab8fa94cb700dd263763a42d680`、tree
+`37889346564f3a5cdc895f26c9d610883076ba02` 与 archive SHA-256
+`4C0A0D30B75D97B020253765621F244FDFD111A1799E4E45159E8BEA04B70A32`。候选以后只有状态、证据和文档
+修改；Platform 产品/API/layout/算法/依赖/正常路径成本没有漂移。
+
+### 正确性、平台与消费者
+
+- exact factor：W1-WIN MSVC Release/WERROR、W1-WSL GCC 14 UBSan/WERROR、M1-MAC AppleClang 21
+  UBSan/WERROR 均为 6/6 PASS；逐头、cgroup/CPU/cache/frequency/NUMA/host-memory、VM、thread/Parker、
+  filesystem/EINTR fixtures 均包含在对应因子回放；
+- exact delivery：Windows、WSL、macOS 的 source embedding、static SDK、shared SDK 与 relocated consumer
+  全部 PASS；中央 `HyleCiComponentContract` 从 archive source 独立执行并报告
+  `HYLE component contracts passed`；
+- exact direct consumers：Mem、Mem-VM、SIMD、Container、Sched、IO 在 Windows、WSL GCC 14
+  UBSan 与 macOS AppleClang 21 UBSan 上各 10/10 PASS。远端只消费 archive，不向 Windows 回传源码；
+- Windows shared package 的 `hyle_platform/hyle_platform_thread/hyle_platform_fs` 分别只有 64/22/50 个
+  MSVC C++ decorated exports，未装饰 `hyle_*` C symbol 为 0；Linux 分别为 69/21/51 个 HYLE C++
+  symbols、C symbol 为 0，RUNPATH 为 `$ORIGIN`；macOS 分别为 66/20/48 个 HYLE C++ symbols、C symbol
+  为 0，install names 使用 `@rpath` 且 LC_RPATH 为 `@loader_path`；
+- 三平台 relocated shared SDK 中 `HYLE-LICENSE`、`THIRD_PARTY-NOTICES.md`、
+  `rust-parker-LICENSE-MIT` 的 SHA-256 分别一致为
+  `EDCBC4391EE471753CC9A7F8B410AD6FE8F65A3DC5A368A5C2FA06122316F478`、
+  `20B074762C64FFBB310017C66F0B09899BF7DF02DB6A81429788F4ECA2BF896B`、
+  `B71BD43A069CA0641A9ECFE585CA7B3C53B5CC1608F8B68321168698E28B5EA1`；notice 明示 Rust
+  1.94.1 revision、MIT option 与 adapted owner。component contract 同时重算 integrated-source content、
+  lock 与 package license multiset。
+
+第一次 Windows 直接消费者回放从 canonical 当前目录绝对调用 archive wrapper，CMake 错把当前目录当
+preset/source；其 10/10 结果被明确作废，未进入上述证据。随后从 archive root 重跑才得到 exact
+结果。该静默 source-anchor 问题不修改 Platform candidate，已登记独立
+[`build-windows-wrapper-source-anchor-2026-09`](../build/build-windows-wrapper-source-anchor-2026-09.md)。
+
+### 工程性能
+
+- `platform`：v2 exact bundle
+  `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-r5` 的仪器 controls 与 4/4 产品 strata
+  均通过，且没有显示 5% material regression；但收尾语义复核发现 peer 只返回派生的
+  `effective_available`，没有物化完整八字段 `HostMemoryInfo`，并以 `abort` 代替 HYLE 的 `Result`
+  失败通道。它违反本卡预先冻结的同字段/同失败合同，因此撤销 `SAME_CONTRACT` 的
+  `QUALIFIED/PASS` 用途，只保留为 diagnostic。原 bundle 的 contract/manifest/summary SHA-256 分别为
+  `9561919627816E603E2AE6C42A8A2CCF38B5366929A2EFF485651E00EC5DB3BF`、
+  `3A13682639F960902E55D3241DF9466B05A60011A7C146AD9B7F3557977DAB1C`、
+  `350CB4D2C6F4F36EC75BF780095D4C862AC2878311DE314D1243C1E9F2886C84`；修正后的
+  `platform-host-p1-v3` 让两边都返回完整 value record、相同 `Result<HostSnapshot>` 通道并消费全部字段，
+  不修改 Platform 产品候选；本轮只允许一次新资格化；
+- `platform_thread`：本轮 Parker 状态机、memory order、layout 与 backend 产品 bytes 未变，只补来源/
+  license/lock/package。三平台 exact code、package、source-content hash 与原有 correctness 回放证明 P0
+  structural PASS；不借旧 P1 点值生成新的数值声明；
+- `platform_fs`：exact r3 的 8/8 产品 strata 都为 `PARITY` 且 NI `PASS`，但 5% known-delta control
+  失格；冻结预算允许的唯一独立重跑 r4 又由 A/A control 先失格，产品聚合为
+  `INCONCLUSIVE / UNRESOLVED`。两个 bundle 均为 exact candidate/provenance，却都只能是
+  `DIAGNOSTIC`。首候选 r2 的 31-sample PASS 只作 supporting history，不静默绑定第二候选。该事实已按
+  硬停止规则登记
+  [`platform-fs-control-stability-2026-09`](../performance/platform-fs-control-stability-2026-09.md)，没有第三次
+  跑数、修改 margin、挑样或把较强/较弱语义混排。
+
+### 易用性、文档与红队
+
+- [`platform-design`](../../../architecture/platform-design.md) 与
+  [`user/platform`](../../../user/platform.md) 已区分 system/process/policy、placement/capacity、coarse/
+  class cache、hardware/policy/current frequency、unknown 与 OS 差异；普通 C++ 使用 owning convenience，
+  控制 storage 的调用者使用 buffer-fill core；VM/File/Thread/DynLib owner 与 failure/lifetime/concurrency
+  坑均有选型和示例；
+- performance 页现在只把同 candidate、同语义、同计费路线写成 verdict。placement 对 quota、cached
+  对 discovery、cursor 对 explicit offset、signal-free 对 injected EINTR 全部保持
+  `NOT_COMPARABLE`；没有发现由 benchmark row 反向制造的公开 API、常态 metadata、固定 N/address/order
+  或隐藏 policy；
+- 红队复核 cgroup mount namespace/root/ancestor、malformed input、Windows nested Job honesty、动态
+  affinity/cache lifetime、CPU id/rank overflow、partial OS facts、NUMA process view、EINTR side-effect/
+  close exception、NTSTATUS、OOM/overflow/null/truncation、Parker provenance 与三交付。所有产品 finding
+  已在 candidate 前修复；没有把 Apple 无公开 per-logical-CPU frequency/id mapping、Windows 无 ancestor
+  Job handles 等 unknown 用型号表、计时或私有 API 填满；
+- 内部复用审计确认 Platform 只依赖已冻结 Core/Error，Thread/FS 公开依赖 Core/Error/Time 并私有依赖
+  base；Linux memory/quota/cpuset 共用一个 private resolver，CPU snapshot 内复用 group prefix；下游
+  Mem/Mem-VM/SIMD/Container/Sched/IO 都走公开 factor，不反向引入 policy owner。没有为了“多复用”让
+  Platform 依赖 Container/Sched 或复制其类型。
+
+### Gate 裁决
+
+| factor | scope | architecture | correctness | delivery | usability/docs | red team | engineering performance |
+|---|---|---|---|---|---|---|---|
+| `platform` | PASS | PASS | PASS | PASS | PASS | PASS | **PENDING / P1 v3** |
+| `platform_thread` | PASS | PASS | PASS | PASS | PASS | PASS | PASS / P0 |
+| `platform_fs` | PASS | PASS | PASS | PASS | PASS | PASS | **INCONCLUSIVE / BLOCKED** |
+
+`platform_thread` 可以进入 `VERIFIED`；`platform` 必须等待唯一一次 v3 资格化；`platform_fs` 不能把
+产品行的好看点值越过失格 controls 写成 PASS，必须按具名工具/环境恢复条件停在本候选。两个未决项都不
+授权继续修改候选产品。
+
+### Candidate LOC
+
+`scripts/loc-report.py --commit c39df6f94c636ab8fa94cb700dd263763a42d680 --self-check --json` 对三个
+factor 均通过：全库代码 451,412；自实现含测试 116,939；自实现不含测试 74,308；factor 实现边界分别为
+`platform` 6,739、`platform_thread` 857、`platform_fs` 2,712 行。`platform` 的 conventional boundary
+包含统一 `include/hyle/platform` 公共头，两个子 factor 数值只计各自实现目录，不能相加后冒充互斥拆分。

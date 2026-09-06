@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <new>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -56,7 +57,7 @@ void run_pair(nb::Bench& bench, bool peer_first,
 
 struct HostSnapshot {
   hyle::platform::CpuTopology topology;
-  std::uint64_t effective_available = 0;
+  hyle::platform::HostMemoryInfo memory;
 };
 
 template <class T, std::size_t StackCount>
@@ -69,13 +70,18 @@ class StackFirstBuffer {
   StackFirstBuffer(const StackFirstBuffer&) = delete;
   StackFirstBuffer& operator=(const StackFirstBuffer&) = delete;
 
-  void resize(std::size_t size) {
+  [[nodiscard]] bool resize(std::size_t size) noexcept {
     require(size_ == 0, "stack-first buffer resized twice");
     size_ = size;
     if (size > StackCount) {
       data_ = new (std::nothrow) T[size];
-      require(data_ != nullptr, "stack-first buffer allocation");
+      if (data_ == nullptr) {
+        size_ = 0;
+        data_ = stack_;
+        return false;
+      }
     }
+    return true;
   }
   [[nodiscard]] T* data() noexcept { return data_; }
   [[nodiscard]] const T* data() const noexcept { return data_; }
@@ -90,7 +96,7 @@ class StackFirstBuffer {
   }
 
  private:
-  T stack_[StackCount];
+  alignas(std::max_align_t) T stack_[StackCount];
   T* data_ = stack_;
   std::size_t size_ = 0;
 };
@@ -101,69 +107,114 @@ struct RawBuffers {
   StackFirstBuffer<std::byte, 64 * 1024> relations;
   StackFirstBuffer<std::uint16_t, 4096> selected;
 
-  RawBuffers() {
+  [[nodiscard]] hyle::Status initialize() noexcept {
     const DWORD logical = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-    require(logical != 0, "GetActiveProcessorCount");
-    default_cpu_sets.resize(logical);
-    selected.resize(logical);
+    if (logical == 0) {
+      return hyle::Status::OutOfRange(
+          "available CPU count exceeds topology limits");
+    }
+    if (!default_cpu_sets.resize(logical) || !selected.resize(logical)) {
+      return hyle::Status::ResourceExhausted(
+          "Win32 topology scratch allocation failed");
+    }
 
     DWORD bytes = 0;
     (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
                                        ::GetCurrentProcess(), 0);
-    require(bytes != 0, "GetSystemCpuSetInformation(size)");
-    cpu_sets.resize(bytes);
+    if (bytes == 0) {
+      return hyle::status_from_win32(
+          ::GetLastError(), "GetSystemCpuSetInformation(size)");
+    }
+    if (!cpu_sets.resize(bytes)) {
+      return hyle::Status::ResourceExhausted(
+          "Win32 CPU-set scratch allocation failed");
+    }
 
     bytes = 0;
-    const BOOL unexpected =
+    const BOOL sized =
         ::GetLogicalProcessorInformationEx(RelationAll, nullptr, &bytes);
-    require(!unexpected && ::GetLastError() == ERROR_INSUFFICIENT_BUFFER &&
-                bytes != 0,
-            "GetLogicalProcessorInformationEx(size)");
-    relations.resize(bytes);
+    const DWORD code = ::GetLastError();
+    if (sized) {
+      return hyle::Status::DataLoss(
+          "CPU topology sizing unexpectedly returned relation data");
+    }
+    if (code != ERROR_INSUFFICIENT_BUFFER || bytes == 0) {
+      if (code == ERROR_INSUFFICIENT_BUFFER) {
+        return hyle::Status::DataLoss(
+            "CPU topology relation size is zero");
+      }
+      return hyle::status_from_win32(
+          code, "GetLogicalProcessorInformationEx(size)");
+    }
+    if (!relations.resize(bytes)) {
+      return hyle::Status::ResourceExhausted(
+          "Win32 relation scratch allocation failed");
+    }
+    return hyle::Status::Ok();
   }
 };
 
-HostSnapshot raw_snapshot(RawBuffers& buffers) {
-  HostSnapshot out;
+hyle::Result<hyle::platform::CpuTopology> raw_topology_snapshot(
+    RawBuffers& buffers) noexcept {
+  hyle::platform::CpuTopology out;
   HANDLE process = ::GetCurrentProcess();
 
   ULONG default_count = 0;
   ::SetLastError(ERROR_SUCCESS);
   const BOOL defaults_ok =
       ::GetProcessDefaultCpuSets(process, nullptr, 0, &default_count);
-  require(defaults_ok || ::GetLastError() == ERROR_INSUFFICIENT_BUFFER,
-          "GetProcessDefaultCpuSets(size)");
-  require(default_count <= buffers.default_cpu_sets.size(),
-          "default CPU set grew beyond prepared storage");
+  DWORD code = defaults_ok ? ERROR_SUCCESS : ::GetLastError();
+  if (!defaults_ok && code != ERROR_INSUFFICIENT_BUFFER) {
+    return std::unexpected(
+        hyle::status_from_win32(code, "GetProcessDefaultCpuSets(size)"));
+  }
+  if (default_count > buffers.default_cpu_sets.size()) {
+    return std::unexpected(hyle::Status::Unavailable(
+        "default CPU set grew beyond prepared storage"));
+  }
   if (default_count != 0) {
     ULONG actual = default_count;
-    require(::GetProcessDefaultCpuSets(process, buffers.default_cpu_sets.data(),
-                                       default_count, &actual) != 0,
-            "GetProcessDefaultCpuSets");
+    if (!::GetProcessDefaultCpuSets(process, buffers.default_cpu_sets.data(),
+                                    default_count, &actual)) {
+      return std::unexpected(hyle::status_from_win32(
+          ::GetLastError(), "GetProcessDefaultCpuSets"));
+    }
+    if (actual > buffers.default_cpu_sets.size()) {
+      return std::unexpected(hyle::Status::Unavailable(
+          "default CPU set expanded during snapshot"));
+    }
     default_count = actual;
     std::sort(buffers.default_cpu_sets.begin(),
               buffers.default_cpu_sets.begin() + default_count);
   }
 
   DWORD cpu_set_bytes = static_cast<DWORD>(buffers.cpu_sets.size());
-  require(::GetSystemCpuSetInformation(
-              reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(
-                  buffers.cpu_sets.data()),
-              cpu_set_bytes, &cpu_set_bytes, process, 0) != 0,
-          "GetSystemCpuSetInformation");
-  require(cpu_set_bytes <= buffers.cpu_sets.size(),
-          "CPU set data grew beyond prepared storage");
+  if (!::GetSystemCpuSetInformation(
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(
+              buffers.cpu_sets.data()),
+          cpu_set_bytes, &cpu_set_bytes, process, 0)) {
+    return std::unexpected(hyle::status_from_win32(
+        ::GetLastError(), "GetSystemCpuSetInformation"));
+  }
+  if (cpu_set_bytes > buffers.cpu_sets.size()) {
+    return std::unexpected(hyle::Status::Unavailable(
+        "CPU set data grew beyond prepared storage"));
+  }
 
   const WORD group_count = ::GetActiveProcessorGroupCount();
-  require(group_count != 0 && group_count <= 64,
-          "active processor group count");
+  if (group_count == 0 || group_count > 64) {
+    return std::unexpected(hyle::Status::Unavailable(
+        "active processor group count is invalid"));
+  }
   std::array<unsigned, 65> group_begin{};
   for (WORD group = 0; group < group_count; ++group) {
     group_begin[group + 1] =
         group_begin[group] + ::GetActiveProcessorCount(group);
   }
-  require(group_begin[group_count] <= buffers.selected.size(),
-          "logical CPU set grew beyond prepared storage");
+  if (group_begin[group_count] > buffers.selected.size()) {
+    return std::unexpected(hyle::Status::Unavailable(
+        "logical CPU set grew beyond prepared storage"));
+  }
   std::fill(buffers.selected.begin(), buffers.selected.end(), 0);
 
   DWORD_PTR process_mask = 0;
@@ -175,10 +226,17 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
   for (DWORD offset = 0; offset < cpu_set_bytes;) {
     const auto* info = reinterpret_cast<const SYSTEM_CPU_SET_INFORMATION*>(
         buffers.cpu_sets.data() + offset);
-    require(info->Size != 0 && info->Size <= cpu_set_bytes - offset,
-            "CPU set record");
+    if (info->Size == 0 || info->Size > cpu_set_bytes - offset) {
+      return std::unexpected(
+          hyle::Status::DataLoss("CPU set record is malformed"));
+    }
     if (info->Type == CpuSetInformation) {
       const auto& set = info->CpuSet;
+      const bool valid_group = set.Group < group_count;
+      const bool valid_index =
+          valid_group &&
+          set.LogicalProcessorIndex <
+              group_begin[set.Group + 1u] - group_begin[set.Group];
       const bool chosen =
           default_count == 0 ||
           std::binary_search(buffers.default_cpu_sets.begin(),
@@ -189,32 +247,36 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
           (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&
            (process_mask &
             (DWORD_PTR{1} << set.LogicalProcessorIndex)) != 0);
-      if (chosen && mask_ok &&
+      if (valid_index && chosen && mask_ok &&
           (!set.Allocated || set.AllocatedToTargetProcess) &&
           set.Group < group_count) {
         const unsigned flat =
             group_begin[set.Group] + set.LogicalProcessorIndex;
-        if (flat < buffers.selected.size()) {
-          buffers.selected[flat] =
-              static_cast<std::uint16_t>(set.EfficiencyClass) + 1u;
-          maximum_rank = (std::max)(
-              maximum_rank,
-              static_cast<unsigned>(set.EfficiencyClass) + 1u);
-          ++out.topology.logical_cpus;
+        if (flat >= buffers.selected.size()) {
+          return std::unexpected(hyle::Status::Unavailable(
+              "available CPU id expanded during snapshot"));
         }
+        buffers.selected[flat] =
+            static_cast<std::uint16_t>(set.EfficiencyClass) + 1u;
+        maximum_rank = (std::max)(
+            maximum_rank,
+            static_cast<unsigned>(set.EfficiencyClass) + 1u);
+        ++out.logical_cpus;
       }
     }
     offset += info->Size;
   }
-  require(out.topology.logical_cpus != 0, "usable CPU set");
+  if (out.logical_cpus == 0) {
+    return std::unexpected(hyle::Status::FailedPrecondition(
+        "process has no usable CPU set"));
+  }
 
   for (std::uint16_t rank : buffers.selected) {
     if (rank == 0) continue;
-    if (rank == maximum_rank) ++out.topology.performance_cpus;
-    else ++out.topology.efficiency_cpus;
+    if (rank == maximum_rank) ++out.performance_cpus;
+    else ++out.efficiency_cpus;
   }
-  out.topology.hybrid = out.topology.performance_cpus != 0 &&
-                        out.topology.efficiency_cpus != 0;
+  out.hybrid = out.performance_cpus != 0 && out.efficiency_cpus != 0;
 
   auto intersects = [&](const GROUP_AFFINITY& mask) noexcept {
     if (mask.Group >= group_count) return false;
@@ -229,14 +291,18 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
   };
 
   DWORD relation_bytes = static_cast<DWORD>(buffers.relations.size());
-  require(::GetLogicalProcessorInformationEx(
-              RelationAll,
-              reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
-                  buffers.relations.data()),
-              &relation_bytes) != 0,
-          "GetLogicalProcessorInformationEx");
-  require(relation_bytes <= buffers.relations.size(),
-          "topology relations grew beyond prepared storage");
+  if (!::GetLogicalProcessorInformationEx(
+          RelationAll,
+          reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+              buffers.relations.data()),
+          &relation_bytes)) {
+    return std::unexpected(hyle::status_from_win32(
+        ::GetLastError(), "GetLogicalProcessorInformationEx"));
+  }
+  if (relation_bytes > buffers.relations.size()) {
+    return std::unexpected(hyle::Status::Unavailable(
+        "topology relations grew beyond prepared storage"));
+  }
   constexpr DWORD kRelationHeader = static_cast<DWORD>(
       offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor));
   for (DWORD offset = 0; offset + kRelationHeader <= relation_bytes;) {
@@ -245,15 +311,8 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
             buffers.relations.data() + offset);
     if (relation->Size < kRelationHeader ||
         relation->Size > relation_bytes - offset) {
-      std::fprintf(stderr,
-                   "# invalid relation offset=%lu size=%lu struct=%zu "
-                   "remaining=%lu kind=%u\n",
-                   static_cast<unsigned long>(offset),
-                   static_cast<unsigned long>(relation->Size),
-                   static_cast<std::size_t>(kRelationHeader),
-                   static_cast<unsigned long>(relation_bytes - offset),
-                   static_cast<unsigned>(relation->Relationship));
-      fail("topology relation record");
+      return std::unexpected(
+          hyle::Status::DataLoss("topology relation record is malformed"));
     }
     bool visible = false;
     if (relation->Relationship == RelationProcessorCore ||
@@ -261,17 +320,19 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
       const std::size_t header =
           offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Processor) +
           offsetof(PROCESSOR_RELATIONSHIP, GroupMask);
-      require(relation->Size >= header &&
-                  relation->Processor.GroupCount <=
-                      (relation->Size - header) / sizeof(GROUP_AFFINITY),
-              "processor relation size");
+      if (relation->Size < header ||
+          relation->Processor.GroupCount >
+              (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        return std::unexpected(hyle::Status::DataLoss(
+            "processor relation record is malformed"));
+      }
       for (WORD group = 0; group < relation->Processor.GroupCount; ++group) {
         visible = visible || intersects(relation->Processor.GroupMask[group]);
       }
       if (visible && relation->Relationship == RelationProcessorCore) {
-        ++out.topology.physical_cores;
+        ++out.physical_cores;
       } else if (visible) {
-        ++out.topology.packages;
+        ++out.packages;
       }
     } else if (relation->Relationship == RelationNumaNode ||
                relation->Relationship == RelationNumaNodeEx) {
@@ -281,14 +342,15 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
       const std::size_t header =
           offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, NumaNode) +
           offsetof(NUMA_NODE_RELATIONSHIP, GroupMasks);
-      require(relation->Size >= header &&
-                  masks <=
-                      (relation->Size - header) / sizeof(GROUP_AFFINITY),
-              "NUMA relation size");
+      if (relation->Size < header ||
+          masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        return std::unexpected(
+            hyle::Status::DataLoss("NUMA relation record is malformed"));
+      }
       for (WORD group = 0; group < masks; ++group) {
         visible = visible || intersects(relation->NumaNode.GroupMasks[group]);
       }
-      if (visible) ++out.topology.numa_nodes;
+      if (visible) ++out.numa_nodes;
     } else if (relation->Relationship == RelationCache &&
                (relation->Cache.Level == 2 || relation->Cache.Level == 3)) {
       const WORD masks = relation->Cache.GroupCount == 0
@@ -297,52 +359,85 @@ HostSnapshot raw_snapshot(RawBuffers& buffers) {
       const std::size_t header =
           offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Cache) +
           offsetof(CACHE_RELATIONSHIP, GroupMasks);
-      require(relation->Size >= header &&
-                  masks <=
-                      (relation->Size - header) / sizeof(GROUP_AFFINITY),
-              "cache relation size");
+      if (relation->Size < header ||
+          masks > (relation->Size - header) / sizeof(GROUP_AFFINITY)) {
+        return std::unexpected(
+            hyle::Status::DataLoss("cache relation record is malformed"));
+      }
       for (WORD group = 0; group < masks; ++group) {
         visible = visible || intersects(relation->Cache.GroupMasks[group]);
       }
       if (visible && relation->Cache.Level == 2) {
-        ++out.topology.l2_cache_domains;
+        ++out.l2_cache_domains;
       } else if (visible) {
-        ++out.topology.l3_cache_domains;
+        ++out.l3_cache_domains;
       }
     }
     offset += relation->Size;
   }
 
-  MEMORYSTATUSEX memory{};
-  memory.dwLength = sizeof(memory);
-  require(::GlobalMemoryStatusEx(&memory) != 0, "GlobalMemoryStatusEx");
-  out.effective_available =
-      (std::min)(memory.ullAvailPhys, memory.ullAvailPageFile);
-
   return out;
 }
 
-HostSnapshot raw_one_shot_snapshot() {
+hyle::Result<hyle::platform::HostMemoryInfo> raw_memory_snapshot() noexcept {
+  MEMORYSTATUSEX native{};
+  native.dwLength = sizeof(native);
+  if (!::GlobalMemoryStatusEx(&native)) {
+    return std::unexpected(hyle::status_from_win32(
+        ::GetLastError(), "GlobalMemoryStatusEx"));
+  }
+  hyle::platform::HostMemoryInfo out;
+  out.physical_total_bytes = native.ullTotalPhys;
+  out.physical_available_bytes = native.ullAvailPhys;
+  out.commit_limit_bytes = native.ullTotalPageFile;
+  out.commit_available_bytes = native.ullAvailPageFile;
+  return out;
+}
+
+hyle::Result<HostSnapshot> raw_one_shot_snapshot() noexcept {
   // Match available_cpu_topology()'s public ownership contract: the caller
   // supplies no persistent OS scratch state, so discovery, workspace lifetime,
   // and teardown all belong to this snapshot. A pre-sized RawBuffers peer is a
   // different reusable-workspace API and must not be compared to the one-shot
   // HYLE entrypoint.
   RawBuffers buffers;
-  return raw_snapshot(buffers);
+  hyle::Status initialized = buffers.initialize();
+  if (!initialized.ok()) return std::unexpected(std::move(initialized));
+  auto topology = raw_topology_snapshot(buffers);
+  if (!topology) return std::unexpected(std::move(topology).error());
+  auto memory = raw_memory_snapshot();
+  if (!memory) return std::unexpected(std::move(memory).error());
+  return HostSnapshot{*topology, *memory};
 }
 
-HostSnapshot hyle_snapshot() {
+hyle::Result<HostSnapshot> hyle_snapshot() noexcept {
   auto topology = hyle::platform::available_cpu_topology();
+  if (!topology) return std::unexpected(std::move(topology).error());
   auto memory = hyle::platform::host_memory_info();
-  require(topology.has_value(), "available_cpu_topology");
-  require(memory.has_value(), "host_memory_info");
-  return {*topology, memory->effective_available_bytes()};
+  if (!memory) return std::unexpected(std::move(memory).error());
+  return HostSnapshot{*topology, *memory};
+}
+
+std::uint64_t checksum_optional(
+    const std::optional<std::uint64_t>& value,
+    unsigned shift) noexcept {
+  const std::uint64_t present = value.has_value() ? 1u : 0u;
+  return (present << shift) ^
+         (value.value_or(0) * (std::uint64_t{0x9e3779b97f4a7c15} + shift));
 }
 
 std::uint64_t checksum(const HostSnapshot& snapshot) noexcept {
   const auto& value = snapshot.topology;
-  return snapshot.effective_available ^ value.logical_cpus ^
+  const auto& memory = snapshot.memory;
+  return memory.physical_total_bytes ^
+         (memory.physical_available_bytes * std::uint64_t{3}) ^
+         checksum_optional(memory.commit_limit_bytes, 8u) ^
+         checksum_optional(memory.commit_available_bytes, 9u) ^
+         checksum_optional(memory.swap_total_bytes, 10u) ^
+         checksum_optional(memory.swap_available_bytes, 11u) ^
+         checksum_optional(memory.process_limit_bytes, 12u) ^
+         checksum_optional(memory.process_available_bytes, 13u) ^
+         value.logical_cpus ^
          (static_cast<std::uint64_t>(value.physical_cores) << 7u) ^
          (static_cast<std::uint64_t>(value.packages) << 14u) ^
          (static_cast<std::uint64_t>(value.numa_nodes) << 21u) ^
@@ -350,6 +445,37 @@ std::uint64_t checksum(const HostSnapshot& snapshot) noexcept {
          (static_cast<std::uint64_t>(value.l3_cache_domains) << 35u) ^
          (static_cast<std::uint64_t>(value.performance_cpus) << 42u) ^
          (static_cast<std::uint64_t>(value.efficiency_cpus) << 49u);
+}
+
+bool snapshots_compatible(const HostSnapshot& lhs,
+                          const HostSnapshot& rhs) noexcept {
+  const auto valid_memory = [](const hyle::platform::HostMemoryInfo& value) {
+    return value.physical_total_bytes != 0 &&
+           value.physical_available_bytes <= value.physical_total_bytes &&
+           (!value.commit_limit_bytes ||
+            !value.commit_available_bytes ||
+            *value.commit_available_bytes <= *value.commit_limit_bytes);
+  };
+  return lhs.topology.logical_cpus == rhs.topology.logical_cpus &&
+         lhs.topology.physical_cores == rhs.topology.physical_cores &&
+         lhs.topology.packages == rhs.topology.packages &&
+         lhs.topology.numa_nodes == rhs.topology.numa_nodes &&
+         lhs.topology.l2_cache_domains == rhs.topology.l2_cache_domains &&
+         lhs.topology.l3_cache_domains == rhs.topology.l3_cache_domains &&
+         lhs.topology.performance_cpus == rhs.topology.performance_cpus &&
+         lhs.topology.efficiency_cpus == rhs.topology.efficiency_cpus &&
+         lhs.topology.hybrid == rhs.topology.hybrid &&
+         lhs.memory.physical_total_bytes == rhs.memory.physical_total_bytes &&
+         lhs.memory.commit_limit_bytes == rhs.memory.commit_limit_bytes &&
+         lhs.memory.swap_total_bytes.has_value() ==
+             rhs.memory.swap_total_bytes.has_value() &&
+         lhs.memory.swap_available_bytes.has_value() ==
+             rhs.memory.swap_available_bytes.has_value() &&
+         lhs.memory.process_limit_bytes.has_value() ==
+             rhs.memory.process_limit_bytes.has_value() &&
+         lhs.memory.process_available_bytes.has_value() ==
+             rhs.memory.process_available_bytes.has_value() &&
+         valid_memory(lhs.memory) && valid_memory(rhs.memory);
 }
 
 }  // namespace
@@ -366,23 +492,12 @@ int main() {
                affinity.topology, affinity.cpu, affinity.ok,
                hyle::bench::perf::run_nonce());
 
-  RawBuffers buffers;
-  const HostSnapshot candidate = hyle_snapshot();
-  const HostSnapshot peer = raw_snapshot(buffers);
-  require(candidate.topology.logical_cpus == peer.topology.logical_cpus &&
-              candidate.topology.physical_cores ==
-                  peer.topology.physical_cores &&
-              candidate.topology.packages == peer.topology.packages &&
-              candidate.topology.numa_nodes == peer.topology.numa_nodes &&
-              candidate.topology.l2_cache_domains ==
-                  peer.topology.l2_cache_domains &&
-              candidate.topology.l3_cache_domains ==
-                  peer.topology.l3_cache_domains &&
-              candidate.topology.performance_cpus ==
-                  peer.topology.performance_cpus &&
-              candidate.topology.efficiency_cpus ==
-                  peer.topology.efficiency_cpus,
-          "raw/HYLE topology mismatch");
+  const auto candidate = hyle_snapshot();
+  const auto peer = raw_one_shot_snapshot();
+  require(candidate.has_value(), "available_cpu_topology/host_memory_info");
+  require(peer.has_value(), "Win32 topology/host-memory adapter");
+  require(snapshots_compatible(*candidate, *peer),
+          "raw/HYLE host snapshot mismatch");
 
   nb::Bench bench;
   bench.title("one-shot host planning snapshot")
@@ -390,9 +505,16 @@ int main() {
       .batch(1)
       .minEpochTime(std::chrono::milliseconds(8));
   run_pair(bench, peer_first, "HYLE topology + memory snapshot",
-           [&] { nb::doNotOptimizeAway(checksum(hyle_snapshot())); },
+           [&] {
+             auto snapshot = hyle_snapshot();
+             require(snapshot.has_value(),
+                     "available_cpu_topology/host_memory_info");
+             nb::doNotOptimizeAway(checksum(*snapshot));
+           },
            "Win32 equivalent snapshot",
            [&] {
-             nb::doNotOptimizeAway(checksum(raw_one_shot_snapshot()));
+             auto snapshot = raw_one_shot_snapshot();
+             require(snapshot.has_value(), "Win32 host snapshot");
+             nb::doNotOptimizeAway(checksum(*snapshot));
            });
 }

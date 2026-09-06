@@ -1,5 +1,16 @@
 # Platform current performance evidence
 
+> **Platform v8 current adjudication（2026-09-06）：**第二候选
+> `c39df6f94c636ab8fa94cb700dd263763a42d680`、tree
+> `37889346564f3a5cdc895f26c9d610883076ba02` 上，host v2 的产品点值和 controls 都通过，但收尾复核发现
+> peer 没有返回完整 memory record，也没有等价的 `Result` 失败通道，故其 same-contract PASS 已撤销；
+> 修正后的 `platform-host-p1-v3` 正在进行唯一一次资格化。Platform-thread 本轮只改变 integrated-source provenance/package，产品
+> Parker bytes 未变，P0 structural 为 `PASS`。Platform-fs 的 exact 产品数据没有显示固定劣化，但连续
+> 两个 bundle 的公共 controls 未取得资格，当前只能是 `INCONCLUSIVE`，不能冻结为 PASS。具名恢复条件见
+> [`platform-fs-control-stability-2026-09`](../../tasks/performance/platform-fs-control-stability-2026-09.md)，
+> 完整产品轮见
+> [`platform-v8-os-resource-contract`](../../tasks/platform/platform-v8-os-resource-contract.md)。
+
 Platform v7 新增异构 cache-class snapshot、opened-file duplicate/info 和同步 explicit-offset
 `RandomAccessFile`。这些路线按 `P0 / STRUCTURAL` 验收：cache discovery 是显式冷路径，file owner
 仍是一字，单次 duplicate/info/read_at/write_at 各直接落一个 native control；旧 cached facts、
@@ -36,12 +47,19 @@ and
 
 ## Current verdict
 
-`PASS` for the v7/v6 P0 structural contracts and all three retained W1-WIN P1
-engineering contracts. This is not a Formal, cross-machine, all-topology, or
-module-wide SOTA certificate. Every numeric row has its own same-contract
-statement and 5% non-inferiority gate; rows are never pooled into a Platform
-score. New control calls are signed structurally because their useful work is
-the OS operation itself and their physical/wait cost is workload-dependent.
+The current v8 verdict is factor-specific: `platform=PENDING`,
+`platform_thread=PASS`, and `platform_fs=INCONCLUSIVE/BLOCKED`. The older v7/v6
+structural results and v3 P1 receipts below remain supporting history; they are
+not silently rebound to the new candidate. This is not a Formal, cross-machine,
+all-topology, or module-wide SOTA certificate. Every numeric row has its own
+same-contract statement and 5% non-inferiority gate; rows are never pooled into
+a Platform score.
+
+| current v8 factor | contract / evidence | result |
+| --- | --- | --- |
+| host | `platform-host-p1-v3`; v2 r5 retained only as diagnostic | pending one bounded qualification; v3 equalizes the complete value record and failure carrier |
+| thread | `P0 / closure-correctness-v1`; unchanged Parker state machine plus exact source/license/package audit | structural `PASS`; no new timing claim |
+| filesystem | `platform-fs-p1-v2`; exact r3/r4 bundles | `INCONCLUSIVE`: r3 product 8/8 `PARITY` and NI `PASS` but delta5 control failed; the one allowed rerun r4 failed A/A and lacked product power |
 
 | v7 capability | tier / same-contract evidence | result |
 | --- | --- | --- |
