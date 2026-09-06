@@ -1,6 +1,6 @@
 # CPU P1 A/A 预冻结扩样修复
 
-<!-- INSTRUMENT TASK: CANDIDATE -->
+<!-- INSTRUMENT TASK: COMPLETE -->
 
 ## 复现事实
 
@@ -33,6 +33,8 @@ identity，也不授权其他模块改写历史 evidence。
   `raw n=15 evidence disagrees with the frozen n=31 escalation decision` 拒绝把它续签为当前证据，这正是
   被修复的旧 stop-rule 缺陷，不允许原地补样或改写旧 manifest。
 
-实现 verdict：`CANDIDATE`。48 项 controls/runner/deep-replay 单元测试通过；修复后的新 qualification
-与 deep verify 通过后再签 `FIXED`。公共 schedule 只按“统计精度是唯一未决项”的原意同时处理产品与
-A/A，不会用扩样掩盖真实 control 或产品失败。
+实现 verdict：`FIXED`。48 项 controls/runner/deep-replay 单元测试通过；修复后的 SIMD v6
+`perf-evidence-v5` qualification 与 deep verify 均为 `QUALIFIED/CURRENT/EXACT`。该次 A/A 在首个
+15-sample stage 已得到 `PARITY`，因此无需实际扩到 31；单元测试覆盖了仅因 CI 穿越边界时扩样以及
+方向性 A/A/其他 control 失败时拒绝扩样。公共 schedule 只按“统计精度是唯一未决项”的原意同时
+处理产品与 A/A，不会用扩样掩盖真实 control 或产品失败。

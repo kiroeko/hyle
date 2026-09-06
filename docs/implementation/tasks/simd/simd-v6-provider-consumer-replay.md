@@ -398,3 +398,45 @@ W1-WIN 修正后 P1 bundle 已经过资格化与 deep verifier，三个完整 ro
 dependency lock、P1 workload/阈值/样本/姿势或语义矩阵。修复后重跑 Windows/WSL/macOS
 SIMD 5/5，再以新 commit/tree 签发候选；旧 P1 bundle 仍可用于同一产品输入的统计事实，
 最终证据必须明确记录两个 commit 之间只有这项测试可移植性变化。
+
+## F06 最终候选（`CANDIDATE`）
+
+新候选为 commit `e72089c196f6b38f897524087bc53201a0fd8df4` / tree
+`a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b`。相对 `fde6fc9c...`，唯一 SIMD 测试变化是
+F06a signed-zero 断言补花括号；其余变化只涉及状态、文档和独立公共性能仪器。相对原产品候选
+`5d734950...`，`CMakeLists.txt`、`cmake/`、`include/`、`src/` 与 SIMD package sample 均无 diff，
+所以产品 API、算法、provider、依赖和三交付输入身份保持不变。
+
+精确 `e72089c1` git archive SHA-256 为
+`3460645B10D001E303634D6A84113F29284545B0E4E5C71B470CAC7C937887FC`。更新后的三平台 exact suite：
+
+| machine / toolchain | build | SIMD tests | verdict |
+|---|---|---:|---|
+| W1-WIN / MSVC 19.50 | Release static exact AVX2, WERROR | 5/5 | `PASS` |
+| W1-WSL / GCC 14.2 | RelWithDebInfo static exact AVX2, ASan, WERROR | 5/5 | `PASS` |
+| M1-MAC / AppleClang 21 | Release static native NEON, WERROR | 5/5 | `PASS` |
+
+原候选完成的三平台 source、relocated static/shared ordinary+expert fixed/fat 交付结果继续有效：上述
+精确 diff 证明交付相关输入没有变化，且新 archive 的三平台完整 SIMD build/test 已重新确认。没有把
+旧二进制假装成新产品，也没有让远程 checkout 回流产品代码。
+
+修正后 W1-WIN P1 bundle
+`C:\public\project-hyle\_validation\simd-v6-provider-consumer-replay\perf-evidence-v5` 的 qualification、
+performance gate 与 deep verifier 均为 `PASS/QUALIFIED/CURRENT/EXACT`。SwiGLU、RMSNorm 和 top-k
+三行在四个预冻结 strata 中都是 exact `PARITY` 且 5% non-inferiority `PASS`；完整数字与 hash 见
+[`benchmarks-simd.md`](../../evidence/performance/benchmarks-simd.md)。
+
+Top-k 的四个点值固定朝 HYLE 负向，已按公共标准 §6.1 做完有界复核：
+
+- comparison matrix 仍为 `SAME_CONTRACT`；两边承担相同检查、一次 noinline 边界、输入/输出/scratch、
+  NaN/tie/index 语义和 ISA；
+- 实际中位差约 0.95%--1.58%，完整 `n=256/k=6` row 为约 4.3--7.9 ns，不是 5%；
+- `k=6` 的循环算法同为有界插入。HYLE 单一自然入口还承载 `k==1` 与大 `k` heap/full-sort 路由；
+  MSVC COMDAT raw code size 为 `0x738`，只含 bounded body 的 peer 为 `0x529`，因此存在可复核的
+  branch/front-end/code-size 机制，不能把固定方向全部称为仪器噪声；
+- 差异低于预冻结 5% material threshold，且没有真实引擎端到端 profile 形成消费钥匙。因此不拆成
+  benchmark 专用 API、不增加常态元数据，也不继续追加第五种姿势。具名引擎若证明该成本成为
+  material bottleneck，可用这一机制作为 reopen 输入，比较 cold general path 或编译期 small-k 自然接口。
+
+F06 的有限 FIX 集已经实现完毕，当前只允许执行 route/coverage、文档、交付、red-team 与状态门的
+最终验证；不得再改变候选产品或性能合同。

@@ -6,6 +6,37 @@
 > [`simd-design`](../../../architecture/simd-design.md) 和
 > [`SIMD v6 closure card`](../../tasks/simd/simd-v6-provider-consumer-replay.md)。
 
+## SIMD v6：修正后推理整行回放（`QUALIFIED/PASS`）
+
+F06b 已把 HYLE 与 direct peer 的 release 参数检查、一次 noinline 调用边界、输入、输出、scratch、
+ISA 和计费范围逐项对齐。W1-WIN、MSVC 19.50、Release exact AVX2 static、LTO off；每个预冻结
+order/placement stratum 为 15 个独立进程样本。`advantage ratio > 1` 有利于 HYLE：
+
+| workload | 四个 median advantage ratios | exact | 5% non-inferiority |
+|---|---|---|---|
+| split SwiGLU f32 / 11008 | 1.0025 / 0.9980 / 0.9974 / 1.0002 | 4/4 `PARITY` | 4/4 `PASS` |
+| weighted RMSNorm f32 / 4096 | 1.0093 / 1.0014 / 1.0020 / 1.0142 | 4/4 `PARITY` | 4/4 `PASS` |
+| expert top-k f32 / 256/6 | 0.9905 / 0.9891 / 0.9842 / 0.9870 | 4/4 `PARITY` | 4/4 `PASS` |
+
+A/A、5%/10% known-delta、timer-floor、placement、artifact/build/host/input/provenance gates 全部
+通过；A/A 在 15 样本即得到 `PARITY`，所以合同允许的 31 样本扩样没有触发。deep verifier 为
+`QUALIFIED/CURRENT/EXACT`。bundle 位于
+`C:\public\project-hyle\_validation\simd-v6-provider-consumer-replay\perf-evidence-v5`；contract-lock、
+manifest、summary SHA-256 分别为
+`0F88BA6B2C0233AE69EB1003747C088545B9E34560E04D070601039BE89B5EE8`、
+`F755A646EF0EF90FA1AD2F871B42C6E184335CF257D940EDF6148933114A7D3E`、
+`F59DE0DE45944A2AE18C985310B1B4D6E2DA333E4890CDF3C5C9DF4FDF8B054A`；contract SHA-256 为
+`6eb9fe307f839ae50997f6f142a7b2fe5dc1c61ea5733dc6005aa39c6f330e33`。
+
+Top-k 在四个固定方向都朝 HYLE 负向，但实际中位差只有约 0.95%--1.58%，不是 5%；完整 row 的
+绝对差约 4.3--7.9 ns。源代码和 MSVC codegen 定向审计确认，`k=6` 时两侧核心都是同合同的有界
+插入；HYLE 的自然通用入口还同时承载 `k==1` 和大 `k` heap/full-sort 路由，生成函数体约
+`0x738` bytes，而只含有界插入 body 的 peer 约 `0x529` bytes。因此固定方向有合理的前端/分支与
+代码体积机制，不能全部归为仪器噪声；但它没有达到冻结的 5% material threshold，也没有真实引擎
+端到端 profile 证明值得拆分公共 API 或增加常态元数据。本轮保持一个自然的通用 API。若具名引擎
+profile 证明该 4--8 ns 成为端到端 material bottleneck，才以 consumer trigger 重开并比较 out-of-line
+cold general path、编译期 small-k overload 等自然实现方案。
+
 ## SIMD v6：初始推理整行回放（`DIAGNOSTIC/REJECTED`）
 
 本节只保留初始候选的原始统计事实。独立红队发现三条 direct peer 没有承担 HYLE public route 的

@@ -1001,7 +1001,7 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
       "round_id": "simd-v6-provider-consumer-replay",
@@ -1009,6 +1009,8 @@
       "scope": "Reconcile the contradictory installed expert-SDK contract and audit only the SIMD capability, provider and build seams affected by current Highway plus current ggml/llama.cpp, ds4, vLLM and SGLang inference-consumer evidence.",
       "non_goals": "An open 422-scope benchmark sweep, benchmark-shaped APIs, a restored public register DSL, model-specific tensor operators, block-quant/GEMM/attention ownership, Compute or Graph implementation, Native FFI/C API, stable cross-toolchain C++ ABI, common instrument redesign or Formal certification.",
       "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
+      "candidate_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
+      "candidate_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1027,7 +1029,7 @@
         "instrument_profile": "formal-release-v1"
       },
       "audit_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "summary": "simd-v6 AUDITED：修正后同合同 P1 已在 W1-WIN 通过；WSL/GCC 14 WERROR 发现 F06a 新增测试的 dangling-else 可移植性缺陷，因此撤销 fde6fc9c 候选身份，有限修复仅为补全该处花括号后重签候选。"
+      "summary": "simd-v6 CANDIDATE：e72089c1 精确归档已在 Windows/MSVC、WSL/GCC+ASan 与 macOS/AppleClang 完成 SIMD 5/5；修正后同合同 P1 为三行 PARITY/5% NI PASS，top-k 固定负向约 0.95%–1.58% 已完成有界实现归因且不满足产品修改的消费钥匙。"
     },
     {
       "module": "container",
