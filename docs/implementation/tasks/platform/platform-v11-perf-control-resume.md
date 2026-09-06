@@ -1,6 +1,6 @@
 # Platform v11：NUMA memory candidate 性能恢复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 本页是 `platform` 从 v10 仪器 blocker 恢复的独立 `RESUME` 轮。NUMA node memory API、三平台实现、
 > correctness、delivery、usability 和 red-team 已绑定 product candidate
@@ -90,3 +90,23 @@ SHA-256 `227D8562BFE74706B7C85657A2DF5FCE1F91524178188A120D427CAD42DE7583`。
 - `CANDIDATE -> VERIFIED` 前态 registry snapshot：
   `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-verified.json`，
   SHA-256 `9D43237076C767C0AEFDA15C02579668AF1701B07EBC8F16FD2D07C76FB293EA`。
+
+## Closure decision
+
+本轮为 `CLOSED/FROZEN`。产品候选保持 v10 identity，scope、architecture、correctness、delivery、
+usability/docs、red-team 与 P1 engineering performance 全部 `PASS`；Formal 独立保持 `PENDING`。
+
+- known limitations：Windows 真多 node 的 total 仍诚实 absent；Linux node available 是无全局 watermark
+  修正的 planning estimate；snapshot 不是 reservation，进程级 cgroup/job/commit 约束由消费者只组合
+  一次；本轮没有 Windows 真多节点硬件；P1 只签 W1-WIN 的完整 host-planning snapshot 和 5% NI，
+  不外推所有 Platform 操作、平台、拓扑、tokens/s 或 universal SOTA；
+- reopen triggers：具名消费者复现 node memory/CPU/host fact 的 correctness、security、ownership、
+  API-usability 或缺失通用能力；公开 API/OS 语义/算法/复杂度/依赖/三交付改变；新的真实推理旅程证明
+  distance/bandwidth/residency 等 deferred family 应归 Platform；或 qualified same-contract/consumer
+  证据证明 material regression；
+- 四项 LOC 绑定 product candidate，`loc-report.py --module platform --commit 3c1ef239... --self-check
+  --json` 为 `PASS`：全库代码 459,121；自实现包含测试 119,445；自实现不包含测试 75,504；Platform
+  实现 6,964；
+- terminal receipt 的完整 end/registry anchor 由下一提交写入唯一状态真相。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
