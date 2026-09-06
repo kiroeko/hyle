@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <type_traits>
@@ -17,9 +18,11 @@ using hyle::math::saturating_divide;
 using hyle::math::saturating_multiply;
 using hyle::math::saturating_subtract;
 using hyle::math::try_add;
+using hyle::math::try_bit_ceil;
 using hyle::math::try_ceil_div;
 using hyle::math::try_divide;
 using hyle::math::try_integer_cast;
+using hyle::math::try_lcm;
 using hyle::math::try_multiply;
 using hyle::math::try_multiply_add;
 using hyle::math::try_product;
@@ -36,6 +39,18 @@ concept CanTryAdd = requires(Lhs lhs, Rhs rhs) { try_add(lhs, rhs); };
 static_assert(CanTryAdd<std::size_t, std::size_t>);
 static_assert(!CanTryAdd<bool, bool>);
 static_assert(!CanTryAdd<int, unsigned>);
+
+template <class Lhs, class Rhs>
+concept CanTryLcm = requires(Lhs lhs, Rhs rhs) { try_lcm(lhs, rhs); };
+
+template <class T>
+concept CanTryBitCeil = requires(T value) { try_bit_ceil(value); };
+
+static_assert(CanTryLcm<std::size_t, std::size_t>);
+static_assert(!CanTryLcm<bool, bool>);
+static_assert(!CanTryLcm<int, unsigned>);
+static_assert(CanTryBitCeil<std::size_t>);
+static_assert(!CanTryBitCeil<bool>);
 
 template <class To, class From>
 concept CanTryIntegerCast = requires(From value) {
@@ -158,6 +173,111 @@ TEST(DivideAndRemainder, RejectInvalidDivisionWithoutEvaluatingUb) {
   EXPECT_EQ(try_remainder<std::int64_t>(kMin, -1), 0);
 }
 
+TEST(DiscreteSizing, LeastCommonMultipleHandlesSignsAndBoundaries) {
+  constexpr auto kSignedMin = (std::numeric_limits<std::int64_t>::min)();
+  constexpr auto kSignedMax = (std::numeric_limits<std::int64_t>::max)();
+  constexpr auto kUnsignedMax = (std::numeric_limits<std::uint64_t>::max)();
+
+  EXPECT_EQ(try_lcm<std::int64_t>(0, kSignedMin), 0);
+  EXPECT_EQ(try_lcm<std::int64_t>(kSignedMin, 0), 0);
+  EXPECT_EQ(try_lcm<std::int64_t>(-6, 8), 24);
+  EXPECT_EQ(try_lcm<std::int64_t>(-21, -6), 42);
+  EXPECT_EQ(try_lcm<std::int64_t>(kSignedMax, 1), kSignedMax);
+  EXPECT_FALSE(try_lcm<std::int64_t>(kSignedMin, 1));
+  EXPECT_FALSE(try_lcm<std::int64_t>(kSignedMin, kSignedMin));
+  EXPECT_FALSE(try_lcm<std::int64_t>(kSignedMax, 2));
+  EXPECT_EQ(try_lcm<std::uint64_t>(kUnsignedMax, 1), kUnsignedMax);
+  EXPECT_FALSE(try_lcm<std::uint64_t>(kUnsignedMax, 2));
+  EXPECT_EQ(try_lcm(char16_t{6}, char16_t{8}), char16_t{24});
+}
+
+TEST(DiscreteSizing, BitCeilHandlesRepresentabilityBeforeCallingStandard) {
+  constexpr std::int64_t kSignedPower = std::int64_t{1} << 62;
+  constexpr std::uint64_t kUnsignedPower = std::uint64_t{1} << 63;
+
+  EXPECT_FALSE(try_bit_ceil<std::int64_t>(-1));
+  EXPECT_EQ(try_bit_ceil<std::int64_t>(0), 1);
+  EXPECT_EQ(try_bit_ceil<std::int64_t>(1), 1);
+  EXPECT_EQ(try_bit_ceil<std::int64_t>(2), 2);
+  EXPECT_EQ(try_bit_ceil<std::int64_t>(3), 4);
+  EXPECT_EQ(try_bit_ceil(kSignedPower), kSignedPower);
+  EXPECT_FALSE(try_bit_ceil(kSignedPower + 1));
+  EXPECT_EQ(try_bit_ceil(kUnsignedPower), kUnsignedPower);
+  EXPECT_FALSE(try_bit_ceil(kUnsignedPower + 1));
+  EXPECT_FALSE(try_bit_ceil((std::numeric_limits<std::uint64_t>::max)()));
+  EXPECT_EQ(try_bit_ceil(char16_t{65}), char16_t{128});
+}
+
+TEST(DiscreteSizing, ExhaustiveEightBitOracle) {
+  for (int lhs = (std::numeric_limits<std::int8_t>::min)();
+       lhs <= (std::numeric_limits<std::int8_t>::max)(); ++lhs) {
+    for (int rhs = (std::numeric_limits<std::int8_t>::min)();
+         rhs <= (std::numeric_limits<std::int8_t>::max)(); ++rhs) {
+      const int lhs_magnitude = lhs < 0 ? -lhs : lhs;
+      const int rhs_magnitude = rhs < 0 ? -rhs : rhs;
+      const int expected = lhs == 0 || rhs == 0
+                               ? 0
+                               : lhs_magnitude /
+                                     std::gcd(lhs_magnitude, rhs_magnitude) *
+                                     rhs_magnitude;
+      const auto actual =
+          try_lcm(static_cast<std::int8_t>(lhs),
+                  static_cast<std::int8_t>(rhs));
+      const bool representable =
+          expected <= (std::numeric_limits<std::int8_t>::max)();
+      ASSERT_EQ(actual.has_value(), representable);
+      if (representable) {
+        EXPECT_EQ(*actual, expected);
+      }
+    }
+  }
+
+  for (unsigned lhs = 0;
+       lhs <= (std::numeric_limits<std::uint8_t>::max)(); ++lhs) {
+    for (unsigned rhs = 0;
+         rhs <= (std::numeric_limits<std::uint8_t>::max)(); ++rhs) {
+      const unsigned expected =
+          lhs == 0 || rhs == 0 ? 0 : lhs / std::gcd(lhs, rhs) * rhs;
+      const auto actual =
+          try_lcm(static_cast<std::uint8_t>(lhs),
+                  static_cast<std::uint8_t>(rhs));
+      const bool representable =
+          expected <= (std::numeric_limits<std::uint8_t>::max)();
+      ASSERT_EQ(actual.has_value(), representable);
+      if (representable) {
+        EXPECT_EQ(*actual, expected);
+      }
+    }
+  }
+
+  for (unsigned value = 0;
+       value <= (std::numeric_limits<std::uint8_t>::max)(); ++value) {
+    unsigned expected = 1;
+    while (expected < value) expected *= 2;
+    const auto actual = try_bit_ceil(static_cast<std::uint8_t>(value));
+    const bool representable =
+        expected <= (std::numeric_limits<std::uint8_t>::max)();
+    ASSERT_EQ(actual.has_value(), representable);
+    if (representable) {
+      EXPECT_EQ(*actual, expected);
+    }
+
+    if (value <= static_cast<unsigned>(
+                     (std::numeric_limits<std::int8_t>::max)())) {
+      const auto signed_actual =
+          try_bit_ceil(static_cast<std::int8_t>(value));
+      const bool signed_representable =
+          expected <= static_cast<unsigned>(
+                          (std::numeric_limits<std::int8_t>::max)());
+      ASSERT_EQ(signed_actual.has_value(), signed_representable);
+      if (signed_representable) {
+        EXPECT_EQ(*signed_actual, expected);
+      }
+    }
+  }
+  EXPECT_FALSE(try_bit_ceil(std::int8_t{-1}));
+}
+
 TEST(CompoundArithmetic, UsesExactStepsAndSinglePassIdentities) {
   EXPECT_EQ(try_multiply_add<std::uint64_t>(7, 6, 1), 43u);
   EXPECT_FALSE(try_multiply_add<std::int8_t>(100, 2, -100));
@@ -273,6 +393,15 @@ TEST(Scalar, Constexpr) {
   static_assert(!try_integer_cast<std::uint32_t>(std::int64_t{-1}));
   static_assert(try_divide<std::int32_t>(21, -3) == -7);
   static_assert(try_remainder<std::int32_t>(22, -3) == 1);
+  static_assert(try_lcm<std::int32_t>(-6, 8) == 24);
+  static_assert(
+      try_lcm<std::int32_t>(
+          0, (std::numeric_limits<std::int32_t>::min)()) == 0);
+  static_assert(!try_lcm<std::int8_t>(64, 3));
+  static_assert(try_bit_ceil<std::uint32_t>(0) == 1u);
+  static_assert(try_bit_ceil<std::uint32_t>(65) == 128u);
+  static_assert(!try_bit_ceil<std::int32_t>(-1));
+  static_assert(!try_bit_ceil<std::uint8_t>(129));
   static_assert(try_multiply_add<std::int32_t>(6, 7, 1) == 43);
   constexpr std::array values{2, 3, 4};
   static_assert(try_sum(std::span{values}) == 9);

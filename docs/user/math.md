@@ -11,6 +11,7 @@
 |---|---|
 | 普通标量三角、指数、常量或 bit primitive | C++ 标准库 |
 | 检查或饱和处理整数 shape/count/stride/offset/byte-size | `hyle::math` |
+| 对不可信 sizing 求 checked LCM 或 next power-of-two | `hyle::math::try_lcm` / `try_bit_ceil` |
 | 对 lane、row 或 buffer 做 dtype、packing、activation 或向量数学 | `hyle::simd` |
 | tensor/model 算子、layout 或融合 | Compute/消费层 |
 
@@ -99,6 +100,18 @@ if (!blocks || !padded) {
 全部 checked 入口返回 `std::optional<T>`，不分配。对于 unsigned ceil-division，只要 divisor 非零，
 结果总能表示；round-up 还可能因下一个倍数超过 `T::max()` 失败。
 
+模型 split granularity 与有界 capacity 规划使用 discrete sizing helper：
+
+```cpp
+auto granularity = hyle::math::try_lcm(block_size, head_dimension);
+auto capacity = hyle::math::try_bit_ceil(requested_capacity);
+if (!granularity || !capacity) return invalid_shape();
+```
+
+`try_lcm` 接受 signed operand，成功结果非负；任一 operand 为零时结果为零。数学结果不能由同一类型
+表示时返回失败，这也安全覆盖 signed minimum。`try_bit_ceil(0)` 和 `(1)` 都返回 1；signed 负值或
+类型无法表示下一幂时失败。输入已经证明安全时，直接使用 `std::lcm` / `std::bit_ceil`。
+
 ## 不要这样用
 
 - 两个 arithmetic operand 必须是同一个非 `bool` integral 类型。需要组合 `uint32_t` shape 与
@@ -109,6 +122,10 @@ if (!blocks || !padded) {
 - `try_subtract` 的 unsigned `lhs < rhs` 是 underflow，返回 `nullopt`；它不是绝对差。
 - 不要用 `round_up_to_multiple` 做 pointer/address alignment；power-of-two 地址对齐用 mem 的
   alignment 能力。
+- 除非已经证明结果可表示，不要用 `std::bit_ceil` 替代 checked capacity 计算；标准 primitive 不提供
+  HYLE 的 `nullopt` failure contract。
+- `try_lcm` 是 logarithmic scalar control-plane 计算，不会向量化一段 buffer。未来若有真实批量
+  consumer，显式 per-lane failure 合同属于 SIMD，而不是让 Math 依赖 SIMD。
 - 不要把 signed 负值当成“向上整除”输入；负数的 rounding direction 是另一种合同，
   math 不隐式猜测。
 - 不要把 checked 与 saturating 结果混用：前者保持“精确或失败”，后者明确接受 clamp；饱和除法也
@@ -122,5 +139,5 @@ if (!blocks || !padded) {
 制造一个没有符号的 math 库文件；它只决定所选闭包中编译型依赖的产物形状。
 
 当前能力边界、三工具链结构成本与交付验证见
-[Math v3 evidence](../implementation/evidence/performance/benchmarks-math-v3.md)；点值 timing 不参与该
+[Math v4 evidence](../implementation/evidence/performance/benchmarks-math-v4.md)；点值 timing 不参与该
 P0 结论。

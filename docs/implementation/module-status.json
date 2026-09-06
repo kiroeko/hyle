@@ -368,18 +368,14 @@
     },
     {
       "module": "math",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "MATH-INTEGER-POLICY-SUPERSET-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
-      "round_id": "math-v3-integer-policy-superset",
-      "closure_task": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
-      "scope": "Complete model-independent checked conversion, division/remainder, compound or extent aggregation and saturating integral policy while preserving scalar Math's Core-only header-only boundary.",
-      "non_goals": "Floating transcendental math, activation or quantization kernels, SIMD or tensor types, arbitrary precision, parsing, Compute policy, downstream frozen-module migration, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
-      "baseline_commit": "e3202ae42d30062da049938c1f267bde83e47324",
-      "candidate_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
-      "candidate_tree": "3aba9d8c9eb06c927f7d29228b925668150bf0a6",
-      "end_commit": "5ead527ffa296e778edb21e5eabd80b51aa90b3f",
-      "registry_anchor_commit": "1825727c5326138126ac222e121e7386539b5cab",
+      "product_state": "AUDITED",
+      "reopen_trigger_id": "MATH-CHECKED-DISCRETE-SIZING-2026-09-06",
+      "reopen_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
+      "round_id": "math-v4-checked-discrete-sizing",
+      "closure_task": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
+      "scope": "Add checked scalar least-common-multiple and next-power-of-two policies for untrusted model-independent sizing while preserving Math's Core-only header-only boundary.",
+      "non_goals": "SIMD lane or buffer variants, trusted standard-library wrappers, tensor or model policy, arbitrary precision, downstream frozen-module migration, component-edge changes, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
+      "baseline_commit": "cc2bb5b648cfa43dc5b72a32db318eca5d4a80e7",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -387,53 +383,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-math-v3.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/math/math-v3-integer-policy-superset.md",
-      "freeze_confirmation": {
-        "id": "math-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "loc": {
-        "snapshot_commit": "ff20319408372013fec6818c35f4ba7a7c79440c",
-        "repository_code": 448054,
-        "self_with_tests": 115258,
-        "self_without_tests": 73078,
-        "module_implementation": 382
-      },
-      "known_limitations": [
-        "Math covers fixed-width non-Boolean integral control-plane values; ordinary binary and aggregate operations use one explicit type and only cast is heterogeneous.",
-        "Multiply-add and aggregate operations use exact left-to-right fixed-width intermediates rather than arbitrary-wide fused cancellation semantics.",
-        "Saturating division has a nonzero-divisor precondition; floating, SIMD, tensor, parsing, arbitrary precision and model policy remain with their semantic owners.",
-        "The P0 claim covers structural cost on the frozen compilers and delivery shapes; timing peers, end-to-end inference, universal SOTA and Formal performance are not claimed."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces an incorrect result, undefined behavior, missing common scalar integer policy or natural C++ API-usability defect.",
-        "A supported compiler or target changes overflow-intrinsic, integer-representation, constexpr or normal-path code-generation semantics.",
-        "The public API, algorithm, complexity, component dependency, header closure or source, static or shared delivery shape changes.",
-        "A locked llama.cpp or ggml journey, or two mature independent peers, prove a new model-independent scalar control-plane MUST.",
-        "A same-contract mechanism proves a better complexity class, or a real consumer or profile proves a reproducible material regression or advantage."
-      ],
-      "summary": "math-v3 CLOSED/FROZEN：checked conversion/divide/compound/aggregate 与 saturating integer policy 已补齐；三平台正确性/UBSan/逐头/三交付、文档/红队和 P0 原生结构成本全部通过。"
+      "summary": "math-v4 AUDITED：两个 checked scalar API、边界语义、Core-only 依赖、P0 复杂度和五项 FIX 已冻结；现在允许单批实现。"
     },
     {
       "module": "time",

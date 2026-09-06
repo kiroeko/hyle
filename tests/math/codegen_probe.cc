@@ -39,6 +39,8 @@ HYLE_MATH_CHECKED_PROBE(try_subtract_u64, std::uint64_t, try_subtract)
 HYLE_MATH_CHECKED_PROBE(try_subtract_i64, std::int64_t, try_subtract)
 HYLE_MATH_CHECKED_PROBE(try_multiply_u64, std::uint64_t, try_multiply)
 HYLE_MATH_CHECKED_PROBE(try_multiply_i64, std::int64_t, try_multiply)
+HYLE_MATH_CHECKED_PROBE(try_lcm_u64, std::uint64_t, try_lcm)
+HYLE_MATH_CHECKED_PROBE(try_lcm_i64, std::int64_t, try_lcm)
 
 #undef HYLE_MATH_CHECKED_PROBE
 
@@ -53,6 +55,22 @@ HYLE_NOINLINE bool hyle_math_probe_cast_i64_u32(
 HYLE_NOINLINE bool hyle_math_probe_divide_i64(
     std::int64_t lhs, std::int64_t rhs, std::int64_t* output) noexcept {
   const auto result = hyle::math::try_divide(lhs, rhs);
+  if (!result) return false;
+  *output = *result;
+  return true;
+}
+
+HYLE_NOINLINE bool hyle_math_probe_bit_ceil_u64(
+    std::uint64_t value, std::uint64_t* output) noexcept {
+  const auto result = hyle::math::try_bit_ceil(value);
+  if (!result) return false;
+  *output = *result;
+  return true;
+}
+
+HYLE_NOINLINE bool hyle_math_probe_bit_ceil_i64(
+    std::int64_t value, std::int64_t* output) noexcept {
+  const auto result = hyle::math::try_bit_ceil(value);
   if (!result) return false;
   *output = *result;
   return true;

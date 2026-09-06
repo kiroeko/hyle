@@ -4,6 +4,7 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <type_traits>
@@ -34,6 +35,17 @@ constexpr bool is_non_negative(T value) noexcept {
 
 template <NonBooleanIntegral T>
 using Unsigned = std::make_unsigned_t<T>;
+
+template <NonBooleanIntegral T>
+constexpr Unsigned<T> unsigned_magnitude(T value) noexcept {
+  using U = Unsigned<T>;
+  const U bits = static_cast<U>(value);
+  if constexpr (std::signed_integral<T>) {
+    return value < T{0} ? static_cast<U>(U{0} - bits) : bits;
+  } else {
+    return bits;
+  }
+}
 
 template <class T>
 inline constexpr bool kCharacterInteger =
@@ -290,6 +302,44 @@ template <detail::NonBooleanIntegral T>
     }
   }
   return static_cast<T>(dividend % divisor);
+}
+
+// Least common multiple for untrusted fixed-width sizing values. The result is
+// non-negative, matching the mathematical/std::lcm convention. Dividing by the
+// GCD before the checked multiply prevents intermediate overflow; unsigned
+// magnitudes also make the signed minimum safe to inspect.
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr std::optional<T> try_lcm(T lhs, T rhs) noexcept {
+  using U = detail::Unsigned<T>;
+  const U lhs_magnitude = detail::unsigned_magnitude(lhs);
+  const U rhs_magnitude = detail::unsigned_magnitude(rhs);
+  if (lhs_magnitude == U{0} || rhs_magnitude == U{0}) return T{0};
+
+  const U divisor = std::gcd(lhs_magnitude, rhs_magnitude);
+  const U reduced = static_cast<U>(lhs_magnitude / divisor);
+  constexpr U kMaxResult =
+      static_cast<U>((std::numeric_limits<T>::max)());
+  const auto product = try_multiply(reduced, rhs_magnitude);
+  if (!product || *product > kMaxResult) {
+    return std::nullopt;
+  }
+  return static_cast<T>(*product);
+}
+
+// Smallest representable power of two that is not less than value. std::bit_ceil
+// requires its result to fit; checking against T's highest representable power
+// first keeps external counts on a defined failure path.
+template <detail::NonBooleanIntegral T>
+[[nodiscard]] constexpr std::optional<T> try_bit_ceil(T value) noexcept {
+  if (!detail::is_non_negative(value)) return std::nullopt;
+
+  using U = detail::Unsigned<T>;
+  const U unsigned_value = static_cast<U>(value);
+  constexpr U kMaxValue =
+      static_cast<U>((std::numeric_limits<T>::max)());
+  constexpr U kMaxPower = std::bit_floor(kMaxValue);
+  if (unsigned_value > kMaxPower) return std::nullopt;
+  return static_cast<T>(std::bit_ceil(unsigned_value));
 }
 
 // Exact left-to-right `multiplicand * multiplier + addend`. An intermediate

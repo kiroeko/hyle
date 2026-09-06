@@ -14,9 +14,10 @@ HYLE simd 承载，少量没有进入 SIMD 的标量/bit/numeric helper 留在�
 能防止溢出/输入边界重复出错的值计算。它不是通用数学伞头，也不是 SIMD 的 scalar
 fallback 目录。
 
-当前准入三类能力：非负整数的 ceiling division 与可表示 multiple round-up；不可信 integral
+当前准入四类能力：非负整数的 ceiling division 与可表示 multiple round-up；不可信 integral
 shape、stride、offset 与 byte-count 的 exact checked conversion/arithmetic/aggregation；以及明确选择
-clamp policy 的 saturating integer operation/conversion。它们在
+clamp policy 的 saturating integer operation/conversion；还有不可信 sizing 的 checked LCM 与 next
+power-of-two。它们在
 tensor/block/launch shape、allocation sizing 和 layout validation 中反复出现，C++23 又没有统一的
 自然 C++ 返回形状。ceil/round 的正常入口把
 非负值、正除数和可表示结果当作程序不变量并 fail-fast；`try_` 入口用 `std::optional`
@@ -28,6 +29,11 @@ destination 的 `try_integer_cast`。成功值是逐步精确结果；overflow/u
 非法 divisor 返回 `nullopt`，不返回 wrapped/saturated value。`try_remainder(min,-1)` 特判返回数学上的
 精确零而不执行 UB；对应 quotient 不可表示，`try_divide` 失败。可信且已经验证的普通算术仍直接用语言
 operator。
+
+Discrete sizing 路线提供 `try_lcm` 与 `try_bit_ceil`。前者先以无符号 magnitude 求 GCD，再约分和
+判界，因此 signed minimum 或乘法 intermediate 都不会触发 UB；成功结果总是非负。后者先证明下一幂
+可以由 `T` 表示，再调用标准 bit primitive。两者都沿用“精确结果或 `nullopt`”策略；可信且已验证的
+输入仍直接使用 `std::lcm` / `std::bit_ceil`。
 
 Saturating 路线使用 `saturating_add/subtract/multiply/divide/cast`，返回最近的可表示值；它不是 checked
 失败的替代品。除零没有可定义的 clamp，因此 trusted saturating divide 以 Core invariant fail-fast，
@@ -72,12 +78,13 @@ scalar 合同，应声明直接依赖并复用，而不是因为模块边界再�
 通用数学事实，对 NaN、无穷与近零的结果也不能从旧函数名自然推导。
 
 当前能力与结构成本的候选绑定证据见
-[Math v3 P0 evidence](../implementation/evidence/performance/benchmarks-math-v3.md)；旧候选报告只作历史输入。
+[Math v4 P0 evidence](../implementation/evidence/performance/benchmarks-math-v4.md)；旧候选报告只作历史输入。
 
 ## 成本与交付
 
-所有 scalar 入口均为 `constexpr` inline value function，O(1)、零分配、零锁、零常态 metadata；span
-sum/product 是 O(n) 单遍、短路、零分配，empty identities 分别为 0/1。
+所有 scalar 入口均为 `constexpr` inline value function、零分配、零锁、零常态 metadata。fixed-width
+arithmetic、conversion、division、ceil/round 与 bit-ceil 是 O(1)；`try_lcm` 通过标准 GCD 达到
+O(log(min(|lhs|,|rhs|)))。span sum/product 是 O(n) 单遍、短路、零分配，empty identities 分别为 0/1。
 ceil/round 使用 quotient/remainder 形状，避免 `(a + b - 1)` 的先行溢出；round-up 在加法前
 检查结果是否可表示。checked add/sub 在 unsigned bit domain 判定 carry/sign overflow；runtime checked
 multiply 使用工具链 overflow primitive 或高半积，constant evaluation 使用先判界再乘，均不执行
