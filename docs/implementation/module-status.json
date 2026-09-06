@@ -294,18 +294,14 @@
     },
     {
       "module": "obs",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "OBS-STRUCTURED-EVENT-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
-      "round_id": "obs-v4-structured-event",
-      "closure_task": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
-      "scope": "Complete the admitted logger-neutral structured event schema, resolve typed Time interoperability and the now-available Mem-reclaim reuse decision, then requalify the affected C++ delivery and normal one-adapter performance contracts.",
-      "non_goals": "Metrics, asynchronous logging, queue/persistence/network exporters, category configuration trees, automatic task-context propagation, GPU/lock/async-flow tracing, crash reporting, Native FFI/C API, stable C++ ABI, Compute/Graph, adjacent-module closure, common instrumentation redesign and Formal certification.",
-      "baseline_commit": "067c3a5060390a8c592fdde38dd095f04fd68603",
-      "candidate_commit": "14c82a18f8f00b892479ae16abba4d8320d5915c",
-      "candidate_tree": "7594a2f13271ba7956c3e685e24c6302a91f015b",
-      "end_commit": "6bc1a1559e11956d73190a234f3748acf4808df8",
-      "registry_anchor_commit": "6bc1a1559e11956d73190a234f3748acf4808df8",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
+      "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
+      "round_id": "obs-v5-metrics-primitives",
+      "closure_task": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
+      "scope": "Add model-independent counter, gauge and fixed-bucket histogram aggregation primitives for production inference observability without coupling them to exporters, labels or runtime policy.",
+      "non_goals": "Prometheus/OpenTelemetry formats, names/labels/cardinality registry, time windows, exporters, persistence/network/background work, automatic task context, GPU timing, engine policy, Native FFI/C API, adjacent-module redesign, common instrumentation changes and Formal certification.",
+      "baseline_commit": "c51599be2fdcd4caeacc5b05aa0f61f725c62491",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -313,58 +309,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
+        "evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "loc": {
-        "snapshot_commit": "14c82a18f8f00b892479ae16abba4d8320d5915c",
-        "repository_code": 441812,
-        "self_with_tests": 112186,
-        "self_without_tests": 70870,
-        "module_implementation": 1454
-      },
-      "closure_evidence": "docs/implementation/tasks/obs/obs-v4-structured-event.md",
-      "freeze_confirmation": {
-        "id": "obs-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "known_limitations": [
-        "The P1 engineering verdict covers only the frozen W1-WIN ordinary, structured model-load and one-adapter registry journeys; cross-platform performance, all event combinations, 4/16-sink diagnostics, async logging, end-to-end inference, universal SOTA and Formal are not claimed.",
-        "Log records and string values are synchronously borrowed; owning queues, persistence, network export, durability, category configuration, metrics and automatic task context remain host or future-factor responsibilities.",
-        "The registry has a fixed 64-sink capacity; callbacks are concurrent noexcept same-thread operations, while O(S) add/remove/flush are cold paths and quiescent removal may wait for callbacks.",
-        "The default sink is best-effort serialized stderr/debugger output, and Trace ON borrows locked Tracy with its documented network and one-client-per-final-image constraints.",
-        "HYLE promises neither Native FFI nor a stable cross-toolchain C++ ABI; source, static and shared consumers require matched headers and binaries, retained engineering bundles are local, and Formal remains PENDING."
-      ],
-      "reopen_triggers": [
-        "A named normal or inference consumer reproduces an Obs correctness, security, borrow or teardown, callback-quiescence, OOM or no-throw, API-usability or missing-capability defect.",
-        "The public record, sink, control or trace API or layout, registry algorithm or normal cost, direct dependency, selected-header inventory, source/static/shared delivery or Tracy product identity changes materially.",
-        "Mem-reclaim, Time, Error, Core, a supported compiler or standard library, or an OS changes the actual reclamation, timestamp, status, formatting, atomic or terminal/debugger semantics.",
-        "Renewing the engineering claim encounters a material change in frozen consumer provenance, peer or baseline, comparison class, machine, instrument, compiler or retained evidence identity.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile reproduces a material regression beyond the frozen 5% margin.",
-        "An independently admitted metrics, async-export or task-context factor proves that the public Obs producer seam itself must change rather than compose through a host adapter."
-      ],
-      "summary": "obs-v4 CLOSED：logger-neutral typed borrowed event、Time/Error 组合与 mem_reclaim snapshot guard 已完成；三平台 correctness/sanitizer、三种 C++ 交付、Trace OFF/ON、内部复用、易用性/文档、红队及三份 W1-WIN 5% P1 正常消费合同全部通过。"
+      "summary": "obs v5 REOPENED：llama.cpp、vLLM 与 SGLang 共同复现 production counter/gauge/histogram 聚合缺口；当前只登记无 exporter/registry 的最小影响面，尚未冻结 closure card 或修改产品。"
     },
     {
       "module": "math",
