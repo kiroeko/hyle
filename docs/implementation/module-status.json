@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
       "round_id": "platform-v9-process-memory-mapping",
@@ -604,7 +604,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v9 REOPENED：Mem 复现 whole-process memory fact 不实，Mem-VM 复现 file mapping 与 Platform 两套 OS range authority；当前只登记窄影响面，尚未冻结 closure card 或授权产品修改。"
+      "summary": "platform v9 SCOPED：whole-process OS memory fact、通用 mapped-range authority、三平台/三交付、Mem 直接消费与既有 host P1 holdout 的有限合同已冻结；尚未完成能力审计或授权产品修改。"
     },
     {
       "module": "platform_thread",

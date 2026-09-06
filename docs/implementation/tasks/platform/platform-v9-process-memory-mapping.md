@@ -41,3 +41,41 @@
 - range control 若现有实现本来已支持任意映射，则只修合同/复用和测试；不得把 file owner、fragment
   metadata 或 model policy 下沉到 Platform；
 - 审计若发现必须改变公开合同、依赖或正常 workload，先在 `AUDITED` ledger 具名，不得边施工边扩 scope。
+
+## Closure card（`SCOPED`）
+
+- component / owner / round / kind：`platform` / OS process-memory and VM range mechanism /
+  `platform-v9-process-memory-mapping` / `REOPEN`；baseline
+  `93dce49922ac1721c45f155d66f3805e74faf7cc`；
+- demands：`PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06` 与
+  `PLATFORM-MEMVM-VM-RANGE-AUTHORITY-2026-09-06`；真实 consumer 分别是长期推理进程的 host
+  pressure snapshot，以及 model loader 对 file-backed ranges 的 advice/residency/partial release；
+- 范围：新增稳定 POD/optional 形状的 whole-process OS memory fact；使既有
+  `vm_advise/vm_lock/vm_unlock` 对合法 mapped page range 的合同不再错误限定为 anonymous region；对应
+  Windows/Linux/macOS 实现、测试、文档、selected header、source/static/shared 和 Mem 直接消费；
+- 非目标：CPU/NUMA/cache/frequency、memory-pressure policy、allocator facts、file/shared mapping owner、
+  fragment metadata/unmap policy、Platform-fs/thread、IO、Native FFI/C API、稳定 C++ ABI、公共仪器与 Formal；
+- 依赖：`core`、`error`；直接 consumer：`mem` 与 `mem_vm`。Platform 只返回 OS 可证事实和 range
+  mechanism，不依赖 Mem，也不把 allocator 聚合或 loader policy 下沉；
+- API 语义档：resident/current+peak 必须覆盖 whole process；private committed 仅在 OS 有公开对等量时
+  `optional`，不得用 virtual address size 或 allocator committed 代替；range mechanism 接受由合法 owner
+  提供的 page-aligned committed/mapped range，owner 仍负责生命周期和合法范围；
+- tier：`P1`。新增 snapshot 为显式冷路径，按 P0 结构/系统事实验证；唯一数值 holdout 复用
+  `bench/platform/host_bench.cc` 的既有 one-shot host-planning 正常 journey，W1-WIN、5% margin，不新增
+  snapshot 微基准，也不重签 Platform 全模块 SOTA；
+- 总调查预算 3 小时，其中性能最多 30 分钟；最多一轮 Platform 产品修改和一次 P1 replay。若现有 VM
+  implementation 已符合通用范围，只改合同、测试和 Mem 复用，不为“统一”重写 syscall；
+- correctness machines：`W1-WIN`、`W1-WSL`、`M1-MAC`；P1 machine：`W1-WIN`；instrument：
+  `closure-perf-v1`，P0 为 `closure-correctness-v1`；
+- authoritative inputs：Windows `GetProcessMemoryInfo/PROCESS_MEMORY_COUNTERS_EX`，Linux
+  `/proc/self/status` 的 `VmRSS/VmHWM`，Apple public Mach task information/getrusage；range 语义取各 OS
+  官方 mmap/VirtualMemory mechanism，Folly `65749da412d92fe27d87ae45a8ef670720712858` 仅作成熟
+  mapped-range mechanism 对照；
+- 适用门：公开 surface reverse trace；正常/字段缺失/parse overflow/OS failure；并发冷查询；三平台；
+  source/static/shared；Mem 直接消费；FFI 清洁；文档/易用性；红队；新增能力 P0 和既有 host P1 holdout；
+- 停止：冻结的 `MUST` 完成、适用门通过且 holdout 无 material regression 则关闭；OS 不提供字段时
+  absent 是成功而非 blocker；无法在公开 OS 合同下证实 whole-process 语义则 `BLOCKED`，不得猜值。
+
+`REOPENED -> SCOPED` 前 registry snapshot：
+`C:\public\project-hyle\_validation\platform-v9-process-memory-mapping\module-status-before-scoped.json`，
+SHA-256 `ADEB548C7A15275FFC8F51E67721E0E39DF6A871CE0C30786A97BC64ADE9530E`。
