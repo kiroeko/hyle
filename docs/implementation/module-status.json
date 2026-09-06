@@ -1068,7 +1068,7 @@
     },
     {
       "module": "container",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v5-product-factorization",
@@ -1093,7 +1093,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 REOPENED：public SSSE3 floor 与 Unix simdutf visibility 已构成直接产品触发；四组真实推理消费还证明能力超集和 sequential/concurrent/queue/text 内部闭包必须重新冻结。产品代码尚未修改。"
+      "summary": "container-v5 SCOPED：产品仍只有一个 hyle::container façade；四因子候选、当前推理/peer identity、P1 语义门、16.5 小时总预算与停止线已冻结，完整审计和有限 FIX 集完成前不修改产品。"
     },
     {
       "module": "util",
@@ -1274,6 +1274,21 @@
       "module": "graph",
       "product_state": "QUEUED",
       "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"
+    },
+    {
+      "module": "container_concurrent",
+      "product_state": "QUEUED",
+      "summary": "Container concurrent 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。"
+    },
+    {
+      "module": "container_queue",
+      "product_state": "QUEUED",
+      "summary": "Container queue 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。"
+    },
+    {
+      "module": "text",
+      "product_state": "QUEUED",
+      "summary": "Container text 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。"
     }
   ]
 }

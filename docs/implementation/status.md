@@ -26,7 +26,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | mem | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-mem-v6.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v6-comprehensive-rebuild.md) | mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。 |
 | mem_vm | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-mem-vm-v2.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem_vm/mem-vm-v2-inference-mapping.md) | mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。 |
 | simd | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-simd.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v6-provider-consumer-replay.md) | simd-v6 CLOSED/FROZEN：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。 |
-| container | REOPENED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v5-product-factorization.md) | container-v5 REOPENED：public SSSE3 floor 与 Unix simdutf visibility 已构成直接产品触发；四组真实推理消费还证明能力超集和 sequential/concurrent/queue/text 内部闭包必须重新冻结。产品代码尚未修改。 |
+| container | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v5-product-factorization.md) | container-v5 SCOPED：产品仍只有一个 hyle::container façade；四因子候选、当前推理/peer identity、P1 语义门、16.5 小时总预算与停止线已冻结，完整审计和有限 FIX 集完成前不修改产品。 |
 | util | CLOSED | — | P0 | [PASS](evidence/performance/benchmarks-util.md) / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
 | sched | CLOSED | — | P1 | [PASS](evidence/performance/benchmarks-sched.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/sched/sched-v3-root-participation.md) | sched-v3 CLOSED：same-Scheduler root participation 与 bounded sibling activation 消除了 v2 的 oneTBB batch gap；三平台 correctness/sanitizer、三种 C++ 交付、符号/FFI 清洁、直接消费者、文档/红队与 W1-WIN 5% P1 engineering gate 全部通过，Formal 保持 PENDING。 |
 | io | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io-v1 保持 SCOPED 且由 owner 暂停：scope、baseline 与预算已经冻结，尚未进入 AUDITED，也没有产品改动；只有 owner 明确恢复后才能继续。 |
@@ -36,6 +36,9 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | io_transfer | QUEUED | — | — | — | — | — | IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | compute | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
+| container_concurrent | QUEUED | — | — | — | — | — | Container concurrent 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
+| container_queue | QUEUED | — | — | — | — | — | Container queue 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
+| text | QUEUED | — | — | — | — | — | Container text 内部因子 ID 已登记；尚无独立 header/source owner、target、依赖或产品根，等待 Container v5 AUDITED 边界与自己的 SCOPED/AUDITED 合同。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：

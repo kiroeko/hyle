@@ -230,6 +230,13 @@ _hyle_declare_component(graph
   PRIVATE_DEPS util_core
   PUBLIC_DEPS core error mem container sched
   PUBLIC_TYPE_DEPS sched)
+# Container v5 reserves these internal factor identities before moving any
+# public header or product code. QUEUED factors do not create targets and cannot
+# enter the consumer-facing Container facade until their own SCOPED/AUDITED
+# contracts establish real ownership and dependencies.
+_hyle_declare_component(container_concurrent QUEUED)
+_hyle_declare_component(container_queue QUEUED)
+_hyle_declare_component(text QUEUED)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
