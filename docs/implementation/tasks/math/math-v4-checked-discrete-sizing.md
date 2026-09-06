@@ -1,6 +1,7 @@
 # Math v4：checked discrete sizing
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮只补齐两个由当前推理参考路径和 owner 明确准入的 scalar control-plane 边界。它不把 Math
 > 扩成 SIMD、tensor 或一般数值库；进入 `AUDITED` 前不修改产品源码。
@@ -258,13 +259,33 @@ header, tests, probe, CMake and package consumer.
 - finding：the first implementation candidate's package sample did not call the new APIs (`medium`, fixed). Candidate
   `686ec1c0` adds the natural calls and all three exact-candidate delivery journeys pass. No unresolved issue remains.
 
-## Closure decision（verification stage）
+## 接受限制与重开条件
 
-- all seven aggregate gates are `PASS`; no blocker or unhandled `MUST` remains；
-- known limitations and reopen triggers are prepared for the terminal registry but do not broaden this round；
-- terminal receipt has not yet been committed, so this section recommends mechanical state `VERIFIED`, not `CLOSED`；
-- LOC snapshot at candidate `686ec1c0215fa7a808ee470fe103ac62a1050759`：repository code 452,775；
-  self-written with tests 117,111；self-written without tests 74,346；Math implementation 420；self-check `PASS`。
+接受限制：Math 只处理 fixed-width、非 `bool`、same-type integral control-plane 值；conversion 仍是唯一
+heterogeneous 入口。`try_lcm` 是 logarithmic scalar work，`try_bit_ceil` 的具体指令选择可由 portable
+standard library 完成；二者不是 buffer SIMD API。P0 只证明冻结工具链/交付的复杂度和结构成本，不覆盖
+纳秒 timing、所有平台或端到端推理 SOTA。Math 没有 Native FFI 或稳定跨工具链 C++ ABI。
+
+只有以下新事实重开 Math：
+
+1. 具名 consumer 复现错误结果、UB、缺失的通用 scalar integer policy 或自然 C++ API 缺陷；
+2. 支持 compiler/standard library/target 改变 integer、GCD、bit primitive、constexpr 或正常 codegen 合同；
+3. public API、算法/复杂度、组件依赖、header closure 或 source/static/shared 交付形状变化；
+4. 锁定 llama.cpp/ggml journey 或两个成熟独立 peer 证明新的模型无关 scalar control-plane `MUST`；
+5. 真实 batch/lane consumer 准入 SIMD 版本，或同合同机制证明更优复杂度档/material regression。
+
+新 benchmark、API/LOC 数量、命名偏好、单个纳秒点值、Formal 状态或没有新事实的“再看一遍”不构成
+trigger。
+
+## Closure decision
+
+- 本轮裁决为 `CLOSED`：`MATH4-LCM-01..DOC-05` 全部完成；所有适用 scope、architecture、correctness、
+  delivery、usability/docs、red-team 与 P0 structural gate 都为 `PASS`；remaining blocker/medium finding = 0；
+- receipt 保持 candidate `686ec1c0215fa7a808ee470fe103ac62a1050759` / tree
+  `1cb4bb81451ba016e09aecce563b3b591648d7a0`，不修改产品实现；
+- LOC snapshot at that immutable candidate：repository code 452,775；self-written with tests 117,111；
+  self-written without tests 74,346；Math implementation 420；cloc 2.08 self-check `PASS`；
+- terminal receipt marker is `CLOSED`; full end identity is recorded by the subsequent registry anchor commit.
 
 `CANDIDATE -> VERIFIED` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-math-v4-verified.json`，SHA-256
