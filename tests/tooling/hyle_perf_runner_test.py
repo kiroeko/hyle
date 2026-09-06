@@ -364,6 +364,44 @@ class RunnerControlsTest(unittest.TestCase):
         self.assertFalse(_eligible_for_sample_escalation(
             summary, controls, closure_contract))
 
+    def test_aa_boundary_uncertainty_uses_prefrozen_second_stage(self):
+        closure_contract = {
+            "workloads": [gate_workload("product", "aa")],
+        }
+        controls = [{
+            "id": "aa",
+            "gate": "FAIL",
+            "details": {
+                "kind": "aa",
+                "orders": {
+                    "candidate-first": {
+                        "verdict": "INCONCLUSIVE",
+                        "reason": "median-ci-crosses-decision-boundary",
+                    },
+                    "peer-first": {
+                        "verdict": "PARITY",
+                        "reason": "median-ci-inside-equivalence-band",
+                    },
+                },
+            },
+        }]
+        summary = {"workloads": [{
+            "id": "product",
+            "comparability": "COMPARABLE",
+            "combined_noninferiority_gate": "PASS",
+        }]}
+        self.assertTrue(_eligible_for_sample_escalation(
+            summary, controls, closure_contract))
+        self.assertTrue(_replay_sample_escalation(
+            summary, controls, closure_contract))
+
+        controls[0]["details"]["orders"]["candidate-first"].update(
+            verdict="LOSE", reason="confidence-interval-below-equivalence-band")
+        self.assertFalse(_eligible_for_sample_escalation(
+            summary, controls, closure_contract))
+        self.assertFalse(_replay_sample_escalation(
+            summary, controls, closure_contract))
+
     def test_mechanism_rows_do_not_drive_escalation(self):
         closure_contract = {"workloads": [
             gate_workload("product", "aa"),

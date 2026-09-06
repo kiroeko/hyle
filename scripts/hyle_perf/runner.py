@@ -42,6 +42,7 @@ from hyle_perf.contract import (
 )
 from hyle_perf.controls import (
     SUPPORTED_TIMER_BATCHES,
+    control_allows_sample_escalation,
     evaluate_cpu_controls,
     validate_cpu_control_observations,
 )
@@ -2012,16 +2013,20 @@ def _eligible_for_sample_escalation(
     required_controls = {
         control_id for workload in eligible
         for control_id in workload["required_controls"]}
-    control_gates = {control["id"]: control["gate"] for control in controls}
-    if any(control_gates.get(control_id) != "PASS"
-           for control_id in required_controls):
-        return False
+    control_rows = {control["id"]: control for control in controls}
+    controls_need_more_samples = False
+    for control_id in required_controls:
+        control = control_rows.get(control_id)
+        if control is None or not control_allows_sample_escalation(control):
+            return False
+        controls_need_more_samples |= control["gate"] != "PASS"
     gates = [
         workload["combined_noninferiority_gate"]
         for workload in summary["workloads"]
         if workload.get("id") in eligible_ids and
         workload["comparability"] == "COMPARABLE"]
-    return (bool(gates) and "UNRESOLVED" in gates and
+    return (bool(gates) and
+            ("UNRESOLVED" in gates or controls_need_more_samples) and
             all(gate in {"PASS", "UNRESOLVED"} for gate in gates))
 
 

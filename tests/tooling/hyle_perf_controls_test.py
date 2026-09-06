@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from hyle_perf.controls import (  # noqa: E402
     CONTROL_OBSERVATIONS_SCHEMA,
+    control_allows_sample_escalation,
     evaluate_cpu_controls,
     validate_cpu_control_observations,
 )
@@ -83,6 +84,35 @@ def product_observations(peer_value=100_000_000.0):
 
 
 class CpuControlsTest(unittest.TestCase):
+    def test_only_boundary_crossing_aa_can_escalate(self):
+        inconclusive = {
+            "id": "aa",
+            "gate": "FAIL",
+            "details": {
+                "kind": "aa",
+                "orders": {
+                    "candidate-first": {
+                        "verdict": "INCONCLUSIVE",
+                        "reason": "median-ci-crosses-decision-boundary",
+                    },
+                    "peer-first": {
+                        "verdict": "PARITY",
+                        "reason": "median-ci-inside-equivalence-band",
+                    },
+                },
+            },
+        }
+        self.assertTrue(control_allows_sample_escalation(inconclusive))
+
+        directional = copy.deepcopy(inconclusive)
+        directional["details"]["orders"]["candidate-first"].update(
+            verdict="LOSE", reason="confidence-interval-below-equivalence-band")
+        self.assertFalse(control_allows_sample_escalation(directional))
+
+        known_delta = copy.deepcopy(inconclusive)
+        known_delta["details"]["kind"] = "known-delta"
+        self.assertFalse(control_allows_sample_escalation(known_delta))
+
     def test_replay_passes_all_fixed_controls(self):
         results = evaluate_cpu_controls(
             closure_contract(), raw_controls(), product_observations())

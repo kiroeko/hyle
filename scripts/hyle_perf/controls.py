@@ -140,6 +140,42 @@ def _estimate_details(values: Mapping[str, list[float]]) -> dict[str, Any]:
     }
 
 
+def control_allows_sample_escalation(result: Mapping[str, Any]) -> bool:
+    """Whether a required control is ready or only lacks n=15 precision.
+
+    A/A is itself an estimator. If one fixed order's interval merely crosses
+    the already-frozen equivalence boundary, the predeclared n=31 stage is the
+    correct next observation. Actual A/A direction, known-delta, timer,
+    placement, delegated or malformed failures remain hard stops.
+    """
+    if result.get("gate") == "PASS":
+        return True
+    if result.get("gate") != "FAIL":
+        return False
+    details = result.get("details")
+    if not isinstance(details, Mapping) or details.get("kind") != "aa":
+        return False
+    orders = details.get("orders")
+    if not isinstance(orders, Mapping) or set(orders) != set(CONTROL_ORDERS):
+        return False
+
+    needs_more_samples = False
+    for order in CONTROL_ORDERS:
+        decision = orders[order]
+        if not isinstance(decision, Mapping):
+            return False
+        verdict = decision.get("verdict")
+        if verdict == ExactVerdict.PARITY.value:
+            continue
+        if (verdict == ExactVerdict.INCONCLUSIVE.value and
+                decision.get("reason") ==
+                "median-ci-crosses-decision-boundary"):
+            needs_more_samples = True
+            continue
+        return False
+    return needs_more_samples
+
+
 def evaluate_cpu_controls(
         contract: Mapping[str, Any], raw_record: Mapping[str, Any],
         observations: Iterable[Observation]) -> list[dict[str, Any]]:
