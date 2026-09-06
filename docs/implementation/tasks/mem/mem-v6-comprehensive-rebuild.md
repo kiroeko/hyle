@@ -1,10 +1,11 @@
 # Mem v6：当前推理内存超集与产品形状重构
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮与 `mem_vm-v2` 协同，但 `mem` 与 `mem_vm` 仍是两个独立组件、两份候选和两项终局裁决。
-> 当前状态为 `VERIFIED`。下方能力账本、API freeze 与五项有限 `FIX` 已由不可变候选实现，全部
-> 适用工程门已经裁决；这里只等待 terminal receipt 和 registry anchor，不再扩面或改产品。
+> 本轮终局裁决为 `CLOSED`。下方能力账本、API freeze、五项有限 `FIX`、全部适用工程门与接受限制
+> 已绑定不可变候选；本记录只作历史证据，不再授权产品修改。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -314,5 +315,39 @@ snapshot 为
 `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
 `FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
 
-当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 仍为 `PENDING`，不
-阻塞工程收口，也不升级成全平台/全 workload SOTA 声明。
+## 接受限制与重开条件
+
+接受限制：
+
+- 自增长、individual-free 的通用可变池走标准 PMR pool + HYLE resource，并无独立 HYLE owner；只有
+  foreign-runtime 或不同成本/失败合同的具名 consumer 才能改变该路由；
+- process-global large-page arena 的 partial side effect 可观察但不可 rollback；物理页粒度和 NUMA
+  placement 在 vendor/OS 无可证事实时保持 unverified。测试不为强制 partial 分支冒险分配多 GiB；
+- Tensor/KV eviction、async completion、device/provider implementation、IPC protocol 和 secure-secret
+  policy 由上层拥有；本轮只保证开放 resource/buffer 组合点；
+- P1 只签 W1-WIN 上冻结的 isolated runtime-erased heap lifecycle；其它 family 为结构/复杂度/资源门，
+  Formal 仍 `PENDING`，不构成全平台、全尺寸、全线程或端到端推理 SOTA。
+
+只有以下新事实重开 Mem：
+
+1. 真实 consumer 复现 allocator/resource/Buffer/pool/arena/planner 的 correctness、OOM、lifetime、并发、
+   ownership 或 C++ 易用性缺陷，或证明当前 `ROUTED` family 无法完成具名基础任务；
+2. mimalloc 或直接 HYLE dependency 的源码/语义/默认策略/ABI/codegen/交付变化影响产品路径；
+3. public API、layout、默认 metadata、复杂度、组件依赖、三交付或 system fact 语义发生变化；
+4. same-contract 正常 consumer workload 证明可复现 material regression，或成熟 peer 证明更优复杂度档；
+5. 新 OS/NUMA/large-page 事实使当前 unknown/partial/placement 合同不再诚实。
+
+新 benchmark、peer 发布本身、LOC/API 数量、命名偏好、单次点值、地址/顺序翻转、亚纳秒差异或无新事实
+的“再看一遍”不构成重开。
+
+## Closure decision
+
+本轮裁决 `CLOSED`：五项冻结 FIX 全部完成，九族能力全部 `COMPLETE/ROUTED`，scope、architecture、
+correctness、delivery、usability/docs、red team 与 P1 engineering performance 七门均为 `PASS`，没有
+blocker 或未处置 material finding。候选保持
+`9604bf4a33f13bd5f84ef78fedce55f305ac9d50` /
+`57adb69f185cf02d42ab7f220ebeccbb91170b1b`，terminal 文档不改变产品 identity。
+
+同候选 LOC（cloc 2.08，`--self-check`）：全库 454,713；自实现含测试 117,630；自实现不含测试
+74,519；Mem boundary 实现 7,631。raw performance evidence 与 hashes 已列在 verification manifest；
+terminal end commit 由随后 registry 记录完整 ID。

@@ -1,9 +1,10 @@
 # Mem VM v2：推理 mapping 与 OS storage 合同重构
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前状态为 `VERIFIED`。下方 API、成本与七项有限 `FIX` 已由不可变候选实现，全部适用工程门
-> 已裁决；这里只等待 terminal receipt 和 registry anchor，不再扩面或改产品。
+> 本轮终局裁决为 `CLOSED`。下方 API、成本、七项有限 `FIX`、全部适用工程门与接受限制已绑定
+> 不可变候选；本记录只作历史证据，不再授权产品修改。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -287,5 +288,39 @@ instrument 会违反本轮停止规则。
 `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
 `FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
 
-当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 为 `PENDING`；WSL
-只签 guest engineering，不冒充 native-Linux/独立硬件认证。
+## 接受限制与重开条件
+
+接受限制：
+
+- Windows whole-view primitive 没有安全 partial unmap，`release_range(s)` 返回 `Unimplemented`；
+  file-backed `kDontNeed` 也不调用可能丢内容的 anonymous/private primitive；
+- SharedMapping 的 payload size/readiness/synchronization 是外部 IPC protocol；Darwin/Windows native
+  capacity 可按页取整，不能由无 header API 恢复精确 logical size；
+- 任何已借出的 raw pointer/span/view 在 owner release/reset/move 后由调用者负责停止使用；checked
+  accessor 防止新建跨 hole view，但不追踪既有 borrow；
+- public OS contract 不能稳定注入“第 N 次 munmap 失败”，该分支由逐 syscall state-update mechanism
+  proof 覆盖；不为测试加入 product fault-injection seam；
+- P1 来自 W1-WSL guest 的 Linux ext4 journey，不是 native-Linux/Formal 证书；Windows progressive
+  residency、remote NUMA、RSS/page-fault 和端到端 load-to-ready 不由该行外推。
+
+只有以下新事实重开 Mem-VM：
+
+1. 真实 loader/scheduler/IPC consumer 复现 mapping、hole、access、flush、lock、shared publication、
+   guarded-stack 或 large-placement correctness/lifetime/易用性缺陷；
+2. supported OS 增加安全同合同 partial-unmap/file-discard primitive，或现有 syscall 合同改变；
+3. public API/layout、normal metadata/allocation/syscall、Platform/Error/Mem 依赖或交付形状改变；
+4. 同合同正常 model-loader workload 证明 material regression，或成熟 peer 证明更优复杂度档；
+5. async/direct IO、persistent memory 或 device mapping 获得具名基础 consumer，且现有 owner route 无法组合。
+
+新 benchmark、symbol 数量、命名偏好、单次点值、地址/执行顺序翻转或无新事实复查不构成重开。
+
+## Closure decision
+
+本轮裁决 `CLOSED`：七项冻结 FIX 完成，六族能力全部 `COMPLETE/ROUTED`，全部 aggregate gate `PASS`，
+独立红队 remaining material finding 为 0。候选保持
+`9604bf4a33f13bd5f84ef78fedce55f305ac9d50` /
+`57adb69f185cf02d42ab7f220ebeccbb91170b1b`；terminal 文档不改变产品 identity。
+
+同候选 LOC：全库 454,713；自实现含测试 117,630；自实现不含测试 74,519；Mem-VM compiled
+implementation 1,318。raw performance archive 与 hashes 已列在 verification manifest；terminal end
+commit 由随后 registry 记录完整 ID。

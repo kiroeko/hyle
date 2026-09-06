@@ -1,9 +1,10 @@
 # Platform v9：进程内存事实与映射 range 机制
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发。当前为 `VERIFIED`：四项冻结 `FIX`
-> 已由不可变候选实现且全部适用工程门已裁决；这里只等待 terminal receipt 与 registry anchor。
+> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发，终局裁决为 `CLOSED`。四项冻结 `FIX`、
+> 全部适用工程门与接受限制已绑定不可变候选；本记录只作历史证据，不再授权产品修改。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -213,5 +214,35 @@ range authority、Windows `DiscardVirtualMemory` 语义和直接消费者，所�
 `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
 `FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
 
-当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 为 `PENDING`，不
-阻塞工程收口，也不把本轮定向事实扩大成 Platform 全模块 SOTA。
+## 接受限制与重开条件
+
+接受限制：
+
+- Linux/macOS 没有本轮可采用的公开 same-semantics process private-commit fact，因此 current/peak
+  private committed 为 absent；Windows 只证明 current `PrivateUsage`，不猜 peak private commit；
+- `process_memory_info()` 是显式冷查询，不缓存；Linux 成本随一次 `/proc/self/status` bytes 线性增长，
+  不承诺纳秒级 hot-path latency；
+- mapped-range free functions 信任 owner 已验证的 mapped/page-aligned lifetime，不保存 owner identity；
+  file/shared lifecycle、holes 和 backing-specific policy 由 Mem-VM 负责；
+- P1 只复签既有 W1-WIN host-planning holdout；本轮不重签 Platform 其它 factor 或 Formal。
+
+只有以下新事实重开 Platform 该 boundary：
+
+1. 具名 consumer 复现 process memory fact 缺失/错误、OS failure translation 或 mapped-range authority 缺陷；
+2. Windows/Linux/macOS 公开 OS contract 改变字段语义，或新支持平台无法维持 optional/unknown 合同；
+3. public API/layout、正常 syscall/allocation/state、Core/Error 依赖、组件图或三交付发生变化；
+4. Mem/Mem-VM 直接消费改变并证明重复 OS decision authority 或现有 mechanism 不足；
+5. 同合同正常 workload 证明 material regression，或成熟 peer 证明更优复杂度档。
+
+新 benchmark、无 consumer 的 feature 愿望、单次点值、亚纳秒差异或无新事实复查不构成重开。
+
+## Closure decision
+
+本轮裁决 `CLOSED`：四项 FIX 完成，所有适用 gate `PASS`，直接 Mem/Mem-VM consumer、三平台事实、
+三交付、红队与 5% P1 holdout 均通过，未处置 `MUST=0`、blocker=0。候选保持
+`9604bf4a33f13bd5f84ef78fedce55f305ac9d50` /
+`57adb69f185cf02d42ab7f220ebeccbb91170b1b`；terminal 文档不改变产品 identity。
+
+同候选 LOC：全库 454,713；自实现含测试 117,630；自实现不含测试 74,519；Platform boundary 实现
+6,816。raw performance evidence 与 hashes 已列在 verification manifest；terminal end commit 由随后
+registry 记录完整 ID。
