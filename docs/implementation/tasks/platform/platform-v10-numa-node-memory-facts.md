@@ -1,10 +1,9 @@
 # Platform v10：NUMA 节点内存事实
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-> 本轮由冻结基础模块的真实推理消费者回放触发。当前仅为 `REOPENED`：本页保存可复现产品事实与
-> 最小影响面；closure card、能力账本和有限 `FIX` 集必须分别在后续 `SCOPED/AUDITED` 冻结，之前
-> 不修改 Platform 产品源码。
+> 本轮由冻结基础模块的真实推理消费者回放触发，最终从 `CANDIDATE` 终止为 `BLOCKED`。产品候选已经
+> 实现并验证 NUMA node 容量事实；阻塞项仅是冻结 P1 holdout 的仪器资格化，不能被改写为产品性能失败。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -188,3 +187,68 @@ SHA-256 `B2DD4B9A72671F32D03830513539AB1C108B9F6A7CCBDDCE75C289007556970D`。
 
 候选后若公开形状、node-id authority、可用量语义、OS 算法、依赖或正常路径成本变化，必须退回
 `AUDITED`；测试、证据与 terminal 文档可以继续补齐，但不能静默重绑定产品身份。
+
+## Verification manifest
+
+全部验证绑定 product candidate `3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c` / tree
+`63b58d1051d86c4aecb1bf736ae84265e359a5f5`，且没有候选后产品修改。
+
+| risk / journey | verdict | evidence |
+|---|---|---|
+| API、parser、invalid/sparse id、unknown/zero/clamp | `PASS` | Windows Platform tests；exact Linux node/key/unit/overflow fixtures；每个 live node 的 native snapshot |
+| concurrency / dynamic snapshot | `PASS` | 4 threads × 8 rounds 遍历可见稀疏 node；value 始终保留 node identity，present total 时 available 不越界 |
+| W1-WIN | `PASS` | MSVC 19.50 Release/WERROR fresh selected Platform build、header isolation 与 native tests |
+| W1-WSL | `PASS` | Ubuntu 24.04 / GCC 14.2 Release selected build、header/tests；实际读取 stable node sysfs |
+| M1-MAC | `PASS` | AppleClang 21 arm64 Release selected build、header/tests；logical node 0 走真实 host snapshot |
+| source/static/shared delivery | `PASS` | source selected target；Windows installed static/shared focused consumer 均直接调用新 C++ symbol；DLL 仅有 decorated C++ export，无 C/FFI surface |
+| dependency/build | `PASS` | `hyle_platform` 仍只公开依赖 `core,error`；无新 target、option、第三方、反向依赖或 hidden collector allocation |
+| usability/docs | `PASS` | architecture/user guide 明确 optional total、逐 OS available 语义、动态非 reservation 与全局 constraint 只组合一次 |
+| red team | `PASS` | 攻击错误 node、Linux prefix/unit/overflow、Windows total 猜测、single-node fallback、global-limit 重复计费与多线程冷查询；无未处置 product finding |
+| P0 node-query structure | `PASS` | Windows bounded native query；Linux O(node meminfo bytes) stack-first scan；single-node O(1) host route；旧热路径零新增状态/分支 |
+| frozen P1 host-planning holdout | `INCONCLUSIVE` | 4/4 product NI 数值通过，但唯一 fresh bundle 的 5% known-delta control 未资格化，不能签 renewed P1 claim |
+
+### P1 holdout 的准确解释
+
+- contract：`platform-host-p1-v3`；W1-WIN；oneTBB
+  `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；15 个独立进程、两种执行顺序和 placement strata；
+- 四个 same-contract product strata 的 5% non-inferiority 均为 `PASS`；median advantage ratio 为
+  `1.020066--1.022953`，即点值约快 2.0%--2.3%。3 行 exact `PARITY`，1 行只因 CI 穿过等价带上界而
+  `INCONCLUSIVE`；没有产品 loss；
+- A/A、10% known delta、timer floor 与 placement control 均通过。5% known-delta 的两个 median
+  `1.034243/1.042137` 落在预冻结 `1.025--1.075` 接受带内，但 99.26% CI 下界
+  `0.993802/1.017608` 穿过下界，因此 control 为 `FAIL`，整包只能是 `DIAGNOSTIC`；
+- raw bundle：
+  `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\perf-evidence`。contract-lock /
+  manifest / summary SHA-256 分别为
+  `2714905D56EA9CCED7132A5EA55FE44C2925AACEF45B14A774EEDE4EF987C420` /
+  `54CE72F8D9E118530A597B9F1D3A95942CA8C93A76D266B4489D1F23AFEB7444` /
+  `DEE64F9037346EBAA65D25C47A90BB48756FC9D940B71DBB11ABE6C2B7A4FBCE`；
+- 冻结规则没有因 control failure 自动从 n=15 升到 n=31，且本任务只授权一次 holdout。不能在看到结果后
+  改采样规则、换顺序、重跑或继承旧 candidate 的 receipt；这是独立公共仪器问题，不授权继续改
+  Platform 产品。
+
+## Closure decision
+
+本轮从 `CANDIDATE` 终止为 **`BLOCKED`**。scope、architecture、correctness、delivery、usability/docs、
+red-team 与新增 node query 的 P0 structural gate 全部 `PASS`；P1 engineering 为 `INCONCLUSIVE`。
+产品没有被撤销：真实推理消费者缺失的 node 容量已经补齐，三平台与三种交付形状均通过；只是当前身份
+不能获得新的 Platform-wide P1 签名。
+
+- blocker：`PLATFORM-V10-PERF-CONTROL-RESOLUTION-01`——冻结 holdout 的产品 4/4 NI 通过，但唯一 bundle
+  无法资格化 5% known-delta control；
+- blocker owner：公共 `closure-perf-v1` 仪器/性能证据 owner，而不是 Platform capability owner；
+- resume condition：另建有界 instrument task，在不查看或改写 Platform product 结果的前提下，预冻结
+  known-delta 在 n=15 未分辨时的 n=31 escalation/判定语义；该规则经独立 qualification 后，新建
+  Platform `RESUME` round 从 `SCOPED` 开始，只运行一次新合同下的 fresh W1-WIN holdout。不得改 API、
+  OS 算法、peer、margin 或挑选执行顺序来恢复；
+- known limitations：Windows 真多 node 路线只能公开 available，total 诚实 absent；Linux available 是
+  没有全局 watermark 修正的 planning estimate；node snapshot 不是 reservation，也不吸收 cgroup/job/
+  commit 全局约束；本轮没有 Windows 真多节点或 macOS 不存在的真 NUMA hardware coverage；
+- reopen/resume triggers：上述精确仪器条件；或真实消费者证明 node-id/available 语义、correctness、
+  security、OS route、依赖/交付缺陷，或具名需求证明 distance/bandwidth/residency 等 deferred family
+  应归 Platform。
+
+四项 LOC 绑定 candidate，`loc-report.py --module platform --commit 3c1ef239... --self-check --json`
+为 `PASS`：全库代码 459,121；自实现包含测试 119,445；自实现不包含测试 75,504；Platform 实现 6,964。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
