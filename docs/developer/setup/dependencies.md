@@ -7,7 +7,7 @@
 | 依赖 | 类别 | 缺了会怎样 | 怎么被发现 |
 |---|---|---|---|
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
-| **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `f503c485…`；只执行 HYLE 自己的 target/package 集成 |
+| **Highway** | **自动拉取**（FetchContent） | 选择 `simd` 或 `container` 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `18e449b6…`；只执行 HYLE 自己的 target/package 集成 |
 | **xsimd** | **自动拉取**（FetchContent） | 选择 `simd` 时与 Highway 一起取得；严格离线 cache/bundle 缺源码则配置失败 | lock pin `3b3151ff…`；用于锁定的 SIMD provider 路由 |
 | **ggml** | **自动拉取**（FetchContent） | compute + sched/fcontext 且启用 bridge 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `v0.21.0` |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
@@ -37,7 +37,7 @@ SHA-256，in-tree snapshot 登记 vendored content tree，修改后并入产品�
 
 当前产品/测试 FetchContent 快照为：
 
-- Highway `f503c485…`（`simd` 与选定 `container` kernel 的直接产品源码）；
+- Highway `18e449b6…`（`simd` 与选定 `container` kernel 的直接产品源码）；
 - xsimd `3b3151ff…`（`simd` 的锁定 provider 源码）；
 - ggml `v0.21.0`；
 - nghttp2 `v1.70.0`；

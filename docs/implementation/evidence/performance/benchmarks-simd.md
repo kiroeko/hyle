@@ -1,11 +1,61 @@
-# SIMD v3 工程性能证据
+# SIMD 工程性能证据
 
-> 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页记录 SIMD v3 的有限工程证据，
-> 不承诺“全部操作、全部 CPU、全部编译器均为 SOTA”。架构与停止规则见
+> 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页首先记录 SIMD v6
+> 推理整行合同的当前有限工程证据，随后保留 v3 路由基线；两者都不承诺“全部操作、全部 CPU、
+> 全部编译器均为 SOTA”。架构与停止规则见
 > [`simd-design`](../../../architecture/simd-design.md) 和
-> [`SIMD v3 closure card`](../../tasks/simd/simd-v3-provider-routing.md)。
+> [`SIMD v6 closure card`](../../tasks/simd/simd-v6-provider-consumer-replay.md)。
 
-## 签署范围
+## SIMD v6：初始推理整行回放（`DIAGNOSTIC/REJECTED`）
+
+本节只保留初始候选的原始统计事实。独立红队发现三条 direct peer 没有承担 HYLE public route 的
+release 参数检查，因而不满足 `SAME_CONTRACT`；narrow/quick 特殊值用例也未保证特殊值进入实际向量
+lane。统计 verifier 的 `QUALIFIED/CURRENT/EXACT` 不能弥补语义等价失败，所以下列结果不得用于
+non-inferiority、SOTA、`PASS` 或模块冻结。修正后的合同和新证据会以新 identity 追加，不改写本节。
+
+候选固定为 `5d7349502311b622d6263ca68071d62dff125b67` / tree
+`9a995bbaa0ea43e67f3889682c647cf7907a7bfb`。冻结合同
+[`simd-inference-row-p1-v1.json`](../../../../bench/contracts/simd-inference-row-p1-v1.json)
+原计划比较本轮新增的三个完整 row：
+
+- split f32 SwiGLU，`n=11008`，HYLE 与 direct Highway 都计算 `silu(gate[i])*value[i]`；
+- weighted f32 RMSNorm，`n=4096`，两边都是 f32 accumulation、相同 epsilon、weight、输出和 alias
+  边界；
+- 非破坏 expert score top-k，`n=256, k=6`，两边都使用 ds4 消费形状的 bounded insertion、同一
+  score+`uint32_t` index、NaN-last 与 lower-index tie 语义，且只使用 caller 提供的 `O(k)` 结果槽。
+
+一次 measurement operation 是一次完整 row；元素数不冒充独立 callback batch，构造、allocation 和
+数据生成都在计时外。但 HYLE 一侧的 release 参数检查没有在 peer adapter 中对齐，所以初始命题仍是
+苹果对橘子，不能因其余 storage/output/scratch/ISA 条目相同而升级为实现级比较。
+
+W1-WIN、MSVC 19.50、Release exact AVX2 static、LTO off；31 个独立进程样本，primary/placement 与
+candidate/peer-first 共四个预冻结 strata。`advantage ratio > 1` 有利于 HYLE：
+
+| workload | 四个 median advantage ratios | 98.9% CI envelope | exact | 5% NI |
+|---|---|---|---|---|
+| split SwiGLU f32 / 11008 | 0.9967 / 1.0067 / 1.0022 / 0.9922 | [0.9681, 1.0341] | 4/4 `PARITY` | 4/4 `PASS` |
+| weighted RMSNorm f32 / 4096 | 1.0056 / 0.9849 / 0.9988 / 0.9884 | [0.9573, 1.0305] | 4/4 `PARITY` | 4/4 `PASS` |
+| expert top-k f32 / 256/6 | 1.0025 / 1.0022 / 1.0104 / 1.0005 | [0.9691, 1.0342] | 4/4 `PARITY` | 4/4 `PASS` |
+
+统计层曾给出三行 `PARITY/PASS`，A/A、5%/10% known-delta、timer-floor、placement 与执行顺序控制也
+全部 `PASS`；语义红队已经撤销该聚合 verdict。点值仍可说明没有明显自然路线异常，但不能据此签
+same-contract、改 route、API、layout 或常态 metadata。
+
+被撤销的 bundle 位于
+`C:\public\project-hyle\_validation\simd-v6-provider-consumer-replay\perf-evidence-v2`。contract-lock、
+manifest、summary SHA-256 分别为
+`660BBE3B35850599E1C878A3F70841D858859D36E177B9F1112438AA8B08CBC8`、
+`9A909FBB4405FE900CF88BEE1216095EB298ED624A8085159272FD572912A4D3`、
+`807C99BEA45CACF6ED17798128A183D9EC08655233B76430FC044C7291250438`；deep verifier 为
+`QUALIFIED/CURRENT/EXACT`，contract SHA-256 为
+`d5745aff4a0f7183310a1d4671cd05a472aef5f279cece78046feaf406a1c216`。
+
+## SIMD v3 历史路由基线
+
+以下内容绑定 v3 候选和当时的 provider lock，用于说明 387-operation/422-scope 路由为何存在；
+它不覆盖 v6 新增 row 或改写旧 evidence identity。
+
+### 签署范围
 
 SIMD v3 的目标不是维护第三套完整寄存器库，而是在自然的 whole-buffer 与 source-kernel 合同下：
 
@@ -34,7 +84,7 @@ python scripts/simd-op-coverage.py --check-provider-manifest --check-ledger \
   --require-route-decisions --check-provider-routes
 ```
 
-## P0：复杂度与零 provider 路由成本
+### P0：复杂度与零 provider 路由成本
 
 `scripts/simd-provider-codegen-audit.py` 对 direct provider body 与通过 HYLE route 类型实例化的 body 做
 最终 object 比较。MSVC 19.50、GCC 14.2 与 AppleClang 21 均通过；当前覆盖的 15 个 provider/kernel
@@ -50,7 +100,7 @@ ordinary fat dispatch 不被伪称为零成本：未知 CPU 的公开入口允�
 它不在 element loop 内选择 provider，也不会再调用第二套 Highway dynamic dispatch。fixed/exact
 source TU 则直接绑定唯一 symbol。
 
-## P1：W1-WIN 普通 row/dtype 路线
+### P1：W1-WIN 普通 row/dtype 路线
 
 当前有限复测使用 W1-WIN、MSVC 19.50、Release/AVX2、`closure-perf-v1`、5% material margin；规模为
 4,096 与 1,048,576。每侧四个 code-placement replica，正反序各两次，CPU 2 P-core、高优先级；A/A、
@@ -74,7 +124,7 @@ non-inferiority 命题仍成立：
 `simd-17-w1-win-row-*.txt`。这只签 W1-WIN 的冻结 source-primary normal workload，不外推为跨平台
 逐 operation SOTA。
 
-## P1：xsimd 激活 family 例外
+### P1：xsimd 激活 family 例外
 
 同一资格化仪器比较锁定 Highway 与锁定 xsimd 的完整 f32 whole-buffer body。四行都超过 5% 门，且方向
 一致；下表小于 1 表示 Highway 比 xsimd 慢：
@@ -90,7 +140,7 @@ non-inferiority 命题仍成立：
 verdict 为 `PASS/ROUTE_XSIMD`。accuracy preflight 同时验证 tail、in-place、NaN/Inf/signed-zero；旧轮
 观察为 xsimd 最大 1 ULP、Highway 最大 2 ULP。当前复测报告与原始日志同样归档在上述 SIMD-17 收据旁。
 
-## 保留算法与平台例外
+### 保留算法与平台例外
 
 这些结论不要求把所有 HYLE 实现删除：
 
@@ -105,7 +155,7 @@ verdict 为 `PASS/ROUTE_XSIMD`。accuracy preflight 同时验证 tail、in-place
 - 其余 HYLE scope 只按 `scripts/simd-op-routing.json` 中的精确 selector 和 evidence 生效。不得从一个 ISA、
   type 或 compiler 外推到全局。
 
-## Correctness、sanitizer 与交付
+### Correctness、sanitizer 与交付
 
 最终 SIMD suite 在 Windows/MSVC、WSL/GCC 与 macOS/AppleClang 均为 5/5 PASS，覆盖 ordinary API、route
 static assertions、有限 winner、provider codegen 和实际 ordering target。WSL GCC 14.2 的 ASan 与
@@ -116,11 +166,12 @@ ASan 曾发现 VQSort adaptation 的真实 debug-shape 缺陷：Highway 在 ASan
 `HWY_IS_DEBUG_BUILD` 作为同一 authority；release 热路径不变。finding 与五组回归见
 [`simd-17-vqsort-sanitizer-fix.json`](../../../../evidence/simd-17-vqsort-sanitizer-fix.json)。
 
-source embedding、搬迁后的 installed static 与 installed shared consumer 已在三平台通过。安装 SDK
-只交付 ordinary HYLE 头与库，不泄漏 provider/target/fat source-only 头；Highway/xsimd 锁、离线映射、
-许可证与 integrated VQSort 内容 hash 均通过机器合同。
+source embedding、搬迁后的 installed static 与 installed shared consumer 已在三平台通过。v3 候选
+当时只安装 ordinary HYLE 头与库；后续 v4 已把 `target.h`、`fat_kernel.h`、`hyle::simd_expert` 与锁定
+Highway/xsimd 开发头扩展到 static/shared SDK，同时继续禁止安装内部 `provider/*` route。这里保留
+v3 历史事实，不再把旧 source-only 交付形状冒充当前产品。
 
-## 结论边界
+### 结论边界
 
 本页允许的结论是：冻结的 v3 作用域内，路由复杂度与中间层成本结构正确；W1-WIN 的普通 row/dtype
 source-primary workload 通过 5% 工程非劣门；两个激活 family 的 xsimd 例外得到 material 复现；已保留

@@ -165,7 +165,7 @@ register façade 的理由。
 | `SIMD-V6-F03` | 提供 weighted/unweighted RMSNorm 与 affine/non-affine LayerNorm row | f32/f16/bf16 storage，f32 accumulation，O(n)/O(1)，无 heap/lock；fused residual/group/model variant 留 Compute |
 | `SIMD-V6-F04` | 提供非破坏 f32 score top-k，返回 score+`uint32_t` original index | result storage 即 O(k) workspace；k==1/有界 MoE k<=8 为 O(n)，其余 O(n log k + k log k)，descending、NaN-last、tie 按原 index；不做 sampler policy |
 | `SIMD-V6-F05` | 把直接 Highway product/bench lock 升到 `18e449b6...`，重签受影响 compile/correctness/codegen/license/package | xsimd 不动；VQSort integrated origin 不伪装成整体 rebase |
-| `SIMD-V6-F06` | 新增三个 family sentinel 的正确性、复杂度、alias/special-value、三交付和 P1 证据，并更新 architecture/user/maintenance/performance 文档 | 仅三档 normal size；peer adapter 先对齐语义和计费边界，不用 apples-vs-oranges 结果改 API |
+| `SIMD-V6-F06` | 新增三个 family sentinel 的正确性、复杂度、alias/special-value、三交付和 P1 证据，并更新 architecture/user/maintenance/performance 文档 | 仅三档 normal size；F06a 要让 NaN/Inf/±0 确实进入至少两个完整向量和 tail；F06b 要让三条 peer 与产品承担相同检查和一次 noinline 调用边界；不用 apples-vs-oranges 结果改 API |
 
 未进入 FIX 集的项目均已有去向：block quant/GEMM/attention/RoPE/Mamba/tensor fusion 记到
 Compute/format/engine；GLU backward 是未来 training consumer trigger；无当前缺陷的 VQSort 整体同步
@@ -227,3 +227,136 @@ static exact-AVX2 SIMD suite 为 5/5 PASS；route ledger、文档合同、模块
 sanitizer、最终文档/红队与 terminal receipt；若 P1 出现 material FAIL，最多执行本卡允许的
 一次机制诊断，不扩展成逐 operation 计时。CANDIDATE 后若公开合同、算法或 normal workload
 发生变化，必须退回 `AUDITED`。
+
+## 初始候选验证回放（`REJECTED`）
+
+> 本节保留第一次候选回放的事实，不是当前 verification manifest。统计工具曾把结果判为
+> `QUALIFIED/CURRENT/EXACT`，但独立红队随后证明三条 peer 没有承担产品路线的 release 参数检查，
+> special-value case 也没有保证特殊值进入 AVX2/AVX-512/NEON vector lane。因此同合同前置门失败，
+> 下述 P1 数字只能作为自然路线诊断，所有 `VERIFIED/PASS` 聚合结论均已撤销；当前状态退回
+> `AUDITED`，只实施 F06a/F06b 后形成新候选。
+
+初始候选 identity 为
+`5d7349502311b622d6263ca68071d62dff125b67` / tree
+`9a995bbaa0ea43e67f3889682c647cf7907a7bfb`；CANDIDATE 后没有产品源码、公开合同、算法、normal
+workload 或依赖 lock 变化。F01--F05 的产品工作完成；F06 的证据工作未完成。
+
+### Correctness、target 与交付
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| exact-candidate SIMD suite | static exact AVX2 `5/5` | ASan static `5/5` | native arm64 static `5/5` | `PASS` |
+| source consumer | ordinary + expert fixed/fat `PASS` | `PASS` | `PASS` | `PASS` |
+| relocated shared SDK | ordinary + expert fixed/fat `PASS` | `PASS` | `PASS` | `PASS` |
+| relocated static SDK | ordinary + expert fixed/fat `PASS` | `PASS` | `PASS` | `PASS` |
+
+macOS 输入是候选 `git archive`，Windows 与 remote SHA-256 均为
+`64F2FA1A0038228AC934DE067904E1E5F2BC3FDE92968B344733EF401CD684DF`；remote 只作验证，没有
+回流产品代码。WSL ASan 没有 sanitizer finding。公开新行覆盖 normal/zero、tail、f16/bf16 一次舍入、
+NaN/Inf/signed-zero、精确 in-place、非法 epsilon、top-k 随机 oracle、NaN/tie/index 上界和 overlap
+拒绝；没有并发、取消或 device backend，因此这些风险为 `NOT_APPLICABLE`。
+
+installed ordinary headers 不包含 `provider/*`。`hyle::simd_expert` 只向显式 expert target 投影锁定
+Highway/xsimd 开发头和 fixed/fat helper；三种交付使用同一 target 名。Windows shared DLL 的 374 个
+导出均为 MSVC C++ decorated symbols；源码中没有 `extern "C"`、Native FFI option、旧 register façade
+或 C header。
+
+### 中央 Highway lock 的相邻影响
+
+红队确认同一中央 Highway lock 也由 Container 的字符串与 DynamicBitset 私有 TU 使用，因此不能把
+F05 假装成只影响 SIMD。`f503c485... -> 18e449b6...` 在 Container 可实例化的 x86/NEON/generic
+headers 中只增加 `ScalarNaN`、`ReduceMinOrNaN/ReduceMaxOrNaN` 与 ARM u8×s8 `PerBlock2x2MatMul`；
+Container 实际使用的 load/store、比较、mask、bitwise、population-count、`SumsOf8`、归约与
+`FindLastTrue` body/target group 没有变化。exact candidate 的 selected Container 定向回放在 Windows
+和 macOS 均为 `4/4 PASS`，包含 header self-containment、完整 container、实际 ISA variant 与 hash
+process。由此该 lock delta 对已冻结 Container 是 `NOT_MATERIAL/CONFIRMED`，不伪造 reopen；未来若
+这些新增或变化的 primitive 真进入 Container kernel，仍按其现有 dependency trigger 重开。
+
+### P0 与被撤销的初始 P1
+
+- activation、GLU、norm 都是一次 whole-row dispatch；fixed/exact TU 在编译期绑定，ordinary fat
+  每行至多一次已缓存 target 间接调用；循环内没有 provider route；
+- activation/GLU/norm 为 `O(n)` time、`O(1)` state、无 allocation/lock/syscall；top-k 的
+  `k==1` 和冻结 MoE `k<=8` 为 `O(n)`，其余为 `O(n log k + k log k)` / `O(k)` caller-owned result；
+- route ledger 仍为 387 operation / 422 scope / 0 pending；默认 Highway、有限 xsimd/HYLE winner
+  与 source/static/shared expert seam 的边界未被新 row 扭曲。
+
+初始合同为
+[`simd-inference-row-p1-v1.json`](../../../../bench/contracts/simd-inference-row-p1-v1.json)，SHA-256
+`d5745aff4a0f7183310a1d4671cd05a472aef5f279cece78046feaf406a1c216`；完整解释见
+[`benchmarks-simd.md`](../../evidence/performance/benchmarks-simd.md)。W1-WIN、exact AVX2 static、
+LTO off、31 个独立进程样本、四个预冻结 order/placement strata 的结果为：
+
+| workload | exact | 5% non-inferiority | median ratio range | CI lower minimum |
+|---|---|---|---:|---:|
+| split SwiGLU f32 / 11008 | 4/4 `PARITY` | 4/4 `PASS` | 0.9922--1.0067 | 0.9681 |
+| weighted RMSNorm f32 / 4096 | 4/4 `PARITY` | 4/4 `PASS` | 0.9849--1.0056 | 0.9573 |
+| expert top-k f32 / 256/6 | 4/4 `PARITY` | 4/4 `PASS` | 1.0005--1.0104 | 0.9691 |
+
+A/A、5%/10% known-delta、timer-floor、placement 与执行顺序 controls 在统计层全部 `PASS`，deep
+verifier 为 `QUALIFIED/CURRENT/EXACT`；这些结果不能越过失败的语义等价门。没有 workload 在四个
+必需 strata 中都固定朝 HYLE 负方向，但在 F06b 完成并重跑前不得签 peer non-inferiority。被撤销的
+bundle 为
+`C:\public\project-hyle\_validation\simd-v6-provider-consumer-replay\perf-evidence-v2`，contract-lock /
+manifest / summary SHA-256 分别为
+`660BBE3B35850599E1C878A3F70841D858859D36E177B9F1112438AA8B08CBC8` /
+`9A909FBB4405FE900CF88BEE1216095EB298ED624A8085159272FD572912A4D3` /
+`807C99BEA45CACF6ED17798128A183D9EC08655233B76430FC044C7291250438`。
+
+### 最终七问
+
+1. **第三方与 ownership：**Highway `18e449b6...` 是默认 provider 和 expert SDK 开发头；xsimd
+   `3b3151ff...` 只承载两个已签 whole-row exception；VQSort adaptation 继续保留精确 origin。
+   HYLE 拥有 semantic row、dtype、target selection、route ledger 和交付合同；四组推理 checkout 只作
+   consumer evidence。
+2. **功能完整度：**387-operation/422-scope 的原生广度通过 expert seam 可达；ordinary 层新增三族
+   current inference `MUST` 后未处置 `MUST=0`。block quant/GEMM/attention/RoPE/Mamba/tensor fusion
+   属 Compute/format/engine，不以“SIMD 缺口”复制。
+3. **内部复用与加速：**Core 提供编译/断言，Platform 提供 CPU/OS facts，SIMD 独占 compiled target/
+   provider decision；新 row 复用现有 Highway target substrate。一个局部 `O(k)` top-k 不引入
+   Container/Mem 反向依赖。
+4. **拟真公平性能：**P0 成本和复杂度未发现问题；初始 P1 peer 少于产品路线的 release 检查，不能
+   称为 same-contract，原 `PARITY/PASS` 已撤销。F06b 对齐后只允许重跑一次冻结合同。
+5. **旧 C ABI / Native FFI：**没有 C header、undecorated HYLE symbol、FFI option、runtime registration
+   或 ABI-paid layout；当前只承诺 C++ source/static/shared。
+6. **交付与易用性：**ordinary 用户只见具义 pointer/count/POD row；需要 422 之外的原生 primitive 时，
+   source/static/shared 都可显式用同名 `hyle::simd_expert`，没有第二套 HYLE register DSL 或额外 runtime
+   route cost。
+7. **文档与维护：**architecture 定义 ownership/边界，user guide 给任务选型和坑，maintenance 定义
+   升级/route 流程，performance 只记录有限命题；current dependency guide 已更新到新 lock，历史证据
+   保留旧 identity。
+
+### 独立红队
+
+2026-09-06 的 30 分钟 bounded adversarial replay 只攻击 F01--F06；没有扩建公共仪器或重新打开
+422-scope 性能矩阵。
+
+| Finding | severity | 处置 | 证据 |
+|---|---|---|---|
+| v3 性能页仍把 expert SDK 写成 source-only | material docs | `fixed` | 当前/历史交付分层；三交付 smoke |
+| 中央 Highway 升级可能静默改变 Container | material dependency | `disproved/not-material` | 精确 header diff；Windows/macOS selected Container `4/4` |
+| narrow/quick 的 NaN/Inf/±0 只落入 scalar tail | high | `fixed-set/F06a` | 扩为至少两个完整 vector 加 tail 后重跑三平台 suite |
+| top-k 的 NaN/tie/index/overlap/复杂度 | high | `disproved` | 随机 full-sort oracle、death tests、bounded/general source audit |
+| installed route 泄漏或伪 C/FFI | high | `disproved` | relocated SDK inventory、expert consumer、DLL export/source scan |
+| P1 三条 peer 缺少产品路线 release 检查 | high | `fixed-set/F06b` | 对齐检查与 noinline 调用边界，冻结逐项等价矩阵后只重跑一次 |
+
+### 被撤销的 aggregate gates 与回退 verdict
+
+| Gate | Verdict | 依据 |
+|---|---|---|
+| scope | `PASS` | 只完成 F01--F06；候选后无产品变化 |
+| architecture | `PASS` | ordinary/expert、Platform facts、provider ownership 与 Compute 边界唯一 |
+| correctness | `INCONCLUSIVE` | ordinary correctness 通过，但 F06a 尚未证明特殊值进入 vector lane |
+| delivery | `PASS` | 三平台 source/relocated static/shared ordinary+expert fixed/fat |
+| usability/docs | `PASS` | 自然 C++ row + 显式 expert escape hatch；当前文档无交付矛盾 |
+| red team | `FAIL` | F06a/F06b 是两个有限 material evidence finding；Container 横向影响已有限回放 |
+| engineering performance | `INCONCLUSIVE` | 初始 P1 的统计资格通过，但 same-contract 语义前置门失败 |
+
+产品能力未新增第四族，未处置 capability `MUST=0`；但 F06 证据尚未完成。初始 candidate LOC 由
+`loc-report.py --commit 5d734950... --self-check` 复算：全库 457,880；自实现含测试 119,162；
+自实现不含测试 75,356；SIMD 实现 15,097。Formal 保持 `PENDING`，本轮工程 verdict 为
+**`AUDITED`**；被撤销的 `CANDIDATE -> VERIFIED` 草稿所用前态 registry 位于
+`C:\public\project-hyle\_validation\simd-v6-provider-consumer-replay\candidate-state-18e06d74\docs\implementation\module-status.json`，
+SHA-256 为 `DA751182A07825A58C2CF6DA80097D327F07F07B6DBF25B94413815AE1757EB2`。它只用于审计错误
+草稿如何产生，不是 terminal receipt。F06a/F06b 会改变测试、harness 与 performance contract，完成后
+必须签发新的 candidate commit/tree。
