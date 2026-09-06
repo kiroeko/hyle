@@ -38,3 +38,13 @@
   capacity、ordering、allocation、progress、producer-token 与 setup 等价；5%；
 - finite FIX：`CONQ-F01`（独立 target/header/test owner、unbounded MPMC、Sched/package edges）和
   `CONT5-F06`。不在本轮增加 blocking adapter 或 concurrent priority queue。
+
+## Candidate（`CANDIDATE`）
+
+- product commit / tree：`31c3ace558a821902d689d2d49c7bf8a102d5beb` /
+  `b10d2261aecbcac34ad8d77a7fa8adc25e78bf9c`；
+- `hyle_container_queue` 独立拥有全部 queue storage，PUBLIC closure 精确为 `core,mem`；新增
+  `UnboundedQueue` 以固定 block 摊薄分配，分别发布 producer/consumer monitoring counts，等待、close、
+  cancel 与 backpressure 仍不进入 storage；
+- W1-WIN shared/static normal、empty、初始/增长 OOM、跨 block FIFO、nonassignable callback 与 4P/4C
+  conservation stress 通过；四生产/四消费 oneTBB SAME_CONTRACT P1 等待 clean-candidate qualification。

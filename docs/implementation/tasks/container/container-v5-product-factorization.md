@@ -245,3 +245,34 @@ payload 无需额外默认构造或 assignment。Unicode API 不分配、不拥�
 把同一 factor 全部做成 P1。每行先签 `SAME_CONTRACT/NATURAL_ROUTE`，5% material margin；只有固定方向
 material regression 且可定位机制时才允许一次产品修正。其余现有容器做 P0 复杂度、metadata、allocation、
 codegen 与 correctness 回放，不复活旧 benchmark 全矩阵。
+
+## Candidate（`CANDIDATE`）
+
+- immutable product commit / tree：`31c3ace558a821902d689d2d49c7bf8a102d5beb` /
+  `b10d2261aecbcac34ad8d77a7fa8adc25e78bf9c`；此后只允许补验证、证据和 terminal 说明。公开合同、算法、
+  layout、normal workload 或 component graph 再变，四个活动 factor 一并退回 `AUDITED`；
+- factor/delivery：`container`、`container_concurrent`、`container_queue`、`text` 已有唯一 header/source/test
+  owner 和真实 target；用户仍只选择 `hyle::container`。中央合同要求完整 façade 聚合五个 factors，也证明
+  IO/Sched 的精确 factor closure 不会制造残缺的 Container 产品；
+- product shape：新增 entry/weight bounded `LruCache`、flat/node concurrent set、分块 unbounded typed MPMC
+  queue，以及 typed UTF-8/16/32 diagnostics/conversion；SmallVector/RingDeque 支持 throwing-move 类型，
+  public Swiss/probe seam 和含混 insertion 状态已清理；
+- mechanism correction：Unicode safe transcode 在同一实现 TU 内复用强制内联 validation core，仍完整计费
+  validate+size+convert；unbounded queue 用独立 producer/consumer publication counters 实现同一
+  `approximate_size` 合同，避免一个仅用于监控的全 worker coherence hotspot。两项都不增加 benchmark-only
+  API、每元素 metadata 或隐藏语义；
+- ISA/vendor：公开 inline x86 保持 SSE2 floor，不再向 consumer TU 传播 SSSE3；xxHash、wyhash、Highway 与
+  simdutf 都是 private/build-only mechanism，Unix shared visibility gate 等待 candidate artifact 实测；
+- pre-freeze correctness：W1-WIN MSVC 19.50 static product 11/11（含 Container/Text 真实 ISA variants）和
+  shared product 9/9 通过；normal/OOM/throwing move/LRU limit+eviction、并发 set/queue stress、Unicode
+  malformed/size-query/六方向 conversion 均在对应 suite；
+- pre-freeze build：中央 component contract `PASS`；Container source embedding、relocated shared、relocated
+  static consumers 各 1/1，consumer 同时实例化 intrusive、sequential、concurrent、queue、text 五个 factor；
+- frozen P1 inputs：`container-product-p1-v5` 与 `container-concurrent-product-p1-v1`，consumer matrix
+  `bench/container/consumer_shapes_v5.json` SHA-256
+  `666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f`。正式 verdict 只接受 clean candidate
+  上 W1-WIN 15-sample qualification，不把之前 one-sample probe 当证据。
+
+`AUDITED -> CANDIDATE` 前的 registry 快照为
+`C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-candidate.json`，SHA-256
+`6A0144BE9C016FE53DADCB64A1D775540361FC879132B9CBB05BEF7F6BEFDB61`。

@@ -38,3 +38,13 @@
   metadata UTF-8→UTF-16/32 transcode，SAME_CONTRACT 对齐 validation、result、allocation 和 output-size；5%；
 - finite FIX：`TEXT-F01`（独立 target/codec/tests/direct edges）、`TEXT-F02`（provider visibility/delivery）
   和 `CONT5-F06`。normalization、grapheme、regex、tokenizer/matcher 不进入本轮。
+
+## Candidate（`CANDIDATE`）
+
+- product commit / tree：`31c3ace558a821902d689d2d49c7bf8a102d5beb` /
+  `b10d2261aecbcac34ad8d77a7fa8adc25e78bf9c`；
+- `hyle_text` 独立拥有 borrowed text/path/interner 与 compiled codecs，PUBLIC closure 为
+  `core,mem,container`、PRIVATE `platform`；六方向 caller-buffer conversion 及 typed malformed offset/
+  required count 不公开 simdutf 类型；
+- W1-WIN shared/static header、empty、malformed UTF-8/16/32、output-too-small、六方向 conversion、tail 与
+  真实 ISA tests 通过；Unix private-symbol scan 和 simdutf SAME_CONTRACT P1 等待 clean candidate 验证。

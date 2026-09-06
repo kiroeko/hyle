@@ -37,3 +37,13 @@
   P1 primary 为 read-mostly membership registry，SAME_CONTRACT peer 在 oneTBB/Folly 中择一，5%；
 - finite FIX：`CONCC-F01`（独立 target/header/test owner、两种 set、direct/package edges）和 Container suite
   的 `CONT5-F06`。除此之外不改现有 map layout、shard heuristic 或 lock algorithm。
+
+## Candidate（`CANDIDATE`）
+
+- product commit / tree：`31c3ace558a821902d689d2d49c7bf8a102d5beb` /
+  `b10d2261aecbcac34ad8d77a7fa8adc25e78bf9c`；
+- `hyle_container_concurrent` 独立拥有 map/set/vector public surface，PUBLIC closure 为
+  `core,mem,mem_reclaim,container`；flat/node set 只暴露 inserted/already-present/OOM 三态，并由底层
+  empty-policy layout assertion 证明不支付 mapped payload；
+- W1-WIN shared/static header、normal、OOM、accessor、rehash/reclamation 与并发 stress tests 通过；
+  read-mostly eight-worker oneTBB SAME_CONTRACT P1 等待 clean-candidate qualification。
