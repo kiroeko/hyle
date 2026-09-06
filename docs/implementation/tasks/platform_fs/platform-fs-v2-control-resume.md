@@ -89,6 +89,21 @@ SHA-256 `361F60B57A5A21A2870A7AF9988429B005692B177507C427A9FC3AD2E6409FB1`。
 `C:\public\project-hyle\_validation\platform-fs-v2-control-resume\transitions\module-status-before-audited.json`，
 SHA-256 `2381C8042A552B9CA175D928FC0535C44BA533930AE566BE1E0FA3F26BD1F6DF`。
 
+## Candidate
+
+- product commit：`c39df6f94c636ab8fa94cb700dd263763a42d680`；tree：
+  `37889346564f3a5cdc895f26c9d610883076ba02`；
+- 该 identity 直接复用 v8 第二候选，没有生成替代产品 commit；当前 clean source 位于
+  `C:\public\project-hyle\_validation\platform-v8-c39df6f9-perf-src`；
+- `c39df6f9..7be19402` 的 Platform/Thread/FS 产品、组件图、FS benchmark 与 FS P1 contract diff 均为空；
+- 公开合同、ownership/lifetime/concurrency/failure、算法、复杂度、常态 metadata/layout 和直接消费者
+  均无变化；
+- harness/control-plane commit：`7be19402912d98fbeb710f6a145869a027e512b9`。它只新增本 RESUME
+  记录和 registry transition，不进入被测产品或 benchmark；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\platform-fs-v2-control-resume\transitions\module-status-before-candidate.json`，
+  SHA-256 `8FFF1F673C711C3C5BE7887971A6DCFFA92838CC504B077D235637286B15724A`。
+
 ## API / usability freeze
 
 - 状态：`FROZEN / UNCHANGED`；
@@ -114,4 +129,4 @@ strata 覆盖。预检不能修改这张矩阵。
 
 ## Current decision
 
-`AUDITED`。恢复条件、产品/合同零漂移和空 `FIX` 集已经冻结；尚未产生本轮正式性能 verdict。
+`CANDIDATE`。未变化的 v8 第二候选已重新绑定；下一项且唯一未完成项是一次 fresh P1 qualification。

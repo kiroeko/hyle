@@ -717,12 +717,14 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-fs-v2-control-resume",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "scope": "Rebind the unchanged Platform-fs v8 product candidate and run exactly one fresh W1-WIN same-contract warm-file P1 qualification after an independent controls-only preflight proves a stable sampling window.",
       "non_goals": "Product, API, benchmark, peer adapter, contract, margin or instrument changes; replacing Windows evidence with WSL/macOS; sample merging, selection or run-until-green; adjacent-module review, Native FFI and Formal certification.",
       "baseline_commit": "27e6128683fbfdf371310dc433ab9abf68d13e9a",
+      "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+      "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -740,7 +742,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 RESUME / AUDITED：新窗口 controls-only 预检通过，候选产品、依赖、benchmark 与 P1 contract 零漂移，冻结 FIX 集为空；下一步只允许一次完整八-strata 资格化。"
+      "summary": "platform_fs v2 RESUME / CANDIDATE：v8 第二候选 c39df6f9/37889346 已在产品、依赖、benchmark 与 contract 零漂移后重新绑定；新窗口 controls 通过，下一项是唯一一次完整 P1 qualification。"
     },
     {
       "module": "mem_reclaim",
