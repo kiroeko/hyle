@@ -857,18 +857,14 @@
     },
     {
       "module": "mem",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "MEM-V5-MULTICHUNK-MIMALLOC-351",
-      "reopen_evidence": "docs/implementation/tasks/mem/mem-current-product-replay-2026-09.md",
-      "round_id": "mem-v5-multichunk-mimalloc-351",
-      "closure_task": "docs/implementation/tasks/mem/mem-v5-multichunk-mimalloc-351.md",
-      "scope": "Complete maximum-allocation-aware multi-chunk lifetime planning and upgrade the private shipping allocator to mimalloc v3.5.1, then requalify only the affected API, host-allocation performance and C++ delivery boundaries.",
-      "non_goals": "Mem VM or reclamation redesign; ordinary Buffer layout changes; Tensor, Graph, Compute backend usage, reset or host-pointer-import policy; async completion; hazard pointers; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
-      "baseline_commit": "ae01203b35d7f6d0b9c76117a1a50fc837c07772",
-      "candidate_commit": "90ffc8499e199fb675c9c704c3cd7e1b2b91768d",
-      "candidate_tree": "d5385c47214ab71cb29f14f2b5e47aa48c8dae85",
-      "end_commit": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
-      "registry_anchor_commit": "d673aeae014fb2e86cb8abe403d0d68378bc37cc",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
+      "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
+      "round_id": "mem-v6-comprehensive-rebuild",
+      "closure_task": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
+      "scope": "Re-establish the current host-memory capability superset, natural C++ product shape, internal reuse, performance and delivery contract after Platform v8, coordinated with but independently from Mem-VM v2.",
+      "non_goals": "Mem reclamation without a new trigger; async or device completion, Tensor, Graph or model policy; Native FFI/C API; stable C++ ABI; common instrument redesign; benchmark-only API or metadata; Formal certification.",
+      "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -876,61 +872,29 @@
         "M1-MAC"
       ],
     "engineering_performance": {
-      "verdict": "PASS",
+      "verdict": "PLANNED",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
       "machine_profile": "W1-WIN",
       "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v5.md"
+      "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
       },
     "formal_performance": {
       "state": "PENDING",
       "instrument_profile": "formal-release-v1"
     },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/mem/mem-v5-multichunk-mimalloc-351.md",
-    "loc": {
-      "snapshot_commit": "90ffc8499e199fb675c9c704c3cd7e1b2b91768d",
-      "repository_code": 438512,
-      "self_with_tests": 111779,
-      "self_without_tests": 70651,
-      "module_implementation": 7638
-    },
-    "known_limitations": [
-      "LifetimePlanner owns cold static whole-graph placement with deterministic next-fit backing boundaries; it does not promise globally minimal bin packing, dynamic-graph growth, device policy, usage/reset or asynchronous completion.",
-      "The P1 claim is limited to the frozen W1-WIN 64-item isolated-heap lifecycle and 5% engineering non-inferiority; cross-platform timing, every size/thread/NUMA shape, RSS, device latency, end-to-end inference and blanket SOTA are not claimed.",
-      "mimalloc 3.5.1 remains a private locked shipping mechanism; THP policy is selected before process startup, while Native FFI, a stable C++ ABI and allocator-vendor policy APIs remain outside the admitted product surface.",
-      "Formal performance certification remains independently PENDING and does not weaken the completed engineering gates."
-    ],
-    "reopen_triggers": [
-      "A named real consumer reproduces an allocator or planner correctness, security, OOM, ownership, concurrency, NUMA, delivery or C++ usability defect.",
-      "A current llama.cpp, ggml or other named consumer requires a memory semantic with no complete or routed owner in the Mem capability ledger.",
-      "mimalloc, a direct HYLE dependency, compiler, OS, provider or backend changes actual semantics, code generation, artifact identity or licensing.",
-      "The public API, layout, complexity, normal metadata, component dependency, source/static/shared delivery shape or frozen normal workload changes.",
-      "A mature same-contract peer proves a better complexity class, or a normal consumer workload reproduces a material performance regression or advantage."
-    ],
-    "summary": "mem-v5 CLOSED：resource-aware bounded multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free 已完成；三平台正确性/sanitizer、三交付、依赖/离线/符号、直接消费者、文档/红队、planner P0 和 W1-WIN 5% P1 工程非劣门全部通过。"
+    "summary": "mem v6 REOPENED：Platform v8 已改变直接依赖 identity；正在按当前推理旅程和成熟实现重建 host-memory 超集、自然 API、复用、性能、红队、文档与三交付合同，尚未冻结修复集。"
     },
     {
       "module": "mem_vm",
-    "product_state": "CLOSED",
-      "round_id": "mem-vm-v1-factor",
-      "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
-      "scope": "Own anonymous, file and shared mappings, residency, huge-page and guarded-stack storage as an independently buildable factor selected by the Mem product facade.",
-      "non_goals": "Allocator, pool, generic Buffer or lifetime-planner redesign, holey or segmented mapping policy, async/direct IO, backend/device policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "5fe4f72d6dff8b307a1271a1f51e7e5b6fc0fed2",
-    "candidate_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-    "candidate_tree": "f808df6fcbd0b5549777e0c6939240a3feab9512",
-    "end_commit": "865413af2255cc58061943b556efe7d98d39a7ac",
-    "registry_anchor_commit": "9c18057bc9e895558594f2b7f61cfeaafefc6548",
+    "product_state": "REOPENED",
+      "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
+      "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
+      "round_id": "mem-vm-v2-inference-mapping",
+      "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
+      "scope": "Complete inference-shaped file mapping and range lifetime, replay anonymous/shared/huge/guarded storage against Platform v8, and re-establish natural C++ API, performance and delivery contracts.",
+      "non_goals": "Base allocator, pool or lifetime-planner redesign; reclamation; async/direct IO; backend/device or model policy; IPC synchronization protocol; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
+      "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -938,47 +902,18 @@
         "M1-MAC"
       ],
     "engineering_performance": {
-      "verdict": "PASS",
+      "verdict": "PLANNED",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
       "machine_profile": "W1-WIN",
       "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm.md"
+      "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
     },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v1-factor.md",
-    "loc": {
-      "snapshot_commit": "b1a526d6fdb05b6bb42c4cb041788959e74511de",
-      "repository_code": 434612,
-      "self_with_tests": 110971,
-      "self_without_tests": 70261,
-      "module_implementation": 1215
-    },
-    "known_limitations": [
-      "Callers own backing lifetime, safe truncation, byte-level concurrency and control-operation synchronization.",
-      "Populate and lock are explicit page-proportional operations subject to OS quota; fragments use multiple owners and NUMA, huge-page or guard behavior depends on platform capability.",
-      "The P1 claim covers the frozen W1-WIN mapping and progressive-residency loader journeys only; Mem VM has no Native FFI, stable C++ ABI or Formal performance claim."
-    ],
-    "reopen_triggers": [
-      "A named real consumer reproduces a VM-storage correctness, security, lifetime, failure or C++ API-usability defect.",
-      "A supported OS invalidates the mapping, range, residency, shared-name, huge-page, NUMA or guard contract.",
-      "The public API or layout, owner boundary, factor dependency, normal cost or source/static/shared delivery changes materially.",
-      "A mature same-contract peer or normal loader or scheduler profile proves a better complexity class or material regression.",
-      "A formally admitted common storage journey cannot be expressed by the current natural owner model."
-    ],
-    "summary": "mem_vm v1 CLOSED：mapping/residency/huge/shared/guarded storage 独立因子完成；三平台、sanitizer、Mem 三交付、direct consumers、文档/红队和两族同语义 P1 全部通过。"
+    "summary": "mem_vm v2 REOPENED：当前 llama.cpp 的 lazy-range/partial-unmap 旅程击穿旧 fragment 非目标，且 Platform v8 改变直接依赖；正在重新审计 OS storage 超集与实现。"
     },
     {
       "module": "simd",
