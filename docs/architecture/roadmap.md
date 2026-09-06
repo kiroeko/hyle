@@ -12,9 +12,9 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同登记 **25 个 factor identity**：其中 **21 个已有实现/target**，另有
+CMake target。当前机器合同登记 **28 个 factor identity**：其中 **24 个已有实现/target**，另有
 `io_tls/io_http/io_http2/io_transfer` **4 个 `QUEUED` 身份保留项**；它们尚无源码 ownership、依赖、
-target 或产品根。中央 manifest 从 21 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
+target 或产品根。中央 manifest 从 24 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
 已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
 产品域；详见[构建系统](build-system.md)。
 
@@ -37,7 +37,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节第一张表是**当前 21-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+本节第一张表是**当前 24-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
 逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
@@ -62,10 +62,13 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | mem | core, error, platform | — |
 | mem_vm | core, error, mem, platform, platform_fs, util_core | — |
 | simd | core, platform | — |
-| container | core, mem, mem_reclaim | platform |
-| util | core, error, mem, container | — |
-| sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, timer_queue |
-| io | core, mem, container, time, timer_queue, sched | — |
+| container | core, mem, container_intrusive | platform |
+| container_concurrent | core, mem, mem_reclaim, container | — |
+| container_queue | core, mem | — |
+| text | core, mem, container | platform |
+| util | core, error, mem, container, text | — |
+| sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, container_queue, timer_queue |
+| io | core, mem, text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
@@ -92,15 +95,15 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 | obs | obs |
 | simd | simd |
 | math | math |
-| container | container_intrusive, container |
+| container | container_intrusive, container, container_concurrent, container_queue, text |
 | util | util_core, util |
 | sched | sched |
 | io | io |
 | compute | compute |
 | graph | graph |
 
-因此，按状态机可独立施工的是 25 个已登记 factor identity；其中当前真正拥有源码、target 与可验证
-依赖边的是 21 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
+因此，按状态机可独立施工的是 28 个已登记 factor identity；其中当前真正拥有源码、target 与可验证
+依赖边的是 24 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
 外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
 factor identity 按首次登记顺序只追加，不能为后来出现的自然低层边改写历史；构造顺序由中央图稳定
@@ -128,7 +131,7 @@ mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `me
 用户选择 `hyle::platform` / `hyle::mem` 的产品心智，只让内部消费者取得精确依赖。
 
 `mem_reclaim` 是只依赖 Core 的独立 factor，拥有 read-side guard、intrusive retire record 和 grace-period
-callback。Container 的 node map 以真实 `PUBLIC` 边复用它，Mem façade 只负责聚合，不复制实现或状态。
+callback。`container_concurrent` 的 node map 以真实 `PUBLIC` 边复用它，Mem façade 只负责聚合，不复制实现或状态。
 具体可交付状态只以 registry 与该 factor 的 closure card 为准。
 
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math

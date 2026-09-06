@@ -205,8 +205,8 @@ concept FlatMapRangeValue =
 template <class K, class Compare, class Alloc>
 class FlatSetStorage {
   // Reuse the established non-trivial sequence engine without embedding an
-  // arbitrary K in every empty set. Flat ordered containers optimize normal
-  // read-mostly indexes, not the singleton benchmark shape.
+  // arbitrary K in every empty set. Flat ordered containers target compact,
+  // read-mostly indexes across the full supported size range.
   using Sequence = SmallVector<K, 0, Alloc>;
 
   static_assert(std::is_nothrow_move_constructible_v<K> &&

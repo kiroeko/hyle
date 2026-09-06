@@ -1,15 +1,19 @@
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
 
 #include "hyle/container/circular_buffer.h"
 #include "hyle/container/concurrent_node_hash_map.h"
+#include "hyle/container/concurrent_flat_hash_set.h"
 #include "hyle/container/dynamic_bitset.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/intrusive_forward_list.h"
 #include "hyle/container/intrusive_hlist.h"
 #include "hyle/container/intrusive_list.h"
+#include "hyle/container/lru_cache.h"
 #include "hyle/container/string_algo.h"
+#include "hyle/container/unbounded_queue.h"
 
 namespace {
 
@@ -127,5 +131,31 @@ int main() {
   if (!registry.try_reserve(128)) return 8;
   decltype(registry)::ConstAccessor reader;
   if (!registry.find(reader, 7) || *reader != 70) return 9;
+
+  hyle::container::ConcurrentFlatHashSet<int> active_ids;
+  if (!active_ids.insert(11) || !active_ids.contains(11)) return 10;
+
+  hyle::container::UnboundedQueue<int> inbox;
+  if (!inbox.valid() || !inbox.try_push(23)) return 11;
+  int received = 0;
+  if (!inbox.try_pop(received) || received != 23) return 12;
+
+  hyle::container::LruCache<int, int> cache({.max_entries = 1});
+  if (!cache.try_insert_or_assign(1, 10).stored() ||
+      !cache.try_insert_or_assign(2, 20).stored() || cache.contains(1)) {
+    return 13;
+  }
+  const int* cached = cache.get(2);
+  if (cached == nullptr || *cached != 20) return 13;
+
+  constexpr char utf8[] = {'A', static_cast<char>(0xC3),
+                           static_cast<char>(0xA9)};
+  std::array<char16_t, 2> utf16{};
+  const auto converted = hyle::container::utf8_to_utf16(
+      hyle::container::StringView{utf8, sizeof(utf8)}, utf16);
+  if (!converted || converted.output_count != utf16.size() ||
+      utf16[0] != u'A' || utf16[1] != u'\u00e9') {
+    return 14;
+  }
   return 0;
 }

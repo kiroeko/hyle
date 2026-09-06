@@ -16,9 +16,9 @@ static_assert(simdutf::SIMDUTF_VERSION_MAJOR == 9 &&
 //
 // CONTRACT MATCH: utf8_length returns the code-point count, or -1 on malformed
 // input -- i.e. VALIDATE + COUNT. simdutf splits these (validate_utf8 +
-// count_utf8), so the borrow does both: validate first, count only if valid.
-// That is the honest same-contract path (a bench against count_utf8 ALONE would
-// be apples-to-oranges -- count_utf8 skips validation).
+// count_utf8), so the implementation does both: validate first, count only if
+// valid. Calling count_utf8 alone would violate the public malformed-input
+// contract because that provider operation intentionally skips validation.
 
 namespace hyle::container::detail {
 
@@ -94,9 +94,7 @@ UtfResult output_result(std::size_t input_size, std::size_t required,
   return {UtfStatus::kSuccess, input_size, required};
 }
 
-}  // namespace
-
-UtfResult utf8_validate_detailed(StringView input) noexcept {
+HYLE_FORCE_INLINE UtfResult validate_utf8_core(StringView input) noexcept {
   if (input.data() == nullptr) {
     return input.empty()
                ? UtfResult{}
@@ -109,14 +107,14 @@ UtfResult utf8_validate_detailed(StringView input) noexcept {
   Utf8Decoder decoder(input);
   while (!decoder.is_end()) {
     decoder.next();
-    if (!decoder.valid())
-      return {UtfStatus::kOther, input.size(), 0};
+    if (!decoder.valid()) return {UtfStatus::kOther, input.size(), 0};
   }
   return {UtfStatus::kSuccess, input.size(), 0};
 #endif
 }
 
-UtfResult utf16_validate(std::span<const char16_t> input) noexcept {
+HYLE_FORCE_INLINE UtfResult validate_utf16_core(
+    std::span<const char16_t> input) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
 #if defined(HYLE_SIMD_SIMDUTF)
   return validation_result(
@@ -135,7 +133,8 @@ UtfResult utf16_validate(std::span<const char16_t> input) noexcept {
 #endif
 }
 
-UtfResult utf32_validate(std::span<const char32_t> input) noexcept {
+HYLE_FORCE_INLINE UtfResult validate_utf32_core(
+    std::span<const char32_t> input) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
 #if defined(HYLE_SIMD_SIMDUTF)
   return validation_result(
@@ -151,10 +150,24 @@ UtfResult utf32_validate(std::span<const char32_t> input) noexcept {
 #endif
 }
 
+}  // namespace
+
+UtfResult utf8_validate_detailed(StringView input) noexcept {
+  return validate_utf8_core(input);
+}
+
+UtfResult utf16_validate(std::span<const char16_t> input) noexcept {
+  return validate_utf16_core(input);
+}
+
+UtfResult utf32_validate(std::span<const char32_t> input) noexcept {
+  return validate_utf32_core(input);
+}
+
 UtfResult utf8_to_utf16(StringView input,
                         std::span<char16_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf8_validate_detailed(input);
+  UtfResult validation = validate_utf8_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
@@ -175,7 +188,7 @@ UtfResult utf8_to_utf16(StringView input,
 UtfResult utf8_to_utf32(StringView input,
                         std::span<char32_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf8_validate_detailed(input);
+  UtfResult validation = validate_utf8_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
@@ -196,7 +209,7 @@ UtfResult utf8_to_utf32(StringView input,
 UtfResult utf16_to_utf8(std::span<const char16_t> input,
                         std::span<char> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf16_validate(input);
+  UtfResult validation = validate_utf16_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
@@ -217,7 +230,7 @@ UtfResult utf16_to_utf8(std::span<const char16_t> input,
 UtfResult utf16_to_utf32(std::span<const char16_t> input,
                          std::span<char32_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf16_validate(input);
+  UtfResult validation = validate_utf16_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
@@ -238,7 +251,7 @@ UtfResult utf16_to_utf32(std::span<const char16_t> input,
 UtfResult utf32_to_utf8(std::span<const char32_t> input,
                         std::span<char> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf32_validate(input);
+  UtfResult validation = validate_utf32_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =
@@ -259,7 +272,7 @@ UtfResult utf32_to_utf8(std::span<const char32_t> input,
 UtfResult utf32_to_utf16(std::span<const char32_t> input,
                          std::span<char16_t> output) noexcept {
   if (invalid_span(output)) return {UtfStatus::kInvalidArgument, 0, 0};
-  UtfResult validation = utf32_validate(input);
+  UtfResult validation = validate_utf32_core(input);
   if (!validation) return validation;
 #if defined(HYLE_SIMD_SIMDUTF)
   const std::size_t required =

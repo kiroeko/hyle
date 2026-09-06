@@ -42,9 +42,9 @@ struct SmallVectorInlineStorage<T, N, true> {};
 }
 
 // Vector with storage for the first N elements embedded in the object. It is a
-// std::vector-like owning container for genuinely small sequences, not a POD
-// benchmark fixture: non-trivial values are constructed, moved and destroyed
-// normally. Trivially copyable values retain the memcpy relocation fast path.
+// std::vector-like owning container for genuinely small sequences. Non-trivial
+// values are constructed, moved and destroyed normally; trivially copyable
+// values retain the memcpy relocation fast path.
 //
 // Growth copies when move construction may throw and T is copyable, preserving
 // the strong guarantee. A throwing move-only T follows std::vector's basic

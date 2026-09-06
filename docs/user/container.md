@@ -21,18 +21,22 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 | 高频无序 metadata map/set | `FlatHashMap` / `FlatHashSet` |
 | 构建后读多写少、需要有序遍历 | `FlatMap` / `FlatSet` |
 | 持续插删并需要 ordered/range query | `BTreeMap` / `BTreeSet` |
+| 需要按 entry 数或 caller-supplied weight 限制的 O(1) LRU storage | `LruCache<Key, Value>` |
 | 普通 ordered map/set，无 HYLE 特殊需求 | `std::map` / `std::set` |
 | dense active mask 与位运算 | `DynamicBitSet` |
 | ID 稀疏但当前 active 数较少 | `SparseSet<Id>` |
 | 单 producer / 单 consumer handoff | `SpscQueue<T>` |
 | 固定容量 MPMC handoff | `BoundedQueue<T>` |
+| bursty、无法预先给容量的 try-only MPMC handoff | `UnboundedQueue<T>` |
 | 已有稳定 producer hint、需要分片降争用 | `ShardedQueue<T>` |
 | 一个 owner、其他 worker steal | `WorkStealingDeque<T>` / `WsFifoQueue<T>` |
 | 并发 registry，value 地址不要求跨 grow 稳定 | `ConcurrentFlatHashMap` |
 | 并发 registry，需要 guard 内稳定 node | `ConcurrentNodeHashMap` |
+| 并发 membership、不要 mapped payload | `ConcurrentFlatHashSet` / `ConcurrentNodeHashSet` |
 | 多线程只 append、之后按 index 读 | `ConcurrentVector<T>` |
 | 不拥有字符串、并需要 known-NUL/search/path helper | `StringView` |
 | 重复字符串只存一份并获得 generation ID | `StringInterner` |
+| typed UTF 错误位置，或 UTF-8/16/32 caller-buffer 转换 | `UtfResult` 与 `utf*_to_utf*` |
 | 普通 borrowed text，不需要 HYLE 额外事实/算法 | `std::string_view` |
 
 `intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付。直接使用
@@ -80,8 +84,9 @@ for (int token : generated) {
 是 O(1) 且不分配；`try_set_capacity` 可能分配，缩小时保留最新元素。容量 0 时 `try_push_*` 返回
 false。满时 push 会销毁被覆盖元素，因此不要保存指向该端元素的引用。
 
-`RingDeque` 需要 grow-or-reject 语义；预先 `reserve` 后使用 bounded 操作可表达背压。两者都要求
-元素满足头文件列出的 nothrow move/destruction 约束。
+`RingDeque` 需要 grow-or-reject 语义；预先 `reserve` 后使用 bounded 操作可表达背压。trivial/nothrow
+元素走直接 relocation fast path；throwing move/copy 元素也能实例化，但 grow/shift 只保证头文件说明的
+basic/strong guarantee。已经 publish 后无法回滚的并发 queue 会有更严格的 nothrow 约束。
 
 ## Associative containers
 
@@ -158,6 +163,38 @@ protocol；升级或 ISA 路由后它可以改变。
 - 持续 mutation、range/lower_bound：`BTreeMap/BTreeSet`，主要操作 O(log n)。
 - 需要 multi、node handle/merge 或标准 allocator 生态：直接选标准库/Boost。
 
+### Bounded LRU storage
+
+```cpp
+#include <hyle/container/lru_cache.h>
+
+hyle::container::LruCache<ModelKey, ModelMeta> cache({
+    .max_entries = 1024,
+    .max_weight = host_cache_bytes,
+});
+
+auto stored = cache.try_insert_or_assign(
+    key, meta, meta.host_bytes(),
+    [](ModelKey&& evicted_key, ModelMeta&& evicted,
+       std::size_t weight) noexcept {
+      release_host_state(std::move(evicted_key), std::move(evicted), weight);
+    });
+if (stored.status == hyle::container::LruInsertStatus::kOutOfMemory) {
+  // The new entry was not committed.
+}
+
+if (ModelMeta* hit = cache.get(key)) {  // hit becomes MRU
+  consume(*hit);
+}
+const ModelMeta* observed = cache.peek(key);  // no touch
+```
+
+`max_entries` 与 `max_weight` 同时生效；weight 的单位完全由 caller 定义。单项 weight 超过限制、或任一
+上限为 0 时，插入返回 `kRejected`。`LruCache` 只提供 single-threaded bounded recency storage：KV block
+pin/in-flight state、device transfer、admission、异步回收与 persistence 留在 cache owner。callback 在本次
+mutation 内同步执行、必须 `noexcept` 且不能重入同一 cache。`get` 返回的 pointer 在下一次可能
+erase/replace/evict 的 mutation 后不能继续使用。
+
 ## 并发容器和 queue
 
 先写出线程角色，再选类型：
@@ -169,6 +206,8 @@ protocol；升级或 ISA 路由后它可以改变。
 - concurrent map 的回调/guard 决定引用有效期；不要把内部 value pointer 带出保护范围。
 - `ConcurrentFlatHashMap` 适合不要求 value 地址跨 grow 稳定的紧凑 registry；
   `ConcurrentNodeHashMap` 的 node 在 accessor guard 内跨 rehash 保持稳定，但不提供无 guard 的永久引用。
+- 只有 membership 时选择对应 `ConcurrentFlatHashSet` / `ConcurrentNodeHashSet`；它们不为用户可见地
+  保存 dummy mapped value。`try_insert` 只返回 inserted/already-present/OOM 三种结果。
 - 默认 `ConcurrentNodeHashMap` 面向启动期 `reserve()` 或增长次数有界的高频查询：旧 bucket table 保留到
   析构，二次幂增长使其容量几何和小于当前表，lookup 不支付 reclamation guard。需要名称显式表达该
   取舍时可用等价的 `RetainedTableConcurrentNodeHashMap` alias。
@@ -179,6 +218,23 @@ protocol；升级或 ISA 路由后它可以改变。
 - `reserve/clear/for_each` 是 management operation；不要在同一线程仍持有该 map accessor 时调用，
   map 析构前必须保证全部访问已静止。
 - `ConcurrentVector` 适合并行 append，不是可并行 erase/insert 的 `std::vector`。
+
+无法诚实给出容量上限的 burst inbox 可以使用 `UnboundedQueue<T>`：
+
+```cpp
+#include <hyle/container/unbounded_queue.h>
+
+hyle::container::UnboundedQueue<Job> inbox;
+if (!inbox.try_emplace(make_job())) {
+  // A new fixed-size block could not be allocated; no FIFO position was used.
+}
+inbox.try_pop([](Job&& job) noexcept { run(std::move(job)); });
+```
+
+它按固定 block 摊薄分配，push/pop expected O(1)，`approximate_size()` 只是独立生产/消费计数导出的监控
+hint，不是同步条件。payload 构造、析构和 pop callback 必须 `noexcept`；callback 借用的 rvalue 只活到
+callback 返回，且不能重入同一 queue。析构前所有 producer/consumer 必须静止。若能够给出容量与
+backpressure，优先 `BoundedQueue`，不要无理由把内存增长变成“无界”。
 
 timeout、cancel、blocking wait、close 和 backpressure policy 属于 scheduler/runtime。需要这些语义时，
 在 Container queue 外组合事件/调度原语，不要忙等一个没有该服务合同的 API。
@@ -221,6 +277,28 @@ if (suffix.is_null_terminated()) {
 `string_algo.h` 提供 byte/ASCII、hex/escape、UTF-8 validate/count/decode 等基础操作；path helper 处理
 跨平台 lexical path。它们不访问文件系统，不替代 `std::filesystem` 的 IO/normalization 语义。
 需要输出的 helper 优先写 caller buffer；按返回合同处理容量不足，不能假设一定 NUL-terminate。
+
+需要错误位置或编码转换时使用 typed Unicode 路线：
+
+```cpp
+#include <hyle/container/string_algo.h>
+
+using namespace hyle::container;
+UtfResult size = utf8_to_utf16(input, {});
+if (size.status == UtfStatus::kOutputTooSmall) {
+  std::vector<char16_t> output(size.output_count);
+  UtfResult converted = utf8_to_utf16(input, output);
+  if (!converted) {
+    report_utf_error(converted.status, converted.input_offset);
+  }
+} else if (!size) {
+  report_utf_error(size.status, size.input_offset);
+}
+```
+
+六个 UTF-8/16/32 方向都不分配。offset/count 的单位是对应 input/output code unit（UTF-8 为 byte）。
+output 不足时不会部分写入，`output_count` 是精确所需容量；空 output span 是正常 size-query。input/output
+不得重叠。只要 bool 的 UTF-8 边界继续用 `utf8_validate`，不要为了得到未使用的详细结果走重接口。
 
 ## StringInterner
 
@@ -274,4 +352,6 @@ Container 当前只面向 C++ 消费者，没有 C ABI/Native FFI。Java/C# 等 
 - 随机崩溃：优先查 borrowed `StringView`、rehash/grow 后旧 pointer、被覆盖 circular-buffer 元素。
 - queue 卡住：确认 producer/consumer 角色、容量、shutdown 与外部 wait policy，没有把 nonblocking
   `try_*` 当 blocking service。
+- LRU value 意外失效：检查是否跨可能逐出/替换的 mutation 保存了 pointer，或在 eviction callback 中重入。
+- UTF output 不完整：先用空 span 取精确 `output_count`；不要假设转换会截断或 NUL-terminate。
 - 跨版本 hash 不一致：这是允许的；不要持久化 table hash。

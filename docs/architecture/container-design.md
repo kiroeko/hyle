@@ -23,15 +23,22 @@ fixed bitset 与 heap algorithm 继续直接使用标准库。
 ## 组件边界和依赖
 
 ```text
-core ───────────────┐
-mem ────────────────┼──> container ──> util / sched / io / graph / future engine
-platform (private) ─┘
-                         └─ build-only/private: Highway, xxHash, wyhash, simdutf
+container_intrusive ───────────┐
+core + mem ─────────> container├──> container_concurrent <── mem_reclaim
+                              ├──> text <── platform (private)
+core + mem ────────────────────└──> container_queue
+
+hyle::container façade = container_intrusive + container
+                       + container_concurrent + container_queue + text
 ```
 
 - `core` 提供编译器、断言与 visibility 合同。
 - `mem` 提供 allocator；Container 不自建第二套系统分配器。
 - `platform` 只提供运行时 ISA/CPU 事实，Container 自己拥有容器语义和 fallback。
+- `container_intrusive` 给 LRU 和其他稳定节点 owner 提供零分配 hook；`mem_reclaim` 给并发表的显式
+  reclamation 路线提供 reader lifetime。两者都不被复制。
+- adaptive mutex/RW lock 是 `container` 的私有共享 mechanism：并发索引与 Text interner 经各自已有的
+  `container` 边复用；它不是用户产品，也不值得制造第五个同步 factor。
 - Highway、xxHash、wyhash、simdutf 只是私有实现机制，公开头不泄漏它们的类型。
 - `intrusive_list.h`、`intrusive_forward_list.h` 与 `intrusive_hlist.h` 的 include owner 是独立的
   `container_intrusive` factor，不属于 compiled container factor 的实现边界；用户侧
@@ -53,12 +60,16 @@ shared 三种交付暴露同一套 HYLE C++ 源码接口。
 | 热 metadata hash index | `FlatHashMap/FlatHashSet` | open addressing、连续 control/slot |
 | read-mostly sorted index | `FlatMap/FlatSet` | 连续存储与二分查找 |
 | 持续 mutation、ordered/range index | `BTreeMap/BTreeSet` | 有序树与范围遍历 |
-| 并发 registry | `ConcurrentFlatHashMap` / `ConcurrentNodeHashMap` | 前者偏密集，后者给被 guard 保护的稳定 node identity |
+| bounded recency storage | `LruCache` | O(1) touch/insert/evict，entry/weight 双预算，不吸收 KV/device policy |
+| 并发 registry map | `ConcurrentFlatHashMap` / `ConcurrentNodeHashMap` | 前者偏密集，后者给被 guard 保护的稳定 node identity |
+| 并发 membership set | `ConcurrentFlatHashSet` / `ConcurrentNodeHashSet` | 不为只有 key 的任务伪造 mapped payload |
 | 并行 append | `ConcurrentVector` | segmented growth，已发布元素地址稳定 |
-| worker handoff | `SpscQueue` / `BoundedQueue` / `ShardedQueue` | 明确 producer/consumer 与 bounded 语义 |
+| bounded worker handoff | `SpscQueue` / `BoundedQueue` / `ShardedQueue` | 明确 producer/consumer 与容量语义 |
+| bursty unbounded handoff | `UnboundedQueue` | typed MPMC、try-only OOM、分块增长；不吸收 wait/service policy |
 | work sharing | `WorkStealingDeque` / `WsFifoQueue` | owner/thief 角色合同 |
 | active membership | `DynamicBitSet` / `SparseSet` | dense algebra 或稀疏 O(1) membership |
 | borrowed text/path | `StringView`、string/path algorithms | 显式借用、长度和 known-NUL 事实 |
+| UTF 边界 | `UtfResult` 与 UTF-8/16/32 conversion | typed error offset、精确 caller-buffer 大小、零隐式 owning allocation |
 | string identity | `StringInterner` / `StringId` | stable bytes、generation handle、可回收/永久两种生命周期 |
 | table hash | `Hash`、`StringHash`、`HardenedStringHash` | semantic composition、trusted 与 hostile key 分流 |
 
@@ -70,25 +81,29 @@ shared 三种交付暴露同一套 HYLE C++ 源码接口。
 便利构造/`push_*` 可以 fail-fast，但不得让失败后的对象处于半提交状态。grow、reserve、rehash、
 capacity change 是允许分配的冷路径；已声明 bounded 或 steady-state no-allocation 的操作不得暗中分配。
 
-容器不统一吞掉 `T` 的构造异常。每个模板在头文件中明确约束，例如 ring 类型要求 nothrow move，
-并把该约束作为复杂度和失败合同的一部分。
+容器不统一吞掉 `T` 的构造异常。每个操作只表达自己真正需要的约束：trivial/nothrow 类型保留直接
+relocation fast path；`SmallVector` 与 `RingDeque` 对 throwing move/copy 类型提供与成熟容器同档的
+basic/strong guarantee 路线，而不是为了 benchmark 把整个类型禁掉。已经 publish 的并发 FIFO 位置
+无法回滚，因此 `UnboundedQueue` 的 payload 构造、提取 callback 和析构明确要求 nothrow。
 
 ### lifetime 与 invalidation
 
 - contiguous grow 会使旧地址失效；不要跨 grow 保存 `data()`、iterator 或 reference。
 - open-addressed table 的 rehash 会使 slot 地址失效；key 不可通过 iterator 修改。
+- `LruCache::get` 会改变 recency；返回 pointer 只活到下一次可能 erase/evict 的 mutation，`peek` 不触碰顺序。
 - `ConcurrentNodeHashMap` 的 node 稳定性仍受 guard/lifetime 合同保护，不等于无锁永久引用。
 - `ConcurrentNodeHashMap` 默认保留旧 table 到析构，以服务期旧表内存换取零 read-side reclamation tax；
   显式 `ReclaimingTableConcurrentNodeHashMap` 才通过 `mem_reclaim` 保护 table load，取得并确认 bucket
   lock 后立即退出 read region。publish 后必须先释放全部旧 bucket lock，再 retire 旧表，避免同步
   callback 销毁仍持有的 lock storage。
 - `StringView` 永不拥有字节；`StringInterner::lookup` 返回的 view 受对应 ID 的生命周期约束。
+- UTF conversion 不拥有 input/output；output 太小时不做部分写入，并返回精确 required count。
 - `CircularBuffer` 满时 push 会销毁一端元素；指向被覆盖元素的引用立即失效。
 
 ### 并发
 
-“线程安全”按类型和操作声明，不是命名空间级保证。普通 sequence、ring、flat/sorted/B-tree 容器需要
-外部同步。queue/work-stealing/concurrent map/vector 只承诺各自列出的角色、progress 与 quiescence；
+“线程安全”按类型和操作声明，不是命名空间级保证。普通 sequence、ring、flat/sorted/B-tree/LRU
+容器需要外部同步。queue/work-stealing/concurrent map/set/vector 只承诺各自列出的角色、progress 与 quiescence；
 它们不提供 timeout、cancel、wait service 或 shutdown policy，这些属于 scheduler/runtime。
 
 ## 复杂度与常态资源
@@ -101,10 +116,14 @@ capacity change 是允许分配的冷路径；已声明 bounded 或 steady-state
 | Flat hash lookup/insert/erase-current | expected amortized O(1) |
 | Flat sorted lookup | O(log n)；中间 insert/erase O(n) |
 | B-tree lookup/insert/erase | O(log n) |
+| LRU get/peek/insert/erase/单项逐出 | expected O(1)；批量 clear O(n) |
+| concurrent flat/node map/set lookup/insert/erase | expected O(1)；rehash 为 management operation |
+| bounded/unbounded queue steady push/pop | O(1)；unbounded 每个固定 block 才发生一次分配/释放 |
 | DynamicBitSet algebra/count | O(number of machine-word blocks) |
 | SparseSet contains/insert/erase | O(1)，内存与最大 admitted ID 及 dense size 有关 |
 | StringView copy | O(1)；search 按输入长度，且不分配 |
 | StringInterner acquire/lookup/release | expected O(1)，按 shard 同步；bytes 只保存一份 |
+| UTF validation/transcode | O(input bytes + output units)，caller-buffer、无隐式分配 |
 
 复杂度门先于点值 benchmark。任何优化都不得通过为全部对象增加无需求字段、改变 lifetime、减少
 正确性检查、削弱进展保证或偷掉被计费阶段来换分。
@@ -144,7 +163,7 @@ llama.cpp 已消费，也不能把 vLLM/SGLang 的 GPU、Triton 或 tensor-fusio
 
 - 通用 std/Boost API 全量 parity、node handle/merge、ordered multi；
 - tokenizer trie/Aho、indexed/decrease-key heap；
-- LRU/KV/device cache、eviction、persistence；
+- KV/device cache policy、pin/in-flight state、异步迁移、持久化；通用 bounded LRU storage 已由 Container 提供；
 - blocking/cancel/backpressure service；
 - compressed bitmap、rank/select；
 - C ABI、Native FFI 或稳定 C++ ABI。

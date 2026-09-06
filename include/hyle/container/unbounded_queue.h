@@ -24,8 +24,9 @@ namespace hyle::container {
 //
 // try_emplace() fails only when a new block cannot be allocated. try_pop()
 // returns false when empty at its linearization point. approximate_size() is a
-// monitoring hint and can transiently overestimate while an operation is in
-// flight. Destruction requires producer/consumer quiescence.
+// monitoring hint derived from independently published producer and consumer
+// counts; it can transiently overestimate while operations are in flight.
+// Destruction requires producer/consumer quiescence.
 //
 // T construction, destruction and extraction are noexcept because a published
 // FIFO position cannot be rolled back. Callback extraction supports
@@ -86,7 +87,7 @@ class UnboundedQueue {
     std::construct_at(tail_->raw(tail_offset_),
                       std::forward<Args>(args)...);
     const std::size_t published = ++tail_offset_;
-    approximate_size_.fetch_add(1, std::memory_order_relaxed);
+    enqueued_.fetch_add(1, std::memory_order_relaxed);
     tail_->published.store(published, std::memory_order_release);
     return true;
   }
@@ -116,7 +117,10 @@ class UnboundedQueue {
   }
 
   [[nodiscard]] std::size_t approximate_size() const noexcept {
-    return approximate_size_.load(std::memory_order_relaxed);
+    const std::size_t consumed = dequeued_.load(std::memory_order_relaxed);
+    const std::size_t produced =
+        enqueued_.load(std::memory_order_relaxed);
+    return produced >= consumed ? produced - consumed : 0;
   }
 
   [[nodiscard]] bool empty() const noexcept {
@@ -151,7 +155,7 @@ class UnboundedQueue {
         T* value = head_->value(head_offset_++);
         std::invoke(std::forward<Fn>(consumer), std::move(*value));
         std::destroy_at(value);
-        approximate_size_.fetch_sub(1, std::memory_order_relaxed);
+        dequeued_.fetch_add(1, std::memory_order_relaxed);
         return true;
       }
 
@@ -180,7 +184,8 @@ class UnboundedQueue {
     }
     head_ = nullptr;
     tail_ = nullptr;
-    approximate_size_.store(0, std::memory_order_relaxed);
+    enqueued_.store(0, std::memory_order_relaxed);
+    dequeued_.store(0, std::memory_order_relaxed);
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
@@ -190,8 +195,13 @@ class UnboundedQueue {
   std::size_t tail_offset_ = 0;
   alignas(core::kMaxDestructiveInterferenceSize) std::mutex head_mutex_;
   alignas(core::kMaxDestructiveInterferenceSize) std::mutex tail_mutex_;
+  // Producers and consumers already serialize on different locks. Keep their
+  // monitoring publications on different cache lines as well; a single shared
+  // size counter would add an unrelated all-worker coherence hotspot.
   alignas(core::kMaxDestructiveInterferenceSize)
-      std::atomic<std::size_t> approximate_size_{0};
+      std::atomic<std::size_t> enqueued_{0};
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::size_t> dequeued_{0};
 };
 
 }  // namespace hyle::container

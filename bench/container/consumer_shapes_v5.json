@@ -1,0 +1,76 @@
+{
+  "schema": "hyle.container.consumer-shapes/v5",
+  "owner": "container-v5-product-factorization",
+  "reference_revisions": {
+    "llama_cpp": "3ad1ba7336986d98592d3e28cafd1a406715351f",
+    "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
+    "ds4": "9ab705347c1775e7599ede7eb81a6255ec7dccb5",
+    "vllm": "52358e6e192aeae73dd3764046c98fc4b156ea83",
+    "sglang": "28457f0dcab4ccf748d60f2387a1a4a7fdb5a110"
+  },
+  "journeys": [
+    {
+      "id": "model-cache-lru-mixed-access",
+      "consumer": "inference runtime model, graph, adapter or host-cache metadata",
+      "topology": "one caller-owned 4096-entry cache; each 4096-operation replay is 93.75 percent hit-and-touch and 6.25 percent insert-and-evict",
+      "ownership": "the cache owns keys and values; the caller supplies the weight and handles synchronous eviction; device transfer, pinning, in-flight state and KV policy stay above Container",
+      "demand_sources": [
+        "ggml/src/ggml-cann/common.h graph LRU",
+        "llama.cpp/tools/server/server-models.cpp model LRU",
+        "vllm/vllm/v1/kv_offload/cpu/policies/lru.py evictable block LRU",
+        "sglang/python/sglang/srt/mem_cache storage and runtime bounded caches"
+      ],
+      "peer": "Abseil flat_hash_map plus std::list using the same stable hash and HYLE system allocator",
+      "reason": "bounded recency storage is common across the four inference references; the benchmark measures the generic storage mechanism rather than any engine-specific eviction policy"
+    },
+    {
+      "id": "read-mostly-concurrent-membership",
+      "consumer": "inference runtime active-object, backend or registry membership",
+      "topology": "one prebuilt 32768-entry set; eight persistent workers each perform 262144 deterministic 50-percent-hit membership queries on distinct physical cores",
+      "ownership": "the set owns keys; construction and reserve are cold; workers receive only snapshot membership results and perform no external synchronization",
+      "demand_sources": [
+        "ggml/src/ggml-metal/ggml-metal-common.cpp active concurrent node-set reasoning",
+        "vLLM runtime worker, block and backend registries",
+        "SGLang runtime worker, transfer and cache registries",
+        "ds4 backend/runtime object registries"
+      ],
+      "peer": "oneTBB concurrent_unordered_set",
+      "reason": "a payload-free set is the natural consumer shape; forcing a dummy mapped value would pollute both storage and API"
+    },
+    {
+      "id": "unbounded-mpmc-runtime-handoff",
+      "consumer": "inference runtime bursty task, completion or transfer inbox",
+      "topology": "four persistent producers and four persistent consumers transfer 1048576 typed values through one unbounded FIFO-compatible queue; every item is checksummed exactly once",
+      "ownership": "the queue owns each in-flight value; producers and consumers do not wait on a service-level close, deadline or cancellation contract; allocation failure remains explicit on HYLE enqueue",
+      "demand_sources": [
+        "llama.cpp/tools/server/server-common.h queued server work",
+        "vllm/vllm/v1/simple_kv_offload and distributed connector SimpleQueue inboxes",
+        "sglang/python/sglang/srt mem-cache and disaggregation transfer queues",
+        "ds4 runtime/backend work handoff"
+      ],
+      "peer": "oneTBB concurrent_queue",
+      "reason": "bursty unbounded typed handoff recurs across inference runtimes; blocking policy and process transport are intentionally not attributed to the container"
+    },
+    {
+      "id": "model-metadata-utf8-to-utf16",
+      "consumer": "model, path and process metadata crossing a UTF-16 host boundary",
+      "topology": "256 independent valid mixed-ASCII and multibyte 128-byte metadata records are validated, sized and converted into caller-owned UTF-16 storage",
+      "ownership": "input and output are caller-owned; HYLE allocates nothing, reports malformed input and required output exactly, and never exposes provider types",
+      "demand_sources": [
+        "ggml/src/ggml.c Windows UTF-8 path conversion",
+        "llama.cpp/common/common.cpp and tools server/rpc UTF-8 path conversion",
+        "vLLM and SGLang model/token metadata entering native and operating-system boundaries",
+        "ds4 GGUF and host metadata boundaries"
+      ],
+      "peer": "simdutf validate-with-errors plus exact length plus convert-valid route",
+      "reason": "the comparison charges the same safe caller-buffer contract on both sides; raw unchecked transcoding is not an equivalent peer"
+    }
+  ],
+  "negative_space": {
+    "policy": "KV eviction, pinning, in-flight ownership, request scheduling, tokenizer automata and device placement remain engine or upper-module policy",
+    "queues": "wait, close, deadline, cancellation, backpressure and process transport belong to Sched or IO rather than Container queue storage",
+    "unicode": "filesystem I/O, locale policy, normalization and owning string allocation are outside caller-buffer transcoding",
+    "performance": "Python queues and policy caches prove demand but are not C++ timing peers; each P1 row uses a mature source-pinned C++ implementation under SAME_CONTRACT",
+    "ordinary_containers": "std and PMR remain the natural route for ordinary vector, string, deque, node map and heap tasks"
+  }
+}

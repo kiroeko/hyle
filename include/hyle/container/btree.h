@@ -490,8 +490,8 @@ public:
       // unlink that leaf directly. A conventional merge would first move the
       // entire right sibling into the empty node only for the next loop to
       // destroy those entries again. Direct unlinking is the B-tree analogue
-      // of dropping a fully expired page and is useful for any long range, not
-      // just the prefix-expiry benchmark.
+      // of dropping a fully expired page and avoids redundant relocation for
+      // any long erased range.
       if (node->count == 0 && node != root_ && size_ != target_size &&
           node->position < node->parent->count) {
         Node *parent = node->parent;

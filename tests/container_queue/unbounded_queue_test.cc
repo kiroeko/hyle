@@ -77,6 +77,16 @@ TEST(UnboundedQueue, AllocationFailureDoesNotConsumeFifoPosition) {
   }
 }
 
+TEST(UnboundedQueue, InitialAllocationFailureProducesAnInvalidEmptyQueue) {
+  bool fail = true;
+  UnboundedQueue<int, FailingAllocator, 2> queue(FailingAllocator{&fail});
+  EXPECT_FALSE(queue.valid());
+  EXPECT_TRUE(queue.empty());
+  EXPECT_FALSE(queue.try_push(1));
+  int value = 0;
+  EXPECT_FALSE(queue.try_pop(value));
+}
+
 TEST(UnboundedQueue, MultipleProducersAndConsumersLoseNoItems) {
   constexpr int kProducers = 4;
   constexpr int kConsumers = 4;

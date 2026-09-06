@@ -1,0 +1,252 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "container-product-p1-v5",
+  "module": "container",
+  "claim": "P1 engineering non-inferiority of the natural Container v5 bounded LRU storage and safe caller-buffer UTF conversion paths against source-pinned mature peers",
+  "candidate": {
+    "target": "hyle_container",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "container",
+    "entrypoint": "hyle/container/lru_cache.h and hyle/container/string_algo.h"
+  },
+  "peers": [
+    {
+      "id": "abseil",
+      "revision": "38f8c1535de9ebc12c6340e5c1c8ebd72afde560",
+      "configuration": {
+        "delivery_shape": "source-built static and header-only",
+        "algorithm": "absl::flat_hash_map plus std::list with the identical stable hash and HYLE system allocator",
+        "source": "clean external checkout"
+      }
+    },
+    {
+      "id": "simdutf",
+      "revision": "2d4e249dcfd978b39dd567b156f20a43db97377b",
+      "configuration": {
+        "delivery_shape": "source-pinned single-header declarations linked to the byte-identical HYLE vendored v9.1.0 amalgamation",
+        "algorithm": "validate_utf8_with_errors plus utf16_length_from_utf8 plus convert_valid_utf8_to_utf16",
+        "source": "clean external checkout at the dependency-lock revision"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "container-v5-contract", "kind": "resource", "parameters": {"validator_id": "container-v5-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "model-cache-lru-mixed-access-4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/model-and-host-cache/lru-storage",
+      "provenance": {
+        "path": "bench/container/consumer_shapes_v5.json",
+        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      },
+      "ownership_topology": {
+        "candidate": "One caller-owned HYLE LruCache owns 4096 integral entries, uses a stable hash and SystemStdAllocator, touches hits and synchronously reports each evicted key/value",
+        "peer": "One caller-owned Abseil flat_hash_map plus std::list composition owns the identical entries, uses the same hash and allocator, touches hits and synchronously reports each eviction",
+        "equivalence": "Both charge identical 93.75-percent get-and-touch and 6.25-percent insert-and-evict streams; setup, reserve, hot-set establishment and owner construction are excluded"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "cache access",
+        "budget": 5,
+        "denominator": "one 4096-operation bounded model/cache metadata replay",
+        "derivation": "ggml, llama.cpp, vLLM and SGLang all retain bounded recency state; the generic storage path is hot while device and KV policy remain above Container"
+      },
+      "semantic_contract": "Execute 3840 successful get-and-touch operations and 256 insert-and-single-evict operations against a continuously full 4096-entry cache",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic 1024-key hot set plus ascending cold inserts", "scale": {"capacity": 4096, "operations_per_callback": 4096, "hit_percent": 93.75}},
+      "setup": "Both caches are constructed in controlled allocation order, reserved, populated and given the identical hot recency state before measurement",
+      "charged_phases": ["4096 hashes and lookups", "3840 recency touches", "256 node insertions", "256 index erases and node destructions", "256 synchronous eviction callbacks", "checksum"],
+      "pair": {"candidate": "HYLE LruCache mixed access N=4096", "peer": "Abseil+list LRU mixed access N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v5-contract"]
+    },
+    {
+      "id": "model-metadata-utf8-to-utf16-4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/model-path-metadata/utf8-to-utf16",
+      "provenance": {
+        "path": "bench/container/consumer_shapes_v5.json",
+        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      },
+      "ownership_topology": {
+        "candidate": "HYLE validates, computes exact required UTF-16 units and converts 256 caller-owned records into caller-owned pre-sized output through the public typed result",
+        "peer": "simdutf performs validate-with-errors, exact UTF-16 length and valid-input conversion over the identical caller-owned records and output",
+        "equivalence": "Both charge the complete safe no-allocation contract and reject malformed input before writing; neither side is compared with raw unchecked transcoding"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 8,
+        "unit": "metadata byte",
+        "budget": 5,
+        "denominator": "256 independent 128-byte metadata records represented as 4096 eight-byte measurement units",
+        "derivation": "ggml and llama.cpp perform native UTF-16 boundary conversion while every reviewed engine carries model and token metadata through native boundaries"
+      },
+      "semantic_contract": "Validate, size and convert 32768 bytes of mixed ASCII and multibyte UTF-8 in 256 independent records to exact caller-owned UTF-16 output",
+      "comparability": "COMPARABLE",
+      "peer_id": "simdutf",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "256 deterministic valid 128-byte metadata records containing ASCII and two three-byte scalar sequences", "scale": {"records": 256, "bytes": 32768, "measurement_units": 4096, "bytes_per_unit": 8}},
+      "setup": "Inputs and exact-sized outputs are allocated and initialized outside measurement in controlled owner order",
+      "charged_phases": ["256 validating scans with error position", "256 exact UTF-16 length scans", "256 UTF-8 to UTF-16 conversions", "output-count validation", "checksum"],
+      "pair": {"candidate": "HYLE UTF-8 to UTF-16 units N=4096", "peer": "simdutf exact-contract UTF-8 to UTF-16 units N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v5-contract"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract", "container-v5-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "PROVISIONAL_ARCHETYPE",
+      "semantic_matrix": "bench/container/consumer_shapes_v5.json",
+      "semantic_matrix_sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+    },
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_ABSL": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "container",
+          "HYLE_CONTAINER_V5_SINGLE_P1_BENCH": "ON",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {"abseil": "HYLE_ABSL_DIR", "simdutf": "HYLE_SIMDUTF_PEER_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "container-v5-primary",
+          "target": "hyle_container_v5_p1_bench",
+          "stem": "hyle_container_v5_p1_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_V5_RUN "],
+          "workloads": [
+            {"id": "model-cache-lru-mixed-access-4096", "title": "container model-cache LRU mixed access N=4096"},
+            {"id": "model-metadata-utf8-to-utf16-4096", "title": "text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
+          ]
+        },
+        {
+          "id": "container-v5-placement",
+          "target": "hyle_container_v5_p1_bench_placement",
+          "stem": "hyle_container_v5_p1_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_V5_RUN "],
+          "workloads": [
+            {"id": "model-cache-lru-mixed-access-4096", "title": "container model-cache LRU mixed access N=4096"},
+            {"id": "model-metadata-utf8-to-utf16-4096", "title": "text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_PEER_ALLOCATION_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "container-v5-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-container-v5-bench.py",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--expected-benchmark-sha256",
+            "a1dd9b55ce3a7b7e4b2b823d88a03562abef7ff0d0fc8f5511e96fedc42153bb",
+            "--expected-shape-sha256",
+            "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+          ]
+        }
+      ]
+    }
+  }
+}

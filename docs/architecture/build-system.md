@@ -43,8 +43,9 @@
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
 - `hyle_build_contract` 只传播所有 C++ factors 共同需要的最低语言、文本编码与预处理语义；它不选择
   exception mode，也不传播某个产品的 ISA 许可。公开 inline 实现若需要特定 ISA，必须由 owning
-  factor 直接以 `PUBLIC` usage requirement 传播。当前 x86 Container 的 header-inline SSSE3 probe
-  因而由 `hyle_container` 自己拥有；只选择 Core 不会无故提高 ISA permission/floor。
+  factor 直接以 `PUBLIC` usage requirement 传播。Container v5 的公开 inline x86 路线保持 SSE2
+  baseline；SSE4/AVX2/AVX-512/NEON 只在 owning compiled variant 上私有选择，不提高 consumer TU 的
+  ISA floor。
 - `hyle::simd_expert` 是 SIMD 用户显式选择的 `INTERFACE` 开发 target，在源码、installed static 和
   installed shared 三种交付中同名存在。`hyle_target_simd()` / `hyle_add_fat_kernel()` 通过它向
   target-bound consumer TU 提供中央锁定 Highway/xsimd 头和一致的 ISA flags。它不被普通
@@ -65,8 +66,8 @@
 
 ### 双层投影合同
 
-Stage C 能力账本中的 30 项是**候选 semantic factor**。当前有 25 个 identity 同时进入
-`module-status.json` 与中央 manifest：21 个已经拥有实际 target、源码 ownership、测试和 HYLE 直接
+Stage C 能力账本中的 30 项是**候选 semantic factor**。当前有 28 个 identity 同时进入
+`module-status.json` 与中央 manifest：24 个已经拥有实际 target、源码 ownership、测试和 HYLE 直接
 依赖，`io_tls/io_http/io_http2/io_transfer` 4 个则只是 `QUEUED` 身份保留项。保留项在自己的
 `SCOPED/AUDITED` 轮次前没有 target、依赖、公开头或 product-root 承诺，也不会被 `all` 选择。
 其余候选尚未登记。所有 factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。
@@ -86,8 +87,9 @@ factor roots。公开头仍由 factor 唯一拥有，产品安装的是所选 fa
 审计。
 
 外部 catalog 按完整问题域保持小而稳定：`core,error,time,platform,mem,obs,simd,math,container,util,
-sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive` 与未来
-`container_queue` 是内部 factor，用户从 `hyle::container` 获得 Container 产品；`util_core/registry/
+sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive`、
+`container_concurrent`、`container_queue` 与 `text` 是内部 factor，用户从 `hyle::container` 获得
+Container 产品；`util_core/registry/
 symbol` 由 `hyle::util` 聚合。只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
 不能因为内部有一个 target 就自动公开。
 
@@ -98,8 +100,9 @@ INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可�
 `23ebefdf96c116700d3e134f04d95a2b60a509de` 那样把 OBJECT 单元聚合成 monolithic shared artifact，必须
 由启动、部署或符号边界证据另立任务；不能借 façade 迁移顺手改变物理 ABI。
 
-本地 peer 对账还包括 oneTBB `a8216b95202f3c55f9749870f4f8cfa4df0b32e3` 的少量语义组件、ggml
-`d4716378882593333721eb33f153144b6885caf2` 的 frontend/backend 分层，以及 Abseil/Boost 的细粒度
+本地 peer 对账还包括 oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f` 的语义组件、ggml
+`e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` 的 frontend/backend 分层，以及 Abseil
+`38f8c1535de9ebc12c6340e5c1c8ebd72afde560`/Boost 的细粒度
 公开 target 反例。结论不是复制任一库，而是把逻辑 factor、物理 artifact 与用户产品入口作为三项分别
 裁决。
 
@@ -156,10 +159,13 @@ mem_reclaim -> PUBLIC core
 mem         -> PUBLIC core error platform
 mem_vm      -> PUBLIC core error mem platform platform_fs util_core
 simd        -> PUBLIC core platform
-container   -> PUBLIC core mem mem_reclaim; PRIVATE platform
-util        -> PUBLIC core error mem container
+container   -> PUBLIC core mem container_intrusive; PRIVATE platform
+container_concurrent -> PUBLIC core mem mem_reclaim container
+container_queue -> PUBLIC core mem
+text        -> PUBLIC core mem container; PRIVATE platform
+util        -> PUBLIC core error mem container text
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container timer_queue
-io          -> PUBLIC core mem container time timer_queue sched
+io          -> PUBLIC core mem text time timer_queue sched; PRIVATE container
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
@@ -177,7 +183,8 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 `container_intrusive` 证明 header-only 能力也应在公开类型穿过 factor 边界
 时拥有真实 target：`timer_queue` 暴露 `TimerList`，Sched cancel record 暴露 safe hlist hook，故不能把
 这些边藏成 include-path 偶然可见；完整
-`container` 产品 façade 聚合 intrusive 与普通容器，但内部 `container` factor 本身不反向聚合它。
+`container` 产品 façade 聚合五个 factor；内部 `container` factor 也因 `LruCache` 公开实例化
+`IntrusiveListHook` 而声明真实 `PUBLIC container_intrusive`，这不是为了 façade 人为加边。
 `platform/fs.h` 公开暴露 `time::UnixTimestamp`，所以
 `platform_fs -> PUBLIC time` 是真实 SDK 边；dependency-light 的 `platform` host factor 不再因此取得
 Time。Platform façade 聚合 `platform/platform_thread/platform_fs`，Mem façade 聚合

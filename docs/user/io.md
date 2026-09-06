@@ -23,7 +23,7 @@ Proactor runtime select ─┼─ Linux: io_uring, unavailable时降为 epoll
 是否真的取得 io_uring。
 
 IOCP/io_uring 是完成式后端，不做 fd hash lookup。epoll/kqueue 必须把 readiness
-还原成 completion，内部用 HYLE `SwissTable<int, PendingOp>` 保存读写两侧；
+还原成 completion，内部用 HYLE `FlatHashMap<int, PendingOp>` 保存读写两侧；
 这是实现细节，用户不需要提供 map，也不会因此把 SIMD 宏或 ISA flag 带进调用方。
 
 ## 2. TCP、超时与取消

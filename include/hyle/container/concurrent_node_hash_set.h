@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <type_traits>
 #include <utility>
@@ -25,7 +26,11 @@ class ConcurrentNodeHashSet {
   using Map = ConcurrentNodeHashMap<K, Value, Hasher, Eq, Alloc, TableLifetime>;
 
  public:
-  using InsertResult = typename Map::InsertResult;
+  enum class InsertResult : std::uint8_t {
+    kInserted,
+    kAlreadyPresent,
+    kOutOfMemory,
+  };
   static constexpr std::size_t kDefaultBucketCount = Map::kDefaultBucketCount;
   static constexpr RetiredTableLifetime kRetiredTableLifetime =
       Map::kRetiredTableLifetime;
@@ -94,7 +99,14 @@ class ConcurrentNodeHashSet {
 
   InsertResult try_insert(K key) {
     typename Map::Accessor accessor;
-    return map_.try_emplace(accessor, std::move(key), Value{});
+    const typename Map::InsertResult result =
+        map_.try_emplace(accessor, std::move(key), Value{});
+    if (result == Map::InsertResult::kInserted)
+      return InsertResult::kInserted;
+    if (result == Map::InsertResult::kAlreadyPresent)
+      return InsertResult::kAlreadyPresent;
+    HYLE_FATAL_ASSERT(result == Map::InsertResult::kOutOfMemory);
+    return InsertResult::kOutOfMemory;
   }
 
   bool insert(K key) {

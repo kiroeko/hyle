@@ -3,7 +3,8 @@ project(hyle_package_container_cpp LANGUAGES CXX)
 
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container)
 
-foreach(_internal_factor IN ITEMS container_intrusive mem_reclaim)
+foreach(_internal_factor IN ITEMS
+    container_intrusive container_concurrent container_queue text mem_reclaim)
   if(_internal_factor IN_LIST Hyle_AVAILABLE_COMPONENTS OR
      TARGET hyle::${_internal_factor})
     message(FATAL_ERROR
@@ -15,6 +16,9 @@ foreach(_internal_factor IN ITEMS container_intrusive mem_reclaim)
   endif()
 endforeach()
 unset(_internal_factor)
+if(NOT TARGET hyle::_factor_container)
+  message(FATAL_ERROR "Container facade lacks its sequential detail factor")
+endif()
 
 add_executable(hyle_package_container_cpp main.cc)
 target_compile_features(hyle_package_container_cpp PRIVATE cxx_std_23)

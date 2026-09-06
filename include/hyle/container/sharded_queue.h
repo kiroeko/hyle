@@ -16,21 +16,16 @@ namespace hyle::container {
 
 // Sharded bounded MPMC queue: N independent Vyukov rings (BoundedQueue shards).
 //
-// WHY THIS EXISTS (vs the single-ring BoundedQueue): a single Vyukov ring has ONE
-// contended enqueue_pos_ / dequeue_pos_; under many producers those atoms become
-// a single-point serialization bottleneck (the CAS cache line ping-pongs between
-// cores). Benchmarks showed the single ring losing ~1.5x to moodycamel at 4P/4C
-// purely from this. Sharding gives each producer its OWN ring -> the producer hot
-// path has ZERO inter-producer contention, and throughput stays flat as producers
-// scale (measured: ~flat 2P->4P, vs the single ring degrading ~2x).
+// WHY THIS EXISTS (vs the single-ring BoundedQueue): a single Vyukov ring has one
+// contended enqueue/dequeue position. Under many producers those cache lines are
+// global serialization points. Stable producer identities distribute publication
+// across independent rings, removing inter-producer coherence from the normal
+// push path.
 //
-// THE TRADE (honest): this DROPS global FIFO order -- items are FIFO only WITHIN a
-// shard, not across the whole queue. That is fine for the design's actual user
-// (sched's global inject queue of runnable fibers): a work-stealing scheduler
-// already abandons global order; it only needs "no starvation + roughly fair". If
-// you need strict global FIFO, use BoundedQueue (one ring) instead. Boundedness is
-// KEPT (each shard is bounded; total capacity = num_shards * cap_per_shard) -- the
-// real requirement (backpressure, no unbounded growth) is preserved.
+// THE TRADE: this drops global FIFO order -- items are FIFO only within a shard.
+// It suits work-sharing queues whose policy already permits approximate fairness.
+// If strict global FIFO is part of the contract, use BoundedQueue instead. Each
+// shard remains bounded, so total capacity is num_shards * cap_per_shard.
 //
 // NOT a lock-free reinvention: each shard IS the audited Vyukov BoundedQueue (same
 // memory orders, TSan-clean). Sharding is pure composition -- it introduces no new

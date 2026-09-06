@@ -144,7 +144,7 @@
 | 内部 owner | 当前公开面 | 审计结论 |
 |---|---|---|
 | `container` | small/static/inplace/POD vector，ring/circular sequence，flat hash/sorted/B-tree，dynamic bitset、sparse set，semantic hash | 保留自然任务；新增通用 LRU storage；清除 `SwissTable`/public probe 的实现名泄漏，并把 throwing-move 与 fallible insert 约束放到真正需要它们的操作 |
-| `container_concurrent` | concurrent flat/node map、concurrent vector、adaptive lock implementation | 保留两种 map 的 compact/stable-node 取舍；补 flat/node set，不能要求用户伪造 mapped payload |
+| `container_concurrent` | concurrent flat/node map、concurrent vector | 保留两种 map 的 compact/stable-node 取舍；补 flat/node set，不能要求用户伪造 mapped payload；复用 `container` 内同时服务 text interner 的 adaptive-lock mechanism，不复制第三套锁 |
 | `container_queue` | byte ring、SPSC、bounded/sharded MPMC、work-stealing deque、owner/thief FIFO | 保留不同 producer/consumer/progress 合同；补 try-only unbounded typed handoff；等待、关闭、取消与 deadline 留给 Sched/IO |
 | `text` | `StringView`、ASCII/string algorithms、lexical path、interner/ID、UTF provider | 保留 borrowed/identity 路线；补 typed UTF diagnostics 与 UTF-8/16/32 caller-buffer conversion；provider/ISA 仍是 private mechanism |
 | `container_intrusive` | list/forward-list/hlist hooks | 已 FROZEN，只由 façade 聚合并供 LRU 复用；本轮不修改它 |
@@ -240,8 +240,8 @@ payload 无需额外默认构造或 assignment。Unicode API 不分配、不拥�
 | `TEXT-F02` | `text`/delivery | Unix shared artifact 隐藏 simdutf/private provider symbols，Windows/static/source 路线不泄漏第三方类型或第二套 ABI |
 | `CONT5-F06` | suite | 迁移直接消费者与 tests，补 choice-oriented guide、architecture、qualified P1 evidence、public header self-containment、source/static/shared/offline/license/symbol gate |
 
-性能冻结为四条 primary：short metadata flat lookup、LRU hit/insert+evict、concurrent membership、typed
-handoff、UTF transcode 中每个 factor最多一条 normal primary 和一条 holdout；这里的列举是风险池，不要求
+性能冻结为四条 primary：LRU hit/insert+evict、concurrent membership、typed handoff、UTF transcode；
+每个 factor 最多一条 normal primary 和一条 holdout；这里的列举是风险池，不要求
 把同一 factor 全部做成 P1。每行先签 `SAME_CONTRACT/NATURAL_ROUTE`，5% material margin；只有固定方向
 material regression 且可定位机制时才允许一次产品修正。其余现有容器做 P0 复杂度、metadata、allocation、
 codegen 与 correctness 回放，不复活旧 benchmark 全矩阵。

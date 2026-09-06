@@ -89,4 +89,29 @@ TEST(LruCache, ReportsAllocatorFailureWithoutMutation) {
   EXPECT_TRUE(cache.empty());
 }
 
+TEST(LruCache, LimitChangesEvictInLruOrderAndZeroDisablesStorage) {
+  LruCache<int, int> cache({.max_entries = 4, .max_weight = 8});
+  for (int key = 1; key <= 4; ++key)
+    ASSERT_TRUE(cache.try_insert_or_assign(key, key * 10, 2).stored());
+  ASSERT_TRUE(cache.touch(2));
+
+  std::vector<int> evicted;
+  const std::size_t count = cache.set_limits(
+      {.max_entries = 2, .max_weight = 4},
+      [&](int&& key, int&&, std::size_t) noexcept {
+        evicted.push_back(key);
+      });
+  EXPECT_EQ(count, 2u);
+  EXPECT_EQ(evicted, (std::vector<int>{1, 3}));
+  EXPECT_EQ(cache.size(), 2u);
+  EXPECT_EQ(cache.total_weight(), 4u);
+  EXPECT_TRUE(cache.contains(2));
+  EXPECT_TRUE(cache.contains(4));
+
+  EXPECT_EQ(cache.set_limits({.max_entries = 0}), 2u);
+  EXPECT_TRUE(cache.empty());
+  EXPECT_EQ(cache.try_insert_or_assign(5, 50).status,
+            LruInsertStatus::kRejected);
+}
+
 }  // namespace

@@ -1,0 +1,194 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "container-concurrent-product-p1-v1",
+  "module": "container_concurrent",
+  "claim": "P1 engineering non-inferiority of Container v5 read-mostly concurrent membership and normal unbounded 4P/4C typed handoff against source-pinned oneTBB under the same eight-physical-core topology",
+  "candidate": {
+    "target": "hyle_container_concurrent",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "container",
+    "entrypoint": "hyle/container/concurrent_flat_hash_set.h and hyle/container/unbounded_queue.h"
+  },
+  "peers": [
+    {
+      "id": "onetbb",
+      "revision": "e00c68dcac0e83947c9b54f6d5304c0616c9639f",
+      "configuration": {
+        "delivery_shape": "source-built dynamic peer runtime staged beside its benchmark process",
+        "algorithms": "oneapi::tbb::concurrent_unordered_set and oneapi::tbb::concurrent_queue",
+        "source": "clean external checkout with TBB_ENABLE_IPO=OFF"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "candidate-first",
+      "dimensions": {"execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "peer-first",
+      "dimensions": {"execution_order": "peer-first"},
+      "target_variant": "primary"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}}
+  ],
+  "workloads": [
+    {
+      "id": "read-mostly-membership-8x262144",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/active-object-registry/read-mostly-membership",
+      "provenance": {
+        "path": "bench/container/consumer_shapes_v5.json",
+        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      },
+      "ownership_topology": {
+        "candidate": "One pre-reserved HYLE ConcurrentFlatHashSet owns 32768 integral keys and serves eight pinned read-only workers",
+        "peer": "One pre-reserved oneTBB concurrent_unordered_set owns the identical keys and serves the identical pinned workers",
+        "equivalence": "Construction, reserve, population and warmup are excluded; both charge exactly 2097152 50-percent-hit contains operations with no dummy mapped payload or external locks"
+      },
+      "material_contribution": {
+        "frequency": 8,
+        "value": 262144,
+        "unit": "membership query",
+        "budget": 5,
+        "denominator": "one eight-worker active-registry replay",
+        "derivation": "inference runtimes retain active backend, worker, request and block membership; a payload-free read-mostly set is the natural primitive"
+      },
+      "semantic_contract": "Answer 2097152 deterministic 50-percent-hit membership queries from eight persistent physical-core workers against one immutable 32768-entry set",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "per-worker deterministic alternating present and absent integral keys", "scale": {"workers": 8, "entries": 32768, "queries_per_worker": 262144, "hit_percent": 50}},
+      "setup": "Both sets are reserved, populated and warmed before timing; workers are created and pinned before the common start barrier",
+      "charged_phases": ["eight concurrent contains loops", "2097152 hashes and membership probes", "checksum reduction", "wall-throughput interval"],
+      "pair": {"candidate": "HYLE ConcurrentFlatHashSet", "peer": "oneTBB concurrent_unordered_set"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["candidate-first", "peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    },
+    {
+      "id": "unbounded-mpmc-handoff-4p4c-262144",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/bursty-task-and-transfer-inbox/unbounded-handoff",
+      "provenance": {
+        "path": "bench/container/consumer_shapes_v5.json",
+        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      },
+      "ownership_topology": {
+        "candidate": "One HYLE UnboundedQueue owns every in-flight uint64_t between four pinned producers and four pinned consumers; enqueue uses its normal recoverable-allocation route",
+        "peer": "One oneTBB concurrent_queue owns the identical values between the identical producer and consumer roles; its normal push route is used",
+        "equivalence": "Both queues grow as required, preserve per-producer FIFO compatibility, expose nonblocking try-pop, transfer every value exactly once and exclude wait, close, cancellation and service policy"
+      },
+      "material_contribution": {
+        "frequency": 8,
+        "value": 262144,
+        "unit": "queue operation",
+        "budget": 5,
+        "denominator": "one four-producer/four-consumer typed handoff replay",
+        "derivation": "vLLM and SGLang use unbounded task, completion and transfer inboxes extensively; llama.cpp and ds4 retain equivalent staged work handoff needs"
+      },
+      "semantic_contract": "Transfer 1048576 typed values exactly once through one unbounded FIFO-compatible MPMC queue using four producers and four consumers, charging 2097152 push/pop operations",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "four disjoint ascending integral producer ranges with whole-run checksum conservation", "scale": {"workers": 8, "producers": 4, "consumers": 4, "items_per_role": 262144, "queue_operations": 2097152}},
+      "setup": "Queue construction and one complete 32768-item-per-role warmup are outside timing; workers are created and pinned before the common start barrier",
+      "charged_phases": ["1048576 normal enqueue operations", "1048576 successful dequeue operations", "temporary empty retry/yield", "checksum conservation", "wall-throughput interval"],
+      "pair": {"candidate": "HYLE UnboundedQueue", "peer": "oneTBB concurrent_queue"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["candidate-first", "peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "PROVISIONAL_ARCHETYPE",
+      "semantic_matrix": "bench/container/consumer_shapes_v5.json",
+      "semantic_matrix_sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+    },
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "measurement_adapter": "structured-paired-process-v1",
+      "sampling_topology": "n-worker-physical-cores",
+      "sampling_worker_count": 8,
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_TBB": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "container",
+          "HYLE_CONTAINER_V5_CONCURRENT_P1_BENCH": "ON",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {"onetbb": "HYLE_TBB_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "container-v5-concurrent-current",
+          "target": "hyle_container_v5_concurrent_bench",
+          "stem": "hyle_container_v5_concurrent_bench",
+          "target_variant": "primary",
+          "measurement_batch": 256,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [
+            {"id": "read-mostly-membership-8x262144", "row_id": "read-mostly-membership-8x262144"},
+            {"id": "unbounded-mpmc-handoff-4p4c-262144", "row_id": "unbounded-mpmc-handoff-4p4c-262144"}
+          ]
+        },
+        {
+          "id": "container-v5-concurrent-onetbb",
+          "target": "hyle_container_v5_concurrent_peer_bench",
+          "stem": "hyle_container_v5_concurrent_peer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 256,
+          "pair_role": "peer",
+          "peer_id": "onetbb",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [
+            {"id": "read-mostly-membership-8x262144", "row_id": "read-mostly-membership-8x262144"},
+            {"id": "unbounded-mpmc-handoff-4p4c-262144", "row_id": "unbounded-mpmc-handoff-4p4c-262144"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": [],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

@@ -49,9 +49,9 @@ hyle_add_dispatched_kernel(HIGHWAY OWN_TARGET_SET
   IMPL "src/container/bitset_ops_impl.h"
   TARGETS ${_container_highway_targets})
 
-# Per-variant ISA flags: each str_search kernel TU gets ONLY its target's -march; the
-# dispatcher (string_view.cc) stays baseline so it never emits a wide instruction on the
-# always-taken path. Gated by arch (the wide TUs only exist in the matching build).
+# Per-variant ISA flags: each architecture-specific Container TU gets only its
+# target ISA; the dispatcher stays at baseline. Wide TUs exist only for the
+# matching build architecture.
 if(HYLE_CONTAINER_X64)
   hyle_set_isa(hash_xxh3_avx2.cc AVX2)
 elseif(HYLE_CONTAINER_ARM64)

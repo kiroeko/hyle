@@ -27,7 +27,11 @@ class ConcurrentFlatHashSet {
                 "ConcurrentFlatHashSet must not pay mapped-value storage");
 
  public:
-  using InsertResult = typename Map::InsertResult;
+  enum class InsertResult : std::uint8_t {
+    kInserted,
+    kAlreadyPresent,
+    kOutOfMemory,
+  };
   static constexpr std::size_t kDefaultShardCount = Map::kDefaultShardCount;
 
   ConcurrentFlatHashSet()
@@ -59,9 +63,14 @@ class ConcurrentFlatHashSet {
 
   InsertResult try_insert(K key) {
     typename Map::Accessor accessor;
-    const InsertResult result =
+    const typename Map::InsertResult result =
         map_.try_emplace(accessor, std::move(key), Value{});
-    return result;
+    if (result == Map::InsertResult::kInserted)
+      return InsertResult::kInserted;
+    if (result == Map::InsertResult::kAlreadyPresent)
+      return InsertResult::kAlreadyPresent;
+    HYLE_FATAL_ASSERT(result == Map::InsertResult::kOutOfMemory);
+    return InsertResult::kOutOfMemory;
   }
 
   bool insert(K key) {

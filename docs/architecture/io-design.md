@@ -20,8 +20,8 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
        │
        ├─ Windows IOCP：真完成；OVERLAPPED intrusive list + owner free-list
        ├─ Linux io_uring：真完成；不可用时自动降为 epoll
-       ├─ Linux epoll：readiness→completion；HYLE SwissTable<fd, PendingOp>
-       └─ macOS kqueue：readiness→completion；HYLE SwissTable<fd, PendingOp>
+       ├─ Linux epoll：readiness→completion；HYLE FlatHashMap<fd, PendingOp>
+       └─ macOS kqueue：readiness→completion；HYLE FlatHashMap<fd, PendingOp>
 
        Linux runtime 选中 io_uring 时
        └─ io_uring_extension()
@@ -42,7 +42,7 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
 - Linux-only recv-multishot/provided-buffer/fixed-file/direct-accept 只能经成功
   取得的 `IoUringExtension` 调用；portable one-shot 永远保留。
-- epoll/kqueue pending 表使用 container/ 的 flat SwissTable。IOCP/io_uring
+- epoll/kqueue pending 表使用 Container 的 `FlatHashMap`。IOCP/io_uring
   不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
 - Native FFI 为 `N/A`；普通 io 修改不得恢复 BUILD-03 已删除的 C schema/bridge。若未来出现已命名
   foreign-runtime 任务，先按全局 [Native FFI 准入策略](native-ffi-policy.md)独立立项。

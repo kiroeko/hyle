@@ -24,8 +24,8 @@
 ## Audit verdict（`AUDITED`）
 
 - public trace：`concurrent_hash_map.h`/`concurrent_flat_hash_map.h`、`concurrent_node_hash_map.h`、
-  `concurrent_vector.h` 及 adaptive lock implementation 归本 factor；sequential Swiss/hash 归 `container`，
-  retirement 归 FROZEN `mem_reclaim`；
+  `concurrent_vector.h` 归本 factor；sequential flat-hash 与同时服务 Text interner 的 adaptive-lock mechanism
+  归 `container`，retirement 归 FROZEN `mem_reclaim`；
 - existing map/vector：`COMPLETE/KEEP`。flat map 提供 compact sharded storage，node map 提供 accessor 内
   stable address 和 retained/reclaiming table 两档，vector 提供 segmented append；不把它们互相伪装；
 - concurrent set：`MISSING/FIX`。提供 flat/node 两档，普通调用为 `contains/try_insert/erase/size/clear`；
