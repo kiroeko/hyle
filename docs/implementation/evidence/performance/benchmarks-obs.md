@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: CURRENT -->
 
-## v5 metrics：候选前合同（尚未签发性能结论）
+## v5 metrics：同合同 P1 资格完成
 
 Obs v5 新增的 production metrics 不沿用日志 benchmark，也不把 thread-confined plain state 与共享 atomic
 state 混成一个排名。冻结合同 `bench/contracts/obs-metrics-p1-v1.json` 取自 llama.cpp、vLLM 与 SGLang
@@ -20,8 +20,37 @@ validation 未内联带来的真实 wrapper call，修复后 candidate 路径只
 comparison/arithmetic/relaxed atomic。semantic validator 同时核对 owner/shared 单轮结果与不同
 primary/placement artifact。
 
-本段仍处于 `AUDITED`：单样本 diagnostic probe 不能签 `PASS/PARITY/WIN`，clean immutable candidate 的
-W1-WIN `closure-perf-v1` 资格化结果和 retained bundle identity 将在状态进入 `VERIFIED` 后补入。
+不可变 candidate `47a9e03a6bfd4d2d299d26d1d32739bb84541166` / tree
+`093836f0791f304deb521e86be8ba5a9c94b5913` 在 W1-WIN、MSVC 19.50、Release/static、portable ISA、LTO OFF
+的 fresh build 上取得 `QUALIFIED + PASS`。15 样本位于 exact 决策边界，runner 按 contract 中预先冻结的
+唯一规则扩到 31 个独立进程样本；没有事后新增姿势或修改 workload。
+
+| workload | four-strata exact verdict | median candidate/peer ratio | 98.93% CI range | 5% non-inferiority |
+|---|---|---:|---:|---|
+| owner scheduler iteration | 4/4 `WIN` | `1.1053–1.1452` | `1.0932–1.1596` | 4/4 `PASS` |
+| shared scheduler iteration | 4/4 `PARITY` | `1.0042–1.0078` | `0.9933–1.0180` | 4/4 `PASS` |
+
+owner 结果表明当前 wrapper 在这个完整路线没有抽象成本，并因编译器对 typed member route 的 codegen
+选择而稳定更快；它不证明每个 scalar operation、所有 bucket 数量或所有编译器都能获得 10–15% 优势。
+shared 结果证明 HYLE 的 explicit relaxed-atomic wrapper 与相同直接机制同档。两个档位没有彼此对比，
+也没有把 thread-cached/sharded Folly 路线错误标成即时共享同合同 peer。
+
+retained bundle 位于
+`C:\hyle-scratch` 之外的本轮验证根
+`C:\public\project-hyle\_validation\obs-v5-metrics-primitives\perf-qualified`；`hyle-perf verify` 返回
+`QUALIFIED`、`EXACT`、`CURRENT`、`paths_verified=true`：
+
+| artifact | SHA-256 |
+|---|---|
+| contract | `337c0d37667f1fccca1f3175eb1b96f3d494b5822f612e93e6b25941ae91644f` |
+| manifest | `ba65acc417133b3f5ec23986ba161e23891188e2a7b770adbe8d1dd7c3015e57` |
+| summary | `731cf65b1cda444f1a31f25fe9fa0b0408127d564bb93c414d7ab3e31bbea014` |
+| controls | `cf28e7cb7ece9f828214d912d5f8172a9c5a015f0ca353128eeaba2214cbe277` |
+| observations | `6b0ed1d36a3e7041139b307d0251b5499543caf3c82a900bfa227cca225e63d6` |
+
+结论只覆盖该真实 scheduler aggregate、W1-WIN 与当前 toolchain。跨平台 timing、动态 registry/exporter、
+不同 ownership 合同、所有 bucket scales、端到端 tokens/s、全面 SOTA 与 Formal certification 均不外推；
+Formal 仍为 `PENDING`。
 
 > **obs-v4：不可变 candidate 的 P1 工程资格已完成。** 本页不再把 obs-v3 的
 > `16 slots x 256 ticks / 3-second` 合成 replay 冒充 llama.cpp 当前真实消费。v4 只接受当前

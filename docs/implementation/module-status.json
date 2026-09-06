@@ -294,7 +294,7 @@
     },
     {
       "module": "obs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "round_id": "obs-v5-metrics-primitives",
@@ -311,18 +311,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs v5 CANDIDATE：真实推理消费者支持的 owner-thread/concurrent counter、gauge、fixed histogram、批量观测、snapshot merge 与 bucket-quantile 已实现并冻结在不可变候选；等待三平台、三交付、P1 与红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "obs v5 VERIFIED：counter、gauge 与 fixed histogram 候选已通过三平台正确性/sanitizer、三种 C++ 交付、API/docs、依赖与红队；W1-WIN owner-thread 4/4 WIN、shared relaxed-atomic 4/4 PARITY，5% 非劣门全部通过，等待 terminal freeze。"
     },
     {
       "module": "math",

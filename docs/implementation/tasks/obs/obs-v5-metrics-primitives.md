@@ -267,3 +267,66 @@ sanitizer/交付、资格化 P1、红队结论与 terminal receipt 在后续合�
   SHA-256 `4783F4F24F43E9D1883865750CBE6F05FC9B98539A06C4C2B268169EBDE3D6FA`。
 
 registry 现进入 `CANDIDATE`。前一节的“候选前”措辞保留为发生顺序事实；当前状态只以 registry 为准。
+
+## Verification 与红队（准备进入 `VERIFIED`）
+
+### Correctness、sanitizer 与交付
+
+- W1-WIN / MSVC 19.50 fresh factor build：Obs header-self-contained、49 项既有 log、compiled-level 与 7 项
+  metrics 测试全部通过；primary/placement semantic validator 同时确认 owner/shared 单轮输出相等；
+- W1-WSL / GCC 14.2：Release、UBSan、ASan 的四项 Obs test executable 全部通过。GCC TSan 在 WSL 默认
+  ASLR 下于进入测试前报 `unexpected memory mapping`，同样影响未修改的 log binary；使用
+  `setarch x86_64 -R` 运行同一 TSan artifact 后，49 项 log 与 7 项 metrics（含四 writer stress）全部
+  通过且无 race report。这是已隔离的 runtime/address-layout 条件，不改产品或测试语义；
+- M1-MAC / AppleClang 21 arm64：四项 Obs tests 全部通过；
+- W1-WIN、W1-WSL 与 M1-MAC 均完成 selected `obs` source embedding、relocated shared SDK、relocated
+  static SDK consumer。三种安装 inventory 均含 `metrics.h`；shared binary 没有 metrics runtime export，
+  没有新增 C/Native-FFI symbol 或第三方 runtime dependency。
+
+### P1 资格
+
+- contract / candidate：`obs-metrics-p1-v1` / `47a9e03a6bfd4d2d299d26d1d32739bb84541166`；
+  W1-WIN fresh Release/static、MSVC 19.50、portable ISA、LTO OFF；
+- 31 个独立进程样本的四个 execution-order/placement strata 中，owner-thread workload 4/4 `WIN`，
+  candidate/peer median ratio `1.1053–1.1452`；shared workload 4/4 `PARITY`，ratio
+  `1.0042–1.0078`。两者 5% non-inferiority 均 4/4 `PASS`；A/A、known-delta、timer-floor、placement、
+  build/artifact 与 semantic/resource controls 全部通过；
+- retained manifest SHA-256
+  `ba65acc417133b3f5ec23986ba161e23891188e2a7b770adbe8d1dd7c3015e57`，summary
+  `731cf65b1cda444f1a31f25fe9fa0b0408127d564bb93c414d7ab3e31bbea014`，controls
+  `cf28e7cb7ece9f828214d912d5f8172a9c5a015f0ca353128eeaba2214cbe277`，observations
+  `6b0ed1d36a3e7041139b307d0251b5499543caf3c82a900bfa227cca225e63d6`；严格 verify 为
+  `QUALIFIED/EXACT/CURRENT/paths_verified`；
+- Folly 只提供语义 provenance。实际计时是同一 executable/toolchain 中的 direct scalar/
+  relaxed-atomic lower bound，故不宣传“战胜 Folly”、跨平台纳秒或 universal SOTA。
+
+### 有界红队结论
+
+| attack | verdict | reason |
+|---|---|---|
+| benchmark 污染 API | `PASS` | 公开名只表达 metric 与 concurrency 语义；没有 `fast/light/case`、workload size、runner 或 peer 类型进入产品 |
+| 苹果对橘子 | `PASS` | owner/shared 分格；双方同 validation、bounds、update、ownership、consistency、delivery 与 charged phase |
+| 隐藏资源/复杂度 | `PASS` | scalar/array/relaxed atomic 与 binary search；无 allocation、lock、clock、syscall、TLS、registry 或 dynamic dispatch |
+| 并发/生命周期 | `PASS` | concurrent types 不可 copy/move、只同步指标值；弱 running snapshot、quiescent exact/reset 和 local-first 路线已测试/文档化 |
+| 错误/数值边界 | `PASS` | construction/merge 使用 Error；non-finite、count merge overflow、integral gauge overflow 与代表性 death path 已覆盖 |
+| 依赖/内部复用 | `PASS` | 只复用 frozen Core/Error；Time/log 与 private Mem-reclaim 的既有边不变，Container/Mem/SIMD 无同合同优势 |
+| delivery/伪 ABI | `PASS` | header-only data plane 在三平台三交付工作；compiled runtime/export surface 不变，Native FFI 仍 `N/A` |
+| 能力边界 | `PASS` | 三个真实 inference consumer 的 counter/gauge/fixed-histogram、multiplicity、merge 与 bucket percentile 已覆盖；schema/exporter/window/sketch 保持正确 owner |
+
+已接受限制：固定 histogram 的 boundary 数量是 template 常量而 boundary 值是 runtime；count/counter
+要求整个生命周期可表示，floating sum 遵循 IEEE；shared state 只在所选 atomic always-lock-free 时可用，
+running snapshot 弱一致且 reset 需要 quiescence；没有 hidden sharding、dynamic registry、label、exporter、
+time window 或 quantile sketch。P1 只证明冻结的 W1-WIN scheduler aggregate，Formal 仍为 `PENDING`。
+
+七项 FIX 均为 `COMPLETE`，七个适用 gate 均有证据且无 blocker；允许下一步执行
+`CANDIDATE -> VERIFIED`，但本节本身不越级改变 registry。
+
+## `CANDIDATE -> VERIFIED` receipt
+
+转换前 registry 快照保存在 canonical checkout 外：
+`C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-verified.json`，
+SHA-256 `0E1F82823380794D58005378490CC43379CA17C978D7E52514D55F89DF7720EB`。
+
+上述 correctness、delivery、usability/docs、red-team 与 qualified P1 证据使七个 gate 全部为 `PASS`；
+registry 依法进入 `VERIFIED`。这一步只签发候选证据，不改变冻结的产品 commit/tree，也不提前宣称
+terminal `CLOSED/FROZEN`。
