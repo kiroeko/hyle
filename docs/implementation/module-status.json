@@ -1001,7 +1001,7 @@
     },
     {
       "module": "simd",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
       "round_id": "simd-v6-provider-consumer-replay",
@@ -1011,6 +1011,8 @@
       "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
       "candidate_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
       "candidate_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
+      "end_commit": "5caf0fe4bbe25b8d8981a7c6500dad77fb8d324d",
+      "registry_anchor_commit": "5caf0fe4bbe25b8d8981a7c6500dad77fb8d324d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1038,8 +1040,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "audit_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "summary": "simd-v6 VERIFIED：F01–F06、三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
+      "freeze_confirmation": {
+        "id": "simd-v6-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
+        "reviewed_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
+        "evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md"
+      },
+      "loc": {
+        "snapshot_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
+        "repository_code": 458401,
+        "self_with_tests": 119226,
+        "self_without_tests": 75356,
+        "module_implementation": 15097
+      },
+      "known_limitations": [
+        "P1 covers three inference rows on W1-WIN MSVC exact AVX2; SVE and RVV have no physical performance receipt, and Formal remains PENDING.",
+        "The same-contract n=256/k=6 top-k row is consistently about 0.95%–1.58% behind its bounded peer; code size and branch routing provide a mechanism, but no real-engine profile provides a material consumer key.",
+        "Block quantization, GEMM, attention, RoPE, Mamba, tensor fusion and sampling policy remain owned by Compute, format or engine layers rather than ordinary SIMD.",
+        "Unknown-CPU ordinary fat calls may pay one cached indirect call per whole buffer; zero selector cost is promised only for fixed or exact targets, and no Native FFI or cross-toolchain stable C++ ABI is provided."
+      ],
+      "reopen_triggers": [
+        "A named inference or foundation consumer proves a missing model-independent row primitive that the expert seam cannot naturally carry.",
+        "A real consumer profile proves the top-k 4–8 ns diagnostic or another route has material end-to-end impact, or a mature peer proves a better complexity class.",
+        "An adopted Highway, xsimd or VQSort update changes semantics, code generation, licensing or delivery for a used primitive.",
+        "The public API or layout, target/provider route, normal dispatch/allocation/state cost, Core/Platform dependency, component graph, or source/static/shared expert delivery changes.",
+        "A supported ISA, compiler or OS cannot preserve correctness, baseline SIGILL safety, fixed/exact zero-selector cost, or fat whole-buffer single-selector cost."
+      ],
+      "summary": "simd-v6 CLOSED/FROZEN：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。"
     },
     {
       "module": "container",
