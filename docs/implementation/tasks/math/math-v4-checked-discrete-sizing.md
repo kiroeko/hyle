@@ -170,3 +170,23 @@ instruments, component edges or introduce a third-party product dependency.
 `SCOPED -> AUDITED` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-math-v4-audited.json`，SHA-256
 `E4FBA77F1E6095B9859734FA11B64CA18DCF3B651E13B2700FD2AEA61EAAB37D`。
+
+## Product candidate（`CANDIDATE`）
+
+- candidate commit：`a57194d8f33611d899bbb4aafb7df994317d7340`；tree：
+  `b8930888c45f95eba90f1fc0967b12104843b21e`；
+- `try_lcm` 使用无符号 magnitude、`std::gcd`、先约分和既有 `try_multiply`，安全覆盖 signed minimum、
+  zero identity、目标正值边界和 full-width product overflow；
+- `try_bit_ceil` 在调用 `std::bit_ceil` 前按 `T` 的最大 representable power 做 guard，因此没有触发
+  标准 primitive 的不可表示前置条件；
+- API、类型约束和五项 FIX 均与 `AUDITED` freeze 一致；没有 component edge、binary artifact、第三方
+  product path、C/Native FFI surface、常态 metadata 或下游迁移；
+- pre-candidate W1-WIN MSVC 19.50 Release/WERROR 与 W1-WSL GCC 14.2 Release/WERROR+UBSan 已通过 Math
+  unit/header tests。GCC optimized object 的 bit-ceil 是 bounded guard + `bsr`，LCM 是 inlined standard
+  binary-GCD shape + checked full-width multiply；
+- M1-MAC、三种交付、candidate-identity replay、完整 P0 evidence 与独立红队仍待执行；上述初步结果
+  不构成 `VERIFIED/CLOSED`。
+
+`AUDITED -> CANDIDATE` 的前态快照保存在 canonical checkout 外：
+`C:\public\project-hyle\_validation\registry-before-math-v4-candidate-a57194d8.json`，SHA-256
+`1177B91178A414088996ADD2B31FD29F0B94F52EC90E1E60753B935807A16B3E`。

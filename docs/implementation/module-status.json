@@ -368,7 +368,7 @@
     },
     {
       "module": "math",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MATH-CHECKED-DISCRETE-SIZING-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
       "round_id": "math-v4-checked-discrete-sizing",
@@ -376,6 +376,8 @@
       "scope": "Add checked scalar least-common-multiple and next-power-of-two policies for untrusted model-independent sizing while preserving Math's Core-only header-only boundary.",
       "non_goals": "SIMD lane or buffer variants, trusted standard-library wrappers, tensor or model policy, arbitrary precision, downstream frozen-module migration, component-edge changes, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
       "baseline_commit": "cc2bb5b648cfa43dc5b72a32db318eca5d4a80e7",
+      "candidate_commit": "a57194d8f33611d899bbb4aafb7df994317d7340",
+      "candidate_tree": "b8930888c45f95eba90f1fc0967b12104843b21e",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -390,7 +392,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v4 AUDITED：两个 checked scalar API、边界语义、Core-only 依赖、P0 复杂度和五项 FIX 已冻结；现在允许单批实现。"
+      "summary": "math-v4 CANDIDATE：checked scalar lcm/bit-ceil 已按冻结合同实现并绑定 a57194d8/b8930888；Windows/WSL 初验通过，Mac、三交付、P0 证据与红队待完成。"
     },
     {
       "module": "time",
