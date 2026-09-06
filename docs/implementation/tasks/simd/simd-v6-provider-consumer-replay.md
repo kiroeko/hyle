@@ -360,3 +360,27 @@ manifest / summary SHA-256 分别为
 SHA-256 为 `DA751182A07825A58C2CF6DA80097D327F07F07B6DBF25B94413815AE1757EB2`。它只用于审计错误
 草稿如何产生，不是 terminal receipt。F06a/F06b 会改变测试、harness 与 performance contract，完成后
 必须签发新的 candidate commit/tree。
+
+## F06 修复候选（`CANDIDATE`）
+
+有限修复没有改变 SIMD 产品 API、算法、provider route 或依赖 lock：
+
+- F06a 把 f32/f16/bf16 quick/narrow activation 的特殊值 case 扩为 4,097 个元素，并周期性布置
+  NaN、±Inf、±0；即使 RVV 达到规范允许的 65,536-bit VLEN，也会执行两个完整 f32 vector 和一个
+  特殊值 tail，AVX2/AVX-512/NEON 执行更多完整块；
+- F06b 在三个 peer adapter 内复制相应 public route 的 zero-length、pointer、epsilon、k/n、index
+  width、byte-range overflow 与 disjointness release checks；候选和 peer 都从 measurement callback
+  穿过一次 `HYLE_NOINLINE` 边界，LTO 保持关闭；
+- [`inference_consumer_shapes_v1.json`](../../../../bench/simd/inference_consumer_shapes_v1.json) 对每个
+  workload 逐项冻结 work/result、粒度、ownership、failure/OOM、cancel/close、ordering/capacity、
+  progress、caller participation、blocking、affinity、计费、memory resource 与 delivery/codegen；只含
+  `EQUAL/ADAPTER_EQUALIZED`，SHA-256 为
+  `a9b3ad67168b617100ef5eaa4bf7e046ed62d24086a5e1566211d87ffdfb0047`；
+- 修正后的 P1 contract SHA-256 为
+  `6eb9fe307f839ae50997f6f142a7b2fe5dc1c61ea5733dc6005aa39c6f330e33`，三个 workload 的 provenance
+  直接绑定上述矩阵；初始 `perf-evidence-v2` 仍保持 `REJECTED`，不得复用样本。
+
+Windows MSVC 19.50 exact-AVX2 static SIMD suite 在修正后为 `5/5 PASS`，benchmark preflight 也通过。
+新候选为 commit `fde6fc9c416fbf1e0b85742c8830e99aa3829c68` / tree
+`ea9162c46fa660a1b4acf16735a2c8a4ba7d3b11`。之后只允许一次正式 P1、WSL/macOS 更新后测试回放和
+必要的候选交付确认；若出现产品算法缺陷必须退回 `AUDITED`，不能继续改变比较姿势。

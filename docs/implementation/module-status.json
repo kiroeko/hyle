@@ -1001,7 +1001,7 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
       "round_id": "simd-v6-provider-consumer-replay",
@@ -1009,6 +1009,8 @@
       "scope": "Reconcile the contradictory installed expert-SDK contract and audit only the SIMD capability, provider and build seams affected by current Highway plus current ggml/llama.cpp, ds4, vLLM and SGLang inference-consumer evidence.",
       "non_goals": "An open 422-scope benchmark sweep, benchmark-shaped APIs, a restored public register DSL, model-specific tensor operators, block-quant/GEMM/attention ownership, Compute or Graph implementation, Native FFI/C API, stable cross-toolchain C++ ABI, common instrument redesign or Formal certification.",
       "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
+      "candidate_commit": "fde6fc9c416fbf1e0b85742c8830e99aa3829c68",
+      "candidate_tree": "ea9162c46fa660a1b4acf16735a2c8a4ba7d3b11",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1027,7 +1029,7 @@
         "instrument_profile": "formal-release-v1"
       },
       "audit_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "summary": "simd-v6 AUDITED：初始候选的产品实现与三平台交付未发现缺陷，但独立红队撤销了 F06 证据结论；有限修复只包含向量 lane 特殊值覆盖，以及三条 P1 peer 的检查与调用边界同合同化。"
+      "summary": "simd-v6 CANDIDATE：F06a 以 4097 元素让特殊值穿过完整向量与 tail；F06b 为三条 P1 peer 对齐 release 检查和 noinline 边界，并以逐项语义矩阵冻结同合同命题。候选 fde6fc9c 进入一次正式 P1 与跨平台复验。"
     },
     {
       "module": "container",
