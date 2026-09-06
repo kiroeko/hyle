@@ -1,0 +1,209 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "obs-metrics-p1-v1",
+  "module": "obs",
+  "claim": "P1 engineering non-inferiority of zero-registry HYLE metric value objects for one inference scheduler metrics iteration against direct C++23 scalar and relaxed-atomic mechanisms with identical ownership, validation, runtime bounds and updates",
+  "candidate": {
+    "target": "hyle_obs",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "obs",
+    "entrypoint": "include/hyle/obs/metrics.h"
+  },
+  "peers": [
+    {
+      "id": "folly",
+      "revision": "65749da412d92fe27d87ae45a8ef670720712858",
+      "configuration": {
+        "delivery_shape": "same-executable source mechanism",
+        "algorithm": "plain scalar fields or always-lock-free relaxed std::atomic fields plus std::lower_bound over caller-owned runtime bounds",
+        "source": "clean Folly checkout pins the mature ownership/fixed-histogram lineage; the machine-profile-bound C++23 standard library is the exact lower-bound comparison authority"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "obs-metrics-contract", "kind": "resource", "parameters": {"validator_id": "obs-metrics-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "owner-scheduler-metrics-iteration",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/observability/owner-scheduler-iteration",
+      "provenance": {
+        "path": "bench/obs/metrics_consumer_shapes_v1.json",
+        "sha256": "65cd057cd2da1f03f84b36b6fa31b06243ce73447ae9c8211b97b038c4616596"
+      },
+      "ownership_topology": {
+        "candidate": "one scheduler owner retains HYLE Counter/Gauge/FixedHistogram state and validated runtime bounds across iterations",
+        "peer": "one scheduler owner retains direct scalar/array state and the same runtime bounds across iterations",
+        "equivalence": "both routes validate the same floating inputs, perform the same scalar increments and gauge stores, binary-search the same six runtime bounds, update one exclusive bucket and weighted sum, and expose persistent state to the caller"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 64,
+        "unit": "scheduler-iteration-with-request-observations",
+        "budget": 5,
+        "denominator": "one metrics-enabled inference scheduler iteration",
+        "derivation": "vLLM and SGLang update their metric families once per scheduler iteration and per completed or scheduled request; 64 records form a bounded serving batch rather than an isolated scalar instruction"
+      },
+      "semantic_contract": "Update two integral counters, one floating counter, two gauges and one fixed histogram for a deterministic 64-request scheduler iteration using runtime-validated bounds and token-count observation multiplicity",
+      "comparability": "COMPARABLE",
+      "peer_id": "folly",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "eight positive latency values spanning six runtime buckets, request token multiplicity 1..8, queue depth 12..18 and cache usage 0.45..0.75", "scale": {"scheduler_iterations_per_callback": 1, "request_records": 64, "finite_bounds": 6}},
+      "setup": "both persistent states and the same validated runtime boundary values are constructed outside measurement; names, labels, exporter and scrape are absent on both sides",
+      "charged_phases": ["three counter updates per request", "floating validity checks", "two gauge stores per iteration", "one logarithmic runtime-bound lookup per request", "one bucket update", "one weighted sum update", "observable persistent state"],
+      "pair": {"candidate": "HYLE owner-thread metrics iteration", "peer": "Direct owner-thread metrics iteration"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "obs-metrics-contract"]
+    },
+    {
+      "id": "shared-scheduler-metrics-iteration",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/observability/shared-scheduler-iteration",
+      "provenance": {
+        "path": "bench/obs/metrics_consumer_shapes_v1.json",
+        "sha256": "65cd057cd2da1f03f84b36b6fa31b06243ce73447ae9c8211b97b038c4616596"
+      },
+      "ownership_topology": {
+        "candidate": "workers deliberately share one HYLE Concurrent metric state whose numeric reads and updates use lock-free relaxed atomics",
+        "peer": "workers deliberately share one direct state with the same always-lock-free relaxed std::atomic fields and runtime bounds",
+        "equivalence": "both routes provide immediate atomic values but no application synchronization, issue the same RMW/store sequence, validate the same input, search the same bounds and permit weak running snapshots with exact quiescent state"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 64,
+        "unit": "shared-scheduler-iteration-with-request-observations",
+        "budget": 5,
+        "denominator": "one deliberately shared metrics-enabled inference scheduler iteration",
+        "derivation": "a host may choose immediate shared producer state instead of per-worker merge; the iteration aggregate keeps atomic cost visible without comparing it to the semantically lighter owner-thread route"
+      },
+      "semantic_contract": "Perform the same 64-request scheduler metrics iteration using always-lock-free relaxed atomic counters, gauges, exclusive buckets and floating sums with persistent shared-state semantics",
+      "comparability": "COMPARABLE",
+      "peer_id": "folly",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "identical to owner-scheduler-metrics-iteration", "scale": {"scheduler_iterations_per_callback": 1, "request_records": 64, "finite_bounds": 6, "writers_in_measurement": 1}},
+      "setup": "both shared states and runtime bounds are constructed outside measurement; a single pinned writer isolates wrapper overhead while correctness separately validates concurrent writers",
+      "charged_phases": ["three relaxed counter RMWs per request", "floating validity checks", "two relaxed gauge stores per iteration", "one logarithmic runtime-bound lookup per request", "one relaxed bucket RMW", "one relaxed floating-sum RMW", "observable persistent state"],
+      "pair": {"candidate": "HYLE concurrent metrics iteration", "peer": "Direct relaxed-atomic metrics iteration"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "obs-metrics-contract"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract", "obs-metrics-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "obs",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"folly": "HYLE_BENCH_METRICS_FOLLY_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "obs-metrics-primary",
+          "target": "hyle_obs_metrics_bench",
+          "stem": "hyle_obs_metrics_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_OBS_METRICS_RUN "],
+          "workloads": [
+            {"id": "owner-scheduler-metrics-iteration", "title": "Owner scheduler metrics iteration"},
+            {"id": "shared-scheduler-metrics-iteration", "title": "Shared scheduler metrics iteration"}
+          ]
+        },
+        {
+          "id": "obs-metrics-placement",
+          "target": "hyle_obs_metrics_bench_placement",
+          "stem": "hyle_obs_metrics_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_OBS_METRICS_RUN "],
+          "workloads": [
+            {"id": "owner-scheduler-metrics-iteration", "title": "Owner scheduler metrics iteration"},
+            {"id": "shared-scheduler-metrics-iteration", "title": "Shared scheduler metrics iteration"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "obs-metrics-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-obs-metrics-bench.py",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--expected-benchmark-sha256",
+            "c67eda15e3f7dfe923b141a374706c9844c5fd324c1b2bbd64527c025d2b645e"
+          ]
+        }
+      ]
+    }
+  }
+}

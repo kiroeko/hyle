@@ -6,6 +6,7 @@
 
 #define HYLE_OBS_COMPILED_MIN_LEVEL 2
 #include <hyle/obs/log.h>
+#include <hyle/obs/metrics.h>
 
 namespace {
 
@@ -78,5 +79,24 @@ int main() {
   (void)hyle::obs::log_message(LogLevel::Info, "after scope");
   if (!hyle::obs::set_default_sink_enabled(true).ok())
     return 6;
-  return capture.messages.size() == 2 ? 0 : 7;
+  if (capture.messages.size() != 2)
+    return 7;
+
+  hyle::obs::Counter<> decoded_tokens;
+  hyle::obs::Gauge<> queue_depth;
+  auto buckets = hyle::obs::FixedBuckets<3>::create({0.001, 0.01, 0.1});
+  if (!buckets)
+    return 8;
+  hyle::obs::FixedHistogram decode_latency(*buckets);
+
+  decoded_tokens.add(32);
+  queue_depth.set(3.0);
+  if (!decode_latency.observe(0.004, 32))
+    return 9;
+  const auto snapshot = decode_latency.snapshot();
+  return decoded_tokens.value() == 32 && queue_depth.value() == 3.0 &&
+                 snapshot.count() == 32 &&
+                 *snapshot.quantile_upper_bound(0.99) == 0.01
+             ? 0
+             : 10;
 }

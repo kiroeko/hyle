@@ -225,3 +225,32 @@ change.
 `SCOPED -> AUDITED` 的前态快照保存在 canonical checkout 外：
 `C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-audited.json`，SHA-256
 `E59698C0B1928AADB9A71AC5F8F9354852AB293458199AF797908CA1AB3343C1`。
+
+## 有限实现批次（`AUDITED`）
+
+- `OBS5-VALUE-01..SNAPSHOT-04` 已实现于单一 header `<hyle/obs/metrics.h>`：owner-thread 与
+  `Concurrent*` 档位不共享隐藏 registry/TLS，fixed bounds 在构造时验证，update/snapshot/merge/
+  bucket-quantile 均遵守冻结语义；
+- `OBS5-DELIVERY-05` 已把自然 metrics journey 接入 Obs package sample。W1-WIN / MSVC 19.50 的
+  selected `obs` source embedding、relocated shared SDK 与 relocated static SDK consumer 均通过，安装
+  header inventory 包含 `metrics.h`；
+- correctness 覆盖 value/reset、invalid/duplicate/non-finite bounds、inclusive boundary、`+Inf` tail、
+  multiplicity、merge 原子失败、empty/invalid quantile，以及四 writer 停止后的 concurrent exact state。
+  W1-WIN fresh factor build 的四项 Obs tests（header self-contained、log、compiled-level、metrics）通过；
+- P0 源码和 Release object 复核确认 owner path 只含 scalar update/binary search，shared path 只含匹配的
+  relaxed atomic RMW/store/CAS；没有 allocation、mutex、clock、syscall、name/label lookup 或 metrics
+  runtime symbol。初始实现曾让 MSVC 把 floating validation helper 留成 out-of-line call，形成真实
+  10–13% wrapper cost；将该 API-boundary helper 设为强制内联后，正常路径恢复为直接比较/算术。这个
+  改动修复 zero-overhead abstraction，而未改变 workload、公开 shape 或常态 metadata；
+- `OBS5-PERF-06` 使用 `obs-metrics-p1-v1`：每次完整 scheduler iteration 更新 64 个 request 的 counters、
+  gauges 与六个 runtime buckets；owner-thread 与 concurrent 分开和完全相同的 direct C++23
+  scalar/relaxed-atomic mechanism 对比。两侧执行相同输入验证、runtime binary search、数值更新、
+  ownership/consistency 和计费边界；Folly checkout 只锁定成熟语义来源，不冒充实际计时 API peer。
+  semantic oracle 同时核对 owner/shared state，primary/placement artifact 必须不同；正式 P1 资格仍待
+  clean immutable candidate；
+- architecture/user guide 已增加三通路选型、local-first/shared opt-in、exclusive bucket、弱 snapshot、
+  quiescent reset、overflow/lifetime 与 exporter/cardinality 边界。Native FFI/C API 仍为 `N/A`，中央
+  component graph 和 compiled Obs runtime 不变。
+
+本节只是候选前实现记录，未把 registry 状态越级写成 `CANDIDATE/VERIFIED`。candidate identity、三平台
+sanitizer/交付、资格化 P1、红队结论与 terminal receipt 在后续合法状态转换中补入。

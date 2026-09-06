@@ -4,9 +4,9 @@ obs 当前只提供 C++ 产品面。本页适用于 C++23 source/static/shared �
 跨语言调用层；Native FFI 当前为 `N/A`。三种集成方式、组件选择与工具链合同见
 [`distribution`](distribution.md)。
 
-obs 有两条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**trace** 是
-profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，也不是一套日志
-运维系统。
+obs 有三条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**metrics** 是 production
+热路径中的数值聚合，**trace** 是 profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，
+也不替应用拥有日志或指标运维系统。
 
 ## 1. 先决定该用什么
 
@@ -16,6 +16,10 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 | 调用方主动记录一条普通诊断 | `HYLE_LOG_*` | level 先门控，未通过时参数不求值；通过后捕获 source location |
 | 重复 warning/progress 需要防刷屏 | `HYLE_LOG_*_EVERY_N/FIRST_N/EVERY` | 每个调用点独立状态；被抑制时不格式化 |
 | 多个 request/slot 各自维护进度周期 | `LogIntervalLimiter` | 状态跟随对象，而不是把所有实例混入一个调用点 static |
+| 一个 worker 累计请求/token、发布 queue 状态 | `Counter` / `Gauge` | owner-thread O(1) 数值状态；无 registry、名字、锁或分配 |
+| 记录 latency/batch 等已知分布 | `FixedBuckets` + `FixedHistogram` | 构造时验证边界；更新二分查找并保留 `+Inf` tail |
+| 多个 worker 共享同一即时指标 | `ConcurrentCounter/Gauge/FixedHistogram` | 显式 relaxed-atomic 档位；不要把它与更轻的 owner-thread 对象混用 |
+| exporter 合并每个 worker 的 histogram | `HistogramSnapshot::merge` | scrape 边界 O(B) 合并，避免 producer 争用 |
 | 已有字符串或 byte slice，不想再格式化 | `log_message(std::string_view)` | 同步借用 exact bytes，不扫描、不复制，可保留内嵌 NUL |
 | 有 category/event、typed 属性、关联 ID、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured event |
 | 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
@@ -23,8 +27,9 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 | 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；shared 或单最终 image 的 static 构建汇入一个 Tracy client |
 
 如果应用已经使用 Abseil/Folly/spdlog 等日志系统，通常不要再建第二套日志配置树：注册
-一个 HYLE sink，把 record 适配进现有系统即可。分层 category、异步 writer、文件滚动、
-上传、查询和告警留给那个上层系统。obs 的目标是提供轻、可安全注销的底层 producer seam。
+一个 HYLE sink，把 record 适配进现有系统即可。指标同理：宿主保留 metric 名、label/cardinality、
+registry、Prometheus/OpenTelemetry exporter 和时间窗口，只把数值状态交给 HYLE。分层 category、异步
+writer、文件滚动、上传、查询和告警都留给上层系统。
 
 ## 2. 普通日志
 
@@ -202,7 +207,70 @@ interval 内最多一个并发调用通过。时间回退会抑制到追上上�
 `should_log`、`count` 和 `reset`。这些对象的 move/reset 都是生命周期控制，不是运行中迁移协议：必须
 先停止或外部同步并发 check，再移动、复用或销毁状态。
 
-## 4. 接入自己的 sink
+## 4. Production metrics：先选 ownership
+
+默认让每个 scheduler/worker 独占状态，再在 scrape 边界合并。这条路线不需要原子操作：
+
+```cpp
+#include <utility>
+
+#include "hyle/obs/metrics.h"
+
+struct WorkerMetrics {
+  explicit WorkerMetrics(hyle::obs::FixedBuckets<4> buckets)
+      : latency(std::move(buckets)) {}
+
+  hyle::obs::Counter<> requests;
+  hyle::obs::Counter<> tokens;
+  hyle::obs::Gauge<> cache_usage;
+  hyle::obs::FixedHistogram<4> latency;
+};
+
+auto bounds = hyle::obs::FixedBuckets<4>::create(
+    {0.001, 0.005, 0.025, 0.1});
+if (!bounds) return hyle::make_unexpected(std::move(bounds.error()));
+
+WorkerMetrics worker(*bounds);
+worker.requests.add();
+worker.tokens.add(32);
+worker.cache_usage.set(0.72);
+if (!worker.latency.observe(0.004, 32)) {
+  // sample 必须有限；这里由上层决定丢弃、记录还是返回错误
+}
+
+auto scrape = worker.latency.snapshot();
+auto p99_bucket = scrape.quantile_upper_bound(0.99);
+```
+
+`observe(value, multiplicity)` 把同一个 observation 按 multiplicity 计数，适合“32 个 token 共享本轮
+latency”这种明确权重；如果每个 request 只算一个 sample，就省略第二个参数。有限边界是 inclusive
+upper bound，另有隐式 `+Inf` tail。snapshot 的 `bucket_counts()` 是 exclusive bucket 数组，不是
+Prometheus 式 cumulative 数组；exporter 若需要 cumulative buckets，应在冷 scrape 路径自行做前缀和。
+`quantile_upper_bound` 只给出包含 rank 的桶上界，不能当成精确 p99。
+
+多个 worker 的 local snapshot 用 `merge` 合并；边界不一致或 count 溢出会返回 `Status`。如果业务确实
+要求多个 writer 立即共享一个状态，才选择显式并发类型：
+
+```cpp
+hyle::obs::ConcurrentCounter<> completed;
+hyle::obs::ConcurrentGauge<std::uint64_t> queue_depth;
+hyle::obs::ConcurrentFixedHistogram<4> shared_latency(*bounds);
+
+completed.add();
+queue_depth.set(7);
+shared_latency.observe(0.004);
+```
+
+并发类型要求对应 `std::atomic<T>` 在目标上 always-lock-free，只提供 relaxed 数值可见性，不同步业务
+对象。writer 活跃时取得的 histogram snapshot 可能组合相邻时刻；停止 writer 后才是精确 snapshot。
+`reset()` 不是并发 epoch 切换协议，必须在 owner/全部 writer quiescent 后调用。高争用环境优先 local
+state + snapshot merge，不要因为“thread-safe”三个字默认把所有 producer 挤到同一 cache line。
+
+Counter 的 floating delta 必须有限且非负；累计值及 bucket count 在整个生命周期内必须可表示。
+Gauge 的 floating 值保留 NaN/Inf（NaN 可表示 unavailable），integral add/subtract 会拒绝不可表示结果。
+metric 类型都不保存名字、label、timestamp 或 exporter；这些由宿主 schema 明确关联。
+
+## 5. 接入自己的 sink
 
 ```cpp
 struct Backend {
@@ -267,7 +335,7 @@ backend 递归到栈溢出。
 add/remove 是冷路径并返回共享 `Status`：空 callback、重复、缺失、容量耗尽和 callback
 跨摘可以区分。registry 固定最多 64 个 sink；emit 不分配，也不拿 mutation mutex。
 
-## 5. Trace：只在该看的 build 中付费
+## 6. Trace：只在该看的 build 中付费
 
 ```cpp
 #include "hyle/obs/trace.h"
@@ -310,7 +378,7 @@ message 会复制文本；动态文本按 Tracy 的 16-bit 长度边界安全截
 极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也走同一条
 native trace seam。
 
-## 6. 常见误用
+## 7. 常见误用
 
 - 不要在库失败时“打日志然后返回成功”；失败走 error，是否记录由调用方决定。
 - 不要假设 sink callback 串行；需要串行化就在 sink 内做。
@@ -327,6 +395,10 @@ native trace seam。
 - 不要把 call-site interval static 用作多 request/slot 的独立进度状态；把 limiter 放进对象。
 - 不要把近似 `EVERY_N` 当严格审计计数；需要精确频率时选 `_EVERY_N_EXACT`。
 - 不要给 interval limiter 传 realtime/Unix 时间；回拨会按合同持续抑制。
+- 不要把 histogram 的 exclusive counts 直接当 Prometheus cumulative buckets，也不要把桶上界当精确 quantile。
+- 不要把 `Concurrent*` 当 application synchronization；它只保证指标数值本身无数据竞争。
+- 不要在 writer 仍活跃时 reset/move/destroy metric state；并发 histogram snapshot 也只在 quiescence 后精确。
+- 不要把 metric name/label/registry 放回每个数值对象；schema 与 cardinality 属于宿主 exporter。
 - 不要把 runtime trace no-op 宣传成关闭态零指令；只有 `HYLE_TRACE_*` 宏具有这个合同。
 
 设计和并发细节见 [`../architecture/obs-design.md`](../architecture/obs-design.md)，点值与

@@ -2,6 +2,27 @@
 
 <!-- MODULE CLOSURE RECORD: CURRENT -->
 
+## v5 metrics：候选前合同（尚未签发性能结论）
+
+Obs v5 新增的 production metrics 不沿用日志 benchmark，也不把 thread-confined plain state 与共享 atomic
+state 混成一个排名。冻结合同 `bench/contracts/obs-metrics-p1-v1.json` 取自 llama.cpp、vLLM 与 SGLang
+的 scheduler metrics journey：一次 iteration 对 64 个 request 更新 counter/gauge/fixed histogram，
+六个边界是调用方拥有并在 measurement 外验证的 runtime values。
+
+两格分别比较 owner-thread scalar state 与 always-lock-free relaxed-atomic shared state；direct route 执行
+相同 floating validation、二分 bucket lookup、exclusive count、weighted sum、ownership、running
+snapshot 保证和计费阶段。Folly revision 只锁定 counter/histogram 的成熟语义 lineage；实际计时 peer 是
+同一 executable、同一 MSVC STL 的 direct C++23 mechanism，因此结果不会被描述成“战胜 Folly”。
+
+P0 已确认：value update O(1)，histogram observe O(log B)，snapshot/merge/quantile O(B)；构造后无
+allocation、mutex、clock、syscall、registry、name 或 label lookup。Release codegen 诊断曾发现 floating
+validation 未内联带来的真实 wrapper call，修复后 candidate 路径只留下与 direct mechanism 对应的
+comparison/arithmetic/relaxed atomic。semantic validator 同时核对 owner/shared 单轮结果与不同
+primary/placement artifact。
+
+本段仍处于 `AUDITED`：单样本 diagnostic probe 不能签 `PASS/PARITY/WIN`，clean immutable candidate 的
+W1-WIN `closure-perf-v1` 资格化结果和 retained bundle identity 将在状态进入 `VERIFIED` 后补入。
+
 > **obs-v4：不可变 candidate 的 P1 工程资格已完成。** 本页不再把 obs-v3 的
 > `16 slots x 256 ticks / 3-second` 合成 replay 冒充 llama.cpp 当前真实消费。v4 只接受当前
 > Abseil 普通调用点、当前 llama.cpp model-load state callback，以及受 `mem_reclaim` 迁移影响的一个

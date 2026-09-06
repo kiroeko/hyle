@@ -1,0 +1,66 @@
+{
+  "schema": "hyle.obs.metrics-consumer-shapes/v1",
+  "comparison_class": "SAME_CONTRACT",
+  "provenance_class": "REAL_CONSUMER_AND_MATURE_PEER",
+  "locked_on": "2026-09-06",
+  "source_evidence": [
+    {
+      "repository": "llama.cpp",
+      "revision": "73a43d1f69345aee8bb186ef4b3172cef892f2e5",
+      "entrypoints": [
+        "tools/server/server-common.h:server_metrics",
+        "tools/server/server-task.cpp:server_task_result_metrics::to_metrics"
+      ],
+      "fact": "server-owned cumulative counters, current gauges and bounded latency/token aggregates are updated independently from the Prometheus text exporter"
+    },
+    {
+      "repository": "vllm",
+      "revision": "808f8cd3ac6751278d8b7be97f6fde5295ca4653",
+      "entrypoints": [
+        "vllm/v1/metrics/loggers.py:PrometheusStatLogger.record"
+      ],
+      "fact": "one scheduler iteration updates request/token/cache counters, running/waiting/cache gauges and block lifetime/idle/reuse histograms"
+    },
+    {
+      "repository": "sglang",
+      "revision": "5bebe7a033ab57751fac3c9d8db219da62ca8c72",
+      "entrypoints": [
+        "python/sglang/srt/observability/metrics_collector.py:SchedulerMetricsCollector",
+        "python/sglang/srt/observability/metrics_collector.py:observe_inter_token_latency"
+      ],
+      "fact": "scheduler metrics include floating cumulative work, NaN gauges, fixed histogram observations and a repeated-value observation weighted by newly generated token count"
+    },
+    {
+      "repository": "folly",
+      "revision": "65749da412d92fe27d87ae45a8ef670720712858",
+      "entrypoints": [
+        "folly/stats/Histogram.h",
+        "folly/ThreadCachedInt.h"
+      ],
+      "fact": "fixed-bucket/repeated-value aggregation and sharded counter state establish mature ownership and snapshot alternatives"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "owner-scheduler-metrics-iteration",
+      "ownership": "one scheduler or worker owns the aggregation object",
+      "shape": "one iteration updates two integral counters, one floating counter, two gauges and a six-bound histogram for 64 request records; histogram multiplicity is the request token count",
+      "candidate": "HYLE owner-thread metric value objects with runtime-validated caller-owned bounds",
+      "peer": "direct plain arithmetic and array storage with the same runtime bounds, validity checks, bucket search, update count and observable lifetime"
+    },
+    {
+      "id": "shared-scheduler-metrics-iteration",
+      "ownership": "workers explicitly share one aggregation object and require immediate lock-free values",
+      "shape": "the same iteration and input distribution use relaxed lock-free atomic counters/gauges/histogram storage",
+      "candidate": "HYLE Concurrent metric value objects",
+      "peer": "direct std::atomic fields and the same runtime bounds, validity checks, bucket search, memory order, update count and observable lifetime"
+    }
+  ],
+  "semantic_equivalence": {
+    "setup": "both sides receive the same already-validated runtime boundary array and persistent zeroed aggregation lifetime outside timing",
+    "charged": "identical deterministic per-iteration request/token/latency values, numeric validity checks, bucket lookup and numeric updates",
+    "excluded": "names, labels, exporters, clocks, scrape snapshots, process/network I/O and construction-time boundary validation",
+    "oracle": "an untimed one-iteration comparison requires identical counters, gauges, exclusive bucket counts and sum"
+  },
+  "material_margin_percent": 5
+}

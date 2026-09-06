@@ -1,15 +1,17 @@
-# obs 设计：同步日志产出 + 编译期追踪
+# obs 设计：同步日志 + 数值指标 + 编译期追踪
 
 本页定义 obs 的长期产品边界和设计理由。当前轮次与未通过的门只看
 [`module-status.json`](../implementation/module-status.json)；当前公开用法只看
 [`user/obs`](../user/obs.md)。obs 只提供 C++23 source/static/shared，Native FFI 当前为 `N/A`。
 
-obs 有两条相互独立的产出通路：
+obs 有三条相互独立的产出通路：
 
 - **log** 面向运行中长期存在的诊断记录。它是同步、level-gated、结构化 fan-out；
+- **metrics** 面向 production 热路径上的 counter、gauge 与固定桶 histogram。它只聚合数值，不拥有
+  名字、标签、registry 或 exporter；
 - **trace** 面向 profiling build 的纳秒级时间线。它默认编译期消失，开启时接 Tracy。
 
-HYLE 不实现日志文件滚动、异步上传、聚合、查询、告警或 profiler viewer。这些是
+HYLE 不实现日志文件滚动、异步上传、动态指标 registry、wire exporter、查询、告警或 profiler viewer。这些是
 sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝。
 
 ## 1. 总体架构
@@ -18,19 +20,14 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
                     C++23 source/static/shared
                       include/hyle/obs/*.h
                                |
-                    +----------+----------+
-                    |                     |
-               HYLE_LOG_* / log_record  HYLE_TRACE_*
-                    |                     |
-             structured log core     HYLE_TRACE=ON
-                    |                     |
-          level gate + immutable     one shared
-          snapshot + active refs     hyle_tracy_client
-          + mem_reclaim epoch
-                    |                     |
-          +---------+---------+       mem / sched / io / compute
-          |                   |
-     default stderr     native C++ sink
+              +-------------+-------------+
+              |             |             |
+        log / log_record   metrics    HYLE_TRACE_*
+              |             |             |
+      synchronous sinks   caller-owned  HYLE_TRACE=ON
+      + mem_reclaim       numeric state  one Tracy client
+              |             |             |
+       stderr / adapter   host exporter  mem / sched / io / compute
 ```
 
 共享库构建里 `hyle_tracy_client` 必须也是共享库。若将静态
@@ -156,7 +153,29 @@ HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**
 日志策略，非请求输出也会污染宿主进程。下游利用发生在 trace hook；error/status
 仍是机器可读失败通道，log 是调用方主动选择的诊断通道。
 
-## 4. 依赖、消费者与负空间
+## 4. 数值指标的数据面
+
+`metrics.h` 提供两种明确的 ownership 档位，而不是以 `fast/light` 命名两套含糊 API：
+
+- `Counter`、`Gauge`、`FixedHistogram` 由一个 scheduler/worker owner 更新；它们是普通 scalar/array，
+  不分配、不加锁、不读钟。多个 worker 各自保存一份后，用 `HistogramSnapshot::merge` 在 scrape 或
+  iteration 边界合并，是默认的低争用路线；
+- `ConcurrentCounter`、`ConcurrentGauge`、`ConcurrentFixedHistogram` 只用于多个 worker 必须立即共享
+  同一状态的场景。它们要求所选原子类型 always-lock-free，并只使用 relaxed atomic；这保证指标更新
+  不会被误认为 application synchronization。
+
+固定桶在 `FixedBuckets::create` 时一次性验证为有限、严格递增。每个 sample 落入第一个大于等于它的
+有限上界，另有隐式 `+Inf` tail；update 用二分查找，复杂度 O(log B)，snapshot/merge/桶上界分位数
+查询为 O(B)。`quantile_upper_bound` 返回包含目标 rank 的桶上界，它不是精确样本 quantile，也不是
+近似 sketch。并发 snapshot 在 writer 活跃时是弱一致的，在 writer quiescence 后精确；reset、move 和
+destruction 都是 caller 管理的 quiescent 生命周期操作。
+
+这些类型不保存 metric name、label、timestamp、registry membership 或 exporter pointer。宿主把自然
+C++ member 与自己的 schema 绑定，在 scrape 时读取/合并 snapshot，再编码 Prometheus、OpenTelemetry
+或其他格式。这样 producer 热路不支付 string/hash/cardinality/clock 成本，也不把服务框架策略固化进
+基础数值类型。
+
+## 5. 依赖、消费者与负空间
 
 `hyle_obs` 在中央 component graph 中 `PUBLIC` 依赖 `core`、`error` 与 `time`：core 提供 compiler、fatal
 invariant 与 visibility 基础，sink 注册的可恢复失败使用 error 的 `Status/Result`，公开 record 直接
@@ -171,6 +190,9 @@ typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期
 `steady_clock` 类型并提供 caller-supplied monotonic-ns seam；Time 依赖来自公开 wall timestamp value，
 不是让 Obs 自动读钟。推理引擎可以把同域的 `monotonic_now()` 或 `coarse_monotonic_ns()` 传入显式
 limiter，但普通 message path 不读取 wall/monotonic clock，也不自动捕获 thread/context。
+指标 header 使用 Core 的 invariant/compiler 合同与 Error 的可恢复构造/merge 结果；标准 array、atomic
+与 binary search 已是同合同最小机制，不为复用而增加 Container、Mem、Platform、SIMD 或新的 Time
+依赖。Obs 既有 log surface 已经需要公开 Time，因此中央 component edge 不变。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
@@ -188,7 +210,7 @@ filter policy、异步线程/队列、文件轮转、上传、聚合/查询/告�
 自动 task context 或 profiler viewer。这些能力应在 adapter/application 层组合，不给所有基础 record
 添加 thread ID、refcount 或拥有型字符串。
 
-## 5. Trace 双面与零成本边界
+## 6. Trace 双面与零成本边界
 
 原生 `HYLE_TRACE_*` 宏用于 HYLE 热路径和同工具链源码用户：
 
@@ -215,7 +237,7 @@ full `strlen` 与 truncated allocation length 同时交给后端。source locati
 Fiber trace 名存放在 Fiber 自身的稳定进程期存储中，不能把临时字符串指针交给
 Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 
-## 6. 维护硬门
+## 7. 维护硬门
 
 改日志 registry 时必须通过：
 
@@ -234,6 +256,15 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 4. 名称和 zone token 的存储期/配对审计；
 5. Windows、Linux、macOS 各跑适用的 ON correctness/build；性能只按登记机器合同裁决。
 
+改 metrics 时必须通过：
+
+1. bounds、tail、multiplicity、sum/count、merge、quantile、reset 与无效输入 correctness；
+2. owner-thread 和 concurrent 两个档位分别验证，并发 writer 停止后的 snapshot 必须精确；
+3. P0 复核无 allocation/mutex/clock/syscall、复杂度不退化；P1 只与相同 ownership、原子序列、输入验证、
+   runtime bounds 和计费范围的直接机制比较，不拿 owner-thread 路线打 concurrent peer；
+4. selected Obs 的 source/static/shared consumer 都能直接包含 `metrics.h`，且不产生 Native FFI/C symbol；
+5. metric schema、label、exporter 与时间窗口保持宿主所有，不因 benchmark 或某个 serving 框架进入类型。
+
 trace-on 自动测试只需要本机 listener，CTest 因而给 Obs test process 设置 Tracy 上游的 runtime
 `TRACY_ONLY_LOCALHOST=1`。该变量不写入产品 target，也不改变普通 trace-on 程序的网络策略。Tracy
 v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时改变 discovery broadcast 地址，
@@ -242,4 +273,4 @@ v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时�
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
 当前模块任务见
-[`obs-v4-structured-event`](../implementation/tasks/obs/obs-v4-structured-event.md)。
+[`obs-v5-metrics-primitives`](../implementation/tasks/obs/obs-v5-metrics-primitives.md)。
