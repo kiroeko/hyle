@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -595,21 +595,31 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v8 CANDIDATE：第二候选 c39df6f9 已隔离 OS 私有辅助函数；Windows/WSL/macOS 严格因子回放通过，待候选精确交付、性能证据绑定、消费者回放与最终红队。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform v8 VERIFIED：OS 资源真相、复杂度、C++ API/文档、三平台严格测试、三交付、直接消费者、红队及修正为完整同合同的 host v3 P1 均通过；产品候选 c39df6f9 未漂移。"
     },
     {
       "module": "platform_thread",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -626,15 +636,25 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_thread v8 CANDIDATE：第二联合候选 c39df6f9 三平台严格因子回放通过；Parker bytes、MIT provenance、lock/license/package 未改，待精确交付与最终复核。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform_thread v8 VERIFIED：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台严格测试、三交付、消费者、易用性与 P0 结构门全部通过。"
     },
     {
       "module": "platform_fs",

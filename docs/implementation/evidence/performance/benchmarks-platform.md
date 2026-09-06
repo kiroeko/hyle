@@ -3,8 +3,10 @@
 > **Platform v8 current adjudication（2026-09-06）：**第二候选
 > `c39df6f94c636ab8fa94cb700dd263763a42d680`、tree
 > `37889346564f3a5cdc895f26c9d610883076ba02` 上，host v2 的产品点值和 controls 都通过，但收尾复核发现
-> peer 没有返回完整 memory record，也没有等价的 `Result` 失败通道，故其 same-contract PASS 已撤销；
-> 修正后的 `platform-host-p1-v3` 正在进行唯一一次资格化。Platform-thread 本轮只改变 integrated-source provenance/package，产品
+> peer 没有返回完整 memory record，也没有等价的 `Result` 失败通道，故其 same-contract PASS 已撤销。
+> 修正后的 `platform-host-p1-v3` 唯一一次 exact 资格化已经通过：4/4 strata 的 5% NI 均 PASS，全部
+> controls PASS；3 行 PARITY，另 1 行因 HYLE 可能快过等价带上界而只判 exact INCONCLUSIVE。
+> Platform-thread 本轮只改变 integrated-source provenance/package，产品
 > Parker bytes 未变，P0 structural 为 `PASS`。Platform-fs 的 exact 产品数据没有显示固定劣化，但连续
 > 两个 bundle 的公共 controls 未取得资格，当前只能是 `INCONCLUSIVE`，不能冻结为 PASS。具名恢复条件见
 > [`platform-fs-control-stability-2026-09`](../../tasks/performance/platform-fs-control-stability-2026-09.md)，
@@ -47,7 +49,7 @@ and
 
 ## Current verdict
 
-The current v8 verdict is factor-specific: `platform=PENDING`,
+The current v8 verdict is factor-specific: `platform=PASS`,
 `platform_thread=PASS`, and `platform_fs=INCONCLUSIVE/BLOCKED`. The older v7/v6
 structural results and v3 P1 receipts below remain supporting history; they are
 not silently rebound to the new candidate. This is not a Formal, cross-machine,
@@ -57,7 +59,7 @@ a Platform score.
 
 | current v8 factor | contract / evidence | result |
 | --- | --- | --- |
-| host | `platform-host-p1-v3`; v2 r5 retained only as diagnostic | pending one bounded qualification; v3 equalizes the complete value record and failure carrier |
+| host | `platform-host-p1-v3`; `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-v3-r1` | exact `QUALIFIED`; 4/4 NI `PASS`; all controls `PASS`; medians favor HYLE by 1.48%--3.79%, without claiming a material win |
 | thread | `P0 / closure-correctness-v1`; unchanged Parker state machine plus exact source/license/package audit | structural `PASS`; no new timing claim |
 | filesystem | `platform-fs-p1-v2`; exact r3/r4 bundles | `INCONCLUSIVE`: r3 product 8/8 `PARITY` and NI `PASS` but delta5 control failed; the one allowed rerun r4 failed A/A and lacked product power |
 

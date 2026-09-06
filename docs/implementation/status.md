@@ -1,6 +1,6 @@
 # 当前模块施工状态
 
-> 更新时间：2026-09-05。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
+> 更新时间：2026-09-06。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
 > `python scripts/check-module-closure.py` 校验的人读投影。历史任务、architecture、user 或性能页中的
 > `SIGNED/AUDITED/CANDIDATE/PRODUCT LOCKED` 字样都不是当前模块状态。
 
@@ -25,8 +25,8 @@ scope 继续
 | math | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/math/math-v3-integer-policy-superset.md) | math-v3 CLOSED/FROZEN：checked conversion/divide/compound/aggregate 与 saturating integer policy 已补齐；三平台正确性/UBSan/逐头/三交付、文档/红队和 P0 原生结构成本全部通过。 |
 | time | CLOSED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/time/time-v5-interoperability.md) | time-v5 CLOSED：signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME 与 header isolation 已通过三平台正确性/WSL sanitizers、三种 C++ 交付、文档/红队和 P0 结构性能门；候选 680c9941/b09b7043 无产品漂移。 |
 | timer_queue | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/timer_queue/timer-queue-v1-factor.md) | timer_queue v1 CLOSED：caller-owned radix/common-timeout 已成为独立 header-only factor，provider 组合与 Sched/IO 直接边正确；三平台正确性/sanitizer、三种 C++ 交付、文档/红队及对当前 Seastar 的 8/8 P1 WIN 全部通过。 |
-| platform | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v8-os-resource-contract.md) | platform v8 CANDIDATE：第二候选 c39df6f9 已隔离 OS 私有辅助函数；Windows/WSL/macOS 严格因子回放通过，待候选精确交付、性能证据绑定、消费者回放与最终红队。 |
-| platform_thread | CANDIDATE | P0 | PLANNED / STRUCTURAL | PENDING | [task](tasks/platform/platform-v8-os-resource-contract.md) | platform_thread v8 CANDIDATE：第二联合候选 c39df6f9 三平台严格因子回放通过；Parker bytes、MIT provenance、lock/license/package 未改，待精确交付与最终复核。 |
+| platform | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v8-os-resource-contract.md) | platform v8 VERIFIED：OS 资源真相、复杂度、C++ API/文档、三平台严格测试、三交付、直接消费者、红队及修正为完整同合同的 host v3 P1 均通过；产品候选 c39df6f9 未漂移。 |
+| platform_thread | VERIFIED | P0 | PASS / STRUCTURAL | PENDING | [task](tasks/platform/platform-v8-os-resource-contract.md) | platform_thread v8 VERIFIED：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台严格测试、三交付、消费者、易用性与 P0 结构门全部通过。 |
 | platform_fs | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v8-os-resource-contract.md) | platform_fs v8 CANDIDATE：第二联合候选 c39df6f9 三平台严格因子回放通过；EINTR 产品路径未改，待精确交付、性能证据绑定与最终红队。 |
 | mem_reclaim | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-reclaim-v2-inference-resume.md) | mem_reclaim v2 CLOSED：推理 read-mostly snapshot 回收、零分配 typed retire 与 Container 直接 consumer 完成；三平台正确性/sanitizer/三交付、文档/红队及官方 Folly 同合同 P1 全部通过。 |
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v5-multichunk-mimalloc-351.md) | mem-v5 CLOSED：resource-aware bounded multi-backing、mimalloc v3.5.1、明确 THP/ISA policy 与端到端 sized-free 已完成；三平台正确性/sanitizer、三交付、依赖/离线/符号、直接消费者、文档/红队、planner P0 和 W1-WIN 5% P1 工程非劣门全部通过。 |

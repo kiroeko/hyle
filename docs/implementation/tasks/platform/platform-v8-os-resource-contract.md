@@ -432,7 +432,19 @@ preset/source；其 10/10 结果被明确作废，未进入上述证据。随后
   `3A13682639F960902E55D3241DF9466B05A60011A7C146AD9B7F3557977DAB1C`、
   `350CB4D2C6F4F36EC75BF780095D4C862AC2878311DE314D1243C1E9F2886C84`；修正后的
   `platform-host-p1-v3` 让两边都返回完整 value record、相同 `Result<HostSnapshot>` 通道并消费全部字段，
-  不修改 Platform 产品候选；本轮只允许一次新资格化；
+  不修改 Platform 产品候选；唯一一次 exact 资格化
+  `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-v3-r1` 已完成：15 个独立进程、双顺序与
+  placement perturbation 下，3 个 strata 为 `PARITY`、1 个因可能优于 5% 上界而为 `INCONCLUSIVE`，
+  4/4 non-inferiority 均 `PASS`；A/A、5%/10% known-delta、timer-floor 与 placement controls 全部
+  `PASS`，aggregate performance/qualification gate 均为 `PASS`。四个 median advantage ratio 分别为
+  1.025918、1.014846、1.020631、1.037875，最终 v3 没有固定方向 HYLE loss；
+  v3 contract/manifest/summary SHA-256 分别为
+  `CC5D0F3EFBD5607B657B73E89A6258049B5A6FAABE6C42F1663007BDD88BB606`、
+  `6050AC12F8BBD5E74CE3EF1FD924BEB486192BD4B43EB5111708D25C18975325`、
+  `9FBC89107FFC4D24C4EC55D3F5D43910E2C8E94397DFA6ABDBF4E56D6185307D`。深验为
+  `QUALIFIED / EXACT / CURRENT`；harness commit/tree 为
+  `f920acec20a7da7c8c6c325d2c3f80710b82be91` / `710f508a5321b2a958af7998ab8770ebe96d4f81`，
+  candidate 到 harness 对 Platform 产品/API/依赖路径的 diff 为空；
 - `platform_thread`：本轮 Parker 状态机、memory order、layout 与 backend 产品 bytes 未变，只补来源/
   license/lock/package。三平台 exact code、package、source-content hash 与原有 correctness 回放证明 P0
   structural PASS；不借旧 P1 点值生成新的数值声明；
@@ -469,13 +481,17 @@ preset/source；其 10/10 结果被明确作废，未进入上述证据。随后
 
 | factor | scope | architecture | correctness | delivery | usability/docs | red team | engineering performance |
 |---|---|---|---|---|---|---|---|
-| `platform` | PASS | PASS | PASS | PASS | PASS | PASS | **PENDING / P1 v3** |
+| `platform` | PASS | PASS | PASS | PASS | PASS | PASS | PASS / P1 v3 |
 | `platform_thread` | PASS | PASS | PASS | PASS | PASS | PASS | PASS / P0 |
 | `platform_fs` | PASS | PASS | PASS | PASS | PASS | PASS | **INCONCLUSIVE / BLOCKED** |
 
-`platform_thread` 可以进入 `VERIFIED`；`platform` 必须等待唯一一次 v3 资格化；`platform_fs` 不能把
-产品行的好看点值越过失格 controls 写成 PASS，必须按具名工具/环境恢复条件停在本候选。两个未决项都不
+`platform` 与 `platform_thread` 可以进入 `VERIFIED`；`platform_fs` 不能把产品行的好看点值越过
+失格 controls 写成 PASS，必须按具名工具/环境恢复条件停在本候选。这个 blocker 不证明产品失败，也不
 授权继续修改候选产品。
+
+第二候选进入最终验证裁决前的 registry snapshot 为
+`C:\public\project-hyle\_validation\platform-v8-os-resource-contract\transitions\module-status-before-verified-final.json`，
+SHA-256 `7A15E54E59E31B1BC2EAC90F63D5D89209976B59F65505257AFCA559A983D2B2`。
 
 ### Candidate LOC
 
