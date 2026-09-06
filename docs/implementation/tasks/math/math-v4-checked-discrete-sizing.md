@@ -197,3 +197,75 @@ instruments, component edges or introduce a third-party product dependency.
 候选身份的同态刷新（`CANDIDATE -> CANDIDATE`）使用前态快照
 `C:\public\project-hyle\_validation\registry-before-math-v4-candidate-686ec1c0.json`，SHA-256
 `328431FC18BC837B8CDCE0A30336E9E3080F68981A4DAB13D148E4A2428F0124`。
+
+## Verification（`VERIFIED`）
+
+Candidate identity remains `686ec1c0215fa7a808ee470fe103ac62a1050759` / tree
+`1cb4bb81451ba016e09aecce563b3b591648d7a0`. Candidate-to-HEAD path diff is empty for the Math public
+header, tests, probe, CMake and package consumer.
+
+### Correctness risk matrix
+
+| risk | verdict | evidence / boundary |
+|---|---|---|
+| normal and sign convention | `PASS` | positive/negative LCM and power/exact-between-power bit-ceil on three compilers |
+| empty / zero / one | `PASS` | either-zero LCM including signed-min peer；bit-ceil 0/1 -> 1 |
+| min/max / overflow / standard preconditions | `PASS` | signed minimum magnitude, largest representable powers, next-power/product overflow all fail before invalid primitive evaluation |
+| type-domain / invalid input | `PASS` | same-type non-bool concepts, mixed/bool rejection, signed-negative bit-ceil, character integral route |
+| property / differential | `PASS` | exhaustive signed and unsigned 8-bit LCM plus unsigned/signed 8-bit bit-ceil oracle |
+| constexpr / header closure | `PASS` | compile-time boundaries and per-header test on MSVC/GCC/AppleClang |
+| sanitizer | `PASS` | exact-candidate W1-WSL GCC 14.2 Release + UBSan |
+| ownership / OOM / concurrency / cancellation | `NOT_APPLICABLE` | value-only synchronous templates own and allocate nothing |
+
+### Aggregate gates
+
+| gate | verdict | evidence / boundary |
+|---|---|---|
+| scope / architecture | `PASS` | exactly two frozen scalar APIs；Math remains Core-only and independent of SIMD |
+| correctness / sanitizer | `PASS` | all three unit/header runs plus WSL UBSan matrix above |
+| source / static / shared | `PASS` | selected-component smoke on W1-WIN, W1-WSL and M1-MAC；relocated consumers execute both APIs |
+| direct/north-star consumer | `PASS` | package model-sizing journey plus locked llama.cpp LCM and ggml pow2 evidence；no fake HYLE inference claim |
+| reuse / acceleration | `PASS` | existing `try_multiply`, standard GCD/bit primitive and compiler ISA lowering used；SIMD correctly N/A |
+| P0 engineering performance | `PASS` | [`benchmarks-math-v4`](../../evidence/performance/benchmarks-math-v4.md) |
+| usability / docs | `PASS` | same checked optional vocabulary, guide choice/traps, architecture boundary and package sample |
+| independent red team | `PASS` | separate checklist pass below; one delivery-test gap fixed before replacement candidate |
+
+### Validation receipts
+
+- W1-WIN：MSVC 19.50 Release/WERROR Math tests + header isolation；selected `math` source/relocated
+  shared/static smoke；codegen object SHA-256
+  `F524BEEE609975E06D130EC20C76245824FB9C532C85924BF6451AB87994949F`；
+- W1-WSL：GCC 14.2 exact-candidate Release/WERROR+UBSan tests/header；source/relocated shared/static smoke；
+  non-sanitized codegen object SHA-256
+  `CAE89783BFE56F74172B70F77120E0343DC6939540EAB9F3819747D3BD359B48`；
+- M1-MAC：candidate tar SHA-256
+  `7297D51DE9DF17B958606AFB901E97D6A694C1E7A9550B69C179D970CA96F6C2`；AppleClang 21
+  tests/header and source/relocated shared/static smoke；codegen object SHA-256
+  `40DB7278DFECB91C475B3B24B54C755A68ED481C1CF50F068F74E3188A32EAC9`；
+- all runs selected only the declared `core,math` closure. No general all-module test or timing benchmark was used.
+
+## 独立红队
+
+- reviewer / date / budget：Codex separate evidence-led pass / 2026-09-06 / 10 minutes；不是外部人类审计；
+- capability/API：checked gap is backed by standard preconditions and two locked inference journeys. Public names have
+  no benchmark knobs; trusted and batch routes remain explicit negative space；
+- correctness：reviewed signed-min magnitude, zero short-circuit, multiply overflow, bit-ceil representability and
+  character types; exhaustive oracles and UBSan found no remaining defect；
+- dependency/build：central graph and target both remain `math -> PUBLIC core`; installed surfaces have no stale C ABI,
+  runtime library or third-party leak；
+- performance：comparison class remains P0 structural. MSVC's bounded standard bit helper is recorded rather than
+  falsely called fully inline; no timing/SOTA inference is made；
+- finding：the first implementation candidate's package sample did not call the new APIs (`medium`, fixed). Candidate
+  `686ec1c0` adds the natural calls and all three exact-candidate delivery journeys pass. No unresolved issue remains.
+
+## Closure decision（verification stage）
+
+- all seven aggregate gates are `PASS`; no blocker or unhandled `MUST` remains；
+- known limitations and reopen triggers are prepared for the terminal registry but do not broaden this round；
+- terminal receipt has not yet been committed, so this section recommends mechanical state `VERIFIED`, not `CLOSED`；
+- LOC snapshot at candidate `686ec1c0215fa7a808ee470fe103ac62a1050759`：repository code 452,775；
+  self-written with tests 117,111；self-written without tests 74,346；Math implementation 420；self-check `PASS`。
+
+`CANDIDATE -> VERIFIED` 的前态快照保存在 canonical checkout 外：
+`C:\public\project-hyle\_validation\registry-before-math-v4-verified.json`，SHA-256
+`BDEBF806622B341E61976ABB5282585C04054907E45E5B57D6B34D40F5C0433B`。

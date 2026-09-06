@@ -368,7 +368,7 @@
     },
     {
       "module": "math",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "MATH-CHECKED-DISCRETE-SIZING-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
       "round_id": "math-v4-checked-discrete-sizing",
@@ -385,14 +385,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-math-v4.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v4 CANDIDATE：checked scalar lcm/bit-ceil 与真实 package consumer 已绑定 686ec1c0/1cb4bb81；三平台核心初验通过，exact-candidate 交付、P0 证据与红队待完成。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "math-v4 VERIFIED：checked scalar lcm/bit-ceil 已通过三平台 correctness/UBSan/逐头/三交付、真实 package consumer、文档/红队与 P0 原生结构门；等待 terminal receipt。"
     },
     {
       "module": "time",

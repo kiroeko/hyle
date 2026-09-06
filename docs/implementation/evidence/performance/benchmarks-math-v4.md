@@ -1,7 +1,9 @@
 # Math v4 P0 结构性能证据
 
-> **当前工程 verdict：`PENDING`。** 本页只覆盖 checked scalar `try_lcm` 与 `try_bit_ceil`。绑定
-> immutable candidate 后才记录三工具链 code shape 与交付结果；不运行纳秒 benchmark，也不声明
+> **当前工程 verdict：`PASS`。** 本页只覆盖 candidate
+> `686ec1c0215fa7a808ee470fe103ac62a1050759` / tree
+> `1cb4bb81451ba016e09aecce563b3b591648d7a0` 的 checked scalar `try_lcm` 与
+> `try_bit_ceil`；不运行纳秒 benchmark，也不声明
 > Math、SIMD 或推理引擎的普遍 SOTA。
 
 设计边界见 [scalar math architecture](../../../architecture/math-design.md)，用户选择见
@@ -25,21 +27,29 @@
 
 ## Candidate 与三工具链结果
 
-Candidate identity、object hash 与代表性 lowering 在产品提交不可变后回填。
+Probe source `tests/math/codegen_probe.cc` 的 SHA-256 是
+`321BF646D52B1D7B48A6E559AD302C994FCB6DEB6EF66BB18BB94E37733AFF59`。从 candidate 到验证 HEAD，
+Math public header、tests、probe、CMake 与 package sample 的 path diff 为空。
 
-| environment | expected representative lowering | forbidden cost | verdict |
+| environment / object SHA-256 | representative lowering | forbidden cost | verdict |
 |---|---|---|---|
-| W1-WIN / MSVC x64 | guarded standard bit scan；unsigned magnitude；standard GCD；checked multiply boundary | heap、lock、syscall、HYLE backend dispatch、input-proportional bit-ceil loop | `PENDING` |
-| W1-WSL / GCC x86-64 | 相同语义，使用 x86 native bit-count/branch | 同上 | `PENDING` |
-| M1-MAC / AppleClang arm64 | 相同语义，使用 arm64 count-leading-zero/branch | 同上 | `PENDING` |
+| W1-WIN；MSVC 19.50 x64；`F524BEEE609975E06D130EC20C76245824FB9C532C85924BF6451AB87994949F` | representability guard 后进入 bounded standard bit helper，其目标体包含 `lzcnt/bsr`；LCM 使用 standard GCD、`div` 与 full-width `mul`/high-half 判界 | 无 heap、lock、syscall、HYLE backend dispatch 或 input-proportional bit-ceil loop | `PASS` |
+| W1-WSL；GCC 14.2 x86-64；`CAE89783BFE56F74172B70F77120E0343DC6939540EAB9F3819747D3BD359B48` | bit-ceil 直接为 guard + `bsr`/shift；LCM inline binary-GCD (`tzcnt`/subtract) 后 `div` + overflow-signalling `mul` | 同上；无 indirect call 或 generic arithmetic backend | `PASS` |
+| M1-MAC；AppleClang 21 arm64；`40DB7278DFECB91C475B3B24B54C755A68ED481C1CF50F068F74E3188A32EAC9` | bit-ceil 为 guard + `clz`/shift；LCM inline standard GCD 后 `udiv` + `umulh/mul` 判界 | 同上；无 helper seam 或 runtime dispatch | `PASS` |
 
 ## Correctness 与交付旁证
 
-候选必须通过 signed/unsigned/character-integral compilation、8-bit exhaustive LCM/bit-ceil oracle、
-zero/one/min/max、constexpr、WSL UBSan、逐头，以及三平台 source/搬迁后 static/shared `hyle::math`
-consumer。结果不预先标 PASS。
+候选在 MSVC 19.50、GCC 14.2 和 AppleClang 21 上通过 Math unit 与逐头测试；GCC exact-candidate 另以
+UBSan 通过。测试覆盖 signed/unsigned/character-integral compilation、signed/unsigned 8-bit exhaustive
+LCM oracle、8-bit bit-ceil oracle、zero/one/min/max、signed minimum、全部 representability boundary 与
+constexpr evaluation。
+
+三平台 `HYLE_COMPONENTS=math` selected smoke 均通过 source embedding、搬迁后的 installed shared 与
+installed static consumer；package sample 直接调用两个 v4 API。输出闭包都是 `core,math`，安装物只含
+header 与 INTERFACE target，没有 Math archive、第三方运行时、C header 或 Native FFI export。
 
 ## Claim 边界
 
-表格仍为 pending 时不签性能结论。P0 完成后也只允许声称：冻结的 scalar 合同达到准入任务的最优
-复杂度档，且在已验证编译器上没有意外动态机制。不得改写成 timing、全平台或端到端推理结论。
+P0 聚合 verdict 为 **`PASS`**：bit-ceil 是 O(1) native scalar bit-count shape，LCM 是标准 GCD 的
+O(log(min magnitude)) 加一次 checked product；没有意外动态资源或 HYLE dispatch。这个结论只覆盖
+绑定 candidate 与三种工具链/交付，不得改写成 timing、所有平台、所有 Math 操作或端到端推理 SOTA。
