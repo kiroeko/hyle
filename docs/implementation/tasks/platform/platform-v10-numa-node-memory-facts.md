@@ -90,3 +90,81 @@
 `REOPENED -> SCOPED` 前 registry snapshot：
 `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\module-status-before-scoped.json`，
 SHA-256 `2067C966DE0B4C66395AF5FE046ED5338D325759D48EC84C2D18FC6FA0EF9C98`。
+
+## Capability / surface audit 与有限 FIX（`AUDITED`）
+
+### 两遍能力与 owner 审计
+
+| ID | 正常任务与语义边界 | 当前路线 | 覆盖/裁决 |
+|---|---|---|---|
+| `PLAT10-C01` | 枚举进程可用的稳定、稀疏 NUMA node id，并验证一个 id | `numa_nodes/numa_node_available` 已从 process placement view 建立唯一 id authority | `COMPLETE / KEEP` |
+| `PLAT10-C02` | 对一个可用 node 读取当前物理总量（可证时）与可供新 host allocation 规划的动态量；失败、unknown、零值可区分 | 无公开 API；只有整机 `host_memory_info` | `MISSING / MUST / FIX` |
+| `PLAT10-C03` | 把 node 物理事实与 cgroup/job/RLIMIT/整机 commit 等进程约束组合 | `host_memory_info().effective_available_bytes()` 已拥有全局约束 | `ROUTED`：consumer 组合；禁止把全局限额复制给每个 node |
+| `PLAT10-C04` | node 选择、rank/GPU 映射、利用率、模型/KV/arena 大小与 reservation | vLLM/SGLang 各自 policy；HYLE placement owner 已独立 | `OUT_OF_SCOPE`：Sched/Compute/engine/Mem owner |
+| `PLAT10-C05` | NUMA distance、跨 die bandwidth、page residency/migration 与 pressure feedback | 当前 watchlist 已保留真多节点证据条件 | `DEFER`：没有本轮第二旅程或真机 material 证据，不伪装成容量查询 |
+
+自底向上 reverse trace 覆盖 `include/hyle/platform/{numa,host_memory}.h`、`src/platform/{numa,
+host_memory}.cc`、Platform tests/CMake、selected header/package smoke、Mem 的 NUMA owner 与四组推理旅程。
+现有 placement API 均有独立任务来源；没有 benchmark-only node query、第二套 node-id authority 或需要删除的
+旧入口。新增能力仍属于 `platform`，不新建 factor，也不增加依赖边。
+
+### 冻结 C++ API 与平台事实
+
+```cpp
+struct NumaNodeMemoryInfo {
+  unsigned node = 0;
+  std::optional<std::uint64_t> physical_total_bytes;
+  std::uint64_t physical_available_bytes = 0;
+};
+
+Result<NumaNodeMemoryInfo> numa_node_memory_info(unsigned node) noexcept;
+```
+
+- `node` 必须属于同次进程生命周期的 `numa_nodes()` id space；错误 id 为 `OutOfRange`，不静默回退；
+- 成功结果总有 `physical_available_bytes`；total 只有公开 OS 路线可证时才 present。若 total present，
+  available 必须 clamp 到 total；零是合法压力状态；
+- Linux：读取 stable sysfs `nodeN/meminfo`；total=`MemTotal`，available 是 `MemFree +
+  Active(file) + Inactive(file) + SReclaimable` 的饱和、clamped planning estimate。该近似沿用锁定 vLLM
+  的真实 CPU journey，但 guide 必须说明它没有 `/proc/meminfo:MemAvailable` 的 per-node watermark 修正；
+- Windows：多 node 直接采用 `GetNumaAvailableMemoryNodeEx` 的 free+zero pages，total absent；单逻辑 node
+  复用 `host_memory_info`，此时 total/available 都可证。不得把 performance counter、WMI 或启动时 free
+  snapshot 当总容量；
+- macOS：只有 HYLE 逻辑 node，复用 `host_memory_info`；任意其它 id 仍失败；
+- 查询动态、fallible、不缓存，不是 reservation；重复查询可以变化。调用者若还受 cgroup/job/commit
+  限制，必须另外读取 host snapshot，并保证全局 budget 只计一次。
+
+不加入 `NumaCapability` bit：这是可直接尝试且可失败的事实查询，不是 placement primitive；单节点平台
+通过 host fact 完整支持，伪造一个“native per-node” capability 反而会让用户写错分支。不加入 vector/
+callback collector：稳定 node span + 单项 query 已完整、无隐藏 allocation，并允许逐 node 错误处理。
+
+### 复用、成本与有限 FIX ledger
+
+| FIX | 产品修改 | 复杂度/常态成本 | 验证 |
+|---|---|---|---|
+| `PLAT10-F01` | 增加冻结 value/query；复用现有 node-id、Error `Result/Status` 与 host single-node route | Windows multi O(1) 一次 native query；Linux O(meminfo bytes)；mac/single O(1) host query；其它热路零变化 | parser/native/invalid/zero/unknown tests |
+| `PLAT10-F02` | Linux exact-prefix parser、checked KiB conversion、饱和求和和 required-field/DataLoss 处理 | 固定逐行 stack buffer；无 payload-size heap、无 node-count 嵌套扫描 | cross-platform fixture + WSL native sysfs |
+| `PLAT10-F03` | architecture/user guide 加入选择规则、平台语义、cgroup/global-budget 陷阱和正常 C++ recipe | 文档不新增 runtime 成本 | docs/link/usability + hostile misuse review |
+| `PLAT10-F04` | selected Platform source/static/shared direct consumer、header closure、visibility/symbol/no-FFI 与中央依赖复验 | 仍只 `PUBLIC core error`；无新 target/option/第三方 | component/package contracts，三平台 |
+| `PLAT10-F05` | 新 query 签 P0 structural；旧 host-planning contract 只运行一次 frozen P1 holdout | 5% NI；不得新增 raw syscall microbench 或更改 peer/margin | `closure-correctness-v1` + `closure-perf-v1` |
+
+以上五票是本轮全部授权。placement、distance/bandwidth、GPU affinity、Mem API、Platform-thread/fs、
+新 CMake option、Native FFI 与公共仪器均不在 ledger；发现问题只能记录相邻 trigger。
+
+### 七问预裁决
+
+1. **第三方：**产品路径无第三方库；Windows SDK/Kernel32、Linux stable sysfs 和 Apple Mach/sysctl 是
+   OS 合同。vLLM/SGLang 是 demand evidence，不进入链接或类型；无性能 peer 被伪造。
+2. **功能：**四组 replay 中唯一未处置 Platform `MUST` 是 C02；ggml/llama 的 NUMA placement、vLLM
+   容量/压力、SGLang rank binding 均能由现有 placement + 新 fact + 上层 policy 完整表达。
+3. **内部复用：**node id 复用现有 NUMA authority，单节点事实复用 HostMemoryInfo，错误复用 Error；
+   不反向依赖 Mem/Container/Sched，也不重复 cgroup resolver。verdict `PASS`。
+4. **性能：**新路线是 P0 control path，timing peer comparison `NOT_APPLICABLE`；结构档最优且不改变
+   allocation/placement 热路。旧 P1 host planner 仅作同合同 holdout，不把两种字段相互排名。
+5. **FFI：**全局为 `N/A`；不增加 C header/schema/bridge、undecorated export、FFI option 或 layout。
+6. **构建/导入：**仍在 `hyle_platform`；必须实测 source/static/shared 与 selected component，不新增开关。
+7. **API/文档/红队：**单项 fallible query、optional total 与明确平台 available 语义形成自然 C++ shape；
+   重点攻击 invalid sparse id、global limit 重复计算、Windows total 猜测和 Linux 近似冒充精确值。
+
+`SCOPED -> AUDITED` 前 registry snapshot：
+`C:\public\project-hyle\_validation\platform-v10-numa-node-memory\module-status-before-audited.json`，
+SHA-256 `B2DD4B9A72671F32D03830513539AB1C108B9F6A7CCBDDCE75C289007556970D`。

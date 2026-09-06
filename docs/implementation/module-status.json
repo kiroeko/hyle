@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
       "round_id": "platform-v10-numa-node-memory-facts",
@@ -604,7 +604,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v10 SCOPED：per-NUMA-node memory fact 的任务、边界、P0/P1 成本合同、三平台/三交付门与有界预算已冻结；尚未完成能力审计或授权产品修改。"
+      "summary": "platform v10 AUDITED：单 node、fallible、optional-total 的 C++ API 与五项 FIX 已冻结；只授权 OS node-memory fact、测试/文档/交付和一次旧 host P1 holdout。"
     },
     {
       "module": "platform_thread",

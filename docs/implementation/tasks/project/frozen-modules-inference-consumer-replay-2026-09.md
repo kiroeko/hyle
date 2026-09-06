@@ -221,7 +221,11 @@ module-closure validators 同轮通过。
 | A / container_intrusive | vLLM KV free queue + BlockPool | counted stable-node free-list `COMPLETE` | existing counted membership P1 same mechanism | `CONFIRMED` |
 | A / util_core | ds4/llama scalar sampling RNG；HYLE Mem/Sched resource paths | scalar RNG/resource/borrow `COMPLETE` | RNG P0；existing Ref/Spin/FunctionRef P1 | `CONFIRMED` |
 | A / time | ds4/vLLM deadlines；SGLang stage/CPU clocks | clocks/deadlines `COMPLETE`；correlation `WATCH` | existing phase/deadline P1 + clock P0 | `CONFIRMED`；`TIME-WATCH-05` |
-| B | pending | pending | pending | pending |
+| B / timer_queue | vLLM P2P pending lookup；SGLang deferred KV release | absolute monotonic arm/cancel/advance `COMPLETE`；callback/periodic policy stays Sched/IO | existing Seastar same-contract P1 | `CONFIRMED` |
+| B / platform | vLLM per-node CPU memory budget/usage；SGLang rank/node binding | node id/placement `COMPLETE`；per-node memory fact `MISSING` | new query P0 + old host-planning P1 holdout | `PRODUCT_TRIGGER`；Platform v10 |
+| B / platform_thread | vLLM CPU worker placement；SGLang CPU affinity/name process setup | affinity/name/priority/wait `COMPLETE`；GPU-to-node policy routed Compute/engine | Parker P0 unchanged | `CONFIRMED` |
+| B / platform_fs | vLLM direct vectored disk offload；ds4/llama temp publish/model mapping | sync buffered/path primitives `COMPLETE`；direct/async routed IO，mapping routed Mem-VM | current warm-file P1 | `CONFIRMED` |
+| B / mem_reclaim | vLLM scheduler fence frees；SGLang GPU-event/deferred release；HYLE Obs snapshots | host read-mostly grace period `COMPLETE`；device/scheduler fences routed owners | current Folly RCU P1 | `CONFIRMED` |
 | C | pending | pending | pending | pending |
 | D | pending | pending | pending | pending |
 | S / simd drift | pending | pending | pending | pending |
