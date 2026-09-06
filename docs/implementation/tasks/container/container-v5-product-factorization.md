@@ -339,3 +339,20 @@ SHA-256 `4CED961505B11F8BE79F56326237E40BB904CFB1FE2BB52FD838379E9FBB01A8`。
 本次退回前态 registry 快照为
 `C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-container-visibility-correction.json`，
 SHA-256 `531E4245C3B684BF8433DBFD8EF6DF813A0762EEA29EB1F63D132738687E0DAD`。
+
+## 第三 Product candidate（`CANDIDATE`）
+
+- product commit/tree：`6fae3c11ebce9a0741f45780e63c9896e08bb2a2` /
+  `8025ee111380c2600f804cf979ed59d289a8be76`；
+- 相比第二候选，唯一产品变化是非 Windows `hyle_container` hidden-by-default，以及在 concurrent
+  flat/node map/set、`UnboundedQueue` public contract 中明示 injected policy 的真实并发责任；没有改变
+  capability、算法、layout、默认 allocator、正常路径成本、ISA 路由或 benchmark；
+- W1-WSL GCC 14 shared/WERROR 开发构建中，四 factor 9/9 精确 tests/header tests 通过；
+  `hyle_container` private bitset ISA dynamic symbols `24 -> 0`、公共 Container symbols 45，
+  `hyle_text` simdutf/provider symbols 0、公共 Text symbols 39；
+- 正式 terminal replay 必须绑定本产品身份。第二候选的性能数值只作 rejected/inconclusive 诊断，不能
+  传递为第三候选的 engineering PASS。
+
+`AUDITED -> CANDIDATE` 前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-third-candidate.json`，
+SHA-256 `0DEF687981CFD02FF5B088BBEF7160B200A6A7616EE4F2F37DE8FEE8CBE57237`。

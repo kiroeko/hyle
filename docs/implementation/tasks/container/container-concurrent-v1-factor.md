@@ -62,3 +62,9 @@
 Hash/Eq；有限修复是在 header/guide 明示该前提，不增加锁或改变默认路线。正式 membership 对拍同时暴露两侧
 默认 allocator 不同，且统计 non-inferiority 为 `UNRESOLVED`；该证据只能作为自然路线诊断，不能签
 `SAME_CONTRACT`。
+
+## 第三 Candidate
+
+共同 product commit/tree 为 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` /
+`8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 只补公开 Alloc/Hash/Eq 并发前提；实现、layout、
+默认 allocator 与正常路径成本不变。W1-WSL GCC 14 shared/WERROR tests/header tests 2/2 通过。

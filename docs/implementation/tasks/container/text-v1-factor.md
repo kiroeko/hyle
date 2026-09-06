@@ -63,3 +63,10 @@ pointer。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4`
 泄漏 24 个 private bitset ISA symbols，因此共同产品身份仍须退回 `AUDITED`。本 factor 的 API、layout、
 算法与 operation-local provider 修正不变。第二候选 UTF 八个分层 median 为 `0.9616–0.9731`，其中
 三条置信区间跨过 5% 边界，工程 verdict 保持 `INCONCLUSIVE`。
+
+## 第三 Candidate
+
+共同 product commit/tree 为 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` /
+`8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 产品没有再次变化；W1-WSL GCC 14
+shared/WERROR tests/header tests 2/2 通过，shared dynamic symbol scan 保持 simdutf/provider 0，
+公共 Text symbols 39。

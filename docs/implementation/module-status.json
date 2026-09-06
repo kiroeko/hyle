@@ -1068,7 +1068,7 @@
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v5-product-factorization",
@@ -1076,6 +1076,8 @@
       "scope": "Re-establish the Container product from current ggml/llama.cpp, ds4, vLLM and SGLang demand: correct the public x86 ISA floor and private shared-provider visibility, freeze the natural capability/API superset, implement admitted generic storage gaps, factor sequential, concurrent, queue and text internals behind one consumer facade, and renew real-journey correctness, performance and delivery evidence.",
       "non_goals": "Compute or Graph design, tokenizer/KV-cache/scheduler/IO policy, copying every standard or peer API, Native FFI or C API, stable cross-toolchain C++ ABI, common closure/performance instrument redesign, adjacent frozen-module changes without their own trigger, and Formal SOTA certification.",
     "baseline_commit": "a9b5b6523867601dd2c708a2bedc8fc4d81469f2",
+    "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+    "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1093,7 +1095,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 第二候选已撤回至 AUDITED：Linux shared artifact 泄漏 24 个 private bitset ISA kernels，且并发 map/queue 未公开 injected allocator 的并发前提；只授权 hidden-by-default 与合同/指南两项有限修复。"
+      "summary": "container-v5 第三 CANDIDATE：Unix shared hidden-by-default 已消除 private ISA ABI，且并发 map/queue 的 injected policy 合同已补全；产品身份 6fae3c11 等待 exact terminal replay。"
     },
     {
       "module": "util",
@@ -1277,12 +1279,14 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-concurrent-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-concurrent-v1-factor.md",
       "scope": "Own the concurrent flat/node hash map and concurrent vector surface, admit natural zero-mapped-payload concurrent sets, establish an independent internal target and exact reclamation/dependency closure, and validate normal inference registry journeys.",
       "non_goals": "Queues, waiting, sequential hash implementation, global registry policy, transactional snapshots, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+    "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1300,16 +1304,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v1 随共同产品退回 AUDITED：补明 flat/node map/set injected Alloc/Hash/Eq 的并发调用前提；算法、layout 与默认 SystemAllocator 路线不变。"
+      "summary": "container_concurrent v1 第三 CANDIDATE：flat/node map/set 的 injected Alloc/Hash/Eq 并发前提已进入公开合同；算法、layout 与默认路线不变，等待共同终局验证。"
     },
     {
       "module": "container_queue",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-queue-v1-factor.md",
       "scope": "Own byte-ring, SPSC, bounded MPMC, sharded and work-stealing storage, adjudicate unbounded and priority mechanisms, establish an independent internal target and Scheduler edge, and validate normal inference handoff journeys.",
       "non_goals": "Condition variables, fiber suspension, deadline, cancellation, close or backpressure service, request scheduling policy, IO completion, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+    "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1327,16 +1333,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v1 随共同产品退回 AUDITED：补明 UnboundedQueue producer allocation 与 consumer deallocation 可重叠；既有 oneTBB 对拍因 allocator/OOM 语义不等价不能签 SAME_CONTRACT。"
+      "summary": "container_queue v1 第三 CANDIDATE：UnboundedQueue injected allocator 的 producer/consumer 并发前提已公开；算法/layout 不变，既有苹果橘子式 oneTBB 对拍不作为终局 PASS。"
     },
     {
       "module": "text",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "text-v1-factor",
       "closure_task": "docs/implementation/tasks/container/text-v1-factor.md",
       "scope": "Own borrowed text, ASCII and Unicode algorithms, lexical paths and interning, complete typed UTF error-offset and UTF-8/16/32 caller-buffer conversion, establish an independent internal target and private provider closure, and validate loader/tokenizer journeys.",
       "non_goals": "Owning string, Cord or IOBuf, filesystem access, locale, normalization, grapheme segmentation, tokenizer/trie/radix/model automata, protocols, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+    "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1354,7 +1362,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "text v1 随共同 Container 产品从第二候选退回 AUDITED：自身 simdutf visibility 已通过，但共同 hyle_container shared artifact 泄漏 private bitset ISA kernels；等待唯一 visibility FIX。"
+      "summary": "text v1 第三 CANDIDATE：自身 simdutf 与共同 Container private providers 均按 Unix hidden-by-default；Unicode API/算法不变，等待共同终局验证。"
     }
   ]
 }

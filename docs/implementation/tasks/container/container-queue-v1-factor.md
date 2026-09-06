@@ -64,3 +64,10 @@
 recoverable `try_push`，oneTBB 使用 `cache_aligned_allocator` 与 throwing `push`；benchmark adapter
 没有等价化 allocator、OOM 和 rollback，故 `1.23–1.25x WIN` 只是一条 `NATURAL_ROUTE` 观测，不能
 签实现级 `SAME_CONTRACT` 或 SOTA。
+
+## 第三 Candidate
+
+共同 product commit/tree 为 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` /
+`8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 只补 `UnboundedQueue` injected allocator 的
+producer/consumer 并发前提；实现、layout、默认 allocator 与正常路径成本不变。W1-WSL GCC 14
+shared/WERROR tests/header tests 2/2 通过。
