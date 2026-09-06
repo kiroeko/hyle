@@ -1,6 +1,7 @@
 # Platform-fs v2：控制稳定窗口恢复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `platform_fs` 从 v8 性能证据 blocker 恢复的独立 `RESUME` 轮。产品能力、API 与实现已经由
 > [`platform-v8-os-resource-contract`](../platform/platform-v8-os-resource-contract.md) 冻结；本轮只重绑
@@ -159,5 +160,41 @@ SHA-256 `9DE5D7B9BE03B09640C3F76B19A0C3A08B9F4064743B49C5D4DC274C19AAE5E2`。
 
 ## Current decision
 
-`VERIFIED`。未变化的 v8 第二候选已经取得唯一一份合法的 fresh P1 receipt；全部适用 gate 为 `PASS`。
-本轮尚未写 terminal receipt，因此此处不提前伪造 `CLOSED`。
+`CLOSED / FROZEN`。未变化的 v8 第二候选已经取得唯一一份合法的 fresh P1 receipt；全部适用 gate 为
+`PASS`，旧 blocker 已由预声明的恢复条件解除。本轮没有产品、benchmark、contract、margin 或仪器修改。
+
+## Closure decision 与 terminal receipt
+
+| gate | verdict | basis |
+|---|---|---|
+| scope | PASS | 只恢复既有 exact candidate 的一次 P1 裁决，没有范围漂移 |
+| architecture | PASS | 产品/API/ownership/复杂度和依赖保持 v8 已验收形状 |
+| correctness | PASS | 同一 candidate 的 W1-WIN、W1-WSL、M1-MAC exact v8 correctness/sanitizer 证据未漂移 |
+| delivery | PASS | source/static/shared、component/direct-consumer 与符号证据绑定同一产品 identity 且无产品 diff |
+| usability/docs | PASS | `FileHandle` C++ 旅程和性能语义未改；当前证据页已区分 qualified 与 diagnostic |
+| red team | PASS | 不拼样、不重跑到绿、不改合同/阈值；固定方向、苹果/橘子与 provenance 均复核 |
+| engineering performance | PASS | 唯一 fresh bundle 为 `QUALIFIED / EXACT / CURRENT`，8/8 PARITY、NI PASS、controls PASS |
+
+已知限制：
+
+- 该 factor 是同步、buffered 文件 owner/namespace 路线；async/direct I/O 仍由 IO owner 承担；
+- POSIX 只对可安全重启且无已知副作用的操作重试 `EINTR`，close-like/可能已产生副作用的操作故意不盲重试；
+- 数值 receipt 只覆盖 W1-WIN 上 warmed 4 MiB model-file open/read/checksum/close 同合同旅程，不外推为
+  冷 cache、全部文件系统、跨机器或 Formal SOTA；
+- W1-WSL 与 M1-MAC 提供正确性、sanitizer 和交付覆盖，不与 Windows/NTFS 点值混合。
+
+reopen triggers：
+
+- 真实 consumer 复现同步文件 correctness、ownership、EOF/short-transfer、EINTR 或 close 语义缺陷；
+- 公开 API、复杂度、native-call 成本/语义、直接依赖、交付或受测 product bytes 改变；
+- 合格的同合同正常 consumer 证据证明超过 5% 的可重复 material regression，或成熟 peer 证明更优复杂度；
+- 支持的 OS/SDK 改变这里依赖的文件 handle 或同步 I/O 合同。
+
+LOC 绑定 candidate `c39df6f94c636ab8fa94cb700dd263763a42d680`；`loc-report.py --module platform-fs`
+加 `--commit <candidate> --self-check --json` 为 `PASS`：全库代码 451,412；自实现含测试 116,939；
+自实现不含测试 74,308；本 factor 实现 2,712 行。公开共享头由 Platform conventional boundary 计数，
+本数只统计 `src/platform_fs`，不能与 base 数值相加冒充互斥拆分。
+
+本提交保存 terminal task、receipt 与 candidate identity；它的完整 commit 将作为 registry 的
+`end_commit`。后续第一个真实保存 `platform_fs=CLOSED` 的提交作为 `registry_anchor_commit`，不在本页
+伪造尚未生成的自身 hash。
