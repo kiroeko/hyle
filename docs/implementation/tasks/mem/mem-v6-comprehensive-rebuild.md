@@ -91,3 +91,95 @@
   和同候选 LOC；
 - 停止：所有 `MUST` 为 `COMPLETE/ROUTED`、适用门通过且无 blocker 即 `CLOSED`；固定预算内无法
   裁决的 correctness/contract/P1 问题具名进入 `BLOCKED`，不得继续发明测试姿势。
+
+## Capability-family audit 与有限 FIX（`AUDITED`）
+
+### 当前超集与 consumer 反向追踪
+
+审计覆盖全部 `include/hyle/mem` base headers、`src/mem`、Mem tests/sample、当前 llama.cpp/ggml 的
+host allocator/scratch/buffer/pool/model-load 旅程、mimalloc v3.5.1、oneTBB 与 Folly。结果按任务而非
+symbol 数量归并如下：
+
+| family | 当前自然能力 | 覆盖/差距 | 裁决 |
+|---|---|---|---|
+| allocator / standard adapters | process system allocator、isolated `Heap`、runtime-erased ref、`std::allocator`/PMR、usable/good-size、collect | aligned/sized realloc、owner/move/OOM 和 private mimalloc mechanism 完整 | `COMPLETE` |
+| arena / external variable heap | owned/fixed/stack/pooled bump owner；caller-storage TLSF-like variable-size individual free/realloc/reset | phase scratch、LIFO 与 hard external workspace 均有自然独立类型 | `COMPLETE` |
+| fixed/typed/growable pools | concurrent hard block pool、explicit local cache、reconstruct/preserve typed pool、growable single-owner pool、RAII loan | 固定/未知容量、remote free 与 bulk release 路线完整 | `COMPLETE` |
+| quota / instrumentation / pressure | strict byte quota、opt-in stats/leaks、allocator + whole-process snapshot | Linux whole-process fields 实为 mimalloc 子域；公开合同不实 | `PARTIAL -> FIX` |
+| resource / byte ownership | property-bearing resource ref、move-only Buffer、host map、adopt、views、composite、sync copy/fill/coherence | 足以承载未来 host/device provider，Mem 不反向依赖 Compute | `COMPLETE` |
+| transient resource pool | bounded retained bytes/count/slack/growth、lease/take/trim/OOM retry | 能力完整；`max_entries_scanned_per_bucket` 泄漏内部 bucket/benchmark 形状 | `COMPLETE + API FIX` |
+| lifetime planning | tensor-free size/alignment/interval/alias、多 backing、deterministic placement 与 peak facts | static graph scratch/model planning 任务完整；dynamic graph/eviction 是上层策略 | `COMPLETE` |
+| explicit allocator huge-page reserve | process-start 1 GiB mimalloc reserve、可选 NUMA preference | 当前 `Status` 丢失 partial side effect；vendor 忽略 Linux bind error 仍可成功 | `PARTIAL -> FIX` |
+| VM/reclamation | anonymous/file/shared/large/guarded mapping；read-mostly reclamation | 分别由 `mem_vm`/`mem_reclaim` 独立因子拥有，Mem product 聚合 | `ROUTED` |
+
+没有准入新的 base-Mem owner family：自己增长且 individual-free 的通用可变池由
+`system_memory_resource()` + 标准 PMR pool 完整路由；Tensor/KV placement、eviction、async completion、
+device provider 与 secure-secret policy 都属于已列非目标或尚无具名基础 consumer，不能因“可能有用”复制
+上层系统。这个结论不取消未来由真实 consumer 触发的 reopen。
+
+### 冻结公开形状
+
+`SystemMemorySnapshot` 保留 allocator current/peak 四项；process current/peak resident 来自
+`platform::process_memory_info()`。只有 OS 能证明时才给出：
+
+```cpp
+std::optional<std::uint64_t> process_private_committed_bytes;
+std::optional<std::uint64_t> process_peak_private_committed_bytes;
+```
+
+旧的必填 `process_committed_bytes/process_peak_committed_bytes` 删除；它们不能再混入 mimalloc 统计。
+
+1 GiB reserve 改为可观察 partial outcome：
+
+```cpp
+enum class HugePagePlacement : std::uint8_t {
+  kUnconstrained,
+  kPreferenceUnverified,
+};
+
+struct HugePageReservationReport {
+  std::size_t requested_pages;
+  std::size_t reserved_pages;
+  int requested_numa_node;
+  HugePagePlacement placement;
+  Status outcome;
+  bool complete() const noexcept;
+};
+
+Result<HugePageReservationReport> reserve_huge_1g_pages(...);
+```
+
+参数/溢出是 `Result` error；调用 vendor 后即使只完成一部分也返回 report，`outcome` 仅在全部完成时 OK。
+process-global arena 不能 rollback；selected-node 只是 mimalloc/OS preference 且明确 unverified。默认
+`kNumaAny` 不再虚称 interleave。
+
+`BufferPoolOptions` 删除 `max_entries_scanned_per_bucket`；固定有界 search 是实现复杂度而非消费策略。
+retention、reuse slack、growth 和 allocation granularity 保留，因为它们直接决定真实资源预算与复用语义。
+
+### 冻结 FIX ledger
+
+| FIX | 修改 | 成本/复杂度 | 证据 |
+|---|---|---|---|
+| `MEM6-F01` | 组合 Platform whole-process facts，改 optional/private commit 字段和 sample/tests | 冷查询；默认 allocation/free 热路零变化 | 三平台 process allocation-domain fixture |
+| `MEM6-F02` | 以 mimalloc `*_at_ex` + `mi_arena_area` 报告实际页数和 partial outcome；移除虚假 interleave/placement guarantee | 启动期 O(1) vendor call；无常态 metadata | zero/invalid/partial-capable contract tests，base Mem 自己覆盖 |
+| `MEM6-F03` | 删除 BufferPool bucket scan 公共 knob，内部固定 bounded scan；改掉 benchmark/proven 注释 | acquire 仍 O(word bits × fixed bound)，对象 layout 只删策略 byte/padding | existing pool property/stress + API surface |
+| `MEM6-F04` | 修正 CMake 依赖注释、architecture/user/API docs 和 source/static/shared sample | 不新增依赖；继续 `mem PUBLIC core error platform` | selected factor + 三交付实调用 |
+| `MEM6-F05` | 仅运行冻结的 isolated Heap same-contract P1；其它变更签 P0/资源事实 | 5% NI，same mimalloc binary/runtime erasure | `closure-perf-v1` W1-WIN |
+
+以上五票是全部产品授权。allocator/pool/arena/buffer/planner 若验证失败可在同一合同内修 correctness；不得
+新增 family、benchmark knob、device/Tensor policy 或公共仪器。红队已明确这些未发现 material mechanism
+缺陷，验证不能反向变成无界重写许可。
+
+### 七问预裁决
+
+1. 超集：九族全部 `COMPLETE/ROUTED`，仅两处 false result 和一个 API 污染进入 FIX；
+2. 复用：Core alignment/assert、Error Result/Status、Platform process/NUMA facts 已是正确边；不依赖上层；
+3. C++ API：owner/lifetime/failure 显式；删除 bucket implementation knob；无 C/Native FFI；
+4. 性能：默认 allocator 无统计税，pool/arena 保持既有复杂度；只对真实 Heap runtime-erased 合同计时；
+5. build：mimalloc 仍 private locked mechanism，selected Mem 三交付不得导出 `mi_*` 或伪 C symbols；
+6. 文档：architecture 讲 owner/route，guide 讲“何时用什么”及 partial/unknown/NUMA 陷阱；
+7. 红队：五项 FIX 后复核系统事实、partial side effect、OOM/overflow/concurrency 和直接消费者。
+
+`SCOPED -> AUDITED` 前 registry snapshot：
+`C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-audited.json`，SHA-256
+`CB157D90B34C09F95BF62DE4F62821286E09E49321B15BBA3992FC14575F096B`。

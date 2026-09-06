@@ -92,3 +92,72 @@
 - 停止：所有 `MUST` 为 `COMPLETE/ROUTED`、适用门通过且无 blocker 即 `CLOSED`；平台缺失而无法
   诚实实现的路线必须明确 capability/`Unimplemented` 并裁决，固定预算内 P1 或 correctness 未决则
   `BLOCKED`，不得扩建仪器或不断换 benchmark。
+
+## Capability-family audit 与 API/成本 freeze（`AUDITED`）
+
+### 当前超集与 owner 裁决
+
+| family | 真实任务 | 当前差距 | 裁决 |
+|---|---|---|---|
+| anonymous VM | reserve/commit/decommit/protect/advice/lock/NUMA 与 whole release | `VirtualMapping` 只是 `platform::VmRegion` 包装并复制 enums | `ROUTED/FIX`：Platform 唯一 owner，Mem 只给 type alias/discovery |
+| file mapping | RO/RW/COW offset/length、checked ranges、lazy advice/populate、progressive residency、flush、POSIX partial release | 连续 raw view 无法表示 holes；缺 inference loader 的 release；flush 对 RO/COW 静默 OK | `MUST/FIX` |
+| named shared storage | create/open size/access、page-aligned payload、unlink、flush、name lifecycle | 私有 16B header 破坏对齐并有 publication race；open 只能 RW；Windows 固定 260 wchar | `MUST/FIX` |
+| large host region | THP hint、prefault、NUMA preferred/bind/selected interleave、accepted/applied 可见 | `HugeMapping` 名字把 THP hint 容易误读成 explicit huge-page guarantee | `MUST/API FIX`；hard 1 GiB allocator reserve 仍由 base Mem |
+| guarded stack | guard pages、move owner、bounded concurrent cache、remote return/trim | Sched 真实消费且机制完整 | `COMPLETE` |
+| Buffer/View combination | mapped range 进入统一 const/mutable view vocabulary | 连续 mapping 完整；hole 后必须拒绝跨 hole view | `MUST/FIX` checked subrange |
+
+Folly/Boost 与当前 llama loader 共同支持上述稳定任务。explicit per-owner hugetlb/MEM_LARGE_PAGES、async/direct
+IO、persistent-memory flush 和 IPC synchronization 没有当前具名通用 consumer，分别 `PENDING/ROUTED`，
+本轮不借“功能越多越好”越过权限/设备/IO owner。
+
+### 冻结 C++ API
+
+- `VirtualMapping`、`MappingProtection`、`MappingAdvice`、`Residency*` 不再是第二套类型；Mem facade 用
+  `using` 指向 `platform::VmRegion/Protect/VmAdvice/VmLock*`，匿名 VM 方法名和语义以 Platform 为准；
+- `MappingRange { offset, size }` 是普通 logical byte range；控制函数默认 length 用
+  `std::dynamic_extent`，显式 `0` 是空范围；
+- `FileMapping` 保留 move-only owner/open/map/access/size，删除不安全的 whole raw `data()/bytes()/view()`；
+  新增 checked `address/bytes/view(offset,length)` 和 writable 对应项；`mapped_size()` 与
+  `fragment_count()` 可观察当前 live logical storage；
+- `release_range`/`release_ranges` 返回实际释放的完整页字节数。POSIX/macOS inward-round 到完整页并
+  O(R log R + F) 合并 range/fragment；Windows 当前 whole-view primitive 无安全等价，返回
+  `Unimplemented` 且不改变 owner；普通连续 owner 不分配 fragment metadata；
+- partial release 后 owner 仍持有 logical extent；checked access 跨 hole 失败，teardown 只释放剩余
+  fragments。advice/populate/flush/lock-prefix 遍历 live intersections；release 不得穿过已锁 prefix；
+- `FileMapping::flush` 只对 RW shared mapping 成功，RO/COW 返回 `FailedPrecondition`；`reset()` 返回
+  teardown Status，析构只 best-effort；offset/native cast/overflow 显式检查；
+- `SharedMapping::open(name,size,access=kReadOnly)` 显式映射请求大小，底层对象至少要有这些字节；移除
+  header，payload 从 mapping base 开始并保持 OS page alignment。create 返回 RW；只读 owner 不暴露 mutable
+  pointer/span/view；POSIX size 尚未 publish 时返回 retryable `Unavailable`，初始化同步仍归 IPC 协议；
+- `HugeMapping/HugeFlags` 改名 `LargeMapping/LargeMappingFlags`；accepted THP 表示 OS 接受 hint，不表示
+  已获得物理巨页，NUMA applied 仍遵守 Platform 定义。
+
+### 冻结 FIX ledger
+
+| FIX | 产品修改 | 复杂度/常态成本 | 验证 |
+|---|---|---|---|
+| `MEMVM2-F01` | 用 Platform aliases/机制删除 VirtualMapping wrapper、enum cast 与重复 advice/lock/unlock | anonymous 路线零中间层；file control syscall 数不增 | API compile + three-OS range tests |
+| `MEMVM2-F02` | FileMapping checked ranges、lazy fragment metadata、single/batch partial release、hole-aware teardown/control | 连续 owner 零额外分配；首个 release 才分配；batch O(R log R + F + syscalls) | property/range/partial failure/move/destroy + llama-shaped replay |
+| `MEMVM2-F03` | 修复 flush/access/native size/cast 和 lock/release 交互 | 无热路常态税 | boundary/OOM/OS-failure tests |
+| `MEMVM2-F04` | SharedMapping 去 header、显式 size/access、动态 Windows UTF-8 name、POSIX name/size/race 校验 | payload page aligned；create/open 各一 view，无 header probe/remap | two-process/read-only/name/size/alignment tests |
+| `MEMVM2-F05` | `LargeMapping` taxonomy、THP/NUMA observability 文档和 tests；不新增 explicit hard owner | header-only 路线仍直接 Platform call | capability-aware three-platform tests |
+| `MEMVM2-F06` | CMake/selected headers、Mem product aggregation、Sched/sample、architecture/user/performance 文档 | 依赖图不新增边 | source/static/shared + direct consumer |
+| `MEMVM2-F07` | 冻结 WSL model-loader mapping/advice/release/teardown same-contract P1 和 Windows whole-map holdout | 5% NI；相同 ranges/pages/syscalls；不跨 OS 池化 | `closure-perf-v1` |
+
+以上七票是全部授权。Folly 的 chunked `mlock/munmap` 解决大 VMA kernel semaphore 停顿，但会改变
+syscall 数；只有冻结 model-loader replay 复现 material tail/throughput 问题时，才允许在 F02 内采用固定
+内部 chunk，不开放 knob、不做孤立 syscall benchmark。
+
+### 七问预裁决
+
+1. 超集：六族在上述 FIX 后 `COMPLETE/ROUTED`，推理 sparse-loader 缺口被直接实现；
+2. 依赖/复用：Platform 是 OS/NUMA/anonymous authority，Mem 是 Buffer/metadata allocator，Error 统一失败；
+3. API：连续/有 hole、只读/可写、hint/guarantee 都由类型和 Result 明说，不由 benchmark case 塑形；
+4. 性能：normal whole-map 不加 metadata allocation；batch 避免 llama 当前逐次 vector rebuild 的 O(k²)；
+5. FFI：无已准入 C/Native FFI，只有 C++ exports；
+6. build：`mem_vm` 独立 factor，Mem product 聚合；三种交付与 Sched direct consumer 必须实跑；
+7. 文档/红队：系统交互按 Windows/Linux/macOS 分开写，unsupported 不伪装成功，五项红队 finding 逐项关闭。
+
+`SCOPED -> AUDITED` 前 registry snapshot：
+`C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-audited.json`，SHA-256
+`CB157D90B34C09F95BF62DE4F62821286E09E49321B15BBA3992FC14575F096B`。

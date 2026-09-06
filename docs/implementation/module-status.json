@@ -816,7 +816,7 @@
     },
     {
       "module": "mem",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
       "round_id": "mem-v6-comprehensive-rebuild",
@@ -842,11 +842,11 @@
       "state": "PENDING",
       "instrument_profile": "formal-release-v1"
     },
-    "summary": "mem v6 SCOPED：host-memory 九个能力 family、真实推理 journey、依赖、P1 同合同 Heap 路线、8h/120min 预算与停止条件已冻结；尚未完成能力审计或授权产品修改。"
+    "summary": "mem v6 AUDITED：九族超集已裁决为 COMPLETE/ROUTED；whole-process fact、1 GiB partial report、BufferPool API 污染及交付/性能共五项有限 FIX 已冻结。"
     },
     {
       "module": "mem_vm",
-    "product_state": "SCOPED",
+    "product_state": "AUDITED",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -872,7 +872,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "mem_vm v2 SCOPED：推理 lazy-range/partial-release、匿名/文件/共享/巨页/stack family、三平台系统交互、W1-WSL 同合同 P1 与 6h/90min 预算已冻结；尚未完成能力审计或授权产品修改。"
+    "summary": "mem_vm v2 AUDITED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping、LargeMapping taxonomy、三交付与同合同 P1 共七项有限 FIX 已冻结。"
     },
     {
       "module": "simd",
