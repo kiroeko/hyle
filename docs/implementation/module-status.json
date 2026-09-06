@@ -294,7 +294,7 @@
     },
     {
       "module": "obs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "round_id": "obs-v5-metrics-primitives",
@@ -320,7 +320,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs v5 SCOPED：冻结 owner-thread/concurrent counter、gauge、fixed histogram 的真实 scheduler-iteration 旅程、资源合同、三平台/三交付与 5% P1 门；尚未完成能力审计或修改产品。"
+      "summary": "obs v5 AUDITED：真实推理消费者支持的 owner-thread/concurrent counter、gauge、fixed histogram、批量观测、snapshot merge 与 bucket-quantile API 已冻结为七项有限 FIX；尚未修改产品，等待候选实现与验证。"
     },
     {
       "module": "math",

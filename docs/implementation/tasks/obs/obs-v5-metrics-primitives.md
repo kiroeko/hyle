@@ -2,9 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 本轮由已冻结模块的真实推理消费者回放触发。当前仅为 `REOPENED`：本页保存可复现的新产品事实与
-> 最小影响面；在后续 `SCOPED/AUDITED` 分别冻结 closure card、能力账本和有限 `FIX` 之前，不修改
-> Obs 产品源码。
+> 本轮由已冻结模块的真实推理消费者回放触发。closure card 已冻结；本页继续保存能力账本、公开面
+> 反向追踪和有限 `FIX`。只有进入 `AUDITED` 后才修改 Obs 产品源码。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -119,3 +118,110 @@
 `REOPENED -> SCOPED` 前 registry snapshot：
 `C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-scoped.json`，
 SHA-256 `14F19674E9C68544EA108DE069F621ABE3450DA0CB2B1CBEE3B29A1B72AA9BA3`。
+
+## Capability-family coverage map（`AUDITED`）
+
+| Family | admitted normal journey | required semantics | current route | coverage | decision |
+|---|---|---|---|---|---|
+| synchronous structured log | caller emits borrowed typed event to one or more host sinks | level gate, typed fields, source/time, quiescent registration, recursion safety | Obs v4 `log.h`/`log.cc` | `COMPLETE` | `KEEP` unchanged |
+| call-site diagnostic control | suppress repeated warning/progress without formatting suppressed records | approximate/exact count, first-N, power-of-two, caller- or clock-driven interval | Obs v4 `log_control.h` | `COMPLETE` | `KEEP` unchanged |
+| profiling timeline | build-selectable zone/message/fiber/frame/memory/counter instrumentation | OFF zero evaluation; ON one process/image backend contract | native Tracy seam | `BORROWED` | `KEEP` unchanged |
+| owner-thread counter | scheduler/worker accumulates request, token, byte, FLOP or duration totals | non-negative unsigned/floating delta, O(1), no synchronization or allocation | repeated plain fields in consumers | `MISSING` | `FIX` |
+| owner-thread gauge | scheduler publishes queue/cache/utilization/current state | last value; arithmetic values including floating NaN sentinel; O(1) | repeated plain fields in consumers | `MISSING` | `FIX` |
+| owner-thread fixed histogram | observe batch/latency/lifetime into fixed inclusive upper bounds | validated increasing finite bounds, implicit +Inf tail, repeated observation, sum and exclusive buckets | ad-hoc bucket arrays | `MISSING` | `FIX` |
+| shared metric state | several workers deliberately update one aggregation object | lock-free relaxed update; weakly consistent running snapshot and exact quiescent snapshot | direct standard atomics | `MISSING` | `FIX` as explicit `Concurrent*` types |
+| snapshot composition | exporter combines per-worker states without forcing a contended hot object | same-bound snapshot merge and total-count derivation, O(B) | consumer loops | `MISSING` | `FIX` |
+| bucket percentile estimate | serving control/diagnostic finds a bucket containing p99 or another quantile | explicit bucket-upper-bound estimate; empty/invalid input distinguished | SGLang scans bucket counts; Folly histogram percentile | `MISSING` | `FIX` on snapshot |
+| names, labels and dynamic registry | exporter owns schema/cardinality and metric discovery | owning strings, lifecycle, conflict/cardinality policy | host Prometheus/OpenTelemetry adapter | `ROUTED` | no HYLE product API |
+| exporter, scrape cadence and time windows | host publishes/rotates metrics | protocol, background/network/time-window policy | application/runtime | `ROUTED` | `OUT_OF_SCOPE` |
+| approximate quantile sketch | unbounded/distribution-dependent quantiles | error-budget and merge policy | application or specialized statistics library | `ROUTED` | fixed histogram is not a sketch |
+
+### Public-surface reverse trace and duplicate scan
+
+- `LogLevel`、`LogValue`、`LogAttribute`、`LogRecord`、`LogSink`、`SinkRegistration`、同步 emit/flush 和
+  `HYLE_LOG_*` 宏都反向追到 v4 的 structured diagnostic journeys；本轮不改它们的 signature、layout
+  或 registry 实现。
+- `LogEveryNState`、`LogEveryNExactState`、`LogFirstNState`、`LogEveryPow2State` 与
+  `LogIntervalLimiter` 是**是否产生日志**的 admission state，不表达业务数值聚合；复用它们会混淆
+  reset、并发和 snapshot 语义。
+- `HYLE_TRACE_COUNTER` 只把时间点送进 profiling backend，Trace OFF 时不存在，也没有 production
+  snapshot；它不能替代 counter/gauge。
+- Mem 的 allocator/domain stats、Util 的引用计数和 Core fatal observer 都是各域控制状态，不是可复用的
+  metric primitive。反向扫描没有发现另一个 HYLE generic counter/gauge/histogram；因此新增实现不会
+  复制已有质因数能力，也不需要引入 Container、Mem、SIMD、Platform 或 scheduler。
+- llama.cpp 的 `server_metrics` 证明 owner-held cumulative/window state；vLLM
+  `PrometheusStatLogger.record` 证明每次 scheduler iteration 混合更新三类指标；SGLang
+  `SchedulerMetricsCollector` 还证明 floating counter、NaN gauge、一次重复 N 个同值 histogram sample
+  与读取 p99 bucket 的正常形状。Folly `ThreadCachedInt`/`stats::Histogram` 只校准并发档、固定桶、
+  repeated value 和 percentile 语义，不成为产品依赖。
+- standalone ggml 与 ds4 没有独立通用 production metric owner；这是负空间。模型/backend/KV policy
+  仍由未来推理 runtime 拥有，不因此塞进 Obs。
+
+## Capability / gap ledger and frozen `FIX` set
+
+| ID | class | exact action | complexity/resource contract | verification / negative space |
+|---|---|---|---|---|
+| `OBS5-VALUE-01` | `MUST` | add owner-thread `Counter<T>` and `Gauge<T>` value objects | O(1), zero allocation/lock/clock/syscall; counter accepts unsigned integral or floating values, gauge accepts non-bool arithmetic values | integer/floating, reset, invalid counter delta, gauge NaN; no names/labels |
+| `OBS5-HIST-02` | `MUST` | add validated `FixedBuckets<N>` and owner-thread `FixedHistogram<N>` | construction O(B); observe O(log B), one bucket update plus one sum; snapshot/reset O(B); no post-construction allocation | invalid/duplicate/NaN bounds, exact boundary, +Inf tail, zero/repeated observation |
+| `OBS5-CONCURRENT-03` | `MUST` | add explicit lock-free `ConcurrentCounter<T>`、`ConcurrentGauge<T>` and `ConcurrentFixedHistogram<N>` | relaxed atomics only; counter/common gauge update one RMW where arithmetic permits, checked integral gauge update may CAS; histogram one bucket RMW plus one sum RMW | exact quiescent totals, concurrent stress, weak-running-snapshot documentation; no hidden mutex |
+| `OBS5-SNAPSHOT-04` | `MUST` | add copyable `HistogramSnapshot<N>` merge and quantile-bucket upper-bound query | merge/query O(B), zero allocation; merge rejects different bounds or unrepresentable bucket totals | per-worker merge, empty/invalid quantile, tail +Inf; no sketch accuracy claim |
+| `OBS5-DELIVERY-05` | `MUST` | deliver `metrics.h` in selected source/static/shared Obs and exercise the natural package sample | header-only metric data plane, unchanged compiled Obs runtime and component graph | self-contained header, factor/product and relocated consumers; no C/FFI symbols |
+| `OBS5-PERF-06` | `MUST` | qualify one full scheduler-iteration mixed update for each ownership grade against direct same-contract standard mechanisms | `P1_ENGINEERING`, 5%; no comparison between plain and atomic grades; P0 confirms release code/resource shape | one qualified run and at most one codegen diagnosis; old logging journeys only regression smoke |
+| `OBS5-DOC-07` | `MUST` | update architecture, user selection/traps, package sample, P1 evidence and terminal record | separate production metrics from log/trace/exporter and state concurrency/lifecycle exactly | four document classes remain consistent |
+
+The finite product batch is exactly `OBS5-VALUE-01..DOC-07`. It cannot add a registry, exporter, label/name storage,
+window/sketch, background work, model policy, component edge, Native FFI, common-instrument rewrite or adjacent-module
+change.
+
+## API / usability freeze
+
+- status：`FROZEN`；new public surface lives only in `<hyle/obs/metrics.h>` under `hyle::obs`. The normal path is
+  `Counter<T = std::uint64_t>`、`Gauge<T = double>`、`FixedBuckets<N>`、`FixedHistogram<N>`；shared state is
+  opt-in through the visibly named `ConcurrentCounter`、`ConcurrentGauge` and `ConcurrentFixedHistogram`.
+- `Counter` accepts unsigned integral or IEEE floating storage. `add(delta)` requires a non-negative finite floating
+  delta; default delta is one. A representable-lifetime precondition remains explicit rather than adding saturation,
+  hidden sharding or wider metadata. `value()` observes and `reset()` begins a caller-controlled lifecycle.
+- `Gauge` accepts standard non-`bool` arithmetic values. `set/value/reset` cover last-value publication; `add` and
+  `subtract` provide natural inc/dec composition. Floating values deliberately preserve IEEE NaN/infinity because
+  SGLang uses NaN as an unavailable gauge sentinel. Integral arithmetic checks representability instead of invoking
+  signed overflow or silently wrapping.
+- `FixedBuckets<N>::create(std::array<double,N>) -> Result<FixedBuckets<N>>` is the only raw-boundary constructor.
+  Bounds must be finite and strictly increasing. Histogram buckets are exclusive counters selected by the first
+  inclusive upper bound, plus an implicit +Inf tail. `observe(value, multiplicity)` returns false and changes nothing
+  for non-finite samples; multiplicity zero is a successful no-op. It updates one bucket and the sum once.
+- `snapshot()` returns a copyable `HistogramSnapshot<N>` with the exact finite bounds, `N+1` exclusive counts and
+  sum; total count is derived. `merge(other)` requires identical bounds and fails recoverably on mismatch/count
+  overflow. `quantile_upper_bound(q)` returns the containing bucket upper bound, including +Inf for the tail, and
+  fails for empty data or q outside `[0,1]`; it is a fixed-bucket estimate, not an exact sample quantile.
+- local objects are thread-compatible. Concurrent objects require a target where their selected `std::atomic<T>` is
+  always lock-free, use relaxed operations, and do not synchronize application state. A running histogram snapshot
+  may combine nearby update instants; after writers quiesce it is exact. Reset/move/destruction are lifecycle actions
+  performed after quiescence. High-contention consumers should keep one local object per worker then merge snapshots;
+  this is not hidden TLS registration and does not claim the stronger immediate-read contract beats Folly sharding.
+- no metric type stores a name, label, timestamp, exporter pointer or registry membership. Existing log/trace public
+  surface remains byte-for-byte outside this header. Freeze identity is this `AUDITED` ledger; implementation may vary
+  only while exact semantics, complexity, resource cost and selected-header delivery remain unchanged.
+
+## Owner 七问直答（`AUDITED`）
+
+1. **Third-party product path:** existing Trace may borrow locked Tracy v0.14.1; the new metric path uses only C++23
+   arrays/algorithms/atomics plus frozen Core/Error contracts. Folly and inference repositories are evidence only.
+2. **Inference capability:** admitted production counter/gauge/fixed-histogram, repeated observation, worker merge and
+   bucket-percentile journeys are covered by the finite FIX set. Export/schema/model policy remains correctly routed.
+3. **Internal reuse/acceleration:** duplicate scan found no generic HYLE metric primitive. Core contracts and Error's
+   recoverable factory/merge failures are reused; Container/Mem/SIMD/Platform/Time add no advantage to a fixed numeric
+   update and would make the factor graph worse.
+4. **Performance:** optimal admitted classes are O(1) scalar/atomic value updates, O(log B) histogram update and O(B)
+   snapshot/merge/query. P1 will compare identical ownership and consistency contracts; no SOTA or end-to-end claim
+   exists before qualification.
+5. **C ABI/FFI:** Obs remains C++-only. No C header, dynamic C symbol, type-erased FFI handle or compatibility bridge is
+   admitted; header templates do not pretend to be cross-language ABI.
+6. **Build/delivery:** central graph and real target remain `obs PUBLIC core,error,time; PRIVATE mem_reclaim`.
+   `metrics.h` adds no edge and must ship in source/static/shared selected Obs headers; validation is pending.
+7. **C++ usability/docs:** names expose metric and concurrency semantics, common scheduler code needs no registry or
+   exporter, and batch observe/worker merge avoid forced hot contention. Natural sample, choices and traps remain in
+   the FIX set and are pending implementation.
+
+`SCOPED -> AUDITED` 的前态快照保存在 canonical checkout 外：
+`C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-audited.json`，SHA-256
+`E59698C0B1928AADB9A71AC5F8F9354852AB293458199AF797908CA1AB3343C1`。
