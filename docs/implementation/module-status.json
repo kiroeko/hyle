@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "platform-v11-perf-control-resume",
       "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
       "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
@@ -613,7 +613,37 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform v11 VERIFIED：未改的 NUMA-memory candidate 已取得唯一 fresh W1-WIN qualified receipt；全部 controls 与 4/4 host-planning NI 通过，三平台 correctness、三交付、API/docs 和红队继续绑定同一产品身份。"
+      "end_commit": "3decd49f5f7a627e3ecf871716f19e73432ce77f",
+      "registry_anchor_commit": "3decd49f5f7a627e3ecf871716f19e73432ce77f",
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
+      "freeze_confirmation": {
+        "id": "platform-v11-inference-replay-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+        "reviewed_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
+        "evidence": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+        "repository_code": 459121,
+        "self_with_tests": 119445,
+        "self_without_tests": 75504,
+        "module_implementation": 6964
+      },
+      "known_limitations": [
+        "Multi-node Windows exposes current free and zeroed bytes but no trustworthy per-node total, so physical_total_bytes is absent there.",
+        "Linux per-node available memory is a planning estimate without the global MemAvailable watermark correction; snapshots are not reservations or allocation-success promises.",
+        "Process-wide cgroup, job and commit constraints stay in host_memory_info and must be composed once by the consumer rather than copied onto every node.",
+        "This round has native Windows, Linux and macOS coverage but no Windows multi-node hardware coverage; its P1 claim is only the W1-WIN host-planning snapshot at a 5% margin."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a Platform node-memory, CPU or host-fact correctness, security, ownership, concurrency, error or natural C++ API-usability defect.",
+        "The public API, OS semantics, algorithm, complexity, dependency graph or source, static or shared delivery shape changes.",
+        "A named inference journey proves that deferred node distance, bandwidth, residency or pressure capability belongs in Platform.",
+        "Qualified same-contract or consumer evidence proves a reproducible material regression or a mature peer proves a better complexity class."
+      ],
+      "summary": "platform v11 CLOSED/FROZEN：NUMA node memory fact 与原有 host facts 已完成三平台 correctness、三交付、API/docs、依赖和红队；唯一 fresh W1-WIN receipt 全 controls 与 4/4 host-planning NI PASS，未改 3c1ef239/63b58d10 产品重新冻结。"
     },
     {
       "module": "platform_thread",
