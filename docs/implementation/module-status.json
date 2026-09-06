@@ -294,7 +294,7 @@
     },
     {
       "module": "obs",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "round_id": "obs-v5-metrics-primitives",
@@ -320,7 +320,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs v5 REOPENED：llama.cpp、vLLM 与 SGLang 共同复现 production counter/gauge/histogram 聚合缺口；当前只登记无 exporter/registry 的最小影响面，尚未冻结 closure card 或修改产品。"
+      "summary": "obs v5 SCOPED：冻结 owner-thread/concurrent counter、gauge、fixed histogram 的真实 scheduler-iteration 旅程、资源合同、三平台/三交付与 5% P1 门；尚未完成能力审计或修改产品。"
     },
     {
       "module": "math",
