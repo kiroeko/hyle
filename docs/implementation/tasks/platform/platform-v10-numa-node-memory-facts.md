@@ -168,3 +168,23 @@ callback collector：稳定 node span + 单项 query 已完整、无隐藏 alloc
 `SCOPED -> AUDITED` 前 registry snapshot：
 `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\module-status-before-audited.json`，
 SHA-256 `B2DD4B9A72671F32D03830513539AB1C108B9F6A7CCBDDCE75C289007556970D`。
+
+## Product candidate（`CANDIDATE`）
+
+- product commit/tree：`3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c` /
+  `63b58d1051d86c4aecb1bf736ae84265e359a5f5`；公开 API、OS 路线、复杂度、测试消费者与文档在该树冻结；
+- Linux 顺序解析 stable node meminfo；Windows 多 node 动态解析
+  `GetNumaAvailableMemoryNodeEx`，单 node 与 macOS 复用 `host_memory_info()`。没有新增 cache、heap
+  collection、常态 metadata、依赖边、target、option 或 FFI surface；
+- candidate 前定向结果：W1-WIN MSVC 19.50、W1-WSL GCC 14.2、M1-MAC AppleClang 21 的 Release/WERROR
+  selected Platform 编译、公开头和 native tests 全部通过；WSL 实际读取 node sysfs，macOS/Windows
+  实际运行 logical-single-node route；
+- Windows installed shared/static Platform SDK 的 focused consumer 均直接调用新 symbol 并运行通过；
+  shared DLL export 是 C++ decorated symbol，未新增 C/Native FFI；candidate 后仍须完成最终交付记录、
+  红队/P0 与冻结的 W1-WIN P1 holdout；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\platform-v10-numa-node-memory\module-status-before-candidate.json`，
+  SHA-256 `BDEA85E3518DDE903331A684810D57B2252B0B159FDF9E942FB99A0D586C5F9D`。
+
+候选后若公开形状、node-id authority、可用量语义、OS 算法、依赖或正常路径成本变化，必须退回
+`AUDITED`；测试、证据与 terminal 文档可以继续补齐，但不能静默重绑定产品身份。

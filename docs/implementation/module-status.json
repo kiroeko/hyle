@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
       "round_id": "platform-v10-numa-node-memory-facts",
@@ -586,6 +586,8 @@
       "scope": "Add truthful per-NUMA-node physical memory facts for inference host planning without moving rank, allocator or model policy into Platform.",
       "non_goals": "Thread or GPU placement policy, allocator reservation, model/KV sizing, CPU/cache/frequency or NUMA placement redesign, Platform-thread/fs, Mem/Mem-VM changes, Native FFI/C API, common instrument redesign and Formal certification.",
       "baseline_commit": "5c529802cd2974b222856608dcaf4cdd0fcf240b",
+      "candidate_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+      "candidate_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -604,7 +606,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v10 AUDITED：单 node、fallible、optional-total 的 C++ API 与五项 FIX 已冻结；只授权 OS node-memory fact、测试/文档/交付和一次旧 host P1 holdout。"
+      "summary": "platform v10 CANDIDATE：NUMA node memory fact 已按冻结 API 在三种 OS 路线实现；候选 3c1ef239/63b58d10 已通过三平台定向测试和 Windows static/shared consumer，等待候选性能 holdout 与终裁。"
     },
     {
       "module": "platform_thread",
