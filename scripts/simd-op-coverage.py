@@ -711,7 +711,7 @@ def build_route_ledger(commit):
             "definition_site_count": sum(len(item["legacy_sites"]) for item in operations),
         },
         "candidate_providers": {
-            "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+            "HIGHWAY": "18e449b642599b8f51c03ca10173fdc59864e4f2",
             "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b",
             "HYLE": commit,
         },

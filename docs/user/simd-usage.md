@@ -78,8 +78,8 @@ API 不能 pin 实现。
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 输入输出分离或原地前缀和；exclusive 可指定 init；支持 u/i32、u/i64、f32、f64 |
 | `search.h` | count/find/min/max/minmax/argmin/argmax/is_sorted | 十种普通 scalar 数组的查找、归约、极值位置和有序性检查 |
 | `dtype_ops.h` | f32/f16/bf16/E4M3/E5M2 间全部异类型转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
-| `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
-| `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
+| `math.h` | 实数/复数数学、f32/f16/bf16 激活、split GLU、row norm、softmax | 数值计算、统计和 AI 热路径 |
+| `sort.h` | 非破坏 score+index top-k、sort、partial sort、select、radix、argsort | MoE/词表选择、排序、nth element、稳定整数/浮点 radix |
 | `bitpack.h` | canonical-v1 `pack`、`unpack`、`packed_size` | 模型载荷、文件或网络 framing 内的定宽整数 payload |
 | `<hwy/highway.h>`（expert target + `hyle_target_simd`） | 锁定版本的 register/tag/load/store/arithmetic/reduction 等 | 三种交付中的自定义固定目标 kernel |
 | `<xsimd/xsimd.hpp>`（expert target + `hyle_target_simd`） | 锁定版本的 batch、mask、数学与 load/store | 三种交付中的自定义固定目标 kernel |
@@ -89,9 +89,10 @@ API 不能 pin 实现。
 - f32/f64 一元函数：`exp`、`log`、`sin`、`cos`、`tanh`、`exp2`、`log2`、`erf`、`atan`、
   `cbrt`、`expm1`、`log1p`、双曲函数、gamma 等，命名形如 `exp_f32_batch`。
 - 二元函数：`atan2`、`pow`、`hypot`、`fmod`、`remainder`、`nextafter`、`fdim`。
-- AI 语义：exact/tanh `gelu_f32_batch`、`sigmoid_f32_batch`、`silu_f32_batch`，以及
+- AI 语义：exact/tanh/quick GELU、`sigmoid_f32_batch`、`silu_f32_batch`，以及
   `relu_f32_batch`、`leaky_relu_f32_batch`、`elu_f32_batch`、`hard_sigmoid_f32_batch`、
-  `hard_swish_f32_batch`；`softmax_f32` / `log_softmax_f32` 同时提供 out-of-place 核心与原地重载。
+  `hard_swish_f32_batch`。GELU/SiLU、split ReGLU/GeGLU/SwiGLU 和 RMSNorm/LayerNorm 另有
+  f16/bf16 storage 入口；`softmax_f32` / `log_softmax_f32` 同时提供 out-of-place 核心与原地重载。
 - 复数 SoA：f32/f64 均提供 `cexp`、`clog`、`csqrt`、`csin`、`ccos`、`ctan`、`csinh`、
   `ccosh`、`ctanh`、`cpow`；实部和虚部放在两个数组中，避免把 `std::complex` 对象布局
   固化到算法边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
@@ -103,15 +104,23 @@ API 不能 pin 实现。
 
 ### Activation 与 softmax 怎么选
 
-- GELU 的 exact/erf 与常见 tanh approximation 是两个不同数值合同；模型指定哪一种就调用哪一种，
-  不要因为名字相近互换。SiLU 就是这里提供的 swish 形状；移动端常用的分段近似则选 hard-swish。
+- GELU 的 exact/erf、常见 tanh approximation 与 quick `x*sigmoid(1.702*x)` 是三个不同数值合同；
+  模型指定哪一种就调用哪一种，不要因为名字相近互换。SiLU 就是这里提供的 swish 形状；移动端常用的
+  分段近似则选 hard-swish。
+- gate/value 已经是两个连续 row 时，直接使用 `reglu_*_batch`、`geglu_*_batch`、
+  `geglu_tanh_*_batch`、`geglu_quick_*_batch` 或 `swiglu_*_batch`。它们计算
+  `activation(gate[i]) * value[i]`，不会替用户解释 packed tensor、stride 或哪一半是 gate。
+- 单行不减均值选择 `rms_norm_*`，需要减均值选择 `layer_norm_*`；不带 learned 参数的重载只做
+  normalization，带参数的重载分别接受 weight 或 scale+bias。epsilon 必须有限且非负。
 - leaky-ReLU 的 `negative_slope` 和 ELU 的 `alpha` 是调用者/模型参数；HYLE 不猜训练框架默认值。
 - elementwise activation 与 softmax 核心都接受 `src, dst, n`；exact `src == dst` 或完全不相交均可，
   带偏移的部分 overlap 不受支持。`n == 0` 时输入输出都可以是空指针。
 - softmax/log-softmax 是稳定的连续 f32 单 row 算法。至少有一个 finite lane 时，`-inf` lane 可作为 mask；
   row 含 NaN、`+inf`，或全为 `-inf` 时没有唯一受支持的 normalizer，目标整行写 quiet NaN。
-- 这些入口不分配、不加锁，也不在元素循环里再次 dispatch。带 attention mask/scale/bias、stride、batch、
-  线程或 operator fusion 的 tensor 形状属于 Compute；不要在 SIMD 外层逐元素反复调用 whole-buffer API。
+- f16/bf16 入口按 f32 计算后只在最终 storage 写回时舍入；它们不是“全程半精度”的另一套数值合同。
+- 这些入口不分配、不加锁，也不在元素循环里再次 dispatch。带 attention mask、tensor stride/batch、线程、
+  fused residual/group norm 或 operator fusion 的形状属于 Compute；不要在 SIMD 外层逐元素反复调用
+  whole-buffer API。
 
 ## C++ whole-buffer 示例
 
@@ -232,7 +241,10 @@ positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“Na
 
 hyle::simd::exp_f32_batch(src, dst, n);
 hyle::simd::gelu_f32_batch(src, dst, n);
+hyle::simd::gelu_quick_f32_batch(src, dst, n);
 hyle::simd::relu_f32_batch(src, dst, n);
+hyle::simd::swiglu_f32_batch(gate, value, dst, n);
+hyle::simd::rms_norm_f32(src, weight, dst, n, 1e-5f);
 hyle::simd::softmax_f32(src, probabilities, n);  // out-of-place
 hyle::simd::log_softmax_f32(dst, n);             // 原地 convenience
 ```
@@ -244,13 +256,15 @@ hyle::simd::log_softmax_f32(dst, n);             // 原地 convenience
 | 全量排序，不要求相等项稳定 | `sort(keys, n, order)` | 原地 comparison ordering；无隐藏的大数组分配 |
 | 只要排好序的前 `k` 项 | `partial_sort(keys, n, k, order)` | 原地；前 `k` 项有序，尾部内容未指定 |
 | 只要第 `k` 项及两侧 partition | `select(keys, n, k, order)` | 原地；不要为只取阈值付全排序成本 |
+| 保留 f32 score，只取最高 `k` 个 score+原 index | `top_k_f32(scores, n, result, k)` | 输入不变；caller 提供 `k` 个结果槽，NaN-last、tie 按较小 index |
 | 整数 key 和整数 payload 一起移动 | `partial_sort(KeyValue32/64*, ...)` | 按 `key` 排序，`value` 跟随；相同 key 不稳定 |
 | 值本身要稳定排序 | `radix_sort(keys, n, scratch, order)` | base-256；显式 `n` 个同类型 scratch，不分配 |
 | 保留原 key，只输出稳定索引 | `argsort(keys, indices, n, scratch, order)` | 输出 `uint32_t` permutation；需要 `n` 个 index scratch |
 
-浮点 score 需要稳定索引时使用 `argsort`，再读取前 `k` 个 index；不要把浮点 bit pattern 塞入只按
-整数 key 比较的 `KeyValue32/64`。当前没有会暗中把小 `k` 改走 `O(n*k)` 插入算法的快速路径，也没有
-在普通 `sort` 达到某个长度后偷偷分配 radix workspace。
+只需要 best `k` 个浮点 score 和原 index 时优先用 `top_k_f32`，避免破坏 score 或为全排列分配 O(n)
+scratch；需要全部稳定 permutation 时才用 `argsort`。不要把浮点 bit pattern 塞入只按整数 key 比较的
+`KeyValue32/64`。`top_k_f32` 的 `k <= 8` 是 MoE 常见 bounded-k 的 O(n) 实现，其余 k 走 heap/full-sort
+复杂度；这不会改变公开排序、NaN 或 tie 合同。普通 `sort` 也不会按长度偷偷分配 radix workspace。
 
 ```cpp
 #include "hyle/simd/sort.h"
@@ -259,6 +273,9 @@ hyle::simd::log_softmax_f32(dst, n);             // 原地 convenience
 hyle::simd::sort(keys, n, hyle::simd::SortOrder::kAscending);
 hyle::simd::partial_sort(keys, n, 10, hyle::simd::SortOrder::kAscending);
 hyle::simd::select(keys, n, k, hyle::simd::SortOrder::kAscending);
+
+std::vector<hyle::simd::ScoredIndexF32> selected(k);
+hyle::simd::top_k_f32(read_only_scores, n, selected.data(), selected.size());
 
 std::vector<float> value_scratch(hyle::simd::radix_sort_workspace_size(n));
 hyle::simd::radix_sort(keys, n, value_scratch,

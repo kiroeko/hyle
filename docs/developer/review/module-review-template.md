@@ -93,12 +93,16 @@ public 入口或常态 metadata 的需求来源。
 - llama.cpp reference / clean locked commit / last remote check：
 - standalone ggml reference / clean locked commit / last remote check：
 - llama.cpp 随仓 ggml identity（若与 standalone 不同）：
+- ds4 reference / clean locked commit / last remote check：
+- vLLM reference / clean locked commit / last remote check：
+- SGLang reference / clean locked commit / last remote check：
 
-| llama.cpp real journey / ggml foundation difference | admitted demand | HYLE route / owner | `COMPLETE/ROUTED/OUT_OF_SCOPE/MISSING` | evidence / remaining trigger |
+| inference evidence group / real journey / foundation difference | admitted demand | HYLE route / owner | `COMPLETE/ROUTED/OUT_OF_SCOPE/MISSING` | evidence / remaining trigger |
 |---|---|---|---|---|
 
 - 当前证据下是否存在未处置 `MUST`：`YES / NO / BLOCKED`
-- 结论边界：这里只回答已准入常用旅程，不承诺未来永不新增，也不按 ggml API 求并集。
+- 结论边界：这里只回答已准入常用旅程，不承诺未来永不新增，也不按任一引擎的 API 求并集；四组
+  reference 是 consumer/demand evidence，不自动成为同合同性能 peer。
 
 ### 3. 内部复用与加速设施
 

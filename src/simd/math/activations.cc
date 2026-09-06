@@ -7,6 +7,9 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <type_traits>
+
+#include "hyle/simd/dtype.h"
 
 namespace hyle::simd::detail {
 namespace {
@@ -28,9 +31,14 @@ float gelu(float x) noexcept {
 
 float gelu_tanh(float x) noexcept {
   if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
-  const float inner = kSqrt2OverPi * x *
-                      std::fma(kGeluCoefficient, x * x, 1.0f);
+  const float inner =
+      kSqrt2OverPi * x * std::fma(kGeluCoefficient, x * x, 1.0f);
   return 0.5f * x * (1.0f + std::tanh(inner));
+}
+
+float gelu_quick(float x) noexcept {
+  if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
+  return x * sigmoid(1.702f * x);
 }
 
 float silu(float x) noexcept {
@@ -72,8 +80,101 @@ void unary(const float* src, float* dst, std::size_t n, Fn&& fn) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = fn(src[i]);
 }
 
-bool finite_row_max(const float* src, std::size_t n,
-                    float& maximum) noexcept {
+template <typename T>
+float storage_to_f32(T value) noexcept {
+  if constexpr (std::is_same_v<T, float>) {
+    return value;
+  } else if constexpr (std::is_same_v<T, float16_t>) {
+    return f16_to_f32(value);
+  } else {
+    static_assert(std::is_same_v<T, bfloat16_t>);
+    return bf16_to_f32(value);
+  }
+}
+
+template <typename T>
+T f32_to_storage(float value) noexcept {
+  if constexpr (std::is_same_v<T, float>) {
+    return value;
+  } else if constexpr (std::is_same_v<T, float16_t>) {
+    return f32_to_f16(value);
+  } else {
+    static_assert(std::is_same_v<T, bfloat16_t>);
+    return f32_to_bf16(value);
+  }
+}
+
+template <typename T, class Fn>
+void unary_storage(const T* src, T* dst, std::size_t n, Fn&& fn) noexcept {
+  for (std::size_t i = 0; i < n; ++i) {
+    dst[i] = f32_to_storage<T>(fn(storage_to_f32(src[i])));
+  }
+}
+
+template <typename T, class Fn>
+void gated_storage(const T* gate, const T* value, T* dst, std::size_t n,
+                   Fn&& activation) noexcept {
+  for (std::size_t i = 0; i < n; ++i) {
+    const float gate_value = storage_to_f32(gate[i]);
+    const float linear_value = storage_to_f32(value[i]);
+    dst[i] = f32_to_storage<T>(activation(gate_value) * linear_value);
+  }
+}
+
+template <typename T>
+void rms_norm_storage(const T* src, const T* weight, T* dst, std::size_t n,
+                      float epsilon) noexcept {
+  if (n == 0) return;
+  float sum_squares = 0.0f;
+  for (std::size_t i = 0; i < n; ++i) {
+    const float value = storage_to_f32(src[i]);
+    sum_squares = std::fma(value, value, sum_squares);
+  }
+  const float inverse_rms =
+      1.0f / std::sqrt(sum_squares / static_cast<float>(n) + epsilon);
+  if (weight == nullptr) {
+    for (std::size_t i = 0; i < n; ++i) {
+      dst[i] = f32_to_storage<T>(storage_to_f32(src[i]) * inverse_rms);
+    }
+  } else {
+    for (std::size_t i = 0; i < n; ++i) {
+      const float value = storage_to_f32(src[i]);
+      const float learned_scale = storage_to_f32(weight[i]);
+      dst[i] = f32_to_storage<T>(value * inverse_rms * learned_scale);
+    }
+  }
+}
+
+template <typename T>
+void layer_norm_storage(const T* src, const T* scale, const T* bias, T* dst,
+                        std::size_t n, float epsilon) noexcept {
+  if (n == 0) return;
+  float sum = 0.0f;
+  for (std::size_t i = 0; i < n; ++i) sum += storage_to_f32(src[i]);
+  const float mean = sum / static_cast<float>(n);
+
+  float sum_squares = 0.0f;
+  for (std::size_t i = 0; i < n; ++i) {
+    const float centered = storage_to_f32(src[i]) - mean;
+    sum_squares = std::fma(centered, centered, sum_squares);
+  }
+  const float inverse_stddev =
+      1.0f / std::sqrt(sum_squares / static_cast<float>(n) + epsilon);
+  if (scale == nullptr) {
+    for (std::size_t i = 0; i < n; ++i) {
+      dst[i] =
+          f32_to_storage<T>((storage_to_f32(src[i]) - mean) * inverse_stddev);
+    }
+  } else {
+    for (std::size_t i = 0; i < n; ++i) {
+      const float normalized = (storage_to_f32(src[i]) - mean) * inverse_stddev;
+      dst[i] = f32_to_storage<T>(std::fma(normalized, storage_to_f32(scale[i]),
+                                          storage_to_f32(bias[i])));
+    }
+  }
+}
+
+bool finite_row_max(const float* src, std::size_t n, float& maximum) noexcept {
   maximum = -std::numeric_limits<float>::infinity();
   for (std::size_t i = 0; i < n; ++i) {
     const float x = src[i];
@@ -101,8 +202,12 @@ void gelu_tanh_f32_scalar(const float* src, float* dst,
   unary(src, dst, n, gelu_tanh);
 }
 
-void sigmoid_f32_scalar(const float* src, float* dst,
-                        std::size_t n) noexcept {
+void gelu_quick_f32_scalar(const float* src, float* dst,
+                           std::size_t n) noexcept {
+  unary(src, dst, n, gelu_quick);
+}
+
+void sigmoid_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   unary(src, dst, n, sigmoid);
 }
 
@@ -135,8 +240,65 @@ void hard_swish_f32_scalar(const float* src, float* dst,
   unary(src, dst, n, hard_swish);
 }
 
-void softmax_f32_scalar(const float* src, float* dst,
-                        std::size_t n) noexcept {
+#define HYLE_DEFINE_NARROW_ACTIVATIONS(T, tag)                             \
+  void gelu_##tag##_scalar(const T* src, T* dst, std::size_t n) noexcept { \
+    unary_storage(src, dst, n, gelu);                                      \
+  }                                                                        \
+  void gelu_tanh_##tag##_scalar(const T* src, T* dst,                      \
+                                std::size_t n) noexcept {                  \
+    unary_storage(src, dst, n, gelu_tanh);                                 \
+  }                                                                        \
+  void gelu_quick_##tag##_scalar(const T* src, T* dst,                     \
+                                 std::size_t n) noexcept {                 \
+    unary_storage(src, dst, n, gelu_quick);                                \
+  }                                                                        \
+  void silu_##tag##_scalar(const T* src, T* dst, std::size_t n) noexcept { \
+    unary_storage(src, dst, n, silu);                                      \
+  }
+
+HYLE_DEFINE_NARROW_ACTIVATIONS(float16_t, f16)
+HYLE_DEFINE_NARROW_ACTIVATIONS(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_NARROW_ACTIVATIONS
+
+#define HYLE_DEFINE_GATED(T, tag, name, activation)                 \
+  void name##_##tag##_scalar(const T* gate, const T* value, T* dst, \
+                             std::size_t n) noexcept {              \
+    gated_storage(gate, value, dst, n, activation);                 \
+  }
+
+#define HYLE_DEFINE_GATED_SET(T, tag)                \
+  HYLE_DEFINE_GATED(T, tag, reglu, relu)             \
+  HYLE_DEFINE_GATED(T, tag, geglu, gelu)             \
+  HYLE_DEFINE_GATED(T, tag, geglu_tanh, gelu_tanh)   \
+  HYLE_DEFINE_GATED(T, tag, geglu_quick, gelu_quick) \
+  HYLE_DEFINE_GATED(T, tag, swiglu, silu)
+
+HYLE_DEFINE_GATED_SET(float, f32)
+HYLE_DEFINE_GATED_SET(float16_t, f16)
+HYLE_DEFINE_GATED_SET(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_GATED_SET
+#undef HYLE_DEFINE_GATED
+
+#define HYLE_DEFINE_NORMALIZATION(T, tag)                                     \
+  void rms_norm_##tag##_scalar(const T* src, const T* weight, T* dst,         \
+                               std::size_t n, float epsilon) noexcept {       \
+    rms_norm_storage(src, weight, dst, n, epsilon);                           \
+  }                                                                           \
+  void layer_norm_##tag##_scalar(const T* src, const T* scale, const T* bias, \
+                                 T* dst, std::size_t n,                       \
+                                 float epsilon) noexcept {                    \
+    layer_norm_storage(src, scale, bias, dst, n, epsilon);                    \
+  }
+
+HYLE_DEFINE_NORMALIZATION(float, f32)
+HYLE_DEFINE_NORMALIZATION(float16_t, f16)
+HYLE_DEFINE_NORMALIZATION(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_NORMALIZATION
+
+void softmax_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   if (n == 0) return;
   float maximum = 0.0f;
   if (!finite_row_max(src, n, maximum)) {

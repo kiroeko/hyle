@@ -1,0 +1,287 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "simd-inference-row-p1-v1",
+  "module": "simd",
+  "claim": "P1 engineering non-inferiority of ordinary HYLE C++ inference-row SwiGLU, weighted RMSNorm, and expert top-k operations against source-equivalent current Highway or ds4 routes at one fixed AVX2 target, under dual execution orders and code-placement strata",
+  "candidate": {
+    "target": "hyle_simd",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "simd",
+    "entrypoint": "include/hyle/simd/math.h and include/hyle/simd/sort.h"
+  },
+  "peers": [
+    {
+      "id": "highway",
+      "revision": "18e449b642599b8f51c03ca10173fdc59864e4f2",
+      "configuration": {
+        "delivery_shape": "same-TU direct Highway AVX2 source",
+        "source": "clean external checkout",
+        "math": "hwy::HWY_NAMESPACE vector arithmetic and hwy/contrib/math/math-inl.h"
+      }
+    },
+    {
+      "id": "xsimd",
+      "revision": "3b3151ff665514a00a437cc985f47b7de99b772b",
+      "configuration": {
+        "delivery_shape": "clean provider checkout",
+        "source": "candidate provider identity retained because the qualified HYLE AVX2 math image contains selected xsimd routes",
+        "rows": "no direct product row in this bounded inference replay"
+      }
+    },
+    {
+      "id": "ds4",
+      "revision": "9ab705347c1775e7599ede7eb81a6255ec7dccb5",
+      "configuration": {
+        "delivery_shape": "same-TU source-equivalent bounded insertion",
+        "source": "clean external checkout",
+        "adaptation": "preserves ds4 bounded expert-selection algorithm while returning score plus original index and applying HYLE deterministic NaN/tie semantics"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "split-swiglu-f32-11008",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/ffn/split-swiglu-f32",
+      "provenance": {
+        "path": "samples/package/simd/cpp/main.cc",
+        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+      },
+      "ownership_topology": {
+        "candidate": "One inference worker calls the ordinary HYLE split-input SwiGLU f32 pointer/count API for one FFN row",
+        "peer": "The same worker calls an independently spelled direct-Highway AVX2 loop for the same gate, value, and destination buffers",
+        "equivalence": "Both routes use identical f32 storage, stable SiLU arithmetic, element count, preallocated output, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 11008,
+        "unit": "elements-per-ffn-row",
+        "budget": 5,
+        "denominator": "one split-gate inference FFN row",
+        "derivation": "11008 is a retained transformer FFN width and the complete activation-plus-gate multiplication is charged once per row"
+      },
+      "semantic_contract": "Compute dst[i] = silu(gate[i]) * value[i] for one f32 FFN row of 11008 elements, preserving stable negative-infinity handling and allowing no allocation",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "deterministic finite trigonometric f32 gate and value inputs spanning positive and negative activation ranges",
+        "scale": {"rows_per_callback": 1, "elements_per_row": 11008, "input_buffers": 2, "output_buffers": 1}
+      },
+      "setup": "All aligned-independent vectors are allocated and populated before measurement; each callback charges only one complete public or peer operation and an observable output sink",
+      "charged_phases": ["11008 f32 gate loads", "11008 stable SiLU evaluations", "11008 value loads and multiplications", "11008 f32 stores", "one output sink"],
+      "pair": {"candidate": "HYLE split SwiGLU f32 N=11008", "peer": "Highway split SwiGLU f32 N=11008"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "weighted-rmsnorm-f32-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/norm/weighted-rmsnorm-f32",
+      "provenance": {
+        "path": "samples/package/simd/cpp/main.cc",
+        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+      },
+      "ownership_topology": {
+        "candidate": "One inference worker calls the ordinary HYLE weighted RMSNorm f32 pointer/count API for one hidden-state row",
+        "peer": "The same worker calls an independently spelled direct-Highway AVX2 reduction and normalization loop over the same source, weight, and destination",
+        "equivalence": "Both routes use identical f32 storage, epsilon placement, weight application, preallocated buffers, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 4096,
+        "unit": "elements-per-hidden-row",
+        "budget": 5,
+        "denominator": "one weighted inference normalization row",
+        "derivation": "4096 is a retained transformer hidden width and the complete sum-of-squares plus normalized weighted write is charged once per row"
+      },
+      "semantic_contract": "Compute weighted RMSNorm for one f32 hidden row of 4096 elements using inverse sqrt(mean(x*x) + 1e-5), no mean subtraction, and no allocation",
+      "comparability": "COMPARABLE",
+      "peer_id": "highway",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "deterministic finite trigonometric f32 source with positive non-uniform f32 weights",
+        "scale": {"rows_per_callback": 1, "elements_per_row": 4096, "epsilon": 0.00001, "weighted": true}
+      },
+      "setup": "Source, weights, and output vectors are allocated and populated before measurement; each callback charges one complete public or peer operation and an observable output sink",
+      "charged_phases": ["4096 f32 loads and square accumulation", "one inverse-square-root normalization factor", "4096 source and weight loads", "4096 normalized weighted stores", "one output sink"],
+      "pair": {"candidate": "HYLE weighted RMSNorm f32 N=4096", "peer": "Highway weighted RMSNorm f32 N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "expert-top-k-f32-256-6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference/moe/expert-top-k-f32",
+      "provenance": {
+        "path": "samples/package/simd/cpp/main.cc",
+        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+      },
+      "ownership_topology": {
+        "candidate": "One inference worker calls the ordinary non-destructive HYLE score-plus-index top-k API over one expert-router row",
+        "peer": "The same worker calls the ds4 bounded insertion algorithm adapted in the benchmark to the same output and deterministic ordering contract",
+        "equivalence": "Both routes read the same immutable 256 f32 scores, retain six score-plus-original-index results, use identical NaN and tie ordering, write preallocated storage, and charge no allocation"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 256,
+        "unit": "expert-scores-per-router-row",
+        "budget": 5,
+        "denominator": "one mixture-of-experts router row selecting six experts",
+        "derivation": "The retained ds4 consumer scans one bounded expert-score row; 256 candidates and K=6 exercise the normal small-K inference algorithm rather than a generic sorting benchmark"
+      },
+      "semantic_contract": "Read 256 f32 expert scores without modifying them and return the best six score-plus-uint32-original-index records in descending score order, treating NaNs after numbers and breaking ties by lower index",
+      "comparability": "COMPARABLE",
+      "peer_id": "ds4",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "deterministic finite non-monotonic f32 expert scores without setup-time sorting",
+        "scale": {"rows_per_callback": 1, "experts": 256, "selected_experts": 6, "input_mutated": false}
+      },
+      "setup": "Input scores and fixed output arrays exist before measurement; each callback charges one complete candidate or peer selection and an observable result sink",
+      "charged_phases": ["256 immutable score reads", "bounded K=6 insertion comparisons and moves", "six score-plus-index outputs", "one result sink"],
+      "pair": {"candidate": "HYLE expert top-k f32 N=256 K=6", "peer": "ds4-shape expert top-k f32 N=256 K=6"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [15, 31],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "exact:AVX2",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": ["artifact-identity", "build-contract"]
+  },
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_DEV_FACTORS": "simd",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "AVX2",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "highway": "HYLE_SIMD_BENCH_HIGHWAY_DIR",
+          "xsimd": "HYLE_SIMD_BENCH_XSIMD_DIR",
+          "ds4": "HYLE_SIMD_BENCH_DS4_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "simd-inference-row-primary",
+          "target": "hyle_simd_inference_consumer_bench",
+          "stem": "hyle_simd_inference_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_SIMD_INFERENCE_RUN "],
+          "workloads": [
+            {"id": "split-swiglu-f32-11008", "title": "inference split SwiGLU f32 N=11008"},
+            {"id": "weighted-rmsnorm-f32-4096", "title": "inference weighted RMSNorm f32 N=4096"},
+            {"id": "expert-top-k-f32-256-6", "title": "inference expert top-k f32 N=256 K=6"}
+          ]
+        },
+        {
+          "id": "simd-inference-row-placement",
+          "target": "hyle_simd_inference_consumer_bench_placement",
+          "stem": "hyle_simd_inference_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_SIMD_INFERENCE_RUN "],
+          "workloads": [
+            {"id": "split-swiglu-f32-11008", "title": "inference split SwiGLU f32 N=11008"},
+            {"id": "weighted-rmsnorm-f32-4096", "title": "inference weighted RMSNorm f32 N=4096"},
+            {"id": "expert-top-k-f32-256-6", "title": "inference expert top-k f32 N=256 K=6"}
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}

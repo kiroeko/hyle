@@ -37,37 +37,57 @@ HWY_INLINE auto load_as_f32(D df, const Storage* data) noexcept {
     const auto source = hn::PromoteTo(du32, packed);
     const auto exponent =
         hn::And(hn::ShiftRight<10>(source), hn::Set(du32, 0x1Fu));
-    const auto mantissa = hn::ShiftLeft<13>(
-        hn::And(source, hn::Set(du32, 0x03FFu)));
+    const auto mantissa =
+        hn::ShiftLeft<13>(hn::And(source, hn::Set(du32, 0x03FFu)));
 #if HWY_TARGET <= HWY_AVX2
     // AVX2 and newer x86 targets lower PromoteTo to VCVTPH2PS. It already
     // handles finite values and infinities exactly; only signaling NaNs are
     // quieted by hardware. Keep the common finite inference path as the raw
     // Highway result and enter the semantic repair only for a NaN block.
-    const auto is_nan = hn::And(
-        hn::Eq(exponent, hn::Set(du32, 0x1Fu)),
-        hn::Ne(mantissa, hn::Zero(du32)));
+    const auto is_nan = hn::And(hn::Eq(exponent, hn::Set(du32, 0x1Fu)),
+                                hn::Ne(mantissa, hn::Zero(du32)));
     if (hn::AllFalse(du32, is_nan)) return promoted;
     const auto sign =
         hn::ShiftLeft<16>(hn::And(source, hn::Set(du32, 0x8000u)));
-    const auto special = hn::Or(
-        sign, hn::Or(hn::Set(du32, 0x7F800000u), mantissa));
-    const auto bits = hn::IfThenElse(
-        is_nan, special, hn::BitCast(du32, promoted));
+    const auto special =
+        hn::Or(sign, hn::Or(hn::Set(du32, 0x7F800000u), mantissa));
+    const auto bits =
+        hn::IfThenElse(is_nan, special, hn::BitCast(du32, promoted));
 #else
     // Highway's portable integer fallback in the locked revision maps normal
     // values correctly but does not map exponent 31 to the f32 special
     // exponent. Repair infinities and NaNs on those targets.
     const auto sign =
         hn::ShiftLeft<16>(hn::And(source, hn::Set(du32, 0x8000u)));
-    const auto special = hn::Or(
-        sign, hn::Or(hn::Set(du32, 0x7F800000u), mantissa));
-    const auto bits = hn::IfThenElse(
-        hn::Eq(exponent, hn::Set(du32, 0x1Fu)), special,
-        hn::BitCast(du32, promoted));
+    const auto special =
+        hn::Or(sign, hn::Or(hn::Set(du32, 0x7F800000u), mantissa));
+    const auto bits = hn::IfThenElse(hn::Eq(exponent, hn::Set(du32, 0x1Fu)),
+                                     special, hn::BitCast(du32, promoted));
 #endif
     return hn::BitCast(df, bits);
   }
+}
+
+// Store one f32 vector through Highway's target-native narrow conversion.
+// Callers that require a particular NaN payload/canonicalization must screen
+// NaN lanes and use their scalar oracle; all finite values and infinities
+// follow the public RNE storage conversion.
+template <typename HNarrow, typename Storage, class D, class V>
+HWY_INLINE void store_from_f32(D df, V value, Storage* destination) noexcept {
+  static_assert(sizeof(HNarrow) == sizeof(Storage));
+  static_assert(sizeof(Storage) == sizeof(std::uint16_t));
+  const hn::Rebind<HNarrow, D> dn;
+  const hn::Rebind<std::uint16_t, decltype(dn)> du16;
+  const auto narrowed = hn::DemoteTo(dn, value);
+#if HWY_TARGET == HWY_SCALAR
+  const std::uint16_t bits = hn::GetLane(hn::BitCast(du16, narrowed));
+  std::memcpy(destination, &bits, sizeof(bits));
+#else
+  const hn::Repartition<unsigned char, decltype(du16)> du8;
+  hn::StoreU(hn::BitCast(du8, hn::BitCast(du16, narrowed)), du8,
+             reinterpret_cast<unsigned char*>(destination));
+#endif
+  (void)df;
 }
 
 }  // namespace hyle::simd::detail::highway_narrow

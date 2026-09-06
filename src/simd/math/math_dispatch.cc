@@ -1,10 +1,12 @@
 #include "hyle/simd/math.h"
 
+#include <cmath>
 #include <cstddef>
 
+#include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
-#include "src/simd/runtime_internal.h"
 #include "src/simd/math/kernels.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/target_manifest.h"
 
 // Baseline-only dispatcher. Fixed-target TUs contain all Highway vector types
@@ -12,10 +14,9 @@
 namespace hyle::simd {
 namespace {
 
-#if HYLE_ARCH_X64 &&                                      \
-    (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
-     (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
-      defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
+#if HYLE_ARCH_X64 && (defined(HYLE_SIMD_COMPILED_AVX2) ||    \
+                      (defined(HYLE_SIMD_COMPILED_AVX512) && \
+                       defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
 bool have_avx2_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || \
     defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -77,94 +78,93 @@ bool have_rvv_math() noexcept {
 
 #if HYLE_ARCH_X64 && defined(HYLE_SIMD_COMPILED_AVX512) && \
     !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
-#define HYLE_TRY_AVX512(name, tag, owner, ...)                              \
-  if (have_avx512_math()) {                                                 \
-    HYLE_VARIANT_KERNEL_II(name, tag, owner, avx512)(__VA_ARGS__);          \
-    return;                                                                 \
+#define HYLE_TRY_AVX512(name, tag, owner, ...)                     \
+  if (have_avx512_math()) {                                        \
+    HYLE_VARIANT_KERNEL_II(name, tag, owner, avx512)(__VA_ARGS__); \
+    return;                                                        \
   }
 #else
 #define HYLE_TRY_AVX512(name, tag, owner, ...)
 #endif
 
-#if HYLE_ARCH_X64 &&                                      \
-    (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
-     (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
-      defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
-#define HYLE_TRY_AVX2(name, tag, owner, ...)                                 \
-  if (have_avx2_math()) {                                                    \
-    HYLE_VARIANT_KERNEL_II(name, tag, owner, avx2)(__VA_ARGS__);             \
-    return;                                                                  \
+#if HYLE_ARCH_X64 && (defined(HYLE_SIMD_COMPILED_AVX2) ||    \
+                      (defined(HYLE_SIMD_COMPILED_AVX512) && \
+                       defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
+#define HYLE_TRY_AVX2(name, tag, owner, ...)                     \
+  if (have_avx2_math()) {                                        \
+    HYLE_VARIANT_KERNEL_II(name, tag, owner, avx2)(__VA_ARGS__); \
+    return;                                                      \
   }
 #else
 #define HYLE_TRY_AVX2(name, tag, owner, ...)
 #endif
 
 #if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_COMPILED_SVE)
-#define HYLE_TRY_SVE(name, tag, owner, ...)                                  \
-  if (have_sve_math()) {                                                     \
-    HYLE_VARIANT_KERNEL_II(name, tag, owner, sve)(__VA_ARGS__);              \
-    return;                                                                  \
+#define HYLE_TRY_SVE(name, tag, owner, ...)                     \
+  if (have_sve_math()) {                                        \
+    HYLE_VARIANT_KERNEL_II(name, tag, owner, sve)(__VA_ARGS__); \
+    return;                                                     \
   }
 #else
 #define HYLE_TRY_SVE(name, tag, owner, ...)
 #endif
 
 #if HYLE_ARCH_ARM64 && defined(HYLE_SIMD_COMPILED_NEON)
-#define HYLE_TRY_NEON(name, tag, owner, ...)                                 \
-  HYLE_VARIANT_KERNEL_II(name, tag, owner, neon)(__VA_ARGS__);               \
+#define HYLE_TRY_NEON(name, tag, owner, ...)                   \
+  HYLE_VARIANT_KERNEL_II(name, tag, owner, neon)(__VA_ARGS__); \
   return;
 #else
 #define HYLE_TRY_NEON(name, tag, owner, ...)
 #endif
 
 #if HYLE_ARCH_RISCV64 && defined(HYLE_SIMD_COMPILED_RVV)
-#define HYLE_TRY_RVV(name, tag, owner, ...)                                  \
-  if (have_rvv_math()) {                                                     \
-    HYLE_VARIANT_KERNEL_II(name, tag, owner, rvv)(__VA_ARGS__);              \
-    return;                                                                  \
+#define HYLE_TRY_RVV(name, tag, owner, ...)                     \
+  if (have_rvv_math()) {                                        \
+    HYLE_VARIANT_KERNEL_II(name, tag, owner, rvv)(__VA_ARGS__); \
+    return;                                                     \
   }
 #else
 #define HYLE_TRY_RVV(name, tag, owner, ...)
 #endif
 
-#define HYLE_DISPATCH(name, tag, owner, ...)                                 \
-  do {                                                                       \
-    HYLE_TRY_AVX512(name, tag, owner, __VA_ARGS__)                           \
-    HYLE_TRY_AVX2(name, tag, owner, __VA_ARGS__)                             \
-    HYLE_TRY_SVE(name, tag, owner, __VA_ARGS__)                              \
-    HYLE_TRY_NEON(name, tag, owner, __VA_ARGS__)                             \
-    HYLE_TRY_RVV(name, tag, owner, __VA_ARGS__)                              \
-    HYLE_SCALAR_KERNEL(name, tag)(__VA_ARGS__);                              \
+#define HYLE_DISPATCH(name, tag, owner, ...)       \
+  do {                                             \
+    HYLE_TRY_AVX512(name, tag, owner, __VA_ARGS__) \
+    HYLE_TRY_AVX2(name, tag, owner, __VA_ARGS__)   \
+    HYLE_TRY_SVE(name, tag, owner, __VA_ARGS__)    \
+    HYLE_TRY_NEON(name, tag, owner, __VA_ARGS__)   \
+    HYLE_TRY_RVV(name, tag, owner, __VA_ARGS__)    \
+    HYLE_SCALAR_KERNEL(name, tag)(__VA_ARGS__);    \
   } while (false)
 
-#define HYLE_DEFINE_PUBLIC_UNARY(type, tag, name)                            \
-  void name##_##tag##_batch(const type* src, type* dst,                      \
-                            std::size_t n) noexcept {                         \
-    HYLE_DISPATCH(name, tag, highway, src, dst, n);                          \
+#define HYLE_DEFINE_PUBLIC_UNARY(type, tag, name)       \
+  void name##_##tag##_batch(const type* src, type* dst, \
+                            std::size_t n) noexcept {   \
+    HYLE_DISPATCH(name, tag, highway, src, dst, n);     \
   }
 
 #define HYLE_DEFINE_PUBLIC_UNARY_SET(type, tag) \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, sin)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cos)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp2)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log2)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, erf)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, atan)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cbrt)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, expm1)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log1p)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, asinh)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, acosh)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, acos)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, asin)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, sinh)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cosh)       \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, tan)        \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, atanh)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log10)      \
-  HYLE_DEFINE_PUBLIC_UNARY(type, tag, tgamma)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, sin)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cos)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, exp2)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log2)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, erf)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, atan)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cbrt)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, expm1)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log1p)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, asinh)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, acosh)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, acos)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, asin)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, sinh)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, cosh)     \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, tan)      \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, atanh)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, log10)    \
+  HYLE_DEFINE_PUBLIC_UNARY(type, tag, tgamma)   \
   HYLE_DEFINE_PUBLIC_UNARY(type, tag, lgamma)
 
 HYLE_DEFINE_PUBLIC_UNARY_SET(float, f32)
@@ -180,15 +180,15 @@ void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 #undef HYLE_DEFINE_PUBLIC_UNARY_SET
 #undef HYLE_DEFINE_PUBLIC_UNARY
 
-#define HYLE_DEFINE_PUBLIC_BINARY(type, tag, name)                           \
-  void name##_##tag##_batch(const type* a, const type* b, type* dst,          \
-                            std::size_t n) noexcept {                         \
-    HYLE_DISPATCH(name, tag, highway, a, b, dst, n);                         \
+#define HYLE_DEFINE_PUBLIC_BINARY(type, tag, name)                   \
+  void name##_##tag##_batch(const type* a, const type* b, type* dst, \
+                            std::size_t n) noexcept {                \
+    HYLE_DISPATCH(name, tag, highway, a, b, dst, n);                 \
   }
 
 #define HYLE_DEFINE_PUBLIC_BINARY_SET(type, tag) \
-  HYLE_DEFINE_PUBLIC_BINARY(type, tag, atan2)      \
-  HYLE_DEFINE_PUBLIC_BINARY(type, tag, pow)        \
+  HYLE_DEFINE_PUBLIC_BINARY(type, tag, atan2)    \
+  HYLE_DEFINE_PUBLIC_BINARY(type, tag, pow)      \
   HYLE_DEFINE_PUBLIC_BINARY(type, tag, hypot)
 HYLE_DEFINE_PUBLIC_BINARY_SET(float, f32)
 HYLE_DEFINE_PUBLIC_BINARY_SET(double, f64)
@@ -226,15 +226,15 @@ void hypot_in_range_f32_batch(const float* a, const float* b, float* dst,
   HYLE_DISPATCH(hypot_in_range, f32, hyle, a, b, dst, n);
 }
 
-#define HYLE_DEFINE_PUBLIC_GAP_UNARY(type, tag, name)                        \
-  void name##_##tag##_batch(const type* src, type* dst,                     \
-                            std::size_t n) noexcept {                        \
-    HYLE_DISPATCH(name, tag, hyle, src, dst, n);                            \
+#define HYLE_DEFINE_PUBLIC_GAP_UNARY(type, tag, name)   \
+  void name##_##tag##_batch(const type* src, type* dst, \
+                            std::size_t n) noexcept {   \
+    HYLE_DISPATCH(name, tag, hyle, src, dst, n);        \
   }
-#define HYLE_DEFINE_PUBLIC_GAP_BINARY(type, tag, name)                       \
-  void name##_##tag##_batch(const type* a, const type* b, type* dst,         \
-                            std::size_t n) noexcept {                        \
-    HYLE_DISPATCH(name, tag, hyle, a, b, dst, n);                           \
+#define HYLE_DEFINE_PUBLIC_GAP_BINARY(type, tag, name)               \
+  void name##_##tag##_batch(const type* a, const type* b, type* dst, \
+                            std::size_t n) noexcept {                \
+    HYLE_DISPATCH(name, tag, hyle, a, b, dst, n);                    \
   }
 HYLE_DEFINE_PUBLIC_GAP_UNARY(float, f32, erfc)
 HYLE_DEFINE_PUBLIC_GAP_UNARY(double, f64, erfc)
@@ -249,10 +249,10 @@ HYLE_DEFINE_PUBLIC_GAP_BINARY(double, f64, fdim)
 // the current vendor surface has no equivalent qualified vector operation.
 // Keep the public capability and use the scalar oracle rather than preserving
 // an unproven copied port.
-#define HYLE_DEFINE_SCALAR_BINARY(type, tag, name)                            \
-  void name##_##tag##_batch(const type* a, const type* b, type* dst,          \
-                            std::size_t n) noexcept {                         \
-    HYLE_SCALAR_KERNEL(name, tag)(a, b, dst, n);                             \
+#define HYLE_DEFINE_SCALAR_BINARY(type, tag, name)                   \
+  void name##_##tag##_batch(const type* a, const type* b, type* dst, \
+                            std::size_t n) noexcept {                \
+    HYLE_SCALAR_KERNEL(name, tag)(a, b, dst, n);                     \
   }
 HYLE_DEFINE_SCALAR_BINARY(float, f32, fmod)
 HYLE_DEFINE_SCALAR_BINARY(double, f64, fmod)
@@ -262,10 +262,10 @@ HYLE_DEFINE_SCALAR_BINARY(float, f32, nextafter)
 HYLE_DEFINE_SCALAR_BINARY(double, f64, nextafter)
 #undef HYLE_DEFINE_SCALAR_BINARY
 
-#define HYLE_DEFINE_PUBLIC_ACTIVATION(name)                                  \
-  void name##_f32_batch(const float* src, float* dst,                        \
-                        std::size_t n) noexcept {                            \
-    HYLE_DISPATCH(name, f32, hyle, src, dst, n);                            \
+#define HYLE_DEFINE_PUBLIC_ACTIVATION(name)           \
+  void name##_f32_batch(const float* src, float* dst, \
+                        std::size_t n) noexcept {     \
+    HYLE_DISPATCH(name, f32, hyle, src, dst, n);      \
   }
 HYLE_DEFINE_PUBLIC_ACTIVATION(gelu)
 HYLE_DEFINE_PUBLIC_ACTIVATION(sigmoid)
@@ -273,12 +273,92 @@ HYLE_DEFINE_PUBLIC_ACTIVATION(silu)
 HYLE_DEFINE_PUBLIC_ACTIVATION(relu)
 HYLE_DEFINE_PUBLIC_ACTIVATION(hard_sigmoid)
 HYLE_DEFINE_PUBLIC_ACTIVATION(hard_swish)
+HYLE_DEFINE_PUBLIC_ACTIVATION(gelu_quick)
 
-void gelu_tanh_f32_batch(const float* src, float* dst,
-                         std::size_t n) noexcept {
+void gelu_tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   HYLE_DISPATCH(gelu_tanh, f32, route, src, dst, n);
 }
 #undef HYLE_DEFINE_PUBLIC_ACTIVATION
+
+#define HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION(type, tag, name) \
+  void name##_##tag##_batch(const type* src, type* dst,       \
+                            std::size_t n) noexcept {         \
+    if (n == 0) return;                                       \
+    HYLE_FATAL_ASSERT(src != nullptr && dst != nullptr);      \
+    HYLE_DISPATCH(name, tag, hyle, src, dst, n);              \
+  }
+
+#define HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION_SET(type, tag)   \
+  HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION(type, tag, gelu)       \
+  HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION(type, tag, gelu_tanh)  \
+  HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION(type, tag, gelu_quick) \
+  HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION(type, tag, silu)
+
+HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION_SET(float16_t, f16)
+HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION_SET(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION_SET
+#undef HYLE_DEFINE_PUBLIC_NARROW_ACTIVATION
+
+#define HYLE_DEFINE_PUBLIC_GATED(type, tag, name)                             \
+  void name##_##tag##_batch(const type* gate, const type* value, type* dst,   \
+                            std::size_t n) noexcept {                         \
+    if (n == 0) return;                                                       \
+    HYLE_FATAL_ASSERT(gate != nullptr && value != nullptr && dst != nullptr); \
+    HYLE_DISPATCH(name, tag, hyle, gate, value, dst, n);                      \
+  }
+
+#define HYLE_DEFINE_PUBLIC_GATED_SET(type, tag)    \
+  HYLE_DEFINE_PUBLIC_GATED(type, tag, reglu)       \
+  HYLE_DEFINE_PUBLIC_GATED(type, tag, geglu)       \
+  HYLE_DEFINE_PUBLIC_GATED(type, tag, geglu_tanh)  \
+  HYLE_DEFINE_PUBLIC_GATED(type, tag, geglu_quick) \
+  HYLE_DEFINE_PUBLIC_GATED(type, tag, swiglu)
+
+HYLE_DEFINE_PUBLIC_GATED_SET(float, f32)
+HYLE_DEFINE_PUBLIC_GATED_SET(float16_t, f16)
+HYLE_DEFINE_PUBLIC_GATED_SET(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_PUBLIC_GATED_SET
+#undef HYLE_DEFINE_PUBLIC_GATED
+
+#define HYLE_DEFINE_PUBLIC_NORMALIZATION(type, tag)                            \
+  void rms_norm_##tag(const type* src, type* dst, std::size_t n,               \
+                      float epsilon) noexcept {                                \
+    if (n == 0) return;                                                        \
+    HYLE_FATAL_ASSERT(src != nullptr && dst != nullptr);                       \
+    HYLE_FATAL_ASSERT(std::isfinite(epsilon) && epsilon >= 0.0f);              \
+    HYLE_DISPATCH(rms_norm, tag, hyle, src, nullptr, dst, n, epsilon);         \
+  }                                                                            \
+  void rms_norm_##tag(const type* src, const type* weight, type* dst,          \
+                      std::size_t n, float epsilon) noexcept {                 \
+    if (n == 0) return;                                                        \
+    HYLE_FATAL_ASSERT(src != nullptr && weight != nullptr && dst != nullptr);  \
+    HYLE_FATAL_ASSERT(std::isfinite(epsilon) && epsilon >= 0.0f);              \
+    HYLE_DISPATCH(rms_norm, tag, hyle, src, weight, dst, n, epsilon);          \
+  }                                                                            \
+  void layer_norm_##tag(const type* src, type* dst, std::size_t n,             \
+                        float epsilon) noexcept {                              \
+    if (n == 0) return;                                                        \
+    HYLE_FATAL_ASSERT(src != nullptr && dst != nullptr);                       \
+    HYLE_FATAL_ASSERT(std::isfinite(epsilon) && epsilon >= 0.0f);              \
+    HYLE_DISPATCH(layer_norm, tag, hyle, src, nullptr, nullptr, dst, n,        \
+                  epsilon);                                                    \
+  }                                                                            \
+  void layer_norm_##tag(const type* src, const type* scale, const type* bias,  \
+                        type* dst, std::size_t n, float epsilon) noexcept {    \
+    if (n == 0) return;                                                        \
+    HYLE_FATAL_ASSERT(src != nullptr && scale != nullptr && bias != nullptr && \
+                      dst != nullptr);                                         \
+    HYLE_FATAL_ASSERT(std::isfinite(epsilon) && epsilon >= 0.0f);              \
+    HYLE_DISPATCH(layer_norm, tag, hyle, src, scale, bias, dst, n, epsilon);   \
+  }
+
+HYLE_DEFINE_PUBLIC_NORMALIZATION(float, f32)
+HYLE_DEFINE_PUBLIC_NORMALIZATION(float16_t, f16)
+HYLE_DEFINE_PUBLIC_NORMALIZATION(bfloat16_t, bf16)
+
+#undef HYLE_DEFINE_PUBLIC_NORMALIZATION
 
 void leaky_relu_f32_batch(const float* src, float negative_slope, float* dst,
                           std::size_t n) noexcept {
@@ -298,14 +378,14 @@ void log_softmax_f32(const float* src, float* dst, std::size_t n) noexcept {
   HYLE_DISPATCH(log_softmax, f32, hyle, src, dst, n);
 }
 
-#define HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, name)                    \
-  void name##_##tag##_batch(const type* src_re, const type* src_im,           \
-                            type* dst_re, type* dst_im,                       \
-                            std::size_t n) noexcept {                         \
-    HYLE_DISPATCH(name, tag, hyle, src_re, src_im, dst_re, dst_im, n);        \
+#define HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, name)              \
+  void name##_##tag##_batch(const type* src_re, const type* src_im,    \
+                            type* dst_re, type* dst_im,                \
+                            std::size_t n) noexcept {                  \
+    HYLE_DISPATCH(name, tag, hyle, src_re, src_im, dst_re, dst_im, n); \
   }
 
-#define HYLE_DEFINE_PUBLIC_COMPLEX_SET(type, tag) \
+#define HYLE_DEFINE_PUBLIC_COMPLEX_SET(type, tag)    \
   HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, cexp)  \
   HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, clog)  \
   HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, csqrt) \
@@ -326,9 +406,9 @@ void cpow_f32_batch(const float* z_re, const float* z_im, const float* w_re,
                     std::size_t n) noexcept {
   HYLE_DISPATCH(cpow, f32, hyle, z_re, z_im, w_re, w_im, dst_re, dst_im, n);
 }
-void cpow_f64_batch(const double* z_re, const double* z_im,
-                    const double* w_re, const double* w_im, double* dst_re,
-                    double* dst_im, std::size_t n) noexcept {
+void cpow_f64_batch(const double* z_re, const double* z_im, const double* w_re,
+                    const double* w_im, double* dst_re, double* dst_im,
+                    std::size_t n) noexcept {
   HYLE_DISPATCH(cpow, f64, hyle, z_re, z_im, w_re, w_im, dst_re, dst_im, n);
 }
 

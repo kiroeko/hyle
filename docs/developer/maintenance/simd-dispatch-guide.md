@@ -12,7 +12,7 @@ SIMD 有两种消费路径，但只有一个公开语义面：
 | 路径 | 用户看到的形状 | 选择成本 | provider 类型边界 |
 |---|---|---|---|
 | ordinary source/static/shared | `hyle/simd/*.h` 的 pointer/count、span、POD API | 未知 CPU 时每次整批调用一次已缓存 target 间接调用；exact build 为零 | Highway/xsimd 类型不出 implementation TU |
-| 完整源码 expert | `hyle_target_simd()` 或 `hyle_add_fat_kernel()` | fixed TU 为零；source-fat 在完整 pointer/POD kernel 边界选一次 | vendor vector/mask 只能留在 target-bound TU |
+| expert source/static/shared SDK | `hyle::simd_expert`、`hyle_target_simd()` 或 `hyle_add_fat_kernel()` | fixed TU 为零；source-fat 在完整 pointer/POD kernel 边界选一次 | vendor vector/mask 只能留在 target-bound TU；installed SDK 自带锁定 provider 头 |
 
 旧 `vec.h`、`native.h`、`native/*` 和 `backend/*` 已在 SIMD-16 物理删除。不要恢复兼容头、转发层或第三套
 portable register DSL。普通寄存器操作直接使用中央锁定 Highway；xsimd 只进入具名 whole-buffer route；
@@ -169,8 +169,9 @@ probe 与当前 ordering target。涉及 target/build seam 时还要验证：
 
 ## 交付与负空间
 
-installed static/shared SDK 只安装 ordinary SIMD 头和 HYLE library，不安装 vendor register headers、
-`target.h`、`fat_kernel.h` 或 `provider/*`。完整源码交付才有 expert seam。
+installed static/shared SDK 同时交付 ordinary SIMD 头、HYLE library，以及显式 opt-in 的
+`hyle::simd_expert` seam 所需 `target.h`、`fat_kernel.h` 和锁定的 Highway/xsimd provider 头；普通
+`hyle::simd` target 不传播这些 provider include。`provider/*` 仍是 HYLE 私有路由，不会安装。
 
 SIMD 不提供 C API、Native FFI、稳定跨工具链 C++ ABI、per-ISA DLL、公开 register façade、GPU backend 或
 模型 operator。不要为不存在的跨语言消费者导出伪 C ABI；未来有明确 runtime/engine FFI 时在其 owner

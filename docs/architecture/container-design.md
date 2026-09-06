@@ -134,8 +134,9 @@ wire fingerprint 或 cryptographic MAC。攻击者可控 key 使用 caller-secre
 4. 不把 vendor header/type 加入 public surface；
 5. vendor 更新不能单方面改变 HYLE 的语义、seed、failure 或 delivery owner。
 
-llama.cpp、独立 ggml 与 llama.cpp 内嵌 ggml 是能力差异和真实消费参考，不是产品依赖。每轮审查必须
-先更新 clean checkout 并记录三者准确 commit；不能用独立 ggml 的最新能力假装当前 llama.cpp 已消费。
+独立 ggml + llama.cpp、ds4、vLLM 与 SGLang 是能力差异和真实消费参考，不是产品依赖。每轮审查
+必须先更新或确认 clean checkout 并记录准确 commit；不能用独立 ggml 的最新能力假装当前
+llama.cpp 已消费，也不能把 vLLM/SGLang 的 GPU、Triton 或 tensor-fusion 表面机械复制成 Container API。
 
 ## 明确负空间和重开条件
 

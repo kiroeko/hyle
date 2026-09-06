@@ -211,12 +211,14 @@ verification | negative space
    `product/test/benchmark/peer` 类别，以及 semantic、mechanism/artifact、decision 和 delivery owner。
    标准库、compiler builtin 与 OS API 不冒充第三方模块，但仍记录其平台合同。vendored、ported 或
    integrated source 仍算第三方实现，不能因复制进仓库而记作 HYLE 自实现。
-2. **功能：**对于已声明的量化推理引擎旅程，必须同时使用**当前锁定的 llama.cpp 真实消费形状**和
-   **当前锁定的 ggml 底座能力**作差异输入，所有准入能力是否为 `COMPLETE` 或完整 `ROUTED`？两者
-   每轮先更新或确认远端状态，再记录 clean commit；llama.cpp 随仓 ggml 与独立 ggml 不同时分别记录，
-   不把漂移的 `master`/`main` 当证据身份。每个差异必须落到本模块、具名相邻模块、推理引擎策略或
-   `MISSING/BLOCKED`，不能以 API 数量对齐代替 owner 裁决。“没有可再加的”只允许解释为当前证据下
-   没有未处置的 `MUST`；不承诺未来不存在新能力，也不要求复制 ggml 的 tensor/backend/模型策略。
+2. **功能：**对于已声明的量化推理引擎旅程，必须使用四组当前锁定证据作差异输入：**独立 ggml
+   底座能力及 llama.cpp 真实消费形状**、**ds4**、**vLLM**、**SGLang**。每轮先更新或确认四组本地
+   reference 的远端状态，再记录 clean commit；llama.cpp 随仓 ggml 与独立 ggml 不同时分别记录，
+   不把漂移的 `master`/`main` 当证据身份。它们是 consumer/demand evidence，不自动成为同合同性能
+   peer；Python/Triton/GPU/tensor/operator-fusion 表面不得机械复制到低层模块。每个差异必须落到本模块、
+   具名相邻模块、推理引擎策略或 `MISSING/BLOCKED`，不能以 API 数量对齐代替 owner 裁决。所有准入
+   能力必须为 `COMPLETE` 或完整 `ROUTED`。“没有可再加的”只允许解释为当前证据下没有未处置的
+   `MUST`；不承诺未来不存在新能力，也不要求复制任一引擎的 tensor/backend/模型策略。
 3. **内部复用与加速设施：**模块需要的 error、allocation、container、reclamation、clock、OS/CPU/
    topology、synchronization、SIMD/hash/text 等机制，是否优先复用了依赖方向合法且同合同的现有能力？
    逐项记录候选设施、实际路线和 `REUSE/BORROW/LOCAL/NOT_APPLICABLE`。本地保留必须说明为什么已有路线

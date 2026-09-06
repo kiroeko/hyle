@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -10,22 +12,26 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/simd/target.h"
 #include "hyle/simd/sort.h"
+#include "hyle/simd/target.h"
 #include "src/simd/runtime_internal.h"
 
-// sort_test -- the borrowed Highway vqsort (whatever tier is live: avx512/avx2/neon/scalar) must
-// agree with the std:: oracle on every (type, length, distribution, order). The dispatcher picks
-// the widest tier the host supports; either way the RESULT is a total order, so:
+// sort_test -- the borrowed Highway vqsort (whatever tier is live:
+// avx512/avx2/neon/scalar) must agree with the std:: oracle on every (type,
+// length, distribution, order). The dispatcher picks the widest tier the host
+// supports; either way the RESULT is a total order, so:
 //   sort         : element-wise equal to std::sort.
-//   partial_sort : the first k, re-sorted, equal std::partial_sort's first k (the [k,n) tail is
+//   partial_sort : the first k, re-sorted, equal std::partial_sort's first k
+//   (the [k,n) tail is
 //                  unspecified for both, so only [0,k) is compared).
-//   select       : keys[k] equals the k-th order statistic, and the partition property holds
-//                  (everything before order-<= keys[k], everything after order->=) -- exactly
-//                  std::nth_element's postcondition.
-// Both ascending and descending. Lengths cover 0/1/tiny (sorting-network base cases) and large
-// (recursion), with distributions: random, all-equal, already-sorted, reverse-sorted, few-unique
-// (heavy duplicates -- stresses the partition).
+//   select       : keys[k] equals the k-th order statistic, and the partition
+//   property holds
+//                  (everything before order-<= keys[k], everything after
+//                  order->=) -- exactly std::nth_element's postcondition.
+// Both ascending and descending. Lengths cover 0/1/tiny (sorting-network base
+// cases) and large (recursion), with distributions: random, all-equal,
+// already-sorted, reverse-sorted, few-unique (heavy duplicates -- stresses the
+// partition).
 
 using hyle::simd::KernelTarget;
 using hyle::simd::partial_sort;
@@ -36,8 +42,9 @@ using hyle::simd::UInt128;
 
 namespace {
 
-// Build a test vector of length n with a named distribution, using a fixed-seed PRNG so failures
-// reproduce. Integer and float types both go through the same generator (cast at the end).
+// Build a test vector of length n with a named distribution, using a fixed-seed
+// PRNG so failures reproduce. Integer and float types both go through the same
+// generator (cast at the end).
 template <typename T>
 std::vector<T> make_data(std::size_t n, int dist, std::uint64_t seed) {
   std::mt19937_64 rng(seed);
@@ -85,8 +92,8 @@ void expect_sort(std::size_t n, int dist, SortOrder order, std::uint64_t seed) {
 }
 
 template <typename T>
-void expect_partial_sort(std::size_t n, std::size_t k, int dist, SortOrder order,
-                         std::uint64_t seed) {
+void expect_partial_sort(std::size_t n, std::size_t k, int dist,
+                         SortOrder order, std::uint64_t seed) {
   const bool asc = (order == SortOrder::kAscending);
   std::vector<T> got = make_data<T>(n, dist, seed);
   std::vector<T> ref = got;
@@ -94,16 +101,20 @@ void expect_partial_sort(std::size_t n, std::size_t k, int dist, SortOrder order
   if (asc)
     std::partial_sort(ref.begin(), ref.begin() + k, ref.end(), std::less<T>{});
   else
-    std::partial_sort(ref.begin(), ref.begin() + k, ref.end(), std::greater<T>{});
-  // Only [0,k) is defined for both; re-sort that prefix on our side (vqsort orders it, but be
-  // robust to tie arrangement) and compare against the oracle's (already-sorted) prefix.
+    std::partial_sort(ref.begin(), ref.begin() + k, ref.end(),
+                      std::greater<T>{});
+  // Only [0,k) is defined for both; re-sort that prefix on our side (vqsort
+  // orders it, but be robust to tie arrangement) and compare against the
+  // oracle's (already-sorted) prefix.
   for (std::size_t i = 0; i < k; ++i)
-    ASSERT_EQ(got[i], ref[i]) << "partial_sort n=" << n << " k=" << k << " dist=" << dist
-                              << " asc=" << asc << " i=" << i;
+    ASSERT_EQ(got[i], ref[i])
+        << "partial_sort n=" << n << " k=" << k << " dist=" << dist
+        << " asc=" << asc << " i=" << i;
 }
 
 template <typename T>
-void expect_select(std::size_t n, std::size_t k, int dist, SortOrder order, std::uint64_t seed) {
+void expect_select(std::size_t n, std::size_t k, int dist, SortOrder order,
+                   std::uint64_t seed) {
   const bool asc = (order == SortOrder::kAscending);
   std::vector<T> got = make_data<T>(n, dist, seed);
   std::vector<T> ref = got;
@@ -111,31 +122,37 @@ void expect_select(std::size_t n, std::size_t k, int dist, SortOrder order, std:
   if (asc)
     std::nth_element(ref.begin(), ref.begin() + k, ref.end(), std::less<T>{});
   else
-    std::nth_element(ref.begin(), ref.begin() + k, ref.end(), std::greater<T>{});
+    std::nth_element(ref.begin(), ref.begin() + k, ref.end(),
+                     std::greater<T>{});
   // The k-th order statistic must match.
-  ASSERT_EQ(got[k], ref[k]) << "select kth n=" << n << " k=" << k << " dist=" << dist
-                            << " asc=" << asc;
-  // Partition postcondition: nothing before k orders-after keys[k], nothing after orders-before.
+  ASSERT_EQ(got[k], ref[k]) << "select kth n=" << n << " k=" << k
+                            << " dist=" << dist << " asc=" << asc;
+  // Partition postcondition: nothing before k orders-after keys[k], nothing
+  // after orders-before.
   const T pivot = got[k];
   for (std::size_t i = 0; i < k; ++i) {
     if (asc) {
-      ASSERT_LE(got[i], pivot) << "select left n=" << n << " k=" << k << " i=" << i;
+      ASSERT_LE(got[i], pivot)
+          << "select left n=" << n << " k=" << k << " i=" << i;
     } else {
-      ASSERT_GE(got[i], pivot) << "select left n=" << n << " k=" << k << " i=" << i;
+      ASSERT_GE(got[i], pivot)
+          << "select left n=" << n << " k=" << k << " i=" << i;
     }
   }
   for (std::size_t i = k + 1; i < n; ++i) {
     if (asc) {
-      ASSERT_GE(got[i], pivot) << "select right n=" << n << " k=" << k << " i=" << i;
+      ASSERT_GE(got[i], pivot)
+          << "select right n=" << n << " k=" << k << " i=" << i;
     } else {
-      ASSERT_LE(got[i], pivot) << "select right n=" << n << " k=" << k << " i=" << i;
+      ASSERT_LE(got[i], pivot)
+          << "select right n=" << n << " k=" << k << " i=" << i;
     }
   }
 }
 
 // The length ladder: base-case sizes + recursion-triggering sizes.
-const std::vector<std::size_t> kLengths = {0, 1, 2, 3, 7, 8, 16, 17, 31,
-                                           64, 100, 257, 1000, 4096, 10007};
+const std::vector<std::size_t> kLengths = {
+    0, 1, 2, 3, 7, 8, 16, 17, 31, 64, 100, 257, 1000, 4096, 10007};
 
 template <typename T>
 void run_all_for_type() {
@@ -145,7 +162,8 @@ void run_all_for_type() {
       for (std::size_t n : kLengths) {
         expect_sort<T>(n, dist, order, ++seed);
         if (n >= 1) {
-          // partial_sort k in {0..n} (k<=n contract); pick a few representative k.
+          // partial_sort k in {0..n} (k<=n contract); pick a few representative
+          // k.
           for (std::size_t k : {std::size_t{0}, n / 3, n / 2, n}) {
             if (k <= n) expect_partial_sort<T>(n, k, dist, order, ++seed);
           }
@@ -184,8 +202,9 @@ std::vector<UInt128> make_u128(std::size_t n) {
   std::vector<UInt128> out(n);
   for (std::size_t i = 0; i < n; ++i) {
     out[i] = UInt128{rng(), rng()};
-    if (i % 7 == 0) out[i].hi &= 3;        // repeated high words exercise low-word ordering
-    if (i % 13 == 0) out[i] = UInt128{};   // duplicates
+    if (i % 7 == 0)
+      out[i].hi &= 3;  // repeated high words exercise low-word ordering
+    if (i % 13 == 0) out[i] = UInt128{};  // duplicates
   }
   if (n > 2) {
     out[0] = UInt128{0, 1};
@@ -198,8 +217,9 @@ std::vector<UInt128> make_u128(std::size_t n) {
 }  // namespace
 
 TEST(Sort, U128SortPartialAndSelect) {
-  for (const std::size_t n : {std::size_t{1}, std::size_t{2}, std::size_t{7},
-                              std::size_t{31}, std::size_t{257}, std::size_t{4096}}) {
+  for (const std::size_t n :
+       {std::size_t{1}, std::size_t{2}, std::size_t{7}, std::size_t{31},
+        std::size_t{257}, std::size_t{4096}}) {
     const auto source = make_u128(n);
     for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
       const bool asc = order == SortOrder::kAscending;
@@ -211,7 +231,8 @@ TEST(Sort, U128SortPartialAndSelect) {
 
       auto got = source;
       sort(got.data(), got.size(), order);
-      ASSERT_TRUE(std::equal(got.begin(), got.end(), expected.begin(), equal_u128))
+      ASSERT_TRUE(
+          std::equal(got.begin(), got.end(), expected.begin(), equal_u128))
           << "sort n=" << n << " asc=" << asc;
 
       for (const std::size_t k : {std::size_t{0}, n / 2, n}) {
@@ -219,7 +240,8 @@ TEST(Sort, U128SortPartialAndSelect) {
         auto ref = source;
         partial_sort(got.data(), got.size(), k, order);
         std::partial_sort(ref.begin(), ref.begin() + k, ref.end(), before128);
-        ASSERT_TRUE(std::equal(got.begin(), got.begin() + k, ref.begin(), equal_u128))
+        ASSERT_TRUE(
+            std::equal(got.begin(), got.begin() + k, ref.begin(), equal_u128))
             << "partial n=" << n << " k=" << k << " asc=" << asc;
       }
 
@@ -228,8 +250,10 @@ TEST(Sort, U128SortPartialAndSelect) {
         select(got.data(), got.size(), k, order);
         ASSERT_TRUE(equal_u128(got[k], expected[k]))
             << "select n=" << n << " k=" << k << " asc=" << asc;
-        for (std::size_t i = 0; i < k; ++i) ASSERT_FALSE(before128(got[k], got[i]));
-        for (std::size_t i = k + 1; i < n; ++i) ASSERT_FALSE(before128(got[i], got[k]));
+        for (std::size_t i = 0; i < k; ++i)
+          ASSERT_FALSE(before128(got[k], got[i]));
+        for (std::size_t i = k + 1; i < n; ++i)
+          ASSERT_FALSE(before128(got[i], got[k]));
       }
     }
   }
@@ -247,11 +271,15 @@ TEST(Sort, FloatingNaNsLast) {
     ASSERT_TRUE(std::isnan(values[4]));
     ASSERT_TRUE(std::isnan(values[5]));
     if (order == SortOrder::kAscending) {
-      EXPECT_EQ(values[0], -1.0f); EXPECT_EQ(values[1], 0.0f);
-      EXPECT_EQ(values[2], 2.0f); EXPECT_EQ(values[3], 3.0f);
+      EXPECT_EQ(values[0], -1.0f);
+      EXPECT_EQ(values[1], 0.0f);
+      EXPECT_EQ(values[2], 2.0f);
+      EXPECT_EQ(values[3], 3.0f);
     } else {
-      EXPECT_EQ(values[0], 3.0f); EXPECT_EQ(values[1], 2.0f);
-      EXPECT_EQ(values[2], 0.0f); EXPECT_EQ(values[3], -1.0f);
+      EXPECT_EQ(values[0], 3.0f);
+      EXPECT_EQ(values[1], 2.0f);
+      EXPECT_EQ(values[2], 0.0f);
+      EXPECT_EQ(values[3], -1.0f);
     }
   }
 }
@@ -293,6 +321,113 @@ TEST(Sort, FloatingNaNsLastPartialAndSelect) {
   }
 }
 
+namespace {
+
+bool scored_index_better(const hyle::simd::ScoredIndexF32& lhs,
+                         const hyle::simd::ScoredIndexF32& rhs) {
+  const bool lhs_nan = std::isnan(lhs.score);
+  const bool rhs_nan = std::isnan(rhs.score);
+  if (lhs_nan != rhs_nan) return !lhs_nan;
+  if (!lhs_nan) {
+    if (lhs.score > rhs.score) return true;
+    if (lhs.score < rhs.score) return false;
+  }
+  return lhs.index < rhs.index;
+}
+
+template <class Range>
+void expect_same_float_bits(const Range& lhs, const Range& rhs) {
+  ASSERT_EQ(lhs.size(), rhs.size());
+  for (std::size_t i = 0; i < lhs.size(); ++i) {
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(lhs[i]),
+              std::bit_cast<std::uint32_t>(rhs[i]));
+  }
+}
+
+}  // namespace
+
+TEST(Sort, IndexedFloatTopKHasDeterministicTotalOrder) {
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::array<float, 8> scores = {nan,
+                                       5.0f,
+                                       -0.0f,
+                                       0.0f,
+                                       5.0f,
+                                       std::numeric_limits<float>::infinity(),
+                                       -std::numeric_limits<float>::infinity(),
+                                       nan};
+  const std::array<std::uint32_t, 8> expected = {5, 1, 4, 2, 3, 6, 0, 7};
+  std::array<hyle::simd::ScoredIndexF32, 8> result{};
+  const auto original = scores;
+  hyle::simd::top_k_f32(scores.data(), scores.size(), result.data(),
+                        result.size());
+  expect_same_float_bits(scores, original);
+  for (std::size_t i = 0; i < result.size(); ++i) {
+    EXPECT_EQ(result[i].index, expected[i]);
+    if (std::isnan(scores[expected[i]])) {
+      EXPECT_TRUE(std::isnan(result[i].score));
+    } else {
+      EXPECT_EQ(result[i].score, scores[expected[i]]);
+      if (result[i].score == 0.0f) {
+        EXPECT_EQ(std::signbit(result[i].score),
+                  std::signbit(scores[expected[i]]));
+      }
+    }
+  }
+
+  hyle::simd::top_k_f32(nullptr, 17, nullptr, 0);
+}
+
+TEST(Sort, IndexedFloatTopKMatchesFullOrderingWithoutMutatingScores) {
+  std::mt19937 rng(0x51A17EEDu);
+  std::uniform_real_distribution<float> distribution(-20.0f, 20.0f);
+  for (const std::size_t n :
+       {std::size_t{1}, std::size_t{2}, std::size_t{7}, std::size_t{64},
+        std::size_t{257}, std::size_t{4096}}) {
+    std::vector<float> scores(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      scores[i] = (i % 11 == 0) ? 3.5f : distribution(rng);
+    }
+    if (n > 7) scores[n / 2] = std::numeric_limits<float>::quiet_NaN();
+    const auto original = scores;
+    std::vector<hyle::simd::ScoredIndexF32> oracle(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      oracle[i] = {scores[i], static_cast<std::uint32_t>(i)};
+    }
+    std::sort(oracle.begin(), oracle.end(), scored_index_better);
+
+    for (const std::size_t k :
+         {std::size_t{1}, std::size_t{2}, std::size_t{6}, std::size_t{32}, n}) {
+      if (k > n) continue;
+      std::vector<hyle::simd::ScoredIndexF32> result(k);
+      hyle::simd::top_k_f32(scores.data(), scores.size(), result.data(), k);
+      expect_same_float_bits(scores, original);
+      for (std::size_t i = 0; i < k; ++i) {
+        EXPECT_EQ(result[i].index, oracle[i].index)
+            << "n=" << n << " k=" << k << " i=" << i;
+        if (std::isnan(oracle[i].score)) {
+          EXPECT_TRUE(std::isnan(result[i].score));
+        } else {
+          EXPECT_EQ(result[i].score, oracle[i].score);
+        }
+      }
+    }
+  }
+}
+
+TEST(Sort, IndexedFloatTopKRejectsInvalidContracts) {
+  std::array<float, 4> scores = {1.0f, 2.0f, 3.0f, 4.0f};
+  std::array<hyle::simd::ScoredIndexF32, 5> result{};
+  EXPECT_DEATH(hyle::simd::top_k_f32(scores.data(), scores.size(),
+                                     result.data(), result.size()),
+               "HYLE fatal");
+  EXPECT_DEATH(
+      hyle::simd::top_k_f32(
+          scores.data(), scores.size(),
+          reinterpret_cast<hyle::simd::ScoredIndexF32*>(scores.data()), 1),
+      "HYLE fatal");
+}
+
 TEST(Sort, SmallKIntegerPartialSort) {
   std::uint64_t seed = 0x51A11C0DEULL;
   for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
@@ -325,9 +460,10 @@ TEST(Sort, PartitionDoesNotTouchAdjacentObjects) {
   // Dense coverage around base-case/partition boundaries plus awkward large
   // sizes. Repeat with duplicate-heavy and full-range inputs, both orders and
   // all three public entry points.
-  const std::size_t sizes[] = {33,  47,  63,  64,  65,  95,  127, 128,
+  const std::size_t sizes[] = {33,  47,  63,  64,  65,  95,  127,  128,
                                129, 191, 255, 256, 257, 511, 1023, 4093};
-  for (const SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+  for (const SortOrder order :
+       {SortOrder::kAscending, SortOrder::kDescending}) {
     for (const bool few_unique : {false, true}) {
       for (const std::size_t n : sizes) {
         std::vector<std::uint32_t> storage(n + 2 * kGuard);
@@ -364,44 +500,56 @@ TEST(Sort, PartitionDoesNotTouchAdjacentObjects) {
   }
 }
 
-// KV (top-k): sort by key, value must ride along. Verify (1) keys come out ordered, (2) every
-// (key,value) pair is preserved (the multiset of pairs is unchanged -- value stays glued to its
-// key), which is the arg-sort/top-k contract. Uses value = a hash of the original key so a
-// mispaired value is caught even when keys tie.
+// KV (top-k): sort by key, value must ride along. Verify (1) keys come out
+// ordered, (2) every (key,value) pair is preserved (the multiset of pairs is
+// unchanged -- value stays glued to its key), which is the arg-sort/top-k
+// contract. Uses value = a hash of the original key so a mispaired value is
+// caught even when keys tie.
 template <typename KV, typename K>
 void run_kv() {
   std::mt19937_64 rng(0xD1CE5EED);
   for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
     const bool asc = (order == SortOrder::kAscending);
-    for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{8}, std::size_t{17},
-                          std::size_t{257}, std::size_t{4096}}) {
+    for (std::size_t n :
+         {std::size_t{0}, std::size_t{1}, std::size_t{8}, std::size_t{17},
+          std::size_t{257}, std::size_t{4096}}) {
       std::vector<KV> kv(n);
-      std::uniform_int_distribution<std::uint64_t> d(0, 50);  // small range -> ties
+      std::uniform_int_distribution<std::uint64_t> d(
+          0,
+          50);  // small range -> ties
       for (std::size_t i = 0; i < n; ++i) {
         const K key = static_cast<K>(d(rng));
         kv[i].key = key;
-        kv[i].value = static_cast<K>(key * 2654435761u + 1);  // deterministic fn(key) to catch mispair
+        kv[i].value = static_cast<K>(
+            key * 2654435761u + 1);  // deterministic fn(key) to catch mispair
       }
       sort(kv.data(), n, order);
       for (std::size_t i = 0; i < n; ++i)
         ASSERT_EQ(kv[i].value, static_cast<K>(kv[i].key * 2654435761u + 1))
-            << "kv value mispaired n=" << n << " i=" << i;  // value still fn(its key)
+            << "kv value mispaired n=" << n
+            << " i=" << i;  // value still fn(its key)
       for (std::size_t i = 1; i < n; ++i) {
         if (asc) {
-          ASSERT_LE(kv[i - 1].key, kv[i].key) << "kv not asc n=" << n << " i=" << i;
+          ASSERT_LE(kv[i - 1].key, kv[i].key)
+              << "kv not asc n=" << n << " i=" << i;
         } else {
-          ASSERT_GE(kv[i - 1].key, kv[i].key) << "kv not desc n=" << n << " i=" << i;
+          ASSERT_GE(kv[i - 1].key, kv[i].key)
+              << "kv not desc n=" << n << " i=" << i;
         }
       }
-      // partial_sort top-k: first k keys are the k smallest/largest, values still paired.
+      // partial_sort top-k: first k keys are the k smallest/largest, values
+      // still paired.
       if (n >= 4) {
         std::vector<KV> kv2(n);
-        for (std::size_t i = 0; i < n; ++i) { kv2[i].key = static_cast<K>(d(rng));
-          kv2[i].value = static_cast<K>(kv2[i].key * 2654435761u + 1); }
+        for (std::size_t i = 0; i < n; ++i) {
+          kv2[i].key = static_cast<K>(d(rng));
+          kv2[i].value = static_cast<K>(kv2[i].key * 2654435761u + 1);
+        }
         const std::size_t k = n / 4;
         partial_sort(kv2.data(), n, k, order);
         for (std::size_t i = 0; i < k; ++i)
-          ASSERT_EQ(kv2[i].value, static_cast<K>(kv2[i].key * 2654435761u + 1)) << "psort kv mispair";
+          ASSERT_EQ(kv2[i].value, static_cast<K>(kv2[i].key * 2654435761u + 1))
+              << "psort kv mispair";
         for (std::size_t i = 1; i < k; ++i) {
           if (asc) {
             ASSERT_LE(kv2[i - 1].key, kv2[i].key);
@@ -426,10 +574,13 @@ void run_kv_select() {
   }
   for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
     const bool asc = order == SortOrder::kAscending;
-    for (std::size_t k : {std::size_t{0}, source.size() / 2, source.size() - 1}) {
+    for (std::size_t k :
+         {std::size_t{0}, source.size() / 2, source.size() - 1}) {
       std::vector<KV> got = source;
       std::vector<KV> ref = source;
-      auto by_key = [asc](const KV& a, const KV& b) { return asc ? a.key < b.key : a.key > b.key; };
+      auto by_key = [asc](const KV& a, const KV& b) {
+        return asc ? a.key < b.key : a.key > b.key;
+      };
       std::nth_element(ref.begin(), ref.begin() + k, ref.end(), by_key);
       select(got.data(), got.size(), k, order);
       EXPECT_EQ(got[k].key, ref[k].key);
@@ -460,8 +611,12 @@ void run_kv_select() {
   }
 }
 
-TEST(Sort, KeyValueSelect32) { run_kv_select<hyle::simd::KeyValue32, std::uint32_t>(); }
-TEST(Sort, KeyValueSelect64) { run_kv_select<hyle::simd::KeyValue64, std::uint64_t>(); }
+TEST(Sort, KeyValueSelect32) {
+  run_kv_select<hyle::simd::KeyValue32, std::uint32_t>();
+}
+TEST(Sort, KeyValueSelect64) {
+  run_kv_select<hyle::simd::KeyValue64, std::uint64_t>();
+}
 
 template <typename KV, typename K>
 void run_small_kv_partial() {
@@ -507,14 +662,16 @@ TEST(Sort, SmallKKeyValue64) {
   run_small_kv_partial<hyle::simd::KeyValue64, std::uint64_t>();
 }
 
-// The dispatcher reports a sane tier for this host (avx512/avx2 on x86, neon on arm64, else
-// scalar). Not asserting a specific value (depends on the build host), just that it is one of the
-// expected tiers -- a smoke check that the shared runtime metadata is wired.
+// The dispatcher reports a sane tier for this host (avx512/avx2 on x86, neon on
+// arm64, else scalar). Not asserting a specific value (depends on the build
+// host), just that it is one of the expected tiers -- a smoke check that the
+// shared runtime metadata is wired.
 TEST(Sort, ActiveVariantIsSane) {
   const auto& active = hyle::simd::runtime();
   const KernelTarget v = active.sort.target;
-  EXPECT_TRUE(v == KernelTarget::kAvx512 || v == KernelTarget::kAvx2 || v == KernelTarget::kSve ||
-              v == KernelTarget::kNeon || v == KernelTarget::kRvv || v == KernelTarget::kScalar);
+  EXPECT_TRUE(v == KernelTarget::kAvx512 || v == KernelTarget::kAvx2 ||
+              v == KernelTarget::kSve || v == KernelTarget::kNeon ||
+              v == KernelTarget::kRvv || v == KernelTarget::kScalar);
   const auto* owner = hyle::simd::runtime_for(v);
   if (owner != nullptr) {
     EXPECT_EQ(active.sort_ops.sort_u32, owner->sort_ops.sort_u32);

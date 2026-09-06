@@ -24,7 +24,7 @@
 | sched | marl、folly fibers、tokio、seastar、oneTBB/taskflow | fiber/work-stealing、同步/取消/关闭、blocking 与 oversubscription |
 | io | liburing、tokio-uring、seastar、Asio、libuv、libevent | proactor 生命周期、四后端语义、deadline/cancel、文件/网络与 backpressure |
 | simd | Highway、xsimd、simdutf、SLEEF、oneDNN | 用户 batch/kernel 面、dispatch/type/dtype/math/sort/search、精度与原生复杂度 |
-| compute | ggml、llama.cpp、oneDNN、Kompute、vitamin-cuda | device/stream/buffer/completion、CPU/GPU 算子、Vulkan/CUDA 和隐藏运行时 |
+| compute | ggml、llama.cpp、ds4、vLLM、SGLang、oneDNN、Kompute、vitamin-cuda | 真实推理 shape、device/stream/buffer/completion、CPU/GPU 算子、Vulkan/CUDA 和隐藏运行时 |
 | graph | oneTBB、taskflow、Eigen、OpenVDB | DAG 增量重算、fork-join/scan/sort、确定性与 CAD/CAE 真消费者 |
 
 对照结论必须落在对应 [architecture](./)、[用户指南](../user/) 或
@@ -53,6 +53,9 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **kompute** | 参考（compute-06 Vulkan 后端骨架）| Vulkan compute 封装，**纯 Vulkan 零隐藏运行时**（无 std::thread/事件循环，唯一同步=可选 submit mutex + 每 Sequence 一个 vk::Fence），合"不引入第二调度器"铁律。抄其 Manager 初始化链 / Algorithm 的 SPIR-V→pipeline→descriptor / Tensor 的 memory-type 选择+staging 双缓冲+barrier 编排；**丢**阻塞 `waitForFences`（换非阻塞 `getFenceStatus` 轮询接 fiber，= Event::query 语义，fence=Vulkan Event 的 native handle）、shared_ptr 所有权、logger、OpBase 虚基类。详见 compute-design「compute-06 kompute 映射」节 |
 | **vitamin-cuda** | **参考（compute 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英“beating cuBLAS”逐步优化 writeup（`posts/`）。它是 ggml 显存边界之外 HYLE 自造 kernel 的优化参考，不是 HYLE kernel 的性能证明。SGEMM 展示 naive → block tiling+共享内存 → 转置写 smem+float4 → swizzle → 合并写回 → double buffer 的阶梯；采用前仍须在 HYLE 的真实合同上复证 |
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式；compute-05 显存归属边界（host 归调用方/device 归 ggml gallocr）的权威范本 |
+| **ds4** | 真实消费参考 | 紧凑 CPU/统一内存量化推理路径；用于发现行算子、内存、top-k 和数据布局需求，不自动作性能 peer |
+| **vLLM** | 真实消费参考 | runtime、CPU offload/custom-op、paged KV、sampling 与 serving 需求；GPU/Triton/tensor fusion 形状必须归到正确 owner |
+| **SGLang** | 真实消费参考 | serving/kernel registry、attention、MoE、sampling、speculative decoding 需求；用于发现语义族，不机械复制 Python/GPU API |
 | **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
@@ -132,7 +135,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ## 阅读优先级（按问题域）
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
-- **计算与 IO**：ggml + llama.cpp（compute 借核/工程参考）、oneDNN/oneMath（Intel CPU/数学后端参考）、seastar（io reactor_backend）。
+- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、oneDNN/oneMath（Intel CPU/数学后端参考）、seastar（io reactor_backend）。
 - **按真实消费者启用**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs）、oneTBB/taskflow（数据并行设计）、nghttp2（HTTP/2 借核）、eigen/openvdb（CAE/几何）。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）

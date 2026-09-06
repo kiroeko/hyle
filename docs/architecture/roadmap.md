@@ -192,8 +192,9 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 12. sched；
 13. io。
 
-这一遍必须先完成每个问题域的 ggml 能力、llama.cpp 真实需要、成熟库通用能力、定义性能力和现有 HYLE
-承诺的超集，再统一做跨域去重、归属和质因数分解。不得边统计边实现，也不得以当前依赖冲突删除能力。
+这一遍必须先完成每个问题域的四组推理证据（独立 ggml + llama.cpp、ds4、vLLM、SGLang）真实需要、
+成熟库通用能力、定义性能力和现有 HYLE 承诺的超集，再统一做跨域去重、归属和质因数分解。
+四组证据是 consumer/demand input，不自动是性能 peer；不得边统计边实现，也不得以当前依赖冲突删除能力。
 新组件图完成后，实际施工顺序只由它的拓扑序决定。
 
 上述列表是能力统计顺序，不是状态表。只读新方法回放可以给出 `CONFIRMED`、`METHOD_GAP` 或

@@ -37,12 +37,18 @@ Compute 与 Graph 在这一阶段保持 `QUEUED`，其旧实现只用于发现�
 每个域的发现超集为：
 
 ```text
-ggml 已提供的基础能力
-∪ 最新锁定 llama.cpp 真实消费旅程所需的能力
+独立 ggml 已提供的基础能力 + 最新锁定 llama.cpp 真实消费旅程所需的能力
+∪ 最新锁定 ds4 的紧凑 CPU / 统一内存推理旅程所需的能力
+∪ 最新锁定 vLLM 的 runtime / CPU / custom-op 旅程所需的能力
+∪ 最新锁定 SGLang 的 serving / kernel 旅程所需的能力
 ∪ 至少两个成熟基础/加速库反复提供的通用能力
 ∪ 按通常工程划分定义上属于该问题域的基础能力
 ∪ HYLE 当前全部公开承诺的反向追踪
 ```
+
+以上四组推理证据每轮都要更新或确认本地 clean checkout 并记录准确 commit。它们用于发现需求和
+真实 shape，不自动成为同合同性能 peer；Python、Triton、GPU、tensor 或模型融合入口必须归到正确
+owner，不能按名称机械复制成当前底层模块 API。
 
 这不是 API 名称并集。每个候选能力必须写成真实用户任务，并记录：
 

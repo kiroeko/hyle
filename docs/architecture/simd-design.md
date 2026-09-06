@@ -149,7 +149,7 @@ AVX-512 不受允许。
 | row ops | 连续 f32/f64 算术、归约、SAXPY；f16/bf16/i8/i16 mixed/storage dot | stride、broadcast、tensor fusion |
 | dtype | f32/f16/bf16/E4M3/E5M2 storage、转换、RNE/饱和/NaN/alias | block quant scale、tensor layout |
 | narrow | f16/bf16 数值/bit 搜索、f32 sum、IEEE total-order | 平行 register DSL、tensor narrow policy |
-| math/activation | whole-buffer 数学 accuracy/domain/alias 与激活语义 | 模型 operator graph |
+| math/activation | whole-buffer 数学 accuracy/domain/alias、f32/f16/bf16 激活、split GLU 与单 row normalization 语义 | 模型 operator graph、stride/thread/fused residual |
 | search/scan | 连续数组的查找、归约、有序性和前缀计算 | container index ownership |
 | bitpack/random | 明确 layout 的内存压缩；可复现非加密批量 RNG | 文件/网络 wire format、密码随机数 |
 | ordering | sort/select/partial/radix/argsort 的 key、NaN 和稳定性合同 | distributed/external sort |
@@ -173,17 +173,21 @@ Highway 直接承担可表达的 f16/bf16 promotion/demotion 和 target lowering
 `narrow_ops.h` 保留用户需要的整段语义；源码寄存器 consumer 直接使用 Highway，并自行声明 numeric
 contract。
 
-### Activation 与 row reduction 合同
+### Activation、GLU 与 row normalization 合同
 
-模型无关的 f32 elementwise activation 与普通连续 row softmax/log-softmax 属于 SIMD。核心入口采用
-`src, dst, n`，允许 exact alias 或完全分离的区间，不支持任意部分 overlap；`n == 0` 允许空指针。
-它们是 O(n)、O(1) extra storage，不分配、不加锁、不建立整段临时数组。softmax 使用稳定 max-shift；
+模型无关的 f32/f16/bf16 elementwise activation、split-input ReGLU/GeGLU/SwiGLU、单 row
+RMSNorm/LayerNorm 与普通连续 row softmax/log-softmax 属于 SIMD。窄 storage 的 activation、GLU 和
+normalization 在 f32 中计算并在写回时舍入一次；exact-erf、tanh 与 quick GELU 是三个显式合同，不能
+由实现或 benchmark 暗中互换。核心入口采用 pointer/count，允许文档声明的 exact alias 或完全分离区间，
+不支持任意部分 overlap；`n == 0` 允许空指针。它们是 O(n)、O(1) extra storage，不分配、不加锁、不
+建立整段临时数组。normalization 的 epsilon 必须有限且非负；learned scale/weight/bias 不得与输出重叠。
+softmax 使用稳定 max-shift；
 至少存在一个 finite lane 时，`-inf` 可用作 mask。含 NaN、`+inf` 或全为 `-inf` 的 row 没有受支持的
 normalizer，整行确定写入 quiet NaN，避免静默制造概率。
 
 activation body 与数学原语在同一个 direct-Highway target TU 中组合；ordinary/fat 批次只允许一次已缓存
-目标选择，element loop 内不得再次进入 public dispatcher。attention mask、scale、bias、stride、线程、
-online/blocked 算法、backward、半精度和模型 operator fusion 由 Compute 拥有，不能为消除一个 tiny-call
+目标选择，element loop 内不得再次进入 public dispatcher。attention mask、tensor stride/batch、线程、
+online/blocked 算法、backward、fused residual/group norm 和模型 operator fusion 由 Compute 拥有，不能为消除一个 tiny-call
 边界而把 tensor policy 倒灌到 SIMD。
 
 ### Search 与 scan 合同
@@ -203,9 +207,15 @@ Graph/Compute 或 accelerator owner。
 
 ### Ordering 合同
 
+非破坏 `top_k_f32` 读取一行 score 并返回 best-first 的 `ScoredIndexF32 {score,index}`，输入不变，caller
+提供的 `k` 个结果槽就是全部 O(k) workspace。数值优先于 NaN，相同 score（包括 signed zero）按较小原
+index 排序。`k == 1` 和真实 MoE 常见的有界 `k <= 8` 使用 fixed-capacity insertion，因 k 是公开限定的
+小常数而为 O(n)；其余使用 O(n log k + k log k) heap，`k == n` 直接 full sort。这是由 expert-router
+消费形状与复杂度共同决定的算法分区，不是按 benchmark 输入长度设置的经验阈值。
+
 普通 `sort/partial_sort/select` 是原地 comparison ordering，不建立与 `n` 成比例的 heap workspace；
 `partial_sort` 只保证前 `k` 项有序，`select` 只保证第 `k` 项及两侧 partition。普通路径不稳定，不能按
-长度暗中切换到稳定 radix，也不能为 benchmark 的小 `k` 特例保留 `O(n*k)` insertion route。numeric、
+长度暗中切换到稳定 radix。numeric、
 `UInt128` 与整数 `KeyValue32/64` 的 full/partial/select entry 和 `selected_target` 由同一 Runtime 表生成，
 每次 ordinary whole-buffer API 调用只有一次已缓存间接调用。经典 cl.exe 因 Highway 官方 AVX3 blocklist 将 ordering 降到
 AVX2；这是可报告的 per-family feature，不得伪称 AVX-512 kernel。

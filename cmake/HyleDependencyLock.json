@@ -177,10 +177,10 @@
     },
     {
       "name": "highway", "class": "fetchcontent",
-      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-08-27",
-      "revision": "f503c485cec6b4f2f596fa60d83484797c9eeb5c", "git_tree": "783503c5fd0755ef0802aac0fd66364f0e5a033b",
-      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/f503c485cec6b4f2f596fa60d83484797c9eeb5c", "sha256": "a63e4252d47093eac1eb26206e139e9743987ef9985d3479f47487d3b6c4fe6f" },
-      "expanded_tree_sha256": "e0b374da8062f78be62af509b64997c5b81836c620e1a9ed463062ca19846792",
+      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-09-04",
+      "revision": "18e449b642599b8f51c03ca10173fdc59864e4f2", "git_tree": "625dacea8834b80bb8b40d54d9298b95a9551d35",
+      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/18e449b642599b8f51c03ca10173fdc59864e4f2", "sha256": "718bf1a26f7c074f04e499033166c9e3f415f9b165a390a8b021adac6e0016c0" },
+      "expanded_tree_sha256": "b2ddaa056705fecb4b4e55dee627fdf140db0fa18de26c84f14ce66ca3c6241c",
       "license": { "expression": "Apache-2.0 OR BSD-3-Clause", "files": [
         { "root": "dependency", "path": "LICENSE", "sha256": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44" }
       ] }

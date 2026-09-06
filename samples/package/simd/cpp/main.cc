@@ -17,8 +17,7 @@
 float hyle_package_expert_sum(const float*, std::size_t) noexcept;
 std::size_t hyle_package_xsimd_width() noexcept;
 
-using HylePackageBiasReluFn =
-    void (*)(float*, std::size_t, float) noexcept;
+using HylePackageBiasReluFn = void (*)(float*, std::size_t, float) noexcept;
 void hyle_package_bias_relu_scalar(float*, std::size_t, float) noexcept;
 #if HYLE_ARCH_X64
 void hyle_package_bias_relu_sse4(float*, std::size_t, float) noexcept;
@@ -50,10 +49,17 @@ int main() {
 
   hyle::simd::softmax_f32(input.data(), output.data(), input.size());
   float probability_sum = 0.0f;
-  for (float probability : output)
-    probability_sum += probability;
-  if (std::abs(probability_sum - 1.0f) > 2e-6f)
-    return 3;
+  for (float probability : output) probability_sum += probability;
+  if (std::abs(probability_sum - 1.0f) > 2e-6f) return 3;
+
+  std::array<float, input.size()> gate_output{};
+  hyle::simd::swiglu_f32_batch(input.data(), output.data(), gate_output.data(),
+                               input.size());
+  hyle::simd::rms_norm_f32(gate_output.data(), gate_output.data(),
+                           gate_output.size(), 1e-5f);
+  for (float value : gate_output) {
+    if (!std::isfinite(value)) return 16;
+  }
 
   const std::array<std::uint32_t, 7> scan_input{3, 1, 4, 1, 5, 9, 2};
   std::array<std::uint32_t, scan_input.size()> scan_output{};
@@ -84,8 +90,7 @@ int main() {
                    std::span<std::uint16_t>{packed}, kBits);
   hyle::simd::unpack(std::span<const std::uint16_t>{packed},
                      std::span<std::uint16_t>{decoded}, kBits);
-  if (hyle::simd::kBitpackFormatVersion != 1 || decoded != raw)
-    return 7;
+  if (hyle::simd::kBitpackFormatVersion != 1 || decoded != raw) return 7;
 
   hyle::simd::RandomState random{12345};
   hyle::simd::RandomState copy = random;
@@ -93,8 +98,7 @@ int main() {
   std::array<float, random_a.size()> random_b{};
   hyle::simd::random_fill(random, std::span<float>{random_a});
   hyle::simd::random_fill(copy, std::span<float>{random_b});
-  if (random_a != random_b)
-    return 8;
+  if (random_a != random_b) return 8;
 
   random.seed(12345);
   auto worker = random.split();
@@ -104,14 +108,12 @@ int main() {
   hyle::simd::random_fill(expected, std::span<float>{discarded});
   hyle::simd::random_fill(worker, std::span<float>{random_a});
   hyle::simd::random_fill(expected, std::span<float>{random_b});
-  if (random_a != random_b)
-    return 9;
+  if (random_a != random_b) return 9;
 
   std::array<float, 6> top_keys{3.0f, -2.0f, 9.0f, 1.0f, 7.0f, 4.0f};
   hyle::simd::partial_sort(top_keys.data(), top_keys.size(), 2,
                            hyle::simd::SortOrder::kDescending);
-  if (top_keys[0] != 9.0f || top_keys[1] != 7.0f)
-    return 10;
+  if (top_keys[0] != 9.0f || top_keys[1] != 7.0f) return 10;
 
   std::array<std::uint32_t, 7> stable_keys{4, 1, 4, 2, 1, 3, 1};
   std::array<std::uint32_t, stable_keys.size()> radix_scratch{};
@@ -124,8 +126,14 @@ int main() {
   std::array<std::uint32_t, scores.size()> argsort_scratch{};
   hyle::simd::argsort(scores.data(), indices.data(), scores.size(),
                       argsort_scratch, hyle::simd::SortOrder::kDescending);
-  if (indices != std::array<std::uint32_t, 4>{1, 3, 0, 2})
-    return 12;
+  if (indices != std::array<std::uint32_t, 4>{1, 3, 0, 2}) return 12;
+
+  std::array<hyle::simd::ScoredIndexF32, 2> selected{};
+  hyle::simd::top_k_f32(scores.data(), scores.size(), selected.data(),
+                        selected.size());
+  if (selected[0].index != 1 || selected[1].index != 3 ||
+      selected[0].score != 2.0f || selected[1].score != 2.0f)
+    return 17;
 
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
@@ -160,6 +168,5 @@ int main() {
       HYLE_SIMD_SELECT_FAT_KERNEL(&hyle_package_bias_relu_scalar);
 #endif
   bias_relu(fat_values.data(), fat_values.size(), 1.0f);
-  return fat_values != std::array<float, 4>{0.0f, 0.5f, 2.0f, 5.0f} ? 15
-                                                                        : 0;
+  return fat_values != std::array<float, 4>{0.0f, 0.5f, 2.0f, 5.0f} ? 15 : 0;
 }

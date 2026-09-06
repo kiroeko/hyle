@@ -11,15 +11,17 @@
 #include <limits>
 #include <random>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
-#include "hyle/simd/target.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/target.h"
 #include "src/simd/runtime_internal.h"
 
-// math_test -- ordinary batch operations vs the std::/libm oracle. Runtime routes to a
-// fixed-target locked-Highway implementation where qualified and otherwise to the scalar
-// semantic floor. The public result must satisfy the same complete-domain contract either way.
+// math_test -- ordinary batch operations vs the std::/libm oracle. Runtime
+// routes to a fixed-target locked-Highway implementation where qualified and
+// otherwise to the scalar semantic floor. The public result must satisfy the
+// same complete-domain contract either way.
 
 using hyle::simd::exp_f32_batch;
 using hyle::simd::KernelTarget;
@@ -27,12 +29,13 @@ using hyle::simd::log_f32_batch;
 using hyle::simd::tanh_f32_batch;
 
 namespace {
-// Relative-error tolerance vs a double-precision libm reference. Set from MEASURED worst
-// case (red team 2026-06 flagged the old 1e-5 ~= 84 ULP as toothless -- a broken
-// polynomial would pass). Qualified locked-Highway functions are in the low-single-digit
-// ULP class, so the bound is 8e-7 ~= 6.7 ULP: enough composition margin while remaining
-// still ~12x tighter than the old toothless 1e-5, so a kernel off by >=7 ULP fails.
-// Absolute floor 1e-6 covers lanes crossing zero (log(1), tanh(0)) where rel err undefined.
+// Relative-error tolerance vs a double-precision libm reference. Set from
+// MEASURED worst case (red team 2026-06 flagged the old 1e-5 ~= 84 ULP as
+// toothless -- a broken polynomial would pass). Qualified locked-Highway
+// functions are in the low-single-digit ULP class, so the bound is 8e-7 ~= 6.7
+// ULP: enough composition margin while remaining still ~12x tighter than the
+// old toothless 1e-5, so a kernel off by >=7 ULP fails. Absolute floor 1e-6
+// covers lanes crossing zero (log(1), tanh(0)) where rel err undefined.
 constexpr double kRelTol = 8e-7;
 constexpr double kAbsTol = 1e-6;
 void check(void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
@@ -50,44 +53,54 @@ void check(void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
 
 TEST(Math, ExpMatchesLibm) {
   std::vector<float> in;
-  for (int k = -300; k <= 300; ++k) in.push_back(static_cast<float>(k) * 0.1f);  // [-30,30]
+  for (int k = -300; k <= 300; ++k)
+    in.push_back(static_cast<float>(k) * 0.1f);  // [-30,30]
   check(exp_f32_batch, std::exp, in, "exp");
 }
 
 TEST(Math, LogMatchesLibm) {
   std::vector<float> in;
-  for (int k = 1; k <= 1000; ++k) in.push_back(static_cast<float>(k) * 0.05f);  // (0, 50]
+  for (int k = 1; k <= 1000; ++k)
+    in.push_back(static_cast<float>(k) * 0.05f);  // (0, 50]
   check(log_f32_batch, std::log, in, "log");
 }
 
 TEST(Math, TanhMatchesLibm) {
   std::vector<float> in;
-  for (int k = -200; k <= 200; ++k) in.push_back(static_cast<float>(k) * 0.05f);  // [-10,10]
+  for (int k = -200; k <= 200; ++k)
+    in.push_back(static_cast<float>(k) * 0.05f);  // [-10,10]
   check(tanh_f32_batch, std::tanh, in, "tanh");
 }
 
-// f64 transcendentals vs a long-double libm reference. The vendored cores are ~3.5-ULP class in
-// double too, so the bound is ~1e-14 relative (~45 ULP of double -- still ~billions x tighter than
-// the f32 8e-7, and catches any broken f64 polynomial / wrong-precision dispatch).
+// f64 transcendentals vs a long-double libm reference. The vendored cores are
+// ~3.5-ULP class in double too, so the bound is ~1e-14 relative (~45 ULP of
+// double -- still ~billions x tighter than the f32 8e-7, and catches any broken
+// f64 polynomial / wrong-precision dispatch).
 namespace {
 constexpr double kRelTolF64 = 1e-14;
 constexpr double kAbsTolF64 = 1e-15;
-void check_f64(void (*fn)(const double*, double*, std::size_t), long double (*ref)(long double),
-               const std::vector<double>& in, const char* name) {
+void check_f64(void (*fn)(const double*, double*, std::size_t),
+               long double (*ref)(long double), const std::vector<double>& in,
+               const char* name) {
   std::vector<double> out(in.size());
   fn(in.data(), out.data(), in.size());
   for (std::size_t i = 0; i < in.size(); ++i) {
     const long double want = ref(static_cast<long double>(in[i]));
-    const double tol = static_cast<double>(std::abs(want)) * kRelTolF64 + kAbsTolF64;
-    EXPECT_NEAR(out[i], static_cast<double>(want), tol) << name << " in=" << in[i] << " i=" << i;
+    const double tol =
+        static_cast<double>(std::abs(want)) * kRelTolF64 + kAbsTolF64;
+    EXPECT_NEAR(out[i], static_cast<double>(want), tol)
+        << name << " in=" << in[i] << " i=" << i;
   }
 }
 }  // namespace
 TEST(Math, F64MatchesLibm) {
   std::vector<double> ein, lin, tin;
-  for (int k = -300; k <= 300; ++k) ein.push_back(static_cast<double>(k) * 0.1);   // exp [-30,30]
-  for (int k = 1; k <= 1000; ++k) lin.push_back(static_cast<double>(k) * 0.05);    // log (0,50]
-  for (int k = -200; k <= 200; ++k) tin.push_back(static_cast<double>(k) * 0.05);  // tanh [-10,10]
+  for (int k = -300; k <= 300; ++k)
+    ein.push_back(static_cast<double>(k) * 0.1);  // exp [-30,30]
+  for (int k = 1; k <= 1000; ++k)
+    lin.push_back(static_cast<double>(k) * 0.05);  // log (0,50]
+  for (int k = -200; k <= 200; ++k)
+    tin.push_back(static_cast<double>(k) * 0.05);  // tanh [-10,10]
   check_f64(hyle::simd::exp_f64_batch, std::expl, ein, "exp_f64");
   check_f64(hyle::simd::log_f64_batch, std::logl, lin, "log_f64");
   check_f64(hyle::simd::tanh_f64_batch, std::tanhl, tin, "tanh_f64");
@@ -97,7 +110,9 @@ namespace {
 
 std::uint64_t ordered_f64_bits(double x) noexcept {
   const std::uint64_t bits = std::bit_cast<std::uint64_t>(x);
-  return (bits & (std::uint64_t{1} << 63)) != 0 ? ~bits + 1 : bits | (std::uint64_t{1} << 63);
+  return (bits & (std::uint64_t{1} << 63)) != 0
+             ? ~bits + 1
+             : bits | (std::uint64_t{1} << 63);
 }
 
 std::uint64_t f64_ulp_distance(double a, double b) noexcept {
@@ -106,10 +121,12 @@ std::uint64_t f64_ulp_distance(double a, double b) noexcept {
   return oa >= ob ? oa - ob : ob - oa;
 }
 
-// Full-domain ULP gate for prospective P2-1 table reductions. std::exp/log is the production
-// scalar floor, so this catches a regression relative to the API's existing fallback semantics.
-void check_f64_ulp(void (*fn)(const double*, double*, std::size_t), double (*ref)(double),
-                   const std::vector<double>& in, std::uint64_t max_ulp, const char* name) {
+// Full-domain ULP gate for prospective P2-1 table reductions. std::exp/log is
+// the production scalar floor, so this catches a regression relative to the
+// API's existing fallback semantics.
+void check_f64_ulp(void (*fn)(const double*, double*, std::size_t),
+                   double (*ref)(double), const std::vector<double>& in,
+                   std::uint64_t max_ulp, const char* name) {
   std::vector<double> out(in.size());
   fn(in.data(), out.data(), in.size());
   std::uint64_t observed = 0;
@@ -126,19 +143,28 @@ void check_f64_ulp(void (*fn)(const double*, double*, std::size_t), double (*ref
     }
     const std::uint64_t ulp = f64_ulp_distance(got, want);
     observed = std::max(observed, ulp);
-    EXPECT_LE(ulp, max_ulp) << name << " in=" << std::hexfloat << in[i] << std::defaultfloat
-                            << " i=" << i << " got=" << std::hexfloat << got
-                            << " want=" << want << std::defaultfloat;
+    EXPECT_LE(ulp, max_ulp)
+        << name << " in=" << std::hexfloat << in[i] << std::defaultfloat
+        << " i=" << i << " got=" << std::hexfloat << got << " want=" << want
+        << std::defaultfloat;
   }
   std::fprintf(stderr, "P2-1 %s max_ulp=%llu samples=%zu\n", name,
                static_cast<unsigned long long>(observed), in.size());
 }
 
 std::vector<double> f64_exp_ulp_inputs() {
-  std::vector<double> in = {
-      -std::numeric_limits<double>::infinity(), -745.0, -744.4400719213812,
-      -708.3964185322641, -1.0, -0.0, 0.0, 1.0, 709.0, 709.782712893384,
-      std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()};
+  std::vector<double> in = {-std::numeric_limits<double>::infinity(),
+                            -745.0,
+                            -744.4400719213812,
+                            -708.3964185322641,
+                            -1.0,
+                            -0.0,
+                            0.0,
+                            1.0,
+                            709.0,
+                            709.782712893384,
+                            std::numeric_limits<double>::infinity(),
+                            std::numeric_limits<double>::quiet_NaN()};
   std::mt19937_64 rng(0xE6F64ULL);
   std::uniform_real_distribution<double> dist(-745.0, 709.0);
   for (std::size_t i = 0; i < 16384; ++i) in.push_back(dist(rng));
@@ -147,15 +173,25 @@ std::vector<double> f64_exp_ulp_inputs() {
 
 std::vector<double> f64_log_ulp_inputs() {
   std::vector<double> in = {
-      -std::numeric_limits<double>::infinity(), -1.0, -0.0, 0.0,
-      std::numeric_limits<double>::denorm_min(), std::nextafter(std::numeric_limits<double>::min(), 0.0),
-      std::numeric_limits<double>::min(), std::nextafter(std::numeric_limits<double>::min(), 1.0),
-      0.5, 1.0, 2.0, std::numeric_limits<double>::max(),
-      std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()};
+      -std::numeric_limits<double>::infinity(),
+      -1.0,
+      -0.0,
+      0.0,
+      std::numeric_limits<double>::denorm_min(),
+      std::nextafter(std::numeric_limits<double>::min(), 0.0),
+      std::numeric_limits<double>::min(),
+      std::nextafter(std::numeric_limits<double>::min(), 1.0),
+      0.5,
+      1.0,
+      2.0,
+      std::numeric_limits<double>::max(),
+      std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::quiet_NaN()};
   std::mt19937_64 rng(0x10AF64ULL);
   std::uniform_real_distribution<double> exponent(-1074.0, 1023.0);
   std::uniform_real_distribution<double> mantissa(1.0, 2.0);
-  for (std::size_t i = 0; i < 16384; ++i) in.push_back(std::scalbn(mantissa(rng), static_cast<int>(exponent(rng))));
+  for (std::size_t i = 0; i < 16384; ++i)
+    in.push_back(std::scalbn(mantissa(rng), static_cast<int>(exponent(rng))));
   return in;
 }
 
@@ -181,26 +217,35 @@ std::vector<double> f64_log_in_range_inputs() {
 }  // namespace
 
 TEST(Math, F64ExpLogFullDomainUlp) {
-  // Existing Highway standard kernels target 1 ULP upstream. Keep a small integration margin for
-  // compiler/FMA differences; any P2-1 replacement must tighten this gate rather than weaken it.
-  check_f64_ulp(hyle::simd::exp_f64_batch, std::exp, f64_exp_ulp_inputs(), 4, "exp_f64");
-  check_f64_ulp(hyle::simd::log_f64_batch, std::log, f64_log_ulp_inputs(), 4, "log_f64");
+  // Existing Highway standard kernels target 1 ULP upstream. Keep a small
+  // integration margin for compiler/FMA differences; any P2-1 replacement must
+  // tighten this gate rather than weaken it.
+  check_f64_ulp(hyle::simd::exp_f64_batch, std::exp, f64_exp_ulp_inputs(), 4,
+                "exp_f64");
+  check_f64_ulp(hyle::simd::log_f64_batch, std::log, f64_log_ulp_inputs(), 4,
+                "log_f64");
 }
 
 TEST(Math, F64ExpLogInRangeUlpAndAlias) {
   const auto exp_in = f64_exp_in_range_inputs();
   const auto log_in = f64_log_in_range_inputs();
-  check_f64_ulp(hyle::simd::exp_in_range_f64_batch, std::exp, exp_in, 4, "exp_in_range_f64");
-  check_f64_ulp(hyle::simd::log_in_range_f64_batch, std::log, log_in, 4, "log_in_range_f64");
+  check_f64_ulp(hyle::simd::exp_in_range_f64_batch, std::exp, exp_in, 4,
+                "exp_in_range_f64");
+  check_f64_ulp(hyle::simd::log_in_range_f64_batch, std::log, log_in, 4,
+                "log_in_range_f64");
 
   auto inplace = exp_in;
-  hyle::simd::exp_in_range_f64_batch(inplace.data(), inplace.data(), inplace.size());
+  hyle::simd::exp_in_range_f64_batch(inplace.data(), inplace.data(),
+                                     inplace.size());
   for (std::size_t i = 0; i < inplace.size(); ++i)
-    EXPECT_LE(f64_ulp_distance(inplace[i], std::exp(exp_in[i])), 4U) << "exp in-place i=" << i;
+    EXPECT_LE(f64_ulp_distance(inplace[i], std::exp(exp_in[i])), 4U)
+        << "exp in-place i=" << i;
   inplace = log_in;
-  hyle::simd::log_in_range_f64_batch(inplace.data(), inplace.data(), inplace.size());
+  hyle::simd::log_in_range_f64_batch(inplace.data(), inplace.data(),
+                                     inplace.size());
   for (std::size_t i = 0; i < inplace.size(); ++i)
-    EXPECT_LE(f64_ulp_distance(inplace[i], std::log(log_in[i])), 4U) << "log in-place i=" << i;
+    EXPECT_LE(f64_ulp_distance(inplace[i], std::log(log_in[i])), 4U)
+        << "log in-place i=" << i;
 }
 
 TEST(Math, F32ExpLogInRangeAndAlias) {
@@ -232,67 +277,99 @@ TEST(Math, F32ExpLogInRangeAndAlias) {
         << "log in-place i=" << i;
 }
 
-// The remaining f64 transcendentals, each on its natural domain, against long-double libm at
-// the ~1e-14 f64 bound. Product routing is not encoded in the test name or oracle.
+// The remaining f64 transcendentals, each on its natural domain, against
+// long-double libm at the ~1e-14 f64 bound. Product routing is not encoded in
+// the test name or oracle.
 namespace {
 std::vector<double> rampd(double lo, double hi, int steps) {
   std::vector<double> v;
-  for (int k = 0; k <= steps; ++k) v.push_back(lo + (hi - lo) * static_cast<double>(k) / steps);
+  for (int k = 0; k <= steps; ++k)
+    v.push_back(lo + (hi - lo) * static_cast<double>(k) / steps);
   return v;
 }
 }  // namespace
 TEST(Math, F64RestMatchesLibm) {
-  check_f64(hyle::simd::sin_f64_batch, std::sinl, rampd(-3.14, 3.14, 600), "sin_f64");
-  check_f64(hyle::simd::cos_f64_batch, std::cosl, rampd(-3.14, 3.14, 600), "cos_f64");
-  check_f64(hyle::simd::exp2_f64_batch, std::exp2l, rampd(-20.0, 20.0, 600), "exp2_f64");
-  check_f64(hyle::simd::log2_f64_batch, std::log2l, rampd(0.01, 100.0, 600), "log2_f64");
-  check_f64(hyle::simd::erf_f64_batch, std::erfl, rampd(-4.0, 4.0, 600), "erf_f64");
-  check_f64(hyle::simd::atan_f64_batch, std::atanl, rampd(-20.0, 20.0, 600), "atan_f64");
-  check_f64(hyle::simd::cbrt_f64_batch, std::cbrtl, rampd(-100.0, 100.0, 600), "cbrt_f64");
-  check_f64(hyle::simd::expm1_f64_batch, std::expm1l, rampd(-2.0, 2.0, 600), "expm1_f64");
-  check_f64(hyle::simd::log1p_f64_batch, std::log1pl, rampd(-0.9, 20.0, 600), "log1p_f64");
-  check_f64(hyle::simd::asinh_f64_batch, std::asinhl, rampd(-20.0, 20.0, 600), "asinh_f64");
-  check_f64(hyle::simd::acosh_f64_batch, std::acoshl, rampd(1.0, 50.0, 600), "acosh_f64");
-  check_f64(hyle::simd::tgamma_f64_batch, std::tgammal, rampd(0.5, 15.0, 400), "tgamma_f64");
-  check_f64(hyle::simd::lgamma_f64_batch, std::lgammal, rampd(0.5, 40.0, 400), "lgamma_f64");
+  check_f64(hyle::simd::sin_f64_batch, std::sinl, rampd(-3.14, 3.14, 600),
+            "sin_f64");
+  check_f64(hyle::simd::cos_f64_batch, std::cosl, rampd(-3.14, 3.14, 600),
+            "cos_f64");
+  check_f64(hyle::simd::exp2_f64_batch, std::exp2l, rampd(-20.0, 20.0, 600),
+            "exp2_f64");
+  check_f64(hyle::simd::log2_f64_batch, std::log2l, rampd(0.01, 100.0, 600),
+            "log2_f64");
+  check_f64(hyle::simd::erf_f64_batch, std::erfl, rampd(-4.0, 4.0, 600),
+            "erf_f64");
+  check_f64(hyle::simd::atan_f64_batch, std::atanl, rampd(-20.0, 20.0, 600),
+            "atan_f64");
+  check_f64(hyle::simd::cbrt_f64_batch, std::cbrtl, rampd(-100.0, 100.0, 600),
+            "cbrt_f64");
+  check_f64(hyle::simd::expm1_f64_batch, std::expm1l, rampd(-2.0, 2.0, 600),
+            "expm1_f64");
+  check_f64(hyle::simd::log1p_f64_batch, std::log1pl, rampd(-0.9, 20.0, 600),
+            "log1p_f64");
+  check_f64(hyle::simd::asinh_f64_batch, std::asinhl, rampd(-20.0, 20.0, 600),
+            "asinh_f64");
+  check_f64(hyle::simd::acosh_f64_batch, std::acoshl, rampd(1.0, 50.0, 600),
+            "acosh_f64");
+  check_f64(hyle::simd::tgamma_f64_batch, std::tgammal, rampd(0.5, 15.0, 400),
+            "tgamma_f64");
+  check_f64(hyle::simd::lgamma_f64_batch, std::lgammal, rampd(0.5, 40.0, 400),
+            "lgamma_f64");
 }
-// hypot f64 (binary), incl overflow inputs (>1e150 where a^2 overflows double -- Highway's exponent
-// scaling must match std::hypot, not return inf).
+// hypot f64 (binary), incl overflow inputs (>1e150 where a^2 overflows double
+// -- Highway's exponent scaling must match std::hypot, not return inf).
 TEST(Math, HypotF64MatchesLibm) {
   std::vector<double> a, b;
-  for (int k = -50; k <= 50; ++k) { a.push_back(static_cast<double>(k) * 3.0); b.push_back(static_cast<double>(k) * 2.0 + 1.0); }
-  a.push_back(3e300); b.push_back(4e300);   // a^2/b^2 overflow double -> tests exponent scaling
-  a.push_back(1e308); b.push_back(1.0);
+  for (int k = -50; k <= 50; ++k) {
+    a.push_back(static_cast<double>(k) * 3.0);
+    b.push_back(static_cast<double>(k) * 2.0 + 1.0);
+  }
+  a.push_back(3e300);
+  b.push_back(4e300);  // a^2/b^2 overflow double -> tests exponent scaling
+  a.push_back(1e308);
+  b.push_back(1.0);
   std::vector<double> out(a.size());
   hyle::simd::hypot_f64_batch(a.data(), b.data(), out.data(), a.size());
   for (std::size_t i = 0; i < a.size(); ++i) {
-    const long double want = std::hypotl(static_cast<long double>(a[i]), static_cast<long double>(b[i]));
+    const long double want = std::hypotl(static_cast<long double>(a[i]),
+                                         static_cast<long double>(b[i]));
     const double tol = static_cast<double>(std::abs(want)) * 1e-14 + 1e-15;
     EXPECT_NEAR(out[i], static_cast<double>(want), tol) << "hypot_f64 i=" << i;
   }
 }
 
-// Breadth functions vs libm. Ranges follow each function's domain; whether the implementation is
-// a qualified Highway primitive, a minimal HYLE composition, or the scalar floor is private.
+// Breadth functions vs libm. Ranges follow each function's domain; whether the
+// implementation is a qualified Highway primitive, a minimal HYLE composition,
+// or the scalar floor is private.
 namespace {
 std::vector<float> ramp(float lo, float hi, int steps) {
   std::vector<float> v;
-  for (int k = 0; k <= steps; ++k) v.push_back(lo + (hi - lo) * static_cast<float>(k) / static_cast<float>(steps));
+  for (int k = 0; k <= steps; ++k)
+    v.push_back(lo +
+                (hi - lo) * static_cast<float>(k) / static_cast<float>(steps));
   return v;
 }
 }  // namespace
 TEST(Math, Simd09MatchesLibm) {
   check(hyle::simd::sin_f32_batch, std::sin, ramp(-3.14f, 3.14f, 600), "sin");
   check(hyle::simd::cos_f32_batch, std::cos, ramp(-3.14f, 3.14f, 600), "cos");
-  check(hyle::simd::exp2_f32_batch, std::exp2, ramp(-20.0f, 20.0f, 600), "exp2");
-  check(hyle::simd::log2_f32_batch, std::log2, ramp(0.01f, 100.0f, 600), "log2");
+  check(hyle::simd::exp2_f32_batch, std::exp2, ramp(-20.0f, 20.0f, 600),
+        "exp2");
+  check(hyle::simd::log2_f32_batch, std::log2, ramp(0.01f, 100.0f, 600),
+        "log2");
   check(hyle::simd::erf_f32_batch, std::erf, ramp(-4.0f, 4.0f, 600), "erf");
-  check(hyle::simd::atan_f32_batch, std::atan, ramp(-20.0f, 20.0f, 600), "atan");
-  check(hyle::simd::cbrt_f32_batch, std::cbrt, ramp(-100.0f, 100.0f, 600), "cbrt");
-  check(hyle::simd::expm1_f32_batch, std::expm1, ramp(-2.0f, 2.0f, 600), "expm1");
-  check(hyle::simd::log1p_f32_batch, std::log1p, ramp(-0.9f, 20.0f, 600), "log1p");
-  check(hyle::simd::asinh_f32_batch, std::asinh, ramp(-20.0f, 20.0f, 600), "asinh");
-  check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600), "acosh");
+  check(hyle::simd::atan_f32_batch, std::atan, ramp(-20.0f, 20.0f, 600),
+        "atan");
+  check(hyle::simd::cbrt_f32_batch, std::cbrt, ramp(-100.0f, 100.0f, 600),
+        "cbrt");
+  check(hyle::simd::expm1_f32_batch, std::expm1, ramp(-2.0f, 2.0f, 600),
+        "expm1");
+  check(hyle::simd::log1p_f32_batch, std::log1p, ramp(-0.9f, 20.0f, 600),
+        "log1p");
+  check(hyle::simd::asinh_f32_batch, std::asinh, ramp(-20.0f, 20.0f, 600),
+        "asinh");
+  check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600),
+        "acosh");
 }
 
 TEST(Math, DirectHighwayPreservesSignedZero) {
@@ -310,8 +387,8 @@ TEST(Math, DirectHighwayPreservesSignedZero) {
     d_x[i] = negative_x ? -0.0 : 0.0;
   }
 
-  for (const auto fn : {hyle::simd::sin_f32_batch,
-                        hyle::simd::expm1_f32_batch}) {
+  for (const auto fn :
+       {hyle::simd::sin_f32_batch, hyle::simd::expm1_f32_batch}) {
     fn(f_input, f_out, n);
     for (std::size_t i = 0; i < n; ++i) {
       EXPECT_EQ(f_out[i], 0.0f) << "f32 lane=" << i;
@@ -319,8 +396,8 @@ TEST(Math, DirectHighwayPreservesSignedZero) {
           << "f32 lane=" << i;
     }
   }
-  for (const auto fn : {hyle::simd::sin_f64_batch,
-                        hyle::simd::expm1_f64_batch}) {
+  for (const auto fn :
+       {hyle::simd::sin_f64_batch, hyle::simd::expm1_f64_batch}) {
     fn(d_input, d_out, n);
     for (std::size_t i = 0; i < n; ++i) {
       EXPECT_EQ(d_out[i], 0.0) << "f64 lane=" << i;
@@ -349,8 +426,14 @@ TEST(Math, DirectHighwayFullRangeSpecialValues) {
   const auto check_f32_specials = [](auto fn, auto ref, const char* name) {
     const float inf = std::numeric_limits<float>::infinity();
     const std::array<float, 8> pattern = {
-        -inf, -1.0f, -0.0f, 0.0f, 1.0f, inf,
-        std::numeric_limits<float>::quiet_NaN(), 2.0f};
+        -inf,
+        -1.0f,
+        -0.0f,
+        0.0f,
+        1.0f,
+        inf,
+        std::numeric_limits<float>::quiet_NaN(),
+        2.0f};
     std::vector<float> in;
     for (int repeat = 0; repeat < 8; ++repeat)
       in.insert(in.end(), pattern.begin(), pattern.end());
@@ -373,8 +456,14 @@ TEST(Math, DirectHighwayFullRangeSpecialValues) {
   const auto check_f64_specials = [](auto fn, auto ref, const char* name) {
     const double inf = std::numeric_limits<double>::infinity();
     const std::array<double, 8> pattern = {
-        -inf, -1.0, -0.0, 0.0, 1.0, inf,
-        std::numeric_limits<double>::quiet_NaN(), 2.0};
+        -inf,
+        -1.0,
+        -0.0,
+        0.0,
+        1.0,
+        inf,
+        std::numeric_limits<double>::quiet_NaN(),
+        2.0};
     std::vector<double> in;
     for (int repeat = 0; repeat < 8; ++repeat)
       in.insert(in.end(), pattern.begin(), pattern.end());
@@ -395,36 +484,48 @@ TEST(Math, DirectHighwayFullRangeSpecialValues) {
     }
   };
 
-  check_f32_specials(hyle::simd::tanh_f32_batch,
-                     [](float x) { return std::tanh(x); }, "tanh_f32");
-  check_f32_specials(hyle::simd::erf_f32_batch,
-                     [](float x) { return std::erf(x); }, "erf_f32");
-  check_f32_specials(hyle::simd::atan_f32_batch,
-                     [](float x) { return std::atan(x); }, "atan_f32");
-  check_f32_specials(hyle::simd::cbrt_f32_batch,
-                     [](float x) { return std::cbrt(x); }, "cbrt_f32");
-  check_f32_specials(hyle::simd::asinh_f32_batch,
-                     [](float x) { return std::asinh(x); }, "asinh_f32");
+  check_f32_specials(
+      hyle::simd::tanh_f32_batch, [](float x) { return std::tanh(x); },
+      "tanh_f32");
+  check_f32_specials(
+      hyle::simd::erf_f32_batch, [](float x) { return std::erf(x); },
+      "erf_f32");
+  check_f32_specials(
+      hyle::simd::atan_f32_batch, [](float x) { return std::atan(x); },
+      "atan_f32");
+  check_f32_specials(
+      hyle::simd::cbrt_f32_batch, [](float x) { return std::cbrt(x); },
+      "cbrt_f32");
+  check_f32_specials(
+      hyle::simd::asinh_f32_batch, [](float x) { return std::asinh(x); },
+      "asinh_f32");
 
-  check_f64_specials(hyle::simd::tanh_f64_batch,
-                     [](double x) { return std::tanh(x); }, "tanh_f64");
-  check_f64_specials(hyle::simd::erf_f64_batch,
-                     [](double x) { return std::erf(x); }, "erf_f64");
-  check_f64_specials(hyle::simd::atan_f64_batch,
-                     [](double x) { return std::atan(x); }, "atan_f64");
-  check_f64_specials(hyle::simd::cbrt_f64_batch,
-                     [](double x) { return std::cbrt(x); }, "cbrt_f64");
-  check_f64_specials(hyle::simd::asinh_f64_batch,
-                     [](double x) { return std::asinh(x); }, "asinh_f64");
+  check_f64_specials(
+      hyle::simd::tanh_f64_batch, [](double x) { return std::tanh(x); },
+      "tanh_f64");
+  check_f64_specials(
+      hyle::simd::erf_f64_batch, [](double x) { return std::erf(x); },
+      "erf_f64");
+  check_f64_specials(
+      hyle::simd::atan_f64_batch, [](double x) { return std::atan(x); },
+      "atan_f64");
+  check_f64_specials(
+      hyle::simd::cbrt_f64_batch, [](double x) { return std::cbrt(x); },
+      "cbrt_f64");
+  check_f64_specials(
+      hyle::simd::asinh_f64_batch, [](double x) { return std::asinh(x); },
+      "asinh_f64");
 }
 
-// The current locked Highway release directly provides lgamma/tgamma. Ranges avoid the poles
-// (0, negative integers) and f32 overflow: tgamma overflows past ~35, so cap at 10
-// (tgamma(10)=362880). Gamma has a wider upstream ULP class than the common transcendentals, so
-// keep a dedicated tolerance instead of weakening the general math gate.
+// The current locked Highway release directly provides lgamma/tgamma. Ranges
+// avoid the poles (0, negative integers) and f32 overflow: tgamma overflows
+// past ~35, so cap at 10 (tgamma(10)=362880). Gamma has a wider upstream ULP
+// class than the common transcendentals, so keep a dedicated tolerance instead
+// of weakening the general math gate.
 TEST(Math, DirectHighwayGammaMatchesLibm) {
-  auto check_gamma = [](void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
-                        const std::vector<float>& in, const char* name, double reltol) {
+  auto check_gamma = [](void (*fn)(const float*, float*, std::size_t),
+                        double (*ref)(double), const std::vector<float>& in,
+                        const char* name, double reltol) {
     std::vector<float> out(in.size());
     fn(in.data(), out.data(), in.size());
     for (std::size_t i = 0; i < in.size(); ++i) {
@@ -435,24 +536,33 @@ TEST(Math, DirectHighwayGammaMatchesLibm) {
     }
   };
   // lgamma over (0, 50] (skip the pole at 0): log-gamma, modest magnitude.
-  check_gamma(hyle::simd::lgamma_f32_batch, std::lgamma, ramp(0.05f, 50.0f, 600), "lgamma", 4e-6);
+  check_gamma(hyle::simd::lgamma_f32_batch, std::lgamma,
+              ramp(0.05f, 50.0f, 600), "lgamma", 4e-6);
   // tgamma over (0, 10]: Gamma itself, capped below f32 overflow (~35).
-  check_gamma(hyle::simd::tgamma_f32_batch, std::tgamma, ramp(0.05f, 10.0f, 600), "tgamma", 4e-6);
+  check_gamma(hyle::simd::tgamma_f32_batch, std::tgamma,
+              ramp(0.05f, 10.0f, 600), "tgamma", 4e-6);
 }
 
-// Full-range hypot uses Highway exponent scaling and must match std::hypot even when a*a overflows.
+// Full-range hypot uses Highway exponent scaling and must match std::hypot even
+// when a*a overflows.
 TEST(Math, HypotMatchesLibm) {
   std::vector<float> a, b;
-  // grid of (a,b) pairs across small, large, and overflow-prone magnitudes + signs.
+  // grid of (a,b) pairs across small, large, and overflow-prone magnitudes +
+  // signs.
   for (float av : {-1e3f, -3.5f, 0.0f, 2.0f, 100.0f, 1e18f, 3e19f})
-    for (float bv : {-1e3f, -0.5f, 0.0f, 4.0f, 100.0f, 1e18f, 3e19f}) { a.push_back(av); b.push_back(bv); }
+    for (float bv : {-1e3f, -0.5f, 0.0f, 4.0f, 100.0f, 1e18f, 3e19f}) {
+      a.push_back(av);
+      b.push_back(bv);
+    }
   std::vector<float> out(a.size());
   hyle::simd::hypot_f32_batch(a.data(), b.data(), out.data(), a.size());
   for (std::size_t i = 0; i < a.size(); ++i) {
-    const double want = std::hypot(static_cast<double>(a[i]), static_cast<double>(b[i]));
+    const double want =
+        std::hypot(static_cast<double>(a[i]), static_cast<double>(b[i]));
     const double got = static_cast<double>(out[i]);
     const double tol = std::abs(want) * 8e-7 + 1e-6;
-    EXPECT_NEAR(got, want, tol) << "hypot a=" << a[i] << " b=" << b[i] << " i=" << i;
+    EXPECT_NEAR(got, want, tol)
+        << "hypot a=" << a[i] << " b=" << b[i] << " i=" << i;
   }
 }
 
@@ -470,40 +580,54 @@ TEST(Math, HypotInRangeWithinContract) {
     }
   };
   std::vector<float> out(a.size());
-  hyle::simd::hypot_in_range_f32_batch(a.data(), b.data(), out.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(a.data(), b.data(), out.data(),
+                                       a.size());
   check(out);
   auto in_place_a = a;
-  hyle::simd::hypot_in_range_f32_batch(in_place_a.data(), b.data(), in_place_a.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(in_place_a.data(), b.data(),
+                                       in_place_a.data(), a.size());
   check(in_place_a);
   auto in_place_b = b;
-  hyle::simd::hypot_in_range_f32_batch(a.data(), in_place_b.data(), in_place_b.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(a.data(), in_place_b.data(),
+                                       in_place_b.data(), a.size());
   check(in_place_b);
 }
 
-// Tail handling across values below, at, and above representative vector widths.
+// Tail handling across values below, at, and above representative vector
+// widths.
 TEST(Math, TailSizes) {
-  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8}, std::size_t{9}, std::size_t{17}}) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8},
+                        std::size_t{9}, std::size_t{17}}) {
     std::vector<float> in(n);
-    for (std::size_t i = 0; i < n; ++i) in[i] = 0.1f + 0.3f * static_cast<float>(i);
+    for (std::size_t i = 0; i < n; ++i)
+      in[i] = 0.1f + 0.3f * static_cast<float>(i);
     std::vector<float> oe(n), ol(n), ot(n);
     exp_f32_batch(in.data(), oe.data(), n);
     log_f32_batch(in.data(), ol.data(), n);
     tanh_f32_batch(in.data(), ot.data(), n);
     for (std::size_t i = 0; i < n; ++i) {
-      EXPECT_NEAR(oe[i], std::exp(in[i]), std::abs(std::exp(in[i])) * kRelTol + kAbsTol) << "exp n=" << n;
-      EXPECT_NEAR(ol[i], std::log(in[i]), std::abs(std::log(in[i])) * kRelTol + kAbsTol) << "log n=" << n;
-      EXPECT_NEAR(ot[i], std::tanh(in[i]), std::abs(std::tanh(in[i])) * kRelTol + kAbsTol) << "tanh n=" << n;
+      EXPECT_NEAR(oe[i], std::exp(in[i]),
+                  std::abs(std::exp(in[i])) * kRelTol + kAbsTol)
+          << "exp n=" << n;
+      EXPECT_NEAR(ol[i], std::log(in[i]),
+                  std::abs(std::log(in[i])) * kRelTol + kAbsTol)
+          << "log n=" << n;
+      EXPECT_NEAR(ot[i], std::tanh(in[i]),
+                  std::abs(std::tanh(in[i])) * kRelTol + kAbsTol)
+          << "tanh n=" << n;
     }
   }
 }
 
-// Active-tier sanity. Correctness is proved independently above; this property ensures the
-// runtime diagnostic names the fixed target actually compiled for the host.
+// Active-tier sanity. Correctness is proved independently above; this property
+// ensures the runtime diagnostic names the fixed target actually compiled for
+// the host.
 TEST(Math, ActiveVariantReported) {
   const KernelTarget v = hyle::simd::runtime().math.target;
 #if HYLE_ARCH_X64
   // x86: scalar floor, or locked-Highway AVX2 / AVX-512 target when available.
-  EXPECT_TRUE(v == KernelTarget::kScalar || v == KernelTarget::kAvx2 || v == KernelTarget::kAvx512);
+  EXPECT_TRUE(v == KernelTarget::kScalar || v == KernelTarget::kAvx2 ||
+              v == KernelTarget::kAvx512);
 #elif HYLE_ARCH_ARM64
   // aarch64: Highway NEON cores are always compiled (ARMv8 baseline) -> kNeon.
   EXPECT_EQ(v, KernelTarget::kNeon);
@@ -530,8 +654,8 @@ TEST(Math, ActivationsMatchReferenceAndAlias) {
   };
   const auto gelu_tanh = [](double x) {
     return 0.5 * x *
-           (1.0 + std::tanh(kSqrt2OverPi * x *
-                            (1.0 + kGeluCoefficient * x * x)));
+           (1.0 +
+            std::tanh(kSqrt2OverPi * x * (1.0 + kGeluCoefficient * x * x)));
   };
   const auto sigmoid = [](double x) {
     const double e = std::exp(-std::abs(x));
@@ -565,8 +689,8 @@ TEST(Math, ActivationsMatchReferenceAndAlias) {
                         std::size_t{9}, std::size_t{257}}) {
     std::vector<float> input(n);
     for (std::size_t i = 0; i < n; ++i) {
-      input[i] = -12.0f + 24.0f * static_cast<float>(i + 1) /
-                              static_cast<float>(n + 1);
+      input[i] = -12.0f +
+                 24.0f * static_cast<float>(i + 1) / static_cast<float>(n + 1);
     }
     for (const UnaryCase& op : cases) {
       std::vector<float> output(n);
@@ -619,9 +743,8 @@ TEST(Math, ParameterizedActivationsMatchReferenceAndAlias) {
   hyle::simd::elu_f32_batch(in_place.data(), kAlpha, in_place.data(),
                             in_place.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
-    const double expected = input[i] >= 0.0f
-                                ? input[i]
-                                : kAlpha * std::expm1(double(input[i]));
+    const double expected =
+        input[i] >= 0.0f ? input[i] : kAlpha * std::expm1(double(input[i]));
     EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6 + 2e-6)
         << "elu i=" << i;
     EXPECT_FLOAT_EQ(in_place[i], output[i]) << "elu alias i=" << i;
@@ -671,8 +794,7 @@ TEST(Math, ActivationExceptionalValuesHaveStableSemantics) {
   EXPECT_EQ(output[3], inf);
   EXPECT_TRUE(std::signbit(output[1]));
   check_nan();
-  hyle::simd::hard_sigmoid_f32_batch(input.data(), output.data(),
-                                     input.size());
+  hyle::simd::hard_sigmoid_f32_batch(input.data(), output.data(), input.size());
   EXPECT_EQ(output[0], 0.0f);
   EXPECT_EQ(output[3], 1.0f);
   check_nan();
@@ -682,21 +804,405 @@ TEST(Math, ActivationExceptionalValuesHaveStableSemantics) {
   check_nan();
 }
 
+namespace {
+
+enum class InferenceActivation {
+  kGelu,
+  kGeluTanh,
+  kGeluQuick,
+  kSilu,
+  kRelu,
+};
+
+float inference_activation_reference(InferenceActivation operation, float x) {
+  if (x == -std::numeric_limits<float>::infinity() &&
+      operation != InferenceActivation::kRelu) {
+    return 0.0f;
+  }
+  switch (operation) {
+    case InferenceActivation::kGelu:
+      return 0.5f * x * (1.0f + std::erf(x * 0.70710678118654752440f));
+    case InferenceActivation::kGeluTanh:
+      return 0.5f * x *
+             (1.0f + std::tanh(0.79788456080286535588f * x *
+                               std::fma(0.044715f, x * x, 1.0f)));
+    case InferenceActivation::kGeluQuick: {
+      const float scaled = 1.702f * x;
+      const float e = std::exp(-std::abs(scaled));
+      const float sigmoid = scaled < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+      return x * sigmoid;
+    }
+    case InferenceActivation::kSilu: {
+      const float e = std::exp(-std::abs(x));
+      const float sigmoid = x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+      return x * sigmoid;
+    }
+    case InferenceActivation::kRelu:
+      if (std::isnan(x)) return x;
+      return x > 0.0f ? x : 0.0f;
+  }
+  return std::numeric_limits<float>::quiet_NaN();
+}
+
+template <typename T>
+float decode_storage(T value) {
+  if constexpr (std::is_same_v<T, hyle::simd::float16_t>) {
+    return hyle::simd::f16_to_f32(value);
+  } else {
+    static_assert(std::is_same_v<T, hyle::simd::bfloat16_t>);
+    return hyle::simd::bf16_to_f32(value);
+  }
+}
+
+template <typename T>
+T encode_storage(float value) {
+  if constexpr (std::is_same_v<T, hyle::simd::float16_t>) {
+    return hyle::simd::f32_to_f16(value);
+  } else {
+    static_assert(std::is_same_v<T, hyle::simd::bfloat16_t>);
+    return hyle::simd::f32_to_bf16(value);
+  }
+}
+
+template <typename T>
+double narrow_tolerance(float expected) {
+  if constexpr (std::is_same_v<T, hyle::simd::float16_t>) {
+    return std::abs(expected) * 0.0015 + 0.001;
+  } else {
+    return std::abs(expected) * 0.012 + 0.008;
+  }
+}
+
+template <typename T>
+void check_narrow_activation(void (*function)(const T*, T*,
+                                              std::size_t) noexcept,
+                             InferenceActivation operation) {
+  for (const std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8},
+                              std::size_t{9}, std::size_t{257}}) {
+    std::vector<T> input(n), output(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      input[i] = encode_storage<T>(-9.0f + 18.0f * static_cast<float>(i + 1) /
+                                               static_cast<float>(n + 1));
+    }
+    function(input.data(), output.data(), n);
+    auto in_place = input;
+    function(in_place.data(), in_place.data(), n);
+    for (std::size_t i = 0; i < n; ++i) {
+      const float expected =
+          inference_activation_reference(operation, decode_storage(input[i]));
+      EXPECT_NEAR(decode_storage(output[i]), expected,
+                  narrow_tolerance<T>(expected));
+      EXPECT_EQ(in_place[i].bits, output[i].bits);
+    }
+  }
+
+  const float special_values[] = {-std::numeric_limits<float>::infinity(),
+                                  -0.0f, 0.0f,
+                                  std::numeric_limits<float>::infinity(),
+                                  std::numeric_limits<float>::quiet_NaN()};
+  std::array<T, std::size(special_values)> special_input{};
+  std::array<T, std::size(special_values)> special_output{};
+  for (std::size_t i = 0; i < special_input.size(); ++i)
+    special_input[i] = encode_storage<T>(special_values[i]);
+  function(special_input.data(), special_output.data(), special_input.size());
+  EXPECT_EQ(decode_storage(special_output[0]), 0.0f);
+  EXPECT_TRUE(std::signbit(decode_storage(special_output[1])));
+  EXPECT_FALSE(std::signbit(decode_storage(special_output[2])));
+  EXPECT_EQ(decode_storage(special_output[3]),
+            std::numeric_limits<float>::infinity());
+  EXPECT_TRUE(std::isnan(decode_storage(special_output[4])));
+}
+
+template <typename T>
+void check_narrow_gated(void (*function)(const T*, const T*, T*,
+                                         std::size_t) noexcept,
+                        InferenceActivation operation) {
+  constexpr std::size_t n = 259;
+  std::vector<T> gate(n), value(n), output(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    gate[i] = encode_storage<T>(-7.0f + 14.0f * static_cast<float>(i) /
+                                            static_cast<float>(n - 1));
+    value[i] =
+        encode_storage<T>(1.25f * std::cos(static_cast<float>(i) * 0.07f));
+  }
+  function(gate.data(), value.data(), output.data(), n);
+  auto alias_gate = gate;
+  function(alias_gate.data(), value.data(), alias_gate.data(), n);
+  auto alias_value = value;
+  function(gate.data(), alias_value.data(), alias_value.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected =
+        inference_activation_reference(operation, decode_storage(gate[i])) *
+        decode_storage(value[i]);
+    EXPECT_NEAR(decode_storage(output[i]), expected,
+                narrow_tolerance<T>(expected));
+    EXPECT_EQ(alias_gate[i].bits, output[i].bits);
+    EXPECT_EQ(alias_value[i].bits, output[i].bits);
+  }
+}
+
+template <typename T>
+void check_narrow_normalization(void (*rms)(const T*, const T*, T*, std::size_t,
+                                            float) noexcept,
+                                void (*layer)(const T*, const T*, const T*, T*,
+                                              std::size_t, float) noexcept) {
+  constexpr std::size_t n = 257;
+  constexpr float epsilon = 1e-5f;
+  std::vector<T> input(n), weight(n), bias(n), rms_output(n), layer_output(n);
+  float sum = 0.0f;
+  for (std::size_t i = 0; i < n; ++i) {
+    input[i] = encode_storage<T>(
+        3.0f * std::sin(static_cast<float>(i) * 0.13f) + 0.25f);
+    weight[i] = encode_storage<T>(0.75f + 0.5f * static_cast<float>(i) /
+                                              static_cast<float>(n));
+    bias[i] = encode_storage<T>(0.1f * std::cos(static_cast<float>(i) * 0.17f));
+    sum += decode_storage(input[i]);
+  }
+  rms(input.data(), weight.data(), rms_output.data(), n, epsilon);
+  layer(input.data(), weight.data(), bias.data(), layer_output.data(), n,
+        epsilon);
+  auto rms_alias = input;
+  auto layer_alias = input;
+  rms(rms_alias.data(), weight.data(), rms_alias.data(), n, epsilon);
+  layer(layer_alias.data(), weight.data(), bias.data(), layer_alias.data(), n,
+        epsilon);
+
+  float sum_squares = 0.0f;
+  for (const T item : input) {
+    const float value = decode_storage(item);
+    sum_squares = std::fma(value, value, sum_squares);
+  }
+  const float inverse_rms =
+      1.0f / std::sqrt(sum_squares / static_cast<float>(n) + epsilon);
+  const float mean = sum / static_cast<float>(n);
+  float variance_sum = 0.0f;
+  for (const T item : input) {
+    const float centered = decode_storage(item) - mean;
+    variance_sum = std::fma(centered, centered, variance_sum);
+  }
+  const float inverse_stddev =
+      1.0f / std::sqrt(variance_sum / static_cast<float>(n) + epsilon);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float rms_expected =
+        decode_storage(input[i]) * inverse_rms * decode_storage(weight[i]);
+    const float layer_expected =
+        std::fma((decode_storage(input[i]) - mean) * inverse_stddev,
+                 decode_storage(weight[i]), decode_storage(bias[i]));
+    EXPECT_NEAR(decode_storage(rms_output[i]), rms_expected,
+                narrow_tolerance<T>(rms_expected));
+    EXPECT_NEAR(decode_storage(layer_output[i]), layer_expected,
+                narrow_tolerance<T>(layer_expected));
+    EXPECT_EQ(rms_alias[i].bits, rms_output[i].bits);
+    EXPECT_EQ(layer_alias[i].bits, layer_output[i].bits);
+  }
+}
+
+}  // namespace
+
+TEST(Math, QuickGeluAndSplitGatedRows) {
+  constexpr std::size_t n = 259;
+  std::vector<float> gate(n), value(n), output(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    gate[i] = -9.0f + 18.0f * static_cast<float>(i) / static_cast<float>(n - 1);
+    value[i] = 1.5f * std::cos(static_cast<float>(i) * 0.11f);
+  }
+
+  using Gated =
+      void (*)(const float*, const float*, float*, std::size_t) noexcept;
+  struct Case {
+    Gated function;
+    InferenceActivation activation;
+  };
+  const Case cases[] = {
+      {hyle::simd::reglu_f32_batch, InferenceActivation::kRelu},
+      {hyle::simd::geglu_f32_batch, InferenceActivation::kGelu},
+      {hyle::simd::geglu_tanh_f32_batch, InferenceActivation::kGeluTanh},
+      {hyle::simd::geglu_quick_f32_batch, InferenceActivation::kGeluQuick},
+      {hyle::simd::swiglu_f32_batch, InferenceActivation::kSilu},
+  };
+  for (const auto& operation : cases) {
+    operation.function(gate.data(), value.data(), output.data(), n);
+    auto alias_gate = gate;
+    operation.function(alias_gate.data(), value.data(), alias_gate.data(), n);
+    auto alias_value = value;
+    operation.function(gate.data(), alias_value.data(), alias_value.data(), n);
+    for (std::size_t i = 0; i < n; ++i) {
+      const float expected =
+          inference_activation_reference(operation.activation, gate[i]) *
+          value[i];
+      EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6 + 2e-6);
+      EXPECT_FLOAT_EQ(alias_gate[i], output[i]);
+      EXPECT_FLOAT_EQ(alias_value[i], output[i]);
+    }
+  }
+
+  hyle::simd::gelu_quick_f32_batch(gate.data(), output.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected = inference_activation_reference(
+        InferenceActivation::kGeluQuick, gate[i]);
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6 + 2e-6);
+  }
+  hyle::simd::gelu_quick_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::swiglu_f32_batch(nullptr, nullptr, nullptr, 0);
+}
+
+TEST(Math, NarrowInferenceActivationsAndGates) {
+  using hyle::simd::bfloat16_t;
+  using hyle::simd::float16_t;
+  check_narrow_activation<float16_t>(hyle::simd::gelu_f16_batch,
+                                     InferenceActivation::kGelu);
+  check_narrow_activation<float16_t>(hyle::simd::gelu_tanh_f16_batch,
+                                     InferenceActivation::kGeluTanh);
+  check_narrow_activation<float16_t>(hyle::simd::gelu_quick_f16_batch,
+                                     InferenceActivation::kGeluQuick);
+  check_narrow_activation<float16_t>(hyle::simd::silu_f16_batch,
+                                     InferenceActivation::kSilu);
+  check_narrow_activation<bfloat16_t>(hyle::simd::gelu_bf16_batch,
+                                      InferenceActivation::kGelu);
+  check_narrow_activation<bfloat16_t>(hyle::simd::gelu_tanh_bf16_batch,
+                                      InferenceActivation::kGeluTanh);
+  check_narrow_activation<bfloat16_t>(hyle::simd::gelu_quick_bf16_batch,
+                                      InferenceActivation::kGeluQuick);
+  check_narrow_activation<bfloat16_t>(hyle::simd::silu_bf16_batch,
+                                      InferenceActivation::kSilu);
+
+  check_narrow_gated<float16_t>(hyle::simd::reglu_f16_batch,
+                                InferenceActivation::kRelu);
+  check_narrow_gated<float16_t>(hyle::simd::geglu_f16_batch,
+                                InferenceActivation::kGelu);
+  check_narrow_gated<float16_t>(hyle::simd::geglu_tanh_f16_batch,
+                                InferenceActivation::kGeluTanh);
+  check_narrow_gated<float16_t>(hyle::simd::geglu_quick_f16_batch,
+                                InferenceActivation::kGeluQuick);
+  check_narrow_gated<float16_t>(hyle::simd::swiglu_f16_batch,
+                                InferenceActivation::kSilu);
+  check_narrow_gated<bfloat16_t>(hyle::simd::reglu_bf16_batch,
+                                 InferenceActivation::kRelu);
+  check_narrow_gated<bfloat16_t>(hyle::simd::geglu_bf16_batch,
+                                 InferenceActivation::kGelu);
+  check_narrow_gated<bfloat16_t>(hyle::simd::geglu_tanh_bf16_batch,
+                                 InferenceActivation::kGeluTanh);
+  check_narrow_gated<bfloat16_t>(hyle::simd::geglu_quick_bf16_batch,
+                                 InferenceActivation::kGeluQuick);
+  check_narrow_gated<bfloat16_t>(hyle::simd::swiglu_bf16_batch,
+                                 InferenceActivation::kSilu);
+
+  hyle::simd::gelu_f16_batch(nullptr, nullptr, 0);
+  hyle::simd::swiglu_bf16_batch(nullptr, nullptr, nullptr, 0);
+}
+
+TEST(Math, RowNormalizationMatchesReferenceAndAlias) {
+  constexpr std::size_t n = 257;
+  constexpr float epsilon = 1e-5f;
+  std::vector<float> input(n), weight(n), bias(n), output(n);
+  float sum = 0.0f;
+  float sum_squares = 0.0f;
+  for (std::size_t i = 0; i < n; ++i) {
+    input[i] = 3.0f * std::sin(static_cast<float>(i) * 0.13f) + 0.25f;
+    weight[i] = 0.75f + 0.5f * static_cast<float>(i) / static_cast<float>(n);
+    bias[i] = 0.1f * std::cos(static_cast<float>(i) * 0.17f);
+    sum += input[i];
+    sum_squares = std::fma(input[i], input[i], sum_squares);
+  }
+  const float inverse_rms =
+      1.0f / std::sqrt(sum_squares / static_cast<float>(n) + epsilon);
+
+  hyle::simd::rms_norm_f32(input.data(), weight.data(), output.data(), n,
+                           epsilon);
+  auto in_place = input;
+  hyle::simd::rms_norm_f32(in_place.data(), weight.data(), in_place.data(), n,
+                           epsilon);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected = input[i] * inverse_rms * weight[i];
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 3e-5 + 3e-6);
+    EXPECT_FLOAT_EQ(in_place[i], output[i]);
+  }
+
+  hyle::simd::rms_norm_f32(input.data(), output.data(), n, epsilon);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected = input[i] * inverse_rms;
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 3e-5 + 3e-6);
+  }
+
+  const float mean = sum / static_cast<float>(n);
+  float variance_sum = 0.0f;
+  for (const float value : input) {
+    const float centered = value - mean;
+    variance_sum = std::fma(centered, centered, variance_sum);
+  }
+  const float inverse_stddev =
+      1.0f / std::sqrt(variance_sum / static_cast<float>(n) + epsilon);
+  hyle::simd::layer_norm_f32(input.data(), weight.data(), bias.data(),
+                             output.data(), n, epsilon);
+  in_place = input;
+  hyle::simd::layer_norm_f32(in_place.data(), weight.data(), bias.data(),
+                             in_place.data(), n, epsilon);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected =
+        std::fma((input[i] - mean) * inverse_stddev, weight[i], bias[i]);
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 3e-5 + 3e-6);
+    EXPECT_FLOAT_EQ(in_place[i], output[i]);
+  }
+
+  hyle::simd::layer_norm_f32(input.data(), output.data(), n, epsilon);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected = (input[i] - mean) * inverse_stddev;
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 3e-5 + 3e-6);
+  }
+
+  std::vector<float> constant(17, 3.0f);
+  hyle::simd::layer_norm_f32(constant.data(), output.data(), constant.size(),
+                             epsilon);
+  for (std::size_t i = 0; i < constant.size(); ++i) EXPECT_EQ(output[i], 0.0f);
+
+  hyle::simd::rms_norm_f32(nullptr, nullptr, 0, epsilon);
+  hyle::simd::layer_norm_f32(nullptr, nullptr, 0, epsilon);
+}
+
+TEST(Math, NarrowRowNormalization) {
+  check_narrow_normalization<hyle::simd::float16_t>(
+      static_cast<void (*)(const hyle::simd::float16_t*,
+                           const hyle::simd::float16_t*, hyle::simd::float16_t*,
+                           std::size_t, float) noexcept>(
+          hyle::simd::rms_norm_f16),
+      static_cast<void (*)(
+          const hyle::simd::float16_t*, const hyle::simd::float16_t*,
+          const hyle::simd::float16_t*, hyle::simd::float16_t*, std::size_t,
+          float) noexcept>(hyle::simd::layer_norm_f16));
+  check_narrow_normalization<hyle::simd::bfloat16_t>(
+      static_cast<void (*)(
+          const hyle::simd::bfloat16_t*, const hyle::simd::bfloat16_t*,
+          hyle::simd::bfloat16_t*, std::size_t, float) noexcept>(
+          hyle::simd::rms_norm_bf16),
+      static_cast<void (*)(
+          const hyle::simd::bfloat16_t*, const hyle::simd::bfloat16_t*,
+          const hyle::simd::bfloat16_t*, hyle::simd::bfloat16_t*, std::size_t,
+          float) noexcept>(hyle::simd::layer_norm_bf16));
+}
+
+TEST(Math, RowNormalizationRejectsInvalidEpsilon) {
+  float input = 1.0f;
+  float output = 0.0f;
+  EXPECT_DEATH(hyle::simd::rms_norm_f32(&input, &output, 1, -1.0f),
+               "HYLE fatal");
+  EXPECT_DEATH(hyle::simd::layer_norm_f32(
+                   &input, &output, 1, std::numeric_limits<float>::quiet_NaN()),
+               "HYLE fatal");
+}
+
 // Stable finite rows, exact alias and disjoint output share the same core.
 TEST(Math, SoftmaxAndLogSoftmaxRows) {
   hyle::simd::softmax_f32(static_cast<const float*>(nullptr), nullptr, 0);
   hyle::simd::log_softmax_f32(static_cast<const float*>(nullptr), nullptr, 0);
 
   for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8},
-                        std::size_t{9}, std::size_t{257},
-                        std::size_t{4096}}) {
+                        std::size_t{9}, std::size_t{257}, std::size_t{4096}}) {
     std::vector<float> input(n);
     for (std::size_t i = 0; i < n; ++i) {
       input[i] = std::sin(static_cast<float>(i) * 0.7f) * 9.0f +
                  std::cos(static_cast<float>(i) * 0.13f);
     }
-    const double maximum =
-        *std::max_element(input.begin(), input.end());
+    const double maximum = *std::max_element(input.begin(), input.end());
     std::vector<double> reference(n);
     double sum = 0.0;
     for (std::size_t i = 0; i < n; ++i) {
@@ -737,8 +1243,7 @@ TEST(Math, SoftmaxMasksAndRejectsUndefinedNormalizers) {
   const std::array<float, 4> masked = {0.0f, -inf, -1.0f, -inf};
   std::array<float, 4> softmax{}, log_softmax{};
   hyle::simd::softmax_f32(masked.data(), softmax.data(), masked.size());
-  hyle::simd::log_softmax_f32(masked.data(), log_softmax.data(),
-                              masked.size());
+  hyle::simd::log_softmax_f32(masked.data(), log_softmax.data(), masked.size());
   EXPECT_EQ(softmax[1], 0.0f);
   EXPECT_EQ(softmax[3], 0.0f);
   EXPECT_EQ(log_softmax[1], -inf);
@@ -758,17 +1263,24 @@ TEST(Math, SoftmaxMasksAndRejectsUndefinedNormalizers) {
   }
 }
 
-// ---- COMPLEX SoA compositions over real primitives vs std::complex oracle ------------
-// SoA planar (re/im separate arrays). Ranges kept moderate (complex exp/pow overflow fast).
-// Tolerance is the ~3.5-ULP transcendental class scaled by magnitude.
+// ---- COMPLEX SoA compositions over real primitives vs std::complex oracle
+// ------------ SoA planar (re/im separate arrays). Ranges kept moderate
+// (complex exp/pow overflow fast). Tolerance is the ~3.5-ULP transcendental
+// class scaled by magnitude.
 namespace {
-void check_cunary(void (*fn)(const float*, const float*, float*, float*, std::size_t),
-                  std::complex<double> (*ref)(std::complex<double>), const char* name) {
+void check_cunary(void (*fn)(const float*, const float*, float*, float*,
+                             std::size_t),
+                  std::complex<double> (*ref)(std::complex<double>),
+                  const char* name) {
   constexpr int N = 200;
   std::vector<float> sr(N), si(N), dr(N), di(N);
-  // Offset both ramps so no sample lands on (0,0): clog/csqrt have a branch-point singularity
-  // there (std::log(0)=(-inf,0)); that's a domain edge, not a core-accuracy question.
-  for (int i = 0; i < N; ++i) { sr[i] = -3.0f + 6.0f * i / N + 0.017f; si[i] = -2.5f + 5.0f * i / N + 0.013f; }
+  // Offset both ramps so no sample lands on (0,0): clog/csqrt have a
+  // branch-point singularity there (std::log(0)=(-inf,0)); that's a domain
+  // edge, not a core-accuracy question.
+  for (int i = 0; i < N; ++i) {
+    sr[i] = -3.0f + 6.0f * i / N + 0.017f;
+    si[i] = -2.5f + 5.0f * i / N + 0.013f;
+  }
   fn(sr.data(), si.data(), dr.data(), di.data(), N);
   for (int i = 0; i < N; ++i) {
     std::complex<double> want = ref(std::complex<double>(sr[i], si[i]));
@@ -787,9 +1299,10 @@ std::complex<double> r_sinh(std::complex<double> z) { return std::sinh(z); }
 std::complex<double> r_cosh(std::complex<double> z) { return std::cosh(z); }
 std::complex<double> r_tanh(std::complex<double> z) { return std::tanh(z); }
 
-void check_cunary_f64(
-    void (*fn)(const double*, const double*, double*, double*, std::size_t),
-    std::complex<double> (*ref)(std::complex<double>), const char* name) {
+void check_cunary_f64(void (*fn)(const double*, const double*, double*, double*,
+                                 std::size_t),
+                      std::complex<double> (*ref)(std::complex<double>),
+                      const char* name) {
   constexpr int N = 201;
   std::vector<double> sr(N), si(N), dr(N), di(N);
   for (int i = 0; i < N; ++i) {
@@ -831,7 +1344,8 @@ TEST(Math, ComplexTranscendentalsF64) {
 }
 
 TEST(Math, ComplexF64SpecialTailAndExactAlias) {
-  using Fn = void (*)(const double*, const double*, double*, double*, std::size_t);
+  using Fn =
+      void (*)(const double*, const double*, double*, double*, std::size_t);
   struct Op {
     const char* name;
     Fn fn;
@@ -852,10 +1366,10 @@ TEST(Math, ComplexF64SpecialTailAndExactAlias) {
   const double nan = std::numeric_limits<double>::quiet_NaN();
   const double denorm = std::numeric_limits<double>::denorm_min();
   const std::vector<std::complex<double>> input = {
-      {0.0, 0.0},       {-0.0, 0.0},  {0.0, -0.0}, {denorm, -denorm},
+      {0.0, 0.0},         {-0.0, 0.0},  {0.0, -0.0}, {denorm, -denorm},
       {1.0e-200, 2e-200}, {1.0, -2.0},  {inf, 0.0},  {-inf, 0.0},
-      {0.0, inf},       {0.0, -inf}, {nan, 1.0},  {1.0, nan},
-      {2.0, -3.0},      {-0.5, 0.75}, {3.0, 2.0}, {0.25, -0.5},
+      {0.0, inf},         {0.0, -inf},  {nan, 1.0},  {1.0, nan},
+      {2.0, -3.0},        {-0.5, 0.75}, {3.0, 2.0},  {0.25, -0.5},
       {1.5, 0.125},
   };
   for (const Op& op : ops) {
@@ -868,7 +1382,8 @@ TEST(Math, ComplexF64SpecialTailAndExactAlias) {
     for (std::size_t i = 0; i < input.size(); ++i) {
       const std::complex<double> want = op.ref(input[i]);
       for (const auto& [got, expected, part] :
-           {std::tuple{re[i], want.real(), "re"}, std::tuple{im[i], want.imag(), "im"}}) {
+           {std::tuple{re[i], want.real(), "re"},
+            std::tuple{im[i], want.imag(), "im"}}) {
         if (std::isnan(expected)) {
           EXPECT_TRUE(std::isnan(got)) << op.name << ' ' << part << " i=" << i;
         } else if (std::isinf(expected)) {
@@ -899,24 +1414,29 @@ TEST(Math, ComplexF64PowTailAndExactAlias) {
   }
   const std::vector<double> original_re = zr;
   const std::vector<double> original_im = zi;
-  hyle::simd::cpow_f64_batch(zr.data(), zi.data(), wr.data(), wi.data(), zr.data(), zi.data(), n);
+  hyle::simd::cpow_f64_batch(zr.data(), zi.data(), wr.data(), wi.data(),
+                             zr.data(), zi.data(), n);
   for (std::size_t i = 0; i < n; ++i) {
     const std::complex<double> want =
         std::pow(std::complex<double>(original_re[i], original_im[i]),
                  std::complex<double>(wr[i], wi[i]));
-    EXPECT_NEAR(zr[i], want.real(), std::abs(want) * 5e-11 + 2e-12) << "re i=" << i;
-    EXPECT_NEAR(zi[i], want.imag(), std::abs(want) * 5e-11 + 2e-12) << "im i=" << i;
+    EXPECT_NEAR(zr[i], want.real(), std::abs(want) * 5e-11 + 2e-12)
+        << "re i=" << i;
+    EXPECT_NEAR(zi[i], want.imag(), std::abs(want) * 5e-11 + 2e-12)
+        << "im i=" << i;
   }
 }
 
-void expect_complex_component(float got, float want, const char* part, std::size_t i) {
+void expect_complex_component(float got, float want, const char* part,
+                              std::size_t i) {
   if (std::isnan(want)) {
     EXPECT_TRUE(std::isnan(got)) << part << " i=" << i;
   } else if (std::isinf(want)) {
     EXPECT_TRUE(std::isinf(got)) << part << " i=" << i;
     EXPECT_EQ(std::signbit(got), std::signbit(want)) << part << " i=" << i;
   } else {
-    EXPECT_NEAR(got, want, std::abs(want) * 5e-6f + 1e-6f) << part << " i=" << i;
+    EXPECT_NEAR(got, want, std::abs(want) * 5e-6f + 1e-6f)
+        << part << " i=" << i;
     if (want == 0.0f) {
       EXPECT_EQ(std::signbit(got), std::signbit(want)) << part << " i=" << i;
     }
@@ -927,24 +1447,33 @@ TEST(Math, ComplexSinCosSpecialTailAndAlias) {
   const float inf = std::numeric_limits<float>::infinity();
   const float nan = std::numeric_limits<float>::quiet_NaN();
   const std::vector<std::complex<float>> input = {
-      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {1.0f, -2.0f},
-      {0.0f, inf}, {0.0f, -inf}, {inf, 0.0f}, {-inf, 0.0f},
-      {nan, 1.0f}, {1.0f, nan}, {1e-38f, -1e-38f}, {3.0f, 100.0f},
-      {-2.0f, -100.0f}, {0.25f, 0.5f}, {-0.75f, 1.25f}, {2.0f, -3.0f}, {0.1f, 0.2f}};
+      {0.0f, 0.0f},     {-0.0f, 0.0f}, {0.0f, -0.0f},     {1.0f, -2.0f},
+      {0.0f, inf},      {0.0f, -inf},  {inf, 0.0f},       {-inf, 0.0f},
+      {nan, 1.0f},      {1.0f, nan},   {1e-38f, -1e-38f}, {3.0f, 100.0f},
+      {-2.0f, -100.0f}, {0.25f, 0.5f}, {-0.75f, 1.25f},   {2.0f, -3.0f},
+      {0.1f, 0.2f}};
   std::vector<float> re(input.size()), im(input.size());
-  for (std::size_t i = 0; i < input.size(); ++i) { re[i] = input[i].real(); im[i] = input[i].imag(); }
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    re[i] = input[i].real();
+    im[i] = input[i].imag();
+  }
 
   for (bool cosine : {false, true}) {
     std::vector<float> got_re = re;
     std::vector<float> got_im = im;
     if (cosine)
-      hyle::simd::ccos_f32_batch(got_re.data(), got_im.data(), got_re.data(), got_im.data(), input.size());
+      hyle::simd::ccos_f32_batch(got_re.data(), got_im.data(), got_re.data(),
+                                 got_im.data(), input.size());
     else
-      hyle::simd::csin_f32_batch(got_re.data(), got_im.data(), got_re.data(), got_im.data(), input.size());
+      hyle::simd::csin_f32_batch(got_re.data(), got_im.data(), got_re.data(),
+                                 got_im.data(), input.size());
     for (std::size_t i = 0; i < input.size(); ++i) {
-      const std::complex<float> want = cosine ? std::cos(input[i]) : std::sin(input[i]);
-      expect_complex_component(got_re[i], want.real(), cosine ? "ccos re" : "csin re", i);
-      expect_complex_component(got_im[i], want.imag(), cosine ? "ccos im" : "csin im", i);
+      const std::complex<float> want =
+          cosine ? std::cos(input[i]) : std::sin(input[i]);
+      expect_complex_component(got_re[i], want.real(),
+                               cosine ? "ccos re" : "csin re", i);
+      expect_complex_component(got_im[i], want.imag(),
+                               cosine ? "ccos im" : "csin im", i);
     }
   }
 }
@@ -954,32 +1483,50 @@ TEST(Math, ComplexTanhSpecialTailAndAlias) {
   const float nan = std::numeric_limits<float>::quiet_NaN();
   const float denorm = std::numeric_limits<float>::denorm_min();
   const std::vector<std::complex<float>> input = {
-      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {0.7f, 0.0f},
-      {0.7f, -0.0f}, {1e-38f, 0.7f}, {-1e-38f, -0.7f}, {0.7f, denorm},
-      {0.7f, -denorm}, {0.01f, 1.5707963f - 0.001f}, {-0.01f, -1.5707963f + 0.001f},
-      {3.0f, -2.0f}, {-3.0f, 2.0f}, {39.0f, 0.3f}, {-39.0f, -0.3f},
-      {45.0f, 0.2f}, {-45.0f, -0.2f}, {inf, 0.0f}, {-inf, 0.0f},
-      {nan, 1.0f}, {1.0f, nan}};
+      {0.0f, 0.0f},
+      {-0.0f, 0.0f},
+      {0.0f, -0.0f},
+      {0.7f, 0.0f},
+      {0.7f, -0.0f},
+      {1e-38f, 0.7f},
+      {-1e-38f, -0.7f},
+      {0.7f, denorm},
+      {0.7f, -denorm},
+      {0.01f, 1.5707963f - 0.001f},
+      {-0.01f, -1.5707963f + 0.001f},
+      {3.0f, -2.0f},
+      {-3.0f, 2.0f},
+      {39.0f, 0.3f},
+      {-39.0f, -0.3f},
+      {45.0f, 0.2f},
+      {-45.0f, -0.2f},
+      {inf, 0.0f},
+      {-inf, 0.0f},
+      {nan, 1.0f},
+      {1.0f, nan}};
   std::vector<float> re(input.size()), im(input.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
     re[i] = input[i].real();
     im[i] = input[i].imag();
   }
-  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(), input.size());
+  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(),
+                              input.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
     const std::complex<float> want = std::tanh(input[i]);
     expect_complex_component(re[i], want.real(), "ctanh re", i);
     expect_complex_component(im[i], want.imag(), "ctanh im", i);
   }
 
-  std::vector<float> sr(input.size() + 2, -123.0f), si(input.size() + 2, -123.0f);
-  std::vector<float> dr(input.size() + 2, -321.0f), di(input.size() + 2, -321.0f);
+  std::vector<float> sr(input.size() + 2, -123.0f),
+      si(input.size() + 2, -123.0f);
+  std::vector<float> dr(input.size() + 2, -321.0f),
+      di(input.size() + 2, -321.0f);
   for (std::size_t i = 0; i < input.size(); ++i) {
     sr[i + 1] = input[i].real();
     si[i + 1] = input[i].imag();
   }
-  hyle::simd::ctanh_f32_batch(sr.data() + 1, si.data() + 1, dr.data() + 1, di.data() + 1,
-                               input.size());
+  hyle::simd::ctanh_f32_batch(sr.data() + 1, si.data() + 1, dr.data() + 1,
+                              di.data() + 1, input.size());
   EXPECT_EQ(sr.front(), -123.0f);
   EXPECT_EQ(sr.back(), -123.0f);
   EXPECT_EQ(si.front(), -123.0f);
@@ -998,14 +1545,16 @@ TEST(Math, ComplexTanhSpecialTailAndAlias) {
 TEST(Math, ComplexTanhExtremeImaginaryFallsBack) {
   const float max = std::numeric_limits<float>::max();
   const std::vector<std::complex<float>> input = {
-      {25.0f, max}, {-25.0f, -max}, {25.0f, 0.75f * max}, {-25.0f, -0.75f * max},
-      {25.0f, 0.25f}, {-25.0f, -0.25f}, {30.0f, 0.5f}, {-30.0f, -0.5f}};
+      {25.0f, max},           {-25.0f, -max}, {25.0f, 0.75f * max},
+      {-25.0f, -0.75f * max}, {25.0f, 0.25f}, {-25.0f, -0.25f},
+      {30.0f, 0.5f},          {-30.0f, -0.5f}};
   std::vector<float> re(input.size()), im(input.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
     re[i] = input[i].real();
     im[i] = input[i].imag();
   }
-  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(), input.size());
+  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(),
+                              input.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
     const std::complex<float> want = std::tanh(input[i]);
     expect_complex_component(re[i], want.real(), "ctanh extreme re", i);
@@ -1016,17 +1565,22 @@ TEST(Math, ComplexTanhExtremeImaginaryFallsBack) {
 TEST(Math, ComplexSinCosTinyImaginary) {
   constexpr std::size_t n = 16;
   const float tiny[] = {1e-38f, -1e-38f, 1e-8f, -1e-8f, 1e-7f, -1e-7f,
-                        1e-6f, -1e-6f, 1e-5f, -1e-5f, 1e-4f, -1e-4f,
-                        1e-3f, -1e-3f, 1e-2f, -1e-2f};
+                        1e-6f,  -1e-6f,  1e-5f, -1e-5f, 1e-4f, -1e-4f,
+                        1e-3f,  -1e-3f,  1e-2f, -1e-2f};
   std::vector<float> re(n), im(n), dr(n), di(n);
-  for (std::size_t i = 0; i < n; ++i) { re[i] = 0.25f + 0.03f * static_cast<float>(i); im[i] = tiny[i]; }
+  for (std::size_t i = 0; i < n; ++i) {
+    re[i] = 0.25f + 0.03f * static_cast<float>(i);
+    im[i] = tiny[i];
+  }
   for (bool cosine : {false, true}) {
-    if (cosine) hyle::simd::ccos_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
-    else hyle::simd::csin_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
+    if (cosine)
+      hyle::simd::ccos_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
+    else
+      hyle::simd::csin_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
     for (std::size_t i = 0; i < n; ++i) {
-      const std::complex<float> want = cosine
-          ? std::cos(std::complex<float>(re[i], im[i]))
-          : std::sin(std::complex<float>(re[i], im[i]));
+      const std::complex<float> want =
+          cosine ? std::cos(std::complex<float>(re[i], im[i]))
+                 : std::sin(std::complex<float>(re[i], im[i]));
       EXPECT_NEAR(dr[i], want.real(), std::abs(want.real()) * 5e-6f + 1e-7f);
       ASSERT_NE(want.imag(), 0.0f);
       EXPECT_NEAR(di[i] / want.imag(), 1.0f, 2e-5f) << "i=" << i;
@@ -1038,10 +1592,13 @@ TEST(Math, ComplexPow) {
   constexpr int N = 128;
   std::vector<float> zr(N), zi(N), wr(N), wi(N), dr(N), di(N);
   for (int i = 0; i < N; ++i) {
-    zr[i] = 0.3f + 2.0f * i / N; zi[i] = -1.0f + 2.0f * i / N;  // base away from 0 (log branch)
-    wr[i] = 0.5f + 1.0f * i / N; wi[i] = 0.2f;
+    zr[i] = 0.3f + 2.0f * i / N;
+    zi[i] = -1.0f + 2.0f * i / N;  // base away from 0 (log branch)
+    wr[i] = 0.5f + 1.0f * i / N;
+    wi[i] = 0.2f;
   }
-  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(), dr.data(), di.data(), N);
+  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(),
+                             dr.data(), di.data(), N);
   for (int i = 0; i < N; ++i) {
     std::complex<double> want = std::pow(std::complex<double>(zr[i], zi[i]),
                                          std::complex<double>(wr[i], wi[i]));
@@ -1056,29 +1613,30 @@ TEST(Math, ComplexPowSpecialTailAndAlias) {
   const float nan = std::numeric_limits<float>::quiet_NaN();
   const float denorm = std::numeric_limits<float>::denorm_min();
   const std::vector<std::complex<float>> base = {
-      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {-2.0f, 0.0f},
+      {0.0f, 0.0f},   {-0.0f, 0.0f},   {0.0f, -0.0f},   {-2.0f, 0.0f},
       {-2.0f, -0.0f}, {1e-38f, 0.25f}, {0.25f, 1e-38f}, {1e18f, 0.5f},
-      {0.5f, -0.75f}, {-1.5f, 2.0f}, {inf, 1.0f}, {1.0f, inf},
-      {nan, 1.0f}, {1.0f, nan}, {2.0f, -3.0f}, {-0.25f, 0.75f}, {3.0f, 2.0f},
-      {0.5f, -0.75f}, {0.5f, -0.75f}, {0.5f, -0.75f}, {0.5f, -0.75f},
-      {0.5f, -0.75f}, {0.5f, -0.75f}};
+      {0.5f, -0.75f}, {-1.5f, 2.0f},   {inf, 1.0f},     {1.0f, inf},
+      {nan, 1.0f},    {1.0f, nan},     {2.0f, -3.0f},   {-0.25f, 0.75f},
+      {3.0f, 2.0f},   {0.5f, -0.75f},  {0.5f, -0.75f},  {0.5f, -0.75f},
+      {0.5f, -0.75f}, {0.5f, -0.75f},  {0.5f, -0.75f}};
   const std::vector<std::complex<float>> exponent = {
-      {0.0f, 0.0f}, {1.0f, 0.0f}, {-1.0f, 0.0f}, {0.5f, 0.25f},
-      {0.5f, -0.25f}, {1.5f, 0.0f}, {-0.5f, 1.0f}, {0.1f, -0.2f},
-      {0.0f, 1.0f}, {2.0f, -0.5f}, {1.0f, 0.0f}, {0.5f, 0.25f},
-      {1.0f, 0.0f}, {0.5f, -0.5f}, {3.0f, 2.0f}, {-2.0f, 1.5f}, {0.75f, -0.4f},
-      {0.0f, 0.3f}, {-0.0f, 0.3f}, {0.3f, 0.0f}, {0.3f, -0.0f},
-      {denorm, 0.3f}, {0.3f, -denorm}};
+      {0.0f, 0.0f},   {1.0f, 0.0f},   {-1.0f, 0.0f},  {0.5f, 0.25f},
+      {0.5f, -0.25f}, {1.5f, 0.0f},   {-0.5f, 1.0f},  {0.1f, -0.2f},
+      {0.0f, 1.0f},   {2.0f, -0.5f},  {1.0f, 0.0f},   {0.5f, 0.25f},
+      {1.0f, 0.0f},   {0.5f, -0.5f},  {3.0f, 2.0f},   {-2.0f, 1.5f},
+      {0.75f, -0.4f}, {0.0f, 0.3f},   {-0.0f, 0.3f},  {0.3f, 0.0f},
+      {0.3f, -0.0f},  {denorm, 0.3f}, {0.3f, -denorm}};
   ASSERT_EQ(base.size(), exponent.size());
-  std::vector<float> zr(base.size()), zi(base.size()), wr(base.size()), wi(base.size());
+  std::vector<float> zr(base.size()), zi(base.size()), wr(base.size()),
+      wi(base.size());
   for (std::size_t i = 0; i < base.size(); ++i) {
     zr[i] = base[i].real();
     zi[i] = base[i].imag();
     wr[i] = exponent[i].real();
     wi[i] = exponent[i].imag();
   }
-  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(), zr.data(), zi.data(),
-                              base.size());
+  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(),
+                             zr.data(), zi.data(), base.size());
   for (std::size_t i = 0; i < base.size(); ++i) {
     const std::complex<float> want = std::pow(base[i], exponent[i]);
     expect_complex_component(zr[i], want.real(), "cpow special re", i);
@@ -1086,7 +1644,8 @@ TEST(Math, ComplexPowSpecialTailAndAlias) {
   }
 
   std::vector<float> ur(base.size() + 2, -123.0f), ui(base.size() + 2, -123.0f);
-  std::vector<float> uwr(base.size() + 2, -123.0f), uwi(base.size() + 2, -123.0f);
+  std::vector<float> uwr(base.size() + 2, -123.0f),
+      uwi(base.size() + 2, -123.0f);
   std::vector<float> dr(base.size() + 2, -321.0f), di(base.size() + 2, -321.0f);
   for (std::size_t i = 0; i < base.size(); ++i) {
     ur[i + 1] = base[i].real();
@@ -1094,11 +1653,15 @@ TEST(Math, ComplexPowSpecialTailAndAlias) {
     uwr[i + 1] = exponent[i].real();
     uwi[i + 1] = exponent[i].imag();
   }
-  hyle::simd::cpow_f32_batch(ur.data() + 1, ui.data() + 1, uwr.data() + 1, uwi.data() + 1,
-                              dr.data() + 1, di.data() + 1, base.size());
-  for (const auto* guarded : {ur.data(), ui.data(), uwr.data(), uwi.data(), dr.data(), di.data()}) {
-    EXPECT_EQ(guarded[0], guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
-    EXPECT_EQ(guarded[base.size() + 1], guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
+  hyle::simd::cpow_f32_batch(ur.data() + 1, ui.data() + 1, uwr.data() + 1,
+                             uwi.data() + 1, dr.data() + 1, di.data() + 1,
+                             base.size());
+  for (const auto* guarded :
+       {ur.data(), ui.data(), uwr.data(), uwi.data(), dr.data(), di.data()}) {
+    EXPECT_EQ(guarded[0],
+              guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
+    EXPECT_EQ(guarded[base.size() + 1],
+              guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
   }
   for (std::size_t i = 0; i < base.size(); ++i) {
     const std::complex<float> want = std::pow(base[i], exponent[i]);
@@ -1134,11 +1697,14 @@ TEST(Math, Simd18BreadthG) {
     EXPECT_NEAR(s[i], std::sin(x[i]), 1e-4f);
     EXPECT_NEAR(c[i], std::cos(x[i]), 1e-4f);
   }
-  // Vendor-gap operations: assert the HYLE composition/scalar floor against libm.
+  // Vendor-gap operations: assert the HYLE composition/scalar floor against
+  // libm.
   hyle::simd::erfc_f32_batch(x, z, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::erfc(x[i]), 1e-4f) << "erfc i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(z[i], std::erfc(x[i]), 1e-4f) << "erfc i=" << i;
   hyle::simd::exp10_f32_batch(x, z, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::pow(10.f, x[i]), 1e-3f) << "exp10 i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(z[i], std::pow(10.f, x[i]), 1e-3f) << "exp10 i=" << i;
   hyle::simd::fmod_f32_batch(y, x, z, n);
   for (std::size_t i = 0; i < n; ++i) {
     if (x[i] != 0.f) {
@@ -1152,9 +1718,11 @@ TEST(Math, Simd18BreadthG) {
     }
   }
   hyle::simd::nextafter_f32_batch(x, y, z, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(z[i], std::nextafter(x[i], y[i])) << "nextafter i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(z[i], std::nextafter(x[i], y[i])) << "nextafter i=" << i;
   hyle::simd::fdim_f32_batch(y, x, z, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::fdim(y[i], x[i]), 1e-4f) << "fdim i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(z[i], std::fdim(y[i], x[i]), 1e-4f) << "fdim i=" << i;
   // f64 smoke
   alignas(64) double dx[n], dy[n], dz[n], ds[n], dc[n];
   for (std::size_t i = 0; i < n; ++i) {
@@ -1166,9 +1734,11 @@ TEST(Math, Simd18BreadthG) {
   hyle::simd::pow_f64_batch(dy, dx, dz, n);
   hyle::simd::sincos_f64_batch(dx, ds, dc, n);
   hyle::simd::erfc_f64_batch(dx, dz, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::erfc(dx[i]), 1e-9) << "erfc64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(dz[i], std::erfc(dx[i]), 1e-9) << "erfc64 i=" << i;
   hyle::simd::exp10_f64_batch(dx, dz, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::pow(10.0, dx[i]), 1e-6) << "exp10_64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(dz[i], std::pow(10.0, dx[i]), 1e-6) << "exp10_64 i=" << i;
   hyle::simd::fmod_f64_batch(dy, dx, dz, n);
   for (std::size_t i = 0; i < n; ++i) {
     if (dx[i] != 0.0) {
@@ -1182,8 +1752,10 @@ TEST(Math, Simd18BreadthG) {
     }
   }
   hyle::simd::nextafter_f64_batch(dx, dy, dz, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(dz[i], std::nextafter(dx[i], dy[i])) << "nextafter64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(dz[i], std::nextafter(dx[i], dy[i])) << "nextafter64 i=" << i;
   hyle::simd::fdim_f64_batch(dy, dx, dz, n);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::fdim(dy[i], dx[i]), 1e-9) << "fdim64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(dz[i], std::fdim(dy[i], dx[i]), 1e-9) << "fdim64 i=" << i;
   SUCCEED();
 }

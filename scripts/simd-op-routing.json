@@ -18,7 +18,7 @@
     "inventory_sha256": "5e330e8e91fc6d835a75db1298c3bdf82a95cf69b633ea6574a4f234f391b401"
   },
   "candidate_providers": {
-    "HIGHWAY": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+    "HIGHWAY": "18e449b642599b8f51c03ca10173fdc59864e4f2",
     "XSIMD": "3b3151ff665514a00a437cc985f47b7de99b772b",
     "HYLE": "77d22d11be31f3184e96f8379068fa9779ed33e0"
   },

@@ -11,6 +11,7 @@
 #include <nanobench.h>
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include "hyle/simd/math.h"
+#include "hyle/simd/sort.h"
 #include "op_parity_engine.h"
 #include "xsimd/xsimd.hpp"
 
@@ -42,8 +44,7 @@ constexpr std::size_t kStreamingCount = 1u << 20;
 
 template <class VectorFn, class ScalarFn>
 HWY_INLINE void direct_unary(const float* src, float* dst, std::size_t n,
-                             VectorFn vector_fn,
-                             ScalarFn scalar_fn) noexcept {
+                             VectorFn vector_fn, ScalarFn scalar_fn) noexcept {
   const hn::ScalableTag<float> d;
   const std::size_t width = hn::Lanes(d);
   std::size_t i = 0;
@@ -59,8 +60,7 @@ HWY_INLINE void peer_add(const float* x, const float* y, float* dst,
   const std::size_t width = hn::Lanes(d);
   std::size_t i = 0;
   for (; width <= n - i; i += width) {
-    hn::StoreU(hn::Add(hn::LoadU(d, x + i), hn::LoadU(d, y + i)), d,
-               dst + i);
+    hn::StoreU(hn::Add(hn::LoadU(d, x + i), hn::LoadU(d, y + i)), d, dst + i);
   }
   for (; i < n; ++i) dst[i] = x[i] + y[i];
 }
@@ -72,8 +72,7 @@ HWY_INLINE void candidate_exp(const float* src, float* dst,
       [](float x) { return std::exp(x); });
 }
 
-HWY_INLINE void peer_exp(const float* src, float* dst,
-                         std::size_t n) noexcept {
+HWY_INLINE void peer_exp(const float* src, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d;
   const std::size_t width = hn::Lanes(d);
   const auto maximum = hn::Set(d, 104.0f);
@@ -93,7 +92,7 @@ HWY_INLINE void peer_exp(const float* src, float* dst,
 }
 
 HWY_INLINE void candidate_gelu_tanh(const float* src, float* dst,
-                                     std::size_t n) noexcept {
+                                    std::size_t n) noexcept {
   hp::unary_loop<hp::UnaryDomain::kDirect>(
       src, dst, n,
       [](auto d, auto x) { return hp::activation_gelu_tanh(d, x); },
@@ -140,8 +139,7 @@ HWY_INLINE void peer_gelu_tanh_xsimd(const float* src, float* dst,
 
 std::uint32_t ordered_f32_bits(float value) noexcept {
   const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);
-  return (bits & 0x80000000U) != 0 ? ~bits + 1U
-                                   : bits | 0x80000000U;
+  return (bits & 0x80000000U) != 0 ? ~bits + 1U : bits | 0x80000000U;
 }
 
 std::uint32_t ulp_distance(float lhs, float rhs) noexcept {
@@ -160,7 +158,8 @@ bool equivalent_result(float got, float want) noexcept {
 }
 
 bool qualify_xsimd_tanh_salvage() {
-  constexpr std::size_t count = 65535;  // deliberately exercises a non-vector tail
+  constexpr std::size_t count =
+      65535;  // deliberately exercises a non-vector tail
   std::vector<float> input(count), highway(count), xsimd(count), inplace(count);
   for (std::size_t i = 0; i < count; ++i) {
     input[i] = 10.0f * std::sin(static_cast<float>(i) * 0.0137f);
@@ -184,10 +183,9 @@ bool qualify_xsimd_tanh_salvage() {
     mismatches += !equivalent_result(xsimd[i], want);
     mismatches += !equivalent_result(inplace[i], want);
     if (std::isfinite(want) && want != 0.0f) {
-      highway_max_ulp = std::max(highway_max_ulp,
-                                 ulp_distance(highway[i], want));
-      xsimd_max_ulp = std::max(xsimd_max_ulp,
-                               ulp_distance(xsimd[i], want));
+      highway_max_ulp =
+          std::max(highway_max_ulp, ulp_distance(highway[i], want));
+      xsimd_max_ulp = std::max(xsimd_max_ulp, ulp_distance(xsimd[i], want));
     }
   }
 
@@ -217,15 +215,13 @@ HWY_INLINE void peer_gelu_tanh(const float* src, float* dst,
       src, dst, n,
       [](auto d, auto x) {
         const auto one = hn::Set(d, 1.0f);
-        const auto inner = hn::Mul(
-            hn::Mul(hn::Set(d, 0.79788456080286535588f), x),
-            hn::MulAdd(hn::Set(d, 0.044715f), hn::Mul(x, x), one));
-        const auto result = hn::Mul(
-            hn::Mul(hn::Set(d, 0.5f), x),
-            hn::Add(one, hn::Tanh(d, inner)));
-        return hn::IfThenElse(
-            hn::And(hn::IsInf(x), hn::Lt(x, hn::Zero(d))), hn::Zero(d),
-            result);
+        const auto inner =
+            hn::Mul(hn::Mul(hn::Set(d, 0.79788456080286535588f), x),
+                    hn::MulAdd(hn::Set(d, 0.044715f), hn::Mul(x, x), one));
+        const auto result = hn::Mul(hn::Mul(hn::Set(d, 0.5f), x),
+                                    hn::Add(one, hn::Tanh(d, inner)));
+        return hn::IfThenElse(hn::And(hn::IsInf(x), hn::Lt(x, hn::Zero(d))),
+                              hn::Zero(d), result);
       },
       [](float x) {
         if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
@@ -238,8 +234,7 @@ HWY_INLINE void peer_gelu_tanh(const float* src, float* dst,
 HWY_INLINE void candidate_silu(const float* src, float* dst,
                                std::size_t n) noexcept {
   hp::unary_loop<hp::UnaryDomain::kDirect>(
-      src, dst, n,
-      [](auto d, auto x) { return hp::activation_silu(d, x); },
+      src, dst, n, [](auto d, auto x) { return hp::activation_silu(d, x); },
       [](float x) { return hp::activation_silu_scalar(x); });
 }
 
@@ -251,21 +246,130 @@ HWY_INLINE void peer_silu(const float* src, float* dst,
         const auto one = hn::Set(d, 1.0f);
         const auto e = hn::Exp(d, hn::Neg(hn::Abs(x)));
         const auto denominator = hn::Add(one, e);
-        const auto sigmoid = hn::IfThenElse(
-            hn::Lt(x, hn::Zero(d)), hn::Div(e, denominator),
-            hn::Div(one, denominator));
+        const auto sigmoid =
+            hn::IfThenElse(hn::Lt(x, hn::Zero(d)), hn::Div(e, denominator),
+                           hn::Div(one, denominator));
         const auto result = hn::Mul(x, sigmoid);
-        return hn::IfThenElse(
-            hn::And(hn::IsInf(x), hn::Lt(x, hn::Zero(d))), hn::Zero(d),
-            result);
+        return hn::IfThenElse(hn::And(hn::IsInf(x), hn::Lt(x, hn::Zero(d))),
+                              hn::Zero(d), result);
       },
       [](float x) {
         if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
         const float e = std::exp(-std::abs(x));
-        const float sigmoid =
-            x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+        const float sigmoid = x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
         return x * sigmoid;
       });
+}
+
+HWY_INLINE void candidate_swiglu(const float* gate, const float* value,
+                                 float* dst, std::size_t n) noexcept {
+  hp::gated_storage_loop<float, float>(
+      gate, value, dst, n,
+      [](auto d, auto x) { return hp::activation_silu(d, x); },
+      [](float x) { return hp::activation_silu_scalar(x); });
+}
+
+HWY_INLINE void peer_swiglu(const float* gate, const float* value, float* dst,
+                            std::size_t n) noexcept {
+  const hn::ScalableTag<float> d;
+  const std::size_t width = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; width <= n - i; i += width) {
+    const auto x = hn::LoadU(d, gate + i);
+    const auto linear = hn::LoadU(d, value + i);
+    const auto one = hn::Set(d, 1.0f);
+    const auto e = hn::Exp(d, hn::Neg(hn::Abs(x)));
+    const auto denominator = hn::Add(one, e);
+    const auto sigmoid =
+        hn::IfThenElse(hn::Lt(x, hn::Zero(d)), hn::Div(e, denominator),
+                       hn::Div(one, denominator));
+    auto activated = hn::Mul(x, sigmoid);
+    activated = hn::IfThenElse(hn::And(hn::IsInf(x), hn::Lt(x, hn::Zero(d))),
+                               hn::Zero(d), activated);
+    hn::StoreU(hn::Mul(activated, linear), d, dst + i);
+  }
+  for (; i < n; ++i) dst[i] = hp::activation_silu_scalar(gate[i]) * value[i];
+}
+
+HWY_INLINE void candidate_rms_norm(const float* src, const float* weight,
+                                   float* dst, std::size_t n,
+                                   float epsilon) noexcept {
+  hp::rms_norm_storage<float, float>(src, weight, dst, n, epsilon);
+}
+
+HWY_INLINE void peer_rms_norm(const float* src, const float* weight, float* dst,
+                              std::size_t n, float epsilon) noexcept {
+  const hn::ScalableTag<float> d;
+  const std::size_t width = hn::Lanes(d);
+  auto sum_squares_v = hn::Zero(d);
+  std::size_t i = 0;
+  for (; width <= n - i; i += width) {
+    const auto value = hn::LoadU(d, src + i);
+    sum_squares_v = hn::MulAdd(value, value, sum_squares_v);
+  }
+  float sum_squares = hn::ReduceSum(d, sum_squares_v);
+  for (; i < n; ++i) sum_squares = std::fma(src[i], src[i], sum_squares);
+  const float inverse =
+      1.0f / std::sqrt(sum_squares / static_cast<float>(n) + epsilon);
+  const auto inverse_v = hn::Set(d, inverse);
+  i = 0;
+  for (; width <= n - i; i += width) {
+    hn::StoreU(hn::Mul(hn::Mul(hn::LoadU(d, src + i), inverse_v),
+                       hn::LoadU(d, weight + i)),
+               d, dst + i);
+  }
+  for (; i < n; ++i) dst[i] = src[i] * inverse * weight[i];
+}
+
+struct BetterScoredIndex {
+  bool operator()(const hs::ScoredIndexF32& lhs,
+                  const hs::ScoredIndexF32& rhs) const noexcept {
+    const bool lhs_nan = std::isnan(lhs.score);
+    const bool rhs_nan = std::isnan(rhs.score);
+    if (lhs_nan != rhs_nan) return !lhs_nan;
+    if (!lhs_nan) {
+      if (lhs.score > rhs.score) return true;
+      if (lhs.score < rhs.score) return false;
+    }
+    return lhs.index < rhs.index;
+  }
+};
+
+// Same score/index/ordering/O(k)-workspace contract as HYLE. The insertion
+// shape is independently adapted from the small expert-routing path used by
+// ds4; it is a qualified peer only for bounded small k.
+void peer_top_k_insertion(const float* scores, std::size_t n,
+                          hs::ScoredIndexF32* result, std::size_t k) noexcept {
+  const BetterScoredIndex better;
+  std::size_t retained = 0;
+  for (std::size_t i = 0; i < n; ++i) {
+    const hs::ScoredIndexF32 candidate{scores[i],
+                                       static_cast<std::uint32_t>(i)};
+    if (retained == k && !better(candidate, result[k - 1])) continue;
+    std::size_t position = retained < k ? retained++ : k - 1;
+    while (position > 0 && better(candidate, result[position - 1])) {
+      result[position] = result[position - 1];
+      --position;
+    }
+    result[position] = candidate;
+  }
+}
+
+void peer_top_k_heap(const float* scores, std::size_t n,
+                     hs::ScoredIndexF32* result, std::size_t k) noexcept {
+  const BetterScoredIndex better;
+  for (std::size_t i = 0; i < k; ++i)
+    result[i] = {scores[i], static_cast<std::uint32_t>(i)};
+  std::make_heap(result, result + k, better);
+  for (std::size_t i = k; i < n; ++i) {
+    const hs::ScoredIndexF32 candidate{scores[i],
+                                       static_cast<std::uint32_t>(i)};
+    if (!better(candidate, result[0])) continue;
+    std::pop_heap(result, result + k, better);
+    result[k - 1] = candidate;
+    std::push_heap(result, result + k, better);
+  }
+  std::sort_heap(result, result + k, better);
 }
 
 HWY_INLINE bool peer_row_max(const float* src, std::size_t n,
@@ -274,15 +378,13 @@ HWY_INLINE bool peer_row_max(const float* src, std::size_t n,
   const std::size_t width = hn::Lanes(d);
   const auto positive_infinity =
       hn::Set(d, std::numeric_limits<float>::infinity());
-  auto maximum_v =
-      hn::Set(d, -std::numeric_limits<float>::infinity());
+  auto maximum_v = hn::Set(d, -std::numeric_limits<float>::infinity());
   bool invalid = false;
   std::size_t i = 0;
   for (; width <= n - i; i += width) {
     const auto x = hn::LoadU(d, src + i);
-    invalid = invalid ||
-              !hn::AllFalse(d, hn::Or(hn::IsNaN(x),
-                                      hn::Eq(x, positive_infinity)));
+    invalid = invalid || !hn::AllFalse(d, hn::Or(hn::IsNaN(x),
+                                                 hn::Eq(x, positive_infinity)));
     maximum_v = hn::Max(maximum_v, x);
   }
   maximum = hn::ReduceMax(d, maximum_v);
@@ -312,8 +414,7 @@ HWY_INLINE void peer_softmax(const float* src, float* dst,
   double sum = 0.0;
   std::size_t i = 0;
   for (; width <= n - i; i += width) {
-    const auto value =
-        hn::Exp(d, hn::Sub(hn::LoadU(d, src + i), maximum_v));
+    const auto value = hn::Exp(d, hn::Sub(hn::LoadU(d, src + i), maximum_v));
     hn::StoreU(value, d, dst + i);
     sum += static_cast<double>(hn::ReduceSum(d, value));
   }
@@ -378,64 +479,142 @@ void run_public_info(const std::string& title, std::size_t n,
 void run_size(std::size_t n) {
   std::vector<float> input(n), other(n), output(n);
   for (std::size_t i = 0; i < n; ++i) {
-    input[i] =
-        8.0f * std::sin(static_cast<float>(i) * 0.0137f) +
-        0.5f * std::cos(static_cast<float>(i) * 0.071f);
-    other[i] =
-        4.0f * std::cos(static_cast<float>(i) * 0.0191f) - 0.25f;
+    input[i] = 8.0f * std::sin(static_cast<float>(i) * 0.0137f) +
+               0.5f * std::cos(static_cast<float>(i) * 0.071f);
+    other[i] = 4.0f * std::cos(static_cast<float>(i) * 0.0191f) - 0.25f;
   }
   const std::string suffix = " (" + std::to_string(n) + ")";
 
   if (n == kResidentCount) {
-    run_pair("Add f32 (4096)", n,
-             [&] { peer_add(input.data(), other.data(), output.data(), n); },
-             [&] { peer_add(input.data(), other.data(), output.data(), n); });
+    run_pair(
+        "Add f32 (4096)", n,
+        [&] { peer_add(input.data(), other.data(), output.data(), n); },
+        [&] { peer_add(input.data(), other.data(), output.data(), n); });
   }
-  run_pair("salvage tanh f32 xsimd" + suffix, n,
-           [&] { candidate_tanh(input.data(), output.data(), n); },
-           [&] { peer_tanh_xsimd(input.data(), output.data(), n); });
-  run_pair("salvage tanh-gelu f32 xsimd" + suffix, n,
-           [&] { candidate_gelu_tanh(input.data(), output.data(), n); },
-           [&] { peer_gelu_tanh_xsimd(input.data(), output.data(), n); });
-  run_pair("activation exp f32" + suffix, n,
-           [&] { candidate_exp(input.data(), output.data(), n); },
-           [&] { peer_exp(input.data(), output.data(), n); });
-  run_pair("activation tanh-gelu f32" + suffix, n,
-           [&] { candidate_gelu_tanh(input.data(), output.data(), n); },
-           [&] { peer_gelu_tanh(input.data(), output.data(), n); });
-  run_pair("activation SiLU f32" + suffix, n,
-           [&] { candidate_silu(input.data(), output.data(), n); },
-           [&] { peer_silu(input.data(), output.data(), n); });
-  run_pair("row softmax f32" + suffix, n,
-           [&] { hp::activation_softmax(input.data(), output.data(), n); },
-           [&] { peer_softmax(input.data(), output.data(), n); });
+  run_pair(
+      "salvage tanh f32 xsimd" + suffix, n,
+      [&] { candidate_tanh(input.data(), output.data(), n); },
+      [&] { peer_tanh_xsimd(input.data(), output.data(), n); });
+  run_pair(
+      "salvage tanh-gelu f32 xsimd" + suffix, n,
+      [&] { candidate_gelu_tanh(input.data(), output.data(), n); },
+      [&] { peer_gelu_tanh_xsimd(input.data(), output.data(), n); });
+  run_pair(
+      "activation exp f32" + suffix, n,
+      [&] { candidate_exp(input.data(), output.data(), n); },
+      [&] { peer_exp(input.data(), output.data(), n); });
+  run_pair(
+      "activation tanh-gelu f32" + suffix, n,
+      [&] { candidate_gelu_tanh(input.data(), output.data(), n); },
+      [&] { peer_gelu_tanh(input.data(), output.data(), n); });
+  run_pair(
+      "activation SiLU f32" + suffix, n,
+      [&] { candidate_silu(input.data(), output.data(), n); },
+      [&] { peer_silu(input.data(), output.data(), n); });
+  run_pair(
+      "row softmax f32" + suffix, n,
+      [&] { hp::activation_softmax(input.data(), output.data(), n); },
+      [&] { peer_softmax(input.data(), output.data(), n); });
 
-  run_public_info("public/body activation exp" + suffix, n,
-                  [&] { hs::exp_f32_batch(input.data(), output.data(), n); },
-                  [&] {
-                    hs::detail::exp_f32_highway_parity(
-                        input.data(), output.data(), n);
-                  });
-  run_public_info("public/body tanh-gelu" + suffix, n,
-                  [&] {
-                    hs::gelu_tanh_f32_batch(input.data(), output.data(), n);
-                  },
-                  [&] {
-                    hs::detail::gelu_tanh_f32_route_parity(
-                        input.data(), output.data(), n);
-                  });
-  run_public_info("public/body SiLU" + suffix, n,
-                  [&] { hs::silu_f32_batch(input.data(), output.data(), n); },
-                  [&] {
-                    hs::detail::silu_f32_hyle_parity(
-                        input.data(), output.data(), n);
-                  });
-  run_public_info("public/body softmax" + suffix, n,
-                  [&] { hs::softmax_f32(input.data(), output.data(), n); },
-                  [&] {
-                    hs::detail::softmax_f32_hyle_parity(
-                        input.data(), output.data(), n);
-                  });
+  run_public_info(
+      "public/body activation exp" + suffix, n,
+      [&] { hs::exp_f32_batch(input.data(), output.data(), n); },
+      [&] {
+        hs::detail::exp_f32_highway_parity(input.data(), output.data(), n);
+      });
+  run_public_info(
+      "public/body tanh-gelu" + suffix, n,
+      [&] { hs::gelu_tanh_f32_batch(input.data(), output.data(), n); },
+      [&] {
+        hs::detail::gelu_tanh_f32_route_parity(input.data(), output.data(), n);
+      });
+  run_public_info(
+      "public/body SiLU" + suffix, n,
+      [&] { hs::silu_f32_batch(input.data(), output.data(), n); },
+      [&] {
+        hs::detail::silu_f32_hyle_parity(input.data(), output.data(), n);
+      });
+  run_public_info(
+      "public/body softmax" + suffix, n,
+      [&] { hs::softmax_f32(input.data(), output.data(), n); },
+      [&] {
+        hs::detail::softmax_f32_hyle_parity(input.data(), output.data(), n);
+      });
+}
+
+void run_inference_rows() {
+  constexpr float epsilon = 1e-5f;
+  for (const std::size_t n :
+       {std::size_t{256}, std::size_t{4096}, std::size_t{11008}}) {
+    std::vector<float> gate(n), value(n), weight(n), output(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      gate[i] = 7.0f * std::sin(static_cast<float>(i) * 0.0137f);
+      value[i] = 2.0f * std::cos(static_cast<float>(i) * 0.0191f);
+      weight[i] = 0.75f + static_cast<float>(i % 127) / 254.0f;
+    }
+    const std::string suffix = " (" + std::to_string(n) + ")";
+
+    run_pair(
+        "inference SwiGLU f32" + suffix, n,
+        [&] { candidate_swiglu(gate.data(), value.data(), output.data(), n); },
+        [&] { peer_swiglu(gate.data(), value.data(), output.data(), n); });
+    run_pair(
+        "inference RMSNorm f32" + suffix, n,
+        [&] {
+          candidate_rms_norm(gate.data(), weight.data(), output.data(), n,
+                             epsilon);
+        },
+        [&] {
+          peer_rms_norm(gate.data(), weight.data(), output.data(), n, epsilon);
+        });
+    run_public_info(
+        "public/body inference SwiGLU" + suffix, n,
+        [&] {
+          hs::swiglu_f32_batch(gate.data(), value.data(), output.data(), n);
+        },
+        [&] {
+          hs::detail::swiglu_f32_hyle_parity(gate.data(), value.data(),
+                                             output.data(), n);
+        });
+    run_public_info(
+        "public/body inference RMSNorm" + suffix, n,
+        [&] {
+          hs::rms_norm_f32(gate.data(), weight.data(), output.data(), n,
+                           epsilon);
+        },
+        [&] {
+          hs::detail::rms_norm_f32_hyle_parity(gate.data(), weight.data(),
+                                               output.data(), n, epsilon);
+        });
+  }
+
+  {
+    constexpr std::size_t n = 256;
+    constexpr std::size_t k = 6;
+    std::vector<float> scores(n);
+    for (std::size_t i = 0; i < n; ++i)
+      scores[i] = std::sin(static_cast<float>(i) * 0.131f) +
+                  0.01f * static_cast<float>(i % 17);
+    std::array<hs::ScoredIndexF32, k> output{};
+    run_pair(
+        "inference top-k f32 (256,6)", n,
+        [&] { hs::top_k_f32(scores.data(), n, output.data(), k); },
+        [&] { peer_top_k_insertion(scores.data(), n, output.data(), k); });
+  }
+
+  {
+    constexpr std::size_t n = 151936;
+    constexpr std::size_t k = 1024;
+    std::vector<float> scores(n);
+    for (std::size_t i = 0; i < n; ++i)
+      scores[i] = std::sin(static_cast<float>(i) * 0.00131f) +
+                  0.0001f * static_cast<float>(i % 251);
+    std::vector<hs::ScoredIndexF32> output(k);
+    run_pair(
+        "inference top-k f32 (151936,1024)", n,
+        [&] { hs::top_k_f32(scores.data(), n, output.data(), k); },
+        [&] { peer_top_k_heap(scores.data(), n, output.data(), k); });
+  }
 }
 
 }  // namespace
@@ -446,8 +625,8 @@ int main() {
     std::fprintf(stderr, "xsimd tanh salvage accuracy qualification failed\n");
     return 2;
   }
-  std::printf(
-      "SIMD-08 activation parity plus SIMD-12 xsimd tanh salvage\n");
+  std::printf("SIMD-08 activation parity plus SIMD-12 xsimd tanh salvage\n");
   run_size(kResidentCount);
   run_size(kStreamingCount);
+  run_inference_rows();
 }

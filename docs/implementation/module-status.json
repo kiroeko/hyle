@@ -1001,63 +1001,33 @@
     },
     {
       "module": "simd",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "SIMD-KERNEL-TARGET-AUTHORITY-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
-      "round_id": "simd-v5-target-ownership",
-      "closure_task": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
-      "scope": "Give SIMD sole ownership of the public compiled-kernel target type and migrate ordinary, exact and source-fat target reporting away from the Platform host-fact type without changing algorithm or provider decisions.",
-      "non_goals": "New SIMD capabilities, operation semantics, provider winners, kernel algorithms, the 387-operation route ledger, vendor revisions, VQSort, a public register DSL, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
-      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
-      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
-      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
-      "performance_tier": "P0",
+      "product_state": "AUDITED",
+      "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
+      "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
+      "round_id": "simd-v6-provider-consumer-replay",
+      "closure_task": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
+      "scope": "Reconcile the contradictory installed expert-SDK contract and audit only the SIMD capability, provider and build seams affected by current Highway plus current ggml/llama.cpp, ds4, vLLM and SGLang inference-consumer evidence.",
+      "non_goals": "An open 422-scope benchmark sweep, benchmark-shaped APIs, a restored public register DSL, model-specific tensor operators, block-quant/GEMM/attention ownership, Compute or Graph implementation, Native FFI/C API, stable cross-toolchain C++ ABI, common instrument redesign or Formal certification.",
+      "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
+      "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md"
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/simd/simd-v5-target-ownership.md",
-      "loc": {
-        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
-        "repository_code": 443000,
-        "self_with_tests": 112489,
-        "self_without_tests": 71135,
-        "module_implementation": 14260
-      },
-      "known_limitations": [
-        "KernelTarget is a coarse compiled product family rather than the host maximum or a catalog of every specialty feature; different families may legitimately select different targets.",
-        "The public SDK intentionally has no current-caller-TU target constant across source/static/shared delivery; custom kernels derive requirements from their actual build flags/provider and runtime diagnosis uses selected_target().",
-        "The P0 claim covers unchanged init-once/one-cached-call dispatch structure only; operation winner timing, SVE/RVV true-machine performance, stable C++ ABI, Native FFI and Formal remain unclaimed."
-      ],
-      "reopen_triggers": [
-        "A provider, compiler, target flag or vendor revision changes canonical requirements or compiled-body identity.",
-        "A named consumer reproduces dishonest selected-target, fallback, exact/fat artifact or source/static/shared reporting.",
-        "The public target API or layout, runtime dispatch, compiled variant set, direct dependency or normal whole-buffer cost changes materially.",
-        "An operation body or route winner changes, a P1/P2 consumer proves material regression, or a new architecture target is formally admitted."
-      ],
-      "summary": "simd-v5 CLOSED：KernelTarget 成为唯一 compiled/selected target authority，Platform 只提供 facts；三平台 correctness/sanitizer/三交付、exact artifact、387/422/0 route、文档/红队与 P0 结构门全部通过，算法 winner 未改。"
+      "audit_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
+      "summary": "simd-v6 AUDITED：四组推理证据回放冻结 activation/GLU、row normalization、indexed float top-k 三个能力族及 expert delivery/Highway lock 横向修复；只允许实施 F01–F06。"
     },
     {
       "module": "container",
