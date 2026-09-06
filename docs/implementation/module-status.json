@@ -1001,7 +1001,7 @@
     },
     {
       "module": "simd",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
       "round_id": "simd-v6-provider-consumer-replay",
@@ -1018,18 +1018,28 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-simd.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
       "audit_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "summary": "simd-v6 CANDIDATE：e72089c1 精确归档已在 Windows/MSVC、WSL/GCC+ASan 与 macOS/AppleClang 完成 SIMD 5/5；修正后同合同 P1 为三行 PARITY/5% NI PASS，top-k 固定负向约 0.95%–1.58% 已完成有界实现归因且不满足产品修改的消费钥匙。"
+      "summary": "simd-v6 VERIFIED：F01–F06、三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过；等待 terminal receipt。"
     },
     {
       "module": "container",

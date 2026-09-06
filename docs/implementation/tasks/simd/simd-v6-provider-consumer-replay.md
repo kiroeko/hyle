@@ -440,3 +440,35 @@ Top-k 的四个点值固定朝 HYLE 负向，已按公共标准 §6.1 做完有�
 
 F06 的有限 FIX 集已经实现完毕，当前只允许执行 route/coverage、文档、交付、red-team 与状态门的
 最终验证；不得再改变候选产品或性能合同。
+
+## 验证裁决（`VERIFIED`）
+
+候选冻结后没有产品、公开合同、算法、normal workload 或 dependency lock 变化。最终机械回放为：
+
+- `simd-op-coverage.py`：387 operation / 422 route scope / 0 pending，provider manifest、ledger、decision
+  和实际 route 全部一致；
+- 三平台 exact suite：Windows、WSL 和 macOS 均 5/5；WSL 的 ASan 未报告 finding；
+- 公共性能仪器的 controls/runner/deep-replay 48 项单测通过；v5 manifest 的 deep verify 为
+  `QUALIFIED/CURRENT/EXACT`；
+- `check-module-closure.py --previous <CANDIDATE registry>`、`check-docs.py` 与 `git diff --check`
+  通过；公开头、ordinary/expert package 与三交付合同没有新增分叉；
+- 源码扫描未发现 SIMD C header、`extern "C"`、Native FFI 开关或已退役 register façade 回流；
+  `vec.h`、`native/`、`backend/` 均不存在。
+
+最终红队重新攻击了 F01--F06 的 ownership、特殊值、alias、top-k NaN/tie/index/复杂度、baseline
+SIGILL、exact/fat codegen、installed expert surface 和比较等价矩阵。GCC test finding 已修复；top-k
+固定负向已按机制/消费双钥匙保留为非 material diagnostic；没有未处置 correctness、security、交付、
+API 易用性、依赖或 P1 blocker。
+
+| gate | verdict | 依据 |
+|---|---|---|
+| scope | `PASS` | 只完成 F01--F06，没有第四能力族或无界 422-scope sweep |
+| architecture | `PASS` | ordinary/expert、Platform facts、SIMD target/provider 与 Compute owner 边界唯一 |
+| correctness | `PASS` | 三平台 exact 5/5；特殊值确实进入 vector lane；ASan 通过 |
+| delivery | `PASS` | source/static/shared ordinary+expert fixed/fat；更新候选的交付输入无 diff |
+| usability/docs | `PASS` | 自然 pointer/count/POD row、显式 expert escape hatch；架构/用户/维护/性能说明一致 |
+| red team | `PASS` | F06a/F06b 与 GCC finding 已修复；固定负向有界复核完成且无 material blocker |
+| engineering performance | `PASS` | 三行四 strata 均 `PARITY` 且 5% non-inferiority `PASS` |
+
+候选 LOC（`loc-report.py --commit e72089c1 --self-check`）：全库 458,401；自实现含测试 119,226；
+自实现不含测试 75,356；SIMD 实现 15,097。Formal 仍为独立 `PENDING`，不影响本轮工程验证。
