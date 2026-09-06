@@ -217,6 +217,13 @@ Audit verdict：**`AUDITED`**。capability-family map、public-surface trace 和
   [`build finding`](../build/build-dependency-lock-cache-refresh-finding-2026-09.md)，不在 SIMD 轮
   顺手修改公共 resolver。
 
-尚未签发 `CANDIDATE`：需要先形成干净 product commit/tree。之后只剩 W1-WIN 正式 P1、WSL/macOS
-正确性与交付、relocated source/static/shared、适用 sanitizer、最终文档/红队与 terminal receipt；
-若 P1 出现 material FAIL，最多执行本卡允许的一次机制诊断，不扩展成逐 operation 计时。
+`CANDIDATE` 已签发：产品 commit
+`5d7349502311b622d6263ca68071d62dff125b67`，tree
+`9a995bbaa0ea43e67f3889682c647cf7907a7bfb`。candidate 前的 Windows MSVC 19.50
+static exact-AVX2 SIMD suite 为 5/5 PASS；route ledger、文档合同、模块状态合同和 P1 合同
+`d5745aff4a0f7183310a1d4671cd05a472aef5f279cece78046feaf406a1c216` 均通过。
+
+之后只剩 W1-WIN 正式 P1、WSL/macOS 正确性与交付、relocated source/static/shared、适用
+sanitizer、最终文档/红队与 terminal receipt；若 P1 出现 material FAIL，最多执行本卡允许的
+一次机制诊断，不扩展成逐 operation 计时。CANDIDATE 后若公开合同、算法或 normal workload
+发生变化，必须退回 `AUDITED`。
