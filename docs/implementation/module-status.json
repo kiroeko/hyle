@@ -717,7 +717,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "platform-fs-v2-control-resume",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "scope": "Rebind the unchanged Platform-fs v8 product candidate and run exactly one fresh W1-WIN same-contract warm-file P1 qualification after an independent controls-only preflight proves a stable sampling window.",
@@ -740,7 +740,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 RESUME / SCOPED：未改候选的 W1-WIN controls-only 新窗口预检已通过 A/A 与 5%/10% 双顺序门；本轮只允许一次完整八-strata P1 资格化，不修改产品、合同或 margin。"
+      "summary": "platform_fs v2 RESUME / AUDITED：新窗口 controls-only 预检通过，候选产品、依赖、benchmark 与 P1 contract 零漂移，冻结 FIX 集为空；下一步只允许一次完整八-strata 资格化。"
     },
     {
       "module": "mem_reclaim",

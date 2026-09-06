@@ -72,6 +72,23 @@ common-control executable（SHA-256
 `C:\public\project-hyle\_validation\platform-fs-v2-control-resume\transitions\module-status-before-scoped.json`，
 SHA-256 `361F60B57A5A21A2870A7AF9988429B005692B177507C427A9FC3AD2E6409FB1`。
 
+## Audit 与冻结 FIX ledger（`AUDITED`）
+
+- `git diff c39df6f9..1360c1e0` 对 `include/hyle/platform`、`src/platform`、`src/platform_thread`、
+  `src/platform_fs` 与中央 component graph 为空；冻结产品候选及其依赖产品路径没有漂移；
+- 同一范围对 `bench/platform_fs` 与 `bench/contracts/platform-fs-p1-v2.json` 也为空；当前合同、peer
+  adapter、八 strata、5% margin 与 runner mapping 没有在看到旧结果后改变；
+- v8 的 capability、correctness、delivery、API/usability、内部复用与 red-team 结果仍绑定同一产品
+  identity；本轮没有新的 consumer、缺陷或成熟 peer 事实触发产品重审；
+- preflight 的 A/A 与 5%/10% 双顺序 controls 全部通过，满足前一 blocker 唯一恢复钥匙；它不参与正式
+  product summary，也不与随后 bundle 拼样；
+- 冻结 `FIX` 集为空。允许的工作只有 fresh build、一次 qualification、deep verify、结果文档和合法
+  registry transition；任何产品、benchmark、contract 或公共仪器修改都使本轮停止并退回新审计。
+
+`SCOPED -> AUDITED` 前态 registry snapshot：
+`C:\public\project-hyle\_validation\platform-fs-v2-control-resume\transitions\module-status-before-audited.json`，
+SHA-256 `2381C8042A552B9CA175D928FC0535C44BA533930AE566BE1E0FA3F26BD1F6DF`。
+
 ## API / usability freeze
 
 - 状态：`FROZEN / UNCHANGED`；
@@ -97,4 +114,4 @@ strata 覆盖。预检不能修改这张矩阵。
 
 ## Current decision
 
-`SCOPED`。恢复条件已经由独立 controls-only 预检满足；产品候选未变，尚未产生本轮正式性能 verdict。
+`AUDITED`。恢复条件、产品/合同零漂移和空 `FIX` 集已经冻结；尚未产生本轮正式性能 verdict。
