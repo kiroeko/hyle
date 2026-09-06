@@ -578,12 +578,14 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-v11-perf-control-resume",
       "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
       "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
       "non_goals": "Any Platform product, API, test, benchmark, adapter, contract, peer or margin change; another common-instrument change, preflight, second bundle, order or sample selection, old-sample merging, adjacent modules, Native FFI and Formal certification.",
       "baseline_commit": "aac877695b04b76b68eeff69c9bccbbafc55f411",
+      "candidate_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+      "candidate_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -601,7 +603,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v11 RESUME / AUDITED：产品、benchmark、contract、peer、margin 与 build edge 相对 v10 candidate 均无漂移；FIX 集为空，只允许在修复后的公共停止规则下执行一次 fresh W1-WIN qualification。"
+      "summary": "platform v11 RESUME / CANDIDATE：重新绑定未改的 3c1ef239/63b58d10 产品身份；v10 correctness/delivery/API/red-team 继续有效，现在只等待一次 fresh W1-WIN qualification。"
     },
     {
       "module": "platform_thread",

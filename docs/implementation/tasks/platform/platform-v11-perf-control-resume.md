@@ -53,3 +53,15 @@ SHA-256 `2116DE531E3C83CF0E0FA4143A2631BCF192ED0BD29102578DEC402AF047F072`。
 `SCOPED -> AUDITED` 前态 registry snapshot：
 `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-audited.json`，
 SHA-256 `227D8562BFE74706B7C85657A2DF5FCE1F91524178188A120D427CAD42DE7583`。
+
+## Candidate（`CANDIDATE`）
+
+- product commit/tree 重新绑定为未改的 `3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c` /
+  `63b58d1051d86c4aecb1bf736ae84265e359a5f5`；没有生成替代产品 candidate；
+- immutable validation source 必须从当前 harness commit 建立 clean worktree，并用上述空 diff 证明其
+  Platform/benchmark/contract bytes 等于 candidate；manifest 同时记录实际 source/tool identity；
+- 公开 API、node-memory OS 语义、复杂度、布局、依赖、三平台 correctness、三交付、文档和红队保持
+  v10 冻结结果；本轮不能用性能结果反向改变它们；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-candidate.json`，
+  SHA-256 `CE7586A0B8B896593F2445981122482330784709B626189A8444FDF9D3A4988A`。
