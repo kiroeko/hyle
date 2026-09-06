@@ -717,7 +717,7 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "platform-fs-v2-control-resume",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "scope": "Rebind the unchanged Platform-fs v8 product candidate and run exactly one fresh W1-WIN same-contract warm-file P1 qualification after an independent controls-only preflight proves a stable sampling window.",
@@ -732,17 +732,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v2 RESUME / CANDIDATE：v8 第二候选 c39df6f9/37889346 已在产品、依赖、benchmark 与 contract 零漂移后重新绑定；新窗口 controls 通过，下一项是唯一一次完整 P1 qualification。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform_fs v2 RESUME / VERIFIED：未变化的 v8 第二候选取得唯一 fresh W1-WIN receipt；31 个独立进程下 controls 全 PASS，8/8 同合同 warm-file strata 为 PARITY 且 5% NI PASS，无固定方向产品劣化。"
     },
     {
       "module": "mem_reclaim",

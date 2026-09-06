@@ -127,6 +127,37 @@ SHA-256 `2381C8042A552B9CA175D928FC0535C44BA533930AE566BE1E0FA3F26BD1F6DF`。
 额外工作/保证方向为 `none`；execution order、buffer allocation order 和 function placement 都由八个冻结
 strata 覆盖。预检不能修改这张矩阵。
 
+## 唯一正式资格化与固定方向复核（`VERIFIED`）
+
+- fresh evidence：
+  `C:\public\project-hyle\_validation\platform-fs-v2-resume-evidence-r1`；统一仪器按预声明的
+  `[15, 31]` power stages 自动进入 31 个独立进程，本轮没有第二个正式 bundle，也没有人工补样、删样或
+  与 preflight/r3/r4 拼样；
+- deep verifier：`QUALIFIED / EXACT / CURRENT`，`inputs_stable=true`、`artifacts_stable=true`、
+  `host_stable=true`，consumer evidence 与 provenance gate 均 `PASS`；MSVC 19.50.35728、Release、static、
+  LTO off、VS 18 x64、Windows SDK 10.0.26100；
+- controls：A/A 双顺序 median 0.999988 / 1.006608，CI 都在等价带内；5% known-delta 为
+  1.043835 / 1.059100，10% 为 1.101676 / 1.095109；timer-floor 与 primary/placement 双 variant
+  也都 `PASS`；
+- product：八个 strata 全部 exact `PARITY` 且 5% non-inferiority `PASS`。advantage ratio 为
+  0.996402、0.999517、1.012026、0.998621、0.987503、1.005656、0.994822、1.002090；对应 CI 全部
+  包含 1。5 行点值低于 1、3 行高于 1，并随 execution order、allocation order 和 placement 翻转；最小
+  点值约低 1.25%，没有跨 strata 的固定方向，也没有可归因的产品机制；
+- 因而旧 r3/r4 暴露的是当时 controls 未取得资格，不是三台机器共同证明产品回归。本轮满足同合同、控制
+  灵敏度和功效后，产品结论只能是 `PARITY / PASS`，不宣称 WIN、跨机器 SOTA 或 Formal certification；
+- contract-lock / manifest / summary / observations / controls SHA-256 分别为
+  `4324C5FD0A97E9B63D2868290B9988A175DBFA344254A52F0F2A79C40F50BE06`、
+  `6BC5AE79776C0A4B561326297F0910E00BB3C44CD9D405368369A1C18E655C14`、
+  `6AE27668D8DC940535E7F1495525D21F7AC67346E14DC26BFCDFAE4E551E9A19`、
+  `C71F9EFD171F99092FF71EB97602579FAC076E4BF5DFADC6B0C5CE5EEE0B35A1`、
+  `D994AF76428673F48EDD2E92610E478265B4AB9264725882E22B54D1594FC4F4`；canonical contract SHA-256 为
+  `c72d5c879273dffcb805892bc0acc746af61b1841a45e57d332411bf82e83adc`。
+
+`CANDIDATE -> VERIFIED` 前态 registry snapshot：
+`C:\public\project-hyle\_validation\platform-fs-v2-control-resume\transitions\module-status-before-verified.json`，
+SHA-256 `9DE5D7B9BE03B09640C3F76B19A0C3A08B9F4064743B49C5D4DC274C19AAE5E2`。
+
 ## Current decision
 
-`CANDIDATE`。未变化的 v8 第二候选已重新绑定；下一项且唯一未完成项是一次 fresh P1 qualification。
+`VERIFIED`。未变化的 v8 第二候选已经取得唯一一份合法的 fresh P1 receipt；全部适用 gate 为 `PASS`。
+本轮尚未写 terminal receipt，因此此处不提前伪造 `CLOSED`。

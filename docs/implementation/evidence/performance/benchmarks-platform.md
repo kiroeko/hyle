@@ -7,10 +7,11 @@
 > 修正后的 `platform-host-p1-v3` 唯一一次 exact 资格化已经通过：4/4 strata 的 5% NI 均 PASS，全部
 > controls PASS；3 行 PARITY，另 1 行因 HYLE 可能快过等价带上界而只判 exact INCONCLUSIVE。
 > Platform-thread 本轮只改变 integrated-source provenance/package，产品
-> Parker bytes 未变，P0 structural 为 `PASS`。Platform-fs 的 exact 产品数据没有显示固定劣化，但连续
-> 两个 bundle 的公共 controls 未取得资格，当前只能是 `INCONCLUSIVE`，不能冻结为 PASS。具名恢复条件见
-> [`platform-fs-control-stability-2026-09`](../../tasks/performance/platform-fs-control-stability-2026-09.md)，
-> 完整产品轮见
+> Parker bytes 未变，P0 structural 为 `PASS`。Platform-fs 随后的受限 resume 轮保持第二候选、合同、
+> Folly peer 和 5% margin 不变，只执行一次 fresh qualification；31 个独立进程下全部 controls 与 8/8
+> 产品 strata 通过，结论为 exact `PARITY / NI PASS`。旧 r3/r4 仍保留为当时失格的 diagnostic，不与新包
+> 拼接。恢复记录见
+> [`platform-fs-v2-control-resume`](../../tasks/platform_fs/platform-fs-v2-control-resume.md)，完整产品轮见
 > [`platform-v8-os-resource-contract`](../../tasks/platform/platform-v8-os-resource-contract.md)。
 
 Platform v7 新增异构 cache-class snapshot、opened-file duplicate/info 和同步 explicit-offset
@@ -40,17 +41,17 @@ The immutable contracts are
 [`platform-host-p1-v1.json`](../../../../bench/contracts/platform-host-p1-v1.json),
 [`platform-thread-p1-v1.json`](../../../../bench/contracts/platform-thread-p1-v1.json),
 and
-[`platform-fs-p1-v1.json`](../../../../bench/contracts/platform-fs-p1-v1.json).
+[`platform-fs-p1-v2.json`](../../../../bench/contracts/platform-fs-p1-v2.json).
 The closure records are
 [`platform-v3-capability-factorization.md`](../../tasks/platform/platform-v3-capability-factorization.md),
 [`platform-thread-v1-factor.md`](../../tasks/platform_thread/platform-thread-v1-factor.md),
 and
-[`platform-fs-v1-factor.md`](../../tasks/platform_fs/platform-fs-v1-factor.md).
+[`platform-fs-v2-control-resume.md`](../../tasks/platform_fs/platform-fs-v2-control-resume.md).
 
 ## Current verdict
 
 The current v8 verdict is factor-specific: `platform=PASS`,
-`platform_thread=PASS`, and `platform_fs=INCONCLUSIVE/BLOCKED`. The older v7/v6
+`platform_thread=PASS`, and `platform_fs=PASS`. The older v7/v6
 structural results and v3 P1 receipts below remain supporting history; they are
 not silently rebound to the new candidate. This is not a Formal, cross-machine,
 all-topology, or module-wide SOTA certificate. Every numeric row has its own
@@ -61,7 +62,7 @@ a Platform score.
 | --- | --- | --- |
 | host | `platform-host-p1-v3`; `C:\public\project-hyle\_validation\platform-v8-perf-host-evidence-v3-r1` | exact `QUALIFIED`; 4/4 NI `PASS`; all controls `PASS`; medians favor HYLE by 1.48%--3.79%, without claiming a material win |
 | thread | `P0 / closure-correctness-v1`; unchanged Parker state machine plus exact source/license/package audit | structural `PASS`; no new timing claim |
-| filesystem | `platform-fs-p1-v2`; exact r3/r4 bundles | `INCONCLUSIVE`: r3 product 8/8 `PARITY` and NI `PASS` but delta5 control failed; the one allowed rerun r4 failed A/A and lacked product power |
+| filesystem | `platform-fs-p1-v2`; `C:\public\project-hyle\_validation\platform-fs-v2-resume-evidence-r1` | exact `QUALIFIED`; 8/8 `PARITY` and NI `PASS`; all controls `PASS`; ratios 0.987503--1.012026 flip with order/allocation/placement and do not show fixed loss |
 
 | v7 capability | tier / same-contract evidence | result |
 | --- | --- | --- |
@@ -82,6 +83,25 @@ Fifteen independent processes were sufficient under the frozen power rule; no
 post-result escalation or API/layout change was made.
 
 ## Qualified receipts
+
+The current Platform-fs receipt binds product candidate
+`c39df6f94c636ab8fa94cb700dd263763a42d680`, tree
+`37889346564f3a5cdc895f26c9d610883076ba02`, and Folly
+`65749da412d92fe27d87ae45a8ef670720712858`. Its immutable
+contract-lock/manifest/summary hashes are
+`4324C5FD0A97E9B63D2868290B9988A175DBFA344254A52F0F2A79C40F50BE06` /
+`6BC5AE79776C0A4B561326297F0910E00BB3C44CD9D405368369A1C18E655C14` /
+`6AE27668D8DC940535E7F1495525D21F7AC67346E14DC26BFCDFAE4E551E9A19`.
+The frozen `[15,31]` rule selected 31 independent processes without a second
+bundle. A/A, both injected deltas, timer floor and placement all passed. All
+eight product confidence intervals include parity and all lower bounds exceed
+the reciprocal 5% non-inferiority limit. Five point estimates are below one and
+three above it; the direction changes across execution, allocation and placement
+strata, so no product change is keyed by those sub-material values.
+
+The v3 rows below are retained historical receipts for the earlier candidate;
+they remain useful supporting evidence but are not the current Platform-fs
+identity.
 
 The v3 P1 evidence product candidate was
 `b1a526d6fdb05b6bb42c4cb041788959e74511de`, tree

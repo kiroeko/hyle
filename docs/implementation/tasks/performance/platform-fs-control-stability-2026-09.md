@@ -1,6 +1,6 @@
 # Platform-fs W1-WIN 控制项稳定性
 
-<!-- TOOL TASK: QUEUED -->
+<!-- TOOL TASK: COMPLETE -->
 
 ## Finding
 
@@ -44,3 +44,16 @@ Platform v8 第二候选 `c39df6f94c636ab8fa94cb700dd263763a42d680`、tree
 恢复运行必须重新产生完整产品 strata 与 controls；不得拼接 r3/r4 样本。若 controls 合格而产品仍
 material fail，再按 Platform-fs 产品性能缺陷处理；若仍不合格，本任务继续保持具名 blocker，而不是
 返回模块内无限调参。
+
+## Resolution（2026-09-06）
+
+第一条恢复条件已经满足。新的无竞争 W1-WIN 窗口先以 15 个独立进程 × 双顺序通过 A/A、5%/10%
+known-delta controls-only preflight；随后 `platform-fs-v2-control-resume` 在不修改 candidate、contract、
+peer、margin 或仪器的前提下，只执行一次 fresh qualification。统一仪器按既有 power rule 从 n=15 自动
+扩到 n=31，最终 A/A、5%/10% known-delta、timer-floor、placement 全部 `PASS`，八个产品 strata 全部
+`PARITY / NI PASS`，deep verifier 为 `QUALIFIED / EXACT / CURRENT`。
+
+正式 bundle 位于
+`C:\public\project-hyle\_validation\platform-fs-v2-resume-evidence-r1`，manifest SHA-256 为
+`6BC5AE79776C0A4B561326297F0910E00BB3C44CD9D405368369A1C18E655C14`。本任务以环境窗口恢复而完成；
+没有发现需要修改公共仪器的可复现缺陷，也没有把旧 r3/r4 或 preflight 样本拼入产品证据。
