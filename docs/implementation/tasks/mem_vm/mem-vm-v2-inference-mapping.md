@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态为 `AUDITED`。下方 API、成本与七项有限 `FIX` 已冻结；产品修改只限该 ledger，完成
-> 候选验证前不得扩面或提前写成 `CLOSED`。
+> 当前状态为 `CANDIDATE`。下方 API、成本与七项有限 `FIX` 已冻结并由候选实现；后续只运行
+> 预声明验证，不得扩面或提前写成 `CLOSED`。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -164,3 +164,20 @@ syscall 数；只有冻结 model-loader replay 复现 material tail/throughput �
 `SCOPED -> AUDITED` 前 registry snapshot：
 `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-audited.json`，SHA-256
 `CB157D90B34C09F95BF62DE4F62821286E09E49321B15BBA3992FC14575F096B`。
+
+## Candidate
+
+- product commit：`9604bf4a33f13bd5f84ef78fedce55f305ac9d50`；tree：
+  `57adb69f185cf02d42ab7f220ebeccbb91170b1b`；
+- `FileMapping` 用 checked range/view 与 lazy ordered fragments 表达 partial release；连续 owner 无
+  fragment allocation，查询 `O(log F)`，局部控制 `O(log F + K)`，batch release
+  `O(R log R + F + syscalls)`；
+- `SharedMapping` 去掉私有 header，create/open 显式 size/access，payload 原生页对齐；Linux 保留精确
+  native size，Darwin/Windows 的 native capacity 可按页取整，初始化同步属于外部 IPC 协议；
+- `VirtualMapping` 直接别名到 Platform authority；`LargeMapping` 明确 THP request/accepted 与 NUMA
+  applied，不把 hint 命名成 hard huge-page guarantee；
+- Windows 对 file-backed `kDontNeed` 与 partial release 诚实返回 `Unimplemented`，不调用语义不等价的
+  `DiscardVirtualMemory`，空 flush 不升级成 whole-file flush；
+- `AUDITED -> CANDIDATE` 前 registry snapshot：
+  `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
+  `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。

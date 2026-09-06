@@ -3,8 +3,8 @@
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
 > 本轮与 `mem_vm-v2` 协同，但 `mem` 与 `mem_vm` 仍是两个独立组件、两份候选和两项终局裁决。
-> 当前状态为 `AUDITED`。下方能力账本、API freeze 与五项有限 `FIX` 已冻结；产品修改只限该
-> ledger，完成候选验证前不得扩面或提前写成 `CLOSED`。
+> 当前状态为 `CANDIDATE`。下方能力账本、API freeze 与五项有限 `FIX` 已冻结并由候选实现；
+> 后续只运行预声明验证，不得扩面或提前写成 `CLOSED`。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -187,3 +187,18 @@ retention、reuse slack、growth 和 allocation granularity 保留，因为它�
 `SCOPED -> AUDITED` 前 registry snapshot：
 `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-audited.json`，SHA-256
 `CB157D90B34C09F95BF62DE4F62821286E09E49321B15BBA3992FC14575F096B`。
+
+## Candidate
+
+- product commit：`9604bf4a33f13bd5f84ef78fedce55f305ac9d50`；tree：
+  `57adb69f185cf02d42ab7f220ebeccbb91170b1b`；
+- `SystemMemorySnapshot` 分离 allocator-domain 与 whole-process OS facts；不可证明字段为
+  `std::optional`，不以零或 mimalloc committed 伪装；
+- allocator arena API 改为 `LargePageArenaReservationReport`，如实保留 process-global partial side
+  effect，并明确请求 GiB 数不证明物理页粒度或 NUMA placement；
+- `BufferPoolOptions` 删除 bucket scan benchmark seam；内部 search 仍固定有界，正常对象没有新增
+  metadata、allocation 或 dispatch；
+- C++ sample 已覆盖 isolated Heap、snapshot、BufferPool 和 large-page report；没有恢复 C/Native FFI；
+- `AUDITED -> CANDIDATE` 前 registry snapshot：
+  `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
+  `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。

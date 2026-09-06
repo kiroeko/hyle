@@ -2,9 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发。当前仅为 `REOPENED`：本页先保存
-> 可复现事实与最小影响面；closure card、能力账本和有限 `FIX` 集必须在后续 `SCOPED/AUDITED`
-> 分别冻结，之前不得修改 Platform 产品源码。
+> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发。当前为 `CANDIDATE`：四项冻结 `FIX`
+> 已由下述候选实现，后续只运行预声明验证，不再扩大产品范围。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -143,3 +142,17 @@ Platform 不校验或保存 owner identity，也不新增 fragment API。
 `SCOPED -> AUDITED` 前 registry snapshot：
 `C:\public\project-hyle\_validation\platform-v9-process-memory-mapping\module-status-before-audited.json`，
 SHA-256 `B167906C62A60E03623745B4B8DB457BF7CF54F05B426522208946DD3C6B5BAC`。
+
+## Candidate
+
+- product commit：`9604bf4a33f13bd5f84ef78fedce55f305ac9d50`；tree：
+  `57adb69f185cf02d42ab7f220ebeccbb91170b1b`；
+- `ProcessMemoryInfo` 使用各平台公开 OS 事实；Linux/macOS 对不可证明的 private commit 保持 absent，
+  Windows 只报告 `PrivateUsage` current；不缓存、不向内存热路径增加状态；
+- `vm_advise/vm_lock/vm_unlock` 保持既有公开签名与 syscall 路线，只修正为通用合法 mapped range 合同；
+  Mem-VM 不再复制匿名 VM wrapper 或 range syscall authority；
+- 直接消费者 `mem::system_memory_snapshot()` 组合 Platform whole-process 与 mimalloc allocator-domain
+  两种事实，不再把后者冒充前者；
+- `AUDITED -> CANDIDATE` 前 registry snapshot：
+  `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
+  `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。

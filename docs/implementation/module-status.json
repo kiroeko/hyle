@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
       "round_id": "platform-v9-process-memory-mapping",
@@ -586,6 +586,8 @@
       "scope": "Add an honest whole-process OS memory fact for Mem and make Platform's existing VM range mechanism the single authority reusable by file-backed mappings.",
       "non_goals": "CPU, cache, NUMA or frequency redesign; file-mapping ownership or fragment policy; Platform-fs/thread; scheduler or engine policy; Native FFI/C API; common instrument redesign and Formal certification.",
       "baseline_commit": "93dce49922ac1721c45f155d66f3805e74faf7cc",
+      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -604,7 +606,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v9 AUDITED：whole-process optional OS memory fact、通用 mapped-range authority 与四项有限 FIX 已冻结；现在只授权该 ledger 的实现、测试、文档、交付和既有 host P1 holdout。"
+      "summary": "platform v9 CANDIDATE：whole-process optional OS memory fact 与通用 mapped-range authority 已按四项冻结 FIX 实现；候选 9604bf4a/57adb69f 正在完成三平台、三交付、红队与既有 host P1 holdout 验证。"
     },
     {
       "module": "platform_thread",
@@ -816,7 +818,7 @@
     },
     {
       "module": "mem",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
       "round_id": "mem-v6-comprehensive-rebuild",
@@ -824,6 +826,8 @@
       "scope": "Re-establish the current host-memory capability superset, natural C++ product shape, internal reuse, performance and delivery contract after Platform v8, coordinated with but independently from Mem-VM v2.",
       "non_goals": "Mem reclamation without a new trigger; async or device completion, Tensor, Graph or model policy; Native FFI/C API; stable C++ ABI; common instrument redesign; benchmark-only API or metadata; Formal certification.",
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
+      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -842,11 +846,11 @@
       "state": "PENDING",
       "instrument_profile": "formal-release-v1"
     },
-    "summary": "mem v6 AUDITED：九族超集已裁决为 COMPLETE/ROUTED；whole-process fact、1 GiB partial report、BufferPool API 污染及交付/性能共五项有限 FIX 已冻结。"
+    "summary": "mem v6 CANDIDATE：九族超集保持 COMPLETE/ROUTED，whole-process fact、large-page partial report、BufferPool API 污染和交付/性能合同已落实；候选 9604bf4a/57adb69f 正在验证。"
     },
     {
       "module": "mem_vm",
-    "product_state": "AUDITED",
+    "product_state": "CANDIDATE",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -854,6 +858,8 @@
       "scope": "Complete inference-shaped file mapping and range lifetime, replay anonymous/shared/huge/guarded storage against Platform v8, and re-establish natural C++ API, performance and delivery contracts.",
       "non_goals": "Base allocator, pool or lifetime-planner redesign; reclamation; async/direct IO; backend/device or model policy; IPC synchronization protocol; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
+      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -872,7 +878,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "mem_vm v2 AUDITED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping、LargeMapping taxonomy、三交付与同合同 P1 共七项有限 FIX 已冻结。"
+    "summary": "mem_vm v2 CANDIDATE：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping taxonomy 已按七项冻结 FIX 实现；候选 9604bf4a/57adb69f 正在验证。"
     },
     {
       "module": "simd",
