@@ -60,6 +60,14 @@ endif()
 # Keep IPO/LTO off for the module so a future global -flto can't inline a variant TU's
 # wider codegen into the baseline dispatcher (same isolation rule as simd/, conventions §10).
 set_target_properties(hyle_container PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
+if(NOT WIN32)
+  # Generated ISA variant entry points and private vendor helpers are an
+  # implementation detail of the Container shared object. Public C++ symbols
+  # opt back in through HYLE_CONTAINER_API.
+  set_target_properties(hyle_container PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES)
+endif()
 
 hyle_register_package_dependency(
   NAME container_hash_vendors

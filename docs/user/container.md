@@ -218,6 +218,10 @@ erase/replace/evict 的 mutation 后不能继续使用。
 - `reserve/clear/for_each` 是 management operation；不要在同一线程仍持有该 map accessor 时调用，
   map 析构前必须保证全部访问已静止。
 - `ConcurrentVector` 适合并行 append，不是可并行 erase/insert 的 `std::vector`。
+- 注入 concurrent flat/node map/set 的 allocator、hasher、equality policy 必须支持并发调用；各 shard
+  会共享它们的副本并同时执行。`UnboundedQueue` 的 producer 可能分配下一个 block，而 consumer 同时
+  归还旧 block，因此它的 allocator 也必须支持并发 `allocate/deallocate`。默认 `SystemAllocator` 满足
+  这些要求；不要直接注入只允许单线程访问的 arena/resource。
 
 无法诚实给出容量上限的 burst inbox 可以使用 `UnboundedQueue<T>`：
 
@@ -332,6 +336,8 @@ release”。`StringId{0}` 表示空字符串，同时也是非空 acquire 的�
 - fail-fast 便利 API 只适合“失败即 invariant violation”的位置；
 - reserve/grow 失败必须保留原容器；不要在失败后假设 requested capacity 已生效；
 - injected allocator 的 lifetime 必须覆盖容器和所有 live allocation；
+- 若容器合同允许不同线程同时触达 allocator（特别是 concurrent map/set 与 `UnboundedQueue`），注入
+  的 allocator 还必须支持并发调用；仅仅 lifetime 足够并不代表线程安全；
 - 不要跨 CRT/模块用错误 allocator 释放 storage。
 
 ## 交付和头文件

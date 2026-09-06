@@ -14,9 +14,10 @@ namespace detail {
 struct ConcurrentNodeSetValue {};
 }  // namespace detail
 
-// Stable-node concurrent membership. A successful find() keeps the bucket
-// protected through ConstAccessor; release the accessor before re-entering the
-// set or calling management operations.
+// Stable-node concurrent membership. Alloc/Hasher/Eq calls must be safe to
+// invoke concurrently. A successful find() keeps the bucket protected through
+// ConstAccessor; release the accessor before re-entering the set or calling
+// management operations.
 template <class K, class Hasher = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator,
           RetiredTableLifetime TableLifetime =

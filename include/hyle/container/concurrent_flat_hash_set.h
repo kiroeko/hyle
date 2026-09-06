@@ -14,9 +14,11 @@ namespace detail {
 struct ConcurrentFlatSetValue {};
 }  // namespace detail
 
-// Compact sharded concurrent membership. contains() is a snapshot; callbacks
-// hold one shard's shared lock and must not re-enter this set. Destruction and
-// management operations require all callers to be quiescent.
+// Compact sharded concurrent membership. Alloc/Hasher/Eq calls must be safe to
+// invoke concurrently because independent shards share copies of those
+// policies. contains() is a snapshot; callbacks hold one shard's shared lock
+// and must not re-enter this set. Destruction and management operations require
+// all callers to be quiescent.
 template <class K, class Hasher = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 class ConcurrentFlatHashSet {

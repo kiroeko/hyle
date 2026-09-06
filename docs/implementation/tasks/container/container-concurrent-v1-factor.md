@@ -58,6 +58,7 @@
 ## 第二候选撤回
 
 共同 `hyle_container` shared artifact 泄漏 private bitset ISA symbols，因此四 factor 一并退回
-`AUDITED`；本 factor 的 API、layout、算法和符号未发现新的产品缺陷。正式 membership 对拍同时暴露两侧
+`AUDITED`。终局红队确认 flat map/set 的不同 shard 会并发触达 injected Alloc/Hash/Eq，而公开合同只写了
+Hash/Eq；有限修复是在 header/guide 明示该前提，不增加锁或改变默认路线。正式 membership 对拍同时暴露两侧
 默认 allocator 不同，且统计 non-inferiority 为 `UNRESOLVED`；该证据只能作为自然路线诊断，不能签
 `SAME_CONTRACT`。

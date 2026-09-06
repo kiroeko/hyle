@@ -1093,7 +1093,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 第二候选已撤回至 AUDITED：Linux exact shared artifact 证实 24 个 private bitset ISA kernel 泄漏到 dynsym；只授权既有 TEXT-F02/CONT5-F06 visibility FIX，修复后建立新产品身份。"
+      "summary": "container-v5 第二候选已撤回至 AUDITED：Linux shared artifact 泄漏 24 个 private bitset ISA kernels，且并发 map/queue 未公开 injected allocator 的并发前提；只授权 hidden-by-default 与合同/指南两项有限修复。"
     },
     {
       "module": "util",
@@ -1300,7 +1300,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v1 随共同 Container 产品从第二候选退回 AUDITED；本 factor 未发现产品缺陷，只等待 visibility FIX 后的新共同身份与终局验证。"
+      "summary": "container_concurrent v1 随共同产品退回 AUDITED：补明 flat/node map/set injected Alloc/Hash/Eq 的并发调用前提；算法、layout 与默认 SystemAllocator 路线不变。"
     },
     {
       "module": "container_queue",
@@ -1327,7 +1327,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v1 随共同 Container 产品从第二候选退回 AUDITED；本 factor 未发生产品修改，既有 oneTBB 对拍因 allocator/OOM 语义不等价不能签 SAME_CONTRACT。"
+      "summary": "container_queue v1 随共同产品退回 AUDITED：补明 UnboundedQueue producer allocation 与 consumer deallocation 可重叠；既有 oneTBB 对拍因 allocator/OOM 语义不等价不能签 SAME_CONTRACT。"
     },
     {
       "module": "text",

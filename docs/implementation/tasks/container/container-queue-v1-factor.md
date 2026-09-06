@@ -59,7 +59,8 @@
 ## 第二候选撤回
 
 共同 `hyle_container` shared artifact 泄漏 private bitset ISA symbols，因此四 factor 一并退回
-`AUDITED`；本 factor 产品未变。正式 queue 对拍中，HYLE 使用 mimalloc-backed `SystemAllocator` 与
+`AUDITED`。终局红队确认 `UnboundedQueue` 的 producer allocation 与 consumer deallocation 可以重叠，
+而公开合同没有要求 injected allocator 支持并发调用；有限修复只补 header/guide 合同。正式 queue 对拍中，HYLE 使用 mimalloc-backed `SystemAllocator` 与
 recoverable `try_push`，oneTBB 使用 `cache_aligned_allocator` 与 throwing `push`；benchmark adapter
 没有等价化 allocator、OOM 和 rollback，故 `1.23–1.25x WIN` 只是一条 `NATURAL_ROUTE` 观测，不能
 签实现级 `SAME_CONTRACT` 或 SOTA。

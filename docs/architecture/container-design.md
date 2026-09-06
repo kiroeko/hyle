@@ -106,6 +106,13 @@ basic/strong guarantee 路线，而不是为了 benchmark 把整个类型禁掉�
 容器需要外部同步。queue/work-stealing/concurrent map/set/vector 只承诺各自列出的角色、progress 与 quiescence；
 它们不提供 timeout、cancel、wait service 或 shutdown policy，这些属于 scheduler/runtime。
 
+并发合同也覆盖注入 policy，而不只覆盖 payload：flat/node map/set 的不同 shard 可以并发调用共享的
+allocator、hasher 与 equality policy；`UnboundedQueue` 的 producer allocation 可以和 consumer
+deallocation 重叠。默认 `SystemAllocator` 与无状态 hash/equality 满足该要求，自定义 policy 必须同样
+支持并发调用。预分配 queue/deque 只在 quiescent construction/destruction 触达 allocator，
+`ConcurrentVector` 的自身 growth allocation 由 cold growth lock 串行化；不能为统一表面给这些 steady
+路径增加无必要的 allocator lock。
+
 ## 复杂度与常态资源
 
 | 操作 | 目标 |

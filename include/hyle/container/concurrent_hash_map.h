@@ -23,11 +23,14 @@ namespace hyle::container {
 // locked while a reference is live; no pointer can silently outlive an erase or
 // rehash as it could in a naive mutex-wrapped flat map.
 //
-// Hash/Eq const calls must be safe to invoke concurrently. Destruction requires
-// all operations and accessors to be quiescent. Re-entering this same map from
-// a for_each callback deadlocks and is unsupported. Keep at most one live
-// accessor from this map per thread; release it before size/reserve/clear/
-// for_each or another lookup (lookup automatically releases a reused accessor).
+// Alloc/Hash/Eq calls must be safe to invoke concurrently: independent shards
+// share copies of those policies and may allocate, hash or compare at the same
+// time. The default SystemAllocator and stateless Hash/Eq satisfy this contract.
+// Destruction requires all operations and accessors to be quiescent. Re-entering
+// this same map from a for_each callback deadlocks and is unsupported. Keep at
+// most one live accessor from this map per thread; release it before
+// size/reserve/clear/for_each or another lookup (lookup automatically releases
+// a reused accessor).
 template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 class ConcurrentHashMap {

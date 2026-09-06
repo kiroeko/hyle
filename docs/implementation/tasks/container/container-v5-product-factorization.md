@@ -326,8 +326,11 @@ SHA-256 `4CED961505B11F8BE79F56326237E40BB904CFB1FE2BB52FD838379E9FBB01A8`。
   `hyle::container::detail::bitset_*_{scalar,sse4,avx2,avx512}` 私有 ISA kernel；公开 HYLE
   symbols 本身正常，但 `hyle_container` 没有像 `hyle_text` 一样启用 Unix hidden-by-default；
 - 该 finding 是冻结的 `TEXT-F02/CONT5-F06` shared-provider visibility 交付缺陷，不改变能力、公开
-  API、layout、算法、正常路径或 ISA 路由。唯一授权修复是在非 Windows 的 `hyle_container` target
-  设置 hidden visibility，由 `HYLE_CONTAINER_API` 恢复公共 C++ symbols；
+  API、layout、算法、正常路径或 ISA 路由。授权在非 Windows 的 `hyle_container` target 设置 hidden
+  visibility，由 `HYLE_CONTAINER_API` 恢复公共 C++ symbols；
+- 终局红队还确认 concurrent flat map/set 与 `UnboundedQueue` 的 injected allocator 并发调用前提没有
+  出现在公开合同。默认 `SystemAllocator` 安全，算法也无需改；第二项有限修复只在相关 public header、
+  architecture 与 user guide 明示 `Alloc/Hash/Eq` 的实际并发责任，不给 steady path 增加统一 allocator lock；
 - 第二候选的 P1 重放同时揭示 performance 命题问题：concurrent set/queue 两侧使用各自默认 allocator，
   queue 还把 HYLE recoverable OOM 与 oneTBB throwing push 表面包装成同一 bool。它们只能作为
   `NATURAL_ROUTE` 观测，不能签 `SAME_CONTRACT` non-inferiority；UTF 与 membership 的统计 verdict

@@ -31,7 +31,9 @@ namespace hyle::container {
 // T construction, destruction and extraction are noexcept because a published
 // FIFO position cannot be rolled back. Callback extraction supports
 // non-assignable T; the rvalue reference is borrowed until callback return and
-// the callback must not re-enter this queue.
+// the callback must not re-enter this queue. Alloc::allocate and deallocate may
+// run concurrently on producer and consumer threads, so an injected allocator
+// must support concurrent calls. The default SystemAllocator does.
 template <class T, class Alloc = mem::SystemAllocator,
           std::size_t BlockCapacity = 64>
 class UnboundedQueue {
