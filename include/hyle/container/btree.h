@@ -1576,10 +1576,17 @@ public:
   }
 
   template <class... Args>
-  std::pair<iterator, bool> try_emplace(K key, Args &&...args) {
+  std::pair<iterator, InsertResult> try_emplace(K key, Args &&...args) {
     auto [position, result] = Base::try_emplace_entry(key, [&]() -> Entry {
       return Entry(std::move(key), std::in_place, std::forward<Args>(args)...);
     });
+    return {position, result};
+  }
+
+  template <class... Args>
+  std::pair<iterator, bool> emplace(K key, Args &&...args) {
+    auto [position, result] =
+        try_emplace(std::move(key), std::forward<Args>(args)...);
     HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
     return {position, result == InsertResult::kInserted};
   }
@@ -1614,7 +1621,7 @@ public:
     return result == InsertResult::kInserted;
   }
 
-  V &operator[](K key) { return try_emplace(std::move(key)).first->value(); }
+  V &operator[](K key) { return emplace(std::move(key)).first->value(); }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
   void insert(It first, Sentinel last) {

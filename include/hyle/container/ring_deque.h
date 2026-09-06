@@ -22,10 +22,10 @@ namespace hyle::container {
 // and provide fixed-capacity/backpressure semantics after reserve(). Growth or
 // reserve invalidates every reference; mutation invalidates iterators/segments,
 // while a no-growth push preserves references to existing elements and pop only
-// invalidates references to erased elements.
+// invalidates references to erased elements. Growth copies when move may throw
+// and T is copyable (strong guarantee); a throwing move-only T retains the
+// standard basic guarantee and may leave existing values moved-from.
 template <class T> class RingDeque {
-  static_assert(std::is_nothrow_move_constructible_v<T>,
-                "RingDeque requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<T>,
                 "RingDeque requires nothrow destruction");
 
@@ -241,7 +241,7 @@ public:
     return first + size() <= capacity_;
   }
 
-  bool try_reserve(size_type requested) noexcept {
+  bool try_reserve(size_type requested) {
     if (requested <= capacity_)
       return true;
     const size_type allocation_limit = static_cast<size_type>(-1) / sizeof(T);
@@ -265,8 +265,24 @@ public:
         std::memcpy(replacement + source.first.size(), source.second.data(),
                     source.second.size_bytes());
     } else {
-      for (size_type i = 0; i < size(); ++i)
-        std::construct_at(replacement + i, std::move((*this)[i]));
+      size_type constructed = 0;
+      try {
+        for (; constructed < size(); ++constructed) {
+          if constexpr (std::is_nothrow_move_constructible_v<T> ||
+                        !std::is_copy_constructible_v<T>) {
+            std::construct_at(replacement + constructed,
+                              std::move((*this)[constructed]));
+          } else {
+            std::construct_at(replacement + constructed,
+                              (*this)[constructed]);
+          }
+        }
+      } catch (...) {
+        while (constructed != 0)
+          std::destroy_at(replacement + --constructed);
+        alloc_.deallocate_n(replacement, target);
+        throw;
+      }
     }
     const size_type active = size();
     destroy_elements();
@@ -379,7 +395,7 @@ private:
   size_type physical_index(size_type logical) const noexcept {
     return (head_ + logical) & (capacity_ - 1);
   }
-  bool grow_for_one() noexcept {
+  bool grow_for_one() {
     const size_type active = size();
     if (active == static_cast<size_type>(-1))
       return false;

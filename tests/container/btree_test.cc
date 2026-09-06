@@ -122,9 +122,9 @@ TEST(BTreeMap, ProvidesOrderedIndexOperationsAndMutableValues) {
   BTreeMap<int, std::string> map;
   EXPECT_TRUE(map.empty());
   EXPECT_TRUE(map.insert(7, "seven").second);
-  EXPECT_TRUE(map.try_emplace(2, "two").second);
-  EXPECT_TRUE(map.try_emplace(11, "eleven").second);
-  EXPECT_FALSE(map.try_emplace(7, "replacement").second);
+  EXPECT_TRUE(map.emplace(2, "two").second);
+  EXPECT_TRUE(map.emplace(11, "eleven").second);
+  EXPECT_FALSE(map.emplace(7, "replacement").second);
   EXPECT_EQ(map.find(7)->value(), "seven");
 
   EXPECT_FALSE(map.insert_or_assign(7, "SEVEN"));
@@ -261,7 +261,7 @@ TEST(BTreeMap, SupportsDescendingOrderCopyMoveAndMoveOnlyMappedValues) {
   EXPECT_EQ(moved.begin()->key(), 3);
 
   BTreeMap<int, MoveOnly> move_only;
-  EXPECT_TRUE(move_only.try_emplace(4, 44).second);
+  EXPECT_TRUE(move_only.emplace(4, 44).second);
   EXPECT_TRUE(move_only.insert_or_assign(4, MoveOnly{45}) == false);
   EXPECT_EQ(move_only.find(4)->value().value, 45);
 }
@@ -417,9 +417,9 @@ TEST(BTreeMap, RepeatedBackExpiryAndRefillMatchesStdMap) {
 TEST(BTreeMap, DuplicateTryEmplaceDoesNotConstructMappedValue) {
   ConstructionCounted::constructions = 0;
   BTreeMap<int, ConstructionCounted> map;
-  EXPECT_TRUE(map.try_emplace(7, 70).second);
+  EXPECT_TRUE(map.emplace(7, 70).second);
   const int after_insert = ConstructionCounted::constructions;
-  EXPECT_FALSE(map.try_emplace(7, 700).second);
+  EXPECT_FALSE(map.emplace(7, 700).second);
   EXPECT_EQ(ConstructionCounted::constructions, after_insert);
   EXPECT_EQ(map.find(7)->value().value, 70);
 }

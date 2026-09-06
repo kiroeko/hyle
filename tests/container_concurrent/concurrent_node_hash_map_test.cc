@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "hyle/container/concurrent_node_hash_map.h"
+#include "hyle/container/concurrent_node_hash_set.h"
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentNodeHashMap;
@@ -261,6 +262,31 @@ TEST(ConcurrentNodeHashMap, ForEachVisitsEveryStableNode) {
   EXPECT_EQ(sum, 999u * 1000u / 2u);
   map.clear();
   EXPECT_TRUE(map.empty());
+}
+
+TEST(ConcurrentNodeHashSet, AccessorProtectsStableKeyAndOomIsRecoverable) {
+  using Set = hyle::container::ConcurrentNodeHashSet<int>;
+  Set set(16);
+  ASSERT_TRUE(set.valid());
+  EXPECT_EQ(set.try_insert(9), Set::InsertResult::kInserted);
+  EXPECT_EQ(set.try_insert(9), Set::InsertResult::kAlreadyPresent);
+  Set::ConstAccessor held;
+  ASSERT_TRUE(set.find(held, 9));
+  EXPECT_EQ(*held, 9);
+  held.release();
+  EXPECT_TRUE(set.erase(9));
+
+  NodeToggleAllocatorState state;
+  AllocatorRef allocator(&node_toggle_allocate, &node_toggle_deallocate,
+                         &node_toggle_reallocate, &state);
+  using FallibleSet = hyle::container::ConcurrentNodeHashSet<
+      int, hyle::container::Hash<int>, std::equal_to<>, AllocatorRef>;
+  FallibleSet fallible(16, allocator);
+  ASSERT_TRUE(fallible.valid());
+  state.fail.store(true);
+  EXPECT_EQ(fallible.try_insert(1),
+            FallibleSet::InsertResult::kOutOfMemory);
+  EXPECT_TRUE(fallible.empty());
 }
 
 #if defined(HYLE_TESTING)

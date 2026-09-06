@@ -19,15 +19,7 @@
 
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#  define HYLE_CONTAINER_API
-#elif defined(HYLE_CONTAINER_BUILD)
-#  define HYLE_CONTAINER_API HYLE_EXPORT
-#else
-#  define HYLE_CONTAINER_API HYLE_IMPORT
-#endif
+#include "hyle/container/visibility.h"
 
 namespace hyle::container {
 

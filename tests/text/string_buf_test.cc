@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "hyle/container/string_interner.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/container/string_view.h"
 #include "hyle/mem/allocator.h"
 
@@ -71,7 +71,7 @@ TEST(StringInterner, InternedAddressSurvivesMoreInterns) {
   for (int i = 0; i < 1000; ++i) {
     buf.intern(std::string("filler_") + std::to_string(i));
   }
-  // The reverse index (SwissTable) rehashed many times; the string storage must
+  // The reverse index (FlatHashMap) rehashed many times; the string storage must
   // not have moved (short strings occupy stable slab blocks).
   StringView again = buf.lookup(buf.acquire("keep_me"));
   EXPECT_EQ(again.data(), addr);

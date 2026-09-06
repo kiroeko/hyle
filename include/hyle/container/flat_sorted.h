@@ -761,14 +761,22 @@ public:
   }
 
   template <class... Args>
-  std::pair<iterator, bool> try_emplace(K key, Args &&...args) {
+  std::pair<iterator, InsertResult> try_emplace(K key, Args &&...args) {
     const size_type index = core_.lower_bound_index(key);
     if (core_.equivalent_at(index, key))
-      return {iterator_at(index), false};
+      return {iterator_at(index), InsertResult::kAlreadyPresent};
     V candidate(std::forward<Args>(args)...);
-    HYLE_FATAL_ASSERT(
-        core_.try_insert_at(index, std::move(key), std::move(candidate)));
-    return {iterator_at(index), true};
+    if (!core_.try_insert_at(index, std::move(key), std::move(candidate)))
+      return {end(), InsertResult::kOutOfMemory};
+    return {iterator_at(index), InsertResult::kInserted};
+  }
+
+  template <class... Args>
+  std::pair<iterator, bool> emplace(K key, Args &&...args) {
+    auto [position, result] =
+        try_emplace(std::move(key), std::forward<Args>(args)...);
+    HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
+    return {position, result == InsertResult::kInserted};
   }
 
   InsertResult try_insert_or_assign(K key, V value) {
@@ -792,7 +800,7 @@ public:
   V &operator[](K key)
     requires std::default_initializable<V>
   {
-    return try_emplace(std::move(key)).first->second;
+    return emplace(std::move(key)).first->second;
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>

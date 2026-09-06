@@ -9,7 +9,7 @@
 
 #include "hyle/container/detail/adaptive_rw_lock.h"
 #include "hyle/container/hash.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
@@ -18,7 +18,7 @@
 namespace hyle::container {
 
 // Sharded concurrent flat hash map for shared registries, memo tables and
-// caches. A key maps to one independently locked SwissTable shard, so unrelated
+// caches. A key maps to one independently locked FlatHashMap shard, so unrelated
 // writers proceed in parallel and reads share a shard. Accessors keep the shard
 // locked while a reference is live; no pointer can silently outlive an erase or
 // rehash as it could in a naive mutex-wrapped flat map.
@@ -36,7 +36,7 @@ class ConcurrentHashMap {
                     std::is_copy_constructible_v<Eq>,
                 "ConcurrentHashMap copies allocator/hash/eq into its shards");
 
-  using Table = SwissTable<K, V, Hash, Eq, Alloc>;
+  using Table = FlatHashMap<K, V, Hash, Eq, Alloc>;
 
   struct alignas(core::kDestructiveInterferenceSize) Shard {
     Shard(Alloc alloc, Hash hash, Eq eq)

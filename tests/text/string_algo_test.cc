@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <string>
 
@@ -261,4 +262,98 @@ TEST(StringAlgo, ScalarUtf8DecoderRejectsNonUnicodeSequences) {
   Utf8Decoder c(StringView{maximum, 4});
   EXPECT_EQ(c.next(), 0x10FFFF);
   EXPECT_TRUE(c.valid());
+}
+
+TEST(StringAlgo, UtfDetailedValidationReportsTypedOffsets) {
+  const char truncated[] = {static_cast<char>(0xE2),
+                            static_cast<char>(0x82)};
+  const UtfResult utf8 = utf8_validate_detailed({truncated, 2});
+  EXPECT_EQ(utf8.status, UtfStatus::kTooShort);
+  EXPECT_EQ(utf8.input_offset, 0u);
+
+  const std::array<char16_t, 2> bad16 = {u'a', 0xD800};
+  const UtfResult utf16 = utf16_validate(bad16);
+  EXPECT_EQ(utf16.status, UtfStatus::kSurrogate);
+  EXPECT_EQ(utf16.input_offset, 1u);
+
+  const std::array<char32_t, 2> bad32 = {U'a', 0x110000};
+  const UtfResult utf32 = utf32_validate(bad32);
+  EXPECT_EQ(utf32.status, UtfStatus::kTooLarge);
+  EXPECT_EQ(utf32.input_offset, 1u);
+}
+
+TEST(StringAlgo, UtfCallerBufferConversionsCoverEveryPair) {
+  const char utf8_bytes[] = {'A', static_cast<char>(0xC3),
+                             static_cast<char>(0xA9),
+                             static_cast<char>(0xF0),
+                             static_cast<char>(0x9F),
+                             static_cast<char>(0x98),
+                             static_cast<char>(0x80)};
+  const StringView utf8{utf8_bytes, sizeof(utf8_bytes)};
+  const std::array<char16_t, 4> expected16 = {u'A', 0x00E9, 0xD83D,
+                                              0xDE00};
+  const std::array<char32_t, 3> expected32 = {U'A', U'\u00E9', 0x1F600};
+
+  std::array<char16_t, 4> as16{};
+  UtfResult result = utf8_to_utf16(utf8, as16);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.input_offset, utf8.size());
+  EXPECT_EQ(result.output_count, expected16.size());
+  EXPECT_EQ(as16, expected16);
+
+  std::array<char32_t, 3> as32{};
+  result = utf8_to_utf32(utf8, as32);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.output_count, expected32.size());
+  EXPECT_EQ(as32, expected32);
+
+  std::array<char, sizeof(utf8_bytes)> from16{};
+  result = utf16_to_utf8(expected16, from16);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.output_count, sizeof(utf8_bytes));
+  EXPECT_TRUE(std::equal(from16.begin(), from16.end(),
+                         std::begin(utf8_bytes)));
+
+  std::array<char32_t, 3> from16_as32{};
+  result = utf16_to_utf32(expected16, from16_as32);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(from16_as32, expected32);
+
+  std::array<char, sizeof(utf8_bytes)> from32{};
+  result = utf32_to_utf8(expected32, from32);
+  EXPECT_TRUE(result.ok());
+  EXPECT_TRUE(std::equal(from32.begin(), from32.end(),
+                         std::begin(utf8_bytes)));
+
+  std::array<char16_t, 4> from32_as16{};
+  result = utf32_to_utf16(expected32, from32_as16);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(from32_as16, expected16);
+}
+
+TEST(StringAlgo, UtfSizeQueryAndFailureDoNotPartiallyWrite) {
+  const StringView input{"A\xF0\x9F\x98\x80"};
+  const UtfResult query = utf8_to_utf16(input, {});
+  EXPECT_EQ(query.status, UtfStatus::kOutputTooSmall);
+  EXPECT_EQ(query.input_offset, input.size());
+  EXPECT_EQ(query.output_count, 3u);
+
+  std::array<char16_t, 2> too_small = {u'x', u'y'};
+  const UtfResult short_result = utf8_to_utf16(input, too_small);
+  EXPECT_EQ(short_result.status, UtfStatus::kOutputTooSmall);
+  EXPECT_EQ(short_result.output_count, 3u);
+  EXPECT_EQ(too_small[0], u'x');
+  EXPECT_EQ(too_small[1], u'y');
+
+  const char malformed[] = {'A', static_cast<char>(0x80)};
+  std::array<char32_t, 4> untouched = {U'x', U'y', U'z', U'w'};
+  const UtfResult invalid = utf8_to_utf32({malformed, 2}, untouched);
+  EXPECT_FALSE(invalid.ok());
+  EXPECT_NE(invalid.status, UtfStatus::kOutputTooSmall);
+  EXPECT_EQ(untouched[0], U'x');
+  EXPECT_EQ(untouched[3], U'w');
+
+  EXPECT_TRUE(utf8_to_utf16(StringView{}, {}).ok());
+  EXPECT_TRUE(utf16_to_utf8({}, {}).ok());
+  EXPECT_TRUE(utf32_to_utf16({}, {}).ok());
 }

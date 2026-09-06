@@ -6,6 +6,7 @@
 #include <deque>
 #include <iterator>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,19 @@ struct Lifetime {
     ++live;
   }
   ~Lifetime() noexcept { --live; }
+};
+
+struct ThrowingMoveCopyable {
+  explicit ThrowingMoveCopyable(int input = 0) noexcept : value(input) {}
+  ThrowingMoveCopyable(const ThrowingMoveCopyable&) noexcept = default;
+  ThrowingMoveCopyable(ThrowingMoveCopyable&& other) noexcept(false) {
+    if (throw_on_move) throw std::runtime_error("move failed");
+    value = other.value;
+  }
+  ~ThrowingMoveCopyable() noexcept = default;
+
+  static inline bool throw_on_move = false;
+  int value = 0;
 };
 } // namespace
 
@@ -109,6 +123,19 @@ TEST(RingDeque, AllocationFailurePreservesExistingElements) {
   EXPECT_FALSE(ring.try_reserve(8));
   EXPECT_FALSE(ring.try_push_back(1));
   EXPECT_TRUE(ring.empty());
+}
+
+TEST(RingDeque, ThrowingMoveUsesCopyFallbackDuringGrowth) {
+  static_assert(!std::is_nothrow_move_constructible_v<ThrowingMoveCopyable>);
+  RingDeque<ThrowingMoveCopyable> ring(2);
+  ring.emplace_back(1);
+  ring.emplace_back(2);
+  ThrowingMoveCopyable::throw_on_move = true;
+  EXPECT_NO_THROW(ring.reserve(8));
+  EXPECT_EQ(ring.size(), 2u);
+  EXPECT_EQ(ring[0].value, 1);
+  EXPECT_EQ(ring[1].value, 2);
+  ThrowingMoveCopyable::throw_on_move = false;
 }
 
 TEST(RingDeque, RandomOperationsMatchStdDequeModel) {

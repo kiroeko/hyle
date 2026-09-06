@@ -45,6 +45,42 @@ struct ThrowingCopy {
   int value;
 };
 
+struct ThrowingMoveCopyable {
+  explicit ThrowingMoveCopyable(int input = 0) noexcept : value(input) {}
+  ThrowingMoveCopyable(const ThrowingMoveCopyable&) noexcept = default;
+  ThrowingMoveCopyable& operator=(const ThrowingMoveCopyable&) noexcept =
+      default;
+  ThrowingMoveCopyable(ThrowingMoveCopyable&& other) noexcept(false) {
+    if (throw_on_move) throw std::runtime_error("move failed");
+    value = other.value;
+    other.value = -1;
+  }
+  ThrowingMoveCopyable& operator=(ThrowingMoveCopyable&& other) noexcept(false) {
+    if (throw_on_move) throw std::runtime_error("move assignment failed");
+    value = other.value;
+    other.value = -1;
+    return *this;
+  }
+
+  static inline bool throw_on_move = false;
+  int value = 0;
+};
+
+struct ThrowingMoveOnly {
+  explicit ThrowingMoveOnly(int input = 0) noexcept : value(input) {}
+  ThrowingMoveOnly(const ThrowingMoveOnly&) = delete;
+  ThrowingMoveOnly& operator=(const ThrowingMoveOnly&) = delete;
+  ThrowingMoveOnly(ThrowingMoveOnly&& other) noexcept(false) {
+    if (throw_on_move) throw std::runtime_error("move failed");
+    value = other.value;
+    other.value = -1;
+  }
+  ThrowingMoveOnly& operator=(ThrowingMoveOnly&&) = delete;
+
+  static inline bool throw_on_move = false;
+  int value = 0;
+};
+
 struct ToggleAllocatorState {
   AllocatorRef backing = system_allocator();
   bool fail = false;
@@ -124,6 +160,30 @@ TEST(SmallVector, ZeroInlineAllocationFailurePreservesEmptyState) {
   EXPECT_TRUE(values.empty());
   EXPECT_TRUE(values.inline_storage());
   EXPECT_EQ(values.capacity(), 0u);
+}
+
+TEST(SmallVector, ThrowingMoveTypesAreNotRejectedClassWide) {
+  static_assert(!std::is_nothrow_move_constructible_v<ThrowingMoveCopyable>);
+  SmallVector<ThrowingMoveCopyable, 2> values;
+  values.emplace_back(1);
+  values.emplace_back(2);
+  ThrowingMoveCopyable::throw_on_move = true;
+  EXPECT_NO_THROW(values.reserve(8));  // copy fallback, strong guarantee
+  EXPECT_EQ(values[0].value, 1);
+  EXPECT_EQ(values[1].value, 2);
+  EXPECT_NO_THROW(values.emplace(values.begin() + 1, 3));
+  EXPECT_EQ(values[1].value, 3);
+  EXPECT_NO_THROW(values.erase(values.begin() + 1));
+  EXPECT_EQ(values.size(), 2u);
+  ThrowingMoveCopyable::throw_on_move = false;
+
+  SmallVector<ThrowingMoveOnly, 2> move_only;
+  move_only.emplace_back(7);
+  move_only.emplace_back(9);
+  ThrowingMoveOnly::throw_on_move = true;
+  EXPECT_THROW(move_only.reserve(8), std::runtime_error);
+  EXPECT_EQ(move_only.size(), 2u);  // valid basic-guarantee state
+  ThrowingMoveOnly::throw_on_move = false;
 }
 
 TEST(SmallVector, StaysInlineUnderN) {

@@ -4,14 +4,14 @@
 #include <string_view>
 
 #include "hyle/container/string_view.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 
 using hyle::container::equal_ignore_case;
 using hyle::container::rsplit;
 using hyle::container::slice;
 using hyle::container::split;
 using hyle::container::StringView;
-using hyle::container::SwissTable;
+using hyle::container::FlatHashMap;
 using namespace hyle::container::literals;
 
 TEST(StringView, DefaultIsEmpty) {
@@ -399,10 +399,10 @@ TEST(StringView, Rsplit) {
   EXPECT_TRUE(path.empty());
 }
 
-// StringView is usable as a SwissTable key via its Hash specialization. Keys
+// StringView is usable as a FlatHashMap key via its Hash specialization. Keys
 // must outlive the table (the table stores views, not copies).
-TEST(StringView, AsSwissTableKey) {
-  SwissTable<StringView, int> t;
+TEST(StringView, AsFlatHashMapKey) {
+  FlatHashMap<StringView, int> t;
   const char* keys[] = {"alpha", "beta", "gamma", "delta"};
   for (int i = 0; i < 4; ++i) t.insert(keys[i], i);
   EXPECT_EQ(t.size(), 4u);

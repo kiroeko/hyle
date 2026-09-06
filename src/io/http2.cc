@@ -8,7 +8,7 @@
 
 #include <nghttp2/nghttp2.h>
 
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 
 namespace hyle::io {
 namespace {
@@ -103,7 +103,7 @@ struct SessionState {
       : alloc(a), streams(a), input(a), server(is_server) {}
 
   mem::AllocatorRef alloc;
-  container::SwissTable<std::int32_t, Stream*,
+  container::FlatHashMap<std::int32_t, Stream*,
                         container::Hash<std::int32_t>,
                         std::equal_to<>, mem::AllocatorRef>
       streams;

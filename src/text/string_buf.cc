@@ -9,7 +9,7 @@
 
 #include "hyle/container/detail/adaptive_mutex.h"
 #include "hyle/container/pod_vector.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/core/cache.h"
 #include "hyle/platform/cpu.h"
 
@@ -144,7 +144,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_intern_text(
 HYLE_FORCE_INLINE HashedText prepare(StringView text, std::uint32_t shard_bits,
                                      std::uint64_t seed) noexcept {
   const std::uint64_t content_hash = hash_intern_text(text, seed);
-  // SwissTable uses the hash's low bits for H1 and top 7 bits for H2. Select a
+  // FlatHashMap uses the hash's low bits for H1 and top 7 bits for H2. Select a
   // shard from disjoint middle bits, preserving full entropy in both table
   // components and avoiding a second avalanche on every lookup.
   return HashedText{text, content_hash,

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 
 #include "hyle/container/string_view.h"
 #include "hyle/core/compiler.h"
@@ -56,9 +57,9 @@ HYLE_FORCE_INLINE constexpr char to_ascii_upper(char c) noexcept {
 // Write the lower/upper-cased `s` into out[cap], always NUL-terminating when
 // cap>0. Returns the full source length (>= cap signals truncation). No alloc.
 namespace detail {
-HYLE_CONTAINER_API std::uint32_t str_ascii_lower(
+HYLE_TEXT_API std::uint32_t str_ascii_lower(
     const char*, std::uint32_t, char*, std::uint32_t) noexcept;
-HYLE_CONTAINER_API std::uint32_t str_ascii_upper(
+HYLE_TEXT_API std::uint32_t str_ascii_upper(
     const char*, std::uint32_t, char*, std::uint32_t) noexcept;
 }
 inline std::uint32_t to_lower(StringView s, char* out,
@@ -241,13 +242,13 @@ class Utf8Decoder {
 // A null data pointer is valid only for an empty range: {nullptr, 0} validates
 // and counts as zero, while {nullptr, nonzero} returns false / -1.
 //
-// The shipping container target embeds reviewed simdutf v9.1 and borrows its
+// The shipping text factor embeds reviewed simdutf v9.1 and borrows its
 // verified cores plus internal runtime ISA dispatch. Utf8Decoder remains the
 // scalar/reference fallback; vendor types do not cross this public seam. The
 // runtime entries live in string_algo.cc.
 namespace detail {
-HYLE_CONTAINER_API bool utf8_validate_runtime(StringView s) noexcept;
-HYLE_CONTAINER_API std::int64_t utf8_length_runtime(StringView s) noexcept;
+HYLE_TEXT_API bool utf8_validate_runtime(StringView s) noexcept;
+HYLE_TEXT_API std::int64_t utf8_length_runtime(StringView s) noexcept;
 }
 inline bool utf8_validate(StringView s) noexcept {
   return detail::utf8_validate_runtime(s);
@@ -255,5 +256,56 @@ inline bool utf8_validate(StringView s) noexcept {
 inline std::int64_t utf8_length(StringView s) noexcept {
   return detail::utf8_length_runtime(s);
 }
+
+// Typed Unicode diagnostics owned by HYLE. Offsets and counts are expressed in
+// input/output code units (bytes for UTF-8). Conversion never allocates. It
+// either writes the complete result or leaves the output untouched; when the
+// output is too small, output_count is the exact required capacity. Passing an
+// empty output span is therefore the normal size-query route. Input and output
+// storage must not overlap.
+enum class UtfStatus : std::uint8_t {
+  kSuccess,
+  kHeaderBits,
+  kTooShort,
+  kTooLong,
+  kOverlong,
+  kTooLarge,
+  kSurrogate,
+  kOutputTooSmall,
+  kInvalidArgument,
+  kOther,
+};
+
+struct UtfResult {
+  UtfStatus status = UtfStatus::kSuccess;
+  std::size_t input_offset = 0;
+  std::size_t output_count = 0;
+
+  [[nodiscard]] constexpr bool ok() const noexcept {
+    return status == UtfStatus::kSuccess;
+  }
+  [[nodiscard]] constexpr explicit operator bool() const noexcept {
+    return ok();
+  }
+};
+
+HYLE_TEXT_API UtfResult utf8_validate_detailed(StringView input) noexcept;
+HYLE_TEXT_API UtfResult
+utf16_validate(std::span<const char16_t> input) noexcept;
+HYLE_TEXT_API UtfResult
+utf32_validate(std::span<const char32_t> input) noexcept;
+
+HYLE_TEXT_API UtfResult utf8_to_utf16(
+    StringView input, std::span<char16_t> output) noexcept;
+HYLE_TEXT_API UtfResult utf8_to_utf32(
+    StringView input, std::span<char32_t> output) noexcept;
+HYLE_TEXT_API UtfResult utf16_to_utf8(
+    std::span<const char16_t> input, std::span<char> output) noexcept;
+HYLE_TEXT_API UtfResult utf16_to_utf32(
+    std::span<const char16_t> input, std::span<char32_t> output) noexcept;
+HYLE_TEXT_API UtfResult utf32_to_utf8(
+    std::span<const char32_t> input, std::span<char> output) noexcept;
+HYLE_TEXT_API UtfResult utf32_to_utf16(
+    std::span<const char32_t> input, std::span<char16_t> output) noexcept;
 
 }  // namespace hyle::container

@@ -14,10 +14,10 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/mem/allocator.h"
 
-using hyle::container::SwissTable;
+using hyle::container::FlatHashMap;
 using hyle::container::FlatHashSet;
 using hyle::mem::system_allocator;
 
@@ -33,11 +33,11 @@ std::vector<std::uint64_t> gen(int n, std::uint64_t seed) {
 }
 }  // namespace
 
-int bench_swiss_vs_absl() {
+int bench_flat_hash_vs_absl() {
   const std::vector<std::uint64_t> keys = gen(kN, 42);
   const std::vector<std::uint64_t> misses = gen(kN, 1337);
 
-  SwissTable<std::uint64_t, std::uint64_t> hyle;
+  FlatHashMap<std::uint64_t, std::uint64_t> hyle;
   absl::flat_hash_map<std::uint64_t, std::uint64_t> abslm;
   for (int i = 0; i < kN; ++i) {
     hyle.insert(keys[i], static_cast<std::uint64_t>(i));
@@ -55,7 +55,7 @@ int bench_swiss_vs_absl() {
       }
       ankerl::nanobench::doNotOptimizeAway(sum);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::uint64_t sum = 0;
       for (auto k : keys)
         if (auto* v = hyle.find(k)) sum += *v;
@@ -70,7 +70,7 @@ int bench_swiss_vs_absl() {
       for (auto k : misses) h += (abslm.find(k) != abslm.end());
       ankerl::nanobench::doNotOptimizeAway(h);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::size_t h = 0;
       for (auto k : misses) h += (hyle.find(k) != nullptr);
       ankerl::nanobench::doNotOptimizeAway(h);
@@ -84,8 +84,8 @@ int bench_swiss_vs_absl() {
       for (int i = 0; i < kN; ++i) m[keys[i]] = static_cast<std::uint64_t>(i);
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
-    b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t;
+    b.run("FlatHashMap", [&] {
+      FlatHashMap<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i) t.insert(keys[i], static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(t.size());
     });
@@ -99,15 +99,15 @@ int bench_swiss_vs_absl() {
       for (auto k : keys) m.erase(k);
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
-    b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t;
+    b.run("FlatHashMap", [&] {
+      FlatHashMap<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i) t.insert(keys[i], static_cast<std::uint64_t>(i));
       for (auto k : keys) t.erase(k);
       ankerl::nanobench::doNotOptimizeAway(t.size());
     });
   }
   // ---- iterate (visit every live entry; both pre-filled at top) ----
-  // Fills the ledger gap "absl 未测此项": SwissTable.for_each vs absl range-for.
+  // Fills the ledger gap "absl 未测此项": FlatHashMap.for_each vs absl range-for.
   // Both are flat (ctrl-byte scan + contiguous slots) so this is a same-design
   // check, not a walk-vs-pointer-chase blowout like vs std::unordered_map.
   {
@@ -118,7 +118,7 @@ int bench_swiss_vs_absl() {
       for (const auto& kv : abslm) sum += kv.second;
       ankerl::nanobench::doNotOptimizeAway(sum);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::uint64_t sum = 0;
       hyle.for_each([&](std::uint64_t, std::uint64_t& v) { sum += v; });
       ankerl::nanobench::doNotOptimizeAway(sum);
@@ -211,9 +211,9 @@ int bench_set_vs_absl() {
 int main() {
   const char* filter = std::getenv("HYLE_ABSL_BENCH_FILTER");
   if (filter != nullptr && std::string_view(filter) == "map")
-    return bench_swiss_vs_absl();
+    return bench_flat_hash_vs_absl();
   if (filter != nullptr && std::string_view(filter) == "set")
     return bench_set_vs_absl();
-  const int map_result = bench_swiss_vs_absl();
+  const int map_result = bench_flat_hash_vs_absl();
   return map_result == 0 ? bench_set_vs_absl() : map_result;
 }

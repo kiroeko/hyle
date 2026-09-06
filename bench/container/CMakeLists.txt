@@ -1,7 +1,9 @@
-hyle_add_bench(container SOURCES container_bench_main.cc swiss_table_bench.cc string_buf_bench.cc string_view_bench.cc path_bench.cc string_algo_bench.cc DEPS hyle_platform)
+hyle_add_bench(container SOURCES container_bench_main.cc flat_hash_map_bench.cc
+  string_buf_bench.cc string_view_bench.cc path_bench.cc string_algo_bench.cc
+  DEPS hyle_text hyle_platform)
 # string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
-# simdutf is VENDORED in third_party and compiled into hyle_container (the product uses it
-# unconditionally), but those symbols are PRIVATE/non-exported across the hyle_container DLL
+# simdutf is VENDORED in third_party and compiled into hyle_text (the product uses it
+# unconditionally), but those symbols are PRIVATE/non-exported across the hyle_text DLL
 # boundary -- the bench can't borrow them transitively. So compile simdutf.cpp into the bench
 # exe too: it's a SEPARATE binary from the DLL, so its own copy is NOT a duplicate symbol (the
 # DLL exports none of them). The gate just toggles the bench-side comparison row.
@@ -11,7 +13,7 @@ if(HYLE_BENCH_SIMDUTF)
   target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_SIMDUTF)
   target_include_directories(hyle_container_bench SYSTEM PRIVATE "${_simdutf}")
   target_sources(hyle_container_bench PRIVATE "${_simdutf}/simdutf.cpp")
-  # Same -Wall/-Werror exemption as the product build (src/container): the amalgamation's
+  # Same -Wall/-Werror exemption as the product build (src/text): the amalgamation's
   # own -Wpedantic warnings would break a HYLE_WERROR=ON bench build.
   if(MSVC)
     set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "/w")
@@ -24,7 +26,7 @@ add_executable(hyle_queue_sota_bench queue_sota_bench.cc)
 # BoundedQueue/ShardedQueue default to compile-time SystemAllocator. A shared
 # build reaches the private backend through hyle_mem; a static build inherits
 # mimalloc as hyle_mem's link-only implementation dependency.
-target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
+target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container_queue nanobench)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
@@ -43,10 +45,10 @@ add_executable(hyle_container_ring_bench ring_bench.cc)
 target_link_libraries(hyle_container_ring_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_container_ring_bench)
 add_executable(hyle_container_spsc_bench spsc_bench.cc)
-target_link_libraries(hyle_container_spsc_bench PRIVATE hyle_container nanobench)
+target_link_libraries(hyle_container_spsc_bench PRIVATE hyle_container_queue nanobench)
 hyle_apply_warnings(hyle_container_spsc_bench)
 add_executable(hyle_container_concurrent_map_bench concurrent_map_bench.cc)
-target_link_libraries(hyle_container_concurrent_map_bench PRIVATE hyle_container nanobench)
+target_link_libraries(hyle_container_concurrent_map_bench PRIVATE hyle_container_concurrent nanobench)
 hyle_apply_warnings(hyle_container_concurrent_map_bench)
 add_executable(hyle_container_flat_sorted_bench flat_sorted_bench.cc)
 target_link_libraries(hyle_container_flat_sorted_bench PRIVATE hyle_container nanobench)
@@ -117,7 +119,7 @@ if(HYLE_BENCH_TBB)
 endif()
 
 if(HYLE_BENCH_ABSL)
-  add_executable(hyle_absl_bench swiss_vs_absl_bench.cc)
+  add_executable(hyle_absl_bench flat_hash_vs_absl_bench.cc)
   target_link_libraries(hyle_absl_bench PRIVATE hyle_container nanobench
     absl::flat_hash_map absl::flat_hash_set)
   hyle_mark_absl_benchmark_consumer(hyle_absl_bench)

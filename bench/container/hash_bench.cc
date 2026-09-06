@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "hyle/container/hash.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/platform/cpu.h"
 
 #if defined(HYLE_HASH_PEER_AVX2)

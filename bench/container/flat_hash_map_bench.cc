@@ -1,5 +1,5 @@
-// SwissTable vs std::unordered_map (roadmap P3 gate: "hashmap 对拍 std + 基准").
-// std::unordered_map is the baseline (relative=1.0); SwissTable's relative number
+// FlatHashMap vs std::unordered_map (roadmap P3 gate: "hashmap 对拍 std + 基准").
+// std::unordered_map is the baseline (relative=1.0); FlatHashMap's relative number
 // is the speedup. We measure the four hot ops over 100k uint64 keys. Honest:
 // whatever the numbers say, they print -- no cherry-picking.
 
@@ -10,10 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/mem/allocator.h"
 
-using hyle::container::SwissTable;
+using hyle::container::FlatHashMap;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -28,12 +28,12 @@ std::vector<std::uint64_t> gen(int n, std::uint64_t seed) {
 }
 }  // namespace
 
-int bench_swiss_table() {
+int bench_flat_hash_map() {
   const std::vector<std::uint64_t> keys = gen(kN, 42);
   const std::vector<std::uint64_t> misses = gen(kN, 1337);  // disjoint set
 
   // Pre-filled maps for the read benchmarks.
-  SwissTable<std::uint64_t, std::uint64_t> hyle;
+  FlatHashMap<std::uint64_t, std::uint64_t> hyle;
   std::unordered_map<std::uint64_t, std::uint64_t> stdm;
   for (int i = 0; i < kN; ++i) {
     hyle.insert(keys[i], static_cast<std::uint64_t>(i));
@@ -52,7 +52,7 @@ int bench_swiss_table() {
       }
       ankerl::nanobench::doNotOptimizeAway(sum);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::uint64_t sum = 0;
       for (auto k : keys) {
         if (auto* v = hyle.find(k)) sum += *v;
@@ -70,7 +70,7 @@ int bench_swiss_table() {
       for (auto k : misses) hits += (stdm.find(k) != stdm.end());
       ankerl::nanobench::doNotOptimizeAway(hits);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::size_t hits = 0;
       for (auto k : misses) hits += (hyle.find(k) != nullptr);
       ankerl::nanobench::doNotOptimizeAway(hits);
@@ -86,8 +86,8 @@ int bench_swiss_table() {
       for (int i = 0; i < kN; ++i) m[keys[i]] = static_cast<std::uint64_t>(i);
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
-    b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t;
+    b.run("FlatHashMap", [&] {
+      FlatHashMap<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i)
         t.insert(keys[i], static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(t.size());
@@ -104,8 +104,8 @@ int bench_swiss_table() {
       for (auto k : keys) m.erase(k);
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
-    b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t;
+    b.run("FlatHashMap", [&] {
+      FlatHashMap<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i)
         t.insert(keys[i], static_cast<std::uint64_t>(i));
       for (auto k : keys) t.erase(k);
@@ -114,7 +114,7 @@ int bench_swiss_table() {
   }
 
   // ---- iterate (visit every live entry; both pre-filled) ----
-  // SwissTable has no iterator -- it exposes for_each(fn) (a template, inlines, no
+  // FlatHashMap has no iterator -- it exposes for_each(fn) (a template, inlines, no
   // alloc). It scans flat ctrl bytes + contiguous slots (cache-friendly);
   // std::unordered_map walks a pointer-chased node list.
   {
@@ -125,7 +125,7 @@ int bench_swiss_table() {
       for (const auto& kv : stdm) sum += kv.second;
       ankerl::nanobench::doNotOptimizeAway(sum);
     });
-    b.run("SwissTable", [&] {
+    b.run("FlatHashMap", [&] {
       std::uint64_t sum = 0;
       hyle.for_each([&](std::uint64_t, std::uint64_t& v) { sum += v; });
       ankerl::nanobench::doNotOptimizeAway(sum);

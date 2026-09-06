@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "hyle/container/concurrent_hash_map.h"
+#include "hyle/container/concurrent_flat_hash_set.h"
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentHashMap;
@@ -235,4 +236,27 @@ TEST(ConcurrentHashMap, TryReserveReportsFailureAndPreservesEntries) {
 
   state.fail.store(false);
   EXPECT_TRUE(map.try_reserve(4096));
+}
+
+TEST(ConcurrentFlatHashSet, MembershipHasSetSemanticsAndRecoverableOom) {
+  using Set = hyle::container::ConcurrentFlatHashSet<int>;
+  Set set(8);
+  ASSERT_TRUE(set.valid());
+  EXPECT_EQ(set.try_insert(7), Set::InsertResult::kInserted);
+  EXPECT_EQ(set.try_insert(7), Set::InsertResult::kAlreadyPresent);
+  EXPECT_TRUE(set.contains(7));
+  EXPECT_TRUE(set.erase(7));
+  EXPECT_FALSE(set.contains(7));
+
+  ToggleAllocatorState state;
+  AllocatorRef allocator(&toggle_allocate, &toggle_deallocate,
+                         &toggle_reallocate, &state);
+  using FallibleSet = hyle::container::ConcurrentFlatHashSet<
+      int, hyle::container::Hash<int>, std::equal_to<>, AllocatorRef>;
+  FallibleSet fallible(8, allocator);
+  ASSERT_TRUE(fallible.valid());
+  state.fail.store(true);
+  EXPECT_EQ(fallible.try_insert(1),
+            FallibleSet::InsertResult::kOutOfMemory);
+  EXPECT_TRUE(fallible.empty());
 }

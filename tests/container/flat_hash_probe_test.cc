@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "hyle/container/probe.h"
+#include "hyle/container/detail/flat_hash_probe.h"
 
 using hyle::container::detail::BitMask;
 using hyle::container::detail::ctrl_t;
@@ -68,7 +68,7 @@ TEST(GroupPortable, NoFalseMatchOnEmpty) {
 }
 
 #if HYLE_ARCH_X64
-#include "hyle/container/probe.h"
+#include "hyle/container/detail/flat_hash_probe.h"
 using hyle::container::detail::GroupSse2;
 
 // On x64 the SSE2 group must agree with the portable one lane-for-lane (over

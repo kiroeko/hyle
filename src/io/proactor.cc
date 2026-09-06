@@ -4,7 +4,7 @@
 #include <new>
 #include <vector>
 
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
 #include "hyle/time/unix_timestamp.h"
@@ -979,10 +979,10 @@ struct Proactor::Impl {
   // Split by direction so read+write on ONE fd coexist. A fd may appear in both.
   // The registered epoll event mask for an fd is the UNION of whichever sides are
   // armed (EPOLLIN|EPOLLOUT when both), all under EPOLLONESHOT.
-  // Flat HYLE SwissTables keep the readiness hot path allocation-free between
+  // Flat HYLE hash maps keep the readiness hot path allocation-free between
   // growths and make io/ a real consumer of container/'s SIMD control-byte probe.
-  container::SwissTable<int, PendingOp> pending_in;
-  container::SwissTable<int, PendingOp> pending_out;
+  container::FlatHashMap<int, PendingOp> pending_in;
+  container::FlatHashMap<int, PendingOp> pending_out;
   // post() has no fd (a bare wake token) and epoll has no
   // PostQueuedCompletionStatus, so injected wakes queue here; reap drains them
   // first. std in the .cc impl is allowed (conventions §1: internal, non-hot).
@@ -1867,7 +1867,7 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   // A readiness backend can keep exactly one operation per fd+direction.
   // Replacing it would orphan the first awaiter forever. Make possible table
   // growth explicit as well, so OOM returns submit=false instead of reaching
-  // SwissTable's infallible-insert assertion inside this noexcept API.
+  // FlatHashMap's infallible-insert assertion inside this noexcept API.
   if (side_pending || !side.try_prepare_insert()) return false;
   side.insert_or_assign(
       fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
@@ -2770,8 +2770,8 @@ struct Proactor::Impl {
   };
   // Split by direction so read+write on ONE fd coexist as INDEPENDENT kqueue filters
   // (unlike epoll's single union registration -- see the block header note).
-  container::SwissTable<int, PendingOp> pending_in;
-  container::SwissTable<int, PendingOp> pending_out;
+  container::FlatHashMap<int, PendingOp> pending_in;
+  container::FlatHashMap<int, PendingOp> pending_out;
   // post() has no fd (a bare wake token) and there is no kqueue "inject completion",
   // so injected wakes + synchronously-synthesized file-op results queue here; reap
   // drains them first. std in the .cc impl is allowed (conventions §1: non-hot).

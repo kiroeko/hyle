@@ -74,6 +74,15 @@ class ConcurrentNodeHashMap {
     Node *next;
   };
 
+  struct NodeWithoutMappedValue {
+    std::uint64_t hash;
+    K key;
+    Node *next;
+  };
+  static_assert(!std::is_empty_v<V> ||
+                    sizeof(Node) == sizeof(NodeWithoutMappedValue),
+                "an empty concurrent-node mapped policy must occupy no storage");
+
   struct Bucket {
     detail::AdaptiveRwLock lock;
     Node *head = nullptr;

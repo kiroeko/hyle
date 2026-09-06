@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "hyle/container/hash.h"
-#include "hyle/container/probe.h"
+#include "hyle/container/detail/flat_hash_probe.h"
 #include "hyle/core/cache.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
@@ -69,8 +69,8 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
                                    DeallocateFn deallocate);
 }  // namespace detail
 
-// Open-addressing flat hash map with abseil SwissTable control bytes + SIMD
-// group probing (probe.h) + triangular group probing. This is the rewrite clay
+// Open-addressing flat hash map with Abseil-style Swiss control bytes + SIMD
+// group probing + triangular group probing. This is the rewrite clay
 // only sketched (its hashmap.h is linear-probing; control bytes were a TODO).
 //
 // find + insert + grow/rehash + erase (tombstones) + for_each iteration are all
@@ -84,25 +84,25 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
 // Moves/destruction are required not to throw so a failed allocation leaves the
 // original table intact and rehash cannot strand a partially moved table.
 //
-// The cold path (resize/free) is type-erased into swiss_table.cc (see detail::
+// The cold path (resize/free) is type-erased into flat_hash_map.cc (see detail::
 // above); the hot path is inlined per instantiation for zero indirection.
 template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
-class SwissTable {
+class FlatHashMap {
   template <class, class, class, class, class>
   friend class ConcurrentHashMap;
   static_assert(std::is_nothrow_move_constructible_v<K> &&
                     std::is_nothrow_move_constructible_v<V>,
-                "SwissTable requires nothrow move construction");
+                "FlatHashMap requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<K> &&
                     std::is_nothrow_destructible_v<V>,
-                "SwissTable requires nothrow destruction");
+                "FlatHashMap requires nothrow destruction");
   static_assert(std::is_nothrow_move_assignable_v<V>,
-                "SwissTable requires nothrow value move assignment");
+                "FlatHashMap requires nothrow value move assignment");
   static_assert(std::is_nothrow_invocable_r_v<std::uint64_t, Hash, const K&>,
-                "SwissTable requires a noexcept hash function");
+                "FlatHashMap requires a noexcept hash function");
   static_assert(std::is_nothrow_invocable_r_v<bool, Eq, const K&, const K&>,
-                "SwissTable requires a noexcept equality function");
+                "FlatHashMap requires a noexcept equality function");
 
   using ctrl_t = detail::ctrl_t;
   static constexpr std::size_t kGroup = detail::kGroupWidth;
@@ -115,7 +115,7 @@ class SwissTable {
   // This follows the same invariant as mature flat maps: values are mutable,
   // keys can only change through erase+insert.
   class Entry {
-    friend class SwissTable;
+    friend class FlatHashMap;
 
    public:
     const K& key() const noexcept { return key_; }
@@ -141,10 +141,10 @@ class SwissTable {
   class BasicIterator {
     template <bool>
     friend class BasicIterator;
-    friend class SwissTable;
+    friend class FlatHashMap;
 
     using Owner =
-        std::conditional_t<IsConst, const SwissTable, SwissTable>;
+        std::conditional_t<IsConst, const FlatHashMap, FlatHashMap>;
 
    public:
     using iterator_concept = std::forward_iterator_tag;
@@ -222,42 +222,42 @@ class SwissTable {
   using Slot = Entry;
 
  public:
-  SwissTable() requires(std::is_default_constructible_v<Alloc> &&
+  FlatHashMap() requires(std::is_default_constructible_v<Alloc> &&
                         std::is_default_constructible_v<Hash> &&
                         std::is_default_constructible_v<Eq>) = default;
 
-  explicit SwissTable(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
+  explicit FlatHashMap(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
       : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)) {}
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-  SwissTable(It first, Sentinel last)
+  FlatHashMap(It first, Sentinel last)
     requires(std::is_default_constructible_v<Alloc> &&
              std::is_default_constructible_v<Hash> &&
              std::is_default_constructible_v<Eq>)
-      : SwissTable() {
+      : FlatHashMap() {
     construct_with_cleanup([&] { insert(first, last); });
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-  SwissTable(Alloc alloc, It first, Sentinel last,
+  FlatHashMap(Alloc alloc, It first, Sentinel last,
              Hash hash = Hash{}, Eq eq = Eq{})
-      : SwissTable(std::move(alloc), std::move(hash), std::move(eq)) {
+      : FlatHashMap(std::move(alloc), std::move(hash), std::move(eq)) {
     construct_with_cleanup([&] { insert(first, last); });
   }
 
-  SwissTable(std::initializer_list<std::pair<K, V>> init)
+  FlatHashMap(std::initializer_list<std::pair<K, V>> init)
     requires(std::is_default_constructible_v<Alloc> &&
              std::is_default_constructible_v<Hash> &&
              std::is_default_constructible_v<Eq>)
-      : SwissTable(init.begin(), init.end()) {}
+      : FlatHashMap(init.begin(), init.end()) {}
 
-  SwissTable(Alloc alloc, std::initializer_list<std::pair<K, V>> init,
+  FlatHashMap(Alloc alloc, std::initializer_list<std::pair<K, V>> init,
              Hash hash = Hash{}, Eq eq = Eq{})
-      : SwissTable(std::move(alloc), init.begin(), init.end(),
+      : FlatHashMap(std::move(alloc), init.begin(), init.end(),
                    std::move(hash), std::move(eq)) {}
 
-  ~SwissTable() { free_storage(); }
-  SwissTable(const SwissTable& other)
+  ~FlatHashMap() { free_storage(); }
+  FlatHashMap(const FlatHashMap& other)
     requires(std::is_copy_constructible_v<K> &&
              std::is_copy_constructible_v<V> &&
              std::is_copy_constructible_v<Alloc> &&
@@ -267,7 +267,7 @@ class SwissTable {
     construct_with_cleanup([&] { copy_entries(other); });
   }
 
-  SwissTable& operator=(const SwissTable& other)
+  FlatHashMap& operator=(const FlatHashMap& other)
     requires(std::is_copy_constructible_v<K> &&
              std::is_copy_constructible_v<V> &&
              std::is_copy_constructible_v<Alloc> &&
@@ -278,13 +278,13 @@ class SwissTable {
              std::is_nothrow_swappable_v<Eq>)
   {
     if (this == &other) return *this;
-    SwissTable replacement(alloc_, other.hash_, other.eq_);
+    FlatHashMap replacement(alloc_, other.hash_, other.eq_);
     replacement.copy_entries(other);
     swap(replacement);
     return *this;
   }
 
-  SwissTable(SwissTable&& o) noexcept(
+  FlatHashMap(FlatHashMap&& o) noexcept(
       std::is_nothrow_move_constructible_v<Alloc> &&
       std::is_nothrow_move_constructible_v<Hash> &&
       std::is_nothrow_move_constructible_v<Eq>)
@@ -299,7 +299,7 @@ class SwissTable {
     o.size_ = 0;
     o.growth_left_ = 0;
   }
-  SwissTable& operator=(SwissTable&& o) noexcept(
+  FlatHashMap& operator=(FlatHashMap&& o) noexcept(
       std::is_nothrow_move_assignable_v<Alloc> &&
       std::is_nothrow_move_assignable_v<Hash> &&
       std::is_nothrow_move_assignable_v<Eq>) {
@@ -323,7 +323,7 @@ class SwissTable {
     return *this;
   }
 
-  void swap(SwissTable& other) noexcept(
+  void swap(FlatHashMap& other) noexcept(
       std::is_nothrow_swappable_v<Alloc> &&
       std::is_nothrow_swappable_v<Hash> &&
       std::is_nothrow_swappable_v<Eq>) {
@@ -339,7 +339,7 @@ class SwissTable {
     swap(growth_left_, other.growth_left_);
   }
 
-  friend void swap(SwissTable& left, SwissTable& right) noexcept(
+  friend void swap(FlatHashMap& left, FlatHashMap& right) noexcept(
       noexcept(left.swap(right))) {
     left.swap(right);
   }
@@ -423,7 +423,7 @@ class SwissTable {
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
   HYLE_SWISS_HOT_INLINE const V* find(const Q& key) const noexcept {
-    return const_cast<SwissTable*>(this)->template find<Q>(key);
+    return const_cast<FlatHashMap*>(this)->template find<Q>(key);
   }
 
   // Key-preserving lookup for set adapters and callers that need the canonical
@@ -436,7 +436,7 @@ class SwissTable {
                                            const Q&>)
   HYLE_SWISS_HOT_INLINE const K* find_key(const Q& key) const noexcept {
     const Slot* slot =
-        const_cast<SwissTable*>(this)->template find_slot<Q>(key);
+        const_cast<FlatHashMap*>(this)->template find_slot<Q>(key);
     return slot == nullptr ? nullptr : &slot->key_;
   }
 
@@ -447,7 +447,7 @@ class SwissTable {
                                            const Q&>)
   bool contains(const Q& key) const noexcept
   {
-    return const_cast<SwissTable*>(this)->template find_slot<Q>(key) != nullptr;
+    return const_cast<FlatHashMap*>(this)->template find_slot<Q>(key) != nullptr;
   }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
@@ -457,6 +457,7 @@ class SwissTable {
   // grow is actually triggered (amortized rare).
   enum class InsertResult : std::uint8_t {
     kInserted,
+    kAlreadyPresent,
     kUpdated,
     kOutOfMemory,
   };
@@ -508,32 +509,35 @@ class SwissTable {
     return result == InsertResult::kInserted;
   }
 
-  // Familiar associative-container shape: insert never changes an existing
-  // mapped value. try_emplace additionally constructs V only after proving the
-  // key absent. Both keep the fused one-hash/one-probe common path.
+  // Fallible emplacement constructs V only after proving the key absent and
+  // reports allocation failure without terminating. The std-shaped emplace()
+  // below is the fail-fast convenience route. Both keep the fused
+  // one-hash/one-probe common path.
   template <class... Args>
     requires std::is_nothrow_constructible_v<V, Args...>
-  std::pair<V*, bool> try_emplace(K key, Args&&... args) {
-    if (cap_ == 0) HYLE_FATAL_ASSERT(grow());
+  std::pair<V*, InsertResult> try_emplace(K key, Args&&... args) {
+    if (cap_ == 0 && !grow())
+      return {nullptr, InsertResult::kOutOfMemory};
 
     const std::uint64_t h = hash_(key);
     bool found = false;
     std::size_t idx = find_or_prepare(key, h, &found);
-    if (found) return {&slots_[idx].value_, false};
+    if (found)
+      return {&slots_[idx].value_, InsertResult::kAlreadyPresent};
 
     if (growth_left_ == 0 && ctrl_[idx] == detail::kEmpty) {
       // Args may borrow another mapped value in this table. Preserve them
       // before rehash invalidates flat-slot references; the extra move is paid
       // only on the rare growth path.
       V saved(std::forward<Args>(args)...);
-      HYLE_FATAL_ASSERT(grow());
+      if (!grow()) return {nullptr, InsertResult::kOutOfMemory};
       idx = find_insert_slot(h);
       set_ctrl(idx, detail::h2(h));
       ::new (static_cast<void*>(slots_ + idx))
           Slot(std::move(key), std::move(saved));
       ++size_;
       --growth_left_;
-      return {&slots_[idx].value_, true};
+      return {&slots_[idx].value_, InsertResult::kInserted};
     }
 
     const bool was_empty = ctrl_[idx] == detail::kEmpty;
@@ -542,11 +546,20 @@ class SwissTable {
         Slot(std::move(key), std::in_place, std::forward<Args>(args)...);
     ++size_;
     if (was_empty) --growth_left_;
-    return {&slots_[idx].value_, true};
+    return {&slots_[idx].value_, InsertResult::kInserted};
+  }
+
+  template <class... Args>
+    requires std::is_nothrow_constructible_v<V, Args...>
+  std::pair<V*, bool> emplace(K key, Args&&... args) {
+    auto [value, result] =
+        try_emplace(std::move(key), std::forward<Args>(args)...);
+    HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
+    return {value, result == InsertResult::kInserted};
   }
 
   bool insert(K key, V value) {
-    return try_emplace(std::move(key), std::move(value)).second;
+    return emplace(std::move(key), std::move(value)).second;
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
@@ -572,7 +585,7 @@ class SwissTable {
   V& operator[](K key)
     requires std::is_nothrow_default_constructible_v<V>
   {
-    return *try_emplace(std::move(key)).first;
+    return *emplace(std::move(key)).first;
   }
 
   // Remove `key`. Returns true if it was present. The slot becomes empty when
@@ -658,7 +671,7 @@ class SwissTable {
     }
   }
 
-  friend bool operator==(const SwissTable& left, const SwissTable& right)
+  friend bool operator==(const FlatHashMap& left, const FlatHashMap& right)
     requires std::equality_comparable<V>
   {
     if (left.size_ != right.size_) return false;
@@ -698,7 +711,7 @@ class SwissTable {
     }
   }
 
-  void copy_entries(const SwissTable& other) {
+  void copy_entries(const FlatHashMap& other) {
     reserve(other.size_);
     insert(other.begin(), other.end());
   }
@@ -925,14 +938,8 @@ class SwissTable {
   std::size_t growth_left_ = 0;  // inserts until next grow (7/8 load)
 };
 
-// Preferred public name. SwissTable remains as the implementation-specific
-// spelling for existing Hyle users and documents the probing strategy.
-template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
-          class Alloc = mem::SystemAllocator>
-using FlatHashMap = SwissTable<K, V, Hash, Eq, Alloc>;
-
 template <class K, class V, class Hash, class Eq, class Alloc, class Predicate>
-std::size_t erase_if(SwissTable<K, V, Hash, Eq, Alloc>& table,
+std::size_t erase_if(FlatHashMap<K, V, Hash, Eq, Alloc>& table,
                      Predicate predicate) {
   const std::size_t before = table.size();
   for (auto iterator = table.begin(); iterator != table.end();) {
@@ -955,7 +962,7 @@ struct SwissSetValue {};
 template <class K, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 class FlatHashSet {
-  using Table = SwissTable<K, detail::SwissSetValue, Hash, Eq, Alloc>;
+  using Table = FlatHashMap<K, detail::SwissSetValue, Hash, Eq, Alloc>;
   static_assert(sizeof(typename Table::value_type) == sizeof(K),
                 "FlatHashSet must not pay mapped-value storage");
 

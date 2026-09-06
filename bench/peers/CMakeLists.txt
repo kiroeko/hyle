@@ -64,7 +64,7 @@ if(HYLE_BENCH_TBB)
 endif()
 
 # Optional Abseil rivals are likewise owner-scoped. They cover more than the
-# original SwissTable comparison today, but remain benchmark-only dependencies.
+# original FlatHashMap comparison today, but remain benchmark-only dependencies.
 set(_hyle_bench_absl_owner FALSE)
 foreach(_hyle_owner IN ITEMS container error obs util util_core)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)

@@ -46,11 +46,10 @@ struct SmallVectorInlineStorage<T, N, true> {};
 // benchmark fixture: non-trivial values are constructed, moved and destroyed
 // normally. Trivially copyable values retain the memcpy relocation fast path.
 //
-// Growth must be recoverable without leaving the original vector half-moved,
-// so T's move construction and destruction must not throw. This includes the
-// normal systems types (strings, smart pointers, handles and PODs) while making
-// the zero-exception contract explicit. Copy construction may throw; normal C++
-// unwinding destroys the completed prefix.
+// Growth copies when move construction may throw and T is copyable, preserving
+// the strong guarantee. A throwing move-only T follows std::vector's basic
+// guarantee: the container stays valid but some old values may be moved-from.
+// Trivial/nothrow types retain the direct relocation fast path.
 //
 // Alloc defaults to the zero-state SystemAllocator. Pass mem::AllocatorRef for a
 // runtime arena/mock/cross-DLL allocator. Allocation failure is available as a
@@ -58,8 +57,6 @@ struct SmallVectorInlineStorage<T, N, true> {};
 // operations fail fast because they have no error return channel.
 template <class T, std::size_t N, class Alloc = mem::SystemAllocator>
 class SmallVector {
-  static_assert(std::is_nothrow_move_constructible_v<T>,
-                "SmallVector requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<T>,
                 "SmallVector requires nothrow destruction");
   static_assert(std::is_nothrow_move_constructible_v<Alloc>,
@@ -148,9 +145,20 @@ public:
         [&] { append_range(other.begin(), other.end()); });
   }
 
-  SmallVector(SmallVector &&other) noexcept
+  SmallVector(SmallVector &&other) noexcept(
+      std::is_nothrow_move_constructible_v<Alloc> &&
+      std::is_nothrow_move_constructible_v<T>)
       : SmallVector(std::move(other.alloc_)) {
-    move_from(other);
+    if constexpr (std::is_nothrow_move_constructible_v<T>) {
+      move_from(other);
+    } else {
+      try {
+        move_from(other);
+      } catch (...) {
+        reset_storage();
+        throw;
+      }
+    }
   }
 
   SmallVector &operator=(const SmallVector &other) {
@@ -163,12 +171,23 @@ public:
     return *this;
   }
 
-  SmallVector &operator=(SmallVector &&other) noexcept {
+  SmallVector &operator=(SmallVector &&other) noexcept(
+      std::is_nothrow_move_assignable_v<Alloc> &&
+      std::is_nothrow_move_constructible_v<T>) {
     if (this == &other)
       return *this;
     reset_storage();
     alloc_ = std::move(other.alloc_);
-    move_from(other);
+    if constexpr (std::is_nothrow_move_constructible_v<T>) {
+      move_from(other);
+    } else {
+      try {
+        move_from(other);
+      } catch (...) {
+        reset_storage();
+        throw;
+      }
+    }
     return *this;
   }
 
@@ -225,7 +244,7 @@ public:
     return const_reverse_iterator(cbegin());
   }
 
-  bool try_reserve(size_type requested) noexcept {
+  bool try_reserve(size_type requested) {
     return requested <= cap_ || grow_to(requested);
   }
 
@@ -301,16 +320,23 @@ public:
     }
 
     // Construct before growth or shifting so arguments may alias any current
-    // element. The saved value also gives the operation the strong guarantee
-    // when its user-defined construction throws.
+    // element. Throwing relocation uses the rebuild path, which preserves the
+    // strong guarantee when T is copyable and the basic guarantee otherwise.
     T saved(std::forward<Args>(args)...);
-    if (size_ == cap_)
-      reserve(next_capacity(size_ + 1));
+    if constexpr (!std::is_trivially_copyable_v<T> &&
+                  !std::is_nothrow_move_constructible_v<T>) {
+      SmallVector inserted(alloc_);
+      inserted.emplace_back(std::move_if_noexcept(saved));
+      return insert_prepared(index, inserted);
+    } else {
+      if (size_ == cap_)
+        reserve(next_capacity(size_ + 1));
 
-    open_gap(index, 1);
-    ::new (static_cast<void *>(data_ + index)) T(std::move(saved));
-    ++size_;
-    return data_ + index;
+      open_gap(index, 1);
+      ::new (static_cast<void *>(data_ + index)) T(std::move(saved));
+      ++size_;
+      return data_ + index;
+    }
   }
 
   iterator insert(const_iterator position, const T &value) {
@@ -411,7 +437,7 @@ public:
     HYLE_FATAL_ASSERT(try_resize(count, value));
   }
 
-  bool try_shrink_to_fit() noexcept {
+  bool try_shrink_to_fit() {
     if (inline_storage() || cap_ == size_)
       return true;
     if (size_ <= N) {
@@ -422,13 +448,18 @@ public:
         alloc_.allocate(size_ * sizeof(T), alignof(T)));
     if (replacement == nullptr)
       return false;
-    relocate_to(replacement, size_);
+    try {
+      relocate_to(replacement, size_);
+    } catch (...) {
+      alloc_.deallocate(replacement, size_ * sizeof(T), alignof(T));
+      throw;
+    }
     return true;
   }
 
   void shrink_to_fit() { HYLE_FATAL_ASSERT(try_shrink_to_fit()); }
 
-  void swap(SmallVector &other) noexcept {
+  void swap(SmallVector &other) {
     if (this == &other)
       return;
     SmallVector temporary(std::move(*this));
@@ -436,7 +467,7 @@ public:
     other = std::move(temporary);
   }
 
-  friend void swap(SmallVector &left, SmallVector &right) noexcept {
+  friend void swap(SmallVector &left, SmallVector &right) {
     left.swap(right);
   }
 
@@ -455,12 +486,12 @@ public:
         left.begin(), left.end(), right.begin(), right.end());
   }
 
-  iterator erase(const_iterator position) noexcept {
+  iterator erase(const_iterator position) {
     const size_type index = position_index(position, false);
     return erase(pointer_at(index), pointer_at(index + 1));
   }
 
-  iterator erase(const_iterator first, const_iterator last) noexcept {
+  iterator erase(const_iterator first, const_iterator last) {
     const size_type first_index = position_index(first, true);
     const size_type last_index = position_index(last, true);
     HYLE_FATAL_ASSERT(first_index <= last_index);
@@ -471,12 +502,24 @@ public:
     if constexpr (std::is_trivially_copyable_v<T>) {
       std::memmove(data_ + first_index, data_ + first_index + count,
                    (size_ - first_index - count) * sizeof(T));
-    } else {
+    } else if constexpr (std::is_nothrow_move_constructible_v<T>) {
       destroy_range(data_ + first_index, count);
       for (size_type i = first_index; i + count < size_; ++i) {
         ::new (static_cast<void *>(data_ + i)) T(std::move(data_[i + count]));
         data_[i + count].~T();
       }
+    } else if constexpr (std::is_move_assignable_v<T> ||
+                         std::is_copy_assignable_v<T>) {
+      for (size_type i = first_index; i + count < size_; ++i) {
+        if constexpr (std::is_nothrow_move_assignable_v<T> ||
+                      !std::is_copy_assignable_v<T>)
+          data_[i] = std::move(data_[i + count]);
+        else
+          data_[i] = data_[i + count];
+      }
+      destroy_range(data_ + size_ - count, count);
+    } else {
+      return rebuild_erase(first_index, last_index);
     }
     size_ -= count;
     return pointer_at(first_index);
@@ -534,24 +577,31 @@ private:
     }
   }
 
-  iterator insert_prepared(size_type index, SmallVector &inserted) noexcept {
+  iterator insert_prepared(size_type index, SmallVector &inserted) {
     const size_type count = inserted.size_;
     if (count == 0)
       return pointer_at(index);
     HYLE_FATAL_ASSERT(
         count <= static_cast<size_type>(-1) / sizeof(T) - size_);
-    const size_type requested = size_ + count;
-    if (requested > cap_)
-      reserve(next_capacity(requested));
-    open_gap(index, count);
-    for (size_type i = 0; i < count; ++i)
-      ::new (static_cast<void *>(data_ + index + i))
-          T(std::move(inserted.data_[i]));
-    size_ = requested;
-    return pointer_at(index);
+    if constexpr (!std::is_trivially_copyable_v<T> &&
+                  !std::is_nothrow_move_constructible_v<T>) {
+      return rebuild_insert(index, inserted);
+    } else {
+      const size_type requested = size_ + count;
+      if (requested > cap_)
+        reserve(next_capacity(requested));
+      open_gap(index, count);
+      for (size_type i = 0; i < count; ++i)
+        ::new (static_cast<void *>(data_ + index + i))
+            T(std::move(inserted.data_[i]));
+      size_ = requested;
+      return pointer_at(index);
+    }
   }
 
   void open_gap(size_type index, size_type count) noexcept {
+    static_assert(std::is_trivially_copyable_v<T> ||
+                  std::is_nothrow_move_constructible_v<T>);
     HYLE_FATAL_ASSERT(index <= size_ && count <= cap_ - size_);
     if (count == 0)
       return;
@@ -567,6 +617,77 @@ private:
     }
   }
 
+  iterator rebuild_insert(size_type index, SmallVector &inserted) {
+    const size_type count = inserted.size_;
+    const size_type requested = size_ + count;
+    const size_type target = cap_ < requested ? requested : cap_;
+    pointer replacement = static_cast<pointer>(
+        alloc_.allocate(target * sizeof(T), alignof(T)));
+    HYLE_FATAL_ASSERT(replacement != nullptr);
+
+    size_type constructed = 0;
+    auto append = [&](T &value) {
+      ::new (static_cast<void *>(replacement + constructed))
+          T(std::move_if_noexcept(value));
+      ++constructed;
+    };
+    try {
+      for (size_type i = 0; i < index; ++i) append(data_[i]);
+      for (size_type i = 0; i < count; ++i) append(inserted.data_[i]);
+      for (size_type i = index; i < size_; ++i) append(data_[i]);
+    } catch (...) {
+      destroy_range(replacement, constructed);
+      alloc_.deallocate(replacement, target * sizeof(T), alignof(T));
+      throw;
+    }
+
+    pointer old_data = data_;
+    const size_type old_capacity = cap_;
+    const bool old_inline = inline_storage();
+    destroy_range(old_data, size_);
+    if (!old_inline)
+      alloc_.deallocate(old_data, old_capacity * sizeof(T), alignof(T));
+    data_ = replacement;
+    size_ = requested;
+    cap_ = target;
+    return data_ + index;
+  }
+
+  iterator rebuild_erase(size_type first, size_type last) {
+    const size_type count = last - first;
+    const size_type requested = size_ - count;
+    const size_type target = cap_ == 0 ? N : cap_;
+    pointer replacement = static_cast<pointer>(
+        alloc_.allocate(target * sizeof(T), alignof(T)));
+    HYLE_FATAL_ASSERT(replacement != nullptr);
+
+    size_type constructed = 0;
+    auto append = [&](T &value) {
+      ::new (static_cast<void *>(replacement + constructed))
+          T(std::move_if_noexcept(value));
+      ++constructed;
+    };
+    try {
+      for (size_type i = 0; i < first; ++i) append(data_[i]);
+      for (size_type i = last; i < size_; ++i) append(data_[i]);
+    } catch (...) {
+      destroy_range(replacement, constructed);
+      alloc_.deallocate(replacement, target * sizeof(T), alignof(T));
+      throw;
+    }
+
+    pointer old_data = data_;
+    const size_type old_capacity = cap_;
+    const bool old_inline = inline_storage();
+    destroy_range(old_data, size_);
+    if (!old_inline)
+      alloc_.deallocate(old_data, old_capacity * sizeof(T), alignof(T));
+    data_ = replacement;
+    size_ = requested;
+    cap_ = target;
+    return data_ + first;
+  }
+
   size_type next_capacity(size_type required) const noexcept {
     HYLE_FATAL_ASSERT(required <= static_cast<size_type>(-1) / sizeof(T));
     if (cap_ > static_cast<size_type>(-1) / 2)
@@ -575,7 +696,7 @@ private:
     return doubled < required ? required : doubled;
   }
 
-  bool grow_to(size_type requested) noexcept {
+  bool grow_to(size_type requested) {
     if (requested < size_ || requested > static_cast<size_type>(-1) / sizeof(T))
       return false;
     pointer replacement = static_cast<pointer>(
@@ -583,12 +704,17 @@ private:
     if (replacement == nullptr)
       return false;
 
-    relocate_to(replacement, requested);
+    try {
+      relocate_to(replacement, requested);
+    } catch (...) {
+      alloc_.deallocate(replacement, requested * sizeof(T), alignof(T));
+      throw;
+    }
     return true;
   }
 
   void relocate_to(pointer replacement,
-                   size_type replacement_capacity) noexcept {
+                   size_type replacement_capacity) {
     pointer old_data = data_;
     const size_type old_capacity = cap_;
     const bool old_inline = inline_storage();
@@ -596,9 +722,15 @@ private:
       if (size_ != 0)
         std::memcpy(replacement, old_data, size_ * sizeof(T));
     } else {
-      for (size_type i = 0; i < size_; ++i)
-        ::new (static_cast<void *>(replacement + i))
-            T(std::move(old_data[i]));
+      size_type constructed = 0;
+      try {
+        for (; constructed < size_; ++constructed)
+          ::new (static_cast<void *>(replacement + constructed))
+              T(std::move_if_noexcept(old_data[constructed]));
+      } catch (...) {
+        destroy_range(replacement, constructed);
+        throw;
+      }
       destroy_range(old_data, size_);
     }
 
@@ -684,7 +816,7 @@ private:
     }
   }
 
-  void move_from(SmallVector &other) noexcept {
+  void move_from(SmallVector &other) {
     if (!other.inline_storage()) {
       data_ = other.data_;
       size_ = other.size_;
@@ -720,7 +852,8 @@ private:
       other.size_ = 0;
     } else {
       for (size_type i = 0; i < other.size_; ++i) {
-        ::new (static_cast<void *>(data_ + i)) T(std::move(other.data_[i]));
+        ::new (static_cast<void *>(data_ + i))
+            T(std::move_if_noexcept(other.data_[i]));
         ++size_;
       }
       other.clear();
@@ -759,7 +892,7 @@ struct SmallVectorAccess {
 
   template <class T, std::size_t N, class Alloc>
   static bool try_reserve_growth(SmallVector<T, N, Alloc> &vector,
-                                 std::size_t required) noexcept {
+                                 std::size_t required) {
     return required <= vector.cap_ ||
            vector.grow_to(vector.next_capacity(required));
   }

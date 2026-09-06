@@ -1,11 +1,11 @@
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 
 #include <cstring>
 
-#include "hyle/container/probe.h"
+#include "hyle/container/detail/flat_hash_probe.h"
 #include "hyle/core/compiler.h"
 
-// Type-erased cold path for SwissTable (conventions §7). The heavy resize loop
+// Type-erased cold path for FlatHashMap (conventions §7). The heavy resize loop
 // (allocate, memset, rehash-reinsert, free) is compiled exactly ONCE here rather
 // than per <K,V>; the typed shell hands it slot_size/align + a hash-of-slot thunk
 // and gets the new storage back. The hot find/insert/erase stay inlined in the

@@ -1,3 +1,3 @@
 #pragma once
 
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/detail/flat_hash_table.h"

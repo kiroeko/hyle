@@ -231,9 +231,9 @@ TEST(FlatMap, ProvidesOrderedSoaMapOperations) {
   EXPECT_TRUE(map.empty());
   EXPECT_TRUE(map.insert("gamma", 3).second);
   EXPECT_TRUE(map.insert(std::pair<std::string, int>{"zeta", 6}).second);
-  EXPECT_TRUE(map.try_emplace("alpha", 1).second);
-  EXPECT_TRUE(map.try_emplace("beta", 2).second);
-  EXPECT_FALSE(map.try_emplace("beta", 200).second);
+  EXPECT_TRUE(map.emplace("alpha", 1).second);
+  EXPECT_TRUE(map.emplace("beta", 2).second);
+  EXPECT_FALSE(map.emplace("beta", 200).second);
   EXPECT_EQ(map.find(std::string_view("beta"))->value(), 2);
 
   EXPECT_EQ(map.try_insert_or_assign("beta", 20),
@@ -416,10 +416,10 @@ TEST(FlatSorted, MoveOnlyKeysAndValuesHaveBalancedLifetime) {
   EXPECT_EQ(MoveOnly::alive, 0);
   {
     FlatMap<MoveOnly, MoveOnly, MoveOnlyLess> map;
-    EXPECT_TRUE(map.try_emplace(MoveOnly(3), 30).second);
-    EXPECT_TRUE(map.try_emplace(MoveOnly(1), 10).second);
-    EXPECT_TRUE(map.try_emplace(MoveOnly(2), 20).second);
-    EXPECT_FALSE(map.try_emplace(MoveOnly(2), 200).second);
+    EXPECT_TRUE(map.emplace(MoveOnly(3), 30).second);
+    EXPECT_TRUE(map.emplace(MoveOnly(1), 10).second);
+    EXPECT_TRUE(map.emplace(MoveOnly(2), 20).second);
+    EXPECT_FALSE(map.emplace(MoveOnly(2), 200).second);
     ASSERT_NE(map.find(3), map.end());
     EXPECT_EQ(map.find(3)->value().value, 30);
     EXPECT_TRUE(map.erase(1));
@@ -460,7 +460,7 @@ TEST(FlatMap, GrowthPreservesAliasedMappedArguments) {
   ASSERT_EQ(map.size(), map.capacity());
 
   const std::string &borrowed = map.find("a")->value();
-  EXPECT_TRUE(map.try_emplace("c", borrowed).second);
+  EXPECT_TRUE(map.emplace("c", borrowed).second);
   EXPECT_EQ(map.find("c")->value(), "shared payload");
 
   const std::string &aliased_key = map.find("a")->key();
@@ -513,11 +513,11 @@ TEST(FlatMap, ThrowingConstructionLeavesOrderingAndLifetimeUnchanged) {
   ThrowingMapped::copies_before_throw = 100;
   {
     FlatMap<int, ThrowingMapped> map;
-    map.try_emplace(1, 1);
-    map.try_emplace(3, 3);
+    map.emplace(1, 1);
+    map.emplace(3, 3);
     ASSERT_EQ(ThrowingMapped::alive, 2);
 
-    EXPECT_THROW(map.try_emplace(2, 13), std::runtime_error);
+    EXPECT_THROW(map.emplace(2, 13), std::runtime_error);
     EXPECT_EQ(map.size(), 2u);
     EXPECT_TRUE(map.contains(1));
     EXPECT_TRUE(map.contains(3));

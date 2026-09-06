@@ -6,8 +6,8 @@
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"
-#include "src/container/cpu_dispatch_internal.h"
-#include "src/container/str_search.h"  // per-ISA str_count/str_rfind_char variant symbols
+#include "cpu_dispatch_internal.h"
+#include "str_search.h"  // per-ISA str_count/str_rfind_char variant symbols
 
 // Out-of-line SIMD cores for StringView's search family. Compiled once here and
 // exported so the public header stays free of ISA-specific headers.
@@ -33,7 +33,7 @@ using TransformFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
 CountFn resolve_count() noexcept {
 #if HYLE_ARCH_X64
   const auto& features = ::hyle::platform::cpu_features();
-#if defined(HYLE_CONTAINER_HAS_AVX512)
+#if defined(HYLE_TEXT_HAS_AVX512)
   if (supports_highway_avx512(features)) return &str_count_avx512;
 #endif
   if (supports_highway_avx2(features)) return &str_count_avx2;
@@ -50,7 +50,7 @@ CountFn resolve_count() noexcept {
 RfindFn resolve_rfind() noexcept {
 #if HYLE_ARCH_X64
   const auto& features = ::hyle::platform::cpu_features();
-#if defined(HYLE_CONTAINER_HAS_AVX512)
+#if defined(HYLE_TEXT_HAS_AVX512)
   if (supports_highway_avx512(features)) return &str_rfind_char_avx512;
 #endif
   if (supports_highway_avx2(features)) return &str_rfind_char_avx2;
@@ -67,7 +67,7 @@ RfindFn resolve_rfind() noexcept {
 TransformFn resolve_transform(bool lower) noexcept {
 #if HYLE_ARCH_X64
   const auto& features = ::hyle::platform::cpu_features();
-#if defined(HYLE_CONTAINER_HAS_AVX512)
+#if defined(HYLE_TEXT_HAS_AVX512)
   if (supports_highway_avx512(features))
     return lower ? &str_ascii_lower_avx512 : &str_ascii_upper_avx512;
 #endif

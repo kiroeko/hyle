@@ -111,7 +111,7 @@ int bench_string_buf() {
   // Apples-to-apples peer: a THREAD-SAFE std interner (unordered_map +
   // std::mutex), same thread-safety contract as StringInterner. Both pay one
   // uncontended lock/op; the honest question is whose interner CORE is faster
-  // (StringInterner uses SwissTable, which beats unordered_map ~2.4x on find).
+  // (StringInterner uses FlatHashMap, which beats unordered_map ~2.4x on find).
   b.run("std::unordered_map + mutex interner (thread-safe peer)", [&] {
     std::unordered_map<std::string, std::uint32_t> pool;
     std::mutex mu;
@@ -125,7 +125,7 @@ int bench_string_buf() {
     ankerl::nanobench::doNotOptimizeAway(pool.size());
   });
 
-  b.run("HYLE StringInterner (thread-safe, SwissTable core)", [&] {
+  b.run("HYLE StringInterner (thread-safe, FlatHashMap core)", [&] {
     StringInterner buf(system_allocator());
     const char* last = nullptr;
     for (const auto& s : stream) {
@@ -235,7 +235,7 @@ int bench_string_buf() {
   // ---- acquire/retain/release refcount churn (the lifecycle intern never hits)
   // ---- intern() above is steady-state insert (2000 uniques, never freed). The
   // refcount lifecycle -- acquire (intern + bump), retain (bump by ID), release
-  // (drop; on the last ref, SwissTable::erase + alloc.deallocate) -- exercises
+  // (drop; on the last ref, FlatHashMap::erase + alloc.deallocate) -- exercises
   // a DIFFERENT path: the erase + free churn. Workload: acquire each unique,
   // retain it, then release it twice (drives the count to zero -> reclaimed).
   // Rival: a std:: unordered_map<string,refcount> doing the same

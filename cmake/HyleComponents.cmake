@@ -195,13 +195,13 @@ _hyle_declare_component(simd PUBLIC_DEPS core platform)
 # implementation paths such as runtime ISA/topology support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
-  PUBLIC_DEPS core mem mem_reclaim)
-_hyle_declare_component(util PUBLIC_DEPS core error mem container)
+  PUBLIC_DEPS core mem container_intrusive)
+_hyle_declare_component(util PUBLIC_DEPS core error mem container text)
 # SchedulerOptions and the public timer/synchronization APIs name platform and
 # typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
   TRACE
-  PRIVATE_DEPS container timer_queue
+  PRIVATE_DEPS container_queue timer_queue
   PUBLIC_DEPS core container_intrusive error time platform platform_thread
               mem mem_vm util_core)
 # io's C++ public headers expose allocator/status/container value types and
@@ -211,7 +211,8 @@ _hyle_declare_component(sched
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
   TRACE
-  PUBLIC_DEPS core mem container time timer_queue sched)
+  PRIVATE_DEPS container
+  PUBLIC_DEPS core mem text time timer_queue sched)
 # These names reserve independently closable IO factors before product work
 # starts. QUEUED reservations deliberately have no source directory, target,
 # dependencies, public headers or product-root membership. Their own closure
@@ -230,13 +231,37 @@ _hyle_declare_component(graph
   PRIVATE_DEPS util_core
   PUBLIC_DEPS core error mem container sched
   PUBLIC_TYPE_DEPS sched)
-# Container v5 reserves these internal factor identities before moving any
-# public header or product code. QUEUED factors do not create targets and cannot
-# enter the consumer-facing Container facade until their own SCOPED/AUDITED
-# contracts establish real ownership and dependencies.
-_hyle_declare_component(container_concurrent QUEUED)
-_hyle_declare_component(container_queue QUEUED)
-_hyle_declare_component(text QUEUED)
+# Container's consumer-facing product remains one facade, while independent
+# factors own concurrency, handoff and text dependencies. Public include paths
+# intentionally remain hyle/container/*: these identities are maintenance and
+# delivery boundaries, not extra concepts imposed on users.
+_hyle_declare_component(container_concurrent
+  PUBLIC_DEPS core mem mem_reclaim container
+  SPLIT_PUBLIC_HEADERS
+    hyle/container/concurrent_flat_hash_map.h
+    hyle/container/concurrent_flat_hash_set.h
+    hyle/container/concurrent_hash_map.h
+    hyle/container/concurrent_node_hash_map.h
+    hyle/container/concurrent_node_hash_set.h
+    hyle/container/concurrent_vector.h)
+_hyle_declare_component(container_queue
+  PUBLIC_DEPS core mem
+  SPLIT_PUBLIC_HEADERS
+    hyle/container/bounded_queue.h
+    hyle/container/byte_ring_buffer.h
+    hyle/container/sharded_queue.h
+    hyle/container/spsc_queue.h
+    hyle/container/unbounded_queue.h
+    hyle/container/work_stealing_deque.h
+    hyle/container/ws_fifo_queue.h)
+_hyle_declare_component(text
+  PRIVATE_DEPS platform
+  PUBLIC_DEPS core mem container
+  SPLIT_PUBLIC_HEADERS
+    hyle/container/path.h
+    hyle/container/string_algo.h
+    hyle/container/string_interner.h
+    hyle/container/string_view.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -291,7 +316,8 @@ _hyle_declare_product(mem FACTORS mem mem_vm mem_reclaim)
 _hyle_declare_product(obs FACTORS obs)
 _hyle_declare_product(simd FACTORS simd)
 _hyle_declare_product(math FACTORS math)
-_hyle_declare_product(container FACTORS container_intrusive container)
+_hyle_declare_product(container FACTORS
+  container_intrusive container container_concurrent container_queue text)
 _hyle_declare_product(util FACTORS util_core util)
 _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS io)

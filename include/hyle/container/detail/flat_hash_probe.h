@@ -8,23 +8,25 @@
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
 
-#if HYLE_ARCH_X64 && (HYLE_COMPILER_MSVC || defined(__SSSE3__))
+#if HYLE_ARCH_X64 && defined(__SSSE3__)
 #  define HYLE_CONTAINER_COMPILED_SSSE3 1
 #else
 #  define HYLE_CONTAINER_COMPILED_SSSE3 0
 #endif
 
-// SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, not
+// FlatHashMap control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, not
 // routed through a whole-buffer provider kernel. The reason is inlineability, not a dependency
 // rule: `match()` sits inside every find/insert/erase probe and must use the compile-time baseline
 // ISA (SSE2 on x86-64, NEON on AArch64) with zero dispatch. Container's string scans can afford
 // one cached target call for an entire buffer; a hash probe cannot afford one per group. A fixed
-// 16-wide SSE2 or 8-wide NEON/SWAR group follows the mature SwissTable shape.
+// 16-wide SSE2 or 8-wide NEON/SWAR group follows the mature FlatHashMap shape.
 //
 // GroupPortable (SWAR, 8-wide) is ALWAYS compiled, so it is testable on every platform
 // (including x64). GroupSse2 (16-wide) is compiled + aliased as `Group` on x86-64; GroupNeon
-// (8-wide) on aarch64 (real-hardware validated on Apple Silicon -- swiss_table_test green).
-// `Group`/`GroupMask`/`kGroupWidth` alias the best available pick.
+// (8-wide) on aarch64 (real-hardware validated on Apple Silicon -- flat_hash_map_test green).
+// `Group`/`GroupMask`/`kGroupWidth` alias the best available baseline pick.
+// In particular, MSVC x64 does not imply SSSE3: the public inline route stays
+// SSE2 unless the consumer explicitly compiles its own TU for a higher ISA.
 //
 // Control byte values are the abseil-chosen ones (do NOT change -- picked for
 // SIMD): empty=0x80, deleted=0xFE, sentinel=0xFF, full=0hhhhhhh (top bit 0,
@@ -198,7 +200,7 @@ using Group = GroupSse2;
 #  include <arm_neon.h>
 namespace hyle::container::detail {
 // ---- ARM64 NEON group (8-wide) ----------------------------------------------
-// Real-hardware validated on Apple Silicon (swiss_table_test + probe_test green).
+// Real-hardware validated on Apple Silicon (flat_hash_map_test + flat_hash_probe_test green).
 // AArch64 has no movemask. Keep the comparison result's high bit in each byte and
 // iterate it with a shift-3 mask, matching mature Swiss-table implementations.
 // This avoids a horizontal NEON reduction on every match/empty query; the public
