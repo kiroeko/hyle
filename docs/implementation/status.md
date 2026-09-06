@@ -26,7 +26,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | mem | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-mem-v6.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v6-comprehensive-rebuild.md) | mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。 |
 | mem_vm | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-mem-vm-v2.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem_vm/mem-vm-v2-inference-mapping.md) | mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。 |
 | simd | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-simd.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v6-provider-consumer-replay.md) | simd-v6 CLOSED/FROZEN：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。 |
-| container | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v5-product-factorization.md) | container-v5 第二 CANDIDATE：能力/API/factor/delivery 不变，Text 每次 safe Unicode 操作只解析一次 private simdutf provider；新产品身份 a7ce0102 等待全门重放。 |
+| container | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v5-product-factorization.md) | container-v5 第二候选已撤回至 AUDITED：Linux exact shared artifact 证实 24 个 private bitset ISA kernel 泄漏到 dynsym；只授权既有 TEXT-F02/CONT5-F06 visibility FIX，修复后建立新产品身份。 |
 | util | CLOSED | — | P0 | [PASS](evidence/performance/benchmarks-util.md) / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v3-rebuild.md) | util-runtime-v3 CLOSED：唯一 lookup-only factory discovery 缺口已补齐；完整能力账本、三平台 correctness/sanitizer、source/static/shared、C++ 易用性、文档、FFI 清洁度、P0 结构成本与红队全部签署。 |
 | sched | CLOSED | — | P1 | [PASS](evidence/performance/benchmarks-sched.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/sched/sched-v3-root-participation.md) | sched-v3 CLOSED：same-Scheduler root participation 与 bounded sibling activation 消除了 v2 的 oneTBB batch gap；三平台 correctness/sanitizer、三种 C++ 交付、符号/FFI 清洁、直接消费者、文档/红队与 W1-WIN 5% P1 engineering gate 全部通过，Formal 保持 PENDING。 |
 | io | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io-v1 保持 SCOPED 且由 owner 暂停：scope、baseline 与预算已经冻结，尚未进入 AUDITED，也没有产品改动；只有 owner 明确恢复后才能继续。 |
@@ -36,9 +36,9 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | io_transfer | QUEUED | — | — | — | — | — | IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | compute | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
-| container_concurrent | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-concurrent-v1-factor.md) | container_concurrent v1 第二 CANDIDATE：本 factor 实现/API 不变，与共同 Container 产品身份 a7ce0102 重新绑定，等待并发 P1 和交付重放。 |
-| container_queue | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-queue-v1-factor.md) | container_queue v1 第二 CANDIDATE：本 factor 实现/API 不变，与共同 Container 产品身份 a7ce0102 重新绑定，等待 queue P1 和交付重放。 |
-| text | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/text-v1-factor.md) | text v1 第二 CANDIDATE：六向 safe Unicode 转换的 API/语义/layout 不变，每次操作只解析一次 private simdutf provider；新身份 a7ce0102 等待全门重放。 |
+| container_concurrent | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-concurrent-v1-factor.md) | container_concurrent v1 随共同 Container 产品从第二候选退回 AUDITED；本 factor 未发现产品缺陷，只等待 visibility FIX 后的新共同身份与终局验证。 |
+| container_queue | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-queue-v1-factor.md) | container_queue v1 随共同 Container 产品从第二候选退回 AUDITED；本 factor 未发生产品修改，既有 oneTBB 对拍因 allocator/OOM 语义不等价不能签 SAME_CONTRACT。 |
+| text | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/text-v1-factor.md) | text v1 随共同 Container 产品从第二候选退回 AUDITED：自身 simdutf visibility 已通过，但共同 hyle_container shared artifact 泄漏 private bitset ISA kernels；等待唯一 visibility FIX。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：

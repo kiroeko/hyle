@@ -56,3 +56,10 @@ non-inferiority boundary。本 factor 在不改 API/语义/layout/workload 的�
 safe Unicode 操作的 validate/size/convert 复用同一 operation-local simdutf implementation
 pointer。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4` /
 `6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`，全部门必须重放。
+
+## 第二候选撤回
+
+`hyle_text` 自身的 simdutf hidden-symbol gate 已通过；但共同 `hyle_container` exact shared artifact
+泄漏 24 个 private bitset ISA symbols，因此共同产品身份仍须退回 `AUDITED`。本 factor 的 API、layout、
+算法与 operation-local provider 修正不变。第二候选 UTF 八个分层 median 为 `0.9616–0.9731`，其中
+三条置信区间跨过 5% 边界，工程 verdict 保持 `INCONCLUSIVE`。

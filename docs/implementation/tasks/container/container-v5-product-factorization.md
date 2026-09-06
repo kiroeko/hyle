@@ -319,3 +319,20 @@ SHA-256 `7AC65FF1EC17D4A76E46063B5EAF3D222155E17685309FEE8C7958E3D6AF1484`。首
 `AUDITED -> CANDIDATE` 前态 registry 快照为
 `C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-second-candidate.json`，
 SHA-256 `4CED961505B11F8BE79F56326237E40BB904CFB1FE2BB52FD838379E9FBB01A8`。
+
+### 第二候选撤回（`CANDIDATE -> AUDITED`）
+
+- W1-WSL exact shared artifact 的动态符号表实际包含 24 个
+  `hyle::container::detail::bitset_*_{scalar,sse4,avx2,avx512}` 私有 ISA kernel；公开 HYLE
+  symbols 本身正常，但 `hyle_container` 没有像 `hyle_text` 一样启用 Unix hidden-by-default；
+- 该 finding 是冻结的 `TEXT-F02/CONT5-F06` shared-provider visibility 交付缺陷，不改变能力、公开
+  API、layout、算法、正常路径或 ISA 路由。唯一授权修复是在非 Windows 的 `hyle_container` target
+  设置 hidden visibility，由 `HYLE_CONTAINER_API` 恢复公共 C++ symbols；
+- 第二候选的 P1 重放同时揭示 performance 命题问题：concurrent set/queue 两侧使用各自默认 allocator，
+  queue 还把 HYLE recoverable OOM 与 oneTBB throwing push 表面包装成同一 bool。它们只能作为
+  `NATURAL_ROUTE` 观测，不能签 `SAME_CONTRACT` non-inferiority；UTF 与 membership 的统计 verdict
+  也仍为 `INCONCLUSIVE`。这些事实不会被 visibility 修复消除。
+
+本次退回前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-container-visibility-correction.json`，
+SHA-256 `531E4245C3B684BF8433DBFD8EF6DF813A0762EEA29EB1F63D132738687E0DAD`。

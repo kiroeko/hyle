@@ -54,3 +54,10 @@
 未变。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4` /
 `6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`，并发 P1、correctness 和 delivery 必须在该身份上
 重放。
+
+## 第二候选撤回
+
+共同 `hyle_container` shared artifact 泄漏 private bitset ISA symbols，因此四 factor 一并退回
+`AUDITED`；本 factor 的 API、layout、算法和符号未发现新的产品缺陷。正式 membership 对拍同时暴露两侧
+默认 allocator 不同，且统计 non-inferiority 为 `UNRESOLVED`；该证据只能作为自然路线诊断，不能签
+`SAME_CONTRACT`。
