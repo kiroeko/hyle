@@ -2,7 +2,9 @@
 
 #include <array>
 #include <cstring>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"
@@ -16,6 +18,7 @@ using hyle::platform::numa_capabilities;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_available;
 using hyle::platform::numa_node_count;
+using hyle::platform::numa_node_memory_info;
 using hyle::platform::numa_node_of_cpu;
 using hyle::platform::numa_nodes;
 using hyle::platform::NumaCapability;
@@ -64,6 +67,81 @@ TEST(Numa, LinuxNodeListParserRejectsAmbiguousOrUnboundedInput) {
       hyle::platform::detail::parse_linux_node_list("0-15", 15, ids, 8, count));
   EXPECT_FALSE(hyle::platform::detail::parse_linux_node_list(
       "0,,2", 15, ids, std::size(ids), count));
+}
+
+TEST(Numa, LinuxNodeMeminfoParserBindsNodeKeyUnitAndRange) {
+  std::uint64_t bytes = 0;
+  EXPECT_TRUE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node 7 MemTotal: 123 kB\n", 7, "MemTotal", bytes));
+  EXPECT_EQ(bytes, 123u * 1024u);
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node 6 MemTotal: 123 kB\n", 7, "MemTotal", bytes));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node +7 MemTotal: 123 kB\n", 7, "MemTotal", bytes));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node  7 MemTotal: 123 kB\n", 7, "MemTotal", bytes));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node 7 MemFree: 123 kB\n", 7, "MemTotal", bytes));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node 7 MemTotal: 123 MB\n", 7, "MemTotal", bytes));
+  EXPECT_FALSE(hyle::platform::detail::parse_linux_node_meminfo_kib(
+      "Node 7 MemTotal: 18446744073709551615 kB\n", 7, "MemTotal",
+      bytes));
+}
+
+TEST(Numa, NodeMemorySnapshotUsesSameSparseIdSpace) {
+  for (const unsigned node : numa_nodes()) {
+    auto info = numa_node_memory_info(node);
+    ASSERT_TRUE(info.has_value()) << info.error().message();
+    EXPECT_EQ(info->node, node);
+    if (info->physical_total_bytes) {
+      EXPECT_LE(info->physical_available_bytes,
+                *info->physical_total_bytes);
+    }
+  }
+  if (numa_nodes().size() == 1u) {
+    auto info = numa_node_memory_info(numa_nodes().front());
+    ASSERT_TRUE(info.has_value()) << info.error().message();
+    ASSERT_TRUE(info->physical_total_bytes.has_value());
+    EXPECT_GT(*info->physical_total_bytes, 0u);
+  }
+}
+
+TEST(Numa, NodeMemoryRejectsUnavailableSparseId) {
+  // The production parser intentionally caps process-visible ids well below
+  // this value, so the fixture never depends on a contiguous topology or on
+  // arithmetic at unsigned's maximum.
+  constexpr unsigned kInvalidNode = 1u << 20;
+  auto result = numa_node_memory_info(kInvalidNode);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsOutOfRange());
+}
+
+TEST(Numa, ConcurrentNodeMemorySnapshotsStaySelfConsistent) {
+  constexpr std::size_t kThreadCount = 4;
+  constexpr std::size_t kQueries = 8;
+  std::array<bool, kThreadCount> valid{};
+  std::vector<std::thread> threads;
+  threads.reserve(kThreadCount);
+  for (std::size_t thread = 0; thread < kThreadCount; ++thread) {
+    threads.emplace_back([&, thread] {
+      valid[thread] = true;
+      for (std::size_t query = 0; query < kQueries; ++query) {
+        for (const unsigned node : numa_nodes()) {
+          auto info = numa_node_memory_info(node);
+          if (!info || info->node != node ||
+              (info->physical_total_bytes &&
+               info->physical_available_bytes >
+                   *info->physical_total_bytes)) {
+            valid[thread] = false;
+            return;
+          }
+        }
+      }
+    });
+  }
+  for (auto& thread : threads) thread.join();
+  for (const bool result : valid) EXPECT_TRUE(result);
 }
 
 TEST(Numa, CurrentNodeInRange) {

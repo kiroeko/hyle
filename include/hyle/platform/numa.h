@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 
 #include "hyle/error/result.h"
@@ -95,6 +96,29 @@ HYLE_PLATFORM_API bool numa_node_available(unsigned node) noexcept;
 
 // Number of NUMA nodes with memory/CPUs, always >= 1.
 HYLE_PLATFORM_API unsigned numa_node_count() noexcept;
+
+// One dynamic physical-memory snapshot for a node in numa_nodes(). The node
+// ID is retained in the value so stored snapshots cannot be confused when IDs
+// are sparse. `physical_total_bytes` is absent when the OS exposes current
+// availability but no trustworthy per-node total; zero availability is a
+// valid pressure observation rather than an unknown sentinel.
+//
+// Availability is a planning fact, not a reservation. Its exact OS meaning is
+// necessarily platform-specific: Linux uses the node's free pages plus its
+// file-backed and reclaimable-slab counters, multi-node Windows reports free
+// and zeroed pages, and a logical single-node host uses host_memory_info().
+// Process-wide cgroup/job/commit constraints are intentionally not divided
+// across nodes; combine those once at the owning planner.
+struct NumaNodeMemoryInfo {
+  unsigned node = 0;
+  std::optional<std::uint64_t> physical_total_bytes;
+  std::uint64_t physical_available_bytes = 0;
+};
+
+// Dynamic, fallible, and intentionally uncached. `node` must belong to
+// numa_nodes(); invalid or process-unavailable sparse IDs return OutOfRange.
+HYLE_PLATFORM_API Result<NumaNodeMemoryInfo> numa_node_memory_info(
+    unsigned node) noexcept;
 
 // Home node of the calling thread. A single logical-node host returns that node
 // without an OS query. On a real multi-node host, discovery failures remain a

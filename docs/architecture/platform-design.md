@@ -59,7 +59,7 @@ benchmark 或单一内部消费者扭曲的首要边界。clock/sleep 与 deadli
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
-| NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
+| NUMA/大页 | `numa_nodes/capabilities`、`numa_node_memory_info`、`vm_*numa*`、huge-page advice | node-local model/KV/worker budget、大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；node memory 是动态物理事实而非 reservation；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
 | Host memory | `HostMemoryInfo`、`host_memory_info` | model/KV allocation 前的 host budget | 动态 fallible snapshot；optional constraint 不用 0 冒充 unknown；不是 reservation |
 | 文件系统 | `FileInfo`、`FileHandle`、`RandomAccessFile`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、顺序/显式 offset 读取、目录扫描、临时文件、缓存/索引控制 | UTF-8 路径；opened-object identity、duplicate alias 与 cursor 语义显式；短读写与 exact/all 并存；显式 sync/close |
 | 环境与 OS entropy | `get/set/unset_env_var`、`secure_random` | 启动配置、不可预测 seed/nonce | unset 与 empty 分开；环境写只在同步控制面；entropy 完整填满或失败 |
@@ -121,6 +121,14 @@ hard memory limit/current 都参与保守下界。物理量在成功时存在；
 commit/swap/process-or-container limit 使用 optional 表达 OS 是否提供可信值，合法 0 不充当 sentinel。
 `effective_available_bytes()` 取已知约束的保守下界，但不预留资源，也不把 UMA device budget 与 host
 budget 重复相加。真正的 allocation failure 仍必须由 Mem/Compute consumer 处理。
+
+`numa_node_memory_info(node)` 与上述 whole-process snapshot 是互补事实。它只接受同一
+`numa_nodes()` 稀疏 id space 中的 node，并返回该 node 当前的物理可用量，以及 OS 能证明时的物理
+总量。Linux 从 node meminfo 组合 free、file-backed 与 reclaimable slab；该 sysfs 没有全局
+`MemAvailable` 的 watermark 修正，因此这是公开局限，不冒充 reservation。多节点 Windows 的公开 API
+只给 free+zero pages，total 保持 absent；逻辑单节点 Windows/macOS 复用 host snapshot。cgroup、Job、
+commit 与 device/UMA budget 都是全局约束，planner 必须只组合一次，Platform 不把它们平均或复制到
+每个 node。
 
 Windows 的公开 Job query 只有 immediate Job，父 Job 可能施加更紧的 process/job commit limit，并把
 同级进程占用计入父级预算。没有 ancestor handles 时，Platform 不把 immediate 值冒充 effective budget，
@@ -210,6 +218,10 @@ needed 或 unavailable。Linux bind 是严格节点集合；interleave/selected 
 topology、preferred reserve、existing-range bind/interleave 和 selected interleave。用户代码应按
 能力或操作返回的 `Status` 决策，不直接围绕 `HYLE_OS_*` 编译分叉；后者只用于 platform 内部选择
 系统实现。
+
+节点级容量同样沿这份 id authority 查询：调用方遍历 `numa_nodes()` 后逐项调用
+`numa_node_memory_info()`，不需要另一份 owning vector 或固定大小表。它是初始化/低频重规划的动态
+控制面，返回值不能证明随后 allocation 成功，也不负责 rank、GPU、利用率或 eviction policy。
 
 推理 worker 若要按 NUMA node 分组，不需要第二套固定大小 topology：枚举动态
 `available_cpu_ids()`，对每个 id 调 `numa_node_of_cpu()`，再把每组构造成 `CpuAffinity`；arena
@@ -351,7 +363,9 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   O(depth)。Windows 不为一个无法证明的嵌套 Job 有效值增加伪查询。frequency discovery 为
   O(available CPUs)，属于初始化/诊断，不缓存 DVFS observation，也不进入 task dispatch。
 - host-memory snapshot 在 Linux 是 O(1 + cgroup visible depth) 个有界 OS/file 查询；Windows 不做无法
-  证明有效值的 Job 查询。`secure_random` 是
+  证明有效值的 Job 查询。单次 node-memory snapshot 在 Windows/macOS 为 O(1) 有界 native 查询，在
+  Linux 为 O(node meminfo bytes) 的一次顺序解析；它不缓存、不分配结果集合，也不进入 allocation
+  热路径。`secure_random` 是
   O(bytes/native chunk)，不维护 TLS PRNG state。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - Windows 显式 priority 固定调用一次 QoS control 和一次 native priority control；未请求 priority
@@ -389,7 +403,8 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
 
 - Windows affinity 集合的硬 mask 受 processor group 限制；跨组 placement 由上层拆 worker。
   `numa_nodes()` 也只从当前 process-available CPU ids 归纳 node，不把全机不可达
-  node 当成可用 placement。
+  node 当成可用 placement。多 node 时 `GetNumaAvailableMemoryNodeEx` 只证明 free+zero pages，不能
+  从它推导 per-node total；单 node 才复用完整 host snapshot。
 - Windows processor-power records 提供 MHz 级 OS observation，但只在返回记录编号与 available CPU id
   一致时采用。公开 Job 查询只返回 immediate Job，无法折叠嵌套的相对 CPU rate，因此 Windows quota
   当前始终 absent；CPU Set placement 仍独立、可信。
@@ -402,7 +417,9 @@ close，setup、bytes 与 teardown 都计费。mapping/residency 性能证据迁
   被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
 - Linux CPU placement 受调用线程 affinity/cpuset 影响，新线程继承该视图；CPU quota 与 memory budget
   还必须解析 cgroup namespace mount 并折叠可见祖先。NUMA 只采用 mempolicy、process status 或 cgroup
-  cpuset 的 process-allowed view；这些都失败时不能退回 system-online nodes 冒充可用。
+  cpuset 的 process-allowed view；这些都失败时不能退回 system-online nodes 冒充可用。node meminfo
+  没有 `MemAvailable` 的 watermark 估算，公开的 node available 采用 free + file-backed + reclaimable
+  slab 并限制在 node total 内；全局 cgroup 限额由 planner 另行只合并一次。
 - process priority 的 portable contract 是显式启动期五档 hint：Windows 同时调整 class/QoS，
   macOS 调整 process nice，Linux 调整调用线程 nice 并依赖随后创建的线程继承；不是跨 OS 完全相同
   的 scheduling guarantee。

@@ -3,6 +3,7 @@
 #include <hyle/platform/fs_convenience.h>
 #include <hyle/platform/fs.h>
 #include <hyle/platform/host_memory.h>
+#include <hyle/platform/numa.h>
 #include <hyle/platform/process.h>
 #include <hyle/platform/random.h>
 #include <hyle/platform/thread.h>
@@ -21,8 +22,11 @@ int main() {
   auto cache_classes = available_cpu_cache_classes();
   auto temp = temp_directory();
   auto memory = host_memory_info();
+  const auto nodes = numa_nodes();
+  auto node_memory = numa_node_memory_info(nodes.front());
   if (!cpus || cpus->empty() || !cache_classes || cache_classes->empty() ||
-      !temp || temp->empty() || !memory ||
+      !temp || temp->empty() || !memory || !node_memory ||
+      node_memory->node != nodes.front() ||
       memory->physical_total_bytes == 0) {
     return 1;
   }

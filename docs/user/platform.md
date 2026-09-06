@@ -26,6 +26,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
+| 为每个 NUMA node 规划模型/KV/worker arena | 遍历 `numa_nodes()`，逐项调用 `numa_node_memory_info()` | 用整机容量均分、把 cgroup 限额复制到每个 node | 动态物理快照；total 可 unknown、0 available 合法；再单独组合一次全局约束 |
 | 普通小对象、容器 backing | mem 的 `AllocatorRef` / `Arena` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | 默认直接 mapping | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
 | 同步读取固定 offset 的模型/header/index | `RandomAccessFile`；完整传输用 `read_exact_at/write_all_at` | `seek+read`、默认上 coroutine IO | blocking、caller-synchronized、无公开 cursor；append 被拒绝；并发/async/direct/vectored 才选 IO |
@@ -490,6 +491,32 @@ Silicon 通常可能全部为 0）。它不参与 `performance_rank`、ISA gate 
 当前 process-available CPU Sets/affinity 归纳 node；Linux 依次使用 mempolicy、
 `/proc/self/status` 和 cgroup cpuset。它不是全机 inventory。若嵌入宿主在首次调用后
 动态改变进程 CPU/cpuset，需重建该 native runtime/process，不能把旧 span 当成新快照。
+
+装载模型或建立每 node 的 KV/worker arena 前，可直接在同一稀疏 id space 中读取节点容量：
+
+```cpp
+#include "hyle/platform/host_memory.h"
+#include "hyle/platform/numa.h"
+
+using namespace hyle::platform;
+
+HYLE_ASSIGN_OR_RETURN(auto host, host_memory_info());
+for (const unsigned node : numa_nodes()) {
+  HYLE_ASSIGN_OR_RETURN(auto memory, numa_node_memory_info(node));
+  const std::uint64_t node_physical_budget = memory.physical_available_bytes;
+  // 应用在这里结合模型/KV 大小与 headroom；host 的 cgroup/job/commit
+  // effective budget 只对整个进程计算一次，不能逐 node 重复计入。
+  (void)node_physical_budget;
+}
+const std::uint64_t process_budget = host.effective_available_bytes();
+```
+
+该查询是动态、可失败且刻意不缓存的控制面，不是 allocation reservation。Linux node sysfs 不提供
+全局 `MemAvailable` 所用的 watermark 修正；HYLE 采用 node free + file-backed + reclaimable slab，
+并夹在 node total 以内。多节点 Windows 公开的只是 free+zero pages，因此
+`physical_total_bytes` 为 `std::nullopt`；0 available 是真实压力观测，不是 unknown。逻辑单节点
+Windows/macOS 复用 host snapshot。若业务必须按总容量比例切 rank，应在 total 确实存在时做；缺失时
+返回上层显式策略或拒绝启动，不能拿 available、机器型号或整机均分来猜。
 
 NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。Linux
 bind 是严格节点集合；interleave/selected interleave 的 `Applied` 只说明 OS 接受 policy，

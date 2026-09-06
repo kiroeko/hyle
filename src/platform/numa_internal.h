@@ -1,11 +1,40 @@
 #pragma once
 
+#include <cerrno>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <limits>
 
+#include "host_memory_internal.h"
 #include "hyle/platform/numa.h"
 
 namespace hyle::platform::detail {
+
+// Parse one exact Linux node meminfo line, for example
+// "Node 7 MemTotal: 123 kB". Requiring the requested node prefix prevents a
+// fixture or future alternate source from silently mixing node identities;
+// the shared meminfo parser owns unit and overflow validation.
+HYLE_HIDDEN inline bool parse_linux_node_meminfo_kib(
+    const char* line, unsigned node, const char* key,
+    std::uint64_t& bytes) noexcept {
+  if (line == nullptr || key == nullptr || key[0] == '\0' ||
+      std::strncmp(line, "Node ", 5) != 0) {
+    return false;
+  }
+  const char* cursor = line + 5;
+  if (*cursor < '0' || *cursor > '9') return false;
+  errno = 0;
+  char* end = nullptr;
+  const unsigned long long parsed = std::strtoull(cursor, &end, 10);
+  if (errno != 0 || end == cursor || *end != ' ' ||
+      parsed > (std::numeric_limits<unsigned>::max)() ||
+      static_cast<unsigned>(parsed) != node) {
+    return false;
+  }
+  return parse_linux_meminfo_kib(end + 1, key, bytes);
+}
 
 // Parse Linux's canonical comma/range list (for example "0-2,7") into a
 // sorted unique caller buffer. maximum_id is an explicit consumer bound.

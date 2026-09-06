@@ -13,6 +13,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
 #include "hyle/platform/cpu.h"
+#include "hyle/platform/host_memory.h"
 #include "hyle/platform/virtual_memory.h"
 
 #if HYLE_OS_WINDOWS
@@ -43,6 +44,7 @@ Status numa_native_status(const char* operation, int code) noexcept {
 
 using PGetCurrentProcessorNumberEx = void(WINAPI*)(PROCESSOR_NUMBER*);
 using PGetNumaProcessorNodeEx = BOOL(WINAPI*)(PPROCESSOR_NUMBER, PUSHORT);
+using PGetNumaAvailableMemoryNodeEx = BOOL(WINAPI*)(USHORT, PULONGLONG);
 using PVirtualAllocExNuma = LPVOID(WINAPI*)(HANDLE, LPVOID, SIZE_T, DWORD,
                                             DWORD, DWORD);
 
@@ -71,6 +73,7 @@ using PVirtualAlloc2 = PVOID(WINAPI*)(HANDLE, PVOID, SIZE_T, ULONG, ULONG,
 struct WinNumaFns {
   PGetCurrentProcessorNumberEx get_cpu_ex = nullptr;
   PGetNumaProcessorNodeEx get_node_ex = nullptr;
+  PGetNumaAvailableMemoryNodeEx get_available_memory_ex = nullptr;
   PVirtualAllocExNuma virtual_alloc_ex_numa = nullptr;
   PVirtualAlloc2 virtual_alloc2 = nullptr;
 };
@@ -86,6 +89,10 @@ WinNumaFns& win_fns() {
       x.get_node_ex =
           reinterpret_cast<PGetNumaProcessorNodeEx>(reinterpret_cast<void*>(
               ::GetProcAddress(k32, "GetNumaProcessorNodeEx")));
+      x.get_available_memory_ex =
+          reinterpret_cast<PGetNumaAvailableMemoryNodeEx>(
+              reinterpret_cast<void*>(::GetProcAddress(
+                  k32, "GetNumaAvailableMemoryNodeEx")));
       x.virtual_alloc_ex_numa = reinterpret_cast<PVirtualAllocExNuma>(
           reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAllocExNuma")));
       x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
@@ -166,6 +173,81 @@ long sys_move_pages(unsigned long count, void** pages, const int* nodes,
 }
 
 bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
+
+struct LinuxNumaMemoryFields {
+  std::uint64_t total = 0;
+  std::uint64_t free = 0;
+  std::uint64_t active_file = 0;
+  std::uint64_t inactive_file = 0;
+  std::uint64_t reclaimable_slab = 0;
+  bool have_total = false;
+  bool have_free = false;
+};
+
+std::uint64_t saturated_add(std::uint64_t left,
+                            std::uint64_t right) noexcept {
+  const std::uint64_t maximum =
+      (std::numeric_limits<std::uint64_t>::max)();
+  return right > maximum - left ? maximum : left + right;
+}
+
+Result<NumaNodeMemoryInfo> read_linux_numa_node_memory(
+    unsigned node) noexcept {
+  char path[96];
+  const int written = std::snprintf(
+      path, sizeof(path), "/sys/devices/system/node/node%u/meminfo", node);
+  if (written < 0 || static_cast<std::size_t>(written) >= sizeof(path)) {
+    return std::unexpected(
+        Status::OutOfRange("NUMA node meminfo path is too long"));
+  }
+  std::FILE* file = std::fopen(path, "r");
+  if (file == nullptr) {
+    return std::unexpected(status_from_errno(errno, "open NUMA node meminfo"));
+  }
+
+  LinuxNumaMemoryFields fields;
+  char line[512];
+  while (std::fgets(line, sizeof(line), file) != nullptr) {
+    std::uint64_t bytes = 0;
+    if (detail::parse_linux_node_meminfo_kib(line, node, "MemTotal", bytes)) {
+      fields.total = bytes;
+      fields.have_total = true;
+    } else if (detail::parse_linux_node_meminfo_kib(line, node, "MemFree",
+                                                     bytes)) {
+      fields.free = bytes;
+      fields.have_free = true;
+    } else if (detail::parse_linux_node_meminfo_kib(
+                   line, node, "Active(file)", bytes)) {
+      fields.active_file = bytes;
+    } else if (detail::parse_linux_node_meminfo_kib(
+                   line, node, "Inactive(file)", bytes)) {
+      fields.inactive_file = bytes;
+    } else if (detail::parse_linux_node_meminfo_kib(
+                   line, node, "SReclaimable", bytes)) {
+      fields.reclaimable_slab = bytes;
+    }
+  }
+  const int saved = errno;
+  const bool io_error = std::ferror(file) != 0;
+  std::fclose(file);
+  if (io_error) {
+    return std::unexpected(
+        status_from_errno(saved, "read NUMA node meminfo"));
+  }
+  if (!fields.have_total || !fields.have_free) {
+    return std::unexpected(Status::DataLoss(
+        "NUMA node meminfo has no usable MemTotal/MemFree"));
+  }
+
+  std::uint64_t available = saturated_add(fields.free, fields.active_file);
+  available = saturated_add(available, fields.inactive_file);
+  available = saturated_add(available, fields.reclaimable_slab);
+  NumaNodeMemoryInfo out;
+  out.node = node;
+  out.physical_total_bytes = fields.total;
+  out.physical_available_bytes = (std::min)(available, fields.total);
+  return out;
+}
 
 #endif
 
@@ -480,6 +562,48 @@ bool numa_node_available(unsigned node) noexcept {
 
 unsigned numa_node_count() noexcept {
   return static_cast<unsigned>(topology().count);
+}
+
+Result<NumaNodeMemoryInfo> numa_node_memory_info(unsigned node) noexcept {
+  if (!numa_node_available(node)) {
+    return std::unexpected(
+        Status::OutOfRange("NUMA node is unavailable to this process"));
+  }
+
+  const auto from_host = [node]() noexcept -> Result<NumaNodeMemoryInfo> {
+    HYLE_ASSIGN_OR_RETURN(HostMemoryInfo host, host_memory_info());
+    NumaNodeMemoryInfo out;
+    out.node = node;
+    out.physical_total_bytes = host.physical_total_bytes;
+    out.physical_available_bytes = host.physical_available_bytes;
+    return out;
+  };
+
+#if HYLE_OS_WINDOWS
+  if (numa_nodes().size() == 1u) return from_host();
+  auto& f = win_fns();
+  if (f.get_available_memory_ex == nullptr) {
+    return std::unexpected(Status::Unimplemented(
+        "NUMA node memory query is unavailable on Windows"));
+  }
+  ULONGLONG available = 0;
+  if (!f.get_available_memory_ex(static_cast<USHORT>(node), &available)) {
+    return std::unexpected(numa_native_status(
+        "GetNumaAvailableMemoryNodeEx", ::GetLastError()));
+  }
+  NumaNodeMemoryInfo out;
+  out.node = node;
+  out.physical_available_bytes = static_cast<std::uint64_t>(available);
+  return out;
+#elif HYLE_OS_LINUX
+  auto result = read_linux_numa_node_memory(node);
+  if (!result && numa_nodes().size() == 1u && result.error().IsNotFound()) {
+    return from_host();
+  }
+  return result;
+#else
+  return from_host();
+#endif
 }
 
 Result<unsigned> numa_current_node() noexcept {
