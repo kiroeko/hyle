@@ -578,18 +578,14 @@
     },
     {
       "module": "platform",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
-      "round_id": "platform-v8-os-resource-contract",
-      "closure_task": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
-      "scope": "Audit and repair process-scoped OS resource truth for CPU placement/capacity/frequency/cache, Linux cgroup memory and NUMA, and Windows large-CPU topology complexity without adding scheduler policy.",
-      "non_goals": "Scheduler or inference-engine worker policy, SIMD target dispatch, device inventory, private OS interfaces or model/timing guesses, Mem/IO redesign, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
-      "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-      "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-      "end_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
-      "registry_anchor_commit": "c72160265bc7e492483be45d8e0addd944364ca7",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
+      "round_id": "platform-v9-process-memory-mapping",
+      "closure_task": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
+      "scope": "Add an honest whole-process OS memory fact for Mem and make Platform's existing VM range mechanism the single authority reusable by file-backed mappings.",
+      "non_goals": "CPU, cache, NUMA or frequency redesign; file-mapping ownership or fragment policy; Platform-fs/thread; scheduler or engine policy; Native FFI/C API; common instrument redesign and Formal certification.",
+      "baseline_commit": "93dce49922ac1721c45f155d66f3805e74faf7cc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -597,55 +593,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
-      "freeze_confirmation": {
-        "id": "platform-v8-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-        "evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md"
-      },
-      "loc": {
-        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "repository_code": 451412,
-        "self_with_tests": 116939,
-        "self_without_tests": 74308,
-        "module_implementation": 6739
-      },
-      "known_limitations": [
-        "Documented Windows APIs cannot fold unknown nested-Job ancestors, so effective hard CPU quota and process-memory limits remain absent instead of being guessed.",
-        "Apple per-logical-CPU frequency/id mapping remains zero when public OS facts are unavailable; coarse cache is a conservative system snapshot while class snapshots express dynamic process placement.",
-        "CPU and memory values are planning snapshots rather than reservations; callers must still handle later allocation, affinity and topology changes.",
-        "The P1 certificate covers the frozen W1-WIN one-shot host-planning source workload and 5% margin; it is not a cross-machine, all-operation, module-wide SOTA or Formal certificate."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a correctness, security, missing OS-fact, unknown-semantics or natural C++ API-usability defect within Platform's boundary.",
-        "A supported OS or SDK changes documented CPU, cache, frequency, NUMA, memory, VM, process or dynamic-loader semantics used by the frozen implementation.",
-        "The public API, normal-path cost, complexity, component dependency or source, static or shared delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class, or a qualified normal consumer workload proves a reproducible material regression beyond the frozen margin."
-      ],
-      "summary": "platform v8 CLOSED/FROZEN：OS 资源真相、复杂度、自然 C++ API、三平台正确性、三交付、直接消费者、红队及完整同合同 host v3 P1 全部通过；产品候选 c39df6f9 未漂移。"
+      "summary": "platform v9 REOPENED：Mem 复现 whole-process memory fact 不实，Mem-VM 复现 file mapping 与 Platform 两套 OS range authority；当前只登记窄影响面，尚未冻结 closure card 或授权产品修改。"
     },
     {
       "module": "platform_thread",
