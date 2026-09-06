@@ -1,6 +1,6 @@
 # SIMD v6：provider 升级与推理消费回放
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由当前产品事实定向重开。它不把“上游发布了新 commit”本身当作需求，也不重新打开
 > 387-operation / 422-scope 的无界性能笛卡尔积。完成 `SCOPED` 与 `AUDITED`、冻结有限 FIX 集以前，
@@ -472,3 +472,42 @@ API 易用性、依赖或 P1 blocker。
 
 候选 LOC（`loc-report.py --commit e72089c1 --self-check`）：全库 458,401；自实现含测试 119,226；
 自实现不含测试 75,356；SIMD 实现 15,097。Formal 仍为独立 `PENDING`，不影响本轮工程验证。
+
+## 接受限制与重开条件
+
+接受限制：
+
+- P1 只在 W1-WIN/MSVC 19.50 exact AVX2 的三个当前推理 row 上签署；SVE/RVV 没有物理性能机，
+  不宣称这些 target 的 P1 SOTA，Formal 继续独立 `PENDING`；
+- top-k `n=256/k=6` 相对同合同 bounded peer 的四个中位点值固定慢约 0.95%--1.58%，但通过 5%
+  non-inferiority；已有 code-size/branch 机制，没有真实引擎 material profile，因此保持自然通用 API；
+- block quant、GEMM、attention、RoPE、Mamba、tensor fusion 和 sampling policy 由 Compute/format/engine
+  拥有；它们不是遗漏的 ordinary SIMD API；
+- ordinary unknown-CPU fat 路线每个 whole-buffer 允许一次缓存间接调用；零 route cost 只承诺
+  fixed/exact target。产品是 C++ source/static/shared，不提供 Native FFI 或跨工具链稳定 C++ ABI。
+
+只有以下新产品事实重开 SIMD：
+
+1. 具名推理或基础库 consumer 证明缺失一个可跨模型复用的 row primitive，且 expert seam 不能自然承载；
+2. 真实 consumer/profile 证明 top-k 的 4--8 ns 或其他 route 达到 material 端到端影响，或成熟 peer
+   证明更优复杂度档；
+3. Highway/xsimd/VQSort lock 的实际采用变化影响已用 primitive 的语义、codegen、license 或交付；
+4. public API/layout、target/provider route、正常 dispatch/allocation/state、Core/Platform 依赖、组件图或
+   source/static/shared expert delivery 改变；
+5. 新支持 ISA、编译器或 OS 不能维持 correctness、baseline SIGILL safety、fixed/exact 零 selector 或
+   fat whole-buffer 单次 selector 合同。
+
+上游只有新 commit、无 consumer 的 feature 愿望、旧 422-scope 全矩阵重跑、单次点值或低于 material
+门且无消费钥匙的 microbenchmark，不构成重开。
+
+## Closure decision
+
+本轮裁决 `CLOSED`：F01--F06 完成，未处置 SIMD `MUST=0`、blocker=0；三平台 correctness/ASan、
+source/static/shared ordinary+expert delivery、387/422/0 route、C++ 易用性/文档、C/FFI 负空间、红队
+与 W1-WIN 三行同合同 5% P1 门全部通过。候选保持
+`e72089c196f6b38f897524087bc53201a0fd8df4` /
+`a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b`；terminal 文档不改变产品 identity。
+
+同候选 LOC：全库 458,401；自实现含测试 119,226；自实现不含测试 75,356；SIMD 实现 15,097。
+raw performance evidence 与 hashes 已列在 verification manifest；terminal end commit 由随后 registry
+记录完整 ID。
