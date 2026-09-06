@@ -578,20 +578,12 @@
     },
     {
       "module": "platform",
-      "product_state": "BLOCKED",
-      "blocked_from": "CANDIDATE",
-      "blocker": "PLATFORM-V10-PERF-CONTROL-RESOLUTION-01: all four frozen host-planning product non-inferiority rows passed, but the only fresh evidence bundle failed qualification because its 5% known-delta confidence intervals were not fully resolved inside the accepted band.",
-      "blocker_owner": "closure-perf-v1 instrument and performance evidence owner",
-      "resume_condition": "Create a bounded independent instrument task that freezes and qualifies the n=15-to-n=31 escalation or adjudication rule for an unresolved known-delta control without using Platform product results; then start a new Platform RESUME round from SCOPED and run exactly one fresh W1-WIN holdout under that revised contract without changing the API, OS algorithm, peer, margin or selected order.",
-      "reopen_trigger_id": "PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
-      "round_id": "platform-v10-numa-node-memory-facts",
-      "closure_task": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
-      "scope": "Add truthful per-NUMA-node physical memory facts for inference host planning without moving rank, allocator or model policy into Platform.",
-      "non_goals": "Thread or GPU placement policy, allocator reservation, model/KV sizing, CPU/cache/frequency or NUMA placement redesign, Platform-thread/fs, Mem/Mem-VM changes, Native FFI/C API, common instrument redesign and Formal certification.",
-      "baseline_commit": "5c529802cd2974b222856608dcaf4cdd0fcf240b",
-      "candidate_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-      "candidate_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
+      "product_state": "SCOPED",
+      "round_id": "platform-v11-perf-control-resume",
+      "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
+      "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
+      "non_goals": "Any Platform product, API, test, benchmark, adapter, contract, peer or margin change; another common-instrument change, preflight, second bundle, order or sample selection, old-sample merging, adjacent modules, Native FFI and Formal certification.",
+      "baseline_commit": "aac877695b04b76b68eeff69c9bccbbafc55f411",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -599,49 +591,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "end_commit": "086c388418f0f1ae8c72bae65bc2d6beff178505",
-      "registry_anchor_commit": "086c388418f0f1ae8c72bae65bc2d6beff178505",
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
-      "loc": {
-        "snapshot_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-        "repository_code": 459121,
-        "self_with_tests": 119445,
-        "self_without_tests": 75504,
-        "module_implementation": 6964
-      },
-      "known_limitations": [
-        "Multi-node Windows exposes current free and zeroed bytes through the public OS contract but no trustworthy per-node total, so physical_total_bytes is absent there.",
-        "Linux per-node available memory is a planning estimate without the global MemAvailable watermark correction; snapshots are dynamic facts, not reservations or allocation-success promises.",
-        "Process-wide cgroup, job, commit and similar constraints remain in host_memory_info and must be composed once by the consumer rather than copied onto every node.",
-        "This round has native Windows, Linux and macOS coverage but no Windows multi-node hardware coverage; macOS exposes only HYLE's logical node zero."
-      ],
-      "reopen_triggers": [
-        "The exact performance-instrument resume condition is met and a new RESUME round can renew the Platform P1 claim.",
-        "A named consumer reproduces a node-id, capacity, availability, error, concurrency, OS-route or API-usability defect.",
-        "The public NUMA memory API, platform semantics, implementation complexity, dependency graph or source, static or shared delivery shape changes.",
-        "A named inference workload proves that deferred node distance, bandwidth, residency or pressure capabilities belong in Platform."
-      ],
-      "summary": "platform v10 BLOCKED：NUMA node memory fact 已完成三平台正确性、结构、交付、文档和红队验证；旧 host-planning holdout 的 4/4 产品 NI 数值通过，但唯一 evidence bundle 的 5% known-delta control 未资格化，因此工程性能只能为 INCONCLUSIVE，等待独立仪器任务后按 RESUME 重签。"
+      "summary": "platform v11 RESUME / SCOPED：通用仪器已补齐 precision-only known-delta 的预注册 n=31 escalation；产品候选、合同、peer、5% margin 与四 strata 不变，本轮只允许一次 fresh W1-WIN qualification。"
     },
     {
       "module": "platform_thread",
