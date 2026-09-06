@@ -1,6 +1,7 @@
 # Platform v8：操作系统资源真相与系统调用韧性
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本轮由 Platform v7 冻结后得到的可复现产品事实定向触发。当前状态只认
 > [`module-status.json`](../../module-status.json)；本记录中的计划在进入相应状态以前不授权产品修改。
@@ -499,3 +500,83 @@ SHA-256 `7A15E54E59E31B1BC2EAC90F63D5D89209976B59F65505257AFCA559A983D2B2`。
 factor 均通过：全库代码 451,412；自实现含测试 116,939；自实现不含测试 74,308；factor 实现边界分别为
 `platform` 6,739、`platform_thread` 857、`platform_fs` 2,712 行。`platform` 的 conventional boundary
 包含统一 `include/hyle/platform` 公共头，两个子 factor 数值只计各自实现目录，不能相加后冒充互斥拆分。
+
+## Terminal owner 七问与比较合同
+
+1. **第三方产品路径**：base/fs 没有第三方产品实现；Windows/macOS/Linux 只依赖 documented OS ABI。
+   `platform_thread` 的 parker 是 Rust std 1.94.1 指定 revision 的 integrated source，MIT 来源、内容 hash、
+   lock、notice、installed license 与 package owner 已闭合。oneTBB、Folly、Highway、llama.cpp 与 ggml 只作
+   peer/消费审计，不进入产品 target 或公开类型。
+2. **推理引擎能力完整度**：已准入的 placement/capacity、异构 topology/cache/frequency、host memory、
+   process NUMA、VM/dynlib/process、thread/wait 与同步文件旅程都有自然路线；device/UMA budget、worker
+   policy、async/direct IO 属 Compute/Sched/IO owner。当前没有未处置 Platform `MUST`。
+3. **内部复用与加速设施**：base 复用已冻结 Core/Error；Thread/FS 复用 Core/Error/Time 并私有使用 base。
+   cgroup memory/quota/cpuset 共用一个 resolver，Windows topology 共用一次 group-prefix snapshot；没有
+   重复 CPU/OS decision authority。Container/SIMD/allocator/reclamation 不匹配这里的 OS snapshot、
+   pointer/lifetime 或依赖合同，不为形式复用制造反向边。
+4. **拟真、公平性能**：base 的一次 model/runtime host-planning snapshot 在 W1-WIN、source/static、LTO
+   off、5% margin 下为 P1 `PASS`；thread 的产品 bytes 未变，为 P0 structural `PASS`；fs 因公共 controls
+   未资格化为 `INCONCLUSIVE/BLOCKED`。没有模块全局、跨机器或 Formal SOTA 声明。
+5. **旧 C ABI / Native FFI**：三个 shared package 的未装饰 HYLE C symbol 都为 0；没有 public C header、
+   bridge、option、sample 或 package metadata。公开面是惯用 C++23，私有 OS C ABI 不构成产品 FFI。
+6. **source/static/shared**：三平台 exact source embedding、relocated static/shared SDK、selected factor/
+   façade、runtime loader 与 Rust license asset 全部通过；Windows wrapper 的 absolute-invocation source anchor
+   是独立 Build task，不改变从 archive root 得到的 exact Platform 交付结果。
+7. **C++ 易用性与文档**：architecture/user guide 已按“系统事实、进程视图、策略”以及 placement/capacity、
+   coarse/class、unknown/error、owner/view 和 concurrency 分层；普通用户用 owning convenience，需要控制
+   storage 才用 caller-buffered core。没有 benchmark-only public seam、固定样本形状或常态 metadata。
+
+### Host v3 `SAME_CONTRACT` 等价矩阵
+
+| Dimension | HYLE | direct Win32 adapter | Verdict / charged note |
+|---|---|---|---|
+| work/result | 完整 process-visible `CpuTopology` + 八字段 `HostMemoryInfo` | 相同两类 value record | `EQUAL`；全部字段进入 checksum |
+| ownership/lifetime | 每次调用内部取得并释放 native scratch | 每次调用内部取得并释放 stack-first scratch | `ADAPTER_EQUALIZED`；无跨 callback cache |
+| failure/OOM/malformed | 两个 `Result<T>` 合并为 `Result<HostSnapshot>` | 同样两个 `Result<T>` 与外层 carrier，OS/OOM/malformed 映射 `Status` | `ADAPTER_EQUALIZED`；peer 不再 abort |
+| affinity/topology | 当前 process CPU sets/affinity + RelationAll | 相同 documented API 和过滤规则 | `EQUAL` |
+| memory fact | `GlobalMemoryStatusEx`，Windows swap/process optional absent | 相同调用、字段和 optional shape | `EQUAL`；动态 available 值不伪要求顺序快照逐字相等 |
+| setup/teardown | sizing、allocation、query、aggregate、Result/value materialization、destroy 全计费 | 同样阶段全计费 | `EQUAL` |
+| delivery/codegen | MSVC 19.50 Release static source route，LTO off | 同一 executable/TU/toolchain | `EQUAL` |
+
+额外工作/保证方向为 `none`。v2 因字段和失败通道不等价已撤销；v3 在采样前完成语义复核。最终四个
+strata 没有 `advantage_ratio < 1` 的 HYLE 行。FS r3 diagnostic 中四个固定方向点值落在
+0.993128--0.999388，随 execution/allocation order 翻转；r4 在失格 A/A 下最低 0.973723，不能归因产品。
+它们分类为“仪器分辨率/控制未通过、无产品机制”，且缺少产品修改的两把钥匙；因此既不假装 PASS，也不
+为这些点值修改 API、layout 或实现。
+
+## Closure decision
+
+本页是三个 factor 的联合 round，因此顶部 receipt 以联合结果 `BLOCKED` 终止；各 factor 的机器状态分别
+裁决，不把一个公共仪器 blocker 扩散成整个产品失败：
+
+| factor | terminal decision | basis |
+|---|---|---|
+| `platform` | `CLOSED / FROZEN` | capability/API、复杂度、三平台 correctness、三交付、直接消费者、文档、红队与 v3 P1 全部 PASS |
+| `platform_thread` | `CLOSED / FROZEN` | Parker bytes/算法不变，provenance/license/package、三平台与 P0 structural 全部 PASS |
+| `platform_fs` | `BLOCKED from CANDIDATE` | 产品 correctness/delivery/usability/red-team PASS；r3 delta5、唯一重跑 r4 A/A controls 失格，P1 只能 INCONCLUSIVE |
+
+- Platform 已知限制：Windows documented API 不能折叠未知 nested-Job ancestor，因此 hard CPU quota 与
+  process memory limit 保持 absent；Apple 没有公开 per-logical-CPU Hz/id mapping 时保持 0；coarse cache
+  是保守 system snapshot，动态 class API 才表达 process placement；任何 memory/CPU snapshot 都不是资源
+  reservation；P1 只覆盖冻结的 W1-WIN planning journey。
+- Platform-thread 已知限制：本轮只签 integrated-source 与 P0 不增成本，不把历史 parker 点值重绑为新的
+  跨平台 P1；OS priority/affinity 权限仍可能以 `Status` 失败；没有稳定 C++ ABI 或 Native FFI。
+- Platform-fs 已知限制/blocker：同步 restart-safe POSIX controls 才重试 `EINTR`，close-like 与可能已产生
+  副作用的调用故意不重试；async/direct IO 不属本 factor；当前没有合格的第二候选 warm-file P1 数值证书。
+- FS blocker owner：
+  [`platform-fs-control-stability-2026-09`](../performance/platform-fs-control-stability-2026-09.md)。恢复条件是
+  在新的无竞争 W1-WIN 窗口、未改 contract/candidate/margin 下先通过 A/A 与 5%/10% known-delta，再一次性
+  生成完整 8-strata 产品证据；不能拼接 r3/r4 或继续第三次试跑。
+- Platform/base reopen triggers：真实消费者复现错误/缺失 OS fact 或不自然 API；supported OS/SDK 改变
+  资源语义；公开 API、复杂度、依赖或交付改变；同合同 peer 证明更好复杂度，或正常消费者证明 material
+  regression。
+- Platform-thread reopen triggers：Rust upstream/selected source/license 或 adapted bytes 改变；wait/thread
+  correctness、lifetime/progress、公开 API、依赖/交付改变；同合同 workload 出现 material regression。
+- Platform-fs resume/reopen triggers：上述 controls 恢复条件成立；同步文件 correctness/ownership/EINTR
+  缺陷；公开 API、syscall cost/semantics、依赖或交付改变；合格同合同 evidence 证明 material regression。
+- raw evidence：host v3 r1、fs r3/r4、三平台 factor/delivery/direct-consumer scratch 均位于
+  `C:\public\project-hyle\_validation\platform-v8-*`；不可变身份和 hash 已在本页逐项记录。
+- LOC snapshot：candidate `c39df6f94c636ab8fa94cb700dd263763a42d680`；全库 451,412，自实现含测试
+  116,939，自实现不含测试 74,308；factor implementation 为 base 6,739、thread 857、fs 2,712。
+- terminal end commit 由本 receipt 提交产生后写入 registry；首个保存各 factor terminal state 的后续提交
+  再作为 `registry_anchor_commit`，不在本提交伪造自身 hash。
