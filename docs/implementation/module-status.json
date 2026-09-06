@@ -1068,7 +1068,7 @@
     },
     {
       "module": "container",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v5-product-factorization",
@@ -1093,7 +1093,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 SCOPED：产品仍只有一个 hyle::container façade；四因子候选、当前推理/peer identity、P1 语义门、16.5 小时总预算与停止线已冻结，完整审计和有限 FIX 集完成前不修改产品。"
+      "summary": "container-v5 AUDITED：全部公开面已归属四个内部因子，四组推理 consumer 的能力超集、普通调用形状、最小依赖和 10 项有限 FIX 已冻结；只授权按 ledger 实现。"
     },
     {
       "module": "util",
@@ -1277,7 +1277,7 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-concurrent-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-concurrent-v1-factor.md",
       "scope": "Own the concurrent flat/node hash map and concurrent vector surface, admit natural zero-mapped-payload concurrent sets, establish an independent internal target and exact reclamation/dependency closure, and validate normal inference registry journeys.",
@@ -1300,11 +1300,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v1 SCOPED：现有并发 map/vector、准入 set、reclamation 和独立 target 边界已冻结；完整 public trace 与有限 FIX 集前不修改产品。"
+      "summary": "container_concurrent v1 AUDITED：map/vector 保留，flat/node set、零 mapped payload、独立 target、最小依赖和 registry P1 合同已冻结。"
     },
     {
       "module": "container_queue",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-queue-v1-factor.md",
       "scope": "Own byte-ring, SPSC, bounded MPMC, sharded and work-stealing storage, adjudicate unbounded and priority mechanisms, establish an independent internal target and Scheduler edge, and validate normal inference handoff journeys.",
@@ -1327,11 +1327,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v1 SCOPED：try-only queue storage、unbounded/priority 裁决、Sched direct edge 和独立 target 边界已冻结；完整审计前不修改产品。"
+      "summary": "container_queue v1 AUDITED：现有 role-specific queues 保留，try-only unbounded MPMC、独立 target、Sched direct edge 和 handoff P1 合同已冻结。"
     },
     {
       "module": "text",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "text-v1-factor",
       "closure_task": "docs/implementation/tasks/container/text-v1-factor.md",
       "scope": "Own borrowed text, ASCII and Unicode algorithms, lexical paths and interning, complete typed UTF error-offset and UTF-8/16/32 caller-buffer conversion, establish an independent internal target and private provider closure, and validate loader/tokenizer journeys.",
@@ -1354,7 +1354,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "text v1 SCOPED：borrowed text/path/interner、typed Unicode codec、私有 provider 与独立 target 边界已冻结；完整审计前不修改产品。"
+      "summary": "text v1 AUDITED：borrowed text/path/interner 保留，typed UTF diagnostics/transcode、独立 target、private provider 和 loader P1 合同已冻结。"
     }
   ]
 }

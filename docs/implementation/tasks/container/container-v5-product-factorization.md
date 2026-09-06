@@ -133,3 +133,115 @@
 - terminal：所有准入 `MUST` 为 `COMPLETE` 或完整 `ROUTED`，四个 factor 与 façade、correctness、
   三交付、docs、红队和 P1 全部通过才可各自 `CLOSED/FROZEN`。适用项未运行或结果不可裁决为
   `BLOCKED/INCONCLUSIVE`；“继续研究”不是状态。
+
+## Audit verdict（`AUDITED`）
+
+### 完整 public trace 与 owner
+
+本轮逐项反查了全部非 intrusive Container headers、compiled source、tests、bench seam 和直接消费者。
+公开产品仍只有 `hyle::container`；下表的 factor 名只用于内部 target、最小依赖闭包和并行维护：
+
+| 内部 owner | 当前公开面 | 审计结论 |
+|---|---|---|
+| `container` | small/static/inplace/POD vector，ring/circular sequence，flat hash/sorted/B-tree，dynamic bitset、sparse set，semantic hash | 保留自然任务；新增通用 LRU storage；清除 `SwissTable`/public probe 的实现名泄漏，并把 throwing-move 与 fallible insert 约束放到真正需要它们的操作 |
+| `container_concurrent` | concurrent flat/node map、concurrent vector、adaptive lock implementation | 保留两种 map 的 compact/stable-node 取舍；补 flat/node set，不能要求用户伪造 mapped payload |
+| `container_queue` | byte ring、SPSC、bounded/sharded MPMC、work-stealing deque、owner/thief FIFO | 保留不同 producer/consumer/progress 合同；补 try-only unbounded typed handoff；等待、关闭、取消与 deadline 留给 Sched/IO |
+| `text` | `StringView`、ASCII/string algorithms、lexical path、interner/ID、UTF provider | 保留 borrowed/identity 路线；补 typed UTF diagnostics 与 UTF-8/16/32 caller-buffer conversion；provider/ISA 仍是 private mechanism |
+| `container_intrusive` | list/forward-list/hlist hooks | 已 FROZEN，只由 façade 聚合并供 LRU 复用；本轮不修改它 |
+
+`probe.h`、`swiss_table.h`、adaptive locks 与 generated/provider headers 是实现所需安装 header，不是第二套
+consumer product API。它们必须进入对应 factor 的 header ownership，但 guide 不把这些 seam 推荐为用户入口。
+
+### 能力超集裁决
+
+| 能力族 | 来源与真实任务 | 当前覆盖 | 动作 / owner |
+|---|---|---|---|
+| small/fixed/POD sequence | 四组引擎的短 metadata、token/result staging；LLVM/Abseil/Boost | `PARTIAL`：能力齐，但 SmallVector/RingDeque class-wide 排除 throwing move | `FIX`：只在 relocation/shift 操作表达实际 exception contract，不让整个类型失去可用性 |
+| exact ring / byte ring | streaming token、log/transport staging；Boost | `COMPLETE` | `KEEP`；分别保留 overwrite、deque 和 raw-byte 合同 |
+| flat hash map/set | graph/metadata/registry；Abseil/Folly | `PARTIAL`：任务完整，公开实现名和 OOM vocabulary 混乱 | `FIX`：用户入口只叫 `FlatHashMap/Set`；fallible 与 std-shaped insert 语义可见且不冲突 |
+| flat sorted / B-tree | 小型 read-mostly index、有序 range；Boost/Abseil | `PARTIAL`：任务完整，fallible `try_emplace` 命名同样混乱 | `FIX`：统一插入结果语义；不补 multi/node-handle 全表面 |
+| dense/sparse membership | active masks、dense IDs；ggml/llama.cpp | `COMPLETE` | `KEEP`；compressed rank/select 无当前通用需求 |
+| bounded recency/eviction storage | ggml CANN cache、vLLM LRU/LoRA、SGLang expert/KV cache；Folly `EvictingCacheMap` | `MISSING` | `FIX` / `container`：entry/weight budget、peek/touch/get、erase/clear、逐出 callback；device/KV/in-flight/pinning policy 留调用者 |
+| concurrent registry map | backend/model registry；oneTBB/Folly | `COMPLETE` | `KEEP`；flat 偏密集，node 给 guard 内 stable address |
+| concurrent membership set | 并发 active/registered membership；oneTBB/Folly | `MISSING` | `FIX` / `container_concurrent`：flat/node set，无 mapped payload，继承相应 guard/reclamation 合同 |
+| parallel append | request/result publication；oneTBB | `COMPLETE` | `KEEP`；不把 random erase 冒充 concurrent vector 能力 |
+| bounded/SPSC/work-sharing queue | engine stage handoff、worker run queue；rigtorp/oneTBB | `COMPLETE` | `KEEP`；每种类型继续显式 role、capacity、progress 和 quiescence |
+| unbounded typed handoff | llama server burst deque、vLLM/SGLang runtime queues；Folly/oneTBB | `MISSING` | `FIX` / `container_queue`：try-only MPMC storage、recoverable OOM、approximate size；不吸收 blocking service |
+| priority/mutable heap | vLLM arbitrary request removal、llama BPE/普通 priority；Boost heap | `ROUTED` | 普通 heap 走 `std`；indexed/decrease-key 保持 watchlist，第二个独立通用 consumer 或 material profile 才准入 |
+| concurrent priority queue | oneTBB peer，但四组 consumer 的 policy 由单 scheduler owner 串行维护 | `OUT_OF_SCOPE` | `DEFER` 到真实 Sched/engine demand；不让普通用户支付并发 heap 成本 |
+| borrowed text/path/interning | model metadata、token text、Windows path boundary | `COMPLETE` | `KEEP`；filesystem I/O 仍由 Platform FS，owning string 用标准/PMR |
+| UTF diagnostics/transcode | ggml Windows/backend boundary、llama token text、simdutf | `PARTIAL`：仅 bool validate/count | `FIX` / `text`：typed code+input offset+output count 与 UTF-8/16/32 caller-owned spans |
+| trie/radix/Aho/token automaton | llama trie、SGLang radix/ngram | `ROUTED` | tokenizer/matcher/KV owner；alphabet、match、eviction 和 serialization 不具备一个诚实通用合同 |
+| ordinary vector/string/deque/node map、stable file checksum | 全部引擎 | `ROUTED` | 分别用标准/PMR、IO/format owner；不复制 API 数量 |
+
+该表覆盖旧 `CONT-A-01..37` 的全部已有公开族，并以当前锁定的 ggml+llama.cpp、ds4、vLLM、SGLang
+identity 重新验证差异。没有现存公开类型因只服务 benchmark 而删除；被清除的是实现 seam 和含混命名，
+不是实际任务。每项最多使用两个成熟 peer；Python/GPU policy 只证明需求，不作为 C++ 点值性能对手。
+
+### 冻结普通调用形状
+
+以下是语义草图，不冻结具体拼写以外的实现细节；candidate 必须让这些调用无需 internal seam：
+
+```cpp
+LruCache<Key, Value> cache({.max_entries = 1024, .max_weight = bytes});
+auto put = cache.try_insert_or_assign(key, value, weight, on_evict);
+if (Value* value = cache.get(key)) { /* hit also touches recency */ }
+if (const Value* value = cache.peek(key)) { /* no recency mutation */ }
+
+ConcurrentFlatHashSet<Key> active;
+auto inserted = active.try_insert(key);       // inserted/already-present/OOM
+bool present = active.contains(key);          // snapshot result
+
+UnboundedQueue<Job> ready;
+if (!ready.try_emplace(args...)) { /* allocation failure */ }
+ready.try_pop([&](Job&& job) { consume(std::move(job)); });
+
+UtfResult result = utf8_to_utf16(input, output);
+// result exposes status, input_offset and output_count; output-too-small is explicit.
+```
+
+LRU 的 weight 由调用者在插入/更新时给出，不保存 type-erased callback；eviction callback 是单次模板参数，
+默认路线无常驻函数指针。返回的 value pointer 只在下一次可能 erase/evict 的 mutation 前有效。并发 set 的
+node variant 只在 accessor 生命周期内给 stable key；unbounded queue 的 `try_pop` callback 让 nonassignable
+payload 无需额外默认构造或 assignment。Unicode API 不分配、不拥有 output，也不暴露 simdutf 类型。
+
+### 第三方、内部复用与 dependency verdict
+
+| 能力 | semantic owner | mechanism / decision authority | delivery owner |
+|---|---|---|---|
+| allocation | 各 Container factor | FROZEN `mem` allocator | central component/package graph |
+| LRU membership | `container` | FROZEN `container_intrusive` hook + `FlatHashSet` index | Container façade；新增真实 PUBLIC edge |
+| concurrent table retirement | `container_concurrent` | FROZEN `mem_reclaim` | `container_concurrent` target |
+| CPU/OS facts | owning compiled kernel | FROZEN `platform` facts；每个 kernel owner 自己作唯一选择 | corresponding factor target |
+| byte hash | `container` | private xxHash/wyhash/local short path | dependency lock + `container` target |
+| UTF codec | `text` | private simdutf runtime dispatch | dependency lock + `text` target，Unix hidden symbols |
+| string/bitset kernels | owning factor | private generated Highway TU；不依赖 `hyle::simd` register API | owning target |
+
+冻结的最小边为：`container -> PUBLIC core,mem,container_intrusive; PRIVATE platform`；
+`container_concurrent -> PUBLIC core,mem,mem_reclaim,container`；`container_queue -> PUBLIC core,mem`；
+`text -> PUBLIC core,mem,container; PRIVATE platform`。Sched 的 queue 使用改为 direct private
+`container_queue`；Util/IO 按其公开类型分别直连 `text`/`container`。不存在为了“多引用”而增加的依赖，
+也不复制 FROZEN allocator、reclamation、hook、CPU facts 或 error 通道。
+
+### 有限 FIX ledger
+
+本轮产品实现只授权下列项目；新能力或新 benchmark 姿势必须另行退回 `AUDITED`：
+
+| ID | owner | 冻结修复与验收 |
+|---|---|---|
+| `CONT5-F01` | all four factors/build | 建立四个真实 target、逐 header/source/test owner、Container façade 和 direct consumer edges；四个 factor 可独立 developer build，三种产品交付保持一个用户心智 |
+| `CONT5-F02` | `container` | public inline x86 真实保持 SSE2 baseline，移除传播给 consumer TU 的 PUBLIC SSSE3 option；显式 higher-ISA 仅属于对应 compiled variant |
+| `CONT5-F03` | `container` | 新增 bounded entry/weight `LruCache`，expected O(1) lookup/touch/erase/evict，复用 intrusive hook，无默认动态分派/无 domain policy |
+| `CONT5-F04` | `container` | 清理 `SwissTable`/probe 实现入口与 stale benchmark/ABI comment；统一 associative fallible insert 与 std-shaped `emplace` 心智，不让 `try_emplace` 在 OOM 时 fatal |
+| `CONT5-F05` | `container` | 将 SmallVector/RingDeque 的 class-wide throwing-move 禁令收窄到实际需要的操作，提供成熟容器同档 exception/basic-guarantee 路线且保留 trivial/nothrow fast path |
+| `CONCC-F01` | `container_concurrent` | 独立 factor + flat/node concurrent set；静态证明无 mapped payload，覆盖 OOM、accessor、erase/rehash/reclamation/stress |
+| `CONQ-F01` | `container_queue` | 独立 factor + try-only unbounded MPMC typed queue；明确 linearization、progress、OOM、approximate size、quiescent destruction，性能只与同合同 peer 比 |
+| `TEXT-F01` | `text` | 独立 factor + typed UTF validation/error offset 与 UTF-8/16/32 caller-buffer conversion；malformed/output-too-small/empty/alias 规则完整 |
+| `TEXT-F02` | `text`/delivery | Unix shared artifact 隐藏 simdutf/private provider symbols，Windows/static/source 路线不泄漏第三方类型或第二套 ABI |
+| `CONT5-F06` | suite | 迁移直接消费者与 tests，补 choice-oriented guide、architecture、qualified P1 evidence、public header self-containment、source/static/shared/offline/license/symbol gate |
+
+性能冻结为四条 primary：short metadata flat lookup、LRU hit/insert+evict、concurrent membership、typed
+handoff、UTF transcode 中每个 factor最多一条 normal primary 和一条 holdout；这里的列举是风险池，不要求
+把同一 factor 全部做成 P1。每行先签 `SAME_CONTRACT/NATURAL_ROUTE`，5% material margin；只有固定方向
+material regression 且可定位机制时才允许一次产品修正。其余现有容器做 P0 复杂度、metadata、allocation、
+codegen 与 correctness 回放，不复活旧 benchmark 全矩阵。

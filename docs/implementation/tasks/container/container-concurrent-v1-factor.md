@@ -20,3 +20,20 @@
   performance-guided product correction；
 - next：完整 public trace、set 的零 mapped-payload 证明、普通调用草图、复杂度/metadata 和有限 FIX
   ledger 完成后进入 `AUDITED`；此前不修改产品。
+
+## Audit verdict（`AUDITED`）
+
+- public trace：`concurrent_hash_map.h`/`concurrent_flat_hash_map.h`、`concurrent_node_hash_map.h`、
+  `concurrent_vector.h` 及 adaptive lock implementation 归本 factor；sequential Swiss/hash 归 `container`，
+  retirement 归 FROZEN `mem_reclaim`；
+- existing map/vector：`COMPLETE/KEEP`。flat map 提供 compact sharded storage，node map 提供 accessor 内
+  stable address 和 retained/reclaiming table 两档，vector 提供 segmented append；不把它们互相伪装；
+- concurrent set：`MISSING/FIX`。提供 flat/node 两档，普通调用为 `contains/try_insert/erase/size/clear`；
+  node set 的 key 只在 accessor 保护期稳定。empty policy 使用 `[[no_unique_address]]` 并以 entry/node
+  `static_assert` 证明不支付 mapped payload；
+- dependencies：PUBLIC `core,mem,mem_reclaim,container`，无 `util_core/time/platform/sched`；不得复制
+  allocator、Swiss core、adaptive reclamation 或 wait service；
+- P0：lookup/insert/erase expected O(1)，shard/bucket count 为构造期选择，正常操作不重复 topology 探测；
+  P1 primary 为 read-mostly membership registry，SAME_CONTRACT peer 在 oneTBB/Folly 中择一，5%；
+- finite FIX：`CONCC-F01`（独立 target/header/test owner、两种 set、direct/package edges）和 Container suite
+  的 `CONT5-F06`。除此之外不改现有 map layout、shard heuristic 或 lock algorithm。
