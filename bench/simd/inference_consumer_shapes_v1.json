@@ -1,0 +1,101 @@
+{
+  "schema": "hyle.simd.inference-consumer-shapes/v1",
+  "owner": "simd-v6-provider-consumer-replay",
+  "comparison_class": "SAME_CONTRACT",
+  "consumer_evidence": [
+    {
+      "group": "ggml/llama.cpp",
+      "revision": "ggml:e91ded11bdcd78c42f9c8d3978ff6686eb4c1226; llama.cpp:7620399f58aebfd2196b74021f9581bcf7218cb9",
+      "shapes": "split gated activation, weighted RMSNorm and indexed top-k rows"
+    },
+    {
+      "group": "ds4",
+      "revision": "9ab705347c1775e7599ede7eb81a6255ec7dccb5",
+      "shapes": "clamped SwiGLU, row RMSNorm and bounded small-k expert routing"
+    },
+    {
+      "group": "vLLM",
+      "revision": "a1541f5742a29864a80087af313ad460066a1524",
+      "shapes": "floating activation/RMSNorm and MoE weight-plus-id selection"
+    },
+    {
+      "group": "SGLang",
+      "revision": "6cee9285a3dd43e1f0270818aef7bf01a0568863",
+      "shapes": "GLU, RMSNorm and MoE/sampling top-k registry entries"
+    }
+  ],
+  "source_evidence": {
+    "adapter": {
+      "path": "bench/simd/inference_consumer_bench.cc",
+      "sha256": "7e92700087552969dcb10c521608b6bb093abf43ecf82e498349070574384672"
+    },
+    "candidate_math_boundary": {
+      "path": "src/simd/math/math_dispatch.cc",
+      "sha256": "5985edbc5331e5f5091ded6f912a70f7ee4e3828706fe207aa5cb3ec5d7043eb"
+    },
+    "candidate_top_k_boundary": {
+      "path": "src/simd/sort/top_k.cc",
+      "sha256": "fd64ce77e15864f7781d50055d60bd79814ccc4a29291f0e7830549bd9fb22bf"
+    }
+  },
+  "journeys": [
+    {
+      "id": "split-swiglu-f32-11008",
+      "semantic_equivalence": [
+        {"dimension": "work-and-result", "candidate": "dst[i] = stable_silu(gate[i]) * value[i] over 11008 f32 elements", "peer": "identical direct-Highway arithmetic and negative-infinity repair", "verdict": "EQUAL"},
+        {"dimension": "result-granularity", "candidate": "one complete FFN row per measured operation", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ownership-and-lifetime", "candidate": "three caller-owned borrowed buffers valid for the synchronous call", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "failure-and-oom", "candidate": "n==0 returns; nonzero n requires non-null gate/value/dst through release-surviving fatal checks; no allocation", "peer": "adapter contains the same return and fatal checks before identical no-allocation work", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "cancel-and-close", "candidate": "not applicable to a synchronous row primitive", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ordering-capacity-backpressure", "candidate": "index order, exactly n outputs, no capacity or backpressure state", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "thread-safety-and-progress", "candidate": "thread-compatible synchronous finite loop with no shared mutable state", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "caller-participation", "candidate": "all work executes on the calling thread", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "blocking-and-suspension", "candidate": "none", "peer": "none", "verdict": "EQUAL"},
+        {"dimension": "affinity-and-stealing", "candidate": "same pinned benchmark thread; no internal affinity or stealing", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "setup-steady-state-teardown", "candidate": "buffer allocation/population outside timing; public call and output sink charged", "peer": "same setup and sink; adapter checks are charged", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "memory-resource", "candidate": "no allocator or scratch", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "delivery-and-codegen", "candidate": "Release exact-AVX2 static library, LTO off, entered through one public noinline call boundary", "peer": "same executable/ISA/compiler with one forced noinline adapter boundary; candidate internal routing remains charged product mechanism", "verdict": "ADAPTER_EQUALIZED"}
+      ]
+    },
+    {
+      "id": "weighted-rmsnorm-f32-4096",
+      "semantic_equivalence": [
+        {"dimension": "work-and-result", "candidate": "f32 sum-of-squares, inverse sqrt(mean + epsilon), f32 weight and output over 4096 elements", "peer": "identical Highway reduction and arithmetic order", "verdict": "EQUAL"},
+        {"dimension": "result-granularity", "candidate": "one complete hidden-state row per measured operation", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ownership-and-lifetime", "candidate": "caller-owned borrowed src/weight/dst buffers valid for the synchronous call", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "failure-and-oom", "candidate": "n==0 returns; nonzero n checks all pointers and finite nonnegative epsilon; no allocation", "peer": "adapter contains the same return, pointer and epsilon fatal checks; no allocation", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "cancel-and-close", "candidate": "not applicable to a synchronous row primitive", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ordering-capacity-backpressure", "candidate": "index order, exactly n outputs, no capacity or backpressure state", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "thread-safety-and-progress", "candidate": "thread-compatible synchronous two-pass finite loop with no shared mutable state", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "caller-participation", "candidate": "all work executes on the calling thread", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "blocking-and-suspension", "candidate": "none", "peer": "none", "verdict": "EQUAL"},
+        {"dimension": "affinity-and-stealing", "candidate": "same pinned benchmark thread; no internal affinity or stealing", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "setup-steady-state-teardown", "candidate": "buffer allocation/population outside timing; public call and output sink charged", "peer": "same setup and sink; adapter checks are charged", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "memory-resource", "candidate": "no allocator or scratch", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "delivery-and-codegen", "candidate": "Release exact-AVX2 static library, LTO off, entered through one public noinline call boundary", "peer": "same executable/ISA/compiler with one forced noinline adapter boundary; candidate internal routing remains charged product mechanism", "verdict": "ADAPTER_EQUALIZED"}
+      ]
+    },
+    {
+      "id": "expert-top-k-f32-256-6",
+      "semantic_equivalence": [
+        {"dimension": "work-and-result", "candidate": "read 256 immutable f32 scores and emit six score+uint32-index records, descending, NaN-last and lower-index tie-first", "peer": "same bounded insertion algorithm and ordering", "verdict": "EQUAL"},
+        {"dimension": "result-granularity", "candidate": "one complete expert-router row per measured operation", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ownership-and-lifetime", "candidate": "caller owns immutable scores and six writable result slots for the synchronous call", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "failure-and-oom", "candidate": "checks k<=n, zero-k return, non-null pointers, uint32 index bound, byte-size/address overflow and input/output disjointness; no allocation", "peer": "adapter duplicates the same checks in the same public-call phase; no allocation", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "cancel-and-close", "candidate": "not applicable to a synchronous row primitive", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "ordering-capacity-backpressure", "candidate": "fixed K=6 caller capacity and deterministic total order", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "thread-safety-and-progress", "candidate": "thread-compatible synchronous O(n*k) bounded-k loop with no shared mutable state", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "caller-participation", "candidate": "all work executes on the calling thread", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "blocking-and-suspension", "candidate": "none", "peer": "none", "verdict": "EQUAL"},
+        {"dimension": "affinity-and-stealing", "candidate": "same pinned benchmark thread; no internal affinity or stealing", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "setup-steady-state-teardown", "candidate": "scores/result storage prepared outside timing; public call and result sink charged", "peer": "same setup and sink; adapter checks are charged", "verdict": "ADAPTER_EQUALIZED"},
+        {"dimension": "memory-resource", "candidate": "six result slots are the only O(k) state; no allocator", "peer": "identical", "verdict": "EQUAL"},
+        {"dimension": "delivery-and-codegen", "candidate": "Release exact-AVX2 static library, LTO off, entered through one public noinline call boundary", "peer": "same executable/ISA/compiler with one forced noinline adapter boundary; candidate internal implementation layering remains charged", "verdict": "ADAPTER_EQUALIZED"}
+      ]
+    }
+  ],
+  "claim_boundary": {
+    "allowed": "W1-WIN 5% engineering non-inferiority for the three named exact-AVX2 complete-row journeys after full qualification",
+    "forbidden": "all SIMD operations, all sizes or ISAs, cross-platform timing, fused tensor kernels, model throughput or universal SOTA"
+  }
+}

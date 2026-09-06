@@ -2,10 +2,10 @@
   "schema": "hyle.perf.contract/v1",
   "id": "simd-inference-row-p1-v1",
   "module": "simd",
-  "claim": "P1 engineering non-inferiority of ordinary HYLE C++ inference-row SwiGLU, weighted RMSNorm, and expert top-k operations against source-equivalent current Highway or ds4 routes at one fixed AVX2 target, under dual execution orders and code-placement strata",
+  "claim": "P1 engineering non-inferiority of ordinary HYLE C++ inference-row SwiGLU, weighted RMSNorm, and expert top-k operations against same-contract checked Highway or ds4 adapters at one fixed AVX2 target, under dual execution orders and code-placement strata",
   "candidate": {
     "target": "hyle_simd",
-    "delivery_shape": "source",
+    "delivery_shape": "static",
     "revision": "runtime-bound",
     "component": "simd",
     "entrypoint": "include/hyle/simd/math.h and include/hyle/simd/sort.h"
@@ -15,7 +15,7 @@
       "id": "highway",
       "revision": "18e449b642599b8f51c03ca10173fdc59864e4f2",
       "configuration": {
-        "delivery_shape": "same-TU direct Highway AVX2 source",
+        "delivery_shape": "same-TU noinline checked Highway AVX2 adapter",
         "source": "clean external checkout",
         "math": "hwy::HWY_NAMESPACE vector arithmetic and hwy/contrib/math/math-inl.h"
       }
@@ -33,7 +33,7 @@
       "id": "ds4",
       "revision": "9ab705347c1775e7599ede7eb81a6255ec7dccb5",
       "configuration": {
-        "delivery_shape": "same-TU source-equivalent bounded insertion",
+        "delivery_shape": "same-TU noinline checked bounded-insertion adapter",
         "source": "clean external checkout",
         "adaptation": "preserves ds4 bounded expert-selection algorithm while returning score plus original index and applying HYLE deterministic NaN/tie semantics"
       }
@@ -77,13 +77,13 @@
       "gate_role": "product",
       "consumer_key": "inference/ffn/split-swiglu-f32",
       "provenance": {
-        "path": "samples/package/simd/cpp/main.cc",
-        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+        "path": "bench/simd/inference_consumer_shapes_v1.json",
+        "sha256": "a9b3ad67168b617100ef5eaa4bf7e046ed62d24086a5e1566211d87ffdfb0047"
       },
       "ownership_topology": {
         "candidate": "One inference worker calls the ordinary HYLE split-input SwiGLU f32 pointer/count API for one FFN row",
         "peer": "The same worker calls an independently spelled direct-Highway AVX2 loop for the same gate, value, and destination buffers",
-        "equivalence": "Both routes use identical f32 storage, stable SiLU arithmetic, element count, preallocated output, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
+        "equivalence": "Both routes use identical f32 storage, stable SiLU arithmetic, element count, preallocated output, release pointer/zero-length checks, one noinline caller boundary, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
       },
       "material_contribution": {
         "frequency": 1,
@@ -102,7 +102,7 @@
         "scale": {"rows_per_callback": 1, "elements_per_row": 11008, "input_buffers": 2, "output_buffers": 1}
       },
       "setup": "All aligned-independent vectors are allocated and populated before measurement; each callback charges only one complete public or peer operation and an observable output sink",
-      "charged_phases": ["11008 f32 gate loads", "11008 stable SiLU evaluations", "11008 value loads and multiplications", "11008 f32 stores", "one output sink"],
+      "charged_phases": ["zero-length and non-null pointer contract checks", "11008 f32 gate loads", "11008 stable SiLU evaluations", "11008 value loads and multiplications", "11008 f32 stores", "one output sink"],
       "pair": {"candidate": "HYLE split SwiGLU f32 N=11008", "peer": "Highway split SwiGLU f32 N=11008"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -116,13 +116,13 @@
       "gate_role": "product",
       "consumer_key": "inference/norm/weighted-rmsnorm-f32",
       "provenance": {
-        "path": "samples/package/simd/cpp/main.cc",
-        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+        "path": "bench/simd/inference_consumer_shapes_v1.json",
+        "sha256": "a9b3ad67168b617100ef5eaa4bf7e046ed62d24086a5e1566211d87ffdfb0047"
       },
       "ownership_topology": {
         "candidate": "One inference worker calls the ordinary HYLE weighted RMSNorm f32 pointer/count API for one hidden-state row",
         "peer": "The same worker calls an independently spelled direct-Highway AVX2 reduction and normalization loop over the same source, weight, and destination",
-        "equivalence": "Both routes use identical f32 storage, epsilon placement, weight application, preallocated buffers, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
+        "equivalence": "Both routes use identical f32 storage, epsilon placement, weight application, preallocated buffers, release pointer/epsilon/zero-length checks, one noinline caller boundary, fixed AVX2 ISA, compiler, process, checksum sink, and measured phase"
       },
       "material_contribution": {
         "frequency": 1,
@@ -141,7 +141,7 @@
         "scale": {"rows_per_callback": 1, "elements_per_row": 4096, "epsilon": 0.00001, "weighted": true}
       },
       "setup": "Source, weights, and output vectors are allocated and populated before measurement; each callback charges one complete public or peer operation and an observable output sink",
-      "charged_phases": ["4096 f32 loads and square accumulation", "one inverse-square-root normalization factor", "4096 source and weight loads", "4096 normalized weighted stores", "one output sink"],
+      "charged_phases": ["zero-length, non-null pointer and epsilon contract checks", "4096 f32 loads and square accumulation", "one inverse-square-root normalization factor", "4096 source and weight loads", "4096 normalized weighted stores", "one output sink"],
       "pair": {"candidate": "HYLE weighted RMSNorm f32 N=4096", "peer": "Highway weighted RMSNorm f32 N=4096"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -155,13 +155,13 @@
       "gate_role": "product",
       "consumer_key": "inference/moe/expert-top-k-f32",
       "provenance": {
-        "path": "samples/package/simd/cpp/main.cc",
-        "sha256": "9ec042d06aef9673e418f96cf44e871121573c3c16ec7b4b214183afa2ab2c02"
+        "path": "bench/simd/inference_consumer_shapes_v1.json",
+        "sha256": "a9b3ad67168b617100ef5eaa4bf7e046ed62d24086a5e1566211d87ffdfb0047"
       },
       "ownership_topology": {
         "candidate": "One inference worker calls the ordinary non-destructive HYLE score-plus-index top-k API over one expert-router row",
         "peer": "The same worker calls the ds4 bounded insertion algorithm adapted in the benchmark to the same output and deterministic ordering contract",
-        "equivalence": "Both routes read the same immutable 256 f32 scores, retain six score-plus-original-index results, use identical NaN and tie ordering, write preallocated storage, and charge no allocation"
+        "equivalence": "Both routes read the same immutable 256 f32 scores, retain six score-plus-original-index results, use identical NaN and tie ordering, perform the same bounds/null/overflow/disjointness checks behind one noinline caller boundary, write preallocated storage, and charge no allocation"
       },
       "material_contribution": {
         "frequency": 1,
@@ -180,7 +180,7 @@
         "scale": {"rows_per_callback": 1, "experts": 256, "selected_experts": 6, "input_mutated": false}
       },
       "setup": "Input scores and fixed output arrays exist before measurement; each callback charges one complete candidate or peer selection and an observable result sink",
-      "charged_phases": ["256 immutable score reads", "bounded K=6 insertion comparisons and moves", "six score-plus-index outputs", "one result sink"],
+      "charged_phases": ["k/n, zero-k, pointer, index-width, byte-range and disjointness contract checks", "256 immutable score reads", "bounded K=6 insertion comparisons and moves", "six score-plus-index outputs", "one result sink"],
       "pair": {"candidate": "HYLE expert top-k f32 N=256 K=6", "peer": "ds4-shape expert top-k f32 N=256 K=6"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -215,6 +215,12 @@
     }
   },
   "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "REAL_CONSUMER",
+      "semantic_matrix": "bench/simd/inference_consumer_shapes_v1.json",
+      "semantic_matrix_sha256": "a9b3ad67168b617100ef5eaa4bf7e046ed62d24086a5e1566211d87ffdfb0047"
+    },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
       "cmake": {

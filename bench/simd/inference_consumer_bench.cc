@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -64,6 +65,8 @@ void run_pair(nb::Bench& bench, bool peer_first,
 
 HYLE_NOINLINE void highway_swiglu_peer(const float* gate, const float* value,
                                        float* dst, std::size_t n) noexcept {
+  if (n == 0) return;
+  HYLE_FATAL_ASSERT(gate != nullptr && value != nullptr && dst != nullptr);
   const hn::ScalableTag<float> d;
   const std::size_t width = hn::Lanes(d);
   std::size_t i = 0;
@@ -92,6 +95,9 @@ HYLE_NOINLINE void highway_swiglu_peer(const float* gate, const float* value,
 HYLE_NOINLINE void highway_rms_norm_peer(const float* src, const float* weight,
                                          float* dst, std::size_t n,
                                          float epsilon) noexcept {
+  if (n == 0) return;
+  HYLE_FATAL_ASSERT(src != nullptr && weight != nullptr && dst != nullptr);
+  HYLE_FATAL_ASSERT(std::isfinite(epsilon) && epsilon >= 0.0f);
   const hn::ScalableTag<float> d;
   const std::size_t width = hn::Lanes(d);
   auto sum_squares_v = hn::Zero(d);
@@ -128,11 +134,42 @@ struct BetterScoredIndex {
   }
 };
 
+struct BenchByteRange {
+  std::uintptr_t begin;
+  std::uintptr_t end;
+};
+
+BenchByteRange bench_byte_range(const void* data, std::size_t count,
+                                std::size_t item_size) noexcept {
+  HYLE_FATAL_ASSERT(item_size != 0);
+  HYLE_FATAL_ASSERT(
+      count <= std::numeric_limits<std::size_t>::max() / item_size);
+  const std::size_t bytes = count * item_size;
+  const auto begin = reinterpret_cast<std::uintptr_t>(data);
+  HYLE_FATAL_ASSERT(bytes <= std::numeric_limits<std::uintptr_t>::max());
+  HYLE_FATAL_ASSERT(
+      begin <= std::numeric_limits<std::uintptr_t>::max() - bytes);
+  return {begin, begin + bytes};
+}
+
+bool bench_disjoint(BenchByteRange lhs, BenchByteRange rhs) noexcept {
+  return lhs.end <= rhs.begin || rhs.end <= lhs.begin;
+}
+
 // Source-equivalent to ds4's bounded expert-selection insertion algorithm,
 // adapted only to HYLE's stronger score+index and deterministic tie contract.
 HYLE_NOINLINE void ds4_small_top_k_peer(const float* scores, std::size_t n,
                                         hs::ScoredIndexF32* result,
                                         std::size_t k) noexcept {
+  HYLE_FATAL_ASSERT(k <= n);
+  if (k == 0) return;
+  HYLE_FATAL_ASSERT(scores != nullptr && result != nullptr);
+  HYLE_FATAL_ASSERT(n - 1 <=
+                    std::numeric_limits<std::uint32_t>::max());
+  HYLE_FATAL_ASSERT(
+      bench_disjoint(bench_byte_range(scores, n, sizeof(float)),
+                     bench_byte_range(result, k,
+                                      sizeof(hs::ScoredIndexF32))));
   const BetterScoredIndex better;
   std::size_t retained = 0;
   for (std::size_t i = 0; i < n; ++i) {

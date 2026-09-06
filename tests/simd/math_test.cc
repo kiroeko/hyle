@@ -873,6 +873,34 @@ double narrow_tolerance(float expected) {
   }
 }
 
+// RVV permits up to 65,536-bit vectors (2,048 f32 lanes). 4,097 therefore
+// forces at least two complete vectors plus a one-element special-value tail
+// even at that architectural maximum; fixed-width targets exercise more.
+constexpr std::size_t kInferenceSpecialCount = 4097;
+
+float inference_special_value(std::size_t index) {
+  switch (index % 9) {
+    case 0:
+      return -std::numeric_limits<float>::infinity();
+    case 1:
+      return -0.0f;
+    case 2:
+      return 0.0f;
+    case 3:
+      return std::numeric_limits<float>::infinity();
+    case 4:
+      return std::numeric_limits<float>::quiet_NaN();
+    case 5:
+      return -7.25f;
+    case 6:
+      return -0.125f;
+    case 7:
+      return 0.125f;
+    default:
+      return 7.25f;
+  }
+}
+
 template <typename T>
 void check_narrow_activation(void (*function)(const T*, T*,
                                               std::size_t) noexcept,
@@ -896,21 +924,42 @@ void check_narrow_activation(void (*function)(const T*, T*,
     }
   }
 
-  const float special_values[] = {-std::numeric_limits<float>::infinity(),
-                                  -0.0f, 0.0f,
-                                  std::numeric_limits<float>::infinity(),
-                                  std::numeric_limits<float>::quiet_NaN()};
-  std::array<T, std::size(special_values)> special_input{};
-  std::array<T, std::size(special_values)> special_output{};
+  // Repeating the exceptional pattern makes NaN/Inf/signed-zero enter vector
+  // lanes instead of accidentally validating only the scalar remainder.
+  std::array<T, kInferenceSpecialCount> special_input{};
+  std::array<T, kInferenceSpecialCount> special_output{};
+  std::array<T, kInferenceSpecialCount> special_in_place{};
   for (std::size_t i = 0; i < special_input.size(); ++i)
-    special_input[i] = encode_storage<T>(special_values[i]);
+    special_input[i] = encode_storage<T>(inference_special_value(i));
   function(special_input.data(), special_output.data(), special_input.size());
-  EXPECT_EQ(decode_storage(special_output[0]), 0.0f);
-  EXPECT_TRUE(std::signbit(decode_storage(special_output[1])));
-  EXPECT_FALSE(std::signbit(decode_storage(special_output[2])));
-  EXPECT_EQ(decode_storage(special_output[3]),
-            std::numeric_limits<float>::infinity());
-  EXPECT_TRUE(std::isnan(decode_storage(special_output[4])));
+  special_in_place = special_input;
+  function(special_in_place.data(), special_in_place.data(),
+           special_in_place.size());
+  for (std::size_t i = 0; i < special_input.size(); ++i) {
+    const float source = decode_storage(special_input[i]);
+    const float got = decode_storage(special_output[i]);
+    const float expected = inference_activation_reference(operation, source);
+    if (std::isnan(source)) {
+      EXPECT_TRUE(std::isnan(got)) << "i=" << i;
+    } else if (std::isinf(source)) {
+      if (source < 0.0f) {
+        EXPECT_EQ(got, 0.0f) << "i=" << i;
+        EXPECT_FALSE(std::signbit(got)) << "i=" << i;
+      } else {
+        EXPECT_EQ(got, std::numeric_limits<float>::infinity()) << "i=" << i;
+      }
+    } else if (source == 0.0f) {
+      EXPECT_EQ(got, expected) << "i=" << i;
+      EXPECT_EQ(std::signbit(got), std::signbit(expected)) << "i=" << i;
+    } else {
+      EXPECT_NEAR(got, expected, narrow_tolerance<T>(expected)) << "i=" << i;
+    }
+    if (std::isnan(got)) {
+      EXPECT_TRUE(std::isnan(decode_storage(special_in_place[i]))) << "i=" << i;
+    } else {
+      EXPECT_EQ(special_in_place[i].bits, special_output[i].bits) << "i=" << i;
+    }
+  }
 }
 
 template <typename T>
@@ -1044,6 +1093,29 @@ TEST(Math, QuickGeluAndSplitGatedRows) {
   }
   hyle::simd::gelu_quick_f32_batch(nullptr, nullptr, 0);
   hyle::simd::swiglu_f32_batch(nullptr, nullptr, nullptr, 0);
+}
+
+TEST(Math, QuickGeluExceptionalValuesReachVectorAndTail) {
+  std::array<float, kInferenceSpecialCount> input{};
+  std::array<float, kInferenceSpecialCount> output{};
+  for (std::size_t i = 0; i < input.size(); ++i)
+    input[i] = inference_special_value(i);
+
+  hyle::simd::gelu_quick_f32_batch(input.data(), output.data(), input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const float expected = inference_activation_reference(
+        InferenceActivation::kGeluQuick, input[i]);
+    if (std::isnan(input[i])) {
+      EXPECT_TRUE(std::isnan(output[i])) << "i=" << i;
+    } else if (std::isinf(input[i])) {
+      EXPECT_EQ(output[i], input[i] < 0.0f ? 0.0f : input[i]) << "i=" << i;
+    } else {
+      EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6f + 2e-6f)
+          << "i=" << i;
+      if (input[i] == 0.0f)
+        EXPECT_EQ(std::signbit(output[i]), std::signbit(expected)) << "i=" << i;
+    }
+  }
 }
 
 TEST(Math, NarrowInferenceActivationsAndGates) {
