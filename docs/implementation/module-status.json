@@ -857,7 +857,7 @@
     },
     {
       "module": "mem",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
       "round_id": "mem-v6-comprehensive-rebuild",
@@ -883,11 +883,11 @@
       "state": "PENDING",
       "instrument_profile": "formal-release-v1"
     },
-    "summary": "mem v6 REOPENED：Platform v8 已改变直接依赖 identity；正在按当前推理旅程和成熟实现重建 host-memory 超集、自然 API、复用、性能、红队、文档与三交付合同，尚未冻结修复集。"
+    "summary": "mem v6 SCOPED：host-memory 九个能力 family、真实推理 journey、依赖、P1 同合同 Heap 路线、8h/120min 预算与停止条件已冻结；尚未完成能力审计或授权产品修改。"
     },
     {
       "module": "mem_vm",
-    "product_state": "REOPENED",
+    "product_state": "SCOPED",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -905,7 +905,7 @@
       "verdict": "PLANNED",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
-      "machine_profile": "W1-WIN",
+      "machine_profile": "W1-WSL",
       "instrument_profile": "closure-perf-v1",
       "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
     },
@@ -913,7 +913,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "mem_vm v2 REOPENED：当前 llama.cpp 的 lazy-range/partial-unmap 旅程击穿旧 fragment 非目标，且 Platform v8 改变直接依赖；正在重新审计 OS storage 超集与实现。"
+    "summary": "mem_vm v2 SCOPED：推理 lazy-range/partial-release、匿名/文件/共享/巨页/stack family、三平台系统交互、W1-WSL 同合同 P1 与 6h/90min 预算已冻结；尚未完成能力审计或授权产品修改。"
     },
     {
       "module": "simd",
