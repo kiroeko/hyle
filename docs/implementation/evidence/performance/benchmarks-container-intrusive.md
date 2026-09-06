@@ -1,6 +1,6 @@
 # container_intrusive 性能资格
 
-<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 本页是工程性能证据，不声明模块状态；唯一权威状态见
 > [`module-status.json`](../../module-status.json)。当前 v4 candidate 3 在 W1-WIN 的四个冻结正常

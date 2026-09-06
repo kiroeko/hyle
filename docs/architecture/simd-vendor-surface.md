@@ -1,8 +1,7 @@
 # SIMD vendor ownership
 
 本文只描述长期 ownership 和升级原则，不承担操作覆盖率、性能排名或任务状态。当前 product state 见
-[`module-status.json`](../implementation/module-status.json)，本轮版本与施工事实见
-[`SIMD v4 closure card`](../implementation/tasks/simd/simd-v4-expert-sdk.md)。
+[`module status`](../implementation/status.md)，并从该表进入当前 closure/performance evidence。
 
 ## 两种依赖必须分开说
 

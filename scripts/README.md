@@ -121,7 +121,10 @@ python scripts/check-docs.py
 ```
 
 The first command is the fast editing loop. It validates the current registry's
-schema, paths, component set, and generated status projection. It is an
+schema, paths, component set, optional `FROZEN` confirmation identity, and
+generated status projection. The projection exposes `Freeze` separately from
+product state and links each engineering verdict to the exact current evidence
+record. It is an
 engineering consistency check, not a Git anti-tamper system; use `--previous`
 only for an explicit before/after state comparison. Candidate/tree/receipt checks
 use ordinary read-only Git commands in the module review. CMake dependency and
@@ -133,6 +136,12 @@ when its first registry state is `QUEUED`. Existing component removal, rename or
 reordering remains invalid, as does introducing a new component directly in a
 later closure state. This makes the documented new-factor registration path
 mechanically usable without weakening ordinary state-transition checks.
+
+`check-docs.py` additionally requires every performance page referenced by a
+current `CLOSED` record to carry one exact
+`<!-- PERFORMANCE EVIDENCE: CURRENT -->` marker, and rejects current markers
+that are not reachable from the registry. This keeps filenames and historical
+prose from becoming a second current-evidence catalog.
 
 `scripts/hyle_perf/` is the shared schema/statistics/evidence/machine core for
 performance instrument v1. It owns contract locking, canonical observations,

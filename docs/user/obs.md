@@ -361,8 +361,8 @@ cmake -S . -B build-trace \
 
 Tracy 默认监听全部网络接口，适合受信局域网中的 viewer。只允许本机 viewer 时，在启动被观测程序前
 设置 `TRACY_ONLY_LOCALHOST=1`；HYLE 的 trace-on CTest 已只对测试子进程设置它，因此不会为了测试申请
-Windows 防火墙入站权限。Tracy v0.14.1 的这个 runtime 变量只限制 listener，并不关闭 UDP discovery
-broadcast；网络策略禁止任何 discovery traffic 时应保持 `HYLE_TRACE=OFF`。不要在不受信网络上暴露
+Windows 防火墙入站权限。锁定 Tracy revision 的这个 runtime 变量只限制 listener，并不关闭 UDP
+discovery broadcast；网络策略禁止任何 discovery traffic 时应保持 `HYLE_TRACE=OFF`。不要在不受信网络上暴露
 默认 listener。
 
 zone 用作用域配对；`ZONE_TEXT/NAME/VALUE/COLOR` 只注释当前 lexical zone，动态 text/name 会在
@@ -401,5 +401,5 @@ native trace seam。
 - 不要把 metric name/label/registry 放回每个数值对象；schema 与 cardinality 属于宿主 exporter。
 - 不要把 runtime trace no-op 宣传成关闭态零指令；只有 `HYLE_TRACE_*` 宏具有这个合同。
 
-设计和并发细节见 [`../architecture/obs-design.md`](../architecture/obs-design.md)，点值与
-方法见 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)。
+设计和并发细节见 [`../architecture/obs-design.md`](../architecture/obs-design.md)；当前 closure record 与
+工程性能证据从 [`module status`](../implementation/status.md) 进入。

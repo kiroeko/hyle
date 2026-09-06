@@ -153,13 +153,12 @@ hyle_register_benches(container
   hyle_container_spsc_bench
   hyle_container_flat_sorted_bench)
 
-# Current closure-perf-v1 adapter. Legacy breadth benchmarks above remain
-# useful diagnostics; this target contains only the five frozen normal-use
-# replays admitted by the current Container closure contract. It is opt-in
-# because all four source-pinned
-# peers must be present and clean for the unified runner.
+# Historical container-v2 closure-perf-v1 adapter.  Keep it buildable for its
+# immutable receipt, but do not reuse its five mixed rows as current-method
+# consumer evidence.  It is opt-in because all four source-pinned peers must be
+# present and clean for the unified runner.
 option(HYLE_CONTAINER_P1_BENCH
-  "build the Container closure-perf adapter" OFF)
+  "build the historical Container v2 five-row evidence adapter" OFF)
 if(HYLE_CONTAINER_P1_BENCH)
   if(NOT HYLE_STATIC OR NOT HYLE_BENCH_ABSL OR NOT HYLE_BENCH_BOOST OR
      NOT HYLE_BENCH_RIGTORP)

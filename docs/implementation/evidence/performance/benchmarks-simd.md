@@ -1,5 +1,7 @@
 # SIMD 工程性能证据
 
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
+
 > 当前产品状态只看 [`module-status.json`](../../module-status.json)。本页首先记录 SIMD v6
 > 推理整行合同的当前有限工程证据，随后保留 v3 路由基线；两者都不承诺“全部操作、全部 CPU、
 > 全部编译器均为 SOTA”。架构与停止规则见

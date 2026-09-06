@@ -610,8 +610,6 @@ aliases 自动线程安全。
 类型，函数签名仍由调用方负责；指针在 `close`/析构后失效。相对路径和搜索名属于进程加载信任
 边界，外部输入不得未经验证直接传入。需要观察 unload 诊断时显式检查 `close()`，析构只做兜底。
 
-性能证据和仍存在的平台差异见
-[`benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)；本轮进程内存与
-mapped-range 定向回放见
-[`benchmarks-platform-v9.md`](../implementation/evidence/performance/benchmarks-platform-v9.md)。不要把单个平台点值外推到
-另外两个 OS。
+当前三个 Platform factor 的 closure record、性能证据和限制从
+[`module status`](../implementation/status.md) 进入。不要把一个 OS 或一台机器的点值外推到另外两个
+OS；历史定向回放和被替换候选不构成当前证书。

@@ -138,6 +138,5 @@ if (!granularity || !capacity) return invalid_shape();
 `math` 是 header-only 组件：源码组装或安装 SDK 都链接 `hyle::math`。static/shared 选项不会
 制造一个没有符号的 math 库文件；它只决定所选闭包中编译型依赖的产物形状。
 
-当前能力边界、三工具链结构成本与交付验证见
-[Math v4 evidence](../implementation/evidence/performance/benchmarks-math-v4.md)；点值 timing 不参与该
-P0 结论。
+当前 closure record、三工具链结构成本与交付验证从
+[`module status`](../implementation/status.md) 进入；点值 timing 不参与 Math 的 P0 结论。

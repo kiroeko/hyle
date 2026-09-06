@@ -1,5 +1,7 @@
 # Mem v6 host-storage 工程性能证据
 
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
+
 > 当前机械状态只见 [`module-status.json`](../../module-status.json)。本页只绑定候选
 > `9604bf4a33f13bd5f84ef78fedce55f305ac9d50` / tree
 > `57adb69f185cf02d42ab7f220ebeccbb91170b1b` 与下述冻结任务；不把一个 host

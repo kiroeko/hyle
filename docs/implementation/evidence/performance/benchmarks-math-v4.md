@@ -1,5 +1,7 @@
 # Math v4 P0 结构性能证据
 
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
+
 > **当前工程 verdict：`PASS`。** 本页只覆盖 candidate
 > `686ec1c0215fa7a808ee470fe103ac62a1050759` / tree
 > `1cb4bb81451ba016e09aecce563b3b591648d7a0` 的 checked scalar `try_lcm` 与

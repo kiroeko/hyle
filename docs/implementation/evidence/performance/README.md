@@ -23,13 +23,19 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 “同合同不劣”“复杂度同档”“某个 workload 获胜”和“模块整体 SOTA”不是同一个命题。最后一项
 通常没有可证定义，文档不得使用它代替逐能力结论。
 
-当前因子化收口报告：
+## 当前证据怎样查
 
-- [新 FROZEN 模块固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)：
-  不论幅度复核所有必需 strata 点值固定不利于 HYLE 的当前行及 retained `LOSE`；
-- [Math v3](benchmarks-math-v3.md)：checked/saturating integer policy 的三工具链 P0 结构成本；
-- [Util-core v3](benchmarks-util-core-v3.md)：FunctionRef qualifier/nontype consumer 对 Abseil 的同合同 P1；
-- [Platform v3](benchmarks-platform.md)：host、native thread/wait 与同步 filesystem；
-- [Mem v5](benchmarks-mem-v5.md)：bounded lifetime planner 的 P0 结构门与 mimalloc 3.5.1 host lifecycle
-  的同合同 P1 工程非劣门；
-- [Mem VM](benchmarks-mem-vm.md)：file mapping 与 progressive residency。
+不要在本目录维护第二份容易漂移的“当前版本列表”。当前模块、冻结标记、工程性能 verdict 和精确证据
+链接统一由 [`module-status.json`](../../module-status.json) 投影到
+[`status.md`](../../status.md)；状态表中的 Engineering performance 单元格可直接进入该模块当前证据。
+同一个报告可以服务多个拆分 factor，例如 Platform 三个 factor；这不会创造第二个产品状态。
+
+registry 当前引用的 performance 页面必须带且只能带一个 `PERFORMANCE EVIDENCE: CURRENT` HTML
+注释标记，文档检查器会拒绝漏标、重复标记和没有 registry
+引用的伪 current 页。旧候选页面应写 `HISTORICAL` 或 `DIAGNOSTIC`，不得靠标题中的“当前”、任务中的
+`PASS` 或文件名版本号取得权威性。
+
+跨模块的固定方向点值复核保存在
+[新 FROZEN 模块固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)；
+它是历史审计输入，不替代每个 current evidence 页面，也不把一次无机制的微小固定方向改写成产品
+缺陷。

@@ -1,14 +1,9 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界：**施工/签证状态只看中央
-> [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
-> runtime 发布证书。当前只提供 C++23
-> source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
-
-> 用户当前选型见 [user/util](../user/util.md)，current util-core 证据见
-> [util-core v4 performance evidence](../implementation/evidence/performance/benchmarks-util-core-v4.md)，
-> runtime/历史证据见 [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
-> [util tasks](../implementation/tasks/util/)。
+> 本页描述长期设计；施工/签证状态与当前性能证据只从中央
+> [`module status`](../implementation/status.md) 进入。当前只提供 C++23 source/static/shared，Native
+> FFI 为 `N/A`；公开 C schema、bridge、动态导出和 managed fixture 不属于产品。用户选型见
+> [user/util](../user/util.md)。
 
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
 
@@ -120,14 +115,9 @@ platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_de
   `NotNull<T*>` 保持一个 pointer，
   动态值只在构造时检查；`ThreadUnsafeRefCounted<T>` 的 retain/drop 是 plain integer 且没有运行时
   mode branch，但跨线程使用是合同违反。
-- SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
-  material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
-  既有 v2 的 W1-WIN 同合同工程门为 Ref `WIN`、短状态转移 `PARITY`，两项 5% 非劣门均 `PASS`；
-  M1-MAC 的旧超短手工诊断被执行顺序完全翻转，按仪器规则只能记为 inconclusive，不能驱动产品。
-  这些旧能力的身份、点值与 freshness 只见
-  [`benchmarks-util-core-v2`](../implementation/evidence/performance/benchmarks-util-core-v2.md)。v3 新增
-  FunctionRef qualifier/nontype 路线的当前同合同结果见
-  [`benchmarks-util-core-v4`](../implementation/evidence/performance/benchmarks-util-core-v4.md)。
+- SpinLock 成功 RMW 保留 acquire-release；不能只根据抽象模型允许的最弱顺序机械削弱实际
+  handoff/codegen 合同。超短锁点值必须通过执行顺序、placement 与机制检查，顺序翻转的诊断不驱动
+  产品形状。当前数值和 candidate identity 只从 status 的性能证据链接进入。
 - 两种 demangle 形状都是 O(input+output)，一次 public 调用只执行一次平台 demangler（Windows 因
   DbgHelp 不返回 required size，超长 decorated symbol 可能做有界容量重试）。owning shape 另有一个
   caller-owned string，buffer shape 不增加 API-owned storage。
@@ -144,7 +134,7 @@ template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 
 mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle_util_core` factor 的
 SpinLock/cpu_relax。`FunctionRef` 与 `NotNull` 是供后续 owner 在自己的语义轮采用的公开词汇，
-本轮不把 stored/asynchronous callback 或 nullable pointer 机械迁移成不同合同。会 allocate/rehash/执行
+不得把 stored/asynchronous callback 或 nullable pointer 机械迁移成不同合同。会 allocate/rehash/执行
 未知用户代码的 mem LeakTracker 与 container ConcurrentVector 使用 mutex。Registry runtime 显式链接
 core、error、mem 和 container；
 删除静态注册/default creator 后不再依赖 util_core。这些依赖同时由中央 component graph 与
@@ -157,8 +147,7 @@ target link 生成/验证。
 
 1. util-core 公开头必须逐头 self-contained，并可通过 `HYLE_DEV_FACTORS=util_core` 独立构建；禁止
    include runtime 头。用户安装包只通过 `util` 产品请求和 `hyle::util` façade 取得两层能力。
-   当前收口证据与 reopen triggers 见
-   [`util-core-v2`](../implementation/tasks/util/util-core-v2-capability-completion.md)。
+   当前收口证据与 reopen triggers 只看中央 registry 指向的 closure record。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
    race、allocator failure、TSan 和 installed source/shared/static C++23 consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
@@ -174,6 +163,4 @@ target link 生成/验证。
    sink 的 shared-CRT ownership 边界以及 source/static/shared consumer；caller buffer 不得被描述为
    async-signal-safe。
 
-新版 capability-family/public-surface 双向复检及当前 owner routes 分别见
-[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md) 与
-[`util-runtime v2`](../implementation/tasks/util/util-runtime-v2-closure.md)。
+历史 capability replay、候选和点值保存在 implementation task 与 Git 中，不在长期架构页重复。

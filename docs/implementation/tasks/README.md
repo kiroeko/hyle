@@ -8,19 +8,28 @@
 | 构建、安装、发布与公共仪器 | [`build/README.md`](build/README.md) |
 | 异构计算 | [`compute/`](compute/) |
 | 容器与数据结构 | [`container/`](container/) |
+| 侵入式容器 factor | [`container_intrusive/`](container_intrusive/) |
 | 最小基础层 | [`core/`](core/) |
 | 错误系统 | [`error/`](error/) |
 | 计算图 | [`graph/`](graph/) |
 | 异步 I/O | [`io/`](io/) |
 | 标量数学补位 | [`math/`](math/) |
 | 内存系统 | [`mem/`](mem/) |
+| 内存 VM factor | [`mem_vm/`](mem_vm/) |
 | 可观测性 | [`obs/`](obs/) |
 | 平台抽象 | [`platform/`](platform/) |
+| 平台 filesystem factor | [`platform_fs/`](platform_fs/) |
+| 平台 thread factor | [`platform_thread/`](platform_thread/) |
 | 全项目与依赖升级 | [`project/`](project/) |
 | 调度器 | [`sched/`](sched/) |
 | SIMD | [`simd/`](simd/) |
 | 时间与定时器 | [`time/`](time/) |
+| timer queue factor | [`timer_queue/`](timer_queue/) |
 | 通用工具 | [`util/`](util/) |
+
+`mem_reclaim` 的现行任务仍由 `mem/` 目录保存，`util_core` 由 `util/` 保存；目录归档不定义当前
+factor 状态或依赖。当前 closure record 必须从 [`module-status.json`](../module-status.json) 查找，不能
+根据“某目录里最新的文件”猜测。
 
 ## 新记录的最低内容
 

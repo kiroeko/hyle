@@ -1,15 +1,9 @@
 # error 设计：值语义失败与模块接缝
 
-> **error-v5 当前设计合同。** 本页描述 consumer-driven 的 Error 产品边界；候选、验证或终态仍只由
-> machine-readable registry 裁决。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧
-> C schema、bridge、C-shaped 动态导出和 managed fixture。用户写法见
+> 本页描述 consumer-driven 的 Error 长期产品边界；候选、验证或终态只由 machine-readable registry
+> 裁决。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。公开 C schema、bridge、C-shaped
+> 动态导出和 managed fixture 不属于产品。用户写法见
 > [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
-
-> `error-p1-v1` 是 immutable historical/raw-diagnostic contract，只可重放既有 raw bundle 或运行明确不具
-> 资格的 mechanism diagnostic；其 derived comparison/product verdict 已拒绝，禁止用它产生新的 current
-> qualification。v4 历史资格使用 `error-source-consumer-v1`；v5 current contract 是
-> `error-source-consumer-v2`。分账、结果与边界见
-> [performance evidence](../implementation/evidence/performance/benchmarks-error.md)。
 
 ## 0. 职责与依赖位置
 
@@ -272,20 +266,16 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 ## 5. 成熟实现裁决
 
-error-v5 的能力/API peer 身份固定为 Abseil commit
-`5e12b490a2009cb223dd75a70fd0213847b82f9c`（本地
-`C:/public/project-hyle/abseil-cpp`）与 Folly commit
-`176c088840724715b2c3c6211b2b347611676002`（本地
-`C:/public/project-hyle/folly`）；C++23 `std::expected` 是标准合同，不算第三个性能 peer。
-本轮没有把未初始化的 Boost.System/Outcome/LEAF 源码冒充已读 peer 证据。
+能力/API 形状主要参考 Abseil `Status/StatusOr`、Folly `result` 与 C++23 `std::expected`；具体锁定
+revision、candidate 和结果属于 current closure/performance evidence，不写入长期架构。
 
 | 参考 | 借鉴 | 明确差异 |
 |---|---|---|
-| 上述固定 Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping、`StatusOr<T&>` temporary guards | 不引入任意 payload/有日志副作用的 StatusBuilder；context 保留扁平渐进表示 |
-| 上述固定 Folly `result` | deep-const `result<T&>`、reference lifetime/copy 边界 | 不引入 rich exception hierarchy、coroutine stopped state或 exception_wrapper 作为 HYLE operational channel |
+| Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping、reference-result temporary guards | 不引入任意 payload/有日志副作用的 StatusBuilder；context 保留扁平渐进表示 |
+| Folly `result` | deep-const reference result、reference lifetime/copy 边界 | 不引入 rich exception hierarchy、coroutine stopped state或 exception_wrapper 作为 HYLE operational channel |
 | C++23 `std::expected` | observers 与 monadic surface | 用零状态 `ResultError` 补 Status 的非 OK 不变量 |
 
-本轮负空间固定为：多独立 machine detail、可遍历/序列化的 structured cause、公共 MultiError、
+负空间固定为：多独立 machine detail、可遍历/序列化的 structured cause、公共 MultiError、
 跨进程序列化、任意 runtime category registry、反向 error-code round-trip、source location/
 backtrace、异常层级与 Native FFI construction/callback。只有具名消费者证明当前 code/native/
 context、caller-owned aggregate 或 borrowed-result 组合无法表达需求时才重开；参考库 API 更多、
@@ -304,15 +294,12 @@ async completion 等正常协议状态继续用紧凑值/枚举。旧模块私�
 
 ## 7. 冻结与重开
 
-error 签署必须同时具备：C++ correctness/三平台、同合同性能 non-inferiority、
+error 签署必须同时具备：C++ correctness/三平台、适用的同合同性能门、
 shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
 
-error-v4 的 `error-source-consumer-v1` 曾在 W1-WIN 对四个 source-primary workload 取得 5% P1
-engineering `PASS`；它只绑定旧 candidate/peer。error-v5 已在新 candidate 上重放这四行，并增加
-registry non-null borrow 的同合同 consumer；当前资格、原始证据身份与有限结论见
-[error 性能证据](../implementation/evidence/performance/benchmarks-error.md)。以后任何公开面、正常成本或
-消费者 provenance 的 material 改变都必须产生新的 qualification，不能从 v4/v5 旧证据外推。旧
-fixed-backing shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变 Status 的正常产品形状。
+当前资格、原始证据身份与有限结论从 [status](../implementation/status.md) 的 Engineering performance
+链接进入。任何公开面、正常成本或消费者 provenance 的 material 改变都必须产生新的 qualification，
+不能从旧证据外推；mechanism diagnostic 不授权改变 Status 的正常产品形状。
 
 签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
 性能落后，或发布形状改变而局部重开。

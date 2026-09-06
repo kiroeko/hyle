@@ -372,6 +372,33 @@ def validate_module(
         if isinstance(engineering, dict) and engineering.get("verdict") != "PASS":
             errors.append(f"{prefix}: CLOSED requires engineering verdict PASS")
 
+    freeze = record.get("freeze_confirmation")
+    if freeze is not None:
+        if state != "CLOSED":
+            errors.append(
+                f"{prefix}: freeze_confirmation is only valid for CLOSED modules")
+        if not isinstance(freeze, dict):
+            errors.append(f"{prefix}: freeze_confirmation must be an object")
+        else:
+            if freeze.get("marker") != "FROZEN":
+                errors.append(
+                    f"{prefix}: freeze_confirmation.marker must be 'FROZEN'")
+            _require_string(freeze, "id", prefix, errors)
+            confirmed_at = _require_string(
+                freeze, "confirmed_at", prefix, errors)
+            if confirmed_at is not None:
+                try:
+                    datetime.date.fromisoformat(confirmed_at)
+                except ValueError:
+                    errors.append(
+                        f"{prefix}: freeze_confirmation.confirmed_at must be "
+                        "a valid YYYY-MM-DD date")
+            _check_commit(freeze, "reviewed_commit", prefix, errors)
+            _check_commit(freeze, "reviewed_tree", prefix, errors)
+            _check_repo_file(
+                root, freeze.get("evidence"),
+                "freeze_confirmation.evidence", prefix, errors)
+
 
 
 def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
@@ -477,19 +504,27 @@ def _escape_cell(value: Any) -> str:
 
 def render_status_table(data: dict[str, Any]) -> str:
     lines = [
-        "| Component | Product | Tier | Engineering performance | Formal | Current record | Summary |",
-        "|---|---|---|---|---|---|---|",
+        "| Component | Product | Freeze | Tier | Engineering performance | Formal | Current record | Summary |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for record in data["modules"]:
         tier = record.get("performance_tier", "—")
         engineering = record.get("engineering_performance")
         if isinstance(engineering, dict):
-            engineering_text = f"{engineering.get('verdict')} / {engineering.get('mode')}"
+            verdict = str(engineering.get("verdict"))
+            evidence = engineering.get("evidence")
+            if isinstance(evidence, str):
+                verdict = _markdown_link(evidence, verdict)
+            engineering_text = f"{verdict} / {engineering.get('mode')}"
             margin = engineering.get("material_margin_pct")
             if isinstance(margin, (int, float)):
                 engineering_text += f" / {margin:g}%"
         else:
             engineering_text = "—"
+        freeze = record.get("freeze_confirmation")
+        freeze_text = (
+            freeze.get("marker", "—") if isinstance(freeze, dict) else "—"
+        )
         formal = record.get("formal_performance")
         formal_text = formal.get("state", "—") if isinstance(formal, dict) else "—"
         task = record.get("closure_task")
@@ -497,6 +532,7 @@ def render_status_table(data: dict[str, Any]) -> str:
         row = (
             record["module"],
             record["product_state"],
+            freeze_text,
             tier,
             engineering_text,
             formal_text,

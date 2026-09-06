@@ -1,5 +1,7 @@
 # Util-core v4 性能证据
 
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
+
 > **当前工程 verdict：`PASS`。** 最终候选
 > `439b8915e2c63a6a15545324444b594a25c62a62` / tree
 > `a7891b8d6a3dab26599e443f9e03150a195b3ba9` 保持 Util-core 的 O(1)、零分配基础形状；固定的

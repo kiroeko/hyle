@@ -54,6 +54,19 @@ Git 防篡改、工作流账本或 CMake 解释器。从 `SCOPED` 起，同一�
 `RESUME`，引用前一 blocker/resume condition，并让 registry 指向新 task 后进入 `SCOPED`。产品 identity
 未变时可以复用旧 candidate，但仍须在新轮重新绑定并验证；旧 `HISTORICAL` task 永不回写。
 
+#### `FROZEN` confirmation 不是第二套状态机
+
+`CLOSED` 只证明 registry 指向的那一轮按其冻结范围结束。项目进行过方法升级后，只有完成当前能力
+完整性、真实消费者、内部复用、性能比较、C++ 易用性、文档、构建交付和红队回放的 `CLOSED` 模块，
+才可在 registry 附加 `freeze_confirmation.marker=FROZEN`。该 confirmation 必须绑定唯一 ID、日期、
+完整 reviewed commit/tree 和 repository 内证据文件；状态表的 `Freeze` 列只是这些字段的机器投影。
+
+`FROZEN` 不表示永久 ABI、Formal SOTA 或未来永远没有新能力，也不替代 `CLOSED`。没有 marker 的旧
+`CLOSED` 仍是合法历史收口，只是尚未取得这一轮方法的复核确认；文档不得靠 summary 中写
+“frozen”冒充 marker。模块出现已登记 reopen trigger 后必须先移除 confirmation，并按
+`CLOSED -> REOPENED -> SCOPED` 开新轮；新轮重新关闭并完成所需回放后才能签发新的 confirmation。
+API/usability freeze、candidate freeze 和这里的产品复核 confirmation 是三个不同时间点，不能混称。
+
 ### 1.2 性能声明轴
 
 发布/对外性能声明独立记录为：

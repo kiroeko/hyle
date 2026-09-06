@@ -131,18 +131,6 @@ mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `me
 callback。Container 的 node map 以真实 `PUBLIC` 边复用它，Mem façade 只负责聚合，不复制实现或状态。
 具体可交付状态只以 registry 与该 factor 的 closure card 为准。
 
-### 2.1 `mem_reclaim` 的恢复轮位置
-
-历史 v1 因没有获准 consumer 和可构建 Folly peer 而 `BLOCKED`。2026-09-03 后两项新事实同时成立：owner
-准入 inference read-mostly snapshot journey；官方 vcpkg Folly RCU 构建、语义 smoke 与 peer 身份完成
-资格化。因此 registry 已依法建立 v2 `RESUME`，并用两个窄 reopen card 分别约束 Mem façade 与 Container
-旧表寿命，历史检查仍只作审计记录。
-
-这一恢复轮只允许 typed retire convenience、Container table hand-off、Mem 产品交付、文档和预冻结 P1；
-不能借机重开 allocator、其它 Container family、Obs 或公共仪器。达到门后依次关闭三个 card，再回到
-全局功能展开顺序中的最低层未完成 factor；若性能、sanitizer 或交付失败，则按 card 进入 `BLOCKED`，不以
-继续研究替代状态。
-
 `core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
 分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol

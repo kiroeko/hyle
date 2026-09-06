@@ -1,8 +1,8 @@
 # HYLE SIMD 设计
 
 本文只描述 SIMD 的长期产品边界、ownership 和调用成本。当前施工状态以
-[`module-status.json`](../implementation/module-status.json) 为准，当前轮及历史验证事实见
-[`SIMD/Math epic`](../implementation/tasks/simd/simd-epic-v1.md)。用户可依赖的接口和陷阱见
+[`module status`](../implementation/status.md) 为准，并从该表进入当前 closure/performance evidence。
+用户可依赖的接口和陷阱见
 [`SIMD 使用指南`](../user/simd-usage.md)。旧实现、实验点值和阶段结论只保留在 implementation/evidence，
 不得从历史任务反推当前承诺。
 
@@ -287,5 +287,4 @@ model operator 和 GPU backend 均不因 SIMD vendor 集成进入本组件。真
 
 - [Highway 官方文档](https://google.github.io/highway/)
 - [xsimd](https://github.com/xtensor-stack/xsimd)
-- [`SIMD/Math epic`](../implementation/tasks/simd/simd-epic-v1.md)
 - [`SIMD dispatch 维护指南`](../developer/maintenance/simd-dispatch-guide.md)

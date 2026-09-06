@@ -155,5 +155,5 @@ HYLE 成功不是因为仓库达到某个行数，也不是因为每个操作都
 - 把 shared C++ library 误当跨语言稳定 ABI；
 - 文档保存大量旧结论却没有可信度和当前状态。
 
-当前的应对是：推理需求锚、工程留出、逐模块 v2 审查、仪器资格、独立红队、四类文档和机器
+当前的应对是：推理需求锚、工程留出、逐模块收口审查、仪器资格、独立红队、四类文档和机器
 合同。具体方法见 [module closure methodology](../developer/review/module-closure-methodology.md)。

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-09-06",
+  "updated_at": "2026-09-07",
   "modules": [
     {
       "module": "core",
@@ -1272,7 +1272,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io-v1 SCOPED 但已按 owner 决定暂停：scope、baseline 与预算已冻结，尚未进入 AUDITED、未修改产品；当前先执行 Mem 全产品只读 replay，IO 只有在 owner 恢复该顺序后继续。"
+      "summary": "io-v1 保持 SCOPED 且由 owner 暂停：scope、baseline 与预算已经冻结，尚未进入 AUDITED，也没有产品改动；只有 owner 明确恢复后才能继续。"
     },
     {
       "module": "io_tls",

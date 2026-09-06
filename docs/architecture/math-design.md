@@ -77,8 +77,8 @@ scalar 合同，应声明直接依赖并复用，而不是因为模块边界再�
 `sgn(eps)` 和 multiplicative `approx_eq` 不再是公开能力：它们把消费域的容差策略伪装成了
 通用数学事实，对 NaN、无穷与近零的结果也不能从旧函数名自然推导。
 
-当前能力与结构成本的候选绑定证据见
-[Math v4 P0 evidence](../implementation/evidence/performance/benchmarks-math-v4.md)；旧候选报告只作历史输入。
+当前 closure record 与结构成本证据从
+[implementation/status](../implementation/status.md) 进入；旧候选报告只作历史输入。
 
 ## 成本与交付
 

@@ -99,6 +99,35 @@ def main() -> None:
     errors = checker.validate_registry(missing_anchor, root)
     require_error(errors, "registry_anchor_commit")
 
+    frozen_record = next(
+        record for record in data["modules"]
+        if isinstance(record.get("freeze_confirmation"), dict)
+    )
+
+    invalid_freeze_marker = copy.deepcopy(data)
+    record = next(
+        item for item in invalid_freeze_marker["modules"]
+        if item["module"] == frozen_record["module"])
+    record["freeze_confirmation"]["marker"] = "DONE"
+    errors = checker.validate_registry(invalid_freeze_marker, root)
+    require_error(errors, "freeze_confirmation.marker must be 'FROZEN'")
+
+    invalid_freeze_identity = copy.deepcopy(data)
+    record = next(
+        item for item in invalid_freeze_identity["modules"]
+        if item["module"] == frozen_record["module"])
+    record["freeze_confirmation"]["reviewed_tree"] = "1234"
+    errors = checker.validate_registry(invalid_freeze_identity, root)
+    require_error(errors, "full 40-digit lowercase Git id")
+
+    frozen_active = copy.deepcopy(data)
+    record = next(
+        item for item in frozen_active["modules"]
+        if item["module"] == frozen_record["module"])
+    record["product_state"] = "VERIFIED"
+    errors = checker.validate_registry(frozen_active, root)
+    require_error(errors, "freeze_confirmation is only valid for CLOSED")
+
     short_identity = copy.deepcopy(data)
     core = next(
         record for record in short_identity["modules"]

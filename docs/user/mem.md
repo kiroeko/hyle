@@ -717,22 +717,14 @@ selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能
 
 ## 如何看性能
 
-Mem v6 的 host hot-path 只用同一 mimalloc binary 上的 isolated `Heap` 与 runtime-erased PMR owner
-比较；Mem-VM v2 另用 Linux model-loader 的相同 mmap、64 次 lazy advice、64 次 partial munmap 和
-相同 survivor teardown 比较批量片段 bookkeeping。两者统一经 `scripts/hyle-perf.py` 运行，合同分别在
-`bench/contracts/mem-v6-host-allocation-p1-v1.json` 与
-`bench/contracts/mem-vm-model-loader-p1-v2.json`。后者的 WSL 结果只属于 Linux guest engineering
-证据，不能冒充 native-Linux 正式认证；Windows progressive residency 是另一合同，也不与 POSIX
-partial release 数字池化。性能结果只回答列出的 ownership/charged-phase 语义，不外推 planner、所有
-OS 或端到端推理 SOTA，更不能用更少 syscall/更弱持久化保证做苹果对橘子排名。
+Mem 的 host allocation 与 VM/model-loader 是不同性能合同：前者必须对齐 allocator backing、owner、
+alignment、failure 和完整 allocate/touch/free；后者必须对齐 mapping、advice、partial release、syscall
+数量和 survivor teardown。一个合同的结果不能替另一个能力背书，WSL guest 也不能冒充 native-Linux
+Formal 证书。性能数字只回答明确列出的 ownership、资源和 charged phase，不外推 planner、所有 OS 或
+端到端推理 SOTA，更不能靠更少 syscall 或更弱持久化保证做苹果对橘子排名。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
-[`module-status.json`](../implementation/module-status.json)。
-当前数值与结构结论分别见
-[`Mem v6 性能证据`](../implementation/evidence/performance/benchmarks-mem-v6.md)和
-[`Mem-VM v2 性能证据`](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)。
-[`mem-close-plan`](../implementation/tasks/mem/mem-close-plan.md) 与 2026-07-26 的
-[`mem-mature-gap-audit`](../implementation/tasks/mem/mem-mature-gap-audit.md) 都是上一轮历史
-验收输入，不是依赖升级后工作树的自动分发证书。
+[`module status`](../implementation/status.md)；其中 Engineering performance 链接是当前精确证据，
+历史 task 和旧版本性能页不构成当前证书。
 安装包的最小默认/组合写法也作为可执行 C++ 消费者保存在
 [`../../samples/package/mem`](../../samples/package/mem)。

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -45,6 +46,7 @@ REFERENCE_LINK_RE = re.compile(
 FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)")
 URI_SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+CURRENT_PERFORMANCE_MARKER = "<!-- PERFORMANCE EVIDENCE: CURRENT -->"
 
 
 def relative_display(path: Path) -> str:
@@ -244,6 +246,69 @@ def check_retired_product_surface(errors: list[str]) -> None:
             )
 
 
+def check_current_performance_evidence(errors: list[str]) -> None:
+    """Bind current performance pages to the canonical module registry.
+
+    Performance reports intentionally retain history, so a filename or a word
+    such as "current" in prose is not authority. Every CLOSED module whose
+    engineering evidence lives in the performance archive must point at a page
+    with one exact current marker; every such marker must in turn be reachable
+    from at least one current CLOSED record.
+    """
+
+    registry_path = DOCS_ROOT / "implementation" / "module-status.json"
+    try:
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        errors.append(f"{relative_display(registry_path)}: cannot load: {error}")
+        return
+
+    current_paths: set[Path] = set()
+    for record in registry.get("modules", []):
+        if not isinstance(record, dict) or record.get("product_state") != "CLOSED":
+            continue
+        engineering = record.get("engineering_performance")
+        if not isinstance(engineering, dict):
+            continue
+        raw_path = engineering.get("evidence")
+        if not isinstance(raw_path, str):
+            continue
+        path = (REPO_ROOT / raw_path).resolve(strict=False)
+        performance_root = (
+            DOCS_ROOT / "implementation" / "evidence" / "performance"
+        ).resolve()
+        try:
+            path.relative_to(performance_root)
+        except ValueError:
+            continue
+        current_paths.add(path)
+
+    for path in sorted(current_paths):
+        if not path.is_file():
+            continue
+        count = path.read_text(encoding="utf-8").count(
+            CURRENT_PERFORMANCE_MARKER)
+        if count != 1:
+            errors.append(
+                f"{relative_display(path)}: current registry evidence must contain "
+                f"exactly one {CURRENT_PERFORMANCE_MARKER!r} marker"
+            )
+
+    performance_root = DOCS_ROOT / "implementation" / "evidence" / "performance"
+    if performance_root.is_dir():
+        for path in sorted(performance_root.glob("*.md")):
+            count = path.read_text(encoding="utf-8").count(
+                CURRENT_PERFORMANCE_MARKER)
+            if count > 1:
+                errors.append(
+                    f"{relative_display(path)}: duplicate current performance markers")
+            elif count == 1 and path.resolve() not in current_paths:
+                errors.append(
+                    f"{relative_display(path)}: current performance marker is not "
+                    "referenced by a CLOSED registry record"
+                )
+
+
 def check_relative_links(paths: list[Path], errors: list[str]) -> int:
     checked = 0
     root_resolved = REPO_ROOT.resolve()
@@ -294,6 +359,7 @@ def main() -> int:
     check_structure(errors)
     check_retired_ffi_symbol(errors)
     check_retired_product_surface(errors)
+    check_current_performance_evidence(errors)
     files = markdown_files()
     links = check_relative_links(files, errors)
 

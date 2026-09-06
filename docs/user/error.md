@@ -1,6 +1,6 @@
 # HYLE error：什么情况用什么
 
-> error 是 HYLE 当前的共享失败模型；本页跟随 error-v5 的 C++ 产品合同。完整源码、static
+> error 是 HYLE 的共享失败模型；本页描述当前公开 C++ 产品合同。完整源码、static
 > 与 shared SDK 使用相同的 `Status` / `Result<T>` 语义。项目没有原生 C 产品或受支持的
 > Native FFI，早期 error C schema/bridge 已移除。
 

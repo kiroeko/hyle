@@ -7,10 +7,8 @@
 > C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
-> 用户当前选型见 [user/mem](../user/mem.md)，当前 base/VM 性能证据分别见
-> [Mem v6](../implementation/evidence/performance/benchmarks-mem-v6.md)与
-> [Mem-VM v2](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)，施工历史见
-> [mem tasks](../implementation/tasks/mem/)。
+> 用户当前选型见 [user/mem](../user/mem.md)；当前 closure record 与性能证据只从
+> [implementation/status](../implementation/status.md) 进入。
 
 ## 1. 边界
 
@@ -248,8 +246,8 @@ owned growable `Arena` 已提供：
 - individual deallocate 明确 no-op；
 - 单线程默认，不偷偷加锁。
 
-`FixedArena(span<byte>)` 是当前 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback；
-Mem v2 将公开名移为 `FixedArena`。HYLE graph evaluation 的逐次 evaluate 临时数组是
+`FixedArena(span<byte>)` 是 external-storage bump 机制：无隐藏 payload 分配、无增长、无 fallback。
+HYLE graph evaluation 的逐次 evaluate 临时数组是
 phase-lifetime workload；Graph 生成 liveness/alias facts，Mem planner 拥有通用 measure/placement。
 
 ### 7.3 `StackArena`
@@ -388,7 +386,7 @@ Mem 进入预发布冻结必须同时满足：
    参数新增 `fast/light` 类型。
 2. 保持 `Native FFI=N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略单独立项，
    不能在 mem 修改中顺手恢复旧 C schema。
-3. 最终候选 commit 通过 Windows/Linux/macOS、OOM/overflow 和适用的 ASan/UBSan/TSan，并验证
+3. 最终候选通过 Windows/Linux/macOS、OOM/overflow 和适用的 ASan/UBSan/TSan，并验证
    source/static/shared C++23 消费路径。
 4. throughput-oriented 能力有正常 workload、同合同成熟 peer、throughput 与 whole-operation
    latency；空间型能力有 peak/retention/fragmentation 证据。没有同合同 peer 时只报告绝对成本
@@ -414,10 +412,9 @@ Mem 进入预发布冻结必须同时满足：
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
 
-当前冻结 consumer/replay 的工程性能证据见
-[`Mem v6`](../implementation/evidence/performance/benchmarks-mem-v6.md)与
-[`Mem-VM v2`](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)；未进入这些合同的固定池
-能力只签复杂度、资源、correctness 与交付门，不冒充数值 SOTA。
+当前工程性能证据从 [status](../implementation/status.md) 的链接进入；未进入当前 P1/P2 合同的固定池
+能力只签复杂度、资源、correctness 与交付门，不冒充数值 SOTA。历史候选与性能轮只留在
+implementation task/evidence 和 Git 中。
 
 ## 参考
 

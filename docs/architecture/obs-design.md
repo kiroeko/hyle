@@ -131,7 +131,7 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
    load/store 近似计数，避免共享调用点上的 RMW 争用；`EVERY_N_EXACT` 提供明确的 relaxed RMW
    替代，`FIRST_N` 用 relaxed CAS 重试保证并发总量不超过 N。无竞争路径是常数成本；竞争时单次
    调用的重试次数不承诺有界。HYLE 不引入产品 mutex；底层原子是否 lock-free 仍服从目标标准库，
-   本轮验证的 x64/aarch64 平台使用 lock-free 64-bit atomic。
+   已签目标上的 64-bit atomic 是否 lock-free 由 candidate 验证，不写死成所有平台承诺。
 2. 推理 request/slot、设备或长任务把 `LogIntervalLimiter` 作为自己的 8-byte 状态。caller-supplied
    monotonic time 让一次 scheduler tick 的 clock read 在多个 slot 间共享；便利 overload 才自行读取
    `steady_clock`。无竞争边界通常由一次 relaxed CAS 裁决；竞争时允许重试，因此同一状态并发最多
@@ -204,8 +204,8 @@ log。trace 的真实消费者仍是 mem/sched/io/compute。
 typed timestamp。当前 llama.cpp server 的 model-load state callback 使用三个 stage-owned throttle，
 按首条、每 200 ms 与末条提交 `stages/current/value`；slot 日志则仍把 task/rate/queue/status 拼进文本。
 两者共同证明正常 product shape 是一个宿主 adapter 加对象持有的 interval state，不是 4/16 个独立
-原子 sink，也给出上述 typed fields 的真实来源。历史 v3 的 `16 slots x 256 ticks` 只能保留为合成诊断，
-不得继续声称它精确来自 llama.cpp。没有真实消费者支持 category 配置树、per-sink
+原子 sink，也给出上述 typed fields 的真实来源。合成的固定 slot/tick replay 只能作机制诊断，不得
+冒充某个版本 llama.cpp 的精确消费。没有真实消费者支持 category 配置树、per-sink
 filter policy、异步线程/队列、文件轮转、上传、聚合/查询/告警、fatal 控制流、owning async record、
 自动 task context 或 profiler viewer。这些能力应在 adapter/application 层组合，不给所有基础 record
 添加 thread ID、refcount 或拥有型字符串。
@@ -244,7 +244,7 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 1. 正常 C++ 测试 + 编译期 floor codegen；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
-4. W1-WIN `closure-perf-v1` 的冻结正常 workload；其他平台做 correctness/交付，不池化点值；
+4. `closure-perf-v1` 在登记裁决机上的冻结正常 workload；其他平台做 correctness/交付，不池化点值；
 5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项；
 6. installed source/shared/static package 中只请求 `COMPONENTS obs` 的 C++23 consumer。
 
@@ -266,11 +266,10 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 5. metric schema、label、exporter 与时间窗口保持宿主所有，不因 benchmark 或某个 serving 框架进入类型。
 
 trace-on 自动测试只需要本机 listener，CTest 因而给 Obs test process 设置 Tracy 上游的 runtime
-`TRACY_ONLY_LOCALHOST=1`。该变量不写入产品 target，也不改变普通 trace-on 程序的网络策略。Tracy
-v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时改变 discovery broadcast 地址，
-所以维护文档不能把测试环境变量描述为“完全禁网”。
+`TRACY_ONLY_LOCALHOST=1`。该变量不写入产品 target，也不改变普通 trace-on 程序的网络策略。锁定
+Tracy revision 的 runtime 开关只限制 listener；compile-time 同名宏才同时改变 discovery broadcast
+地址，所以维护文档不能把测试环境变量描述为“完全禁网”。具体 revision 属外部依赖账本。
 
-性能数与仪器见
-[`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
-当前模块任务见
-[`obs-v5-metrics-primitives`](../implementation/tasks/obs/obs-v5-metrics-primitives.md)。
+当前 closure record 与工程性能证据从
+[`implementation/status`](../implementation/status.md) 进入；历史 candidate、task 与数字不在架构页
+重复。
