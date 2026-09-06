@@ -49,13 +49,13 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 |---|---|---|
 | core | — | — |
 | error | core | — |
-| math | core | — |
 | container_intrusive | core | — |
 | util_core | core | — |
 | time | core | — |
 | timer_queue | core, time, container_intrusive | — |
 | mem_reclaim | core | — |
 | obs | core, error, time | mem_reclaim |
+| math | core | — |
 | platform | core, error | — |
 | platform_thread | core, error, time | platform |
 | platform_fs | core, error, time | platform |
