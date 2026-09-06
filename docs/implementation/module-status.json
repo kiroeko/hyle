@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-OS-RESOURCE-TRUTH-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -588,6 +588,8 @@
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+      "end_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
+      "registry_anchor_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -615,11 +617,39 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform v8 VERIFIED：OS 资源真相、复杂度、C++ API/文档、三平台严格测试、三交付、直接消费者、红队及修正为完整同合同的 host v3 P1 均通过；产品候选 c39df6f9 未漂移。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "freeze_confirmation": {
+        "id": "platform-v8-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+        "evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md"
+      },
+      "loc": {
+        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "repository_code": 451412,
+        "self_with_tests": 116939,
+        "self_without_tests": 74308,
+        "module_implementation": 6739
+      },
+      "known_limitations": [
+        "Documented Windows APIs cannot fold unknown nested-Job ancestors, so effective hard CPU quota and process-memory limits remain absent instead of being guessed.",
+        "Apple per-logical-CPU frequency/id mapping remains zero when public OS facts are unavailable; coarse cache is a conservative system snapshot while class snapshots express dynamic process placement.",
+        "CPU and memory values are planning snapshots rather than reservations; callers must still handle later allocation, affinity and topology changes.",
+        "The P1 certificate covers the frozen W1-WIN one-shot host-planning source workload and 5% margin; it is not a cross-machine, all-operation, module-wide SOTA or Formal certificate."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a correctness, security, missing OS-fact, unknown-semantics or natural C++ API-usability defect within Platform's boundary.",
+        "A supported OS or SDK changes documented CPU, cache, frequency, NUMA, memory, VM, process or dynamic-loader semantics used by the frozen implementation.",
+        "The public API, normal-path cost, complexity, component dependency or source, static or shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class, or a qualified normal consumer workload proves a reproducible material regression beyond the frozen margin."
+      ],
+      "summary": "platform v8 CLOSED/FROZEN：OS 资源真相、复杂度、自然 C++ API、三平台正确性、三交付、直接消费者、红队及完整同合同 host v3 P1 全部通过；产品候选 c39df6f9 未漂移。"
     },
     {
       "module": "platform_thread",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -629,6 +659,8 @@
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+      "end_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
+      "registry_anchor_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -654,11 +686,42 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform_thread v8 VERIFIED：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台严格测试、三交付、消费者、易用性与 P0 结构门全部通过。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "freeze_confirmation": {
+        "id": "platform-thread-v8-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+        "evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md"
+      },
+      "loc": {
+        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "repository_code": 451412,
+        "self_with_tests": 116939,
+        "self_without_tests": 74308,
+        "module_implementation": 857
+      },
+      "known_limitations": [
+        "This round signs the Rust-derived parker provenance, license and unchanged P0 cost structure; it does not rebind historical timing points into a new cross-platform P1 claim.",
+        "Thread priority and affinity controls remain subject to OS permissions and can fail through Status; they are mechanisms rather than scheduler policy.",
+        "The C++ API does not promise a stable cross-toolchain ABI, a C API or Native FFI."
+      ],
+      "reopen_triggers": [
+        "The selected Rust upstream revision, source bytes, license option or HYLE adapted parker state machine changes.",
+        "A named consumer reproduces a wait/thread correctness, lifetime, progress, cancellation or C++ API-usability defect.",
+        "The public API, wait algorithm, memory-order contract, layout, component dependency or source, static or shared delivery shape changes.",
+        "A same-contract mechanism proves a better complexity class, or a qualified normal consumer workload proves a reproducible material regression."
+      ],
+      "summary": "platform_thread v8 CLOSED/FROZEN：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台正确性、三交付、直接消费者、易用性、红队与 P0 结构门全部通过。"
     },
     {
       "module": "platform_fs",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The second-candidate warm-file P1 evidence cannot be qualified: r3 failed the 5% known-delta control and the one allowed independent rerun r4 failed A/A before a product verdict.",
+      "blocker_owner": "docs/implementation/tasks/performance/platform-fs-control-stability-2026-09.md",
+      "resume_condition": "In a new uncontended W1-WIN window, the unchanged contract, candidate and 5% margin must first pass A/A plus 5% and 10% known-delta controls, then produce one complete fresh eight-strata product bundle without merging r3/r4 samples.",
       "reopen_trigger_id": "PLATFORM-FS-EINTR-2026-09-05",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "round_id": "platform-v8-os-resource-contract",
@@ -668,6 +731,8 @@
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+      "end_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
+      "registry_anchor_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -675,17 +740,46 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform_fs v8 CANDIDATE：第二联合候选 c39df6f9 三平台严格因子回放通过；EINTR 产品路径未改，待精确交付、性能证据绑定与最终红队。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "loc": {
+        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "repository_code": 451412,
+        "self_with_tests": 116939,
+        "self_without_tests": 74308,
+        "module_implementation": 2712
+      },
+      "known_limitations": [
+        "Only POSIX controls that are restart-safe before observable side effects retry EINTR; close-like and potentially completed side-effect operations intentionally remain single-shot.",
+        "Async, direct and vectored IO are owned by higher IO factors rather than this synchronous filesystem factor.",
+        "The second candidate has no qualified warm-file P1 certificate: r3 product rows were non-inferior but its delta5 control failed, while r4 failed A/A and remained unresolved."
+      ],
+      "reopen_triggers": [
+        "The named control-stability task satisfies the exact resume condition and produces a fresh complete qualification bundle.",
+        "A named consumer reproduces a synchronous filesystem correctness, security, ownership, EINTR, durability or C++ API-usability defect.",
+        "The public API, syscall count/semantics, component dependency or source, static or shared delivery shape changes.",
+        "A qualified same-contract workload proves a material product regression after controls pass."
+      ],
+      "summary": "platform_fs v8 BLOCKED：EINTR correctness、三平台、三交付、直接消费者、易用性与红队均通过；第二候选 r3 delta5 与唯一重跑 r4 A/A controls 失格，P1 必须保持 INCONCLUSIVE，按具名恢复条件停止。"
     },
     {
       "module": "mem_reclaim",
