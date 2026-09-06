@@ -1068,14 +1068,16 @@
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v5-product-factorization",
       "closure_task": "docs/implementation/tasks/container/container-v5-product-factorization.md",
       "scope": "Re-establish the Container product from current ggml/llama.cpp, ds4, vLLM and SGLang demand: correct the public x86 ISA floor and private shared-provider visibility, freeze the natural capability/API superset, implement admitted generic storage gaps, factor sequential, concurrent, queue and text internals behind one consumer facade, and renew real-journey correctness, performance and delivery evidence.",
       "non_goals": "Compute or Graph design, tokenizer/KV-cache/scheduler/IO policy, copying every standard or peer API, Native FFI or C API, stable cross-toolchain C++ ABI, common closure/performance instrument redesign, adjacent frozen-module changes without their own trigger, and Formal SOTA certification.",
-      "baseline_commit": "a9b5b6523867601dd2c708a2bedc8fc4d81469f2",
+    "baseline_commit": "a9b5b6523867601dd2c708a2bedc8fc4d81469f2",
+    "candidate_commit": "a7ce0102413c783e26227c68645e0282b109fde4",
+    "candidate_tree": "6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1093,7 +1095,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 AUDITED：首候选的 LRU 全分层胜出，UTF safe transcode 固定落后约 3.1–4.1% 且置信区间跨过 5% 非劣界；已撤回候选，只授权一次 operation-local simdutf provider dispatch 复用修正及全门重放。"
+      "summary": "container-v5 第二 CANDIDATE：能力/API/factor/delivery 不变，Text 每次 safe Unicode 操作只解析一次 private simdutf provider；新产品身份 a7ce0102 等待全门重放。"
     },
     {
       "module": "util",
@@ -1277,12 +1279,14 @@
     },
     {
       "module": "container_concurrent",
-    "product_state": "AUDITED",
+    "product_state": "CANDIDATE",
       "round_id": "container-concurrent-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-concurrent-v1-factor.md",
       "scope": "Own the concurrent flat/node hash map and concurrent vector surface, admit natural zero-mapped-payload concurrent sets, establish an independent internal target and exact reclamation/dependency closure, and validate normal inference registry journeys.",
       "non_goals": "Queues, waiting, sequential hash implementation, global registry policy, transactional snapshots, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
-      "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "a7ce0102413c783e26227c68645e0282b109fde4",
+    "candidate_tree": "6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1300,16 +1304,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "container_concurrent v1 AUDITED：因共同 Container 产品的 Text provider 修正撤回首候选；本 factor 产品形状未发现新缺陷，新候选必须重放并发 P1 与共同交付门。"
+    "summary": "container_concurrent v1 第二 CANDIDATE：本 factor 实现/API 不变，与共同 Container 产品身份 a7ce0102 重新绑定，等待并发 P1 和交付重放。"
     },
     {
       "module": "container_queue",
-    "product_state": "AUDITED",
+    "product_state": "CANDIDATE",
       "round_id": "container-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-queue-v1-factor.md",
       "scope": "Own byte-ring, SPSC, bounded MPMC, sharded and work-stealing storage, adjudicate unbounded and priority mechanisms, establish an independent internal target and Scheduler edge, and validate normal inference handoff journeys.",
       "non_goals": "Condition variables, fiber suspension, deadline, cancellation, close or backpressure service, request scheduling policy, IO completion, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
-      "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "a7ce0102413c783e26227c68645e0282b109fde4",
+    "candidate_tree": "6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1327,16 +1333,18 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "container_queue v1 AUDITED：因共同 Container 产品的 Text provider 修正撤回首候选；本 factor 产品形状未发现新缺陷，新候选必须重放队列 P1 与共同交付门。"
+    "summary": "container_queue v1 第二 CANDIDATE：本 factor 实现/API 不变，与共同 Container 产品身份 a7ce0102 重新绑定，等待 queue P1 和交付重放。"
     },
     {
       "module": "text",
-    "product_state": "AUDITED",
+    "product_state": "CANDIDATE",
       "round_id": "text-v1-factor",
       "closure_task": "docs/implementation/tasks/container/text-v1-factor.md",
       "scope": "Own borrowed text, ASCII and Unicode algorithms, lexical paths and interning, complete typed UTF error-offset and UTF-8/16/32 caller-buffer conversion, establish an independent internal target and private provider closure, and validate loader/tokenizer journeys.",
       "non_goals": "Owning string, Cord or IOBuf, filesystem access, locale, normalization, grapheme segmentation, tokenizer/trie/radix/model automata, protocols, Native FFI or C API, stable cross-toolchain C++ ABI, common instrument changes and Formal certification.",
-      "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
+    "candidate_commit": "a7ce0102413c783e26227c68645e0282b109fde4",
+    "candidate_tree": "6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1354,7 +1362,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "text v1 AUDITED：首候选 UTF safe transcode 全分层固定落后约 3.1–4.1%，只授权在单次公开操作内复用同一 simdutf provider 指针，不改 API、语义、layout 或 workload。"
+    "summary": "text v1 第二 CANDIDATE：六向 safe Unicode 转换的 API/语义/layout 不变，每次操作只解析一次 private simdutf provider；新身份 a7ce0102 等待全门重放。"
     }
   ]
 }

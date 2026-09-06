@@ -302,3 +302,20 @@ SHA-256 `7AC65FF1EC17D4A76E46063B5EAF3D222155E17685309FEE8C7958E3D6AF1484`。首
 证据位于
 `C:\public\project-hyle\_validation\container-v5\qual-single-evidence-31c3ace5\manifest.json`，
 仅作 withdrawn-candidate 事实，不传递到新候选。
+
+## 第二 Product candidate（`CANDIDATE`）
+
+- product commit / tree：`a7ce0102413c783e26227c68645e0282b109fde4` /
+  `6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`；
+- 相比首候选，只改变 `text` 的 private provider 调用机制：六种 safe Unicode
+  conversion 及三种 detailed validation 在单次公开操作内只读取一次 simdutf
+  active implementation，后续 validate/size/convert 复用该指针；
+- pointer 为 operation-local，不是全局/TLS cache；provider 更改在下一次公开调用中可见。
+  没有改变公开 API、错误 offset/完整输出语义、layout、复杂度、normal workload、peer、
+  margin、ISA authority 或常态 metadata；
+- 候选化前 W1-WIN fresh MSVC Release/WERROR 的 sequential/concurrent/queue/text 相关头文件、
+  normal 与 ISA tests 10/10 通过；这不替代 exact-candidate 的正式重放。
+
+`AUDITED -> CANDIDATE` 前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-second-candidate.json`，
+SHA-256 `4CED961505B11F8BE79F56326237E40BB904CFB1FE2BB52FD838379E9FBB01A8`。

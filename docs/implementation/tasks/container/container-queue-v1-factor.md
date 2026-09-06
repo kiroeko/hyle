@@ -48,3 +48,10 @@
   cancel 与 backpressure 仍不进入 storage；
 - W1-WIN shared/static normal、empty、初始/增长 OOM、跨 block FIFO、nonassignable callback 与 4P/4C
   conservation stress 通过；四生产/四消费 oneTBB SAME_CONTRACT P1 等待 clean-candidate qualification。
+
+## 第二 Candidate
+
+首候选因共同产品的 Text provider 正常路径修正撤回；本 factor 的 API、layout 和算法
+未变。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4` /
+`6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`，queue P1、correctness 和 delivery 必须在该身份上
+重放。

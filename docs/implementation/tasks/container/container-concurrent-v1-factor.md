@@ -47,3 +47,10 @@
   empty-policy layout assertion 证明不支付 mapped payload；
 - W1-WIN shared/static header、normal、OOM、accessor、rehash/reclamation 与并发 stress tests 通过；
   read-mostly eight-worker oneTBB SAME_CONTRACT P1 等待 clean-candidate qualification。
+
+## 第二 Candidate
+
+首候选因共同产品的 Text provider 正常路径修正撤回；本 factor 的 API、layout 和算法
+未变。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4` /
+`6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`，并发 P1、correctness 和 delivery 必须在该身份上
+重放。

@@ -48,3 +48,11 @@
   required count 不公开 simdutf 类型；
 - W1-WIN shared/static header、empty、malformed UTF-8/16/32、output-too-small、六方向 conversion、tail 与
   真实 ISA tests 通过；Unix private-symbol scan 和 simdutf SAME_CONTRACT P1 等待 clean candidate 验证。
+
+## 第二 Candidate
+
+首候选的 exact-contract UTF P1 显示全分层固定约 3.1–4.1% 差距，部分置信区间跨过 5%
+non-inferiority boundary。本 factor 在不改 API/语义/layout/workload 的前提下，让单次
+safe Unicode 操作的 validate/size/convert 复用同一 operation-local simdutf implementation
+pointer。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4` /
+`6ae52a087b8b2b9271bbd98acb9d7c62bb61d10c`，全部门必须重放。
