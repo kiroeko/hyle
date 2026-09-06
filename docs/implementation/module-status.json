@@ -1068,7 +1068,11 @@
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The four P1 peer cells do not yet have an equalized semantic/resource contract: allocator, OOM, rollback and result differences make the second-candidate numbers NATURAL_ROUTE diagnostics rather than SAME_CONTRACT evidence, and the final candidate cannot inherit rejected evidence.",
+      "blocker_owner": "container-v5-p1-contract-evidence",
+      "resume_condition": "Open a finite RESUME round from SCOPED, freeze an EQUAL/ADAPTER_EQUALIZED/INTENTIONALLY_DIFFERENT matrix for LRU, concurrent membership, unbounded MPMC and Unicode, equalize the declared allocator/OOM/rollback/result contracts, and obtain a qualified immutable-candidate W1-WIN 5% verdict; a separately pre-frozen NATURAL_ROUTE consumer budget may only support an end-to-end default-route claim.",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v5-product-factorization",
@@ -1078,6 +1082,8 @@
     "baseline_commit": "a9b5b6523867601dd2c708a2bedc8fc4d81469f2",
     "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
     "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
+      "end_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
+      "registry_anchor_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1085,17 +1091,45 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v5 第三 CANDIDATE：Unix shared hidden-by-default 已消除 private ISA ABI，且并发 map/queue 的 injected policy 合同已补全；产品身份 6fae3c11 等待 exact terminal replay。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/container/container-v5-product-factorization.md",
+      "loc": {
+        "snapshot_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+        "repository_code": 464718,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 7962
+      },
+      "known_limitations": [
+        "No aggregate SAME_CONTRACT non-inferiority, comprehensive SOTA, cross-platform fixed timing or Formal certificate is currently claimed; rejected second-candidate timings are diagnostics only.",
+        "Concurrent injected policies must satisfy the documented concurrent-call contract and destruction requires external quiescence; the defaults satisfy that contract.",
+        "The four maintenance factors remain one hyle::container consumer product; Native FFI, C API and stable cross-toolchain C++ ABI are not provided."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a Container correctness, security, OOM, lifetime, missing-capability or C++ usability defect.",
+        "The public API, layout, complexity, allocator, ISA/provider semantics, direct dependency or source/static/shared delivery shape changes.",
+        "A refreshed named inference demand exposes a new Container-owned MUST, or a mature same-contract peer or normal consumer proves a material regression or better complexity class."
+      ],
+      "summary": "container-v5 BLOCKED：四引擎能力超集、自然 C++ API、内部四因子、三平台正确性/三交付、私有符号、文档与红队均通过；唯一阻塞是四条 peer 对比尚未等价化 allocator/OOM/rollback/result，P1 保持 INCONCLUSIVE，不能伪签 SOTA/FROZEN。"
     },
     {
       "module": "util",
@@ -1279,7 +1313,11 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The read-mostly membership comparison used different default allocator/resources and its confidence interval remained unresolved, so it cannot certify SAME_CONTRACT non-inferiority.",
+      "blocker_owner": "container-v5-p1-contract-evidence",
+      "resume_condition": "Open a finite RESUME round from SCOPED, freeze allocator/resource equality and membership result/setup semantics, then obtain a qualified immutable-candidate W1-WIN 5% verdict.",
       "round_id": "container-concurrent-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-concurrent-v1-factor.md",
       "scope": "Own the concurrent flat/node hash map and concurrent vector surface, admit natural zero-mapped-payload concurrent sets, establish an independent internal target and exact reclamation/dependency closure, and validate normal inference registry journeys.",
@@ -1287,6 +1325,8 @@
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
     "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
     "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
+      "end_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
+      "registry_anchor_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1294,21 +1334,52 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v1 第三 CANDIDATE：flat/node map/set 的 injected Alloc/Hash/Eq 并发前提已进入公开合同；算法、layout 与默认路线不变，等待共同终局验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/container/container-concurrent-v1-factor.md",
+      "loc": {
+        "snapshot_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+        "repository_code": 464718,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 1600
+      },
+      "known_limitations": [
+        "No SAME_CONTRACT P1, comprehensive SOTA or Formal certificate is currently claimed.",
+        "Injected Alloc, Hash and Eq policies must be concurrently callable across shards; node key/address stability is limited to the accessor lifetime and destruction requires quiescence."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a concurrent map, set or vector correctness, security, lifetime, missing-capability or C++ usability defect.",
+        "The public contract, layout, complexity, reclamation, direct dependency or source/static/shared delivery shape changes.",
+        "A mature same-contract peer or normal consumer proves a material regression or better complexity class."
+      ],
+      "summary": "container_concurrent v1 BLOCKED：flat/node map/set 与 vector 的功能、自然 API、并发合同、三平台正确性/三交付、依赖、文档和红队均通过；membership allocator/resource 尚未等价，P1 为 INCONCLUSIVE。"
     },
     {
       "module": "container_queue",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The oneTBB comparison mixed HYLE recoverable try_push and mimalloc-backed SystemAllocator with throwing push and cache_aligned_allocator, so its favorable timing is NATURAL_ROUTE rather than SAME_CONTRACT evidence.",
+      "blocker_owner": "container-v5-p1-contract-evidence",
+      "resume_condition": "Open a finite RESUME round from SCOPED and equalize allocator/resource, OOM, push result, setup and producer-token semantics before a qualified immutable-candidate W1-WIN 5% verdict; a separately pre-frozen NATURAL_ROUTE budget may support only a default-route claim.",
       "round_id": "container-queue-v1-factor",
       "closure_task": "docs/implementation/tasks/container/container-queue-v1-factor.md",
       "scope": "Own byte-ring, SPSC, bounded MPMC, sharded and work-stealing storage, adjudicate unbounded and priority mechanisms, establish an independent internal target and Scheduler edge, and validate normal inference handoff journeys.",
@@ -1316,6 +1387,8 @@
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
     "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
     "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
+      "end_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
+      "registry_anchor_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1323,21 +1396,52 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v1 第三 CANDIDATE：UnboundedQueue injected allocator 的 producer/consumer 并发前提已公开；算法/layout 不变，既有苹果橘子式 oneTBB 对拍不作为终局 PASS。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/container/container-queue-v1-factor.md",
+      "loc": {
+        "snapshot_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+        "repository_code": 464718,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 1101
+      },
+      "known_limitations": [
+        "No SAME_CONTRACT P1, comprehensive SOTA or Formal certificate is currently claimed; favorable natural-route timings are diagnostic only.",
+        "Injected allocators must permit concurrent producer allocation and consumer deallocation, destruction requires quiescence, and try-only storage does not own wait, close, cancellation, deadline or backpressure service."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a queue correctness, security, lifetime, missing-capability or C++ usability defect.",
+        "The public contract, layout, progress, allocator, direct dependency or source/static/shared delivery shape changes.",
+        "A mature same-contract peer or normal consumer proves a material regression or better complexity class."
+      ],
+      "summary": "container_queue v1 BLOCKED：role-specific 与 unbounded typed handoff 的功能、自然 API、并发/OOM 合同、三平台正确性/三交付、依赖、文档和红队均通过；oneTBB comparator 仍混合 allocator 与失败语义，P1 为 INCONCLUSIVE。"
     },
     {
       "module": "text",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The Unicode peer adapter terminates on errors while HYLE returns typed status, input offset and output count, and three confidence intervals crossed the 5% boundary; the comparison cannot certify SAME_CONTRACT non-inferiority.",
+      "blocker_owner": "container-v5-p1-contract-evidence",
+      "resume_condition": "Open a finite RESUME round from SCOPED, equalize validation, typed error/result, output-size and caller-buffer semantics, then obtain a qualified immutable-candidate W1-WIN 5% verdict; valid-input natural-route timing alone is insufficient.",
       "round_id": "text-v1-factor",
       "closure_task": "docs/implementation/tasks/container/text-v1-factor.md",
       "scope": "Own borrowed text, ASCII and Unicode algorithms, lexical paths and interning, complete typed UTF error-offset and UTF-8/16/32 caller-buffer conversion, establish an independent internal target and private provider closure, and validate loader/tokenizer journeys.",
@@ -1345,6 +1449,8 @@
     "baseline_commit": "b5568e929787ecd5bb222e436c7456c6517fae21",
     "candidate_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
     "candidate_tree": "8025ee111380c2600f804cf979ed59d289a8be76",
+      "end_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
+      "registry_anchor_commit": "c64a64bdf4e53a4490ce14fa6e77bea9da20bda8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1352,17 +1458,44 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "text v1 第三 CANDIDATE：自身 simdutf 与共同 Container private providers 均按 Unix hidden-by-default；Unicode API/算法不变，等待共同终局验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/container/text-v1-factor.md",
+      "loc": {
+        "snapshot_commit": "6fae3c11ebce9a0741f45780e63c9896e08bb2a2",
+        "repository_code": 464718,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 2040
+      },
+      "known_limitations": [
+        "No SAME_CONTRACT P1, comprehensive SOTA or Formal certificate is currently claimed; valid-input natural-route timing does not cover the typed error contract.",
+        "Text does not own locale, normalization, grapheme segmentation, regex, tokenizer or model automata, filesystem I/O, or undeclared overlapping caller buffers."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a text, path or Unicode correctness, security, lifetime, missing-capability or C++ usability defect.",
+        "The public contract, provider or ISA semantics, direct dependency or source/static/shared delivery shape changes.",
+        "A mature same-contract peer or normal consumer proves a material regression or better complexity class."
+      ],
+      "summary": "text v1 BLOCKED：borrowed text/path/interner 与六向 typed Unicode 的功能、自然 API、三平台正确性/三交付、private provider、文档和红队均通过；peer 错误结果合同未等价且 CI 未裁决，P1 为 INCONCLUSIVE。"
     }
   ]
 }
