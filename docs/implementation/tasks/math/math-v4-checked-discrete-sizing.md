@@ -173,14 +173,17 @@ instruments, component edges or introduce a third-party product dependency.
 
 ## Product candidate（`CANDIDATE`）
 
-- candidate commit：`a57194d8f33611d899bbb4aafb7df994317d7340`；tree：
-  `b8930888c45f95eba90f1fc0967b12104843b21e`；
+- candidate commit：`686ec1c0215fa7a808ee470fe103ac62a1050759`；tree：
+  `1cb4bb81451ba016e09aecce563b3b591648d7a0`；
 - `try_lcm` 使用无符号 magnitude、`std::gcd`、先约分和既有 `try_multiply`，安全覆盖 signed minimum、
   zero identity、目标正值边界和 full-width product overflow；
 - `try_bit_ceil` 在调用 `std::bit_ceil` 前按 `T` 的最大 representable power 做 guard，因此没有触发
   标准 primitive 的不可表示前置条件；
 - API、类型约束和五项 FIX 均与 `AUDITED` freeze 一致；没有 component edge、binary artifact、第三方
   product path、C/Native FFI surface、常态 metadata 或下游迁移；
+- red-team delivery review found that the first implementation commit's installed consumer still exercised only v3
+  entries. The replacement candidate adds both v4 calls to the existing natural package sample; public implementation
+  bytes are unchanged from `a57194d8f33611d899bbb4aafb7df994317d7340`；
 - pre-candidate W1-WIN MSVC 19.50 Release/WERROR 与 W1-WSL GCC 14.2 Release/WERROR+UBSan 已通过 Math
   unit/header tests。GCC optimized object 的 bit-ceil 是 bounded guard + `bsr`，LCM 是 inlined standard
   binary-GCD shape + checked full-width multiply；
@@ -190,3 +193,7 @@ instruments, component edges or introduce a third-party product dependency.
 `AUDITED -> CANDIDATE` 的前态快照保存在 canonical checkout 外：
 `C:\public\project-hyle\_validation\registry-before-math-v4-candidate-a57194d8.json`，SHA-256
 `1177B91178A414088996ADD2B31FD29F0B94F52EC90E1E60753B935807A16B3E`。
+
+候选身份的同态刷新（`CANDIDATE -> CANDIDATE`）使用前态快照
+`C:\public\project-hyle\_validation\registry-before-math-v4-candidate-686ec1c0.json`，SHA-256
+`328431FC18BC837B8CDCE0A30336E9E3080F68981A4DAB13D148E4A2428F0124`。
