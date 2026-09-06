@@ -384,3 +384,17 @@ Windows MSVC 19.50 exact-AVX2 static SIMD suite 在修正后为 `5/5 PASS`，ben
 新候选为 commit `fde6fc9c416fbf1e0b85742c8830e99aa3829c68` / tree
 `ea9162c46fa660a1b4acf16735a2c8a4ba7d3b11`。之后只允许一次正式 P1、WSL/macOS 更新后测试回放和
 必要的候选交付确认；若出现产品算法缺陷必须退回 `AUDITED`，不能继续改变比较姿势。
+
+## F06 跨工具链回放（`AUDITED`）
+
+W1-WIN 修正后 P1 bundle 已经过资格化与 deep verifier，三个完整 row 均为
+`PARITY/PASS`。但同一 `fde6fc9c...` 归档在 W1-WSL/GCC 14.2 + ASan + WERROR 编译
+`tests/simd/math_test.cc` 时复现 `-Wdangling-else`：F06a 新增的 signed-zero 断言是唯一
+未加花括号的嵌套 `if`。AppleClang 21 对同一候选已完成 SIMD 5/5，说明这是
+便携测试的跨工具链缺陷，不是产品算法失败；但未通过声明的 WSL 门仍不得保留
+`CANDIDATE` 身份。
+
+有限修复集只在该 `if` 上补显式花括号；不改产品 API、算法、provider route、
+dependency lock、P1 workload/阈值/样本/姿势或语义矩阵。修复后重跑 Windows/WSL/macOS
+SIMD 5/5，再以新 commit/tree 签发候选；旧 P1 bundle 仍可用于同一产品输入的统计事实，
+最终证据必须明确记录两个 commit 之间只有这项测试可移植性变化。

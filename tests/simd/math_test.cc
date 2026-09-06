@@ -1112,8 +1112,9 @@ TEST(Math, QuickGeluExceptionalValuesReachVectorAndTail) {
     } else {
       EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6f + 2e-6f)
           << "i=" << i;
-      if (input[i] == 0.0f)
+      if (input[i] == 0.0f) {
         EXPECT_EQ(std::signbit(output[i]), std::signbit(expected)) << "i=" << i;
+      }
     }
   }
 }
