@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
       "round_id": "platform-v10-numa-node-memory-facts",
@@ -604,7 +604,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v10 REOPENED：vLLM 与 SGLang 的独立 host-planning journeys 共同复现 per-NUMA-node memory fact 缺失；当前只登记最小影响面，尚未冻结 closure card 或授权产品修改。"
+      "summary": "platform v10 SCOPED：per-NUMA-node memory fact 的任务、边界、P0/P1 成本合同、三平台/三交付门与有界预算已冻结；尚未完成能力审计或授权产品修改。"
     },
     {
       "module": "platform_thread",

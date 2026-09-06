@@ -50,3 +50,43 @@
 - total 与 available 的 unknown/平台差异必须在类型中可见；零是合法观测值，不兼任 unknown sentinel；
 - 审计若发现必须改变 placement、其它 Platform factor、Mem owner 或公共仪器，先登记相邻任务，不在本轮
   顺手扩 scope。
+
+## Closure card（`SCOPED`）
+
+- component / owner / round / kind：`platform` / host NUMA topology facts /
+  `platform-v10-numa-node-memory-facts` / `REOPEN`；baseline
+  `5c529802cd2974b222856608dcaf4cdd0fcf240b`；
+- demand：`PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06`；正常任务是在模型/KV/worker arena 分配前，
+  枚举当前进程可用的稀疏 node id，读取所选 node 的物理容量/当前压力事实，再由上层结合全进程约束和
+  利用率 policy 形成预算；查询也用于运行期低频重规划，但不是 allocation 热路径；
+- 范围：一个自然、fallible、unknown-safe 的 per-node memory value/query；Windows/Linux/macOS 的公开
+  OS 路线；无效/稀疏 node、零值、缺字段、解析溢出和并发冷查询；selected Platform 的 source/static/
+  shared、直接 host planner、architecture/user guide 与内部复用审计；
+- 非目标：rank/worker/GPU 选择、模型/KV/allocator budget、cgroup 到 node 的虚假分摊、reservation、
+  placement/migration、memory distance/bandwidth、Platform-thread/fs、Mem/Mem-VM、Native FFI/C API、
+  stable C++ ABI、公共仪器与 Formal；
+- 依赖：仍为 `core`、`error`；直接 consumer 原型是 C++ host planner，未来 Mem/Compute/engine 只组合
+  Platform fact，不产生 Platform 对上层的反向依赖；现有 `numa_nodes()` 是唯一 node-id authority；
+- 语义档：单 node 的动态 snapshot；total 与 available 分开，不能证明的字段显式 absent；available 的
+  OS 语义逐平台公开，不能冒充 reservation 或成功保证。暂不加入收集式 vector API：调用者已能遍历
+  稳定 `numa_nodes()`，单项查询避免隐藏分配并自然处理某个 node 的失败；
+- tier：`P1`。新增 query 本身为 P0 control path：Windows/macOS O(1) bounded native queries，Linux
+  O(node meminfo bytes)，零常态缓存/metadata/后台工作；数值门只复用既有一次 host-planning workload，
+  W1-WIN、5% material margin，验证未受影响 route，不把不同字段的 raw syscall 做苹果/橘子排名；
+- 总调查预算 3 小时，其中性能最多 30 分钟；最多一轮产品实现、一次 Windows P1 holdout 和一次因
+  correctness 失败触发的产品修复。没有可复现 material 问题时停止，不扩成 NUMA 百科；
+- correctness machines：`W1-WIN`、`W1-WSL`、`M1-MAC`；P1 machine：`W1-WIN`；instrument：
+  `closure-perf-v1`，P0：`closure-correctness-v1`；
+- authoritative inputs：锁定 vLLM/SGLang journeys；Linux stable sysfs node meminfo 与 proc meminfo
+  字段语义；Windows documented `GetNumaAvailableMemoryNodeEx`；Apple public host VM/sysctl 路线；
+  vLLM 只作 consumer，不自动成为同合同性能 peer；
+- 适用门：完整 capability/public-surface trace；API/usability freeze；parser + native system tests；
+  concurrency/error/unknown；三平台 selected build；source/static/shared direct call；中央 component graph、
+  selected headers、visibility/符号与 no-FFI；architecture/user guide；红队；P0 structural + 一次 P1 holdout；
+- 停止：冻结的 `MUST` 全部 `COMPLETE/ROUTED`、未处置 material finding 为零且适用门通过则关闭；某 OS
+  不公开 total 时 optional absent 是诚实能力，不是 blocker；若没有公开机制能返回任何 node memory fact，
+  则该平台明确 `Unimplemented/Unavailable`，不得猜测。
+
+`REOPENED -> SCOPED` 前 registry snapshot：
+`C:\public\project-hyle\_validation\platform-v10-numa-node-memory\module-status-before-scoped.json`，
+SHA-256 `2067C966DE0B4C66395AF5FE046ED5338D325759D48EC84C2D18FC6FA0EF9C98`。
