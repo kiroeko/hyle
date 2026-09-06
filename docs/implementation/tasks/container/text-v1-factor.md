@@ -1,6 +1,6 @@
 # Container Text v1：文本、路径与标识因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`SCOPED`）
 
@@ -70,3 +70,30 @@ pointer。新 product commit/tree 为 `a7ce0102413c783e26227c68645e0282b109fde4`
 `8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 产品没有再次变化；W1-WSL GCC 14
 shared/WERROR tests/header tests 2/2 通过，shared dynamic symbol scan 保持 simdutf/provider 0，
 公共 Text symbols 39。
+
+## Terminal verification and decision
+
+精确共同候选 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` 已通过 Windows static/shared、WSL
+ASan/UBSan/WERROR、macOS UBSan/WERROR，以及三平台 source/static/shared relocated consumer。六向
+UTF-8/16/32 conversion、malformed offset、size query、output-too-small、borrowed lifetime、private
+provider 与动态符号门均通过；WSL/macOS 的 simdutf/provider 导出为 0、公开 Text symbols 为 39。终局
+红队未发现新的产品 defect、owner 泄漏或 benchmark-shaped API。
+
+本 factor 从 `CANDIDATE` 终止为 **`BLOCKED`**：scope、architecture、correctness、delivery、
+usability/docs、red-team 均 `PASS`；engineering performance=`INCONCLUSIVE`。第二候选有效输入自然路线
+HYLE/peer 为 `0.9616–0.9731`，三条 CI 穿越 5% 边界；更关键的是 HYLE 返回 typed status/error offset/
+output count，而 peer adapter 对错误输入终止，结果合同未等价，不能签 `SAME_CONTRACT` non-inferiority。
+
+- blocker owner：`container-v5-p1-contract-evidence`；
+- resume condition：新 `RESUME` round 等价化 validation、typed error/result、output-size 与 caller-buffer
+  contract，在 immutable candidate、W1-WIN、5% margin 下取得合格 verdict；只重测 valid-input
+  natural route 不满足同合同恢复条件；
+- known limitations：Text 不拥有 locale、normalization、grapheme、regex、tokenizer/model automaton 或
+  filesystem I/O；caller buffer 不允许未声明 overlap；当前没有同合同 P1、全面 SOTA 或 Formal 结论；
+- reopen triggers：真实 consumer 暴露 correctness/security/lifetime/API/能力缺口；Unicode/path/string
+  contract、provider/ISA、依赖或三交付改变；强 peer 证明 material regression 或更优复杂度档。
+
+LOC 绑定共同 immutable candidate：全库 464,718；自实现包含测试 121,614；自实现不包含测试 77,078；
+`text` 实现 2,040。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->

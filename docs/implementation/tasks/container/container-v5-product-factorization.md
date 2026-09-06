@@ -1,6 +1,6 @@
 # Container v5：真实推理能力与内部因子化
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 > 本轮由当前全产品只读回放触发。它不继承 v4 的窄 CPU-selector 结论，也不把历史能力候选直接当作
 > 实现授权。机械状态只以 [`module-status.json`](../../module-status.json) 为准。
@@ -356,3 +356,87 @@ SHA-256 `531E4245C3B684BF8433DBFD8EF6DF813A0762EEA29EB1F63D132738687E0DAD`。
 `AUDITED -> CANDIDATE` 前态 registry 快照为
 `C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-third-candidate.json`，
 SHA-256 `0DEF687981CFD02FF5B088BBEF7160B200A6A7616EE4F2F37DE8FEE8CBE57237`。
+
+## 第三候选精确终局回放
+
+精确候选 archive 为
+`C:\public\project-hyle\_validation\container-v5\candidate\hyle-6fae3c11.tar.gz`，SHA-256
+`12D427FA189AFF598C113858DEB61D8F1F6C6CB5BC1882650B53266EF31DA6D0`。所有远程验证均从该 archive
+解包，不把 WSL/macOS checkout 当作产品改动来源。
+
+| 风险 / journey | verdict | exact evidence |
+|---|---|---|
+| W1-WIN correctness/header/ISA | `PASS` | MSVC 19.50 static 11/11、shared 9/9；normal/OOM/throwing move、LRU、concurrent set/queue stress、六向 Unicode 与真实 ISA 均覆盖 |
+| W1-WSL sanitizer/WERROR | `PASS` | GCC 14 static ASan 11/11、UBSan 11/11；shared WERROR factor tests/header tests 9/9 |
+| M1-MAC correctness/WERROR | `PASS` | AppleClang 21 arm64 static UBSan/WERROR 11/11 |
+| source/static/shared delivery | `PASS` | 三平台 selected Container source embedding、relocated static SDK、relocated shared SDK 各 1/1；同一 consumer 实例化五个公开 families |
+| shared symbol surface | `PASS` | WSL/macOS installed `hyle_container` private bitset ISA symbols 0、public Container symbols 45；`hyle_text` private simdutf/provider symbols 0、public Text symbols 39 |
+| dependency/build/package | `PASS` | sequential、concurrent、queue、text 有独立真实 target；完整 façade 精确聚合；private provider、offline pin、license 与三交付闭包通过 |
+| API/usability/docs | `PASS` | 公开 surface 只保留自然 C++ 类型；失败、lifetime、并发 policy 与选择指南已对账；无旧 C ABI/Native FFI 或 benchmark-only API |
+| independent red team | `PASS` | 终局 reviewer 复核第三候选；24-symbol 泄漏与 allocator concurrency 合同均已修复，限时内无新产品 defect |
+| P1 engineering performance | `INCONCLUSIVE` | 第二候选四组 comparator 未等价化 allocator/OOM/rollback/result；第三候选不能继承 rejected evidence，详见 [`benchmarks-container.md`](../../evidence/performance/benchmarks-container.md) |
+
+中央 component graph 在产品依赖不变的第二候选已通过；第三候选只改变 target visibility property 与公开
+注释，不改变图。精确三交付 consumer 又实际解析并链接了最终图，因此没有为同一事实再运行全库大套件。
+
+## 终局红队
+
+终局攻击范围是 factor owner、真实推理能力超集、exception/OOM/lifetime、并发 policy、复杂度、公开
+API、直接依赖、三种交付、动态符号和 performance comparison class。结论：
+
+- ggml/llama.cpp、ds4、vLLM、SGLang 的冻结 demand map 已逐项裁决；本轮准入的 LRU、concurrent set、
+  unbounded typed MPMC 与完整 caller-buffer Unicode 已实现，未发现仍属于 Container 基础存储边界的
+  `MUST` 缺口；tokenizer/KV/scheduler/IO policy 没有被错误塞进容器；
+- `hyle_container` 的 Unix hidden-by-default 已将 24 个私有 ISA 动态符号降为 0；公开 HYLE 符号仍可用；
+- injected `Alloc/Hash/Eq` 的并发可调用性是 policy 合同。默认 `SystemAllocator` 满足合同；模板无法通用
+  验证自定义 policy，给所有操作加统一锁反而会改变并发语义和正常路径成本；
+- 未发现新的 correctness/security、owner、复杂度档、常态 metadata、benchmark-shaped API、旧 FFI、
+  source/static/shared 或文档缺陷；
+- 四条性能数字不能签发 `SAME_CONTRACT`。即使其中 LRU/queue 自然路线显示 HYLE 更快，也必须拒绝
+  苹果与橘子式证书；这是一项证据 blocker，不是已确认产品慢。
+
+## Closure decision
+
+四个活动 factor 从 `CANDIDATE` 终止为 **`BLOCKED`**，而不是 `VERIFIED/CLOSED/FROZEN`。scope、
+architecture、correctness、delivery、usability/docs 与 red-team 均为 `PASS`；唯一非通过 gate 是
+engineering performance=`INCONCLUSIVE`。产品实现和接口没有待修 defect，不能以“继续研究”为状态，
+也不能把无效 comparator 的有利点值改写成 SOTA。
+
+blocker owner：`container-v5-p1-contract-evidence`。恢复条件：按 `BLOCKED -> SCOPED` 新建一个有限
+`RESUME` round，在不改公开 API/layout/常态 metadata/5% margin 的前提下，为四个 cell 先冻结
+`EQUAL`、`ADAPTER_EQUALIZED` 或 `INTENTIONALLY_DIFFERENT` 语义矩阵，再完成：
+
+1. LRU 的 allocation failure、rollback 与返回结果等价 adapter；
+2. concurrent membership 的相同 allocator/resource；
+3. queue 的 allocator、OOM、push result 与 setup/producer-token 等价；
+4. Unicode 的 validation、typed error/result、output-size 和 caller-buffer 等价。
+
+若命题改为“各库默认 API/allocator 的端到端自然路线”，必须在新卡中预冻结独立 `NATURAL_ROUTE`
+consumer budget；它不能代替 `SAME_CONTRACT` 实现结论。恢复轮只补合法证据，不授权新功能或第二轮
+performance-guided 产品修改。
+
+已知限制：
+
+- 当前不能声明 Container 聚合 P1、四个 factor 的同合同 non-inferiority、全面 SOTA、跨平台固定点值或
+  Formal certificate；
+- concurrent map/set 的自定义 `Alloc/Hash/Eq` 以及 `UnboundedQueue` 的自定义 allocator 必须支持文档
+  所述并发调用；析构仍要求外部 quiescence；
+- product façade 对用户只暴露 `hyle::container`，四个内部 factor 是维护/最小依赖边界，不是四套稳定
+  C++ ABI；Native FFI/C API 与稳定跨工具链 C++ ABI 仍不提供；
+- owning string/Cord/IOBuf、normalization/grapheme/regex、blocking channel、concurrent priority policy、
+  tokenizer/trie/KV-cache/device policy 等继续由既有 ROUTE/DEFER/负空间裁决约束。
+
+LOC 绑定 immutable candidate `6fae3c11ebce9a0741f45780e63c9896e08bb2a2`：全库代码 464,718；
+自实现包含测试 121,614；自实现不包含测试 77,078；用户可见 Container 产品实现 14,293。内部维护边界为
+sequential `container` 7,962、`container_concurrent` 1,600、`container_queue` 1,101、`text` 2,040，另聚合
+FROZEN `container_intrusive` 1,590；内部五项合计与产品 14,293 对账。传统
+`include/hyle/container + src/container` 边界得到 13,007，但它遗漏独立 `src/text`，所以不再拿该数字冒充
+完整产品。
+
+产品重开 trigger：真实 consumer 复现本边界 correctness/security/OOM/lifetime/API 易用性或缺失能力；
+公开 API/layout、算法复杂度、allocator/ISA/provider 语义、直接依赖或三交付形状改变；当前冻结的四引擎
+demand identity 变化后出现新的 Container-owned `MUST`；或成熟同合同 peer/正常 consumer 证明 material
+regression 或更优复杂度档。达到上述 performance resume condition 只是恢复证据轮，不是无新事实重开
+产品的许可。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->

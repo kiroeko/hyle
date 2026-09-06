@@ -1,6 +1,6 @@
 # Container concurrent v1：并发索引因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`SCOPED`）
 
@@ -68,3 +68,30 @@ Hash/Eq；有限修复是在 header/guide 明示该前提，不增加锁或改�
 共同 product commit/tree 为 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` /
 `8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 只补公开 Alloc/Hash/Eq 并发前提；实现、layout、
 默认 allocator 与正常路径成本不变。W1-WSL GCC 14 shared/WERROR tests/header tests 2/2 通过。
+
+## Terminal verification and decision
+
+精确共同候选 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` 已通过 Windows static/shared、WSL
+ASan/UBSan/WERROR、macOS UBSan/WERROR，以及三平台 source/static/shared relocated consumer。终局红队
+确认 flat/node map/set 的 owner、accessor/reclamation、零 mapped-payload set、OOM、公开 policy 并发前提、
+依赖和文档均通过，未发现新的产品 defect 或 benchmark-shaped API。
+
+本 factor 从 `CANDIDATE` 终止为 **`BLOCKED`**：scope、architecture、correctness、delivery、
+usability/docs、red-team 均 `PASS`；engineering performance=`INCONCLUSIVE`。第二候选 membership 的点值
+约为 peer 的 `0.9893/0.9744`，但两侧 allocator/resource 未等价且置信区间未裁决，不能签
+`SAME_CONTRACT` 或 SOTA；第三候选不得继承 rejected evidence。
+
+- blocker owner：`container-v5-p1-contract-evidence`；
+- resume condition：新 `RESUME` round 预冻结 allocator/resource equality 和完整 membership result/
+  setup 合同，在同一 immutable candidate、W1-WIN、5% margin 下取得合格 verdict；只补自然路线或更换
+  workload 不满足条件；
+- known limitations：自定义 `Alloc/Hash/Eq` 必须可由不同 shard 并发调用；node key/address 只在 accessor
+  保护期稳定；析构要求外部 quiescence；当前没有同合同 P1、全面 SOTA 或 Formal 结论；
+- reopen triggers：真实 consumer 暴露 correctness/security/lifetime/API/能力缺口；map/set/vector 的公开
+  contract、layout、复杂度、reclamation、依赖或三交付改变；强 peer 证明 material regression 或更优
+  复杂度档。
+
+LOC 绑定共同 immutable candidate：全库 464,718；自实现包含测试 121,614；自实现不包含测试 77,078；
+`container_concurrent` 实现 1,600。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->

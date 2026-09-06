@@ -1,6 +1,6 @@
 # Container queue v1：并发传递存储因子
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`SCOPED`）
 
@@ -71,3 +71,31 @@ recoverable `try_push`，oneTBB 使用 `cache_aligned_allocator` 与 throwing `p
 `8025ee111380c2600f804cf979ed59d289a8be76`。本 factor 只补 `UnboundedQueue` injected allocator 的
 producer/consumer 并发前提；实现、layout、默认 allocator 与正常路径成本不变。W1-WSL GCC 14
 shared/WERROR tests/header tests 2/2 通过。
+
+## Terminal verification and decision
+
+精确共同候选 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` 已通过 Windows static/shared、WSL
+ASan/UBSan/WERROR、macOS UBSan/WERROR，以及三平台 source/static/shared relocated consumer。终局红队
+确认全部 role-specific queue、unbounded block lifetime/FIFO/conservation/OOM、公开 allocator 并发前提、
+依赖和选择文档均通过，未发现新的产品 defect 或把 wait/service policy 塞回 storage。
+
+本 factor 从 `CANDIDATE` 终止为 **`BLOCKED`**：scope、architecture、correctness、delivery、
+usability/docs、red-team 均 `PASS`；engineering performance=`INCONCLUSIVE`。第二候选的自然路线曾显示
+HYLE/oneTBB `1.2296–1.2538`，但 HYLE 使用 mimalloc-backed `SystemAllocator` 与 recoverable
+`try_push`，peer 使用 `cache_aligned_allocator` 与 throwing `push`；这不是 `SAME_CONTRACT`，有利数字也
+不能冒充 SOTA。
+
+- blocker owner：`container-v5-p1-contract-evidence`；
+- resume condition：新 `RESUME` round 等价化 allocator/resource、OOM、push result、setup 与
+  producer-token 后，在 immutable candidate、W1-WIN、5% margin 下取得合格 verdict；或另行预冻结且只
+  声称端到端默认路线的 `NATURAL_ROUTE` budget；
+- known limitations：自定义 allocator 必须支持 producer allocation 与 consumer deallocation 并发；析构
+  要求外部 quiescence；try-only storage 不提供 wait/close/cancel/deadline/backpressure；当前没有同合同
+  P1、全面 SOTA 或 Formal 结论；
+- reopen triggers：真实 consumer 暴露 correctness/security/lifetime/API/能力缺口；queue 的公开合同、
+  layout、progress、allocator、依赖或三交付改变；强 peer 证明 material regression 或更优复杂度档。
+
+LOC 绑定共同 immutable candidate：全库 464,718；自实现包含测试 121,614；自实现不包含测试 77,078；
+`container_queue` 实现 1,101。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
