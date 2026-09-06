@@ -254,3 +254,16 @@ change.
 
 本节只是候选前实现记录，未把 registry 状态越级写成 `CANDIDATE/VERIFIED`。candidate identity、三平台
 sanitizer/交付、资格化 P1、红队结论与 terminal receipt 在后续合法状态转换中补入。
+
+## 不可变候选（`CANDIDATE`）
+
+- product commit：`47a9e03a6bfd4d2d299d26d1d32739bb84541166`；tree：
+  `093836f0791f304deb521e86be8ba5a9c94b5913`；
+- 冻结内容：`OBS5-VALUE-01..DOC-07` 的公开 API、算法/资源合同、consumer shapes、P1 contract、
+  semantic validator、tests/sample 与 architecture/user/performance 文档。后续若改变这些产品事实，必须
+  退回 `AUDITED`，不能在验证阶段偷偷调 workload 或 shape；
+- `AUDITED -> CANDIDATE` 前 registry snapshot：
+  `C:\\public\\project-hyle\\_validation\\obs-v5-metrics-primitives\\transitions\\before-candidate.json`，
+  SHA-256 `4783F4F24F43E9D1883865750CBE6F05FC9B98539A06C4C2B268169EBDE3D6FA`。
+
+registry 现进入 `CANDIDATE`。前一节的“候选前”措辞保留为发生顺序事实；当前状态只以 registry 为准。

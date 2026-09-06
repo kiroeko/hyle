@@ -294,7 +294,7 @@
     },
     {
       "module": "obs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "round_id": "obs-v5-metrics-primitives",
@@ -302,6 +302,8 @@
       "scope": "Add model-independent counter, gauge and fixed-bucket histogram aggregation primitives for production inference observability without coupling them to exporters, labels or runtime policy.",
       "non_goals": "Prometheus/OpenTelemetry formats, names/labels/cardinality registry, time windows, exporters, persistence/network/background work, automatic task context, GPU timing, engine policy, Native FFI/C API, adjacent-module redesign, common instrumentation changes and Formal certification.",
       "baseline_commit": "c51599be2fdcd4caeacc5b05aa0f61f725c62491",
+      "candidate_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
+      "candidate_tree": "093836f0791f304deb521e86be8ba5a9c94b5913",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -320,7 +322,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs v5 AUDITED：真实推理消费者支持的 owner-thread/concurrent counter、gauge、fixed histogram、批量观测、snapshot merge 与 bucket-quantile API 已冻结为七项有限 FIX；尚未修改产品，等待候选实现与验证。"
+      "summary": "obs v5 CANDIDATE：真实推理消费者支持的 owner-thread/concurrent counter、gauge、fixed histogram、批量观测、snapshot merge 与 bucket-quantile 已实现并冻结在不可变候选；等待三平台、三交付、P1 与红队验证。"
     },
     {
       "module": "math",
