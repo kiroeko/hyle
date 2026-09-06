@@ -35,3 +35,21 @@
 `BLOCKED -> SCOPED` 前态 registry snapshot：
 `C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-scoped.json`，
 SHA-256 `2116DE531E3C83CF0E0FA4143A2631BCF192ED0BD29102578DEC402AF047F072`。
+
+## Audit（`AUDITED`）
+
+- `git diff 3c1ef239..46f4892e -- include/hyle/platform src/platform bench/platform
+  bench/contracts/platform-host-p1-v3.json CMakeLists.txt cmake` 为空；NUMA memory 产品、全部 Platform normal
+  path、benchmark/adapter/contract 与中央 build edge 均未漂移；
+- oneTBB checkout clean，identity 精确为合同锁定的
+  `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；comparison class、四 strata、ownership/failure、charged
+  phases 与 5% margin 沿用 v10 的 same-contract 审计；
+- `aac87769` 只修改公共 runner/control 判断、tooling canary 和说明；它不会链接进
+  `hyle_platform`/benchmark product path。live runner 与 manifest verifier 共享同一个纯 stop-rule；
+- v10 三平台 correctness、source/static/shared、API/docs 与 red-team 全部绑定不变 candidate，继续有效；
+  本轮没有新产品 finding。冻结 FIX ledger 为空，允许操作只有 clean qualification、deep verify 和记录；
+- 当前唯一风险是 n=31 仍可能不能资格化；这是合法终裁，不授权再次运行。
+
+`SCOPED -> AUDITED` 前态 registry snapshot：
+`C:\public\project-hyle\_validation\platform-v11-perf-control-resume\transitions\module-status-before-audited.json`，
+SHA-256 `227D8562BFE74706B7C85657A2DF5FCE1F91524178188A120D427CAD42DE7583`。

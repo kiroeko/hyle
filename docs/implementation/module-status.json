@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "platform-v11-perf-control-resume",
       "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
       "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
@@ -601,7 +601,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v11 RESUME / SCOPED：通用仪器已补齐 precision-only known-delta 的预注册 n=31 escalation；产品候选、合同、peer、5% margin 与四 strata 不变，本轮只允许一次 fresh W1-WIN qualification。"
+      "summary": "platform v11 RESUME / AUDITED：产品、benchmark、contract、peer、margin 与 build edge 相对 v10 candidate 均无漂移；FIX 集为空，只允许在修复后的公共停止规则下执行一次 fresh W1-WIN qualification。"
     },
     {
       "module": "platform_thread",
