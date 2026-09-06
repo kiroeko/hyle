@@ -717,7 +717,9 @@
     },
     {
       "module": "platform_fs",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
+      "reopen_trigger_id": "PLATFORM-FS-CONTROL-WINDOW-2026-09-06",
+      "reopen_evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "round_id": "platform-fs-v2-control-resume",
       "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "scope": "Rebind the unchanged Platform-fs v8 product candidate and run exactly one fresh W1-WIN same-contract warm-file P1 qualification after an independent controls-only preflight proves a stable sampling window.",
@@ -725,6 +727,8 @@
       "baseline_commit": "27e6128683fbfdf371310dc433ab9abf68d13e9a",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+      "end_commit": "adf82306eee363f1a5f44ee48d556fc0fcc784bb",
+      "registry_anchor_commit": "adf82306eee363f1a5f44ee48d556fc0fcc784bb",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -752,7 +756,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform_fs v2 RESUME / VERIFIED：未变化的 v8 第二候选取得唯一 fresh W1-WIN receipt；31 个独立进程下 controls 全 PASS，8/8 同合同 warm-file strata 为 PARITY 且 5% NI PASS，无固定方向产品劣化。"
+      "closure_evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
+      "freeze_confirmation": {
+        "id": "platform-fs-v2-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
+        "evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "repository_code": 451412,
+        "self_with_tests": 116939,
+        "self_without_tests": 74308,
+        "module_implementation": 2712
+      },
+      "known_limitations": [
+        "This factor owns synchronous buffered file-handle and namespace journeys; asynchronous and direct I/O remain with the IO owner.",
+        "POSIX EINTR retry is limited to restart-safe controls without known side effects; close-like or potentially committed operations are intentionally not retried blindly.",
+        "The numeric receipt covers one warmed 4 MiB model-file journey on W1-WIN; cold-cache, other filesystems, cross-machine ranking and Formal SOTA remain unclaimed.",
+        "W1-WSL and M1-MAC provide correctness, sanitizer and delivery coverage and are not pooled with Windows NTFS timing."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces synchronous file correctness, ownership, EOF, short-transfer, EINTR, close or C++ usability failure.",
+        "The public API, complexity, native-call cost or semantics, direct dependencies, delivery, or measured product bytes change materially.",
+        "Qualified same-contract normal-consumer evidence proves a reproducible regression beyond the 5% material margin, or a mature peer proves a better complexity class.",
+        "A supported OS or SDK changes the file-handle or synchronous-I/O contract used by this factor."
+      ],
+      "summary": "platform_fs v2 CLOSED/FROZEN：未变化的 v8 第二候选取得唯一 fresh W1-WIN receipt；31 个独立进程下 controls 全 PASS，8/8 同合同 warm-file strata 为 PARITY 且 5% NI PASS，无固定方向产品劣化。"
     },
     {
       "module": "mem_reclaim",
