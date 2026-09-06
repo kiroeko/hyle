@@ -1068,61 +1068,32 @@
     },
     {
       "module": "container",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "CONTAINER-CPU-FEATURE-ROUTING-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
-      "round_id": "container-v4-cpu-feature-migration",
-      "closure_task": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
-      "scope": "Migrate the private StringView, hash and DynamicBitset variant selectors from the provider-shaped Platform ISA tier to explicit raw CPU feature requirements while preserving public APIs and kernel bodies.",
-      "non_goals": "New container capabilities or APIs, node-table lifetime, hash/string/bitset algorithm optimization, redesigning historical P1 evidence, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "66dc97620d34dd05b566fdbc359f2a28ad981447",
-      "candidate_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
-      "candidate_tree": "1456eea7575fa72ce48626a9db13a80f0aa31c09",
-      "end_commit": "c3a8b0beb24a9bfce95f9117fc7df6f194b0e966",
-      "registry_anchor_commit": "195aa9a3d2ce90db1ddb249a5319edb351224988",
-      "performance_tier": "P0",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
+      "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
+      "round_id": "container-v5-product-factorization",
+      "closure_task": "docs/implementation/tasks/container/container-v5-product-factorization.md",
+      "scope": "Re-establish the Container product from current ggml/llama.cpp, ds4, vLLM and SGLang demand: correct the public x86 ISA floor and private shared-provider visibility, freeze the natural capability/API superset, implement admitted generic storage gaps, factor sequential, concurrent, queue and text internals behind one consumer facade, and renew real-journey correctness, performance and delivery evidence.",
+      "non_goals": "Compute or Graph design, tokenizer/KV-cache/scheduler/IO policy, copying every standard or peer API, Native FFI or C API, stable cross-toolchain C++ ABI, common closure/performance instrument redesign, adjacent frozen-module changes without their own trigger, and Formal SOTA certification.",
+      "baseline_commit": "a9b5b6523867601dd2c708a2bedc8fc4d81469f2",
+      "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md"
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
-        "state": "NONE"
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/container/container-v4-cpu-feature-migration.md",
-      "loc": {
-        "snapshot_commit": "d015b0de1cf6d5899da8336fef94104974bcd90e",
-        "repository_code": 443000,
-        "self_with_tests": 112489,
-        "self_without_tests": 71135,
-        "module_implementation": 13094
-      },
-      "known_limitations": [
-        "The Highway and XXH3 feature requirements are private implementation details rather than a public target-pinning API.",
-        "This P0 round covers init-once selectors and O(1) membership only; it does not renew StringView, hash, DynamicBitset, node-table, end-to-end inference or Formal performance rankings.",
-        "A compiler-flag, Highway/XXH3 target-group or variant-body change invalidates the current structural evidence."
-      ],
-      "reopen_triggers": [
-        "The actual generated-TU flags or provider target group changes, or a named consumer reproduces wrong dispatch or an illegal instruction.",
-        "The public API or layout, kernel body, dependency, normal dispatch cost or source/static/shared delivery changes materially.",
-        "A same-contract normal consumer proves material performance regression."
-      ],
-      "summary": "container-v4 CLOSED：三个私有 selector 各自匹配 Highway/XXH3 的真实 TU requirements；三平台 correctness/sanitizer/三交付、无 SIMD 依赖、文档/红队与 P0 结构门全部通过，公开 API/kernel body 未改。"
+      "summary": "container-v5 REOPENED：public SSSE3 floor 与 Unix simdutf visibility 已构成直接产品触发；四组真实推理消费还证明能力超集和 sequential/concurrent/queue/text 内部闭包必须重新冻结。产品代码尚未修改。"
     },
     {
       "module": "util",
