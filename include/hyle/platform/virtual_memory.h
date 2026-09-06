@@ -58,10 +58,10 @@ enum class Protect : std::uint8_t {
   kReadWrite = 2,  // read + write
 };
 
-// Page-range residency controls shared by anonymous storage owners. Advice is
-// a performance/residency request except kDontNeed, whose mature OS contract
-// permits the current anonymous contents to be discarded. Unsupported native
-// hints return Unimplemented rather than pretending they were applied.
+// Page-range residency controls shared by anonymous and file-backed storage
+// owners. Advice is a performance/residency request except kDontNeed, whose
+// exact refault/writeback semantics follow the backing mapping. Unsupported
+// native hints return Unimplemented rather than pretending they were applied.
 enum class VmAdvice : std::uint8_t {
   kNormal = 0,
   kRandom = 1,
@@ -122,13 +122,14 @@ HYLE_PLATFORM_API Status vm_release(void* base, std::size_t size) noexcept;
 HYLE_PLATFORM_API Status vm_protect(void* ptr, std::size_t size,
                                     Protect prot) noexcept;
 
-// Apply an access/residency policy to a committed, page-aligned anonymous
-// range. Size is rounded up. kNormal is a successful no-op on platforms that
-// have no explicit reset hint; all other unsupported policies are observable.
+// Apply an access/residency policy to a valid, page-aligned mapped range. The
+// owner must ensure that the rounded range remains mapped and supports the
+// selected advice. kNormal is a successful no-op on platforms that have no
+// explicit reset hint; all other unsupported policies are observable.
 HYLE_PLATFORM_API Status vm_advise(void* ptr, std::size_t size,
                                    VmAdvice advice) noexcept;
 
-// Pin/unpin a committed page-aligned range. kAdjustIfNeeded permits one
+// Pin/unpin a valid mapped page-aligned range. kAdjustIfNeeded permits one
 // process-global working-set/memlock-limit adjustment and retry. Callers own
 // the policy implications; unlock does not roll a process limit back.
 HYLE_PLATFORM_API Status vm_lock(void* ptr, std::size_t size,

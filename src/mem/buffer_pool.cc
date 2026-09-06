@@ -13,6 +13,7 @@ namespace hyle::mem {
 namespace {
 
 constexpr std::size_t kBucketCount = sizeof(std::size_t) * 8 + 1;
+constexpr std::uint8_t kMaxEntriesScannedPerBucket = 8;
 
 struct Entry {
   Buffer buffer;
@@ -112,8 +113,7 @@ Entry* find_reusable(PoolImpl& pool, std::size_t size,
     std::size_t best_slack = (std::numeric_limits<std::size_t>::max)();
     Entry** link = &pool.buckets[bucket_index];
     std::uint8_t scanned = 0;
-    while (*link != nullptr &&
-           scanned < pool.options.max_entries_scanned_per_bucket) {
+    while (*link != nullptr && scanned < kMaxEntriesScannedPerBucket) {
       Entry* entry = *link;
       const std::size_t capacity = entry->buffer.size();
       if (capacity >= size && entry->buffer.alignment() >= alignment) {
@@ -216,10 +216,6 @@ Result<BufferPool> BufferPool::create(MemoryResourceRef resource,
   if (options.growth_percent > 100) {
     return std::unexpected(
         Status::InvalidArgument("buffer pool growth percent exceeds 100"));
-  }
-  if (options.max_entries_scanned_per_bucket == 0) {
-    return std::unexpected(Status::InvalidArgument(
-        "buffer pool bounded scan must inspect at least one entry"));
   }
   AllocatorRef allocator = system_allocator();
   void* storage = allocator.allocate(sizeof(PoolImpl), alignof(PoolImpl));

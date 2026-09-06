@@ -531,7 +531,7 @@ Status vm_advise(void* ptr, std::size_t size, VmAdvice advice) noexcept {
                : native_status("DiscardVirtualMemory", code);
   }
   return Status::Unimplemented(
-      "random/sequential anonymous VM advice is unavailable on Windows");
+      "random/sequential mapped-range advice is unavailable on Windows");
 #else
   int native = MADV_NORMAL;
   switch (advice) {

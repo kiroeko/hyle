@@ -170,18 +170,19 @@ int main() {
       memory->allocator_peak_committed_bytes <
           memory->allocator_committed_bytes ||
       memory->process_peak_resident_bytes < memory->process_resident_bytes ||
-      memory->process_peak_committed_bytes < memory->process_committed_bytes) {
+      (memory->process_private_committed_bytes &&
+       memory->process_peak_private_committed_bytes &&
+       *memory->process_peak_private_committed_bytes <
+           *memory->process_private_committed_bytes)) {
     std::fprintf(stderr,
                  "inconsistent memory snapshot: allocator=%llu/%llu, "
-                 "committed=%llu/%llu, rss=%llu/%llu, process=%llu/%llu\n",
+                 "committed=%llu/%llu, rss=%llu/%llu\n",
                  static_cast<unsigned long long>(memory->allocator_reserved_bytes),
                  static_cast<unsigned long long>(memory->allocator_peak_reserved_bytes),
                  static_cast<unsigned long long>(memory->allocator_committed_bytes),
                  static_cast<unsigned long long>(memory->allocator_peak_committed_bytes),
                  static_cast<unsigned long long>(memory->process_resident_bytes),
-                 static_cast<unsigned long long>(memory->process_peak_resident_bytes),
-                 static_cast<unsigned long long>(memory->process_committed_bytes),
-                 static_cast<unsigned long long>(memory->process_peak_committed_bytes));
+                 static_cast<unsigned long long>(memory->process_peak_resident_bytes));
     return 21;
   }
   return 0;

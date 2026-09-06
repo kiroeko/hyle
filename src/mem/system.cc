@@ -12,6 +12,7 @@
 
 #include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
+#include "hyle/platform/host_memory.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -226,12 +227,8 @@ Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
         "system memory snapshot: allocator returned negative byte counts"));
   }
 
-  std::size_t current_rss = 0;
-  std::size_t peak_rss = 0;
-  std::size_t current_commit = 0;
-  std::size_t peak_commit = 0;
-  mi_process_info(nullptr, nullptr, nullptr, &current_rss, &peak_rss,
-                  &current_commit, &peak_commit, nullptr);
+  HYLE_ASSIGN_OR_RETURN(platform::ProcessMemoryInfo process,
+                        platform::process_memory_info());
 
   SystemMemorySnapshot out;
   out.allocator_reserved_bytes =
@@ -242,16 +239,11 @@ Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
       static_cast<std::uint64_t>(stats.committed.current);
   out.allocator_peak_committed_bytes =
       static_cast<std::uint64_t>(stats.committed.peak);
-  out.process_resident_bytes = static_cast<std::uint64_t>(current_rss);
-  // On Linux, mimalloc obtains current RSS and the process high-water mark
-  // through different kernel interfaces. At small process sizes the latter
-  // can lag one sampling interval and transiently report less than current.
-  // A snapshot-level peak is still required to include its current value.
-  out.process_peak_resident_bytes = static_cast<std::uint64_t>(
-      peak_rss < current_rss ? current_rss : peak_rss);
-  out.process_committed_bytes = static_cast<std::uint64_t>(current_commit);
-  out.process_peak_committed_bytes = static_cast<std::uint64_t>(
-      peak_commit < current_commit ? current_commit : peak_commit);
+  out.process_resident_bytes = process.resident_bytes;
+  out.process_peak_resident_bytes = process.peak_resident_bytes;
+  out.process_private_committed_bytes = process.private_committed_bytes;
+  out.process_peak_private_committed_bytes =
+      process.peak_private_committed_bytes;
   return out;
 }
 
@@ -259,45 +251,55 @@ Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
 int system_backend_version_for_testing() noexcept { return mi_version(); }
 #endif
 
-Status reserve_huge_1g_pages(std::size_t pages, int numa_node,
-                             unsigned timeout_ms) noexcept {
-  if (pages == 0)
-    return Status::Ok();
+Result<HugePageReservationReport> reserve_huge_1g_pages(
+    std::size_t pages, int numa_node, unsigned timeout_ms) noexcept {
+  HugePageReservationReport report;
+  report.requested_pages = pages;
+  report.requested_numa_node = numa_node;
+  report.placement = numa_node == platform::kNumaAny
+                         ? HugePagePlacement::kUnconstrained
+                         : HugePagePlacement::kPreferenceUnverified;
+  if (pages == 0) return report;
   constexpr std::size_t kHuge1GiB = std::size_t{1} << 30;
   if (pages > (std::numeric_limits<std::size_t>::max)() / kHuge1GiB) {
-    return Status::OutOfRange(
-        "reserve_huge_1g_pages: requested byte size overflows size_t");
+    return std::unexpected(Status::OutOfRange(
+        "reserve_huge_1g_pages: requested byte size overflows size_t"));
   }
   if (numa_node != platform::kNumaAny &&
       (numa_node < 0 ||
        !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
-    return Status::OutOfRange(
-        "reserve_huge_1g_pages: NUMA node ID is unavailable");
+    return std::unexpected(Status::OutOfRange(
+        "reserve_huge_1g_pages: NUMA node ID is unavailable"));
   }
   // mimalloc: 0 success, non-zero error. timeout 0 → use a short default so a
   // fragmented box does not hang the process for minutes.
   const std::size_t t =
       timeout_ms == 0 ? static_cast<std::size_t>(100) : timeout_ms;
-  int rc;
-  if (numa_node == platform::kNumaAny) {
-    // Interleave 1GiB pages across nodes (0 = all nodes in mi API).
-    rc = mi_reserve_huge_os_pages_interleave(pages, /*numa_nodes=*/0, t);
-  } else {
-    rc = mi_reserve_huge_os_pages_at(pages, numa_node, t);
+  mi_arena_id_t arena = nullptr;
+  const int rc = mi_reserve_huge_os_pages_at_ex(
+      pages, numa_node, t, false, &arena);
+  if (arena != nullptr) {
+    std::size_t arena_size = 0;
+    void* area = mi_arena_area(arena, &arena_size);
+    if (area == nullptr || arena_size % kHuge1GiB != 0) {
+      report.outcome = Status::Internal(
+          "mimalloc huge-page arena has an invalid observable size");
+      return report;
+    }
+    report.reserved_pages = arena_size / kHuge1GiB;
   }
-  if (rc == 0)
-    return Status::Ok();
 
   char context[160];
   std::snprintf(context, sizeof(context),
                 "mimalloc reserve huge 1GiB pages (pages=%zu, numa_node=%d)",
                 pages, numa_node);
-  // The pinned mimalloc implementation returns ENOMEM for privilege,
-  // fragmentation and arena-management failures. It does not expose enough
-  // detail to claim PermissionDenied or DeadlineExceeded, so preserve its
-  // native errno and use the error module's O(1) canonical taxonomy. A future
-  // backend/native code outside that documented contract remains Unknown.
-  return status_from_errno(rc, context);
+  if (rc != 0) {
+    report.outcome = status_from_errno(rc, context);
+  } else if (report.reserved_pages != pages) {
+    report.outcome = Status::ResourceExhausted(
+        "mimalloc reserved only part of the requested 1GiB pages");
+  }
+  return report;
 }
 
 } // namespace hyle::mem

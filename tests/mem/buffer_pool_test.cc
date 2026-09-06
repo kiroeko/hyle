@@ -154,11 +154,6 @@ TEST(BufferPool, RejectsInvalidResourceAndPolicy) {
   EXPECT_TRUE(BufferPool::create(system_resource(), options)
                   .error()
                   .IsInvalidArgument());
-  options.allocation_granularity = 256;
-  options.max_entries_scanned_per_bucket = 0;
-  EXPECT_TRUE(BufferPool::create(system_resource(), options)
-                  .error()
-                  .IsInvalidArgument());
 }
 
 }  // namespace

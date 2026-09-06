@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
@@ -40,8 +41,8 @@ struct SystemMemorySnapshot {
   std::uint64_t allocator_peak_committed_bytes = 0;
   std::uint64_t process_resident_bytes = 0;
   std::uint64_t process_peak_resident_bytes = 0;
-  std::uint64_t process_committed_bytes = 0;
-  std::uint64_t process_peak_committed_bytes = 0;
+  std::optional<std::uint64_t> process_private_committed_bytes;
+  std::optional<std::uint64_t> process_peak_private_committed_bytes;
 };
 
 // Internal backing/version failure is reported instead of returning a partial

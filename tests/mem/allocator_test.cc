@@ -116,8 +116,11 @@ TEST(AllocatorRef, SystemMemorySnapshotIsStableAndSelfConsistent) {
             before->allocator_committed_bytes);
   EXPECT_GE(before->process_peak_resident_bytes,
             before->process_resident_bytes);
-  EXPECT_GE(before->process_peak_committed_bytes,
-            before->process_committed_bytes);
+  if (before->process_private_committed_bytes &&
+      before->process_peak_private_committed_bytes) {
+    EXPECT_GE(*before->process_peak_private_committed_bytes,
+              *before->process_private_committed_bytes);
+  }
 
   constexpr std::size_t kProbeBytes = 8u * 1024u * 1024u;
   AllocatorRef allocator = system_allocator();
@@ -133,16 +136,22 @@ TEST(AllocatorRef, SystemMemorySnapshotIsStableAndSelfConsistent) {
             during->allocator_committed_bytes);
   EXPECT_GE(during->process_peak_resident_bytes,
             during->process_resident_bytes);
-  EXPECT_GE(during->process_peak_committed_bytes,
-            during->process_committed_bytes);
+  if (during->process_private_committed_bytes &&
+      during->process_peak_private_committed_bytes) {
+    EXPECT_GE(*during->process_peak_private_committed_bytes,
+              *during->process_private_committed_bytes);
+  }
   EXPECT_GE(during->allocator_peak_reserved_bytes,
             before->allocator_peak_reserved_bytes);
   EXPECT_GE(during->allocator_peak_committed_bytes,
             before->allocator_peak_committed_bytes);
   EXPECT_GE(during->process_peak_resident_bytes,
             before->process_peak_resident_bytes);
-  EXPECT_GE(during->process_peak_committed_bytes,
-            before->process_peak_committed_bytes);
+  if (during->process_peak_private_committed_bytes &&
+      before->process_peak_private_committed_bytes) {
+    EXPECT_GE(*during->process_peak_private_committed_bytes,
+              *before->process_peak_private_committed_bytes);
+  }
 
   allocator.deallocate(probe, kProbeBytes, 64);
 }

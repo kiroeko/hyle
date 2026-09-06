@@ -17,6 +17,7 @@
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
+#  include <psapi.h>
 #elif HYLE_OS_MACOS
 #  include <mach/mach.h>
 #  include <sys/resource.h>
@@ -207,6 +208,41 @@ std::optional<std::uint64_t> linux_virtual_bytes() noexcept {
   return pages * static_cast<std::uint64_t>(page);
 }
 
+Result<ProcessMemoryInfo> read_linux_process_memory() noexcept {
+  std::FILE* file = std::fopen("/proc/self/status", "r");
+  if (file == nullptr) {
+    return std::unexpected(status_from_errno(errno, "open /proc/self/status"));
+  }
+
+  ProcessMemoryInfo out;
+  bool have_resident = false;
+  bool have_peak = false;
+  char line[512];
+  while (std::fgets(line, sizeof(line), file) != nullptr) {
+    std::uint64_t bytes = 0;
+    if (detail::parse_linux_meminfo_kib(line, "VmRSS", bytes)) {
+      out.resident_bytes = bytes;
+      have_resident = true;
+    } else if (detail::parse_linux_meminfo_kib(line, "VmHWM", bytes)) {
+      out.peak_resident_bytes = bytes;
+      have_peak = true;
+    }
+  }
+  const int saved = errno;
+  const bool io_error = std::ferror(file) != 0;
+  std::fclose(file);
+  if (io_error) {
+    return std::unexpected(status_from_errno(saved, "read /proc/self/status"));
+  }
+  if (!have_resident || !have_peak) {
+    return std::unexpected(Status::DataLoss(
+        "/proc/self/status has no usable VmRSS/VmHWM"));
+  }
+  out.peak_resident_bytes =
+      (std::max)(out.peak_resident_bytes, out.resident_bytes);
+  return out;
+}
+
 #endif  // HYLE_OS_LINUX
 
 }  // namespace
@@ -292,6 +328,45 @@ Result<HostMemoryInfo> host_memory_info() noexcept {
       merge_process_budget(info, bytes, remaining(bytes, task.virtual_size));
     }
   }
+#endif
+  return info;
+}
+
+Result<ProcessMemoryInfo> process_memory_info() noexcept {
+  ProcessMemoryInfo info;
+#if HYLE_OS_WINDOWS
+  PROCESS_MEMORY_COUNTERS_EX counters{};
+  if (!::K32GetProcessMemoryInfo(
+          ::GetCurrentProcess(),
+          reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
+          static_cast<DWORD>(sizeof(counters)))) {
+    return std::unexpected(
+        status_from_win32(::GetLastError(), "K32GetProcessMemoryInfo"));
+  }
+  info.resident_bytes = static_cast<std::uint64_t>(counters.WorkingSetSize);
+  info.peak_resident_bytes = (std::max)(
+      info.resident_bytes,
+      static_cast<std::uint64_t>(counters.PeakWorkingSetSize));
+  info.private_committed_bytes =
+      static_cast<std::uint64_t>(counters.PrivateUsage);
+  // PeakPagefileUsage is not documented as the peak of PrivateUsage. Leave
+  // the stronger field absent instead of silently changing its meaning.
+#elif HYLE_OS_LINUX
+  return read_linux_process_memory();
+#elif HYLE_OS_MACOS
+  mach_task_basic_info_data_t task{};
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+  const kern_return_t result = ::task_info(
+      ::mach_task_self(), MACH_TASK_BASIC_INFO,
+      reinterpret_cast<task_info_t>(&task), &count);
+  if (result != KERN_SUCCESS) {
+    return std::unexpected(
+        Status::Unavailable("process Mach task information failed"));
+  }
+  info.resident_bytes = static_cast<std::uint64_t>(task.resident_size);
+  info.peak_resident_bytes = (std::max)(
+      info.resident_bytes,
+      static_cast<std::uint64_t>(task.resident_size_max));
 #endif
   return info;
 }

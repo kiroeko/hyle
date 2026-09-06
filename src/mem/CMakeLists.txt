@@ -56,7 +56,7 @@ elseif(HYLE_SANITIZER STREQUAL "asan")
 endif()
 target_link_libraries(hyle_mem PRIVATE mimalloc_static)
 # The central component graph gives the real hyle_mem target public edges to
-# error (Status/Result), platform (VM/CPU/NUMA), and util_core (SpinLock).  Keep
+# core, error (Status/Result), and platform (process/NUMA facts). Keep
 # error explicit rather than hiding it behind platform's transitive link.
 # Core is an explicit PUBLIC header-only dependency because mem's public object
 # layouts consume core/cache.h; it adds no runtime artifact. obs/trace.h remains

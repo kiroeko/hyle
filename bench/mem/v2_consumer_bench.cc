@@ -374,7 +374,6 @@ class BufferPoolReplay {
     result.max_reuse_slack = 0;
     result.growth_percent = 0;
     result.allocation_granularity = 256;
-    result.max_entries_scanned_per_bucket = 8;
     return result;
   }
 

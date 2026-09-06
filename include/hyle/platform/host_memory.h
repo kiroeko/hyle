@@ -41,11 +41,27 @@ struct HostMemoryInfo {
   }
 };
 
+// One uncached whole-process memory snapshot. Resident values include every
+// allocator and mapping domain in the process. Private committed values are
+// present only when the OS exposes that exact concept; virtual address size,
+// host-wide commit and an individual allocator's committed bytes are not
+// substitutes for an absent field.
+struct ProcessMemoryInfo {
+  std::uint64_t resident_bytes = 0;
+  std::uint64_t peak_resident_bytes = 0;
+  std::optional<std::uint64_t> private_committed_bytes;
+  std::optional<std::uint64_t> peak_private_committed_bytes;
+};
+
 // Dynamic, fallible and intentionally uncached: physical availability and
 // cgroup/process limits may change between calls. Windows leaves process_*
 // empty because documented APIs cannot fold an unknown nested Job chain. The
 // snapshot is internally coherent enough for planning but is not a reservation;
 // allocation may still race another process and fail.
 HYLE_PLATFORM_API Result<HostMemoryInfo> host_memory_info() noexcept;
+
+// Dynamic, fallible and intentionally uncached. This is a cold diagnostic and
+// planning query; it adds no state or work to allocation and mapping hot paths.
+HYLE_PLATFORM_API Result<ProcessMemoryInfo> process_memory_info() noexcept;
 
 }  // namespace hyle::platform

@@ -20,14 +20,10 @@ struct BufferPoolOptions {
   std::size_t max_reuse_slack = std::size_t{4} << 20;
 
   // New allocations reserve this percentage of headroom, then round to the
-  // power-of-two allocation_granularity. Five percent mirrors proven
-  // inference-buffer growth without committing to power-of-two capacities.
+  // power-of-two allocation_granularity. This is an explicit retention versus
+  // provider-allocation policy, not a benchmark tuning control.
   std::uint8_t growth_percent = 5;
   std::size_t allocation_granularity = 256;
-
-  // Per size bucket, bound the best-fit/alignment inspection. A miss allocates
-  // a new buffer instead of turning a long cache into an unbounded hot scan.
-  std::uint8_t max_entries_scanned_per_bucket = 8;
 };
 
 struct BufferPoolStats {

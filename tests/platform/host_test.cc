@@ -26,6 +26,21 @@ TEST(HostMemory, SnapshotHasCoherentPhysicalBounds) {
   }
 }
 
+TEST(HostMemory, ProcessSnapshotUsesWholeProcessOsFacts) {
+  auto info = process_memory_info();
+  ASSERT_TRUE(info.has_value()) << info.error().message();
+  EXPECT_GT(info->resident_bytes, 0u);
+  EXPECT_GE(info->peak_resident_bytes, info->resident_bytes);
+#if defined(_WIN32)
+  ASSERT_TRUE(info->private_committed_bytes.has_value());
+  EXPECT_GT(*info->private_committed_bytes, 0u);
+  EXPECT_FALSE(info->peak_private_committed_bytes.has_value());
+#else
+  EXPECT_FALSE(info->private_committed_bytes.has_value());
+  EXPECT_FALSE(info->peak_private_committed_bytes.has_value());
+#endif
+}
+
 TEST(HostMemory, EffectiveBudgetUsesEveryAvailableConstraint) {
   HostMemoryInfo info;
   info.physical_available_bytes = 900;
