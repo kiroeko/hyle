@@ -115,18 +115,113 @@ Python、Rust、CUDA、Triton 或 vendor kernel 中的业务对象不会按名�
 - 全轮仍执行 `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。只有实际改变
   `module-status.json` 的子轮才保存 previous registry 并用 `--previous` 校验。
 
+## Wave A：foundation prime differential
+
+本波只读回放绑定本页锁定的五个 revision。以下 source path 均相对于对应 reference checkout；它们
+证明任务形状和重复频率，不把 Python/Rust/Torch API 本身下沉为 HYLE API。
+
+### Core
+
+- exact sources：ggml `include/ggml-cpu.h:ggml_vec_dot_t` 的 restrict contract 与大量
+  `GGML_ASSERT`；vLLM `csrc/cpu/cpu_attn_rvv.hpp:gemm_macro_rvv_fma_Mx8_Ku4` 的 restrict/force-inline
+  kernel contract、`csrc/attention/dtype_bfloat16.cuh` 的 unreachable route；vLLM
+  `csrc/torch_utils.h:TORCH_UTILS_CHECK` 以及 ds4 `cuda/mmq/vendors/hip.h:__trap`；
+- task/contract：kernel 编译提示必须零运行时状态；fatal invariant 在失败路径终止；target/device
+  dispatch 与 tensor validation 由 SIMD/Compute/backend owner 承担。它们按 element/kernel 调用为
+  `STRUCTURAL_HOT`，但 Core 只提供 compile-time lowering；
+- route/cost：`HYLE_RESTRICT`、force-inline/noinline/cold/likely/unlikely、assume/unreachable、assert
+  field contract、prefetch/cache constants 与 environment facts 已覆盖模型无关部分。所有正常路线均为
+  inline/compile-time，零 allocation/lock/syscall/dispatch；GPU/device annotation 不能伪装成 host Core
+  缺口；
+- generalization/verdict：四组 consumer 重复的是现有编译合同，没有第二个新的 host primitive，也没有
+  新 codegen 或交付失败事实，故为 `CONFIRMED`。性能保持 P0 structural；不为单个 kernel 新建宏。
+
+### Error
+
+- exact sources：llama.cpp `src/llama-context.cpp:llama_context` 的 owning diagnostic exceptions；ggml
+  `src/gguf.cpp:gguf_init_from_file_impl` 的 errno + operation text；ds4 `ds4_gpu_args.h` 的 status + caller
+  buffer 与 `ds4_distributed.c:dist_connect_endpoint_once` 的立即 errno 捕获；vLLM
+  `csrc/fs_io.cpp:atomic_copy` 的 errno preservation 和 `csrc/torch_utils.h` 的 boundary check；
+- task/contract：模型加载/配置失败是 `CONTROL_PATH`；Result success、registry borrow 和 scheduler first-error
+  handoff 是正常传播路径。owner 必须保留 canonical code、owning message、native integer 与逐层 context，
+  backend/Torch/Python exception ABI 不进入 Error；
+- route/cost：`Status`/`Result<T>`/`Result<T&>`、`WithContext`、errno/Win32/WinSock/HRESULT/backend native
+  detail 和 `std::error_code` adapter 已覆盖。HIP/Metal 命中尚未证明现有 canonical + native integer +
+  message 无法恢复，因此继续受 `ERROR-WATCH-01` 管理；不按 backend 名单扩 enum。现有 v5 P1 已对
+  success、owning first-error 和 non-owning lookup 同合同路径全部通过；冷失败能力保持 P0；
+- generalization/verdict：没有发现需要 Error 拥有的 multi-error、exception registry 或第二 native field，
+  也没有固定 material regression，故为 `CONFIRMED`。
+
+### Container-intrusive
+
+- exact sources：vLLM `vllm/v1/core/kv_cache_utils.py:KVCacheBlock` 与
+  `FreeKVCacheBlockQueue`；`vllm/v1/core/block_pool.py:BlockPool.get_new_blocks/touch/free_blocks`；
+- task/contract：每个 KV block 是 caller-owned stable node。自由队列以双哨兵维持 LRU/局部性次序，要求
+  两端插入/弹出、任意已知节点 O(1) 删除、O(1) count、零 steady-state allocation；批量取出/归还按
+  block 数量为 O(n)。`touch/free/get` 随 block/request 重复，属于 `STRUCTURAL_HOT`；eviction policy 仍归
+  engine；
+- route/cost：`CountedIntrusiveList` 已提供相同 sentinel/member-hook/size/iterator_to/erase/front/back，
+  已链接的批量链可用 O(1) splice；逐节点 detach 必然 O(n)。现有 `counted-membership-4096` P1 对
+  preallocated node 的插入、每次 size 和任意删除与 Boost constant-time-size list 同合同，恰好覆盖新增
+  consumer 的成本机制；不需要 KV 专名、`popleft_n` 返回 owning vector 或常态新 metadata；
+- generalization/verdict：真实推理消费确认既有自然形状，复杂度与证据合同一致，故为 `CONFIRMED`。
+
+### Util-core
+
+- exact sources：ds4 `ds4.c:sample_rng_next/sample_rng_f32` 及 sampling/speculative-accept 调用；llama.cpp
+  sampling 中的 `std::mt19937`/standard distributions；HYLE 内部 Mem/Sched 的 `Ref`/`SpinLock` 和资源
+  owner 路线作为直接 foundation consumer；
+- task/contract：显式 seed/state 的 scalar RNG 在采样决策中按 token 使用，属于 `STRUCTURAL_HOT`；并行
+  stream、bulk draw 或 crypto 不是该任务。资源/borrow/callback 路线分别要求明确 lifetime、零隐藏
+  ownership 和同步调用；
+- route/cost：`Rng` 已是标准 UniformRandomBitGenerator，提供可复现 state、xoshiro256++、24/53-bit
+  float、无偏 bounded integer、shuffle、jump/long-jump 和 thread convenience；steady draw 全 inline、
+  zero allocation/lock/division（bounded rejection rare），比 ds4 私有 xorshift64* 覆盖更完整的通用合同。
+  单次 draw 相对完整 logits/filter scan 没有已证明 material 独立预算，因此保持 P0，不制造 RNG 微榜；
+  Ref/SpinLock/FunctionRef 的既有同合同 P1 仍覆盖其当前热消费者；
+- generalization/verdict：未出现 bulk RNG、weak ownership 或 parking mutex 的准入证据，故为
+  `CONFIRMED`。观察清单已移除早已实现的 conditional scope/resource 假缺口。
+
+### Time
+
+- exact sources：ds4 `ds4.c:now_sec`、`ds4_kvstore.c:kv_now_sec`、`ds4_server.c` 的 monotonic/absolute
+  realtime wait；vLLM `vllm/v1/core/sched/scheduler.py:Scheduler.schedule` 与
+  `vllm/v1/worker/gpu_worker.py` deadline；SGLang
+  `python/sglang/srt/managers/scheduler_components/metrics_reporter.py:_record_scheduler_time` 的
+  monotonic/process CPU accounting，以及
+  `python/sglang/srt/observability/req_time_stats.py:calibrate_time_diff/convert_time_to_realtime_ns`；
+- task/contract：elapsed/deadline 必须 monotonic，pthread absolute wait 可需要 native realtime interop，
+  utilization 需要 process/thread CPU domain；这些按 request/stage 为 `STRUCTURAL_HOT`。SGLang 还先记
+  monotonic stage，再以定期校准 offset 导出 Unix trace；NTP、跨线程/进程传播和精度是独立合同；
+- route/cost：typed monotonic/realtime、Instant、saturated deadline/remaining、native interop、coarse/
+  profiling clock、thread/process CPU clock 和 absolute sleep 已覆盖前三类；现有
+  `host-phase-deadline-64` P1 正好计费成组 monotonic sample + elapsed/deadline。所有 clock 原语 O(1)、
+  zero allocation；OS clock syscall/vDSO/QPC 由选定精度决定。cross-clock correlation 目前只有 SGLang
+  一个具名 consumer，Tracy/Seastar/Folly 当前 pinned source 未给出同形状公共基础 API，不能据此重开；
+- generalization/verdict：现有产品为 `CONFIRMED`；cross-clock snapshot 记为 `TIME-WATCH-05`，等待第二
+  consumer/peer 与误差合同。观察清单同时纠正 ManualClock/ClockRef 已完成的旧描述。
+
+### Wave A dependency / build replay
+
+中央 manifest 与真实 target 都保持 `core -> {container_intrusive, util_core, error, time}` 的单向 prime
+边（箭头表示被依赖到依赖者）；Core/header-only factor 无伪 runtime，Error/Time compiled owner 只链接
+声明的 Core，两个 split factor 只由 Container/Util façade 聚合。公开 include owner validator、exact-factor
+开发入口和 source/static/shared package smoke 已由当前 build contract 承载；本波没有产品/header/edge
+变化，不继承 reference engine 的 Torch/Python/Rust 或 backend 依赖。W1-WIN / CMake 4.4.0 / VS 18 的
+fresh `HyleCiComponentContract.cmake` 于 2026-09-06 返回 `HYLE component contracts passed`；docs 与
+module-closure validators 同轮通过。
+
 ## 执行账本
 
 | wave / factor | exact consumer paths | capability/hot-path result | performance method | verdict / next action |
 |---|---|---|---|---|
 | references | five clean commits above | remote identities locked | N/A | `COMPLETE` |
-| A / core | pending | pending | pending | pending |
-| A / error | pending | pending | pending | pending |
-| A / container_intrusive | pending | pending | pending | pending |
-| A / util_core | pending | pending | pending | pending |
-| A / time | pending | pending | pending | pending |
+| A / core | ggml vec-dot contract；vLLM RVV/dtype；ds4 HIP trap | compile/assert/cache facts `COMPLETE` | P0 inline/codegen | `CONFIRMED` |
+| A / error | llama load；gguf errno；ds4 buffers；vLLM fs/Torch boundary | value/native/context/borrow `COMPLETE` | v5 success/failure P1 + cold P0 | `CONFIRMED` |
+| A / container_intrusive | vLLM KV free queue + BlockPool | counted stable-node free-list `COMPLETE` | existing counted membership P1 same mechanism | `CONFIRMED` |
+| A / util_core | ds4/llama scalar sampling RNG；HYLE Mem/Sched resource paths | scalar RNG/resource/borrow `COMPLETE` | RNG P0；existing Ref/Spin/FunctionRef P1 | `CONFIRMED` |
+| A / time | ds4/vLLM deadlines；SGLang stage/CPU clocks | clocks/deadlines `COMPLETE`；correlation `WATCH` | existing phase/deadline P1 + clock P0 | `CONFIRMED`；`TIME-WATCH-05` |
 | B | pending | pending | pending | pending |
 | C | pending | pending | pending | pending |
 | D | pending | pending | pending | pending |
 | S / simd drift | pending | pending | pending | pending |
-

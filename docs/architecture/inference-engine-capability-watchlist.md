@@ -70,7 +70,11 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 | `UTILC-WATCH-01` | sampling、随机初始化或并行算法需要 bulk RNG、丰富 seed material、可复现子流 | 引擎先消费现有显式 `Rng`/jump；批量向量化可能归 `simd` | 当前 scalar draw 已满足已知任务；需真实批量规模、确定性合同和对 token sampling 端到端 materiality |
 | `UTILC-WATCH-02` | backend/session 对象需要 weak observer、aliasing owner 或打破引用环 | 首选 `std::shared_ptr/weak_ptr` 或新的领域 handle；不扩一指针 `Ref` | 这些语义需要 control block/lifetime identity，会破坏当前 Ref 形状；需反复出现的通用 ownership 任务 |
 | `UTILC-WATCH-03` | 高争用或 fiber-aware 临界区需要公平、parking 或自适应 mutex | `sched`/`container`/`platform` 对应同步 owner | `SpinLock` 只服务极短低争用区；需 contention trace 与进展/取消合同，不能按微基准给它加状态 |
-| `UTILC-WATCH-04` | exception 条件 cleanup 或 generic resource pair | 优先 C++ `<scope>`/typed RAII；HYLE 主失败流仍走 `Status/Result` | `scope_fail/scope_success/unique_resource` 不能仅因 peer 存在而加入；需跨模块重复且标准路线不可用 |
+
+原 `UTILC-WATCH-04` 已由 `util-core-v3-foundation-utility-superset` 和
+`util-core-v4-resource-move-ctad` 提升：条件 scope cleanup、通用 resource pair、move-only deleter 与自然
+CTAD 已进入当前 `ScopeFail`、`ScopeSuccess` 和 `UniqueResource`。剩余 typed Platform/Mem/IO owner 仍由
+对应领域模块负责，不能再把已经完成的通用 RAII 写成未承诺能力。
 
 ## Error
 
@@ -78,9 +82,11 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 |---|---|---|---|
 | `ERROR-WATCH-01` | CUDA/HIP/Metal/Vulkan、模型格式或远端 backend 需要稳定 typed detail/domain | backend owner 先映射到现有 code/native detail；稳定第二字段再由 Error 审核 | 当前一个 native detail 足够；需至少一个真实 backend 无法保真恢复，并定义跨 DLL/序列化边界 |
 | `ERROR-WATCH-02` | 模型 shard、多 device 初始化或 shutdown 同时产生多个错误 | 调用方先用 caller-owned aggregate；重复通用形状才考虑公共 helper | `MultiError` 会引入顺序、截断、OOM 和展示策略；需正常恢复流程证明“只保留首错/附 context”不足 |
-| `ERROR-WATCH-03` | lookup/parse 返回非空借用值，希望避免 pointer/reference-wrapper 样板 | 现用 pointer、span、string_view 或 `reference_wrapper` | borrowed result 不延长 owner lifetime；需具名、重复的 non-null borrow consumer 和明确 deep-const 合同 |
 | `ERROR-WATCH-04` | 生产崩溃需要 source location、stack/backtrace、trace correlation | `obs`/crash reporter 拥有采集与符号化；Error 只携带必要关联值 | 每层自动 location/payload 会增加传播噪声和常态成本；需实际诊断收益、采样/OOM/隐私和失败路径合同 |
 | `ERROR-WATCH-05` | 第三方 C++ callback 抛异常，需要转为值错误 | 拥有 callback/backend 的 adapter 在边界转换 | Error 不承诺跨模块 exception ABI/RTTI；只有两个重复 adapter 证明需要通用 helper 时才复审 |
+
+原 `ERROR-WATCH-03` 已由 `error-v5-capability-completion` 提升为 `Result<T&>`：它提供非空 borrowed
+success、deep-const、临时对象拒绝和完整 monadic surface，同时明确不延长 owner lifetime。
 
 ## Math
 
@@ -94,10 +100,14 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 
 | ID | 可能的推理旅程 | 暂定 owner / route | 当前不承诺的原因与准入证据 |
 |---|---|---|---|
-| `TIME-WATCH-01` | deterministic scheduler/continuous-batching 测试需要 manual/virtual clock | `sched` runtime 注入 clock；Time 保持默认 clock 热路无虚调用 | queue 已接受 explicit `now`；需真实 deterministic runtime 旅程和 clock lifetime/concurrency 合同 |
 | `TIME-WATCH-02` | request deadline、batch window 或 maintenance 需要 periodic/cross-thread timer service | `sched`/`io` 拥有 callback、routing、cancel 和 missed-tick policy | Time 只提供 clock 与 caller-owned timer containers；不得造第二个 event loop |
 | `TIME-WATCH-03` | GPU/accelerator kernel timing 与 CPU timeline 对齐 | `compute` backend event/timestamp owner，必要时 obs 做 correlation | device clock domain、同步和频率不等于 host monotonic clock；需真实 backend 与可校准误差合同 |
 | `TIME-WATCH-04` | serving 需要 histogram、SLO、TTFT/ITL window 或采样 clock policy | `obs`/引擎策略 | 指标命名和聚合策略不属于 Time；只有底层 clock primitive 缺失才重开本模块 |
+| `TIME-WATCH-05` | 先以 monotonic clock 记录跨线程 request stage，导出 trace 时再关联 Unix epoch | Time 可提供不可混淆的 paired clock snapshot；重校准频率、跨进程传播和 trace policy 归 Obs/引擎 | SGLang `req_time_stats.py` 是当前唯一具名消费者；需第二消费者或成熟 peer、采样误差/NTP 跳变合同，并证明直接 realtime read 或 owner 私有 calibration 不足 |
+
+原 `TIME-WATCH-01` 的底层部分已由 `time-v3-host-clock-factor` 与 `time-v5-interoperability` 提升：
+`ManualClock`、`MonotonicClockRef`、显式 clock-source deadline/remaining 和 caller-owned timer queue 已完成。
+把同一 clock 注入完整 scheduler runtime 仍归 Sched；它不再是 Time 缺失能力。
 
 ## Platform
 
