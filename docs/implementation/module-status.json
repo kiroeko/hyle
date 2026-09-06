@@ -368,7 +368,7 @@
     },
     {
       "module": "math",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MATH-CHECKED-DISCRETE-SIZING-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
       "round_id": "math-v4-checked-discrete-sizing",
@@ -378,6 +378,8 @@
       "baseline_commit": "cc2bb5b648cfa43dc5b72a32db318eca5d4a80e7",
       "candidate_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
       "candidate_tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0",
+      "end_commit": "26ae9c3180aed86ad1dd21c2ef5f634c1154c29e",
+      "registry_anchor_commit": "26ae9c3180aed86ad1dd21c2ef5f634c1154c29e",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -402,7 +404,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "math-v4 VERIFIED：checked scalar lcm/bit-ceil 已通过三平台 correctness/UBSan/逐头/三交付、真实 package consumer、文档/红队与 P0 原生结构门；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
+      "freeze_confirmation": {
+        "id": "math-v4-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
+        "reviewed_tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0",
+        "evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md"
+      },
+      "loc": {
+        "snapshot_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
+        "repository_code": 452775,
+        "self_with_tests": 117111,
+        "self_without_tests": 74346,
+        "module_implementation": 420
+      },
+      "known_limitations": [
+        "Math covers fixed-width non-Boolean scalar integral control-plane values; ordinary multi-operand operations use one explicit type and conversion is the only heterogeneous entry.",
+        "try_lcm is logarithmic scalar work and try_bit_ceil may use a bounded standard-library ISA selector; lane or buffer variants remain with SIMD after a real batch consumer is admitted.",
+        "Trusted scalar GCD, LCM and bit operations continue to use the C++ standard library directly; tensor, model, floating, arbitrary-precision and domain layout policy remain with their semantic owners.",
+        "The P0 claim covers complexity and structural cost on the frozen compilers and delivery shapes; nanosecond timing, every platform, end-to-end inference, universal SOTA, Native FFI and stable cross-toolchain C++ ABI are not claimed."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces an incorrect result, undefined behavior, missing common scalar integer policy or natural C++ API-usability defect.",
+        "A supported compiler, standard library or target changes integer, GCD, bit-primitive, constexpr or normal-path code-generation semantics.",
+        "The public API, algorithm or complexity, component dependency, header closure or source, static or shared delivery shape changes.",
+        "A locked llama.cpp or ggml journey, or two mature independent peers, prove a new model-independent scalar control-plane MUST.",
+        "A real batch or lane consumer admits a SIMD variant, a same-contract mechanism proves a better complexity class, or a real consumer or profile proves a reproducible material regression."
+      ],
+      "summary": "math-v4 CLOSED/FROZEN：checked scalar lcm/bit-ceil 已补齐；三平台 correctness/UBSan/逐头/三交付、真实 package consumer、文档/红队与 P0 原生结构成本全部通过。"
     },
     {
       "module": "time",
