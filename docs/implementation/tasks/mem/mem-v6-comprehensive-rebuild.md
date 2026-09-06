@@ -3,8 +3,8 @@
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
 > 本轮与 `mem_vm-v2` 协同，但 `mem` 与 `mem_vm` 仍是两个独立组件、两份候选和两项终局裁决。
-> 当前状态为 `CANDIDATE`。下方能力账本、API freeze 与五项有限 `FIX` 已冻结并由候选实现；
-> 后续只运行预声明验证，不得扩面或提前写成 `CLOSED`。
+> 当前状态为 `VERIFIED`。下方能力账本、API freeze 与五项有限 `FIX` 已由不可变候选实现，全部
+> 适用工程门已经裁决；这里只等待 terminal receipt 和 registry anchor，不再扩面或改产品。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -202,3 +202,117 @@ retention、reuse slack、growth 和 allocation granularity 保留，因为它�
 - `AUDITED -> CANDIDATE` 前 registry snapshot：
   `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
   `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。
+
+## Owner 七问终裁
+
+1. **第三方产品路径：**唯一直接产品 mechanism 是 private、锁定的 mimalloc v3.5.1
+   `34fbd7e7cd4627424490afe19b20f8066bfc537d`。它拥有 system/isolated heap 的底层实现，HYLE 拥有
+   allocator/resource/owner 语义、API 与交付决策；public type 不泄漏 mimalloc。标准 PMR 是公开互操作
+   vocabulary；oneTBB/Folly/llama.cpp/ggml 只作 capability/consumer peer，不进入产品链接。升级必须按
+   dependency trigger 定向重开 allocator family，不能自动继承本轮性能证据。
+2. **推理引擎能力完整度：**allocator/adapter、arena/external heap、fixed/typed/growable pool、quota/
+   diagnostics/pressure、resource/Buffer、transient BufferPool、lifetime planning、large-page arena 与
+   routed VM/reclamation 九族全部 `COMPLETE/ROUTED`。当前 llama.cpp/ggml model-load、scratch、long-lived
+   weight、resource-neutral future device provider 与 static lifetime packing 均有自然路线；Tensor/KV
+   eviction、async completion、device backend 和 IPC protocol 是上层 owner，不是漏做 Mem family。当前
+   evidence 下未处置 `MUST=0`。
+3. **内部复用与加速：**Core 提供 alignment/assert/cache facts，Error 提供全部可恢复 `Status/Result`，
+   Platform 提供 whole-process/NUMA/VM truth，标准 allocator/PMR 提供互操作；实际依赖与
+   `hyle_mem PUBLIC core error platform` 一致。没有反向依赖 Container/Sched/Compute；FixedHeap 的局部
+   bitmap/free-list、planner 的本地排序 metadata 与 pool 的 inline slots 均因 ownership、依赖方向或
+   固定布局为 `LOCAL`，未重复已有同合同 HYLE facility。verdict `PASS`。
+4. **拟真公平性能：**P1 只比较两个同一 mimalloc binary、相同 owner lifetime/alignment/failure 与
+   64 次 allocation/touch/sized-free 的 runtime-erased isolated heaps。qualified r2 的 8/8 exact
+   `PARITY`、8/8 5% NI 和全部 controls 为 `PASS`；点估计有利于 HYLE 0.68%--2.41%，不宣称 material
+   win。其余 family 由复杂度、allocation/metadata/syscall 与资源事实作 P0；没有苹果对橘子排名。
+5. **旧 C ABI / Native FFI：**没有 HYLE C header/schema/bridge、FFI option、undecorated HYLE export 或
+   FFI-paid layout。static consumer header 的六个 `extern "C" mi_*` declaration 是 private vendored
+   mimalloc archive 的链接机制；shared `hyle_mem.dll` 不导出任何 `mi_*`。verdict `CLEAN`。
+6. **Source/static/shared：**Windows exact-candidate selected Mem smoke 的 source embedding、relocated
+   installed shared 与 relocated installed static consumer 全部编译运行；shared runtime DLL staging 与
+   static mimalloc link-only dependency 正确。安装集包含新 `large_mapping.h` / `large_page_reservation.h`
+   且不含旧 hugepage headers。额外 `HYLE_COMPONENTS=sched` fresh build 与 `hyle_sched_test` 证明真实
+   FiberStack consumer 通过。verdict `PASS`。
+7. **C++ API / 文档：**所有 owner move-only，borrow/view、individual/bulk、hard/soft、thread-safe/
+   single-owner、hint/guarantee、unknown/partial 都由类型或 Result 明示；删除唯一 bucket scan
+   implementation knob。architecture 只讲 owner/route/成本，user guide 按任务说明选型、lifetime、OOM、
+   NUMA/large-page 与 mapping 陷阱，performance 页只绑定冻结命题。verdict `PASS`。
+
+## Verification manifest
+
+### Correctness risk matrix
+
+| Risk | Verdict | 证据 / 限制 |
+|---|---|---|
+| normal；empty / zero | `PASS` | 三平台 selected Mem suites；zero owner、allocation、plan、reserve、pool 与 view cases |
+| capacity / boundary / overflow | `PASS` | alignment/count/range/provider maximum、quota、planner、large-page byte overflow |
+| OOM / system failure / invalid input | `PASS` | injected backing OOM、constructor rollback、invalid allocator/resource/NUMA；process-global reserve 的不可回滚 partial 被 report 保存 |
+| move / destroy / lifetime | `PASS` | Heap/Buffer/arena/pool/planner move/reset/destructor 与 borrowed-view contracts |
+| concurrency / reentrancy | `PASS` | concurrent/remote-free/cache/stats/object/buffer-pool tests；exact-candidate TSan 11 cases |
+| cancellation / close | `NOT_APPLICABLE` | base Mem 没有 async operation；显式 reset/trim/collect/bulk release 已在 lifetime 行验证 |
+| property / differential / fuzz / stress | `PASS` | randomized FixedHeap、LifetimePlanner property、pool capacity/accounting stress |
+| ASan / UBSan / TSan | `PASS` | WSL exact candidate：ASan 2/2 suites、UBSan 2/2 suites；TSan 11 个并发用例 |
+| real ISA / backend | `NOT_APPLICABLE` | host control path 不含 SIMD/device backend；native OS/NUMA 由三平台验证 |
+
+### Platform、correctness 与交付
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| exact-candidate Release/WERROR selected correctness | `35/35` | `34/34` | `33/33` | `PASS` |
+| sanitizer | — | ASan `2/2`、UBSan `2/2`、TSan targeted `11/11` | — | `PASS` |
+| source/static/shared selected Mem journeys | 三种均 `PASS` | correctness/source compile | correctness/source compile | `PASS` |
+| direct Sched consumer | fresh selected Sched build + `1/1 PASS` | build closure covered | native compile closure covered | `PASS` |
+
+macOS source 来自候选 archive
+`hyle-mem-v6-candidate-9604bf4a.tar.gz`，Windows 与 remote SHA-256 均为
+`9DA2830B1EF9C0A89AE409F73BB40212346517381EA6518FD5081EC5C4ED7AF4`；remote checkout 只作验证，
+没有回流产品代码。TSan 在 WSL 6.18 / GCC 14 启动时要求 shadow address layout；验证命令仅在同一
+shell 内把 `vm.mmap_rnd_bits` 从 32 临时置 28，并以 trap 恢复，最终值已复核为 32。
+
+### Aggregate gates
+
+| Gate | Verdict | 依据 |
+|---|---|---|
+| scope | `PASS` | 只实现 `MEM6-F01..F05`，候选后无产品改动 |
+| architecture | `PASS` | 九族完整/路由；Platform/Error/Core authority 与依赖方向唯一 |
+| correctness | `PASS` | 三平台、边界/OOM/property、ASan/UBSan/TSan |
+| delivery | `PASS` | source/static/shared、relocation、selected product 与 Sched direct consumer |
+| usability/docs | `PASS` | natural C++ owner/view/API；architecture/user/performance/task 职责分离 |
+| red team | `PASS` | 独立 hostile review 的 material remaining finding 为 0 |
+| engineering performance | `PASS` | P1 qualified 8/8 5% NI；P0 family 成本/复杂度通过 |
+
+### 性能证据
+
+冻结合同为 [`mem-v6-host-allocation-p1-v1.json`](../../../../bench/contracts/mem-v6-host-allocation-p1-v1.json)，
+完整结果见 [`benchmarks-mem-v6.md`](../../evidence/performance/benchmarks-mem-v6.md)。qualified r2 位于
+`C:\public\project-hyle\_validation\mem-v6-host-perf-evidence-r2`，contract-lock / manifest / summary
+SHA-256 分别为
+`297958D9E2F9F98D12370D99DAFA76B8D1E89D50D04F55F630F8563193093144` /
+`A7749296A3A772DB71F2534D01C8E38F2506830FCCDCE61F4014F6151C3B8EC0` /
+`5054BED366D60C2D7F1B8926D50FBD9BBEC7B2A6C4B7A6AFB3BD389144A2FA0F`；deep verify 为
+`QUALIFIED/CURRENT/EXACT`。r1 因 A/A 一个顺序和 5% delta control 未收敛而只保留 `DIAGNOSTIC`，
+没有被拼入 PASS。
+
+### 独立红队
+
+独立 reviewer `mem_vm_red_team` 于 2026-09-06 在冻结候选上复核 capability、contract、OOM/lifetime/
+concurrency、系统事实、依赖/交付、性能 comparability 与 benchmark pollution。
+
+| Finding | severity | 处置 | 证据 |
+|---|---|---|---|
+| fully released repeat 与 zero/subpage release 曾在判空前分配 metadata | high | `fixed` | 先 bounds/page pre-scan，幂等 0 无分配；tests |
+| large-page reserve 曾把请求 GiB/fallback 容量冒充物理 1 GiB page | high | `fixed` | `LargePageArenaReservationReport` 分离容量、placement、granularity、outcome |
+| `0 < reserved < requested` 很难以安全 1 GiB 环境稳定制造 | evidence gap | `accepted` | vendor `*_at_ex` + `mi_arena_area` mechanism/code review；API 保存 partial，禁止为测试分配多 GiB |
+| 其它 allocator/pool/planner/public shape | medium+ | `disproved` | reverse trace、property/OOM/concurrency、P1 same-contract 与三交付未发现 material defect |
+
+## Verification verdict
+
+所有适用门均有明确 verdict，五项 FIX 完成，未处置 `MUST=0`、material red-team finding=0、blocker=0。
+候选 LOC 由 `loc-report.py --commit 9604bf4a... --self-check` 复算：全库 454,713；自实现含测试
+117,630；自实现不含测试 74,519；Mem boundary 实现 7,631。`CANDIDATE -> VERIFIED` 前 registry
+snapshot 为
+`C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
+`FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
+
+当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 仍为 `PENDING`，不
+阻塞工程收口，也不升级成全平台/全 workload SOTA 声明。

@@ -728,6 +728,9 @@ OS 或端到端推理 SOTA，更不能用更少 syscall/更弱持久化保证做
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
 [`module-status.json`](../implementation/module-status.json)。
+当前数值与结构结论分别见
+[`Mem v6 性能证据`](../implementation/evidence/performance/benchmarks-mem-v6.md)和
+[`Mem-VM v2 性能证据`](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)。
 [`mem-close-plan`](../implementation/tasks/mem/mem-close-plan.md) 与 2026-07-26 的
 [`mem-mature-gap-audit`](../implementation/tasks/mem/mem-mature-gap-audit.md) 都是上一轮历史
 验收输入，不是依赖升级后工作树的自动分发证书。

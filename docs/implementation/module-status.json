@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
       "round_id": "platform-v9-process-memory-mapping",
@@ -595,18 +595,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform-v9.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform v9 CANDIDATE：whole-process optional OS memory fact 与通用 mapped-range authority 已按四项冻结 FIX 实现；候选 9604bf4a/57adb69f 正在完成三平台、三交付、红队与既有 host P1 holdout 验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform v9 VERIFIED：whole-process optional OS memory fact 与通用 mapped-range authority 已完成三平台正确性、三交付/direct-consumer、文档/易用性、红队及 W1-WIN 5% P1 holdout；等待 terminal receipt。"
     },
     {
       "module": "platform_thread",
@@ -818,7 +827,7 @@
     },
     {
       "module": "mem",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
       "round_id": "mem-v6-comprehensive-rebuild",
@@ -835,22 +844,31 @@
         "M1-MAC"
       ],
     "engineering_performance": {
-      "verdict": "PLANNED",
+      "verdict": "PASS",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
       "machine_profile": "W1-WIN",
       "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v6.md"
       },
     "formal_performance": {
       "state": "PENDING",
       "instrument_profile": "formal-release-v1"
     },
-    "summary": "mem v6 CANDIDATE：九族超集保持 COMPLETE/ROUTED，whole-process fact、large-page partial report、BufferPool API 污染和交付/性能合同已落实；候选 9604bf4a/57adb69f 正在验证。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "mem v6 VERIFIED：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过；等待 terminal receipt。"
     },
     {
       "module": "mem_vm",
-    "product_state": "CANDIDATE",
+    "product_state": "VERIFIED",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -867,18 +885,27 @@
         "M1-MAC"
       ],
     "engineering_performance": {
-      "verdict": "PLANNED",
+      "verdict": "PASS",
       "mode": "P1_ENGINEERING",
       "material_margin_pct": 5,
       "machine_profile": "W1-WSL",
       "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md"
     },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-    "summary": "mem_vm v2 CANDIDATE：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping taxonomy 已按七项冻结 FIX 实现；候选 9604bf4a/57adb69f 正在验证。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "summary": "mem_vm v2 VERIFIED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门；等待 terminal receipt。"
     },
     {
       "module": "simd",

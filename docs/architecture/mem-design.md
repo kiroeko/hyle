@@ -7,8 +7,9 @@
 > C schema、bridge、动态导出和 fixture。机械收口状态见
 > [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
-> 用户当前选型见 [user/mem](../user/mem.md)，性能证据见
-> [mem evidence](../implementation/evidence/performance/benchmarks-mem.md)，施工历史见
+> 用户当前选型见 [user/mem](../user/mem.md)，当前 base/VM 性能证据分别见
+> [Mem v6](../implementation/evidence/performance/benchmarks-mem-v6.md)与
+> [Mem-VM v2](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)，施工历史见
 > [mem tasks](../implementation/tasks/mem/)。
 
 ## 1. 边界
@@ -360,7 +361,7 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 | 默认/注入 host allocation | `SystemAllocator`、`AllocatorRef`、`Heap` 与 std/PMR adapters | direct 与 runtime borrow 分型；owned heap 可 bulk release；backing 长寿 |
 | phase/external/LIFO scratch | `Arena`、`FixedArena`、`PooledArena`、`StackArena` | 单 owner；bulk/reset/rewind 失效化明示；无隐式 fallback |
 | variable/fixed/object pool | `FixedHeap`、`ConcurrentBlockPool`、`BlockPoolCache`、object-pool 家族 | size model、storage ownership、hard/soft/growable、reconstruct/preserve 都由类型表达 |
-| mapping/residency | `VirtualMapping`、`FileMapping`、`SharedMapping` | owner 在 Mem，OS/namespace 机制留 Platform/IO；不默认 prefault/lock/grow |
+| mapping/residency | `VirtualMapping`、`FileMapping`、`SharedMapping` | owner 在 Mem；anonymous/range control 与 `FileHandle` 复用 Platform，file/shared native mapping 由 `mem_vm` 实现；不默认 prefault/lock/grow |
 | host/device/custom storage | `MemoryResource`、`MemoryResourceRef`、properties/domain/stats | provider 开放；不用闭合 kind；ref 一字且借用 provider |
 | persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
 | sync data/coherence | view 上 `read/write/fill/copy/map/flush/invalidate` | 无 hidden staging；非 coherent 明示；async ordering 由 Compute/IO typed adapter 组合 |
@@ -414,7 +415,8 @@ Mem 进入预发布冻结必须同时满足：
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
 
 当前冻结 consumer/replay 的工程性能证据见
-[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)；未进入该合同的固定池
+[`Mem v6`](../implementation/evidence/performance/benchmarks-mem-v6.md)与
+[`Mem-VM v2`](../implementation/evidence/performance/benchmarks-mem-vm-v2.md)；未进入这些合同的固定池
 能力只签复杂度、资源、correctness 与交付门，不冒充数值 SOTA。
 
 ## 参考

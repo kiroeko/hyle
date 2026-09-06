@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发。当前为 `CANDIDATE`：四项冻结 `FIX`
-> 已由下述候选实现，后续只运行预声明验证，不再扩大产品范围。
+> 本轮由 Mem v6 / Mem-VM v2 的具名 consumer replay 触发。当前为 `VERIFIED`：四项冻结 `FIX`
+> 已由不可变候选实现且全部适用工程门已裁决；这里只等待 terminal receipt 与 registry anchor。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -156,3 +156,62 @@ SHA-256 `B167906C62A60E03623745B4B8DB457BF7CF54F05B426522208946DD3C6B5BAC`。
 - `AUDITED -> CANDIDATE` 前 registry snapshot：
   `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
   `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。
+
+## Owner 七问终裁
+
+1. **第三方：**Platform v9 没有第三方产品 dependency；只使用 Windows PSAPI、Linux procfs 和 Apple
+   Mach/getrusage 等公开 OS contract。Folly 与 oneTBB 是 peer/holdout，不进入链接、公开类型或决策权。
+2. **功能：**whole-process resident/peak 与可证 private commit、以及任意合法 mapped-page range 的
+   advice/lock/unlock 已补齐 Mem 两个具名 consumer；file/shared owner 与 fragment policy 完整路由
+   Mem-VM。当前 scope 未处置 `MUST=0`。
+3. **复用：**全部可恢复失败走 Error，POD/optional/overflow 基础走 Core/standard；Platform 不反向依赖
+   Mem。Mem snapshot 组合 allocator 与 OS facts，Mem-VM alias/调用 Platform range authority，不再复制
+   enum/wrapper/syscall。verdict `PASS`。
+4. **性能：**process query 是显式 P0 冷路；Windows/macOS O(1) query，Linux O(status bytes)，无缓存与
+   热路状态。既有 host planning holdout 4/4 5% NI、all controls `PASS`；3 `PARITY` + 1
+   `INCONCLUSIVE`，点估计有利约 2.12%--2.72%，不宣称 material win。
+5. **FFI：**没有 C schema/bridge、undecorated HYLE export、Native FFI option/fixture 或 FFI layout。
+   verdict `CLEAN`。
+6. **交付：**selected Mem source/static/shared journey 实际调用新 Platform symbol；fresh Sched closure 也
+   构建该 factor。中央 DAG 保持 `platform PUBLIC core error`，Mem 与 Mem-VM 是正向 consumer。
+7. **API/文档：**unknown 用 optional，不用零猜测；free function 只接 owner 已验证 range，不保存或
+   假装验证 owner；architecture/user guide 分清 OS fact、allocator fact、file owner 和平台差异，没有
+   benchmark seam。verdict `PASS`。
+
+## Verification manifest
+
+| Risk / gate | Verdict | 证据 / 限制 |
+|---|---|---|
+| normal / missing field / overflow / OS error | `PASS` | parser fixtures、native process query、optional platform semantics |
+| concurrency | `PASS` | 8 threads × 16 cold queries；函数无缓存或共享 HYLE mutable state，结果各自 self-consistent |
+| mapped file range mechanism | `PASS` | 三平台 Mem-VM advice/lock/unlock tests；Windows dangerous file `kDontNeed` 在 owner 层拒绝 |
+| move/destroy/cancel | `NOT_APPLICABLE` | API 返回 value fact/free function，没有 owner 或 async operation |
+| ASan / UBSan | `PASS` | exact-candidate WSL selected Mem suites 覆盖 consumer 路线 |
+| TSan | `PASS` | concurrent cold-query test；实现只用 caller-local parse buffers 和 OS query |
+| source/static/shared | `PASS` | Windows exact-candidate selected Mem 三交付与 relocation |
+| docs/usability / red team | `PASS` | OS fact含义、unknown 与 authority boundary 已逐项复核；material remaining 0 |
+| P1 engineering | `PASS` | `platform-host-p1-v3` qualified；4/4 5% NI、all controls PASS |
+
+性能详情见
+[`benchmarks-platform-v9.md`](../../evidence/performance/benchmarks-platform-v9.md)。evidence 位于
+`C:\public\project-hyle\_validation\platform-v9-host-perf-evidence-r1`；contract-lock / manifest /
+summary SHA-256 为
+`2714905D56EA9CCED7132A5EA55FE44C2925AACEF45B14A774EEDE4EF987C420` /
+`03856C2DC1CE2C1E1B8292881611A40567E11EFDCA3FD00BD696E25B7D95878D` /
+`E22B8F15BAE064EC3E0EB23809A77027956C80F6E870F65D5C90864A8386A09A`；deep verify 为
+`QUALIFIED/CURRENT/EXACT`。
+
+三平台 exact product candidate 的 selected correctness closure 分别为 W1-WIN `35/35`、W1-WSL
+`34/34`、M1-MAC `33/33`。独立 Mem/Mem-VM hostile review 同时 reverse-trace 了 Platform process fact、
+range authority、Windows `DiscardVirtualMemory` 语义和直接消费者，所有 material finding 已修复。
+
+## Verification verdict
+
+四项 FIX 全部完成，全部 aggregate gate `PASS`，未处置 `MUST=0`、blocker=0。候选 LOC：全库
+454,713；自实现含测试 117,630；自实现不含测试 74,519；Platform boundary 实现 6,816。
+`CANDIDATE -> VERIFIED` 前 registry snapshot 为
+`C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
+`FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
+
+当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 为 `PENDING`，不
+阻塞工程收口，也不把本轮定向事实扩大成 Platform 全模块 SOTA。

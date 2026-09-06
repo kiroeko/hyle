@@ -4,8 +4,9 @@
 > `N/A`，早期 C schema、bridge、动态导出和 fixture 已删除。验收状态与一次性事实由
 > implementation 记录维护，不写进架构真相。
 
-> 用户当前选型见 [user/platform](../user/platform.md)，当前性能证据见
-> [platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，施工历史见
+> 用户当前选型见 [user/platform](../user/platform.md)，当前基础证据见
+> [platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，v9 定向重开见
+> [platform v9 evidence](../implementation/evidence/performance/benchmarks-platform-v9.md)，施工历史见
 > [platform tasks](../implementation/tasks/platform/)。
 
 ## 1. 定位与依赖

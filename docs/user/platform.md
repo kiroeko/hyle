@@ -584,5 +584,7 @@ aliases 自动线程安全。
 边界，外部输入不得未经验证直接传入。需要观察 unload 诊断时显式检查 `close()`，析构只做兜底。
 
 性能证据和仍存在的平台差异见
-[`benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)，不要把单个平台点值外推到
+[`benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)；本轮进程内存与
+mapped-range 定向回放见
+[`benchmarks-platform-v9.md`](../implementation/evidence/performance/benchmarks-platform-v9.md)。不要把单个平台点值外推到
 另外两个 OS。

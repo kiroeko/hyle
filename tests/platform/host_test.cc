@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <cstring>
+#include <thread>
+#include <vector>
 
 #include "host_memory_internal.h"
 #include "hyle/platform/environment.h"
@@ -39,6 +41,33 @@ TEST(HostMemory, ProcessSnapshotUsesWholeProcessOsFacts) {
   EXPECT_FALSE(info->private_committed_bytes.has_value());
   EXPECT_FALSE(info->peak_private_committed_bytes.has_value());
 #endif
+}
+
+TEST(HostMemory, ConcurrentProcessSnapshotsRemainSelfConsistent) {
+  constexpr std::size_t kThreadCount = 8;
+  constexpr std::size_t kQueriesPerThread = 16;
+  std::array<bool, kThreadCount> valid{};
+  std::vector<std::thread> threads;
+  threads.reserve(kThreadCount);
+  for (std::size_t thread = 0; thread < kThreadCount; ++thread) {
+    threads.emplace_back([&, thread] {
+      valid[thread] = true;
+      for (std::size_t query = 0; query < kQueriesPerThread; ++query) {
+        auto info = process_memory_info();
+        if (!info || info->resident_bytes == 0 ||
+            info->peak_resident_bytes < info->resident_bytes ||
+            (info->private_committed_bytes &&
+             *info->private_committed_bytes == 0) ||
+            (info->peak_private_committed_bytes &&
+             *info->peak_private_committed_bytes == 0)) {
+          valid[thread] = false;
+          return;
+        }
+      }
+    });
+  }
+  for (auto& thread : threads) thread.join();
+  for (const bool result : valid) EXPECT_TRUE(result);
 }
 
 TEST(HostMemory, EffectiveBudgetUsesEveryAvailableConstraint) {

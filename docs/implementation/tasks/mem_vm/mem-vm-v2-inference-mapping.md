@@ -2,8 +2,8 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前状态为 `CANDIDATE`。下方 API、成本与七项有限 `FIX` 已冻结并由候选实现；后续只运行
-> 预声明验证，不得扩面或提前写成 `CLOSED`。
+> 当前状态为 `VERIFIED`。下方 API、成本与七项有限 `FIX` 已由不可变候选实现，全部适用工程门
+> 已裁决；这里只等待 terminal receipt 和 registry anchor，不再扩面或改产品。
 
 ## Reopen evidence（`REOPENED`）
 
@@ -181,3 +181,111 @@ syscall 数；只有冻结 model-loader replay 复现 material tail/throughput �
 - `AUDITED -> CANDIDATE` 前 registry snapshot：
   `C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-candidate.json`，SHA-256
   `173814FFC86DB38FC7587C43D64F2433E7CFC4AB6DC09A2E6C33B75CDB37553C`。
+
+## Owner 七问终裁
+
+1. **第三方产品路径：**Mem-VM 没有第三方 implementation dependency；它直接使用支持 OS 的 mapping/
+   shm primitives，并复用 HYLE Platform/FileHandle、Mem Buffer/View 与 Error。Folly、Boost 与锁定
+   llama.cpp 只作 capability/consumer peer，不进入链接或 public type。base Mem 的 mimalloc 是传递
+   product artifact，但不参与 file/shared/native mapping mechanism。
+2. **推理引擎能力完整度：**anonymous reserve/commit、file RO/RW/COW、checked range、advice/populate/
+   lock/flush、POSIX sparse release、named shared bytes、large/THP/NUMA owner 与 guarded stack 六族均
+   `COMPLETE/ROUTED`。async/direct IO、device mapping、persistent-memory flush、IPC synchronization、
+   Tensor/KV/model policy 都有别的 semantic owner 或缺少当前具名基础 consumer；未处置 `MUST=0`。
+3. **内部复用与加速：**`VirtualMapping` 直接 alias Platform `VmRegion`，advice/lock/unlock 复用唯一
+   Platform range authority；FileMapping 消费 `platform::FileHandle`，所有失败走 Error，views 复用 Mem，
+   fragment metadata 用 base Mem system allocator。file/shared owner-specific mmap/shm lifecycle 与
+   fragment table 因 Platform 无 owner state、且下沉会反向制造依赖而保留 `LOCAL`。verdict `PASS`。
+4. **拟真公平性能：**Linux 任务严格等同一次 file lifecycle、64 advice、64 partial munmap、相同 survivor
+   state 与 65 次 teardown；只比较 HYLE batch `O(R log R + F)` 与锁定 llama vector rebuild。4/4 5% NI、
+   all controls `PASS`；2 `PARITY` + 2 `INCONCLUSIVE`，点估计有利 3.07%--4.67%，不宣称 material win。
+   Windows 没有 partial-unmap 同合同，明确不参与苹果对橘子排名。
+5. **旧 C ABI / Native FFI：**没有 C header/schema/bridge、undecorated HYLE export、FFI option/fixture 或
+   FFI-paid layout；Windows shared DLL 导出仅为 decorated C++ symbols。verdict `CLEAN`。
+6. **Source/static/shared：**Mem product 聚合 `mem_vm`，内部 factor 仍可独立选择；Windows exact candidate
+   source embedding、relocated static/shared SDK consumer 全部运行，selected install 的新 headers 与
+   runtime DLL 正确。fresh Sched selected build/test 证明 FiberStack consumer。verdict `PASS`。
+7. **C++ API / 文档：**move-only owner、checked view、read-only mutable denial、explicit shared size/access、
+   dynamic-extent 与 explicit-empty、requested/accepted/applied 和 reset Status 都由类型表达；没有为
+   benchmark 暴露 fragment scan/threshold knob。guide 按 OS 写清 hole、borrow invalidation、hint、lock、
+   flush、shared readiness 和 Windows unsupported。verdict `PASS`。
+
+## Verification manifest
+
+### Correctness risk matrix
+
+| Risk | Verdict | 证据 / 限制 |
+|---|---|---|
+| normal；empty / zero | `PASS` | anonymous/file/shared/large/stack suites；empty range、explicit zero 与 to-end 分离 |
+| capacity / boundary / overflow | `PASS` | unaligned offset、EOF、native cast、page rounding、shared capacity/name/range overflow |
+| OOM / system failure / invalid input | `PASS` | invalid path/name/access/node、lock limit、unsupported advice/release；metadata failure keeps owner coherent |
+| move / destroy / lifetime | `PASS` | move/reset、open-handle consumption、hole teardown、shared unlink 和 subprocess peer |
+| concurrency / reentrancy | `PASS` | FiberStackPool concurrent recycle；SharedMapping real subprocess visibility |
+| cancellation / close | `PASS` | `reset()` 返回 teardown Status；析构 best-effort；partial release 保留已完成 state |
+| property / differential / fuzz / stress | `PASS` | overlapping/repeated/batch ranges、large multi-page/fragment invariants、cross-process shared route |
+| ASan / UBSan / TSan | `PASS` | exact candidate ASan/UBSan Mem-VM suites各 `1/1`；TSan FiberStackPool `1/1` |
+| real ISA / backend | `NOT_APPLICABLE` | 没有 SIMD/device backend；三个原生 OS mapping backend 均运行 |
+
+### Platform 与交付
+
+| Gate | W1-WIN / MSVC 19.50 | W1-WSL / GCC 14.2 | M1-MAC / AppleClang 21 | Verdict |
+|---|---|---|---|---|
+| exact-candidate selected correctness closure | `35/35`（含 Mem-VM） | `34/34` | `33/33` | `PASS` |
+| native partial release | 正确 `Unimplemented` 且 owner 不变 | full tests `PASS` | full tests `PASS` | `PASS` |
+| SharedMapping subprocess/capacity | read-only peer、page-rounded capacity | read-only peer、exact capacity | read-only peer、page-rounded capacity | `PASS` |
+| source/static/shared + Sched consumer | 三种均 `PASS`；Sched `1/1` | source/correctness | source/correctness | `PASS` |
+
+### 性能与同合同前置门
+
+冻结合同为
+[`mem-vm-model-loader-p1-v2.json`](../../../../bench/contracts/mem-vm-model-loader-p1-v2.json)，完整结果见
+[`benchmarks-mem-vm-v2.md`](../../evidence/performance/benchmarks-mem-vm-v2.md)。W1-WSL ext4 evidence 位于
+`/tmp/hyle-mem-vm-perf-evidence-r1`，Windows 归档 SHA-256 为
+`EFD00C22451D0E2D6E9CA500FCCA2ABE343E454EE2ED0F28DDA4234D57C81A0E`；contract-lock / manifest /
+summary SHA-256 为
+`3F2FCD4EFA42406E4EB370BB76AAA1A45B23797A4955EF5107CB0427AA2D1AC0` /
+`14C90027CBE0715C855E20D9382B73EAB3EE614FF708F090FE2FF02B764191F3` /
+`E338BFD642F5254E315769457DA0E748EC7A35B7B6E5354315BDA33AFE2F4878`。deep verifier 为
+`QUALIFIED/CURRENT/EXACT`。相同页、syscall、failure、ownership、setup/teardown 已逐项对齐；没有把
+Windows whole view、无 advice 或不 teardown 的弱路线混入。
+
+### 独立红队
+
+独立 reviewer `mem_vm_red_team` 于 2026-09-06 对冻结候选做 hostile review。
+
+| Finding | severity | 处置 | 证据 |
+|---|---|---|---|
+| fully released repeat、zero/subpage batch 曾在判空前分配 | high | `fixed` | O(R) pre-scan 后无分配早退；tests |
+| hole-aware access/control 曾线扫全部 fragments | high | `fixed` | ordered table + binary search：O(log F) / O(log F + K) |
+| Windows partial release 曾在确定 unsupported 前排序/分配 | medium | `fixed` | validation/page detection 后直接 `Unimplemented` |
+| Windows file `kDontNeed` 错用内容可失效的 `DiscardVirtualMemory` | high | `fixed` | file-backed 全 access mode 明确 `Unimplemented` |
+| Windows empty flush 升级为 whole-file flush | medium | `fixed` | validated empty span 直接 OK |
+| SharedMapping header/alignment/access/name/capacity 合同不自然 | high | `fixed` | headerless explicit size/access + subprocess/three-OS tests |
+| `HugeMapping` 把 THP hint 暗示为 hard huge-page | medium | `fixed` | `LargeMapping` taxonomy；requested/accepted/applied 分开 |
+| deterministic “中途第 N 次 munmap 失败”无法由公共 OS 合同安全制造 | evidence gap | `accepted` | implementation 每次成功立即更新 survivor，首个失败停止并返回；无 test-only LD_PRELOAD/fault-injection 产品 seam |
+
+红队最终 material remaining finding 为 0。最后一项是证据机制限制，不是已证实产品缺陷：正常、重复、
+invalid、unsupported、teardown 与成功 partial state 都有直接测试；为制造系统调用第 N 次失败而扩建公共
+instrument 会违反本轮停止规则。
+
+### Aggregate gates
+
+| Gate | Verdict | 依据 |
+|---|---|---|
+| scope / architecture | `PASS` | 六族 COMPLETE/ROUTED；唯一 OS authority，owner policy 不下沉 |
+| correctness | `PASS` | 三平台、subprocess、holes/ranges/OOM/failure、sanitizers |
+| delivery | `PASS` | source/static/shared selected Mem 与 direct Sched consumer |
+| usability/docs | `PASS` | natural owner/access/range/result；OS 陷阱与借用失效写入 guide |
+| red team | `PASS` | 全部 material finding fixed/disproved；remaining medium+ 0 |
+| engineering performance | `PASS` | qualified 4/4 5% NI；连续路线零 fragment allocation；复杂度达标 |
+
+## Verification verdict
+
+七项 FIX 全部完成，未处置 `MUST=0`、blocker=0。候选 LOC 由不可变 tree 复算：全库 454,713；自实现
+含测试 117,630；自实现不含测试 74,519；Mem-VM compiled implementation 1,318。`CANDIDATE -> VERIFIED`
+前 registry snapshot 为
+`C:\public\project-hyle\_validation\mem-v6-mem-vm-v2\module-status-before-verified.json`，SHA-256
+`FDE8CBEAB0EF0BB63714E0C037EABF357879EC7E150445E27BEB25A45F2773DA`。
+
+当前为 `VERIFIED`；下一步只记录 terminal receipt、LOC 与 registry anchor。Formal 为 `PENDING`；WSL
+只签 guest engineering，不冒充 native-Linux/独立硬件认证。
