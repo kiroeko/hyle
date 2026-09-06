@@ -276,3 +276,29 @@ codegen 与 correctness 回放，不复活旧 benchmark 全矩阵。
 `AUDITED -> CANDIDATE` 前的 registry 快照为
 `C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-candidate.json`，SHA-256
 `6A0144BE9C016FE53DADCB64A1D775540361FC879132B9CBB05BEF7F6BEFDB61`。
+
+### 首候选撤回（`CANDIDATE -> AUDITED`）
+
+- W1-WIN 正式 `container-product-p1-v5` 资格门为 `PASS`，A/A、5%/10% known-delta、
+  timer floor、placement、resource 和 consumer provenance 全部通过；
+- LRU 在 primary/placement、两种执行顺序和两种 allocation placement 的八个分层全部
+  `WIN`，median advantage `1.1129–1.1528`；
+- UTF-8→UTF-16 safe caller-buffer route 在八个分层全部固定落后，median advantage
+  `0.9595–0.9692`。四个分层为 `PARITY/PASS`，四个因 98.93% CI 下沿跨过
+  5% non-inferiority boundary 为 `INCONCLUSIVE/UNRESOLVED`；因此聚合 performance gate
+  正确为 `INCONCLUSIVE`，不得写成 PASS；
+- exact-contract 实现审计显示两边均完整计费 validate-with-errors + exact length +
+  convert-valid；HYLE 每条 128-byte record 额外经过一次公开 wrapper 边界，且三次
+  provider 调用分别读取 simdutf active-implementation atomic。这与全分层稳定的小差距
+ 4一致，不是顺序/地址幽灵；
+- 仍属冻结的 `TEXT-F01` 正常路径成本，本轮只授权一次机制修正：在单次
+  公开 Unicode 操作中只解析一次 private simdutf implementation 指针，validate/size/
+  convert 复用它。不改 API、错误/输出语义、layout、workload、peer、margin 或常态
+  metadata；修正后四 factor 必须建立新 candidate 并重放全门。
+
+本次 `CANDIDATE -> AUDITED` 的前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v5\transitions\module-status-before-utf-provider-correction.json`，
+SHA-256 `7AC65FF1EC17D4A76E46063B5EAF3D222155E17685309FEE8C7958E3D6AF1484`。首候选
+证据位于
+`C:\public\project-hyle\_validation\container-v5\qual-single-evidence-31c3ace5\manifest.json`，
+仅作 withdrawn-candidate 事实，不传递到新候选。
