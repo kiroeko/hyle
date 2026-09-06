@@ -27,5 +27,12 @@ int main() {
   if (hyle::math::try_product(std::span{shape}) != 24) return 12;
   if (hyle::math::saturating_add<std::uint8_t>(255, 1) != 255) return 13;
   if (hyle::math::saturating_cast<std::uint8_t>(-1) != 0) return 14;
+  if (hyle::math::try_lcm<std::uint64_t>(12, 18) != 36) return 15;
+  if (hyle::math::try_lcm<std::int64_t>(
+          (std::numeric_limits<std::int64_t>::min)(), 1)) {
+    return 16;
+  }
+  if (hyle::math::try_bit_ceil<std::uint64_t>(65) != 128) return 17;
+  if (hyle::math::try_bit_ceil<std::uint64_t>(kMax)) return 18;
   return 0;
 }
