@@ -578,18 +578,14 @@
     },
     {
       "module": "platform",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
-      "round_id": "platform-v9-process-memory-mapping",
-      "closure_task": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
-      "scope": "Add an honest whole-process OS memory fact for Mem and make Platform's existing VM range mechanism the single authority reusable by file-backed mappings.",
-      "non_goals": "CPU, cache, NUMA or frequency redesign; file-mapping ownership or fragment policy; Platform-fs/thread; scheduler or engine policy; Native FFI/C API; common instrument redesign and Formal certification.",
-      "baseline_commit": "93dce49922ac1721c45f155d66f3805e74faf7cc",
-      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
-      "registry_anchor_commit": "7b26b3d135f40998b66cdabe233d125d6851b860",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "PLATFORM-NUMA-NODE-MEMORY-FACT-2026-09-06",
+      "reopen_evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
+      "round_id": "platform-v10-numa-node-memory-facts",
+      "closure_task": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md",
+      "scope": "Add truthful per-NUMA-node physical memory facts for inference host planning without moving rank, allocator or model policy into Platform.",
+      "non_goals": "Thread or GPU placement policy, allocator reservation, model/KV sizing, CPU/cache/frequency or NUMA placement redesign, Platform-thread/fs, Mem/Mem-VM changes, Native FFI/C API, common instrument redesign and Formal certification.",
+      "baseline_commit": "5c529802cd2974b222856608dcaf4cdd0fcf240b",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -597,55 +593,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform-v9.md"
+        "evidence": "docs/implementation/tasks/platform/platform-v10-numa-node-memory-facts.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
-      "freeze_confirmation": {
-        "id": "platform-v9-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-        "evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md"
-      },
-      "loc": {
-        "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "repository_code": 454713,
-        "self_with_tests": 117630,
-        "self_without_tests": 74519,
-        "module_implementation": 6816
-      },
-      "known_limitations": [
-        "Linux and macOS expose no adopted same-semantics process private-commit fact; Windows proves current PrivateUsage but not peak private commit, so unavailable fields remain absent.",
-        "process_memory_info is an uncached control-path query; mapped-range functions trust the caller-owned mapping lifetime and do not own file fragments or policy.",
-        "The P1 receipt is only the frozen W1-WIN host-planning holdout; it is not a new whole-Platform or Formal performance certificate."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a missing or false process-memory fact, OS error translation defect, or mapped-range authority defect.",
-        "A supported OS changes the adopted memory-field or VM-range contract, or a new supported platform cannot preserve the optional unknown semantics.",
-        "The public API, layout, normal syscall/allocation/state cost, Core/Error dependency, component graph, or source/static/shared delivery changes.",
-        "Mem or Mem-VM consumption proves duplicate OS decision authority or an insufficient Platform mechanism.",
-        "A same-contract normal workload proves a material regression, or a mature peer proves a better complexity class."
-      ],
-      "summary": "platform v9 CLOSED/FROZEN：whole-process optional OS memory fact 与通用 mapped-range authority 已完成三平台正确性、三交付/direct-consumer、文档/易用性、红队及 W1-WIN 5% P1 holdout。"
+      "summary": "platform v10 REOPENED：vLLM 与 SGLang 的独立 host-planning journeys 共同复现 per-NUMA-node memory fact 缺失；当前只登记最小影响面，尚未冻结 closure card 或授权产品修改。"
     },
     {
       "module": "platform_thread",
