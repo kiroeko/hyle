@@ -578,7 +578,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "PLATFORM-MEM-PROCESS-MEMORY-TRUTH-2026-09-06",
       "reopen_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
       "round_id": "platform-v9-process-memory-mapping",
@@ -588,6 +588,8 @@
       "baseline_commit": "93dce49922ac1721c45f155d66f3805e74faf7cc",
       "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
+      "registry_anchor_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -615,7 +617,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform v9 VERIFIED：whole-process optional OS memory fact 与通用 mapped-range authority 已完成三平台正确性、三交付/direct-consumer、文档/易用性、红队及 W1-WIN 5% P1 holdout；等待 terminal receipt。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md",
+      "freeze_confirmation": {
+        "id": "platform-v9-freeze-2026-09-06",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-06",
+        "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+        "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+        "evidence": "docs/implementation/tasks/platform/platform-v9-process-memory-mapping.md"
+      },
+      "loc": {
+        "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+        "repository_code": 454713,
+        "self_with_tests": 117630,
+        "self_without_tests": 74519,
+        "module_implementation": 6816
+      },
+      "known_limitations": [
+        "Linux and macOS expose no adopted same-semantics process private-commit fact; Windows proves current PrivateUsage but not peak private commit, so unavailable fields remain absent.",
+        "process_memory_info is an uncached control-path query; mapped-range functions trust the caller-owned mapping lifetime and do not own file fragments or policy.",
+        "The P1 receipt is only the frozen W1-WIN host-planning holdout; it is not a new whole-Platform or Formal performance certificate."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a missing or false process-memory fact, OS error translation defect, or mapped-range authority defect.",
+        "A supported OS changes the adopted memory-field or VM-range contract, or a new supported platform cannot preserve the optional unknown semantics.",
+        "The public API, layout, normal syscall/allocation/state cost, Core/Error dependency, component graph, or source/static/shared delivery changes.",
+        "Mem or Mem-VM consumption proves duplicate OS decision authority or an insufficient Platform mechanism.",
+        "A same-contract normal workload proves a material regression, or a mature peer proves a better complexity class."
+      ],
+      "summary": "platform v9 CLOSED/FROZEN：whole-process optional OS memory fact 与通用 mapped-range authority 已完成三平台正确性、三交付/direct-consumer、文档/易用性、红队及 W1-WIN 5% P1 holdout。"
     },
     {
       "module": "platform_thread",
@@ -827,7 +857,7 @@
     },
     {
       "module": "mem",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
       "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
       "round_id": "mem-v6-comprehensive-rebuild",
@@ -837,6 +867,8 @@
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
+      "registry_anchor_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -864,11 +896,40 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "mem v6 VERIFIED：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过；等待 terminal receipt。"
+    "closure_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
+    "freeze_confirmation": {
+      "id": "mem-v6-freeze-2026-09-06",
+      "marker": "FROZEN",
+      "confirmed_at": "2026-09-06",
+      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
+    },
+    "loc": {
+      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "repository_code": 454713,
+      "self_with_tests": 117630,
+      "self_without_tests": 74519,
+      "module_implementation": 7631
+    },
+    "known_limitations": [
+      "A growable variable-size individual-free pool is routed through standard PMR over a HYLE resource rather than duplicated as a distinct HYLE owner.",
+      "Large-page arena partial effects are observable but not rollbackable; physical page granularity and NUMA placement remain unverified when the vendor or OS cannot prove them.",
+      "Tensor/KV eviction, asynchronous completion, device providers, IPC protocols and secure-secret policy remain upper-layer owners.",
+      "The P1 receipt covers one W1-WIN isolated runtime-erased heap lifecycle; other families are structural and this is not an all-platform, all-shape or Formal SOTA certificate."
+    ],
+    "reopen_triggers": [
+      "A real consumer reproduces an allocator/resource/buffer/pool/arena/planner correctness, OOM, lifetime, concurrency, ownership or C++ usability defect, or proves a routed family cannot perform a named foundation task.",
+      "The locked mimalloc or a direct HYLE dependency changes source, semantics, default policy, ABI, code generation or delivery on the product path.",
+      "The public API, layout, default metadata, complexity, component dependency, delivery shape or system-fact semantics changes.",
+      "A same-contract normal consumer workload proves a material regression, or a mature peer proves a better complexity class.",
+      "New OS, NUMA or large-page facts invalidate the current unknown, partial-outcome or placement contract."
+    ],
+    "summary": "mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。"
     },
     {
       "module": "mem_vm",
-    "product_state": "VERIFIED",
+    "product_state": "CLOSED",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -878,6 +939,8 @@
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
+      "registry_anchor_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -905,7 +968,36 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "summary": "mem_vm v2 VERIFIED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门；等待 terminal receipt。"
+    "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
+    "freeze_confirmation": {
+      "id": "mem-vm-v2-freeze-2026-09-06",
+      "marker": "FROZEN",
+      "confirmed_at": "2026-09-06",
+      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
+    },
+    "loc": {
+      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "repository_code": 454713,
+      "self_with_tests": 117630,
+      "self_without_tests": 74519,
+      "module_implementation": 1318
+    },
+    "known_limitations": [
+      "Windows whole-view mappings have no safe partial-unmap equivalent, and file-backed kDontNeed is rejected instead of using a content-weakening anonymous-memory primitive.",
+      "SharedMapping payload size, readiness and synchronization are an external IPC protocol; Darwin and Windows native capacities may be page-rounded.",
+      "Existing borrowed pointers, spans and views must not outlive owner release, reset or move; checked accessors prevent new cross-hole views but do not track prior borrows.",
+      "The Linux model-loader P1 receipt is from W1-WSL guest engineering and is not a native-Linux, independent-hardware or Formal certificate."
+    ],
+    "reopen_triggers": [
+      "A real loader, scheduler or IPC consumer reproduces a mapping, hole, access, flush, lock, shared-publication, guarded-stack, placement, lifetime or C++ usability defect.",
+      "A supported OS adds a safe same-contract partial-unmap or file-discard primitive, or changes an adopted mapping syscall contract.",
+      "The public API, layout, normal metadata/allocation/syscall cost, Platform/Error/Mem dependency, component graph or delivery shape changes.",
+      "A same-contract normal model-loader workload proves a material regression, or a mature peer proves a better complexity class.",
+      "Async/direct IO, persistent memory or device mapping gains a named foundation consumer that cannot compose the current owner routes."
+    ],
+    "summary": "mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
     },
     {
       "module": "simd",
