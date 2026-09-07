@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -120,6 +121,141 @@ TEST(Proactor, CapabilitiesMatchSelectedBackend) {
     EXPECT_FALSE(uring.register_file_table(1));
     EXPECT_FALSE(uring.release_fixed_file(0));
   }
+}
+
+TEST(Proactor, QueueDepthBackpressuresAndReleasesUserOperations) {
+#if defined(_WIN32)
+  const std::wstring stem =
+      L"\\\\.\\pipe\\hyle-proactor-depth-" +
+      std::to_wstring(static_cast<unsigned long>(::GetCurrentProcessId()));
+  const std::wstring first_name = stem + L"-a";
+  const std::wstring second_name = stem + L"-b";
+  HANDLE first = ::CreateNamedPipeW(
+      first_name.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 4096, 4096, 0,
+      nullptr);
+  HANDLE second = ::CreateNamedPipeW(
+      second_name.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 4096, 4096, 0,
+      nullptr);
+  ASSERT_NE(first, INVALID_HANDLE_VALUE);
+  ASSERT_NE(second, INVALID_HANDLE_VALUE);
+
+  {
+    Proactor p;
+    ASSERT_TRUE(p.init(1));
+    ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(first)));
+    ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(second)));
+    ASSERT_TRUE(p.submit_pipe_accept(reinterpret_cast<std::intptr_t>(first),
+                                     0xD001));
+    EXPECT_FALSE(p.submit_pipe_accept(reinterpret_cast<std::intptr_t>(second),
+                                      0xD002));
+
+    HANDLE client = ::CreateFileW(first_name.c_str(), GENERIC_READ | GENERIC_WRITE,
+                                  0, nullptr, OPEN_EXISTING, 0, nullptr);
+    ASSERT_NE(client, INVALID_HANDLE_VALUE);
+    Completion completion{};
+    ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+    EXPECT_EQ(completion.user_data, 0xD001u);
+    ::CloseHandle(client);
+
+    // Reaping returned the fixed slab slot, so the next operation can enter.
+    ASSERT_TRUE(p.submit_pipe_accept(reinterpret_cast<std::intptr_t>(second),
+                                     0xD002));
+    client = ::CreateFileW(second_name.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                           nullptr, OPEN_EXISTING, 0, nullptr);
+    ASSERT_NE(client, INVALID_HANDLE_VALUE);
+    ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+    EXPECT_EQ(completion.user_data, 0xD002u);
+    ::CloseHandle(client);
+  }
+  ::CloseHandle(first);
+  ::CloseHandle(second);
+#else
+  int first[2] = {-1, -1};
+  int second[2] = {-1, -1};
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, first), 0);
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, second), 0);
+  for (int fd : {first[0], first[1], second[0], second[1]}) {
+    const int flags = ::fcntl(fd, F_GETFL, 0);
+    ASSERT_GE(flags, 0);
+    ASSERT_EQ(::fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  }
+  char first_byte = 0;
+  char second_byte = 0;
+  {
+    Proactor p;
+    ASSERT_TRUE(p.init(1));
+    ASSERT_TRUE(p.submit_recv(first[0], &first_byte, 1, 0, 0xD001));
+    EXPECT_FALSE(p.submit_recv(second[0], &second_byte, 1, 0, 0xD002));
+    ASSERT_EQ(::write(first[1], "a", 1), 1);
+    Completion completion{};
+    ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+    EXPECT_EQ(completion.user_data, 0xD001u);
+    EXPECT_EQ(first_byte, 'a');
+
+    ASSERT_TRUE(p.submit_recv(second[0], &second_byte, 1, 0, 0xD002));
+    ASSERT_EQ(::write(second[1], "b", 1), 1);
+    ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+    EXPECT_EQ(completion.user_data, 0xD002u);
+    EXPECT_EQ(second_byte, 'b');
+  }
+  for (int fd : {first[0], first[1], second[0], second[1]}) ::close(fd);
+#endif
+}
+
+TEST(Proactor, FullQueueStillAcceptsCancellationControlWork) {
+  Completion completions[4] = {};
+  bool saw_target = false;
+#if defined(_WIN32)
+  const std::wstring name =
+      L"\\\\.\\pipe\\hyle-proactor-cancel-" +
+      std::to_wstring(static_cast<unsigned long>(::GetCurrentProcessId()));
+  HANDLE pipe = ::CreateNamedPipeW(
+      name.c_str(), PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 4096, 4096, 0,
+      nullptr);
+  ASSERT_NE(pipe, INVALID_HANDLE_VALUE);
+  {
+    Proactor p;
+    ASSERT_TRUE(p.init(1));
+    ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(pipe)));
+    ASSERT_TRUE(p.submit_pipe_accept(reinterpret_cast<std::intptr_t>(pipe),
+                                     0xCA01));
+    ASSERT_TRUE(p.submit_cancel(0xCA01, 0xCA02));
+    for (unsigned guard = 0; guard < 4 && p.in_flight(); ++guard) {
+      const std::size_t n = p.reap(completions, 4, 1'000'000'000ull);
+      ASSERT_GT(n, 0u);
+      for (std::size_t i = 0; i < n; ++i)
+        saw_target |= completions[i].user_data == 0xCA01u;
+    }
+  }
+  ::CloseHandle(pipe);
+#else
+  int pair[2] = {-1, -1};
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+  for (int fd : pair) {
+    const int flags = ::fcntl(fd, F_GETFL, 0);
+    ASSERT_GE(flags, 0);
+    ASSERT_EQ(::fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  }
+  char byte = 0;
+  {
+    Proactor p;
+    ASSERT_TRUE(p.init(1));
+    ASSERT_TRUE(p.submit_recv(pair[0], &byte, 1, 0, 0xCA01));
+    ASSERT_TRUE(p.submit_cancel(0xCA01, 0xCA02));
+    for (unsigned guard = 0; guard < 4 && p.in_flight(); ++guard) {
+      const std::size_t n = p.reap(completions, 4, 1'000'000'000ull);
+      ASSERT_GT(n, 0u);
+      for (std::size_t i = 0; i < n; ++i)
+        saw_target |= completions[i].user_data == 0xCA01u;
+    }
+  }
+  ::close(pair[0]);
+  ::close(pair[1]);
+#endif
+  EXPECT_TRUE(saw_target);
 }
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -707,9 +843,10 @@ TEST(Proactor, RegisteredFixedFiles) {
   ::close(sv[1]);
 }
 
-TEST(Proactor, FixedFileSubmissionFlushesAtRingDepth) {
+TEST(Proactor, FixedFileSubmissionsHonorQueueDepth) {
   // The fixed-file SQEs have fields submit_one cannot express. They still must
-  // share its "pending batch reached SQ depth -> flush before reuse" invariant.
+  // share its bounded admission invariant: depth operations enter, the next is
+  // backpressured, and reap makes those slots reusable.
   Proactor p;
   if (!p.init(8)) GTEST_SKIP() << "no io_uring backend";
   auto uring = p.io_uring_extension();
@@ -729,23 +866,36 @@ TEST(Proactor, FixedFileSubmissionFlushesAtRingDepth) {
     sent[i] = static_cast<char>('A' + (i % 26));
   ASSERT_EQ(::write(sv[1], sent, sizeof(sent)),
             static_cast<ssize_t>(sizeof(sent)));
-  for (std::size_t i = 0; i < kOps; ++i) {
-    ASSERT_TRUE(uring.submit_recv_fixed(
-        slot, &received[i], 1, 0, 0xF100u + i));
-  }
-
   std::size_t completed = 0;
   while (completed < kOps) {
-    Completion completions[16];
-    const std::size_t n =
-        p.reap(completions, 16, 1'000'000'000ull);
-    ASSERT_GT(n, 0u);
-    for (std::size_t i = 0; i < n; ++i) {
-      ASSERT_GE(completions[i].user_data, 0xF100u);
-      ASSERT_LT(completions[i].user_data, 0xF100u + kOps);
-      EXPECT_EQ(completions[i].result, 1);
-      ++completed;
+    constexpr std::size_t kDepth = 8;
+    const std::size_t batch_begin = completed;
+    for (std::size_t i = 0; i < kDepth; ++i) {
+      const std::size_t index = batch_begin + i;
+      ASSERT_TRUE(uring.submit_recv_fixed(
+          slot, &received[index], 1, 0, 0xF100u + index));
     }
+    if (batch_begin + kDepth < kOps) {
+      const std::size_t blocked = batch_begin + kDepth;
+      EXPECT_FALSE(uring.submit_recv_fixed(
+          slot, &received[blocked], 1, 0, 0xF100u + blocked));
+    }
+
+    std::size_t batch_completed = 0;
+    while (batch_completed < kDepth) {
+      Completion completions[kDepth];
+      const std::size_t n = p.reap(completions, kDepth - batch_completed,
+                                   1'000'000'000ull);
+      ASSERT_GT(n, 0u);
+      for (std::size_t i = 0; i < n; ++i) {
+        ASSERT_GE(completions[i].user_data, 0xF100u + batch_begin);
+        ASSERT_LT(completions[i].user_data,
+                  0xF100u + batch_begin + kDepth);
+        EXPECT_EQ(completions[i].result, 1);
+      }
+      batch_completed += n;
+    }
+    completed += kDepth;
   }
   EXPECT_EQ(std::memcmp(sent, received, sizeof(sent)), 0);
 

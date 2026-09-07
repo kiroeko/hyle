@@ -329,6 +329,9 @@ struct Scheduler::Impl {
   // and io_wake are registered together by IoContext, but read independently.
   std::atomic<Scheduler::IoWakeFn> io_wake{nullptr};
   std::atomic<void*> io_wake_ctx{nullptr};
+  // Claims the pair above as one integration. This is control-path state: the
+  // worker hot path still reads only its callback and context atomics.
+  std::atomic<void*> io_owner{nullptr};
   Status init_status;
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
@@ -1039,11 +1042,10 @@ struct Scheduler::Impl {
         // io_uring surfaces many completions only when the owning thread makes a
         // GETEVENTS enter (that enter runs the kernel's completion task-work). A
         // futex park + the drain-path non-blocking reap(0) never enters with
-        // GETEVENTS, so once the run queue drains with ops in flight (notably
-        // >ring-depth in flight) those completions never surface and their fibers
-        // hang forever -- the worker just spins reap(0)==0 while drain() waits on
-        // outstanding!=0 (root-caused 2026-07-03 via a blocking-reap probe that
-        // made a 300-stream pipelined bench complete).
+        // GETEVENTS, so once the run queue drains with admitted ops in flight
+        // those completions may never surface and their fibers hang forever --
+        // the worker just spins reap(0)==0 while drain() waits on outstanding!=0
+        // (root-caused 2026-07-03 with a pipelined consumer probe).
         //
         // The hook RETURNS whether ops were in flight. true -> it BLOCKED in the
         // ring (up to `timeout`) harvesting completions; loop to run whatever they
@@ -1542,20 +1544,39 @@ bool Scheduler::drain_until(time::MonotonicTimePoint deadline) noexcept {
   return impl_->drain_until(deadline);
 }
 
-void Scheduler::set_io_poll_(IoPollFn fn, void* ctx) noexcept {
-  // Publish ctx BEFORE fn (release) so a worker that reads a non-null fn is
-  // guaranteed to see the matching ctx. Clearing (fn=null) is the reverse but
-  // benign: a worker reading the stale non-null fn with a now-null ctx still runs
-  // a valid (pre-teardown) hook; unregister happens only after the scheduler is
-  // stopped (IoContext dtor), so no worker is looping then anyway.
+bool Scheduler::attach_io_(IoPollFn poll, IoWakeFn wake,
+                           void* ctx) noexcept {
+  if (impl_ == nullptr || poll == nullptr || wake == nullptr || ctx == nullptr)
+    return false;
+  void* expected = nullptr;
+  if (!impl_->io_owner.compare_exchange_strong(
+          expected, ctx, std::memory_order_acq_rel,
+          std::memory_order_acquire))
+    return false;
+  // Publish each context before its callback. The owner reservation prevents a
+  // competing context from entering while the pair is installed.
   impl_->io_poll_ctx.store(ctx, std::memory_order_relaxed);
-  impl_->io_poll.store(fn, std::memory_order_release);
+  impl_->io_wake_ctx.store(ctx, std::memory_order_relaxed);
+  impl_->io_wake.store(wake, std::memory_order_release);
+  impl_->io_poll.store(poll, std::memory_order_release);
+  return true;
 }
 
-void Scheduler::set_io_wake_(IoWakeFn fn, void* ctx) noexcept {
-  // Same publish discipline as set_io_poll_ (ctx before fn, release).
-  impl_->io_wake_ctx.store(ctx, std::memory_order_relaxed);
-  impl_->io_wake.store(fn, std::memory_order_release);
+void Scheduler::detach_io_(void* ctx) noexcept {
+  if (impl_ == nullptr || ctx == nullptr ||
+      impl_->io_owner.load(std::memory_order_acquire) != ctx)
+    return;
+  // IoContext calls this only after the scheduler has stopped. Clear callbacks
+  // before releasing the reservation so the next owner never observes stale
+  // callbacks paired with its identity.
+  impl_->io_poll.store(nullptr, std::memory_order_release);
+  impl_->io_wake.store(nullptr, std::memory_order_release);
+  impl_->io_poll_ctx.store(nullptr, std::memory_order_relaxed);
+  impl_->io_wake_ctx.store(nullptr, std::memory_order_relaxed);
+  void* expected = ctx;
+  (void)impl_->io_owner.compare_exchange_strong(
+      expected, nullptr, std::memory_order_acq_rel,
+      std::memory_order_acquire);
 }
 
 // ---- completion spine (sched-04a) -------------------------------------------

@@ -105,27 +105,42 @@ struct Proactor::Impl {
     alignas(16) char addr_buf[2 * (sizeof(SOCKADDR_STORAGE) + 16)] = {};
   };
   IoOp* inflight = nullptr;  // intrusive doubly-linked list of in-flight ops
-  IoOp* free_ops = nullptr;  // owner-thread cache: no per-I/O heap churn
+  IoOp* free_ops = nullptr;
+  IoOp* operation_storage = nullptr;
+  unsigned operation_capacity = 0;
+
+  bool initialize_operation_pool(unsigned capacity) noexcept {
+    if (capacity == 0) return false;
+    operation_storage = new (std::nothrow) IoOp[capacity];
+    if (operation_storage == nullptr) return false;
+    operation_capacity = capacity;
+    for (unsigned i = 0; i < capacity; ++i) {
+      operation_storage[i].next = free_ops;
+      free_ops = &operation_storage[i];
+    }
+    return true;
+  }
 
   IoOp* acquire() noexcept {
-    if (free_ops != nullptr) {
-      IoOp* op = free_ops;
-      free_ops = free_ops->next;
-      *op = IoOp{};
-      return op;
-    }
-    return new (std::nothrow) IoOp{};
+    if (free_ops == nullptr) return nullptr;
+    IoOp* op = free_ops;
+    free_ops = free_ops->next;
+    *op = IoOp{};
+    return op;
   }
   void recycle(IoOp* op) noexcept {
     op->next = free_ops;
     free_ops = op;
   }
   void release_cache() noexcept {
-    while (free_ops != nullptr) {
-      IoOp* op = free_ops;
-      free_ops = free_ops->next;
-      delete op;
-    }
+    // A broken completion port cannot prove that a residual OVERLAPPED has
+    // retired. Leak the one bounded slab in that impossible-to-recover branch
+    // rather than freeing storage still owned by the kernel.
+    if (inflight != nullptr) return;
+    delete[] operation_storage;
+    operation_storage = nullptr;
+    free_ops = nullptr;
+    operation_capacity = 0;
   }
 
   void link(IoOp* op) noexcept {
@@ -182,8 +197,9 @@ Proactor::~Proactor() {
   impl_ = nullptr;
 }
 
-bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept {
+bool Proactor::init(unsigned entries, bool /*defer_worker_thread*/) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
+  if (entries == 0) return false;
   // NumberOfConcurrentThreads=0 -> IOCP allows as many concurrently-running
   // completion threads as there are cores (we drive it per-worker anyway).
   HANDLE p = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
@@ -194,6 +210,12 @@ bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept
     return false;
   }
   impl_->port = p;
+  if (!impl_->initialize_operation_pool(entries)) {
+    ::CloseHandle(p);
+    delete impl_;
+    impl_ = nullptr;
+    return false;
+  }
   // Winsock is needed only for the socket ops; a file-only proactor never touches
   // it. Startup here is cheap and ref-counted, so do it eagerly and keep the
   // socket-submit paths free of a per-call init check. Non-fatal if it fails --
@@ -357,22 +379,30 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     // listener and stamp kMore (more connections coming, same user_data) --
     // mirrors io_uring native multishot upward. On failure leave kMore clear =
     // terminal (the multishot ended). Re-arm failure also ends it (kMore clear).
+    bool recycled_for_rearm = false;
     if (op->multishot && op->kind == Impl::kAccept && out[i].result >= 0) {
-      if (iocp_arm_accept(impl_, reinterpret_cast<std::intptr_t>(op->handle),
-                          nullptr, nullptr, op->user_data,
+      const std::intptr_t listener =
+          reinterpret_cast<std::intptr_t>(op->handle);
+      const std::uint64_t token = op->user_data;
+      // Release this logical operation's slab slot before re-arming it. This
+      // preserves multishot at queue_depth=1 without a hidden reserve slot.
+      impl_->recycle(op);
+      recycled_for_rearm = true;
+      if (iocp_arm_accept(impl_, listener, nullptr, nullptr, token,
                           /*multishot=*/true))
         out[i].flags |= Completion::kMore;
     }
-    impl_->recycle(op);
+    if (!recycled_for_rearm) impl_->recycle(op);
   }
   return static_cast<std::size_t>(removed);
 }
 
 bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
-  // Post a synthetic completion: key = user_data (the Waker token), bytes =
-  // result. Wakes a blocked reap() from any thread AND drives tests without a
-  // real fd. OVERLAPPED is nullptr -- reap() uses that to tell it from a real op.
+  // Thread-safe control-plane injection used by the console signal handler.
+  // SignalSet coalesces by kind and has one waiter token, so this contributes at
+  // most one completion outside the bounded user-operation slab. Ordinary file,
+  // socket, and metadata operations all consume slab capacity.
   //
   // CONTRACT: `result` must be a NON-NEGATIVE, <=32-bit value on IOCP. It rides
   // dwNumberOfBytesTransferred (a 32-bit DWORD) and reap() zero-extends it back, so
@@ -807,6 +837,9 @@ bool Proactor::submit_open(const char* path, std::uint32_t flags,
                            std::uint32_t /*mode*/,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || path == nullptr) return false;
+  // Reserve admission before the synchronous side effect. Otherwise a full
+  // completion queue could open a handle that the caller never receives.
+  if (impl_->free_ops == nullptr) return false;
   // Map neutral OpenFlags onto CreateFileW access + disposition. FILE_FLAG_
   // OVERLAPPED so subsequent submit_read/write on this handle are truly async.
   DWORD access = 0;
@@ -834,13 +867,19 @@ bool Proactor::submit_open(const char* path, std::uint32_t flags,
     ::CloseHandle(h);
     return iocp_post_meta(impl_, -static_cast<std::int64_t>(e), user_data);
   }
-  return iocp_post_meta(impl_, static_cast<std::int64_t>(reinterpret_cast<std::intptr_t>(h)),
-                        user_data);
+  if (iocp_post_meta(
+          impl_,
+          static_cast<std::int64_t>(reinterpret_cast<std::intptr_t>(h)),
+          user_data))
+    return true;
+  ::CloseHandle(h);
+  return false;
 }
 
 bool Proactor::submit_close(std::intptr_t fd,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->free_ops == nullptr) return false;
   BOOL ok = ::CloseHandle(reinterpret_cast<HANDLE>(fd));
   return iocp_post_meta(impl_, ok ? 0 : -static_cast<std::int64_t>(::GetLastError()),
                         user_data);
@@ -849,6 +888,7 @@ bool Proactor::submit_close(std::intptr_t fd,
 bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || out == nullptr) return false;
+  if (impl_->free_ops == nullptr) return false;
   BY_HANDLE_FILE_INFORMATION info;
   if (::GetFileInformationByHandle(reinterpret_cast<HANDLE>(fd), &info) == 0)
     return iocp_post_meta(impl_, -static_cast<std::int64_t>(::GetLastError()), user_data);
@@ -870,6 +910,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
 bool Proactor::submit_fsync(std::intptr_t fd, bool /*datasync*/,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->free_ops == nullptr) return false;
   // Windows has no data-only flush; FlushFileBuffers does the full sync either way.
   BOOL ok = ::FlushFileBuffers(reinterpret_cast<HANDLE>(fd));
   return iocp_post_meta(impl_, ok ? 0 : -static_cast<std::int64_t>(::GetLastError()),
@@ -880,6 +921,7 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->free_ops == nullptr) return false;
   if (mode != 0)
     return iocp_post_meta(
         impl_, -static_cast<std::int64_t>(ERROR_NOT_SUPPORTED), user_data);
@@ -1158,6 +1200,10 @@ struct Proactor::Impl {
   // growths and make io/ a real consumer of container/'s SIMD control-byte probe.
   container::FlatHashMap<int, PendingOp> pending_in;
   container::FlatHashMap<int, PendingOp> pending_out;
+  // Exact logical admission bound requested at init. Kernel tables may reserve
+  // more metadata, but pending user operations plus undelivered synthetic
+  // completions never exceed this value.
+  unsigned operation_capacity = 0;
   // post() has no fd (a bare wake token) and epoll has no
   // PostQueuedCompletionStatus, so injected wakes queue here; reap drains them
   // first. std in the .cc impl is allowed (conventions §1: internal, non-hot).
@@ -1166,6 +1212,12 @@ struct Proactor::Impl {
     std::int64_t result;
   };
   std::vector<Posted> posted;
+
+  bool has_user_capacity() const noexcept {
+    return static_cast<std::size_t>(inflight) + pending_in.size() +
+               pending_out.size() + posted.size() <
+           operation_capacity;
+  }
 };
 
 Proactor::~Proactor() {
@@ -1300,7 +1352,24 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries,
   }
   impl->backend = Proactor::Impl::kUring;
   impl->fd = fd;
-  impl->sq_entries = p.sq_entries;
+  // The kernel may round the physical SQ upward. Keep the caller's requested
+  // depth as the logical admission/flush bound so all backends expose the same
+  // backpressure contract rather than silently accepting more work on Linux.
+  impl->sq_entries = entries < p.sq_entries ? entries : p.sq_entries;
+  impl->operation_capacity = impl->sq_entries;
+  try {
+    // All owner-thread bookkeeping is pre-sized to the ring's admitted depth;
+    // steady-state submissions therefore cannot throw or allocate while an SQE
+    // is being published.
+    impl->posted.reserve(p.sq_entries);
+    impl->pending_statx.reserve(p.sq_entries);
+    impl->pending_direct_accepts.reserve(p.sq_entries);
+    impl->pending_direct_closes.reserve(p.sq_entries);
+  } catch (...) {
+    ::close(fd);
+    delete impl;
+    return nullptr;
+  }
   impl->single_mmap = (p.features & IORING_FEAT_SINGLE_MMAP) != 0;
   // DEFER_TASKRUN chosen -> reap(0) must enter with GETEVENTS to surface deferred
   // completions (see the defer_taskrun branch in reap()).
@@ -1400,8 +1469,16 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
   }
   impl->backend = Proactor::Impl::kEpoll;
   impl->epfd = ep;
+  impl->operation_capacity = entries;
   if (!impl->pending_in.try_reserve(entries) ||
       !impl->pending_out.try_reserve(entries)) {
+    delete impl;
+    ::close(ep);
+    return nullptr;
+  }
+  try {
+    impl->posted.reserve(entries);
+  } catch (...) {
     delete impl;
     ::close(ep);
     return nullptr;
@@ -1426,6 +1503,7 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
 
 bool Proactor::init(unsigned entries, bool defer_worker_thread) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
+  if (entries == 0) return false;
   // SOTA-first: always try io_uring; production runs on it wherever it exists.
   // Fall back to epoll ONLY when io_uring is truly unavailable (old kernel /
   // sysctl-disabled / seccomp-blocked). A test-only env var forces the epoll
@@ -1979,7 +2057,15 @@ bool submit_one(int ring_fd, unsigned sq_entries, unsigned* sq_pending,
                 unsigned* sq_array, io_uring_sqe* sqes, std::uint8_t opcode,
                 std::int32_t fd, std::uint64_t addr, std::uint32_t len,
                 std::uint64_t off, std::uint64_t user_data,
-                std::uint32_t op_flags = 0, std::uint16_t ioprio = 0) noexcept {
+                std::uint32_t op_flags = 0, std::uint16_t ioprio = 0,
+                bool control = false) noexcept {
+  // `sq_entries` is also this backend's admitted-user-operation budget. A
+  // cancel is control-plane work: it must still enter a full ring so the user
+  // operation occupying that last slot can retire. While that extra SQE is
+  // outstanding, ordinary submissions remain backpressured.
+  if ((!control && *inflight >= sq_entries) ||
+      (control && *inflight >= static_cast<std::uint64_t>(sq_entries) * 2u))
+    return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(ring_fd, sq_entries, sq_pending, sq_tail, sq_mask,
                    sq_array, sqes, &sqe))
@@ -2011,6 +2097,13 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // synthetic completion in user space for BOTH io_uring and epoll so its signed
   // 64-bit result is preserved. An io_uring NOP CQE always reports res=0, which
   // previously discarded `result` and made the Linux backend differ from IOCP.
+  if (impl_->backend == Impl::kEpoll) {
+    if (!impl_->has_user_capacity()) return false;
+  } else {
+    const std::size_t admitted = static_cast<std::size_t>(impl_->inflight) +
+                                 impl_->posted.size();
+    if (admitted >= impl_->sq_entries) return false;
+  }
   impl_->posted.push_back({user_data, result});
   return true;
 }
@@ -2057,7 +2150,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   // Replacing it would orphan the first awaiter forever. Make possible table
   // growth explicit as well, so OOM returns submit=false instead of reaching
   // FlatHashMap's infallible-insert assertion inside this noexcept API.
-  if (side_pending || !side.try_prepare_insert()) return false;
+  if (side_pending || !impl->has_user_capacity() ||
+      !side.try_prepare_insert())
+    return false;
   side.insert_or_assign(
       fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
                           addrlen, flags});
@@ -2400,6 +2495,7 @@ bool Proactor::submit_recv_fixed(int slot, void* buf, std::uint32_t len,
     return false;
   // Fill the SQE directly (submit_one doesn't set sqe.flags): IOSQE_FIXED_FILE +
   // sqe.fd = the SLOT INDEX (the kernel resolves the real fd from its table).
+  if (impl_->inflight >= impl_->sq_entries) return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
@@ -2425,6 +2521,7 @@ bool Proactor::submit_send_fixed(int slot, const void* buf, std::uint32_t len,
   if (slot < 0 || static_cast<std::size_t>(slot) >= impl_->file_slots.size() ||
       impl_->file_slots[static_cast<std::size_t>(slot)] == -1)
     return false;
+  if (impl_->inflight >= impl_->sq_entries) return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
@@ -2459,6 +2556,7 @@ bool Proactor::submit_accept_direct(std::intptr_t fd,
   // a FREE table slot as a direct descriptor, and the CQE result is the chosen slot
   // index. No addr/addrlen (peer address not needed here). submit_one doesn't set
   // sqe.file_index, so fill the SQE directly.
+  if (impl_->inflight >= impl_->sq_entries) return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
@@ -2486,6 +2584,7 @@ bool Proactor::submit_close_direct(int slot, std::uint64_t user_data) noexcept {
     if (pending.slot == slot) return false;
   // CLOSE with file_index (fd unused): closes the direct descriptor in that
   // slot. Keep the mirror reserved until the successful close CQE.
+  if (impl_->inflight >= impl_->sq_entries) return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
@@ -2510,6 +2609,7 @@ bool Proactor::submit_recv_multishot(std::intptr_t fd, int bgid,
   // buffer (addr/len 0): the kernel picks one per arrival and reports its id in
   // IORING_CQE_F_BUFFER. submit_one doesn't set sqe.flags/buf_group, so fill the
   // SQE directly here.
+  if (impl_->inflight >= impl_->sq_entries) return false;
   io_uring_sqe* sqe = nullptr;
   if (!reserve_sqe(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                    impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array,
@@ -2775,6 +2875,7 @@ bool Proactor::submit_open(const char* path, std::uint32_t flags,
   if (impl_ == nullptr || path == nullptr) return false;
   int oflags = open_flags_to_posix(flags);
   if (impl_->backend == Impl::kEpoll) {
+    if (!impl_->has_user_capacity()) return false;
     // No async openat on epoll -> open synchronously, synthesize a completion.
     int fd = ::open(path, oflags, static_cast<mode_t>(mode));
     impl_->posted.push_back(
@@ -2796,6 +2897,7 @@ bool Proactor::submit_close(std::intptr_t fd,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
+    if (!impl_->has_user_capacity()) return false;
     int r = ::close(static_cast<int>(fd));
     impl_->posted.push_back(
         {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
@@ -2812,6 +2914,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || out == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
+    if (!impl_->has_user_capacity()) return false;
     struct stat st;
     int r = ::fstat(static_cast<int>(fd), &st);
     if (r == 0) {
@@ -2827,6 +2930,8 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
         {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
     return true;
   }
+
+  if (!impl_->has_user_capacity()) return false;
 
   // The user_data identifies an in-flight operation everywhere in Proactor; a
   // duplicate would make cancellation/completion routing ambiguous.
@@ -2859,6 +2964,7 @@ bool Proactor::submit_fsync(std::intptr_t fd, bool datasync,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
+    if (!impl_->has_user_capacity()) return false;
     int r = datasync ? ::fdatasync(static_cast<int>(fd))
                      : ::fsync(static_cast<int>(fd));
     impl_->posted.push_back(
@@ -2878,6 +2984,7 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   const auto max_offset =
       static_cast<std::uint64_t>((std::numeric_limits<off_t>::max)());
   if (len > max_offset || offset > max_offset - len) {
@@ -2965,7 +3072,8 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
   return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
                     &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_ASYNC_CANCEL,
-                    -1, target_user_data, 0, 0, cancel_user_data);
+                    -1, target_user_data, 0, 0, cancel_user_data, 0, 0,
+                    /*control=*/true);
 }
 
 
@@ -3120,6 +3228,9 @@ struct Proactor::Impl {
   // (unlike epoll's single union registration -- see the block header note).
   container::FlatHashMap<int, PendingOp> pending_in;
   container::FlatHashMap<int, PendingOp> pending_out;
+  // Exact logical admission bound requested at init. Pending readiness watches
+  // plus synthesized completions never exceed this value.
+  unsigned operation_capacity = 0;
   // post() has no fd (a bare wake token) and there is no kqueue "inject completion",
   // so injected wakes + synchronously-synthesized file-op results queue here; reap
   // drains them first. std in the .cc impl is allowed (conventions §1: non-hot).
@@ -3128,6 +3239,11 @@ struct Proactor::Impl {
     std::int64_t result;
   };
   std::vector<Posted> posted;
+
+  bool has_user_capacity() const noexcept {
+    return pending_in.size() + pending_out.size() + posted.size() <
+           operation_capacity;
+  }
 };
 
 Proactor::~Proactor() {
@@ -3150,8 +3266,16 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
     return nullptr;
   }
   impl->kq = kq;
+  impl->operation_capacity = entries;
   if (!impl->pending_in.try_reserve(entries) ||
       !impl->pending_out.try_reserve(entries)) {
+    delete impl;
+    ::close(kq);
+    return nullptr;
+  }
+  try {
+    impl->posted.reserve(entries);
+  } catch (...) {
     delete impl;
     ::close(kq);
     return nullptr;
@@ -3169,6 +3293,7 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
 
 bool Proactor::init(unsigned entries, bool /*defer_worker_thread*/) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
+  if (entries == 0) return false;
   // No io_uring on macOS: kqueue is the only backend. (entries/defer are io_uring
   // ring-lifecycle knobs with no kqueue analogue -- ignored, like IOCP ignores them.)
   Impl* k = try_init_epoll(entries);
@@ -3401,6 +3526,7 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
   // kqueue has no "inject completion": queue a software completion that reap() drains
   // first. (Single-threaded per-worker use; cross-thread post is not the model.)
+  if (!impl_->has_user_capacity()) return false;
   impl_->posted.push_back({user_data, result});
   return true;
 }
@@ -3448,6 +3574,7 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
       opcode == IORING_OP_READV || opcode == IORING_OP_WRITEV) {
     struct stat st;
     if (::fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+      if (!impl->has_user_capacity()) return false;
       std::int64_t res;
       if (opcode == IORING_OP_WRITEV) {
         ssize_t w = ::pwritev(fd, static_cast<const iovec*>(buf),
@@ -3471,7 +3598,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
     }
   }
   auto& side = is_read ? impl->pending_in : impl->pending_out;
-  if (side.contains(fd) || !side.try_prepare_insert()) return false;
+  if (side.contains(fd) || !impl->has_user_capacity() ||
+      !side.try_prepare_insert())
+    return false;
   side.insert_or_assign(
       fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
                           addrlen, flags});
@@ -3658,6 +3787,7 @@ bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
 bool Proactor::submit_open(const char* path, std::uint32_t flags,
                            std::uint32_t mode, std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || path == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   // No async open on kqueue -> open synchronously, synthesize a completion.
   int oflags = open_flags_to_posix(flags);
   int fd = ::open(path, oflags, static_cast<mode_t>(mode));
@@ -3669,6 +3799,7 @@ bool Proactor::submit_open(const char* path, std::uint32_t flags,
 
 bool Proactor::submit_close(std::intptr_t fd, std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   int r = ::close(static_cast<int>(fd));
   impl_->posted.push_back(
       {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
@@ -3678,6 +3809,7 @@ bool Proactor::submit_close(std::intptr_t fd, std::uint64_t user_data) noexcept 
 bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || out == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   // Pure metadata query (no disk-io wait): run fstat synchronously and synthesize a
   // completion. macOS `struct stat` uses st_mtimespec (BSD), not Linux's st_mtim.
   struct stat st;
@@ -3699,6 +3831,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
 bool Proactor::submit_fsync(std::intptr_t fd, bool /*datasync*/,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   // macOS has no fdatasync (Linux-only): ::fsync is the correct superset for both the
   // datasync and full-sync request, so ignore `datasync` and always fsync. Synchronous
   // + synthesized (no async form). (F_FULLFSYNC would force a device-cache flush; plain
@@ -3713,6 +3846,7 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (!impl_->has_user_capacity()) return false;
   if (mode != 0) {
     impl_->posted.push_back({user_data, -ENOTSUP});
     return true;

@@ -425,8 +425,8 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
     Proactor &proactor = self->io_->proactor_for_current();
     if (!proactor.submit_read(state.pipe_read, &wake_byte, 1, 0,
                               to_token(&operation))) {
-      status =
-          Status::Unavailable("IO backend rejected the process signal wait");
+      status = Status::ResourceExhausted(
+          "process signal wait could not enter the bounded IO queue");
       break;
     }
     sched::suspend();

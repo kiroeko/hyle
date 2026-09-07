@@ -42,8 +42,10 @@ struct IoContextAccess;
 }
 
 struct IoContextOptions {
-  // One completion queue per scheduler worker. The value is a capacity hint;
-  // backends may round it to a supported queue size.
+  // Maximum admitted user operations per scheduler worker. Backend storage may
+  // round upward, but ordinary submissions are backpressured at this logical
+  // bound. Cancellation uses bounded control-plane headroom so a full queue can
+  // still retire timed/cancelled work.
   unsigned queue_depth = 256;
   mem::AllocatorRef allocator = mem::system_allocator();
   unsigned max_blocking_threads = 512;

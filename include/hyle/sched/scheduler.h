@@ -261,8 +261,8 @@ class HYLE_SCHED_API Scheduler {
   // Build-only IO integration. Public users compose through IoContext; these
   // single-slot worker-loop hooks are deliberately inaccessible as scheduler
   // policy and are not installed as an SDK header.
-  void set_io_poll_(IoPollFn fn, void* context) noexcept;
-  void set_io_wake_(IoWakeFn fn, void* context) noexcept;
+  bool attach_io_(IoPollFn poll, IoWakeFn wake, void* context) noexcept;
+  void detach_io_(void* context) noexcept;
   struct Impl;
   Impl* impl_;
   void init_(unsigned num_workers, mem::AllocatorRef alloc,

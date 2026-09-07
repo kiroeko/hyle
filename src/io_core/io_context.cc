@@ -57,10 +57,14 @@ IoContext::IoContext(sched::Scheduler& sched,
       return;
     }
   }
-  sched::detail::SchedulerIntegration::set_io_poll(
-      sched_, &IoContext::poll_trampoline, this);
-  sched::detail::SchedulerIntegration::set_io_wake(
-      sched_, &IoContext::wake_trampoline, this);
+  if (!sched::detail::SchedulerIntegration::attach_io(
+          sched_, &IoContext::poll_trampoline, &IoContext::wake_trampoline,
+          this)) {
+    destroy_rings();
+    status_ = Status::AlreadyExists(
+        "scheduler already has an attached IO context");
+    return;
+  }
   valid_ = true;
 }
 
@@ -69,8 +73,7 @@ IoContext::~IoContext() {
   // dangling hook during teardown. The scheduler is expected already stopped
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
   if (valid_) {
-    sched::detail::SchedulerIntegration::set_io_wake(sched_, nullptr, nullptr);
-    sched::detail::SchedulerIntegration::set_io_poll(sched_, nullptr, nullptr);
+    sched::detail::SchedulerIntegration::detach_io(sched_, this);
   }
 
   // io-06 orphan drain: a timed op whose TIMER won submitted a cancel and resumed

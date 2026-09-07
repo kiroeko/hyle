@@ -13,7 +13,8 @@ constexpr std::int64_t kCanonicalTimedOut = -110;
 Status status_from_negative(std::int64_t result, NativeOperationDomain domain,
                             const char *operation) noexcept {
   if (result == kSubmitFailed)
-    return Status::Unavailable("IO backend rejected the operation submission");
+    return Status::ResourceExhausted(
+        "IO operation could not enter the bounded backend queue");
   if (result == kCanonicalCancelled)
     return Status::Cancelled(operation);
   if (result == kCanonicalTimedOut)

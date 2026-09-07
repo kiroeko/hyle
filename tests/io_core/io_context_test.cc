@@ -44,6 +44,51 @@ struct CountingAllocator {
   }
 };
 
+struct FailAfterAllocator {
+  std::size_t successful = 0;
+  std::size_t fail_after = 0;
+  std::size_t live = 0;
+
+  static void *allocate(void *context, std::size_t size,
+                        std::size_t alignment) noexcept {
+    auto &self = *static_cast<FailAfterAllocator *>(context);
+    if (self.successful >= self.fail_after) return nullptr;
+    void *pointer = hyle::mem::system_allocator().allocate(size, alignment);
+    if (pointer != nullptr) {
+      ++self.successful;
+      ++self.live;
+    }
+    return pointer;
+  }
+
+  static void deallocate(void *context, void *pointer, std::size_t size,
+                         std::size_t alignment) noexcept {
+    auto &self = *static_cast<FailAfterAllocator *>(context);
+    if (pointer != nullptr) --self.live;
+    hyle::mem::system_allocator().deallocate(pointer, size, alignment);
+  }
+
+  static void *reallocate(void *context, void *pointer, std::size_t old_size,
+                          std::size_t new_size,
+                          std::size_t alignment) noexcept {
+    auto &self = *static_cast<FailAfterAllocator *>(context);
+    if (pointer == nullptr) return allocate(context, new_size, alignment);
+    if (new_size == 0) {
+      deallocate(context, pointer, old_size, alignment);
+      return nullptr;
+    }
+    if (self.successful >= self.fail_after) return nullptr;
+    void *replacement = hyle::mem::system_allocator().reallocate(
+        pointer, old_size, new_size, alignment);
+    if (replacement != nullptr) ++self.successful;
+    return replacement;
+  }
+
+  hyle::mem::AllocatorRef get() noexcept {
+    return {&allocate, &deallocate, &reallocate, this};
+  }
+};
+
 TEST(IoContext, DerivesWorkerCountAndBalancesInjectedMetadata) {
   CountingAllocator::live_allocations.store(0, std::memory_order_relaxed);
   hyle::sched::Scheduler scheduler(2, hyle::mem::system_allocator(), 256);
@@ -82,6 +127,36 @@ TEST(IoContext, InvalidOptionsReturnTypedStatus) {
   EXPECT_FALSE(invalid_alloc.valid());
   EXPECT_TRUE(invalid_alloc.status().IsInvalidArgument());
 
+  scheduler.shutdown();
+}
+
+TEST(IoContext, RejectsASecondDriverForTheSameScheduler) {
+  hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 256);
+  ASSERT_TRUE(scheduler.valid());
+  hyle::io::IoContext first(scheduler);
+  ASSERT_TRUE(first.valid()) << first.status().message();
+  hyle::io::IoContext duplicate(scheduler);
+  EXPECT_FALSE(duplicate.valid());
+  EXPECT_TRUE(duplicate.status().IsAlreadyExists());
+  scheduler.shutdown();
+}
+
+TEST(IoContext, RingTableAllocationFailureRollsBackInjectedState) {
+  hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 256);
+  ASSERT_TRUE(scheduler.valid());
+  FailAfterAllocator allocator;
+  // BlockingPool owns the first allocation. Reject the following ring-owner
+  // table allocation and verify both partial owners unwind.
+  allocator.fail_after = 1;
+  {
+    hyle::io::IoContextOptions options;
+    options.allocator = allocator.get();
+    options.max_blocking_threads = 1;
+    hyle::io::IoContext context(scheduler, options);
+    EXPECT_FALSE(context.valid());
+    EXPECT_TRUE(context.status().IsResourceExhausted());
+  }
+  EXPECT_EQ(allocator.live, 0u);
   scheduler.shutdown();
 }
 
