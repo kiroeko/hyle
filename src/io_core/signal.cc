@@ -7,6 +7,8 @@
 
 #include "hyle/core/assert.h"
 #include "hyle/core/environment.h"
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
 #include "hyle/io/operation.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
@@ -23,6 +25,11 @@
 #endif
 
 namespace hyle::io {
+
+using detail::IoOperation;
+using detail::Proactor;
+using detail::to_token;
+
 namespace {
 
 constexpr unsigned mask(SignalInterest interest) noexcept {
@@ -365,7 +372,7 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   }
   self->waiting_ = true;
   operation.waker = sched::current_waker();
-  state.ring.store(&self->io_->proactor_for_current(),
+  state.ring.store(&detail::IoContextAccess::proactor_for_current(*self->io_),
                    std::memory_order_release);
   state.token.store(to_token(&operation), std::memory_order_release);
 
@@ -422,7 +429,8 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
     }
     operation = IoOperation{};
     operation.waker = sched::current_waker();
-    Proactor &proactor = self->io_->proactor_for_current();
+    Proactor &proactor =
+        detail::IoContextAccess::proactor_for_current(*self->io_);
     if (!proactor.submit_read(state.pipe_read, &wake_byte, 1, 0,
                               to_token(&operation))) {
       status = Status::ResourceExhausted(

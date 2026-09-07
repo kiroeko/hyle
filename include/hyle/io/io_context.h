@@ -2,8 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/io/net.h"
-#include "hyle/io/proactor.h"
+#include "hyle/io/capabilities.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/visibility.h"
@@ -38,6 +37,7 @@
 namespace hyle::io {
 
 namespace detail {
+class Proactor;
 struct IoContextAccess;
 }
 
@@ -70,39 +70,22 @@ class IoContext {
   bool valid() const noexcept { return valid_; }
   const Status& status() const noexcept { return status_; }
 
-  // The proactor for a specific worker (used by the poll hook + by awaitables via
-  // proactor_for_current()). Index must be < num_workers.
-  Proactor& proactor(unsigned worker_idx) noexcept {
-    return rings_[worker_idx];
-  }
-
-  // The proactor of the worker running the current fiber -- the ring an awaitable
-  // must submit on so submit + reap stay on one thread. Precondition: called from
-  // a fiber on a worker of the matching scheduler (else the index is -1 and this
-  // asserts). This is what net.h ops call to get their ring.
-  HYLE_IO_API Proactor& proactor_for_current() noexcept;
-
-  // Bind an fd to `worker_idx`'s ring (shard-per-core): registers it there
-  // (needed on IOCP -- a socket associates with exactly one completion port; a
-  // no-op on io_uring/epoll) and returns worker_idx so callers can pass it to
-  // Scheduler::spawn_on for the connection's fiber. All of that fd's ops then run
-  // on that one worker. Returns whether registration succeeded.
-  HYLE_IO_API bool bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept;
-
   unsigned num_workers() const noexcept {
     return ring_count_;
   }
 
-  // Portable file operations use this pool whenever the selected backend cannot
-  // complete a regular-file operation asynchronously. Network operations never
-  // use it. The pool belongs to the context and is drained on destruction.
-  sched::BlockingPool& blocking_pool() noexcept { return blocking_; }
+  // Snapshot the selected backend and optional accelerators for one worker.
+  // Invalid contexts or out-of-range workers return an empty snapshot.  This is
+  // observational only: portable transport operations never require branching
+  // on the backend.
+  HYLE_IO_API IoCapabilities capabilities(unsigned worker = 0) const noexcept;
 
-  // Backs only bounded-operation arbitration state. A bounded operation waits
-  // for native cancellation retirement before returning, so caller byte buffers
-  // are never accessed after the await completes. Ordinary operations remain
-  // stack-only.
-  mem::AllocatorRef operation_allocator() const noexcept { return allocator_; }
+#if HYLE_OS_LINUX
+  // Acquire the explicit Linux acceleration track for one worker.  An empty
+  // handle means this context selected the epoll fallback (or is invalid); no
+  // io_uring-only operation exists on non-Linux builds.
+  HYLE_IO_API IoUringExtension io_uring(unsigned worker = 0) noexcept;
+#endif
 
  private:
   friend struct detail::IoContextAccess;
@@ -111,12 +94,14 @@ class IoContext {
                               unsigned long long timeout_ns) noexcept;
   static void wake_trampoline(void* ctx, unsigned worker_idx) noexcept;
   bool poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
+  HYLE_IO_API bool bind_handle(unsigned worker_idx,
+                               std::intptr_t handle) noexcept;
   void destroy_rings() noexcept;
 
   sched::Scheduler& sched_;
   mem::AllocatorRef allocator_;
   Status status_;
-  Proactor* rings_ = nullptr;  // allocator-backed contiguous owner table
+  detail::Proactor* rings_ = nullptr;  // allocator-backed owner table
   unsigned ring_count_ = 0;
   sched::BlockingPool blocking_;
   bool valid_ = false;

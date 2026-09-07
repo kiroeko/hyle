@@ -1,4 +1,4 @@
-#include "hyle/io/proactor.h"
+#include "hyle/io/detail/proactor.h"
 
 #include <limits>
 #include <new>
@@ -29,7 +29,7 @@
 
 #  include <cstring>
 
-namespace hyle::io {
+namespace hyle::io::detail {
 namespace {
 static_assert(sizeof(detail::NativeBuffer) == sizeof(WSABUF));
 static_assert(alignof(detail::NativeBuffer) == alignof(WSABUF));
@@ -237,12 +237,6 @@ ProactorCapabilities Proactor::capabilities() const noexcept {
     supported |= ProactorCapability::kEmulatedMultishotAccept |
                  ProactorCapability::kAsyncFileData;
   }
-#if defined(HYLE_IO_TLS)
-  supported |= ProactorCapability::kTls;
-#endif
-#if defined(HYLE_IO_HTTP2)
-  supported |= ProactorCapability::kHttp2;
-#endif
   return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
@@ -969,7 +963,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 }
 
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail
 
 #elif HYLE_OS_LINUX
 
@@ -1006,7 +1000,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <cstring>
 #  include <vector>
 
-namespace hyle::io {
+namespace hyle::io::detail {
 namespace {
 
 static_assert(sizeof(detail::NativeBuffer) == sizeof(iovec));
@@ -1546,12 +1540,6 @@ ProactorCapabilities Proactor::capabilities() const noexcept {
       supported |= ProactorCapability::kEmulatedMultishotAccept;
     }
   }
-#if defined(HYLE_IO_TLS)
-  supported |= ProactorCapability::kTls;
-#endif
-#if defined(HYLE_IO_HTTP2)
-  supported |= ProactorCapability::kHttp2;
-#endif
   return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
@@ -3077,7 +3065,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 }
 
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail
 
 #elif HYLE_OS_MACOS
 
@@ -3115,7 +3103,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <ctime>
 #  include <vector>
 
-namespace hyle::io {
+namespace hyle::io::detail {
 namespace {
 
 // PendingOp.opcode reuses the io_uring op names as PLAIN TAGS telling perform()
@@ -3312,12 +3300,6 @@ ProactorCapabilities Proactor::capabilities() const noexcept {
   ProactorCapability supported =
       impl_ != nullptr ? ProactorCapability::kEmulatedMultishotAccept
                        : ProactorCapability::kNone;
-#if defined(HYLE_IO_TLS)
-  supported |= ProactorCapability::kTls;
-#endif
-#if defined(HYLE_IO_HTTP2)
-  supported |= ProactorCapability::kHttp2;
-#endif
   return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
@@ -3916,7 +3898,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
   return false;  // not armed (already fired) -> nothing to cancel
 }
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail
 
 #else
 #  error "HYLE io/proactor: unsupported OS"

@@ -9,7 +9,6 @@
 #include <thread>
 
 #include "hyle/io/io_context.h"
-#include "hyle/io/net_cancel.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/udp.h"
 #include "hyle/mem/allocator.h"
@@ -35,7 +34,6 @@
 // Also the fan-out shape: one request-root token derives N child tokens; cancelling
 // the root wakes every child's blocked recv with -ECANCELED (connected-cancel).
 
-using hyle::io::CancelRecvOp;
 using hyle::io::AddressFamily;
 using hyle::io::Endpoint;
 using hyle::io::IoContext;
@@ -53,6 +51,7 @@ using hyle::sched::Task;
 namespace {
 
 constexpr unsigned kOwner = 0;
+constexpr std::int64_t kCancelledResult = -125;
 
 struct Drive {
   Task<int> task;
@@ -100,7 +99,7 @@ Task<int> cancel_client(AllocatorRef, IoContext* io, CancelResult* r,
   const std::int64_t rc =
       transfer.ok() ? static_cast<std::int64_t>(transfer.bytes)
                     : (transfer.status.code() == hyle::StatusCode::Cancelled
-                           ? hyle::io::kCancelled
+                           ? kCancelledResult
                            : -999);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
@@ -149,7 +148,7 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
 
   EXPECT_TRUE(r->done.load());
   EXPECT_TRUE(r->connected.load());
-  EXPECT_EQ(r->recv_rc.load(), hyle::io::kCancelled);  // normalized: token cancel won
+  EXPECT_EQ(r->recv_rc.load(), kCancelledResult);  // normalized: token cancel won
 }
 
 // A recv whose token is ALREADY cancelled before it starts returns -ECANCELED
@@ -165,10 +164,10 @@ Task<int> precancel_client(AllocatorRef, IoContext* io, PrecancelResult* r,
   char buf[16] = {};
   auto transfer = co_await stream->read_some(
       std::as_writable_bytes(std::span{buf}),
-      OperationOptions{.cancel = tok});
+      OperationOptions{.deadline = {}, .cancel = tok});
   const std::int64_t rc =
       transfer.status.code() == hyle::StatusCode::Cancelled
-          ? hyle::io::kCancelled
+          ? kCancelledResult
           : static_cast<std::int64_t>(transfer.bytes);
   r->rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
@@ -204,7 +203,7 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
   sched.shutdown();
 
   EXPECT_TRUE(r->done.load());
-  EXPECT_EQ(r->rc.load(), hyle::io::kCancelled);  // short-circuited, no ring op
+  EXPECT_EQ(r->rc.load(), kCancelledResult);  // short-circuited, no ring op
 }
 
 namespace {
@@ -214,9 +213,9 @@ Task<int> precancel_udp_send(AllocatorRef, hyle::io::UdpSocket* socket,
   auto sent = co_await socket->send_to(
       std::as_bytes(std::span{message}),
       Endpoint::loopback(AddressFamily::kIpv4, 54482),
-      OperationOptions{.cancel = token});
+      OperationOptions{.deadline = {}, .cancel = token});
   result->rc.store(sent.status.code() == hyle::StatusCode::Cancelled
-                       ? hyle::io::kCancelled
+                       ? kCancelledResult
                        : static_cast<std::int64_t>(sent.bytes),
                    std::memory_order_release);
   result->done.store(true, std::memory_order_release);
@@ -244,5 +243,5 @@ TEST(NetCancel, AlreadyCancelledUdpSendReturnsCancelledImmediately) {
   sched.shutdown();
 
   EXPECT_TRUE(result->done.load());
-  EXPECT_EQ(result->rc.load(), hyle::io::kCancelled);
+  EXPECT_EQ(result->rc.load(), kCancelledResult);
 }

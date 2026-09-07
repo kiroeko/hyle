@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "hyle/core/environment.h"
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/cancel.h"
 
@@ -21,6 +22,13 @@
 #endif
 
 namespace hyle::io {
+
+using detail::IoOperation;
+using detail::Proactor;
+using detail::BackendKind;
+using detail::kSubmitFailed;
+using detail::to_token;
+
 namespace {
 
 constexpr std::uint64_t kLargestFileOffset =
@@ -36,7 +44,9 @@ std::int64_t native_file_error() noexcept {
 
 template <class Fn> std::int64_t offload(IoContext &io, Fn &&fn) noexcept {
   auto handle = sched::spawn_blocking(
-      io.blocking_pool(), io.operation_allocator(), std::forward<Fn>(fn));
+      detail::IoContextAccess::blocking_pool(io),
+      detail::IoContextAccess::operation_allocator(io),
+      std::forward<Fn>(fn));
   auto result = handle.join();
   return result.has_value() ? *result : kSubmitFailed;
 }
@@ -542,7 +552,9 @@ Result<File> File::adopt(IoContext &io, unsigned owner_worker,
     return make_unexpected(
         Status::InvalidArgument("cannot adopt an empty FileHandle"));
 #if HYLE_OS_LINUX
-  const bool native_async = io.proactor(owner_worker).has_async_file_data();
+  const bool native_async =
+      detail::IoContextAccess::proactor(io, owner_worker)
+          .has_async_file_data();
 #else
   const bool native_async = false;
 #endif
@@ -579,9 +591,12 @@ bool File::ReadSomeAtAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  Proactor *proactor = &self->io_->proactor_for_current();
+  Proactor *proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   state =
-      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+      detail::BudgetState{
+          proactor,
+          detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready())
     return true;
   if (!self->native_async_ &&
@@ -645,9 +660,12 @@ bool File::WriteSomeAtAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  Proactor *proactor = &self->io_->proactor_for_current();
+  Proactor *proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   state =
-      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+      detail::BudgetState{
+          proactor,
+          detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready())
     return true;
   if (!self->native_async_ &&
@@ -709,9 +727,12 @@ bool File::ReadBuffersAtAwaitable::await_ready() noexcept {
   }
   HYLE_FATAL_ASSERT(sched::current_worker_index() ==
                     static_cast<int>(self->owner_));
-  Proactor *proactor = &self->io_->proactor_for_current();
+  Proactor *proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   state =
-      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+      detail::BudgetState{
+          proactor,
+          detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready()) return true;
   if (!self->native_async_ &&
       (options.deadline.has_value() || options.cancel != nullptr)) {
@@ -725,7 +746,8 @@ bool File::ReadBuffersAtAwaitable::await_ready() noexcept {
       self->cache_ == FileCacheMode::kDirect
           ? self->alignment_.memory_alignment
           : alignof(std::max_align_t);
-  if (!staging.allocate(self->io_->operation_allocator(),
+  if (!staging.allocate(
+          detail::IoContextAccess::operation_allocator(*self->io_),
                         buffers.total_size(), alignment)) {
     immediate.status =
         Status::ResourceExhausted("file read staging allocation failed");
@@ -818,9 +840,12 @@ bool File::WriteBuffersAtAwaitable::await_ready() noexcept {
   }
   HYLE_FATAL_ASSERT(sched::current_worker_index() ==
                     static_cast<int>(self->owner_));
-  Proactor *proactor = &self->io_->proactor_for_current();
+  Proactor *proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   state =
-      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+      detail::BudgetState{
+          proactor,
+          detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready()) return true;
   if (!self->native_async_ &&
       (options.deadline.has_value() || options.cancel != nullptr)) {
@@ -834,7 +859,8 @@ bool File::WriteBuffersAtAwaitable::await_ready() noexcept {
       self->cache_ == FileCacheMode::kDirect
           ? self->alignment_.memory_alignment
           : alignof(std::max_align_t);
-  if (!staging.allocate(self->io_->operation_allocator(),
+  if (!staging.allocate(
+          detail::IoContextAccess::operation_allocator(*self->io_),
                         buffers.total_size(), alignment)) {
     immediate.status =
         Status::ResourceExhausted("file write staging allocation failed");
@@ -910,7 +936,7 @@ bool File::InfoAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   }
   HYLE_FATAL_ASSERT(sched::current_worker_index() ==
                     static_cast<int>(self->owner_));
-  (void)self->io_->proactor_for_current();
+  (void)detail::IoContextAccess::proactor_for_current(*self->io_);
   result = offload(*self->io_, [handle = self->native_handle(),
                                 output = &native]() noexcept {
     return file_stat_sync(handle, output);
@@ -935,7 +961,8 @@ bool File::SyncAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   }
   HYLE_FATAL_ASSERT(sched::current_worker_index() ==
                     static_cast<int>(self->owner_));
-  Proactor &proactor = self->io_->proactor_for_current();
+  Proactor &proactor =
+      detail::IoContextAccess::proactor_for_current(*self->io_);
   const bool data_only = mode == FileSyncMode::kDataOnly;
   if (self->native_async_ && proactor.backend_kind() == BackendKind::kIoUring) {
     return submit_and_suspend(
@@ -968,7 +995,8 @@ bool File::PreallocateAwaitable::await_suspend(
   }
   HYLE_FATAL_ASSERT(sched::current_worker_index() ==
                     static_cast<int>(self->owner_));
-  Proactor &proactor = self->io_->proactor_for_current();
+  Proactor &proactor =
+      detail::IoContextAccess::proactor_for_current(*self->io_);
   if (length == 0) {
     operation.result = 0;
     return false;
@@ -999,7 +1027,8 @@ bool File::CloseAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   HYLE_FATAL_ASSERT(self != nullptr && self->valid() &&
                     sched::current_worker_index() ==
                         static_cast<int>(self->owner_));
-  Proactor &proactor = self->io_->proactor_for_current();
+  Proactor &proactor =
+      detail::IoContextAccess::proactor_for_current(*self->io_);
   const std::intptr_t handle = self->handle_.release();
   self->native_async_ = false;
   self->cache_ = FileCacheMode::kBuffered;
@@ -1024,7 +1053,7 @@ OpenFileAwaitable::OpenFileAwaitable(IoContext &context, unsigned owner_worker,
                                      std::string_view input,
                                      FileOpenOptions file_options) noexcept
     : io(&context), owner(owner_worker), options(file_options),
-      path(context.operation_allocator()) {
+      path(detail::IoContextAccess::operation_allocator(context)) {
   if (!context.valid()) {
     preparation =
         Status::FailedPrecondition("open_file requires a valid IoContext");
@@ -1090,7 +1119,9 @@ bool OpenFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   HYLE_FATAL_ASSERT(io != nullptr &&
                     sched::current_worker_index() == static_cast<int>(owner));
   native_result =
-      offload(*io, [allocator = io->operation_allocator(), input = path.data(),
+      offload(*io,
+              [allocator = detail::IoContextAccess::operation_allocator(*io),
+               input = path.data(),
                     options = options, output = &native_handle,
                     alignment = &alignment]() noexcept {
         return file_open_sync(allocator, input, options, output, alignment);
@@ -1098,7 +1129,7 @@ bool OpenFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   if (native_result < 0)
     return false;
 
-  Proactor &proactor = io->proactor_for_current();
+  Proactor &proactor = detail::IoContextAccess::proactor_for_current(*io);
 #if HYLE_OS_WINDOWS || HYLE_OS_LINUX
   native_async = proactor.has_async_file_data();
 #else

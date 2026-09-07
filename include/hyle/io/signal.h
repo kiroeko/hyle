@@ -3,8 +3,8 @@
 #include <cstdint>
 
 #include "hyle/error/result.h"
+#include "hyle/io/detail/net.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -60,7 +60,7 @@ public:
 
   struct WaitAwaitable {
     SignalSet *self = nullptr;
-    IoOperation operation{};
+    detail::IoOperation operation{};
     unsigned char wake_byte = 0;
     Status status{};
     ProcessSignal signal = ProcessSignal::kInterrupt;

@@ -2,9 +2,11 @@
 
 #include <new>
 
-#include "hyle/io/net.h"
-#include "hyle/io/net_multishot.h"  // io-07b: complete_multishot + multishot-token routing
-#include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/net_timeout.h"
+#if HYLE_OS_LINUX
+#  include "hyle/io/detail/net_multishot.h"
+#endif
 #include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
 #include "hyle/sched/detail/integration.h"
@@ -15,6 +17,16 @@
 // net::complete(). See io_context.h for the per-core-ring rationale.
 
 namespace hyle::io {
+
+using detail::Completion;
+using detail::Proactor;
+using detail::complete;
+using detail::complete_timed;
+using detail::is_timed_token;
+#if HYLE_OS_LINUX
+using detail::complete_multishot;
+using detail::is_multishot_token;
+#endif
 
 IoContext::IoContext(sched::Scheduler& sched,
                      IoContextOptions options) noexcept
@@ -103,8 +115,16 @@ IoContext::~IoContext() {
       std::size_t n = ring.reap(batch, 64, 1'000'000ull);  // up to 1ms per wait
       for (std::size_t i = 0; i < n; ++i) {
         if (batch[i].user_data == Proactor::kWakeToken) continue;
-        if (is_multishot_token(batch[i].user_data)) {
+        if (
+#if HYLE_OS_LINUX
+            is_multishot_token(batch[i].user_data)
+#else
+            false
+#endif
+        ) {
+#if HYLE_OS_LINUX
           complete_multishot(batch[i]);
+#endif
         } else if (is_timed_token(batch[i].user_data)) {
           complete_timed(batch[i]);
         }
@@ -128,21 +148,30 @@ void IoContext::destroy_rings() noexcept {
   ring_count_ = 0;
 }
 
-Proactor& IoContext::proactor_for_current() noexcept {
-  int idx = sched::current_worker_index();
-  HYLE_FATAL_ASSERT(idx >= 0);  // must be called from a worker fiber
-  HYLE_FATAL_ASSERT(static_cast<unsigned>(idx) < ring_count_);
-  return rings_[static_cast<unsigned>(idx)];
-}
-
-bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
+bool IoContext::bind_handle(unsigned worker_idx,
+                            std::intptr_t handle) noexcept {
   // Associate the fd with this worker's ring. On IOCP this is the (once-only)
   // CreateIoCompletionPort association; on io_uring/epoll register_handle is a
   // no-op returning true. After this, the fd's ops must run on worker_idx (pin
   // the connection fiber there with Scheduler::spawn_on).
-  if (worker_idx >= ring_count_ || fd < 0) return false;
-  return rings_[worker_idx].register_handle(fd);
+  if (worker_idx >= ring_count_ || handle < 0) return false;
+  return rings_[worker_idx].register_handle(handle);
 }
+
+IoCapabilities IoContext::capabilities(unsigned worker) const noexcept {
+  if (!valid_ || worker >= ring_count_) return {};
+  return rings_[worker].capabilities();
+}
+
+#if HYLE_OS_LINUX
+IoUringExtension IoContext::io_uring(unsigned worker) noexcept {
+  if (!valid_ || worker >= ring_count_ ||
+      rings_[worker].backend_kind() != IoBackend::kIoUring) {
+    return {};
+  }
+  return IoUringExtension(this, worker);
+}
+#endif
 
 bool IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
                                 unsigned long long timeout_ns) noexcept {
@@ -194,8 +223,16 @@ bool IoContext::poll(unsigned worker_idx,
     // this branch); is_multishot_token catches it first and routes to its own arbiter
     // (one token, many completions, kernel ref spent on the kMore-clear terminal one).
     // An ordinary op's token is a clean &IoOperation -> the plain router.
-    if (is_multishot_token(batch[i].user_data)) {
+    if (
+#if HYLE_OS_LINUX
+        is_multishot_token(batch[i].user_data)
+#else
+        false
+#endif
+    ) {
+#if HYLE_OS_LINUX
       complete_multishot(batch[i]);
+#endif
     } else if (is_timed_token(batch[i].user_data)) {
       complete_timed(batch[i]);
     } else {

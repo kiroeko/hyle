@@ -2,9 +2,8 @@
 
 #include <cstdint>
 
-#include "hyle/io/coroutine_transport.h"
 #include "hyle/io/endpoint.h"
-#include "hyle/io/proactor.h"
+#include "hyle/io/detail/proactor.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
 #include "hyle/visibility.h"
@@ -33,7 +32,7 @@
 // proactor.h stays sched-agnostic (it only moves u64 tokens); THIS header is the
 // io<->sched composition, so it is the one place io/ depends on sched/'s Waker.
 
-namespace hyle::io {
+namespace hyle::io::detail {
 
 // Result sentinel for "the op was never submitted" (ring/backend rejected the
 // submit, or the timed-op heap slot OOM'd) -- distinct from any real negative
@@ -299,4 +298,4 @@ struct SendToOp {
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail

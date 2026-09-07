@@ -1,6 +1,6 @@
 #include <hyle/io/capabilities.h>
+#include <hyle/io/endpoint.h>
 #include <hyle/io/http.h>
-#include <hyle/io/net.h>
 #include <hyle/mem/mapping.h>
 
 #if HYLE_IO_HAS_COROUTINE_TRANSPORT != 1
@@ -17,11 +17,11 @@ int main() {
   hyle::io::StringView body{"installed io payload"};
   if (body.find("payload") == hyle::io::StringView::npos) return 3;
 
-  // complete() is header-inline and calls Waker::wake().  The harmless public
-  // scheduler query proves the same hyle::io usage requirement is propagated
-  // to an installed consumer and staged at runtime.
+  // A typed endpoint parse crosses the io_core binary boundary without exposing
+  // native sockaddr storage, completion tokens, or the backend proactor.
   if (hyle::sched::current_worker_index() != -1) return 4;
-  using CompleteFn = void (*)(const hyle::io::Completion&) noexcept;
-  CompleteFn volatile complete = &hyle::io::complete;
-  return complete == nullptr ? 5 : 0;
+  auto endpoint = hyle::io::Endpoint::parse("127.0.0.1", 2048);
+  if (!endpoint.has_value() || !endpoint->is_loopback()) return 5;
+  hyle::io::IoCapabilities capabilities;
+  return capabilities.backend_name() == "none" ? 0 : 6;
 }

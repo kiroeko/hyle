@@ -12,7 +12,7 @@
 # only there. proactor.cc itself never depends on sched, but the current public
 # io component does; a standalone proactor would require a future real component
 # split rather than a conditional omission from the dependency graph.
-set(_io_sources proactor.cc endpoint.cc operation.cc)
+set(_io_sources proactor.cc endpoint.cc operation.cc io_uring.cc)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where

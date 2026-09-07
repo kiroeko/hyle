@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "hyle/core/environment.h"
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/io/io_context.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/cancel.h"
@@ -350,7 +351,7 @@ ResolveHandle resolve(IoContext& io, mem::AllocatorRef allocator,
   state->port = port;
 
   state->retain();  // pool-side reference
-  if (!io.blocking_pool().submit(&state->job)) {
+  if (!detail::IoContextAccess::blocking_pool(io).submit(&state->job)) {
     detail::ResolveState::cancel_job(state);
     detail::ResolveState::destroy_job(state);
   }

@@ -8,6 +8,7 @@
 
 #include "hyle/core/environment.h"
 #include "hyle/error/system_error.h"
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/cancel.h"
 
@@ -113,7 +114,7 @@ Result<std::intptr_t> create_pipe_instance(
   if (pipe == INVALID_HANDLE_VALUE)
     return make_unexpected(local_native_error("create local named pipe"));
   const std::intptr_t handle = reinterpret_cast<std::intptr_t>(pipe);
-  if (!io.bind_fd(owner, handle)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner, handle)) {
     Status status = local_native_error("associate named pipe with IO shard");
     ::CloseHandle(pipe);
     return make_unexpected(std::move(status));
@@ -346,7 +347,8 @@ Result<LocalStream> LocalStream::adopt(IoContext& io, unsigned owner_worker,
     close_local_handle(native_handle);
     return make_unexpected(std::move(endpoint_status));
   }
-  if (!io.bind_fd(owner_worker, native_handle)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker,
+                                            native_handle)) {
     Status status = local_native_error("associate local stream with IO shard");
     close_local_handle(native_handle);
     return make_unexpected(std::move(status));
@@ -431,14 +433,15 @@ bool LocalStream::ConnectAwaitable::await_ready() noexcept {
   handle = *socket;
   std::memcpy(native_address.data(), &address->address, address->length);
   native_length = address->length;
-  if (!io->bind_fd(owner, handle)) {
+  if (!detail::IoContextAccess::bind_handle(*io, owner, handle)) {
     preparation = local_native_error("associate local socket with IO shard");
     close_local_handle(std::exchange(handle, -1));
     return true;
   }
-  inner = BudgetConnectOp{&io->proactor_for_current(), handle,
-                          native_address.data(), native_length,
-                          io->operation_allocator(), options};
+  inner = detail::BudgetConnectOp{
+      &detail::IoContextAccess::proactor_for_current(*io), handle,
+      native_address.data(), native_length,
+      detail::IoContextAccess::operation_allocator(*io), options};
   return inner.await_ready();
 #endif
 }
@@ -448,7 +451,8 @@ bool LocalStream::ConnectAwaitable::await_suspend(
 #if HYLE_OS_WINDOWS
   (void)coroutine;
   auto job = sched::spawn_blocking(
-      io->blocking_pool(), io->operation_allocator(),
+      detail::IoContextAccess::blocking_pool(*io),
+      detail::IoContextAccess::operation_allocator(*io),
       [endpoint = endpoint, options = options]() noexcept {
         return connect_pipe_blocking(endpoint, options);
       });
@@ -462,7 +466,7 @@ bool LocalStream::ConnectAwaitable::await_suspend(
     return false;
   }
   handle = **joined;
-  if (!io->bind_fd(owner, handle)) {
+  if (!detail::IoContextAccess::bind_handle(*io, owner, handle)) {
     preparation = local_native_error("associate local pipe with IO shard");
     close_local_handle(std::exchange(handle, -1));
     return false;
@@ -514,8 +518,9 @@ bool LocalStream::ReadSomeAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  state = detail::BudgetState{&self->io_->proactor_for_current(),
-                              self->io_->operation_allocator(), options};
+  state = detail::BudgetState{
+      &detail::IoContextAccess::proactor_for_current(*self->io_),
+      detail::IoContextAccess::operation_allocator(*self->io_), options};
   return state.await_ready();
 }
 
@@ -552,8 +557,9 @@ bool LocalStream::WriteSomeAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  state = detail::BudgetState{&self->io_->proactor_for_current(),
-                              self->io_->operation_allocator(), options};
+  state = detail::BudgetState{
+      &detail::IoContextAccess::proactor_for_current(*self->io_),
+      detail::IoContextAccess::operation_allocator(*self->io_), options};
   return state.await_ready();
 }
 
@@ -587,12 +593,14 @@ bool LocalStream::ReadBuffersAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  state = detail::BudgetState{&self->io_->proactor_for_current(),
-                              self->io_->operation_allocator(), options};
+  state = detail::BudgetState{
+      &detail::IoContextAccess::proactor_for_current(*self->io_),
+      detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready()) return true;
 #if HYLE_OS_WINDOWS
-  if (!staging.allocate(self->io_->operation_allocator(), buffers.total_size(),
-                        alignof(std::max_align_t))) {
+  if (!staging.allocate(
+          detail::IoContextAccess::operation_allocator(*self->io_),
+          buffers.total_size(), alignof(std::max_align_t))) {
     immediate.status =
         Status::ResourceExhausted("local read staging allocation failed");
     immediate_ready = true;
@@ -650,12 +658,14 @@ bool LocalStream::WriteBuffersAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  state = detail::BudgetState{&self->io_->proactor_for_current(),
-                              self->io_->operation_allocator(), options};
+  state = detail::BudgetState{
+      &detail::IoContextAccess::proactor_for_current(*self->io_),
+      detail::IoContextAccess::operation_allocator(*self->io_), options};
   if (state.await_ready()) return true;
 #if HYLE_OS_WINDOWS
-  if (!staging.allocate(self->io_->operation_allocator(), buffers.total_size(),
-                        alignof(std::max_align_t))) {
+  if (!staging.allocate(
+          detail::IoContextAccess::operation_allocator(*self->io_),
+          buffers.total_size(), alignof(std::max_align_t))) {
     immediate.status =
         Status::ResourceExhausted("local write staging allocation failed");
     immediate_ready = true;
@@ -795,7 +805,8 @@ Result<LocalListener> LocalListener::bind(
     listener.path_device_ = static_cast<std::uint64_t>(owned.st_dev);
     listener.path_inode_ = static_cast<std::uint64_t>(owned.st_ino);
   }
-  if (!io.bind_fd(owner_worker, listener.handle_)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker,
+                                            listener.handle_)) {
     Status status = local_native_error("associate local listener with IO shard");
     close_local_handle(std::exchange(listener.handle_, -1));
     (void)remove_owned_socket(listener.endpoint_, listener.path_device_,
@@ -860,8 +871,9 @@ bool LocalListener::AcceptAwaitable::await_ready() noexcept {
 #endif
   self->accept_active_ = true;
   armed = true;
-  state = detail::BudgetState{&self->io_->proactor_for_current(),
-                              self->io_->operation_allocator(), options};
+  state = detail::BudgetState{
+      &detail::IoContextAccess::proactor_for_current(*self->io_),
+      detail::IoContextAccess::operation_allocator(*self->io_), options};
   return state.await_ready();
 }
 
@@ -900,7 +912,8 @@ Result<LocalStream> LocalListener::AcceptAwaitable::await_resume() noexcept {
     close_local_handle(accepted);
     return make_unexpected(std::move(status));
   }
-  if (!self->io_->bind_fd(self->owner_, accepted)) {
+  if (!detail::IoContextAccess::bind_handle(*self->io_, self->owner_,
+                                            accepted)) {
     Status status = local_native_error("associate accepted local stream");
     close_local_handle(accepted);
     return make_unexpected(std::move(status));

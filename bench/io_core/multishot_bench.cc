@@ -43,9 +43,12 @@
 #include <memory>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
+#if defined(__linux__)
+#  include "hyle/io/detail/net_multishot.h"
+#endif
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_multishot.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -57,10 +60,9 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::MultishotRecvStream;
-using hyle::io::RecvBuf;
-using hyle::io::RecvOp;
-using hyle::io::SendOp;
+using hyle::io::detail::IoContextAccess;
+using hyle::io::detail::RecvOp;
+using hyle::io::detail::SendOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -71,6 +73,8 @@ using hyle::sched::Task;
 // The whole bench (Pair + io_uring multishot) is Linux-only; on Windows there is no
 // IOCP provided-buffer-ring equivalent, so it compiles to a stub main after #else.
 #if defined(__linux__)
+using hyle::io::detail::MultishotRecvStream;
+using hyle::io::detail::RecvBuf;
 namespace {
 
 constexpr int kMsgLen = 64;   // bytes per datagram
@@ -114,7 +118,8 @@ struct Shared {
 Task<int> sender(AllocatorRef, Shared* s) {
   static const char kMsg[kMsgLen] = "hyle-multishot-clean-bench-payload";
   for (int i = 0; i < kMsgs; ++i) {
-    std::int64_t w = co_await SendOp{&s->io->proactor_for_current(), s->send_fd,
+    std::int64_t w = co_await SendOp{
+        &IoContextAccess::proactor_for_current(*s->io), s->send_fd,
                                      kMsg, kMsgLen, 0};
     if (w != kMsgLen) break;
     // Every window, the co_await above naturally yields to the receiver between sends
@@ -128,7 +133,7 @@ Task<int> sender(AllocatorRef, Shared* s) {
 // ---- receiver: multishot ----
 Task<int> recv_multishot(AllocatorRef alloc, Shared* s) {
   auto stream = MultishotRecvStream{
-      s->io->proactor_for_current().io_uring_extension(), s->recv_fd, kBgid,
+      &IoContextAccess::proactor_for_current(*s->io), s->recv_fd, kBgid,
       alloc};
   while (s->received < kMsgs) {
     RecvBuf b = co_await stream.next();
@@ -142,7 +147,8 @@ Task<int> recv_multishot(AllocatorRef alloc, Shared* s) {
 Task<int> recv_oneshot(AllocatorRef, Shared* s) {
   char buf[kMsgLen];
   while (s->received < kMsgs) {
-    std::int64_t n = co_await RecvOp{&s->io->proactor_for_current(), s->recv_fd,
+    std::int64_t n = co_await RecvOp{
+        &IoContextAccess::proactor_for_current(*s->io), s->recv_fd,
                                      buf, kMsgLen, 0};
     if (n <= 0) break;
     ++s->received;
@@ -156,13 +162,13 @@ int run(bool use_multishot) {
   Scheduler sched(1, system_allocator(), 4096);
   IoContext io(sched);
   Pair p = make_pair();
-  io.bind_fd(0, p.a);
-  io.bind_fd(0, p.b);
+  IoContextAccess::bind_handle(io, 0, p.a);
+  IoContextAccess::bind_handle(io, 0, p.b);
   if (use_multishot) {
     // ONE ring shared by the single receiver. Enough buffers for a full window in
     // flight + headroom.
-    auto uring = io.proactor(0).io_uring_extension();
-    if (!uring || !uring.register_buffer_ring(kBgid, 1024, kMsgLen)) {
+    auto& backend = IoContextAccess::proactor(io, 0);
+    if (!backend.register_buf_ring(kBgid, 1024, kMsgLen)) {
       close_pair(p);
       sched.shutdown();
       return -1;  // non-uring backend / old kernel: skip

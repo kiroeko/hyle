@@ -8,6 +8,7 @@
 #include <span>
 #include <string>
 
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/io/local.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/cancel.h"
@@ -137,7 +138,8 @@ Task<int> deadline_accept(AllocatorRef, IoContext* io,
   state->expected.store(!accepted.has_value() &&
                             accepted.error().IsDeadlineExceeded(),
                         std::memory_order_release);
-  state->retired.store(!io->proactor_for_current().in_flight(),
+  state->retired.store(
+      !hyle::io::detail::IoContextAccess::proactor_for_current(*io).in_flight(),
                        std::memory_order_release);
   state->done.store(true, std::memory_order_release);
   co_return 0;
@@ -154,7 +156,8 @@ Task<int> cancelled_connect(AllocatorRef, IoContext* io,
   state->expected.store(!connected.has_value() &&
                             connected.error().IsCancelled(),
                         std::memory_order_release);
-  state->retired.store(!io->proactor_for_current().in_flight(),
+  state->retired.store(
+      !hyle::io::detail::IoContextAccess::proactor_for_current(*io).in_flight(),
                        std::memory_order_release);
   state->done.store(true, std::memory_order_release);
   co_return 0;

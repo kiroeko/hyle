@@ -10,13 +10,14 @@
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/net_budget.h"
 #include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_budget.h"
-#include "hyle/io/net_cancel.h"
-#include "hyle/io/net_multishot.h"
-#include "hyle/io/net_timeout.h"
+#if HYLE_OS_LINUX
+#  include "hyle/io/io_uring.h"
+#endif
 #include "hyle/io/operation.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -110,7 +111,7 @@ class TcpStream {
     OperationOptions options;
     alignas(16) std::array<std::byte, 128> native_address{};
     std::uint32_t native_length = 0;
-    BudgetConnectOp inner{};
+    detail::BudgetConnectOp inner{};
     Status preparation{};
 
     HYLE_IO_API bool await_ready() noexcept;
@@ -128,7 +129,7 @@ class TcpStream {
   }
 
   struct ReadSomeAwaitable {
-    RecvOp inner;
+    detail::RecvOp inner;
     bool empty = false;
 
     bool await_ready() noexcept { return empty || inner.await_ready(); }
@@ -144,7 +145,7 @@ class TcpStream {
   };
 
   struct WriteSomeAwaitable {
-    SendOp inner;
+    detail::SendOp inner;
     bool empty = false;
 
     bool await_ready() noexcept { return empty || inner.await_ready(); }
@@ -160,7 +161,7 @@ class TcpStream {
   };
 
   struct BudgetReadSomeAwaitable {
-    BudgetRecvOp inner;
+    detail::BudgetRecvOp inner;
     bool empty = false;
 
     bool await_ready() noexcept { return empty || inner.await_ready(); }
@@ -176,7 +177,7 @@ class TcpStream {
   };
 
   struct BudgetWriteSomeAwaitable {
-    BudgetSendOp inner;
+    detail::BudgetSendOp inner;
     bool empty = false;
 
     bool await_ready() noexcept { return empty || inner.await_ready(); }
@@ -195,7 +196,7 @@ class TcpStream {
     TcpStream* self = nullptr;
     detail::BufferSequenceStorage<MutableBuffer> buffers;
     OperationOptions options{};
-    BudgetRecvBuffersOp inner{};
+    detail::BudgetRecvBuffersOp inner{};
     BufferSequenceResult immediate{};
     bool immediate_ready = false;
 
@@ -210,7 +211,7 @@ class TcpStream {
     TcpStream* self = nullptr;
     detail::BufferSequenceStorage<ConstBuffer> buffers;
     OperationOptions options{};
-    BudgetSendBuffersOp inner{};
+    detail::BudgetSendBuffersOp inner{};
     BufferSequenceResult immediate{};
     bool immediate_ready = false;
 
@@ -231,7 +232,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     return ReadSomeAwaitable{
-        RecvOp{&io_->proactor_for_current(), fd_, buffer.data(),
+        detail::RecvOp{&detail::IoContextAccess::proactor_for_current(*io_), fd_, buffer.data(),
                static_cast<std::uint32_t>(buffer.size()), 0},
         empty};
   }
@@ -243,7 +244,7 @@ class TcpStream {
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
     return WriteSomeAwaitable{
-        SendOp{&io_->proactor_for_current(), fd_, buffer.data(),
+        detail::SendOp{&detail::IoContextAccess::proactor_for_current(*io_), fd_, buffer.data(),
                static_cast<std::uint32_t>(buffer.size()), 0},
         empty};
   }
@@ -255,11 +256,12 @@ class TcpStream {
     HYLE_FATAL_ASSERT(buffer.size() <=
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
-    Proactor* proactor = &io_->proactor_for_current();
+    detail::Proactor* proactor =
+        &detail::IoContextAccess::proactor_for_current(*io_);
     return BudgetReadSomeAwaitable{
-        BudgetRecvOp{proactor, fd_, buffer.data(),
+        detail::BudgetRecvOp{proactor, fd_, buffer.data(),
                      static_cast<std::uint32_t>(buffer.size()),
-                     io_->operation_allocator(), options},
+                     detail::IoContextAccess::operation_allocator(*io_), options},
         empty};
   }
 
@@ -270,11 +272,12 @@ class TcpStream {
     HYLE_FATAL_ASSERT(buffer.size() <=
                       (std::numeric_limits<std::uint32_t>::max)());
     const bool empty = buffer.empty();
-    Proactor* proactor = &io_->proactor_for_current();
+    detail::Proactor* proactor =
+        &detail::IoContextAccess::proactor_for_current(*io_);
     return BudgetWriteSomeAwaitable{
-        BudgetSendOp{proactor, fd_, buffer.data(),
+        detail::BudgetSendOp{proactor, fd_, buffer.data(),
                      static_cast<std::uint32_t>(buffer.size()),
-                     io_->operation_allocator(), options},
+                     detail::IoContextAccess::operation_allocator(*io_), options},
         empty};
   }
 
@@ -304,18 +307,14 @@ class TcpStream {
         options};
   }
 
-  // Explicit io_uring zero-copy multishot receive track. The caller must first
-  // acquire `io.proactor(owner).io_uring_extension()` and register `bgid` on it;
-  // requiring that handle prevents a non-Linux caller from entering an API that
-  // cannot honor its zero-copy provided-buffer contract.
-  MultishotRecvStream read_multishot(IoUringExtension uring, int bgid,
-                                     mem::AllocatorRef alloc) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_) &&
-                      uring.valid() &&
-                      uring.proactor() == &io_->proactor_for_current());
-    return MultishotRecvStream{uring, fd_, bgid, alloc};
-  }
+#if HYLE_OS_LINUX
+  // Explicit provided-buffer/multishot receive route. Acquire and configure the
+  // owner worker's extension through IoContext first. A mismatched context or
+  // worker is reported as a typed setup error instead of exposing a raw driver.
+  HYLE_IO_API Result<IoUringReceiveStream> read_multishot(
+      IoUringExtension extension, int group_id,
+      mem::AllocatorRef allocator) noexcept;
+#endif
 
  private:
   IoContext* io_ = nullptr;
@@ -351,7 +350,7 @@ class TcpListener {
   struct AcceptAwaitable {
     TcpListener* self;
     unsigned assign_owner;
-    BudgetAcceptOp inner;
+    detail::BudgetAcceptOp inner;
 
     bool await_ready() noexcept { return inner.await_ready(); }
     bool await_suspend(std::coroutine_handle<> h) noexcept {
@@ -370,8 +369,9 @@ class TcpListener {
                       sched::current_worker_index() == static_cast<int>(owner_));
     return AcceptAwaitable{
         this, assign_owner,
-        BudgetAcceptOp{&io_->proactor_for_current(), fd_,
-                       io_->operation_allocator(), options}};
+        detail::BudgetAcceptOp{
+            &detail::IoContextAccess::proactor_for_current(*io_), fd_,
+            detail::IoContextAccess::operation_allocator(*io_), options}};
   }
 
  private:

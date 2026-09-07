@@ -35,8 +35,9 @@
 #include <memory>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -58,8 +59,9 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::RecvOp;
-using hyle::io::SendOp;
+using hyle::io::detail::IoContextAccess;
+using hyle::io::detail::RecvOp;
+using hyle::io::detail::SendOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -166,14 +168,15 @@ Task<int> client_task(AllocatorRef, Conn* c) {
     std::uint32_t sent = 0;
     while (sent < c->msg_len) {
       std::int64_t w = co_await SendOp{
-          &c->io->proactor_for_current(), c->client_fd,
+          &IoContextAccess::proactor_for_current(*c->io), c->client_fd,
           c->cbuf.data() + sent, c->msg_len - sent};
       if (w <= 0) co_return 0;
       sent += static_cast<std::uint32_t>(w);
     }
     std::uint32_t got = 0;
     while (got < c->msg_len) {  // a large payload may arrive over several reads
-      std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->client_fd,
+      std::int64_t r = co_await RecvOp{
+          &IoContextAccess::proactor_for_current(*c->io), c->client_fd,
                                        c->cbuf.data() + got, c->msg_len - got};
       if (r <= 0) co_return 0;
       got += static_cast<std::uint32_t>(r);
@@ -187,14 +190,16 @@ Task<int> server_task(AllocatorRef, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
     std::uint32_t got = 0;
     while (got < c->msg_len) {
-      std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->server_fd,
+      std::int64_t r = co_await RecvOp{
+          &IoContextAccess::proactor_for_current(*c->io), c->server_fd,
                                        c->sbuf.data() + got, c->msg_len - got};
       if (r <= 0) co_return 0;
       got += static_cast<std::uint32_t>(r);
     }
     std::uint32_t sent = 0;
     while (sent < c->msg_len) {
-      std::int64_t w = co_await SendOp{&c->io->proactor_for_current(), c->server_fd,
+      std::int64_t w = co_await SendOp{
+          &IoContextAccess::proactor_for_current(*c->io), c->server_fd,
                                        c->sbuf.data() + sent, c->msg_len - sent};
       if (w <= 0) co_return 0;
       sent += static_cast<std::uint32_t>(w);
@@ -223,8 +228,8 @@ std::uint64_t run_echo(unsigned workers, int conns, int round_trips,
   for (int i = 0; i < conns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
-    io.bind_fd(owner, pairs[i].a);
-    io.bind_fd(owner, pairs[i].b);
+    IoContextAccess::bind_handle(io, owner, pairs[i].a);
+    IoContextAccess::bind_handle(io, owner, pairs[i].b);
     auto c = std::make_unique<Conn>();
     c->io = &io;
     c->client_fd = pairs[i].a;

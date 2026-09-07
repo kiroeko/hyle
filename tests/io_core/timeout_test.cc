@@ -8,9 +8,10 @@
 #include <memory>
 #include <span>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/net_timeout.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_timeout.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/udp.h"
 #include "hyle/mem/allocator.h"
@@ -39,7 +40,7 @@
 using hyle::io::IoContext;
 using hyle::io::AddressFamily;
 using hyle::io::Endpoint;
-using hyle::io::RecvOp;
+using hyle::io::detail::RecvOp;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::mem::AllocatorRef;
@@ -52,6 +53,7 @@ using hyle::sched::Task;
 namespace {
 
 constexpr unsigned kOwner = 0;
+constexpr std::int64_t kDeadlineExceededResult = -110;
 
 // A counting allocator to catch TimedSlot leaks: every allocate bumps `live`, every
 // deallocate drops it. After a timed op fully retires (including the late cancel
@@ -140,10 +142,11 @@ Task<int> timeout_client(AllocatorRef alloc, IoContext* io, TimeoutResult* r,
       transfer.ok() ? static_cast<std::int64_t>(transfer.progress.bytes)
                     : (transfer.status.code() ==
                                hyle::StatusCode::DeadlineExceeded
-                           ? hyle::io::kDeadlineExceeded
+                           ? kDeadlineExceededResult
                            : -999);
   r->recv_rc.store(rc, std::memory_order_release);
-  r->native_retired.store(!io->proactor_for_current().in_flight(),
+  r->native_retired.store(
+      !hyle::io::detail::IoContextAccess::proactor_for_current(*io).in_flight(),
                           std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -267,7 +270,7 @@ Task<int> accept_timeout_client(AllocatorRef alloc, IoContext* io, TcpListener* 
   const std::int64_t rc =
       !accepted.has_value() &&
               accepted.error().code() == hyle::StatusCode::DeadlineExceeded
-          ? hyle::io::kDeadlineExceeded
+          ? kDeadlineExceededResult
           : (accepted.has_value() ? 0 : -999);
   r->rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
@@ -309,7 +312,7 @@ Task<int> udp_timeout_recv(AllocatorRef alloc, hyle::io::UdpSocket* socket,
               std::chrono::milliseconds(50))});
   result->rc.store(received.status.code() ==
                            hyle::StatusCode::DeadlineExceeded
-                       ? hyle::io::kDeadlineExceeded
+                       ? kDeadlineExceededResult
                        : static_cast<std::int64_t>(received.bytes),
                    std::memory_order_release);
   result->done.store(true, std::memory_order_release);
@@ -406,7 +409,8 @@ Task<int> base_recv_client(AllocatorRef, IoContext* io, BaseRecvState* s,
                            std::uint16_t port) {
   if (!(co_await s->s.connect(
             Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
-  s->rc.store(co_await RecvOp{&io->proactor_for_current(),
+  s->rc.store(co_await RecvOp{
+                  &hyle::io::detail::IoContextAccess::proactor_for_current(*io),
                               s->s.native_handle(), s->buf,
                               sizeof(s->buf)},
               std::memory_order_release);

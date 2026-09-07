@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include "hyle/io/net.h"
-#include "hyle/io/net_timeout.h"  // kCancelToken (the cancel-op's own-CQE drop token)
-#include "hyle/io/proactor.h"
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/net_timeout.h"  // kCancelToken (the cancel-op's own-CQE drop token)
+#include "hyle/io/detail/proactor.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
@@ -48,9 +48,7 @@
 // down before the fiber returns, so a later token cancel won't submit_cancel a
 // completed op (or a reused fd).
 
-namespace hyle::io {
-
-namespace detail {
+namespace hyle::io::detail {
 
 // CancelCallback context for a cancellable op: on token cancel, ask the proactor to
 // cancel the in-flight op named by `token` (its user_data). Owner-worker-only, no
@@ -79,8 +77,6 @@ struct CancelOpCtx {
   }
 };
 
-}  // namespace detail
-
 // co_await CancelRecvOp{p, fd, buf, len, token} -> bytes read (>=0), negative errno,
 // or -ECANCELED (-125) if the token was cancelled while the recv was in flight (or
 // before it started). `token` must outlive the co_await (it lives on the connection/
@@ -94,7 +90,7 @@ struct CancelRecvOp {
   std::uint32_t flags = 0;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   bool submitted_ = false;
 
   bool await_ready() noexcept {
@@ -120,7 +116,7 @@ struct CancelRecvOp {
     // cancelled -- the callback fires here and submit_cancel runs at once, queuing
     // the -ECANCELED that will wake us. Lives on this (frozen) await_suspend frame.
     if (token != nullptr) {
-      sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::CancelCallback cb{*token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();  // cb remains registered across the fiber suspension
     } else {
       // A null token means "no cancellation" and behaves like the base op. The
@@ -148,7 +144,7 @@ struct CancelSendOp {
   std::uint32_t flags = 0;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   bool submitted_ = false;
 
   bool await_ready() noexcept {
@@ -169,7 +165,7 @@ struct CancelSendOp {
     }
     if (token != nullptr) {
       sched::CancelCallback callback{
-          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+          *token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();
     } else {
       sched::suspend();
@@ -192,7 +188,7 @@ struct CancelAcceptOp {
   const sched::CancelToken* token;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   bool submitted_ = false;
 
   bool await_ready() noexcept {
@@ -212,7 +208,7 @@ struct CancelAcceptOp {
       return false;
     }
     if (token != nullptr) {
-      sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::CancelCallback cb{*token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();
     } else {
       sched::suspend();
@@ -233,7 +229,7 @@ struct CancelConnectOp {
   const sched::CancelToken* token;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   bool submitted_ = false;
 
   bool await_ready() noexcept {
@@ -254,7 +250,7 @@ struct CancelConnectOp {
     }
     if (token != nullptr) {
       sched::CancelCallback callback{
-          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+          *token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();
     } else {
       sched::suspend();
@@ -278,7 +274,7 @@ struct CancelRecvFromOp {
   const sched::CancelToken* token;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
   bool submitted_ = false;
 
@@ -301,7 +297,7 @@ struct CancelRecvFromOp {
     }
     if (token != nullptr) {
       sched::CancelCallback callback{
-          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+          *token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();
     } else {
       sched::suspend();
@@ -325,7 +321,7 @@ struct CancelSendToOp {
   const sched::CancelToken* token;
 
   IoOperation op_{};
-  detail::CancelOpCtx cctx_{};
+  CancelOpCtx cctx_{};
   alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
   bool submitted_ = false;
 
@@ -348,7 +344,7 @@ struct CancelSendToOp {
     }
     if (token != nullptr) {
       sched::CancelCallback callback{
-          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+          *token, &CancelOpCtx::on_cancel, &cctx_};
       sched::suspend();
     } else {
       sched::suspend();
@@ -362,4 +358,4 @@ struct CancelSendToOp {
   }
 };
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail

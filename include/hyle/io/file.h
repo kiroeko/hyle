@@ -9,9 +9,8 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/error/result.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/detail/net_budget.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_budget.h"
 #include "hyle/io/operation.h"
 #include "hyle/platform/fs.h"
 #include "hyle/sched/coro.h"
@@ -185,7 +184,7 @@ public:
 
   struct InfoAwaitable {
     File *self = nullptr;
-    Proactor::FileStat native{};
+    detail::Proactor::FileStat native{};
     std::int64_t result = 0;
     Status preparation{};
     bool await_ready() noexcept { return false; }
@@ -196,7 +195,7 @@ public:
   struct SyncAwaitable {
     File *self = nullptr;
     FileSyncMode mode = FileSyncMode::kDataAndMetadata;
-    IoOperation operation{};
+    detail::IoOperation operation{};
     bool submitted = false;
     Status preparation{};
     bool await_ready() noexcept { return false; }
@@ -208,7 +207,7 @@ public:
     File *self = nullptr;
     std::uint64_t offset = 0;
     std::uint64_t length = 0;
-    IoOperation operation{};
+    detail::IoOperation operation{};
     bool submitted = false;
     Status preparation{};
     bool await_ready() noexcept { return false; }
@@ -218,7 +217,7 @@ public:
 
   struct CloseAwaitable {
     File *self = nullptr;
-    IoOperation operation{};
+    detail::IoOperation operation{};
     bool submitted = false;
     bool await_ready() noexcept { return self == nullptr || !self->valid(); }
     HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
@@ -274,7 +273,7 @@ struct OpenFileAwaitable {
   FileOpenOptions options{};
   container::SmallVector<char, 256, mem::AllocatorRef> path;
   Status preparation{};
-  std::int64_t native_result = kSubmitFailed;
+  std::int64_t native_result = detail::kSubmitFailed;
   std::intptr_t native_handle = platform::FileHandle::kInvalid;
   DirectIoAlignment alignment{};
   bool native_async = false;

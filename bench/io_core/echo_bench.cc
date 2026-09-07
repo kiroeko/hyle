@@ -26,8 +26,9 @@
 #include <memory>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -62,8 +63,9 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::RecvOp;
-using hyle::io::SendOp;
+using hyle::io::detail::IoContextAccess;
+using hyle::io::detail::RecvOp;
+using hyle::io::detail::SendOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -188,10 +190,12 @@ struct Conn {
 Task<int> client_task(AllocatorRef, Conn* c) {
   static const char kMsg[kMsgLen] = "hyle-io-echo-bench-payload";
   for (int i = 0; i < c->round_trips; ++i) {
-    std::int64_t w = co_await SendOp{&c->io->proactor_for_current(), c->client_fd,
+    std::int64_t w = co_await SendOp{
+        &IoContextAccess::proactor_for_current(*c->io), c->client_fd,
                                      kMsg, kMsgLen};
     if (w != kMsgLen) break;
-    std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->client_fd,
+    std::int64_t r = co_await RecvOp{
+        &IoContextAccess::proactor_for_current(*c->io), c->client_fd,
                                      c->cbuf, kMsgLen};
     if (r != kMsgLen) break;
     c->completed->fetch_add(1, std::memory_order_relaxed);
@@ -201,10 +205,12 @@ Task<int> client_task(AllocatorRef, Conn* c) {
 
 Task<int> server_task(AllocatorRef, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
-    std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->server_fd,
+    std::int64_t r = co_await RecvOp{
+        &IoContextAccess::proactor_for_current(*c->io), c->server_fd,
                                      c->sbuf, kMsgLen};
     if (r <= 0) break;
-    std::int64_t w = co_await SendOp{&c->io->proactor_for_current(), c->server_fd,
+    std::int64_t w = co_await SendOp{
+        &IoContextAccess::proactor_for_current(*c->io), c->server_fd,
                                      c->sbuf, static_cast<std::uint32_t>(r)};
     if (w != r) break;
   }
@@ -230,8 +236,8 @@ int run_hyle_echo(unsigned workers) {
   for (int i = 0; i < kConns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
-    io.bind_fd(owner, pairs[i].a);
-    io.bind_fd(owner, pairs[i].b);
+    IoContextAccess::bind_handle(io, owner, pairs[i].a);
+    IoContextAccess::bind_handle(io, owner, pairs[i].b);
     auto c = std::make_unique<Conn>();
     c->io = &io;
     c->client_fd = pairs[i].a;
@@ -278,8 +284,8 @@ int run_hyle_pipelined(unsigned workers) {
   for (int i = 0; i < kPipeConns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
-    io.bind_fd(owner, pairs[i].a);
-    io.bind_fd(owner, pairs[i].b);
+    IoContextAccess::bind_handle(io, owner, pairs[i].a);
+    IoContextAccess::bind_handle(io, owner, pairs[i].b);
     auto c = std::make_unique<Conn>();
     c->io = &io;
     c->client_fd = pairs[i].a;

@@ -41,9 +41,12 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
+#if defined(__linux__)
+#  include "hyle/io/detail/net_multishot.h"
+#endif
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_multishot.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -55,10 +58,9 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::MultishotRecvStream;
-using hyle::io::RecvBuf;
-using hyle::io::RecvOp;
-using hyle::io::SendOp;
+using hyle::io::detail::IoContextAccess;
+using hyle::io::detail::RecvOp;
+using hyle::io::detail::SendOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -73,6 +75,8 @@ constexpr int kMsgs = 2000;   // datagrams echoed per epoch
 constexpr int kBgid = 30;
 
 #if defined(__linux__)
+using hyle::io::detail::MultishotRecvStream;
+using hyle::io::detail::RecvBuf;
 struct Pair { std::intptr_t a = -1, b = -1; };
 Pair make_pair() {
   int sv[2]; Pair p;
@@ -100,9 +104,11 @@ Task<int> client(AllocatorRef, Shared* s) {
   static const char msg[kMsgLen] = "hyle-multishot-echo-bench-payload";
   char buf[kMsgLen];
   for (int i = 0; i < kMsgs; ++i) {
-    if (co_await SendOp{&s->io->proactor_for_current(), s->cli_fd, msg, kMsgLen, 0}
+    if (co_await SendOp{&IoContextAccess::proactor_for_current(*s->io),
+                        s->cli_fd, msg, kMsgLen, 0}
         != kMsgLen) break;
-    if (co_await RecvOp{&s->io->proactor_for_current(), s->cli_fd, buf, kMsgLen, 0}
+    if (co_await RecvOp{&IoContextAccess::proactor_for_current(*s->io),
+                        s->cli_fd, buf, kMsgLen, 0}
         <= 0) break;
   }
   co_return 0;
@@ -115,14 +121,15 @@ Task<int> client(AllocatorRef, Shared* s) {
 // the buffer before we hand it back).
 Task<int> srv_multishot(AllocatorRef alloc, Shared* s) {
   auto stream = MultishotRecvStream{
-      s->io->proactor_for_current().io_uring_extension(), s->srv_fd, kBgid,
+      &IoContextAccess::proactor_for_current(*s->io), s->srv_fd, kBgid,
       alloc};
   while (s->echoed < kMsgs) {
     RecvBuf b = co_await stream.next();
     if (b.size() == 0 || !b.more()) { if (!b.more()) break; else continue; }
     // Zero-copy echo: send directly from the ring buffer, await completion, then the
     // RecvBuf dtor (end of this scope) returns the buffer.
-    co_await SendOp{&s->io->proactor_for_current(), s->srv_fd, b.data(), b.size(), 0};
+    co_await SendOp{&IoContextAccess::proactor_for_current(*s->io),
+                    s->srv_fd, b.data(), b.size(), 0};
     ++s->echoed;
   }
   co_return 0;
@@ -134,10 +141,12 @@ Task<int> srv_multishot(AllocatorRef alloc, Shared* s) {
 Task<int> srv_oneshot(AllocatorRef, Shared* s) {
   char buf[kMsgLen];
   while (s->echoed < kMsgs) {
-    std::int64_t n = co_await RecvOp{&s->io->proactor_for_current(), s->srv_fd,
+    std::int64_t n = co_await RecvOp{
+        &IoContextAccess::proactor_for_current(*s->io), s->srv_fd,
                                      buf, kMsgLen, 0};
     if (n <= 0) break;
-    co_await SendOp{&s->io->proactor_for_current(), s->srv_fd, buf,
+    co_await SendOp{&IoContextAccess::proactor_for_current(*s->io), s->srv_fd,
+                    buf,
                     static_cast<std::uint32_t>(n), 0};
     ++s->echoed;
   }
@@ -148,11 +157,11 @@ int run(bool use_multishot) {
   Scheduler sched(1, system_allocator(), 4096);
   IoContext io(sched);
   Pair p = make_pair();
-  io.bind_fd(0, p.a);
-  io.bind_fd(0, p.b);
+  IoContextAccess::bind_handle(io, 0, p.a);
+  IoContextAccess::bind_handle(io, 0, p.b);
   if (use_multishot) {
-    auto uring = io.proactor(0).io_uring_extension();
-    if (!uring || !uring.register_buffer_ring(kBgid, 1024, kMsgLen)) {
+    auto& backend = IoContextAccess::proactor(io, 0);
+    if (!backend.register_buf_ring(kBgid, 1024, kMsgLen)) {
       close_pair(p); sched.shutdown(); return -1;  // non-uring: skip
     }
   }

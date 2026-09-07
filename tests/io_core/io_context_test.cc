@@ -111,6 +111,24 @@ TEST(IoContext, DerivesWorkerCountAndBalancesInjectedMetadata) {
             0u);
 }
 
+TEST(IoContext, ExposesTypedBackendSnapshotWithoutRawDriverAccess) {
+  hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 256);
+  ASSERT_TRUE(scheduler.valid());
+  hyle::io::IoContext context(scheduler);
+  ASSERT_TRUE(context.valid()) << context.status().message();
+
+  const auto capabilities = context.capabilities();
+  EXPECT_NE(capabilities.backend, hyle::io::IoBackend::kNone);
+  EXPECT_NE(capabilities.backend_name(), "none");
+  EXPECT_EQ(context.capabilities(context.num_workers()).backend,
+            hyle::io::IoBackend::kNone);
+#if HYLE_OS_LINUX
+  EXPECT_EQ(context.io_uring().valid(),
+            capabilities.backend == hyle::io::IoBackend::kIoUring);
+#endif
+  scheduler.shutdown();
+}
+
 TEST(IoContext, InvalidOptionsReturnTypedStatus) {
   hyle::sched::Scheduler scheduler(1, hyle::mem::system_allocator(), 256);
   ASSERT_TRUE(scheduler.valid());

@@ -209,10 +209,11 @@ _hyle_declare_component(sched
   PUBLIC_DEPS core container_intrusive error time platform platform_thread
               mem mem_vm util_core)
 # io_core's C++ public headers expose allocator/status/container value types and
-# header-inline sched calls (for example complete()/await_suspend()). These are
-# consumer usage requirements, not only implementation closure: installed
-# consumers that link hyle::io alone must see
-# the corresponding import libraries and runtime DLLs.
+# header-inline sched awaitables. These are consumer usage requirements, not
+# only implementation closure: installed consumers that link hyle::io alone
+# must see the corresponding import libraries and runtime DLLs. Headers under
+# hyle/io/detail are shipped only because those zero-overhead awaitables need a
+# complete layout; they are not supported public entry points.
 _hyle_declare_component(io_core
   TRACE
   PUBLIC_DEPS core error mem container container_text time timer_queue sched
@@ -220,21 +221,23 @@ _hyle_declare_component(io_core
   SPLIT_PUBLIC_HEADERS
     hyle/io/buffer.h
     hyle/io/capabilities.h
-    hyle/io/coroutine_transport.h
+    hyle/io/detail/io_context_access.h
+    hyle/io/detail/io_uring_access.h
+    hyle/io/detail/net.h
+    hyle/io/detail/net_budget.h
+    hyle/io/detail/net_cancel.h
+    hyle/io/detail/net_multishot.h
+    hyle/io/detail/net_timeout.h
+    hyle/io/detail/proactor.h
     hyle/io/dns.h
     hyle/io/endpoint.h
     hyle/io/file.h
     hyle/io/http.h
     hyle/io/http2.h
     hyle/io/io_context.h
+    hyle/io/io_uring.h
     hyle/io/local.h
-    hyle/io/net.h
-    hyle/io/net_budget.h
-    hyle/io/net_cancel.h
-    hyle/io/net_multishot.h
-    hyle/io/net_timeout.h
     hyle/io/operation.h
-    hyle/io/proactor.h
     hyle/io/signal.h
     hyle/io/tcp.h
     hyle/io/tls.h

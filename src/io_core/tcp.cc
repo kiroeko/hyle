@@ -8,12 +8,15 @@
 
 #include "hyle/core/environment.h"  // HYLE_OS_* (must precede the per-OS socket headers)
 #include "hyle/error/system_error.h"
+#include "hyle/io/detail/io_context_access.h"
+#if HYLE_OS_LINUX
+#  include "hyle/io/detail/io_uring_access.h"
+#endif
 #include "hyle/io/dns.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/sync.h"
 #include "hyle/sched/timer.h"
 #include "endpoint_native.h"
-#include "io_context_access.h"
 
 #if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -440,7 +443,7 @@ Result<TcpStream> TcpStream::open(IoContext& io, unsigned owner_worker,
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
   std::intptr_t fd = make_tcp_socket(family);
   if (fd < 0) return make_unexpected(socket_error("create TCP socket"));
-  if (!io.bind_fd(owner_worker, fd)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker, fd)) {
     Status status = handle_error("associate TCP socket with IO shard");
     close_fd(fd);
     return make_unexpected(std::move(status));
@@ -461,7 +464,7 @@ Result<TcpStream> TcpStream::adopt(IoContext& io, unsigned owner_worker,
     close_fd(native_socket);
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
   }
-  if (!io.bind_fd(owner_worker, native_socket)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker, native_socket)) {
     Status status = handle_error("associate adopted TCP socket with IO shard");
     close_fd(native_socket);
     return make_unexpected(std::move(status));
@@ -588,6 +591,31 @@ Result<Endpoint> TcpStream::peer_endpoint() const noexcept {
   return query_endpoint(fd_, true);
 }
 
+#if HYLE_OS_LINUX
+Result<IoUringReceiveStream> TcpStream::read_multishot(
+    IoUringExtension extension, int group_id,
+    mem::AllocatorRef allocator) noexcept {
+  if (!valid()) {
+    return make_unexpected(
+        Status::FailedPrecondition("multishot receive requires a valid stream"));
+  }
+  if (!allocator.valid()) {
+    return make_unexpected(Status::InvalidArgument(
+        "multishot receive requires a complete allocator"));
+  }
+  if (group_id < 0 || group_id > UINT16_MAX) {
+    return make_unexpected(
+        Status::InvalidArgument("invalid io_uring receive-ring group id"));
+  }
+  if (!detail::IoUringAccess::belongs_to(extension, *io_, owner_)) {
+    return make_unexpected(Status::FailedPrecondition(
+        "io_uring extension does not own this stream"));
+  }
+  return IoUringReceiveStream(
+      detail::IoUringAccess::proactor(extension), fd_, group_id, allocator);
+}
+#endif
+
 bool TcpStream::ConnectAwaitable::await_ready() noexcept {
   auto native = EndpointNativeAccess::encode(endpoint);
   if (!native.has_value()) {
@@ -596,11 +624,12 @@ bool TcpStream::ConnectAwaitable::await_ready() noexcept {
   }
   std::memcpy(native_address.data(), native->storage, native->size);
   native_length = native->size;
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.address = native_address.data();
   inner.address_length = native_length;
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }
@@ -715,7 +744,7 @@ Result<TcpListener> TcpListener::bind(IoContext& io, unsigned owner_worker,
     close_fd(fd);
     return make_unexpected(std::move(status));
   }
-  if (!io.bind_fd(owner_worker, fd)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker, fd)) {
     Status status = handle_error("associate TCP listener with IO shard");
     close_fd(fd);
     return make_unexpected(std::move(status));
@@ -753,7 +782,7 @@ Result<TcpStream> TcpListener::finish_accept(std::int64_t result,
 #endif
   // Bind the accepted fd to its assigned owner's ring (IOCP association; no-op on
   // io_uring/epoll). If binding fails, drop the fd and return invalid.
-  if (!io_->bind_fd(assign_owner, new_fd)) {
+  if (!detail::IoContextAccess::bind_handle(*io_, assign_owner, new_fd)) {
     Status status = handle_error("associate accepted TCP socket with IO shard");
     close_fd(new_fd);
     return make_unexpected(std::move(status));
@@ -772,11 +801,12 @@ bool TcpStream::ReadBuffersAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffers = buffers.native_data();
   inner.count = static_cast<std::uint32_t>(buffers.native_count());
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }
@@ -805,11 +835,12 @@ bool TcpStream::WriteBuffersAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffers = buffers.native_data();
   inner.count = static_cast<std::uint32_t>(buffers.native_count());
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }

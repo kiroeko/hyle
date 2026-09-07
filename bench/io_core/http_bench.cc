@@ -43,6 +43,7 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/io/http.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -580,8 +581,8 @@ int run_region_footprint(const char* variant) {
   for (int i = 0; i < connections; ++i) {
     Pair pair = make_pair();
     if (pair.a == -1 || pair.b == -1) std::abort();
-    io.bind_fd(0, pair.a);
-    io.bind_fd(0, pair.b);
+    hyle::io::detail::IoContextAccess::bind_handle(io, 0, pair.a);
+    hyle::io::detail::IoContextAccess::bind_handle(io, 0, pair.b);
     TcpStream client_end(io, pair.a, 0);
     TcpStream server_end(io, pair.b, 0);
     auto server = std::make_unique<Drive>();
@@ -689,8 +690,8 @@ int run(unsigned workers, bool use_http) {
   for (int i = 0; i < kConns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
-    io.bind_fd(owner, pairs[i].a);
-    io.bind_fd(owner, pairs[i].b);
+    hyle::io::detail::IoContextAccess::bind_handle(io, owner, pairs[i].a);
+    hyle::io::detail::IoContextAccess::bind_handle(io, owner, pairs[i].b);
     // Wrap both ends in TcpStreams bound to the connection's owner core.
     TcpStream client_end(io, pairs[i].a, owner);
     TcpStream server_end(io, pairs[i].b, owner);

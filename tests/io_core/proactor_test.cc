@@ -29,14 +29,14 @@
 #  include <cstring>
 #endif
 
-#include "hyle/io/proactor.h"
+#include "hyle/io/detail/proactor.h"
 
 #include "timeout_internal.h"
 
-using hyle::io::BackendKind;
-using hyle::io::Completion;
-using hyle::io::Proactor;
-using hyle::io::ProactorCapability;
+using hyle::io::detail::BackendKind;
+using hyle::io::detail::Completion;
+using hyle::io::detail::Proactor;
+using hyle::io::detail::ProactorCapability;
 
 static_assert(hyle::io::detail::finite_timeout_milliseconds(0, 100) == 0);
 static_assert(hyle::io::detail::finite_timeout_milliseconds(1, 100) == 1);
@@ -104,8 +104,6 @@ TEST(Proactor, CapabilitiesMatchSelectedBackend) {
   ASSERT_TRUE(p.init());
   const auto caps = p.capabilities();
   EXPECT_EQ(caps.backend, p.backend_kind());
-  const auto uring = p.io_uring_extension();
-  EXPECT_EQ(uring.valid(), caps.backend == BackendKind::kIoUring);
   if (caps.backend == BackendKind::kIoUring) {
     EXPECT_TRUE(caps.has(ProactorCapability::kNativeMultishotAccept));
     EXPECT_TRUE(caps.has(ProactorCapability::kProvidedBufferRing));
@@ -118,8 +116,6 @@ TEST(Proactor, CapabilitiesMatchSelectedBackend) {
     EXPECT_FALSE(caps.has(ProactorCapability::kFixedFiles));
     EXPECT_FALSE(caps.has(ProactorCapability::kAsyncFileMetadata));
     EXPECT_FALSE(p.has_async_file_metadata());
-    EXPECT_FALSE(uring.register_file_table(1));
-    EXPECT_FALSE(uring.release_fixed_file(0));
   }
 }
 
@@ -731,13 +727,13 @@ TEST(Proactor, MultishotAcceptEpoll) {
 TEST(Proactor, ProvidedBufRingMultishotRecv) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
-  auto uring = p.io_uring_extension();
-  ASSERT_TRUE(uring);
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "io_uring backend unavailable";
 
   constexpr int kBgid = 7;
   constexpr unsigned kEntries = 8;
   constexpr unsigned kBufSize = 128;
-  if (!uring.register_buffer_ring(kBgid, kEntries, kBufSize))
+  if (!p.register_buf_ring(kBgid, kEntries, kBufSize))
     GTEST_SKIP() << "provided buffer ring unsupported on this kernel";
 
   // DGRAM pair: message boundaries preserved, so N sends == N recv completions
@@ -754,7 +750,7 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
 
   // ONE multishot recv arm on sv[0], drawing from the ring.
   ASSERT_TRUE(
-      uring.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
+      p.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
 
   int got = 0;
   int kbuf_set = 0;
@@ -769,12 +765,12 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
       ASSERT_TRUE(c[i].flags & Completion::kBuffer)
           << "multishot recv completion must carry a kernel-selected buffer";
       ++kbuf_set;
-      void* addr = uring.buffer_address(kBgid, c[i].buffer_id);
+      void* addr = p.buf_ring_addr(kBgid, c[i].buffer_id);
       ASSERT_NE(addr, nullptr);
       // The bytes the kernel wrote into the selected buffer must match a message.
       EXPECT_STREQ(static_cast<const char*>(addr), msgs[got]);
       // Return the buffer so the ring doesn't run dry.
-      EXPECT_TRUE(uring.return_buffer(kBgid, c[i].buffer_id));
+      EXPECT_TRUE(p.buf_ring_return(kBgid, c[i].buffer_id));
       ++got;
     }
   }
@@ -791,15 +787,15 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
 TEST(Proactor, RegisteredFixedFiles) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
-  auto uring = p.io_uring_extension();
-  ASSERT_TRUE(uring);
-  if (!uring.register_file_table(8))
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "io_uring backend unavailable";
+  if (!p.register_file_table(8))
     GTEST_SKIP() << "registered files unsupported on this kernel";
 
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
   // Place the RECEIVE end (sv[0]) into a fixed-file slot; sv[1] is the raw sender.
-  int slot = uring.assign_fixed_file(sv[0]);
+  int slot = p.assign_fixed_slot(sv[0]);
   ASSERT_GE(slot, 0) << "assign_fixed_slot must return a valid slot index";
 
   // Send from the raw peer, then recv via the FIXED slot (not sv[0]).
@@ -807,7 +803,7 @@ TEST(Proactor, RegisteredFixedFiles) {
   ASSERT_GT(::write(sv[1], msg, std::strlen(msg) + 1), 0);
   char buf[64] = {};
   ASSERT_TRUE(
-      uring.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xF1));
+      p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xF1));
 
   bool got = false;
   for (int spins = 0; spins < 100 && !got; ++spins) {
@@ -824,8 +820,8 @@ TEST(Proactor, RegisteredFixedFiles) {
 
   // Also exercise submit_send_fixed: send via the slot back to the peer, verify it.
   const char* reply = "fixed-file-send";
-  ASSERT_TRUE(uring.submit_send_fixed(slot, reply, std::strlen(reply) + 1, 0,
-                                      /*user_data=*/0xF2));
+  ASSERT_TRUE(p.submit_send_fixed(slot, reply, std::strlen(reply) + 1, 0,
+                                  /*user_data=*/0xF2));
   bool sent = false;
   for (int spins = 0; spins < 100 && !sent; ++spins) {
     Completion c[4];
@@ -838,7 +834,7 @@ TEST(Proactor, RegisteredFixedFiles) {
   EXPECT_GT(::read(sv[1], rbuf, sizeof(rbuf)), 0);
   EXPECT_STREQ(rbuf, reply) << "peer received the fixed-file send bytes";
 
-  EXPECT_TRUE(uring.release_fixed_file(slot));
+  EXPECT_TRUE(p.release_fixed_slot(slot));
   ::close(sv[0]);
   ::close(sv[1]);
 }
@@ -849,14 +845,14 @@ TEST(Proactor, FixedFileSubmissionsHonorQueueDepth) {
   // backpressured, and reap makes those slots reusable.
   Proactor p;
   if (!p.init(8)) GTEST_SKIP() << "no io_uring backend";
-  auto uring = p.io_uring_extension();
-  ASSERT_TRUE(uring);
-  if (!uring.register_file_table(4))
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "io_uring backend unavailable";
+  if (!p.register_file_table(4))
     GTEST_SKIP() << "registered files unsupported on this kernel";
 
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
-  const int slot = uring.assign_fixed_file(sv[0]);
+  const int slot = p.assign_fixed_slot(sv[0]);
   ASSERT_GE(slot, 0);
 
   constexpr std::size_t kOps = 32;
@@ -872,12 +868,12 @@ TEST(Proactor, FixedFileSubmissionsHonorQueueDepth) {
     const std::size_t batch_begin = completed;
     for (std::size_t i = 0; i < kDepth; ++i) {
       const std::size_t index = batch_begin + i;
-      ASSERT_TRUE(uring.submit_recv_fixed(
+      ASSERT_TRUE(p.submit_recv_fixed(
           slot, &received[index], 1, 0, 0xF100u + index));
     }
     if (batch_begin + kDepth < kOps) {
       const std::size_t blocked = batch_begin + kDepth;
-      EXPECT_FALSE(uring.submit_recv_fixed(
+      EXPECT_FALSE(p.submit_recv_fixed(
           slot, &received[blocked], 1, 0, 0xF100u + blocked));
     }
 
@@ -899,7 +895,7 @@ TEST(Proactor, FixedFileSubmissionsHonorQueueDepth) {
   }
   EXPECT_EQ(std::memcmp(sent, received, sizeof(sent)), 0);
 
-  EXPECT_TRUE(uring.release_fixed_file(slot));
+  EXPECT_TRUE(p.release_fixed_slot(slot));
   ::close(sv[0]);
   ::close(sv[1]);
 }
@@ -911,9 +907,9 @@ TEST(Proactor, FixedFileSubmissionsHonorQueueDepth) {
 TEST(Proactor, DirectAccept) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
-  auto uring = p.io_uring_extension();
-  ASSERT_TRUE(uring);
-  if (!uring.register_file_table(8))
+  if (p.backend_kind() != BackendKind::kIoUring)
+    GTEST_SKIP() << "io_uring backend unavailable";
+  if (!p.register_file_table(8))
     GTEST_SKIP() << "registered files unsupported on this kernel";
 
   int ls = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -930,7 +926,7 @@ TEST(Proactor, DirectAccept) {
   ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
 
   // Direct accept armed BEFORE the client connects (accept waits for it).
-  ASSERT_TRUE(uring.submit_accept_direct(ls, /*user_data=*/0xDA));
+  ASSERT_TRUE(p.submit_accept_direct(ls, /*user_data=*/0xDA));
 
   // Client connects + sends on a separate thread (blocking connect to loopback).
   sockaddr_in ca = sa;
@@ -972,7 +968,7 @@ TEST(Proactor, DirectAccept) {
   // recv on the DIRECT descriptor by slot (IOSQE_FIXED_FILE) -- it was never a raw fd.
   char buf[64] = {};
   ASSERT_TRUE(
-      uring.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xDB));
+      p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xDB));
   bool got = false;
   for (int spins = 0; spins < 200 && !got; ++spins) {
     Completion c[4];
@@ -986,7 +982,7 @@ TEST(Proactor, DirectAccept) {
   EXPECT_TRUE(got) << "recv on the direct-accepted descriptor never delivered";
 
   // close_direct the slot (IORING_OP_CLOSE with file_index).
-  ASSERT_TRUE(uring.submit_close_direct(slot, /*user_data=*/0xDC));
+  ASSERT_TRUE(p.submit_close_direct(slot, /*user_data=*/0xDC));
   bool closed = false;
   for (int spins = 0; spins < 100 && !closed; ++spins) {
     Completion c[4];

@@ -5,8 +5,8 @@
 #include <new>
 #include <optional>
 
-#include "hyle/io/net.h"
-#include "hyle/io/proactor.h"
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/proactor.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/timer.h"
@@ -59,7 +59,7 @@
 // aligned -> bit 0 free): ordinary = &IoOperation (bit0 clear), timed = &TimedSlot
 // | 1. The cancel op's OWN completion carries kCancelToken, dropped by the router.
 
-namespace hyle::io {
+namespace hyle::io::detail {
 
 // Heap state for one timed op. Refcount {kernel op, fiber} = 2. Single-threaded per
 // owner worker => refcount + flags are PLAIN (non-atomic).
@@ -160,8 +160,6 @@ inline void timed_on_fire(time::TimerEntry* e) noexcept {
   // barrier for the borrowed bytes and will perform the one wake.
   s->p->submit_cancel(to_timed_token(s), kCancelToken);
 }
-
-namespace detail {
 
 // Allocate + arm a timed op. Captures the fiber waker into the io slot, arms the
 // timer (callback = arbiter, so fire_due_timers routes through timed_on_fire, NOT the
@@ -285,8 +283,6 @@ inline void on_submit_failed(TimedSlot* s) noexcept {
   s->release();  // kernel ref (never materialized)
 }
 
-}  // namespace detail
-
 // co_await TimedRecvOp -> bytes read (>=0), negative errno, or -ETIMEDOUT (-110).
 // `deadline_ns` is absolute monotonic (prefer
 // time::deadline_after_ns(budget), which saturates). `alloc`
@@ -303,10 +299,10 @@ struct TimedRecvOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;  // OOM -> await_resume returns error
     if (!p->submit_recv(fd, buf, len, 0, to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;  // resume immediately
     }
     sched::suspend();
@@ -314,7 +310,7 @@ struct TimedRecvOp {
   }
   std::int64_t await_resume() noexcept {
     if (slot_ == nullptr) return kSubmitFailed;  // OOM
-    return detail::resume_timed(slot_);
+    return resume_timed(slot_);
   }
 };
 
@@ -333,17 +329,17 @@ struct TimedSendOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;
     if (!p->submit_send(fd, buf, len, flags, to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;
     }
     sched::suspend();
     return false;
   }
   std::int64_t await_resume() noexcept {
-    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
+    return slot_ == nullptr ? kSubmitFailed : resume_timed(slot_);
   }
 };
 
@@ -360,10 +356,10 @@ struct TimedAcceptOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;
     if (!p->submit_accept(fd, nullptr, nullptr, to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;
     }
     sched::suspend();
@@ -371,7 +367,7 @@ struct TimedAcceptOp {
   }
   std::int64_t await_resume() noexcept {
     if (slot_ == nullptr) return kSubmitFailed;
-    return detail::resume_timed(slot_);
+    return resume_timed(slot_);
   }
 };
 
@@ -390,10 +386,10 @@ struct TimedConnectOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;
     if (!p->submit_connect(fd, addr, addrlen, to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;
     }
     sched::suspend();
@@ -401,7 +397,7 @@ struct TimedConnectOp {
   }
   std::int64_t await_resume() noexcept {
     if (slot_ == nullptr) return kSubmitFailed;
-    return detail::resume_timed(slot_);
+    return resume_timed(slot_);
   }
 };
 
@@ -420,18 +416,18 @@ struct TimedRecvFromOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;
     if (!p->submit_recvfrom(fd, buf, len, addr, addr_cap, scratch_,
                             to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;
     }
     sched::suspend();
     return false;
   }
   std::int64_t await_resume() noexcept {
-    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
+    return slot_ == nullptr ? kSubmitFailed : resume_timed(slot_);
   }
 };
 
@@ -450,19 +446,19 @@ struct TimedSendToOp {
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
-    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    slot_ = make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;
     if (!p->submit_sendto(fd, buf, len, addr, addrlen, scratch_,
                           to_timed_token(slot_))) {
-      detail::on_submit_failed(slot_);
+      on_submit_failed(slot_);
       return false;
     }
     sched::suspend();
     return false;
   }
   std::int64_t await_resume() noexcept {
-    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
+    return slot_ == nullptr ? kSubmitFailed : resume_timed(slot_);
   }
 };
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail

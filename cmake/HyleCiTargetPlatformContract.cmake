@@ -118,9 +118,9 @@ _hyle_target_contract_run("unsupported target retains honest sched edge" TRUE
   -B "${HYLE_SMOKE_ROOT}/unsupported-fcontext-graph-build"
   ${_hyle_generator_args})
 
-# Keep the internal raw-proactor header seam coherent, without claiming it is a
-# separately installable component. A sched-dependent header must still fail
-# immediately if an internal build supplies an incompatible capability value.
+# The public IO contract exposes typed capabilities and transport values, not
+# backend completion tokens. Keep both the positive product surface and the
+# removal of the former raw include/symbol surface under a build-system gate.
 set(_hyle_io_header_source
   "${HYLE_SMOKE_ROOT}/io-capability-header-source")
 set(_hyle_io_header_build
@@ -130,54 +130,49 @@ file(MAKE_DIRECTORY "${_hyle_io_header_source}")
 file(WRITE "${_hyle_io_header_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_io_capability_header_contract LANGUAGES CXX)\n"
-"add_library(raw_supported OBJECT raw_supported.cc)\n"
-"target_compile_features(raw_supported PRIVATE cxx_std_23)\n"
-"target_include_directories(raw_supported PRIVATE \"${HYLE_SOURCE_DIR}/include\")\n"
-"add_library(no_transport_surfaces OBJECT no_transport_surfaces.cc)\n"
-"target_compile_features(no_transport_surfaces PRIVATE cxx_std_23)\n"
-"target_compile_definitions(no_transport_surfaces PRIVATE HYLE_IO_HAS_COROUTINE_TRANSPORT=0)\n"
-"target_include_directories(no_transport_surfaces PRIVATE \"${HYLE_SOURCE_DIR}/include\")\n"
-"add_library(raw_unsupported EXCLUDE_FROM_ALL OBJECT raw_unsupported.cc)\n"
-"target_compile_features(raw_unsupported PRIVATE cxx_std_23)\n"
-"target_compile_definitions(raw_unsupported PRIVATE HYLE_IO_HAS_COROUTINE_TRANSPORT=0)\n"
-"target_include_directories(raw_unsupported PRIVATE \"${HYLE_SOURCE_DIR}/include\")\n")
-file(WRITE "${_hyle_io_header_source}/raw_supported.cc"
+"foreach(probe IN ITEMS public_supported retired_header retired_symbol)\n"
+"  add_library(\${probe} EXCLUDE_FROM_ALL OBJECT \${probe}.cc)\n"
+"  target_compile_features(\${probe} PRIVATE cxx_std_23)\n"
+"  target_include_directories(\${probe} PRIVATE \"${HYLE_SOURCE_DIR}/include\")\n"
+"endforeach()\n")
+file(WRITE "${_hyle_io_header_source}/public_supported.cc"
 "#include <hyle/io/capabilities.h>\n"
-"#include <hyle/io/net.h>\n"
-"static_assert(HYLE_IO_HAS_COROUTINE_TRANSPORT == 1);\n"
-"using CompleteFn = void (*)(const hyle::io::Completion&) noexcept;\n"
-"CompleteFn raw_supported_complete = &hyle::io::complete;\n")
-file(WRITE "${_hyle_io_header_source}/no_transport_surfaces.cc"
-"#include <hyle/io/proactor.h>\n"
+"#include <hyle/io/endpoint.h>\n"
 "#include <type_traits>\n"
-"using hyle::io::BackendKind;\n"
-"using hyle::io::Completion;\n"
-"using hyle::io::ProactorCapabilities;\n"
-"using hyle::io::ProactorCapability;\n"
-"static_assert(std::is_trivially_copyable_v<Completion>);\n"
-"static_assert(sizeof(Completion) != 0);\n"
-"constexpr ProactorCapabilities capabilities{\n"
-"    BackendKind::kNone, ProactorCapability::kAsyncFileData};\n"
-"static_assert(capabilities.backend == BackendKind::kNone);\n"
-"static_assert(capabilities.has(ProactorCapability::kAsyncFileData));\n"
-"static_assert(!capabilities.has(ProactorCapability::kHttp2));\n")
-file(WRITE "${_hyle_io_header_source}/raw_unsupported.cc"
+"static_assert(HYLE_IO_HAS_COROUTINE_TRANSPORT == 1);\n"
+"static_assert(std::is_trivially_copyable_v<hyle::io::IoCapabilities>);\n"
+"constexpr hyle::io::IoCapabilities capabilities{\n"
+"    hyle::io::IoBackend::kIoUring,\n"
+"    hyle::io::IoCapability::kAsyncFileData};\n"
+"static_assert(capabilities.has(hyle::io::IoCapability::kAsyncFileData));\n"
+"static_assert(capabilities.backend_name() == \"io_uring\");\n")
+file(WRITE "${_hyle_io_header_source}/retired_header.cc"
 "#include <hyle/io/net.h>\n")
+file(WRITE "${_hyle_io_header_source}/retired_symbol.cc"
+"#include <hyle/io/io_context.h>\n"
+"hyle::io::Completion retired_completion;\n")
 
 _hyle_target_contract_run("configure io raw-header capability contract" TRUE
   "${CMAKE_COMMAND}" -S "${_hyle_io_header_source}"
   -B "${_hyle_io_header_build}" ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
-_hyle_target_contract_run("build supported/raw standalone io headers" TRUE
+_hyle_target_contract_run("build public standalone io headers" TRUE
   "${CMAKE_COMMAND}" --build "${_hyle_io_header_build}" --config Release
-  --parallel 2 --target raw_supported no_transport_surfaces)
-_hyle_target_contract_run("reject sched-dependent header for no-transport product" FALSE
+  --parallel 2 --target public_supported)
+_hyle_target_contract_run("reject retired raw io header" FALSE
   "${CMAKE_COMMAND}" --build "${_hyle_io_header_build}" --config Release
-  --parallel 2 --target raw_unsupported)
-if(NOT HYLE_TARGET_CONTRACT_LAST_OUTPUT MATCHES
-   "coroutine-transport target/header capability mismatch")
+  --parallel 2 --target retired_header)
+if(NOT HYLE_TARGET_CONTRACT_LAST_OUTPUT MATCHES "hyle/io/net.h")
   message(FATAL_ERROR
-    "unsupported io header failed for the wrong reason:\n"
+    "retired raw IO header failed for the wrong reason:\n"
+    "${HYLE_TARGET_CONTRACT_LAST_OUTPUT}")
+endif()
+_hyle_target_contract_run("reject retired raw io symbol" FALSE
+  "${CMAKE_COMMAND}" --build "${_hyle_io_header_build}" --config Release
+  --parallel 2 --target retired_symbol)
+if(NOT HYLE_TARGET_CONTRACT_LAST_OUTPUT MATCHES "Completion")
+  message(FATAL_ERROR
+    "retired raw IO symbol failed for the wrong reason:\n"
     "${HYLE_TARGET_CONTRACT_LAST_OUTPUT}")
 endif()
 message(STATUS "HYLE target-platform contract passed")

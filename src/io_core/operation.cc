@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include "hyle/io/net.h"
+#include "hyle/io/detail/net.h"
 
 namespace hyle::io::detail {
 namespace {

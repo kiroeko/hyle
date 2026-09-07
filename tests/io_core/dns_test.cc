@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 
+#include "hyle/io/detail/io_context_access.h"
 #include "hyle/io/dns.h"
 #include "hyle/io/io_context.h"
 #include "hyle/mem/allocator.h"
@@ -121,7 +122,8 @@ TEST(IoDns, DeadlineCoversQueuedResolverAndDetachedStateRetiresSafely) {
   DnsRuntime runtime(1);
   BlockingGate gate;
   auto blocker = hyle::sched::spawn_blocking(
-      runtime.io.blocking_pool(), system_allocator(),
+      hyle::io::detail::IoContextAccess::blocking_pool(runtime.io),
+      system_allocator(),
       [&gate]() noexcept { return occupy_blocking_thread(&gate); });
   gate.started.wait();
 
@@ -143,7 +145,8 @@ TEST(IoDns, CancellationWakesQueuedResolverPromptly) {
   DnsRuntime runtime(1);
   BlockingGate gate;
   auto blocker = hyle::sched::spawn_blocking(
-      runtime.io.blocking_pool(), system_allocator(),
+      hyle::io::detail::IoContextAccess::blocking_pool(runtime.io),
+      system_allocator(),
       [&gate]() noexcept { return occupy_blocking_thread(&gate); });
   gate.started.wait();
 

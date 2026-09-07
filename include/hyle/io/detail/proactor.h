@@ -6,6 +6,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/capabilities.h"
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
@@ -34,56 +35,11 @@
 // port), epoll/kqueue (reactor -> completion emulation). This header is what
 // they all present upward; the consumer (a sched worker) is backend-agnostic.
 
-namespace hyle::io {
+namespace hyle::io::detail {
 
-enum class BackendKind : std::uint8_t {
-  kNone = 0,
-  kIocp,
-  kIoUring,
-  kEpoll,
-  kKqueue,
-};
-
-enum class ProactorCapability : std::uint64_t {
-  kNone = 0,
-  kNativeMultishotAccept = 1ull << 0,
-  kEmulatedMultishotAccept = 1ull << 1,
-  kProvidedBufferRing = 1ull << 2,
-  kFixedFiles = 1ull << 3,
-  kDirectAccept = 1ull << 4,
-  kAsyncFileData = 1ull << 5,
-  kAsyncFileMetadata = 1ull << 6,
-  kTls = 1ull << 7,
-  kHttp2 = 1ull << 8,
-};
-
-constexpr ProactorCapability operator|(ProactorCapability left,
-                                       ProactorCapability right) noexcept {
-  return static_cast<ProactorCapability>(
-      static_cast<std::uint64_t>(left) | static_cast<std::uint64_t>(right));
-}
-
-constexpr ProactorCapability& operator|=(ProactorCapability& left,
-                                         ProactorCapability right) noexcept {
-  left = left | right;
-  return left;
-}
-
-constexpr bool has_proactor_capability(
-    ProactorCapability capabilities, ProactorCapability capability) noexcept {
-  return (static_cast<std::uint64_t>(capabilities) &
-          static_cast<std::uint64_t>(capability)) != 0;
-}
-
-struct ProactorCapabilities {
-  BackendKind backend = BackendKind::kNone;
-  ProactorCapability supported = ProactorCapability::kNone;
-
-  [[nodiscard]] constexpr bool has(
-      ProactorCapability capability) const noexcept {
-    return has_proactor_capability(supported, capability);
-  }
-};
+using BackendKind = IoBackend;
+using ProactorCapability = IoCapability;
+using ProactorCapabilities = IoCapabilities;
 
 struct FileStat {
   std::uint64_t size = 0;
@@ -91,8 +47,6 @@ struct FileStat {
   std::uint32_t mode = 0;
   bool is_directory = false;
 };
-
-class IoUringExtension;
 
 // A finished operation handed back by the proactor. `user_data` is the exact
 // 64-bit value the submitter attached (typically a Waker pointer / id, cast to
@@ -165,13 +119,6 @@ class Proactor {
   HYLE_IO_API ProactorCapabilities capabilities() const noexcept;
   HYLE_IO_API bool has_async_file_data() const noexcept;
   HYLE_IO_API bool has_async_file_metadata() const noexcept;
-  // Borrow the Linux io_uring acceleration surface. The returned handle is
-  // invalid when this proactor selected IOCP/epoll/kqueue (or is uninitialized);
-  // portable code should use capabilities() and the ordinary methods above.
-  // Unlike the old public methods, an unsupported platform cannot accidentally
-  // call an io_uring-only operation and mistake a sentinel/no-op for support.
-  IoUringExtension io_uring_extension() noexcept;
-
   // ---- submit real IO ops (io-02) -------------------------------------------
   // Queue a read/write of `len` bytes on `fd` at file `offset` (offset ignored
   // for streams; use 0 or the pipe/socket convention). `buf` is caller-owned and
@@ -304,7 +251,7 @@ class Proactor {
   // Neutral, backend-filled file metadata (the statx subset a file server needs).
   // Bytes/times are the cross-platform intersection; `mode` is the POSIX st_mode
   // (0 on Windows -- use is_directory). One struct both backends fill on a stat op.
-  using FileStat = io::FileStat;
+  using FileStat = hyle::io::detail::FileStat;
 
   // Neutral open flags (mapped to O_* on POSIX, to CreateFileW's disposition/access
   // on Windows). A file server needs read, write, create, truncate, append. `mode`
@@ -422,11 +369,10 @@ class Proactor {
   bool valid() const noexcept { return impl_ != nullptr; }
 
  private:
-  friend class IoUringExtension;
-
-  // Backend primitives used only through IoUringExtension. Keeping them private
-  // prevents the portable surface from advertising Linux-only facilities.
+  // Linux-only primitives stay behind the typed public extension and internal
+  // mechanism tests.  They never form a portable raw-submission API.
 #if HYLE_OS_LINUX
+ public:
   HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
                                      unsigned buf_size) noexcept;
   HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
@@ -450,6 +396,7 @@ class Proactor {
                                    std::uint32_t buffer_id) noexcept;
 #endif
 
+ private:
   struct Impl;
   // Backend init + epoll-arm helpers need to touch the private Impl, so they are
   // private statics (defined per-OS in proactor.cc) rather than free functions
@@ -486,132 +433,4 @@ class Proactor {
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
 
-// Explicit Linux io_uring acceleration track. This is a borrowed, non-owning
-// view: it is valid only while its Proactor is alive. Its presence proves that
-// the runtime actually selected io_uring; failures from these methods therefore
-// mean invalid arguments/resource/kernel-version limits, never "wrong platform".
-class IoUringExtension {
- public:
-  IoUringExtension() noexcept = default;
-
-  bool valid() const noexcept { return proactor_ != nullptr; }
-  explicit operator bool() const noexcept { return valid(); }
-  Proactor* proactor() const noexcept { return proactor_; }
-
-  bool register_buffer_ring(int group_id, unsigned entries,
-                            unsigned buffer_size) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() &&
-           proactor_->register_buf_ring(group_id, entries, buffer_size);
-#else
-    (void)group_id; (void)entries; (void)buffer_size;
-    return false;
-#endif
-  }
-  bool register_file_table(unsigned entries) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->register_file_table(entries);
-#else
-    (void)entries;
-    return false;
-#endif
-  }
-  int assign_fixed_file(std::intptr_t fd) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() ? proactor_->assign_fixed_slot(fd) : -1;
-#else
-    (void)fd;
-    return -1;
-#endif
-  }
-  bool release_fixed_file(int slot) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->release_fixed_slot(slot);
-#else
-    (void)slot;
-    return false;
-#endif
-  }
-  bool submit_recv_fixed(int slot, void* buffer, std::uint32_t length,
-                         std::uint32_t flags,
-                         std::uint64_t user_data) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->submit_recv_fixed(
-                          slot, buffer, length, flags, user_data);
-#else
-    (void)slot; (void)buffer; (void)length; (void)flags; (void)user_data;
-    return false;
-#endif
-  }
-  bool submit_send_fixed(int slot, const void* buffer, std::uint32_t length,
-                         std::uint32_t flags,
-                         std::uint64_t user_data) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->submit_send_fixed(
-                          slot, buffer, length, flags, user_data);
-#else
-    (void)slot; (void)buffer; (void)length; (void)flags; (void)user_data;
-    return false;
-#endif
-  }
-  bool submit_accept_direct(std::intptr_t fd,
-                            std::uint64_t user_data) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->submit_accept_direct(fd, user_data);
-#else
-    (void)fd; (void)user_data;
-    return false;
-#endif
-  }
-  bool submit_close_direct(int slot,
-                           std::uint64_t user_data) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->submit_close_direct(slot, user_data);
-#else
-    (void)slot; (void)user_data;
-    return false;
-#endif
-  }
-  bool submit_recv_multishot(std::intptr_t fd, int group_id,
-                             std::uint64_t user_data) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() &&
-           proactor_->submit_recv_multishot(fd, group_id, user_data);
-#else
-    (void)fd; (void)group_id; (void)user_data;
-    return false;
-#endif
-  }
-  void* buffer_address(int group_id,
-                       std::uint32_t buffer_id) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() ? proactor_->buf_ring_addr(group_id, buffer_id) : nullptr;
-#else
-    (void)group_id; (void)buffer_id;
-    return nullptr;
-#endif
-  }
-  bool return_buffer(int group_id, std::uint32_t buffer_id) const noexcept {
-#if HYLE_OS_LINUX
-    return valid() && proactor_->buf_ring_return(group_id, buffer_id);
-#else
-    (void)group_id; (void)buffer_id;
-    return false;
-#endif
-  }
-
- private:
-  friend class Proactor;
-  explicit IoUringExtension(Proactor* proactor) noexcept
-      : proactor_(proactor) {}
-
-  Proactor* proactor_ = nullptr;
-};
-
-inline IoUringExtension Proactor::io_uring_extension() noexcept {
-  return backend_kind() == BackendKind::kIoUring
-             ? IoUringExtension(this)
-             : IoUringExtension();
-}
-
-}  // namespace hyle::io
+}  // namespace hyle::io::detail

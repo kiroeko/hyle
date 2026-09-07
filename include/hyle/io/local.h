@@ -9,8 +9,8 @@
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/detail/net_budget.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net_budget.h"
 #include "hyle/io/operation.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -111,7 +111,7 @@ class LocalStream {
     alignas(16) std::array<std::byte, 128> native_address{};
     std::uint32_t native_length = 0;
     std::intptr_t handle = -1;
-    BudgetConnectOp inner{};
+    detail::BudgetConnectOp inner{};
     Status preparation{};
     bool platform_ready = false;
 

@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <utility>
 
-#include "hyle/io/net.h"
-#include "hyle/io/net_timeout.h"
+#include "hyle/io/detail/net.h"
+#include "hyle/io/detail/net_timeout.h"
 #include "hyle/io/operation.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/cancel.h"
@@ -86,7 +86,7 @@ struct BudgetState {
 
 }  // namespace hyle::io::detail
 
-namespace hyle::io {
+namespace hyle::io::detail {
 
 struct BudgetRecvOp {
   Proactor* proactor = nullptr;
@@ -96,10 +96,10 @@ struct BudgetRecvOp {
   mem::AllocatorRef allocator;
   OperationOptions options{};
   std::uint32_t flags = 0;
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -118,10 +118,10 @@ struct BudgetSendOp {
   mem::AllocatorRef allocator;
   OperationOptions options{};
   std::uint32_t flags = 0;
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -135,14 +135,14 @@ struct BudgetSendOp {
 struct BudgetRecvBuffersOp {
   Proactor* proactor = nullptr;
   std::intptr_t fd = -1;
-  detail::NativeBuffer* buffers = nullptr;
+  NativeBuffer* buffers = nullptr;
   std::uint32_t count = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -156,14 +156,14 @@ struct BudgetRecvBuffersOp {
 struct BudgetSendBuffersOp {
   Proactor* proactor = nullptr;
   std::intptr_t fd = -1;
-  detail::NativeBuffer* buffers = nullptr;
+  NativeBuffer* buffers = nullptr;
   std::uint32_t count = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -179,10 +179,10 @@ struct BudgetAcceptOp {
   std::intptr_t fd = -1;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -200,10 +200,10 @@ struct BudgetConnectOp {
   std::uint32_t address_length = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -223,11 +223,11 @@ struct BudgetRecvFromOp {
   std::uint32_t address_capacity = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
   alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -248,11 +248,11 @@ struct BudgetSendToOp {
   std::uint32_t address_length = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
   alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -267,17 +267,17 @@ struct BudgetSendToOp {
 struct BudgetRecvFromBuffersOp {
   Proactor* proactor = nullptr;
   std::intptr_t fd = -1;
-  detail::NativeBuffer* buffers = nullptr;
+  NativeBuffer* buffers = nullptr;
   std::uint32_t count = 0;
   void* address = nullptr;
   std::uint32_t address_capacity = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
   alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -292,17 +292,17 @@ struct BudgetRecvFromBuffersOp {
 struct BudgetSendToBuffersOp {
   Proactor* proactor = nullptr;
   std::intptr_t fd = -1;
-  detail::NativeBuffer* buffers = nullptr;
+  NativeBuffer* buffers = nullptr;
   std::uint32_t count = 0;
   const void* address = nullptr;
   std::uint32_t address_length = 0;
   mem::AllocatorRef allocator;
   OperationOptions options{};
-  detail::BudgetState state{};
+  BudgetState state{};
   alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
 
   bool await_ready() noexcept {
-    state = detail::BudgetState{proactor, allocator, options};
+    state = BudgetState{proactor, allocator, options};
     return state.await_ready();
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
@@ -314,4 +314,4 @@ struct BudgetSendToBuffersOp {
   std::int64_t await_resume() noexcept { return state.await_resume(); }
 };
 
-}  // namespace hyle::io
+}  // namespace hyle::io::detail

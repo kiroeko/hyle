@@ -5,6 +5,7 @@
 
 #include "hyle/core/environment.h"   // HYLE_OS_* (must precede the per-OS socket headers)
 #include "hyle/error/system_error.h"
+#include "hyle/io/detail/io_context_access.h"
 #include "endpoint_native.h"
 
 #if HYLE_OS_WINDOWS
@@ -25,6 +26,9 @@
 // awaitables); this file owns fd lifetime and the socket/bind syscalls.
 
 namespace hyle::io {
+
+using detail::Completion;
+
 namespace {
 
 void close_fd(std::intptr_t fd) noexcept {
@@ -192,7 +196,7 @@ Result<UdpSocket> UdpSocket::open(IoContext& io, unsigned owner_worker,
     close_fd(fd);
     return make_unexpected(std::move(configured));
   }
-  if (!io.bind_fd(owner_worker, fd)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker, fd)) {
     Status status = handle_error("associate UDP socket with IO shard");
     close_fd(fd);
     return make_unexpected(std::move(status));
@@ -232,7 +236,8 @@ Result<UdpSocket> UdpSocket::adopt(IoContext& io, unsigned owner_worker,
     close_fd(native_socket);
     return make_unexpected(Status::OutOfRange("UDP owner worker is out of range"));
   }
-  if (!io.bind_fd(owner_worker, native_socket)) {
+  if (!detail::IoContextAccess::bind_handle(io, owner_worker,
+                                            native_socket)) {
     Status status = handle_error("associate adopted UDP socket with IO shard");
     close_fd(native_socket);
     return make_unexpected(std::move(status));
@@ -252,13 +257,14 @@ Result<Endpoint> UdpSocket::local_endpoint() const noexcept {
 }
 
 bool UdpSocket::ReceiveAwaitable::await_ready() noexcept {
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffer = buffer.data();
   inner.length = static_cast<std::uint32_t>(buffer.size());
   inner.address = native_peer.data();
   inner.address_capacity = static_cast<std::uint32_t>(native_peer.size());
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }
@@ -287,13 +293,14 @@ bool UdpSocket::SendAwaitable::await_ready() noexcept {
   }
   std::memcpy(native_destination.data(), native->storage, native->size);
   native_length = native->size;
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffer = buffer.data();
   inner.length = static_cast<std::uint32_t>(buffer.size());
   inner.address = native_destination.data();
   inner.address_length = native_length;
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }
@@ -311,7 +318,8 @@ bool UdpSocket::ReceiveBuffersAwaitable::await_ready() noexcept {
     immediate_ready = true;
     return true;
   }
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffers = buffers.native_data();
   // A zero-byte UDP datagram remains a real operation. One empty native
@@ -320,7 +328,7 @@ bool UdpSocket::ReceiveBuffersAwaitable::await_ready() noexcept {
       buffers.native_count() == 0 ? 1 : buffers.native_count());
   inner.address = native_peer.data();
   inner.address_capacity = static_cast<std::uint32_t>(native_peer.size());
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }
@@ -367,14 +375,15 @@ bool UdpSocket::SendBuffersAwaitable::await_ready() noexcept {
   }
   std::memcpy(native_destination.data(), native->storage, native->size);
   native_length = native->size;
-  inner.proactor = &self->io_->proactor_for_current();
+  inner.proactor =
+      &detail::IoContextAccess::proactor_for_current(*self->io_);
   inner.fd = self->fd_;
   inner.buffers = buffers.native_data();
   inner.count = static_cast<std::uint32_t>(
       buffers.native_count() == 0 ? 1 : buffers.native_count());
   inner.address = native_destination.data();
   inner.address_length = native_length;
-  inner.allocator = self->io_->operation_allocator();
+  inner.allocator = detail::IoContextAccess::operation_allocator(*self->io_);
   inner.options = options;
   return inner.await_ready();
 }

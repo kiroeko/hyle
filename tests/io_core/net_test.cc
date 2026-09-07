@@ -7,9 +7,14 @@
 #include <memory>
 #include <vector>
 
+#include "hyle/io/detail/io_context_access.h"
+#include "hyle/io/detail/net.h"
+#if defined(__linux__)
+#  include "hyle/io/detail/net_multishot.h"
+#  include "hyle/io/io_uring.h"
+#endif
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_multishot.h"
+#include "hyle/io/tcp.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -34,10 +39,18 @@
 // MULTIPLE workers with connections sharded across them.
 
 using hyle::io::IoContext;
-using hyle::io::MultishotRecvStream;
-using hyle::io::RecvBuf;
-using hyle::io::RecvOp;
-using hyle::io::SendOp;
+using hyle::io::detail::Completion;
+using hyle::io::detail::IoContextAccess;
+#if defined(__linux__)
+using hyle::io::detail::MultishotRecvStream;
+using hyle::io::detail::MultishotSlot;
+#endif
+using hyle::io::detail::Proactor;
+#if defined(__linux__)
+using hyle::io::detail::RecvBuf;
+#endif
+using hyle::io::detail::RecvOp;
+using hyle::io::detail::SendOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -46,6 +59,15 @@ using hyle::sched::Scheduler;
 using hyle::sched::Task;
 
 namespace {
+
+Proactor& current_proactor(IoContext& io) noexcept {
+  return IoContextAccess::proactor_for_current(io);
+}
+
+bool bind_handle(IoContext& io, unsigned owner,
+                 std::intptr_t handle) noexcept {
+  return IoContextAccess::bind_handle(io, owner, handle);
+}
 
 // A connected pair of fds, bound to an owner worker. On IOCP each fd associates
 // with exactly ONE completion port, so we register only on the owner's ring (a
@@ -65,7 +87,7 @@ SocketPair make_pair(IoContext& io, unsigned owner) {
   sp.a = sv[0];
   sp.b = sv[1];
   // register_handle is a no-op on io_uring/epoll but keeps the call site uniform.
-  sp.ok = io.bind_fd(owner, sp.a) && io.bind_fd(owner, sp.b);
+  sp.ok = bind_handle(io, owner, sp.a) && bind_handle(io, owner, sp.b);
   return sp;
 }
 void close_pair(SocketPair& sp) {
@@ -97,7 +119,7 @@ SocketPair make_pair(IoContext& io, unsigned owner) {
   // Bind BOTH ends to the owner worker's port only. IOCP allows a socket to
   // associate with exactly one port, and the connection's fibers are pinned to
   // this same owner, so both ends' ops complete on this one ring.
-  sp.ok = io.bind_fd(owner, sp.a) && io.bind_fd(owner, sp.b);
+  sp.ok = bind_handle(io, owner, sp.a) && bind_handle(io, owner, sp.b);
   return sp;
 }
 void close_pair(SocketPair& sp) {
@@ -121,9 +143,11 @@ struct EchoState {
 Task<int> echo_coro(AllocatorRef, EchoState* st) {
   static const char kMsg[] = "co_await-socket-echo";
   const std::uint32_t len = sizeof(kMsg);
-  st->sent = co_await SendOp{&st->io->proactor_for_current(), st->send_fd, kMsg, len};
+  st->sent =
+      co_await SendOp{&current_proactor(*st->io), st->send_fd, kMsg, len};
   st->received =
-      co_await RecvOp{&st->io->proactor_for_current(), st->recv_fd, st->recv_buf, len};
+      co_await RecvOp{&current_proactor(*st->io), st->recv_fd, st->recv_buf,
+                      len};
   co_return 0;
 }
 
@@ -189,9 +213,10 @@ struct EchoPair {
 
 Task<int> server_coro(AllocatorRef, EchoPair* c) {
   c->server_recv =
-      co_await RecvOp{&c->io->proactor_for_current(), c->server_fd, c->server_buf, 64};
+      co_await RecvOp{&current_proactor(*c->io), c->server_fd, c->server_buf,
+                      64};
   if (c->server_recv > 0) {
-    co_await SendOp{&c->io->proactor_for_current(), c->server_fd, c->server_buf,
+    co_await SendOp{&current_proactor(*c->io), c->server_fd, c->server_buf,
                     static_cast<std::uint32_t>(c->server_recv)};
   }
   co_return 0;
@@ -200,9 +225,10 @@ Task<int> server_coro(AllocatorRef, EchoPair* c) {
 Task<int> client_coro(AllocatorRef, EchoPair* c) {
   static const char kMsg[] = "two-fiber-echo";
   const std::uint32_t len = sizeof(kMsg);
-  co_await SendOp{&c->io->proactor_for_current(), c->client_fd, kMsg, len};
+  co_await SendOp{&current_proactor(*c->io), c->client_fd, kMsg, len};
   c->client_recv =
-      co_await RecvOp{&c->io->proactor_for_current(), c->client_fd, c->client_reply, len};
+      co_await RecvOp{&current_proactor(*c->io), c->client_fd,
+                      c->client_reply, len};
   co_return 0;
 }
 }  // namespace
@@ -315,12 +341,14 @@ struct DuplexState {
 };
 Task<int> duplex_recv(AllocatorRef, DuplexState* s) {
   // Blocks until data arrives on `fd` (the peer end is written by the test).
-  s->recv_n = co_await RecvOp{&s->io->proactor_for_current(), s->fd, s->recv_buf, 64};
+  s->recv_n =
+      co_await RecvOp{&current_proactor(*s->io), s->fd, s->recv_buf, 64};
   co_return 0;
 }
 Task<int> duplex_send(AllocatorRef, DuplexState* s) {
   static const char kMsg[] = "duplex-write";
-  s->send_n = co_await SendOp{&s->io->proactor_for_current(), s->fd, kMsg, sizeof(kMsg)};
+  s->send_n =
+      co_await SendOp{&current_proactor(*s->io), s->fd, kMsg, sizeof(kMsg)};
   co_return 0;
 }
 }  // namespace
@@ -373,31 +401,41 @@ TEST(IoNet, FullDuplexSameFdEpoll) {
 namespace {
 struct MultishotState {
   IoContext* io;
-  std::intptr_t recv_fd;
+  hyle::io::TcpStream* stream;
   int bgid;
   std::atomic<int> chunks{0};
   char joined[256] = {};
   std::uint32_t joined_len = 0;
   std::atomic<bool> saw_terminal{false};
+  std::atomic<bool> failed{false};
 };
 Task<int> multishot_recv_coro(AllocatorRef alloc, MultishotState* st) {
-  auto uring = st->io->proactor_for_current().io_uring_extension();
-  auto stream = uring ? MultishotRecvStream{uring, st->recv_fd, st->bgid, alloc}
-                      : MultishotRecvStream{};
+  auto opened = st->stream->read_multishot(
+      st->io->io_uring(st->stream->owner_worker()), st->bgid, alloc);
+  if (!opened.has_value()) {
+    st->failed.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  auto stream = std::move(*opened);
   for (;;) {
-    RecvBuf b = co_await stream.next();
-    if (!b.more() && b.size() == 0) {  // terminal chunk
+    auto received = co_await stream.next();
+    if (!received.has_value()) {
+      st->failed.store(true, std::memory_order_release);
+      break;
+    }
+    auto buffer = std::move(*received);
+    const auto bytes = buffer.bytes();
+    if (!buffer.more() && bytes.empty()) {  // terminal chunk
       st->saw_terminal.store(true, std::memory_order_release);
       break;
     }
-    // Append the chunk bytes (data lives in the ring buffer; copy out before b's dtor
-    // returns it). Datagram boundaries => one chunk per message.
-    if (b.size() > 0 && st->joined_len + b.size() < sizeof(st->joined)) {
-      std::memcpy(st->joined + st->joined_len, b.data(), b.size());
-      st->joined_len += b.size();
+    // Copy before the buffer's destructor returns it to the provided ring.
+    if (!bytes.empty() && st->joined_len + bytes.size() < sizeof(st->joined)) {
+      std::memcpy(st->joined + st->joined_len, bytes.data(), bytes.size());
+      st->joined_len += static_cast<std::uint32_t>(bytes.size());
     }
     st->chunks.fetch_add(1, std::memory_order_relaxed);
-    if (!b.more()) {  // a data chunk that is ALSO terminal
+    if (!buffer.more()) {  // a data chunk that is ALSO terminal
       st->saw_terminal.store(true, std::memory_order_release);
       break;
     }
@@ -413,10 +451,13 @@ TEST(IoNet, MultishotRecvAwaitable) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched);
   ASSERT_TRUE(io.valid());
-  // Register the provided-buffer ring on the OWNER worker's proactor (io_uring only).
-  auto uring = io.proactor(kOwner).io_uring_extension();
-  if (!uring ||
-      !uring.register_buffer_ring(kBgid, /*entries=*/8, /*buffer_size=*/128))
+  // The expert path is explicit and exists only on Linux. Portable users never
+  // see raw completion tokens or a constant-failure backend stub.
+  auto uring = io.io_uring(kOwner);
+  if (!uring) GTEST_SKIP() << "io_uring backend unavailable";
+  auto configured = uring.configure_receive_ring(
+      {.group_id = kBgid, .entries = 8, .buffer_size = 128});
+  if (!configured.ok())
     GTEST_SKIP() << "provided buffer ring unsupported (non-uring backend/old kernel)";
 
   // STREAM pair: peer close delivers a terminal (result 0, kMore clear) completion --
@@ -425,7 +466,9 @@ TEST(IoNet, MultishotRecvAwaitable) {
   // chunk count. Bind the recv end to the owner worker's ring.
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
-  ASSERT_TRUE(io.bind_fd(kOwner, sv[0]));
+  auto adopted = hyle::io::TcpStream::adopt(io, kOwner, sv[0]);
+  ASSERT_TRUE(adopted.has_value())
+      << (adopted.has_value() ? "" : adopted.error().message());
   // Pre-send 3 segments + close the peer so the stream sees data then a clean EOF
   // terminal (avoids a blocking reap waiting on data that never comes).
   const char* msgs[] = {"aa", "bb", "cc"};
@@ -434,7 +477,7 @@ TEST(IoNet, MultishotRecvAwaitable) {
 
   MultishotState st{};
   st.io = &io;
-  st.recv_fd = sv[0];
+  st.stream = &*adopted;
   st.bgid = kBgid;
   auto d = std::make_unique<Drive>();
   d->task = multishot_recv_coro(system_allocator(), &st);
@@ -444,13 +487,12 @@ TEST(IoNet, MultishotRecvAwaitable) {
   sched.shutdown();
 
   EXPECT_TRUE(d->finished.load()) << "multishot fiber never finished (stream hung)";
+  EXPECT_FALSE(st.failed.load()) << "typed multishot receive failed";
   EXPECT_GE(st.chunks.load(), 1) << "one arm should deliver the data (>=1 chunk)";
   EXPECT_TRUE(st.saw_terminal.load()) << "peer close must surface a terminal chunk";
   st.joined[st.joined_len] = '\0';
   EXPECT_STREQ(st.joined, "aabbcc") << "all bytes received in order (STREAM coalesces)";
-  ::close(sv[0]);
 }
-#endif  // __linux__
 
 namespace {
 struct MultishotAllocState {
@@ -482,16 +524,16 @@ struct MultishotAllocState {
 TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   MultishotAllocState state;
   AllocatorRef a = state.handle();
-  hyle::io::Proactor p;  // uninitialized is enough: early-drop cancel returns false
+  Proactor p;  // uninitialized is enough: early-drop cancel returns false
 
   auto make_slot = [&]() {
-    auto* s = static_cast<hyle::io::MultishotSlot*>(
-        a.allocate(sizeof(hyle::io::MultishotSlot),
-                   alignof(hyle::io::MultishotSlot)));
+    auto* s = static_cast<MultishotSlot*>(
+        a.allocate(sizeof(MultishotSlot), alignof(MultishotSlot)));
     EXPECT_NE(s, nullptr);
     if (s == nullptr) return s;
-    new (s) hyle::io::MultishotSlot{};
+    new (s) MultishotSlot{};
     s->alloc = a;
+    s->proactor = &p;
     s->armed = true;
     return s;
   };
@@ -500,10 +542,10 @@ TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   {
     auto* s = make_slot();
     ASSERT_NE(s, nullptr);
-    hyle::io::MultishotRecvStream stream{p.io_uring_extension(), -1, 1, a};
+    MultishotRecvStream stream{&p, -1, 1, a};
     stream.slot_ = s;
-    hyle::io::complete_multishot(
-        hyle::io::Completion{hyle::io::to_multishot_token(s), 0, 0, 0});
+    hyle::io::detail::complete_multishot(Completion{
+        hyle::io::detail::to_multishot_token(s), 0, 0, 0});
     EXPECT_EQ(state.live.load(), 1);
   }
   EXPECT_EQ(state.live.load(), 0);
@@ -513,11 +555,12 @@ TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   auto* late = make_slot();
   ASSERT_NE(late, nullptr);
   {
-    hyle::io::MultishotRecvStream stream{p.io_uring_extension(), -1, 1, a};
+    MultishotRecvStream stream{&p, -1, 1, a};
     stream.slot_ = late;
   }
   EXPECT_EQ(state.live.load(), 1);
-  hyle::io::complete_multishot(
-      hyle::io::Completion{hyle::io::to_multishot_token(late), -125, 0, 0});
+  hyle::io::detail::complete_multishot(Completion{
+      hyle::io::detail::to_multishot_token(late), -125, 0, 0});
   EXPECT_EQ(state.live.load(), 0);
 }
+#endif  // __linux__

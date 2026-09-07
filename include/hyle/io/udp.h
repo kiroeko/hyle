@@ -9,9 +9,9 @@
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
 #include "hyle/io/buffer.h"
+#include "hyle/io/detail/net_budget.h"
 #include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net_budget.h"
 #include "hyle/io/operation.h"
 #include "hyle/visibility.h"
 
@@ -98,7 +98,7 @@ class UdpSocket {
     std::span<std::byte> buffer;
     OperationOptions options;
     alignas(16) std::array<std::byte, 128> native_peer{};
-    BudgetRecvFromOp inner{};
+    detail::BudgetRecvFromOp inner{};
 
     HYLE_IO_API bool await_ready() noexcept;
     bool await_suspend(std::coroutine_handle<> handle) noexcept {
@@ -114,7 +114,7 @@ class UdpSocket {
     OperationOptions options;
     alignas(16) std::array<std::byte, 128> native_destination{};
     std::uint32_t native_length = 0;
-    BudgetSendToOp inner{};
+    detail::BudgetSendToOp inner{};
     Status preparation{};
 
     HYLE_IO_API bool await_ready() noexcept;
@@ -129,7 +129,7 @@ class UdpSocket {
     detail::BufferSequenceStorage<MutableBuffer> buffers;
     OperationOptions options{};
     alignas(16) std::array<std::byte, 128> native_peer{};
-    BudgetRecvFromBuffersOp inner{};
+    detail::BudgetRecvFromBuffersOp inner{};
     BufferDatagramResult immediate{};
     bool immediate_ready = false;
 
@@ -147,7 +147,7 @@ class UdpSocket {
     OperationOptions options{};
     alignas(16) std::array<std::byte, 128> native_destination{};
     std::uint32_t native_length = 0;
-    BudgetSendToBuffersOp inner{};
+    detail::BudgetSendToBuffersOp inner{};
     BufferSequenceResult immediate{};
     bool immediate_ready = false;
 
