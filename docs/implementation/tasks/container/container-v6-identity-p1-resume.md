@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - components / owner / rounds：
   - `container` / Container / `container-v6-identity-p1-resume`；
@@ -140,3 +140,33 @@ layout 没有变化。`CONT6-F01=PASS`；活动状态保持 `AUDITED`，只剩 `
 
 预采样复核确认四格现在均为 `ADAPTER_EQUALIZED`，没有剩余苹果/橘子差异；活动状态仍保持
 `AUDITED`，尚未把未运行的 qualification 写成 `PASS`。
+
+## Candidate freeze 与 P1 qualification
+
+产品、公开合同、算法、四条 normal workload 与 adapter 合同冻结在 commit
+`6a78f6dfa7a711350c694c01d90d4301fc57ae4f`、tree
+`53fd52ba931af02216b9686baf77de1a2b670acc`。`AUDITED -> CANDIDATE` 前态 registry 快照位于
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-candidate.json`，SHA-256
+`eb0fc730bbb5358a427f0b9d2b2292c1a8c03beb201e085dea85c2a3804d9b35`。
+
+W1-WIN / MSVC 19.50 / `closure-perf-v1` 的 candidate-bound 结果如下：
+
+- `container-product-p1-v6` qualification 与 performance gate 均 `PASS`；manifest SHA-256
+  `2d01defce2189c50ec3cc629832270c221dd4c943ef08eba838538da3401cc52`。LRU 在 primary/placement、
+  双执行顺序、双分配顺序的八个 strata 全部 `WIN`，median advantage 约 `1.1898–1.2061`；安全 UTF
+  八个 strata 全部 `PARITY`，median advantage 约 `0.97197–0.99365`，全部 5% non-inferiority gate
+  `PASS`。A/A、5%/10% known delta、timer floor、placement 与语义 oracle 全部 `PASS`；
+- `container-concurrent-product-p1-v2` 第一次完整 `n=31` qualification 自身 `PASS`，queue 两顺序
+  `WIN`，membership 两顺序 median 都高于 peer，但 peer-first 的 99% CI 为
+  `[0.94120, 1.14756]`，跨过 5% non-inferiority 下界，因此聚合性能为 `INCONCLUSIVE`。唯一机制检查
+  确认 affinity、work/checksum、A/A、5%/10% known delta 与 timer floor 全部正常，没有固定损失或产品
+  correction 依据；
+- 按预冻结预算执行唯一一次同合同重跑。最终 manifest SHA-256
+  `13e667c238c3268e6165f9e0792dd216baa6d998a90f7a9ddf47023d2bd6e371`，qualification/performance
+  均 `PASS`。membership 两顺序 median advantage 为 `1.0662/1.0652`，99% CI 下界
+  `0.96686/0.95969`，均通过 5% non-inferiority；queue 两顺序 median advantage 为
+  `1.1784/1.4158`，均通过 non-inferiority，其中 peer-first 为 `WIN`。未把 exact
+  `INCONCLUSIVE` 冒充普遍更快，工程声明只签四条冻结 workload 的 5% 非劣。
+
+性能阶段到此结束，不再采样或修改产品。四个 factor 进入 `CANDIDATE`，下一步只执行候选上已声明的
+correctness、三平台/三交付、direct-consumer、symbol/FFI、文档和独立红队门。
