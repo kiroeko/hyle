@@ -1075,7 +1075,7 @@
     },
     {
       "module": "container",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v6-identity-p1-resume",
@@ -1085,6 +1085,8 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
+      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1112,7 +1114,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container-v6 VERIFIED：sequential capability、交付、文档与独立红队通过；同合同 weighted-LRU 8/8 WIN，5% P1 非劣门通过，产品/API/算法冻结在 111c28ea。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "freeze_confirmation": {
+        "id": "container-v6-freeze-2026-09-07",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-07",
+        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "repository_code": 465734,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 7962
+      },
+      "known_limitations": [
+        "The P1 claim covers one frozen 4096-entry entry-and-weight LRU model-cache workload on W1-WIN; it is not an all-container, cross-platform or Formal SOTA certificate.",
+        "Standard containers remain the route where HYLE cannot supply a distinct layout, complexity, ownership or failure contract; Container does not promise full std, Boost or Folly API parity.",
+        "Tokenizer automata, KV or device cache policy, blocking service, compressed rank/select structures and model-specific storage remain higher-layer owners.",
+        "The product is C++23 source, static and shared delivery for compatible C++ toolchains without a Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a sequential container correctness, security, OOM, lifetime, invalidation or natural C++ API-usability defect, or proves a missing common Container-owned capability.",
+        "A public API or layout, normal algorithm or metadata cost, allocator, hash, ISA/provider route, dependency graph or source, static or shared delivery shape changes.",
+        "An adopted Highway, xxHash or wyhash update changes semantics, code generation, licensing or delivery on a used Container path.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted workload."
+      ],
+      "summary": "container-v6 CLOSED/FROZEN：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
     },
     {
       "module": "util",
@@ -1296,7 +1326,7 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "container-concurrent-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete concurrent map, set and vector product while equalizing allocator/resource and membership semantics for the frozen read-mostly P1 workload, then replay affected correctness, delivery, documentation and red-team gates.",
@@ -1304,6 +1334,8 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
+      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1331,11 +1363,39 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container_concurrent v2 VERIFIED：并发表能力、交付、文档与独立红队通过；约 134ms 同合同 membership 双顺序 PARITY 且 5% P1 非劣门通过，候选为 111c28ea。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "freeze_confirmation": {
+        "id": "container-concurrent-v2-freeze-2026-09-07",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-07",
+        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "repository_code": 465734,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 1600
+      },
+      "known_limitations": [
+        "The P1 claim covers one frozen eight-worker read-mostly membership workload on W1-WIN; exact superiority is inconclusive and no all-operation, cross-platform or Formal SOTA claim is made.",
+        "Custom Alloc, Hash and Eq policies can be called concurrently by different shards and must themselves satisfy the documented concurrency contract.",
+        "Node address stability is limited to the documented guard lifetime; destruction requires external quiescence, and the default node map trades retained old tables for a zero read-side reclamation tax.",
+        "The factor is a private build and dependency boundary behind the C++ Container product, not a Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a concurrent map, set or vector correctness, security, publication, reclamation, lifetime, OOM or natural C++ API-usability defect, or proves a missing common concurrent-container capability.",
+        "A public API or layout, shard, table, reclamation or progress algorithm, allocator policy, dependency graph or source, static or shared delivery shape changes.",
+        "The mem_reclaim contract used by the reclaiming node-map route changes in a way that affects lifetime, synchronization or cost.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted concurrent workload."
+      ],
+      "summary": "container_concurrent v2 CLOSED/FROZEN：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
     },
     {
       "module": "container_queue",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "container-queue-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete role-specific and unbounded typed queue product while equalizing allocator/resource, OOM, result, setup and producer-participation semantics for the frozen P1 handoff workload, then replay affected gates.",
@@ -1343,6 +1403,8 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
+      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1370,11 +1432,39 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container_queue v2 VERIFIED：queue 能力、交付、文档与独立红队通过；同合同 unbounded 4P4C handoff 双顺序 WIN 且 5% P1 非劣门通过，候选为 111c28ea。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "freeze_confirmation": {
+        "id": "container-queue-v2-freeze-2026-09-07",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-07",
+        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
+        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "repository_code": 465734,
+        "self_with_tests": 121614,
+        "self_without_tests": 77078,
+        "module_implementation": 1101
+      },
+      "known_limitations": [
+        "The P1 claim covers one frozen unbounded typed 4P4C handoff workload on W1-WIN; it is not an all-queue, cross-platform or Formal SOTA certificate.",
+        "UnboundedQueue payload construction, extraction callback and destruction require the documented nothrow behavior; its allocator may see producer allocation and consumer deallocation concurrently.",
+        "Queue destruction requires quiescence, and try-only storage deliberately does not own waiting, close, cancellation, deadline or backpressure service policy.",
+        "The factor is a private build and dependency boundary behind the C++ Container product, not a Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a queue correctness, security, progress, FIFO, OOM, lifetime or natural C++ API-usability defect, or proves a missing common handoff or work-sharing capability.",
+        "A public API or layout, queue or progress algorithm, allocator policy, dependency graph or source, static or shared delivery shape changes.",
+        "A real Scheduler or IO consumer proves that an excluded storage-level semantic cannot be composed above the current try-only queue contract.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted queue workload."
+      ],
+      "summary": "container_queue v2 CLOSED/FROZEN：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
     },
     {
       "module": "container_text",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
@@ -1382,6 +1472,8 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
       "candidate_tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f",
+      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
+      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1409,7 +1501,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "container_text v2 VERIFIED：六种 safe conversion、三平台、三交付、文档与独立红队通过；同合同 Unicode 8/8 PARITY 且 5% P1 非劣门通过，候选为 3ba50461。"
+      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "freeze_confirmation": {
+        "id": "container-text-v2-freeze-2026-09-07",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-07",
+        "reviewed_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
+        "reviewed_tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f",
+        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
+      },
+      "loc": {
+        "snapshot_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
+        "repository_code": 465870,
+        "self_with_tests": 121658,
+        "self_without_tests": 77122,
+        "module_implementation": 2084
+      },
+      "known_limitations": [
+        "The P1 claim covers one frozen safe UTF-8-to-UTF-16 caller-buffer workload on W1-WIN; it is not an all-text, cross-platform or Formal SOTA certificate.",
+        "StringView and lookup results are borrowed; UTF input and output are caller-owned, undeclared overlap is unsupported, and output-too-small performs no partial conversion.",
+        "Container Text deliberately does not own locale, normalization, grapheme segmentation, regex, tokenizer automata, filesystem IO or a general owning-string policy.",
+        "simdutf is a private implementation provider, and the factor is a private build boundary behind the C++ Container product without a Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a borrowed-text, path, interner or Unicode correctness, security, lifetime, OOM or natural C++ API-usability defect, or proves a missing common Container-owned text capability.",
+        "A public API or layout, Unicode error or complete-write semantic, provider or ISA route, allocator, dependency graph or source, static or shared delivery shape changes.",
+        "An adopted simdutf or Highway update changes semantics, code generation, licensing or delivery on a used Container Text path.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted text workload."
+      ],
+      "summary": "container_text v2 CLOSED/FROZEN：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选冻结在 3ba50461。"
     }
   ]
 }

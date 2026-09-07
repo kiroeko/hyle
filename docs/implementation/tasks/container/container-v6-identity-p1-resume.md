@@ -1,6 +1,6 @@
 # Container v6：Container Text 身份与 P1 证据恢复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`AUDITED`）
 
@@ -432,3 +432,26 @@ SHA-256 `9cc4537856ce2d7685377034886877f948a3654241a808e50f50e0ae36b2b024`。
 不可变候选 LOC 由 `loc-report.py --self-check` 计算且均为 `PASS`：sequential `container` 7,962、
 `container_concurrent` 1,600、`container_queue` 1,101、`container_text` 2,084；四个活动 factor 合计
 12,747。加上已经冻结的 `container_intrusive` 1,590，消费者所见 Container 产品实现合计 14,337。
+
+## Closure decision
+
+四个 factor 本轮均为 `CLOSED/FROZEN`。产品能力与自然 C++ API 来自前轮完整超集审计；本轮完成
+`container_text` 的无别名内部身份迁移、四条 apples-to-apples 性能合同、三平台/三交付回放和终局红队。
+所有适用 gate 为 `PASS`，Formal 独立保持 `PENDING`。
+
+- sequential Container 的工程性能声明只覆盖冻结的 4096-entry entry+weight LRU consumer；并发声明只
+  覆盖冻结的 read-mostly membership；queue 只覆盖冻结的 4P4C unbounded handoff；text 只覆盖冻结的
+  safe UTF-8→UTF-16 路径，均不外推为全操作、全平台或 Formal SOTA；
+- 并发 policy 必须支持其文档声明的并发调用，析构要求 quiescence；queue service 的 wait/close/cancel/
+  deadline/backpressure 仍属于 Scheduler/IO；text 不拥有 normalization、grapheme、regex、tokenizer 或
+  owning-string policy；
+- source/static/shared 暴露同一 C++23 产品，仍不承诺 Native FFI、C API 或跨工具链稳定 C++ ABI；
+- reopen 仅由具名 consumer 的 correctness/security/OOM/lifetime/API/能力缺口，公开 API/layout/算法/
+  provider/allocator/依赖/交付变化，锁定第三方语义变化，或合格同合同证据证明 material regression/
+  更优复杂度档触发；历史 benchmark 点值和无新事实的“再看一次”不触发重开；
+- `VERIFIED -> CLOSED` 前态 registry 快照为
+  `C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-terminal-closed.json`，
+  SHA-256 `474c813b180a9396333cbbfb37ce25cb3d9408bb52886769c4e2a6eaae7ac309`；terminal evidence anchor 为
+  `4f5b0944806c809073430eae07400e832ccdb8f9`。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
