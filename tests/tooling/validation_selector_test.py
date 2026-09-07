@@ -173,6 +173,40 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         self.assertEqual(self.selected(self.plan()), {"docs", "closure", "tool:tests/tooling/validation_selector_test.py"})
 
+    def test_inline_format_is_blocked_until_exact_format_proof_then_no_build(self):
+        path = "src/container_queue/change.cc"
+        old_blob = selector.Snapshot(self.root, self.base).files[path][2]
+        self.write(path, "int value=1;\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertEqual(self.selected(plan), {"docs", "closure"})
+        new_blob = selector.Snapshot(self.root, "HEAD").files[path][2]
+        item = {"path": path, "before_blob": old_blob, "after_blob": new_blob,
+                "classification": "FORMAT_ONLY", "reviewer": "fixture", "reason": "only spaces around initializer; no macro or literal"}
+        self.write(selector.FORMAT_PROOF, json.dumps({"schema_version": 1, "files": [item]}))
+        self.commit()
+        self.assertEqual(self.plan()["verdict"], "READY")
+        self.assertEqual(self.selected(self.plan()), {"docs", "closure"})
+        self.write(path, "int  value=1;\n")
+        self.commit()
+        self.assertEqual(self.plan()["verdict"], "BLOCKED")
+
+    def test_explicit_semantic_whitespace_change_selects_owner_and_consumers(self):
+        path = "src/container_queue/change.cc"
+        self.write(path, 'const char* value = "a b";\n')
+        self.base = self.commit()
+        old = selector.Snapshot(self.root, self.base).files[path][2]
+        self.write(path, 'const char* value = "ab";\n')
+        self.commit()
+        new = selector.Snapshot(self.root, "HEAD").files[path][2]
+        self.assertEqual(self.plan()["verdict"], "BLOCKED")
+        item = {"path": path, "before_blob": old, "after_blob": new, "classification": "SEMANTIC",
+                "reviewer": "fixture", "reason": "string payload changed"}
+        self.write(selector.FORMAT_PROOF, json.dumps({"schema_version": 1, "files": [item]}))
+        self.commit()
+        self.assertEqual(self.plan()["selected_factors"], ["container_queue", "sched"])
+
     def test_worktree_plan_preserves_index_and_cannot_execute_product(self):
         self.write("src/container_queue/change.cc", "int value = 2;\n")
         index_before = self.git("write-tree")

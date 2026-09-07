@@ -55,7 +55,27 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 
 自动格式证明覆盖 JSON 结构一致，以及 native source 保持行结构的缩进/尾空白/CRLF。
 字符串内容、raw string、宏续行、行号敏感代码和 Python 缩进不能用 `git diff -w` 忽略。
-无法证明等价的变化保留语义风险分类；复杂 formatter 迁移需要独立冻结其等价性证明。
+无法自动证明的 native/CMake 空白重排先 `BLOCKED`，不启动构建/P1。复杂 formatter 迁移可在候选中
+加入 `docs/implementation/validation-format-proof.json`；本地与 CI 自动读取同一文件：
+
+```json
+{
+  "schema_version": 1,
+  "files": [{
+    "path": "src/<factor>/<file>.cc",
+    "before_blob": "<full Git blob ID from baseline>",
+    "after_blob": "<full Git blob ID from candidate>",
+    "classification": "FORMAT_ONLY",
+    "reviewer": "<review owner>",
+    "reason": "<specific equivalence evidence>"
+  }]
+}
+```
+
+证明绑定精确 Git blob pair，模式/类型必须一致，不是路径白名单；过期记录没有跳过权限。
+`FORMAT_ONLY` 只选择轻量门；若空白确实改变字符串、宏等语义，用相同结构的 `SEMANTIC` 声明
+进入正常 owning-factor 验证。reviewer 对等价性证据负责；选择器机械验证身份，不假装能证明任意
+C++ 程序语义。proof 文件本身是文档证据，不改变产品 registry。
 
 ## P1 冻结卡
 

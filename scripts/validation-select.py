@@ -19,6 +19,7 @@ import tempfile
 SCRIPT_DIR = Path(__file__).resolve().parent
 MANIFEST = "cmake/HyleComponents.cmake"
 REGISTRY = "docs/implementation/module-status.json"
+FORMAT_PROOF = "docs/implementation/validation-format-proof.json"
 NATIVE = {".h", ".hpp", ".hh", ".hxx", ".c", ".cc", ".cpp", ".cxx", ".cu", ".cuh", ".inl", ".inc", ".S", ".asm"}
 
 
@@ -163,8 +164,32 @@ def formatting_only(path, before, after):
         line.strip(" \t") for line in new.splitlines()]
 
 
+def format_decisions(before, after):
+    data = after.read(FORMAT_PROOF)
+    if data is None:
+        return {}
+    proof = json.loads(data)
+    if proof.get("schema_version") != 1 or not isinstance(proof.get("files"), list):
+        raise SelectionError("format proof requires schema_version=1 and files array")
+    decisions = {}
+    for item in proof["files"]:
+        path = item["path"]
+        if path in decisions or item.get("classification") not in {"FORMAT_ONLY", "SEMANTIC"}:
+            raise SelectionError("format proof has duplicate path or unknown classification")
+        if not item.get("reviewer") or not item.get("reason"):
+            raise SelectionError("format proof must name reviewer and concrete reason")
+        old, new = before.files.get(path), after.files.get(path)
+        # Historical/stale records have no authority over a new blob pair.
+        # Modes and object types must also match; executable/symlink changes
+        # cannot be concealed by an equality claim about file contents.
+        if old and new and old[:2] == new[:2] and old[1] == "blob" and old[2] == item.get("before_blob") and new[2] == item.get("after_blob"):
+            decisions[path] = item
+    return decisions
+
+
 def classify(before, after, graphs, policy):
     changes, unknown = [], []
+    decisions = format_decisions(before, after)
     for path in sorted(before.files.keys() | after.files.keys()):
         if before.files.get(path) == after.files.get(path):
             continue
@@ -172,6 +197,8 @@ def classify(before, after, graphs, policy):
         same_mode = old_entry and new_entry and old_entry[:2] == new_entry[:2]
         factors = sorted({x for g in graphs if (x := owner(path, g))})
         kind, reason, suites = "unknown", "no reviewed ownership or gate mapping", []
+        decision = decisions.get(path, {})
+        whitespace_sensitive = Path(path).suffix in NATIVE | {".cmake"} or path.endswith("CMakeLists.txt")
         if path == REGISTRY or path == "docs/implementation/status.md":
             kind, reason = "state", "registry/projection maintenance; no product execution"
         elif path.startswith(("docs/", "evidence/")) or path.endswith(".md"):
@@ -180,6 +207,10 @@ def classify(before, after, graphs, policy):
             kind, reason = "format", "editor/format policy; no product semantics"
         elif same_mode and formatting_only(path, before.read(path), after.read(path)):
             kind, reason = "format", "proven JSON or line-preserving native formatting equivalence"
+        elif decision.get("classification") == "FORMAT_ONLY":
+            kind, reason = "format", "exact blob-bound format proof: " + decision["reviewer"] + ": " + decision["reason"]
+        elif same_mode and whitespace_sensitive and decision.get("classification") != "SEMANTIC" and re.sub(rb"\s+", b"", before.read(path) or b"") == re.sub(rb"\s+", b"", after.read(path) or b""):
+            kind, reason = "unproven_format", "whitespace-only diff lacks safe equivalence; no build/P1; bind FORMAT_ONLY or SEMANTIC evidence in " + FORMAT_PROOF
         elif path == "scripts/check-docs.py":
             kind, reason = "tool", "documentation checker executes in the mandatory docs gate"
         else:
@@ -210,7 +241,7 @@ def classify(before, after, graphs, policy):
                     kind, reason = "benchmark", "harness change requires explicit frozen P1 card; no automatic sampling"
             elif path in {"include/hyle/version.h", "include/hyle/visibility.h"}:
                 kind, reason = "package", "shared public version/visibility contract changed"
-        if kind == "unknown":
+        if kind in {"unknown", "unproven_format"}:
             unknown.append(path)
         changes.append({"path": path, "kind": kind, "factors": factors,
                         "reason": reason, "suites": sorted(set(suites))})
