@@ -1,0 +1,28 @@
+{
+  "identity": {
+    "candidate_tree": "8e29fa98a96cfc626afb48110215557f4d8429e7",
+    "contract_hash": "4c753047bbc00653caa325c135a599429ae4774efb4dfa6388c2338a87c93aea",
+    "toolchain": {
+      "id": "python-maintenance",
+      "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+    },
+    "machine_profile": {
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "node": "kiro-workstation",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "python_executable": "C:\\Program Files\\Python312\\python.exe"
+    },
+    "observed_host": null,
+    "selector_hash": "3ed8e98081b2e1646b6ded991ba188da0b28026b0872d5c23c269011011bcb46"
+  },
+  "candidate_commit": "b14d680d15a181072f0a18528f761f599b5c29e4",
+  "verdict": "PASS",
+  "logs": [
+    {
+      "path": "f94ff4cf5cc7cce4c7d36c2857a5d5a806365d6405a5546c70212907a3019353-0.log",
+      "sha256": "4805a623b08441046232ed2f30ecc6e60ef00788170cb833a6f649e374d99066"
+    }
+  ]
+}

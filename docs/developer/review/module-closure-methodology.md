@@ -363,7 +363,9 @@ A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-
   scope，不能默默继续。
 - 普通约千行及以下的 P0/P1 模块，默认审查与取证预算不超过两小时；计划实现超过一个工作日时先
   拆成可独立验证的 defect/demand。
-- P1 异常最多允许：一次复现/反序、一次 codegen/profile 机制检查、一个产品修改与一次重跑。
+- 每个 immutable candidate 只运行一次完整 P1 bundle，必需反序在同一冻结 bundle 中完成。
+  异常后最多一次 codegen/profile 机制检查、一个满足两把钥匙的产品修改；修改先退回 `AUDITED`
+  并形成新 candidate，才可重新选择一次 P1。旧候选不得追加采样或靠 metadata 提交重置额度。
 - 同一轮不得发明第五种 benchmark 姿势。活动收口轮需要的中央仪器无法给出 verdict 时，记录独立
   instrument issue，并让该轮按硬门进入 `BLOCKED`；不得在模块任务内扩建统计平台。回放一个已经
   `CLOSED` 的模块时，后来发生的仪器实现或兼容策略漂移只产生 `METHOD_GAP`，产品状态保持不变；

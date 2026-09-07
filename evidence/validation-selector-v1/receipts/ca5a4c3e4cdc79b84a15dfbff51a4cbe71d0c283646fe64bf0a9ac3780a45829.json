@@ -1,0 +1,28 @@
+{
+  "identity": {
+    "candidate_tree": "8e29fa98a96cfc626afb48110215557f4d8429e7",
+    "contract_hash": "4af57435e274c490dea8353ff249768bd3e0c687a1e17bca0a2a3a17f2f2df93",
+    "toolchain": {
+      "id": "python-maintenance",
+      "version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+    },
+    "machine_profile": {
+      "system": "Windows",
+      "release": "11",
+      "machine": "AMD64",
+      "node": "kiro-workstation",
+      "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+      "python_executable": "C:\\Program Files\\Python312\\python.exe"
+    },
+    "observed_host": null,
+    "selector_hash": "3ed8e98081b2e1646b6ded991ba188da0b28026b0872d5c23c269011011bcb46"
+  },
+  "candidate_commit": "b14d680d15a181072f0a18528f761f599b5c29e4",
+  "verdict": "PASS",
+  "logs": [
+    {
+      "path": "ca5a4c3e4cdc79b84a15dfbff51a4cbe71d0c283646fe64bf0a9ac3780a45829-0.log",
+      "sha256": "f0a0e7e73c084425a1ad4ed7e7b1d33d7b2fdbdc6041da93da1148d6e45fb0fb"
+    }
+  ]
+}

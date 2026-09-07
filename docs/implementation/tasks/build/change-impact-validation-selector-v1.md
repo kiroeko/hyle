@@ -1,6 +1,6 @@
 # Change-impact validation selector v1
 
-<!-- PROJECT UNIT REVIEW: CANDIDATE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## 冻结任务卡
 
@@ -65,3 +65,47 @@ labels 负责测试，现有 selected-component smoke 负责三交付，现有 P
 CMake 原 manifest 会在 metadata 后直接进入 configure-only 的 `CONFIGURE_DEPENDS` 审计；
 首次 script-mode 诊断因此拒绝执行。最终 adapter 只提取具名 metadata 前缀交给 CMake 原生执行，
 并检查边界与后置声明，未改变 `HyleComponents.cmake` 或任何产品构建语义。
+
+## 最终候选与验收
+
+- candidate commit：`b14d680d15a181072f0a18528f761f599b5c29e4`；
+  candidate tree：`8e29fa98a96cfc626afb48110215557f4d8429e7`。
+- scope card commit：`e97cec9687b69b0c0808960f0e43e94babd83c3c`，先于实现建立。
+- 最终工具为 618 行 Python selector、15 行 CMake metadata adapter、集中工具 policy、
+  Git fixture 合同测试与 CI/维护入口；不增加产品 factor 或状态轴。
+- baseline→candidate 的 `include/hyle/**`、`src/**`、`module-status.json`、`status.md` diff 为空。
+  Container 五个因子的 `CLOSED/FROZEN` 和其他模块状态完整保留。
+
+| Gate | Verdict | Evidence |
+|---|---|---|
+| selector 合同 | `PASS` | 25 tests / 37.369 秒；隔离 Git fixtures，所有 C++ configure/build/CTest/P1 子进程均用 spy 替代 |
+| 精确 factor/消费者/公共边界 | `PASS` | queue 源码只选 queue+sched；queue 公共头扩至其反向消费者；text split header 不误认 sequential factor；删边与重命名保留旧、新影响 |
+| 无构建的轻量路径 | `PASS` | 本轮自身只执行 docs、closure、LOC test、selector test 四门；65 门带原因跳过 |
+| 身份与证据复用 | `PASS` | 同一候选第二次执行四门全部 `REUSED`、零测试重跑；tree/contract/toolchain/machine/log 漂移不能误复用 |
+| P1 单次与负向路径 | `PASS` | API/algorithm/profile/contract/immutable identity 拒绝用例、成功复用、失败/中断/并发 claim，以及改日志目录/追加 docs 不能重置额度 |
+| LOC boundary | `PASS` | `python tests/tooling/loc_report_test.py`；新工具进入 build-package，native 自实现口径不变 |
+| docs / closure | `PASS` | 451 Markdown、1211 relative links；28 components / schema 1 |
+| CI 调度 | `PASS` | YAML 解析、selector 调用与 manual-full guard；未声明远端 CI 已运行 |
+| diff / product isolation | `PASS` | `git diff --check`；产品实现与 registry/status 无改动 |
+| native build / 三交付 / sanitizer / P1 timing | `NOT_APPLICABLE` | 本轮只有维护工具，无产品变动；本库实际编译与采样次数均为 0 |
+
+原始机器输出：[candidate selection](../../../../evidence/validation-selector-v1/candidate-result.json)、
+[reuse selection](../../../../evidence/validation-selector-v1/reused-result.json)，四个 gate 的原始 logs 与
+hash receipts 在同目录 `receipts/`。两个报告只做无损 JSON compact，不删 selected/skipped reason。
+receipt 中的原始绝对路径保留执行事实，归档目录保存同名 receipt/log；可用 `--cache` 指向该目录
+只读核验相同 candidate 的复用。P1 原始 manifest 验证仍由现有仪器负责，本轮没有产品性能证书。
+
+四项 LOC 同一 immutable candidate snapshot，命令为
+`python scripts/loc-report.py --module build-package --commit b14d680d15a181072f0a18528f761f599b5c29e4 --self-check --json`：
+
+| Metric | code |
+|---|---:|
+| 全库代码 | 467288 |
+| 自实现含测试 | 121658 |
+| 自实现不含测试 | 77122 |
+| 当前工程单元 build-package 实现 | 10249 |
+
+终态为 `CLOSED`，VI-1～VI-6 有限 FIX 完成，无 blocker。最后 receipt/归档提交只补文档与证据，
+仅运行 docs/closure/diff 门，不重复上述已通过工具测试或本库构建。适用范围不包含复杂 formatter
+的普遍语义证明、跨 clone 防篡改、模块额外 sanitizer/ISA 风险或所有未知脚本的自动归属。
+只有可复现漏选/误扩范围、证据身份误复用、P1 重复执行或真实新增工具消费者，才另开有限工具任务。
