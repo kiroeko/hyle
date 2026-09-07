@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - components / owner / rounds：
   - `container` / Container / `container-v6-identity-p1-resume`；
@@ -170,3 +170,64 @@ W1-WIN / MSVC 19.50 / `closure-perf-v1` 的 candidate-bound 结果如下：
 
 性能阶段到此结束，不再采样或修改产品。四个 factor 进入 `CANDIDATE`，下一步只执行候选上已声明的
 correctness、三平台/三交付、direct-consumer、symbol/FFI、文档和独立红队门。
+
+## Candidate 精确回放
+
+不可变 source archive 为
+`C:\public\project-hyle\_validation\container-v6\candidate\hyle-6a78f6df.tar.gz`，SHA-256
+`5afc74ff8f8ca7bd7d8b843ef2c4e2232f864bca81fb5532777ea6cfa166d1`。WSL 与 macOS 都从该 archive
+解包到 `/tmp/hyle-container-v6-6a78f6df`；远程 checkout 不作为产品来源。
+
+| 风险 / journey | verdict | candidate-bound evidence |
+|---|---|---|
+| W1-WIN correctness/header/ISA | `PASS` | 身份迁移产品 `43105dd5` 的 MSVC 19.50 static 36/36、shared 35/35；`43105dd5..6a78f6df` 精确 diff 只有 bench/contracts、validator 与本轮 task，无 include/src/CMake/product test/package consumer 变化；最终候选又完成四 adapter 编译、semantic/resource oracle 和正式 P1 运行 |
+| W1-WSL correctness/WERROR | `PASS` | exact archive / GCC 14.2 / Release static 41/41；公开头、真实 ISA、normal/OOM/concurrency/Unicode 与 factor tests 全部通过 |
+| W1-WSL sanitizers | `PASS` | exact archive / GCC 14.2 / static WERROR：ASan 39/39、UBSan 39/39；source archive 没有 Git-only LOC 两项，因此测试数少于 checkout suite |
+| M1-MAC correctness/WERROR | `PASS` | exact archive / AppleClang 21 / arm64 Release static 41/41；公开头、NEON/真实 ISA 与四 factor tests 全部通过 |
+| source/static/shared delivery | `PASS` | exact archive 在 WSL 与 macOS 的 source embedding、relocated shared SDK、relocated static SDK 各 1/1；W1-WIN 同一产品/构建树在身份迁移提交三路线各 1/1，candidate diff 没有交付输入变化 |
+| direct consumer / component graph | `PASS` | `util/io -> container_text`、Container façade 与四个独立 factor target 在身份迁移提交完成中央图、精确 closure 和 package 回放；candidate diff 没有 component/product/build 变化；旧 `text` factor 选择明确失败 |
+| shared symbol / FFI | `PASS` | exact WSL/macOS shared SDK：`hyle_container` 公开 C++ symbols 45、`hyle_container_text` 39；private bitset ISA、simdutf/provider、`hyle_text`、`hyle::container_text`、C/Native FFI exports 均为 0 |
+| API/usability/docs | `PASS` | 用户只有自然的 `<hyle/container/**>` / `hyle::container` 产品心智；四个 factor 是内部最小依赖边界；failure、ownership、lifetime、并发 policy、Unicode buffer/status 与选型陷阱均由 architecture/user guide 说明，没有 benchmark-only API 或兼容 alias |
+| P1 engineering performance | `INCONCLUSIVE` | LRU weight 合同仍不等价；membership 首次合法 `n=31` 为 `UNRESOLVED`，后续缩到 `n=15` 的结果无效；见 [`benchmarks-container.md`](../../evidence/performance/benchmarks-container.md) |
+| independent red team | `FAIL` | 终局攻击发现两项 HIGH 证据缺陷及两项 MED attribution/docs 缺陷；未发现新的产品 correctness 缺陷 |
+
+W1-WIN 的 carry-forward 只复用候选间没有任何产品、公开头、构建图、测试或 package 输入变化的门；P1
+数字和 WSL/macOS 回放均直接绑定最终候选。没有用旧提交的性能值、远程 checkout 或 dirty 工作树替代
+候选证据。
+
+## 首候选撤回：终局红队 verdict（`CANDIDATE -> AUDITED`）
+
+终局红队没有发现新的 Container 产品正确性、API、复杂度、ownership、交付或私有符号缺陷，但证明
+`CONT6-F02` 的性能结论仍不合法：
+
+1. `PeerLru::Entry` 只存 key/value，peer 只按 entry capacity 淘汰；HYLE 路径真实接收、存储、累计和
+   约束 weight。callback 中写死 `1` 只模拟了返回值，没有让 peer 承担 entry+weight 语义，因此旧 LRU
+   数字是 `NOT_COMPARABLE`，不能以八个有利 strata 签 `WIN`；
+2. membership 第一次合法的同候选/同合同 `n=31` 中，peer-first 99% CI
+   `[0.94120, 1.14756]` 穿过 5% NI 下界，工程 verdict 是 `UNRESOLVED`。随后在没有产品或合同修正时
+   反向缩成一轮 `n=15` 并以 `0.95969` 刚越线，违反统一标准只允许 `n=15 -> n=31` 提升功效、禁止
+   跑到刚好通过的规则；该 manifest 只能保留为 rejected-candidate 事实；
+3. 两份合同顶层 factor/target 归属没有覆盖各自包含的第二个 factor；
+4. `docs/architecture/references.md` 仍把 simdutf 的真实 owner 写成 `hyle_container`，而迁移后它只编入
+   `hyle_container_text`。
+
+约 2,097,152 次 membership query 的原始进程窗口只有约 9ms，固定八线程 Windows 调度噪声足以使
+process-level ratio CI 大幅摆动。下一候选不会换 API、peer、分布、margin 或执行顺序；只把 membership
+重复次数提高 16 倍，使每个独立进程窗口稳定超过约 100ms，并严格从唯一 `n=15` 开始。该变化提高仪器
+分辨率，不改变真实 consumer 语义或产品形状。
+
+冻结后的有限 FIX 集扩展为：
+
+| ID | owner | 唯一允许修正 | 完成门 |
+|---|---|---|---|
+| `CONT6-F03` | benchmark adapter | peer 存储 per-entry weight、维护 total weight、同时执行 entry/weight limits，并补 reject/assign/weight-evict oracle | pre-sample semantic/resource oracle |
+| `CONT6-F04` | benchmark contract | membership 独立使用 4,194,304 queries/worker；更新 row/shape/contract identity；新候选只先运行 `n=15`，只有功效不足才允许全新 `n=31` | qualification + 5% NI |
+| `CONT6-F05` | evidence/docs | 两合同如实声明 Container product root 与逐 workload factor owner；simdutf owner 改为 `container_text` | contract validator + docs checker + red team |
+
+产品源码、公开 API/layout、正常算法、allocator 和常态 metadata 没有新 FIX 授权。首候选
+`6a78f6df` 的 correctness/sanitizer/三平台/三交付/symbol 结果仍是历史事实，但其性能 verdict 不传递到
+下一候选。四个 factor 依法退回 `AUDITED`，完成上述三项后再共同形成新的 immutable candidate。
+
+本次 `CANDIDATE -> AUDITED` 使用的明确前态 registry 快照为
+`C:\Users\kiro\AppData\Local\Temp\hyle-container-v6-before-red-team-retreat.json`，SHA-256
+`61bdbb423c8165a3c677a01124984e388432ad3b446799a2f5f733b2ac70a397`。

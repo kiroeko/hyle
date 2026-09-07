@@ -1075,7 +1075,7 @@
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v6-identity-p1-resume",
@@ -1083,8 +1083,6 @@
       "scope": "Rename the internal text factor to container_text without changing the public hyle::container product, equalize the four previously rejected P1 peer contracts, and replay affected correctness, direct-consumer, source/static/shared, symbol, documentation, performance and red-team gates.",
       "non_goals": "New Container capabilities or public API, layout, algorithm, default allocator or metadata changes; tokenizer, KV, scheduler or IO policy; Native FFI or C API; stable C++ ABI; common performance-instrument changes; Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "6a78f6dfa7a711350c694c01d90d4301fc57ae4f",
-      "candidate_tree": "53fd52ba931af02216b9686baf77de1a2b670acc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1102,7 +1100,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v6 CANDIDATE：container_text 身份已无 alias 地迁移，四条既有 P1 comparator 已等价化；产品/API/算法/layout 和 normal workload 冻结在 6a78f6df，等待候选验证与红队。"
+      "summary": "container-v6 AUDITED：首候选被终局红队撤回；产品实现未发现缺陷，有限修正为 weighted-LRU peer 等价、membership 测量窗口增益及 factor/文档归属校准。"
     },
     {
       "module": "util",
@@ -1286,14 +1284,12 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "container-concurrent-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete concurrent map, set and vector product while equalizing allocator/resource and membership semantics for the frozen read-mostly P1 workload, then replay affected correctness, delivery, documentation and red-team gates.",
       "non_goals": "New concurrent capabilities, public API, layout, reclamation, shard, algorithm or default allocator changes; queues, wait/service policy, Native FFI or C API, common instrument changes and Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "6a78f6dfa7a711350c694c01d90d4301fc57ae4f",
-      "candidate_tree": "53fd52ba931af02216b9686baf77de1a2b670acc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1311,18 +1307,16 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v2 CANDIDATE：read-mostly membership 的 hash、allocator/resource 与结果合同已等价化，产品/API/算法冻结在 6a78f6df，等待候选验证与红队。"
+      "summary": "container_concurrent v2 AUDITED：首候选的合法 n=31 membership NI 为 UNRESOLVED，反向缩至 n=15 的重跑已撤销；下一候选只提高同合同进程窗口分辨率。"
     },
     {
       "module": "container_queue",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "container-queue-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete role-specific and unbounded typed queue product while equalizing allocator/resource, OOM, result, setup and producer-participation semantics for the frozen P1 handoff workload, then replay affected gates.",
       "non_goals": "New queue capabilities, public API, layout, progress algorithm or default allocator changes; wait, close, cancel, deadline or backpressure service; Native FFI or C API; common instrument changes; Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "6a78f6dfa7a711350c694c01d90d4301fc57ae4f",
-      "candidate_tree": "53fd52ba931af02216b9686baf77de1a2b670acc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1340,18 +1334,16 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v2 CANDIDATE：unbounded MPMC 的 allocator/OOM/result/setup 合同已等价化，产品/API/算法冻结在 6a78f6df，等待候选验证与红队。"
+      "summary": "container_queue v2 AUDITED：产品与同合同 queue adapter 未发现缺陷；因共享合同 attribution 和聚合候选撤回，等待新候选统一重放。"
     },
     {
       "module": "container_text",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
       "non_goals": "New text capabilities, public header, namespace, API, algorithm, provider or default behavior changes; owning strings, locale, normalization, grapheme, regex or tokenizer policy; Native FFI or C API; common instrument changes; Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "6a78f6dfa7a711350c694c01d90d4301fc57ae4f",
-      "candidate_tree": "53fd52ba931af02216b9686baf77de1a2b670acc",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1369,7 +1361,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_text v2 CANDIDATE：旧 text identity 已无 alias 地完整迁移，typed Unicode 同合同 adapter 已完成；公开 hyle::container surface 与算法冻结在 6a78f6df，等待候选验证与红队。"
+      "summary": "container_text v2 AUDITED：身份迁移与 Unicode adapter 未发现缺陷；因共享合同 attribution、simdutf owner 文档和聚合候选撤回，等待新候选统一重放。"
     }
   ]
 }

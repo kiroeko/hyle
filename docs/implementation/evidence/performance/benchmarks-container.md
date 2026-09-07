@@ -1,8 +1,44 @@
 # Container 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: BLOCKED RECORD -->
+<!-- PERFORMANCE EVIDENCE: REJECTED CANDIDATE -->
 
-## Container v5：终局为 `INCONCLUSIVE`
+## Container v6 首候选：终局红队撤销错误的 `PASS`
+
+当前不可变产品候选是
+`6a78f6dfa7a711350c694c01d90d4301fc57ae4f` / tree
+`53fd52ba931af02216b9686baf77de1a2b670acc`。下表保留当时的原始统计事实，但终局红队证明 LRU weight
+语义尚未等价，并发 membership 又违反了样本升级顺序；所有 `PASS/WIN` 解释均已撤销，不是当前证书。
+
+| factor / workload | 当时使用的 peer/adapter | candidate-bound 原始结果 | 红队后的合法结论 |
+|---|---|---|---|
+| `container` / entry+weight LRU hit、insert+evict | Abseil `38f8c1535de9ebc12c6340e5c1c8ebd72afde560`；hash、allocator、OOM、rollback 与 typed result 已对齐，但 peer 未维护 weight | 8/8 strata 数值有利，median ratio `1.1898–1.2061` | `NOT_COMPARABLE`；不得签胜出或 NI |
+| `container_text` / safe UTF-8→UTF-16 caller buffer | simdutf `2d4e249dcfd978b39dd567b156f20a43db97377b`；同一 validation、exact length、endian-correct conversion、typed status/offset/count 与 caller buffer | 8/8 strata `PARITY`；median advantage `0.97197–0.99365`；8/8 NI `PASS` | 冻结 workload 上 5% 非劣，不声明普遍更快 |
+| `container_concurrent` / read-mostly membership | oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；同一 hash/equality、system allocator backend、操作 mix、生命周期与 checksum | 首次合法 `n=31` 的 peer-first CI 下界 `0.94120`；后续反向缩至 `n=15` 才越线 | 首次 verdict `UNRESOLVED`；缩样本重跑无效 |
+| `container_queue` / unbounded typed MPMC | 同一 oneTBB revision；同一 allocator backend、recoverable OOM/retry、producer/consumer participation、setup/drain 与 FIFO conservation | 最终双顺序 median `1.1784/1.4158`；2/2 NI `PASS`，其中一向为 `WIN` | 冻结 workload 上 5% 非劣，不声明所有 queue 形状胜出 |
+
+单线程合同 `container-product-p1-v6` 的 manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-single-evidence\manifest.json`，SHA-256
+`2d01defce2189c50ec3cc629832270c221dd4c943ef08eba838538da3401cc52`，contract SHA-256
+`46adff1d372d43c2e6b403576d8117144cd1f1e3aa30acafa76488aed72f0390`；qualification 与 performance
+gate 均为 `PASS`。A/A、5%/10% known delta、timer floor、placement 与语义/resource oracle 全部通过。
+
+并发合同 `container-concurrent-product-p1-v2` 的首次 `n=31` qualification 合法，但 membership 的一个
+99% CI 下界穿过 5% NI 边界，因此当次聚合正确记为 `INCONCLUSIVE`。唯一机制检查确认 affinity、工作量、
+checksum、A/A、known delta 与 timer floor 均正常，没有固定产品损失或 correction 依据；按预冻结预算只
+进行一次同候选、同合同重跑。最终 manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-concurrent-rerun-evidence\manifest.json`，SHA-256
+`13e667c238c3268e6165f9e0792dd216baa6d998a90f7a9ddf47023d2bd6e371`，contract SHA-256
+`c2eb52350b27c7663c6a761a6b3fc780f9ff315deff46652c9a2131c41138e15`。该 manifest 的机械 gate 虽为
+`PASS`，但运行顺序违反只允许 `n=15 -> n=31` 提升功效、禁止跑到刚好通过的规则，不能覆盖首次
+`n=31` 的 `UNRESOLVED`。
+
+因此四个 factor 的聚合工程 P1 仍为 `INCONCLUSIVE`。本轮返回 `AUDITED`，只允许让 LRU peer 真正承担
+weight 语义、把约 9ms 的 membership 进程窗口按预冻结规则提高到足够分辨率、修正 factor attribution，
+再从唯一 `n=15` 开始形成新候选证据；不得复用本候选 verdict、改 margin 或挑样。
+
+<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
+
+## Container v5：历史终局为 `INCONCLUSIVE`
 
 当前 Container 产品候选是
 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` / tree
