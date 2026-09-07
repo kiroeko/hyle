@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -34,7 +35,9 @@
 
 using hyle::io::IoContext;
 using hyle::io::AddressFamily;
+using hyle::io::ConstBuffer;
 using hyle::io::Endpoint;
+using hyle::io::MutableBuffer;
 using hyle::io::UdpSocket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
@@ -67,18 +70,21 @@ Task<int> server_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
       std::memory_order_release);
 #endif
   char buf[64] = {};
-  auto received = co_await sock->receive_from(
-      std::as_writable_bytes(std::span{buf}));
+  const MutableBuffer input[] = {{buf, 7}, {buf + 7, sizeof(buf) - 7}};
+  auto received =
+      co_await sock->receive_from(std::span<const MutableBuffer>{input});
   const std::int64_t n = received.ok()
-                             ? static_cast<std::int64_t>(received.bytes)
+                             ? static_cast<std::int64_t>(received.progress.bytes)
                              : -1;
   r->server_recv.store(n, std::memory_order_release);
   if (n > 0) {
+    const std::size_t first = std::min<std::size_t>(7, n);
+    const ConstBuffer output[] = {
+        {buf, first}, {buf + first, static_cast<std::size_t>(n) - first}};
     auto sent = co_await sock->send_to(
-        std::as_bytes(std::span{buf, static_cast<std::size_t>(n)}),
-        received.peer);
+        std::span<const ConstBuffer>{output}, received.peer);
     const std::int64_t w = sent.ok()
-                               ? static_cast<std::int64_t>(sent.bytes)
+                               ? static_cast<std::int64_t>(sent.progress.bytes)
                                : -1;
     r->server_sent.store(w, std::memory_order_release);
   }
@@ -94,17 +100,20 @@ Task<int> client_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
       std::memory_order_release);
 #endif
   static const char kMsg[] = "udp-wrapper-echo";
+  const ConstBuffer output[] = {{kMsg, 3}, {kMsg + 3, sizeof(kMsg) - 3}};
   auto sent = co_await sock->send_to(
-      std::as_bytes(std::span{kMsg}),
+      std::span<const ConstBuffer>{output},
       Endpoint::loopback(AddressFamily::kIpv4, kPort));
   if (!sent.ok()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  auto received = co_await sock->receive_from(
-      std::as_writable_bytes(std::span{r->client_got, sizeof(kMsg)}));
+  const MutableBuffer input[] = {
+      {r->client_got, 2}, {r->client_got + 2, sizeof(kMsg) - 2}};
+  auto received =
+      co_await sock->receive_from(std::span<const MutableBuffer>{input});
   r->client_recv.store(received.ok()
-                           ? static_cast<std::int64_t>(received.bytes)
+                           ? static_cast<std::int64_t>(received.progress.bytes)
                            : -1,
                        std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
@@ -115,6 +124,39 @@ struct Drive {
   Task<int> task;
 };
 void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
+
+struct TruncationResult {
+  std::atomic<bool> receive_done{false};
+  std::atomic<bool> send_done{false};
+  std::atomic<bool> truncated{false};
+  std::atomic<std::size_t> bytes{0};
+};
+
+Task<int> receive_truncated(AllocatorRef, UdpSocket* socket,
+                            TruncationResult* result) {
+  std::byte first[2]{};
+  std::byte second[3]{};
+  const MutableBuffer buffers[] = {
+      {first, sizeof(first)}, {second, sizeof(second)}};
+  auto received =
+      co_await socket->receive_from(std::span<const MutableBuffer>{buffers});
+  result->truncated.store(received.ok() && received.truncated,
+                          std::memory_order_release);
+  result->bytes.store(received.progress.bytes, std::memory_order_release);
+  result->receive_done.store(true, std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> send_oversized(AllocatorRef, UdpSocket* socket, Endpoint destination,
+                         TruncationResult* result) {
+  static constexpr char kMessage[] = "larger-than-five";
+  const ConstBuffer buffers[] = {
+      {kMessage, 6}, {kMessage + 6, sizeof(kMessage) - 6}};
+  auto sent = co_await socket->send_to(
+      std::span<const ConstBuffer>{buffers}, destination);
+  result->send_done.store(sent.ok(), std::memory_order_release);
+  co_return 0;
+}
 
 }  // namespace
 
@@ -156,4 +198,33 @@ TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
   EXPECT_EQ(r->server_sent.load(), kLen);
   EXPECT_EQ(r->client_recv.load(), kLen);
   EXPECT_STREQ(r->client_got, "udp-wrapper-echo");
+}
+
+TEST(IoUdp, VectoredReceiveReportsDiscardedDatagramTail) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto server = UdpSocket::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, 0));
+  ASSERT_TRUE(server.has_value());
+  auto endpoint = server->local_endpoint();
+  ASSERT_TRUE(endpoint.has_value());
+  auto client = UdpSocket::open(io, kOwner);
+  ASSERT_TRUE(client.has_value());
+
+  TruncationResult result;
+  Drive receiver{receive_truncated(system_allocator(), &*server, &result)};
+  Drive sender{
+      send_oversized(system_allocator(), &*client, *endpoint, &result)};
+  Fiber receive_fiber(kDefaultStackSize, &drive_entry, &receiver);
+  Fiber send_fiber(kDefaultStackSize, &drive_entry, &sender);
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &receive_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &send_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+
+  EXPECT_TRUE(result.receive_done.load());
+  EXPECT_TRUE(result.send_done.load());
+  EXPECT_TRUE(result.truncated.load());
+  EXPECT_EQ(result.bytes.load(), 5u);
 }

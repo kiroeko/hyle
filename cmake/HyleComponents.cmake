@@ -218,6 +218,7 @@ _hyle_declare_component(io_core
   PUBLIC_DEPS core error mem container container_text time timer_queue sched
               platform_fs
   SPLIT_PUBLIC_HEADERS
+    hyle/io/buffer.h
     hyle/io/capabilities.h
     hyle/io/coroutine_transport.h
     hyle/io/dns.h

@@ -31,6 +31,11 @@
 
 namespace hyle::io {
 namespace {
+static_assert(sizeof(detail::NativeBuffer) == sizeof(WSABUF));
+static_assert(alignof(detail::NativeBuffer) == alignof(WSABUF));
+static_assert(offsetof(detail::NativeBuffer, length) == offsetof(WSABUF, len));
+static_assert(offsetof(detail::NativeBuffer, address) == offsetof(WSABUF, buf));
+
 // Map a Win32/WSA error to the negative-result convention the header promises
 // (same shape as io_uring CQE res < 0). Callers store this in Completion.result.
 inline std::int64_t neg_err(DWORD e) noexcept {
@@ -92,6 +97,7 @@ struct Proactor::Impl {
     // must outlive the async op, so fromlen lives here (the addr buffer is caller-
     // owned on the fiber stack). Unused (0) for stream ops.
     int fromlen = 0;
+    DWORD socket_flags = 0;
     IoOp* prev = nullptr;
     IoOp* next = nullptr;
     // AcceptEx writes local+remote addrs here (needs >= 2*(sockaddr+16)).
@@ -285,9 +291,28 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     // GetOverlappedResult (no wait -- the op is already complete) is the
     // documented way to read a per-op error out of a batch-dequeued completion:
     // dwNumberOfBytesTransferred alone can't distinguish 0-byte EOF from failure.
-    BOOL rok = ::GetOverlappedResult(op->handle, &op->ov, &xfer, FALSE);
+    BOOL rok;
+    DWORD completion_error = ERROR_SUCCESS;
+    if (op->kind == Impl::kRecvFrom) {
+      rok = ::WSAGetOverlappedResult(
+          reinterpret_cast<SOCKET>(op->handle), &op->ov, &xfer, FALSE,
+          &op->socket_flags);
+      if (!rok) completion_error = static_cast<DWORD>(::WSAGetLastError());
+    } else {
+      rok = ::GetOverlappedResult(op->handle, &op->ov, &xfer, FALSE);
+      if (!rok) completion_error = ::GetLastError();
+    }
+    if (!rok && op->kind == Impl::kRecvFrom &&
+        completion_error == WSAEMSGSIZE) {
+      // UDP is unreliable: Winsock copied the prefix, discarded the tail and
+      // reports WSAEMSGSIZE. Preserve the useful byte count and expose the
+      // message-boundary fact as a portable completion flag.
+      out[i].result = static_cast<std::int64_t>(xfer);
+      out[i].flags |= Completion::kDatagramTruncated;
+      rok = TRUE;
+    }
     if (!rok) {
-      out[i].result = neg_err(::GetLastError());  // negative Win32 error
+      out[i].result = neg_err(completion_error);
       if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
     } else if (op->kind == Impl::kAccept) {
       // Finalize the accepted socket so it inherits the listener's properties, then
@@ -425,6 +450,21 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
   return false;
 }
 
+bool Proactor::submit_read_buffers(std::intptr_t,
+                                   detail::NativeBuffer*, std::uint32_t,
+                                   std::uint64_t, std::uint64_t) noexcept {
+  // Windows ReadFile has no arbitrary-buffer counterpart. ReadFileScatter has
+  // page/no-buffering constraints and is not the portable File contract; the
+  // typed facade stages into one aligned buffer and submits one ReadFile.
+  return false;
+}
+
+bool Proactor::submit_write_buffers(std::intptr_t,
+                                    detail::NativeBuffer*, std::uint32_t,
+                                    std::uint64_t, std::uint64_t) noexcept {
+  return false;
+}
+
 bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
@@ -437,8 +477,9 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
   op->wsabuf.buf = static_cast<CHAR*>(buf);  // buffer descriptor outlives the op
   op->wsabuf.len = len;
   impl_->link(op);
-  DWORD f = flags;
-  int r = ::WSARecv(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, &f,
+  op->socket_flags = flags;
+  int r = ::WSARecv(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr,
+                    &op->socket_flags,
                     &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
@@ -461,6 +502,51 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
   int r = ::WSASend(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, flags,
                     &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_recv_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kRecv;
+  impl_->link(op);
+  op->socket_flags = 0;
+  int result = ::WSARecv(static_cast<SOCKET>(fd),
+                         reinterpret_cast<WSABUF*>(buffers), count, nullptr,
+                         &op->socket_flags, &op->ov, nullptr);
+  if (result == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_send_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kSend;
+  impl_->link(op);
+  int result = ::WSASend(static_cast<SOCKET>(fd),
+                         reinterpret_cast<WSABUF*>(buffers), count, nullptr, 0,
+                         &op->ov, nullptr);
+  if (result == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
   impl_->recycle(op);
   return false;
@@ -576,11 +662,12 @@ bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
   op->wsabuf.len = len;
   op->fromlen = static_cast<int>(addr_cap);  // WSARecvFrom reads cap / writes len
   impl_->link(op);
-  DWORD f = 0;
+  op->socket_flags = 0;
   // WSARecvFrom writes the source address into the caller's `addr` and its length
   // into op->fromlen; both outlive the async op (addr on the fiber stack, fromlen
   // in the IoOp). scratch (the io_uring msghdr) is unused on IOCP.
-  int r = ::WSARecvFrom(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, &f,
+  int r = ::WSARecvFrom(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr,
+                        &op->socket_flags,
                         static_cast<sockaddr*>(addr),
                         addr ? &op->fromlen : nullptr, &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
@@ -606,6 +693,54 @@ bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t le
                       static_cast<const sockaddr*>(addr),
                       static_cast<int>(addrlen), &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_recvfrom_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    void* addr, std::uint32_t addr_cap, void*,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kRecvFrom;
+  op->fromlen = static_cast<int>(addr_cap);
+  impl_->link(op);
+  op->socket_flags = 0;
+  int result = ::WSARecvFrom(
+      static_cast<SOCKET>(fd), reinterpret_cast<WSABUF*>(buffers), count,
+      nullptr, &op->socket_flags, static_cast<sockaddr*>(addr),
+      addr != nullptr ? &op->fromlen : nullptr, &op->ov, nullptr);
+  if (result == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_sendto_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    const void* addr, std::uint32_t addrlen, void*,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kSendTo;
+  impl_->link(op);
+  int result = ::WSASendTo(
+      static_cast<SOCKET>(fd), reinterpret_cast<WSABUF*>(buffers), count,
+      nullptr, 0, static_cast<const sockaddr*>(addr),
+      static_cast<int>(addrlen), &op->ov, nullptr);
+  if (result == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
   impl_->recycle(op);
   return false;
@@ -792,6 +927,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <sys/socket.h>
 #  include <sys/stat.h>   // io-05: fstat + struct stat (statx synthesis)
 #  include <sys/syscall.h>
+#  include <sys/uio.h>
 #  include <fcntl.h>      // io-05: O_* open flags
 #  include <unistd.h>
 
@@ -804,6 +940,19 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 
 namespace hyle::io {
 namespace {
+
+static_assert(sizeof(detail::NativeBuffer) == sizeof(iovec));
+static_assert(alignof(detail::NativeBuffer) == alignof(iovec));
+static_assert(offsetof(detail::NativeBuffer, address) ==
+              offsetof(iovec, iov_base));
+static_assert(offsetof(detail::NativeBuffer, length) ==
+              offsetof(iovec, iov_len));
+
+// Private readiness-backend tags. Native io_uring submissions below still use
+// IORING_OP_RECVMSG/SENDMSG; these values only tell epoll's inline performer
+// that PendingOp.buf is an iovec array rather than one byte buffer.
+constexpr std::uint8_t kRecvMsgBuffers = 254;
+constexpr std::uint8_t kSendMsgBuffers = 255;
 
 int sys_io_uring_setup(unsigned entries, io_uring_params* p) noexcept {
   return static_cast<int>(::syscall(__NR_io_uring_setup, entries, p));
@@ -1345,7 +1494,15 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     // Perform the ready op inline and synthesize its result. The op tag says
     // which syscall. Shared by both directions (read-side / write-side).
     auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
-      if (op.opcode == IORING_OP_WRITE) {
+      if (op.opcode == IORING_OP_WRITEV) {
+        ssize_t written = ::writev(fd, static_cast<const iovec*>(op.buf),
+                                   static_cast<int>(op.len));
+        return written < 0 ? -errno : static_cast<std::int64_t>(written);
+      } else if (op.opcode == IORING_OP_READV) {
+        ssize_t read = ::readv(fd, static_cast<const iovec*>(op.buf),
+                               static_cast<int>(op.len));
+        return read < 0 ? -errno : static_cast<std::int64_t>(read);
+      } else if (op.opcode == IORING_OP_WRITE) {
         ssize_t w = ::write(fd, op.buf, op.len);
         return (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else if (op.opcode == IORING_OP_SEND) {
@@ -1361,6 +1518,12 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         socklen_t sl = sizeof(soerr);
         ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
         return (soerr == 0) ? 0 : -soerr;
+      } else if (op.opcode == kRecvMsgBuffers) {
+        ssize_t read = ::recvmsg(fd, static_cast<msghdr*>(op.buf), 0);
+        return read < 0 ? -errno : static_cast<std::int64_t>(read);
+      } else if (op.opcode == kSendMsgBuffers) {
+        ssize_t written = ::sendmsg(fd, static_cast<msghdr*>(op.buf), 0);
+        return written < 0 ? -errno : static_cast<std::int64_t>(written);
       } else if (op.opcode == IORING_OP_RECVMSG) {
         socklen_t al = static_cast<socklen_t>(op.addr_cap);
         ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
@@ -1907,7 +2070,17 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
       // never in `other`, so the union logic above is a no-op here).
       side.erase(fd);
       std::int64_t res;
-      if (opcode == IORING_OP_WRITE) {
+      if (opcode == IORING_OP_WRITEV) {
+        ssize_t w = ::pwritev(fd, static_cast<const iovec*>(buf),
+                              static_cast<int>(len),
+                              static_cast<off_t>(offset));
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else if (opcode == IORING_OP_READV) {
+        ssize_t r = ::preadv(fd, static_cast<const iovec*>(buf),
+                             static_cast<int>(len),
+                             static_cast<off_t>(offset));
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      } else if (opcode == IORING_OP_WRITE) {
         ssize_t w = ::pwrite(fd, buf, len, static_cast<off_t>(offset));
         res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else {  // IORING_OP_READ
@@ -1959,6 +2132,40 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
                     reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
 }
 
+bool Proactor::submit_read_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count, std::uint64_t offset,
+                                   std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  if (impl_->backend == Impl::kEpoll)
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READV,
+                     buffers, count, user_data, offset);
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_READV, static_cast<std::int32_t>(fd),
+      reinterpret_cast<std::uint64_t>(buffers), count, offset, user_data);
+}
+
+bool Proactor::submit_write_buffers(std::intptr_t fd,
+                                    detail::NativeBuffer* buffers,
+                                    std::uint32_t count, std::uint64_t offset,
+                                    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  if (impl_->backend == Impl::kEpoll)
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITEV,
+                     buffers, count, user_data, offset);
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_WRITEV, static_cast<std::int32_t>(fd),
+      reinterpret_cast<std::uint64_t>(buffers), count, offset, user_data);
+}
+
 bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
@@ -1974,6 +2181,13 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
                     flags);
+}
+
+bool Proactor::submit_recv_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  return submit_read_buffers(fd, buffers, count, 0, user_data);
 }
 
 // ---- provided buffer ring + multishot recv (io-07b) -----------------------
@@ -2303,6 +2517,13 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                     flags);
 }
 
+bool Proactor::submit_send_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  return submit_write_buffers(fd, buffers, count, 0, user_data);
+}
+
 bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                              std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || ((addr == nullptr) != (addrlen == nullptr)))
@@ -2398,6 +2619,21 @@ msghdr* build_msghdr(void* scratch, void* buf, std::uint32_t len, void* addr,
   mh->msg_namelen = addr_len;  // recv: capacity; send: dest length
   return mh;
 }
+
+msghdr* build_msghdr_buffers(void* scratch,
+                             detail::NativeBuffer* buffers,
+                             std::uint32_t count, void* addr,
+                             std::uint32_t addr_len) noexcept {
+  static_assert(sizeof(msghdr) <= Proactor::kDatagramScratch,
+                "kDatagramScratch too small for msghdr");
+  auto* message = static_cast<msghdr*>(scratch);
+  std::memset(message, 0, sizeof(*message));
+  message->msg_iov = reinterpret_cast<iovec*>(buffers);
+  message->msg_iovlen = count;
+  message->msg_name = addr;
+  message->msg_namelen = addr_len;
+  return message;
+}
 }  // namespace
 
 bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
@@ -2405,10 +2641,10 @@ bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
                                std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
-    // Reactor: arm EPOLLIN; reap() runs ::recvfrom when readable, filling addr.
+    msghdr* message = build_msghdr(scratch, buf, len, addr, addr_cap);
     return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLIN,
-                           IORING_OP_RECVMSG, buf, len, addr, addr_cap, nullptr,
-                           0, user_data);
+                           kRecvMsgBuffers, message, 0, nullptr, 0, nullptr, 0,
+                           user_data);
   }
   // RECVMSG: sqe.addr = &msghdr, sqe.len = 1 (liburing io_uring_prep_recvmsg).
   msghdr* mh = build_msghdr(scratch, buf, len, addr, addr_cap);
@@ -2423,10 +2659,10 @@ bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t le
                              void* scratch, std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
-    // Reactor: arm EPOLLOUT; reap() runs ::sendto to `addr` when writable.
+    msghdr* message = build_msghdr(scratch, const_cast<void*>(buf), len,
+                                   const_cast<void*>(addr), addrlen);
     return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLOUT,
-                           IORING_OP_SENDMSG, const_cast<void*>(buf), len,
-                           const_cast<void*>(addr), addrlen, nullptr, 0,
+                           kSendMsgBuffers, message, 0, nullptr, 0, nullptr, 0,
                            user_data);
   }
   // SENDMSG: same shape as RECVMSG; msg_name is the destination (kernel reads it).
@@ -2436,6 +2672,52 @@ bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t le
                     impl_->sq_array, impl_->sqes, IORING_OP_SENDMSG,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(mh), 1, 0, user_data);
+}
+
+bool Proactor::submit_recvfrom_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    void* addr, std::uint32_t addr_cap, void* scratch,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments || scratch == nullptr)
+    return false;
+  if (impl_->backend == Impl::kEpoll) {
+    msghdr* message =
+        build_msghdr_buffers(scratch, buffers, count, addr, addr_cap);
+    return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLIN,
+                           kRecvMsgBuffers, message, 0, nullptr, 0, nullptr, 0,
+                           user_data);
+  }
+  msghdr* message =
+      build_msghdr_buffers(scratch, buffers, count, addr, addr_cap);
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_RECVMSG, static_cast<std::int32_t>(fd),
+      reinterpret_cast<std::uint64_t>(message), 1, 0, user_data);
+}
+
+bool Proactor::submit_sendto_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    const void* addr, std::uint32_t addrlen, void* scratch,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments || scratch == nullptr)
+    return false;
+  if (impl_->backend == Impl::kEpoll) {
+    msghdr* message = build_msghdr_buffers(
+        scratch, buffers, count, const_cast<void*>(addr), addrlen);
+    return epoll_arm_dgram(
+        impl_, static_cast<int>(fd), EPOLLOUT, kSendMsgBuffers, message, 0,
+        nullptr, 0, nullptr, 0, user_data);
+  }
+  msghdr* message = build_msghdr_buffers(
+      scratch, buffers, count, const_cast<void*>(addr), addrlen);
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_SENDMSG, static_cast<std::int32_t>(fd),
+      reinterpret_cast<std::uint64_t>(message), 1, 0, user_data);
 }
 
 bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
@@ -2688,6 +2970,7 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
+#  include <sys/uio.h>
 #  include <netinet/in.h>
 #  include <unistd.h>
 #  include <fcntl.h>
@@ -2714,7 +2997,18 @@ enum : std::uint8_t {
   IORING_OP_SENDMSG = 6,
   IORING_OP_RECV = 7,
   IORING_OP_SEND = 8,
+  IORING_OP_READV = 9,
+  IORING_OP_WRITEV = 10,
+  kRecvMsgBuffers = 254,
+  kSendMsgBuffers = 255,
 };
+
+static_assert(sizeof(detail::NativeBuffer) == sizeof(iovec));
+static_assert(alignof(detail::NativeBuffer) == alignof(iovec));
+static_assert(offsetof(detail::NativeBuffer, address) ==
+              offsetof(iovec, iov_base));
+static_assert(offsetof(detail::NativeBuffer, length) ==
+              offsetof(iovec, iov_len));
 
 // EVFILT_USER wake ident (io-04 park merge). A fixed, fd-uncollidable value: the
 // wake is distinguished by filter==EVFILT_USER, but a distinct ident keeps it clear
@@ -2735,10 +3029,38 @@ int open_flags_to_posix(std::uint32_t flags) noexcept {
   return f;
 }
 
-// Lay a msghdr + one iovec into `scratch` for a datagram op. Identical to the Linux
-// build_msghdr, but kqueue's reactor runs recvfrom/sendto INLINE (it doesn't hand a
-// msghdr to a kernel op), so this is unused on macOS -- the neutral submit_recvfrom/
-// sendto take `scratch` for signature parity and we simply don't touch it.
+// Keep the message in awaitable-owned scratch even on a readiness backend. Besides
+// giving every backend one lifetime shape, recvmsg writes MSG_TRUNC here so the
+// typed UDP facade can report a discarded datagram tail.
+msghdr* build_msghdr(void* scratch, void* buf, std::uint32_t len, void* addr,
+                     std::uint32_t addr_len) noexcept {
+  static_assert(sizeof(msghdr) + sizeof(iovec) <= Proactor::kDatagramScratch);
+  auto* message = static_cast<msghdr*>(scratch);
+  auto* vector = reinterpret_cast<iovec*>(
+      static_cast<char*>(scratch) + sizeof(msghdr));
+  std::memset(message, 0, sizeof(*message));
+  vector->iov_base = buf;
+  vector->iov_len = len;
+  message->msg_iov = vector;
+  message->msg_iovlen = 1;
+  message->msg_name = addr;
+  message->msg_namelen = addr_len;
+  return message;
+}
+
+msghdr* build_msghdr_buffers(void* scratch,
+                             detail::NativeBuffer* buffers,
+                             std::uint32_t count, void* addr,
+                             std::uint32_t addr_len) noexcept {
+  static_assert(sizeof(msghdr) <= Proactor::kDatagramScratch);
+  auto* message = static_cast<msghdr*>(scratch);
+  std::memset(message, 0, sizeof(*message));
+  message->msg_iov = reinterpret_cast<iovec*>(buffers);
+  message->msg_iovlen = count;
+  message->msg_name = addr;
+  message->msg_namelen = addr_len;
+  return message;
+}
 
 }  // namespace
 
@@ -2891,7 +3213,15 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // Perform the ready op inline and synthesize its result. The op tag says which
   // syscall. Shared by both directions -- IDENTICAL to the epoll branch's perform.
   auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
-    if (op.opcode == IORING_OP_WRITE) {
+    if (op.opcode == IORING_OP_WRITEV) {
+      ssize_t written = ::writev(fd, static_cast<const iovec*>(op.buf),
+                                 static_cast<int>(op.len));
+      return written < 0 ? -errno : static_cast<std::int64_t>(written);
+    } else if (op.opcode == IORING_OP_READV) {
+      ssize_t read = ::readv(fd, static_cast<const iovec*>(op.buf),
+                             static_cast<int>(op.len));
+      return read < 0 ? -errno : static_cast<std::int64_t>(read);
+    } else if (op.opcode == IORING_OP_WRITE) {
       ssize_t w = ::write(fd, op.buf, op.len);
       return (w < 0) ? -errno : static_cast<std::int64_t>(w);
     } else if (op.opcode == IORING_OP_SEND) {
@@ -2914,6 +3244,12 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       socklen_t sl = sizeof(soerr);
       ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
       return (soerr == 0) ? 0 : -soerr;
+    } else if (op.opcode == kRecvMsgBuffers) {
+      ssize_t read = ::recvmsg(fd, static_cast<msghdr*>(op.buf), 0);
+      return read < 0 ? -errno : static_cast<std::int64_t>(read);
+    } else if (op.opcode == kSendMsgBuffers) {
+      ssize_t written = ::sendmsg(fd, static_cast<msghdr*>(op.buf), 0);
+      return written < 0 ? -errno : static_cast<std::int64_t>(written);
     } else if (op.opcode == IORING_OP_RECVMSG) {
       socklen_t al = static_cast<socklen_t>(op.addr_cap);
       ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
@@ -3082,11 +3418,22 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   // regular file -- sockets never do) and do the byte IO synchronously at the file
   // offset, synthesizing a completion via posted -- the identical outcome to epoll's
   // EPERM branch, just triggered by S_ISREG since kqueue never hands us EPERM.
-  if (opcode == IORING_OP_READ || opcode == IORING_OP_WRITE) {
+  if (opcode == IORING_OP_READ || opcode == IORING_OP_WRITE ||
+      opcode == IORING_OP_READV || opcode == IORING_OP_WRITEV) {
     struct stat st;
     if (::fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
       std::int64_t res;
-      if (opcode == IORING_OP_WRITE) {
+      if (opcode == IORING_OP_WRITEV) {
+        ssize_t w = ::pwritev(fd, static_cast<const iovec*>(buf),
+                              static_cast<int>(len),
+                              static_cast<off_t>(offset));
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else if (opcode == IORING_OP_READV) {
+        ssize_t r = ::preadv(fd, static_cast<const iovec*>(buf),
+                             static_cast<int>(len),
+                             static_cast<off_t>(offset));
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      } else if (opcode == IORING_OP_WRITE) {
         ssize_t w = ::pwrite(fd, buf, len, static_cast<off_t>(offset));
         res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else {  // IORING_OP_READ
@@ -3136,6 +3483,28 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf, std::uint32_t len
                    const_cast<void*>(buf), len, user_data, offset);
 }
 
+bool Proactor::submit_read_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count, std::uint64_t offset,
+                                   std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_READV,
+                   buffers, count, user_data, offset);
+}
+
+bool Proactor::submit_write_buffers(std::intptr_t fd,
+                                    detail::NativeBuffer* buffers,
+                                    std::uint32_t count, std::uint64_t offset,
+                                    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_WRITE,
+                   IORING_OP_WRITEV, buffers, count, user_data, offset);
+}
+
 bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
@@ -3147,6 +3516,13 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                          user_data);
 }
 
+bool Proactor::submit_recv_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  return submit_read_buffers(fd, buffers, count, 0, user_data);
+}
+
 bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
@@ -3154,6 +3530,13 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
   return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_WRITE,
                          IORING_OP_SEND, const_cast<void*>(buf), len, nullptr, 0,
                          nullptr, flags, user_data);
+}
+
+bool Proactor::submit_send_buffers(std::intptr_t fd,
+                                   detail::NativeBuffer* buffers,
+                                   std::uint32_t count,
+                                   std::uint64_t user_data) noexcept {
+  return submit_write_buffers(fd, buffers, count, 0, user_data);
 }
 
 bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
@@ -3195,22 +3578,50 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
 }
 
 bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
-                               void* addr, std::uint32_t addr_cap, void* /*scratch*/,
+                               void* addr, std::uint32_t addr_cap, void* scratch,
                                std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  // Reactor: arm EVFILT_READ; reap() runs ::recvfrom when readable, filling addr.
-  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_RECVMSG,
-                         buf, len, addr, addr_cap, nullptr, 0, user_data);
+  msghdr* message = build_msghdr(scratch, buf, len, addr, addr_cap);
+  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_READ, kRecvMsgBuffers,
+                         message, 0, nullptr, 0, nullptr, 0, user_data);
 }
 
 bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t len,
                              const void* addr, std::uint32_t addrlen,
-                             void* /*scratch*/, std::uint64_t user_data) noexcept {
+                             void* scratch, std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  // Reactor: arm EVFILT_WRITE; reap() runs ::sendto to `addr` when writable.
-  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_WRITE, IORING_OP_SENDMSG,
-                         const_cast<void*>(buf), len, const_cast<void*>(addr),
-                         addrlen, nullptr, 0, user_data);
+  msghdr* message = build_msghdr(scratch, const_cast<void*>(buf), len,
+                                 const_cast<void*>(addr), addrlen);
+  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_WRITE, kSendMsgBuffers,
+                         message, 0, nullptr, 0, nullptr, 0, user_data);
+}
+
+bool Proactor::submit_recvfrom_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    void* addr, std::uint32_t addr_cap, void* scratch,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  msghdr* message =
+      build_msghdr_buffers(scratch, buffers, count, addr, addr_cap);
+  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_READ,
+                         kRecvMsgBuffers, message, 0, nullptr, 0, nullptr, 0,
+                         user_data);
+}
+
+bool Proactor::submit_sendto_buffers(
+    std::intptr_t fd, detail::NativeBuffer* buffers, std::uint32_t count,
+    const void* addr, std::uint32_t addrlen, void* scratch,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments)
+    return false;
+  msghdr* message = build_msghdr_buffers(
+      scratch, buffers, count, const_cast<void*>(addr), addrlen);
+  return epoll_arm_dgram(
+      impl_, static_cast<int>(fd), EVFILT_WRITE, kSendMsgBuffers, message, 0,
+      nullptr, 0, nullptr, 0, user_data);
 }
 
 bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {

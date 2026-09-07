@@ -17,11 +17,13 @@
 #include "hyle/sched/scheduler.h"
 
 using hyle::io::File;
+using hyle::io::ConstBuffer;
 using hyle::io::FileAccess;
 using hyle::io::FileCacheMode;
 using hyle::io::FileOpenOptions;
 using hyle::io::FileSyncMode;
 using hyle::io::IoContext;
+using hyle::io::MutableBuffer;
 using hyle::io::open_file;
 using hyle::io::read_exact_at;
 using hyle::io::write_all_at;
@@ -71,18 +73,23 @@ Task<int> file_coro(AllocatorRef allocator, IoContext *io, const char *path,
   File file = std::move(*opened);
   result->opened.store(true, std::memory_order_release);
 
-  auto written = co_await write_all_at(allocator, file, 0,
-                                       std::as_bytes(std::span{kMessage}));
-  result->write_ok.store(written.ok() && written.bytes == sizeof(kMessage),
+  const ConstBuffer output[] = {
+      {kMessage, 4}, {kMessage + 4, sizeof(kMessage) - 4}};
+  auto written = co_await write_all_at(
+      allocator, file, 0, std::span<const ConstBuffer>{output});
+  result->write_ok.store(
+      written.ok() && written.progress.bytes == sizeof(kMessage),
                          std::memory_order_release);
 
   hyle::Status synced = co_await file.sync(FileSyncMode::kDataOnly);
   result->sync_ok.store(synced.ok(), std::memory_order_release);
 
+  const MutableBuffer input[] = {
+      {result->got, 7}, {result->got + 7, sizeof(kMessage) - 7}};
   auto read = co_await read_exact_at(
-      allocator, file, 0,
-      std::as_writable_bytes(std::span{result->got, sizeof(kMessage)}));
-  result->read_ok.store(read.ok() && read.bytes == sizeof(kMessage),
+      allocator, file, 0, std::span<const MutableBuffer>{input});
+  result->read_ok.store(
+      read.ok() && read.progress.bytes == sizeof(kMessage),
                         std::memory_order_release);
 
   auto info = co_await file.info();

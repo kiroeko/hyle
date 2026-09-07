@@ -75,6 +75,18 @@ Status handle_error(const char* operation) noexcept {
 #endif
 }
 
+template <class ReceiveOp>
+bool datagram_was_truncated(const ReceiveOp& operation) noexcept {
+#if HYLE_OS_WINDOWS
+  return (operation.state.completion_flags &
+          Completion::kDatagramTruncated) != 0;
+#else
+  const auto* message =
+      reinterpret_cast<const msghdr*>(operation.scratch);
+  return (message->msg_flags & MSG_TRUNC) != 0;
+#endif
+}
+
 Result<Endpoint> query_local_endpoint(std::intptr_t fd) noexcept {
   sockaddr_storage address{};
 #if HYLE_OS_WINDOWS
@@ -252,16 +264,19 @@ bool UdpSocket::ReceiveAwaitable::await_ready() noexcept {
 }
 
 DatagramResult UdpSocket::ReceiveAwaitable::await_resume() noexcept {
+  const std::int64_t native_result = inner.await_resume();
+  const bool truncated = datagram_was_truncated(inner);
   TransferResult transfer = detail::transfer_from_native(
-      inner.await_resume(), detail::kNetworkNativeDomain, "UDP receive", false);
+      native_result, detail::kNetworkNativeDomain, "UDP receive", false);
   if (!transfer.ok())
-    return DatagramResult{transfer.bytes, Endpoint{}, std::move(transfer.status)};
+    return DatagramResult{transfer.bytes, Endpoint{},
+                          std::move(transfer.status), truncated};
   auto peer = EndpointNativeAccess::decode(native_peer.data(),
                                            static_cast<std::uint32_t>(
                                                native_peer.size()));
   if (!peer.has_value())
-    return DatagramResult{transfer.bytes, Endpoint{}, peer.error()};
-  return DatagramResult{transfer.bytes, *peer, Status{}};
+    return DatagramResult{transfer.bytes, Endpoint{}, peer.error(), truncated};
+  return DatagramResult{transfer.bytes, *peer, Status{}, truncated};
 }
 
 bool UdpSocket::SendAwaitable::await_ready() noexcept {
@@ -288,6 +303,94 @@ TransferResult UdpSocket::SendAwaitable::await_resume() noexcept {
   return detail::transfer_from_native(inner.await_resume(),
                                       detail::kNetworkNativeDomain,
                                       "UDP send", false);
+}
+
+bool UdpSocket::ReceiveBuffersAwaitable::await_ready() noexcept {
+  if (!buffers.ok()) {
+    immediate.status = buffers.status();
+    immediate_ready = true;
+    return true;
+  }
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffers = buffers.native_data();
+  // A zero-byte UDP datagram remains a real operation. One empty native
+  // descriptor is portable across Winsock, sendmsg/recvmsg and kqueue.
+  inner.count = static_cast<std::uint32_t>(
+      buffers.native_count() == 0 ? 1 : buffers.native_count());
+  inner.address = native_peer.data();
+  inner.address_capacity = static_cast<std::uint32_t>(native_peer.size());
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+BufferDatagramResult
+UdpSocket::ReceiveBuffersAwaitable::await_resume() noexcept {
+  if (immediate_ready) return std::move(immediate);
+  const std::int64_t native_result = inner.await_resume();
+  const bool truncated = datagram_was_truncated(inner);
+  TransferResult transfer = detail::transfer_from_native(
+      native_result, detail::kNetworkNativeDomain,
+      "UDP vectored receive", false);
+  if (!transfer.ok()) {
+    return BufferDatagramResult{buffers.progress(transfer.bytes), Endpoint{},
+                                std::move(transfer.status), truncated};
+  }
+  if (transfer.bytes > buffers.total_size()) {
+    return BufferDatagramResult{
+        {}, Endpoint{},
+        Status::Internal("UDP vectored receive exceeded requested bytes"),
+        truncated};
+  }
+  auto peer = EndpointNativeAccess::decode(
+      native_peer.data(), static_cast<std::uint32_t>(native_peer.size()));
+  if (!peer.has_value()) {
+    return BufferDatagramResult{buffers.progress(transfer.bytes), Endpoint{},
+                                std::move(peer).error(), truncated};
+  }
+  return BufferDatagramResult{buffers.progress(transfer.bytes), *peer,
+                              Status{}, truncated};
+}
+
+bool UdpSocket::SendBuffersAwaitable::await_ready() noexcept {
+  if (!buffers.ok()) {
+    immediate.status = buffers.status();
+    immediate_ready = true;
+    return true;
+  }
+  auto native = EndpointNativeAccess::encode(destination);
+  if (!native.has_value()) {
+    immediate.status = std::move(native).error();
+    immediate_ready = true;
+    return true;
+  }
+  std::memcpy(native_destination.data(), native->storage, native->size);
+  native_length = native->size;
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffers = buffers.native_data();
+  inner.count = static_cast<std::uint32_t>(
+      buffers.native_count() == 0 ? 1 : buffers.native_count());
+  inner.address = native_destination.data();
+  inner.address_length = native_length;
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+BufferSequenceResult UdpSocket::SendBuffersAwaitable::await_resume() noexcept {
+  if (immediate_ready) return std::move(immediate);
+  TransferResult transfer = detail::transfer_from_native(
+      inner.await_resume(), detail::kNetworkNativeDomain,
+      "UDP vectored send", false);
+  if (transfer.bytes > buffers.total_size()) {
+    return BufferSequenceResult{
+        {}, Status::Internal("UDP vectored send exceeded requested bytes"),
+        false};
+  }
+  return BufferSequenceResult{buffers.progress(transfer.bytes),
+                              std::move(transfer.status), false};
 }
 
 }  // namespace hyle::io

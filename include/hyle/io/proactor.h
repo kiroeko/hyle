@@ -5,6 +5,7 @@
 
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"
+#include "hyle/io/buffer.h"
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
@@ -121,6 +122,8 @@ struct Completion {
   enum : std::uint32_t {
     kMore = 1u << 0,    // more completions coming for this user_data (multishot)
     kBuffer = 1u << 1,  // buffer_id is valid (kernel-selected zero-copy buffer)
+    kDatagramTruncated =
+        1u << 2, // receive copied a prefix and discarded the datagram tail
   };
 };
 
@@ -189,6 +192,19 @@ class Proactor {
   HYLE_IO_API bool submit_write(std::intptr_t fd, const void* buf,
                                 std::uint32_t len, std::uint64_t offset,
                                 std::uint64_t user_data) noexcept;
+  // Vectored positional IO. `buffers` is an awaitable-owned native descriptor
+  // array and must remain alive with the referenced bytes until completion.
+  // One call maps to one native vectored submission on POSIX. Windows regular
+  // files have no general arbitrary-buffer vectored primitive; the typed File
+  // facade uses one staged ReadFile/WriteFile submission there instead.
+  HYLE_IO_API bool submit_read_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, std::uint64_t offset,
+      std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_write_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, std::uint64_t offset,
+      std::uint64_t user_data) noexcept;
 
   // ---- socket ops (io-04 net) -----------------------------------------------
   // recv/send are read/write-shaped for a socket fd (no file offset; `flags` is
@@ -200,6 +216,14 @@ class Proactor {
   HYLE_IO_API bool submit_send(std::intptr_t fd, const void* buf,
                                std::uint32_t len, std::uint32_t flags,
                                std::uint64_t user_data) noexcept;
+  // Stream scatter/gather. The typed facade fixes flags at zero so every
+  // backend can use its true readv/writev or WSARecv/WSASend operation.
+  HYLE_IO_API bool submit_recv_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_send_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, std::uint64_t user_data) noexcept;
   // accept a connection on listening `fd`. `addr`/`addrlen` receive the peer
   // address (may be null to ignore); both must outlive the completion. The
   // completion result is the accepted fd (>=0) or a negative errno.
@@ -255,6 +279,14 @@ class Proactor {
                                  std::uint32_t len, const void* addr,
                                  std::uint32_t addrlen, void* scratch,
                                  std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_recvfrom_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, void* addr, std::uint32_t addr_cap,
+      void* scratch, std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_sendto_buffers(
+      std::intptr_t fd, detail::NativeBuffer* buffers,
+      std::uint32_t count, const void* addr, std::uint32_t addrlen,
+      void* scratch, std::uint64_t user_data) noexcept;
 
   // Windows only: an OVERLAPPED handle must be associated with the port ONCE
   // before submit_read/write on it (io_uring needs no such step). No-op / returns

@@ -9,6 +9,7 @@
 
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
+#include "hyle/io/buffer.h"
 #include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
@@ -190,6 +191,36 @@ class TcpStream {
     }
   };
 
+  struct ReadBuffersAwaitable {
+    TcpStream* self = nullptr;
+    detail::BufferSequenceStorage<MutableBuffer> buffers;
+    OperationOptions options{};
+    BudgetRecvBuffersOp inner{};
+    BufferSequenceResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API BufferSequenceResult await_resume() noexcept;
+  };
+
+  struct WriteBuffersAwaitable {
+    TcpStream* self = nullptr;
+    detail::BufferSequenceStorage<ConstBuffer> buffers;
+    OperationOptions options{};
+    BudgetSendBuffersOp inner{};
+    BufferSequenceResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API BufferSequenceResult await_resume() noexcept;
+  };
+
   // Ordinary typed fast path: one borrowed buffer, no allocation, one native
   // submission and at most one scheduler wake. Options/cancellation are added
   // by the unified operation-budget overload in IOCORE-F03.
@@ -245,6 +276,32 @@ class TcpStream {
                      static_cast<std::uint32_t>(buffer.size()),
                      io_->operation_allocator(), options},
         empty};
+  }
+
+  // Scatter/gather descriptors are copied synchronously into the returned
+  // awaitable; the pointed-to bytes remain borrowed until co_await completes.
+  // A previous result's cursor resumes a partial transfer without the caller
+  // rebuilding subspans. One call maps to one native vectored submission.
+  ReadBuffersAwaitable read_some(
+      std::span<const MutableBuffer> buffers,
+      OperationOptions options = {},
+      BufferSequenceCursor cursor = {}) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return ReadBuffersAwaitable{
+        this, detail::BufferSequenceStorage<MutableBuffer>(buffers, cursor),
+        options};
+  }
+
+  WriteBuffersAwaitable write_some(
+      std::span<const ConstBuffer> buffers,
+      OperationOptions options = {},
+      BufferSequenceCursor cursor = {}) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return WriteBuffersAwaitable{
+        this, detail::BufferSequenceStorage<ConstBuffer>(buffers, cursor),
+        options};
   }
 
   // Explicit io_uring zero-copy multishot receive track. The caller must first
@@ -334,6 +391,14 @@ HYLE_IO_API sched::Task<TransferResult> read_exact(
 HYLE_IO_API sched::Task<TransferResult> write_all(
     mem::AllocatorRef coroutine_allocator, TcpStream& stream,
     std::span<const std::byte> buffer, OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<BufferSequenceResult> read_exact(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<const MutableBuffer> buffers,
+    OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<BufferSequenceResult> write_all(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<const ConstBuffer> buffers,
+    OperationOptions options = {}) noexcept;
 
 // Connect one of an endpoint sequence using bounded RFC 8305-style staggered
 // attempts. Inputs are copied before this function returns, so caller storage

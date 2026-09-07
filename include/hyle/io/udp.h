@@ -8,6 +8,7 @@
 
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
+#include "hyle/io/buffer.h"
 #include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net_budget.h"
@@ -45,6 +46,17 @@ struct [[nodiscard]] DatagramResult {
   std::size_t bytes = 0;
   Endpoint peer;
   Status status{};
+  bool truncated = false;
+
+  bool ok() const noexcept { return status.ok(); }
+  explicit operator bool() const noexcept { return ok(); }
+};
+
+struct [[nodiscard]] BufferDatagramResult {
+  BufferSequenceProgress progress{};
+  Endpoint peer;
+  Status status{};
+  bool truncated = false;
 
   bool ok() const noexcept { return status.ok(); }
   explicit operator bool() const noexcept { return ok(); }
@@ -112,6 +124,40 @@ class UdpSocket {
     HYLE_IO_API TransferResult await_resume() noexcept;
   };
 
+  struct ReceiveBuffersAwaitable {
+    UdpSocket* self = nullptr;
+    detail::BufferSequenceStorage<MutableBuffer> buffers;
+    OperationOptions options{};
+    alignas(16) std::array<std::byte, 128> native_peer{};
+    BudgetRecvFromBuffersOp inner{};
+    BufferDatagramResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API BufferDatagramResult await_resume() noexcept;
+  };
+
+  struct SendBuffersAwaitable {
+    UdpSocket* self = nullptr;
+    detail::BufferSequenceStorage<ConstBuffer> buffers;
+    Endpoint destination;
+    OperationOptions options{};
+    alignas(16) std::array<std::byte, 128> native_destination{};
+    std::uint32_t native_length = 0;
+    BudgetSendToBuffersOp inner{};
+    BufferSequenceResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API BufferSequenceResult await_resume() noexcept;
+  };
+
   ReceiveAwaitable receive_from(
       std::span<std::byte> buffer, OperationOptions options = {}) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
@@ -129,6 +175,25 @@ class UdpSocket {
     HYLE_FATAL_ASSERT(buffer.size() <=
                       (std::numeric_limits<std::uint32_t>::max)());
     return SendAwaitable{this, buffer, destination, options};
+  }
+
+  ReceiveBuffersAwaitable receive_from(
+      std::span<const MutableBuffer> buffers,
+      OperationOptions options = {}) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return ReceiveBuffersAwaitable{
+        this, detail::BufferSequenceStorage<MutableBuffer>(buffers), options};
+  }
+
+  SendBuffersAwaitable send_to(
+      std::span<const ConstBuffer> buffers, const Endpoint& destination,
+      OperationOptions options = {}) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return SendBuffersAwaitable{
+        this, detail::BufferSequenceStorage<ConstBuffer>(buffers), destination,
+        options};
   }
 
  private:

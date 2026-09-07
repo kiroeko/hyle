@@ -13,8 +13,8 @@ namespace hyle::io::detail {
 
 // Shared state for the public one-budget awaitables. The default/no-options
 // branch stays on the suspended fiber's stack. A deadline or cancellation
-// source uses a heap slot because either one may let the fiber return before the
-// kernel's mandatory late completion arrives.
+// source uses a heap slot to arbitrate the extra wake source and waits for the
+// kernel's mandatory terminal completion before returning borrowed storage.
 struct BudgetState {
   Proactor* proactor = nullptr;
   mem::AllocatorRef allocator;
@@ -22,6 +22,7 @@ struct BudgetState {
   IoOperation ordinary{};
   TimedSlot* bounded = nullptr;
   std::int64_t immediate = 0;
+  std::uint32_t completion_flags = 0;
   bool immediate_ready = false;
 
   bool await_ready() noexcept {
@@ -68,6 +69,7 @@ struct BudgetState {
       sched::CancelCallback callback{*options.cancel, &cancel_timed_slot,
                                      bounded};
       sched::suspend();
+      await_cancel_retirement(bounded);
     } else {
       sched::suspend();
     }
@@ -76,6 +78,8 @@ struct BudgetState {
 
   std::int64_t await_resume() noexcept {
     if (immediate_ready) return immediate;
+    completion_flags =
+        bounded != nullptr ? bounded->io.flags : ordinary.flags;
     return bounded != nullptr ? resume_timed(bounded) : ordinary.result;
   }
 };
@@ -123,6 +127,48 @@ struct BudgetSendOp {
   bool await_suspend(std::coroutine_handle<>) noexcept {
     return state.await_suspend([&](std::uint64_t token) noexcept {
       return proactor->submit_send(fd, buffer, length, flags, token);
+    });
+  }
+  std::int64_t await_resume() noexcept { return state.await_resume(); }
+};
+
+struct BudgetRecvBuffersOp {
+  Proactor* proactor = nullptr;
+  std::intptr_t fd = -1;
+  detail::NativeBuffer* buffers = nullptr;
+  std::uint32_t count = 0;
+  mem::AllocatorRef allocator;
+  OperationOptions options{};
+  detail::BudgetState state{};
+
+  bool await_ready() noexcept {
+    state = detail::BudgetState{proactor, allocator, options};
+    return state.await_ready();
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    return state.await_suspend([&](std::uint64_t token) noexcept {
+      return proactor->submit_recv_buffers(fd, buffers, count, token);
+    });
+  }
+  std::int64_t await_resume() noexcept { return state.await_resume(); }
+};
+
+struct BudgetSendBuffersOp {
+  Proactor* proactor = nullptr;
+  std::intptr_t fd = -1;
+  detail::NativeBuffer* buffers = nullptr;
+  std::uint32_t count = 0;
+  mem::AllocatorRef allocator;
+  OperationOptions options{};
+  detail::BudgetState state{};
+
+  bool await_ready() noexcept {
+    state = detail::BudgetState{proactor, allocator, options};
+    return state.await_ready();
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    return state.await_suspend([&](std::uint64_t token) noexcept {
+      return proactor->submit_send_buffers(fd, buffers, count, token);
     });
   }
   std::int64_t await_resume() noexcept { return state.await_resume(); }
@@ -213,6 +259,56 @@ struct BudgetSendToOp {
     return state.await_suspend([&](std::uint64_t token) noexcept {
       return proactor->submit_sendto(fd, buffer, length, address,
                                      address_length, scratch, token);
+    });
+  }
+  std::int64_t await_resume() noexcept { return state.await_resume(); }
+};
+
+struct BudgetRecvFromBuffersOp {
+  Proactor* proactor = nullptr;
+  std::intptr_t fd = -1;
+  detail::NativeBuffer* buffers = nullptr;
+  std::uint32_t count = 0;
+  void* address = nullptr;
+  std::uint32_t address_capacity = 0;
+  mem::AllocatorRef allocator;
+  OperationOptions options{};
+  detail::BudgetState state{};
+  alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
+
+  bool await_ready() noexcept {
+    state = detail::BudgetState{proactor, allocator, options};
+    return state.await_ready();
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    return state.await_suspend([&](std::uint64_t token) noexcept {
+      return proactor->submit_recvfrom_buffers(
+          fd, buffers, count, address, address_capacity, scratch, token);
+    });
+  }
+  std::int64_t await_resume() noexcept { return state.await_resume(); }
+};
+
+struct BudgetSendToBuffersOp {
+  Proactor* proactor = nullptr;
+  std::intptr_t fd = -1;
+  detail::NativeBuffer* buffers = nullptr;
+  std::uint32_t count = 0;
+  const void* address = nullptr;
+  std::uint32_t address_length = 0;
+  mem::AllocatorRef allocator;
+  OperationOptions options{};
+  detail::BudgetState state{};
+  alignas(16) unsigned char scratch[Proactor::kDatagramScratch]{};
+
+  bool await_ready() noexcept {
+    state = detail::BudgetState{proactor, allocator, options};
+    return state.await_ready();
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    return state.await_suspend([&](std::uint64_t token) noexcept {
+      return proactor->submit_sendto_buffers(
+          fd, buffers, count, address, address_length, scratch, token);
     });
   }
   std::int64_t await_resume() noexcept { return state.await_resume(); }

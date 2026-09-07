@@ -96,8 +96,10 @@ class IoContext {
   // use it. The pool belongs to the context and is drained on destruction.
   sched::BlockingPool& blocking_pool() noexcept { return blocking_; }
 
-  // Backs only bounded operations whose state must survive an early timeout or
-  // cancellation return. Ordinary operations remain stack-only.
+  // Backs only bounded-operation arbitration state. A bounded operation waits
+  // for native cancellation retirement before returning, so caller byte buffers
+  // are never accessed after the await completes. Ordinary operations remain
+  // stack-only.
   mem::AllocatorRef operation_allocator() const noexcept { return allocator_; }
 
  private:

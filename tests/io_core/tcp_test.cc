@@ -30,7 +30,9 @@
 // (shard-per-core) so the connection's io stays on its core.
 
 using hyle::io::IoContext;
+using hyle::io::ConstBuffer;
 using hyle::io::Endpoint;
+using hyle::io::MutableBuffer;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::TcpConnectOptions;
@@ -139,17 +141,21 @@ Task<int> client_coro(AllocatorRef, IoContext* io, EchoResult* r) {
       s.set_nodelay().ok() && s.set_keepalive(keepalive).ok(),
       std::memory_order_release);
   static const char kMsg[] = "tcp-wrapper-echo";
-  auto written =
-      co_await write_all(system_allocator(), s, std::as_bytes(std::span{kMsg}));
+  const ConstBuffer output[] = {{kMsg, 4}, {kMsg + 4, sizeof(kMsg) - 4}};
+  auto written = co_await write_all(system_allocator(), s,
+                                    std::span<const ConstBuffer>{output});
   if (!written.ok()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
   r->half_closed.store(s.shutdown_write().ok(), std::memory_order_release);
+  const MutableBuffer input[] = {
+      {r->client_got, 5}, {r->client_got + 5, sizeof(kMsg) - 5}};
   r->client_recv.store(
-      static_cast<std::int64_t>((co_await read_exact(
-          system_allocator(), s,
-          std::as_writable_bytes(std::span{r->client_got, sizeof(kMsg)}))).bytes),
+      static_cast<std::int64_t>(
+          (co_await read_exact(system_allocator(), s,
+                               std::span<const MutableBuffer>{input}))
+              .progress.bytes),
       std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
   co_return 0;

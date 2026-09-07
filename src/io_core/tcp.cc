@@ -761,6 +761,72 @@ Result<TcpStream> TcpListener::finish_accept(std::int64_t result,
   return TcpStream{*io_, new_fd, assign_owner};
 }
 
+bool TcpStream::ReadBuffersAwaitable::await_ready() noexcept {
+  if (!buffers.ok()) {
+    immediate.status = buffers.status();
+    immediate_ready = true;
+    return true;
+  }
+  if (buffers.empty()) {
+    immediate.progress = buffers.progress(0);
+    immediate_ready = true;
+    return true;
+  }
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffers = buffers.native_data();
+  inner.count = static_cast<std::uint32_t>(buffers.native_count());
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+BufferSequenceResult TcpStream::ReadBuffersAwaitable::await_resume() noexcept {
+  if (immediate_ready) return std::move(immediate);
+  TransferResult transfer = detail::transfer_from_native(
+      inner.await_resume(), detail::kNetworkNativeDomain, "TCP read", true);
+  if (transfer.bytes > buffers.total_size()) {
+    return BufferSequenceResult{
+        {}, Status::Internal("TCP vectored read exceeded requested bytes"),
+        false};
+  }
+  return BufferSequenceResult{buffers.progress(transfer.bytes),
+                              std::move(transfer.status), transfer.eof};
+}
+
+bool TcpStream::WriteBuffersAwaitable::await_ready() noexcept {
+  if (!buffers.ok()) {
+    immediate.status = buffers.status();
+    immediate_ready = true;
+    return true;
+  }
+  if (buffers.empty()) {
+    immediate.progress = buffers.progress(0);
+    immediate_ready = true;
+    return true;
+  }
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffers = buffers.native_data();
+  inner.count = static_cast<std::uint32_t>(buffers.native_count());
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+BufferSequenceResult TcpStream::WriteBuffersAwaitable::await_resume() noexcept {
+  if (immediate_ready) return std::move(immediate);
+  TransferResult transfer = detail::transfer_from_native(
+      inner.await_resume(), detail::kNetworkNativeDomain, "TCP write", false);
+  if (transfer.bytes > buffers.total_size()) {
+    return BufferSequenceResult{
+        {}, Status::Internal("TCP vectored write exceeded requested bytes"),
+        false};
+  }
+  return BufferSequenceResult{buffers.progress(transfer.bytes),
+                              std::move(transfer.status), false};
+}
+
 sched::Task<TransferResult> read_exact(mem::AllocatorRef, TcpStream& stream,
                                       std::span<std::byte> buffer,
                                       OperationOptions options) noexcept {
@@ -799,6 +865,86 @@ sched::Task<TransferResult> write_all(mem::AllocatorRef, TcpStream& stream,
     }
   }
   co_return TransferResult{done, Status{}, false};
+}
+
+namespace {
+
+sched::Task<BufferSequenceResult> read_exact_buffers(
+    mem::AllocatorRef, TcpStream& stream,
+    detail::BufferSequenceStorage<MutableBuffer> buffers,
+    OperationOptions options) noexcept {
+  if (!buffers.ok())
+    co_return BufferSequenceResult{{}, buffers.status(), false};
+  BufferSequenceProgress progress = buffers.progress(0);
+  while (!progress.complete) {
+    BufferSequenceResult part =
+        co_await stream.read_some(buffers.sequence(), options, progress.next);
+    progress.bytes += part.progress.bytes;
+    progress.next = part.progress.next;
+    progress.complete = part.progress.complete;
+    if (!part.ok()) {
+      part.progress = progress;
+      co_return part;
+    }
+    if (part.eof) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::DataLoss("EOF before exact TCP vectored read completed"),
+          true};
+    }
+    if (part.progress.bytes == 0) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::Unavailable("TCP vectored read made no forward progress"),
+          false};
+    }
+  }
+  co_return BufferSequenceResult{progress, Status{}, false};
+}
+
+sched::Task<BufferSequenceResult> write_all_buffers(
+    mem::AllocatorRef, TcpStream& stream,
+    detail::BufferSequenceStorage<ConstBuffer> buffers,
+    OperationOptions options) noexcept {
+  if (!buffers.ok())
+    co_return BufferSequenceResult{{}, buffers.status(), false};
+  BufferSequenceProgress progress = buffers.progress(0);
+  while (!progress.complete) {
+    BufferSequenceResult part =
+        co_await stream.write_some(buffers.sequence(), options, progress.next);
+    progress.bytes += part.progress.bytes;
+    progress.next = part.progress.next;
+    progress.complete = part.progress.complete;
+    if (!part.ok()) {
+      part.progress = progress;
+      co_return part;
+    }
+    if (part.progress.bytes == 0) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::Unavailable("TCP vectored write made no forward progress"),
+          false};
+    }
+  }
+  co_return BufferSequenceResult{progress, Status{}, false};
+}
+
+}  // namespace
+
+sched::Task<BufferSequenceResult> read_exact(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<const MutableBuffer> buffers, OperationOptions options) noexcept {
+  return read_exact_buffers(
+      coroutine_allocator, stream,
+      detail::BufferSequenceStorage<MutableBuffer>(buffers), options);
+}
+
+sched::Task<BufferSequenceResult> write_all(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<const ConstBuffer> buffers, OperationOptions options) noexcept {
+  return write_all_buffers(
+      coroutine_allocator, stream,
+      detail::BufferSequenceStorage<ConstBuffer>(buffers), options);
 }
 
 sched::Task<Result<TcpStream>> connect_tcp(

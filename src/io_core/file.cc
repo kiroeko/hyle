@@ -16,6 +16,7 @@
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 #include <unistd.h>
 #endif
 
@@ -313,6 +314,32 @@ std::int64_t file_read_sync(std::intptr_t handle, void *buffer,
   return result < 0 ? native_file_error() : static_cast<std::int64_t>(result);
 }
 
+std::int64_t file_readv_sync(std::intptr_t handle,
+                             detail::NativeBuffer *buffers,
+                             std::uint32_t count,
+                             std::uint64_t offset) noexcept {
+  ssize_t result;
+  do {
+    result = ::preadv(static_cast<int>(handle),
+                     reinterpret_cast<const iovec *>(buffers),
+                     static_cast<int>(count), static_cast<off_t>(offset));
+  } while (result < 0 && errno == EINTR);
+  return result < 0 ? native_file_error() : static_cast<std::int64_t>(result);
+}
+
+std::int64_t file_writev_sync(std::intptr_t handle,
+                              detail::NativeBuffer *buffers,
+                              std::uint32_t count,
+                              std::uint64_t offset) noexcept {
+  ssize_t result;
+  do {
+    result = ::pwritev(static_cast<int>(handle),
+                      reinterpret_cast<const iovec *>(buffers),
+                      static_cast<int>(count), static_cast<off_t>(offset));
+  } while (result < 0 && errno == EINTR);
+  return result < 0 ? native_file_error() : static_cast<std::int64_t>(result);
+}
+
 std::int64_t file_write_sync(std::intptr_t handle, const void *buffer,
                              std::uint32_t length,
                              std::uint64_t offset) noexcept {
@@ -420,6 +447,29 @@ Status validate_transfer(const File &file, const void *buffer,
       !file.direct_alignment().accepts(buffer, offset, length))
     return Status::InvalidArgument(
         "direct file transfer violates address/offset/length alignment");
+  return Status{};
+}
+
+template <class Buffer>
+Status validate_buffer_sequence(
+    const File &file, const detail::BufferSequenceStorage<Buffer> &buffers,
+    std::uint64_t offset) noexcept {
+  if (!buffers.ok()) return buffers.status();
+  if (!file.valid()) return Status::FailedPrecondition("file is not open");
+  if (offset > kLargestFileOffset ||
+      static_cast<std::uint64_t>(buffers.total_size()) >
+          kLargestFileOffset - offset)
+    return Status::OutOfRange("file vectored transfer offset overflows");
+  if (file.cache_mode() != FileCacheMode::kDirect) return Status{};
+
+  std::uint64_t segment_offset = offset;
+  for (const detail::NativeBuffer &buffer : buffers.native_buffers()) {
+    if (!file.direct_alignment().accepts(buffer.data(), segment_offset,
+                                         buffer.size()))
+      return Status::InvalidArgument(
+          "direct vectored file transfer violates segment alignment");
+    segment_offset += buffer.size();
+  }
   return Status{};
 }
 
@@ -638,6 +688,219 @@ TransferResult File::WriteSomeAtAwaitable::await_resume() noexcept {
     return std::move(immediate);
   return detail::transfer_from_native(
       state.await_resume(), detail::kFileNativeDomain, "file write", false);
+}
+
+bool File::ReadBuffersAtAwaitable::await_ready() noexcept {
+  if (self == nullptr) {
+    immediate.status = Status::FailedPrecondition("file is not open");
+    immediate_ready = true;
+    return true;
+  }
+  Status valid = validate_buffer_sequence(*self, buffers, offset);
+  if (!valid.ok()) {
+    immediate.status = std::move(valid);
+    immediate_ready = true;
+    return true;
+  }
+  if (buffers.empty()) {
+    immediate.progress = buffers.progress(0);
+    immediate_ready = true;
+    return true;
+  }
+  HYLE_FATAL_ASSERT(sched::current_worker_index() ==
+                    static_cast<int>(self->owner_));
+  Proactor *proactor = &self->io_->proactor_for_current();
+  state =
+      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+  if (state.await_ready()) return true;
+  if (!self->native_async_ &&
+      (options.deadline.has_value() || options.cancel != nullptr)) {
+    immediate.status = Status::Unimplemented(
+        "bounded file IO requires a natively cancellable backend");
+    immediate_ready = true;
+    return true;
+  }
+#if HYLE_OS_WINDOWS
+  const std::size_t alignment =
+      self->cache_ == FileCacheMode::kDirect
+          ? self->alignment_.memory_alignment
+          : alignof(std::max_align_t);
+  if (!staging.allocate(self->io_->operation_allocator(),
+                        buffers.total_size(), alignment)) {
+    immediate.status =
+        Status::ResourceExhausted("file read staging allocation failed");
+    immediate_ready = true;
+    return true;
+  }
+#endif
+  return false;
+}
+
+bool File::ReadBuffersAtAwaitable::await_suspend(
+    std::coroutine_handle<>) noexcept {
+  if (!self->native_async_) {
+#if HYLE_OS_WINDOWS
+    const std::int64_t result = offload(
+        *self->io_, [handle = self->native_handle(), data = staging.data(),
+                     length = static_cast<std::uint32_t>(buffers.total_size()),
+                     offset = offset]() noexcept {
+          return file_read_sync(handle, data, length, offset);
+        });
+#else
+    const std::int64_t result = offload(
+        *self->io_, [handle = self->native_handle(), data = buffers.native_data(),
+                     count = static_cast<std::uint32_t>(buffers.native_count()),
+                     offset = offset]() noexcept {
+          return file_readv_sync(handle, data, count, offset);
+        });
+#endif
+    TransferResult transfer = detail::transfer_from_native(
+        result, detail::kFileNativeDomain, "file vectored read", true);
+    if (transfer.bytes > buffers.total_size()) {
+      immediate.status =
+          Status::Internal("file vectored read exceeded requested bytes");
+    } else {
+      immediate = BufferSequenceResult{buffers.progress(transfer.bytes),
+                                       std::move(transfer.status), transfer.eof};
+    }
+    immediate_ready = true;
+    return false;
+  }
+  return state.await_suspend([&](std::uint64_t token) noexcept {
+#if HYLE_OS_WINDOWS
+    return state.proactor->submit_read(
+        self->native_handle(), staging.data(),
+        static_cast<std::uint32_t>(buffers.total_size()), offset, token);
+#else
+    return state.proactor->submit_read_buffers(
+        self->native_handle(), buffers.native_data(),
+        static_cast<std::uint32_t>(buffers.native_count()), offset, token);
+#endif
+  });
+}
+
+BufferSequenceResult File::ReadBuffersAtAwaitable::await_resume() noexcept {
+  if (!immediate_ready) {
+    TransferResult transfer = detail::transfer_from_native(
+        state.await_resume(), detail::kFileNativeDomain, "file vectored read",
+        true);
+    if (transfer.bytes > buffers.total_size()) {
+      return BufferSequenceResult{
+          {}, Status::Internal("file vectored read exceeded requested bytes"),
+          false};
+    }
+    immediate = BufferSequenceResult{buffers.progress(transfer.bytes),
+                                     std::move(transfer.status), transfer.eof};
+  }
+#if HYLE_OS_WINDOWS
+  if (staging.data() != nullptr && immediate.progress.bytes != 0)
+    buffers.copy_from_contiguous(staging.data(), immediate.progress.bytes);
+#endif
+  return std::move(immediate);
+}
+
+bool File::WriteBuffersAtAwaitable::await_ready() noexcept {
+  if (self == nullptr) {
+    immediate.status = Status::FailedPrecondition("file is not open");
+    immediate_ready = true;
+    return true;
+  }
+  Status valid = validate_buffer_sequence(*self, buffers, offset);
+  if (!valid.ok()) {
+    immediate.status = std::move(valid);
+    immediate_ready = true;
+    return true;
+  }
+  if (buffers.empty()) {
+    immediate.progress = buffers.progress(0);
+    immediate_ready = true;
+    return true;
+  }
+  HYLE_FATAL_ASSERT(sched::current_worker_index() ==
+                    static_cast<int>(self->owner_));
+  Proactor *proactor = &self->io_->proactor_for_current();
+  state =
+      detail::BudgetState{proactor, self->io_->operation_allocator(), options};
+  if (state.await_ready()) return true;
+  if (!self->native_async_ &&
+      (options.deadline.has_value() || options.cancel != nullptr)) {
+    immediate.status = Status::Unimplemented(
+        "bounded file IO requires a natively cancellable backend");
+    immediate_ready = true;
+    return true;
+  }
+#if HYLE_OS_WINDOWS
+  const std::size_t alignment =
+      self->cache_ == FileCacheMode::kDirect
+          ? self->alignment_.memory_alignment
+          : alignof(std::max_align_t);
+  if (!staging.allocate(self->io_->operation_allocator(),
+                        buffers.total_size(), alignment)) {
+    immediate.status =
+        Status::ResourceExhausted("file write staging allocation failed");
+    immediate_ready = true;
+    return true;
+  }
+  buffers.copy_to_contiguous(staging.data());
+#endif
+  return false;
+}
+
+bool File::WriteBuffersAtAwaitable::await_suspend(
+    std::coroutine_handle<>) noexcept {
+  if (!self->native_async_) {
+#if HYLE_OS_WINDOWS
+    const std::int64_t result = offload(
+        *self->io_, [handle = self->native_handle(), data = staging.data(),
+                     length = static_cast<std::uint32_t>(buffers.total_size()),
+                     offset = offset]() noexcept {
+          return file_write_sync(handle, data, length, offset);
+        });
+#else
+    const std::int64_t result = offload(
+        *self->io_, [handle = self->native_handle(), data = buffers.native_data(),
+                     count = static_cast<std::uint32_t>(buffers.native_count()),
+                     offset = offset]() noexcept {
+          return file_writev_sync(handle, data, count, offset);
+        });
+#endif
+    TransferResult transfer = detail::transfer_from_native(
+        result, detail::kFileNativeDomain, "file vectored write", false);
+    if (transfer.bytes > buffers.total_size()) {
+      immediate.status =
+          Status::Internal("file vectored write exceeded requested bytes");
+    } else {
+      immediate = BufferSequenceResult{buffers.progress(transfer.bytes),
+                                       std::move(transfer.status), false};
+    }
+    immediate_ready = true;
+    return false;
+  }
+  return state.await_suspend([&](std::uint64_t token) noexcept {
+#if HYLE_OS_WINDOWS
+    return state.proactor->submit_write(
+        self->native_handle(), staging.data(),
+        static_cast<std::uint32_t>(buffers.total_size()), offset, token);
+#else
+    return state.proactor->submit_write_buffers(
+        self->native_handle(), buffers.native_data(),
+        static_cast<std::uint32_t>(buffers.native_count()), offset, token);
+#endif
+  });
+}
+
+BufferSequenceResult File::WriteBuffersAtAwaitable::await_resume() noexcept {
+  if (immediate_ready) return std::move(immediate);
+  TransferResult transfer = detail::transfer_from_native(
+      state.await_resume(), detail::kFileNativeDomain, "file vectored write",
+      false);
+  if (transfer.bytes > buffers.total_size()) {
+    return BufferSequenceResult{
+        {}, Status::Internal("file vectored write exceeded requested bytes"),
+        false};
+  }
+  return BufferSequenceResult{buffers.progress(transfer.bytes),
+                              std::move(transfer.status), false};
 }
 
 bool File::InfoAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
@@ -916,6 +1179,98 @@ sched::Task<TransferResult> write_all_at(mem::AllocatorRef, File &file,
     }
   }
   co_return TransferResult{done, Status{}, false};
+}
+
+namespace {
+
+sched::Task<BufferSequenceResult> read_exact_buffers_at(
+    mem::AllocatorRef, File &file, std::uint64_t offset,
+    detail::BufferSequenceStorage<MutableBuffer> buffers,
+    OperationOptions options) noexcept {
+  if (!buffers.ok())
+    co_return BufferSequenceResult{{}, buffers.status(), false};
+  BufferSequenceProgress progress = buffers.progress(0);
+  while (!progress.complete) {
+    if (offset > (std::numeric_limits<std::uint64_t>::max)() - progress.bytes) {
+      co_return BufferSequenceResult{
+          progress, Status::OutOfRange("file vectored read offset overflows"),
+          false};
+    }
+    BufferSequenceResult part = co_await file.read_some_at(
+        offset + progress.bytes, buffers.sequence(), options, progress.next);
+    progress.bytes += part.progress.bytes;
+    progress.next = part.progress.next;
+    progress.complete = part.progress.complete;
+    if (!part.ok()) {
+      part.progress = progress;
+      co_return part;
+    }
+    if (part.eof) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::DataLoss("EOF before exact vectored file read completed"),
+          true};
+    }
+    if (part.progress.bytes == 0) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::Unavailable("vectored file read made no forward progress"),
+          false};
+    }
+  }
+  co_return BufferSequenceResult{progress, Status{}, false};
+}
+
+sched::Task<BufferSequenceResult> write_all_buffers_at(
+    mem::AllocatorRef, File &file, std::uint64_t offset,
+    detail::BufferSequenceStorage<ConstBuffer> buffers,
+    OperationOptions options) noexcept {
+  if (!buffers.ok())
+    co_return BufferSequenceResult{{}, buffers.status(), false};
+  BufferSequenceProgress progress = buffers.progress(0);
+  while (!progress.complete) {
+    if (offset > (std::numeric_limits<std::uint64_t>::max)() - progress.bytes) {
+      co_return BufferSequenceResult{
+          progress, Status::OutOfRange("file vectored write offset overflows"),
+          false};
+    }
+    BufferSequenceResult part = co_await file.write_some_at(
+        offset + progress.bytes, buffers.sequence(), options, progress.next);
+    progress.bytes += part.progress.bytes;
+    progress.next = part.progress.next;
+    progress.complete = part.progress.complete;
+    if (!part.ok()) {
+      part.progress = progress;
+      co_return part;
+    }
+    if (part.progress.bytes == 0) {
+      co_return BufferSequenceResult{
+          progress,
+          Status::Unavailable("vectored file write made no forward progress"),
+          false};
+    }
+  }
+  co_return BufferSequenceResult{progress, Status{}, false};
+}
+
+} // namespace
+
+sched::Task<BufferSequenceResult>
+read_exact_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+              std::span<const MutableBuffer> buffers,
+              OperationOptions options) noexcept {
+  return read_exact_buffers_at(
+      allocator, file, offset,
+      detail::BufferSequenceStorage<MutableBuffer>(buffers), options);
+}
+
+sched::Task<BufferSequenceResult>
+write_all_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+             std::span<const ConstBuffer> buffers,
+             OperationOptions options) noexcept {
+  return write_all_buffers_at(
+      allocator, file, offset,
+      detail::BufferSequenceStorage<ConstBuffer>(buffers), options);
 }
 
 } // namespace hyle::io

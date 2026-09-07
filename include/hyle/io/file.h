@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <utility>
 
 #include "hyle/container/small_vector.h"
 #include "hyle/error/result.h"
+#include "hyle/io/buffer.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
 #include "hyle/io/net_budget.h"
@@ -69,6 +71,59 @@ struct DirectIoAlignment {
   }
 };
 
+namespace detail {
+
+class FileStagingBuffer {
+public:
+  FileStagingBuffer() noexcept = default;
+  ~FileStagingBuffer() { reset(); }
+  FileStagingBuffer(FileStagingBuffer &&other) noexcept
+      : allocator_(other.allocator_), data_(std::exchange(other.data_, nullptr)),
+        size_(std::exchange(other.size_, 0)),
+        alignment_(std::exchange(other.alignment_, 1)) {}
+  FileStagingBuffer &operator=(FileStagingBuffer &&other) noexcept {
+    if (this != &other) {
+      reset();
+      allocator_ = other.allocator_;
+      data_ = std::exchange(other.data_, nullptr);
+      size_ = std::exchange(other.size_, 0);
+      alignment_ = std::exchange(other.alignment_, 1);
+    }
+    return *this;
+  }
+  FileStagingBuffer(const FileStagingBuffer &) = delete;
+  FileStagingBuffer &operator=(const FileStagingBuffer &) = delete;
+
+  bool allocate(mem::AllocatorRef allocator, std::size_t size,
+                std::size_t alignment) noexcept {
+    reset();
+    if (size == 0) return true;
+    void *data = allocator.allocate(size, alignment);
+    if (data == nullptr) return false;
+    allocator_ = allocator;
+    data_ = data;
+    size_ = size;
+    alignment_ = alignment;
+    return true;
+  }
+  void reset() noexcept {
+    if (data_ != nullptr) allocator_.deallocate(data_, size_, alignment_);
+    data_ = nullptr;
+    size_ = 0;
+    alignment_ = 1;
+  }
+  void *data() const noexcept { return data_; }
+  std::size_t size() const noexcept { return size_; }
+
+private:
+  mem::AllocatorRef allocator_{};
+  void *data_ = nullptr;
+  std::size_t size_ = 0;
+  std::size_t alignment_ = 1;
+};
+
+} // namespace detail
+
 class File {
 public:
   File() noexcept = default;
@@ -124,6 +179,36 @@ public:
     HYLE_IO_API TransferResult await_resume() noexcept;
   };
 
+  struct ReadBuffersAtAwaitable {
+    File *self = nullptr;
+    detail::BufferSequenceStorage<MutableBuffer> buffers;
+    std::uint64_t offset = 0;
+    OperationOptions options{};
+    detail::BudgetState state{};
+    detail::FileStagingBuffer staging{};
+    BufferSequenceResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API BufferSequenceResult await_resume() noexcept;
+  };
+
+  struct WriteBuffersAtAwaitable {
+    File *self = nullptr;
+    detail::BufferSequenceStorage<ConstBuffer> buffers;
+    std::uint64_t offset = 0;
+    OperationOptions options{};
+    detail::BudgetState state{};
+    detail::FileStagingBuffer staging{};
+    BufferSequenceResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API BufferSequenceResult await_resume() noexcept;
+  };
+
   ReadSomeAtAwaitable read_some_at(std::uint64_t offset,
                                    std::span<std::byte> buffer,
                                    OperationOptions options = {}) noexcept {
@@ -133,6 +218,22 @@ public:
                                      std::span<const std::byte> buffer,
                                      OperationOptions options = {}) noexcept {
     return WriteSomeAtAwaitable{this, buffer, offset, options};
+  }
+  ReadBuffersAtAwaitable read_some_at(
+      std::uint64_t offset, std::span<const MutableBuffer> buffers,
+      OperationOptions options = {},
+      BufferSequenceCursor cursor = {}) noexcept {
+    return ReadBuffersAtAwaitable{
+        this, detail::BufferSequenceStorage<MutableBuffer>(buffers, cursor),
+        offset, options};
+  }
+  WriteBuffersAtAwaitable write_some_at(
+      std::uint64_t offset, std::span<const ConstBuffer> buffers,
+      OperationOptions options = {},
+      BufferSequenceCursor cursor = {}) noexcept {
+    return WriteBuffersAtAwaitable{
+        this, detail::BufferSequenceStorage<ConstBuffer>(buffers, cursor),
+        offset, options};
   }
 
   struct InfoAwaitable {
@@ -247,6 +348,14 @@ read_exact_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
 HYLE_IO_API sched::Task<TransferResult>
 write_all_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
              std::span<const std::byte> buffer,
+             OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<BufferSequenceResult>
+read_exact_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+              std::span<const MutableBuffer> buffers,
+              OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<BufferSequenceResult>
+write_all_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+             std::span<const ConstBuffer> buffers,
              OperationOptions options = {}) noexcept;
 
 } // namespace hyle::io

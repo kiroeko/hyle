@@ -30,8 +30,9 @@
 // both race outcomes on every backend (Win IOCP / Linux io_uring / forced-epoll):
 //   1. TIMEOUT wins: the server accepts but never sends -> the client's timed recv
 //      hits its deadline and returns -ETIMEDOUT (-110); the in-flight recv is
-//      cancelled (its late -ECANCELED/ABORTED completion must NOT UAF the freed
-//      slot -- the refcount orphan keeps it alive; TSan + a clean shutdown verify).
+//      cancelled; the public await resumes only after the original completion
+//      retires, so neither the slot nor the borrowed byte buffers can be touched
+//      after return.
 //   2. IO wins: the server sends promptly -> the timed recv returns the bytes
 //      before the (generous) deadline, and the timer is cancelled cleanly.
 
@@ -99,6 +100,7 @@ struct TimeoutResult {
   std::atomic<bool> done{false};
   std::atomic<bool> connected{false};
   std::atomic<std::int64_t> recv_rc{999};  // expect -110 (ETIMEDOUT)
+  std::atomic<bool> native_retired{false};
   TcpStream held;  // keep the accepted server conn alive (so it doesn't RST)
 };
 
@@ -125,19 +127,24 @@ Task<int> timeout_client(AllocatorRef alloc, IoContext* io, TimeoutResult* r,
     co_return 0;
   }
   r->connected.store(true, std::memory_order_release);
-  char buf[64] = {};
+  char first[17] = {};
+  char second[47] = {};
+  const hyle::io::MutableBuffer buffers[] = {
+      {first, sizeof(first)}, {second, sizeof(second)}};
   // Deadline 50ms out; server never sends, so the timer must win.
   auto transfer = co_await s.read_some(
-      std::as_writable_bytes(std::span{buf}),
+      std::span<const hyle::io::MutableBuffer>{buffers},
       hyle::io::OperationOptions{
           .deadline = hyle::time::deadline_after(std::chrono::milliseconds(50))});
   const std::int64_t rc =
-      transfer.ok() ? static_cast<std::int64_t>(transfer.bytes)
+      transfer.ok() ? static_cast<std::int64_t>(transfer.progress.bytes)
                     : (transfer.status.code() ==
                                hyle::StatusCode::DeadlineExceeded
                            ? hyle::io::kDeadlineExceeded
                            : -999);
   r->recv_rc.store(rc, std::memory_order_release);
+  r->native_retired.store(!io->proactor_for_current().in_flight(),
+                          std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -212,6 +219,7 @@ TEST(IoTimeout, TimeoutWinsReturnsETimedout) {
   EXPECT_TRUE(r->done.load());
   EXPECT_TRUE(r->connected.load());
   EXPECT_EQ(r->recv_rc.load(), -110);  // -ETIMEDOUT: the timer won the race
+  EXPECT_TRUE(r->native_retired.load());
 }
 
 TEST(IoTimeout, IoWinsReturnsBytes) {
