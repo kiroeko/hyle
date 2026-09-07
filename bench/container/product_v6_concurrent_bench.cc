@@ -347,8 +347,7 @@ int main() {
   (void)run_set(cpus, set, kWarmupIterations);
   const RunResult set_result =
       run_set(cpus, set, kMembershipMeasuredIterations);
-  const std::uint64_t set_work =
-      kWorkerCount * kMembershipMeasuredIterations;
+  const std::uint64_t set_work = kWorkerCount * kMembershipMeasuredIterations;
   const std::uint64_t expected_set = set_work / 2;
   if (!affinity_ok(set_result) || set_result.checksum != expected_set)
     fail("concurrent membership accounting failed");
@@ -369,17 +368,15 @@ int main() {
     fail("queue warmup accounting failed");
   const RunResult queue_result =
       run_queue(cpus, queue, kQueueMeasuredIterations);
-  const std::uint64_t transferred =
-      kProducerCount * kQueueMeasuredIterations;
+  const std::uint64_t transferred = kProducerCount * kQueueMeasuredIterations;
   const std::uint64_t queue_operations = 2 * transferred;
   const std::uint64_t expected_queue = transferred * (transferred + 1);
   if (!affinity_ok(queue_result) || queue_result.checksum != expected_queue)
     fail("queue transfer accounting failed");
-  print_measurement("unbounded-mpmc-handoff-4p4c-262144",
-                    static_cast<double>(queue_operations) /
-                        queue_result.seconds,
-                    queue_result, queue_operations, kQueueMeasuredIterations,
-                    expected_queue);
+  print_measurement(
+      "unbounded-mpmc-handoff-4p4c-262144",
+      static_cast<double>(queue_operations) / queue_result.seconds,
+      queue_result, queue_operations, kQueueMeasuredIterations, expected_queue);
 
   const char *execution_order = std::getenv("HYLE_PERF_EXECUTION_ORDER");
   const char *topology = std::getenv("HYLE_PERF_SAMPLING_TOPOLOGY");
@@ -400,7 +397,6 @@ int main() {
               parent_mask != nullptr ? parent_mask : "unmanaged",
               priority != nullptr ? priority : "unmanaged", kWarmupIterations,
               kMembershipMeasuredIterations, kQueueMeasuredIterations,
-              kProducerCount,
-              hyle::bench::perf::run_nonce());
+              kProducerCount, hyle::bench::perf::run_nonce());
   return 0;
 }

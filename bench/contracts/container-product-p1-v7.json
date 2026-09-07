@@ -241,7 +241,7 @@
             "--build",
             "{build}",
             "--expected-benchmark-sha256",
-            "4d2a172c26e2739c9da873b12b407e76a6c81efe5a5f82640003461301280de3",
+            "1fed110bcc552f80e3794e8634e6a1e80933442d6b968220a3e9afade2565d64",
             "--expected-shape-sha256",
             "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
           ]

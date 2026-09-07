@@ -245,7 +245,7 @@ process-level ratio CI 大幅摆动。下一候选不会换 API、peer、分布�
 - 当前语义矩阵升为 `consumer_shapes_v7.json`，SHA-256
   `78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60`；单线程合同升为
   `container-product-p1-v7`（SHA-256
-  `6fba10b094d27ab42cd6db04f3d86f3006e84e615b3f723103e94111cfe5ce21`），并发合同升为
+  `3009a1294fdc7004b365e8af79c7a5d13f237e9ffaa540c722f105cc7b71d5ef`），并发合同升为
   `container-concurrent-product-p1-v3`（SHA-256
   `0af5617ca1c4b978a8ad65ace62764efc2e792642939465110796c333f4e6389`）。旧 v6/v2 合同只存在于
   被撤回候选的 Git 历史与 manifest 中；

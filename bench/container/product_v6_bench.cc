@@ -211,8 +211,7 @@ public:
                                          std::uint64_t, std::size_t>
   hyle::container::LruInsertResult<std::uint64_t>
   try_insert_or_assign(std::uint64_t key, std::uint64_t value,
-                       std::size_t weight,
-                       OnEvict &&on_evict) {
+                       std::size_t weight, OnEvict &&on_evict) {
     using hyle::container::LruInsertStatus;
     if (limits_.max_entries == 0 || weight > limits_.max_weight)
       return {nullptr, LruInsertStatus::kRejected, 0};
@@ -221,8 +220,8 @@ public:
     if (found != index_.end()) {
       const std::size_t weight_without_existing =
           total_weight_ - found->second->weight;
-      if (weight > (std::numeric_limits<std::size_t>::max)() -
-                       weight_without_existing)
+      if (weight >
+          (std::numeric_limits<std::size_t>::max)() - weight_without_existing)
         return {nullptr, LruInsertStatus::kRejected, 0};
       found->second->value = value;
       found->second->weight = weight;
@@ -259,8 +258,7 @@ public:
 
     total_weight_ += weight;
     const std::size_t evicted = trim(std::forward<OnEvict>(on_evict));
-    return {&entries_.front().value,
-            LruInsertStatus::kInserted, evicted};
+    return {&entries_.front().value, LruInsertStatus::kInserted, evicted};
   }
 
   std::size_t size() const noexcept { return entries_.size(); }
@@ -379,8 +377,7 @@ public:
         std::size_t evicted = 0;
         auto result = peer_->try_insert_or_assign(
             key, value, 1,
-            [&](std::uint64_t evicted_key,
-                std::uint64_t evicted_value,
+            [&](std::uint64_t evicted_key, std::uint64_t evicted_value,
                 std::size_t weight) noexcept {
               checksum += evicted_key ^ evicted_value ^ weight;
               ++evicted;
@@ -418,8 +415,7 @@ bool validate_lru_failure_contract() {
   PeerLru<hyle::mem::SystemAllocator, PeerFailurePoint::kBeforeNode> peer_node(
       limits);
   const auto peer_node_result = peer_node.try_insert_or_assign(
-      1, 11, 1,
-      [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
+      1, 11, 1, [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
 
   FailureBudget candidate_index_failure{1};
   Candidate candidate_index(
@@ -430,8 +426,7 @@ bool validate_lru_failure_contract() {
   PeerLru<hyle::mem::SystemAllocator, PeerFailurePoint::kAfterNode> peer_index(
       limits);
   const auto peer_index_result = peer_index.try_insert_or_assign(
-      2, 22, 1,
-      [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
+      2, 22, 1, [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
 
   const auto out_of_memory = [](const auto &result) {
     return result.status == hyle::container::LruInsertStatus::kOutOfMemory &&
@@ -475,12 +470,10 @@ bool validate_lru_weight_contract() {
       peer.try_insert_or_assign(3, 33, 2, peer_evict);
   const auto candidate_assign =
       candidate.try_insert_or_assign(2, 222, 4, candidate_evict);
-  const auto peer_assign =
-      peer.try_insert_or_assign(2, 222, 4, peer_evict);
+  const auto peer_assign = peer.try_insert_or_assign(2, 222, 4, peer_evict);
   const auto candidate_rejected =
       candidate.try_insert_or_assign(4, 44, 6, candidate_evict);
-  const auto peer_rejected =
-      peer.try_insert_or_assign(4, 44, 6, peer_evict);
+  const auto peer_rejected = peer.try_insert_or_assign(4, 44, 6, peer_evict);
 
   const auto same_result = [](const auto &left, const auto &right) {
     return left.status == right.status && left.evicted == right.evicted &&
@@ -501,9 +494,10 @@ bool validate_lru_weight_contract() {
          candidate.size() == 1 && peer.size() == 1 &&
          candidate.total_weight() == 4 && peer.total_weight() == 4 &&
          candidate_evictions == peer_evictions && candidate_value != nullptr &&
-         peer_value != nullptr && *candidate_value == 222 && *peer_value == 222 &&
-         !candidate.contains(1) && !candidate.contains(3) &&
-         peer.get(1) == nullptr && peer.get(3) == nullptr;
+         peer_value != nullptr && *candidate_value == 222 &&
+         *peer_value == 222 && !candidate.contains(1) &&
+         !candidate.contains(3) && peer.get(1) == nullptr &&
+         peer.get(3) == nullptr;
 }
 
 hyle::container::UtfStatus peer_utf_status(simdutf::error_code error) noexcept {
@@ -684,8 +678,7 @@ int validate_contract() {
               "unicode_input_bytes=%zu unicode_units=%zu "
               "unicode_unit_bytes=%zu verdict=%s\n",
               candidate_lru == peer_lru ? "PASS" : "FAIL",
-              lru_failure ? "PASS" : "FAIL",
-              lru_weight ? "PASS" : "FAIL",
+              lru_failure ? "PASS" : "FAIL", lru_weight ? "PASS" : "FAIL",
               candidate_unicode == peer_unicode ? "PASS" : "FAIL",
               malformed_equal ? "PASS" : "FAIL", small_equal ? "PASS" : "FAIL",
               kLruCapacity, kBatch, kMetadataRecords,
