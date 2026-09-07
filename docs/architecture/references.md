@@ -42,7 +42,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 |---|---|---|
 | **highway** | 借（锁定产品源码）+ 参考 + bench 对照 | 当前直接承载 SIMD 数学实现，后续 foundation/dispatch 仍按 capability 裁决；HYLE façade 不泄漏 vendor 类型。独立 peer checkout 只用于同身份 benchmark，不能与产品 source override 混用 |
 | **xsimd** | 参考 + bench 对照 | 当前只作数学精度/性能 oracle，不进产品构建；只有 Highway 无法满足的具名 capability/accuracy gap 才重新准入 |
-| **simdutf** | 借（container 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
+| **simdutf** | 借（container_text 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container_text`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
 | **sleef** | **已退役** | 曾评估作 transcendental 核；当前不进产品或基准默认闭包，只有新的具名缺口才重新准入 |
 | **nanobench** | 借（测试期） | 微基准框架，vendored 在 `third_party/`；统一性能仪器在其上做跨进程同进程配对：预声明 margin、分布无关中位数 CI、comparability/qualification/exact-performance 分轴、同合同 non-inferiority gate、逐进程 raw JSON 与正反序/shape 合成；sign p 值只作诊断 |
 

@@ -1,5 +1,5 @@
 {
-  "schema": "hyle.container.consumer-shapes/v6",
+  "schema": "hyle.container.consumer-shapes/v7",
   "owner": "container-v6-identity-p1-resume",
   "reference_revisions": {
     "llama_cpp": "3ad1ba7336986d98592d3e28cafd1a406715351f",
@@ -20,13 +20,13 @@
         "vllm/vllm/v1/kv_offload/cpu/policies/lru.py evictable block LRU",
         "sglang/python/sglang/srt/mem_cache storage and runtime bounded caches"
       ],
-      "peer": "Abseil flat_hash_map plus std::list using the same stable hash and HYLE system allocator, with bad_alloc mapped to the same typed result and rollback after partial insertion",
-      "reason": "bounded recency storage is common across the four inference references; both adapters now preserve the identical recoverable failure and no-partial-commit contract while the benchmark measures the generic storage mechanism rather than engine-specific eviction policy"
+      "peer": "Abseil flat_hash_map plus std::list using the same stable hash and HYLE system allocator, storing and enforcing identical per-entry/total weight, with bad_alloc mapped to the same typed result and rollback after partial insertion",
+      "reason": "bounded weighted recency storage is common across the four inference references; both adapters preserve identical entry and weight limits, recoverable failure and no-partial-commit semantics while the benchmark measures the generic storage mechanism rather than engine-specific eviction policy"
     },
     {
       "id": "read-mostly-concurrent-membership",
       "consumer": "inference runtime active-object, backend or registry membership",
-      "topology": "one prebuilt 32768-entry set; eight persistent workers each perform 262144 deterministic 50-percent-hit membership queries on distinct physical cores",
+      "topology": "one prebuilt 32768-entry set; eight persistent workers each perform 4194304 deterministic 50-percent-hit membership queries on distinct physical cores, producing a process window above 100 ms on W1-WIN",
       "ownership": "the set owns keys; construction and reserve are cold; workers receive only snapshot membership results and perform no external synchronization",
       "demand_sources": [
         "ggml/src/ggml-metal/ggml-metal-common.cpp active concurrent node-set reasoning",

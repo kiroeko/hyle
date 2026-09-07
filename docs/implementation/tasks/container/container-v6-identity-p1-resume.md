@@ -231,3 +231,31 @@ process-level ratio CI 大幅摆动。下一候选不会换 API、peer、分布�
 本次 `CANDIDATE -> AUDITED` 使用的明确前态 registry 快照为
 `C:\Users\kiro\AppData\Local\Temp\hyle-container-v6-before-red-team-retreat.json`，SHA-256
 `61bdbb423c8165a3c677a01124984e388432ad3b446799a2f5f733b2ac70a397`。
+
+## 第二候选预采样修复（`AUDITED`）
+
+`CONT6-F03..F05` 已在不改产品源码、公开 API/layout、allocator 或正常算法的前提下完成：
+
+- 新 `PeerLru` 与 HYLE 一样存储 per-entry weight、维护 total weight，并同时按 entry/weight limits
+  循环淘汰。未计时 oracle 覆盖 weight-driven eviction、assignment 改重后淘汰、overweight rejection、
+  callback、size、weight、value 和 membership 等价；原有 node/index OOM/rollback oracle 保留；
+- membership workload 保持同一 32768-entry set、八个物理核 worker、50% hit、hash/equality/allocator、
+  setup 与双执行顺序，只把每 worker 查询数由 262144 提至 4194304。W1-WIN smoke 的 HYLE/oneTBB
+  独立进程窗口为约 133.7/137.0ms，已消除原约 9ms 窗口的分辨率缺陷；queue scale 完全不变；
+- 当前语义矩阵升为 `consumer_shapes_v7.json`，SHA-256
+  `78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60`；单线程合同升为
+  `container-product-p1-v7`（SHA-256
+  `6fba10b094d27ab42cd6db04f3d86f3006e84e615b3f723103e94111cfe5ce21`），并发合同升为
+  `container-concurrent-product-p1-v3`（SHA-256
+  `0af5617ca1c4b978a8ad65ace62764efc2e792642939465110796c333f4e6389`）。旧 v6/v2 合同只存在于
+  被撤回候选的 Git 历史与 manifest 中；
+- 两合同现在以真实 `hyle_product_container` / `hyle::container` façade 为产品根，并逐 workload 声明
+  `container`、`container_text`、`container_concurrent`、`container_queue` factor owner；simdutf 的真实
+  compiled owner 文档也改为 `hyle_container_text`；
+- W1-WIN Release/WERROR 四个 adapter target 已编译；新 v7 validator 的 primary/placement artifact
+  分离、LRU/OOM/weight/Unicode semantic oracle 全部 `PASS`；并发 HYLE/oneTBB smoke 的 affinity、工作量、
+  checksum 与结构化 row identity 全部匹配。smoke 点值不是性能证据。
+
+三项 FIX 的预采样门均为 `PASS`。状态仍为 `AUDITED`：下一步只能先提交并冻结新的 immutable candidate，
+然后对 v7/v3 各执行一次 `n=15` qualification；只有合法 verdict 为 `UNRESOLVED` 时才可按合同执行唯一
+一次全新 `n=31`，不得缩样本、追加或挑选有利结果。

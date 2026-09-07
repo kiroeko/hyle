@@ -36,6 +36,12 @@ checksum、A/A、known delta 与 timer floor 均正常，没有固定产品损�
 weight 语义、把约 9ms 的 membership 进程窗口按预冻结规则提高到足够分辨率、修正 factor attribution，
 再从唯一 `n=15` 开始形成新候选证据；不得复用本候选 verdict、改 margin 或挑样。
 
+上述有限修复已形成新的预采样合同 `container-product-p1-v7` 与
+`container-concurrent-product-p1-v3`：peer 已真实执行 weighted-LRU 语义，membership 窗口提高到每 worker
+4194304 次查询（W1-WIN smoke 约 134--137ms），合同以 Container 产品 façade 为根并记录逐 workload
+factor owner。编译、未计时语义 oracle 和 smoke 已通过，但正式 qualification 尚未运行，因此本页仍明确
+保持 rejected/inconclusive，而不会把预采样结果提前写成性能 `PASS`。
+
 <!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
 ## Container v5：历史终局为 `INCONCLUSIVE`

@@ -39,7 +39,13 @@ constexpr std::size_t kWorkerCount = 8;
 constexpr std::size_t kProducerCount = 4;
 constexpr std::size_t kSetEntries = 32768;
 constexpr std::size_t kWarmupIterations = 32768;
-constexpr std::size_t kMeasuredIterations = 262144;
+// The original 262144-query membership window completed in about 9 ms on the
+// qualification host, so process scheduling dominated its paired CI even at
+// n=31. Keep the consumer topology and distribution, but charge a >=100 ms
+// process window. Queue handoff already has a materially longer window and
+// retains its original frozen scale.
+constexpr std::size_t kMembershipMeasuredIterations = 4194304;
+constexpr std::size_t kQueueMeasuredIterations = 262144;
 
 struct StableHash {
   std::uint64_t operator()(std::uint64_t value) const noexcept {
@@ -289,6 +295,7 @@ void print_json_masks(const RunResult &result) {
 
 void print_measurement(const char *row_id, double operations_per_second,
                        const RunResult &result, std::uint64_t work_items,
+                       std::size_t work_items_per_worker,
                        std::uint64_t expected_checksum) {
   std::printf("{\"record\":\"hyle_perf_structured_measurement\","
               "\"schema\":\"hyle.perf.structured-measurement/v1\","
@@ -297,7 +304,8 @@ void print_measurement(const char *row_id, double operations_per_second,
               "\"fanout\":1,\"callback_count\":%llu,"
               "\"expected_callback_count\":%llu,\"affinity_ok\":true,"
               "\"requested_logical_cpus\":",
-              row_id, operations_per_second, kWorkerCount, kMeasuredIterations,
+              row_id, operations_per_second, kWorkerCount,
+              work_items_per_worker,
               static_cast<unsigned long long>(work_items),
               static_cast<unsigned long long>(work_items),
               static_cast<unsigned long long>(work_items));
@@ -337,14 +345,17 @@ int main() {
       fail("set setup insert failed");
   }
   (void)run_set(cpus, set, kWarmupIterations);
-  const RunResult set_result = run_set(cpus, set, kMeasuredIterations);
-  const std::uint64_t set_work = kWorkerCount * kMeasuredIterations;
+  const RunResult set_result =
+      run_set(cpus, set, kMembershipMeasuredIterations);
+  const std::uint64_t set_work =
+      kWorkerCount * kMembershipMeasuredIterations;
   const std::uint64_t expected_set = set_work / 2;
   if (!affinity_ok(set_result) || set_result.checksum != expected_set)
     fail("concurrent membership accounting failed");
-  print_measurement("read-mostly-membership-8x262144",
+  print_measurement("read-mostly-membership-8x4194304",
                     static_cast<double>(set_work) / set_result.seconds,
-                    set_result, set_work, expected_set);
+                    set_result, set_work, kMembershipMeasuredIterations,
+                    expected_set);
 
   HandoffQueue queue;
 #if !defined(HYLE_CONTAINER_V6_PEER)
@@ -356,8 +367,10 @@ int main() {
   const std::uint64_t expected_warmup = warmup_items * (warmup_items + 1);
   if (!affinity_ok(queue_warmup) || queue_warmup.checksum != expected_warmup)
     fail("queue warmup accounting failed");
-  const RunResult queue_result = run_queue(cpus, queue, kMeasuredIterations);
-  const std::uint64_t transferred = kProducerCount * kMeasuredIterations;
+  const RunResult queue_result =
+      run_queue(cpus, queue, kQueueMeasuredIterations);
+  const std::uint64_t transferred =
+      kProducerCount * kQueueMeasuredIterations;
   const std::uint64_t queue_operations = 2 * transferred;
   const std::uint64_t expected_queue = transferred * (transferred + 1);
   if (!affinity_ok(queue_result) || queue_result.checksum != expected_queue)
@@ -365,7 +378,8 @@ int main() {
   print_measurement("unbounded-mpmc-handoff-4p4c-262144",
                     static_cast<double>(queue_operations) /
                         queue_result.seconds,
-                    queue_result, queue_operations, expected_queue);
+                    queue_result, queue_operations, kQueueMeasuredIterations,
+                    expected_queue);
 
   const char *execution_order = std::getenv("HYLE_PERF_EXECUTION_ORDER");
   const char *topology = std::getenv("HYLE_PERF_SAMPLING_TOPOLOGY");
@@ -380,10 +394,13 @@ int main() {
   std::printf(" parent_mask=%s priority=%s affinity_ok=1 hash=stable "
               "allocator=hyle-system allocation_failure=recoverable "
               "warmup_iterations=%zu "
-              "measured_iterations=%zu producer_count=%zu run_nonce=%s\n",
+              "membership_measured_iterations=%zu "
+              "queue_measured_iterations=%zu producer_count=%zu "
+              "run_nonce=%s\n",
               parent_mask != nullptr ? parent_mask : "unmanaged",
               priority != nullptr ? priority : "unmanaged", kWarmupIterations,
-              kMeasuredIterations, kProducerCount,
+              kMembershipMeasuredIterations, kQueueMeasuredIterations,
+              kProducerCount,
               hyle::bench::perf::run_nonce());
   return 0;
 }

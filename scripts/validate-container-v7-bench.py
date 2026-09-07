@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Container v6 single-thread consumer adapter.
+"""Validate the Container v7 single-thread consumer adapter.
 
 The shared performance runner owns sampling and statistics. This validator
 binds the semantic matrix and benchmark source, runs the exact correctness
@@ -18,9 +18,10 @@ import sys
 
 PREFIX = "# HYLE_CONTAINER_V6_CONTRACT "
 EXPECTED = {
-    "schema": "2",
+    "schema": "3",
     "lru": "PASS",
     "lru_oom": "PASS",
+    "lru_weight": "PASS",
     "container_text": "PASS",
     "unicode_malformed": "PASS",
     "unicode_output_small": "PASS",
@@ -87,7 +88,7 @@ def _run(executable: pathlib.Path) -> dict[str, str]:
     fields = _fields(output)
     if fields != EXPECTED:
         raise RuntimeError(
-            "Container v6 marker differs from the frozen semantic oracle: "
+            "Container v7 marker differs from the frozen semantic oracle: "
             f"expected={EXPECTED!r} actual={fields!r}"
         )
     return {"path": str(executable), "sha256": _sha256(executable)}
@@ -104,17 +105,17 @@ def main() -> int:
     source = pathlib.Path(args.source).resolve(strict=True)
     build = pathlib.Path(args.build).resolve(strict=True)
     benchmark = source / "bench" / "container" / "product_v6_bench.cc"
-    shape = source / "bench" / "container" / "consumer_shapes_v6.json"
+    shape = source / "bench" / "container" / "consumer_shapes_v7.json"
     benchmark_hash = _sha256(benchmark)
     shape_hash = _sha256(shape)
     if benchmark_hash != args.expected_benchmark_sha256:
         raise RuntimeError(
-            "Container v6 benchmark differs from the contract-frozen hash: "
+            "Container v7 benchmark differs from the contract-frozen hash: "
             f"expected={args.expected_benchmark_sha256} actual={benchmark_hash}"
         )
     if shape_hash != args.expected_shape_sha256:
         raise RuntimeError(
-            "Container v6 consumer shape differs from the contract-frozen hash: "
+            "Container v7 consumer shape differs from the contract-frozen hash: "
             f"expected={args.expected_shape_sha256} actual={shape_hash}"
         )
 
@@ -128,7 +129,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "schema": "hyle.container-v6-validator/v1",
+                "schema": "hyle.container-v7-validator/v1",
                 "semantic_oracle": "PASS",
                 "placement_artifact": "PASS",
                 "benchmark_sha256": benchmark_hash,
@@ -146,5 +147,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
-        print(f"container-v6 validator: {exc}", file=sys.stderr)
+        print(f"container-v7 validator: {exc}", file=sys.stderr)
         raise SystemExit(2)

@@ -180,6 +180,7 @@ class PeerLru {
   struct Entry {
     std::uint64_t key;
     std::uint64_t value;
+    std::size_t weight;
   };
 
   using ListAllocator = ReplayStdAllocator<Entry, RawAlloc>;
@@ -191,10 +192,11 @@ class PeerLru {
                           std::equal_to<>, IndexAllocator>;
 
 public:
-  explicit PeerLru(std::size_t capacity, RawAlloc alloc = RawAlloc{})
+  explicit PeerLru(hyle::container::LruCacheLimits limits,
+                   RawAlloc alloc = RawAlloc{})
       : entries_(ListAllocator{alloc}),
         index_(0, StableHash{}, std::equal_to<>{}, IndexAllocator{alloc}),
-        capacity_(capacity) {}
+        limits_(limits) {}
 
   std::uint64_t *get(std::uint64_t key) noexcept {
     const auto found = index_.find(key);
@@ -206,29 +208,44 @@ public:
 
   template <class OnEvict>
     requires std::is_nothrow_invocable_v<OnEvict &, std::uint64_t,
-                                         std::uint64_t>
+                                         std::uint64_t, std::size_t>
   hyle::container::LruInsertResult<std::uint64_t>
   try_insert_or_assign(std::uint64_t key, std::uint64_t value,
+                       std::size_t weight,
                        OnEvict &&on_evict) {
+    using hyle::container::LruInsertStatus;
+    if (limits_.max_entries == 0 || weight > limits_.max_weight)
+      return {nullptr, LruInsertStatus::kRejected, 0};
+
     const auto found = index_.find(key);
     if (found != index_.end()) {
+      const std::size_t weight_without_existing =
+          total_weight_ - found->second->weight;
+      if (weight > (std::numeric_limits<std::size_t>::max)() -
+                       weight_without_existing)
+        return {nullptr, LruInsertStatus::kRejected, 0};
       found->second->value = value;
+      found->second->weight = weight;
+      total_weight_ = weight_without_existing + weight;
       entries_.splice(entries_.begin(), entries_, found->second);
-      return {&found->second->value,
-              hyle::container::LruInsertStatus::kAssigned, 0};
+      const std::size_t evicted = trim(std::forward<OnEvict>(on_evict));
+      return {&found->second->value, LruInsertStatus::kAssigned, evicted};
     }
 
+    if (weight > (std::numeric_limits<std::size_t>::max)() - total_weight_)
+      return {nullptr, LruInsertStatus::kRejected, 0};
+
     if constexpr (FailurePoint == PeerFailurePoint::kBeforeNode)
-      return {nullptr, hyle::container::LruInsertStatus::kOutOfMemory, 0};
+      return {nullptr, LruInsertStatus::kOutOfMemory, 0};
 
     try {
-      entries_.push_front({key, value});
+      entries_.push_front({key, value, weight});
     } catch (const std::bad_alloc &) {
-      return {nullptr, hyle::container::LruInsertStatus::kOutOfMemory, 0};
+      return {nullptr, LruInsertStatus::kOutOfMemory, 0};
     }
     if constexpr (FailurePoint == PeerFailurePoint::kAfterNode) {
       entries_.pop_front();
-      return {nullptr, hyle::container::LruInsertStatus::kOutOfMemory, 0};
+      return {nullptr, LruInsertStatus::kOutOfMemory, 0};
     }
     try {
       const auto [unused, inserted] = index_.emplace(key, entries_.begin());
@@ -237,27 +254,40 @@ public:
         std::abort();
     } catch (const std::bad_alloc &) {
       entries_.pop_front();
-      return {nullptr, hyle::container::LruInsertStatus::kOutOfMemory, 0};
+      return {nullptr, LruInsertStatus::kOutOfMemory, 0};
     }
 
-    std::size_t evicted = 0;
-    if (entries_.size() > capacity_) {
-      const Entry &victim = entries_.back();
-      std::invoke(on_evict, victim.key, victim.value);
-      index_.erase(victim.key);
-      entries_.pop_back();
-      evicted = 1;
-    }
+    total_weight_ += weight;
+    const std::size_t evicted = trim(std::forward<OnEvict>(on_evict));
     return {&entries_.front().value,
-            hyle::container::LruInsertStatus::kInserted, evicted};
+            LruInsertStatus::kInserted, evicted};
   }
 
   std::size_t size() const noexcept { return entries_.size(); }
+  std::size_t total_weight() const noexcept { return total_weight_; }
 
 private:
+  template <class OnEvict> std::size_t trim(OnEvict &&on_evict) noexcept {
+    std::size_t evicted = 0;
+    while (entries_.size() > limits_.max_entries ||
+           total_weight_ > limits_.max_weight) {
+      const Entry &victim = entries_.back();
+      const std::uint64_t key = victim.key;
+      const std::uint64_t value = victim.value;
+      const std::size_t weight = victim.weight;
+      std::invoke(on_evict, key, value, weight);
+      index_.erase(key);
+      entries_.pop_back();
+      total_weight_ -= weight;
+      ++evicted;
+    }
+    return evicted;
+  }
+
   List entries_;
   Index index_;
-  std::size_t capacity_;
+  hyle::container::LruCacheLimits limits_;
+  std::size_t total_weight_ = 0;
 };
 
 template <class Alloc = hyle::mem::SystemAllocator>
@@ -269,21 +299,22 @@ using CandidateLru = CandidateLruFor<>;
 class LruReplay {
 public:
   explicit LruReplay(bool peer_allocation_first) {
+    constexpr hyle::container::LruCacheLimits limits{
+        .max_entries = kLruCapacity, .max_weight = kLruCapacity};
     if (peer_allocation_first) {
-      peer_ = std::make_unique<PeerLru<>>(kLruCapacity);
-      candidate_ = std::make_unique<CandidateLru>(
-          hyle::container::LruCacheLimits{.max_entries = kLruCapacity});
+      peer_ = std::make_unique<PeerLru<>>(limits);
+      candidate_ = std::make_unique<CandidateLru>(limits);
     } else {
-      candidate_ = std::make_unique<CandidateLru>(
-          hyle::container::LruCacheLimits{.max_entries = kLruCapacity});
-      peer_ = std::make_unique<PeerLru<>>(kLruCapacity);
+      candidate_ = std::make_unique<CandidateLru>(limits);
+      peer_ = std::make_unique<PeerLru<>>(limits);
     }
     for (std::uint64_t key = 0; key < kLruCapacity; ++key) {
       const std::uint64_t value = key * 17 + 3;
       if (!candidate_->try_insert_or_assign(key, value).stored())
         std::abort();
       const auto result = peer_->try_insert_or_assign(
-          key, value, [](std::uint64_t, std::uint64_t) noexcept {});
+          key, value, 1,
+          [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
       if (!result.stored())
         std::abort();
     }
@@ -347,10 +378,11 @@ public:
         const std::uint64_t value = key * 17 + 3;
         std::size_t evicted = 0;
         auto result = peer_->try_insert_or_assign(
-            key, value,
+            key, value, 1,
             [&](std::uint64_t evicted_key,
-                std::uint64_t evicted_value) noexcept {
-              checksum += evicted_key ^ evicted_value ^ 1U;
+                std::uint64_t evicted_value,
+                std::size_t weight) noexcept {
+              checksum += evicted_key ^ evicted_value ^ weight;
               ++evicted;
             });
         if (!result.stored() || result.evicted != 1 || evicted != 1)
@@ -363,6 +395,10 @@ public:
 
   std::size_t candidate_size() const noexcept { return candidate_->size(); }
   std::size_t peer_size() const noexcept { return peer_->size(); }
+  std::size_t candidate_weight() const noexcept {
+    return candidate_->total_weight();
+  }
+  std::size_t peer_weight() const noexcept { return peer_->total_weight(); }
 
 private:
   std::unique_ptr<CandidateLru> candidate_;
@@ -380,9 +416,10 @@ bool validate_lru_failure_contract() {
                            StableHash{});
   const auto candidate_node_result = candidate_node.try_insert_or_assign(1, 11);
   PeerLru<hyle::mem::SystemAllocator, PeerFailurePoint::kBeforeNode> peer_node(
-      4);
+      limits);
   const auto peer_node_result = peer_node.try_insert_or_assign(
-      1, 11, [](std::uint64_t, std::uint64_t) noexcept {});
+      1, 11, 1,
+      [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
 
   FailureBudget candidate_index_failure{1};
   Candidate candidate_index(
@@ -391,9 +428,10 @@ bool validate_lru_failure_contract() {
       candidate_index.try_insert_or_assign(2, 22);
 
   PeerLru<hyle::mem::SystemAllocator, PeerFailurePoint::kAfterNode> peer_index(
-      4);
+      limits);
   const auto peer_index_result = peer_index.try_insert_or_assign(
-      2, 22, [](std::uint64_t, std::uint64_t) noexcept {});
+      2, 22, 1,
+      [](std::uint64_t, std::uint64_t, std::size_t) noexcept {});
 
   const auto out_of_memory = [](const auto &result) {
     return result.status == hyle::container::LruInsertStatus::kOutOfMemory &&
@@ -405,6 +443,67 @@ bool validate_lru_failure_contract() {
          out_of_memory(peer_index_result) && candidate_node.empty() &&
          peer_node.size() == 0 && candidate_index.empty() &&
          peer_index.size() == 0;
+}
+
+bool validate_lru_weight_contract() {
+  using hyle::container::LruCacheLimits;
+  using hyle::container::LruInsertStatus;
+  constexpr LruCacheLimits limits{.max_entries = 4, .max_weight = 5};
+  CandidateLru candidate(limits);
+  PeerLru<> peer(limits);
+
+  std::uint64_t candidate_evictions = 0;
+  std::uint64_t peer_evictions = 0;
+  auto candidate_evict = [&](std::uint64_t &&key, std::uint64_t &&value,
+                             std::size_t weight) noexcept {
+    candidate_evictions += key * 101 + value * 7 + weight;
+  };
+  auto peer_evict = [&](std::uint64_t key, std::uint64_t value,
+                        std::size_t weight) noexcept {
+    peer_evictions += key * 101 + value * 7 + weight;
+  };
+
+  const auto candidate_first =
+      candidate.try_insert_or_assign(1, 11, 2, candidate_evict);
+  const auto peer_first = peer.try_insert_or_assign(1, 11, 2, peer_evict);
+  const auto candidate_second =
+      candidate.try_insert_or_assign(2, 22, 2, candidate_evict);
+  const auto peer_second = peer.try_insert_or_assign(2, 22, 2, peer_evict);
+  const auto candidate_weight_evict =
+      candidate.try_insert_or_assign(3, 33, 2, candidate_evict);
+  const auto peer_weight_evict =
+      peer.try_insert_or_assign(3, 33, 2, peer_evict);
+  const auto candidate_assign =
+      candidate.try_insert_or_assign(2, 222, 4, candidate_evict);
+  const auto peer_assign =
+      peer.try_insert_or_assign(2, 222, 4, peer_evict);
+  const auto candidate_rejected =
+      candidate.try_insert_or_assign(4, 44, 6, candidate_evict);
+  const auto peer_rejected =
+      peer.try_insert_or_assign(4, 44, 6, peer_evict);
+
+  const auto same_result = [](const auto &left, const auto &right) {
+    return left.status == right.status && left.evicted == right.evicted &&
+           left.stored() == right.stored();
+  };
+  const std::uint64_t *candidate_value = candidate.get(2);
+  const std::uint64_t *peer_value = peer.get(2);
+  return same_result(candidate_first, peer_first) &&
+         same_result(candidate_second, peer_second) &&
+         same_result(candidate_weight_evict, peer_weight_evict) &&
+         candidate_weight_evict.status == LruInsertStatus::kInserted &&
+         candidate_weight_evict.evicted == 1 &&
+         same_result(candidate_assign, peer_assign) &&
+         candidate_assign.status == LruInsertStatus::kAssigned &&
+         candidate_assign.evicted == 1 &&
+         same_result(candidate_rejected, peer_rejected) &&
+         candidate_rejected.status == LruInsertStatus::kRejected &&
+         candidate.size() == 1 && peer.size() == 1 &&
+         candidate.total_weight() == 4 && peer.total_weight() == 4 &&
+         candidate_evictions == peer_evictions && candidate_value != nullptr &&
+         peer_value != nullptr && *candidate_value == 222 && *peer_value == 222 &&
+         !candidate.contains(1) && !candidate.contains(3) &&
+         peer.get(1) == nullptr && peer.get(3) == nullptr;
 }
 
 hyle::container::UtfStatus peer_utf_status(simdutf::error_code error) noexcept {
@@ -532,6 +631,7 @@ private:
 
 int validate_contract() {
   const bool lru_failure = validate_lru_failure_contract();
+  const bool lru_weight = validate_lru_weight_contract();
   LruReplay lru(false);
   const std::uint64_t candidate_lru = lru.candidate();
   const std::uint64_t peer_lru = lru.peer();
@@ -573,15 +673,19 @@ int validate_contract() {
 
   const bool passed =
       candidate_lru == peer_lru && candidate_unicode == peer_unicode &&
-      lru_failure && malformed_equal && small_equal &&
-      lru.candidate_size() == kLruCapacity && lru.peer_size() == kLruCapacity;
-  std::printf("# HYLE_CONTAINER_V6_CONTRACT schema=2 lru=%s lru_oom=%s "
+      lru_failure && lru_weight && malformed_equal && small_equal &&
+      lru.candidate_size() == kLruCapacity && lru.peer_size() == kLruCapacity &&
+      lru.candidate_weight() == kLruCapacity &&
+      lru.peer_weight() == kLruCapacity;
+  std::printf("# HYLE_CONTAINER_V6_CONTRACT schema=3 lru=%s lru_oom=%s "
+              "lru_weight=%s "
               "container_text=%s unicode_malformed=%s unicode_output_small=%s "
               "lru_capacity=%zu lru_operations=%zu unicode_records=%zu "
               "unicode_input_bytes=%zu unicode_units=%zu "
               "unicode_unit_bytes=%zu verdict=%s\n",
               candidate_lru == peer_lru ? "PASS" : "FAIL",
               lru_failure ? "PASS" : "FAIL",
+              lru_weight ? "PASS" : "FAIL",
               candidate_unicode == peer_unicode ? "PASS" : "FAIL",
               malformed_equal ? "PASS" : "FAIL", small_equal ? "PASS" : "FAIL",
               kLruCapacity, kBatch, kMetadataRecords,

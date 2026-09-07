@@ -1,10 +1,10 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "container-product-p1-v6",
+  "id": "container-product-p1-v7",
   "module": "container",
-  "claim": "P1 engineering non-inferiority of the Container v6 bounded LRU storage and safe caller-buffer UTF conversion paths after allocator, rollback and typed-result adapter equalization",
+  "claim": "P1 engineering non-inferiority of the Container bounded weighted-LRU storage and safe caller-buffer UTF conversion paths after allocator, weight, rollback and typed-result adapter equalization",
   "candidate": {
-    "target": "hyle_container",
+    "target": "hyle_product_container",
     "delivery_shape": "source",
     "revision": "runtime-bound",
     "component": "container",
@@ -16,7 +16,7 @@
       "revision": "38f8c1535de9ebc12c6340e5c1c8ebd72afde560",
       "configuration": {
         "delivery_shape": "source-built static and header-only",
-        "algorithm": "absl::flat_hash_map plus std::list with the identical stable hash and HYLE system allocator, bad_alloc result mapping and partial-insert rollback",
+        "algorithm": "absl::flat_hash_map plus std::list with the identical stable hash and HYLE system allocator, per-entry and total-weight accounting, entry/weight trimming, bad_alloc result mapping and partial-insert rollback",
         "source": "clean external checkout"
       }
     },
@@ -93,13 +93,13 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/model-and-host-cache/lru-storage",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v6.json",
-        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+        "path": "bench/container/consumer_shapes_v7.json",
+        "sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
       },
       "ownership_topology": {
-        "candidate": "One caller-owned HYLE LruCache owns 4096 integral entries, uses StableHash and SystemAllocator, returns a typed recoverable insert result, touches hits and synchronously reports each evicted key/value",
-        "peer": "One caller-owned Abseil flat_hash_map plus std::list composition owns the identical entries, uses StableHash over the same SystemAllocator backend, maps bad_alloc to the same result and rolls back partial insertion",
-        "equivalence": "Both charge identical 93.75-percent get-and-touch and 6.25-percent insert-and-single-evict streams; construction, natural population, hot-set establishment and final verification are excluded, and the validator exercises node/index OOM rollback"
+        "candidate": "The container factor owns one caller-owned HYLE LruCache with 4096 integral entries, unit per-entry weight, equal entry/total-weight limits, StableHash and SystemAllocator; it returns a typed recoverable insert result, touches hits and synchronously reports each evicted key/value/weight",
+        "peer": "One caller-owned Abseil flat_hash_map plus std::list composition owns the identical entries and weights, maintains total weight, enforces the same entry/weight limits, uses StableHash over the same SystemAllocator backend, maps bad_alloc to the same result and rolls back partial insertion",
+        "equivalence": "Both charge identical 93.75-percent get-and-touch and 6.25-percent unit-weight insert-and-single-evict streams, including weight accounting and both limit checks; construction, natural population, hot-set establishment and final verification are excluded, and the validator exercises weight eviction/assignment/rejection plus node/index OOM rollback"
       },
       "material_contribution": {
         "frequency": 4096,
@@ -109,13 +109,13 @@
         "denominator": "one 4096-operation bounded model/cache metadata replay",
         "derivation": "ggml, llama.cpp, vLLM and SGLang all retain bounded recency state; the generic storage path is hot while device and KV policy remain above Container"
       },
-      "semantic_contract": "Execute 3840 successful get-and-touch operations and 256 insert-and-single-evict operations against a continuously full 4096-entry cache",
+      "semantic_contract": "Execute 3840 successful get-and-touch operations and 256 unit-weight insert-and-single-evict operations against a continuously full 4096-entry cache with max_entries=max_weight=4096",
       "comparability": "COMPARABLE",
       "peer_id": "abseil",
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {"distribution": "deterministic 1024-key hot set plus ascending cold inserts", "scale": {"capacity": 4096, "operations_per_callback": 4096, "hit_percent": 93.75}},
       "setup": "Both caches are constructed in controlled allocation order, naturally populated without an asymmetric reserve hint and given the identical hot recency state before measurement",
-      "charged_phases": ["4096 hashes and lookups", "3840 recency touches", "256 node insertions", "256 index erases and node destructions", "256 synchronous eviction callbacks", "checksum"],
+      "charged_phases": ["4096 hashes and lookups", "3840 recency touches", "256 node insertions", "256 per-entry and total-weight updates", "512 entry/weight limit checks", "256 index erases and node destructions", "256 synchronous weighted eviction callbacks", "checksum"],
       "pair": {"candidate": "HYLE LruCache mixed access N=4096", "peer": "Abseil+list LRU mixed access N=4096"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -129,11 +129,11 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/model-path-metadata/utf8-to-utf16",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v6.json",
-        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+        "path": "bench/container/consumer_shapes_v7.json",
+        "sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
       },
       "ownership_topology": {
-        "candidate": "HYLE validates, computes exact required UTF-16 units and converts 256 caller-owned records into caller-owned pre-sized output through the public typed result",
+        "candidate": "The container_text factor validates, computes exact required UTF-16 units and converts 256 caller-owned records into caller-owned pre-sized output through the public typed result",
         "peer": "The product-locked simdutf implementation pointer performs validate-with-errors, exact UTF-16 length and endian-correct valid-input conversion, then returns the identical UtfResult fields",
         "equivalence": "Both charge the complete safe no-allocation three-pass contract and reject malformed or undersized output before writing; the validator compares status, input offset, required/output count and untouched output"
       },
@@ -172,8 +172,8 @@
     "comparison_contract": {
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PROVISIONAL_ARCHETYPE",
-      "semantic_matrix": "bench/container/consumer_shapes_v6.json",
-      "semantic_matrix_sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+      "semantic_matrix": "bench/container/consumer_shapes_v7.json",
+      "semantic_matrix_sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
@@ -235,18 +235,22 @@
           "kind": "command",
           "command": [
             "{python}",
-            "scripts/validate-container-v6-bench.py",
+            "scripts/validate-container-v7-bench.py",
             "--source",
             "{source}",
             "--build",
             "{build}",
             "--expected-benchmark-sha256",
-            "cc16c91e4d1285fdf28aa58064a476b5fb28fb2244cd76069bf47e466f78eea0",
+            "4d2a172c26e2739c9da873b12b407e76a6c81efe5a5f82640003461301280de3",
             "--expected-shape-sha256",
-            "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+            "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
           ]
         }
       ]
+    },
+    "factor_owners": {
+      "model-cache-lru-mixed-access-4096": "container",
+      "model-metadata-utf8-to-utf16-4096": "container_text"
     }
   }
 }

@@ -1,10 +1,10 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "container-concurrent-product-p1-v2",
-  "module": "container_concurrent",
-  "claim": "P1 engineering non-inferiority of Container v6 read-mostly concurrent membership and unbounded 4P/4C typed handoff against source-pinned oneTBB after hash, allocator and recoverable-OOM adapter equalization",
+  "id": "container-concurrent-product-p1-v3",
+  "module": "container",
+  "claim": "P1 engineering non-inferiority of the Container read-mostly concurrent membership and unbounded 4P/4C typed handoff paths against source-pinned oneTBB after hash, allocator and recoverable-OOM adapter equalization",
   "candidate": {
-    "target": "hyle_container_concurrent",
+    "target": "hyle_product_container",
     "delivery_shape": "source",
     "revision": "runtime-bound",
     "component": "container",
@@ -41,34 +41,34 @@
   ],
   "workloads": [
     {
-      "id": "read-mostly-membership-8x262144",
+      "id": "read-mostly-membership-8x4194304",
       "tier": "consumer",
       "gate_role": "product",
       "consumer_key": "inference-runtime/active-object-registry/read-mostly-membership",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v6.json",
-        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+        "path": "bench/container/consumer_shapes_v7.json",
+        "sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
       },
       "ownership_topology": {
-        "candidate": "One pre-reserved HYLE ConcurrentFlatHashSet owns 32768 integral keys using StableHash, std::equal_to and SystemAllocator, then serves eight pinned read-only workers",
+        "candidate": "The container_concurrent factor owns one pre-reserved HYLE ConcurrentFlatHashSet with 32768 integral keys using StableHash, std::equal_to and SystemAllocator, then serves eight pinned read-only workers",
         "peer": "One pre-reserved oneTBB concurrent_unordered_set owns the identical keys using StableHash, std::equal_to and SystemStdAllocator over the same backend, then serves the identical pinned workers",
-        "equivalence": "Construction, recoverable reserve/population and warmup are excluded; both charge exactly 2097152 50-percent-hit contains operations with identical hash/equality/allocation policy, no dummy mapped payload and no external locks"
+        "equivalence": "Construction, recoverable reserve/population and warmup are excluded; both charge exactly 33554432 50-percent-hit contains operations with identical hash/equality/allocation policy, no dummy mapped payload and no external locks"
       },
       "material_contribution": {
         "frequency": 8,
-        "value": 262144,
+        "value": 4194304,
         "unit": "membership query",
         "budget": 5,
         "denominator": "one eight-worker active-registry replay",
         "derivation": "inference runtimes retain active backend, worker, request and block membership; a payload-free read-mostly set is the natural primitive"
       },
-      "semantic_contract": "Answer 2097152 deterministic 50-percent-hit membership queries from eight persistent physical-core workers against one immutable 32768-entry set",
+      "semantic_contract": "Answer 33554432 deterministic 50-percent-hit membership queries from eight persistent physical-core workers against one immutable 32768-entry set",
       "comparability": "COMPARABLE",
       "peer_id": "onetbb",
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
-      "input": {"distribution": "per-worker deterministic alternating present and absent integral keys", "scale": {"workers": 8, "entries": 32768, "queries_per_worker": 262144, "hit_percent": 50}},
+      "input": {"distribution": "per-worker deterministic alternating present and absent integral keys", "scale": {"workers": 8, "entries": 32768, "queries_per_worker": 4194304, "hit_percent": 50}},
       "setup": "Both sets are reserved, populated and warmed before timing; workers are created and pinned before the common start barrier",
-      "charged_phases": ["eight concurrent contains loops", "2097152 hashes and membership probes", "checksum reduction", "wall-throughput interval"],
+      "charged_phases": ["eight concurrent contains loops", "33554432 hashes and membership probes", "checksum reduction", "wall-throughput interval"],
       "pair": {"candidate": "HYLE ConcurrentFlatHashSet", "peer": "oneTBB concurrent_unordered_set"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -82,11 +82,11 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/bursty-task-and-transfer-inbox/unbounded-handoff",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v6.json",
-        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+        "path": "bench/container/consumer_shapes_v7.json",
+        "sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
       },
       "ownership_topology": {
-        "candidate": "One HYLE UnboundedQueue owns every in-flight uint64_t between four pinned producers and four pinned consumers using SystemAllocator; enqueue returns recoverable allocation failure",
+        "candidate": "The container_queue factor owns every in-flight uint64_t in one HYLE UnboundedQueue between four pinned producers and four pinned consumers using SystemAllocator; enqueue returns recoverable allocation failure",
         "peer": "One oneTBB concurrent_queue owns the identical values between the identical roles using SystemStdAllocator over the same backend; bad_alloc is mapped to the same retry result",
         "equivalence": "Both queues grow as required, use the same allocation owner, preserve per-producer FIFO compatibility, expose nonblocking try-pop, return recoverable enqueue failure, transfer every value exactly once and exclude wait, close, cancellation and service policy"
       },
@@ -125,8 +125,8 @@
     "comparison_contract": {
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PROVISIONAL_ARCHETYPE",
-      "semantic_matrix": "bench/container/consumer_shapes_v6.json",
-      "semantic_matrix_sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
+      "semantic_matrix": "bench/container/consumer_shapes_v7.json",
+      "semantic_matrix_sha256": "78b6ba01743c0566f9828098a7e5a583c2b7ef09f3eea231230c4e607afe8b60"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
@@ -164,7 +164,7 @@
           "pair_role": "candidate",
           "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
           "workloads": [
-            {"id": "read-mostly-membership-8x262144", "row_id": "read-mostly-membership-8x262144"},
+            {"id": "read-mostly-membership-8x4194304", "row_id": "read-mostly-membership-8x4194304"},
             {"id": "unbounded-mpmc-handoff-4p4c-262144", "row_id": "unbounded-mpmc-handoff-4p4c-262144"}
           ]
         },
@@ -178,7 +178,7 @@
           "peer_id": "onetbb",
           "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
           "workloads": [
-            {"id": "read-mostly-membership-8x262144", "row_id": "read-mostly-membership-8x262144"},
+            {"id": "read-mostly-membership-8x4194304", "row_id": "read-mostly-membership-8x4194304"},
             {"id": "unbounded-mpmc-handoff-4p4c-262144", "row_id": "unbounded-mpmc-handoff-4p4c-262144"}
           ]
         }
@@ -189,6 +189,10 @@
         {"id": "artifact-identity", "kind": "artifact-identity"},
         {"id": "build-contract", "kind": "build-contract"}
       ]
+    },
+    "factor_owners": {
+      "read-mostly-membership-8x4194304": "container_concurrent",
+      "unbounded-mpmc-handoff-4p4c-262144": "container_queue"
     }
   }
 }
