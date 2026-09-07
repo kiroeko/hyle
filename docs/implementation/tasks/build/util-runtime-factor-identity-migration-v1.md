@@ -1,6 +1,6 @@
 # Util-runtime factor 身份迁移
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: COMPLETE -->
 
 ## Scope
 
@@ -27,4 +27,14 @@ consumer。产品行为修复属于后续 v5 resume，不混入本迁移。
 
 ## Result
 
-待验证后填写。此项目单元不改变 util-runtime 的 BLOCKED 产品裁决，也不签发 FROZEN。
+迁移实现 commit 为 `48b11387`。显式 previous transition、closure schema/transition tests、selector、
+LOC owner test、docs checker 和 whitespace check 全部通过；新 `util_runtime` factor 在 Windows
+独立配置，runtime library、普通 Registry/demangle executable 与两张公开头均成功构建。完整 Util
+产品的源码嵌入、relocated shared SDK 与 relocated static SDK consumer 全部通过，安装导出只向用户
+暴露 `hyle::util`，内部 detail target 为 `hyle::_factor_util_runtime`。
+
+全仓当前合同扫描没有遗留 `hyle_util`、`HYLE_UTIL_BUILD`、`src/tests/bench util` 机器路径或旧
+factor selector；历史 task/evidence 中的旧名仍作为当时事实保留。独立 fault fixture 和长平台符号
+测试仍按 v4 已登记的 RT-02/03 失败，未被本身份任务改写成 PASS；Registry RT-01 也保持 BLOCKED，
+由下一轮有限恢复处理。因此本项目单元 **COMPLETE**，但不改变 util-runtime 的产品裁决，也不签发
+FROZEN。
