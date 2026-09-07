@@ -1344,14 +1344,12 @@
     },
     {
       "module": "container_text",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
       "non_goals": "New text capabilities, public header, namespace, API, algorithm, provider or default behavior changes; owning strings, locale, normalization, grapheme, regex or tokenizer policy; Native FFI or C API; common instrument changes; Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "6f07b9ed023daa72c346bc65e4613d65e3cd20d5",
-      "candidate_tree": "c25e36393175dba6a7f5118564a18377de53f30d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1369,7 +1367,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_text v2 CANDIDATE：safe Unicode 的 fast-success 修正已冻结在 6f07b9ed；公开 API/语义/provider/workload 不变，只对该不可变候选重放一次正式 v7 qualification。"
+      "summary": "container_text v2 AUDITED：6f07b9ed 的合法 P1 仍证明 safe Unicode 6/8 strata 固定劣化；object code 定位为六种转换在成功路径构造并搬运两个中间 UtfResult，只允许一次全族终态构造修正。"
     }
   ]
 }

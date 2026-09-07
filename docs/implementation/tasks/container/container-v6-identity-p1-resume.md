@@ -328,3 +328,30 @@ SHA-256 `04393c89bcb7770e9c853c6c52adb18542779e0e6defea32d9b5062836f64eb6`。
 
 这一状态提交不改变 candidate 产品树，不运行 P1。下一项且唯一允许的性能动作是从干净 detached
 worktree 对该不可变候选运行一次 v7 qualification；其余 factor 的合法证据继续复用。
+
+## 第三候选 P1 与终态构造修正
+
+第三候选的唯一正式运行位于
+`C:\public\project-hyle\_validation\container-v6\qual-single-v7-fast-evidence\manifest.json`，
+manifest SHA-256 `ba4fa20dd6556134d5c2d800244da398474c5cfe846c85148e532e20c9575f99`；合同 SHA-256
+`3009a1294fdc7004b365e8af79c7a5d13f237e9ffaa540c722f105cc7b71d5ef`。资格化与 5% engineering
+performance gate 均 `PASS`，LRU 8/8 `WIN`；但 safe Unicode primary median 为
+`0.9666–0.9728`，placement 为 `0.9829–0.9906`，其中 6/8 的 98.9% CI 上界仍低于 1。这个结果不允许
+被聚合 `PASS` 隐藏，`container_text` 不能据此冻结。
+
+同一构建的 MSVC Release/LTO-off object code 证明，candidate 与 peer 的 simdutf provider、验证、精确
+sizing、valid conversion 和外层 replay 语义一致；剩余差异来自 HYLE 的公共实现组合方式。六种 safe
+conversion 都先令 `validate_*_core()` 构造 `UtfResult`，检查成功后又令 `output_result()` 构造第二个
+`UtfResult`。MSVC 未消去这些中间聚合对象，成功路径仍包含额外状态/填充字节搬运、分支和寄存器保存；
+peer 则直接检查原始 `simdutf::result.error`，只在错误或最终返回时构造 typed result。
+
+有限 FIX 集增加且只增加 `CONT6-F07`：对全部六种 safe conversion 使用相同的 terminal-result 形状——
+参数检查后直接检查 provider 的原始验证结果，错误时映射，成功时进入 sizing/conversion，且只在
+output-too-small 或最终成功时构造 `UtfResult`；scalar fallback 语义保持原样。不得改变公开 API/layout、
+错误码、完整写入保证、provider、workload 或 margin。这是公共 Unicode 家族的成本结构修正，不是只为
+`utf8_to_utf16` benchmark 添加分支。
+
+只有 `container_text` 从 `CANDIDATE` 返回 `AUDITED`；前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-container-text-terminal-correction.json`，
+SHA-256 `99843515ce8ef08861392dd1f35390e391acbf8813582f2314618beb1b3335ae`。其余三个 factor 保持
+`CANDIDATE`，所有不受影响的证据继续 carry-forward。
