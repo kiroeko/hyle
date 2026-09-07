@@ -1150,7 +1150,7 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SCHED-V4-CONTROL-CONTRACT-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-current-product-replay-2026-09.md",
       "round_id": "sched-v4-control-contracts",
@@ -1158,6 +1158,8 @@
       "scope": "Correct the public Sched control contracts for cooperative task cancellation, no-throw raw callbacks and distinguishable semaphore outcomes, and repair the directly affected API, dependency, delivery and user documentation without redesigning the scheduler.",
       "non_goals": "Whole-scheduler, queue or fiber rewrites; forced stack destruction; unsafe wake of still-linked waits; external-caller gang execution; model or request policy; continuous batching; heterogeneous/GPU scheduling; Compute, Graph or IO redesign; Native FFI/C API; common performance-instrument changes; P2 or Formal certification.",
       "baseline_commit": "f4da6ed4a2953b183a99532f31686852147ca09e",
+      "candidate_commit": "dbc9634455176450fb86d68b373c6cc4a4156f24",
+      "candidate_tree": "5e39d8ab76b6da83e7dd267584f9592c59930532",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1176,7 +1178,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v4 AUDITED：主体能力保持，有限 FIX 冻结为 cooperative cancel 命名/组合、raw callback noexcept、Semaphore typed result、move-only Waker 和文档/构建校准；尚未修改产品或运行验证。"
+      "summary": "sched-v4 CANDIDATE：五项冻结 FIX 已落在不可变候选 dbc96344；取消、raw callback、Semaphore、Waker 与文档/构建合同已修复，等待三平台、sanitizer、三交付、P1 与红队裁决。"
     },
     {
       "module": "io",

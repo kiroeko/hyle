@@ -235,3 +235,14 @@ if (!permit && permit.error().IsUnavailable()) { /* apply backpressure */ }
 全部 Sched benchmark target 只编译不采样并通过；Windows shared build 的 IO、Compute、Graph 直接下游
 均通过编译。它们是实现回归输入，不替代 immutable candidate 后的三平台、sanitizer、三交付、P1 与
 独立红队 gate。
+
+## Candidate
+
+- 状态：`CANDIDATE`；candidate commit：
+  `dbc9634455176450fb86d68b373c6cc4a4156f24`；candidate tree：
+  `5e39d8ab76b6da83e7dd267584f9592c59930532`；
+- candidate 包含全部五项 FIX、直接 consumer 编译迁移、语义/竞态测试、当前 user/architecture/build
+  文档和 fcontext provenance hash；API/usability freeze 未变化；
+- 从现在起产品源码、公开 API、常态 layout/cost 和 candidate tree 不再修改。后续只允许执行 closure
+  card 已声明的正确性、交付、P1、红队与记录；出现必须修改候选的真实问题时退回 `AUDITED`，不得在
+  candidate 上静默补丁。
