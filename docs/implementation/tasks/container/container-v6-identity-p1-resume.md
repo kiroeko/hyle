@@ -317,3 +317,14 @@ validation 返回后先 `test` 并直接进入 sizing/conversion，错误码 jum
 
 `CONT6-F06=PASS`。下一步只把 `container_text` 的这一产品提交冻结为新 candidate，并对不可变候选运行
 一次正式 v7 qualification；没有产品字节变化的 concurrent/queue 结果继续 carry-forward。
+
+## 第三候选冻结
+
+`container_text` 的 fast-success 产品修正冻结于 commit
+`6f07b9ed023daa72c346bc65e4613d65e3cd20d5`、tree
+`c25e36393175dba6a7f5118564a18377de53f30d`。`AUDITED -> CANDIDATE` 前 registry 快照为
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-container-text-third-candidate.json`，
+SHA-256 `04393c89bcb7770e9c853c6c52adb18542779e0e6defea32d9b5062836f64eb6`。
+
+这一状态提交不改变 candidate 产品树，不运行 P1。下一项且唯一允许的性能动作是从干净 detached
+worktree 对该不可变候选运行一次 v7 qualification；其余 factor 的合法证据继续复用。

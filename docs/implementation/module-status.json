@@ -1344,12 +1344,14 @@
     },
     {
       "module": "container_text",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
       "non_goals": "New text capabilities, public header, namespace, API, algorithm, provider or default behavior changes; owning strings, locale, normalization, grapheme, regex or tokenizer policy; Native FFI or C API; common instrument changes; Formal certification.",
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
+      "candidate_commit": "6f07b9ed023daa72c346bc65e4613d65e3cd20d5",
+      "candidate_tree": "c25e36393175dba6a7f5118564a18377de53f30d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1367,7 +1369,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_text v2 AUDITED：111c28ea 的合法 P1 揭示 safe Unicode 8/8 同方向约 1.5–3.4% 损失；汇编定位为成功结果仍进入错误码 jump table，只允许一次不改 API/语义的 fast-success 修正。"
+      "summary": "container_text v2 CANDIDATE：safe Unicode 的 fast-success 修正已冻结在 6f07b9ed；公开 API/语义/provider/workload 不变，只对该不可变候选重放一次正式 v7 qualification。"
     }
   ]
 }
