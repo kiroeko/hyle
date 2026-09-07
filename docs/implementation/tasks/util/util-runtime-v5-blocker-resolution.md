@@ -1,6 +1,6 @@
 # Util-runtime v5：有限 blocker 恢复
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: VERIFIED -->
 
 ## Scope and retained evidence
 

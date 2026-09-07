@@ -1151,7 +1151,7 @@
     },
     {
       "module": "util_runtime",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "util-runtime-v5-blocker-resolution",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
       "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
@@ -1166,15 +1166,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
         "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v5 CANDIDATE：三条 blocker 已在不可变候选 70199980/a0f5b8d9 修复，等待预声明的三平台、三交付、sanitizer、P0/export 与候选后红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "util-runtime v5 VERIFIED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。"
     },
     {
       "module": "sched",
