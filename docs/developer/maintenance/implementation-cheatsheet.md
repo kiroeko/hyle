@@ -45,7 +45,7 @@
 - 独立红队逐项 `fixed/disproved/accepted/out-of-scope`。
 - 终止轮使用
   `python scripts/loc-report.py --module <name> --commit <full-snapshot-commit> --self-check --json`
-  记录四个 LOC；不带 `--commit` 只观察当前工作树，不能写入 terminal 记录。
+  记录三项 LOC；不带 `--commit` 只观察当前工作树，不能写入 terminal 记录。
 - `git status --short`、`git diff --check`、提交真实文件；低 CI 价值的纯文档提交使用 `[skip ci]`。
 
 ## 环境提醒

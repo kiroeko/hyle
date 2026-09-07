@@ -9,7 +9,7 @@
 > 复制到 `docs/implementation/tasks/<module>/`。权威状态文件是
 > `docs/implementation/module-status.json`，完整判据是
 > `docs/developer/review/module-closure-methodology.md`。本页记录该轮事实，不复制当前状态；真正进入
-> `CLOSED/BLOCKED` 的 terminal 提交才把顶部 `ACTIVE` 改为 `HISTORICAL` 并写 receipt marker。
+> `CLOSED/BLOCKED` 的 terminal 提交才把顶部 `ACTIVE` 改为 `HISTORICAL`，并在正文记录逐组件终态结论。
 
 > 本页是可裁剪的检查清单，不是最低篇幅。复制后删除不适用的空行/空表，并用一句具体理由裁决整节
 > `NOT_APPLICABLE`；七问、全部 `MUST`、适用风险与最终 verdict 仍必须留下。不得为填模板制造 peer、

@@ -101,10 +101,10 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 - `PRODUCT_TRIGGER`：发现满足第 10 节的产品新事实；把模块改为 `REOPENED`，记录 trigger/evidence，
   随后只对受影响范围重新 `SCOPED`。
 
-回放必须是 product-non-mutating，记录 reviewed closure round/candidate/end/product-identity anchor、
-实际 replay commit、closure task、reviewer、日期、预算、task 和 verdict；所有 Git identity 使用完整
-40 位对象名。若为解决 finding 改了公开合同、算法、layout 或正常 workload，它已经不是回放，必须重开
-产品轮。task 绑定当时的 closure round/candidate；registry 仍只保存当前产品状态，不承担 Jira 日志。
+回放必须是 product-non-mutating，记录 reviewed closure round/candidate/tree、实际 replay commit、
+closure task、reviewer、日期、预算、task 和 verdict；所有 Git identity 使用完整 40 位对象名。
+若为解决 finding 改了公开合同、算法、layout 或正常 workload，它已经不是回放，必须重开产品轮。
+task 绑定当时的 closure round/candidate；registry 仍只保存当前产品状态，不承担 Jira 日志。
 
 ## 2. 启动输入：一张冻结的 closure card
 
