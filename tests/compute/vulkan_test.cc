@@ -896,7 +896,7 @@ sched::Task<int> vk_await_coro(mem::AllocatorRef, int* out) {
   co_return 0;
 }
 struct Drive { sched::Task<int> task; std::atomic<bool> fin{false}; };
-void drive(void* p) { auto* d = static_cast<Drive*>(p); d->task.resume(); d->fin.store(true, std::memory_order_release); }
+void drive(void* p) noexcept { auto* d = static_cast<Drive*>(p); d->task.resume(); d->fin.store(true, std::memory_order_release); }
 }  // namespace
 
 // Fiber co_await a Vulkan kernel's completion (async path via GpuPoller).

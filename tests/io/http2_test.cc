@@ -120,7 +120,7 @@ Task<int> client_task(AllocatorRef alloc, IoContext* io, Result* result) noexcep
 struct Drive {
   Task<int> task;
 };
-void drive(void* ptr) { static_cast<Drive*>(ptr)->task.resume(); }
+void drive(void* ptr) noexcept { static_cast<Drive*>(ptr)->task.resume(); }
 
 }  // namespace
 

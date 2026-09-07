@@ -92,7 +92,7 @@ Task<int> file_coro(AllocatorRef, IoContext* io, const char* path, FileResult* r
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // Open a missing file WITHOUT create -> must fail (invalid File), not crash/hang.
 Task<int> open_missing_coro(AllocatorRef, IoContext* io, FileResult* r) {

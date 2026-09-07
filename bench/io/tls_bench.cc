@@ -183,7 +183,7 @@ Task<int> hyle_client(AllocatorRef alloc, IoContext* io, HyleTls* h) {
 }
 
 struct Drive { Task<int> task; };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // One HYLE TLS connection: handshake (+ optional N echoes), both fibers pinned to
 // one worker. `port` is bumped per call to dodge TIME_WAIT.

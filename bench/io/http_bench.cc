@@ -181,7 +181,7 @@ Pair make_pair() {
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 struct BenchState {
   std::atomic<int> completed{0};

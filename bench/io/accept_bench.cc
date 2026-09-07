@@ -94,7 +94,7 @@ Task<int> client_connect(AllocatorRef, IoContext* io, unsigned owner,
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // Establish `conns` connections through one listener on `workers` cores: the accept
 // loop on worker 0, `conns` client fibers round-robin across workers. Returns after

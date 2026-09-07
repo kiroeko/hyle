@@ -114,7 +114,7 @@ struct MatmulArg {
   MatmulArg(const Device& d, BlockingPool* p, int m_, int k_, int n_, int nt)
       : device(d), pool(p), m(m_), k(k_), n(n_), n_threads(nt) {}
 };
-void matmul_fiber(void* p) {
+void matmul_fiber(void* p) noexcept {
   auto* a = static_cast<MatmulArg*>(p);
   a->result = run_matmul(a->device, *a->pool, a->m, a->k, a->n, a->n_threads);
   a->done.store(true, std::memory_order_release);
@@ -267,7 +267,7 @@ int run_elementwise(const Device& device, BlockingPool& pool) {
   return 0;
 }
 struct EwArg { Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false}; };
-void elementwise_fiber(void* p) {
+void elementwise_fiber(void* p) noexcept {
   auto* a = static_cast<EwArg*>(p);
   a->result = run_elementwise(a->device, *a->pool);
   a->done.store(true, std::memory_order_release);
@@ -385,7 +385,7 @@ int run_ffn(const Device& device, BlockingPool& pool) {
   return 0;
 }
 struct FfnArg { Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false}; };
-void ffn_fiber(void* p) {
+void ffn_fiber(void* p) noexcept {
   auto* a = static_cast<FfnArg*>(p);
   a->result = run_ffn(a->device, *a->pool);
   a->done.store(true, std::memory_order_release);
@@ -495,7 +495,7 @@ struct BatchArg {
   std::atomic<bool> done{false};
   BatchArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
 };
-void batch_fiber(void* p) {
+void batch_fiber(void* p) noexcept {
   auto* a = static_cast<BatchArg*>(p);
   a->result = run_batch(a->device, *a->pool, /*n_threads=*/1);
   a->done.store(true, std::memory_order_release);
@@ -590,7 +590,7 @@ struct ReuseArg {
   std::atomic<bool> done{false};
   ReuseArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
 };
-void reuse_fiber(void* p) {
+void reuse_fiber(void* p) noexcept {
   auto* a = static_cast<ReuseArg*>(p);
   a->result = run_reuse(a->device, *a->pool);
   a->done.store(true, std::memory_order_release);

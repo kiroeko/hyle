@@ -244,7 +244,7 @@ Task<int> client_fiber(AllocatorRef alloc, IoContext* io, Result* r) {
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // ---- request-smuggling regression harness (red-team fix, 2026-07-05) ----------
 // A raw-bytes client that sends a hand-crafted request the well-formed

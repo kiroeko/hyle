@@ -206,7 +206,7 @@ Task<int> server_task(AllocatorRef, Conn* c) {
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // Run `conns` connections x `round_trips` echoes of `msg_len` bytes on `workers`
 // cores. Connections shard round-robin across workers. Returns after all complete.

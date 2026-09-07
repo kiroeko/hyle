@@ -31,7 +31,7 @@ struct Drive {
   Task<int> task;
   std::atomic<bool> finished{false};
 };
-void drive_entry(void* p) {
+void drive_entry(void* p) noexcept {
   auto* d = static_cast<Drive*>(p);
   d->task.resume();
   d->finished.store(true, std::memory_order_release);

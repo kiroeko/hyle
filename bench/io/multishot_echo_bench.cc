@@ -85,7 +85,7 @@ void close_pair(Pair& p) {
 }
 
 struct Drive { Task<int> task; };
-void drive_entry(void* v) { static_cast<Drive*>(v)->task.resume(); }
+void drive_entry(void* v) noexcept { static_cast<Drive*>(v)->task.resume(); }
 
 struct Shared {
   IoContext* io;

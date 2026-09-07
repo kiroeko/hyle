@@ -74,7 +74,7 @@ constexpr int kMsgLen = 64;  // request/response payload size
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // Per-connection handler: serve `rounds` echo round-trips, then close. The TcpStream is
 // SCOPED in an inner block so its destructor (fd close) runs at block exit -- BEFORE

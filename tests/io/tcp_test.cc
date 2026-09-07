@@ -125,7 +125,7 @@ Task<int> client_coro(AllocatorRef, IoContext* io, EchoResult* r) {
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 }  // namespace
 

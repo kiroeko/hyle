@@ -55,7 +55,7 @@ constexpr unsigned kOwner = 0;
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // ---- case 1: token cancel wins (server connects, never sends) ---------------
 struct CancelResult {

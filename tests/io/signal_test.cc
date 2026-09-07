@@ -41,7 +41,7 @@ constexpr unsigned kOwner = 0;
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 struct SigR {
   std::atomic<int> got{-999};

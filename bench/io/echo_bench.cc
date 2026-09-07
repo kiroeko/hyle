@@ -214,7 +214,7 @@ Task<int> server_task(AllocatorRef, Conn* c) {
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
 // Run kConns connections x kRoundTrips echo round-trips on `workers` cores,
 // connections sharded round-robin across the cores. Returns after all complete.
