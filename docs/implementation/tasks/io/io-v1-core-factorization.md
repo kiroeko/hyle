@@ -262,7 +262,16 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   只做一次 allocator-backed staging。分段 round-trip、权限/清理、Linux abstract、accept
   deadline、预取消 connect 和 completion retirement 已在 Windows IOCP、Linux io_uring 与
   macOS kqueue 通过定向测试。
+- `46b75216`：完成 `IOCORE-F08`。`queue_depth` 现在是每 worker 有界的用户
+  operation admission：IOCP 使用一次性固定 slab，io_uring 使用有界 SQ/inflight，
+  epoll/kqueue 预留 readiness map 与 synthetic-completion storage；达到上限返回 typed
+  `ResourceExhausted`，reap 后槽位立即复用。取消拥有至多一份/operation 的有界控制面余量，
+  因而满队列仍能退休 deadline/cancel work。Scheduler 的两个 IO hook 改成同 identity
+  原子 attach/detach，第二个 `IoContext` 不再静默覆盖活动 driver；注入 allocator 的
+  ring-table 失败路径也已验证完全回滚。Windows 全部 15 个 IO correctness 测试、Linux
+  全部 15 个测试及强制 epoll 的容量/取消路径、macOS kqueue 的 proactor/context/local/
+  signal/timeout 定向路径均通过；Sched 受影响的 Windows 回归也通过。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F01、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
+裁决；F01、F09--F10 仍未完成，四个协议/传输 factor
 仍处于 `QUEUED`。
