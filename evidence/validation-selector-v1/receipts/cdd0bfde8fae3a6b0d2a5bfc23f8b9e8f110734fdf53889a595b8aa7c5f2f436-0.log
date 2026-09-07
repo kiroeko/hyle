@@ -1,0 +1,9 @@
+.....RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py', '--previous', 'C:\\Users\\kiro\\AppData\\Local\\Temp\\hyle-selector-test-u0vzrp0o\\scratch\\e0047287f65f1d8f5588\\previous-535f610d0e12adf98c367e61b80fce4e492389da.json']
+...........RUN docs: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-docs.py']
+RUN closure: ['C:\\Program Files\\Python312\\python.exe', 'scripts/check-module-closure.py']
+...........
+----------------------------------------------------------------------
+Ran 27 tests in 50.977s
+
+OK
