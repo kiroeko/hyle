@@ -122,7 +122,10 @@ class HYLE_SCHED_API Scheduler {
   // product path for callbacks that do not need a result/JoinHandle; use
   // schedule_task for a non-suspending typed result and spawn_task when the
   // structured task may suspend.
-  using DetachedFn = void (*)(void* ctx);
+  // Raw callbacks cross a noexcept runtime trampoline. Express that boundary
+  // in the pointer type so a potentially-throwing function is rejected at
+  // compile time.
+  using DetachedFn = void (*)(void* ctx) noexcept;
   Status spawn_detached(DetachedFn fn, void* ctx,
                         std::size_t stack_size =
                             mem::kFiberStackDefault) noexcept;

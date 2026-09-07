@@ -52,7 +52,7 @@ struct MutexHammer {
   std::uint64_t counter = 0;
   int iters;
 };
-void mutex_hammer_body(void* p) {
+void mutex_hammer_body(void* p) noexcept {
   auto* a = static_cast<MutexHammer*>(p);
   for (int i = 0; i < a->iters; ++i) {
     a->m.lock();
@@ -66,12 +66,12 @@ struct ChanPair {
   Channel<int>* ch;
   int n;
 };
-void chan_prod(void* p) {
+void chan_prod(void* p) noexcept {
   auto* a = static_cast<ChanPair*>(p);
   for (int i = 0; i < a->n; ++i) (void)a->ch->send(i);
   a->ch->close();
 }
-void chan_cons(void* p) {
+void chan_cons(void* p) noexcept {
   auto* a = static_cast<ChanPair*>(p);
   int v;
   std::uint64_t sink = 0;
@@ -83,15 +83,15 @@ void chan_cons(void* p) {
 struct WgFork {
   WaitGroup* wg;
 };
-void wg_done_body(void* p) { static_cast<WgFork*>(p)->wg->done(); }
-void wg_wait_body(void* p) { static_cast<WgFork*>(p)->wg->wait(); }
+void wg_done_body(void* p) noexcept { static_cast<WgFork*>(p)->wg->done(); }
+void wg_wait_body(void* p) noexcept { static_cast<WgFork*>(p)->wg->wait(); }
 
 // ---- (5) latch fork-join (one-shot countdown, std::latch shape) ----
 struct LatchFork {
   Latch* l;
 };
-void latch_down_body(void* p) { static_cast<LatchFork*>(p)->l->count_down(); }
-void latch_wait_body(void* p) { static_cast<LatchFork*>(p)->l->wait(); }
+void latch_down_body(void* p) noexcept { static_cast<LatchFork*>(p)->l->count_down(); }
+void latch_wait_body(void* p) noexcept { static_cast<LatchFork*>(p)->l->wait(); }
 
 // ---- (6) CV wait+notify handoff: a consumer fiber BLOCKS in cv.wait until a
 // producer fiber flips a counter + notifies. N rounds of real block->notify->
@@ -105,7 +105,7 @@ struct CvPair {
   long consumed = 0;   // bumped by consumer under mu
   int rounds;
 };
-void cv_producer(void* p) {
+void cv_producer(void* p) noexcept {
   auto* s = static_cast<CvPair*>(p);
   for (int i = 0; i < s->rounds; ++i) {
     s->mu.lock();
@@ -116,7 +116,7 @@ void cv_producer(void* p) {
     s->mu.unlock();
   }
 }
-void cv_consumer(void* p) {
+void cv_consumer(void* p) noexcept {
   auto* s = static_cast<CvPair*>(p);
   for (int i = 0; i < s->rounds; ++i) {
     s->mu.lock();

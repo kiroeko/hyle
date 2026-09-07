@@ -151,7 +151,8 @@ struct BlockingJobImpl {
   static void run_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
     if (self->state->cancel_req.load(std::memory_order_acquire)) {
-      self->state->set_error(Status::Cancelled("blocking task aborted before start"));
+      self->state->set_error(
+          Status::Cancelled("blocking task cancelled before start"));
     } else {
       try {
         R value = self->fn();                    // blocking work (pool thread)
@@ -197,7 +198,8 @@ struct BlockingJobImpl<F, void> {
   static void run_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
     if (self->state->cancel_req.load(std::memory_order_acquire)) {
-      self->state->set_error(Status::Cancelled("blocking task aborted before start"));
+      self->state->set_error(
+          Status::Cancelled("blocking task cancelled before start"));
     } else {
       try {
         self->fn();

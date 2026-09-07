@@ -3,6 +3,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -18,6 +19,12 @@ using hyle::sched::Scheduler;
 using hyle::sched::suspend;
 using hyle::sched::Waker;
 
+static_assert(!std::is_copy_constructible_v<Waker>);
+static_assert(!std::is_copy_assignable_v<Waker>);
+static_assert(std::is_nothrow_move_constructible_v<Waker>);
+static_assert(std::is_nothrow_move_assignable_v<Waker>);
+static_assert(sizeof(Waker) == 2 * sizeof(void*));
+
 namespace {
 
 // One wait episode: the fiber captures its Waker, signals it's ready, suspends,
@@ -28,7 +35,7 @@ struct Episode {
   std::atomic<bool> resumed{false};
 };
 
-void waiting_entry(void* p) {
+void waiting_entry(void* p) noexcept {
   auto* e = static_cast<Episode*>(p);
   e->waker = current_waker();                       // {scheduler, this fiber}
   e->waker_ready.store(true, std::memory_order_release);
@@ -50,7 +57,11 @@ TEST(Waker, SuspendThenWakeFromForeignThread) {
       std::this_thread::yield();
     EXPECT_TRUE(e.waker.valid());
     EXPECT_FALSE(e.resumed.load());  // still parked: nothing rescheduled it
-    e.waker.wake();                  // wake from this (main) thread
+    Waker owned = std::move(e.waker);
+    EXPECT_FALSE(e.waker.valid());
+    EXPECT_TRUE(owned.valid());
+    owned.wake();                    // wake from this (main) thread
+    EXPECT_FALSE(owned.valid());     // wake consumes the one-shot handle
     sched.drain();                   // blocks until the fiber finishes
   }
   EXPECT_TRUE(e.resumed.load());
@@ -92,7 +103,7 @@ namespace {
 struct Waker2 {
   Episode* target;
 };
-void waker_entry(void* p) {
+void waker_entry(void* p) noexcept {
   auto* w = static_cast<Waker2*>(p);
   while (!w->target->waker_ready.load(std::memory_order_acquire)) Fiber::yield();
   w->target->waker.wake();

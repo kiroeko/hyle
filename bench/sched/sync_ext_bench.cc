@@ -41,10 +41,10 @@ struct SemHammer {
   Semaphore sem{1};
   int iters;
 };
-void sem_hammer_body(void* p) {
+void sem_hammer_body(void* p) noexcept {
   auto* a = static_cast<SemHammer*>(p);
   for (int i = 0; i < a->iters; ++i) {
-    a->sem.acquire(1);
+    (void)a->sem.acquire(1); // benchmark-owned semaphore is never closed
     a->sem.release(1);
   }
 }
@@ -56,7 +56,7 @@ struct RwHammer {
   RwLock rw;
   int iters;
 };
-void rw_read_body(void* p) {
+void rw_read_body(void* p) noexcept {
   auto* a = static_cast<RwHammer*>(p);
   std::uint64_t sink = 0;
   for (int i = 0; i < a->iters; ++i) {
@@ -101,7 +101,7 @@ int main() {
     b.run("HYLE Semaphore(1) try_acquire/release", [&] {
       Semaphore sem(1);
       for (int i = 0; i < kIters; ++i) {
-        bool ok = sem.try_acquire(1);
+        bool ok = sem.try_acquire(1).has_value();
         nb::doNotOptimizeAway(ok);
         if (ok) sem.release(1);
       }
@@ -188,7 +188,7 @@ int main() {
       s.rounds = kRounds;
       // One driver fiber runs the whole round loop (send + recv on the same fiber is
       // fine: send doesn't block, recv gets the already-set value without yielding).
-      auto body = +[](void* p) {
+      auto body = +[](void* p) noexcept {
         auto* st = static_cast<S*>(p);
         std::uint64_t sink = 0;
         for (int i = 0; i < st->rounds; ++i) {
@@ -214,7 +214,7 @@ int main() {
     b.run("HYLE watch<int> send+borrow", [&] {
       struct S { int rounds; } s{kRounds};
       Scheduler sched(1, system_allocator(), 256);
-      auto body = +[](void* p) {
+      auto body = +[](void* p) noexcept {
         auto* st = static_cast<S*>(p);
         auto [tx, rx] = make_watch<int>(system_allocator(), 0);
         std::uint64_t sink = 0;
@@ -260,7 +260,7 @@ int main() {
         struct RxArg { Ctx* c; int idx; };
         std::vector<std::unique_ptr<RxArg>> rxargs;
         std::vector<std::unique_ptr<Fiber>> fibers;
-        auto rx_body = +[](void* p) {
+        auto rx_body = +[](void* p) noexcept {
           auto* ra = static_cast<RxArg*>(p);
           std::uint64_t sink = 0;
           for (int i = 0; i < ra->c->msgs; ++i) {
@@ -269,7 +269,7 @@ int main() {
           }
           nb::doNotOptimizeAway(sink);
         };
-        auto tx_body = +[](void* p) {
+        auto tx_body = +[](void* p) noexcept {
           auto* c = static_cast<Ctx*>(p);
           for (int i = 0; i < c->msgs; ++i) (void)c->sender.send(i);
         };

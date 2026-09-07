@@ -33,7 +33,7 @@ struct TaskDriver;
 // work stores it in thread-local state for the duration of the callback. The
 // record lives in the owning RAII scope, so pushing a source allocates nothing.
 // A linked stack is required: a request token must compose with
-// JoinHandle::abort instead of replacing it.
+// JoinHandle::request_cancel instead of replacing it.
 struct CancelFlagLink {
   std::atomic<bool>* flag = nullptr;
   CancelFlagLink* previous = nullptr;
@@ -92,7 +92,10 @@ inline constexpr std::size_t kLargeStackSize = mem::kFiberStackLarge;
 // client-side (same pattern as Parker).
 class Fiber {
  public:
-  using EntryFn = void (*)(void* arg);
+  // A raw fiber entry crosses the fcontext trampoline, so exceptions cannot
+  // propagate to its resumer. The type rejects potentially-throwing functions
+  // at compile time instead of terminating after the stack switch.
+  using EntryFn = void (*)(void* arg) noexcept;
 
   // Recoverable construction for user-controlled inputs. Returns a structured
   // allocation/validation error and does not start the fiber.

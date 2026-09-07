@@ -1,6 +1,7 @@
 #include "hyle/sched/sync.h"
 
 #include <atomic>
+#include <utility>
 
 #include "hyle/core/compiler.h"
 #include "hyle/core/environment.h"  // HYLE_OS_WINDOWS (Mutex backend split)
@@ -37,7 +38,7 @@ thread_local ThreadToken t_token;
 bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   // current_waker() names {scheduler, this fiber} iff we run inside a worker
   // fiber; off a worker (a bare/external thread) it is invalid -> thread mode.
-  const Waker w = current_waker();
+  Waker w = current_waker();
   const bool fiber = w.valid();
   node->next = nullptr;
   node->prev = nullptr;
@@ -45,7 +46,7 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   node->timed_state.store(0, std::memory_order_relaxed);
   node->fiber_timed = false;
   if (fiber) {
-    node->waker = w;
+    node->waker = std::move(w);
     node->token = nullptr;
     // Mark before publication. Untimed fiber waits also use the one-shot notify
     // state harmlessly; timed waits need a notify racing finish_wait_timed_fiber_
@@ -117,7 +118,7 @@ void ConditionVariable::finish_wait_(bool fiber, void* token) noexcept {
 // woken (which is what we are about to do). For a thread waiter we must read the
 // token pointer (stable thread_local) -- the node may die the instant the thread
 // observes `notified`, so flag THEN unpark, and never touch the node afterwards.
-static void wake_one(const Waker& waker, void* token) noexcept {
+static void wake_one(Waker waker, void* token) noexcept {
   if (token != nullptr) {
     auto* tok = static_cast<ThreadToken*>(token);
     tok->notified.store(true, std::memory_order_release);
@@ -155,13 +156,13 @@ void ConditionVariable::notify_one() noexcept {
       }
       // Copy out everything we need BEFORE releasing the lock / waking: the node
       // may be destroyed the instant its owner resumes.
-      waker = node->waker;
+      waker = std::move(node->waker);
       token = node->token;
       have = won;
     }
     mu_.unlock();
   }
-  if (have) wake_one(waker, token);
+  if (have) wake_one(std::move(waker), token);
 }
 
 void ConditionVariable::notify_all() noexcept {
@@ -190,11 +191,11 @@ void ConditionVariable::notify_all() noexcept {
   while (node != nullptr) {
     // Read next + copy fields BEFORE waking: once woken, the node can vanish.
     Waiter* next = node->next;
-    const Waker waker = node->waker;
+    Waker waker = std::move(node->waker);
     void* token = node->token;
     if (!node->fiber_timed ||
         node->timed_state.load(std::memory_order_acquire) == 1)
-      wake_one(waker, token);
+      wake_one(std::move(waker), token);
     node = next;
   }
 }
@@ -245,26 +246,26 @@ void ConditionVariable::timed_fiber_fire_(
   auto* ctx = static_cast<TimedContext*>(entry->data());
   ConditionVariable* cv = ctx->cv;
   Waiter* node = ctx->node;
-  bool wake = false;
+  Waker waker;
   cv->mu_.lock();
   unsigned char expected = 0;
   if (node->linked &&
       node->timed_state.compare_exchange_strong(
           expected, 2, std::memory_order_acq_rel)) {
     cv->remove_waiter_(node);
-    wake = true;
+    waker = std::move(node->waker);
   }
   cv->mu_.unlock();
-  if (wake) node->waker.wake();
+  if (waker.valid()) waker.wake();
 }
 
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
     Waiter* node, time::Duration timeout) noexcept {
   Fiber* self = Fiber::current();
-  HYLE_FATAL_ASSERT(self != nullptr && node->waker.valid());
+  HYLE_FATAL_ASSERT(self != nullptr);
   // prepare_wait_ marked every fiber waiter before publishing its stack node.
   // Do not write that mode flag here: a notifier may already have popped and
-  // inspected the node after enqueue but before this function starts.
+  // moved its Waker after enqueue but before this function starts.
 
   // An immediate deadline still has to arbitrate with a notify that may have
   // popped us after the monitor lock was released.
@@ -405,35 +406,47 @@ std::size_t Barrier::participants() const noexcept {
 
 // ---- Semaphore --------------------------------------------------------------
 
-bool Semaphore::try_acquire(std::size_t n) noexcept {
-  mu_.lock();
-  // Only take permits if none are queued ahead of us: honoring FIFO here is what
-  // lets RwLock's queued writer block later readers (a try_read must NOT steal a
-  // permit the writer is waiting for). If a waiter is queued, we defer.
-  if (!closed_ && head_ == nullptr && permits_ >= n) {
-    permits_ -= n;
-    mu_.unlock();
-    return true;
-  }
-  mu_.unlock();
-  return false;
-}
-
-bool Semaphore::acquire(std::size_t n) noexcept {
+Result<void> Semaphore::try_acquire(std::size_t n) noexcept {
   mu_.lock();
   if (closed_) {
     mu_.unlock();
-    return false;
+    return std::unexpected(Status::Cancelled());
+  }
+  if (n == 0) {
+    mu_.unlock();
+    return {};
+  }
+  // Only take permits if none are queued ahead of us: honoring FIFO here is what
+  // lets RwLock's queued writer block later readers (a try_read must NOT steal a
+  // permit the writer is waiting for). If a waiter is queued, we defer.
+  if (head_ == nullptr && permits_ >= n) {
+    permits_ -= n;
+    mu_.unlock();
+    return {};
+  }
+  mu_.unlock();
+  return std::unexpected(Status::Unavailable());
+}
+
+Result<void> Semaphore::acquire(std::size_t n) noexcept {
+  mu_.lock();
+  if (closed_) {
+    mu_.unlock();
+    return std::unexpected(Status::Cancelled());
+  }
+  if (n == 0) {
+    mu_.unlock();
+    return {};
   }
   // Fast path: enough permits AND nobody ahead of us in line (FIFO -- never jump
   // the queue, or a big head-of-line request could starve).
   if (head_ == nullptr && permits_ >= n) {
     permits_ -= n;
     mu_.unlock();
-    return true;
+    return {};
   }
   // Slow path: queue a waiter with its own CV, block until release() grants us the
-  // full request or close() aborts us. The node lives on this stack frame; it stays
+  // full request or close() cancels us. The node lives on this stack frame; it stays
   // linked only while we are parked (unlinked by release/close before waking us).
   Waiter node;
   node.need = n;
@@ -446,12 +459,13 @@ bool Semaphore::acquire(std::size_t n) noexcept {
   }
   tail_ = &node;
   // Mesa monitor: wait on our own CV under mu_, re-checking the predicate. release
-  // sets granted (+ already debited permits_); close sets aborted. Either way the
+  // sets granted (+ already debited permits_); close sets cancelled. Either way the
   // node has been UNLINKED by the setter before notify, so no dangling stack node.
-  node.cv.wait(mu_, [&] { return node.granted || node.aborted; });
-  const bool ok = node.granted;
+  node.cv.wait(mu_, [&] { return node.granted || node.cancelled; });
+  const bool granted = node.granted;
   mu_.unlock();
-  return ok;
+  if (!granted) return std::unexpected(Status::Cancelled());
+  return {};
 }
 
 void Semaphore::unlink_waiter_locked_(Waiter* waiter) noexcept {
@@ -494,26 +508,30 @@ void Semaphore::notify_waiters_(Waiter* waiters) noexcept {
   }
 }
 
-bool Semaphore::try_acquire_for(time::Duration timeout,
-                                std::size_t n) noexcept {
+Result<void> Semaphore::try_acquire_for(time::Duration timeout,
+                                        std::size_t n) noexcept {
   return try_acquire_until(time::deadline_after(timeout), n);
 }
 
-bool Semaphore::try_acquire_until(time::MonotonicTimePoint deadline,
-                                  std::size_t n) noexcept {
+Result<void> Semaphore::try_acquire_until(time::MonotonicTimePoint deadline,
+                                          std::size_t n) noexcept {
   mu_.lock();
   if (closed_) {
     mu_.unlock();
-    return false;
+    return std::unexpected(Status::Cancelled());
+  }
+  if (n == 0) {
+    mu_.unlock();
+    return {};
   }
   if (head_ == nullptr && permits_ >= n) {
     permits_ -= n;
     mu_.unlock();
-    return true;
+    return {};
   }
   if (deadline <= time::monotonic_now()) {
     mu_.unlock();
-    return false;
+    return std::unexpected(Status::DeadlineExceeded());
   }
 
   Waiter node;
@@ -527,22 +545,23 @@ bool Semaphore::try_acquire_until(time::MonotonicTimePoint deadline,
   tail_ = &node;
 
   const bool completed = node.cv.wait_until(
-      mu_, deadline, [&] { return node.granted || node.aborted; });
+      mu_, deadline, [&] { return node.granted || node.cancelled; });
   if (completed) {
     const bool granted = node.granted;
     mu_.unlock();
-    return granted;
+    if (!granted) return std::unexpected(Status::Cancelled());
+    return {};
   }
 
   // A predicate-false timeout still owns mu_. The node therefore cannot race a
   // grant/close while it unlinks. Removing a large head request can expose
   // followers to permits accumulated behind it, so grant them immediately.
-  HYLE_FATAL_ASSERT(node.linked && !node.granted && !node.aborted);
+  HYLE_FATAL_ASSERT(node.linked && !node.granted && !node.cancelled);
   unlink_waiter_locked_(&node);
   Waiter* newly_granted = grant_waiters_locked_();
   mu_.unlock();
   notify_waiters_(newly_granted);
-  return false;
+  return std::unexpected(Status::DeadlineExceeded());
 }
 
 bool Semaphore::try_release(std::size_t n) noexcept {
@@ -563,17 +582,17 @@ bool Semaphore::try_release(std::size_t n) noexcept {
 }
 
 void Semaphore::close() noexcept {
-  Waiter* aborted_head = nullptr;
+  Waiter* cancelled_head = nullptr;
   mu_.lock();
   closed_ = true;
-  // Detach the whole queue; each waiter's acquire() will see aborted and return
-  // false. Reuse `next` to build the local list (as in release()).
+  // Detach the whole queue; each waiter's acquire() will see cancelled and return
+  // Cancelled. Reuse `next` to build the local list (as in release()).
   Waiter* w = head_;
   head_ = nullptr;
   tail_ = nullptr;
-  aborted_head = w;
+  cancelled_head = w;
   while (w != nullptr) {
-    w->aborted = true;
+    w->cancelled = true;
     Waiter* n = w->next;
     w->linked = false;
     w->prev = nullptr;
@@ -581,7 +600,7 @@ void Semaphore::close() noexcept {
     w = n;
   }
   mu_.unlock();
-  for (Waiter* p = aborted_head; p != nullptr;) {
+  for (Waiter* p = cancelled_head; p != nullptr;) {
     Waiter* next = p->next;
     p->cv.notify_one();
     p = next;

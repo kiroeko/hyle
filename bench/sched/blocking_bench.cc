@@ -55,7 +55,7 @@ struct HyleBlockingArg {
   int rounds;
   std::uint64_t sink;
 };
-void hyle_blocking_body(void* p) {
+void hyle_blocking_body(void* p) noexcept {
   auto* a = static_cast<HyleBlockingArg*>(p);
   std::uint64_t sink = 0;
   for (int i = 0; i < a->rounds; ++i) {
@@ -74,7 +74,7 @@ struct HyleFanoutArg {
   int n;
   std::uint64_t sink;
 };
-void hyle_fanout_body(void* p) {
+void hyle_fanout_body(void* p) noexcept {
   auto* a = static_cast<HyleFanoutArg*>(p);
   std::vector<hyle::sched::JoinHandle<int>> handles;
   handles.reserve(a->n);

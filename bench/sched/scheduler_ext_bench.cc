@@ -99,7 +99,7 @@ struct PingPong {
 };
 
 // -- raw fiber spine --
-void raw_a(void* p) {
+void raw_a(void* p) noexcept {
   auto* s = static_cast<PingPong*>(p);
   for (int i = 0; i < s->cycles; ++i) {
     s->a_waker = current_waker();
@@ -110,7 +110,7 @@ void raw_a(void* p) {
     s->b_waker.wake();
   }
 }
-void raw_b(void* p) {
+void raw_b(void* p) noexcept {
   auto* s = static_cast<PingPong*>(p);
   for (int i = 0; i < s->cycles; ++i) {
     while (!s->a_ready.load(std::memory_order_acquire)) Fiber::yield();
@@ -150,13 +150,13 @@ Task<void> coro_b(AllocatorRef, PingPong* s) {
 struct CoroDrive {
   Task<void> task;
 };
-void coro_drive(void* p) { static_cast<CoroDrive*>(p)->task.resume(); }
+void coro_drive(void* p) noexcept { static_cast<CoroDrive*>(p)->task.resume(); }
 
 // ---- (4) fiber sleep -----------------------------------------------------
 struct SleepArg {
   hyle::time::Duration duration;
 };
-void sleep_body(void* p) { sleep_for(static_cast<SleepArg*>(p)->duration); }
+void sleep_body(void* p) noexcept { sleep_for(static_cast<SleepArg*>(p)->duration); }
 
 }  // namespace
 
@@ -305,7 +305,8 @@ int main() {
   // N ~equal) is what matters, not the absolute value. minEpochIterations(1) +
   // few epochs since each epoch is a real sleep.
   {
-    constexpr std::uint64_t kSleepNs = 2'000'000;  // 2 ms requested duration
+    constexpr hyle::time::Duration kSleepDuration =
+        std::chrono::milliseconds(2);
     constexpr int kN = 64;
     ankerl::nanobench::Bench b;
     b.title("fiber sleep: 1 vs 64 concurrent sleepers (1 worker)")
@@ -314,7 +315,7 @@ int main() {
         .minEpochIterations(1);
 
     b.run("1 fiber sleep 2ms", [&] {
-      SleepArg arg{kSleepNs};
+      SleepArg arg{kSleepDuration};
       Fiber f(kDefaultStackSize, &sleep_body, &arg);
       Scheduler sched(1, system_allocator(), 256);
       sched.spawn(&f);
@@ -322,7 +323,7 @@ int main() {
     });
 
     b.run("64 fibers sleep 2ms (concurrent, 1 worker)", [&] {
-      SleepArg arg{kSleepNs};
+      SleepArg arg{kSleepDuration};
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kN);
       for (int i = 0; i < kN; ++i)

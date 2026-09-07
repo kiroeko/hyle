@@ -88,14 +88,14 @@ struct WfState {
     }
   }
 
-  // Balance one task's pending slot + WfState reference.  Copy the Waker before
+  // Balance one task's pending slot + WfState reference. Move the Waker before
   // drop_ref(): a future caller may legitimately make this the last reference,
   // and wake must not touch a freed WfState.  Today failed-admission rollback is
   // protected by either the seeding guard or the currently-running parent task,
   // but sharing the normal completion path keeps that invariant from becoming a
   // latent lost-wake if wf_spawn gains another caller.
   void finish_task_ref() noexcept {
-    sched::Waker w = waker;
+    sched::Waker w = std::move(waker);
     const bool last =
         pending.fetch_sub(1, std::memory_order_acq_rel) == 1;
     drop_ref();
@@ -198,7 +198,7 @@ sched::Task<bool> wf_node_task(mem::AllocatorRef alloc, WfState *st,
     // same as serial/level path).
     st->record(s);
   }
-  // COMPLETION: if I am the last pending node, wake the waiter. Copy the Waker
+  // COMPLETION: if I am the last pending node, wake the waiter. Move the Waker
   // to MY stack FIRST -- after the wake the waiter may resume and drop the last
   // ref, freeing st; touching st->waker after that would be the exact
   // send-after-free the old channel design had.

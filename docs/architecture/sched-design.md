@@ -55,8 +55,9 @@ timer / IO / GPU / channel notification
 ```
 
 `suspend()` 与 `Waker::wake()` 使用对称 rendezvous，解决 wake-before-suspend：无论 completion 先到还是
-worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并发 resume 同一栈。一个 Fiber 同时只能在
-一个线程上运行；仅在 suspended 状态才允许迁移。
+worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并发 resume 同一栈。Waker 是两指针、
+move-only、一次消费的 handle；多个 completion source 必须在 operation owner 中先裁决唯一 winner，不能
+复制 handle 去竞争重复 wake。一个 Fiber 同时只能在一个线程上运行；仅在 suspended 状态才允许迁移。
 
 ## 任务形状
 
@@ -66,13 +67,14 @@ worker 先离开 Fiber，恰好一方负责重新注入，不能丢唤醒或并�
 |---|---|---|---|
 | `schedule` | worker 自身栈 | raw 入口零分配；owning callable 一次 allocator record | 很短、不会挂起或阻塞、无需结果 |
 | `bulk_execute` | 至多 worker 数个 provider participant；同 Scheduler root Fiber 可直接参与 | callable/results 借用到同步返回；O(1) batch state、O(worker) queue entries、无逐项 allocation/handle | 有限 indexed/chunk work，只需要 batch completion/首错/取消 |
-| `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 abort | 很短、不会挂起或阻塞、需要 typed result/join |
+| `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 cancellation request | 很短、不会挂起或阻塞、需要 typed result/join |
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
-| `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 abort | 会挂起且需要结果、join/select/fan-out |
+| `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 cancellation request | 会挂起且需要结果、join/select/fan-out |
 | `spawn_blocking` + `BlockingPool` | 专用 OS thread pool | 独立有界 runtime metadata；结果走 JoinHandle | 阻塞 syscall、外部同步 API、长 CPU 工作 |
 
-Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；普通
-C++ 用户优先传捕获 lambda。`spawn(Fiber*)` 是显式 lifetime 的低层入口，Scheduler 不取得 Fiber
+Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；其
+函数类型显式为 `noexcept`，因为异常不能跨 fcontext/runtime trampoline 传播。普通 C++ 用户优先传捕获
+的 noexcept lambda。`spawn(Fiber*)` 是显式 lifetime 的低层入口，Scheduler 不取得 Fiber
 ownership；一般 fire-and-forget 不应手工管理它。
 
 `bulk_execute` 不是 Graph algorithm：Sched 只按 caller 给定 grain，把有限半开 range 交给至多 worker
@@ -133,8 +135,12 @@ Fiber stack 由 Mem 的 `FiberStack`/`FiberStackPool` 提供 guarded small/defau
 - `CancelToken` 可共享；`derive()` 建立子树；`is_cancelled()` 是 O(1) atomic load；
 - tree mutation、callback register/drop 与 cancel 是 control path，可跨线程并按树串行化；
 - `CancelScope` 把 token 加入当前 sched execution context 的 active source 栈：Fiber 上随 Fiber 迁移，
-  worker-stack task 中按 callback/thread 生命周期约束；它与 `JoinHandle::abort()` 组合而非覆盖；
+  worker-stack task 中按 callback/thread 生命周期约束；它与 `JoinHandle::request_cancel()` 组合而非覆盖；
 - callback 只能请求底层操作取消或唤醒等待者，不能强行摧毁正在运行的 stack。
+
+`JoinHandle::request_cancel()` 只发布 task 的 cooperative flag，不能绕过仍持有 timer/IO/waiter 节点的
+operation owner 强制恢复 Fiber。在途操作由 caller-owned token 与 owner-owned callback 请求取消，正常
+completion 状态机裁决唯一 winner 并消费 Waker；随后 task 才观察请求并安全退栈。
 
 Sched shutdown 分成关闭 admission/广播 shutdown 与等待 in-flight 完成。stackful work 无法安全抢占；
 deadline 到达后，owner 必须取消 IO、请求 cooperative cancellation 或选择进程级终止，不能让 Scheduler
@@ -143,9 +149,10 @@ deadline 到达后，owner 必须取消 IO、请求 cooperative cancellation 或
 ## 同步与消息
 
 长等待原语必须 fiber-aware：Fiber waiter 挂起并由 Waker 重入，外部 OS thread waiter 走 Platform
-Parker。`ConditionVariable` 是共同地基，Mutex、WaitGroup、Latch、Event、Barrier、Semaphore 和
-RwLock 复用同一唤醒协议。Semaphore 使用严格 FIFO，避免大 permit 请求或 writer 被小请求永久饿死；
-timed waiter 以 intrusive 双链 O(1) 摘除。
+Parker。`ConditionVariable` 是 WaitGroup、Latch、Event、Barrier、Semaphore、RwLock 和消息原语的共同
+唤醒地基。`Mutex` 是短临界区的有意例外：竞争时 park OS thread，不能跨 suspension 或长工作持有。
+Semaphore 使用严格 FIFO，避免大 permit 请求或 writer 被小请求永久饿死；timed waiter 以 intrusive
+双链 O(1) 摘除，`Result` 保留 unavailable、deadline 与 closed 的不同控制决策。
 
 消息按消费语义分开：
 
@@ -168,7 +175,7 @@ OS Thread 自身的系统资源属于 Platform 合同。便利构造可对可信
 未消费 value 时还必须返还 ownership。
 
 当前直接公开 factor 依赖是 Core、Container-intrusive、Error、Time、Platform host/thread、Mem core/VM
-和 Util-core；完整 Container 与 Timer-queue 只支撑 compiled implementation，因此是 PRIVATE edge。
+和 Util-core；Container-queue 与 Timer-queue 只支撑 compiled implementation，因此是 PRIVATE edge。
 普通用户不需要理解这些内部拆分，只选择 `hyle::sched`，其产品闭包由中央 manifest 解析。IO 依赖
 Sched，不允许反向 include IO。IoContext 通过不安装的
 build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改 Scheduler worker loop。

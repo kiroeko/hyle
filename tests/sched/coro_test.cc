@@ -50,7 +50,7 @@ struct DriveInt {
   std::atomic<int> result{-1};
   std::atomic<bool> finished{false};
 };
-void drive_int_entry(void* p) {
+void drive_int_entry(void* p) noexcept {
   auto* d = static_cast<DriveInt*>(p);
   // One resume() runs the coroutine to completion: a co_await that fiber-yields
   // freezes this whole call (including resume()) on the fiber stack, and

@@ -154,7 +154,7 @@ struct OffloadArg {
   std::atomic<bool>* b_ran;
   std::atomic<bool>* a_joined;
 };
-void offload_a(void* p) {
+void offload_a(void* p) noexcept {
   auto* a = static_cast<OffloadArg*>(p);
   auto h = spawn_blocking(*a->pool, system_allocator(), [] {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -164,7 +164,7 @@ void offload_a(void* p) {
   (void)r;
   a->a_joined->store(true, std::memory_order_release);
 }
-void offload_b(void* p) {
+void offload_b(void* p) noexcept {
   auto* a = static_cast<OffloadArg*>(p);
   // If the worker were stuck in A's blocking sleep, this never runs until after.
   a->b_ran->store(true, std::memory_order_release);
@@ -294,7 +294,7 @@ TEST(Blocking, ConcurrentShutdownCallsAreCompletionBarriers) {
   EXPECT_TRUE(busy.join().has_value());
 }
 
-TEST(Blocking, AbortSkipsQueuedClosureBeforeItStarts) {
+TEST(Blocking, CancelRequestSkipsQueuedClosureBeforeItStarts) {
   BlockingPool pool(system_allocator(), /*max_threads=*/1);
   std::atomic<bool> busy_started{false};
   std::atomic<bool> release_busy{false};
@@ -309,7 +309,7 @@ TEST(Blocking, AbortSkipsQueuedClosureBeforeItStarts) {
   auto queued = spawn_blocking(pool, system_allocator(), [&] {
     queued_ran.store(true, std::memory_order_release);
   });
-  queued.abort();
+  queued.request_cancel();
   release_busy.store(true, std::memory_order_release);
   EXPECT_TRUE(busy.join().has_value());
   auto result = queued.join();

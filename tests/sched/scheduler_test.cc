@@ -5,6 +5,7 @@
 #include <memory>
 #include <span>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #if defined(_WIN32)
@@ -29,6 +30,15 @@ using hyle::sched::SchedulerIdlePolicy;
 using hyle::sched::SchedulerOptions;
 using hyle::sched::Waker;
 using hyle::platform::CpuOrder;
+
+static_assert(
+    std::is_same_v<Fiber::EntryFn, void (*)(void*) noexcept>);
+static_assert(
+    std::is_same_v<Scheduler::DetachedFn, void (*)(void*) noexcept>);
+static_assert(
+    !std::is_convertible_v<void (*)(void*), Fiber::EntryFn>);
+static_assert(
+    !std::is_convertible_v<void (*)(void*), Scheduler::DetachedFn>);
 
 namespace {
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
@@ -61,7 +71,7 @@ struct Body {
   std::atomic<int>* ran;       // total resume segments observed (sanity)
   std::atomic<int>* completed;  // fibers that reached the end
 };
-void body_entry(void* p) {
+void body_entry(void* p) noexcept {
   auto* b = static_cast<Body*>(p);
   for (int i = 0; i < b->yields; ++i) {
     b->ran->fetch_add(1, std::memory_order_relaxed);
@@ -71,7 +81,7 @@ void body_entry(void* p) {
 }
 
 #if defined(_WIN32) || defined(__linux__)
-void observe_current_cpu(void* raw) {
+void observe_current_cpu(void* raw) noexcept {
   unsigned cpu = ~0u;
 #  if defined(_WIN32)
   PROCESSOR_NUMBER number{};
@@ -236,7 +246,7 @@ TEST(Scheduler, IdlePoliciesAndWorkerLifecycleHooksAreOperational) {
 
 TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {
   std::atomic<int> ran{0};
-  auto callback = +[](void* raw) {
+  auto callback = +[](void* raw) noexcept {
     static_cast<std::atomic<int>*>(raw)->fetch_add(
         1, std::memory_order_relaxed);
   };
@@ -299,7 +309,7 @@ TEST(Scheduler, InlineScheduleMultiProducerConservesEveryTask) {
   constexpr int kProducers = 8;
   constexpr int kPerProducer = 1000;
   std::atomic<int> ran{0};
-  auto callback = +[](void* raw) {
+  auto callback = +[](void* raw) noexcept {
     static_cast<std::atomic<int>*>(raw)->fetch_add(
         1, std::memory_order_relaxed);
   };
@@ -325,12 +335,12 @@ TEST(Scheduler, RecursiveInlineSaturationReturnsInsteadOfSelfDeadlocking) {
     std::atomic<int> accepted{0};
     std::atomic<int> full{0};
   };
-  auto parent = +[](void* raw) {
+  auto parent = +[](void* raw) noexcept {
     auto* context = static_cast<Context*>(raw);
     context->ran.fetch_add(1, std::memory_order_relaxed);
     for (int i = 0; i < 8; ++i) {
       const hyle::Status status = context->scheduler->schedule(
-          +[](void* leaf_raw) {
+          +[](void* leaf_raw) noexcept {
             static_cast<Context*>(leaf_raw)->ran.fetch_add(
                 1, std::memory_order_relaxed);
           },
@@ -360,7 +370,7 @@ TEST(Scheduler, RecursiveFiberSaturationReturnsInsteadOfSelfDeadlocking) {
     std::atomic<int> full{0};
     bool pinned = false;
   };
-  auto parent = +[](void* raw) {
+  auto parent = +[](void* raw) noexcept {
     auto* context = static_cast<Context*>(raw);
     context->ran.fetch_add(1, std::memory_order_relaxed);
     for (int i = 0; i < 8; ++i) {
@@ -368,13 +378,13 @@ TEST(Scheduler, RecursiveFiberSaturationReturnsInsteadOfSelfDeadlocking) {
           context->pinned
               ? context->scheduler->spawn_detached_on(
                     0,
-                    +[](void* leaf_raw) {
+                    +[](void* leaf_raw) noexcept {
                       static_cast<Context*>(leaf_raw)->ran.fetch_add(
                           1, std::memory_order_relaxed);
                     },
                     context, kDefaultStackSize)
               : context->scheduler->spawn_detached(
-                    +[](void* leaf_raw) {
+                    +[](void* leaf_raw) noexcept {
                       static_cast<Context*>(leaf_raw)->ran.fetch_add(
                           1, std::memory_order_relaxed);
                     },
@@ -419,7 +429,7 @@ TEST(Scheduler, WakeFloodUsesOverflowInsteadOfDeadlockingConsumer) {
     std::atomic<int> ready{0};
     std::atomic<int> completed{0};
   };
-  auto waiter = +[](void* raw) {
+  auto waiter = +[](void* raw) noexcept {
     auto* context = static_cast<Context*>(raw);
     const int slot =
         context->next_slot.fetch_add(1, std::memory_order_relaxed);
@@ -428,9 +438,9 @@ TEST(Scheduler, WakeFloodUsesOverflowInsteadOfDeadlockingConsumer) {
     hyle::sched::suspend();
     context->completed.fetch_add(1, std::memory_order_release);
   };
-  auto notifier = +[](void* raw) {
+  auto notifier = +[](void* raw) noexcept {
     auto* context = static_cast<Context*>(raw);
-    for (const Waker& waker : context->wakers) waker.wake();
+    for (Waker& waker : context->wakers) waker.wake();
   };
 
   for (bool pinned : {false, true}) {
@@ -507,7 +517,7 @@ struct SeedArgs {
   std::atomic<int>* ran;
   std::atomic<int>* completed;
 };
-void seed_entry(void* p) {
+void seed_entry(void* p) noexcept {
   auto* a = static_cast<SeedArgs*>(p);
   for (int i = 0; i < a->children; ++i) {
     (*a->bodies)[i] = Body{2, a->ran, a->completed};
@@ -600,7 +610,7 @@ namespace {
 struct YieldHog {
   std::atomic<bool>* stop;
 };
-void yield_hog(void* p) {
+void yield_hog(void* p) noexcept {
   auto* h = static_cast<YieldHog*>(p);
   while (!h->stop->load(std::memory_order_acquire)) Fiber::yield();
 }

@@ -140,7 +140,7 @@
       "repository": "https://github.com/boostorg/context.git", "version": "boost-1.92.0",
       "revision": "cc1b9e02cd530d6607becc984e1e5bfa4f7b3600", "git_tree": "6385b2357b7bf5d2da1123d03c8ee94df0281f97",
       "archive": { "url": "https://codeload.github.com/boostorg/context/tar.gz/cc1b9e02cd530d6607becc984e1e5bfa4f7b3600", "sha256": "4b54746ccf87f0066974ccdde188b1343371e032b7b9b9cf3e22b2792e9ca9c6" },
-      "vendored": { "path": "third_party/fcontext", "tree_sha256": "e235578df19caa9b5d05133a1f81b6d0ab118a2039f34fbaed2bc95fdf26d98a" },
+      "vendored": { "path": "third_party/fcontext", "tree_sha256": "a31357ae32fac3763ba1cf20e259faeb6270541e1b21b149b26ee05ec3634b62" },
       "license": { "expression": "BSL-1.0", "files": [
         { "root": "hyle", "path": "third_party/fcontext/LICENSE_1_0.txt", "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566" }
       ] }

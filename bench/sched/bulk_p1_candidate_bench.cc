@@ -75,7 +75,7 @@ struct RootContext {
   BatchRun result{};
 };
 
-void batch_root(void* raw) {
+void batch_root(void* raw) noexcept {
   auto* context = static_cast<RootContext*>(raw);
   context->result = run_batches(*context->scheduler, context->input,
                                 context->rounds, context->fanout,

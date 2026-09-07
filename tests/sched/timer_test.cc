@@ -31,7 +31,7 @@ struct SleepProbe {
   std::atomic<bool> done{false};
 };
 
-void sleep_entry(void* p) {
+void sleep_entry(void* p) noexcept {
   auto* s = static_cast<SleepProbe*>(p);
   std::uint64_t t0 = monotonic_ns();
   sleep_for(s->sleep_duration);
@@ -107,7 +107,7 @@ struct ChainProbe {
   int depth = 0;
   std::vector<std::unique_ptr<Fiber>>* keep = nullptr;
 };
-void chain_entry(void* p) {
+void chain_entry(void* p) noexcept {
   auto* c = static_cast<ChainProbe*>(p);
   sleep_for(5ms);
   c->counter->fetch_add(1, std::memory_order_acq_rel);
@@ -157,11 +157,11 @@ TEST(SchedTimer, MixedSleepersAndRunnables) {
   std::vector<std::unique_ptr<B>> bs;
   std::vector<std::unique_ptr<Fiber>> fibers;
 
-  auto sleeper = [](void* p) {
+  auto sleeper = [](void* p) noexcept {
     sleep_for(10ms);
     static_cast<S*>(p)->woke->fetch_add(1, std::memory_order_acq_rel);
   };
-  auto busy = [](void* p) {
+  auto busy = [](void* p) noexcept {
     static_cast<B*>(p)->ran->fetch_add(1, std::memory_order_acq_rel);
   };
 

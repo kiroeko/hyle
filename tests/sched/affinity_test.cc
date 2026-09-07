@@ -41,7 +41,7 @@ struct PinProbe {
   std::atomic<bool> done{false};
 };
 
-void pin_probe_entry(void* p) {
+void pin_probe_entry(void* p) noexcept {
   auto* pr = static_cast<PinProbe*>(p);
   for (int i = 0; i < 200; ++i) {
     int idx = current_worker_index();
@@ -115,7 +115,7 @@ struct WakePin {
   std::atomic<int> after{-1};
   std::atomic<bool> done{false};
 };
-void wake_pin_entry(void* p) {
+void wake_pin_entry(void* p) noexcept {
   auto* w = static_cast<WakePin*>(p);
   w->before.store(current_worker_index(), std::memory_order_relaxed);
   w->waker = current_waker();
@@ -156,7 +156,7 @@ struct NativeAffinityProbe {
   bool contains_expected = false;
 };
 
-void native_affinity_probe(void* arg) {
+void native_affinity_probe(void* arg) noexcept {
   auto* probe = static_cast<NativeAffinityProbe*>(arg);
   cpu_set_t mask;
   CPU_ZERO(&mask);

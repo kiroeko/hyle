@@ -212,7 +212,7 @@ TEST(Join, ScheduledTaskSupportsDynamicTypedFanout) {
   scheduler.shutdown();
 }
 
-TEST(Join, ScheduledTaskAbortIsVisibleDuringWorkerStackExecution) {
+TEST(Join, ScheduledTaskCancelRequestIsVisibleDuringWorkerStackExecution) {
   Scheduler scheduler(1, system_allocator(), 64);
   std::atomic<bool> started{false};
   std::atomic<bool> observed{false};
@@ -224,7 +224,7 @@ TEST(Join, ScheduledTaskAbortIsVisibleDuringWorkerStackExecution) {
         return 7;
       });
   while (!started.load(std::memory_order_acquire)) std::this_thread::yield();
-  handle.abort();
+  handle.request_cancel();
   auto result = handle.join();
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(*result, 7);
@@ -423,7 +423,8 @@ TEST(Join, RuntimeSizedWhenAnyReturnsDynamicWinner) {
   EXPECT_EQ(*handles[1].join(), 42);
 }
 
-// abort() sets the cooperative flag; a task that checks is_cancel_requested()
+// request_cancel() sets the cooperative flag; a task that checks
+// is_cancel_requested()
 // after being woken observes it and can return early (reported as Cancelled).
 namespace {
 Task<int> cancellable(AllocatorRef, WaitBox* box) {
@@ -435,12 +436,12 @@ Task<int> cancellable(AllocatorRef, WaitBox* box) {
 }
 }  // namespace
 
-TEST(Join, AbortIsCooperative) {
+TEST(Join, CancelRequestDoesNotForgeWakeForParkedTask) {
   Scheduler sched(2, system_allocator(), 256);
   WaitBox box;
   auto h = spawn_task(sched, system_allocator(), cancellable(system_allocator(), &box));
   while (!box.ready.load(std::memory_order_acquire)) {}
-  h.abort();          // request cancellation (flag set)
+  h.request_cancel(); // request cancellation (flag set)
   box.waker.wake();   // wake the parked fiber so it reaches the check
   auto r = h.join();
   // The task saw the flag and co_return -1 (still a value, not an error, since it
@@ -448,6 +449,36 @@ TEST(Join, AbortIsCooperative) {
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, -1);
   sched.shutdown();
+}
+
+TEST(Join, CancelRequestAfterCompletionDoesNotRewriteResult) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto handle = schedule_task(
+      scheduler, system_allocator(), []() noexcept { return 42; });
+  scheduler.drain();
+  ASSERT_TRUE(handle.is_finished());
+
+  handle.request_cancel();
+  auto result = handle.join();
+  ASSERT_TRUE(result);
+  EXPECT_EQ(*result, 42);
+  scheduler.shutdown();
+}
+
+TEST(Join, CancelRequestRacingCompletionHasOneValidOutcome) {
+  Scheduler scheduler(4, system_allocator(), 256);
+  for (int iteration = 0; iteration < 200; ++iteration) {
+    auto handle = schedule_task(
+        scheduler, system_allocator(), []() noexcept { return 7; });
+    handle.request_cancel();
+    auto result = handle.join();
+    if (result) {
+      EXPECT_EQ(*result, 7);
+    } else {
+      EXPECT_TRUE(result.error().IsCancelled());
+    }
+  }
+  scheduler.shutdown();
 }
 
 // Concurrency stress: many tasks joined from the main thread. TSan gate for the

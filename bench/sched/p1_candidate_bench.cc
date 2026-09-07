@@ -151,7 +151,7 @@ struct StructuredContext {
   StructuredRun result{};
 };
 
-void structured_root(void* raw) {
+void structured_root(void* raw) noexcept {
   auto* context = static_cast<StructuredContext*>(raw);
   context->result = run_structured_body(
       *context->scheduler, context->allocator, context->input,

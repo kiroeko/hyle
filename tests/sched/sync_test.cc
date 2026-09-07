@@ -102,7 +102,7 @@ struct MutexArg {
   int iters;
 };
 
-void mutex_body(void *p) {
+void mutex_body(void *p) noexcept {
   auto *a = static_cast<MutexArg *>(p);
   for (int i = 0; i < a->iters; ++i) {
     a->m.lock();
@@ -131,12 +131,12 @@ struct WgArg {
   std::atomic<int> seen_at_wait{-1}; // done_count observed when wait() returned
 };
 
-void wg_worker(void *p) {
+void wg_worker(void *p) noexcept {
   auto *a = static_cast<WgArg *>(p);
   a->done_count.fetch_add(1, std::memory_order_acq_rel); // "work happened"
   a->wg.done();
 }
-void wg_coordinator(void *p) {
+void wg_coordinator(void *p) noexcept {
   auto *a = static_cast<WgArg *>(p);
   a->wg.wait(); // returns only after all n done()
   a->seen_at_wait.store(a->done_count.load(std::memory_order_acquire),
@@ -172,11 +172,11 @@ struct LatchArg {
   std::atomic<int> resumed{0}; // waiters that passed the latch
 };
 
-void latch_counter(void *p) {
+void latch_counter(void *p) noexcept {
   auto *a = static_cast<LatchArg *>(p);
   a->latch->count_down();
 }
-void latch_waiter(void *p) {
+void latch_waiter(void *p) noexcept {
   auto *a = static_cast<LatchArg *>(p);
   a->latch->wait();
   a->resumed.fetch_add(1, std::memory_order_acq_rel);
@@ -224,7 +224,7 @@ struct EventWaitArg {
   std::atomic<int> *returned;
 };
 
-void event_waiter(void *raw) {
+void event_waiter(void *raw) noexcept {
   auto *arg = static_cast<EventWaitArg *>(raw);
   arg->entered->fetch_add(1, std::memory_order_release);
   arg->event->wait();
@@ -328,13 +328,13 @@ struct ChanArg {
   std::atomic<int> count{0}; // number received
 };
 
-void chan_producer(void *p) {
+void chan_producer(void *p) noexcept {
   auto *a = static_cast<ChanArg *>(p);
   for (int i = 0; i < a->n; ++i)
     (void)a->ch->send(i);
   a->ch->close();
 }
-void chan_consumer(void *p) {
+void chan_consumer(void *p) noexcept {
   auto *a = static_cast<ChanArg *>(p);
   int v;
   while (a->ch->recv(v)) {
@@ -425,18 +425,18 @@ struct ChanMpmcArg {
   std::atomic<long> sum{0};
   std::atomic<int> count{0};
 };
-void mpmc_producer(void *p) {
+void mpmc_producer(void *p) noexcept {
   auto *a = static_cast<ChanMpmcArg *>(p);
   for (int i = 0; i < a->per_producer; ++i)
     (void)a->ch->send(1);
   a->producers_done->done();
 }
-void mpmc_closer(void *p) {
+void mpmc_closer(void *p) noexcept {
   auto *a = static_cast<ChanMpmcArg *>(p);
   a->producers_done->wait(); // all producers finished
   a->ch->close();
 }
-void mpmc_consumer(void *p) {
+void mpmc_consumer(void *p) noexcept {
   auto *a = static_cast<ChanMpmcArg *>(p);
   int v;
   while (a->ch->recv(v)) {
@@ -484,7 +484,7 @@ struct CvBroadcastArg {
   std::atomic<int> woke{0};
 };
 
-void cv_waiter(void *p) {
+void cv_waiter(void *p) noexcept {
   auto *a = static_cast<CvBroadcastArg *>(p);
   a->mu.lock();
   while (!a->go)
@@ -492,7 +492,7 @@ void cv_waiter(void *p) {
   a->mu.unlock();
   a->woke.fetch_add(1, std::memory_order_acq_rel);
 }
-void cv_broadcaster(void *p) {
+void cv_broadcaster(void *p) noexcept {
   auto *a = static_cast<CvBroadcastArg *>(p);
   a->mu.lock();
   a->go = true;
@@ -528,7 +528,7 @@ struct CrossArg {
   std::atomic<bool> resumed{false};
 };
 
-void cross_notifier_fiber(void *p) {
+void cross_notifier_fiber(void *p) noexcept {
   auto *a = static_cast<CrossArg *>(p);
   a->mu.lock();
   a->ready = true;
@@ -560,7 +560,7 @@ TEST(Sync, CvThreadWaiterWokenByFiber) {
 }
 
 namespace {
-void cv_fiber_waiter(void *p) {
+void cv_fiber_waiter(void *p) noexcept {
   auto *a = static_cast<CrossArg *>(p);
   a->mu.lock();
   while (!a->ready)
@@ -710,7 +710,7 @@ struct FiberTimedArg {
   CvStatus status = CvStatus::kNoTimeout;
   hyle::time::Duration timeout{};
 };
-void fiber_timed_waiter(void *p) {
+void fiber_timed_waiter(void *p) noexcept {
   auto *a = static_cast<FiberTimedArg *>(p);
   a->mu.lock();
   a->entered.store(true, std::memory_order_release);
@@ -789,9 +789,13 @@ TEST(SyncTimed, FiberNotifyVsTimeoutRaceDoesNotDoubleWake) {
 TEST(Sync, SemaphoreTryAcquireCounts) {
   Semaphore s(3);
   EXPECT_TRUE(s.try_acquire(2));  // 3 -> 1
-  EXPECT_FALSE(s.try_acquire(2)); // only 1 left
-  EXPECT_TRUE(s.try_acquire(1));  // 1 -> 0
-  EXPECT_FALSE(s.try_acquire(1)); // empty
+  auto unavailable = s.try_acquire(2); // only 1 left
+  ASSERT_FALSE(unavailable);
+  EXPECT_TRUE(unavailable.error().IsUnavailable());
+  EXPECT_TRUE(s.try_acquire(1)); // 1 -> 0
+  unavailable = s.try_acquire(1); // empty
+  ASSERT_FALSE(unavailable);
+  EXPECT_TRUE(unavailable.error().IsUnavailable());
   s.release(3);
   EXPECT_EQ(s.available(), 3u);
 }
@@ -799,9 +803,24 @@ TEST(Sync, SemaphoreTryAcquireCounts) {
 TEST(Sync, SemaphoreTimedAcquireSupportsImmediateSuccessAndTimeout) {
   Semaphore semaphore(1);
   EXPECT_TRUE(semaphore.try_acquire_for(hyle::time::Duration::zero()));
-  EXPECT_FALSE(semaphore.try_acquire_for(2ms));
+  auto timeout = semaphore.try_acquire_for(2ms);
+  ASSERT_FALSE(timeout);
+  EXPECT_TRUE(timeout.error().IsDeadlineExceeded());
   semaphore.release();
   EXPECT_TRUE(semaphore.try_acquire_until(hyle::time::monotonic_now() + 1s));
+}
+
+TEST(Sync, SemaphoreZeroAcquireIsImmediateButClosedIsCancelled) {
+  Semaphore semaphore(0);
+  EXPECT_TRUE(semaphore.acquire(0));
+  EXPECT_TRUE(semaphore.try_acquire(0));
+  EXPECT_TRUE(semaphore.try_acquire_for(hyle::time::Duration::zero(), 0));
+  EXPECT_EQ(semaphore.available(), 0u);
+
+  semaphore.close();
+  auto closed = semaphore.acquire(0);
+  ASSERT_FALSE(closed);
+  EXPECT_TRUE(closed.error().IsCancelled());
 }
 
 TEST(Sync, SemaphoreTimedOutHeadMakesAccumulatedPermitsAvailable) {
@@ -813,7 +832,7 @@ TEST(Sync, SemaphoreTimedOutHeadMakesAccumulatedPermitsAvailable) {
 
   std::thread head([&] {
     head_entered.store(true, std::memory_order_release);
-    head_acquired.store(semaphore.try_acquire_for(40ms, 2),
+    head_acquired.store(semaphore.try_acquire_for(40ms, 2).has_value(),
                         std::memory_order_release);
   });
   while (!head_entered.load(std::memory_order_acquire))
@@ -822,7 +841,8 @@ TEST(Sync, SemaphoreTimedOutHeadMakesAccumulatedPermitsAvailable) {
 
   std::thread follower([&] {
     follower_entered.store(true, std::memory_order_release);
-    follower_acquired.store(semaphore.acquire(1), std::memory_order_release);
+    follower_acquired.store(semaphore.acquire(1).has_value(),
+                            std::memory_order_release);
   });
   while (!follower_entered.load(std::memory_order_acquire))
     std::this_thread::yield();
@@ -843,9 +863,9 @@ struct TimedSemaphoreArg {
   bool acquired = true;
 };
 
-void timed_semaphore_waiter(void *raw) {
+void timed_semaphore_waiter(void *raw) noexcept {
   auto *arg = static_cast<TimedSemaphoreArg *>(raw);
-  arg->acquired = arg->semaphore->try_acquire_for(5ms);
+  arg->acquired = arg->semaphore->try_acquire_for(5ms).has_value();
   arg->returned->store(true, std::memory_order_release);
 }
 } // namespace
@@ -872,10 +892,10 @@ struct SemLimitArg {
   std::atomic<int> peak{0};
   int iters;
 };
-void sem_limit_body(void *p) {
+void sem_limit_body(void *p) noexcept {
   auto *a = static_cast<SemLimitArg *>(p);
   for (int i = 0; i < a->iters; ++i) {
-    a->sem->acquire(1);
+    (void)a->sem->acquire(1); // this semaphore is never closed
     int now = a->in_flight.fetch_add(1, std::memory_order_acq_rel) + 1;
     int prev = a->peak.load(std::memory_order_relaxed);
     while (now > prev && !a->peak.compare_exchange_weak(
@@ -897,15 +917,16 @@ TEST(Sync, SemaphoreLimitsConcurrency) {
   EXPECT_EQ(sem.available(), static_cast<std::size_t>(kLimit)); // all returned
 }
 
-// close() wakes every blocked acquirer; their acquire() returns false.
+// close() wakes every blocked acquirer with a typed Cancelled status.
 struct SemCloseArg {
   Semaphore *sem;
-  std::atomic<int> false_returns{0};
+  std::atomic<int> cancelled_returns{0};
 };
-void sem_close_body(void *p) {
+void sem_close_body(void *p) noexcept {
   auto *a = static_cast<SemCloseArg *>(p);
-  if (!a->sem->acquire(1))
-    a->false_returns.fetch_add(1, std::memory_order_acq_rel);
+  auto result = a->sem->acquire(1);
+  if (!result && result.error().IsCancelled())
+    a->cancelled_returns.fetch_add(1, std::memory_order_acq_rel);
 }
 TEST(Sync, SemaphoreCloseWakesWaiters) {
   constexpr int kFibers = 8;
@@ -921,11 +942,11 @@ TEST(Sync, SemaphoreCloseWakesWaiters) {
   for (auto &f : fibers)
     sched.spawn(f.get());
   // Close from a bare thread after giving the fibers time to block. drain()
-  // then returns only once all acquirers have been woken and returned false.
+  // then returns only once all acquirers have observed Cancelled.
   std::this_thread::sleep_for(std::chrono::milliseconds(20));
   sem.close();
   sched.drain();
-  EXPECT_EQ(a.false_returns.load(), kFibers);
+  EXPECT_EQ(a.cancelled_returns.load(), kFibers);
 }
 
 // FIFO no-skip: a big head-of-line request must not be starved by later small
@@ -939,9 +960,9 @@ struct SemFifoArg {
   std::atomic<int> *order_ctr;
   int my_order = -1;
 };
-void sem_fifo_body(void *p) {
+void sem_fifo_body(void *p) noexcept {
   auto *a = static_cast<SemFifoArg *>(p);
-  a->sem->acquire(a->need);
+  (void)a->sem->acquire(a->need); // this semaphore is never closed
   a->my_order = a->order_ctr->fetch_add(1, std::memory_order_acq_rel);
 }
 TEST(Sync, SemaphoreFifoNoSkip) {
@@ -985,14 +1006,14 @@ struct RwArg {
   std::atomic<int> reader_peak{0};
   int iters;
 };
-void rw_writer_body(void *p) {
+void rw_writer_body(void *p) noexcept {
   auto *a = static_cast<RwArg *>(p);
   for (int i = 0; i < a->iters; ++i) {
     auto g = a->rw.write();
     ++a->value; // exclusive: no other reader/writer touches value now
   }
 }
-void rw_reader_body(void *p) {
+void rw_reader_body(void *p) noexcept {
   auto *a = static_cast<RwArg *>(p);
   for (int i = 0; i < a->iters; ++i) {
     auto g = a->rw.read();
@@ -1052,7 +1073,7 @@ struct RwOverlapArg {
   std::atomic<int> inside{0};
   int target;
 };
-void rw_overlap_body(void *p) {
+void rw_overlap_body(void *p) noexcept {
   auto *a = static_cast<RwOverlapArg *>(p);
   auto g = a->rw.read(); // shared read lock
   a->inside.fetch_add(1, std::memory_order_acq_rel);
@@ -1103,11 +1124,11 @@ struct OneshotArg {
   hyle::sched::OneshotReceiver<int> rx;
   std::atomic<int> got{-1};
 };
-void oneshot_tx_body(void *p) {
+void oneshot_tx_body(void *p) noexcept {
   auto *a = static_cast<OneshotArg *>(p);
   (void)std::move(a->tx).send(42);
 }
-void oneshot_rx_body(void *p) {
+void oneshot_rx_body(void *p) noexcept {
   auto *a = static_cast<OneshotArg *>(p);
   auto r = std::move(a->rx).recv();
   a->got.store(r.has_value() ? *r : -1, std::memory_order_release);
@@ -1170,7 +1191,7 @@ struct WatchArg {
   std::atomic<int> observed{-1};
   std::atomic<bool> changed_ok{false};
 };
-void watch_rx_body(void *p) {
+void watch_rx_body(void *p) noexcept {
   auto *a = static_cast<WatchArg *>(p);
   auto r = a->rx.changed(); // block until the first send
   a->changed_ok.store(r.has_value(), std::memory_order_release);
@@ -1224,7 +1245,7 @@ struct BcastArg {
   int n;
   std::atomic<long> sum{0};
 };
-void bcast_rx_body(void *p) {
+void bcast_rx_body(void *p) noexcept {
   auto *a = static_cast<BcastArg *>(p);
   int got = 0;
   while (got < a->n) {
@@ -1332,18 +1353,23 @@ TEST(Sync, MessagingCopyFailureDoesNotStrandMonitor) {
 TEST(Sync, SemaphorePermitGuard) {
   Semaphore s(2);
   {
-    auto p = s.acquire_guard(2);
+    auto acquired = s.acquire_guard(2);
+    ASSERT_TRUE(acquired);
+    auto p = std::move(acquired).value();
     EXPECT_TRUE(p.owns());
     EXPECT_EQ(s.available(), 0u);
   }
   EXPECT_EQ(s.available(), 2u); // returned on scope exit
   {
-    auto p = s.acquire_guard(1);
+    auto acquired = s.acquire_guard(1);
+    ASSERT_TRUE(acquired);
+    auto p = std::move(acquired).value();
     p.forget(); // permanently remove this permit from the pool
   }
   EXPECT_EQ(s.available(), 1u); // forgot 1 -> capacity shrank
   auto none = s.try_acquire_guard(5);
-  EXPECT_FALSE(none.owns()); // can't get 5 from 1
+  ASSERT_FALSE(none); // can't get 5 from 1
+  EXPECT_TRUE(none.error().IsUnavailable());
 }
 
 // oneshot Sender::closed() blocks until the receiver is dropped (async cancel).
@@ -1351,7 +1377,7 @@ struct OneshotClosedArg {
   hyle::sched::OneshotSender<int> tx;
   std::atomic<bool> saw_closed{false};
 };
-void oneshot_closed_body(void *p) {
+void oneshot_closed_body(void *p) noexcept {
   auto *a = static_cast<OneshotClosedArg *>(p);
   a->tx.closed(); // blocks until receiver gone
   a->saw_closed.store(true, std::memory_order_release);
@@ -1441,7 +1467,7 @@ TEST(Sync, OneshotSenderDropRaceNoHang) {
     auto arg = std::make_unique<RaceArg>();
     arg->rx = std::move(rx);
     arg->done = &got_result;
-    auto body = [](void *p) {
+    auto body = [](void *p) noexcept {
       auto *a = static_cast<RaceArg *>(p);
       auto r = std::move(a->rx).recv(); // must return (Cancelled), never hang
       a->done->store(true, std::memory_order_release);
@@ -1477,7 +1503,7 @@ TEST(Sync, WatchSenderDropRaceNoHang) {
     auto arg = std::make_unique<RaceArg>();
     arg->rx = rx; // copy; original rx dropped at end of loop (keeps a receiver)
     arg->done = &returned;
-    auto body = [](void *p) {
+    auto body = [](void *p) noexcept {
       auto *a = static_cast<RaceArg *>(p);
       (void)a->rx.changed(); // must return (Cancelled on close), never hang
       a->done->store(true, std::memory_order_release);

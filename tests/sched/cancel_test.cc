@@ -329,7 +329,7 @@ TEST(Cancel, ScopePublishesTokenToIsCancelRequested) {
   box->tok = CancelToken::root(system_allocator());
   auto h = spawn_task(sched, system_allocator(), scoped_waiter(system_allocator(), box.get()));
   while (!box->ready.load(std::memory_order_acquire)) {}
-  box->tok.cancel();      // cancel via the TOKEN (not JoinHandle::abort)
+  box->tok.cancel();      // cancel via the TOKEN (not JoinHandle task request)
   box->waker.wake();      // wake the parked fiber so it reaches the check
   auto r = h.join();
   ASSERT_TRUE(r.has_value());
@@ -337,7 +337,7 @@ TEST(Cancel, ScopePublishesTokenToIsCancelRequested) {
   sched.shutdown();
 }
 
-TEST(Cancel, TokenScopeComposesWithJoinHandleAbort) {
+TEST(Cancel, TokenScopeComposesWithJoinHandleCancelRequest) {
   Scheduler sched(2, system_allocator(), 256);
   auto box = std::make_unique<ScopeBox>();
   box->tok = CancelToken::root(system_allocator());
@@ -345,7 +345,7 @@ TEST(Cancel, TokenScopeComposesWithJoinHandleAbort) {
       sched, system_allocator(),
       scoped_waiter(system_allocator(), box.get()));
   while (!box->ready.load(std::memory_order_acquire)) {}
-  handle.abort();  // the request token itself remains live and not cancelled
+  handle.request_cancel();  // request token remains live and not cancelled
   box->waker.wake();
   auto result = handle.join();
   ASSERT_TRUE(result.has_value());

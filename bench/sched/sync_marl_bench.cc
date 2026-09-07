@@ -54,7 +54,7 @@ struct HyleHammer {
   int iters;
   hyle::sched::WaitGroup* done = nullptr;
 };
-void hyle_hammer_body(void* p) {
+void hyle_hammer_body(void* p) noexcept {
   auto* h = static_cast<HyleHammer*>(p);
   for (int i = 0; i < h->iters; ++i) {
     h->m.lock();
@@ -68,10 +68,10 @@ Task<void> hyle_wg_task(hyle::mem::AllocatorRef, hyle::sched::WaitGroup* wg) {
   co_return;
 }
 Task<void> hyle_noop_task(hyle::mem::AllocatorRef) { co_return; }
-void hyle_wg_done(void* p) {
+void hyle_wg_done(void* p) noexcept {
   static_cast<hyle::sched::WaitGroup*>(p)->done();
 }
-void hyle_noop(void*) {}
+void hyle_noop(void*) noexcept {}
 }  // namespace
 
 int main() {

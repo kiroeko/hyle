@@ -14,7 +14,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 |---|---|---|
 | 很短、不挂起、无结果 callback | `Scheduler::schedule` | 直接在 worker stack 执行；不得 sleep/yield/block |
 | 一批短小、不挂起的 indexed/chunk work，只等整批结果 | `bulk_execute` | caller-owned result slots；一个 batch 首错/取消/完成；无逐项 handle |
-| 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；取消是协作式 |
+| 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；`request_cancel` 只发布协作请求 |
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
@@ -121,7 +121,7 @@ runner 尚未结束时挂起；另一个 Scheduler 的 Fiber 不会被借来替�
 `schedule`/`schedule_task` 这类 worker-stack callback 中嵌套调用时，为避免单 worker 自死锁，整批在
 当前 callback 上串行执行。body 无论运行在 caller Fiber 还是 worker-stack runner 上，都不得 yield、
 fiber-wait、blocking syscall 或抛异常；栈较深的 kernel 还要把 caller Fiber 的 stack tier 计入预算。
-动态添加的异构任务可组合 `schedule + WaitGroup`；需要逐项 result/join/abort 时才选 `schedule_task`，
+动态添加的异构任务可组合 `schedule + WaitGroup`；需要逐项 result/join/cancel 时才选 `schedule_task`，
 不要为了等待整批而制造一组 handles。
 
 ## 有结果任务与 fan-out
@@ -160,12 +160,15 @@ use(*result);                         // 42
 
 两条路线返回相同的 `JoinHandle`，因此可以混合进入 `when_all/when_any`。它是 move-only result slot；
 析构或 `detach()` 只放弃结果，任务继续运行且仍被
-`Scheduler::drain/shutdown` 计数。`abort()` 只设置协作取消标志，任务必须在循环、等待或 I/O 边界检查
-`is_cancel_requested()` 并通过 RAII 自行退出。
+`Scheduler::drain/shutdown` 计数。`request_cancel()` 只设置协作取消标志，任务必须在循环或工作边界检查
+`is_cancel_requested()` 并通过 RAII 自行退出。这个函数不会凭空唤醒已经挂在 timer、I/O 或同步 waiter
+链上的 Fiber；这样做会绕开真正拥有底层操作和节点生命周期的 owner。
 
 多个异构 handle 用参数包 `when_all(a,b,c)` / `when_any(a,b,c)`；运行时同类型集合用
-`std::span<JoinHandle<T>>`。它们不消耗 handle，所以之后仍要 `join()`、`abort()` 或明确 detach。
-`when_any` 只返回 winner index，不会猜测 loser 应继续、取消还是复用。
+`std::span<JoinHandle<T>>`。它们不消耗 handle，所以之后仍要 `join()`、`request_cancel()` 或明确
+detach。`when_any` 只返回 winner index，不会猜测 loser 应继续、取消还是复用。如果 loser 正在等待
+外部操作，应先通过该操作的 `CancelToken`/owner 撤销或完成它，再 `request_cancel()` 并 `join()`；只写
+task flag 后立刻销毁 operation state 是悬挂回调风险。
 
 ## 阻塞工作不是 Fiber 工作
 
@@ -191,8 +194,10 @@ job 内 shutdown 自己。
 `CancelToken::root(alloc)` 建立可复制根句柄，`derive()` 建立子树；父取消向下传播，子取消不反向污染
 父或 sibling。运营环境需要恢复 OOM 时使用 `try_create_root` / `try_derive`。`CancelScope` 把一个
 token 叠加到当前 sched execution context 的活动取消源：Fiber 上随 Fiber 迁移，`schedule_task` 中只在
-该 worker-stack callback 期间有效；嵌套 scope 与 `JoinHandle::abort()` 组合，不互相覆盖。主动取消
-已提交的 I/O 可用无分配 RAII `CancelCallback`，其 token copy 必须比 callback 长寿。
+该 worker-stack callback 期间有效；嵌套 scope 与 `JoinHandle::request_cancel()` 组合，不互相覆盖。
+主动取消已提交的 I/O 可用无分配 RAII `CancelCallback`，其 token copy 必须比 callback 长寿。典型顺序
+是 caller 取消 token，operation owner 的 callback 请求 OS/backend 取消，正常 completion 路线裁决唯一
+winner 并消费 Waker，最后 task 才从等待点返回；不要让 JoinHandle 越过 operation owner 强制恢复 Fiber。
 
 短生命周期批处理直接 `shutdown()`：它等待有限工作归零、关闭 admission 并 join workers。长期服务先：
 
@@ -206,15 +211,30 @@ stackful Fiber 无法安全地被外部强杀。超时后不能销毁仍在运�
 
 ## 同步原语如何选择
 
-`Mutex`、`ConditionVariable`、`WaitGroup`、`Latch`、`Event`、`Barrier`、`Semaphore` 和 `RwLock`
-在 Scheduler Fiber 中挂起当前 Fiber，在普通线程中阻塞当前线程。因此同一原语可以跨控制线程与
-worker 使用，但其 lifetime 必须覆盖所有 waiter。
+`ConditionVariable`、`WaitGroup`、`Latch`、`Event`、`Barrier`、`Semaphore` 和 `RwLock` 在 Scheduler
+Fiber 中挂起当前 Fiber，在普通线程中阻塞当前线程。因此同一长等待原语可以跨控制线程与 worker
+使用，但其 lifetime 必须覆盖所有 waiter。`Mutex` 是有意不同的短临界区锁：竞争时它会 park 当前 OS
+worker，而不是切走 Fiber。绝不能持有它跨 `yield`、sched wait、blocking syscall 或长 kernel；需要等待
+条件时用 `ConditionVariable`，让 Fiber 真正离开 run queue。
 
 - 条件等待始终使用 predicate overload 或循环，且只把受保护状态放在对应 mutex 下；
 - timed 入口接收 `time::Duration` / `MonotonicTimePoint`，不要手算 raw ns；
 - 销毁带 waiter 的原语、递归锁普通 `Mutex`、读锁升级写锁都是程序错误；
-- `Semaphore` 采用严格 FIFO，避免大 permit 请求饿死，代价是有意的 head-of-line blocking；
+- `Semaphore` 采用严格 FIFO，避免大 permit 请求饿死，代价是有意的 head-of-line blocking；acquire
+  family 返回 `Result`，`Unavailable` 表示立即入口暂时拿不到，`DeadlineExceeded` 表示 timed wait 超时，
+  `Cancelled` 表示 semaphore 已关闭；零 permit 在未关闭时立即成功；
 - 同步原语保护短 metadata；不要拿它们包住 blocking syscall 或大段 kernel 计算。
+
+限制并发量时优先用 RAII permit，并保留失败原因：
+
+```cpp
+auto permit = gate.try_acquire_guard();
+if (!permit) {
+  if (permit.error().IsUnavailable()) return apply_backpressure();
+  return permit.error();                 // closed -> Cancelled
+}
+run_with_capacity();                     // scope exit 自动 release
+```
 
 ## 消息与 ownership
 
@@ -267,7 +287,9 @@ overload 是热路 adapter；默认优先 value-returning `Result<T>`。
 - 默认 stack tier 适合普通工作。只有有实际深栈证据时选 small/large/custom stack；过小返回错误或
   fail-fast，不能靠关闭 guard page 赌性能。
 - `arm_timeout/cancel_timeout` 是同 worker completion owner 的底层构件，不是普通 sleep API。
-- `Waker` 统一完成唤醒，但不替 source 决定 ownership、取消 winner 或关闭顺序。
+- `Waker` 是 move-only、一次消费的低层 completion handle。每次 suspend episode 都重新取得；`wake()`
+  后自身失效。多个完成源必须先在 operation state 中裁决唯一 winner，只有 winner 可以消费 Waker；它不替
+  source 决定 ownership、取消或关闭顺序。
 
 ## 构建与支持范围
 

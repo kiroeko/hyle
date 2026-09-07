@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
@@ -26,25 +28,43 @@ namespace hyle::sched {
 
 class Fiber;
 class Scheduler;
+class Waker;
 
-// A one-shot handle to wake a specific suspended fiber. Trivially copyable
-// ({scheduler, fiber} pointers); cheap to pass to a backend. wake() is safe to
-// call from any thread, exactly once per suspend() episode. Get a FRESH Waker
-// (current_waker()) for each suspend -- a Waker is bound to one wait episode.
+HYLE_SCHED_API Waker current_waker() noexcept;
+
+// A one-shot handle to wake a specific suspended fiber. It remains exactly two
+// pointers and is move-only so one wait episode has one completion owner.
+// wake() is safe to call from any thread and consumes the handle. Get a FRESH
+// Waker (current_waker()) for every suspend episode. Competing completion
+// sources must first arbitrate one winner, then let only that winner wake.
 class Waker {
  public:
   Waker() noexcept = default;
-  Waker(Scheduler* sched, Fiber* fiber) noexcept : sched_(sched), fiber_(fiber) {}
+  Waker(Waker&& other) noexcept
+      : sched_(std::exchange(other.sched_, nullptr)),
+        fiber_(std::exchange(other.fiber_, nullptr)) {}
+  Waker& operator=(Waker&& other) noexcept {
+    if (this != &other) {
+      sched_ = std::exchange(other.sched_, nullptr);
+      fiber_ = std::exchange(other.fiber_, nullptr);
+    }
+    return *this;
+  }
+  Waker(const Waker&) = delete;
+  Waker& operator=(const Waker&) = delete;
 
   bool valid() const noexcept { return sched_ != nullptr && fiber_ != nullptr; }
 
   // Mark the associated fiber runnable again and hand it back to the scheduler.
   // May run before the fiber has finished suspending (wake-before-suspend); the
   // rendezvous inside makes that safe -- the worker re-injects post-suspend in
-  // that case, and wake() becomes a no-op re-injection. Call at most once.
-  HYLE_SCHED_API void wake() const noexcept;
+  // that case. Precondition: valid(); this object is invalid after the call.
+  HYLE_SCHED_API void wake() noexcept;
 
  private:
+  friend HYLE_SCHED_API Waker current_waker() noexcept;
+  Waker(Scheduler* sched, Fiber* fiber) noexcept : sched_(sched), fiber_(fiber) {}
+
   Scheduler* sched_ = nullptr;
   Fiber* fiber_ = nullptr;
 };
@@ -52,8 +72,6 @@ class Waker {
 // Build a Waker naming the scheduler + fiber currently running on this worker.
 // Precondition: called from inside a fiber that is running under a Scheduler
 // (i.e. on a worker thread); returns an invalid Waker otherwise.
-HYLE_SCHED_API Waker current_waker() noexcept;
-
 // The index of the worker thread currently running this fiber, or -1 if not on a
 // worker. Lets an integration owner pick THIS worker's per-core completion source so a
 // submit and the reap of its completion happen on the same thread -- the per-core

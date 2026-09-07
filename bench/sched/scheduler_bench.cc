@@ -28,11 +28,11 @@ using hyle::sched::Waker;
 
 namespace {
 
-void yield_body(void* arg) {
+void yield_body(void* arg) noexcept {
   int n = *static_cast<int*>(arg);
   for (int i = 0; i < n; ++i) Fiber::yield();
 }
-void noop_body(void*) {}
+void noop_body(void*) noexcept {}
 
 // ---- suspend/wake completion-spine ping-pong (the safe harness) -------------
 // Two long-lived fibers bounce N suspend/wake cycles between each other, all
@@ -52,7 +52,7 @@ struct PingPong {
   Waker b_waker;
   int cycles;
 };
-void pingpong_a(void* p) {
+void pingpong_a(void* p) noexcept {
   auto* s = static_cast<PingPong*>(p);
   for (int i = 0; i < s->cycles; ++i) {
     s->a_waker = current_waker();
@@ -65,7 +65,7 @@ void pingpong_a(void* p) {
     s->b_waker.wake();
   }
 }
-void pingpong_b(void* p) {
+void pingpong_b(void* p) noexcept {
   auto* s = static_cast<PingPong*>(p);
   for (int i = 0; i < s->cycles; ++i) {
     // Wake A (it published its waker first), then suspend waiting for A's wake.

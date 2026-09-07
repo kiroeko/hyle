@@ -34,7 +34,7 @@ struct LongLived {
   std::atomic<bool>* exited;
   std::atomic<int>* iterations;
 };
-void longlived_entry(void* p) {
+void longlived_entry(void* p) noexcept {
   auto* s = static_cast<LongLived*>(p);
   while (!shutdown_requested()) {
     s->iterations->fetch_add(1, std::memory_order_relaxed);
@@ -81,7 +81,7 @@ TEST(Shutdown, SpawnRejectedAfterBeginShutdown) {
   std::atomic<bool> ran{false};
   struct B { std::atomic<bool>* ran; };
   B b{&ran};
-  auto entry = [](void* p) { static_cast<B*>(p)->ran->store(true); };
+  auto entry = [](void* p) noexcept { static_cast<B*>(p)->ran->store(true); };
   Fiber f(kDefaultStackSize, entry, &b);
   EXPECT_FALSE(sched.spawn(&f));
 
@@ -95,7 +95,7 @@ TEST(Shutdown, SuspendedWaiterIsBroadcastWithoutPolling) {
     std::atomic<bool> entered{false};
     std::atomic<bool> exited{false};
   } state;
-  auto entry = [](void* raw) {
+  auto entry = [](void* raw) noexcept {
     auto* waiter = static_cast<Waiter*>(raw);
     waiter->entered.store(true, std::memory_order_release);
     wait_for_shutdown();
@@ -120,10 +120,10 @@ struct ChildSpawn {
   std::atomic<bool>* ready;
   std::atomic<bool>* go;
 };
-void child_entry(void* p) {
+void child_entry(void* p) noexcept {
   static_cast<std::atomic<bool>*>(p)->store(true, std::memory_order_release);
 }
-void parent_entry(void* p) {
+void parent_entry(void* p) noexcept {
   auto* arg = static_cast<ChildSpawn*>(p);
   arg->ready->store(true, std::memory_order_release);
   while (!arg->go->load(std::memory_order_acquire)) Fiber::yield();
@@ -164,7 +164,7 @@ TEST(Shutdown, ConcurrentCallsJoinWorkersExactlyOnce) {
     std::atomic<bool>* entered;
   } context{&running, &entered};
   Fiber fiber(kSmallStackSize,
-              +[](void* raw) {
+              +[](void* raw) noexcept {
                 auto* context = static_cast<Context*>(raw);
                 context->entered->store(true, std::memory_order_release);
                 while (context->running->load(std::memory_order_acquire))
@@ -212,7 +212,7 @@ TEST(Shutdown, ConcurrentAdmissionAndCloseAreLinearizable) {
       std::vector<Arg> args(kFibers, Arg{&ran});
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kFibers);
-      auto entry = [](void* p) {
+      auto entry = [](void* p) noexcept {
         static_cast<Arg*>(p)->ran->fetch_add(1, std::memory_order_relaxed);
       };
       for (int i = 0; i < kFibers; ++i)
@@ -244,7 +244,7 @@ TEST(Shutdown, ConcurrentAdmissionAndCloseAreLinearizable) {
       std::atomic<int> ran{0};
       std::atomic<int> accepted{0};
       std::atomic<bool> go{false};
-      auto entry = +[](void* p) {
+      auto entry = +[](void* p) noexcept {
         static_cast<std::atomic<int>*>(p)->fetch_add(
             1, std::memory_order_relaxed);
       };
@@ -283,7 +283,7 @@ TEST(Shutdown, DrainForTimesOutOnStuckFiber) {
   auto keep_going = std::make_unique<std::atomic<bool>>(true);
   struct Stuck { std::atomic<bool>* go; };
   Stuck s{keep_going.get()};
-  auto entry = [](void* p) {
+  auto entry = [](void* p) noexcept {
     auto* st = static_cast<Stuck*>(p);
     while (st->go->load(std::memory_order_acquire)) Fiber::yield();
   };

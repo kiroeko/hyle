@@ -208,3 +208,30 @@ if (!permit && permit.error().IsUnavailable()) { /* apply backpressure */ }
 自顶向下和自底向上审计均完成；没有新增第六项产品 FIX。`sched` 进入 `AUDITED`，只允许实施冻结的
 `SCHED-V4-CANCEL-01`、`NOEXCEPT-01`、`SEMAPHORE-01`、`WAKER-01` 与 `DOC-BUILD-01`。未运行的测试、
 交付和性能仍为 `PLANNED`，不能写成 PASS。
+
+## AUDITED implementation（候选前）
+
+冻结的五项 FIX 已实施，尚未因此授予 candidate 或 gate verdict：
+
+- `CANCEL-01`：删除 `JoinHandle::abort()`，唯一入口改为 `request_cancel()`；公开注释与 guide 明确它只
+  发布 cooperative flag。在途 timer/IO/wait 仍由 caller-owned token 与 operation owner 的 callback
+  撤销，`when_any` 不伪造 loser wake；before-start、running、parked、completed 与 completion race 均有
+  定向测试；
+- `NOEXCEPT-01`：`Fiber::EntryFn` 与 `Scheduler::DetachedFn` 的函数指针类型包含 `noexcept`，现有 raw
+  consumer 迁移；compile-time assertion 同时证明 potentially-throwing pointer 不可转换；
+- `SEMAPHORE-01`：acquire family 和 guard family 使用 HYLE `Result`，分别保留 `Cancelled`、
+  `Unavailable`、`DeadlineExceeded`；zero request 在未关闭时先于 FIFO 检查成功，closed 仍优先返回
+  `Cancelled`；waiter 仍为 stack node、timed unlink 仍 O(1)，成功 fast path 未增加 allocation、lock 或
+  metadata；
+- `WAKER-01`：Waker 保持两指针，改为 move-only consuming handle，raw pair 构造收为 Sched 私有；
+  notify/timeout/shutdown/Graph 直接 consumer 在锁内或 owner 状态中转移唯一 handle、锁外消费。重复
+  Windows race 回归曾真实捕获 notify 在 timed helper 进入前取走 Waker 的合法交错；修复后 timeout 与
+  notify 都不再借用 stack node 上的可复制 handle；
+- `DOC-BUILD-01`：user/architecture 的 Mutex、取消、Semaphore、Waker 选择说明已校准；中央依赖说明
+  修正为 PRIVATE `container_queue,timer_queue`；fcontext README 只声明真实执行过的 Windows x86-64、
+  Linux x86-64 与 macOS arm64 变体，README 改动同步更新中央 vendored content hash。
+
+候选前本地检查：Windows MSVC Release `sched` 公开头与 173 tests 通过，完整 suite 连续重复十轮通过；
+全部 Sched benchmark target 只编译不采样并通过；Windows shared build 的 IO、Compute、Graph 直接下游
+均通过编译。它们是实现回归输入，不替代 immutable candidate 后的三平台、sanitizer、三交付、P1 与
+独立红队 gate。

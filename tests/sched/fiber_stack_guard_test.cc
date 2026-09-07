@@ -13,13 +13,13 @@ using hyle::sched::kSmallStackSize;
 
 namespace {
 
-void mark_entry(void* arg) {
+void mark_entry(void* arg) noexcept {
   *static_cast<int*>(arg) = 99;
   Fiber::yield();
   *static_cast<int*>(arg) = 100;
 }
 
-void deep_use_stack(void* arg) {
+void deep_use_stack(void* arg) noexcept {
   // Touch a moderate amount of stack frame space without overflowing.
   volatile char buf[2048];
   for (int i = 0; i < 2048; ++i) buf[i] = static_cast<char>(i);

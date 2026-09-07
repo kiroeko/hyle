@@ -64,7 +64,7 @@ struct FiberLaunch {
   static void trampoline(transfer_t t) noexcept {
     auto* self = static_cast<Fiber*>(t.data);
     self->return_ctx_ = t.fctx;  // where to jump back when we yield/finish
-    self->entry_(self->arg_);    // run user code (may yield repeatedly)
+    self->entry_(self->arg_);    // noexcept user code; may yield repeatedly
     self->finished_ = true;
     // Hand TSan back to the resumer before the final stack switch (control never
     // returns here, so there is no finish-switch on this side).

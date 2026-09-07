@@ -85,8 +85,8 @@ class CancelToken {
 // Adds a token to the active cancellation sources of the current sched
 // execution context. On a Fiber the scope migrates with that Fiber; inside a
 // worker-stack schedule_task callback it is thread-confined for the callback's
-// lifetime. Nested scopes compose with JoinHandle::abort instead of replacing
-// it. The token (or one of its copies) must outlive the scope.
+// lifetime. Nested scopes compose with JoinHandle::request_cancel instead of
+// replacing it. The token (or one of its copies) must outlive the scope.
 class CancelScope {
  public:
   explicit CancelScope(const CancelToken& token) noexcept

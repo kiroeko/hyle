@@ -62,7 +62,7 @@ struct RawTask {
   int result = 0;
   WaitGroup wg{1};
 };
-void raw_entry(void* p) {
+void raw_entry(void* p) noexcept {
   auto* r = static_cast<RawTask*>(p);
   r->result = 7;  // "compute"
   r->wg.done();

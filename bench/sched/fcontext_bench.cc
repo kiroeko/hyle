@@ -31,7 +31,7 @@ FiberStack allocate_stack() {
   return *std::move(stack);
 }
 
-void fiber_yield_body(void* argument) {
+void fiber_yield_body(void* argument) noexcept {
   const int rounds = *static_cast<const int*>(argument);
   for (int i = 0; i < rounds; ++i) Fiber::yield();
 }
@@ -47,13 +47,13 @@ struct HandleYieldArguments {
   int rounds = 0;
 };
 
-void handle_yield_body(void* argument) {
+void handle_yield_body(void* argument) noexcept {
   auto* state = static_cast<HandleYieldArguments*>(argument);
   for (int i = 0; i < state->rounds; ++i)
     hyle_bench_fcontext_seam_yield_handle(state->context);
 }
 
-void current_yield_body(void* argument) {
+void current_yield_body(void* argument) noexcept {
   const int rounds = *static_cast<const int*>(argument);
   for (int i = 0; i < rounds; ++i) hyle_bench_fcontext_seam_yield_current();
 }

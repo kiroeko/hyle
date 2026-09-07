@@ -26,7 +26,7 @@ void deep_call(Probe* p) {
   p->seq.push_back(5);
 }
 
-void probe_entry(void* arg) {
+void probe_entry(void* arg) noexcept {
   auto* p = static_cast<Probe*>(arg);
   int local = 100;          // lives on the fiber's own stack
   p->seq.push_back(1);
@@ -39,7 +39,7 @@ void probe_entry(void* arg) {
   p->carried = local;       // 111 iff `local` survived both yields
 }
 
-void no_yield_entry(void* arg);
+void no_yield_entry(void* arg) noexcept;
 
 }  // namespace
 
@@ -81,7 +81,7 @@ TEST(Fiber, StackPreservedAcrossNestedYields) {
 }
 
 namespace {
-void no_yield_entry(void* arg) { *static_cast<int*>(arg) = 7; }
+void no_yield_entry(void* arg) noexcept { *static_cast<int*>(arg) = 7; }
 }  // namespace
 
 TEST(Fiber, RunsToCompletionWithoutYield) {
@@ -100,7 +100,7 @@ struct Indep {
   int start;
   int out;
 };
-void indep_entry(void* arg) {
+void indep_entry(void* arg) noexcept {
   auto* x = static_cast<Indep*>(arg);
   int local = x->start;
   Fiber::yield();

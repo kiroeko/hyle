@@ -33,10 +33,11 @@
 //    joining fiber suspend()s, a bare thread parks) -- already TSan-proven. No
 //    hand-rolled rendezvous state machine.
 //  * Cancellation is COOPERATIVE. A stackful fiber cannot be preempted (folly
-//    /fibers offers no external cancel, marl none) -- abort() sets a flag and the
-//    task checks is_cancel_requested() at its own suspend points and unwinds via
-//    RAII. when_any's loser cancellation is the same mechanism. In-flight OS
-//    operation cancellation remains the completion source owner's job.
+//    /fibers offers no external cancel, marl none) -- request_cancel() sets a
+//    flag and the task checks is_cancel_requested() at its own suspend points
+//    and unwinds via RAII. when_any's loser cancellation is the same mechanism.
+//    In-flight OS operation cancellation remains the completion source owner's
+//    job.
 //  * schedule_task runs a non-suspending callable directly on a worker stack and
 //    keeps its callable + JoinState in one allocation. spawn_task owns a Fiber
 //    via a heap TaskDriver for work that really can suspend. In both routes,
@@ -268,7 +269,7 @@ HYLE_SCHED_API bool is_cancel_requested() noexcept;
 
 // ---- JoinHandle<T> ----------------------------------------------------------
 // Move-only handle to a spawned task's result. join() blocks (fiber-aware from a
-// worker) until the task finishes, returning Result<T>. abort() requests
+// worker) until the task finishes, returning Result<T>. request_cancel() asks
 // cooperative cancellation. Dropping detaches (task runs on, result discarded).
 template <class T>
 class JoinHandle {
@@ -307,7 +308,7 @@ class JoinHandle {
     return result;
   }
 
-  void abort() noexcept {
+  void request_cancel() noexcept {
     if (state_) state_->cancel_req.store(true, std::memory_order_release);
   }
   bool is_finished() const noexcept {
@@ -373,7 +374,7 @@ class JoinHandle<void> {
     if (!s.ok()) return std::unexpected(std::move(s));
     return {};
   }
-  void abort() noexcept {
+  void request_cancel() noexcept {
     if (state_) state_->cancel_req.store(true, std::memory_order_release);
   }
   bool is_finished() const noexcept {
@@ -437,7 +438,8 @@ struct ScheduledTaskCell final : JoinState<R> {
     JoinState<R>* state = self;
     if (state->cancel_req.load(std::memory_order_acquire)) {
       self->fn.reset();
-      state->set_error(Status::Cancelled("scheduled task aborted before start"));
+      state->set_error(
+          Status::Cancelled("scheduled task cancelled before start"));
     } else {
       ScopedCancelFlag cancel_scope(&state->cancel_req);
       R value = std::invoke(*self->fn);
@@ -472,7 +474,8 @@ struct ScheduledTaskCell<F, void> final : JoinState<void> {
     JoinState<void>* state = self;
     if (state->cancel_req.load(std::memory_order_acquire)) {
       self->fn.reset();
-      state->set_error(Status::Cancelled("scheduled task aborted before start"));
+      state->set_error(
+          Status::Cancelled("scheduled task cancelled before start"));
     } else {
       ScopedCancelFlag cancel_scope(&state->cancel_req);
       std::invoke(*self->fn);
@@ -555,7 +558,7 @@ struct TaskDriver {
     ScopedCancelFlag cancel_scope(&st->cancel_req);
     d->task.resume();  // one resume drives the whole coroutine (fiber-yields on await)
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
-      st->set_error(Status::Cancelled("task aborted"));
+      st->set_error(Status::Cancelled("task cancellation requested"));
     } else {
       try {
         st->set_value(d->task.result());
@@ -599,7 +602,7 @@ struct TaskDriver<void> {
     ScopedCancelFlag cancel_scope(&st->cancel_req);
     d->task.resume();
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
-      st->set_error(Status::Cancelled("task aborted"));
+      st->set_error(Status::Cancelled("task cancellation requested"));
     } else {
       try {
         d->task.result();
@@ -694,7 +697,8 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task
 // Both block (fiber-aware) on a stack GroupSignal that each task signals on
 // completion. They do NOT consume the handles -- after when_all every handle is
 // finished (join each for results); after when_any the winner index is returned
-// and the caller may join the winner + abort()/join the losers. The waiter
+// and the caller may join the winner + request cancellation/join the losers.
+// The waiter
 // uninstalls the group from every state before returning so a late loser never
 // touches the (stack) GroupSignal (folly WhenN UAF guard).
 
@@ -772,8 +776,10 @@ void when_all(std::span<JoinHandle<T>> handles) noexcept {
 }
 
 // Wait until the FIRST handle's task finishes; returns its index. Handles are
-// left intact -- the caller decides whether to abort()/join the losers. This is
-// the select primitive underpinning C2 timeout io (io op vs timer, first wins).
+// left intact. request_cancel() only publishes a cooperative flag; if a loser
+// owns an in-flight wait, cancel that operation through its CancelToken/owner
+// before joining it. This is the select primitive underpinning C2 timeout io
+// (io op vs timer, first wins).
 template <class... Ts>
 int when_any(JoinHandle<Ts>&... handles) noexcept {
   static_assert(sizeof...(Ts) > 0, "when_any needs at least one handle");

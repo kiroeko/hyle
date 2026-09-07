@@ -29,7 +29,8 @@
 #define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
-// Fiber-aware synchronization primitives over the common wake spine.
+// Scheduler synchronization primitives. Long waits use the common wake spine;
+// Mutex deliberately remains a short-section OS-thread lock.
 //
 // WHY they exist: a std::mutex / std::condition_variable blocks the WORKER OS
 // THREAD. On an M:N scheduler that strands every OTHER fiber pinned to that
@@ -39,9 +40,9 @@
 // just another completion/wake through the same Waker spine.
 //
 // Convergence (marl's lesson, adopted): do NOT write a bespoke wake mechanism
-// for mutex / waitgroup / channel / latch. Build ONE fiber-aware
-// ConditionVariable and layer everything on it. Everything below is a thin
-// wrapper around CV.
+// for waitgroup / channel / latch / event. Build ONE fiber-aware
+// ConditionVariable and layer long-wait facilities on it. Mutex is not a
+// long-wait facility and uses the platform lock path described below.
 //
 // Dual-mode (REQUIRED, not optional): a waiter may be a fiber (yield +
 // re-inject) OR a bare OS thread (fall back to platform::Parker). HYLE's
@@ -69,7 +70,9 @@ class TimerEntry;
 
 namespace hyle::sched {
 
-// The one fiber-aware blocking primitive; all others build on it. Mirrors
+// The common fiber-aware long-wait primitive; the long-wait/message facilities
+// below build on it. Mutex is the deliberate exception: it is a short-section
+// OS-thread lock, documented separately below. Mirrors
 // std::condition_variable_any: wait() takes ANY BasicLockable (the monitor
 // lock), releases it while blocked, and re-acquires it before returning (Mesa
 // semantics -- always re-check the predicate in a loop).
@@ -876,25 +879,25 @@ public:
   Semaphore(Semaphore &&) = delete;
   Semaphore &operator=(Semaphore &&) = delete;
 
-  // Acquire `n` permits, blocking (fiber-aware) until available. Returns false
-  // if the semaphore was closed before n could be granted (permits already
+  // Acquire `n` permits, blocking (fiber-aware) until available. Returns
+  // Cancelled if the semaphore closes before n can be granted (permits already
   // handed to this waiter are returned to the pool). n may exceed the initial
-  // permit count (it just waits for enough release()s).
-  HYLE_SCHED_API bool acquire(std::size_t n = 1) noexcept;
+  // permit count. Acquiring zero is an immediate success unless closed.
+  HYLE_SCHED_API Result<void> acquire(std::size_t n = 1) noexcept;
 
   // Non-blocking: take `n` permits iff all are available right now. Returns
-  // false if fewer than n are available OR the semaphore is closed. Never
-  // queues.
-  HYLE_SCHED_API bool try_acquire(std::size_t n = 1) noexcept;
+  // Unavailable when permits/FIFO order prevent acquisition, or Cancelled when
+  // closed. Never queues. Acquiring zero succeeds unless closed.
+  HYLE_SCHED_API Result<void> try_acquire(std::size_t n = 1) noexcept;
 
   // Timed FIFO acquire. An expired deadline still performs one immediate
   // acquisition attempt. A timed-out queued request unlinks itself in O(1),
   // then makes any newly-unblocked follower eligible without waiting for a new
-  // release. False also means the semaphore was closed.
-  HYLE_SCHED_API bool try_acquire_for(time::Duration timeout,
-                                      std::size_t n = 1) noexcept;
-  HYLE_SCHED_API bool try_acquire_until(time::MonotonicTimePoint deadline,
-                                        std::size_t n = 1) noexcept;
+  // release. Returns DeadlineExceeded on timeout and Cancelled on close.
+  HYLE_SCHED_API Result<void> try_acquire_for(time::Duration timeout,
+                                              std::size_t n = 1) noexcept;
+  HYLE_SCHED_API Result<void> try_acquire_until(
+      time::MonotonicTimePoint deadline, std::size_t n = 1) noexcept;
 
   // Return `n` permits to the pool, waking FIFO-front waiters whose full
   // request is thereby satisfied. Wakes are delivered after the internal lock
@@ -904,9 +907,9 @@ public:
     HYLE_FATAL_ASSERT(try_release(n));
   }
 
-  // Close: wake every waiter (their acquire() returns false). Post-close
-  // acquire/ try_acquire return false. Idempotent. Permits already in the pool
-  // stay.
+  // Close: wake every waiter (their acquire returns Cancelled). Post-close
+  // acquire/try_acquire also return Cancelled. Idempotent. Permits already in
+  // the pool stay.
   HYLE_SCHED_API void close() noexcept;
 
   // Available permits right now (racy snapshot; for diagnostics/tests).
@@ -914,8 +917,8 @@ public:
 
   // RAII permit: holds `n` permits and returns them to the pool on destruction.
   // The ergonomic limiter usage -- `auto p = sem.acquire_guard(); ...` frees
-  // the slot automatically on scope exit, even on early return. owns() is false
-  // if the acquire failed (semaphore closed).
+  // the slot automatically on scope exit, even on early return. Failure stays
+  // in Result rather than being collapsed into an empty Permit.
   class Permit {
   public:
     Permit() noexcept = default;
@@ -950,22 +953,28 @@ public:
     std::size_t n_ = 0;
   };
 
-  // Blocking acquire returning an RAII Permit (owns()==false if closed).
-  Permit acquire_guard(std::size_t n = 1) noexcept {
-    return acquire(n) ? Permit(this, n) : Permit();
+  // Acquire an RAII permit while preserving the exact failure reason.
+  Result<Permit> acquire_guard(std::size_t n = 1) noexcept {
+    auto result = acquire(n);
+    if (!result) return std::unexpected(std::move(result).error());
+    return Permit(this, n);
   }
-  // Non-blocking acquire returning an RAII Permit (owns()==false if
-  // unavailable).
-  Permit try_acquire_guard(std::size_t n = 1) noexcept {
-    return try_acquire(n) ? Permit(this, n) : Permit();
+  Result<Permit> try_acquire_guard(std::size_t n = 1) noexcept {
+    auto result = try_acquire(n);
+    if (!result) return std::unexpected(std::move(result).error());
+    return Permit(this, n);
   }
-  Permit try_acquire_guard_for(time::Duration timeout,
-                               std::size_t n = 1) noexcept {
-    return try_acquire_for(timeout, n) ? Permit(this, n) : Permit();
+  Result<Permit> try_acquire_guard_for(time::Duration timeout,
+                                       std::size_t n = 1) noexcept {
+    auto result = try_acquire_for(timeout, n);
+    if (!result) return std::unexpected(std::move(result).error());
+    return Permit(this, n);
   }
-  Permit try_acquire_guard_until(time::MonotonicTimePoint deadline,
-                                 std::size_t n = 1) noexcept {
-    return try_acquire_until(deadline, n) ? Permit(this, n) : Permit();
+  Result<Permit> try_acquire_guard_until(time::MonotonicTimePoint deadline,
+                                         std::size_t n = 1) noexcept {
+    auto result = try_acquire_until(deadline, n);
+    if (!result) return std::unexpected(std::move(result).error());
+    return Permit(this, n);
   }
 
 private:
@@ -976,7 +985,7 @@ private:
     Waiter *prev = nullptr;
     std::size_t need = 0; // permits still required before this waiter proceeds
     bool granted = false; // set by release(): request fully satisfied
-    bool aborted = false; // set by close(): give up, acquire() returns false
+    bool cancelled = false; // set by close(): acquire returns Cancelled
     bool linked = false;  // guarded by mu_; enables O(1) timeout unlink
     ConditionVariable cv; // this waiter blocks here; woken 1:1
   };
@@ -1104,10 +1113,12 @@ public:
 
   // Raw lock/unlock pairs for generic guard/erased runtime integration.
   void lock_read() noexcept { (void)sem_.acquire(1); }
-  bool try_lock_read() noexcept { return sem_.try_acquire(1); }
+  bool try_lock_read() noexcept { return sem_.try_acquire(1).has_value(); }
   void unlock_read() noexcept { sem_.release(1); }
   void lock_write() noexcept { (void)sem_.acquire(kMaxReaders); }
-  bool try_lock_write() noexcept { return sem_.try_acquire(kMaxReaders); }
+  bool try_lock_write() noexcept {
+    return sem_.try_acquire(kMaxReaders).has_value();
+  }
   void unlock_write() noexcept { sem_.release(kMaxReaders); }
 
 private:

@@ -81,7 +81,7 @@ struct DetachedDriver {
     detail::FiberAccess::set_on_finish(&fiber, &destroy, this);
   }
 
-  static void entry(void* p) {
+  static void entry(void* p) noexcept {
     auto* self = static_cast<DetachedDriver*>(p);
     self->fn(self->ctx);
   }
@@ -1174,7 +1174,7 @@ struct Scheduler::Impl {
     // stack-resident waiter immediately.
     while (waiters != nullptr) {
       ShutdownWaiter* next = waiters->next;
-      const Waker waker = waiters->waker;
+      Waker waker = std::move(waiters->waker);
       waker.wake();
       waiters = next;
     }
@@ -1560,12 +1560,15 @@ void Scheduler::set_io_wake_(IoWakeFn fn, void* ctx) noexcept {
 
 // ---- completion spine (sched-04a) -------------------------------------------
 
-void Waker::wake() const noexcept {
+void Waker::wake() noexcept {
+  Scheduler* scheduler = std::exchange(sched_, nullptr);
+  Fiber* fiber = std::exchange(fiber_, nullptr);
+  HYLE_FATAL_ASSERT(scheduler != nullptr && fiber != nullptr);
   // Rendezvous: whichever of {worker dispatch, this wake()} sees the other has
   // already arrived performs the single re-injection. If we arrived first, the
   // worker's dispatch will re-inject post-suspend.
-  if (detail::FiberAccess::wake_rendezvous(fiber_))
-    sched_->impl_->reinject(fiber_);
+  if (detail::FiberAccess::wake_rendezvous(fiber))
+    scheduler->impl_->reinject(fiber);
 }
 
 Waker current_waker() noexcept {

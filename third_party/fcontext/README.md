@@ -37,6 +37,9 @@ dependency on boost headers or build system.
 
 The MASM files reference `BOOST_CONTEXT_EXPORT` (undefined in-file). It is a PROC
 visibility macro; we pass `/DBOOST_CONTEXT_EXPORT=EXPORT` to ml64 so the routines
-are PUBLIC (linkable from `fiber.cc`). Only the Windows x86_64 masm trio is built
-and tested on the current toolchain; the other five platforms are vendored for
-when CI / other machines come online (not yet verified).
+are PUBLIC (linkable from `fiber.cc`). The product build selects exactly one trio
+from the target OS/architecture. Current HYLE closure evidence executes the
+Windows x86_64 MASM, Linux x86_64 ELF/GAS and macOS arm64 Mach-O/GAS variants;
+the packaged Linux arm64, macOS x86_64 and Windows arm64 variants remain supported
+source selections but require a matching validation machine before a round may
+claim execution evidence for them.
