@@ -370,3 +370,14 @@ W1-WIN Release/WERROR 只构建受影响的 `hyle_container_text_tests`、普通
 
 `CONT6-F07=PASS`。下一步提交这一产品字节，再把精确提交冻结为新的 `container_text` candidate；只有该
 不可变候选需要最后一次 v7 qualification，其他 Container factor 不重放。
+
+## 终态候选冻结
+
+`container_text` 的 terminal-result 产品实现冻结于 commit
+`3ba50461ec7c8f387f4d953f1e499a1f6d449870`、tree
+`bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f`。`AUDITED -> CANDIDATE` 前 registry 快照为
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-container-text-terminal-candidate.json`，
+SHA-256 `ac8ad50f3fde7cdeab79143773e3b0a257dd4608204664104fdd07dd304ca248`。
+
+这一状态提交不改变产品树，因此不运行 P1。下一项只允许对这个干净不可变候选运行一次 v7
+qualification；若预注册判据仍证明固定产品劣化，本轮进入 `BLOCKED` 而不是继续追加试验或 FIX。

@@ -38,7 +38,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CANDIDATE：同合同 membership 只提高进程窗口分辨率并冻结在 111c28ea，hash/allocator/语义/topology 不变；正式采样必须从唯一 n=15 开始。 |
 | container_queue | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CANDIDATE：同合同 queue adapter 与原 scale 不变，产品/factor attribution 已修正并冻结在 111c28ea，等待同一候选正式重放。 |
-| container_text | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 AUDITED：6f07b9ed 的合法 P1 仍证明 safe Unicode 6/8 strata 固定劣化；object code 定位为六种转换在成功路径构造并搬运两个中间 UtfResult，只允许一次全族终态构造修正。 |
+| container_text | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CANDIDATE：六种 safe conversion 的 terminal-result 实现冻结于 3ba50461；定向正确性、语义 oracle 与成功路径 codegen 已通过，只等待最后一次 v7 qualification。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：
