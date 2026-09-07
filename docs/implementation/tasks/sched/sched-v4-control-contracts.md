@@ -1,6 +1,7 @@
 # Sched v4 控制与结果合同
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 当前唯一状态真相是 [`module-status.json`](../../module-status.json)。本轮由只读
 > [`Sched 当前产品回放`](sched-current-product-replay-2026-09.md) 的具体产品事实触发，不重做 v3 已经
@@ -331,3 +332,41 @@ raw exception boundary、shutdown、allocator/result 生命周期、公开 inclu
 不可变 product candidate LOC：全库代码 `481377`；自实现不含测试 `77120`；Sched 实现 `5626`。
 全部适用工程门已经完成，当前进入 `VERIFIED`；下一合法状态是补齐限制、reopen triggers 与 terminal
 receipt 后进入 `CLOSED/FROZEN`。
+
+## Closure decision 与 terminal receipt
+
+`CLOSED / FROZEN`。产品 candidate 仍为
+`dbc9634455176450fb86d68b373c6cc4a4156f24` / tree
+`5e39d8ab76b6da83e7dd267584f9592c59930532`；执行证据提交
+`e91fc36b52075f8d36a5d4cb2f375e4c967082b1` 相对该 candidate 的 Sched 产品路径为空。`VERIFIED`
+状态提交为 `4a58d7b8`。五项冻结 FIX 与全部适用 correctness、delivery、docs/usability、reuse、red-team
+和 P1 工程门均 `PASS`，没有未决 blocker；Formal performance 保持 `PENDING`。
+
+已知限制：
+
+- `JoinHandle::request_cancel()` 只发布 cooperative flag；它不绕过 timer/IO/backend owner 唤醒仍挂链的
+  Fiber。调用方必须让 operation owner 安全取消或完成底层操作；
+- stackful Fiber 不能被外部安全强杀；deadline 后仍不合作的任务需要继续排空，或由进程 supervisor
+  处理，不能销毁仍在运行的 Scheduler；
+- `Waker` 是 move-only one-shot completion handle，不自带 generation 或 multi-winner arbitration；多个
+  completion source 必须先在 operation state 中选出唯一 winner；
+- external-caller gang/SPMD、自适应分区、模型/请求 priority、continuous batching、GPU stream 和异构
+  策略仍属于 Graph/Compute/推理 runtime，不由通用 Sched 静态加 metadata；
+- P1 只覆盖 W1-WIN 上 request fan-out、completion wake 与四 worker finite batch；不是全操作、跨平台或
+  Formal SOTA 证书。vendored fcontext 只验证 Windows/Linux x86-64 与 macOS arm64 的当前变体；
+- macOS 下游 aggregate static link 仍可能提示重复的传递 archive；当前三交付无缺失或重复定义，这一
+  link-line 整理应由独立 build-system trigger 承担，不构成隐藏的 Sched API。
+
+reopen triggers：
+
+- 真实 consumer 复现 task/cancel/Waker/Semaphore/synchronization/shutdown 的 correctness、ownership、
+  race、OOM 或自然 C++ API 易用性缺陷；
+- 公开 API、layout、复杂度、常态 allocation/lock/syscall/metadata、直接依赖、component identity 或
+  source/static/shared 交付发生变化；
+- named inference journey 证明 gang/SPMD、priority、continuous batching 或 per-wait cancellation 是通用
+  Sched owner，而不是 Graph/Compute/IO/服务策略；
+- Boost.Context、支持的编译器/OS wait/thread 语义或目标架构改变当前 fcontext/异常边界合同；
+- qualified 同合同或真实 consumer evidence 证明 material regression，或成熟 peer 证明更好复杂度类。
+
+LOC 绑定不可变 product candidate：全库代码 `481377`；自实现不含测试 `77120`；Sched 实现 `5626`。
+freeze confirmation ID 为 `sched-v4-freeze-2026-09-08`，证据就是本 terminal task。

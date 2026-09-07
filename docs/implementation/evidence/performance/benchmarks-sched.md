@@ -1,6 +1,6 @@
 # sched 性能证据
 
-<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
 > `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
