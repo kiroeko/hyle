@@ -259,3 +259,15 @@ process-level ratio CI 大幅摆动。下一候选不会换 API、peer、分布�
 三项 FIX 的预采样门均为 `PASS`。状态仍为 `AUDITED`：下一步只能先提交并冻结新的 immutable candidate，
 然后对 v7/v3 各执行一次 `n=15` qualification；只有合法 verdict 为 `UNRESOLVED` 时才可按合同执行唯一
 一次全新 `n=31`，不得缩样本、追加或挑选有利结果。
+
+## 第二候选冻结
+
+修正后的 benchmark、语义矩阵、合同、validator 和归属文档冻结在 commit
+`111c28eab99daff6257427473a2a1b11ac1cfd0c`、tree
+`a2e578165582cd4f34c23d5350bfd7d019ca900b`。该候选相对首候选没有 `include/`、`src/`、产品测试、
+组件图或 package consumer 的变化；候选新增事实只影响性能证据合法性。
+
+`AUDITED -> CANDIDATE` 的明确前态 registry 快照位于
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-second-candidate.json`，
+SHA-256 `60a8ad7aca27092ef43cbc753e509366b7661c696b55e5e2a381ecec9fc6d80d`。四个 factor 共同进入
+`CANDIDATE`，不得再改变候选树；下一步严格运行两份新合同各自的首轮 `n=15`。
