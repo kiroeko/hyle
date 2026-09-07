@@ -1,6 +1,6 @@
 # Util-runtime v5：有限 blocker 恢复
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Scope and retained evidence
 
@@ -20,12 +20,15 @@
 ASan/UBSan/TSan、P0/codegen/export 及候选后一次红队。若出现第四个独立产品 MUST，或既定修复需要改变
 依赖/能力边界，立即裁决 BLOCKED，不扩建公共仪器。P1 因没有已准入热 consumer 而不适用。
 
-## Audit input（SCOPED，尚未冻结 FIX）
+## Audit result and frozen FIX
 
-| ID | retained fact | intended proof |
+| ID | retained fact | frozen correction and proof |
 |---|---|---|
-| RT-01 | `Creator/create/Entry::invoke` 的连续按值 hop 可在 `noexcept` 内触发额外 throwing move | 值参数只在公开边界构造一次；类型擦除用地址槽传递，最终 factory 仍得到声明的 `Args...` 类别 |
-| RT-02 | `dbghelp.h` 依赖 `windows.h`，格式化后次序会复发 | 私有 fixture 以不可重排 include block 编译通过 |
-| RT-03 | 合法 ABI 实现可拒绝构造的超长符号，公开语义是原样回退 | integration 接受成功 demangle 或精确 fallback；确定性 fake adapter 继续证明长结果/释放路径 |
+| RT-01 | `Registry::create -> EntryView::Creator -> Entry::invoke` 以及 `FrozenView::create -> Creator` 都复制了按值 signature；`Creator` 本身还有一层 | 三个公开调用入口各自只形成其声明所需的 `Args...` 参数；内部公共 helper 借用这些局部参数，erased invoker 只收 `remove_reference_t<Args>*...` 地址槽，最终以 `std::forward<Args>(*slot)` 恢复原类别。测试 named rvalue 的入口构造数、borrow-only factory 零内部 move、调用前 throwing move 可传播，以及现有 move-only by-value factory |
+| RT-02 | `dbghelp.h` 依赖 `windows.h`，普通 include sort 会把前者移到前面 | 私有 fixture 用局部 `clang-format off/on` 固定 `windows.h` 后 `dbghelp.h`，不改生产 header 或全局 formatter |
+| RT-03 | GCC、DbgHelp 可合法拒绝人为构造的 1500 字节符号，公开语义是原样回退 | 平台 integration 分支验证“成功时确含 identifier，否则必须精确等于输入”，两条分支都并发复放；确定性 fake adapter 继续证明 1500 字节成功结果、OOM 与释放路径 |
 
-完成调用链和现有测试复核后先进入 AUDITED，再允许修改产品代码。
+审计同时确认：Entry lifetime 已由 Registry-owned immutable chain 保证，地址槽不会逃逸调用；引用、
+const 引用、值与 rvalue-reference 的折叠均保持原签名，空参数 pack 合法；factory 的最终按值参数若需要
+一次 move，仍由既有 `is_nothrow_invocable_r` 准入覆盖。本轮只执行以上三项，不修改布局外的常态
+metadata、复杂度、依赖或能力表。

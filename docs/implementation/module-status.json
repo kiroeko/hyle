@@ -1151,7 +1151,7 @@
     },
     {
       "module": "util_runtime",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "util-runtime-v5-blocker-resolution",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
       "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
@@ -1172,7 +1172,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v5 SCOPED：只恢复 v4 已证明的三个 blocker，复用既有能力审计，不扩展产品范围、公共工具或 P1。"
+      "summary": "util-runtime v5 AUDITED：三条 blocker 调用链已复核，有限 FIX 锁定为无额外构造的地址槽类型擦除与两项私有 fixture 校正。"
     },
     {
       "module": "sched",
