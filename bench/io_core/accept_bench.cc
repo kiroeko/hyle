@@ -50,11 +50,10 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -72,8 +71,8 @@ Task<int> accept_loop(AllocatorRef, TcpListener* ls, int n, unsigned workers,
                       std::atomic<int>* accepted) {
   for (int i = 0; i < n; ++i) {
     unsigned owner = static_cast<unsigned>(i) % workers;
-    TcpStream conn = co_await ls->accept(owner);
-    if (conn.valid()) accepted->fetch_add(1, std::memory_order_relaxed);
+    auto conn = co_await ls->accept(owner);
+    if (conn.has_value()) accepted->fetch_add(1, std::memory_order_relaxed);
     // conn drops here -> fd closed. Pure connection-setup timing.
   }
   co_return 0;
@@ -82,12 +81,10 @@ Task<int> accept_loop(AllocatorRef, TcpListener* ls, int n, unsigned workers,
 // One client: connect once to the listener, then drop (close). Pinned to its worker.
 Task<int> client_connect(AllocatorRef, IoContext* io, unsigned owner,
                          std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, owner);
-  if (!s.valid()) co_return 0;
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  if (!resolve_addr("127.0.0.1", port, &ss, &len)) co_return 0;
-  co_await s.connect(&ss, len);
+  auto opened = TcpStream::open(*io, owner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, port));
   co_return 0;  // s drops -> client fd closed
 }
 
@@ -109,11 +106,15 @@ int run_accept(unsigned workers, int conns, std::uint16_t port) {
   // too-small backlog (the default 128) drops the overflow SYNs -> TCP SYN-retransmit
   // (1s backoff) -> a fabricated 16x super-linear blowup at N>=256 that looks like a
   // broken accept path but is really just a starved listen queue. Size it to N.
-  TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port, conns);
-  if (!ls.valid()) {  // port still in TIME_WAIT etc -> skip this iteration cleanly
+  hyle::io::TcpListenOptions options;
+  options.backlog = conns;
+  auto opened_listener = TcpListener::bind(
+      io, 0, Endpoint::loopback(AddressFamily::kIpv4, port), options);
+  if (!opened_listener.has_value()) {  // port still in TIME_WAIT etc -> skip cleanly
     sched.shutdown();
     return -1;
   }
+  TcpListener ls = std::move(*opened_listener);
 
   std::atomic<int> accepted{0};
   auto da = std::make_unique<Drive>();

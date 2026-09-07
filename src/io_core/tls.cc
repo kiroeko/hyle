@@ -6,6 +6,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include <span>
 #include <utility>
 
 // io-08 TLS implementation. memory-BIO pump over the co_await TcpStream. Reference:
@@ -242,10 +243,10 @@ static sched::Task<int> flush_wbio(mem::AllocatorRef, TcpStream& sock, bio_st* w
     if (n <= 0) co_return 0;                     // nothing (more) to send
     std::uint32_t off = 0;
     while (off < static_cast<std::uint32_t>(n)) {
-      std::int64_t w = co_await sock.write(scratch + off,
-                                           static_cast<std::uint32_t>(n) - off);
-      if (w <= 0) co_return -1;  // socket write failed
-      off += static_cast<std::uint32_t>(w);
+      auto written = co_await sock.write_some(std::as_bytes(std::span{
+          scratch + off, static_cast<std::size_t>(n) - off}));
+      if (!written.ok() || written.bytes == 0) co_return -1;
+      off += static_cast<std::uint32_t>(written.bytes);
     }
   }
 }
@@ -255,9 +256,11 @@ static sched::Task<int> flush_wbio(mem::AllocatorRef, TcpStream& sock, bio_st* w
 // data fed, 0 on peer EOF, negative on error.
 static sched::Task<int> feed_rbio(mem::AllocatorRef, TcpStream& sock, bio_st* rbio,
                                   char* scratch) noexcept {
-  std::int64_t n = co_await sock.read(scratch, kBufSize);
-  if (n == 0) co_return 0;   // peer closed the transport
-  if (n < 0) co_return -1;   // socket read error
+  auto received = co_await sock.read_some(std::as_writable_bytes(
+      std::span{scratch, static_cast<std::size_t>(kBufSize)}));
+  if (!received.ok()) co_return -1;
+  if (received.eof) co_return 0;
+  const std::size_t n = received.bytes;
   // A mem BIO_write only fails on OOM; if it wrote short the ciphertext would be
   // silently truncated and SSL would later fail decryption with an opaque error.
   // Treat a short/failed write as an error here so the failure is attributable.

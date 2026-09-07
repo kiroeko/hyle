@@ -2,13 +2,19 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <span>
 
 #include "hyle/core/assert.h"
+#include "hyle/error/result.h"
+#include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
+#include "hyle/io/net_budget.h"
 #include "hyle/io/net_cancel.h"
 #include "hyle/io/net_multishot.h"
 #include "hyle/io/net_timeout.h"
+#include "hyle/io/operation.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/visibility.h"
@@ -21,22 +27,30 @@
 #  define HYLE_IO_API HYLE_IMPORT
 #endif
 
-// io-04 net convenience layer: RAII TCP socket wrappers over the raw co_await ops
-// in net.h. TcpStream owns a connected socket fd and exposes co_await read/write;
+// Scheduler-bound RAII TCP resources. TcpStream owns a connected socket and
+// exposes typed span-based asynchronous transfers;
 // TcpListener binds/listens and exposes co_await accept -> TcpStream. Both are
 // shard-per-core aware: a socket is bound to an owner worker (its ring), and the
 // fiber servicing it must be pinned there (Scheduler::spawn_on) so submit + reap
 // stay on one core. The wrappers carry the owner index so accept() can hand a new
 // connection to the right core.
 //
-// These are thin: fd ownership (RAII close), the co_await methods delegate to
-// net.h's RecvOp/SendOp/AcceptOp/ConnectOp, and a couple of cross-platform socket
-// setup helpers (tcp_listen / tcp_connect) live in tcp.cc.
+// Native descriptors, backend completion tokens, and negative platform error
+// codes stay behind this facade.
 
 namespace hyle::io {
 
-// A connected TCP socket. Move-only; closes the fd on destruction. read()/write()
-// are co_await-able and MUST be awaited from the fiber pinned to owner_worker().
+struct TcpListenOptions {
+  int backlog = 128;
+  bool reuse_address = true;
+  bool reuse_port = false;
+  // Applies only to IPv6 listeners. false accepts mapped IPv4 connections too
+  // where the operating system supports a dual-stack socket.
+  bool ipv6_only = false;
+};
+
+// A connected TCP socket. Move-only; closes the socket on destruction. Transfer
+// operations MUST be awaited from the fiber pinned to owner_worker().
 class TcpStream {
  public:
   TcpStream() noexcept = default;
@@ -48,58 +62,167 @@ class TcpStream {
   TcpStream(const TcpStream&) = delete;
   TcpStream& operator=(const TcpStream&) = delete;
 
-  bool valid() const noexcept { return fd_ >= 0; }
-  std::intptr_t fd() const noexcept { return fd_; }
-  unsigned owner_worker() const noexcept { return owner_; }
-  HYLE_IO_API bool set_nodelay(bool enabled = true) noexcept;
-  HYLE_IO_API bool set_keepalive(bool enabled = true) noexcept;
-  HYLE_IO_API bool shutdown_write() noexcept;
+  HYLE_IO_API static Result<TcpStream> open(
+      IoContext& io, unsigned owner_worker,
+      AddressFamily family = AddressFamily::kIpv4) noexcept;
+  // Adopt ownership of a socket supplied by an embedding host and associate it
+  // with this context's owner shard. On failure the native socket is closed.
+  HYLE_IO_API static Result<TcpStream> adopt(IoContext& io,
+                                             unsigned owner_worker,
+                                             std::intptr_t native_socket) noexcept;
 
-  // co_await stream.read(buf, len) -> bytes read (>=0; 0 = peer closed) or
-  // negative errno. Awaited from the fiber pinned to owner_worker().
-  RecvOp read(void* buf, std::uint32_t len) noexcept {
+  bool valid() const noexcept { return fd_ >= 0; }
+  std::intptr_t native_handle() const noexcept { return fd_; }
+  HYLE_IO_API std::intptr_t release_native_handle() noexcept;
+  unsigned owner_worker() const noexcept { return owner_; }
+  HYLE_IO_API Status set_nodelay(bool enabled = true) noexcept;
+  HYLE_IO_API Status set_keepalive(bool enabled = true) noexcept;
+  HYLE_IO_API Status shutdown_write() noexcept;
+  HYLE_IO_API Result<Endpoint> local_endpoint() const noexcept;
+  HYLE_IO_API Result<Endpoint> peer_endpoint() const noexcept;
+
+  struct ConnectAwaitable {
+    TcpStream* self = nullptr;
+    Endpoint endpoint;
+    OperationOptions options;
+    alignas(16) std::array<std::byte, 128> native_address{};
+    std::uint32_t native_length = 0;
+    BudgetConnectOp inner{};
+    Status preparation{};
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API Status await_resume() noexcept;
+  };
+
+  ConnectAwaitable connect(const Endpoint& endpoint,
+                           OperationOptions options = {}) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return RecvOp{&io_->proactor_for_current(), fd_, buf, len, 0};
+    return ConnectAwaitable{this, endpoint, options};
   }
-  TimedRecvOp read_until(void* buf, std::uint32_t len, mem::AllocatorRef alloc,
-                         std::uint64_t deadline_ns) noexcept {
+
+  struct ReadSomeAwaitable {
+    RecvOp inner;
+    bool empty = false;
+
+    bool await_ready() noexcept { return empty || inner.await_ready(); }
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    TransferResult await_resume() noexcept {
+      if (empty) return {};
+      return detail::transfer_from_native(inner.await_resume(),
+                                          detail::kNetworkNativeDomain,
+                                          "TCP read", true);
+    }
+  };
+
+  struct WriteSomeAwaitable {
+    SendOp inner;
+    bool empty = false;
+
+    bool await_ready() noexcept { return empty || inner.await_ready(); }
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    TransferResult await_resume() noexcept {
+      if (empty) return {};
+      return detail::transfer_from_native(inner.await_resume(),
+                                          detail::kNetworkNativeDomain,
+                                          "TCP write", false);
+    }
+  };
+
+  struct BudgetReadSomeAwaitable {
+    BudgetRecvOp inner;
+    bool empty = false;
+
+    bool await_ready() noexcept { return empty || inner.await_ready(); }
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    TransferResult await_resume() noexcept {
+      if (empty) return {};
+      return detail::transfer_from_native(inner.await_resume(),
+                                          detail::kNetworkNativeDomain,
+                                          "TCP read", true);
+    }
+  };
+
+  struct BudgetWriteSomeAwaitable {
+    BudgetSendOp inner;
+    bool empty = false;
+
+    bool await_ready() noexcept { return empty || inner.await_ready(); }
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    TransferResult await_resume() noexcept {
+      if (empty) return {};
+      return detail::transfer_from_native(inner.await_resume(),
+                                          detail::kNetworkNativeDomain,
+                                          "TCP write", false);
+    }
+  };
+
+  // Ordinary typed fast path: one borrowed buffer, no allocation, one native
+  // submission and at most one scheduler wake. Options/cancellation are added
+  // by the unified operation-budget overload in IOCORE-F03.
+  ReadSomeAwaitable read_some(std::span<std::byte> buffer) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return TimedRecvOp{&io_->proactor_for_current(), fd_, buf, len, alloc,
-                       deadline_ns};
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    const bool empty = buffer.empty();
+    return ReadSomeAwaitable{
+        RecvOp{&io_->proactor_for_current(), fd_, buffer.data(),
+               static_cast<std::uint32_t>(buffer.size()), 0},
+        empty};
   }
-  CancelRecvOp read_cancel(void* buf, std::uint32_t len,
-                           const sched::CancelToken* token) noexcept {
+
+  WriteSomeAwaitable write_some(std::span<const std::byte> buffer) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return CancelRecvOp{&io_->proactor_for_current(), fd_, buf, len, token};
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    const bool empty = buffer.empty();
+    return WriteSomeAwaitable{
+        SendOp{&io_->proactor_for_current(), fd_, buffer.data(),
+               static_cast<std::uint32_t>(buffer.size()), 0},
+        empty};
   }
-  // co_await stream.write(buf, len) -> bytes written or negative errno.
-  SendOp write(const void* buf, std::uint32_t len) noexcept {
+
+  BudgetReadSomeAwaitable read_some(
+      std::span<std::byte> buffer, OperationOptions options) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return SendOp{&io_->proactor_for_current(), fd_, buf, len, 0};
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    const bool empty = buffer.empty();
+    Proactor* proactor = &io_->proactor_for_current();
+    return BudgetReadSomeAwaitable{
+        BudgetRecvOp{proactor, fd_, buffer.data(),
+                     static_cast<std::uint32_t>(buffer.size()),
+                     io_->operation_allocator(), options},
+        empty};
   }
-  TimedSendOp write_until(const void* buf, std::uint32_t len,
-                          mem::AllocatorRef alloc,
-                          std::uint64_t deadline_ns) noexcept {
+
+  BudgetWriteSomeAwaitable write_some(
+      std::span<const std::byte> buffer, OperationOptions options) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return TimedSendOp{&io_->proactor_for_current(), fd_, buf, len, alloc,
-                       deadline_ns};
-  }
-  CancelSendOp write_cancel(const void* buf, std::uint32_t len,
-                            const sched::CancelToken* token) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return CancelSendOp{&io_->proactor_for_current(), fd_, buf, len, token};
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    const bool empty = buffer.empty();
+    Proactor* proactor = &io_->proactor_for_current();
+    return BudgetWriteSomeAwaitable{
+        BudgetSendOp{proactor, fd_, buffer.data(),
+                     static_cast<std::uint32_t>(buffer.size()),
+                     io_->operation_allocator(), options},
+        empty};
   }
 
   // Explicit io_uring zero-copy multishot receive track. The caller must first
@@ -113,31 +236,6 @@ class TcpStream {
                       uring.valid() &&
                       uring.proactor() == &io_->proactor_for_current());
     return MultishotRecvStream{uring, fd_, bgid, alloc};
-  }
-
-  // co_await stream.connect(&ss, len) -> 0 on success or negative errno, where
-  // (ss, len) is a sockaddr filled by resolve_addr(). Awaited from the fiber
-  // pinned to owner_worker(). The sockaddr must outlive the co_await (keep it on
-  // the coroutine frame). Use for a client socket from tcp_socket().
-  ConnectOp connect(const void* addr, std::uint32_t addrlen) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return ConnectOp{&io_->proactor_for_current(), fd_, addr, addrlen};
-  }
-  TimedConnectOp connect_until(const void* addr, std::uint32_t addrlen,
-                               mem::AllocatorRef alloc,
-                               std::uint64_t deadline_ns) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return TimedConnectOp{&io_->proactor_for_current(), fd_, addr, addrlen,
-                          alloc, deadline_ns};
-  }
-  CancelConnectOp connect_cancel(const void* addr, std::uint32_t addrlen,
-                                 const sched::CancelToken* token) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return CancelConnectOp{&io_->proactor_for_current(), fd_, addr, addrlen,
-                           token};
   }
 
  private:
@@ -160,131 +258,59 @@ class TcpListener {
   TcpListener(const TcpListener&) = delete;
   TcpListener& operator=(const TcpListener&) = delete;
 
+  HYLE_IO_API static Result<TcpListener> bind(
+      IoContext& io, unsigned owner_worker, const Endpoint& endpoint,
+      const TcpListenOptions& options = {}) noexcept;
+
   bool valid() const noexcept { return fd_ >= 0; }
-  std::intptr_t fd() const noexcept { return fd_; }
+  std::intptr_t native_handle() const noexcept { return fd_; }
   unsigned owner_worker() const noexcept { return owner_; }
+  HYLE_IO_API Result<Endpoint> local_endpoint() const noexcept;
 
   // An awaitable that co_awaits AcceptOp then wraps the accepted fd (binding it to
   // `assign_owner`'s ring) into a TcpStream. Returned by accept(); co_await it.
   struct AcceptAwaitable {
     TcpListener* self;
     unsigned assign_owner;
-    AcceptOp inner;  // constructed in accept() with the listener's ring + fd
+    BudgetAcceptOp inner;
 
     bool await_ready() noexcept { return inner.await_ready(); }
     bool await_suspend(std::coroutine_handle<> h) noexcept {
       return inner.await_suspend(h);
     }
-    // Bind the accepted fd to its owner's ring and wrap it. On failure (negative
-    // result) returns an invalid TcpStream (valid() == false).
-    HYLE_IO_API TcpStream await_resume() noexcept;
-  };
-
-  struct TimedAcceptAwaitable {
-    TcpListener* self;
-    unsigned assign_owner;
-    TimedAcceptOp inner;
-
-    bool await_ready() noexcept { return inner.await_ready(); }
-    bool await_suspend(std::coroutine_handle<> h) noexcept {
-      return inner.await_suspend(h);
-    }
-    HYLE_IO_API TcpStream await_resume() noexcept;
-  };
-
-  struct CancelAcceptAwaitable {
-    TcpListener* self;
-    unsigned assign_owner;
-    CancelAcceptOp inner;
-
-    bool await_ready() noexcept { return inner.await_ready(); }
-    bool await_suspend(std::coroutine_handle<> h) noexcept {
-      return inner.await_suspend(h);
-    }
-    HYLE_IO_API TcpStream await_resume() noexcept;
+    HYLE_IO_API Result<TcpStream> await_resume() noexcept;
   };
 
   // co_await listener.accept() -> TcpStream. The new connection is bound to
   // `assign_owner` (its fibers must be spawn_on(assign_owner) to service it on
   // that core). accept() itself is awaited from the fiber pinned to the
   // listener's owner_worker().
-  AcceptAwaitable accept(unsigned assign_owner) noexcept {
+  AcceptAwaitable accept(unsigned assign_owner,
+                         OperationOptions options = {}) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    return AcceptAwaitable{this, assign_owner,
-                           AcceptOp{&io_->proactor_for_current(), fd_}};
-  }
-  TimedAcceptAwaitable accept_until(unsigned assign_owner,
-                                    mem::AllocatorRef alloc,
-                                    std::uint64_t deadline_ns) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return TimedAcceptAwaitable{
+    return AcceptAwaitable{
         this, assign_owner,
-        TimedAcceptOp{&io_->proactor_for_current(), fd_, alloc, deadline_ns}};
-  }
-  CancelAcceptAwaitable accept_cancel(
-      unsigned assign_owner, const sched::CancelToken* token) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return CancelAcceptAwaitable{
-        this, assign_owner,
-        CancelAcceptOp{&io_->proactor_for_current(), fd_, token}};
+        BudgetAcceptOp{&io_->proactor_for_current(), fd_,
+                       io_->operation_allocator(), options}};
   }
 
  private:
-  TcpStream finish_accept(std::int64_t result,
-                          unsigned assign_owner) noexcept;
+  Result<TcpStream> finish_accept(std::int64_t result,
+                                  unsigned assign_owner) noexcept;
   IoContext* io_ = nullptr;
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;
 };
 
-// ---- cross-platform socket setup (tcp.cc) ----------------------------------
-// Create a listening TCP socket bound to `host`:`port` (host e.g. "127.0.0.1" or
-// "0.0.0.0"), associate it with `owner_worker`'s ring, and return a TcpListener.
-// Returns an invalid TcpListener (valid()==false) on failure. `backlog` is the
-// listen queue depth.
-HYLE_IO_API TcpListener tcp_listen(IoContext& io, unsigned owner_worker,
-                                   const char* host, std::uint16_t port,
-                                   int backlog = 128) noexcept;
-
-// Create a client TCP socket bound to `owner_worker`'s ring (unconnected). The
-// caller resolves the target with resolve_addr() then `co_await stream.connect(
-// &ss, len)` from the fiber pinned to owner_worker. Returns an invalid TcpStream
-// on failure.
-HYLE_IO_API TcpStream tcp_socket(IoContext& io,
-                                 unsigned owner_worker) noexcept;
-HYLE_IO_API TcpStream tcp_socket(IoContext& io, unsigned owner_worker,
-                                 AddressFamily family) noexcept;
-
-// Fill `out_ss` (a sockaddr_storage-sized buffer) + `out_len` from a numeric
-// IPv4 or IPv6 `host` and `port`. Returns false for non-numeric hostnames.
-// Keep `out_ss` alive across the co_await connect (it's on the coroutine frame).
-HYLE_IO_API bool resolve_addr(const char* host, std::uint16_t port, void* out_ss,
-                              std::uint32_t* out_len) noexcept;
-
-// Whole-buffer conveniences. Success returns exactly `len`; EOF/zero-progress
-// before the buffer is complete returns the partial byte count (possibly 0);
-// an OS/timeout/cancel error returns its negative code. The `_until` variants use
-// one absolute deadline across the entire loop, not a fresh timeout per chunk.
-HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact(
-    mem::AllocatorRef alloc, TcpStream& stream, void* buffer,
-    std::uint32_t len) noexcept;
-HYLE_IO_API sched::Task<std::int64_t> tcp_write_all(
-    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
-    std::uint32_t len) noexcept;
-HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact_until(
-    mem::AllocatorRef alloc, TcpStream& stream, void* buffer, std::uint32_t len,
-    std::uint64_t deadline_ns) noexcept;
-HYLE_IO_API sched::Task<std::int64_t> tcp_write_all_until(
-    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
-    std::uint32_t len, std::uint64_t deadline_ns) noexcept;
-HYLE_IO_API sched::Task<std::int64_t> tcp_read_exact_cancel(
-    mem::AllocatorRef alloc, TcpStream& stream, void* buffer, std::uint32_t len,
-    const sched::CancelToken* token) noexcept;
-HYLE_IO_API sched::Task<std::int64_t> tcp_write_all_cancel(
-    mem::AllocatorRef alloc, TcpStream& stream, const void* buffer,
-    std::uint32_t len, const sched::CancelToken* token) noexcept;
+// Composed stream operations preserve partial progress together with the
+// terminal status/EOF. One absolute OperationOptions budget is reused across
+// every partial syscall; it is never reset per chunk.
+HYLE_IO_API sched::Task<TransferResult> read_exact(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<std::byte> buffer, OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<TransferResult> write_all(
+    mem::AllocatorRef coroutine_allocator, TcpStream& stream,
+    std::span<const std::byte> buffer, OperationOptions options = {}) noexcept;
 
 }  // namespace hyle::io

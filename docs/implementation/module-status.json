@@ -1224,7 +1224,7 @@
     },
     {
       "module": "io_core",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-v1-core-factorization",
       "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
       "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
@@ -1247,7 +1247,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io_core v1 已恢复并保持 SCOPED：内部 factor 身份由含混的 io 纠正为 io_core，公共 io 产品 façade/namespace/include 不变；下一门是完成能力审计并冻结有限 FIX 集。"
+      "summary": "io_core v1 已完成真实推理消费者与 Asio/Seastar 回放并进入 AUDITED：内部 factor 为 io_core、用户产品仍为 io；typed endpoint/error、operation budget、DNS/connect、vectored/direct IO、local IPC、teardown 与物理 factorization 的十项有限 FIX 已冻结。"
     },
     {
       "module": "io_tls",

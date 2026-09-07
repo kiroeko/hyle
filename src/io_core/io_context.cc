@@ -15,35 +15,69 @@
 namespace hyle::io {
 
 IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
-                     bool defer_taskrun) noexcept
-    : sched_(sched), blocking_(mem::system_allocator()) {
-  HYLE_FATAL_ASSERT(num_workers >= 1);
-  HYLE_FATAL_ASSERT(num_workers == sched.num_workers());
-  rings_.reserve(num_workers);
-  valid_ = true;
+                     IoContextOptions options) noexcept
+    : sched_(sched),
+      allocator_(options.allocator),
+      blocking_(allocator_, options.max_blocking_threads,
+                options.blocking_keep_alive, &status_) {
+  if (num_workers == 0 || num_workers != sched.num_workers()) {
+    status_ = Status::InvalidArgument(
+        "IO context worker count must match the scheduler");
+    return;
+  }
+  if (options.queue_depth == 0) {
+    status_ = Status::InvalidArgument(
+        "IO context queue depth must be at least one");
+    return;
+  }
+  if (!status_.ok()) return;
+
+  try {
+    rings_.reserve(num_workers);
+  } catch (...) {
+    status_ = Status::ResourceExhausted(
+        "IO context ring table allocation failed");
+    return;
+  }
   for (unsigned i = 0; i < num_workers; ++i) {
-    auto p = std::make_unique<Proactor>();
+    std::unique_ptr<Proactor> p;
+    try {
+      p = std::make_unique<Proactor>();
+    } catch (...) {
+      rings_.clear();
+      status_ = Status::ResourceExhausted(
+          "IO context proactor allocation failed");
+      return;
+    }
     // defer_taskrun (opt-in, default false): each ring is created HERE (constructing
     // thread) but submitted+reaped from its owner worker. When true, opt into
     // DEFER_TASKRUN+SINGLE_ISSUER via R_DISABLED (worker's first reap enables the ring,
     // becoming the issuer). DEFAULT FALSE = COOP_TASKRUN, because an R_DISABLED ring
     // can't register a provided-buffer ring from this thread -> multishot/zero-copy
     // contexts need COOP. io_uring only; a no-op on IOCP/epoll.
-    if (!p->init(256, /*defer_worker_thread=*/defer_taskrun)) valid_ = false;
+    if (!p->init(options.queue_depth,
+                 /*defer_worker_thread=*/options.defer_taskrun)) {
+      rings_.clear();
+      status_ = Status::Unavailable("IO backend initialization failed");
+      return;
+    }
     rings_.push_back(std::move(p));
   }
   sched::detail::SchedulerIntegration::set_io_poll(
       sched_, &IoContext::poll_trampoline, this);
   sched::detail::SchedulerIntegration::set_io_wake(
       sched_, &IoContext::wake_trampoline, this);
+  valid_ = true;
 }
 
 IoContext::~IoContext() {
   // Unregister before we (and our rings) are destroyed so no worker calls a
   // dangling hook during teardown. The scheduler is expected already stopped
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
-  sched::detail::SchedulerIntegration::set_io_wake(sched_, nullptr, nullptr);
-  sched::detail::SchedulerIntegration::set_io_poll(sched_, nullptr, nullptr);
+  if (valid_) {
+    sched::detail::SchedulerIntegration::set_io_wake(sched_, nullptr, nullptr);
+    sched::detail::SchedulerIntegration::set_io_poll(sched_, nullptr, nullptr);
+  }
 
   // io-06 orphan drain: a timed op whose TIMER won submitted a cancel and resumed
   // its fiber, but the cancelled kernel op still owes a late completion (io_uring

@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "hyle/io/coroutine_transport.h"
+#include "hyle/io/endpoint.h"
 #include "hyle/io/proactor.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
@@ -34,11 +35,6 @@
 
 namespace hyle::io {
 
-enum class AddressFamily : std::uint8_t {
-  kIpv4 = 4,
-  kIpv6 = 6,
-};
-
 // Result sentinel for "the op was never submitted" (ring/backend rejected the
 // submit, or the timed-op heap slot OOM'd) -- distinct from any real negative
 // errno. The base ops previously used -1, which COLLIDES with -EPERM (errno 1):
@@ -48,6 +44,8 @@ enum class AddressFamily : std::uint8_t {
 // errno range and distinct from those. Callers that only test `result < 0` (the
 // common "fail/close" branch) are unaffected; this only makes the value legible.
 inline constexpr std::int64_t kSubmitFailed = -1000;
+inline constexpr std::int64_t kCancelled = -125;
+inline constexpr std::int64_t kDeadlineExceeded = -110;
 
 // The per-await slot: a completion's landing pad. Lives on the suspending fiber's
 // stack; its address is the proactor `user_data`. The reaper (worker loop, io-04

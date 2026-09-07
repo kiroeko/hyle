@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
+#include <thread>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net_cancel.h"
@@ -34,12 +36,12 @@
 // the root wakes every child's blocked recv with -ECANCELED (connected-cancel).
 
 using hyle::io::CancelRecvOp;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
+using hyle::io::OperationOptions;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::CancelToken;
@@ -67,43 +69,41 @@ struct CancelResult {
 };
 
 Task<int> cancel_server(AllocatorRef, IoContext*, TcpListener* ls, CancelResult* r) {
-  TcpStream conn = co_await ls->accept(kOwner);
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   r->held = std::move(conn);  // hold open, send NOTHING -> client recv stalls
   co_return 0;
 }
 
 Task<int> cancel_client(AllocatorRef, IoContext* io, CancelResult* r,
                         std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) {
+    r->done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) {
     r->done.store(true, std::memory_order_release);
     co_return 0;
   }
   r->connected.store(true, std::memory_order_release);
   char buf[64] = {};
-  // A cancellable recv bound to the request token. The server never sends, so only
-  // a token cancel can unblock it (-ECANCELED).
-  std::int64_t rc =
-      co_await s.read_cancel(buf, sizeof(buf), r->tok);
+  // One public operation budget combines cancellation and a generous deadline.
+  // The server never sends, so cancellation must win this three-way race.
+  OperationOptions options{
+      .deadline = hyle::time::deadline_after(std::chrono::seconds(5)),
+      .cancel = r->tok};
+  auto transfer = co_await s.read_some(
+      std::as_writable_bytes(std::span{buf}), options);
+  const std::int64_t rc =
+      transfer.ok() ? static_cast<std::int64_t>(transfer.bytes)
+                    : (transfer.status.code() == hyle::StatusCode::Cancelled
+                           ? hyle::io::kCancelled
+                           : -999);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
-  co_return 0;
-}
-
-// A fiber that, once the client has connected + submitted its recv, cancels the
-// token. It runs on the SAME owner worker (shard-per-core), so the cancel callback
-// (submit_cancel) and the recv's reap are single-threaded. It sleeps briefly (a real
-// timer wake, not a park-forever spin) to let the client fiber reach suspend on the
-// recv before cancelling.
-Task<int> canceller(AllocatorRef, CancelResult* r) {
-  while (!r->connected.load(std::memory_order_acquire)) {
-    hyle::sched::sleep_for(std::chrono::milliseconds(1));
-  }
-  hyle::sched::sleep_for(std::chrono::milliseconds(20));
-  r->tok->cancel();
   co_return 0;
 }
 
@@ -117,8 +117,10 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   CancelToken tok = CancelToken::root(system_allocator());
   auto r = std::make_unique<CancelResult>();
@@ -132,15 +134,17 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
 
-  // A canceller fiber pinned to the SAME owner worker cancels the token once the
-  // client has connected (so submit_cancel + reap stay single-threaded, shard-per-
-  // core). It is spawned up front and internally waits on connected via sleep.
-  auto dk = std::make_unique<Drive>();
-  dk->task = canceller(system_allocator(), r.get());
-  Fiber fk(kDefaultStackSize, &drive_entry, dk.get());
-  sched.spawn_on(kOwner, &fk);
+  // Cancel from a foreign OS thread. The callback may arbitrate there, but the
+  // native Proactor cancellation must be handed back to the pinned owner worker.
+  std::thread canceller([&] {
+    while (!r->connected.load(std::memory_order_acquire))
+      std::this_thread::yield();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    tok.cancel();
+  });
 
   sched.drain();
+  canceller.join();
   sched.shutdown();
 
   EXPECT_TRUE(r->done.load());
@@ -156,10 +160,16 @@ struct PrecancelResult {
   std::atomic<std::int64_t> rc{999};
 };
 Task<int> precancel_client(AllocatorRef, IoContext* io, PrecancelResult* r,
-                           CancelToken* tok, std::intptr_t fd) {
+                           CancelToken* tok, TcpStream* stream) {
+  (void)io;
   char buf[16] = {};
-  std::int64_t rc =
-      co_await CancelRecvOp{&io->proactor_for_current(), fd, buf, sizeof(buf), tok};
+  auto transfer = co_await stream->read_some(
+      std::as_writable_bytes(std::span{buf}),
+      OperationOptions{.cancel = tok});
+  const std::int64_t rc =
+      transfer.status.code() == hyle::StatusCode::Cancelled
+          ? hyle::io::kCancelled
+          : static_cast<std::int64_t>(transfer.bytes);
   r->rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -172,19 +182,22 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid());
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value());
+  TcpListener ls = std::move(*listener);
 
   // Pre-cancel the token; a client socket bound to the ring never needs to connect
   // because await_ready short-circuits before submitting.
   CancelToken tok = CancelToken::root(system_allocator());
   tok.cancel();
-  TcpStream s = tcp_socket(io, kOwner);
-  ASSERT_TRUE(s.valid());
+  auto opened = TcpStream::open(io, kOwner);
+  ASSERT_TRUE(opened.has_value());
+  TcpStream s = std::move(*opened);
 
   auto r = std::make_unique<PrecancelResult>();
   auto d = std::make_unique<Drive>();
-  d->task = precancel_client(system_allocator(), &io, r.get(), &tok, s.fd());
+  d->task = precancel_client(system_allocator(), &io, r.get(), &tok, &s);
   Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
@@ -197,14 +210,15 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
 namespace {
 Task<int> precancel_udp_send(AllocatorRef, hyle::io::UdpSocket* socket,
                              PrecancelResult* result, CancelToken* token) {
-  alignas(16) unsigned char address[128]{};
-  std::uint32_t address_length = 0;
-  resolve_addr("127.0.0.1", 54482, address, &address_length);
   static const char message[] = "cancelled";
-  result->rc.store(
-      co_await socket->send_to_cancel(message, sizeof(message), address,
-                                      address_length, token),
-      std::memory_order_release);
+  auto sent = co_await socket->send_to(
+      std::as_bytes(std::span{message}),
+      Endpoint::loopback(AddressFamily::kIpv4, 54482),
+      OperationOptions{.cancel = token});
+  result->rc.store(sent.status.code() == hyle::StatusCode::Cancelled
+                       ? hyle::io::kCancelled
+                       : static_cast<std::int64_t>(sent.bytes),
+                   std::memory_order_release);
   result->done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -214,8 +228,9 @@ TEST(NetCancel, AlreadyCancelledUdpSendReturnsCancelledImmediately) {
   Scheduler sched(1, system_allocator(), 256);
   IoContext io(sched, 1);
   ASSERT_TRUE(io.valid());
-  auto socket = hyle::io::udp_socket(io, kOwner);
-  ASSERT_TRUE(socket.valid());
+  auto opened = hyle::io::UdpSocket::open(io, kOwner);
+  ASSERT_TRUE(opened.has_value());
+  auto socket = std::move(*opened);
   CancelToken token = CancelToken::root(system_allocator());
   token.cancel();
 

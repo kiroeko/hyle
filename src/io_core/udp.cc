@@ -3,8 +3,9 @@
 #include <cstring>
 #include <utility>
 
-#include "hyle/io/tcp.h"     // resolve_addr (shared IPv4 literal -> sockaddr_in)
 #include "hyle/core/environment.h"   // HYLE_OS_* (must precede the per-OS socket headers)
+#include "hyle/error/system_error.h"
+#include "endpoint_native.h"
 
 #if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -58,6 +59,93 @@ std::intptr_t make_udp_socket(AddressFamily family) noexcept {
 #endif
 }
 
+Status socket_error(const char* operation) noexcept {
+#if HYLE_OS_WINDOWS
+  return status_from_winsock(::WSAGetLastError(), operation);
+#else
+  return status_from_errno(errno, operation);
+#endif
+}
+
+Status handle_error(const char* operation) noexcept {
+#if HYLE_OS_WINDOWS
+  return status_from_win32(::GetLastError(), operation);
+#else
+  return status_from_errno(errno, operation);
+#endif
+}
+
+Result<Endpoint> query_local_endpoint(std::intptr_t fd) noexcept {
+  sockaddr_storage address{};
+#if HYLE_OS_WINDOWS
+  int length = sizeof(address);
+  if (::getsockname(static_cast<SOCKET>(fd),
+                    reinterpret_cast<sockaddr*>(&address), &length) != 0)
+    return make_unexpected(socket_error("get UDP local endpoint"));
+#else
+  socklen_t length = sizeof(address);
+  if (::getsockname(static_cast<int>(fd),
+                    reinterpret_cast<sockaddr*>(&address), &length) != 0)
+    return make_unexpected(socket_error("get UDP local endpoint"));
+#endif
+  return EndpointNativeAccess::decode(&address,
+                                      static_cast<std::uint32_t>(length));
+}
+
+Status configure_socket(std::intptr_t fd, AddressFamily family,
+                        const UdpSocketOptions& options) noexcept {
+  const int reuse = options.reuse_address ? 1 : 0;
+#if HYLE_OS_WINDOWS
+  if (::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_REUSEADDR,
+                   reinterpret_cast<const char*>(&reuse), sizeof(reuse)) != 0)
+#else
+  if (::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_REUSEADDR, &reuse,
+                   sizeof(reuse)) != 0)
+#endif
+    return socket_error("set UDP SO_REUSEADDR");
+
+  if (options.broadcast) {
+    const int one = 1;
+#if HYLE_OS_WINDOWS
+    if (::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_BROADCAST,
+                     reinterpret_cast<const char*>(&one), sizeof(one)) != 0)
+#else
+    if (::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_BROADCAST, &one,
+                     sizeof(one)) != 0)
+#endif
+      return socket_error("set UDP SO_BROADCAST");
+  }
+  if (family == AddressFamily::kIpv6) {
+    const int ipv6_only = options.ipv6_only ? 1 : 0;
+#if HYLE_OS_WINDOWS
+    if (::setsockopt(static_cast<SOCKET>(fd), IPPROTO_IPV6, IPV6_V6ONLY,
+                     reinterpret_cast<const char*>(&ipv6_only),
+                     sizeof(ipv6_only)) != 0)
+#else
+    if (::setsockopt(static_cast<int>(fd), IPPROTO_IPV6, IPV6_V6ONLY,
+                     &ipv6_only, sizeof(ipv6_only)) != 0)
+#endif
+      return socket_error("set UDP IPV6_V6ONLY");
+  }
+  if (options.reuse_port) {
+#if defined(SO_REUSEPORT)
+    const int one = 1;
+#  if HYLE_OS_WINDOWS
+    if (::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_REUSEPORT,
+                     reinterpret_cast<const char*>(&one), sizeof(one)) != 0)
+#  else
+    if (::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_REUSEPORT, &one,
+                     sizeof(one)) != 0)
+#  endif
+      return socket_error("set UDP SO_REUSEPORT");
+#else
+    return Status::Unimplemented(
+        "UDP reuse-port is not supported by this operating system");
+#endif
+  }
+  return Status{};
+}
+
 }  // namespace
 
 // ---- UdpSocket -------------------------------------------------------------
@@ -80,59 +168,126 @@ UdpSocket& UdpSocket::operator=(UdpSocket&& o) noexcept {
   return *this;
 }
 
-// ---- socket setup ----------------------------------------------------------
-
-UdpSocket udp_bind(IoContext& io, unsigned owner_worker, const char* host,
-                   std::uint16_t port) noexcept {
-  sockaddr_storage sa{};
-  std::uint32_t len = 0;
-  if (!resolve_addr(host, port, &sa, &len)) return UdpSocket{};
-  const AddressFamily family =
-      sa.ss_family == AF_INET6 ? AddressFamily::kIpv6 : AddressFamily::kIpv4;
+Result<UdpSocket> UdpSocket::open(IoContext& io, unsigned owner_worker,
+                                  AddressFamily family,
+                                  const UdpSocketOptions& options) noexcept {
+  if (owner_worker >= io.num_workers())
+    return make_unexpected(Status::OutOfRange("UDP owner worker is out of range"));
   std::intptr_t fd = make_udp_socket(family);
-  if (fd < 0) return UdpSocket{};
-
-  int one = 1;
-#if HYLE_OS_WINDOWS
-  ::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_REUSEADDR,
-               reinterpret_cast<const char*>(&one), sizeof(one));
-#else
-  ::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-#endif
-
-#if HYLE_OS_WINDOWS
-  if (::bind(static_cast<SOCKET>(fd), reinterpret_cast<sockaddr*>(&sa),
-             static_cast<int>(len)) != 0) {
+  if (fd < 0) return make_unexpected(socket_error("create UDP socket"));
+  Status configured = configure_socket(fd, family, options);
+  if (!configured.ok()) {
     close_fd(fd);
-    return UdpSocket{};
+    return make_unexpected(std::move(configured));
   }
-#else
-  if (::bind(static_cast<int>(fd), reinterpret_cast<sockaddr*>(&sa), len) != 0) {
-    close_fd(fd);
-    return UdpSocket{};
-  }
-#endif
-
-  if (!io.bind_fd(owner_worker, fd)) {  // associate with the owner's ring (IOCP)
-    close_fd(fd);
-    return UdpSocket{};
-  }
-  return UdpSocket{io, fd, owner_worker};
-}
-
-UdpSocket udp_socket(IoContext& io, unsigned owner_worker,
-                     AddressFamily family) noexcept {
-  std::intptr_t fd = make_udp_socket(family);
-  if (fd < 0) return UdpSocket{};
   if (!io.bind_fd(owner_worker, fd)) {
+    Status status = handle_error("associate UDP socket with IO shard");
     close_fd(fd);
-    return UdpSocket{};
+    return make_unexpected(std::move(status));
   }
   return UdpSocket{io, fd, owner_worker};
 }
 
-UdpSocket udp_socket(IoContext& io, unsigned owner_worker) noexcept {
-  return udp_socket(io, owner_worker, AddressFamily::kIpv4);
+Result<UdpSocket> UdpSocket::bind(IoContext& io, unsigned owner_worker,
+                                  const Endpoint& endpoint,
+                                  const UdpSocketOptions& options) noexcept {
+  auto native = EndpointNativeAccess::encode(endpoint);
+  if (!native.has_value()) return make_unexpected(native.error());
+  auto opened = open(io, owner_worker, endpoint.family(), options);
+  if (!opened.has_value()) return make_unexpected(opened.error());
+  UdpSocket socket = std::move(*opened);
+#if HYLE_OS_WINDOWS
+  const int result = ::bind(
+      static_cast<SOCKET>(socket.fd_),
+      reinterpret_cast<const sockaddr*>(native->storage),
+      static_cast<int>(native->size));
+#else
+  const int result = ::bind(
+      static_cast<int>(socket.fd_),
+      reinterpret_cast<const sockaddr*>(native->storage),
+      static_cast<socklen_t>(native->size));
+#endif
+  if (result != 0)
+    return make_unexpected(socket_error("bind UDP socket"));
+  return socket;
+}
+
+Result<UdpSocket> UdpSocket::adopt(IoContext& io, unsigned owner_worker,
+                                   std::intptr_t native_socket) noexcept {
+  if (native_socket < 0)
+    return make_unexpected(Status::InvalidArgument("invalid native UDP socket"));
+  if (owner_worker >= io.num_workers()) {
+    close_fd(native_socket);
+    return make_unexpected(Status::OutOfRange("UDP owner worker is out of range"));
+  }
+  if (!io.bind_fd(owner_worker, native_socket)) {
+    Status status = handle_error("associate adopted UDP socket with IO shard");
+    close_fd(native_socket);
+    return make_unexpected(std::move(status));
+  }
+  return UdpSocket{io, native_socket, owner_worker};
+}
+
+std::intptr_t UdpSocket::release_native_handle() noexcept {
+  io_ = nullptr;
+  return std::exchange(fd_, -1);
+}
+
+Result<Endpoint> UdpSocket::local_endpoint() const noexcept {
+  if (!valid())
+    return make_unexpected(Status::FailedPrecondition("UDP socket is not open"));
+  return query_local_endpoint(fd_);
+}
+
+bool UdpSocket::ReceiveAwaitable::await_ready() noexcept {
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffer = buffer.data();
+  inner.length = static_cast<std::uint32_t>(buffer.size());
+  inner.address = native_peer.data();
+  inner.address_capacity = static_cast<std::uint32_t>(native_peer.size());
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+DatagramResult UdpSocket::ReceiveAwaitable::await_resume() noexcept {
+  TransferResult transfer = detail::transfer_from_native(
+      inner.await_resume(), detail::kNetworkNativeDomain, "UDP receive", false);
+  if (!transfer.ok())
+    return DatagramResult{transfer.bytes, Endpoint{}, std::move(transfer.status)};
+  auto peer = EndpointNativeAccess::decode(native_peer.data(),
+                                           static_cast<std::uint32_t>(
+                                               native_peer.size()));
+  if (!peer.has_value())
+    return DatagramResult{transfer.bytes, Endpoint{}, peer.error()};
+  return DatagramResult{transfer.bytes, *peer, Status{}};
+}
+
+bool UdpSocket::SendAwaitable::await_ready() noexcept {
+  auto native = EndpointNativeAccess::encode(destination);
+  if (!native.has_value()) {
+    preparation = native.error();
+    return true;
+  }
+  std::memcpy(native_destination.data(), native->storage, native->size);
+  native_length = native->size;
+  inner.proactor = &self->io_->proactor_for_current();
+  inner.fd = self->fd_;
+  inner.buffer = buffer.data();
+  inner.length = static_cast<std::uint32_t>(buffer.size());
+  inner.address = native_destination.data();
+  inner.address_length = native_length;
+  inner.allocator = self->io_->operation_allocator();
+  inner.options = options;
+  return inner.await_ready();
+}
+
+TransferResult UdpSocket::SendAwaitable::await_resume() noexcept {
+  if (!preparation.ok()) return TransferResult{0, preparation, false};
+  return detail::transfer_from_native(inner.await_resume(),
+                                      detail::kNetworkNativeDomain,
+                                      "UDP send", false);
 }
 
 }  // namespace hyle::io

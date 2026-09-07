@@ -1,3 +1,5 @@
+#include <span>
+
 // io-10 HTTP benchmark: the honest "what does the HTTP parse/framing layer cost?"
 // comparison. HYLE's HTTP/1.1 request/response throughput has TWO cost components:
 // (1) the io transport -- co_await TcpStream over the proactor/fiber stack, ALREADY
@@ -638,9 +640,16 @@ int run_region_footprint(const char* variant) {
 Task<int> raw_server(AllocatorRef, TcpStream server_end) {
   char buf[256];
   for (int i = 0; i < kReqRoundTrips; ++i) {
-    std::int64_t r = co_await server_end.read(buf, sizeof(buf));
+    auto received = co_await server_end.read_some(
+        std::as_writable_bytes(std::span{buf}));
+    const std::int64_t r = received.ok()
+                               ? static_cast<std::int64_t>(received.bytes)
+                               : -1;
     if (r <= 0) break;
-    std::int64_t w = co_await server_end.write(kRawResp, kRawRespLen);
+    auto sent = co_await server_end.write_some(std::as_bytes(
+        std::span{kRawResp, static_cast<std::size_t>(kRawRespLen)}));
+    const std::int64_t w =
+        sent.ok() ? static_cast<std::int64_t>(sent.bytes) : -1;
     if (w != static_cast<std::int64_t>(kRawRespLen)) break;
   }
   co_return 0;
@@ -648,9 +657,16 @@ Task<int> raw_server(AllocatorRef, TcpStream server_end) {
 Task<int> raw_client(AllocatorRef, TcpStream client_end, BenchState* state) {
   char buf[256];
   for (int i = 0; i < kReqRoundTrips; ++i) {
-    std::int64_t w = co_await client_end.write(kRawReq, kRawReqLen);
+    auto sent = co_await client_end.write_some(std::as_bytes(
+        std::span{kRawReq, static_cast<std::size_t>(kRawReqLen)}));
+    const std::int64_t w =
+        sent.ok() ? static_cast<std::int64_t>(sent.bytes) : -1;
     if (w != static_cast<std::int64_t>(kRawReqLen)) break;
-    std::int64_t r = co_await client_end.read(buf, sizeof(buf));
+    auto received = co_await client_end.read_some(
+        std::as_writable_bytes(std::span{buf}));
+    const std::int64_t r = received.ok()
+                               ? static_cast<std::int64_t>(received.bytes)
+                               : -1;
     if (r <= 0) break;
     state->completed.fetch_add(1, std::memory_order_relaxed);
   }

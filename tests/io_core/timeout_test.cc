@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <span>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
@@ -34,13 +36,11 @@
 //      before the (generous) deadline, and the timer is cancelled cleanly.
 
 using hyle::io::IoContext;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::RecvOp;
-using hyle::io::resolve_addr;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
-using hyle::io::TimedRecvOp;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -104,27 +104,39 @@ struct TimeoutResult {
 
 Task<int> timeout_server(AllocatorRef, IoContext*, TcpListener* ls,
                          TimeoutResult* r) {
-  TcpStream conn = co_await ls->accept(kOwner);
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   r->held = std::move(conn);  // hold it open but send NOTHING -> client recv stalls
   co_return 0;
 }
 
 Task<int> timeout_client(AllocatorRef alloc, IoContext* io, TimeoutResult* r,
                          std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) {
+  (void)alloc;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) {
+    r->done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) {
     r->done.store(true, std::memory_order_release);
     co_return 0;
   }
   r->connected.store(true, std::memory_order_release);
   char buf[64] = {};
   // Deadline 50ms out; server never sends, so the timer must win.
-  std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
-  std::int64_t rc =
-      co_await s.read_until(buf, sizeof(buf), alloc, deadline);
+  auto transfer = co_await s.read_some(
+      std::as_writable_bytes(std::span{buf}),
+      hyle::io::OperationOptions{
+          .deadline = hyle::time::deadline_after(std::chrono::milliseconds(50))});
+  const std::int64_t rc =
+      transfer.ok() ? static_cast<std::int64_t>(transfer.bytes)
+                    : (transfer.status.code() ==
+                               hyle::StatusCode::DeadlineExceeded
+                           ? hyle::io::kDeadlineExceeded
+                           : -999);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -138,26 +150,35 @@ struct IoWinResult {
 };
 
 Task<int> iowin_server(AllocatorRef, IoContext*, TcpListener* ls, IoWinResult*) {
-  TcpStream conn = co_await ls->accept(kOwner);
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   static const char kMsg[] = "prompt";
-  co_await conn.write(kMsg, sizeof(kMsg));
+  (void)(co_await conn.write_some(std::as_bytes(std::span{kMsg})));
   co_return 0;
 }
 
 Task<int> iowin_client(AllocatorRef alloc, IoContext* io, IoWinResult* r,
                        std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) {
+  (void)alloc;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) {
+    r->done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) {
     r->done.store(true, std::memory_order_release);
     co_return 0;
   }
   // Generous 5s deadline; the server sends at once, so io must win well within it.
-  std::uint64_t deadline = hyle::time::deadline_after_ns(5'000'000'000ull);
-  std::int64_t rc =
-      co_await s.read_until(r->got, sizeof(r->got), alloc, deadline);
+  auto transfer = co_await s.read_some(
+      std::as_writable_bytes(std::span{r->got}),
+      hyle::io::OperationOptions{
+          .deadline = hyle::time::deadline_after(std::chrono::seconds(5))});
+  const std::int64_t rc = transfer.ok()
+                              ? static_cast<std::int64_t>(transfer.bytes)
+                              : -999;
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -171,8 +192,10 @@ TEST(IoTimeout, TimeoutWinsReturnsETimedout) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   auto r = std::make_unique<TimeoutResult>();
   auto ds = std::make_unique<Drive>();
@@ -197,8 +220,10 @@ TEST(IoTimeout, IoWinsReturnsBytes) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   auto r = std::make_unique<IoWinResult>();
   auto ds = std::make_unique<Drive>();
@@ -225,10 +250,17 @@ struct AcceptResult {
 
 Task<int> accept_timeout_client(AllocatorRef alloc, IoContext* io, TcpListener* ls,
                                 AcceptResult* r) {
-  std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
-  // No one connects; the timed accept must return -ETIMEDOUT.
-  std::int64_t rc = co_await hyle::io::TimedAcceptOp{
-      &io->proactor_for_current(), ls->fd(), alloc, deadline};
+  (void)alloc;
+  (void)io;
+  auto accepted = co_await ls->accept(
+      kOwner, hyle::io::OperationOptions{
+                  .deadline = hyle::time::deadline_after(
+                      std::chrono::milliseconds(50))});
+  const std::int64_t rc =
+      !accepted.has_value() &&
+              accepted.error().code() == hyle::StatusCode::DeadlineExceeded
+          ? hyle::io::kDeadlineExceeded
+          : (accepted.has_value() ? 0 : -999);
   r->rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -240,8 +272,10 @@ TEST(IoTimeout, AcceptTimesOut) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   auto r = std::make_unique<AcceptResult>();
   auto d = std::make_unique<Drive>();
@@ -258,13 +292,18 @@ TEST(IoTimeout, AcceptTimesOut) {
 namespace {
 Task<int> udp_timeout_recv(AllocatorRef alloc, hyle::io::UdpSocket* socket,
                            AcceptResult* result) {
+  (void)alloc;
   char buffer[32] = {};
-  alignas(16) unsigned char peer[hyle::io::UdpSocket::kSockaddrCap]{};
-  const auto deadline = hyle::time::deadline_after_ns(50'000'000ull);
-  result->rc.store(
-      co_await socket->recv_from_until(buffer, sizeof(buffer), peer, alloc,
-                                       deadline),
-      std::memory_order_release);
+  auto received = co_await socket->receive_from(
+      std::as_writable_bytes(std::span{buffer}),
+      hyle::io::OperationOptions{
+          .deadline = hyle::time::deadline_after(
+              std::chrono::milliseconds(50))});
+  result->rc.store(received.status.code() ==
+                           hyle::StatusCode::DeadlineExceeded
+                       ? hyle::io::kDeadlineExceeded
+                       : static_cast<std::int64_t>(received.bytes),
+                   std::memory_order_release);
   result->done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -276,8 +315,10 @@ TEST(IoTimeout, UdpReceiveTimesOut) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  auto socket = hyle::io::udp_bind(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(socket.valid());
+  auto opened = hyle::io::UdpSocket::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(opened.has_value());
+  auto socket = std::move(*opened);
 
   auto result = std::make_unique<AcceptResult>();
   auto drive = std::make_unique<Drive>();
@@ -298,10 +339,14 @@ TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
   CountingAlloc::live.store(0, std::memory_order_relaxed);
   {
     Scheduler sched(kWorkers, system_allocator(), 256);
-    IoContext io(sched, kWorkers);
+    IoContext io(sched, kWorkers,
+                 hyle::io::IoContextOptions{
+                     .allocator = CountingAlloc::make()});
     ASSERT_TRUE(io.valid());
-    TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-    ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+    auto listener = TcpListener::bind(
+        io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+    ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+    TcpListener ls = std::move(*listener);
 
     auto r = std::make_unique<TimeoutResult>();
     auto ds = std::make_unique<Drive>();
@@ -342,18 +387,20 @@ struct BaseRecvState {
 };
 Task<int> base_recv_server(AllocatorRef, IoContext*, TcpListener* ls,
                            TcpStream* held) {
-  TcpStream conn = co_await ls->accept(kOwner);
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   static const char kMsg[] = "base-recv-ok";
-  co_await conn.write(kMsg, sizeof(kMsg));
+  (void)(co_await conn.write_some(std::as_bytes(std::span{kMsg})));
   *held = std::move(conn);  // keep open
   co_return 0;
 }
 Task<int> base_recv_client(AllocatorRef, IoContext* io, BaseRecvState* s,
                            std::uint16_t port) {
-  alignas(16) unsigned char ss[128]; std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s->s.connect(&ss, len) != 0) co_return 0;
-  s->rc.store(co_await RecvOp{&io->proactor_for_current(), s->s.fd(), s->buf,
+  if (!(co_await s->s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
+  s->rc.store(co_await RecvOp{&io->proactor_for_current(),
+                              s->s.native_handle(), s->buf,
                               sizeof(s->buf)},
               std::memory_order_release);
   co_return 0;
@@ -366,12 +413,16 @@ TEST(IoTimeout, BaseOpCompletionRoutingIntact) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid());
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value());
+  TcpListener ls = std::move(*listener);
 
   auto st = std::make_unique<BaseRecvState>();
   st->io = &io;
-  st->s = tcp_socket(io, kOwner);
+  auto opened = TcpStream::open(io, kOwner);
+  ASSERT_TRUE(opened.has_value());
+  st->s = std::move(*opened);
   TcpStream held;
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();

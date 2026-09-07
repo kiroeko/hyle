@@ -55,11 +55,10 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::io::TlsContext;
 using hyle::io::TlsStream;
 using hyle::io::tls_handshake;
@@ -146,8 +145,9 @@ struct HyleTls {
 };
 
 Task<int> hyle_server(AllocatorRef alloc, TcpListener* ls, HyleTls* h) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (!conn.valid()) co_return 0;
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   TlsStream tls(std::move(conn), *h->sctx, /*is_server=*/true);
   if (co_await tls_handshake(alloc, tls) != 0) co_return 0;
   if (!h->do_echo) h->client_units.store(1, std::memory_order_relaxed);
@@ -163,11 +163,11 @@ Task<int> hyle_server(AllocatorRef alloc, TcpListener* ls, HyleTls* h) {
 }
 
 Task<int> hyle_client(AllocatorRef alloc, IoContext* io, HyleTls* h) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", h->port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, h->port))).ok()) co_return 0;
   TlsStream tls(std::move(s), *h->cctx, /*is_server=*/false);
   if (co_await tls_handshake(alloc, tls) != 0) co_return 0;
   if (h->do_echo) {
@@ -191,8 +191,10 @@ int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx,
                  TlsContext* cctx) {
   Scheduler sched(1, system_allocator(), 1024);
   IoContext io(sched, 1);
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
-  if (!ls.valid()) return -1;
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
+  if (!opened_listener.has_value()) return -1;
+  TcpListener ls = std::move(*opened_listener);
   HyleTls h{port, do_echo, sctx, cctx};
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <new>
+#include <optional>
 
 #include "hyle/io/net.h"
 #include "hyle/io/proactor.h"
@@ -66,13 +68,24 @@ namespace hyle::io {
 // Heap state for one timed op. Refcount {kernel op, fiber} = 2. Single-threaded per
 // owner worker => refcount + flags are PLAIN (non-atomic).
 struct TimedSlot {
+  enum class Winner : std::uint8_t {
+    kNone,
+    kIo,
+    kDeadline,
+    kCancelled,
+  };
+
   IoOperation io{};          // the io op's landing pad (reaper fills result)
   time::TimerEntry timer{};  // armed on owner worker's queue; callback = arbiter
   mem::AllocatorRef alloc;      // frees the slot at refcount 0
   Proactor* p = nullptr;     // ring, for submit_cancel when the timer wins
   int refcount = 2;          // {kernel op, fiber}; non-atomic (owner-thread only)
-  bool io_done = false;      // io completion arrived
-  bool timer_fired = false;  // deadline fired
+  // Cancellation callbacks may run on a different thread.  Only the optional
+  // deadline/cancellation path pays for this arbitration atomic; ordinary IO
+  // continues to use the stack-only IoOperation fast path.
+  std::atomic<Winner> winner{Winner::kNone};
+  bool timer_armed = false;
+  bool timer_fired = false;  // owner-worker timer callback has run
 
   void release() noexcept {
     if (--refcount == 0) {
@@ -107,18 +120,16 @@ inline void complete_timed(const Completion& c) noexcept {
   TimedSlot* s = from_timed_token(c.user_data);
   s->io.result = c.result;
   s->io.flags = c.flags;
-  s->io_done = true;
-  // The kernel op just completed -> its ref is spent, release it. If the timer
-  // already won, the fiber is gone (resumed with -ETIMEDOUT): DON'T wake, this is
-  // the late cancellation completion, just drop the ref (may free the slot). If io
-  // won the race, wake the fiber FIRST (it still holds its own ref), THEN release
-  // the kernel ref -- wake before release so the slot is alive across the wake.
-  if (s->timer_fired) {
-    s->release();  // late completion: kernel ref, fiber ref already dropped/ing
-    return;
+  TimedSlot::Winner expected = TimedSlot::Winner::kNone;
+  if (s->winner.compare_exchange_strong(expected, TimedSlot::Winner::kIo,
+                                        std::memory_order_acq_rel,
+                                        std::memory_order_acquire)) {
+    // IO won. Wake before spending the kernel ref so the fiber-owned ref keeps
+    // the slot alive even if the scheduler runs it immediately.
+    s->io.waker.wake();
   }
-  s->io.waker.wake();  // io won -> exactly one wake_rendezvous this episode
-  s->release();        // kernel ref spent
+  // Deadline/cancellation already won -> this is the required late completion.
+  s->release();
 }
 
 // Timer-side arbiter, installed as TimedSlot::timer's fire callback. Runs in
@@ -131,8 +142,17 @@ inline void complete_timed(const Completion& c) noexcept {
 inline void timed_on_fire(time::TimerEntry* e) noexcept {
   auto* s = static_cast<TimedSlot*>(e->data());
   s->timer_fired = true;
-  if (s->io_done) return;  // io already won + woke the fiber: do not touch rendezvous
-  s->io.waker.wake();      // timeout won -> exactly one wake_rendezvous this episode
+  TimedSlot::Winner expected = TimedSlot::Winner::kNone;
+  if (!s->winner.compare_exchange_strong(
+          expected, TimedSlot::Winner::kDeadline,
+          std::memory_order_acq_rel, std::memory_order_acquire)) {
+    return;
+  }
+  // Cancel immediately rather than waiting for the resumed fiber to run. The
+  // original completion still owns the kernel ref and is the only event that
+  // spends it.
+  s->p->submit_cancel(to_timed_token(s), kCancelToken);
+  s->io.waker.wake();
 }
 
 namespace detail {
@@ -153,22 +173,49 @@ inline TimedSlot* make_timed_slot(mem::AllocatorRef alloc, Proactor* p,
       &timed_on_fire);  // route timer fire through the arbiter
   s->timer.set_data(s);  // publish complete callback context before the live arm
   sched::arm_timeout(&s->timer, time::monotonic_time_point(deadline_ns));
+  s->timer_armed = true;
+  return s;
+}
+
+inline TimedSlot* make_budget_slot(
+    mem::AllocatorRef alloc, Proactor* p,
+    const std::optional<time::MonotonicTimePoint>& deadline) noexcept {
+  auto* s = static_cast<TimedSlot*>(
+      alloc.allocate(sizeof(TimedSlot), alignof(TimedSlot)));
+  if (s == nullptr) return nullptr;
+  new (s) TimedSlot{};
+  s->alloc = alloc;
+  s->p = p;
+  s->io.waker = sched::current_waker();
+  if (deadline.has_value()) {
+    s->timer.set_fire_callback(&timed_on_fire);
+    s->timer.set_data(s);
+    sched::arm_timeout(&s->timer, *deadline);
+    s->timer_armed = true;
+  }
   return s;
 }
 
 // Resume-side arbitration + cleanup. Returns the value for await_resume.
 inline std::int64_t resume_timed(TimedSlot* s) noexcept {
-  std::int64_t result;
-  if (s->io_done) {
-    // io won (or completed alongside the timer). Cancel the timer if it hasn't
-    // fired -- synchronous queue unlink, no late event. result = the io bytes/errno.
-    if (!s->timer_fired) sched::cancel_timeout(&s->timer);
-    result = s->io.result;
-    s->release();  // fiber ref (kernel ref was released by complete_timed)
-    return result;
+  const TimedSlot::Winner winner =
+      s->winner.load(std::memory_order_acquire);
+  HYLE_FATAL_ASSERT(winner != TimedSlot::Winner::kNone);
+  if (s->timer_armed && !s->timer_fired) sched::cancel_timeout(&s->timer);
+
+  std::int64_t result = s->io.result;
+  if (winner == TimedSlot::Winner::kDeadline) result = kDeadlineExceeded;
+  if (winner == TimedSlot::Winner::kCancelled) {
+    // CancelToken callbacks may run on a foreign thread, while a Proactor's
+    // submission side belongs exclusively to the socket's owner worker. The
+    // callback only wins+wakes; submit the native cancellation here after the
+    // pinned fiber resumes on its owner.
+    s->p->submit_cancel(to_timed_token(s), kCancelToken);
+    result = kCancelled;
   }
-  // Timer won: io still in flight. Ask the proactor to cancel it; the late CQE will
-  // drop the kernel ref via complete_timed. Drop the fiber ref now, return timeout.
+
+  // For a deadline/cancellation winner, the late original CQE drops the kernel
+  // ref. For an IO winner it already did. Drop the fiber ref in every case.
   //
   // submit_cancel's return value is DELIBERATELY IGNORED, and that is correct (red-
   // team U5 investigation, 2026-07-05, cross-checked vs tokio-uring + liburing +
@@ -189,19 +236,33 @@ inline std::int64_t resume_timed(TimedSlot* s) noexcept {
   // so its SQE was never kernel-consumed (no CQE ever comes) -- is handled elsewhere:
   // on_submit_failed() drops the kernel ref synchronously when submit_recv/accept/
   // connect returns false. So a cancel-submit failure here is genuinely harmless.
-  s->p->submit_cancel(to_timed_token(s), kCancelToken);
-  result = -110;  // -ETIMEDOUT (Linux errno 110; a stable negative sentinel)
-  s->release();   // fiber ref; kernel ref stays until the late completion lands
+  s->release();
   return result;
+}
+
+// Cross-thread cancellation arbiter for a bounded operation. The
+// callback owns no ref: CancelCallback destruction is serialized against an
+// in-progress invocation, while the suspended fiber and kernel completion each
+// retain one slot ref. It deliberately does not touch the owner-thread-only
+// Proactor; resume_timed submits native cancellation on the pinned owner.
+inline void cancel_timed_slot(void* context) noexcept {
+  auto* s = static_cast<TimedSlot*>(context);
+  TimedSlot::Winner expected = TimedSlot::Winner::kNone;
+  if (!s->winner.compare_exchange_strong(
+          expected, TimedSlot::Winner::kCancelled,
+          std::memory_order_acq_rel, std::memory_order_acquire)) {
+    return;
+  }
+  s->io.waker.wake();
 }
 
 // Called when the proactor submit failed (ring full / bad fd): the kernel never
 // took the op, so no completion will drop its kernel ref -- drop it here, cancel
 // the timer, mark done so await_resume returns the error without suspending.
 inline void on_submit_failed(TimedSlot* s) noexcept {
-  sched::cancel_timeout(&s->timer);
+  if (s->timer_armed) sched::cancel_timeout(&s->timer);
   s->io.result = kSubmitFailed;  // never submitted (distinct from -EPERM); see net.h
-  s->io_done = true;
+  s->winner.store(TimedSlot::Winner::kIo, std::memory_order_release);
   s->release();  // kernel ref (never materialized)
 }
 

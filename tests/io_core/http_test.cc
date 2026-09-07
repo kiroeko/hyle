@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
 #include <string>
 
 #include "hyle/io/http.h"
@@ -29,13 +30,12 @@ using hyle::io::HttpResponseView;
 using hyle::io::HttpClientConn;
 using hyle::io::HttpServerConn;
 using hyle::io::http_serve;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
 using hyle::io::StreamChunk;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -172,8 +172,9 @@ Task<HttpResponse> handler(AllocatorRef alloc, void* ctx,
 Task<int> server_fiber(AllocatorRef, IoContext*, TcpListener* ls,
                        Result* r) {
   // Accept up to 2 connections (one for the keep-alive test client, room for more).
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (conn.valid()) {
+  auto accepted = co_await ls->accept(kOwner);
+  if (accepted.has_value()) {
+    TcpStream conn = std::move(*accepted);
     AllocatorRef counted(&counting_alloc, &counting_free, &counting_realloc, r);
     co_await http_serve(counted, std::move(conn), &handler, r);
   }
@@ -182,11 +183,14 @@ Task<int> server_fiber(AllocatorRef, IoContext*, TcpListener* ls,
 }
 
 Task<int> client_fiber(AllocatorRef alloc, IoContext* io, Result* r) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", kPort, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) {
+    r->client_done.store(true);
+    co_return 0;
+  }
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, kPort))).ok()) {
     r->client_done.store(true);
     co_return 0;
   }
@@ -263,20 +267,23 @@ Task<HttpResponse> smuggle_handler(AllocatorRef, void* ctx,
 }
 Task<int> smuggle_server(AllocatorRef alloc, IoContext*, TcpListener* ls,
                          SmuggleResult* r) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (conn.valid()) co_await http_serve(alloc, std::move(conn), &smuggle_handler, r);
+  auto accepted = co_await ls->accept(kOwner);
+  if (accepted.has_value()) {
+    co_await http_serve(alloc, std::move(*accepted), &smuggle_handler, r);
+  }
   co_return 0;
 }
 Task<int> smuggle_client(AllocatorRef, IoContext* io, const char* raw,
                          std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) co_return 0;
-  co_await s.write(raw, static_cast<std::uint32_t>(std::strlen(raw)));
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
+  (void)(co_await s.write_some(std::as_bytes(
+      std::span{raw, std::strlen(raw)})));
   char buf[512];
-  (void)(co_await s.read(buf, sizeof(buf)));  // one read then close (see smuggle_probe rationale)
+  (void)(co_await s.read_some(std::as_writable_bytes(std::span{buf})));
   co_return 0;
 }
 // Run one raw request against a fresh server; return how many times the handler
@@ -285,8 +292,10 @@ int smuggle_served(const char* raw, std::uint16_t port) {
   Scheduler sched(2, system_allocator(), 256);
   IoContext io(sched, 2);
   if (!io.valid()) return -1;
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
-  if (!ls.valid()) return -1;
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
+  if (!listener.has_value()) return -1;
+  TcpListener ls = std::move(*listener);
   SmuggleResult r;
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();
@@ -307,14 +316,19 @@ struct ResponseProbeResult {
   std::atomic<bool> accepted{false};
 };
 Task<int> raw_response_server(AllocatorRef, TcpListener* ls, const char* raw) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (!conn.valid()) co_return 0;
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   char request[1024];
-  (void)(co_await conn.read(request, sizeof(request)));
+  (void)(co_await conn.read_some(
+      std::as_writable_bytes(std::span{request})));
   std::uint32_t off = 0;
   const std::uint32_t len = static_cast<std::uint32_t>(std::strlen(raw));
   while (off < len) {
-    std::int64_t n = co_await conn.write(raw + off, len - off);
+    auto written = co_await conn.write_some(std::as_bytes(
+        std::span{raw + off, static_cast<std::size_t>(len - off)}));
+    const std::int64_t n =
+        written.ok() ? static_cast<std::int64_t>(written.bytes) : -1;
     if (n <= 0) break;
     off += static_cast<std::uint32_t>(n);
   }
@@ -322,11 +336,11 @@ Task<int> raw_response_server(AllocatorRef, TcpListener* ls, const char* raw) {
 }
 Task<int> raw_response_client(AllocatorRef alloc, IoContext* io,
                               ResponseProbeResult* r, std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
   HttpClientConn conn{alloc, std::move(s)};
   r->accepted.store(
       (co_await conn.request("GET", "/", "127.0.0.1")) != nullptr,
@@ -337,8 +351,10 @@ bool response_accepted(const char* raw, std::uint16_t port) {
   Scheduler sched(2, system_allocator(), 256);
   IoContext io(sched, 2);
   if (!io.valid()) return false;
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
-  if (!ls.valid()) return false;
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
+  if (!listener.has_value()) return false;
+  TcpListener ls = std::move(*listener);
   ResponseProbeResult r;
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();
@@ -363,14 +379,19 @@ struct CloseBodyResult {
   std::atomic<int> body_len{-1};
 };
 Task<int> closebody_server(AllocatorRef, IoContext*, TcpListener* ls, int body_size) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (!conn.valid()) co_return 0;
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream conn = std::move(*accepted);
   char rbuf[2048];
-  co_await conn.read(rbuf, sizeof(rbuf));  // read+discard the request
+  (void)(co_await conn.read_some(
+      std::as_writable_bytes(std::span{rbuf})));
   std::string head = "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
   std::uint32_t off = 0, t = static_cast<std::uint32_t>(head.size());
   while (off < t) {
-    std::int64_t w = co_await conn.write(head.data() + off, t - off);
+    auto written = co_await conn.write_some(std::as_bytes(
+        std::span{head.data() + off, static_cast<std::size_t>(t - off)}));
+    const std::int64_t w =
+        written.ok() ? static_cast<std::int64_t>(written.bytes) : -1;
     if (w <= 0) co_return 0;
     off += static_cast<std::uint32_t>(w);
   }
@@ -380,7 +401,10 @@ Task<int> closebody_server(AllocatorRef, IoContext*, TcpListener* ls, int body_s
   off = 0;
   t = static_cast<std::uint32_t>(body.size());
   while (off < t) {
-    std::int64_t w = co_await conn.write(body.data() + off, t - off);
+    auto written = co_await conn.write_some(std::as_bytes(
+        std::span{body.data() + off, static_cast<std::size_t>(t - off)}));
+    const std::int64_t w =
+        written.ok() ? static_cast<std::int64_t>(written.bytes) : -1;
     if (w <= 0) break;
     off += static_cast<std::uint32_t>(w);
   }
@@ -388,11 +412,11 @@ Task<int> closebody_server(AllocatorRef, IoContext*, TcpListener* ls, int body_s
 }
 Task<int> closebody_client(AllocatorRef alloc, IoContext* io, CloseBodyResult* r,
                            std::uint16_t port) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", port, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
   HttpClientConn conn{alloc, std::move(s)};
   HttpResponseView* resp = co_await conn.request("GET", "/", "127.0.0.1");
   if (resp != nullptr) {
@@ -410,8 +434,10 @@ TEST(IoHttp, GetKeepAlive) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   auto r = std::make_unique<Result>();
   auto ds = std::make_unique<Drive>();
@@ -508,8 +534,10 @@ TEST(IoHttp, ReadsCloseDelimitedBody) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kCbPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kCbPort));
+  ASSERT_TRUE(listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   CloseBodyResult r;
   auto ds = std::make_unique<Drive>();

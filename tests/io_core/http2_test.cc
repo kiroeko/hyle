@@ -18,12 +18,11 @@ using hyle::io::Http2ClientConn;
 using hyle::io::Http2Header;
 using hyle::io::Http2MessageView;
 using hyle::io::Http2ServerConn;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -56,8 +55,9 @@ void copy_ref(char* out, std::size_t cap, StringView value) noexcept {
 
 Task<int> server_task(AllocatorRef alloc, TcpListener* listener,
                       Result* result) noexcept {
-  TcpStream stream = co_await listener->accept(kOwner);
-  if (!stream.valid()) co_return 0;
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream stream = std::move(*accepted);
   Http2ServerConn conn{alloc, std::move(stream)};
   if (!conn.valid()) co_return 0;
 
@@ -88,12 +88,11 @@ Task<int> server_task(AllocatorRef alloc, TcpListener* listener,
 }
 
 Task<int> client_task(AllocatorRef alloc, IoContext* io, Result* result) noexcept {
-  TcpStream stream = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char address[128]{};
-  std::uint32_t length = 0;
-  if (!resolve_addr("127.0.0.1", kPort, address, &length) ||
-      co_await stream.connect(address, length) != 0)
-    co_return 0;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream stream = std::move(*opened);
+  if (!(co_await stream.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, kPort))).ok()) co_return 0;
 
   Http2ClientConn conn{alloc, std::move(stream)};
   if (!conn.valid()) co_return 0;
@@ -128,8 +127,10 @@ TEST(IoHttp2, MultiplexedLoopbackRoundTrip) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler, 2);
   ASSERT_TRUE(io.valid());
-  TcpListener listener = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(listener.valid());
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(opened_listener.has_value());
+  TcpListener listener = std::move(*opened_listener);
 
   auto result = std::make_unique<Result>();
   auto server = std::make_unique<Drive>();
@@ -173,7 +174,9 @@ struct FlowResult {
 
 Task<int> flow_server(AllocatorRef alloc, TcpListener* listener,
                       FlowResult* result) noexcept {
-  TcpStream stream = co_await listener->accept(kOwner);
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream stream = std::move(*accepted);
   Http2ServerConn conn{alloc, std::move(stream)};
   Http2MessageView* request = co_await conn.next_request();
   if (request == nullptr) co_return 0;
@@ -188,12 +191,11 @@ Task<int> flow_server(AllocatorRef alloc, TcpListener* listener,
 
 Task<int> flow_client(AllocatorRef alloc, IoContext* io, std::uint16_t port,
                       FlowResult* result) noexcept {
-  TcpStream stream = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char address[128]{};
-  std::uint32_t length = 0;
-  if (!resolve_addr("127.0.0.1", port, address, &length) ||
-      co_await stream.connect(address, length) != 0)
-    co_return 0;
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream stream = std::move(*opened);
+  if (!(co_await stream.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
   Http2ClientConn conn{alloc, std::move(stream)};
   const StringView request{result->request.data(),
                            static_cast<std::uint32_t>(result->request.size())};
@@ -214,8 +216,10 @@ TEST(IoHttp2, DrivesConnectionAndStreamFlowControl) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler, 2);
   ASSERT_TRUE(io.valid());
-  TcpListener listener = tcp_listen(io, kOwner, "127.0.0.1", port);
-  ASSERT_TRUE(listener.valid());
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
+  ASSERT_TRUE(opened_listener.has_value());
+  TcpListener listener = std::move(*opened_listener);
 
   auto result = std::make_unique<FlowResult>();
   auto server = std::make_unique<Drive>();

@@ -50,12 +50,6 @@
 
 namespace hyle::io {
 
-// Canonical cancellation result. Backends report a cancelled op with different
-// native codes (io_uring -ECANCELED = -125; IOCP ERROR_OPERATION_ABORTED = -995;
-// epoll synthesizes -125). We normalize to ONE value so a consumer (e.g. an HTTP
-// handler) tells "cancelled" from a real error without backend-specific checks.
-inline constexpr std::int64_t kCancelled = -125;  // -ECANCELED (the canonical code)
-
 namespace detail {
 
 // CancelCallback context for a cancellable op: on token cancel, ask the proactor to

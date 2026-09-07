@@ -215,20 +215,22 @@ _hyle_declare_component(sched
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io_core
   TRACE
-  PRIVATE_DEPS container
-  PUBLIC_DEPS core mem container_text time timer_queue sched
+  PUBLIC_DEPS core error mem container container_text time timer_queue sched
   SPLIT_PUBLIC_HEADERS
     hyle/io/capabilities.h
     hyle/io/coroutine_transport.h
     hyle/io/dns.h
+    hyle/io/endpoint.h
     hyle/io/file.h
     hyle/io/http.h
     hyle/io/http2.h
     hyle/io/io_context.h
     hyle/io/net.h
+    hyle/io/net_budget.h
     hyle/io/net_cancel.h
     hyle/io/net_multishot.h
     hyle/io/net_timeout.h
+    hyle/io/operation.h
     hyle/io/proactor.h
     hyle/io/signal.h
     hyle/io/tcp.h

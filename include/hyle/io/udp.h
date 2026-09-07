@@ -1,12 +1,17 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <span>
 
 #include "hyle/core/assert.h"
+#include "hyle/error/result.h"
+#include "hyle/io/endpoint.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"
-#include "hyle/io/net_cancel.h"
-#include "hyle/io/net_timeout.h"
+#include "hyle/io/net_budget.h"
+#include "hyle/io/operation.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -24,10 +29,26 @@
 // is bound to an owner worker's ring, and the fiber servicing it must be pinned
 // there (Scheduler::spawn_on) so submit + reap stay on one core.
 //
-// Thin: fd ownership (RAII close) + the co_await methods delegate to net.h's
-// RecvFromOp/SendToOp; udp_bind / udp_socket (socket+bind setup) live in udp.cc.
+// Setup, transfer, endpoint conversion and native error mapping stay behind the
+// typed owner. Native sockaddr and negative errno values never cross this API.
 
 namespace hyle::io {
+
+struct UdpSocketOptions {
+  bool reuse_address = true;
+  bool reuse_port = false;
+  bool broadcast = false;
+  bool ipv6_only = false;
+};
+
+struct [[nodiscard]] DatagramResult {
+  std::size_t bytes = 0;
+  Endpoint peer;
+  Status status{};
+
+  bool ok() const noexcept { return status.ok(); }
+  explicit operator bool() const noexcept { return ok(); }
+};
 
 // A bound (or unbound-but-sendable) UDP socket. Move-only; closes the fd on
 // destruction. recv_from()/send_to() are co_await-able and MUST be awaited from
@@ -43,93 +64,77 @@ class UdpSocket {
   UdpSocket(const UdpSocket&) = delete;
   UdpSocket& operator=(const UdpSocket&) = delete;
 
+  HYLE_IO_API static Result<UdpSocket> open(
+      IoContext& io, unsigned owner_worker,
+      AddressFamily family = AddressFamily::kIpv4,
+      const UdpSocketOptions& options = {}) noexcept;
+  HYLE_IO_API static Result<UdpSocket> bind(
+      IoContext& io, unsigned owner_worker, const Endpoint& endpoint,
+      const UdpSocketOptions& options = {}) noexcept;
+  HYLE_IO_API static Result<UdpSocket> adopt(
+      IoContext& io, unsigned owner_worker,
+      std::intptr_t native_socket) noexcept;
+
   bool valid() const noexcept { return fd_ >= 0; }
-  std::intptr_t fd() const noexcept { return fd_; }
+  std::intptr_t native_handle() const noexcept { return fd_; }
+  HYLE_IO_API std::intptr_t release_native_handle() noexcept;
   unsigned owner_worker() const noexcept { return owner_; }
+  HYLE_IO_API Result<Endpoint> local_endpoint() const noexcept;
 
-  // co_await sock.recv_from(buf, len, &ss) -> bytes received (>=0) or negative
-  // errno; the sender's address is written into `peer` (a sockaddr_storage-sized
-  // buffer). Both `buf` and `peer` must outlive the co_await (put them on the
-  // coroutine frame). Read the peer length from peer->ss_family after resume.
-  RecvFromOp recv_from(void* buf, std::uint32_t len, void* peer) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return RecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
-                      kSockaddrCap};
-  }
-  TimedRecvFromOp recv_from_until(void* buf, std::uint32_t len, void* peer,
-                                  mem::AllocatorRef alloc,
-                                  std::uint64_t deadline_ns) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && peer != nullptr);
-    return TimedRecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
-                           kSockaddrCap, alloc, deadline_ns};
-  }
-  CancelRecvFromOp recv_from_cancel(
-      void* buf, std::uint32_t len, void* peer,
-      const sched::CancelToken* token) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && peer != nullptr);
-    return CancelRecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
-                            kSockaddrCap, token};
-  }
+  struct ReceiveAwaitable {
+    UdpSocket* self = nullptr;
+    std::span<std::byte> buffer;
+    OperationOptions options;
+    alignas(16) std::array<std::byte, 128> native_peer{};
+    BudgetRecvFromOp inner{};
 
-  // co_await sock.send_to(buf, len, &ss, sslen) -> bytes sent (>=0) or negative
-  // errno, to the destination (ss, sslen) filled by resolve_addr(). `buf` and `ss`
-  // must outlive the co_await.
-  SendToOp send_to(const void* buf, std::uint32_t len, const void* dest,
-                   std::uint32_t destlen) noexcept {
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API DatagramResult await_resume() noexcept;
+  };
+
+  struct SendAwaitable {
+    UdpSocket* self = nullptr;
+    std::span<const std::byte> buffer;
+    Endpoint destination;
+    OperationOptions options;
+    alignas(16) std::array<std::byte, 128> native_destination{};
+    std::uint32_t native_length = 0;
+    BudgetSendToOp inner{};
+    Status preparation{};
+
+    HYLE_IO_API bool await_ready() noexcept;
+    bool await_suspend(std::coroutine_handle<> handle) noexcept {
+      return inner.await_suspend(handle);
+    }
+    HYLE_IO_API TransferResult await_resume() noexcept;
+  };
+
+  ReceiveAwaitable receive_from(
+      std::span<std::byte> buffer, OperationOptions options = {}) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
                       sched::current_worker_index() == static_cast<int>(owner_));
-    return SendToOp{&io_->proactor_for_current(), fd_, buf, len, dest, destlen};
-  }
-  TimedSendToOp send_to_until(const void* buf, std::uint32_t len,
-                              const void* dest, std::uint32_t destlen,
-                              mem::AllocatorRef alloc,
-                              std::uint64_t deadline_ns) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && dest != nullptr &&
-                      destlen != 0);
-    return TimedSendToOp{&io_->proactor_for_current(), fd_, buf, len, dest,
-                         destlen, alloc, deadline_ns};
-  }
-  CancelSendToOp send_to_cancel(
-      const void* buf, std::uint32_t len, const void* dest,
-      std::uint32_t destlen, const sched::CancelToken* token) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && dest != nullptr &&
-                      destlen != 0);
-    return CancelSendToOp{&io_->proactor_for_current(), fd_, buf, len, dest,
-                          destlen, token};
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    return ReceiveAwaitable{this, buffer, options};
   }
 
-  // Size a caller sockaddr buffer to this so recv_from can hold any address it
-  // sees (sockaddr_storage is 128 bytes on Linux/Windows; matches proactor use).
-  static constexpr std::uint32_t kSockaddrCap = 128;
+  SendAwaitable send_to(
+      std::span<const std::byte> buffer, const Endpoint& destination,
+      OperationOptions options = {}) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT(buffer.size() <=
+                      (std::numeric_limits<std::uint32_t>::max)());
+    return SendAwaitable{this, buffer, destination, options};
+  }
 
  private:
   IoContext* io_ = nullptr;
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;
 };
-
-// ---- cross-platform socket setup (udp.cc) ----------------------------------
-// Create a UDP socket bound to `host`:`port` (host e.g. "127.0.0.1"), associate
-// it with `owner_worker`'s ring, and return a UdpSocket. Returns an invalid
-// UdpSocket (valid()==false) on failure. Use for a receiver/server.
-HYLE_IO_API UdpSocket udp_bind(IoContext& io, unsigned owner_worker,
-                               const char* host, std::uint16_t port) noexcept;
-
-// Create an unbound UDP socket associated with `owner_worker`'s ring (the OS
-// assigns an ephemeral local port on first send). Use for a client that only
-// send_to()s and recv_from()s replies. Returns invalid on failure.
-HYLE_IO_API UdpSocket udp_socket(IoContext& io,
-                                 unsigned owner_worker) noexcept;
-HYLE_IO_API UdpSocket udp_socket(IoContext& io, unsigned owner_worker,
-                                 AddressFamily family) noexcept;
 
 }  // namespace hyle::io

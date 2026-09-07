@@ -35,11 +35,10 @@ using hyle::io::Http2ServerConn;
 #endif
 using hyle::io::HttpResponse;
 using hyle::io::HttpServerConn;
-using hyle::io::resolve_addr;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::io::TlsContext;
 using hyle::io::TlsStream;
 using hyle::io::tls_handshake;
@@ -130,8 +129,9 @@ struct TlsResult {
 // Server: accept, wrap in server TlsStream, handshake, read plaintext, echo it back.
 Task<int> tls_server(AllocatorRef alloc, TcpListener* ls, TlsContext* sctx,
                      TlsResult* r) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (!conn.valid()) { r->server_done.store(true); co_return 0; }
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) { r->server_done.store(true); co_return 0; }
+  TcpStream conn = std::move(*accepted);
   TlsStream tls(std::move(conn), *sctx, /*is_server=*/true);
   int hs = co_await tls_handshake(alloc, tls);
   r->server_hs.store(hs, std::memory_order_release);
@@ -152,11 +152,14 @@ Task<int> tls_server(AllocatorRef alloc, TcpListener* ls, TlsContext* sctx,
 // Client: connect, wrap in client TlsStream, handshake, send, read echo, verify.
 Task<int> tls_client(AllocatorRef alloc, IoContext* io, TlsContext* cctx,
                      TlsResult* r) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  resolve_addr("127.0.0.1", kPort, &ss, &len);
-  if (co_await s.connect(&ss, len) != 0) { r->client_done.store(true); co_return 0; }
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) { r->client_done.store(true); co_return 0; }
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, kPort))).ok()) {
+    r->client_done.store(true);
+    co_return 0;
+  }
   TlsStream tls(std::move(s), *cctx, /*is_server=*/false);
   int hs = co_await tls_handshake(alloc, tls);
   r->client_hs.store(hs, std::memory_order_release);
@@ -204,8 +207,10 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(opened_listener.has_value()) << "listen failed (port in use?)";
+  TcpListener ls = std::move(*opened_listener);
 
   auto r = std::make_unique<TlsResult>();
   auto ds = std::make_unique<Drive>();
@@ -265,7 +270,9 @@ Task<HttpResponse> https_handler(AllocatorRef alloc, void* context,
 
 Task<int> https_server(AllocatorRef alloc, IoContext*, TcpListener* listener,
                        TlsContext* context, HttpsResult* result) {
-  TcpStream socket = co_await listener->accept(kOwner);
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream socket = std::move(*accepted);
   TlsStream tls(std::move(socket), *context, true);
   if (co_await tls_handshake(alloc, tls) == 0) {
     co_await hyle::io::http_serve(alloc, std::move(tls), &https_handler,
@@ -277,11 +284,11 @@ Task<int> https_server(AllocatorRef alloc, IoContext*, TcpListener* listener,
 
 Task<int> https_client(AllocatorRef alloc, IoContext* io, TlsContext* context,
                        HttpsResult* result, std::uint16_t port) {
-  TcpStream socket = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char address[128]{};
-  std::uint32_t address_length = 0;
-  resolve_addr("127.0.0.1", port, address, &address_length);
-  if (co_await socket.connect(address, address_length) == 0) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream socket = std::move(*opened);
+  if ((co_await socket.connect(
+          Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) {
     TlsStream tls(std::move(socket), *context, false);
     if (co_await tls_handshake(alloc, tls) == 0) {
       HttpClientConn http(alloc, std::move(tls));
@@ -316,9 +323,10 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   Scheduler sched(2, system_allocator(), 256);
   IoContext io(sched, 2);
   ASSERT_TRUE(io.valid());
-  TcpListener listener =
-      tcp_listen(io, kOwner, "127.0.0.1", kHttpsPort);
-  ASSERT_TRUE(listener.valid());
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kHttpsPort));
+  ASSERT_TRUE(opened_listener.has_value());
+  TcpListener listener = std::move(*opened_listener);
 
   auto result = std::make_unique<HttpsResult>();
   auto server = std::make_unique<Drive>();
@@ -347,7 +355,9 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
 namespace {
 Task<int> h2_tls_server(AllocatorRef alloc, TcpListener* listener,
                         TlsContext* context, HttpsResult* result) {
-  TcpStream socket = co_await listener->accept(kOwner);
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value()) co_return 0;
+  TcpStream socket = std::move(*accepted);
   result->server_stage.store(1);
   TlsStream tls(std::move(socket), *context, true);
   if (co_await tls_handshake(alloc, tls) == 0) {
@@ -373,11 +383,11 @@ Task<int> h2_tls_server(AllocatorRef alloc, TcpListener* listener,
 
 Task<int> h2_tls_client(AllocatorRef alloc, IoContext* io, TlsContext* context,
                         HttpsResult* result, std::uint16_t port) {
-  TcpStream socket = tcp_socket(*io, kOwner);
-  alignas(16) unsigned char address[128]{};
-  std::uint32_t address_length = 0;
-  resolve_addr("127.0.0.1", port, address, &address_length);
-  if (co_await socket.connect(address, address_length) == 0) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream socket = std::move(*opened);
+  if ((co_await socket.connect(
+          Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) {
     result->client_stage.store(1);
     TlsStream tls(std::move(socket), *context, false);
     if (co_await tls_handshake(alloc, tls) == 0) {
@@ -415,9 +425,10 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
 
   Scheduler sched(2, system_allocator(), 256);
   IoContext io(sched, 2);
-  TcpListener listener =
-      tcp_listen(io, kOwner, "127.0.0.1", kH2TlsPort);
-  ASSERT_TRUE(listener.valid());
+  auto opened_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kH2TlsPort));
+  ASSERT_TRUE(opened_listener.has_value());
+  TcpListener listener = std::move(*opened_listener);
   auto result = std::make_unique<HttpsResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <cstring>
+#include <string>
 
 #include "hyle/io/dns.h"
 #include "hyle/mem/allocator.h"
@@ -24,8 +24,6 @@
 // hostname (localhost) should resolve on any sane machine but is SKIP-guarded so a
 // networkless CI doesn't fail.
 
-using hyle::io::ResolvedAddr;
-using hyle::io::ResolveResult;
 using hyle::io::AddressFamily;
 using hyle::io::resolve;
 using hyle::mem::system_allocator;
@@ -56,16 +54,13 @@ TEST(IoDns, ResolvesIpv4Literal) {
   auto h = resolve(pool, system_allocator(), "127.0.0.1", 8080);
   auto r = h.join();
   ASSERT_TRUE(r.has_value());
-  EXPECT_EQ(r->error, 0);
-  ASSERT_GE(r->count, 1);
+  ASSERT_FALSE(r->empty());
   // The first result must be the AF_INET loopback on port 8080.
   bool found_v4_loopback = false;
-  for (int i = 0; i < r->count; ++i) {
-    const ResolvedAddr& a = r->addrs[i];
-    if (a.family != AddressFamily::kIpv4) continue;
-    const auto* sin = reinterpret_cast<const sockaddr_in*>(a.storage);
-    if (ntohs(sin->sin_port) != 8080) continue;
-    if (ntohl(sin->sin_addr.s_addr) == INADDR_LOOPBACK) found_v4_loopback = true;
+  for (const auto& endpoint : *r) {
+    if (endpoint.family() == AddressFamily::kIpv4 &&
+        endpoint.port() == 8080 && endpoint.is_loopback())
+      found_v4_loopback = true;
   }
   EXPECT_TRUE(found_v4_loopback);
 }
@@ -77,35 +72,30 @@ TEST(IoDns, ResolvesLocalhost) {
   BlockingPool pool(system_allocator());
   auto h = resolve(pool, system_allocator(), "localhost", 443);
   auto r = h.join();
-  ASSERT_TRUE(r.has_value());
-  if (r->error != 0 || r->count == 0)
-    GTEST_SKIP() << "localhost did not resolve (networkless CI?) err=" << r->error;
+  if (!r.has_value())
+    GTEST_SKIP() << "localhost did not resolve (networkless CI?)";
+  ASSERT_FALSE(r->empty());
   // Every returned address must carry the requested port and a known family.
-  for (int i = 0; i < r->count; ++i) {
-    const ResolvedAddr& a = r->addrs[i];
-    EXPECT_TRUE(a.family == AddressFamily::kIpv4 ||
-                a.family == AddressFamily::kIpv6);
-    EXPECT_GT(a.len, 0u);
+  for (const auto& endpoint : *r) {
+    EXPECT_TRUE(endpoint.family() == AddressFamily::kIpv4 ||
+                endpoint.family() == AddressFamily::kIpv6);
+    EXPECT_EQ(endpoint.port(), 443);
   }
 }
 
-TEST(IoDns, RejectsNullAndOverlongHostWithoutTruncation) {
+TEST(IoDns, RejectsEmptyAndEmbeddedNullHost) {
   WsaGuard wsa;
   BlockingPool pool(system_allocator());
-  auto null_h = resolve(pool, system_allocator(), nullptr, 80);
-  auto null_r = null_h.join();
-  ASSERT_TRUE(null_r.has_value());
-  EXPECT_EQ(null_r->error, ResolveResult::kInvalidHost);
-  EXPECT_EQ(null_r->count, 0);
+  auto empty = resolve(pool, system_allocator(), "", 80).join();
+  ASSERT_FALSE(empty.has_value());
+  EXPECT_TRUE(empty.error().IsInvalidArgument());
 
-  char host[300];
-  std::memset(host, 'a', sizeof(host));
-  host[sizeof(host) - 1] = '\0';
-  auto long_h = resolve(pool, system_allocator(), host, 80);
-  auto long_r = long_h.join();
-  ASSERT_TRUE(long_r.has_value());
-  EXPECT_EQ(long_r->error, ResolveResult::kInvalidHost);
-  EXPECT_EQ(long_r->count, 0);
+  const char embedded[] = {'h', 'o', 's', 't', '\0', 'x'};
+  auto invalid = resolve(pool, system_allocator(),
+                         std::string_view(embedded, sizeof(embedded)), 80)
+                     .join();
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
 }
 
 // A name that cannot resolve returns a non-zero error and zero addresses, WITHOUT
@@ -116,14 +106,12 @@ TEST(IoDns, UnresolvableNameErrors) {
   auto h = resolve(pool, system_allocator(),
                    "no.such.host.hyle.invalid.", 80);
   auto r = h.join();
-  ASSERT_TRUE(r.has_value());
   // A hijacking resolver (proxy fake-ip, captive portal, ISP wildcard) answers
   // even an RFC-2606 `.invalid` name -- then the failure path cannot be
   // exercised, so SKIP rather than fail (mirrors ResolvesLocalhost's guard for
   // a networkless box). A well-behaved resolver returns NXDOMAIN.
-  if (r->error == 0 || r->count != 0)
+  if (r.has_value())
     GTEST_SKIP() << "resolver answered a .invalid name (hijacked DNS?) count="
-                 << r->count << " err=" << r->error;
-  EXPECT_EQ(r->count, 0);
-  EXPECT_NE(r->error, 0);  // getaddrinfo signalled a lookup failure
+                 << r->size();
+  EXPECT_FALSE(r.error().ok());
 }

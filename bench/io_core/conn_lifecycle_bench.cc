@@ -1,3 +1,5 @@
+#include <span>
+
 // io CONNECTION-LIFECYCLE bench: the REALISTIC full-connection cost that the other
 // io benches deliberately factor OUT. echo_bench pre-builds socketpairs (never accepts
 // or closes -- pure steady-state transport); accept_bench accepts then DROPS instantly
@@ -54,11 +56,10 @@
 #endif
 
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_socket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -89,12 +90,19 @@ Task<int> serve_conn(AllocatorRef, TcpStream conn, int rounds,
     TcpStream s = std::move(conn);
     char buf[kMsgLen];
     for (int r = 0; r < rounds; ++r) {
-      std::int64_t got = co_await s.read(buf, kMsgLen);
+      auto received = co_await s.read_some(
+          std::as_writable_bytes(std::span{buf}));
+      const std::int64_t got = received.ok()
+                                   ? static_cast<std::int64_t>(received.bytes)
+                                   : -1;
       if (got <= 0) {
         complete = false;
         break;
       }
-      std::int64_t put = co_await s.write(buf, static_cast<std::uint32_t>(got));
+      auto sent = co_await s.write_some(std::as_bytes(
+          std::span{buf, static_cast<std::size_t>(got)}));
+      const std::int64_t put =
+          sent.ok() ? static_cast<std::int64_t>(sent.bytes) : -1;
       if (put != got) {
         complete = false;
         break;
@@ -118,8 +126,9 @@ Task<int> accept_dispatch_loop(AllocatorRef, Scheduler* sched, TcpListener* ls, 
                                std::vector<std::unique_ptr<Fiber>>* hfibers) {
   for (int i = 0; i < n; ++i) {
     unsigned owner = static_cast<unsigned>(i) % workers;
-    TcpStream conn = co_await ls->accept(owner);
-    if (!conn.valid()) continue;
+    auto accepted_conn = co_await ls->accept(owner);
+    if (!accepted_conn.has_value()) continue;
+    TcpStream conn = std::move(*accepted_conn);
     auto dh = std::make_unique<Drive>();
     dh->task = serve_conn(system_allocator(), std::move(conn), rounds, served);
     auto fh =
@@ -134,18 +143,23 @@ Task<int> accept_dispatch_loop(AllocatorRef, Scheduler* sched, TcpListener* ls, 
 // One client: connect, do `rounds` request/response round-trips, then drop (close).
 Task<int> client_lifecycle(AllocatorRef, IoContext* io, unsigned owner,
                            std::uint16_t port, int rounds) {
-  TcpStream s = tcp_socket(*io, owner);
-  if (!s.valid()) co_return 0;
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  if (!resolve_addr("127.0.0.1", port, &ss, &len)) co_return 0;
-  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  auto opened = TcpStream::open(*io, owner);
+  if (!opened.has_value()) co_return 0;
+  TcpStream s = std::move(*opened);
+  if (!(co_await s.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port))).ok()) co_return 0;
   char buf[kMsgLen];
   std::memset(buf, 'x', sizeof(buf));
   for (int r = 0; r < rounds; ++r) {
-    std::int64_t put = co_await s.write(buf, kMsgLen);
+    auto sent = co_await s.write_some(std::as_bytes(std::span{buf}));
+    const std::int64_t put =
+        sent.ok() ? static_cast<std::int64_t>(sent.bytes) : -1;
     if (put != kMsgLen) break;
-    std::int64_t got = co_await s.read(buf, kMsgLen);
+    auto received = co_await s.read_some(
+        std::as_writable_bytes(std::span{buf}));
+    const std::int64_t got = received.ok()
+                                 ? static_cast<std::int64_t>(received.bytes)
+                                 : -1;
     if (got != kMsgLen) break;
   }
   co_return 0;  // s drops -> client fd closed
@@ -162,11 +176,15 @@ int run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) {
   // backlog MUST cover the whole burst (all N client fibers spawn at once): a starved
   // backlog drops overflow SYNs -> TCP SYN-retransmit (1s backoff) -> a fabricated
   // super-linear blowup that looks like a broken accept path (see accept_bench).
-  TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port, conns);
-  if (!ls.valid()) {  // port still in TIME_WAIT etc -> skip this iteration cleanly
+  hyle::io::TcpListenOptions options;
+  options.backlog = conns;
+  auto opened_listener = TcpListener::bind(
+      io, 0, Endpoint::loopback(AddressFamily::kIpv4, port), options);
+  if (!opened_listener.has_value()) {  // port still in TIME_WAIT etc -> skip cleanly
     sched.shutdown();
     return -1;
   }
+  TcpListener ls = std::move(*opened_listener);
 
   std::atomic<int> served{0};
   std::vector<std::unique_ptr<Drive>> hdrives;

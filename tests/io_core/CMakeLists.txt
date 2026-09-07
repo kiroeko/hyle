@@ -1,4 +1,5 @@
 hyle_add_test(io_core SOURCES proactor_test.cc)
+hyle_add_test(io_core NAME endpoint SOURCES endpoint_test.cc)
 if(TARGET hyle_io_core_test)
   target_include_directories(hyle_io_core_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src/io_core")

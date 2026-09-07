@@ -45,7 +45,7 @@
   IOCP 与 macOS kqueue 是 backend correctness/cost holdout，除非另有合格同合同性能任务；
 - instrument profile：`closure-correctness-v1` + `closure-perf-v1`；
 - strong peers：Asio `8806a6803cde7054c3049d3666d3ec36786568c5` 与 Seastar
-  `9b95b250cc64af11b84fa5ea3d677f76b37fdef0`；Linux kernel/io_uring、Windows IOCP 与 POSIX socket/file
+  `78f64e2317b19c7e34ba61f5e8ea85f083eca1da`；Linux kernel/io_uring、Windows IOCP 与 POSIX socket/file
   API 是定义性平台合同，不冒充第三方；
 - 使用原型 provenance：primary model-file pipeline 与 loopback request path 是
   `NORTH_STAR_JOURNEY`；llama.cpp/ggml 是 `REAL_CONSUMER` reference；纯 submit/reap microcase 只能是
@@ -95,9 +95,132 @@ ownership/target 删除，新 factor 的独立 `AUDITED` 卡授权新增 owner/A
 - 冻结普通调用草图、guide 选型和 primary/holdout 的完整语义等价矩阵；
 - 生成有限 `KEEP/FIX/BORROW/DEFER/REJECT` 集，未完成项不得进入实现。
 
+## Resume reference lock（2026-09-08）
+
+本轮在 canonical Windows checkout 重新锁定并扫描以下 clean reference tree；commit 只标识审计输入，
+不构成 HYLE 产品依赖：
+
+| reference | commit | 本卡使用的真实形状 |
+|---|---|---|
+| llama.cpp | `e71b80510c848c00175924ecf3c40333ccae8eb5` | model load/direct IO、RPC exact stream、HTTP server、SSE、Unix socket、download |
+| standalone ggml | `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` | framed RPC、remote transport、shared-memory/RDMA owner boundary |
+| ds4 | `f62ca29a308724cde5bc99134ede19104b2a3260` | compact HTTP/SSE server、SSD/model-file access、browser WebSocket evidence |
+| vLLM | `51da0ca66c8065619c79e35dff97aa99aeaf5644` | HTTP streaming/disconnect、realtime WebSocket、gRPC、KV offload/file IO |
+| SGLang | `dcebe8c4733a5cb802fb679e0c8fbb886e2801b0` | HTTP/SSE disconnect、gateway pooling/timeouts/TLS、gRPC/local IPC |
+| Asio | `8806a6803cde7054c3049d3666d3ec36786568c5` | endpoint、buffer sequence、resolver、socket/file cancellation contracts |
+| Seastar | `78f64e2317b19c7e34ba61f5e8ea85f083eca1da` | shard-per-core transport、streams/backpressure、DMA file IO、Unix sockets |
+
+这些消费者共同证明 HTTP(S) server/streaming 是 IO 产品必须承载的基础设施，但 application route、
+OpenAI JSON schema、auth/batching/model policy 不属于 HYLE IO。它们也共同要求 base transport 先提供 typed
+endpoint/error、deadline/cancel、scatter/gather、local IPC 与 bounded flow control；不能用 echo benchmark
+替代这些合同。WebSocket 有 ds4/vLLM 的真实证据，但它是独立协议候选，不偷偷塞进 `io_core`。
+
+## Capability-family coverage map（`AUDITED`）
+
+本表把全局 `IO-A-01..54` 账本投影到 `io_core` owner；TLS/HTTP/H2/transfer 的缺口只标明路由，不由
+本卡实现或签署。
+
+| family | normal consumer task | baseline | verdict / owner |
+|---|---|---|---|
+| completion backend、per-worker shard、batched reap/park wake | scheduler-bound async runtime | IOCP/io_uring/epoll/kqueue 已有，稳态 completion 无逐项 heap | `COMPLETE / KEEP`，backend engine 变成 private seam |
+| public backend/capability inspection | 调优、诊断与 fallback | 数据与 `Proactor` raw object 绑定 | `PARTIAL / FIX`，保留 typed snapshot，隐藏 submit token |
+| owning IPv4/IPv6 endpoint | parse/format/compare/local-peer/DNS/connect/UDP | `void*+len`、128-byte array 与 bool parser 混用 | `MISSING / FIX` |
+| portable failure and partial-transfer result | setup、IO、EOF、cancel、deadline、native diagnosis | invalid object/bool/null/negative errno 混用 | `MISSING / FIX`，普通面接 Error；raw integer 仅 private backend |
+| one-shot TCP/UDP/File | borrowed buffer、partial、EOF、RAII owner | 四 backend 基础机制已有 | `COMPLETE / KEEP`，在新 typed facade 下复用 |
+| one operation budget | base/deadline/cancel 与二者组合 | 每种操作复制三套入口，TLS/HTTP 无法继承 | `PARTIAL / FIX`；一个 options/budget 形状，默认腿无额外分配 |
+| TCP setup/options/inspection | bind/listen/connect/half-close/keepalive/reuse-port | 基础 setup 完整，错误与选项过窄 | `PARTIAL / FIX` |
+| async resolver + hostname connect | DNS、总期限、IPv6/IPv4 fallback | blocking pool + 固定 8 地址；无取消/Happy Eyeballs | `PARTIAL / FIX` |
+| scatter/gather stream/datagram/file IO | framed RPC header+payload、分段 buffer | 单 buffer only | `MISSING / FIX` |
+| local stream/listener | 同机 inference frontend/backend | 无 | `MISSING / FIX`，POSIX Unix domain + Windows named pipe/真实等价腿 |
+| advanced Linux registered/provided-buffer route | 高吞吐 receive/fixed files | raw io_uring 扩展机制完整 | `COMPLETE / BORROW`，重塑为明确 expert extension；不污染 portable API |
+| positional/direct model-file IO | large model read、alignment、queue depth | positional/metadata/fallback 有；direct/alignment 无，native owner 与 Platform 重复 | `PARTIAL / FIX`，adopt `platform_fs::FileHandle` owner，显式 direct policy |
+| async file stream/read-ahead/watcher/pipe | 顺序流、reload、child-process pipe | 无 | `DEFER`：没有本轮 owner-ready dependency；分别由后续 consumer card 准入 |
+| signal-driven shutdown | SIGINT/SIGTERM/Ctrl-C -> normal completion | single process waiter 已有 | `COMPLETE / KEEP`，补 typed failure/lifetime negative tests |
+| plain file-to-socket/sendfile | static/model serving | 无 | `ROUTE io_transfer`，TLS fallback 与 transfer policy 不进 core |
+| TLS / HTTP1 / HTTP2 / reliable download | HTTPS、REST/SSE、multiplex、model fetch | 当前代码仍错误同 target | `ROUTE io_tls/io_http/io_http2/io_transfer` |
+| QUIC/gRPC/RDMA/WebSocket | future protocol/transport | 无统一 owner | `DEFER/REJECT`：只保留真实 consumer watchlist；不得在 core 手写协议 |
+
+### Public/source reverse trace
+
+| existing surface | audit verdict |
+|---|---|
+| `capabilities.h` | `KEEP/FIX`：只拥有产品与 backend typed facts |
+| `io_context.h` | `KEEP/FIX`：自然 options、status 与 capability 查询；不返回 public `Proactor&` |
+| `tcp.h`, `udp.h`, `file.h`, `dns.h`, `signal.h` | `KEEP/FIX`：成为普通 typed API；不泄 raw sockaddr、负 native code 或 backend slot |
+| `proactor.h`, `net.h`, `net_cancel.h`, `net_timeout.h` | `INTERNALIZE`：completion token、tagged stack/heap slot 与 raw submit 是实现机制 |
+| `net_multishot.h` | portable raw token 部分 `INTERNALIZE`；经 capability 成功取得的 io_uring accelerator 重塑为 explicit expert header |
+| `coroutine_transport.h` | `REJECT` 独立用户概念：它是 package/target compatibility fact，不应要求普通用户选择一个机制 header |
+| `tls.h`, `http.h`, `http2.h` | `MOVE` 到各自 factor；公开 namespace 仍为 `hyle::io`，用户不看内部 factor 名 |
+| 11 个 `src/io_core/*.cc` 与 pico/nghttp2/OpenSSL | core 只留下 backend/context/file/net/DNS/signal；协议源码与第三方 owner 随 factor 移走 |
+
+反向扫描未找到 HYLE 产品模块直接消费 raw Proactor/negative errno；当前直接 product consumer 只通过
+Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不是为 benchmark 删除正常能力。
+
+## API/usability and cost freeze
+
+- 用户只认识 `hyle::io` 产品、namespace 与 `<hyle/io/...>` 头；`io_core` 只在 component graph、target 和
+  维护文档出现。以后所有内部子因子也遵守该规则，禁止再与产品根同名；
+- 普通网络地址是 owning typed endpoint，支持 IPv4/IPv6 parse/format/equality/port；native sockaddr view
+  只在 implementation boundary。local endpoint 是独立类型，不能用一个 family flag 假装 Windows pipe
+  与 Unix path 生命周期相同；
+- setup 返回 `Result<Resource>`；一次传输返回同时保留 bytes、EOF 与 `Status` 的 typed outcome。错误附带
+  portable `StatusCode` 和正确的 Posix/Win32/WinSock native domain；用户不比较 magic negative integer；
+- `OperationOptions` 统一 absolute monotonic deadline 与 optional `CancelToken`。无 options 的普通 awaitable
+  保持 inline、无额外 heap/虚分派；带 deadline/cancel 的慢腿允许使用 IoContext 注入 allocator，但一个
+  operation 仍至多一次 completion wake，late completion 不触碰已释放 frame；
+- scatter/gather 接受 borrowed span-of-spans，返回跨 segment 的精确 progress；提交期间 descriptor 与 bytes
+  均须存活，超过平台 segment/byte limit 返回 typed error而非截断；
+- resolver 返回 owning endpoint sequence，不固定截断为 8；hostname connect 用一个总 budget 按 RFC 8305
+  思路错峰尝试，失败关闭所有 loser，成功只留下一个 owner；
+- File 继续是唯一 async owner，但从/向 `platform_fs::FileHandle` 显式 adopt/release，避免两个 RAII owner。
+  Direct I/O 必须显式请求、查询/返回 alignment，不支持时诚实失败，绝不静默回 buffered；
+- `Proactor`、`Completion`、raw fd/user_data 和 backend-specific negative result 变为 implementation detail。
+  Linux acceleration 只经显式 capability/extension handle 暴露，portable 调用不存在恒失败 stub；
+- P0 常态成本：single-buffer base op 无逐项 allocation/copy/lock；one ready completion 至多一次 wake；每
+  worker 一个 owner ring；scatter/gather 一次 native submission；DNS blocking fallback 不占 worker；bounded
+  queue/buffer pressure 必须可观察。P1 只在语义等价的 loopback/framed-RPC/model-file journeys 上裁决，
+  不拿 raw submit 对完整 typed lifecycle，也不以地址/顺序翻转点值改 API。
+
+## Owner 七问直答（`AUDITED`）
+
+1. **第三方路径：** core backend 自实现 OS API；没有运行时第三方。pico、OpenSSL、nghttp2 必须随协议
+   factor 移出。Asio/Seastar 与四组引擎只作证据。
+2. **功能完整度：** 当前机制底座成立，但 typed error/endpoint、Happy Eyeballs、vectored/direct IO 与
+   local IPC 是已证实的 `MUST`，未实现前不能关闭；高级 UDP、watcher、pipe/RDMA 暂无本轮准入。
+3. **现有 HYLE 复用：** Error、Time、Platform FS、Mem、Container buffer 与 Sched cancellation/waker 应
+   成为真实 direct edge；不得复制 native file owner、time scalar、queue 或 error taxonomy。
+4. **性能：** backend 机制已有结构优势，但旧 microbench 不能证明产品 SOTA。先锁定零分配/copy/wake/
+   syscall 账本，再对 framed RPC、model file 与 server loop 做公平 P1；系统调用延迟不是忽略用户态税的理由。
+5. **Native FFI：** 当前无具名 Java/C# consumer，N/A；不恢复旧 C facade，也不导出 awaitable/template。
+6. **Build/delivery：** factor 名已纠正，但物理 target 仍错误含三个协议和三类依赖；必须拆 target/option/
+   package owner，并验证 source/static/shared 与 exact-factor consumer。
+7. **易用性/文档：** 当前 guide 教用户理解 Proactor、raw sockaddr 和负数，是实现泄漏；需按“何时用
+   TCP/UDP/local/file、何时加 budget、何时选择协议 factor”重写，并清除旧 C ABI/benchmark 结论。
+
+## Frozen finite FIX set（`AUDITED`）
+
+| ID | exact authorized work | required gate |
+|---|---|---|
+| `IOCORE-F01` | 把 raw completion/proactor/net slot internalize；公开 capability 经 IoContext，保留无恒失败 stub 的 Linux expert accelerator | header self-containment、raw symbol/include negative scan、base cost/codegen |
+| `IOCORE-F02` | 接入 Error，建立 typed endpoint、native error mapping、setup/transfer outcome | IPv4/6/invalid/native-domain/EOF/partial/OOM tests |
+| `IOCORE-F03` | 用一个 operation-options 合同覆盖 base/deadline/cancel 与组合 race；默认腿保持零分配 | cancel-before/during/after、deadline race、late completion、ASan/TSan |
+| `IOCORE-F04` | 完成 socket option/endpoint inspection、owning resolver 与 Happy-Eyeballs hostname connect | dual-stack、port 0、reuse-port、all-fail cleanup、total budget |
+| `IOCORE-F05` | 增加 portable scatter/gather TCP/UDP/File operation 与 progress cursor | segment/byte limits、partial progress、one native submit、three backends |
+| `IOCORE-F06` | 增加 `LocalListener/LocalStream`；POSIX Unix socket 与 Windows named-pipe 是各自真实 lifecycle | path/cleanup/permissions/connect/cancel/close、三平台 |
+| `IOCORE-F07` | File 与 Platform owner 互操作，增加显式 Direct I/O/alignment 与 large positional chunking | buffered/direct unsupported/alignment/tail/short IO、model-file journey |
+| `IOCORE-F08` | 修正 IoContext/Signal teardown、allocator/queue depth/backpressure 与 invalid construction 状态 | init rollback、inflight destroy、repeated signal/move、resource ledger |
+| `IOCORE-F09` | 建立真正的 `io_core` source/header/target；协议与依赖由各自合法 card 接走 | exact factor、source/static/shared、feature-off/no probe、offline package |
+| `IOCORE-F10` | 重写 architecture/user/evidence，运行限定 correctness、sanitizer、P1 primary+holdout 和红队 | no apple-vs-orange、docs/closure checker、terminal receipt |
+
+本轮产品修改只允许上述十项；HTTP body/router/server、TLS config、HTTP/2 stream 与 download 分别进入其
+自己的 card。若某项需要重开已 FROZEN dependency、发明公共 scheduler select 或超过两次机制诊断，本卡
+按合同进入 `BLOCKED`，不能在 IO 里偷偷实现第二份。
+
+`SCOPED -> AUDITED` 的前态 registry snapshot 位于
+`C:\public\project-hyle\_validation\io-core-v1\registry-before-audited.json`，SHA-256
+`1C5F42AB5840889B9E943FC7E98ED5CBB97B4268F746F1690899FCA44580AB83`。
+
 ## Current decision
 
-`SCOPED / ACTIVE`。owner 于 2026-09-08 明确恢复 IO，并纠正内部 factor 身份为 `io_core`；原 baseline、
-P1 tier、机器、仪器和 8-hour 有界预算继续有效。身份迁移只修正 component/target/目录和当前文档，
-没有改变公共 API 或算法，也不冒充 `AUDITED`。下一门是完成本卡 audit queue、四组推理 consumer 与成熟
-peer 对账，并冻结有限 `FIX/BORROW/DEFER/REJECT` 集；在此之前仍不得修改产品实现。
+`AUDITED / ACTIVE`。identity、能力超集、自然 API、P0 成本、ownership 与有限 FIX 集已冻结。下一步只可
+按 `IOCORE-F01..F10` 实施；任何新 protocol/API/benchmark idea 都不得追加进本候选。

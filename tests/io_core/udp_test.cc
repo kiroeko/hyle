@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
 
 #include "hyle/io/io_context.h"
-#include "hyle/io/tcp.h"  // resolve_addr (shared IPv4 literal -> sockaddr helper)
 #include "hyle/io/udp.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -33,9 +33,8 @@
 // send); the server echoes to exactly the address recv_from reported.
 
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
-using hyle::io::udp_bind;
-using hyle::io::udp_socket;
+using hyle::io::AddressFamily;
+using hyle::io::Endpoint;
 using hyle::io::UdpSocket;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
@@ -64,17 +63,23 @@ struct UdpResult {
 Task<int> server_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
 #if !defined(_WIN32)
   r->server_nonblocking.store(
-      (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      (::fcntl(static_cast<int>(sock->native_handle()), F_GETFL, 0) & O_NONBLOCK) != 0,
       std::memory_order_release);
 #endif
   char buf[64] = {};
-  alignas(16) unsigned char peer[UdpSocket::kSockaddrCap];
-  std::int64_t n = co_await sock->recv_from(buf, sizeof(buf), &peer);
+  auto received = co_await sock->receive_from(
+      std::as_writable_bytes(std::span{buf}));
+  const std::int64_t n = received.ok()
+                             ? static_cast<std::int64_t>(received.bytes)
+                             : -1;
   r->server_recv.store(n, std::memory_order_release);
   if (n > 0) {
-    // Echo back to the exact source. The peer length: IPv4 sockaddr_in = 16.
-    std::int64_t w =
-        co_await sock->send_to(buf, static_cast<std::uint32_t>(n), &peer, 16);
+    auto sent = co_await sock->send_to(
+        std::as_bytes(std::span{buf, static_cast<std::size_t>(n)}),
+        received.peer);
+    const std::int64_t w = sent.ok()
+                               ? static_cast<std::int64_t>(sent.bytes)
+                               : -1;
     r->server_sent.store(w, std::memory_order_release);
   }
   r->server_done.store(true, std::memory_order_release);
@@ -85,21 +90,23 @@ Task<int> server_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
 Task<int> client_coro(AllocatorRef, UdpSocket* sock, UdpResult* r) {
 #if !defined(_WIN32)
   r->client_nonblocking.store(
-      (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      (::fcntl(static_cast<int>(sock->native_handle()), F_GETFL, 0) & O_NONBLOCK) != 0,
       std::memory_order_release);
 #endif
-  alignas(16) unsigned char dest[128];
-  std::uint32_t dlen = 0;
-  if (!resolve_addr("127.0.0.1", kPort, &dest, &dlen)) {
+  static const char kMsg[] = "udp-wrapper-echo";
+  auto sent = co_await sock->send_to(
+      std::as_bytes(std::span{kMsg}),
+      Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  if (!sent.ok()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  static const char kMsg[] = "udp-wrapper-echo";
-  co_await sock->send_to(kMsg, sizeof(kMsg), &dest, dlen);
-  alignas(16) unsigned char from[UdpSocket::kSockaddrCap];
-  r->client_recv.store(
-      co_await sock->recv_from(r->client_got, sizeof(kMsg), &from),
-      std::memory_order_release);
+  auto received = co_await sock->receive_from(
+      std::as_writable_bytes(std::span{r->client_got, sizeof(kMsg)}));
+  r->client_recv.store(received.ok()
+                           ? static_cast<std::int64_t>(received.bytes)
+                           : -1,
+                       std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -117,10 +124,13 @@ TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
 
-  UdpSocket srv = udp_bind(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(srv.valid()) << "udp_bind failed (port in use?)";
-  UdpSocket cli = udp_socket(io, kOwner);
-  ASSERT_TRUE(cli.valid());
+  auto server = UdpSocket::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(server.has_value()) << "UDP bind failed (port in use?)";
+  UdpSocket srv = std::move(*server);
+  auto client = UdpSocket::open(io, kOwner);
+  ASSERT_TRUE(client.has_value());
+  UdpSocket cli = std::move(*client);
 
   auto r = std::make_unique<UdpResult>();
   auto ds = std::make_unique<Drive>();

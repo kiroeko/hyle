@@ -39,6 +39,16 @@
 
 namespace hyle::io {
 
+struct IoContextOptions {
+  // One completion queue per scheduler worker. The value is a capacity hint;
+  // backends may round it to a supported queue size.
+  unsigned queue_depth = 256;
+  bool defer_taskrun = false;
+  mem::AllocatorRef allocator = mem::system_allocator();
+  unsigned max_blocking_threads = 512;
+  time::Duration blocking_keep_alive = std::chrono::seconds(10);
+};
+
 class IoContext {
  public:
   // Stands up one proactor per worker and registers the poll hook on `sched`.
@@ -46,15 +56,15 @@ class IoContext {
   // this ownership invariant is a fatal programming error. `sched` must outlive
   // this IoContext. valid() reports whether every ring came up.
   //
-  // `defer_taskrun`: opt into io_uring DEFER_TASKRUN+SINGLE_ISSUER (via the R_DISABLED
+  // `options.defer_taskrun`: opt into io_uring DEFER_TASKRUN+SINGLE_ISSUER (via the R_DISABLED
   // worker-enable lifecycle). DEFAULT FALSE (COOP_TASKRUN) because DEFER's R_DISABLED
   // ring cannot register a provided-buffer ring from the constructing thread -- so a
   // context that uses multishot recv / zero-copy buffer rings MUST keep this false.
-  // Set true only for a pure recv/send workload (no buf-ring) that wants DEFER's lower
+  // Set it only for a pure recv/send workload (no buf-ring) that wants DEFER's lower
   // task_work overhead. io_uring only; ignored on IOCP/epoll. (COOP already captures
   // most of the task_work-batching win -- see benchmarks-io.md.)
   HYLE_IO_API IoContext(sched::Scheduler& sched, unsigned num_workers,
-                        bool defer_taskrun = false) noexcept;
+                        IoContextOptions options = {}) noexcept;
   HYLE_IO_API ~IoContext();
   IoContext(const IoContext&) = delete;
   IoContext& operator=(const IoContext&) = delete;
@@ -62,6 +72,7 @@ class IoContext {
   IoContext& operator=(IoContext&&) = delete;
 
   bool valid() const noexcept { return valid_; }
+  const Status& status() const noexcept { return status_; }
 
   // The proactor for a specific worker (used by the poll hook + by awaitables via
   // proactor_for_current()). Index must be < num_workers.
@@ -91,6 +102,10 @@ class IoContext {
   // use it. The pool belongs to the context and is drained on destruction.
   sched::BlockingPool& blocking_pool() noexcept { return blocking_; }
 
+  // Backs only bounded operations whose state must survive an early timeout or
+  // cancellation return. Ordinary operations remain stack-only.
+  mem::AllocatorRef operation_allocator() const noexcept { return allocator_; }
+
  private:
   static bool poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
@@ -98,6 +113,8 @@ class IoContext {
   bool poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
 
   sched::Scheduler& sched_;
+  mem::AllocatorRef allocator_;
+  Status status_;
   std::vector<std::unique_ptr<Proactor>> rings_;  // one per worker (non-movable)
   sched::BlockingPool blocking_;
   bool valid_ = false;

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -27,13 +28,11 @@
 // (shard-per-core) so the connection's io stays on its core.
 
 using hyle::io::IoContext;
-using hyle::io::resolve_addr;
+using hyle::io::Endpoint;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::tcp_listen;
-using hyle::io::tcp_read_exact;
-using hyle::io::tcp_socket;
-using hyle::io::tcp_write_all;
+using hyle::io::read_exact;
+using hyle::io::write_all;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -61,22 +60,30 @@ struct EchoResult {
 
 // Server: accept one connection, read a message, echo it back, close.
 Task<int> server_coro(AllocatorRef, IoContext*, TcpListener* ls, EchoResult* r) {
-  TcpStream conn = co_await ls->accept(kOwner);
-  if (!conn.valid()) {
+  auto accepted = co_await ls->accept(kOwner);
+  if (!accepted.has_value()) {
     r->server_done.store(true, std::memory_order_release);
     co_return 0;
   }
+  TcpStream conn = std::move(*accepted);
 #if !defined(_WIN32)
   r->accepted_nonblocking.store(
-      (::fcntl(static_cast<int>(conn.fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      (::fcntl(static_cast<int>(conn.native_handle()), F_GETFL, 0) & O_NONBLOCK) != 0,
       std::memory_order_release);
 #endif
   char buf[64] = {};
-  std::int64_t n = co_await tcp_read_exact(
-      system_allocator(), conn, buf, sizeof("tcp-wrapper-echo"));
+  auto read = co_await read_exact(
+      system_allocator(), conn,
+      std::as_writable_bytes(
+          std::span{buf, sizeof("tcp-wrapper-echo")}));
+  const std::int64_t n =
+      read.ok() ? static_cast<std::int64_t>(read.bytes) : -1;
   if (n > 0) {
-    std::int64_t w = co_await tcp_write_all(
-        system_allocator(), conn, buf, static_cast<std::uint32_t>(n));
+    auto written = co_await write_all(
+        system_allocator(), conn,
+        std::as_bytes(std::span{buf, static_cast<std::size_t>(n)}));
+    const std::int64_t w =
+        written.ok() ? static_cast<std::int64_t>(written.bytes) : -1;
     r->server_echoed.store(w, std::memory_order_release);
   }
   r->server_done.store(true, std::memory_order_release);
@@ -85,38 +92,42 @@ Task<int> server_coro(AllocatorRef, IoContext*, TcpListener* ls, EchoResult* r) 
 
 // Client: connect, send a message, read the echo, verify.
 Task<int> client_coro(AllocatorRef, IoContext* io, EchoResult* r) {
-  TcpStream s = tcp_socket(*io, kOwner);
-  if (!s.valid()) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
+  TcpStream s = std::move(*opened);
 #if !defined(_WIN32)
   r->client_nonblocking.store(
-      (::fcntl(static_cast<int>(s.fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      (::fcntl(static_cast<int>(s.native_handle()), F_GETFL, 0) & O_NONBLOCK) != 0,
       std::memory_order_release);
 #endif
-  // A sockaddr_storage-sized, suitably-aligned buffer; resolve_addr fills a
-  // sockaddr_in into it. Lives on the coroutine frame so it outlives the connect.
-  alignas(16) unsigned char ss[128];
-  std::uint32_t len = 0;
-  if (!resolve_addr("127.0.0.1", kPort, &ss, &len)) {
+  auto endpoint = Endpoint::parse("127.0.0.1", kPort);
+  if (!endpoint.has_value()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
-  std::int64_t cc = co_await s.connect(&ss, len);
-  if (cc != 0) {
+  auto connected = co_await s.connect(*endpoint);
+  if (!connected.ok()) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
   r->connected.store(true, std::memory_order_release);
-  r->socket_options.store(s.set_nodelay() && s.set_keepalive(),
+  r->socket_options.store(s.set_nodelay().ok() && s.set_keepalive().ok(),
                           std::memory_order_release);
   static const char kMsg[] = "tcp-wrapper-echo";
-  co_await tcp_write_all(system_allocator(), s, kMsg, sizeof(kMsg));
-  r->half_closed.store(s.shutdown_write(), std::memory_order_release);
+  auto written =
+      co_await write_all(system_allocator(), s, std::as_bytes(std::span{kMsg}));
+  if (!written.ok()) {
+    r->client_done.store(true, std::memory_order_release);
+    co_return 0;
+  }
+  r->half_closed.store(s.shutdown_write().ok(), std::memory_order_release);
   r->client_recv.store(
-      co_await tcp_read_exact(system_allocator(), s, r->client_got,
-                              sizeof(kMsg)),
+      static_cast<std::int64_t>((co_await read_exact(
+          system_allocator(), s,
+          std::as_writable_bytes(std::span{r->client_got, sizeof(kMsg)}))).bytes),
       std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
   co_return 0;
@@ -130,14 +141,9 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 }  // namespace
 
 TEST(IoTcp, ResolvesIpv4AndIpv6Literals) {
-  alignas(16) unsigned char storage[128]{};
-  std::uint32_t len = 0;
-  EXPECT_TRUE(resolve_addr("127.0.0.1", 80, storage, &len));
-  EXPECT_GT(len, 0u);
-  EXPECT_TRUE(resolve_addr("::1", 443, storage, &len));
-  EXPECT_GT(len, 0u);
-  EXPECT_FALSE(resolve_addr("localhost", 80, storage, &len));
-  EXPECT_EQ(len, 0u);
+  EXPECT_TRUE(Endpoint::parse("127.0.0.1", 80).has_value());
+  EXPECT_TRUE(Endpoint::parse("::1", 443).has_value());
+  EXPECT_FALSE(Endpoint::parse("localhost", 80).has_value());
 }
 
 TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
@@ -146,8 +152,10 @@ TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
 
-  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
-  ASSERT_TRUE(ls.valid()) << "tcp_listen failed (port in use?)";
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(hyle::io::AddressFamily::kIpv4, kPort));
+  ASSERT_TRUE(listener.has_value()) << "TCP bind failed (port in use?)";
+  TcpListener ls = std::move(*listener);
 
   auto r = std::make_unique<EchoResult>();
   auto ds = std::make_unique<Drive>();

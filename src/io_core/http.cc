@@ -1,6 +1,7 @@
 #include "hyle/io/http.h"
 
 #include <cstring>
+#include <span>
 
 #include "hyle/mem/region.h"
 #include "picohttpparser.h"
@@ -28,7 +29,9 @@ sched::Task<std::int64_t> http_transport_read(mem::AllocatorRef alloc,
 #else
   (void)alloc;
 #endif
-  co_return co_await transport.tcp_.read(buffer, length);
+  auto result = co_await transport.tcp_.read_some(
+      std::span{static_cast<std::byte*>(buffer), length});
+  co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
 }
 
 sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef alloc,
@@ -41,7 +44,9 @@ sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef alloc,
 #else
   (void)alloc;
 #endif
-  co_return co_await transport.tcp_.write(buffer, length);
+  auto result = co_await transport.tcp_.write_some(
+      std::span{static_cast<const std::byte*>(buffer), length});
+  co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
 }
 
 sched::Task<int> http_transport_shutdown(mem::AllocatorRef alloc,
@@ -52,7 +57,7 @@ sched::Task<int> http_transport_shutdown(mem::AllocatorRef alloc,
 #else
   (void)alloc;
 #endif
-  co_return transport.tcp_.shutdown_write() ? 0 : -1;
+  co_return transport.tcp_.shutdown_write().ok() ? 0 : -1;
 }
 
 namespace {
