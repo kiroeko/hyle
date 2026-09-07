@@ -4,17 +4,17 @@
 #include <cstdint>
 #include <optional>
 
-#include "hyle/error/status.h"
 #include "hyle/core/environment.h"
+#include "hyle/error/status.h"
 #include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_IO_API
+#define HYLE_IO_API
 #elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
+#define HYLE_IO_API HYLE_EXPORT
 #else
-#  define HYLE_IO_API HYLE_IMPORT
+#define HYLE_IO_API HYLE_IMPORT
 #endif
 
 namespace hyle::sched {
@@ -31,13 +31,14 @@ struct OperationOptions {
   // construction helper; wall-clock timestamps are intentionally a different
   // type and cannot be passed accidentally.
   std::optional<time::MonotonicTimePoint> deadline;
-  const sched::CancelToken* cancel = nullptr;
+  const sched::CancelToken *cancel = nullptr;
 };
 
 // Transfer outcome keeps partial progress even when the terminal state is EOF,
 // cancellation, timeout, or an OS failure. Result<size_t> alone cannot preserve
-// both a useful partial byte count and the error that stopped a composed read or
-// write. A successful read with eof=true may have transferred zero or more bytes.
+// both a useful partial byte count and the error that stopped a composed read
+// or write. A successful read with eof=true may have transferred zero or more
+// bytes.
 struct [[nodiscard]] TransferResult {
   std::size_t bytes = 0;
   Status status{};
@@ -72,9 +73,17 @@ inline constexpr NativeOperationDomain kFileNativeDomain =
 // Translate the private proactor's signed result at the ordinary C++ boundary.
 // `read_operation` gives zero its EOF meaning; a zero-length caller request is
 // handled before submit and therefore never becomes a false EOF here.
-HYLE_IO_API TransferResult transfer_from_native(
-    std::int64_t result, NativeOperationDomain domain,
-    const char* operation, bool read_operation) noexcept;
+HYLE_IO_API TransferResult transfer_from_native(std::int64_t result,
+                                                NativeOperationDomain domain,
+                                                const char *operation,
+                                                bool read_operation) noexcept;
 
-}  // namespace detail
-}  // namespace hyle::io
+// Translate a zero-on-success native completion used by setup, metadata, sync,
+// and close operations. Positive values are also successful so an opened
+// native handle can be validated before it is wrapped by an owning C++ type.
+HYLE_IO_API Status status_from_native_result(std::int64_t result,
+                                             NativeOperationDomain domain,
+                                             const char *operation) noexcept;
+
+} // namespace detail
+} // namespace hyle::io

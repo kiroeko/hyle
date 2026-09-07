@@ -1,228 +1,252 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
+#include <string_view>
 
-#include "hyle/core/assert.h"
+#include "hyle/container/small_vector.h"
+#include "hyle/error/result.h"
 #include "hyle/io/io_context.h"
-#include "hyle/io/net.h"  // IoOperation, to_token, sched bridge
-#include "hyle/io/proactor.h"
+#include "hyle/io/net.h"
+#include "hyle/io/net_budget.h"
+#include "hyle/io/operation.h"
+#include "hyle/platform/fs.h"
+#include "hyle/sched/coro.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_IO_API
+#define HYLE_IO_API
 #elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
+#define HYLE_IO_API HYLE_EXPORT
 #else
-#  define HYLE_IO_API HYLE_IMPORT
+#define HYLE_IO_API HYLE_IMPORT
 #endif
-
-// io-05 file io (capability C5). Async file read/write/stat/sync over the proactor,
-// co_await style like TcpStream. On io_uring these are REAL async ops (openat /
-// read / write / fsync / fallocate use their native SQE; regular-file read/write is
-// the one place io_uring genuinely beats epoll, which cannot async a regular file);
-// on IOCP read/write are real OVERLAPPED operations; epoll/kqueue cannot async a
-// regular file. The high-level File API therefore chooses per operation: native
-// proactor when the backend supports it, otherwise IoContext's blocking pool. No
-// synchronous disk syscall runs on a scheduler worker. The low-level Proactor
-// remains available for users who deliberately want exact backend mechanics.
-//
-// Shard-per-core like the socket wrappers: a File is bound to an owner worker's
-// ring, and its co_await ops MUST run on the fiber pinned there (Scheduler::
-// spawn_on), so submit + reap + resume stay single-threaded on one core.
-//
-// Independent of C2 (timeout io): file ops don't take deadlines here (open/stat/
-// fsync rarely need them; a slow disk is not a dead peer). Timeout/cancel is io-06.
-//
-// LIFETIME INVARIANT (shared with net.h's socket ops): an in-flight op parks its
-// IoOperation slot on the awaiting fiber's frozen stack and hands its address to
-// the kernel as the completion token. The fiber MUST NOT be destroyed while an op
-// is in flight -- the completion would write into freed memory. co_await always
-// waits for the completion, so ordinary use is safe; forcibly destroying a
-// suspended fiber mid-op is what cooperative cancellation (io-06/C3) will address.
 
 namespace hyle::io {
 
-// A co_await-able that submits ONE proactor file op and resumes with its result.
-// Distinct from net.h's socket ops only in which submit_* it calls; the suspend/
-// wake plumbing is identical (an IoOperation slot on the frozen fiber stack whose
-// address is the completion token). Result is >= 0 (fd / bytes / 0) or -errno.
-
-// co_await FileReadOp -> bytes read (>=0, 0 = EOF) or negative errno. Reads at
-// file `offset` (byte position), unlike a stream recv.
-struct FileReadOp {
-  IoContext* io;
-  std::intptr_t fd;
-  void* buf;
-  std::uint32_t len;
-  std::uint64_t offset;
-
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
-  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  std::int64_t await_resume() noexcept { return op_.result; }
+enum class FileAccess : std::uint8_t {
+  kRead,
+  kWrite,
+  kReadWrite,
 };
 
-// co_await FileWriteOp -> bytes written (>=0) or negative errno, at file `offset`.
-struct FileWriteOp {
-  IoContext* io;
-  std::intptr_t fd;
-  const void* buf;
-  std::uint32_t len;
-  std::uint64_t offset;
-
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
-  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  std::int64_t await_resume() noexcept { return op_.result; }
+enum class FileCacheMode : std::uint8_t {
+  kBuffered,
+  // The open must establish a real OS direct/non-buffered contract or fail.
+  // HYLE never silently falls back to buffered IO.
+  kDirect,
 };
 
-// co_await FileStatOp -> 0 on success (fills *out) or negative errno.
-struct FileStatOp {
-  IoContext* io;
-  std::intptr_t fd;
-  Proactor::FileStat* out;
-
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
-  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  std::int64_t await_resume() noexcept { return op_.result; }
+enum class FileSyncMode : std::uint8_t {
+  kDataAndMetadata,
+  kDataOnly,
 };
 
-// co_await FileSyncOp -> 0 on success or negative errno. datasync = fdatasync.
-struct FileSyncOp {
-  IoContext* io;
-  std::intptr_t fd;
-  bool datasync;
-
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
-  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  std::int64_t await_resume() noexcept { return op_.result; }
+struct FileOpenOptions {
+  FileAccess access = FileAccess::kRead;
+  bool create = false;
+  bool truncate = false;
+  FileCacheMode cache = FileCacheMode::kBuffered;
+  std::uint32_t create_permissions = 0644;
 };
 
-// co_await FileAllocOp -> 0 on success or negative errno (preallocate/extend).
-struct FileAllocOp {
-  IoContext* io;
-  std::intptr_t fd;
-  std::uint32_t mode;
-  std::uint64_t offset;
-  std::uint64_t len;
+// Direct IO has independent address, offset, and length constraints. Values
+// are powers of two and are 1 for an unconstrained dimension. Allocate through
+// HYLE Mem with memory_alignment and validate every request with accepts().
+struct DirectIoAlignment {
+  std::size_t memory_alignment = 1;
+  std::size_t offset_alignment = 1;
+  std::size_t length_alignment = 1;
 
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
-  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  std::int64_t await_resume() noexcept { return op_.result; }
+  [[nodiscard]] bool accepts(const void *buffer, std::uint64_t offset,
+                             std::size_t length) const noexcept {
+    if (length == 0)
+      return true;
+    const auto address = reinterpret_cast<std::uintptr_t>(buffer);
+    return buffer != nullptr && address % memory_alignment == 0 &&
+           offset % offset_alignment == 0 && length % length_alignment == 0;
+  }
 };
 
-// An open regular file. Move-only; co_await close() to release (the destructor
-// also closes synchronously if you drop it without awaiting close -- but prefer
-// co_await close() so the close itself is async on io_uring). read/write take an
-// explicit file offset; stat/sync/allocate are metadata ops. All co_await methods
-// MUST be awaited from the fiber pinned to owner_worker().
 class File {
- public:
+public:
   File() noexcept = default;
-  HYLE_IO_API File(IoContext& io, std::intptr_t fd, unsigned owner_worker) noexcept;
   HYLE_IO_API ~File();
-  HYLE_IO_API File(File&& o) noexcept;
-  HYLE_IO_API File& operator=(File&& o) noexcept;
-  File(const File&) = delete;
-  File& operator=(const File&) = delete;
+  HYLE_IO_API File(File &&other) noexcept;
+  HYLE_IO_API File &operator=(File &&other) noexcept;
+  File(const File &) = delete;
+  File &operator=(const File &) = delete;
 
-  bool valid() const noexcept { return fd_ >= 0; }
-  std::intptr_t fd() const noexcept { return fd_; }
+  // Adopt the sole owner produced by Platform. POSIX io_uring can submit an
+  // ordinary descriptor directly. A Windows FileHandle was not necessarily
+  // opened for OVERLAPPED IO, so adoption honestly uses the blocking fallback;
+  // open_file() remains the native asynchronous path there.
+  HYLE_IO_API static Result<File> adopt(IoContext &io, unsigned owner_worker,
+                                        platform::FileHandle &&handle) noexcept;
+
+  bool valid() const noexcept { return handle_.valid(); }
+  explicit operator bool() const noexcept { return valid(); }
+  std::intptr_t native_handle() const noexcept { return handle_.get(); }
   unsigned owner_worker() const noexcept { return owner_; }
+  FileCacheMode cache_mode() const noexcept { return cache_; }
+  DirectIoAlignment direct_alignment() const noexcept { return alignment_; }
 
-  FileReadOp read(void* buf, std::uint32_t len, std::uint64_t offset) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return FileReadOp{io_, fd_, buf, len, offset};
+  // Transfer ownership back to Platform. There must be no operation in flight;
+  // scheduler affinity and direct-IO metadata are intentionally discarded.
+  HYLE_IO_API platform::FileHandle release() noexcept;
+
+  struct ReadSomeAtAwaitable {
+    File *self = nullptr;
+    std::span<std::byte> buffer;
+    std::uint64_t offset = 0;
+    OperationOptions options{};
+    detail::BudgetState state{};
+    TransferResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API TransferResult await_resume() noexcept;
+  };
+
+  struct WriteSomeAtAwaitable {
+    File *self = nullptr;
+    std::span<const std::byte> buffer;
+    std::uint64_t offset = 0;
+    OperationOptions options{};
+    detail::BudgetState state{};
+    TransferResult immediate{};
+    bool immediate_ready = false;
+
+    HYLE_IO_API bool await_ready() noexcept;
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API TransferResult await_resume() noexcept;
+  };
+
+  ReadSomeAtAwaitable read_some_at(std::uint64_t offset,
+                                   std::span<std::byte> buffer,
+                                   OperationOptions options = {}) noexcept {
+    return ReadSomeAtAwaitable{this, buffer, offset, options};
   }
-  FileWriteOp write(const void* buf, std::uint32_t len,
-                    std::uint64_t offset) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
-    return FileWriteOp{io_, fd_, buf, len, offset};
-  }
-  FileStatOp stat(Proactor::FileStat* out) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    HYLE_FATAL_ASSERT(out != nullptr);
-    return FileStatOp{io_, fd_, out};
-  }
-  FileSyncOp sync(bool datasync = false) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return FileSyncOp{io_, fd_, datasync};
-  }
-  FileAllocOp allocate(std::uint64_t offset, std::uint64_t len,
-                       std::uint32_t mode = 0) noexcept {
-    HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return FileAllocOp{io_, fd_, mode, offset, len};
+  WriteSomeAtAwaitable write_some_at(std::uint64_t offset,
+                                     std::span<const std::byte> buffer,
+                                     OperationOptions options = {}) noexcept {
+    return WriteSomeAtAwaitable{this, buffer, offset, options};
   }
 
-  // co_await file.close() -> 0 or negative errno. Releases the fd (async on
-  // io_uring). After this the File is invalid; the destructor won't double-close.
-  struct CloseAwaitable {
-    File* self;
-    IoOperation op_{};
-    bool submitted_ = false;
+  struct InfoAwaitable {
+    File *self = nullptr;
+    Proactor::FileStat native{};
+    std::int64_t result = 0;
+    Status preparation{};
     bool await_ready() noexcept { return false; }
     HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-    std::int64_t await_resume() noexcept { return op_.result; }
+    HYLE_IO_API Result<platform::FileInfo> await_resume() noexcept;
   };
+
+  struct SyncAwaitable {
+    File *self = nullptr;
+    FileSyncMode mode = FileSyncMode::kDataAndMetadata;
+    IoOperation operation{};
+    bool submitted = false;
+    Status preparation{};
+    bool await_ready() noexcept { return false; }
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API Status await_resume() noexcept;
+  };
+
+  struct PreallocateAwaitable {
+    File *self = nullptr;
+    std::uint64_t offset = 0;
+    std::uint64_t length = 0;
+    IoOperation operation{};
+    bool submitted = false;
+    Status preparation{};
+    bool await_ready() noexcept { return false; }
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API Status await_resume() noexcept;
+  };
+
+  struct CloseAwaitable {
+    File *self = nullptr;
+    IoOperation operation{};
+    bool submitted = false;
+    bool await_ready() noexcept { return self == nullptr || !self->valid(); }
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
+    HYLE_IO_API Status await_resume() noexcept;
+  };
+
+  InfoAwaitable info() noexcept { return InfoAwaitable{this}; }
+  SyncAwaitable
+  sync(FileSyncMode mode = FileSyncMode::kDataAndMetadata) noexcept {
+    return SyncAwaitable{this, mode};
+  }
+  PreallocateAwaitable preallocate(std::uint64_t offset,
+                                   std::uint64_t length) noexcept {
+    return PreallocateAwaitable{this, offset, length};
+  }
   CloseAwaitable close() noexcept { return CloseAwaitable{this}; }
 
- private:
-  IoContext* io_ = nullptr;
-  std::intptr_t fd_ = -1;
+private:
+  HYLE_IO_API File(IoContext &io, platform::FileHandle &&handle,
+                   unsigned owner_worker, bool native_async,
+                   FileCacheMode cache, DirectIoAlignment alignment) noexcept;
+
+  IoContext *io_ = nullptr;
+  platform::FileHandle handle_;
   unsigned owner_ = 0;
+  bool native_async_ = false;
+  FileCacheMode cache_ = FileCacheMode::kBuffered;
+  DirectIoAlignment alignment_{};
+
+  friend struct OpenFileAwaitable;
 };
 
-// A co_await-able that opens `path` on `owner_worker`'s ring and wraps the fd in a
-// File. co_await it from the fiber pinned to owner_worker. On failure (negative
-// result) returns an invalid File (valid() == false). `path` must outlive the
-// co_await (keep it alive on the coroutine frame -- io_uring reads it when the op
-// runs). `flags` is a Proactor::OpenFlags bitmask; `mode` is the POSIX permission
-// for a newly created file (ignored on Windows).
-struct OpenAwaitable {
-  IoContext* io;
-  unsigned owner;
-  const char* path;
-  std::uint32_t flags;
-  std::uint32_t mode;
+// Owns the UTF-8 path across asynchronous open. The common short path remains
+// inline; long paths grow through IoContext's injected allocator rather than a
+// hidden global allocation. Open uses the blocking pool where the OS has no
+// asynchronous path, never a scheduler worker.
+struct OpenFileAwaitable {
+  HYLE_IO_API OpenFileAwaitable(IoContext &io, unsigned owner_worker,
+                                std::string_view path,
+                                FileOpenOptions options) noexcept;
+  HYLE_IO_API ~OpenFileAwaitable();
+  HYLE_IO_API OpenFileAwaitable(OpenFileAwaitable &&) noexcept;
+  HYLE_IO_API OpenFileAwaitable &operator=(OpenFileAwaitable &&) noexcept;
+  OpenFileAwaitable(const OpenFileAwaitable &) = delete;
+  OpenFileAwaitable &operator=(const OpenFileAwaitable &) = delete;
 
-  IoOperation op_{};
-  bool submitted_ = false;
-
-  bool await_ready() noexcept { return false; }
+  HYLE_IO_API bool await_ready() noexcept;
   HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
-  File await_resume() noexcept {
-    if (op_.result < 0) return File{};
-    return File{*io, static_cast<std::intptr_t>(op_.result), owner};
-  }
+  HYLE_IO_API Result<File> await_resume() noexcept;
+
+  IoContext *io = nullptr;
+  unsigned owner = 0;
+  FileOpenOptions options{};
+  container::SmallVector<char, 256, mem::AllocatorRef> path;
+  Status preparation{};
+  std::int64_t native_result = kSubmitFailed;
+  std::intptr_t native_handle = platform::FileHandle::kInvalid;
+  DirectIoAlignment alignment{};
+  bool native_async = false;
 };
 
-// co_await open_file(io, worker, "path", flags) -> File. Opens on `owner_worker`'s
-// ring; the returned File's fibers must be spawn_on(owner_worker) to service it on
-// that core. Default mode 0644 for created files.
-inline OpenAwaitable open_file(IoContext& io, unsigned owner_worker,
-                               const char* path, std::uint32_t flags,
-                               std::uint32_t mode = 0644) noexcept {
-  return OpenAwaitable{&io, owner_worker, path, flags, mode};
+inline OpenFileAwaitable open_file(IoContext &io, unsigned owner_worker,
+                                   std::string_view path,
+                                   FileOpenOptions options = {}) noexcept {
+  return OpenFileAwaitable(io, owner_worker, path, options);
 }
 
-}  // namespace hyle::io
+// Complete positional transfers preserve partial progress and reuse one
+// absolute deadline/cancellation budget across every native chunk.
+HYLE_IO_API sched::Task<TransferResult>
+read_exact_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+              std::span<std::byte> buffer,
+              OperationOptions options = {}) noexcept;
+HYLE_IO_API sched::Task<TransferResult>
+write_all_at(mem::AllocatorRef allocator, File &file, std::uint64_t offset,
+             std::span<const std::byte> buffer,
+             OperationOptions options = {}) noexcept;
+
+} // namespace hyle::io

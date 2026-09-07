@@ -11,7 +11,7 @@ constexpr std::int64_t kCanonicalCancelled = -125;
 constexpr std::int64_t kCanonicalTimedOut = -110;
 
 Status status_from_negative(std::int64_t result, NativeOperationDomain domain,
-                            const char* operation) noexcept {
+                            const char *operation) noexcept {
   if (result == kSubmitFailed)
     return Status::Unavailable("IO backend rejected the operation submission");
   if (result == kCanonicalCancelled)
@@ -26,21 +26,21 @@ Status status_from_negative(std::int64_t result, NativeOperationDomain domain,
     return Status::Unknown("native IO error is outside the supported range");
   const int code = static_cast<int>(magnitude);
   switch (domain) {
-    case NativeOperationDomain::kPosix:
-      return status_from_errno(code, operation);
-    case NativeOperationDomain::kWin32:
-      return status_from_win32(static_cast<std::uint32_t>(code), operation);
-    case NativeOperationDomain::kWinSock:
-      return status_from_winsock(code, operation);
+  case NativeOperationDomain::kPosix:
+    return status_from_errno(code, operation);
+  case NativeOperationDomain::kWin32:
+    return status_from_win32(static_cast<std::uint32_t>(code), operation);
+  case NativeOperationDomain::kWinSock:
+    return status_from_winsock(code, operation);
   }
   return Status::Unknown(operation);
 }
 
-}  // namespace
+} // namespace
 
 TransferResult transfer_from_native(std::int64_t result,
                                     NativeOperationDomain domain,
-                                    const char* operation,
+                                    const char *operation,
                                     bool read_operation) noexcept {
   if (result < 0)
     return TransferResult{0, status_from_negative(result, domain, operation),
@@ -49,4 +49,11 @@ TransferResult transfer_from_native(std::int64_t result,
                         read_operation && result == 0};
 }
 
-}  // namespace hyle::io::detail
+Status status_from_native_result(std::int64_t result,
+                                 NativeOperationDomain domain,
+                                 const char *operation) noexcept {
+  return result < 0 ? status_from_negative(result, domain, operation)
+                    : Status{};
+}
+
+} // namespace hyle::io::detail
