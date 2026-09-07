@@ -1150,14 +1150,14 @@
     },
     {
       "module": "sched",
-      "product_state": "CLOSED",
-      "round_id": "sched-v3-root-participation",
-      "closure_task": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
-      "scope": "Resolve the measured oneTBB batch-level performance gap by auditing and, if proven, implementing same-Scheduler root-Fiber participation in synchronous bulk execution while preserving the admitted callback, error, cancellation, lifetime and complexity contract.",
-      "non_goals": "External-caller computation, cross-Scheduler worker borrowing, public partitioner or auto-grain policy, benchmark workload or peer changes, Graph/Compute/IO redesign, whole-scheduler rewrites, semantic weakening, Native FFI/C API, P2 claims and Formal certification.",
-      "baseline_commit": "3a2bbca61038f5343729bf2dad66596bffc687b3",
-      "candidate_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
-      "candidate_tree": "bc9b6baaa5dbf4f3d214047e85cb3ada472e45df",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "SCHED-V4-CONTROL-CONTRACT-2026-09-07",
+      "reopen_evidence": "docs/implementation/tasks/sched/sched-current-product-replay-2026-09.md",
+      "round_id": "sched-v4-control-contracts",
+      "closure_task": "docs/implementation/tasks/sched/sched-v4-control-contracts.md",
+      "scope": "Correct the public Sched control contracts for cooperative task cancellation, no-throw raw callbacks and distinguishable semaphore outcomes, and repair the directly affected API, dependency, delivery and user documentation without redesigning the scheduler.",
+      "non_goals": "Whole-scheduler, queue or fiber rewrites; forced stack destruction; unsafe wake of still-linked waits; external-caller gang execution; model or request policy; continuous batching; heterogeneous/GPU scheduling; Compute, Graph or IO redesign; Native FFI/C API; common performance-instrument changes; P2 or Formal certification.",
+      "baseline_commit": "f4da6ed4a2953b183a99532f31686852147ca09e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1165,47 +1165,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
+        "evidence": "docs/implementation/tasks/sched/sched-v4-control-contracts.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "loc": {
-        "snapshot_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
-        "repository_code": 410759,
-        "self_without_tests": 61670,
-        "module_implementation": 5595
-      },
-      "known_limitations": [
-        "The P1 engineering claim covers one frozen W1-WIN four-worker batch-structured source workload against pinned Marl and oneTBB revisions; it is not an all-operation, cross-platform, P2 inference-engine or Formal SOTA certificate.",
-        "The oneTBB and one Marl order exact-superiority verdicts remain INCONCLUSIVE even though every 5% non-inferiority gate passes; HYLE must not be described as universally faster than either runtime.",
-        "Root participation applies only when bulk_execute is called from a Fiber owned by the same Scheduler; external callers and cross-Scheduler Fibers do not compute, while worker-stack nested calls retain the serial progress-safe fallback.",
-        "Bulk bodies remain synchronous, non-suspending and borrowed until return; same-Scheduler root participation makes Fiber::current() and caller Fiber stack budget observable as documented.",
-        "Native FFI, a C API and a stable cross-toolchain C++ ABI are not promised; the vendored fcontext C and assembly boundary remains a private product mechanism."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a correctness, security, cancellation, lifetime, stack-budget, API-usability or common scheduling-capability defect within the Sched boundary.",
-        "A public API or layout, bulk or ordinary scheduling algorithm, direct dependency, worker topology contract or source, static or shared delivery shape changes materially.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material regression beyond the frozen 5% margin on a normal Sched consumer workload.",
-        "The performance contract, consumer provenance, peer revision, W1-WIN machine profile, instrument or retained evidence bundle changes while the engineering claim must be renewed.",
-        "A real inference-engine consumer admits adaptive partitioning, external-thread participation, suspending bulk bodies, heterogeneous execution or another currently excluded scheduling family."
-      ],
-      "summary": "sched-v3 CLOSED：same-Scheduler root participation 与 bounded sibling activation 消除了 v2 的 oneTBB batch gap；三平台 correctness/sanitizer、三种 C++ 交付、符号/FFI 清洁、直接消费者、文档/红队与 W1-WIN 5% P1 engineering gate 全部通过，Formal 保持 PENDING。"
+      "summary": "sched-v4 REOPENED：当前回放确认 cooperative cancellation 命名/组合、raw callback noexcept 类型和 Semaphore 可判别结果三个产品触发点；目前只登记最小影响面，尚未冻结 closure card 或修改产品。"
     },
     {
       "module": "io",
