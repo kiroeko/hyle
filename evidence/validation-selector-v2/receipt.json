@@ -1,0 +1,365 @@
+{
+  "schema": "hyle.selector-v2-retained-evidence/v1",
+  "tool_candidate": "66897618aeb2b0c043a4904d205f11abf8b5b892",
+  "tool_tree": "11b29222f9a33e28761d7c200e6d8883caf3af2f",
+  "fixture_commit": "8caa65e5992412bcbfa0701c3868794c8daf035a",
+  "fixture_tree": "e2ac47e6224d2ea4dca2428c20712a2266d1f037",
+  "fixture_scope": "only tests/math/CMakeLists.txt changed; all product files identical",
+  "verdict": "PASS",
+  "native": {
+    "configure_count": 1,
+    "build_targets": [
+      "hyle_math_tests"
+    ],
+    "ctest_labels": "^math$ excluding headers",
+    "ctest_result": "1/1 PASS",
+    "performance_samples": 0,
+    "p1_runs": 0,
+    "context_sha256": "ab2118c73d7aaaf3346a1d1ff0f1cf9d4685c11ed1098c14c95a2f5b69cfe343",
+    "actual_cmake_cache": {
+      "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+      "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+      "HYLE_DEV_FACTORS": "math",
+      "HYLE_BUILD_BENCH": "OFF"
+    },
+    "reuse": "4 gates REUSED in read-only plan; no second build/test"
+  },
+  "selected_gates": [
+    {
+      "id": "docs",
+      "status": "PASS",
+      "reason": "mandatory documentation contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-docs.py"
+        ]
+      ],
+      "cache_key": "21e881b103b08a1ffbca52281acec937b3bee3b06fc5831491fdbf75b26880ec"
+    },
+    {
+      "id": "closure",
+      "status": "PASS",
+      "reason": "mandatory registry contract",
+      "factors": [],
+      "commands": [
+        [
+          "{python}",
+          "scripts/check-module-closure.py"
+        ]
+      ],
+      "cache_key": "5be08e97ef66e798ade6f6482968c4d1953e64695cea808f0186e53bab5291fd"
+    },
+    {
+      "id": "configure",
+      "status": "PASS",
+      "reason": "configure exact factor roots; dependency artifacts are prerequisites, not additional test roots",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-B",
+          "{build}",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DHYLE_DEV_FACTORS=math",
+          "-DHYLE_BUILD_TESTS=ON",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_TEST_INSTRUMENTATION=OFF",
+          "-DHYLE_WERROR=ON",
+          "-DCMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /GR /EHsc",
+          "-DCMAKE_CXX_FLAGS_RELEASE=/O2 /Ob2 /DNDEBUG"
+        ]
+      ],
+      "cache_key": "eeb425e4c62e0df77158d1b8cc3a7633e5b041c7674af676db7fd196d7bda780"
+    },
+    {
+      "id": "factor:math",
+      "status": "PASS",
+      "reason": "owning factor: tests/math/CMakeLists.txt",
+      "factors": [
+        "math"
+      ],
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "{build}",
+          "--config",
+          "Release",
+          "--target",
+          "hyle_math_tests",
+          "--parallel",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "{build}",
+          "-C",
+          "Release",
+          "--output-on-failure",
+          "--no-tests=error",
+          "-L",
+          "^math$",
+          "-LE",
+          "headers"
+        ]
+      ],
+      "cache_key": "76bc1f6a33abfb872081dc2c57e6b56331d506004ce4c52a42409dd849615b65"
+    }
+  ],
+  "skipped_gate_count": 63,
+  "complete_selected_skipped_reasons": "native-integration.zip/native-result.json",
+  "tool_contract_tests": {
+    "command": "python -X utf8 tests/tooling/validation_selector_test.py",
+    "result": "34/34 PASS",
+    "elapsed_seconds": 69.922,
+    "evidence_kind": "observed command exit 0 and unittest terminal output; no retained raw log",
+    "native_processes": "process spies in disposable Git fixtures; actual native proof is the Math run"
+  },
+  "loc_candidate": {
+    "schema": 2,
+    "repository": {
+      "root": "C:\\public\\project-hyle\\hyle",
+      "commit": "66897618aeb2b0c043a4904d205f11abf8b5b892",
+      "dirty": false,
+      "tracked_regular_files": 1632,
+      "tracked_missing_files": []
+    },
+    "policy": {
+      "snapshot": "immutable Git commit tree",
+      "untracked": "not applicable to immutable commit tree",
+      "self_written_languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA"
+      ],
+      "self_written_excludes": [
+        "bench",
+        "docs",
+        "third_party",
+        "samples",
+        "cmake/build/package scripts",
+        "all build/cache/scratch directories"
+      ],
+      "module_excludes": [
+        "tests",
+        "bench",
+        "docs",
+        "third_party",
+        "samples"
+      ]
+    },
+    "tool": {
+      "cloc": "2.08"
+    },
+    "module": {
+      "name": "build-package",
+      "boundary": "canonical",
+      "paths": [
+        ".github/workflows/build-system.yml",
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "cmake",
+        "hyle-offline-deps.cmake",
+        "scripts/check-docs.py",
+        "scripts/header-self-contained.py",
+        "scripts/hyle-unix.sh",
+        "scripts/hyle-windows.ps1",
+        "scripts/validation-select.py",
+        "scripts/validation-graph.cmake",
+        "scripts/validation-policy.json"
+      ]
+    },
+    "metrics": [
+      {
+        "id": "repository",
+        "label": "full repository code",
+        "code": 479440,
+        "files": 1584,
+        "selected_files": 1632,
+        "paths": [
+          "Git-tracked files at immutable commit"
+        ],
+        "languages": [
+          "all languages recognized by cloc"
+        ]
+      },
+      {
+        "id": "self_with_tests",
+        "label": "self-written including tests",
+        "code": 121658,
+        "files": 505,
+        "selected_files": 573,
+        "paths": [
+          "include/hyle",
+          "src",
+          "tests"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA"
+        ]
+      },
+      {
+        "id": "self_without_tests",
+        "label": "self-written excluding tests",
+        "code": 77122,
+        "files": 337,
+        "selected_files": 364,
+        "paths": [
+          "include/hyle",
+          "src"
+        ],
+        "languages": [
+          "C++",
+          "C/C++ Header",
+          "C",
+          "CUDA"
+        ]
+      },
+      {
+        "id": "module",
+        "label": "module implementation (build-package)",
+        "code": 10419,
+        "files": 52,
+        "selected_files": 52,
+        "paths": [
+          ".github/workflows/build-system.yml",
+          "CMakeLists.txt",
+          "CMakePresets.json",
+          "cmake",
+          "hyle-offline-deps.cmake",
+          "scripts/check-docs.py",
+          "scripts/header-self-contained.py",
+          "scripts/hyle-unix.sh",
+          "scripts/hyle-windows.ps1",
+          "scripts/validation-select.py",
+          "scripts/validation-graph.cmake",
+          "scripts/validation-policy.json"
+        ],
+        "languages": [
+          "CMake",
+          "Python",
+          "PowerShell",
+          "Bourne Shell",
+          "JSON",
+          "YAML"
+        ]
+      }
+    ],
+    "self_check": "pass"
+  },
+  "archive": {
+    "path": "native-integration.zip",
+    "sha256": "c47c2a48bdac1138fb30e6e525e8dcba83b668cf86f16508fe5492cdf262626f",
+    "bytes": 80928
+  },
+  "members": {
+    "loc-candidate.json": {
+      "sha256": "981e461be10a9c382ac1466d19e85d0e9e6121de7db8f9e3493b8116e392325a",
+      "bytes": 3033
+    },
+    "native-build/CMakeCache.txt": {
+      "sha256": "b8f31f4b7ba60547026e307674676b4ada4523625ce070165e56b825af3bdd1a",
+      "bytes": 24049
+    },
+    "native-build/CMakeFiles/4.4.0/CMakeCXXCompiler.cmake": {
+      "sha256": "a77cb365ed187165573135bfafa1988828b17d71fd0b6206c55895a405fdb38f",
+      "bytes": 6790
+    },
+    "native-build/Testing/Temporary/LastTest.log": {
+      "sha256": "2484e49f13956cf3a3c899da74d2e0b8dfcde8619e76113e34f4b33d800c11de",
+      "bytes": 4649
+    },
+    "native-context.json": {
+      "sha256": "ab2118c73d7aaaf3346a1d1ff0f1cf9d4685c11ed1098c14c95a2f5b69cfe343",
+      "bytes": 2345
+    },
+    "native-driver.log": {
+      "sha256": "84a51c566411d10e9efdddaf0c16b4b83146c7b8805bd83f791d60b79442ec8d",
+      "bytes": 1369
+    },
+    "native-dry-plan.json": {
+      "sha256": "aa2c76d5b5b031e2ba2f6562d3dcf330d02c5e3de58c44836172169d023ce13c",
+      "bytes": 103780
+    },
+    "native-fixture.patch": {
+      "sha256": "ed367e67f741b49d87c4ffe09db874db688846ca16690b8e9cdf25f127fc2ff3",
+      "bytes": 541
+    },
+    "native-integration-summary.json": {
+      "sha256": "e0df1ea7c0217fed8920d3200f0f0bbc07cade3d19b9ce6464ec426d4960906d",
+      "bytes": 1337
+    },
+    "native-integration.ps1": {
+      "sha256": "745688e8d65fe1f16ebd0eb8cdfab79b7bbdb6d26b01f5dca1b2b987363fe66c",
+      "bytes": 972
+    },
+    "native-integration.py": {
+      "sha256": "19d32286cf159374c7b1ea7db7c0053ba8b2dc4511b9960b25bd48f5ee425576",
+      "bytes": 6106
+    },
+    "native-receipts/21e881b103b08a1ffbca52281acec937b3bee3b06fc5831491fdbf75b26880ec-0.log": {
+      "sha256": "01fc5c0554bcf1e96c72a01354b8e0702e5d20efb380da56d49075ef973bb936",
+      "bytes": 80
+    },
+    "native-receipts/21e881b103b08a1ffbca52281acec937b3bee3b06fc5831491fdbf75b26880ec.json": {
+      "sha256": "449e31a658f51443e927eee4ca5daee8b6c95e3cbd866f277df379433d607244",
+      "bytes": 10368
+    },
+    "native-receipts/5be08e97ef66e798ade6f6482968c4d1953e64695cea808f0186e53bab5291fd-0.log": {
+      "sha256": "bb153d7b8aba3df1b2cbc195c40607a192fef31b16b9ef46d9db3e64ab797bf7",
+      "bytes": 57
+    },
+    "native-receipts/5be08e97ef66e798ade6f6482968c4d1953e64695cea808f0186e53bab5291fd.json": {
+      "sha256": "e0a36de9c6a984273d7cd4e31de3e8538a0119364a7b90367393171d627d1ee4",
+      "bytes": 10368
+    },
+    "native-receipts/76bc1f6a33abfb872081dc2c57e6b56331d506004ce4c52a42409dd849615b65-0.log": {
+      "sha256": "a487550170c52b7e08ab86dc456ef1bb85897a0109fac31212a4dd6b9cfd5a30",
+      "bytes": 593
+    },
+    "native-receipts/76bc1f6a33abfb872081dc2c57e6b56331d506004ce4c52a42409dd849615b65-1.log": {
+      "sha256": "82babb3aab08b45be2943275003ea323fd725464b6f7328f7942f56aee105a7b",
+      "bytes": 354
+    },
+    "native-receipts/76bc1f6a33abfb872081dc2c57e6b56331d506004ce4c52a42409dd849615b65.json": {
+      "sha256": "9add24713840acb2f7ff4b5b5ad37ce0175820cbc8a926fadb367951f4d7d694",
+      "bytes": 10556
+    },
+    "native-receipts/eeb425e4c62e0df77158d1b8cc3a7633e5b041c7674af676db7fd196d7bda780-0.log": {
+      "sha256": "a35aea1fc9a62834959ad0056e2420872e69f647d22741dbeb2da652d9171f5f",
+      "bytes": 1673
+    },
+    "native-receipts/eeb425e4c62e0df77158d1b8cc3a7633e5b041c7674af676db7fd196d7bda780.json": {
+      "sha256": "3df3df09f7002c0eab823fc6c5fb538b36fd602257753cc9481da80fa3d58f69",
+      "bytes": 10368
+    },
+    "native-result.json": {
+      "sha256": "4ca3eef34caf62e46258c44c88160d92e13c332cbbe4cb84e0c601183039c414",
+      "bytes": 739822
+    },
+    "native-reuse-plan.json": {
+      "sha256": "041382c6745482987520cb356ea65ef2611ffed367e1800d9b1e144d3b27269c",
+      "bytes": 740026
+    },
+    "tool-plan.json": {
+      "sha256": "701207aa516f501f4a77c8e04969c273a977032e8a5f94620b6339369903e30a",
+      "bytes": 106405
+    }
+  }
+}

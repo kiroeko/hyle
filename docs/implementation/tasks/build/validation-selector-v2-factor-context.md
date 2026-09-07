@@ -1,6 +1,6 @@
 # Validation selector v2：factor 额度与 native 身份
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 ## SCOPED：有限工具任务
 
@@ -61,4 +61,44 @@ Native 身份新增完整 stdlib include-root tree hash，既检查库文件，�
 但不能复用 native receipt。P1 schema v2 输出每个 factor 的依赖/input paths/hash/claim key；canonical
 Git 账本目前没有旧 v1 claim，旧格式存在时仍保留并要求先做归属审计，不自动迁移成新额度。
 
-工具候选冻结后执行唯一 Math native 集成；在得到实际结果前不签 native PASS 或最终 CLOSED。
+不可变工具候选为 `66897618aeb2b0c043a4904d205f11abf8b5b892`，tree 为
+`11b29222f9a33e28761d7c200e6d8883caf3af2f`。独立 Math fixture commit 为
+`8caa65e5992412bcbfa0701c3868794c8daf035a`，tree 为
+`e2ac47e6224d2ea4dca2428c20712a2266d1f037`：只为 `hyle_math_test` 增加 60 秒 CTest timeout，
+差异唯一位于 `tests/math/CMakeLists.txt`；所有产品文件及 selector 与工具候选完全相同。fixture 不并入
+canonical main；保留 patch 可在工具候选上重建相同 tree。
+
+真实 selector native 路线 `PASS`：一次 configure，只构建 `hyle_math_tests`，执行 CTest `^math$`
+并排除 headers label，`hyle_math_test` 为 `1/1 PASS`。所选门只有 `docs`、`closure`、`configure`、
+`factor:math`，其他 63 门均有 skipped reason；没有独立 header/delivery/consumer/P1 门。
+实际 CMake cache 确认 `HYLE_DEV_FACTORS=math`、`HYLE_BUILD_BENCH=OFF`，编译器为 MSVC
+19.50.35728，flags 与 context 中的 `/DWIN32 /D_WINDOWS /GR /EHsc` 和 `/O2 /Ob2 /DNDEBUG`
+逐项相同。context 绑定实际 cl/c1xx/c2/link 文件、MSVC STL/UCRT 库文件与 include-root tree hash。
+随后仅运行只读 plan，四个已执行门全部 `REUSED`；未第二次构建或执行 CTest。
+
+本轮 [receipt](../../../../evidence/validation-selector-v2/receipt.json) 与
+[原始证据包](../../../../evidence/validation-selector-v2/native-integration.zip) 保留完整
+selected/skipped 输出、context、逐 gate 原始 receipt/log、CMake cache、CTest 日志、fixture patch、
+集成驱动和不可变候选 LOC。归档逐项核对所有 receipt/log SHA-256 并通过 ZIP 原字节 round-trip；
+不会将规范化后的文本冒充原始日志。34 项工具测试结果来自命令返回码和终端输出，没有另存原始
+测试 stdout，receipt 明确记录这一边界。真实 native 证据仅覆盖本轮 Windows Math 路线；不宣称
+全模块、全平台或 P1 qualification。
+
+`loc-report.py --module build-package --commit 66897618aeb2b0c043a4904d205f11abf8b5b892
+--self-check --json` 为 `PASS`；以下数字绑定工具候选，不把后续文档/receipt 提交混入该快照：
+
+| 口径 | code LOC |
+|---|---:|
+| 全库 Git-tracked，cloc 全语言 | 479440 |
+| 自实现含测试，C/C++/CUDA | 121658 |
+| 自实现不含测试 | 77122 |
+| 当前工程单元实现，build-package canonical 边界 | 10419 |
+
+canonical 收尾先由 selector 选择 `docs`、`closure`，其余 65 门跳过；实际执行
+`python scripts/check-docs.py` 与 `python scripts/check-module-closure.py` 均返回 0，selector
+结果为 `PASS`。`git diff --check` 为 `PASS`。这次 docs/evidence 变化未准备编译器、构建或补跑
+工具合同/native/P1；工具实现与已验收候选完全相同。
+
+终态 `CLOSED`：VS2-1..4 已完成并补齐一次真实 native 集成证据；达到有限停止条件。产品改动、
+registry 改动、新性能样本和 P1 次数均为零。性能审计中三个双顺序负 median 项的 CI 均跨 1，
+本工具修复不会把它们变成稳定产品缺陷，也不授权重开任何 FROZEN 模块。本卡不登记后续产品 FIX。
