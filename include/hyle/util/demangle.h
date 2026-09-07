@@ -9,11 +9,11 @@
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_UTIL_API
-#elif defined(HYLE_UTIL_BUILD)
-#  define HYLE_UTIL_API HYLE_EXPORT
+#  define HYLE_UTIL_RUNTIME_API
+#elif defined(HYLE_UTIL_RUNTIME_BUILD)
+#  define HYLE_UTIL_RUNTIME_API HYLE_EXPORT
 #else
-#  define HYLE_UTIL_API HYLE_IMPORT
+#  define HYLE_UTIL_RUNTIME_API HYLE_IMPORT
 #endif
 
 // Runtime symbol demangling (clay sys/demangle). Turns a mangled C++ symbol --
@@ -41,8 +41,9 @@ namespace detail {
 // This is not a supported Native FFI entry point.
 using DemangleSink = bool (*)(void* context, const char* text,
                               std::size_t size) noexcept;
-HYLE_UTIL_API bool demangle_visit_internal(const char* mangled, void* context,
-                                           DemangleSink sink) noexcept;
+HYLE_UTIL_RUNTIME_API bool demangle_visit_internal(const char* mangled,
+                                                   void* context,
+                                                   DemangleSink sink) noexcept;
 
 }  // namespace detail
 
@@ -56,8 +57,8 @@ HYLE_UTIL_API bool demangle_visit_internal(const char* mangled, void* context,
 // platform demangler may allocate or serialize internally; this is a diagnostic
 // cold-path API, not a compute hot-path or async-signal-safe primitive. Input
 // and output may overlap.
-HYLE_UTIL_API std::size_t demangle(const char* mangled, char* out,
-                                   std::size_t cap) noexcept;
+HYLE_UTIL_RUNTIME_API std::size_t demangle(const char* mangled, char* out,
+                                          std::size_t cap) noexcept;
 
 // Return the complete human-readable name as caller-owned standard storage.
 // Unlike the buffer overload this convenience may throw when std::string

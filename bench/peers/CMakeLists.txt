@@ -66,7 +66,7 @@ endif()
 # Optional Abseil rivals are likewise owner-scoped. They cover more than the
 # original FlatHashMap comparison today, but remain benchmark-only dependencies.
 set(_hyle_bench_absl_owner FALSE)
-foreach(_hyle_owner IN ITEMS container error obs util util_core)
+foreach(_hyle_owner IN ITEMS container error obs util_runtime util_core)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_absl_owner TRUE)

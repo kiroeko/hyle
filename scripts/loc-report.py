@@ -63,11 +63,7 @@ MODULE_BOUNDARIES = {
     "util-runtime": (
         "include/hyle/util/demangle.h",
         "include/hyle/util/registry.h",
-        "src/util",
-    ),
-    "util": (
-        "include/hyle/util",
-        "src/util",
+        "src/util_runtime",
     ),
     "build-package": (
         ".github/workflows/build-system.yml",

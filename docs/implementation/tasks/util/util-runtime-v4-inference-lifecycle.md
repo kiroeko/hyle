@@ -379,3 +379,7 @@ legacy 值和单独 provenance；它不是本轮统计，也未用于本轮报�
 BLOCKED registry anchor 为 `aa3e2697c0b6db3d0f7b00961719feaceda34424`，后续文档提交只校正该实际
 anchor 引用。CANDIDATE→BLOCKED 的显式 previous checker、docs checker 与 diff whitespace 均通过；
 terminal selector 仅选 docs/closure 两门，65 门跳过。恢复前不得把本候选当成 CLOSED/FROZEN。
+
+> 后续身份注记：内部 factor 在预发布阶段由 `util` 迁为 `util_runtime`；本卡中的旧 ID、target、
+> 路径和 selector 名称保留为当时证据事实。当前身份只看中央 registry、组件图及
+> `util-runtime-factor-identity-migration-v1`。

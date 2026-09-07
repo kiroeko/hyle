@@ -57,6 +57,19 @@ def main() -> None:
         if header not in util_core_files:
             raise AssertionError(f"util_core boundary lost public header: {header}")
 
+    util_runtime_specs, util_runtime_files = reporter.module_scope(
+        "util_runtime", files)
+    if tuple(util_runtime_specs) != reporter.MODULE_BOUNDARIES["util-runtime"]:
+        raise AssertionError("util_runtime canonical boundary drifted")
+    for implementation in (
+        "include/hyle/util/demangle.h",
+        "include/hyle/util/registry.h",
+        "src/util_runtime/demangle.cc",
+    ):
+        if implementation not in util_runtime_files:
+            raise AssertionError(
+                f"util_runtime boundary lost implementation: {implementation}")
+
     synthetic = (
         "include/hyle/core/cache.h",
         "src/core/CMakeLists.txt",

@@ -196,7 +196,11 @@ _hyle_declare_component(simd PUBLIC_DEPS core platform)
 _hyle_declare_component(container
   PRIVATE_DEPS platform
   PUBLIC_DEPS core mem container_intrusive)
-_hyle_declare_component(util PUBLIC_DEPS core error mem container container_text)
+_hyle_declare_component(util_runtime
+  PUBLIC_DEPS core error mem container container_text
+  SPLIT_PUBLIC_HEADERS
+    hyle/util/demangle.h
+    hyle/util/registry.h)
 # SchedulerOptions and the public timer/synchronization APIs name platform and
 # typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
@@ -318,7 +322,7 @@ _hyle_declare_product(simd FACTORS simd)
 _hyle_declare_product(math FACTORS math)
 _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
-_hyle_declare_product(util FACTORS util_core util)
+_hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS io)
 _hyle_declare_product(compute FACTORS compute)

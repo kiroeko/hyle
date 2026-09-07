@@ -7,6 +7,11 @@
       "from": "text",
       "to": "container_text",
       "evidence": "docs/implementation/tasks/build/container-text-factor-identity-migration-v1.md"
+    },
+    {
+      "from": "util",
+      "to": "util_runtime",
+      "evidence": "docs/implementation/tasks/build/util-runtime-factor-identity-migration-v1.md"
     }
   ],
   "modules": [
@@ -1145,13 +1150,13 @@
       "summary": "container-v6 CLOSED/FROZEN：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
     },
     {
-      "module": "util",
+      "module": "util_runtime",
       "product_state": "BLOCKED",
       "reopen_trigger_id": "UTIL-V4-DEPENDENCY-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
       "round_id": "util-runtime-v4-inference-lifecycle",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
-      "scope": "Revalidate only util-runtime (factor ID util) against current dependency and inference-factory ownership contracts, repair admitted finite capability and delivery gaps, and close under the new freeze standard.",
+      "scope": "Revalidate only util-runtime (factor ID util_runtime) against current dependency and inference-factory ownership contracts, repair admitted finite capability and delivery gaps, and close under the new freeze standard.",
       "non_goals": "util_core or frozen dependency changes; Sched, IO, Compute or Graph implementation; module unloading or service drain; Native FFI/C API; timing sampling; shared tools or build-system infrastructure changes.",
       "baseline_commit": "ded05c9e36fffe8cdc54515d7413097cfdec230e",
       "performance_tier": "P0",
@@ -1175,7 +1180,7 @@
       "blocked_from": "CANDIDATE",
       "blocker": "RT-01: Registry's erased by-value argument hop can move a value inside noexcept and terminate even when the accepted factory only borrows const T&. RT-02: Windows demangle fault fixture includes DbgHelp before windows.h after formatting. RT-03: Linux long-symbol fixture incorrectly requires ABI success instead of honoring fallback. The single correction allowance is exhausted; applicable sanitizer, Windows/Linux delivery and full release-structure gates remain incomplete.",
       "blocker_owner": "util-runtime maintainer (primary agent for this closure round)",
-      "resume_condition": "Start a new bounded util-only SCOPED/AUDITED resume round from the retained v4 evidence. Fix only RT-01 argument forwarding without narrowing natural callable admission, RT-02 private Windows include ordering, and RT-03 native long-symbol/fallback contract. Freeze a new immutable execution tree; use the selector for util-only correctness, two runtime headers and Util source/relocated static/relocated shared on Windows/Linux/macOS; complete WSL ASan/UBSan/TSan, P0, exports and candidate red-team. No util_core/frozen dependency/product-owner or shared-tool changes; no P1 absent a new admitted hot consumer.",
+      "resume_condition": "Start a new bounded util_runtime-only SCOPED/AUDITED resume round from the retained v4 evidence. Fix only RT-01 argument forwarding without narrowing natural callable admission, RT-02 private Windows include ordering, and RT-03 native long-symbol/fallback contract. Freeze a new immutable execution tree; use the selector for util_runtime-only correctness, two runtime headers and Util source/relocated static/relocated shared on Windows/Linux/macOS; complete WSL ASan/UBSan/TSan, P0, exports and candidate red-team. No util_core/frozen dependency/product-owner or shared-tool changes; no P1 absent a new admitted hot consumer.",
       "end_commit": "6454815345fb2494ac52718d414a3b4df9811295",
       "registry_anchor_commit": "aa3e2697c0b6db3d0f7b00961719feaceda34424",
       "gate_verdicts": {

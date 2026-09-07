@@ -90,8 +90,8 @@ factor roots。公开头仍由 factor 唯一拥有，产品安装的是所选 fa
 sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive`、
 `container_concurrent`、`container_queue` 与 `container_text` 是内部 factor，用户从 `hyle::container` 获得
 Container 产品；Util 产品 `hyle::util` 聚合 `util_core`（header-only foundation）与
-`util`（语义名称 util-runtime，compiled demangle 与 Registry；内部 target `hyle_util`）。
-registry 的 `util` 记录只裁决 runtime，不能把它的状态当成整个 façade 或 `util_core` 的状态。
+`util_runtime`（compiled demangle 与 Registry；内部 target `hyle_util_runtime`）。
+registry 的 `util_runtime` 记录只裁决 runtime，不能把它的状态当成整个 façade 或 `util_core` 的状态。
 只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
 不能因为内部有一个 target 就自动公开。
 
@@ -166,7 +166,7 @@ container   -> PUBLIC core mem container_intrusive; PRIVATE platform
 container_concurrent -> PUBLIC core mem mem_reclaim container
 container_queue -> PUBLIC core mem
 container_text -> PUBLIC core mem container; PRIVATE platform
-util        -> PUBLIC core error mem container container_text
+util_runtime -> PUBLIC core error mem container container_text
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container timer_queue
 io          -> PUBLIC core mem container_text time timer_queue sched; PRIVATE container
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd

@@ -7,4 +7,4 @@
 # crosses the DLL boundary. Registry publicly exposes error Status, mem
 # allocator/region, and container string/hash/index templates, so those targets
 # remain PUBLIC dependencies (important for static consumers).
-hyle_add_module(util SOURCES demangle.cc)
+hyle_add_module(util_runtime SOURCES demangle.cc)

@@ -6,8 +6,8 @@
 > [user/util](../user/util.md)。
 
 Util 不是随手堆 helper 的杂物目录。产品入口 `hyle::util` 聚合两个分别收口的因子：
-`util_core` 是 header-only foundation；**util-runtime 的机器 ID 仍为 `util`**，内部 target 为
-`hyle_util`。文档中的 runtime 名称不新增 component，也不表示 util_core 被重新打开。
+`util_core` 是 header-only foundation；util-runtime 的机器 ID 为 `util_runtime`，内部 target 为
+`hyle_util_runtime`。两者都不是独立用户产品，也不表示 util_core 被重新打开。
 
 ```text
 foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
@@ -18,14 +18,14 @@ foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
                     ├──► mem / sched / graph
                     └──► hyle::util 产品 façade
 
-runtime：hyle_util（内部 compiled factor；component ID util）
+runtime：hyle_util_runtime（内部 compiled factor；component ID util_runtime）
    demangle / Registry
                     │
                     └──► core + error + mem + container + container_text
 ```
 
 Registry 是模板头，但公开形状直接使用 container 的 `StringView/FlatHashMap`，并借 mem allocator/
-Arena；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util`，从而没有
+Arena；它因此属于 util-runtime，不能反塞进 foundation。container 不依赖 `hyle_util_runtime`，从而没有
 `container ↔ util` binary 环。demangle 只有 buffer entry 和服务 header-inline owning convenience 的
 internal sink 两个冷路径动态符号，本身不依赖 container；为它新增 binary component 会增加发布和
 消费选择而没有形成独立能力族，因此与 runtime 共用 target。

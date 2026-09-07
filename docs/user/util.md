@@ -16,7 +16,7 @@ target_link_libraries(my_target PRIVATE hyle::util)
 
 源码嵌入时设置 `HYLE_COMPONENTS=util` 并链接 `hyle::util`；不要靠手写 include path 绕过产品与
 安装包合同。内部把 header-only `util_core` 与 util-runtime 分开；后者的机器 component ID 为
-`util`，内部 target 为 `hyle_util`，提供 Registry 与 compiled demangle。这使 Mem/Sched
+`util_runtime`，内部 target 为 `hyle_util_runtime`，提供 Registry 与 compiled demangle。这使 Mem/Sched
 能精确复用 leaf primitive 而不产生反向环；这些内部 target 不进入用户 component catalog。
 
 ## 先看选择表
@@ -378,7 +378,7 @@ module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活�
 ## 分层与证据入口
 
 header-only `util_core` 作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；Registry
-和 demangle 属于 util-runtime（registry ID `util`），不能用其中一条状态替代整个 Util 产品的状态。
+和 demangle 属于 util-runtime（registry ID `util_runtime`），不能用其中一条状态替代整个 Util 产品的状态。
 该分层避免低层 mem/container 为一个运行时 Registry 反向链接 runtime
 factor，用户仍只选择一个 Util 产品。唯一当前状态、closure record 与性能证据入口见
 [`module status`](../implementation/status.md)；旧 task、commit 和点值只属于历史记录。

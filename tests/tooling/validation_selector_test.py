@@ -141,7 +141,10 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["changes"][0]["factors"], ["container_text"])
-        self.assertEqual(set(plan["selected_factors"]), {"container_text", "util", "io"})
+        self.assertEqual(
+            set(plan["selected_factors"]),
+            {"container_text", "util_runtime", "io"},
+        )
 
     def test_deletion_rename_mixed_changes_keep_old_and_new_owners(self):
         (self.root / "src/container_queue/change.cc").unlink()
@@ -149,7 +152,10 @@ class ImpactTest(unittest.TestCase):
         self.write("README.md", "# mixed\n")
         self.commit()
         plan = self.plan()
-        self.assertEqual(set(plan["selected_factors"]), {"container_queue", "sched", "container_text", "util", "io"})
+        self.assertEqual(
+            set(plan["selected_factors"]),
+            {"container_queue", "sched", "container_text", "util_runtime", "io"},
+        )
         self.assertEqual(len(plan["changes"]), 3)
 
     def test_test_only_changes_do_not_retest_consumers(self):

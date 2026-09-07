@@ -66,7 +66,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container_concurrent | core, mem, mem_reclaim, container | — |
 | container_queue | core, mem | — |
 | container_text | core, mem, container | platform |
-| util-runtime | core, error, mem, container, container_text | — |
+| util_runtime | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, container_queue, timer_queue |
 | io | core, mem, container_text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
@@ -96,7 +96,7 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 | simd | simd |
 | math | math |
 | container | container_intrusive, container, container_concurrent, container_queue, container_text |
-| util | util_core, util |
+| util | util_core, util_runtime |
 | sched | sched |
 | io | io |
 | compute | compute |
@@ -179,7 +179,7 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 8. obs；
 9. simd 与 math 边界；
 10. container；
-11. util-runtime（registry/component ID 为 `util`）；
+11. util-runtime（registry/component ID 为 `util_runtime`）；
 12. sched；
 13. io。
 

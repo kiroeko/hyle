@@ -103,7 +103,7 @@ bool fault_demangle_visit(const char*, void*, DemangleSink) noexcept;
 #define demangle fault_demangle_buffer
 #define demangle_visit_internal fault_demangle_visit
 #define std fault_std
-#include "../../src/util/demangle.cc"
+#include "../../src/util_runtime/demangle.cc"
 #undef std
 #undef demangle_visit_internal
 #undef demangle
