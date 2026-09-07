@@ -6,6 +6,7 @@
 #include <cstring>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <new>
 #include <optional>
@@ -62,6 +63,9 @@ enum class RegistryPriority : std::uint8_t {
 template <class Ptr, class... Args>
 class Registry {
  private:
+  template <class Arg>
+  using ArgumentSlot = std::add_pointer_t<std::remove_reference_t<Arg>>;
+
   struct Entry;
   using Table = container::FlatHashMap<container::StringView, Entry*,
                                        container::Hash<container::StringView>,
@@ -79,7 +83,7 @@ class Registry {
 
     Ptr operator()(Args... args) const noexcept {
       HYLE_FATAL_ASSERT(entry_ != nullptr);
-      return entry_->invoke(entry_, std::forward<Args>(args)...);
+      return Registry::invoke_entry(entry_, args...);
     }
 
    private:
@@ -102,8 +106,8 @@ class Registry {
   class FrozenView {
    public:
     Ptr create(container::StringView key, Args... args) const {
-      if (const auto entry = find(key)) {
-        return entry->creator(std::forward<Args>(args)...);
+      if (const Entry* entry = Registry::entry_pointer(index_->find(key))) {
+        return Registry::invoke_entry(entry, args...);
       }
       return detail::RegistryResultTraits<Ptr>::missing();
     }
@@ -240,23 +244,20 @@ class Registry {
   }
 
   std::optional<EntryView> find(container::StringView key) const noexcept {
-    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
-      return entry_view(index->find(key));
-    }
-    std::lock_guard lock(mu_);
-    // Whether or not freeze won the race, this mutex observes the same table.
-    return entry_view(entries_.find(key));
+    return entry_view(find_entry(key));
   }
   bool has(container::StringView key) const noexcept {
-    return find(key).has_value();
+    return find_entry(key) != nullptr;
   }
 
   // Nullable results use their default empty value for missing; Result<T>
   // returns NotFound and otherwise preserves the creator's error unchanged.
   Ptr create(container::StringView key, Args... args) const {
-    const auto entry =
-        find(key);  // releases the startup lock before invocation
-    if (entry) return entry->creator(std::forward<Args>(args)...);
+    // The returned immutable entry outlives every operation. find_entry()
+    // releases the startup lock before user code runs.
+    if (const Entry* entry = find_entry(key)) {
+      return invoke_entry(entry, args...);
+    }
     return detail::RegistryResultTraits<Ptr>::missing();
   }
   container::StringView help(container::StringView key) const noexcept {
@@ -317,7 +318,7 @@ class Registry {
     container::StringView help;
     RegistryPriority priority;
     Entry* next;
-    Ptr (*invoke)(const Entry*, Args...) noexcept;
+    Ptr (*invoke)(const Entry*, ArgumentSlot<Args>...) noexcept;
     void (*destroy)(Entry*) noexcept;
   };
 
@@ -332,6 +333,29 @@ class Registry {
   static std::optional<EntryView> entry_view(Entry* const* value) noexcept {
     if (value == nullptr) return std::nullopt;
     return view_of(*value);
+  }
+  static std::optional<EntryView> entry_view(const Entry* value) noexcept {
+    if (value == nullptr) return std::nullopt;
+    return view_of(value);
+  }
+  static const Entry* entry_pointer(Entry* const* value) noexcept {
+    return value == nullptr ? nullptr : *value;
+  }
+
+  // Args... are materialized only at the public call boundary. The erased hop
+  // borrows those parameter slots and restores the declared value category at
+  // the final factory call, avoiding hidden moves inside noexcept.
+  static Ptr invoke_entry(const Entry* entry, Args&... args) noexcept {
+    return entry->invoke(entry, std::addressof(args)...);
+  }
+
+  const Entry* find_entry(container::StringView key) const noexcept {
+    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
+      return entry_pointer(index->find(key));
+    }
+    std::lock_guard lock(mu_);
+    // Whether or not freeze won the race, this mutex observes the same table.
+    return entry_pointer(entries_.find(key));
   }
 
   class SnapshotStorage {
@@ -412,9 +436,10 @@ class Registry {
         Entry{container::StringView{key_data, key.size(), true},
               container::StringView{help_data, help.size(), true}, priority,
               owned_,
-              +[](const Entry* entry, Args... args) noexcept -> Ptr {
+              +[](const Entry* entry,
+                  ArgumentSlot<Args>... args) noexcept -> Ptr {
                 return std::invoke(static_cast<const Stored*>(entry)->factory,
-                                   std::forward<Args>(args)...);
+                                   std::forward<Args>(*args)...);
               },
               +[](Entry* entry) noexcept {
                 static_cast<Stored*>(entry)->~Stored();

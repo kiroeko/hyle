@@ -334,6 +334,69 @@ TEST(Registry, MoveOnlyFactoryArgumentsAreForwarded) {
 
 namespace {
 
+struct ThrowingMoveArgument {
+  ThrowingMoveArgument(int input, int* move_count, int throw_on_move = 0)
+      : value(input), moves(move_count), throw_on(throw_on_move) {}
+  ThrowingMoveArgument(const ThrowingMoveArgument&) = delete;
+  ThrowingMoveArgument& operator=(const ThrowingMoveArgument&) = delete;
+  ThrowingMoveArgument(ThrowingMoveArgument&& other) noexcept(false)
+      : value(other.value), moves(other.moves), throw_on(other.throw_on) {
+    const int move = ++*moves;
+    if (move == throw_on) throw std::runtime_error("argument move failed");
+  }
+
+  int value;
+  int* moves;
+  int throw_on;
+};
+
+struct BorrowingArgumentFactory {
+  int* output;
+  int* operator()(const ThrowingMoveArgument& input) const noexcept {
+    *output = input.value;
+    return output;
+  }
+};
+
+}  // namespace
+
+TEST(Registry, ErasedInvocationDoesNotAddValueMovesInsideNoexcept) {
+  using Reg = hyle::util::Registry<int*, ThrowingMoveArgument>;
+  Reg registry;
+  int output = 0;
+  ASSERT_TRUE(
+      registry.register_creator("borrow", BorrowingArgumentFactory{&output})
+          .ok());
+  const auto entry = registry.find("borrow");
+  ASSERT_TRUE(entry.has_value());
+  const auto creator = entry->creator;
+  const auto frozen = registry.freeze();
+
+  auto expect_one_boundary_move = [&](auto&& invoke) {
+    int moves = 0;
+    ThrowingMoveArgument argument{42, &moves, 2};
+    EXPECT_EQ(invoke(std::move(argument)), &output);
+    EXPECT_EQ(output, 42);
+    EXPECT_EQ(moves, 1);
+  };
+  expect_one_boundary_move([&](auto&& value) {
+    return creator(std::forward<decltype(value)>(value));
+  });
+  expect_one_boundary_move([&](auto&& value) {
+    return frozen.create("borrow", std::forward<decltype(value)>(value));
+  });
+  expect_one_boundary_move([&](auto&& value) {
+    return registry.create("borrow", std::forward<decltype(value)>(value));
+  });
+
+  int moves = 0;
+  ThrowingMoveArgument throwing{7, &moves, 1};
+  EXPECT_THROW((void)creator(std::move(throwing)), std::runtime_error);
+  EXPECT_EQ(moves, 1);
+}
+
+namespace {
+
 using ReentrantRegistry = hyle::util::Registry<int*>;
 ReentrantRegistry* g_reentrant_registry = nullptr;
 

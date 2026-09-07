@@ -51,6 +51,14 @@ DWORD undecorate_once(const char* mangled, char* out, DWORD capacity) {
   std::lock_guard<std::mutex> lock(mutex);
   return UnDecorateSymbolName(mangled, out, capacity, UNDNAME_COMPLETE);
 }
+
+bool undecorate_result_is_complete(DWORD size, DWORD capacity) noexcept {
+  // DbgHelp can report success for a truncated result that reaches the final
+  // two character slots (observed as 1022 for a 1024-character buffer).
+  // Treat a near-boundary fill as ambiguous and retry with spare capacity
+  // rather than exposing a silently truncated owning/buffer result.
+  return size != 0 && size < capacity && capacity - size > 2;
+}
 #endif
 
 // Present exactly one transient, NUL-terminated final spelling to `sink`.
@@ -73,7 +81,10 @@ auto visit_demangled(const char* mangled, Sink&& sink) {
 #elif defined(_WIN32)
   char buffer[1024];
   DWORD size = undecorate_once(mangled, buffer, sizeof(buffer));
-  if (size != 0) return sink(buffer, static_cast<std::size_t>(size));
+  if (undecorate_result_is_complete(size, sizeof(buffer))) {
+    return sink(buffer, static_cast<std::size_t>(size));
+  }
+  DWORD truncated_size = size;
 
   // A valid decorated name can exceed the small stack buffer. DbgHelp does not
   // report the required length, so retry only the '?' form used by MSVC linker
@@ -85,9 +96,16 @@ auto visit_demangled(const char* mangled, Sink&& sink) {
       if (dynamic == nullptr) break;
       size = undecorate_once(mangled, dynamic.get(),
                              static_cast<DWORD>(capacity));
-      if (size != 0) {
+      // Some DbgHelp versions cap long output at the same non-zero length even
+      // when the caller supplies more space. A result that did not grow beyond
+      // the previous exact-fill value is still ambiguous, so prefer the
+      // documented input fallback over exposing partial text as complete.
+      if (size != 0 && truncated_size != 0 && size <= truncated_size) break;
+      if (undecorate_result_is_complete(
+              size, static_cast<DWORD>(capacity))) {
         return sink(dynamic.get(), static_cast<std::size_t>(size));
       }
+      if (size != 0) truncated_size = size;
     }
   }
   return sink(mangled, std::strlen(mangled));

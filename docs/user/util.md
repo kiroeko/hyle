@@ -283,10 +283,11 @@ exception handler 的受限上下文调用；需要 async-signal-safe crash capt
 
 ## Registry：注册阶段可变，服务阶段冻结
 
-当前 util-runtime 候选有一项未解决限制：Registry 的按值 `Args` 若移动构造会抛异常，即使 factory
-本身是 `noexcept` 且只接收 `const T&`，内部额外转发也可能触发 `terminate`。此形状尚不能依赖，
-详见 [v4 红队与恢复条件](../implementation/tasks/util/util-runtime-v4-inference-lifecycle.md)。
-按真实借用语义声明 `const Config&` 不经过这个值移动路径，但不能据此把整个 API 判为通过。
+Registry 的 `Args...` 是公开调用签名：值参数会在调用边界构造，引用参数继续借用。内部类型擦除只传
+这些参数槽的地址，不会为 `create`、`FrozenView::create` 或借用 `Creator` 再增加一次隐藏 move；最终
+factory 若自己按值接收参数，仍会发生该 factory 语义所需的一次 move。可能抛异常的调用方参数构造
+发生在进入 `noexcept` creator body 之前，可以正常向调用方传播；被注册 factory 的实际调用仍必须
+满足无异常合同。
 
 ```cpp
 #include "hyle/util/registry.h"

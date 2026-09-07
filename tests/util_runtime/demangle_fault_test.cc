@@ -2,6 +2,7 @@
 // calls and C allocation are substituted; no production hook or copied logic.
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
@@ -16,9 +17,11 @@
 #include "hyle/util/demangle.h"
 
 #if defined(_WIN32)
+// clang-format off: DbgHelp requires Windows declarations first.
 #define WIN32_LEAN_AND_MEAN
-#include <dbghelp.h>
 #include <windows.h>
+#include <dbghelp.h>
+// clang-format on
 #else
 #include <cxxabi.h>
 #endif
@@ -71,10 +74,12 @@ DWORD fault_undecorate(PCSTR, PSTR out, DWORD capacity, DWORD) {
   }
   std::this_thread::yield();
   DWORD result = 0;
-  if (fault::mode == fault::Mode::kSuccess && capacity > fault::kLength) {
-    std::memset(out, 'x', fault::kLength);
-    out[fault::kLength] = '\0';
-    result = static_cast<DWORD>(fault::kLength);
+  if (fault::mode == fault::Mode::kSuccess && capacity > 0) {
+    const std::size_t length =
+        (std::min)(fault::kLength, static_cast<std::size_t>(capacity - 1));
+    std::memset(out, 'x', length);
+    out[length] = '\0';
+    result = static_cast<DWORD>(length);
   }
   fault::active.fetch_sub(1);
   return result;
