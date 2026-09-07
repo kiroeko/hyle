@@ -246,3 +246,88 @@ if (!permit && permit.error().IsUnavailable()) { /* apply backpressure */ }
 - 从现在起产品源码、公开 API、常态 layout/cost 和 candidate tree 不再修改。后续只允许执行 closure
   card 已声明的正确性、交付、P1、红队与记录；出现必须修改候选的真实问题时退回 `AUDITED`，不得在
   candidate 上静默补丁。
+
+## Candidate 后的 fixture 与直接消费者校正
+
+候选后的三项改动都在 Sched 产品边界之外：
+
+- `8d423bdf` 把 IO/Compute/Graph 私有测试和 benchmark 的 raw callback fixture 补成 `noexcept`；
+- `d460ad40` 修正 Graph 原有的多 finisher Waker 所有权：只有 `pending` 的最后完成者移动并消费一次
+  Waker。该 O(1)、零分配修复属于尚未冻结的 Graph consumer，不改变 Sched API/实现；
+- `e91fc36b` 把 P1 completion fixture 的 Waker 循环从 `const` 借用改为一次消费。首次 qualification 在
+  编译期停止，没有产生样本；这是冻结卡允许的 fixture correction。
+
+执行证据使用 clean `e91fc36b52075f8d36a5d4cb2f375e4c967082b1`；
+`git diff dbc96344..e91fc36b -- include/hyle/sched src/sched` 为空，所以产品 candidate/tree 保持不变。
+
+## Candidate verification（`VERIFIED`）
+
+| Gate | W1-WIN | W1-WSL | M1-MAC | Verdict |
+|---|---|---|---|---|
+| public headers + Sched suite | MSVC 19.50，2/2 CTest；suite 内 173 cases | GCC 14.2，2/2 | AppleClang 21，2/2 | `PASS` |
+| WSL sanitizers | 本卡指定 WSL | ASan、UBSan、TSan（`setarch x86_64 -R`）均 2/2 | 本卡指定 WSL | `PASS` |
+| selected source / relocated shared / relocated static | 三条均通过 | 三条均通过 | 三条均通过 | `PASS` |
+| direct consumers | IO file/net/http、Compute GPU await、Graph parallel/data-parallel 六项通过 | 同六项通过 | 同六项通过 | `PASS` |
+| compiled surface | 无旧 HYLE C/Native FFI；DLL 无 `SchedulerAccess` | 无公开旧 FFI/fcontext symbol | 无公开旧 FFI/fcontext symbol | `PASS` |
+
+Windows DLL 可见 `jump_fcontext/make_fcontext/ontop_fcontext` 三个原始符号；它们是目标内 vendored
+assembly 必需的 private ABI，不是 HYLE C API，公开 package/guide 也没有把它们声明成消费面。macOS
+下游 aggregate static link 对重复的 `hyle_time/hyle_mem` archive 给出 linker warning，但没有缺失/重复
+定义、三种交付与六项消费者全部通过；这是下游静态 link-line 的构建维护输入，不是 Sched 产品失败，
+且本轮未越界重写公共 build system。
+
+### P1 性能裁决与苹果/橘子纠正
+
+`sched-batch-p1-v4` holdout 在 W1-WIN 完成 31 对双顺序样本，qualification/performance、A/A、5%/10%
+known delta、timer floor、artifact/build/provenance 与独立 verifier 全部 `PASS`。HYLE 对 Marl 的
+advantage 为 `1.153/1.129`，双顺序 `WIN`；对 oneTBB 为 `1.049/1.050`，exact `INCONCLUSIVE`、5% NI
+双顺序 `PASS`。精确 bundle/hash 见
+[`benchmarks-sched`](../../evidence/performance/benchmarks-sched.md)。
+
+旧 `sched-p1-v1` primary 也在相同机器完成 qualification，但它仍把已在 sched-v1 红队判定为
+`NATURAL_ROUTE / NOT_COMPARABLE` 的 typed `schedule_task` 对 Marl caller-owned batch slot 标成
+`COMPARABLE`，因此机器 aggregate 如实返回 `FAIL`。这不是可用于改产品的同合同门：
+
+- request fan-out/collect 当前双顺序 `WIN`、5% NI `PASS`（`1.617/1.632`）；
+- completion wake 当前双顺序 `PARITY`、5% NI `PASS`（`1.024/1.015`）；
+- typed structured row 的 `0.927/0.927` 只保留为 ownership-cost diagnostic；需要 batch-only 语义的消费
+  者已有本轮 holdout 验证的 `bulk_execute`；
+- 三条当前 HYLE absolute median 对 sched-v1 同机 qualified bundle 的双顺序比值分别为
+  `1.132/1.088`、`0.987/1.074`、`1.015/1.009`，没有固定方向的 5% material same-product regression。
+
+原始 FAIL manifest 没有删除、改写或伪装成 PASS；当前 `sched-p1-v1` contract/consumer manifest 已把
+typed row 改成 non-gating diagnostic，避免未来再次浪费 31 对样本。跨 bundle 比值只作方向诊断，不
+冒充 paired certificate。本轮工程 P1 `PASS` 由两条当前同合同 replay、P0 成本检查和完整
+Marl/oneTBB batch holdout 共同给出，不宣称全操作或 Formal SOTA。
+
+## Candidate 后红队
+
+分离的 adversarial pass 逆向检查了：cancel flag 与 operation owner 的 teardown 顺序、Waker move/drop/
+double-wake/wake-before-suspend、timed CV notify-vs-timeout、Semaphore zero/FIFO/close/timeout/overflow、
+raw exception boundary、shutdown、allocator/result 生命周期、公开 include/dependency closure 和三交付。
+没有新的 correctness、ownership、concurrency、复杂度、易用性或交付 finding：
+
+- 默认 schedule/spawn/join 路线没有新增 allocation、全局查找、syscall 或常态 metadata；
+- Waker 仍恰为两指针，move-only/consuming 只把已有 one-shot 前置条件变成类型合同；当前 completion
+  replay 与 Marl 同合同平；
+- Semaphore fast path 仍一次短锁检查，slow waiter 为 stack node，timed unlink O(1)，结果类型不增加
+  waiter/lock/wake；
+- `schedule`、`schedule_task`、`spawn_task`、`bulk_execute` 的选择来自 suspension/result/ownership/
+  batch granularity，不是 benchmark 的 fast/slow 档位；guide 已写明选择和陷阱；
+- Error/Time/Container-intrusive/Container-queue/Util-core/Platform-thread/Timer-queue/Mem 均沿中央真实边
+  复用，没有第二套错误、时间、wait、queue、allocator 或 cancel authority。
+
+### Aggregate gate verdict
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | `PASS` | 五项冻结 FIX 完成，推理策略和下游重构保持负空间 |
+| correctness | `PASS` | 三平台 suite/direct consumers 与 WSL ASan/UBSan/TSan |
+| delivery | `PASS` | selected source + relocated shared/static × 三平台；FFI 边界诚实 |
+| usability / docs | `PASS` | 取消、结果、Waker ownership 和任务选择已进入公开 guide/architecture |
+| reuse / red team | `PASS` | 直接边与内部 authority 正确；候选后无 material product finding |
+| engineering performance | `PASS` | 当前同合同 request/wake + qualified Marl/oneTBB bulk holdout；旧苹果/橘子行不参与 gate |
+
+不可变 product candidate LOC：全库代码 `481377`；自实现不含测试 `77120`；Sched 实现 `5626`。
+全部适用工程门已经完成，当前进入 `VERIFIED`；下一合法状态是补齐限制、reopen triggers 与 terminal
+receipt 后进入 `CLOSED/FROZEN`。

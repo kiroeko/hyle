@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "methodology": "module-closure-v2",
-  "updated_at": "2026-09-07",
+  "updated_at": "2026-09-08",
   "component_identity_migrations": [
     {
       "from": "text",
@@ -1150,7 +1150,7 @@
     },
     {
       "module": "sched",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "SCHED-V4-CONTROL-CONTRACT-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-current-product-replay-2026-09.md",
       "round_id": "sched-v4-control-contracts",
@@ -1167,18 +1167,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/tasks/sched/sched-v4-control-contracts.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v4 CANDIDATE：五项冻结 FIX 已落在不可变候选 dbc96344；取消、raw callback、Semaphore、Waker 与文档/构建合同已修复，等待三平台、sanitizer、三交付、P1 与红队裁决。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "sched-v4 VERIFIED：五项控制合同缺陷已关闭；三平台、sanitizer、三交付、直接消费者、易用性/文档、候选后红队及同合同 Marl/oneTBB P1 工程门全部通过。"
     },
     {
       "module": "io",

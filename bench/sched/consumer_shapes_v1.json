@@ -27,6 +27,7 @@
     {
       "id": "structured-spawn-join",
       "consumer": "graph or inference execution layer",
+      "comparison_class": "NATURAL_ROUTE / NOT_COMPARABLE",
       "topology": "one admitted root fiber runs 16 batches that each fan out 128 non-suspending typed worker-stack tasks over four workers; each task computes a 1024-element tile, and the root waits for the whole dynamic span and consumes every typed result",
       "ownership": "the caller owns immutable input and the root-lifetime acknowledgement; the root fiber owns dynamic JoinHandles/results; each scheduled task owns one allocator cell containing its callable and result state until execution and handle teardown complete",
       "charged_phases": [
@@ -77,10 +78,11 @@
   "peer_contract": {
     "scheduler": "Marl b8406ab0a82524170ead6dd6c371b579bbc28b3e",
     "cancellation_submechanism": "C++23 std::stop_token from the same MSVC toolchain",
-    "equivalence": "Candidate and peer use separate processes, the same four physical cores, identical input/tile/count/accounting, persistent scheduler lifetimes and setup exclusions. Marl owns peer scheduling, fiber wait/wake, WaitGroup and channel lock/notification composition; std::stop_token supplies the standard O(1) cancellation poll Marl does not define."
+    "equivalence": "Request fan-out/collect and completion wake use separate processes, the same four physical cores, identical input/tile/count/accounting, persistent scheduler lifetimes and setup exclusions. Marl owns peer scheduling, fiber wait/wake, WaitGroup and channel lock/notification composition; std::stop_token supplies the standard O(1) cancellation poll Marl does not define. The structured-spawn-join row is deliberately not equivalent: HYLE owns one typed result/status/cancel/lifetime cell per item while the Marl route writes caller-owned slots behind one batch WaitGroup."
   },
   "negative_space": {
     "zero_work": "Historical zero/noop task results remain diagnostic API-cost facts and do not gate the normal nonzero consumer replays.",
+    "structured_peer": "The typed per-item JoinHandle route remains a useful absolute-cost and same-product regression diagnostic, but its Marl batch-slot row cannot produce a peer non-inferiority verdict. Consumers needing only finite batch completion should use bulk_execute and its same-contract Marl/oneTBB holdout.",
     "specialized_spmd": "ggml-style caller-participating graph execution, pause/resume and chunk policy belong to Graph/Compute or a future inference runtime.",
     "downstream_closure": "Building IO, Compute or Graph against sched proves compatibility only; it does not validate their functionality or performance."
   }
