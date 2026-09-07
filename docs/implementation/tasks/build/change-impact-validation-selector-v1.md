@@ -1,6 +1,6 @@
 # Change-impact validation selector v1
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CANDIDATE -->
 
 ## 冻结任务卡
 
@@ -58,4 +58,10 @@ labels 负责测试，现有 selected-component smoke 负责三交付，现有 P
 
 ## 结果
 
-实现与证据待本轮有限验证后填入；当前仅冻结任务卡及 FIX 集，尚未声明 PASS。
+工具实现已冻结，后续提交记录其完整 candidate identity。首轮隔离 fixture 的 22 项合同测试用时
+23.281 秒通过；据边界复查补充了持久 P1 预算、profile hash、重复执行 lease 与构建前置缓存检查。
+最终验收由选择器本身执行本轮所选门后记录，不把首轮测试冒充最终候选证据。
+
+CMake 原 manifest 会在 metadata 后直接进入 configure-only 的 `CONFIGURE_DEPENDS` 审计；
+首次 script-mode 诊断因此拒绝执行。最终 adapter 只提取具名 metadata 前缀交给 CMake 原生执行，
+并检查边界与后置声明，未改变 `HyleComponents.cmake` 或任何产品构建语义。

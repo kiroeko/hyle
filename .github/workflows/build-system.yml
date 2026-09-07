@@ -15,14 +15,94 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  change-impact:
+    name: Selected change-impact validation
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BASE_REV: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      CANDIDATE_REV: ${{ github.sha }}
+      HYLE_DEP_SOURCE_CACHE: ${{ github.workspace }}/../hyle-dependency-sources
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Select gates before provisioning compilers or dependency caches
+        id: impact
+        run: |
+          python3 scripts/validation-select.py plan --base "$BASE_REV" --candidate "$CANDIDATE_REV" --output "$RUNNER_TEMP/impact-plan.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          plan = json.loads((Path(os.environ['RUNNER_TEMP']) / 'impact-plan.json').read_text())
+          build = any(g['kind'] in ('build', 'correctness', 'headers', 'delivery') for g in plan['selected_gates'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('build=' + str(build).lower() + '\n')
+          PY
+
+      - name: Select GCC 14 for affected native gates
+        if: steps.impact.outputs.build == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 ninja-build
+          echo "CC=gcc-14" >> "$GITHUB_ENV"
+          echo "CXX=g++-14" >> "$GITHUB_ENV"
+
+      - name: Restore locked dependency sources for affected native gates
+        if: steps.impact.outputs.build == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-dependency-sources-v1-${{ hashFiles('cmake/HyleDependencyLock.json') }}
+
+      - name: Bind execution environment
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, platform, shutil, subprocess, sys
+          from pathlib import Path
+          toolchain = {'id': 'python-maintenance', 'python': sys.version}
+          if os.environ.get('CXX'):
+              cxx = shutil.which(os.environ['CXX'])
+              version = subprocess.run([cxx, '-v'], capture_output=True, text=True, check=True).stderr
+              stdlib = subprocess.check_output([cxx, '-print-file-name=libstdc++.so'], text=True).strip()
+              toolchain = {'id': version, 'compiler_sha256': hashlib.sha256(Path(cxx).read_bytes()).hexdigest(),
+                           'stdlib_sha256': hashlib.sha256(Path(stdlib).read_bytes()).hexdigest(),
+                           'cmake': subprocess.check_output(['cmake', '--version'], text=True),
+                           'CC': os.environ['CC'], 'CXX': os.environ['CXX'], 'configuration': 'Ninja/Release/WERROR/shipping-layout'}
+          context = {'toolchain': toolchain, 'machine_profile': {'id': 'CI-LINUX', 'host': platform.uname()._asdict()}}
+          (Path(os.environ['RUNNER_TEMP']) / 'impact-context.json').write_text(json.dumps(context))
+          PY
+
+      - name: Execute selected gates and retain receipts
+        run: >-
+          python3 scripts/validation-select.py run
+          --base "$BASE_REV" --candidate "$CANDIDATE_REV"
+          --context "$RUNNER_TEMP/impact-context.json"
+          --cache "$RUNNER_TEMP/impact-evidence"
+          --scratch "$RUNNER_TEMP/impact-build"
+          --output "$RUNNER_TEMP/impact-result.json"
+
+      - name: Retain selection reasons and gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: change-impact-validation
+          path: |
+            ${{ runner.temp }}/impact-plan.json
+            ${{ runner.temp }}/impact-result.json
+            ${{ runner.temp }}/impact-context.json
+            ${{ runner.temp }}/impact-evidence
+
   platform-and-package-smoke:
+    if: github.event_name == 'workflow_dispatch'
     name: ${{ matrix.os == 'ubuntu-latest' && 'Linux' || matrix.os == 'windows-latest' && 'Windows' || 'macOS' }} CPU baseline + distribution smoke
     strategy:
       fail-fast: false
       matrix:
-        # Pull requests and main pushes are the high-signal Linux gate. A
-        # manual dispatch deliberately expands this same job to all hosts.
-        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest"]') }}
+        # Explicit full validation retains the existing three-host matrix.
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.os == 'windows-latest' && 90 || matrix.os == 'macos-latest' && 75 || 60 }}
     env:

@@ -3,6 +3,7 @@
 - [模块重构与收口标准](module-closure-methodology.md)
 - [审查记录模板](module-review-template.md)
 - [P0 候选验证 profile](correctness-profile-v1.md)
+- [Change-impact 验证选择与证据复用](change-impact-validation.md)
 
 ## 开始一轮工作
 

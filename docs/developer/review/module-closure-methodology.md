@@ -380,6 +380,13 @@ A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-
 
 ## 7. Candidate、验证与独立红队
 
+普通迭代先用[change-impact selector](change-impact-validation.md)生成机器计划，保留
+selected/skipped gates 与理由。文档、状态和已证明格式变化不触发产品构建或 P1；模块实现只验证
+对应 factor 与真实一跳消费者，公共头/API、组件图和 build/package seam 才扩大。额外 sanitizer/
+ISA/平台风险仍以冻结卡为准。P1 在 API/算法冻结的 immutable candidate 上只启动一次完整 bundle；
+tree/contract/toolchain/machine/tool 身份一致时复用证据。异常后按预算重新裁决，不能清 claim、
+更换日志目录或追加文档提交给同一产品候选自动增加采样额度。
+
 `CANDIDATE` 同时冻结 product commit/tree、公开合同、算法、normal workload 和 tier；harness/tool
 identity 单独记录。验证 manifest 至少给出：
 

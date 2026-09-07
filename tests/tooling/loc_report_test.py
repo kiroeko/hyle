@@ -94,12 +94,17 @@ def main() -> None:
             "scripts/header-self-contained.py",
             "scripts/hyle-unix.sh",
             "scripts/hyle-windows.ps1",
+            "scripts/validation-select.py",
+            "scripts/validation-graph.cmake",
+            "scripts/validation-policy.json",
         ),
     )
     if tuple(build_specs) != reporter.MODULE_BOUNDARIES["build-package"]:
         raise AssertionError("build/package canonical boundary drifted")
     if "cmake/HylePackage.cmake" not in build_files:
         raise AssertionError("build/package boundary lost package implementation")
+    if "scripts/validation-select.py" not in build_files:
+        raise AssertionError("build/package boundary lost validation selector")
 
 
 if __name__ == "__main__":

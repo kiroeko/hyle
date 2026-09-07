@@ -79,6 +79,9 @@ MODULE_BOUNDARIES = {
         "scripts/header-self-contained.py",
         "scripts/hyle-unix.sh",
         "scripts/hyle-windows.ps1",
+        "scripts/validation-select.py",
+        "scripts/validation-graph.cmake",
+        "scripts/validation-policy.json",
     ),
 }
 

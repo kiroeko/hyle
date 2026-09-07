@@ -414,7 +414,7 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 
 | 层级 | 当前职责 |
 |---|---|
-| PR / main push | 只跑 Linux all-product shipping-layout CPU 基线、文档和产品/factor/依赖合同；昂贵可选后端关闭 |
+| PR / main push | Linux change-impact selector：先选门，再按需准备工具链；产品按 factor 与真实消费者裁剪 |
 | 手工 full dispatch | Linux/Windows/macOS CPU 基线，并在适用主机跑 production shape、package consumer 与源码包 |
 | 手工 Windows clang-cl | 显式 test instrumentation 的一组底层组件及多个 exact-SIMD artifact |
 | 手工 Linux AArch64 cross | 全产品交叉编译；不宣称目标机运行正确性 |
@@ -428,16 +428,18 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 `HYLE_DEV_FACTORS=all` 只取 implemented 集合，因此 `QUEUED` 身份保留项不会要求虚构源码或测试目录。
 某个因子从 `QUEUED` 进入实际施工后，只有在真实 target/ownership/测试合同就位并移除 manifest 的
 `QUEUED` 标记后，才进入维护者 all-factor 构建。两者都不是用户 component catalog。PR 与 main push
-都故意只保留高信号 Linux 门以控制额度；Windows、macOS、
+使用[change-impact selector](../developer/review/change-impact-validation.md)选择 Linux 门；Windows、macOS、
 交叉编译、完整交付和 locked feature 由 `workflow_dispatch` 展开。package smoke 自动发现安装消费
 样例。更严格的 production roots 仍是显式列表，只能在对应模块通过收口后扩展。CI 绿灯只覆盖
 该 job 明示的形状，不能外推硬件、性能或未运行配置。
 
 ### 模块持续回归
 
-模块审查后的每次依赖、公开头或 option 改动，都应至少重跑：
+模块迭代先比较 task baseline 与 candidate，保留 selector 的 selected/skipped/reason。
+文档、状态、已证明格式和维护工具变化不触发产品构建；实现变化只运行对应 factor 与真实一跳
+消费者测试。依赖 artifact 只是构建前置。公共头/API、组件图或 CMake/package seam 才扩大为：
 
-1. 本模块及其传递依赖的 source build/test。
+1. 受影响 factor 与反向消费者闭包的 source build/test。
 2. 用独占 scratch 跑该产品根的 `HyleCiSelectedComponentSmoke.cmake`：source embedding、shared、static
    及搬迁后 installed consumer；Windows 使用 `hyle-windows.ps1 -Action SelectedComponentSmoke`，
    Unix 用 `hyle-unix.sh cmake ... -P cmake/HyleCiSelectedComponentSmoke.cmake`，避免继承不受支持的
@@ -446,7 +448,8 @@ CI 不把所有平台、后端和性能门塞进一次任务：
    SDK 两种形状偶然使用不同的 macOS loader floor。
 3. 涉及外部依赖时的锁、离线和许可证投影。
 4. 涉及 ABI 或运行时装载时的 relocated consumer。
-5. 涉及性能时的独立、可复现性能门；普通 CI 不替代性能证据。
+5. 显式冻结卡绑定 immutable API/算法 candidate 后的一次 P1；身份一致则复用证据，
+   docs/status/format 和普通 CI 不触发采样。
 
 并行 agent/session 不得复用 preset 的固定 build tree，也不得在另一会话的 cache 上重配。Windows
 wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提供独占目录；配置单个

@@ -4,6 +4,22 @@ Project automation: environment setup and reproducible builds. The goal is that 
 **fresh checkout on any machine** can build, test, and benchmark HYLE without
 depending on a hand-crafted directory layout.
 
+## `validation-select.py` — change-impact validation
+
+Local and PR/main validation starts with a bounded Git plan:
+
+```text
+python scripts/validation-select.py plan --base <baseline-commit> --candidate WORKTREE --output .scratch/validation/plan.json
+python scripts/validation-select.py run --base <baseline-commit> --candidate <candidate-commit> --context .scratch/validation/context.json --output .scratch/validation/result.json
+```
+
+The selector projects the central graph using CMake script mode, selects factor
+targets and real consumers, reports selected/skipped gates with reasons, and
+reuses exact-identity evidence. Documentation/state/proven formatting never
+starts native builds or P1. P1 additionally needs a frozen card and a single
+atomic attempt claim. See the [contract](../docs/developer/review/change-impact-validation.md)
+for context/card fields, supported scope and limitations.
+
 ## `loc-report.py` — canonical module-closure LOC
 
 Every module closure reports the same four `code` counts: all repository code,
