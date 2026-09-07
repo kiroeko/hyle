@@ -6,6 +6,29 @@
 > factor 的 P0 结构证据；`util_core` 的当前 P1 证据在
 > [`benchmarks-util-core-v4.md`](benchmarks-util-core-v4.md)。
 
+## v5 当前结构证书
+
+util-runtime v5 产品 candidate `7019998034f8025890770fad04406dc5ef2d6194` / tree
+`a0f5b8d9ae5af99b9e15d60678ec6dac7d566327` 的等级仍为 **P0 / STRUCTURAL PASS**。Registry 与
+demangle 都是启动、发现或冷诊断机制；没有真实 profile 将它们准入 token/kernel 热路径，因此没有
+运行 P1 benchmark、没有 peer ratio，也不作“全场景 SOTA”声明。
+
+- Registry 的三个公开调用入口只构造其声明的 `Args...`；内部 erased hop 传参数槽地址，最终一次
+  `std::forward` 恢复声明类别。独立 v4 失败复现现在于 GCC 14/AppleClang 21 的普通与 throwing-move
+  两种输入均观察到零内部 move；MSVC 回归同时验证调用边界 move 与异常传播；
+- register 仍为 O(key+help)+expected-amortized O(1)，freeze 为 O(1)/零分配，frozen lookup 为
+  O(key)+expected O(1)/无内部锁、allocation 或 refcount；accepted owning callable/entry 是用户要求的
+  生命周期状态，不是 benchmark metadata；
+- demangle 仍为 O(input+output)，平台临时存储和 DbgHelp 串行化只在冷诊断路径计费。Windows 对填满
+  caller buffer 的非零结果扩容复验，仍不明确时原样回退，不暴露静默截断文本；
+- 三平台 factor/逐头、三种 C++ 交付、WSL ASan/UBSan/TSan、三平台 compiled symbol 与候选后红队均
+  通过。完整命令语境和限制见
+  [`util-runtime v5 task`](../../tasks/util/util-runtime-v5-blocker-resolution.md)。
+
+本证书不覆盖动态模块 unload/drain、任意 demangler 质量、跨进程 DbgHelp 协调、未来热 consumer、
+Native FFI、跨工具链 C++ ABI 或 Formal performance。任何真实 profile 将 Registry/demangle 提升为
+P1/P2 时，必须先冻结该 consumer workload，再建立同合同性能证据。
+
 ## v4 未通过的结构取证
 
 [util-runtime v4 receipt](../../tasks/util/util-runtime-v4-inference-lifecycle.md) 记录产品

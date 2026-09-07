@@ -53,3 +53,49 @@ alloc/dealloc family mismatch。该隔离程序为验证 public owning string �
 `nothrow new` 走 ASan C++ allocator，释放却落入 fixture 的 `free`。校正仅补齐同一私有 executable
 中的 scalar/array nothrow 配对，不修改产品头、实现、API、算法、依赖或正常 workload。失败保留为
 验证历史，受影响的 ASan 与三平台私有 fixture 必须在终态前重跑。
+
+## Candidate verification
+
+验证执行 commit/tree 为 `342dbcfd10c2ab985aab023991db2c7367c3719e` /
+`2edd6da353a43cde252282772cf6d6910436bdb4`。它相对产品 candidate 只增加上述私有 fixture 配对和本卡
+记录；`git diff 70199980..342dbcfd -- include/hyle/util src/util_runtime` 为空，因此产品 API、实现、
+算法、正常 workload 与 P0 身份没有漂移。
+
+| Gate | W1-WIN | W1-WSL | M1-MAC | Verdict |
+|---|---|---|---|---|
+| factor tests 与两张 runtime 头 | MSVC 19.50，3/3 | GCC 14.2，3/3 | AppleClang 21，3/3 | PASS |
+| Util source / relocated shared / relocated static | 1/1、1/1、1/1 | 1/1、1/1、1/1 | 1/1、1/1、1/1 | PASS |
+| sanitizer | 本卡指定 WSL | ASan 3/3；UBSan 3/3；TSan Registry/头正常通过，fault executable 在既定 `setarch x86_64 -R` 运行合同下 3/3 | 本卡指定 WSL | PASS |
+| compiled exports | 仅两个 decorated C++ demangle symbols | 同两个 C++ symbols | 同两个 C++ symbols | PASS |
+
+TSan 的 fault executable 首次普通 CTest 在进入 `main` 前由 GCC runtime 报 `unexpected memory mapping`；
+该程序在项目文档既定的 WSL `setarch -R` 合同下全部通过。并发 Registry 主程序无需该绕行即通过，且
+没有 sanitizer 报告；这不是把未运行项写成 PASS。
+
+P0 forwarding probe 复用 v4 的独立复现源码，在 WSL/GCC 14 与 M1-MAC/AppleClang 21 的 `-O3`
+candidate headers/artifact 上，普通调用和启用 throwing-move 两种运行都输出
+`moves inside borrowed creator: 0` 并正常退出；Windows 的同合同回归在三个公开入口各观察到恰好一次
+公开边界 move，且调用前异常可传播。Registry 继续保持 register
+O(key+help)+expected-amortized O(1)、freeze O(1)/零分配、frozen lookup
+O(key)+expected O(1)/无锁无分配；erased hop 只传参数槽地址，未新增常态 metadata、分配、锁或
+runtime route。demangle 仍为 O(input+output) 冷诊断路径。
+
+候选后红队复核了值/引用/rvalue-reference/空参数折叠、entry 与 allocator 生命周期、替换后借用保活、
+freeze publication、callback 重入以及 Windows DbgHelp 截断/串行化边界。没有未决 correctness、
+ownership、concurrency、异常、交付或易用性 finding；API 中没有 benchmark 的固定 N、地址、执行顺序、
+peer、fast/slow mode 或常态测量 metadata。`util_runtime` 继续复用已冻结的 Core/Error/Mem/Container/
+Container-text 路线，没有复制 allocator、hash、text 或 error authority，也没有要求上游模块重开。
+
+### Aggregate gate verdict
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | PASS | 三项固定 blocker 关闭；能力、依赖和产品 façade 不变 |
+| correctness | PASS | 三平台、边界/故障/并发测试及 WSL ASan/UBSan/TSan |
+| delivery | PASS | source + relocated shared/static × 三平台；exports 无旧 C/FFI 面 |
+| usability / docs | PASS | 自然 owning factory、借用 Creator 与参数边界已写入用户指南 |
+| red team | PASS | fixture 校正后无 material product finding |
+| engineering performance | PASS | P0 复杂度、分配/锁结构及 forwarding probe 通过；P1 不适用 |
+
+不可变产品候选 LOC：全库代码 480,987；自实现不含测试 77,069；util-runtime 实现 544。registry v1
+仍要求的 `self_with_tests=122059` 只作为旧 schema 兼容字段登记，不向 owner 常规报告，也不参与完成度。
