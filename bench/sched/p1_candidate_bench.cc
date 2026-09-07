@@ -239,7 +239,7 @@ WakeRun run_completion_replay(Scheduler& scheduler, p1::WorkerHits& hits) {
       p1::wait_at_least(slot.published, episode + 1);
     if (episode == p1::kWakeWarmupEpisodes)
       measured_start = p1::Clock::now();
-    for (const WakeSlot& slot : slots)
+    for (WakeSlot& slot : slots)
       slot.waker.wake();
     for (const WakeSlot& slot : slots)
       p1::wait_at_least(slot.completed, episode + 1);
