@@ -235,8 +235,17 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   的 `io_core` correctness 回归；
 - `ce2da848`：SignalSet 改为 typed factory/result，pending 按 signal kind 合并并
   保留不同种类；重复等待、move、重复 owner、非法输入与宿主 handler 恢复已在
-  Windows IOCP、Linux io_uring/epoll 构建和 macOS kqueue 路径通过测试。
+  Windows IOCP、Linux io_uring/epoll 构建和 macOS kqueue 路径通过测试；
+- `007c14ca`：`IoContext` 从 Scheduler 推导 worker 数量，移除用户可见的
+  benchmark/backend knob，并把 ring owner table 改为注入 allocator 管理的连续
+  存储；Windows 全 IO 与 Linux/macOS 定向回归通过；
+- `30512b94`：resolver 改为 owning、可 deadline/cancel 的单状态 offload，
+  hostname/endpoint-sequence connect 增加有界 RFC 8305-style 错峰、快速失败推进与
+  loser drain；补齐 idle/interval/count keepalive、endpoint inspection、reuse-port
+  的 typed 合同。DNS/TCP 定向测试在 Windows/MSVC、WSL/GCC 与 macOS/AppleClang
+  全部通过；超时/取消使用被占满的单线程 blocking pool 确定性验证提前返回后状态
+  安全退休。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F01、F04--F06、F08 的 IoContext 部分以及 F09--F10 仍未完成，四个协议/传输
-factor 仍处于 `QUEUED`。
+裁决；F01、F05--F06、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
+仍处于 `QUEUED`。
