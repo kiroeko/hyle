@@ -157,27 +157,27 @@ hyle_register_benches(container
   hyle_container_spsc_bench
   hyle_container_flat_sorted_bench)
 
-# Container v5 product evidence is intentionally narrow: one normal workload
+# Container v6 product evidence is intentionally narrow: one normal workload
 # for each reviewed internal factor.  Keep the single-thread and structured
 # multi-worker adapters independently selectable so a qualification contract
 # does not acquire an unused peer dependency.
-option(HYLE_CONTAINER_V5_SINGLE_P1_BENCH
-  "build the Container v5 LRU and UTF product evidence adapter" OFF)
-if(HYLE_CONTAINER_V5_SINGLE_P1_BENCH)
+option(HYLE_CONTAINER_V6_SINGLE_P1_BENCH
+  "build the Container v6 LRU and UTF product evidence adapter" OFF)
+if(HYLE_CONTAINER_V6_SINGLE_P1_BENCH)
   if(NOT HYLE_STATIC OR NOT HYLE_BENCH_ABSL)
     message(FATAL_ERROR
-      "HYLE_CONTAINER_V5_SINGLE_P1_BENCH requires HYLE_STATIC plus the "
+      "HYLE_CONTAINER_V6_SINGLE_P1_BENCH requires HYLE_STATIC plus the "
       "Abseil benchmark peer")
   endif()
   set(HYLE_SIMDUTF_PEER_DIR "${HYLE_SOURCE_DIR}/../simdutf" CACHE PATH
-      "source-pinned simdutf checkout for Container v5 evidence")
+      "source-pinned simdutf checkout for Container v6 evidence")
   if(NOT EXISTS "${HYLE_SIMDUTF_PEER_DIR}/include/simdutf.h")
     message(FATAL_ERROR
-      "HYLE_CONTAINER_V5_SINGLE_P1_BENCH requires a source-pinned simdutf "
+      "HYLE_CONTAINER_V6_SINGLE_P1_BENCH requires a source-pinned simdutf "
       "checkout at HYLE_SIMDUTF_PEER_DIR")
   endif()
 
-  function(_hyle_configure_container_v5_single target)
+  function(_hyle_configure_container_v6_single target)
     target_link_libraries(${target} PRIVATE
       hyle_container_text hyle_container hyle_mem nanobench
       absl::flat_hash_map)
@@ -188,58 +188,58 @@ if(HYLE_CONTAINER_V5_SINGLE_P1_BENCH)
     hyle_apply_warnings(${target})
   endfunction()
 
-  add_executable(hyle_container_v5_p1_bench product_v5_bench.cc)
-  _hyle_configure_container_v5_single(hyle_container_v5_p1_bench)
-  add_executable(hyle_container_v5_p1_bench_placement product_v5_bench.cc)
-  _hyle_configure_container_v5_single(
-    hyle_container_v5_p1_bench_placement)
+  add_executable(hyle_container_v6_p1_bench product_v6_bench.cc)
+  _hyle_configure_container_v6_single(hyle_container_v6_p1_bench)
+  add_executable(hyle_container_v6_p1_bench_placement product_v6_bench.cc)
+  _hyle_configure_container_v6_single(
+    hyle_container_v6_p1_bench_placement)
   if(MSVC)
-    target_link_options(hyle_container_v5_p1_bench_placement PRIVATE
+    target_link_options(hyle_container_v6_p1_bench_placement PRIVATE
       /FUNCTIONPADMIN:64)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(hyle_container_v5_p1_bench_placement PRIVATE
+    target_compile_options(hyle_container_v6_p1_bench_placement PRIVATE
       -falign-functions=64)
   else()
-    message(FATAL_ERROR "Container v5 placement perturbation is unsupported")
+    message(FATAL_ERROR "Container v6 placement perturbation is unsupported")
   endif()
 
   hyle_register_benches(container
-    hyle_container_v5_p1_bench
-    hyle_container_v5_p1_bench_placement)
+    hyle_container_v6_p1_bench
+    hyle_container_v6_p1_bench_placement)
 endif()
 
-option(HYLE_CONTAINER_V5_CONCURRENT_P1_BENCH
-  "build the Container v5 concurrent set and queue evidence adapters" OFF)
-if(HYLE_CONTAINER_V5_CONCURRENT_P1_BENCH)
+option(HYLE_CONTAINER_V6_CONCURRENT_P1_BENCH
+  "build the Container v6 concurrent set and queue evidence adapters" OFF)
+if(HYLE_CONTAINER_V6_CONCURRENT_P1_BENCH)
   if(NOT HYLE_STATIC OR NOT HYLE_BENCH_TBB)
     message(FATAL_ERROR
-      "HYLE_CONTAINER_V5_CONCURRENT_P1_BENCH requires HYLE_STATIC plus the "
+      "HYLE_CONTAINER_V6_CONCURRENT_P1_BENCH requires HYLE_STATIC plus the "
       "oneTBB benchmark peer")
   endif()
 
-  add_executable(hyle_container_v5_concurrent_bench
-    product_v5_concurrent_bench.cc)
-  target_link_libraries(hyle_container_v5_concurrent_bench PRIVATE
+  add_executable(hyle_container_v6_concurrent_bench
+    product_v6_concurrent_bench.cc)
+  target_link_libraries(hyle_container_v6_concurrent_bench PRIVATE
     hyle_container_concurrent hyle_container_queue Threads::Threads)
-  set_property(TARGET hyle_container_v5_concurrent_bench
+  set_property(TARGET hyle_container_v6_concurrent_bench
     PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-  hyle_apply_warnings(hyle_container_v5_concurrent_bench)
+  hyle_apply_warnings(hyle_container_v6_concurrent_bench)
 
-  add_executable(hyle_container_v5_concurrent_peer_bench
-    product_v5_concurrent_bench.cc)
-  target_compile_definitions(hyle_container_v5_concurrent_peer_bench PRIVATE
-    HYLE_CONTAINER_V5_PEER)
-  target_link_libraries(hyle_container_v5_concurrent_peer_bench PRIVATE
-    TBB::tbb Threads::Threads)
-  set_property(TARGET hyle_container_v5_concurrent_peer_bench
+  add_executable(hyle_container_v6_concurrent_peer_bench
+    product_v6_concurrent_bench.cc)
+  target_compile_definitions(hyle_container_v6_concurrent_peer_bench PRIVATE
+    HYLE_CONTAINER_V6_PEER)
+  target_link_libraries(hyle_container_v6_concurrent_peer_bench PRIVATE
+    hyle_mem TBB::tbb Threads::Threads)
+  set_property(TARGET hyle_container_v6_concurrent_peer_bench
     PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-  hyle_apply_warnings(hyle_container_v5_concurrent_peer_bench)
+  hyle_apply_warnings(hyle_container_v6_concurrent_peer_bench)
   hyle_stage_tbb_benchmark_runtime(
-    hyle_container_v5_concurrent_peer_bench)
+    hyle_container_v6_concurrent_peer_bench)
 
   hyle_register_benches(container
-    hyle_container_v5_concurrent_bench
-    hyle_container_v5_concurrent_peer_bench)
+    hyle_container_v6_concurrent_bench
+    hyle_container_v6_concurrent_peer_bench)
 endif()
 
 # Historical container-v2 closure-perf-v1 adapter.  Keep it buildable for its

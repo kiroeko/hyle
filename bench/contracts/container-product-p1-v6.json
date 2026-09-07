@@ -1,8 +1,8 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "container-product-p1-v5",
+  "id": "container-product-p1-v6",
   "module": "container",
-  "claim": "P1 engineering non-inferiority of the natural Container v5 bounded LRU storage and safe caller-buffer UTF conversion paths against source-pinned mature peers",
+  "claim": "P1 engineering non-inferiority of the Container v6 bounded LRU storage and safe caller-buffer UTF conversion paths after allocator, rollback and typed-result adapter equalization",
   "candidate": {
     "target": "hyle_container",
     "delivery_shape": "source",
@@ -16,7 +16,7 @@
       "revision": "38f8c1535de9ebc12c6340e5c1c8ebd72afde560",
       "configuration": {
         "delivery_shape": "source-built static and header-only",
-        "algorithm": "absl::flat_hash_map plus std::list with the identical stable hash and HYLE system allocator",
+        "algorithm": "absl::flat_hash_map plus std::list with the identical stable hash and HYLE system allocator, bad_alloc result mapping and partial-insert rollback",
         "source": "clean external checkout"
       }
     },
@@ -84,7 +84,7 @@
     {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
     {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
     {"id": "placement", "kind": "placement", "parameters": {}},
-    {"id": "container-v5-contract", "kind": "resource", "parameters": {"validator_id": "container-v5-contract"}}
+    {"id": "container-v6-contract", "kind": "resource", "parameters": {"validator_id": "container-v6-contract"}}
   ],
   "workloads": [
     {
@@ -93,13 +93,13 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/model-and-host-cache/lru-storage",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v5.json",
-        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+        "path": "bench/container/consumer_shapes_v6.json",
+        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
       },
       "ownership_topology": {
-        "candidate": "One caller-owned HYLE LruCache owns 4096 integral entries, uses a stable hash and SystemStdAllocator, touches hits and synchronously reports each evicted key/value",
-        "peer": "One caller-owned Abseil flat_hash_map plus std::list composition owns the identical entries, uses the same hash and allocator, touches hits and synchronously reports each eviction",
-        "equivalence": "Both charge identical 93.75-percent get-and-touch and 6.25-percent insert-and-evict streams; setup, reserve, hot-set establishment and owner construction are excluded"
+        "candidate": "One caller-owned HYLE LruCache owns 4096 integral entries, uses StableHash and SystemAllocator, returns a typed recoverable insert result, touches hits and synchronously reports each evicted key/value",
+        "peer": "One caller-owned Abseil flat_hash_map plus std::list composition owns the identical entries, uses StableHash over the same SystemAllocator backend, maps bad_alloc to the same result and rolls back partial insertion",
+        "equivalence": "Both charge identical 93.75-percent get-and-touch and 6.25-percent insert-and-single-evict streams; construction, natural population, hot-set establishment and final verification are excluded, and the validator exercises node/index OOM rollback"
       },
       "material_contribution": {
         "frequency": 4096,
@@ -114,14 +114,14 @@
       "peer_id": "abseil",
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {"distribution": "deterministic 1024-key hot set plus ascending cold inserts", "scale": {"capacity": 4096, "operations_per_callback": 4096, "hit_percent": 93.75}},
-      "setup": "Both caches are constructed in controlled allocation order, reserved, populated and given the identical hot recency state before measurement",
+      "setup": "Both caches are constructed in controlled allocation order, naturally populated without an asymmetric reserve hint and given the identical hot recency state before measurement",
       "charged_phases": ["4096 hashes and lookups", "3840 recency touches", "256 node insertions", "256 index erases and node destructions", "256 synchronous eviction callbacks", "checksum"],
       "pair": {"candidate": "HYLE LruCache mixed access N=4096", "peer": "Abseil+list LRU mixed access N=4096"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
       "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
-      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v5-contract"]
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v6-contract"]
     },
     {
       "id": "model-metadata-utf8-to-utf16-4096",
@@ -129,13 +129,13 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/model-path-metadata/utf8-to-utf16",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v5.json",
-        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+        "path": "bench/container/consumer_shapes_v6.json",
+        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
       },
       "ownership_topology": {
         "candidate": "HYLE validates, computes exact required UTF-16 units and converts 256 caller-owned records into caller-owned pre-sized output through the public typed result",
-        "peer": "simdutf performs validate-with-errors, exact UTF-16 length and valid-input conversion over the identical caller-owned records and output",
-        "equivalence": "Both charge the complete safe no-allocation contract and reject malformed input before writing; neither side is compared with raw unchecked transcoding"
+        "peer": "The product-locked simdutf implementation pointer performs validate-with-errors, exact UTF-16 length and endian-correct valid-input conversion, then returns the identical UtfResult fields",
+        "equivalence": "Both charge the complete safe no-allocation three-pass contract and reject malformed or undersized output before writing; the validator compares status, input offset, required/output count and untouched output"
       },
       "material_contribution": {
         "frequency": 4096,
@@ -152,17 +152,17 @@
       "input": {"distribution": "256 deterministic valid 128-byte metadata records containing ASCII and two three-byte scalar sequences", "scale": {"records": 256, "bytes": 32768, "measurement_units": 4096, "bytes_per_unit": 8}},
       "setup": "Inputs and exact-sized outputs are allocated and initialized outside measurement in controlled owner order",
       "charged_phases": ["256 validating scans with error position", "256 exact UTF-16 length scans", "256 UTF-8 to UTF-16 conversions", "output-count validation", "checksum"],
-      "pair": {"candidate": "HYLE UTF-8 to UTF-16 units N=4096", "peer": "simdutf exact-contract UTF-8 to UTF-16 units N=4096"},
+      "pair": {"candidate": "HYLE UTF-8 to UTF-16 units N=4096", "peer": "simdutf UtfResult-adapted UTF-8 to UTF-16 units N=4096"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
       "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
       "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
-      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v5-contract"]
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-v6-contract"]
     }
   ],
   "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
   "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
-  "artifacts": {"validators": ["artifact-identity", "build-contract", "container-v5-contract"]},
+  "artifacts": {"validators": ["artifact-identity", "build-contract", "container-v6-contract"]},
   "hosts": {
     "allowed_platforms": ["windows"],
     "certification_platforms": ["windows"],
@@ -172,8 +172,8 @@
     "comparison_contract": {
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PROVISIONAL_ARCHETYPE",
-      "semantic_matrix": "bench/container/consumer_shapes_v5.json",
-      "semantic_matrix_sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      "semantic_matrix": "bench/container/consumer_shapes_v6.json",
+      "semantic_matrix_sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
@@ -185,7 +185,7 @@
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
           "HYLE_COMPONENTS": "container",
-          "HYLE_CONTAINER_V5_SINGLE_P1_BENCH": "ON",
+          "HYLE_CONTAINER_V6_SINGLE_P1_BENCH": "ON",
           "HYLE_INSTALL": "OFF",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",
@@ -201,27 +201,27 @@
       },
       "executables": [
         {
-          "id": "container-v5-primary",
-          "target": "hyle_container_v5_p1_bench",
-          "stem": "hyle_container_v5_p1_bench",
+          "id": "container-v6-primary",
+          "target": "hyle_container_v6_p1_bench",
+          "stem": "hyle_container_v6_p1_bench",
           "target_variant": "primary",
           "measurement_batch": 4096,
-          "telemetry_prefixes": ["# HYLE_CONTAINER_V5_RUN "],
+          "telemetry_prefixes": ["# HYLE_CONTAINER_V6_RUN "],
           "workloads": [
             {"id": "model-cache-lru-mixed-access-4096", "title": "container model-cache LRU mixed access N=4096"},
-            {"id": "model-metadata-utf8-to-utf16-4096", "title": "text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
+            {"id": "model-metadata-utf8-to-utf16-4096", "title": "container_text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
           ]
         },
         {
-          "id": "container-v5-placement",
-          "target": "hyle_container_v5_p1_bench_placement",
-          "stem": "hyle_container_v5_p1_bench_placement",
+          "id": "container-v6-placement",
+          "target": "hyle_container_v6_p1_bench_placement",
+          "stem": "hyle_container_v6_p1_bench_placement",
           "target_variant": "placement",
           "measurement_batch": 4096,
-          "telemetry_prefixes": ["# HYLE_CONTAINER_V5_RUN "],
+          "telemetry_prefixes": ["# HYLE_CONTAINER_V6_RUN "],
           "workloads": [
             {"id": "model-cache-lru-mixed-access-4096", "title": "container model-cache LRU mixed access N=4096"},
-            {"id": "model-metadata-utf8-to-utf16-4096", "title": "text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
+            {"id": "model-metadata-utf8-to-utf16-4096", "title": "container_text model-metadata UTF-8 to UTF-16 8-byte units N=4096"}
           ]
         }
       ],
@@ -231,19 +231,19 @@
         {"id": "artifact-identity", "kind": "artifact-identity"},
         {"id": "build-contract", "kind": "build-contract"},
         {
-          "id": "container-v5-contract",
+          "id": "container-v6-contract",
           "kind": "command",
           "command": [
             "{python}",
-            "scripts/validate-container-v5-bench.py",
+            "scripts/validate-container-v6-bench.py",
             "--source",
             "{source}",
             "--build",
             "{build}",
             "--expected-benchmark-sha256",
-            "a1dd9b55ce3a7b7e4b2b823d88a03562abef7ff0d0fc8f5511e96fedc42153bb",
+            "cc16c91e4d1285fdf28aa58064a476b5fb28fb2244cd76069bf47e466f78eea0",
             "--expected-shape-sha256",
-            "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+            "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
           ]
         }
       ]

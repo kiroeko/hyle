@@ -1,8 +1,8 @@
 {
   "schema": "hyle.perf.contract/v1",
-  "id": "container-concurrent-product-p1-v1",
+  "id": "container-concurrent-product-p1-v2",
   "module": "container_concurrent",
-  "claim": "P1 engineering non-inferiority of Container v5 read-mostly concurrent membership and normal unbounded 4P/4C typed handoff against source-pinned oneTBB under the same eight-physical-core topology",
+  "claim": "P1 engineering non-inferiority of Container v6 read-mostly concurrent membership and unbounded 4P/4C typed handoff against source-pinned oneTBB after hash, allocator and recoverable-OOM adapter equalization",
   "candidate": {
     "target": "hyle_container_concurrent",
     "delivery_shape": "source",
@@ -16,7 +16,7 @@
       "revision": "e00c68dcac0e83947c9b54f6d5304c0616c9639f",
       "configuration": {
         "delivery_shape": "source-built dynamic peer runtime staged beside its benchmark process",
-        "algorithms": "oneapi::tbb::concurrent_unordered_set and oneapi::tbb::concurrent_queue",
+        "algorithms": "oneapi::tbb::concurrent_unordered_set and concurrent_queue with StableHash, HYLE SystemStdAllocator and bad_alloc mapped to recoverable results",
         "source": "clean external checkout with TBB_ENABLE_IPO=OFF"
       }
     }
@@ -46,13 +46,13 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/active-object-registry/read-mostly-membership",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v5.json",
-        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+        "path": "bench/container/consumer_shapes_v6.json",
+        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
       },
       "ownership_topology": {
-        "candidate": "One pre-reserved HYLE ConcurrentFlatHashSet owns 32768 integral keys and serves eight pinned read-only workers",
-        "peer": "One pre-reserved oneTBB concurrent_unordered_set owns the identical keys and serves the identical pinned workers",
-        "equivalence": "Construction, reserve, population and warmup are excluded; both charge exactly 2097152 50-percent-hit contains operations with no dummy mapped payload or external locks"
+        "candidate": "One pre-reserved HYLE ConcurrentFlatHashSet owns 32768 integral keys using StableHash, std::equal_to and SystemAllocator, then serves eight pinned read-only workers",
+        "peer": "One pre-reserved oneTBB concurrent_unordered_set owns the identical keys using StableHash, std::equal_to and SystemStdAllocator over the same backend, then serves the identical pinned workers",
+        "equivalence": "Construction, recoverable reserve/population and warmup are excluded; both charge exactly 2097152 50-percent-hit contains operations with identical hash/equality/allocation policy, no dummy mapped payload and no external locks"
       },
       "material_contribution": {
         "frequency": 8,
@@ -82,13 +82,13 @@
       "gate_role": "product",
       "consumer_key": "inference-runtime/bursty-task-and-transfer-inbox/unbounded-handoff",
       "provenance": {
-        "path": "bench/container/consumer_shapes_v5.json",
-        "sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+        "path": "bench/container/consumer_shapes_v6.json",
+        "sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
       },
       "ownership_topology": {
-        "candidate": "One HYLE UnboundedQueue owns every in-flight uint64_t between four pinned producers and four pinned consumers; enqueue uses its normal recoverable-allocation route",
-        "peer": "One oneTBB concurrent_queue owns the identical values between the identical producer and consumer roles; its normal push route is used",
-        "equivalence": "Both queues grow as required, preserve per-producer FIFO compatibility, expose nonblocking try-pop, transfer every value exactly once and exclude wait, close, cancellation and service policy"
+        "candidate": "One HYLE UnboundedQueue owns every in-flight uint64_t between four pinned producers and four pinned consumers using SystemAllocator; enqueue returns recoverable allocation failure",
+        "peer": "One oneTBB concurrent_queue owns the identical values between the identical roles using SystemStdAllocator over the same backend; bad_alloc is mapped to the same retry result",
+        "equivalence": "Both queues grow as required, use the same allocation owner, preserve per-producer FIFO compatibility, expose nonblocking try-pop, return recoverable enqueue failure, transfer every value exactly once and exclude wait, close, cancellation and service policy"
       },
       "material_contribution": {
         "frequency": 8,
@@ -125,8 +125,8 @@
     "comparison_contract": {
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PROVISIONAL_ARCHETYPE",
-      "semantic_matrix": "bench/container/consumer_shapes_v5.json",
-      "semantic_matrix_sha256": "666161e7b937aaf9244da82f08e48c01fbbac8c405ba909a2dc39bc000f7a78f"
+      "semantic_matrix": "bench/container/consumer_shapes_v6.json",
+      "semantic_matrix_sha256": "1ec4e0ee7836523bbbcc3250a3cbd11858861e05a647ff068943318513472bfc"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
@@ -140,7 +140,7 @@
           "HYLE_BUILD_BENCH": "ON",
           "HYLE_BUILD_TESTS": "OFF",
           "HYLE_COMPONENTS": "container",
-          "HYLE_CONTAINER_V5_CONCURRENT_P1_BENCH": "ON",
+          "HYLE_CONTAINER_V6_CONCURRENT_P1_BENCH": "ON",
           "HYLE_INSTALL": "OFF",
           "HYLE_SANITIZER": "off",
           "HYLE_SIMD_EXACT_TARGET": "",
@@ -156,9 +156,9 @@
       },
       "executables": [
         {
-          "id": "container-v5-concurrent-current",
-          "target": "hyle_container_v5_concurrent_bench",
-          "stem": "hyle_container_v5_concurrent_bench",
+          "id": "container-v6-concurrent-current",
+          "target": "hyle_container_v6_concurrent_bench",
+          "stem": "hyle_container_v6_concurrent_bench",
           "target_variant": "primary",
           "measurement_batch": 256,
           "pair_role": "candidate",
@@ -169,9 +169,9 @@
           ]
         },
         {
-          "id": "container-v5-concurrent-onetbb",
-          "target": "hyle_container_v5_concurrent_peer_bench",
-          "stem": "hyle_container_v5_concurrent_peer_bench",
+          "id": "container-v6-concurrent-onetbb",
+          "target": "hyle_container_v6_concurrent_peer_bench",
+          "stem": "hyle_container_v6_concurrent_peer_bench",
           "target_variant": "primary",
           "measurement_batch": 256,
           "pair_role": "peer",

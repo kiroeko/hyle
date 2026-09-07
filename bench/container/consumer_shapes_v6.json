@@ -1,6 +1,6 @@
 {
-  "schema": "hyle.container.consumer-shapes/v5",
-  "owner": "container-v5-product-factorization",
+  "schema": "hyle.container.consumer-shapes/v6",
+  "owner": "container-v6-identity-p1-resume",
   "reference_revisions": {
     "llama_cpp": "3ad1ba7336986d98592d3e28cafd1a406715351f",
     "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
@@ -20,8 +20,8 @@
         "vllm/vllm/v1/kv_offload/cpu/policies/lru.py evictable block LRU",
         "sglang/python/sglang/srt/mem_cache storage and runtime bounded caches"
       ],
-      "peer": "Abseil flat_hash_map plus std::list using the same stable hash and HYLE system allocator",
-      "reason": "bounded recency storage is common across the four inference references; the benchmark measures the generic storage mechanism rather than any engine-specific eviction policy"
+      "peer": "Abseil flat_hash_map plus std::list using the same stable hash and HYLE system allocator, with bad_alloc mapped to the same typed result and rollback after partial insertion",
+      "reason": "bounded recency storage is common across the four inference references; both adapters now preserve the identical recoverable failure and no-partial-commit contract while the benchmark measures the generic storage mechanism rather than engine-specific eviction policy"
     },
     {
       "id": "read-mostly-concurrent-membership",
@@ -34,8 +34,8 @@
         "SGLang runtime worker, transfer and cache registries",
         "ds4 backend/runtime object registries"
       ],
-      "peer": "oneTBB concurrent_unordered_set",
-      "reason": "a payload-free set is the natural consumer shape; forcing a dummy mapped value would pollute both storage and API"
+      "peer": "oneTBB concurrent_unordered_set with the identical stable hash, equality and HYLE SystemStdAllocator backend",
+      "reason": "a payload-free set is the natural consumer shape; forcing a dummy mapped value would pollute both storage and API, while hash and allocation policy are equalized rather than hidden in defaults"
     },
     {
       "id": "unbounded-mpmc-runtime-handoff",
@@ -48,8 +48,8 @@
         "sglang/python/sglang/srt mem-cache and disaggregation transfer queues",
         "ds4 runtime/backend work handoff"
       ],
-      "peer": "oneTBB concurrent_queue",
-      "reason": "bursty unbounded typed handoff recurs across inference runtimes; blocking policy and process transport are intentionally not attributed to the container"
+      "peer": "oneTBB concurrent_queue using HYLE SystemStdAllocator, with bad_alloc mapped to the same recoverable enqueue result",
+      "reason": "bursty unbounded typed handoff recurs across inference runtimes; allocator and OOM results are equalized, while blocking policy and process transport remain intentionally outside the container"
     },
     {
       "id": "model-metadata-utf8-to-utf16",
@@ -62,8 +62,8 @@
         "vLLM and SGLang model/token metadata entering native and operating-system boundaries",
         "ds4 GGUF and host metadata boundaries"
       ],
-      "peer": "simdutf validate-with-errors plus exact length plus convert-valid route",
-      "reason": "the comparison charges the same safe caller-buffer contract on both sides; raw unchecked transcoding is not an equivalent peer"
+      "peer": "the product-locked simdutf implementation pointer performing validate-with-errors, exact length and endian-correct convert-valid, adapted to the identical UtfResult",
+      "reason": "the comparison charges the same safe caller-buffer contract on both sides, including malformed input and output-too-small oracle checks; raw unchecked transcoding is not an equivalent peer"
     }
   ],
   "negative_space": {

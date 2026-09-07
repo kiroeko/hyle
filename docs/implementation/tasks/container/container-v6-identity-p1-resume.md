@@ -118,3 +118,25 @@ Audit verdict 为 **PASS**，四个 factor 进入 `AUDITED`。`SCOPED -> AUDITED
 selected closure `36/36`、shared selected closure `35/35` 通过；旧 factor 选择明确失败；Container
 source/shared/static relocated consumer 全部通过。公开 `<hyle/container/**>`、`hyle::container`、算法和
 layout 没有变化。`CONT6-F01=PASS`；活动状态保持 `AUDITED`，只剩 `CONT6-F02` 与其后声明的回放门。
+
+## `CONT6-F02` pre-sample adapter receipt
+
+四格 adapter 已在不改产品源码的前提下等价化，并生成新合同
+`container-product-p1-v6` / `container-concurrent-product-p1-v2`：
+
+- LRU 双侧使用同一 `StableHash` 和 HYLE system allocator。正常 peer route 只捕获
+  `std::bad_alloc`、在 index 失败后回滚 list，并返回同构 `LruInsertResult`；未计时 validator 使用编译期
+  `before-node/after-node` 故障点验证 peer adapter 的 OOM 映射和部分插入回滚，避免把 MSVC STL 不承诺的
+  自定义 throwing-allocator 注入机制冒充消费合同。正常计时实例没有该分支；
+- concurrent membership 双侧使用相同 hash/equality 和同一 system allocator backend；queue 双侧使用
+  同一 allocator backend，并把 oneTBB `bad_alloc` 映射为 recoverable retry；
+- Unicode peer 固定产品 simdutf revision，只获取一次 implementation pointer，执行 validate-with-errors、
+  exact length、endian-correct conversion，并返回同构 `UtfResult`。validator 比较 malformed 与
+  output-too-small 的 status/offset/count/未写输出；
+- `consumer_shapes_v6.json`、benchmark source 和两份合同已通过 schema/资源校验；W1-WIN Release/WERROR
+  四个 adapter target 编译，单线程 primary/placement 语义 oracle 全部 `PASS`，并发双进程 smoke 的
+  affinity、工作量与 checksum 全部匹配。smoke 数字不作性能裁决；正式结论只来自下一步 immutable
+  candidate 的一次 `closure-perf-v1` qualification。
+
+预采样复核确认四格现在均为 `ADAPTER_EQUALIZED`，没有剩余苹果/橘子差异；活动状态仍保持
+`AUDITED`，尚未把未运行的 qualification 写成 `PASS`。
