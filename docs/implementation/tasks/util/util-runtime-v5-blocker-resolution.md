@@ -1,6 +1,7 @@
 # Util-runtime v5：有限 blocker 恢复
 
-<!-- MODULE REVIEW: VERIFIED -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 ## Scope and retained evidence
 
@@ -43,7 +44,7 @@ invoker 仅接收地址槽；具名 throwing-move 回归证明三个入口各只
 不被 `noexcept` 误终止，既有 move-only by-value factory 仍通过。Windows 私有 adapter 固定 SDK include
 顺序，并模拟 DbgHelp 非零截断；实现只接受留有明确余量且相对上一轮确实增长的结果，否则继续扩容或
 回退原始名字，避免把 1022/1024 的部分结果冒充完整 owning string。Windows util-runtime 三个测试
-程序在候选前的工作树验证通过；三平台候选验证与终态签证仍待执行。
+程序在候选前的工作树验证通过；后续三平台候选验证与终态签证结果记录如下。
 
 ### 候选后的私有 fixture 校正
 
@@ -99,3 +100,49 @@ Container-text 路线，没有复制 allocator、hash、text 或 error authority
 
 不可变产品候选 LOC：全库代码 480,987；自实现不含测试 77,069；util-runtime 实现 544。registry v1
 仍要求的 `self_with_tests=122059` 只作为旧 schema 兼容字段登记，不向 owner 常规报告，也不参与完成度。
+
+## Closure decision 与 terminal receipt
+
+`CLOSED / FROZEN`。产品候选
+`7019998034f8025890770fad04406dc5ef2d6194` / tree
+`a0f5b8d9ae5af99b9e15d60678ec6dac7d566327` 保持不变；私有测试 fixture 校正后的精确执行源码为
+`342dbcfd10c2ab985aab023991db2c7367c3719e` / tree
+`2edd6da353a43cde252282772cf6d6910436bdb4`，两者在 `include/hyle/util` 与
+`src/util_runtime` 上没有差异。候选证据提交为
+`9d99b2ba84da7571a02f8c3d210ce1c411e4b63a`，`VERIFIED` 状态提交为
+`27ddf8f0e91163ed0d21ad144f2c4acb52db659c`。
+
+全部七项适用 gate 为 `PASS`，没有未决 blocker：三条 v4 blocker 均已关闭；三平台 factor/header、
+source/relocated shared/relocated static、WSL sanitizers、compiled C++ exports、用户文档、候选后红队和
+P0 结构成本均通过。P1 timing comparison 明确为 `NOT_APPLICABLE`，没有借未运行的计时产生
+non-inferiority、WIN 或 SOTA 声明。
+
+已知限制：
+
+- Registry 是启动期、进程内、one-way freeze 的 owning registry，不提供动态模块
+  unregister/unload/drain/quiescence；宿主必须在卸载 callable 所属 image 前排空借用和调用；
+- `EntryView`、`FrozenView` 与缓存的 `Creator` 都借用 Registry-owned immutable storage；Registry 必须
+  活得更久，具名 callable 替换只保证旧借用继续有效，不回收旧 entry；
+- demangle 是 best-effort 冷诊断工具；平台 demangler 拒绝、OOM 或无法证明输出完整时允许精确回退
+  输入，不承诺跨进程 DbgHelp 协调或任意 ABI 名称质量；
+- P0 证书只覆盖已冻结候选的复杂度、allocation/lock/metadata 和 forwarding 结构；不覆盖未来热
+  consumer、Native FFI、跨工具链 C++ ABI、Formal performance 或全场景 SOTA。
+
+reopen triggers：
+
+- 真实消费者复现 Registry 参数类别、异常、entry/allocator/image 生命周期、并发 publication、
+  demangle 完整性、OOM 或 C++ API 易用性缺陷；
+- 真实动态插件消费者证明 unregister/drain/quiescence 是 util-runtime 的通用职责，而不是宿主策略；
+- 公开 API、布局、算法、复杂度、正常路径成本、直接依赖、组件身份或 source/static/shared 交付发生变化；
+- profile 把 Registry 或 demangle 提升为 P1/P2，或成熟同合同 peer 证明更优复杂度或可复现 material
+  consumer advantage；
+- 支持的 compiler、STL、ABI demangler、Windows DbgHelp 或 sanitizer runtime 改变本轮依赖的语义。
+
+LOC 绑定不可变产品 candidate：全库代码 480,987；自实现不含测试 77,069；util-runtime 实现 544。
+registry v1 的旧兼容字段 `self_with_tests=122059` 只写入机器记录，不作为 owner 指标。
+
+`VERIFIED -> CLOSED` 前态 registry 快照位于 canonical checkout 外的
+`C:\public\project-hyle\_validation\util-runtime-v5\state-before-closed.json`，SHA-256 为
+`FACF881D3DCAC4BE3BF0FBD002B901F16778970DA2F987DECA9A606DF1C541D4`。terminal end commit 与第一个
+真实保存 `util_runtime=CLOSED` 的 registry anchor 在各自提交产生后由后续 registry 提交登记；本
+receipt 不伪造提交内自引用。
