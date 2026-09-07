@@ -122,8 +122,12 @@ transport owner fiber 上调用。
 
 - `resolve()` 把 `getaddrinfo` 卸载到 blocking pool，结果同时携带 IPv4/IPv6
   family；字面量地址可用 `resolve_addr()`。
-- `SignalSet` 是进程级单 owner、单 waiter 的优雅关闭入口，析构会恢复宿主旧
-  handler。
+- `SignalSet` 是进程级单 owner、单 waiter 的优雅关闭入口。用
+  `SignalSet::create()` 显式选择 `SignalInterest`，失败返回 typed `Status`；
+  `co_await wait()` 返回 `Result<ProcessSignal>`，不需要解释 signal number 或负数。
+  同类信号会合并，`Interrupt` 与 `Terminate` 两类 pending 事件不会互相覆盖。
+  对象必须活到当前 `wait()` 完成，重复的顺序等待受支持；需要把关闭事件广播给
+  多个任务时，在唯一 waiter 之后使用 Sched。析构会恢复嵌入宿主原有的 handler。
 - provided-buffer multishot recv、fixed-file 与 direct accept 是 io_uring
   专属快腿。先查询/尝试注册，失败后回到 portable one-shot；不能把“不支持”
   当成一个极快 benchmark 样本。

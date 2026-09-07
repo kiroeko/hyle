@@ -12,20 +12,12 @@
 #include "hyle/sched/scheduler.h"
 
 #if !defined(_WIN32)
-#  include <csignal>
+#include <csignal>
 #endif
 
-// io-09 signal_set test. On POSIX we drive the whole path end-to-end: a fiber
-// co_await sigs.wait(), the test raise()s the signal, the process-global handler
-// writes the self-pipe, the proactor read completes, and wait() returns the bit.
-// On Windows a real console control event would target the whole process (and can
-// kill the test runner), so there we only smoke-test that construction/teardown
-// installs+removes the handler without crashing -- the real Ctrl-C delivery is an
-// integration concern, not a unit test.
-
 using hyle::io::IoContext;
-using hyle::io::kSigInt;
-using hyle::io::kSigTerm;
+using hyle::io::ProcessSignal;
+using hyle::io::SignalInterest;
 using hyle::io::SignalSet;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
@@ -35,132 +27,191 @@ using hyle::sched::Scheduler;
 using hyle::sched::Task;
 
 namespace {
+
 constexpr unsigned kOwner = 0;
 
 #if !defined(_WIN32)
+
 struct Drive {
   Task<int> task;
 };
-void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 
-struct SigR {
-  std::atomic<int> got{-999};
+void drive_entry(void *context) noexcept {
+  static_cast<Drive *>(context)->task.resume();
+}
+
+struct SignalResult {
+  std::atomic<int> first{-1};
+  std::atomic<int> second{-1};
   std::atomic<bool> done{false};
 };
-// Waiter fiber: co_await the signal; record which bit fired.
-Task<int> wait_coro(AllocatorRef, SigR* r, SignalSet* s) {
-  int bit = co_await s->wait();
-  r->got.store(bit, std::memory_order_release);
-  r->done.store(true, std::memory_order_release);
+
+Task<int> wait_once(AllocatorRef, SignalResult *result, SignalSet *signals) {
+  auto received = co_await signals->wait();
+  result->first.store(received.has_value() ? static_cast<int>(*received) : -1,
+                      std::memory_order_release);
+  result->done.store(true, std::memory_order_release);
   co_return 0;
 }
-// Raiser fiber: fire SIGTERM (runs after the waiter has armed the pipe read).
-Task<int> raise_coro(AllocatorRef) {
+
+Task<int> wait_twice(AllocatorRef, SignalResult *result, SignalSet *signals) {
+  auto first = co_await signals->wait();
+  auto second = co_await signals->wait();
+  result->first.store(first.has_value() ? static_cast<int>(*first) : -1,
+                      std::memory_order_release);
+  result->second.store(second.has_value() ? static_cast<int>(*second) : -1,
+                       std::memory_order_release);
+  result->done.store(true, std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> raise_terminate(AllocatorRef) {
   ::raise(SIGTERM);
   co_return 0;
 }
-void prior_sigint_handler(int) {}
+
+Task<int> raise_both(AllocatorRef) {
+  ::raise(SIGINT);
+  ::raise(SIGTERM);
+  co_return 0;
+}
+
+void prior_interrupt_handler(int) {}
+
 #endif
-}  // namespace
+
+} // namespace
 
 #if !defined(_WIN32)
 
-// A fiber waits on SIGTERM; another fiber raises it; wait() must return kSigTerm.
-TEST(IoSignal, WaitReturnsRaisedSignal) {
-  constexpr unsigned kWorkers = 1;
-  Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+TEST(IoSignal, WaitReturnsTypedSignal) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
   ASSERT_TRUE(io.valid());
+  auto created = SignalSet::create(io, kOwner, SignalInterest::kTerminate);
+  ASSERT_TRUE(created.has_value()) << created.error().message();
+  SignalSet signals = std::move(*created);
+  SignalResult result;
 
-  auto r = std::make_unique<SigR>();
-  auto sigs = std::make_unique<SignalSet>(io, kOwner, kSigTerm);
-  ASSERT_TRUE(sigs->valid());
+  Drive waiter{wait_once(system_allocator(), &result, &signals)};
+  Drive raiser{raise_terminate(system_allocator())};
+  Fiber wait_fiber(kDefaultStackSize, &drive_entry, &waiter);
+  Fiber raise_fiber(kDefaultStackSize, &drive_entry, &raiser);
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &wait_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &raise_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
 
-  // Waiter fiber: arm the wait, then a raiser fiber (spawned after) fires SIGTERM.
-  auto dw = std::make_unique<Drive>();
-  dw->task = wait_coro(system_allocator(), r.get(), sigs.get());
-  Fiber fw(kDefaultStackSize, &drive_entry, dw.get());
-
-  // Raiser fiber: raise SIGTERM. Runs on the same worker (pinned) but after the
-  // waiter has suspended on the pipe read (spawned second, FIFO local queue).
-  auto dr = std::make_unique<Drive>();
-  dr->task = raise_coro(system_allocator());
-  Fiber fr(kDefaultStackSize, &drive_entry, dr.get());
-
-  sched.spawn_on(kOwner, &fw);
-  sched.spawn_on(kOwner, &fr);
-  sched.drain();
-  sched.shutdown();
-
-  EXPECT_TRUE(r->done.load());
-  EXPECT_EQ(r->got.load(), static_cast<int>(kSigTerm));
+  EXPECT_TRUE(result.done.load());
+  EXPECT_EQ(result.first.load(), static_cast<int>(ProcessSignal::kTerminate));
 }
 
-// The signal transport is process-global and single-consumer. A second set must
-// fail cleanly instead of stealing bytes from the first set's wait.
-TEST(IoSignal, RegisterUnregisterIsClean) {
-  constexpr unsigned kWorkers = 1;
-  Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+TEST(IoSignal, DistinctBurstSignalsAreNotOverwritten) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
   ASSERT_TRUE(io.valid());
-  {
-    SignalSet a(io, kOwner, kSigInt | kSigTerm);
-    EXPECT_TRUE(a.valid());
-    SignalSet b(io, kOwner, kSigInt);
-    EXPECT_FALSE(b.valid());
-    SignalSet moved;
-    moved = std::move(a);  // regression: move assignment must not end `moved`'s lifetime
-    EXPECT_TRUE(moved.valid());
-  }
+  auto created = SignalSet::create(
+      io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
+  ASSERT_TRUE(created.has_value());
+  SignalSet signals = std::move(*created);
+  SignalResult result;
 
-  // Invalid masks/owners are rejected before touching process handlers.
-  EXPECT_FALSE(SignalSet(io, kOwner, 0).valid());
-  EXPECT_FALSE(SignalSet(io, io.num_workers(), kSigInt).valid());
+  Drive waiter{wait_twice(system_allocator(), &result, &signals)};
+  Drive raiser{raise_both(system_allocator())};
+  Fiber wait_fiber(kDefaultStackSize, &drive_entry, &waiter);
+  Fiber raise_fiber(kDefaultStackSize, &drive_entry, &raiser);
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &wait_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &raise_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+
+  EXPECT_TRUE(result.done.load());
+  EXPECT_NE(result.first.load(), result.second.load());
+  EXPECT_TRUE(
+      (result.first.load() == static_cast<int>(ProcessSignal::kInterrupt) &&
+       result.second.load() == static_cast<int>(ProcessSignal::kTerminate)) ||
+      (result.first.load() == static_cast<int>(ProcessSignal::kTerminate) &&
+       result.second.load() == static_cast<int>(ProcessSignal::kInterrupt)));
 }
 
-// Embedders may already own SIGINT. HYLE must restore that exact disposition,
-// not overwrite it with SIG_DFL when the last SignalSet is destroyed.
+TEST(IoSignal, FactoryRejectsDuplicateAndInvalidOwnership) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
+  ASSERT_TRUE(io.valid());
+  auto first = SignalSet::create(
+      io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
+  ASSERT_TRUE(first.has_value());
+  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kInterrupt)
+                  .error()
+                  .IsAlreadyExists());
+
+  SignalSet moved = std::move(*first);
+  EXPECT_TRUE(moved.valid());
+  EXPECT_EQ(moved.interest(),
+            SignalInterest::kInterrupt | SignalInterest::kTerminate);
+}
+
+TEST(IoSignal, InvalidInputIsTyped) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
+  ASSERT_TRUE(io.valid());
+  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      SignalSet::create(io, io.num_workers(), SignalInterest::kInterrupt)
+          .error()
+          .IsOutOfRange());
+}
+
 TEST(IoSignal, RestoresPriorHandler) {
-  constexpr unsigned kWorkers = 1;
-  Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
   ASSERT_TRUE(io.valid());
 
-  struct sigaction original {};
-  struct sigaction custom {};
-  struct sigaction observed {};
+  struct sigaction original{};
+  struct sigaction custom{};
+  struct sigaction observed{};
   ASSERT_EQ(::sigaction(SIGINT, nullptr, &original), 0);
-  custom.sa_handler = &prior_sigint_handler;
+  custom.sa_handler = &prior_interrupt_handler;
   sigemptyset(&custom.sa_mask);
   ASSERT_EQ(::sigaction(SIGINT, &custom, nullptr), 0);
   {
-    SignalSet s(io, kOwner, kSigInt);
-    ASSERT_TRUE(s.valid());
+    auto created = SignalSet::create(io, kOwner, SignalInterest::kInterrupt);
+    ASSERT_TRUE(created.has_value());
   }
   ASSERT_EQ(::sigaction(SIGINT, nullptr, &observed), 0);
-  EXPECT_EQ(observed.sa_handler, &prior_sigint_handler);
+  EXPECT_EQ(observed.sa_handler, &prior_interrupt_handler);
   ASSERT_EQ(::sigaction(SIGINT, &original, nullptr), 0);
 }
 
-#else  // Windows
+#else
 
-// Windows: a real CTRL event targets the whole process group and can terminate the
-// test runner, so we only verify the handler install/uninstall path is clean.
-TEST(IoSignal, RegisterUnregisterIsCleanWindows) {
-  constexpr unsigned kWorkers = 1;
-  Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+TEST(IoSignal, WindowsFactoryOwnsOneProcessHandler) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
   ASSERT_TRUE(io.valid());
-  {
-    SignalSet a(io, kOwner, kSigInt | kSigTerm);
-    EXPECT_TRUE(a.valid());
-    SignalSet b(io, kOwner, kSigTerm);
-    EXPECT_FALSE(b.valid());
-    SignalSet moved;
-    moved = std::move(a);
-    EXPECT_TRUE(moved.valid());
-  }
-  SUCCEED();
+  auto created = SignalSet::create(
+      io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
+  ASSERT_TRUE(created.has_value()) << created.error().message();
+  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kTerminate)
+                  .error()
+                  .IsAlreadyExists());
+  SignalSet moved = std::move(*created);
+  EXPECT_TRUE(moved.valid());
+}
+
+TEST(IoSignal, WindowsInvalidInputIsTyped) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler, 1);
+  ASSERT_TRUE(io.valid());
+  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
+                  .error()
+                  .IsInvalidArgument());
+  EXPECT_TRUE(
+      SignalSet::create(io, io.num_workers(), SignalInterest::kInterrupt)
+          .error()
+          .IsOutOfRange());
 }
 
 #endif

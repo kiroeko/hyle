@@ -224,3 +224,18 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 
 `AUDITED / ACTIVE`。identity、能力超集、自然 API、P0 成本、ownership 与有限 FIX 集已冻结。下一步只可
 按 `IOCORE-F01..F10` 实施；任何新 protocol/API/benchmark idea 都不得追加进本候选。
+
+## Implementation checkpoints
+
+- `415e54ed`：完成 `io_core` 内部 factor 身份迁移，公共产品仍保持 `hyle::io`；
+- `58ddd108`：完成 typed endpoint、portable/native error、transfer outcome 与统一
+  deadline/cancel transport 合同；
+- `8a68f175`：完成 File/Platform FS 单一 owner 互操作、typed positional/exact IO、
+  显式 direct-I/O policy/alignment 与 preallocate 修正，并通过 Windows、Linux、macOS
+  的 `io_core` correctness 回归；
+- 当前未提交候选：SignalSet 已改为 typed factory/result，pending 按 signal kind
+  合并并保留不同种类，重复等待、move、重复 owner、非法输入与宿主 handler 恢复已进入测试。
+
+以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
+裁决；F01、F04--F06、F08 的 IoContext 部分以及 F09--F10 仍未完成，四个协议/传输
+factor 仍处于 `QUEUED`。
