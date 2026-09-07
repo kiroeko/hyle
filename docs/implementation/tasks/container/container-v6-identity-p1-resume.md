@@ -355,3 +355,18 @@ output-too-small 或最终成功时构造 `UtfResult`；scalar fallback 语义�
 `C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-container-text-terminal-correction.json`，
 SHA-256 `99843515ce8ef08861392dd1f35390e391acbf8813582f2314618beb1b3335ae`。其余三个 factor 保持
 `CANDIDATE`，所有不受影响的证据继续 carry-forward。
+
+## `CONT6-F07` implementation receipt
+
+六种 safe conversion 已统一为 terminal-result 实现：simdutf provider 的原始 validation result 在错误时
+才映射为 `UtfResult`，成功路径直接进入精确 sizing 和 valid conversion；容量不足与最终成功各只构造一次
+公开结果。旧 `output_result()` 中间聚合 helper 已移除。公开 API/layout、provider、错误枚举、完整写入和
+scalar fallback 合同不变，空的 UTF-16/UTF-32 输入增加等价的直接成功路径。
+
+W1-WIN Release/WERROR 只构建受影响的 `hyle_container_text_tests`、普通测试与 ISA-variant 目标，三项
+定向测试全部通过；v7 primary/placement semantic oracle 也为 `PASS`。MSVC Release/LTO-off object code
+在 provider validation 返回后直接按 `error == SUCCESS` 跳入 sizing；中间 success-result 搬运与随后状态
+检查已经消失，错误 jump table 只可由错误分支到达。未运行 exploratory performance sample。
+
+`CONT6-F07=PASS`。下一步提交这一产品字节，再把精确提交冻结为新的 `container_text` candidate；只有该
+不可变候选需要最后一次 v7 qualification，其他 Container factor 不重放。
