@@ -1150,7 +1150,7 @@
     },
     {
       "module": "sched",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "SCHED-V4-CONTROL-CONTRACT-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-current-product-replay-2026-09.md",
       "round_id": "sched-v4-control-contracts",
@@ -1176,7 +1176,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v4 REOPENED：当前回放确认 cooperative cancellation 命名/组合、raw callback noexcept 类型和 Semaphore 可判别结果三个产品触发点；目前只登记最小影响面，尚未冻结 closure card 或修改产品。"
+      "summary": "sched-v4 SCOPED：三项公共控制合同、Waker 有界裁决、直接 consumer、三交付和一次 primary/holdout P1 已冻结范围与预算；AUDITED 前不修改产品。"
     },
     {
       "module": "io",
