@@ -1177,7 +1177,7 @@
       "blocker_owner": "util-runtime maintainer (primary agent for this closure round)",
       "resume_condition": "Start a new bounded util-only SCOPED/AUDITED resume round from the retained v4 evidence. Fix only RT-01 argument forwarding without narrowing natural callable admission, RT-02 private Windows include ordering, and RT-03 native long-symbol/fallback contract. Freeze a new immutable execution tree; use the selector for util-only correctness, two runtime headers and Util source/relocated static/relocated shared on Windows/Linux/macOS; complete WSL ASan/UBSan/TSan, P0, exports and candidate red-team. No util_core/frozen dependency/product-owner or shared-tool changes; no P1 absent a new admitted hot consumer.",
       "end_commit": "6454815345fb2494ac52718d414a3b4df9811295",
-      "registry_anchor_commit": "6454815345fb2494ac52718d414a3b4df9811295",
+      "registry_anchor_commit": "aa3e2697c0b6db3d0f7b00961719feaceda34424",
       "gate_verdicts": {
         "scope": "PASS",
         "architecture": "PASS",

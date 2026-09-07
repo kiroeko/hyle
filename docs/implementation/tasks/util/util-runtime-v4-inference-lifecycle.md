@@ -374,3 +374,8 @@ file-set/测量实现，只调用用户指定的三组集合，没有运行四�
 第三项不包括 util_core、测试、package sample 或文档。registry schema 的旧第四字段只保留旧 snapshot 的
 legacy 值和单独 provenance；它不是本轮统计，也未用于本轮报告。终态之后只有文档/证据/状态提交，
 产品实现 LOC 不变。
+
+终态落盘：receipt/evidence commit 为 `6454815345fb2494ac52718d414a3b4df9811295`；首次
+BLOCKED registry anchor 为 `aa3e2697c0b6db3d0f7b00961719feaceda34424`，后续文档提交只校正该实际
+anchor 引用。CANDIDATE→BLOCKED 的显式 previous checker、docs checker 与 diff whitespace 均通过；
+terminal selector 仅选 docs/closure 两门，65 门跳过。恢复前不得把本候选当成 CLOSED/FROZEN。
