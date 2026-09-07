@@ -254,7 +254,15 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   bounded cancel/deadline 在返回用户前等待原操作退休，避免 late-completion 触碰
   已释放 buffer。buffer、TCP、UDP、File 与 timeout 定向测试已在 Windows IOCP、
   Linux io_uring 和 macOS kqueue 通过。
+- `739c4beb`：完成 `IOCORE-F06` 的真实本地传输。公开 `LocalEndpoint` 明确区分
+  Unix 路径、Linux abstract namespace 与 Windows named pipe；`LocalListener/LocalStream`
+  复用统一 operation budget、typed error 和 buffer sequence。Unix 路径只安全替换 socket
+  node，close 仅按 bind 后记录的 device/inode 清理自己的节点并支持显式权限；Windows
+  named-pipe accept 进入 IOCP，connect 进入有界 blocking pool，byte-mode scatter/gather
+  只做一次 allocator-backed staging。分段 round-trip、权限/清理、Linux abstract、accept
+  deadline、预取消 connect 和 completion retirement 已在 Windows IOCP、Linux io_uring 与
+  macOS kqueue 通过定向测试。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F01、F06、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
+裁决；F01、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
 仍处于 `QUEUED`。
