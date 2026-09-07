@@ -54,7 +54,7 @@ sched::Task<bool> run_node_task(mem::AllocatorRef, TaskGraph *g, std::uint32_t i
 // construction, not luck). Each running task holds a ref; the waiting fiber
 // holds one; last drop frees. `remaining[i]` is ATOMIC (workers concurrently
 // decrement). `pending` counts spawned-not-finished nodes; when it hits 0 the
-// last task wakes the waiter. `waker` is COPIED onto the finishing task's stack
+// last task wakes the waiter. The last finisher moves `waker` onto its stack
 // before the wake, so wake() never touches this (possibly-freed) struct.
 struct WfState {
   TaskGraph *g;
@@ -95,9 +95,10 @@ struct WfState {
   // but sharing the normal completion path keeps that invariant from becoming a
   // latent lost-wake if wf_spawn gains another caller.
   void finish_task_ref() noexcept {
-    sched::Waker w = std::move(waker);
     const bool last =
         pending.fetch_sub(1, std::memory_order_acq_rel) == 1;
+    sched::Waker w;
+    if (last) w = std::move(waker);
     drop_ref();
     if (last) w.wake();
   }
