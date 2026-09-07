@@ -381,3 +381,31 @@ SHA-256 `ac8ad50f3fde7cdeab79143773e3b0a257dd4608204664104fdd07dd304ca248`。
 
 这一状态提交不改变产品树，因此不运行 P1。下一项只允许对这个干净不可变候选运行一次 v7
 qualification；若预注册判据仍证明固定产品劣化，本轮进入 `BLOCKED` 而不是继续追加试验或 FIX。
+
+## 终态候选验证
+
+最后一次且唯一一次终态 v7 qualification 位于
+`C:\public\project-hyle\_validation\container-v6\qual-single-v7-terminal-evidence\manifest.json`，manifest
+SHA-256 `c4793256dfe376d82feb4beeb3b5d9789f90666bd9c981bd4a9323d108f4ea5a`，contract SHA-256
+`3009a1294fdc7004b365e8af79c7a5d13f237e9ffaa540c722f105cc7b71d5ef`。n=15 已足够裁决，未升级为
+n=31；qualification/performance 均 `PASS`。LRU 八个 strata 全部 `WIN`，median advantage
+`1.2243–1.2728`。safe Unicode 八项全部 `PARITY` 且 5% NI `PASS`，median `0.9863–1.0102`；七项 CI
+跨 1，余下一项 CI 完全高于 1。第三候选的 6/8 固定劣化已消失，没有通过换顺序、缩 margin 或挑样掩盖。
+
+精确 source archive 为
+`C:\public\project-hyle\_validation\container-v6\candidate\hyle-3ba50461.tar.gz`，SHA-256
+`ce6718997233e0997845d09761d209adf7e17d26d69561d70c510a4855c9f916`。只重放受影响的
+`container_text` 风险：
+
+- W1-WIN / MSVC 19.50：Release/WERROR 三项定向 test `3/3 PASS`，v7 primary/placement semantic oracle
+  `PASS`，正式候选构建与 P1 通过；
+- W1-WSL / GCC 14.2：Release/static/WERROR + UBSan，header、ordinary 与 ISA-variant `3/3 PASS`；
+- Mac mini `Mac16,10` / M4 / macOS 26.6.2 / AppleClang 21：static `3/3 PASS`，shared
+  header+ordinary `2/2 PASS`；
+- MacBook Air `Mac16,12` / M4 / 同 OS/toolchain：static `3/3 PASS`；相同 Apple ABI 的 shared 路线由
+  Mac mini 覆盖，不重复构建；
+- 没有 include、公开 layout、component graph、package metadata 或 symbol visibility 变化；此前精确
+  source/static/shared relocated consumer、direct consumer、symbol/FFI 证据按未变化风险复用。
+
+两个 macOS 环境是不同硬件，不把 static/shared 两种 linkage 误计为两台机器。两者只提供 correctness /
+portability 事实；当前 performance profile `M1-MAC` 仍只登记 MacBook Air 且未绑定 Formal 主机身份。

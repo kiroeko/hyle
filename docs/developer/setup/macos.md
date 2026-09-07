@@ -1,7 +1,10 @@
 # macOS 环境准备（Apple Silicon）
 
 > ARM/NEON + kqueue 真机验证平台。**无 NVIDIA GPU → CUDA 后端不编，走 CPU/host**（未来 Metal）。
-> 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库开发机通过 SSH 访问（`ssh kiro@172.22.10.198`）。
+> 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库有两个独立 Apple Silicon 验证环境：MacBook Air
+> `Mac16,12`（`ssh kiro@172.22.10.198`）与 Mac mini `Mac16,10`
+>（`ssh kiro@172.22.10.107`）。`M1-MAC` 性能 profile 当前只指前者；后者在单独登记身份前只作
+> correctness/portability 复核，不能把两台机器或两种 linkage 混为一个 Formal 证据。
 > 无网机器的 Command Line Tools/CMake 介质与断网验收见 [`offline.md`](offline.md)。
 
 ## 一、硬门槛

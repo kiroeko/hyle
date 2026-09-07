@@ -1,10 +1,43 @@
 # Container 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: REJECTED CANDIDATE -->
+<!-- PERFORMANCE EVIDENCE: CANDIDATE -->
+
+## Container v6 终态候选
+
+当前证据由两个预冻结合同组成，二者都从干净不可变候选运行，没有在看到结果后改变 workload、peer、
+margin、顺序或样本数：
+
+| factor / workload | 同合同 peer | 当前结果 | 可声明边界 |
+|---|---|---|---|
+| `container` / entry+weight LRU mixed access | Abseil `38f8c1535de9ebc12c6340e5c1c8ebd72afde560` adapter；同 hash、allocator、recoverable OOM、rollback、typed result、per-entry/total weight 与 entry/weight limits | 8/8 strata `WIN`；median advantage `1.2243–1.2728`；8/8 NI `PASS` | 冻结 4096-entry model-cache 形状胜出，不外推所有 cache 或 hash workload |
+| `container_text` / safe UTF-8→UTF-16 caller buffer | simdutf `2d4e249dcfd978b39dd567b156f20a43db97377b`；同 provider、validation-with-errors、exact sizing、endian-correct valid conversion、typed status/offset/count 与 caller buffer | 8/8 `PARITY`、8/8 NI `PASS`；median `0.9863–1.0102`；7/8 CI 跨 1，余下一项只证明 HYLE 小幅有利 | 同语义正常路径未证明固定劣化，不声明普遍更快 |
+| `container_concurrent` / read-mostly membership | oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；同 hash/equality、system allocator、8 worker、分布、查询量、生命周期与 checksum | 双顺序 `PARITY`、NI `PASS`；median `0.9882/0.9777`，CI 均跨 1 | 冻结 membership 形状 5% 非劣，不声明 exact 胜出 |
+| `container_queue` / unbounded typed MPMC handoff | 同一 oneTBB revision；同 allocator、recoverable OOM/retry、producer/consumer participation、setup/drain、payload 与 FIFO conservation | 双顺序 `WIN`、NI `PASS`；median `1.2888/1.2614` | 冻结 4P4C handoff 形状胜出，不外推其他 queue policy |
+
+单线程/Unicode 终态 manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-single-v7-terminal-evidence\manifest.json`，SHA-256
+`c4793256dfe376d82feb4beeb3b5d9789f90666bd9c981bd4a9323d108f4ea5a`；contract SHA-256
+`3009a1294fdc7004b365e8af79c7a5d13f237e9ffaa540c722f105cc7b71d5ef`。它绑定
+`container_text` commit `3ba50461ec7c8f387f4d953f1e499a1f6d449870`，qualification 与 performance gate 均
+`PASS`，n=15 已给出终局裁决而未升级样本。
+
+并发/queue manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-concurrent-v3-evidence\manifest.json`，SHA-256
+`f16b135ff6a1b0974055ae63940e88df44f2ffe44c71841d6417930eb06eb196`；contract SHA-256
+`0af5617ca1c4b978a8ad65ace62764efc2e792642939465110796c333f4e6389`，绑定 commit
+`111c28eab99daff6257427473a2a1b11ac1cfd0c`。`container`、`container_concurrent` 与
+`container_queue` 在 `111c28ea..3ba50461` 间没有产品字节变化；因此单线程 LRU 与并发结果可按 factor
+identity 复用，不把 `container_text` 的后续修正错误归给其他 factor。
+
+两合同的 A/A、5%/10% known delta、timer floor、placement/执行顺序、artifact identity 与未计时
+semantic/resource oracle 均通过。这里的 `PASS/WIN` 只回答表中冻结的同合同 consumer 形状；不同
+allocator、失败语义、错误结果或所有权的默认路线必须另立 `NATURAL_ROUTE` 合同，不能混入这些结论。
+
+<!-- PERFORMANCE EVIDENCE: HISTORICAL / REJECTED CANDIDATE -->
 
 ## Container v6 首候选：终局红队撤销错误的 `PASS`
 
-当前不可变产品候选是
+当时的不可变产品候选是
 `6a78f6dfa7a711350c694c01d90d4301fc57ae4f` / tree
 `53fd52ba931af02216b9686baf77de1a2b670acc`。下表保留当时的原始统计事实，但终局红队证明 LRU weight
 语义尚未等价，并发 membership 又违反了样本升级顺序；所有 `PASS/WIN` 解释均已撤销，不是当前证书。
@@ -36,17 +69,17 @@ checksum、A/A、known delta 与 timer floor 均正常，没有固定产品损�
 weight 语义、把约 9ms 的 membership 进程窗口按预冻结规则提高到足够分辨率、修正 factor attribution，
 再从唯一 `n=15` 开始形成新候选证据；不得复用本候选 verdict、改 margin 或挑样。
 
-上述有限修复已形成新的预采样合同 `container-product-p1-v7` 与
+上述有限修复随后形成新的预采样合同 `container-product-p1-v7` 与
 `container-concurrent-product-p1-v3`：peer 已真实执行 weighted-LRU 语义，membership 窗口提高到每 worker
 4194304 次查询（W1-WIN smoke 约 134--137ms），合同以 Container 产品 façade 为根并记录逐 workload
-factor owner。编译、未计时语义 oracle 和 smoke 已通过，但正式 qualification 尚未运行，因此本页仍明确
-保持 rejected/inconclusive，而不会把预采样结果提前写成性能 `PASS`。
+factor owner。在该历史时间点，编译、未计时语义 oracle 和 smoke 已通过但正式 qualification 尚未运行，
+因此当时保持 rejected/inconclusive，没有把预采样结果提前写成性能 `PASS`；当前终态结果见本页首节。
 
 <!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
 ## Container v5：历史终局为 `INCONCLUSIVE`
 
-当前 Container 产品候选是
+该轮 Container 产品候选是
 `6fae3c11ebce9a0741f45780e63c9896e08bb2a2` / tree
 `8025ee111380c2600f804cf979ed59d289a8be76`。本轮的功能、复杂度、正确性、交付、易用性、文档和
 红队均已完成；P1 工程性能门没有通过，也没有确认产品性能失败。原因是第二候选的四组 peer
