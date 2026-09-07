@@ -97,3 +97,8 @@ LOC 绑定共同 immutable candidate：全库 464,718；自实现包含测试 12
 `text` 实现 2,040。
 
 <!-- MODULE CLOSURE RECEIPT: BLOCKED -->
+
+> 2026-09-07 identity note：本记录中的 `text/hyle_text` 是当时真实内部身份。预发布 owner 后续确认其
+> semantic owner 始终是 Container，并在
+> [`container-text-factor-identity-migration-v1`](../build/container-text-factor-identity-migration-v1.md)
+> 中把当前身份完整迁移为 `container_text/hyle_container_text`，不保留 alias；本历史证据不回写。

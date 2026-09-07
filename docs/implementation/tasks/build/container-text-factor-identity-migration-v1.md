@@ -1,6 +1,6 @@
 # Container Text factor 身份迁移
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: COMPLETE -->
 
 ## Scope and audit
 
@@ -46,3 +46,21 @@ CMake/CI/package 与活动 resume task 必须使用新名，并在历史 termina
 停止条件：三项完成并由真实 source/static/shared Container consumer 证明新 target/package closure；若发现
 公开 API 或产品 namespace 必须改变，停止并回到 Container `AUDITED`，不能在本 build task 顺手修改。
 
+## Result
+
+三项 FIX 全部完成。checker/schema 与合法/非法 transition tests 由 `d04710a3` 落地；Container 四 factor
+审计由 `c4c09459` 签署；完整 identity correction 的产品/构建 commit 为 `43105dd5`：
+
+- 当前 component、target、目录、visibility/provider 名分别为 `container_text`、
+  `hyle_container_text`、`src/container_text` / `tests/container_text`、`HYLE_CONTAINER_TEXT_*`；旧 target、
+  alias、目录和构建宏不存在；
+- registry 在原有 ledger 槽位保存目标记录，并永久登记 `text -> container_text` migration；`util`、`io`
+  与 Container façade 的边以及 roadmap/build/container/user 当前文档均使用新 ID；
+- W1-WIN static selected closure `36/36`、shared selected closure `35/35` 通过；显式选择旧
+  `HYLE_DEV_FACTORS=text` 配置按预期失败；
+- `SelectedComponentSmoke -Component container` 的 source、relocated shared、relocated static 三条真实
+  consumer 全部通过，安装包只向用户公开 `hyle::container`，内部 detail target 为
+  `_factor_container_text`。
+
+本 build unit 为 **COMPLETE**。它只完成身份修正，不替 Container v6 的剩余 P1 adapter、跨平台回放或
+terminal closure 作结论。

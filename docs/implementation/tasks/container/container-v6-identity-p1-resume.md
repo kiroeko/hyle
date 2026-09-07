@@ -110,3 +110,11 @@ Top-down public trace 与 bottom-up ownership scan 得到以下冻结结论：
 Audit verdict 为 **PASS**，四个 factor 进入 `AUDITED`。`SCOPED -> AUDITED` 前态 registry 快照位于
 `C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-audit.json`，SHA-256
 `439AC47F594ED0B26963981C2BDE5132E3CA65F1354D976ECC179F54AE1DA4E4`。
+
+## `CONT6-F01` implementation receipt
+
+`43105dd5` 完成无 alias 的 `container_text` component/target/source/test/macro/provider/package 迁移，
+并同步 Container façade、`util`、`io`、roadmap、build/container architecture 和用户指南。W1-WIN static
+selected closure `36/36`、shared selected closure `35/35` 通过；旧 factor 选择明确失败；Container
+source/shared/static relocated consumer 全部通过。公开 `<hyle/container/**>`、`hyle::container`、算法和
+layout 没有变化。`CONT6-F01=PASS`；活动状态保持 `AUDITED`，只剩 `CONT6-F02` 与其后声明的回放门。
