@@ -1151,12 +1151,14 @@
     },
     {
       "module": "util_runtime",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "util-runtime-v5-blocker-resolution",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
       "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
       "non_goals": "New capability families; util_core or frozen dependency changes; Sched, IO, Compute or Graph work; unregister/unload/drain; Native FFI/C API; P1 timing; shared closure, selector or build-system redesign.",
       "baseline_commit": "3ed2a2cef5ffc0c5acbcaff6421e568a5546f77a",
+      "candidate_commit": "7019998034f8025890770fad04406dc5ef2d6194",
+      "candidate_tree": "a0f5b8d9ae5af99b9e15d60678ec6dac7d566327",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1172,7 +1174,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v5 AUDITED：三条 blocker 调用链已复核，有限 FIX 锁定为无额外构造的地址槽类型擦除与两项私有 fixture 校正。"
+      "summary": "util-runtime v5 CANDIDATE：三条 blocker 已在不可变候选 70199980/a0f5b8d9 修复，等待预声明的三平台、三交付、sanitizer、P0/export 与候选后红队验证。"
     },
     {
       "module": "sched",

@@ -1,6 +1,6 @@
 # Util-runtime v5：有限 blocker 恢复
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Scope and retained evidence
 
@@ -36,9 +36,11 @@ metadata、复杂度、依赖或能力表。
 
 ## Implementation batch
 
-有限实现已完成但尚未锁定 candidate：Registry 三个入口复用内部 `find_entry/invoke_entry`，erased
+有限实现已锁定为 candidate `7019998034f8025890770fad04406dc5ef2d6194`、tree
+`a0f5b8d9ae5af99b9e15d60678ec6dac7d566327`：Registry 三个入口复用内部
+`find_entry/invoke_entry`，erased
 invoker 仅接收地址槽；具名 throwing-move 回归证明三个入口各只有公开边界的一次 move，且调用前异常
 不被 `noexcept` 误终止，既有 move-only by-value factory 仍通过。Windows 私有 adapter 固定 SDK include
 顺序，并模拟 DbgHelp 非零截断；实现只接受留有明确余量且相对上一轮确实增长的结果，否则继续扩容或
 回退原始名字，避免把 1022/1024 的部分结果冒充完整 owning string。Windows util-runtime 三个测试
-程序当前通过；这不是三平台或终态签证。
+程序在候选前的工作树验证通过；三平台候选验证与终态签证仍待执行。
