@@ -132,10 +132,14 @@ delivery semantics stay with the real build/package contract tests rather than a
 second parser here.
 
 An explicit `--previous` comparison permits a newly declared component only
-when its first registry state is `QUEUED`. Existing component removal, rename or
+when its first registry state is `QUEUED`. Unrecorded removal, rename or
 reordering remains invalid, as does introducing a new component directly in a
-later closure state. This makes the documented new-factor registration path
-mechanically usable without weakening ordinary state-transition checks.
+later closure state. A pre-release corrective rename is allowed only through a
+one-to-one `component_identity_migrations` registry entry with repository
+evidence: the target must replace the source in the same ledger position and
+continue a legal source-state transition. No compatibility alias or history
+reset is inferred. This makes both new-factor registration and rare explicit
+identity correction mechanically auditable without weakening ordinary checks.
 
 `check-docs.py` additionally requires every performance page referenced by a
 current `CLOSED` record to carry one exact

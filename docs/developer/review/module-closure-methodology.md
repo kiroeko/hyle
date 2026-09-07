@@ -50,6 +50,12 @@ Git 防篡改、工作流账本或 CMake 解释器。从 `SCOPED` 起，同一�
 期间 candidate commit/tree 也冻结，产品变化必须先退回 `AUDITED`。这些是 reviewer 执行的工程规则，
 不是把整个开发过程编码成状态机。中央 component graph 新增模块时，以 `QUEUED` 进入 registry。
 
+预发布阶段若 owner 明确纠正一个错误的内部 component 名称，不得靠删除旧记录、伪造新 `QUEUED` 记录或
+跳过 `--previous` 实现。当前 registry 必须保存一对一 `component_identity_migrations` 及 repository 内
+证据；新 ID 在原 ledger 位置继续旧 ID 的合法状态迁移，中央 manifest、target、直接边和当前文档原子
+迁移，不保留未经需求证明的 compatibility alias。检查器仍拒绝未登记删除/重命名、链式/循环迁移和借
+迁移重排组件。历史 task 保留当时名称并加迁移注记，而不是改写已经发生的事实。
+
 从 `BLOCKED` 恢复时不得把旧 terminal task 改回活动状态：创建新的 round 与 `ACTIVE` task，标为
 `RESUME`，引用前一 blocker/resume condition，并让 registry 指向新 task 后进入 `SCOPED`。产品 identity
 未变时可以复用旧 candidate，但仍须在新轮重新绑定并验证；旧 `HISTORICAL` task 永不回写。

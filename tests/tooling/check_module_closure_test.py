@@ -238,10 +238,51 @@ def main() -> None:
     errors = checker.validate_transitions(data, scoped_addition)
     require_error(errors, "new component 'new_factor' must enter as 'QUEUED'")
 
+    # A pre-release corrective rename is legal only when the current registry
+    # records a one-to-one migration and preserves the component's ledger slot
+    # and state transition. It does not turn the target into a newly queued
+    # component or reset its history.
+    renamed_component = copy.deepcopy(data)
+    old_name = "core"
+    new_name = "core_identity_test"
+    renamed_record = next(
+        record for record in renamed_component["modules"]
+        if record["module"] == old_name)
+    renamed_record["module"] = new_name
+    renamed_component.setdefault("component_identity_migrations", []).append(
+        {
+            "from": old_name,
+            "to": new_name,
+            "evidence": (
+                "docs/implementation/tasks/build/"
+                "container-text-factor-identity-migration-v1.md"
+            ),
+        }
+    )
+    errors = checker.validate_transitions(data, renamed_component)
+    if errors:
+        raise AssertionError(f"recorded component identity migration rejected: {errors!r}")
+
+    unrecorded_rename = copy.deepcopy(data)
+    next(
+        record for record in unrecorded_rename["modules"]
+        if record["module"] == old_name)["module"] = new_name
+    errors = checker.validate_transitions(data, unrecorded_rename)
+    require_error(errors, "unrecorded component removal or rename")
+
+    reordered_rename = copy.deepcopy(renamed_component)
+    renamed_index = next(
+        index for index, record in enumerate(reordered_rename["modules"])
+        if record["module"] == new_name)
+    reordered_rename["modules"].append(
+        reordered_rename["modules"].pop(renamed_index))
+    errors = checker.validate_transitions(data, reordered_rename)
+    require_error(errors, "does not allow reordering existing components")
+
     removed_component = copy.deepcopy(data)
     removed_component["modules"].pop()
     errors = checker.validate_transitions(data, removed_component)
-    require_error(errors, "does not allow component removal or rename")
+    require_error(errors, "unrecorded component removal or rename")
 
     reordered_components = copy.deepcopy(data)
     reordered_components["modules"][0:2] = reversed(

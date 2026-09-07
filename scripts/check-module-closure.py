@@ -52,6 +52,7 @@ STATUS_TABLE_BEGIN = "<!-- BEGIN GENERATED MODULE STATUS -->"
 STATUS_TABLE_END = "<!-- END GENERATED MODULE STATUS -->"
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 COMPONENT_RE = re.compile(r"_hyle_declare_component\(\s*([a-z][a-z0-9_]*)")
+COMPONENT_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 ALLOWED_TRANSITIONS = {
     "QUEUED": {"QUEUED", "SCOPED"},
@@ -186,6 +187,47 @@ def _check_nonempty_string_list(
     if (not isinstance(value, list) or not value or
             any(not isinstance(item, str) or not item.strip() for item in value)):
         errors.append(f"{prefix}: '{field}' must be a non-empty string array")
+
+
+def _identity_migration_map(
+        data: dict[str, Any], errors: list[str],
+        root: Path | None = None) -> dict[str, str]:
+    """Parse explicit, one-to-one pre-release component identity corrections."""
+    value = data.get("component_identity_migrations", [])
+    if not isinstance(value, list):
+        errors.append("registry component_identity_migrations must be an array")
+        return {}
+
+    result: dict[str, str] = {}
+    targets: set[str] = set()
+    for index, migration in enumerate(value):
+        prefix = f"component identity migration {index}"
+        if not isinstance(migration, dict):
+            errors.append(f"{prefix}: entry must be an object")
+            continue
+        source = _require_string(migration, "from", prefix, errors)
+        target = _require_string(migration, "to", prefix, errors)
+        if source is not None and COMPONENT_ID_RE.fullmatch(source) is None:
+            errors.append(f"{prefix}: invalid source component id {source!r}")
+        if target is not None and COMPONENT_ID_RE.fullmatch(target) is None:
+            errors.append(f"{prefix}: invalid target component id {target!r}")
+        if source is None or target is None:
+            continue
+        if source == target:
+            errors.append(f"{prefix}: source and target must differ")
+        if source in result:
+            errors.append(f"{prefix}: duplicate source component {source!r}")
+        if target in targets:
+            errors.append(f"{prefix}: duplicate target component {target!r}")
+        if source in targets or target in result:
+            errors.append(
+                f"{prefix}: chained or cyclic identity migrations are not allowed")
+        result[source] = target
+        targets.add(target)
+        if root is not None:
+            _check_repo_file(
+                root, migration.get("evidence"), "evidence", prefix, errors)
+    return result
 
 
 def validate_module(
@@ -434,6 +476,14 @@ def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
     ]
     if len(actual) != len(set(actual)):
         errors.append("registry contains duplicate module ids")
+    migrations = _identity_migration_map(data, errors, root)
+    for source, target in migrations.items():
+        if source in actual:
+            errors.append(
+                f"component identity migration source {source!r} remains in registry")
+        if target not in actual:
+            errors.append(
+                f"component identity migration target {target!r} is absent from registry")
     try:
         expected = declared_components(root)
     except (OSError, ValueError) as error:
@@ -449,6 +499,7 @@ def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
 def validate_transitions(
         previous: dict[str, Any], current: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    migrations = _identity_migration_map(current, errors)
     before_order = [
         record["module"] for record in previous.get("modules", [])
         if isinstance(record, dict) and isinstance(record.get("module"), str)
@@ -465,31 +516,52 @@ def validate_transitions(
         record["module"]: record for record in current.get("modules", [])
         if isinstance(record, dict) and isinstance(record.get("module"), str)
     }
-    removed = sorted(set(before) - set(after))
+    translated_before_order = [
+        migrations.get(component, component) for component in before_order
+    ]
+    if len(translated_before_order) != len(set(translated_before_order)):
+        errors.append(
+            "component identity migration collides with an existing component")
+
+    removed = sorted(
+        component for component in before
+        if migrations.get(component, component) not in after)
     if removed:
         errors.append(
-            "transition comparison does not allow component removal or rename: "
+            "transition comparison does not allow unrecorded component removal "
+            "or rename: "
             + ", ".join(removed))
 
-    surviving_after = [component for component in after_order if component in before]
-    if surviving_after != before_order:
+    translated_before = set(translated_before_order)
+    surviving_after = [
+        component for component in after_order
+        if component in translated_before
+    ]
+    if surviving_after != translated_before_order:
         errors.append(
             "transition comparison does not allow reordering existing components")
 
-    added = [component for component in after_order if component not in before]
+    added = [
+        component for component in after_order
+        if component not in translated_before
+    ]
     for component in added:
         if after[component].get("product_state") != "QUEUED":
             errors.append(
                 f"new component {component!r} must enter as 'QUEUED', got "
                 f"{after[component].get('product_state')!r}")
 
-    for component in sorted(set(before) & set(after)):
-        old_state = before[component].get("product_state")
+    for old_component in before_order:
+        component = migrations.get(old_component, old_component)
+        if component not in after:
+            continue
+        old_state = before[old_component].get("product_state")
         new_state = after[component].get("product_state")
         allowed = ALLOWED_TRANSITIONS.get(old_state, set())
         if new_state not in allowed:
             errors.append(
-                f"module {component!r}: illegal transition {old_state!r} -> {new_state!r}")
+                f"module {old_component!r} -> {component!r}: illegal transition "
+                f"{old_state!r} -> {new_state!r}")
     return errors
 
 
