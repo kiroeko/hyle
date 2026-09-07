@@ -44,3 +44,12 @@ invoker 仅接收地址槽；具名 throwing-move 回归证明三个入口各只
 顺序，并模拟 DbgHelp 非零截断；实现只接受留有明确余量且相对上一轮确实增长的结果，否则继续扩容或
 回退原始名字，避免把 1022/1024 的部分结果冒充完整 owning string。Windows util-runtime 三个测试
 程序在候选前的工作树验证通过；三平台候选验证与终态签证仍待执行。
+
+### 候选后的私有 fixture 校正
+
+首次 W1-WSL ASan 运行在 `hyle_util_runtime_demangle_fault_test` 启动 GoogleTest 时报告
+alloc/dealloc family mismatch。该隔离程序为验证 public owning string 的 `bad_alloc` 传播而重载了普通
+`operator new/delete`，却没有一并重载标准库会使用的 `nothrow` new/delete；于是 GoogleTest 的
+`nothrow new` 走 ASan C++ allocator，释放却落入 fixture 的 `free`。校正仅补齐同一私有 executable
+中的 scalar/array nothrow 配对，不修改产品头、实现、API、算法、依赖或正常 workload。失败保留为
+验证历史，受影响的 ASan 与三平台私有 fixture 必须在终态前重跑。

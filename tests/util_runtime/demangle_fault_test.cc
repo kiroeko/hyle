@@ -46,10 +46,24 @@ void* operator new(std::size_t size) {
   throw std::bad_alloc();
 }
 void* operator new[](std::size_t size) { return ::operator new(size); }
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
+  if (fault::fail_cpp_allocation) return nullptr;
+  return std::malloc(size == 0 ? 1 : size);
+}
+void* operator new[](std::size_t size,
+                     const std::nothrow_t& tag) noexcept {
+  return ::operator new(size, tag);
+}
 void operator delete(void* value) noexcept { std::free(value); }
 void operator delete[](void* value) noexcept { std::free(value); }
 void operator delete(void* value, std::size_t) noexcept { std::free(value); }
 void operator delete[](void* value, std::size_t) noexcept { std::free(value); }
+void operator delete(void* value, const std::nothrow_t&) noexcept {
+  std::free(value);
+}
+void operator delete[](void* value, const std::nothrow_t&) noexcept {
+  std::free(value);
+}
 
 namespace fault_std {
 using namespace std;  // Only inside this private implementation adapter.
