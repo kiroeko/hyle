@@ -12,7 +12,7 @@
   "modules": [
     {
       "module": "core",
-      "product_state": "CLOSED",
+        "product_state": "CLOSED",
       "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
       "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
       "round_id": "core-v5-assert-macro-contract",
@@ -20,63 +20,63 @@
       "scope": "Repair the reproduced public assertion-macro hygiene and disabled-Debug semantic checking defects without changing Core's admitted capability families or normal runtime cost contract.",
       "non_goals": "New Core capabilities, logging or crash management, recoverable errors, arbitrary formatting, C or Native FFI, timing benchmarks, adjacent-module review and build-system redesign.",
       "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
-      "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
-      "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
-      "end_commit": "f9e8b3c8137a25e8903265da89adfc08eff0abe7",
-      "registry_anchor_commit": "aa6f1148ee19ea45680183094b685773598dcfa6",
+        "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+        "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
+        "end_commit": "f9e8b3c8137a25e8903265da89adfc08eff0abe7",
+        "registry_anchor_commit": "aa6f1148ee19ea45680183094b685773598dcfa6",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
-      },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
-      "freeze_confirmation": {
-        "id": "core-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "loc": {
-        "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
-        "repository_code": 414925,
-        "self_with_tests": 99927,
-        "self_without_tests": 62142,
-        "module_implementation": 762
-      },
-      "known_limitations": [
-        "The fatal observer remains image-local and synchronously borrowed; callback exchange is not a quiescence barrier, so the embedding host owns restore and quiescence before plugin unload.",
-        "Core owns bounded typed invariant context, not arbitrary formatting, logging, backtraces, signal or minidump handling, process-wide crash policy or Native FFI.",
-        "The P0 certificate covers structural normal-path cost on the frozen candidate, toolchains and delivery shapes; it makes no failure-I/O, downstream-workload, universal timing, cache-hit, SOTA or Formal-performance claim."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces a Core correctness, security, missing-foundation or C++ API-usability defect.",
-        "A supported compiler or target invalidates assertion semantic parity, the one-to-eight field bound, macro hygiene, normal-path code generation, public-header closure or visibility contract.",
-        "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
-        "A named host consumer proves that fatal-observer lifetime or coordination must be owned by Core with a different complexity or ownership shape.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage."
-      ],
-      "summary": "core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。"
+        "engineering_performance": {
+          "verdict": "PASS",
+          "mode": "STRUCTURAL",
+          "instrument_profile": "closure-correctness-v1",
+          "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
+        },
+        "formal_performance": {
+          "state": "NONE"
+        },
+        "gate_verdicts": {
+          "scope": "PASS",
+          "architecture": "PASS",
+          "correctness": "PASS",
+          "delivery": "PASS",
+          "usability_docs": "PASS",
+          "red_team": "PASS",
+          "engineering_performance": "PASS"
+        },
+        "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+        "freeze_confirmation": {
+          "id": "core-freeze-replay-2026-09-05",
+          "marker": "FROZEN",
+          "confirmed_at": "2026-09-05",
+          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
+        },
+        "loc": {
+          "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+          "repository_code": 414925,
+          "self_with_tests": 99927,
+          "self_without_tests": 62142,
+          "module_implementation": 762
+        },
+        "known_limitations": [
+          "The fatal observer remains image-local and synchronously borrowed; callback exchange is not a quiescence barrier, so the embedding host owns restore and quiescence before plugin unload.",
+          "Core owns bounded typed invariant context, not arbitrary formatting, logging, backtraces, signal or minidump handling, process-wide crash policy or Native FFI.",
+          "The P0 certificate covers structural normal-path cost on the frozen candidate, toolchains and delivery shapes; it makes no failure-I/O, downstream-workload, universal timing, cache-hit, SOTA or Formal-performance claim."
+        ],
+        "reopen_triggers": [
+          "A named real consumer reproduces a Core correctness, security, missing-foundation or C++ API-usability defect.",
+          "A supported compiler or target invalidates assertion semantic parity, the one-to-eight field bound, macro hygiene, normal-path code generation, public-header closure or visibility contract.",
+          "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
+          "A named host consumer proves that fatal-observer lifetime or coordination must be owned by Core with a different complexity or ownership shape.",
+          "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage."
+        ],
+        "summary": "core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。"
     },
     {
       "module": "container_intrusive",
@@ -202,14 +202,14 @@
         "self_without_tests": 73155,
         "module_implementation": 1549
       },
-      "freeze_confirmation": {
-        "id": "util-core-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
+        "freeze_confirmation": {
+          "id": "util-core-freeze-replay-2026-09-05",
+          "marker": "FROZEN",
+          "confirmed_at": "2026-09-05",
+          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
+          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
+          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
+        },
       "known_limitations": [
         "FunctionRef remains a synchronous non-owning call-only view; storage, return and asynchronous use require an owning callable or an owner-defined function-plus-context shape.",
         "If a resource is only potentially-throwing copyable and its deleter is move-only, failed owner move cleans the token through the transferred deleter and disarms the source; it prevents leak and double release but does not preserve source ownership after the exception.",
@@ -877,61 +877,61 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v6.md"
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WIN",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v6.md"
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
-      "freeze_confirmation": {
-        "id": "mem-v6-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-        "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
-      },
-      "loc": {
-        "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "repository_code": 454713,
-        "self_with_tests": 117630,
-        "self_without_tests": 74519,
-        "module_implementation": 7631
-      },
-      "known_limitations": [
-        "A growable variable-size individual-free pool is routed through standard PMR over a HYLE resource rather than duplicated as a distinct HYLE owner.",
-        "Large-page arena partial effects are observable but not rollbackable; physical page granularity and NUMA placement remain unverified when the vendor or OS cannot prove them.",
-        "Tensor/KV eviction, asynchronous completion, device providers, IPC protocols and secure-secret policy remain upper-layer owners.",
-        "The P1 receipt covers one W1-WIN isolated runtime-erased heap lifecycle; other families are structural and this is not an all-platform, all-shape or Formal SOTA certificate."
-      ],
-      "reopen_triggers": [
-        "A real consumer reproduces an allocator/resource/buffer/pool/arena/planner correctness, OOM, lifetime, concurrency, ownership or C++ usability defect, or proves a routed family cannot perform a named foundation task.",
-        "The locked mimalloc or a direct HYLE dependency changes source, semantics, default policy, ABI, code generation or delivery on the product path.",
-        "The public API, layout, default metadata, complexity, component dependency, delivery shape or system-fact semantics changes.",
-        "A same-contract normal consumer workload proves a material regression, or a mature peer proves a better complexity class.",
-        "New OS, NUMA or large-page facts invalidate the current unknown, partial-outcome or placement contract."
-      ],
-      "summary": "mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。"
+    "formal_performance": {
+      "state": "PENDING",
+      "instrument_profile": "formal-release-v1"
+    },
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "closure_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
+    "freeze_confirmation": {
+      "id": "mem-v6-freeze-2026-09-06",
+      "marker": "FROZEN",
+      "confirmed_at": "2026-09-06",
+      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
+    },
+    "loc": {
+      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "repository_code": 454713,
+      "self_with_tests": 117630,
+      "self_without_tests": 74519,
+      "module_implementation": 7631
+    },
+    "known_limitations": [
+      "A growable variable-size individual-free pool is routed through standard PMR over a HYLE resource rather than duplicated as a distinct HYLE owner.",
+      "Large-page arena partial effects are observable but not rollbackable; physical page granularity and NUMA placement remain unverified when the vendor or OS cannot prove them.",
+      "Tensor/KV eviction, asynchronous completion, device providers, IPC protocols and secure-secret policy remain upper-layer owners.",
+      "The P1 receipt covers one W1-WIN isolated runtime-erased heap lifecycle; other families are structural and this is not an all-platform, all-shape or Formal SOTA certificate."
+    ],
+    "reopen_triggers": [
+      "A real consumer reproduces an allocator/resource/buffer/pool/arena/planner correctness, OOM, lifetime, concurrency, ownership or C++ usability defect, or proves a routed family cannot perform a named foundation task.",
+      "The locked mimalloc or a direct HYLE dependency changes source, semantics, default policy, ABI, code generation or delivery on the product path.",
+      "The public API, layout, default metadata, complexity, component dependency, delivery shape or system-fact semantics changes.",
+      "A same-contract normal consumer workload proves a material regression, or a mature peer proves a better complexity class.",
+      "New OS, NUMA or large-page facts invalidate the current unknown, partial-outcome or placement contract."
+    ],
+    "summary": "mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。"
     },
     {
       "module": "mem_vm",
-      "product_state": "CLOSED",
+    "product_state": "CLOSED",
       "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
       "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
       "round_id": "mem-vm-v2-inference-mapping",
@@ -949,57 +949,57 @@
         "W1-WSL",
         "M1-MAC"
       ],
-      "engineering_performance": {
-        "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md"
-      },
+    "engineering_performance": {
+      "verdict": "PASS",
+      "mode": "P1_ENGINEERING",
+      "material_margin_pct": 5,
+      "machine_profile": "W1-WSL",
+      "instrument_profile": "closure-perf-v1",
+      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md"
+    },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
-      "freeze_confirmation": {
-        "id": "mem-vm-v2-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-        "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
-      },
-      "loc": {
-        "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-        "repository_code": 454713,
-        "self_with_tests": 117630,
-        "self_without_tests": 74519,
-        "module_implementation": 1318
-      },
-      "known_limitations": [
-        "Windows whole-view mappings have no safe partial-unmap equivalent, and file-backed kDontNeed is rejected instead of using a content-weakening anonymous-memory primitive.",
-        "SharedMapping payload size, readiness and synchronization are an external IPC protocol; Darwin and Windows native capacities may be page-rounded.",
-        "Existing borrowed pointers, spans and views must not outlive owner release, reset or move; checked accessors prevent new cross-hole views but do not track prior borrows.",
-        "The Linux model-loader P1 receipt is from W1-WSL guest engineering and is not a native-Linux, independent-hardware or Formal certificate."
-      ],
-      "reopen_triggers": [
-        "A real loader, scheduler or IPC consumer reproduces a mapping, hole, access, flush, lock, shared-publication, guarded-stack, placement, lifetime or C++ usability defect.",
-        "A supported OS adds a safe same-contract partial-unmap or file-discard primitive, or changes an adopted mapping syscall contract.",
-        "The public API, layout, normal metadata/allocation/syscall cost, Platform/Error/Mem dependency, component graph or delivery shape changes.",
-        "A same-contract normal model-loader workload proves a material regression, or a mature peer proves a better complexity class.",
-        "Async/direct IO, persistent memory or device mapping gains a named foundation consumer that cannot compose the current owner routes."
-      ],
-      "summary": "mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
+    "gate_verdicts": {
+      "scope": "PASS",
+      "architecture": "PASS",
+      "correctness": "PASS",
+      "delivery": "PASS",
+      "usability_docs": "PASS",
+      "red_team": "PASS",
+      "engineering_performance": "PASS"
+    },
+    "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
+    "freeze_confirmation": {
+      "id": "mem-vm-v2-freeze-2026-09-06",
+      "marker": "FROZEN",
+      "confirmed_at": "2026-09-06",
+      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
+      "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
+    },
+    "loc": {
+      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+      "repository_code": 454713,
+      "self_with_tests": 117630,
+      "self_without_tests": 74519,
+      "module_implementation": 1318
+    },
+    "known_limitations": [
+      "Windows whole-view mappings have no safe partial-unmap equivalent, and file-backed kDontNeed is rejected instead of using a content-weakening anonymous-memory primitive.",
+      "SharedMapping payload size, readiness and synchronization are an external IPC protocol; Darwin and Windows native capacities may be page-rounded.",
+      "Existing borrowed pointers, spans and views must not outlive owner release, reset or move; checked accessors prevent new cross-hole views but do not track prior borrows.",
+      "The Linux model-loader P1 receipt is from W1-WSL guest engineering and is not a native-Linux, independent-hardware or Formal certificate."
+    ],
+    "reopen_triggers": [
+      "A real loader, scheduler or IPC consumer reproduces a mapping, hole, access, flush, lock, shared-publication, guarded-stack, placement, lifetime or C++ usability defect.",
+      "A supported OS adds a safe same-contract partial-unmap or file-discard primitive, or changes an adopted mapping syscall contract.",
+      "The public API, layout, normal metadata/allocation/syscall cost, Platform/Error/Mem dependency, component graph or delivery shape changes.",
+      "A same-contract normal model-loader workload proves a material regression, or a mature peer proves a better complexity class.",
+      "Async/direct IO, persistent memory or device mapping gains a named foundation consumer that cannot compose the current owner routes."
+    ],
+    "summary": "mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
     },
     {
       "module": "simd",
@@ -1146,7 +1146,7 @@
     },
     {
       "module": "util",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
       "reopen_trigger_id": "UTIL-V4-DEPENDENCY-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
       "round_id": "util-runtime-v4-inference-lifecycle",
@@ -1161,16 +1161,60 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "FAIL",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v4 CANDIDATE：owning factory、借用 creator 生命周期、util 消费闭包和风险测试已实现；锁定候选，等待三平台与预声明 P0 门裁决。",
+      "summary": "util-runtime v4 BLOCKED：owning factory 与生命周期主线已实现，Mac 三交付通过；红队复现按值转发额外 move/terminate，Windows/Linux fixture 及 sanitizer 资格未完成，纠正额度已用完；无新 FROZEN。",
       "candidate_commit": "0fff17ef3abe6830dba58a344c3878199dfb21ea",
-      "candidate_tree": "365f633cdf44153bb865526b3854cd9c1f04ec58"
+      "candidate_tree": "365f633cdf44153bb865526b3854cd9c1f04ec58",
+      "blocked_from": "CANDIDATE",
+      "blocker": "RT-01: Registry's erased by-value argument hop can move a value inside noexcept and terminate even when the accepted factory only borrows const T&. RT-02: Windows demangle fault fixture includes DbgHelp before windows.h after formatting. RT-03: Linux long-symbol fixture incorrectly requires ABI success instead of honoring fallback. The single correction allowance is exhausted; applicable sanitizer, Windows/Linux delivery and full release-structure gates remain incomplete.",
+      "blocker_owner": "util-runtime maintainer (primary agent for this closure round)",
+      "resume_condition": "Start a new bounded util-only SCOPED/AUDITED resume round from the retained v4 evidence. Fix only RT-01 argument forwarding without narrowing natural callable admission, RT-02 private Windows include ordering, and RT-03 native long-symbol/fallback contract. Freeze a new immutable execution tree; use the selector for util-only correctness, two runtime headers and Util source/relocated static/relocated shared on Windows/Linux/macOS; complete WSL ASan/UBSan/TSan, P0, exports and candidate red-team. No util_core/frozen dependency/product-owner or shared-tool changes; no P1 absent a new admitted hot consumer.",
+      "end_commit": "6454815345fb2494ac52718d414a3b4df9811295",
+      "registry_anchor_commit": "6454815345fb2494ac52718d414a3b4df9811295",
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "FAIL",
+        "delivery": "INCONCLUSIVE",
+        "usability_docs": "INCONCLUSIVE",
+        "red_team": "FAIL",
+        "engineering_performance": "FAIL"
+      },
+      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
+      "known_limitations": [
+        "Captured factories and borrowed creators are implemented, but an accepted const-reference factory with a throwing-move value Args type can terminate in the erased forwarding layer (RT-01); this candidate is not FROZEN.",
+        "Only M1-MAC passed the complete selected util correctness/header/source/static/shared route. Windows is blocked by the private fault fixture include order; WSL by an overstrict long-symbol assertion. WSL ASan/UBSan/TSan and the full three-platform symbol/codegen audit did not run and are BLOCKED.",
+        "Creator, EntryView and FrozenView borrow Registry-owned immutable entries; every operation must quiesce before Registry destruction. Factories and created objects independently retain any required dynamic code image.",
+        "Registry deliberately has no unregister/unload/drain or universal version resolver. Typed backend owners perform version/score prechecks and image/object/worker lifetime management; Sched/IO service lifecycle remains owner input.",
+        "Demangle may allocate or serialize and falls back to the original name on platform failure. Its Windows mutex covers one runtime image only; other DbgHelp clients and static copies need host-level coordination.",
+        "No new timing samples, P1/P2 qualification, peer-ratio or fixed-loss verdict were produced. P0 failed on a concrete copy/noexcept mechanism; Formal remains NONE."
+      ],
+      "reopen_triggers": [
+        "A named consumer or reproducible test proves a Registry or demangle correctness, OOM, lifetime, concurrency or natural C++ API-usability defect, or a common util-runtime-owned capability gap.",
+        "Public API/layout/algorithm/normal metadata, direct dependencies, platform demangler behavior or C++ source/static/shared delivery changes.",
+        "Real consumer profiling establishes a hot util-runtime path or qualified same-contract evidence proves a material regression or a better admitted complexity class."
+      ],
+      "loc": {
+        "snapshot_commit": "6145023f31590f0f175845470d6f4da32e8df1ee",
+        "repository_code": 480679,
+        "self_without_tests": 77042,
+        "module_implementation": 517,
+        "self_with_tests": 97015,
+        "legacy_field_provenance": {
+          "self_with_tests": {
+            "snapshot_commit": "b2b7bd679293d748d996662414c01c4cbcefcbda",
+            "source": "util-runtime-v3 terminal registry LOC",
+            "usage": "Carried solely for the legacy checker-required field; not remeasured, not a v4 candidate metric, and excluded from the user-requested three-metric report."
+          }
+        }
+      }
     },
     {
       "module": "sched",
