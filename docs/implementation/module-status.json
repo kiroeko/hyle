@@ -1151,14 +1151,12 @@
     },
     {
       "module": "util_runtime",
-      "product_state": "BLOCKED",
-      "reopen_trigger_id": "UTIL-V4-DEPENDENCY-AND-DELIVERY-2026-09-07",
-      "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
-      "round_id": "util-runtime-v4-inference-lifecycle",
-      "closure_task": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
-      "scope": "Revalidate only util-runtime (factor ID util_runtime) against current dependency and inference-factory ownership contracts, repair admitted finite capability and delivery gaps, and close under the new freeze standard.",
-      "non_goals": "util_core or frozen dependency changes; Sched, IO, Compute or Graph implementation; module unloading or service drain; Native FFI/C API; timing sampling; shared tools or build-system infrastructure changes.",
-      "baseline_commit": "ded05c9e36fffe8cdc54515d7413097cfdec230e",
+      "product_state": "SCOPED",
+      "round_id": "util-runtime-v5-blocker-resolution",
+      "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
+      "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
+      "non_goals": "New capability families; util_core or frozen dependency changes; Sched, IO, Compute or Graph work; unregister/unload/drain; Native FFI/C API; P1 timing; shared closure, selector or build-system redesign.",
+      "baseline_commit": "3ed2a2cef5ffc0c5acbcaff6421e568a5546f77a",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1166,60 +1164,15 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "FAIL",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
         "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md"
+        "evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v4 BLOCKED：owning factory 与生命周期主线已实现，Mac 三交付通过；红队复现按值转发额外 move/terminate，Windows/Linux fixture 及 sanitizer 资格未完成，纠正额度已用完；无新 FROZEN。",
-      "candidate_commit": "0fff17ef3abe6830dba58a344c3878199dfb21ea",
-      "candidate_tree": "365f633cdf44153bb865526b3854cd9c1f04ec58",
-      "blocked_from": "CANDIDATE",
-      "blocker": "RT-01: Registry's erased by-value argument hop can move a value inside noexcept and terminate even when the accepted factory only borrows const T&. RT-02: Windows demangle fault fixture includes DbgHelp before windows.h after formatting. RT-03: Linux long-symbol fixture incorrectly requires ABI success instead of honoring fallback. The single correction allowance is exhausted; applicable sanitizer, Windows/Linux delivery and full release-structure gates remain incomplete.",
-      "blocker_owner": "util-runtime maintainer (primary agent for this closure round)",
-      "resume_condition": "Start a new bounded util_runtime-only SCOPED/AUDITED resume round from the retained v4 evidence. Fix only RT-01 argument forwarding without narrowing natural callable admission, RT-02 private Windows include ordering, and RT-03 native long-symbol/fallback contract. Freeze a new immutable execution tree; use the selector for util_runtime-only correctness, two runtime headers and Util source/relocated static/relocated shared on Windows/Linux/macOS; complete WSL ASan/UBSan/TSan, P0, exports and candidate red-team. No util_core/frozen dependency/product-owner or shared-tool changes; no P1 absent a new admitted hot consumer.",
-      "end_commit": "6454815345fb2494ac52718d414a3b4df9811295",
-      "registry_anchor_commit": "aa3e2697c0b6db3d0f7b00961719feaceda34424",
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "FAIL",
-        "delivery": "INCONCLUSIVE",
-        "usability_docs": "INCONCLUSIVE",
-        "red_team": "FAIL",
-        "engineering_performance": "FAIL"
-      },
-      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
-      "known_limitations": [
-        "Captured factories and borrowed creators are implemented, but an accepted const-reference factory with a throwing-move value Args type can terminate in the erased forwarding layer (RT-01); this candidate is not FROZEN.",
-        "Only M1-MAC passed the complete selected util correctness/header/source/static/shared route. Windows is blocked by the private fault fixture include order; WSL by an overstrict long-symbol assertion. WSL ASan/UBSan/TSan and the full three-platform symbol/codegen audit did not run and are BLOCKED.",
-        "Creator, EntryView and FrozenView borrow Registry-owned immutable entries; every operation must quiesce before Registry destruction. Factories and created objects independently retain any required dynamic code image.",
-        "Registry deliberately has no unregister/unload/drain or universal version resolver. Typed backend owners perform version/score prechecks and image/object/worker lifetime management; Sched/IO service lifecycle remains owner input.",
-        "Demangle may allocate or serialize and falls back to the original name on platform failure. Its Windows mutex covers one runtime image only; other DbgHelp clients and static copies need host-level coordination.",
-        "No new timing samples, P1/P2 qualification, peer-ratio or fixed-loss verdict were produced. P0 failed on a concrete copy/noexcept mechanism; Formal remains NONE."
-      ],
-      "reopen_triggers": [
-        "A named consumer or reproducible test proves a Registry or demangle correctness, OOM, lifetime, concurrency or natural C++ API-usability defect, or a common util-runtime-owned capability gap.",
-        "Public API/layout/algorithm/normal metadata, direct dependencies, platform demangler behavior or C++ source/static/shared delivery changes.",
-        "Real consumer profiling establishes a hot util-runtime path or qualified same-contract evidence proves a material regression or a better admitted complexity class."
-      ],
-      "loc": {
-        "snapshot_commit": "6145023f31590f0f175845470d6f4da32e8df1ee",
-        "repository_code": 480679,
-        "self_without_tests": 77042,
-        "module_implementation": 517,
-        "self_with_tests": 97015,
-        "legacy_field_provenance": {
-          "self_with_tests": {
-            "snapshot_commit": "b2b7bd679293d748d996662414c01c4cbcefcbda",
-            "source": "util-runtime-v3 terminal registry LOC",
-            "usage": "Carried solely for the legacy checker-required field; not remeasured, not a v4 candidate metric, and excluded from the user-requested three-metric report."
-          }
-        }
-      }
+      "summary": "util-runtime v5 SCOPED：只恢复 v4 已证明的三个 blocker，复用既有能力审计，不扩展产品范围、公共工具或 P1。"
     },
     {
       "module": "sched",
