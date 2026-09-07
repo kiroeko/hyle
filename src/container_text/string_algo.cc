@@ -1,6 +1,6 @@
 #include "hyle/container/string_algo.h"
 
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
 #  include "simdutf.h"
 
 static_assert(simdutf::SIMDUTF_VERSION_MAJOR == 9 &&
@@ -10,7 +10,8 @@ static_assert(simdutf::SIMDUTF_VERSION_MAJOR == 9 &&
 #endif
 
 // string_algo.cc -- runtime-dispatched UTF-8 validate/count entries. The shipping
-// text factor directly embeds simdutf's verified SIMD cores ("借核不手搓").
+// container_text factor directly embeds simdutf's verified SIMD cores
+// ("借核不手搓").
 // The conditional keeps this TU usable in stripped/standalone builds; the scalar
 // Utf8Decoder is also the constexpr/reference fallback.
 //
@@ -24,7 +25,7 @@ namespace hyle::container::detail {
 
 bool utf8_validate_runtime(StringView s) noexcept {
   if (s.data() == nullptr) return s.size() == 0;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   return simdutf::validate_utf8(s.data(), s.size());
 #else
   Utf8Decoder decoder(s);
@@ -38,7 +39,7 @@ bool utf8_validate_runtime(StringView s) noexcept {
 
 std::int64_t utf8_length_runtime(StringView s) noexcept {
   if (s.data() == nullptr) return s.size() == 0 ? 0 : -1;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   // Borrowed SIMD core: validate then count (matches utf8_length's validate+count
   // contract). simdutf runs its own internal runtime ISA dispatch.
   if (!simdutf::validate_utf8(s.data(), s.size())) return -1;
@@ -61,7 +62,7 @@ std::int64_t utf8_length_runtime(StringView s) noexcept {
 namespace hyle::container {
 namespace {
 
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
 using UtfProvider = simdutf::implementation;
 
 // Resolve the private runtime-dispatch provider once per public operation. A
@@ -188,7 +189,7 @@ HYLE_FORCE_INLINE UtfResult validate_utf8_core(
                ? UtfResult{}
                : UtfResult{UtfStatus::kInvalidArgument, 0, 0};
   }
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   return validation_result(
       provider->validate_utf8_with_errors(input.data(), input.size()));
 #else
@@ -205,7 +206,7 @@ HYLE_FORCE_INLINE UtfResult validate_utf8_core(
 HYLE_FORCE_INLINE UtfResult validate_utf16_core(
     std::span<const char16_t> input, const UtfProvider* provider) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   return validation_result(
       provider_validate_utf16(provider, input.data(), input.size()));
 #else
@@ -226,7 +227,7 @@ HYLE_FORCE_INLINE UtfResult validate_utf16_core(
 HYLE_FORCE_INLINE UtfResult validate_utf32_core(
     std::span<const char32_t> input, const UtfProvider* provider) noexcept {
   if (invalid_span(input)) return {UtfStatus::kInvalidArgument, 0, 0};
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   return validation_result(
       provider->validate_utf32_with_errors(input.data(), input.size()));
 #else
@@ -261,7 +262,7 @@ UtfResult utf8_to_utf16(StringView input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf8_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider->utf16_length_from_utf8(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
@@ -283,7 +284,7 @@ UtfResult utf8_to_utf32(StringView input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf8_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider->utf32_length_from_utf8(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
@@ -305,7 +306,7 @@ UtfResult utf16_to_utf8(std::span<const char16_t> input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf16_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider_utf8_length_from_utf16(provider, input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
@@ -327,7 +328,7 @@ UtfResult utf16_to_utf32(std::span<const char16_t> input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf16_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider_utf32_length_from_utf16(provider, input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
@@ -349,7 +350,7 @@ UtfResult utf32_to_utf8(std::span<const char32_t> input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf32_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider->utf8_length_from_utf32(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());
@@ -371,7 +372,7 @@ UtfResult utf32_to_utf16(std::span<const char32_t> input,
   const UtfProvider* provider = active_utf_provider();
   UtfResult validation = validate_utf32_core(input, provider);
   if (!validation) return validation;
-#if defined(HYLE_SIMD_SIMDUTF)
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
   const std::size_t required =
       provider->utf16_length_from_utf32(input.data(), input.size());
   UtfResult result = output_result(input.size(), required, output.size());

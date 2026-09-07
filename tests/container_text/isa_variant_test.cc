@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "hyle/platform/cpu.h"
-#include "src/text/cpu_dispatch_internal.h"
-#include "src/text/str_search.h"
+#include "src/container_text/cpu_dispatch_internal.h"
+#include "src/container_text/str_search.h"
 
 namespace {
 

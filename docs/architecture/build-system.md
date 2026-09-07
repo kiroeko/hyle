@@ -88,7 +88,7 @@ factor roots。公开头仍由 factor 唯一拥有，产品安装的是所选 fa
 
 外部 catalog 按完整问题域保持小而稳定：`core,error,time,platform,mem,obs,simd,math,container,util,
 sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive`、
-`container_concurrent`、`container_queue` 与 `text` 是内部 factor，用户从 `hyle::container` 获得
+`container_concurrent`、`container_queue` 与 `container_text` 是内部 factor，用户从 `hyle::container` 获得
 Container 产品；`util_core/registry/
 symbol` 由 `hyle::util` 聚合。只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
 不能因为内部有一个 target 就自动公开。
@@ -134,7 +134,8 @@ INTERFACE façade 聚合：静态链接器可按需抽取对象，共享包可�
 
 配置结束时 `hyle_validate_final_module_graph()` 再核对 target 的 `LINK_LIBRARIES` 和
 `INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。中央登记顺序与
-`module-status.json` 一样是不可改写的 component identity 历史，不兼任依赖顺序：配置先对完整 manifest
+`module-status.json` 一样是默认不可改写的 component identity 历史，不兼任依赖顺序；只有预发布期间
+经过审计、一对一、保留账本槽位并在 registry 留下永久 receipt 的 identity correction 才能更名。配置先对完整 manifest
 做一次稳定 DFS，拒绝 unknown/QUEUED edge 与 cycle，并以登记顺序作为无依赖关系节点的 tie-breaker
 得到拓扑；依赖闭包再按该拓扑单次反向传播，target 也严格按解析结果构造。这样旧 factor 可以自然依赖
 后来拆出的低层质因数，而不用重排状态历史或复制实现，整体仍为 O(V+E)。随后只对本次 selected closure
@@ -162,10 +163,10 @@ simd        -> PUBLIC core platform
 container   -> PUBLIC core mem container_intrusive; PRIVATE platform
 container_concurrent -> PUBLIC core mem mem_reclaim container
 container_queue -> PUBLIC core mem
-text        -> PUBLIC core mem container; PRIVATE platform
-util        -> PUBLIC core error mem container text
+container_text -> PUBLIC core mem container; PRIVATE platform
+util        -> PUBLIC core error mem container container_text
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container timer_queue
-io          -> PUBLIC core mem text time timer_queue sched; PRIVATE container
+io          -> PUBLIC core mem container_text time timer_queue sched; PRIVATE container
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```

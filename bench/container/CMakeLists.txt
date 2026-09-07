@@ -1,9 +1,10 @@
 hyle_add_bench(container SOURCES container_bench_main.cc flat_hash_map_bench.cc
   string_buf_bench.cc string_view_bench.cc path_bench.cc string_algo_bench.cc
-  DEPS hyle_text hyle_platform)
+  DEPS hyle_container_text hyle_platform)
 # string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
-# simdutf is VENDORED in third_party and compiled into hyle_text (the product uses it
-# unconditionally), but those symbols are PRIVATE/non-exported across the hyle_text DLL
+# simdutf is VENDORED in third_party and compiled into hyle_container_text
+# (the product uses it unconditionally), but those symbols are PRIVATE/non-exported
+# across the hyle_container_text DLL
 # boundary -- the bench can't borrow them transitively. So compile simdutf.cpp into the bench
 # exe too: it's a SEPARATE binary from the DLL, so its own copy is NOT a duplicate symbol (the
 # DLL exports none of them). The gate just toggles the bench-side comparison row.
@@ -13,7 +14,8 @@ if(HYLE_BENCH_SIMDUTF)
   target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_SIMDUTF)
   target_include_directories(hyle_container_bench SYSTEM PRIVATE "${_simdutf}")
   target_sources(hyle_container_bench PRIVATE "${_simdutf}/simdutf.cpp")
-  # Same -Wall/-Werror exemption as the product build (src/text): the amalgamation's
+  # Same -Wall/-Werror exemption as the product build (src/container_text):
+  # the amalgamation's
   # own -Wpedantic warnings would break a HYLE_WERROR=ON bench build.
   if(MSVC)
     set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "/w")
@@ -177,7 +179,8 @@ if(HYLE_CONTAINER_V5_SINGLE_P1_BENCH)
 
   function(_hyle_configure_container_v5_single target)
     target_link_libraries(${target} PRIVATE
-      hyle_text hyle_container hyle_mem nanobench absl::flat_hash_map)
+      hyle_container_text hyle_container hyle_mem nanobench
+      absl::flat_hash_map)
     target_include_directories(${target} SYSTEM BEFORE PRIVATE
       "${HYLE_SIMDUTF_PEER_DIR}/include")
     set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)

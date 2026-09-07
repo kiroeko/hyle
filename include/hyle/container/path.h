@@ -194,7 +194,7 @@ inline StringView pop_last(StringView* path) noexcept {
 // written (`result >= output.size()` signals truncation). A leading separator on
 // parts[0] and a trailing separator on the last part are preserved; interior
 // separators are collapsed. Output must not overlap the input bytes.
-HYLE_TEXT_API std::size_t join_path(
+HYLE_CONTAINER_TEXT_API std::size_t join_path(
     std::span<const StringView> parts, std::span<char> output) noexcept;
 
 inline std::size_t join_path(StringView a, StringView b,
@@ -205,14 +205,14 @@ inline std::size_t join_path(StringView a, StringView b,
 
 // Splits `path` into its elements (clay split_all). Allocates the array via
 // `alloc`; each element is a view INTO `path` (no string copies).
-HYLE_TEXT_API PodVector<StringView> split_all(StringView path,
+HYLE_CONTAINER_TEXT_API PodVector<StringView> split_all(StringView path,
                                                    mem::AllocatorRef alloc);
 
 // Replaces the extension: "test.jpg" + ".png" -> "test.png". If `path` has no
 // extension, `ext` is appended ("test" + ".png" -> "test.png" -- clay returned
 // null here; HYLE appends, which is the useful behavior). Uses the same
 // snprintf-style return contract as join_path; output must not overlap inputs.
-HYLE_TEXT_API std::size_t replace_extension(
+HYLE_CONTAINER_TEXT_API std::size_t replace_extension(
     StringView path, StringView ext, std::span<char> output) noexcept;
 
 // Copies `path` into caller-owned storage and collapses redundant separators:
@@ -224,7 +224,7 @@ HYLE_TEXT_API std::size_t replace_extension(
 // a component walk -- clearer than clay's in-place memmove batching, same result.)
 // The result borrows `output`; nullopt means output is smaller than
 // max(path.size(), 1)+1. Exact overlap between input and output is supported.
-HYLE_TEXT_API std::optional<StringView> normalize_path(
+HYLE_CONTAINER_TEXT_API std::optional<StringView> normalize_path(
     StringView path, std::span<char> output) noexcept;
 
 }  // namespace hyle::container

@@ -18,11 +18,11 @@ namespace hyle::container {
 // header pulls in no ISA headers; runtime members delegate here while constexpr
 // evaluation keeps a scalar implementation.
 namespace detail {
-HYLE_TEXT_API std::uint32_t str_count(const char* data, std::uint32_t size,
+HYLE_CONTAINER_TEXT_API std::uint32_t str_count(const char* data, std::uint32_t size,
                                            char c) noexcept;
 // Reverse char scan: index of the LAST `c` in data[0,size), or npos. Returns
 // StringView::npos-equivalent 0xFFFFFFFF when absent.
-HYLE_TEXT_API std::uint32_t str_rfind_char(const char* data,
+HYLE_CONTAINER_TEXT_API std::uint32_t str_rfind_char(const char* data,
                                                 std::uint32_t size,
                                                 char c) noexcept;
 // Character-set membership scans. `set` is the delimiter set (any length). RUNTIME
@@ -31,13 +31,13 @@ HYLE_TEXT_API std::uint32_t str_rfind_char(const char* data,
 // hardware string-search MSVC STL's find_*_of family uses; else a 256-bool table
 // scan. Return StringView::npos-equivalent 0xFFFFFFFF when nothing matches. `want`:
 // true = first/last IN the set (find_*_of), false = first/last NOT in set (not_of).
-HYLE_TEXT_API std::uint32_t str_find_first_of(const char* data,
+HYLE_CONTAINER_TEXT_API std::uint32_t str_find_first_of(const char* data,
                                                    std::uint32_t size,
                                                    const char* set,
                                                    std::uint32_t set_size,
                                                    std::uint32_t pos,
                                                    bool want) noexcept;
-HYLE_TEXT_API std::uint32_t str_find_last_of(const char* data,
+HYLE_CONTAINER_TEXT_API std::uint32_t str_find_last_of(const char* data,
                                                   std::uint32_t size,
                                                   const char* set,
                                                   std::uint32_t set_size,
@@ -46,7 +46,7 @@ HYLE_TEXT_API std::uint32_t str_find_last_of(const char* data,
 // Substring search delegates to the standard-library implementation. `rev`:
 // false = find (first at/after pos), true = rfind (last at/before pos).
 // npos = 0xFFFFFFFF.
-HYLE_TEXT_API std::uint32_t str_find_substr(const char* data,
+HYLE_CONTAINER_TEXT_API std::uint32_t str_find_substr(const char* data,
                                                  std::uint32_t size,
                                                  const char* needle,
                                                  std::uint32_t needle_size,

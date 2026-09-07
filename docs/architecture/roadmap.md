@@ -65,10 +65,10 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container | core, mem, container_intrusive | platform |
 | container_concurrent | core, mem, mem_reclaim, container | — |
 | container_queue | core, mem | — |
-| text | core, mem, container | platform |
-| util | core, error, mem, container, text | — |
+| container_text | core, mem, container | platform |
+| util | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, container_queue, timer_queue |
-| io | core, mem, text, time, timer_queue, sched | container |
+| io | core, mem, container_text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
@@ -95,7 +95,7 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 | obs | obs |
 | simd | simd |
 | math | math |
-| container | container_intrusive, container, container_concurrent, container_queue, text |
+| container | container_intrusive, container, container_concurrent, container_queue, container_text |
 | util | util_core, util |
 | sched | sched |
 | io | io |
@@ -106,9 +106,9 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 依赖边的是 24 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
 外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
-factor identity 按首次登记顺序只追加，不能为后来出现的自然低层边改写历史；构造顺序由中央图稳定
-拓扑解析，闭包必须无环，unknown/QUEUED edge 与 cycle 都 fail closed。外部第三方依赖由所属模块登记，
-不出现在内部组件图中。
+factor identity 通常按首次登记顺序只追加，不能为后来出现的自然低层边随意改写历史；只有经过审计、
+一对一且保留原账本槽位的显式 identity migration 才能更名。构造顺序由中央图稳定拓扑解析，闭包必须
+无环，unknown/QUEUED edge 与 cycle 都 fail closed。外部第三方依赖由所属模块登记，不出现在内部组件图中。
 SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only
 `hyle_highway_headers` 外部实现 target，但 Container 不因此依赖、构建或安装 `hyle::simd`。Highway 的
 来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。

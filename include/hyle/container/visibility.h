@@ -6,7 +6,7 @@
 #  define HYLE_CONTAINER_API
 #  define HYLE_CONTAINER_CONCURRENT_API
 #  define HYLE_CONTAINER_QUEUE_API
-#  define HYLE_TEXT_API
+#  define HYLE_CONTAINER_TEXT_API
 #else
 #  if defined(HYLE_CONTAINER_BUILD)
 #    define HYLE_CONTAINER_API HYLE_EXPORT
@@ -23,9 +23,9 @@
 #  else
 #    define HYLE_CONTAINER_QUEUE_API HYLE_IMPORT
 #  endif
-#  if defined(HYLE_TEXT_BUILD)
-#    define HYLE_TEXT_API HYLE_EXPORT
+#  if defined(HYLE_CONTAINER_TEXT_BUILD)
+#    define HYLE_CONTAINER_TEXT_API HYLE_EXPORT
 #  else
-#    define HYLE_TEXT_API HYLE_IMPORT
+#    define HYLE_CONTAINER_TEXT_API HYLE_IMPORT
 #  endif
 #endif

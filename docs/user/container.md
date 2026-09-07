@@ -39,7 +39,8 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 | typed UTF 错误位置，或 UTF-8/16/32 caller-buffer 转换 | `UtfResult` 与 `utf*_to_utf*` |
 | 普通 borrowed text，不需要 HYLE 额外事实/算法 | `std::string_view` |
 
-`intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付。直接使用
+`intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付；其中 compiled
+text/path/Unicode 实现由内部 `container_text` factor 承载。直接使用
 任何 Container 能力都选择并链接同一个 `container` 产品；其他产品公开类型所需的传递闭包由 CMake
 自动处理。
 
@@ -343,7 +344,7 @@ release”。`StringId{0}` 表示空字符串，同时也是非空 acquire 的�
 ## 交付和头文件
 
 源码、静态库和动态库用户都 include 同一套 `<hyle/container/...>` 头并链接
-`hyle::container`。模板逻辑通常直接实例化在消费者 TU；compiled hash/text/interner 路径通过组件
+`hyle::container`。模板逻辑通常直接实例化在消费者 TU；compiled hash/container_text/interner 路径通过组件
 target 正确链接。不要直接 include vendor header 或链接私有 Highway/xxHash/simdutf target。
 
 Container 当前只面向 C++ 消费者，没有 C ABI/Native FFI。Java/C# 等 foreign runtime 不能把模板

@@ -4,7 +4,8 @@ project(hyle_package_container_cpp LANGUAGES CXX)
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container)
 
 foreach(_internal_factor IN ITEMS
-    container_intrusive container_concurrent container_queue text mem_reclaim)
+    container_intrusive container_concurrent container_queue container_text
+    mem_reclaim)
   if(_internal_factor IN_LIST Hyle_AVAILABLE_COMPONENTS OR
      TARGET hyle::${_internal_factor})
     message(FATAL_ERROR

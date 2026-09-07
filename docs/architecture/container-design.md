@@ -25,11 +25,11 @@ fixed bitset 与 heap algorithm 继续直接使用标准库。
 ```text
 container_intrusive ───────────┐
 core + mem ─────────> container├──> container_concurrent <── mem_reclaim
-                              ├──> text <── platform (private)
+                              ├──> container_text <── platform (private)
 core + mem ────────────────────└──> container_queue
 
 hyle::container façade = container_intrusive + container
-                       + container_concurrent + container_queue + text
+                       + container_concurrent + container_queue + container_text
 ```
 
 - `core` 提供编译器、断言与 visibility 合同。
@@ -156,7 +156,7 @@ wire fingerprint 或 cryptographic MAC。攻击者可控 key 使用 caller-secre
 
 1. 先记录新 pin 和许可证；
 2. 复跑对应 correctness、fallback/ISA 与 package projection；
-3. 只有受影响的 hash/text/bitset 性能合同需要重取证；
+3. 只有受影响的 hash/container_text/bitset 性能合同需要重取证；
 4. 不把 vendor header/type 加入 public surface；
 5. vendor 更新不能单方面改变 HYLE 的语义、seed、failure 或 delivery owner。
 

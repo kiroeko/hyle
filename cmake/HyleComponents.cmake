@@ -196,7 +196,7 @@ _hyle_declare_component(simd PUBLIC_DEPS core platform)
 _hyle_declare_component(container
   PRIVATE_DEPS platform
   PUBLIC_DEPS core mem container_intrusive)
-_hyle_declare_component(util PUBLIC_DEPS core error mem container text)
+_hyle_declare_component(util PUBLIC_DEPS core error mem container container_text)
 # SchedulerOptions and the public timer/synchronization APIs name platform and
 # typed time values, so both are real transitive SDK requirements.
 _hyle_declare_component(sched
@@ -212,7 +212,7 @@ _hyle_declare_component(sched
 _hyle_declare_component(io
   TRACE
   PRIVATE_DEPS container
-  PUBLIC_DEPS core mem text time timer_queue sched)
+  PUBLIC_DEPS core mem container_text time timer_queue sched)
 # These names reserve independently closable IO factors before product work
 # starts. QUEUED reservations deliberately have no source directory, target,
 # dependencies, public headers or product-root membership. Their own closure
@@ -254,7 +254,7 @@ _hyle_declare_component(container_queue
     hyle/container/unbounded_queue.h
     hyle/container/work_stealing_deque.h
     hyle/container/ws_fifo_queue.h)
-_hyle_declare_component(text
+_hyle_declare_component(container_text
   PRIVATE_DEPS platform
   PUBLIC_DEPS core mem container
   SPLIT_PUBLIC_HEADERS
@@ -317,7 +317,7 @@ _hyle_declare_product(obs FACTORS obs)
 _hyle_declare_product(simd FACTORS simd)
 _hyle_declare_product(math FACTORS math)
 _hyle_declare_product(container FACTORS
-  container_intrusive container container_concurrent container_queue text)
+  container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util)
 _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS io)

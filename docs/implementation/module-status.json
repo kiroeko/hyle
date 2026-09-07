@@ -2,6 +2,13 @@
   "schema_version": 1,
   "methodology": "module-closure-v1",
   "updated_at": "2026-09-07",
+  "component_identity_migrations": [
+    {
+      "from": "text",
+      "to": "container_text",
+      "evidence": "docs/implementation/tasks/build/container-text-factor-identity-migration-v1.md"
+    }
+  ],
   "modules": [
     {
       "module": "core",
@@ -1330,7 +1337,7 @@
       "summary": "container_queue v2 AUDITED：产品/API/算法冻结，只补 unbounded MPMC 的 allocator/OOM/result/setup 同合同证据。"
     },
     {
-      "module": "text",
+      "module": "container_text",
       "product_state": "AUDITED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
@@ -1354,7 +1361,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "text -> container_text v2 AUDITED：公开 hyle::container surface 与算法冻结；有限 FIX 是无 alias 的完整内部 identity 迁移和 typed Unicode 同合同 adapter。"
+      "summary": "container_text v2 AUDITED：旧 text identity 已无 alias 地完整迁移；公开 hyle::container surface 与算法冻结，剩余有限 FIX 是 typed Unicode 同合同 adapter 与受影响验证。"
     }
   ]
 }

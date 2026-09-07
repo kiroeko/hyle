@@ -38,7 +38,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 AUDITED：产品/API/算法冻结，只补 read-mostly membership 的相同 hash、allocator/resource 与结果合同等价证据。 |
 | container_queue | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 AUDITED：产品/API/算法冻结，只补 unbounded MPMC 的 allocator/OOM/result/setup 同合同证据。 |
-| text | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | text -> container_text v2 AUDITED：公开 hyle::container surface 与算法冻结；有限 FIX 是无 alias 的完整内部 identity 迁移和 typed Unicode 同合同 adapter。 |
+| container_text | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 AUDITED：旧 text identity 已无 alias 地完整迁移；公开 hyle::container surface 与算法冻结，剩余有限 FIX 是 typed Unicode 同合同 adapter 与受影响验证。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：
