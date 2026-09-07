@@ -76,6 +76,8 @@ Registry 拥有 key/help，priority 保证显式组合顺序不成为隐式策�
 `find()` 返回 lookup-only `EntryView` value snapshot：借用 Creator handle/priority 被复制，key/help 借用 Registry-owned
 storage。它使 backend owner 能在启动期解析并缓存 typed factory，而不必为了取得 callable 提前构造或
 O(n) 枚举。Creator 是一个 entry 指针，经 type-erased invoker 调用 const callable；不在每次查询加引用计数。
+转发层不应额外构造按值参数，也不得让 factory 的 noexcept 准入掩盖包装层自身可能抛异常的 move；
+完整调用链的值类别与异常边界必须一起验证。
 被高优先级替换的 entry 仍保留到 Registry 析构，保证旧借用和在途调用有效。私有销毁链负责依次释放
 capture；三档优先级使每个 key 最多保留三份被接受的 entry，不接受同级/较低项时不分配。
 `FrozenView` 不拥有表，Registry 必须活过 view 和所有在途 operation。没有 unregister 是安全

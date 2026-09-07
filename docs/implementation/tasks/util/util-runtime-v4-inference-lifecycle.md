@@ -238,3 +238,139 @@ adapter 的 windows.h/DbgHelp include 顺序。没有改变产品/API/算法/nor
 拒绝签证；此失败不算产品失败。保留该用户提交，改用 Windows canonical commit 的只读验证副本，
 与 WSL/macOS 一样不作为产品来源。M1-MAC 首次 configure 因机器缺 Ninja 失败，补齐外部工具后
 重新执行原选择门；不修改 HYLE 构建系统。以上初始失败证据保留，不写成 PASS。
+
+## Terminal receipt：BLOCKED
+
+裁决日期 2026-09-07。达到本卡“一次具名纠正与受影响重跑”的停止条件；不追加产品修复或新测试轮，
+不修改 util_core 或其他模块，不把未运行门降格为 NOT_APPLICABLE。中央 registry 以随后的
+CANDIDATE→BLOCKED 状态提交登记本结论；本节不是另一份当前状态表。
+
+### 身份、原始证据与状态链
+
+- 产品 commit：`0fff17ef3abe6830dba58a344c3878199dfb21ea`；
+  tree：`365f633cdf44153bb865526b3854cd9c1f04ec58`。
+- 最终验证 execution commit：`6145023f31590f0f175845470d6f4da32e8df1ee`；
+  tree：`4a8c602dbb79cba2f4a5c58845ba49134c9e0f20`。相对产品 commit 仅有状态/文档和具名测试纠正，
+  两个 runtime public headers、src/util 和 package sample 完全相同；用户 `d9e23b02` 文档提交保留。
+- [原始验证包](../../evidence/util-runtime-v4/validation.zip)，SHA-256
+  `aa9bf0ea5e62aab644c9687080fdacdeec9119b253ce627da1d1b9ed20376a7b`。包内 manifest 对 83 个文件逐项
+  绑定 SHA-256：三平台 context、selected/skipped 理由、成功和失败 receipt/log、前置状态原字节、
+  P0 参数转发复现源码/结果和三项 LOC。没有 native PASS receipt 被手工重写，没有计时样本。
+- 工具链：MSVC 19.50.35728、GCC 14.2.0、AppleClang 21.0.0；context 分别绑定 9/3/1 个实际 include
+  roots、compiler/stdlib 文件及 Release flags。Windows 和 Mac 的初始环境/树漂移失败同样保留。
+- 合法链：`b6877d48` REOPENED → `a27bbf38` SCOPED → `a8f6ab8c` AUDITED →
+  `f613684a` CANDIDATE。每次变更已运行 checker 的明确 `--previous`，不是只检查终态快照。
+  BLOCKED 前快照 SHA-256 为 `4b806f715f158dcb8cdfd66b5c2ef9b388360ef1132081e2159bdc1a32a2eea6`；
+  其余快照及原始 hash 见包。终态 end/registry anchor commit 由 registry 绑定。
+
+### 候选后第二遍红队
+
+主 agent 于 09:46–09:51 UTC 在锁定候选之后独立进行第二遍合同/成本复核；不是另一个 reviewer，
+也没有使用前期 engine 扫描 agent 代签。本轮最多两遍审计、一个产品 FIX 批次与一次具名纠正已经用完。
+
+| Finding | Severity / disposition | 机制、证据与实际影响 |
+|---|---|---|
+| RT-01：按值参数在 erased invoker 内再次构造 | **MUST / OPEN，阻止冻结** | `Creator::operator()(Args...)` 把参数转给另一个按值 `Entry::invoke(const Entry*, Args...)`；factory 若只接收 `const T&`，nothrow-invocable 准入仍通过，但包装层新增的 move 可抛异常并越过 noexcept 边界，触发 terminate。调用方把值交给 factory 是正常 C++ 用法；不能靠删掉此 API 或要求所有值类型均 noexcept move 隐藏缺陷 |
+| RT-02：Windows 私有 adapter 的 include 依赖顺序 | **validation blocker / OPEN** | 具名纠正曾调整顺序，但 clang-format 的 include regroup 又把 DbgHelp 排到 windows.h 前；最终执行树仍不正确，MSVC C3646/C2065 等编译失败。需在测试内显式保留顺序，不改生产 demangle 或全局工具 |
+| RT-03：长符号测试越过平台能力合同 | **validation blocker / OPEN** | GCC ABI 对 fixture 的 1500 字节 identifier 返回失败，HYLE 按公开合同回退原名；测试却强制要求成功反修饰。Mac 相同 fixture 成功并不证明 GCC 必须成功。需以实际 ABI 可接受的 fixture 或明确的 fallback 合同比对校正；不能为此扭曲产品实现 |
+
+RT-01 的独立冷路径复现见包内 `windows/forwarding-probe.cc` 和
+`linux/forwarding-probe-result.json`：`Registry<int*, Argument>` 接受
+`Factory::operator()(const Argument&) const noexcept`；普通调用观察到包装层 **1 次额外 move**，
+启用该 move 的异常后，明确的 terminate handler 以 **86** 退出。不是 benchmark、不是纳秒差异；
+编译命令及 compiler/stdlib/candidate 绑定在 manifest/context 中。其他通过 create 的按值转发层也须
+在恢复轮一起检查；本轮没有对它们宣称已完成修复或全部复现。
+
+### 适用验证与正确性矩阵
+
+三平台最终 selector 都只选择 docs、closure、configure、factor:util、headers:util、delivery:util，
+其余 61 门跳过；完整逐 gate 理由在 JSON 中。失败 prerequisite 后由 selector 阻止后续门，未绕开。
+
+| Gate / 风险 | W1-WIN | W1-WSL | M1-MAC | 合并结论与限制 |
+|---|---|---|---|---|
+| configure util 精确闭包 | PASS | PASS | PASS | 没有构建其他 factor 的单测、Compute/Graph 或 benchmark |
+| util 测试程序 | BLOCKED：RT-02 | FAIL：RT-03；其余 43/44 普通用例通过，独立 fault 程序通过 | PASS：2 个 CTest 程序 | 不用单平台 PASS 补签另外两台 |
+| 注册/查询/priority/捕获、move-only/overalign、替换旧借用 | 未运行 | PASS：29 个 Registry 用例 | PASS | 状态所有权主线成立；RT-01 是另外发现的按值参数角落，未被这些原测试覆盖 |
+| 并发注册/读取/freeze 与 release/acquire、callback 重入 | 未运行 | PASS：确定性断言/stress | PASS | 普通测试不能代替 TSan；外部销毁 quiescence 是 caller 前置条件 |
+| OOM/重复/no-op 不接管、枚举失败和 visitor 异常 cleanup | 未运行 | PASS | PASS | allocator 必须活过所有操作并满足并发释放前置条件 |
+| demangle cap=0/1、required-size、双向/截断 overlap、正常/invalid | 未运行 | PASS | PASS | 长符号“必须成功”判据不成立，记录 RT-03；不升级成产品算法缺陷 |
+| ABI error/OOM、失败 sink 临时释放、public string bad_alloc | 未运行 | PASS：独立私有 adapter 与真实 public owning route | PASS | Windows DbgHelp 的私有串行化注入测试未编译，不能写 PASS |
+| util runtime 两头 self-contained | BLOCKED：前置失败 | BLOCKED：前置失败 | PASS | compiled journey 不冒充 util_core header-only 资格 |
+| Util source / relocated static / relocated shared | BLOCKED：前置失败 | BLOCKED：前置失败 | **PASS / PASS / PASS** | 使用 owning factory、版本预检、image/object lifetime 与 façade foundation；没有新 target/依赖/ABI |
+| WSL ASan / UBSan / TSan | NOT_APPLICABLE：卡已选 WSL | **BLOCKED / BLOCKED / BLOCKED** | NOT_APPLICABLE：卡已选 WSL | 适用工具未运行；已达到停止条件且存在 RT-01，不能写成 sanitizer PASS |
+| 三平台独立 export/codegen 全门 | BLOCKED | BLOCKED；只有 RT-01 有限机制复现已完成 | BLOCKED；交付消费通过不替代完整 symbol audit | 未为失败候选继续取完整资格证据 |
+| 文档、closure、显式 previous、diff whitespace | PASS | selector docs/closure PASS | selector docs/closure PASS | terminal 状态另执行要求的三个机械检查 |
+
+源码红队确认：mutable 写操作由同一 mutex 串行；freeze 在该 mutex 内 release-publish 同一表，之后不
+修改表或 accepted entry；普通 read acquire，FrozenView 的跨线程传递由 caller 同步。旧 entry/capture
+留到 Registry 析构，所以 replacement 不释放在途 creator。creator/visitor 在锁外调用；callable 特殊
+成员与 allocator callback 不得重入。销毁要求所有 view、操作与 callback 已静止。这个源码论证没有替代
+尚未运行的 TSan，也没有声称 Registry 能推导动态库卸载的 quiescence。
+
+### P0 与交付裁决
+
+P0 **FAIL**：RT-01 证明额外参数移动和 noexcept 边界错误；不是“没跑 P1 所以失败”。
+注册/索引仍是 O(key+help)+expected-amortized O(1)，accepted callable 大小与复制成本另外计入；
+freeze O(1)、零分配、复用同一索引，frozen lookup O(key)+expected O(1)、无内部 allocation/lock/
+refcount 的断言在 Linux/Mac 通过。entry teardown 为 O(accepted entries)，每 key 至多三项；
+注册项 owning metadata 与 invoker 是生命周期语义的真实成本，未按旧 benchmark 保留重复热字段。
+
+P1/P2、timing peer、5% margin、固定输项与 Formal 证书均 **NOT_APPLICABLE / NONE**：
+当前没有真实热路径证据或时延主张，也没有新耗时样本；不从“未测”推出“没有固定输”或“更快”。
+本轮内部采用扫描没有发现需要修改 util-runtime 的直接产品消费者，只有 util façade/package 真实样例；
+不向 Obs、Sched、IO、Compute、Graph 强推 Registry。依赖仍为 core/error/mem/container/container_text，
+target 与中央图未改变，没有新环。**没有发现需要重开任何已 FROZEN 依赖的事实。**
+
+### 五个引擎输入与剩余能力
+
+llama.cpp/独立 ggml 的 U01 由 owning per-entry state、名称/优先级/发布、owner 版本预检和独立 image
+ownership 组合覆盖；F02 的存储能力已实现，但公共按值调用有 RT-01，因此整条 family 仍为 PARTIAL/FIX，
+不能最终 COMPLETE。SGLang 的 factory(ctx)、vLLM 的 extension/renderer factory 采用相同的通用形状；
+Python import/GIL/模型策略不下沉。ds4 没有新增通用 Registry MUST。ggml 的卸载、SG15/V12/D04 的
+stop/drain/join 仍作为 Sched/IO/推理 owner 输入；本轮没有新增这些服务能力，也没有声称五仓已经移植到 HYLE。
+
+demangle 功能不增加；Registry 去掉“Creator 等于原函数指针”的旧形状而不留兼容别名。
+公共 façade 名称、runtime component ID 与 util_core 边界、ownership、错误/发布、性能历史入口和
+用户 guide 已校准；guide 明确保留 RT-01 限制。API usable gate 仍受该实际问题阻塞，不能只凭 docs checker
+通过就签 API PASS。历史 v3 task 不重写成当前能力授权。
+
+### Gate verdict 与恢复条件
+
+| 聚合 gate | Verdict |
+|---|---|
+| scope | PASS |
+| architecture / ownership / dependency boundary | PASS |
+| correctness | FAIL：RT-01；其余未完成项明确 BLOCKED |
+| delivery | INCONCLUSIVE |
+| usability_docs | INCONCLUSIVE：文档检查通过，API 尚有 RT-01 |
+| red_team | FAIL |
+| engineering_performance | FAIL：P0 copy/noexcept 机制 |
+| product / freeze | **BLOCKED / 无 freeze_confirmation** |
+
+**blocker_owner：util-runtime maintainer（本轮主 agent）**。resume_condition：
+
+1. 为 `module=util` 依法从 BLOCKED→SCOPED 开一个有限恢复轮，沿用此 evidence/baseline，记录新的预算，
+   再 AUDITED。只纳入 RT-01、RT-02、RT-03，禁止借机改 util_core、其他模块或公共验证工具。
+2. RT-01：消除 erased invoker 和 create/Creator 包装层不必要的按值构造；保留自然 C++ callable/API，
+   不通过拒绝原已准入的 const-reference callable 隐藏错误。加入具名 regression：值参数交给借用
+   factory 不在内部额外 move，失败可传播的边界不误 terminate，普通按值/move-only factory 仍正确。
+3. RT-02/03：在 util 私有 fixture 保证 Windows include 先决关系不会被格式化颠倒；长名字按各平台 ABI
+   的实际成功/失败与 HYLE fallback 合同检查，同时保留 required-size、临时内存释放和并发覆盖。
+4. 锁定新 immutable execution tree，由 selector 选择 util factor、两头、Util 三种消费；完成 Windows、
+   Linux、macOS 和 WSL ASan/UBSan/TSan、预声明 P0/export/红队，再依法 VERIFIED→CLOSED/FROZEN。
+   只复用输入/工具链/contract 不变且有原始 PASS 的证据；未运行项不复用、不签 PASS，不跑全库/P1。
+
+### 三项候选 LOC
+
+`6145023f31590f0f175845470d6f4da32e8df1ee`，cloc 2.08，直接复用 `loc-report.py` 的不可变 Git
+file-set/测量实现，只调用用户指定的三组集合，没有运行四项默认报告：
+
+| 口径 | Code LOC |
+|---|---:|
+| 全库，全部 Git 跟踪文件与 cloc 识别语言 | 480,679 |
+| 自实现不含测试：include/hyle + src，C/C++/CUDA | 77,042 |
+| util-runtime 不含测试：demangle.h、registry.h、src/util | 517 |
+
+第三项不包括 util_core、测试、package sample 或文档。registry schema 的旧第四字段只保留旧 snapshot 的
+legacy 值和单独 provenance；它不是本轮统计，也未用于本轮报告。终态之后只有文档/证据/状态提交，
+产品实现 LOC 不变。

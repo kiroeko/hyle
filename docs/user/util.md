@@ -283,6 +283,11 @@ exception handler 的受限上下文调用；需要 async-signal-safe crash capt
 
 ## Registry：注册阶段可变，服务阶段冻结
 
+当前 util-runtime 候选有一项未解决限制：Registry 的按值 `Args` 若移动构造会抛异常，即使 factory
+本身是 `noexcept` 且只接收 `const T&`，内部额外转发也可能触发 `terminate`。此形状尚不能依赖，
+详见 [v4 红队与恢复条件](../implementation/tasks/util/util-runtime-v4-inference-lifecycle.md)。
+按真实借用语义声明 `const Config&` 不经过这个值移动路径，但不能据此把整个 API 判为通过。
+
 ```cpp
 #include "hyle/util/registry.h"
 
