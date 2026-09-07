@@ -91,7 +91,9 @@ CMake 原 manifest 会在 metadata 后直接进入 configure-only 的 `CONFIGURE
 
 原始机器输出：[candidate selection](../../../../evidence/validation-selector-v1/candidate-result.json)、
 [reuse selection](../../../../evidence/validation-selector-v1/reused-result.json)，四个 gate 的原始 logs 与
-hash receipts 在同目录 `receipts/`。两个报告只做无损 JSON compact，不删 selected/skipped reason。
+hash receipts 在同目录 `receipts/`。两个报告只做无损 JSON compact/LF 规范化，不删 selected/skipped
+reason；receipt JSON 同样使用 LF。Windows 原始 logs 保持原始 CRLF 与 hash，`.gitattributes` 仅对
+本目录原始 log 声明 `-text whitespace=cr-at-eol`，不归一化或改写它们的字节。
 receipt 中的原始绝对路径保留执行事实，归档目录保存同名 receipt/log；可用 `--cache` 指向该目录
 只读核验相同 candidate 的复用。P1 原始 manifest 验证仍由现有仪器负责，本轮没有产品性能证书。
 

@@ -2,6 +2,7 @@ evidence/performance/*.csv text eol=lf
 evidence/core/*.log text eol=lf
 evidence/core/*.txt text eol=lf
 evidence/core/*.md text eol=lf
+evidence/validation-selector-v1/receipts/*.log -text whitespace=cr-at-eol
 third_party/mimalloc/** whitespace=-trailing-space
 third_party/simdutf/simdutf.cpp whitespace=cr-at-eol
 third_party/simdutf/simdutf.h whitespace=cr-at-eol
