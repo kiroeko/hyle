@@ -66,7 +66,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container_concurrent | core, mem, mem_reclaim, container | — |
 | container_queue | core, mem | — |
 | container_text | core, mem, container | platform |
-| util（util-runtime） | core, error, mem, container, container_text | — |
+| util-runtime | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, container_queue, timer_queue |
 | io | core, mem, container_text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
