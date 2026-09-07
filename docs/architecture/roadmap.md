@@ -66,7 +66,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container_concurrent | core, mem, mem_reclaim, container | — |
 | container_queue | core, mem | — |
 | container_text | core, mem, container | platform |
-| util | core, error, mem, container, container_text | — |
+| util（util-runtime） | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container, container_queue, timer_queue |
 | io | core, mem, container_text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
@@ -179,7 +179,7 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 8. obs；
 9. simd 与 math 边界；
 10. container；
-11. util-runtime；
+11. util-runtime（registry/component ID 为 `util`）；
 12. sched；
 13. io。
 

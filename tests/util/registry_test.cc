@@ -1,20 +1,23 @@
+#include "hyle/util/registry.h"
+
 #include <gtest/gtest.h>
 
 #include <array>
 #include <atomic>
+#include <barrier>
 #include <cstdio>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <new>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "hyle/container/string_view.h"
 #include "hyle/util/ref_counted.h"
-#include "hyle/util/registry.h"
 
 using hyle::container::StringView;
 using hyle::util::RegistryPriority;
@@ -59,13 +62,12 @@ Shape* create_triangle() noexcept { return new (std::nothrow) Triangle(); }
 Shape* create_square() noexcept { return new (std::nothrow) Square(); }
 
 hyle::Status register_shapes(hyle::util::Registry<Shape*>* registry) noexcept {
-  hyle::Status status = registry->register_creator(
-      "triangle", &create_triangle, RegistryPriority::kDefault,
-      "three-sided shape");
+  hyle::Status status = registry->register_creator("triangle", &create_triangle,
+                                                   RegistryPriority::kDefault,
+                                                   "three-sided shape");
   if (!status.ok()) return status;
-  return registry->register_creator("square", &create_square,
-                                    RegistryPriority::kDefault,
-                                    "four-sided shape");
+  return registry->register_creator(
+      "square", &create_square, RegistryPriority::kDefault, "four-sided shape");
 }
 
 struct FailingAllocatorState {
@@ -90,8 +92,7 @@ void failing_deallocate(void* context, void* pointer, std::size_t size,
 }
 
 void* failing_reallocate(void* context, void* pointer, std::size_t old_size,
-                         std::size_t new_size,
-                         std::size_t alignment) noexcept {
+                         std::size_t new_size, std::size_t alignment) noexcept {
   auto* state = static_cast<FailingAllocatorState*>(context);
   if (state->calls++ >= state->fail_after) return nullptr;
   return state->backing.reallocate(pointer, old_size, new_size, alignment);
@@ -99,7 +100,7 @@ void* failing_reallocate(void* context, void* pointer, std::size_t old_size,
 
 hyle::mem::AllocatorRef failing_allocator(FailingAllocatorState* state) {
   return hyle::mem::AllocatorRef(&failing_allocate, &failing_deallocate,
-                              &failing_reallocate, state);
+                                 &failing_reallocate, state);
 }
 
 }  // namespace
@@ -122,7 +123,7 @@ TEST(Registry, FindResolvesFactoryMetadataWithoutCreating) {
   const auto triangle = registry.find("triangle");
   ASSERT_TRUE(triangle.has_value());
   EXPECT_EQ(triangle->key, StringView{"triangle"});
-  EXPECT_EQ(triangle->creator, &create_triangle);
+  EXPECT_TRUE(triangle->creator);
   EXPECT_EQ(triangle->priority, RegistryPriority::kDefault);
   EXPECT_EQ(triangle->help, StringView{"three-sided shape"});
   EXPECT_FALSE(registry.find("hexagon").has_value());
@@ -135,7 +136,7 @@ TEST(Registry, FindResolvesFactoryMetadataWithoutCreating) {
   const auto square = frozen.find("square");
   ASSERT_TRUE(square.has_value());
   EXPECT_EQ(square->key, StringView{"square"});
-  EXPECT_EQ(square->creator, &create_square);
+  EXPECT_TRUE(square->creator);
   EXPECT_EQ(square->help, StringView{"four-sided shape"});
   EXPECT_FALSE(frozen.find("hexagon").has_value());
 }
@@ -253,10 +254,12 @@ TEST(Registry, RegisteredKeysVisible) {
 TEST(Registry, PriorityOverride) {
   hyle::util::Registry<CheapWidget*> reg;
   ASSERT_TRUE(reg.register_creator(
-      "widget", [](void) noexcept -> CheapWidget* {
-        return new (std::nothrow) CheapWidget();
-      },
-      RegistryPriority::kFallback).ok());
+                     "widget",
+                     [](void) noexcept -> CheapWidget* {
+                       return new (std::nothrow) CheapWidget();
+                     },
+                     RegistryPriority::kFallback)
+                  .ok());
   EXPECT_EQ(reg.size(), 1u);
   {
     std::unique_ptr<CheapWidget> w(reg.create("widget"));
@@ -264,10 +267,12 @@ TEST(Registry, PriorityOverride) {
   }
   // Higher priority overrides.
   ASSERT_TRUE(reg.register_creator(
-      "widget", [](void) noexcept -> CheapWidget* {
-        return new (std::nothrow) FancyWidget();
-      },
-      RegistryPriority::kPreferred).ok());
+                     "widget",
+                     [](void) noexcept -> CheapWidget* {
+                       return new (std::nothrow) FancyWidget();
+                     },
+                     RegistryPriority::kPreferred)
+                  .ok());
   EXPECT_EQ(reg.size(), 1u);  // same key, replaced not added
   {
     std::unique_ptr<CheapWidget> w(reg.create("widget"));
@@ -275,10 +280,12 @@ TEST(Registry, PriorityOverride) {
   }
   // A later fallback does NOT displace the preferred one.
   ASSERT_TRUE(reg.register_creator(
-      "widget", [](void) noexcept -> CheapWidget* {
-        return new (std::nothrow) CheapWidget();
-      },
-      RegistryPriority::kFallback).ok());
+                     "widget",
+                     [](void) noexcept -> CheapWidget* {
+                       return new (std::nothrow) CheapWidget();
+                     },
+                     RegistryPriority::kFallback)
+                  .ok());
   {
     std::unique_ptr<CheapWidget> w(reg.create("widget"));
     EXPECT_EQ(w->quality(), 10);  // still preferred
@@ -288,8 +295,10 @@ TEST(Registry, PriorityOverride) {
 TEST(Registry, SamePriorityCollisionIsRecoverable) {
   hyle::util::Registry<CheapWidget*> reg;
   ASSERT_TRUE(reg.register_creator(
-      "dup", [](void) noexcept -> CheapWidget* { return nullptr; },
-      RegistryPriority::kDefault).ok());
+                     "dup",
+                     [](void) noexcept -> CheapWidget* { return nullptr; },
+                     RegistryPriority::kDefault)
+                  .ok());
   const hyle::Status status = reg.register_creator(
       "dup", [](void) noexcept -> CheapWidget* { return nullptr; },
       RegistryPriority::kDefault);
@@ -314,12 +323,11 @@ TEST(Registry, MoveOnlyFactoryArgumentsAreForwarded) {
   using Reg = hyle::util::Registry<Ptr, std::unique_ptr<int>>;
   Reg registry;
   auto creator = +[](std::unique_ptr<int> input) noexcept -> Ptr {
-    return hyle::util::adopt_ref(
-        new (std::nothrow) MoveWidget(std::move(input)));
+    return hyle::util::adopt_ref(new (std::nothrow)
+                                     MoveWidget(std::move(input)));
   };
   ASSERT_TRUE(registry.register_creator("move", creator).ok());
-  Ptr value =
-      registry.create("move", std::make_unique<int>(42));
+  Ptr value = registry.create("move", std::make_unique<int>(42));
   ASSERT_TRUE(value);
   EXPECT_EQ(value->value, 42);
 }
@@ -341,8 +349,7 @@ int* create_reentrantly() noexcept {
 TEST(Registry, CreatorMayReenterRegistry) {
   ReentrantRegistry registry;
   g_reentrant_registry = &registry;
-  ASSERT_TRUE(
-      registry.register_creator("reentrant", &create_reentrantly).ok());
+  ASSERT_TRUE(registry.register_creator("reentrant", &create_reentrantly).ok());
   EXPECT_EQ(registry.create("reentrant"), create_reentrantly());
   g_reentrant_registry = nullptr;
 }
@@ -360,7 +367,8 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
   std::atomic<bool> start{false};
   std::atomic<bool> finished{false};
   std::thread reader([&] {
-    while (!start.load(std::memory_order_acquire)) {}
+    while (!start.load(std::memory_order_acquire)) {
+    }
     while (!finished.load(std::memory_order_acquire)) {
       (void)registry.has("missing");
       (void)registry.find("missing");
@@ -370,12 +378,16 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
   std::vector<std::thread> writers;
   for (std::size_t worker = 0; worker < 4; ++worker) {
     writers.emplace_back([&, worker] {
-      while (!start.load(std::memory_order_acquire)) {}
+      while (!start.load(std::memory_order_acquire)) {
+      }
       for (std::size_t i = worker; i < kKeys; i += 4) {
-        const auto length = static_cast<std::uint32_t>(
-            std::strlen(key_storage[i].data()));
-        ASSERT_TRUE(registry.register_creator(
-            StringView{key_storage[i].data(), length, true}, creator).ok());
+        const auto length =
+            static_cast<std::uint32_t>(std::strlen(key_storage[i].data()));
+        ASSERT_TRUE(
+            registry
+                .register_creator(
+                    StringView{key_storage[i].data(), length, true}, creator)
+                .ok());
       }
     });
   }
@@ -388,9 +400,8 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
   for (std::size_t i = 0; i < kKeys; ++i) {
     const auto entry = registry.find(key_storage[i].data());
     ASSERT_TRUE(entry.has_value());
-    EXPECT_EQ(entry->creator, creator);
-    std::unique_ptr<CheapWidget> value(
-        entry->creator());
+    EXPECT_TRUE(entry->creator);
+    std::unique_ptr<CheapWidget> value(entry->creator());
     ASSERT_NE(value, nullptr);
   }
 }
@@ -398,14 +409,16 @@ TEST(Registry, ConcurrentRegistrationAndReadsAreSafe) {
 TEST(Registry, RejectsInvalidRegistration) {
   hyle::util::Registry<CheapWidget*> registry;
   EXPECT_TRUE(registry.register_creator("null", nullptr).IsInvalidArgument());
-  EXPECT_TRUE(registry.register_creator(
-      "priority", +[]() noexcept -> CheapWidget* { return nullptr; },
-      static_cast<RegistryPriority>(99)).IsInvalidArgument());
-  EXPECT_TRUE(
-      registry
-          .register_creator(
-              "", +[]() noexcept -> CheapWidget* { return nullptr; })
-          .IsInvalidArgument());
+  EXPECT_TRUE(registry
+                  .register_creator(
+                      "priority",
+                      +[]() noexcept -> CheapWidget* { return nullptr; },
+                      static_cast<RegistryPriority>(99))
+                  .IsInvalidArgument());
+  EXPECT_TRUE(registry
+                  .register_creator(
+                      "", +[]() noexcept -> CheapWidget* { return nullptr; })
+                  .IsInvalidArgument());
 }
 
 TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
@@ -421,28 +434,32 @@ TEST(Registry, OwnsDynamicKeysAndHelpAndKeepsOldViewsStable) {
   {
     std::string key = "dynamic-widget";
     std::string help = "fallback implementation";
-    ASSERT_TRUE(registry.register_creator(
-        key, fallback, RegistryPriority::kFallback, help).ok());
+    ASSERT_TRUE(
+        registry
+            .register_creator(key, fallback, RegistryPriority::kFallback, help)
+            .ok());
     old_help = registry.help("dynamic-widget");
     old_entry = registry.find("dynamic-widget");
   }
   ASSERT_TRUE(old_entry.has_value());
-  EXPECT_EQ(old_entry->creator, fallback);
+  EXPECT_TRUE(old_entry->creator);
   EXPECT_EQ(old_entry->priority, RegistryPriority::kFallback);
   EXPECT_EQ(old_entry->key, StringView{"dynamic-widget"});
   EXPECT_EQ(old_help, StringView{"fallback implementation"});
   std::unique_ptr<CheapWidget> value(registry.create("dynamic-widget"));
   ASSERT_NE(value, nullptr);
 
-  ASSERT_TRUE(registry.register_creator(
-      "dynamic-widget", preferred, RegistryPriority::kPreferred,
-      "preferred implementation").ok());
+  ASSERT_TRUE(registry
+                  .register_creator("dynamic-widget", preferred,
+                                    RegistryPriority::kPreferred,
+                                    "preferred implementation")
+                  .ok());
   const auto current_entry = registry.find("dynamic-widget");
   ASSERT_TRUE(current_entry.has_value());
-  EXPECT_EQ(current_entry->creator, preferred);
+  EXPECT_TRUE(current_entry->creator);
   EXPECT_EQ(current_entry->priority, RegistryPriority::kPreferred);
   EXPECT_EQ(current_entry->help, StringView{"preferred implementation"});
-  EXPECT_EQ(old_entry->creator, fallback);
+  EXPECT_TRUE(old_entry->creator);
   EXPECT_EQ(old_entry->priority, RegistryPriority::kFallback);
   EXPECT_EQ(old_entry->help, StringView{"fallback implementation"});
   EXPECT_EQ(old_help, StringView{"fallback implementation"});
@@ -473,8 +490,11 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   hyle::util::Registry<CheapWidget*> registry;
   ASSERT_TRUE(registry.reserve(32).ok());
   auto creator = +[]() noexcept -> CheapWidget* { return nullptr; };
-  ASSERT_TRUE(registry.register_creator("frozen", creator, RegistryPriority::kDefault,
-                                        "immutable entry").ok());
+  ASSERT_TRUE(registry
+                  .register_creator("frozen", creator,
+                                    RegistryPriority::kDefault,
+                                    "immutable entry")
+                  .ok());
   const auto frozen = registry.freeze();
   const auto frozen_again = registry.freeze();
   (void)frozen_again;
@@ -482,7 +502,7 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   EXPECT_TRUE(frozen.has("frozen"));
   const auto found = frozen.find("frozen");
   ASSERT_TRUE(found.has_value());
-  EXPECT_EQ(found->creator, creator);
+  EXPECT_TRUE(found->creator);
   EXPECT_EQ(found->priority, RegistryPriority::kDefault);
   EXPECT_EQ(found->help, StringView{"immutable entry"});
   EXPECT_EQ(frozen.help("frozen"), StringView{"immutable entry"});
@@ -490,7 +510,8 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   EXPECT_EQ(frozen.create("frozen"), nullptr);
   EXPECT_TRUE(registry.has("frozen"));
   EXPECT_EQ(registry.help("frozen"), StringView{"immutable entry"});
-  EXPECT_TRUE(registry.register_creator("late", creator).IsFailedPrecondition());
+  EXPECT_TRUE(
+      registry.register_creator("late", creator).IsFailedPrecondition());
   EXPECT_TRUE(registry.reserve(64).IsFailedPrecondition());
 
   std::atomic<std::size_t> observations{0};
@@ -501,7 +522,7 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
         if (registry.has("frozen") && registry.size() == 1) {
           const auto entry = frozen.find("frozen");
           EXPECT_TRUE(entry.has_value());
-          EXPECT_EQ(entry->creator, creator);
+          EXPECT_TRUE(entry->creator);
           observations.fetch_add(1, std::memory_order_relaxed);
         }
       }
@@ -511,10 +532,12 @@ TEST(Registry, FreezePublishesLockFreeReadPhase) {
   EXPECT_EQ(observations.load(), 80'000u);
 
   std::size_t visited = 0;
-  ASSERT_TRUE(registry.for_each([&](auto entry) {
-    ++visited;
-    EXPECT_TRUE(registry.has(entry.key));
-  }).ok());
+  ASSERT_TRUE(registry
+                  .for_each([&](auto entry) {
+                    ++visited;
+                    EXPECT_TRUE(registry.has(entry.key));
+                  })
+                  .ok());
   EXPECT_EQ(visited, 1u);
 
   visited = 0;
@@ -570,9 +593,9 @@ TEST(Registry, EveryInitialAllocationFailureIsAtomicAndRetryable) {
   probe.fail_after = (std::numeric_limits<std::size_t>::max)();
   {
     hyle::util::Registry<CheapWidget*> registry(failing_allocator(&probe));
-    ASSERT_TRUE(registry.register_creator("entry", creator,
-                                          RegistryPriority::kDefault,
-                                          "diagnostics")
+    ASSERT_TRUE(registry
+                    .register_creator("entry", creator,
+                                      RegistryPriority::kDefault, "diagnostics")
                     .ok());
   }
   ASSERT_GT(probe.calls, 0u);
@@ -585,17 +608,17 @@ TEST(Registry, EveryInitialAllocationFailureIsAtomicAndRetryable) {
     failure.fail_after = fail_after;
     hyle::util::Registry<CheapWidget*> registry(failing_allocator(&failure));
 
-    EXPECT_TRUE(registry.register_creator("entry", creator,
-                                          RegistryPriority::kDefault,
-                                          "diagnostics")
+    EXPECT_TRUE(registry
+                    .register_creator("entry", creator,
+                                      RegistryPriority::kDefault, "diagnostics")
                     .IsResourceExhausted());
     EXPECT_EQ(registry.size(), 0u);
     EXPECT_FALSE(registry.has("entry"));
 
     failure.fail_after = (std::numeric_limits<std::size_t>::max)();
-    EXPECT_TRUE(registry.register_creator("entry", creator,
-                                         RegistryPriority::kDefault,
-                                         "diagnostics")
+    EXPECT_TRUE(registry
+                    .register_creator("entry", creator,
+                                      RegistryPriority::kDefault, "diagnostics")
                     .ok());
     EXPECT_EQ(registry.size(), 1u);
     EXPECT_EQ(registry.help("entry"), StringView{"diagnostics"});
@@ -612,16 +635,16 @@ TEST(Registry, FailedPriorityReplacementKeepsPreviousEntry) {
   FailingAllocatorState failure;
   failure.fail_after = (std::numeric_limits<std::size_t>::max)();
   hyle::util::Registry<CheapWidget*> registry(failing_allocator(&failure));
-  ASSERT_TRUE(registry.register_creator("widget", fallback,
-                                        RegistryPriority::kFallback,
-                                        "fallback")
+  ASSERT_TRUE(registry
+                  .register_creator("widget", fallback,
+                                    RegistryPriority::kFallback, "fallback")
                   .ok());
 
   failure.fail_after = failure.calls;
   const std::string large_help(20 * 1024, 'x');
-  EXPECT_TRUE(registry.register_creator("widget", preferred,
-                                        RegistryPriority::kPreferred,
-                                        large_help)
+  EXPECT_TRUE(registry
+                  .register_creator("widget", preferred,
+                                    RegistryPriority::kPreferred, large_help)
                   .IsResourceExhausted());
   EXPECT_EQ(registry.help("widget"), StringView{"fallback"});
   std::unique_ptr<CheapWidget> value(registry.create("widget"));
@@ -651,11 +674,187 @@ TEST(Registry, MaximumStringLengthWidensBeforeNulByteAllocation) {
   // before adding the terminator and Entry bytes.
   const char placeholder = 'x';
   const StringView maximum_key{&placeholder, StringView::npos};
-  const hyle::Status status =
-      registry.register_creator(maximum_key, creator);
+  const hyle::Status status = registry.register_creator(maximum_key, creator);
 
   EXPECT_TRUE(status.IsResourceExhausted());
   EXPECT_EQ(failure.calls, probe.calls);
   EXPECT_GT(failure.last_allocation_size,
             static_cast<std::size_t>(StringView::npos));
+}
+
+namespace {
+
+struct alignas(128) OwnedFactory {
+  std::unique_ptr<int> state;
+  int* operator()() const noexcept { return state.get(); }
+};
+
+}  // namespace
+
+TEST(Registry, OwnsMoveOnlyOveralignedStateAndRetainsReplacedCreators) {
+  hyle::util::Registry<int*> registry;
+  OwnedFactory first{std::make_unique<int>(17)};
+  ASSERT_TRUE(registry
+                  .register_creator("backend", std::move(first),
+                                    RegistryPriority::kFallback)
+                  .ok());
+  EXPECT_EQ(first.state, nullptr);
+  const auto old = registry.find("backend");
+  ASSERT_TRUE(old);
+  EXPECT_EQ(*old->creator(), 17);
+
+  OwnedFactory replacement{std::make_unique<int>(23)};
+  ASSERT_TRUE(registry
+                  .register_creator("backend", std::move(replacement),
+                                    RegistryPriority::kPreferred)
+                  .ok());
+  const auto current = registry.find("backend");
+  ASSERT_TRUE(current);
+  EXPECT_NE(current->creator, old->creator);
+  EXPECT_EQ(*current->creator(), 23);
+  EXPECT_EQ(*old->creator(), 17);
+  EXPECT_EQ(registry.freeze().find("backend")->creator, current->creator);
+}
+
+TEST(Registry, RejectedOrIgnoredRegistrationDoesNotConsumeNamedCallable) {
+  FailingAllocatorState state;
+  hyle::util::Registry<int*> registry(failing_allocator(&state));
+  OwnedFactory pending{std::make_unique<int>(31)};
+  EXPECT_TRUE(registry.register_creator("backend", std::move(pending))
+                  .IsResourceExhausted());
+  ASSERT_NE(pending.state, nullptr);
+  EXPECT_EQ(registry.size(), 0u);
+  state.fail_after = (std::numeric_limits<std::size_t>::max)();
+  ASSERT_TRUE(registry.register_creator("backend", std::move(pending)).ok());
+
+  OwnedFactory rejected{std::make_unique<int>(47)};
+  const auto calls = state.calls;
+  EXPECT_TRUE(registry.register_creator("backend", std::move(rejected))
+                  .IsAlreadyExists());
+  EXPECT_TRUE(registry
+                  .register_creator("backend", std::move(rejected),
+                                    RegistryPriority::kFallback)
+                  .ok());
+  EXPECT_EQ(state.calls, calls);
+  ASSERT_NE(rejected.state, nullptr);
+
+  state.fail_after = state.calls;
+  const std::string help(20 * 1024, 'x');
+  EXPECT_TRUE(registry
+                  .register_creator("backend", std::move(rejected),
+                                    RegistryPriority::kPreferred, help)
+                  .IsResourceExhausted());
+  ASSERT_NE(rejected.state, nullptr);
+  EXPECT_EQ(*registry.create("backend"), 31);
+  (void)registry.freeze();
+  EXPECT_TRUE(registry.register_creator("late", std::move(rejected))
+                  .IsFailedPrecondition());
+  ASSERT_NE(rejected.state, nullptr);
+}
+
+TEST(Registry, EntryAndCreatedObjectHaveIndependentImageOwnership) {
+  using Owner = std::shared_ptr<int>;
+  std::weak_ptr<int> image;
+  Owner object;
+  {
+    hyle::util::Registry<Owner> registry;
+    auto owner = std::make_shared<int>(53);
+    image = owner;
+    auto factory = [owner = std::move(owner)]() noexcept { return owner; };
+    ASSERT_TRUE(registry.register_creator("backend", std::move(factory)).ok());
+    EXPECT_EQ(owner, nullptr);
+    EXPECT_FALSE(image.expired());
+    object = registry.create("backend");
+    EXPECT_EQ(*object, 53);
+    (void)registry.freeze();
+  }
+  EXPECT_FALSE(image.expired());
+  object.reset();
+  EXPECT_TRUE(image.expired());
+}
+
+TEST(Registry, CapturedCreatorCanRegisterAndFreezeOutsideTheLock) {
+  hyle::util::Registry<int*> registry;
+  int value = 61;
+  ASSERT_TRUE(registry
+                  .register_creator("start",
+                                    [&]() noexcept {
+                                      EXPECT_TRUE(registry
+                                                      .register_creator(
+                                                          "late",
+                                                          [&value]() noexcept {
+                                                            return &value;
+                                                          })
+                                                      .ok());
+                                      return registry.freeze().create("late");
+                                    })
+                  .ok());
+  EXPECT_EQ(registry.create("start"), &value);
+  EXPECT_TRUE(registry.frozen());
+}
+
+TEST(Registry, ConcurrentFreezeLinearizesRegistrationAndPublishesState) {
+  for (int round = 0; round < 32; ++round) {
+    hyle::util::Registry<int*> registry;
+    std::barrier start(3);
+    hyle::Status registered;
+    std::thread writer([&] {
+      OwnedFactory factory{std::make_unique<int>(round)};
+      start.arrive_and_wait();
+      registered = registry.register_creator("race", std::move(factory));
+      EXPECT_TRUE(registered.ok() || registered.IsFailedPrecondition());
+      EXPECT_EQ(factory.state == nullptr, registered.ok());
+    });
+    std::thread publisher([&] {
+      start.arrive_and_wait();
+      (void)registry.freeze();
+    });
+    start.arrive_and_wait();
+    while (!registry.frozen()) {
+    }
+    const auto entry = registry.find("race");
+    if (entry) EXPECT_EQ(*entry->creator(), round);
+    writer.join();
+    publisher.join();
+    EXPECT_EQ(registry.has("race"), registered.ok());
+    EXPECT_EQ(registry.freeze().has("race"), registered.ok());
+  }
+}
+
+TEST(Registry, MutableEnumerationFailureDoesNotCallVisitorAndRemainsUsable) {
+  FailingAllocatorState state;
+  state.fail_after = (std::numeric_limits<std::size_t>::max)();
+  hyle::util::Registry<int*> registry(failing_allocator(&state));
+  ASSERT_TRUE(
+      registry
+          .register_creator("entry", []() noexcept -> int* { return nullptr; })
+          .ok());
+  state.fail_after = state.calls;
+  int visits = 0;
+  EXPECT_TRUE(registry.for_each([&](auto) { ++visits; }).IsResourceExhausted());
+  EXPECT_EQ(visits, 0);
+  state.fail_after = (std::numeric_limits<std::size_t>::max)();
+  EXPECT_THROW((void)registry.for_each(
+                   [](auto) { throw std::runtime_error("visitor failed"); }),
+               std::runtime_error);
+  EXPECT_TRUE(registry.has("entry"));
+  ASSERT_TRUE(registry
+                  .for_each([&](auto) {
+                    ++visits;
+                    return false;
+                  })
+                  .ok());
+  EXPECT_EQ(visits, 1);
+}
+
+TEST(Registry, EmptyAndTypedNullCreatorHaveExplicitSemantics) {
+  using Registry = hyle::util::Registry<int*>;
+  Registry::Creator empty;
+  EXPECT_FALSE(empty);
+  EXPECT_EQ(empty, Registry::Creator{});
+  int* (*null_factory)() noexcept = nullptr;
+  Registry registry;
+  EXPECT_TRUE(
+      registry.register_creator("null", null_factory).IsInvalidArgument());
+  EXPECT_TRUE(registry.freeze().find("null") == std::nullopt);
 }

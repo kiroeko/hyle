@@ -89,8 +89,10 @@ factor roots。公开头仍由 factor 唯一拥有，产品安装的是所选 fa
 外部 catalog 按完整问题域保持小而稳定：`core,error,time,platform,mem,obs,simd,math,container,util,
 sched,io`；`compute,graph` 待产品重写后仍以问题域加入。比如 `container_intrusive`、
 `container_concurrent`、`container_queue` 与 `container_text` 是内部 factor，用户从 `hyle::container` 获得
-Container 产品；`util_core/registry/
-symbol` 由 `hyle::util` 聚合。只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
+Container 产品；Util 产品 `hyle::util` 聚合 `util_core`（header-only foundation）与
+`util`（语义名称 util-runtime，compiled demangle 与 Registry；内部 target `hyle_util`）。
+registry 的 `util` 记录只裁决 runtime，不能把它的状态当成整个 façade 或 `util_core` 的状态。
+只有用户确实需要独立选择的语义产品或 expert journey 才新增公开 target，
 不能因为内部有一个 target 就自动公开。
 
 source/static/shared 必须暴露同名 façade。当前首选物理实现是继续保留精确 factor artifact/target，由

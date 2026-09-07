@@ -44,7 +44,9 @@ using MallocString = std::unique_ptr<char, CFree>;
 #if defined(_WIN32)
 DWORD undecorate_once(const char* mangled, char* out, DWORD capacity) {
   // DbgHelp is documented as single-threaded. Keep only the DbgHelp call under
-  // the process-wide lock; allocation and sink/string copies need not serialize.
+  // this runtime image's lock; allocation and sink/string copies need not
+  // serialize. Other DbgHelp users (including separate static HYLE copies) need
+  // host-level coordination covering all calls into the same DbgHelp instance.
   static std::mutex mutex;
   std::lock_guard<std::mutex> lock(mutex);
   return UnDecorateSymbolName(mangled, out, capacity, UNDNAME_COMPLETE);

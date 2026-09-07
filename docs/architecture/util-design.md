@@ -5,7 +5,9 @@
 > FFI 为 `N/A`；公开 C schema、bridge、动态导出和 managed fixture 不属于产品。用户选型见
 > [user/util](../user/util.md)。
 
-`util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
+Util 不是随手堆 helper 的杂物目录。产品入口 `hyle::util` 聚合两个分别收口的因子：
+`util_core` 是 header-only foundation；**util-runtime 的机器 ID 仍为 `util`**，内部 target 为
+`hyle_util`。文档中的 runtime 名称不新增 component，也不表示 util_core 被重新打开。
 
 ```text
 foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
@@ -16,10 +18,10 @@ foundation：hyle_util_core（内部 INTERFACE factor，无 binary artifact）
                     ├──► mem / sched / graph
                     └──► hyle::util 产品 façade
 
-runtime：hyle_util（内部 compiled factor；严格收口波次 R2）
+runtime：hyle_util（内部 compiled factor；component ID util）
    demangle / Registry
                     │
-                    └──► core + error + mem + container
+                    └──► core + error + mem + container + container_text
 ```
 
 Registry 是模板头，但公开形状直接使用 container 的 `StringView/FlatHashMap`，并借 mem allocator/
@@ -63,17 +65,19 @@ immutable service
 ```
 
 旧形状若在 freeze 时复制/重建第二张表，会让启动延迟、峰值内存和 OOM surface 随注册规模增长；
-当前一表两阶段直接发布。lookup value 内联 creator，所以 create 不读取 Entry 的冷 help/priority；
-初次注册把 Entry、owned key 与 owned help 作为一个 Arena allocation 提交，并在此前准备好唯一
+当前一表两阶段直接发布。索引保存稳定 entry pointer；entry 拥有 callable 及其捕获的状态。
+初次注册把 Entry、callable、owned key 与 owned help 作为一个 Arena allocation 提交，并在此前准备好唯一
 仍可能分配的 Swiss capacity。这样 OOM 不会在单调 arena 留下不可达 key/help，普通 4--32 项
 startup 也只需一个小 storage Arena，而不是预留两个独立 4 KiB arena。这些是正常
 init-heavy/read-heavy 消费形状的架构优化，不是按 benchmark 的 key 数量或线程数特化。
 
 Registry 拥有 key/help，priority 保证显式组合顺序不成为隐式策略：更高覆盖、更低忽略、
 同级冲突报错。可变枚举在锁内复制时间点快照，锁外执行 callback；冻结枚举直接遍历不可变表。
-`find()` 返回 lookup-only `EntryView` value snapshot：creator/priority 被复制，key/help 借用 Registry-owned
+`find()` 返回 lookup-only `EntryView` value snapshot：借用 Creator handle/priority 被复制，key/help 借用 Registry-owned
 storage。它使 backend owner 能在启动期解析并缓存 typed factory，而不必为了取得 callable 提前构造或
-O(n) 枚举；没有新增表、entry 字段、allocation 或动态分发。
+O(n) 枚举。Creator 是一个 entry 指针，经 type-erased invoker 调用 const callable；不在每次查询加引用计数。
+被高优先级替换的 entry 仍保留到 Registry 析构，保证旧借用和在途调用有效。私有销毁链负责依次释放
+capture；三档优先级使每个 key 最多保留三份被接受的 entry，不接受同级/较低项时不分配。
 `FrozenView` 不拥有表，Registry 必须活过 view 和所有在途 operation。没有 unregister 是安全
 边界：module unload 需要追踪 created object、函数指针与并发 reader quiescence，应由独立 module
 manager 负责，而不是让通用名字表猜测。
@@ -83,8 +87,11 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
 使用 `Registry<Result<T*>, Args...>`：missing 自动成为 `NotFound`，creator 的 `Status` 原样
 传播。该策略不增加每项元数据，也不要求 benchmark-only API。
 
-creator 是 `noexcept` function pointer，而不是 captured/type-erased callable。运营失败必须进入
-返回的 `Result`；需要状态时通过 Registry 的显式 `Args...` 或生命周期清楚的 owner 传递。旧
+creator 可以是 `noexcept` function pointer，也可以是 owning、move-only、通过 `const F&` 无异常调用的
+callable；构造/销毁必须无异常且不重入 Registry。具名 rvalue callable 在错误或低优先级 no-op 后
+仍由 caller 持有。运营失败进入返回的 `Result`；`Args...` 是调用时输入，capture 保存每项绑定状态。
+版本兼容/能力分数在注册前由 typed backend owner 判断；并存版本可用不同 key/registry，不增加泛用
+版本求解器。callable 与创建的对象分别保活所需 image，裸 pointer capture 不会延长生命周期。旧
 Clay 静态注册宏和 default-`new` creator 已删除：archive 中只有静态初始化副作用的 TU 可能被
 dead-strip，而且构造器无法把 collision/OOM 可靠交还 startup owner。内建与动态 backend 都由
 明确的启动代码调用 `register_creator()` 并处理 `Status`。
@@ -92,7 +99,8 @@ dead-strip，而且构造器无法把 collision/OOM 可靠交还 startup owner�
 demangle 的 owning overload 是 header-inline `std::string` convenience。它通过一个窄 internal sink
 让 caller TU 构造标准字符串，不把 DLL-owned STL layout/heap ownership交给调用方；sink 在 transient
 platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_demangle` malloc，再复制进
-`std::string`；Windows DbgHelp 仍需要全局串行调用。buffer overload 是 `noexcept` 且支持输入/输出
+`std::string`；Windows DbgHelp 仍需要全局串行调用，HYLE mutex 只覆盖同一 runtime image，其他 static
+副本或宿主直接调用需由宿主协调。buffer overload 是 `noexcept` 且支持输入/输出
 重叠，但也不等于无内部 allocation，更不能在 signal handler 中调用。
 
 ## 复杂度与布局合同
@@ -136,7 +144,7 @@ mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显�
 SpinLock/cpu_relax。`FunctionRef` 与 `NotNull` 是供后续 owner 在自己的语义轮采用的公开词汇，
 不得把 stored/asynchronous callback 或 nullable pointer 机械迁移成不同合同。会 allocate/rehash/执行
 未知用户代码的 mem LeakTracker 与 container ConcurrentVector 使用 mutex。Registry runtime 显式链接
-core、error、mem 和 container；
+core、error、mem、container 和 container_text；
 删除静态注册/default creator 后不再依赖 util_core。这些依赖同时由中央 component graph 与
 target link 生成/验证。
 

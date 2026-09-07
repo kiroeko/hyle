@@ -1,10 +1,12 @@
+#include "hyle/util/demangle.h"
+
 #include <gtest/gtest.h>
 
 #include <cstring>
 #include <string>
+#include <thread>
 #include <typeinfo>
-
-#include "hyle/util/demangle.h"
+#include <vector>
 
 using hyle::util::demangle;
 
@@ -70,7 +72,8 @@ TEST(Demangle, NullInputYieldsEmpty) {
   EXPECT_STREQ(buf, "");
 }
 
-// cap == 0: nothing is written (buf may be untouched), full length still returned.
+// cap == 0: nothing is written (buf may be untouched), full length still
+// returned.
 TEST(Demangle, ZeroCapWritesNothing) {
   char sentinel[8];
   std::memset(sentinel, 'X', sizeof(sentinel));
@@ -103,4 +106,48 @@ TEST(Demangle, DistinctTypes) {
   demangle(typeid(int).name(), a, sizeof(a));
   demangle(typeid(double).name(), b, sizeof(b));
   EXPECT_STRNE(a, b);
+}
+
+TEST(Demangle, ZeroAndOneCapacityAndReverseTruncatedOverlap) {
+  EXPECT_EQ(demangle("hello", nullptr, 0), 5u);
+  char one = 'X';
+  EXPECT_EQ(demangle("hello", &one, 1), 5u);
+  EXPECT_EQ(one, '\0');
+  char text[32] = "ordinary_symbol";
+  EXPECT_EQ(demangle(text, text + 2, 5), 15u);
+  EXPECT_STREQ(text + 2, "ordi");
+}
+
+TEST(Demangle, PlatformSymbolMayOverlapAndTruncate) {
+#if defined(_WIN32)
+  constexpr const char* name = "?foo@@YAHH@Z";
+#else
+  constexpr const char* name = "_Z3fooi";
+#endif
+  const std::string expected = demangle(name);
+  char storage[128];
+  std::strcpy(storage, name);
+  EXPECT_EQ(demangle(storage, storage, 4), expected.size());
+  EXPECT_EQ(std::string(storage), expected.substr(0, 3));
+}
+
+TEST(Demangle, LongPlatformSymbolAndConcurrentCalls) {
+  const std::string identifier(1500, 'x');
+#if defined(_WIN32)
+  const std::string name = "?" + identifier + "@@YAHH@Z";
+#else
+  const std::string name = "_Z1500" + identifier + "i";
+#endif
+  const std::string expected = demangle(name.c_str());
+  ASSERT_NE(expected.find(identifier), std::string::npos);
+  ASSERT_NE(expected, name);
+  std::vector<std::thread> workers;
+  for (int i = 0; i < 4; ++i) {
+    workers.emplace_back([&] {
+      for (int j = 0; j < 32; ++j) {
+        EXPECT_EQ(demangle(name.c_str()), expected);
+      }
+    });
+  }
+  for (auto& worker : workers) worker.join();
 }

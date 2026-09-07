@@ -1,58 +1,79 @@
+#include <cstddef>
+#include <cstring>
+#include <memory>
+#include <string>
+
 #include "hyle/container/string_view.h"
 #include "hyle/util/demangle.h"
 #include "hyle/util/registry.h"
-
-#include <cstddef>
-#include <cstring>
-#include <string>
+#include "hyle/util/scope_guard.h"
 
 namespace {
+struct Backend {
+  std::shared_ptr<int> image;
+};
+using Registry = hyle::util::Registry<hyle::Result<Backend>, bool>;
 
-hyle::Result<void*> create_value(bool available) noexcept {
-  if (!available) {
-    return hyle::make_unexpected(
-        hyle::Status::Unavailable("sample backend unavailable"));
+// Version compatibility belongs to the typed backend owner, before committing
+// any entry. A real image owner also keeps its unload operation here.
+hyle::Status register_backend(Registry& registry, unsigned version,
+                              std::shared_ptr<int> image) noexcept {
+  if (version != 1) {
+    return hyle::Status::InvalidArgument("incompatible backend version");
   }
-  static int value = 7;
-  return &value;
+  return registry.register_creator(
+      "sample",
+      [image =
+           std::move(image)](bool available) noexcept -> hyle::Result<Backend> {
+        if (!available) {
+          return hyle::make_unexpected(
+              hyle::Status::Unavailable("sample backend unavailable"));
+        }
+        return Backend{image};
+      },
+      hyle::util::RegistryPriority::kDefault, "installed C++ package probe");
 }
-
 }  // namespace
 
 int main() {
-  hyle::util::Registry<hyle::Result<void*>, bool> registry;
-  if (!registry.register_creator("sample", &create_value,
-                                 hyle::util::RegistryPriority::kDefault,
-                                 "installed C++ package probe")
-           .ok()) {
-    return 1;
+  bool scope_finished = false;
+  {
+    hyle::util::ScopeGuard cleanup{[&]() noexcept { scope_finished = true; }};
+    (void)cleanup;
   }
-  const auto frozen = registry.freeze();
-  const auto entry = frozen.find("sample");
-  if (!entry.has_value() ||
-      entry->key != hyle::container::StringView{"sample"} ||
-      entry->creator != &create_value ||
-      entry->priority != hyle::util::RegistryPriority::kDefault) {
-    return 2;
+  if (!scope_finished) return 1;
+
+  std::weak_ptr<int> image_lifetime;
+  Backend object;
+  {
+    Registry registry;
+    auto image = std::make_shared<int>(7);
+    image_lifetime = image;
+    if (!register_backend(registry, 2, image).IsInvalidArgument() ||
+        registry.size() != 0)
+      return 2;
+    if (!register_backend(registry, 1, std::move(image)).ok()) return 3;
+    const auto frozen = registry.freeze();
+    const auto entry = frozen.find("sample");
+    if (!entry || !entry->creator ||
+        entry->key != hyle::container::StringView{"sample"})
+      return 4;
+    const auto created = entry->creator(true);
+    if (!created || *created->image != 7) return 5;
+    object = *created;
+    const auto failed = frozen.create("sample", false);
+    const auto missing = frozen.create("missing", true);
+    if (failed || !failed.error().IsUnavailable() || missing ||
+        !missing.error().IsNotFound())
+      return 6;
   }
-  const auto creator = entry->creator;
-  const auto created = creator(true);
-  if (!created.has_value() || *created == nullptr) {
-    return 3;
-  }
-  const auto failed = frozen.create("sample", false);
-  const auto missing = frozen.create("missing", true);
-  if (failed.has_value() || !failed.error().IsUnavailable() ||
-      missing.has_value() || !missing.error().IsNotFound()) {
-    return 4;
-  }
+  if (image_lifetime.expired()) return 7;
+  object.image.reset();
+  if (!image_lifetime.expired()) return 8;
 
   char readable[32];
   const std::size_t required =
       hyle::util::demangle("plain_name", readable, sizeof(readable));
-  if (required != 10 || std::strcmp(readable, "plain_name") != 0) {
-    return 5;
-  }
-  const std::string owned = hyle::util::demangle("plain_name");
-  return owned == "plain_name" ? 0 : 6;
+  if (required != 10 || std::strcmp(readable, "plain_name") != 0) return 9;
+  return hyle::util::demangle("plain_name") == "plain_name" ? 0 : 10;
 }

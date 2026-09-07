@@ -207,3 +207,20 @@ headers:util、delivery:util；其余 factor 测试、全库 component contract 
 链接/编译 adapter，不能为测试改变生产 API/metadata。release codegen 和 exports 只读实际产物。
 
 目前各 runtime 验证均 **PLANNED**，没有把历史 v3 PASS 复制到新候选。候选锁定后再逐项回填。
+
+## 实现批次与候选准备
+
+四项 FIX 已完成一次实现批次：Registry 以 immutable owning entry 保存 const noexcept callable，
+Creator 是借用 handle，替换保留旧 entry；版本拒绝和 image/object 双重保活由 util package consumer
+演示。独立 util 私有故障 executable 编译真实 demangle 源码，仅替换平台调用/C allocator，覆盖
+平台错误、OOM、失败 sink 的释放与同 image DbgHelp 串行化；另在该隔离 executable 验证真实 public
+owning string 的 `bad_alloc` 传播。未向产品增加 hook，也未修改公共测试基础设施。
+
+selector 对 AUDITED baseline `a8f6ab8c` 的影响计划只选择 docs、closure、configure、factor:util、
+headers:util、delivery:util（61 门跳过）；其中测试 CMake 只归 util，公开 Registry 头没有实际反向
+产品消费者。实现后文档/closure checker 和 `git diff --check` 已通过；native 仍待不可变候选。
+
+产品 commit/tree 先独立落盘，再用仅 card/registry/projection 的状态提交绑定 CANDIDATE。
+三平台验证使用这个干净的状态提交作为 selector execution commit/tree；其 runtime/test/sample
+输入与绑定的产品 commit 完全相同。终态分别记录产品身份与 execution tree，不把后续文档树冒充
+已编译的产品变化。不存在 P1 claim 或新计时样本。

@@ -15,7 +15,8 @@ target_link_libraries(my_target PRIVATE hyle::util)
 ```
 
 源码嵌入时设置 `HYLE_COMPONENTS=util` 并链接 `hyle::util`；不要靠手写 include path 绕过产品与
-安装包合同。内部仍把 header-only `util_core` 与 compiled Registry/symbol factor 分开，使 Mem/Sched
+安装包合同。内部把 header-only `util_core` 与 util-runtime 分开；后者的机器 component ID 为
+`util`，内部 target 为 `hyle_util`，提供 Registry 与 compiled demangle。这使 Mem/Sched
 能精确复用 leaf primitive 而不产生反向环；这些内部 target 不进入用户 component catalog。
 
 ## 先看选择表
@@ -275,8 +276,10 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 Windows DbgHelp 调用会串行化，超长 decorated symbol 还可能使用有界 temporary。caller-buffer 从不
 接管这些 allocation，不代表函数本身零分配/无锁。尤其不要从 POSIX signal handler 或 Windows
 exception handler 的受限上下文调用；需要 async-signal-safe crash capture 时先保存原始地址/符号，
-回到正常执行上下文再反修饰。HYLE 的 mutex 只协调 HYLE 发起的 DbgHelp 调用；应用若还直接调用
-DbgHelp，必须在应用层把所有 DbgHelp 使用统一串行化。
+回到正常执行上下文再反修饰。HYLE 的 mutex 只协调同一 runtime image 发起的 DbgHelp 调用；应用
+若还直接调用 DbgHelp，或多个 DLL 各自静态链接 HYLE，必须由宿主把这些调用统一串行化。
+平台反修饰失败（包括 ABI 分配失败）回退原始名字，required size 属于最终输出，且不包括 NUL。
+`out == nullptr` 只允许 `cap == 0`。
 
 ## Registry：注册阶段可变，服务阶段冻结
 
@@ -301,7 +304,7 @@ HYLE_RETURN_IF_ERROR(engines.register_creator(
 // 初始化结束：单向、幂等、O(1)、零分配。
 auto factories = engines.freeze();
 
-// 只解析一次；随后可在 owner 中缓存这个 typed function pointer。
+// 只解析一次；随后可在 owner 中缓存这个借用 Creator handle。
 auto cuda = factories.find("cuda");
 if (!cuda) return hyle::Status::NotFound("engine factory not found");
 auto make_selected_engine = cuda->creator;
@@ -320,13 +323,30 @@ Registry 会复制并拥有 key/help；调用者无需保留传入字符串。�
 creator 返回 NULL 都得到 NULL。`Registry<Result<T*>>` 是推荐的 fallible backend 形状：missing
 得到 `NotFound`，设备、驱动、配置或资源错误由 creator 原样返回。两者共用同一张表、相同
 lookup value 和复杂度；Result 不是额外的 per-entry 元数据。Registry 不替用户 `new` 对象；
-factory 必须是 `noexcept` function pointer，`Result<Ref<T>>` 等 owning value 由 factory 显式构造，
+factory 可以是 `noexcept` function pointer，或拥有捕获状态的 const-invocable callable；
+`Result<Ref<T>>` 等 owning value 由 factory 显式构造，
 OOM/设备/驱动失败都通过 `Result` 返回。
 
 `find()` 不调用 factory，missing 返回 `std::nullopt`。它返回 `EntryView` 的值快照：creator 与 priority
-被复制，key/help 是 Registry-owned 字节的借用 view；旧快照即使遇到更高 priority 替换也保持可读，
-但不能活过 Registry。缓存 Creator 还要求提供这段代码的 executable/shared module 未被卸载；Registry
-不会替 module owner 证明对象、线程和函数指针已经 quiescent。
+被复制，key/help 是 Registry-owned 字节的借用 view；旧快照及旧 creator 即使遇到更高 priority 替换
+也保持有效，但不能活过 Registry。Creator 支持调用、显式 bool 和 handle identity 比较，默认空
+handle 不可调用；它不再是可以与原 function pointer 比较的裸函数地址。
+
+每项需要自己的 descriptor/image 时，直接保存 owning callable，例如：
+
+```cpp
+// owner->create 返回的 Engine 也必须保活其执行代码所需的 image。
+auto factory = [owner = std::move(owner)](const Config& config) noexcept {
+  return owner->create(config);
+};
+HYLE_RETURN_IF_ERROR(engines.register_creator("plugin", std::move(factory)));
+```
+
+callable 可以 move-only 或 over-aligned；存入 Registry 的构造/销毁和通过 `const F&` 的调用都必须
+无异常。登记错误或较低优先级 no-op 不移动具名 `factory`；若直接传入临时 capture，其表达式自身
+的 move 已由调用方执行，Registry 无法把临时对象还原成原 owner。已经接受的 capture 包括被替换项
+都保留到 Registry 析构。捕获裸指针不延长 image 生命周期；创建的对象需要独立的 image owner。
+版本、ABI 和能力分数先由 backend owner 验证，再登记；多个版本可显式使用不同 key 或 registry。
 
 启动登记必须显式执行并检查 `Status`。不要把“只靠全局构造器副作用的 registration TU”塞进
 static archive：链接器可以直接丢弃该 TU，静态初始化也没有自然位置向应用返回 collision/OOM。
@@ -336,7 +356,10 @@ Registry，最后 unload；HYLE 当前没有可直接实例化的通用 `ModuleM
 生命周期。
 
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
-Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
+Registry；allocator callback 和 callable 构造/析构不得重入。捕获状态的共享可变数据由 caller 同步。
+allocator 必须活过 Registry，并支持并发枚举的快照释放，或由 caller 串行化；底层 Arena 不得提前
+clear/reset。可变阶段枚举会为时间点快照分配一次，失败返回 `ResourceExhausted` 且不调用 visitor；
+visitor 抛异常会在释放快照后传播。冻结阶段则无锁、无分配。`Registry::create()`
 在冻结后只多一次生命周期 acquire load，适合普通调用；反复按名的 service lookup 可缓存
 `FrozenView`，其 `find/create` 直接查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1)
 probes，creator 自身成本另计。若 backend/op 已经能在初始化时解析成 typed handle 或 function pointer，应缓存解析结果，
@@ -350,6 +373,7 @@ module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活�
 ## 分层与证据入口
 
 header-only `util_core` 作为独立内部 factor 构建和收口，但通过 `hyle::util` 产品 façade 交付；Registry
-和 demangle 属于 runtime factor。该分层避免低层 mem/container 为一个运行时 Registry 反向链接 runtime
+和 demangle 属于 util-runtime（registry ID `util`），不能用其中一条状态替代整个 Util 产品的状态。
+该分层避免低层 mem/container 为一个运行时 Registry 反向链接 runtime
 factor，用户仍只选择一个 Util 产品。唯一当前状态、closure record 与性能证据入口见
 [`module status`](../implementation/status.md)；旧 task、commit 和点值只属于历史记录。

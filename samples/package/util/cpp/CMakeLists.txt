@@ -15,9 +15,9 @@ unset(_internal_factor)
 if(NOT TARGET hyle::_factor_util_core)
   message(FATAL_ERROR "Util facade lacks detail factor 'util_core'")
 endif()
-if(TARGET hyle::_factor_container_intrusive)
+if(NOT TARGET hyle::_factor_container_intrusive)
   message(FATAL_ERROR
-    "Util facade unexpectedly selected detail factor 'container_intrusive'")
+    "Util runtime lacks Container's public intrusive dependency")
 endif()
 
 add_executable(hyle_util_cpp_package_probe main.cc)
