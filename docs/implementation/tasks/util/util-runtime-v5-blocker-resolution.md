@@ -143,6 +143,9 @@ registry v1 的旧兼容字段 `self_with_tests=122059` 只写入机器记录，
 
 `VERIFIED -> CLOSED` 前态 registry 快照位于 canonical checkout 外的
 `C:\public\project-hyle\_validation\util-runtime-v5\state-before-closed.json`，SHA-256 为
-`FACF881D3DCAC4BE3BF0FBD002B901F16778970DA2F987DECA9A606DF1C541D4`。terminal end commit 与第一个
-真实保存 `util_runtime=CLOSED` 的 registry anchor 在各自提交产生后由后续 registry 提交登记；本
-receipt 不伪造提交内自引用。
+`FACF881D3DCAC4BE3BF0FBD002B901F16778970DA2F987DECA9A606DF1C541D4`。terminal receipt 的 end commit
+为 `a3b7885bae647fe0d14a975326c79fe2467b618c`；第一个真实保存 `util_runtime=CLOSED` 及同一 candidate
+identity 的 registry anchor 为 `6e477989340810967b451743851f7d82c1ae2ba4`。anchor 回填前 registry
+快照位于 `C:\public\project-hyle\_validation\util-runtime-v5\state-before-anchor-fill.json`，SHA-256 为
+`FF68A2DCB0ACCE5DA94563887ED8B6B6370410D516D27FC99D064A9838C231F5`。这些 Git identity 只在对象产生
+后补记，没有伪造提交内自引用，也不改变产品或 verdict。
