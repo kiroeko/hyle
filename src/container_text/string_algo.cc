@@ -160,6 +160,8 @@ UtfStatus from_simdutf(simdutf::error_code error) noexcept {
 }
 
 UtfResult validation_result(simdutf::result result) noexcept {
+  if (result.error == simdutf::SUCCESS)
+    return {UtfStatus::kSuccess, result.count, 0};
   return {from_simdutf(result.error), result.count, 0};
 }
 #else

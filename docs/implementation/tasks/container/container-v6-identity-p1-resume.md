@@ -302,3 +302,18 @@ Unicode correctness/oracle、三平台 Container 选择测试和新 candidate �
 `C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-unicode-correction.json`，
 SHA-256 `3a5d1d3df110e72285eb2e49bd953b37458c9469720ca954f6187c76f8504bff`。其他三个 factor 保持
 `CANDIDATE`，不重新运行已经合法且不受影响的 concurrent qualification。
+
+## `CONT6-F06` implementation receipt
+
+`validation_result()` 现在先判断 `simdutf::SUCCESS` 并直接返回 typed success，只有错误结果进入既有
+`from_simdutf()` 映射。公开 API/layout、provider、错误码、三遍 safe-conversion 语义和 benchmark workload
+均未改变。
+
+W1-WIN Release/WERROR 的 `container_text` header/self-contained、ordinary 和 ISA-variant 三项定向测试
+全部通过，新 v7 primary/placement semantic oracle 也全部 `PASS`。修后 MSVC object code 在 simdutf
+validation 返回后先 `test` 并直接进入 sizing/conversion，错误码 jump table 已离开 success path。唯一
+非证据 smoke 中 Unicode HYLE/peer 为约 `190.85/192.63 M units/s`（ratio `0.9908`），相对第二候选
+正式样本的 `0.9666–0.9854` 方向改善；该单点不用于性能裁决。
+
+`CONT6-F06=PASS`。下一步只把 `container_text` 的这一产品提交冻结为新 candidate，并对不可变候选运行
+一次正式 v7 qualification；没有产品字节变化的 concurrent/queue 结果继续 carry-forward。
