@@ -126,7 +126,7 @@ TEST(Demangle, PlatformSymbolMayOverlapAndTruncate) {
 #endif
   const std::string expected = demangle(name);
   char storage[128];
-  std::strcpy(storage, name);
+  std::memcpy(storage, name, std::strlen(name) + 1);
   EXPECT_EQ(demangle(storage, storage, 4), expected.size());
   EXPECT_EQ(std::string(storage), expected.substr(0, 3));
 }

@@ -224,3 +224,17 @@ headers:util、delivery:util（61 门跳过）；其中测试 CMake 只归 util�
 三平台验证使用这个干净的状态提交作为 selector execution commit/tree；其 runtime/test/sample
 输入与绑定的产品 commit 完全相同。终态分别记录产品身份与 execution tree，不把后续文档树冒充
 已编译的产品变化。不存在 P1 claim 或新计时样本。
+
+### 唯一具名纠正：UTIL-V4-TEST-PORTABILITY-01
+
+首次 W1-WSL 编译暴露 GTest assertion 在裸 `if` 下触发 `-Wdangling-else`；W1-WIN 暴露测试
+`strcpy` 的 C4996、始终 throw 的测试 visitor 在 template return 处触发 C4702。只修正 util 测试：
+加 braces、按已知 NUL 长度 memcpy、按实际 entry 条件注入 visitor 异常，并固定 Windows 私有
+adapter 的 windows.h/DbgHelp include 顺序。没有改变产品/API/算法/normal workload，CANDIDATE
+产品身份仍为 `0fff17ef3abe6830dba58a344c3878199dfb21ea` / tree
+`365f633cdf44153bb865526b3854cd9c1f04ec58`；测试修正后的 execution tree 单独绑定。
+
+首次 Windows configure 本身完成，但用户同时提交 roadmap 文档 `d9e23b02`，selector 正确因树漂移
+拒绝签证；此失败不算产品失败。保留该用户提交，改用 Windows canonical commit 的只读验证副本，
+与 WSL/macOS 一样不作为产品来源。M1-MAC 首次 configure 因机器缺 Ninja 失败，补齐外部工具后
+重新执行原选择门；不修改 HYLE 构建系统。以上初始失败证据保留，不写成 PASS。

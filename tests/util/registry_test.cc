@@ -813,7 +813,9 @@ TEST(Registry, ConcurrentFreezeLinearizesRegistrationAndPublishesState) {
     while (!registry.frozen()) {
     }
     const auto entry = registry.find("race");
-    if (entry) EXPECT_EQ(*entry->creator(), round);
+    if (entry) {
+      EXPECT_EQ(*entry->creator(), round);
+    }
     writer.join();
     publisher.join();
     EXPECT_EQ(registry.has("race"), registered.ok());
@@ -834,8 +836,11 @@ TEST(Registry, MutableEnumerationFailureDoesNotCallVisitorAndRemainsUsable) {
   EXPECT_TRUE(registry.for_each([&](auto) { ++visits; }).IsResourceExhausted());
   EXPECT_EQ(visits, 0);
   state.fail_after = (std::numeric_limits<std::size_t>::max)();
-  EXPECT_THROW((void)registry.for_each(
-                   [](auto) { throw std::runtime_error("visitor failed"); }),
+  EXPECT_THROW((void)registry.for_each([](auto entry) {
+    if (entry.key == StringView{"entry"}) {
+      throw std::runtime_error("visitor failed");
+    }
+  }),
                std::runtime_error);
   EXPECT_TRUE(registry.has("entry"));
   ASSERT_TRUE(registry
