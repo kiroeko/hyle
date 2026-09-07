@@ -1,6 +1,6 @@
 # Util-runtime 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前状态和证据绑定只看 [`module-status.json`](../../module-status.json)。本页只承担 `util` runtime
 > factor 的 P0 结构证据；`util_core` 的当前 P1 证据在

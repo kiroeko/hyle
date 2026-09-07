@@ -1151,7 +1151,7 @@
     },
     {
       "module": "util_runtime",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "util-runtime-v5-blocker-resolution",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
       "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
@@ -1159,6 +1159,8 @@
       "baseline_commit": "3ed2a2cef5ffc0c5acbcaff6421e568a5546f77a",
       "candidate_commit": "7019998034f8025890770fad04406dc5ef2d6194",
       "candidate_tree": "a0f5b8d9ae5af99b9e15d60678ec6dac7d566327",
+      "end_commit": "a3b7885bae647fe0d14a975326c79fe2467b618c",
+      "registry_anchor_commit": "a3b7885bae647fe0d14a975326c79fe2467b618c",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1183,7 +1185,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "util-runtime v5 VERIFIED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。"
+      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
+      "freeze_confirmation": {
+        "id": "util-runtime-v5-blocker-resolution",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-07",
+        "reviewed_commit": "342dbcfd10c2ab985aab023991db2c7367c3719e",
+        "reviewed_tree": "2edd6da353a43cde252282772cf6d6910436bdb4",
+        "evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"
+      },
+      "loc": {
+        "snapshot_commit": "7019998034f8025890770fad04406dc5ef2d6194",
+        "repository_code": 480987,
+        "self_with_tests": 122059,
+        "self_without_tests": 77069,
+        "module_implementation": 544
+      },
+      "known_limitations": [
+        "Registry is a process-local startup registry with one-way freeze; it does not own dynamic-module unregister, unload, drain or quiescence, so the host must retire borrowed creators before unloading their image.",
+        "EntryView, FrozenView and cached Creator handles borrow Registry-owned immutable storage; the Registry must outlive them, and replaced entries remain alive until Registry destruction.",
+        "Demangling is a best-effort cold diagnostic facility and may return the exact input after platform rejection, OOM or ambiguous truncation; arbitrary ABI name quality and cross-process DbgHelp coordination are not promised.",
+        "The P0 certificate covers complexity and normal-path allocation, lock, metadata and forwarding structure; it makes no P1 timing, Native FFI, cross-toolchain C++ ABI, Formal-performance or universal SOTA claim."
+      ],
+      "reopen_triggers": [
+        "A named real consumer reproduces a Registry forwarding, exception, entry, allocator or image-lifetime, concurrent-publication, demangle-completeness, OOM or natural C++ API-usability defect.",
+        "A real dynamic-plugin consumer proves that generic unregister, drain or quiescence belongs in util-runtime rather than in the host policy owner.",
+        "The public API, layout, algorithm, complexity, normal-path cost, direct dependency, component identity or source, static or shared delivery shape changes.",
+        "A real profile promotes Registry or demangle to P1 or P2, or a mature same-contract peer proves a better complexity class or reproducible material consumer advantage.",
+        "A supported compiler, standard library, ABI demangler, Windows DbgHelp or sanitizer runtime changes semantics relied on by this round."
+      ],
+      "summary": "util-runtime v5 CLOSED/FROZEN：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。"
     },
     {
       "module": "sched",
