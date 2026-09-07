@@ -249,6 +249,12 @@ class Proactor {
   HYLE_IO_API bool submit_connect(std::intptr_t fd, const void* addr,
                                   std::uint32_t addrlen,
                                   std::uint64_t user_data) noexcept;
+#if HYLE_OS_WINDOWS
+  // Internal named-pipe listener primitive. The handle must be an overlapped
+  // CreateNamedPipe instance already associated with this proactor's IOCP.
+  HYLE_IO_API bool submit_pipe_accept(
+      std::intptr_t pipe, std::uint64_t user_data) noexcept;
+#endif
 
   // ---- datagram ops (UDP) ---------------------------------------------------
   // Scratch bytes the caller MUST provide for the datagram ops below. On io_uring

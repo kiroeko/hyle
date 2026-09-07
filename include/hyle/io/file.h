@@ -71,59 +71,6 @@ struct DirectIoAlignment {
   }
 };
 
-namespace detail {
-
-class FileStagingBuffer {
-public:
-  FileStagingBuffer() noexcept = default;
-  ~FileStagingBuffer() { reset(); }
-  FileStagingBuffer(FileStagingBuffer &&other) noexcept
-      : allocator_(other.allocator_), data_(std::exchange(other.data_, nullptr)),
-        size_(std::exchange(other.size_, 0)),
-        alignment_(std::exchange(other.alignment_, 1)) {}
-  FileStagingBuffer &operator=(FileStagingBuffer &&other) noexcept {
-    if (this != &other) {
-      reset();
-      allocator_ = other.allocator_;
-      data_ = std::exchange(other.data_, nullptr);
-      size_ = std::exchange(other.size_, 0);
-      alignment_ = std::exchange(other.alignment_, 1);
-    }
-    return *this;
-  }
-  FileStagingBuffer(const FileStagingBuffer &) = delete;
-  FileStagingBuffer &operator=(const FileStagingBuffer &) = delete;
-
-  bool allocate(mem::AllocatorRef allocator, std::size_t size,
-                std::size_t alignment) noexcept {
-    reset();
-    if (size == 0) return true;
-    void *data = allocator.allocate(size, alignment);
-    if (data == nullptr) return false;
-    allocator_ = allocator;
-    data_ = data;
-    size_ = size;
-    alignment_ = alignment;
-    return true;
-  }
-  void reset() noexcept {
-    if (data_ != nullptr) allocator_.deallocate(data_, size_, alignment_);
-    data_ = nullptr;
-    size_ = 0;
-    alignment_ = 1;
-  }
-  void *data() const noexcept { return data_; }
-  std::size_t size() const noexcept { return size_; }
-
-private:
-  mem::AllocatorRef allocator_{};
-  void *data_ = nullptr;
-  std::size_t size_ = 0;
-  std::size_t alignment_ = 1;
-};
-
-} // namespace detail
-
 class File {
 public:
   File() noexcept = default;
@@ -185,7 +132,7 @@ public:
     std::uint64_t offset = 0;
     OperationOptions options{};
     detail::BudgetState state{};
-    detail::FileStagingBuffer staging{};
+    detail::StagingBuffer staging{};
     BufferSequenceResult immediate{};
     bool immediate_ready = false;
 
@@ -200,7 +147,7 @@ public:
     std::uint64_t offset = 0;
     OperationOptions options{};
     detail::BudgetState state{};
-    detail::FileStagingBuffer staging{};
+    detail::StagingBuffer staging{};
     BufferSequenceResult immediate{};
     bool immediate_ready = false;
 

@@ -6,9 +6,11 @@
 #include <cstring>
 #include <span>
 #include <type_traits>
+#include <utility>
 
 #include "hyle/core/environment.h"
 #include "hyle/error/status.h"
+#include "hyle/mem/allocator.h"
 
 namespace hyle::io {
 
@@ -95,6 +97,59 @@ struct [[nodiscard]] BufferSequenceResult {
 };
 
 namespace detail {
+
+// Awaitable-owned contiguous staging used only when an operating system lacks
+// an arbitrary-buffer primitive (notably Windows files and named pipes). It is
+// allocator-injected and move-only; native completion retirement precedes its
+// destruction.
+class StagingBuffer {
+ public:
+  StagingBuffer() noexcept = default;
+  ~StagingBuffer() { reset(); }
+  StagingBuffer(StagingBuffer&& other) noexcept
+      : allocator_(other.allocator_), data_(std::exchange(other.data_, nullptr)),
+        size_(std::exchange(other.size_, 0)),
+        alignment_(std::exchange(other.alignment_, 1)) {}
+  StagingBuffer& operator=(StagingBuffer&& other) noexcept {
+    if (this != &other) {
+      reset();
+      allocator_ = other.allocator_;
+      data_ = std::exchange(other.data_, nullptr);
+      size_ = std::exchange(other.size_, 0);
+      alignment_ = std::exchange(other.alignment_, 1);
+    }
+    return *this;
+  }
+  StagingBuffer(const StagingBuffer&) = delete;
+  StagingBuffer& operator=(const StagingBuffer&) = delete;
+
+  bool allocate(mem::AllocatorRef allocator, std::size_t size,
+                std::size_t alignment) noexcept {
+    reset();
+    if (size == 0) return true;
+    void* data = allocator.allocate(size, alignment);
+    if (data == nullptr) return false;
+    allocator_ = allocator;
+    data_ = data;
+    size_ = size;
+    alignment_ = alignment;
+    return true;
+  }
+  void reset() noexcept {
+    if (data_ != nullptr) allocator_.deallocate(data_, size_, alignment_);
+    data_ = nullptr;
+    size_ = 0;
+    alignment_ = 1;
+  }
+  void* data() const noexcept { return data_; }
+  std::size_t size() const noexcept { return size_; }
+
+ private:
+  mem::AllocatorRef allocator_{};
+  void* data_ = nullptr;
+  std::size_t size_ = 0;
+  std::size_t alignment_ = 1;
+};
 
 // Deliberately matches WSABUF on Windows and iovec on POSIX. The backend source
 // static-asserts size/alignment/member offsets against the native type before

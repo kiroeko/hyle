@@ -20,6 +20,7 @@ if(TARGET hyle_sched)
   # io-05 file io + io-09 async DNS / signal_set: co_await file ops, getaddrinfo
   # offload to the blocking pool, and signal waits -- all need io + sched.
   hyle_add_test(io_core NAME file SOURCES file_test.cc DEPS hyle_sched)
+  hyle_add_test(io_core NAME local SOURCES local_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME dns SOURCES dns_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME signal SOURCES signal_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME timeout SOURCES timeout_test.cc DEPS hyle_sched)
@@ -49,6 +50,7 @@ if(TARGET hyle_sched)
     target_link_libraries(hyle_io_core_net_cancel_test PRIVATE ws2_32)  # loopback TCP pair
     target_link_libraries(hyle_io_core_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_core_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
+    target_link_libraries(hyle_io_core_local_test PRIVATE ws2_32)  # IoContext initializes Winsock
     target_link_libraries(hyle_io_core_dns_test PRIVATE ws2_32)  # getaddrinfo + WSAStartup
     target_link_libraries(hyle_io_core_timeout_test PRIVATE ws2_32)  # loopback TCP pair
     if(HYLE_IO_HTTP2)

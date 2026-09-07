@@ -67,6 +67,7 @@ struct Proactor::Impl {
 
   enum OpKind : int {
     kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo,
+    kPipeAccept,
     kFileMeta  // io-05: open/close/statx/fsync/fallocate done SYNCHRONOUSLY here
                // (no async form on IOCP) then posted with the result already in
                // syn_result -- reap skips GetOverlappedResult for these.
@@ -643,6 +644,31 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
                              static_cast<int>(addrlen), nullptr, 0, nullptr,
                              &op->ov);
   if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_pipe_accept(std::intptr_t pipe,
+                                  std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || pipe == 0 || pipe == -1) return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(pipe);
+  op->kind = Impl::kPipeAccept;
+  impl_->link(op);
+  const BOOL connected = ::ConnectNamedPipe(op->handle, &op->ov);
+  const DWORD error = connected != 0 ? ERROR_SUCCESS : ::GetLastError();
+  if (connected != 0 || error == ERROR_IO_PENDING) return true;
+  if (error == ERROR_PIPE_CONNECTED) {
+    // The client won the create/connect race, so no kernel operation exists to
+    // complete. Post the same owned OVERLAPPED as a synthetic zero result.
+    op->kind = Impl::kFileMeta;
+    op->syn_result = 0;
+    if (::PostQueuedCompletionStatus(impl_->port, 0, 0, &op->ov) != 0)
+      return true;
+  }
   impl_->unlink(op);
   impl_->recycle(op);
   return false;

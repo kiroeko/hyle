@@ -227,6 +227,7 @@ _hyle_declare_component(io_core
     hyle/io/http.h
     hyle/io/http2.h
     hyle/io/io_context.h
+    hyle/io/local.h
     hyle/io/net.h
     hyle/io/net_budget.h
     hyle/io/net_cancel.h
