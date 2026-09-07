@@ -1146,7 +1146,7 @@
     },
     {
       "module": "util",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "UTIL-V4-DEPENDENCY-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
       "round_id": "util-runtime-v4-inference-lifecycle",
@@ -1168,7 +1168,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v4 REOPENED：当前 Mem/Container 依赖与 util 安装消费合同已有具体变化；仅登记本 factor 新轮，尚未授权产品修改。"
+      "summary": "util-runtime v4 SCOPED：baseline、三小时预算、P0、三平台和 util 精确验证范围已冻结；正在完成能力/API 与有限 FIX 审计。"
     },
     {
       "module": "sched",
