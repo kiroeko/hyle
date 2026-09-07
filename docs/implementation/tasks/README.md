@@ -31,6 +31,9 @@
 factor 状态或依赖。当前 closure record 必须从 [`module-status.json`](../module-status.json) 查找，不能
 根据“某目录里最新的文件”猜测。
 
+2026-09 的[冻结模块性能机会审计](project/frozen-performance-opportunity-audit-2026-09.md)保存 CURRENT
+证据的逐格盘点、合同/分辨率限制与条件观察项；它不授权重开产品模块。
+
 ## 新记录的最低内容
 
 - 唯一标题或任务标识、记录性质、范围与不在范围内的事项；当前产品状态只写入
