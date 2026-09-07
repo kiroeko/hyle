@@ -245,7 +245,16 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   的 typed 合同。DNS/TCP 定向测试在 Windows/MSVC、WSL/GCC 与 macOS/AppleClang
   全部通过；超时/取消使用被占满的单线程 blocking pool 确定性验证提前返回后状态
   安全退休。
+- `ea1fb927`：完成 `IOCORE-F05` 的 portable buffer-sequence 形状与 TCP、UDP、
+  positional File scatter/gather 路径。描述符在调用时复制，字节内存借用至原生
+  completion 退休；64 段/2 GiB 边界返回 typed error，partial cursor 可精确续传。
+  Windows socket 走单次 `WSARecv/WSASend`，文件走一次 allocator-backed aligned
+  staging 加单次 `ReadFile/WriteFile`；Linux/macOS 分别走原生或 readiness-backed
+  `readv/writev/preadv/pwritev/recvmsg/sendmsg`。UDP 现在显式报告报文尾部丢弃，
+  bounded cancel/deadline 在返回用户前等待原操作退休，避免 late-completion 触碰
+  已释放 buffer。buffer、TCP、UDP、File 与 timeout 定向测试已在 Windows IOCP、
+  Linux io_uring 和 macOS kqueue 通过。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F01、F05--F06、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
+裁决；F01、F06、F08 的剩余部分以及 F09--F10 仍未完成，四个协议/传输 factor
 仍处于 `QUEUED`。
