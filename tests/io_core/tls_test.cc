@@ -205,7 +205,7 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
 
   constexpr unsigned kWorkers = 2;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -321,7 +321,7 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   SSL_CTX_set_verify(client_context.native(), SSL_VERIFY_NONE, nullptr);
 
   Scheduler sched(2, system_allocator(), 256);
-  IoContext io(sched, 2);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kHttpsPort));
@@ -424,7 +424,7 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
   SSL_CTX_set_verify(client_context.native(), SSL_VERIFY_NONE, nullptr);
 
   Scheduler sched(2, system_allocator(), 256);
-  IoContext io(sched, 2);
+  IoContext io(sched);
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kH2TlsPort));
   ASSERT_TRUE(opened_listener.has_value());

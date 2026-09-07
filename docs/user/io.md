@@ -30,7 +30,7 @@ IOCP/io_uring 是完成式后端，不做 fd hash lookup。epoll/kqueue 必须�
 
 ```cpp
 hyle::sched::Scheduler sched{4, hyle::mem::system_allocator(), 4096};
-hyle::io::IoContext io{sched, 4};
+hyle::io::IoContext io{sched};
 auto listener = hyle::io::tcp_listen(io, 0, "::", 8080);
 
 // 在 worker 0 的 fiber 中：

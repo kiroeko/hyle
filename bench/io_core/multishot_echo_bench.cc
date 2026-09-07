@@ -146,7 +146,7 @@ Task<int> srv_oneshot(AllocatorRef, Shared* s) {
 
 int run(bool use_multishot) {
   Scheduler sched(1, system_allocator(), 4096);
-  IoContext io(sched, 1);
+  IoContext io(sched);
   Pair p = make_pair();
   io.bind_fd(0, p.a);
   io.bind_fd(0, p.b);

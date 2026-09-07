@@ -213,7 +213,7 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 std::uint64_t run_echo(unsigned workers, int conns, int round_trips,
                        std::uint32_t msg_len) {
   Scheduler sched(workers, system_allocator(), 8192);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   std::atomic<std::uint64_t> completed{0};
   std::vector<Pair> pairs(conns);

@@ -190,7 +190,7 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx,
                  TlsContext* cctx) {
   Scheduler sched(1, system_allocator(), 1024);
-  IoContext io(sched, 1);
+  IoContext io(sched);
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
   if (!opened_listener.has_value()) return -1;

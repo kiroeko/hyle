@@ -99,7 +99,7 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 // with the still-draining TIME_WAIT sockets of the previous nanobench iteration.
 int run_accept(unsigned workers, int conns, std::uint16_t port) {
   Scheduler sched(workers, system_allocator(), 8192);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   // backlog MUST cover the whole burst: this bench spawns all N client fibers at
   // once, so up to N SYNs can arrive before the single accept loop drains them. A

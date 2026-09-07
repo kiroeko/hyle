@@ -290,7 +290,7 @@ Task<int> smuggle_client(AllocatorRef, IoContext* io, const char* raw,
 // ran (0 = the server rejected the request before dispatch).
 int smuggle_served(const char* raw, std::uint16_t port) {
   Scheduler sched(2, system_allocator(), 256);
-  IoContext io(sched, 2);
+  IoContext io(sched);
   if (!io.valid()) return -1;
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
@@ -349,7 +349,7 @@ Task<int> raw_response_client(AllocatorRef alloc, IoContext* io,
 }
 bool response_accepted(const char* raw, std::uint16_t port) {
   Scheduler sched(2, system_allocator(), 256);
-  IoContext io(sched, 2);
+  IoContext io(sched);
   if (!io.valid()) return false;
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
@@ -432,7 +432,7 @@ Task<int> closebody_client(AllocatorRef alloc, IoContext* io, CloseBodyResult* r
 TEST(IoHttp, GetKeepAlive) {
   constexpr unsigned kWorkers = 2;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -532,7 +532,7 @@ TEST(IoHttp, ReadsCloseDelimitedBody) {
   constexpr int kBodySize = 10000;
   constexpr std::uint16_t kCbPort = 54440;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kCbPort));

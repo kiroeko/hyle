@@ -86,7 +86,7 @@ void prior_interrupt_handler(int) {}
 
 TEST(IoSignal, WaitReturnsTypedSignal) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto created = SignalSet::create(io, kOwner, SignalInterest::kTerminate);
   ASSERT_TRUE(created.has_value()) << created.error().message();
@@ -108,7 +108,7 @@ TEST(IoSignal, WaitReturnsTypedSignal) {
 
 TEST(IoSignal, DistinctBurstSignalsAreNotOverwritten) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto created = SignalSet::create(
       io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
@@ -136,7 +136,7 @@ TEST(IoSignal, DistinctBurstSignalsAreNotOverwritten) {
 
 TEST(IoSignal, FactoryRejectsDuplicateAndInvalidOwnership) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto first = SignalSet::create(
       io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
@@ -153,7 +153,7 @@ TEST(IoSignal, FactoryRejectsDuplicateAndInvalidOwnership) {
 
 TEST(IoSignal, InvalidInputIsTyped) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
                   .error()
@@ -166,7 +166,7 @@ TEST(IoSignal, InvalidInputIsTyped) {
 
 TEST(IoSignal, RestoresPriorHandler) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
 
   struct sigaction original{};
@@ -189,7 +189,7 @@ TEST(IoSignal, RestoresPriorHandler) {
 
 TEST(IoSignal, WindowsFactoryOwnsOneProcessHandler) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto created = SignalSet::create(
       io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
@@ -203,7 +203,7 @@ TEST(IoSignal, WindowsFactoryOwnsOneProcessHandler) {
 
 TEST(IoSignal, WindowsInvalidInputIsTyped) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
                   .error()

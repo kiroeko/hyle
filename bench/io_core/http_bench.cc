@@ -553,7 +553,7 @@ int run_region_footprint(const char* variant) {
   }
 
   Scheduler scheduler(1, system_allocator(), 4096);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   FootprintState state;
   state.connections = connections;
   state.spike_bytes = static_cast<std::size_t>(spike_kib) * 1024;
@@ -677,7 +677,7 @@ Task<int> raw_client(AllocatorRef, TcpStream client_end, BenchState* state) {
 // to completion. `use_http` selects the HYLE HTTP path vs the raw-TCP baseline.
 int run(unsigned workers, bool use_http) {
   Scheduler sched(workers, system_allocator(), 4096);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   std::vector<Pair> pairs(kConns);
   std::vector<std::unique_ptr<Drive>> drives;

@@ -1,5 +1,7 @@
 #include "hyle/io/io_context.h"
 
+#include <new>
+
 #include "hyle/io/net.h"
 #include "hyle/io/net_multishot.h"  // io-07b: complete_multishot + multishot-token routing
 #include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
@@ -14,15 +16,15 @@
 
 namespace hyle::io {
 
-IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
+IoContext::IoContext(sched::Scheduler& sched,
                      IoContextOptions options) noexcept
     : sched_(sched),
       allocator_(options.allocator),
       blocking_(allocator_, options.max_blocking_threads,
                 options.blocking_keep_alive, &status_) {
-  if (num_workers == 0 || num_workers != sched.num_workers()) {
-    status_ = Status::InvalidArgument(
-        "IO context worker count must match the scheduler");
+  if (!sched.valid()) {
+    status_ = Status::FailedPrecondition(
+        "IO context requires a valid scheduler");
     return;
   }
   if (options.queue_depth == 0) {
@@ -32,36 +34,28 @@ IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
   }
   if (!status_.ok()) return;
 
-  try {
-    rings_.reserve(num_workers);
-  } catch (...) {
+  const unsigned num_workers = sched.num_workers();
+  rings_ = allocator_.allocate_n<Proactor>(num_workers);
+  if (rings_ == nullptr) {
     status_ = Status::ResourceExhausted(
         "IO context ring table allocation failed");
     return;
   }
   for (unsigned i = 0; i < num_workers; ++i) {
-    std::unique_ptr<Proactor> p;
-    try {
-      p = std::make_unique<Proactor>();
-    } catch (...) {
-      rings_.clear();
-      status_ = Status::ResourceExhausted(
-          "IO context proactor allocation failed");
-      return;
-    }
-    // defer_taskrun (opt-in, default false): each ring is created HERE (constructing
-    // thread) but submitted+reaped from its owner worker. When true, opt into
-    // DEFER_TASKRUN+SINGLE_ISSUER via R_DISABLED (worker's first reap enables the ring,
-    // becoming the issuer). DEFAULT FALSE = COOP_TASKRUN, because an R_DISABLED ring
-    // can't register a provided-buffer ring from this thread -> multishot/zero-copy
-    // contexts need COOP. io_uring only; a no-op on IOCP/epoll.
-    if (!p->init(options.queue_depth,
-                 /*defer_worker_thread=*/options.defer_taskrun)) {
-      rings_.clear();
+    ::new (static_cast<void*>(&rings_[i])) Proactor();
+    ++ring_count_;
+  }
+  for (unsigned i = 0; i < num_workers; ++i) {
+    // COOP_TASKRUN is the portable context policy. The incompatible
+    // DEFER_TASKRUN/R_DISABLED experiment remains an internal Proactor mechanism;
+    // it cannot be a normal IoContext switch while provided-buffer registration
+    // requires a different lifecycle.
+    if (!rings_[i].init(options.queue_depth,
+                        /*defer_worker_thread=*/false)) {
+      destroy_rings();
       status_ = Status::Unavailable("IO backend initialization failed");
       return;
     }
-    rings_.push_back(std::move(p));
   }
   sched::detail::SchedulerIntegration::set_io_poll(
       sched_, &IoContext::poll_trampoline, this);
@@ -99,10 +93,11 @@ IoContext::~IoContext() {
   // only correct action is to reap-and-discard: pull the CQE off the ring so the
   // kernel is squared, and drop it. (Normal drain-to-completion never reaches here
   // with a base op in flight; this is purely the abandoned-op teardown backstop.)
-  for (auto& ring : rings_) {
+  for (unsigned ring_index = 0; ring_index < ring_count_; ++ring_index) {
+    Proactor& ring = rings_[ring_index];
     Completion batch[64];
-    for (int guard = 0; guard < 1024 && ring->in_flight(); ++guard) {
-      std::size_t n = ring->reap(batch, 64, 1'000'000ull);  // up to 1ms per wait
+    for (int guard = 0; guard < 1024 && ring.in_flight(); ++guard) {
+      std::size_t n = ring.reap(batch, 64, 1'000'000ull);  // up to 1ms per wait
       for (std::size_t i = 0; i < n; ++i) {
         if (batch[i].user_data == Proactor::kWakeToken) continue;
         if (is_multishot_token(batch[i].user_data)) {
@@ -119,13 +114,22 @@ IoContext::~IoContext() {
       // backend still reports in-flight work; the guard remains the hard bound.
     }
   }
+  destroy_rings();
+}
+
+void IoContext::destroy_rings() noexcept {
+  if (rings_ == nullptr) return;
+  for (unsigned i = ring_count_; i > 0; --i) rings_[i - 1].~Proactor();
+  allocator_.deallocate_n(rings_, ring_count_);
+  rings_ = nullptr;
+  ring_count_ = 0;
 }
 
 Proactor& IoContext::proactor_for_current() noexcept {
   int idx = sched::current_worker_index();
   HYLE_FATAL_ASSERT(idx >= 0);  // must be called from a worker fiber
-  HYLE_FATAL_ASSERT(static_cast<unsigned>(idx) < rings_.size());
-  return *rings_[static_cast<unsigned>(idx)];
+  HYLE_FATAL_ASSERT(static_cast<unsigned>(idx) < ring_count_);
+  return rings_[static_cast<unsigned>(idx)];
 }
 
 bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
@@ -133,8 +137,8 @@ bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
   // CreateIoCompletionPort association; on io_uring/epoll register_handle is a
   // no-op returning true. After this, the fd's ops must run on worker_idx (pin
   // the connection fiber there with Scheduler::spawn_on).
-  if (worker_idx >= rings_.size() || fd < 0) return false;
-  return rings_[worker_idx]->register_handle(fd);
+  if (worker_idx >= ring_count_ || fd < 0) return false;
+  return rings_[worker_idx].register_handle(fd);
 }
 
 bool IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
@@ -147,13 +151,13 @@ void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
   // ring's wake eventfd (io_uring) / posts its port (IOCP) -- thread-safe, no SQ
   // race. The woken reap returns and the worker re-checks its run queue.
   auto* self = static_cast<IoContext*>(ctx);
-  HYLE_FATAL_ASSERT(worker_idx < self->rings_.size());
-  self->rings_[worker_idx]->wake();
+  HYLE_FATAL_ASSERT(worker_idx < self->ring_count_);
+  self->rings_[worker_idx].wake();
 }
 
 bool IoContext::poll(unsigned worker_idx,
                      unsigned long long timeout_ns) noexcept {
-  HYLE_FATAL_ASSERT(worker_idx < rings_.size());
+  HYLE_FATAL_ASSERT(worker_idx < ring_count_);
   HYLE_TRACE_ZONE_NAMED("hyle.io.reap");
   // Reap THIS worker's own ring only (per-core: submit + reap share this thread,
   // no lock). A batch amortizes the reap syscall. Every completion here is an io
@@ -167,7 +171,7 @@ bool IoContext::poll(unsigned worker_idx,
   // wake should interrupt an ordinary park, which a reap block cannot). The
   // blocking GETEVENTS reap when timeout_ns > 0 is what actually surfaces
   // io_uring completions that a non-blocking reap(0) never would (the hang fix).
-  Proactor& p = *rings_[worker_idx];
+  Proactor& p = rings_[worker_idx];
   bool had_io = p.in_flight();
   Completion batch[64];
   std::size_t n = p.reap(batch, 64, had_io ? timeout_ns : 0);

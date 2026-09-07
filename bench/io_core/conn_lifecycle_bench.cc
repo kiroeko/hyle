@@ -171,7 +171,7 @@ Task<int> client_lifecycle(AllocatorRef, IoContext* io, unsigned owner,
 // the previous epoch's TIME_WAIT sockets.
 int run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) {
   Scheduler sched(workers, system_allocator(), 8192);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   // backlog MUST cover the whole burst (all N client fibers spawn at once): a starved
   // backlog drops overflow SYNs -> TCP SYN-retransmit (1s backoff) -> a fabricated

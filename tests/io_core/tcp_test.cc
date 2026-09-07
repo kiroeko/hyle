@@ -149,7 +149,7 @@ TEST(IoTcp, ResolvesIpv4AndIpv6Literals) {
 TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
   constexpr unsigned kWorkers = 2;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
 
   auto listener = TcpListener::bind(

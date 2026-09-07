@@ -12,6 +12,7 @@ endif()
 if(TARGET hyle_sched)
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
   # sched (scheduler drives the reap). Only buildable where sched exists.
+  hyle_add_test(io_core NAME io_context SOURCES io_context_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME net SOURCES net_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME tcp SOURCES tcp_test.cc DEPS hyle_sched)
   hyle_add_test(io_core NAME udp SOURCES udp_test.cc DEPS hyle_sched)

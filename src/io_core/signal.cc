@@ -229,7 +229,7 @@ Result<SignalSet> SignalSet::create(IoContext &io, unsigned owner_worker,
   Status status = result.initialize(io, owner_worker, interest);
   if (!status.ok())
     return make_unexpected(std::move(status));
-  return std::move(result);
+  return result;
 }
 
 Status SignalSet::initialize(IoContext &io, unsigned owner_worker,

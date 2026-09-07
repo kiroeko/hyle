@@ -220,7 +220,7 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 // connections sharded round-robin across the cores. Returns after all complete.
 int run_hyle_echo(unsigned workers) {
   Scheduler sched(workers, system_allocator(), 4096);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   std::vector<Pair> pairs(kConns);
   std::vector<std::unique_ptr<Conn>> conns;
@@ -268,7 +268,7 @@ int run_hyle_echo(unsigned workers) {
 #if defined(__linux__)
 int run_hyle_pipelined(unsigned workers) {
   Scheduler sched(workers, system_allocator(), 8192);
-  IoContext io(sched, workers);
+  IoContext io(sched);
 
   std::vector<Pair> pairs(kPipeConns);
   std::vector<std::unique_ptr<Conn>> conns;

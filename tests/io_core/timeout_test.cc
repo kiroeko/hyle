@@ -190,7 +190,7 @@ TEST(IoTimeout, TimeoutWinsReturnsETimedout) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54390;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -218,7 +218,7 @@ TEST(IoTimeout, IoWinsReturnsBytes) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54391;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -270,7 +270,7 @@ TEST(IoTimeout, AcceptTimesOut) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54393;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -313,7 +313,7 @@ TEST(IoTimeout, UdpReceiveTimesOut) {
   constexpr unsigned kWorkers = 1;
   constexpr std::uint16_t kPort = 54394;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto opened = hyle::io::UdpSocket::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -339,9 +339,8 @@ TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
   CountingAlloc::live.store(0, std::memory_order_relaxed);
   {
     Scheduler sched(kWorkers, system_allocator(), 256);
-    IoContext io(sched, kWorkers,
-                 hyle::io::IoContextOptions{
-                     .allocator = CountingAlloc::make()});
+    IoContext io(sched, hyle::io::IoContextOptions{
+                            .allocator = CountingAlloc::make()});
     ASSERT_TRUE(io.valid());
     auto listener = TcpListener::bind(
         io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -411,7 +410,7 @@ TEST(IoTimeout, BaseOpCompletionRoutingIntact) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54396;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));

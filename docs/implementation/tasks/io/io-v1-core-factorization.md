@@ -233,8 +233,9 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 - `8a68f175`：完成 File/Platform FS 单一 owner 互操作、typed positional/exact IO、
   显式 direct-I/O policy/alignment 与 preallocate 修正，并通过 Windows、Linux、macOS
   的 `io_core` correctness 回归；
-- 当前未提交候选：SignalSet 已改为 typed factory/result，pending 按 signal kind
-  合并并保留不同种类，重复等待、move、重复 owner、非法输入与宿主 handler 恢复已进入测试。
+- `ce2da848`：SignalSet 改为 typed factory/result，pending 按 signal kind 合并并
+  保留不同种类；重复等待、move、重复 owner、非法输入与宿主 handler 恢复已在
+  Windows IOCP、Linux io_uring/epoll 构建和 macOS kqueue 路径通过测试。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
 裁决；F01、F04--F06、F08 的 IoContext 部分以及 F09--F10 仍未完成，四个协议/传输

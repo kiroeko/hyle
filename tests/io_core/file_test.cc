@@ -198,7 +198,7 @@ void run_one(Scheduler &scheduler, FileResult &result, MakeTask &&make_task) {
 
 TEST(IoFile, TypedOpenWriteReadInfoSyncClose) {
   Scheduler scheduler(2, system_allocator(), 256);
-  IoContext io(scheduler, 2);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid()) << io.status().message();
   const std::string path = temp_path();
   FileResult result;
@@ -220,7 +220,7 @@ TEST(IoFile, TypedOpenWriteReadInfoSyncClose) {
 
 TEST(IoFile, MissingPathPreservesTypedFailure) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   FileResult result;
   run_one(scheduler, result,
@@ -230,7 +230,7 @@ TEST(IoFile, MissingPathPreservesTypedFailure) {
 
 TEST(IoFile, PreallocateExtendsFile) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   const std::string path = temp_path();
   FileResult result;
@@ -256,7 +256,7 @@ TEST(IoFile, PlatformOwnerCanBeAdoptedAndReleased) {
   ASSERT_TRUE(owner.write_all(kData, 5).ok());
 
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   FileResult result;
   run_one(scheduler, result,
@@ -271,7 +271,7 @@ TEST(IoFile, PlatformOwnerCanBeAdoptedAndReleased) {
 
 TEST(IoFile, DirectOpenNeverSilentlyBecomesBuffered) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler, 1);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   const std::string path = temp_path();
   FileResult result;

@@ -121,7 +121,7 @@ void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
 TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
   constexpr unsigned kWorkers = 2;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
 
   auto server = UdpSocket::bind(

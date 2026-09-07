@@ -125,7 +125,7 @@ void drive(void* ptr) noexcept { static_cast<Drive*>(ptr)->task.resume(); }
 
 TEST(IoHttp2, MultiplexedLoopbackRoundTrip) {
   Scheduler scheduler(2, system_allocator(), 256);
-  IoContext io(scheduler, 2);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -214,7 +214,7 @@ Task<int> flow_client(AllocatorRef alloc, IoContext* io, std::uint16_t port,
 TEST(IoHttp2, DrivesConnectionAndStreamFlowControl) {
   constexpr std::uint16_t port = kPort + 1;
   Scheduler scheduler(2, system_allocator(), 256);
-  IoContext io(scheduler, 2);
+  IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));

@@ -115,7 +115,7 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54480;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -180,7 +180,7 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54481;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
@@ -226,7 +226,7 @@ Task<int> precancel_udp_send(AllocatorRef, hyle::io::UdpSocket* socket,
 
 TEST(NetCancel, AlreadyCancelledUdpSendReturnsCancelledImmediately) {
   Scheduler sched(1, system_allocator(), 256);
-  IoContext io(sched, 1);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   auto opened = hyle::io::UdpSocket::open(io, kOwner);
   ASSERT_TRUE(opened.has_value());

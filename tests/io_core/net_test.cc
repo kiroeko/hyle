@@ -145,7 +145,7 @@ TEST(IoNet, CoAwaitSendRecvRoundTrip) {
   constexpr unsigned kWorkers = 4;
   constexpr unsigned kOwner = 1;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid()) << "every worker's proactor must come up";
 
   SocketPair sp = make_pair(io, kOwner);
@@ -211,7 +211,7 @@ TEST(IoNet, TwoFiberEchoPinnedToCore) {
   constexpr unsigned kWorkers = 4;
   constexpr unsigned kOwner = 2;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
 
   SocketPair sp = make_pair(io, kOwner);
@@ -252,7 +252,7 @@ TEST(IoNet, ManyConnectionsShardedAcrossCores) {
   constexpr unsigned kWorkers = 4;
   constexpr int kPairs = 32;
   Scheduler sched(kWorkers, system_allocator(), 1024);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
 
   std::vector<SocketPair> pairs;
@@ -331,7 +331,7 @@ TEST(IoNet, FullDuplexSameFdEpoll) {
   constexpr unsigned kOwner = 0;
   {
     Scheduler sched(kWorkers, system_allocator(), 256);
-    IoContext io(sched, kWorkers);
+    IoContext io(sched);
     ASSERT_TRUE(io.valid());
     SocketPair sp = make_pair(io, kOwner);
     ASSERT_TRUE(sp.ok);
@@ -411,7 +411,7 @@ TEST(IoNet, MultishotRecvAwaitable) {
   constexpr unsigned kOwner = 0;
   constexpr int kBgid = 11;
   Scheduler sched(kWorkers, system_allocator(), 256);
-  IoContext io(sched, kWorkers);
+  IoContext io(sched);
   ASSERT_TRUE(io.valid());
   // Register the provided-buffer ring on the OWNER worker's proactor (io_uring only).
   auto uring = io.proactor(kOwner).io_uring_extension();
