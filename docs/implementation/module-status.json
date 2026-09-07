@@ -1146,7 +1146,7 @@
     },
     {
       "module": "util",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "UTIL-V4-DEPENDENCY-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/util/util-runtime-v4-inference-lifecycle.md",
       "round_id": "util-runtime-v4-inference-lifecycle",
@@ -1168,7 +1168,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime v4 SCOPED：baseline、三小时预算、P0、三平台和 util 精确验证范围已冻结；正在完成能力/API 与有限 FIX 审计。"
+      "summary": "util-runtime v4 AUDITED：四项有限 FIX 与 API/成本合同已冻结；支持 owning factory、修正 util 消费闭包、补风险验证并校准产品/因子命名。"
     },
     {
       "module": "sched",

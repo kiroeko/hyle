@@ -68,3 +68,142 @@
 
 本卡先登记实际依赖/交付 trigger，再经 `REOPENED -> SCOPED`。在 capability-family map、public trace、
 owner 七问与 API/有限 FIX 集完成并进入 AUDITED 前，不修改产品或测试实现。
+
+## AUDITED：能力、所有权与有限 FIX
+
+2026-09-07 只读审计已完成。当前 scope 不增加 component、依赖或第三方产品输入。
+
+### 固定来源与能力族
+
+五个 engine 的本地 clean revision 沿用已完成 audit，2026-09-07 再只读确认 HEAD/工作树与远端：
+
+| 来源 | 本地完整 commit | default branch / 本轮查询远端 HEAD |
+|---|---|---|
+| llama.cpp | `3ad1ba7336986d98592d3e28cafd1a406715351f` | master / `5202104b59ada9005db079eea43882a2b7bf5802` |
+| standalone ggml | `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` | master / `e91ded11bdcd78c42f9c8d3978ff6686eb4c1226` |
+| SGLang | `28457f0dcab4ccf748d60f2387a1a4a7fdb5a110` | main / `8ae962021dbb5eb8ee408c578e772c13e2c934fe` |
+| vLLM | `52358e6e192aeae73dd3764046c98fc4b156ea83` | main / `392db567b260cb4d1e5f91547b65d527038fe641` |
+| ds4 | `9ab705347c1775e7599ede7eb81a6255ec7dccb5` | main / `b6af0adf8ca97c89145c9f9c15be70c9fd6c4507` |
+
+origin 与准确消费点继承 [frozen capability audit](../project/frozen-inference-capability-audit-2026-09.md)。
+只补读 U01 所需的 ggml factory descriptor 和 SGLang/vLLM registry 文件，没有重新扫描五仓全部能力。
+llama 随仓 ggml backend-reg 与独立 ggml 为同一实现来源，不算两个独立 peer。
+
+成熟基础库只作功能/算法参考，不作性能 peer、不引入产品依赖：Folly clean
+`65749da412d92fe27d87ae45a8ef670720712858` 的 `folly/Singleton.h:322–336` 用 owning
+`std::function` 保存 creator，`:188–196` 区分注册与使用阶段；Boost.DLL clean 子仓
+`de905f331abdfac9aabe895b2bbbf1fbca71a002` 的 `include/boost/dll/import.hpp:40–61,82–85`
+通过 aliasing shared owner 把 callable 与 library 生命周期绑定。Boost superproject
+`cb94f33fcb13e90922905c2d8105508e71fa6db4` 有既存 `libs/filesystem` 修改，本轮保留且不读取其 dirty
+内容作机制证据；DLL 子仓独立 clean identity 为准。demangle 参考同一 Folly `Demangle.cpp:149–194` 的
+ABI 临时内存/owning route 和 HYLE 已采用的 compiler ABI/DbgHelp，保留 fallback 语义。
+
+| Family / requirement | 完整旅程与证据 | 当前覆盖 / 动作 | 生命周期、边界、复杂度与负空间 |
+|---|---|---|---|
+| F01 MUST 显式命名 factory | ggml backend-reg.cpp:186/220/325；SGLang attention_registry.py:40–49、mem_cache/registry.py:53–81/创建路线；vLLM utils/registry.py:9–53、renderers/registry.py:36–76 | COMPLETE / KEEP | register→find/create→freeze→借用→quiescent destruction；empty/null、OOM、dup、length-aware key 明确；expected O(1) 索引 |
+| F02 MUST 每项 factory 状态所有权 | ggml backend-impl.h:176–224 的 device/context + init_backend(device,params)，backend.cpp:610–612；Folly owning creator 与 Boost.DLL callable/image | PARTIAL / FIX-1 | 注册后的 callable 必须能绑定不同 descriptor/image，而不要求调用者再维护同 key 的第二张 map 或全局 trampoline；接管成功、失败不接管、旧 snapshot 和销毁均验证 |
+| F03 MUST 版本与优先级 | ggml backend-reg.cpp:245–253 在注册前验证 API version；当前三档 RegistryPriority | ROUTED + COMPLETE / KEEP | owner 校验 typed version/score，再 register；并存版本可用显式不同 key 或不同 registry；更高替换、同级失败、更低 no-op；不增加泛用 semver/score 求解或每项版本 metadata |
+| F04 MUST lookup-only / nullable / Result | 当前 find/create；SGLang get_radix_cache_factory→factory(ctx)；vLLM load_renderer_cls→class(config,tokenizer) | COMPLETE / FIX-1 适配 callable | missing find=nullopt；nullable create=empty；Result create=NotFound/原样 factory error；结果由 caller 拥有，lookup 不构造、不分配 |
+| F05 MUST 发布与枚举 | 当前 mutable/frozen 公开承诺；Folly registrationComplete 作为阶段参考 | COMPLETE / KEEP | 一张表，mutex mutation，release/acquire 发布；freeze O(1) 零分配；visitor/factory 锁外且可重入；cached view 借用 |
+| F06 MUST symbol presentation | 当前全部 demangle overload；Folly ABI/owning；平台 ABI | COMPLETE / KEEP，FIX-3 补证 | 普通诊断线程、full owning 或 snprintf buffer、type_info、空/非法符号 fallback、required-size、重叠、截断；允许 ABI malloc/串行，非 async-signal-safe |
+| F07 MUST C++ source/static/shared | 当前 façade、factor、sample 与新闭包 | PARTIAL / FIX-2 | util-runtime 两头/compiled demangle；util_core 仅由 façade 聚合；当前 sample 的禁止 intrusive 断言错误 |
+| F08 MUST 可发现性与文档 | user/architecture/roadmap 命名混淆、runtime ownership 新形状 | PARTIAL / FIX-4 | 产品 Util 与因子 util-runtime（ID util）分开；不修改 util_core 能力合同 |
+| F09 GENERAL 动态模块/服务生命周期 | U01 的 unload、S02 的 start/stop/drain；ggml backend-reg.cpp:266–287；SG15/V12/D04 | OUT_OF_SCOPE / REJECT 下沉 | DynLib 是 Platform；版本/device/object/worker/late callback 是 owner；名字表不能证明 unload quiescence，不提供 unregister/unfreeze |
+| F10 GENERAL signal-safe/Rust/整栈 symbolizer | Folly 的可选 libiberty/Rust branch | OUT_OF_SCOPE / DEFER | 需具名 crash/foreign-runtime 消费与独立跨平台合同；当前 diagnostic fallback 已完整，不复制功能并集 |
+
+F02 的准入不是“库里有 std::function 就必须复制”：U01 的不同 runtime descriptor 无法作为普通
+function pointer 的捕获，`Args...` 是调用时输入，无法独自保存每个注册项各自的绑定。用第二份名字索引、
+全局变量或预分配 trampoline 槽解决会重复 Registry 的查找、失败与生命周期。C++ owning callable 是
+模型无关的自然形状；只在 Registry 内存储它，不在 util_core 新增另一种 owning function 通用产品。
+
+### API / usability freeze
+
+状态 **FROZEN**，冻结于 AUDITED；普通 C++ 形状为：
+
+```cpp
+Registry<Result<Backend>, const Config&> factories;
+HYLE_RETURN_IF_ERROR(factories.register_creator(
+    name, [owner = std::move(owner)](const Config& config) noexcept {
+      return owner->create(config);  // Backend 也持有它需要的 image owner
+    }, RegistryPriority::kPreferred, help));
+auto view = factories.freeze();
+auto entry = view.find(name);
+if (!entry) return Status::NotFound("backend is absent");
+return entry->creator(config);
+```
+
+- `register_creator` 接受可无异常构造/销毁、通过 `const F&` 无异常调用的 callable（包括 move-only
+  capture 与普通 noexcept function pointer）。构造/销毁的特殊成员不得重入 Registry；注册成功前
+  所有可能失败的内存准备先完成，失败或低优先级 no-op 不移动具名 rvalue callable。
+- `Registry::Creator` 从裸 function pointer 重塑为可缓存的 **借用 callable handle**；call/显式 bool/
+  handle identity 可用，默认空 handle 不可调用。它不是独立 owner，也不再承诺与原函数地址比较。
+  不保留错误兼容别名；factory 类型由 register 推导，不要求用户手造 type-erasure record。
+- 每次被接受的登记拥有不可变 entry、callable、key/help。替换只交换索引指针，旧 entry/capture
+  留到 Registry 析构，确保已返回 Creator/EntryView 和进行中的调用不悬空。三档 priority 限制每 key
+  最多三份被接受的 lifetime record；相同/较低优先级不分配。
+- 回调调用与 visitor 均在锁外，可重入并自行同步捕获的共享可变数据。`const` 不自动让 referent
+  thread-safe。Registry allocator 必须活过 Registry；并发枚举临时快照的锁外释放要求 allocator
+  支持该并发，或 caller 外部串行化。Arena 与 views 均不许提前 clear/reset。
+- freeze 后只能读/调用/枚举；register/reserve 失败，freeze 幂等；没有单项删除、unfreeze 或隐式
+  worker/image drain。所有 handle/view/操作先 quiesce，再销毁 Registry；返回对象的 image owner
+  可以活得更久，由该对象独立持有。仅捕获裸 DynLib pointer 不延长其生命周期。
+- compiled demangle API 不变：ABI failure（包括 ABI allocation failure）fallback 原名，不另发错误码；
+  buffer required size 属最终 spelling，NUL 不计入；owning string 分配异常仍向 caller 传播。
+  Windows mutex 只覆盖同一 util runtime image 的 HYLE DbgHelp 调用；多份 static image/直接 DbgHelp
+  用户需宿主统一串行化。不得声称它自动协调进程所有 DbgHelp 客户。
+- 成本：以一个稳定 entry pointer 索引 owning record，销毁链是 callable teardown 的必要 metadata。
+  普通 factory 的 erasure 调用可能多一层 trampoline；P0 显式计费，不按旧微基准要求保留重复热字段。
+  frozen lookup 自身没有 allocation/lock/refcount；factory 自己的工作另计。freeze 不复制 callable。
+
+### 冻结 FIX 集（唯一实现批次）
+
+1. **FIX-1 / F02**：仅重塑 Registry 的 stored callable/borrowed Creator 和事务式 entry replacement；
+   支持每项 owning state，保留同一索引、优先级/Result/发布合同。测试 capture、move-only/overalign、
+   OOM 不接管、替换旧 handle 保活、并发发布与锁外重入。预计一头和 owner tests；无新依赖。
+2. **FIX-2 / F07**：util package sample 承认真实 Container intrusive 闭包；普通 C++ sample 验证
+   captured factory、façade foundation+compiled runtime、错误/版本 owner route。只改 util sample，
+   不改公共 smoke/CMake 基础设施或中央图。
+3. **FIX-3 / F06、红队**：补足 owner 风险测试，包括 freeze race、枚举 OOM、demangle cap=0/1、
+   两方向/截断 overlap、真实 ABI 长名字、并发 demangle、失败 sink。仅 util tests 的私有故障
+   adapter 可注入 platform demangler OOM/错误；不加公共测试 API。校正 DbgHelp 锁范围注释。
+4. **FIX-4 / F08**：校准 runtime headers 注释、architecture/user/roadmap/build-system 的名称与依赖、
+   当前性能页和 task/status。已 FROZEN util_core 的产品及能力合同不变；旧任务保留历史语义。
+
+以上之外的新 material MUST 只按方法论裁决，不追加模块或进行无界实现。
+
+### Owner 七问（审计阶段）
+
+1. **第三方**：Util 无直接第三方。Registry 组合 Core、Error Result/Status、Mem AllocatorRef/Arena、
+   Container FlatHashMap、Container-text StringView/hash。mimalloc、Highway/xxHash/wyhash/simdutf 为
+   依赖闭包自己的锁定实现，semantic/decision authority 各留在 Mem/Container，不在 Util 再选 allocator/
+   ISA。Folly/Boost 仅只读需求参考；demangle 直接用 compiler ABI/Windows DbgHelp。
+2. **五个引擎**：llama/独立 ggml 的 U01 名字/版本/descriptor/image 由 F01–05、F09 处置；SGLang
+   factory(ctx) 与 vLLM renderer/extension class 属同一通用创建旅程，Python import/GIL/模型策略不下沉；
+   SGLang SG15、vLLM V12 与 ds4 D04 的 stop/drain/join 交 Sched/IO；ds4 没有新的通用 runtime Registry
+   要求，其诊断与 typed lifetime 可用现有能力。当前未解决 MUST 只有冻结 FIX 所列，不声称五仓已采用 HYLE。
+3. **内部复用**：`rg` 的产品 include/call 扫描未发现 util-runtime 直接消费者。Obs sink registry 有
+   unregister/quiescence/dispatch 保活，不能替成一向冻结表；Mem/Sched/Graph 的 util_core helpers
+   不等于 runtime 重复实现。SIMD/NUMA/reclamation/clock/wait/pool 不适用于这个短 startup 索引；
+   现有 flat hash/string/Arena/标准 mutex 是同合同路线。teardown 单链只是私有 owning record 销毁顺序，
+   不为它新增 intrusive factor 公开边；没有重复 runtime decision authority。
+4. **性能**：P0；find→cache 的启动消费没有新 timing claim；核验 complexity、allocation、锁与
+   release call chain。P1/P2、qualified ratio、fixed loss 均不适用，不续签旧点值。
+5. **FFI**：无已准入 slice；两个 demangle decorated C++ exports 为 runtime 编译边界，Registry 是
+   C++ template。所有新增测试私有 fault adapter 不进入安装产品；没有原生 C 产品承诺。
+6. **三交付**：util-runtime 独立 factor；Util façade 聚合 util_core+util，完整闭包是
+   core/error/platform/mem/container_intrusive/container/container_text 加两 util roots。source/static/
+   shared、逐头、export/staging/relocation 将实际验证；本节尚不签 PASS。
+7. **易用性/docs**：按注册/解析/创建/发布/销毁写 recipe，版本 gate 和 image owner 明确；产品与
+   factor 三层命名校准，runtime capture 不借用 FunctionRef 冒充 owner。实现后检查旧函数指针假设、
+   不适用 snapshot、旧 CLOSED/FROZEN 和当前性能文案；本节尚不签最终 PASS。
+
+### 预声明取证矩阵
+
+三平台 selector 同一 immutable candidate：只选 docs/closure、configure(util)、factor:util、
+headers:util、delivery:util；其余 factor 测试、全库 component contract 和 P1 均跳过。
+测试包含 stateless/captured C++ 例子与 allocator fault sweep、版本拒绝/优先级事务、creator/visitor
+重入及 register/read/freeze race。WSL 同一 candidate 另跑 util-only ASan、UBSan、TSan；不启动
+依赖单测、benchmark 或全库 CTest。demangle 平台 failure 注入为独立 util-owned test target，借私有
+链接/编译 adapter，不能为测试改变生产 API/metadata。release codegen 和 exports 只读实际产物。
+
+目前各 runtime 验证均 **PLANNED**，没有把历史 v3 PASS 复制到新候选。候选锁定后再逐项回填。
