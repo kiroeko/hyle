@@ -7,6 +7,7 @@ import importlib.util
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -54,8 +55,19 @@ class ImpactTest(unittest.TestCase):
         self.base = self.commit()
         self.cache = Path(self.temp.name) / "cache"
         self.context = Path(self.temp.name) / "context.json"
+        self.compiler = Path(self.temp.name) / "fixture-compiler"
+        self.stdlib = Path(self.temp.name) / "fixture-stdlib"
+        self.compiler.write_bytes(b"process-spy fixture compiler; never executed")
+        self.stdlib.write_bytes(b"process-spy fixture standard library")
+        self.stdheaders = Path(self.temp.name) / "stdlib-include"
+        self.stdheaders.mkdir()
+        (self.stdheaders / "vector").write_bytes(b"process-spy fixture standard headers")
         selector.write_json(self.context, {"toolchain": {"id": "fixture", "version": 1,
-                                                        "compiler_sha256": "f" * 64, "stdlib": "fixture", "flags": ["fixture"]},
+                                                        "compiler_path": str(self.compiler), "compiler_id": "FIXTURE", "compiler_version": "1",
+                                                        "compiler_sha256": selector.digest(self.compiler.read_bytes()),
+                                                        "stdlib": {"id": "fixture", "files": {str(self.stdlib): selector.digest(self.stdlib.read_bytes())},
+                                                                   "include_roots": {str(self.stdheaders): selector.directory_digest(self.stdheaders)}},
+                                                        "flags": {"CMAKE_CXX_FLAGS": "", "CMAKE_CXX_FLAGS_RELEASE": "-O2 -DNDEBUG"}},
                                            "machine_profile": {"id": "TEST-ONLY", "profile_hash": selector.digest({"id": "TEST-ONLY"})}})
 
     def git(self, *args):
@@ -144,6 +156,23 @@ class ImpactTest(unittest.TestCase):
         self.write("tests/container_queue/change.cc", "int expected = 2;\n")
         self.commit()
         self.assertEqual(self.plan()["selected_factors"], ["container_queue"])
+
+    def test_factor_test_cmake_is_owner_only_while_product_cmake_expands(self):
+        for path in ("tests/container_queue/CMakeLists.txt", "tests/container_queue/nested/helper.cmake"):
+            with self.subTest(path=path):
+                self.write(path, "set(FACTOR_TEST_TIMEOUT 60)\n")
+                self.commit()
+                plan = self.plan()
+                self.assertEqual(plan["selected_factors"], ["container_queue"])
+                self.assertEqual(self.selected(plan), {"docs", "closure", "configure", "factor:container_queue"})
+                self.assertTrue(all(c["kind"] == "test" for c in plan["changes"]))
+        self.write("tests/container_queue/CMakeLists.txt", "hyle_add_header_self_contained_test(container_queue)\nset(FACTOR_TEST_TIMEOUT 60)\n")
+        self.write("src/container_queue/CMakeLists.txt", "hyle_add_module(container_queue)\n")
+        self.commit()
+        plan = self.plan()
+        self.assertIn("factor:sched", self.selected(plan))
+        self.assertIn("headers:container_queue", self.selected(plan))
+        self.assertIn("delivery:container", self.selected(plan))
 
     def test_graph_removed_edge_and_package_seams_expand(self):
         self.write(selector.MANIFEST, self.graph_bytes.replace(b"PRIVATE_DEPS container_queue timer_queue", b"PRIVATE_DEPS timer_queue"))
@@ -312,7 +341,7 @@ class ImpactTest(unittest.TestCase):
     def test_p1_competing_claim_blocks_even_if_plan_was_already_ready(self):
         path = self.p1_card()
         plan = self.plan(card_path=path, context=self.context)
-        claim = selector.p1_claim(self.root, plan["p1_candidate_key"])
+        claim = selector.p1_claim(self.root, plan["p1_scopes"]["container_queue"]["claim_key"])
         claim.parent.mkdir(parents=True)
         claim.write_text("interrupted/racing owner")
         calls = self.simulated_execution(plan)
@@ -331,8 +360,132 @@ class ImpactTest(unittest.TestCase):
         card.update(candidate_commit=candidate, candidate_tree=selector.Snapshot(self.root, candidate).tree)
         selector.write_json(path, card)
         updated = self.plan(card_path=path, context=self.context)
-        self.assertEqual(updated["product_input_hash"], plan["product_input_hash"])
+        self.assertEqual(updated["p1_scopes"], plan["p1_scopes"])
         self.assertEqual(self.row(updated, "p1")["status"], "BLOCKED")
+
+    def refresh_card(self, path, factors=None):
+        card = selector.read_json(path)
+        snapshot = selector.Snapshot(self.root, "HEAD")
+        card.update(candidate_commit=snapshot.commit, candidate_tree=snapshot.tree)
+        if factors is not None:
+            card["factors"] = factors
+        selector.write_json(path, card)
+
+    def test_p1_scope_ignores_unrelated_factor_and_tracks_real_dependencies(self):
+        path = self.p1_card()
+        original = self.plan(card_path=path, context=self.context)
+        scope = original["p1_scopes"]["container_queue"]
+        self.assertEqual(scope["dependencies"], ["container_queue", "core", "error", "mem", "platform"])
+        self.simulated_execution(original, p1_returncode=2)
+        self.write("src/container/change.cc", "int value = 42;\n")
+        self.write("third_party/xxhash/xxhash.h", "unrelated container provider\n")
+        self.commit()
+        self.refresh_card(path)
+        unrelated = self.plan(card_path=path, context=self.context)
+        self.assertEqual(unrelated["p1_scopes"]["container_queue"], scope)
+        self.assertEqual(self.row(unrelated, "p1")["status"], "BLOCKED")
+        self.write("src/mem/change.cc", "int allocator_version = 2;\n")
+        self.write("third_party/mimalloc/include/mimalloc.h", "real queue dependency\n")
+        self.commit()
+        self.refresh_card(path)
+        dependent = self.plan(card_path=path, context=self.context)
+        self.assertNotEqual(dependent["p1_scopes"]["container_queue"]["claim_key"], scope["claim_key"])
+        self.assertIn("third_party/mimalloc/include/mimalloc.h", dependent["p1_scopes"]["container_queue"]["input_paths"])
+        self.assertEqual(self.row(dependent, "p1")["status"], "SELECTED")
+
+    def test_independent_factor_budget_and_multifactor_regrouping(self):
+        path = self.p1_card()
+        self.write("src/math/change.cc", "int math_version = 2;\n")
+        self.commit()
+        self.refresh_card(path)
+        queue = self.plan(card_path=path, context=self.context)
+        self.simulated_execution(queue, p1_returncode=2)
+        self.refresh_card(path, ["math"])
+        math = self.plan(card_path=path, context=self.context)
+        self.assertEqual(self.row(math, "p1")["status"], "SELECTED")
+        self.assertNotEqual(math["p1_scopes"]["math"]["claim_key"], queue["p1_scopes"]["container_queue"]["claim_key"])
+        self.refresh_card(path, ["math", "container_queue"])
+        grouped = self.plan(card_path=path, context=self.context)
+        self.assertEqual(self.row(grouped, "p1")["status"], "BLOCKED")
+        self.assertFalse(selector.p1_claim(self.root, math["p1_scopes"]["math"]["claim_key"]).exists())
+
+    def test_legacy_unattributed_claim_does_not_gain_allowance_on_upgrade(self):
+        path = self.p1_card()
+        legacy = selector.p1_claim(self.root, "0" * 64)
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text('{"candidate_tree":"old-version-without-factor"}')
+        plan = self.plan(card_path=path, context=self.context)
+        self.assertEqual(self.row(plan, "p1")["status"], "BLOCKED")
+        self.assertIn("legacy P1 claim", self.row(plan, "p1")["reason"])
+        self.assertTrue(legacy.exists())
+
+    def test_multifactor_attempt_spends_each_factor_before_regrouping(self):
+        path = self.p1_card()
+        self.write("src/math/change.cc", "int math_version = 2;\n")
+        self.commit()
+        self.refresh_card(path, ["container_queue", "math"])
+        plan = self.plan(card_path=path, context=self.context)
+        self.simulated_execution(plan, p1_returncode=2)
+        for factor, scope in plan["p1_scopes"].items():
+            with self.subTest(factor=factor):
+                self.assertTrue(selector.p1_claim(self.root, scope["claim_key"]).exists())
+                self.refresh_card(path, [factor])
+                self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
+
+    def test_native_rejects_id_only_and_incomplete_context_without_execution(self):
+        self.write("tests/container_queue/CMakeLists.txt", "set(FACTOR_TEST_TIMEOUT 60)\n")
+        self.commit()
+        valid = selector.read_json(self.context)
+        broken = [{"toolchain": {"id": "claimed-msvc"}, "machine_profile": {"id": "claimed-host"}}]
+        for key in ("compiler_path", "compiler_sha256", "stdlib", "flags"):
+            item = json.loads(json.dumps(valid))
+            item["toolchain"].pop(key)
+            broken.append(item)
+        for item in broken:
+            with self.subTest(item=item):
+                selector.write_json(self.context, item)
+                plan = self.plan(context=self.context)
+                self.assertEqual(plan["verdict"], "BLOCKED")
+                self.assertEqual(self.row(plan, "configure")["status"], "BLOCKED")
+                with patch.object(selector.subprocess, "run") as run:
+                    selector.execute(self.root, plan, self.cache, Path(self.temp.name) / "scratch", context=self.context)
+                    run.assert_not_called()
+        self.assertEqual(self.plan()["verdict"], "READY")  # pre-provisioning dry selection
+
+    def test_native_receipt_binds_compiler_stdlib_flags_and_environment(self):
+        self.write("tests/container_queue/change.cc", "int expected = 4;\n")
+        self.commit()
+        plan = self.plan(context=self.context)
+        self.simulated_execution(plan)
+        cached_plan = self.plan(context=self.context)
+        self.assertEqual(self.row(cached_plan, "factor:container_queue")["status"], "REUSED")
+        with patch.dict(os.environ, {"CXXFLAGS": "changed ambient flags"}):
+            self.assertEqual(self.row(self.plan(context=self.context), "factor:container_queue")["status"], "SELECTED")
+            with self.assertRaisesRegex(selector.SelectionError, "environment differs"):
+                self.simulated_execution(cached_plan)
+        original = selector.read_json(self.context)
+        self.compiler.write_bytes(b"new compiler bytes")
+        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
+        context = json.loads(json.dumps(original))
+        context["toolchain"]["compiler_sha256"] = selector.digest(self.compiler.read_bytes())
+        selector.write_json(self.context, context)
+        self.assertEqual(self.row(self.plan(context=self.context), "factor:container_queue")["status"], "SELECTED")
+        self.stdlib.write_bytes(b"new standard library bytes")
+        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
+        context["toolchain"]["stdlib"]["files"][str(self.stdlib)] = selector.digest(self.stdlib.read_bytes())
+        (self.stdheaders / "vector").write_bytes(b"changed template implementation")
+        selector.write_json(self.context, context)
+        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
+        context["toolchain"]["stdlib"]["include_roots"][str(self.stdheaders)] = selector.directory_digest(self.stdheaders)
+        context["toolchain"]["flags"]["CMAKE_CXX_FLAGS"] = "-DFLAG_CHANGE=1"
+        selector.write_json(self.context, context)
+        changed = self.plan(context=self.context)
+        self.assertIn("-DCMAKE_CXX_FLAGS=-DFLAG_CHANGE=1", self.row(changed, "configure")["commands"][0])
+        self.assertNotEqual(self.row(changed, "factor:container_queue")["cache_key"], self.row(plan, "factor:container_queue")["cache_key"])
+        context["toolchain"]["flags"]["CMAKE_CXX_FLAGS_RELEASE"] = "-O3 -DNDEBUG"
+        selector.write_json(self.context, context)
+        with self.assertRaisesRegex(selector.SelectionError, "environment differs"):
+            self.simulated_execution(changed)
 
     def test_reused_configure_cannot_replace_missing_build_prerequisites(self):
         path = self.p1_card()

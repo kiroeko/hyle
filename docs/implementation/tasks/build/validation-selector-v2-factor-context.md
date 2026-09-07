@@ -51,4 +51,14 @@ native context 的文件摘要要与本机实际文件核对，flags 要用于�
 
 ## 结果
 
-待实现与有界验收；没有提前签 native PASS 或最终锁定 selector。
+三处工具修改已实现，最终 selector 合同测试 `34/34 PASS`，69.922 秒；真实 P1 次数为零，P1 路线
+只在 disposable Git fixture 中用 process spy 检查状态与原子 claim。针对性回归期间修正了两处测试
+夹具前置条件：保留 header suite 再检查 product seam，以及用新的 REUSED plan 检查执行前环境漂移；
+没有据此修改产品或扩大构建范围。
+
+Native 身份新增完整 stdlib include-root tree hash，既检查库文件，也防止标准库模板头变化后误复用；
+显式 flags 同时用于直接 configure 与继承该 context 的嵌套 CMake。无 context 的 dry plan 保持可用，
+但不能复用 native receipt。P1 schema v2 输出每个 factor 的依赖/input paths/hash/claim key；canonical
+Git 账本目前没有旧 v1 claim，旧格式存在时仍保留并要求先做归属审计，不自动迁移成新额度。
+
+工具候选冻结后执行唯一 Math native 集成；在得到实际结果前不签 native PASS 或最终 CLOSED。

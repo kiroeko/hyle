@@ -21,6 +21,10 @@ MANIFEST = "cmake/HyleComponents.cmake"
 REGISTRY = "docs/implementation/module-status.json"
 FORMAT_PROOF = "docs/implementation/validation-format-proof.json"
 NATIVE = {".h", ".hpp", ".hh", ".hxx", ".c", ".cc", ".cpp", ".cxx", ".cu", ".cuh", ".inl", ".inc", ".S", ".asm"}
+NATIVE_GATES = {"build", "correctness", "headers", "delivery", "performance"}
+NATIVE_ENV = ("CC", "CXX", "CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "CL", "_CL_",
+              "INCLUDE", "LIB", "LIBPATH", "SDKROOT", "MACOSX_DEPLOYMENT_TARGET",
+              "CPATH", "CPLUS_INCLUDE_PATH", "LIBRARY_PATH", "CMAKE_TOOLCHAIN_FILE", "PATH")
 
 
 class SelectionError(RuntimeError):
@@ -229,14 +233,14 @@ def classify(before, after, graphs, policy):
             elif path in policy["package_tools"] or path in {"CMakeLists.txt", "CMakePresets.json", "tests/CMakeLists.txt", "src/CMakeLists.txt", "bench/CMakeLists.txt", "include/hyle/obs/trace.h"} or path.startswith(("cmake/", "third_party/")):
                 kind, reason = "package", "shared build/package or external product input changed"
             elif factors:
-                if path.endswith(("CMakeLists.txt", ".cmake")):
-                    kind, reason = "factor_seam", "factor build/test/package seam changed"
+                if path.startswith("tests/"):
+                    kind, reason = "test", "factor test source or CMake change; owner tests only"
+                elif path.endswith(("CMakeLists.txt", ".cmake")):
+                    kind, reason = "factor_seam", "factor product build/package seam changed"
                 elif path.startswith("include/"):
                     kind, reason = "public", "owned public header/API may change consumer closure"
                 elif path.startswith("src/"):
                     kind, reason = "source", "implementation change; owner and one-hop direct consumers only"
-                elif path.startswith("tests/"):
-                    kind, reason = "test", "factor test change; owner tests only"
                 elif path.startswith("bench/"):
                     kind, reason = "benchmark", "harness change requires explicit frozen P1 card; no automatic sampling"
             elif path in {"include/hyle/version.h", "include/hyle/visibility.h"}:
@@ -255,7 +259,23 @@ def read_json(path):
         raise SelectionError(f"invalid JSON {path}: {exc}") from exc
 
 
-def environment_identity(context=None):
+def verified_files(files, label):
+    if not isinstance(files, dict) or not files:
+        raise SelectionError(f"native context requires non-empty {label} file/hash mapping")
+    for name, expected in files.items():
+        if not isinstance(name, str) or not Path(name).is_absolute() or not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
+            raise SelectionError(f"native {label} requires absolute file paths and SHA256 digests")
+        path = Path(name)
+        if not path.is_file() or digest(path.read_bytes()) != expected.lower():
+            raise SelectionError(f"native {label} file identity mismatch: {name}")
+
+
+def directory_digest(path):
+    return digest({p.relative_to(path).as_posix(): digest(p.read_bytes())
+                   for p in sorted(Path(path).rglob("*")) if p.is_file()})
+
+
+def environment_identity(context=None, *, native=False):
     observed = {"system": platform.system(), "release": platform.release(),
                 "machine": platform.machine(), "node": platform.node(),
                 "python": sys.version, "python_executable": str(Path(sys.executable).resolve())}
@@ -264,10 +284,76 @@ def environment_identity(context=None):
         for key in ("toolchain", "machine_profile"):
             if not isinstance(identity.get(key), dict) or not identity[key].get("id"):
                 raise SelectionError(f"context requires {key} object with a non-empty id")
+        if native:
+            toolchain = identity["toolchain"]
+            for key in ("compiler_path", "compiler_id", "compiler_version"):
+                if not isinstance(toolchain.get(key), str) or not toolchain[key].strip():
+                    raise SelectionError(f"native context requires toolchain.{key}")
+            verified_files({toolchain["compiler_path"]: toolchain.get("compiler_sha256")}, "compiler")
+            if "compiler_files" in toolchain:
+                verified_files(toolchain["compiler_files"], "compiler support")
+            stdlib = toolchain.get("stdlib")
+            if not isinstance(stdlib, dict) or not stdlib.get("id"):
+                raise SelectionError("native context requires concrete stdlib id and files")
+            verified_files(stdlib.get("files"), "stdlib")
+            roots = stdlib.get("include_roots")
+            if not isinstance(roots, dict) or not roots:
+                raise SelectionError("native stdlib requires complete include_roots tree hashes")
+            for name, expected in roots.items():
+                path = Path(name)
+                if not path.is_absolute() or not path.is_dir() or not isinstance(expected, str) or directory_digest(path) != expected:
+                    raise SelectionError(f"native stdlib include tree identity mismatch: {name}")
+            flags = toolchain.get("flags")
+            required = {"CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE"}
+            if not isinstance(flags, dict) or set(flags) != required or not all(isinstance(v, str) for v in flags.values()) or not flags["CMAKE_CXX_FLAGS_RELEASE"].strip():
+                raise SelectionError("native context requires explicit CMAKE_CXX_FLAGS and non-empty CMAKE_CXX_FLAGS_RELEASE")
+            observed["native_environment"] = {key: os.environ.get(key) for key in NATIVE_ENV}
         identity["observed_host"] = observed
         return identity
     return {"toolchain": {"id": "python-maintenance", "version": sys.version},
             "machine_profile": observed}
+
+
+def p1_scope(snapshot, graph, policy, factor):
+    dependencies, pending = set(), {factor}
+    while pending:
+        name = pending.pop()
+        if name in dependencies:
+            continue
+        if name not in graph["factors"] or graph["factors"][name]["queued"]:
+            raise SelectionError(f"P1 input scope has no implemented owner: {name}")
+        dependencies.add(name)
+        pending.update(graph["factors"][name]["deps"])
+    shared = {"CMakeLists.txt", "CMakePresets.json", "src/CMakeLists.txt",
+              "include/hyle/version.h", "include/hyle/visibility.h", "include/hyle/obs/trace.h",
+              *policy["package_tools"]}
+    inputs = {}
+    for path, entry in snapshot.files.items():
+        if path.startswith("third_party/"):
+            matches = [owners for prefix, owners in policy["vendored_input_owners"].items()
+                       if path == prefix or (prefix.endswith("/") and path.startswith(prefix))]
+            if len(matches) != 1:
+                raise SelectionError(f"P1 vendored product input lacks unique reviewed ownership: {path}")
+            relevant = bool(dependencies & set(matches[0]))
+        else:
+            relevant = path in shared or path.startswith("cmake/") or (
+                path.startswith(("include/", "src/")) and owner(path, graph) in dependencies)
+        if relevant:
+            inputs[path] = entry
+    input_hash = digest({"factor": factor, "dependencies": sorted(dependencies), "files": inputs})
+    return {"factor": factor, "dependencies": sorted(dependencies), "product_input_hash": input_hash,
+            "input_paths": sorted(inputs), "claim_key": "v2-" + factor + "-" + input_hash}
+
+
+def spent_p1_scopes(root, scopes):
+    directory = p1_claim(root, "unused").parent
+    # Legacy receipts did not retain the factor. Guessing its owner would grant
+    # a fresh allowance on tool upgrade; preserve these opaque claims for audit.
+    legacy = [p.name for p in directory.glob("p1-*.claim") if not p.name.startswith("p1-v2-")]
+    if legacy:
+        return "legacy P1 claim lacks factor attribution; retain and audit before new sampling: " + ", ".join(sorted(legacy))
+    spent = [name for name, scope in scopes.items() if p1_claim(root, scope["claim_key"]).exists()]
+    return "factor/dependency inputs already spent their one P1 attempt: " + ", ".join(sorted(spent)) if spent else ""
 
 
 def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=None):
@@ -307,6 +393,12 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
         if set(roots) & expanded:
             delivery.add(product)
     identity = environment_identity(context)
+    native_issue = None
+    if context and (selected_factors or broad or delivery):
+        try:
+            identity = environment_identity(context, native=True)
+        except SelectionError as exc:
+            native_issue = str(exc)
     tool_hash = digest({p.name: digest(p.read_bytes()) for p in SCRIPT_DIR.glob("validation-*") if p.is_file()})
     gates = []
 
@@ -339,6 +431,9 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                  "-DCMAKE_BUILD_TYPE=Release", "-DHYLE_DEV_FACTORS=" + ",".join(sorted(selected_factors)),
                  "-DHYLE_BUILD_TESTS=ON", "-DHYLE_BUILD_BENCH=OFF", "-DHYLE_INSTALL=OFF",
                  "-DHYLE_TEST_INSTRUMENTATION=OFF", "-DHYLE_WERROR=ON"]
+    if context and selected_factors and not native_issue:
+        configure += ["-DCMAKE_CXX_COMPILER=" + identity["toolchain"]["compiler_path"]]
+        configure += ["-D" + key + "=" + value for key, value in sorted(identity["toolchain"]["flags"].items())]
     gate("configure", "build", bool(selected_factors),
          "configure exact factor roots; dependency artifacts are prerequisites, not additional test roots"
          if selected_factors else "no product or factor test impact", [configure], selected_factors)
@@ -371,11 +466,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
              [["cmake", "-DHYLE_SOURCE_DIR={root}", "-DHYLE_SMOKE_ROOT={scratch}/delivery-" + product,
                "-DHYLE_SMOKE_COMPONENT=" + product, "-P", "cmake/HyleCiSelectedComponentSmoke.cmake"]])
     p1 = gate("p1", "performance", False, "no explicit frozen P1 card; sampling is never automatic")
-    product_inputs = {p: entry for p, entry in after.files.items()
-                      if p.startswith(("include/", "src/", "cmake/", "third_party/"))
-                      or p in {"CMakeLists.txt", "CMakePresets.json", *policy["package_tools"]}}
-    product_input_hash = digest(product_inputs)
-    p1_candidate_key = digest({"product_input_hash": product_input_hash, "budget": "one-p1-bundle-v1"})
+    p1_scopes = {}
     if card_path:
         card = read_json(card_path)
         material = any(c["kind"] in {"source", "public", "factor_seam", "graph", "package", "benchmark"} for c in changes)
@@ -397,8 +488,13 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
             if machine_profile.get("id") not in profiles or machine_profile.get("profile_hash") != digest(profiles.get(machine_profile.get("id"))):
                 issues.append("P1 machine profile hash must match the candidate central machine registry")
             factors = card.get("factors")
-            if not isinstance(factors, list) or not factors or not set(factors) <= selected_factors:
+            if not isinstance(factors, list) or not factors or not all(isinstance(f, str) for f in factors) or len(set(factors)) != len(factors) or not set(factors) <= selected_factors:
                 issues.append("P1 factors must have selected candidate correctness gates")
+            else:
+                try:
+                    p1_scopes = {f: p1_scope(after, graphs[1], policy, f) for f in sorted(factors)}
+                except SelectionError as exc:
+                    issues.append(str(exc))
             contract_path = card.get("contract", "")
             contract_bytes = after.read(contract_path)
             if contract_bytes is None or card.get("contract_hash") != digest(contract_bytes):
@@ -419,6 +515,11 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
             p1["identity"]["contract_hash"] = digest({"card": card, "contract_blob": digest(contract_bytes or b"")})
             p1["cache_key"] = digest(p1["identity"])
     for row in gates:
+        if row["status"] == "SELECTED" and row["kind"] in NATIVE_GATES and native_issue:
+            row.update(status="BLOCKED", reason=native_issue)
+        # A context-free dry plan must never reuse compiler-dependent evidence.
+        if row["kind"] in NATIVE_GATES and not context:
+            continue
         if row["status"] != "SELECTED" or not cache or not after.commit:
             continue
         receipt = cached_receipt(cache, row, root)
@@ -429,11 +530,11 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     if configure_gate["status"] == "REUSED" and any(g["status"] == "SELECTED" and
             g["kind"] in {"correctness", "headers"} for g in gates):
         configure_gate.update(status="SELECTED", reason="pending native gates need local build prerequisites; evidence alone is not a build tree")
-    if p1["status"] == "SELECTED" and p1_claim(root, p1_candidate_key).exists():
-        p1.update(status="BLOCKED", reason="this candidate already spent its one P1 attempt; failed/interrupted or mismatched evidence cannot be rerun")
-    return {"schema_version": 1, "baseline_commit": before.commit, "baseline_tree": before.tree,
-            "candidate_commit": after.commit, "candidate_tree": after.tree, "product_input_hash": product_input_hash,
-            "changes": changes, "selected_factors": sorted(selected_factors), "p1_candidate_key": p1_candidate_key,
+    if p1["status"] == "SELECTED" and (spent := spent_p1_scopes(root, p1_scopes)):
+        p1.update(status="BLOCKED", reason=spent)
+    return {"schema_version": 2, "baseline_commit": before.commit, "baseline_tree": before.tree,
+            "candidate_commit": after.commit, "candidate_tree": after.tree,
+            "changes": changes, "selected_factors": sorted(selected_factors), "p1_scopes": p1_scopes,
             "unknown_paths": unknown, "gates": gates,
             "verdict": "BLOCKED" if unknown or any(g["status"] == "BLOCKED" for g in gates) else "READY"}
 
@@ -491,7 +592,8 @@ def execute(root, plan, cache, scratch, *, context=None):
     if plan["verdict"] == "BLOCKED":
         return
     common = Path(git(root, "rev-parse", "--git-common-dir").decode().strip())
-    key = digest({"tree": plan["candidate_tree"], "context": environment_identity(context)})
+    native = any(g["status"] in {"SELECTED", "REUSED"} and g["kind"] in NATIVE_GATES for g in plan["gates"])
+    key = digest({"tree": plan["candidate_tree"], "context": environment_identity(context, native=native)})
     lease = root / common / "hyle-validation-executions" / (key + ".lock")
     lease.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -508,18 +610,22 @@ def execute(root, plan, cache, scratch, *, context=None):
 def _execute_locked(root, plan, cache, scratch, *, context=None):
     if plan["verdict"] == "BLOCKED":
         return
-    expensive = any(g["status"] == "SELECTED" and g["kind"] in {"build", "correctness", "headers", "delivery", "performance"} for g in plan["gates"])
+    expensive = any(g["status"] in {"SELECTED", "REUSED"} and g["kind"] in NATIVE_GATES for g in plan["gates"])
     if expensive and (not plan["candidate_commit"] or not context):
         raise SelectionError("product execution requires a committed candidate and explicit --context toolchain/machine identity")
+    execution_identity = environment_identity(context, native=expensive)
+    for row in plan["gates"]:
+        if row["status"] in {"SELECTED", "REUSED"} and any(row["identity"].get(k) != execution_identity.get(k) for k in ("toolchain", "machine_profile", "observed_host")):
+            raise SelectionError("execution environment differs from plan; regenerate with the current context")
     current = Snapshot(root, "WORKTREE")
     if current.tree != plan["candidate_tree"]:
         raise SelectionError("checkout differs from planned candidate; use its clean checkout or WORKTREE for maintenance only")
     cache = Path(cache).resolve()
     scratch = (root / scratch).resolve()
-    scratch /= digest({"tree": plan["candidate_tree"], "context": environment_identity(context)})[:20]
+    scratch /= digest({"tree": plan["candidate_tree"], "context": execution_identity})[:20]
     cache.mkdir(parents=True, exist_ok=True)
     scratch.mkdir(parents=True, exist_ok=True)
-    build = scratch / ("build-" + digest({"tree": plan["candidate_tree"], "context": environment_identity(context),
+    build = scratch / ("build-" + digest({"tree": plan["candidate_tree"], "context": execution_identity,
                                        "factors": plan["selected_factors"]})[:20])
     before = Snapshot(root, plan["baseline_commit"])
     previous = scratch / ("previous-" + plan["baseline_tree"] + ".json")
@@ -527,6 +633,22 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
         previous.write_bytes(before.read(REGISTRY))
     replacements = {"{python}": sys.executable, "{root}": str(root), "{build}": str(build),
                     "{scratch}": str(scratch), "{previous_registry}": str(previous)}
+    native_env = None
+    if expensive:
+        # A native smoke/qualifier may launch nested CMake processes. Bind the
+        # same explicit compiler/flags there as on the direct factor configure.
+        native_env = dict(os.environ)
+        toolchain = execution_identity["toolchain"]
+        variables = {"CMAKE_CXX_COMPILER": toolchain["compiler_path"].replace("\\", "/"), **toolchain["flags"]}
+        lines = []
+        for key, value in variables.items():
+            equals = "="
+            while "]" + equals + "]" in value:
+                equals += "="
+            lines.append(f'set({key} [{equals}[{value}]{equals}] CACHE STRING "selector native context" FORCE)')
+        native_file = scratch / "native-context.cmake"
+        native_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        native_env["CMAKE_TOOLCHAIN_FILE"] = str(native_file)
     failure = False
     for row in plan["gates"]:
         if row["status"] != "SELECTED":
@@ -538,6 +660,8 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
             row.update(status="BLOCKED", reason="checkout changed before this gate; regenerate the candidate plan")
             failure = True
             continue
+        if expensive and environment_identity(context, native=True) != execution_identity:
+            raise SelectionError("native context changed before gate; no stale receipt may be signed")
         if row["id"] == "p1":
             if Snapshot(root, "WORKTREE").tree != plan["candidate_tree"]:
                 row.update(status="BLOCKED", reason="candidate drifted while prerequisites ran; no P1 attempt started")
@@ -545,13 +669,22 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
                 continue
             # Shared Git-common cache is the default across worktrees. O_EXCL
             # grants at most one claimant even when two plans raced.
-            claim = p1_claim(root, plan["p1_candidate_key"])
-            claim.parent.mkdir(parents=True, exist_ok=True)
+            created_claims = []
             try:
-                with claim.open("x", encoding="utf-8") as stream:
-                    json.dump({"candidate_tree": plan["candidate_tree"], "identity": row["identity"]}, stream)
+                if spent_p1_scopes(root, plan["p1_scopes"]):
+                    raise FileExistsError
+                for factor, scope in sorted(plan["p1_scopes"].items()):
+                    claim = p1_claim(root, scope["claim_key"])
+                    claim.parent.mkdir(parents=True, exist_ok=True)
+                    with claim.open("x", encoding="utf-8") as stream:
+                        created_claims.append(claim)
+                        json.dump({"schema_version": 2, "scope": scope, "candidate_tree": plan["candidate_tree"], "identity": row["identity"]}, stream)
             except FileExistsError:
-                row.update(status="BLOCKED", reason="another execution already claimed this candidate's P1 attempt")
+                # No qualifier started. Release only reservations acquired by
+                # this attempt; never delete a prior or competing claim.
+                for claim in created_claims:
+                    claim.unlink()
+                row.update(status="BLOCKED", reason="another execution already claimed a factor's P1 attempt")
                 failure = True
                 continue
         logs, verdict = [], "PASS"
@@ -568,7 +701,8 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
             print(f"RUN {row['id']}: {argv}", file=sys.stderr, flush=True)
             with log_path.open("wb") as stream:
                 try:
-                    result = subprocess.run(argv, cwd=root, stdout=stream, stderr=subprocess.STDOUT)
+                    result = subprocess.run(argv, cwd=root, stdout=stream, stderr=subprocess.STDOUT,
+                                            env=native_env if row["kind"] in NATIVE_GATES else None)
                     if result.returncode:
                         verdict = "FAIL"
                 except OSError as exc:
@@ -578,6 +712,8 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
             if verdict == "FAIL":
                 break
         if Snapshot(root, "WORKTREE").tree != plan["candidate_tree"]:
+            verdict = "FAIL"
+        if expensive and environment_identity(context, native=True) != execution_identity:
             verdict = "FAIL"
         receipt = {"identity": row["identity"], "candidate_commit": plan["candidate_commit"],
                    "verdict": verdict, "logs": logs}

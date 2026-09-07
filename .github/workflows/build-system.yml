@@ -60,15 +60,27 @@ jobs:
       - name: Bind execution environment
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, platform, shutil, subprocess, sys
+          import hashlib, importlib.util, json, os, platform, shutil, subprocess, sys
           from pathlib import Path
           toolchain = {'id': 'python-maintenance', 'python': sys.version}
           if os.environ.get('CXX'):
-              cxx = shutil.which(os.environ['CXX'])
+              spec = importlib.util.spec_from_file_location('selector', 'scripts/validation-select.py')
+              selector = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(selector)
+              cxx = str(Path(shutil.which(os.environ['CXX'])).resolve())
               version = subprocess.run([cxx, '-v'], capture_output=True, text=True, check=True).stderr
               stdlib = subprocess.check_output([cxx, '-print-file-name=libstdc++.so'], text=True).strip()
+              headers = subprocess.run([cxx, '-E', '-x', 'c++', '-v', '/dev/null'], capture_output=True, text=True, check=True).stderr
+              search = headers.split('#include <...> search starts here:', 1)[1].split('End of search list.', 1)[0]
+              roots = [Path(line.strip()).resolve() for line in search.splitlines() if '/c++/' in line]
+              backend = Path(subprocess.check_output([cxx, '-print-prog-name=cc1plus'], text=True).strip()).resolve()
               toolchain = {'id': version, 'compiler_sha256': hashlib.sha256(Path(cxx).read_bytes()).hexdigest(),
-                           'stdlib_sha256': hashlib.sha256(Path(stdlib).read_bytes()).hexdigest(),
+                           'compiler_path': cxx, 'compiler_id': 'GNU',
+                           'compiler_version': subprocess.check_output([cxx, '-dumpfullversion'], text=True).strip(),
+                           'compiler_files': {str(backend): hashlib.sha256(backend.read_bytes()).hexdigest()},
+                           'stdlib': {'id': 'libstdc++', 'files': {str(Path(stdlib).resolve()): hashlib.sha256(Path(stdlib).read_bytes()).hexdigest()},
+                                      'include_roots': {str(path): selector.directory_digest(path) for path in roots}},
+                           'flags': {'CMAKE_CXX_FLAGS': '', 'CMAKE_CXX_FLAGS_RELEASE': '-O3 -DNDEBUG'},
                            'cmake': subprocess.check_output(['cmake', '--version'], text=True),
                            'CC': os.environ['CC'], 'CXX': os.environ['CXX'], 'configuration': 'Ninja/Release/WERROR/shipping-layout'}
           context = {'toolchain': toolchain, 'machine_profile': {'id': 'CI-LINUX', 'host': platform.uname()._asdict()}}

@@ -1,5 +1,16 @@
 {
   "schema_version": 1,
+  "vendored_input_owners": {
+    "third_party/mimalloc/": ["mem"],
+    "third_party/xxhash/": ["container"],
+    "third_party/wyhash/": ["container"],
+    "third_party/simdutf/": ["container_text"],
+    "third_party/fcontext/": ["sched"],
+    "third_party/picohttpparser/": ["io"],
+    "third_party/ported/LICENSE-RUST": ["platform_thread"],
+    "third_party/ported/LICENSE-HIGHWAY": ["simd"],
+    "third_party/nanobench/": []
+  },
   "tool_suites": [
     {
       "paths": ["scripts/validation-*", "tests/tooling/validation_selector_test.py", ".github/workflows/*"],
