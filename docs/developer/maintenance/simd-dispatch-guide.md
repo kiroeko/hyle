@@ -151,7 +151,7 @@ python scripts/simd-op-coverage.py --check-ledger \
   --require-route-decisions --check-provider-routes
 cmake --build <build> --target hyle_simd_tests
 ctest --test-dir <build> -L simd --output-on-failure
-python scripts/check-module-closure.py --previous <round-snapshot>
+python scripts/check-module-closure.py --previous-ref <revision-before-transition>
 python scripts/check-docs.py
 ```
 

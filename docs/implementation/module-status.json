@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "methodology": "module-closure-v1",
+  "schema_version": 2,
+  "methodology": "module-closure-v2",
   "updated_at": "2026-09-07",
   "component_identity_migrations": [
     {
@@ -27,8 +27,6 @@
       "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
         "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
         "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
-        "end_commit": "f9e8b3c8137a25e8903265da89adfc08eff0abe7",
-        "registry_anchor_commit": "aa6f1148ee19ea45680183094b685773598dcfa6",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -53,7 +51,6 @@
           "red_team": "PASS",
           "engineering_performance": "PASS"
         },
-        "closure_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
         "freeze_confirmation": {
           "id": "core-freeze-replay-2026-09-05",
           "marker": "FROZEN",
@@ -65,7 +62,6 @@
         "loc": {
           "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
           "repository_code": 414925,
-          "self_with_tests": 99927,
           "self_without_tests": 62142,
           "module_implementation": 762
         },
@@ -95,8 +91,6 @@
       "baseline_commit": "b4915574020cc7da857d2871c545a3489c75288b",
       "candidate_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
       "candidate_tree": "8df2b7d7806918d03b5bb5c31611adb196f30c7f",
-      "end_commit": "5bff39684e1e89f0ecdfeded5f694eed69ff93fe",
-      "registry_anchor_commit": "5bff39684e1e89f0ecdfeded5f694eed69ff93fe",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -127,11 +121,9 @@
       "loc": {
         "snapshot_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
         "repository_code": 423430,
-        "self_with_tests": 103452,
         "self_without_tests": 64452,
         "module_implementation": 1590
       },
-      "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
       "freeze_confirmation": {
         "id": "container-intrusive-freeze-replay-2026-09-05",
         "marker": "FROZEN",
@@ -170,8 +162,6 @@
       "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
       "candidate_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
       "candidate_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
-      "end_commit": "1b4ae13e8c82ea6bfd314dfc7e64f4b8fe927df6",
-      "registry_anchor_commit": "084f7321ff28211b738df1a3050271098da9f395",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -199,11 +189,9 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md",
       "loc": {
         "snapshot_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
         "repository_code": 449005,
-        "self_with_tests": 115561,
         "self_without_tests": 73155,
         "module_implementation": 1549
       },
@@ -243,8 +231,6 @@
       "baseline_commit": "afdb6b81ab4e8e3ad9d790be87a80dc9242c1cec",
       "candidate_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
       "candidate_tree": "305b2cb5947627dfb5b9697c939205b6c26cc6b7",
-      "end_commit": "a8e862d92cbe38d85a556689aa95e81aa1b2a771",
-      "registry_anchor_commit": "400b44d180f8903ac5759c289d59324226238818",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -275,11 +261,9 @@
       "loc": {
         "snapshot_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
         "repository_code": 417715,
-        "self_with_tests": 101020,
         "self_without_tests": 62970,
         "module_implementation": 2178
       },
-      "closure_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
       "freeze_confirmation": {
         "id": "error-freeze-replay-2026-09-05",
         "marker": "FROZEN",
@@ -343,9 +327,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "end_commit": "bc3c5b38b5cd3ee794331af7a29bf767edce67ab",
-      "registry_anchor_commit": "bc3c5b38b5cd3ee794331af7a29bf767edce67ab",
-      "closure_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
       "freeze_confirmation": {
         "id": "obs-v5-metrics-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -357,7 +338,6 @@
       "loc": {
         "snapshot_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
         "repository_code": 461132,
-        "self_with_tests": 119996,
         "self_without_tests": 75879,
         "module_implementation": 1829
       },
@@ -387,8 +367,6 @@
       "baseline_commit": "cc2bb5b648cfa43dc5b72a32db318eca5d4a80e7",
       "candidate_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
       "candidate_tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0",
-      "end_commit": "26ae9c3180aed86ad1dd21c2ef5f634c1154c29e",
-      "registry_anchor_commit": "26ae9c3180aed86ad1dd21c2ef5f634c1154c29e",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -413,7 +391,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
       "freeze_confirmation": {
         "id": "math-v4-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -425,7 +402,6 @@
       "loc": {
         "snapshot_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
         "repository_code": 452775,
-        "self_with_tests": 117111,
         "self_without_tests": 74346,
         "module_implementation": 420
       },
@@ -456,8 +432,6 @@
       "baseline_commit": "1f18f8fc26298b39524420735c7cc4713b1ee729",
       "candidate_commit": "680c9941d7af787067afae904a8ba886c14ba851",
       "candidate_tree": "b09b704304d943adb8d6442c3790fbe02a3048de",
-      "end_commit": "ea2d38ce287df0689e6e5be1d2d25f420b67a8f4",
-      "registry_anchor_commit": "99bab28b5f4a9bb538841f9259714a5853727a01",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -483,7 +457,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
       "freeze_confirmation": {
         "id": "time-freeze-replay-2026-09-05",
         "marker": "FROZEN",
@@ -495,7 +468,6 @@
       "loc": {
         "snapshot_commit": "680c9941d7af787067afae904a8ba886c14ba851",
         "repository_code": 424240,
-        "self_with_tests": 103871,
         "self_without_tests": 64671,
         "module_implementation": 1420
       },
@@ -524,8 +496,6 @@
       "baseline_commit": "f342f8d92cebaae9f4870fe05e78afe6c6ca1391",
       "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
       "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
-      "end_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
-      "registry_anchor_commit": "e8fb222bf975f76e45e777e5db3a7854db1d23e0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -553,7 +523,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
       "freeze_confirmation": {
         "id": "timer-queue-freeze-replay-2026-09-05",
         "marker": "FROZEN",
@@ -565,7 +534,6 @@
       "loc": {
         "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
         "repository_code": 420468,
-        "self_with_tests": 101897,
         "self_without_tests": 63430,
         "module_implementation": 438
       },
@@ -622,9 +590,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "end_commit": "3decd49f5f7a627e3ecf871716f19e73432ce77f",
-      "registry_anchor_commit": "3decd49f5f7a627e3ecf871716f19e73432ce77f",
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
       "freeze_confirmation": {
         "id": "platform-v11-inference-replay-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -636,7 +601,6 @@
       "loc": {
         "snapshot_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
         "repository_code": 459121,
-        "self_with_tests": 119445,
         "self_without_tests": 75504,
         "module_implementation": 6964
       },
@@ -666,8 +630,6 @@
       "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-      "end_commit": "011c7427eedcc2022c5d55b7fa62c640d3836143",
-      "registry_anchor_commit": "c72160265bc7e492483be45d8e0addd944364ca7",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -693,7 +655,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
       "freeze_confirmation": {
         "id": "platform-thread-v8-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -705,7 +666,6 @@
       "loc": {
         "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
         "repository_code": 451412,
-        "self_with_tests": 116939,
         "self_without_tests": 74308,
         "module_implementation": 857
       },
@@ -734,8 +694,6 @@
       "baseline_commit": "27e6128683fbfdf371310dc433ab9abf68d13e9a",
       "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
       "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-      "end_commit": "adf82306eee363f1a5f44ee48d556fc0fcc784bb",
-      "registry_anchor_commit": "485ceb0558277f42ee18f5d7a4dae5a59cb7db66",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -763,7 +721,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
       "freeze_confirmation": {
         "id": "platform-fs-v2-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -775,7 +732,6 @@
       "loc": {
         "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
         "repository_code": 451412,
-        "self_with_tests": 116939,
         "self_without_tests": 74308,
         "module_implementation": 2712
       },
@@ -803,8 +759,6 @@
       "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
       "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
       "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
-      "end_commit": "5a51b909031a3efd18288f84aa573549f5a4acaf",
-      "registry_anchor_commit": "b9fdec1a404aa05f0e63cd214896b05c09c59444",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -832,7 +786,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
       "freeze_confirmation": {
         "id": "mem-reclaim-freeze-replay-2026-09-05",
         "marker": "FROZEN",
@@ -844,7 +797,6 @@
       "loc": {
         "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
         "repository_code": 436638,
-        "self_with_tests": 111204,
         "self_without_tests": 70416,
         "module_implementation": 227
       },
@@ -874,8 +826,6 @@
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
-      "registry_anchor_commit": "7b26b3d135f40998b66cdabe233d125d6851b860",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -903,7 +853,6 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "closure_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
     "freeze_confirmation": {
       "id": "mem-v6-freeze-2026-09-06",
       "marker": "FROZEN",
@@ -915,7 +864,6 @@
     "loc": {
       "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "repository_code": 454713,
-      "self_with_tests": 117630,
       "self_without_tests": 74519,
       "module_implementation": 7631
     },
@@ -946,8 +894,6 @@
       "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
       "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "end_commit": "6fd99e837b19a60d8e9e81812021e1804d9a3696",
-      "registry_anchor_commit": "7b26b3d135f40998b66cdabe233d125d6851b860",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -975,7 +921,6 @@
       "red_team": "PASS",
       "engineering_performance": "PASS"
     },
-    "closure_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
     "freeze_confirmation": {
       "id": "mem-vm-v2-freeze-2026-09-06",
       "marker": "FROZEN",
@@ -987,7 +932,6 @@
     "loc": {
       "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
       "repository_code": 454713,
-      "self_with_tests": 117630,
       "self_without_tests": 74519,
       "module_implementation": 1318
     },
@@ -1018,8 +962,6 @@
       "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
       "candidate_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
       "candidate_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
-      "end_commit": "5caf0fe4bbe25b8d8981a7c6500dad77fb8d324d",
-      "registry_anchor_commit": "3728da5c180f2a779c99cb39209b8cd4fb303989",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1047,7 +989,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
       "freeze_confirmation": {
         "id": "simd-v6-freeze-2026-09-06",
         "marker": "FROZEN",
@@ -1059,7 +1000,6 @@
       "loc": {
         "snapshot_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
         "repository_code": 458401,
-        "self_with_tests": 119226,
         "self_without_tests": 75356,
         "module_implementation": 15097
       },
@@ -1090,8 +1030,6 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
-      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1119,7 +1057,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "freeze_confirmation": {
         "id": "container-v6-freeze-2026-09-07",
         "marker": "FROZEN",
@@ -1131,7 +1068,6 @@
       "loc": {
         "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
         "repository_code": 465734,
-        "self_with_tests": 121614,
         "self_without_tests": 77078,
         "module_implementation": 7962
       },
@@ -1159,8 +1095,6 @@
       "baseline_commit": "3ed2a2cef5ffc0c5acbcaff6421e568a5546f77a",
       "candidate_commit": "7019998034f8025890770fad04406dc5ef2d6194",
       "candidate_tree": "a0f5b8d9ae5af99b9e15d60678ec6dac7d566327",
-      "end_commit": "a3b7885bae647fe0d14a975326c79fe2467b618c",
-      "registry_anchor_commit": "6e477989340810967b451743851f7d82c1ae2ba4",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1185,7 +1119,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
       "freeze_confirmation": {
         "id": "util-runtime-v5-blocker-resolution",
         "marker": "FROZEN",
@@ -1197,7 +1130,6 @@
       "loc": {
         "snapshot_commit": "7019998034f8025890770fad04406dc5ef2d6194",
         "repository_code": 480987,
-        "self_with_tests": 122059,
         "self_without_tests": 77069,
         "module_implementation": 544
       },
@@ -1226,8 +1158,6 @@
       "baseline_commit": "3a2bbca61038f5343729bf2dad66596bffc687b3",
       "candidate_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
       "candidate_tree": "bc9b6baaa5dbf4f3d214047e85cb3ada472e45df",
-      "end_commit": "939504d2b60469cd982b34141c1b27cc1d76f7ab",
-      "registry_anchor_commit": "939504d2b60469cd982b34141c1b27cc1d76f7ab",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1255,11 +1185,9 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/sched/sched-v3-root-participation.md",
       "loc": {
         "snapshot_commit": "536d4abf6324e2b08ed7b3a80df34e83f955e60b",
         "repository_code": 410759,
-        "self_with_tests": 99270,
         "self_without_tests": 61670,
         "module_implementation": 5595
       },
@@ -1346,8 +1274,6 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
-      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1375,7 +1301,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "freeze_confirmation": {
         "id": "container-concurrent-v2-freeze-2026-09-07",
         "marker": "FROZEN",
@@ -1387,7 +1312,6 @@
       "loc": {
         "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
         "repository_code": 465734,
-        "self_with_tests": 121614,
         "self_without_tests": 77078,
         "module_implementation": 1600
       },
@@ -1415,8 +1339,6 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
       "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
-      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1444,7 +1366,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "freeze_confirmation": {
         "id": "container-queue-v2-freeze-2026-09-07",
         "marker": "FROZEN",
@@ -1456,7 +1377,6 @@
       "loc": {
         "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
         "repository_code": 465734,
-        "self_with_tests": 121614,
         "self_without_tests": 77078,
         "module_implementation": 1101
       },
@@ -1484,8 +1404,6 @@
       "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
       "candidate_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
       "candidate_tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f",
-      "end_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
-      "registry_anchor_commit": "4f5b0944806c809073430eae07400e832ccdb8f9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1513,7 +1431,6 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "closure_evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "freeze_confirmation": {
         "id": "container-text-v2-freeze-2026-09-07",
         "marker": "FROZEN",
@@ -1525,7 +1442,6 @@
       "loc": {
         "snapshot_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
         "repository_code": 465870,
-        "self_with_tests": 121658,
         "self_without_tests": 77122,
         "module_implementation": 2084
       },

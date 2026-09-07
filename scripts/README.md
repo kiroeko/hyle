@@ -16,15 +16,16 @@ python scripts/validation-select.py run --base <baseline-commit> --candidate <ca
 The selector projects the central graph using CMake script mode, selects factor
 targets and real consumers, reports selected/skipped gates with reasons, and
 reuses exact-identity evidence. Documentation/state/proven formatting never
-starts native builds or P1. P1 additionally needs a frozen card and a single
-atomic attempt claim. See the [contract](../docs/developer/review/change-impact-validation.md)
+starts native builds or P1. P1 additionally needs a frozen card; its task owns the
+bounded attempt history while the selector prevents concurrent duplicate execution.
+See the [contract](../docs/developer/review/change-impact-validation.md)
 for context/card fields, supported scope and limitations.
 
 ## `loc-report.py` — canonical module-closure LOC
 
-Every module closure reports the same four `code` counts: all repository code,
-HYLE-written native code with tests, HYLE-written native code without tests,
-and the current module implementation. Run it from anywhere inside the checkout:
+Every module closure reports the same three `code` counts: all repository code,
+HYLE-written native code without tests, and the current module implementation.
+Run it from anywhere inside the checkout:
 
 ```bash
 python scripts/loc-report.py --module core --self-check
@@ -39,12 +40,12 @@ are not counted but also make the report dirty. `--commit` instead asks Git/`clo
 to materialize and count that immutable tree, which is the required form when
 checking a recorded terminal LOC snapshot. The repository total includes every language `cloc`
 recognizes, including tracked docs, benchmarks, and in-tree third-party code.
-The two self-written totals count only `C++`, `C/C++ Header`, `C`, and `CUDA`
-under `include/hyle`, `src`, and (for the first total) `tests`; consequently
+The self-written total counts only `C++`, `C/C++ Header`, `C`, and `CUDA`
+under `include/hyle` and `src`; consequently
 docs, benchmarks, samples, third-party code, CMake, and build/cache trees do not
 enter those totals. A module count uses the same native language policy and
 excludes tests, benchmarks, docs, and CMake.
-In JSON schema 2, each metric's `files` is the number of files actually counted
+In JSON schema 3, each metric's `files` is the number of files actually counted
 by `cloc`; `selected_files` is the wider tracked-path selection before language
 filtering. This keeps a selected `CMakeLists.txt` from being mislabeled as a
 native implementation file.
@@ -123,7 +124,7 @@ python scripts/check-docs.py
 The Linux baseline CI runs the same command. Content correctness still requires
 module review; this script prevents structural and navigation drift.
 
-## Module closure and performance evidence v1
+## Module closure and performance evidence v2
 
 `check-module-closure.py` validates the canonical current-state registry at
 `docs/implementation/module-status.json` and its generated human projection.
@@ -140,14 +141,14 @@ The first command is the fast editing loop. It validates the current registry's
 schema, paths, component set, optional `FROZEN` confirmation identity, and
 generated status projection. The projection exposes `Freeze` separately from
 product state and links each engineering verdict to the exact current evidence
-record. It is an
-engineering consistency check, not a Git anti-tamper system; use `--previous`
-only for an explicit before/after state comparison. Candidate/tree/receipt checks
-use ordinary read-only Git commands in the module review. CMake dependency and
+record. It is an engineering consistency check, not a Git anti-tamper system; use
+`--previous-ref <revision>` for an explicit before/after state comparison without
+copying the old registry to an external file. Candidate/tree/receipt checks use
+ordinary read-only Git commands in the module review. CMake dependency and
 delivery semantics stay with the real build/package contract tests rather than a
 second parser here.
 
-An explicit `--previous` comparison permits a newly declared component only
+An explicit `--previous-ref` comparison permits a newly declared component only
 when its first registry state is `QUEUED`. Unrecorded removal, rename or
 reordering remains invalid, as does introducing a new component directly in a
 later closure state. A pre-release corrective rename is allowed only through a

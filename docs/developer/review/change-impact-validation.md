@@ -23,25 +23,22 @@ python scripts/validation-select.py run --base <baseline-commit> --candidate WOR
 python scripts/validation-select.py run --base <baseline-commit> --candidate <candidate-commit> --context .scratch/validation/context.json --output .scratch/validation/result.json
 ```
 
-context 含 `toolchain`、`machine_profile` 两个带 `id` 的对象。普通 native 和 P1 都强制要求：
+context 含 `toolchain`、`machine_profile` 两个带 `id` 的对象。普通 native 和 P1 都要求：
 
-- `toolchain.compiler_path/compiler_id/compiler_version/compiler_sha256`：实际编译器绝对路径、身份和
-  文件 SHA-256；可用 `compiler_files` 文件/hash map 记录 cc1plus、c1xx 等配套编译器实现；
-- `toolchain.stdlib.id/files/include_roots`：具体标准库身份、实际库文件绝对路径/hash map，以及全部
-  使用的标准库 include roots 的目录树 hash。不能只给一个“MSVC”标签或只记录 runtime 而漏掉模板头；
+- `toolchain.compiler_path/compiler_id/compiler_version`：实际使用的编译器绝对路径、实现和版本；
+- `toolchain.stdlib.id`：足以区分实现与版本的标准库身份；
 - `toolchain.flags`：恰好两个 string 键 `CMAKE_CXX_FLAGS` 与 `CMAKE_CXX_FLAGS_RELEASE`，后者非空。
   selector 将 compiler/flags 显式用于 configure，并通过受控 CMake toolchain file 传给嵌套 smoke；
 - 实际 machine profile。P1 还要求下面所述中央 profile hash；普通 native 另外绑定观测主机和影响
   native 编译的环境变量，包括 INCLUDE/LIB、CXXFLAGS、SDKROOT 等。
 
-目录 hash 是 `directory_digest(Path(root))`：相对 POSIX 文件路径到原字节 SHA-256 的映射，再由
-selector 的 `digest()` 计算 canonical JSON SHA-256。完整 context 都进入证据键；缺字段、文件/目录
-内容不匹配、执行前身份漂移都会拒绝 native，不允许 id-only receipt 复用。消费者负责提供实际使用的
-完整 compiler/stdlib/SDK 范围；这不是防御有写盘权限者故意伪造环境的远程证明系统。
-Linux CI 从实际编译器 include search path 和 libstdc++/cc1plus 文件构造 context。
+完整 context 进入工程 receipt key；缺字段、编译器路径不存在或执行前描述漂移会拒绝 native。
+selector 不再散列 compiler/backend/stdlib binary 或整棵标准库头目录：这无法防御有写盘权限的恶意
+维护者，却使换机和工具链升级付出巨大无关成本。正式性能 runner 仍按其 manifest 合同记录实际
+artifact/toolchain 身份，发布级真实性由 Formal 流程承担。Linux CI 直接记录编译器与标准库版本。
 
 无 context 的 `plan` 仍只做影响选择，方便 CI 先决定是否准备编译器；此路线不复用 native 证据，
-`run` 必须重新绑定完整 context。docs/state/format/tool-only 不要求 native 字段，也不读取标准库树或
+`run` 必须重新绑定 context。docs/state/format/tool-only 不要求 native 字段，也不扫描标准库树或
 启动编译器。产品命令使用已经准备好的工具链环境：Unix 可用 `hyle-unix.sh python3 ...`，
 Windows 使用已导入 VS 环境的 PowerShell。默认 Ninja/Release/WERROR/shipping layout；其他
 sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 selector PASS 替代。
@@ -50,7 +47,7 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 
 | 变更 | 自动选择 | 不自动选择 |
 |---|---|---|
-| 文档、状态、证据、格式配置、已证明格式变化 | docs + closure；registry 改变时保存 baseline registry 并传 `--previous` | C++ build、交付、P1 |
+| 文档、状态、证据、格式配置、已证明格式变化 | docs + closure；registry 改变时传包含旧 registry 的 `--previous-ref` | C++ build、交付、P1 |
 | 模块实现 | owning factor + 中央真实直接边的一跳消费者 | 传递消费者测试、无关 factor、package、P1 |
 | factor 测试，包括 `tests/<factor>/CMakeLists.txt` 与目录内 `.cmake` | owning factor correctness | 消费者、独立 header/delivery gate、P1 |
 | 公共头/API、factor 产品 CMake seam | owning factor、反向消费者闭包、已有逐头测试、受影响产品三交付 | 自动 P1 |
@@ -69,29 +66,11 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 边界缺失/重复、声明移到边界后均拒绝。旧、新两份图参与删改影响计算；`SPLIT_PUBLIC_HEADERS`
 决定精确 owner，façade 只决定交付产品。
 
-自动格式证明覆盖 JSON 结构一致，以及 native source 保持行结构的缩进/尾空白/CRLF。
-字符串内容、raw string、宏续行、行号敏感代码和 Python 缩进不能用 `git diff -w` 忽略。
-无法自动证明的 native/CMake 空白重排先 `BLOCKED`，不启动构建/P1。复杂 formatter 迁移可在候选中
-加入 `docs/implementation/validation-format-proof.json`；本地与 CI 自动读取同一文件：
-
-```json
-{
-  "schema_version": 1,
-  "files": [{
-    "path": "src/<factor>/<file>.cc",
-    "before_blob": "<full Git blob ID from baseline>",
-    "after_blob": "<full Git blob ID from candidate>",
-    "classification": "FORMAT_ONLY",
-    "reviewer": "<review owner>",
-    "reason": "<specific equivalence evidence>"
-  }]
-}
-```
-
-证明绑定精确 Git blob pair，模式/类型必须一致，不是路径白名单；过期记录没有跳过权限。
-`FORMAT_ONLY` 只选择轻量门；若空白确实改变字符串、宏等语义，用相同结构的 `SEMANTIC` 声明
-进入正常 owning-factor 验证。reviewer 对等价性证据负责；选择器机械验证身份，不假装能证明任意
-C++ 程序语义。proof 文件本身是文档证据，不改变产品 registry。
+自动轻量格式识别只覆盖 JSON 结构一致，以及 native source 保持行结构的缩进、尾空白和 CRLF。
+字符串内容、raw string、宏续行、行号敏感代码、Python 缩进和无法机械证明的空白重排都保守地按
+普通语义变更走 owner/consumer 验证，而不是 `BLOCKED` 或要求维护一份 blob-pair 证明账本。这样最多
+多跑受影响模块的正常门，不会为了“证明没改代码”引入另一套当前事实。大规模 formatter 迁移若需要
+更窄预算，应单独冻结一次性任务并由普通 diff/reviewer 说明，不把例外永久写进公共 selector。
 
 ## P1 冻结卡
 
@@ -112,30 +91,27 @@ P1 从不自动选择。只有 `--p1-card` 显式绑定不可变候选、diff �
 }
 ```
 
-P1 context 必须满足上述完整 native compiler/stdlib/flags 合同；
+P1 context 必须满足上述 native compiler/stdlib/flags 合同；
 `machine_profile.id/profile_hash` 必须匹配候选 `scripts/perf-machines.json` 对应 profile。
 profile hash 是 UTF-8、sorted keys、无多余空白的 canonical JSON SHA256，与工具 `digest()` 一致。
 命令固定由选择器生成 `hyle-perf.py qualify-platform`；所有已选前置门通过后才采样。原仪器仍
 负责机器资格、peer、合同、公平性与统计，结果必须同时为 qualification/performance `PASS`。
 
-开始 P1 前在 Git common directory 的 `hyle-validation-attempts` 为卡中**每个 factor**独占创建 claim，
-所有 worktree 共用。输出 `p1_scopes` 逐 factor 列出中央图的完整产品依赖闭包、计入的 input paths、
-`product_input_hash` 和 `claim_key`。只计 owner/dependency 的源码、split headers、各自 vendored
+输出 `p1_scopes` 逐 factor 列出中央图的完整产品依赖闭包、计入的 input paths、
+`product_input_hash` 和 `scope_hash`。只计 owner/dependency 的源码、split headers、各自 vendored
 输入及共享 build/package seam；不会把无关 `src/container` 混入 Queue scope。
 外部文件 owner 由 `validation-policy.json` 的有限映射说明，不复制中央 factor 依赖图；未登记
 vendored 输入阻塞 P1，nanobench 等仪器不是产品输入。
 
-失败、中断、并发、改变 toolchain/machine/contract、工具、测试或 `--cache` 日志目录均不能自动重跑。
-无关 factor 不共享额度；multi-factor card 占用每个成员的额度，拆组/重组不能再取一次。正常竞争中
-若尚未开始采样，仅回滚当前尝试刚创建的部分 reservation，绝不删除既有 claim；中断遗留仍保留。
-旧 v1 claim 没有 factor 身份，无法自动归属时明确阻塞并保留待审，不通过工具升级补发额度。
-claim 不自动删除；新的 material 产品候选按 closure 协议重新 scope，不能换 clone 或清账本
-跑到绿。这是工程调度合同，不是对有磁盘写权限者的防篡改系统；多 clone/远程副本由 task owner
-统一持有 canonical 账本，不能分别领取 P1 配额。
+P1 的有效、失格、中断和纠正历史由当前 closure task 记录，selector 不在 Git common dir 建永久
+one-shot claim。相同 candidate/context 的 execution lease 仍防止并发重复运行，完整 PASS receipt 仍按
+精确 identity 复用。有效 material FAIL 必须依方法进入一次机制诊断并改产品、重定范围或 `BLOCKED`；
+不得换 clone、cache、顺序或追加样本跑到绿。fixture/tool 缺陷和环境失格不产生产品 verdict，修复后
+只重跑受影响 gate；这两类纠正不消耗产品修改名额，但仍受 task 的 wall-clock/性能预算约束。
 
 ## 证据和结果
 
-每个 gate key 含 candidate tree、contract hash、toolchain、machine profile、观测 host、selector
+每个 gate key 含 candidate tree、contract hash、toolchain 描述、machine profile、观测 host、selector
 hash。合同 hash 含命令、策略、冻结卡；closure 还绑定 previous registry。只有同 key 完整 PASS
 receipt 与全部命令 log hash 匹配才 `REUSED`。P1 还需原始 manifest hash 与现有 `hyle-perf.py verify`
 的引用文件/资格校验通过；这是只读验证，不采样。失败、RUNNING、缺失或损坏证据不得复用。

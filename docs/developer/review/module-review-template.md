@@ -1,4 +1,4 @@
-# 模块重构与收口任务模板 v1
+# 模块重构与收口任务模板 v2
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
@@ -9,7 +9,11 @@
 > 复制到 `docs/implementation/tasks/<module>/`。权威状态文件是
 > `docs/implementation/module-status.json`，完整判据是
 > `docs/developer/review/module-closure-methodology.md`。本页记录该轮事实，不复制当前状态；真正进入
-> `CLOSED/BLOCKED` 的 terminal end commit 才把顶部 `ACTIVE` 改为 `HISTORICAL` 并写 receipt marker。
+> `CLOSED/BLOCKED` 的 terminal 提交才把顶部 `ACTIVE` 改为 `HISTORICAL` 并写 receipt marker。
+
+> 本页是可裁剪的检查清单，不是最低篇幅。复制后删除不适用的空行/空表，并用一句具体理由裁决整节
+> `NOT_APPLICABLE`；七问、全部 `MUST`、适用风险与最终 verdict 仍必须留下。不得为填模板制造 peer、
+> binary journey、性能样本或消费者，也不要重复粘贴 raw log。
 
 ## Closure card（进入 `SCOPED` 前冻结）
 
@@ -25,7 +29,7 @@
 - tier 与理由：`P0 / P1 / P2`
 - material margin / resource budget：
 - 总调查预算 / 性能预算：
-- 最多复现、机制诊断、产品修改次数：
+- P1/P2 有效采样与机制诊断上限（fixture/tool/environment 纠正按方法 v2 分账）：
 - machine profile：
 - instrument profile：
 - strong peers（每项 capability 最多两个，绑定版本/commit/source）：
@@ -168,7 +172,7 @@ public 入口或常态 metadata 的需求来源。
 - candidate tests：
 - harness / tool identity（与 product identity 分开）：
 
-所有 commit/tree/anchor 字段使用完整 40 位 Git object ID；不得在不可变证据中混用短 hash。
+所有 candidate commit/tree 字段使用完整 40 位 Git object ID；不得在不可变证据中混用短 hash。
 
 ## Verification manifest
 
@@ -249,16 +253,13 @@ P1/P2 补充：
 - blocker，或无 blocker 的依据：
 - 已知限制：
 - reopen triggers：
-- terminal receipt 内容（完整 end commit ID 只由后续 registry 提交记录）：
-- terminal receipt marker：只在真正终止的 end commit 把顶部 marker 改为 `HISTORICAL`，并把下方
-  `<STATE>` 替换为 `CLOSED` 或 `BLOCKED`：
-  `<!-- MODULE CLOSURE RECEIPT: <STATE> -->`
-- registry anchor commit：end commit 保存 receipt 内容，不能在该提交内写入自己的 hash；提交产生后，
-  由后续 registry 提交记录完整 40 位 end/anchor identity。
+- terminal receipt 内容：
+- record marker：只在真正终止的提交把顶部 `ACTIVE` 改为 `HISTORICAL`；逐组件
+  `CLOSED/BLOCKED` 只写入 registry，联合 task 不复制一个含混的 task-level 状态：
+- terminal task 与 registry 状态可在同一提交结束；不生成自引用 end/anchor 回填提交：
 - raw evidence：
-- 四项 LOC snapshot commit：
+- 三项 LOC snapshot commit：
 - 全库代码：
-- 自实现包含测试：
 - 自实现不包含测试：
 - 当前模块实现代码：
 - 建议机械状态：`VERIFIED / CLOSED / BLOCKED`

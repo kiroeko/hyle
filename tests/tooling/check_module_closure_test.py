@@ -91,13 +91,35 @@ def main() -> None:
     errors = checker.validate_registry(missing_loc, root)
     require_error(errors, "missing LOC fields")
 
-    missing_anchor = copy.deepcopy(data)
-    core = next(
-        record for record in missing_anchor["modules"]
-        if record["module"] == terminal_module)
-    del core["registry_anchor_commit"]
-    errors = checker.validate_registry(missing_anchor, root)
-    require_error(errors, "registry_anchor_commit")
+    retired_test_count_rejected = copy.deepcopy(data)
+    record = next(
+        item for item in retired_test_count_rejected["modules"]
+        if item["module"] == terminal_module)
+    record["loc"]["self_with_tests"] = 1
+    errors = checker.validate_registry(retired_test_count_rejected, root)
+    require_error(errors, "retired v1 LOC field 'self_with_tests'")
+
+    retired_terminal_identities_rejected = copy.deepcopy(data)
+    record = next(
+        item for item in retired_terminal_identities_rejected["modules"]
+        if item["module"] == terminal_module)
+    record["end_commit"] = "1" * 40
+    record["registry_anchor_commit"] = "2" * 40
+    errors = checker.validate_registry(retired_terminal_identities_rejected, root)
+    require_error(errors, "retired v1 field 'end_commit'")
+    require_error(errors, "retired v1 field 'registry_anchor_commit'")
+
+    duplicate_closure_evidence_rejected = copy.deepcopy(data)
+    record = next(
+        item for item in duplicate_closure_evidence_rejected["modules"]
+        if item["module"] == terminal_module)
+    record["closure_evidence"] = record["closure_task"]
+    errors = checker.validate_registry(duplicate_closure_evidence_rejected, root)
+    require_error(errors, "retired v1 field 'closure_evidence'")
+
+    previous_ref = checker.load_registry_ref(root, "HEAD")
+    if [item["module"] for item in previous_ref["modules"]] != actual_modules:
+        raise AssertionError("--previous-ref Git reader lost the component ledger")
 
     frozen_record = next(
         record for record in data["modules"]
@@ -190,14 +212,6 @@ def main() -> None:
     errors = checker.validate_registry(duplicate, root)
     require_error(errors, "duplicate module ids")
     require_error(errors, "differs from HyleComponents.cmake")
-
-    absolute_evidence = copy.deepcopy(data)
-    core = next(
-        record for record in absolute_evidence["modules"]
-        if record["module"] == terminal_module)
-    core["closure_evidence"] = "C:/private/core.log"
-    errors = checker.validate_registry(absolute_evidence, root)
-    require_error(errors, "must not be an absolute path")
 
     illegal = copy.deepcopy(data)
     core = next(

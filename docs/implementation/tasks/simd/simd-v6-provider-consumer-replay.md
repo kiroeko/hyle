@@ -1,5 +1,6 @@
 # SIMD v6：provider 升级与推理消费回放
 
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由当前产品事实定向重开。它不把“上游发布了新 commit”本身当作需求，也不重新打开

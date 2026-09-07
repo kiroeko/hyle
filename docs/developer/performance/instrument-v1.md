@@ -311,9 +311,12 @@ manifest 的恶意证据作者。需要这种真实性时，必须由受信 runn
 
 ## 9. 调查与停止预算
 
-P1 异常最多允许：一次正常运行、一次反序/布局复现、一次 codegen/profile 机制检查、一个产品假设
-及重跑。随后必须裁决；不得继续发明第五种 benchmark 姿势。红队只能攻击冻结合同。通用仪器缺陷
-进入独立 instrument task；除非证明会跨过 material 门，不追溯移动已完成模块的终点。
+每个 immutable candidate 只保留一份有效完整 P1 bundle；有效 material FAIL 最多进行一次
+codegen/profile 机制检查，产品变化后必须形成新 candidate。验证 fixture/tool 缺陷使受影响 gate
+失效，环境或 controls 失格使该 bundle 无资格：这两类可以在修正后按 task 预算重做，但不产生产品
+PASS/FAIL，也不消耗产品修改名额。所有失败、失格与重跑理由必须写入 task；不得换顺序、cache 或追加
+样本把有效失败跑到绿，也不得继续发明第五种 benchmark 姿势。通用仪器缺陷进入独立 instrument task；
+除非证明会跨过 material 门，不追溯移动已完成模块的终点。
 
 ## 10. v1 非目标与验收
 

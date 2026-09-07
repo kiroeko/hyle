@@ -1,4 +1,4 @@
-# HYLE 模块重构与收口协议 v1
+# HYLE 模块重构与收口协议 v2
 
 > 本协议是普通模块工程决策的唯一方法。它回答“本轮是否应继续改、能否停止并进入下一模块”，
 > 不把发布级性能声明绑到每次重构。当前机械状态见
@@ -36,14 +36,15 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 | `AUDITED` | 能力覆盖与差距已裁决 | capability-family map、现有 public-surface trace、覆盖状态与 capability/gap ledger；本轮 `FIX` 集冻结 |
 | `CANDIDATE` | 产品形状冻结 | product commit/tree、合同与复杂度变化、直接消费者迁移、候选测试 |
 | `VERIFIED` | 本轮适用工程门完成 | correctness、delivery、docs/usability、内部复用/加速适用性、red-team 与分级工程性能 verdict |
-| `CLOSED` | 工程上应停止 | 无未决 blocker，限制与 reopen trigger 明确，结束 receipt、registry anchor 和四项 LOC 齐全 |
+| `CLOSED` | 工程上应停止 | 无未决 blocker，限制与 reopen trigger、结束 receipt 和三项 LOC 齐全 |
 | `BLOCKED` | 已停止但不能签 | 一个可点名的 blocker、owner、恢复所需的新证据；不得用“继续研究”代替 blocker |
 | `REOPENED` | 新事实击穿已关闭结论 | trigger ID、复现证据、受影响范围；随后只对受影响部分重新 `SCOPED` |
 
 不得跳过状态。公开合同、算法、对象布局或正常 workload 在 `CANDIDATE` 后改变，退回 `AUDITED`；
 只补测试、说明或证据不会改变 product candidate identity。`BLOCKED` 是一次有效裁决，不是无限调查的
 许可。`module-status.json` 只负责当前状态；Git 与 implementation task 保存历史。检查器验证 schema、
-路径、组件集合、状态投影，并可用 `--previous` 检查两个明确快照之间是否出现非法状态跳跃。它不实现
+路径、组件集合、状态投影，并可用 `--previous-ref` 从 Git 读取改动前 registry，检查两版之间是否
+出现非法状态跳跃。它不实现
 Git 防篡改、工作流账本或 CMake 解释器。从 `SCOPED` 起，同一轮的 closure task、scope/non-goals、baseline、
 性能 tier、机器集合、工程性能 mode/instrument/machine/material margin 构成冻结 closure card；只有
 `QUEUED/REOPENED/BLOCKED -> SCOPED` 才可重新设定。`CANDIDATE -> VERIFIED -> CLOSED/BLOCKED`
@@ -51,7 +52,7 @@ Git 防篡改、工作流账本或 CMake 解释器。从 `SCOPED` 起，同一�
 不是把整个开发过程编码成状态机。中央 component graph 新增模块时，以 `QUEUED` 进入 registry。
 
 预发布阶段若 owner 明确纠正一个错误的内部 component 名称，不得靠删除旧记录、伪造新 `QUEUED` 记录或
-跳过 `--previous` 实现。当前 registry 必须保存一对一 `component_identity_migrations` 及 repository 内
+跳过 `--previous-ref` 实现。当前 registry 必须保存一对一 `component_identity_migrations` 及 repository 内
 证据；新 ID 在原 ledger 位置继续旧 ID 的合法状态迁移，中央 manifest、target、直接边和当前文档原子
 迁移，不保留未经需求证明的 compatibility alias。检查器仍拒绝未登记删除/重命名、链式/循环迁移和借
 迁移重排组件。历史 task 保留当时名称并加迁移注记，而不是改写已经发生的事实。
@@ -114,7 +115,7 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 - 初始问题域与用户旅程；不能从现有类名、函数名或 benchmark case 反推完整范围；
 - 范围、非目标、直接依赖和直接消费者；
 - `P0/P1/P2` 及理由，正常 workload、资源预算和 material margin；
-- 总调查预算、性能预算、最多实验/修复次数；
+- 总调查预算、性能预算，以及 P1/P2 的有效采样与机制诊断上限；
 - 中央 `machine_profile`、`instrument_profile` 及适用 correctness/delivery gates；
 - 每项 capability 最多两个预先选择且绑定版本/commit/source 的 strong peers；
 - 预期输出、停止条件和可接受限制。
@@ -122,6 +123,11 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 没有真实输入时保持 `QUEUED`。没有 P1/P2 workload、阈值、机器或仪器 ID 时不得开始计时。模块任务
 不得一边看结果一边修改中央统计规则、机器配置或 material margin；公共仪器缺口另开 project/perf
 任务。
+
+模板是问题清单，不是篇幅合同。task 只保留本轮适用的表格行和风险项；语义上不适用的整节可用一句
+具体理由裁决后删除空表。七问、全部 `MUST`、适用风险和最终 verdict 不能省略，但不得为了填满模板
+制造虚构 peer、binary journey、性能样本、消费者或重复粘贴原始日志。小型 P0 因子的记录应随风险
+缩小，而不是随模板长度膨胀。
 
 ### 2.1 从用户任务到 API 的固定设计顺序
 
@@ -363,9 +369,14 @@ A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-
   scope，不能默默继续。
 - 普通约千行及以下的 P0/P1 模块，默认审查与取证预算不超过两小时；计划实现超过一个工作日时先
   拆成可独立验证的 defect/demand。
-- 每个 immutable candidate 只运行一次完整 P1 bundle，必需反序在同一冻结 bundle 中完成。
-  异常后最多一次 codegen/profile 机制检查、一个满足两把钥匙的产品修改；修改先退回 `AUDITED`
-  并形成新 candidate，才可重新选择一次 P1。旧候选不得追加采样或靠 metadata 提交重置额度。
+- 每个 immutable candidate 只保留一份有效完整 P1 bundle，必需反序在同一冻结 bundle 中完成。有效
+  material FAIL 后最多一次 codegen/profile 机制检查；需要产品修改时先退回 `AUDITED` 并形成新
+  candidate。旧候选不得靠追加样本、换顺序或 metadata 提交跑到绿。
+- 纠正必须分成三类，不能共用一个任意的“总修正次数”：**产品机制纠正**改变 API、算法、layout 或
+  normal workload，必须退回审计并生成新 candidate；**验证 fixture/tool 纠正**只使受影响 gate 的
+  execution identity 失效，修好后只重跑该 gate；**环境/采样失格**不产生产品 PASS/FAIL，只能在重新
+  取得预声明合格环境后重做该 bundle。后二者不消耗产品修改名额，但仍受本轮 wall-clock 与性能预算
+  约束，并必须保留失败事实和纠正理由。
 - 同一轮不得发明第五种 benchmark 姿势。活动收口轮需要的中央仪器无法给出 verdict 时，记录独立
   instrument issue，并让该轮按硬门进入 `BLOCKED`；不得在模块任务内扩建统计平台。回放一个已经
   `CLOSED` 的模块时，后来发生的仪器实现或兼容策略漂移只产生 `METHOD_GAP`，产品状态保持不变；
@@ -377,8 +388,9 @@ A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-
 - 红队 P0/P1 默认 30 分钟，只攻击已冻结的能力、合同、correctness、依赖和工程性能门。新发现的
   通用仪器增强进入下一版工具；除非已证明当前 material verdict 无效，不追溯移动本轮终点。
 
-稳定 material `FAIL` 在一次机制诊断后仍未解决时，记录具体性能缺口并 `BLOCKED`。这比八小时后仍
-写“继续调查”更完整，也不会阻止不依赖该结论的其他模块准备工作。
+稳定 material `FAIL` 在一次机制诊断后仍未解决时，记录具体性能缺口并 `BLOCKED`。`BLOCKED` 必须
+指向仍然存在的 material 问题、缺少的外部输入或无法取得的适用环境及其恢复条件；不得仅因为 fixture
+修正、环境失格或任意计数器耗尽而阻塞一个已有确定性、范围内修复的问题。
 
 ## 7. Candidate、验证与独立红队
 
@@ -386,8 +398,8 @@ A/A、known-delta、timer floor 和统计门全部通过，也要撤销该 same-
 selected/skipped gates 与理由。文档、状态和已证明格式变化不触发产品构建或 P1；模块实现只验证
 对应 factor 与真实一跳消费者，公共头/API、组件图和 build/package seam 才扩大。额外 sanitizer/
 ISA/平台风险仍以冻结卡为准。P1 在 API/算法冻结的 immutable candidate 上只启动一次完整 bundle；
-tree/contract/toolchain/machine/tool 身份一致时复用证据。异常后按预算重新裁决，不能清 claim、
-更换日志目录或追加文档提交给同一产品候选自动增加采样额度。
+tree/contract/toolchain/machine/tool 身份一致时复用证据。有效 FAIL、无效 fixture/tool、环境失格和
+操作者中断按第 6 节分别记账；换日志目录或追加文档提交不能把有效旧结果冒充为新产品证据。
 
 `CANDIDATE` 同时冻结 product commit/tree、公开合同、算法、normal workload 和 tier；harness/tool
 identity 单独记录。验证 manifest 至少给出：
@@ -397,7 +409,7 @@ identity 单独记录。验证 manifest 至少给出：
 - P0/P1/P2 工程性能 verdict、机器/仪器 ID 和证据；
 - user journey 与文档检查；
 - 独立红队问题的 `fixed/disproved/accepted/out-of-scope`；
-- 已知限制、结束 receipt commit、registry anchor 与 reopen triggers。
+- 已知限制、terminal receipt 与 reopen triggers。
 
 Blocker 是 correctness/security、合同/ownership 错误、构建/交付断裂，或本 tier 工程性能未通过。
 非 material 命名、风格、feature 愿望和 Formal 待办不是 blocker。
@@ -418,26 +430,25 @@ python scripts/check-module-closure.py
 python scripts/check-docs.py
 ```
 
-`end_commit` 指向已经包含 terminal task/receipt 与 candidate identity 的提交；后续 registry 记录用
-`registry_anchor_commit` 指向第一个确实保存该 terminal product state/candidate 的历史快照。anchor
-只锚 product state/candidate identity；允许后续 audit 纠正误标的 legacy round label、旧 end/LOC 等
-证据字段，但必须留下
-finding，不能把它描述成完整 terminal record 的逐字段副本。这样不靠
-无法实现的“提交内写入自身 hash”。v1 前导入记录允许旧 `SIGNED` receipt，但必须明确
-`LEGACY_IMPORT`；新轮在 terminal task 写精确 `MODULE CLOSURE RECEIPT: CLOSED|BLOCKED` marker。
-legacy `BLOCKED` 的证据纠正必须在 task 中说明。候选 commit/tree、end、anchor 和 receipt 由 reviewer
-使用 Git 的普通只读命令核对，不在 closure checker 中复制一套 Git 审计系统。
+v2 的 terminal task 与 registry 状态可以在同一提交结束：task 从 `ACTIVE` 改为 `HISTORICAL` 并在正文
+记录逐组件结论，registry 绑定每个组件的 candidate、closure task、gates、限制、reopen triggers 与 LOC。
+联合 task 可以让不同组件得到不同 verdict，因此不再用单个 task-level `CLOSED/BLOCKED` marker 复制或
+覆盖逐组件状态。Git 已经为这个提交提供身份和历史，不再要求先提交 receipt、再提交状态、再
+回填一个无法在提交内自引用的 `end_commit/registry_anchor_commit`。v2 当前 registry 不接受这两个字段、
+与 `closure_task` 重复的 `closure_evidence` 或已退役的 `self_with_tests`；旧 Git revision 和历史 task
+仍保存当时事实，不把兼容字段继续带入当前合同。新记录只用 `closure_task` 指向该轮冻结卡与终态
+receipt。旧 task 中的 `SIGNED` 或 receipt marker 只按历史原文解释，不是 v2 兼容入口或当前状态。
 
 Product boundary 不等于 LOC boundary。terminal review/replay 以及后来确实触碰该 boundary 的改动，
-由 reviewer 用普通 Git diff 比较 candidate→end/current 的实现路径；不是每次打开仓库都重审全部
+由 reviewer 用普通 Git diff 比较 candidate→terminal/current 的实现路径；不是每次打开仓库都重审全部
 `CLOSED/BLOCKED` 模块。签后产品漂移必须按 trigger reopen，不能靠旧 reviewed commit 自证。
 组件依赖、CMake 语义与 package/source delivery 由 build/package 的真实
 configure/build/install/source-package contracts 负责，模块 task 记录这些门的结果；closure checker
 不扫描 Git 历史、不重新实现 CMake 解释器，也不从文本 diff 猜测交付语义。历史 audit 的
-product-identity anchor 由 reviewer 从 Git 打开 registry，核对当时确为对应状态/round/candidate，并
-单独核验 end receipt。
+product identity 由 reviewer 从 Git 打开 terminal registry/task，核对当时确为对应状态、round、
+candidate 与 receipt。
 
-## 9. 终止输出与四项 LOC
+## 9. 终止输出与三项 LOC
 
 只有所有适用工程门有 verdict、所有 `MUST` 能力为 `COMPLETE` 或完整 `ROUTED`、不存在
 `PARTIAL + KEEP`、内部复用/加速设施审计为 `PASS`、P1/P2 工程性能为 `PASS`、没有 blocker，且
@@ -449,18 +460,18 @@ python scripts/loc-report.py --module <component> --commit <full-snapshot-commit
 ```
 
 不带 `--commit` 的形式只观察当前工作树规模，不得登记为 candidate LOC。`--commit` 从指定不可变
-快照直接复算四项数值，不能
+快照直接复算三项数值，不能
 用当前 dirty worktree 的计数回填另一个 candidate。source bundle 没有历史对象时这项门明确不适用，
 不得伪称已深验。
 
-并绑定同一快照记录四项 `code`：
+并绑定同一快照记录三项 `code`：
 
 1. 全库代码；
-2. 自实现包含测试；
-3. 自实现不包含测试；
-4. 当前模块实现代码。
+2. 自实现不包含测试；
+3. 当前模块实现代码。
 
-LOC 只用于规模与过程复盘，不是完成度、优先级或重开依据。
+历史 registry/task 的“自实现包含测试”数字仍是当时事实，但 v2 不再计算、要求或常规报告。LOC 只
+用于规模与过程复盘，不是完成度、优先级或重开依据。
 
 ## 10. 重开条件
 

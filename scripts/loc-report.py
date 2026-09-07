@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report the four canonical HYLE module-closure LOC metrics.
+"""Report the three canonical HYLE module-closure LOC metrics.
 
 The report deliberately counts the current contents of Git-tracked files.  It
 therefore describes a dirty working tree honestly without letting untracked
@@ -30,7 +30,6 @@ BUILD_PACKAGE_LANGUAGES = (
     "JSON",
     "YAML",
 )
-SELF_WITH_TESTS_ROOTS = ("include/hyle", "src", "tests")
 SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 
 # Some closure units do not match the ordinary
@@ -373,14 +372,12 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         else NATIVE_LANGUAGES
     )
 
-    self_with_tests = files_under(tracked, SELF_WITH_TESTS_ROOTS)
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
 
     cloc = find_cloc()
     if args.commit:
         (
             (repository_code, repository_files),
-            (self_with_tests_code, self_with_tests_files),
             (self_without_tests_code, self_without_tests_files),
             (module_code, module_code_files),
         ) = cloc_measure_commit_sets(
@@ -389,16 +386,12 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
             commit,
             (
                 (tracked, None),
-                (self_with_tests, NATIVE_LANGUAGES),
                 (self_without_tests, NATIVE_LANGUAGES),
                 (module_files, module_languages),
             ),
         )
     else:
         repository_code, repository_files = cloc_measure(cloc, root, tracked, None)
-        self_with_tests_code, self_with_tests_files = cloc_measure(
-            cloc, root, self_with_tests, NATIVE_LANGUAGES
-        )
         self_without_tests_code, self_without_tests_files = cloc_measure(
             cloc, root, self_without_tests, NATIVE_LANGUAGES
         )
@@ -418,15 +411,6 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
                 "Git-tracked regular files (current working tree)"
             ],
             "languages": ["all languages recognized by cloc"],
-        },
-        {
-            "id": "self_with_tests",
-            "label": "self-written including tests",
-            "code": self_with_tests_code,
-            "files": self_with_tests_files,
-            "selected_files": len(self_with_tests),
-            "paths": list(SELF_WITH_TESTS_ROOTS),
-            "languages": list(NATIVE_LANGUAGES),
         },
         {
             "id": "self_without_tests",
@@ -449,7 +433,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
     ]
 
     report: dict[str, object] = {
-        "schema": 2,
+        "schema": 3,
         "repository": {
             "root": str(root),
             "commit": commit,
@@ -512,8 +496,7 @@ def self_check(report: dict[str, object]) -> None:
     assert isinstance(metrics, list)
     values = {metric["id"]: metric["code"] for metric in metrics}
     if not (
-        values["repository"] >= values["self_with_tests"]
-        >= values["self_without_tests"] >= 0
+        values["repository"] >= values["self_without_tests"] >= 0
         and values["repository"] >= values["module"] >= 0
     ):
         raise ReportError("LOC subset ordering is inconsistent")
@@ -567,10 +550,6 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
     snapshot = report["policy"]["snapshot"]
     print(f"  full repository: {snapshot}; every cloc language")
     print(
-        "  self-written + tests: include/hyle, src, tests; "
-        + ", ".join(NATIVE_LANGUAGES)
-    )
-    print(
         "  self-written - tests: include/hyle, src; "
         + ", ".join(NATIVE_LANGUAGES)
     )
@@ -591,7 +570,7 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Report the four canonical LOC metrics for a HYLE closure unit."
+        description="Report the three canonical LOC metrics for a HYLE closure unit."
     )
     parser.add_argument("--module", required=True, help="closure unit name, for example core")
     parser.add_argument(

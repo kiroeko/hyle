@@ -56,17 +56,10 @@ class ImpactTest(unittest.TestCase):
         self.cache = Path(self.temp.name) / "cache"
         self.context = Path(self.temp.name) / "context.json"
         self.compiler = Path(self.temp.name) / "fixture-compiler"
-        self.stdlib = Path(self.temp.name) / "fixture-stdlib"
         self.compiler.write_bytes(b"process-spy fixture compiler; never executed")
-        self.stdlib.write_bytes(b"process-spy fixture standard library")
-        self.stdheaders = Path(self.temp.name) / "stdlib-include"
-        self.stdheaders.mkdir()
-        (self.stdheaders / "vector").write_bytes(b"process-spy fixture standard headers")
         selector.write_json(self.context, {"toolchain": {"id": "fixture", "version": 1,
                                                         "compiler_path": str(self.compiler), "compiler_id": "FIXTURE", "compiler_version": "1",
-                                                        "compiler_sha256": selector.digest(self.compiler.read_bytes()),
-                                                        "stdlib": {"id": "fixture", "files": {str(self.stdlib): selector.digest(self.stdlib.read_bytes())},
-                                                                   "include_roots": {str(self.stdheaders): selector.directory_digest(self.stdheaders)}},
+                                                        "stdlib": {"id": "fixture-stdlib:1"},
                                                         "flags": {"CMAKE_CXX_FLAGS": "", "CMAKE_CXX_FLAGS_RELEASE": "-O2 -DNDEBUG"}},
                                            "machine_profile": {"id": "TEST-ONLY", "profile_hash": selector.digest({"id": "TEST-ONLY"})}})
 
@@ -100,7 +93,7 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         plan = self.plan()
         self.assertEqual(self.selected(plan), {"docs", "closure"})
-        self.assertIn("--previous", self.row(plan, "closure")["commands"][0])
+        self.assertIn("--previous-ref", self.row(plan, "closure")["commands"][0])
         self.assertEqual({c["kind"] for c in plan["changes"]}, {"docs", "state", "format"})
         calls = []
         real_run = subprocess.run
@@ -208,37 +201,19 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         self.assertEqual(self.selected(self.plan()), {"docs", "closure", "tool:tests/tooling/validation_selector_test.py"})
 
-    def test_inline_format_is_blocked_until_exact_format_proof_then_no_build(self):
+    def test_unproven_inline_format_defaults_to_semantic_validation(self):
         path = "src/container_queue/change.cc"
-        old_blob = selector.Snapshot(self.root, self.base).files[path][2]
         self.write(path, "int value=1;\n")
         self.commit()
         plan = self.plan()
-        self.assertEqual(plan["verdict"], "BLOCKED")
-        self.assertEqual(self.selected(plan), {"docs", "closure"})
-        new_blob = selector.Snapshot(self.root, "HEAD").files[path][2]
-        item = {"path": path, "before_blob": old_blob, "after_blob": new_blob,
-                "classification": "FORMAT_ONLY", "reviewer": "fixture", "reason": "only spaces around initializer; no macro or literal"}
-        self.write(selector.FORMAT_PROOF, json.dumps({"schema_version": 1, "files": [item]}))
-        self.commit()
-        self.assertEqual(self.plan()["verdict"], "READY")
-        self.assertEqual(self.selected(self.plan()), {"docs", "closure"})
-        self.write(path, "int  value=1;\n")
-        self.commit()
-        self.assertEqual(self.plan()["verdict"], "BLOCKED")
+        self.assertEqual(plan["verdict"], "READY")
+        self.assertEqual(plan["selected_factors"], ["container_queue", "sched"])
 
-    def test_explicit_semantic_whitespace_change_selects_owner_and_consumers(self):
+    def test_string_payload_change_selects_owner_and_consumers(self):
         path = "src/container_queue/change.cc"
         self.write(path, 'const char* value = "a b";\n')
         self.base = self.commit()
-        old = selector.Snapshot(self.root, self.base).files[path][2]
         self.write(path, 'const char* value = "ab";\n')
-        self.commit()
-        new = selector.Snapshot(self.root, "HEAD").files[path][2]
-        self.assertEqual(self.plan()["verdict"], "BLOCKED")
-        item = {"path": path, "before_blob": old, "after_blob": new, "classification": "SEMANTIC",
-                "reviewer": "fixture", "reason": "string payload changed"}
-        self.write(selector.FORMAT_PROOF, json.dumps({"schema_version": 1, "files": [item]}))
         self.commit()
         self.assertEqual(self.plan()["selected_factors"], ["container_queue", "sched"])
 
@@ -318,7 +293,7 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "SKIPPED")
 
-    def test_p1_runs_once_after_prerequisites_and_reuses_verified_artifact(self):
+    def test_p1_reuses_verified_artifact_and_reselects_invalid_cache(self):
         path = self.p1_card()
         plan = self.plan(card_path=path, context=self.context)
         calls = self.simulated_execution(plan)
@@ -333,33 +308,22 @@ class ImpactTest(unittest.TestCase):
             reused = self.plan(card_path=path, context=self.context)
         self.assertEqual(self.row(reused, "p1")["status"], "REUSED")
         (Path(self.temp.name) / "raw-manifest.json").unlink()
-        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
+        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "SELECTED")
 
-    def test_failed_or_interrupted_p1_is_not_retried_with_new_context(self):
+    def test_failed_p1_is_not_reused_or_permanently_locked(self):
         path = self.p1_card()
         plan = self.plan(card_path=path, context=self.context)
         self.simulated_execution(plan, p1_returncode=2)
         self.assertEqual(plan["verdict"], "BLOCKED")
-        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
-        selector.write_json(self.context, {"toolchain": {"id": "changed"}, "machine_profile": {"id": "OTHER"}})
-        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
+        retry = self.plan(card_path=path, context=self.context)
+        self.assertEqual(self.row(retry, "p1")["status"], "SELECTED")
 
-    def test_p1_competing_claim_blocks_even_if_plan_was_already_ready(self):
-        path = self.p1_card()
-        plan = self.plan(card_path=path, context=self.context)
-        claim = selector.p1_claim(self.root, plan["p1_scopes"]["container_queue"]["claim_key"])
-        claim.parent.mkdir(parents=True)
-        claim.write_text("interrupted/racing owner")
-        calls = self.simulated_execution(plan)
-        self.assertFalse(any("qualify-platform" in argv for argv in calls))
-        self.assertEqual(self.row(plan, "p1")["status"], "BLOCKED")
-
-    def test_p1_attempt_survives_new_cache_and_metadata_commit(self):
+    def test_p1_scope_survives_new_cache_and_metadata_commit(self):
         path = self.p1_card()
         plan = self.plan(card_path=path, context=self.context)
         self.simulated_execution(plan, p1_returncode=2)
         self.cache = Path(self.temp.name) / "another-cache"
-        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
+        self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "SELECTED")
         self.write("README.md", "# new metadata cannot reset candidate budget\n")
         candidate = self.commit()
         card = selector.read_json(path)
@@ -367,7 +331,7 @@ class ImpactTest(unittest.TestCase):
         selector.write_json(path, card)
         updated = self.plan(card_path=path, context=self.context)
         self.assertEqual(updated["p1_scopes"], plan["p1_scopes"])
-        self.assertEqual(self.row(updated, "p1")["status"], "BLOCKED")
+        self.assertEqual(self.row(updated, "p1")["status"], "SELECTED")
 
     def refresh_card(self, path, factors=None):
         card = selector.read_json(path)
@@ -389,17 +353,17 @@ class ImpactTest(unittest.TestCase):
         self.refresh_card(path)
         unrelated = self.plan(card_path=path, context=self.context)
         self.assertEqual(unrelated["p1_scopes"]["container_queue"], scope)
-        self.assertEqual(self.row(unrelated, "p1")["status"], "BLOCKED")
+        self.assertEqual(self.row(unrelated, "p1")["status"], "SELECTED")
         self.write("src/mem/change.cc", "int allocator_version = 2;\n")
         self.write("third_party/mimalloc/include/mimalloc.h", "real queue dependency\n")
         self.commit()
         self.refresh_card(path)
         dependent = self.plan(card_path=path, context=self.context)
-        self.assertNotEqual(dependent["p1_scopes"]["container_queue"]["claim_key"], scope["claim_key"])
+        self.assertNotEqual(dependent["p1_scopes"]["container_queue"]["scope_hash"], scope["scope_hash"])
         self.assertIn("third_party/mimalloc/include/mimalloc.h", dependent["p1_scopes"]["container_queue"]["input_paths"])
         self.assertEqual(self.row(dependent, "p1")["status"], "SELECTED")
 
-    def test_independent_factor_budget_and_multifactor_regrouping(self):
+    def test_independent_factor_scopes_and_multifactor_grouping(self):
         path = self.p1_card()
         self.write("src/math/change.cc", "int math_version = 2;\n")
         self.commit()
@@ -409,41 +373,17 @@ class ImpactTest(unittest.TestCase):
         self.refresh_card(path, ["math"])
         math = self.plan(card_path=path, context=self.context)
         self.assertEqual(self.row(math, "p1")["status"], "SELECTED")
-        self.assertNotEqual(math["p1_scopes"]["math"]["claim_key"], queue["p1_scopes"]["container_queue"]["claim_key"])
+        self.assertNotEqual(math["p1_scopes"]["math"]["scope_hash"], queue["p1_scopes"]["container_queue"]["scope_hash"])
         self.refresh_card(path, ["math", "container_queue"])
         grouped = self.plan(card_path=path, context=self.context)
-        self.assertEqual(self.row(grouped, "p1")["status"], "BLOCKED")
-        self.assertFalse(selector.p1_claim(self.root, math["p1_scopes"]["math"]["claim_key"]).exists())
-
-    def test_legacy_unattributed_claim_does_not_gain_allowance_on_upgrade(self):
-        path = self.p1_card()
-        legacy = selector.p1_claim(self.root, "0" * 64)
-        legacy.parent.mkdir(parents=True)
-        legacy.write_text('{"candidate_tree":"old-version-without-factor"}')
-        plan = self.plan(card_path=path, context=self.context)
-        self.assertEqual(self.row(plan, "p1")["status"], "BLOCKED")
-        self.assertIn("legacy P1 claim", self.row(plan, "p1")["reason"])
-        self.assertTrue(legacy.exists())
-
-    def test_multifactor_attempt_spends_each_factor_before_regrouping(self):
-        path = self.p1_card()
-        self.write("src/math/change.cc", "int math_version = 2;\n")
-        self.commit()
-        self.refresh_card(path, ["container_queue", "math"])
-        plan = self.plan(card_path=path, context=self.context)
-        self.simulated_execution(plan, p1_returncode=2)
-        for factor, scope in plan["p1_scopes"].items():
-            with self.subTest(factor=factor):
-                self.assertTrue(selector.p1_claim(self.root, scope["claim_key"]).exists())
-                self.refresh_card(path, [factor])
-                self.assertEqual(self.row(self.plan(card_path=path, context=self.context), "p1")["status"], "BLOCKED")
+        self.assertEqual(self.row(grouped, "p1")["status"], "SELECTED")
 
     def test_native_rejects_id_only_and_incomplete_context_without_execution(self):
         self.write("tests/container_queue/CMakeLists.txt", "set(FACTOR_TEST_TIMEOUT 60)\n")
         self.commit()
         valid = selector.read_json(self.context)
         broken = [{"toolchain": {"id": "claimed-msvc"}, "machine_profile": {"id": "claimed-host"}}]
-        for key in ("compiler_path", "compiler_sha256", "stdlib", "flags"):
+        for key in ("compiler_path", "compiler_id", "compiler_version", "stdlib", "flags"):
             item = json.loads(json.dumps(valid))
             item["toolchain"].pop(key)
             broken.append(item)
@@ -458,7 +398,7 @@ class ImpactTest(unittest.TestCase):
                     run.assert_not_called()
         self.assertEqual(self.plan()["verdict"], "READY")  # pre-provisioning dry selection
 
-    def test_native_receipt_binds_compiler_stdlib_flags_and_environment(self):
+    def test_native_receipt_binds_described_toolchain_flags_and_environment(self):
         self.write("tests/container_queue/change.cc", "int expected = 4;\n")
         self.commit()
         plan = self.plan(context=self.context)
@@ -471,18 +411,14 @@ class ImpactTest(unittest.TestCase):
                 self.simulated_execution(cached_plan)
         original = selector.read_json(self.context)
         self.compiler.write_bytes(b"new compiler bytes")
-        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
+        self.assertEqual(self.row(self.plan(context=self.context), "factor:container_queue")["status"], "REUSED")
         context = json.loads(json.dumps(original))
-        context["toolchain"]["compiler_sha256"] = selector.digest(self.compiler.read_bytes())
+        context["toolchain"]["compiler_version"] = "2"
         selector.write_json(self.context, context)
         self.assertEqual(self.row(self.plan(context=self.context), "factor:container_queue")["status"], "SELECTED")
-        self.stdlib.write_bytes(b"new standard library bytes")
-        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
-        context["toolchain"]["stdlib"]["files"][str(self.stdlib)] = selector.digest(self.stdlib.read_bytes())
-        (self.stdheaders / "vector").write_bytes(b"changed template implementation")
+        context["toolchain"]["stdlib"]["id"] = "fixture-stdlib:2"
         selector.write_json(self.context, context)
-        self.assertEqual(self.plan(context=self.context)["verdict"], "BLOCKED")
-        context["toolchain"]["stdlib"]["include_roots"][str(self.stdheaders)] = selector.directory_digest(self.stdheaders)
+        self.assertEqual(self.row(self.plan(context=self.context), "factor:container_queue")["status"], "SELECTED")
         context["toolchain"]["flags"]["CMAKE_CXX_FLAGS"] = "-DFLAG_CHANGE=1"
         selector.write_json(self.context, context)
         changed = self.plan(context=self.context)

@@ -56,7 +56,7 @@ python scripts/check-module-closure.py
 python scripts/check-docs.py
 ```
 
-若本轮改变 `module-status.json`，还要把改动前 registry 保存为明确快照并传给
-`check-module-closure.py --previous <previous-registry>`；普通命令只检查当前快照，不证明状态没有跳级。
+若本轮改变 `module-status.json`，传入包含改动前 registry 的明确 Git revision：
+`check-module-closure.py --previous-ref <revision>`；普通命令只检查当前快照，不证明状态没有跳级。
 
 到达预算或停止条件后必须裁决为 `CLOSED`、`BLOCKED`，或按协议退回明确阶段；“继续研究”不是状态。

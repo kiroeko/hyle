@@ -70,20 +70,6 @@ def main() -> None:
             raise AssertionError(
                 f"util_runtime boundary lost implementation: {implementation}")
 
-    synthetic = (
-        "include/hyle/core/cache.h",
-        "src/core/CMakeLists.txt",
-        "tests/core/cache_test.cc",
-        "third_party/vendor/src/not_hyle.cc",
-        "third_party/vendor/tests/not_hyle_test.cc",
-    )
-    self_files = reporter.files_under(synthetic, reporter.SELF_WITH_TESTS_ROOTS)
-    if self_files != list(synthetic[:3]):
-        raise AssertionError(
-            "self-owned roots admitted a nested vendor src/tests directory: "
-            f"{self_files!r}"
-        )
-
     evolving_io = (
         "include/hyle/io/file.h",
         "include/hyle/io/proactor.h",

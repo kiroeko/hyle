@@ -8,6 +8,7 @@ import datetime
 import json
 import posixpath
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -44,9 +45,13 @@ GATE_NAMES = {
 GATE_VERDICTS = {"PASS", "FAIL", "INCONCLUSIVE"}
 LOC_FIELDS = {
     "repository_code",
-    "self_with_tests",
     "self_without_tests",
     "module_implementation",
+}
+RETIRED_MODULE_FIELDS = {
+    "closure_evidence",
+    "end_commit",
+    "registry_anchor_commit",
 }
 STATUS_TABLE_BEGIN = "<!-- BEGIN GENERATED MODULE STATUS -->"
 STATUS_TABLE_END = "<!-- END GENERATED MODULE STATUS -->"
@@ -75,6 +80,24 @@ def load_registry(path: Path) -> dict[str, Any]:
         value = json.load(stream)
     if not isinstance(value, dict):
         raise ValueError("registry root must be a JSON object")
+    return value
+
+
+def load_registry_ref(root: Path, revision: str) -> dict[str, Any]:
+    if not revision or revision.startswith("-"):
+        raise ValueError("previous revision must be a non-option Git revision")
+    result = subprocess.run(
+        ["git", "show", f"{revision}:docs/implementation/module-status.json"],
+        cwd=root,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode:
+        detail = result.stderr.decode(errors="replace").strip()
+        raise ValueError(f"cannot read module registry at {revision!r}: {detail}")
+    value = json.loads(result.stdout.decode("utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("previous registry root must be a JSON object")
     return value
 
 
@@ -241,6 +264,10 @@ def validate_module(
     if not isinstance(component, str) or not component:
         errors.append("module entry has no non-empty 'module' id")
         return
+    for field in sorted(RETIRED_MODULE_FIELDS & record.keys()):
+        errors.append(
+            f"{prefix}: retired v1 field {field!r} must remain in Git history, "
+            "not the current registry")
 
     state = record.get("product_state")
     if state not in PRODUCT_STATES:
@@ -374,11 +401,6 @@ def validate_module(
                     errors.append(f"{prefix}: invalid {gate} gate verdict {verdict!r}")
 
     if state in {"CLOSED", "BLOCKED"}:
-        _check_commit(record, "end_commit", prefix, errors)
-        _check_commit(record, "registry_anchor_commit", prefix, errors)
-        _check_repo_path(
-            root, record.get("closure_evidence"),
-            "closure_evidence", prefix, errors)
         _check_nonempty_string_list(record, "known_limitations", prefix, errors)
         _check_nonempty_string_list(record, "reopen_triggers", prefix, errors)
         _require_string(record, "summary", prefix, errors)
@@ -387,6 +409,10 @@ def validate_module(
         if not isinstance(loc, dict):
             errors.append(f"{prefix}: terminal round requires a loc object")
         else:
+            if "self_with_tests" in loc:
+                errors.append(
+                    f"{prefix}: retired v1 LOC field 'self_with_tests' must remain "
+                    "in Git history, not the current registry")
             _check_commit(loc, "snapshot_commit", prefix, errors)
             missing_loc = sorted(LOC_FIELDS - set(loc))
             if missing_loc:
@@ -445,10 +471,10 @@ def validate_module(
 
 def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
     errors: list[str] = []
-    if data.get("schema_version") != 1:
-        errors.append("registry schema_version must be 1")
-    if data.get("methodology") != "module-closure-v1":
-        errors.append("registry methodology must be 'module-closure-v1'")
+    if data.get("schema_version") != 2:
+        errors.append("registry schema_version must be 2")
+    if data.get("methodology") != "module-closure-v2":
+        errors.append("registry methodology must be 'module-closure-v2'")
     updated = data.get("updated_at")
     if not isinstance(updated, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", updated) is None:
         errors.append("registry updated_at must be YYYY-MM-DD")
@@ -638,8 +664,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--registry", type=Path)
     parser.add_argument("--status-page", type=Path)
     parser.add_argument(
-        "--previous", type=Path,
-        help="optional previous registry used to reject skipped state transitions")
+        "--previous-ref",
+        help="Git revision whose registry is compared to reject skipped state transitions")
     parser.add_argument(
         "--print-table", action="store_true",
         help="print the canonical Markdown table instead of checking status.md")
@@ -658,11 +684,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     errors = validate_registry(data, root)
-    if args.previous is not None:
+    if args.previous_ref is not None:
         try:
-            previous = load_registry(args.previous)
+            previous = load_registry_ref(root, args.previous_ref)
         except (OSError, ValueError, json.JSONDecodeError) as error:
-            errors.append(f"cannot read previous registry: {error}")
+            errors.append(f"cannot read previous registry revision: {error}")
         else:
             errors.extend(validate_transitions(previous, data))
 

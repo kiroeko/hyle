@@ -81,7 +81,8 @@ lower-is-better 用 `peer/candidate`。给定预声明 margin `m`，双边等价
 - microbench 只归因；产品变化需要机制证据与 material 消费影响两把钥匙。
 - A/A、known-delta、timer floor 和适用的 order/placement 未通过时结果只能是 `DIAGNOSTIC`。
 - 不为稳定的亚纳秒差异增加常态字段、padding、间接或非自然入口。
-- P1 异常按统一协议的固定调查预算停止；模块不得现场发明新统计方法或第五种 benchmark 姿势。
+- P1 异常按统一协议先区分有效产品失败、fixture/tool 缺陷与环境失格，再在固定调查预算内停止；模块
+  不得现场发明新统计方法或第五种 benchmark 姿势，也不得让后两类纠正耗尽产品修正名额。
 
 模块达到签署条件后，只因真实缺口、correctness、依赖/平台变化或强 peer 的 material 证据重新
 开启。工具链或 Formal 证书过期会使相应证据失效，不会自动证明产品形状错误。

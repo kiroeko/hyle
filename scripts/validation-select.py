@@ -19,7 +19,6 @@ import tempfile
 SCRIPT_DIR = Path(__file__).resolve().parent
 MANIFEST = "cmake/HyleComponents.cmake"
 REGISTRY = "docs/implementation/module-status.json"
-FORMAT_PROOF = "docs/implementation/validation-format-proof.json"
 NATIVE = {".h", ".hpp", ".hh", ".hxx", ".c", ".cc", ".cpp", ".cxx", ".cu", ".cuh", ".inl", ".inc", ".S", ".asm"}
 NATIVE_GATES = {"build", "correctness", "headers", "delivery", "performance"}
 NATIVE_ENV = ("CC", "CXX", "CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "CL", "_CL_",
@@ -168,32 +167,8 @@ def formatting_only(path, before, after):
         line.strip(" \t") for line in new.splitlines()]
 
 
-def format_decisions(before, after):
-    data = after.read(FORMAT_PROOF)
-    if data is None:
-        return {}
-    proof = json.loads(data)
-    if proof.get("schema_version") != 1 or not isinstance(proof.get("files"), list):
-        raise SelectionError("format proof requires schema_version=1 and files array")
-    decisions = {}
-    for item in proof["files"]:
-        path = item["path"]
-        if path in decisions or item.get("classification") not in {"FORMAT_ONLY", "SEMANTIC"}:
-            raise SelectionError("format proof has duplicate path or unknown classification")
-        if not item.get("reviewer") or not item.get("reason"):
-            raise SelectionError("format proof must name reviewer and concrete reason")
-        old, new = before.files.get(path), after.files.get(path)
-        # Historical/stale records have no authority over a new blob pair.
-        # Modes and object types must also match; executable/symlink changes
-        # cannot be concealed by an equality claim about file contents.
-        if old and new and old[:2] == new[:2] and old[1] == "blob" and old[2] == item.get("before_blob") and new[2] == item.get("after_blob"):
-            decisions[path] = item
-    return decisions
-
-
 def classify(before, after, graphs, policy):
     changes, unknown = [], []
-    decisions = format_decisions(before, after)
     for path in sorted(before.files.keys() | after.files.keys()):
         if before.files.get(path) == after.files.get(path):
             continue
@@ -201,8 +176,6 @@ def classify(before, after, graphs, policy):
         same_mode = old_entry and new_entry and old_entry[:2] == new_entry[:2]
         factors = sorted({x for g in graphs if (x := owner(path, g))})
         kind, reason, suites = "unknown", "no reviewed ownership or gate mapping", []
-        decision = decisions.get(path, {})
-        whitespace_sensitive = Path(path).suffix in NATIVE | {".cmake"} or path.endswith("CMakeLists.txt")
         if path == REGISTRY or path == "docs/implementation/status.md":
             kind, reason = "state", "registry/projection maintenance; no product execution"
         elif path.startswith(("docs/", "evidence/")) or path.endswith(".md"):
@@ -211,10 +184,6 @@ def classify(before, after, graphs, policy):
             kind, reason = "format", "editor/format policy; no product semantics"
         elif same_mode and formatting_only(path, before.read(path), after.read(path)):
             kind, reason = "format", "proven JSON or line-preserving native formatting equivalence"
-        elif decision.get("classification") == "FORMAT_ONLY":
-            kind, reason = "format", "exact blob-bound format proof: " + decision["reviewer"] + ": " + decision["reason"]
-        elif same_mode and whitespace_sensitive and decision.get("classification") != "SEMANTIC" and re.sub(rb"\s+", b"", before.read(path) or b"") == re.sub(rb"\s+", b"", after.read(path) or b""):
-            kind, reason = "unproven_format", "whitespace-only diff lacks safe equivalence; no build/P1; bind FORMAT_ONLY or SEMANTIC evidence in " + FORMAT_PROOF
         elif path == "scripts/check-docs.py":
             kind, reason = "tool", "documentation checker executes in the mandatory docs gate"
         else:
@@ -245,7 +214,7 @@ def classify(before, after, graphs, policy):
                     kind, reason = "benchmark", "harness change requires explicit frozen P1 card; no automatic sampling"
             elif path in {"include/hyle/version.h", "include/hyle/visibility.h"}:
                 kind, reason = "package", "shared public version/visibility contract changed"
-        if kind in {"unknown", "unproven_format"}:
+        if kind == "unknown":
             unknown.append(path)
         changes.append({"path": path, "kind": kind, "factors": factors,
                         "reason": reason, "suites": sorted(set(suites))})
@@ -257,22 +226,6 @@ def read_json(path):
         return json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise SelectionError(f"invalid JSON {path}: {exc}") from exc
-
-
-def verified_files(files, label):
-    if not isinstance(files, dict) or not files:
-        raise SelectionError(f"native context requires non-empty {label} file/hash mapping")
-    for name, expected in files.items():
-        if not isinstance(name, str) or not Path(name).is_absolute() or not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
-            raise SelectionError(f"native {label} requires absolute file paths and SHA256 digests")
-        path = Path(name)
-        if not path.is_file() or digest(path.read_bytes()) != expected.lower():
-            raise SelectionError(f"native {label} file identity mismatch: {name}")
-
-
-def directory_digest(path):
-    return digest({p.relative_to(path).as_posix(): digest(p.read_bytes())
-                   for p in sorted(Path(path).rglob("*")) if p.is_file()})
 
 
 def environment_identity(context=None, *, native=False):
@@ -289,20 +242,12 @@ def environment_identity(context=None, *, native=False):
             for key in ("compiler_path", "compiler_id", "compiler_version"):
                 if not isinstance(toolchain.get(key), str) or not toolchain[key].strip():
                     raise SelectionError(f"native context requires toolchain.{key}")
-            verified_files({toolchain["compiler_path"]: toolchain.get("compiler_sha256")}, "compiler")
-            if "compiler_files" in toolchain:
-                verified_files(toolchain["compiler_files"], "compiler support")
+            compiler = Path(toolchain["compiler_path"])
+            if not compiler.is_absolute() or not compiler.is_file():
+                raise SelectionError("native context requires an existing absolute compiler_path")
             stdlib = toolchain.get("stdlib")
             if not isinstance(stdlib, dict) or not stdlib.get("id"):
-                raise SelectionError("native context requires concrete stdlib id and files")
-            verified_files(stdlib.get("files"), "stdlib")
-            roots = stdlib.get("include_roots")
-            if not isinstance(roots, dict) or not roots:
-                raise SelectionError("native stdlib requires complete include_roots tree hashes")
-            for name, expected in roots.items():
-                path = Path(name)
-                if not path.is_absolute() or not path.is_dir() or not isinstance(expected, str) or directory_digest(path) != expected:
-                    raise SelectionError(f"native stdlib include tree identity mismatch: {name}")
+                raise SelectionError("native context requires a concrete stdlib id")
             flags = toolchain.get("flags")
             required = {"CMAKE_CXX_FLAGS", "CMAKE_CXX_FLAGS_RELEASE"}
             if not isinstance(flags, dict) or set(flags) != required or not all(isinstance(v, str) for v in flags.values()) or not flags["CMAKE_CXX_FLAGS_RELEASE"].strip():
@@ -341,19 +286,9 @@ def p1_scope(snapshot, graph, policy, factor):
         if relevant:
             inputs[path] = entry
     input_hash = digest({"factor": factor, "dependencies": sorted(dependencies), "files": inputs})
-    return {"factor": factor, "dependencies": sorted(dependencies), "product_input_hash": input_hash,
-            "input_paths": sorted(inputs), "claim_key": "v2-" + factor + "-" + input_hash}
-
-
-def spent_p1_scopes(root, scopes):
-    directory = p1_claim(root, "unused").parent
-    # Legacy receipts did not retain the factor. Guessing its owner would grant
-    # a fresh allowance on tool upgrade; preserve these opaque claims for audit.
-    legacy = [p.name for p in directory.glob("p1-*.claim") if not p.name.startswith("p1-v2-")]
-    if legacy:
-        return "legacy P1 claim lacks factor attribution; retain and audit before new sampling: " + ", ".join(sorted(legacy))
-    spent = [name for name, scope in scopes.items() if p1_claim(root, scope["claim_key"]).exists()]
-    return "factor/dependency inputs already spent their one P1 attempt: " + ", ".join(sorted(spent)) if spent else ""
+    return {"factor": factor, "dependencies": sorted(dependencies),
+            "product_input_hash": input_hash, "input_paths": sorted(inputs),
+            "scope_hash": digest({"factor": factor, "product_input_hash": input_hash})}
 
 
 def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=None):
@@ -408,7 +343,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
         row["identity"] = {"candidate_tree": after.tree,
                            "contract_hash": digest({"gate": name, "commands": row["commands"],
                                                     "policy": policy, "card": read_json(card_path) if card_path else None,
-                                                    "previous_registry": before.files.get(REGISTRY) if name == "closure" else None}),
+                                                    "baseline_registry": before.files.get(REGISTRY) if name == "closure" else None}),
                            "toolchain": identity["toolchain"], "machine_profile": identity["machine_profile"],
                            "observed_host": identity.get("observed_host"), "selector_hash": tool_hash}
         row["cache_key"] = digest(row["identity"])
@@ -420,7 +355,9 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     registry_changed = before.files.get(REGISTRY) != after.files.get(REGISTRY)
     closure_argv = ["{python}", "scripts/check-module-closure.py"]
     if registry_changed:
-        closure_argv += ["--previous", "{previous_registry}"]
+        if not before.commit:
+            raise SelectionError("registry transition requires an immutable Git baseline")
+        closure_argv += ["--previous-ref", before.commit]
     gate("closure", "maintenance", True,
          "mandatory registry contract" + (" including explicit baseline snapshot transition check" if registry_changed else ""),
          [closure_argv])
@@ -480,8 +417,9 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                 issues.append("API and algorithm must both be FROZEN")
             if not context:
                 issues.append("P1 requires explicit toolchain and machine profile context")
-            elif not all(identity["toolchain"].get(key) for key in ("compiler_sha256", "stdlib", "flags")):
-                issues.append("P1 toolchain must identify compiler bytes, standard library and build flags")
+            elif not all(identity["toolchain"].get(key) for key in
+                         ("compiler_path", "compiler_id", "compiler_version", "stdlib", "flags")):
+                issues.append("P1 toolchain must identify compiler, standard library and build flags")
             machines = after.read("scripts/perf-machines.json")
             profiles = json.loads(machines).get("machine_profiles", {}) if machines else {}
             machine_profile = identity["machine_profile"]
@@ -510,7 +448,7 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
                 for peer, path in sorted(peers.items()):
                     argv += ["--peer", peer + "=" + path]
             p1.update(status="BLOCKED" if issues else "SELECTED", reason="; ".join(issues) if issues else
-                      "immutable API/algorithm candidate; one P1 bundle after every selected prerequisite passes",
+                      "immutable API/algorithm candidate; bounded P1 bundle after every selected prerequisite passes",
                       commands=[argv] if not issues else [], factors=factors or [])
             p1["identity"]["contract_hash"] = digest({"card": card, "contract_blob": digest(contract_bytes or b"")})
             p1["cache_key"] = digest(p1["identity"])
@@ -530,8 +468,6 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     if configure_gate["status"] == "REUSED" and any(g["status"] == "SELECTED" and
             g["kind"] in {"correctness", "headers"} for g in gates):
         configure_gate.update(status="SELECTED", reason="pending native gates need local build prerequisites; evidence alone is not a build tree")
-    if p1["status"] == "SELECTED" and (spent := spent_p1_scopes(root, p1_scopes)):
-        p1.update(status="BLOCKED", reason=spent)
     return {"schema_version": 2, "baseline_commit": before.commit, "baseline_tree": before.tree,
             "candidate_commit": after.commit, "candidate_tree": after.tree,
             "changes": changes, "selected_factors": sorted(selected_factors), "p1_scopes": p1_scopes,
@@ -570,11 +506,6 @@ def cached_receipt(cache, gate, root):
         except (SelectionError, ValueError):
             return None
     return receipt
-
-
-def p1_claim(root, key):
-    common = Path(git(root, "rev-parse", "--git-common-dir").decode().strip())
-    return root / common / "hyle-validation-attempts" / ("p1-" + key + ".claim")
 
 
 def write_json(path, data):
@@ -627,12 +558,8 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
     scratch.mkdir(parents=True, exist_ok=True)
     build = scratch / ("build-" + digest({"tree": plan["candidate_tree"], "context": execution_identity,
                                        "factors": plan["selected_factors"]})[:20])
-    before = Snapshot(root, plan["baseline_commit"])
-    previous = scratch / ("previous-" + plan["baseline_tree"] + ".json")
-    if before.read(REGISTRY) is not None:
-        previous.write_bytes(before.read(REGISTRY))
     replacements = {"{python}": sys.executable, "{root}": str(root), "{build}": str(build),
-                    "{scratch}": str(scratch), "{previous_registry}": str(previous)}
+                    "{scratch}": str(scratch)}
     native_env = None
     if expensive:
         # A native smoke/qualifier may launch nested CMake processes. Bind the
@@ -665,26 +592,6 @@ def _execute_locked(root, plan, cache, scratch, *, context=None):
         if row["id"] == "p1":
             if Snapshot(root, "WORKTREE").tree != plan["candidate_tree"]:
                 row.update(status="BLOCKED", reason="candidate drifted while prerequisites ran; no P1 attempt started")
-                failure = True
-                continue
-            # Shared Git-common cache is the default across worktrees. O_EXCL
-            # grants at most one claimant even when two plans raced.
-            created_claims = []
-            try:
-                if spent_p1_scopes(root, plan["p1_scopes"]):
-                    raise FileExistsError
-                for factor, scope in sorted(plan["p1_scopes"].items()):
-                    claim = p1_claim(root, scope["claim_key"])
-                    claim.parent.mkdir(parents=True, exist_ok=True)
-                    with claim.open("x", encoding="utf-8") as stream:
-                        created_claims.append(claim)
-                        json.dump({"schema_version": 2, "scope": scope, "candidate_tree": plan["candidate_tree"], "identity": row["identity"]}, stream)
-            except FileExistsError:
-                # No qualifier started. Release only reservations acquired by
-                # this attempt; never delete a prior or competing claim.
-                for claim in created_claims:
-                    claim.unlink()
-                row.update(status="BLOCKED", reason="another execution already claimed a factor's P1 attempt")
                 failure = True
                 continue
         logs, verdict = [], "PASS"
@@ -753,8 +660,8 @@ def main(argv=None):
     parser.add_argument("--base", required=True)
     parser.add_argument("--candidate", default="HEAD", help="Git commit or WORKTREE (maintenance only)")
     parser.add_argument("--context", type=Path, help="exact toolchain and machine_profile JSON")
-    parser.add_argument("--p1-card", type=Path, help="explicit frozen API/algorithm candidate and one P1 command")
-    parser.add_argument("--cache", type=Path, help="persistent evidence/attempt ledger; defaults to Git common dir")
+    parser.add_argument("--p1-card", type=Path, help="explicit frozen API/algorithm candidate and P1 qualification command")
+    parser.add_argument("--cache", type=Path, help="persistent PASS evidence cache; defaults to Git common dir")
     parser.add_argument("--scratch", type=Path, default=Path(".scratch/validation"))
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
