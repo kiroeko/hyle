@@ -389,7 +389,7 @@ qualification；若预注册判据仍证明固定产品劣化，本轮进入 `BL
 SHA-256 `c4793256dfe376d82feb4beeb3b5d9789f90666bd9c981bd4a9323d108f4ea5a`，contract SHA-256
 `3009a1294fdc7004b365e8af79c7a5d13f237e9ffaa540c722f105cc7b71d5ef`。n=15 已足够裁决，未升级为
 n=31；qualification/performance 均 `PASS`。LRU 八个 strata 全部 `WIN`，median advantage
-`1.2243–1.2728`。safe Unicode 八项全部 `PARITY` 且 5% NI `PASS`，median `0.9863–1.0102`；七项 CI
+`1.2223–1.2728`。safe Unicode 八项全部 `PARITY` 且 5% NI `PASS`，median `0.9863–1.0102`；七项 CI
 跨 1，余下一项 CI 完全高于 1。第三候选的 6/8 固定劣化已消失，没有通过换顺序、缩 margin 或挑样掩盖。
 
 精确 source archive 为
@@ -409,3 +409,26 @@ n=31；qualification/performance 均 `PASS`。LRU 八个 strata 全部 `WIN`，m
 
 两个 macOS 环境是不同硬件，不把 static/shared 两种 linkage 误计为两台机器。两者只提供 correctness /
 portability 事实；当前 performance profile `M1-MAC` 仍只登记 MacBook Air 且未绑定 Formal 主机身份。
+
+## 终局独立红队与 VERIFIED 回执
+
+独立只读红队逐项攻击 `3ba50461` 的六种 safe conversion、候选身份和两份性能合同，结论为 `PASS`：
+
+- 参数、null/empty、完整 validation、错误 code-unit offset、exact sizing、output-too-small 不写和最终完整写入
+  语义保持一致；UTF-16 按 host endian 选择 provider 路线，UTF-32 保持 native code point 语义；
+- 公开头、API、`UtfResult` layout、符号签名和正常 metadata 没有变化；修正覆盖六种转换，不是只服务
+  UTF-8→UTF-16 workload 的 benchmark 特化；
+- v7 contract、consumer shape、adapter、候选与 manifest provenance 为 `EXACT`，verifier 为
+  `QUALIFIED` 且 `paths_verified=true`；Unicode 两侧使用同一 provider、validate、size、convert 和 typed
+  result 合同；LRU 两侧使用相同 hash、allocator、OOM/rollback 与 entry/weight 双预算；
+- manifest 的 LRU 最小 median 是 `1.2223276`，文档已据此校正为 `1.2223–1.2728`；这是事实笔误修正，
+  没有重跑测试或 P1。
+
+四个 factor 的 scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
+performance 门均为 `PASS`，可由 `CANDIDATE` 进入 `VERIFIED`。迁移前 registry 快照为
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-terminal-verified.json`，
+SHA-256 `9cc4537856ce2d7685377034886877f948a3654241a808e50f50e0ae36b2b024`。
+
+不可变候选 LOC 由 `loc-report.py --self-check` 计算且均为 `PASS`：sequential `container` 7,962、
+`container_concurrent` 1,600、`container_queue` 1,101、`container_text` 2,084；四个活动 factor 合计
+12,747。加上已经冻结的 `container_intrusive` 1,590，消费者所见 Container 产品实现合计 14,337。

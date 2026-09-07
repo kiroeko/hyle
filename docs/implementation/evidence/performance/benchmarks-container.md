@@ -9,7 +9,7 @@ margin、顺序或样本数：
 
 | factor / workload | 同合同 peer | 当前结果 | 可声明边界 |
 |---|---|---|---|
-| `container` / entry+weight LRU mixed access | Abseil `38f8c1535de9ebc12c6340e5c1c8ebd72afde560` adapter；同 hash、allocator、recoverable OOM、rollback、typed result、per-entry/total weight 与 entry/weight limits | 8/8 strata `WIN`；median advantage `1.2243–1.2728`；8/8 NI `PASS` | 冻结 4096-entry model-cache 形状胜出，不外推所有 cache 或 hash workload |
+| `container` / entry+weight LRU mixed access | Abseil `38f8c1535de9ebc12c6340e5c1c8ebd72afde560` adapter；同 hash、allocator、recoverable OOM、rollback、typed result、per-entry/total weight 与 entry/weight limits | 8/8 strata `WIN`；median advantage `1.2223–1.2728`；8/8 NI `PASS` | 冻结 4096-entry model-cache 形状胜出，不外推所有 cache 或 hash workload |
 | `container_text` / safe UTF-8→UTF-16 caller buffer | simdutf `2d4e249dcfd978b39dd567b156f20a43db97377b`；同 provider、validation-with-errors、exact sizing、endian-correct valid conversion、typed status/offset/count 与 caller buffer | 8/8 `PARITY`、8/8 NI `PASS`；median `0.9863–1.0102`；7/8 CI 跨 1，余下一项只证明 HYLE 小幅有利 | 同语义正常路径未证明固定劣化，不声明普遍更快 |
 | `container_concurrent` / read-mostly membership | oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；同 hash/equality、system allocator、8 worker、分布、查询量、生命周期与 checksum | 双顺序 `PARITY`、NI `PASS`；median `0.9882/0.9777`，CI 均跨 1 | 冻结 membership 形状 5% 非劣，不声明 exact 胜出 |
 | `container_queue` / unbounded typed MPMC handoff | 同一 oneTBB revision；同 allocator、recoverable OOM/retry、producer/consumer participation、setup/drain、payload 与 FIFO conservation | 双顺序 `WIN`、NI `PASS`；median `1.2888/1.2614` | 冻结 4P4C handoff 形状胜出，不外推其他 queue policy |

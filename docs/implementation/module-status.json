@@ -1075,7 +1075,7 @@
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v6-identity-p1-resume",
@@ -1092,17 +1092,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v6 CANDIDATE：v7 weighted-LRU 同合同 peer、约 134ms membership 窗口与产品/factor 归属已通过预采样 oracle，产品/API/算法不变并冻结在 111c28ea；下一步只运行声明的正式验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container-v6 VERIFIED：sequential capability、交付、文档与独立红队通过；同合同 weighted-LRU 8/8 WIN，5% P1 非劣门通过，产品/API/算法冻结在 111c28ea。"
     },
     {
       "module": "util",
@@ -1286,7 +1296,7 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "container-concurrent-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete concurrent map, set and vector product while equalizing allocator/resource and membership semantics for the frozen read-mostly P1 workload, then replay affected correctness, delivery, documentation and red-team gates.",
@@ -1301,21 +1311,31 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v2 CANDIDATE：同合同 membership 只提高进程窗口分辨率并冻结在 111c28ea，hash/allocator/语义/topology 不变；正式采样必须从唯一 n=15 开始。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container_concurrent v2 VERIFIED：并发表能力、交付、文档与独立红队通过；约 134ms 同合同 membership 双顺序 PARITY 且 5% P1 非劣门通过，候选为 111c28ea。"
     },
     {
       "module": "container_queue",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "container-queue-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete role-specific and unbounded typed queue product while equalizing allocator/resource, OOM, result, setup and producer-participation semantics for the frozen P1 handoff workload, then replay affected gates.",
@@ -1330,21 +1350,31 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v2 CANDIDATE：同合同 queue adapter 与原 scale 不变，产品/factor attribution 已修正并冻结在 111c28ea，等待同一候选正式重放。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container_queue v2 VERIFIED：queue 能力、交付、文档与独立红队通过；同合同 unbounded 4P4C handoff 双顺序 WIN 且 5% P1 非劣门通过，候选为 111c28ea。"
     },
     {
       "module": "container_text",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
@@ -1359,17 +1389,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_text v2 CANDIDATE：六种 safe conversion 的 terminal-result 实现冻结于 3ba50461；定向正确性、语义 oracle 与成功路径 codegen 已通过，只等待最后一次 v7 qualification。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "container_text v2 VERIFIED：六种 safe conversion、三平台、三交付、文档与独立红队通过；同合同 Unicode 8/8 PARITY 且 5% P1 非劣门通过，候选为 3ba50461。"
     }
   ]
 }
