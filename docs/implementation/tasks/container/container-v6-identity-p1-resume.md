@@ -271,3 +271,34 @@ process-level ratio CI 大幅摆动。下一候选不会换 API、peer、分布�
 `C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-second-candidate.json`，
 SHA-256 `60a8ad7aca27092ef43cbc753e509366b7661c696b55e5e2a381ecec9fc6d80d`。四个 factor 共同进入
 `CANDIDATE`，不得再改变候选树；下一步严格运行两份新合同各自的首轮 `n=15`。
+
+## 第二候选 P1 与 `container_text` 定向退回
+
+`container-product-p1-v7` 自动按合法 `n=15 -> n=31` 路径完成 qualification，manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-single-v7-evidence\manifest.json`，SHA-256
+`9e277f514978582be8fe023e091db20f279f02af124e826f7a4ab94d9a1ee785`。weighted-LRU 8/8 strata 为
+`WIN`，median advantage `1.2276–1.2693`；safe UTF-8→UTF-16 8/8 strata 为 `PARITY` 且 5% NI
+全部 `PASS`，但 median advantage 稳定为 `0.9666–0.9854`，每个 99% CI 上界都低于 1。
+
+`container-concurrent-product-p1-v3` 在首轮 `n=15` 直接 qualification，manifest 位于
+`C:\public\project-hyle\_validation\container-v6\qual-concurrent-v3-evidence\manifest.json`，SHA-256
+`f16b135ff6a1b0974055ae63940e88df44f2ffe44c71841d6417930eb06eb196`。membership 双顺序为
+`PARITY`、5% NI `PASS`，median `0.9882/0.9777` 且 CI 跨 1；queue 双顺序为 `WIN`，median
+`1.2888/1.2614`。因此 `container`、`container_concurrent`、`container_queue` 的本轮 P1 证据合法，
+不因相邻 factor 的后续修正撤销。
+
+对 Unicode 唯一机制检查比较了 MSVC 19.50 Release/LTO-off 的 candidate 与 peer object code：两个
+`UtfReplay` 循环除 call relocation 外逐指令同形，peer adapter 也未被 inline；差异位于产品
+`validation_result()`。HYLE 对常见 `simdutf::SUCCESS` 仍执行 enum bounds check 和间接 jump table，
+peer 则先直接 fast-success，只在错误时映射状态。这是同语义正常调用路径的确定成本，不是 placement
+或顺序幽灵。
+
+有限 FIX 集增加且只增加 `CONT6-F06`：令 `validation_result()` 对 success 直接构造结果，错误路径继续
+调用既有映射；不得改变公开 API/layout、错误语义、provider、workload 或 margin。修后只验证 affected
+Unicode correctness/oracle、三平台 Container 选择测试和新 candidate 的 v7 performance；未改变产品字节
+的 factor 继续复用已绑定证据。
+
+只有 `container_text` 从 `CANDIDATE` 退回 `AUDITED`；其前态 registry 快照为
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-unicode-correction.json`，
+SHA-256 `3a5d1d3df110e72285eb2e49bd953b37458c9469720ca954f6187c76f8504bff`。其他三个 factor 保持
+`CANDIDATE`，不重新运行已经合法且不受影响的 concurrent qualification。

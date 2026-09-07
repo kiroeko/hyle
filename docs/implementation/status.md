@@ -38,7 +38,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CANDIDATE：同合同 membership 只提高进程窗口分辨率并冻结在 111c28ea，hash/allocator/语义/topology 不变；正式采样必须从唯一 n=15 开始。 |
 | container_queue | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CANDIDATE：同合同 queue adapter 与原 scale 不变，产品/factor attribution 已修正并冻结在 111c28ea，等待同一候选正式重放。 |
-| container_text | CANDIDATE | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CANDIDATE：无 alias 身份迁移、typed Unicode 同合同 adapter 与 simdutf build owner 文档已冻结在 111c28ea，等待正式候选重放。 |
+| container_text | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 AUDITED：111c28ea 的合法 P1 揭示 safe Unicode 8/8 同方向约 1.5–3.4% 损失；汇编定位为成功结果仍进入错误码 jump table，只允许一次不改 API/语义的 fast-success 修正。 |
 <!-- END GENERATED MODULE STATUS -->
 
 产品状态流固定为：
