@@ -11,6 +11,7 @@ cmake --build build
 ./build/installed_io_http2_consumer
 ```
 
-The same project consumes shared and static HYLE packages. A shared `hyle_io` contains the
-private nghttp2 archive and needs no nghttp2 DLL. A static package propagates the pinned
-archive through its imported target graph.
+The same project consumes shared and static HYLE packages through `hyle::io`; internal
+factor artifact names are package details. The shared product closure contains the private
+nghttp2 archive and needs no nghttp2 DLL. A static package propagates the pinned archive
+through its imported target graph.

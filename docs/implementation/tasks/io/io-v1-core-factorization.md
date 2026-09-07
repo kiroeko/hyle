@@ -1,14 +1,18 @@
-# IO v1：异步 IO core 因子化与收口
+# IO Core v1：异步传输因子化与收口
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 本卡是现有 `io` component 的当前活动轮。它先冻结最终 ownership 和审计预算；在进入 `AUDITED` 并
+> 本卡是现有 `io_core` factor 的当前活动轮。其 round ID 在身份纠正前已冻结为
+> `io-v1-core-factorization`；component 已通过
+> [`io-core-factor-identity-migration-v1`](../build/io-core-factor-identity-migration-v1.md)
+> 从含混的 `io` 纠正为 `io_core`。公共产品仍是 `hyle::io`，公开 namespace/include 仍是
+> `hyle::io` / `<hyle/io/...>`。本卡先冻结最终 ownership 和审计预算；在进入 `AUDITED` 并
 > 冻结有限 FIX 集以前，不修改产品源码。TLS、HTTP/1、HTTP/2 与 transfer 分别使用已登记的 factor ID
 > 和独立 closure card，本卡不替它们签署功能或性能结论。
 
 ## Closure card（`SCOPED`）
 
-- component / owner / round ID：`io` / IO maintainers / `io-v1-core-factorization`；
+- component / owner / round ID：`io_core` / IO maintainers / `io-v1-core-factorization`；
 - task kind：`REFACTOR`；
 - baseline commit：`2e4b0606b08f57ac15a3717f8b0e9be82db16123`；
 - 进入原因与 demand/defect ID：`IO-V1-OWNERSHIP-01`、`IO-V1-CAPABILITY-02`、
@@ -19,7 +23,7 @@
   大模型文件，并通过多连接 TCP/local IPC 服务请求；普通 HYLE 服务端需要 DNS、signal-driven shutdown、
   deadline/cancel 与明确 backpressure。llama.cpp remote/server/model-load 路径只作真实形状输入，不把其
   同步 API 原样复制到本模块；
-- 范围：把现有 `io` 最终收束为 scheduler-bound async IO core，拥有 completion/backend 内部机制、
+- 范围：把现有聚合实现最终收束为 scheduler-bound `io_core`，拥有 completion/backend 内部机制、
   `IoContext`、file、TCP/UDP、DNS、signal、local IPC 及其通用 endpoint/error/cancel/deadline/buffering
   合同；反向追踪全部现有公开入口；决定 raw Proactor 是完整 expert API 还是 internal seam；冻结自然
   C++ API、复杂度与成本；授权后续从旧 `io` target 移除由其他 IO factor 接管的源码/头/依赖；
@@ -68,8 +72,8 @@
 
 | Existing family | final owner candidate | reason / next audit |
 |---|---|---|
-| `proactor.*`, capabilities, `io_context.*` | `io` | Proactor currently carries internal backend tokens and is consumed by IoContext; audit public-vs-internal status |
-| `net*`, `tcp.*`, `udp.*`, `file.*`, `dns.*`, `signal.*` | `io` | same scheduler/cancel/completion lifecycle; audit endpoint, error, local IPC, vector/direct/bulk gaps |
+| `proactor.*`, capabilities, `io_context.*` | `io_core` | Proactor currently carries internal backend tokens and is consumed by IoContext; audit public-vs-internal status |
+| `net*`, `tcp.*`, `udp.*`, `file.*`, `dns.*`, `signal.*` | `io_core` | same scheduler/cancel/completion lifecycle; audit endpoint, error, local IPC, vector/direct/bulk gaps |
 | `tls.*` | `io_tls` | external provider/config/session lifecycle and feature cost are independent |
 | `http.*` + picohttpparser integration | `io_http` | protocol/client/server/body lifecycle distinct from transport mechanism |
 | `http2.*` + nghttp2 integration | `io_http2` | connection/stream/flow-control lifecycle and optional provider are distinct |
@@ -77,8 +81,8 @@
 
 本轮允许与当前正在提取的 factor 同时处于活动状态，仅为一次 ownership move：本卡授权从旧 `io`
 ownership/target 删除，新 factor 的独立 `AUDITED` 卡授权新增 owner/API/target；不得让两个 factor 同时
-声称同一实现或 performance authority。`io` 的 API/usability freeze 必须先完成，随后按
-`io_tls → io_http → io_http2 → io_transfer` 处理；最后 `io` 才绑定 candidate 并裁决。
+声称同一实现或 performance authority。`io_core` 的 API/usability freeze 必须先完成，随后按
+`io_tls → io_http → io_http2 → io_transfer` 处理；最后 `io_core` 才绑定 candidate 并裁决。
 
 ## Audit queue（进入 `AUDITED` 前必须清零）
 
@@ -93,8 +97,7 @@ ownership/target 删除，新 factor 的独立 `AUDITED` 卡授权新增 owner/A
 
 ## Current decision
 
-`SCOPED / OWNER-DEFERRED`。本卡尚未声明任何 capability `COMPLETE`、API `FROZEN`、candidate 或性能
-结论，也没有修改产品代码。2026-09-03 owner 纠正了施工优先级：先执行 Mem 全产品只读 replay，
-因此本卡停在已经合法进入的 `SCOPED`，不得继续 IO 审计或进入 `AUDITED`。这不是产品 blocker，也
-不伪造 `BLOCKED`；恢复条件是 owner 明确恢复 IO 顺序，并重新确认 baseline、reference identity 和预算
-是否仍有效。
+`SCOPED / ACTIVE`。owner 于 2026-09-08 明确恢复 IO，并纠正内部 factor 身份为 `io_core`；原 baseline、
+P1 tier、机器、仪器和 8-hour 有界预算继续有效。身份迁移只修正 component/target/目录和当前文档，
+没有改变公共 API 或算法，也不冒充 `AUDITED`。下一门是完成本卡 audit queue、四组推理 consumer 与成熟
+peer 对账，并冻结有限 `FIX/BORROW/DEFER/REJECT` 集；在此之前仍不得修改产品实现。

@@ -7,7 +7,7 @@
 DEFER_TASKRUN(+SINGLE_ISSUER,≥6.1)把完成 task_work 全延到 GETEVENTS enter 才跑,理论最契合"每核一 ring、单消费者"。曾因"挂死基本 send/recv"撤下(见 io-pipelined-hang-hunt 的 reap-path 次要因),本轮认真接回。
 
 ## 1. 根因一:SINGLE_ISSUER 线程绑定(探针 errno=17 铁证)
-加 DEFER 到 setup flag 后,`hyle_io_net_test` 的第一个用例 `CoAwaitSendRecvRoundTrip` 就挂。**先疑自己**:先前撤下时我归因"reap 路径 submit-only enter 不带 GETEVENTS",以为修好 reap 就行——但修了 reap-path GETEVENTS-peek 后仍挂。
+加 DEFER 到 setup flag 后,`hyle_io_core_net_test` 的第一个用例 `CoAwaitSendRecvRoundTrip` 就挂。**先疑自己**:先前撤下时我归因"reap 路径 submit-only enter 不带 GETEVENTS",以为修好 reap 就行——但修了 reap-path GETEVENTS-peek 后仍挂。
 
 **探针**:在 reap 的每次 `io_uring_enter` 后打 `errno`(env-gated)。铁证:
 ```

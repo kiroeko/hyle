@@ -807,9 +807,9 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "if(NOT TARGET hyle_container_intrusive OR TARGET hyle::container_intrusive)\n"
 "  message(FATAL_ERROR \"transport factor/product projection is invalid\")\n"
 "endif()\n"
-"hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
-"hyle_contract_require_direct_public_edge(hyle_io hyle_timer_queue)\n"
-"hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n"
+"hyle_contract_require_direct_public_edge(hyle_io_core hyle_time)\n"
+"hyle_contract_require_direct_public_edge(hyle_io_core hyle_timer_queue)\n"
+"hyle_contract_require_direct_public_edge(hyle_io_core hyle_sched)\n"
 "hyle_contract_require_direct_public_edge(hyle_sched hyle_container_intrusive)\n")
 _hyle_contract_run("supported transport direct PUBLIC edges" TRUE
   "${CMAKE_COMMAND}" -S "${_transport_source}"

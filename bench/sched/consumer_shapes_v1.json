@@ -59,7 +59,7 @@
       ],
       "sources": [
         {
-          "path": "src/io/proactor.cc",
+          "path": "src/io_core/proactor.cc",
           "sha256": "a40a3ed7a9c6624b5a1e380faedc6ee5c745898dd0fa2fc4db7e13c53d1fd519"
         },
         {

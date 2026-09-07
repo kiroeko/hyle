@@ -68,7 +68,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container_text | core, mem, container | platform |
 | util_runtime | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container_queue, timer_queue |
-| io | core, mem, container_text, time, timer_queue, sched | container |
+| io_core | core, mem, container_text, time, timer_queue, sched | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
@@ -98,7 +98,7 @@ closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真�
 | container | container_intrusive, container, container_concurrent, container_queue, container_text |
 | util | util_core, util_runtime |
 | sched | sched |
-| io | io |
+| io | io_core |
 | compute | compute |
 | graph | graph |
 
@@ -181,7 +181,7 @@ cancellation hlist、arena/deferred-work forward chain 等重复形状则应在�
 10. container；
 11. util-runtime（registry/component ID 为 `util_runtime`）；
 12. sched；
-13. io。
+13. io（当前基础传输 factor ID 为 `io_core`）。
 
 这一遍必须先完成每个问题域的四组推理证据（独立 ggml + llama.cpp、ds4、vLLM、SGLang）真实需要、
 成熟库通用能力、定义性能力和现有 HYLE 承诺的超集，再统一做跨域去重、归属和质因数分解。

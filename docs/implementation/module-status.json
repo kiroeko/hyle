@@ -12,6 +12,11 @@
       "from": "util",
       "to": "util_runtime",
       "evidence": "docs/implementation/tasks/build/util-runtime-factor-identity-migration-v1.md"
+    },
+    {
+      "from": "io",
+      "to": "io_core",
+      "evidence": "docs/implementation/tasks/build/io-core-factor-identity-migration-v1.md"
     }
   ],
   "modules": [
@@ -1218,11 +1223,11 @@
       "summary": "sched-v4 CLOSED/FROZEN：五项控制合同缺陷已关闭；三平台、sanitizer、三交付、直接消费者、易用性/文档、内部复用、候选后红队及同合同 Marl/oneTBB P1 工程门全部通过。"
     },
     {
-      "module": "io",
+      "module": "io_core",
       "product_state": "SCOPED",
       "round_id": "io-v1-core-factorization",
       "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
-      "scope": "Refactor the existing aggregate IO component into the scheduler-bound async IO core, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the aggregate no longer contains unaudited higher-layer code.",
+      "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
       "non_goals": "TLS, HTTP1, HTTP2 or transfer semantic closure in this card; changes to closed lower factors without a named trigger; Compute or Graph work; Native FFI or C API; benchmark-shaped entry points; cross-platform or all-operation SOTA claims.",
       "baseline_commit": "2e4b0606b08f57ac15a3717f8b0e9be82db16123",
       "performance_tier": "P1",
@@ -1242,7 +1247,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io-v1 保持 SCOPED 且由 owner 暂停：scope、baseline 与预算已经冻结，尚未进入 AUDITED，也没有产品改动；只有 owner 明确恢复后才能继续。"
+      "summary": "io_core v1 已恢复并保持 SCOPED：内部 factor 身份由含混的 io 纠正为 io_core，公共 io 产品 façade/namespace/include 不变；下一门是完成能力审计并冻结有限 FIX 集。"
     },
     {
       "module": "io_tls",

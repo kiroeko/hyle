@@ -168,14 +168,15 @@ container_queue -> PUBLIC core mem
 container_text -> PUBLIC core mem container; PRIVATE platform
 util_runtime -> PUBLIC core error mem container container_text
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container_queue timer_queue
-io          -> PUBLIC core mem container_text time timer_queue sched; PRIVATE container
+io_core     -> PUBLIC core mem container_text time timer_queue sched; PRIVATE container
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
 
-`io_tls`、`io_http`、`io_http2` 与 `io_transfer` 已登记为 `QUEUED`，但不属于上述可构建图。现有机器 ID
-`io` 在后续拆分中承载 IO core（completion/file/net/IPC）语义，避免为概念改名制造状态身份迁移；
-`hyle::io` façade 在各因子分别收口前仍只投影现有 `io` 根。保留项禁止 target metadata 和产品根，
+`io_tls`、`io_http`、`io_http2` 与 `io_transfer` 已登记为 `QUEUED`，但不属于上述可构建图。现有基础
+传输机器 ID 已通过显式一对一身份迁移纠正为 `io_core`，承载 completion/file/net/IPC 语义；这避免
+它与完整 `io` 用户产品 façade 同名。`hyle::io` façade 在各协议因子分别收口前仍只投影 `io_core`
+根。保留项禁止 target metadata 和产品根，
 `HYLE_DEV_FACTORS=all` 只选择 `HYLE_IMPLEMENTED_COMPONENTS`，显式选择保留项会以可诊断错误失败。
 
 `PUBLIC` 表示消费者编译或链接本 factor 时也需要该 factor 依赖；`PRIVATE` 表示只服务本 factor 实现。
@@ -193,7 +194,7 @@ header seam，不能用来伪装外部依赖或隐藏跨 factor 调用。当前 
 Time。Platform façade 聚合 `platform/platform_thread/platform_fs`，Mem façade 聚合
 `mem/mem_vm/mem_reclaim`；
 内部 factor 仍只链接自己实际使用的 factor，不能链接 façade。sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
-但 cancel callback 已迁移 hlist 并形成真实 direct edge。io、compute 与 graph 的当前公开面都暴露 sched
+但 cancel callback 已迁移 hlist 并形成真实 direct edge。io_core、compute 与 graph 的当前公开面都暴露 sched
 类型，因此 sched
 是无条件 `PUBLIC` 边；无 fcontext 平台会诚实拒绝这三个产品根。未来若要交付 raw proactor 或
 host-only compute，必须先拆成拥有独立公开头与 journey 的真实 factor，不能只从图上删边。

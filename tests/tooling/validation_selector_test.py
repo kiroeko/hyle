@@ -124,7 +124,7 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["changes"][0]["factors"], ["container_queue"])
-        self.assertEqual(set(plan["selected_factors"]), {"container_queue", "sched", "io", "compute", "graph"})
+        self.assertEqual(set(plan["selected_factors"]), {"container_queue", "sched", "io_core", "compute", "graph"})
         self.assertIn("headers:container_queue", self.selected(plan))
         self.assertIn("delivery:container", self.selected(plan))
         self.assertNotIn("factor:container", self.selected(plan))
@@ -136,7 +136,7 @@ class ImpactTest(unittest.TestCase):
         self.assertEqual(plan["changes"][0]["factors"], ["container_text"])
         self.assertEqual(
             set(plan["selected_factors"]),
-            {"container_text", "util_runtime", "io"},
+            {"container_text", "util_runtime", "io_core"},
         )
 
     def test_deletion_rename_mixed_changes_keep_old_and_new_owners(self):
@@ -147,7 +147,7 @@ class ImpactTest(unittest.TestCase):
         plan = self.plan()
         self.assertEqual(
             set(plan["selected_factors"]),
-            {"container_queue", "sched", "container_text", "util_runtime", "io"},
+            {"container_queue", "sched", "container_text", "util_runtime", "io_core"},
         )
         self.assertEqual(len(plan["changes"]), 3)
 

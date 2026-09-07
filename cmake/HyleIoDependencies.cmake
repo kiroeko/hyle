@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-# This file is included only when io belongs to the selected component closure,
+# This file is included only when io_core belongs to the selected component closure,
 # so its product controls do not pollute unrelated caches.
 hyle_auto_feature_option(HYLE_IO_TLS
   "Build the io TLS capability using OpenSSL" DEFAULT OFF)
@@ -14,7 +14,7 @@ function(hyle_configure_io_dependencies)
   # product component and must not be advertised as one by the build graph.
   if(NOT HYLE_FCONTEXT_SUPPORTED)
     message(FATAL_ERROR
-      "The io component currently requires sched/fcontext. The standalone "
+      "The io_core factor currently requires sched/fcontext. The standalone "
       "proactor is not a separately deliverable component.")
   endif()
 
@@ -87,7 +87,7 @@ function(hyle_configure_io_dependencies)
       HYLE_DEP_BINARY_DIR "${nghttp2_BINARY_DIR}")
     hyle_register_package_dependency(
       NAME nghttp2
-      OWNER io
+      OWNER io_core
       FEATURES io_http2
       STATIC_EXPORT_TARGETS nghttp2_static
       LOCKED_DEPENDENCIES nghttp2

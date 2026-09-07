@@ -29,7 +29,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | container | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-container.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container-v6 CLOSED/FROZEN：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。 |
 | util_runtime | CLOSED | FROZEN | P0 | [PASS](evidence/performance/benchmarks-util.md) / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v5-blocker-resolution.md) | util-runtime v5 CLOSED/FROZEN：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。 |
 | sched | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-sched.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/sched/sched-v4-control-contracts.md) | sched-v4 CLOSED/FROZEN：五项控制合同缺陷已关闭；三平台、sanitizer、三交付、直接消费者、易用性/文档、内部复用、候选后红队及同合同 Marl/oneTBB P1 工程门全部通过。 |
-| io | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io-v1 保持 SCOPED 且由 owner 暂停：scope、baseline 与预算已经冻结，尚未进入 AUDITED，也没有产品改动；只有 owner 明确恢复后才能继续。 |
+| io_core | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io_core v1 已恢复并保持 SCOPED：内部 factor 身份由含混的 io 纠正为 io_core，公共 io 产品 façade/namespace/include 不变；下一门是完成能力审计并冻结有限 FIX 集。 |
 | io_tls | QUEUED | — | — | — | — | — | IO/TLS 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | io_http | QUEUED | — | — | — | — | — | IO/HTTP 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
 | io_http2 | QUEUED | — | — | — | — | — | IO/HTTP2 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |

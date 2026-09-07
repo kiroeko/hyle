@@ -61,7 +61,7 @@
       "gate_role": "product",
       "consumer_key": "io/io-context/completion-counter",
       "provenance": {
-        "path": "src/io/io_context.cc",
+        "path": "src/io_core/io_context.cc",
         "sha256": "08c32a8ed658dd824e880980582fc837ef6b2863f9bd2fe2845a3ef53169e818"
       },
       "ownership_topology": {
@@ -97,7 +97,7 @@
       "gate_role": "product",
       "consumer_key": "io/io-context/reap-zone",
       "provenance": {
-        "path": "src/io/io_context.cc",
+        "path": "src/io_core/io_context.cc",
         "sha256": "08c32a8ed658dd824e880980582fc837ef6b2863f9bd2fe2845a3ef53169e818"
       },
       "ownership_topology": {

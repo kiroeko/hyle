@@ -112,7 +112,7 @@ include/hyle/io/
 ├─ tls.h / http*.h           加密 transport 与 HTTP/1.1/2 产品层
 
 
-src/io/
+src/io_core/
 ├─ proactor.cc               四后端按平台条件编译；不跨 TU 暴露 OS 类型
 ├─ io_context.cc + net impl  sched 集成
 ├─ file.cc / dns.cc          capability-aware blocking offload

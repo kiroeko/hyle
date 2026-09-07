@@ -37,7 +37,7 @@ if(HYLE_HAS_FCONTEXT)
 
   hyle_register_package_dependency(
     NAME picohttpparser
-    OWNER io
+    OWNER io_core
     LOCKED_DEPENDENCIES picohttpparser
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|picohttpparser-LICENSE")
@@ -47,7 +47,7 @@ set(_io_module_options "")
 if(HYLE_HAS_FCONTEXT)
   list(APPEND _io_module_options TRACE)
 endif()
-hyle_add_module(io ${_io_module_options} SOURCES ${_io_sources})
+hyle_add_module(io_core ${_io_module_options} SOURCES ${_io_sources})
 unset(_io_module_options)
 
 # Export the exact coroutine-transport product fact on hyle::io in both
@@ -55,10 +55,10 @@ unset(_io_module_options)
 # actionable diagnostic while the raw proactor remains available. Named mapped
 # storage is owned by mem::SharedMapping and reaches the same Platform mechanism.
 if(HYLE_HAS_FCONTEXT)
-  target_compile_definitions(hyle_io
+  target_compile_definitions(hyle_io_core
     PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=1)
 else()
-  target_compile_definitions(hyle_io
+  target_compile_definitions(hyle_io_core
     PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=0)
 endif()
 
@@ -68,7 +68,7 @@ if(HYLE_HAS_FCONTEXT)
   # exactly like simdutf.cpp in src/container. It has an optional SSE4.2 fast path
   # gated on __SSE4_2__; the project-global -mssse3 doesn't enable it, so it uses the
   # portable scalar scan (fine -- header parsing isn't the bottleneck).
-  target_include_directories(hyle_io SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/picohttpparser")
+  target_include_directories(hyle_io_core SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/picohttpparser")
   if(MSVC)
     set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c"
       PROPERTIES COMPILE_OPTIONS "/w")
@@ -79,23 +79,23 @@ if(HYLE_HAS_FCONTEXT)
 endif()
 
 if(HYLE_HAS_FCONTEXT AND HYLE_IO_HTTP2)
-  target_link_libraries(hyle_io PRIVATE nghttp2)
-  target_compile_definitions(hyle_io PUBLIC HYLE_IO_HTTP2)
+  target_link_libraries(hyle_io_core PRIVATE nghttp2)
+  target_compile_definitions(hyle_io_core PUBLIC HYLE_IO_HTTP2)
   # MSVC has no POSIX ssize_t. nghttp2's modern `nghttp2_ssize` API remains
   # available; this only hides its deprecated ssize_t overloads.
   if(WIN32)
-    target_compile_definitions(hyle_io PRIVATE NGHTTP2_NO_SSIZE_T)
+    target_compile_definitions(hyle_io_core PRIVATE NGHTTP2_NO_SSIZE_T)
   endif()
 endif()
 
 if(HYLE_HAS_FCONTEXT AND HYLE_IO_TLS_ENABLED)
   # Dynamic-link OpenSSL (security lib tracks system CVE updates). PUBLIC define so
   # consumers including tls.h see the real TlsStream; PRIVATE link (impl detail).
-  target_link_libraries(hyle_io PRIVATE OpenSSL::SSL OpenSSL::Crypto)
-  target_compile_definitions(hyle_io PUBLIC HYLE_IO_TLS)
+  target_link_libraries(hyle_io_core PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+  target_compile_definitions(hyle_io_core PUBLIC HYLE_IO_TLS)
   hyle_register_package_dependency(
     NAME openssl
-    OWNER io
+    OWNER io_core
     FEATURES io_tls
     STATIC_FIND_DEPENDENCIES OpenSSL)
 endif()
@@ -106,5 +106,5 @@ if(WIN32)
   # WSAIoctl) need Winsock: ws2_32 for the core calls, mswsock for the extension
   # GUIDs. File read/write need neither, but linking both is harmless and keeps
   # the single proactor TU whole.
-  target_link_libraries(hyle_io PRIVATE ws2_32 mswsock)
+  target_link_libraries(hyle_io_core PRIVATE ws2_32 mswsock)
 endif()

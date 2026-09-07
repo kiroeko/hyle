@@ -6,7 +6,7 @@
 
 ## 0. 现象
 
-- **负载**：`bench/io/echo_bench.cc` 的 pipelined 变体 —— **512 条独立 echo 流共享一个 worker，每流 16 round-trip**（512 » io_uring ring 深度 256）。
+- **负载**：`bench/io_core/echo_bench.cc` 的 pipelined 变体 —— **512 条独立 echo 流共享一个 worker，每流 16 round-trip**（512 » io_uring ring 深度 256）。
 - **现象**：进程 100% 挂死，`drain()` 永不返回。CPU 一核 100%（worker 空转），非死锁（无线程互等）而是**活锁 + 完成丢失**。
 - **反差**：同文件的 ping-pong echo（64 连接 × 64 round-trip）**从不挂**。这个反差是最重要的线索（见 §4）。
 - **平台**：**仅 Linux io_uring**。Windows IOCP 跑同负载不挂（IOCP 完成经端口投递，与本线程是否 enter 内核无关）。→ 复现 + 验证只能在 WSL 原生 ext4。

@@ -18,7 +18,7 @@
     },
     {
       "role": "request-region-lifecycle",
-      "path": "src/io/http.cc",
+      "path": "src/io_core/http.cc",
       "sha256": "2f98756a2a0470c3813ae7e8816be4a781cd1e6a7c9c7c6f0b3de2e190a68d34",
       "fact": "One keep-alive owner reuses ordinary blocks, clears after handler/response destruction and releases pathological retained capacity."
     },

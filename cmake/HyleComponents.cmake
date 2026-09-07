@@ -208,15 +208,32 @@ _hyle_declare_component(sched
   PRIVATE_DEPS container_queue timer_queue
   PUBLIC_DEPS core container_intrusive error time platform platform_thread
               mem mem_vm util_core)
-# io's C++ public headers expose allocator/status/container value types and
+# io_core's C++ public headers expose allocator/status/container value types and
 # header-inline sched calls (for example complete()/await_suspend()). These are
 # consumer usage requirements, not only implementation closure: installed
 # consumers that link hyle::io alone must see
 # the corresponding import libraries and runtime DLLs.
-_hyle_declare_component(io
+_hyle_declare_component(io_core
   TRACE
   PRIVATE_DEPS container
-  PUBLIC_DEPS core mem container_text time timer_queue sched)
+  PUBLIC_DEPS core mem container_text time timer_queue sched
+  SPLIT_PUBLIC_HEADERS
+    hyle/io/capabilities.h
+    hyle/io/coroutine_transport.h
+    hyle/io/dns.h
+    hyle/io/file.h
+    hyle/io/http.h
+    hyle/io/http2.h
+    hyle/io/io_context.h
+    hyle/io/net.h
+    hyle/io/net_cancel.h
+    hyle/io/net_multishot.h
+    hyle/io/net_timeout.h
+    hyle/io/proactor.h
+    hyle/io/signal.h
+    hyle/io/tcp.h
+    hyle/io/tls.h
+    hyle/io/udp.h)
 # These names reserve independently closable IO factors before product work
 # starts. QUEUED reservations deliberately have no source directory, target,
 # dependencies, public headers or product-root membership. Their own closure
@@ -324,7 +341,7 @@ _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
-_hyle_declare_product(io FACTORS io)
+_hyle_declare_product(io FACTORS io_core)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
 

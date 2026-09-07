@@ -71,15 +71,29 @@ def main() -> None:
                 f"util_runtime boundary lost implementation: {implementation}")
 
     evolving_io = (
+        "include/hyle/io/capabilities.h",
+        "include/hyle/io/coroutine_transport.h",
+        "include/hyle/io/dns.h",
         "include/hyle/io/file.h",
+        "include/hyle/io/http.h",
+        "include/hyle/io/http2.h",
+        "include/hyle/io/io_context.h",
+        "include/hyle/io/net.h",
+        "include/hyle/io/net_cancel.h",
+        "include/hyle/io/net_multishot.h",
+        "include/hyle/io/net_timeout.h",
         "include/hyle/io/proactor.h",
-        "src/io/file.cc",
+        "include/hyle/io/signal.h",
+        "include/hyle/io/tcp.h",
+        "include/hyle/io/tls.h",
+        "include/hyle/io/udp.h",
+        "src/io_core/file.cc",
     )
-    io_specs, io_files = reporter.module_scope("io", evolving_io)
-    if io_specs != ["include/hyle/io", "src/io"]:
-        raise AssertionError(f"conventional IO boundary drifted: {io_specs!r}")
-    if "src/io/file.cc" not in io_files:
-        raise AssertionError("a newly added conventional source root escaped IO scope")
+    io_specs, io_files = reporter.module_scope("io_core", evolving_io)
+    if "src/io_core" not in io_specs or "include/hyle/io/file.h" not in io_specs:
+        raise AssertionError(f"split IO Core boundary drifted: {io_specs!r}")
+    if "src/io_core/file.cc" not in io_files:
+        raise AssertionError("a newly added IO Core source escaped its factor scope")
 
     build_specs, build_files = reporter.module_scope(
         "build-package",
