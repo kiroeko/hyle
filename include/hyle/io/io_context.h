@@ -37,6 +37,10 @@
 
 namespace hyle::io {
 
+namespace detail {
+struct IoContextAccess;
+}
+
 struct IoContextOptions {
   // One completion queue per scheduler worker. The value is a capacity hint;
   // backends may round it to a supported queue size.
@@ -97,6 +101,8 @@ class IoContext {
   mem::AllocatorRef operation_allocator() const noexcept { return allocator_; }
 
  private:
+  friend struct detail::IoContextAccess;
+
   static bool poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
   static void wake_trampoline(void* ctx, unsigned worker_idx) noexcept;

@@ -1,12 +1,19 @@
 #include "hyle/io/tcp.h"
 
+#include <algorithm>
 #include <cerrno>
+#include <climits>
 #include <cstring>
 #include <utility>
 
 #include "hyle/core/environment.h"  // HYLE_OS_* (must precede the per-OS socket headers)
 #include "hyle/error/system_error.h"
+#include "hyle/io/dns.h"
+#include "hyle/sched/cancel.h"
+#include "hyle/sched/sync.h"
+#include "hyle/sched/timer.h"
 #include "endpoint_native.h"
+#include "io_context_access.h"
 
 #if HYLE_OS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -90,6 +97,293 @@ Status handle_error(const char* operation) noexcept {
 #endif
 }
 
+Status set_socket_integer(std::intptr_t fd, int level, int option, int value,
+                          const char* operation) noexcept {
+#if HYLE_OS_WINDOWS
+  if (::setsockopt(static_cast<SOCKET>(fd), level, option,
+                   reinterpret_cast<const char*>(&value), sizeof(value)) != 0)
+#else
+  if (::setsockopt(static_cast<int>(fd), level, option, &value,
+                   sizeof(value)) != 0)
+#endif
+    return socket_error(operation);
+  return Status{};
+}
+
+Result<int> keepalive_seconds(time::Duration duration,
+                              const char* field) noexcept {
+  if (duration <= time::Duration::zero())
+    return make_unexpected(
+        Status::InvalidArgument(field).WithContext(
+            "TCP keepalive duration must be positive"));
+  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+  if (seconds < duration) ++seconds;
+  if (seconds.count() > INT_MAX)
+    return make_unexpected(
+        Status::OutOfRange(field).WithContext(
+            "TCP keepalive duration exceeds the native range"));
+  return static_cast<int>(seconds.count());
+}
+
+struct ConnectAttemptOutcome {
+  Result<TcpStream> result;
+};
+
+using ConnectOutcomeChannel = sched::Channel<ConnectAttemptOutcome>;
+
+sched::Task<Result<TcpStream>> connect_error_task(mem::AllocatorRef,
+                                                   Status status) noexcept {
+  co_return make_unexpected(std::move(status));
+}
+
+Result<EndpointList> interleave_endpoints(
+    mem::AllocatorRef allocator,
+    std::span<const Endpoint> endpoints) noexcept {
+  EndpointList primary(allocator);
+  EndpointList secondary(allocator);
+  EndpointList ordered(allocator);
+  if (endpoints.empty())
+    return make_unexpected(
+        Status::InvalidArgument("TCP connect requires at least one endpoint"));
+  const AddressFamily first_family = endpoints.front().family();
+  for (const Endpoint& endpoint : endpoints) {
+    if (!endpoint.valid())
+      return make_unexpected(
+          Status::InvalidArgument("TCP connect endpoint is invalid"));
+    EndpointList& destination = endpoint.family() == first_family
+                                    ? primary
+                                    : secondary;
+    if (!destination.try_push_back(endpoint))
+      return make_unexpected(Status::ResourceExhausted(
+          "TCP endpoint ordering allocation failed"));
+  }
+  if (!ordered.try_reserve(endpoints.size()))
+    return make_unexpected(Status::ResourceExhausted(
+        "TCP endpoint ordering allocation failed"));
+  std::size_t primary_index = 0;
+  std::size_t secondary_index = 0;
+  while (primary_index < primary.size() ||
+         secondary_index < secondary.size()) {
+    if (primary_index < primary.size() &&
+        !ordered.try_push_back(primary[primary_index++]))
+      return make_unexpected(Status::ResourceExhausted(
+          "TCP endpoint ordering allocation failed"));
+    if (secondary_index < secondary.size() &&
+        !ordered.try_push_back(secondary[secondary_index++]))
+      return make_unexpected(Status::ResourceExhausted(
+          "TCP endpoint ordering allocation failed"));
+  }
+  return ordered;
+}
+
+sched::Task<void> run_connect_attempt(
+    mem::AllocatorRef, IoContext* io, unsigned owner_worker,
+    Endpoint endpoint, OperationOptions operation,
+    sched::CancelToken cancellation,
+    ConnectOutcomeChannel* outcomes) noexcept {
+  Result<TcpStream> opened =
+      TcpStream::open(*io, owner_worker, endpoint.family());
+  if (!opened.has_value()) {
+    auto sent = outcomes->send(ConnectAttemptOutcome{
+        make_unexpected(std::move(opened).error())});
+    HYLE_FATAL_ASSERT(sent.has_value());
+    co_return;
+  }
+
+  TcpStream stream = std::move(*opened);
+  operation.cancel = &cancellation;
+  Status connected = co_await stream.connect(endpoint, operation);
+  auto sent = connected.ok()
+                  ? outcomes->send(
+                        ConnectAttemptOutcome{std::move(stream)})
+                  : outcomes->send(ConnectAttemptOutcome{
+                        make_unexpected(std::move(connected))});
+  HYLE_FATAL_ASSERT(sent.has_value());
+}
+
+Status start_connect_attempt(IoContext& io, unsigned owner_worker,
+                             mem::AllocatorRef allocator,
+                             const Endpoint& endpoint,
+                             OperationOptions operation,
+                             const sched::CancelToken& cancellation,
+                             ConnectOutcomeChannel* outcomes) noexcept {
+  auto task = run_connect_attempt(allocator, &io, owner_worker, endpoint,
+                                  operation, cancellation, outcomes);
+  if (!task.valid())
+    return Status::ResourceExhausted(
+        "TCP connection attempt coroutine allocation failed");
+  return detail::IoContextAccess::scheduler(io).spawn_detached_on(
+      owner_worker,
+      [task = std::move(task)]() mutable noexcept { task.resume(); });
+}
+
+sched::Task<Result<TcpStream>> connect_ordered(
+    mem::AllocatorRef allocator, IoContext& io, unsigned owner_worker,
+    EndpointList endpoints, TcpConnectOptions options) noexcept {
+  if (!io.valid())
+    co_return make_unexpected(
+        Status::FailedPrecondition("TCP connect requires a valid IoContext"));
+  if (owner_worker >= io.num_workers())
+    co_return make_unexpected(
+        Status::OutOfRange("TCP owner worker is out of range"));
+  if (options.attempt_delay < time::Duration::zero())
+    co_return make_unexpected(
+        Status::InvalidArgument("TCP attempt delay cannot be negative"));
+  if (options.max_parallel_attempts == 0)
+    co_return make_unexpected(Status::InvalidArgument(
+        "TCP max parallel attempts must be at least one"));
+  HYLE_FATAL_ASSERT(sched::current_worker_index() ==
+                    static_cast<int>(owner_worker));
+
+  const std::size_t capacity =
+      (std::min)(endpoints.size(),
+                 static_cast<std::size_t>(options.max_parallel_attempts));
+  Status channel_status;
+  ConnectOutcomeChannel outcomes(allocator, capacity, &channel_status);
+  if (!channel_status.ok())
+    co_return make_unexpected(std::move(channel_status).WithContext(
+        "create TCP connection-attempt channel"));
+
+  Result<sched::CancelToken> cancellation_result =
+      options.operation.cancel != nullptr
+          ? options.operation.cancel->try_derive()
+          : sched::CancelToken::try_create_root(allocator);
+  if (!cancellation_result.has_value())
+    co_return make_unexpected(std::move(cancellation_result).error());
+  sched::CancelToken cancellation = std::move(*cancellation_result);
+
+  auto budget_status = [&]() noexcept -> Status {
+    if (options.operation.cancel != nullptr &&
+        options.operation.cancel->is_cancelled())
+      return Status::Cancelled("TCP connection cancelled");
+    if (options.operation.deadline.has_value() &&
+        *options.operation.deadline <= time::monotonic_now())
+      return Status::DeadlineExceeded("TCP connection deadline exceeded");
+    return Status{};
+  };
+
+  std::size_t next_endpoint = 0;
+  std::size_t active = 0;
+  Status last_error = Status::Unavailable("all TCP connection attempts failed");
+  auto launch_one = [&]() noexcept {
+    while (next_endpoint < endpoints.size()) {
+      Status started = start_connect_attempt(
+          io, owner_worker, allocator, endpoints[next_endpoint++],
+          options.operation, cancellation, &outcomes);
+      if (started.ok()) {
+        ++active;
+        return true;
+      }
+      last_error = std::move(started);
+    }
+    return false;
+  };
+
+  auto cancel_and_drain = [&]() noexcept -> Status {
+    cancellation.cancel();
+    while (active != 0) {
+      Result<ConnectAttemptOutcome> outcome = outcomes.recv();
+      if (!outcome.has_value())
+        return std::move(outcome).error().WithContext(
+            "drain TCP connection attempts");
+      --active;
+    }
+    return Status{};
+  };
+
+  Status initial_budget = budget_status();
+  if (!initial_budget.ok())
+    co_return make_unexpected(std::move(initial_budget));
+  (void)launch_one();
+  time::MonotonicTimePoint next_launch =
+      time::deadline_after(options.attempt_delay);
+  while (active != 0 || next_endpoint < endpoints.size()) {
+    if (active == 0) {
+      Status expired = budget_status();
+      if (!expired.ok()) co_return make_unexpected(std::move(expired));
+      (void)launch_one();
+      next_launch = time::deadline_after(options.attempt_delay);
+      continue;
+    }
+
+    Result<ConnectAttemptOutcome> outcome =
+        next_endpoint < endpoints.size() &&
+                active < options.max_parallel_attempts
+            ? outcomes.recv_for(time::remaining(next_launch))
+            : outcomes.recv();
+    if (!outcome.has_value() && outcome.error().IsDeadlineExceeded()) {
+      Status expired = budget_status();
+      if (!expired.ok()) {
+        Status drained = cancel_and_drain();
+        if (!drained.ok()) co_return make_unexpected(std::move(drained));
+        co_return make_unexpected(std::move(expired));
+      }
+      (void)launch_one();
+      next_launch = time::deadline_after(options.attempt_delay);
+      continue;
+    }
+    if (!outcome.has_value())
+      co_return make_unexpected(std::move(outcome).error().WithContext(
+          "receive TCP connection attempt"));
+
+    --active;
+    if (outcome->result.has_value()) {
+      TcpStream winner = std::move(*outcome->result);
+      cancellation.cancel();
+      while (active != 0) {
+        Result<ConnectAttemptOutcome> loser = outcomes.recv();
+        if (!loser.has_value())
+          co_return make_unexpected(std::move(loser).error().WithContext(
+              "drain TCP connection attempts"));
+        --active;
+      }
+      co_return winner;
+    }
+
+    last_error = std::move(outcome->result).error();
+    Status expired = budget_status();
+    if (!expired.ok()) {
+      Status drained = cancel_and_drain();
+      if (!drained.ok()) co_return make_unexpected(std::move(drained));
+      co_return make_unexpected(std::move(expired));
+    }
+    if (next_endpoint < endpoints.size() &&
+        active < options.max_parallel_attempts) {
+      (void)launch_one();
+      next_launch = time::deadline_after(options.attempt_delay);
+    }
+  }
+  co_return make_unexpected(
+      std::move(last_error).WithContext("connect TCP endpoint set"));
+}
+
+struct OwnedHost {
+  explicit OwnedHost(mem::AllocatorRef allocator) noexcept : bytes(allocator) {}
+  container::SmallVector<char, 256, mem::AllocatorRef> bytes;
+};
+
+sched::Task<Result<TcpStream>> connect_host(
+    mem::AllocatorRef allocator, IoContext& io, unsigned owner_worker,
+    OwnedHost host, std::uint16_t port, TcpConnectOptions options) noexcept {
+  ResolveHandle resolving = resolve(io, allocator,
+                                    std::string_view(host.bytes.data(),
+                                                     host.bytes.size()),
+                                    port);
+  Result<EndpointList> resolved = resolving.join(options.operation);
+  if (!resolved.has_value())
+    co_return make_unexpected(std::move(resolved).error());
+  Result<EndpointList> ordered = interleave_endpoints(
+      allocator, std::span<const Endpoint>(resolved->data(), resolved->size()));
+  if (!ordered.has_value())
+    co_return make_unexpected(std::move(ordered).error());
+  auto task = connect_ordered(allocator, io, owner_worker,
+                              std::move(*ordered), options);
+  if (!task.valid())
+    co_return make_unexpected(Status::ResourceExhausted(
+        "TCP connection task allocation failed"));
+  co_return co_await task;
+}
+
 Result<Endpoint> query_endpoint(std::intptr_t fd, bool peer) noexcept {
   sockaddr_storage address{};
 #if HYLE_OS_WINDOWS
@@ -139,6 +433,9 @@ TcpStream& TcpStream::operator=(TcpStream&& o) noexcept {
 
 Result<TcpStream> TcpStream::open(IoContext& io, unsigned owner_worker,
                                   AddressFamily family) noexcept {
+  if (!io.valid())
+    return make_unexpected(
+        Status::FailedPrecondition("TCP open requires a valid IoContext"));
   if (owner_worker >= io.num_workers())
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
   std::intptr_t fd = make_tcp_socket(family);
@@ -155,6 +452,11 @@ Result<TcpStream> TcpStream::adopt(IoContext& io, unsigned owner_worker,
                                     std::intptr_t native_socket) noexcept {
   if (native_socket < 0)
     return make_unexpected(Status::InvalidArgument("invalid native TCP socket"));
+  if (!io.valid()) {
+    close_fd(native_socket);
+    return make_unexpected(
+        Status::FailedPrecondition("TCP adopt requires a valid IoContext"));
+  }
   if (owner_worker >= io.num_workers()) {
     close_fd(native_socket);
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
@@ -188,18 +490,78 @@ Status TcpStream::set_nodelay(bool enabled) noexcept {
 }
 
 Status TcpStream::set_keepalive(bool enabled) noexcept {
+  TcpKeepaliveOptions options;
+  options.enabled = enabled;
+  return set_keepalive(options);
+}
+
+Status TcpStream::set_keepalive(
+    const TcpKeepaliveOptions& options) noexcept {
   if (!valid()) return Status::FailedPrecondition("TCP stream is not open");
-  const int value = enabled ? 1 : 0;
-#if HYLE_OS_WINDOWS
-  if (::setsockopt(static_cast<SOCKET>(fd_), SOL_SOCKET, SO_KEEPALIVE,
-                   reinterpret_cast<const char*>(&value), sizeof(value)) != 0)
-    return socket_error("set SO_KEEPALIVE");
+  if (!options.enabled &&
+      (options.idle.has_value() || options.interval.has_value() ||
+       options.probe_count.has_value()))
+    return Status::InvalidArgument(
+        "disabled TCP keepalive cannot carry probe tuning");
+
+  std::optional<int> idle;
+  std::optional<int> interval;
+  if (options.idle.has_value()) {
+    auto value = keepalive_seconds(*options.idle, "idle");
+    if (!value.has_value()) return std::move(value).error();
+    idle = *value;
+  }
+  if (options.interval.has_value()) {
+    auto value = keepalive_seconds(*options.interval, "interval");
+    if (!value.has_value()) return std::move(value).error();
+    interval = *value;
+  }
+  if (options.probe_count.has_value() && *options.probe_count == 0)
+    return Status::InvalidArgument(
+        "TCP keepalive probe count must be at least one");
+
+  Status status = set_socket_integer(fd_, SOL_SOCKET, SO_KEEPALIVE,
+                                     options.enabled ? 1 : 0,
+                                     "set SO_KEEPALIVE");
+  if (!status.ok() || !options.enabled) return status;
+
+  if (idle.has_value()) {
+#if HYLE_OS_MACOS
+    status = set_socket_integer(fd_, IPPROTO_TCP, TCP_KEEPALIVE, *idle,
+                                "set TCP_KEEPALIVE");
+#elif defined(TCP_KEEPIDLE)
+    status = set_socket_integer(fd_, IPPROTO_TCP, TCP_KEEPIDLE, *idle,
+                                "set TCP_KEEPIDLE");
 #else
-  if (::setsockopt(static_cast<int>(fd_), SOL_SOCKET, SO_KEEPALIVE, &value,
-                   sizeof(value)) != 0)
-    return socket_error("set SO_KEEPALIVE");
+    return Status::Unimplemented(
+        "TCP keepalive idle tuning is not supported by this platform");
 #endif
-  return Status{};
+    if (!status.ok()) return status;
+  }
+  if (interval.has_value()) {
+#if defined(TCP_KEEPINTVL)
+    status = set_socket_integer(fd_, IPPROTO_TCP, TCP_KEEPINTVL, *interval,
+                                "set TCP_KEEPINTVL");
+#else
+    return Status::Unimplemented(
+        "TCP keepalive interval tuning is not supported by this platform");
+#endif
+    if (!status.ok()) return status;
+  }
+  if (options.probe_count.has_value()) {
+#if defined(TCP_KEEPCNT)
+    if (*options.probe_count > static_cast<unsigned>(INT_MAX))
+      return Status::OutOfRange(
+          "TCP keepalive probe count exceeds the native range");
+    status = set_socket_integer(fd_, IPPROTO_TCP, TCP_KEEPCNT,
+                                static_cast<int>(*options.probe_count),
+                                "set TCP_KEEPCNT");
+#else
+    return Status::Unimplemented(
+        "TCP keepalive probe-count tuning is not supported by this platform");
+#endif
+  }
+  return status;
 }
 
 Status TcpStream::shutdown_write() noexcept {
@@ -274,6 +636,9 @@ TcpListener& TcpListener::operator=(TcpListener&& o) noexcept {
 Result<TcpListener> TcpListener::bind(IoContext& io, unsigned owner_worker,
                                       const Endpoint& endpoint,
                                       const TcpListenOptions& options) noexcept {
+  if (!io.valid())
+    return make_unexpected(
+        Status::FailedPrecondition("TCP bind requires a valid IoContext"));
   if (owner_worker >= io.num_workers())
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
   if (options.backlog < 0)
@@ -434,6 +799,46 @@ sched::Task<TransferResult> write_all(mem::AllocatorRef, TcpStream& stream,
     }
   }
   co_return TransferResult{done, Status{}, false};
+}
+
+sched::Task<Result<TcpStream>> connect_tcp(
+    mem::AllocatorRef coroutine_allocator, IoContext& io,
+    unsigned owner_worker, std::span<const Endpoint> endpoints,
+    TcpConnectOptions options) noexcept {
+  Result<EndpointList> ordered =
+      interleave_endpoints(coroutine_allocator, endpoints);
+  if (!ordered.has_value())
+    return connect_error_task(coroutine_allocator,
+                              std::move(ordered).error());
+  return connect_ordered(coroutine_allocator, io, owner_worker,
+                         std::move(*ordered), options);
+}
+
+sched::Task<Result<TcpStream>> connect_tcp(
+    mem::AllocatorRef coroutine_allocator, IoContext& io,
+    unsigned owner_worker, std::string_view host, std::uint16_t port,
+    TcpConnectOptions options) noexcept {
+  if (!coroutine_allocator.valid())
+    return connect_error_task(
+        coroutine_allocator,
+        Status::InvalidArgument("TCP connect requires a complete allocator"));
+  if (host.empty() || host.find('\0') != std::string_view::npos)
+    return connect_error_task(
+        coroutine_allocator,
+        Status::InvalidArgument("TCP connect requires one non-empty host name"));
+  OwnedHost owned(coroutine_allocator);
+  if (!owned.bytes.try_reserve(host.size()))
+    return connect_error_task(
+        coroutine_allocator,
+        Status::ResourceExhausted("TCP host name allocation failed"));
+  for (char byte : host) {
+    if (!owned.bytes.try_push_back(byte))
+      return connect_error_task(
+          coroutine_allocator,
+          Status::ResourceExhausted("TCP host name allocation failed"));
+  }
+  return connect_host(coroutine_allocator, io, owner_worker,
+                      std::move(owned), port, options);
 }
 
 }  // namespace hyle::io

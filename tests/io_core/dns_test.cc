@@ -1,63 +1,70 @@
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
 #include <string>
+#include <thread>
 
 #include "hyle/io/dns.h"
+#include "hyle/io/io_context.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/blocking.h"
-
-#if defined(_WIN32)
-#  define WIN32_LEAN_AND_MEAN
-#  define NOMINMAX
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-#else
-#  include <arpa/inet.h>
-#  include <netinet/in.h>
-#  include <sys/socket.h>
-#endif
-
-// io-09 async DNS test: resolve() offloads getaddrinfo to the blocking pool and
-// delivers a value list through a JoinHandle. A bare thread joins it (thread-mode)
-// -- no scheduler needed, since DNS is orthogonal to the io ring. A literal IP must
-// resolve deterministically (getaddrinfo parses it without a network hit); a
-// hostname (localhost) should resolve on any sane machine but is SKIP-guarded so a
-// networkless CI doesn't fail.
+#include "hyle/sched/cancel.h"
+#include "hyle/sched/scheduler.h"
+#include "hyle/sched/sync.h"
+#include "hyle/time/clock.h"
 
 using hyle::io::AddressFamily;
+using hyle::io::IoContext;
+using hyle::io::IoContextOptions;
+using hyle::io::OperationOptions;
 using hyle::io::resolve;
 using hyle::mem::system_allocator;
-using hyle::sched::BlockingPool;
+using hyle::sched::CancelToken;
+using hyle::sched::Event;
+using hyle::sched::EventResetMode;
+using hyle::sched::Scheduler;
 
 namespace {
-// Windows getaddrinfo needs Winsock initialized; the proactor does it in the real
-// runtime, but this test resolves without an IoContext, so it starts WSA itself.
-struct WsaGuard {
-  WsaGuard() {
-#if defined(_WIN32)
-    WSADATA w;
-    ::WSAStartup(MAKEWORD(2, 2), &w);
-#endif
+
+struct DnsRuntime {
+  explicit DnsRuntime(unsigned max_blocking_threads = 4)
+      : scheduler(1, system_allocator(), 64),
+        io(scheduler, options(max_blocking_threads)) {}
+
+  ~DnsRuntime() { scheduler.shutdown(); }
+
+  static IoContextOptions options(unsigned max_blocking_threads) {
+    IoContextOptions value;
+    value.max_blocking_threads = max_blocking_threads;
+    return value;
   }
-  ~WsaGuard() {
-#if defined(_WIN32)
-    ::WSACleanup();
-#endif
-  }
+
+  Scheduler scheduler;
+  IoContext io;
 };
+
+struct BlockingGate {
+  Event started{EventResetMode::kManual};
+  Event release{EventResetMode::kManual};
+};
+
+int occupy_blocking_thread(BlockingGate* gate) noexcept {
+  gate->started.signal();
+  gate->release.wait();
+  return 0;
+}
+
 }  // namespace
 
-// A numeric IPv4 literal resolves to exactly that address, no network involved.
 TEST(IoDns, ResolvesIpv4Literal) {
-  WsaGuard wsa;
-  BlockingPool pool(system_allocator());
-  auto h = resolve(pool, system_allocator(), "127.0.0.1", 8080);
-  auto r = h.join();
-  ASSERT_TRUE(r.has_value());
-  ASSERT_FALSE(r->empty());
-  // The first result must be the AF_INET loopback on port 8080.
+  DnsRuntime runtime;
+  auto result =
+      resolve(runtime.io, system_allocator(), "127.0.0.1", 8080).join();
+  ASSERT_TRUE(result.has_value());
+  ASSERT_FALSE(result->empty());
   bool found_v4_loopback = false;
-  for (const auto& endpoint : *r) {
+  for (const auto& endpoint : *result) {
     if (endpoint.family() == AddressFamily::kIpv4 &&
         endpoint.port() == 8080 && endpoint.is_loopback())
       found_v4_loopback = true;
@@ -65,18 +72,18 @@ TEST(IoDns, ResolvesIpv4Literal) {
   EXPECT_TRUE(found_v4_loopback);
 }
 
-// A hostname resolves through the OS resolver. localhost is in every hosts file;
-// if resolution fails (a truly networkless/misconfigured box) SKIP rather than fail.
-TEST(IoDns, ResolvesLocalhost) {
-  WsaGuard wsa;
-  BlockingPool pool(system_allocator());
-  auto h = resolve(pool, system_allocator(), "localhost", 443);
-  auto r = h.join();
-  if (!r.has_value())
-    GTEST_SKIP() << "localhost did not resolve (networkless CI?)";
-  ASSERT_FALSE(r->empty());
-  // Every returned address must carry the requested port and a known family.
-  for (const auto& endpoint : *r) {
+TEST(IoDns, ResolvesLocalhostAndOwnsHostInput) {
+  DnsRuntime runtime;
+  hyle::io::ResolveHandle handle;
+  {
+    std::string temporary_host = "localhost";
+    handle = resolve(runtime.io, system_allocator(), temporary_host, 443);
+  }
+  auto result = handle.join();
+  if (!result.has_value())
+    GTEST_SKIP() << "localhost did not resolve: " << result.error().message();
+  ASSERT_FALSE(result->empty());
+  for (const auto& endpoint : *result) {
     EXPECT_TRUE(endpoint.family() == AddressFamily::kIpv4 ||
                 endpoint.family() == AddressFamily::kIpv6);
     EXPECT_EQ(endpoint.port(), 443);
@@ -84,34 +91,79 @@ TEST(IoDns, ResolvesLocalhost) {
 }
 
 TEST(IoDns, RejectsEmptyAndEmbeddedNullHost) {
-  WsaGuard wsa;
-  BlockingPool pool(system_allocator());
-  auto empty = resolve(pool, system_allocator(), "", 80).join();
+  DnsRuntime runtime;
+  auto empty =
+      resolve(runtime.io, system_allocator(), "", 80).join();
   ASSERT_FALSE(empty.has_value());
   EXPECT_TRUE(empty.error().IsInvalidArgument());
 
   const char embedded[] = {'h', 'o', 's', 't', '\0', 'x'};
-  auto invalid = resolve(pool, system_allocator(),
-                         std::string_view(embedded, sizeof(embedded)), 80)
-                     .join();
+  auto invalid =
+      resolve(runtime.io, system_allocator(),
+              std::string_view(embedded, sizeof(embedded)), 80)
+          .join();
   ASSERT_FALSE(invalid.has_value());
   EXPECT_TRUE(invalid.error().IsInvalidArgument());
 }
 
-// A name that cannot resolve returns a non-zero error and zero addresses, WITHOUT
-// crashing -- the failure path is a clean value, not an exception/hang.
-TEST(IoDns, UnresolvableNameErrors) {
-  WsaGuard wsa;
-  BlockingPool pool(system_allocator());
-  auto h = resolve(pool, system_allocator(),
-                   "no.such.host.hyle.invalid.", 80);
-  auto r = h.join();
-  // A hijacking resolver (proxy fake-ip, captive portal, ISP wildcard) answers
-  // even an RFC-2606 `.invalid` name -- then the failure path cannot be
-  // exercised, so SKIP rather than fail (mirrors ResolvesLocalhost's guard for
-  // a networkless box). A well-behaved resolver returns NXDOMAIN.
-  if (r.has_value())
-    GTEST_SKIP() << "resolver answered a .invalid name (hijacked DNS?) count="
-                 << r->size();
-  EXPECT_FALSE(r.error().ok());
+TEST(IoDns, UnresolvableNameReturnsTypedError) {
+  DnsRuntime runtime;
+  auto result = resolve(runtime.io, system_allocator(),
+                        "no.such.host.hyle.invalid.", 80)
+                    .join();
+  if (result.has_value())
+    GTEST_SKIP() << "resolver answered a reserved .invalid name; count="
+                 << result->size();
+  EXPECT_FALSE(result.error().ok());
+}
+
+TEST(IoDns, DeadlineCoversQueuedResolverAndDetachedStateRetiresSafely) {
+  DnsRuntime runtime(1);
+  BlockingGate gate;
+  auto blocker = hyle::sched::spawn_blocking(
+      runtime.io.blocking_pool(), system_allocator(),
+      [&gate]() noexcept { return occupy_blocking_thread(&gate); });
+  gate.started.wait();
+
+  auto handle = resolve(runtime.io, system_allocator(), "localhost", 443);
+  OperationOptions options;
+  options.deadline = hyle::time::deadline_after(std::chrono::milliseconds(10));
+  const auto started = std::chrono::steady_clock::now();
+  auto result = handle.join(options);
+  const auto elapsed = std::chrono::steady_clock::now() - started;
+
+  EXPECT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsDeadlineExceeded());
+  EXPECT_LT(elapsed, std::chrono::seconds(1));
+  gate.release.signal();
+  EXPECT_TRUE(blocker.join().has_value());
+}
+
+TEST(IoDns, CancellationWakesQueuedResolverPromptly) {
+  DnsRuntime runtime(1);
+  BlockingGate gate;
+  auto blocker = hyle::sched::spawn_blocking(
+      runtime.io.blocking_pool(), system_allocator(),
+      [&gate]() noexcept { return occupy_blocking_thread(&gate); });
+  gate.started.wait();
+
+  auto token = CancelToken::try_create_root(system_allocator());
+  ASSERT_TRUE(token.has_value());
+  auto handle = resolve(runtime.io, system_allocator(), "localhost", 443);
+  std::thread canceler([&token] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    token->cancel();
+  });
+  OperationOptions options;
+  options.cancel = &*token;
+  const auto started = std::chrono::steady_clock::now();
+  auto result = handle.join(options);
+  const auto elapsed = std::chrono::steady_clock::now() - started;
+  canceler.join();
+
+  EXPECT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  EXPECT_LT(elapsed, std::chrono::seconds(1));
+  gate.release.signal();
+  EXPECT_TRUE(blocker.join().has_value());
 }

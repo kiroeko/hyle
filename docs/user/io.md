@@ -3,8 +3,8 @@
 > **`provisional / NOT_REVIEWED_V2`。** IO 当前只提供 C++ 产品面。
 > 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
-HYLE IO 有两层。普通 C++ 程序优先用 `IoContext` 与 RAII/`co_await`
-封装；需要精确控制后端或自己管理状态机时才直接用 `Proactor`。
+普通 C++ 程序使用 `IoContext` 与 RAII/`co_await` 封装。`Proactor`、native
+completion token 和负错误码是正在内收的后端机制，不是新代码应依赖的产品面。
 
 ## 1. 运行时结构
 
@@ -19,8 +19,8 @@ Proactor runtime select ─┼─ Linux: io_uring, unavailable时降为 epoll
 
 一个 socket/file 绑定一个 owner worker。创建连接后，把处理它的 fiber 用
 `Scheduler::spawn_on(owner)` 钉到相同 worker；不要在另一个 worker 上提交它的
-操作。`Proactor::backend_kind()` 可观察实际后端，不能用操作系统名字猜 Linux
-是否真的取得 io_uring。
+操作。后端能力通过 `IoContext` 的 typed capability 查询观察；不能用操作系统
+名字猜 Linux 是否真的取得 io_uring。
 
 IOCP/io_uring 是完成式后端，不做 fd hash lookup。epoll/kqueue 必须把 readiness
 还原成 completion，内部用 HYLE `FlatHashMap<int, PendingOp>` 保存读写两侧；
@@ -31,35 +31,63 @@ IOCP/io_uring 是完成式后端，不做 fd hash lookup。epoll/kqueue 必须�
 ```cpp
 hyle::sched::Scheduler sched{4, hyle::mem::system_allocator(), 4096};
 hyle::io::IoContext io{sched};
-auto listener = hyle::io::tcp_listen(io, 0, "::", 8080);
+auto address = hyle::io::Endpoint::parse("::", 8080);
+auto listener = hyle::io::TcpListener::bind(io, 0, *address);
 
 // 在 worker 0 的 fiber 中：
-auto stream = co_await listener.accept(/*assign_owner=*/1);
+auto accepted = co_await listener->accept(/*assign_owner=*/1);
+if (!accepted) co_return;
+auto stream = std::move(*accepted);
 
 // 在 worker 1 的连接 fiber 中：
-char buffer[4096];
-auto deadline = hyle::time::deadline_after_ns(5'000'000'000ull);
-auto n = co_await stream.read_until(
-    buffer, sizeof(buffer), hyle::mem::system_allocator(), deadline);
+std::array<std::byte, 4096> buffer{};
+hyle::io::OperationOptions operation;
+operation.deadline = hyle::time::deadline_after(std::chrono::seconds(5));
+auto read = co_await stream.read_some(buffer, operation);
+if (!read.ok()) handle(read.status);
 ```
 
-`read/write/connect/accept` 是无截止期的最薄腿，适合 completion 必然到达的
-受控路径。面向网络对端应使用 `*_until` 或 `*_cancel`：TCP 的
-read/write/connect/accept 与 UDP 的 recv/send 都有 deadline 和
-`CancelToken` 变体。timeout 返回 `-110`，结构化取消统一返回
-`hyle::io::kCancelled`，不暴露 IOCP 与 POSIX 的错误码差异。
+单 buffer 的无 options 腿不分配、只做一次 native submission；面向不可信网络
+对端时，把 absolute monotonic deadline 和/或 `CancelToken` 放进同一个
+`OperationOptions`。TCP read/write/connect/accept 与 UDP recv/send 都使用该
+形状。`TransferResult` 同时保留 partial bytes、EOF 和 typed `Status`，用户不需要
+解释 IOCP/POSIX 负错误码。
 
-buffer、sockaddr 和取消 token 必须活到 await 完成。不要在仍有裸 base op
-挂起时强行销毁 fiber；需要有界退出时用 deadline/cancel 腿。
+连接主机名使用一个总预算和有界错峰尝试，而不是让应用手写 resolver 循环：
+
+```cpp
+hyle::io::TcpConnectOptions connect_options;
+connect_options.operation.deadline =
+    hyle::time::deadline_after(std::chrono::seconds(5));
+connect_options.max_parallel_attempts = 2;
+auto connected = co_await hyle::io::connect_tcp(
+    alloc, io, owner, "model-host.example", 443, connect_options);
+```
+
+主机名和 endpoint sequence 都在函数返回前复制。resolver 保留 OS 返回的完整
+IPv4/IPv6 列表，按 family 交错并默认每 250 ms 启动下一次尝试；快速失败会立即
+推进下一地址。成功或总预算结束前会关闭并排空全部 loser。portable
+`getaddrinfo` 进入 OS 后不能强停，因此 deadline/cancel 可以让调用方立即返回，
+后台状态仍会安全完成并自行释放。
+
+长连接可用 `set_nodelay()`，以及 `TcpKeepaliveOptions` 设置 idle、interval 和
+probe count；不填写的字段保留 OS 默认值。关闭 keepalive 时同时携带 tuning
+字段属于错误，避免“配置被静默忽略”。
+
+buffer 和取消 token 必须活到 await 完成。不要在操作仍挂起时强行销毁 fiber；
+shutdown 应先停止 admission/cancel，再排空 completion。
 
 ## 3. 文件：默认不会堵 scheduler worker
 
 ```cpp
-auto file = co_await hyle::io::open_file(
-    io, owner, path,
-    hyle::io::Proactor::kRead | hyle::io::Proactor::kWrite);
-auto n = co_await file.read(buffer, size, offset);
-co_await file.close();
+hyle::io::FileOpenOptions options;
+options.access = hyle::io::FileAccess::kRead;
+options.cache = hyle::io::FileCacheMode::kBuffered;
+auto opened = co_await hyle::io::open_file(io, owner, path, options);
+if (!opened) co_return;
+auto file = std::move(*opened);
+auto read = co_await file.read_some_at(offset, buffer, operation);
+auto closed = co_await file.close();
 ```
 
 `File` 自动选择：
@@ -70,8 +98,9 @@ co_await file.close();
   `IoContext` 自带的 blocking pool。
 
 因此普通 C++ 用户无需先判断 backend。`File` 析构只作为同步防泄漏后备；
-正常路径应 `co_await close()`。需要完全掌控 syscall/queue 形状的用户可直接
-调用低层 `Proactor::submit_*`，并自行承担 capability 与阻塞语义。
+正常路径应 `co_await close()`。模型文件要请求真实 direct/non-buffered IO 时显式
+选择 `FileCacheMode::kDirect`，随后用 `direct_alignment().accepts(...)` 校验 buffer、
+offset 和 length；平台无法兑现时 open 会诚实失败，不静默降为 buffered。
 
 命名共享 storage 属于 Mem：使用 `mem::SharedMapping::create/open/unlink`；IO 只负责建立在
 它之上的 namespace/handle transfer、notification 或异步协议。跨进程数据结构只能保存
@@ -120,8 +149,10 @@ transport owner fiber 上调用。
 
 ## 5. DNS、signal 与 Linux 专属快腿
 
-- `resolve()` 把 `getaddrinfo` 卸载到 blocking pool，结果同时携带 IPv4/IPv6
-  family；字面量地址可用 `resolve_addr()`。
+- `resolve(io, allocator, host, port).join(operation)` 把 `getaddrinfo` 卸载到
+  `IoContext` 的 blocking pool，复制 host、返回 owning 的完整 IPv4/IPv6 列表，
+  并接受与 transport 相同的 deadline/cancel 合同；数字地址直接用
+  `Endpoint::parse()`。
 - `SignalSet` 是进程级单 owner、单 waiter 的优雅关闭入口。用
   `SignalSet::create()` 显式选择 `SignalInterest`，失败返回 typed `Status`；
   `co_await wait()` 返回 `Result<ProcessSignal>`，不需要解释 signal number 或负数。

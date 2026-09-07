@@ -7,8 +7,8 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/error/result.h"
 #include "hyle/io/endpoint.h"
+#include "hyle/io/operation.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/sched/blocking.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -21,6 +21,18 @@
 
 namespace hyle::io {
 
+class IoContext;
+class ResolveHandle;
+
+// Copy `host` before returning, then resolve it on IoContext's blocking pool so
+// NSS, hosts-file, or network lookup never blocks a scheduler worker. Host names
+// are not truncated and all returned IPv4/IPv6 endpoints are retained until an
+// allocator failure is reported.
+HYLE_IO_API ResolveHandle resolve(IoContext& io,
+                                  mem::AllocatorRef allocator,
+                                  std::string_view host,
+                                  std::uint16_t port) noexcept;
+
 // Most host names resolve to one or two endpoints, so eight inline slots avoid
 // an allocation on the common path without imposing the old hard eight-address
 // truncation. Growth uses the allocator explicitly supplied to resolve().
@@ -28,53 +40,39 @@ using EndpointList =
     container::SmallVector<Endpoint, 8, mem::AllocatorRef>;
 
 namespace detail {
-
-struct ResolveOutcome {
-  explicit ResolveOutcome(mem::AllocatorRef allocator) noexcept
-      : endpoints(allocator) {}
-
-  EndpointList endpoints;
-  Status status;
-};
-
-HYLE_IO_API ResolveOutcome resolve_blocking(
-    mem::AllocatorRef allocator, const char* host,
-    std::uint16_t port) noexcept;
-
+struct ResolveAccess;
+struct ResolveState;
 }  // namespace detail
 
-// Domain-specific wrapper flattens BlockingPool's task failure and resolver's
-// own failure into one Result<EndpointList>. Cancellation is best effort: a job
-// not yet started is cancelled; portable getaddrinfo cannot be force-stopped
-// once inside the OS, so an already-running job completes and releases itself.
+// Owning result handle for one asynchronous name lookup. join() is fiber-aware
+// when called on a Scheduler worker and parks a foreign thread otherwise. A
+// deadline or cancellation returns promptly; portable getaddrinfo cannot be
+// force-stopped once inside the OS, so an already-running lookup safely finishes
+// against its own state after the caller has returned.
 class ResolveHandle {
  public:
   ResolveHandle() noexcept = default;
-  explicit ResolveHandle(sched::JoinHandle<detail::ResolveOutcome> handle) noexcept
-      : handle_(std::move(handle)) {}
-
-  ResolveHandle(ResolveHandle&&) noexcept = default;
-  ResolveHandle& operator=(ResolveHandle&&) noexcept = default;
+  HYLE_IO_API ~ResolveHandle();
+  HYLE_IO_API ResolveHandle(ResolveHandle&& other) noexcept;
+  HYLE_IO_API ResolveHandle& operator=(ResolveHandle&& other) noexcept;
   ResolveHandle(const ResolveHandle&) = delete;
   ResolveHandle& operator=(const ResolveHandle&) = delete;
 
-  HYLE_IO_API Result<EndpointList> join() noexcept;
-  void request_cancel() noexcept { handle_.request_cancel(); }
-  bool is_finished() const noexcept { return handle_.is_finished(); }
-  bool valid() const noexcept { return handle_.valid(); }
-  void detach() noexcept { handle_.detach(); }
+  HYLE_IO_API Result<EndpointList> join(
+      OperationOptions options = {}) noexcept;
+  HYLE_IO_API void request_cancel() noexcept;
+  HYLE_IO_API bool is_finished() const noexcept;
+  HYLE_IO_API bool valid() const noexcept;
+  HYLE_IO_API void detach() noexcept;
 
  private:
-  sched::JoinHandle<detail::ResolveOutcome> handle_;
-};
+  friend struct detail::ResolveAccess;
+  explicit ResolveHandle(detail::ResolveState* state) noexcept : state_(state) {}
+  explicit ResolveHandle(Status status) noexcept
+      : immediate_(std::move(status)) {}
 
-// Copy `host` before returning, then resolve it on the blocking pool so an NSS,
-// hosts-file, or network lookup never blocks a scheduler worker. Host names are
-// not truncated and all returned IPv4/IPv6 endpoints are retained until an
-// allocator failure is reported.
-HYLE_IO_API ResolveHandle resolve(sched::BlockingPool& pool,
-                                  mem::AllocatorRef allocator,
-                                  std::string_view host,
-                                  std::uint16_t port) noexcept;
+  detail::ResolveState* state_ = nullptr;
+  Status immediate_;
+};
 
 }  // namespace hyle::io

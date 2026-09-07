@@ -152,7 +152,12 @@ src/io_core/
   `RecvOp/SendOp` 的 `fixed_slot` 暗门已删除，IOCP/kqueue 不再有 stub
   定义。`release_fixed_file` 现在检查内核 `FILES_UPDATE` 结果。
 - **io-08 TLS(C9)✅**:OpenSSL 加密 socket over co_await stream，包含 SNI、DNS/IP identity verification、有界 shutdown；HTTP transport 已可持有已握手 TLS，真实 HTTPS loopback 覆盖。
-- **io-09 异步 DNS + signal ✅(C10)**:`resolve_addr`(tcp.h)只 `inet_pton` 解析 IPv4 字面量(连 getaddrinfo 都没有)——`dns.h/cc` 加 `resolve()` **经 sched-11 spawn_blocking 卸载 getaddrinfo**(抄 tokio 路线,不自造 DNS 协议),内部值拷贝 sockaddr + freeaddrinfo 不泄 addrinfo*,`JoinHandle<ResolveResult>` 回传;字面量 IP 走 getaddrinfo 同步快路径。**signal_set**(`signal.h/cc`)co_await `wait()`:POSIX self-pipe + sigaction(进程全局单例 + 引用计数;handler 只 async-signal-safe 写 pipe,免 signalfd 全线程 mask),Windows SetConsoleCtrlHandler(handler 独立线程 post 到 ring;CTRL_CLOSE/LOGOFF/SHUTDOWN handler 阻塞防提前杀,tokio 同款救命坑)。**单 waiter 模型**(优雅关闭单 fiber 用例,同 tokio Signal)。三后端真测(Win/io_uring/epoll)+ WSL TSan 净。signal 是 C4 优雅关闭的触发器。
+- **io-09 异步 DNS + signal ✅(C10，历史落点)**：当时首次用 blocking pool 卸载
+  `getaddrinfo`，并建立 signal self-pipe/console-handler 路径。当前 resolver 已改为
+  `resolve(IoContext&, ...).join(OperationOptions)`：host 与全部 IPv4/IPv6 endpoint
+  都拥有所有权，deadline/cancel 可提前返回，而不可强停的 OS 查询通过引用状态在后台
+  安全退休；数字地址由 `Endpoint::parse()` 处理。`SignalSet::create()` / `wait()`
+  返回 typed result，维持进程级单 owner、顺序单 waiter 合同。
 - **io-05 文件/shmem(C5)✅（历史）**：`proactor` 覆盖 open/close/stat/fsync/fallocate，`File` 按 capability 自动把非原生异步操作卸载到 `IoContext` blocking pool。旧 `io::SharedMemory` 曾实现 Windows file mapping / POSIX `shm_open`；Mem v2 已把 storage owner 迁为 `mem::SharedMapping`，Platform 保留 syscall mechanism，IO 只组合 IPC/async protocol，旧 C++ owner 与伪 C ABI 均不再是当前产品面。
 
 ## 参考

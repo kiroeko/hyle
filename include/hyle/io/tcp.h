@@ -3,7 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
+#include <string_view>
 
 #include "hyle/core/assert.h"
 #include "hyle/error/result.h"
@@ -49,6 +51,24 @@ struct TcpListenOptions {
   bool ipv6_only = false;
 };
 
+struct TcpConnectOptions {
+  OperationOptions operation{};
+  // RFC 8305-style delay before starting another address while an earlier
+  // attempt is still pending. A prompt failure accelerates the next attempt.
+  time::Duration attempt_delay = std::chrono::milliseconds(250);
+  // Caps simultaneously open connection attempts and their socket resources.
+  unsigned max_parallel_attempts = 2;
+};
+
+struct TcpKeepaliveOptions {
+  bool enabled = true;
+  // Empty values preserve the operating-system defaults. Non-empty durations
+  // are rounded up to whole seconds because that is the portable TCP contract.
+  std::optional<time::Duration> idle;
+  std::optional<time::Duration> interval;
+  std::optional<unsigned> probe_count;
+};
+
 // A connected TCP socket. Move-only; closes the socket on destruction. Transfer
 // operations MUST be awaited from the fiber pinned to owner_worker().
 class TcpStream {
@@ -77,6 +97,8 @@ class TcpStream {
   unsigned owner_worker() const noexcept { return owner_; }
   HYLE_IO_API Status set_nodelay(bool enabled = true) noexcept;
   HYLE_IO_API Status set_keepalive(bool enabled = true) noexcept;
+  HYLE_IO_API Status set_keepalive(
+      const TcpKeepaliveOptions& options) noexcept;
   HYLE_IO_API Status shutdown_write() noexcept;
   HYLE_IO_API Result<Endpoint> local_endpoint() const noexcept;
   HYLE_IO_API Result<Endpoint> peer_endpoint() const noexcept;
@@ -312,5 +334,22 @@ HYLE_IO_API sched::Task<TransferResult> read_exact(
 HYLE_IO_API sched::Task<TransferResult> write_all(
     mem::AllocatorRef coroutine_allocator, TcpStream& stream,
     std::span<const std::byte> buffer, OperationOptions options = {}) noexcept;
+
+// Connect one of an endpoint sequence using bounded RFC 8305-style staggered
+// attempts. Inputs are copied before this function returns, so caller storage
+// need not outlive the returned Task. Address families are interleaved while
+// preserving resolver order within each family. Run the Task on owner_worker.
+HYLE_IO_API sched::Task<Result<TcpStream>> connect_tcp(
+    mem::AllocatorRef coroutine_allocator, IoContext& io,
+    unsigned owner_worker, std::span<const Endpoint> endpoints,
+    TcpConnectOptions options = {}) noexcept;
+
+// Owning hostname convenience: copies `host` before returning, resolves without
+// blocking a Scheduler worker, then applies the same total operation budget and
+// bounded Happy-Eyeballs policy as the endpoint-sequence overload.
+HYLE_IO_API sched::Task<Result<TcpStream>> connect_tcp(
+    mem::AllocatorRef coroutine_allocator, IoContext& io,
+    unsigned owner_worker, std::string_view host, std::uint16_t port,
+    TcpConnectOptions options = {}) noexcept;
 
 }  // namespace hyle::io
