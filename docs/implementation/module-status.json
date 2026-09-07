@@ -1068,7 +1068,7 @@
     },
     {
       "module": "container",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
       "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
       "round_id": "container-v6-identity-p1-resume",
@@ -1093,7 +1093,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v6 SCOPED：保留 v5 完整产品能力，只迁移内部 text 身份并等价化四条 P1 comparator；公开 hyle::container API、算法、layout 与正常 workload 均冻结。"
+      "summary": "container-v6 AUDITED：完整产品能力和公开 hyle::container API/算法/layout/normal workload 均冻结；有限 FIX 只有彻底迁移 container_text 内部身份和等价化四条既有 P1 comparator。"
     },
     {
       "module": "util",
@@ -1277,7 +1277,7 @@
     },
     {
       "module": "container_concurrent",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-concurrent-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete concurrent map, set and vector product while equalizing allocator/resource and membership semantics for the frozen read-mostly P1 workload, then replay affected correctness, delivery, documentation and red-team gates.",
@@ -1300,11 +1300,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_concurrent v2 SCOPED：产品/API/算法冻结，只补 read-mostly membership 的 allocator/resource 与结果合同等价证据。"
+      "summary": "container_concurrent v2 AUDITED：产品/API/算法冻结，只补 read-mostly membership 的相同 hash、allocator/resource 与结果合同等价证据。"
     },
     {
       "module": "container_queue",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-queue-v2-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Preserve the complete role-specific and unbounded typed queue product while equalizing allocator/resource, OOM, result, setup and producer-participation semantics for the frozen P1 handoff workload, then replay affected gates.",
@@ -1327,11 +1327,11 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container_queue v2 SCOPED：产品/API/算法冻结，只补 unbounded MPMC 的 allocator/OOM/result/setup 同合同证据。"
+      "summary": "container_queue v2 AUDITED：产品/API/算法冻结，只补 unbounded MPMC 的 allocator/OOM/result/setup 同合同证据。"
     },
     {
       "module": "text",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-text-v2-identity-p1-resume",
       "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
       "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
@@ -1354,7 +1354,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "text -> container_text v2 SCOPED：公开 hyle::container surface 与算法冻结，只迁移内部 factor identity 并补 typed Unicode 同合同证据。"
+      "summary": "text -> container_text v2 AUDITED：公开 hyle::container surface 与算法冻结；有限 FIX 是无 alias 的完整内部 identity 迁移和 typed Unicode 同合同 adapter。"
     }
   ]
 }

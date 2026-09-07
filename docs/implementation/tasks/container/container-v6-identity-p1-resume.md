@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - components / owner / rounds：
   - `container` / Container / `container-v6-identity-p1-resume`；
@@ -41,8 +41,8 @@
   `28457f0dcab4ccf748d60f2387a1a4a7fdb5a110`。本轮只确认前轮 capability map 没有因身份迁移改变，
   不重新求 API 并集；
 - strong peers：LRU 为 Abseil `38f8c1535de9ebc12c6340e5c1c8ebd72afde560`；membership/queue 为
-  oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；Unicode mechanism 为 simdutf
-  `b91b70d7d7bf8609eec2612971c01f3c92499a4b`。每个 cell 只有一个 peer；
+  oneTBB `e00c68dcac0e83947c9b54f6d5304c0616c9639f`；Unicode mechanism 为 HYLE dependency
+  lock 对应的 simdutf `2d4e249dcfd978b39dd567b156f20a43db97377b`。每个 cell 只有一个 peer；
 - tier / machine / instrument / margin：P1；W1-WIN primary，W1-WSL/M1-MAC correctness/delivery；
   `closure-perf-v1`；5%；
 - budget：identity/audit 45 分钟，迁移与 build 45 分钟，P1 90 分钟，三平台/交付 90 分钟，红队
@@ -51,18 +51,19 @@
   correction 内解决，立即以具名 blocker 终止；不得扩建第五个 workload、修改公共仪器或用有利
   natural-route 点值覆盖失败。
 
-## 冻结 normal workloads 与语义矩阵草案
+## 冻结 normal workloads 与语义矩阵（`FROZEN`）
 
 四条 primary workload、输入规模、线程数、operation mix、计时 phase、双顺序/placement 与 checksum
-沿用前轮 immutable contract；审计只允许修 adapter/metadata 中被红队证明不等价的格。采样前必须把
-本节从草案签为 `FROZEN`。
+沿用前轮 workload identity；本轮只修 adapter/metadata 中被红队证明不等价的格。以下矩阵于
+2026-09-07 冻结；任何输入规模、operation mix、线程角色、计时 phase、产品 API 或产品算法变化都必须
+退回 `SCOPED/AUDITED`，不得用新的有利姿势替代旧 blocker。
 
 | Cell | comparison class | candidate minimum contract | peer adapter 必须补齐 | 不计入 steady phase |
 |---|---|---|---|---|
-| entry+weight LRU hit / insert+evict | `SAME_CONTRACT` | recoverable allocation result、失败不改变 cache、相同 touch/evict/checksum | peer allocation failure 转为同一三态；异常边界 rollback；相同 allocator/resource 或预分配资源合同 | object/resource setup、input generation、final checksum |
-| read-mostly membership | `SAME_CONTRACT` | concurrent contains/insert/erase result、相同 key/shard/load 生命周期 | 两侧注入同一可并发 resource/allocator；相同 reserve/setup 与 teardown | table/resource construction、thread creation、final verification |
-| unbounded typed MPMC | `SAME_CONTRACT` | try push/pop、recoverable OOM、FIFO conservation、相同 producer/consumer participation | oneTBB throwing push 在 adapter 捕获并映射；两侧使用同一 resource ownership；相同 setup/token 和 drain | queue/resource construction、worker creation、final conservation |
-| safe UTF-8→UTF-16 caller buffer | `SAME_CONTRACT` | validate、typed status/input offset/output count、exact caller buffer、相同 valid/error mix | simdutf peer 返回同构 adapter result，不终止；相同 size/validation/conversion passes 与 output capacity | corpus construction、buffer allocation、final checksum |
+| entry+weight LRU hit / insert+evict | `ADAPTER_EQUALIZED` | recoverable allocation result、失败不改变 cache、相同 touch/evict/checksum | 两侧使用 `SystemAllocator` 路由与同一 `StableHash`；peer 只捕获 `bad_alloc`，在 index failure 后回滚 list，并返回与 HYLE 同构的 stored/OOM/evicted 结果 | object/resource setup、reserve、input generation、final checksum |
+| read-mostly membership | `ADAPTER_EQUALIZED` | concurrent contains/insert/erase result、相同 key/load 生命周期 | HYLE 与 oneTBB set 都使用同一 `StableHash`、equality 与 `SystemStdAllocator`；reserve/populate/warmup 相同且在计时外 | table/resource construction、thread creation、final verification |
+| unbounded typed MPMC | `ADAPTER_EQUALIZED` | try push/pop、recoverable OOM、FIFO conservation、相同 producer/consumer participation | 两侧使用 `SystemStdAllocator`/`SystemAllocator` 的同一底层 owner；oneTBB throwing push 只捕获 `bad_alloc` 并映射为 false；相同 setup/warmup/drain | queue/resource construction、worker creation、final conservation |
+| safe UTF-8→UTF-16 caller buffer | `ADAPTER_EQUALIZED` | validate、typed status/input offset/output count、exact caller buffer、相同 valid/error mix | peer 固定到 vendored simdutf 同一 revision，返回同构 status/input offset/output count 而不 abort；validator 覆盖 malformed 与 output-too-small；steady valid corpus 仍执行相同三趟 safe route | corpus construction、buffer allocation、final checksum |
 
 若 peer 的 allocator template 或 API 使同一 resource 无法合法注入，该格必须写
 `INTENTIONALLY_DIFFERENT` 并把 cell 降为 `NATURAL_ROUTE`；此时本轮没有预冻结独立 consumer budget，
@@ -83,3 +84,29 @@ semantic owner、公开 surface、生命周期、复杂度或负空间；若审�
 
 当前没有第三个产品 FIX 授权。
 
+## Audit verdict（`AUDITED`）
+
+Top-down public trace 与 bottom-up ownership scan 得到以下冻结结论：
+
+- `path.h`、`string_algo.h`、`string_interner.h`、`string_view.h` 的公开 include 与全部类型仍位于
+  `hyle/container`、`hyle::container`；错误只存在于内部 factor/target/directory/package identity。更名
+  不准移动公开头、改 namespace、API、layout、算法或 provider；
+- 真实直接消费者是 Container façade、`util` 的 Registry 和 `io` 的 HTTP/TLS surface。中央图必须把
+  `util/io -> text` 改为 `util/io -> container_text`；其他源码消费者只通过公开头或 façade，不新增边；
+- 当前 LRU peer 已使用相同 hash 与 System allocator，但其 throwing insert 缺 OOM 映射和 index-failure
+  rollback；membership peer 还使用不同 hash/allocator；queue peer 使用 oneTBB 默认 allocator 且把
+  throwing push 无条件当成功；Unicode peer 终止而非返回同构 typed result，且 task 一度错误记录了
+  本地 simdutf HEAD 而非产品 lock revision。这些都是比较器合同缺陷，不是产品缺陷；
+- frozen workloads 的输入、角色、计时 phase 和产品实现不变。`CONT6-F02` 只允许 benchmark-only adapter、
+  新版本 contract/shape metadata 与 validator；不得以异常处理、allocator 或 hash 差异继续做
+  `SAME_CONTRACT` 声明，也不得因数字修改产品 API/layout/metadata；
+- factor identity 执行完整一对一迁移：`text -> container_text`、`hyle_text -> hyle_container_text`、
+  `src/text -> src/container_text`、`tests/text -> tests/container_text`、`HYLE_TEXT_* ->
+  HYLE_CONTAINER_TEXT_*`、`text_simdutf -> container_text_simdutf`。不保留 alias、旧目录、旧构建开关或
+  当前性文档引用；历史 task/evidence 仍按当时事实保留，并由迁移 receipt 连接；
+- capability carry-forward 没有新的 `MUST/PARTIAL/MISSING`，因此有限 FIX 集仍严格只有
+  `CONT6-F01` 和 `CONT6-F02`。任何产品能力、实现或公开 surface 变化都是新的 reopen trigger。
+
+Audit verdict 为 **PASS**，四个 factor 进入 `AUDITED`。`SCOPED -> AUDITED` 前态 registry 快照位于
+`C:\public\project-hyle\_validation\container-v6\transitions\module-status-before-audit.json`，SHA-256
+`439AC47F594ED0B26963981C2BDE5132E3CA65F1354D976ECC179F54AE1DA4E4`。
