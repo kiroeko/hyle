@@ -1,12 +1,15 @@
-# Util-runtime 当前工程性能证据
+# Util-runtime 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
+<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
 > 当前状态和证据绑定只看 [`module-status.json`](../../module-status.json)。本页只承担 `util` runtime
 > factor 的 P0 结构证据；`util_core` 的当前 P1 证据在
 > [`benchmarks-util-core-v4.md`](benchmarks-util-core-v4.md)。
 
-## 当前命题
+## v3 历史命题
+
+以下记录绑定 v3 候选。v4 已因具体依赖/交付变化重新登记，本页暂不为当前工作树签发证据；
+当前轮只从 registry 指向的 closure card 读取。
 
 Registry 的正常形状是启动期少量 registration/find/create/freeze，demangle 是日志、异常与 backtrace
 冷路；没有 profile 证明它们进入 token/kernel 热路径。因此当前等级是
