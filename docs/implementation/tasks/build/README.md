@@ -22,6 +22,7 @@
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 - [Change-impact validation selector v1](change-impact-validation-selector-v1.md)
 - [Validation selector 行内格式证明](validation-selector-format-proof-v1.md)
+- [Validation selector v2：factor 额度与 native 身份](validation-selector-v2-factor-context.md)
 
 任务记录可以解释一次实现或失败实验，但不能单独充当当前用户指南、模块 `CLOSED` 结论或 Formal
 性能证书。
