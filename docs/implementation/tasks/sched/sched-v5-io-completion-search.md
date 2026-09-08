@@ -21,7 +21,7 @@
   （Asio `0.768 ms`），encrypted-stream episode 从约 `165.4 ms` 降至 `3.94 ms`
   （Asio `4.26 ms`）。这不是 provider 或 TLS API 差异。
 
-## Closure card（`AUDITED`，已冻结）
+## Closure card（`CANDIDATE`，已冻结）
 
 - scope：只修正 scheduler 已附着 IO driver 且该 worker 有 in-flight IO、run queue 已空时，默认
   idle search 在不 poll completion 的情况下先执行 4096 relax + 4 yield 所造成的 completion latency；
@@ -61,5 +61,16 @@ backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue
 
 ## Current decision
 
-`AUDITED / ACTIVE`。有限 `FIX` 集已经冻结，允许实现 `SCHED5-F01`；公开 API、依赖图和普通无 IO
-scheduler 路线必须保持不变。
+`CANDIDATE / ACTIVE`。产品冻结于
+`2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
+`212a5c0305d9a756cdea91b2ed1270319264db8a`；公开 API、依赖图和普通无 IO scheduler 路线未变。
+
+## Candidate checkpoint
+
+- `SCHED5-F01`：drain-time `poll(0)` 的 pre-reap in-flight 返回值现在控制 idle transition；若其为 true
+  且 completion 尚未产生 runnable work，worker 跳过不 poll IO 的 spin/yield search，直接进入既有
+  sleeper publication、queue recheck 与 interruptible proactor wait；
+- Windows MSVC 19.44 static 的 `hyle_sched_test`、`hyle_io_core_test`、`hyle_io_tls_test` 全过；
+- WSL GCC 14 static 同三项全过；默认 Balanced TLS diagnostic 已从修复前约 `1.94/165.4 ms`
+  降为约 `1.14/4.64 ms`，同次 Asio 为 `1.10/4.63 ms`。这些是机制 smoke，不替代正式 P1；
+- candidate 后只允许验证、文档与 fixture 修正；任何产品变化必须退回 `AUDITED`。

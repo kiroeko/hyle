@@ -82,6 +82,7 @@ remain explicit future triggers.
 | `IOTLS-F03` | 用 `Result<TlsStream>` construction、`Status` handshake/shutdown、`TransferResult` read/write 与统一 `OperationOptions` 取代 int/long | EOF/partial/provider+native domain/deadline/cancel/late completion |
 | `IOTLS-F04` | 增加 move-only provider-opaque session ticket owner 与显式 client resume route；明确 close-notify truncation | resumed handshake、wrong context/host、move/destroy、session lifetime |
 | `IOTLS-F05` | guide/architecture、三平台 TLS-on correctness/sanitizer、三交付、normal record+handshake P1 与红队 | no apple-vs-orange、terminal receipt |
+| `IOTLS-F06` | 回放 Sched v5 completion-search 修复，重新冻结包含已修依赖的产品树；TLS API/provider/pump 不扩张 | Sched candidate identity、三平台定向 correctness、唯一正式 W1-WSL P1 重跑 |
 
 不保留旧签名、`native()` 或伪 C ABI；HTTP framing、early data、OCSP/keylog/DTLS/QUIC 不得追加到本轮。
 
@@ -122,8 +123,9 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 
 ## Current decision
 
-`CANDIDATE / ACTIVE`。有限 F01--F04 已形成不可变产品候选；F05 只允许补验证、证据与文档，
-不得再改变公开合同、算法、layout 或正常 workload。若发现真实产品缺陷，先依法退回 `AUDITED`。
+`AUDITED / ACTIVE`。原 `228c73a6` TLS API/provider 候选本身保持不变，但其产品树包含的 Sched
+依赖已被合格 P1 证明有 material completion-latency 缺陷，故依法退回并冻结 `IOTLS-F06`。TLS 不得
+借此扩张公开合同或修改 provider pump；只有 Sched v5 候选验证通过后才能形成新的整体 candidate。
 
 ## Implementation checkpoints
 
@@ -161,7 +163,12 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
   HYLE public `spawn_task` + typed TLS 自然路线与 standalone Asio async SSL 自然路线；两侧使用同一
   OpenSSL、verified localhost、禁用 session/ticket，完整计 TCP connect/accept、handshake、精确
   512x256 B 双向 stream、`close_notify` 和 connection teardown。有限 5% margin、正反序与 workload
-  identity 已在采样前冻结；目前仅完成 Windows fixture smoke，正式 W1-WSL qualification 尚未运行。
+  identity 已在采样前冻结。正式 W1-WSL qualification 的 A/A、known delta、timer floor、artifact、
+  build/product provenance 与正反序均通过，但 handshake advantage 为 `0.448/0.446`、encrypted-stream
+  advantage 为 `0.0265/0.0259`，5% 非劣门全部失败。一次机制诊断将差距定位到冻结依赖 Sched 的
+  Balanced idle search：同路线改用 `kPowerSaving` 后分别变为 `0.783 ms` 与 `3.94 ms`，同次 Asio
+  为 `0.768 ms` 与 `4.26 ms`。因此这是合法的 Sched reopen trigger，不是 TLS benchmark 调参；
+  `io_tls` 已退回 `AUDITED`，待新 Sched candidate 后只重跑原冻结 workload。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256

@@ -1155,7 +1155,7 @@
     },
     {
       "module": "sched",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
       "round_id": "sched-v5-io-completion-search",
@@ -1163,6 +1163,8 @@
       "scope": "Correct the scheduler idle transition when an attached IO driver reports in-flight work so default balanced search does not delay completion reaping, then replay the directly affected IO and TLS consumers.",
       "non_goals": "Public Sched API or capability expansion; queue, fiber, synchronization or cancellation redesign; idle constant tuning; TLS/provider specialization; multi-worker IO rewrite; Compute, Graph or common performance-instrument changes.",
       "baseline_commit": "d53cdadfb1184a57f5ed18880edfeaf719a4412f",
+      "candidate_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
+      "candidate_tree": "212a5c0305d9a756cdea91b2ed1270319264db8a",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1180,7 +1182,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v5 AUDITED：确认 IoContext poll 已返回可靠的 pre-reap in-flight 状态；有限 FIX 只允许 run queue 排空且 IO 仍在途时跳过不收 CQ 的 idle search，其他调度路径保持不变。"
+      "summary": "sched-v5 CANDIDATE：run queue 排空且 IO 仍在途时跳过不收 CQ 的 idle search；无公开 API/依赖变化，Windows/WSL Sched、IO Core、TLS correctness 通过，待 macOS、sanitizer、交付、红队与正式 P1。"
     },
     {
       "module": "io_core",
@@ -1211,14 +1213,12 @@
     },
     {
       "module": "io_tls",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "io-tls-v1",
       "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
       "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
       "non_goals": "HTTP framing or routing, HTTP2 stream semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API, stable C++ ABI and benchmark-shaped buffer entry points.",
       "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
-      "candidate_commit": "228c73a687efe34318afc6b399e45edd9acdd055",
-      "candidate_tree": "28b25ab2a0ada318fff9c8b89a2df591e594e78e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1226,7 +1226,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "FAIL",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
@@ -1235,7 +1235,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 候选已冻结于 228c73a6：typed config/session/operation、完整 mTLS、统一 budget、显式 allocator 与严格 truncation 已实现；Windows shared/static、WSL shared 与 macOS shared correctness 通过，F05 的 sanitizer、产品 source/static/shared relocation、P1、红队与最终文档仍待完成。"
+      "summary": "io_tls v1 退回 AUDITED：228c73a6 产品/API 自身正确性与交付通过，但合格 W1-WSL P1 揭示其冻结依赖 Sched 的 IO completion latency 缺陷；TLS 本身不扩张，只待 Sched v5 候选回放后重新冻结产品树并复跑 P1。"
     },
     {
       "module": "io_http",
