@@ -1155,7 +1155,7 @@
     },
     {
       "module": "sched",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
       "round_id": "sched-v5-io-completion-search",
@@ -1180,7 +1180,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v5 REOPENED：合格 W1-WSL TLS consumer 证明默认 Balanced idle search 在 in-flight IO 完成前引入约 160 us 固定等待；只重开 Sched/IO completion 协同，不扩张公开 API。"
+      "summary": "sched-v5 SCOPED：冻结只修 in-flight IO 与 Balanced idle search 协同的有限范围；不扩张公开 API、队列/fiber 或 idle policy 参数。"
     },
     {
       "module": "io_core",

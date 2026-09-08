@@ -21,7 +21,7 @@
   （Asio `0.768 ms`），encrypted-stream episode 从约 `165.4 ms` 降至 `3.94 ms`
   （Asio `4.26 ms`）。这不是 provider 或 TLS API 差异。
 
-## Closure card（`REOPENED`；进入 `SCOPED` 时冻结）
+## Closure card（`SCOPED`，已冻结）
 
 - scope：只修正 scheduler 已附着 IO driver 且该 worker 有 in-flight IO、run queue 已空时，默认
   idle search 在不 poll completion 的情况下先执行 4096 relax + 4 yield 所造成的 completion latency；
@@ -55,5 +55,5 @@
 
 ## Current decision
 
-`REOPENED / ACTIVE`。冻结 confirmation 已撤销；尚未授权产品修改。下一合法状态是 `SCOPED`。
-
+`SCOPED / ACTIVE`。范围、非目标、预算、机器、tier 与停止条件已冻结；尚未授权产品修改。
+下一合法状态是完成现有实现/消费路径审计并冻结有限 `FIX` 集后进入 `AUDITED`。
