@@ -1,6 +1,6 @@
 # Sched v5：IO completion 与空闲搜索协同
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Reopen trigger
 
@@ -61,7 +61,7 @@ backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue
 
 ## Current decision
 
-`VERIFIED / ACTIVE`。产品冻结于
+`CLOSED / FROZEN`。产品冻结于
 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
 `212a5c0305d9a756cdea91b2ed1270319264db8a`；公开 API、依赖图和普通无 IO scheduler 路线未变。
 
@@ -108,4 +108,22 @@ backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue
 | reuse / red team | `PASS` | 复用既有 poll/wake/sleeper 协议，无第二套 IO 或等待 authority |
 | engineering performance | `PASS` | qualified 双顺序 natural TLS consumer 四项 5% NI PASS |
 
-本轮工程门已经完成；terminal commit 只允许补 LOC、限制、reopen trigger 与冻结 receipt。
+## Terminal receipt（`CLOSED / FROZEN`）
+
+- freeze ID：`sched-v5-freeze-2026-09-08`；完整复核点
+  `c1b2a5b775fcc8100281bf3acc3117d09b764987` / tree
+  `7bb2e83a57fa740d84625c1a9539d63e10ee351d`；产品 candidate/tree 保持
+  `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` /
+  `212a5c0305d9a756cdea91b2ed1270319264db8a`；
+- 不可变 candidate LOC：全库代码 `491234`；自实现不含测试 `83216`；Sched 实现 `5653`；
+- 工程门：scope、architecture、correctness、delivery、usability/docs、reuse/red-team 与 P1 全部
+  `PASS`；Formal 保持 `PENDING`；
+- 限制：本轮数值只覆盖 single-worker natural TLS completion；普通无 IO batch 路线沿用 v4 证据，
+  不声明全操作/跨平台 SOTA。IO integration 仍要求唯一 attached driver 正确报告 pre-reap in-flight，
+  blocking wait 可被 scheduler wake 打断；取消仍由 operation owner 排空，stackful Fiber 不支持强杀，
+  gang/SPMD、连续批处理和 GPU 调度仍属于上层；
+- reopen：只有可复现的调度/同步/取消/ownership/自然 API 缺陷，IO hook 的 lost-wake、hang、busy-poll
+  或错误 in-flight 合同，公开 API/layout/算法/依赖/交付/正常成本变化，支持平台/toolchain/fcontext
+  语义变化，或合格同合同证据证明 material regression/更优复杂度，才能重新开启。
+
+本轮到此终止；后续 IO 因子不得把历史命令式文字当成继续修改 Sched 的授权。

@@ -1,6 +1,6 @@
 # IO TLS v1：加密 transport 因子化与收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`AUDITED`）
 
@@ -123,7 +123,7 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 
 ## Current decision
 
-`VERIFIED / ACTIVE`。新产品树冻结于
+`CLOSED / FROZEN`。新产品树冻结于
 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
 `212a5c0305d9a756cdea91b2ed1270319264db8a`。相对原 `228c73a6`，TLS API/provider/pump 没有变化；
 唯一产品差异是依赖的 Sched v5 completion-latency 修复。全部适用工程门已经通过；terminal commit 只
@@ -219,7 +219,29 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 | reuse / red team | `PASS` | 依赖复用正确，candidate 后无产品漂移或公开旧接口 |
 | engineering performance | `PASS` | qualified natural HYLE/Asio 双顺序四项 5% NI PASS |
 
-当前进入 `VERIFIED`；不声明全 TLS、全平台或 Formal SOTA。
+## Terminal receipt（`CLOSED / FROZEN`）
+
+- freeze ID：`io-tls-v1-freeze-2026-09-08`；完整复核点
+  `c1b2a5b775fcc8100281bf3acc3117d09b764987` / tree
+  `7bb2e83a57fa740d84625c1a9539d63e10ee351d`；产品 candidate/tree 保持
+  `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` /
+  `212a5c0305d9a756cdea91b2ed1270319264db8a`；
+- 不可变 candidate LOC 使用显式 factor 边界 `include/hyle/io/tls.h + src/io_tls`：全库代码
+  `491234`；自实现不含测试 `83216`；io_tls 实现 `1045`。`loc-report` 的旧 conventional `io-core`
+  映射仍聚合协议头，因此本轮没有越界修改公共 LOC 工具，而是把实际边界显式传入并保留口径；
+- scope、architecture、correctness、delivery、usability/docs、reuse/red-team 与 P1 全部 `PASS`；
+  Formal 为 `NONE`；
+- 限制：`TlsContext` 及其 allocator backing 必须活过产生的 stream/session；一个 stream 同时只允许
+  一个 reader 和一个 writer，buffer 借用至 await 完成；session/cache 默认关闭。证书签发、系统
+  trust-store provisioning、early data、OCSP/keylog、DTLS/QUIC 属于明确负空间；没有 Native FFI、
+  C API 或跨 toolchain 稳定 C++ ABI。P1 只覆盖 W1-WSL 上同 OpenSSL 的 verified handshake 与小记录
+  stream 两条 single-worker 路线；
+- reopen：只有真实 HTTPS/H2 consumer 复现 correctness、安全、验证、truncation、cancel/deadline、
+  session/context lifetime 或自然 C++ 易用性缺陷；公开 API/layout/算法/依赖/交付/常态成本变化；
+  OpenSSL 或支持 OS/toolchain 改变已依赖语义；或 qualified same-contract evidence 证明 material
+  regression/更优复杂度时，才依法重开。
+
+本轮到此终止；HTTP/HTTP2/transfer 后续实现不得把其策略或应用 schema 下沉进已冻结 TLS 因子。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256

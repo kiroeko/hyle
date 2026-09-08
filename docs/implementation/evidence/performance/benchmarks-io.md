@@ -1,6 +1,6 @@
 # io 实测铁证
 
-<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 本页当前证据只签发 `io_tls-v1` 的两个冻结自然路线；后续 V2 与旧 io 聚合数据均为
 > `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP、HTTP/2、transfer、全平台或全操作 SOTA。

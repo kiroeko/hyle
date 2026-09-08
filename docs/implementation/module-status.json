@@ -1155,7 +1155,7 @@
     },
     {
       "module": "sched",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
       "round_id": "sched-v5-io-completion-search",
@@ -1192,7 +1192,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "sched-v5 VERIFIED：IO completion 空闲转换缺陷已修复；三平台定向正确性、WSL sanitizers、直接交付、红队及 W1-WSL 自然 TLS consumer 双顺序 5% P1 非劣门全部通过，无公开 API 或普通无 IO 路线扩张。"
+      "freeze_confirmation": {
+        "id": "sched-v5-freeze-2026-09-08",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-08",
+        "reviewed_commit": "c1b2a5b775fcc8100281bf3acc3117d09b764987",
+        "reviewed_tree": "7bb2e83a57fa740d84625c1a9539d63e10ee351d",
+        "evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md"
+      },
+      "loc": {
+        "snapshot_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
+        "repository_code": 491234,
+        "self_without_tests": 83216,
+        "module_implementation": 5653
+      },
+      "known_limitations": [
+        "The current P1 receipt covers the single-worker natural TLS completion route; the prior v4 evidence covers selected no-IO batch routes, and neither is an all-operation, cross-platform or Formal SOTA certificate.",
+        "An attached IO driver must report a reliable pre-reap in-flight state and provide a wait that Scheduler wake can interrupt; the current integration admits one owner and is private to IO.",
+        "Cancellation is cooperative and an in-flight timer, IO or backend operation must be cancelled or retired by its owner before a waiting Fiber resumes; stackful Fibers cannot be force-destroyed safely.",
+        "Gang or SPMD execution, adaptive model or request priority, continuous batching and heterogeneous or GPU scheduling remain upper-layer policy.",
+        "Vendored fcontext is verified for Windows and Linux x86-64 plus macOS arm64; new targets or toolchain ABI changes require new evidence."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a task, synchronization, cancellation, shutdown, ownership, concurrency or natural C++ API-usability defect.",
+        "A supported IO consumer reproduces a lost wake, hang, busy poll, completion-latency regression or incorrect in-flight or interruptible-wait contract at the Sched integration boundary.",
+        "The public API, layout, algorithm, complexity, normal-path allocation, lock, syscall or metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
+        "Boost.Context, a supported compiler, operating-system wait or thread contract, or target architecture changes semantics relied on by this round.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
+      ],
+      "summary": "sched-v5 CLOSED/FROZEN：IO completion 空闲转换缺陷已修复；三平台定向正确性、WSL sanitizers、直接交付、红队及 W1-WSL 自然 TLS consumer 双顺序 5% P1 非劣门全部通过，无公开 API 或普通无 IO 路线扩张。"
     },
     {
       "module": "io_core",
@@ -1223,7 +1251,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-tls-v1",
       "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
       "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
@@ -1257,7 +1285,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_tls v1 VERIFIED：typed TLS 生命周期、三平台正确性、WSL sanitizers、source/static/shared 交付、文档/易用性、红队及 W1-WSL 对 Asio 的两条自然路线双顺序 5% P1 非劣门全部通过。"
+      "freeze_confirmation": {
+        "id": "io-tls-v1-freeze-2026-09-08",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-08",
+        "reviewed_commit": "c1b2a5b775fcc8100281bf3acc3117d09b764987",
+        "reviewed_tree": "7bb2e83a57fa740d84625c1a9539d63e10ee351d",
+        "evidence": "docs/implementation/tasks/io/io-tls-v1.md"
+      },
+      "loc": {
+        "snapshot_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
+        "repository_code": 491234,
+        "self_without_tests": 83216,
+        "module_implementation": 1045
+      },
+      "known_limitations": [
+        "TlsContext and its configured allocator backing must outlive streams and sessions created from it; a stream supports one concurrent reader and one concurrent writer, and operation buffers remain borrowed until await completion.",
+        "Session caching and resumption are explicit opt-in facilities; certificate issuance, system trust-store provisioning, early data, OCSP stapling, key logging, DTLS and QUIC are outside this factor.",
+        "The P1 receipt covers verified connection establishment and one bounded small-record stream on a single W1-WSL worker against Asio over the same OpenSSL; it is not an all-TLS, cross-platform or Formal SOTA certificate.",
+        "OpenSSL is the sole private provider in this round; provider-specific handles are not public and an OpenSSL semantic or lifecycle change requires replay.",
+        "Delivery is C++23 source, static and shared for compatible C++ toolchains; there is no Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named HTTPS or HTTP2 consumer reproduces a correctness, security, identity-verification, truncation, deadline, cancellation, session, context-lifetime or natural C++ API-usability defect.",
+        "A real consumer proves a missing generic TLS capability rather than HTTP, routing, authentication, certificate-provisioning or application policy.",
+        "The public API, layout, algorithm, allocation or copy contract, direct dependency, component identity or source, static or shared delivery shape changes.",
+        "OpenSSL, a supported operating system, compiler or standard library changes semantics relied on by the provider, error mapping or teardown contract.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
+      ],
+      "summary": "io_tls v1 CLOSED/FROZEN：typed TLS 生命周期、三平台正确性、WSL sanitizers、source/static/shared 交付、文档/易用性、红队及 W1-WSL 对 Asio 的两条自然路线双顺序 5% P1 非劣门全部通过。"
     },
     {
       "module": "io_http",
