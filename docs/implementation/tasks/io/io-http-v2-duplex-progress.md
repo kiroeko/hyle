@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`io_http` / IO maintainers /
   `io-http-v2-duplex-progress`；task kind：`REOPEN`；baseline：
@@ -50,6 +50,32 @@
   已处于 nonblocking mode；
 - HTTP/2 只调用组合缝，不复制 POSIX/WinSock/OpenSSL 分支。API/layout/普通 HTTP/1 路线不因 benchmark
   增加 metadata。
+
+## Capability / public-surface audit
+
+| family | existing shape | finding / action |
+|---|---|---|
+| TCP immediate progress | `TcpStream::read_some()` 总是登记 completion 后 suspend | 协议 owner 无法在阻塞写前吸收已经到达的 bytes；增加 private detail helper，ordinary C++ API 不扩面 |
+| TLS immediate progress | memory-BIO pump 只提供 awaitable read/write | 先以小缓冲 H2 TLS 确定性复现；未复现则本轮只记录 `UNSUPPORTED`，复现则由 `io_tls` 自己 reopen，禁止在 HTTP 复制 OpenSSL |
+| transport erasure | `HttpTransport::read_some/write_some` | 缺 immediate outcome；增加 detail dispatch，不改变对象 layout、公开 message API 或 provider handle |
+| HTTP/2 driver | `drive_until` 先完整 flush、再 blocking read | 双向 socket 背压可形成 write/write stall；在没有另一 read in flight 时先处理一个 bounded immediate read |
+| HTTP/1 | 单 owner、顺序 request/response streaming | 没有新能力缺口；只做受影响 correctness/P1 replay，不重构 framing |
+
+现有 public surface 没有 `try_*`、native provider 或 benchmark-only knob；本轮仍保持这一点。即时尝试是
+factor 间 detail contract：TCP 系统调用与 error mapping 仍由 `io_core` 唯一实现，type erasure 仍由
+`io_http` 实现，HTTP/2 只消费，不跨 owner 复制代码。
+
+## Frozen finite FIX set（`AUDITED`）
+
+| ID | exact work | required gate |
+|---|---|---|
+| `IOHTTP2P-F01` | 在 io_core detail 定义 allocation-free immediate receive outcome 与跨平台 TCP 实现；POSIX 使用 nonblocking recv，Windows 先零等待 readiness、不得假设 socket mode | ready/would-block/EOF/error/partial、owner/single-reader、三平台 |
+| `IOHTTP2P-F02` | `HttpTransport` 增加 internal dispatch；HTTP/2 driver 在阻塞写前 bounded drain，并复用现有 parser/error/flow-control | 4 KiB h2c 双向 holdout，io_uring + forced epoll，无 busy loop/hidden queue |
+| `IOHTTP2P-F03` | 增加确定性 regression，并对 TLS ALPN h2 路径做同形复现；若命中旧 io_tls trigger，独立 reopen 后再实现 provider owner 修复 | h2c/TLS、default/fallback、deadline/cancel/teardown |
+| `IOHTTP2P-F04` | 回放 io_core/io_http/io_http2 correctness、sanitizer、source/static/shared，以及原 HTTP/1 与冻结 HTTP/2 P1；更新 guide/receipt/registry | 所有受影响门，无 workload 漂移 |
+
+FIX 集到此冻结。不得把 public `try_read`、background thread、第二 scheduler、socket busy-poll、HTTP/2
+专有字段或新 benchmark shape 加入本轮。
 
 ## Historical boundary
 
