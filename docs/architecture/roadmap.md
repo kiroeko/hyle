@@ -12,10 +12,9 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同登记 **28 个 factor identity**：其中 **27 个已有实现/target**；
-`io_transfer` 是唯一已进入 `AUDITED`、尚待实体化的施工身份。TLS、HTTP/1 与 HTTP/2 已各自拥有源码、
-依赖、测试与交付 target；Transfer 已冻结 owner、依赖候选与有限 FIX，但在 target/source ownership
-实际建立前仍不属于可构建图或产品根。中央 manifest 从 27 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
+CMake target。当前机器合同登记 **28 个 factor identity**，且均已有实现/target；`io_transfer` 已按其
+`AUDITED` 卡建立源码、依赖、测试与产品边，但仍是施工中的 candidate，不能写成已冻结能力。中央
+manifest 从 28 个 factor 投影 **14 个用户产品 façade**。Build/package v7
 已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
 产品域；详见[构建系统](build-system.md)。
 
@@ -38,7 +37,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 ## 2. 组件图
 
-本节第一张表是**当前 24-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
+本节第一张表是**当前 28-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
 [`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
 逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
 
@@ -73,15 +72,9 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | io_tls | core, error, io_core, mem, sched, container_text | — |
 | io_http | core, io_core, io_tls, mem, sched, container_text | — |
 | io_http2 | core, io_http | container |
+| io_transfer | core, error, io_core, io_tls, mem, sched, container_text | container, io_http, platform_fs, time |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
-
-另有以下机器登记项。它已完成 closure card 的 `AUDITED` 边界/依赖候选冻结，但尚未建立真实 target，
-因此不在当前依赖图或任何产品闭包中；只有本轮 F01 建立并验证真实 ownership 后才可进入可构建图：
-
-| Reserved factor ID | Intended semantic owner | Current build contract |
-|---|---|---|
-| io_transfer | bounded model/artifact transfer workflow | AUDITED design; not selectable; no target |
 
 用户看到的不是上述内部 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
 再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
@@ -99,12 +92,12 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | container | container_intrusive, container, container_concurrent, container_queue, container_text |
 | util | util_core, util_runtime |
 | sched | sched |
-| io | io_core, io_tls, io_http, io_http2 |
+| io | io_core, io_tls, io_http, io_http2, io_transfer |
 | compute | compute |
 | graph | graph |
 
-因此，按状态机可独立施工的是 28 个已登记 factor identity；其中当前真正拥有源码、target 与可验证
-依赖边的是 27 个。普通用户仍只看到 14 个产品。Build/package 是贯穿所有 factor 的横向开发单元，
+因此，按状态机可独立施工的是 28 个已登记且可构建的 factor identity。普通用户仍只看到 14 个产品。
+Build/package 是贯穿所有 factor 的横向开发单元，
 外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
 
 factor identity 通常按首次登记顺序只追加，不能为后来出现的自然低层边随意改写历史；只有经过审计、

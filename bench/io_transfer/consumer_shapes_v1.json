@@ -1,0 +1,50 @@
+{
+  "schema": "hyle.io_transfer.consumer-shapes/v1",
+  "purpose": "Freeze the model-artifact transfer journeys used by io_transfer v1 P1 before the only candidate measurement bundle.",
+  "comparison_class": "NATURAL_ROUTE",
+  "reference_snapshots": {
+    "llama.cpp": "e71b80510c848c00175924ecf3c40333ccae8eb5",
+    "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
+    "ds4": "f62ca29a308724cde5bc99134ede19104b2a3260",
+    "vllm": "51da0ca66c8065619c79e35dff97aa99aeaf5644",
+    "sglang": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0"
+  },
+  "common_semantics": {
+    "destination": "one existing sibling destination remains intact until a complete temporary artifact is synced, closed and atomically renamed over it",
+    "memory": "one 1 MiB transfer buffer and O(1) memory in artifact size",
+    "failure": "any short read/write, metadata, validator, extent, checksum, sync, close or publication failure invalidates the process",
+    "interpretation": "the formal peer is source-pinned libcurl 8.22.0 through its public easy API; an earlier direct POSIX same-task route was used only to locate completion amortization and cannot support a public peer, primitive or library-wide SOTA claim"
+  },
+  "workloads": [
+    {
+      "id": "verified-atomic-local-256m",
+      "consumer": "an inference process prepares a complete local model artifact before making it visible to loaders",
+      "source": "one 256 MiB sparse regular file on the same local filesystem as the destination",
+      "charged_phases": [
+        "plan and bounded-buffer construction",
+        "source open, initial metadata validation and complete positioned reads",
+        "incremental FNV-1a verification and complete positioned temporary-file writes",
+        "final source identity validation",
+        "file data-and-metadata sync, close and atomic replacement of an existing destination"
+      ]
+    },
+    {
+      "id": "interrupted-http-range-resume-64m",
+      "consumer": "a model download requests cancellation after reaching 32 MiB and resumes the retained artifact without downloading the prefix again",
+      "source": "one identity-encoded 64 MiB loopback HTTP/1 representation with a strong ETag",
+      "charged_phases": [
+        "initial GET, response validation and cancellation after the first completed body chunk at or beyond 32 MiB",
+        "connection interruption and retained partial ownership",
+        "second connection with Range and If-Range",
+        "206, ETag, Content-Range and response-extent validation",
+        "bounded suffix write from the actual retained offset, file sync, close and atomic replacement"
+      ]
+    }
+  ],
+  "negative_space": [
+    "source creation, server construction and persistent runtime construction are outside timing",
+    "repository schemas, authentication, archive extraction and model parsing are not transfer-factor work",
+    "raw file copy without checksum, source-identity validation, sync and atomic publication is not an admissible primary comparator",
+    "a second full GET instead of validated Range resume is not an admissible holdout comparator"
+  ]
+}

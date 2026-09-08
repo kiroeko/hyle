@@ -15,8 +15,9 @@
   checksum hook、temp-file + fsync + atomic replace、progress observation、cancel/cleanup；
 - non-goals：Hugging Face/model repository schema、authentication UI/token storage、archive extraction、
   model parsing/loading、P2P/RDMA、object-store SDK、route/server、Native FFI/C API；
-- dependencies / consumers：候选 `PUBLIC io_core,io_http,error,mem,container_text,time,sched,platform_fs`；
-  HTTPS route only when `io_tls` is available。最终 edge 在 `AUDITED` 冻结；
+- dependencies / consumers：实际公开边为 `core,error,io_core,io_tls,mem,sched,container_text`，实现边为
+  `container,io_http,platform_fs,time`；公开 `io_tls` 边来自 borrowed custom `TlsContext`，HTTPS route
+  only when provider capability is available；
 - tier：`P1`。primary 为 256 MiB sparse/generated source→temp→atomic publish，holdout 为 interrupted
   range resume；吞吐预算以 OS/file/network 限制为主，但用户态只允许有界 buffers、无全文件 copy、
   O(1) memory in file size；
@@ -46,14 +47,14 @@
 
 | family | admitted journey / lifecycle | baseline | coverage / action |
 |---|---|---|---|
-| local source | regular file range、known/unknown size、short read | raw async file primitive only | `PARTIAL / FIX` composition |
-| HTTP(S) source | streaming body、length/range、redirect、validators | no transfer workflow | `MISSING / FIX` |
-| destination transaction | sibling temp、mode/replace policy、flush + atomic publish | primitives exist across io_core/platform_fs | `MISSING / FIX` owner |
-| resume | partial-file identity、Range/If-Range、206/200/416 decisions | absent | `MISSING / FIX` |
-| integrity | byte count and caller-supplied incremental checksum/verifier | absent | `MISSING / FIX` hook |
-| resource budget | total deadline/cancel、max bytes、bounded buffers、rate/backpressure | per-operation primitive only | `PARTIAL / FIX` |
-| progress | monotonic observation without reentrant ownership transfer | absent | `MISSING / FIX` |
-| failure cleanup | preserve old target、retain/remove partial by policy、typed outcome | absent | `MISSING / FIX` |
+| local source | regular file range、known/virtual-unknown size、short read/source mutation | raw async file primitive only | `IMPLEMENTED / VERIFIED` composition |
+| HTTP(S) source | streaming body、length/range、redirect、validators | no transfer workflow | `IMPLEMENTED / VERIFIED` |
+| destination transaction | sibling temp、flush + atomic replace | primitives exist across io_core/platform_fs | `IMPLEMENTED / VERIFIED` owner |
+| resume | exact partial owner、Range/If-Range、206/200/416 decisions | absent | `IMPLEMENTED / VERIFIED` |
+| integrity | byte count and caller-supplied incremental whole-artifact verifier | absent | `IMPLEMENTED / VERIFIED` hook |
+| resource budget | total deadline/cancel、max bytes、bounded buffers、natural sink backpressure | per-operation primitive only | `IMPLEMENTED / VERIFIED` |
+| progress | monotonic observation without reentrant ownership transfer | absent | `IMPLEMENTED / VERIFIED` |
+| failure cleanup | preserve old target、retain/remove/keep partial by policy、typed outcome | absent | `IMPLEMENTED / VERIFIED` |
 | repository/auth/model semantics | token store、Hub paths、manifest/archive/model parsing | application-specific | `OUT_OF_SCOPE / REJECT` |
 
 llama.cpp provides the defining direct consumer: remote artifacts use redirects, range/resume validators, temporary files and
@@ -64,7 +65,7 @@ policy. libcurl is a semantic peer only; HYLE composes its already-owned HTTP, f
 
 - no current public transfer surface constrains names or layout. The API starts from an owning `TransferPlan`/typed source and
   destination, not from benchmark buffer sizes or callback context pointers;
-- resume is valid only when local partial metadata and remote validator agree. A range ignored as `200`, mismatched ETag/
+- resume is valid only when local metadata and an exact source/partial prefix comparison agree, or the remote validator agrees. A range ignored as `200`, mismatched ETag/
   Last-Modified, or inconsistent total length restarts or fails according to explicit policy; bytes are never blindly appended;
 - publication creates a sibling temporary file, flushes file data, uses the platform's strongest admitted atomic replace and
   preserves the previous destination on failure. Directory durability is reported where the platform contract can express it;
@@ -88,36 +89,65 @@ policy. libcurl is a semantic peer only; HYLE composes its already-owned HTTP, f
 不实现 repository client、auth/token、archive/model parsing 或 server route；不保留失败后损坏目标的 convenience。
 若 io_http 的 streaming/cancel 合同尚未成为 immutable candidate，本 factor 等待其 owner，不复制 parser/socket。
 
-## API / usability freeze draft
+## Implemented API / usability candidate
 
 ```cpp
-TransferPlan plan{
-    .source = HttpTransferSource{url, redirect_policy, resume_policy},
-    .destination = AtomicFileDestination{path, publish_policy},
-    .limits = {.max_bytes = model_budget},
-};
-auto report = co_await transfer(alloc, io, plan, operation,
-                                checksum_hook, progress_observer);
+TransferOptions options;
+options.limits.max_bytes = model_budget;
+auto plan = TransferPlan::http(
+    alloc, HttpTransferSource{url}, AtomicFileDestination{path}, options);
+
+TransferExecution execution;
+execution.owner_worker = owner;
+execution.operation = operation;
+execution.verifier = TransferVerifier::from(checksum_hook);
+execution.progress = TransferProgressObserver::from(progress_observer);
+execution.tls_context = optional_custom_tls_context;
+auto report = co_await transfer(alloc, io, std::move(*plan), execution);
+
+auto retry = TransferPlan::resume(std::move(report.checkpoint));
 ```
 
-Plans own configuration strings/paths; source body buffers are borrowed only during one pipeline step. Progress observers run
+Plans own configuration strings/paths; source body buffers are borrowed only during one pipeline step. Execution callbacks,
+cancel state, the coroutine allocator and an optional custom TLS context are borrowed through task completion. The plan
+factory allocator must outlive every plan, checkpoint and kept-path value derived from it. Progress observers run
 on the owner fiber, cannot re-enter the same transfer, and may request cancellation through the normal token. The report
 distinguishes published, resumed, restarted and retained-partial outcomes. Concrete names may tighten before API freeze, but
 the transaction and resume safety contract cannot be weakened.
 
 ## Owner 七问（AUDITED）
 
-1. Third-party: no new linked dependency is admitted; libcurl/Beast and inference engines are semantic/reference evidence.
+1. Third-party: no new product dependency is admitted; fixed curl 8.22.0 is linked only into the opt-in P1 peer executable,
+   while libcurl/Beast and inference engines remain semantic/reference evidence for the shipped factor.
 2. Capability: eight general transfer families are admitted and absent/partial; F02--F05 are the complete finite repair set.
-3. Reuse: all wire, file, filesystem, allocation, timing, cancellation and scheduling primitives come from lower factors;
+3. Reuse: all wire, TLS policy/context, file, filesystem, allocation, timing, cancellation and scheduling primitives come from lower factors;
    only the transfer state machine is local. Concrete lower-factor gaps trigger lawful reopen rather than duplication.
 4. Performance: P1 256 MiB bounded transfer + interrupted resume; compare equal durability/checksum/buffer ownership or use
-   OS-limited consumer budgets. Raw copy without flush/atomic publish is not a peer.
+   OS-limited consumer budgets. Raw copy without flush/atomic publish is not a peer. A pre-candidate mechanism replay found
+   that the old 256 KiB default paid one io_uring completion per block and trailed the equal-task POSIX cost floor by
+   10--18%; a bounded 1 MiB default reduced both execution orders to about 2--3% without changing ownership or complexity.
+   The HTTP holdout uses libcurl's public easy API rather than a benchmark-local raw parser.
 5. FFI: `N/A`; no C exports, schema or managed-language wrapper.
-6. Delivery: currently `FAIL` because no target/source/header exists; F01 owns the three-shape product contract.
-7. C++ usability/docs: currently `FAIL` because users must hand-compose every failure-sensitive step; F02--F06 establish the guide.
+6. Delivery: target/header/source and exact-factor graph are `PASS`; source/static/shared relocated product smoke remains in F06.
+7. C++ usability/docs: owning plan/checkpoint/report and the user guide are implemented. Red-team removed the final
+   buffer-fill escape hatch: `keep_partial()` now returns a move-only owning path value without allocating or copying.
+
+## Bounded red-team receipt
+
+- a resumed HTTP attempt now starts from the original stable source URL, not a transient or signed redirect target;
+- 206/416 resume responses must repeat the checkpoint ETag/Last-Modified; an omitted validator is a mismatch, not consent;
+- unsupported absolute redirect schemes are rejected instead of being interpreted as same-origin relative paths;
+- `keep_partial()` closes and disarms cleanup before transferring its existing path storage into
+  `KeptTransferPartial`; close failure leaves the checkpoint owning the artifact;
+- arithmetic, byte budgets, old-target preservation, callback borrowing and teardown were replayed against the finite
+  F02--F05 set. No benchmark-only metadata, compatibility overload, pseudo C ABI or second protocol/filesystem primitive
+  remains. Windows/MSVC, WSL/GCC 14 `-Werror` and macOS/AppleClang targeted correctness plus header isolation pass.
 
 ## Current decision
 
-`AUDITED / ACTIVE`。能力图、transaction/resume 生命周期、owner、API draft 与有限 F01--F06 已冻结；
-允许实现，但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+`AUDITED / ACTIVE`。F01--F05 产品实现、定向 Windows/WSL/macOS correctness、GCC 14 `-Werror`、逐头、
+组件图与 bounded red-team 已通过；实现期间修复 validator/total mismatch policy、stable-URL redirect
+reacquisition、unsupported redirect scheme、POSIX zero-size virtual file、local partial 前缀完整性、206 body
+extent 与 keep ownership 形状。F06 的 provider-on OpenSSL HTTPS 以及早期 WSL ASan/UBSan/TSan 已通过；
+最终 exact-candidate source/static/shared、sanitizer replay、immutable candidate 与唯一 P1 bundle 尚未完成，
+因此仍禁止把本 checkpoint 写成 terminal certificate。

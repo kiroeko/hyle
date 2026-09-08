@@ -1,13 +1,14 @@
 #include <hyle/io/capabilities.h>
 #include <hyle/io/endpoint.h>
 #include <hyle/io/http.h>
+#include <hyle/io/transfer.h>
 #if defined(HYLE_IO_TLS)
 #include <hyle/io/tls.h>
 #endif
 #include <hyle/mem/mapping.h>
 
 #if HYLE_IO_HAS_COROUTINE_TRANSPORT != 1
-#  error "supported installed io package lost its coroutine-transport capability"
+#error "supported installed io package lost its coroutine-transport capability"
 #endif
 
 int main() {
@@ -45,14 +46,23 @@ int main() {
   if (http.has_value() || !http.error().IsInvalidArgument())
     return 7;
 
+  // Reliable transfer is part of the same public IO product in source,
+  // static, and shared delivery. The plan owns both paths immediately and
+  // performs no filesystem work until transfer() is awaited on an IO worker.
+  auto transfer = hyle::io::TransferPlan::local(
+      hyle::mem::system_allocator(), {"model.source"}, {"model.ready"});
+  if (!transfer.has_value() || transfer->source() != "model.source" ||
+      transfer->destination() != "model.ready")
+    return 8;
+
 #if defined(HYLE_IO_TLS)
   if (!hyle::io::tls_available())
-    return 8;
+    return 9;
   hyle::io::TlsClientOptions tls_options;
   tls_options.verify = hyle::io::TlsVerifyMode::kNone;
   auto tls_context = hyle::io::TlsContext::make_client(tls_options);
   if (!tls_context.has_value() || !tls_context->valid())
-    return 9;
+    return 10;
 #endif
   return 0;
 }

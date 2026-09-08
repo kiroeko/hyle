@@ -150,7 +150,14 @@ Result<int> keepalive_seconds(time::Duration duration,
 }
 
 struct ConnectAttemptOutcome {
-  Result<TcpStream> result;
+  // Keep the bounded Happy-Eyeballs handoff as two fully initialized values.
+  // A nested Result<TcpStream> makes GCC 14 lose the active-member proof while
+  // std::expected is moved through Channel in a static -O3 build, producing a
+  // false maybe-uninitialized diagnostic. An engaged stream denotes success;
+  // otherwise status owns the attempt failure. This representation adds no
+  // allocation or syscall and makes the channel ownership state explicit.
+  TcpStream stream;
+  Status status;
 };
 
 using ConnectOutcomeChannel = sched::Channel<ConnectAttemptOutcome>;
@@ -208,8 +215,8 @@ sched::Task<void> run_connect_attempt(
   Result<TcpStream> opened =
       TcpStream::open(*io, owner_worker, endpoint.family());
   if (!opened.has_value()) {
-    auto sent = outcomes->send(ConnectAttemptOutcome{
-        make_unexpected(std::move(opened).error())});
+    auto sent = outcomes->send(
+        ConnectAttemptOutcome{TcpStream{}, std::move(opened).error()});
     HYLE_FATAL_ASSERT(sent.has_value());
     co_return;
   }
@@ -217,11 +224,11 @@ sched::Task<void> run_connect_attempt(
   TcpStream stream = std::move(*opened);
   operation.cancel = &cancellation;
   Status connected = co_await stream.connect(endpoint, operation);
-  auto sent = connected.ok()
-                  ? outcomes->send(
-                        ConnectAttemptOutcome{std::move(stream)})
-                  : outcomes->send(ConnectAttemptOutcome{
-                        make_unexpected(std::move(connected))});
+  auto sent =
+      connected.ok()
+          ? outcomes->send(ConnectAttemptOutcome{std::move(stream), Status{}})
+          : outcomes->send(
+                ConnectAttemptOutcome{TcpStream{}, std::move(connected)});
   HYLE_FATAL_ASSERT(sent.has_value());
 }
 
@@ -351,8 +358,8 @@ sched::Task<Result<TcpStream>> connect_ordered(
           "receive TCP connection attempt"));
 
     --active;
-    if (outcome->result.has_value()) {
-      TcpStream winner = std::move(*outcome->result);
+    if (outcome->stream.valid()) {
+      TcpStream winner = std::move(outcome->stream);
       cancellation.cancel();
       while (active != 0) {
         Result<ConnectAttemptOutcome> loser = outcomes.recv();
@@ -364,7 +371,7 @@ sched::Task<Result<TcpStream>> connect_ordered(
       co_return winner;
     }
 
-    last_error = std::move(outcome->result).error();
+    last_error = std::move(outcome->status);
     Status expired = budget_status();
     if (!expired.ok()) {
       Status drained = cancel_and_drain();

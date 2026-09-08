@@ -517,9 +517,8 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
 endif()
 unset(_intrusive_factor_build)
 
-# Maintainer `all` selects the three implemented protocol factors but still
-# excludes the audited transfer identity until its real target lands.
-_hyle_contract_run("maintainer all excludes remaining queued reservation" TRUE
+# Maintainer `all` selects every implemented protocol/workflow factor.
+_hyle_contract_run("maintainer all selects every implemented IO factor" TRUE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
   -B "${_hyle_contract_root}/implemented-factors-all"
   ${_hyle_generator_args}
@@ -534,30 +533,35 @@ _hyle_contract_run("maintainer all excludes remaining queued reservation" TRUE
   -DHYLE_COMPUTE_VULKAN=OFF
   -DHYLE_COMPUTE_GGML=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "resolved='[^']*io_tls[^']*io_http[^']*io_http2" OR
-   HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "resolved='[^']*io_transfer")
+   "resolved='[^']*io_tls[^']*io_http[^']*io_http2[^']*io_transfer")
   message(FATAL_ERROR
-    "maintainer all did not distinguish implemented protocol factors from the "
-    "QUEUED transfer reservation:\n"
+    "maintainer all did not select the complete implemented IO factor set:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
-_hyle_contract_run("queued factor has no build target" FALSE
+set(_io_transfer_factor_build
+  "${_hyle_contract_root}/io-transfer-factor")
+_hyle_contract_run("exact io_transfer factor is selectable" TRUE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
-  -B "${_hyle_contract_root}/queued-factor-request"
+  -B "${_io_transfer_factor_build}"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release
   -DHYLE_DEV_FACTORS=io_transfer
-  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_BUILD_TESTS=ON
   -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_IO_TLS=OFF
+  -DHYLE_IO_HTTP2=OFF
   -DHYLE_INSTALL=OFF)
-if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "factor 'io_transfer'.*registered but QUEUED" OR
-   NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "target yet")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "resolved='[^']*io_core[^']*io_tls[^']*io_http[^']*io_transfer")
   message(FATAL_ERROR
-    "queued factor request failed for the wrong reason:\n"
+    "exact io_transfer factor resolved the wrong dependency closure:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
+_hyle_contract_run("build exact io_transfer factor tests" TRUE
+  "${CMAKE_COMMAND}" --build "${_io_transfer_factor_build}"
+  --config Release --target hyle_io_transfer_tests --parallel 2)
+unset(_io_transfer_factor_build)
 
 # Component identity order is append-only audit history, not a dependency
 # schedule. Obs predates the later mem_reclaim factor in that ledger but may

@@ -1,8 +1,9 @@
 # HYLE io/ 网络库选型
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 io 轮次重裁决。
+> **当前状态：factorized rebuild active。** 本页描述当前设计与边界，不替代
+> `module-status.json` 的逐 factor 证书。当前只提供 C++23 source/static/shared，Native FFI 为
+> `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。IO 五个 factor 当前仍须完成各自活动卡
+> 的 terminal gates 才能写成 `CLOSED/FROZEN`。
 
 > 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
@@ -11,7 +12,7 @@
 ```text
 普通 C++ 用户
   TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1
-  HTTP/2（重构中，不是冻结用户合同）
+  HTTP/2 / reliable local-or-HTTP artifact transfer（重构中）
        │ co_await；deadline / CancelToken；RAII
        ▼
 IoContext（每 Scheduler worker 一个 private completion engine + blocking pool）
@@ -56,6 +57,19 @@ private backend engine ───────────────────
 - HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；当前 factor
   仍为 `AUDITED`，旧 fixed-buffer API 不是冻结合同。它只能经同一个
   `HttpTransport` 重构，不能再复制 TCP/TLS transport 或另起 event loop。
+- `io_transfer` 只拥有有界的 local/HTTP(S) source 到 sibling temporary file、
+  validator-safe resume、caller verifier、file sync 与 atomic replacement 状态机。
+  它复用 IO/HTTP/TLS/Platform FS，不复制协议或文件原语；repository/auth/model
+  schema、archive、路由与服务策略留在上层。plan/checkpoint 拥有跨 suspend 状态，
+  body/copy buffer 对制品大小保持 O(1)，旧目标只在校验与 sync 成功后被替换。
+  HTTPS 默认创建只协商 HTTP/1.1 的系统信任 client context；custom CA/mTLS 复用
+  `io_tls::TlsContext` 的 borrow，不在 transfer 中复制第二套 TLS option。普通 local
+  copy 使用一个 buffer；local resume 才用第二个同上限 buffer 对源和 partial 前缀
+  逐字节核对。POSIX size=0 的 virtual regular file 读到真实 EOF，不能把元数据 0
+  当成空内容。
+  HTTP resume 每次从原始稳定 URL 重新取得 redirect chain；206/416 必须重复提供
+  checkpoint validator，缺失与改变同样进入显式 restart/fail policy。`keep_partial()`
+  关闭句柄并返回 owning C++ path value，不暴露 buffer-fill 式伪 C 接口。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
 - Linux-only provided-buffer/multishot receive 只能经成功取得的
@@ -72,8 +86,9 @@ private backend engine ───────────────────
 > 现存例外和补全工单见
 > [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
-IO 正在按 factor 重构；`io_tls`、`io_http` 已 `CLOSED/FROZEN`，`io_core`、
-`io_http2` 与 `io_transfer` 仍为 `AUDITED`，不得把实现 checkpoint 当成已收口证书。
+IO 正在按 factor 重构；`io_core`、`io_tls`、`io_http`、`io_http2` 与
+`io_transfer` 当前均以中央 registry 的 `AUDITED` 活动卡为准，不得把实现或测试
+checkpoint 当成已收口证书。
 当前轮与唯一状态见各 closure card 和
 [`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
 施工历史，若与本节、活动卡或代码冲突，以活动卡和代码为准。
@@ -131,6 +146,7 @@ include/hyle/io/
 ├─ file.h / dns.h / signal.h 文件、解析与关闭事件
 ├─ io_uring.h                Linux-only typed receive accelerator
 ├─ tls.h / http*.h           由独立协议 factor 拥有，仍保持统一用户 namespace
+├─ transfer.h                可靠制品传输 transaction/resume owner
 └─ detail/proactor.h + net*  不承诺的完成引擎与 awaitable 实现 seam
 
 
@@ -142,7 +158,7 @@ src/io_core/
 src/io_tls/                  OpenSSL provider/config/session/stream owner
 src/io_http/                 HTTP/1 lifecycle + private picohttpparser
 src/io_http2/                HTTP/2 lifecycle + private nghttp2
-src/io_transfer/             download/upload/resume owner（尚未实现）
+src/io_transfer/             local/HTTP(S) download/copy/resume/publish owner
 ```
 
 F09 已把协议源码、测试、benchmark、依赖与导出边分别迁入 `io_tls/io_http/io_http2`；

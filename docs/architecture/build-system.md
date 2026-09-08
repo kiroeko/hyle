@@ -67,8 +67,8 @@
 ### 双层投影合同
 
 Stage C 能力账本中的 30 项是**候选 semantic factor**。当前有 28 个 identity 同时进入
-`module-status.json` 与中央 manifest：27 个已经拥有实际 target、源码 ownership、测试和 HYLE 直接
-依赖；`io_transfer` 是唯一已 `AUDITED` 但仍无 target 的身份保留项，不会被 `all` 选择。
+`module-status.json` 与中央 manifest，且均已拥有实际 target、源码 ownership、测试和 HYLE 直接
+依赖。`io_transfer` 已实体化但仍处在 `AUDITED` 活动轮，是否冻结仍只看 registry/task gates。
 其余候选尚未登记。所有 factor 都不是用户产品；中央 manifest 另行投影 14 个 product façade。
 双层投影把旧
 “component”承担的四种含义拆开：
@@ -171,14 +171,16 @@ io_core     -> PUBLIC core error mem container time timer_queue sched platform_f
 io_tls      -> PUBLIC core error io_core mem sched container_text
 io_http     -> PUBLIC core io_core io_tls mem sched container_text
 io_http2    -> PUBLIC core io_http; PRIVATE container
+io_transfer -> PUBLIC core error io_core io_tls mem sched container_text;
+               PRIVATE container io_http platform_fs time
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd
 graph       -> PUBLIC core error mem container sched; PRIVATE util_core
 ```
 
-`io_tls`、`io_http` 与 `io_http2` 已从 `io_core` 物理拆出；各自拥有公开头、源码、测试、外部依赖和
-source/static/shared artifact，但继续共享用户命名空间 `hyle::io`。基础传输机器 ID `io_core` 只承载
-completion/file/net/IPC；`hyle::io` façade 聚合四个已实现根。`io_transfer` 仍是唯一无 target 的
-`QUEUED` build identity；`HYLE_DEV_FACTORS=all` 不选择它，显式选择会以可诊断错误失败。
+`io_tls`、`io_http`、`io_http2` 与 `io_transfer` 已从 `io_core` 物理拆出；各自拥有公开头、源码、测试、
+外部依赖和 source/static/shared artifact，但继续共享用户命名空间 `hyle::io`。基础传输机器 ID
+`io_core` 只承载 completion/file/net/IPC；`hyle::io` façade 聚合五个已实现根。维护者可用
+`HYLE_DEV_FACTORS=io_transfer` 独立选择其精确闭包；普通消费者始终只选择 `io` 产品。
 
 `PUBLIC` 表示消费者编译或链接本 factor 时也需要该 factor 依赖；`PRIVATE` 表示只服务本 factor 实现。
 `BUILD_PRIVATE` 保留给确有真实 `$<BUILD_INTERFACE:...>` target 边、但不扩大安装闭包的 HYLE 内部

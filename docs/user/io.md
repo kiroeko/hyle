@@ -1,7 +1,8 @@
 # IO 使用指南
 
-> **`provisional / NOT_REVIEWED_V2`。** IO 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+> **`provisional / factorized rebuild active`。** IO 当前只提供 C++ 产品面；五个内部
+> factor 的终态以 `module-status.json` 为准。本页适用于 C++23 source/static/shared 三种交付，
+> 不描述 C API 或跨语言调用层。
 
 普通 C++ 程序使用 `IoContext` 与 RAII/`co_await` 封装。`Proactor`、native
 completion token 和负错误码已经收进 `detail` 后端，不是公开产品面；不要 include
@@ -250,7 +251,94 @@ HTTP/2 因子目前仍处于 `AUDITED` 重构轮，旧的 fixed-buffer
 RST/GOAWAY、统一 deadline/cancel 与 ALPN 检查后再签发使用指南。当前需要稳定
 HTTP 服务的代码应使用上面的 HTTP/1 streaming 路线，不要自行绕过到 nghttp2。
 
-## 5. DNS、signal 与 Linux 专属快腿
+## 5. 可靠复制与模型下载
+
+当需求是“旧模型继续可用，完整的新制品校验成功后才替换它”时，使用
+`TransferPlan`，不要在应用中重新拼 redirect、Range、临时文件和 rename：
+
+```cpp
+#include <hyle/io/transfer.h>
+
+hyle::io::TransferOptions options;
+options.limits.max_bytes = 16ull << 30;
+// Optional: the 1 MiB default favors model-sized local and HTTP artifacts.
+// Select a smaller block only when concurrent-transfer memory is tighter.
+options.limits.buffer_bytes = 1 << 20;
+
+auto plan = hyle::io::TransferPlan::http(
+    alloc,
+    {.url = "https://models.example/qwen/model.gguf"},
+    {.path = "models/qwen.ready"}, options);
+if (!plan) co_return;
+
+hyle::io::TransferExecution execution;
+execution.owner_worker = owner;
+execution.operation.deadline =
+    hyle::time::deadline_after(std::chrono::minutes(30));
+execution.operation.cancel = &cancel;
+execution.verifier = hyle::io::TransferVerifier::from(sha256_verifier);
+execution.progress = hyle::io::TransferProgressObserver::from(progress);
+
+auto report = co_await hyle::io::transfer(
+    alloc, io, std::move(*plan), execution);
+if (!report.published() && report.checkpoint.resumable()) {
+  auto retry = hyle::io::TransferPlan::resume(
+      std::move(report.checkpoint));
+  // 在新的 transfer() attempt 中重新提供 deadline/cancel/callback。
+}
+```
+
+本地文件用 `TransferPlan::local`，HTTP 与 HTTPS 用
+`TransferPlan::http`。factory 在返回前复制 source、URL、destination 和 options；
+factory 的 allocator 为 plan、checkpoint 和 kept-path value 提供存储，必须比这些值活得更久；
+传给 `transfer()` 的 coroutine allocator 则必须活到返回的 task 完成。
+`TransferExecution` 中的 verifier、observer、cancel token 与可选 TLS context 是 borrow，必须活到 task
+完成。task 必须运行在 `owner_worker` 对应的 Scheduler worker。每次 read 完整 await
+对应 write 后才继续取下一块，没有隐藏的全文件缓冲或无界队列；内存对制品大小为
+O(1)。HTTP 正常路径复用 body chunk，本地复制以及 resume 前缀校验才使用显式 copy
+buffer。默认 block 为 1 MiB；每个本地 resume 最多临时持有两块，因此需要大量并发下载且更重视
+内存上限时，可显式选择更小的非零 `buffer_bytes`。较小 block 会增加每字节的 completion/syscall
+摊销，不应仅为微基准随意修改。
+
+成功路径在目标同目录创建已打开的随机 temporary file，校验完整 byte stream，sync
+文件数据与 metadata，close 后才原子替换目标。因此失败、cancel、checksum mismatch、
+超限或短读都不会破坏旧目标。`kFileDataAndMetadata` 只承诺文件本身已 sync；当前
+Platform 没有可移植 directory-fsync 合同，所以它不声称掉电后目录项一定持久。该
+workflow 使用 buffered temporary file：direct IO 的 alignment/尾块语义不适合 HTTP
+chunk 与通用原子发布；需要 direct model-file reads 时应在发布后用第 3 节的显式
+`FileCacheMode::kDirect`。
+
+默认失败策略返回一个 move-only `TransferCheckpoint`。它拥有准确的 open partial
+file、source identity/HTTP validator 和 options：
+
+- `resume(std::move(checkpoint))` 继续原配置；重载可显式修改 limits 与 mismatch policy；
+- 本地 resume 先比较 regular-file size/mtime，再把 source 与 retained partial 的
+  完整前缀逐字节核对，并在复制结束再次核验元数据；即使时间戳碰巧相同也不会盲目
+  append。POSIX 上 `/proc`/`sysfs` 一类报告 size=0 的 regular file 会读到真实 EOF，
+  真正的空文件仍正常发布；HTTP 使用 strong ETag，缺少时退到 Last-Modified。server
+  忽略 Range、validator/total 改变时默认安全
+  truncate 并重启；`kFail` 则保留 partial 并返回 `FailedPrecondition`；
+- `416` 只有在 `Content-Range: bytes */total` 与 checkpoint offset、已知 total，以及
+  响应中出现的 validator 一致时，才把 partial 当作完整制品继续校验和发布；
+- `discard()` 显式关闭并删除；checkpoint 析构也会 best-effort 同步 close/remove，故应
+  在 control path 明确处理，不要把大量 checkpoint 的析构堆到 latency-sensitive worker；
+- `keep_partial()` 返回 move-only `KeptTransferPartial`。它关闭 partial、解除 HYLE 的
+  自动删除，并零额外分配地接管稳定路径存储；`path()`/`c_str()` 在该值存活期间有效。
+  值析构后文件仍由调用方负责。它不会生成跨进程 resume manifest，调用方必须自行管理
+  该诊断/移交文件。
+
+HTTPS 默认验证系统信任链、只使用 HTTP/1.1 并禁止降级到 HTTP。需要企业 CA 或 mTLS 时，
+先用 `<hyle/io/tls.h>` 构造 `TlsContext`，再令
+`execution.tls_context = &client_context`；context 必须活到 task 完成，而且不得配置为
+协商 `h2`，因为本 workflow 当前只组合已冻结的 HTTP/1 body contract。URL 中的 credentials/userinfo、fragment、
+控制字符和非法 authority 会被拒绝。认证 token、代理、Hugging Face/repository layout、
+archive、模型 schema 与 digest lookup 都属于上层。redirect 有显式上限，响应必须是
+identity encoding；`max_bytes` 计算最终制品总量而非“本次剩余量”。progress/verifier
+同步运行在 owner fiber，不得重入同一 transfer；它们返回非 OK `Status` 就按普通失败
+策略停止。commit 在 atomic replace 开始后不可取消，避免出现调用方无法判断目标名字
+指向哪一版的状态。
+
+## 6. DNS、signal 与 Linux 专属快腿
 
 - `resolve(io, allocator, host, port).join(operation)` 把 `getaddrinfo` 卸载到
   `IoContext` 的 blocking pool，复制 host、返回 owning 的完整 IPv4/IPv6 列表，

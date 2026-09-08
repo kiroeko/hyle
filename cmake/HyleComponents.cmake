@@ -253,9 +253,14 @@ _hyle_declare_component(io_http2
   PRIVATE_DEPS container sched util_core
   PUBLIC_DEPS core io_http
   SPLIT_PUBLIC_HEADERS hyle/io/http2.h)
-# Transfer has an audited design but remains a non-buildable identity until its
-# first real public contract and implementation land; no empty product target.
-_hyle_declare_component(io_transfer QUEUED)
+# Reliable artifact transfer owns orchestration only. Public types expose the
+# canonical allocator/error/task/operation contracts; HTTP framing and atomic
+# filesystem mechanisms remain private implementation dependencies.
+_hyle_declare_component(io_transfer
+  PRIVATE_DEPS container io_http platform_fs time
+  PUBLIC_DEPS core error io_core io_tls mem sched container_text
+  PUBLIC_TYPE_DEPS io_tls
+  SPLIT_PUBLIC_HEADERS hyle/io/transfer.h)
 # compute publicly exposes error/mem and sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
@@ -355,7 +360,7 @@ _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
-_hyle_declare_product(io FACTORS io_core io_tls io_http io_http2)
+_hyle_declare_product(io FACTORS io_core io_tls io_http io_http2 io_transfer)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
 
