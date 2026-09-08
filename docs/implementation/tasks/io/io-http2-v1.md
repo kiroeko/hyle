@@ -86,22 +86,57 @@ allocator, error translation and the stream-facing lifecycle; it must not duplic
 不保留旧 whole-message、pointer/bool/fixed-array API；不手写 HPACK/frame state machine。gRPC schema、server push、
 HTTP/1 Upgrade、WebSocket 与 HTTP/3 不得追加到本轮。
 
-## API / usability freeze draft
+## API / usability freeze（`AUDITED`）
 
 ```cpp
-Http2ServerSession session{alloc, std::move(transport), limits};
-auto incoming = co_await session.accept_stream(operation);
-Http2Stream stream = std::move(**incoming);
-Http2RequestHeadView head = stream.request_head();
-TransferResult n = co_await stream.read_body(bytes, operation);
-Status sent = co_await stream.send_response(head, body_source, operation);
-Status drained = co_await session.drain(goaway, operation);
+auto made = Http2ServerSession::create(alloc, std::move(transport), limits);
+Http2ServerSession session = std::move(*made);
+auto incoming = co_await session.accept(operation);
+Http2StreamId id = (*incoming)->stream_id;
+Http2RequestView head = (*incoming)->head;
+Http2BodyReader body = std::move((*incoming)->body);
+
+auto started = co_await session.start_response(
+    id, Http2ResponseHead{.status = 200}, std::nullopt, operation);
+Http2BodyWriter writer = std::move(*started);
+co_await writer.write(token_bytes, operation);
+co_await writer.finish({}, operation);
+co_await session.drain(Http2Error::kNoError, operation);
 ```
 
-Each session has one execution owner; a stream has at most one read and one write in flight. Header views remain valid until
-the next header event on that stream, body bytes until the corresponding await returns, and stream/session destruction must
-retire provider callbacks before releasing allocator state. No P1 starts before compile-only multiplexed/streaming journeys
-freeze these contracts.
+The public shape is frozen as follows before product implementation begins:
+
+- `Http2Limits` is a value contract for dynamic header count/bytes, per-stream body bytes, concurrent streams,
+  connection/stream receive windows and ordinary read chunk size. There are no public compile-time HTTP/2 maxima.
+- `Http2StreamId` is an opaque positive value. No API accepts or returns a raw signed stream ID as a success/error union.
+- regular fields reuse `HttpHeader` / `HttpHeadersView`; `Http2RequestView` owns the HTTP/2 pseudo-field vocabulary and
+  `Http2ResponseView` owns `:status`. Repeated regular fields retain order.
+- `Http2IncomingRequest` / `Http2IncomingResponse` are values containing a head view, strong stream ID and move-only
+  `Http2BodyReader`. Initial HEADERS make the value ready; END_STREAM is not required before delivery.
+- `Http2BodyReader::read()` returns bounded `HttpBodyChunkView`; acknowledgement occurs on the next reader operation and
+  directly calls `nghttp2_session_consume_stream()`. EOF exposes trailers. Dropping an unfinished reader submits RST and
+  releases connection credit.
+- `Http2BodyWriter` has one borrowed chunk in flight. `write()` does not return before bytes encoded from that chunk have
+  crossed the transport write boundary; `finish()` supplies optional trailers. The nghttp2 provider returns
+  `NGHTTP2_ERR_DEFERRED` when the producer has not supplied bytes, and `nghttp2_session_resume_data()` is the only resume
+  mechanism. Fixed span and `HttpBodySource` overloads are conveniences over this same path.
+- `Http2ServerSession` exposes `create`, `accept`, `start_response` / `send_response`, `reset`, `drain`, `close` and peer
+  GOAWAY inspection. `Http2ClientSession` exposes `create`, `start_request` / `send_request`, completion-order
+  `next_response`, ID-specific `read_response`, `reset`, `drain`, `close` and peer GOAWAY inspection.
+- A session and every stream handle are bound to the transport owner worker. At most one read and one write may be active
+  for an individual stream. Multiple stream fibers may operate cooperatively: a bounded internal driver serializes nghttp2
+  mutation and at most one transport read/write per direction; it never creates a second scheduler or an unbounded request
+  queue.
+- Header views remain valid until the next header/session operation documented on that stream; a returned body view remains
+  valid until the next operation on its reader. Session destruction invalidates every outstanding handle. Reader/writer
+  destruction retires nghttp2 callbacks before allocator-backed stream state can be reclaimed.
+- h2c means prior knowledge only. A TLS constructor accepts only an already-handshaken stream whose ALPN is exactly `h2`.
+  CONNECT, HTTP/1 Upgrade, server push, WebSocket and gRPC schema/runtime remain named non-goals rather than half-working
+  fields on the generic API.
+
+No P1 starts before compile-only multiplexed/streaming journeys and the implementation freeze these contracts. Product
+evidence may refine private layout and driver mechanics, but changing the public lifecycle requires returning this card to
+`AUDITED` with a named consumer contradiction.
 
 ## Owner 七问（AUDITED）
 
