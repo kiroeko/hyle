@@ -149,8 +149,19 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 - `IOTLS-F05 delivery checkpoint`：TLS-enabled Windows installed-package consumer 已分别从
   `hyle::io` 的 shared 与 static 安装树完成 configure/build/run；sample 还实际构造 typed client
   context，因而不是只验证链接器能找到空壳 target。exact-factor source journey 已在 Windows、WSL
-  与 macOS 覆盖；sanitizer、合格 P1、红队和最终 relocation receipt 仍待签发，不能据此提前写成
+  与 macOS 覆盖；合格 P1、红队和最终 relocation receipt 仍待签发，不能据此提前写成
   `VERIFIED`。
+- `IOTLS-F05 sanitizer checkpoint`：冻结 candidate 的 WSL GCC 14 static exact-factor 分别在
+  ASan、UBSan 与 TSan 下通过全部 `io_tls` test。TSan 首次启动遇到 GCC/WSL 的
+  `unexpected memory mapping` 环境失格；按既有 Linux 合同经 `setarch x86_64 -R` 关闭子进程
+  ASLR 后复跑通过，未报告 data race，不能把首次环境失败隐去或误记成产品失败。
+- `IOTLS-F05 P1 fixture freeze`：旧 blocking OpenSSL 行已明确降为 opt-in
+  `MECHANISM_DIAGNOSTIC / NOT_COMPARABLE`；它不再默认执行，也不能签产品结论。新的
+  [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 只比较持久单 worker runtime 上的
+  HYLE public `spawn_task` + typed TLS 自然路线与 standalone Asio async SSL 自然路线；两侧使用同一
+  OpenSSL、verified localhost、禁用 session/ticket，完整计 TCP connect/accept、handshake、精确
+  512x256 B 双向 stream、`close_notify` 和 connection teardown。有限 5% margin、正反序与 workload
+  identity 已在采样前冻结；目前仅完成 Windows fixture smoke，正式 W1-WSL qualification 尚未运行。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256

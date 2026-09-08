@@ -597,15 +597,21 @@ Product builds have no external benchmark dependency. Any `HYLE_BUILD_BENCH=ON` 
 | `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_intrusive_bench` |
 | `-DHYLE_BENCH_WYHASH=ON` | hash_bytes vs wyhash | `hyle_hash_bench` |
 | `-DHYLE_BENCH_FOLLY=ON` | immutable snapshot reads vs official Folly RCU | `hyle_mem_reclaim_consumer_bench` |
+| `-DHYLE_BENCH_LIBURING=ON` | io_core echo vs raw liburing diagnostic | `hyle_io_core_bench` |
+| `-DHYLE_BENCH_ASIO=ON` | io_core echo vs standalone Asio | `hyle_io_core_bench` |
+| `-DHYLE_BENCH_LIBUV=ON` | io_core echo vs libuv | `hyle_io_core_bench` |
+| `-DHYLE_BENCH_ASIO_TLS=ON` | verified persistent-runtime TLS journeys vs standalone Asio SSL | `hyle_io_tls_bench` |
 
-**11 gates total.** Highway and xsimd are **pinned external** rivals rooted at
+**15 gates total.** Highway and xsimd are **pinned external** rivals rooted at
 `HYLE_BENCH_VENDOR_DIR`; their gates only toggle comparison rows after the
-mandatory bench checkout is available. SIMDUTF remains **vendored**. Seven are
-**clone** rivals (ABSL/MOODYCAMEL/TBB/RIGTORP/MARL/BOOST/WYHASH — each
-needs its sibling clone + a `HYLE_<LIB>_DIR` path variable, defaulting to
-`$repo/../<lib>`). Folly uses a clean source checkout only for provenance and a
-separately prepared official package prefix for its dependency closure. All
-gates are B-category dev/bench controls and never affect the shipped library.
+mandatory bench checkout is available. SIMDUTF remains **vendored**. Nine are
+**clone** rivals (ABSL/MOODYCAMEL/TBB/RIGTORP/MARL/BOOST/WYHASH/ASIO/LIBUV —
+each needs its sibling clone plus a `HYLE_<LIB>_DIR` path variable, defaulting
+to `$repo/../<lib>`); one Asio checkout serves both Asio gates. Raw liburing
+uses a separately installed benchmark-only library. Folly uses a clean source
+checkout only for provenance and a separately prepared official package prefix
+for its dependency closure. All gates are B-category dev/bench controls and
+never affect the shipped library.
 
 On Windows, install Folly with vcpkg into a persistent prefix, pass the clean
 tag-matched checkout as `HYLE_FOLLY_DIR`, and pass the installed triplet root

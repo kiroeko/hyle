@@ -1,33 +1,23 @@
-// io-08 TLS benchmark: the honest TLS perf comparison the io-08 milestone
-// deferred. TLS throughput/handshake over HYLE's memory-BIO pump (co_await
-// TcpStream) has TWO cost components: (1) OpenSSL's crypto (handshake
-// asymmetric + record symmetric) -- UNAVOIDABLE, identical for any OpenSSL
-// user; (2) HYLE's pump + fiber scheduling overhead ON TOP. A single throughput
-// number can't separate them, so the SOTA baseline here is RAW OpenSSL over a
-// blocking socket (same cert, same cipher, same payload, NO HYLE) -- the ratio
-// is exactly what HYLE's co_await abstraction costs over bare OpenSSL. Both pay
-// the identical crypto floor, so the delta is pure HYLE.
+// io_tls P1 consumer benchmark. The product pair keeps one runtime, TLS
+// contexts and listener alive, then charges one complete connection episode:
+// HYLE's public spawn_task/TLS route versus standalone Asio's public async SSL
+// route over the same OpenSSL provider. Both sides connect, handshake, move the
+// same bytes and exchange close_notify. Runtime/context/listener construction
+// is outside the charged episode, matching a long-lived inference server.
 //
-// Three measurements:
-//   1. HYLE TLS handshake/s -- full connect + handshake + close round-trip (the
-//      connection-setup cost, dominated by the asymmetric key exchange).
-//   2. HYLE TLS echo throughput -- post-handshake N encrypted round-trips
-//   (steady-
-//      state record read/write pump).
-//   3. raw OpenSSL (blocking socket, no HYLE) -- same handshake + echo, the
-//   crypto
-//      floor + a plain blocking-socket loop. HYLE/this ratio = the pump
-//      overhead.
-//
-// Run under scripts/bench-stat.py -n 15 for the statistical verdict.
+// A raw blocking OpenSSL route remains available only when
+// HYLE_TLS_RAW_DIAGNOSTIC is set. Blocking versus scheduler-bound async IO has
+// a different progress/lifecycle contract, so that row is a mechanism
+// diagnostic and MUST NOT be used for product non-inferiority or SOTA claims.
 
 #include <nanobench.h>
 
-#include <atomic>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <future>
 #include <memory>
 #include <string>
 #include <thread>
@@ -42,7 +32,13 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
+
+#if defined(HYLE_BENCH_ASIO_TLS)
+#include <asio.hpp>
+#include <asio/ssl.hpp>
+#endif
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
@@ -52,8 +48,12 @@
 #include <unistd.h>
 #endif
 #if defined(_WIN32)
+#if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
+#endif
+#if !defined(NOMINMAX)
 #define NOMINMAX
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
@@ -65,8 +65,12 @@ using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tls_handshake;
 using hyle::io::tls_read;
+using hyle::io::tls_shutdown;
 using hyle::io::tls_write;
+using hyle::io::TlsConnectOptions;
 using hyle::io::TlsContext;
+using hyle::io::TlsShutdownMode;
+using hyle::io::TlsShutdownOptions;
 using hyle::io::TlsStream;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
@@ -80,7 +84,7 @@ namespace {
 constexpr unsigned kOwner = 0;
 constexpr int kMsgLen = 256; // TLS record payload
 constexpr int kEchoRoundTrips =
-    64; // encrypted round-trips per connection per epoch
+    512; // amortizes one honest connection lifecycle without hiding it
 
 // Self-signed cert + key (CN=localhost, RSA 2048), same as tls_test.cc.
 const char *kCertPem =
@@ -155,7 +159,6 @@ struct HyleTls {
                 // echoes
   TlsContext *sctx;
   TlsContext *cctx;
-  std::atomic<int> client_units{0};
 };
 
 Task<int> hyle_server(AllocatorRef alloc, TcpListener *ls, HyleTls *h) {
@@ -169,22 +172,36 @@ Task<int> hyle_server(AllocatorRef alloc, TcpListener *ls, HyleTls *h) {
   TlsStream tls = std::move(*wrapped);
   if (!(co_await tls_handshake(alloc, tls)).ok())
     co_return 0;
-  if (!h->do_echo)
-    h->client_units.store(1, std::memory_order_relaxed);
+  int units = 1;
   if (h->do_echo) {
+    units = 0;
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
-      auto received =
-          co_await tls_read(alloc, tls, std::as_writable_bytes(std::span(buf)));
-      if (!received.ok() || received.bytes == 0)
-        break;
-      auto sent = co_await tls_write(
-          alloc, tls, std::as_bytes(std::span(buf, received.bytes)));
-      if (!sent.ok() || sent.bytes != received.bytes)
-        break;
+      std::size_t received_bytes = 0;
+      while (received_bytes != sizeof(buf)) {
+        auto received = co_await tls_read(
+            alloc, tls,
+            std::as_writable_bytes(std::span(buf)).subspan(received_bytes));
+        if (!received.ok() || received.bytes == 0)
+          co_return 0;
+        received_bytes += received.bytes;
+      }
+      std::size_t sent_bytes = 0;
+      while (sent_bytes != sizeof(buf)) {
+        auto sent = co_await tls_write(
+            alloc, tls, std::as_bytes(std::span(buf)).subspan(sent_bytes));
+        if (!sent.ok() || sent.bytes == 0)
+          co_return 0;
+        sent_bytes += sent.bytes;
+      }
+      ++units;
     }
   }
-  co_return 0;
+  TlsShutdownOptions shutdown;
+  shutdown.mode = TlsShutdownMode::kBidirectional;
+  if (!(co_await tls_shutdown(alloc, tls, shutdown)).ok())
+    co_return 0;
+  co_return units;
 }
 
 Task<int> hyle_client(AllocatorRef alloc, IoContext *io, HyleTls *h) {
@@ -195,66 +212,304 @@ Task<int> hyle_client(AllocatorRef alloc, IoContext *io, HyleTls *h) {
   if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, h->port)))
            .ok())
     co_return 0;
-  auto wrapped = TlsStream::connect(std::move(s), *h->cctx);
+  TlsConnectOptions connect_options;
+  connect_options.server_name = "localhost";
+  auto wrapped = TlsStream::connect(std::move(s), *h->cctx, connect_options);
   if (!wrapped)
     co_return 0;
   TlsStream tls = std::move(*wrapped);
   if (!(co_await tls_handshake(alloc, tls)).ok())
     co_return 0;
+  int units = 1;
   if (h->do_echo) {
+    units = 0;
     static const char kMsg[kMsgLen] = "hyle-tls-bench-payload";
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
-      auto sent =
-          co_await tls_write(alloc, tls, std::as_bytes(std::span(kMsg)));
-      if (!sent.ok() || sent.bytes != kMsgLen)
-        break;
-      auto received =
-          co_await tls_read(alloc, tls, std::as_writable_bytes(std::span(buf)));
-      if (!received.ok() || received.bytes == 0)
-        break;
-      h->client_units.fetch_add(1, std::memory_order_relaxed);
+      std::size_t sent_bytes = 0;
+      while (sent_bytes != sizeof(kMsg)) {
+        auto sent = co_await tls_write(
+            alloc, tls, std::as_bytes(std::span(kMsg)).subspan(sent_bytes));
+        if (!sent.ok() || sent.bytes == 0)
+          co_return 0;
+        sent_bytes += sent.bytes;
+      }
+      std::size_t received_bytes = 0;
+      while (received_bytes != sizeof(buf)) {
+        auto received = co_await tls_read(
+            alloc, tls,
+            std::as_writable_bytes(std::span(buf)).subspan(received_bytes));
+        if (!received.ok() || received.bytes == 0)
+          co_return 0;
+        received_bytes += received.bytes;
+      }
+      ++units;
     }
   }
-  co_return 0;
+  TlsShutdownOptions shutdown;
+  shutdown.mode = TlsShutdownMode::kBidirectional;
+  if (!(co_await tls_shutdown(alloc, tls, shutdown)).ok())
+    co_return 0;
+  co_return units;
 }
 
-struct Drive {
-  Task<int> task;
+// Persistent public HYLE consumer. Scheduler/IoContext/TLS contexts/listener
+// are server-level state; one run charges only a connection task tree.
+class HyleTlsHarness {
+public:
+  HyleTlsHarness(std::uint16_t port, TlsContext *server, TlsContext *client)
+      : scheduler_(1, system_allocator(), 1024), io_(scheduler_) {
+    auto opened = TcpListener::bind(
+        io_, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
+    if (!opened)
+      std::abort();
+    listener_ = std::move(*opened);
+    state_.port = port;
+    state_.sctx = server;
+    state_.cctx = client;
+  }
+
+  ~HyleTlsHarness() { scheduler_.shutdown(); }
+
+  int run(bool do_echo) {
+    state_.do_echo = do_echo;
+    auto server = hyle::sched::spawn_task(
+        scheduler_, system_allocator(),
+        hyle_server(system_allocator(), &listener_, &state_));
+    auto client =
+        hyle::sched::spawn_task(scheduler_, system_allocator(),
+                                hyle_client(system_allocator(), &io_, &state_));
+    auto client_result = client.join();
+    auto server_result = server.join();
+    if (!client_result || !server_result || *client_result != *server_result)
+      return -1;
+    return *client_result;
+  }
+
+private:
+  Scheduler scheduler_;
+  IoContext io_;
+  TcpListener listener_;
+  HyleTls state_{0, false, nullptr, nullptr};
 };
-void drive_entry(void *p) noexcept { static_cast<Drive *>(p)->task.resume(); }
 
-// One HYLE TLS connection: handshake (+ optional N echoes), both fibers pinned
-// to one worker. `port` is bumped per call to dodge TIME_WAIT.
-int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext *sctx,
-                 TlsContext *cctx) {
-  Scheduler sched(1, system_allocator(), 1024);
-  IoContext io(sched);
-  auto opened_listener = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
-  if (!opened_listener.has_value())
-    return -1;
-  TcpListener ls = std::move(*opened_listener);
-  HyleTls h{port, do_echo, sctx, cctx};
-  auto ds = std::make_unique<Drive>();
-  auto dc = std::make_unique<Drive>();
-  ds->task = hyle_server(system_allocator(), &ls, &h);
-  dc->task = hyle_client(system_allocator(), &io, &h);
-  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
-  sched.spawn_on(kOwner, &fs);
-  sched.spawn_on(kOwner, &fc);
-  sched.drain();
-  sched.shutdown();
-  return h.client_units.load(std::memory_order_relaxed);
-}
+#if defined(HYLE_BENCH_ASIO_TLS)
 
-// ---- raw OpenSSL over a blocking socket (SOTA baseline, no HYLE) ------------
-// Same self-signed cert, same cipher defaults, same payload. Server runs on a
-// std::thread; client on the main thread. Plain blocking SSL_read/SSL_write
-// over a connected loopback TCP socket -- the crypto floor + a bare blocking
-// loop. HYLE's number vs this = the co_await pump + fiber scheduling overhead
-// over bare OpenSSL.
+class AsioTlsHarness {
+  using Tcp = asio::ip::tcp;
+
+  struct Episode : std::enable_shared_from_this<Episode> {
+    explicit Episode(AsioTlsHarness *owner, bool echo)
+        : owner(owner), server(owner->io_, owner->server_context_),
+          client(owner->io_, owner->client_context_), do_echo(echo) {
+      static constexpr char kPayload[] = "hyle-tls-bench-payload";
+      std::memcpy(client_message.data(), kPayload, sizeof(kPayload));
+    }
+
+    void start() {
+      auto self = shared_from_this();
+      if (SSL_set_tlsext_host_name(client.native_handle(), "localhost") != 1)
+        return fail();
+      client.set_verify_callback(
+          asio::ssl::host_name_verification("localhost"));
+      owner->listener_.async_accept(
+          server.next_layer(), [self](const asio::error_code &error) {
+            if (error)
+              return self->fail();
+            self->server.async_handshake(
+                asio::ssl::stream_base::server,
+                [self](const asio::error_code &handshake_error) {
+                  if (handshake_error)
+                    return self->fail();
+                  if (self->do_echo)
+                    self->server_read();
+                  else
+                    self->shutdown_server();
+                });
+          });
+      client.next_layer().async_connect(
+          owner->listener_.local_endpoint(),
+          [self](const asio::error_code &error) {
+            if (error)
+              return self->fail();
+            self->client.async_handshake(
+                asio::ssl::stream_base::client,
+                [self](const asio::error_code &handshake_error) {
+                  if (handshake_error)
+                    return self->fail();
+                  if (self->do_echo)
+                    self->client_write();
+                  else
+                    self->shutdown_client();
+                });
+          });
+    }
+
+    void server_read() {
+      auto self = shared_from_this();
+      asio::async_read(
+          server, asio::buffer(server_buffer),
+          [self](const asio::error_code &error, std::size_t bytes) {
+            if (error || bytes != self->server_buffer.size())
+              return self->fail();
+            asio::async_write(self->server, asio::buffer(self->server_buffer),
+                              [self](const asio::error_code &write_error,
+                                     std::size_t written) {
+                                if (write_error ||
+                                    written != self->server_buffer.size())
+                                  return self->fail();
+                                if (++self->server_units == kEchoRoundTrips)
+                                  self->shutdown_server();
+                                else
+                                  self->server_read();
+                              });
+          });
+    }
+
+    void client_write() {
+      auto self = shared_from_this();
+      asio::async_write(
+          client, asio::buffer(client_message),
+          [self](const asio::error_code &error, std::size_t written) {
+            if (error || written != self->client_message.size())
+              return self->fail();
+            asio::async_read(
+                self->client, asio::buffer(self->client_buffer),
+                [self](const asio::error_code &read_error, std::size_t bytes) {
+                  if (read_error || bytes != self->client_buffer.size())
+                    return self->fail();
+                  ++self->client_units;
+                  if (self->client_units == kEchoRoundTrips)
+                    self->shutdown_client();
+                  else
+                    self->client_write();
+                });
+          });
+    }
+
+    void shutdown_server() {
+      auto self = shared_from_this();
+      server.async_shutdown([self](const asio::error_code &error) {
+        if (error)
+          return self->fail();
+        asio::error_code ignored;
+        self->server.next_layer().close(ignored);
+        ++self->shutdowns;
+        self->finish_if_ready();
+      });
+    }
+
+    void shutdown_client() {
+      auto self = shared_from_this();
+      client.async_shutdown([self](const asio::error_code &error) {
+        if (error)
+          return self->fail();
+        asio::error_code ignored;
+        self->client.next_layer().close(ignored);
+        ++self->shutdowns;
+        self->finish_if_ready();
+      });
+    }
+
+    void finish_if_ready() {
+      if (shutdowns == 2)
+        complete(do_echo ? client_units : 1);
+    }
+
+    void fail() {
+      if (finished)
+        return;
+      asio::error_code ignored;
+      server.next_layer().cancel(ignored);
+      server.next_layer().close(ignored);
+      client.next_layer().cancel(ignored);
+      client.next_layer().close(ignored);
+      complete(-1);
+    }
+
+    void complete(int value) {
+      if (finished)
+        return;
+      finished = true;
+      result.set_value(value);
+    }
+
+    AsioTlsHarness *owner;
+    asio::ssl::stream<Tcp::socket> server;
+    asio::ssl::stream<Tcp::socket> client;
+    std::array<char, kMsgLen> server_buffer{};
+    std::array<char, kMsgLen> client_buffer{};
+    std::array<char, kMsgLen> client_message{};
+    std::promise<int> result;
+    bool do_echo = false;
+    bool finished = false;
+    int server_units = 0;
+    int client_units = 0;
+    int shutdowns = 0;
+  };
+
+public:
+  AsioTlsHarness(std::uint16_t port, const std::string &certificate,
+                 const std::string &private_key)
+      : io_(1), server_context_(asio::ssl::context::tls_server),
+        client_context_(asio::ssl::context::tls_client), listener_(io_),
+        work_(asio::make_work_guard(io_)) {
+    server_context_.use_certificate_chain_file(certificate);
+    server_context_.use_private_key_file(private_key, asio::ssl::context::pem);
+    client_context_.load_verify_file(certificate);
+    client_context_.set_verify_mode(asio::ssl::verify_peer);
+    for (SSL_CTX *context :
+         {server_context_.native_handle(), client_context_.native_handle()}) {
+      SSL_CTX_set_min_proto_version(context, TLS1_2_VERSION);
+      SSL_CTX_set_session_cache_mode(context, SSL_SESS_CACHE_OFF);
+      SSL_CTX_set_options(context, SSL_OP_NO_TICKET);
+    }
+    asio::error_code error;
+    listener_.open(Tcp::v4(), error);
+    if (error)
+      std::abort();
+    listener_.set_option(Tcp::acceptor::reuse_address(true), error);
+    if (error)
+      std::abort();
+    listener_.bind(Tcp::endpoint(asio::ip::address_v4::loopback(), port),
+                   error);
+    if (error)
+      std::abort();
+    listener_.listen(asio::socket_base::max_listen_connections, error);
+    if (error)
+      std::abort();
+    worker_ = std::thread([this] { io_.run(); });
+  }
+
+  ~AsioTlsHarness() {
+    work_.reset();
+    io_.stop();
+    if (worker_.joinable())
+      worker_.join();
+  }
+
+  int run(bool do_echo) {
+    auto episode = std::make_shared<Episode>(this, do_echo);
+    auto result = episode->result.get_future();
+    asio::post(io_, [episode] { episode->start(); });
+    return result.get();
+  }
+
+private:
+  asio::io_context io_;
+  asio::ssl::context server_context_;
+  asio::ssl::context client_context_;
+  Tcp::acceptor listener_;
+  asio::executor_work_guard<asio::io_context::executor_type> work_;
+  std::thread worker_;
+};
+
+#endif // HYLE_BENCH_ASIO_TLS
+
+// ---- raw OpenSSL over a blocking socket (non-gating diagnostic) -------------
+// Same provider/certificate/payload, but a blocking thread and an asynchronous
+// scheduler are intentionally different progress and lifecycle contracts. This
+// route can help localize provider/pump cost; it is not a product peer.
 #if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
 int make_listener(std::uint16_t port) {
   int ls = static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0));
@@ -375,25 +630,64 @@ int main() {
   server_options.private_key_file = key;
   auto made_server = TlsContext::make_server(server_options);
   hyle::io::TlsClientOptions client_options;
-  client_options.verify = hyle::io::TlsVerifyMode::kNone;
+  client_options.verify = hyle::io::TlsVerifyMode::kPeer;
+  client_options.certificate_authority_file = cert;
   auto made_client = TlsContext::make_client(client_options);
   if (!made_server || !made_client)
     std::abort();
   TlsContext hsctx = std::move(*made_server);
   TlsContext hcctx = std::move(*made_client);
 
-  // Raw OpenSSL contexts (same cert/key/verify).
-  SSL_CTX *rsctx = SSL_CTX_new(TLS_server_method());
-  SSL_CTX_use_certificate_chain_file(rsctx, cert.c_str());
-  SSL_CTX_use_PrivateKey_file(rsctx, key.c_str(), SSL_FILETYPE_PEM);
-  SSL_CTX *rcctx = SSL_CTX_new(TLS_client_method());
-  SSL_CTX_set_verify(rcctx, SSL_VERIFY_NONE, nullptr);
+  HyleTlsHarness hyle_harness(18460, &hsctx, &hcctx);
+#if defined(HYLE_BENCH_ASIO_TLS)
+  AsioTlsHarness asio_harness(18461, cert, key);
+#endif
 
-  // Stay below the OS ephemeral-client ranges (Linux commonly starts at 32768,
-  // Windows at 49152). The old 54460 base could be selected as the previous
-  // connection's client port, so the next sequential server bind intermittently
-  // failed with EADDRINUSE and fabricated a benchmark abort.
-  std::uint16_t port = 18460;
+  const bool raw_diagnostic = std::getenv("HYLE_TLS_RAW_DIAGNOSTIC") != nullptr;
+  SSL_CTX *rsctx = nullptr;
+  SSL_CTX *rcctx = nullptr;
+  if (raw_diagnostic) {
+    rsctx = SSL_CTX_new(TLS_server_method());
+    SSL_CTX_use_certificate_chain_file(rsctx, cert.c_str());
+    SSL_CTX_use_PrivateKey_file(rsctx, key.c_str(), SSL_FILETYPE_PEM);
+    rcctx = SSL_CTX_new(TLS_client_method());
+    SSL_CTX_set_verify(rcctx, SSL_VERIFY_NONE, nullptr);
+    SSL_CTX_set_min_proto_version(rsctx, TLS1_2_VERSION);
+    SSL_CTX_set_min_proto_version(rcctx, TLS1_2_VERSION);
+    SSL_CTX_set_session_cache_mode(rsctx, SSL_SESS_CACHE_OFF);
+    SSL_CTX_set_session_cache_mode(rcctx, SSL_SESS_CACHE_OFF);
+    SSL_CTX_set_options(rsctx, SSL_OP_NO_TICKET);
+    SSL_CTX_set_options(rcctx, SSL_OP_NO_TICKET);
+  }
+
+  std::uint16_t diagnostic_port = 18462;
+  const bool peer_first = std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
+  const char *run_nonce = std::getenv("HYLE_PERF_RUN_NONCE");
+  std::fprintf(stderr, "# HYLE_IO_TLS_RUN execution_order=%s run_nonce=%s\n",
+               peer_first ? "peer-first" : "candidate-first",
+               run_nonce != nullptr ? run_nonce : "unmanaged");
+
+  auto warm_hyle = [&] {
+    if (hyle_harness.run(/*do_echo=*/false) != 1 ||
+        hyle_harness.run(/*do_echo=*/true) != kEchoRoundTrips)
+      std::abort();
+  };
+#if defined(HYLE_BENCH_ASIO_TLS)
+  auto warm_peer = [&] {
+    if (asio_harness.run(/*do_echo=*/false) != 1 ||
+        asio_harness.run(/*do_echo=*/true) != kEchoRoundTrips)
+      std::abort();
+  };
+  if (peer_first) {
+    warm_peer();
+    warm_hyle();
+  } else {
+    warm_hyle();
+    warm_peer();
+  }
+#else
+  warm_hyle();
+#endif
 
   // ---- 1. handshake/s: full connect + TLS handshake + close
   // --------------------
@@ -402,42 +696,77 @@ int main() {
     b.title("TLS handshake (connect + handshake + close)")
         .relative(true)
         .unit("handshake")
-        .minEpochIterations(1)
+        .minEpochIterations(10)
         .epochs(5);
-    b.run("HYLE TLS (memory-BIO pump over co_await)", [&] {
-      if (run_hyle_tls(port++, /*do_echo=*/false, &hsctx, &hcctx) != 1)
+    auto hyle = [&] {
+      if (hyle_harness.run(/*do_echo=*/false) != 1)
         std::abort();
-    });
-    b.run("raw OpenSSL (blocking socket, no HYLE)", [&] {
-      if (run_raw_openssl_tls(port++, /*do_echo=*/false, rsctx, rcctx) != 1)
+    };
+#if defined(HYLE_BENCH_ASIO_TLS)
+    auto peer = [&] {
+      if (asio_harness.run(/*do_echo=*/false) != 1)
         std::abort();
-    });
+    };
+    if (peer_first) {
+      b.run("Asio SSL persistent runtime handshake", peer);
+      b.run("HYLE TLS persistent runtime handshake", hyle);
+    } else {
+      b.run("HYLE TLS persistent runtime handshake", hyle);
+      b.run("Asio SSL persistent runtime handshake", peer);
+    }
+#else
+    (void)peer_first;
+    b.run("HYLE TLS persistent runtime handshake", hyle);
+#endif
+    if (raw_diagnostic) {
+      b.run("raw OpenSSL blocking handshake [diagnostic]", [&] {
+        if (run_raw_openssl_tls(diagnostic_port++, /*do_echo=*/false, rsctx,
+                                rcctx) != 1)
+          std::abort();
+      });
+    }
   }
 
-  // ---- 2. encrypted echo throughput: handshake + N record round-trips
-  // ----------
+  // ---- 2. encrypted record stream: one handshake + 512 round-trips + close
   {
     ankerl::nanobench::Bench b;
-    b.title("TLS encrypted echo (64 round-trips x 256B, post-handshake)")
+    b.title("TLS encrypted stream (512 round-trips x 256B)")
         .relative(true)
-        .batch(kEchoRoundTrips)
-        .unit("round-trip")
+        .unit("episode")
         .minEpochIterations(1)
         .epochs(5);
-    b.run("HYLE TLS (memory-BIO pump over co_await)", [&] {
-      if (run_hyle_tls(port++, /*do_echo=*/true, &hsctx, &hcctx) !=
-          kEchoRoundTrips)
+    auto hyle = [&] {
+      if (hyle_harness.run(/*do_echo=*/true) != kEchoRoundTrips)
         std::abort();
-    });
-    b.run("raw OpenSSL (blocking socket, no HYLE)", [&] {
-      if (run_raw_openssl_tls(port++, /*do_echo=*/true, rsctx, rcctx) !=
-          kEchoRoundTrips)
+    };
+#if defined(HYLE_BENCH_ASIO_TLS)
+    auto peer = [&] {
+      if (asio_harness.run(/*do_echo=*/true) != kEchoRoundTrips)
         std::abort();
-    });
+    };
+    if (peer_first) {
+      b.run("Asio SSL persistent runtime encrypted stream", peer);
+      b.run("HYLE TLS persistent runtime encrypted stream", hyle);
+    } else {
+      b.run("HYLE TLS persistent runtime encrypted stream", hyle);
+      b.run("Asio SSL persistent runtime encrypted stream", peer);
+    }
+#else
+    b.run("HYLE TLS persistent runtime encrypted stream", hyle);
+#endif
+    if (raw_diagnostic) {
+      b.run("raw OpenSSL blocking encrypted stream [diagnostic]", [&] {
+        if (run_raw_openssl_tls(diagnostic_port++, /*do_echo=*/true, rsctx,
+                                rcctx) != kEchoRoundTrips)
+          std::abort();
+      });
+    }
   }
 
-  SSL_CTX_free(rsctx);
-  SSL_CTX_free(rcctx);
+  if (rsctx != nullptr)
+    SSL_CTX_free(rsctx);
+  if (rcctx != nullptr)
+    SSL_CTX_free(rcctx);
 #if defined(_WIN32)
   ::WSACleanup();
 #endif

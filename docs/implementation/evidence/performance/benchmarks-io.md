@@ -3,6 +3,19 @@
 > **V2：`HISTORICAL / UNQUALIFIED`。** io 尚未按当前真实消费者与仪器资格标准重审；
 > 本页数字只解释旧 candidate，不是当前模块证书。
 
+## 2026-09 `io_tls-v1` candidate：合格仪器待采样
+
+当前 TLS candidate 不再把 blocking OpenSSL 与 scheduler-bound async TLS 当作同合同产品排名。
+`HYLE_TLS_RAW_DIAGNOSTIC=1` 才会显示该行，且只能回答 provider/pump 机制问题。产品 P1 的冻结命题为
+[`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json)：持久单 worker runtime、持久 listener/context、
+verified localhost、禁用 session/ticket、完整 `close_notify`，HYLE public `spawn_task` 路线对 standalone
+Asio async SSL 路线。一个 workload 计完整 verified connection，另一个计同一连接生命周期加
+512 次 256 B 双向精确传输；runtime/context/listener 构造与一次对称 warmup 在计时外。
+
+Windows 开发 smoke 只证明 fixture 能完整结束并在正反序运行，不是性能证书。正式结果必须来自
+`closure-perf-v1` 的 W1-WSL candidate-first/peer-first、A/A、known-delta 与 timer-floor bundle；在它
+签发前本页不发布新的输赢数字。
+
 > **2026-07-20 收口证书（本节优先于下文历史记录）。** SIMD/sched/IO
 > 重构后，现有 8 个 IO benchmark 已在 Windows IOCP、WSL 原生 ext4
 > io_uring 和 M4 kqueue 重建、运行。所有 workload 现在校验实际完成量；

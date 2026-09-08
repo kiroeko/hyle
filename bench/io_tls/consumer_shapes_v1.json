@@ -1,0 +1,65 @@
+{
+  "schema": "hyle.io_tls.consumer-shapes/v1",
+  "purpose": "Freeze the long-lived inference-service TLS journeys used by the io_tls-v1 P1 gate before qualification.",
+  "comparison_class": "NATURAL_ROUTE",
+  "common_setup_outside_measurement": [
+    "one long-lived event runtime with one dedicated worker",
+    "one loopback listener",
+    "one reusable TLS client context and one reusable TLS server context",
+    "certificate and private-key parsing",
+    "one complete warmup episode per workload and route"
+  ],
+  "common_semantics": {
+    "provider": "the same host OpenSSL build and default cipher selection",
+    "protocol": "TLS 1.2 minimum with session caching and tickets disabled",
+    "identity": "client verifies the same self-signed localhost identity and sends SNI localhost",
+    "progress": "one external caller admits an episode to one dedicated event worker and waits for completion",
+    "completion": "every admitted byte is checked and both endpoints exchange close_notify",
+    "failure": "any connect, handshake, exact-transfer or shutdown failure invalidates the process"
+  },
+  "route_specific_implementation": {
+    "hyle": "public Scheduler, IoContext, spawn_task, TcpListener/TcpStream and typed TlsContext/TlsStream operations",
+    "asio": "public standalone Asio io_context, TCP accept/connect and async SSL stream operations",
+    "interpretation": "backend, handler/fiber representation and allocation counts are product-route outputs, not hidden adapters; the result can answer natural-route non-inferiority but not raw OpenSSL mechanism superiority"
+  },
+  "workloads": [
+    {
+      "id": "persistent-runtime-verified-handshake",
+      "consumer": "an inference HTTPS client/server connection establishment episode",
+      "scale": {
+        "connections": 1,
+        "dedicated_workers": 1,
+        "payload_bytes": 0
+      },
+      "charged_phases": [
+        "per-connection task and stream state",
+        "TCP accept and connect",
+        "verified full TLS handshake",
+        "bidirectional close_notify",
+        "per-connection teardown"
+      ]
+    },
+    {
+      "id": "persistent-runtime-encrypted-stream-512x256",
+      "consumer": "a bounded inference streaming connection episode with repeated small records",
+      "scale": {
+        "connections": 1,
+        "dedicated_workers": 1,
+        "round_trips": 512,
+        "bytes_per_direction_per_round_trip": 256
+      },
+      "charged_phases": [
+        "all verified-handshake phases",
+        "512 exact 256-byte client writes and server reads",
+        "512 exact 256-byte server writes and client reads",
+        "bidirectional close_notify",
+        "per-connection teardown"
+      ]
+    }
+  ],
+  "negative_space": [
+    "raw blocking OpenSSL is diagnostic-only because it has a different progress and lifecycle contract",
+    "session resumption is a separate opt-in journey",
+    "certificate provisioning, HTTP framing, routing and model schema are not TLS-factor work"
+  ]
+}
