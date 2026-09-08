@@ -761,6 +761,8 @@ http_transport_read(mem::AllocatorRef allocator, HttpTransport &transport,
   if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
     co_return co_await tls_read(allocator, *tls, buffer, options);
   }
+#else
+  (void)allocator;
 #endif
   if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
     co_return co_await tcp->read_some(buffer, options);
@@ -777,6 +779,8 @@ http_transport_write(mem::AllocatorRef allocator, HttpTransport &transport,
   if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
     co_return co_await tls_write(allocator, *tls, buffer, options);
   }
+#else
+  (void)allocator;
 #endif
   if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
     co_return co_await tcp->write_some(buffer, options);
