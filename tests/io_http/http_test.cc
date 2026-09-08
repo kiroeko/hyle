@@ -167,7 +167,9 @@ private:
     static constexpr HttpHeader kTrailers[] = {
         {StringView("X-Hyle-Final"), StringView("yes")}};
     static constexpr StringView kParts[] = {
-        StringView(kPart0), StringView(kPart1), StringView(kPart2)};
+        StringView(kPart0, sizeof(kPart0) - 1, true),
+        StringView(kPart1, sizeof(kPart1) - 1, true),
+        StringView(kPart2, sizeof(kPart2) - 1, true)};
     if (self->index >= std::size(kParts)) {
       co_return hyle::make_unexpected(
           Status::FailedPrecondition("token source read after completion"));
