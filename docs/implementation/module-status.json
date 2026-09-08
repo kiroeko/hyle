@@ -1251,14 +1251,12 @@
     },
     {
       "module": "io_tls",
-      "product_state": "CLOSED",
-      "round_id": "io-tls-v1",
-      "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
-      "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
-      "non_goals": "HTTP framing or routing, HTTP2 stream semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API, stable C++ ABI and benchmark-shaped buffer entry points.",
-      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
-      "candidate_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
-      "candidate_tree": "212a5c0305d9a756cdea91b2ed1270319264db8a",
+      "product_state": "REOPENED",
+      "round_id": "io-tls-v2-duplex-progress",
+      "closure_task": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
+      "scope": "Repair only the TLS ciphertext-pump progress seam after an HTTP2 consumer reproduced a forced-epoll full-duplex flow-control stall; replay affected TLS correctness, delivery and performance contracts.",
+      "non_goals": "Public TLS configuration or stream API redesign, HTTP framing or routing, HTTP2 protocol semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API and benchmark-shaped entry points.",
+      "baseline_commit": "79848f76946ac661abb221a537e71e4d70abdb1e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1266,54 +1264,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "freeze_confirmation": {
-        "id": "io-tls-v1-freeze-2026-09-08",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-08",
-        "reviewed_commit": "c1b2a5b775fcc8100281bf3acc3117d09b764987",
-        "reviewed_tree": "7bb2e83a57fa740d84625c1a9539d63e10ee351d",
-        "evidence": "docs/implementation/tasks/io/io-tls-v1.md"
-      },
-      "loc": {
-        "snapshot_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
-        "repository_code": 491234,
-        "self_without_tests": 83216,
-        "module_implementation": 1045
-      },
-      "known_limitations": [
-        "TlsContext and its configured allocator backing must outlive streams and sessions created from it; a stream supports one concurrent reader and one concurrent writer, and operation buffers remain borrowed until await completion.",
-        "Session caching and resumption are explicit opt-in facilities; certificate issuance, system trust-store provisioning, early data, OCSP stapling, key logging, DTLS and QUIC are outside this factor.",
-        "The P1 receipt covers verified connection establishment and one bounded small-record stream on a single W1-WSL worker against Asio over the same OpenSSL; it is not an all-TLS, cross-platform or Formal SOTA certificate.",
-        "OpenSSL is the sole private provider in this round; provider-specific handles are not public and an OpenSSL semantic or lifecycle change requires replay.",
-        "Delivery is C++23 source, static and shared for compatible C++ toolchains; there is no Native FFI, C API or stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named HTTPS or HTTP2 consumer reproduces a correctness, security, identity-verification, truncation, deadline, cancellation, session, context-lifetime or natural C++ API-usability defect.",
-        "A real consumer proves a missing generic TLS capability rather than HTTP, routing, authentication, certificate-provisioning or application policy.",
-        "The public API, layout, algorithm, allocation or copy contract, direct dependency, component identity or source, static or shared delivery shape changes.",
-        "OpenSSL, a supported operating system, compiler or standard library changes semantics relied on by the provider, error mapping or teardown contract.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
-      ],
-      "summary": "io_tls v1 CLOSED/FROZEN：typed TLS 生命周期、三平台正确性、WSL sanitizers、source/static/shared 交付、文档/易用性、红队及 W1-WSL 对 Asio 的两条自然路线双顺序 5% P1 非劣门全部通过。"
+      "reopen_trigger_id": "IOTLS-REOPEN-H2-EPOLL-DUPLEX-01",
+      "reopen_evidence": "A deterministic HTTP2-over-TLS consumer with 4 KiB socket buffers and a 65,535-byte receive window completes on io_uring but stalls on forced epoll after exactly 32 KiB is consumed; syscall traces end with both TLS ciphertext pumps waiting for EPOLLOUT.",
+      "summary": "io_tls v2 REOPENED：HTTP/2 TLS flow-control consumer 击穿旧 ciphertext-pump 全双工进展结论；本轮只修复 provider-owned progress seam 并回放受影响合同。"
     },
     {
       "module": "io_http",

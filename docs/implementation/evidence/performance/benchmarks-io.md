@@ -1,8 +1,9 @@
 # io 实测铁证
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
+<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
-> 本页当前证据只签发 `io_tls-v1` 与 `io_http-v1` 各自冻结的自然路线；后续 V2 与旧 io 聚合数据均为
+> 本页历史证据曾签发 `io_tls-v1` 与 `io_http-v1` 各自冻结的自然路线；两者现已因具名
+> full-duplex progress 缺陷进入新轮，旧 receipt 不再是当前性能签名。后续 V2 与旧 io 聚合数据均为
 > `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP/2、transfer、完整服务器、全平台或全操作
 > SOTA。
 
