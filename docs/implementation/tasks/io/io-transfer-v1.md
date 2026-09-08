@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`io_transfer` / IO maintainers / `io-transfer-v1`；task kind：`NEW`；
   baseline commit：`e1499bb404e1a69881fb1c4d91c60aa183d1d1a7`；
@@ -35,13 +35,89 @@
 - stop：若 HTTP factor 尚未提供完整 streaming body/cancel contract，本卡可保持 `AUDITED/BLOCKED`，
   不复制 socket/parser；不把模型 schema、auth 或 batch policy下沉。
 
-## SCOPED audit queue
+## Completed audit inputs
 
 - 追踪 llama.cpp download 与四组引擎部署路径，区分库机制与应用 repository policy；
 - 对 libcurl/Beast 的 redirect/range/resume/temp-file/checksum 生命周期建立能力图；
 - 冻结与 `platform_fs`/Mem/HTTP/TLS 的唯一 ownership 和有限 FIX 集；
 - 没有 existing public surface；新 API 必须先通过 normal C++ sketch，再允许实现。
 
+## Capability-family coverage map（`AUDITED`）
+
+| family | admitted journey / lifecycle | baseline | coverage / action |
+|---|---|---|---|
+| local source | regular file range、known/unknown size、short read | raw async file primitive only | `PARTIAL / FIX` composition |
+| HTTP(S) source | streaming body、length/range、redirect、validators | no transfer workflow | `MISSING / FIX` |
+| destination transaction | sibling temp、mode/replace policy、flush + atomic publish | primitives exist across io_core/platform_fs | `MISSING / FIX` owner |
+| resume | partial-file identity、Range/If-Range、206/200/416 decisions | absent | `MISSING / FIX` |
+| integrity | byte count and caller-supplied incremental checksum/verifier | absent | `MISSING / FIX` hook |
+| resource budget | total deadline/cancel、max bytes、bounded buffers、rate/backpressure | per-operation primitive only | `PARTIAL / FIX` |
+| progress | monotonic observation without reentrant ownership transfer | absent | `MISSING / FIX` |
+| failure cleanup | preserve old target、retain/remove partial by policy、typed outcome | absent | `MISSING / FIX` |
+| repository/auth/model semantics | token store、Hub paths、manifest/archive/model parsing | application-specific | `OUT_OF_SCOPE / REJECT` |
+
+llama.cpp provides the defining direct consumer: remote artifacts use redirects, range/resume validators, temporary files and
+integrity checks before publication. ds4/vLLM/SGLang confirm deployment demand but do not admit their repository/auth/model
+policy. libcurl is a semantic peer only; HYLE composes its already-owned HTTP, file, cancellation and scheduler mechanisms.
+
+### Public/source reverse trace and owner decision
+
+- no current public transfer surface constrains names or layout. The API starts from an owning `TransferPlan`/typed source and
+  destination, not from benchmark buffer sizes or callback context pointers;
+- resume is valid only when local partial metadata and remote validator agree. A range ignored as `200`, mismatched ETag/
+  Last-Modified, or inconsistent total length restarts or fails according to explicit policy; bytes are never blindly appended;
+- publication creates a sibling temporary file, flushes file data, uses the platform's strongest admitted atomic replace and
+  preserves the previous destination on failure. Directory durability is reported where the platform contract can express it;
+- checksum is a caller-owned incremental type-erased hook with no algorithm mandate in IO. Model format, expected digest lookup
+  and authentication remain consumers' responsibility;
+- `io_transfer` owns orchestration; `io_http`/`io_tls` own protocol bytes, `io_core` owns async files, Platform FS owns atomic
+  filesystem mechanisms, Error/Time/Sched own failure/budget/cancellation. A reproduced missing lower contract lawfully reopens
+  its owner through the registry; this factor must not fork a replacement primitive.
+
+## Frozen finite FIX set（`AUDITED`）
+
+| ID | exact work | required gate |
+|---|---|---|
+| `IOTRANSFER-F01` | 建立 `io_transfer` target/header/source/test owner、独立 export macro、产品 façade/root 与精确依赖 | exact factor、source/static/shared、selected component/header scan |
+| `IOTRANSFER-F02` | typed local/HTTP(S) source、destination transaction、limits/resume/redirect policy 与 typed report | compile-only local/HTTP/HTTPS natural journeys; invalid option tests |
+| `IOTRANSFER-F03` | bounded copy pipeline + whole-transfer OperationOptions/max bytes/progress/checksum；O(1) memory in file size | empty/short/large/OOM/cancel/deadline/slow source/sink |
+| `IOTRANSFER-F04` | HTTP redirect/range/If-Range/validator state machine 与安全 restart/retain decision | 200/206/416, mismatch, redirect loop/cross-origin security |
+| `IOTRANSFER-F05` | sibling temp、flush、atomic replace、old-target preservation 与 policy-driven partial cleanup | disk full/rename failure/crash-boundary approximation/old file intact |
+| `IOTRANSFER-F06` | guide/architecture、三平台 sanitizer/correctness、三交付、256 MiB+resume P1 与红队 | no apple-vs-orange、terminal receipt |
+
+不实现 repository client、auth/token、archive/model parsing 或 server route；不保留失败后损坏目标的 convenience。
+若 io_http 的 streaming/cancel 合同尚未成为 immutable candidate，本 factor 等待其 owner，不复制 parser/socket。
+
+## API / usability freeze draft
+
+```cpp
+TransferPlan plan{
+    .source = HttpTransferSource{url, redirect_policy, resume_policy},
+    .destination = AtomicFileDestination{path, publish_policy},
+    .limits = {.max_bytes = model_budget},
+};
+auto report = co_await transfer(alloc, io, plan, operation,
+                                checksum_hook, progress_observer);
+```
+
+Plans own configuration strings/paths; source body buffers are borrowed only during one pipeline step. Progress observers run
+on the owner fiber, cannot re-enter the same transfer, and may request cancellation through the normal token. The report
+distinguishes published, resumed, restarted and retained-partial outcomes. Concrete names may tighten before API freeze, but
+the transaction and resume safety contract cannot be weakened.
+
+## Owner 七问（AUDITED）
+
+1. Third-party: no new linked dependency is admitted; libcurl/Beast and inference engines are semantic/reference evidence.
+2. Capability: eight general transfer families are admitted and absent/partial; F02--F05 are the complete finite repair set.
+3. Reuse: all wire, file, filesystem, allocation, timing, cancellation and scheduling primitives come from lower factors;
+   only the transfer state machine is local. Concrete lower-factor gaps trigger lawful reopen rather than duplication.
+4. Performance: P1 256 MiB bounded transfer + interrupted resume; compare equal durability/checksum/buffer ownership or use
+   OS-limited consumer budgets. Raw copy without flush/atomic publish is not a peer.
+5. FFI: `N/A`; no C exports, schema or managed-language wrapper.
+6. Delivery: currently `FAIL` because no target/source/header exists; F01 owns the three-shape product contract.
+7. C++ usability/docs: currently `FAIL` because users must hand-compose every failure-sensitive step; F02--F06 establish the guide.
+
 ## Current decision
 
-`SCOPED / ACTIVE`。本卡只授权审计；尚未进入 `AUDITED`。
+`AUDITED / ACTIVE`。能力图、transaction/resume 生命周期、owner、API draft 与有限 F01--F06 已冻结；
+允许实现，但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。

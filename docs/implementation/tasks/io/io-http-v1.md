@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`io_http` / IO maintainers / `io-http-v1`；task kind：`NEW`；
   baseline commit：`e1499bb404e1a69881fb1c4d91c60aa183d1d1a7`；
@@ -36,13 +36,93 @@
 - stop：不在本卡增加应用 server framework；若 transport abstraction 会迫使 `io_core` 依赖高层或
   为可选 TLS 让普通 HTTP 付费，退回审计而不是复制两套 HTTP 实现。
 
-## SCOPED audit queue
+## Completed audit inputs
 
 - 反向追踪 `http.h/http.cc/http*_test.cc` 与 pico package owner；
 - 建立 head、fixed/bounded body、streaming body、client/server、connection lifecycle 能力图；
 - 比较四组推理真实旅程与 Beast/Seastar，先冻结 natural C++ journey 和负空间；
 - 冻结有限 FIX 集后才允许迁移源码或改变公开 API。
 
+## Capability-family coverage map（`AUDITED`）
+
+| family | admitted journey / lifecycle | baseline | coverage / action |
+|---|---|---|---|
+| message head/view | request/status line、重复 header、lookup、view invalidation | fixed raw arrays + pointer-return | `PARTIAL / FIX` |
+| framing security | CL/chunked/EOF framing、smuggling rejection、fragmentation、limits | pico integration mostly present | `PARTIAL / FIX`（typed errors + configurable limits） |
+| request body input | buffered small JSON and bounded incremental large body | whole body only, 8 MiB constant | `MISSING / FIX` streaming route |
+| response body output | fixed body and producer-paced chunk/SSE | synchronous raw callback; cannot await token producer | `PARTIAL / FIX` async body source/backpressure |
+| server connection | keep-alive loop、one request at a time、drain/close | pointer/bool, no whole-request budget | `PARTIAL / FIX` |
+| client connection | headers + fixed/streaming response、reuse、disconnect | one fixed-body convenience only | `PARTIAL / FIX` |
+| TLS interop | already-handshaken stream without duplicating framing | compile-time variant embedded in union | `PARTIAL / FIX` transport seam |
+| application server | listener accept、routing、middleware、auth、batching | thin callback loop mixes policy | `OUT_OF_SCOPE / REMOVE OR ROUTE` |
+| WebSocket/multipart/cookies/proxy | separate protocol/application conveniences | absent | `GENERAL / DEFER` with named owner trigger |
+
+llama.cpp, ds4, vLLM and SGLang all make bounded request parsing, streaming responses, disconnect and shutdown
+first-class. Seastar and Beast both separate parser/body stream from routing. Therefore buffered-only request/response
+and synchronous chunk callbacks are not complete routes even though historical tests pass.
+
+### Public/source reverse trace and owner decision
+
+- `HttpRequest*`/`HttpResponseView*` are borrowed but failure and EOF collapse into null; `send_response` bool collapses
+  protocol/system/cancel; replace with value views inside typed read results and `Status`;
+- response fixed header arrays and `add_header(bool)` are benchmark-shaped capacity exposure. The normal send route accepts
+  a borrowed span/range of `HttpHeader`; an optional builder may own small storage but cannot be the only route;
+- `NextChunkFn` is synchronous, so a token producer must busy-poll or buffer elsewhere. Replace with an awaitable source
+  contract and preserve one-in-flight chunk backpressure; no per-chunk queue or hidden allocation;
+- `http_serve` embeds handler invocation/request arena policy. The low-level connection loop is sufficient foundation;
+  remove the policy wrapper unless a separate generic composed-operation sketch survives red team;
+- semantic owner is `io_http`; picohttpparser owns syntax scanning only; io_core/io_tls own byte transports; application
+  owns route, authentication, request scheduling and model response production.
+
+## Frozen finite FIX set（`AUDITED`）
+
+| ID | exact work | required gate |
+|---|---|---|
+| `IOHTTP-F01` | 建立 `io_http` target/header/source/test owner、独立 export macro 与 pico package owner；从 io_core 移除协议 | exact factor、source/static/shared、dependency/license/header scans |
+| `IOHTTP-F02` | 建立 typed limits/error/message head/header span 和 value view；移除 null/bool/fixed public slots | parser fragmentation/smuggling/duplicate headers/limits/OOM/error-domain |
+| `IOHTTP-F03` | 增加 request/response `HttpBodyReader` incremental route，small-body convenience 只是有界组合 | content-length/chunked/EOF/trailers/partial/cancel/disconnect |
+| `IOHTTP-F04` | 增加 awaitable `HttpBodySource`/writer 与逐 chunk backpressure；固定 body 共用同一 send pipeline | delayed producer、slow client、zero/final chunk、no hidden queue/allocation |
+| `IOHTTP-F05` | server/client connection 的 operation budget、keep-alive/drain/close 与 plain/TLS transport interop；删除 policy-shaped `http_serve` | total deadline/cancel、late completion、pipelining negative space、TLS optionality |
+| `IOHTTP-F06` | guide/architecture、三平台 correctness/sanitizer、三交付、normal REST+SSE P1 与红队 | no apple-vs-orange、terminal receipt |
+
+不保留旧 pointer/bool/fixed-array/callback API。Routing、middleware、auth、model schema、handler pool、
+WebSocket 与 HTTP/2 不得追加进本轮。
+
+## API / usability freeze draft
+
+```cpp
+HttpServerConnection connection{alloc, std::move(stream), limits};
+auto incoming = co_await connection.read_request(operation);
+if (!incoming || !*incoming) co_return;       // typed failure / clean EOF
+HttpRequestView request = **incoming;         // valid until finish_request()
+auto body = connection.request_body();        // incremental + bounded
+Status sent = co_await connection.send_response(head, body_source, operation);
+
+HttpClientConnection client{alloc, std::move(stream), limits};
+auto response = co_await client.request(head, request_body, operation);
+auto response_body = client.response_body();
+```
+
+The concrete names may tighten before the API freeze, but the task shape cannot regress to whole-body-only or synchronous
+producer callbacks. Body source/reader allow one outstanding read/write, borrow bytes until that await completes, and expose
+trailers only after end-of-body. No P1 starts until compile-only fixed and streaming journeys freeze these contracts.
+
+## Owner 七问（AUDITED）
+
+1. Third-party: picohttpparser is direct vendored mechanism and must move to io_http; inference engines/Beast/Seastar
+   are references only.
+2. Capability: seven admitted families have material gaps captured by F02--F05; application server/WebSocket remain
+   explicit negative space.
+3. Reuse: io_core transport/result/options, io_tls encrypted transport, Error, Time, Mem Region and Container text are
+   candidates. Parser integration remains local because peers with event loops are not same-contract reusable runtimes.
+4. Performance: P1 normal REST + SSE; historical raw/pico or sync callback microbenches do not gate. Compare same parsing,
+   body ownership and backpressure or use natural-route budget without primitive SOTA claims.
+5. FFI: `N/A`, no C schema/codec/exports.
+6. Delivery: currently `FAIL` because source/header/dependency/tests belong to io_core; F01 repairs all three shapes.
+7. C++ usability/docs: currently `FAIL` due null/bool, fixed slots, sync callback and missing body/cancel selection guide;
+   F02--F06 repair it.
+
 ## Current decision
 
-`SCOPED / ACTIVE`。本卡只授权审计；尚未进入 `AUDITED`。
+`AUDITED / ACTIVE`。能力图、lifecycle、owner、API draft 与有限 F01--F06 已冻结；允许实现，
+但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。

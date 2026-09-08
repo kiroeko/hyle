@@ -1251,7 +1251,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-tls-v1",
       "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
       "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
@@ -1273,11 +1273,11 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 已进入 SCOPED：本轮先冻结 TLS config/session/stream、typed failure、deadline/cancel/shutdown 与 OpenSSL 交付边界，审计完成前不移动或重写产品实现。"
+      "summary": "io_tls v1 已完成能力、生命周期、owner 与自然 API 审计并进入 AUDITED；IOTLS-F01--F05 是唯一有限实现集，P1 须等待 immutable candidate。"
     },
     {
       "module": "io_http",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-http-v1",
       "closure_task": "docs/implementation/tasks/io/io-http-v1.md",
       "scope": "Factor HTTP1 framing and bounded streaming client/server lifecycle out of io_core; freeze natural message views, body streaming, request budgets, disconnect, backpressure and keep-alive contracts.",
@@ -1299,11 +1299,11 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http v1 已进入 SCOPED：本轮先冻结 HTTP/1 client/server、bounded/streaming body、whole-request budget、disconnect/backpressure 与 parser ownership，审计完成前不改产品。"
+      "summary": "io_http v1 已完成 HTTP/1 framing、bounded streaming、连接生命周期、owner 与自然 API 审计并进入 AUDITED；IOHTTP-F01--F06 是唯一有限实现集。"
     },
     {
       "module": "io_http2",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-http2-v1",
       "closure_task": "docs/implementation/tasks/io/io-http2-v1.md",
       "scope": "Factor HTTP2 session, stream and flow-control lifecycle out of io_core; replace mandatory whole-body buffering with bounded incremental streams and define reset, GOAWAY, cancellation and h2c or TLS ALPN interop.",
@@ -1325,11 +1325,11 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http2 v1 已进入 SCOPED：本轮先冻结多 stream、incremental body、flow control、RST/GOAWAY/cancel、nghttp2 与 h2c/TLS 交付边界。"
+      "summary": "io_http2 v1 已完成多 stream、incremental body、flow control、RST/GOAWAY、owner 与自然 API 审计并进入 AUDITED；IOH2-F01--F06 是唯一有限实现集。"
     },
     {
       "module": "io_transfer",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-transfer-v1",
       "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
       "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
@@ -1351,7 +1351,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_transfer v1 已进入 SCOPED：本轮先冻结大模型/制品的 bounded copy、HTTP range resume、checksum、temp-file/atomic publish、progress/cancel 与失败清理合同。"
+      "summary": "io_transfer v1 已完成模型/制品 bounded transfer、resume validator、checksum、atomic publish、owner 与自然 API 审计并进入 AUDITED；IOTRANSFER-F01--F06 是唯一有限实现集。"
     },
     {
       "module": "compute",

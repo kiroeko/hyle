@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`io_tls` / IO maintainers / `io-tls-v1`；task kind：`NEW`；
   baseline commit：`e1499bb404e1a69881fb1c4d91c60aa183d1d1a7`；
@@ -37,13 +37,86 @@
 - stop：任何 provider identity、平台 TLS 环境或同合同 P1 无法在预算内资格化时明确 `BLOCKED`；
   不允许用无验证 stub、跳过证书验证或 benchmark-only buffer API取得绿色结果。
 
-## SCOPED audit queue
+## Completed audit inputs
 
 - 反向追踪 `tls.h/tls.cc/tls_test.cc` 全部公开与 private provider seam；
 - 对四组锁定推理证据、Asio/Seastar 的 config/session/stream/close 合同建立能力图；
 - 裁决 feature-off header/target、OpenSSL package ownership、HTTP/2 ALPN 依赖方向；
 - 冻结有限 `KEEP/FIX/BORROW/DEFER/REJECT` 集后才允许移动或重写产品源码。
 
+## Capability-family coverage map（`AUDITED`）
+
+| family | admitted journey / lifecycle | baseline | coverage / action |
+|---|---|---|---|
+| provider/config owner | client trust、server cert/key、protocol floor、verify policy | invalid-object factories；native pointer public | `PARTIAL / FIX` |
+| encrypted stream construction | move TCP owner，SNI + hostname/IP identity，server/client role | constructor can only become invalid | `PARTIAL / FIX` |
+| handshake/read/write | partial transfer、EOF、provider/native failure | `Task<int/long>`，无 operation budget | `PARTIAL / FIX` |
+| deadline/cancel/close | whole operation budget、late completion retirement、close-notify/truncation | absent / best-effort int | `MISSING / FIX` |
+| ALPN | generic protocol list/result，HTTP/2 convenience | only `enable_http2(bool)` | `PARTIAL / FIX` |
+| session resumption | export/import reusable client session without exposing OpenSSL types | absent | `MISSING / FIX` |
+| advanced provider controls | custom BIO、early data、OCSP stapling、keylog | no admitted normal journey | `GENERAL / DEFER` |
+
+四组 inference references all require HTTPS transport but do not require certificate issuance or a TLS
+framework. Asio and Seastar both expose config/session separate from socket ownership, async handshake/
+shutdown, peer verification and cancellation. This admits the first six families; provider-specific knobs
+remain explicit future triggers.
+
+### Public/source reverse trace and owner decision
+
+- `tls.h` exports raw `ssl_ctx_st* native()` and invalid factories, while `tls.cc` owns OpenSSL memory BIO;
+  raw provider pointer has no current consumer and is internalized. A deliberate native interop view is deferred;
+- `tls_handshake/read/write/shutdown` conflate EOF, protocol failure, syscall failure and byte count, and cannot
+  inherit `OperationOptions`; all four are `PARTIAL`, not compatibility constraints;
+- `TlsStream` correctly owns one `TcpStream` and one per-connection provider session; one owner fiber remains the
+  concurrency contract. Scratch reuse is a valid local mechanism: OpenSSL record pumping needs contiguous mutable
+  storage and Mem has no same-contract protocol buffer owner;
+- semantic owner is `io_tls`; OpenSSL owns crypto/protocol mechanism; Build/package owns discovery/export/license;
+  `io_core` owns TCP completion and Error/Time own result/deadline taxonomy. There is one backend decision authority.
+
+## Frozen finite FIX set（`AUDITED`）
+
+| ID | exact work | required gate |
+|---|---|---|
+| `IOTLS-F01` | 建立 `io_tls` target/header/source/test ownership、独立 export macro 与 OpenSSL package owner；feature OFF 不探测 | exact factor、source/static/shared、OFF/ON、symbol/header scan |
+| `IOTLS-F02` | 用 typed client/server options 与 `Result<TlsContext>` factory 取代 invalid factory/native pointer；通用 ALPN list + HTTP/2 convenience | trust/cert/key/protocol/ALPN invalid-boundary tests |
+| `IOTLS-F03` | 用 `Result<TlsStream>` construction、`Status` handshake/shutdown、`TransferResult` read/write 与统一 `OperationOptions` 取代 int/long | EOF/partial/provider+native domain/deadline/cancel/late completion |
+| `IOTLS-F04` | 增加 move-only provider-opaque session ticket owner 与显式 client resume route；明确 close-notify truncation | resumed handshake、wrong context/host、move/destroy、session lifetime |
+| `IOTLS-F05` | guide/architecture、三平台 TLS-on correctness/sanitizer、三交付、normal record+handshake P1 与红队 | no apple-vs-orange、terminal receipt |
+
+不保留旧签名、`native()` 或伪 C ABI；HTTP framing、early data、OCSP/keylog/DTLS/QUIC 不得追加到本轮。
+
+## API / usability freeze draft
+
+```cpp
+auto client = TlsContext::make_client(TlsClientOptions{...});
+auto server = TlsContext::make_server(TlsServerOptions{...});
+auto stream = TlsStream::connect(std::move(tcp), *client,
+                                 {.server_name = "api.example.com"});
+Status ready = co_await tls_handshake(alloc, *stream, operation);
+TransferResult n = co_await tls_read(alloc, *stream, bytes, operation);
+Status closed = co_await tls_shutdown(alloc, *stream, operation);
+```
+
+Options are copied at construction; certificate path/string ownership is documented per field. Buffers are borrowed
+until await completion. Session tickets are owning values tied to the provider identity but expose no OpenSSL type.
+The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume journeys exist; no P1 runs before then.
+
+## Owner 七问（AUDITED）
+
+1. Third-party: direct product mechanism OpenSSL, exact installed identity supplied by the selected environment;
+   Asio/Seastar and inference engines are peer/reference only.
+2. Capability: six admitted families above have four material partial/missing edges, all in F01--F04; no unresolved
+   `MUST` may remain at candidate.
+3. Reuse: TCP/OperationOptions/Error/Time/Mem/Sched are reused; local memory-BIO pump and scratch remain `BORROW/LOCAL`
+   because importing Asio/Seastar would add a second runtime and cannot share HYLE completion ownership.
+4. Performance: P1; current historical TLS benchmark is diagnostic only. Frozen record-stream and handshake journeys
+   need a same-provider comparison or consumer budget; no module-wide SOTA claim.
+5. FFI: `N/A`; scan must remain free of C headers/exports/managed sample.
+6. Delivery: currently `FAIL` because TLS code and OpenSSL registration live in `io_core`; F01 owns the repair.
+7. C++ usability/docs: currently `FAIL` due invalid objects, raw integers, missing budget/session and stale guide;
+   F02--F05 own the repair.
+
 ## Current decision
 
-`SCOPED / ACTIVE`。本卡只授权审计；尚未进入 `AUDITED`，不得修改 TLS 产品实现或物理 owner。
+`AUDITED / ACTIVE`。能力图、自然 API draft、owner 与有限 F01--F05 已冻结；现在允许实现，
+但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。

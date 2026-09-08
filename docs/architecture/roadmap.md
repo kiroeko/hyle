@@ -13,8 +13,9 @@ owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
 CMake target。当前机器合同登记 **28 个 factor identity**：其中 **24 个已有实现/target**，另有
-`io_tls/io_http/io_http2/io_transfer` **4 个 `QUEUED` 身份保留项**；它们尚无源码 ownership、依赖、
-target 或产品根。中央 manifest 从 24 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
+`io_tls/io_http/io_http2/io_transfer` **4 个已进入 `AUDITED`、尚待实体化的施工身份**；它们已经冻结
+owner、依赖候选与有限 FIX，但在 target/source ownership 实际建立前仍不属于可构建图或产品根。
+中央 manifest 从 24 个已实现 factor 投影 **14 个用户产品 façade**。Build/package v7
 已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
 产品域；详见[构建系统](build-system.md)。
 
@@ -72,15 +73,15 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
 | graph | core, error, mem, container, sched | util_core |
 
-另有以下机器登记项。它们只是为独立施工预留稳定 ID，不在当前依赖图或任何产品闭包中；只有自己的
-closure card 进入 `SCOPED`，完成 `AUDITED` 边界/依赖冻结并存在真实 target 后，才可移除 `QUEUED`：
+另有以下机器登记项。它们已完成 closure card 的 `AUDITED` 边界/依赖候选冻结，但尚未建立真实 target，
+因此不在当前依赖图或任何产品闭包中；只有本轮 F01 建立并验证真实 ownership 后才可进入可构建图：
 
 | Reserved factor ID | Intended semantic owner | Current build contract |
 |---|---|---|
-| io_tls | TLS transport/configuration/session lifecycle | not selectable; no target |
-| io_http | HTTP/1 framing/client-server semantics | not selectable; no target |
-| io_http2 | HTTP/2 connection/stream semantics | not selectable; no target |
-| io_transfer | bounded model/artifact transfer workflow | not selectable; no target |
+| io_tls | TLS transport/configuration/session lifecycle | AUDITED design; not selectable; no target |
+| io_http | HTTP/1 framing/client-server semantics | AUDITED design; not selectable; no target |
+| io_http2 | HTTP/2 connection/stream semantics | AUDITED design; not selectable; no target |
+| io_transfer | bounded model/artifact transfer workflow | AUDITED design; not selectable; no target |
 
 用户看到的不是上述内部 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
 再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
