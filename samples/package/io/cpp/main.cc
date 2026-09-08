@@ -34,14 +34,25 @@ int main() {
   if (capabilities.backend_name() != "none")
     return 6;
 
+  // The public product must carry the HTTP factor through every delivery
+  // shape. Exercise a typed factory across the binary boundary without
+  // depending on a live peer: an empty transport is rejected before any
+  // connection state is allocated.
+  hyle::io::HttpLimits http_limits;
+  http_limits.max_head_bytes = 32 * 1024;
+  auto http = hyle::io::HttpClientConnection::create(
+      hyle::mem::system_allocator(), hyle::io::HttpTransport{}, http_limits);
+  if (http.has_value() || !http.error().IsInvalidArgument())
+    return 7;
+
 #if defined(HYLE_IO_TLS)
   if (!hyle::io::tls_available())
-    return 7;
+    return 8;
   hyle::io::TlsClientOptions tls_options;
   tls_options.verify = hyle::io::TlsVerifyMode::kNone;
   auto tls_context = hyle::io::TlsContext::make_client(tls_options);
   if (!tls_context.has_value() || !tls_context->valid())
-    return 8;
+    return 9;
 #endif
   return 0;
 }
