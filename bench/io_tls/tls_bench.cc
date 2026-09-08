@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <future>
 #include <memory>
 #include <string>
@@ -48,6 +49,7 @@
 #include <unistd.h>
 #endif
 #if defined(_WIN32)
+#include <process.h>
 #if !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -137,20 +139,46 @@ const char *kKeyPem =
     "A48heHgTiFQ6QIIrkn9z7lQJ\n"
     "-----END PRIVATE KEY-----\n";
 
-std::string write_temp(const char *name, const char *pem) {
-  std::string path = std::string("hyle_tls_bench_") + name;
-  std::FILE *f = nullptr;
+class TempPemFile {
+public:
+  TempPemFile(const char *name, const char *pem) {
 #if defined(_WIN32)
-  (void)::fopen_s(&f, path.c_str(), "wb");
+    const auto process_id = static_cast<unsigned long long>(::_getpid());
 #else
-  f = std::fopen(path.c_str(), "wb");
+    const auto process_id = static_cast<unsigned long long>(::getpid());
 #endif
-  if (f) {
-    std::fwrite(pem, 1, std::strlen(pem), f);
-    std::fclose(f);
+    path_ = (std::filesystem::temp_directory_path() /
+             (std::string("hyle_tls_bench_") + std::to_string(process_id) +
+              "_" + name))
+                .string();
+    std::FILE *f = nullptr;
+#if defined(_WIN32)
+    (void)::fopen_s(&f, path_.c_str(), "wb");
+#else
+    f = std::fopen(path_.c_str(), "wb");
+#endif
+    if (f == nullptr)
+      std::abort();
+    const std::size_t pem_size = std::strlen(pem);
+    const std::size_t written = std::fwrite(pem, 1, pem_size, f);
+    const int close_status = std::fclose(f);
+    if (written != pem_size || close_status != 0)
+      std::abort();
   }
-  return path;
-}
+
+  TempPemFile(const TempPemFile &) = delete;
+  TempPemFile &operator=(const TempPemFile &) = delete;
+
+  ~TempPemFile() {
+    std::error_code ignored;
+    std::filesystem::remove(path_, ignored);
+  }
+
+  const std::string &path() const noexcept { return path_; }
+
+private:
+  std::string path_;
+};
 
 // ---- HYLE side --------------------------------------------------------------
 struct HyleTls {
@@ -620,8 +648,10 @@ int main() {
   WSADATA wsa;
   ::WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
-  std::string cert = write_temp("cert.pem", kCertPem);
-  std::string key = write_temp("key.pem", kKeyPem);
+  TempPemFile cert_file("cert.pem", kCertPem);
+  TempPemFile key_file("key.pem", kKeyPem);
+  const std::string &cert = cert_file.path();
+  const std::string &key = key_file.path();
 
   // HYLE contexts (reused across iterations -- SSL_CTX is shareable; per-conn
   // SSL is made from it, matching how a real server holds one CTX).

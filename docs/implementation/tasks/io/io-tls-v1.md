@@ -173,7 +173,17 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 - `IOTLS-F06 candidate replay`：Sched v5 candidate 后，Windows、WSL 与 macOS 的
   `hyle_sched_test`/`hyle_io_core_test`/`hyle_io_tls_test` 全过；WSL GCC 14 的 ASan、UBSan、TSan
   exact-factor 三组全过；Windows installed shared/static `hyle::io` consumer 均通过。默认 Balanced
-  diagnostic 已与 Asio 恢复同量级，正式 P1 尚未运行，不能提前写成性能 PASS。
+  diagnostic 已与 Asio 恢复同量级。首次冻结 workload 的 W1-WSL 采样中，两个 workload 的正反序
+  5% 非劣门、A/A、known-delta、timer floor、artifact 与 build gate 实际均通过，HYLE/Asio 中位
+  优势分别为 handshake `1.097/1.123`、stream `1.053/1.088`；但 fixture 把证书和私钥写入 source
+  checkout，导致事后 provenance 得到 `source.clean=false`，整包依法为
+  `qualification=DIAGNOSTIC`、`qualification_gate=FAIL`、`performance_gate=INCONCLUSIVE`，不能拿
+  上述数值签发 PASS。失格包位于 `/root/hyle-io-tls-p1-evidence-b46ed6a5`，`summary.json` /
+  `manifest.json` SHA-256 分别为
+  `AE17ECCA7BE050EC98E6FF45E10995BA5ACE79CFAADE70AB7E4CA0853AA1C13E` /
+  `34C00BE03F917BEE9626D5D138D65F46EF9EA835E50E4A1F67D32115A63E906F`。候选后 fixture 修正只把
+  per-process PEM 移入操作系统临时目录并在进程退出时删除；它不改变产品、peer、参数、顺序、
+  workload 或统计合同。只有从新 clean checkout 得到的重跑包可以签发正式 P1。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256
