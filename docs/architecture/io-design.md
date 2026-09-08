@@ -55,8 +55,12 @@ private backend engine ───────────────────
   allocator 只拥有 coroutine frame；provider session cache/ticket 默认关闭，只在
   client/server 配置显式启用。
 - HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；当前 factor
-  仍为 `AUDITED`，旧 fixed-buffer API 不是冻结合同。它只能经同一个
-  `HttpTransport` 重构，不能再复制 TCP/TLS transport 或另起 event loop。
+  仍为 `AUDITED`，但旧 fixed-buffer API 已被 typed client/server session、checked stream ID、
+  增量 reader/writer、真实 connection/stream flow control、RST/GOAWAY 与统一 operation budget
+  取代。plain TCP 与已协商 `h2` 的 TLS 都经同一个 `HttpTransport`；private driver 直接借
+  现有 owner stackful fiber 推进 transport，不复制 TCP/TLS transport、scheduler 或 event loop。
+  `read()` 是 coroutine pull 形状；同步 borrowed sink 用单 task 的 `consume()`，sink failure
+  终止当前 stream，避免产生看似可重试却跳过已拒绝 chunk 的语义。
 - `io_transfer` 只拥有有界的 local/HTTP(S) source 到 sibling temporary file、
   validator-safe resume、caller verifier、file sync 与 atomic replacement 状态机。
   它复用 IO/HTTP/TLS/Platform FS，不复制协议或文件原语；repository/auth/model

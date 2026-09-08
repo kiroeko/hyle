@@ -116,6 +116,10 @@ The public shape is frozen as follows before product implementation begins:
 - `Http2BodyReader::read()` returns bounded `HttpBodyChunkView`; acknowledgement occurs on the next reader operation and
   directly calls `nghttp2_session_consume_stream()`. EOF exposes trailers. Dropping an unfinished reader submits RST and
   releases connection credit.
+- `Http2BodyReader::consume()` is the allocation-bounded shape for a synchronous borrowed sink. It drives one body in one
+  task, invokes the sink once per bounded `HttpBodyChunkView`, and acknowledges only after that callback returns. The sink
+  may neither retain the view nor suspend/re-enter the session. `read()` remains the natural coroutine pull shape; this is
+  not a whole-body buffer or benchmark-only entry point.
 - `Http2BodyWriter` has one borrowed chunk in flight. `write()` does not return before bytes encoded from that chunk have
   crossed the transport write boundary; `finish()` supplies optional trailers. The nghttp2 provider returns
   `NGHTTP2_ERR_DEFERRED` when the producer has not supplied bytes, and `nghttp2_session_resume_data()` is the only resume
@@ -154,11 +158,42 @@ evidence may refine private layout and driver mechanics, but changing the public
 
 ## Current decision
 
-`AUDITED / ACTIVE`。能力图、stream 生命周期、owner、API draft 与有限 F01--F06 已冻结；允许实现，
-但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+`AUDITED / ACTIVE`。`18d6d6b9` exact candidate 已完成 qualification；multiplex workload 为 `WIN`，但
+`flow-control-holdout-4x256k` 在两种执行顺序分别只有约 `0.794` / `0.776` peer throughput，正式 P1
+为 `FAIL`。控制项均通过，故不得把约 20--22% 固定差距解释为仪器噪声或签发 freeze。
+
+机制诊断已用完并形成有限结论：256 KiB socket buffer 同时提高双方绝对吞吐、没有缩小比例；syscall
+跟踪显示 HYLE 并未发送更多 wire calls；计数 allocator 则证明逐 chunk 的嵌套 `Task` 令 holdout 达到
+约 554 次 allocation/stream。允许且只允许以下 consumer-proven correction：利用既有 stackful owner
+fiber 去掉私有 transport-driver 嵌套 task，并增加上述单 task、borrowed synchronous sink 的
+`consume()` 形状，使 HYLE 与 nghttp2/curl callback consumer 在 body ownership 上对等。不得调整窗口、
+chunk、样本或 margin 来迎合结果；correctness/delivery 全通过并形成新 immutable candidate 后，才可执行
+一次新的正式 P1。
+
+该有限 correction 的工作树实现已经完成：raw TCP awaitable 直接借当前 owner fiber 挂起/恢复；一次
+transport read 的 nghttp2 callback batch 只发布一次普通 DATA/HEADERS 状态变化；进入 proactor wait 前先
+尝试现成 socket bytes，并只给同 owner runnable peer 一次 bounded cooperative yield，第二次 miss 必须
+进入真实 kernel wait，不能 spin。TLS 没有 immediate socket seam，仍走原有单 task memory-BIO pump。
+对照端的 stream lookup 也已从 benchmark 自建线性查找改为 nghttp2 stream user-data 的 O(1) 同合同形状。
+
+尚未签作正式 P1 的方向诊断显示：`64x1KiB` multiplex 的 HYLE throughput 高约 41--51%；
+`4x256KiB` flow-control holdout 在两种顺序下分别低约 3.9% / 2.4%，已进入预声明 5% noninferiority
+margin。它只证明 correction 值得形成新 candidate，不替代 clean revision 上的一次正式测量。
+Windows/Linux plain correctness 已重复通过；Windows/Linux TLS interop、ASan、UBSan 与 TSan 均通过。
+WSL TSan 默认地址布局会在 main 前报 `unexpected memory mapping`，以 `setarch $(uname -m) -R` 运行
+同一 instrumented binary 后主套件和强制 epoll 双工用例均通过。source/static/shared、macOS、guide/
+red-team 与正式 P1 receipt 仍是 terminal gate，故本卡保持 `AUDITED`。
+
+`consume()` 的 sink error 已定义为 stream-terminal：返回调用方原 `Status`，同时发送 CANCEL、归还
+connection credit 并令 reader 失效。否则后续 reader operation 会确认并跳过被 sink 拒绝的 borrowed
+chunk，形成虚假的 retry 形状。隔离用例同时验证该失败不会毒化后续 stream。测试 listener 改用 OS
+分配端口，避免 Linux ephemeral `TIME_WAIT` 与固定测试端口相撞被误判为协议失败。
 
 ## Implementation checkpoints
 
 - `ea45d866`：`IOH2-F01` 的物理 owner 已建立；HTTP/2 source/header/test、nghttp2 package owner
   与 `HYLE_IO_HTTP2_API` 均属于 `io_http2`。feature OFF 只保留 capability query；Windows
   OFF/ON shared correctness、跨 DLL transport link 与独立 header 已通过。
+- `18d6d6b9`：首个 exact product candidate 的 W1-WSL P1 qualification/control 全通过；normal
+  multiplex 为 `WIN`，大 body flow-control holdout 为固定 `LOSE`。该证据是上述有限 correction 的
+  trigger，不是可挑选或合并的历史样本。

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/io/http.h"
@@ -147,6 +148,13 @@ class Http2BodyWriter;
 class Http2ServerSession;
 class Http2ClientSession;
 
+namespace detail {
+using Http2BodySinkFn = Status (*)(void *, const HttpBodyChunkView &) noexcept;
+HYLE_IO_HTTP2_API sched::Task<Status>
+http2_body_consume(mem::AllocatorRef, Http2BodyReader &, void *,
+                   Http2BodySinkFn, std::size_t, OperationOptions) noexcept;
+} // namespace detail
+
 HYLE_IO_HTTP2_API sched::Task<Result<HttpBodyChunkView>>
 http2_body_read(mem::AllocatorRef, Http2BodyReader &, std::size_t,
                 OperationOptions) noexcept;
@@ -176,6 +184,26 @@ public:
   read(std::size_t max_bytes = 0, OperationOptions options = {}) noexcept {
     return http2_body_read(allocator_, *this, max_bytes, options);
   }
+  // Consume the whole body in one task without allocating a task per chunk.
+  // The borrowed sink must outlive the returned task, must return on the same
+  // fiber, and must not retain the chunk view or re-enter this session. A sink
+  // error cancels this stream and invalidates the reader; it is not retryable.
+  template <class Sink>
+    requires requires(Sink &sink, const HttpBodyChunkView &chunk) {
+      { sink(chunk) } noexcept;
+    } &&
+             std::is_same_v<decltype(std::declval<Sink &>()(
+                                std::declval<const HttpBodyChunkView &>())),
+                            Status>
+  sched::Task<Status> consume(Sink &sink, std::size_t max_bytes = 0,
+                              OperationOptions options = {}) noexcept {
+    return detail::http2_body_consume(
+        allocator_, *this, &sink,
+        +[](void *context, const HttpBodyChunkView &chunk) noexcept -> Status {
+          return (*static_cast<Sink *>(context))(chunk);
+        },
+        max_bytes, options);
+  }
   sched::Task<Status> discard(OperationOptions options = {}) noexcept {
     return http2_body_discard(allocator_, *this, options);
   }
@@ -188,6 +216,10 @@ private:
   friend HYLE_IO_HTTP2_API sched::Task<Status>
   http2_body_discard(mem::AllocatorRef, Http2BodyReader &,
                      OperationOptions) noexcept;
+  friend HYLE_IO_HTTP2_API sched::Task<Status>
+  detail::http2_body_consume(mem::AllocatorRef, Http2BodyReader &, void *,
+                             detail::Http2BodySinkFn, std::size_t,
+                             OperationOptions) noexcept;
   Http2BodyReader(detail::Http2SessionState *session,
                   detail::Http2StreamState *stream, std::uint64_t generation,
                   mem::AllocatorRef allocator) noexcept

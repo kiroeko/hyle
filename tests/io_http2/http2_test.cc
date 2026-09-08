@@ -57,7 +57,22 @@ using hyle::sched::Task;
 namespace {
 
 constexpr unsigned kOwner = 0;
-constexpr std::uint16_t kPort = 54428;
+
+struct TestListener {
+  TcpListener listener;
+  std::uint16_t port = 0;
+};
+
+hyle::Result<TestListener> bind_test_listener(IoContext &io) noexcept {
+  auto listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, 0));
+  if (!listener.has_value())
+    return hyle::make_unexpected(std::move(listener).error());
+  auto endpoint = listener->local_endpoint();
+  if (!endpoint.has_value())
+    return hyle::make_unexpected(std::move(endpoint).error());
+  return TestListener{std::move(*listener), endpoint->port()};
+}
 
 std::span<const std::byte> bytes(std::string_view text) noexcept {
   return {reinterpret_cast<const std::byte *>(text.data()), text.size()};
@@ -82,23 +97,28 @@ void *oom_reallocate(void *, void *, std::size_t, std::size_t,
 Task<Status> read_body(AllocatorRef, hyle::io::Http2BodyReader &body,
                        std::string *output,
                        std::size_t max_bytes = 4096) noexcept {
-  for (;;) {
-    auto next = co_await body.read(max_bytes, budget());
-    if (!next.has_value())
-      co_return std::move(next).error();
-    output->append(reinterpret_cast<const char *>(next->bytes.data()),
-                   next->bytes.size());
-    if (next->end_stream) {
-      if (!body.done())
-        co_return Status::Internal(
-            "HTTP/2 reader did not expose final-chunk completion");
-      co_return Status::Ok();
-    }
-  }
+  auto append =
+      [&](const hyle::io::HttpBodyChunkView &next) noexcept -> Status {
+    output->append(reinterpret_cast<const char *>(next.bytes.data()),
+                   next.bytes.size());
+    return next.end_stream && !body.done()
+               ? Status::Internal(
+                     "HTTP/2 reader did not expose final-chunk completion")
+               : Status::Ok();
+  };
+  co_return co_await body.consume(append, max_bytes, budget());
 }
 
 struct Drive {
   Task<int> task;
+};
+
+struct SignalOnReturn {
+  Event *event = nullptr;
+  ~SignalOnReturn() {
+    if (event != nullptr)
+      event->signal();
+  }
 };
 
 void drive(void *opaque) noexcept {
@@ -114,6 +134,7 @@ struct MultiplexResult {
   std::string paths[2];
   std::string requests[2];
   std::string responses[2];
+  Event client_finished;
 };
 
 Task<int> multiplex_server(AllocatorRef allocator, TcpListener *listener,
@@ -152,17 +173,20 @@ Task<int> multiplex_server(AllocatorRef allocator, TcpListener *listener,
            .ok())
     co_return 0;
   result->server_ok.store(true, std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
   co_return 0;
 }
 
 Task<int> multiplex_client(AllocatorRef allocator, IoContext *io,
+                           std::uint16_t port,
                            MultiplexResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -207,16 +231,17 @@ TEST(IoHttp2, MultiplexesIncrementalMessagesInCompletionOrder) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<MultiplexResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = multiplex_server(system_allocator(), &listener, result.get());
-  client->task = multiplex_client(system_allocator(), &io, result.get());
+  server->task =
+      multiplex_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      multiplex_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -247,6 +272,7 @@ struct FlowResult {
   std::atomic<std::size_t> client_bytes{0};
   std::atomic<bool> server_ok{false};
   std::atomic<bool> client_ok{false};
+  Event client_finished;
 };
 
 struct StringBodySource {
@@ -299,17 +325,19 @@ Task<int> flow_server(AllocatorRef allocator, TcpListener *listener,
       hyle::io::HttpBodySource::from(source, result->response.size()),
       budget());
   result->server_ok.store(sent.ok(), std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
   co_return 0;
 }
 
-Task<int> flow_client(AllocatorRef allocator, IoContext *io,
+Task<int> flow_client(AllocatorRef allocator, IoContext *io, std::uint16_t port,
                       FlowResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 1), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -340,16 +368,17 @@ TEST(IoHttp2, ConsumerProgressDrivesBothFlowControlWindows) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 1));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<FlowResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = flow_server(system_allocator(), &listener, result.get());
-  client->task = flow_client(system_allocator(), &io, result.get());
+  server->task =
+      flow_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      flow_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -556,13 +585,13 @@ Task<int> reuse_server(AllocatorRef allocator, TcpListener *listener,
 }
 
 Task<int> reuse_client(AllocatorRef allocator, IoContext *io,
-                       ReuseResult *result) noexcept {
+                       std::uint16_t port, ReuseResult *result) noexcept {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 2), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   hyle::io::Http2Limits limits;
@@ -596,16 +625,17 @@ TEST(IoHttp2, ConcurrentLimitDoesNotBecomeLifetimeRequestLimit) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 2));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<ReuseResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = reuse_server(system_allocator(), &listener, result.get());
-  client->task = reuse_client(system_allocator(), &io, result.get());
+  server->task =
+      reuse_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      reuse_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -624,6 +654,7 @@ struct TrailerResult {
   std::string response_trailer;
   std::atomic<bool> server_ok{false};
   std::atomic<bool> client_ok{false};
+  Event client_finished;
 };
 
 Task<Status> read_body_and_trailer(AllocatorRef,
@@ -677,17 +708,19 @@ Task<int> trailer_server(AllocatorRef allocator, TcpListener *listener,
   if (!(co_await started->finish(std::span(&trailer, 1), budget())).ok())
     co_return 0;
   result->server_ok.store(true, std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
   co_return 0;
 }
 
 Task<int> trailer_client(AllocatorRef allocator, IoContext *io,
-                         TrailerResult *result) noexcept {
+                         std::uint16_t port, TrailerResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 3), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -722,16 +755,17 @@ TEST(IoHttp2, StreamsFragmentedBodiesAndPublishesTrailersAtEnd) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 3));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<TrailerResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = trailer_server(system_allocator(), &listener, result.get());
-  client->task = trailer_client(system_allocator(), &io, result.get());
+  server->task =
+      trailer_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      trailer_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -792,13 +826,13 @@ Task<int> reset_server(AllocatorRef allocator, TcpListener *listener,
 }
 
 Task<int> reset_client(AllocatorRef allocator, IoContext *io,
-                       ResetResult *result) noexcept {
+                       std::uint16_t port, ResetResult *result) noexcept {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 4), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -863,16 +897,17 @@ TEST(IoHttp2, OperationCancellationAndStreamResetDoNotPoisonSession) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 4));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<ResetResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = reset_server(system_allocator(), &listener, result.get());
-  client->task = reset_client(system_allocator(), &io, result.get());
+  server->task =
+      reset_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      reset_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -891,6 +926,7 @@ struct GoawayResult {
   std::atomic<bool> server_drained{false};
   std::atomic<bool> client_saw_goaway{false};
   std::atomic<bool> client_rejected_new_stream{false};
+  Event client_finished;
 };
 
 Task<int> goaway_server(AllocatorRef allocator, TcpListener *listener,
@@ -917,17 +953,19 @@ Task<int> goaway_server(AllocatorRef allocator, TcpListener *listener,
   Status drained =
       co_await session.drain(hyle::io::Http2Error::kNoError, budget());
   result->server_drained.store(drained.ok(), std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
   co_return 0;
 }
 
 Task<int> goaway_client(AllocatorRef allocator, IoContext *io,
-                        GoawayResult *result) noexcept {
+                        std::uint16_t port, GoawayResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 5), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -966,16 +1004,17 @@ TEST(IoHttp2, GoawayDrainsExistingStreamAndRejectsNewStreams) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 5));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<GoawayResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = goaway_server(system_allocator(), &listener, result.get());
-  client->task = goaway_client(system_allocator(), &io, result.get());
+  server->task =
+      goaway_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      goaway_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -995,6 +1034,7 @@ struct ValidationResult {
   std::atomic<bool> typed_content_length_required{false};
   std::atomic<bool> valid_token_case_accepted{false};
   std::atomic<bool> server_ok{false};
+  Event client_finished;
 };
 
 Task<int> validation_server(AllocatorRef allocator, TcpListener *listener,
@@ -1025,18 +1065,21 @@ Task<int> validation_server(AllocatorRef allocator, TcpListener *listener,
            .ok())
     co_return 0;
   result->server_ok.store(true, std::memory_order_release);
+  (void)result->client_finished.wait_for(hyle::time::Duration(5'000'000'000));
   co_return 0;
 }
 
 Task<int> validation_client(AllocatorRef allocator, IoContext *io,
+                            std::uint16_t port,
                             ValidationResult *result) noexcept {
+  SignalOnReturn finish{&result->client_finished};
   {
     auto opened = TcpStream::open(*io, kOwner);
     if (!opened.has_value())
       co_return 0;
     TcpStream transport = std::move(*opened);
     if (!(co_await transport.connect(
-              Endpoint::loopback(AddressFamily::kIpv4, kPort + 6), budget()))
+              Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
              .ok())
       co_return 0;
     AllocatorRef oom(&oom_allocate, &oom_deallocate, &oom_reallocate, nullptr);
@@ -1051,7 +1094,7 @@ Task<int> validation_client(AllocatorRef allocator, IoContext *io,
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 6), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   hyle::io::Http2Limits limits;
@@ -1115,16 +1158,17 @@ TEST(IoHttp2, RejectsInvalidHeadersAndSurfacesAllocatorAndLimitFailures) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 6));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<ValidationResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = validation_server(system_allocator(), &listener, result.get());
-  client->task = validation_client(system_allocator(), &io, result.get());
+  server->task =
+      validation_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      validation_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -1166,13 +1210,14 @@ Task<int> invalid_wire_server(AllocatorRef allocator, TcpListener *listener,
 }
 
 Task<int> invalid_wire_client(AllocatorRef allocator, IoContext *io,
+                              std::uint16_t port,
                               InvalidWireResult *result) noexcept {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream stream = std::move(*opened);
-  if (!(co_await stream.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 7), budget()))
+  if (!(co_await stream.connect(Endpoint::loopback(AddressFamily::kIpv4, port),
+                                budget()))
            .ok())
     co_return 0;
   constexpr std::string_view invalid_preface =
@@ -1196,17 +1241,17 @@ TEST(IoHttp2, RejectsInvalidClientPrefaceAsProtocolDataLoss) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 7));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<InvalidWireResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
   server->task =
-      invalid_wire_server(system_allocator(), &listener, result.get());
-  client->task = invalid_wire_client(system_allocator(), &io, result.get());
+      invalid_wire_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      invalid_wire_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -1224,6 +1269,8 @@ struct IsolationResult {
   std::string abandoned_body = std::string(48 * 1024, 'a');
   std::string oversized_body = std::string(72 * 1024, 'b');
   std::atomic<bool> abandoned_reader_reset{false};
+  std::atomic<bool> rejected_sink_cancelled{false};
+  std::atomic<bool> rejected_sink_reset{false};
   std::atomic<bool> body_limit_reported{false};
   std::atomic<bool> session_reused{false};
   std::atomic<bool> server_ok{false};
@@ -1271,6 +1318,21 @@ Task<int> isolation_server(AllocatorRef allocator, TcpListener *listener,
     auto incoming = co_await session.accept(budget());
     if (!incoming.has_value() || !incoming->has_value())
       co_return 0;
+    Http2IncomingRequest request = std::move(**incoming);
+    auto reject = [](const hyle::io::HttpBodyChunkView &) noexcept -> Status {
+      return Status::Aborted("test sink rejected HTTP/2 body");
+    };
+    Status rejected = co_await request.body.consume(reject, 1024, budget());
+    const bool isolated = rejected.IsAborted() && !request.body.valid();
+    result->rejected_sink_cancelled.store(isolated, std::memory_order_release);
+    if (!isolated)
+      co_return 0;
+  }
+
+  {
+    auto incoming = co_await session.accept(budget());
+    if (!incoming.has_value() || !incoming->has_value())
+      co_return 0;
     result->server_stage.store(3, std::memory_order_release);
     Http2IncomingRequest request = std::move(**incoming);
     Status discarded = co_await request.body.discard(budget());
@@ -1298,13 +1360,14 @@ Task<int> isolation_server(AllocatorRef allocator, TcpListener *listener,
 }
 
 Task<int> isolation_client(AllocatorRef allocator, IoContext *io,
+                           std::uint16_t port,
                            IsolationResult *result) noexcept {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 8), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -1332,6 +1395,20 @@ Task<int> isolation_client(AllocatorRef allocator, IoContext *io,
   result->abandoned_reader_reset.store(abandoned_reset,
                                        std::memory_order_release);
   result->client_stage.store(2, std::memory_order_release);
+
+  head.path = "/reject-sink";
+  StringBodySource rejected{.body = &result->abandoned_body};
+  auto rejected_id = co_await session.send_request(
+      head,
+      hyle::io::HttpBodySource::from(rejected, result->abandoned_body.size()),
+      budget());
+  bool sink_reset = !rejected_id.has_value();
+  if (rejected_id.has_value()) {
+    auto response = co_await session.read_response(*rejected_id, budget());
+    sink_reset = response.has_value() && response->stream_error.has_value() &&
+                 *response->stream_error == hyle::io::Http2Error::kCancel;
+  }
+  result->rejected_sink_reset.store(sink_reset, std::memory_order_release);
 
   head.path = "/too-large";
   StringBodySource oversized{.body = &result->oversized_body};
@@ -1362,20 +1439,22 @@ Task<int> isolation_client(AllocatorRef allocator, IoContext *io,
   co_return 0;
 }
 
-TEST(IoHttp2, AbandonAndBodyLimitIsolateStreamsWithoutPoisoningSession) {
+TEST(IoHttp2,
+     AbandonSinkFailureAndBodyLimitIsolateStreamsWithoutPoisoningSession) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 8));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<IsolationResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = isolation_server(system_allocator(), &listener, result.get());
-  client->task = isolation_client(system_allocator(), &io, result.get());
+  server->task =
+      isolation_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      isolation_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -1384,6 +1463,8 @@ TEST(IoHttp2, AbandonAndBodyLimitIsolateStreamsWithoutPoisoningSession) {
   scheduler.shutdown();
 
   EXPECT_TRUE(result->abandoned_reader_reset.load());
+  EXPECT_TRUE(result->rejected_sink_cancelled.load());
+  EXPECT_TRUE(result->rejected_sink_reset.load());
   EXPECT_TRUE(result->body_limit_reported.load());
   EXPECT_TRUE(result->session_reused.load());
   EXPECT_TRUE(result->server_ok.load());
@@ -1443,13 +1524,13 @@ Task<int> deadline_server(AllocatorRef allocator, TcpListener *listener,
 }
 
 Task<int> deadline_client(AllocatorRef allocator, IoContext *io,
-                          DeadlineResult *result) noexcept {
+                          std::uint16_t port, DeadlineResult *result) noexcept {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value())
     co_return 0;
   TcpStream transport = std::move(*opened);
   if (!(co_await transport.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, kPort + 9), budget()))
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
            .ok())
     co_return 0;
   auto made = Http2ClientSession::create(allocator, std::move(transport));
@@ -1490,16 +1571,17 @@ TEST(IoHttp2, DeadlineInterruptsFlowControlledWriterWithoutPoisoningSession) {
   Scheduler scheduler(2, system_allocator(), 256);
   IoContext io(scheduler);
   ASSERT_TRUE(io.valid());
-  auto listener_result = TcpListener::bind(
-      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPort + 9));
+  auto listener_result = bind_test_listener(io);
   ASSERT_TRUE(listener_result.has_value());
-  TcpListener listener = std::move(*listener_result);
+  TestListener listener = std::move(*listener_result);
 
   auto result = std::make_unique<DeadlineResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = deadline_server(system_allocator(), &listener, result.get());
-  client->task = deadline_client(system_allocator(), &io, result.get());
+  server->task =
+      deadline_server(system_allocator(), &listener.listener, result.get());
+  client->task =
+      deadline_client(system_allocator(), &io, listener.port, result.get());
   Fiber server_fiber(kDefaultStackSize, drive, server.get());
   Fiber client_fiber(kDefaultStackSize, drive, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));

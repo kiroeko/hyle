@@ -440,6 +440,7 @@ public:
   }
 
 private:
+  friend class detail::Http2SessionAccess;
   friend HYLE_IO_HTTP_API sched::Task<TransferResult>
   detail::http_transport_read(mem::AllocatorRef, HttpTransport &,
                               std::span<std::byte>, OperationOptions) noexcept;

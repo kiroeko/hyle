@@ -115,7 +115,6 @@ HTTP/1.1 server/client 都接受 plain `TcpStream`。启用 OpenSSL 时也接受
 
 ```cpp
 hyle::io::TlsClientOptions tls_options;
-tls_options.alpn_protocols = hyle::io::tls_http2_protocols();
 auto context = hyle::io::TlsContext::make_client(tls_options);
 if (!context) co_return;
 
@@ -245,11 +244,56 @@ read/write 重置预算。`close()` 幂等，在安全完成 TCP shutdown 或 TL
 close-notify 的正常 close。listener accept loop、路由、中间件、认证、模型 schema、
 handler admission/batching 与优雅排空策略属于应用 owner，HTTP 因子不偷偷选择。
 
-HTTP/2 因子目前仍处于 `AUDITED` 重构轮，旧的 fixed-buffer
-`Http2ClientConn`/`Http2ServerConn` 形状不是稳定用户合同。不要以旧接口开始新的
-消费；本轮会在相同 `HttpTransport` 上提供有界并发 stream、增量 body、流控、
-RST/GOAWAY、统一 deadline/cancel 与 ALPN 检查后再签发使用指南。当前需要稳定
-HTTP 服务的代码应使用上面的 HTTP/1 streaming 路线，不要自行绕过到 nghttp2。
+HTTP/2 需要配置 `HYLE_IO_HTTP2=ON`。h2c 只支持 prior knowledge；HTTPS 则让 client/server
+TLS context 都使用 `tls_http2_protocols(false)`、设置 `require_alpn=true`，完成握手后再把
+`TlsStream` 移入 session。factory 会拒绝没有协商到 `h2` 的 TLS transport。nghttp2 是 private
+framing/HPACK 机制，用户不取得它的 session 或 callback：
+
+```cpp
+#include <hyle/io/http2.h>
+
+auto made = hyle::io::Http2ClientSession::create(
+    alloc, std::move(tls), hyle::io::Http2Limits{});
+if (!made) co_return;
+auto session = std::move(*made);
+
+hyle::io::Http2RequestHead head;
+head.method = "POST";
+head.scheme = "https";
+head.authority = "model.example";
+head.path = "/v1/infer";
+auto id = co_await session.send_request(head, request_bytes, operation);
+if (!id) co_return;
+
+auto response = co_await session.read_response(*id, operation);
+if (!response) co_return;
+auto on_chunk = [&](const hyle::io::HttpBodyChunkView &chunk) noexcept
+                    -> hyle::Status {
+  return consume_tokens(chunk.bytes); // 不保存 chunk/view，也不重入 session
+};
+if (!(co_await response->body.consume(on_chunk, 16 * 1024, operation)).ok())
+  co_return;
+```
+
+`send_request()`/`send_response()` 的 span 重载适合固定小 body；token stream 使用
+`start_request()`/`start_response()` 得到 move-only `Http2BodyWriter`，逐块 `write()` 后
+`finish()`。一次 write 完整穿过 transport boundary 后才返回，不存在隐藏的无界发送队列。
+接收端可循环 `read()`，也可用上面的 `consume()` 让同步 borrowed sink 在一个 task 中处理完整
+body；后者避免每 chunk 建立 task。sink 必须是活到 await 完成的 lvalue，`noexcept` 返回
+`Status`，不得 suspend、保留 view 或重入同一 session；sink 返回错误会取消该 stream 并令 reader
+失效，不能把它当成 chunk retry。只想释放数据与流控额度时使用 `discard()`。
+
+每个 chunk view 在 reader 的下一次操作时失效；该次操作也才确认上一 chunk 并产生相应
+WINDOW_UPDATE。丢弃未读完的 reader 会发送 `RST_STREAM(CANCEL)`、归还 connection credit，
+不会毒化其他 stream。`next_response()` 按完成顺序取结果，`read_response(id)` 等待指定 stream；
+不要把两者同时用于同一个 response。session 及所有 stream handle 固定属于 transport owner
+worker，多个 stream 可以在该 worker 上协作推进，但同一 reader/writer 只能有一个在途操作。
+
+`Http2Limits` 是每 session 的 header/body/concurrency/window 上限。一个低于 65,535 bytes 的
+stream receive window 只有在 peer 收到 SETTINGS 后才生效；connection window 不能低于协议初值。
+所有操作沿用同一个绝对 deadline/`CancelToken`。取消单 stream 用 `reset()`；停止接收新 stream、
+等待既有 stream 并发送 GOAWAY 用 `drain()`，最后调用 `close()`。HTTP/1 Upgrade、server push、
+gRPC schema/runtime、路由、认证与模型 batching 仍属于本因子之外。
 
 ## 5. 可靠复制与模型下载
 

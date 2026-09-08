@@ -165,21 +165,21 @@ Task<Status> read_hyle_body(AllocatorRef,
                             hyle::io::Http2BodyReader &body,
                             std::string_view expected) noexcept {
   std::size_t received = 0;
-  for (;;) {
-    auto next = co_await body.read(16 * 1024);
-    if (!next.has_value())
-      co_return std::move(next).error();
-    if (received + next->bytes.size() > expected.size() ||
-        std::memcmp(next->bytes.data(), expected.data() + received,
-                    next->bytes.size()) != 0)
-      co_return Status::DataLoss("HTTP/2 benchmark body mismatch");
-    received += next->bytes.size();
-    if (next->end_stream) {
-      if (received != expected.size())
-        co_return Status::DataLoss("HTTP/2 benchmark body length mismatch");
-      co_return Status::Ok();
-    }
-  }
+  auto verify =
+      [&](const hyle::io::HttpBodyChunkView &next) noexcept -> Status {
+    if (received + next.bytes.size() > expected.size() ||
+        std::memcmp(next.bytes.data(), expected.data() + received,
+                    next.bytes.size()) != 0)
+      return Status::DataLoss("HTTP/2 benchmark body mismatch");
+    received += next.bytes.size();
+    return Status::Ok();
+  };
+  Status consumed = co_await body.consume(verify, 16 * 1024);
+  if (!consumed.ok())
+    co_return consumed;
+  co_return received == expected.size()
+      ? Status::Ok()
+      : Status::DataLoss("HTTP/2 benchmark body length mismatch");
 }
 
 Task<int> hyle_server(AllocatorRef allocator, TcpStream stream,
@@ -334,14 +334,6 @@ struct RawEndpoint {
   bool server = false;
   bool failed = false;
   int completed = 0;
-
-  RawStream *find(std::int32_t id) noexcept {
-    for (auto &stream : streams) {
-      if (stream.id == id)
-        return &stream;
-    }
-    return nullptr;
-  }
 };
 
 bool raw_queue_readable(RawEndpoint &endpoint, RawStream &stream) noexcept {
@@ -446,12 +438,13 @@ int raw_begin_headers(nghttp2_session *session, const nghttp2_frame *frame,
   return 0;
 }
 
-int raw_header(nghttp2_session *, const nghttp2_frame *frame,
+int raw_header(nghttp2_session *session, const nghttp2_frame *frame,
                const std::uint8_t *name, std::size_t name_length,
                const std::uint8_t *value, std::size_t value_length,
                std::uint8_t, void *user_data) {
   auto &endpoint = *static_cast<RawEndpoint *>(user_data);
-  RawStream *stream = endpoint.find(frame->hd.stream_id);
+  auto *stream = static_cast<RawStream *>(
+      nghttp2_session_get_stream_user_data(session, frame->hd.stream_id));
   if (stream == nullptr) {
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
@@ -467,11 +460,12 @@ int raw_header(nghttp2_session *, const nghttp2_frame *frame,
   return 0;
 }
 
-int raw_data_chunk(nghttp2_session *, std::uint8_t,
+int raw_data_chunk(nghttp2_session *session, std::uint8_t,
                    std::int32_t stream_id, const std::uint8_t *data,
                    std::size_t length, void *user_data) {
   auto &endpoint = *static_cast<RawEndpoint *>(user_data);
-  RawStream *stream = endpoint.find(stream_id);
+  auto *stream = static_cast<RawStream *>(
+      nghttp2_session_get_stream_user_data(session, stream_id));
   if (stream == nullptr) {
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
@@ -519,14 +513,15 @@ int raw_data_chunk(nghttp2_session *, std::uint8_t,
   return 0;
 }
 
-int raw_frame_recv(nghttp2_session *, const nghttp2_frame *frame,
+int raw_frame_recv(nghttp2_session *session, const nghttp2_frame *frame,
                    void *user_data) {
   auto &endpoint = *static_cast<RawEndpoint *>(user_data);
   if ((frame->hd.type != NGHTTP2_HEADERS &&
        frame->hd.type != NGHTTP2_DATA) ||
       (frame->hd.flags & NGHTTP2_FLAG_END_STREAM) == 0)
     return 0;
-  RawStream *stream = endpoint.find(frame->hd.stream_id);
+  auto *stream = static_cast<RawStream *>(
+      nghttp2_session_get_stream_user_data(session, frame->hd.stream_id));
   if (stream == nullptr)
     return 0;
   stream->input_end_received = true;
