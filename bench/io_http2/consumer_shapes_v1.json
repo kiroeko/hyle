@@ -1,0 +1,118 @@
+{
+  "schema": "hyle.io_http2.consumer-shapes/v1",
+  "purpose": "Freeze the same-contract multiplex and flow-control journeys used by the io-http2-v1 P1 gate before the first timing sample.",
+  "comparison_class": "SAME_CONTRACT",
+  "reference_snapshots": {
+    "llama.cpp": "e71b80510c848c00175924ecf3c40333ccae8eb5",
+    "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
+    "ds4": "f62ca29a308724cde5bc99134ede19104b2a3260",
+    "sglang": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0",
+    "vllm": "51da0ca66c8065619c79e35dff97aa99aeaf5644",
+    "nghttp2": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2"
+  },
+  "common_setup_outside_measurement": [
+    "one persistent dedicated event worker and one external admitting and waiting caller per route",
+    "immutable request and response payloads",
+    "one complete route-ordered warmup episode per workload"
+  ],
+  "common_semantics": {
+    "transport": "one fresh nonblocking Unix socket pair with 4 KiB send and receive buffers per charged episode",
+    "request": "POST /v1/completions over h2c prior knowledge with Content-Length and an exact byte-validated body",
+    "multiplex": "submit one complete fixed request, keep its stream active, submit the second, then allow the server to respond only after both streams are accepted",
+    "response": "HTTP status 200 with Content-Length; the complete second response crosses the transport before the first starts, and the client verifies reverse completion order",
+    "flow_control": "automatic window updates disabled; every consumed DATA chunk returns both stream and connection credit",
+    "progress": "one external owner dispatches the episode to one persistent worker and waits for all client and server state to retire",
+    "failure": "any session, framing, method, path, status, byte, length, ordering, syscall or completion mismatch invalidates the process"
+  },
+  "same_contract_matrix": [
+    {
+      "dimension": "work-result",
+      "candidate": "public HYLE client/server sessions complete and validate the declared number of request-response streams",
+      "peer": "direct public nghttp2 client/server sessions complete and validate the same streams",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "ownership-lifetime",
+      "candidate": "one external harness owns a persistent Scheduler worker; session and stream objects are created and retired inside every timed episode",
+      "peer": "one external harness owns a persistent worker; session and stream adapter objects are created and retired inside every timed episode",
+      "verdict": "ADAPTER_EQUALIZED"
+    },
+    {
+      "dimension": "failure-diagnostics",
+      "candidate": "typed Status/Result checks invalidate the episode; no failure is injected in this success-path P1 row",
+      "peer": "the adapter maps every callback, nghttp2 and syscall failure to the same invalid episode; no failure is injected",
+      "verdict": "ADAPTER_EQUALIZED"
+    },
+    {
+      "dimension": "cancel-deadline-close",
+      "candidate": "deadline and cancellation are disabled for this successful journey; destruction retires the session after all streams complete",
+      "peer": "no deadline or cancellation is armed; destruction retires the session after all streams complete",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "ordering-capacity-backpressure",
+      "candidate": "two active streams per pair, serial fixed-body production, reverse response completion, 64 KiB stream windows and the declared connection window",
+      "peer": "the adapter enforces the identical submission sequence, reverse response sequence, windows and explicit consumption credits",
+      "verdict": "ADAPTER_EQUALIZED"
+    },
+    {
+      "dimension": "thread-safety-progress-caller-participation",
+      "candidate": "both endpoints run cooperatively on one dedicated Scheduler worker while the caller only admits and waits",
+      "peer": "both endpoints are pumped on one dedicated worker while the caller only admits and waits",
+      "verdict": "ADAPTER_EQUALIZED"
+    },
+    {
+      "dimension": "setup-steady-state-teardown",
+      "candidate": "runtime and payload setup are outside; socket, HTTP/2 state, all protocol work, validation and retirement are charged",
+      "peer": "runtime and payload setup are outside; the identical episode boundary is charged",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "memory-resource",
+      "candidate": "HYLE stream/session state uses its injected system allocator and reusable wire buffers",
+      "peer": "direct nghttp2 and the bounded adapter use their natural allocators; allocation count and bytes are measured product-route outputs",
+      "verdict": "EQUAL"
+    },
+    {
+      "dimension": "delivery-codegen",
+      "candidate": "source-built static HYLE wrapper over the pinned nghttp2 object code with LTO disabled",
+      "peer": "direct calls to the same pinned nghttp2 object code in the same executable and toolchain",
+      "verdict": "EQUAL"
+    }
+  ],
+  "workloads": [
+    {
+      "id": "multiplexed-inference-streams-64x1k",
+      "consumer": "a retained inference connection carrying pairs of overlapping small JSON requests and token-response bodies",
+      "scale": {
+        "connections": 1,
+        "streams": 64,
+        "active_streams": 2,
+        "request_bytes": 1024,
+        "response_bytes": 1024,
+        "stream_window_bytes": 65536,
+        "connection_window_bytes": 1048576,
+        "dedicated_workers": 1
+      }
+    },
+    {
+      "id": "flow-control-holdout-4x256k",
+      "consumer": "large prompt or artifact-control messages that must make progress through both HTTP/2 window levels without whole-body session buffering",
+      "scale": {
+        "connections": 1,
+        "streams": 4,
+        "active_streams": 2,
+        "request_bytes": 262144,
+        "response_bytes": 262144,
+        "stream_window_bytes": 65536,
+        "connection_window_bytes": 65535,
+        "dedicated_workers": 1
+      }
+    }
+  ],
+  "negative_space": [
+    "the peer adapter calls nghttp2 rather than implementing HPACK, frames or protocol state",
+    "HTTP/1, TLS handshakes, listener accept, application routing, authentication, gRPC schema and batching are not charged",
+    "this gate proves public-wrapper non-inferiority over its pinned protocol mechanism for the fixed successful journeys; it is not an all-server, WAN, TLS, all-body-distribution or Formal SOTA certificate"
+  ]
+}
