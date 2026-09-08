@@ -21,7 +21,7 @@
   （Asio `0.768 ms`），encrypted-stream episode 从约 `165.4 ms` 降至 `3.94 ms`
   （Asio `4.26 ms`）。这不是 provider 或 TLS API 差异。
 
-## Closure card（`SCOPED`，已冻结）
+## Closure card（`AUDITED`，已冻结）
 
 - scope：只修正 scheduler 已附着 IO driver 且该 worker 有 in-flight IO、run queue 已空时，默认
   idle search 在不 poll completion 的情况下先执行 4096 relax + 4 yield 所造成的 completion latency；
@@ -53,7 +53,13 @@
 本轮没有公开 API 或功能超集扩张。若审计确认 `poll(0)` 的返回值已经可靠表达 pre-reap in-flight，
 `FIX` 集只允许在 worker idle transition 中据此跳过无意义 search；不得添加 TLS benchmark flag 到产品。
 
+审计已确认：`IoContext::poll()` 在 reap 前读取 `Proactor::in_flight()` 并把该值返回 scheduler；各平台
+backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue 在 non-blocking reap 后仍为空且
+返回 true 时，继续 CPU search 不会执行用户工作、也不会收割 completion；直接进入既有 sleeper 注册、
+二次 queue 检查和 interruptible proactor wait 不改变 ownership 或 wake 协议。因此本轮冻结产品改动仅为
+`SCHED5-F01`；`F02/F03` 只回归，不得顺手调参或重写队列。
+
 ## Current decision
 
-`SCOPED / ACTIVE`。范围、非目标、预算、机器、tier 与停止条件已冻结；尚未授权产品修改。
-下一合法状态是完成现有实现/消费路径审计并冻结有限 `FIX` 集后进入 `AUDITED`。
+`AUDITED / ACTIVE`。有限 `FIX` 集已经冻结，允许实现 `SCHED5-F01`；公开 API、依赖图和普通无 IO
+scheduler 路线必须保持不变。
