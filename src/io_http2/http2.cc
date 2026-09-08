@@ -238,15 +238,25 @@ struct Http2SessionState {
   void destroy() noexcept;
   void retain() noexcept { references.fetch_add(1, std::memory_order_relaxed); }
   void release() noexcept;
-  void notify() noexcept {
-    std::lock_guard<util::SpinLock> lock(monitor);
+  // Protocol state is owner-worker affine. A sibling owner fiber cannot run
+  // until the current fiber suspends, by which point ConditionVariable has
+  // already published its waiter node. Its own no-waiter fast path therefore
+  // supplies all the synchronization needed here.
+  void notify_owner() noexcept {
     ++change_epoch;
+    changed.notify_all();
+  }
+  // Cancellation may originate on any thread. Taking the predicate monitor
+  // closes the cancel-vs-wait-publication window without charging every normal
+  // owner-local protocol transition.
+  void notify_cancelled_wait() noexcept {
+    std::lock_guard<util::SpinLock> lock(monitor);
     changed.notify_all();
   }
   void fail(Status status) noexcept {
     if (fatal_status.ok())
       fatal_status = std::move(status);
-    notify();
+    notify_owner();
   }
   Http2StreamState *find(std::int32_t id) noexcept {
     Http2StreamState **entry = streams.find(id);
@@ -504,7 +514,7 @@ int consume_rejected_data(Http2SessionState &state,
       nghttp2_session_consume_connection(state.session, length);
   if (consumed == 0) {
     ++state.submit_epoch;
-    state.notify();
+    state.notify_owner();
     return 0;
   }
   state.fail(status_from_nghttp2(
@@ -807,7 +817,7 @@ int on_stream_close(nghttp2_session *, std::int32_t stream_id,
     }
     state.maybe_retire(stream);
   }
-  state.notify();
+  state.notify_owner();
   return 0;
 }
 
@@ -1104,7 +1114,7 @@ struct CancelWakeContext {
 
 void wake_cancelled_wait(void *opaque) noexcept {
   auto *context = static_cast<CancelWakeContext *>(opaque);
-  context->state->notify();
+  context->state->notify_cancelled_wait();
 }
 
 Status wait_for_change(Http2SessionState &state, OperationOptions options,
@@ -1138,8 +1148,7 @@ Status wait_for_change(Http2SessionState &state, OperationOptions options,
   return check_operation(state, options);
 }
 
-bool claim_direction(Http2SessionState &state, bool &busy) noexcept {
-  std::lock_guard<util::SpinLock> lock(state.monitor);
+bool claim_direction(bool &busy) noexcept {
   if (busy)
     return false;
   busy = true;
@@ -1148,14 +1157,9 @@ bool claim_direction(Http2SessionState &state, bool &busy) noexcept {
 
 void release_direction(Http2SessionState &state, bool &busy,
                        bool notify_waiters = true) noexcept {
-  {
-    std::lock_guard<util::SpinLock> lock(state.monitor);
-    busy = false;
-    if (notify_waiters) {
-      ++state.change_epoch;
-      state.changed.notify_all();
-    }
-  }
+  busy = false;
+  if (notify_waiters)
+    state.notify_owner();
 }
 
 struct ProgressResult {
@@ -1190,12 +1194,12 @@ ProgressResult process_received(Http2SessionState &state,
     // execute atomically on the session owner, so expose the resulting state
     // transition and wake parked sibling operations once per read rather than
     // once per callback.
-    state.notify();
+    state.notify_owner();
     progressed = true;
   }
   if (received.eof) {
     state.peer_closed = true;
-    state.notify();
+    state.notify_owner();
   }
   if (!received.ok()) {
     const Status failure = received.status;
@@ -1207,7 +1211,7 @@ ProgressResult process_received(Http2SessionState &state,
 }
 
 ProgressResult try_read_once(Http2SessionState &state) noexcept {
-  if (!claim_direction(state, state.read_busy))
+  if (!claim_direction(state.read_busy))
     return {};
   const ImmediateTransferResult attempted = detail::http_transport_try_read(
       state.transport,
@@ -1243,7 +1247,7 @@ void complete_wire_frame(Http2SessionState &state) noexcept {
 
 ProgressResult flush_once(mem::AllocatorRef allocator, Http2SessionState &state,
                           OperationOptions options) noexcept {
-  if (!claim_direction(state, state.write_busy))
+  if (!claim_direction(state.write_busy))
     return {};
 
   if (state.wire_offset == state.wire.size) {
@@ -1362,7 +1366,7 @@ ProgressResult flush_once(mem::AllocatorRef allocator, Http2SessionState &state,
 
 ProgressResult read_once(mem::AllocatorRef allocator, Http2SessionState &state,
                          OperationOptions options) noexcept {
-  if (!claim_direction(state, state.read_busy))
+  if (!claim_direction(state.read_busy))
     return {};
 
   TransferResult received = Http2SessionAccess::read(
@@ -1438,11 +1442,7 @@ Status drive_until(mem::AllocatorRef allocator, Http2SessionState &state,
     if (received.progressed)
       continue;
 
-    std::uint64_t observed = 0;
-    {
-      std::lock_guard<util::SpinLock> lock(state.monitor);
-      observed = state.change_epoch;
-    }
+    const std::uint64_t observed = state.change_epoch;
     Status waited = wait_for_change(state, options, observed);
     if (!waited.ok())
       return waited;
@@ -1676,7 +1676,7 @@ submit_request_head(Http2SessionState &state, const Http2RequestHead &head,
         Status::ResourceExhausted("HTTP/2 stream index allocation"));
   }
   ++state.submit_epoch;
-  state.notify();
+  state.notify_owner();
   return stream;
 }
 
@@ -1732,7 +1732,7 @@ submit_response_head(Http2SessionState &state, Http2StreamState &stream,
   stream.output_submitted = true;
   stream.outbound_expected = content_length;
   ++state.submit_epoch;
-  state.notify();
+  state.notify_owner();
   return Status::Ok();
 }
 
@@ -1815,7 +1815,7 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
   }
   reader.session_ = nullptr;
   reader.stream_ = nullptr;
-  state->notify();
+  state->notify_owner();
   state->release();
 }
 
@@ -1841,7 +1841,7 @@ void Http2SessionAccess::release(Http2BodyWriter &writer) noexcept {
   }
   writer.session_ = nullptr;
   writer.stream_ = nullptr;
-  state->notify();
+  state->notify_owner();
   state->release();
 }
 
@@ -1870,7 +1870,7 @@ Status acknowledge_body(Http2SessionState &state,
   }
   stream.borrowed_bytes = 0;
   stream.body_borrowed = false;
-  state.notify();
+  state.notify_owner();
   return Status::Ok();
 }
 
@@ -1888,7 +1888,7 @@ Status reset_stream(Http2SessionState &state, Http2StreamState &stream,
   stream.outbound_data = nullptr;
   stream.outbound_size = stream.outbound_offset = 0;
   ++state.submit_epoch;
-  state.notify();
+  state.notify_owner();
   return Status::Ok();
 }
 
@@ -2122,7 +2122,7 @@ sched::Task<Status> http2_body_write(mem::AllocatorRef allocator,
     co_return detail::status_from_nghttp2(resumed,
                                           "nghttp2_session_resume_data");
   }
-  state.notify();
+  state.notify_owner();
   auto complete = [&]() noexcept {
     return stream.flushed_epoch >= epoch || stream.closed ||
            stream.reset_received || stream.local_reset || !stream.failure.ok();
@@ -2178,7 +2178,7 @@ sched::Task<Status> http2_body_finish(mem::AllocatorRef allocator,
     co_return detail::status_from_nghttp2(resumed,
                                           "nghttp2_session_resume_data");
   }
-  state.notify();
+  state.notify_owner();
   auto complete = [&]() noexcept {
     return (stream.output_done && stream.flushed_epoch >= epoch) ||
            stream.reset_received || stream.local_reset || !stream.failure.ok();
@@ -2237,7 +2237,7 @@ void release_session_owner(detail::Http2SessionState *&state) noexcept {
   if (state == nullptr)
     return;
   state->owner_alive = false;
-  state->notify();
+  state->notify_owner();
   detail::Http2SessionState *saved = std::exchange(state, nullptr);
   saved->release();
 }
@@ -2301,7 +2301,7 @@ sched::Task<Status> session_drain(mem::AllocatorRef allocator,
       co_return detail::status_from_nghttp2(submitted, "nghttp2_submit_goaway");
     state->local_draining = true;
     ++state->submit_epoch;
-    state->notify();
+    state->notify_owner();
   }
   auto complete = [&]() noexcept {
     return state->goaway_wire_epoch != 0 &&
@@ -2320,7 +2320,7 @@ sched::Task<Status> session_close(mem::AllocatorRef allocator,
       co_await session_drain(allocator, state, Http2Error::kNoError, options);
   Status shutdown = co_await state->transport.shutdown(allocator, options);
   state->closed = true;
-  state->notify();
+  state->notify_owner();
   co_return drained.ok() ? shutdown : drained;
 }
 
@@ -2383,7 +2383,7 @@ sched::Task<Status> send_submitted_fixed(mem::AllocatorRef allocator,
     state.collect_garbage();
     co_return failure;
   }
-  state.notify();
+  state.notify_owner();
   auto complete = [&]() noexcept {
     return (stream.output_done && stream.flushed_epoch >= epoch) ||
            stream.reset_received || stream.local_reset || !stream.failure.ok();

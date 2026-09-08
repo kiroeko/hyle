@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -9,6 +10,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <thread>
 
 #include "hyle/core/environment.h"
 
@@ -31,6 +33,7 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
+#include "hyle/sched/timer.h"
 
 using hyle::Status;
 using hyle::io::AddressFamily;
@@ -920,6 +923,156 @@ TEST(IoHttp2, OperationCancellationAndStreamResetDoNotPoisonSession) {
   EXPECT_TRUE(result->reset_observed.load());
   EXPECT_TRUE(result->session_reused.load());
   EXPECT_TRUE(result->server_ok.load());
+}
+
+struct ExternalCancelResult {
+  std::atomic<bool> cancelled_contender{false};
+  std::atomic<bool> first_reader_released{false};
+  Event first_started;
+  Event cancel_ready;
+  Event first_done;
+  Event second_done;
+  Event close_peer;
+};
+
+Task<int> silent_http2_peer(AllocatorRef, TcpListener *listener,
+                            ExternalCancelResult *result) noexcept {
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted.has_value())
+    co_return 0;
+  (void)result->close_peer.wait_for(hyle::time::Duration(5'000'000'000));
+  // Close on the socket owner while the two client operations are still alive;
+  // this releases the non-cancelled reader after the contender has returned.
+  *accepted = TcpStream{};
+  co_return 0;
+}
+
+Task<int> hold_http2_read(AllocatorRef, Http2ClientSession *session,
+                          Http2StreamId id,
+                          ExternalCancelResult *result) noexcept {
+  SignalOnReturn done{&result->first_done};
+  result->first_started.signal();
+  auto response = co_await session->read_response(id, budget());
+  result->first_reader_released.store(!response.has_value(),
+                                      std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> cancel_contending_http2_read(
+    AllocatorRef, Http2ClientSession *session, Http2StreamId id,
+    const hyle::sched::CancelToken *cancel,
+    ExternalCancelResult *result) noexcept {
+  SignalOnReturn done{&result->second_done};
+  result->cancel_ready.signal();
+  auto response = co_await session->read_response(
+      id, OperationOptions{
+              .deadline = hyle::time::deadline_after(
+                  hyle::time::Duration(2'000'000'000)),
+              .cancel = cancel});
+  result->cancelled_contender.store(
+      !response.has_value() && response.error().IsCancelled(),
+      std::memory_order_release);
+  co_return 0;
+}
+
+Task<int> external_cancel_client(AllocatorRef allocator, Scheduler *scheduler,
+                                 IoContext *io, std::uint16_t port,
+                                 const hyle::sched::CancelToken *cancel,
+                                 ExternalCancelResult *result) noexcept {
+  SignalOnReturn unblock_canceller{&result->cancel_ready};
+  SignalOnReturn close_peer{&result->close_peer};
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened.has_value())
+    co_return 0;
+  TcpStream transport = std::move(*opened);
+  if (!(co_await transport.connect(
+            Endpoint::loopback(AddressFamily::kIpv4, port), budget()))
+           .ok())
+    co_return 0;
+  auto made = Http2ClientSession::create(allocator, std::move(transport));
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+
+  Http2RequestHead head{.method = "GET",
+                        .scheme = "http",
+                        .authority = "127.0.0.1",
+                        .path = "/external-cancel/first"};
+  auto first_id = co_await session.send_request(
+      head, std::span<const std::byte>{}, budget());
+  head.path = "/external-cancel/second";
+  auto second_id = co_await session.send_request(
+      head, std::span<const std::byte>{}, budget());
+  if (!first_id.has_value() || !second_id.has_value())
+    co_return 0;
+
+  Drive first{hold_http2_read(allocator, &session, *first_id, result)};
+  Fiber first_fiber(kDefaultStackSize, drive, &first);
+  if (!scheduler->spawn_on(kOwner, &first_fiber))
+    co_return 0;
+  result->first_started.wait();
+  // The first reader has signalled before entering read_response. Give it one
+  // real timer turn so it owns the asynchronous read direction, rather than
+  // making this test depend on ready-queue order or a fixed number of yields.
+  hyle::sched::sleep_for(hyle::time::Duration(5'000'000));
+
+  Drive second{cancel_contending_http2_read(allocator, &session, *second_id,
+                                             cancel, result)};
+  Fiber second_fiber(kDefaultStackSize, drive, &second);
+  if (!scheduler->spawn_on(kOwner, &second_fiber)) {
+    result->close_peer.signal();
+    result->first_done.wait();
+    close_peer.event = nullptr;
+    co_return 0;
+  }
+
+  result->second_done.wait();
+  result->close_peer.signal();
+  close_peer.event = nullptr;
+  result->first_done.wait();
+  co_return 0;
+}
+
+TEST(IoHttp2, ExternalCancelWakesOwnerLocalDirectionContender) {
+  Scheduler scheduler(2, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto listener_result = bind_test_listener(io);
+  ASSERT_TRUE(listener_result.has_value());
+  TestListener listener = std::move(*listener_result);
+  auto cancel = hyle::sched::CancelToken::try_create_root(system_allocator());
+  ASSERT_TRUE(cancel.has_value());
+
+  auto result = std::make_unique<ExternalCancelResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task =
+      silent_http2_peer(system_allocator(), &listener.listener, result.get());
+  client->task = external_cancel_client(
+      system_allocator(), &scheduler, &io, listener.port, &*cancel, result.get());
+  Fiber server_fiber(kDefaultStackSize, drive, server.get());
+  Fiber client_fiber(kDefaultStackSize, drive, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+
+  hyle::sched::CancelToken cancelling = *cancel;
+  std::thread canceller([state = result.get(),
+                         token = std::move(cancelling)]() noexcept {
+    if (!state->cancel_ready.wait_for(
+            hyle::time::Duration(5'000'000'000)))
+      return;
+    // The contender signals immediately before entering the operation. This
+    // delay lets it publish its state waiter and makes cancellation genuinely
+    // cross-thread rather than a pre-cancel fast path.
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    token.cancel();
+  });
+  scheduler.drain();
+  scheduler.shutdown();
+  canceller.join();
+
+  EXPECT_TRUE(result->cancelled_contender.load(std::memory_order_acquire));
+  EXPECT_TRUE(result->first_reader_released.load(std::memory_order_acquire));
 }
 
 struct GoawayResult {
