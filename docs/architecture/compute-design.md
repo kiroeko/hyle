@@ -149,9 +149,13 @@ compute/
 - **轮询 = io_uring reap 模型的同构**:提交 kernel 后 `cudaEventRecord(ev, stream)`;worker 在**已有的 poll hook**(`Scheduler::set_io_poll` seam,scheduler.cc:527 抽干热路径 + :587 park 边界带 timeout)里 `cudaEventQuery(ev)`,`cudaSuccess` 即 `waker.wake()`。**wake 跑在自己的 worker 上(同 io),不在 CUDA 线程**;GPU 成为 worker 循环收割的**第三种 completion source**(CPU/io/GPU 一套挂起-唤醒),正是 sched-design §3 与 compute-design §4 的论点落地。
 - **避免每次 poll 空转**:沿用 io 的 park 边界策略——有在途 GPU op 才轮询;`cudaEventQuery` 是轻量非阻塞查询。真实节奏调优(轮询间隔 vs 延迟)留实测,不预设。
 
-### 3. completion awaitable 形状 = 照镜 io 的 `IoOperation`
+### 3. completion awaitable 形状 = 复用 IO 已证明的生命周期原则
 
-`co_await stream.launch(...)`/`co_await event` 的 awaitable **完全照镜 net.h 的 IoOperation 模式**(net.h:66-90):栈 slot 存 `{Waker, result}` 活在挂起 fiber 栈、`await_suspend` 捕获 `current_waker()` + 记 pending event + fiber-yield、worker poll 到 event done 后填 result + `wake()`、`await_resume` 返回。**同一套 stack-slot 生命周期契约**(fiber 栈冻结到 wake,base op 靠 drain-to-completion)。shard-per-core:stream 绑 owner worker,submit/poll/resume 同核,免锁(同 io plan A)。
+`co_await stream.launch(...)`/`co_await event` 可以复用 IO 已证明的原则：挂起期间
+保活 operation state，backend 完整退休后才唤醒并归还结果。raw `IoOperation`/
+`net.h` 已经是 `io_core` 私有机制，Compute 不能 include `hyle/io/detail/**` 或复制
+其 backend token；它必须拥有 typed GPU operation，并只复用 Sched 的公开
+`Waker`/取消合同。
 
 ### 4. device/buffer 枚举薄包、kernel-launch + completion 自造(§2/§4 已定,不重复)
 
@@ -174,7 +178,7 @@ compute/
 **completion 通知只能走轮询/阻塞，不能走 callback（铁证）**：ggml 全库对 GPU 完成**只有阻塞 `cudaStreamSynchronize`/`cudaEventSynchronize`**、**零 `cudaEventQuery`**（它是同步执行模型，无 fiber 要唤醒）；跨端等待里唯一的 `cudaLaunchHostFunc` 被 `#if 0` 注掉标 untested，旁边直接 `GGML_ABORT`（ggml-cuda.cu:4539）。CCCL 把 host callback 契约标为"回调内禁调任何 CUDA API、禁依赖阻塞在异步 work 的线程"（host_launch.h:72），CUDASTF 为让 callback 落到指定线程不得不起专用 progress 线程 + GPU 侧 busy-spin kernel。**结论：callback 无法安全唤醒 fiber（唤醒涉及锁/futex，与驱动内部锁易死锁），路线否决。** CCCL 只提供 `event_ref::is_done()`（= `cudaEventQuery`）作非阻塞 poll 一等公民，且 **CUDA 无 `EventQueryMany` 批量原语**——只能逐 event 查。
 
 **两条落地路线（compute-03 首版走 A，B 是后续优化）**：
-- **方案 A（首版，零改 sched，风险最低）**：GPU 完成走**独立 poller 线程**阻塞 `cudaEventSynchronize`（或轻量轮询一组 in-flight event），完成时 `Waker::wake()` 把 fiber 重新注入 + `set_io_wake` 已注册的 wake 打断 worker 的 park。GPU **不占** worker 的 park 边界，和任何外部 completion 一样纯靠 Waker 从外部注入——**完全复用现有 Waker / io 的 `IoOperation`+`complete()` 模式 / `net_timeout` 的 refcount 堆 slot（GPU op 可能永不完成→需 timed/heap slot 非栈 slot）/ JoinHandle / spawn_blocking（卸载阻塞 sync）**，sched 一行不改。GPU event awaitable 照抄 `io::RecvOp`（`CaptureWaker`→arm event→`SuspendFiber`）。
+- **方案 A（首版，零改 sched，风险最低）**：GPU 完成走**独立 poller 线程**阻塞 `cudaEventSynchronize`（或轻量轮询一组 in-flight event），完成时 `Waker::wake()` 把 fiber 重新注入并打断 worker 的 park。GPU **不占** worker 的 park 边界，和任何外部 completion 一样纯靠公开 Waker 从外部注入。IO 的 raw operation、timeout slot 和 completion helper 已被内收，Compute 只能借鉴其 lifetime/cancel 原则，不能依赖或复制 `hyle/io/detail/**`；GPU event awaitable 由 Compute 自己拥有 typed 状态。
 - **方案 B（后续，省 poller 线程，需改 sched）**：worker 在 park 时**同时**轮询 GPU event + 阻塞 io ring。需把 `set_io_poll`/`set_io_wake` 的**单槽泛化成多 completion source 列表**（park 前依次 poll、取最小 timeout），并抄 **seastar 的 `try_enter_interrupt_mode` veto 协议**（reactor.cc:3477/2937）：GPU source 有在途 event 就**否决 worker 深睡**、继续和 io busy-poll（此时轮询几乎免费，反正没睡）；无在途 GPU 工作才放行 io_uring `GETEVENTS` 深睡。这样**只在既有 io 又有 GPU 在途时才轮询，纯 io 场景零浪费**——正是"可阻塞源 io + 只能轮询源 GPU 共存于一个 park 边界"的教科书解。
 
 **为何 compute-01 接口无需改**：方案 A 用 `Event::sync()`（poller 线程阻塞），方案 B 用 `Event::query()`（worker 轮询）——两个原语 compute-01 都已提供并双平台真机验证。选 A 还是 B 是 compute-03 的调度集成细节，不回头改 Event/Stream 形状。

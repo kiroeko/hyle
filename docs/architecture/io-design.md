@@ -6,17 +6,17 @@
 
 > 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
-## 2026-07-20 当前架构（维护入口）
+## 2026-09-08 当前架构（维护入口）
 
 ```text
 普通 C++ 用户
   TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1 + HTTP/2
        │ co_await；deadline / CancelToken；RAII
        ▼
-IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
-       │ submit token                          │ completion token
+IoContext（每 Scheduler worker 一个 private completion engine + blocking pool）
+       │ internal submit state                 │ internal completion state
        ▼                                       ▼
-统一 Proactor ───────────────────────────────► sched::Waker
+private backend engine ──────────────────────► sched::Waker
        │
        ├─ Windows IOCP：真完成；OVERLAPPED intrusive list + owner free-list
        ├─ Linux io_uring：真完成；不可用时自动降为 epoll
@@ -24,9 +24,9 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
        └─ macOS kqueue：readiness→completion；HYLE FlatHashMap<fd, PendingOp>
 
        Linux runtime 选中 io_uring 时
-       └─ io_uring_extension()
-           └─ provided buffer · recv multishot · fixed file · direct accept
-              （显式快腿；不进入 portable Proactor）
+       └─ IoContext::io_uring()
+           └─ typed provided-buffer multishot receive
+              （显式公开快腿；fixed-file/direct-accept 仍是内部机制）
 ```
 
 当前不变量：
@@ -34,14 +34,15 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
 - socket/file shard 由一个 owner worker 提交和收割；IOCP handle 绑定后不可换
   completion port。
 - 普通 C++ 文件腿依据 backend capability 自动选原生异步或 blocking pool；
-  低层 Proactor 保持机制透明，调用者选择它就承担同步 fallback 语义。
+  用户不取得低层 engine、completion token 或同步 fallback seam。
 - plain TCP 与已握手 TLS 经同一个 `HttpTransport` 进入 HTTP framing 核。
 - HTTP/2 协议核固定为 nghttp2；它不拥有 IO/event loop。C++ connection 直接
   驱动 `HttpTransport`。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
-- Linux-only recv-multishot/provided-buffer/fixed-file/direct-accept 只能经成功
-  取得的 `IoUringExtension` 调用；portable one-shot 永远保留。
+- Linux-only provided-buffer/multishot receive 只能经成功取得的
+  `IoUringExtension` 调用；portable one-shot 永远保留。fixed-file/direct-accept
+  目前只是 private backend capability，不能从 capability bit 推断公开操作存在。
 - epoll/kqueue pending 表使用 Container 的 `FlatHashMap`。IOCP/io_uring
   不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
 - Native FFI 为 `N/A`；普通 io 修改不得恢复 BUILD-03 已删除的 C schema/bridge。若未来出现已命名
@@ -53,11 +54,10 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
 > 现存例外和补全工单见
 > [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
-实现与正确性已完成本轮收口，现有 8 benchmark 的三平台证书也已生成；已确认
-的 M4 TLS/kqueue 多 worker 与 handshake 性能尾，以及尚缺的专项 peer 测试见
-[`io-module-closure.md`](../implementation/tasks/io/io-module-closure.md) 与
-[`benchmarks-io.md`](../implementation/evidence/performance/benchmarks-io.md)。下文“已落地纪要”保留
-施工历史，若与本节冲突，以本节和代码为准。
+IO 正在按 factor 重构；当前 `io_core` 仍为 `AUDITED`，不是已收口证书。当前轮与
+唯一状态见 [`io-v1-core-factorization`](../implementation/tasks/io/io-v1-core-factorization.md)
+和 [`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
+施工历史，若与本节、活动卡或代码冲突，以活动卡和代码为准。
 
 ## 两个调查事实
 
@@ -105,22 +105,27 @@ fiber-blocking（`co_await async_read()` → 提交 → 挂起 fiber → 完成�
 
 ```text
 include/hyle/io/
-├─ proactor.h                 统一完成式机制接口
-├─ io_context.h + net*.h     sched/Waker、base/timed/cancel/multishot awaitable
-├─ tcp.h / udp.h / file.h    普通 C++ RAII facade
-├─ dns.h / signal.h          blocking resolver / shutdown source
-├─ tls.h / http*.h           加密 transport 与 HTTP/1.1/2 产品层
+├─ capabilities.h            typed backend/capability snapshot
+├─ io_context.h              scheduler-bound runtime owner
+├─ operation.h / buffer.h    deadline/cancel 与 borrowed buffer sequence
+├─ tcp.h / udp.h / local.h   普通 C++ RAII transport facade
+├─ file.h / dns.h / signal.h 文件、解析与关闭事件
+├─ io_uring.h                Linux-only typed receive accelerator
+├─ tls.h / http*.h           F09 前待迁移的协议公开面
+└─ detail/proactor.h + net*  不承诺的完成引擎与 awaitable 实现 seam
 
 
 src/io_core/
-├─ proactor.cc               四后端按平台条件编译；不跨 TU 暴露 OS 类型
-├─ io_context.cc + net impl  sched 集成
+├─ proactor.cc               四后端按平台条件编译；OS 类型不进入公开 API
+├─ io_context.cc + operation.cc + io_uring.cc
 ├─ file.cc / dns.cc          capability-aware blocking offload
 ├─ tls.cc / http*.cc         transport + picohttpparser/nghttp2 protocol core
 └─ http2.cc                  native H2 codec facade
 ```
 
-一句话：**对上一套 proactor 抽象，对下 4 个后端，中间只借 syscall 封装、调度自己管。**
+F09 完成前协议源码仍暂存在旧 target；它们随后分别迁入 `io_tls/io_http/io_http2`，
+不是 `io_core` 的最终 ownership。对用户暴露的是任务型 awaitable/RAII，对下仍是四种
+private backend；调度和 completion lifetime 由 HYLE 自己管理。
 
 ## 已落地（io-01/02 历史实现纪要）
 

@@ -271,7 +271,17 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   ring-table 失败路径也已验证完全回滚。Windows 全部 15 个 IO correctness 测试、Linux
   全部 15 个测试及强制 epoll 的容量/取消路径、macOS kqueue 的 proactor/context/local/
   signal/timeout 定向路径均通过；Sched 受影响的 Windows 回归也通过。
+- `b19cd51f`：完成 `IOCORE-F01`。raw `Proactor`、`Completion`、submit slot 与
+  `net*` awaitable 已迁入 `<hyle/io/detail/**>`；公开面只保留 `IoContext` 的 typed
+  backend/capability snapshot，以及 Linux 编译期存在、运行时可空的
+  `IoUringExtension`。当前 expert route 把 provided-buffer multishot receive
+  重塑为 typed RAII buffer/stream，非 Linux 不再出现恒失败 stub。Windows IOCP、
+  Linux io_uring/epoll 与 macOS kqueue 的 15 项 IO 回归均通过；四个新公开头在
+  MSVC、GCC 14 与 AppleClang 21 下 self-contained，构建合同同时证明旧
+  `<hyle/io/net.h>` 与顶层 `hyle::io::Completion` 无法再被消费者编译。Linux
+  CTest 从 DrvFS 工作目录运行时，Unix socket 与 fallocate 两项会因宿主文件系统
+  语义失败；同一二进制改在 `/tmp` 原生文件系统运行全部通过，故该现象不归因于产品。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F01、F09--F10 仍未完成，四个协议/传输 factor
+裁决；F09--F10 仍未完成，四个协议/传输 factor
 仍处于 `QUEUED`。

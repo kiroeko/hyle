@@ -4,7 +4,8 @@
 > 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 普通 C++ 程序使用 `IoContext` 与 RAII/`co_await` 封装。`Proactor`、native
-completion token 和负错误码是正在内收的后端机制，不是新代码应依赖的产品面。
+completion token 和负错误码已经收进 `detail` 后端，不是公开产品面；不要 include
+`<hyle/io/detail/...>`，也不要依赖共享库中为公开 inline awaitable 保留的内部符号。
 
 ## 1. 运行时结构
 
@@ -12,9 +13,9 @@ completion token 和负错误码是正在内收的后端机制，不是新代码
 Scheduler worker 0 ── IoContext ring 0 ── socket/file shard 0
 Scheduler worker 1 ── IoContext ring 1 ── socket/file shard 1
         ...                    ...
-                         ┌─ Windows: IOCP
-Proactor runtime select ─┼─ Linux: io_uring, unavailable时降为 epoll
-                         └─ macOS: kqueue
+                                  ┌─ Windows: IOCP
+private completion engine select ─┼─ Linux: io_uring, unavailable时降为 epoll
+                                  └─ macOS: kqueue
 ```
 
 一个 socket/file 绑定一个 owner worker。创建连接后，把处理它的 fiber 用
@@ -159,6 +160,27 @@ transport owner fiber 上调用。
   同类信号会合并，`Interrupt` 与 `Terminate` 两类 pending 事件不会互相覆盖。
   对象必须活到当前 `wait()` 完成，重复的顺序等待受支持；需要把关闭事件广播给
   多个任务时，在唯一 waiter 之后使用 Sched。析构会恢复嵌入宿主原有的 handler。
-- provided-buffer multishot recv、fixed-file 与 direct accept 是 io_uring
-  专属快腿。先查询/尝试注册，失败后回到 portable one-shot；不能把“不支持”
-  当成一个极快 benchmark 样本。
+- Linux 上可以先用 `io.io_uring(owner)` 取得 typed extension；空 handle 表示运行时
+  选择了 epoll。当前公开 expert route 只承诺 provided-buffer multishot receive：
+
+  ```cpp
+  auto uring = io.io_uring(owner);
+  if (uring) {
+    auto configured = uring.configure_receive_ring(
+        {.group_id = 7, .entries = 256, .buffer_size = 16 * 1024});
+    if (configured.ok()) {
+      auto receives = stream.read_multishot(uring, 7, allocator);
+      if (receives) {
+        auto receive_stream = std::move(*receives);
+        auto next = co_await receive_stream.next();
+      }
+    }
+  }
+  ```
+
+  每个返回的 `IoUringReceiveBuffer` 都是 RAII 借用；析构/移动会把 buffer 归还
+  ring，长期持有会以减少可用 buffer 的方式自然施加 backpressure。其他平台没有
+  恒失败的同名 stub，普通跨平台路线始终是循环 `read_some()`。fixed-file 与
+  direct-accept 仍是内部 backend 机制，不是用户可依赖的公开操作；capability
+  snapshot 只用于诊断和选择已公开的 typed route。不能把“不支持”当成一个极快
+  benchmark 样本。
