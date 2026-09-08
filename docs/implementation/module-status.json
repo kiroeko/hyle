@@ -1251,7 +1251,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-tls-v2-duplex-progress",
       "closure_task": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
       "scope": "Repair only the TLS ciphertext-pump progress seam after an HTTP2 consumer reproduced a forced-epoll full-duplex flow-control stall; replay affected TLS correctness, delivery and performance contracts.",
@@ -1275,7 +1275,7 @@
       },
       "reopen_trigger_id": "IOTLS-REOPEN-H2-EPOLL-DUPLEX-01",
       "reopen_evidence": "A deterministic HTTP2-over-TLS consumer with 4 KiB socket buffers and a 65,535-byte receive window completes on io_uring but stalls on forced epoll after exactly 32 KiB is consumed; syscall traces end with both TLS ciphertext pumps waiting for EPOLLOUT.",
-      "summary": "io_tls v2 SCOPED：只修复 provider-owned ciphertext pump 的有界双向进展，并回放受影响 TLS correctness、delivery 与冻结 P1；公开 TLS API 不扩面。"
+      "summary": "io_tls v2 AUDITED：公开 API 不变；唯一产品修复是有界 provider pump 进展，另把 Linux SIGPIPE-safe send 路由到仍活动的 io_core，F01--F03 与一项相邻修复已冻结。"
     },
     {
       "module": "io_http",
