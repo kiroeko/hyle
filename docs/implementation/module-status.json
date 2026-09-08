@@ -1317,7 +1317,7 @@
     },
     {
       "module": "io_http",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-http-v1",
       "closure_task": "docs/implementation/tasks/io/io-http-v1.md",
       "scope": "Factor HTTP1 framing and bounded streaming client/server lifecycle out of io_core; freeze natural message views, body streaming, request budgets, disconnect, backpressure and keep-alive contracts.",
@@ -1332,16 +1332,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http v1 处于 CANDIDATE；typed bounded HTTP/1 client/server、streaming/backpressure、lifecycle 与私有 parser owner 已冻结在 400e015e，terminal gates 已完成并等待依法登记 VERIFIED。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "io_http v1 处于 VERIFIED；400e015e 已完成三平台正确性、sanitizers、source/static/shared/offline 交付、文档/红队及 W1-WSL 同合同 P1，等待 terminal CLOSED/FROZEN 登记。"
     },
     {
       "module": "io_http2",

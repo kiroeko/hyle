@@ -155,7 +155,8 @@ immutable candidate commit and the same-contract peer fixture is fixed.
 
 ## Current decision
 
-`AUDITED / ACTIVE`，terminal evidence 已齐，等待按状态机依次登记 `CANDIDATE -> VERIFIED -> CLOSED`。
+`VERIFIED / ACTIVE`。产品候选与全部适用工程 gate 已分别登记，等待最后的 `CLOSED/FROZEN` terminal
+receipt；本步没有重跑或改变产品。
 F01--F05 的公开 API/usability 形状保持冻结。最终 immutable product candidate
 `400e015e6e8604b753d64cd27a16e21898670e91` 已通过唯一允许的末次正式 P1：1 KiB normal workload
 双执行顺序均为 `PARITY` 且通过 5% non-inferiority gate，64 KiB fragmented holdout 双顺序均为
