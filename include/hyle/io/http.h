@@ -14,11 +14,11 @@
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
+#  define HYLE_IO_HTTP_API
+#elif defined(HYLE_IO_HTTP_BUILD)
+#  define HYLE_IO_HTTP_API HYLE_EXPORT
 #else
-#  define HYLE_IO_API HYLE_IMPORT
+#  define HYLE_IO_HTTP_API HYLE_IMPORT
 #endif
 
 // io-10 HTTP/1.1 skeleton over the co_await TcpStream. Per docs scope "HTTP 最终
@@ -68,14 +68,12 @@ class HttpRequest;
 class HttpResponse;
 class HttpResponseView;
 class HttpTransport;
-sched::Task<std::int64_t> http_transport_read(mem::AllocatorRef,
-                                              HttpTransport&, void*,
-                                              std::uint32_t) noexcept;
-sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef,
-                                               HttpTransport&, const void*,
-                                               std::uint32_t) noexcept;
-sched::Task<int> http_transport_shutdown(mem::AllocatorRef,
-                                         HttpTransport&) noexcept;
+HYLE_IO_HTTP_API sched::Task<std::int64_t> http_transport_read(
+    mem::AllocatorRef, HttpTransport&, void*, std::uint32_t) noexcept;
+HYLE_IO_HTTP_API sched::Task<std::int64_t> http_transport_write(
+    mem::AllocatorRef, HttpTransport&, const void*, std::uint32_t) noexcept;
+HYLE_IO_HTTP_API sched::Task<int> http_transport_shutdown(
+    mem::AllocatorRef, HttpTransport&) noexcept;
 sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef, HttpServerConn&) noexcept;
 sched::Task<bool> http_server_send(mem::AllocatorRef, HttpServerConn&,
                                    const HttpResponse&) noexcept;
@@ -116,12 +114,12 @@ class HttpTransport {
   }
 
  private:
-  friend sched::Task<std::int64_t> http_transport_read(
+  friend HYLE_IO_HTTP_API sched::Task<std::int64_t> http_transport_read(
       mem::AllocatorRef, HttpTransport&, void*, std::uint32_t) noexcept;
-  friend sched::Task<std::int64_t> http_transport_write(
+  friend HYLE_IO_HTTP_API sched::Task<std::int64_t> http_transport_write(
       mem::AllocatorRef, HttpTransport&, const void*, std::uint32_t) noexcept;
-  friend sched::Task<int> http_transport_shutdown(mem::AllocatorRef,
-                                                   HttpTransport&) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<int> http_transport_shutdown(
+      mem::AllocatorRef, HttpTransport&) noexcept;
   TcpStream tcp_{};
 #if defined(HYLE_IO_TLS)
   TlsStream tls_{};
@@ -148,7 +146,7 @@ class HttpRequest {
   StringView header_name(std::size_t i) const noexcept;
   StringView header_value(std::size_t i) const noexcept;
   // Case-insensitive header lookup; returns an empty StringView if absent.
-  HYLE_IO_API StringView header(StringView name) const noexcept;
+  HYLE_IO_HTTP_API StringView header(StringView name) const noexcept;
 
   // The (buffered) request body. Empty for GET/DELETE and when there is no body.
   StringView body() const noexcept { return body_; }
@@ -198,7 +196,7 @@ class HttpResponse {
     reason_ = reason;
   }
   // Append a header. name/value views must outlive the send.
-  HYLE_IO_API bool add_header(StringView name, StringView value) noexcept;
+  HYLE_IO_HTTP_API bool add_header(StringView name, StringView value) noexcept;
   // Whole in-memory body (sets Content-Length). Mutually exclusive with set_stream.
   void set_body(StringView body) noexcept {
     body_ = body;
@@ -247,11 +245,11 @@ class HttpResponse {
 //   }
 class HttpServerConn {
  public:
-  HYLE_IO_API HttpServerConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
+  HYLE_IO_HTTP_API HttpServerConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API HttpServerConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
+  HYLE_IO_HTTP_API HttpServerConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
 #endif
-  HYLE_IO_API ~HttpServerConn();
+  HYLE_IO_HTTP_API ~HttpServerConn();
   HttpServerConn(HttpServerConn&&) noexcept;
   HttpServerConn& operator=(HttpServerConn&&) noexcept;
   HttpServerConn(const HttpServerConn&) = delete;
@@ -266,11 +264,11 @@ class HttpServerConn {
   // free coroutine (AllocatorRef-first) -- a MEMBER coroutine can't be used because the
   // promise operator new would see `this` as its first arg, not the AllocatorRef (the
   // same trap TLS/dns/file hit; see tls.cc).
-  HYLE_IO_API sched::Task<HttpRequest*> next_request() noexcept;
+  HYLE_IO_HTTP_API sched::Task<HttpRequest*> next_request() noexcept;
 
   // co_await conn.send_response(resp) -> true on success, false on socket error.
   // Handles Content-Length vs chunked framing and the Connection header.
-  HYLE_IO_API sched::Task<bool> send_response(const HttpResponse& resp) noexcept;
+  HYLE_IO_HTTP_API sched::Task<bool> send_response(const HttpResponse& resp) noexcept;
 
  private:
   friend sched::Task<HttpRequest*> http_server_next(mem::AllocatorRef, HttpServerConn&) noexcept;
@@ -325,11 +323,11 @@ struct HttpServeOptions {
   std::size_t request_region_retain_limit = 256 * 1024;
 };
 
-HYLE_IO_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TcpStream stream,
+HYLE_IO_HTTP_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TcpStream stream,
                                          HttpHandlerFn handler, void* ctx,
                                          HttpServeOptions options = {}) noexcept;
 #if defined(HYLE_IO_TLS)
-HYLE_IO_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TlsStream stream,
+HYLE_IO_HTTP_API sched::Task<void> http_serve(mem::AllocatorRef alloc, TlsStream stream,
                                          HttpHandlerFn handler,
                                          void* ctx,
                                          HttpServeOptions options = {}) noexcept;
@@ -347,7 +345,7 @@ class HttpResponseView {
   std::size_t header_count() const noexcept { return header_count_; }
   StringView header_name(std::size_t i) const noexcept;
   StringView header_value(std::size_t i) const noexcept;
-  HYLE_IO_API StringView header(StringView name) const noexcept;
+  HYLE_IO_HTTP_API StringView header(StringView name) const noexcept;
   StringView body() const noexcept { return body_; }
 
  private:
@@ -363,11 +361,11 @@ class HttpResponseView {
 
 class HttpClientConn {
  public:
-  HYLE_IO_API HttpClientConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
+  HYLE_IO_HTTP_API HttpClientConn(mem::AllocatorRef alloc, TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API HttpClientConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
+  HYLE_IO_HTTP_API HttpClientConn(mem::AllocatorRef alloc, TlsStream stream) noexcept;
 #endif
-  HYLE_IO_API ~HttpClientConn();
+  HYLE_IO_HTTP_API ~HttpClientConn();
   HttpClientConn(HttpClientConn&&) noexcept;
   HttpClientConn& operator=(HttpClientConn&&) noexcept;
   HttpClientConn(const HttpClientConn&) = delete;
@@ -379,7 +377,7 @@ class HttpClientConn {
   // until the next request) or nullptr on error. Writes "METHOD path HTTP/1.1\r\n
   // Host: <host>\r\n" (+ Content-Length if body) + body, then parses the response.
   // Forwards to a free coroutine (AllocatorRef-first), same reason as the server conn.
-  HYLE_IO_API sched::Task<HttpResponseView*> request(StringView method, StringView path,
+  HYLE_IO_HTTP_API sched::Task<HttpResponseView*> request(StringView method, StringView path,
                                                      StringView host,
                                                      StringView body = {}) noexcept;
 

@@ -216,7 +216,7 @@ _hyle_declare_component(sched
 # complete layout; they are not supported public entry points.
 _hyle_declare_component(io_core
   TRACE
-  PUBLIC_DEPS core error mem container container_text time timer_queue sched
+  PUBLIC_DEPS core error mem container time timer_queue sched
               platform_fs
   SPLIT_PUBLIC_HEADERS
     hyle/io/buffer.h
@@ -232,23 +232,28 @@ _hyle_declare_component(io_core
     hyle/io/dns.h
     hyle/io/endpoint.h
     hyle/io/file.h
-    hyle/io/http.h
-    hyle/io/http2.h
     hyle/io/io_context.h
     hyle/io/io_uring.h
     hyle/io/local.h
     hyle/io/operation.h
     hyle/io/signal.h
     hyle/io/tcp.h
-    hyle/io/tls.h
     hyle/io/udp.h)
-# These names reserve independently closable IO factors before product work
-# starts. QUEUED reservations deliberately have no source directory, target,
-# dependencies, public headers or product-root membership. Their own closure
-# rounds must remove QUEUED only after those contracts exist.
-_hyle_declare_component(io_tls QUEUED)
-_hyle_declare_component(io_http QUEUED)
-_hyle_declare_component(io_http2 QUEUED)
+# Protocol factors keep the public hyle::io namespace while owning precise
+# source, dependency and delivery boundaries. Optional provider gates make a
+# factor header inert; they never manufacture constant-failure operations.
+_hyle_declare_component(io_tls
+  PUBLIC_DEPS core io_core mem sched container_text
+  SPLIT_PUBLIC_HEADERS hyle/io/tls.h)
+_hyle_declare_component(io_http
+  PUBLIC_DEPS core io_core io_tls mem sched container_text
+  SPLIT_PUBLIC_HEADERS hyle/io/http.h)
+_hyle_declare_component(io_http2
+  PRIVATE_DEPS container
+  PUBLIC_DEPS core io_http
+  SPLIT_PUBLIC_HEADERS hyle/io/http2.h)
+# Transfer has an audited design but remains a non-buildable identity until its
+# first real public contract and implementation land; no empty product target.
 _hyle_declare_component(io_transfer QUEUED)
 # compute publicly exposes error/mem and sched Waker types;
 # platform and simd stay compiled implementation details.
@@ -349,7 +354,7 @@ _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
-_hyle_declare_product(io FACTORS io_core)
+_hyle_declare_product(io FACTORS io_core io_tls io_http io_http2)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
 

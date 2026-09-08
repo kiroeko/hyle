@@ -222,7 +222,7 @@ cmake -S . -B build -DHYLE_IO_TLS=ON ^
 
 ```bat
 set PATH=C:\public\vcpkg\installed\x64-windows\bin;%PATH%
-cd build\bin && hyle_io_core_tls_test.exe
+cd build\bin && hyle_io_tls_test.exe
 ```
 
 ### CUDA（GPU 后端）

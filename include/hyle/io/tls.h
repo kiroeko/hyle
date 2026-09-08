@@ -19,25 +19,34 @@
 // error queue) is handled inside tls.cc: the SSL_call -> SSL_get_error ->
 // ERR_get_error triple is never split by a co_await.
 
-#if defined(HYLE_IO_TLS)
-
 #include <cstddef>
 #include <cstdint>
+
+#include "hyle/visibility.h"
+
+#if defined(HYLE_STATIC)
+#  define HYLE_IO_TLS_API
+#elif defined(HYLE_IO_TLS_BUILD)
+#  define HYLE_IO_TLS_API HYLE_EXPORT
+#else
+#  define HYLE_IO_TLS_API HYLE_IMPORT
+#endif
+
+namespace hyle::io {
+
+// Runtime/package capability query. A disabled TLS factor exposes no
+// operation-shaped stubs; callers can branch before constructing TLS state.
+HYLE_IO_TLS_API bool tls_available() noexcept;
+
+}  // namespace hyle::io
+
+#if defined(HYLE_IO_TLS)
 
 #include "hyle/io/tcp.h"
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/container/string_view.h"
-#include "hyle/visibility.h"
-
-#if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
-#else
-#  define HYLE_IO_API HYLE_IMPORT
-#endif
 
 // Opaque OpenSSL types kept out of this header (no <openssl/*> leak into consumers).
 struct ssl_ctx_st;
@@ -52,9 +61,9 @@ namespace hyle::io {
 class TlsContext {
  public:
   TlsContext() noexcept = default;
-  HYLE_IO_API ~TlsContext();
-  HYLE_IO_API TlsContext(TlsContext&& o) noexcept;
-  HYLE_IO_API TlsContext& operator=(TlsContext&& o) noexcept;
+  HYLE_IO_TLS_API ~TlsContext();
+  HYLE_IO_TLS_API TlsContext(TlsContext&& o) noexcept;
+  HYLE_IO_TLS_API TlsContext& operator=(TlsContext&& o) noexcept;
   TlsContext(const TlsContext&) = delete;
   TlsContext& operator=(const TlsContext&) = delete;
 
@@ -63,15 +72,15 @@ class TlsContext {
 
   // Build a CLIENT context (verifies the peer against the system trust store by
   // default). Returns an invalid TlsContext on failure.
-  static HYLE_IO_API TlsContext client() noexcept;
+  static HYLE_IO_TLS_API TlsContext client() noexcept;
   // Build a SERVER context from a PEM certificate chain + private key file.
   // Returns an invalid TlsContext on failure (bad/missing files, key mismatch).
-  static HYLE_IO_API TlsContext server(const char* cert_pem_path,
+  static HYLE_IO_TLS_API TlsContext server(const char* cert_pem_path,
                                        const char* key_pem_path) noexcept;
 
   // Advertise/select HTTP/2 through TLS ALPN. With allow_http1=true the list is
   // "h2, http/1.1" (h2 preferred); false makes the context HTTP/2-only.
-  HYLE_IO_API bool enable_http2(bool allow_http1 = true) noexcept;
+  HYLE_IO_TLS_API bool enable_http2(bool allow_http1 = true) noexcept;
 
  private:
   explicit TlsContext(ssl_ctx_st* ctx) noexcept : ctx_(ctx) {}
@@ -94,11 +103,11 @@ class TlsStream {
   // A verifying client MUST provide `server_name`: it is used for both SNI and
   // certificate hostname/IP matching. It may be null only for a server stream or
   // a client context explicitly configured with SSL_VERIFY_NONE.
-  HYLE_IO_API TlsStream(TcpStream sock, const TlsContext& ctx, bool is_server,
+  HYLE_IO_TLS_API TlsStream(TcpStream sock, const TlsContext& ctx, bool is_server,
                         const char* server_name = nullptr) noexcept;
-  HYLE_IO_API ~TlsStream();
-  HYLE_IO_API TlsStream(TlsStream&& o) noexcept;
-  HYLE_IO_API TlsStream& operator=(TlsStream&& o) noexcept;
+  HYLE_IO_TLS_API ~TlsStream();
+  HYLE_IO_TLS_API TlsStream(TlsStream&& o) noexcept;
+  HYLE_IO_TLS_API TlsStream& operator=(TlsStream&& o) noexcept;
   TlsStream(const TlsStream&) = delete;
   TlsStream& operator=(const TlsStream&) = delete;
 
@@ -106,7 +115,7 @@ class TlsStream {
   unsigned owner_worker() const noexcept { return sock_.owner_worker(); }
   // Borrowed view into SSL state, valid for this stream's lifetime. Empty before
   // a successful handshake or when the peer did not negotiate ALPN.
-  HYLE_IO_API container::StringView negotiated_protocol() const noexcept;
+  HYLE_IO_TLS_API container::StringView negotiated_protocol() const noexcept;
 
   // The co_await operations are FREE FUNCTIONS taking (mem::AllocatorRef, TlsStream&),
   // not member coroutines. A coroutine's frame is allocated by its promise's
@@ -117,20 +126,20 @@ class TlsStream {
   // dns::resolve / spawn_task). See tls_handshake/read/write/shutdown below.
 
  private:
-  friend HYLE_IO_API sched::Task<int> tls_handshake(mem::AllocatorRef,
+  friend HYLE_IO_TLS_API sched::Task<int> tls_handshake(mem::AllocatorRef,
                                                     TlsStream&) noexcept;
-  friend HYLE_IO_API sched::Task<long> tls_read(mem::AllocatorRef, TlsStream&, void*,
+  friend HYLE_IO_TLS_API sched::Task<long> tls_read(mem::AllocatorRef, TlsStream&, void*,
                                                std::uint32_t) noexcept;
-  friend HYLE_IO_API sched::Task<long> tls_write(mem::AllocatorRef, TlsStream&,
+  friend HYLE_IO_TLS_API sched::Task<long> tls_write(mem::AllocatorRef, TlsStream&,
                                                 const void*,
                                                 std::uint32_t) noexcept;
-  friend HYLE_IO_API sched::Task<int> tls_shutdown(mem::AllocatorRef,
+  friend HYLE_IO_TLS_API sched::Task<int> tls_shutdown(mem::AllocatorRef,
                                                    TlsStream&) noexcept;
 
   // Lazily allocate the 16KB pump scratch on first use (reused for the stream's
   // life, freed in the dtor). Returns the block, or nullptr on OOM. Called by the
   // pump entry points before they touch flush_wbio/feed_rbio.
-  HYLE_IO_API char* ensure_scratch(mem::AllocatorRef alloc) noexcept;
+  HYLE_IO_TLS_API char* ensure_scratch(mem::AllocatorRef alloc) noexcept;
 
   TcpStream sock_{};
   ssl_st* ssl_ = nullptr;   // per-connection SSL (owns rbio_/wbio_ after SSL_set_bio)
@@ -154,19 +163,19 @@ class TlsStream {
 // underlying TcpStream per SSL_get_error's WANT_READ/WANT_WRITE, until it resolves.
 
 // co_await tls_handshake(alloc, s) -> 0 on success, negative on error.
-HYLE_IO_API sched::Task<int> tls_handshake(mem::AllocatorRef alloc,
+HYLE_IO_TLS_API sched::Task<int> tls_handshake(mem::AllocatorRef alloc,
                                            TlsStream& s) noexcept;
 // co_await tls_read(alloc, s, buf, len) -> plaintext bytes (>0), 0 on clean close,
 // negative on error.
-HYLE_IO_API sched::Task<long> tls_read(mem::AllocatorRef alloc, TlsStream& s,
+HYLE_IO_TLS_API sched::Task<long> tls_read(mem::AllocatorRef alloc, TlsStream& s,
                                        void* buf, std::uint32_t len) noexcept;
 // co_await tls_write(alloc, s, buf, len) -> bytes written (== len) or negative.
-HYLE_IO_API sched::Task<long> tls_write(mem::AllocatorRef alloc, TlsStream& s,
+HYLE_IO_TLS_API sched::Task<long> tls_write(mem::AllocatorRef alloc, TlsStream& s,
                                         const void* buf,
                                         std::uint32_t len) noexcept;
 // co_await tls_shutdown(alloc, s) -> 0 once the close_notify exchange is done
 // (best-effort on error / unresponsive peer).
-HYLE_IO_API sched::Task<int> tls_shutdown(mem::AllocatorRef alloc,
+HYLE_IO_TLS_API sched::Task<int> tls_shutdown(mem::AllocatorRef alloc,
                                           TlsStream& s) noexcept;
 
 }  // namespace hyle::io

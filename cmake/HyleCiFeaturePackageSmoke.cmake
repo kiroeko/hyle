@@ -103,11 +103,11 @@ function(_hyle_feature_smoke_correctness)
     -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${_googletest_source})
   _hyle_feature_smoke_run("build locked feature adapter tests"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2
-    --target hyle_io_core_http2_test hyle_compute_ggml_bridge_test
+    --target hyle_io_http2_test hyle_compute_ggml_bridge_test
              hyle_compute_vulkan_test)
   _hyle_feature_smoke_run("run locked feature adapter tests"
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_build}" -C Release
-    -R "^(hyle_io_core_http2_test|hyle_compute_ggml_bridge_test|hyle_compute_vulkan_test)$"
+    -R "^(hyle_io_http2_test|hyle_compute_ggml_bridge_test|hyle_compute_vulkan_test)$"
     --output-on-failure)
 endfunction()
 

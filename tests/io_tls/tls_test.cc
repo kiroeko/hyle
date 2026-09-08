@@ -9,8 +9,10 @@
 
 #include <openssl/ssl.h>  // SSL_CTX_set_verify (client skips verify for self-signed)
 
-#include "hyle/io/http.h"
-#if defined(HYLE_IO_HTTP2)
+#if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
+#  include "hyle/io/http.h"
+#endif
+#if defined(HYLE_IO_TLS_HTTP_INTEGRATION) && defined(HYLE_IO_HTTP2)
 #  include "hyle/io/http2.h"
 #endif
 #include "hyle/io/io_context.h"
@@ -28,13 +30,15 @@
 // SSL_write ciphertext -> socket, socket -> rbio -> SSL_read plaintext.
 
 using hyle::io::IoContext;
+#if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
 using hyle::io::HttpClientConn;
-#if defined(HYLE_IO_HTTP2)
+using hyle::io::HttpResponse;
+using hyle::io::HttpServerConn;
+#endif
+#if defined(HYLE_IO_TLS_HTTP_INTEGRATION) && defined(HYLE_IO_HTTP2)
 using hyle::io::Http2ClientConn;
 using hyle::io::Http2ServerConn;
 #endif
-using hyle::io::HttpResponse;
-using hyle::io::HttpServerConn;
 using hyle::io::AddressFamily;
 using hyle::io::Endpoint;
 using hyle::io::TcpListener;
@@ -238,6 +242,8 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   EXPECT_EQ(r->client_recv.load(), static_cast<long>(sizeof(kMsg)));
   EXPECT_STREQ(r->client_got, "tls-encrypted-echo");
 }
+
+#if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
 
 namespace {
 struct HttpsResult {
@@ -453,3 +459,5 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
   EXPECT_STREQ(result->body, "h2-tls-ok");
 }
 #endif
+
+#endif  // HYLE_IO_TLS_HTTP_INTEGRATION

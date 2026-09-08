@@ -1,0 +1,18 @@
+hyle_ensure_module_test_target(io_tls)
+hyle_add_header_self_contained_test(io_tls HEADER_DIR io HEADERS tls.h)
+
+if(HYLE_IO_TLS_ENABLED)
+  hyle_add_test(io_tls SOURCES tls_test.cc DEPS hyle_sched)
+  target_link_libraries(hyle_io_tls_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+  if(TARGET hyle_io_http)
+    target_link_libraries(hyle_io_tls_test PRIVATE hyle_io_http)
+    target_compile_definitions(hyle_io_tls_test PRIVATE
+      HYLE_IO_TLS_HTTP_INTEGRATION)
+    if(TARGET hyle_io_http2)
+      target_link_libraries(hyle_io_tls_test PRIVATE hyle_io_http2)
+    endif()
+  endif()
+  if(WIN32)
+    target_link_libraries(hyle_io_tls_test PRIVATE ws2_32)
+  endif()
+endif()

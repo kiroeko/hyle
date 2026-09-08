@@ -7,11 +7,11 @@
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_IO_API
-#elif defined(HYLE_IO_CORE_BUILD)
-#  define HYLE_IO_API HYLE_EXPORT
+#  define HYLE_IO_HTTP2_API
+#elif defined(HYLE_IO_HTTP2_BUILD)
+#  define HYLE_IO_HTTP2_API HYLE_EXPORT
 #else
-#  define HYLE_IO_API HYLE_IMPORT
+#  define HYLE_IO_HTTP2_API HYLE_IMPORT
 #endif
 
 // io-11 HTTP/2. nghttp2 is the protocol core (RFC 9113 framing, HPACK, stream
@@ -22,6 +22,14 @@
 // Multiple requests may be submitted before responses are consumed, and frames
 // from different streams may arrive interleaved. The session remains single-owner:
 // every method on a connection must run on its transport's owner fiber.
+
+namespace hyle::io {
+
+// Runtime/package capability query. A disabled HTTP/2 factor exposes no
+// protocol-operation stubs.
+HYLE_IO_HTTP2_API bool http2_available() noexcept;
+
+}  // namespace hyle::io
 
 #if defined(HYLE_IO_HTTP2)
 
@@ -63,18 +71,18 @@ class Http2ClientConn;
 class Http2MessageView {
  public:
   bool valid() const noexcept { return stream_ != nullptr; }
-  HYLE_IO_API std::int32_t stream_id() const noexcept;
-  HYLE_IO_API StringView method() const noexcept;
-  HYLE_IO_API StringView scheme() const noexcept;
-  HYLE_IO_API StringView authority() const noexcept;
-  HYLE_IO_API StringView path() const noexcept;
-  HYLE_IO_API int status() const noexcept;
-  HYLE_IO_API Http2Error stream_error() const noexcept;
-  HYLE_IO_API std::size_t header_count() const noexcept;
-  HYLE_IO_API StringView header_name(std::size_t index) const noexcept;
-  HYLE_IO_API StringView header_value(std::size_t index) const noexcept;
-  HYLE_IO_API StringView header(StringView name) const noexcept;
-  HYLE_IO_API StringView body() const noexcept;
+  HYLE_IO_HTTP2_API std::int32_t stream_id() const noexcept;
+  HYLE_IO_HTTP2_API StringView method() const noexcept;
+  HYLE_IO_HTTP2_API StringView scheme() const noexcept;
+  HYLE_IO_HTTP2_API StringView authority() const noexcept;
+  HYLE_IO_HTTP2_API StringView path() const noexcept;
+  HYLE_IO_HTTP2_API int status() const noexcept;
+  HYLE_IO_HTTP2_API Http2Error stream_error() const noexcept;
+  HYLE_IO_HTTP2_API std::size_t header_count() const noexcept;
+  HYLE_IO_HTTP2_API StringView header_name(std::size_t index) const noexcept;
+  HYLE_IO_HTTP2_API StringView header_value(std::size_t index) const noexcept;
+  HYLE_IO_HTTP2_API StringView header(StringView name) const noexcept;
+  HYLE_IO_HTTP2_API StringView body() const noexcept;
 
  private:
   friend class Http2ServerConn;
@@ -100,15 +108,15 @@ sched::Task<bool> http2_server_shutdown(mem::AllocatorRef, Http2ServerConn&,
 // the caller's protocol negotiation). The constructor queues the initial SETTINGS.
 class Http2ServerConn {
  public:
-  HYLE_IO_API Http2ServerConn(mem::AllocatorRef alloc,
+  HYLE_IO_HTTP2_API Http2ServerConn(mem::AllocatorRef alloc,
                               TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API Http2ServerConn(mem::AllocatorRef alloc,
+  HYLE_IO_HTTP2_API Http2ServerConn(mem::AllocatorRef alloc,
                               TlsStream stream) noexcept;
 #endif
-  HYLE_IO_API ~Http2ServerConn();
-  HYLE_IO_API Http2ServerConn(Http2ServerConn&&) noexcept;
-  HYLE_IO_API Http2ServerConn& operator=(Http2ServerConn&&) noexcept;
+  HYLE_IO_HTTP2_API ~Http2ServerConn();
+  HYLE_IO_HTTP2_API Http2ServerConn(Http2ServerConn&&) noexcept;
+  HYLE_IO_HTTP2_API Http2ServerConn& operator=(Http2ServerConn&&) noexcept;
   Http2ServerConn(const Http2ServerConn&) = delete;
   Http2ServerConn& operator=(const Http2ServerConn&) = delete;
 
@@ -116,17 +124,17 @@ class Http2ServerConn {
 
   // Reads until any stream has a complete request. Interleaved streams are kept
   // independently; completed requests are returned in completion order.
-  HYLE_IO_API sched::Task<Http2MessageView*> next_request() noexcept;
+  HYLE_IO_HTTP2_API sched::Task<Http2MessageView*> next_request() noexcept;
 
   // Queues HEADERS plus an optional fixed body and flushes all currently encoded
   // frames. nghttp2 applies peer flow-control windows and frame sizing.
-  HYLE_IO_API sched::Task<bool> respond(
+  HYLE_IO_HTTP2_API sched::Task<bool> respond(
       std::int32_t stream_id, int status, const Http2Header* headers = nullptr,
       std::size_t header_count = 0, StringView body = {}) noexcept;
-  HYLE_IO_API sched::Task<bool> reset(
+  HYLE_IO_HTTP2_API sched::Task<bool> reset(
       std::int32_t stream_id,
       Http2Error error = Http2Error::kCancel) noexcept;
-  HYLE_IO_API sched::Task<bool> shutdown(
+  HYLE_IO_HTTP2_API sched::Task<bool> shutdown(
       Http2Error error = Http2Error::kNoError) noexcept;
 
  private:
@@ -160,29 +168,29 @@ sched::Task<bool> http2_client_shutdown(mem::AllocatorRef, Http2ClientConn&,
 // next_response(); returned positive stream IDs identify multiplexed requests.
 class Http2ClientConn {
  public:
-  HYLE_IO_API Http2ClientConn(mem::AllocatorRef alloc,
+  HYLE_IO_HTTP2_API Http2ClientConn(mem::AllocatorRef alloc,
                               TcpStream stream) noexcept;
 #if defined(HYLE_IO_TLS)
-  HYLE_IO_API Http2ClientConn(mem::AllocatorRef alloc,
+  HYLE_IO_HTTP2_API Http2ClientConn(mem::AllocatorRef alloc,
                               TlsStream stream) noexcept;
 #endif
-  HYLE_IO_API ~Http2ClientConn();
-  HYLE_IO_API Http2ClientConn(Http2ClientConn&&) noexcept;
-  HYLE_IO_API Http2ClientConn& operator=(Http2ClientConn&&) noexcept;
+  HYLE_IO_HTTP2_API ~Http2ClientConn();
+  HYLE_IO_HTTP2_API Http2ClientConn(Http2ClientConn&&) noexcept;
+  HYLE_IO_HTTP2_API Http2ClientConn& operator=(Http2ClientConn&&) noexcept;
   Http2ClientConn(const Http2ClientConn&) = delete;
   Http2ClientConn& operator=(const Http2ClientConn&) = delete;
 
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 
-  HYLE_IO_API sched::Task<std::int32_t> submit_request(
+  HYLE_IO_HTTP2_API sched::Task<std::int32_t> submit_request(
       StringView method, StringView scheme, StringView authority,
       StringView path, const Http2Header* headers = nullptr,
       std::size_t header_count = 0, StringView body = {}) noexcept;
-  HYLE_IO_API sched::Task<Http2MessageView*> next_response() noexcept;
-  HYLE_IO_API sched::Task<bool> reset(
+  HYLE_IO_HTTP2_API sched::Task<Http2MessageView*> next_response() noexcept;
+  HYLE_IO_HTTP2_API sched::Task<bool> reset(
       std::int32_t stream_id,
       Http2Error error = Http2Error::kCancel) noexcept;
-  HYLE_IO_API sched::Task<bool> shutdown(
+  HYLE_IO_HTTP2_API sched::Task<bool> shutdown(
       Http2Error error = Http2Error::kNoError) noexcept;
 
  private:

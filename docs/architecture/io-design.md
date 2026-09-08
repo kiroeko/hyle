@@ -111,20 +111,22 @@ include/hyle/io/
 ├─ tcp.h / udp.h / local.h   普通 C++ RAII transport facade
 ├─ file.h / dns.h / signal.h 文件、解析与关闭事件
 ├─ io_uring.h                Linux-only typed receive accelerator
-├─ tls.h / http*.h           F09 前待迁移的协议公开面
+├─ tls.h / http*.h           由独立协议 factor 拥有，仍保持统一用户 namespace
 └─ detail/proactor.h + net*  不承诺的完成引擎与 awaitable 实现 seam
 
 
 src/io_core/
 ├─ proactor.cc               四后端按平台条件编译；OS 类型不进入公开 API
 ├─ io_context.cc + operation.cc + io_uring.cc
-├─ file.cc / dns.cc          capability-aware blocking offload
-├─ tls.cc / http*.cc         transport + picohttpparser/nghttp2 protocol core
-└─ http2.cc                  native H2 codec facade
+└─ file.cc / dns.cc          capability-aware blocking offload
+
+src/io_tls/                  OpenSSL provider/config/session/stream owner
+src/io_http/                 HTTP/1 lifecycle + private picohttpparser
+src/io_http2/                HTTP/2 lifecycle + private nghttp2
 ```
 
-F09 完成前协议源码仍暂存在旧 target；它们随后分别迁入 `io_tls/io_http/io_http2`，
-不是 `io_core` 的最终 ownership。对用户暴露的是任务型 awaitable/RAII，对下仍是四种
+F09 已把协议源码、测试、benchmark、依赖与导出边分别迁入 `io_tls/io_http/io_http2`；
+它们不再属于 `io_core`。对用户暴露的仍是统一 `hyle::io` 任务型 awaitable/RAII，对下仍是四种
 private backend；调度和 completion lifetime 由 HYLE 自己管理。
 
 ## 已落地（io-01/02 历史实现纪要）

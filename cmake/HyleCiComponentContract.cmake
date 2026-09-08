@@ -517,11 +517,9 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
 endif()
 unset(_intrusive_factor_build)
 
-# A newly registered factor must remain a non-buildable identity reservation
-# until its own closure round supplies real ownership, dependencies and a
-# target. Maintainer `all` selects implemented factors only; an explicit typo-
-# resistant request for a known reservation fails for the lifecycle reason.
-_hyle_contract_run("maintainer all excludes queued factor reservations" TRUE
+# Maintainer `all` selects the three implemented protocol factors but still
+# excludes the audited transfer identity until its real target lands.
+_hyle_contract_run("maintainer all excludes remaining queued reservation" TRUE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
   -B "${_hyle_contract_root}/implemented-factors-all"
   ${_hyle_generator_args}
@@ -535,10 +533,13 @@ _hyle_contract_run("maintainer all excludes queued factor reservations" TRUE
   -DHYLE_COMPUTE_CUDA=OFF
   -DHYLE_COMPUTE_VULKAN=OFF
   -DHYLE_COMPUTE_GGML=OFF)
-if(HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "resolved='[^']*(io_tls|io_http|io_http2|io_transfer)")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "resolved='[^']*io_tls[^']*io_http[^']*io_http2" OR
+   HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "resolved='[^']*io_transfer")
   message(FATAL_ERROR
-    "maintainer all selected a QUEUED factor reservation:\n"
+    "maintainer all did not distinguish implemented protocol factors from the "
+    "QUEUED transfer reservation:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
@@ -547,11 +548,11 @@ _hyle_contract_run("queued factor has no build target" FALSE
   -B "${_hyle_contract_root}/queued-factor-request"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release
-  -DHYLE_DEV_FACTORS=io_tls
+  -DHYLE_DEV_FACTORS=io_transfer
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_INSTALL=OFF)
-if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "factor 'io_tls'.*registered but QUEUED" OR
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "factor 'io_transfer'.*registered but QUEUED" OR
    NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "target yet")
   message(FATAL_ERROR
     "queued factor request failed for the wrong reason:\n"

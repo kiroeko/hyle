@@ -1,17 +1,23 @@
 include_guard(GLOBAL)
 
-# This file is included only when io_core belongs to the selected component closure,
-# so its product controls do not pollute unrelated caches.
-hyle_auto_feature_option(HYLE_IO_TLS
-  "Build the io TLS capability using OpenSSL" DEFAULT OFF)
-option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core"
-  OFF)
+# This file is included only when a protocol factor belongs to the selected
+# closure, so protocol controls do not pollute an io_core-only maintainer cache.
+if(HYLE_BUILD_IO_TLS)
+  hyle_auto_feature_option(HYLE_IO_TLS
+    "Build the io TLS capability using OpenSSL" DEFAULT OFF)
+else()
+  set(HYLE_IO_TLS OFF)
+endif()
+if(HYLE_BUILD_IO_HTTP2)
+  option(HYLE_IO_HTTP2 "Build the io HTTP/2 capability using nghttp2" OFF)
+else()
+  set(HYLE_IO_HTTP2 OFF)
+endif()
 set(HYLE_IO_TLS_ENABLED OFF)
 
 function(hyle_configure_io_dependencies)
-  # The current io product root exposes sched types in public headers. A raw
-  # proactor implementation exists, but it is not yet a separately selectable
-  # product component and must not be advertised as one by the build graph.
+  # Protocol transports expose sched types and therefore require the existing
+  # coroutine transport factor; unsupported fcontext targets fail closed.
   if(NOT HYLE_FCONTEXT_SUPPORTED)
     message(FATAL_ERROR
       "The io_core factor currently requires sched/fcontext. The standalone "
@@ -21,7 +27,7 @@ function(hyle_configure_io_dependencies)
   # AUTO preserves convenient source builds; ON makes TLS part of the requested
   # product contract; OFF is deterministic and does not even probe OpenSSL.
   set(_hyle_io_tls_enabled OFF)
-  if(NOT HYLE_IO_TLS STREQUAL "OFF")
+  if(HYLE_BUILD_IO_TLS AND NOT HYLE_IO_TLS STREQUAL "OFF")
     find_package(OpenSSL QUIET)
     if(OpenSSL_FOUND)
       set(_hyle_io_tls_enabled ON)
@@ -40,7 +46,7 @@ function(hyle_configure_io_dependencies)
 
   # nghttp2 owns RFC 9113 framing, HPACK, stream state and flow control. HYLE
   # owns the coroutine transport and imports none of nghttp2's runtime policy.
-  if(HYLE_IO_HTTP2)
+  if(HYLE_BUILD_IO_HTTP2 AND HYLE_IO_HTTP2)
     include(FetchContent)
     FetchContent_Declare(nghttp2
       URL      ${HYLE_DEP_NGHTTP2_ARCHIVE_URL}
@@ -87,7 +93,7 @@ function(hyle_configure_io_dependencies)
       HYLE_DEP_BINARY_DIR "${nghttp2_BINARY_DIR}")
     hyle_register_package_dependency(
       NAME nghttp2
-      OWNER io_core
+      OWNER io_http2
       FEATURES io_http2
       STATIC_EXPORT_TARGETS nghttp2_static
       LOCKED_DEPENDENCIES nghttp2

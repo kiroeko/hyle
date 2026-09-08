@@ -337,9 +337,11 @@ mark_as_advanced(HYLE_DEP_BUILD_DIR)
 # cache. Locked SOURCE_DIR overrides are resolved separately from the shared
 # HYLE_DEP_SOURCE_CACHE.
 set(FETCHCONTENT_BASE_DIR "${HYLE_DEP_BUILD_DIR}")
-if(HYLE_BUILD_IO_CORE)
+if(HYLE_BUILD_IO_TLS OR HYLE_BUILD_IO_HTTP2)
   include(HyleIoDependencies)
   hyle_configure_io_dependencies()
+else()
+  set(HYLE_IO_TLS_ENABLED OFF)
 endif()
 if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
   include(HyleSimdDependencies)

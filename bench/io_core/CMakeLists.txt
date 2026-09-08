@@ -124,21 +124,6 @@
     target_link_libraries(hyle_conn_lifecycle_bench PRIVATE ws2_32)
   endif()
 
-  # io HTTP bench (io-10): request/response throughput of the FULL HTTP/1.1 path
-  # (picohttpparser parse + GrowBuf head/body copies + Request/Response build + status
-  # /header formatting) vs a RAW TCP echo over the SAME co_await TcpStream transport
-  # moving the IDENTICAL byte volume with no HTTP work. The ratio isolates the HTTP
-  # parse/framing layer cost from the io transport (already measured by echo_bench),
-  # and the 1/2/4/8-worker sweep shows the HTTP path preserves shard-per-core scaling.
-  # Socketpair transport (like echo_bench) -- no accept, no TIME_WAIT. Needs hyle_io_core
-  # (http/tcp) + ws2_32 on Windows.
-  add_executable(hyle_http_bench http_bench.cc)
-  target_link_libraries(hyle_http_bench PRIVATE hyle_sched hyle_io_core nanobench)
-  hyle_apply_warnings(hyle_http_bench)
-  if(WIN32)
-    target_link_libraries(hyle_http_bench PRIVATE ws2_32 psapi)
-  endif()
-
   # io multishot-recv bench (io-07b): does the multishot + provided-buffer-ring
   # awaitable beat one-shot RecvOp on a receive-heavy load? Same-worker sender+receiver
   # fibers + DGRAM socketpair (no cross-thread wakeup floor, equal completion counts);
@@ -163,28 +148,9 @@
     target_link_libraries(hyle_multishot_echo_bench PRIVATE ws2_32)
   endif()
 
-  # io TLS bench (io-08): TLS handshake/s + encrypted-echo throughput over HYLE's
-  # memory-BIO pump vs RAW OpenSSL over a blocking socket (same cert/cipher/payload).
-  # The ratio isolates HYLE's co_await pump + fiber overhead from the identical
-  # OpenSSL crypto floor both pay. Only when the resolved TLS capability is enabled
-  # (same gate as the tls.cc build). Links OpenSSL + ws2_32 on Windows.
-  if(HYLE_IO_TLS_ENABLED)
-    add_executable(hyle_io_tls_bench tls_bench.cc)
-    target_link_libraries(hyle_io_tls_bench PRIVATE hyle_sched hyle_io_core nanobench
-                          OpenSSL::SSL OpenSSL::Crypto)
-    hyle_apply_warnings(hyle_io_tls_bench)
-    if(WIN32)
-      target_link_libraries(hyle_io_tls_bench PRIVATE ws2_32)
-    endif()
-  endif()
-
 hyle_register_benches(io_core
   hyle_io_scaling_bench
   hyle_accept_bench
   hyle_conn_lifecycle_bench
-  hyle_http_bench
   hyle_multishot_bench
   hyle_multishot_echo_bench)
-if(TARGET hyle_io_tls_bench)
-  hyle_register_benches(io_core hyle_io_tls_bench)
-endif()
