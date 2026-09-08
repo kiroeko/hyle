@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Reopen record（`REOPENED`）
+## Closure card（`SCOPED`）
 
 - component / owner / round ID：`io_http` / IO maintainers /
   `io-http-v2-duplex-progress`；task kind：`REOPEN`；baseline：
@@ -20,8 +20,36 @@
   在 holdout 稳定挂起，末端轨迹为两端 `EPOLLOUT|EPOLLONESHOT`，而对应 peer receive queue
   已有未消费字节。这满足旧 `io_http` 登记的“HTTP2 consumer 复现 backpressure/teardown
   defect” reopen trigger；
-- immediate decision：依法移除旧 FROZEN confirmation，先进入 `REOPENED`。在 `SCOPED` 前
-  不修改产品；随后只冻结一个有界 transport progress primitive、回归矩阵与受影响回放。
+- scope：为协议因子增加一个 internal、transport-neutral 的 immediate-read attempt。它一次最多
+  吸收一个已经到达的 bounded chunk，以独立 `would_block` 状态区分“现在无数据”和 EOF/error；
+  不等待、不分配、不吞掉 deadline/cancel，也不公开 native/provider handle。`io_http2` 在准备阻塞
+  写入前用它维持 full-duplex progress；plain TCP owner 在 `io_core`，TLS provider owner 若由确定性
+  复现证明受影响则依法单独重开；
+- non-goals：改变 HTTP/1 parser/framing/message/body API，给 ordinary 用户公开 reactor syscall，
+  新建后台 scheduler/线程、无界读写队列，修改 nghttp2/flow-control 语义，或增加应用 server 策略；
+- tier / gates：P0 先证明 nonblocking、EOF/error、单 reader/owner 与 no-allocation；correctness 固定覆盖
+  4 KiB socket buffer + 双向 flow-control、默认 io_uring 与强制 epoll，并补 h2c/TLS 分类。P1 只回放
+  已冻结 HTTP/1 两条 workload 与 HTTP/2 normal/holdout，不改变 peer、socket/window/body/order；
+- budget：3 engineering hours；只允许一次 transport progress 产品机制纠正和一次受影响 provider
+  纠正；性能最多一次机制检查。超过后按真实剩余问题 CLOSED 或 BLOCKED；
+- machines / delivery：W1-WIN、W1-WSL、M1-MAC；source/static/shared。sanitizer 只跑受影响的
+  io_core/io_tls/io_http/io_http2 exact factors；
+- strong references：Boost.Asio、libuv/nginx 的 optimistic nonblocking receive + readiness fallback
+  只作为机制参照；nghttp2 仍是协议 authority。不能把直接 busy polling 或 blocking raw loop 当成
+  HYLE scheduler 路线；
+- stop：确定性双向进展与旧 HTTP/1 语义/P1 回放全部通过后关闭；若 TLS 需要无法在本轮边界内表达的
+  provider engine 重构，`io_http` 不冒充完成，登记精确 io_tls blocker/trigger。
+
+## Decision invariants
+
+- immediate attempt 只在 transport owner worker、且没有另一 read operation 在途时执行；上层仍保持
+  每方向最多一项 native operation；
+- `would_block` 不是错误，EOF 与部分 bytes + terminal status 不得丢失；任何已吸收 bytes 必须在本次
+  调用返回前进入协议 parser；
+- optimistic path 与普通 awaitable path 使用同一 native error 映射；Windows 不假设 adopted socket
+  已处于 nonblocking mode；
+- HTTP/2 只调用组合缝，不复制 POSIX/WinSock/OpenSSL 分支。API/layout/普通 HTTP/1 路线不因 benchmark
+  增加 metadata。
 
 ## Historical boundary
 
