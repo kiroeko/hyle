@@ -82,8 +82,8 @@
         "connection-state teardown and external completion handoff"
       ],
       "pair": {
-        "candidate": "HYLE HTTP/1 persistent-runtime REST plus chunked stream",
-        "peer": "Boost.Beast HTTP/1 persistent-runtime REST plus chunked stream"
+        "candidate": "HYLE HTTP/1 persistent runtime",
+        "peer": "Boost.Beast HTTP/1 persistent runtime"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
@@ -131,8 +131,8 @@
         "connection-state teardown and external completion handoff"
       ],
       "pair": {
-        "candidate": "HYLE HTTP/1 persistent-runtime fragmented body holdout",
-        "peer": "Boost.Beast HTTP/1 persistent-runtime fragmented body holdout"
+        "candidate": "HYLE HTTP/1 persistent runtime",
+        "peer": "Boost.Beast HTTP/1 persistent runtime"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,
