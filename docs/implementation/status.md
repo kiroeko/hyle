@@ -30,10 +30,10 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | util_runtime | CLOSED | FROZEN | P0 | [PASS](evidence/performance/benchmarks-util.md) / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v5-blocker-resolution.md) | util-runtime v5 CLOSED/FROZEN：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。 |
 | sched | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-sched.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/sched/sched-v4-control-contracts.md) | sched-v4 CLOSED/FROZEN：五项控制合同缺陷已关闭；三平台、sanitizer、三交付、直接消费者、易用性/文档、内部复用、候选后红队及同合同 Marl/oneTBB P1 工程门全部通过。 |
 | io_core | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io_core v1 已完成真实推理消费者与 Asio/Seastar 回放并进入 AUDITED：内部 factor 为 io_core、用户产品仍为 io；typed endpoint/error、operation budget、DNS/connect、vectored/direct IO、local IPC、teardown 与物理 factorization 的十项有限 FIX 已冻结。 |
-| io_tls | QUEUED | — | — | — | — | — | IO/TLS 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
-| io_http | QUEUED | — | — | — | — | — | IO/HTTP 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
-| io_http2 | QUEUED | — | — | — | — | — | IO/HTTP2 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
-| io_transfer | QUEUED | — | — | — | — | — | IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。 |
+| io_tls | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-tls-v1.md) | io_tls v1 已进入 SCOPED：本轮先冻结 TLS config/session/stream、typed failure、deadline/cancel/shutdown 与 OpenSSL 交付边界，审计完成前不移动或重写产品实现。 |
+| io_http | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-http-v1.md) | io_http v1 已进入 SCOPED：本轮先冻结 HTTP/1 client/server、bounded/streaming body、whole-request budget、disconnect/backpressure 与 parser ownership，审计完成前不改产品。 |
+| io_http2 | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-http2-v1.md) | io_http2 v1 已进入 SCOPED：本轮先冻结多 stream、incremental body、flow control、RST/GOAWAY/cancel、nghttp2 与 h2c/TLS 交付边界。 |
+| io_transfer | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-transfer-v1.md) | io_transfer v1 已进入 SCOPED：本轮先冻结大模型/制品的 bounded copy、HTTP range resume、checksum、temp-file/atomic publish、progress/cancel 与失败清理合同。 |
 | compute | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | CLOSED | FROZEN | P1 | [PASS](evidence/performance/benchmarks-container.md) / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED/FROZEN：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选冻结在 111c28ea。 |

@@ -1251,23 +1251,107 @@
     },
     {
       "module": "io_tls",
-      "product_state": "QUEUED",
-      "summary": "IO/TLS 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+      "product_state": "SCOPED",
+      "round_id": "io-tls-v1",
+      "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
+      "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
+      "non_goals": "HTTP framing or routing, HTTP2 stream semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API, stable C++ ABI and benchmark-shaped buffer entry points.",
+      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "io_tls v1 已进入 SCOPED：本轮先冻结 TLS config/session/stream、typed failure、deadline/cancel/shutdown 与 OpenSSL 交付边界，审计完成前不移动或重写产品实现。"
     },
     {
       "module": "io_http",
-      "product_state": "QUEUED",
-      "summary": "IO/HTTP 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+      "product_state": "SCOPED",
+      "round_id": "io-http-v1",
+      "closure_task": "docs/implementation/tasks/io/io-http-v1.md",
+      "scope": "Factor HTTP1 framing and bounded streaming client/server lifecycle out of io_core; freeze natural message views, body streaming, request budgets, disconnect, backpressure and keep-alive contracts.",
+      "non_goals": "Application routing, middleware, authentication, model or OpenAI schema, handler pool and batching policy, WebSocket, HTTP2 or HTTP3, TLS provider, Native FFI or C API.",
+      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "io_http v1 已进入 SCOPED：本轮先冻结 HTTP/1 client/server、bounded/streaming body、whole-request budget、disconnect/backpressure 与 parser ownership，审计完成前不改产品。"
     },
     {
       "module": "io_http2",
-      "product_state": "QUEUED",
-      "summary": "IO/HTTP2 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+      "product_state": "SCOPED",
+      "round_id": "io-http2-v1",
+      "closure_task": "docs/implementation/tasks/io/io-http2-v1.md",
+      "scope": "Factor HTTP2 session, stream and flow-control lifecycle out of io_core; replace mandatory whole-body buffering with bounded incremental streams and define reset, GOAWAY, cancellation and h2c or TLS ALPN interop.",
+      "non_goals": "HTTP1 upgrade, server push, gRPC schema or runtime, WebSocket, HTTP3 or QUIC, application routing or model policy, Native FFI or C API.",
+      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "io_http2 v1 已进入 SCOPED：本轮先冻结多 stream、incremental body、flow control、RST/GOAWAY/cancel、nghttp2 与 h2c/TLS 交付边界。"
     },
     {
       "module": "io_transfer",
-      "product_state": "QUEUED",
-      "summary": "IO/transfer 因子 ID 已登记；尚无独立源码 ownership、target、依赖或产品根，等待自己的 SCOPED/AUDITED 轮次。"
+      "product_state": "SCOPED",
+      "round_id": "io-transfer-v1",
+      "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
+      "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
+      "non_goals": "Model repository schema, authentication UI or token storage, archive extraction, model parsing or loading, P2P or RDMA, object-store SDKs, serving routes, Native FFI or C API.",
+      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "io_transfer v1 已进入 SCOPED：本轮先冻结大模型/制品的 bounded copy、HTTP range resume、checksum、temp-file/atomic publish、progress/cancel 与失败清理合同。"
     },
     {
       "module": "compute",
