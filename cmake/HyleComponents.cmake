@@ -246,7 +246,8 @@ _hyle_declare_component(io_tls
   PUBLIC_DEPS core error io_core mem sched container_text
   SPLIT_PUBLIC_HEADERS hyle/io/tls.h)
 _hyle_declare_component(io_http
-  PUBLIC_DEPS core io_core io_tls mem sched container_text
+  PUBLIC_DEPS core error io_core io_tls mem sched container_text time
+  PUBLIC_TYPE_DEPS time
   SPLIT_PUBLIC_HEADERS hyle/io/http.h)
 _hyle_declare_component(io_http2
   PRIVATE_DEPS container

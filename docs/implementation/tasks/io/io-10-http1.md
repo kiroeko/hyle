@@ -1,5 +1,10 @@
 # io-10：HTTP/1.1 server + client（over 自有 io_uring/fiber）
 
+> **历史记录 / 已被取代。** 本页只记录 2026-07 的首次实现，所列
+> `HttpServerConn`、`HttpClientConn`、`http_serve`、fixed header slot 与同步
+> `NextChunkFn` 均已由活动的 [`io-http-v1`](io-http-v1.md) 重构删除，不能作为当前
+> API、状态或待办。当前真相只看 `module-status.json` 指向的 closure card 与用户指南。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P5 |

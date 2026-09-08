@@ -10,7 +10,8 @@
 
 ```text
 普通 C++ 用户
-  TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1 + HTTP/2
+  TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1
+  HTTP/2（重构中，不是冻结用户合同）
        │ co_await；deadline / CancelToken；RAII
        ▼
 IoContext（每 Scheduler worker 一个 private completion engine + blocking pool）
@@ -35,7 +36,13 @@ private backend engine ───────────────────
   completion port。
 - 普通 C++ 文件腿依据 backend capability 自动选原生异步或 blocking pool；
   用户不取得低层 engine、completion token 或同步 fallback seam。
-- plain TCP 与已握手 TLS 经同一个 `HttpTransport` 进入 HTTP framing 核。
+- plain TCP 与已握手 TLS 经同一个 owning `HttpTransport` 进入 HTTP framing 核。
+  HTTP/1 只拥有 connection/framing/body lifecycle：typed client/server factory、
+  borrowed head/chunk view、有界 `read_all` 与增量 reader、awaitable source/writer、
+  keep-alive、trailers、Expect/Continue fallback 和统一 operation budget。每次 writer
+  await 完成后才拉取下一 source chunk，不建立隐藏发送队列；大 head/body 聚合缓冲
+  在安全消息边界按 `HttpLimits` 释放高水位。listener host、routing、auth、模型
+  schema、handler admission/batching 和 graceful service policy 仍由应用拥有。
 - TLS config/session/provider 由独立 `io_tls` factor 持有；OpenSSL 类型不进入
   公开面。client/server factory、handshake/read/write/shutdown 都返回共享 typed
   Error 形状，一个绝对 `OperationOptions` 贯穿 memory-BIO pump 的每次底层操作。
@@ -46,8 +53,9 @@ private backend engine ───────────────────
   分配一次，allocator backing 生命周期是显式 context/stream 前置条件，operation
   allocator 只拥有 coroutine frame；provider session cache/ticket 默认关闭，只在
   client/server 配置显式启用。
-- HTTP/2 协议核固定为 nghttp2；它不拥有 IO/event loop。C++ connection 直接
-  驱动 `HttpTransport`。
+- HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；当前 factor
+  仍为 `AUDITED`，旧 fixed-buffer API 不是冻结合同。它只能经同一个
+  `HttpTransport` 重构，不能再复制 TCP/TLS transport 或另起 event loop。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
 - Linux-only provided-buffer/multishot receive 只能经成功取得的
@@ -64,9 +72,10 @@ private backend engine ───────────────────
 > 现存例外和补全工单见
 > [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
-IO 正在按 factor 重构；当前 `io_core` 仍为 `AUDITED`，不是已收口证书。当前轮与
-唯一状态见 [`io-v1-core-factorization`](../implementation/tasks/io/io-v1-core-factorization.md)
-和 [`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
+IO 正在按 factor 重构；`io_tls` 已 `CLOSED/FROZEN`，`io_core`、`io_http`、
+`io_http2` 与 `io_transfer` 仍为 `AUDITED`，不得把实现 checkpoint 当成已收口证书。
+当前轮与唯一状态见各 closure card 和
+[`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
 施工历史，若与本节、活动卡或代码冲突，以活动卡和代码为准。
 
 ## 两个调查事实
@@ -133,6 +142,7 @@ src/io_core/
 src/io_tls/                  OpenSSL provider/config/session/stream owner
 src/io_http/                 HTTP/1 lifecycle + private picohttpparser
 src/io_http2/                HTTP/2 lifecycle + private nghttp2
+src/io_transfer/             download/upload/resume owner（尚未实现）
 ```
 
 F09 已把协议源码、测试、benchmark、依赖与导出边分别迁入 `io_tls/io_http/io_http2`；

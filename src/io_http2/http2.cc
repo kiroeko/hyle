@@ -607,10 +607,11 @@ sched::Task<bool> write_all_h2(mem::AllocatorRef alloc,
     const auto chunk = static_cast<std::uint32_t>(
         std::min<std::size_t>(size - offset,
                               (std::numeric_limits<std::uint32_t>::max)()));
-    const std::int64_t n = co_await http_transport_write(
-        alloc, transport, data + offset, chunk);
-    if (n <= 0) co_return false;
-    offset += static_cast<std::size_t>(n);
+    TransferResult result = co_await transport.write_some(
+        alloc, std::span<const std::byte>(
+                   reinterpret_cast<const std::byte*>(data + offset), chunk));
+    if (!result.ok() || result.bytes == 0) co_return false;
+    offset += result.bytes;
   }
   co_return true;
 }
@@ -654,13 +655,15 @@ bool feed_session(SessionState& state, const std::uint8_t* data,
 sched::Task<bool> pump_once(mem::AllocatorRef alloc, SessionState& state,
                             HttpTransport& transport) noexcept {
   if (!(co_await flush_session(alloc, state, transport))) co_return false;
-  const std::int64_t n = co_await http_transport_read(
-      alloc, transport, state.input.data, state.input.cap);
-  if (n <= 0) {
+  TransferResult result = co_await transport.read_some(
+      alloc,
+      std::span<std::byte>(reinterpret_cast<std::byte*>(state.input.data),
+                           state.input.cap));
+  if (!result.ok() || result.eof || result.bytes == 0) {
     state.fatal = true;
     co_return false;
   }
-  if (!feed_session(state, state.input.data, static_cast<std::size_t>(n)))
+  if (!feed_session(state, state.input.data, result.bytes))
     co_return false;
   co_return co_await flush_session(alloc, state, transport);
 }
@@ -874,7 +877,7 @@ sched::Task<bool> http2_server_shutdown(mem::AllocatorRef alloc,
     co_return false;
   if (!(co_await flush_session(alloc, *conn.impl_, conn.transport_)))
     co_return false;
-  co_return (co_await http_transport_shutdown(alloc, conn.transport_)) == 0;
+  co_return (co_await conn.transport_.shutdown(alloc)).ok();
 }
 sched::Task<bool> Http2ServerConn::shutdown(Http2Error error) noexcept {
   return http2_server_shutdown(alloc_, *this, error);
@@ -975,7 +978,7 @@ sched::Task<bool> http2_client_shutdown(mem::AllocatorRef alloc,
     co_return false;
   if (!(co_await flush_session(alloc, *conn.impl_, conn.transport_)))
     co_return false;
-  co_return (co_await http_transport_shutdown(alloc, conn.transport_)) == 0;
+  co_return (co_await conn.transport_.shutdown(alloc)).ok();
 }
 sched::Task<bool> Http2ClientConn::shutdown(Http2Error error) noexcept {
   return http2_client_shutdown(alloc_, *this, error);

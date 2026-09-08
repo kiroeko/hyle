@@ -91,21 +91,44 @@ WebSocket 与 HTTP/2 不得追加进本轮。
 ## API / usability freeze draft
 
 ```cpp
-HttpServerConnection connection{alloc, std::move(stream), limits};
-auto incoming = co_await connection.read_request(operation);
-if (!incoming || !*incoming) co_return;       // typed failure / clean EOF
-HttpRequestView request = **incoming;         // valid until finish_request()
-auto body = connection.request_body();        // incremental + bounded
-Status sent = co_await connection.send_response(head, body_source, operation);
+auto server_result = HttpServerConnection::create(
+    alloc, HttpTransport{std::move(stream)}, limits);
+if (!server_result) co_return server_result.error();
+auto server = std::move(*server_result);
 
-HttpClientConnection client{alloc, std::move(stream), limits};
+auto incoming_result = co_await server.read_request(operation);
+if (!incoming_result) co_return incoming_result.error();
+if (!*incoming_result) co_return Status{};       // clean peer EOF
+HttpIncomingRequest incoming = std::move(**incoming_result);
+HttpRequestView request = incoming.head;         // borrowed until body retires
+for (;;) {
+  auto chunk = co_await incoming.body.read(0, operation);
+  if (!chunk) co_return chunk.error();
+  consume(chunk->bytes);
+  if (chunk->end_stream) break;
+}
+Status sent = co_await server.send_response(head, fixed_body, operation);
+
+auto client_result = HttpClientConnection::create(
+    alloc, HttpTransport{std::move(client_stream)}, limits);
+if (!client_result) co_return client_result.error();
+auto client = std::move(*client_result);
 auto response = co_await client.request(head, request_body, operation);
-auto response_body = client.response_body();
+if (!response) co_return response.error();
+for (;;) {
+  auto chunk = co_await response->body.read(0, operation);
+  if (!chunk) co_return chunk.error();
+  consume(chunk->bytes);
+  if (chunk->end_stream) break;
+}
 ```
 
-The concrete names may tighten before the API freeze, but the task shape cannot regress to whole-body-only or synchronous
-producer callbacks. Body source/reader allow one outstanding read/write, borrow bytes until that await completes, and expose
-trailers only after end-of-body. No P1 starts until compile-only fixed and streaming journeys freeze these contracts.
+This API/algorithm shape is frozen for the immutable candidate. `HttpBodyReader` and
+`HttpBodyWriter` are move-only, allow one outstanding operation, and borrow chunk bytes
+until the next body operation. `HttpBodySource` is a non-owning, type-erased awaitable
+producer; its callable and coroutine state must outlive `send_response()`/`request()`.
+Trailers become visible only after end-of-body. P1 may start only after this shape has an
+immutable candidate commit and the same-contract peer fixture is fixed.
 
 ## Owner 七问（AUDITED）
 
@@ -124,11 +147,19 @@ trailers only after end-of-body. No P1 starts until compile-only fixed and strea
 
 ## Current decision
 
-`AUDITED / ACTIVE`。能力图、lifecycle、owner、API draft 与有限 F01--F06 已冻结；允许实现，
-但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+`AUDITED / ACTIVE`。F01--F05 的实现、API/usability 与算法形状已形成候选并冻结，不再追加能力或
+修改常态 metadata；F06 尚待 immutable candidate commit、三平台/三交付/sanitizer、同合同 P1、
+guide/red-team terminal receipt。候选提交形成前禁止启动 P1。
 
 ## Implementation checkpoints
 
 - `ea45d866`：`IOHTTP-F01` 的物理 owner 已建立；HTTP/1 source/header/test/benchmark、pico
   license/package owner 与 `HYLE_IO_HTTP_API` 均属于 `io_http`。HTTP/2 只经导出的 transport
   seam 复用本 factor；Windows shared correctness 与独立 header 已通过。
+- 2026-09-08 candidate preparation：F02--F05 已实现。公开形状改为 typed
+  `Result<optional<HttpIncomingRequest>>`/`Status`、move-only incremental body reader/writer、
+  awaitable source 与 owning client/server connection；动态 limits、CL/TE smuggling rejection、
+  fixed/chunked/EOF framing、trailers、keep-alive、Expect/Continue bounded fallback、whole-operation
+  deadline/cancel、慢消费者 backpressure、断连停产、buffer high-water release 和幂等立即 close
+  均有 Windows 回归覆盖。plain HTTP 3/3、TLS interop 1/1 通过，HTTP/2 transport seam 编译通过；
+  smoke benchmark 只作分解诊断，不构成 P1 或 peer 结论。

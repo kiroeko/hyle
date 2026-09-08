@@ -8,6 +8,7 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
@@ -34,9 +35,10 @@
 
 using hyle::io::IoContext;
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
-using hyle::io::HttpClientConn;
-using hyle::io::HttpResponse;
-using hyle::io::HttpServerConn;
+using hyle::io::HttpClientConnection;
+using hyle::io::HttpRequestHead;
+using hyle::io::HttpResponseHead;
+using hyle::io::HttpServerConnection;
 #endif
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION) && defined(HYLE_IO_HTTP2)
 using hyle::io::Http2ClientConn;
@@ -744,29 +746,8 @@ struct HttpsResult {
   std::atomic<bool> server_done{false};
   std::atomic<bool> client_done{false};
   std::atomic<int> status{0};
-  std::atomic<int> server_stage{0};
-  std::atomic<int> client_stage{0};
-  std::atomic<bool> handler_used_region{false};
   char body[32] = {};
 };
-
-Task<HttpResponse> https_handler(AllocatorRef alloc, void *context,
-                                 const hyle::io::HttpRequest &) noexcept {
-  auto *result = static_cast<HttpsResult *>(context);
-  result->handler_used_region.store(alloc.alloc_fn() !=
-                                        system_allocator().alloc_fn(),
-                                    std::memory_order_relaxed);
-  char *body = alloc.allocate_n<char>(8);
-  HttpResponse response;
-  if (body == nullptr) {
-    response.set_status(500);
-    response.set_body({"request-region-oom", 18});
-    co_return response;
-  }
-  std::memcpy(body, "https-ok", 8);
-  response.set_body({body, 8});
-  co_return response;
-}
 
 Task<int> https_server(AllocatorRef alloc, IoContext *, TcpListener *listener,
                        TlsContext *context, HttpsResult *result) {
@@ -779,8 +760,18 @@ Task<int> https_server(AllocatorRef alloc, IoContext *, TcpListener *listener,
     co_return 0;
   TlsStream tls = std::move(*wrapped);
   if ((co_await tls_handshake(alloc, tls)).ok()) {
-    co_await hyle::io::http_serve(alloc, std::move(tls), &https_handler,
-                                  result);
+    auto made = HttpServerConnection::create(alloc, std::move(tls));
+    if (made) {
+      HttpServerConnection connection = std::move(*made);
+      auto incoming = co_await connection.read_request();
+      if (incoming && incoming->has_value() &&
+          (co_await incoming->value().body.discard()).ok()) {
+        static constexpr char kBody[] = "https-ok";
+        HttpResponseHead response;
+        (void)co_await connection.send_response(
+            response, std::as_bytes(std::span(kBody, sizeof(kBody) - 1)));
+      }
+    }
   }
   result->server_done.store(true, std::memory_order_release);
   co_return 0;
@@ -799,16 +790,22 @@ Task<int> https_client(AllocatorRef alloc, IoContext *io, TlsContext *context,
       co_return 0;
     TlsStream tls = std::move(*wrapped);
     if ((co_await tls_handshake(alloc, tls)).ok()) {
-      HttpClientConn http(alloc, std::move(tls));
-      auto *response =
-          co_await http.request({"GET", 3}, {"/", 1}, {"localhost", 9});
-      if (response != nullptr) {
-        result->status.store(response->status(), std::memory_order_release);
-        const auto body = response->body();
-        const auto size = body.size() < sizeof(result->body) - 1
-                              ? body.size()
-                              : sizeof(result->body) - 1;
-        std::memcpy(result->body, body.data(), size);
+      auto made = HttpClientConnection::create(alloc, std::move(tls));
+      if (made) {
+        HttpClientConnection http = std::move(*made);
+        HttpRequestHead request;
+        request.authority = "localhost";
+        auto response =
+            co_await http.request(request, std::span<const std::byte>{});
+        if (response) {
+          result->status.store(response->head.status(),
+                               std::memory_order_release);
+          auto body =
+              co_await response->body.read_all(sizeof(result->body) - 1);
+          if (body) {
+            std::memcpy(result->body, body->data(), body->size());
+          }
+        }
       }
     }
   }
@@ -861,7 +858,6 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   EXPECT_TRUE(result->client_done.load());
   EXPECT_EQ(result->status.load(), 200);
   EXPECT_STREQ(result->body, "https-ok");
-  EXPECT_TRUE(result->handler_used_region.load());
 }
 
 #if defined(HYLE_IO_HTTP2)

@@ -128,9 +128,19 @@ budget.deadline =
     hyle::time::deadline_after(std::chrono::seconds(10));
 if (!(co_await hyle::io::tls_handshake(alloc, tls, budget)).ok()) co_return;
 
-hyle::io::HttpClientConn client{alloc, std::move(tls)};
-auto* response = co_await client.request(
-    {"GET", 3}, {"/health", 7}, {"api.example.com", 15});
+auto made = hyle::io::HttpClientConnection::create(
+    alloc, std::move(tls), hyle::io::HttpLimits{});
+if (!made) co_return;
+auto client = std::move(*made);
+
+hyle::io::HttpRequestHead request;
+request.method = "GET";
+request.target = "/health";
+request.authority = "api.example.com";
+auto response = co_await client.request(
+    request, std::span<const std::byte>{}, budget);
+if (!response) co_return;
+auto body = co_await response->body.read_all(64 * 1024, budget);
 ```
 
 client 默认验证系统信任链；verifying client 必须给 `server_name`，它同时用于
@@ -170,32 +180,68 @@ TLS 1.3 ticket 可能在握手完成后的 post-handshake record 中才到达；
 返回非 OK 后，尤其是 deadline/cancel 或底层 partial write 后，关闭该 stream 并按
 应用边界重连，不要把同一 plaintext buffer 从头盲重试。
 
-`HttpRequest`/`HttpResponseView` 的 string view 只活到同一连接的下一次 request。
-流式响应用 `HttpResponse::set_stream`；`add_header` 返回 false 表示固定 header
-槽已满。HTTP 会拒绝 TE+CL、冲突 Content-Length、非 bare chunked 和 CRLF/token
-注入。
-
-当前 HTTP convenience 尚未把整个 request 生命周期绑定到一个统一 deadline /
-CancelToken；要求强制有界退出的服务应在连接层使用 cancellable/timed I/O，
-并在 shutdown 阶段停止 accept 后排空连接。该项仍是 IO 的产品尾项。
-
-HTTP/2 使用 `Http2ClientConn` / `Http2ServerConn`。它支持同连接多 stream、
-逆序完成、HPACK、RST/GOAWAY 与流控；TLS context 应把
-`tls_http2_protocols()` 交给通用 `alpn_protocols` 并完成握手，构造函数会拒绝
-ALPN 不是 `h2` 的 stream。当前 body 是最多 8 MiB 的完整 fixed buffer，不适合
-无限 token stream：
+HTTP/1 是连接级协议因子，不是应用 server framework。server 在 accept 后创建
+`HttpServerConnection`，由自己的 route/handler/task owner 驱动循环：
 
 ```cpp
-hyle::io::Http2ClientConn h2{alloc, std::move(tls)};
-auto id = co_await h2.submit_request(
-    "POST", "https", "api.example.com", "/v1/infer",
-    nullptr, 0, request_body);
-auto* response = co_await h2.next_response();
+auto made = hyle::io::HttpServerConnection::create(
+    alloc, std::move(accepted), limits);
+if (!made) co_return;
+auto connection = std::move(*made);
+
+for (;;) {
+  auto next = co_await connection.read_request(operation);
+  if (!next || !next->has_value()) break;  // typed failure / clean EOF
+  auto incoming = std::move(next->value());
+  auto json = co_await incoming.body.read_all(256 * 1024, operation);
+  if (!json) break;
+
+  hyle::io::HttpResponseHead head;
+  static constexpr hyle::io::HttpHeader headers[] = {
+      {"Content-Type", "application/json"}};
+  head.headers = headers;
+  if (!(co_await connection.send_response(
+            head, std::as_bytes(std::span("{}", 2)), operation)).ok()) {
+    break;
+  }
+}
+(void)co_await connection.close(operation);
 ```
 
-可以连续 `submit_request` 后再取 response；必须按返回的 stream ID 关联，不要
-假设 response 与提交顺序一致。连接仍是 single-owner，所有方法在同一个
-transport owner fiber 上调用。
+head、header、body chunk 都是 connection-owned borrowed view。head/header 在同一
+连接的下一次消息操作失效；body chunk 在该 reader 的下一次操作失效。
+小 JSON 使用显式上限的 `read_all(max_bytes)`；大 request/response 循环
+`body.read()`。要复用 keep-alive 连接，必须把 body 读完或调用 `discard()`；丢弃
+未完成 reader 会把连接标为不可复用，但 server 仍可发送一个强制 close 的最终
+响应。一个 connection 固定属于 transport 的 owner fiber，同一 reader/writer
+只允许一个在途操作。
+
+流式 token/SSE 用 `HttpBodySource::from(source)`。HTTP 在取得一块后先完整 await
+transport 写入，再请求下一块，不建立隐藏队列，因此慢客户端会自然把压力传回
+producer。`Source::next(AllocatorRef, OperationOptions)` 必须 `noexcept` 并返回
+`Task<Result<HttpBodyChunk>>`；由于 HYLE coroutine frame 的 allocator-first 约定，
+成员入口通常只是普通转发函数，真正的 coroutine 写成 allocator 为首参的 static
+helper。source 和它借出的字节必须活到 `send_response` await 完成。
+
+`HttpLimits` 同时限制 head/body/header 数、每次 body read，并限制异常大 head 与
+`read_all` 聚合缓冲在下一消息后的保留量。默认 `Expect: 100-continue` 最多等待
+1 秒，然后按 RFC 允许的行为继续发 body；可用 `expect_continue_wait` 调整，整体
+更早的 `OperationOptions::deadline` 仍然优先。early 413/417 会作为正常 response
+返回且不会发送 body。HTTP 拒绝 TE+CL、冲突 Content-Length、重复 Host、非 bare
+chunked、obsolete folding 和 CRLF/token 注入；trailers 仅能随 chunked 的最终块
+发送，调用方还应在 head 中声明相应 `Trailer` 字段。
+
+所有 composed operation 复用同一个绝对 deadline/`CancelToken`，不会按 partial
+read/write 重置预算。`close()` 幂等，在安全完成 TCP shutdown 或 TLS close-notify
+发送后立即释放 transport；析构只作不阻塞的资源后备，不能替代需要 TLS
+close-notify 的正常 close。listener accept loop、路由、中间件、认证、模型 schema、
+handler admission/batching 与优雅排空策略属于应用 owner，HTTP 因子不偷偷选择。
+
+HTTP/2 因子目前仍处于 `AUDITED` 重构轮，旧的 fixed-buffer
+`Http2ClientConn`/`Http2ServerConn` 形状不是稳定用户合同。不要以旧接口开始新的
+消费；本轮会在相同 `HttpTransport` 上提供有界并发 stream、增量 body、流控、
+RST/GOAWAY、统一 deadline/cancel 与 ALPN 检查后再签发使用指南。当前需要稳定
+HTTP 服务的代码应使用上面的 HTTP/1 streaming 路线，不要自行绕过到 nghttp2。
 
 ## 5. DNS、signal 与 Linux 专属快腿
 

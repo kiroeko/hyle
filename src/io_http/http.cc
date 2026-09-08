@@ -1,561 +1,274 @@
 #include "hyle/io/http.h"
 
+#include <algorithm>
 #include <cstring>
-#include <span>
+#include <limits>
+#include <new>
+#include <utility>
 
-#include "hyle/mem/region.h"
 #include "picohttpparser.h"
 
-// io-10 HTTP/1.1 integration layer. HYLE owns the io (co_await TcpStream over
-// the proactor/fiber) + this integration; protocol PARSING is borrowed from
-// vendored picohttpparser (phr_parse_request/response + phr_decode_chunked, a
-// pure zero-IO state machine). Reference for the loop structure: seastar
-// src/http/httpd.cc (read loop feeds the parser, body source separate from
-// header parse, _done flag governs keep-alive) -- see docs scope "HTTP
-// 最终结论".
-//
-// The co_await layers are FREE coroutines taking mem::AllocatorRef FIRST (a
-// member coroutine's promise operator new would bind `this`, not the
-// AllocatorRef -- the trap tls.cc/dns.cc/file.cc all hit). The public members
-// forward to them.
-
 namespace hyle::io {
-
-sched::Task<std::int64_t> http_transport_read(mem::AllocatorRef alloc,
-                                              HttpTransport &transport,
-                                              void *buffer,
-                                              std::uint32_t length) noexcept {
-#if defined(HYLE_IO_TLS)
-  if (transport.is_tls_) {
-    TransferResult result = co_await tls_read(
-        alloc, transport.tls_,
-        std::span<std::byte>(static_cast<std::byte *>(buffer), length));
-    co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
-  }
-#else
-  (void)alloc;
-#endif
-  auto result = co_await transport.tcp_.read_some(
-      std::span{static_cast<std::byte *>(buffer), length});
-  co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
-}
-
-sched::Task<std::int64_t> http_transport_write(mem::AllocatorRef alloc,
-                                               HttpTransport &transport,
-                                               const void *buffer,
-                                               std::uint32_t length) noexcept {
-#if defined(HYLE_IO_TLS)
-  if (transport.is_tls_) {
-    TransferResult result =
-        co_await tls_write(alloc, transport.tls_,
-                           std::span<const std::byte>(
-                               static_cast<const std::byte *>(buffer), length));
-    co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
-  }
-#else
-  (void)alloc;
-#endif
-  auto result = co_await transport.tcp_.write_some(
-      std::span{static_cast<const std::byte *>(buffer), length});
-  co_return result.ok() ? static_cast<std::int64_t>(result.bytes) : -1;
-}
-
-sched::Task<int> http_transport_shutdown(mem::AllocatorRef alloc,
-                                         HttpTransport &transport) noexcept {
-#if defined(HYLE_IO_TLS)
-  if (transport.is_tls_)
-    co_return (co_await tls_shutdown(alloc, transport.tls_)).ok() ? 0 : -1;
-#else
-  (void)alloc;
-#endif
-  co_return transport.tcp_.shutdown_write().ok() ? 0 : -1;
-}
-
 namespace {
 
-// ASCII case-insensitive byte compare (HTTP header names are case-insensitive).
-bool iequal(StringView a, StringView b) noexcept {
-  if (a.size() != b.size())
+constexpr std::uint32_t kInitialBufferBytes = 4096;
+
+template <class T> Result<T> http_failure(Status status) noexcept {
+  return make_unexpected(std::move(status));
+}
+
+bool ascii_iequal(StringView left, StringView right) noexcept {
+  if (left.size() != right.size())
     return false;
-  for (std::uint32_t i = 0; i < a.size(); ++i) {
-    char ca = a[i], cb = b[i];
-    if (ca >= 'A' && ca <= 'Z')
-      ca = static_cast<char>(ca - 'A' + 'a');
-    if (cb >= 'A' && cb <= 'Z')
-      cb = static_cast<char>(cb - 'A' + 'a');
-    if (ca != cb)
+  for (std::uint32_t i = 0; i < left.size(); ++i) {
+    unsigned char a = static_cast<unsigned char>(left[i]);
+    unsigned char b = static_cast<unsigned char>(right[i]);
+    if (a >= 'A' && a <= 'Z')
+      a = static_cast<unsigned char>(a + ('a' - 'A'));
+    if (b >= 'A' && b <= 'Z')
+      b = static_cast<unsigned char>(b + ('a' - 'A'));
+    if (a != b)
       return false;
   }
   return true;
 }
 
-bool contains_crlf(StringView s) noexcept {
-  for (std::uint32_t i = 0; i < s.size(); ++i)
-    if (s[i] == '\r' || s[i] == '\n')
-      return true;
+StringView trim_ows(StringView value) noexcept {
+  std::uint32_t first = 0;
+  std::uint32_t last = value.size();
+  while (first != last && (value[first] == ' ' || value[first] == '\t')) {
+    ++first;
+  }
+  while (last != first && (value[last - 1] == ' ' || value[last - 1] == '\t')) {
+    --last;
+  }
+  return value.substr(first, last - first);
+}
+
+bool header_has_token(HttpHeadersView headers, StringView name,
+                      StringView wanted) noexcept {
+  for (const HttpHeader &header : headers) {
+    if (!ascii_iequal(header.name, name))
+      continue;
+    StringView value = header.value;
+    std::uint32_t begin = 0;
+    while (begin <= value.size()) {
+      std::uint32_t comma = value.find(',', begin);
+      if (comma == StringView::npos)
+        comma = value.size();
+      if (ascii_iequal(trim_ows(value.substr(begin, comma - begin)), wanted)) {
+        return true;
+      }
+      if (comma == value.size())
+        break;
+      begin = comma + 1;
+    }
+  }
   return false;
 }
 
-bool valid_header_name(StringView s) noexcept {
-  if (s.empty())
-    return false;
-  // RFC token: reject controls, separators, space and non-ASCII. This is
-  // stricter than merely blocking CRLF and keeps emitted framing unambiguous.
-  static constexpr const char *kSeparators = "()<>@,;:\\\"/[]?={} \t";
-  for (std::uint32_t i = 0; i < s.size(); ++i) {
-    unsigned char c = static_cast<unsigned char>(s[i]);
-    if (c <= 0x20 || c >= 0x7f || std::strchr(kSeparators, c) != nullptr)
-      return false;
-  }
-  return true;
-}
-
-// Parse a non-negative decimal (Content-Length). Returns false on overflow / a
-// non-digit / empty. Bounds the value to guard against absurd lengths.
-bool parse_u64(StringView s, std::uint64_t &out) noexcept {
-  if (s.empty())
-    return false;
-  std::uint64_t v = 0;
-  for (std::uint32_t i = 0; i < s.size(); ++i) {
-    char c = s[i];
-    if (c < '0' || c > '9')
-      return false;
-    if (v > (0xFFFFFFFFFFFFFFFFull - 9) / 10)
-      return false; // overflow guard
-    v = v * 10 + static_cast<std::uint64_t>(c - '0');
-  }
-  out = v;
-  return true;
-}
-
-// A small growable byte buffer allocated via mem::AllocatorRef. Holds the read
-// data for one connection; persists across keep-alive requests (leftover
-// pipelined bytes stay at the front after consume()). Not a general container
-// -- just what the HTTP read loop needs (append at tail, consume from front).
-struct GrowBuf {
-  mem::AllocatorRef alloc;
-  char *data = nullptr;
-  std::uint32_t size = 0; // bytes of valid data
-  std::uint32_t cap = 0;
-
-  explicit GrowBuf(mem::AllocatorRef a) noexcept : alloc(a) {}
-  ~GrowBuf() {
-    if (data != nullptr)
-      alloc.deallocate(data, cap, alignof(std::max_align_t));
-  }
-  GrowBuf(const GrowBuf &) = delete;
-  GrowBuf &operator=(const GrowBuf &) = delete;
-
-  // Ensure room for `extra` more bytes past size. Returns false on OOM.
-  bool reserve(std::uint32_t want_total) noexcept {
-    if (want_total <= cap)
+bool contains_crlf(StringView value) noexcept {
+  for (char byte : value) {
+    if (byte == '\r' || byte == '\n')
       return true;
-    std::uint32_t ncap = cap == 0 ? 4096 : cap;
-    while (ncap < want_total) {
-      if (ncap >= 0x80000000u) {
-        ncap =
-            want_total; // next double would overflow u32 -> clamp to exact need
+  }
+  return false;
+}
+
+bool valid_header_name(StringView name) noexcept {
+  if (name.empty())
+    return false;
+  static constexpr char kSeparators[] = "()<>@,;:\\\"/[]?={} \t";
+  for (char byte : name) {
+    const unsigned char value = static_cast<unsigned char>(byte);
+    if (value <= 0x20 || value >= 0x7f ||
+        std::strchr(kSeparators, value) != nullptr) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool valid_header_value(StringView value) noexcept {
+  for (char byte : value) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    if (ch == '\r' || ch == '\n' || ch == 0x7f || (ch < 0x20 && ch != '\t')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool valid_request_target(StringView target) noexcept {
+  if (target.empty() || contains_crlf(target))
+    return false;
+  for (char byte : target) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    if (ch <= 0x20 || ch == 0x7f)
+      return false;
+  }
+  return true;
+}
+
+bool parse_u64(StringView text, std::uint64_t &output) noexcept {
+  if (text.empty())
+    return false;
+  std::uint64_t value = 0;
+  for (char byte : text) {
+    if (byte < '0' || byte > '9')
+      return false;
+    const std::uint64_t digit = static_cast<std::uint64_t>(byte - '0');
+    if (value > ((std::numeric_limits<std::uint64_t>::max)() - digit) / 10) {
+      return false;
+    }
+    value = value * 10 + digit;
+  }
+  output = value;
+  return true;
+}
+
+struct GrowBuffer {
+  explicit GrowBuffer(mem::AllocatorRef source) noexcept : allocator(source) {}
+  ~GrowBuffer() {
+    if (data != nullptr) {
+      allocator.deallocate(data, capacity, alignof(std::max_align_t));
+    }
+  }
+  GrowBuffer(const GrowBuffer &) = delete;
+  GrowBuffer &operator=(const GrowBuffer &) = delete;
+
+  bool reserve(std::size_t requested) noexcept {
+    if (requested <= capacity)
+      return true;
+    if (requested > (std::numeric_limits<std::uint32_t>::max)())
+      return false;
+    std::size_t next = capacity == 0 ? kInitialBufferBytes : capacity;
+    while (next < requested) {
+      if (next > (std::numeric_limits<std::uint32_t>::max)() / 2) {
+        next = requested;
         break;
       }
-      ncap *= 2;
+      next *= 2;
     }
-    char *np = static_cast<char *>(
-        alloc.reallocate(data, cap, ncap, alignof(std::max_align_t)));
-    if (np == nullptr)
+    void *replacement =
+        allocator.reallocate(data, capacity, next, alignof(std::max_align_t));
+    if (replacement == nullptr)
       return false;
-    data = np;
-    cap = ncap;
+    data = static_cast<char *>(replacement);
+    capacity = static_cast<std::uint32_t>(next);
     return true;
   }
 
-  // Drop the first `n` bytes (shift the tail down). Keeps unconsumed pipelined
-  // bytes at the front for the next request.
-  void consume(std::uint32_t n) noexcept {
-    if (n >= size) {
+  bool append(const void *source, std::size_t count) noexcept {
+    if (count == 0)
+      return true;
+    if (count > (std::numeric_limits<std::uint32_t>::max)() - size ||
+        !reserve(static_cast<std::size_t>(size) + count)) {
+      return false;
+    }
+    std::memcpy(data + size, source, count);
+    size += static_cast<std::uint32_t>(count);
+    return true;
+  }
+
+  bool append(StringView source) noexcept {
+    return append(source.data(), source.size());
+  }
+
+  void consume(std::size_t count) noexcept {
+    if (count >= size) {
       size = 0;
       return;
     }
-    std::memmove(data, data + n, size - n);
-    size -= n;
+    std::memmove(data, data + count, size - count);
+    size -= static_cast<std::uint32_t>(count);
   }
+
+  void clear() noexcept { size = 0; }
+
+  void release_if_empty_above(std::size_t retained_bytes) noexcept {
+    if (size == 0 && capacity > retained_bytes)
+      release();
+  }
+
+  void release() noexcept {
+    if (data != nullptr) {
+      allocator.deallocate(data, capacity, alignof(std::max_align_t));
+    }
+    data = nullptr;
+    size = 0;
+    capacity = 0;
+  }
+
+  mem::AllocatorRef allocator;
+  char *data = nullptr;
+  std::uint32_t size = 0;
+  std::uint32_t capacity = 0;
 };
 
-} // namespace
-
-// ---- HttpServerConn::Impl --------------------------------------------------
-// Per-connection state that outlives individual requests (heap, via
-// AllocatorRef): the growable read buffer + the parser scratch (header array +
-// the last parsed request views). Kept in an Impl so http.h needn't include
-// picohttpparser.
-struct HttpServerConn::Impl {
-  GrowBuf buf;  // connection read buffer (raw bytes off the socket)
-  GrowBuf head; // stable COPY of the current request's head bytes (views point
-                // here)
-  GrowBuf body; // decoded/collected body storage (views point here)
-  phr_header headers[kHttpMaxHeaders];
-  HttpRequest req; // reused each next_request(); views point into head/body
-  explicit Impl(mem::AllocatorRef a) noexcept : buf(a), head(a), body(a) {}
-};
-
-// ---- HttpRequest accessors -------------------------------------------------
-
-StringView HttpRequest::header_name(std::size_t i) const noexcept {
-  if (i >= header_count_)
-    return {};
-  const auto &h = headers_[i];
-  return StringView{h.name, static_cast<std::uint32_t>(h.name_len)};
+bool put(GrowBuffer &output, const char *bytes, std::size_t size) noexcept {
+  return output.append(bytes, size);
 }
-StringView HttpRequest::header_value(std::size_t i) const noexcept {
-  if (i >= header_count_)
-    return {};
-  const auto &h = headers_[i];
-  return StringView{h.value, static_cast<std::uint32_t>(h.value_len)};
+
+bool put(GrowBuffer &output, StringView value) noexcept {
+  return output.append(value);
 }
-StringView HttpRequest::header(StringView name) const noexcept {
-  for (std::size_t i = 0; i < header_count_; ++i) {
-    if (iequal(header_name(i), name))
-      return header_value(i);
+
+bool put_cstr(GrowBuffer &output, const char *value) noexcept {
+  return put(output, value, std::strlen(value));
+}
+
+bool put_u64(GrowBuffer &output, std::uint64_t value) noexcept {
+  char digits[20];
+  std::size_t begin = sizeof(digits);
+  do {
+    digits[--begin] = static_cast<char>('0' + (value % 10));
+    value /= 10;
+  } while (value != 0);
+  return put(output, digits + begin, sizeof(digits) - begin);
+}
+
+std::size_t format_hex(char *destination, std::size_t capacity,
+                       std::uint64_t value) noexcept {
+  static constexpr char kHex[] = "0123456789abcdef";
+  char reverse[16];
+  std::size_t count = 0;
+  do {
+    reverse[count++] = kHex[value & 0xfu];
+    value >>= 4;
+  } while (value != 0);
+  if (count > capacity)
+    return 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    destination[i] = reverse[count - i - 1];
   }
-  return {};
+  return count;
 }
 
-// ---- HttpResponse ----------------------------------------------------------
-
-bool HttpResponse::add_header(StringView name, StringView value) noexcept {
-  if (h_count_ >= kMaxRespHeaders)
-    return false;
-  h_names_[h_count_] = name;
-  h_vals_[h_count_] = value;
-  ++h_count_;
-  return true;
-}
-
-// ---- HttpResponseView accessors --------------------------------------------
-
-StringView HttpResponseView::header_name(std::size_t i) const noexcept {
-  if (i >= header_count_)
-    return {};
-  const auto &h = headers_[i];
-  return StringView{h.name, static_cast<std::uint32_t>(h.name_len)};
-}
-StringView HttpResponseView::header_value(std::size_t i) const noexcept {
-  if (i >= header_count_)
-    return {};
-  const auto &h = headers_[i];
-  return StringView{h.value, static_cast<std::uint32_t>(h.value_len)};
-}
-StringView HttpResponseView::header(StringView name) const noexcept {
-  for (std::size_t i = 0; i < header_count_; ++i) {
-    if (iequal(header_name(i), name))
-      return header_value(i);
-  }
-  return {};
-}
-
-// ---- server: read helpers (free coroutines, AllocatorRef-first)
-// ---------------
-namespace {
-
-// co_await one read into buf's tail; grow first. Returns bytes read (0 = peer
-// closed, <0 = error). Appends to buf.size on success.
-sched::Task<std::int64_t> read_more(mem::AllocatorRef alloc, GrowBuf &buf,
-                                    HttpTransport &transport) noexcept {
-  if (!buf.reserve(buf.size + 4096))
-    co_return -1;
-  std::int64_t n = co_await http_transport_read(
-      alloc, transport, buf.data + buf.size, buf.cap - buf.size);
-  if (n > 0)
-    buf.size += static_cast<std::uint32_t>(n);
-  co_return n;
-}
-
-// Given headers already parsed (header block consumed from the FRONT is the
-// caller's job), read the remaining body per framing into buf so that the body
-// bytes are contiguous starting at buf.data[0..body_len]. Returns body length,
-// or UINT64_MAX on error / too large. `header_len` = bytes of the request head
-// still at the front of buf (consumed after we know body size). For
-// Content-Length we ensure buf has header_len+CL bytes; for chunked we decode
-// in place. NOTE: on success buf's front `header_len` bytes are the head
-// (caller consumes), and body occupies buf.data[header_len ..
-// header_len+body_len).
-
-// Read exactly `need` total body bytes (already have `have`) appended after the
-// head. Returns false on eof/err.
-sched::Task<bool> fill_body(mem::AllocatorRef alloc, GrowBuf &buf,
-                            HttpTransport &transport, std::uint32_t body_off,
-                            std::uint64_t need) noexcept {
-  while (buf.size - body_off < need) {
-    std::int64_t n = co_await read_more(alloc, buf, transport);
-    if (n <= 0)
-      co_return false;
-  }
-  co_return true;
-}
-
-// Decode a chunked body into `out` (a separate GrowBuf holding the DECODED
-// bytes). On entry buf.data[0..buf.size) is raw chunked-encoded bytes read so
-// far (the head was already consumed by the caller); more may need reading.
-//
-// phr_decode_chunked rewrites its input region IN PLACE (stripping chunk
-// framing), keeping cross-call state in `dec`. The correct incremental use is
-// to feed it the bytes we have, copy out the decoded prefix, and on -2
-// (incomplete) reset the read buffer and read fresh -- the decoder itself
-// remembers where it is. Feeding it the same already-compacted bytes twice was
-// the earlier bug (Linux delivered the whole body in one read and hid it;
-// Windows IOCP split it across reads and tripped it).
-//
-// Returns decoded byte count on success (leaving trailing pipelined bytes at
-// the front of buf), or UINT64_MAX on error.
-sched::Task<std::uint64_t> decode_chunked(mem::AllocatorRef alloc, GrowBuf &buf,
-                                          GrowBuf &out,
-                                          HttpTransport &transport) noexcept {
-  phr_chunked_decoder dec;
-  std::memset(&dec, 0, sizeof(dec));
-  // Consume the trailer-part + the terminating CRLF of the chunked body.
-  // WITHOUT this, phr_decode_chunked Completes right after the last-chunk's
-  // "0\r\n" and returns the final "\r\n" (the CRLF after the empty trailer, RFC
-  // 7230 §4.1) as "undecoded octets" -- which we would then mistake for the
-  // NEXT pipelined message, corrupting the following keep-alive
-  // request/response (phr_parse_* then chokes on the spurious leading "\r\n").
-  // With consume_trailer=1 the decoder eats the trailer + final CRLF, so rv is
-  // 0 for a lone response and the true byte count only when a real pipelined
-  // message actually follows. (Trailers are discarded -- HYLE exposes none;
-  // better than breaking keep-alive.) Root cause of the multi-chunk keep-alive
-  // bug found 2026-07-05.
-  dec.consume_trailer = 1;
-  for (;;) {
-    if (buf.size > 0) {
-      std::size_t rsz = buf.size;
-      ssize_t rv = phr_decode_chunked(&dec, buf.data, &rsz);
-      // buf.data[0..rsz) is now decoded data; append it to out.
-      if (rsz > 0) {
-        // Apply the body cap BEFORE narrowing/adding. In particular, a complete
-        // final chunk returns rv>=0 below, so a check only on the "need more"
-        // branch lets an oversized body bypass the cap in one packet.
-        if (rsz > kHttpMaxBodyBytes - out.size || rsz > UINT32_MAX - out.size)
-          co_return UINT64_MAX;
-        if (!out.reserve(out.size + static_cast<std::uint32_t>(rsz)))
-          co_return UINT64_MAX;
-        std::memcpy(out.data + out.size, buf.data, rsz);
-        out.size += static_cast<std::uint32_t>(rsz);
-      }
-      if (rv >= 0) {
-        // Done. `rv` trailing octets (next pipelined message) sit at
-        // buf.data[rsz].
-        if (rv > 0)
-          std::memmove(buf.data, buf.data + rsz, static_cast<std::size_t>(rv));
-        buf.size = static_cast<std::uint32_t>(rv);
-        co_return out.size;
-      }
-      if (rv == -1)
-        co_return UINT64_MAX; // malformed chunk
-      // rv == -2: the decoder consumed everything we gave it; read fresh bytes.
-      buf.size = 0;
-      if (out.size > kHttpMaxBodyBytes)
-        co_return UINT64_MAX;
-    }
-    std::int64_t n = co_await read_more(alloc, buf, transport);
-    if (n <= 0)
-      co_return UINT64_MAX; // eof mid-body
-  }
-}
-
-} // namespace
-
-// ---- HttpServerConn lifetime -----------------------------------------------
-
-HttpServerConn::HttpServerConn(mem::AllocatorRef alloc,
-                               TcpStream stream) noexcept
-    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
-  impl_ = alloc.allocate_n<Impl>(1);
-  if (impl_ != nullptr)
-    new (impl_) Impl(alloc);
-}
-#if defined(HYLE_IO_TLS)
-HttpServerConn::HttpServerConn(mem::AllocatorRef alloc,
-                               TlsStream stream) noexcept
-    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
-  impl_ = alloc.allocate_n<Impl>(1);
-  if (impl_ != nullptr)
-    new (impl_) Impl(alloc);
-}
-#endif
-HttpServerConn::~HttpServerConn() {
-  if (impl_ != nullptr) {
-    impl_->~Impl();
-    alloc_.deallocate_n(impl_, 1);
-  }
-}
-HttpServerConn::HttpServerConn(HttpServerConn &&o) noexcept
-    : impl_(std::exchange(o.impl_, nullptr)),
-      transport_(std::move(o.transport_)), alloc_(o.alloc_) {}
-HttpServerConn &HttpServerConn::operator=(HttpServerConn &&o) noexcept {
-  if (this != &o) {
-    if (impl_ != nullptr) {
-      impl_->~Impl();
-      alloc_.deallocate_n(impl_, 1);
-    }
-    impl_ = std::exchange(o.impl_, nullptr);
-    transport_ = std::move(o.transport_);
-    alloc_ = o.alloc_;
-  }
-  return *this;
-}
-
-// ---- server: next_request --------------------------------------------------
-
-sched::Task<HttpRequest *> http_server_next(mem::AllocatorRef alloc,
-                                            HttpServerConn &c) noexcept {
-  HttpServerConn::Impl &im = *c.impl_;
-  GrowBuf &buf = im.buf;
-  // Leftover pipelined bytes from a previous request are at the front of buf.
-  const char *method;
-  const char *path;
-  std::size_t method_len, path_len, num_headers;
-  int minor_version;
-  int pret;
-  // Phase 1: read until the request HEAD is complete.
-  std::uint32_t last_len = 0;
-  for (;;) {
-    if (buf.size > 0) {
-      num_headers = kHttpMaxHeaders;
-      pret = phr_parse_request(buf.data, buf.size, &method, &method_len, &path,
-                               &path_len, &minor_version, im.headers,
-                               &num_headers, last_len);
-      if (pret > 0)
-        break; // full head; pret = head byte count
-      if (pret == -1)
-        co_return nullptr; // malformed
-      last_len = buf.size; // pret == -2: incomplete
-      if (buf.size >= kHttpMaxHeaderBytes)
-        co_return nullptr; // DoS guard
-    }
-    std::int64_t n = co_await read_more(alloc, buf, c.transport_);
-    if (n <= 0)
-      co_return nullptr; // clean close or error before a full request
-  }
-  const std::uint32_t head_len = static_cast<std::uint32_t>(pret);
-
-  // Copy the head bytes into stable storage, then relocate parser views by
-  // offset. Re-parsing the same head here used to double the parser cost on
-  // every message.
-  im.head.size = 0;
-  if (!im.head.reserve(head_len))
-    co_return nullptr;
-  std::memcpy(im.head.data, buf.data, head_len);
-  im.head.size = head_len;
-  method = im.head.data + (method - buf.data);
-  path = im.head.data + (path - buf.data);
-  for (std::size_t i = 0; i < num_headers; ++i) {
-    im.headers[i].name = im.head.data + (im.headers[i].name - buf.data);
-    im.headers[i].value = im.head.data + (im.headers[i].value - buf.data);
-  }
-
-  HttpRequest &r = im.req;
-  r = HttpRequest{};
-  r.method_ = StringView{method, static_cast<std::uint32_t>(method_len)};
-  r.target_ = StringView{path, static_cast<std::uint32_t>(path_len)};
-  r.minor_version_ = minor_version;
-  r.headers_ = im.headers;
-  r.header_count_ = num_headers;
-  std::uint32_t q = r.target_.find('?');
-  if (q == StringView::npos) {
-    r.path_ = r.target_;
-  } else {
-    r.path_ = r.target_.substr(0, q);
-    r.query_ = r.target_.substr(q + 1, r.target_.size() - q - 1);
-  }
-  StringView conn = r.header("connection");
-  if (minor_version >= 1) {
-    r.keep_alive_ = !iequal(conn, "close");
-  } else {
-    r.keep_alive_ = iequal(conn, "keep-alive");
-  }
-
-  // Body framing. chunked precedence over Content-Length (RFC). Body goes into
-  // im.body (stable) so the body view is also safe against buf moves.
-  StringView te = r.header("transfer-encoding");
-  StringView cl = r.header("content-length");
-  // Request-smuggling defense (RFC 7230 §3.3.3). A message that is ambiguous
-  // about its body length is a desync/smuggling vector when HYLE sits behind or
-  // in front of another HTTP actor that resolves the ambiguity differently.
-  // Reject (close the connection -> nullptr) rather than guess:
-  //  - BOTH Transfer-Encoding and Content-Length present: the classic TE.CL /
-  //  CL.TE
-  //    smuggling pair. RFC says TE overrides CL, but a CL-honoring hop would
-  //    frame it differently -> refuse.
-  //  - Transfer-Encoding present but not EXACTLY "chunked" (e.g. "gzip,
-  //  chunked",
-  //    "chunked, chunked", "identity", or an obfuscated "chunked "): we only
-  //    decode a single chunked layer; anything else is unframeable here, and
-  //    lax matching is exactly how smuggling slips through. Only bare "chunked"
-  //    is accepted.
-  //  - Duplicate Content-Length headers with CONFLICTING values (RFC 7230
-  //  §3.3.3
-  //    rule: multiple CL with different values is unrecoverable): scan all
-  //    headers, reject if two "content-length" values differ.
-  if (!te.empty()) {
-    if (!cl.empty())
-      co_return nullptr; // TE + CL both present -> reject
-    if (!iequal(te, "chunked"))
-      co_return nullptr; // non-bare-chunked TE -> reject
-  } else {
-    StringView seen_cl{};
-    for (std::size_t i = 0; i < r.header_count_; ++i) {
-      if (iequal(r.header_name(i), "content-length")) {
-        StringView v = r.header_value(i);
-        if (!seen_cl.empty() && !(seen_cl == v))
-          co_return nullptr; // conflicting
-        seen_cl = v;
-      }
-    }
-  }
-  buf.consume(head_len); // head is safely copied; drop it from the read buffer
-  im.body.size = 0;
-  if (!te.empty()) { // == chunked (guarded above)
-    std::uint64_t dn =
-        co_await decode_chunked(alloc, buf, im.body, c.transport_);
-    if (dn == UINT64_MAX)
-      co_return nullptr;
-    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(dn)};
-  } else if (!cl.empty()) {
-    std::uint64_t body_len = 0;
-    if (!parse_u64(cl, body_len))
-      co_return nullptr;
-    if (body_len > kHttpMaxBodyBytes)
-      co_return nullptr;
-    // Pull the body into buf (from index 0 now), then copy it into im.body so
-    // the view survives the next request's buf reuse.
-    if (!(co_await fill_body(alloc, buf, c.transport_, 0, body_len)))
-      co_return nullptr;
-    if (!im.body.reserve(static_cast<std::uint32_t>(body_len)))
-      co_return nullptr;
-    std::memcpy(im.body.data, buf.data, body_len);
-    im.body.size = static_cast<std::uint32_t>(body_len);
-    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(body_len)};
-    buf.consume(
-        static_cast<std::uint32_t>(body_len)); // leftover pipelined stays
-  } else {
-    r.body_ = StringView{}; // no body (GET/DELETE)
-  }
-  co_return &r;
-}
-
-sched::Task<HttpRequest *> HttpServerConn::next_request() noexcept {
-  return http_server_next(alloc_, *this);
-}
-
-// ---- server: send_response -------------------------------------------------
-namespace {
-
-const char *reason_phrase(int code) noexcept {
-  switch (code) {
+const char *reason_phrase(int status) noexcept {
+  switch (status) {
   case 200:
     return "OK";
   case 201:
     return "Created";
+  case 202:
+    return "Accepted";
   case 204:
     return "No Content";
+  case 206:
+    return "Partial Content";
+  case 300:
+    return "Multiple Choices";
+  case 301:
+    return "Moved Permanently";
+  case 302:
+    return "Found";
+  case 304:
+    return "Not Modified";
+  case 307:
+    return "Temporary Redirect";
+  case 308:
+    return "Permanent Redirect";
   case 400:
     return "Bad Request";
   case 401:
@@ -566,470 +279,2486 @@ const char *reason_phrase(int code) noexcept {
     return "Not Found";
   case 405:
     return "Method Not Allowed";
+  case 408:
+    return "Request Timeout";
+  case 409:
+    return "Conflict";
+  case 411:
+    return "Length Required";
   case 413:
     return "Payload Too Large";
+  case 417:
+    return "Expectation Failed";
   case 429:
     return "Too Many Requests";
   case 500:
     return "Internal Server Error";
+  case 501:
+    return "Not Implemented";
+  case 502:
+    return "Bad Gateway";
   case 503:
     return "Service Unavailable";
+  case 504:
+    return "Gateway Timeout";
   default:
-    return "OK";
+    return "";
   }
 }
 
-// Append raw bytes / a decimal / a StringView to a GrowBuf (out framing
-// buffer).
-bool put(GrowBuf &b, const char *s, std::uint32_t n) noexcept {
-  if (!b.reserve(b.size + n))
-    return false;
-  std::memcpy(b.data + b.size, s, n);
-  b.size += n;
-  return true;
-}
-bool put(GrowBuf &b, StringView s) noexcept {
-  return put(b, s.data(), s.size());
-}
-bool put_cstr(GrowBuf &b, const char *s) noexcept {
-  return put(b, s, static_cast<std::uint32_t>(std::strlen(s)));
-}
-bool put_u64(GrowBuf &b, std::uint64_t v) noexcept {
-  char tmp[20];
-  int i = 20;
-  if (v == 0)
-    tmp[--i] = '0';
-  while (v > 0) {
-    tmp[--i] = static_cast<char>('0' + v % 10);
-    v /= 10;
-  }
-  return put(b, tmp + i, static_cast<std::uint32_t>(20 - i));
-}
-bool put_hex(GrowBuf &b, std::uint64_t v) noexcept {
-  char tmp[16];
-  int i = 16;
-  const char *hd = "0123456789abcdef";
-  if (v == 0)
-    tmp[--i] = '0';
-  while (v > 0) {
-    tmp[--i] = hd[v & 0xF];
-    v >>= 4;
-  }
-  return put(b, tmp + i, static_cast<std::uint32_t>(16 - i));
+const char *version_text(HttpVersion version) noexcept {
+  return version == HttpVersion::kHttp10 ? "HTTP/1.0" : "HTTP/1.1";
 }
 
-// co_await-write the whole [p, p+n) to the stream (loop over partial writes).
-sched::Task<bool> write_all(mem::AllocatorRef alloc, HttpTransport &transport,
-                            const char *p, std::uint32_t n) noexcept {
-  std::uint32_t off = 0;
-  while (off < n) {
-    std::int64_t w =
-        co_await http_transport_write(alloc, transport, p + off, n - off);
-    if (w <= 0)
-      co_return false;
-    off += static_cast<std::uint32_t>(w);
+Status validate_limits(mem::AllocatorRef allocator,
+                       const HttpTransport &transport,
+                       const HttpLimits &limits) noexcept {
+  if (!allocator.valid()) {
+    return Status::InvalidArgument("HTTP requires a valid allocator");
   }
-  co_return true;
+  if (!transport.valid()) {
+    return Status::InvalidArgument("HTTP requires a connected transport");
+  }
+  if (limits.max_head_bytes < 4 ||
+      limits.max_head_bytes > (std::numeric_limits<std::uint32_t>::max)()) {
+    return Status::InvalidArgument(
+        "HTTP max_head_bytes must fit the parser buffer");
+  }
+  if (limits.max_header_count == 0 ||
+      limits.max_header_count > (std::numeric_limits<std::uint32_t>::max)()) {
+    return Status::InvalidArgument(
+        "HTTP max_header_count must be nonzero and bounded");
+  }
+  if (limits.read_chunk_bytes == 0 ||
+      limits.read_chunk_bytes > (std::numeric_limits<std::uint32_t>::max)()) {
+    return Status::InvalidArgument(
+        "HTTP read_chunk_bytes must be nonzero and bounded");
+  }
+  if (limits.max_retained_body_bytes >
+      (std::numeric_limits<std::uint32_t>::max)()) {
+    return Status::InvalidArgument(
+        "HTTP max_retained_body_bytes must fit the body buffer");
+  }
+  if (limits.max_retained_head_bytes >
+      (std::numeric_limits<std::uint32_t>::max)()) {
+    return Status::InvalidArgument(
+        "HTTP max_retained_head_bytes must fit the parser buffer");
+  }
+  if (limits.expect_continue_wait < time::Duration::zero()) {
+    return Status::InvalidArgument(
+        "HTTP expect_continue_wait must be nonnegative");
+  }
+  return Status{};
+}
+
+struct HeaderStorage {
+  HeaderStorage(mem::AllocatorRef source, std::size_t maximum,
+                std::size_t retained_head_bytes) noexcept
+      : allocator(source), head(source), capacity(maximum),
+        max_retained_head_bytes(retained_head_bytes) {
+    raw = allocator.allocate_n<phr_header>(capacity);
+    headers = allocator.allocate_n<HttpHeader>(capacity);
+    if (raw == nullptr || headers == nullptr)
+      reset_allocations();
+  }
+  ~HeaderStorage() { reset_allocations(); }
+  HeaderStorage(const HeaderStorage &) = delete;
+  HeaderStorage &operator=(const HeaderStorage &) = delete;
+
+  bool valid() const noexcept {
+    return capacity != 0 && raw != nullptr && headers != nullptr;
+  }
+
+  void reset_message() noexcept {
+    head.clear();
+    head.release_if_empty_above(max_retained_head_bytes);
+    count = 0;
+  }
+
+  Status capture(const char *source_base, std::size_t head_bytes,
+                 std::size_t parsed_count) noexcept {
+    if (head_bytes > (std::numeric_limits<std::uint32_t>::max)() ||
+        parsed_count > capacity) {
+      return Status::ResourceExhausted("HTTP header limits exceeded");
+    }
+    head.clear();
+    if (!head.append(source_base, head_bytes)) {
+      return Status::ResourceExhausted(
+          "HTTP could not allocate stable header storage");
+    }
+    for (std::size_t i = 0; i < parsed_count; ++i) {
+      if (raw[i].name == nullptr) {
+        return Status::InvalidArgument(
+            "obsolete folded HTTP header is not accepted");
+      }
+      const std::ptrdiff_t name_offset = raw[i].name - source_base;
+      const std::ptrdiff_t value_offset = raw[i].value - source_base;
+      if (name_offset < 0 || value_offset < 0 ||
+          static_cast<std::size_t>(name_offset) > head_bytes ||
+          static_cast<std::size_t>(value_offset) > head_bytes ||
+          raw[i].name_len >
+              head_bytes - static_cast<std::size_t>(name_offset) ||
+          raw[i].value_len >
+              head_bytes - static_cast<std::size_t>(value_offset)) {
+        return Status::Internal("HTTP parser returned an invalid header view");
+      }
+      raw[i].name = head.data + name_offset;
+      raw[i].value = head.data + value_offset;
+      headers[i] = HttpHeader{
+          StringView(raw[i].name, static_cast<std::uint32_t>(raw[i].name_len)),
+          StringView(raw[i].value,
+                     static_cast<std::uint32_t>(raw[i].value_len))};
+    }
+    count = parsed_count;
+    return Status{};
+  }
+
+  HttpHeadersView view() const noexcept {
+    return HttpHeadersView(std::span<const HttpHeader>(headers, count));
+  }
+
+private:
+  void reset_allocations() noexcept {
+    if (raw != nullptr)
+      allocator.deallocate_n(raw, capacity);
+    if (headers != nullptr)
+      allocator.deallocate_n(headers, capacity);
+    raw = nullptr;
+    headers = nullptr;
+  }
+
+public:
+  mem::AllocatorRef allocator;
+  GrowBuffer head;
+  phr_header *raw = nullptr;
+  HttpHeader *headers = nullptr;
+  std::size_t capacity = 0;
+  std::size_t count = 0;
+  std::size_t max_retained_head_bytes = 0;
+};
+
+enum class BodyFraming : std::uint8_t {
+  kNone,
+  kContentLength,
+  kChunked,
+  kCloseDelimited,
+};
+
+enum class WriteFraming : std::uint8_t {
+  kFixed,
+  kChunked,
+  kCloseDelimited,
+  kSuppressed,
+};
+
+enum class ConnectionKind : std::uint8_t {
+  kServer,
+  kClient,
+};
+
+struct Framing {
+  BodyFraming kind = BodyFraming::kNone;
+  std::uint64_t length = 0;
+};
+
+Status framing_protocol_error(bool request, const char *message) noexcept {
+  return request ? Status::InvalidArgument(message) : Status::DataLoss(message);
+}
+
+Result<Framing> inspect_framing(HttpHeadersView headers,
+                                std::uint64_t body_limit,
+                                bool request) noexcept {
+  std::optional<StringView> transfer_encoding;
+  std::optional<StringView> content_length;
+  for (const HttpHeader &header : headers) {
+    if (ascii_iequal(header.name, "transfer-encoding")) {
+      if (transfer_encoding.has_value()) {
+        return http_failure<Framing>(framing_protocol_error(
+            request, "multiple Transfer-Encoding fields are ambiguous"));
+      }
+      transfer_encoding = trim_ows(header.value);
+      continue;
+    }
+    if (ascii_iequal(header.name, "content-length")) {
+      const StringView value = trim_ows(header.value);
+      if (content_length.has_value() && !ascii_iequal(*content_length, value)) {
+        return http_failure<Framing>(framing_protocol_error(
+            request, "conflicting Content-Length fields are ambiguous"));
+      }
+      content_length = value;
+    }
+  }
+
+  if (transfer_encoding.has_value()) {
+    if (content_length.has_value()) {
+      return http_failure<Framing>(framing_protocol_error(
+          request, "Transfer-Encoding and Content-Length cannot coexist"));
+    }
+    if (!ascii_iequal(*transfer_encoding, "chunked")) {
+      return http_failure<Framing>(framing_protocol_error(
+          request, "HTTP supports only one terminal chunked transfer coding"));
+    }
+    return Framing{BodyFraming::kChunked, 0};
+  }
+
+  if (content_length.has_value()) {
+    std::uint64_t length = 0;
+    if (!parse_u64(*content_length, length)) {
+      return http_failure<Framing>(framing_protocol_error(
+          request, "Content-Length is not a valid decimal"));
+    }
+    if (length > body_limit) {
+      return http_failure<Framing>(
+          Status::ResourceExhausted("HTTP body exceeds max_body_bytes"));
+    }
+    return Framing{BodyFraming::kContentLength, length};
+  }
+
+  return Framing{request ? BodyFraming::kNone : BodyFraming::kCloseDelimited,
+                 0};
+}
+
+Status validate_headers(std::span<const HttpHeader> headers,
+                        bool request) noexcept {
+  for (const HttpHeader &header : headers) {
+    if (!valid_header_name(header.name) || !valid_header_value(header.value)) {
+      return Status::InvalidArgument("HTTP header contains invalid bytes");
+    }
+    if (ascii_iequal(header.name, "content-length") ||
+        ascii_iequal(header.name, "transfer-encoding") ||
+        ascii_iequal(header.name, "connection") ||
+        (request && (ascii_iequal(header.name, "host") ||
+                     ascii_iequal(header.name, "expect")))) {
+      return Status::InvalidArgument(
+          "HTTP framing header is owned by the message head");
+    }
+  }
+  return Status{};
+}
+
+Status validate_trailers(std::span<const HttpHeader> trailers) noexcept {
+  for (const HttpHeader &trailer : trailers) {
+    if (!valid_header_name(trailer.name) ||
+        !valid_header_value(trailer.value)) {
+      return Status::InvalidArgument("HTTP trailer contains invalid bytes");
+    }
+    if (ascii_iequal(trailer.name, "content-length") ||
+        ascii_iequal(trailer.name, "transfer-encoding") ||
+        ascii_iequal(trailer.name, "host") ||
+        ascii_iequal(trailer.name, "connection") ||
+        ascii_iequal(trailer.name, "trailer") ||
+        ascii_iequal(trailer.name, "te")) {
+      return Status::InvalidArgument(
+          "HTTP trailer uses a forbidden framing field");
+    }
+  }
+  return Status{};
 }
 
 } // namespace
 
-sched::Task<bool> http_server_send(mem::AllocatorRef alloc, HttpServerConn &c,
-                                   const HttpResponse &resp) noexcept {
-  if (resp.status() < 100 || resp.status() > 999 || contains_crlf(resp.reason_))
-    co_return false;
-  if (resp.streaming() && resp.next_ == nullptr)
-    co_return false;
-  for (std::size_t i = 0; i < resp.h_count_; ++i) {
-    if (!valid_header_name(resp.h_names_[i]) || contains_crlf(resp.h_vals_[i]))
-      co_return false;
-    // Framing is owned by this function. Accepting caller-supplied framing and
-    // then appending our own CL/TE creates ambiguous duplicate headers.
-    if (iequal(resp.h_names_[i], "content-length") ||
-        iequal(resp.h_names_[i], "transfer-encoding"))
-      co_return false;
+std::optional<StringView>
+HttpHeadersView::find(StringView name) const noexcept {
+  for (const HttpHeader &header : headers_) {
+    if (ascii_iequal(header.name, name))
+      return header.value;
   }
-  GrowBuf out(alloc);
-  // Status line.
-  if (!put_cstr(out, "HTTP/1.1 "))
-    co_return false;
-  if (!put_u64(out, static_cast<std::uint64_t>(resp.status())))
-    co_return false;
-  if (!put(out, " ", 1))
-    co_return false;
-  StringView reason = resp.reason_;
-  if (!reason.empty()) {
-    if (!put(out, reason))
-      co_return false;
-  } else {
-    if (!put_cstr(out, reason_phrase(resp.status())))
-      co_return false;
-  }
-  if (!put_cstr(out, "\r\n"))
-    co_return false;
-  // Caller headers.
-  for (std::size_t i = 0; i < resp.h_count_; ++i) {
-    if (!put(out, resp.h_names_[i]) || !put_cstr(out, ": ") ||
-        !put(out, resp.h_vals_[i]) || !put_cstr(out, "\r\n"))
-      co_return false;
-  }
-  // Framing header: Content-Length for a fixed body, chunked for a stream.
-  if (resp.streaming()) {
-    if (!put_cstr(out, "Transfer-Encoding: chunked\r\n"))
-      co_return false;
-  } else {
-    if (!put_cstr(out, "Content-Length: "))
-      co_return false;
-    if (!put_u64(out, resp.body_.size()))
-      co_return false;
-    if (!put_cstr(out, "\r\n"))
-      co_return false;
-  }
-  if (!put_cstr(out, "\r\n"))
-    co_return false; // end of headers
-
-  // Send head (+ fixed body appended for the common small-response case).
-  if (!resp.streaming()) {
-    if (!resp.body_.empty()) {
-      if (!put(out, resp.body_))
-        co_return false;
-    }
-    co_return co_await write_all(alloc, c.transport_, out.data, out.size);
-  }
-
-  // Streaming: send the head, then pump chunks until more==false. Reuse `out`
-  // (its head bytes are already written) as the per-chunk frame buffer: reset
-  // size=0 each iteration so the capacity grown for the head/first chunk is
-  // kept and reused -- no per-chunk allocation (was `GrowBuf frame(alloc)`
-  // inside the loop = one alloc+free every chunk, hot for token-stream/SSE
-  // responses).
-  if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
-    co_return false;
-  for (;;) {
-    StreamChunk ch = resp.next_(resp.stream_ctx_);
-    if (ch.len > 0) {
-      // chunk = <hex len>\r\n<data>\r\n
-      out.size =
-          0; // reuse buffer + capacity; no realloc unless this chunk is bigger
-      if (!put_hex(out, ch.len) || !put_cstr(out, "\r\n") ||
-          !put(out, static_cast<const char *>(ch.data), ch.len) ||
-          !put_cstr(out, "\r\n"))
-        co_return false;
-      if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
-        co_return false;
-    }
-    if (!ch.more)
-      break;
-  }
-  // Terminating zero-length chunk.
-  co_return co_await write_all(alloc, c.transport_, "0\r\n\r\n", 5);
+  return std::nullopt;
 }
 
-sched::Task<bool>
-HttpServerConn::send_response(const HttpResponse &resp) noexcept {
-  return http_server_send(alloc_, *this, resp);
+namespace detail {
+
+struct HttpBodyState {
+  HttpBodyState(mem::AllocatorRef allocator, const HttpLimits &limits) noexcept
+      : decoded(allocator), aggregate(allocator),
+        trailers(allocator, limits.max_header_count,
+                 limits.max_retained_head_bytes),
+        max_retained_head_bytes(limits.max_retained_head_bytes),
+        max_retained_body_bytes(limits.max_retained_body_bytes) {}
+
+  void begin(HttpTransport *byte_transport, GrowBuffer *byte_buffer,
+             BodyFraming body_framing, std::uint64_t content_length,
+             const HttpLimits &limits_value,
+             bool reading_request_body) noexcept {
+    transport = byte_transport;
+    wire = byte_buffer;
+    framing = body_framing;
+    remaining_bytes = content_length;
+    max_body_bytes = limits_value.max_body_bytes;
+    read_chunk_bytes = limits_value.read_chunk_bytes;
+    max_head_bytes = limits_value.max_head_bytes;
+    request_body = reading_request_body;
+    total_bytes = 0;
+    pending_consume = 0;
+    decoded_offset = 0;
+    decoded.clear();
+    aggregate.clear();
+    trailers.reset_message();
+    std::memset(&decoder, 0, sizeof(decoder));
+    decoder.consume_trailer = 0;
+    ++generation;
+    active = true;
+    done = body_framing == BodyFraming::kNone ||
+           (body_framing == BodyFraming::kContentLength && content_length == 0);
+    abandoned = false;
+    busy = false;
+    chunk_terminal = false;
+    collecting = false;
+  }
+
+  // Retiring a completed borrow is the connection boundary that invalidates
+  // its last returned view. Consume those bytes before the shared wire buffer
+  // is interpreted as the next pipelined message.
+  void retire() noexcept {
+    if (pending_consume != 0 && wire != nullptr) {
+      wire->consume(pending_consume);
+      pending_consume = 0;
+    }
+    if (wire != nullptr) {
+      wire->release_if_empty_above(max_retained_head_bytes);
+    }
+    if (aggregate.capacity > max_retained_body_bytes)
+      aggregate.release();
+    active = false;
+    ++generation;
+  }
+
+  HttpTransport *transport = nullptr;
+  GrowBuffer *wire = nullptr;
+  GrowBuffer decoded;
+  GrowBuffer aggregate;
+  HeaderStorage trailers;
+  phr_chunked_decoder decoder{};
+  BodyFraming framing = BodyFraming::kNone;
+  std::uint64_t generation = 0;
+  std::uint64_t remaining_bytes = 0;
+  std::uint64_t total_bytes = 0;
+  std::uint64_t max_body_bytes = 0;
+  std::size_t read_chunk_bytes = 0;
+  std::size_t max_head_bytes = 0;
+  std::size_t max_retained_head_bytes = 0;
+  std::size_t max_retained_body_bytes = 0;
+  std::size_t pending_consume = 0;
+  std::size_t decoded_offset = 0;
+  bool active = false;
+  bool done = true;
+  bool abandoned = false;
+  bool busy = false;
+  bool chunk_terminal = false;
+  bool collecting = false;
+  bool request_body = true;
+};
+
+struct HttpWriteState {
+  HttpTransport *transport = nullptr;
+  void *owner = nullptr;
+  ConnectionKind owner_kind = ConnectionKind::kServer;
+  WriteFraming framing = WriteFraming::kFixed;
+  std::uint64_t generation = 0;
+  std::optional<std::uint64_t> remaining_bytes{};
+  bool active = false;
+  bool abandoned = false;
+  bool busy = false;
+  bool close_after = false;
+  bool wrote_body = false;
+};
+
+class HttpConnectionAccess {
+public:
+  static HttpBodyReader reader(HttpBodyState &state,
+                               mem::AllocatorRef allocator) noexcept {
+    return HttpBodyReader(&state, state.generation, allocator);
+  }
+
+  static HttpBodyWriter writer(HttpWriteState &state,
+                               mem::AllocatorRef allocator) noexcept {
+    return HttpBodyWriter(&state, state.generation, allocator);
+  }
+
+  static sched::Task<Result<HttpBodyChunk>>
+  source_next(mem::AllocatorRef allocator, HttpBodySource source,
+              OperationOptions options) noexcept {
+    return source.next_(allocator, source.context_, options);
+  }
+
+  static bool source_valid(HttpBodySource source) noexcept {
+    return source.next_ != nullptr;
+  }
+
+  static std::optional<std::uint64_t>
+  source_length(HttpBodySource source) noexcept {
+    return source.content_length_;
+  }
+
+  static bool writer_suppressed(const HttpBodyWriter &writer) noexcept {
+    return writer.state_ != nullptr &&
+           writer.state_->generation == writer.generation_ &&
+           writer.state_->framing == WriteFraming::kSuppressed;
+  }
+
+  static bool writer_matches(const HttpBodyWriter &writer,
+                             const HttpWriteState &state) noexcept {
+    return writer.state_ == &state && state.active && !state.abandoned &&
+           writer.generation_ == state.generation;
+  }
+
+  static bool writer_has_written(const HttpBodyWriter &writer) noexcept {
+    return writer.state_ != nullptr && writer.state_->wrote_body;
+  }
+
+  static void disarm_writer(HttpBodyWriter &writer,
+                            HttpWriteState &state) noexcept {
+    state.active = false;
+    if (writer.state_ == &state && writer.generation_ == state.generation) {
+      writer.state_ = nullptr;
+      writer.generation_ = 0;
+    }
+  }
+
+  static void writer_finished(HttpWriteState &state) noexcept;
+  static void writer_abandoned(HttpWriteState &state) noexcept;
+};
+
+} // namespace detail
+
+bool HttpTransport::valid() const noexcept {
+  if (const auto *tcp = std::get_if<TcpStream>(&stream_))
+    return tcp->valid();
+#if defined(HYLE_IO_TLS)
+  if (const auto *tls = std::get_if<TlsStream>(&stream_))
+    return tls->valid();
+#endif
+  return false;
 }
 
-// ---- high-level http_serve -------------------------------------------------
+bool HttpTransport::encrypted() const noexcept {
+#if defined(HYLE_IO_TLS)
+  return std::holds_alternative<TlsStream>(stream_);
+#else
+  return false;
+#endif
+}
+
+unsigned HttpTransport::owner_worker() const noexcept {
+  if (const auto *tcp = std::get_if<TcpStream>(&stream_)) {
+    return tcp->owner_worker();
+  }
+#if defined(HYLE_IO_TLS)
+  if (const auto *tls = std::get_if<TlsStream>(&stream_)) {
+    return tls->owner_worker();
+  }
+#endif
+  return 0;
+}
+
+namespace detail {
+
+sched::Task<TransferResult>
+http_transport_read(mem::AllocatorRef allocator, HttpTransport &transport,
+                    std::span<std::byte> buffer,
+                    OperationOptions options) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
+    co_return co_await tls_read(allocator, *tls, buffer, options);
+  }
+#endif
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
+    co_return co_await tcp->read_some(buffer, options);
+  }
+  co_return TransferResult{
+      0, Status::FailedPrecondition("HTTP transport is invalid"), false};
+}
+
+sched::Task<TransferResult>
+http_transport_write(mem::AllocatorRef allocator, HttpTransport &transport,
+                     std::span<const std::byte> buffer,
+                     OperationOptions options) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
+    co_return co_await tls_write(allocator, *tls, buffer, options);
+  }
+#endif
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
+    co_return co_await tcp->write_some(buffer, options);
+  }
+  co_return TransferResult{
+      0, Status::FailedPrecondition("HTTP transport is invalid"), false};
+}
+
+sched::Task<Status> http_transport_shutdown(mem::AllocatorRef allocator,
+                                            HttpTransport &transport,
+                                            OperationOptions options) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
+    Status status = co_await tls_shutdown(
+        allocator, *tls,
+        TlsShutdownOptions{TlsShutdownMode::kSendOnly, options});
+    transport.stream_.template emplace<std::monostate>();
+    co_return status;
+  }
+#else
+  (void)allocator;
+  (void)options;
+#endif
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
+    Status status = tcp->shutdown_write();
+    transport.stream_.template emplace<std::monostate>();
+    co_return status;
+  }
+  co_return Status::FailedPrecondition("HTTP transport is invalid");
+}
+
+} // namespace detail
 
 namespace {
 
-template <class Stream>
-sched::Task<void> http_serve_impl(mem::AllocatorRef alloc, Stream stream,
-                                  HttpHandlerFn handler, void *ctx,
-                                  HttpServeOptions options) noexcept {
-  HttpServerConn conn{alloc, std::move(stream)};
-  if (!conn.valid())
-    co_return;
-  // Connection parsing/storage stays on the long-lived backing allocator. Only
-  // handler-owned, request-lifetime work uses this region. Retain ordinary
-  // blocks across keep-alive requests so a hot connection pays the backing
-  // allocation cost once; clear after the response and handler frame are both
-  // gone.
-  mem::Arena request_region{alloc, options.request_region};
-  for (;;) {
-    HttpRequest *req = co_await conn.next_request();
-    if (req == nullptr)
-      break;
-    const bool keep = req->keep_alive();
-    bool sent = false;
-    {
-      // Destruction order is part of the contract: response, then handler Task
-      // (whose coroutine frame may own response views), then Arena::clear().
-      // This keeps body/header views and streaming state alive through the
-      // send.
-      mem::AllocatorRef request_alloc = request_region.as_allocator();
-      sched::Task<HttpResponse> task = handler(request_alloc, ctx, *req);
-      if (!task.valid())
-        break;
-      HttpResponse response = co_await task;
-      sent = co_await conn.send_response(response);
-    }
-    request_region.clear();
-    if (request_region.reserved() > options.request_region_retain_limit)
-      request_region.release();
-    if (!sent || !keep)
-      break;
+sched::Task<TransferResult> read_more(mem::AllocatorRef allocator,
+                                      GrowBuffer &buffer,
+                                      HttpTransport &transport,
+                                      std::size_t maximum_read,
+                                      OperationOptions options) noexcept {
+  if (maximum_read == 0 ||
+      maximum_read >
+          (std::numeric_limits<std::uint32_t>::max)() - buffer.size ||
+      !buffer.reserve(static_cast<std::size_t>(buffer.size) + maximum_read)) {
+    co_return TransferResult{
+        0, Status::ResourceExhausted("HTTP input buffer allocation failed"),
+        false};
   }
-  co_return;
+  const std::size_t writable =
+      std::min<std::size_t>(maximum_read, buffer.capacity - buffer.size);
+  auto task = transport.read_some(
+      allocator,
+      std::span<std::byte>(
+          reinterpret_cast<std::byte *>(buffer.data + buffer.size), writable),
+      options);
+  if (!task.valid()) {
+    co_return TransferResult{
+        0,
+        Status::ResourceExhausted(
+            "HTTP transport read coroutine allocation failed"),
+        false};
+  }
+  TransferResult result = co_await task;
+  if (result.bytes > writable) {
+    co_return TransferResult{
+        0, Status::Internal("HTTP transport over-reported read progress"),
+        false};
+  }
+  buffer.size += static_cast<std::uint32_t>(result.bytes);
+  co_return result;
+}
+
+sched::Task<Status> write_all(mem::AllocatorRef allocator,
+                              HttpTransport &transport,
+                              std::span<const std::byte> bytes,
+                              OperationOptions options) noexcept {
+  std::size_t offset = 0;
+  while (offset != bytes.size()) {
+    auto task = transport.write_some(allocator, bytes.subspan(offset), options);
+    if (!task.valid()) {
+      co_return Status::ResourceExhausted(
+          "HTTP transport write coroutine allocation failed");
+    }
+    TransferResult result = co_await task;
+    if (!result.status.ok())
+      co_return std::move(result.status);
+    if (result.bytes == 0 || result.bytes > bytes.size() - offset) {
+      co_return Status::Unavailable(
+          "HTTP transport made no valid write progress");
+    }
+    offset += result.bytes;
+  }
+  co_return Status{};
+}
+
+sched::Task<Result<HttpHeadersView>>
+read_trailers(mem::AllocatorRef allocator, detail::HttpBodyState &state,
+              OperationOptions options) noexcept {
+  std::size_t last_length = 0;
+  for (;;) {
+    std::size_t header_count = state.trailers.capacity;
+    const int parsed =
+        phr_parse_headers(state.wire->data, state.wire->size,
+                          state.trailers.raw, &header_count, last_length);
+    if (parsed > 0) {
+      Status captured = state.trailers.capture(
+          state.wire->data, static_cast<std::size_t>(parsed), header_count);
+      if (!captured.ok()) {
+        co_return http_failure<HttpHeadersView>(std::move(captured));
+      }
+      Status valid = validate_trailers(state.trailers.view().entries());
+      if (!valid.ok()) {
+        co_return http_failure<HttpHeadersView>(
+            state.request_body
+                ? std::move(valid)
+                : Status::DataLoss("invalid HTTP response trailer field"));
+      }
+      state.wire->consume(static_cast<std::size_t>(parsed));
+      co_return state.trailers.view();
+    }
+    if (parsed == -1) {
+      co_return http_failure<HttpHeadersView>(
+          state.request_body
+              ? Status::InvalidArgument("malformed HTTP trailer block")
+              : Status::DataLoss("malformed HTTP response trailer block"));
+    }
+    last_length = state.wire->size;
+    if (state.wire->size >= state.max_head_bytes) {
+      co_return http_failure<HttpHeadersView>(
+          Status::ResourceExhausted("HTTP trailers exceed max_head_bytes"));
+    }
+    const std::size_t amount = std::min(
+        state.read_chunk_bytes, state.max_head_bytes - state.wire->size);
+    auto task =
+        read_more(allocator, *state.wire, *state.transport, amount, options);
+    if (!task.valid()) {
+      co_return http_failure<HttpHeadersView>(Status::ResourceExhausted(
+          "HTTP trailer read coroutine allocation failed"));
+    }
+    TransferResult result = co_await task;
+    if (!result.status.ok()) {
+      co_return http_failure<HttpHeadersView>(std::move(result.status));
+    }
+    if (result.eof || result.bytes == 0) {
+      co_return http_failure<HttpHeadersView>(
+          Status::DataLoss("HTTP peer closed inside trailer block"));
+    }
+  }
+}
+
+struct BusyGuard {
+  explicit BusyGuard(bool &flag) noexcept : flag_(&flag) { flag = true; }
+  ~BusyGuard() { *flag_ = false; }
+  BusyGuard(const BusyGuard &) = delete;
+  BusyGuard &operator=(const BusyGuard &) = delete;
+  bool *flag_;
+};
+
+Result<HttpBodyChunkView> body_failure(detail::HttpBodyState &state,
+                                       Status status) noexcept {
+  state.abandoned = true;
+  return http_failure<HttpBodyChunkView>(std::move(status));
 }
 
 } // namespace
 
-sched::Task<void> http_serve(mem::AllocatorRef alloc, TcpStream stream,
-                             HttpHandlerFn handler, void *ctx,
-                             HttpServeOptions options) noexcept {
-  return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
-}
+HttpBodyReader::~HttpBodyReader() { abandon_(); }
 
-#if defined(HYLE_IO_TLS)
-sched::Task<void> http_serve(mem::AllocatorRef alloc, TlsStream stream,
-                             HttpHandlerFn handler, void *ctx,
-                             HttpServeOptions options) noexcept {
-  return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
-}
-#endif
+HttpBodyReader::HttpBodyReader(HttpBodyReader &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)),
+      generation_(std::exchange(other.generation_, 0)),
+      allocator_(other.allocator_) {}
 
-// ---- HttpClientConn --------------------------------------------------------
-
-struct HttpClientConn::Impl {
-  GrowBuf buf;  // connection read buffer
-  GrowBuf head; // stable COPY of the response head (views point here)
-  GrowBuf body; // collected body storage (views point here)
-  phr_header headers[kHttpMaxHeaders];
-  HttpResponseView resp;
-  explicit Impl(mem::AllocatorRef a) noexcept : buf(a), head(a), body(a) {}
-};
-
-HttpClientConn::HttpClientConn(mem::AllocatorRef alloc,
-                               TcpStream stream) noexcept
-    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
-  impl_ = alloc.allocate_n<Impl>(1);
-  if (impl_ != nullptr)
-    new (impl_) Impl(alloc);
-}
-#if defined(HYLE_IO_TLS)
-HttpClientConn::HttpClientConn(mem::AllocatorRef alloc,
-                               TlsStream stream) noexcept
-    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
-  impl_ = alloc.allocate_n<Impl>(1);
-  if (impl_ != nullptr)
-    new (impl_) Impl(alloc);
-}
-#endif
-HttpClientConn::~HttpClientConn() {
-  if (impl_ != nullptr) {
-    impl_->~Impl();
-    alloc_.deallocate_n(impl_, 1);
-  }
-}
-HttpClientConn::HttpClientConn(HttpClientConn &&o) noexcept
-    : impl_(std::exchange(o.impl_, nullptr)),
-      transport_(std::move(o.transport_)), alloc_(o.alloc_) {}
-HttpClientConn &HttpClientConn::operator=(HttpClientConn &&o) noexcept {
-  if (this != &o) {
-    if (impl_ != nullptr) {
-      impl_->~Impl();
-      alloc_.deallocate_n(impl_, 1);
-    }
-    impl_ = std::exchange(o.impl_, nullptr);
-    transport_ = std::move(o.transport_);
-    alloc_ = o.alloc_;
+HttpBodyReader &HttpBodyReader::operator=(HttpBodyReader &&other) noexcept {
+  if (this != &other) {
+    abandon_();
+    state_ = std::exchange(other.state_, nullptr);
+    generation_ = std::exchange(other.generation_, 0);
+    allocator_ = other.allocator_;
   }
   return *this;
 }
 
-sched::Task<HttpResponseView *>
-http_client_request(mem::AllocatorRef alloc, HttpClientConn &c,
-                    StringView method, StringView path, StringView host,
-                    StringView body) noexcept {
-  // These fields are serialized directly into the request line/Host header.
-  // Reject delimiter injection instead of emitting a second attacker-controlled
-  // header or request on the keep-alive connection.
-  if (method.empty() || path.empty() || host.empty() || contains_crlf(method) ||
-      contains_crlf(path) || contains_crlf(host)) {
-    co_return nullptr;
-  }
-  if (!valid_header_name(method))
-    co_return nullptr;
-  for (std::uint32_t i = 0; i < path.size(); ++i) {
-    const unsigned char ch = static_cast<unsigned char>(path[i]);
-    if (ch <= 0x20 || ch == 0x7f)
-      co_return nullptr;
-  }
-  for (std::uint32_t i = 0; i < host.size(); ++i) {
-    const unsigned char ch = static_cast<unsigned char>(host[i]);
-    if (ch <= 0x20 || ch == 0x7f)
-      co_return nullptr;
-  }
-  HttpClientConn::Impl &im = *c.impl_;
-  // Build + send the request. "METHOD path HTTP/1.1\r\nHost: host\r\n
-  // Content-Length: N\r\n\r\n" + body.
-  {
-    GrowBuf out(alloc);
-    if (!put(out, method) || !put(out, " ", 1) || !put(out, path) ||
-        !put_cstr(out, " HTTP/1.1\r\nHost: ") || !put(out, host) ||
-        !put_cstr(out, "\r\n"))
-      co_return nullptr;
-    if (!body.empty()) {
-      if (!put_cstr(out, "Content-Length: ") || !put_u64(out, body.size()) ||
-          !put_cstr(out, "\r\n"))
-        co_return nullptr;
-    }
-    if (!put_cstr(out, "\r\n"))
-      co_return nullptr;
-    if (!body.empty() && !put(out, body))
-      co_return nullptr;
-    if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
-      co_return nullptr;
-  }
-
-  // Read + parse the response. Leftover pipelined bytes stay at the front of
-  // buf.
-  GrowBuf &buf = im.buf;
-  std::uint32_t last_len = 0;
-  int minor_version, status;
-  const char *msg;
-  std::size_t msg_len, num_headers;
-  int pret;
-  for (;;) {
-    if (buf.size > 0) {
-      num_headers = kHttpMaxHeaders;
-      pret =
-          phr_parse_response(buf.data, buf.size, &minor_version, &status, &msg,
-                             &msg_len, im.headers, &num_headers, last_len);
-      if (pret > 0)
-        break;
-      if (pret == -1)
-        co_return nullptr;
-      last_len = buf.size;
-      if (buf.size >= kHttpMaxHeaderBytes)
-        co_return nullptr;
-    }
-    std::int64_t n = co_await read_more(alloc, buf, c.transport_);
-    if (n <= 0)
-      co_return nullptr;
-  }
-
-  const std::uint32_t head_len = static_cast<std::uint32_t>(pret);
-  // Copy the head into stable storage and relocate parser views. This preserves
-  // response views across buf reuse without a second parse.
-  im.head.size = 0;
-  if (!im.head.reserve(head_len))
-    co_return nullptr;
-  std::memcpy(im.head.data, buf.data, head_len);
-  im.head.size = head_len;
-  msg = im.head.data + (msg - buf.data);
-  for (std::size_t i = 0; i < num_headers; ++i) {
-    im.headers[i].name = im.head.data + (im.headers[i].name - buf.data);
-    im.headers[i].value = im.head.data + (im.headers[i].value - buf.data);
-  }
-
-  HttpResponseView &r = im.resp;
-  r = HttpResponseView{};
-  r.status_ = status;
-  r.minor_version_ = minor_version;
-  r.reason_ = StringView{msg, static_cast<std::uint32_t>(msg_len)};
-  r.headers_ = im.headers;
-  r.header_count_ = num_headers;
-
-  // Body-suppressing responses (RFC 7230 §3.3.3 rule 1): a response to a HEAD
-  // request, and any 1xx / 204 / 304 status, has NO message body EVEN IF it
-  // carries Content-Length or Transfer-Encoding. Framing off those headers here
-  // would make us read a body that never comes -- blocking until the peer
-  // closes, or (on a keep-alive conn) consuming the NEXT response's bytes =
-  // desync. So short-circuit to an empty body and leave any pipelined bytes in
-  // buf for the next response.
-  bool no_body = iequal(method, "HEAD") || status == 204 || status == 304 ||
-                 (status >= 100 && status < 200);
-  if (no_body) {
-    buf.consume(head_len);
-    im.body.size = 0;
-    r.body_ = StringView{};
-    co_return &r;
-  }
-
-  // Body framing (same rules as the server request path).
-  StringView te = r.header("transfer-encoding");
-  StringView cl = r.header("content-length");
-  // Apply the same anti-smuggling framing policy on responses as requests.
-  // A client that accepts TE+CL, an unsupported transfer coding, or conflicting
-  // duplicate Content-Length values can desynchronize its keep-alive stream
-  // from an intermediary that resolves the ambiguity differently.
-  if (!te.empty()) {
-    if (!cl.empty())
-      co_return nullptr;
-    if (!iequal(te, "chunked"))
-      co_return nullptr;
-  } else {
-    StringView seen_cl{};
-    for (std::size_t i = 0; i < r.header_count_; ++i) {
-      if (!iequal(r.header_name(i), "content-length"))
-        continue;
-      StringView v = r.header_value(i);
-      if (!seen_cl.empty() && !(seen_cl == v))
-        co_return nullptr;
-      seen_cl = v;
-    }
-  }
-  buf.consume(head_len);
-  im.body.size = 0;
-  if (!te.empty()) { // exactly bare "chunked" (validated above)
-    std::uint64_t dn =
-        co_await decode_chunked(alloc, buf, im.body, c.transport_);
-    if (dn == UINT64_MAX)
-      co_return nullptr;
-    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(dn)};
-  } else if (!cl.empty()) {
-    std::uint64_t body_len = 0;
-    if (!parse_u64(cl, body_len))
-      co_return nullptr;
-    if (body_len > kHttpMaxBodyBytes)
-      co_return nullptr;
-    if (!(co_await fill_body(alloc, buf, c.transport_, 0, body_len)))
-      co_return nullptr;
-    if (!im.body.reserve(static_cast<std::uint32_t>(body_len)))
-      co_return nullptr;
-    std::memcpy(im.body.data, buf.data, body_len);
-    im.body.size = static_cast<std::uint32_t>(body_len);
-    r.body_ = StringView{im.body.data, static_cast<std::uint32_t>(body_len)};
-    buf.consume(static_cast<std::uint32_t>(body_len));
-  } else {
-    // No Content-Length and not chunked: the body runs until the peer CLOSES
-    // the connection (HTTP/1.0, or an HTTP/1.1 "Connection: close" streaming
-    // response -- RFC 7230 §3.3.3 rule 7). Read until EOF, accumulating into
-    // buf; buf already holds whatever leading body bytes arrived with the head.
-    // read_more appends and returns 0 on a clean peer close (the body
-    // terminator here) or <0 on error. Cap at kHttpMaxBodyBytes so a peer that
-    // never closes can't grow us unboundedly. (Previously this returned only
-    // the already-buffered bytes -> silent truncation of any close-delimited
-    // body larger than the header packet; red-team U3.)
-    for (;;) {
-      if (buf.size > kHttpMaxBodyBytes)
-        co_return nullptr; // DoS guard
-      std::int64_t n = co_await read_more(alloc, buf, c.transport_);
-      if (n == 0)
-        break; // clean close = end of body
-      if (n < 0)
-        co_return nullptr; // read error before close
-    }
-    std::uint32_t avail = buf.size;
-    if (avail > 0) {
-      if (!im.body.reserve(avail))
-        co_return nullptr;
-      std::memcpy(im.body.data, buf.data, avail);
-      im.body.size = avail;
-    }
-    r.body_ = StringView{im.body.data, avail};
-    buf.consume(avail);
-  }
-  co_return &r;
+bool HttpBodyReader::valid() const noexcept {
+  return state_ != nullptr && state_->active &&
+         state_->generation == generation_ && !state_->abandoned;
 }
 
-sched::Task<HttpResponseView *>
-HttpClientConn::request(StringView method, StringView path, StringView host,
-                        StringView body) noexcept {
-  return http_client_request(alloc_, *this, method, path, host, body);
+bool HttpBodyReader::done() const noexcept { return valid() && state_->done; }
+
+std::optional<std::uint64_t> HttpBodyReader::remaining() const noexcept {
+  if (!valid() || state_->framing != BodyFraming::kContentLength) {
+    return std::nullopt;
+  }
+  return state_->remaining_bytes;
+}
+
+void HttpBodyReader::abandon_() noexcept {
+  if (state_ != nullptr && state_->active &&
+      state_->generation == generation_ && !state_->done) {
+    state_->abandoned = true;
+  }
+  state_ = nullptr;
+  generation_ = 0;
+}
+
+sched::Task<Result<HttpBodyChunkView>>
+http_body_read(mem::AllocatorRef allocator, HttpBodyReader &reader,
+               std::size_t requested_bytes, OperationOptions options) noexcept {
+  detail::HttpBodyState *state = reader.state_;
+  if (state == nullptr || !state->active ||
+      state->generation != reader.generation_) {
+    co_return http_failure<HttpBodyChunkView>(
+        Status::FailedPrecondition("HTTP body reader is stale"));
+  }
+  if (state->abandoned) {
+    co_return http_failure<HttpBodyChunkView>(
+        Status::FailedPrecondition("HTTP body reader was abandoned"));
+  }
+  if (state->busy) {
+    co_return http_failure<HttpBodyChunkView>(
+        Status::FailedPrecondition("only one HTTP body read may be in flight"));
+  }
+  BusyGuard guard(state->busy);
+
+  if (state->pending_consume != 0) {
+    state->wire->consume(state->pending_consume);
+    state->pending_consume = 0;
+  }
+  if (!state->collecting)
+    state->aggregate.clear();
+  if (state->done) {
+    co_return HttpBodyChunkView{{}, state->trailers.view(), true};
+  }
+
+  std::size_t maximum =
+      requested_bytes == 0 ? state->read_chunk_bytes : requested_bytes;
+  maximum = std::min(maximum, state->read_chunk_bytes);
+  if (maximum == 0) {
+    co_return body_failure(
+        *state, Status::InvalidArgument("HTTP body read size must be nonzero"));
+  }
+
+  if (state->framing == BodyFraming::kContentLength) {
+    while (state->wire->size == 0) {
+      const std::size_t amount =
+          static_cast<std::size_t>(std::min<std::uint64_t>(
+              state->read_chunk_bytes, state->remaining_bytes));
+      auto task = read_more(allocator, *state->wire, *state->transport, amount,
+                            options);
+      if (!task.valid()) {
+        co_return body_failure(
+            *state, Status::ResourceExhausted(
+                        "HTTP body read coroutine allocation failed"));
+      }
+      TransferResult result = co_await task;
+      if (!result.status.ok()) {
+        co_return body_failure(*state, std::move(result.status));
+      }
+      if (result.eof || result.bytes == 0) {
+        co_return body_failure(
+            *state, Status::DataLoss(
+                        "HTTP peer closed before Content-Length completed"));
+      }
+    }
+    const std::size_t count = static_cast<std::size_t>(std::min<std::uint64_t>(
+        std::min<std::size_t>(state->wire->size, maximum),
+        state->remaining_bytes));
+    state->remaining_bytes -= count;
+    state->total_bytes += count;
+    state->pending_consume = count;
+    state->done = state->remaining_bytes == 0;
+    co_return HttpBodyChunkView{
+        std::span<const std::byte>(
+            reinterpret_cast<const std::byte *>(state->wire->data), count),
+        {},
+        state->done};
+  }
+
+  if (state->framing == BodyFraming::kCloseDelimited) {
+    while (state->wire->size == 0) {
+      auto task = read_more(allocator, *state->wire, *state->transport,
+                            state->read_chunk_bytes, options);
+      if (!task.valid()) {
+        co_return body_failure(
+            *state, Status::ResourceExhausted(
+                        "HTTP body read coroutine allocation failed"));
+      }
+      TransferResult result = co_await task;
+      if (!result.status.ok()) {
+        co_return body_failure(*state, std::move(result.status));
+      }
+      if (result.eof || result.bytes == 0) {
+        state->done = true;
+        co_return HttpBodyChunkView{{}, {}, true};
+      }
+    }
+    const std::size_t count = std::min<std::size_t>(state->wire->size, maximum);
+    if (count > state->max_body_bytes - state->total_bytes) {
+      co_return body_failure(
+          *state, Status::ResourceExhausted(
+                      "HTTP close-delimited body exceeds max_body_bytes"));
+    }
+    state->total_bytes += count;
+    state->pending_consume = count;
+    co_return HttpBodyChunkView{
+        std::span<const std::byte>(
+            reinterpret_cast<const std::byte *>(state->wire->data), count),
+        {},
+        false};
+  }
+
+  // Chunked decoding keeps parser state across transport fragments. Decoded
+  // payload is copied once into reusable connection storage because pico
+  // compacts trailing pipelined bytes into the same input buffer.
+  for (;;) {
+    if (state->decoded_offset < state->decoded.size) {
+      const std::size_t available = state->decoded.size - state->decoded_offset;
+      const std::size_t count = std::min(available, maximum);
+      const auto *data = reinterpret_cast<const std::byte *>(
+          state->decoded.data + state->decoded_offset);
+      state->decoded_offset += count;
+      co_return HttpBodyChunkView{
+          std::span<const std::byte>(data, count), {}, false};
+    }
+    state->decoded.clear();
+    state->decoded_offset = 0;
+
+    if (state->chunk_terminal) {
+      auto task = read_trailers(allocator, *state, options);
+      if (!task.valid()) {
+        co_return body_failure(*state,
+                               Status::ResourceExhausted(
+                                   "HTTP trailer coroutine allocation failed"));
+      }
+      Result<HttpHeadersView> trailers = co_await task;
+      if (!trailers) {
+        co_return body_failure(*state, std::move(trailers).error());
+      }
+      state->done = true;
+      co_return HttpBodyChunkView{{}, *trailers, true};
+    }
+
+    if (state->wire->size != 0) {
+      std::size_t decoded_bytes = state->wire->size;
+      const ssize_t trailing = phr_decode_chunked(
+          &state->decoder, state->wire->data, &decoded_bytes);
+      if (trailing == -1) {
+        co_return body_failure(
+            *state,
+            state->request_body
+                ? Status::InvalidArgument("malformed chunked HTTP body")
+                : Status::DataLoss("malformed chunked HTTP response body"));
+      }
+      if (decoded_bytes > state->max_body_bytes - state->total_bytes) {
+        co_return body_failure(*state,
+                               Status::ResourceExhausted(
+                                   "chunked HTTP body exceeds max_body_bytes"));
+      }
+      if (decoded_bytes != 0 &&
+          !state->decoded.append(state->wire->data, decoded_bytes)) {
+        co_return body_failure(
+            *state,
+            Status::ResourceExhausted("HTTP decoded chunk allocation failed"));
+      }
+      state->total_bytes += decoded_bytes;
+      if (trailing >= 0) {
+        const std::size_t tail = static_cast<std::size_t>(trailing);
+        if (tail != 0) {
+          std::memmove(state->wire->data, state->wire->data + decoded_bytes,
+                       tail);
+        }
+        state->wire->size = static_cast<std::uint32_t>(tail);
+        state->chunk_terminal = true;
+      } else {
+        state->wire->clear();
+      }
+      if (state->decoded.size != 0)
+        continue;
+      if (state->chunk_terminal)
+        continue;
+    }
+
+    auto task = read_more(allocator, *state->wire, *state->transport,
+                          state->read_chunk_bytes, options);
+    if (!task.valid()) {
+      co_return body_failure(*state,
+                             Status::ResourceExhausted(
+                                 "HTTP body read coroutine allocation failed"));
+    }
+    TransferResult result = co_await task;
+    if (!result.status.ok()) {
+      co_return body_failure(*state, std::move(result.status));
+    }
+    if (result.eof || result.bytes == 0) {
+      co_return body_failure(
+          *state, Status::DataLoss("HTTP peer closed inside chunked body"));
+    }
+  }
+}
+
+sched::Task<Result<StringView>>
+http_body_read_all(mem::AllocatorRef allocator, HttpBodyReader &reader,
+                   std::size_t max_bytes, OperationOptions options) noexcept {
+  detail::HttpBodyState *state = reader.state_;
+  if (state == nullptr || !state->active ||
+      state->generation != reader.generation_ || state->abandoned) {
+    co_return http_failure<StringView>(
+        Status::FailedPrecondition("HTTP body reader is stale"));
+  }
+  if (max_bytes > (std::numeric_limits<std::uint32_t>::max)()) {
+    co_return http_failure<StringView>(
+        Status::InvalidArgument("HTTP read_all limit must fit a StringView"));
+  }
+  if (state->framing == BodyFraming::kContentLength &&
+      state->remaining_bytes > max_bytes) {
+    state->abandoned = true;
+    co_return http_failure<StringView>(
+        Status::ResourceExhausted("HTTP body exceeds read_all limit"));
+  }
+
+  state->aggregate.clear();
+  state->collecting = true;
+  for (;;) {
+    auto task = http_body_read(allocator, reader, 0, options);
+    if (!task.valid()) {
+      state->collecting = false;
+      state->abandoned = true;
+      co_return http_failure<StringView>(Status::ResourceExhausted(
+          "HTTP body convenience coroutine allocation failed"));
+    }
+    Result<HttpBodyChunkView> next = co_await task;
+    if (!next) {
+      state->collecting = false;
+      co_return http_failure<StringView>(std::move(next).error());
+    }
+    if (next->bytes.size() > max_bytes - state->aggregate.size ||
+        !state->aggregate.append(next->bytes.data(), next->bytes.size())) {
+      state->collecting = false;
+      state->abandoned = true;
+      co_return http_failure<StringView>(
+          Status::ResourceExhausted("HTTP body exceeds read_all limit"));
+    }
+    if (next->end_stream)
+      break;
+  }
+  state->collecting = false;
+  co_return StringView(state->aggregate.data, state->aggregate.size);
+}
+
+sched::Task<Status> http_body_discard(mem::AllocatorRef allocator,
+                                      HttpBodyReader &reader,
+                                      OperationOptions options) noexcept {
+  for (;;) {
+    auto task = http_body_read(allocator, reader, 0, options);
+    if (!task.valid()) {
+      co_return Status::ResourceExhausted(
+          "HTTP body discard coroutine allocation failed");
+    }
+    Result<HttpBodyChunkView> chunk = co_await task;
+    if (!chunk)
+      co_return std::move(chunk).error();
+    if (chunk->end_stream)
+      co_return Status{};
+  }
+}
+
+struct HttpServerConnection::Impl {
+  Impl(mem::AllocatorRef allocator, HttpTransport byte_transport,
+       const HttpLimits &limits) noexcept
+      : transport(std::move(byte_transport)), wire(allocator),
+        message(allocator, limits.max_header_count,
+                limits.max_retained_head_bytes),
+        body(allocator, limits) {}
+
+  bool ready() const noexcept {
+    return transport.valid() && message.valid() && body.trailers.valid();
+  }
+
+  HttpTransport transport;
+  GrowBuffer wire;
+  HeaderStorage message;
+  detail::HttpBodyState body;
+  detail::HttpWriteState writer;
+  HttpRequestView current_request{};
+  bool request_active = false;
+  bool response_started = false;
+  bool continue_sent = false;
+  bool reusable = true;
+  bool closed = false;
+};
+
+struct HttpClientConnection::Impl {
+  Impl(mem::AllocatorRef allocator, HttpTransport byte_transport,
+       const HttpLimits &limits) noexcept
+      : transport(std::move(byte_transport)), wire(allocator),
+        message(allocator, limits.max_header_count,
+                limits.max_retained_head_bytes),
+        body(allocator, limits) {}
+
+  bool ready() const noexcept {
+    return transport.valid() && message.valid() && body.trailers.valid();
+  }
+
+  HttpTransport transport;
+  GrowBuffer wire;
+  HeaderStorage message;
+  detail::HttpBodyState body;
+  detail::HttpWriteState writer;
+  HttpResponseView current_response{};
+  bool request_active = false;
+  bool request_finished = false;
+  bool response_active = false;
+  bool last_request_was_head = false;
+  bool last_request_expects_continue = false;
+  bool continue_decided = false;
+  bool waiting_for_continue = false;
+  bool reusable = true;
+  bool closed = false;
+};
+
+namespace detail {
+
+void HttpConnectionAccess::writer_finished(HttpWriteState &state) noexcept {
+  if (state.owner_kind == ConnectionKind::kServer) {
+    auto *owner = static_cast<HttpServerConnection::Impl *>(state.owner);
+    owner->request_active = false;
+    owner->response_started = false;
+    if (state.close_after)
+      owner->reusable = false;
+  } else {
+    auto *owner = static_cast<HttpClientConnection::Impl *>(state.owner);
+    owner->request_finished = true;
+    if (state.close_after)
+      owner->reusable = false;
+  }
+}
+
+void HttpConnectionAccess::writer_abandoned(HttpWriteState &state) noexcept {
+  state.abandoned = true;
+  state.active = false;
+  if (state.owner_kind == ConnectionKind::kServer) {
+    auto *owner = static_cast<HttpServerConnection::Impl *>(state.owner);
+    owner->reusable = false;
+    owner->response_started = false;
+    owner->request_active = false;
+    owner->body.active = false;
+    ++owner->body.generation;
+  } else {
+    auto *owner = static_cast<HttpClientConnection::Impl *>(state.owner);
+    owner->reusable = false;
+    owner->request_active = false;
+    owner->request_finished = false;
+  }
+}
+
+} // namespace detail
+
+namespace {
+
+Status append_connection_header(GrowBuffer &output, HttpVersion version,
+                                bool keep_alive) noexcept {
+  if (version == HttpVersion::kHttp11 && !keep_alive) {
+    if (!put_cstr(output, "Connection: close\r\n")) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  } else if (version == HttpVersion::kHttp10 && keep_alive) {
+    if (!put_cstr(output, "Connection: keep-alive\r\n")) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  }
+  return Status{};
+}
+
+Status append_outgoing_headers(GrowBuffer &output,
+                               std::span<const HttpHeader> headers) noexcept {
+  for (const HttpHeader &header : headers) {
+    if (!put(output, header.name) || !put_cstr(output, ": ") ||
+        !put(output, header.value) || !put_cstr(output, "\r\n")) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  }
+  return Status{};
+}
+
+Status
+append_framing_header(GrowBuffer &output, WriteFraming framing,
+                      std::optional<std::uint64_t> content_length) noexcept {
+  if (framing == WriteFraming::kFixed ||
+      (framing == WriteFraming::kSuppressed && content_length.has_value())) {
+    if (!put_cstr(output, "Content-Length: ") ||
+        !put_u64(output, content_length.value_or(0)) ||
+        !put_cstr(output, "\r\n")) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  } else if (framing == WriteFraming::kChunked) {
+    if (!put_cstr(output, "Transfer-Encoding: chunked\r\n")) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  }
+  return Status{};
+}
+
+Status
+build_request_head(GrowBuffer &output, const HttpRequestHead &head,
+                   WriteFraming framing,
+                   std::optional<std::uint64_t> content_length) noexcept {
+  if (!valid_header_name(head.method) || !valid_request_target(head.target) ||
+      contains_crlf(head.authority)) {
+    return Status::InvalidArgument(
+        "HTTP request method, target, or authority is invalid");
+  }
+  if (head.version == HttpVersion::kHttp11 && head.authority.empty()) {
+    return Status::InvalidArgument(
+        "HTTP/1.1 request requires an authority for Host");
+  }
+  for (char byte : head.authority) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    if (ch <= 0x20 || ch == 0x7f) {
+      return Status::InvalidArgument("HTTP authority contains invalid bytes");
+    }
+  }
+  Status headers = validate_headers(head.headers, true);
+  if (!headers.ok())
+    return headers;
+  if (head.version == HttpVersion::kHttp10 &&
+      framing == WriteFraming::kChunked) {
+    return Status::InvalidArgument(
+        "HTTP/1.0 request cannot use chunked transfer coding");
+  }
+
+  if (!put(output, head.method) || !put(output, " ", 1) ||
+      !put(output, head.target) || !put(output, " ", 1) ||
+      !put_cstr(output, version_text(head.version)) ||
+      !put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  if (!head.authority.empty() &&
+      (!put_cstr(output, "Host: ") || !put(output, head.authority) ||
+       !put_cstr(output, "\r\n"))) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  headers = append_outgoing_headers(output, head.headers);
+  if (!headers.ok())
+    return headers;
+  headers = append_framing_header(output, framing, content_length);
+  if (!headers.ok())
+    return headers;
+  headers = append_connection_header(output, head.version, head.keep_alive);
+  if (!headers.ok())
+    return headers;
+  if (head.expect_continue && !put_cstr(output, "Expect: 100-continue\r\n")) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  if (!put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  return Status{};
+}
+
+Status build_response_head(GrowBuffer &output, const HttpResponseHead &head,
+                           WriteFraming framing,
+                           std::optional<std::uint64_t> content_length,
+                           HttpVersion version,
+                           bool effective_keep_alive) noexcept {
+  if (head.status < 200 || head.status > 999 || contains_crlf(head.reason)) {
+    return Status::InvalidArgument(
+        "HTTP final response status or reason is invalid");
+  }
+  for (char byte : head.reason) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    if (ch == 0x7f || (ch < 0x20 && ch != '\t')) {
+      return Status::InvalidArgument("HTTP reason contains invalid bytes");
+    }
+  }
+  Status headers = validate_headers(head.headers, false);
+  if (!headers.ok())
+    return headers;
+  if (version == HttpVersion::kHttp10 && framing == WriteFraming::kChunked) {
+    return Status::InvalidArgument(
+        "HTTP/1.0 response cannot use chunked transfer coding");
+  }
+
+  if (!put_cstr(output, version_text(version)) || !put(output, " ", 1) ||
+      !put_u64(output, static_cast<std::uint64_t>(head.status)) ||
+      !put(output, " ", 1)) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  if (!head.reason.empty()) {
+    if (!put(output, head.reason)) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  } else {
+    const char *phrase = reason_phrase(head.status);
+    if (!put_cstr(output, phrase)) {
+      return Status::ResourceExhausted("HTTP head allocation failed");
+    }
+  }
+  if (!put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  headers = append_outgoing_headers(output, head.headers);
+  if (!headers.ok())
+    return headers;
+  headers = append_framing_header(output, framing, content_length);
+  if (!headers.ok())
+    return headers;
+  headers = append_connection_header(output, version, effective_keep_alive);
+  if (!headers.ok())
+    return headers;
+  if (!put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP head allocation failed");
+  }
+  return Status{};
+}
+
+void begin_writer(detail::HttpWriteState &state, HttpTransport &transport,
+                  void *owner, ConnectionKind kind, WriteFraming framing,
+                  std::optional<std::uint64_t> content_length,
+                  bool close_after) noexcept {
+  state.transport = &transport;
+  state.owner = owner;
+  state.owner_kind = kind;
+  state.framing = framing;
+  state.remaining_bytes = content_length;
+  ++state.generation;
+  state.active = true;
+  state.abandoned = false;
+  state.busy = false;
+  state.close_after = close_after;
+  state.wrote_body = false;
+}
+
+sched::Task<Status> immediate_status(mem::AllocatorRef,
+                                     Status status) noexcept {
+  co_return status;
+}
+
+} // namespace
+
+HttpBodyWriter::~HttpBodyWriter() { abandon_(); }
+
+HttpBodyWriter::HttpBodyWriter(HttpBodyWriter &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)),
+      generation_(std::exchange(other.generation_, 0)),
+      allocator_(other.allocator_) {}
+
+HttpBodyWriter &HttpBodyWriter::operator=(HttpBodyWriter &&other) noexcept {
+  if (this != &other) {
+    abandon_();
+    state_ = std::exchange(other.state_, nullptr);
+    generation_ = std::exchange(other.generation_, 0);
+    allocator_ = other.allocator_;
+  }
+  return *this;
+}
+
+bool HttpBodyWriter::valid() const noexcept {
+  return state_ != nullptr && state_->active &&
+         state_->generation == generation_ && !state_->abandoned;
+}
+
+std::optional<std::uint64_t> HttpBodyWriter::remaining() const noexcept {
+  if (!valid())
+    return std::nullopt;
+  return state_->remaining_bytes;
+}
+
+void HttpBodyWriter::abandon_() noexcept {
+  if (state_ != nullptr && state_->active &&
+      state_->generation == generation_) {
+    detail::HttpConnectionAccess::writer_abandoned(*state_);
+  }
+  state_ = nullptr;
+  generation_ = 0;
+}
+
+sched::Task<Status> http_body_write(mem::AllocatorRef allocator,
+                                    HttpBodyWriter &writer,
+                                    std::span<const std::byte> bytes,
+                                    OperationOptions options) noexcept {
+  detail::HttpWriteState *state = writer.state_;
+  if (state == nullptr || !state->active ||
+      state->generation != writer.generation_) {
+    co_return Status::FailedPrecondition("HTTP body writer is stale");
+  }
+  if (state->abandoned) {
+    co_return Status::FailedPrecondition("HTTP body writer was abandoned");
+  }
+  if (state->busy) {
+    co_return Status::FailedPrecondition(
+        "only one HTTP body write may be in flight");
+  }
+  BusyGuard guard(state->busy);
+  if (bytes.empty())
+    co_return Status{};
+
+  if (state->remaining_bytes.has_value() &&
+      bytes.size() > *state->remaining_bytes) {
+    detail::HttpConnectionAccess::writer_abandoned(*state);
+    writer.state_ = nullptr;
+    co_return Status::OutOfRange("HTTP body exceeds declared Content-Length");
+  }
+
+  if (state->framing == WriteFraming::kSuppressed) {
+    if (state->remaining_bytes.has_value()) {
+      *state->remaining_bytes -= bytes.size();
+    }
+    co_return Status{};
+  }
+
+  if (state->framing == WriteFraming::kChunked) {
+    char prefix[20];
+    const std::size_t digits =
+        format_hex(prefix, sizeof(prefix) - 2, bytes.size());
+    prefix[digits] = '\r';
+    prefix[digits + 1] = '\n';
+    auto prefix_task =
+        write_all(allocator, *state->transport,
+                  std::span<const std::byte>(
+                      reinterpret_cast<const std::byte *>(prefix), digits + 2),
+                  options);
+    if (!prefix_task.valid()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted(
+          "HTTP chunk-prefix coroutine allocation failed");
+    }
+    Status status = co_await prefix_task;
+    if (!status.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return status;
+    }
+    auto bytes_task = write_all(allocator, *state->transport, bytes, options);
+    if (!bytes_task.valid()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted(
+          "HTTP chunk coroutine allocation failed");
+    }
+    status = co_await bytes_task;
+    if (!status.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return status;
+    }
+    static constexpr std::byte kCrLf[] = {std::byte{'\r'}, std::byte{'\n'}};
+    auto suffix_task = write_all(allocator, *state->transport,
+                                 std::span<const std::byte>(kCrLf), options);
+    if (!suffix_task.valid()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted(
+          "HTTP chunk-suffix coroutine allocation failed");
+    }
+    status = co_await suffix_task;
+    if (!status.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return status;
+    }
+  } else {
+    auto task = write_all(allocator, *state->transport, bytes, options);
+    if (!task.valid()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted(
+          "HTTP body coroutine allocation failed");
+    }
+    Status status = co_await task;
+    if (!status.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return status;
+    }
+  }
+
+  if (state->remaining_bytes.has_value()) {
+    *state->remaining_bytes -= bytes.size();
+  }
+  state->wrote_body = true;
+  co_return Status{};
+}
+
+sched::Task<Status> http_body_finish(mem::AllocatorRef allocator,
+                                     HttpBodyWriter &writer,
+                                     std::span<const HttpHeader> trailers,
+                                     OperationOptions options) noexcept {
+  detail::HttpWriteState *state = writer.state_;
+  if (state == nullptr || !state->active ||
+      state->generation != writer.generation_) {
+    co_return Status::FailedPrecondition("HTTP body writer is stale");
+  }
+  if (state->abandoned) {
+    co_return Status::FailedPrecondition("HTTP body writer was abandoned");
+  }
+  if (state->busy) {
+    co_return Status::FailedPrecondition(
+        "only one HTTP body write may be in flight");
+  }
+  BusyGuard guard(state->busy);
+
+  if (state->framing != WriteFraming::kSuppressed &&
+      state->remaining_bytes.has_value() && *state->remaining_bytes != 0) {
+    detail::HttpConnectionAccess::writer_abandoned(*state);
+    writer.state_ = nullptr;
+    co_return Status::DataLoss(
+        "HTTP body ended before declared Content-Length");
+  }
+  if (state->framing != WriteFraming::kChunked && !trailers.empty()) {
+    detail::HttpConnectionAccess::writer_abandoned(*state);
+    writer.state_ = nullptr;
+    co_return Status::InvalidArgument(
+        "HTTP trailers require chunked transfer coding");
+  }
+
+  if (state->framing == WriteFraming::kChunked) {
+    Status valid = validate_trailers(trailers);
+    if (!valid.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return valid;
+    }
+    GrowBuffer ending(allocator);
+    if (!put_cstr(ending, "0\r\n")) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted("HTTP trailer allocation failed");
+    }
+    valid = append_outgoing_headers(ending, trailers);
+    if (!valid.ok() || !put_cstr(ending, "\r\n")) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return valid.ok()
+          ? Status::ResourceExhausted("HTTP trailer allocation failed")
+          : valid;
+    }
+    auto task = write_all(
+        allocator, *state->transport,
+        std::span<const std::byte>(
+            reinterpret_cast<const std::byte *>(ending.data), ending.size),
+        options);
+    if (!task.valid()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return Status::ResourceExhausted(
+          "HTTP trailer coroutine allocation failed");
+    }
+    Status status = co_await task;
+    if (!status.ok()) {
+      detail::HttpConnectionAccess::writer_abandoned(*state);
+      writer.state_ = nullptr;
+      co_return status;
+    }
+  }
+
+  state->active = false;
+  detail::HttpConnectionAccess::writer_finished(*state);
+  writer.state_ = nullptr;
+  writer.generation_ = 0;
+  co_return Status{};
+}
+
+Result<HttpServerConnection>
+HttpServerConnection::create(mem::AllocatorRef allocator,
+                             HttpTransport transport,
+                             HttpLimits limits) noexcept {
+  Status valid = validate_limits(allocator, transport, limits);
+  if (!valid.ok()) {
+    return http_failure<HttpServerConnection>(std::move(valid));
+  }
+  Impl *impl = allocator.allocate_n<Impl>(1);
+  if (impl == nullptr) {
+    return http_failure<HttpServerConnection>(
+        Status::ResourceExhausted("HTTP server connection allocation failed"));
+  }
+  new (impl) Impl(allocator, std::move(transport), limits);
+  if (!impl->ready()) {
+    impl->~Impl();
+    allocator.deallocate_n(impl, 1);
+    return http_failure<HttpServerConnection>(Status::ResourceExhausted(
+        "HTTP server connection state allocation failed"));
+  }
+  return HttpServerConnection(allocator, limits, impl);
+}
+
+HttpServerConnection::~HttpServerConnection() {
+  if (impl_ != nullptr) {
+    impl_->~Impl();
+    allocator_.deallocate_n(impl_, 1);
+  }
+}
+
+HttpServerConnection::HttpServerConnection(
+    HttpServerConnection &&other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)), allocator_(other.allocator_),
+      limits_(other.limits_) {}
+
+HttpServerConnection &
+HttpServerConnection::operator=(HttpServerConnection &&other) noexcept {
+  if (this != &other) {
+    if (impl_ != nullptr) {
+      impl_->~Impl();
+      allocator_.deallocate_n(impl_, 1);
+    }
+    impl_ = std::exchange(other.impl_, nullptr);
+    allocator_ = other.allocator_;
+    limits_ = other.limits_;
+  }
+  return *this;
+}
+
+bool HttpServerConnection::valid() const noexcept {
+  return impl_ != nullptr && !impl_->closed && impl_->transport.valid();
+}
+
+unsigned HttpServerConnection::owner_worker() const noexcept {
+  return impl_ == nullptr ? 0 : impl_->transport.owner_worker();
+}
+
+sched::Task<Status>
+HttpServerConnection::close(OperationOptions options) noexcept {
+  if (impl_ == nullptr) {
+    return immediate_status(
+        allocator_,
+        Status::FailedPrecondition("HTTP server connection is invalid"));
+  }
+  if (impl_->closed)
+    return immediate_status(allocator_, Status{});
+  impl_->closed = true;
+  impl_->reusable = false;
+  impl_->request_active = false;
+  impl_->body.active = false;
+  ++impl_->body.generation;
+  if (impl_->writer.active) {
+    detail::HttpConnectionAccess::writer_abandoned(impl_->writer);
+  }
+  return impl_->transport.shutdown(allocator_, options);
+}
+
+sched::Task<Result<std::optional<HttpIncomingRequest>>>
+http_server_read_request(mem::AllocatorRef allocator,
+                         HttpServerConnection &connection,
+                         OperationOptions options) noexcept {
+  HttpServerConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::FailedPrecondition("HTTP server connection is invalid"));
+  }
+  if (impl->request_active || impl->response_started || impl->writer.active) {
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::FailedPrecondition(
+            "finish the current HTTP request before reading another"));
+  }
+  if (!impl->reusable) {
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::FailedPrecondition(
+            "HTTP server connection is no longer reusable"));
+  }
+
+  impl->body.active = false;
+  ++impl->body.generation;
+  impl->message.reset_message();
+  std::size_t last_length = 0;
+  const char *method = nullptr;
+  const char *target = nullptr;
+  std::size_t method_length = 0;
+  std::size_t target_length = 0;
+  int minor_version = -1;
+  std::size_t header_count = 0;
+  int parsed = -2;
+
+  for (;;) {
+    if (impl->wire.size != 0) {
+      header_count = impl->message.capacity;
+      parsed = phr_parse_request(impl->wire.data, impl->wire.size, &method,
+                                 &method_length, &target, &target_length,
+                                 &minor_version, impl->message.raw,
+                                 &header_count, last_length);
+      if (parsed > 0)
+        break;
+      if (parsed == -1) {
+        impl->reusable = false;
+        const Status status =
+            header_count == impl->message.capacity
+                ? Status::ResourceExhausted(
+                      "HTTP request exceeds max_header_count")
+                : Status::InvalidArgument("malformed HTTP request head");
+        co_return http_failure<std::optional<HttpIncomingRequest>>(status);
+      }
+      last_length = impl->wire.size;
+      if (impl->wire.size >= connection.limits_.max_head_bytes) {
+        impl->reusable = false;
+        co_return http_failure<std::optional<HttpIncomingRequest>>(
+            Status::ResourceExhausted(
+                "HTTP request head exceeds max_head_bytes"));
+      }
+    }
+
+    const std::size_t amount =
+        std::min(connection.limits_.read_chunk_bytes,
+                 connection.limits_.max_head_bytes - impl->wire.size);
+    auto task =
+        read_more(allocator, impl->wire, impl->transport, amount, options);
+    if (!task.valid()) {
+      impl->reusable = false;
+      co_return http_failure<std::optional<HttpIncomingRequest>>(
+          Status::ResourceExhausted(
+              "HTTP request read coroutine allocation failed"));
+    }
+    TransferResult result = co_await task;
+    if (!result.status.ok()) {
+      impl->reusable = false;
+      co_return http_failure<std::optional<HttpIncomingRequest>>(
+          std::move(result.status));
+    }
+    if (result.eof || result.bytes == 0) {
+      impl->closed = true;
+      impl->reusable = false;
+      if (impl->wire.size == 0) {
+        co_return std::optional<HttpIncomingRequest>{};
+      }
+      co_return http_failure<std::optional<HttpIncomingRequest>>(
+          Status::DataLoss("HTTP peer closed inside request head"));
+    }
+  }
+
+  if (minor_version != 0 && minor_version != 1) {
+    impl->reusable = false;
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::InvalidArgument("unsupported HTTP/1 minor version"));
+  }
+  const std::size_t head_length = static_cast<std::size_t>(parsed);
+  const std::ptrdiff_t method_offset = method - impl->wire.data;
+  const std::ptrdiff_t target_offset = target - impl->wire.data;
+  if (method_offset < 0 || target_offset < 0 ||
+      static_cast<std::size_t>(method_offset) > head_length ||
+      static_cast<std::size_t>(target_offset) > head_length ||
+      method_length > head_length - static_cast<std::size_t>(method_offset) ||
+      target_length > head_length - static_cast<std::size_t>(target_offset)) {
+    impl->reusable = false;
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::Internal("HTTP parser returned an invalid request view"));
+  }
+
+  Status captured =
+      impl->message.capture(impl->wire.data, head_length, header_count);
+  if (!captured.ok()) {
+    impl->reusable = false;
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        std::move(captured));
+  }
+  const StringView method_view(impl->message.head.data + method_offset,
+                               static_cast<std::uint32_t>(method_length));
+  const StringView target_view(impl->message.head.data + target_offset,
+                               static_cast<std::uint32_t>(target_length));
+  const HttpHeadersView headers = impl->message.view();
+
+  std::size_t host_count = 0;
+  for (const HttpHeader &header : headers) {
+    if (ascii_iequal(header.name, "host"))
+      ++host_count;
+  }
+  if (minor_version == 1 &&
+      (host_count != 1 || !headers.find("host").has_value() ||
+       headers.find("host")->empty())) {
+    impl->reusable = false;
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        Status::InvalidArgument(
+            "HTTP/1.1 request requires exactly one nonempty Host"));
+  }
+
+  Result<Framing> framing =
+      inspect_framing(headers, connection.limits_.max_body_bytes, true);
+  if (!framing) {
+    impl->reusable = false;
+    co_return http_failure<std::optional<HttpIncomingRequest>>(
+        std::move(framing).error());
+  }
+
+  const HttpVersion version =
+      minor_version == 0 ? HttpVersion::kHttp10 : HttpVersion::kHttp11;
+  const bool keep_alive =
+      version == HttpVersion::kHttp11
+          ? !header_has_token(headers, "connection", "close")
+          : header_has_token(headers, "connection", "keep-alive");
+  const bool expect_continue =
+      header_has_token(headers, "expect", "100-continue");
+  const std::uint32_t query_at = target_view.find('?');
+  const StringView path = query_at == StringView::npos
+                              ? target_view
+                              : target_view.substr(0, query_at);
+  const StringView query = query_at == StringView::npos
+                               ? StringView{}
+                               : target_view.substr(query_at + 1);
+
+  impl->wire.consume(head_length);
+  impl->body.begin(&impl->transport, &impl->wire, framing->kind,
+                   framing->length, connection.limits_, true);
+  impl->current_request =
+      HttpRequestView{method_view, target_view, path,       query,
+                      version,     headers,     keep_alive, expect_continue};
+  impl->request_active = true;
+  impl->response_started = false;
+  impl->continue_sent = false;
+  impl->reusable = keep_alive;
+
+  HttpIncomingRequest incoming{
+      impl->current_request,
+      detail::HttpConnectionAccess::reader(impl->body, allocator)};
+  co_return std::optional<HttpIncomingRequest>(std::move(incoming));
+}
+
+sched::Task<Status>
+http_server_send_continue(mem::AllocatorRef allocator,
+                          HttpServerConnection &connection,
+                          OperationOptions options) noexcept {
+  HttpServerConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->request_active) {
+    co_return Status::FailedPrecondition("HTTP server has no active request");
+  }
+  if (!impl->current_request.expects_continue()) {
+    co_return Status::FailedPrecondition(
+        "HTTP request did not ask for 100-continue");
+  }
+  if (impl->continue_sent || impl->response_started) {
+    co_return Status::FailedPrecondition(
+        "HTTP continue/final response was already started");
+  }
+  static constexpr char kContinue[] = "HTTP/1.1 100 Continue\r\n\r\n";
+  auto task = write_all(
+      allocator, impl->transport,
+      std::span<const std::byte>(reinterpret_cast<const std::byte *>(kContinue),
+                                 sizeof(kContinue) - 1),
+      options);
+  if (!task.valid()) {
+    impl->reusable = false;
+    co_return Status::ResourceExhausted(
+        "HTTP continue coroutine allocation failed");
+  }
+  Status status = co_await task;
+  if (status.ok()) {
+    impl->continue_sent = true;
+  } else {
+    impl->reusable = false;
+  }
+  co_return status;
+}
+
+sched::Task<Result<HttpBodyWriter>> http_server_start_response(
+    mem::AllocatorRef allocator, HttpServerConnection &connection,
+    const HttpResponseHead &head, std::optional<std::uint64_t> content_length,
+    OperationOptions options) noexcept {
+  HttpServerConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->request_active) {
+    co_return http_failure<HttpBodyWriter>(
+        Status::FailedPrecondition("HTTP server has no active request"));
+  }
+  if (impl->response_started || impl->writer.active) {
+    co_return http_failure<HttpBodyWriter>(
+        Status::FailedPrecondition("HTTP response was already started"));
+  }
+  if (!impl->body.done && !impl->body.abandoned) {
+    co_return http_failure<HttpBodyWriter>(Status::FailedPrecondition(
+        "drain or abandon the request body before responding"));
+  }
+  if (head.status < 200) {
+    co_return http_failure<HttpBodyWriter>(Status::InvalidArgument(
+        "use send_continue for an interim HTTP response"));
+  }
+
+  const bool head_request =
+      ascii_iequal(impl->current_request.method(), "HEAD");
+  const bool body_abandoned = impl->body.abandoned;
+  const bool status_suppresses_body =
+      head.status == 204 || head.status == 205 || head.status == 304;
+  if ((head.status == 204 || head.status == 205) &&
+      content_length.value_or(0) != 0) {
+    co_return http_failure<HttpBodyWriter>(Status::InvalidArgument(
+        "this HTTP status cannot carry a response body"));
+  }
+
+  WriteFraming framing = WriteFraming::kFixed;
+  std::optional<std::uint64_t> serialized_length = content_length;
+  bool effective_keep_alive =
+      head.keep_alive && impl->current_request.keep_alive() && !body_abandoned;
+  if (head_request || status_suppresses_body) {
+    framing = WriteFraming::kSuppressed;
+    if (head.status == 204 || head.status == 205)
+      serialized_length.reset();
+  } else if (content_length.has_value()) {
+    framing = WriteFraming::kFixed;
+  } else if (impl->current_request.version() == HttpVersion::kHttp11) {
+    framing = WriteFraming::kChunked;
+  } else {
+    framing = WriteFraming::kCloseDelimited;
+    effective_keep_alive = false;
+  }
+
+  impl->body.retire();
+
+  GrowBuffer output(allocator);
+  Status built = build_response_head(output, head, framing, serialized_length,
+                                     impl->current_request.version(),
+                                     effective_keep_alive);
+  if (!built.ok()) {
+    co_return http_failure<HttpBodyWriter>(std::move(built));
+  }
+  auto task = write_all(
+      allocator, impl->transport,
+      std::span<const std::byte>(
+          reinterpret_cast<const std::byte *>(output.data), output.size),
+      options);
+  if (!task.valid()) {
+    impl->reusable = false;
+    co_return http_failure<HttpBodyWriter>(Status::ResourceExhausted(
+        "HTTP response-head coroutine allocation failed"));
+  }
+  Status written = co_await task;
+  if (!written.ok()) {
+    impl->reusable = false;
+    co_return http_failure<HttpBodyWriter>(std::move(written));
+  }
+
+  begin_writer(impl->writer, impl->transport, impl, ConnectionKind::kServer,
+               framing, content_length, !effective_keep_alive);
+  impl->response_started = true;
+  co_return detail::HttpConnectionAccess::writer(impl->writer, allocator);
+}
+
+sched::Task<Status> http_server_send_fixed(mem::AllocatorRef allocator,
+                                           HttpServerConnection &connection,
+                                           const HttpResponseHead &head,
+                                           std::span<const std::byte> body,
+                                           OperationOptions options) noexcept {
+  auto start = http_server_start_response(
+      allocator, connection, head, static_cast<std::uint64_t>(body.size()),
+      options);
+  if (!start.valid()) {
+    co_return Status::ResourceExhausted(
+        "HTTP response-start coroutine allocation failed");
+  }
+  Result<HttpBodyWriter> result = co_await start;
+  if (!result)
+    co_return std::move(result).error();
+  HttpBodyWriter writer = std::move(*result);
+  if (!detail::HttpConnectionAccess::writer_suppressed(writer) &&
+      !body.empty()) {
+    auto write = http_body_write(allocator, writer, body, options);
+    if (!write.valid()) {
+      co_return Status::ResourceExhausted(
+          "HTTP response-body coroutine allocation failed");
+    }
+    Status status = co_await write;
+    if (!status.ok())
+      co_return status;
+  }
+  auto finish = http_body_finish(allocator, writer, {}, options);
+  if (!finish.valid()) {
+    co_return Status::ResourceExhausted(
+        "HTTP response-finish coroutine allocation failed");
+  }
+  co_return co_await finish;
+}
+
+sched::Task<Status> http_server_send_source(mem::AllocatorRef allocator,
+                                            HttpServerConnection &connection,
+                                            const HttpResponseHead &head,
+                                            HttpBodySource source,
+                                            OperationOptions options) noexcept {
+  if (!detail::HttpConnectionAccess::source_valid(source)) {
+    co_return Status::InvalidArgument("HTTP body source is invalid");
+  }
+  auto start = http_server_start_response(
+      allocator, connection, head,
+      detail::HttpConnectionAccess::source_length(source), options);
+  if (!start.valid()) {
+    co_return Status::ResourceExhausted(
+        "HTTP response-start coroutine allocation failed");
+  }
+  Result<HttpBodyWriter> result = co_await start;
+  if (!result)
+    co_return std::move(result).error();
+  HttpBodyWriter writer = std::move(*result);
+  if (detail::HttpConnectionAccess::writer_suppressed(writer)) {
+    auto finish = http_body_finish(allocator, writer, {}, options);
+    if (!finish.valid()) {
+      co_return Status::ResourceExhausted(
+          "HTTP response-finish coroutine allocation failed");
+    }
+    co_return co_await finish;
+  }
+
+  for (;;) {
+    auto next_task =
+        detail::HttpConnectionAccess::source_next(allocator, source, options);
+    if (!next_task.valid()) {
+      co_return Status::ResourceExhausted(
+          "HTTP body-source coroutine allocation failed");
+    }
+    Result<HttpBodyChunk> next = co_await next_task;
+    if (!next)
+      co_return std::move(next).error();
+    if (next->bytes.empty() && !next->end_stream) {
+      co_return Status::InvalidArgument(
+          "HTTP body source returned an empty non-final chunk");
+    }
+    if (!next->bytes.empty()) {
+      auto write = http_body_write(allocator, writer, next->bytes, options);
+      if (!write.valid()) {
+        co_return Status::ResourceExhausted(
+            "HTTP response-body coroutine allocation failed");
+      }
+      Status status = co_await write;
+      if (!status.ok())
+        co_return status;
+    }
+    if (next->end_stream) {
+      auto finish =
+          http_body_finish(allocator, writer, next->trailers, options);
+      if (!finish.valid()) {
+        co_return Status::ResourceExhausted(
+            "HTTP response-finish coroutine allocation failed");
+      }
+      co_return co_await finish;
+    }
+    if (!next->trailers.empty()) {
+      co_return Status::InvalidArgument(
+          "HTTP trailers are valid only on the final body chunk");
+    }
+  }
+}
+
+Result<HttpClientConnection>
+HttpClientConnection::create(mem::AllocatorRef allocator,
+                             HttpTransport transport,
+                             HttpLimits limits) noexcept {
+  Status valid = validate_limits(allocator, transport, limits);
+  if (!valid.ok()) {
+    return http_failure<HttpClientConnection>(std::move(valid));
+  }
+  Impl *impl = allocator.allocate_n<Impl>(1);
+  if (impl == nullptr) {
+    return http_failure<HttpClientConnection>(
+        Status::ResourceExhausted("HTTP client connection allocation failed"));
+  }
+  new (impl) Impl(allocator, std::move(transport), limits);
+  if (!impl->ready()) {
+    impl->~Impl();
+    allocator.deallocate_n(impl, 1);
+    return http_failure<HttpClientConnection>(Status::ResourceExhausted(
+        "HTTP client connection state allocation failed"));
+  }
+  return HttpClientConnection(allocator, limits, impl);
+}
+
+HttpClientConnection::~HttpClientConnection() {
+  if (impl_ != nullptr) {
+    impl_->~Impl();
+    allocator_.deallocate_n(impl_, 1);
+  }
+}
+
+HttpClientConnection::HttpClientConnection(
+    HttpClientConnection &&other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)), allocator_(other.allocator_),
+      limits_(other.limits_) {}
+
+HttpClientConnection &
+HttpClientConnection::operator=(HttpClientConnection &&other) noexcept {
+  if (this != &other) {
+    if (impl_ != nullptr) {
+      impl_->~Impl();
+      allocator_.deallocate_n(impl_, 1);
+    }
+    impl_ = std::exchange(other.impl_, nullptr);
+    allocator_ = other.allocator_;
+    limits_ = other.limits_;
+  }
+  return *this;
+}
+
+bool HttpClientConnection::valid() const noexcept {
+  return impl_ != nullptr && !impl_->closed && impl_->transport.valid();
+}
+
+unsigned HttpClientConnection::owner_worker() const noexcept {
+  return impl_ == nullptr ? 0 : impl_->transport.owner_worker();
+}
+
+sched::Task<Status>
+HttpClientConnection::close(OperationOptions options) noexcept {
+  if (impl_ == nullptr) {
+    return immediate_status(
+        allocator_,
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  if (impl_->closed)
+    return immediate_status(allocator_, Status{});
+  impl_->closed = true;
+  impl_->reusable = false;
+  impl_->request_active = false;
+  impl_->response_active = false;
+  impl_->body.active = false;
+  ++impl_->body.generation;
+  if (impl_->writer.active) {
+    detail::HttpConnectionAccess::writer_abandoned(impl_->writer);
+  }
+  return impl_->transport.shutdown(allocator_, options);
+}
+
+sched::Task<Result<HttpBodyWriter>> http_client_start_request(
+    mem::AllocatorRef allocator, HttpClientConnection &connection,
+    const HttpRequestHead &head, std::optional<std::uint64_t> content_length,
+    OperationOptions options) noexcept {
+  HttpClientConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<HttpBodyWriter>(
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  if (impl->request_active || impl->writer.active) {
+    co_return http_failure<HttpBodyWriter>(Status::FailedPrecondition(
+        "finish the active HTTP request before starting another"));
+  }
+  if (impl->response_active) {
+    if (impl->body.abandoned)
+      impl->reusable = false;
+    if (!impl->body.done) {
+      co_return http_failure<HttpBodyWriter>(Status::FailedPrecondition(
+          "drain the HTTP response body before reusing the connection"));
+    }
+    impl->body.retire();
+    impl->response_active = false;
+  }
+  if (!impl->reusable) {
+    co_return http_failure<HttpBodyWriter>(Status::FailedPrecondition(
+        "HTTP client connection is no longer reusable"));
+  }
+
+  WriteFraming framing;
+  if (content_length.has_value()) {
+    framing = WriteFraming::kFixed;
+  } else if (head.version == HttpVersion::kHttp11) {
+    framing = WriteFraming::kChunked;
+  } else {
+    co_return http_failure<HttpBodyWriter>(Status::InvalidArgument(
+        "streaming HTTP/1.0 request requires a known Content-Length"));
+  }
+
+  GrowBuffer output(allocator);
+  Status built = build_request_head(output, head, framing, content_length);
+  if (!built.ok()) {
+    co_return http_failure<HttpBodyWriter>(std::move(built));
+  }
+  auto task = write_all(
+      allocator, impl->transport,
+      std::span<const std::byte>(
+          reinterpret_cast<const std::byte *>(output.data), output.size),
+      options);
+  if (!task.valid()) {
+    impl->reusable = false;
+    co_return http_failure<HttpBodyWriter>(Status::ResourceExhausted(
+        "HTTP request-head coroutine allocation failed"));
+  }
+  Status written = co_await task;
+  if (!written.ok()) {
+    impl->reusable = false;
+    co_return http_failure<HttpBodyWriter>(std::move(written));
+  }
+
+  begin_writer(impl->writer, impl->transport, impl, ConnectionKind::kClient,
+               framing, content_length, !head.keep_alive);
+  impl->request_active = true;
+  impl->request_finished = false;
+  impl->last_request_was_head = ascii_iequal(head.method, "HEAD");
+  impl->last_request_expects_continue = head.expect_continue;
+  impl->continue_decided = false;
+  co_return detail::HttpConnectionAccess::writer(impl->writer, allocator);
+}
+
+sched::Task<Result<std::optional<HttpIncomingResponse>>>
+http_client_wait_for_continue(mem::AllocatorRef allocator,
+                              HttpClientConnection &connection,
+                              HttpBodyWriter &writer,
+                              OperationOptions options) noexcept {
+  HttpClientConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  if (!impl->request_active || impl->request_finished ||
+      !impl->last_request_expects_continue) {
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::FailedPrecondition(
+            "active HTTP request did not ask for 100-continue"));
+  }
+  if (impl->continue_decided || impl->waiting_for_continue) {
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::FailedPrecondition(
+            "HTTP continue decision was already requested"));
+  }
+  if (!detail::HttpConnectionAccess::writer_matches(writer, impl->writer)) {
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::FailedPrecondition(
+            "HTTP continue writer does not belong to this request"));
+  }
+  if (detail::HttpConnectionAccess::writer_has_written(writer)) {
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::FailedPrecondition(
+            "wait for 100-continue before writing the request body"));
+  }
+
+  // Expect is an optimization, not permission for a peer that ignores it to
+  // deadlock a request. Use a protocol sub-deadline while preserving an
+  // earlier caller deadline as the terminal whole-operation budget.
+  const time::Duration continue_wait = connection.limits_.expect_continue_wait;
+  if (continue_wait == time::Duration::zero()) {
+    impl->continue_decided = true;
+    co_return std::optional<HttpIncomingResponse>{};
+  }
+  OperationOptions wait_options = options;
+  const time::MonotonicTimePoint fallback_deadline =
+      time::deadline_after(continue_wait);
+  const bool fallback_owns_deadline =
+      !options.deadline.has_value() || fallback_deadline < *options.deadline;
+  if (fallback_owns_deadline)
+    wait_options.deadline = fallback_deadline;
+
+  impl->waiting_for_continue = true;
+  auto task = http_client_read_response(allocator, connection, wait_options);
+  if (!task.valid()) {
+    impl->waiting_for_continue = false;
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        Status::ResourceExhausted("HTTP continue coroutine allocation failed"));
+  }
+  Result<HttpIncomingResponse> response = co_await task;
+  impl->waiting_for_continue = false;
+  if (!response) {
+    if (fallback_owns_deadline && response.error().IsDeadlineExceeded()) {
+      // The timed receive has fully retired before it reports timeout, so the
+      // transport and any partial response bytes remain safe to reuse. A late
+      // 100 response is skipped by the normal final-response reader.
+      impl->reusable = true;
+      impl->continue_decided = true;
+      co_return std::optional<HttpIncomingResponse>{};
+    }
+    co_return http_failure<std::optional<HttpIncomingResponse>>(
+        std::move(response).error());
+  }
+  impl->continue_decided = true;
+  if (response->head.status() == 100) {
+    impl->body.retire();
+    co_return std::optional<HttpIncomingResponse>{};
+  }
+
+  detail::HttpConnectionAccess::disarm_writer(writer, impl->writer);
+  co_return std::optional<HttpIncomingResponse>(std::move(*response));
+}
+
+sched::Task<Result<HttpIncomingResponse>>
+http_client_read_response(mem::AllocatorRef allocator,
+                          HttpClientConnection &connection,
+                          OperationOptions options) noexcept {
+  HttpClientConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  const bool waiting_for_continue =
+      impl->waiting_for_continue && impl->request_active &&
+      !impl->request_finished && impl->writer.active &&
+      impl->last_request_expects_continue && !impl->continue_decided;
+  const bool waiting_for_final =
+      impl->request_active && impl->request_finished && !impl->writer.active;
+  if (!waiting_for_continue && !waiting_for_final) {
+    co_return http_failure<HttpIncomingResponse>(Status::FailedPrecondition(
+        "finish an HTTP request before reading its response"));
+  }
+  if (impl->response_active) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::FailedPrecondition("HTTP response was already returned"));
+  }
+
+  for (;;) {
+    impl->message.reset_message();
+    std::size_t last_length = 0;
+    int minor_version = -1;
+    int status_code = 0;
+    const char *reason = nullptr;
+    std::size_t reason_length = 0;
+    std::size_t header_count = 0;
+    int parsed = -2;
+
+    for (;;) {
+      if (impl->wire.size != 0) {
+        header_count = impl->message.capacity;
+        parsed =
+            phr_parse_response(impl->wire.data, impl->wire.size, &minor_version,
+                               &status_code, &reason, &reason_length,
+                               impl->message.raw, &header_count, last_length);
+        if (parsed > 0)
+          break;
+        if (parsed == -1) {
+          impl->reusable = false;
+          const Status status =
+              header_count == impl->message.capacity
+                  ? Status::ResourceExhausted(
+                        "HTTP response exceeds max_header_count")
+                  : Status::DataLoss("malformed HTTP response head");
+          co_return http_failure<HttpIncomingResponse>(status);
+        }
+        last_length = impl->wire.size;
+        if (impl->wire.size >= connection.limits_.max_head_bytes) {
+          impl->reusable = false;
+          co_return http_failure<HttpIncomingResponse>(
+              Status::ResourceExhausted(
+                  "HTTP response head exceeds max_head_bytes"));
+        }
+      }
+
+      const std::size_t amount =
+          std::min(connection.limits_.read_chunk_bytes,
+                   connection.limits_.max_head_bytes - impl->wire.size);
+      auto task =
+          read_more(allocator, impl->wire, impl->transport, amount, options);
+      if (!task.valid()) {
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+            "HTTP response read coroutine allocation failed"));
+      }
+      TransferResult result = co_await task;
+      if (!result.status.ok()) {
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(std::move(result.status));
+      }
+      if (result.eof || result.bytes == 0) {
+        impl->closed = true;
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(
+            Status::DataLoss("HTTP peer closed before a response head"));
+      }
+    }
+
+    if (minor_version != 0 && minor_version != 1) {
+      impl->reusable = false;
+      co_return http_failure<HttpIncomingResponse>(
+          Status::DataLoss("unsupported HTTP/1 minor version"));
+    }
+    const std::size_t head_length = static_cast<std::size_t>(parsed);
+    const std::ptrdiff_t reason_offset = reason - impl->wire.data;
+    if (reason_offset < 0 ||
+        static_cast<std::size_t>(reason_offset) > head_length ||
+        reason_length > head_length - static_cast<std::size_t>(reason_offset)) {
+      impl->reusable = false;
+      co_return http_failure<HttpIncomingResponse>(
+          Status::Internal("HTTP parser returned an invalid response view"));
+    }
+    Status captured =
+        impl->message.capture(impl->wire.data, head_length, header_count);
+    if (!captured.ok()) {
+      impl->reusable = false;
+      co_return http_failure<HttpIncomingResponse>(std::move(captured));
+    }
+
+    const HttpHeadersView headers = impl->message.view();
+    const HttpVersion version =
+        minor_version == 0 ? HttpVersion::kHttp10 : HttpVersion::kHttp11;
+    bool keep_alive =
+        version == HttpVersion::kHttp11
+            ? !header_has_token(headers, "connection", "close")
+            : header_has_token(headers, "connection", "keep-alive");
+    const bool informational =
+        status_code >= 100 && status_code < 200 && status_code != 101;
+    const bool no_body = informational || status_code == 101 ||
+                         status_code == 204 || status_code == 205 ||
+                         status_code == 304 || impl->last_request_was_head;
+
+    Framing framing{BodyFraming::kNone, 0};
+    if (!no_body) {
+      Result<Framing> inspected =
+          inspect_framing(headers, connection.limits_.max_body_bytes, false);
+      if (!inspected) {
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(
+            std::move(inspected).error());
+      }
+      framing = *inspected;
+      if (framing.kind == BodyFraming::kCloseDelimited)
+        keep_alive = false;
+    }
+    if (status_code == 101)
+      keep_alive = false;
+
+    const StringView reason_view(impl->message.head.data + reason_offset,
+                                 static_cast<std::uint32_t>(reason_length));
+    impl->wire.consume(head_length);
+    if (informational && !(waiting_for_continue && status_code == 100)) {
+      // 100 Continue and other non-upgrade informational messages have no
+      // body and do not complete the request/response exchange.
+      continue;
+    }
+
+    if (waiting_for_continue && status_code == 100) {
+      impl->body.begin(&impl->transport, &impl->wire, BodyFraming::kNone, 0,
+                       connection.limits_, false);
+      impl->current_response = HttpResponseView{status_code, reason_view,
+                                                version, headers, keep_alive};
+      co_return HttpIncomingResponse{
+          impl->current_response,
+          detail::HttpConnectionAccess::reader(impl->body, allocator)};
+    }
+
+    impl->body.begin(&impl->transport, &impl->wire, framing.kind,
+                     framing.length, connection.limits_, false);
+    impl->current_response = HttpResponseView{status_code, reason_view, version,
+                                              headers, keep_alive};
+    if (waiting_for_continue) {
+      // The peer rejected the request before its body. This is a successful
+      // protocol transition, not an abandoned writer/connection.
+      impl->writer.active = false;
+    }
+    impl->response_active = true;
+    impl->request_active = false;
+    impl->request_finished = false;
+    impl->reusable = impl->reusable && keep_alive;
+
+    HttpIncomingResponse incoming{
+        impl->current_response,
+        detail::HttpConnectionAccess::reader(impl->body, allocator)};
+    co_return incoming;
+  }
+}
+
+sched::Task<Result<HttpIncomingResponse>> http_client_request_fixed(
+    mem::AllocatorRef allocator, HttpClientConnection &connection,
+    const HttpRequestHead &head, std::span<const std::byte> body,
+    OperationOptions options) noexcept {
+  auto start = http_client_start_request(
+      allocator, connection, head, static_cast<std::uint64_t>(body.size()),
+      options);
+  if (!start.valid()) {
+    co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+        "HTTP request-start coroutine allocation failed"));
+  }
+  Result<HttpBodyWriter> result = co_await start;
+  if (!result) {
+    co_return http_failure<HttpIncomingResponse>(std::move(result).error());
+  }
+  HttpBodyWriter writer = std::move(*result);
+  if (head.expect_continue) {
+    auto wait =
+        http_client_wait_for_continue(allocator, connection, writer, options);
+    if (!wait.valid()) {
+      co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+          "HTTP continue coroutine allocation failed"));
+    }
+    Result<std::optional<HttpIncomingResponse>> decision = co_await wait;
+    if (!decision) {
+      co_return http_failure<HttpIncomingResponse>(std::move(decision).error());
+    }
+    if (decision->has_value()) {
+      co_return std::move(decision->value());
+    }
+  }
+  if (!body.empty()) {
+    auto write = http_body_write(allocator, writer, body, options);
+    if (!write.valid()) {
+      co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+          "HTTP request-body coroutine allocation failed"));
+    }
+    Status status = co_await write;
+    if (!status.ok()) {
+      co_return http_failure<HttpIncomingResponse>(std::move(status));
+    }
+  }
+  auto finish = http_body_finish(allocator, writer, {}, options);
+  if (!finish.valid()) {
+    co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+        "HTTP request-finish coroutine allocation failed"));
+  }
+  Status finished = co_await finish;
+  if (!finished.ok()) {
+    co_return http_failure<HttpIncomingResponse>(std::move(finished));
+  }
+  auto response = http_client_read_response(allocator, connection, options);
+  if (!response.valid()) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::ResourceExhausted("HTTP response coroutine allocation failed"));
+  }
+  co_return co_await response;
+}
+
+sched::Task<Result<HttpIncomingResponse>>
+http_client_request_source(mem::AllocatorRef allocator,
+                           HttpClientConnection &connection,
+                           const HttpRequestHead &head, HttpBodySource source,
+                           OperationOptions options) noexcept {
+  if (!detail::HttpConnectionAccess::source_valid(source)) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::InvalidArgument("HTTP body source is invalid"));
+  }
+  auto start = http_client_start_request(
+      allocator, connection, head,
+      detail::HttpConnectionAccess::source_length(source), options);
+  if (!start.valid()) {
+    co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+        "HTTP request-start coroutine allocation failed"));
+  }
+  Result<HttpBodyWriter> result = co_await start;
+  if (!result) {
+    co_return http_failure<HttpIncomingResponse>(std::move(result).error());
+  }
+  HttpBodyWriter writer = std::move(*result);
+
+  if (head.expect_continue) {
+    auto wait =
+        http_client_wait_for_continue(allocator, connection, writer, options);
+    if (!wait.valid()) {
+      co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+          "HTTP continue coroutine allocation failed"));
+    }
+    Result<std::optional<HttpIncomingResponse>> decision = co_await wait;
+    if (!decision) {
+      co_return http_failure<HttpIncomingResponse>(std::move(decision).error());
+    }
+    if (decision->has_value()) {
+      co_return std::move(decision->value());
+    }
+  }
+
+  for (;;) {
+    auto next_task =
+        detail::HttpConnectionAccess::source_next(allocator, source, options);
+    if (!next_task.valid()) {
+      co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+          "HTTP body-source coroutine allocation failed"));
+    }
+    Result<HttpBodyChunk> next = co_await next_task;
+    if (!next) {
+      co_return http_failure<HttpIncomingResponse>(std::move(next).error());
+    }
+    if (next->bytes.empty() && !next->end_stream) {
+      co_return http_failure<HttpIncomingResponse>(Status::InvalidArgument(
+          "HTTP body source returned an empty non-final chunk"));
+    }
+    if (!next->bytes.empty()) {
+      auto write = http_body_write(allocator, writer, next->bytes, options);
+      if (!write.valid()) {
+        co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+            "HTTP request-body coroutine allocation failed"));
+      }
+      Status status = co_await write;
+      if (!status.ok()) {
+        co_return http_failure<HttpIncomingResponse>(std::move(status));
+      }
+    }
+    if (!next->trailers.empty() && !next->end_stream) {
+      co_return http_failure<HttpIncomingResponse>(Status::InvalidArgument(
+          "HTTP trailers are valid only on the final body chunk"));
+    }
+    if (next->end_stream) {
+      auto finish =
+          http_body_finish(allocator, writer, next->trailers, options);
+      if (!finish.valid()) {
+        co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+            "HTTP request-finish coroutine allocation failed"));
+      }
+      Status finished = co_await finish;
+      if (!finished.ok()) {
+        co_return http_failure<HttpIncomingResponse>(std::move(finished));
+      }
+      break;
+    }
+  }
+
+  auto response = http_client_read_response(allocator, connection, options);
+  if (!response.valid()) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::ResourceExhausted("HTTP response coroutine allocation failed"));
+  }
+  co_return co_await response;
 }
 
 } // namespace hyle::io
