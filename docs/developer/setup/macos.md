@@ -7,6 +7,20 @@
 > correctness/portability 复核，不能把两台机器或两种 linkage 混为一个 Formal 证据。
 > 无网机器的 Command Line Tools/CMake 介质与断网验收见 [`offline.md`](offline.md)。
 
+从 Windows canonical workspace 连接时，MacBook Air 使用 OpenSSH 默认身份：
+
+```powershell
+ssh kiro@172.22.10.198
+```
+
+Mac mini 使用它自己的专用身份；该 key 不能拿来判断 Air 是否可达：
+
+```powershell
+ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107
+```
+
+只记录 identity 的位置与连接方法，不把私钥内容、远端临时源码或构建产物提交进仓库。
+
 ## 一、硬门槛
 
 | 组件 | 要求 | 装法 |

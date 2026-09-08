@@ -12,6 +12,17 @@
 7. 涉及模块顺序、组件、依赖或交付时阅读[架构路线](docs/architecture/roadmap.md)和
    [构建系统](docs/architecture/build-system.md)。
 
+## 远程验证工作区
+
+- 产品真相只在 Windows `C:\public\project-hyle\hyle`；WSL 与两台 macOS 主机上的 checkout/
+  archive 都是可丢弃的验证副本，不得反向覆盖产品源码。
+- MacBook Air `Mac16,12`：`ssh kiro@172.22.10.198`。使用 Windows OpenSSH 的默认身份；不要强制
+  指定给 Mac mini 使用的 `codex_mac_172_22_10_107_win`。
+- Mac mini `Mac16,10`：
+  `ssh -i C:\Users\kiro\.ssh\codex_mac_172_22_10_107_win kiro@172.22.10.107`。
+- `M1-MAC` profile 当前只指 MacBook Air；Mac mini 只签 correctness/portability，不能冒充同一台
+  Formal 性能机。工具位置、部署版本和缓存合同见 [macOS 环境准备](docs/developer/setup/macos.md)。
+
 ## 权威边界
 
 - architecture 说明长期需求、边界和决策；user 文档说明当前可依赖的公开用法。
