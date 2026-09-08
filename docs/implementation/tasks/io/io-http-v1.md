@@ -130,29 +130,38 @@ producer; its callable and coroutine state must outlive `send_response()`/`reque
 Trailers become visible only after end-of-body. P1 may start only after this shape has an
 immutable candidate commit and the same-contract peer fixture is fixed.
 
-## Owner 七问（AUDITED）
+## Owner 七问（terminal candidate）
 
-1. Third-party: picohttpparser is direct vendored mechanism and must move to io_http; inference engines/Beast/Seastar
-   are references only.
-2. Capability: seven admitted families have material gaps captured by F02--F05; application server/WebSocket remain
-   explicit negative space.
-3. Reuse: io_core transport/result/options, io_tls encrypted transport, Error, Time, Mem Region and Container text are
-   candidates. Parser integration remains local because peers with event loops are not same-contract reusable runtimes.
-4. Performance: P1 normal REST + SSE; historical raw/pico or sync callback microbenches do not gate. Compare same parsing,
-   body ownership and backpressure or use natural-route budget without primitive SOTA claims.
-5. FFI: `N/A`, no C schema/codec/exports.
-6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared candidate journeys passed before the final
-   private algorithm change and require one terminal replay. Offline configuration remains a build-contract gate.
-7. C++ usability/docs: natural typed connection/body APIs and selection guidance are candidate-complete; terminal guide
-   scan and red-team receipt remain pending.
+1. Third-party: picohttpparser is the direct private syntax mechanism owned and packaged by `io_http`; Boost.Beast and
+   Nginx are evidence peers, while inference engines and Seastar are reference consumers/architectures only. No peer
+   event loop or public provider type leaks into the product.
+2. Capability: all seven admitted families are `COMPLETE`; bounded incremental client/server bodies, keep-alive,
+   trailers, Expect/Continue, typed failures and lifecycle are present. Routing, middleware, auth/schema, CONNECT tunnel,
+   protocol Upgrade/WebSocket, cookie jar and multipart convenience remain named negative space rather than silent claims.
+3. Reuse: the factor reuses io_core transport/options/scatter-gather, io_tls encrypted transport, Error, Time, Mem and
+   Container text along legal graph edges. HTTP syntax/framing remains local because none of those facilities has the same
+   contract. No duplicate runtime, allocator, clock, cancel authority or normal-path queue remains.
+4. Performance: the qualified W1-WSL natural REST/stream route is `PARITY` with Beast in both orders and the fragmented
+   holdout is `WIN`; all four rows pass the predeclared 5% non-inferiority gate. This is engineering evidence for those
+   two source-built routes, not an all-HTTP, TLS, Nginx-server, cross-platform or Formal SOTA claim.
+5. FFI: `N/A`; the product tree has no C schema/header, bridge, C export, managed sample, FFI option or FFI-only layout.
+   Shared artifacts export ordinary decorated C++23 symbols for compatible toolchains.
+6. Delivery: the exact candidate passes direct source embedding plus relocated installed static/shared `io` product
+   consumers on Windows, and a fresh fully-disconnected configure resolves its locked shared source cache without network.
+   Linux/macOS shared correctness also exercises the same public factor and private provider boundary.
+7. C++ usability/docs: typed RAII connection, move-only body handle, span/view, bounded convenience, streaming source,
+   error, deadline/cancel and explicit `close()` form natural journeys. The guide states selection, borrow invalidation,
+   owner-fiber/concurrency, backpressure, limit, teardown and unsupported protocol-takeover traps.
 
 ## Current decision
 
-`AUDITED / ACTIVE`。F01--F05 的公开 API/usability 形状保持冻结。`4a3cbf54` 的首个正式 P1 包
-资格门全过但 normal workload 为 `INCONCLUSIVE`；本卡两项机制诊断额度已经用完，最后一项私有
-算法修正删除了 plain TCP 热路径上的纯转发 coroutine frame。新的 immutable candidate 尚待形成，
-之后只允许一次正式 P1。F06 仍需该 candidate 的三平台/三交付/sanitizer、同合同 P1、guide 与
-red-team terminal receipt；若 P1 仍不通过，本卡按既定停止规则进入 `BLOCKED`。
+`AUDITED / ACTIVE`，terminal evidence 已齐，等待按状态机依次登记 `CANDIDATE -> VERIFIED -> CLOSED`。
+F01--F05 的公开 API/usability 形状保持冻结。最终 immutable product candidate
+`400e015e6e8604b753d64cd27a16e21898670e91` 已通过唯一允许的末次正式 P1：1 KiB normal workload
+双执行顺序均为 `PARITY` 且通过 5% non-inferiority gate，64 KiB fragmented holdout 双顺序均为
+`WIN`。性能调查到此停止，不再以 benchmark 为由改变产品。F06 的三平台、source/static/shared、
+sanitizer、guide 与 red-team terminal inputs 已完成；registry 未走完合法转换前仍不得写成
+`CLOSED/FROZEN`。
 
 ## Implementation checkpoints
 
@@ -188,5 +197,77 @@ red-team terminal receipt；若 P1 仍不通过，本卡按既定停止规则进
   workload 每个 response 重复支付 8 次；Beast 的相同行为由一个 `async_write` composed operation
   承担。最终修正使 plain transport dispatch 直接返回 io_core vectored task，并在 owner coroutine
   内同步翻译结果；fixed request 同样删除纯转发 frame。双顺序非正式机制检查的 normal 差距约
-  `2.3%`，方向一致，Windows plain/TLS correctness 仍通过。下一 candidate 只允许再执行一次正式
-  qualification；若仍未通过，本卡按停止规则进入 `BLOCKED`，不再增加诊断或改变 workload。
+  `2.3%`，方向一致，Windows plain/TLS correctness 仍通过。该修正形成 `400e015e` candidate；其
+  唯一正式 qualification 结果见下一项。此后不再增加诊断或改变 workload。
+- `400e015e` 的最终 W1-WSL 正式包通过 source/peer/artifact/build/host provenance、A/A、5%/10%
+  known-delta、timer-floor、qualification 与 performance 聚合门。1 KiB normal 的 candidate-first /
+  peer-first 中位 advantage ratio 为 `0.9941` / `1.0042`，置信区间分别为
+  `[0.9843, 1.0288]` / `[0.9808, 1.0288]`，均裁决 `PARITY`；64 KiB fragmented holdout 为
+  `3.0297` / `3.0418`，均裁决 `WIN`。manifest / summary SHA-256 分别为
+  `BBA0094D768F93CE9BBAA25B6F88F3400DA05567A22CD3B03C078A0CF2C043F3` /
+  `31C919D09591F96E10A2B198B14EEA235B78EA92E3017B2157B5F186B1678C28`；contract SHA-256 为
+  `4340D27B845DC83D1C2A86A02192FAD1DE0110992E583ECCF4A6723C1C716C9C`。这是 WSL 工程证据，
+  不外推为所有网络、硬件、TLS 或完整服务器的普遍优势。
+- Nginx `5c812c034e6cb10368f9e98cf05b6d0a01f27f1f` 有界实现对照确认：其 memory chain 同样以
+  栈内 iovec、相邻内存段合并、partial-send cursor 和 write-ready backpressure 工作；HYLE 已有
+  64 段原生 scatter/gather、游标续写和 awaitable backpressure，HTTP chunk 的 prefix/payload/CRLF
+  本来就不相邻，因而相邻段合并不是本 workload 的缺陷。Nginx 的 `postpone_output`、rate limit 与
+  `sendfile_max_chunk` 是服务器策略，不能作为低延迟 token stream 的隐藏默认缓冲。Nginx 另有
+  memory/file mixed chain 与跨平台 `sendfile` 路线；HYLE 当前没有 file-to-socket 零拷贝 primitive，
+  这是通用 artifact-serving 的命名候选，不属于本卡 HTTP/1 协议范围或已冻结 FIX 集。只有真实
+  consumer 证明需要时，才依法重开其最低 owner（`io_core` 或独立 file-transfer factor）；不得为
+  通过 benchmark 把静态文件服务器策略塞进 `io_http`。
+
+## F06 terminal validation inputs
+
+所有产品验证都绑定 clean、exact `400e015e6e8604b753d64cd27a16e21898670e91` checkout；文档与
+registry 归档不改变该产品 identity：
+
+| gate | environment / shape | result |
+|---|---|---|
+| correctness | W1-WIN，MSVC 19.50，Release/shared，TLS ON | `hyle_io_http_tests` + `hyle_io_tls_tests`，5/5 PASS |
+| correctness | W1-WSL，GCC 14.2，Release/shared，TLS ON | 同一 5 tests，5/5 PASS |
+| correctness | M1-MAC，AppleClang 21，Release/shared，TLS ON | 同一 5 tests，5/5 PASS |
+| sanitizers | W1-WSL，GCC 14.2，RelWithDebInfo/static，ASan/UBSan/TSan | 三个独立 build 各 5/5 PASS；TSan 以禁用 ASLR 的受支持方式运行 |
+| delivery | W1-WIN selected product `io` | source consumer、relocated installed shared consumer、relocated installed static consumer 全部 PASS |
+| offline | W1-WIN，fresh configure，static `io`，tests/TLS/H2 off | `FETCHCONTENT_FULLY_DISCONNECTED=ON` PASS；无网络访问 |
+| performance | W1-WSL，qualified P1，n=15 × 双顺序 | normal 2/2 PARITY、holdout 2/2 WIN、5% NI 4/4 PASS |
+
+原始 WSL bundle 已用 `hyle-perf verify` 重放为 `QUALIFIED`、`paths_verified=true`、
+`provenance_compatibility=EXACT`；仓库内 68-file/409,501-byte 镜像与原目录 `diff -qr` 为空。manifest
+有意保留 live WSL artifact/toolchain 的绝对路径，Windows checkout 不能冒充可独立重放的 Formal archive。
+
+macOS 链接器报告本机 26.6.2 与 Homebrew OpenSSL 26.0 deployment metadata 不同；两者都高于库要求且
+correctness 全过，这只是验证环境 warning，不是产品或交付失败。Windows wrapper 若从另一个 current
+directory 以绝对路径调用，会把 preset 作用到调用目录；本轮通过在 exact source checkout 内执行规避。
+它不影响三种 consumer 结果，也不授权 IO task 顺手修改公共 build tooling；若要修复应作为独立
+build/package finding 处理。
+
+## Candidate red-team receipt
+
+- 自顶向下按 llama.cpp/ggml、ds4、vLLM、SGLang 的 REST/SSE/disconnect 旅程复查，全部 admitted
+  family 都有有界正常路线；应用路由、模型 schema、认证、batching/handler pool 没有下沉。
+- 自底向上反查公开 header/source/export：没有遗留 pointer/bool/fixed-slot/callback server API、C ABI、
+  provider-native handle、benchmark-only public entry 或第二套 deadline/cancel/allocator authority。
+- RFC 9112 body-length 优先级要求 HEAD、1xx、204、304 在 header 后结束，不论收到什么 framing field；
+  当前 client 的 no-body 路线因此是正确实现而非漏掉 CL/TE 检查。205 的发送端不生成 content，接收端
+  同样不暴露 content。普通 response 的 TE+CL、冲突 CL、非 final/bare chunked 仍按安全边界拒绝。
+- CONNECT 的 2xx 会转为 tunnel，101 会把 transport 交给 upgraded protocol；当前因子没有安全表达
+  residual buffered bytes/transport hand-off 的类型，故两者保持明确负空间。guide 已禁止把通用
+  method/header 当作 tunnel API；收到 101 后连接不可复用。WebSocket 非目标没有被写成“部分支持”。
+- connection outlives borrowed head/chunk/reader/writer 和 pending operation 的要求已在 guide 明示；
+  unfinished body 会取消复用，`discard()`、abandon/final-close、幂等 close 与 TLS close-notify 路径一致。
+- 输入 head、header count、body、read chunk 与高水位保留有界；输出逐 chunk await transport，未引入
+  hidden queue 或 per-chunk heap allocation。Nginx 对照没有发现当前 REST/SSE 路线遗漏更优复杂度；
+  相邻 buffer 合并对非相邻 chunk prefix/body/CRLF 不适用，sendfile 留在未来 artifact-serving owner。
+
+没有发现会推翻 candidate 的 correctness、安全、复杂度、自然 API、依赖或交付缺陷。
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | `PASS` | F01--F06 完成；协议 factor 与应用/transport/provider owner 分离 |
+| correctness | `PASS` | 三平台 exact-candidate tests + WSL ASan/UBSan/TSan + adversarial framing/lifecycle cases |
+| delivery | `PASS` | source、relocated installed static/shared consumer + fully disconnected configure |
+| usability / docs | `PASS` | typed RAII/streaming journey、selection 与 lifetime/concurrency/teardown/negative-space 陷阱齐全 |
+| reuse / red team | `PASS` | 合法复用既有 factor；RFC/Nginx/公开面反查无 material finding |
+| engineering performance | `PASS` | qualified Beast same-contract 双顺序 4/4 5% NI PASS |

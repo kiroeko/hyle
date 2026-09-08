@@ -208,8 +208,10 @@ for (;;) {
 (void)co_await connection.close(operation);
 ```
 
-head、header、body chunk 都是 connection-owned borrowed view。head/header 在同一
-连接的下一次消息操作失效；body chunk 在该 reader 的下一次操作失效。
+head、header、body chunk 都是 connection-owned borrowed view，connection 必须活过这些
+borrow 以及所有仍在途的 reader/writer operation。head/header 在同一连接的下一次消息操作
+失效；body chunk 在该 reader 的下一次操作失效。移动 connection 不会移动其内部状态，但销毁或
+`close()` 会让现有 reader/writer 失效；不要把未完成操作跨过 connection 的析构。
 小 JSON 使用显式上限的 `read_all(max_bytes)`；大 request/response 循环
 `body.read()`。要复用 keep-alive 连接，必须把 body 读完或调用 `discard()`；丢弃
 未完成 reader 会把连接标为不可复用，但 server 仍可发送一个强制 close 的最终
@@ -230,6 +232,11 @@ helper。source 和它借出的字节必须活到 `send_response` await 完成�
 返回且不会发送 body。HTTP 拒绝 TE+CL、冲突 Content-Length、重复 Host、非 bare
 chunked、obsolete folding 和 CRLF/token 注入；trailers 仅能随 chunked 的最终块
 发送，调用方还应在 head 中声明相应 `Trailer` 字段。
+
+HTTP/1 因子不提供协议接管：`CONNECT` tunnel、`101 Upgrade`/WebSocket 和取得底层
+transport 都不在当前合同中。不要用通用 method/header 字段发起这些操作；若 peer 返回 `101`，
+只能观察 response head，连接会变为不可复用并应关闭。需要 tunnel 或 upgraded protocol 时应先为
+独立因子冻结 ownership、残留已读字节和 transport hand-off 合同，不能从当前 connection 私自取句柄。
 
 所有 composed operation 复用同一个绝对 deadline/`CancelToken`，不会按 partial
 read/write 重置预算。`close()` 幂等，在安全完成 TCP shutdown 或 TLS close-notify

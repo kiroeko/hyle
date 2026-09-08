@@ -2,8 +2,47 @@
 
 <!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页当前证据只签发 `io_tls-v1` 的两个冻结自然路线；后续 V2 与旧 io 聚合数据均为
-> `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP、HTTP/2、transfer、全平台或全操作 SOTA。
+> 本页当前证据只签发 `io_tls-v1` 与 `io_http-v1` 各自冻结的自然路线；后续 V2 与旧 io 聚合数据均为
+> `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP/2、transfer、完整服务器、全平台或全操作
+> SOTA。
+
+## 2026-09-08 `io_http-v1` 最终工程证据（`PASS`）
+
+不可变产品 candidate/tree 为 `400e015e6e8604b753d64cd27a16e21898670e91` /
+`16b94922825e66373d4a33c76c22ece7156a4dde`。合同
+[`io-http-p1-v1`](../../../../bench/contracts/io-http-p1-v1.json) 在 W1-WSL、GCC 14.2、
+Release/static、单 worker persistent connection 上比较 HYLE public typed streaming HTTP/1 与
+Boost.Beast 的同合同自然路线。双方都解析并保留同一 request、由应用按相同 chunk 粒度产生 response，
+逐 chunk 写入并增量验证，不把直接内存 callback 与 awaitable transport 混作 peer。Boost source identity、
+构建参数、affinity、输入、artifact 与 host probe 均在 bundle 中锁定。
+
+advantage 为 candidate/peer 的 op/s，越大越有利于 HYLE；每种执行顺序各 15 个独立进程，置信水平
+99.26%，预声明 practical/non-inferiority margin 为 5%：
+
+| workload / 顺序 | HYLE / Beast（op/s） | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 128 × 1 KiB REST/stream / HYLE first | 66,286.94 / 66,571.84 | 0.9941 / [0.9843, 1.0288] | `PARITY` | `PASS` |
+| 128 × 1 KiB REST/stream / Beast first | 67,141.43 / 67,233.17 | 1.0042 / [0.9808, 1.0288] | `PARITY` | `PASS` |
+| 16 × 64 KiB fragmented / HYLE first | 19,114.04 / 6,264.43 | 3.0297 / [2.9623, 3.1255] | `WIN` | `PASS` |
+| 16 × 64 KiB fragmented / Beast first | 19,400.97 / 6,303.08 | 3.0418 / [2.9758, 3.1076] | `WIN` | `PASS` |
+
+A/A、5%/10% known delta、timer floor、source/peer/artifact/build/host provenance 与前后稳定性均
+`PASS`；qualification 和 performance 聚合门均 `PASS`。原始 68-file bundle 在
+[`io-http-p1-v1-400e015e`](../../../../evidence/performance/io-http-p1-v1-400e015e/)；manifest、summary、
+controls SHA-256 依次为
+`BBA0094D768F93CE9BBAA25B6F88F3400DA05567A22CD3B03C078A0CF2C043F3`、
+`31C919D09591F96E10A2B198B14EEA235B78EA92E3017B2157B5F186B1678C28`、
+`1CE746DD01B0F62BD69581A05B0E1576B281AA351031CADD89C1D6FDE6C5A979`。
+原始 `/root/hyle-perf-io-http-400e015e-evidence` 在保留的 WSL artifact/toolchain 上通过严格
+`hyle-perf verify`；仓库目录是 68-file/409,501-byte 的逐字节镜像（`diff -qr` 为空）。manifest 按
+工程证据合同保留原 WSL 绝对路径，因此 Windows 不能单独重放 live-path 校验；不得为可移植外观改写
+manifest。Formal 发布若需要脱离 live build 的可移植证明，应另由受信 runner 签发归档。
+
+本证据只支持上述 plain HTTP/1、single-worker、persistent-connection 形状。它不比较完整 Nginx/Seastar
+server，不覆盖 TLS、路由、handler 调度、真实网络 WAN、所有 body 分布或所有平台，也不把 holdout 的
+3x 外推成模块整体优势。Nginx `5c812c034e6cb10368f9e98cf05b6d0a01f27f1f` 仅作实现对照：其
+iovec/partial-send/readiness chain 与 HYLE 当前 scatter/gather/backpressure 同方向；其混合内存/文件
+`sendfile` 是未来 artifact-serving 候选，不是本 HTTP framing workload 的同合同 peer。
 
 ## 2026-09-08 `io_tls-v1` 最终工程证据（`PASS`）
 
