@@ -1,6 +1,6 @@
 # IO HTTP/1 v1：有界 streaming client/server 因子化与收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card（`AUDITED`）
 
@@ -155,8 +155,8 @@ immutable candidate commit and the same-contract peer fixture is fixed.
 
 ## Current decision
 
-`VERIFIED / ACTIVE`。产品候选与全部适用工程 gate 已分别登记，等待最后的 `CLOSED/FROZEN` terminal
-receipt；本步没有重跑或改变产品。
+`CLOSED / FROZEN`。产品 candidate `400e015e6e8604b753d64cd27a16e21898670e91` 与全部适用工程
+gate 已分别登记；本轮到此停止。后续只有 registry 中的具名 trigger 新事实才能依法重开。
 F01--F05 的公开 API/usability 形状保持冻结。最终 immutable product candidate
 `400e015e6e8604b753d64cd27a16e21898670e91` 已通过唯一允许的末次正式 P1：1 KiB normal workload
 双执行顺序均为 `PARITY` 且通过 5% non-inferiority gate，64 KiB fragmented holdout 双顺序均为
@@ -272,3 +272,33 @@ build/package finding 处理。
 | usability / docs | `PASS` | typed RAII/streaming journey、selection 与 lifetime/concurrency/teardown/negative-space 陷阱齐全 |
 | reuse / red team | `PASS` | 合法复用既有 factor；RFC/Nginx/公开面反查无 material finding |
 | engineering performance | `PASS` | qualified Beast same-contract 双顺序 4/4 5% NI PASS |
+
+## Terminal receipt（`CLOSED / FROZEN`）
+
+- freeze ID：`io-http-v1-freeze-2026-09-08`；完整复核点
+  `bb55e3e1c4c15d6fa9cdc34879ef728273c75525` / tree
+  `e4cf7f707dd9ec3b3ee45ef2583a664ad5987880`；产品 candidate/tree 保持
+  `400e015e6e8604b753d64cd27a16e21898670e91` /
+  `16b94922825e66373d4a33c76c22ece7156a4dde`；
+- immutable candidate LOC：全库代码 `495109`；自实现不含测试 `85581`；io_http 实现 `2829`；
+- scope、architecture、correctness、delivery、usability/docs、reuse/red-team 与 P1 全部 `PASS`；
+  Formal 为 `NONE`；
+- 限制：message/body view 与 reader/writer 借用 connection state，connection/source bytes 必须活过在途
+  await，连接固定单 owner fiber。CONNECT/101 hand-off、WebSocket、HTTP2/3、路由/auth/schema、cookie、
+  multipart 与 handler/batching policy 均为负空间。P1 只覆盖 W1-WSL plain、single-worker、persistent
+  connection 的两个 source-build workload，不外推 TLS、完整服务器、WAN、跨平台或全操作 SOTA；
+- reopen：只有真实 consumer 复现 framing/security/limit/disconnect/deadline/cancel/keep-alive/backpressure/
+  teardown/ownership/API 缺陷，证明缺少通用 HTTP1/transport hand-off/artifact-serving primitive，产品
+  API/layout/算法/正常成本/依赖/交付变化，provider/RFC/io_core/io_tls/OS/toolchain 语义漂移，或合格
+  同合同证据证明 material regression/更优复杂度，才能依法重开。
+
+三次 registry 转换前快照保存在 canonical checkout 外：
+
+- `C:\public\project-hyle\_validation\io-http-v1\transitions\before-candidate.json`，SHA-256
+  `B3052B93A9187145725256B1BCE78203D37A62549AF2769FC91A5966CD601A7B`；
+- `C:\public\project-hyle\_validation\io-http-v1\transitions\before-verified.json`，SHA-256
+  `0B2106FBC3167463B4D42FBA11F16DDCD5C89A2615A95A53D1A4A10D39EB035F`；
+- `C:\public\project-hyle\_validation\io-http-v1\transitions\before-closed.json`，SHA-256
+  `C238AB7591D0D7FF2BF6D9986FF56766697FDF64B3680E817D2ADF064F741ABE`。
+
+本轮终止；HTTP/2、transfer 与 io_core 后续施工不得把本卡历史命令式文字当成继续修改 HTTP/1 的授权。

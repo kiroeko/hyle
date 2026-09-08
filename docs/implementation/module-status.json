@@ -1317,7 +1317,7 @@
     },
     {
       "module": "io_http",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-http-v1",
       "closure_task": "docs/implementation/tasks/io/io-http-v1.md",
       "scope": "Factor HTTP1 framing and bounded streaming client/server lifecycle out of io_core; freeze natural message views, body streaming, request budgets, disconnect, backpressure and keep-alive contracts.",
@@ -1351,7 +1351,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_http v1 处于 VERIFIED；400e015e 已完成三平台正确性、sanitizers、source/static/shared/offline 交付、文档/红队及 W1-WSL 同合同 P1，等待 terminal CLOSED/FROZEN 登记。"
+      "freeze_confirmation": {
+        "id": "io-http-v1-freeze-2026-09-08",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-08",
+        "reviewed_commit": "bb55e3e1c4c15d6fa9cdc34879ef728273c75525",
+        "reviewed_tree": "e4cf7f707dd9ec3b3ee45ef2583a664ad5987880",
+        "evidence": "docs/implementation/tasks/io/io-http-v1.md"
+      },
+      "loc": {
+        "snapshot_commit": "400e015e6e8604b753d64cd27a16e21898670e91",
+        "repository_code": 495109,
+        "self_without_tests": 85581,
+        "module_implementation": 2829
+      },
+      "known_limitations": [
+        "HttpRequestView, HttpResponseView, headers, body chunks and body reader or writer handles borrow connection-owned state; the connection and source bytes must outlive every outstanding await, and each connection remains on one owner fiber with one body operation in flight.",
+        "CONNECT tunnel hand-off, 101 protocol upgrade, WebSocket, HTTP2 or HTTP3, routing, middleware, authentication, cookie or multipart convenience, model schema and handler admission or batching are outside this factor.",
+        "The engineering P1 receipt covers two plain HTTP1 source-built single-worker persistent-connection workloads on W1-WSL against Boost.Beast; it is not a TLS, complete server, WAN, cross-platform, all-body-distribution or Formal SOTA certificate.",
+        "picohttpparser is the private syntax provider; a provider, RFC framing, io_core transport or io_tls lifecycle semantic change requires affected correctness and performance replay.",
+        "Delivery is C++23 source, static and shared for compatible C++ toolchains; there is no Native FFI, C API or stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named HTTP consumer reproduces a framing, smuggling, fragmentation, limit, allocation-failure, disconnect, deadline, cancellation, keep-alive, backpressure, teardown, ownership or natural C++ API-usability defect.",
+        "A real consumer proves a missing generic HTTP1 capability, protocol-takeover hand-off or artifact-serving transfer primitive rather than application routing, model schema, authentication or serving policy.",
+        "The public API, layout, framing algorithm, allocation, copy, syscall, normal-path metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
+        "picohttpparser, a supported RFC contract, io_core, io_tls, compiler, standard library or operating system changes semantics relied on by parsing, transport, cancellation or teardown.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted HTTP1 journey."
+      ],
+      "summary": "io_http v1 CLOSED/FROZEN：typed bounded HTTP/1 client/server、增量 body、awaitable backpressure、keep-alive/Expect/trailers、统一 deadline/cancel 与私有 parser owner 已完成三平台正确性/sanitizers、三交付/offline、文档/红队及 W1-WSL 对 Beast 的 4/4 5% P1 非劣门。"
     },
     {
       "module": "io_http2",

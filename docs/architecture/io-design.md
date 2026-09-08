@@ -72,7 +72,7 @@ private backend engine ───────────────────
 > 现存例外和补全工单见
 > [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
-IO 正在按 factor 重构；`io_tls` 已 `CLOSED/FROZEN`，`io_core`、`io_http`、
+IO 正在按 factor 重构；`io_tls`、`io_http` 已 `CLOSED/FROZEN`，`io_core`、
 `io_http2` 与 `io_transfer` 仍为 `AUDITED`，不得把实现 checkpoint 当成已收口证书。
 当前轮与唯一状态见各 closure card 和
 [`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
