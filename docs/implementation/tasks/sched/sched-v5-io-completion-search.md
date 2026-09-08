@@ -61,7 +61,7 @@ backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue
 
 ## Current decision
 
-`CANDIDATE / ACTIVE`。产品冻结于
+`VERIFIED / ACTIVE`。产品冻结于
 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
 `212a5c0305d9a756cdea91b2ed1270319264db8a`；公开 API、依赖图和普通无 IO scheduler 路线未变。
 
@@ -74,3 +74,38 @@ backend 都由现有 ring/port/kqueue wake hook 打断 blocking reap。run queue
 - WSL GCC 14 static 同三项全过；默认 Balanced TLS diagnostic 已从修复前约 `1.94/165.4 ms`
   降为约 `1.14/4.64 ms`，同次 Asio 为 `1.10/4.63 ms`。这些是机制 smoke，不替代正式 P1；
 - candidate 后只允许验证、文档与 fixture 修正；任何产品变化必须退回 `AUDITED`。
+
+## Candidate verification（`VERIFIED`）
+
+- W1-WIN MSVC 19.44、W1-WSL GCC 14 与 M1-MAC AppleClang 21 的
+  `hyle_sched_test`、`hyle_io_core_test`、`hyle_io_tls_test` 全部通过；
+- WSL GCC 14 exact-factor 的 ASan、UBSan 与 TSan（`setarch x86_64 -R`）三组均通过；Windows installed
+  `hyle::io` shared/static consumers 均通过；
+- W1-WSL clean source `b38aa34cf75cd89b179f0ee32449bfeb4ff0cb59` 的正式
+  `io-tls-p1-v1` qualification/performance gate、A/A、5%/10% known delta、timer floor、artifact/build/
+  consumer provenance 与稳定性全部 `PASS`。handshake 双顺序 HYLE/Asio advantage 为
+  `1.081/1.100`，encrypted stream 为 `1.069/1.075`，四项 5% NI 均通过；superiority 因置信区间跨
+  practical margin 均为 `INCONCLUSIVE`；
+- reopen 时 registry 的 `engineering_performance.machine_profile` 误沿用 v4 的 `W1-WIN`，但本卡从
+  `REOPENED` 起冻结的终端 consumer gate 与 `io-tls-p1-v1` 合同始终明确为 `W1-WSL`；进入
+  `VERIFIED` 时把投影纠正为实际冻结机器，不更换采样结果、阈值或测试合同；
+- 原始 bundle `/root/hyle-io-tls-p1-evidence-b38aa34c`；manifest/summary/controls SHA-256 依次为
+  `6D0049A792B83630B489EB59EB78B886AF731B2209BAB6022DB94834D2E341F9`、
+  `BD4FDB499490DC080415C0DEDB781BDEDFEDAC1AB990C187CE7FF1ABE4A03143`、
+  `49FE7239FA181D595013CE12BD78AEF811CB545B6522E34BCCCE654776E1BD49`；
+- candidate 后红队复核了 searcher 计数配对、sleeper publication/recheck、foreign/pinned wake、timer
+  bound、shutdown、IO detach 和 completion retirement。IO-in-flight 路线从未增加
+  `num_searching_`，因此不会错误 `fetch_sub`；它注册 sleeper 后再查队列，proactor wake 可打断
+  blocking wait。无 IO 路线仍成对 increment/decrement，未发现丢 wake、underflow、busy poll、API
+  污染、TLS 特化或新增常态成本。
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | `PASS` | 唯一冻结 FIX 完成，无 API/依赖/idle-policy 参数扩张 |
+| correctness | `PASS` | 三平台定向 suites + WSL ASan/UBSan/TSan |
+| delivery | `PASS` | 直接 source journeys + Windows installed shared/static consumer |
+| usability / docs | `PASS` | 无公开形状变化；触发、取舍、限制与自然 consumer 已记录 |
+| reuse / red team | `PASS` | 复用既有 poll/wake/sleeper 协议，无第二套 IO 或等待 authority |
+| engineering performance | `PASS` | qualified 双顺序 natural TLS consumer 四项 5% NI PASS |
+
+本轮工程门已经完成；terminal commit 只允许补 LOC、限制、reopen trigger 与冻结 receipt。

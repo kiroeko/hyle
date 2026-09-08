@@ -1155,7 +1155,7 @@
     },
     {
       "module": "sched",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
       "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
       "round_id": "sched-v5-io-completion-search",
@@ -1172,17 +1172,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "machine_profile": "W1-WSL",
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "sched-v5 CANDIDATE：run queue 排空且 IO 仍在途时跳过不收 CQ 的 idle search；无公开 API/依赖变化，Windows/WSL Sched、IO Core、TLS correctness 通过，待 macOS、sanitizer、交付、红队与正式 P1。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "sched-v5 VERIFIED：IO completion 空闲转换缺陷已修复；三平台定向正确性、WSL sanitizers、直接交付、红队及 W1-WSL 自然 TLS consumer 双顺序 5% P1 非劣门全部通过，无公开 API 或普通无 IO 路线扩张。"
     },
     {
       "module": "io_core",
@@ -1213,7 +1223,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-tls-v1",
       "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
       "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
@@ -1228,16 +1238,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 新候选冻结于 2f9ecc81：TLS API/provider 未变，依赖的 Sched completion latency 已修；三平台定向 correctness、WSL ASan/UBSan/TSan 与 Windows static/shared package 通过，待唯一正式 W1-WSL P1 与红队。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "io_tls v1 VERIFIED：typed TLS 生命周期、三平台正确性、WSL sanitizers、source/static/shared 交付、文档/易用性、红队及 W1-WSL 对 Asio 的两条自然路线双顺序 5% P1 非劣门全部通过。"
     },
     {
       "module": "io_http",

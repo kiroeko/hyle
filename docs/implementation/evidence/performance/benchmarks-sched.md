@@ -2,8 +2,32 @@
 
 <!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
-> 当前产品状态只见 [`module-status.json`](../../module-status.json)。本页后续大部分点值是旧轮
-> `HISTORICAL / UNQUALIFIED` 输入；不能与下面 `sched-v1` terminal evidence 混成一张证书。
+> 当前产品状态只见 [`module-status.json`](../../module-status.json)。当前工程结论以紧接的 sched-v5
+> 小节为准；后续各轮数据只解释对应候选，不能拼成全操作、跨平台或 Formal SOTA。
+
+## sched-v5 IO completion 工程证据（2026-09-08，`PASS`）
+
+产品 candidate 为 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
+`212a5c0305d9a756cdea91b2ed1270319264db8a`。本轮只改变 attached IO driver 报告 in-flight、run queue
+为空时的 idle transition：worker 不再先执行不 poll completion 的固定 spin/yield search，而直接进入
+已有的 sleeper publication、queue recheck 与可被 foreign wake 打断的 proactor wait。无 IO hook 或无
+in-flight IO 时仍走既有 searcher 路线；公共 API、layout、依赖、allocation、lock、metadata 与 syscall
+种类均未变化。
+
+冻结的真实 consumer gate 是 [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json)。W1-WSL、
+GCC 14.2、Release/static、portable ISA、OpenSSL 3.0.13；clean verification source 为
+`b38aa34cf75cd89b179f0ee32449bfeb4ff0cb59`，产品目录相对 candidate 无差异。对 Asio
+`8806a6803cde7054c3049d3666d3ec36786568c5` 的双顺序 5% non-inferiority 四门全部 `PASS`：verified
+handshake advantage `1.081/1.100`，512x256 B encrypted-stream advantage `1.069/1.075`；四行
+superiority 都因 CI 跨 5% practical margin 而为 `INCONCLUSIVE`，不宣称确定胜出。精确表、合同边界、
+bundle 与 hash 见 [`benchmarks-io`](benchmarks-io.md)。
+
+这相对修复前合法暴露的 `0.448/0.446` 与 `0.0265/0.0259` 不是调 spin 常数或 benchmark 特化，而是
+移除了每个低并发 IO 依赖链中约 160 us 的错误 completion 等待。A/A、known-delta、timer floor、
+artifact/build/provenance 与 source/peer/input/host stability 全部通过。三平台 Sched/IO/TLS correctness、
+WSL ASan/UBSan/TSan 和 Windows installed shared/static consumer 也通过。该 `PASS` 只裁决本轮受影响的
+IO completion 路线；无 IO 批执行的既有证据仍由 sched-v4 小节承载，不借本次 TLS workload 宣称全
+Scheduler SOTA。
 
 ## sched-v4 最终工程证据（2026-09-07，`PASS`）
 

@@ -1,9 +1,45 @@
 # io 实测铁证
 
-> **V2：`HISTORICAL / UNQUALIFIED`。** io 尚未按当前真实消费者与仪器资格标准重审；
-> 本页数字只解释旧 candidate，不是当前模块证书。
+<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
-## 2026-09 `io_tls-v1` candidate：合格仪器待采样
+> 本页当前证据只签发 `io_tls-v1` 的两个冻结自然路线；后续 V2 与旧 io 聚合数据均为
+> `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP、HTTP/2、transfer、全平台或全操作 SOTA。
+
+## 2026-09-08 `io_tls-v1` 最终工程证据（`PASS`）
+
+产品 candidate 为 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
+`212a5c0305d9a756cdea91b2ed1270319264db8a`；资格化使用 clean source
+`b38aa34cf75cd89b179f0ee32449bfeb4ff0cb59` / tree
+`3ef20170490d5fca3bc402fb6a1aec0def23f607`。两者之间
+`include/hyle/{sched,io}`、`src/{sched,io_tls}` 无差异；后续提交只校准状态、文档和 benchmark
+临时 PEM 的落点，不改变产品。环境为 W1-WSL、GCC 14.2、Release/static、portable ISA，双方共用
+OpenSSL 3.0.13；Asio 固定于 `8806a6803cde7054c3049d3666d3ec36786568c5`。
+
+合同 [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 对比一个持久单 worker runtime 上的
+HYLE public `spawn_task` + typed TLS 与 standalone Asio async SSL 自然路线。双方都计 TCP
+connect/accept、verified localhost handshake、双向 `close_notify` 和连接 teardown；stream 行另计
+512 次 256 B request/echo。advantage 为 HYLE/Asio，越大越有利于 HYLE；每个顺序 15 个独立进程，
+置信水平 99.26%：
+
+| workload / 顺序 | HYLE / Asio（op/s） | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| verified handshake / HYLE first | 1241.45 / 1147.84 | 1.081 / [1.031, 1.117] | `INCONCLUSIVE` | `PASS` |
+| verified handshake / Asio first | 1219.50 / 1143.40 | 1.100 / [1.024, 1.114] | `INCONCLUSIVE` | `PASS` |
+| encrypted stream / HYLE first | 248.47 / 232.90 | 1.069 / [1.035, 1.093] | `INCONCLUSIVE` | `PASS` |
+| encrypted stream / Asio first | 241.51 / 230.29 | 1.075 / [1.028, 1.122] | `INCONCLUSIVE` | `PASS` |
+
+四行的 5% non-inferiority 均通过；点估计方向有利于 HYLE，但置信区间跨过 5% practical-margin
+边界，所以诚实的 superiority verdict 是 `INCONCLUSIVE`，不能写成确定胜出。A/A、5%/10%
+known-delta、timer floor、artifact identity、build contract、consumer provenance、source/peer clean 与
+前后 host/input/artifact stability 全部 `PASS`；资格与性能聚合门均为 `PASS`。
+
+原始 bundle 位于 `/root/hyle-io-tls-p1-evidence-b38aa34c`；manifest、summary、controls SHA-256
+依次为 `6D0049A792B83630B489EB59EB78B886AF731B2209BAB6022DB94834D2E341F9`、
+`BD4FDB499490DC080415C0DEDB781BDEDFEDAC1AB990C187CE7FF1ABE4A03143`、
+`49FE7239FA181D595013CE12BD78AEF811CB545B6522E34BCCCE654776E1BD49`。本证据只支持上述 source-build、
+同 provider、单 worker 的两条自然路线；Formal、跨机和其他 TLS workload 仍未声明。
+
+## 2026-09 `io_tls-v1` candidate fixture（历史）
 
 当前 TLS candidate 不再把 blocking OpenSSL 与 scheduler-bound async TLS 当作同合同产品排名。
 `HYLE_TLS_RAW_DIAGNOSTIC=1` 才会显示该行，且只能回答 provider/pump 机制问题。产品 P1 的冻结命题为
@@ -12,9 +48,7 @@ verified localhost、禁用 session/ticket、完整 `close_notify`，HYLE public
 Asio async SSL 路线。一个 workload 计完整 verified connection，另一个计同一连接生命周期加
 512 次 256 B 双向精确传输；runtime/context/listener 构造与一次对称 warmup 在计时外。
 
-Windows 开发 smoke 只证明 fixture 能完整结束并在正反序运行，不是性能证书。正式结果必须来自
-`closure-perf-v1` 的 W1-WSL candidate-first/peer-first、A/A、known-delta 与 timer-floor bundle；在它
-签发前本页不发布新的输赢数字。
+Windows 开发 smoke 只证明 fixture 能完整结束并在正反序运行，不是性能证书；当前资格结果以上节为准。
 
 > **2026-07-20 收口证书（本节优先于下文历史记录）。** SIMD/sched/IO
 > 重构后，现有 8 个 IO benchmark 已在 Windows IOCP、WSL 原生 ext4

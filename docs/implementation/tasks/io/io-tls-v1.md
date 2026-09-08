@@ -123,10 +123,11 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 
 ## Current decision
 
-`CANDIDATE / ACTIVE`。新产品树冻结于
+`VERIFIED / ACTIVE`。新产品树冻结于
 `2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
 `212a5c0305d9a756cdea91b2ed1270319264db8a`。相对原 `228c73a6`，TLS API/provider/pump 没有变化；
-唯一产品差异是依赖的 Sched v5 completion-latency 修复。candidate 后只允许验证、证据与 fixture 修正。
+唯一产品差异是依赖的 Sched v5 completion-latency 修复。全部适用工程门已经通过；terminal commit 只
+允许补 LOC、限制、reopen trigger 与冻结 receipt。
 
 ## Implementation checkpoints
 
@@ -184,6 +185,41 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
   `34C00BE03F917BEE9626D5D138D65F46EF9EA835E50E4A1F67D32115A63E906F`。候选后 fixture 修正只把
   per-process PEM 移入操作系统临时目录并在进程退出时删除；它不改变产品、peer、参数、顺序、
   workload 或统计合同。只有从新 clean checkout 得到的重跑包可以签发正式 P1。
+- `IOTLS-F05/F06 terminal verification`：fixture 修正后的 clean source
+  `b38aa34cf75cd89b179f0ee32449bfeb4ff0cb59` 已完成唯一有效的 W1-WSL qualification；source/peer
+  clean，inputs/artifacts/host stable，A/A、5%/10% known delta、timer floor、artifact/build/consumer
+  provenance、qualification 和 performance 聚合门全部 `PASS`。handshake 双顺序为
+  HYLE `1241.45/1219.50`、Asio `1147.84/1143.40` op/s，advantage `1.081/1.100`；encrypted stream
+  为 HYLE `248.47/241.51`、Asio `232.90/230.29` op/s，advantage `1.069/1.075`。四行 5% NI 均
+  `PASS`，但 superiority CI 跨 5% practical margin，均诚实裁决为 `INCONCLUSIVE`。有效 bundle 与
+  hash 见 [`benchmarks-io`](../../evidence/performance/benchmarks-io.md)。
+
+## Candidate 后红队与聚合门
+
+红队仅复核冻结后的 TLS product、Sched 依赖回放和 fixture，不重开已经完成的能力设计：
+
+- `git diff 2f9ecc81..b38aa34 -- include/hyle/{sched,io} src/{sched,io_tls}` 为空；PEM 修正只改变
+  benchmark，且 Linux/Windows smoke 均确认进程退出后 source checkout 不产生文件；
+- context/session/stream 仍保持单 owner、move-only provider handle、context-outlives-stream 与
+  one-reader/one-writer 合同；typed EOF/truncation、provider/native error、whole-operation deadline/cancel
+  和 late completion retirement 没有被性能 fixture 绕过；
+- client/server verification、mTLS、ALPN、session opt-in、wrong-context、close-notify、HTTP/H2 与
+  teardown 已由三平台 correctness、sanitizer 和 package consumer 覆盖；无 `native()`、旧 `int/long`
+  operation、C/Native FFI 或 benchmark-only public entry；
+- scratch 每 stream 从 context allocator 分配一次，稳态 pump 无每次分配；OpenSSL 是唯一 private
+  provider，TCP/Error/Mem/Time/Sched/Container-text 仍沿已登记边复用。没有发现新的 correctness、
+  ownership、复杂度、易用性、交付或 dependency finding。
+
+| gate | verdict | basis |
+|---|---|---|
+| scope / architecture | `PASS` | F01--F06 全部完成，HTTP/routing/auth/schema 留在正确 owner |
+| correctness | `PASS` | Windows/WSL/macOS + ASan/UBSan/TSan + lifecycle/error adversarial cases |
+| delivery | `PASS` | TLS on/off、source journey、installed shared/static consumer |
+| usability / docs | `PASS` | typed options/results、选择指南、lifetime/verification/truncation 陷阱齐全 |
+| reuse / red team | `PASS` | 依赖复用正确，candidate 后无产品漂移或公开旧接口 |
+| engineering performance | `PASS` | qualified natural HYLE/Asio 双顺序四项 5% NI PASS |
+
+当前进入 `VERIFIED`；不声明全 TLS、全平台或 Formal SOTA。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256
