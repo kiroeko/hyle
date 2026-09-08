@@ -32,7 +32,7 @@ Engineering performance 的 `PASS` 直接链接本轮精确证据；它与 Forma
 | io_core | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/io/io-v1-core-factorization.md) | io_core v1 处于 AUDITED：F01--F08 已实现，TLS/HTTP/HTTP2 source/header/test/dependency 已在 ea45d866 迁入独立 factor；F09 交付矩阵、F10 candidate/P1/红队仍待完成。 |
 | io_tls | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-tls-v2-duplex-progress.md) | io_tls v2 AUDITED：公开 API 不变；唯一产品修复是有界 provider pump 进展，另把 Linux SIGPIPE-safe send 路由到仍活动的 io_core，F01--F03 与一项相邻修复已冻结。 |
 | io_http | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-http-v2-duplex-progress.md) | io_http v2 AUDITED：TCP/detail immediate receive、HttpTransport dispatch、HTTP/2 bounded drain、TLS 分类与受影响回放已冻结为唯一 F01--F04。 |
-| io_http2 | BLOCKED | — | P1 | [INCONCLUSIVE](evidence/performance/benchmarks-io.md) / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-http2-v1.md) | io_http2 v1 BLOCKED：能力、自然 API、correctness、sanitizer、三交付与 macOS 均完成；64x1 KiB 明确 WIN，4x256 KiB 一种顺序 PASS、另一种 CI 仅差 0.073 个百分点但仍为 UNRESOLVED，故依法不签 FROZEN。 |
+| io_http2 | SCOPED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 SCOPED：只审计 single-owner/no-waiter 路径的无条件 monitor/notification 成本；至多一项私有修正与一次原合同 P1，API、workload、窗口、chunk 和 margin 全部不变。 |
 | io_transfer | AUDITED | — | P1 | PLANNED / P1_ENGINEERING / 5% | NONE | [task](tasks/io/io-transfer-v1.md) | io_transfer v1 已完成模型/制品 bounded transfer、resume validator、checksum、atomic publish、owner 与自然 API 审计并进入 AUDITED；IOTRANSFER-F01--F06 是唯一有限实现集。 |
 | compute | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | graph | QUEUED | — | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
