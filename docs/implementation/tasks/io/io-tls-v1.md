@@ -85,7 +85,7 @@ remain explicit future triggers.
 
 不保留旧签名、`native()` 或伪 C ABI；HTTP framing、early data、OCSP/keylog/DTLS/QUIC 不得追加到本轮。
 
-## API / usability freeze draft
+## API / usability freeze
 
 ```cpp
 auto client = TlsContext::make_client(TlsClientOptions{...});
@@ -99,7 +99,11 @@ Status closed = co_await tls_shutdown(alloc, *stream, operation);
 
 Options are copied at construction; certificate path/string ownership is documented per field. Buffers are borrowed
 until await completion. Session tickets are owning values tied to the provider identity but expose no OpenSSL type.
-The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume journeys exist; no P1 runs before then.
+状态：`FROZEN`。plain TLS、mTLS、ALPN、resume、deadline/cancel、strict truncation 与 move/lifetime
+journey 均已进入候选；公开形状冻结于 `228c73a687efe34318afc6b399e45edd9acdd055`。context options
+显式持有 per-connection scratch allocator，默认 system allocator；该 backing 必须活过 context 产生的
+全部 stream。operation 首参 allocator 只拥有 coroutine frame，不会被 stream 隐式保存。session cache/
+ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 
 ## Owner 七问（AUDITED）
 
@@ -118,8 +122,8 @@ The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume jo
 
 ## Current decision
 
-`AUDITED / ACTIVE`。能力图、自然 API draft、owner 与有限 F01--F05 已冻结；现在允许实现，
-但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+`CANDIDATE / ACTIVE`。有限 F01--F04 已形成不可变产品候选；F05 只允许补验证、证据与文档，
+不得再改变公开合同、算法、layout 或正常 workload。若发现真实产品缺陷，先依法退回 `AUDITED`。
 
 ## Implementation checkpoints
 
@@ -136,6 +140,12 @@ The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume jo
   session reuse、wrong-context rejection、missing close-notify、HTTPS 与 H2；TLS-off target
   也通过。该结果尚不是 terminal receipt：F05 的三平台、source/static/shared、sanitizer、
   immutable-candidate P1、红队与最终文档仍待完成。
+- `228c73a687efe34318afc6b399e45edd9acdd055`（tree
+  `28b25ab2a0ada318fff9c8b89a2df591e594e78e`）：API/usability candidate 冻结。补齐 client
+  certificate/private-key route，使 server-side client verification 成为完整 mTLS；session cache 改为
+  显式 opt-in；每 stream 16 KiB scratch 在 typed construction 中从 context 的 allocator 分配一次，
+  不再把 coroutine allocator 的生命周期偷偷延长；同时修复 `bytes + EOF` 最后一段 ciphertext 的处理。
+  Windows shared/static、WSL shared、macOS shared exact-factor correctness 均通过；F05 后续门不再授权产品改动。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256
