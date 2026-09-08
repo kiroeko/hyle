@@ -123,9 +123,10 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
 
 ## Current decision
 
-`AUDITED / ACTIVE`。原 `228c73a6` TLS API/provider 候选本身保持不变，但其产品树包含的 Sched
-依赖已被合格 P1 证明有 material completion-latency 缺陷，故依法退回并冻结 `IOTLS-F06`。TLS 不得
-借此扩张公开合同或修改 provider pump；只有 Sched v5 候选验证通过后才能形成新的整体 candidate。
+`CANDIDATE / ACTIVE`。新产品树冻结于
+`2f9ecc8168b4d303a17ae4fcad385b8150cdd072` / tree
+`212a5c0305d9a756cdea91b2ed1270319264db8a`。相对原 `228c73a6`，TLS API/provider/pump 没有变化；
+唯一产品差异是依赖的 Sched v5 completion-latency 修复。candidate 后只允许验证、证据与 fixture 修正。
 
 ## Implementation checkpoints
 
@@ -168,7 +169,11 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
   advantage 为 `0.0265/0.0259`，5% 非劣门全部失败。一次机制诊断将差距定位到冻结依赖 Sched 的
   Balanced idle search：同路线改用 `kPowerSaving` 后分别变为 `0.783 ms` 与 `3.94 ms`，同次 Asio
   为 `0.768 ms` 与 `4.26 ms`。因此这是合法的 Sched reopen trigger，不是 TLS benchmark 调参；
-  `io_tls` 已退回 `AUDITED`，待新 Sched candidate 后只重跑原冻结 workload。
+  `io_tls` 因此曾退回 `AUDITED`，并只以新 Sched candidate 回放原冻结 workload。
+- `IOTLS-F06 candidate replay`：Sched v5 candidate 后，Windows、WSL 与 macOS 的
+  `hyle_sched_test`/`hyle_io_core_test`/`hyle_io_tls_test` 全过；WSL GCC 14 的 ASan、UBSan、TSan
+  exact-factor 三组全过；Windows installed shared/static `hyle::io` consumer 均通过。默认 Balanced
+  diagnostic 已与 Asio 恢复同量级，正式 P1 尚未运行，不能提前写成性能 PASS。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256

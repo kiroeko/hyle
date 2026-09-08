@@ -1213,12 +1213,14 @@
     },
     {
       "module": "io_tls",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "io-tls-v1",
       "closure_task": "docs/implementation/tasks/io/io-tls-v1.md",
       "scope": "Factor TLS provider, configuration, session and encrypted transport lifecycle out of io_core; define typed handshake, stream IO, deadline, cancellation, ALPN, session reuse and shutdown contracts before implementation.",
       "non_goals": "HTTP framing or routing, HTTP2 stream semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API, stable C++ ABI and benchmark-shaped buffer entry points.",
       "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "candidate_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
+      "candidate_tree": "212a5c0305d9a756cdea91b2ed1270319264db8a",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1226,7 +1228,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "FAIL",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
@@ -1235,7 +1237,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 退回 AUDITED：228c73a6 产品/API 自身正确性与交付通过，但合格 W1-WSL P1 揭示其冻结依赖 Sched 的 IO completion latency 缺陷；TLS 本身不扩张，只待 Sched v5 候选回放后重新冻结产品树并复跑 P1。"
+      "summary": "io_tls v1 新候选冻结于 2f9ecc81：TLS API/provider 未变，依赖的 Sched completion latency 已修；三平台定向 correctness、WSL ASan/UBSan/TSan 与 Windows static/shared package 通过，待唯一正式 W1-WSL P1 与红队。"
     },
     {
       "module": "io_http",
