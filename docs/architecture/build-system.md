@@ -168,7 +168,7 @@ container_text -> PUBLIC core mem container; PRIVATE platform
 util_runtime -> PUBLIC core error mem container container_text
 sched       -> PUBLIC core container_intrusive error time platform platform_thread mem mem_vm util_core; PRIVATE container_queue timer_queue
 io_core     -> PUBLIC core error mem container time timer_queue sched platform_fs
-io_tls      -> PUBLIC core io_core mem sched container_text
+io_tls      -> PUBLIC core error io_core mem sched container_text
 io_http     -> PUBLIC core io_core io_tls mem sched container_text
 io_http2    -> PUBLIC core io_http; PRIVATE container
 compute     -> PUBLIC core error mem sched; PRIVATE platform platform_thread platform_fs simd

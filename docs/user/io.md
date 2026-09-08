@@ -113,28 +113,60 @@ HTTP/1.1 server/client 都接受 plain `TcpStream`。启用 OpenSSL 时也接受
 完成握手的 `TlsStream`，同一解析与 framing 核直接运行在 TLS transport 上：
 
 ```cpp
-hyle::io::TlsStream tls{std::move(tcp), client_ctx, false, "api.example.com"};
-if (co_await hyle::io::tls_handshake(alloc, tls) != 0) co_return;
+hyle::io::TlsClientOptions tls_options;
+tls_options.alpn_protocols = hyle::io::tls_http2_protocols();
+auto context = hyle::io::TlsContext::make_client(tls_options);
+if (!context) co_return;
+
+auto encrypted = hyle::io::TlsStream::connect(
+    std::move(tcp), *context, {.server_name = "api.example.com"});
+if (!encrypted) co_return;
+auto tls = std::move(*encrypted);
+
+hyle::io::OperationOptions budget;
+budget.deadline =
+    hyle::time::deadline_after(std::chrono::seconds(10));
+if (!(co_await hyle::io::tls_handshake(alloc, tls, budget)).ok()) co_return;
 
 hyle::io::HttpClientConn client{alloc, std::move(tls)};
 auto* response = co_await client.request(
     {"GET", 3}, {"/health", 7}, {"api.example.com", 15});
 ```
 
-verifying client 必须给 server name；它同时用于 SNI 与证书 DNS/IP identity
-校验。`HttpRequest`/`HttpResponseView` 的 string view 只活到同一连接的下一次
-request。流式响应用 `HttpResponse::set_stream`；`add_header` 返回 false 表示
-固定 header 槽已满。HTTP 会拒绝 TE+CL、冲突 Content-Length、非 bare chunked
-和 CRLF/token 注入。
+client 默认验证系统信任链；verifying client 必须给 `server_name`，它同时用于
+SNI 与证书 DNS/IP identity 校验。自签测试或明确的机会式加密必须显式设置
+`TlsVerifyMode::kNone`，不再通过 OpenSSL native pointer 偷改验证。server 用
+`TlsServerOptions` 提供证书链、私钥以及可选 mTLS CA；路径只在 factory 调用期间
+借用，provider/config 与编码后的通用 ALPN list 由 `TlsContext` 持有。
+
+`tls_handshake/read/write/shutdown` 都接受同一个绝对 `OperationOptions`；一次
+handshake 或 record pump 内不会重置 deadline。read/write 返回
+`TransferResult`，因此 partial bytes、EOF、cancel/timeout 与协议失败不会再被
+一个负整数混在一起。默认严格要求 peer `close_notify`：裸 TCP EOF 返回
+`DataLoss`；只有已知会遇到不规范 peer 时才显式设置
+`allow_truncated_eof=true`。默认 shutdown 只保证发送本端 close-notify；要求双向
+关闭时选择 `TlsShutdownMode::kBidirectional` 并给出 deadline/cancel，避免静默
+peer 永久占住 fiber。
+
+客户端完成握手后可用 `take_session()` 取得 move-only opaque ticket，并在同一
+`TlsContext` 的下一次 `TlsStream::connect` 中传给 `resume_session`。来自另一
+context 的 ticket 会返回 `InvalidArgument`；`session_reused()` 可验证 provider
+是否接受了复用。不要持有或转换 OpenSSL 类型，公开 API 不暴露 provider pointer。
+
+`HttpRequest`/`HttpResponseView` 的 string view 只活到同一连接的下一次 request。
+流式响应用 `HttpResponse::set_stream`；`add_header` 返回 false 表示固定 header
+槽已满。HTTP 会拒绝 TE+CL、冲突 Content-Length、非 bare chunked 和 CRLF/token
+注入。
 
 当前 HTTP convenience 尚未把整个 request 生命周期绑定到一个统一 deadline /
 CancelToken；要求强制有界退出的服务应在连接层使用 cancellable/timed I/O，
 并在 shutdown 阶段停止 accept 后排空连接。该项仍是 IO 的产品尾项。
 
 HTTP/2 使用 `Http2ClientConn` / `Http2ServerConn`。它支持同连接多 stream、
-逆序完成、HPACK、RST/GOAWAY 与流控；TLS 必须先调用
-`TlsContext::enable_http2()` 并完成握手，构造函数会拒绝 ALPN 不是 `h2` 的
-stream。当前 body 是最多 8 MiB 的完整 fixed buffer，不适合无限 token stream：
+逆序完成、HPACK、RST/GOAWAY 与流控；TLS context 应把
+`tls_http2_protocols()` 交给通用 `alpn_protocols` 并完成握手，构造函数会拒绝
+ALPN 不是 `h2` 的 stream。当前 body 是最多 8 MiB 的完整 fixed buffer，不适合
+无限 token stream：
 
 ```cpp
 hyle::io::Http2ClientConn h2{alloc, std::move(tls)};

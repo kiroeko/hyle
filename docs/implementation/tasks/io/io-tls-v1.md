@@ -126,3 +126,17 @@ The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume jo
 - `ea45d866`：`IOTLS-F01` 的物理 owner 已建立；TLS-enabled source、test、benchmark、OpenSSL
   package owner 与 `HYLE_IO_TLS_API` 均属于 `io_tls`。feature OFF 只保留 capability query，
   不暴露失败 operation；Windows OFF/ON shared correctness 与独立 header 已通过。
+- `IOTLS-F02--F04 implementation candidate`：公开面已删除 invalid factory、raw
+  `ssl_ctx_st* native()` 与 `int/long` operation；client/server typed options、
+  `Result<TlsContext/TlsStream>`、`Status/TransferResult`、一个贯穿 pump 的
+  `OperationOptions`、通用 ALPN、context-bound opaque session、显式 shutdown 与
+  strict/opt-in-truncated EOF 已落地。context 以引用所有权活过 handle，stream scratch
+  仍只在首次 pump 分配一次。Windows OpenSSL 3.6.3 shared TLS-on 10/10 通过，覆盖
+  invalid config、verifying identity、deadline、pre-cancel、context lifetime、真实 TLS 1.2
+  session reuse、wrong-context rejection、missing close-notify、HTTPS 与 H2；TLS-off target
+  也通过。该结果尚不是 terminal receipt：F05 的三平台、source/static/shared、sanitizer、
+  immutable-candidate P1、红队与最终文档仍待完成。
+
+本次 registry 叙述校准的前态快照位于
+`C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256
+`5F81C4D85139187BB2F1AAFCEE8BCD12B42B2EA6062200CF831A9D51DE482EDC`。

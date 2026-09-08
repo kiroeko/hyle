@@ -1273,7 +1273,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 处于 AUDITED；IOTLS-F01 物理 factor/OpenSSL owner 已在 ea45d866 落地，typed config/session/operation 与 terminal delivery/P1 仍按 F02--F05 实施。"
+      "summary": "io_tls v1 处于 AUDITED；F01--F04 的 factor owner、typed config/session/operation、统一 budget 与严格 truncation 候选已实现，Windows TLS-on shared 10/10 和 TLS-off target 通过；F05 三平台/三交付/sanitizer/P1/红队仍待完成。"
     },
     {
       "module": "io_http",

@@ -5,378 +5,912 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/x509_vfy.h>
 
-#include <span>
+#include <atomic>
+#include <cstring>
+#include <limits>
+#include <new>
 #include <utility>
-
-// io-08 TLS implementation. memory-BIO pump over the co_await TcpStream. Reference:
-// seastar src/net/tls_openssl.cc (handshake/read/write/shutdown state machines) +
-// libevent bufferevent_openssl.c (SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER, BIO
-// ownership, dirty-shutdown). See tls.h for the model + threading contract.
 
 namespace hyle::io {
 namespace {
 
-constexpr int kBufSize = 16 * 1024;  // ciphertext pump chunk
-constexpr unsigned char kAlpnH2[] = {2, 'h', '2'};
-constexpr unsigned char kAlpnH2Http1[] = {
-    2, 'h', '2', 8, 'h', 't', 't', 'p', '/', '1', '.', '1'};
-int kAllowHttp1Token;
+constexpr std::size_t kPumpBytes = 16 * 1024;
 
-int select_alpn(SSL*, const unsigned char** out, unsigned char* out_len,
-                const unsigned char* client, unsigned int client_len,
-                void* arg) noexcept {
-  const bool allow_http1 = arg != nullptr;
-  const unsigned char* offered =
-      allow_http1 ? kAlpnH2Http1 : kAlpnH2;
-  const unsigned int offered_len =
-      allow_http1 ? sizeof(kAlpnH2Http1) : sizeof(kAlpnH2);
-  return SSL_select_next_proto(
-             const_cast<unsigned char**>(out), out_len, offered, offered_len,
-             client, client_len) == OPENSSL_NPN_NEGOTIATED
-             ? SSL_TLSEXT_ERR_OK
-             : SSL_TLSEXT_ERR_NOACK;
+struct ContextImpl {
+  std::atomic<std::uint32_t> references{1};
+  SSL_CTX *provider = nullptr;
+  unsigned char *alpn = nullptr;
+  unsigned int alpn_size = 0;
+  std::uint64_t identity = 0;
+  bool server = false;
+  bool verify_peer = false;
+  bool require_alpn = false;
+  bool allow_truncated_eof = false;
+};
+
+std::atomic<std::uint64_t> next_context_identity{1};
+
+ContextImpl *as_context(void *value) noexcept {
+  return static_cast<ContextImpl *>(value);
 }
 
-// Map the current SSL op's non-positive return to what the pump must do next. We
-// call SSL_get_error IMMEDIATELY after the SSL_* call (nothing between), per
-// OpenSSL's per-thread-error-queue contract -- a co_await must never split this.
-enum class Want { kDone, kReadMore, kWriteMore, kError, kEof };
-
-Want classify(SSL* ssl, int ret) noexcept {
-  int e = SSL_get_error(ssl, ret);
-  switch (e) {
-    case SSL_ERROR_NONE:
-      return Want::kDone;
-    case SSL_ERROR_WANT_READ:
-      return Want::kReadMore;
-    case SSL_ERROR_WANT_WRITE:
-      return Want::kWriteMore;
-    case SSL_ERROR_ZERO_RETURN:
-      return Want::kEof;  // peer sent close_notify: clean TLS EOF
-    case SSL_ERROR_SYSCALL:
-      // OpenSSL 3.0.x: a clean transport EOF with no error on the queue shows up
-      // here with errno 0 -- treat as EOF, not error (seastar tls_openssl notes
-      // this explicitly). A real syscall error would have queued something.
-      return (ERR_peek_error() == 0) ? Want::kEof : Want::kError;
-    default:
-      return Want::kError;  // SSL_ERROR_SSL etc.
-  }
+const ContextImpl *as_context(const void *value) noexcept {
+  return static_cast<const ContextImpl *>(value);
 }
 
-}  // namespace
-// ---- TlsContext ------------------------------------------------------------
-
-TlsContext::~TlsContext() {
-  if (ctx_ != nullptr) SSL_CTX_free(ctx_);
+SSL *as_ssl(void *value) noexcept { return static_cast<SSL *>(value); }
+const SSL *as_ssl(const void *value) noexcept {
+  return static_cast<const SSL *>(value);
 }
-TlsContext::TlsContext(TlsContext&& o) noexcept
-    : ctx_(std::exchange(o.ctx_, nullptr)) {}
-TlsContext& TlsContext::operator=(TlsContext&& o) noexcept {
-  if (this != &o) {
-    if (ctx_ != nullptr) SSL_CTX_free(ctx_);
-    ctx_ = std::exchange(o.ctx_, nullptr);
-  }
-  return *this;
+BIO *as_bio(void *value) noexcept { return static_cast<BIO *>(value); }
+
+void retain_context(ContextImpl *context) noexcept {
+  context->references.fetch_add(1, std::memory_order_relaxed);
 }
 
-TlsContext TlsContext::client() noexcept {
-  SSL_CTX* ctx = SSL_CTX_new(TLS_client_method());
-  if (ctx == nullptr) return TlsContext{};
-  SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
-  // Verify the peer against the default trust store. A caller that wants to skip
-  // verification (self-signed test certs) can adjust the returned ctx's native().
-  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
-  if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
-    SSL_CTX_free(ctx);
-    return TlsContext{};
-  }
-  return TlsContext{ctx};
-}
-
-TlsContext TlsContext::server(const char* cert_pem_path,
-                              const char* key_pem_path) noexcept {
-  if (cert_pem_path == nullptr || key_pem_path == nullptr) return TlsContext{};
-  SSL_CTX* ctx = SSL_CTX_new(TLS_server_method());
-  if (ctx == nullptr) return TlsContext{};
-  SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
-  if (SSL_CTX_use_certificate_chain_file(ctx, cert_pem_path) != 1 ||
-      SSL_CTX_use_PrivateKey_file(ctx, key_pem_path, SSL_FILETYPE_PEM) != 1 ||
-      SSL_CTX_check_private_key(ctx) != 1) {
-    SSL_CTX_free(ctx);
-    return TlsContext{};
-  }
-  return TlsContext{ctx};
-}
-
-bool TlsContext::enable_http2(bool allow_http1) noexcept {
-  if (ctx_ == nullptr) return false;
-  const unsigned char* protocols =
-      allow_http1 ? kAlpnH2Http1 : kAlpnH2;
-  const unsigned int length =
-      allow_http1 ? sizeof(kAlpnH2Http1) : sizeof(kAlpnH2);
-  if (SSL_CTX_set_alpn_protos(ctx_, protocols, length) != 0) return false;
-  SSL_CTX_set_alpn_select_cb(ctx_, select_alpn,
-                             allow_http1 ? &kAllowHttp1Token : nullptr);
-  return true;
-}
-
-// ---- TlsStream lifetime ----------------------------------------------------
-
-TlsStream::TlsStream(TcpStream sock, const TlsContext& ctx, bool is_server,
-                     const char* server_name) noexcept
-    : sock_(std::move(sock)) {
-  if (!ctx.valid()) return;
-  ssl_ = SSL_new(ctx.native());
-  if (ssl_ == nullptr) return;
-  rbio_ = BIO_new(BIO_s_mem());
-  wbio_ = BIO_new(BIO_s_mem());
-  if (rbio_ == nullptr || wbio_ == nullptr) {
-    if (rbio_ != nullptr) BIO_free(rbio_);
-    if (wbio_ != nullptr) BIO_free(wbio_);
-    SSL_free(ssl_);
-    ssl_ = nullptr;
-    rbio_ = wbio_ = nullptr;
+void release_context(ContextImpl *context) noexcept {
+  if (context == nullptr ||
+      context->references.fetch_sub(1, std::memory_order_acq_rel) != 1) {
     return;
   }
-  // SSL_set_bio TAKES OWNERSHIP of both BIOs -- SSL_free frees them, so we must NOT
-  // BIO_free them again (double free). After this, rbio_/wbio_ are observed-only.
-  SSL_set_bio(ssl_, rbio_, wbio_);
-  // Partial SSL_write must be retryable with a possibly-moved buffer pointer, or it
-  // asserts. Mandatory for the write pump (libevent sets this too).
-  SSL_set_mode(ssl_, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-  if (is_server) {
-    SSL_set_accept_state(ssl_);
-  } else {
-    if ((SSL_CTX_get_verify_mode(ctx.native()) & SSL_VERIFY_PEER) != 0) {
-      if (server_name == nullptr || *server_name == '\0') {
-        SSL_free(ssl_);
-        ssl_ = nullptr;
-        rbio_ = wbio_ = nullptr;
-        return;
-      }
-      bool looks_like_ip = false;
-      bool only_digits_dots = true;
-      for (const char* p = server_name; *p != '\0'; ++p) {
-        if (*p == ':') looks_like_ip = true;  // IPv6 literal
-        if ((*p < '0' || *p > '9') && *p != '.') only_digits_dots = false;
-      }
-      looks_like_ip = looks_like_ip || only_digits_dots;
-      int ok;
-      if (looks_like_ip) {
-        ok = X509_VERIFY_PARAM_set1_ip_asc(SSL_get0_param(ssl_), server_name);
-      } else {
-        ok = SSL_set1_host(ssl_, server_name);
-        if (ok == 1) ok = SSL_set_tlsext_host_name(ssl_, server_name);
-      }
-      if (ok != 1) {
-        SSL_free(ssl_);
-        ssl_ = nullptr;
-        rbio_ = wbio_ = nullptr;
-        return;
+  SSL_CTX_free(context->provider);
+  delete[] context->alpn;
+  delete context;
+}
+
+class OwnedCString {
+public:
+  OwnedCString() noexcept = default;
+  ~OwnedCString() { delete[] data_; }
+  OwnedCString(const OwnedCString &) = delete;
+  OwnedCString &operator=(const OwnedCString &) = delete;
+
+  Status assign(container::StringView value, bool required,
+                const char *field) noexcept {
+    if (value.empty()) {
+      if (required)
+        return Status::InvalidArgument(field);
+      return {};
+    }
+    if (value.data() == nullptr ||
+        value.size() == container::StringView::npos) {
+      return Status::InvalidArgument(field);
+    }
+    if (std::memchr(value.data(), '\0', value.size()) != nullptr) {
+      return Status::InvalidArgument("TLS path/name contains an embedded NUL");
+    }
+    data_ = new (std::nothrow) char[static_cast<std::size_t>(value.size()) + 1];
+    if (data_ == nullptr) {
+      return Status::ResourceExhausted("TLS option copy allocation failed");
+    }
+    std::memcpy(data_, value.data(), value.size());
+    data_[value.size()] = '\0';
+    return {};
+  }
+
+  const char *get() const noexcept { return data_; }
+
+private:
+  char *data_ = nullptr;
+};
+
+int provider_version(TlsVersion version) noexcept {
+  switch (version) {
+  case TlsVersion::kProviderDefault:
+    return 0;
+  case TlsVersion::kTls12:
+    return TLS1_2_VERSION;
+  case TlsVersion::kTls13:
+    return TLS1_3_VERSION;
+  }
+  return -1;
+}
+
+Status configure_versions(SSL_CTX *provider, TlsVersion minimum,
+                          TlsVersion maximum) noexcept {
+  const int min_value = provider_version(minimum);
+  const int max_value = provider_version(maximum);
+  if (min_value < 0 || max_value < 0 ||
+      (min_value != 0 && max_value != 0 && min_value > max_value)) {
+    return Status::InvalidArgument("invalid TLS protocol version range");
+  }
+  if (SSL_CTX_set_min_proto_version(provider, min_value) != 1 ||
+      SSL_CTX_set_max_proto_version(provider, max_value) != 1) {
+    return Status::InvalidArgument(
+        "TLS provider rejected protocol version range");
+  }
+  return {};
+}
+
+Status encode_alpn(std::span<const container::StringView> protocols,
+                   ContextImpl *context) noexcept {
+  if (protocols.empty())
+    return {};
+  std::size_t encoded_size = 0;
+  for (const container::StringView protocol : protocols) {
+    if (protocol.data() == nullptr || protocol.empty() ||
+        protocol.size() > 255) {
+      return Status::InvalidArgument(
+          "each TLS ALPN protocol must contain 1..255 bytes");
+    }
+    if (encoded_size >
+        static_cast<std::size_t>((std::numeric_limits<unsigned int>::max)()) -
+            protocol.size() - 1) {
+      return Status::OutOfRange("TLS ALPN protocol list is too large");
+    }
+    encoded_size += static_cast<std::size_t>(protocol.size()) + 1;
+  }
+  auto *encoded = new (std::nothrow) unsigned char[encoded_size];
+  if (encoded == nullptr) {
+    return Status::ResourceExhausted("TLS ALPN allocation failed");
+  }
+  std::size_t offset = 0;
+  for (const container::StringView protocol : protocols) {
+    encoded[offset++] = static_cast<unsigned char>(protocol.size());
+    std::memcpy(encoded + offset, protocol.data(), protocol.size());
+    offset += protocol.size();
+  }
+  context->alpn = encoded;
+  context->alpn_size = static_cast<unsigned int>(encoded_size);
+  return {};
+}
+
+int select_alpn(SSL *, const unsigned char **out, unsigned char *out_size,
+                const unsigned char *peer, unsigned int peer_size,
+                void *argument) noexcept {
+  auto *context = static_cast<ContextImpl *>(argument);
+  if (context == nullptr || context->alpn_size == 0) {
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+  const int selected =
+      SSL_select_next_proto(const_cast<unsigned char **>(out), out_size,
+                            context->alpn, context->alpn_size, peer, peer_size);
+  if (selected == OPENSSL_NPN_NEGOTIATED)
+    return SSL_TLSEXT_ERR_OK;
+  return context->require_alpn ? SSL_TLSEXT_ERR_ALERT_FATAL
+                               : SSL_TLSEXT_ERR_NOACK;
+}
+
+Status finish_context(ContextImpl *context) noexcept {
+  if (context->alpn_size != 0) {
+    if (context->server) {
+      SSL_CTX_set_alpn_select_cb(context->provider, select_alpn, context);
+    } else if (SSL_CTX_set_alpn_protos(context->provider, context->alpn,
+                                       context->alpn_size) != 0) {
+      return Status::InvalidArgument("TLS provider rejected ALPN protocols");
+    }
+  } else if (context->require_alpn) {
+    return Status::InvalidArgument(
+        "TLS ALPN cannot be required without configured protocols");
+  }
+  return {};
+}
+
+enum class ProviderWant : std::uint8_t {
+  kDone,
+  kRead,
+  kWrite,
+  kCleanEof,
+  kError,
+};
+
+ProviderWant classify(SSL *provider, int result) noexcept {
+  switch (SSL_get_error(provider, result)) {
+  case SSL_ERROR_NONE:
+    return ProviderWant::kDone;
+  case SSL_ERROR_WANT_READ:
+    return ProviderWant::kRead;
+  case SSL_ERROR_WANT_WRITE:
+    return ProviderWant::kWrite;
+  case SSL_ERROR_ZERO_RETURN:
+    return ProviderWant::kCleanEof;
+  default:
+    return ProviderWant::kError;
+  }
+}
+
+Status provider_failure(const char *operation) noexcept {
+  // Portable recovery uses the canonical code. OpenSSL's thread-local numeric
+  // queue is deliberately drained here rather than exported as a fake stable
+  // native domain; callers may add tracing at the operation boundary.
+  while (ERR_get_error() != 0) {
+  }
+  return Status::DataLoss(operation);
+}
+
+struct FeedResult {
+  Status status{};
+  bool eof = false;
+};
+
+sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
+                                     BIO *write_bio, std::byte *scratch,
+                                     OperationOptions options) noexcept {
+  for (;;) {
+    const int produced =
+        BIO_read(write_bio, scratch, static_cast<int>(kPumpBytes));
+    if (produced <= 0)
+      co_return Status{};
+    std::size_t offset = 0;
+    while (offset < static_cast<std::size_t>(produced)) {
+      TransferResult sent = co_await socket.write_some(
+          std::span<const std::byte>(
+              scratch + offset, static_cast<std::size_t>(produced) - offset),
+          options);
+      offset += sent.bytes;
+      if (!sent.status.ok())
+        co_return sent.status;
+      if (sent.bytes == 0) {
+        co_return Status::Unavailable(
+            "TLS transport write made no forward progress");
       }
     }
-    SSL_set_connect_state(ssl_);
   }
 }
 
-TlsStream::~TlsStream() {
-  if (ssl_ != nullptr) SSL_free(ssl_);  // also frees rbio_ + wbio_ (SSL_set_bio owns)
-  if (scratch_ != nullptr)
-    scratch_alloc_.deallocate(scratch_, kBufSize, alignof(std::max_align_t));
+sched::Task<FeedResult> feed_ciphertext(mem::AllocatorRef, TcpStream &socket,
+                                        BIO *read_bio, std::byte *scratch,
+                                        OperationOptions options) noexcept {
+  TransferResult received = co_await socket.read_some(
+      std::span<std::byte>(scratch, kPumpBytes), options);
+  if (!received.status.ok())
+    co_return FeedResult{received.status, false};
+  if (received.eof)
+    co_return FeedResult{{}, true};
+  if (received.bytes == 0) {
+    co_return FeedResult{
+        Status::Unavailable("TLS transport read made no forward progress"),
+        false};
+  }
+  const int accepted =
+      BIO_write(read_bio, scratch, static_cast<int>(received.bytes));
+  if (accepted != static_cast<int>(received.bytes)) {
+    co_return FeedResult{Status::ResourceExhausted(
+                             "TLS provider input buffer rejected ciphertext"),
+                         false};
+  }
+  co_return FeedResult{};
 }
 
-TlsStream::TlsStream(TlsStream&& o) noexcept
-    : sock_(std::move(o.sock_)),
-      ssl_(std::exchange(o.ssl_, nullptr)),
-      rbio_(std::exchange(o.rbio_, nullptr)),
-      wbio_(std::exchange(o.wbio_, nullptr)),
-      scratch_(std::exchange(o.scratch_, nullptr)),
-      scratch_alloc_(o.scratch_alloc_) {}
+Status transport_eof_status(const ContextImpl *context,
+                            const char *operation) noexcept {
+  return context->allow_truncated_eof ? Status{} : Status::DataLoss(operation);
+}
 
-TlsStream& TlsStream::operator=(TlsStream&& o) noexcept {
-  if (this != &o) {
-    if (ssl_ != nullptr) SSL_free(ssl_);
-    if (scratch_ != nullptr)
-      scratch_alloc_.deallocate(scratch_, kBufSize, alignof(std::max_align_t));
-    sock_ = std::move(o.sock_);
-    ssl_ = std::exchange(o.ssl_, nullptr);
-    rbio_ = std::exchange(o.rbio_, nullptr);
-    wbio_ = std::exchange(o.wbio_, nullptr);
-    scratch_ = std::exchange(o.scratch_, nullptr);
-    scratch_alloc_ = o.scratch_alloc_;
+} // namespace
+
+Result<TlsStream> TlsStream::make_(TcpStream socket, const TlsContext &owner,
+                                   bool server,
+                                   const TlsConnectOptions *options) noexcept {
+  if (!socket.valid()) {
+    return make_unexpected(
+        Status::FailedPrecondition("TLS requires an open TCP stream"));
+  }
+  auto *context = as_context(owner.impl_);
+  if (context == nullptr || context->provider == nullptr) {
+    return make_unexpected(
+        Status::FailedPrecondition("TLS context is not initialized"));
+  }
+  if (context->server != server) {
+    return make_unexpected(Status::InvalidArgument(
+        server ? "TLS accept requires a server context"
+               : "TLS connect requires a client context"));
+  }
+
+  ERR_clear_error();
+  SSL *provider = SSL_new(context->provider);
+  if (provider == nullptr) {
+    return make_unexpected(
+        Status::ResourceExhausted("TLS stream allocation failed"));
+  }
+  BIO *read_bio = BIO_new(BIO_s_mem());
+  BIO *write_bio = BIO_new(BIO_s_mem());
+  if (read_bio == nullptr || write_bio == nullptr) {
+    BIO_free(read_bio);
+    BIO_free(write_bio);
+    SSL_free(provider);
+    return make_unexpected(
+        Status::ResourceExhausted("TLS BIO allocation failed"));
+  }
+  SSL_set_bio(provider, read_bio, write_bio);
+  SSL_set_mode(provider, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER |
+                             SSL_MODE_ENABLE_PARTIAL_WRITE);
+
+  if (server) {
+    SSL_set_accept_state(provider);
+  } else {
+    const TlsConnectOptions &connect_options = *options;
+    OwnedCString server_name;
+    const bool name_required = context->verify_peer;
+    Status copied =
+        server_name.assign(connect_options.server_name, name_required,
+                           "verifying TLS requires server_name");
+    if (!copied.ok()) {
+      SSL_free(provider);
+      return make_unexpected(std::move(copied));
+    }
+    if (server_name.get() != nullptr) {
+      bool numeric = false;
+      bool digits_and_dots = true;
+      for (const char *p = server_name.get(); *p != '\0'; ++p) {
+        if (*p == ':')
+          numeric = true;
+        if ((*p < '0' || *p > '9') && *p != '.')
+          digits_and_dots = false;
+      }
+      numeric = numeric || digits_and_dots;
+      int configured = 1;
+      if (context->verify_peer) {
+        configured = numeric ? X509_VERIFY_PARAM_set1_ip_asc(
+                                   SSL_get0_param(provider), server_name.get())
+                             : SSL_set1_host(provider, server_name.get());
+      }
+      if (configured == 1 && !numeric) {
+        configured = SSL_set_tlsext_host_name(provider, server_name.get());
+      }
+      if (configured != 1) {
+        SSL_free(provider);
+        return make_unexpected(Status::InvalidArgument(
+            "TLS provider rejected server identity configuration"));
+      }
+    }
+    if (connect_options.resume_session != nullptr) {
+      if (!connect_options.resume_session->valid()) {
+        SSL_free(provider);
+        return make_unexpected(
+            Status::InvalidArgument("TLS resume session is empty"));
+      }
+      if (connect_options.resume_session->context_id_ != context->identity) {
+        SSL_free(provider);
+        return make_unexpected(Status::InvalidArgument(
+            "TLS resume session belongs to a different context"));
+      }
+      if (SSL_set_session(provider,
+                          static_cast<SSL_SESSION *>(
+                              connect_options.resume_session->session_)) != 1) {
+        SSL_free(provider);
+        return make_unexpected(
+            Status::InvalidArgument("TLS provider rejected resume session"));
+      }
+    }
+    SSL_set_connect_state(provider);
+  }
+
+  retain_context(context);
+  TlsStream stream;
+  stream.socket_ = std::move(socket);
+  stream.ssl_ = provider;
+  stream.read_bio_ = read_bio;
+  stream.write_bio_ = write_bio;
+  stream.context_impl_ = context;
+  stream.server_ = server;
+  return stream;
+}
+
+std::span<const container::StringView>
+tls_http2_protocols(bool allow_http1) noexcept {
+  static constexpr container::StringView h2_only[] = {{"h2", 2, true}};
+  static constexpr container::StringView h2_and_http1[] = {
+      {"h2", 2, true}, {"http/1.1", 8, true}};
+  return allow_http1 ? std::span<const container::StringView>(h2_and_http1)
+                     : std::span<const container::StringView>(h2_only);
+}
+
+TlsSession::~TlsSession() {
+  SSL_SESSION_free(static_cast<SSL_SESSION *>(session_));
+}
+
+TlsSession::TlsSession(TlsSession &&other) noexcept
+    : session_(std::exchange(other.session_, nullptr)),
+      context_id_(std::exchange(other.context_id_, 0)) {}
+
+TlsSession &TlsSession::operator=(TlsSession &&other) noexcept {
+  if (this != &other) {
+    SSL_SESSION_free(static_cast<SSL_SESSION *>(session_));
+    session_ = std::exchange(other.session_, nullptr);
+    context_id_ = std::exchange(other.context_id_, 0);
   }
   return *this;
+}
+
+TlsContext::~TlsContext() { release_context(as_context(impl_)); }
+
+TlsContext::TlsContext(TlsContext &&other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)) {}
+
+TlsContext &TlsContext::operator=(TlsContext &&other) noexcept {
+  if (this != &other) {
+    release_context(as_context(impl_));
+    impl_ = std::exchange(other.impl_, nullptr);
+  }
+  return *this;
+}
+
+Result<TlsContext>
+TlsContext::make_client(const TlsClientOptions &options) noexcept {
+  ERR_clear_error();
+  SSL_CTX *provider = SSL_CTX_new(TLS_client_method());
+  if (provider == nullptr) {
+    return make_unexpected(
+        Status::ResourceExhausted("TLS client context allocation failed"));
+  }
+  auto *context = new (std::nothrow) ContextImpl;
+  if (context == nullptr) {
+    SSL_CTX_free(provider);
+    return make_unexpected(
+        Status::ResourceExhausted("TLS context metadata allocation failed"));
+  }
+  context->provider = provider;
+  context->identity =
+      next_context_identity.fetch_add(1, std::memory_order_relaxed);
+  context->verify_peer = options.verify == TlsVerifyMode::kPeer;
+  context->require_alpn = options.require_alpn;
+  context->allow_truncated_eof = options.allow_truncated_eof;
+
+  Status status =
+      configure_versions(provider, options.min_version, options.max_version);
+  if (status.ok())
+    status = encode_alpn(options.alpn_protocols, context);
+  if (status.ok())
+    status = finish_context(context);
+  if (status.ok()) {
+    SSL_CTX_set_verify(provider,
+                       context->verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
+                       nullptr);
+    if (context->verify_peer) {
+      if (options.certificate_authority_file.empty()) {
+        if (SSL_CTX_set_default_verify_paths(provider) != 1) {
+          status = Status::FailedPrecondition(
+              "TLS system trust store could not be loaded");
+        }
+      } else {
+        OwnedCString authority;
+        status = authority.assign(options.certificate_authority_file, true,
+                                  "TLS certificate authority path is required");
+        if (status.ok() && SSL_CTX_load_verify_locations(
+                               provider, authority.get(), nullptr) != 1) {
+          status = Status::InvalidArgument(
+              "TLS certificate authority file could not be loaded");
+        }
+      }
+    }
+  }
+  if (status.ok()) {
+    SSL_CTX_set_session_cache_mode(provider, options.enable_session_resumption
+                                                 ? SSL_SESS_CACHE_CLIENT
+                                                 : SSL_SESS_CACHE_OFF);
+    if (!options.enable_session_resumption) {
+      SSL_CTX_set_options(provider, SSL_OP_NO_TICKET);
+    }
+  }
+  if (!status.ok()) {
+    release_context(context);
+    return make_unexpected(std::move(status));
+  }
+  return TlsContext(context);
+}
+
+Result<TlsContext>
+TlsContext::make_server(const TlsServerOptions &options) noexcept {
+  OwnedCString certificate;
+  OwnedCString key;
+  Status status = certificate.assign(options.certificate_chain_file, true,
+                                     "TLS server certificate is required");
+  if (status.ok()) {
+    status = key.assign(options.private_key_file, true,
+                        "TLS server private key is required");
+  }
+  if (!status.ok())
+    return make_unexpected(std::move(status));
+
+  ERR_clear_error();
+  SSL_CTX *provider = SSL_CTX_new(TLS_server_method());
+  if (provider == nullptr) {
+    return make_unexpected(
+        Status::ResourceExhausted("TLS server context allocation failed"));
+  }
+  auto *context = new (std::nothrow) ContextImpl;
+  if (context == nullptr) {
+    SSL_CTX_free(provider);
+    return make_unexpected(
+        Status::ResourceExhausted("TLS context metadata allocation failed"));
+  }
+  context->provider = provider;
+  context->identity =
+      next_context_identity.fetch_add(1, std::memory_order_relaxed);
+  context->server = true;
+  context->verify_peer = options.client_verification == TlsVerifyMode::kPeer;
+  context->require_alpn = options.require_alpn;
+  context->allow_truncated_eof = options.allow_truncated_eof;
+
+  status =
+      configure_versions(provider, options.min_version, options.max_version);
+  if (status.ok() &&
+      (SSL_CTX_use_certificate_chain_file(provider, certificate.get()) != 1 ||
+       SSL_CTX_use_PrivateKey_file(provider, key.get(), SSL_FILETYPE_PEM) !=
+           1 ||
+       SSL_CTX_check_private_key(provider) != 1)) {
+    status = Status::InvalidArgument(
+        "TLS certificate/private key could not be loaded or do not match");
+  }
+  if (status.ok())
+    status = encode_alpn(options.alpn_protocols, context);
+  if (status.ok())
+    status = finish_context(context);
+  if (status.ok()) {
+    SSL_CTX_set_verify(provider,
+                       context->verify_peer
+                           ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+                           : SSL_VERIFY_NONE,
+                       nullptr);
+    if (context->verify_peer) {
+      OwnedCString authority;
+      status = authority.assign(options.client_certificate_authority_file, true,
+                                "TLS client certificate authority is required "
+                                "when verification is enabled");
+      if (status.ok() && SSL_CTX_load_verify_locations(
+                             provider, authority.get(), nullptr) != 1) {
+        status = Status::InvalidArgument(
+            "TLS client certificate authority file could not be loaded");
+      }
+    }
+  }
+  if (status.ok()) {
+    SSL_CTX_set_session_cache_mode(provider, options.enable_session_resumption
+                                                 ? SSL_SESS_CACHE_SERVER
+                                                 : SSL_SESS_CACHE_OFF);
+    if (options.enable_session_resumption) {
+      const auto *identity =
+          reinterpret_cast<const unsigned char *>(&context->identity);
+      if (SSL_CTX_set_session_id_context(provider, identity,
+                                         sizeof(context->identity)) != 1) {
+        status = Status::Internal("TLS session cache identity setup failed");
+      }
+    } else {
+      SSL_CTX_set_options(provider, SSL_OP_NO_TICKET);
+    }
+  }
+  if (!status.ok()) {
+    release_context(context);
+    return make_unexpected(std::move(status));
+  }
+  return TlsContext(context);
+}
+
+TlsStream::~TlsStream() { reset_(); }
+
+TlsStream::TlsStream(TlsStream &&other) noexcept
+    : socket_(std::move(other.socket_)),
+      ssl_(std::exchange(other.ssl_, nullptr)),
+      read_bio_(std::exchange(other.read_bio_, nullptr)),
+      write_bio_(std::exchange(other.write_bio_, nullptr)),
+      context_impl_(std::exchange(other.context_impl_, nullptr)),
+      scratch_(std::exchange(other.scratch_, nullptr)),
+      scratch_allocator_(other.scratch_allocator_), server_(other.server_),
+      handshake_complete_(other.handshake_complete_) {}
+
+TlsStream &TlsStream::operator=(TlsStream &&other) noexcept {
+  if (this != &other) {
+    reset_();
+    socket_ = std::move(other.socket_);
+    ssl_ = std::exchange(other.ssl_, nullptr);
+    read_bio_ = std::exchange(other.read_bio_, nullptr);
+    write_bio_ = std::exchange(other.write_bio_, nullptr);
+    context_impl_ = std::exchange(other.context_impl_, nullptr);
+    scratch_ = std::exchange(other.scratch_, nullptr);
+    scratch_allocator_ = other.scratch_allocator_;
+    server_ = other.server_;
+    handshake_complete_ = other.handshake_complete_;
+  }
+  return *this;
+}
+
+void TlsStream::reset_() noexcept {
+  SSL_free(as_ssl(ssl_));
+  ssl_ = nullptr;
+  read_bio_ = nullptr;
+  write_bio_ = nullptr;
+  release_context(as_context(context_impl_));
+  context_impl_ = nullptr;
+  if (scratch_ != nullptr) {
+    scratch_allocator_.deallocate(scratch_, kPumpBytes,
+                                  alignof(std::max_align_t));
+    scratch_ = nullptr;
+  }
+  handshake_complete_ = false;
+}
+
+Result<TlsStream>
+TlsStream::connect(TcpStream socket, const TlsContext &context,
+                   const TlsConnectOptions &options) noexcept {
+  return make_(std::move(socket), context, false, &options);
+}
+
+Result<TlsStream> TlsStream::accept(TcpStream socket,
+                                    const TlsContext &context) noexcept {
+  return make_(std::move(socket), context, true, nullptr);
 }
 
 container::StringView TlsStream::negotiated_protocol() const noexcept {
-  if (ssl_ == nullptr) return {};
-  const unsigned char* data = nullptr;
-  unsigned int length = 0;
-  SSL_get0_alpn_selected(ssl_, &data, &length);
-  return container::StringView{reinterpret_cast<const char*>(data),
-                               static_cast<std::uint32_t>(length)};
+  if (ssl_ == nullptr || !handshake_complete_)
+    return {};
+  const unsigned char *selected = nullptr;
+  unsigned int selected_size = 0;
+  SSL_get0_alpn_selected(as_ssl(ssl_), &selected, &selected_size);
+  return container::StringView(reinterpret_cast<const char *>(selected),
+                               selected_size);
 }
 
-// Lazily allocate (once) the shared 16KB ciphertext pump scratch. Reused for the
-// stream's whole life, freed in the dtor. Returns nullptr on OOM.
-char* TlsStream::ensure_scratch(mem::AllocatorRef alloc) noexcept {
-  if (scratch_ == nullptr) {
-    scratch_ = static_cast<char*>(
-        alloc.allocate(kBufSize, alignof(std::max_align_t)));
-    if (scratch_ != nullptr) scratch_alloc_ = alloc;
+bool TlsStream::session_reused() const noexcept {
+  return ssl_ != nullptr && handshake_complete_ &&
+         SSL_session_reused(as_ssl(ssl_)) == 1;
+}
+
+Result<TlsSession> TlsStream::take_session() const noexcept {
+  if (ssl_ == nullptr || !handshake_complete_ || server_) {
+    return make_unexpected(Status::FailedPrecondition(
+        "TLS client handshake must complete before taking a session"));
   }
+  SSL_SESSION *session = SSL_get1_session(as_ssl(ssl_));
+  if (session == nullptr || SSL_SESSION_is_resumable(session) != 1) {
+    SSL_SESSION_free(session);
+    return make_unexpected(
+        Status::FailedPrecondition("TLS provider has no resumable session"));
+  }
+  return TlsSession(session, as_context(context_impl_)->identity);
+}
+
+std::byte *TlsStream::ensure_scratch(mem::AllocatorRef allocator) noexcept {
+  if (scratch_ != nullptr)
+    return scratch_;
+  if (!allocator.valid())
+    return nullptr;
+  scratch_ = static_cast<std::byte *>(
+      allocator.allocate(kPumpBytes, alignof(std::max_align_t)));
+  if (scratch_ != nullptr)
+    scratch_allocator_ = allocator;
   return scratch_;
 }
 
-// ---- pump helpers (allocator-first free coroutines; take the raw socket + BIO +
-// a caller-owned scratch buffer so they need no access to TlsStream privates and
-// keep the 16KB OFF their coroutine frame) ----------------------------------
-
-// Drain all pending ciphertext from `wbio` and co_await-write it to the peer via
-// `sock`. `scratch` is a kBufSize block owned by the TlsStream (reused across
-// calls). Returns 0 on success, negative on a socket write error.
-static sched::Task<int> flush_wbio(mem::AllocatorRef, TcpStream& sock, bio_st* wbio,
-                                   char* scratch) noexcept {
+sched::Task<Status> tls_handshake(mem::AllocatorRef allocator,
+                                  TlsStream &stream,
+                                  OperationOptions options) noexcept {
+  if (!stream.valid()) {
+    co_return Status::FailedPrecondition("TLS stream is not initialized");
+  }
+  if (stream.handshake_complete_)
+    co_return Status{};
+  std::byte *scratch = stream.ensure_scratch(allocator);
+  if (scratch == nullptr) {
+    co_return Status::ResourceExhausted("TLS pump scratch allocation failed");
+  }
+  SSL *provider = as_ssl(stream.ssl_);
   for (;;) {
-    int n = BIO_read(wbio, scratch, kBufSize);  // pull ciphertext SSL queued for us
-    if (n <= 0) co_return 0;                     // nothing (more) to send
-    std::uint32_t off = 0;
-    while (off < static_cast<std::uint32_t>(n)) {
-      auto written = co_await sock.write_some(std::as_bytes(std::span{
-          scratch + off, static_cast<std::size_t>(n) - off}));
-      if (!written.ok() || written.bytes == 0) co_return -1;
-      off += static_cast<std::uint32_t>(written.bytes);
+    ERR_clear_error();
+    const int result = SSL_do_handshake(provider);
+    const ProviderWant want = classify(provider, result);
+    Status flushed = co_await flush_ciphertext(
+        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+    if (!flushed.ok())
+      co_return flushed;
+    if (want == ProviderWant::kDone) {
+      auto *context = as_context(stream.context_impl_);
+      Status checked;
+      if (context->verify_peer &&
+          SSL_get_verify_result(provider) != X509_V_OK) {
+        checked =
+            Status::Unauthenticated("TLS peer certificate verification failed");
+      } else if (context->require_alpn) {
+        const unsigned char *selected = nullptr;
+        unsigned int selected_size = 0;
+        SSL_get0_alpn_selected(provider, &selected, &selected_size);
+        if (selected_size == 0) {
+          checked = Status::FailedPrecondition(
+              "TLS peer did not negotiate a required ALPN protocol");
+        }
+      }
+      if (checked.ok())
+        stream.handshake_complete_ = true;
+      co_return checked;
+    }
+    if (want == ProviderWant::kCleanEof) {
+      co_return Status::DataLoss("TLS peer closed during handshake");
+    }
+    if (want == ProviderWant::kError) {
+      auto *context = as_context(stream.context_impl_);
+      if (context->verify_peer &&
+          SSL_get_verify_result(provider) != X509_V_OK) {
+        while (ERR_get_error() != 0) {
+        }
+        co_return Status::Unauthenticated(
+            "TLS peer certificate verification failed");
+      }
+      if (context->require_alpn) {
+        const unsigned char *selected = nullptr;
+        unsigned int selected_size = 0;
+        SSL_get0_alpn_selected(provider, &selected, &selected_size);
+        if (selected_size == 0) {
+          while (ERR_get_error() != 0) {
+          }
+          co_return Status::FailedPrecondition(
+              "TLS peer did not negotiate a required ALPN protocol");
+        }
+      }
+      co_return provider_failure("TLS handshake failed");
+    }
+    if (want == ProviderWant::kWrite)
+      continue;
+    FeedResult fed = co_await feed_ciphertext(
+        allocator, stream.socket_, as_bio(stream.read_bio_), scratch, options);
+    if (!fed.status.ok())
+      co_return fed.status;
+    if (fed.eof)
+      co_return Status::DataLoss("truncated TLS handshake");
+  }
+}
+
+sched::Task<TransferResult> tls_read(mem::AllocatorRef allocator,
+                                     TlsStream &stream,
+                                     std::span<std::byte> buffer,
+                                     OperationOptions options) noexcept {
+  if (!stream.valid() || !stream.handshake_complete_) {
+    co_return TransferResult{
+        0, Status::FailedPrecondition("TLS handshake is not complete"), false};
+  }
+  if (buffer.empty())
+    co_return TransferResult{};
+  std::byte *scratch = stream.ensure_scratch(allocator);
+  if (scratch == nullptr) {
+    co_return TransferResult{
+        0, Status::ResourceExhausted("TLS pump scratch allocation failed"),
+        false};
+  }
+  SSL *provider = as_ssl(stream.ssl_);
+  for (;;) {
+    std::size_t bytes = 0;
+    ERR_clear_error();
+    const int result =
+        SSL_read_ex(provider, buffer.data(), buffer.size(), &bytes);
+    const ProviderWant want = classify(provider, result);
+    Status flushed = co_await flush_ciphertext(
+        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+    if (!flushed.ok())
+      co_return TransferResult{bytes, flushed, false};
+    if (result == 1 && bytes != 0) {
+      co_return TransferResult{bytes, {}, false};
+    }
+    if (want == ProviderWant::kCleanEof) {
+      co_return TransferResult{bytes, {}, true};
+    }
+    if (want == ProviderWant::kError) {
+      co_return TransferResult{
+          bytes, provider_failure("TLS record read failed"), false};
+    }
+    if (want == ProviderWant::kWrite)
+      continue;
+    FeedResult fed = co_await feed_ciphertext(
+        allocator, stream.socket_, as_bio(stream.read_bio_), scratch, options);
+    if (!fed.status.ok()) {
+      co_return TransferResult{bytes, fed.status, false};
+    }
+    if (fed.eof) {
+      Status eof_status =
+          transport_eof_status(as_context(stream.context_impl_),
+                               "TLS transport ended without close_notify");
+      co_return TransferResult{bytes, eof_status, eof_status.ok()};
     }
   }
 }
 
-// co_await-read a chunk of ciphertext from the peer and feed it into `rbio` so SSL
-// can consume it. `scratch` is the TlsStream's reused kBufSize block. Returns 1 on
-// data fed, 0 on peer EOF, negative on error.
-static sched::Task<int> feed_rbio(mem::AllocatorRef, TcpStream& sock, bio_st* rbio,
-                                  char* scratch) noexcept {
-  auto received = co_await sock.read_some(std::as_writable_bytes(
-      std::span{scratch, static_cast<std::size_t>(kBufSize)}));
-  if (!received.ok()) co_return -1;
-  if (received.eof) co_return 0;
-  const std::size_t n = received.bytes;
-  // A mem BIO_write only fails on OOM; if it wrote short the ciphertext would be
-  // silently truncated and SSL would later fail decryption with an opaque error.
-  // Treat a short/failed write as an error here so the failure is attributable.
-  int wr = BIO_write(rbio, scratch, static_cast<int>(n));
-  if (wr != static_cast<int>(n)) co_return -1;
-  co_return 1;
-}
-
-// ---- handshake -------------------------------------------------------------
-
-sched::Task<int> tls_handshake(mem::AllocatorRef alloc, TlsStream& s) noexcept {
-  if (s.ssl_ == nullptr) co_return -1;
-  char* scratch = s.ensure_scratch(alloc);
-  if (scratch == nullptr) co_return -1;  // OOM
-  for (;;) {
-    ERR_clear_error();
-    int r = SSL_do_handshake(s.ssl_);
-    Want w = classify(s.ssl_, r);     // MUST be right after SSL_do_handshake
-    // Always flush any ciphertext the handshake produced (our ClientHello/Finished
-    // etc.) before waiting to read the peer's -- the handshake is a ping-pong.
-    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
-    if (w == Want::kDone) co_return 0;         // SSL_is_init_finished
-    if (w == Want::kError || w == Want::kEof) co_return -1;
-    if (w == Want::kReadMore || w == Want::kWriteMore) {
-      // Both need the transport to advance. kReadMore: feed peer ciphertext.
-      // kWriteMore is near-impossible on an unbounded mem wbio (SSL always writes
-      // there), but if it ever occurs, feed_rbio still yields the worker and pulls
-      // input -- guaranteeing forward progress rather than a non-yielding spin.
-      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_, scratch);
-      if (f <= 0) co_return -1;  // EOF/err mid-handshake
-    }
+sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
+                                      TlsStream &stream,
+                                      std::span<const std::byte> buffer,
+                                      OperationOptions options) noexcept {
+  if (!stream.valid() || !stream.handshake_complete_) {
+    co_return TransferResult{
+        0, Status::FailedPrecondition("TLS handshake is not complete"), false};
   }
-}
-
-// ---- read ------------------------------------------------------------------
-
-sched::Task<long> tls_read(mem::AllocatorRef alloc, TlsStream& s, void* buf,
-                           std::uint32_t len) noexcept {
-  if (s.ssl_ == nullptr) co_return -1;
-  char* scratch = s.ensure_scratch(alloc);
-  if (scratch == nullptr) co_return -1;  // OOM
-  for (;;) {
-    ERR_clear_error();
-    int r = SSL_read(s.ssl_, buf, static_cast<int>(len));
-    if (r > 0) co_return static_cast<long>(r);  // plaintext bytes
-    Want w = classify(s.ssl_, r);               // right after SSL_read
-    // A read may still need to WRITE (renegotiation) -- flush first either way.
-    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
-    if (w == Want::kEof) co_return 0;           // clean close_notify / transport EOF
-    if (w == Want::kError) co_return -1;
-    if (w == Want::kReadMore || w == Want::kWriteMore) {
-      // Need more ciphertext (or, rarely, a mem-wbio WANT_WRITE): feed input, which
-      // also yields the worker -- guarantees progress, never a non-yielding spin.
-      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_, scratch);
-      if (f == 0) co_return 0;   // peer closed while we needed more ciphertext
-      if (f < 0) co_return -1;
-    }
+  if (buffer.empty())
+    co_return TransferResult{};
+  std::byte *scratch = stream.ensure_scratch(allocator);
+  if (scratch == nullptr) {
+    co_return TransferResult{
+        0, Status::ResourceExhausted("TLS pump scratch allocation failed"),
+        false};
   }
-}
-
-// ---- write -----------------------------------------------------------------
-
-sched::Task<long> tls_write(mem::AllocatorRef alloc, TlsStream& s, const void* buf,
-                            std::uint32_t len) noexcept {
-  if (s.ssl_ == nullptr) co_return -1;
-  char* scratch = s.ensure_scratch(alloc);
-  if (scratch == nullptr) co_return -1;  // OOM
-  const char* p = static_cast<const char*>(buf);
-  std::uint32_t remaining = len;
-  while (remaining > 0) {
+  SSL *provider = as_ssl(stream.ssl_);
+  std::size_t completed = 0;
+  while (completed < buffer.size()) {
+    std::size_t bytes = 0;
     ERR_clear_error();
-    int r = SSL_write(s.ssl_, p, static_cast<int>(remaining));
-    if (r > 0) {
-      // Ciphertext for these bytes is now in wbio_; send it before continuing.
-      if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
-      p += r;
-      remaining -= static_cast<std::uint32_t>(r);
+    const int result = SSL_write_ex(provider, buffer.data() + completed,
+                                    buffer.size() - completed, &bytes);
+    const ProviderWant want = classify(provider, result);
+    completed += bytes;
+    Status flushed = co_await flush_ciphertext(
+        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+    if (!flushed.ok())
+      co_return TransferResult{completed, flushed, false};
+    if (result == 1) {
+      if (bytes == 0) {
+        co_return TransferResult{
+            completed,
+            Status::Unavailable("TLS write made no forward progress"), false};
+      }
       continue;
     }
-    Want w = classify(s.ssl_, r);  // right after SSL_write
-    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
-    if (w == Want::kError || w == Want::kEof) co_return -1;
-    if (w == Want::kReadMore || w == Want::kWriteMore) {
-      // Renegotiation (write needs to read) or a rare mem-wbio WANT_WRITE: feed
-      // input, which also yields -- guarantees progress, never a non-yielding spin.
-      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_, scratch);
-      if (f <= 0) co_return -1;
+    if (want == ProviderWant::kCleanEof) {
+      co_return TransferResult{
+          completed, Status::Unavailable("TLS peer closed during write"),
+          false};
+    }
+    if (want == ProviderWant::kError) {
+      co_return TransferResult{
+          completed, provider_failure("TLS record write failed"), false};
+    }
+    if (want == ProviderWant::kWrite)
+      continue;
+    FeedResult fed = co_await feed_ciphertext(
+        allocator, stream.socket_, as_bio(stream.read_bio_), scratch, options);
+    if (!fed.status.ok()) {
+      co_return TransferResult{completed, fed.status, false};
+    }
+    if (fed.eof) {
+      co_return TransferResult{
+          completed, Status::DataLoss("TLS peer closed during record write"),
+          false};
     }
   }
-  co_return static_cast<long>(len);
+  co_return TransferResult{completed, {}, false};
 }
 
-// ---- shutdown --------------------------------------------------------------
-
-sched::Task<int> tls_shutdown(mem::AllocatorRef alloc, TlsStream& s) noexcept {
-  if (s.ssl_ == nullptr) co_return 0;
-  char* scratch = s.ensure_scratch(alloc);
-  if (scratch == nullptr) co_return 0;  // OOM at teardown -> dirty shutdown, fine
-  // Send our close_notify and flush it, but do not wait for the peer's reply. A
-  // fixed attempt count did not make the old code bounded: its first feed_rbio()
-  // was an untimed socket read and could park forever on a silent peer.
-  for (int attempt = 0; attempt < 4; ++attempt) {
+sched::Task<Status> tls_shutdown(mem::AllocatorRef allocator, TlsStream &stream,
+                                 TlsShutdownOptions options) noexcept {
+  if (!stream.valid())
+    co_return Status{};
+  std::byte *scratch = stream.ensure_scratch(allocator);
+  if (scratch == nullptr) {
+    co_return Status::ResourceExhausted("TLS pump scratch allocation failed");
+  }
+  SSL *provider = as_ssl(stream.ssl_);
+  for (;;) {
     ERR_clear_error();
-    int r = SSL_shutdown(s.ssl_);
-    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
-    if (r == 1) co_return 0;  // full duplex close_notify exchange complete
-    if (r == 0) co_return 0;  // our close_notify is sent; do not await the peer
-    Want w = classify(s.ssl_, r);
-    if (w == Want::kError || w == Want::kEof) co_return 0;  // give up cleanly
-    if (w == Want::kReadMore) {
-      co_return 0;  // peer reply would require an unbounded transport read
+    const int result = SSL_shutdown(provider);
+    ProviderWant want = ProviderWant::kDone;
+    if (result < 0)
+      want = classify(provider, result);
+    Status flushed = co_await flush_ciphertext(allocator, stream.socket_,
+                                               as_bio(stream.write_bio_),
+                                               scratch, options.operation);
+    if (!flushed.ok())
+      co_return flushed;
+    if (result == 1 ||
+        (result == 0 && options.mode == TlsShutdownMode::kSendOnly)) {
+      co_return Status{};
+    }
+    if (result < 0 && want == ProviderWant::kError) {
+      co_return provider_failure("TLS shutdown failed");
+    }
+    if (result < 0 && want == ProviderWant::kCleanEof)
+      co_return Status{};
+    if (result < 0 && want == ProviderWant::kWrite)
+      continue;
+
+    FeedResult fed = co_await feed_ciphertext(allocator, stream.socket_,
+                                              as_bio(stream.read_bio_), scratch,
+                                              options.operation);
+    if (!fed.status.ok())
+      co_return fed.status;
+    if (fed.eof) {
+      co_return transport_eof_status(
+          as_context(stream.context_impl_),
+          "TLS transport ended before peer close_notify");
     }
   }
-  co_return 0;
 }
 
-}  // namespace hyle::io
+} // namespace hyle::io
 
-#endif  // HYLE_IO_TLS
+#endif // HYLE_IO_TLS

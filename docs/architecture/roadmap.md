@@ -70,7 +70,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | util_runtime | core, error, mem, container, container_text | — |
 | sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container_queue, timer_queue |
 | io_core | core, error, mem, container, time, timer_queue, sched, platform_fs | — |
-| io_tls | core, io_core, mem, sched, container_text | — |
+| io_tls | core, error, io_core, mem, sched, container_text | — |
 | io_http | core, io_core, io_tls, mem, sched, container_text | — |
 | io_http2 | core, io_http | container |
 | compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |

@@ -36,6 +36,11 @@ private backend engine ───────────────────
 - 普通 C++ 文件腿依据 backend capability 自动选原生异步或 blocking pool；
   用户不取得低层 engine、completion token 或同步 fallback seam。
 - plain TCP 与已握手 TLS 经同一个 `HttpTransport` 进入 HTTP framing 核。
+- TLS config/session/provider 由独立 `io_tls` factor 持有；OpenSSL 类型不进入
+  公开面。client/server factory、handshake/read/write/shutdown 都返回共享 typed
+  Error 形状，一个绝对 `OperationOptions` 贯穿 memory-BIO pump 的每次底层操作。
+  默认验证 client peer、默认把缺少 close-notify 的 EOF 视为截断；通用 ALPN 与
+  context-bound opaque session ticket 不含 HTTP 专有状态机。
 - HTTP/2 协议核固定为 nghttp2；它不拥有 IO/event loop。C++ connection 直接
   驱动 `HttpTransport`。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
@@ -158,7 +163,11 @@ private backend；调度和 completion lifetime 由 HYLE 自己管理。
   recv/send、direct accept/close 全部位于 `IoUringExtension`；普通
   `RecvOp/SendOp` 的 `fixed_slot` 暗门已删除，IOCP/kqueue 不再有 stub
   定义。`release_fixed_file` 现在检查内核 `FILES_UPDATE` 结果。
-- **io-08 TLS(C9)✅**:OpenSSL 加密 socket over co_await stream，包含 SNI、DNS/IP identity verification、有界 shutdown；HTTP transport 已可持有已握手 TLS，真实 HTTPS loopback 覆盖。
+- **io-08 TLS(C9) 历史落点**：最初实现了 OpenSSL memory-BIO over co_await
+  stream、SNI 和 HTTPS loopback，但当时仍暴露 native provider pointer、invalid
+  object 与 `int/long`。当前 `io_tls` v1 已用 typed config/session/result、统一
+  deadline/cancel、通用 ALPN、严格 truncation 与显式 shutdown policy 取代这些
+  旧形状；是否最终冻结只看活动 closure card 与 registry。
 - **io-09 异步 DNS + signal ✅(C10，历史落点)**：当时首次用 blocking pool 卸载
   `getaddrinfo`，并建立 signal self-pipe/console-handler 路径。当前 resolver 已改为
   `resolve(IoContext&, ...).join(OperationOptions)`：host 与全部 IPv4/IPv6 endpoint

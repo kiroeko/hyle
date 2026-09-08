@@ -1,19 +1,23 @@
-// io-08 TLS benchmark: the honest TLS perf comparison the io-08 milestone deferred.
-// TLS throughput/handshake over HYLE's memory-BIO pump (co_await TcpStream) has TWO
-// cost components: (1) OpenSSL's crypto (handshake asymmetric + record symmetric) --
-// UNAVOIDABLE, identical for any OpenSSL user; (2) HYLE's pump + fiber scheduling
-// overhead ON TOP. A single throughput number can't separate them, so the SOTA
-// baseline here is RAW OpenSSL over a blocking socket (same cert, same cipher, same
-// payload, NO HYLE) -- the ratio is exactly what HYLE's co_await abstraction costs
-// over bare OpenSSL. Both pay the identical crypto floor, so the delta is pure HYLE.
+// io-08 TLS benchmark: the honest TLS perf comparison the io-08 milestone
+// deferred. TLS throughput/handshake over HYLE's memory-BIO pump (co_await
+// TcpStream) has TWO cost components: (1) OpenSSL's crypto (handshake
+// asymmetric + record symmetric) -- UNAVOIDABLE, identical for any OpenSSL
+// user; (2) HYLE's pump + fiber scheduling overhead ON TOP. A single throughput
+// number can't separate them, so the SOTA baseline here is RAW OpenSSL over a
+// blocking socket (same cert, same cipher, same payload, NO HYLE) -- the ratio
+// is exactly what HYLE's co_await abstraction costs over bare OpenSSL. Both pay
+// the identical crypto floor, so the delta is pure HYLE.
 //
 // Three measurements:
 //   1. HYLE TLS handshake/s -- full connect + handshake + close round-trip (the
 //      connection-setup cost, dominated by the asymmetric key exchange).
-//   2. HYLE TLS echo throughput -- post-handshake N encrypted round-trips (steady-
+//   2. HYLE TLS echo throughput -- post-handshake N encrypted round-trips
+//   (steady-
 //      state record read/write pump).
-//   3. raw OpenSSL (blocking socket, no HYLE) -- same handshake + echo, the crypto
-//      floor + a plain blocking-socket loop. HYLE/this ratio = the pump overhead.
+//   3. raw OpenSSL (blocking socket, no HYLE) -- same handshake + echo, the
+//   crypto
+//      floor + a plain blocking-socket loop. HYLE/this ratio = the pump
+//      overhead.
 //
 // Run under scripts/bench-stat.py -n 15 for the statistical verdict.
 
@@ -21,16 +25,16 @@
 
 #include <atomic>
 #include <cstdint>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <thread>
 
-#include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -41,29 +45,29 @@
 #include "hyle/sched/scheduler.h"
 
 #if !defined(_WIN32)
-#  include <sys/socket.h>
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-#  include <unistd.h>
-#  include <csignal>  // ignore SIGPIPE: a write to a peer-closed socket must not kill us
+#include <arpa/inet.h>
+#include <csignal> // ignore SIGPIPE: a write to a peer-closed socket must not kill us
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #endif
 #if defined(_WIN32)
-#  define WIN32_LEAN_AND_MEAN
-#  define NOMINMAX
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #endif
 
-using hyle::io::IoContext;
 using hyle::io::AddressFamily;
 using hyle::io::Endpoint;
+using hyle::io::IoContext;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
-using hyle::io::TlsContext;
-using hyle::io::TlsStream;
 using hyle::io::tls_handshake;
 using hyle::io::tls_read;
 using hyle::io::tls_write;
+using hyle::io::TlsContext;
+using hyle::io::TlsStream;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -74,11 +78,12 @@ using hyle::sched::Task;
 namespace {
 
 constexpr unsigned kOwner = 0;
-constexpr int kMsgLen = 256;       // TLS record payload
-constexpr int kEchoRoundTrips = 64;  // encrypted round-trips per connection per epoch
+constexpr int kMsgLen = 256; // TLS record payload
+constexpr int kEchoRoundTrips =
+    64; // encrypted round-trips per connection per epoch
 
 // Self-signed cert + key (CN=localhost, RSA 2048), same as tls_test.cc.
-const char* kCertPem =
+const char *kCertPem =
     "-----BEGIN CERTIFICATE-----\n"
     "MIIDCTCCAfGgAwIBAgIUN8o8u2IFjiNjqkZO2bW2LU5tXXowDQYJKoZIhvcNAQEL\n"
     "BQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI2MDcwNDA3MTA1M1oXDTM2MDcw\n"
@@ -98,7 +103,7 @@ const char* kCertPem =
     "i4W6kCNLXKk2OG5WP/A+F3FukS9r5sbGgdQC5ANxndDwfSUuYcEYDRn+P7mdEbBZ\n"
     "+9hlP09t1qimUNJa/g==\n"
     "-----END CERTIFICATE-----\n";
-const char* kKeyPem =
+const char *kKeyPem =
     "-----BEGIN PRIVATE KEY-----\n"
     "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCp0oLWG2oP2peE\n"
     "sXbAMGfnrmhjiuzqs/aILJMN87l48/+ws4LMOSJXNrUyOHBJu4rrMNFutjaOhfci\n"
@@ -128,72 +133,102 @@ const char* kKeyPem =
     "A48heHgTiFQ6QIIrkn9z7lQJ\n"
     "-----END PRIVATE KEY-----\n";
 
-std::string write_temp(const char* name, const char* pem) {
+std::string write_temp(const char *name, const char *pem) {
   std::string path = std::string("hyle_tls_bench_") + name;
-  std::FILE* f = std::fopen(path.c_str(), "wb");
-  if (f) { std::fwrite(pem, 1, std::strlen(pem), f); std::fclose(f); }
+  std::FILE *f = std::fopen(path.c_str(), "wb");
+  if (f) {
+    std::fwrite(pem, 1, std::strlen(pem), f);
+    std::fclose(f);
+  }
   return path;
 }
 
 // ---- HYLE side --------------------------------------------------------------
 struct HyleTls {
   std::uint16_t port;
-  bool do_echo;          // false = handshake-only (then close); true = handshake + N echoes
-  TlsContext* sctx;
-  TlsContext* cctx;
+  bool do_echo; // false = handshake-only (then close); true = handshake + N
+                // echoes
+  TlsContext *sctx;
+  TlsContext *cctx;
   std::atomic<int> client_units{0};
 };
 
-Task<int> hyle_server(AllocatorRef alloc, TcpListener* ls, HyleTls* h) {
+Task<int> hyle_server(AllocatorRef alloc, TcpListener *ls, HyleTls *h) {
   auto accepted = co_await ls->accept(kOwner);
-  if (!accepted.has_value()) co_return 0;
+  if (!accepted.has_value())
+    co_return 0;
   TcpStream conn = std::move(*accepted);
-  TlsStream tls(std::move(conn), *h->sctx, /*is_server=*/true);
-  if (co_await tls_handshake(alloc, tls) != 0) co_return 0;
-  if (!h->do_echo) h->client_units.store(1, std::memory_order_relaxed);
+  auto wrapped = TlsStream::accept(std::move(conn), *h->sctx);
+  if (!wrapped)
+    co_return 0;
+  TlsStream tls = std::move(*wrapped);
+  if (!(co_await tls_handshake(alloc, tls)).ok())
+    co_return 0;
+  if (!h->do_echo)
+    h->client_units.store(1, std::memory_order_relaxed);
   if (h->do_echo) {
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
-      long n = co_await tls_read(alloc, tls, buf, sizeof(buf));
-      if (n <= 0) break;
-      if (co_await tls_write(alloc, tls, buf, static_cast<std::uint32_t>(n)) != n) break;
+      auto received =
+          co_await tls_read(alloc, tls, std::as_writable_bytes(std::span(buf)));
+      if (!received.ok() || received.bytes == 0)
+        break;
+      auto sent = co_await tls_write(
+          alloc, tls, std::as_bytes(std::span(buf, received.bytes)));
+      if (!sent.ok() || sent.bytes != received.bytes)
+        break;
     }
   }
   co_return 0;
 }
 
-Task<int> hyle_client(AllocatorRef alloc, IoContext* io, HyleTls* h) {
+Task<int> hyle_client(AllocatorRef alloc, IoContext *io, HyleTls *h) {
   auto opened = TcpStream::open(*io, kOwner);
-  if (!opened.has_value()) co_return 0;
+  if (!opened.has_value())
+    co_return 0;
   TcpStream s = std::move(*opened);
-  if (!(co_await s.connect(
-            Endpoint::loopback(AddressFamily::kIpv4, h->port))).ok()) co_return 0;
-  TlsStream tls(std::move(s), *h->cctx, /*is_server=*/false);
-  if (co_await tls_handshake(alloc, tls) != 0) co_return 0;
+  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, h->port)))
+           .ok())
+    co_return 0;
+  auto wrapped = TlsStream::connect(std::move(s), *h->cctx);
+  if (!wrapped)
+    co_return 0;
+  TlsStream tls = std::move(*wrapped);
+  if (!(co_await tls_handshake(alloc, tls)).ok())
+    co_return 0;
   if (h->do_echo) {
     static const char kMsg[kMsgLen] = "hyle-tls-bench-payload";
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
-      if (co_await tls_write(alloc, tls, kMsg, kMsgLen) != kMsgLen) break;
-      if (co_await tls_read(alloc, tls, buf, kMsgLen) <= 0) break;
+      auto sent =
+          co_await tls_write(alloc, tls, std::as_bytes(std::span(kMsg)));
+      if (!sent.ok() || sent.bytes != kMsgLen)
+        break;
+      auto received =
+          co_await tls_read(alloc, tls, std::as_writable_bytes(std::span(buf)));
+      if (!received.ok() || received.bytes == 0)
+        break;
       h->client_units.fetch_add(1, std::memory_order_relaxed);
     }
   }
   co_return 0;
 }
 
-struct Drive { Task<int> task; };
-void drive_entry(void* p) noexcept { static_cast<Drive*>(p)->task.resume(); }
+struct Drive {
+  Task<int> task;
+};
+void drive_entry(void *p) noexcept { static_cast<Drive *>(p)->task.resume(); }
 
-// One HYLE TLS connection: handshake (+ optional N echoes), both fibers pinned to
-// one worker. `port` is bumped per call to dodge TIME_WAIT.
-int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx,
-                 TlsContext* cctx) {
+// One HYLE TLS connection: handshake (+ optional N echoes), both fibers pinned
+// to one worker. `port` is bumped per call to dodge TIME_WAIT.
+int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext *sctx,
+                 TlsContext *cctx) {
   Scheduler sched(1, system_allocator(), 1024);
   IoContext io(sched);
   auto opened_listener = TcpListener::bind(
       io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
-  if (!opened_listener.has_value()) return -1;
+  if (!opened_listener.has_value())
+    return -1;
   TcpListener ls = std::move(*opened_listener);
   HyleTls h{port, do_echo, sctx, cctx};
   auto ds = std::make_unique<Drive>();
@@ -211,19 +246,21 @@ int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx,
 
 // ---- raw OpenSSL over a blocking socket (SOTA baseline, no HYLE) ------------
 // Same self-signed cert, same cipher defaults, same payload. Server runs on a
-// std::thread; client on the main thread. Plain blocking SSL_read/SSL_write over a
-// connected loopback TCP socket -- the crypto floor + a bare blocking loop. HYLE's
-// number vs this = the co_await pump + fiber scheduling overhead over bare OpenSSL.
+// std::thread; client on the main thread. Plain blocking SSL_read/SSL_write
+// over a connected loopback TCP socket -- the crypto floor + a bare blocking
+// loop. HYLE's number vs this = the co_await pump + fiber scheduling overhead
+// over bare OpenSSL.
 #if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
 int make_listener(std::uint16_t port) {
   int ls = static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0));
   int one = 1;
-  ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&one), sizeof(one));
+  ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR,
+               reinterpret_cast<const char *>(&one), sizeof(one));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = htons(port);
-  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) != 0 ||
+  if (::bind(ls, reinterpret_cast<sockaddr *>(&sa), sizeof(sa)) != 0 ||
       ::listen(ls, 8) != 0) {
 #if defined(_WIN32)
     ::closesocket(ls);
@@ -235,17 +272,20 @@ int make_listener(std::uint16_t port) {
   return ls;
 }
 
-void raw_openssl_server(int ls, SSL_CTX* sctx, bool do_echo) {
+void raw_openssl_server(int ls, SSL_CTX *sctx, bool do_echo) {
   int c = static_cast<int>(::accept(ls, nullptr, nullptr));
-  if (c < 0) return;
-  SSL* ssl = SSL_new(sctx);
+  if (c < 0)
+    return;
+  SSL *ssl = SSL_new(sctx);
   SSL_set_fd(ssl, c);
   if (SSL_accept(ssl) == 1 && do_echo) {
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
       int n = SSL_read(ssl, buf, kMsgLen);
-      if (n <= 0) break;
-      if (SSL_write(ssl, buf, n) != n) break;
+      if (n <= 0)
+        break;
+      if (SSL_write(ssl, buf, n) != n)
+        break;
     }
   }
   SSL_shutdown(ssl);
@@ -257,10 +297,11 @@ void raw_openssl_server(int ls, SSL_CTX* sctx, bool do_echo) {
 #endif
 }
 
-int run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx,
-                        SSL_CTX* cctx) {
+int run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX *sctx,
+                        SSL_CTX *cctx) {
   int ls = make_listener(port);
-  if (ls < 0) return -1;
+  if (ls < 0)
+    return -1;
   std::thread srv(raw_openssl_server, ls, sctx, do_echo);
 
   int c = static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0));
@@ -269,18 +310,21 @@ int run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx,
   sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = htons(port);
   int units = 0;
-  if (::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == 0) {
-    SSL* ssl = SSL_new(cctx);
+  if (::connect(c, reinterpret_cast<sockaddr *>(&sa), sizeof(sa)) == 0) {
+    SSL *ssl = SSL_new(cctx);
     SSL_set_fd(ssl, c);
     if (SSL_connect(ssl) == 1) {
-      if (!do_echo) units = 1;
+      if (!do_echo)
+        units = 1;
     }
     if (SSL_is_init_finished(ssl) && do_echo) {
       static const char kMsg[kMsgLen] = "hyle-tls-bench-payload";
       char buf[kMsgLen];
       for (int i = 0; i < kEchoRoundTrips; ++i) {
-        if (SSL_write(ssl, kMsg, kMsgLen) != kMsgLen) break;
-        if (SSL_read(ssl, buf, kMsgLen) <= 0) break;
+        if (SSL_write(ssl, kMsg, kMsgLen) != kMsgLen)
+          break;
+        if (SSL_read(ssl, buf, kMsgLen) <= 0)
+          break;
         ++units;
       }
     }
@@ -300,15 +344,16 @@ int run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx,
 #endif
   return units;
 }
-#endif  // POSIX || Windows
+#endif // POSIX || Windows
 
-}  // namespace
+} // namespace
 
 int main() {
 #if !defined(_WIN32)
-  // A blocking SSL_write to a socket the peer already closed raises SIGPIPE, which
-  // is fatal by default -- ignore it so the raw-OpenSSL baseline's teardown races
-  // don't kill the bench (the write just returns EPIPE, which we don't act on here).
+  // A blocking SSL_write to a socket the peer already closed raises SIGPIPE,
+  // which is fatal by default -- ignore it so the raw-OpenSSL baseline's
+  // teardown races don't kill the bench (the write just returns EPIPE, which we
+  // don't act on here).
   std::signal(SIGPIPE, SIG_IGN);
 #endif
 #if defined(_WIN32)
@@ -318,18 +363,25 @@ int main() {
   std::string cert = write_temp("cert.pem", kCertPem);
   std::string key = write_temp("key.pem", kKeyPem);
 
-  // HYLE contexts (reused across iterations -- SSL_CTX is shareable; per-conn SSL is
-  // made from it, matching how a real server holds one CTX).
-  TlsContext hsctx = TlsContext::server(cert.c_str(), key.c_str());
-  TlsContext hcctx = TlsContext::client();
-  if (hsctx.valid() && hcctx.valid())
-    SSL_CTX_set_verify(hcctx.native(), SSL_VERIFY_NONE, nullptr);
+  // HYLE contexts (reused across iterations -- SSL_CTX is shareable; per-conn
+  // SSL is made from it, matching how a real server holds one CTX).
+  hyle::io::TlsServerOptions server_options;
+  server_options.certificate_chain_file = cert;
+  server_options.private_key_file = key;
+  auto made_server = TlsContext::make_server(server_options);
+  hyle::io::TlsClientOptions client_options;
+  client_options.verify = hyle::io::TlsVerifyMode::kNone;
+  auto made_client = TlsContext::make_client(client_options);
+  if (!made_server || !made_client)
+    std::abort();
+  TlsContext hsctx = std::move(*made_server);
+  TlsContext hcctx = std::move(*made_client);
 
   // Raw OpenSSL contexts (same cert/key/verify).
-  SSL_CTX* rsctx = SSL_CTX_new(TLS_server_method());
+  SSL_CTX *rsctx = SSL_CTX_new(TLS_server_method());
   SSL_CTX_use_certificate_chain_file(rsctx, cert.c_str());
   SSL_CTX_use_PrivateKey_file(rsctx, key.c_str(), SSL_FILETYPE_PEM);
-  SSL_CTX* rcctx = SSL_CTX_new(TLS_client_method());
+  SSL_CTX *rcctx = SSL_CTX_new(TLS_client_method());
   SSL_CTX_set_verify(rcctx, SSL_VERIFY_NONE, nullptr);
 
   // Stay below the OS ephemeral-client ranges (Linux commonly starts at 32768,
@@ -338,7 +390,8 @@ int main() {
   // failed with EADDRINUSE and fabricated a benchmark abort.
   std::uint16_t port = 18460;
 
-  // ---- 1. handshake/s: full connect + TLS handshake + close --------------------
+  // ---- 1. handshake/s: full connect + TLS handshake + close
+  // --------------------
   {
     ankerl::nanobench::Bench b;
     b.title("TLS handshake (connect + handshake + close)")
@@ -356,7 +409,8 @@ int main() {
     });
   }
 
-  // ---- 2. encrypted echo throughput: handshake + N record round-trips ----------
+  // ---- 2. encrypted echo throughput: handshake + N record round-trips
+  // ----------
   {
     ankerl::nanobench::Bench b;
     b.title("TLS encrypted echo (64 round-trips x 256B, post-handshake)")
