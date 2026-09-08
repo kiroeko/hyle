@@ -112,7 +112,7 @@ The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume jo
 4. Performance: P1; current historical TLS benchmark is diagnostic only. Frozen record-stream and handshake journeys
    need a same-provider comparison or consumer budget; no module-wide SOTA claim.
 5. FFI: `N/A`; scan must remain free of C headers/exports/managed sample.
-6. Delivery: currently `FAIL` because TLS code and OpenSSL registration live in `io_core`; F01 owns the repair.
+6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared/offline terminal journeys remain pending.
 7. C++ usability/docs: currently `FAIL` due invalid objects, raw integers, missing budget/session and stale guide;
    F02--F05 own the repair.
 
@@ -120,3 +120,9 @@ The draft becomes `FROZEN` only after compile-only plain TLS, ALPN and resume jo
 
 `AUDITED / ACTIVE`。能力图、自然 API draft、owner 与有限 F01--F05 已冻结；现在允许实现，
 但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+
+## Implementation checkpoints
+
+- `ea45d866`：`IOTLS-F01` 的物理 owner 已建立；TLS-enabled source、test、benchmark、OpenSSL
+  package owner 与 `HYLE_IO_TLS_API` 均属于 `io_tls`。feature OFF 只保留 capability query，
+  不暴露失败 operation；Windows OFF/ON shared correctness 与独立 header 已通过。

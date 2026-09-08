@@ -118,7 +118,7 @@ trailers only after end-of-body. No P1 starts until compile-only fixed and strea
 4. Performance: P1 normal REST + SSE; historical raw/pico or sync callback microbenches do not gate. Compare same parsing,
    body ownership and backpressure or use natural-route budget without primitive SOTA claims.
 5. FFI: `N/A`, no C schema/codec/exports.
-6. Delivery: currently `FAIL` because source/header/dependency/tests belong to io_core; F01 repairs all three shapes.
+6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared/offline terminal journeys remain pending.
 7. C++ usability/docs: currently `FAIL` due null/bool, fixed slots, sync callback and missing body/cancel selection guide;
    F02--F06 repair it.
 
@@ -126,3 +126,9 @@ trailers only after end-of-body. No P1 starts until compile-only fixed and strea
 
 `AUDITED / ACTIVE`。能力图、lifecycle、owner、API draft 与有限 F01--F06 已冻结；允许实现，
 但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+
+## Implementation checkpoints
+
+- `ea45d866`：`IOHTTP-F01` 的物理 owner 已建立；HTTP/1 source/header/test/benchmark、pico
+  license/package owner 与 `HYLE_IO_HTTP_API` 均属于 `io_http`。HTTP/2 只经导出的 transport
+  seam 复用本 factor；Windows shared correctness 与独立 header 已通过。

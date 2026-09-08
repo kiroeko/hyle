@@ -1247,7 +1247,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io_core v1 已完成真实推理消费者与 Asio/Seastar 回放并进入 AUDITED：内部 factor 为 io_core、用户产品仍为 io；typed endpoint/error、operation budget、DNS/connect、vectored/direct IO、local IPC、teardown 与物理 factorization 的十项有限 FIX 已冻结。"
+      "summary": "io_core v1 处于 AUDITED：F01--F08 已实现，TLS/HTTP/HTTP2 source/header/test/dependency 已在 ea45d866 迁入独立 factor；F09 交付矩阵、F10 candidate/P1/红队仍待完成。"
     },
     {
       "module": "io_tls",
@@ -1273,7 +1273,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_tls v1 已完成能力、生命周期、owner 与自然 API 审计并进入 AUDITED；IOTLS-F01--F05 是唯一有限实现集，P1 须等待 immutable candidate。"
+      "summary": "io_tls v1 处于 AUDITED；IOTLS-F01 物理 factor/OpenSSL owner 已在 ea45d866 落地，typed config/session/operation 与 terminal delivery/P1 仍按 F02--F05 实施。"
     },
     {
       "module": "io_http",
@@ -1299,7 +1299,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http v1 已完成 HTTP/1 framing、bounded streaming、连接生命周期、owner 与自然 API 审计并进入 AUDITED；IOHTTP-F01--F06 是唯一有限实现集。"
+      "summary": "io_http v1 处于 AUDITED；IOHTTP-F01 物理 factor/pico owner 已在 ea45d866 落地，typed streaming body/连接 lifecycle 与 terminal delivery/P1 仍按 F02--F06 实施。"
     },
     {
       "module": "io_http2",
@@ -1325,7 +1325,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http2 v1 已完成多 stream、incremental body、flow control、RST/GOAWAY、owner 与自然 API 审计并进入 AUDITED；IOH2-F01--F06 是唯一有限实现集。"
+      "summary": "io_http2 v1 处于 AUDITED；IOH2-F01 物理 factor/nghttp2 owner 已在 ea45d866 落地，incremental stream/flow control/lifecycle 与 terminal delivery/P1 仍按 F02--F06 实施。"
     },
     {
       "module": "io_transfer",

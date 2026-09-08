@@ -281,7 +281,13 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   `<hyle/io/net.h>` 与顶层 `hyle::io::Completion` 无法再被消费者编译。Linux
   CTest 从 DrvFS 工作目录运行时，Unix socket 与 fallocate 两项会因宿主文件系统
   语义失败；同一二进制改在 `/tmp` 原生文件系统运行全部通过，故该现象不归因于产品。
+- `ea45d866`：完成 `IOCORE-F09` 的源码 ownership 部分。TLS、HTTP/1、HTTP/2 的
+  source/header/test/benchmark、导出宏、OpenSSL/picohttpparser/nghttp2 owner 已从
+  `io_core` 迁入三个独立 factor target，`hyle::io` façade 聚合它们且可选能力关闭时
+  不生成恒失败 operation。Windows shared build 在 TLS/H2 OFF 下 18/18、ON 下 20/20，
+  完整 component/source-embedding 合同通过。static/shared install、offline package 与
+  另外两平台仍归 F09 terminal gate，不由本检查点冒充完成。
 
 以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F09--F10 仍未完成，四个协议/传输 factor
-仍处于 `QUEUED`。
+裁决；F09 的交付矩阵与 F10 仍未完成。三个协议 factor 已有真实 target，`io_transfer`
+已完成 `AUDITED` 但仍等待自己的首个真实实现。

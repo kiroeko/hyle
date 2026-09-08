@@ -114,10 +114,16 @@ freeze these contracts.
 4. Performance: P1 multiplex + >64 KiB flow-control journeys; compare same body ownership/window semantics or use a frozen
    consumer budget. Whole-body versus streaming and single versus multiplexed are invalid comparisons.
 5. FFI: `N/A`; no C schema/exports/managed sample.
-6. Delivery: currently `FAIL` because implementation, tests, nghttp2 and export macro live under io_core; F01 owns repair.
+6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared/offline terminal journeys remain pending.
 7. C++ usability/docs: currently `FAIL` due pointers/bools, mandatory body buffering and absent lifecycle guide; F02--F06 repair it.
 
 ## Current decision
 
 `AUDITED / ACTIVE`。能力图、stream 生命周期、owner、API draft 与有限 F01--F06 已冻结；允许实现，
 但 API/usability freeze 与 immutable candidate 尚未形成，禁止启动 P1。
+
+## Implementation checkpoints
+
+- `ea45d866`：`IOH2-F01` 的物理 owner 已建立；HTTP/2 source/header/test、nghttp2 package owner
+  与 `HYLE_IO_HTTP2_API` 均属于 `io_http2`。feature OFF 只保留 capability query；Windows
+  OFF/ON shared correctness、跨 DLL transport link 与独立 header 已通过。
