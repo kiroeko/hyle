@@ -760,7 +760,11 @@ Task<int> https_server(AllocatorRef alloc, IoContext *, TcpListener *listener,
     co_return 0;
   TlsStream tls = std::move(*wrapped);
   if ((co_await tls_handshake(alloc, tls)).ok()) {
-    auto made = HttpServerConnection::create(alloc, std::move(tls));
+    hyle::io::HttpLimits limits;
+    // Exercise both encrypted chunk routes: the 5-byte chunk exceeds this
+    // staging budget once framing is included, while the 3-byte chunk fits.
+    limits.max_retained_body_bytes = 8;
+    auto made = HttpServerConnection::create(alloc, std::move(tls), limits);
     if (made) {
       HttpServerConnection connection = std::move(*made);
       auto incoming = co_await connection.read_request();
@@ -768,8 +772,16 @@ Task<int> https_server(AllocatorRef alloc, IoContext *, TcpListener *listener,
           (co_await incoming->value().body.discard()).ok()) {
         static constexpr char kBody[] = "https-ok";
         HttpResponseHead response;
-        (void)co_await connection.send_response(
-            response, std::as_bytes(std::span(kBody, sizeof(kBody) - 1)));
+        auto started = co_await connection.start_response(response);
+        if (started) {
+          auto writer = std::move(*started);
+          auto first = co_await writer.write(
+              std::as_bytes(std::span(kBody, std::size_t{5})));
+          auto second = co_await writer.write(std::as_bytes(
+              std::span(kBody + 5, sizeof(kBody) - 1 - std::size_t{5})));
+          if (first.ok() && second.ok())
+            (void)co_await writer.finish();
+        }
       }
     }
   }

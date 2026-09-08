@@ -11,6 +11,7 @@
 
 #include "hyle/container/string_view.h"
 #include "hyle/error/result.h"
+#include "hyle/io/buffer.h"
 #include "hyle/io/operation.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/tls.h"
@@ -383,6 +384,10 @@ http_transport_read(mem::AllocatorRef, HttpTransport &, std::span<std::byte>,
 HYLE_IO_HTTP_API sched::Task<TransferResult>
 http_transport_write(mem::AllocatorRef, HttpTransport &,
                      std::span<const std::byte>, OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<BufferSequenceResult>
+http_transport_write_all(mem::AllocatorRef, HttpTransport &,
+                         std::span<const ConstBuffer>,
+                         OperationOptions) noexcept;
 HYLE_IO_HTTP_API sched::Task<Status>
 http_transport_shutdown(mem::AllocatorRef, HttpTransport &,
                         OperationOptions) noexcept;
@@ -431,6 +436,10 @@ private:
   detail::http_transport_write(mem::AllocatorRef, HttpTransport &,
                                std::span<const std::byte>,
                                OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<BufferSequenceResult>
+  detail::http_transport_write_all(mem::AllocatorRef, HttpTransport &,
+                                   std::span<const ConstBuffer>,
+                                   OperationOptions) noexcept;
   friend HYLE_IO_HTTP_API sched::Task<Status>
   detail::http_transport_shutdown(mem::AllocatorRef, HttpTransport &,
                                   OperationOptions) noexcept;

@@ -147,9 +147,12 @@ immutable candidate commit and the same-contract peer fixture is fixed.
 
 ## Current decision
 
-`AUDITED / ACTIVE`。F01--F05 的实现、API/usability 与算法形状已形成候选并冻结，不再追加能力或
-修改常态 metadata；F06 尚待 immutable candidate commit、三平台/三交付/sanitizer、同合同 P1、
-guide/red-team terminal receipt。候选提交形成前禁止启动 P1。
+`AUDITED / ACTIVE`。F01--F05 的公开 API/usability 形状保持冻结；性能仪器资格化发现旧发送机制
+在正常 streaming journey 中一次 application chunk 产生三次 transport write，因此算法候选已依法
+退回 `AUDITED` 并完成有限修正。新的产品源码、测试、consumer-shape snapshot 与
+`io-http-p1-v1` contract 已准备形成一个新的 immutable candidate；正式 P1 尚未运行。F06 仍需该
+candidate 的三平台/三交付/sanitizer、同合同 P1、guide 与 red-team terminal receipt。资格化运行只用于
+校准仪器和定位机制，不作为工程性能证据，也不授权继续追逐点值。
 
 ## Implementation checkpoints
 
@@ -163,3 +166,15 @@ guide/red-team terminal receipt。候选提交形成前禁止启动 P1。
   deadline/cancel、慢消费者 backpressure、断连停产、buffer high-water release 和幂等立即 close
   均有 Windows 回归覆盖。plain HTTP 3/3、TLS interop 1/1 通过，HTTP/2 transport seam 编译通过；
   smoke benchmark 只作分解诊断，不构成 P1 或 peer 结论。
+- 2026-09-08 instrument qualification：首先删除 `HttpBodySource` 对直接内存 writer 的
+  apples-vs-oranges 对比，让 HYLE 与 Beast 都由应用按相同 chunk 大小写出，并锁定 persistent
+  one-worker、同一 socketpair/缓冲、同一请求保留与响应增量校验合同。资格化暴露的真实机制是 HYLE
+  chunk framing 原先把 prefix/payload/CRLF 拆为三个异步写，同时每条 head/ending 创建新的最小
+  4 KiB grow buffer。修正后 plain TCP 复用已冻结的 io_core scatter/gather，连接复用 bounded output
+  scratch，固定请求把 head/body 合并成一次 vectored route；TLS 小 chunk 在 retention budget 内复用
+  staging，大 chunk 保留无额外大拷贝的顺序写，超过 portable vector-byte limit 的合法 fixed body 也
+  自动退回顺序写。没有改变公开 API、layout 或常态 metadata。
+- 资格化的 11-epoch 双向次序结果仅用于确认仪器有分辨率：1 KiB normal journey 中 HYLE 比 Beast
+  慢约 `2.98%`（candidate-first）/`4.86%`（peer-first），均在预声明 5% non-inferiority margin 内；
+  64 KiB fragmented holdout 中 HYLE 快约 `2.91x`/`2.97x`。这些不是 terminal evidence；新的
+  immutable candidate 形成后只允许按 `bench/contracts/io-http-p1-v1.json` 正式执行一次证据包。

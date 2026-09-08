@@ -1,0 +1,76 @@
+{
+  "schema": "hyle.io_http.consumer-shapes/v1",
+  "purpose": "Freeze the bounded inference REST and streaming-response journeys used by the io-http-v1 P1 gate before qualification.",
+  "comparison_class": "NATURAL_ROUTE",
+  "reference_snapshots": {
+    "llama.cpp": "e71b80510c848c00175924ecf3c40333ccae8eb5",
+    "ggml": "e91ded11bdcd78c42f9c8d3978ff6686eb4c1226",
+    "ds4": "f62ca29a308724cde5bc99134ede19104b2a3260",
+    "sglang": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0",
+    "vllm": "51da0ca66c8065619c79e35dff97aa99aeaf5644"
+  },
+  "common_setup_outside_measurement": [
+    "one long-lived asynchronous runtime with one dedicated event worker per route",
+    "immutable request and response payloads",
+    "one complete warmup episode per workload and execution order"
+  ],
+  "common_semantics": {
+    "transport": "a fresh nonblocking Unix socket pair with identical 4 KiB send and receive buffers for each charged connection episode",
+    "request": "sequential keep-alive HTTP/1.1 POST /v1/completions with Content-Length and an application/json body retained and byte-validated by the server",
+    "response": "HTTP/1.1 200 keep-alive response with text/event-stream and application-sized chunked writes",
+    "consumption": "the client incrementally decodes every response body into a bounded 8 KiB view and validates every byte",
+    "progress": "one external owner admits both endpoints to one persistent dedicated worker and synchronously waits for their typed completion",
+    "failure": "any framing, status, body, keep-alive or completion mismatch invalidates the process"
+  },
+  "route_specific_implementation": {
+    "hyle": "public Scheduler, IoContext, TcpStream and io_http owning connection/body reader/body writer APIs",
+    "boost_beast": "public Boost.Asio io_context/local stream and Boost.Beast parser, serializer and chunk APIs",
+    "interpretation": "parser, coroutine representation, allocation and connection-state costs are natural product-route outputs; the result answers HTTP-factor non-inferiority on the fixed local byte transport, not TCP-stack or raw-parser superiority"
+  },
+  "workloads": [
+    {
+      "id": "persistent-http1-rest-stream-128x1k",
+      "consumer": "a warm keep-alive inference REST connection carrying small JSON requests and token-stream response fragments",
+      "scale": {
+        "connections": 1,
+        "requests": 128,
+        "request_bytes": 1024,
+        "response_bytes": 1024,
+        "response_chunk_bytes": 128,
+        "dedicated_workers": 1
+      },
+      "charged_phases": [
+        "per-connection HTTP state construction and retirement",
+        "128 complete request head serializations and parses",
+        "128 retained and validated 1 KiB request bodies",
+        "128 response heads and 1024 application-sized chunk writes",
+        "incremental response decoding and exact validation"
+      ]
+    },
+    {
+      "id": "persistent-http1-fragmented-16x64k",
+      "consumer": "a holdout inference request/response episode whose body is much larger than the socket buffers",
+      "scale": {
+        "connections": 1,
+        "requests": 16,
+        "request_bytes": 65536,
+        "response_bytes": 65536,
+        "response_chunk_bytes": 4096,
+        "dedicated_workers": 1
+      },
+      "charged_phases": [
+        "per-connection HTTP state construction and retirement",
+        "16 complete request head serializations and parses",
+        "16 retained and validated 64 KiB request bodies through partial transport progress",
+        "16 response heads and 256 application-sized chunk writes",
+        "incremental response decoding and exact validation"
+      ]
+    }
+  ],
+  "negative_space": [
+    "raw picohttpparser and blocking socket rows are diagnostic-only",
+    "TLS handshakes and encryption are owned and qualified by io_tls",
+    "listener accept, routing, authentication, model schema, batching and handler-pool policy are not HTTP-factor work",
+    "the convenience HttpBodySource adapter is a correctness and usability route; the same-contract performance gate measures identical manual application chunk production on both sides"
+  ]
+}

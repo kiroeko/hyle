@@ -213,7 +213,7 @@ unset(_hyle_owner_upper)
 # superproject include closure in one place: individual benchmark directories
 # only decide which targets instantiate which peer capability.
 set(_hyle_bench_boost_owner FALSE)
-foreach(_hyle_owner IN ITEMS container_intrusive platform util_core mem)
+foreach(_hyle_owner IN ITEMS container_intrusive platform util_core mem io_http)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_boost_owner TRUE)
@@ -240,8 +240,10 @@ if(HYLE_BENCH_BOOST)
       "${HYLE_BOOST_DIR}")
   else()
     foreach(_hyle_boost_library IN ITEMS
-        assert config container core interprocess intrusive move predef smart_ptr
-        static_assert winapi)
+        align asio assert beast bind config container container_hash context
+        core date_time describe endian exception function interprocess intrusive io
+        logic move mp11 optional predef smart_ptr static_assert static_string system
+        throw_exception type_index type_traits utility winapi)
       if(EXISTS
           "${HYLE_BOOST_DIR}/libs/${_hyle_boost_library}/include")
         target_include_directories(hyle_bench_boost_headers SYSTEM INTERFACE
