@@ -28,6 +28,7 @@ struct ContextImpl {
   bool verify_peer = false;
   bool require_alpn = false;
   bool allow_truncated_eof = false;
+  mem::AllocatorRef connection_allocator{};
 };
 
 std::atomic<std::uint64_t> next_context_identity{1};
@@ -36,14 +37,7 @@ ContextImpl *as_context(void *value) noexcept {
   return static_cast<ContextImpl *>(value);
 }
 
-const ContextImpl *as_context(const void *value) noexcept {
-  return static_cast<const ContextImpl *>(value);
-}
-
 SSL *as_ssl(void *value) noexcept { return static_cast<SSL *>(value); }
-const SSL *as_ssl(const void *value) noexcept {
-  return static_cast<const SSL *>(value);
-}
 BIO *as_bio(void *value) noexcept { return static_cast<BIO *>(value); }
 
 void retain_context(ContextImpl *context) noexcept {
@@ -257,7 +251,10 @@ sched::Task<FeedResult> feed_ciphertext(mem::AllocatorRef, TcpStream &socket,
       std::span<std::byte>(scratch, kPumpBytes), options);
   if (!received.status.ok())
     co_return FeedResult{received.status, false};
-  if (received.eof)
+  // TransferResult deliberately permits bytes+EOF. Feed those final bytes to
+  // OpenSSL first; a following read observes the transport EOF after the
+  // provider has consumed all complete records/close_notify they contain.
+  if (received.bytes == 0 && received.eof)
     co_return FeedResult{{}, true};
   if (received.bytes == 0) {
     co_return FeedResult{
@@ -378,6 +375,15 @@ Result<TlsStream> TlsStream::make_(TcpStream socket, const TlsContext &owner,
     SSL_set_connect_state(provider);
   }
 
+  std::byte *scratch =
+      static_cast<std::byte *>(context->connection_allocator.allocate(
+          kPumpBytes, alignof(std::max_align_t)));
+  if (scratch == nullptr) {
+    SSL_free(provider);
+    return make_unexpected(
+        Status::ResourceExhausted("TLS pump scratch allocation failed"));
+  }
+
   retain_context(context);
   TlsStream stream;
   stream.socket_ = std::move(socket);
@@ -385,6 +391,8 @@ Result<TlsStream> TlsStream::make_(TcpStream socket, const TlsContext &owner,
   stream.read_bio_ = read_bio;
   stream.write_bio_ = write_bio;
   stream.context_impl_ = context;
+  stream.scratch_ = scratch;
+  stream.scratch_allocator_ = context->connection_allocator;
   stream.server_ = server;
   return stream;
 }
@@ -430,6 +438,27 @@ TlsContext &TlsContext::operator=(TlsContext &&other) noexcept {
 
 Result<TlsContext>
 TlsContext::make_client(const TlsClientOptions &options) noexcept {
+  const bool has_certificate = !options.certificate_chain_file.empty();
+  const bool has_key = !options.private_key_file.empty();
+  if (has_certificate != has_key) {
+    return make_unexpected(Status::InvalidArgument(
+        "TLS client certificate and private key must be supplied together"));
+  }
+
+  OwnedCString certificate;
+  OwnedCString key;
+  Status status;
+  if (has_certificate) {
+    status = certificate.assign(options.certificate_chain_file, true,
+                                "TLS client certificate is required");
+    if (status.ok()) {
+      status = key.assign(options.private_key_file, true,
+                          "TLS client private key is required");
+    }
+    if (!status.ok())
+      return make_unexpected(std::move(status));
+  }
+
   ERR_clear_error();
   SSL_CTX *provider = SSL_CTX_new(TLS_client_method());
   if (provider == nullptr) {
@@ -448,9 +477,25 @@ TlsContext::make_client(const TlsClientOptions &options) noexcept {
   context->verify_peer = options.verify == TlsVerifyMode::kPeer;
   context->require_alpn = options.require_alpn;
   context->allow_truncated_eof = options.allow_truncated_eof;
+  context->connection_allocator = options.connection_allocator;
 
-  Status status =
+  if (!context->connection_allocator.valid()) {
+    release_context(context);
+    return make_unexpected(
+        Status::InvalidArgument("TLS connection allocator is invalid"));
+  }
+
+  status =
       configure_versions(provider, options.min_version, options.max_version);
+  if (status.ok() && has_certificate &&
+      (SSL_CTX_use_certificate_chain_file(provider, certificate.get()) != 1 ||
+       SSL_CTX_use_PrivateKey_file(provider, key.get(), SSL_FILETYPE_PEM) !=
+           1 ||
+       SSL_CTX_check_private_key(provider) != 1)) {
+    status = Status::InvalidArgument(
+        "TLS client certificate/private key could not be loaded or do not "
+        "match");
+  }
   if (status.ok())
     status = encode_alpn(options.alpn_protocols, context);
   if (status.ok())
@@ -524,6 +569,13 @@ TlsContext::make_server(const TlsServerOptions &options) noexcept {
   context->verify_peer = options.client_verification == TlsVerifyMode::kPeer;
   context->require_alpn = options.require_alpn;
   context->allow_truncated_eof = options.allow_truncated_eof;
+  context->connection_allocator = options.connection_allocator;
+
+  if (!context->connection_allocator.valid()) {
+    release_context(context);
+    return make_unexpected(
+        Status::InvalidArgument("TLS connection allocator is invalid"));
+  }
 
   status =
       configure_versions(provider, options.min_version, options.max_version);
@@ -662,18 +714,6 @@ Result<TlsSession> TlsStream::take_session() const noexcept {
   return TlsSession(session, as_context(context_impl_)->identity);
 }
 
-std::byte *TlsStream::ensure_scratch(mem::AllocatorRef allocator) noexcept {
-  if (scratch_ != nullptr)
-    return scratch_;
-  if (!allocator.valid())
-    return nullptr;
-  scratch_ = static_cast<std::byte *>(
-      allocator.allocate(kPumpBytes, alignof(std::max_align_t)));
-  if (scratch_ != nullptr)
-    scratch_allocator_ = allocator;
-  return scratch_;
-}
-
 sched::Task<Status> tls_handshake(mem::AllocatorRef allocator,
                                   TlsStream &stream,
                                   OperationOptions options) noexcept {
@@ -682,10 +722,7 @@ sched::Task<Status> tls_handshake(mem::AllocatorRef allocator,
   }
   if (stream.handshake_complete_)
     co_return Status{};
-  std::byte *scratch = stream.ensure_scratch(allocator);
-  if (scratch == nullptr) {
-    co_return Status::ResourceExhausted("TLS pump scratch allocation failed");
-  }
+  std::byte *scratch = stream.scratch_;
   SSL *provider = as_ssl(stream.ssl_);
   for (;;) {
     ERR_clear_error();
@@ -761,12 +798,7 @@ sched::Task<TransferResult> tls_read(mem::AllocatorRef allocator,
   }
   if (buffer.empty())
     co_return TransferResult{};
-  std::byte *scratch = stream.ensure_scratch(allocator);
-  if (scratch == nullptr) {
-    co_return TransferResult{
-        0, Status::ResourceExhausted("TLS pump scratch allocation failed"),
-        false};
-  }
+  std::byte *scratch = stream.scratch_;
   SSL *provider = as_ssl(stream.ssl_);
   for (;;) {
     std::size_t bytes = 0;
@@ -814,12 +846,7 @@ sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
   }
   if (buffer.empty())
     co_return TransferResult{};
-  std::byte *scratch = stream.ensure_scratch(allocator);
-  if (scratch == nullptr) {
-    co_return TransferResult{
-        0, Status::ResourceExhausted("TLS pump scratch allocation failed"),
-        false};
-  }
+  std::byte *scratch = stream.scratch_;
   SSL *provider = as_ssl(stream.ssl_);
   std::size_t completed = 0;
   while (completed < buffer.size()) {
@@ -870,10 +897,10 @@ sched::Task<Status> tls_shutdown(mem::AllocatorRef allocator, TlsStream &stream,
                                  TlsShutdownOptions options) noexcept {
   if (!stream.valid())
     co_return Status{};
-  std::byte *scratch = stream.ensure_scratch(allocator);
-  if (scratch == nullptr) {
-    co_return Status::ResourceExhausted("TLS pump scratch allocation failed");
+  if (!stream.handshake_complete_) {
+    co_return Status::FailedPrecondition("TLS handshake is not complete");
   }
+  std::byte *scratch = stream.scratch_;
   SSL *provider = as_ssl(stream.ssl_);
   for (;;) {
     ERR_clear_error();

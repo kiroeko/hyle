@@ -41,6 +41,11 @@ private backend engine ───────────────────
   Error 形状，一个绝对 `OperationOptions` 贯穿 memory-BIO pump 的每次底层操作。
   默认验证 client peer、默认把缺少 close-notify 的 EOF 视为截断；通用 ALPN 与
   context-bound opaque session ticket 不含 HTTP 专有状态机。
+  可选 client identity + server-side client CA 组成完整 mTLS；每条 stream 的
+  16 KiB memory-BIO scratch 在 typed construction 时由 context 配置的 Mem allocator
+  分配一次，allocator backing 生命周期是显式 context/stream 前置条件，operation
+  allocator 只拥有 coroutine frame；provider session cache/ticket 默认关闭，只在
+  client/server 配置显式启用。
 - HTTP/2 协议核固定为 nghttp2；它不拥有 IO/event loop。C++ connection 直接
   驱动 `HttpTransport`。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、

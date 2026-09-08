@@ -135,7 +135,12 @@ const char *kKeyPem =
 
 std::string write_temp(const char *name, const char *pem) {
   std::string path = std::string("hyle_tls_bench_") + name;
-  std::FILE *f = std::fopen(path.c_str(), "wb");
+  std::FILE *f = nullptr;
+#if defined(_WIN32)
+  (void)::fopen_s(&f, path.c_str(), "wb");
+#else
+  f = std::fopen(path.c_str(), "wb");
+#endif
   if (f) {
     std::fwrite(pem, 1, std::strlen(pem), f);
     std::fclose(f);

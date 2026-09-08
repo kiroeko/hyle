@@ -48,9 +48,17 @@ struct TlsClientOptions {
   TlsVersion min_version = TlsVersion::kTls12;
   TlsVersion max_version = TlsVersion::kProviderDefault;
   container::StringView certificate_authority_file{};
+  // Optional client identity for mutual TLS. Supply both fields together;
+  // make_client() loads them before returning and does not retain the paths.
+  container::StringView certificate_chain_file{};
+  container::StringView private_key_file{};
   std::span<const container::StringView> alpn_protocols{};
+  // Backs the one reusable 16 KiB pump buffer allocated for each stream.
+  // Custom allocator state must outlive every stream made from this context.
+  mem::AllocatorRef connection_allocator = mem::system_allocator();
   bool require_alpn = false;
-  bool enable_session_resumption = true;
+  // Session caching/tickets retain provider state and are explicit opt-in.
+  bool enable_session_resumption = false;
   bool allow_truncated_eof = false;
 };
 
@@ -62,8 +70,10 @@ struct TlsServerOptions {
   TlsVersion max_version = TlsVersion::kProviderDefault;
   container::StringView client_certificate_authority_file{};
   std::span<const container::StringView> alpn_protocols{};
+  // Same lifetime contract as TlsClientOptions::connection_allocator.
+  mem::AllocatorRef connection_allocator = mem::system_allocator();
   bool require_alpn = false;
-  bool enable_session_resumption = true;
+  bool enable_session_resumption = false;
   bool allow_truncated_eof = false;
 };
 
@@ -163,8 +173,6 @@ private:
   tls_shutdown(mem::AllocatorRef, TlsStream &,
                struct TlsShutdownOptions) noexcept;
 
-  HYLE_IO_TLS_API std::byte *
-  ensure_scratch(mem::AllocatorRef allocator) noexcept;
   HYLE_IO_TLS_API void reset_() noexcept;
   HYLE_IO_TLS_API static Result<TlsStream>
   make_(TcpStream socket, const TlsContext &context, bool server,

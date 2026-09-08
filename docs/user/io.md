@@ -136,8 +136,16 @@ auto* response = co_await client.request(
 client 默认验证系统信任链；verifying client 必须给 `server_name`，它同时用于
 SNI 与证书 DNS/IP identity 校验。自签测试或明确的机会式加密必须显式设置
 `TlsVerifyMode::kNone`，不再通过 OpenSSL native pointer 偷改验证。server 用
-`TlsServerOptions` 提供证书链、私钥以及可选 mTLS CA；路径只在 factory 调用期间
-借用，provider/config 与编码后的通用 ALPN list 由 `TlsContext` 持有。
+`TlsServerOptions` 提供证书链、私钥以及可选 mTLS CA；mTLS client 同时填写
+`TlsClientOptions::certificate_chain_file/private_key_file`，只给其中一项会在
+factory 返回 `InvalidArgument`。路径只在 factory 调用期间借用，provider/config
+与编码后的通用 ALPN list 由 `TlsContext` 持有。
+
+每条 stream 在构造时从 context 的 `connection_allocator` 取得一个可复用的 16 KiB
+pump buffer；默认使用 `mem::system_allocator()`，record 热路不会反复分配。显式注入
+allocator 时，其 backing 必须活过该 context 产生的全部 stream；分配失败由
+`TlsStream::connect/accept` 返回 `ResourceExhausted`，不会产生半有效对象。传给
+`tls_handshake/read/write/shutdown` 的首个 allocator 只负责对应 coroutine frame。
 
 `tls_handshake/read/write/shutdown` 都接受同一个绝对 `OperationOptions`；一次
 handshake 或 record pump 内不会重置 deadline。read/write 返回
@@ -151,7 +159,16 @@ peer 永久占住 fiber。
 客户端完成握手后可用 `take_session()` 取得 move-only opaque ticket，并在同一
 `TlsContext` 的下一次 `TlsStream::connect` 中传给 `resume_session`。来自另一
 context 的 ticket 会返回 `InvalidArgument`；`session_reused()` 可验证 provider
-是否接受了复用。不要持有或转换 OpenSSL 类型，公开 API 不暴露 provider pointer。
+是否接受了复用。client/server 的 session cache 与 ticket 默认关闭；确实复用连接
+握手时，两端都显式设置 `enable_session_resumption=true`。不要持有或转换 OpenSSL
+类型，公开 API 不暴露 provider pointer。
+TLS 1.3 ticket 可能在握手完成后的 post-handshake record 中才到达；若
+`take_session()` 尚无可复用 ticket，它会返回 `FailedPrecondition`，调用方应在完成
+一次正常读写后再取，而不是轮询 provider 状态。
+
+`TlsStream` 是 single-owner transport；不得同时从多个 fiber 调用其操作。任一操作
+返回非 OK 后，尤其是 deadline/cancel 或底层 partial write 后，关闭该 stream 并按
+应用边界重连，不要把同一 plaintext buffer 从头盲重试。
 
 `HttpRequest`/`HttpResponseView` 的 string view 只活到同一连接的下一次 request。
 流式响应用 `HttpResponse::set_stream`；`add_header` 返回 false 表示固定 header

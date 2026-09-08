@@ -120,7 +120,12 @@ const char *kKeyPem =
 
 std::string write_temp(const char *name, const char *pem) {
   std::string path = std::string("hyle_tls_test_") + name;
-  std::FILE *f = std::fopen(path.c_str(), "wb");
+  std::FILE *f = nullptr;
+#if defined(_WIN32)
+  (void)::fopen_s(&f, path.c_str(), "wb");
+#else
+  f = std::fopen(path.c_str(), "wb");
+#endif
   if (f) {
     std::fwrite(pem, 1, std::strlen(pem), f);
     std::fclose(f);
@@ -178,14 +183,14 @@ Task<int> tls_server(AllocatorRef alloc, TcpListener *ls, TlsContext *sctx,
 // Client: connect, wrap in client TlsStream, handshake, send, read echo,
 // verify.
 Task<int> tls_client(AllocatorRef alloc, IoContext *io, TlsContext *cctx,
-                     TlsResult *r) {
+                     TlsResult *r, std::uint16_t port = kPort) {
   auto opened = TcpStream::open(*io, kOwner);
   if (!opened.has_value()) {
     r->client_done.store(true);
     co_return 0;
   }
   TcpStream s = std::move(*opened);
-  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, kPort)))
+  if (!(co_await s.connect(Endpoint::loopback(AddressFamily::kIpv4, port)))
            .ok()) {
     r->client_done.store(true);
     co_return 0;
@@ -273,7 +278,8 @@ Task<int> tls_cancelled_client(AllocatorRef allocator, IoContext *io,
     co_return 0;
   TlsStream stream = std::move(*wrapped);
   hyle::Status status = co_await tls_handshake(
-      allocator, stream, hyle::io::OperationOptions{.cancel = cancel});
+      allocator, stream,
+      hyle::io::OperationOptions{.deadline = {}, .cancel = cancel});
   result->status.store(status.code(), std::memory_order_release);
   co_return 0;
 }
@@ -427,6 +433,20 @@ TEST(IoTls, TypedFactoryRejectsInvalidConfiguration) {
   auto missing_server_identity = TlsContext::make_server(TlsServerOptions{});
   ASSERT_FALSE(missing_server_identity);
   EXPECT_TRUE(missing_server_identity.error().IsInvalidArgument());
+
+  TlsClientOptions incomplete_client_identity;
+  incomplete_client_identity.verify = hyle::io::TlsVerifyMode::kNone;
+  incomplete_client_identity.certificate_chain_file = "client.pem";
+  auto missing_client_key = TlsContext::make_client(incomplete_client_identity);
+  ASSERT_FALSE(missing_client_key);
+  EXPECT_TRUE(missing_client_key.error().IsInvalidArgument());
+
+  TlsClientOptions invalid_allocator;
+  invalid_allocator.verify = hyle::io::TlsVerifyMode::kNone;
+  invalid_allocator.connection_allocator = {};
+  auto bad_allocator = TlsContext::make_client(invalid_allocator);
+  ASSERT_FALSE(bad_allocator);
+  EXPECT_TRUE(bad_allocator.error().IsInvalidArgument());
 }
 
 TEST(IoTls, StreamRetainsOpaqueContextState) {
@@ -568,6 +588,55 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   EXPECT_STREQ(r->client_got, "tls-encrypted-echo");
 }
 
+TEST(IoTls, MutualTlsAuthenticatesClientIdentity) {
+  constexpr std::uint16_t kMutualTlsPort = 54402;
+  std::string cert = write_temp("mtls-cert.pem", kCertPem);
+  std::string key = write_temp("mtls-key.pem", kKeyPem);
+
+  TlsServerOptions server_options;
+  server_options.certificate_chain_file = cert;
+  server_options.private_key_file = key;
+  server_options.client_verification = hyle::io::TlsVerifyMode::kPeer;
+  server_options.client_certificate_authority_file = cert;
+  auto made_server = TlsContext::make_server(server_options);
+  ASSERT_TRUE(made_server);
+  TlsContext server_context = std::move(*made_server);
+
+  TlsClientOptions client_options;
+  client_options.verify = hyle::io::TlsVerifyMode::kNone;
+  client_options.certificate_chain_file = cert;
+  client_options.private_key_file = key;
+  auto made_client = TlsContext::make_client(client_options);
+  ASSERT_TRUE(made_client);
+  TlsContext client_context = std::move(*made_client);
+
+  Scheduler scheduler(1, system_allocator(), 128);
+  IoContext io(scheduler);
+  auto made_listener = TcpListener::bind(
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kMutualTlsPort));
+  ASSERT_TRUE(made_listener);
+  TcpListener listener = std::move(*made_listener);
+  auto result = std::make_unique<TlsResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task =
+      tls_server(system_allocator(), &listener, &server_context, result.get());
+  client->task = tls_client(system_allocator(), &io, &client_context,
+                            result.get(), kMutualTlsPort);
+  Fiber server_fiber(kDefaultStackSize, &drive_entry, server.get());
+  Fiber client_fiber(kDefaultStackSize, &drive_entry, client.get());
+  scheduler.spawn_on(kOwner, &server_fiber);
+  scheduler.spawn_on(kOwner, &client_fiber);
+  scheduler.drain();
+  scheduler.shutdown();
+
+  std::remove(cert.c_str());
+  std::remove(key.c_str());
+  EXPECT_EQ(result->server_hs.load(), 0);
+  EXPECT_EQ(result->client_hs.load(), 0);
+  EXPECT_GT(result->client_recv.load(), 0);
+}
+
 TEST(IoTls, OpaqueSessionCanResumeOnItsOwningContext) {
   constexpr std::uint16_t kResumePort = 54399;
   std::string cert = write_temp("resume-cert.pem", kCertPem);
@@ -576,12 +645,14 @@ TEST(IoTls, OpaqueSessionCanResumeOnItsOwningContext) {
   server_options.certificate_chain_file = cert;
   server_options.private_key_file = key;
   server_options.max_version = hyle::io::TlsVersion::kTls12;
+  server_options.enable_session_resumption = true;
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server);
   TlsContext server_context = std::move(*made_server);
   TlsClientOptions client_options;
   client_options.verify = hyle::io::TlsVerifyMode::kNone;
   client_options.max_version = hyle::io::TlsVersion::kTls12;
+  client_options.enable_session_resumption = true;
   auto made_client = TlsContext::make_client(client_options);
   ASSERT_TRUE(made_client);
   TlsContext client_context = std::move(*made_client);
