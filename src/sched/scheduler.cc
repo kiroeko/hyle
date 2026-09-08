@@ -958,8 +958,10 @@ struct Scheduler::Impl {
       // the next wave of fibers. (tokio's tick model: run a batch of tasks, then
       // service io -- not io between every task.) Null hook (no io) -> skipped,
       // zero cost. A reaped completion re-injects a fiber, so re-check find_task.
+      bool io_in_flight = false;
       if (IoPollFn poll = io_poll.load(std::memory_order_acquire); poll != nullptr) {
-        poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
+        io_in_flight =
+            poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
         if (run_inline_batch(w)) continue;
         f = find_task(w, idx);
         if (f != nullptr) {
@@ -967,32 +969,40 @@ struct Scheduler::Impl {
           continue;
         }
       }
-      // No work after draining + reaping -> become a SEARCHER. While
-      // num_searching_ > 0 producers skip waking parked workers (notify() gate),
-      // so a spawn burst no longer triggers a futex per enqueue -- THIS searcher
-      // absorbs them by finding the work during its spin. The spin also just
-      // bridges the brief producer gap before the (now rarely needed) park.
-      num_searching_.fetch_add(1, std::memory_order_relaxed);
+      // No work after draining + reaping. With no IO outstanding, become a
+      // SEARCHER: while num_searching_ > 0 producers skip waking parked workers
+      // (notify() gate), so a spawn burst avoids a futex per enqueue and this
+      // worker catches the next CPU task during the brief producer gap.
+      //
+      // If IO IS outstanding, do not search without polling its completion
+      // source. A just-flushed SQE commonly completes after poll(0); burning the
+      // entire Balanced/LowLatency search before the blocking proactor poll adds
+      // that search delay to every low-concurrency IO dependency chain. The
+      // existing sleeper registration + queue recheck below closes the producer
+      // race, and the proactor wake hook interrupts its wait for foreign work.
       bool got = false;
       bool ran_inline = false;
-      for (int spin = 0; spin < spin_polls && !got; ++spin) {
-        util::cpu_relax();
-        if (run_inline(w)) {
-          ran_inline = true;
-          got = true;
-        } else {
-          f = find_task(w, idx);
-          if (f != nullptr) got = true;
+      if (!io_in_flight) {
+        num_searching_.fetch_add(1, std::memory_order_relaxed);
+        for (int spin = 0; spin < spin_polls && !got; ++spin) {
+          util::cpu_relax();
+          if (run_inline(w)) {
+            ran_inline = true;
+            got = true;
+          } else {
+            f = find_task(w, idx);
+            if (f != nullptr) got = true;
+          }
         }
-      }
-      for (int y = 0; y < yields_before_park && !got; ++y) {
-        platform::this_thread::yield();
-        if (run_inline(w)) {
-          ran_inline = true;
-          got = true;
-        } else {
-          f = find_task(w, idx);
-          if (f != nullptr) got = true;
+        for (int y = 0; y < yields_before_park && !got; ++y) {
+          platform::this_thread::yield();
+          if (run_inline(w)) {
+            ran_inline = true;
+            got = true;
+          } else {
+            f = find_task(w, idx);
+            if (f != nullptr) got = true;
+          }
         }
       }
       if (got) {
@@ -1006,18 +1016,21 @@ struct Scheduler::Impl {
         if (!ran_inline) dispatch(w, f);
         continue;
       }
-      // Give up: register as a sleeper, THEN leave searching with a seq_cst RMW,
-      // THEN recheck once. Order is load-bearing: the seq_cst fetch_sub pairs
-      // with notify()'s seq_cst fence (Dekker) so a producer either sees
-      // num_searching_ == 0 and wakes us (we are already registered) or our
-      // recheck sees its task. Registering BEFORE the fetch_sub guarantees a
-      // notify that observes 0 finds us in `sleepers`.
+      // Register as a sleeper, then (if this worker searched) leave searching
+      // with a seq_cst RMW, then recheck once. The order is load-bearing: the
+      // fetch_sub pairs with notify()'s seq_cst fence (Dekker) so a producer
+      // either sees num_searching_ == 0 and wakes us (already registered), or
+      // our recheck sees its task. The IO-in-flight route never became a
+      // searcher, so registration itself publishes the interruptible wait.
       {
         std::lock_guard<std::mutex> lk(idle_mu);
         sleeper_pos[idx] = sleepers.size();  // my slot = the tail I'm about to push
         sleepers.push_back(idx);
       }
-      num_searching_.fetch_sub(1, std::memory_order_seq_cst);  // Dekker store+fence
+      if (!io_in_flight) {
+        num_searching_.fetch_sub(1,
+                                 std::memory_order_seq_cst);  // Dekker store+fence
+      }
       if (run_inline(w)) {
         remove_sleeper(idx);
         continue;
