@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "methodology": "module-closure-v2",
-  "updated_at": "2026-09-08",
+  "updated_at": "2026-09-09",
   "component_identity_migrations": [
     {
       "from": "text",
@@ -1307,12 +1307,14 @@
     },
     {
       "module": "io_http2",
-      "product_state": "AUDITED",
+      "product_state": "BLOCKED",
       "round_id": "io-http2-v1",
       "closure_task": "docs/implementation/tasks/io/io-http2-v1.md",
       "scope": "Factor HTTP2 session, stream and flow-control lifecycle out of io_core; replace mandatory whole-body buffering with bounded incremental streams and define reset, GOAWAY, cancellation and h2c or TLS ALPN interop.",
       "non_goals": "HTTP1 upgrade, server push, gRPC schema or runtime, WebSocket, HTTP3 or QUIC, application routing or model policy, Native FFI or C API.",
       "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "candidate_commit": "705b21112af34765227a132c1bd1a2e84a82e655",
+      "candidate_tree": "893b26312eaaec002a8e9860059090262339727d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1320,16 +1322,44 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http2 v1 处于 AUDITED；IOH2-F01 物理 factor/nghttp2 owner 已在 ea45d866 落地，incremental stream/flow control/lifecycle 与 terminal delivery/P1 仍按 F02--F06 实施。"
+      "blocked_from": "AUDITED",
+      "blocker": "The qualified 31-run io-http2-p1-v1 flow-control holdout passed non-inferiority peer-first, but candidate-first remained UNRESOLVED: advantage 0.96586 with 98.93% CI [0.95165, 0.97344] crosses the frozen 1/1.05 boundary 0.95238. The single allowed corrected-candidate P1 and mechanism budget are exhausted.",
+      "blocker_owner": "IO maintainer",
+      "resume_condition": "Create one bounded io_http2-only RESUME round. Before product edits, prove structurally whether unconditional monitor/notification work on the single-owner no-waiter path is a real removable normal-consumer cost; freeze at most one private correction, preserve the public API and io-http2-p1-v1 workload/window/chunk/margin, replay affected correctness/delivery/red-team, and run exactly one new immutable-candidate P1. If that round does not pass, stop without another optimization loop.",
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "INCONCLUSIVE",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "loc": {
+        "snapshot_commit": "705b21112af34765227a132c1bd1a2e84a82e655",
+        "repository_code": 509608,
+        "self_without_tests": 89866,
+        "module_implementation": 2555
+      },
+      "known_limitations": [
+        "The complete streaming/lifecycle implementation and all recorded correctness/delivery routes are available, but io_http2 is not FROZEN because one required large-body flow-control non-inferiority stratum remains statistically unresolved.",
+        "The qualified claim is limited to the two frozen W1-WSL h2c workloads and does not establish universal HTTP/2, TLS, WAN, multi-worker or Formal SOTA."
+      ],
+      "reopen_triggers": [
+        "The bounded resume condition identifies and validates a generally useful private owner-progress cost correction without changing the public contract or benchmark shape.",
+        "A real consumer or supported platform reproduces a correctness, lifetime, cancellation, flow-control, API usability, dependency or delivery defect."
+      ],
+      "summary": "io_http2 v1 BLOCKED：能力、自然 API、correctness、sanitizer、三交付与 macOS 均完成；64x1 KiB 明确 WIN，4x256 KiB 一种顺序 PASS、另一种 CI 仅差 0.073 个百分点但仍为 UNRESOLVED，故依法不签 FROZEN。"
     },
     {
       "module": "io_transfer",

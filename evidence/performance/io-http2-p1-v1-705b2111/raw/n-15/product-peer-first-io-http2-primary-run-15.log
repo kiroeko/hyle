@@ -1,0 +1,15 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |           ns/stream |            stream/s |    err% |     total | HTTP/2 multiplexed inference streams 64x1KiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------------------
+|   100.0% |            7,240.30 |          138,115.76 |    5.5% |      0.02 | :wavy_dash: `nghttp2 direct HTTP/2 session` (Unstable with ~5.4 iters. Increase `minEpochIterations` to e.g. 54)
+|   140.9% |            5,138.77 |          194,598.97 |    2.7% |      0.02 | `HYLE HTTP/2 public session`
+
+| relative |           ns/stream |            stream/s |    err% |     total | HTTP/2 flow-control holdout 4x256KiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------
+|   100.0% |          192,539.12 |            5,193.75 |    1.5% |      0.04 | `nghttp2 direct HTTP/2 session`
+|    98.0% |          196,405.25 |            5,091.51 |    3.4% |      0.04 | `HYLE HTTP/2 public session`
+# HYLE_IO_HTTP2_RUN execution_order=peer-first run_nonce=20d446350f6858ba3def16112fb48750

@@ -1,6 +1,6 @@
 # IO HTTP/2 v1：多 stream 与流控因子化收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`AUDITED`）
 
@@ -156,44 +156,75 @@ evidence may refine private layout and driver mechanics, but changing the public
 6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared/offline terminal journeys remain pending.
 7. C++ usability/docs: currently `FAIL` due pointers/bools, mandatory body buffering and absent lifecycle guide; F02--F06 repair it.
 
-## Current decision
+## Terminal decision（`BLOCKED`）
 
-`AUDITED / ACTIVE`。`18d6d6b9` exact candidate 已完成 qualification；multiplex workload 为 `WIN`，但
-`flow-control-holdout-4x256k` 在两种执行顺序分别只有约 `0.794` / `0.776` peer throughput，正式 P1
-为 `FAIL`。控制项均通过，故不得把约 20--22% 固定差距解释为仪器噪声或签发 freeze。
+本轮在 immutable candidate `705b21112af34765227a132c1bd1a2e84a82e655` / tree
+`893b26312eaaec002a8e9860059090262339727d` 停止，不能签发 `CLOSED/FROZEN`。F01--F05、自然 API、
+correctness、sanitizer、三交付和用户指南均已落地；唯一 terminal blocker 是预声明 P1 的一个 required
+stratum 在最大精度升级后仍为 `UNRESOLVED`。这不是 `FAIL`，也不能把它手写成 `PASS`。
 
-机制诊断已用完并形成有限结论：256 KiB socket buffer 同时提高双方绝对吞吐、没有缩小比例；syscall
-跟踪显示 HYLE 并未发送更多 wire calls；计数 allocator 则证明逐 chunk 的嵌套 `Task` 令 holdout 达到
-约 554 次 allocation/stream。允许且只允许以下 consumer-proven correction：利用既有 stackful owner
-fiber 去掉私有 transport-driver 嵌套 task，并增加上述单 task、borrowed synchronous sink 的
-`consume()` 形状，使 HYLE 与 nghttp2/curl callback consumer 在 body ownership 上对等。不得调整窗口、
-chunk、样本或 margin 来迎合结果；correctness/delivery 全通过并形成新 immutable candidate 后，才可执行
-一次新的正式 P1。
+### Product correction and correctness receipt
 
-该有限 correction 的工作树实现已经完成：raw TCP awaitable 直接借当前 owner fiber 挂起/恢复；一次
-transport read 的 nghttp2 callback batch 只发布一次普通 DATA/HEADERS 状态变化；进入 proactor wait 前先
-尝试现成 socket bytes，并只给同 owner runnable peer 一次 bounded cooperative yield，第二次 miss 必须
-进入真实 kernel wait，不能 spin。TLS 没有 immediate socket seam，仍走原有单 task memory-BIO pump。
-对照端的 stream lookup 也已从 benchmark 自建线性查找改为 nghttp2 stream user-data 的 O(1) 同合同形状。
+- 首个 candidate `18d6d6b9` 的 holdout 固定慢约 20--22%。两项机制诊断确认 socket buffer 不解释比例，
+  syscall 数也没有膨胀；真正的产品成本是逐 chunk 私有 transport-driver `Task`，约 554 allocations/stream。
+- `705b2111` 让 raw TCP transport 直接借 stackful owner fiber、把 callback notification 合并到每次 read，
+  提供单 task borrowed synchronous `Http2BodyReader::consume()`，并把 peer stream lookup 校准为 nghttp2
+  user-data O(1)。`consume()` sink error 为 stream-terminal：发送 CANCEL、归还 connection credit、令 reader
+  失效，且不毒化其他 stream。测试 listener 使用 OS 分配端口，不再与 ephemeral `TIME_WAIT` 冲突。
+- W1-WIN plain HTTP/2、W1-WSL plain/TLS、ASan、UBSan 均通过；WSL TSan 的 host runtime 默认在 main 前
+  报 `unexpected memory mapping`，同一 binary 以 `setarch $(uname -m) -R` 运行后 11 项主套件和 forced-epoll
+  duplex 用例通过。
+- exact candidate 的 source embedding、搬迁后 installed static 和 installed shared consumer 均在 fresh WSL
+  tree 通过；source journey 使用 fully-disconnected nghttp2 `85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2`。
+- M1-MAC MacBook Air `Mac16,12`、AppleClang 21、OpenSSL 3.6.1 的 WERROR shared build 与 HTTP/2/TLS
+  integration 全部通过；Mac mini `Mac16,10` 独立 portability replay 也通过。两台机器未混作性能证据。
+  两端源码来自 Windows 对 candidate 的 Git archive，archive SHA-256 为
+  `FC83EA02DDFA98B1E082F48043CD7B00391ED3F8DF7C57ACA403F96349BD15FC`。
 
-尚未签作正式 P1 的方向诊断显示：`64x1KiB` multiplex 的 HYLE throughput 高约 41--51%；
-`4x256KiB` flow-control holdout 在两种顺序下分别低约 3.9% / 2.4%，已进入预声明 5% noninferiority
-margin。它只证明 correction 值得形成新 candidate，不替代 clean revision 上的一次正式测量。
-Windows/Linux plain correctness 已重复通过；Windows/Linux TLS interop、ASan、UBSan 与 TSan 均通过。
-WSL TSan 默认地址布局会在 main 前报 `unexpected memory mapping`，以 `setarch $(uname -m) -R` 运行
-同一 instrumented binary 后主套件和强制 epoll 双工用例均通过。source/static/shared、macOS、guide/
-red-team 与正式 P1 receipt 仍是 terminal gate，故本卡保持 `AUDITED`。
+### P1 receipt
 
-`consume()` 的 sink error 已定义为 stream-terminal：返回调用方原 `Status`，同时发送 CANCEL、归还
-connection credit 并令 reader 失效。否则后续 reader operation 会确认并跳过被 sink 拒绝的 borrowed
-chunk，形成虚假的 retry 形状。隔离用例同时验证该失败不会毒化后续 stream。测试 listener 改用 OS
-分配端口，避免 Linux ephemeral `TIME_WAIT` 与固定测试端口相撞被误判为协议失败。
+合同 [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json) 在 W1-WSL、GCC 14.2、
+Release/static、portable ISA 上资格化；candidate 与 peer 均 clean/exact。A/A、5%/10% known delta、timer
+floor、artifact/build/consumer provenance 全部 `PASS`，15-run 结果依法升级到唯一允许的 31-run 阶段：
+
+| workload / order | HYLE / nghttp2 op/s | advantage / 98.93% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 64x1 KiB / candidate-first | 199,139.84 / 139,278.98 | 1.43534 / [1.41048, 1.46084] | `WIN` | `PASS` |
+| 64x1 KiB / peer-first | 199,836.76 / 137,836.07 | 1.45537 / [1.40300, 1.47630] | `WIN` | `PASS` |
+| 4x256 KiB / candidate-first | 5,068.43 / 5,271.64 | 0.96586 / [0.95165, 0.97344] | `INCONCLUSIVE` | `UNRESOLVED` |
+| 4x256 KiB / peer-first | 5,108.49 / 5,303.68 | 0.96911 / [0.95441, 0.97911] | `PARITY` | `PASS` |
+
+5% advantage 下界为 `1/1.05 = 0.95238`；candidate-first CI 下界只差约 0.00073，但合同要求完整 CI
+进入 non-inferiority 区间。因此 qualification=`PASS`、aggregate performance=`INCONCLUSIVE`。完整 192-file
+bundle 在 [`io-http2-p1-v1-705b2111`](../../../../evidence/performance/io-http2-p1-v1-705b2111/)；manifest、
+summary、controls SHA-256 分别为
+`D0C3A61493373D9CFB40DD901933011FC47931D0E0D54CCE744837F5FC70AFB1`、
+`BA90CAE0DFCADA40DB62BF0BF49D0372721966BB985E2AD6EDD53FF8736ABFE7`、
+`8910F16F2A86F70E5C37B8D63DE69C7EB776E4C2294C8702FF347215114AC253`。
+
+### Gate verdict and resume condition
+
+| gate | verdict |
+|---|---|
+| scope / architecture / API / capability | `PASS` |
+| correctness / sanitizer / delivery / M1-MAC | `PASS` |
+| red-team | `INCONCLUSIVE`：terminal performance blocker 出现后未冒充最终独立签字 |
+| engineering performance | `INCONCLUSIVE` |
+| product / freeze | **`BLOCKED` / no `freeze_confirmation`** |
+
+blocker owner 为 IO maintainer。只有新的有限 resume round 先用结构证据确认“single-owner、无同 session
+waiter 时仍无条件支付 monitor/notification 成本”是正常 consumer 的可移除机制，并冻结一项私有实现
+correction、一次 correctness/delivery/red-team replay 与一次原合同 P1，才能恢复；不得改 workload、窗口、
+chunk、margin、公共 API 或追加第三次机制搜索。若该唯一恢复轮仍未通过，保留限制并停止，不再循环。
+
+### LOC at terminal candidate
+
+`705b21112af34765227a132c1bd1a2e84a82e655` / cloc 2.08：全库 509,608 行；自实现不含测试
+89,866 行；`io_http2` 实现 2,555 行。
 
 ## Implementation checkpoints
 
-- `ea45d866`：`IOH2-F01` 的物理 owner 已建立；HTTP/2 source/header/test、nghttp2 package owner
-  与 `HYLE_IO_HTTP2_API` 均属于 `io_http2`。feature OFF 只保留 capability query；Windows
-  OFF/ON shared correctness、跨 DLL transport link 与独立 header 已通过。
-- `18d6d6b9`：首个 exact product candidate 的 W1-WSL P1 qualification/control 全通过；normal
-  multiplex 为 `WIN`，大 body flow-control holdout 为固定 `LOSE`。该证据是上述有限 correction 的
-  trigger，不是可挑选或合并的历史样本。
+- `ea45d866`：F01 factor/package owner；
+- `3bd9c939`：F02--F05 streaming/lifecycle product implementation；
+- `18d6d6b9`：transfer 与首个 exact P1 candidate，holdout 固定失败；
+- `705b2111`：有限 allocation/progress correction 与本轮 terminal candidate。

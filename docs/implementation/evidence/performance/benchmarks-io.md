@@ -7,6 +7,28 @@
 > `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP/2、transfer、完整服务器、全平台或全操作
 > SOTA。
 
+## 2026-09-09 `io_http2-v1` terminal 工程证据（`INCONCLUSIVE`）
+
+不可变 candidate/tree 为 `705b21112af34765227a132c1bd1a2e84a82e655` /
+`893b26312eaaec002a8e9860059090262339727d`；peer 是同一锁定源码的 nghttp2
+`85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2`。双方在一个 persistent worker 上完成相同 h2c stream、
+body validation、flow-control credit 和 teardown；合同、输入、窗口、chunk、计费和执行顺序在采样前冻结，
+没有用小 body 对大 body或 whole-buffer 对 streaming 的苹果/橘子对比。
+
+| workload / order | HYLE / nghttp2 op/s | advantage / 98.93% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 64x1 KiB / candidate-first | 199,139.84 / 139,278.98 | 1.43534 / [1.41048, 1.46084] | `WIN` | `PASS` |
+| 64x1 KiB / peer-first | 199,836.76 / 137,836.07 | 1.45537 / [1.40300, 1.47630] | `WIN` | `PASS` |
+| 4x256 KiB / candidate-first | 5,068.43 / 5,271.64 | 0.96586 / [0.95165, 0.97344] | `INCONCLUSIVE` | `UNRESOLVED` |
+| 4x256 KiB / peer-first | 5,108.49 / 5,303.68 | 0.96911 / [0.95441, 0.97911] | `PARITY` | `PASS` |
+
+资格、A/A、known-delta、timer floor、artifact/build/consumer provenance 全部 `PASS`；唯一未决项是
+candidate-first holdout 的 CI 下界 `0.95165` 尚未完整进入 `1/1.05 = 0.95238` 的非劣区间。31 次最大
+精度升级后聚合性能门仍为 `INCONCLUSIVE`，故本证据阻止 freeze，不能靠重抽样或四舍五入改成 PASS。
+完整 bundle 位于
+[`io-http2-p1-v1-705b2111`](../../../../evidence/performance/io-http2-p1-v1-705b2111/)；详见
+[`io-http2-v1`](../../tasks/io/io-http2-v1.md)。
+
 ## 2026-09-08 `io_http-v1` 最终工程证据（`PASS`）
 
 不可变产品 candidate/tree 为 `400e015e6e8604b753d64cd27a16e21898670e91` /
