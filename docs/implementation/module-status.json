@@ -1317,12 +1317,14 @@
     },
     {
       "module": "io_http",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "io-http-v1",
       "closure_task": "docs/implementation/tasks/io/io-http-v1.md",
       "scope": "Factor HTTP1 framing and bounded streaming client/server lifecycle out of io_core; freeze natural message views, body streaming, request budgets, disconnect, backpressure and keep-alive contracts.",
       "non_goals": "Application routing, middleware, authentication, model or OpenAI schema, handler pool and batching policy, WebSocket, HTTP2 or HTTP3, TLS provider, Native FFI or C API.",
       "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "candidate_commit": "400e015e6e8604b753d64cd27a16e21898670e91",
+      "candidate_tree": "16b94922825e66373d4a33c76c22ece7156a4dde",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1339,7 +1341,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http v1 处于 AUDITED；IOHTTP-F01 物理 factor/pico owner 已在 ea45d866 落地，typed streaming body/连接 lifecycle 与 terminal delivery/P1 仍按 F02--F06 实施。"
+      "summary": "io_http v1 处于 CANDIDATE；typed bounded HTTP/1 client/server、streaming/backpressure、lifecycle 与私有 parser owner 已冻结在 400e015e，terminal gates 已完成并等待依法登记 VERIFIED。"
     },
     {
       "module": "io_http2",
