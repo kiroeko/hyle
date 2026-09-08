@@ -791,91 +791,106 @@ http_transport_write(mem::AllocatorRef allocator, HttpTransport &transport,
       0, Status::FailedPrecondition("HTTP transport is invalid"), false};
 }
 
+namespace {
+
+Status validate_http_buffer_sequence(std::span<const ConstBuffer> buffers,
+                                     std::size_t &total) noexcept {
+  if (buffers.size() > kMaxBufferSequenceSegments) {
+    return Status::OutOfRange(
+        "HTTP buffer sequence exceeds the portable segment limit");
+  }
+  total = 0;
+  for (const ConstBuffer buffer : buffers) {
+    if (!buffer.empty() && buffer.data() == nullptr) {
+      return Status::InvalidArgument(
+          "HTTP buffer sequence contains a null segment");
+    }
+    if (buffer.size() > kMaxBufferSequenceBytes - total) {
+      return Status::OutOfRange(
+          "HTTP buffer sequence exceeds the portable byte limit");
+    }
+    total += buffer.size();
+  }
+  return Status{};
+}
+
+sched::Task<BufferSequenceResult>
+ready_buffer_sequence(mem::AllocatorRef allocator,
+                      BufferSequenceResult result) noexcept {
+  (void)allocator;
+  co_return result;
+}
+
+#if defined(HYLE_IO_TLS)
+sched::Task<BufferSequenceResult>
+tls_write_all_buffers(mem::AllocatorRef allocator, TlsStream &tls,
+                      std::span<const ConstBuffer> buffers,
+                      OperationOptions options) noexcept {
+  std::size_t transferred = 0;
+  for (std::size_t segment = 0; segment < buffers.size(); ++segment) {
+    const ConstBuffer buffer = buffers[segment];
+    std::size_t offset = 0;
+    while (offset != buffer.size()) {
+      const auto bytes = std::span<const std::byte>(
+          static_cast<const std::byte *>(buffer.data()) + offset,
+          buffer.size() - offset);
+      auto task = tls_write(allocator, tls, bytes, options);
+      if (!task.valid()) {
+        co_return BufferSequenceResult{
+            {transferred, BufferSequenceCursor{segment, offset}, false},
+            Status::ResourceExhausted(
+                "HTTP TLS vector-write coroutine allocation failed"),
+            false};
+      }
+      TransferResult result = co_await task;
+      if (!result.status.ok()) {
+        co_return BufferSequenceResult{
+            {transferred, BufferSequenceCursor{segment, offset}, false},
+            std::move(result.status), result.eof};
+      }
+      if (result.bytes == 0 || result.bytes > bytes.size()) {
+        co_return BufferSequenceResult{
+            {transferred, BufferSequenceCursor{segment, offset}, false},
+            Status::Unavailable(
+                "HTTP TLS transport made no valid vector-write progress"),
+            result.eof};
+      }
+      offset += result.bytes;
+      transferred += result.bytes;
+    }
+  }
+  co_return BufferSequenceResult{
+      {transferred, BufferSequenceCursor{buffers.size(), 0}, true}, Status{},
+      false};
+}
+#endif
+
+} // namespace
+
 sched::Task<BufferSequenceResult>
 http_transport_write_all(mem::AllocatorRef allocator,
                          HttpTransport &transport,
                          std::span<const ConstBuffer> buffers,
                          OperationOptions options) noexcept {
-  if (buffers.size() > kMaxBufferSequenceSegments) {
-    co_return BufferSequenceResult{
-        {}, Status::OutOfRange(
-                "HTTP buffer sequence exceeds the portable segment limit"),
-        false};
-  }
   std::size_t total = 0;
-  for (const ConstBuffer buffer : buffers) {
-    if (!buffer.empty() && buffer.data() == nullptr) {
-      co_return BufferSequenceResult{
-          {}, Status::InvalidArgument(
-                  "HTTP buffer sequence contains a null segment"),
-          false};
-    }
-    if (buffer.size() > kMaxBufferSequenceBytes - total) {
-      co_return BufferSequenceResult{
-          {}, Status::OutOfRange(
-                  "HTTP buffer sequence exceeds the portable byte limit"),
-          false};
-    }
-    total += buffer.size();
-  }
+  Status valid = validate_http_buffer_sequence(buffers, total);
+  if (!valid.ok())
+    return ready_buffer_sequence(
+        allocator, BufferSequenceResult{{}, std::move(valid), false});
   if (total == 0) {
-    co_return BufferSequenceResult{
-        {0, BufferSequenceCursor{buffers.size(), 0}, true}, Status{}, false};
+    return ready_buffer_sequence(allocator, BufferSequenceResult{
+        {0, BufferSequenceCursor{buffers.size(), 0}, true}, Status{}, false});
   }
 
 #if defined(HYLE_IO_TLS)
-  if (auto *tls = std::get_if<TlsStream>(&transport.stream_)) {
-    std::size_t transferred = 0;
-    for (std::size_t segment = 0; segment < buffers.size(); ++segment) {
-      const ConstBuffer buffer = buffers[segment];
-      std::size_t offset = 0;
-      while (offset != buffer.size()) {
-        const auto bytes = std::span<const std::byte>(
-            static_cast<const std::byte *>(buffer.data()) + offset,
-            buffer.size() - offset);
-        auto task = tls_write(allocator, *tls, bytes, options);
-        if (!task.valid()) {
-          co_return BufferSequenceResult{
-              {transferred, BufferSequenceCursor{segment, offset}, false},
-              Status::ResourceExhausted(
-                  "HTTP TLS vector-write coroutine allocation failed"),
-              false};
-        }
-        TransferResult result = co_await task;
-        if (!result.status.ok()) {
-          co_return BufferSequenceResult{
-              {transferred, BufferSequenceCursor{segment, offset}, false},
-              std::move(result.status), result.eof};
-        }
-        if (result.bytes == 0 || result.bytes > bytes.size()) {
-          co_return BufferSequenceResult{
-              {transferred, BufferSequenceCursor{segment, offset}, false},
-              Status::Unavailable(
-                  "HTTP TLS transport made no valid vector-write progress"),
-              result.eof};
-        }
-        offset += result.bytes;
-        transferred += result.bytes;
-      }
-    }
-    co_return BufferSequenceResult{
-        {transferred, BufferSequenceCursor{buffers.size(), 0}, true},
-        Status{}, false};
-  }
+  if (auto *tls = std::get_if<TlsStream>(&transport.stream_))
+    return tls_write_all_buffers(allocator, *tls, buffers, options);
 #endif
 
-  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_)) {
-    auto task = hyle::io::write_all(allocator, *tcp, buffers, options);
-    if (!task.valid()) {
-      co_return BufferSequenceResult{
-          {}, Status::ResourceExhausted(
-                  "HTTP TCP vector-write coroutine allocation failed"),
-          false};
-    }
-    co_return co_await task;
-  }
-  co_return BufferSequenceResult{
-      {}, Status::FailedPrecondition("HTTP transport is invalid"), false};
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_))
+    return hyle::io::write_all(allocator, *tcp, buffers, options);
+  return ready_buffer_sequence(allocator, BufferSequenceResult{
+      {}, Status::FailedPrecondition("HTTP transport is invalid"), false});
 }
 
 sched::Task<Status> http_transport_shutdown(mem::AllocatorRef allocator,
@@ -965,24 +980,14 @@ sched::Task<Status> write_all(mem::AllocatorRef allocator,
   co_return Status{};
 }
 
-sched::Task<Status>
-write_all_buffers(mem::AllocatorRef allocator, HttpTransport &transport,
-                  std::span<const ConstBuffer> buffers,
-                  OperationOptions options) noexcept {
-  auto task = detail::http_transport_write_all(allocator, transport, buffers,
-                                               options);
-  if (!task.valid()) {
-    co_return Status::ResourceExhausted(
-        "HTTP vector-write coroutine allocation failed");
-  }
-  BufferSequenceResult result = co_await task;
+Status buffer_sequence_status(BufferSequenceResult result) noexcept {
   if (!result.status.ok())
-    co_return std::move(result.status);
+    return std::move(result.status);
   if (!result.progress.complete) {
-    co_return Status::Unavailable(
+    return Status::Unavailable(
         "HTTP transport did not complete the buffer sequence");
   }
-  co_return Status{};
+  return Status{};
 }
 
 sched::Task<Status>
@@ -1006,24 +1011,6 @@ write_all_sequential(mem::AllocatorRef allocator, HttpTransport &transport,
       co_return status;
   }
   co_return Status{};
-}
-
-sched::Task<Status>
-write_fixed_request_bytes(mem::AllocatorRef allocator,
-                          HttpTransport &transport,
-                          std::span<const std::byte> head,
-                          std::span<const std::byte> body,
-                          OperationOptions options) noexcept {
-  if (head.size() <= kMaxBufferSequenceBytes &&
-      body.size() <= kMaxBufferSequenceBytes - head.size()) {
-    const ConstBuffer sequence[] = {ConstBuffer(head), ConstBuffer(body)};
-    co_return co_await write_all_buffers(allocator, transport, sequence,
-                                         options);
-  }
-  Status status = co_await write_all(allocator, transport, head, options);
-  if (!status.ok())
-    co_return status;
-  co_return co_await write_all(allocator, transport, body, options);
 }
 
 sched::Task<Result<HttpHeadersView>>
@@ -1813,15 +1800,15 @@ sched::Task<Status> http_body_write(mem::AllocatorRef allocator,
       const ConstBuffer sequence[] = {
           ConstBuffer(prefix, digits + 2), ConstBuffer(bytes),
           ConstBuffer(kCrLf, sizeof(kCrLf))};
-      auto task = write_all_buffers(allocator, *state->transport, sequence,
-                                    options);
+      auto task = detail::http_transport_write_all(
+          allocator, *state->transport, sequence, options);
       if (!task.valid()) {
         detail::HttpConnectionAccess::writer_abandoned(*state);
         writer.state_ = nullptr;
         co_return Status::ResourceExhausted(
             "HTTP chunk vector-write coroutine allocation failed");
       }
-      status = co_await task;
+      status = buffer_sequence_status(co_await task);
     }
     if (!status.ok()) {
       detail::HttpConnectionAccess::writer_abandoned(*state);
@@ -2917,19 +2904,39 @@ sched::Task<Result<HttpIncomingResponse>> http_client_request_fixed(
       output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
       co_return http_failure<HttpIncomingResponse>(std::move(built));
     }
-    auto write = write_fixed_request_bytes(
-        allocator, impl->transport,
-        std::span<const std::byte>(
-            reinterpret_cast<const std::byte *>(output.data), output.size),
-        body, options);
-    if (!write.valid()) {
-      output.clear();
-      output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
-      impl->reusable = false;
-      co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
-          "HTTP fixed request vector-write coroutine allocation failed"));
+    const auto head_bytes = std::span<const std::byte>(
+        reinterpret_cast<const std::byte *>(output.data), output.size);
+    Status written;
+    if (head_bytes.size() <= kMaxBufferSequenceBytes &&
+        body.size() <= kMaxBufferSequenceBytes - head_bytes.size()) {
+      const ConstBuffer sequence[] = {ConstBuffer(head_bytes),
+                                      ConstBuffer(body)};
+      auto write = detail::http_transport_write_all(
+          allocator, impl->transport, sequence, options);
+      if (!write.valid()) {
+        output.clear();
+        output.release_if_empty_above(
+            connection.limits_.max_retained_head_bytes);
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+            "HTTP fixed request vector-write coroutine allocation failed"));
+      }
+      written = buffer_sequence_status(co_await write);
+    } else {
+      const ConstBuffer sequence[] = {ConstBuffer(head_bytes),
+                                      ConstBuffer(body)};
+      auto write = write_all_sequential(allocator, impl->transport, sequence,
+                                        options);
+      if (!write.valid()) {
+        output.clear();
+        output.release_if_empty_above(
+            connection.limits_.max_retained_head_bytes);
+        impl->reusable = false;
+        co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+            "HTTP fixed request coroutine allocation failed"));
+      }
+      written = co_await write;
     }
-    Status written = co_await write;
     output.clear();
     output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
     if (!written.ok()) {

@@ -141,18 +141,18 @@ immutable candidate commit and the same-contract peer fixture is fixed.
 4. Performance: P1 normal REST + SSE; historical raw/pico or sync callback microbenches do not gate. Compare same parsing,
    body ownership and backpressure or use natural-route budget without primitive SOTA claims.
 5. FFI: `N/A`, no C schema/codec/exports.
-6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared/offline terminal journeys remain pending.
-7. C++ usability/docs: currently `FAIL` due null/bool, fixed slots, sync callback and missing body/cancel selection guide;
-   F02--F06 repair it.
+6. Delivery: F01 ownership landed in `ea45d866`; source/static/shared candidate journeys passed before the final
+   private algorithm change and require one terminal replay. Offline configuration remains a build-contract gate.
+7. C++ usability/docs: natural typed connection/body APIs and selection guidance are candidate-complete; terminal guide
+   scan and red-team receipt remain pending.
 
 ## Current decision
 
-`AUDITED / ACTIVE`。F01--F05 的公开 API/usability 形状保持冻结；性能仪器资格化发现旧发送机制
-在正常 streaming journey 中一次 application chunk 产生三次 transport write，因此算法候选已依法
-退回 `AUDITED` 并完成有限修正。新的产品源码、测试、consumer-shape snapshot 与
-`io-http-p1-v1` contract 已准备形成一个新的 immutable candidate；正式 P1 尚未运行。F06 仍需该
-candidate 的三平台/三交付/sanitizer、同合同 P1、guide 与 red-team terminal receipt。资格化运行只用于
-校准仪器和定位机制，不作为工程性能证据，也不授权继续追逐点值。
+`AUDITED / ACTIVE`。F01--F05 的公开 API/usability 形状保持冻结。`4a3cbf54` 的首个正式 P1 包
+资格门全过但 normal workload 为 `INCONCLUSIVE`；本卡两项机制诊断额度已经用完，最后一项私有
+算法修正删除了 plain TCP 热路径上的纯转发 coroutine frame。新的 immutable candidate 尚待形成，
+之后只允许一次正式 P1。F06 仍需该 candidate 的三平台/三交付/sanitizer、同合同 P1、guide 与
+red-team terminal receipt；若 P1 仍不通过，本卡按既定停止规则进入 `BLOCKED`。
 
 ## Implementation checkpoints
 
@@ -178,3 +178,15 @@ candidate 的三平台/三交付/sanitizer、同合同 P1、guide 与 red-team t
   慢约 `2.98%`（candidate-first）/`4.86%`（peer-first），均在预声明 5% non-inferiority margin 内；
   64 KiB fragmented holdout 中 HYLE 快约 `2.91x`/`2.97x`。这些不是 terminal evidence；新的
   immutable candidate 形成后只允许按 `bench/contracts/io-http-p1-v1.json` 正式执行一次证据包。
+- `4a3cbf54` candidate 的正式 W1-WSL 包通过 artifact/build/host、A/A、5%/10% known-delta 与
+  timer-floor 全部资格门；64 KiB holdout 在两个顺序分别约为 Beast 的 `2.90x`/`2.93x`，但 1 KiB
+  normal 中位数比 Beast 慢 `4.46%`/`5.29%`，两侧 98.9% CI 均跨过预声明 5% non-inferiority
+  limit，因此裁决严格为 `INCONCLUSIVE`，不得写成 PASS 或 FAIL。
+- 第二项也是本卡最后一项机制诊断比较了实际调用链：每次 plain chunk 原为
+  `http_body_write -> write_all_buffers -> http_transport_write_all -> io_core::write_all`。HYLE `Task`
+  的每个 coroutine frame 都通过显式 `AllocatorRef` 分配，两个中间层只转发/翻译结果，却让 1 KiB
+  workload 每个 response 重复支付 8 次；Beast 的相同行为由一个 `async_write` composed operation
+  承担。最终修正使 plain transport dispatch 直接返回 io_core vectored task，并在 owner coroutine
+  内同步翻译结果；fixed request 同样删除纯转发 frame。双顺序非正式机制检查的 normal 差距约
+  `2.3%`，方向一致，Windows plain/TLS correctness 仍通过。下一 candidate 只允许再执行一次正式
+  qualification；若仍未通过，本卡按停止规则进入 `BLOCKED`，不再增加诊断或改变 workload。
