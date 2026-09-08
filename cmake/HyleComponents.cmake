@@ -250,7 +250,7 @@ _hyle_declare_component(io_http
   PUBLIC_TYPE_DEPS time
   SPLIT_PUBLIC_HEADERS hyle/io/http.h)
 _hyle_declare_component(io_http2
-  PRIVATE_DEPS container
+  PRIVATE_DEPS container sched util_core
   PUBLIC_DEPS core io_http
   SPLIT_PUBLIC_HEADERS hyle/io/http2.h)
 # Transfer has an audited design but remains a non-buildable identity until its

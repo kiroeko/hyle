@@ -2,11 +2,17 @@
 #include "hyle/mem/allocator.h"
 
 #if !defined(HYLE_IO_HTTP2)
-#  error "installed package advertises io_http2 but did not expose HYLE_IO_HTTP2"
+#error "installed package advertises io_http2 but did not expose HYLE_IO_HTTP2"
 #endif
 
 int main() {
-  hyle::io::Http2ClientConn client(hyle::mem::system_allocator(),
-                                   hyle::io::TcpStream{});
-  return client.valid() ? 1 : 0;
+  const auto id = hyle::io::Http2StreamId::from_value(1);
+  hyle::io::Http2RequestHead request{.method = "GET",
+                                     .scheme = "https",
+                                     .authority = "localhost",
+                                     .path = "/health"};
+  return hyle::io::http2_available() && id.has_value() &&
+                 request.method == "GET"
+             ? 0
+             : 1;
 }

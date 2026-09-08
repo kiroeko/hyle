@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -10,6 +11,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
 #include "hyle/io/http.h"
@@ -41,8 +43,10 @@ using hyle::io::HttpResponseHead;
 using hyle::io::HttpServerConnection;
 #endif
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION) && defined(HYLE_IO_HTTP2)
-using hyle::io::Http2ClientConn;
-using hyle::io::Http2ServerConn;
+using hyle::io::Http2ClientSession;
+using hyle::io::Http2RequestHead;
+using hyle::io::Http2ResponseHead;
+using hyle::io::Http2ServerSession;
 #endif
 using hyle::io::AddressFamily;
 using hyle::io::Endpoint;
@@ -746,6 +750,8 @@ struct HttpsResult {
   std::atomic<bool> server_done{false};
   std::atomic<bool> client_done{false};
   std::atomic<int> status{0};
+  std::atomic<int> server_stage{0};
+  std::atomic<int> client_stage{0};
   char body[32] = {};
 };
 
@@ -874,6 +880,14 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
 
 #if defined(HYLE_IO_HTTP2)
 namespace {
+std::span<const std::byte> h2_bytes(std::string_view text) noexcept {
+  return {reinterpret_cast<const std::byte *>(text.data()), text.size()};
+}
+
+hyle::io::OperationOptions h2_budget() noexcept {
+  return {.deadline = hyle::time::deadline_after(std::chrono::seconds(5))};
+}
+
 Task<int> h2_tls_server(AllocatorRef alloc, TcpListener *listener,
                         TlsContext *context, HttpsResult *result) {
   auto accepted = co_await listener->accept(kOwner);
@@ -887,19 +901,25 @@ Task<int> h2_tls_server(AllocatorRef alloc, TcpListener *listener,
   TlsStream tls = std::move(*wrapped);
   if ((co_await tls_handshake(alloc, tls)).ok()) {
     result->server_stage.store(2);
-    Http2ServerConn h2(alloc, std::move(tls));
-    if (h2.valid())
-      result->server_stage.store(3);
-    auto *request = co_await h2.next_request();
-    if (request != nullptr) {
+    auto made = Http2ServerSession::create(alloc, std::move(tls));
+    if (!made.has_value())
+      co_return 0;
+    Http2ServerSession h2 = std::move(*made);
+    result->server_stage.store(3);
+    auto accepted_request = co_await h2.accept(h2_budget());
+    if (accepted_request.has_value() && accepted_request->has_value()) {
+      auto request = std::move(**accepted_request);
       result->server_stage.store(4);
-      if (co_await h2.respond(request->stream_id(), 207, nullptr, 0,
-                              {"h2-tls-ok", 9})) {
+      if ((co_await request.body.discard(h2_budget())).ok() &&
+          (co_await h2.send_response(request.stream_id,
+                                     Http2ResponseHead{.status = 207},
+                                     h2_bytes("h2-tls-ok"), h2_budget()))
+              .ok()) {
         result->server_stage.store(5);
         // Best-effort GOAWAY + TLS close_notify. A client is allowed to close
         // immediately after consuming the response, so EPIPE here is not a
         // response failure.
-        (void)co_await h2.shutdown();
+        (void)co_await h2.close(h2_budget());
       }
     }
   }
@@ -922,17 +942,38 @@ Task<int> h2_tls_client(AllocatorRef alloc, IoContext *io, TlsContext *context,
     TlsStream tls = std::move(*wrapped);
     if ((co_await tls_handshake(alloc, tls)).ok()) {
       result->client_stage.store(2);
-      Http2ClientConn h2(alloc, std::move(tls));
-      if (h2.valid())
-        result->client_stage.store(3);
-      if (co_await h2.submit_request("GET", "https", "localhost", "/") > 0) {
+      auto made = Http2ClientSession::create(alloc, std::move(tls));
+      if (!made.has_value())
+        co_return 0;
+      Http2ClientSession h2 = std::move(*made);
+      result->client_stage.store(3);
+      auto submitted =
+          co_await h2.send_request(Http2RequestHead{.method = "GET",
+                                                    .scheme = "https",
+                                                    .authority = "localhost",
+                                                    .path = "/"},
+                                   std::span<const std::byte>{}, h2_budget());
+      if (submitted.has_value()) {
         result->client_stage.store(4);
-        auto *response = co_await h2.next_response();
-        if (response != nullptr) {
+        auto response = co_await h2.read_response(*submitted, h2_budget());
+        if (response.has_value()) {
           result->client_stage.store(5);
-          result->status.store(response->status(), std::memory_order_release);
-          const auto body = response->body();
-          std::memcpy(result->body, body.data(), body.size());
+          result->status.store(response->head.status(),
+                               std::memory_order_release);
+          std::size_t offset = 0;
+          for (;;) {
+            auto chunk = co_await response->body.read(0, h2_budget());
+            if (!chunk.has_value())
+              break;
+            const std::size_t count =
+                (std::min)(chunk->bytes.size(),
+                           sizeof(result->body) - 1 - offset);
+            if (count != 0)
+              std::memcpy(result->body + offset, chunk->bytes.data(), count);
+            offset += count;
+            if (chunk->end_stream)
+              break;
+          }
         }
       }
     }

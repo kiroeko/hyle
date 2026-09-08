@@ -174,6 +174,7 @@ namespace detail {
 struct HttpBodyState;
 struct HttpWriteState;
 class HttpConnectionAccess;
+class Http2SessionAccess;
 } // namespace detail
 
 class HttpBodyReader;
@@ -294,6 +295,7 @@ public:
 
 private:
   friend class detail::HttpConnectionAccess;
+  friend class detail::Http2SessionAccess;
   constexpr HttpBodySource(void *context, NextFn next,
                            std::optional<std::uint64_t> length) noexcept
       : context_(context), next_(next), content_length_(length) {}
@@ -411,6 +413,10 @@ public:
 
   HYLE_IO_HTTP_API bool valid() const noexcept;
   HYLE_IO_HTTP_API bool encrypted() const noexcept;
+  // Empty for TCP; for TLS this is the ALPN value selected by the completed
+  // handshake. Protocol factors use it to reject a mismatched transport before
+  // emitting bytes.
+  HYLE_IO_HTTP_API StringView negotiated_protocol() const noexcept;
   HYLE_IO_HTTP_API unsigned owner_worker() const noexcept;
 
   sched::Task<TransferResult>

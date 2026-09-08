@@ -741,6 +741,14 @@ bool HttpTransport::encrypted() const noexcept {
 #endif
 }
 
+StringView HttpTransport::negotiated_protocol() const noexcept {
+#if defined(HYLE_IO_TLS)
+  if (const auto *tls = std::get_if<TlsStream>(&stream_))
+    return tls->negotiated_protocol();
+#endif
+  return {};
+}
+
 unsigned HttpTransport::owner_worker() const noexcept {
   if (const auto *tcp = std::get_if<TcpStream>(&stream_)) {
     return tcp->owner_worker();
