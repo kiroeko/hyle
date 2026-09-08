@@ -146,6 +146,11 @@ ticket 默认关闭，只有显式打开才产生 provider 保留成本。
   显式 opt-in；每 stream 16 KiB scratch 在 typed construction 中从 context 的 allocator 分配一次，
   不再把 coroutine allocator 的生命周期偷偷延长；同时修复 `bytes + EOF` 最后一段 ciphertext 的处理。
   Windows shared/static、WSL shared、macOS shared exact-factor correctness 均通过；F05 后续门不再授权产品改动。
+- `IOTLS-F05 delivery checkpoint`：TLS-enabled Windows installed-package consumer 已分别从
+  `hyle::io` 的 shared 与 static 安装树完成 configure/build/run；sample 还实际构造 typed client
+  context，因而不是只验证链接器能找到空壳 target。exact-factor source journey 已在 Windows、WSL
+  与 macOS 覆盖；sanitizer、合格 P1、红队和最终 relocation receipt 仍待签发，不能据此提前写成
+  `VERIFIED`。
 
 本次 registry 叙述校准的前态快照位于
 `C:\public\project-hyle\_validation\io-tls-v1\registry-before-f02-f04.json`，SHA-256

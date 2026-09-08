@@ -1,6 +1,9 @@
 #include <hyle/io/capabilities.h>
 #include <hyle/io/endpoint.h>
 #include <hyle/io/http.h>
+#if defined(HYLE_IO_TLS)
+#include <hyle/io/tls.h>
+#endif
 #include <hyle/mem/mapping.h>
 
 #if HYLE_IO_HAS_COROUTINE_TRANSPORT != 1
@@ -11,17 +14,34 @@ int main() {
   // Public io headers expose Status and allocator-backed protocol values.  The
   // consumer deliberately links only hyle::io.
   auto status = hyle::mem::SharedMapping::unlink(nullptr);
-  if (!status.IsInvalidArgument()) return 1;
+  if (!status.IsInvalidArgument())
+    return 1;
 
-  if (!hyle::mem::system_allocator().valid()) return 2;
+  if (!hyle::mem::system_allocator().valid())
+    return 2;
   hyle::io::StringView body{"installed io payload"};
-  if (body.find("payload") == hyle::io::StringView::npos) return 3;
+  if (body.find("payload") == hyle::io::StringView::npos)
+    return 3;
 
   // A typed endpoint parse crosses the io_core binary boundary without exposing
   // native sockaddr storage, completion tokens, or the backend proactor.
-  if (hyle::sched::current_worker_index() != -1) return 4;
+  if (hyle::sched::current_worker_index() != -1)
+    return 4;
   auto endpoint = hyle::io::Endpoint::parse("127.0.0.1", 2048);
-  if (!endpoint.has_value() || !endpoint->is_loopback()) return 5;
+  if (!endpoint.has_value() || !endpoint->is_loopback())
+    return 5;
   hyle::io::IoCapabilities capabilities;
-  return capabilities.backend_name() == "none" ? 0 : 6;
+  if (capabilities.backend_name() != "none")
+    return 6;
+
+#if defined(HYLE_IO_TLS)
+  if (!hyle::io::tls_available())
+    return 7;
+  hyle::io::TlsClientOptions tls_options;
+  tls_options.verify = hyle::io::TlsVerifyMode::kNone;
+  auto tls_context = hyle::io::TlsContext::make_client(tls_options);
+  if (!tls_context.has_value() || !tls_context->valid())
+    return 8;
+#endif
+  return 0;
 }
