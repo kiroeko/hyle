@@ -41,6 +41,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/sync.h"
 
 using hyle::Status;
 using hyle::io::Http2ClientSession;
@@ -60,6 +61,8 @@ namespace {
 
 constexpr unsigned kOwner = 0;
 constexpr std::size_t kWireBytes = 64 * 1024;
+constexpr std::size_t kBodyReadBytes = 16 * 1024;
+constexpr std::size_t kStreamWindowBytes = 64 * 1024;
 
 void close_descriptor(int descriptor) noexcept {
   if (descriptor >= 0)
@@ -135,6 +138,14 @@ struct Workload {
   std::string response_body;
 };
 
+struct HyleRunState {
+  explicit HyleRunState(const Workload &selected) noexcept
+      : workload(&selected) {}
+
+  const Workload *workload = nullptr;
+  hyle::sched::Event client_consumed;
+};
+
 Workload make_workload(const char *title, int streams,
                        std::size_t request_bytes,
                        std::size_t response_bytes,
@@ -172,7 +183,8 @@ Task<Status> read_hyle_body(AllocatorRef,
 }
 
 Task<int> hyle_server(AllocatorRef allocator, TcpStream stream,
-                      const Workload *workload) noexcept {
+                      HyleRunState *run) noexcept {
+  const Workload *workload = run->workload;
   hyle::io::Http2Limits limits;
   limits.connection_receive_window = workload->connection_window;
   auto made = Http2ServerSession::create(allocator, std::move(stream), limits);
@@ -202,11 +214,14 @@ Task<int> hyle_server(AllocatorRef allocator, TcpStream stream,
         co_return -1;
     }
   }
+  if (!run->client_consumed.wait_for(std::chrono::seconds(5)))
+    co_return -1;
   co_return workload->streams;
 }
 
 Task<int> hyle_client(AllocatorRef allocator, TcpStream stream,
-                      const Workload *workload) noexcept {
+                      HyleRunState *run) noexcept {
+  const Workload *workload = run->workload;
   hyle::io::Http2Limits limits;
   limits.connection_receive_window = workload->connection_window;
   auto made = Http2ClientSession::create(allocator, std::move(stream), limits);
@@ -243,6 +258,7 @@ Task<int> hyle_client(AllocatorRef allocator, TcpStream stream,
     if (completed[0] != submitted[1] || completed[1] != submitted[0])
       co_return -1;
   }
+  run->client_consumed.signal();
   co_return workload->streams;
 }
 
@@ -266,13 +282,14 @@ public:
         io_, kOwner, server_descriptor);
     TcpStream client(io_, client_descriptor, kOwner);
     TcpStream server(io_, server_descriptor, kOwner);
+    HyleRunState state(workload);
 
     auto server_join = hyle::sched::spawn_task(
         scheduler_, system_allocator(),
-        hyle_server(system_allocator(), std::move(server), &workload));
+        hyle_server(system_allocator(), std::move(server), &state));
     auto client_join = hyle::sched::spawn_task(
         scheduler_, system_allocator(),
-        hyle_client(system_allocator(), std::move(client), &workload));
+        hyle_client(system_allocator(), std::move(client), &state));
     auto client_result = client_join.join();
     auto server_result = server_join.join();
     if (!client_result || !server_result ||
@@ -289,15 +306,21 @@ private:
 
 // Direct nghttp2 peer -------------------------------------------------------
 
+struct RawHeader {
+  std::string name;
+  std::string value;
+};
+
 struct RawStream {
   std::int32_t id = 0;
   std::size_t sent = 0;
   std::size_t received = 0;
-  bool method_ok = false;
-  bool path_ok = false;
-  bool status_ok = false;
-  bool content_length_ok = false;
+  std::size_t inbound_start = 0;
+  std::vector<std::uint8_t> inbound;
+  std::vector<RawHeader> headers;
+  bool input_end_received = false;
   bool input_done = false;
+  bool queued_for_read = false;
   bool response_submitted = false;
   bool output_done = false;
 };
@@ -306,6 +329,8 @@ struct RawEndpoint {
   const Workload *workload = nullptr;
   nghttp2_session *session = nullptr;
   std::vector<RawStream> streams;
+  std::vector<RawStream *> readable;
+  std::size_t readable_head = 0;
   bool server = false;
   bool failed = false;
   int completed = 0;
@@ -318,6 +343,19 @@ struct RawEndpoint {
     return nullptr;
   }
 };
+
+bool raw_queue_readable(RawEndpoint &endpoint, RawStream &stream) noexcept {
+  if (stream.queued_for_read)
+    return true;
+  try {
+    endpoint.readable.push_back(&stream);
+  } catch (...) {
+    endpoint.failed = true;
+    return false;
+  }
+  stream.queued_for_read = true;
+  return true;
+}
 
 nghttp2_nv raw_nv(const char *name, const char *value) noexcept {
   return {reinterpret_cast<std::uint8_t *>(const_cast<char *>(name)),
@@ -408,12 +446,6 @@ int raw_begin_headers(nghttp2_session *session, const nghttp2_frame *frame,
   return 0;
 }
 
-bool bytes_equal(const std::uint8_t *value, std::size_t length,
-                 std::string_view expected) noexcept {
-  return length == expected.size() &&
-         std::memcmp(value, expected.data(), length) == 0;
-}
-
 int raw_header(nghttp2_session *, const nghttp2_frame *frame,
                const std::uint8_t *name, std::size_t name_length,
                const std::uint8_t *value, std::size_t value_length,
@@ -424,42 +456,66 @@ int raw_header(nghttp2_session *, const nghttp2_frame *frame,
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
-  if (bytes_equal(name, name_length, ":method"))
-    stream->method_ok = bytes_equal(value, value_length, "POST");
-  else if (bytes_equal(name, name_length, ":path"))
-    stream->path_ok = bytes_equal(value, value_length, "/v1/completions");
-  else if (bytes_equal(name, name_length, ":status"))
-    stream->status_ok = bytes_equal(value, value_length, "200");
-  else if (bytes_equal(name, name_length, "content-length")) {
-    char expected[32]{};
-    std::snprintf(expected, sizeof(expected), "%zu",
-                  endpoint.server ? endpoint.workload->request_bytes
-                                  : endpoint.workload->response_bytes);
-    stream->content_length_ok =
-        bytes_equal(value, value_length, expected);
+  try {
+    stream->headers.push_back(
+        {std::string(reinterpret_cast<const char *>(name), name_length),
+         std::string(reinterpret_cast<const char *>(value), value_length)});
+  } catch (...) {
+    endpoint.failed = true;
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
   return 0;
 }
 
-int raw_data_chunk(nghttp2_session *session, std::uint8_t,
+int raw_data_chunk(nghttp2_session *, std::uint8_t,
                    std::int32_t stream_id, const std::uint8_t *data,
                    std::size_t length, void *user_data) {
   auto &endpoint = *static_cast<RawEndpoint *>(user_data);
   RawStream *stream = endpoint.find(stream_id);
+  if (stream == nullptr) {
+    endpoint.failed = true;
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  }
   const std::string &expected_body =
       endpoint.server ? endpoint.workload->request_body
                       : endpoint.workload->response_body;
-  if (stream == nullptr || stream->received + length > expected_body.size() ||
-      std::memcmp(data, expected_body.data() + stream->received, length) != 0) {
+  const std::size_t buffered = stream->inbound.size() - stream->inbound_start;
+  if (stream->received > expected_body.size() ||
+      length > expected_body.size() - stream->received ||
+      buffered > expected_body.size() - stream->received - length) {
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
-  stream->received += length;
-  if (nghttp2_session_consume_stream(session, stream_id, length) != 0 ||
-      nghttp2_session_consume_connection(session, length) != 0) {
+  if (stream->inbound.capacity() == 0) {
+    try {
+      stream->inbound.reserve(kStreamWindowBytes);
+    } catch (...) {
+      endpoint.failed = true;
+      return NGHTTP2_ERR_CALLBACK_FAILURE;
+    }
+  }
+  if (length > stream->inbound.capacity() - stream->inbound.size() &&
+      stream->inbound_start != 0) {
+    std::memmove(stream->inbound.data(),
+                 stream->inbound.data() + stream->inbound_start, buffered);
+    stream->inbound.resize(buffered);
+    stream->inbound_start = 0;
+  }
+  if (length > stream->inbound.capacity() - stream->inbound.size()) {
     endpoint.failed = true;
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
+  const std::size_t old_size = stream->inbound.size();
+  try {
+    stream->inbound.resize(old_size + length);
+  } catch (...) {
+    endpoint.failed = true;
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
+  }
+  if (length != 0)
+    std::memcpy(stream->inbound.data() + old_size, data, length);
+  if (!raw_queue_readable(endpoint, *stream))
+    return NGHTTP2_ERR_CALLBACK_FAILURE;
   return 0;
 }
 
@@ -473,15 +529,35 @@ int raw_frame_recv(nghttp2_session *, const nghttp2_frame *frame,
   RawStream *stream = endpoint.find(frame->hd.stream_id);
   if (stream == nullptr)
     return 0;
-  const std::size_t expected = endpoint.server
-                                   ? endpoint.workload->request_bytes
-                                   : endpoint.workload->response_bytes;
-  if (stream->received != expected ||
-      !stream->content_length_ok ||
-      (endpoint.server && (!stream->method_ok || !stream->path_ok)) ||
-      (!endpoint.server && !stream->status_ok)) {
+  stream->input_end_received = true;
+  return raw_queue_readable(endpoint, *stream)
+             ? 0
+             : NGHTTP2_ERR_CALLBACK_FAILURE;
+}
+
+bool raw_has_header(const RawStream &stream, std::string_view name,
+                    std::string_view value) noexcept {
+  for (const RawHeader &header : stream.headers) {
+    if (header.name == name && header.value == value)
+      return true;
+  }
+  return false;
+}
+
+bool raw_finish_input(RawEndpoint &endpoint, RawStream &stream) noexcept {
+  char expected_length[32]{};
+  std::snprintf(expected_length, sizeof(expected_length), "%zu",
+                endpoint.server ? endpoint.workload->request_bytes
+                                : endpoint.workload->response_bytes);
+  if (stream.received != (endpoint.server ? endpoint.workload->request_bytes
+                                          : endpoint.workload->response_bytes) ||
+      !raw_has_header(stream, "content-length", expected_length) ||
+      (endpoint.server &&
+       (!raw_has_header(stream, ":method", "POST") ||
+        !raw_has_header(stream, ":path", "/v1/completions"))) ||
+      (!endpoint.server && !raw_has_header(stream, ":status", "200"))) {
     endpoint.failed = true;
-    return NGHTTP2_ERR_CALLBACK_FAILURE;
+    return false;
   }
   if (!endpoint.server) {
     const std::size_t pair_base =
@@ -489,14 +565,49 @@ int raw_frame_recv(nghttp2_session *, const nghttp2_frame *frame,
     const std::size_t expected_index =
         pair_base + (endpoint.completed % 2 == 0 ? 1u : 0u);
     if (expected_index >= endpoint.streams.size() ||
-        endpoint.streams[expected_index].id != frame->hd.stream_id) {
+        endpoint.streams[expected_index].id != stream.id) {
       endpoint.failed = true;
-      return NGHTTP2_ERR_CALLBACK_FAILURE;
+      return false;
     }
   }
-  stream->input_done = true;
+  stream.input_done = true;
   ++endpoint.completed;
-  return 0;
+  return true;
+}
+
+bool raw_consume_readable(RawEndpoint &endpoint, bool &progress) noexcept {
+  while (endpoint.readable_head != endpoint.readable.size()) {
+    RawStream &stream = *endpoint.readable[endpoint.readable_head++];
+    stream.queued_for_read = false;
+    const std::string &expected_body =
+        endpoint.server ? endpoint.workload->request_body
+                        : endpoint.workload->response_body;
+    while (stream.inbound_start != stream.inbound.size()) {
+      const std::size_t count =
+          (std::min)(kBodyReadBytes,
+                     stream.inbound.size() - stream.inbound_start);
+      if (stream.received + count > expected_body.size() ||
+          std::memcmp(stream.inbound.data() + stream.inbound_start,
+                      expected_body.data() + stream.received, count) != 0 ||
+          nghttp2_session_consume_stream(endpoint.session, stream.id, count) !=
+              0 ||
+          nghttp2_session_consume_connection(endpoint.session, count) != 0) {
+        endpoint.failed = true;
+        return false;
+      }
+      stream.inbound_start += count;
+      stream.received += count;
+      progress = true;
+    }
+    stream.inbound.clear();
+    stream.inbound_start = 0;
+    if (stream.input_end_received && !stream.input_done &&
+        !raw_finish_input(endpoint, stream))
+      return false;
+  }
+  endpoint.readable.clear();
+  endpoint.readable_head = 0;
+  return true;
 }
 
 bool raw_initialize(RawEndpoint &endpoint) noexcept {
@@ -600,9 +711,7 @@ bool raw_read(RawEndpoint &endpoint, RawWire &wire, bool &progress) noexcept {
       progress = true;
       const nghttp2_ssize consumed = nghttp2_session_mem_recv2(
           endpoint.session, wire.input.data(), static_cast<std::size_t>(count));
-      if (consumed != count)
-        return false;
-      continue;
+      return consumed == count;
     }
     if (count == 0)
       return false;
@@ -688,9 +797,11 @@ int run_raw(const Workload &workload) noexcept {
         !raw_fill_output(client, client_wire) ||
         !raw_fill_output(server, server_wire) ||
         !raw_write(client_wire, progress) ||
-        !raw_write(server_wire, progress) ||
-        !raw_read(client, client_wire, progress) ||
-        !raw_read(server, server_wire, progress)) {
+         !raw_write(server_wire, progress) ||
+         !raw_read(client, client_wire, progress) ||
+         !raw_read(server, server_wire, progress) ||
+         !raw_consume_readable(client, progress) ||
+         !raw_consume_readable(server, progress)) {
       client.failed = true;
       break;
     }
@@ -834,10 +945,13 @@ int main() {
   HyleHarness hyle;
   RawHarness peer;
   if (std::getenv("HYLE_BENCH_SMOKE") != nullptr) {
-    return hyle.run(normal) == normal.streams &&
-                   peer.run(normal) == normal.streams &&
-                   hyle.run(holdout) == holdout.streams &&
-                   peer.run(holdout) == holdout.streams
+    const int hyle_normal = hyle.run(normal);
+    const int peer_normal = peer.run(normal);
+    const int hyle_holdout = hyle.run(holdout);
+    const int peer_holdout = peer.run(holdout);
+    return hyle_normal == normal.streams && peer_normal == normal.streams &&
+                   hyle_holdout == holdout.streams &&
+                   peer_holdout == holdout.streams
                ? 0
                : 2;
   }

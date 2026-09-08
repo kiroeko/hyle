@@ -20,7 +20,8 @@
     "request": "POST /v1/completions over h2c prior knowledge with Content-Length and an exact byte-validated body",
     "multiplex": "submit one complete fixed request, keep its stream active, submit the second, then allow the server to respond only after both streams are accepted",
     "response": "HTTP status 200 with Content-Length; the complete second response crosses the transport before the first starts, and the client verifies reverse completion order",
-    "flow_control": "automatic window updates disabled; every consumed DATA chunk returns both stream and connection credit",
+    "body_lifetime": "both routes copy received DATA into session or adapter-owned bounded stream storage, expose and validate at most 16 KiB per consumer step outside the protocol callback, and retain capacity only for the charged session lifetime",
+    "flow_control": "automatic window updates disabled; every adapter- or reader-consumed DATA chunk returns both stream and connection credit after validation rather than inside the receive callback",
     "progress": "one external owner dispatches the episode to one persistent worker and waits for all client and server state to retire",
     "failure": "any session, framing, method, path, status, byte, length, ordering, syscall or completion mismatch invalidates the process"
   },
@@ -34,7 +35,7 @@
     {
       "dimension": "ownership-lifetime",
       "candidate": "one external harness owns a persistent Scheduler worker; session and stream objects are created and retired inside every timed episode",
-      "peer": "one external harness owns a persistent worker; session and stream adapter objects are created and retired inside every timed episode",
+      "peer": "one external harness owns a persistent worker; session and stream adapter objects plus owned header/body storage are created and retired inside every timed episode",
       "verdict": "ADAPTER_EQUALIZED"
     },
     {
@@ -52,7 +53,7 @@
     {
       "dimension": "ordering-capacity-backpressure",
       "candidate": "two active streams per pair, serial fixed-body production, reverse response completion, 64 KiB stream windows and the declared connection window",
-      "peer": "the adapter enforces the identical submission sequence, reverse response sequence, windows and explicit consumption credits",
+      "peer": "the adapter enforces the identical submission sequence, reverse response sequence and windows; its bounded reader retains DATA outside callbacks and returns both explicit credits only after each validated consumer chunk",
       "verdict": "ADAPTER_EQUALIZED"
     },
     {

@@ -7,6 +7,7 @@
 #include <openssl/ssl.h>
 #include <openssl/x509_vfy.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstring>
 #include <limits>
@@ -219,28 +220,124 @@ struct FeedResult {
   bool eof = false;
 };
 
+Status consume_sent_ciphertext(BIO *write_bio, std::byte *scratch,
+                               std::size_t bytes) noexcept {
+  while (bytes != 0) {
+    const std::size_t request = (std::min)(bytes, kPumpBytes);
+    const int consumed =
+        BIO_read(write_bio, scratch, static_cast<int>(request));
+    if (consumed <= 0 || static_cast<std::size_t>(consumed) != request) {
+      return Status::Internal(
+          "TLS provider lost pending ciphertext after transport write");
+    }
+    bytes -= request;
+  }
+  return {};
+}
+
+Status retain_received_ciphertext(BIO *read_bio, std::byte *scratch,
+                                  const TransferResult &received) noexcept {
+  if (received.bytes != 0) {
+    const int accepted =
+        BIO_write(read_bio, scratch, static_cast<int>(received.bytes));
+    if (accepted != static_cast<int>(received.bytes)) {
+      return Status::ResourceExhausted(
+          "TLS provider input buffer rejected ciphertext");
+    }
+  }
+  if (!received.status.ok())
+    return received.status;
+  if (received.eof) {
+    return Status::DataLoss(
+        "TLS transport ended while ciphertext output was pending");
+  }
+  if (received.bytes == 0) {
+    return Status::Unavailable(
+        "TLS transport read made no forward progress");
+  }
+  return {};
+}
+
 sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
-                                     BIO *write_bio, std::byte *scratch,
+                                     BIO *read_bio, BIO *write_bio,
+                                     std::byte *scratch,
                                      OperationOptions options) noexcept {
+  bool opportunistic_read_used = false;
   for (;;) {
-    const int produced =
-        BIO_read(write_bio, scratch, static_cast<int>(kPumpBytes));
-    if (produced <= 0)
+    char *pending = nullptr;
+    const long available = BIO_get_mem_data(write_bio, &pending);
+    if (available <= 0)
       co_return Status{};
-    std::size_t offset = 0;
-    while (offset < static_cast<std::size_t>(produced)) {
-      TransferResult sent = co_await socket.write_some(
-          std::span<const std::byte>(
-              scratch + offset, static_cast<std::size_t>(produced) - offset),
-          options);
-      offset += sent.bytes;
-      if (!sent.status.ok())
-        co_return sent.status;
-      if (sent.bytes == 0) {
+    if (pending == nullptr) {
+      co_return Status::Internal(
+          "TLS provider reported pending ciphertext without storage");
+    }
+    const std::size_t pending_size = (std::min)(
+        static_cast<std::size_t>(available), kPumpBytes);
+    const auto output = std::span<const std::byte>(
+        reinterpret_cast<const std::byte *>(pending), pending_size);
+
+    detail::ImmediateTransferResult immediate =
+        detail::tcp_try_write_some(socket, output);
+    if (immediate.state == detail::ImmediateTransferState::kReady) {
+      if (immediate.transfer.bytes != 0) {
+        Status consumed = consume_sent_ciphertext(
+            write_bio, scratch, immediate.transfer.bytes);
+        if (!consumed.ok())
+          co_return consumed;
+      }
+      if (!immediate.transfer.status.ok())
+        co_return immediate.transfer.status;
+      if (immediate.transfer.bytes == 0)
         co_return Status::Unavailable(
             "TLS transport write made no forward progress");
+      // A successful transport write ends the current pressure episode. A
+      // later would-block may again consume one already-arrived peer record;
+      // every reset is therefore backed by real output progress and cannot
+      // create a read/write spin loop.
+      opportunistic_read_used = false;
+      continue;
+    }
+    if (immediate.state == detail::ImmediateTransferState::kUnsupported) {
+      co_return Status::Internal(
+          "TLS TCP transport does not support immediate progress");
+    }
+
+    if (!opportunistic_read_used) {
+      detail::ImmediateTransferResult received =
+          detail::tcp_try_read_some(
+              socket, std::span<std::byte>(scratch, kPumpBytes));
+      if (received.state == detail::ImmediateTransferState::kReady) {
+        Status retained = retain_received_ciphertext(
+            read_bio, scratch, received.transfer);
+        if (!retained.ok())
+          co_return retained;
+        opportunistic_read_used = true;
+        continue;
+      }
+      if (received.state == detail::ImmediateTransferState::kUnsupported) {
+        co_return Status::Internal(
+            "TLS TCP transport does not support immediate progress");
       }
     }
+
+    // The pointer belongs to the memory BIO and remains stable while this
+    // single-owner TLS operation is suspended: no provider/BIO call can run on
+    // the stream until the await completes. Consume only bytes the socket has
+    // actually accepted.
+    TransferResult sent = co_await socket.write_some(output, options);
+    if (sent.bytes != 0) {
+      Status consumed =
+          consume_sent_ciphertext(write_bio, scratch, sent.bytes);
+      if (!consumed.ok())
+        co_return consumed;
+    }
+    if (!sent.status.ok())
+      co_return sent.status;
+    if (sent.bytes == 0)
+      co_return Status::Unavailable(
+          "TLS transport write made no forward progress");
+    opportunistic_read_used = false;
   }
 }
 
@@ -729,7 +826,8 @@ sched::Task<Status> tls_handshake(mem::AllocatorRef allocator,
     const int result = SSL_do_handshake(provider);
     const ProviderWant want = classify(provider, result);
     Status flushed = co_await flush_ciphertext(
-        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+        allocator, stream.socket_, as_bio(stream.read_bio_),
+        as_bio(stream.write_bio_), scratch, options);
     if (!flushed.ok())
       co_return flushed;
     if (want == ProviderWant::kDone) {
@@ -807,7 +905,8 @@ sched::Task<TransferResult> tls_read(mem::AllocatorRef allocator,
         SSL_read_ex(provider, buffer.data(), buffer.size(), &bytes);
     const ProviderWant want = classify(provider, result);
     Status flushed = co_await flush_ciphertext(
-        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+        allocator, stream.socket_, as_bio(stream.read_bio_),
+        as_bio(stream.write_bio_), scratch, options);
     if (!flushed.ok())
       co_return TransferResult{bytes, flushed, false};
     if (result == 1 && bytes != 0) {
@@ -857,7 +956,8 @@ sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
     const ProviderWant want = classify(provider, result);
     completed += bytes;
     Status flushed = co_await flush_ciphertext(
-        allocator, stream.socket_, as_bio(stream.write_bio_), scratch, options);
+        allocator, stream.socket_, as_bio(stream.read_bio_),
+        as_bio(stream.write_bio_), scratch, options);
     if (!flushed.ok())
       co_return TransferResult{completed, flushed, false};
     if (result == 1) {
@@ -908,9 +1008,9 @@ sched::Task<Status> tls_shutdown(mem::AllocatorRef allocator, TlsStream &stream,
     ProviderWant want = ProviderWant::kDone;
     if (result < 0)
       want = classify(provider, result);
-    Status flushed = co_await flush_ciphertext(allocator, stream.socket_,
-                                               as_bio(stream.write_bio_),
-                                               scratch, options.operation);
+    Status flushed = co_await flush_ciphertext(
+        allocator, stream.socket_, as_bio(stream.read_bio_),
+        as_bio(stream.write_bio_), scratch, options.operation);
     if (!flushed.ok())
       co_return flushed;
     if (result == 1 ||

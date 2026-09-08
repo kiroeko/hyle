@@ -49,7 +49,7 @@
       "consumer_key": "inference/io/http2-multiplexed-streams",
       "provenance": {
         "path": "bench/io_http2/consumer_shapes_v1.json",
-        "sha256": "7b15ba4f2553375b698793b0493151ffb51c7bd1e416703d3c9994280204314e"
+        "sha256": "95a5ef244925398f6bf2930ce2a932b05dae4f0e65e234338ad2335757eea403"
       },
       "ownership_topology": {
         "candidate": "One external owner admits HYLE client and server Tasks to one persistent Scheduler/IoContext worker, waits through JoinHandles and retires session state after 64 streams",
@@ -97,7 +97,7 @@
       "consumer_key": "inference/io/http2-two-level-flow-control",
       "provenance": {
         "path": "bench/io_http2/consumer_shapes_v1.json",
-        "sha256": "7b15ba4f2553375b698793b0493151ffb51c7bd1e416703d3c9994280204314e"
+        "sha256": "95a5ef244925398f6bf2930ce2a932b05dae4f0e65e234338ad2335757eea403"
       },
       "ownership_topology": {
         "candidate": "The same persistent HYLE owner consumes 256 KiB bodies through public bounded body readers and returns stream and connection credit",
@@ -163,6 +163,12 @@
     }
   },
   "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "PROVISIONAL_ARCHETYPE",
+      "semantic_matrix": "bench/io_http2/consumer_shapes_v1.json",
+      "semantic_matrix_sha256": "95a5ef244925398f6bf2930ce2a932b05dae4f0e65e234338ad2335757eea403"
+    },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
       "sampling_topology": "single-logical-cpu",

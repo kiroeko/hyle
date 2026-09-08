@@ -50,6 +50,22 @@ struct [[nodiscard]] TransferResult {
 
 namespace detail {
 
+// Internal protocol-composition result for an operation that must never wait.
+// kReady includes bytes, clean EOF, and a typed terminal error; kWouldBlock is
+// ordinary backpressure rather than an error. kUnsupported lets a type-erased
+// transport retain its portable shape without pretending every provider has an
+// optimistic path. This is deliberately not an ordinary user-facing IO API.
+enum class ImmediateTransferState : std::uint8_t {
+  kReady,
+  kWouldBlock,
+  kUnsupported,
+};
+
+struct ImmediateTransferResult {
+  TransferResult transfer{};
+  ImmediateTransferState state = ImmediateTransferState::kReady;
+};
+
 enum class NativeOperationDomain : std::uint8_t {
   kPosix,
   kWin32,

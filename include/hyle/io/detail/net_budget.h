@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <utility>
 
@@ -161,6 +162,7 @@ struct BudgetSendBuffersOp {
   mem::AllocatorRef allocator;
   OperationOptions options{};
   BudgetState state{};
+  alignas(16) std::byte message_scratch[Proactor::kDatagramScratch]{};
 
   bool await_ready() noexcept {
     state = BudgetState{proactor, allocator, options};
@@ -168,7 +170,8 @@ struct BudgetSendBuffersOp {
   }
   bool await_suspend(std::coroutine_handle<>) noexcept {
     return state.await_suspend([&](std::uint64_t token) noexcept {
-      return proactor->submit_send_buffers(fd, buffers, count, token);
+      return proactor->submit_send_buffers(fd, buffers, count,
+                                           message_scratch, token);
     });
   }
   std::int64_t await_resume() noexcept { return state.await_resume(); }

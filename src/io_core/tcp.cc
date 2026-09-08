@@ -100,6 +100,27 @@ Status handle_error(const char* operation) noexcept {
 #endif
 }
 
+Status configure_adopted_socket(std::intptr_t fd) noexcept {
+#if HYLE_OS_WINDOWS
+  (void)fd;
+  return {};
+#else
+#  if HYLE_OS_MACOS
+  const int no_sigpipe = 1;
+  if (::setsockopt(static_cast<int>(fd), SOL_SOCKET, SO_NOSIGPIPE,
+                   &no_sigpipe, sizeof(no_sigpipe)) != 0) {
+    return socket_error("set SO_NOSIGPIPE on adopted TCP socket");
+  }
+#  endif
+  const int flags = ::fcntl(static_cast<int>(fd), F_GETFL, 0);
+  if (flags < 0 ||
+      ::fcntl(static_cast<int>(fd), F_SETFL, flags | O_NONBLOCK) != 0) {
+    return socket_error("set adopted TCP socket nonblocking");
+  }
+  return {};
+#endif
+}
+
 Status set_socket_integer(std::intptr_t fd, int level, int option, int value,
                           const char* operation) noexcept {
 #if HYLE_OS_WINDOWS
@@ -464,6 +485,11 @@ Result<TcpStream> TcpStream::adopt(IoContext& io, unsigned owner_worker,
     close_fd(native_socket);
     return make_unexpected(Status::OutOfRange("TCP owner worker is out of range"));
   }
+  Status configured = configure_adopted_socket(native_socket);
+  if (!configured.ok()) {
+    close_fd(native_socket);
+    return make_unexpected(std::move(configured));
+  }
   if (!detail::IoContextAccess::bind_handle(io, owner_worker, native_socket)) {
     Status status = handle_error("associate adopted TCP socket with IO shard");
     close_fd(native_socket);
@@ -475,6 +501,129 @@ Result<TcpStream> TcpStream::adopt(IoContext& io, unsigned owner_worker,
 std::intptr_t TcpStream::release_native_handle() noexcept {
   io_ = nullptr;
   return std::exchange(fd_, -1);
+}
+
+detail::ImmediateTransferResult
+detail::tcp_try_read_some(TcpStream &stream,
+                          std::span<std::byte> buffer) noexcept {
+  HYLE_FATAL_ASSERT(stream.valid() &&
+                    sched::current_worker_index() ==
+                        static_cast<int>(stream.owner_worker()));
+  if (buffer.empty())
+    return {};
+
+#if HYLE_OS_WINDOWS
+  // HYLE accepts host-adopted sockets and therefore cannot assume FIONBIO. A
+  // zero-time readiness query makes the following recv nonblocking without
+  // changing the embedding host's socket mode. With the single-reader contract
+  // no competing consumer can drain the readiness between these two calls.
+  WSAPOLLFD descriptor{};
+  descriptor.fd = static_cast<SOCKET>(stream.native_handle());
+  descriptor.events = POLLRDNORM;
+  const int ready = ::WSAPoll(&descriptor, 1, 0);
+  if (ready == 0) {
+    return {{}, ImmediateTransferState::kWouldBlock};
+  }
+  if (ready == SOCKET_ERROR) {
+    const int error = ::WSAGetLastError();
+    return {transfer_from_native(-static_cast<std::int64_t>(error),
+                                 kNetworkNativeDomain,
+                                 "TCP immediate read readiness", true),
+            ImmediateTransferState::kReady};
+  }
+  const int requested = static_cast<int>((std::min)(
+      buffer.size(), static_cast<std::size_t>((std::numeric_limits<int>::max)())));
+  const int received = ::recv(descriptor.fd,
+                              reinterpret_cast<char *>(buffer.data()),
+                              requested, 0);
+  if (received == SOCKET_ERROR) {
+    const int error = ::WSAGetLastError();
+    if (error == WSAEWOULDBLOCK)
+      return {{}, ImmediateTransferState::kWouldBlock};
+    return {transfer_from_native(-static_cast<std::int64_t>(error),
+                                 kNetworkNativeDomain,
+                                 "TCP immediate read", true),
+            ImmediateTransferState::kReady};
+  }
+  return {transfer_from_native(received, kNetworkNativeDomain,
+                               "TCP immediate read", true),
+          ImmediateTransferState::kReady};
+#else
+  ssize_t received;
+  do {
+    received = ::recv(static_cast<int>(stream.native_handle()), buffer.data(),
+                      buffer.size(), MSG_DONTWAIT);
+  } while (received < 0 && errno == EINTR);
+  if (received < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+    return {{}, ImmediateTransferState::kWouldBlock};
+  const std::int64_t native =
+      received < 0 ? -static_cast<std::int64_t>(errno)
+                   : static_cast<std::int64_t>(received);
+  return {transfer_from_native(native, kNetworkNativeDomain,
+                               "TCP immediate read", true),
+          ImmediateTransferState::kReady};
+#endif
+}
+
+detail::ImmediateTransferResult
+detail::tcp_try_write_some(TcpStream &stream,
+                           std::span<const std::byte> buffer) noexcept {
+  HYLE_FATAL_ASSERT(stream.valid() &&
+                    sched::current_worker_index() ==
+                        static_cast<int>(stream.owner_worker()));
+  if (buffer.empty())
+    return {};
+
+#if HYLE_OS_WINDOWS
+  WSAPOLLFD descriptor{};
+  descriptor.fd = static_cast<SOCKET>(stream.native_handle());
+  descriptor.events = POLLWRNORM;
+  const int ready = ::WSAPoll(&descriptor, 1, 0);
+  if (ready == 0)
+    return {{}, ImmediateTransferState::kWouldBlock};
+  if (ready == SOCKET_ERROR) {
+    const int error = ::WSAGetLastError();
+    return {transfer_from_native(-static_cast<std::int64_t>(error),
+                                 kNetworkNativeDomain,
+                                 "TCP immediate write readiness", false),
+            ImmediateTransferState::kReady};
+  }
+  const int requested = static_cast<int>((std::min)(
+      buffer.size(), static_cast<std::size_t>((std::numeric_limits<int>::max)())));
+  const int written = ::send(descriptor.fd,
+                             reinterpret_cast<const char *>(buffer.data()),
+                             requested, 0);
+  if (written == SOCKET_ERROR) {
+    const int error = ::WSAGetLastError();
+    if (error == WSAEWOULDBLOCK)
+      return {{}, ImmediateTransferState::kWouldBlock};
+    return {transfer_from_native(-static_cast<std::int64_t>(error),
+                                 kNetworkNativeDomain,
+                                 "TCP immediate write", false),
+            ImmediateTransferState::kReady};
+  }
+  return {transfer_from_native(written, kNetworkNativeDomain,
+                               "TCP immediate write", false),
+          ImmediateTransferState::kReady};
+#else
+  int flags = MSG_DONTWAIT;
+#  if defined(MSG_NOSIGNAL)
+  flags |= MSG_NOSIGNAL;
+#  endif
+  ssize_t written;
+  do {
+    written = ::send(static_cast<int>(stream.native_handle()), buffer.data(),
+                     buffer.size(), flags);
+  } while (written < 0 && errno == EINTR);
+  if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+    return {{}, ImmediateTransferState::kWouldBlock};
+  const std::int64_t native =
+      written < 0 ? -static_cast<std::int64_t>(errno)
+                  : static_cast<std::int64_t>(written);
+  return {transfer_from_native(native, kNetworkNativeDomain,
+                               "TCP immediate write", false),
+          ImmediateTransferState::kReady};
+#endif
 }
 
 Status TcpStream::set_nodelay(bool enabled) noexcept {

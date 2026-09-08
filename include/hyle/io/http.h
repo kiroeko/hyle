@@ -393,6 +393,11 @@ http_transport_write_all(mem::AllocatorRef, HttpTransport &,
 HYLE_IO_HTTP_API sched::Task<Status>
 http_transport_shutdown(mem::AllocatorRef, HttpTransport &,
                         OperationOptions) noexcept;
+HYLE_IO_HTTP_API ImmediateTransferResult
+http_transport_try_read(HttpTransport &, std::span<std::byte>) noexcept;
+HYLE_IO_HTTP_API ImmediateTransferResult
+http_transport_try_write(HttpTransport &,
+                         std::span<const std::byte>) noexcept;
 } // namespace detail
 
 // Owning type-erased byte transport shared by HTTP/1 and HTTP/2. std::variant
@@ -449,6 +454,12 @@ private:
   friend HYLE_IO_HTTP_API sched::Task<Status>
   detail::http_transport_shutdown(mem::AllocatorRef, HttpTransport &,
                                   OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API detail::ImmediateTransferResult
+  detail::http_transport_try_read(HttpTransport &,
+                                  std::span<std::byte>) noexcept;
+  friend HYLE_IO_HTTP_API detail::ImmediateTransferResult
+  detail::http_transport_try_write(HttpTransport &,
+                                   std::span<const std::byte>) noexcept;
 
 #if defined(HYLE_IO_TLS)
   std::variant<std::monostate, TcpStream, TlsStream> stream_{};

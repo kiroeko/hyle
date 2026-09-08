@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -9,6 +10,19 @@
 #include <string>
 #include <string_view>
 
+#include "hyle/core/environment.h"
+
+#if HYLE_OS_WINDOWS
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
+#else
+#  include <fcntl.h>
+#  include <sys/socket.h>
+#  include <unistd.h>
+#endif
+
 #include "hyle/io/http2.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -16,6 +30,7 @@
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/sync.h"
 
 using hyle::Status;
 using hyle::io::AddressFamily;
@@ -34,6 +49,7 @@ using hyle::io::TcpStream;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
+using hyle::sched::Event;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::Task;
@@ -64,9 +80,10 @@ void *oom_reallocate(void *, void *, std::size_t, std::size_t,
 }
 
 Task<Status> read_body(AllocatorRef, hyle::io::Http2BodyReader &body,
-                       std::string *output) noexcept {
+                       std::string *output,
+                       std::size_t max_bytes = 4096) noexcept {
   for (;;) {
-    auto next = co_await body.read(4096, budget());
+    auto next = co_await body.read(max_bytes, budget());
     if (!next.has_value())
       co_return std::move(next).error();
     output->append(reinterpret_cast<const char *>(next->bytes.data()),
@@ -345,6 +362,162 @@ TEST(IoHttp2, ConsumerProgressDrivesBothFlowControlWindows) {
   EXPECT_EQ(result->server_bytes.load(), result->request.size());
   EXPECT_EQ(result->client_bytes.load(), result->response.size());
 }
+
+#if !HYLE_OS_WINDOWS
+constexpr std::size_t kDuplexStreams = 4;
+
+struct DuplexProgressResult {
+  std::string request = std::string(256 * 1024, 'd');
+  std::string response = std::string(256 * 1024, 'u');
+  std::array<std::string, kDuplexStreams> requests;
+  std::array<std::string, kDuplexStreams> responses;
+  std::array<Http2StreamId, kDuplexStreams> submitted{};
+  std::array<Http2StreamId, kDuplexStreams> completed{};
+  std::atomic<bool> server_ok{false};
+  std::atomic<bool> client_ok{false};
+  Event client_consumed;
+};
+
+bool make_small_socket_pair(std::array<int, 2> &sockets) noexcept {
+  sockets = {-1, -1};
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.data()) != 0)
+    return false;
+  constexpr int kSocketBufferBytes = 4 * 1024;
+  for (const int socket : sockets) {
+    const int flags = ::fcntl(socket, F_GETFL, 0);
+    if (flags < 0 || ::fcntl(socket, F_SETFL, flags | O_NONBLOCK) != 0 ||
+        ::setsockopt(socket, SOL_SOCKET, SO_SNDBUF, &kSocketBufferBytes,
+                     sizeof(kSocketBufferBytes)) != 0 ||
+        ::setsockopt(socket, SOL_SOCKET, SO_RCVBUF, &kSocketBufferBytes,
+                     sizeof(kSocketBufferBytes)) != 0) {
+      for (int &owned : sockets) {
+        if (owned >= 0)
+          (void)::close(owned);
+        owned = -1;
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+Task<int> duplex_progress_server(AllocatorRef allocator, TcpStream transport,
+                                 DuplexProgressResult *result) noexcept {
+  hyle::io::Http2Limits limits;
+  limits.connection_receive_window = 65'535;
+  auto made =
+      Http2ServerSession::create(allocator, std::move(transport), limits);
+  if (!made.has_value())
+    co_return 0;
+  Http2ServerSession session = std::move(*made);
+  for (std::size_t base = 0; base < kDuplexStreams; base += 2) {
+    std::array<Http2StreamId, 2> ids{};
+    for (std::size_t offset = 0; offset < ids.size(); ++offset) {
+      auto incoming = co_await session.accept(budget());
+      if (!incoming.has_value() || !incoming->has_value())
+        co_return 0;
+      Http2IncomingRequest request = std::move(**incoming);
+      ids[offset] = request.stream_id;
+      Status consumed = co_await read_body(
+          allocator, request.body, &result->requests[base + offset], 16 * 1024);
+      if (!consumed.ok())
+        co_return 0;
+    }
+    for (std::size_t offset = ids.size(); offset-- != 0;) {
+      Status sent = co_await session.send_response(
+          ids[offset], Http2ResponseHead{}, bytes(result->response), budget());
+      if (!sent.ok())
+        co_return 0;
+    }
+  }
+  result->server_ok.store(true, std::memory_order_release);
+  // The protocol-under-test is a persistent session. Keep it alive until the
+  // peer has consumed the final DATA/END_STREAM; otherwise unread WINDOW_UPDATE
+  // frames can turn socket destruction into an unrelated abortive-close test.
+  (void)result->client_consumed.wait_for(hyle::time::Duration(5'000'000'000));
+  co_return 0;
+}
+
+Task<int> duplex_progress_client(AllocatorRef allocator, TcpStream transport,
+                                 DuplexProgressResult *result) noexcept {
+  hyle::io::Http2Limits limits;
+  limits.connection_receive_window = 65'535;
+  auto made =
+      Http2ClientSession::create(allocator, std::move(transport), limits);
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+  Http2RequestHead head{.method = "POST",
+                        .scheme = "http",
+                        .authority = "localhost",
+                        .path = "/duplex-progress"};
+  for (std::size_t base = 0; base < kDuplexStreams; base += 2) {
+    for (std::size_t offset = 0; offset < 2; ++offset) {
+      auto sent = co_await session.send_request(head, bytes(result->request),
+                                                budget());
+      if (!sent.has_value())
+        co_return 0;
+      result->submitted[base + offset] = *sent;
+    }
+    for (std::size_t offset = 0; offset < 2; ++offset) {
+      auto incoming = co_await session.next_response(budget());
+      if (!incoming.has_value() || !incoming->has_value())
+        co_return 0;
+      Http2IncomingResponse response = std::move(**incoming);
+      result->completed[base + offset] = response.stream_id;
+      Status consumed = co_await read_body(
+          allocator, response.body, &result->responses[base + offset],
+          16 * 1024);
+      if (!consumed.ok())
+        co_return 0;
+    }
+  }
+  result->client_ok.store(true, std::memory_order_release);
+  result->client_consumed.signal();
+  co_return 0;
+}
+
+TEST(IoHttp2, DuplexProgressSurvivesSmallSocketAndFlowControl) {
+  std::array<int, 2> sockets{};
+  ASSERT_TRUE(make_small_socket_pair(sockets));
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto client_transport = TcpStream::adopt(io, kOwner, sockets[0]);
+  sockets[0] = -1;
+  ASSERT_TRUE(client_transport.has_value());
+  auto server_transport = TcpStream::adopt(io, kOwner, sockets[1]);
+  sockets[1] = -1;
+  ASSERT_TRUE(server_transport.has_value());
+
+  auto result = std::make_unique<DuplexProgressResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task = duplex_progress_server(system_allocator(),
+                                         std::move(*server_transport),
+                                         result.get());
+  client->task = duplex_progress_client(system_allocator(),
+                                         std::move(*client_transport),
+                                         result.get());
+  Fiber server_fiber(kDefaultStackSize, drive, server.get());
+  Fiber client_fiber(kDefaultStackSize, drive, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+
+  EXPECT_TRUE(result->server_ok.load());
+  EXPECT_TRUE(result->client_ok.load());
+  for (std::size_t index = 0; index < kDuplexStreams; ++index) {
+    EXPECT_EQ(result->requests[index], result->request);
+    EXPECT_EQ(result->responses[index], result->response);
+  }
+  for (std::size_t base = 0; base < kDuplexStreams; base += 2) {
+    EXPECT_EQ(result->completed[base], result->submitted[base + 1]);
+    EXPECT_EQ(result->completed[base + 1], result->submitted[base]);
+  }
+}
+#endif
 
 struct ReuseResult {
   std::atomic<std::size_t> server_count{0};

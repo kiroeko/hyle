@@ -1073,12 +1073,15 @@ bool claim_direction(Http2SessionState &state, bool &busy) noexcept {
   return true;
 }
 
-void release_direction(Http2SessionState &state, bool &busy) noexcept {
+void release_direction(Http2SessionState &state, bool &busy,
+                       bool notify_waiters = true) noexcept {
   {
     std::lock_guard<util::SpinLock> lock(state.monitor);
     busy = false;
-    ++state.change_epoch;
-    state.changed.notify_all();
+    if (notify_waiters) {
+      ++state.change_epoch;
+      state.changed.notify_all();
+    }
   }
 }
 
@@ -1086,6 +1089,61 @@ struct ProgressResult {
   Status status{};
   bool progressed = false;
 };
+
+ProgressResult process_received(Http2SessionState &state,
+                                TransferResult received) noexcept {
+  bool progressed = false;
+  if (received.bytes > state.input.capacity) {
+    Status failure =
+        Status::Internal("HTTP/2 transport over-reported read progress");
+    state.fail(failure);
+    return {failure, false};
+  }
+  if (received.bytes != 0) {
+    std::size_t offset = 0;
+    while (offset < received.bytes) {
+      const nghttp2_ssize used = nghttp2_session_mem_recv2(
+          state.session, state.input.data + offset, received.bytes - offset);
+      if (used <= 0) {
+        Status failure = status_from_nghttp2(static_cast<int>(used),
+                                             "nghttp2_session_mem_recv2");
+        state.fail(failure);
+        return {failure, progressed};
+      }
+      offset += static_cast<std::size_t>(used);
+    }
+    state.collect_garbage();
+    progressed = true;
+  }
+  if (received.eof) {
+    state.peer_closed = true;
+    state.notify();
+  }
+  if (!received.ok()) {
+    const Status failure = received.status;
+    if (!failure.IsCancelled() && !failure.IsDeadlineExceeded())
+      state.fail(failure.WithContext("HTTP/2 transport read"));
+    return {failure, progressed};
+  }
+  return {Status::Ok(), progressed || received.eof};
+}
+
+ProgressResult try_read_once(Http2SessionState &state) noexcept {
+  if (!claim_direction(state, state.read_busy))
+    return {};
+  const ImmediateTransferResult attempted = detail::http_transport_try_read(
+      state.transport,
+      std::span<std::byte>(reinterpret_cast<std::byte *>(state.input.data),
+                           state.input.capacity));
+  ProgressResult result;
+  if (attempted.state == ImmediateTransferState::kReady)
+    result = process_received(state, attempted.transfer);
+  // The immediate attempt cannot suspend, so no same-owner fiber can observe
+  // the temporary claim. If it found no protocol change there is no waiter to
+  // wake and no epoch to publish.
+  release_direction(state, state.read_busy, result.progressed);
+  return result;
+}
 
 void complete_wire_frame(Http2SessionState &state) noexcept {
   state.flushed_wire_epoch =
@@ -1149,8 +1207,28 @@ sched::Task<ProgressResult> flush_once(mem::AllocatorRef allocator,
         reinterpret_cast<const std::byte *>(state.wire.data) +
             state.wire_offset,
         state.wire.size - state.wire_offset);
-    TransferResult sent =
-        co_await state.transport.write_some(allocator, bytes, options);
+    TransferResult sent;
+    const ImmediateTransferResult attempted =
+        detail::http_transport_try_write(state.transport, bytes);
+    if (attempted.state == ImmediateTransferState::kReady) {
+      sent = attempted.transfer;
+    } else if (attempted.state == ImmediateTransferState::kWouldBlock) {
+      // Both peers may be backpressured on writes. Drain one already-arrived
+      // input chunk before parking this direction; if there is no input, the
+      // ordinary async write remains the correct readiness wait.
+      ProgressResult received = try_read_once(state);
+      if (!received.status.ok()) {
+        release_direction(state, state.write_busy);
+        co_return received;
+      }
+      if (received.progressed) {
+        release_direction(state, state.write_busy);
+        co_return ProgressResult{Status::Ok(), true};
+      }
+      sent = co_await state.transport.write_some(allocator, bytes, options);
+    } else {
+      sent = co_await state.transport.write_some(allocator, bytes, options);
+    }
     if (sent.bytes > bytes.size()) {
       Status failure =
           Status::Internal("HTTP/2 transport over-reported write progress");
@@ -1192,44 +1270,9 @@ sched::Task<ProgressResult> read_once(mem::AllocatorRef allocator,
       std::span<std::byte>(reinterpret_cast<std::byte *>(state.input.data),
                            state.input.capacity),
       options);
-  bool progressed = false;
-  if (received.bytes > state.input.capacity) {
-    Status failure =
-        Status::Internal("HTTP/2 transport over-reported read progress");
-    state.fail(failure);
-    release_direction(state, state.read_busy);
-    co_return ProgressResult{failure, false};
-  }
-  if (received.bytes != 0) {
-    std::size_t offset = 0;
-    while (offset < received.bytes) {
-      const nghttp2_ssize used = nghttp2_session_mem_recv2(
-          state.session, state.input.data + offset, received.bytes - offset);
-      if (used <= 0) {
-        Status failure = status_from_nghttp2(static_cast<int>(used),
-                                             "nghttp2_session_mem_recv2");
-        state.fail(failure);
-        release_direction(state, state.read_busy);
-        co_return ProgressResult{failure, progressed};
-      }
-      offset += static_cast<std::size_t>(used);
-    }
-    state.collect_garbage();
-    progressed = true;
-  }
-  if (received.eof) {
-    state.peer_closed = true;
-    state.notify();
-  }
-  if (!received.ok()) {
-    const Status failure = received.status;
-    if (!failure.IsCancelled() && !failure.IsDeadlineExceeded())
-      state.fail(failure.WithContext("HTTP/2 transport read"));
-    release_direction(state, state.read_busy);
-    co_return ProgressResult{failure, progressed};
-  }
+  ProgressResult result = process_received(state, received);
   release_direction(state, state.read_busy);
-  co_return ProgressResult{Status::Ok(), progressed || received.eof};
+  co_return result;
 }
 
 template <class Ready>
@@ -1610,6 +1653,11 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
   Http2StreamState *stream = reader.stream_;
   if (stream != nullptr && stream->generation == reader.generation_) {
     const std::size_t unread = stream->inbound.size - stream->inbound_start;
+    const std::size_t delivered =
+        stream->body_borrowed ? stream->borrowed_bytes : 0;
+    const bool body_fully_delivered =
+        stream->inbound_end &&
+        stream->inbound_start + delivered == stream->inbound.size;
     if (unread != 0 && state->session != nullptr) {
       if (!stream->closed)
         (void)nghttp2_session_consume_stream(state->session, stream->id,
@@ -1619,7 +1667,7 @@ void Http2SessionAccess::release(Http2BodyReader &reader) noexcept {
     }
     stream->inbound_start = 0;
     stream->inbound.size = 0;
-    if (!stream->inbound_end && !stream->closed && state->session != nullptr) {
+    if (!body_fully_delivered && !stream->closed && state->session != nullptr) {
       stream->local_reset = true;
       stream->reset_code = static_cast<std::uint32_t>(Http2Error::kCancel);
       (void)nghttp2_submit_rst_stream(state->session, NGHTTP2_FLAG_NONE,
@@ -1970,15 +2018,14 @@ sched::Task<Status> http2_body_finish(mem::AllocatorRef allocator,
   state.notify();
   auto complete = [&]() noexcept {
     return (stream.output_done && stream.flushed_epoch >= epoch) ||
-           stream.closed || stream.reset_received || stream.local_reset ||
-           !stream.failure.ok();
+           stream.reset_received || stream.local_reset || !stream.failure.ok();
   };
   Status driven =
       co_await detail::drive_until(allocator, state, complete, options);
   const bool delivered = stream.output_done && stream.flushed_epoch >= epoch;
   if (!driven.ok() ||
-      (!delivered && (stream.closed || stream.reset_received ||
-                      stream.local_reset || !stream.failure.ok()))) {
+      (!delivered && (stream.reset_received || stream.local_reset ||
+                      !stream.failure.ok()))) {
     Status failure = !driven.ok() ? driven
                      : !stream.failure.ok()
                          ? stream.failure
@@ -2145,6 +2192,64 @@ sched::Task<Status> write_source(mem::AllocatorRef allocator,
   }
 }
 
+sched::Task<Status>
+send_submitted_fixed(mem::AllocatorRef allocator,
+                     detail::Http2SessionState &state,
+                     detail::Http2StreamState &stream,
+                     std::span<const std::byte> body,
+                     OperationOptions options) noexcept {
+  // A fixed body is one logical submission. Feed its borrowed bytes and EOF to
+  // nghttp2 before the first drive so HEADERS, DATA and END_STREAM share one
+  // protocol lifecycle rather than constructing a public streaming writer and
+  // driving the same session three times.
+  ++stream.operation_pins;
+  stream.writer_busy = true;
+  stream.output_finishing = true;
+  stream.outbound_data = body.data();
+  stream.outbound_size = body.size();
+  stream.outbound_offset = 0;
+  stream.outbound_total = body.size();
+  const std::uint64_t epoch = ++stream.outbound_epoch;
+  const int resumed = nghttp2_session_resume_data(state.session, stream.id);
+  if (resumed != 0 && resumed != NGHTTP2_ERR_INVALID_ARGUMENT) {
+    const Status failure =
+        detail::status_from_nghttp2(resumed, "nghttp2_session_resume_data");
+    (void)detail::reset_stream(state, stream, Http2Error::kCancel);
+    stream.outbound_data = nullptr;
+    stream.outbound_size = stream.outbound_offset = 0;
+    stream.writer_busy = false;
+    --stream.operation_pins;
+    state.maybe_retire(&stream);
+    state.collect_garbage();
+    co_return failure;
+  }
+  state.notify();
+  auto complete = [&]() noexcept {
+    return (stream.output_done && stream.flushed_epoch >= epoch) ||
+           stream.reset_received || stream.local_reset || !stream.failure.ok();
+  };
+  Status driven =
+      co_await detail::drive_until(allocator, state, complete, options);
+  const bool delivered = stream.output_done && stream.flushed_epoch >= epoch;
+  Status result = Status::Ok();
+  if (!driven.ok() ||
+      (!delivered && (stream.reset_received || stream.local_reset ||
+                      !stream.failure.ok()))) {
+    result = !driven.ok() ? std::move(driven)
+             : !stream.failure.ok()
+                 ? stream.failure
+                 : detail::stream_reset_status(stream.reset_code);
+    (void)detail::reset_stream(state, stream, Http2Error::kCancel);
+  }
+  stream.outbound_data = nullptr;
+  stream.outbound_size = stream.outbound_offset = 0;
+  stream.writer_busy = false;
+  --stream.operation_pins;
+  state.maybe_retire(&stream);
+  state.collect_garbage();
+  co_return result;
+}
+
 } // namespace
 
 Http2ServerSession::~Http2ServerSession() { release_session_owner(state_); }
@@ -2270,15 +2375,21 @@ sched::Task<Status> http2_server_send_fixed(mem::AllocatorRef allocator,
                                             const Http2ResponseHead &head,
                                             std::span<const std::byte> body,
                                             OperationOptions options) noexcept {
-  Result<Http2BodyWriter> started = co_await http2_server_start_response(
-      allocator, session, id, head, body.size(), options);
-  if (!started.has_value())
-    co_return std::move(started).error();
-  Http2BodyWriter writer = std::move(*started);
-  Status written = co_await writer.write(body, options);
-  if (!written.ok())
-    co_return written;
-  co_return co_await writer.finish({}, options);
+  detail::Http2SessionState *state = session.state_;
+  if (state == nullptr || !id.valid())
+    co_return Status::InvalidArgument("invalid HTTP/2 response stream");
+  Status operation = detail::check_operation(*state, options);
+  if (!operation.ok())
+    co_return operation;
+  detail::Http2StreamState *stream = state->find(id.value());
+  if (stream == nullptr || !stream->head_delivered)
+    co_return Status::NotFound("HTTP/2 request stream is not accepted");
+  Status submitted =
+      detail::submit_response_head(*state, *stream, head, body.size());
+  if (!submitted.ok())
+    co_return submitted;
+  co_return co_await send_submitted_fixed(allocator, *state, *stream, body,
+                                          options);
 }
 
 sched::Task<Status>
@@ -2407,17 +2518,23 @@ sched::Task<Result<Http2StreamId>> http2_client_send_fixed(
     mem::AllocatorRef allocator, Http2ClientSession &session,
     const Http2RequestHead &head, std::span<const std::byte> body,
     OperationOptions options) noexcept {
-  Result<Http2OutgoingRequest> started = co_await http2_client_start_request(
-      allocator, session, head, body.size(), options);
-  if (!started.has_value())
-    co_return make_unexpected(std::move(started).error());
-  Http2StreamId id = started->stream_id;
-  Status written = co_await started->body.write(body, options);
-  if (!written.ok())
-    co_return make_unexpected(std::move(written));
-  Status finished = co_await started->body.finish({}, options);
-  if (!finished.ok())
-    co_return make_unexpected(std::move(finished));
+  detail::Http2SessionState *state = session.state_;
+  if (state == nullptr || state->server)
+    co_return make_unexpected(
+        Status::FailedPrecondition("invalid HTTP/2 client session"));
+  Status operation = detail::check_operation(*state, options);
+  if (!operation.ok())
+    co_return make_unexpected(std::move(operation));
+  Result<detail::Http2StreamState *> submitted =
+      detail::submit_request_head(*state, head, body.size());
+  if (!submitted.has_value())
+    co_return make_unexpected(std::move(submitted).error());
+  detail::Http2StreamState *stream = *submitted;
+  const Http2StreamId id = *Http2StreamId::from_value(stream->id);
+  Status sent =
+      co_await send_submitted_fixed(allocator, *state, *stream, body, options);
+  if (!sent.ok())
+    co_return make_unexpected(std::move(sent));
   co_return id;
 }
 

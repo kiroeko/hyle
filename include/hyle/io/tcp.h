@@ -88,7 +88,10 @@ class TcpStream {
       IoContext& io, unsigned owner_worker,
       AddressFamily family = AddressFamily::kIpv4) noexcept;
   // Adopt ownership of a socket supplied by an embedding host and associate it
-  // with this context's owner shard. On failure the native socket is closed.
+  // with this context's owner shard. HYLE normalizes the owned POSIX socket to
+  // nonblocking mode (and suppresses per-write SIGPIPE where the OS requires
+  // a socket option); the caller must not continue using the transferred
+  // handle. On failure the native socket is closed.
   HYLE_IO_API static Result<TcpStream> adopt(IoContext& io,
                                              unsigned owner_worker,
                                              std::intptr_t native_socket) noexcept;
@@ -321,6 +324,20 @@ class TcpStream {
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;
 };
+
+namespace detail {
+
+// Protocol-engine seam: attempt one receive on an already-owned socket without
+// waiting or allocating. Ordinary users should use TcpStream::read_some(); this
+// exists so a full-duplex protocol can drain bytes that are already queued before
+// it blocks on the opposite direction.
+HYLE_IO_API ImmediateTransferResult
+tcp_try_read_some(TcpStream &stream, std::span<std::byte> buffer) noexcept;
+HYLE_IO_API ImmediateTransferResult
+tcp_try_write_some(TcpStream &stream,
+                   std::span<const std::byte> buffer) noexcept;
+
+} // namespace detail
 
 // A listening TCP socket. co_await accept() yields the next connection as a
 // TcpStream bound to `accept_owner` (round-robin across workers by default so new

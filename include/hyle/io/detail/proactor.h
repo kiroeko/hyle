@@ -170,7 +170,8 @@ class Proactor {
       std::uint32_t count, std::uint64_t user_data) noexcept;
   HYLE_IO_API bool submit_send_buffers(
       std::intptr_t fd, detail::NativeBuffer* buffers,
-      std::uint32_t count, std::uint64_t user_data) noexcept;
+      std::uint32_t count, void* message_scratch,
+      std::uint64_t user_data) noexcept;
   // accept a connection on listening `fd`. `addr`/`addrlen` receive the peer
   // address (may be null to ignore); both must outlive the completion. The
   // completion result is the accepted fd (>=0) or a negative errno.

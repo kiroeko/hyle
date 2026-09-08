@@ -558,6 +558,7 @@ bool Proactor::submit_recv_buffers(std::intptr_t fd,
 bool Proactor::submit_send_buffers(std::intptr_t fd,
                                    detail::NativeBuffer* buffers,
                                    std::uint32_t count,
+                                   void*,
                                    std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || buffers == nullptr || count == 0 ||
       count > kMaxBufferSequenceSegments)
@@ -1015,6 +1016,18 @@ static_assert(offsetof(detail::NativeBuffer, length) ==
 // that PendingOp.buf is an iovec array rather than one byte buffer.
 constexpr std::uint8_t kRecvMsgBuffers = 254;
 constexpr std::uint8_t kSendMsgBuffers = 255;
+
+msghdr* build_stream_send_message(void* scratch,
+                                  detail::NativeBuffer* buffers,
+                                  std::uint32_t count) noexcept {
+  static_assert(sizeof(msghdr) <= Proactor::kDatagramScratch,
+                "kDatagramScratch too small for msghdr");
+  auto* message = static_cast<msghdr*>(scratch);
+  std::memset(message, 0, sizeof(*message));
+  message->msg_iov = reinterpret_cast<iovec*>(buffers);
+  message->msg_iovlen = count;
+  return message;
+}
 
 int sys_io_uring_setup(unsigned entries, io_uring_params* p) noexcept {
   return static_cast<int>(::syscall(__NR_io_uring_setup, entries, p));
@@ -1614,7 +1627,9 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         ssize_t read = ::recvmsg(fd, static_cast<msghdr*>(op.buf), 0);
         return read < 0 ? -errno : static_cast<std::int64_t>(read);
       } else if (op.opcode == kSendMsgBuffers) {
-        ssize_t written = ::sendmsg(fd, static_cast<msghdr*>(op.buf), 0);
+        ssize_t written =
+            ::sendmsg(fd, static_cast<msghdr*>(op.buf),
+                      static_cast<int>(op.flags));
         return written < 0 ? -errno : static_cast<std::int64_t>(written);
       } else if (op.opcode == IORING_OP_RECVMSG) {
         socklen_t al = static_cast<socklen_t>(op.addr_cap);
@@ -2619,23 +2634,41 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  const std::uint32_t safe_flags = flags | MSG_NOSIGNAL;
   if (impl_->backend == Impl::kEpoll) {
     return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLOUT,
                            IORING_OP_SEND, const_cast<void*>(buf), len, nullptr,
-                           0, nullptr, flags, user_data);
+                           0, nullptr, safe_flags, user_data);
   }
   return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_SEND,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
-                    flags);
+                    safe_flags);
 }
 
 bool Proactor::submit_send_buffers(std::intptr_t fd,
                                    detail::NativeBuffer* buffers,
                                    std::uint32_t count,
+                                   void* message_scratch,
                                    std::uint64_t user_data) noexcept {
-  return submit_write_buffers(fd, buffers, count, 0, user_data);
+  if (impl_ == nullptr || buffers == nullptr || count == 0 ||
+      count > kMaxBufferSequenceSegments || message_scratch == nullptr) {
+    return false;
+  }
+  msghdr* message =
+      build_stream_send_message(message_scratch, buffers, count);
+  if (impl_->backend == Impl::kEpoll) {
+    return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLOUT,
+                           kSendMsgBuffers, message, 0, nullptr, 0, nullptr,
+                           MSG_NOSIGNAL, user_data);
+  }
+  return submit_one(
+      impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight,
+      impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+      IORING_OP_SENDMSG, static_cast<std::int32_t>(fd),
+      reinterpret_cast<std::uint64_t>(message), 1, 0, user_data,
+      MSG_NOSIGNAL);
 }
 
 bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
@@ -3672,6 +3705,7 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
 bool Proactor::submit_send_buffers(std::intptr_t fd,
                                    detail::NativeBuffer* buffers,
                                    std::uint32_t count,
+                                   void*,
                                    std::uint64_t user_data) noexcept {
   return submit_write_buffers(fd, buffers, count, 0, user_data);
 }

@@ -13,6 +13,12 @@
 #include <string>
 #include <string_view>
 
+#if !defined(_WIN32)
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #if defined(HYLE_IO_TLS_HTTP_INTEGRATION)
 #include "hyle/io/http.h"
 #endif
@@ -27,6 +33,7 @@
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/sync.h"
 
 // io-08 TLS test: a real TLS 1.2+ handshake + encrypted echo over loopback TCP,
 // using the memory-BIO pump (TlsContext + TlsStream + co_await
@@ -67,6 +74,7 @@ using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::Task;
+using hyle::sched::Event;
 
 namespace {
 
@@ -753,6 +761,7 @@ struct HttpsResult {
   std::atomic<int> server_stage{0};
   std::atomic<int> client_stage{0};
   char body[32] = {};
+  Event h2_client_done;
 };
 
 Task<int> https_server(AllocatorRef alloc, IoContext *, TcpListener *listener,
@@ -916,9 +925,12 @@ Task<int> h2_tls_server(AllocatorRef alloc, TcpListener *listener,
                                      h2_bytes("h2-tls-ok"), h2_budget()))
               .ok()) {
         result->server_stage.store(5);
-        // Best-effort GOAWAY + TLS close_notify. A client is allowed to close
-        // immediately after consuming the response, so EPIPE here is not a
-        // response failure.
+        // Keep the transport alive until the consumer has actually observed
+        // the response. Closing a TCP socket with unread peer control frames
+        // may legally emit RST and discard queued response bytes; relying on
+        // an async send to happen to yield here made the old fixture backend-
+        // and scheduling-order dependent.
+        (void)result->h2_client_done.wait_for(std::chrono::seconds(5));
         (void)co_await h2.close(h2_budget());
       }
     }
@@ -979,6 +991,7 @@ Task<int> h2_tls_client(AllocatorRef alloc, IoContext *io, TlsContext *context,
     }
   }
   result->client_done.store(true, std::memory_order_release);
+  result->h2_client_done.signal();
   co_return 0;
 }
 } // namespace
@@ -1032,6 +1045,202 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
   EXPECT_EQ(result->status.load(), 207);
   EXPECT_STREQ(result->body, "h2-tls-ok");
 }
+
+#if !defined(_WIN32)
+namespace {
+struct H2TlsDuplexResult {
+  std::string request = std::string(256 * 1024, 'q');
+  std::string response = std::string(256 * 1024, 'r');
+  std::atomic<std::size_t> request_bytes{0};
+  std::atomic<std::size_t> response_bytes{0};
+  std::atomic<bool> server_ok{false};
+  std::atomic<bool> client_ok{false};
+  std::atomic<int> server_stage{0};
+  std::atomic<int> client_stage{0};
+  Event client_consumed;
+};
+
+bool make_tls_small_socket_pair(std::array<int, 2> &sockets) noexcept {
+  sockets = {-1, -1};
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.data()) != 0)
+    return false;
+  constexpr int kSocketBufferBytes = 4 * 1024;
+  for (const int socket : sockets) {
+    const int flags = ::fcntl(socket, F_GETFL, 0);
+    if (flags < 0 || ::fcntl(socket, F_SETFL, flags | O_NONBLOCK) != 0 ||
+        ::setsockopt(socket, SOL_SOCKET, SO_SNDBUF, &kSocketBufferBytes,
+                     sizeof(kSocketBufferBytes)) != 0 ||
+        ::setsockopt(socket, SOL_SOCKET, SO_RCVBUF, &kSocketBufferBytes,
+                     sizeof(kSocketBufferBytes)) != 0) {
+      for (int &owned : sockets) {
+        if (owned >= 0)
+          (void)::close(owned);
+        owned = -1;
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+Task<hyle::Status> consume_h2_tls_body(AllocatorRef,
+                                       hyle::io::Http2BodyReader &body,
+                                       char expected,
+                                       std::atomic<std::size_t> *total) noexcept {
+  std::size_t consumed = 0;
+  total->store(0, std::memory_order_release);
+  for (;;) {
+    auto chunk = co_await body.read(16 * 1024, h2_budget());
+    if (!chunk.has_value())
+      co_return std::move(chunk).error();
+    for (const std::byte value : chunk->bytes) {
+      if (value != static_cast<std::byte>(expected))
+        co_return hyle::Status::DataLoss("HTTP/2 TLS body mismatch");
+    }
+    consumed += chunk->bytes.size();
+    total->store(consumed, std::memory_order_release);
+    if (chunk->end_stream)
+      co_return hyle::Status::Ok();
+  }
+}
+
+Task<int> h2_tls_duplex_server(AllocatorRef allocator, TcpStream socket,
+                               TlsContext *context,
+                               H2TlsDuplexResult *result) noexcept {
+  auto wrapped = TlsStream::accept(std::move(socket), *context);
+  if (!wrapped.has_value())
+    co_return 0;
+  TlsStream tls = std::move(*wrapped);
+  result->server_stage.store(1, std::memory_order_release);
+  if (!(co_await tls_handshake(allocator, tls, h2_budget())).ok())
+    co_return 0;
+  result->server_stage.store(2, std::memory_order_release);
+  hyle::io::Http2Limits limits;
+  limits.connection_receive_window = 65'535;
+  auto made = Http2ServerSession::create(allocator, std::move(tls), limits);
+  if (!made.has_value())
+    co_return 0;
+  Http2ServerSession session = std::move(*made);
+  result->server_stage.store(3, std::memory_order_release);
+  auto incoming = co_await session.accept(h2_budget());
+  if (!incoming.has_value() || !incoming->has_value())
+    co_return 0;
+  result->server_stage.store(4, std::memory_order_release);
+  auto request = std::move(**incoming);
+  if (!(co_await consume_h2_tls_body(allocator, request.body, 'q',
+                                     &result->request_bytes))
+           .ok())
+    co_return 0;
+  result->server_stage.store(5, std::memory_order_release);
+  if (!(co_await session.send_response(request.stream_id, Http2ResponseHead{},
+                                       h2_bytes(result->response), h2_budget()))
+           .ok())
+    co_return 0;
+  result->server_ok.store(true, std::memory_order_release);
+  result->server_stage.store(6, std::memory_order_release);
+  (void)result->client_consumed.wait_for(std::chrono::seconds(5));
+  co_return 0;
+}
+
+Task<int> h2_tls_duplex_client(AllocatorRef allocator, TcpStream socket,
+                               TlsContext *context,
+                               H2TlsDuplexResult *result) noexcept {
+  auto wrapped = TlsStream::connect(std::move(socket), *context);
+  if (!wrapped.has_value())
+    co_return 0;
+  TlsStream tls = std::move(*wrapped);
+  result->client_stage.store(1, std::memory_order_release);
+  if (!(co_await tls_handshake(allocator, tls, h2_budget())).ok())
+    co_return 0;
+  result->client_stage.store(2, std::memory_order_release);
+  hyle::io::Http2Limits limits;
+  limits.connection_receive_window = 65'535;
+  auto made = Http2ClientSession::create(allocator, std::move(tls), limits);
+  if (!made.has_value())
+    co_return 0;
+  Http2ClientSession session = std::move(*made);
+  result->client_stage.store(3, std::memory_order_release);
+  auto submitted = co_await session.send_request(
+      Http2RequestHead{.method = "POST",
+                       .scheme = "https",
+                       .authority = "localhost",
+                       .path = "/duplex-progress"},
+      h2_bytes(result->request), h2_budget());
+  if (!submitted.has_value())
+    co_return 0;
+  result->client_stage.store(4, std::memory_order_release);
+  auto incoming = co_await session.read_response(*submitted, h2_budget());
+  if (!incoming.has_value())
+    co_return 0;
+  result->client_stage.store(5, std::memory_order_release);
+  if (!(co_await consume_h2_tls_body(allocator, incoming->body, 'r',
+                                     &result->response_bytes))
+           .ok())
+    co_return 0;
+  result->client_ok.store(true, std::memory_order_release);
+  result->client_stage.store(6, std::memory_order_release);
+  result->client_consumed.signal();
+  co_return 0;
+}
+} // namespace
+
+TEST(IoTls, Http2TlsDuplexProgressSurvivesSmallSocketAndFlowControl) {
+  std::string cert = write_temp("h2-duplex-cert.pem", kCertPem);
+  std::string key = write_temp("h2-duplex-key.pem", kKeyPem);
+  TlsServerOptions server_options;
+  server_options.certificate_chain_file = cert;
+  server_options.private_key_file = key;
+  server_options.alpn_protocols = hyle::io::tls_http2_protocols();
+  server_options.require_alpn = true;
+  auto made_server = TlsContext::make_server(server_options);
+  TlsClientOptions client_options;
+  client_options.verify = hyle::io::TlsVerifyMode::kNone;
+  client_options.alpn_protocols = hyle::io::tls_http2_protocols();
+  client_options.require_alpn = true;
+  auto made_client = TlsContext::make_client(client_options);
+  ASSERT_TRUE(made_server.has_value());
+  ASSERT_TRUE(made_client.has_value());
+  TlsContext server_context = std::move(*made_server);
+  TlsContext client_context = std::move(*made_client);
+
+  std::array<int, 2> sockets{};
+  ASSERT_TRUE(make_tls_small_socket_pair(sockets));
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler);
+  ASSERT_TRUE(io.valid());
+  auto client_transport = TcpStream::adopt(io, kOwner, sockets[0]);
+  sockets[0] = -1;
+  ASSERT_TRUE(client_transport.has_value());
+  auto server_transport = TcpStream::adopt(io, kOwner, sockets[1]);
+  sockets[1] = -1;
+  ASSERT_TRUE(server_transport.has_value());
+
+  auto result = std::make_unique<H2TlsDuplexResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task = h2_tls_duplex_server(system_allocator(),
+                                       std::move(*server_transport),
+                                       &server_context, result.get());
+  client->task = h2_tls_duplex_client(system_allocator(),
+                                       std::move(*client_transport),
+                                       &client_context, result.get());
+  Fiber server_fiber(kDefaultStackSize, &drive_entry, server.get());
+  Fiber client_fiber(kDefaultStackSize, &drive_entry, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  std::remove(cert.c_str());
+  std::remove(key.c_str());
+
+  EXPECT_TRUE(result->server_ok.load());
+  EXPECT_TRUE(result->client_ok.load());
+  EXPECT_EQ(result->server_stage.load(), 6);
+  EXPECT_EQ(result->client_stage.load(), 6);
+  EXPECT_EQ(result->request_bytes.load(), result->request.size());
+  EXPECT_EQ(result->response_bytes.load(), result->response.size());
+}
+#endif
 #endif
 
 #endif // HYLE_IO_TLS_HTTP_INTEGRATION

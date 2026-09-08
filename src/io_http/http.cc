@@ -763,6 +763,35 @@ unsigned HttpTransport::owner_worker() const noexcept {
 
 namespace detail {
 
+ImmediateTransferResult
+http_transport_try_read(HttpTransport &transport,
+                        std::span<std::byte> buffer) noexcept {
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_))
+    return tcp_try_read_some(*tcp, buffer);
+#if defined(HYLE_IO_TLS)
+  if (std::holds_alternative<TlsStream>(transport.stream_)) {
+    return {{}, ImmediateTransferState::kUnsupported};
+  }
+#endif
+  return {TransferResult{
+              0, Status::FailedPrecondition("HTTP transport is invalid"), false},
+          ImmediateTransferState::kReady};
+}
+
+ImmediateTransferResult
+http_transport_try_write(HttpTransport &transport,
+                         std::span<const std::byte> buffer) noexcept {
+  if (auto *tcp = std::get_if<TcpStream>(&transport.stream_))
+    return tcp_try_write_some(*tcp, buffer);
+#if defined(HYLE_IO_TLS)
+  if (std::holds_alternative<TlsStream>(transport.stream_))
+    return {{}, ImmediateTransferState::kUnsupported};
+#endif
+  return {TransferResult{
+              0, Status::FailedPrecondition("HTTP transport is invalid"), false},
+          ImmediateTransferState::kReady};
+}
+
 sched::Task<TransferResult>
 http_transport_read(mem::AllocatorRef allocator, HttpTransport &transport,
                     std::span<std::byte> buffer,
