@@ -1307,7 +1307,7 @@
     },
     {
       "module": "io_http2",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "io-http2-v2-owner-progress-cost",
       "closure_task": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
       "scope": "Audit and, only if structurally proven, remove unconditional monitor and notification cost from the HTTP2 single-owner no-waiter progress path while preserving all public API, protocol, lifecycle and delivery contracts.",
@@ -1329,7 +1329,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http2 v2 SCOPED：只审计 single-owner/no-waiter 路径的无条件 monitor/notification 成本；至多一项私有修正与一次原合同 P1，API、workload、窗口、chunk 和 margin 全部不变。"
+      "summary": "io_http2 v2 AUDITED：owner-local protocol/direction state 与唯一 cross-thread cancel notifier 已逐点分类并完成 missed-wake 证明；唯一 FIX 是移除 owner progress 外层 session monitor，cancel 仍按 monitor discipline 唤醒，API、workload、窗口、chunk 和 margin 全部不变。"
     },
     {
       "module": "io_transfer",

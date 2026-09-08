@@ -46,6 +46,55 @@
   接近边界改 comparison class；
 - 冻结 `KEEP/FIX`：若无法证明一项通用私有修正，直接终止，不写产品代码。
 
+## Source / P0 audit（`AUDITED`）
+
+### 路径分类
+
+- `validate_owner()` 要求所有 session、stream 和 body 操作运行在 transport owner worker；公开头与用户指南也把
+  handle 的移动、查询、操作和销毁纳入同一 owner 契约。`claim_direction()` 的全部调用只来自已通过该检查的
+  `drive_until()` / `flush_once()` / `read_once()` / `try_read_once()` 路径，而且 claim 自身到 busy publication
+  之间没有 suspension point。
+- 除 `wake_cancelled_wait()` 外，`notify()` 的所有调用都来自 owner worker：同步 nghttp2 recv/send callback、
+  owner 上的 protocol submit/consume/reset、transport completion、body handle retire 或 session close。nghttp2
+  callback 只在 owner 调用 `nghttp2_session_mem_recv2()` / `nghttp2_session_mem_send2()` 时同步执行，不是第二个
+  执行线程。
+- 唯一合法的 cross-thread notifier 是 `CancelCallback` 调用的 `wake_cancelled_wait()`。它不修改 session
+  protocol state 或 `change_epoch`，只负责让对应 operation 重新检查外部 atomic cancel predicate。
+- `read_busy`、`write_busy`、`change_epoch`、`fatal_status` 和 `peer_closed` 均只在 owner worker 读写；
+  `references` 仍是独立 atomic lifetime 机制，不在本轮改动。
+
+### happens-before / missed-wake 证明
+
+1. 同一个 Scheduler worker 同时只执行一个 fiber。owner waiter 在检查 predicate 后，
+   `ConditionVariable::prepare_wait_()` 会在仍持有 session monitor 时先发布其 waiter node，随后才释放 monitor
+   并 suspend；在 node 发布前另一个 owner fiber不可能运行。owner progress 因而可以先修改 owner-local state /
+   `change_epoch`，再直接调用 thread-safe `ConditionVariable::notify_all()`；无 waiter 时该 primitive 已用自己的
+   atomic waiter count 返回，有 waiter 时 node 已经可见。wake-before-suspend 由既有 Fiber rendezvous 处理。
+2. 对 cross-thread cancel，callback 仍先取得 session monitor。若 cancel 发生在注册前，
+   `CancelCallback` 构造会同步调用 callback，随后 predicate 看见 cancelled；若发生在 predicate 检查前，检查直接
+   停止等待；若发生在检查后，callback 必须等 waiter 在 monitor 下完成 publication 并释放 monitor，之后的
+   notify 必然命中。故三种顺序均不丢 wake。
+3. `wait_for_change()` 在释放 session monitor 后才析构 callback；`CancelCallback::unregister()` 与 callback
+   执行由 cancel tree 的 recursive control lock 串行化，因此栈上的 `CancelWakeContext` 不会在返回后被调用。
+4. owner progress 与 cancel 可以并发调用 `ConditionVariable::notify_all()`；该 primitive 自己以内部锁和 waiter
+   winner 状态仲裁。cancel 不再伪造 `change_epoch`，只会让所有被唤醒 fiber 按各自 predicate 重检，属于 Mesa
+   monitor 的既有允许语义。
+
+### 同合同复核
+
+v1 peer 两侧的 body byte 数、receive-window credit、固定 64x1 KiB 与 4x256 KiB workload、socket sizing、
+validation、teardown、owner lifetime、双顺序、31-run precision 和固定 5% NI margin 全部不变。本轮不得通过
+缩短 body、放宽 window、去掉 HYLE lifecycle 或替 peer 预分配额外状态把苹果与橘子重新比较。
+
+### Frozen `KEEP/FIX`
+
+- `KEEP-01`：保留 session monitor，专门关闭 cross-thread cancel 的 predicate-check / waiter-publication 窗口；
+  保留 `ConditionVariable`、`change_epoch` 和所有 deadline/cancel/owner/public semantics。
+- `FIX-01`（本轮唯一产品修正）：把现有通知拆成 owner-local progress 与 external-cancel wake。owner progress
+  不再取得 session monitor；direction claim/release 和 epoch snapshot 改为 owner-local 访问，release 仍在需要时
+  发布 epoch 并调用 CV。external cancel 仍在 session monitor 下 notify。不得添加 public 或 private waiter
+  counter、allocation、syscall、spin、额外 yield 或第二项机制改写。
+
 ## Predeclared validation
 
 - correctness：HTTP/2 主套件、small-socket duplex、sink/reset/GOAWAY/deadline、TLS ALPN HTTP/2；
@@ -57,5 +106,5 @@
 
 ## Current decision
 
-`SCOPED`。本提交只建立有限恢复合同，不修改产品。下一步只可完成 audit queue；结构证明成立后才进入
-`AUDITED` 并冻结唯一 FIX。
+`AUDITED`。source/P0 证明支持 `FIX-01`，且没有新增能力/API/metadata 或 peer 合同变化。下一步只可实现该
+唯一私有修正和定向 correctness/red-team；通过后冻结一个 immutable candidate 并执行唯一 P1。
