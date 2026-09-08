@@ -1155,16 +1155,14 @@
     },
     {
       "module": "sched",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "SCHED-V4-CONTROL-CONTRACT-2026-09-07",
-      "reopen_evidence": "docs/implementation/tasks/sched/sched-current-product-replay-2026-09.md",
-      "round_id": "sched-v4-control-contracts",
-      "closure_task": "docs/implementation/tasks/sched/sched-v4-control-contracts.md",
-      "scope": "Correct the public Sched control contracts for cooperative task cancellation, no-throw raw callbacks and distinguishable semaphore outcomes, and repair the directly affected API, dependency, delivery and user documentation without redesigning the scheduler.",
-      "non_goals": "Whole-scheduler, queue or fiber rewrites; forced stack destruction; unsafe wake of still-linked waits; external-caller gang execution; model or request policy; continuous batching; heterogeneous/GPU scheduling; Compute, Graph or IO redesign; Native FFI/C API; common performance-instrument changes; P2 or Formal certification.",
-      "baseline_commit": "f4da6ed4a2953b183a99532f31686852147ca09e",
-      "candidate_commit": "dbc9634455176450fb86d68b373c6cc4a4156f24",
-      "candidate_tree": "5e39d8ab76b6da83e7dd267584f9592c59930532",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
+      "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
+      "round_id": "sched-v5-io-completion-search",
+      "closure_task": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
+      "scope": "Correct the scheduler idle transition when an attached IO driver reports in-flight work so default balanced search does not delay completion reaping, then replay the directly affected IO and TLS consumers.",
+      "non_goals": "Public Sched API or capability expansion; queue, fiber, synchronization or cancellation redesign; idle constant tuning; TLS/provider specialization; multi-worker IO rewrite; Compute, Graph or common performance-instrument changes.",
+      "baseline_commit": "d53cdadfb1184a57f5ed18880edfeaf719a4412f",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1172,55 +1170,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "freeze_confirmation": {
-        "id": "sched-v4-freeze-2026-09-08",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-08",
-        "reviewed_commit": "dbc9634455176450fb86d68b373c6cc4a4156f24",
-        "reviewed_tree": "5e39d8ab76b6da83e7dd267584f9592c59930532",
-        "evidence": "docs/implementation/tasks/sched/sched-v4-control-contracts.md"
-      },
-      "loc": {
-        "snapshot_commit": "dbc9634455176450fb86d68b373c6cc4a4156f24",
-        "repository_code": 481377,
-        "self_without_tests": 77120,
-        "module_implementation": 5626
-      },
-      "known_limitations": [
-        "JoinHandle::request_cancel publishes only a cooperative flag; an in-flight timer, IO or backend wait must be cancelled or completed by its operation owner before the waiting Fiber can safely resume.",
-        "Stackful Fibers cannot be force-destroyed safely, and Waker is a move-only one-shot handle without built-in multi-winner arbitration; the runtime owner must drain work and choose one completion winner.",
-        "Gang or SPMD execution, adaptive partitioning, model or request priority, continuous batching and heterogeneous or GPU scheduling remain Graph, Compute or inference-runtime policy.",
-        "The P1 receipt covers request fan-out, completion wake and finite four-worker batch shapes on W1-WIN; it is not an all-operation, cross-platform or Formal SOTA certificate.",
-        "Vendored fcontext is currently verified for Windows and Linux x86-64 plus macOS arm64; macOS aggregate static consumers may emit harmless duplicate-transitive-archive warnings pending an independent build-system trigger."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a task, cancellation, Waker, Semaphore, synchronization, shutdown, OOM, ownership, concurrency or natural C++ API-usability defect.",
-        "The public API, layout, algorithm, complexity, normal-path allocation, lock, syscall or metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
-        "A named inference journey proves that gang or SPMD execution, priority, continuous batching or per-wait cancellation is a general Sched responsibility rather than upper-layer policy.",
-        "Boost.Context, a supported compiler, operating-system wait or thread contract, or target architecture changes semantics relied on by the current fcontext and exception boundary.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
-      ],
-      "summary": "sched-v4 CLOSED/FROZEN：五项控制合同缺陷已关闭；三平台、sanitizer、三交付、直接消费者、易用性/文档、内部复用、候选后红队及同合同 Marl/oneTBB P1 工程门全部通过。"
+      "summary": "sched-v5 REOPENED：合格 W1-WSL TLS consumer 证明默认 Balanced idle search 在 in-flight IO 完成前引入约 160 us 固定等待；只重开 Sched/IO completion 协同，不扩张公开 API。"
     },
     {
       "module": "io_core",

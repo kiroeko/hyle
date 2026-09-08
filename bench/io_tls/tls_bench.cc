@@ -77,6 +77,8 @@ using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
+using hyle::sched::SchedulerIdlePolicy;
+using hyle::sched::SchedulerOptions;
 using hyle::sched::Task;
 
 namespace {
@@ -85,6 +87,21 @@ constexpr unsigned kOwner = 0;
 constexpr int kMsgLen = 256; // TLS record payload
 constexpr int kEchoRoundTrips =
     512; // amortizes one honest connection lifecycle without hiding it
+
+// Diagnostic-only scheduler selector. The qualified product route leaves this
+// unset and therefore exercises HYLE's public default. Selecting power-saving
+// removes the scheduler's idle search phase without changing the TLS or socket
+// contract, which isolates completion-poll latency from provider work.
+SchedulerOptions hyle_scheduler_options() noexcept {
+  SchedulerOptions options;
+  if (const char *value = std::getenv("HYLE_TLS_DIAGNOSTIC_IDLE_POLICY")) {
+    if (std::strcmp(value, "power-saving") == 0)
+      options.idle_policy = SchedulerIdlePolicy::kPowerSaving;
+    else if (std::strcmp(value, "low-latency") == 0)
+      options.idle_policy = SchedulerIdlePolicy::kLowLatency;
+  }
+  return options;
+}
 
 // Self-signed cert + key (CN=localhost, RSA 2048), same as tls_test.cc.
 const char *kCertPem =
@@ -258,7 +275,8 @@ Task<int> hyle_client(AllocatorRef alloc, IoContext *io, HyleTls *h) {
 class HyleTlsHarness {
 public:
   HyleTlsHarness(std::uint16_t port, TlsContext *server, TlsContext *client)
-      : scheduler_(1, system_allocator(), 1024), io_(scheduler_) {
+      : scheduler_(1, system_allocator(), 1024, hyle_scheduler_options()),
+        io_(scheduler_) {
     auto opened = TcpListener::bind(
         io_, kOwner, Endpoint::loopback(AddressFamily::kIpv4, port));
     if (!opened)
