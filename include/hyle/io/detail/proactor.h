@@ -202,6 +202,16 @@ class Proactor {
   // CreateNamedPipe instance already associated with this proactor's IOCP.
   HYLE_IO_API bool submit_pipe_accept(
       std::intptr_t pipe, std::uint64_t user_data) noexcept;
+
+  // Internal non-recursive directory-change primitive for io_watch. `directory`
+  // must be a FILE_LIST_DIRECTORY handle opened with FILE_FLAG_OVERLAPPED and
+  // already associated with this proactor. The caller-owned buffer remains
+  // borrowed until the terminal completion and receives FILE_NOTIFY_INFORMATION
+  // records. The fixed filter covers entry names, metadata, size and writes;
+  // portable event normalization and re-arm policy belong to io_watch.
+  HYLE_IO_API bool submit_directory_changes(
+      std::intptr_t directory, void* buffer, std::uint32_t length,
+      std::uint64_t user_data) noexcept;
 #endif
 
   // ---- datagram ops (UDP) ---------------------------------------------------

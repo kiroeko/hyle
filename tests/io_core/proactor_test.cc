@@ -1049,6 +1049,100 @@ TEST(Proactor, RealFileReadBadHandleSubmitFails) {
                              buf, sizeof(buf), 0, 0x333));
 }
 
+TEST(Proactor, DirectoryChangesCompleteAndRearmIocp) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+
+  wchar_t temp_path[MAX_PATH];
+  wchar_t unique_path[MAX_PATH];
+  ASSERT_NE(::GetTempPathW(MAX_PATH, temp_path), 0u);
+  ASSERT_NE(::GetTempFileNameW(temp_path, L"hyw", 0, unique_path), 0u);
+  ASSERT_TRUE(::DeleteFileW(unique_path));
+  ASSERT_TRUE(::CreateDirectoryW(unique_path, nullptr));
+
+  HANDLE directory = ::CreateFileW(
+      unique_path, FILE_LIST_DIRECTORY,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+      OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
+  ASSERT_NE(directory, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(directory)));
+
+  alignas(DWORD) unsigned char buffer[4096]{};
+  ASSERT_TRUE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(directory), buffer, sizeof(buffer),
+      0xD1u));
+
+  std::wstring child = unique_path;
+  child += L"\\changed.txt";
+  HANDLE file = ::CreateFileW(child.c_str(), GENERIC_WRITE,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                  FILE_SHARE_DELETE,
+                              nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
+                              nullptr);
+  ASSERT_NE(file, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(::CloseHandle(file));
+
+  Completion completion{};
+  ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0xD1u);
+  ASSERT_GT(completion.result, 0);
+  const auto* info = reinterpret_cast<const FILE_NOTIFY_INFORMATION*>(buffer);
+  EXPECT_EQ(info->Action, FILE_ACTION_ADDED);
+  EXPECT_EQ(std::wstring(info->FileName,
+                         info->FileNameLength / sizeof(wchar_t)),
+            L"changed.txt");
+
+  // The native operation is one-shot: a second arm reports a later mutation.
+  ASSERT_TRUE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(directory), buffer, sizeof(buffer),
+      0xD2u));
+  ASSERT_TRUE(::DeleteFileW(child.c_str()));
+  ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0xD2u);
+  EXPECT_GT(completion.result, 0);
+
+  ASSERT_TRUE(::CloseHandle(directory));
+  ASSERT_TRUE(::RemoveDirectoryW(unique_path));
+}
+
+TEST(Proactor, DirectoryChangesHonorAdmissionAndCancellationIocp) {
+  Proactor p;
+  ASSERT_TRUE(p.init(1));
+
+  wchar_t temp_path[MAX_PATH];
+  wchar_t unique_path[MAX_PATH];
+  ASSERT_NE(::GetTempPathW(MAX_PATH, temp_path), 0u);
+  ASSERT_NE(::GetTempFileNameW(temp_path, L"hyw", 0, unique_path), 0u);
+  ASSERT_TRUE(::DeleteFileW(unique_path));
+  ASSERT_TRUE(::CreateDirectoryW(unique_path, nullptr));
+  HANDLE directory = ::CreateFileW(
+      unique_path, FILE_LIST_DIRECTORY,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+      OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
+  ASSERT_NE(directory, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(directory)));
+
+  alignas(DWORD) unsigned char first[1024]{};
+  alignas(DWORD) unsigned char second[1024]{};
+  ASSERT_TRUE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(directory), first, sizeof(first), 0xD3u));
+  EXPECT_FALSE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(directory), second, sizeof(second),
+      0xD4u));
+  EXPECT_FALSE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(INVALID_HANDLE_VALUE), second,
+      sizeof(second), 0xD5u));
+  ASSERT_TRUE(p.submit_cancel(0xD3u, 0xD6u));
+  Completion completion{};
+  ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0xD3u);
+  EXPECT_EQ(completion.result,
+            -static_cast<std::int64_t>(ERROR_OPERATION_ABORTED));
+
+  ASSERT_TRUE(::CloseHandle(directory));
+  ASSERT_TRUE(::RemoveDirectoryW(unique_path));
+}
+
 TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   Proactor p;
   ASSERT_TRUE(p.init());

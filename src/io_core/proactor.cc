@@ -67,7 +67,7 @@ struct Proactor::Impl {
 
   enum OpKind : int {
     kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo,
-    kPipeAccept,
+    kPipeAccept, kDirectoryChanges,
     kFileMeta  // io-05: open/close/statx/fsync/fallocate done SYNCHRONOUSLY here
                // (no async form on IOCP) then posted with the result already in
                // syn_result -- reap skips GetOverlappedResult for these.
@@ -450,6 +450,31 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
   BOOL ok = ::ReadFile(op->handle, buf, len, nullptr, &op->ov);
   // Async success queues a completion too (we don't set SKIP_ON_SUCCESS), so only
   // a synchronous failure that ISN'T "pending" means the op won't complete.
+  if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
+  impl_->unlink(op);
+  impl_->recycle(op);
+  return false;
+}
+
+bool Proactor::submit_directory_changes(
+    std::intptr_t directory, void* buffer, std::uint32_t length,
+    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || buffer == nullptr || length == 0 ||
+      reinterpret_cast<HANDLE>(directory) == INVALID_HANDLE_VALUE)
+    return false;
+  auto* op = impl_->acquire();
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(directory);
+  op->kind = Impl::kDirectoryChanges;
+  impl_->link(op);
+  constexpr DWORD kFilter =
+      FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
+      FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
+      FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION |
+      FILE_NOTIFY_CHANGE_SECURITY;
+  const BOOL ok = ::ReadDirectoryChangesW(
+      op->handle, buffer, length, FALSE, kFilter, nullptr, &op->ov, nullptr);
   if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
   impl_->unlink(op);
   impl_->recycle(op);
