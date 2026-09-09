@@ -203,9 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v6-pinned-structured-task.md",
-      "summary": "sched v6 SCOPED：真实 inference/rendering worker-owner 纵切证明 pinned fire-and-forget 与 typed joinable task 之间存在交集缺口；本轮只审计并复用现有 TaskDriver/JoinState/Fiber owner 提供 pinned structured task。"
+      "summary": "sched v6 AUDITED：能力/peer/public-surface 回映已把范围冻结为 spawn_task_on；它只复用现有 TaskDriver/JoinState/Fiber pinned owner，有限 FIX 为 API、owner 生命周期测试、真实 sample/docs/三交付与同合同 P1。"
     },
     {
       "module": "io_core",
