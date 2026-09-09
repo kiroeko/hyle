@@ -93,6 +93,79 @@ if(TARGET hyle_mem_fiber_stack_bench)
   hyle_register_benches(mem hyle_mem_fiber_stack_bench)
 endif()
 
+# Mem v7 payload-free range owner. The peer is benchmark-only and deliberately
+# caller-supplied: it never enters HYLE's product/package dependency graph.
+# Exact file hashes bind the reviewed OffsetAllocator commit even when the
+# reference is an archive without .git metadata.
+option(HYLE_MEM_V7_RANGE_P1_BENCH
+  "build the Mem v7 logical-range same-contract evidence adapter" OFF)
+if(HYLE_MEM_V7_RANGE_P1_BENCH)
+  if(NOT HYLE_STATIC)
+    message(FATAL_ERROR
+      "HYLE_MEM_V7_RANGE_P1_BENCH requires HYLE_STATIC")
+  endif()
+  set(HYLE_OFFSET_ALLOCATOR_DIR "" CACHE PATH
+      "locked OffsetAllocator 3610a737 source for Mem v7 P1")
+  foreach(_hyle_offset_file IN ITEMS offsetAllocator.hpp offsetAllocator.cpp LICENSE)
+    if(NOT EXISTS "${HYLE_OFFSET_ALLOCATOR_DIR}/${_hyle_offset_file}")
+      message(FATAL_ERROR
+        "HYLE_MEM_V7_RANGE_P1_BENCH requires ${_hyle_offset_file} at "
+        "HYLE_OFFSET_ALLOCATOR_DIR='${HYLE_OFFSET_ALLOCATOR_DIR}'")
+    endif()
+  endforeach()
+  set(_hyle_offset_expected_offsetAllocator_hpp
+      1d1043bc4baa33bf8b385e562b74d2efbb0d70835ad974dc13d7e2b8255a35e6)
+  set(_hyle_offset_expected_offsetAllocator_cpp
+      337aedd1d455dc227fa3af1454937a69c88d2cbf0eea9d41ad65e40105307f6c)
+  set(_hyle_offset_expected_LICENSE
+      ca618b192cd46bdd230d062c5e407e972ea47b9d98bd16323af1cc2549880858)
+  foreach(_hyle_offset_file IN ITEMS offsetAllocator.hpp offsetAllocator.cpp LICENSE)
+    file(SHA256 "${HYLE_OFFSET_ALLOCATOR_DIR}/${_hyle_offset_file}"
+         _hyle_offset_actual)
+    string(REPLACE "." "_" _hyle_offset_key "${_hyle_offset_file}")
+    if(NOT _hyle_offset_actual STREQUAL
+       _hyle_offset_expected_${_hyle_offset_key})
+      message(FATAL_ERROR
+        "OffsetAllocator 3610a737 identity mismatch for ${_hyle_offset_file}")
+    endif()
+  endforeach()
+
+  add_library(hyle_offset_allocator_peer STATIC
+    "${HYLE_OFFSET_ALLOCATOR_DIR}/offsetAllocator.cpp")
+  target_include_directories(hyle_offset_allocator_peer PUBLIC
+    "${HYLE_OFFSET_ALLOCATOR_DIR}")
+  set_target_properties(hyle_offset_allocator_peer PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
+
+  function(_hyle_configure_mem_v7_range_bench target)
+    target_link_libraries(${target} PRIVATE
+      hyle_mem nanobench hyle_offset_allocator_peer)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_mem_range_consumer_bench
+    range_allocator_consumer_bench.cc)
+  _hyle_configure_mem_v7_range_bench(hyle_mem_range_consumer_bench)
+
+  add_executable(hyle_mem_range_consumer_bench_placement
+    range_allocator_consumer_bench.cc)
+  _hyle_configure_mem_v7_range_bench(
+    hyle_mem_range_consumer_bench_placement)
+  if(MSVC)
+    target_link_options(hyle_mem_range_consumer_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_mem_range_consumer_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR "Mem v7 placement perturbation is unsupported")
+  endif()
+  hyle_register_benches(mem
+    hyle_mem_range_consumer_bench
+    hyle_mem_range_consumer_bench_placement)
+endif()
+
 # mem-v2 closure evidence.  This opt-in adapter keeps the four admitted hot
 # families in one source-consumer artifact: isolated Heap allocation, external
 # scratch epochs, BufferView range dispatch, and warmed transient BufferPool

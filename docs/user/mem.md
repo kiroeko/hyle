@@ -22,6 +22,7 @@ Buffer ownership/view/mapping/reuse/placement 也由它表达。它不替业务�
 | 为 Compute kernel 创建 device/pinned/managed bytes | 从 `compute::device_memory_resource` / `host_memory_resource` / `managed_memory_resource` 取得 provider，再创建 `Buffer` | resource 与 Device identity 必须匹配；managed 可能明确返回 `Unimplemented`；owner 活到 in-flight completion 之后 |
 | 把多个独立 allocation/shard 暴露为一段逻辑 bytes | `CompositeBuffer::create(segments)` | 只 composite 支付 segment metadata；不 flatten、不隐藏 staging；输入在成功后才被 move |
 | 反复申请短寿命 host/device scratch | `BufferPool::create(resource)` + `acquire()` | thread-safe bounded best-fit；lease 只在 completion 后归还；retention/stats/trim 可见 |
+| 在一块 opaque device/pinned/page backing 中动态切 offset | `RangeAllocator::create(capacity,{.max_allocations=N})` + `allocate(size,alignment)` | 不拥有或触碰 payload；caller-synchronized；move-only lease individual free，owner `reset()` 整批失效 |
 | 已知整张执行图的 storage lifetime | `LifetimePlanner::build(requests, resources)` -> `instantiate(resources)` | tensor-free；先查 resource/backing/placement，再按 provider 单次分配上限建立一个或多个 backing；alias/output facts 显式 |
 | 占地址后分段提交 / 释放物理页 | `VirtualMapping::reserve` + `commit/decommit` | `VirtualMapping` 是 Platform `VmRegion` 的零开销别名；页粒度，无隐式 commit、prefault 或 fallback |
 | 映射模型权重/数据集 | `FileMapping::open` | RO/RW/COW；checked range/view；advice/lock/flush 显式；POSIX/macOS 可批量释放已知页区间 |
@@ -201,6 +202,52 @@ scratch.reset();
 已有实践的通用形状，不是 benchmark 档位。`stats()` 区分 live/cached bytes、provider allocation、reuse
 和 OOM trim retry；`trim()` 只释放 cached buffer，不等待或取消 in-flight operation。需要把 allocation
 永久带走时用 `lease.take()`。
+
+## Logical range：已有 backing，只需要动态 offset
+
+渲染 resource heap、pinned upload slab、descriptor backing 或推理 page backing 往往已经由 device/provider
+拥有一块大 allocation；此时需要管理的是 offset，而不是再取得 host pointer。使用
+`RangeAllocator`，不要把 opaque device 地址伪装成 `AllocatorRef`，也不要让 `FixedHeap` 往 payload
+里写 block header：
+
+```cpp
+#include "hyle/mem/range_allocator.h"
+
+HYLE_ASSIGN_OR_RETURN(
+    auto ranges,
+    hyle::mem::RangeAllocator::create(
+        8ull << 30,
+        {.max_allocations = 4096}));
+HYLE_ASSIGN_OR_RETURN(auto weights,
+                      ranges.allocate(768ull << 20, 256));
+create_device_view(backing, weights.offset(), weights.size());
+
+// 若 GPU 仍在使用该 range，把 ownership 一起移交给 completion owner。
+completion_queue.push(std::move(weights));
+```
+
+`max_allocations` 必须显式给出，它限制**同时 live 的 range 数**，也决定 create 时的 metadata 上界；
+普通 allocate/free 不增长 metadata。空间或 slot 耗尽返回 `ResourceExhausted`。size 必须非零，alignment
+必须是非零 2 的幂；offset/size 为 64-bit，所以大于 4 GiB 的 backing 不会被截断。
+
+`RangeAllocation` 不可复制，析构或 `reset()` 自动归还并合并相邻 free range。它没有接受任意 token/owner
+的 `free`，因此不会把一个 allocator 的 token 错还给另一个 allocator。owner 的 `reset()` 是 quiescent
+bulk invalidation：所有旧 range 立即不再拥有 offset；旧 lease 随后析构只释放 control handle，不会误伤
+同一 node 上的新 allocation。`valid()` 可检查这种失效；失效后不能再调用 `offset()`/`size()`。
+
+owner 可以先于 lease 析构，默认 system metadata 会安全延寿 control block；若传入自定义
+`metadata_allocator`，该 allocator 的 state 必须长寿于 owner 和所有 outstanding lease。整个 family
+是 caller-synchronized，包括 lease 的析构；GPU/IO completion 应把 lease move 到固定 owner 上释放，
+不能从多个线程无同步地同时 allocate/free/reset。
+
+`stats()` 是 O(1)，适合普通 pressure telemetry；`detailed_stats()` 扫描 metadata，额外回答最大空洞和
+空洞数，只在控制/诊断路径使用。默认两级 bitmap lookup 是 O(1) common path；为了不把一个已经对齐但
+短于保守 `size+alignment-1` 的可用洞误报为 OOM，碎片化 fallback 最坏 O(free ranges)。这项取舍不由
+benchmark knob 控制。
+
+如果 backing 是可解引用的 caller-owned host buffer，需要 pointer/realloc，选 `FixedHeap`；如果整张
+执行图的 lifetime 预先已知，选 `LifetimePlanner`；如果还没有大 backing、需要 provider 自己分配与缓存，
+选 `BufferPool`。`RangeAllocator` 不处理 fence、defrag/move callback、KV eviction 或资源类型策略。
 
 ## Lifetime planner：已知整张执行图时先规划再分配
 

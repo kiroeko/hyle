@@ -7,4 +7,5 @@
 #include "hyle/mem/object_pool.h"   // typed fixed-capacity pools/cache
 #include "hyle/mem/pool_cache.h"    // BlockPoolCache
 #include "hyle/mem/pool_loan.h"     // PoolLoan
+#include "hyle/mem/range_allocator.h" // payload-free logical ranges
 #include "hyle/mem/shared_pool.h"    // ConcurrentBlockPool

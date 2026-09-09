@@ -30,8 +30,10 @@
   直接消费者：未来 Compute device heap、推理 cache/backing owner、渲染 resource allocator；本轮用独立
   public C++ probe 证明，不修改仍为 `QUEUED` 的 Compute/Graph。
 - 性能 tier：`P1`。P0 先裁决复杂度、metadata bytes、allocation/copy/lock；P1 primary 是固定种子的
-  mixed resource churn，在 alignment=1/32-bit 同合同交集对 OffsetAllocator，holdout 是变化 alignment
-  与大于 4 GiB capacity 的 HYLE correctness/resource trace。默认 5% non-inferiority margin；VMA/
+  mixed resource churn，在 alignment=1/32-bit 能力交集上对 OffsetAllocator 的同合同 adapter：peer 侧必须
+  同样计费 fallible result、move-only RAII、owner/lease 独立寿命、generation、固定 metadata 与精确常态
+  counters。raw peer 自然路线只能作较弱语义的诊断地板。holdout 是变化 alignment 与大于 4 GiB capacity
+  的 HYLE correctness/resource trace。默认 5% non-inferiority margin；VMA/
   D3D12MA 只在能隔离相同 virtual-block 合同和依赖身份时才进入计时，否则仅作算法/API 参考。
 - 仪器/机器：`closure-correctness-v1`；P1 使用 `closure-perf-v1` 的 W1-WIN 锁定身份。正确性先覆盖
   W1-WIN；产品候选再覆盖 W1-WSL 与两台可用 macOS 中至少一台，另一台只在平台差异或前者不可用时
@@ -69,7 +71,9 @@ placement knob。
 
 - OffsetAllocator 以外置 node metadata 和 TLSF-like 两级 bitmap 提供极低常数的 32-bit、无 alignment
   offset 分配；它证明 metadata 与 payload 分离和 O(1) common lookup 的价值，但其固定 32-bit offset、
-  allocation count 与无对齐参数不能直接成为 HYLE 公共合同。
+  allocation count、显式裸 `free` 与无对齐参数不能直接成为 HYLE 公共合同。初始开发夹具直接把它与
+  HYLE RAII 路线相排，raw peer 约快 14--20%；生命周期/安全检查/统计矩阵复核后该行被降为
+  `NATURAL_ROUTE`，不得据此改坏公开 API。正式 P1 由完整计费 adapter 对齐这些语义。
 - VMA/D3D12MA virtual block 提供 64-bit offset、alignment、individual free、clear 与统计；这构成能力/API
   下界。VMA 的 aligned TLSF 搜索在碎片化候选中允许遍历，因此不能据其名称宣称所有 aligned request
   都有硬 O(1) 最坏上界。
@@ -82,11 +86,11 @@ placement knob。
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| `MEM7-F01` | 缺 payload-free 64-bit logical-range owner | 新增 range allocator/lease/stats；固定 metadata | 边界、alignment、OOM、随机 model | pending |
-| `MEM7-F02` | individual free、bulk reset 与 stale lifetime 缺少自然 C++ 形状 | RAII lease、generation invalidation、owner/lease 独立控制块寿命 | free/coalesce/reset/move/destroy | pending |
-| `MEM7-F03` | Mem 产品、安装和三交付尚不可发现 | façade、CMake source、focused test、package consumer | header/source/static/shared | pending |
-| `MEM7-F04` | 用户不知道它与 FixedHeap/LifetimePlanner/device policy 的边界 | architecture/user/usage 文档及最短 recipe | docs checker + usability probe | pending |
-| `MEM7-F05` | 无同合同工程性能证据 | 固定 mixed-churn contract；OffsetAllocator 仅比 alignment=1/32-bit 交集 | controls + 双顺序 5% NI | pending |
+| `MEM7-F01` | 缺 payload-free 64-bit logical-range owner | 新增 range allocator/lease/stats；固定 metadata | 边界、alignment、OOM、随机 model | implemented；候选复验待签 |
+| `MEM7-F02` | individual free、bulk reset 与 stale lifetime 缺少自然 C++ 形状 | RAII lease、generation invalidation、owner/lease 独立控制块寿命 | free/coalesce/reset/move/destroy | implemented；候选复验待签 |
+| `MEM7-F03` | Mem 产品、安装和三交付尚不可发现 | façade、CMake source、focused test、package consumer | header/source/static/shared | Windows pre-candidate PASS；候选跨平台待签 |
+| `MEM7-F04` | 用户不知道它与 FixedHeap/LifetimePlanner/device policy 的边界 | architecture/user/usage 文档及最短 recipe | docs checker + usability probe | implemented；候选复验待签 |
+| `MEM7-F05` | 无同合同工程性能证据 | 固定 mixed-churn contract；OffsetAllocator 算法只在 alignment=1/32-bit 交集并经完整 lifecycle adapter 对拍 | controls + 双顺序 5% NI；raw route 不签排名 | contract/adapter qualified for sampling；正式 P1 待签 |
 
 本表冻结后不扩张到 F02 Sched、F03 IO、Compute/Graph、并发 wrapper、device policy 或 benchmark-only
 策略。验证发现上述语义内部缺陷可在原合同内修；能力范围变化必须退回 `SCOPED/AUDITED`。
@@ -126,7 +130,8 @@ ranges.reset();                            // phase-wide logical invalidation
   worker 并发析构。
 - `stats()` 为 O(1)，报告 capacity/allocated/free/peak/live/max/metadata/outstanding handles；
   `detailed_stats()` 显式 O(N)，另报 free-range count 与 largest free range。peak 不因 reset 清零。
-- `RangeAllocator` 是一指针公开对象；`RangeAllocation` 的 offset/size 内联读取。source/static/shared 均使用
+- `RangeAllocator` 是一指针公开对象；`RangeAllocation` 的 `offset/size` 是以 `valid()` 为前置条件的
+  O(1) observer，正常读取不重复执行整套 generation 验证。source/static/shared 均使用
   同一个公开 C++ 头和 `hyle::mem` target，不创建 C/Native FFI。
 
 ### P0 成本上界
@@ -139,6 +144,8 @@ ranges.reset();                            // phase-wide logical invalidation
 - summary O(1)，detailed stats O(N)；metadata 上界为 control + `(2M+1) * (node + free-index)`，由 API
   精确报告，不能伪称只与 capacity 有关；
 - lease 生命周期只有 caller-synchronized 非原子引用计数与 node/generation 检查；没有 hidden shared_ptr。
+  已证明的私有索引不变量在 Debug 中诊断、优化构建中作为 optimizer precondition，不让对手关闭的
+  内部 assert 变成 HYLE 独有的常态分支；可恢复输入仍始终返回 `Status/Result`。
 
 ## 七问预裁决
 
@@ -148,8 +155,9 @@ ranges.reset();                            // phase-wide logical invalidation
    `MEM7-F01..F04` 后完整。device/fence/KV policy 在其 owner 路由，不向 Mem 下沉。
 3. **下层复用：**使用 Core compiler/assert、Error Status/Result 和 Mem `AllocatorRef`；`platform` 是 Mem
    既有产品边但本能力无 OS 调用。固定 metadata 不反向依赖 Container，也不复制上层 queue/scheduler。
-4. **性能：**复杂度和成本如 P0；P1 只对 alignment=1/32-bit same-contract mixed churn 与
-   OffsetAllocator 做 5% NI。aligned/64-bit 是 HYLE 的 correctness holdout，不能拿 peer 缺失语义排名。
+4. **性能：**复杂度和成本如 P0；P1 只对 alignment=1/32-bit same-contract mixed churn 与完整计费的
+   OffsetAllocator adapter 做 5% NI。raw peer API 的较弱语义只作 natural-route 诊断；aligned/64-bit 是
+   HYLE correctness holdout，不能拿 peer 缺失语义排名。
 5. **FFI：**`N/A/CLEAN`；没有旧 C header/schema/bridge 或未修饰动态符号，本轮不为假想语言绑定擦除
    move-only C++ lifetime。
 6. **交付：**`mem` 现有 source/static/shared 产品承载新 compiled implementation；新增 public header 和
@@ -160,6 +168,19 @@ ranges.reset();                            // phase-wide logical invalidation
 Audit verdict：全部 MUST 已成为五项有限 FIX，API、成本、peer、normal/holdout shape 和停止条件均已冻结，
 允许进入产品实现。
 
+## Pre-candidate implementation receipt
+
+- 新实现以 32-byte partition node 和两级 bitmap 管理 64-bit range；free-state 复用空闲链身份，不增加
+  常态 flag/padding。private structural invariants 在 Debug 中检查、优化构建中成为 optimizer
+  precondition；可恢复输入、容量和 OOM 仍走 `Result`。
+- W1-WIN/MSVC 19.50 Release 全 Mem 226/226（加入额外 lifetime 用例后为 228/228 的下一次候选重放）、
+  新增 RangeAllocator 14/14 Debug、public-header self-contained，以及 selected Mem source/relocated
+  shared/relocated static 三交付均通过。
+- W1-WSL/GCC 14.2 `-Werror` + UBSan 与 ASan 分别通过完整 Mem 和 public-header 两项；GCC 首轮发现的
+  未使用 const helper 已删除。实现没有共享状态，TSan 按 caller-synchronized 合同不适用。
+- 开发 P1 八种 execution/allocation/placement 反转均显示完整语义 HYLE 路线不劣于完整计费 adapter；
+  这不是正式样本。初始 raw Offset 路线的明显领先已按语义矩阵正确降级，未用较弱 API 反向塑造产品。
+
 ## 预声明验证命令
 
 Windows 先在独立 build directory 配置 selected Mem Release，构建并运行 `hyle_mem_test`；新增 test filter
@@ -169,8 +190,10 @@ consumer。候选阶段再以 archive 验证 WSL GCC ASan/UBSan 和一台 macOS 
 TSan 记为 `NOT_APPLICABLE`，不能写成 `PASS`。
 
 P1 只在 API/correctness 候选固定后启动，使用独立 opt-in target、锁定 peer identity、固定 seed/trace、
-相同成功/失败处理和 setup/teardown charging；记录 A/B、B/A、A/A、known-delta、timer floor、placement 与
-资源 telemetry。OffsetAllocator 不支持的 alignment 与 >4 GiB 行只作 correctness/resource holdout。
+相同成功/失败处理和 setup/teardown charging；peer adapter 必须实际执行与 HYLE 相同的 Result、RAII、
+owner/lease、generation、stats 和 metadata-bound 工作，而不是只把返回类型包一层；记录 A/B、B/A、A/A、
+known-delta、timer floor、placement 与资源 telemetry。OffsetAllocator 不支持的 alignment 与 >4 GiB 行只作
+correctness/resource holdout。
 
 每个状态迁移和终局至少执行：
 

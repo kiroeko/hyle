@@ -6,6 +6,7 @@
 #include <hyle/mem/pmr.h>
 #include <hyle/mem/pool.h>
 #include <hyle/mem/quota_allocator.h>
+#include <hyle/mem/range_allocator.h>
 #include <hyle/mem/reclamation.h>
 #include <hyle/mem/stats.h>
 #include <hyle/platform/virtual_memory.h>
@@ -145,6 +146,19 @@ int main() {
     if (!reused) return 15;
   }
   if (pool.stats().cache_reuses != 1) return 16;
+
+  auto ranges_result = hyle::mem::RangeAllocator::create(
+      std::uint64_t{8} << 30, {.max_allocations = 16});
+  if (!ranges_result) return 24;
+  hyle::mem::RangeAllocator ranges = std::move(*ranges_result);
+  auto logical_result = ranges.allocate(std::uint64_t{1} << 30, 2u << 20);
+  if (!logical_result || logical_result->offset() % (2u << 20) != 0) {
+    return 25;
+  }
+  hyle::mem::RangeAllocation logical = std::move(*logical_result);
+  ranges.reset();
+  if (logical.valid() || ranges.stats().allocated_bytes != 0) return 26;
+  logical.reset();
 
   const std::array requests{
       hyle::mem::LifetimeRequest{.resource_slot = 0,

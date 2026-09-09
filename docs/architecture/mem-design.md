@@ -15,6 +15,7 @@
 Mem 是 HYLE 唯一 storage-semantics owner，目标产品面同时覆盖：
 
 - host raw allocation、owned heap、arena、fixed/object/block pool、quota/stats；
+- 不接触 payload 的 64-bit aligned logical-range suballocation；
 - anonymous/file/named shared mapping、range protection/advice/residency、NUMA/大页和 guarded stack；
 - host、pinned、device、managed/unified 与 custom storage 的开放 `MemoryResourceRef`；
 - move-only `Buffer`、mutable/const view、import/composite、host mapping 与 sync range operation；
@@ -114,6 +115,7 @@ GPU completion 属 Compute/Sched owner 组合，不反向塞进 Mem。历史恢�
 | oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `SystemStdAllocator<T>` / `StdAllocator<T>` + `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；默认静态绑定与运行时注入分型，高对齐 policy 不污染默认容器 |
 | oneTBB `memory_pool`（owned growable variable-size） | isolated owner 用 `Heap`；按 size class 缓存的 PMR consumer 组合标准 pool resource，运行时 upstream 用 `PmrResource` | `Heap` 提供 individual free、remote free 与 bulk invalidation；`FixedHeap` 覆盖 external bounded 版本；不再复制另一套通用 malloc/pool 算法 |
 | oneTBB `fixed_pool` | `FixedHeap` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
+| VMA/D3D12MA virtual block、OffsetAllocator | `RangeAllocator` / `RangeAllocation` | metadata 与 opaque backing 分离；64-bit aligned range、individual RAII release、bulk invalidation 和显式 metadata 上限 |
 | Folly `Arena` | `Arena` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
 | Folly `ThreadCachedArena` | 不内建隐藏 TLS registry | 用户可按 worker/thread 持有 `Arena`；线程退出合并/全局销毁属于 runtime owner（如 sched），基础 mem 不猜 TLS lifetime |
 | mimalloc heap/arena/local+remote free | `SystemAllocator` 与 `ConcurrentBlockPool`/显式 cache | 任意大小 heap 直接借核；严格固定容量和 soft owner cache 用不同公开类型表达 |
@@ -282,7 +284,32 @@ external 能力按 allocation model 分成两个类型：
 需要 quota/stats/region 等运行时 upstream 才构造 `PmrResource`。Native FFI 当前为 `N/A`；是否
 需要面向 foreign runtime 的 growable variable-size pool，只能由未来已命名的消费任务裁决。
 
-### 8.1 Mapping factor 与 warm-up 语义
+### 8.1 Opaque backing 的逻辑区间
+
+`RangeAllocator` 管理 `[0, capacity)` 中的 64-bit `[offset,size)`，但不分配、映射或触碰 payload。
+它服务大 device buffer/heap、descriptor backing、pinned staging slab 或 page backing：真正的资源 owner
+先取得 backing，再把 returned offset 交给 provider 创建 view/resource。它不能替代 `FixedHeap`——后者
+从 caller storage 返回可解引用 host pointer，并把 block metadata 放进该 storage；也不能替代
+`LifetimePlanner`——后者要求整张图的 interval 已知，而 range allocator 处理运行期 churn。
+
+公开形状刻意只有一个默认策略。create 时调用者必须给出 `max_allocations`，实现预留最多
+`2 * max_allocations + 1` 个 partition node；后续 allocate/free/reset 不增长 metadata、不锁、不 syscall。
+`RangeAllocation` 是 move-only RAII identity，因而不存在把 token 交给错误 owner 的公开 free 入口。
+owner-wide `reset()` 增加 generation 并重建一个完整 free range；旧 lease 立即失效，稍后析构不会误释放
+已经复用的 node。控制块通过 caller-synchronized 非原子引用计数活到最后一个 lease，允许 owner 先析构；
+若注入自定义 metadata allocator，其 backing 仍须活到所有 handle 消失。
+
+索引使用 64-bit TLSF-like 两级 size classes。`size + alignment - 1` 可表示且存在相应 free range 时，
+bitmap lookup、split、free 和相邻合并均为 O(1)；为避免明明有一个地址已经对齐的小洞却虚假 OOM，
+保守 lookup 不命中时会做地址相关 free-range fallback，allocate 最坏 O(F)。这与成熟 aligned virtual
+allocator 的真实成本一致；不能为了写“硬 O(1)”永久吞掉 alignment padding，或把 benchmark 内部 bin/
+search limit 暴露成用户策略。summary stats O(1)，largest-free/free-range detailed stats 明示 O(N)。
+
+该类型 caller-synchronized。GPU completion 应把 lease move 给拥有 stream/fence 的 pinned completion
+owner；并发 wrapper、defragment/move callback、buffer-image granularity 与 KV eviction policy 分别属于
+有真实同步或 device policy 的上层能力，不塞进 Mem 默认对象。
+
+### 8.2 Mapping factor 与 warm-up 语义
 
 `mem_vm` 是 file/shared storage mapping 的唯一 public owner；Platform 提供 raw anonymous VM 和
 `FileHandle` mechanism。`VirtualMapping` 是 `VmRegion` 的零开销别名，避免两套 enum、wrapper 和
@@ -359,6 +386,7 @@ shared name 同样保留 native namespace identity：POSIX 仅规范化前导 `/
 | 默认/注入 host allocation | `SystemAllocator`、`AllocatorRef`、`Heap` 与 std/PMR adapters | direct 与 runtime borrow 分型；owned heap 可 bulk release；backing 长寿 |
 | phase/external/LIFO scratch | `Arena`、`FixedArena`、`PooledArena`、`StackArena` | 单 owner；bulk/reset/rewind 失效化明示；无隐式 fallback |
 | variable/fixed/object pool | `FixedHeap`、`ConcurrentBlockPool`、`BlockPoolCache`、object-pool 家族 | size model、storage ownership、hard/soft/growable、reconstruct/preserve 都由类型表达 |
+| opaque backing 动态分段 | `RangeAllocator` / `RangeAllocation` | 64-bit aligned offset；显式 metadata/live 上限；RAII individual free + generation bulk reset；不拥有 payload |
 | mapping/residency | `VirtualMapping`、`FileMapping`、`SharedMapping` | owner 在 Mem；anonymous/range control 与 `FileHandle` 复用 Platform，file/shared native mapping 由 `mem_vm` 实现；不默认 prefault/lock/grow |
 | host/device/custom storage | `MemoryResource`、`MemoryResourceRef`、properties/domain/stats | provider 开放；不用闭合 kind；ref 一字且借用 provider |
 | persistent/imported/composite bytes | `Buffer`、`BufferView`、`ConstBufferView`、`HostMapping`、`CompositeBuffer` | owner/view 分开；view 四字 O(1) subview；opaque handle 不冒充 host pointer |
@@ -408,6 +436,7 @@ Mem 进入预发布冻结必须同时满足：
   driver 路径明确 skip，不用 synthetic 冒充硬件 PASS。
 - bump/arena：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback；多 block 长寿命复用用结构门禁证明每 epoch 至多线性考察，并用 32→2048 blocks 的跨进程 scaling 证书防回归。
 - fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedHeap 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
+- logical ranges：zero/overflow/>4 GiB/alignment、metadata OOM 回滚与上限、随机 non-overlap、split/coalesce、owner/lease move、bulk generation reset 和 stale lease；P1 只能比较 peer 也拥有的相同 offset/ownership/alignment 子合同。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
@@ -423,4 +452,5 @@ implementation task/evidence 和 Git 中。
 - Folly Arena / ThreadCachedArena
 - marl BoundedPool / PoolPolicy / Loan
 - TLSF two-level bitmap mapping；Boost.Interprocess `rbtree_best_fit` 作为 O(log N) 备选形状对照
+- AMD VMA/D3D12MA virtual allocator；Sebastian Aaltonen OffsetAllocator
 - ggml gallocr 与 llama.cpp pinned upload ring
