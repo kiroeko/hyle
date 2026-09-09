@@ -166,6 +166,10 @@ handshake 或 record pump 内不会重置 deadline。read/write 返回
 关闭时选择 `TlsShutdownMode::kBidirectional` 并给出 deadline/cancel，避免静默
 peer 永久占住 fiber。
 
+`tls_write` 是 write-some：一次成功最多提交一个 provider record，并可能返回小于
+输入 span 的 partial progress。发送完整 buffer 时像 TCP 一样按返回的 `bytes` 推进，
+或使用 HTTP 等已经提供 write-all 组合语义的上层；不要假设一次调用必定耗尽输入。
+
 客户端完成握手后可用 `take_session()` 取得 move-only opaque ticket，并在同一
 `TlsContext` 的下一次 `TlsStream::connect` 中传给 `resume_session`。来自另一
 context 的 ticket 会返回 `InvalidArgument`；`session_reused()` 可验证 provider
@@ -180,6 +184,7 @@ TLS 1.3 ticket 可能在握手完成后的 post-handshake record 中才到达；
 返回非 OK 后，尤其是 deadline/cancel 或底层 partial write 后，关闭该 stream 并按
 应用边界重连，不要把同一 plaintext buffer 从头盲重试。HTTP/2 等流控协议造成底层
 write backpressure 时，TLS 内部会有界地吸收已经到达的 peer ciphertext 并继续原操作；
+单 stream 的这部分未处理 ciphertext 有 32 KiB 硬上限，
 用户不需要、也不得另起并发 read/write 来手工驱动 memory-BIO pump。
 
 HTTP/1 是连接级协议因子，不是应用 server framework。server 在 accept 后创建

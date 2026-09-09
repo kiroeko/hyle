@@ -48,8 +48,12 @@
   opportunistic receive 只能在底层 write 立即报告 would-block 时发生；
 - 已接收 ciphertext 必须进入该 stream 的 read BIO，不能被 HTTP/2 owner旁路解析；pending write BIO
   数据在确认 native send 完成前不得被丢弃或重复；
-- 每次 pressure 处理最多吸收一个 `kPumpBytes` chunk，随后重新尝试既有输出；若双向都 would-block，
-  回到统一带 deadline/cancel 的 awaitable，不自旋；
+- 每次 pressure 处理最多吸收一个 `kPumpBytes` chunk，read BIO 的 opportunistic 未处理输入总量硬限为
+  `2 * kPumpBytes`；随后重新尝试既有输出，若双向都 would-block，回到统一带 deadline/cancel 的
+  awaitable，不自旋；
+- `tls_write` 保持 `TransferResult` 的 write-some 语义：启用 provider partial-write 后一次成功只提交
+  一个 record，完整发送由既有 HTTP/HTTP2 或调用者循环组合；不得在一次 operation 内循环全部输入并
+  借机累积无界 peer ciphertext；
 - 普通无背压路线不得新增 heap allocation、公开字段、虚分派或 syscall。`io_core` 仍唯一负责 POSIX/
   WinSock error 与 SIGPIPE-safe socket send，TLS 不复制 OS 分支。
 

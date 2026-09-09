@@ -374,6 +374,83 @@ struct TlsTruncationResult {
   std::atomic<hyle::StatusCode> status{hyle::StatusCode::Unknown};
 };
 
+constexpr std::size_t kPartialWriteBytes = 64 * 1024;
+const std::array<std::byte, kPartialWriteBytes> kPartialWritePayload{};
+
+struct TlsPartialWriteResult {
+  std::atomic<hyle::StatusCode> client_status{hyle::StatusCode::Unknown};
+  std::atomic<hyle::StatusCode> server_status{hyle::StatusCode::Unknown};
+  std::atomic<hyle::StatusCode> client_ack_status{hyle::StatusCode::Unknown};
+  std::atomic<hyle::StatusCode> server_ack_status{hyle::StatusCode::Unknown};
+  std::atomic<std::size_t> first_write_bytes{0};
+  std::atomic<std::size_t> first_read_bytes{0};
+  std::string server_message;
+};
+
+Task<int> tls_partial_write_server(AllocatorRef allocator,
+                                   TcpListener *listener,
+                                   TlsContext *context,
+                                   TlsPartialWriteResult *result) {
+  auto accepted = co_await listener->accept(kOwner);
+  if (!accepted)
+    co_return 0;
+  auto wrapped = TlsStream::accept(std::move(*accepted), *context);
+  if (!wrapped)
+    co_return 0;
+  TlsStream stream = std::move(*wrapped);
+  if (!(co_await tls_handshake(allocator, stream)).ok())
+    co_return 0;
+  std::array<std::byte, 32 * 1024> received{};
+  TransferResult read = co_await tls_read(
+      allocator, stream, received,
+      hyle::io::OperationOptions{
+          .deadline = hyle::time::deadline_after(std::chrono::seconds(2))});
+  result->server_status.store(read.status.code(), std::memory_order_release);
+  result->first_read_bytes.store(read.bytes, std::memory_order_release);
+  result->server_message = std::string(read.status.message());
+  if (read.ok() && read.bytes != 0) {
+    const std::array<std::byte, 1> ack{std::byte{0x7f}};
+    TransferResult written = co_await tls_write(allocator, stream, ack);
+    result->server_ack_status.store(written.status.code(),
+                                    std::memory_order_release);
+  }
+  co_return 0;
+}
+
+Task<int> tls_partial_write_client(AllocatorRef allocator, IoContext *io,
+                                   TlsContext *context,
+                                   TlsPartialWriteResult *result,
+                                   std::uint16_t port) {
+  auto opened = TcpStream::open(*io, kOwner);
+  if (!opened)
+    co_return 0;
+  TcpStream socket = std::move(*opened);
+  if (!(co_await socket.connect(Endpoint::loopback(AddressFamily::kIpv4, port)))
+           .ok()) {
+    co_return 0;
+  }
+  auto wrapped = TlsStream::connect(std::move(socket), *context);
+  if (!wrapped)
+    co_return 0;
+  TlsStream stream = std::move(*wrapped);
+  if (!(co_await tls_handshake(allocator, stream)).ok())
+    co_return 0;
+  TransferResult written =
+      co_await tls_write(allocator, stream, kPartialWritePayload);
+  result->client_status.store(written.status.code(), std::memory_order_release);
+  result->first_write_bytes.store(written.bytes, std::memory_order_release);
+  if (written.ok() && written.bytes != 0) {
+    std::array<std::byte, 1> ack{};
+    TransferResult received = co_await tls_read(
+        allocator, stream, ack,
+        hyle::io::OperationOptions{
+            .deadline = hyle::time::deadline_after(std::chrono::seconds(2))});
+    result->client_ack_status.store(received.status.code(),
+                                    std::memory_order_release);
+  }
+  co_return 0;
+}
+
 Task<int> tls_truncating_server(AllocatorRef allocator, TcpListener *listener,
                                 TlsContext *context) {
   auto accepted = co_await listener->accept(kOwner);
@@ -631,6 +708,60 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   EXPECT_EQ(r->server_echoed.load(), static_cast<long>(sizeof(kMsg)));
   EXPECT_EQ(r->client_recv.load(), static_cast<long>(sizeof(kMsg)));
   EXPECT_STREQ(r->client_got, "tls-encrypted-echo");
+}
+
+TEST(IoTls, LargeWriteReturnsOneRecordOfPartialProgress) {
+  constexpr std::uint16_t kPartialWritePort = 54403;
+  std::string cert = write_temp("partial-cert.pem", kCertPem);
+  std::string key = write_temp("partial-key.pem", kKeyPem);
+
+  TlsServerOptions server_options;
+  server_options.certificate_chain_file = cert;
+  server_options.private_key_file = key;
+  auto made_server = TlsContext::make_server(server_options);
+  ASSERT_TRUE(made_server);
+  TlsContext server_context = std::move(*made_server);
+  TlsClientOptions client_options;
+  client_options.verify = hyle::io::TlsVerifyMode::kNone;
+  auto made_client = TlsContext::make_client(client_options);
+  ASSERT_TRUE(made_client);
+  TlsContext client_context = std::move(*made_client);
+
+  Scheduler scheduler(1, system_allocator(), 256);
+  IoContext io(scheduler);
+  auto made_listener = TcpListener::bind(
+      io, kOwner,
+      Endpoint::loopback(AddressFamily::kIpv4, kPartialWritePort));
+  ASSERT_TRUE(made_listener);
+  TcpListener listener = std::move(*made_listener);
+  auto result = std::make_unique<TlsPartialWriteResult>();
+  auto server = std::make_unique<Drive>();
+  auto client = std::make_unique<Drive>();
+  server->task = tls_partial_write_server(
+      system_allocator(), &listener, &server_context, result.get());
+  client->task = tls_partial_write_client(system_allocator(), &io,
+                                           &client_context, result.get(),
+                                           kPartialWritePort);
+  Fiber server_fiber(kDefaultStackSize, &drive_entry, server.get());
+  Fiber client_fiber(kDefaultStackSize, &drive_entry, client.get());
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
+  ASSERT_TRUE(scheduler.spawn_on(kOwner, &client_fiber));
+  scheduler.drain();
+  scheduler.shutdown();
+  std::remove(cert.c_str());
+  std::remove(key.c_str());
+
+  EXPECT_EQ(result->client_status.load(), hyle::StatusCode::Ok);
+  EXPECT_EQ(result->server_status.load(), hyle::StatusCode::Ok)
+      << result->server_message;
+  EXPECT_EQ(result->server_ack_status.load(), hyle::StatusCode::Ok);
+  EXPECT_EQ(result->client_ack_status.load(), hyle::StatusCode::Ok);
+  EXPECT_GT(result->first_write_bytes.load(), 0u);
+  EXPECT_LE(result->first_write_bytes.load(), 16u * 1024u);
+  EXPECT_LT(result->first_write_bytes.load(), kPartialWritePayload.size());
+  EXPECT_GT(result->first_read_bytes.load(), 0u);
+  EXPECT_LE(result->first_read_bytes.load(),
+            result->first_write_bytes.load());
 }
 
 TEST(IoTls, MutualTlsAuthenticatesClientIdentity) {

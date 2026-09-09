@@ -207,6 +207,8 @@ tls_handshake(mem::AllocatorRef coroutine_allocator, TlsStream &stream,
 HYLE_IO_TLS_API sched::Task<TransferResult>
 tls_read(mem::AllocatorRef coroutine_allocator, TlsStream &stream,
          std::span<std::byte> buffer, OperationOptions options = {}) noexcept;
+// Write-some operation. A successful call submits at most one provider record;
+// advance by TransferResult::bytes until the complete plaintext is sent.
 HYLE_IO_TLS_API sched::Task<TransferResult>
 tls_write(mem::AllocatorRef coroutine_allocator, TlsStream &stream,
           std::span<const std::byte> buffer,

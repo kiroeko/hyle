@@ -20,6 +20,11 @@ namespace hyle::io {
 namespace {
 
 constexpr std::size_t kPumpBytes = 16 * 1024;
+// Opportunistic input exists only to break a full-duplex transport stalemate
+// while one TLS record is being flushed. Two pump chunks cover one maximum TLS
+// record plus provider overhead without turning a write operation into an
+// unbounded peer-input queue.
+constexpr std::size_t kMaxRetainedCiphertextBytes = 2 * kPumpBytes;
 
 struct ContextImpl {
   std::atomic<std::uint32_t> references{1};
@@ -278,11 +283,11 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
                                      BIO *read_bio, BIO *write_bio,
                                      std::byte *scratch,
                                      OperationOptions options) noexcept {
-  Status budget = operation_budget_status(options);
-  if (!budget.ok())
-    co_return budget;
   bool opportunistic_read_used = false;
   for (;;) {
+    Status budget = operation_budget_status(options);
+    if (!budget.ok())
+      co_return budget;
     char *pending = nullptr;
     const long available = BIO_get_mem_data(write_bio, &pending);
     if (available <= 0)
@@ -322,10 +327,15 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
           "TLS TCP transport does not support immediate progress");
     }
 
-    if (!opportunistic_read_used) {
+    const std::size_t retained_ciphertext = BIO_ctrl_pending(read_bio);
+    if (!opportunistic_read_used &&
+        retained_ciphertext < kMaxRetainedCiphertextBytes) {
+      const std::size_t receive_capacity =
+          (std::min)(kPumpBytes,
+                     kMaxRetainedCiphertextBytes - retained_ciphertext);
       detail::ImmediateTransferResult received =
           detail::tcp_try_read_some(
-              socket, std::span<std::byte>(scratch, kPumpBytes));
+              socket, std::span<std::byte>(scratch, receive_capacity));
       if (received.state == detail::ImmediateTransferState::kReady) {
         Status retained = retain_received_ciphertext(
             read_bio, scratch, received.transfer);
@@ -967,7 +977,7 @@ sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
   std::byte *scratch = stream.scratch_;
   SSL *provider = as_ssl(stream.ssl_);
   std::size_t completed = 0;
-  while (completed < buffer.size()) {
+  for (;;) {
     std::size_t bytes = 0;
     ERR_clear_error();
     const int result = SSL_write_ex(provider, buffer.data() + completed,
@@ -985,7 +995,11 @@ sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
             completed,
             Status::Unavailable("TLS write made no forward progress"), false};
       }
-      continue;
+      // SSL_MODE_ENABLE_PARTIAL_WRITE makes one successful provider call one
+      // record-sized write-some operation. Returning here keeps peer input
+      // retained by the duplex progress pump bounded; write-all belongs to the
+      // caller/composed transport and already loops TransferResult progress.
+      co_return TransferResult{completed, {}, false};
     }
     if (want == ProviderWant::kCleanEof) {
       co_return TransferResult{
@@ -1009,7 +1023,6 @@ sched::Task<TransferResult> tls_write(mem::AllocatorRef allocator,
           false};
     }
   }
-  co_return TransferResult{completed, {}, false};
 }
 
 sched::Task<Status> tls_shutdown(mem::AllocatorRef allocator, TlsStream &stream,
