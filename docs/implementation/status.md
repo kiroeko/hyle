@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。 |
-| io_watch | CANDIDATE | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 CANDIDATE：bounded borrowed file-change stream、三原生 backend、cancel/close、OOM rollback 与自然 C++ shape 已固定在 10f0bcda；后续只补候选验证、同合同 P1、红队和 terminal 证据。 |
+| io_watch | AUDITED | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 AUDITED：首候选 10f0bcda 的 WSL ASan 在 16 KiB pump fiber 上执行 SIMD UTF-8 校验时栈溢出；公开合同不变，限于 IOW-F04 的 sanitizer-aware 私有 stack-tier 纠正后重签候选。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

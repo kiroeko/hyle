@@ -174,3 +174,12 @@ API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接�
   evidence、task/user/developer 文档与状态投影变化；若发现产品/API/算法问题，必须退回 `AUDITED`。
 - 尚待：sanitizers、三交付/relocation、完整语义覆盖矩阵、P0/P1、终局红队与 terminal verdict；未运行项
   不提前写成 PASS。
+
+### 首候选撤回（`CANDIDATE -> AUDITED`）
+
+W1-WSL GCC 14.2 ASan 在第一个 native event 的 UTF-8 验证中命中 guarded fiber stack：release 使用的
+16 KiB small tier 在普通三平台测试中成立，但 simdutf 的 ASan instrumentation 把该调用栈放大到越过
+guard page。此结果是预声明 sanitizer 风险，不可写成 PASS，也不是 watcher 语义或 simdutf 算法失败。
+本轮依法退回 `AUDITED`，只允许在 `IOW-F04` 内把 native pump 的 sanitizer build 选择为已有 64 KiB
+default tier；普通 release 仍使用 16 KiB，公开 API、layout、事件算法和正常成本均不得变化。修复后产生
+新候选，首候选不再承担 terminal verdict。

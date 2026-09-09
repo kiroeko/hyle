@@ -320,10 +320,9 @@
     },
     {
       "module": "io_watch",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-watch-v1-file-change-stream.md",
-      "candidate": "10f0bcda75d434af20fc530e1a0317ad6571f016",
-      "summary": "io_watch v1 CANDIDATE：bounded borrowed file-change stream、三原生 backend、cancel/close、OOM rollback 与自然 C++ shape 已固定在 10f0bcda；后续只补候选验证、同合同 P1、红队和 terminal 证据。"
+      "summary": "io_watch v1 AUDITED：首候选 10f0bcda 的 WSL ASan 在 16 KiB pump fiber 上执行 SIMD UTF-8 校验时栈溢出；公开合同不变，限于 IOW-F04 的 sanitizer-aware 私有 stack-tier 纠正后重签候选。"
     }
   ]
 }
