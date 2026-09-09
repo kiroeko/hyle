@@ -36,7 +36,6 @@
 #include <unistd.h>
 
 #include "hyle/container/string_view.h"
-#include "hyle/io/detail/io_context_access.h"
 #include "hyle/io/http.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -257,14 +256,16 @@ public:
     SocketPair pair = make_socket_pair();
     if (!pair.valid())
       return -1;
-    const int client_descriptor = pair.release_client();
-    const int server_descriptor = pair.release_server();
-    hyle::io::detail::IoContextAccess::bind_handle(
-        io_, kOwner, client_descriptor);
-    hyle::io::detail::IoContextAccess::bind_handle(
-        io_, kOwner, server_descriptor);
-    TcpStream client(io_, client_descriptor, kOwner);
-    TcpStream server(io_, server_descriptor, kOwner);
+    auto adopted_client =
+        TcpStream::adopt(io_, kOwner, pair.release_client());
+    if (!adopted_client)
+      return -1;
+    auto adopted_server =
+        TcpStream::adopt(io_, kOwner, pair.release_server());
+    if (!adopted_server)
+      return -1;
+    TcpStream client = std::move(*adopted_client);
+    TcpStream server = std::move(*adopted_server);
 
     auto server_join = hyle::sched::spawn_task(
         scheduler_, system_allocator(),
