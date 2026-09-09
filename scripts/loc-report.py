@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report the three canonical HYLE module-closure LOC metrics.
+"""Report canonical HYLE repository, implementation, and component LOC.
 
 The report deliberately counts the current contents of Git-tracked files.  It
 therefore describes a dirty working tree honestly without letting untracked
@@ -10,6 +10,8 @@ instead measures the immutable tree named by a recorded closure snapshot.
 from __future__ import annotations
 
 import argparse
+import fnmatch
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -31,6 +33,19 @@ BUILD_PACKAGE_LANGUAGES = (
     "YAML",
 )
 SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
+REGISTRY_PATH = "docs/implementation/module-status.json"
+NATIVE_SUFFIXES = {
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".cu",
+    ".cuh",
+    ".h",
+    ".hh",
+    ".hpp",
+    ".hxx",
+}
 
 # Some closure units do not match the ordinary
 # include/hyle/<module> + src/<module> layout.
@@ -263,6 +278,148 @@ def custom_module_scope(
     return specs, expand_specs(files, specs)
 
 
+def snapshot_component_graph(root: Path, revision: str) -> dict[str, object]:
+    """Project the authoritative CMake component graph for one Git snapshot."""
+
+    selector_path = root / "scripts" / "validation-select.py"
+    spec = importlib.util.spec_from_file_location(
+        "hyle_validation_select_for_loc", selector_path
+    )
+    if spec is None or spec.loader is None:
+        raise ReportError(f"cannot load component graph projector: {selector_path}")
+    selector = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(selector)
+        snapshot = selector.Snapshot(root, revision)
+        graph = selector.project_graph(snapshot)
+    except Exception as exc:
+        raise ReportError(f"cannot project central component graph: {exc}") from exc
+    if not isinstance(graph, dict) or not isinstance(graph.get("factors"), dict):
+        raise ReportError("central component graph projector returned malformed data")
+    return graph
+
+
+def snapshot_registry(root: Path, commit: str | None) -> dict[str, object]:
+    if commit is None:
+        path = root / REGISTRY_PATH
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ReportError(f"cannot read current module registry: {exc}") from exc
+    else:
+        raw = run(("git", "show", f"{commit}:{REGISTRY_PATH}"), root)
+        assert isinstance(raw, str)
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ReportError("committed module registry is malformed JSON") from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("modules"), list):
+        raise ReportError("module registry must contain a modules array")
+    return payload
+
+
+def registry_record_state(record: dict[str, object]) -> str | None:
+    """Return the registry state during the v2 -> v3 governance migration."""
+
+    value = record.get("state", record.get("product_state"))
+    return value if isinstance(value, str) else None
+
+
+def component_owner(path: str, factors: dict[str, object]) -> str | None:
+    """Return the one central component that owns a native implementation file."""
+
+    split_owners: dict[str, str] = {}
+    for name, raw_factor in factors.items():
+        if not isinstance(raw_factor, dict):
+            raise ReportError(f"malformed central component metadata for {name!r}")
+        headers = raw_factor.get("headers", [])
+        if not isinstance(headers, list):
+            raise ReportError(f"malformed split-header metadata for {name!r}")
+        for header in headers:
+            if not isinstance(header, str):
+                raise ReportError(f"non-string split header owned by {name!r}")
+            if header in split_owners:
+                raise ReportError(f"split header has two owners: {header}")
+            split_owners[header] = name
+
+    if path in split_owners:
+        return split_owners[path]
+    if path in {"include/hyle/version.h", "include/hyle/visibility.h"}:
+        return "core"
+
+    parts = PurePosixPath(path).parts
+    if len(parts) >= 3 and parts[0] == "src":
+        candidate = parts[1]
+    elif len(parts) >= 4 and parts[:2] == ("include", "hyle"):
+        candidate = parts[2]
+    else:
+        return None
+    return candidate if candidate in factors else None
+
+
+def registry_state_scope(
+    state: str,
+    files: Sequence[str],
+    registry: dict[str, object],
+    graph: dict[str, object],
+) -> tuple[list[str], list[str]]:
+    """Select the de-duplicated current implementation union for one state."""
+
+    requested = state.strip().upper()
+    if not requested:
+        raise ReportError("registry state cannot be empty")
+    records = registry["modules"]
+    assert isinstance(records, list)
+    selected_modules: list[str] = []
+    for raw_record in records:
+        if not isinstance(raw_record, dict):
+            raise ReportError("module registry contains a non-object record")
+        if registry_record_state(raw_record) != requested:
+            continue
+        name = raw_record.get("module")
+        if not isinstance(name, str) or not name:
+            raise ReportError("module registry contains an invalid module name")
+        selected_modules.append(name)
+    if not selected_modules:
+        raise ReportError(f"module registry has no records in state {requested!r}")
+
+    factors = graph["factors"]
+    assert isinstance(factors, dict)
+    missing_factors = [name for name in selected_modules if name not in factors]
+    if missing_factors:
+        raise ReportError(
+            "registry modules are absent from the central component graph: "
+            + ", ".join(missing_factors)
+        )
+
+    native_files = [
+        path
+        for path in files_under(files, SELF_WITHOUT_TESTS_ROOTS)
+        if PurePosixPath(path).suffix.lower() in NATIVE_SUFFIXES
+    ]
+    owned: dict[str, str] = {}
+    unowned: list[str] = []
+    for path in native_files:
+        owner = component_owner(path, factors)
+        if owner is None:
+            unowned.append(path)
+        else:
+            owned[path] = owner
+    if unowned:
+        raise ReportError(
+            "native implementation files have no central component owner: "
+            + ", ".join(unowned)
+        )
+
+    selected_set = set(selected_modules)
+    selected_files = sorted(
+        path for path, owner in owned.items() if owner in selected_set
+    )
+    if not selected_files:
+        raise ReportError(f"state {requested!r} selects no native implementation files")
+    return selected_modules, selected_files
+
+
 def find_cloc() -> str:
     executable = shutil.which("cloc")
     if executable is None:
@@ -388,21 +545,42 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
     if not tracked:
         raise ReportError("the repository has no tracked working-tree files")
 
-    if args.module_path:
+    selected_modules: list[str] | None = None
+    if args.registry_state:
+        registry = snapshot_registry(root, commit if args.commit else None)
+        graph = snapshot_component_graph(
+            root, commit if args.commit else "WORKTREE"
+        )
+        selected_modules, module_files = registry_state_scope(
+            args.registry_state, tracked, registry, graph
+        )
+        module_specs: list[str] = []
+        boundary_kind = "central-component-ownership"
+        selection_name = f"state:{args.registry_state.strip().upper()}"
+        normalized_module = ""
+        module_languages = NATIVE_LANGUAGES
+    elif args.module_path:
         module_specs, module_files = custom_module_scope(args.module_path, tracked)
         boundary_kind = "explicit"
+        selection_name = args.module
+        normalized_module = args.module.strip().lower().replace("_", "-")
+        module_languages = (
+            BUILD_PACKAGE_LANGUAGES
+            if normalized_module == "build-package"
+            else NATIVE_LANGUAGES
+        )
     else:
         module_specs, module_files = module_scope(args.module, tracked)
         normalized_module = args.module.strip().lower().replace("_", "-")
         boundary_kind = (
             "canonical" if normalized_module in MODULE_BOUNDARIES else "conventional"
         )
-    normalized_module = args.module.strip().lower().replace("_", "-")
-    module_languages = (
-        BUILD_PACKAGE_LANGUAGES
-        if normalized_module == "build-package"
-        else NATIVE_LANGUAGES
-    )
+        selection_name = args.module
+        module_languages = (
+            BUILD_PACKAGE_LANGUAGES
+            if normalized_module == "build-package"
+            else NATIVE_LANGUAGES
+        )
 
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
 
@@ -455,7 +633,11 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         },
         {
             "id": "module",
-            "label": f"module implementation ({args.module})",
+            "label": (
+                f"module implementation union ({selection_name})"
+                if args.registry_state
+                else f"module implementation ({selection_name})"
+            ),
             "code": module_code,
             "files": module_code_files,
             "selected_files": len(module_files),
@@ -496,9 +678,10 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         },
         "tool": {"cloc": cloc_version(cloc, root)},
         "module": {
-            "name": args.module,
+            "name": selection_name,
             "boundary": boundary_kind,
             "paths": module_specs,
+            "modules": selected_modules,
         },
         "metrics": metrics,
     }
@@ -538,6 +721,13 @@ def self_check(report: dict[str, object]) -> None:
     module_paths = module["paths"]
     assert isinstance(module_paths, list)
     normalized_module = str(module["name"]).strip().lower().replace("_", "-")
+    if module["boundary"] == "central-component-ownership":
+        selected_modules = module.get("modules")
+        if not isinstance(selected_modules, list) or not selected_modules:
+            raise ReportError("registry-state report has no selected modules")
+        if module_paths:
+            raise ReportError("registry-state report must not publish directory scopes")
+        return
     if normalized_module == "build-package":
         expected_build = MODULE_BOUNDARIES["build-package"]
         if tuple(module_paths) != expected_build:
@@ -594,17 +784,28 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
         "  current unit languages: " + ", ".join(module_metric["languages"])
     )
     print(f"  module boundary ({module['boundary']}):")
-    for path in module["paths"]:
-        print(f"    - {path}")
+    selected_modules = module.get("modules")
+    if selected_modules:
+        print("    modules: " + ", ".join(selected_modules))
+        print("    files: unique union by central component ownership")
+    else:
+        for path in module["paths"]:
+            print(f"    - {path}")
     if passed_self_check:
         print("self-check: PASS")
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Report the three canonical LOC metrics for a HYLE closure unit."
+        description="Report canonical LOC metrics for a HYLE component or state set."
     )
-    parser.add_argument("--module", required=True, help="closure unit name, for example core")
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--module", help="closure unit name, for example core")
+    selection.add_argument(
+        "--registry-state",
+        metavar="STATE",
+        help="count the unique implementation union of modules in this current state",
+    )
     parser.add_argument(
         "--module-path",
         action="append",
@@ -625,7 +826,10 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="verify canonical boundaries and LOC subset invariants",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.module_path and args.module is None:
+        parser.error("--module-path requires --module")
+    return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:

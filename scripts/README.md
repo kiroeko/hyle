@@ -32,6 +32,7 @@ python scripts/loc-report.py --module core --self-check
 python scripts/loc-report.py --module core --commit <candidate-commit> --self-check
 python scripts/loc-report.py --module mem --json
 python scripts/loc-report.py --module container_intrusive --self-check
+python scripts/loc-report.py --registry-state CLOSED --commit HEAD --self-check
 ```
 
 Without `--commit`, the snapshot is the current content of Git-tracked files.
@@ -58,6 +59,14 @@ shape, repeat `--module-path REPO_PATH`; the exact override is printed in the
 report so the certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
+
+`--registry-state STATE` answers recurring aggregate questions without adding
+historical per-module LOC snapshots. It reads the registry and central CMake
+component graph from the same snapshot, assigns every native implementation
+file to one component, and counts the selected modules as a file union. Split
+headers therefore cannot be counted once for a product factor and again for an
+internal factor. Use `--commit HEAD` (or an exact commit) for a reproducible
+number; omit it only when the intended subject is the current dirty worktree.
 
 ## `simd-op-coverage.py` — frozen SIMD operation and route ledger
 

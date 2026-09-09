@@ -160,6 +160,36 @@ def main() -> None:
     if "scripts/validation-select.py" not in build_files:
         raise AssertionError("build/package boundary lost validation selector")
 
+    registry = reporter.snapshot_registry(root, commit)
+    graph = reporter.snapshot_component_graph(root, commit)
+    closed_modules, closed_files = reporter.registry_state_scope(
+        "CLOSED", files, registry, graph
+    )
+    queued_modules, queued_files = reporter.registry_state_scope(
+        "QUEUED", files, registry, graph
+    )
+    expected_closed = [
+        record["module"]
+        for record in registry["modules"]
+        if reporter.registry_record_state(record) == "CLOSED"
+    ]
+    if closed_modules != expected_closed:
+        raise AssertionError("CLOSED LOC selection lost registry order or membership")
+    if set(queued_modules) != {"compute", "graph"}:
+        raise AssertionError(f"unexpected QUEUED LOC selection: {queued_modules!r}")
+    if set(closed_files) & set(queued_files):
+        raise AssertionError("registry-state LOC selections overlap")
+
+    native_implementation = {
+        path
+        for path in reporter.files_under(files, reporter.SELF_WITHOUT_TESTS_ROOTS)
+        if Path(path).suffix.lower() in reporter.NATIVE_SUFFIXES
+    }
+    if set(closed_files) | set(queued_files) != native_implementation:
+        raise AssertionError(
+            "CLOSED + QUEUED selections do not partition current native implementation"
+        )
+
 
 if __name__ == "__main__":
     main()
