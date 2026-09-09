@@ -164,7 +164,13 @@ API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接�
 7. **易用性：** factory helper、typed batch、统一 OperationOptions、explicit rescan/close；guide 按 TLS 和
    resource reload 告诉用户如何选，突出 borrowed view、non-recursive、atomic replace 和 shutdown 顺序。
 
-## Candidate / 验证 / terminal
+## Product candidate（`CANDIDATE`）
 
-尚未产生 candidate。先完成 F00；随后只允许 F01--F05 一个有限产品批次。验证与裁决沿用 SCOPED 卡的
-预声明矩阵，任何未运行适用门均不得写 PASS。
+- immutable product commit：`10f0bcda75d434af20fc530e1a0317ad6571f016`；公开 API、对象布局、三平台
+  backend、root grouping、event coalescing、cancel/close 与常态成本从该提交起停止变化。
+- candidate 前已在 W1-WIN、W1-WSL、M1-MAC 通过 exact factor header 与普通 correctness；Windows 与
+  WSL 使用同一 canonical bytes，M1-MAC 从远端精确拉取 `995b2c60`，其中产品 tree 对应上述 candidate。
+- `AUDITED -> CANDIDATE` 的明确 previous revision 为 `995b2c60`。后续只允许 benchmark/test fixture、
+  evidence、task/user/developer 文档与状态投影变化；若发现产品/API/算法问题，必须退回 `AUDITED`。
+- 尚待：sanitizers、三交付/relocation、完整语义覆盖矩阵、P0/P1、终局红队与 terminal verdict；未运行项
+  不提前写成 PASS。
