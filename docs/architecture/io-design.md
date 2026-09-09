@@ -6,8 +6,8 @@ record 或 Git 历史追溯，不复制到这里。
 
 ## 设计目标
 
-HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 I/O：socket、文件、DNS、signal、
-TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
+HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 I/O：socket、文件、文件变化流、
+DNS、signal、TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
 ```text
@@ -35,8 +35,9 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 | `io_http` | HTTP/1 framing、head/body lifecycle、client/server connection | listener、routing、auth、batching |
 | `io_http2` | HTTP/2 session/stream、HPACK/frame provider、flow control、RST/GOAWAY | transport event loop、gRPC policy |
 | `io_transfer` | local/HTTP(S) copy/download、resume、verify、temporary file 与 atomic publication | repository/model schema、credentials、archive |
+| `io_watch` | bounded non-recursive file/directory change stream、coalescing、overflow/rescan、cancel/close | debounce、content diff、TLS/config/model/shader reload policy |
 
-五个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
+六个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
 构建和交付。中央依赖图是 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)，本页不复制边。
 
 ## Ownership 与进度
@@ -57,6 +58,12 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 普通 `File` 根据 backend capability 选择原生异步或 `IoContext` 的 blocking offload；用户不按 OS 名字
 猜路线。direct/non-buffered I/O 是显式请求，alignment 合同不可满足时诚实失败，不静默变成 buffered。
 named shared storage 属于 Mem，原子 replace/同步文件机制属于 Platform FS，IO 只组合异步 workflow。
+
+文件变化使用 parent/root 的原生 stream（Windows IOCP + `ReadDirectoryChangesW`、Linux inotify、macOS
+FSEvents），对外统一为 bounded borrowed batch。exact file 也观察 parent，才能跨 inode atomic replace；
+overflow 或粗粒度事件只承诺显式 rescan，不伪装成完整 event log。watcher 复用 Scheduler 的 owner、取消、
+deadline 和唤醒，不建立 polling loop 或永久私有线程。reload/验证/发布策略属于调用方或独立的
+`hyle-service`，不能反向进入 IO factor。
 
 Linux 专属的 provided-buffer/multishot receive 经成功取得的 `IoUringExtension` 使用；portable
 one-shot 永远存在。backend-specific 快腿必须用 typed capability/extension 显式取得，不能在其他平台

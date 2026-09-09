@@ -2,6 +2,7 @@
 #include <hyle/io/endpoint.h>
 #include <hyle/io/http.h>
 #include <hyle/io/transfer.h>
+#include <hyle/io/watch.h>
 #if defined(HYLE_IO_TLS)
 #include <hyle/io/tls.h>
 #endif
@@ -55,14 +56,28 @@ int main() {
       transfer->destination() != "model.ready")
     return 8;
 
+  // The bounded file-change stream is carried by the same IO product. Its
+  // target/options values are source-level C++ contracts, while close() proves
+  // that the owning binary boundary is present in static and shared SDKs.
+  constexpr auto watch_target =
+      hyle::io::FileWatchTarget::file("tls/cert.pem");
+  static_assert(watch_target.kind() ==
+                hyle::io::FileWatchTargetKind::kFile);
+  hyle::io::FileWatchOptions watch_options;
+  watch_options.max_batch_events = 16;
+  hyle::io::FileWatcher empty_watcher;
+  if (watch_options.max_batch_events != 16 || empty_watcher.valid() ||
+      !empty_watcher.close().ok())
+    return 9;
+
 #if defined(HYLE_IO_TLS)
   if (!hyle::io::tls_available())
-    return 9;
+    return 10;
   hyle::io::TlsClientOptions tls_options;
   tls_options.verify = hyle::io::TlsVerifyMode::kNone;
   auto tls_context = hyle::io::TlsContext::make_client(tls_options);
   if (!tls_context.has_value() || !tls_context->valid())
-    return 10;
+    return 11;
 #endif
   return 0;
 }

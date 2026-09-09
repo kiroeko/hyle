@@ -182,7 +182,6 @@ struct FileWatcherState {
   sched::ConditionVariable changed;
   sched::CancelToken native_cancel;
   Status failure{};
-  std::uint64_t epoch = 0;
   std::uint64_t generation = 0;
   std::uint64_t next_rename_correlation = 1;
   std::size_t expected_arms = 0;

@@ -172,7 +172,18 @@ Status initialize_native_watch(FileWatcherState& state) noexcept {
   }
 
   FSEventStreamSetDispatchQueue(stream, queue);
+  {
+    // FSEventStreamStart may enqueue the first callback immediately. Publish
+    // the initial lifecycle state before that callback can invalidate a root;
+    // setting active after Start would race and could resurrect a lost root.
+    std::lock_guard<util::SpinLock> lock(state.monitor);
+    for (NativeWatchRoot& root : state.roots) root.active = true;
+  }
   if (!FSEventStreamStart(stream)) {
+    {
+      std::lock_guard<util::SpinLock> lock(state.monitor);
+      for (NativeWatchRoot& root : state.roots) root.active = false;
+    }
     FSEventStreamInvalidate(stream);
     FSEventStreamRelease(stream);
 #if !OS_OBJECT_USE_OBJC
@@ -183,7 +194,6 @@ Status initialize_native_watch(FileWatcherState& state) noexcept {
 
   state.apple_stream = stream;
   state.apple_queue = queue;
-  for (NativeWatchRoot& root : state.roots) root.active = true;
   // FSEventStreamStart synchronously registers the stream; unlike the IOCP and
   // inotify coroutine pumps there is no first suspended native operation to
   // await before create() returns.

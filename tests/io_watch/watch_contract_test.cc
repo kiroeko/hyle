@@ -19,6 +19,7 @@
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/time/clock.h"
 
@@ -452,6 +453,89 @@ struct RootOutcome {
   bool close_idempotent = false;
 };
 
+struct CancelDuringOutcome {
+  Status status{};
+  bool waiter_cancelled = false;
+  bool watcher_reused = false;
+  bool closed_next_cancelled = false;
+};
+
+Task<void> wait_with_cancel(AllocatorRef allocator, FileWatcher* watcher,
+                            hyle::sched::CancelToken* cancel,
+                            CancelDuringOutcome* outcome) noexcept {
+  (void)allocator;
+  auto batch = co_await watcher->next(
+      {.deadline = std::nullopt, .cancel = cancel});
+  outcome->waiter_cancelled =
+      !batch.has_value() && batch.error().IsCancelled();
+  if (batch.has_value())
+    outcome->status =
+        Status::Internal("cancelled FileWatcher wait returned an event");
+  else if (!batch.error().IsCancelled())
+    outcome->status = std::move(batch).error();
+  co_return;
+}
+
+Task<int> exercise_cancel_during(AllocatorRef allocator, IoContext* io,
+                                 Scheduler* scheduler, std::string root,
+                                 CancelDuringOutcome* outcome) noexcept {
+  const std::array target{FileWatchTarget::directory(root)};
+  auto made = FileWatcher::create(allocator, *io, kOwner, target);
+  if (!made.has_value()) {
+    outcome->status = std::move(made).error();
+    co_return 0;
+  }
+  FileWatcher watcher = std::move(*made);
+  auto token = hyle::sched::CancelToken::try_create_root(allocator);
+  if (!token.has_value()) {
+    outcome->status = std::move(token).error();
+    outcome->status.Update(watcher.close());
+    co_return 0;
+  }
+
+  auto waiter = hyle::sched::spawn_task_on(
+      *scheduler, kOwner, allocator,
+      wait_with_cancel(allocator, &watcher, &*token, outcome));
+  if (waiter.is_finished()) {
+    auto joined = waiter.join();
+    if (!joined.has_value()) outcome->status = std::move(joined).error();
+    else outcome->status = Status::Internal("watch cancel waiter did not start");
+    outcome->status.Update(watcher.close());
+    co_return 0;
+  }
+  Fiber::yield();
+  token->cancel();
+  auto joined = waiter.join();
+  if (!joined.has_value()) outcome->status.Update(std::move(joined).error());
+  if (!outcome->status.ok()) {
+    outcome->status.Update(watcher.close());
+    co_return 0;
+  }
+
+  const std::string after_cancel = root + "/after-cancel.bin";
+  outcome->status = write_file(after_cancel, "still alive");
+  if (outcome->status.ok()) {
+    auto batch = co_await watcher.next(
+        {.deadline =
+             hyle::time::deadline_after(std::chrono::seconds(5))});
+    if (!batch.has_value()) {
+      outcome->status = std::move(batch).error();
+    } else {
+      for (const auto& event : batch->events()) {
+        if (event.target_index == 0 &&
+            event.relative_path == "after-cancel.bin")
+          outcome->watcher_reused = true;
+      }
+    }
+  }
+
+  outcome->status.Update(watcher.close());
+  auto after_close = co_await watcher.next();
+  outcome->closed_next_cancelled =
+      !after_close.has_value() && after_close.error().IsCancelled();
+  co_return 0;
+}
+
 Task<int> exercise_root_and_move(AllocatorRef allocator, IoContext* io,
                                  std::string root,
                                  RootOutcome* outcome) noexcept {
@@ -559,6 +643,18 @@ TEST(FileWatchContract, RootLossAndMoveOwnershipAreExplicit) {
   EXPECT_TRUE(outcome.terminal);
   EXPECT_TRUE(outcome.moved_from_inert);
   EXPECT_TRUE(outcome.close_idempotent);
+}
+
+TEST(FileWatchContract, InFlightCancelPreservesWatcherAndCloseIsTerminal) {
+  TempDirectory temporary;
+  CancelDuringOutcome outcome;
+  run_watch_journey(&outcome, [&](IoContext* io, Scheduler* scheduler) {
+    return exercise_cancel_during(system_allocator(), io, scheduler,
+                                  temporary.path().string(), &outcome);
+  });
+  EXPECT_TRUE(outcome.waiter_cancelled);
+  EXPECT_TRUE(outcome.watcher_reused);
+  EXPECT_TRUE(outcome.closed_next_cancelled);
 }
 
 TEST(FileWatchContract, InvalidAllocatorAndContextFailBeforeOwnerWork) {

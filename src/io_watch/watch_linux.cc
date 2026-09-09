@@ -141,7 +141,6 @@ bool publish_inotify_buffer(FileWatcherState& state,
   state.publish_locked(changed);
   if (lost_last_root && state.failure.ok()) {
     state.failure = Status::NotFound("all FileWatcher roots were invalidated");
-    ++state.epoch;
     state.changed.notify_all();
   }
   return changed;

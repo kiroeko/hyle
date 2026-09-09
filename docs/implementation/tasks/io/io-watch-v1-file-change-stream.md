@@ -127,8 +127,10 @@ HYLE_RETURN_IF_ERROR(watcher.close());
   next 无逐事件 heap、无 busy poll/额外 OS thread。macOS directory/coarse parent notification，以及任意
   native/library overflow，必须置 rescan flag；用户重读 authoritative state，不依赖事件日志完整性。
 - portable 保证 non-recursive；macOS 虽由递归 FSEvents source 提供机制，也必须在 factor 内过滤为 exact
-  file/直接子项，深层事件不得泄漏到 API。case/Unicode/path alias 遵循 host filesystem；rename pairing、每次 write
-  对应一个 event、跨 network FS 可见性、递归、内容 diff 与 debounce 都不承诺。
+  file/直接子项，深层事件不得泄漏到 API。root 按原生目录身份 canonicalize，子项按 native stream 返回的
+  UTF-8 拼写 byte-exact 匹配；case-fold、Unicode normalization 与 symlink alias 等价不作跨平台承诺，用户
+  应使用目录实际保存的名称，或观察 parent 后重读 authoritative state。rename pairing、每次 write 对应一个
+  event、跨 network FS 可见性、递归、内容 diff 与 debounce 都不承诺。
 
 ## 冻结有限 FIX 集
 

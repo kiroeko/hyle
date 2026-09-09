@@ -298,6 +298,20 @@ Status FileWatcherState::initialize(
   if (!targets.try_reserve(inputs.size()) || !roots.try_reserve(inputs.size()))
     return Status::ResourceExhausted(
         "FileWatcher target table allocation failed");
+  // path_storage may relocate while target paths are normalized, so a map
+  // keyed by string_view cannot safely be built until the final storage is
+  // stable. Group roots through stable hashes plus an explicit collision chain
+  // instead: expected O(targets), without over-reserving PATH_MAX per input.
+  container::FlatHashMap<std::uint64_t, std::size_t,
+                         container::Hash<std::uint64_t>, std::equal_to<>,
+                         mem::AllocatorRef>
+      root_hash_heads(allocator);
+  container::SmallVector<std::size_t, 4, mem::AllocatorRef>
+      root_hash_next(allocator);
+  if (!root_hash_heads.try_reserve(inputs.size()) ||
+      !root_hash_next.try_reserve(inputs.size()))
+    return Status::ResourceExhausted(
+        "FileWatcher root grouping allocation failed");
   if (!banks[0].reserve(options.max_batch_events,
                         options.max_batch_path_bytes) ||
       !banks[1].reserve(options.max_batch_events,
@@ -350,10 +364,14 @@ Status FileWatcherState::initialize(
                                  canonical_root.size() - 1);
 #endif
 
+    const std::uint64_t root_hash = watch_hash_bytes(root_name);
     std::size_t root_index = kNoWatchIndex;
-    for (std::size_t i = 0; i < roots.size(); ++i) {
-      if (root_path(i) == root_name) {
-        root_index = i;
+    std::size_t* hash_head = root_hash_heads.find(root_hash);
+    for (std::size_t candidate =
+             hash_head == nullptr ? kNoWatchIndex : *hash_head;
+         candidate != kNoWatchIndex; candidate = root_hash_next[candidate]) {
+      if (root_path(candidate) == root_name) {
+        root_index = candidate;
         break;
       }
     }
@@ -367,6 +385,20 @@ Status FileWatcherState::initialize(
       root_index = roots.size() - 1;
       roots[root_index].path_offset = path_offset;
       roots[root_index].path_size = root_name.size();
+      if (!root_hash_next.try_push_back(
+              hash_head == nullptr ? kNoWatchIndex : *hash_head))
+        return Status::ResourceExhausted(
+            "FileWatcher root collision table allocation failed");
+      if (hash_head != nullptr) {
+        *hash_head = root_index;
+      } else {
+        auto [entry, result] =
+            root_hash_heads.try_emplace(root_hash, root_index);
+        if (result == decltype(root_hash_heads)::InsertResult::kOutOfMemory)
+          return Status::ResourceExhausted(
+              "FileWatcher root grouping allocation failed");
+        (void)entry;
+      }
 
       Result<platform::FileInfo> info =
           platform::stat(path_storage.data() + path_offset);
@@ -534,7 +566,6 @@ bool FileWatcherState::require_rescan_locked() noexcept {
 
 void FileWatcherState::publish_locked(bool did_change) noexcept {
   if (!did_change) return;
-  ++epoch;
   changed.notify_all();
 }
 
@@ -542,21 +573,18 @@ void FileWatcherState::fail(Status error) noexcept {
   if (error.ok()) return;
   std::lock_guard<util::SpinLock> lock(monitor);
   if (failure.ok()) failure = std::move(error);
-  ++epoch;
   changed.notify_all();
 }
 
 void FileWatcherState::report_armed() noexcept {
   std::lock_guard<util::SpinLock> lock(monitor);
   ++armed;
-  ++epoch;
   changed.notify_all();
 }
 
 void FileWatcherState::report_start_failure(Status error) noexcept {
   std::lock_guard<util::SpinLock> lock(monitor);
   if (failure.ok()) failure = std::move(error);
-  ++epoch;
   changed.notify_all();
 }
 
@@ -641,7 +669,6 @@ Status FileWatcherState::close() noexcept {
       return Status::Ok();
     }
     closing = true;
-    ++epoch;
     changed.notify_all();
   }
 
@@ -657,7 +684,6 @@ Status FileWatcherState::close() noexcept {
     pending_bank = 0;
     closed = true;
     closing = false;
-    ++epoch;
     changed.notify_all();
   }
   return native_status;

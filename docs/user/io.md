@@ -1,6 +1,6 @@
 # IO 使用指南
 
-> IO 当前只提供 C++ 产品面；五个内部
+> IO 当前只提供 C++ 产品面；六个内部
 > factor 的终态以 `module-status.json` 为准。本页适用于 C++23 source/static/shared 三种交付，
 > 不描述 C API 或跨语言调用层。
 
@@ -107,6 +107,54 @@ offset 和 length；平台无法兑现时 open 会诚实失败，不静默降为
 命名共享 storage 属于 Mem：使用 `mem::SharedMapping::create/open/unlink`；IO 只负责建立在
 它之上的 namespace/handle transfer、notification 或异步协议。跨进程数据结构只能保存
 offset/POD，不能保存本进程裸指针。详见 [Mem 指南](mem.md)。
+
+### 文件变化：观察后重读 authoritative state
+
+证书、配置、model sidecar 或 shader 由另一个进程以 write/rename/atomic replace 发布时，使用
+`FileWatcher`；不要轮询 mtime，也不要依赖“一次 write 必有一个 event”。watcher 只提供通用、
+non-recursive 的变化流，解析证书、验证配置以及发布新对象仍由调用方或 `hyle-service` 拥有：
+
+```cpp
+#include <hyle/io/watch.h>
+
+std::array targets{
+    hyle::io::FileWatchTarget::file("tls/server.crt"),
+    hyle::io::FileWatchTarget::file("tls/server.key"),
+    hyle::io::FileWatchTarget::file("tls/ca.pem")};
+auto made = hyle::io::FileWatcher::create(alloc, io, owner, targets);
+if (!made) co_return;
+auto watcher = std::move(*made);
+
+while (!shutdown.is_cancelled()) {
+  auto batch = co_await watcher.next(
+      {.deadline = std::nullopt, .cancel = &shutdown});
+  if (!batch) break;
+
+  // Event 是失效通知，不是完整日志。先同时重读并验证整组文件，
+  // 只有全部成功才替换当前 TLS context；失败时继续服务旧 context。
+  if (batch->rescan_required() || !batch->empty())
+    try_publish_reloaded_tls_context();
+}
+(void)watcher.close();  // 必须早于 IoContext/Scheduler shutdown
+```
+
+一个 exact-file target 可以在 `create()` 时尚不存在，但其 parent 必须存在；directory target 本身必须是
+已有目录。输入 path 在 factory 返回前被复制。exact event 用稳定 `target_index` 标识，
+`relative_path` 为空；directory event 的 path 只是一层 basename，深层 descendant 不会泄漏。
+根目录会按原生文件系统身份 canonicalize；子项则按 native directory stream 返回的 UTF-8 拼写做
+byte-exact 匹配。不要依赖大小写折叠、Unicode normalization 或 symlink alias 在三个平台上等价；对
+exact-file target 使用目录实际保存/枚举的名称，或者观察其 parent directory 后重读 authoritative state。
+
+返回的 `FileWatchBatchView` 借用 watcher 的双缓冲，到下一次 `next()`、`close()` 或析构即失效；需要跨
+await 保存时复制。event 可能合并多个 change bit，rename correlation 只是尽力提供。任何 native/library
+overflow、粗粒度通知或无法安全表示的名称都会设置 `rescan_required()`；此时枚举并重建 authoritative
+state，不能猜丢了哪些事件。应用 debounce、内容 hash/diff、证书验证、reload retry 和 watcher service
+不是 IO 的职责。
+
+`FileWatcher` 是 single-owner 对象：`create/next/close` 以及 live-owner 的 move assignment 都在指定
+Scheduler worker 上进行；只能有一个在途 `next()`。取消或 deadline 只结束该次等待，watcher 仍可复用；
+`close()` 幂等，会唤醒 waiter 并排空 native completion。默认限制为 16 KiB native buffer、256 events
+和 16 KiB path bytes，可按一批资源数量显式调整；容量耗尽不会静默丢失，而是请求 rescan。
 
 ## 4. HTTP 与 HTTPS
 

@@ -33,7 +33,9 @@ enum class FileWatchTargetKind : std::uint8_t {
 
 // A borrowed factory input. FileWatcher::create copies the path, so the input
 // storage may be released as soon as create returns. File targets may be absent
-// while their parent exists; directory targets must exist at creation.
+// while their parent exists; directory targets must exist at creation. Child
+// name matching uses the UTF-8 spelling reported by the native directory
+// stream; case-folded or Unicode-normalized aliases are not portable.
 class FileWatchTarget {
  public:
   static constexpr FileWatchTarget file(std::string_view path) noexcept {
