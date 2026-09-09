@@ -124,7 +124,7 @@ bool mapping_search(std::uint64_t size, unsigned* first,
 
 void insert_free(RangeAllocatorImpl& impl, NodeIndex index) noexcept {
   RangeNode& node = impl.nodes[index];
-  HYLE_ASSUME(is_free(node) && node.size != 0);
+  HYLE_ASSUME(node.previous_free != kAllocatedNode && node.size != 0);
   unsigned first = 0;
   unsigned second = 0;
   mapping_insert(node.size, &first, &second);
@@ -142,7 +142,7 @@ void insert_free(RangeAllocatorImpl& impl, NodeIndex index) noexcept {
 
 void remove_free(RangeAllocatorImpl& impl, NodeIndex index) noexcept {
   RangeNode& node = impl.nodes[index];
-  HYLE_ASSUME(is_free(node) && node.size != 0);
+  HYLE_ASSUME(node.previous_free != kAllocatedNode && node.size != 0);
   unsigned first = 0;
   unsigned second = 0;
   mapping_insert(node.size, &first, &second);
@@ -357,7 +357,8 @@ NodeIndex allocate_node(RangeAllocatorImpl& impl, std::uint64_t size,
 
 void free_node(RangeAllocatorImpl& impl, NodeIndex index) noexcept {
   RangeNode& released = impl.nodes[index];
-  HYLE_ASSUME(!is_free(released) && released.size != 0 &&
+  HYLE_ASSUME(released.previous_free == kAllocatedNode &&
+              released.size != 0 &&
               impl.live_allocations != 0 && impl.allocated >= released.size);
   impl.allocated -= released.size;
   --impl.live_allocations;
@@ -578,7 +579,8 @@ void RangeAllocation::reset() noexcept {
   if (impl->owner_alive && generation_ == impl->generation) {
     HYLE_ASSUME(node_ < impl->node_count);
     const RangeNode& node = impl->nodes[node_];
-    HYLE_ASSUME(!is_free(node) && node.offset == offset_);
+    HYLE_ASSUME(node.previous_free == kAllocatedNode &&
+                node.offset == offset_);
     free_node(*impl, node_);
   }
   release_reference(impl);
