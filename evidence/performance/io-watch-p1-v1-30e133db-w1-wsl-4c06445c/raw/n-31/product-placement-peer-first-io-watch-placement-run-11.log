@@ -1,0 +1,15 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |           ns/change |            change/s |    err% |     total | exact-file atomic replace reload
+|---------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|   100.0% |           48,563.62 |           20,591.55 |    0.0% |      0.10 | `libuv uv_fs_event`
+|    92.8% |           52,349.52 |           19,102.37 |    0.0% |      0.10 | `HYLE FileWatcher`
+
+| relative |           ns/change |            change/s |    err% |     total | nonrecursive directory burst reload
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------
+|   100.0% |           16,075.08 |           62,208.07 |    0.0% |      0.10 | `libuv uv_fs_event`
+|   107.0% |           15,017.43 |           66,589.27 |    0.0% |      0.10 | `HYLE FileWatcher`
+# HYLE_IO_WATCH_RUN execution_order=peer-first apple_qos=not-applicable qos_ok=not-applicable run_nonce=7cf7f3e49e72ae5e9101301d45b84184

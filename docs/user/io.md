@@ -159,7 +159,8 @@ Scheduler worker 上进行；只能有一个在途 `next()`。取消或 deadline
 `close()` 幂等，会唤醒 waiter 并排空 native completion。默认限制为 16 KiB native buffer、256 events
 和 16 KiB path bytes，可按一批资源数量显式调整；容量耗尽不会静默丢失，而是请求 rescan。
 从构造 `next()` 返回的 awaitable 到其 `await_resume()` 完成，awaitable 借用的是同一个 watcher 对象；
-这段时间不得移动、赋值、关闭或析构 watcher。watcher 的析构也属于 owner-worker 操作，不能把未等待的
+这段时间不得移动、赋值或析构 watcher。owner worker 上的另一 fiber 可以调用 `close()`，它会取消并
+排空该等待，随后 awaitable 以取消状态恢复；watcher 的析构也属于 owner-worker 操作，不能把未等待的
 awaitable 带出 watcher 的生命周期。
 
 ## 4. HTTP 与 HTTPS

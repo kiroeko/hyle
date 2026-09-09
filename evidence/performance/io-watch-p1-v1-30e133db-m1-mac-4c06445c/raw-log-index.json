@@ -1,0 +1,1059 @@
+{
+  "entries": [
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-01.log",
+        "sha256": "feeca772ff14f48836d8582c3d4be25945f687343f505fca3fe9beea19f28938"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "be616766be38bad4a6c82b0529f8db7e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-02.log",
+        "sha256": "ac0e56f040df22a5ef692718e9a41f1dfe391de4fb99ee65eb8a90a461c7e039"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "0536b9712716bc6f7e90f2657d5833ef",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-03.log",
+        "sha256": "911f01e5be8dfd6ac5325fdad176cf02c60375b89e2b84503dbceac668e3c7c0"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "87a4c43416678530d7a99caf95b86011",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-04.log",
+        "sha256": "159c9ea695863741ef00e02311fea6566fc529038ae95f91df156efaca973027"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "26ac35d2d9943a385ee48f97b44af55e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-05.log",
+        "sha256": "48912674089f330ac70fa40716a7394964696732edb7c58a85dbff59146fd795"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "e361ca4603954bb48646e5dd47240dd9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-06.log",
+        "sha256": "8f05506baf26c165143bebbbcc33b3a30e2500dfa8a42d701511f5c7136b5f85"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "10512bab961ed451ae53c238c4762d55",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-07.log",
+        "sha256": "e8c34369948a9ced15724369c83803854f1b76c6eda92e3bcf64791eb45a4013"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "4cbcd1b286b23ab4fc968f53729f48f4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-08.log",
+        "sha256": "52282fc670fc1b60ddeef65176c8b314b00de55a374bb47d4c6b9b649866fc09"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "b3c359894861e3e8cf28a08fa9679471",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-09.log",
+        "sha256": "5810b5db31ca5f06ead916240753c0e6f6e65a13bcabb6e10f90cb319595bf27"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "dd3fb6f19c39ccf2d874e50f656b59f4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-10.log",
+        "sha256": "ae5c6d2573a7cee2b7193bab8d6765d5006fe7ca5795eb76554e3cab0916572b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "86781fff34de500dfe2ea82057a00589",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-11.log",
+        "sha256": "5afc6ef13dbba7789a7b0929b817c5f0c95051ee9b5121b023332d74fc223c05"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "e53678a5078ef1d664f8111566111cc1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-12.log",
+        "sha256": "a29b8532e47a446c46040b3d5baab16fa1dd77e880bf501fae3c60deedd40945"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "9bf61667b9bf8fd2801d35e4458eead3",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-13.log",
+        "sha256": "f406687a1dfb33785653d7b2671eb14df208a7a03fa3d0cbdb488e0668df76c1"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "7b5f02063fd941689c5275ba0c68dadf",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-14.log",
+        "sha256": "3776db83910468b58a58d602dd9c07692db95af9efc534d7d5f832cee9ec69da"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "e93322c1cc66aeed4f9bd72da436dc26",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-candidate-first-io-watch-primary-run-15.log",
+        "sha256": "6e23becc7f45f7b72ee1685bcd4f2ef7693b242f55965d571a741d24d99a9ed8"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "67408f186ecc6ee189ed8c0043d5160a",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-01.log",
+        "sha256": "04c61d803139271c84e4cd1f885662717f6ab525937034e64b19e03ce499224f"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "ba4ad9152fe80a9ea73437e8ab598197",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-02.log",
+        "sha256": "b42d36693feabfb0eeff82d3814cac4fb0a9ddb65d60ef3842cb27fcf524b69d"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "8d0c6b303387efa91dbd46c76b1dba31",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-03.log",
+        "sha256": "e52024ea586a68d65bf43d2287783e007183c1cf748d9353b59d46c4010f87bd"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "9e728eabc8e4f0959222399feb9c59a9",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-04.log",
+        "sha256": "2f6dca0dde08a9538c0c6374a801bcc290f92ea3509c444be359dc9351f90e5e"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "737a9e9b7c35f7094a52b43cec522466",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-05.log",
+        "sha256": "3c6a495f9377d0e423979bc6f34a300b3515fff0dacaedeb2674bba4c9f2b601"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "4ed98eddcd05f2d968040caaebf7bf27",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-06.log",
+        "sha256": "b462ab149a307002d33b15b047bcc11ab45b40dfe6f2e899c8c87dcffa854547"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "f3a99b2c059aba5b140f53d368ebbddd",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-07.log",
+        "sha256": "7b5f5a228ce09d558bc6d354f193b4bc626af8aba03f64f33817621ffec24f50"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "c1da6c993d7943b88f9e61e5127b0c76",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-08.log",
+        "sha256": "baef2ddb57093a2fe4615afdc34f825a2b5c8ea8efce1aaff14aa87d833aee43"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "24a4d08f7f28c942c82ed735e84f755e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-09.log",
+        "sha256": "f00158de41d4f94def48b9d798da9f0164449d2ef7806c9fa987f4930aaee82d"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "a6214cdeb4dbc14501aa9fdf0b5fbf63",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-10.log",
+        "sha256": "e350b10a07f450151c1f10297709b081cf35fdf894eaf71f9281e48159ddd70b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "64593e79fc1199805993eb1fa472e424",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-11.log",
+        "sha256": "382f899a2a4a492e89e9269632d81925bf240c2de19bc95af6f273471919e8cd"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "be4d876f713e7ec45245c797744b9aa5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-12.log",
+        "sha256": "7330b2b4e966bb77ea09e66e45e18ab21f6b9d897bc4938060b1a2a70827bc00"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "3ee19c292e0f1ec2b6bb157bcfd6a9f7",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-13.log",
+        "sha256": "3fd0c53f73d5037e725f797a9d4f7ad7628f18741792f6fb83cdd1f2533a44a0"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "c00bc0249ebd31f2b6aea53c9a143ca7",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-14.log",
+        "sha256": "83a199463ed8458b78bf0cedc5fcaaa955a438461a0ddad0a1f278533928ffb4"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "2fd6af208a5afad4a4b6be922d656875",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-primary-peer-first-io-watch-primary-run-15.log",
+        "sha256": "9bbdd3b0ca2e51c43442d9a320ec748d85a18020d288b1354a61a3a89aa07e21"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "a07e94efb6d3b121c6269e5c91ef6d2e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-01.log",
+        "sha256": "f4c479eb9db85f382b6e521692a6d3bd578b7d2d373db0690abe321a19a9dcaf"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "613d6e0a473ca9fa21b73f5dbbaf2e74",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-02.log",
+        "sha256": "ae0d3387fb9553358e3b5738dd4a5eeccaa27ec76983160f210b4c63b1127774"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "f55453647ba07d17a389126f32caf027",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-03.log",
+        "sha256": "acef6694eee527bebd95b97d4b84f1b18f1435cca307434eca73cce47fd10694"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "3b443529223bff2949e12fec8e0b05d1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-04.log",
+        "sha256": "3df8eab24ccab2eb288afc90247b5796d568610fffce4feee09331c25828ea0c"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "63b1ca457532c06cc86462a95a2e5c24",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-05.log",
+        "sha256": "303bb2e54c3004a03526063d3da03c92528ea2573377126aa3e741e0f42dc725"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "ba222966636a03e7305f9e6b667c803c",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-06.log",
+        "sha256": "db74f8ca1f28b643098ae4fe26c447f036a94cb29cc0da050d0155b75a406183"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "353e8e15a35822cc355e08aa09582640",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-07.log",
+        "sha256": "940623cd194cdee7098d65a753e64f664055553ac56e1ec92d0beb27975e6a5f"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "5165defee555c3be04061e39bf633539",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-08.log",
+        "sha256": "996cc83dc853c888842b430775c9dd82481b2dea25c9b7d86a04b274b43522a9"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "ee059cab81b422b6e336cf994b45ed54",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-09.log",
+        "sha256": "798a3c5556b1e30b521424a5b108d3e97929bc0c81cba8a43eedc5ad41eb61a9"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "0b4e3678c1997cb37e5a3927292155f6",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-10.log",
+        "sha256": "bd2b3b7ce970c6bdfb3d1e0911c9c4ee5892e009e060723329ba929d9c644e3c"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "e9ae6c4760e599e0332ea7d5d9720e92",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-11.log",
+        "sha256": "e28ba2b9bc5d0e6f52eeaf57146d7e27d941602e20b5520598b8022950de718a"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "fdfff416b55185fb3dbd8d96162ed2d2",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-12.log",
+        "sha256": "c829f02922ac0458ee614b54bad3e0ce08553b470f7275debbfea83ffbe63013"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "7be3a60503c37115158a472461e10b10",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-13.log",
+        "sha256": "4eb0116ed23e8d341b0dd90cbdc393fd5904ee73a102111140ba2737ff46436d"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "8dfce2f833799face2e8f270b37298be",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-14.log",
+        "sha256": "6284dc20679aa752acd787f8ef270a62e7dbeecf33df17274e2aaa2d856debe6"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "7738abdd28968d8885648d25ee440d5d",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-candidate-first-io-watch-placement-run-15.log",
+        "sha256": "04c02aeec7f8b2a71e53df4c85130ce773f09443229e9a8038126876f5a1d4de"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "187fadff517241c5f4574596b3603ba3",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-01.log",
+        "sha256": "419e0dd66258041b41579afbbfdba6773d4a10bb93cfa63e8f899e99f41b480e"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "0991181e9d6eb8b6e51286c001b420b0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-02.log",
+        "sha256": "5f78526a9857b7652e9c31237490ea62863306e71755dbf670203d4289eb3c0f"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "622ee49c15fe69fb3dbc382ad120cc80",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-03.log",
+        "sha256": "3efc4b89e49f8c818fbdf93943eb0ef64730b41817dfce95ca7b9748f4b6ee75"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "dd55fcb872e3892adc4aa5529a5739e9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-04.log",
+        "sha256": "d03c224814c5f2c12618fb34909617ababf598251e34fb99a0c13293db9c87d9"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "70073c9dd771a56bd0999b8d8cc185f8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-05.log",
+        "sha256": "38ba8cfef70c160813b735189bf6ad9643dbd0645b50b64822d9d6463754864e"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "c03e1cd8a034ba0dd746a06d8cb5ad21",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-06.log",
+        "sha256": "f0e70483bddb2dfad4ed3baada1defc0eab9df8c56ec69a700aeefea83fb387e"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "f3987049bd6fd9807c571e67e22b7576",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-07.log",
+        "sha256": "cf3ca51a88848df637b697d48e0be3983ef0d42f52a509a951350a779d3d29c9"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f0be5d1b93da09c88dd9b58fc0b6c44c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-08.log",
+        "sha256": "4dc63c6b47efbc7d4062096aa194fd87412e4c3ae83ddeee48822fd188b52d0f"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "92978700509b02827212c46b1e8f9bc4",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-09.log",
+        "sha256": "9d0fe5f14a45d0a547b7d727d0c298f62fc423594aedd1123000b6616ec70c5f"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "64c7d16c21555626e8324656abe23f85",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-10.log",
+        "sha256": "27ab757262dd5f6419ff44d0964dfae0def57c8119f5cc1b52f7db1a53fbe305"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "e2eac94473c410e4d1b632566ec101e2",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-11.log",
+        "sha256": "42f0924d431acad0b2a2659a047bf0f460d22941642ed2002f333dff6ab31e2d"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "5cdf56954e583f88f86cec665d0805a7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-12.log",
+        "sha256": "f0a25d82a473db0d71b226c9a70dbc1066017d78f79ae679cdc9b18287960ae9"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "62557fef3e66e27eaa71fabcde76ac85",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-13.log",
+        "sha256": "75150f07aa071c9b73c3d5c0cfc5651a6ed8053d0b77a85683696776c327dc7e"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ab12ed6a6d001a92eb018f1b9078f6dd",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-14.log",
+        "sha256": "ba04d5500bce1413d81ad81e023e49d22291a0a39da9b6f33ddae41aa1e1c12c"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "74d9ccada45f6a00eabcbecfc1bd716e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "io-watch-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/product-placement-peer-first-io-watch-placement-run-15.log",
+        "sha256": "6bdad373375fb13323ae0025582e2142bc0ff7db31ecf84d162bcb8b75042d2a"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "4ef488a2c755787e6931aca0f49cfb70",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "3eb51c8b06d8bb80b6afbb8b8d9bab8959d7165f0708a2ab75bfe6f4557c88b0"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "c4af5277a6d00cd0afaed6e9f1ebb8dd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "fd39a6afcc560f286ba495597ee7e5a73045290306c945525bc5404059b42df7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "93bf69a4ee02740acf3f642f9522c40c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "29263f0e1292260ff8a9bd96e0f8c2d1a9954241fa7b7adc788edb3f2b1f579b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "53e249546214aacf1e58e1ed778ecf57",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "905329abe3fd85e03b89928573fffe3340fff7345af936510bf5614e66e4ea46"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "ef75608c4e5a5733640b7aee1d2120e0",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "38873f7b2e8a78fa275534489687f99135f07b79fbce721cdd96071d1e73dc7c"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "b070f24350f4c7fd3dea4691b0fb8da5",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "53c93867209d1f94ae66e6363c995c7d705a52b664ff3fd761c7eaacd7f0bb49"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "efb27717aff9110619627e597d29a979",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "ab778cf4d1b9c38d08fe7195d7b226498c4068a9fd349b90c5a79f11bf86d0d3"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "9b243aaa6fae0163d47354830ceddeee",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "e79097bdda9d7daaecb659eaa51009b0c375e65fffb324af84cd813854dc51ef"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "47130bd964c49c5da89500161070880c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "b57769e204a435f18d06383ff8d48fac9b2521af14c40a46a1924d8eecce85ed"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "1a59f28f758e247736be72a2b3845ad3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "cb90ddefadfd6c4c0d0beac8d4d6888af0cc51b2f79af8048e9cdba6e3be6a58"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "4bfcf59acea0b403f9d61a2b7a864c4b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "69449e1c8ca2270123694a8f751eef31880a0d02a7346979137e00723cd79075"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "70771f45fb80f68f10c5b3dc74e01f9c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "12903d2c96584603fd32a43569dd9b69577177e06c04576c32789bcfa5719ec5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "55305b946836d25baa716c4b38ee80cb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "e09ac88816f388651c728bd682336f7d6ea4a85722d7a49d3413907c14c34a47"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "172f0898f139d1e2daa705f63fc58eb6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "12d878a73e641ad5fa858c3fbff60f5e9f94c10e00e26feee5b854b9d31b9149"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "ae17712fee87394be01afa2e6256c22e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "eb03e82be19041f3d35690d944a8bc4c970a3be63738dbaafde8fef0d63fa940"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "9079556f6aabc74a6ef9a73061a5cf26",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "3961308dfd2ed6d892860f1a457ab8bb817c91f1c6339341a9699c3a00b3f52e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "72859bc5bef9d902e71bf7999eb66891",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "1d46350ea03f098ae092a50880b8d7491b723d7e46d3513bb2f995de6649ba9c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "90fd89ac5580f2344a4f632b662f6d19",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "29a001e2e6d83798ddf95050105221c8de8dfd6ed53b2774a8c6627cd1972c50"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "4cef3ad9ea89906e94cdfbb371790689",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "e6d0a2848b04cc67ef191fe5dafb8f70463352ec2f2f02057e37ef5fcecf0465"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "387a7c64b8205fa5f8cde57432b83f37",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "538edb485e91f2beadce6aba2322ba01f70754b2d2584eb72ae7bb2d4019eea3"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "7df4f2b0d78320a0e7f75eece8568d4d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "288816c1a73b87d6993baf2df774a1b64ec697b109099c011c22cac7bd6e6281"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "5fffe7be87b531ad130a059aa9b83b22",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "88269ceb14c73bc353a7e269d484070972c8542c38d26bfcb6bba023e45509bf"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "cf5fab378afbcf16ea2bc5e0c6eac346",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "76e424101de9522ee056c083697df56ff63ccae8dc76de7ca74a5fd51d0219e7"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "b27c5a505622322945c2b2245933d21c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "e2d21c6b13e69a3c726434b910455ea1b5ce591b5ab0cd7ef3133fd9d0acb53e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "4f52c8e6c7598a4b317996a453ed3144",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "6eefbae3cf5546cb24541c2dc156b689bfbb1649fa043400b772812e2833539f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "777f63827ea2444d384405a842ae8a5e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "c06b892303d19edf294da40903bddeb2cf89fd719885bab3861013b1a85f3225"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "5309f15fa4fc4d80a13a27bb2f6df985",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "e49799c6c08a6166ba9d4fff505d1332c91082f6b2e48792745c85a6c4aa5c57"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "36bf709a1629168e9b20b9bc0bcf6fe8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "c58f549061a4377d6a618aec4a73918b19a25b2528cb08cb50a08487d716ef9a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "352b5b2daf12f21d25601105bd3cd2dd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "83fecc9faf44590021412474bd8b0abf810e0ff81e65b23f7bf10817c0ea9820"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "2348ce3b932fda16aad704e395419ed3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "4d1f68b6ea4a6e0cb52b09d2bc852ad7de4d2581c2565deff5c2f51bfa8a2529"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "3ecac797bb39b8909f200e14d68ddedf",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

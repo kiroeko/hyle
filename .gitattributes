@@ -1,4 +1,7 @@
 evidence/performance/*.csv text eol=lf
+evidence/performance/**/*.json -text whitespace=cr-at-eol
+evidence/performance/**/*.jsonl -text whitespace=cr-at-eol
+evidence/performance/**/*.log -text whitespace=cr-at-eol
 evidence/core/*.log text eol=lf
 evidence/core/*.txt text eol=lf
 evidence/core/*.md text eol=lf

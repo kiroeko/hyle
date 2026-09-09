@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。 |
-| io_watch | CANDIDATE | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 CANDIDATE：首候选的 sanitizer stack finding 已用仅插桩构建的既有 64 KiB tier 修复；公开合同与 release 16 KiB 成本不变，30e133db 已通过三平台普通回归及 WSL ASan。 |
+| io_watch | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 10% | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 CLOSED：跨平台 bounded 文件变化流完成三平台正确性/sanitizer、公开 IO 三交付、易用性、红队和同合同 libuv P1；原预声明 10% 工程非劣门全过，严格 5% 附加诊断仅在 WSL exact-file 两格未决且无 LOSE。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

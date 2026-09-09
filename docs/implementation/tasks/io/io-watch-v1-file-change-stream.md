@@ -1,6 +1,6 @@
 # IO Watch v1：可取消的跨平台文件变更流
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card（`SCOPED`）
 
@@ -38,7 +38,8 @@
 - 直接依赖 / 直接消费者：依赖冻结为 public `core,error,io_core,mem`，private
   `container,container_text,mem_vm,platform_fs,sched,time,util_core`；`sched` 没有公开类型泄漏，
   `mem_vm` 只提供已冻结的小型 fiber stack 档位，`util_core` 只承载实现内同步 primitive。
-  直接消费者为 IO product façade、exact-factor package sample 与两个 compile-only TLS/resource reload recipe；
+  直接消费者为 IO product façade、maintainer-only exact-factor header/build smoke 与两个 compile-only
+  TLS/resource reload recipe；
   当前没有产品实现反向依赖。
 - 性能 tier 与原因：`P1`。等待是 OS 主导，但 idle polling、逐 event allocation、额外线程/loop、无界队列、
   多余 wake/syscall 会在长期服务和 burst 热更新中传播；需要 P0 成本账本和同合同 full-consumer P1，
@@ -55,7 +56,8 @@
   rename/atomic-replace；多 target、unicode/长路径、empty/invalid/missing/root-disappear、overflow、OOM；
   cancel-before/during/after、deadline race、close-before/during/after、late native completion、move/destroy、
   single-owner/concurrent-next 误用；idle/burst/backpressure；ASan/UBSan/TSan；Windows/Linux/macOS；
-  exact-factor 与 IO façade 的 source/static/shared/offline/install/relocation；用户/architecture/性能文档；
+  maintainer exact-factor header/build，以及公开 IO façade 的 source/static/shared/offline/install/relocation；
+  用户/architecture/性能文档；
   P0 allocation/syscall/wake/thread 账本和上述 P1 primary+holdout。
 - stop / blocker 条件：只有全部准入 MUST、适用门、自然 API、交付和工程性能通过才 `CLOSED`。任一 OS
   无法在不引入第二 scheduler/loop 或永久 dedicated thread 的情况下提供可取消、无 busy-poll 的合同，
@@ -80,7 +82,7 @@
 | W05 bounded backpressure/overflow | renderer burst；inotify/Windows buffer overflow | one sealed borrowed batch；producer 在消费前不覆写；native/library overflow 均返回 rescan-required，不静默丢失 | 无 | `MISSING / FIX` |
 | W06 cancel/deadline/close | serving task cancellation；HYLE OperationOptions | next cancel 只结束该 wait；close 取消所有 native waits、join owner tasks、幂等；watcher 先于 IoContext/Scheduler 关闭 | 无 | `MISSING / FIX` |
 | W07 cross-platform no-dedicated-thread mechanism | libuv/Seastar + HYLE shard-per-core | Linux one inotify fd/owner task；Windows one IOCP owner task per unique root；macOS one file-event FSEventStream over all roots，系统 dispatch callback 只发布 bounded batch；零 blocking-pool thread/busy poll | io_core 只缺 Windows submit | `PARTIAL / FIX`，依法重开 io_core v2 |
-| W08 C++/delivery/docs | HYLE source/static/shared 产品 | `<hyle/io/watch.h>`；无 C/Native FFI；exact factor + IO façade；默认值、borrow、rescan 与 teardown recipe | factor 仅有 identity | `MISSING / FIX` |
+| W08 C++/delivery/docs | HYLE source/static/shared 产品 | `<hyle/io/watch.h>`；无 C/Native FFI；内部 exact factor 验证 + 公开 IO façade；默认值、borrow、rescan 与 teardown recipe | factor 仅有 identity | `MISSING / FIX` |
 
 public-surface 反向 trace 为空：此前没有 watcher API、兼容别名或 benchmark-only 入口需要保留。
 `platform_fs` 的同步 stat/path/handle owner 不应承载 awaitable stream；`io_core` 只补 native submission，
@@ -142,7 +144,7 @@ HYLE_RETURN_IF_ERROR(watcher.close());
 | `IOW-F02` | target 与 native setup 全缺 | checked path copy/group；Linux inotify、Windows directory handle、macOS FSEvents roots/file-events | exact missing/replace、dir/root loss、Unicode/long path、nonrecursive filter、rollback |
 | `IOW-F03` | event/batch/backpressure 全缺 | 固定 buffer/event/path storage、linear parse、expected O(1) coalesce、sealed generation、overflow/rescan | all kinds、burst/caps/overflow、view stability、无 silent loss |
 | `IOW-F04` | async lifecycle 全缺 | 用 `spawn_task_on` + existing budget/cancel，single-owner next 与 idempotent close/join | cancel/deadline/late completion/concurrent-next/teardown/sanitizers |
-| `IOW-F05` | 交付、指南、性能全缺 | exact factor + IO product、三交付/平台、guide/architecture/evidence、同合同 libuv P1 | 全部预声明门与独立红队 |
+| `IOW-F05` | 交付、指南、性能全缺 | maintainer exact-factor build/header + 公开 IO product 三交付/平台、guide/architecture/evidence、同合同 libuv P1 | 全部预声明门与独立红队 |
 
 本表之外不加入 recursive watcher、polling fallback、callback façade、glob 或 application reload。任何公共
 API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接口。
@@ -164,7 +166,8 @@ API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接�
    exact-replace 和 directory-burst consumer 对 libuv，双顺序/扰动/10% margin，不比 raw call。
 5. **FFI：** 当前唯一消费者是 C++ source/static/shared；没有具名 Java/C# owner，N/A，不恢复伪 C API。
 6. **交付：** `io_watch` 独立 compiled factor，关闭后由 `hyle::io` 聚合；header/target/export/offline/
-   relocation 和 transitive runtime DLL 都要实测，不能借 io_core sample 冒充。
+  relocation 和 transitive runtime DLL 都要实测；factor header/build 仅作 maintainer 验证，不能冒充用户
+  可取得的独立 factor package，也不能借 io_core sample 冒充。
 7. **易用性：** factory helper、typed batch、统一 OperationOptions、explicit rescan/close；guide 按 TLS 和
    resource reload 告诉用户如何选，突出 borrowed view、non-recursive、atomic replace 和 shutdown 顺序。
 
@@ -226,13 +229,58 @@ default tier；普通 release 仍使用 16 KiB，公开 API、layout、事件算
 
 ## P1 合同校准与夹具事实
 
-- closure card 最初给出的工程 ceiling 是 `10%`；在任何采样前，统一 P1 合同已依项目级规则收紧为
-  `5%` practical 与 non-inferiority gate。结果出现后不得退回较宽门，故 terminal verdict 只认 `5%`。
+- closure card 在任何采样前给出的工程 material margin 是 `10%`；统一 P1 runner 仍以项目默认 `5%`
+  生成一份更严格的附加诊断。terminal verdict 依原预声明 10% 门裁决，同时必须完整披露 5% 结果，
+  不能把严格门下的 `UNRESOLVED` 改写成 `PASS/PARITY`，也不能让 runner 的默认值事后覆盖产品卡片。
   `experiment.holdout=false` 是 nanobench runner v1 的固定执行字段，不表示缺少反偏置 workload；directory
   burst 仍是本轮唯一的正交产品 holdout，和 primary 一样完整采样并参与产品裁决。
-- 首次 Windows formal replay 暴露的是双方共用发布夹具的问题：watcher 活跃时，快速
+- 首次 Windows engineering qualification attempt 暴露的是双方共用发布夹具的问题：watcher 活跃时，快速
   `MoveFileExW(REPLACE_EXISTING)` 在 HYLE 路线和 libuv 路线都可瞬时返回 access denied。无 watcher 的
   10,000 次原子替换对照通过；加入相同 watcher/re-read 生命周期后，两侧均可复现。最终合同因此把
   Windows 真实发布者应有的 bounded transient retry 固定为最多 50 次、每次 1 ms；它位于共同
   `publish_exact` 中、对双方完全相同并计入测量，不改变 watcher、事件数、completion 或 target shape。
   诊断版的日志和 publish-only 入口不进入产品或正式仪器。
+
+## 终局验证与裁决
+
+candidate `30e133dbcf37e806f9deb1b121cdf0ae559546f6` 的 tree 为
+`b0df48f10774ae119b03fc1e779ababfe3b5e744`。从 candidate 到终局，
+`git diff 30e133db -- include/hyle/io/watch.h src/io_watch` 为空；后续提交只改变 benchmark/fixture、证据、
+task/user 文档和状态投影，没有用 P1 结果改公开 API、layout、算法或 shipping 16 KiB stack 档位。
+
+| 风险 / 命令或 receipt | 结果 |
+|---|---|
+| W1-WIN exact factor：`cmake --build C:/hyle-scratch/io-watch-v1-dev-root --target hyle_io_watch_tests`；对应 label/header `ctest` | header + watcher `2/2 PASS`，内部 11 个 API/journey/contract case 全过 |
+| W1-WSL exact candidate sanitizers：三个独立 Debug tree，`HYLE_SANITIZER=asan/ubsan/tsan`、`HYLE_WERROR=OFF`；TSan 用 `setarch x86_64 -R ctest ... -R '^(hyle_io_watch_header_self_contained_test|hyle_io_watch_test)$'` | ASan `2/2`、UBSan `2/2`、TSan `2/2 PASS`；各自 watcher 11/11。最初未用 `setarch -R` 的 TSan 在进入产品前命中已记录的 high-ASLR runtime mapping 错误，不是产品 verdict |
+| M1-MAC / MacBook Air `Mac16,12` exact archive、AppleClang 21、Release | header + watcher `2/2 PASS`；FSEvents exact/directory/nonrecursive/root-loss/cancel/close 路径运行 |
+| 公开 `hyle::io` 三交付：`cmake -DHYLE_SOURCE_DIR=<candidate> -DHYLE_SMOKE_ROOT=<scratch> -DHYLE_SMOKE_COMPONENT=io -P cmake/HyleCiSelectedComponentSmoke.cmake` | W1-WIN、W1-WSL、M1-MAC 的 source embedding、relocated static、relocated shared consumer 均 `3/3 PASS`；Windows receipt 在 `C:/hyle-scratch/io-watch-v1-delivery-30e133db/selected-io` |
+| P1：`io-watch-p1-v1`，同一 contract hash、libuv revision、两 workload、双顺序与 placement | 三平台 controls/qualification/provenance 全过；原预声明 10% NI 全过。W1-WIN 两 workload 8/8 `WIN`，M1-MAC 8/8 `PARITY`；W1-WSL directory 点估计领先约 6.3%--6.9%，exact 点估计落后约 1.4%--3.2%，严格 5% 附加门中两格 `UNRESOLVED`、无 `LOSE` |
+| 独立 bounded red-team | 实现/API/P0/依赖/三 backend 无产品反证；确认 one-owner/one-next/borrow/capacity 是公开性能合同，并纠正 exact factor 交付措辞及 close-awaitable 文档，不改变产品 candidate |
+| `python scripts/check-module-closure.py --previous-ref 4c06445c`、`--write-status`、普通 closure checker、`python scripts/check-docs.py`、`git diff --check` | `PASS`；previous registry 明确来自 `4c06445c` 的 `CANDIDATE` 快照 |
+
+P1 的完整数字、资格结果和三份 bundle/hash 见
+[`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md)。WSL exact-file 的小幅差异来自完整通用路径的
+UTF-8 validation、multiple-target expected-O(1) route、bounded coalescing 与 fiber wake；libuv adapter 在该格
+可直接比较 basename 并 callback。directory burst 能摊销这些成本且 HYLE 转为领先。该机制、跨平台反转和
+严格 5% 的区间都不支持为了 1%--3% 点值重做 API 或增加常态 metadata；原 10% 工程门最坏区间下界仍为
+`0.94623 > 0.90909`。
+
+七门终局结论：scope、architecture、correctness、delivery、usability_docs、red_team 与
+engineering_performance 全部 `PASS`，`io_watch` v1 签发 `CLOSED/FROZEN`。
+
+公开限制是产品形状的一部分，而不是隐藏缺陷：watcher 由一个 Scheduler worker 拥有、只允许一个在途
+`next()`；batch/path 是借用且容量显式有界；正常 shutdown 必须先 `close()` 再停止 IoContext/Scheduler；
+portable 范围只到 exact file 和 non-recursive directory，overflow/coarse event 后由应用重读 authoritative
+state。它们共同换来 steady event 无 heap allocation、无 busy poll、bounded memory 与确定 teardown。
+只有具名消费者证明 copying/multi-waiter/recursive convenience 的通用收益大于其额外成本，才另轮准入。
+
+只有以下新事实可以重开：可复现的 event-loss/错误 identity/UB/race/OOM rollback/cancel-close/lifetime
+缺陷；真实消费者证明缺少通用 file-change primitive 而非 debounce/reload/application policy；公开 API、
+layout、native backend、route/coalescing/capacity 算法、依赖或 source/static/shared 交付改变；下层
+IO/Sched/Platform/Mem 合同变化破坏组合证明；或者合格同合同证据证明超过预声明 material margin 的固定
+回归。单次点值、严格 5% 下的统计未决、recursive/network-FS 偏好或 benchmark 排名不是重开条件。
+
+`python scripts/loc-report.py --module io_watch --commit 30e133dbcf37e806f9deb1b121cdf0ae559546f6
+--self-check --json` 为 `PASS`：全库 508,296 行、自实现不含测试 92,332 行、`io_watch` 实现 1,605 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

@@ -1,0 +1,926 @@
+{
+  "artifacts": [
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-build\\CMakeCache.txt",
+        "sha256": "1754a97672b054d5ddb06e7cf6cbdefcc7fa2be0f15cde35c21a2d86d07c5f78"
+      },
+      "id": "cmake-cache"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-build\\bin\\Release\\hyle_perf_control_bench.exe",
+        "sha256": "bfd53a4ba98784bfd6f4e31e379aba03d462ce1d9e7cde51cbe7d19ab0f35af8"
+      },
+      "id": "common-control"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-build\\bin\\Release\\hyle_io_watch_p1_placement_bench.exe",
+        "sha256": "71de79a74b8b3dad8056ae6bbcc3afc4c65bf5c9ef7c40dbd8144aee37cb9697"
+      },
+      "id": "io-watch-placement"
+    },
+    {
+      "file": {
+        "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-build\\bin\\Release\\hyle_io_watch_p1_bench.exe",
+        "sha256": "0812f3ec8a35fb4db227b49b6c1433df09d3a68a70764669c857ae96090ef2ee"
+      },
+      "id": "io-watch-primary"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      },
+      "id": "toolchain-compiler"
+    },
+    {
+      "file": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202"
+      },
+      "id": "toolchain-linker"
+    }
+  ],
+  "artifacts_stable": true,
+  "build": {
+    "configuration": "Release",
+    "details": {
+      "architecture": "x64",
+      "build_stdout_sha256": "8212f0093ab68d9272a655c35f4b521deefc888bb3f6870a5af302e0c04dd9fd",
+      "cmake_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo",
+        "CMAKE_GENERATOR": "Visual Studio 18 2026",
+        "CMAKE_GENERATOR_PLATFORM": "x64",
+        "CMAKE_GENERATOR_TOOLSET": "",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON"
+      },
+      "cmake_cache_sha256": "1754a97672b054d5ddb06e7cf6cbdefcc7fa2be0f15cde35c21a2d86d07c5f78",
+      "compiler": {
+        "compiler_id": "MSVC",
+        "compiler_version": "19.50.35728.0"
+      },
+      "configuration_observation": {
+        "available": [
+          "Release"
+        ],
+        "mechanism": "CMAKE_BUILD_TYPE",
+        "proven": true,
+        "value": "Release"
+      },
+      "configure_stdout_sha256": "90cdcae78336a11558c33cd98a7ee044ddc979784f83ddfce70a7d5b11b49d15",
+      "generator": "Visual Studio 18 2026",
+      "machine_profile": "W1-WIN",
+      "requested_cache": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "HYLE_BUILD_BENCH": "ON",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_DEV_FACTORS": "io_watch",
+        "HYLE_INSTALL": "OFF",
+        "HYLE_IO_WATCH_P1_BENCH": "ON",
+        "HYLE_LIBUV_DIR": "C:\\public\\project-hyle\\libuv",
+        "HYLE_SANITIZER": "off",
+        "HYLE_SIMD_EXACT_TARGET": "",
+        "HYLE_STATIC": "ON",
+        "HYLE_TEST_INSTRUMENTATION": "OFF",
+        "HYLE_TRACE": "OFF",
+        "HYLE_WERROR": "ON"
+      },
+      "requested_configuration": "Release",
+      "targets": [
+        "hyle_io_watch_p1_bench",
+        "hyle_io_watch_p1_placement_bench",
+        "hyle_perf_control_bench"
+      ],
+      "toolchain": {
+        "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+        "compiler_frontend_variant": "MSVC",
+        "compiler_id": "MSVC",
+        "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+        "compiler_target": "unknown",
+        "compiler_version": "19.50.35728.0",
+        "formal_identity_complete": true,
+        "linker_id": "MSVC",
+        "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+        "linker_version": "14.50.35728.0",
+        "schema": "hyle.perf.toolchain-record/v1",
+        "sdk": "windows-sdk:10.0.26100.0",
+        "stdlib": "msvc-stl:14.50.35717/v145",
+        "system_name": "Windows",
+        "system_processor": "AMD64",
+        "system_version": "10.0.26200"
+      }
+    },
+    "fresh": true
+  },
+  "contract_lock": {
+    "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\contract-lock.json",
+    "sha256": "194c7858f7ed01b6aca084ec397f36951060ff618200ed5de496497b237acd42"
+  },
+  "contract_sha256": "9d1305102cbb2d4ab619856dca91d54fd974c29993dce00082008d4b316ac125",
+  "controls": [
+    {
+      "details": {
+        "kind": "aa",
+        "maximum_bias_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9935941105148166,
+                1.0078879058943822
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 0.9999494005681547,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          },
+          "peer-first": {
+            "equivalence_band": [
+              0.9523809523809523,
+              1.05
+            ],
+            "estimate": {
+              "confidence_interval": [
+                0.9872391360228271,
+                1.0151938234779903
+              ],
+              "confidence_level": 0.99261474609375,
+              "estimator": "process-median",
+              "independent_clusters": 15,
+              "median_advantage_ratio": 1.0036411797842482,
+              "sample_count": 15
+            },
+            "reason": "median-ci-inside-equivalence-band",
+            "verdict": "PARITY"
+          }
+        }
+      },
+      "gate": "PASS",
+      "id": "aa"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.025,
+          1.075
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 5.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.045433928439391,
+              1.0620740320184143
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.051105104588177,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0342159586078534,
+              1.0570061797044714
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.048994874556281,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta5"
+    },
+    {
+      "details": {
+        "accepted_median_band": [
+          1.05,
+          1.15
+        ],
+        "kind": "known-delta",
+        "monotonic_5_to_10": true,
+        "nominal_percent": 10.0,
+        "orders": {
+          "candidate-first": {
+            "confidence_interval": [
+              1.0789863914844335,
+              1.112867226263072
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0995933580070312,
+            "sample_count": 15
+          },
+          "peer-first": {
+            "confidence_interval": [
+              1.0925154615080364,
+              1.1155190716656629
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.1023877516913174,
+            "sample_count": 15
+          }
+        },
+        "relative_tolerance_percent": 50.0
+      },
+      "gate": "PASS",
+      "id": "delta10"
+    },
+    {
+      "details": {
+        "kind": "timer-floor",
+        "minimum_workload_floor_multiple": 20.0,
+        "workloads": [
+          {
+            "candidate_median_ns_per_op": 670621.0963385487,
+            "conservative_floor_ns_per_op": 0.20001546478370522,
+            "gate": "PASS",
+            "id": "exact-file-atomic-replace",
+            "measurement_batch": 1,
+            "observed_multiple": 3352846.2264842964,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.1953958903700085,
+                "peer_median_ns_per_op": 0.19541046859112138
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.1973481232448021,
+                "peer_median_ns_per_op": 0.20001546478370522
+              }
+            },
+            "peer_median_ns_per_op": 1133180.340711391
+          },
+          {
+            "candidate_median_ns_per_op": 205184.0681005499,
+            "conservative_floor_ns_per_op": 0.20001546478370522,
+            "gate": "PASS",
+            "id": "nonrecursive-directory-burst",
+            "measurement_batch": 1,
+            "observed_multiple": 1025841.0184554177,
+            "orders": {
+              "candidate-first": {
+                "candidate_median_ns_per_op": 0.1953958903700085,
+                "peer_median_ns_per_op": 0.19541046859112138
+              },
+              "peer-first": {
+                "candidate_median_ns_per_op": 0.1973481232448021,
+                "peer_median_ns_per_op": 0.20001546478370522
+              }
+            },
+            "peer_median_ns_per_op": 788385.8546324763
+          }
+        ]
+      },
+      "gate": "PASS",
+      "id": "timer-floor"
+    },
+    {
+      "details": {
+        "kind": "placement",
+        "target_variants": [
+          "placement",
+          "primary"
+        ]
+      },
+      "gate": "PASS",
+      "id": "placement"
+    }
+  ],
+  "extensions": {
+    "control_observations_file": {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\control-observations.json",
+      "sha256": "a824634ba87c502ee54d7e99967cf3adecd144e03c78804fc4470965f9985eb1"
+    },
+    "controls_file": {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\controls.json",
+      "sha256": "a4e19c49fecf550232782e68ed504962cf7494e9c81682b4cd186eddc6244d56"
+    },
+    "created_at_utc": "2026-09-09T20:30:50.929817+00:00",
+    "formal": false,
+    "host_probe_file": {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\host-probe.json",
+      "sha256": "7a3dea62d98867bc9ae30042c500f72f4794043a6903cc5d342519ad244bbcc5"
+    },
+    "mode": "qualify-platform",
+    "pre_sampling_validator_gates": [
+      {
+        "gate": "PASS",
+        "id": "artifact-identity"
+      },
+      {
+        "gate": "PASS",
+        "id": "build-contract"
+      }
+    ],
+    "product_evidence": [
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "exact-file-atomic-replace",
+        "provenance_file": {
+          "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-source\\bench\\io_watch\\consumer_shapes_v1.json",
+          "sha256": "d2a238b66fda8abf724c27164b693592ce945b85668cffa908de166ab96be517"
+        },
+        "provenance_path": "bench/io_watch/consumer_shapes_v1.json",
+        "tier": "consumer"
+      },
+      {
+        "errors": [],
+        "gate": "PASS",
+        "id": "nonrecursive-directory-burst",
+        "provenance_file": {
+          "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-source\\bench\\io_watch\\consumer_shapes_v1.json",
+          "sha256": "d2a238b66fda8abf724c27164b693592ce945b85668cffa908de166ab96be517"
+        },
+        "provenance_path": "bench/io_watch/consumer_shapes_v1.json",
+        "tier": "consumer"
+      }
+    ],
+    "product_gate_policy": "consumer-evidence-v1",
+    "product_gate_workloads": {
+      "eligible": [
+        "exact-file-atomic-replace",
+        "nonrecursive-directory-burst"
+      ],
+      "excluded": []
+    },
+    "raw_log_index_file": {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw-log-index.json",
+      "sha256": "96ac58aed4c76f1221d76903599d65a5604360a321e2fe19bfb008686c563acb"
+    },
+    "runs": 15,
+    "sample_stages": [
+      15
+    ]
+  },
+  "host": {
+    "child_environment_policy": {
+      "cleared_names": [
+        "ASAN_OPTIONS",
+        "CPUPROFILE",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "GLIBC_TUNABLES",
+        "GOMP_CPU_AFFINITY",
+        "KMP_AFFINITY",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+        "LSAN_OPTIONS",
+        "MALLOC_CONF",
+        "MIMALLOC_OPTIONS",
+        "TRACY_ONLY_LOCALHOST",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS"
+      ],
+      "cleared_prefixes": [
+        "HYLE_BENCH_",
+        "HYLE_PERF_"
+      ],
+      "fixed_values": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "path_sha256": "f5e81530b7766d190979bb08d8f44c3da7ab77799bd5d8c8124a2147b24401a2",
+      "raw_environment_recorded": false,
+      "schema": "hyle.perf.child-environment-policy/v2"
+    },
+    "child_policy": {
+      "affinity_mask": "0x4",
+      "applied_by": "benchmark-child-launcher",
+      "child_canary": {
+        "affinity_mask": "0x4",
+        "environment": "windows",
+        "gate": "PASS",
+        "mechanism": "inherited-process-policy-canary",
+        "ok": true,
+        "priority_class": "0x8000"
+      },
+      "cpu_set_id": 258,
+      "environment": "windows",
+      "launcher_applied": true,
+      "logical_cpu": 2,
+      "observed_affinity_mask": "0x4",
+      "previous_affinity_mask": "0xffffffff",
+      "priority": "above-normal",
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3
+    },
+    "evidence_role": "engineering",
+    "formal_claim": null,
+    "machine_profile": "W1-WIN",
+    "physical_host_identity": {
+      "environment": "windows",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WIN",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "registration_state": "REGISTERED_MATCH",
+      "required_host_facts_match": true,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": true,
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_source": "windows-machine-guid-sha256"
+    },
+    "platform": "windows",
+    "probe_sha256": "7a3dea62d98867bc9ae30042c500f72f4794043a6903cc5d342519ad244bbcc5",
+    "sampling_mutex": {
+      "acquired_at_utc": "2026-09-09T20:22:36.797553+00:00",
+      "environment": "windows",
+      "mutex_key": "W1",
+      "owner_token_sha256": "312b499d38b78ca376cef4438bac71f0f7f8fddb05d40f7354799750dd8f7367",
+      "path": "C:\\hyle-perf-locks\\W1.sampling.lock",
+      "physical_host_id": "W1",
+      "pid": 77144,
+      "profile_id": "W1-WIN",
+      "raw_owner_token_recorded": false,
+      "release_policy": "owner-token-match-only",
+      "schema": "hyle-perf-sampling-mutex-v1"
+    }
+  },
+  "host_stable": true,
+  "inputs_stable": true,
+  "observations": {
+    "count": 120,
+    "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\observations.jsonl",
+    "sha256": "f8b53cc0f2c9f57785dc574ec0472cdeea35954a8d7bad56c7c8d818686db889"
+  },
+  "peers": [
+    {
+      "clean": true,
+      "id": "libuv",
+      "remote": "https://github.com/libuv/libuv.git",
+      "revision": "3e606bc30a842701f8d12007d3ade662d258b76b",
+      "tree": "5a131784be3a81972fbca694c4a2825ea549615c"
+    }
+  ],
+  "qualification": "QUALIFIED",
+  "raw_logs": [
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-01.log",
+      "sha256": "f64ece146df4f49cc8db173561a256a93fb9e4d2329f0e1c52f424d29d607071"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-02.log",
+      "sha256": "27d437770c8f943cd3c10958e9aff57077f0d3d1d456fcd640e305b3f93e9085"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-03.log",
+      "sha256": "d4dd2c8e285668ed0116eb3a8a21581443cb14cf6fbba28fd7f3d04bb5416631"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-04.log",
+      "sha256": "f12bbcec3a034183847ef82fd85716dff9c0f6d22f84fbb4a04e609bd802a8d7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-05.log",
+      "sha256": "52961135b2e3be26cba6daf61f732749eef3fca6896c34d09e8286587fa07c7f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-06.log",
+      "sha256": "a28182bb03de32e05d1e9cc063db0eaed1b672648efb39fee0d3018b69a59d92"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-07.log",
+      "sha256": "a669548783002fa72d35085ab8d20b43a6e914eccd1c8b1d634a0bb24416d862"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-08.log",
+      "sha256": "3d4df6799916e040586b74ce7efa793827064bf02bbe6d047a33dc7734c2fa06"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-09.log",
+      "sha256": "827078fcdc296064154a8990568d7de520520d008c67b39f1a2c9465774b4a8c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-10.log",
+      "sha256": "5a9bdf538a2bce989d5a1f664a482431dccad31a053c88f011eeb8a9f8fa9d16"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-11.log",
+      "sha256": "a8e1b6b33315bf5515335f7b791ed7f0da9735d08dbd9afb42b1039e7ff27f9c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-12.log",
+      "sha256": "7a1b0d3b67bab66c3879ed53951253fd9db7aeb7a6651f60cfc6eb433327adf3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-13.log",
+      "sha256": "d61e91fdd4c54fa485ec5e9f4796830dc32b4a5b3c0af7370cbcafeaf630568f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-14.log",
+      "sha256": "6f87310c55168a6a88c8936b9d8ec2169e472232ed2245626582ca368ae60846"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-candidate-first-io-watch-primary-run-15.log",
+      "sha256": "718cb61023cb7936055b4489ea9aa4862b61b166dc85a34f693db25f83ef09ca"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-01.log",
+      "sha256": "93767b9420160ebeb2cb785a7283ee0906e4388aa1d3a000e275017b5d20495c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-02.log",
+      "sha256": "29444341549f1369fc4b6252b7263609aa4e6e385beff0860cc1a77a4ad14ff2"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-03.log",
+      "sha256": "650e11a214142489add262200b210224c4b1cfbe11d7502c18a30679956abaff"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-04.log",
+      "sha256": "0c480244d586a81f3d9488ca74b13572045f6a236ebdfa231bd91d04a0a0d795"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-05.log",
+      "sha256": "4680dd9e58b994466aa2d2ae319aeb3cb97dc5b1b825d622a30f11b3fb207b9e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-06.log",
+      "sha256": "ce432f48032e177930a69d34d5d41c96d1d83e3cd47ff4c55e497b9f61851980"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-07.log",
+      "sha256": "4f02a9a891890e3dff39643c050e57069b0bc5a57b44d702647d03a8edc7ffad"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-08.log",
+      "sha256": "0ee5a8f4f5c6509847ffd74bfea16501906be517042b5c52f3f51194395edb31"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-09.log",
+      "sha256": "c0cd248f67e387ccf7266daf7dc243a2b5623f18d5e6795519105e758f9bc27a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-10.log",
+      "sha256": "23d2e5bab24a6976febee953265c58935dcde294a4360ef55047866cfe8b37df"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-11.log",
+      "sha256": "835f96701af2c77989f03a9ee6c3aae0455900f67853deb848d479e509a569c3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-12.log",
+      "sha256": "30870d73c0985192e29b72baa47c156789875ac05ac8e9c6b03d26141b0a60af"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-13.log",
+      "sha256": "20ba4fe8319ac5877a465a57f115e316aa45882810694b01af0368e898c96790"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-14.log",
+      "sha256": "c58ef0acd279745728184f68c361f945f5f9a9c7b82c0127966deb83a8a968d7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-primary-peer-first-io-watch-primary-run-15.log",
+      "sha256": "c37961c7e2233ee7a6b996efb794d6d313ce15d0d3c587ec1db6f554d3ea9533"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-01.log",
+      "sha256": "8ceb81617280fb63cd176092cb391a4afad55893dc364af84f244f058bef72cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-02.log",
+      "sha256": "7dfcf80f19746adc9256653528b8c97f0ee0ae9f9cff332f5083ee1d4e203292"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-03.log",
+      "sha256": "8fc247b2fd3958731ae552251b23670e3227e71d7ace06eb1770cea26a3e0513"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-04.log",
+      "sha256": "afa6e97271a19ec99f17b9e5966d42659903da5124dbd7bb9eccbf08acbb0c2e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-05.log",
+      "sha256": "e55aa049c44fa84a543af4baa5a4f174b50337a04e36ea5f3cf2f6d147e7433b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-06.log",
+      "sha256": "99ca32cdb8d23265d635f0827a4fcc403c92ec3ff8b7043a43eb4461a8a4fff8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-07.log",
+      "sha256": "4666f8c77ad397bcabff8fc580e20a7827311032f8dec8ec116d77ecc9a9999a"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-08.log",
+      "sha256": "a80929e7aca96501f744f93700af5c7f56b38e1fac3e358f52727a1fddeb6c19"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-09.log",
+      "sha256": "f1680bb0f9ed28dd8547ad3df31723cd44b3e974c8f25ccdac4310d3ce7889dc"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-10.log",
+      "sha256": "fdc25855dd803783c3783e9d7031e255026a16a1ebc5a0297c82c0d5d14118b5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-11.log",
+      "sha256": "9222ee04b1cd3b06374a7fb33defbba52f65ee8495b6e7410ff6c3bbed2edfe5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-12.log",
+      "sha256": "7878270dc4db2e32a21365b375008b0b88b0eac458a2af0df6d528995c500088"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-13.log",
+      "sha256": "5660357f7fc7f9ef76871075b261d4c662439e24a5cc9a5990ef890fc84932f7"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-14.log",
+      "sha256": "04304d373c9678e7d47b5b10c00ef450caf4156a43ec06dcedb2a15bb3e6a38e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-candidate-first-io-watch-placement-run-15.log",
+      "sha256": "a8bcf255d865be4a18989d16e9bc922d50522ad7ff8ef06c007925575a442c92"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-01.log",
+      "sha256": "8e47c778f7a2d8b555ebe840daa747ecd4208a1fb719d9140598c6816af2a656"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-02.log",
+      "sha256": "08bdc0650451779355b32954c9c9a4d14e31400834cd7f1256c3fc2e3326f511"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-03.log",
+      "sha256": "2f19041a8db1fecb9667d0c1004afa181deae8d0662ac0f239ec02010603402e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-04.log",
+      "sha256": "a320a51e33f161e22134eb5b13757b7456e2df1b993a0349dde3bdbea6b17132"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-05.log",
+      "sha256": "fb737c3d00fc91b0599dbd81a3beb8d0c40052fb7bc70dedc91ff7ef8221253d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-06.log",
+      "sha256": "5d5a92730f247005646ba08b9d44c0d210a77230edb95bfda3d178a6439afb98"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-07.log",
+      "sha256": "99689770c32190b6e205bced66384df02fa1227996aa55fe7632de170d5befcd"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-08.log",
+      "sha256": "83ad8131ce13b2e971bd7decde26b6d69f53d5f171acfe3ed037fd7799477514"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-09.log",
+      "sha256": "a4b4fb367eec0b82b9f69cd2cc3047422fe82b6d98ff4fec1fb2561dd61baf92"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-10.log",
+      "sha256": "7a5dea8cb9ced5d831a499d1e590b5c16569d7c03b9351e08aa4ae7d0dea96ad"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-11.log",
+      "sha256": "ca51fabf19fe06948dbdf6d21a8380a96374304b4a2d4185a879eee1ad8316d3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-12.log",
+      "sha256": "a87c3cdca6b16910fd6cdf1691f7dc7604d5d3522a7fd6b6c865928323b5a688"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-13.log",
+      "sha256": "2499bf86b72fb8e613940d1ac9915adcb5506580b7eb89bfa976d0f0d702f564"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-14.log",
+      "sha256": "7e46cfb1bf3ea87a96956ec921268616fd93b09a31405ea693755203a43d979f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\product-placement-peer-first-io-watch-placement-run-15.log",
+      "sha256": "f67593ea1c4ed8c5808ce189e19009eeda101f5d07851deb0e53cf86a19aa5b5"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-01.log",
+      "sha256": "1728bfe23a3b1e3344891f0845b1c77c04c2076a7c76daceafdb359a680ebf5d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-02.log",
+      "sha256": "6701dcbfa1a31f683179871f991f14bb6b6dc01bd410d6a69d7ba5ac838e6255"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-03.log",
+      "sha256": "55d71ebc1626449255bc10903a8288bfe70b26f8883be4dd05a84bedd574a037"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-04.log",
+      "sha256": "18afe3142a1d7d78838d6cd35fc7af7de558942f070b3089466cdc7d53d3ad1e"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-05.log",
+      "sha256": "8bc2aedb576de019ac2dd9557d078b1f8811ba2297e744a94bc50bbdb90892eb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-06.log",
+      "sha256": "6bc6a9ad5afbc7485b7efaeed0d85d96c4e9cedfa7dc332e13e54b2a2b3daf0d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-07.log",
+      "sha256": "d116c66228b2844437754e846d8706ec9db44831d40e327f6318f66bad6d8e84"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-08.log",
+      "sha256": "fe243eae3811a3d638075e8f09900c08c445ad15fd6daa42b4b74c29a731fbf3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-09.log",
+      "sha256": "ee703b1bcad09c8725ce475b7a0a20d3d87632b9b87a01a54a0e7ebceed4ded0"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-10.log",
+      "sha256": "0772946b96c82c90c54e48f633fa24d3691ff4ef5b38f2be2928fd93d8aedcb3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-11.log",
+      "sha256": "b1e920214f510493e97279dcd93ede166d8d466f4f69135748699d2d52dc35ac"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-12.log",
+      "sha256": "e948bba93aee756b917b37e406241da0b8b698d1e48d3e8ce0160381f9e42738"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-13.log",
+      "sha256": "c6e9bb01f2a8e981bc43bdb25d6dc53c552e1d99beeaf532721788de57e15585"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-14.log",
+      "sha256": "b3075b36321cbc102ecd2e22d145ec1739c7a47ec82fc1e26d38d461b0d0aba8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-candidate-first-run-15.log",
+      "sha256": "8ef2ae08188212f81f7d8b7aa0075384deec6a7a2362b09ff39bb047e9899212"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-01.log",
+      "sha256": "7c7f54c62f23c70131751735c349bc3cbd8962064675411b86d51f76191c722d"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-02.log",
+      "sha256": "6a5d6f3fc228dbbd85fef0a9853fefe1e0d9a119cca45b54b9fd9601812e6caf"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-03.log",
+      "sha256": "5b377c96c1ffb5fa20056e32638e4eaefde5ec6a2547f69aefc260910eab85e3"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-04.log",
+      "sha256": "eb4ece26ab7fd004029d3b4a8a3b1a6c841983e4358d1d952eda012b79c6a7cb"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-05.log",
+      "sha256": "8672e498763055a7bf15e1cbca70a5c2f85eace1d96d73484b57dfe0322f003f"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-06.log",
+      "sha256": "55b3cf5720d01ea0c0a65737eada2011254ae532e4bf794e224d0684799e5ed1"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-07.log",
+      "sha256": "78afe65cda047c38750d0fe578bb665dbeb07dfaa5188090a3997152567ce89c"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-08.log",
+      "sha256": "612bd21fc9a078c9af5607bdf127b9632dff332c2519b5d85332d8fc238a98d8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-09.log",
+      "sha256": "52de2997f1fcc199e2f2de925afefb24ed209c7434039ce55d8ed11563057de8"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-10.log",
+      "sha256": "c32a5d8473bffe5d76614a1e09e131c17cc1bb7abc1f83296890b092df5d4c09"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-11.log",
+      "sha256": "763551a2571d85cf1f69f351c4b3a89da356a3d25e8c565e14486bbbe0d1fd32"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-12.log",
+      "sha256": "c3a14243bbff0b22af808d0e5c0fc01db48bdf555ed3d506b971350072783c14"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-13.log",
+      "sha256": "1a2e4b2764f7618b81d51d6600354d9cea2e3a7e996bed4b6fae778dafd7c638"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-14.log",
+      "sha256": "c23d81119f1e621b719feb41969b28ea1224ad1130988722702b2107e642e99b"
+    },
+    {
+      "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\raw\\n-15\\control-peer-first-run-15.log",
+      "sha256": "b1a29abf46ace52062ca15ddd0fcb74851c6fd59a4e075f5c917e6fd8d1f0952"
+    }
+  ],
+  "record": "hyle_perf_evidence_manifest",
+  "schema": "hyle.perf.evidence-manifest/v1",
+  "source": {
+    "clean": true,
+    "remote": "git@github.com:axiomates/hyle.git",
+    "revision": "4c06445c4ba0988c2dab1610d51c8f1b26d9f3ba",
+    "tree": "25b05c0be3289a6be52e311a20f09c6bd7275dd0"
+  },
+  "summary": {
+    "path": "C:\\hyle-scratch\\io-watch-p1-4c06445c-win-engineering-evidence\\summary.json",
+    "sha256": "d228f8b4e258fa0dc116e62d144dd57135047ed0ff8534e82506d62fcb5cfc03"
+  },
+  "validator_results": [
+    {
+      "details": {
+        "artifact_count": 6,
+        "kind": "artifact-identity"
+      },
+      "gate": "PASS",
+      "id": "artifact-identity"
+    },
+    {
+      "details": {
+        "architecture_matches_profile": true,
+        "compiler_id": "MSVC",
+        "compiler_matches_profile": true,
+        "compiler_version": "19.50.35728.0",
+        "configuration": "Release",
+        "configuration_observation": {
+          "available": [
+            "Release"
+          ],
+          "mechanism": "CMAKE_BUILD_TYPE",
+          "proven": true,
+          "value": "Release"
+        },
+        "expected_compiler_id": "MSVC",
+        "expected_compiler_version_prefix": "19.50",
+        "formal_toolchain": {
+          "mismatches": {},
+          "proven": false,
+          "reason": "machine runner profile has no pinned formal_toolchain",
+          "required": false
+        },
+        "fresh": true,
+        "generator_matches_profile": true,
+        "isa": "portable",
+        "kind": "build-contract",
+        "linkage": "static",
+        "lto": "off",
+        "toolchain": {
+          "cmake_compiler_record_sha256": "2485d7b0c0da4ab1511f625362025eb43be3c3b931431747fc6220a0d5e19938",
+          "compiler_frontend_variant": "MSVC",
+          "compiler_id": "MSVC",
+          "compiler_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "compiler_sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782",
+          "compiler_target": "unknown",
+          "compiler_version": "19.50.35728.0",
+          "formal_identity_complete": true,
+          "linker_id": "MSVC",
+          "linker_path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "linker_sha256": "c988acb4ec7ef964ae4d4e414b693a6a3782dd85f1e200100b3f896db6b1a202",
+          "linker_version": "14.50.35728.0",
+          "schema": "hyle.perf.toolchain-record/v1",
+          "sdk": "windows-sdk:10.0.26100.0",
+          "stdlib": "msvc-stl:14.50.35717/v145",
+          "system_name": "Windows",
+          "system_processor": "AMD64",
+          "system_version": "10.0.26200"
+        },
+        "toolchain_attested": true
+      },
+      "gate": "PASS",
+      "id": "build-contract"
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "contract_sha256": "9d1305102cbb2d4ab619856dca91d54fd974c29993dce00082008d4b316ac125",
+  "experiment_id": "io-watch-p1-v1",
+  "qualification": "QUALIFIED",
+  "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+  "record": "hyle_perf_summary",
+  "schema": "hyle.perf.summary/v1",
+  "workloads": [
+    {
+      "combined_exact_verdict": "WIN",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "exact-file-atomic-replace",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 1474.88,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 893.96,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              1.5013483243807495,
+              1.816755595429219
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.6597823053307283,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "primary-candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 1495.34,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 861.52,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              1.5768628053464433,
+              1.8932876065508588
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.762692750560891,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "primary-peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 1498.81,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 937.31,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              1.5111278455636177,
+              1.8736570107439139
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.6158758430444085,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "placement-candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 1501.21,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 844.45,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              1.4949105412180195,
+              1.8717394753866248
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.721220168501698,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "placement-peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    },
+    {
+      "combined_exact_verdict": "WIN",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "nonrecursive-directory-burst",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 4957.59,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 1278.61,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              3.593784659548094,
+              4.189160777901069
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.8906322442107317,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "primary-candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 4791.89,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 1267.57,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              3.5685001273236563,
+              3.9846518215803286
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.78416971054853,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "primary-peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 4935.73,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 1259.37,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              3.6330063249286204,
+              4.1121325980719
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.8691305252709607,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "placement-candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 4900.61,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 1283.68,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              3.4300960512273213,
+              4.069024593313693
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.6967779913861194,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "placement-peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    }
+  ]
+}

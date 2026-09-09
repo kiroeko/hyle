@@ -1,0 +1,11 @@
+
+| relative |           ns/change |            change/s |    err% |     total | exact-file atomic replace reload
+|---------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|   100.0% |          711,126.32 |            1,406.22 |    0.0% |      0.11 | `HYLE FileWatcher`
+|    60.3% |        1,179,430.00 |              847.87 |    0.0% |      0.09 | `libuv uv_fs_event`
+
+| relative |           ns/change |            change/s |    err% |     total | nonrecursive directory burst reload
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------
+|   100.0% |          201,052.02 |            4,973.84 |    0.0% |      0.10 | `HYLE FileWatcher`
+|    23.7% |          848,421.09 |            1,178.66 |    0.0% |      0.11 | `libuv uv_fs_event`
+# HYLE_IO_WATCH_RUN execution_order=candidate-first apple_qos=not-applicable qos_ok=not-applicable run_nonce=876900013cb1b6bb7768471a72e23efe

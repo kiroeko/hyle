@@ -2,9 +2,68 @@
 
 
 > 本页当前签发 `io_core-v1`、`io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
-> `io_http2-v2-owner-progress-cost` 与 `io-transfer-v1` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是
+> `io_http2-v2-owner-progress-cost`、`io-transfer-v1` 与 `io-watch-v1` 的工程性能结论。`io_tls-v1`、
+> `io_http-v1` 与旧 io 聚合数据均是
 > 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成完整服务器、
 > 全平台或全操作 SOTA。
+
+## 2026-09-10 `io-watch-v1` 当前工程证据（`PASS`）
+
+产品 candidate/tree 为 `30e133dbcf37e806f9deb1b121cdf0ae559546f6` /
+`b0df48f10774ae119b03fc1e779ababfe3b5e744`；peer 是 source-pinned libuv
+`3e606bc30a842701f8d12007d3ade662d258b76b`。三平台使用同一个
+`9d1305102cbb2d4ab619856dca91d54fd974c29993dce00082008d4b316ac125` 合同：双方都从已经建立的
+watcher 开始计费，到 consumer 收到并分类同一批事件结束；都包含各自的 event-loop/task dispatch、
+atomic replace 或 directory burst、事件校验和 teardown。Windows 发布者对两侧使用同一个最多 50 次、
+每次 1 ms 的瞬时 sharing/access retry，并把 retry 计入时间；它模拟正常的可靠发布者，不改变 watcher
+语义或完成条件。因此这里没有把 raw syscall、callback 或较少语义的队列同完整 HYLE 生命周期作
+苹果/橘子比较。
+
+advantage 为 HYLE/libuv op/s，越大越有利于 HYLE。primary 与 placement、candidate-first 与
+peer-first 都独立报告；Windows/macOS 为每格 15 个独立进程，WSL 按预声明精度升级到 31 个：
+
+| machine / workload | HYLE / libuv op/s 范围 | advantage / 置信区间范围 | exact | closure NI |
+|---|---:|---:|---|---|
+| W1-WIN exact-file atomic replace | 1,474.88--1,501.21 / 844.45--937.31 | 1.61588--1.76269 / lower 1.49491--1.57686 | 4/4 `WIN` | 10% `PASS`；严格 5% 亦全过 |
+| W1-WIN non-recursive directory burst | 4,791.89--4,957.59 / 1,259.37--1,283.68 | 3.69678--3.89063 / lower 3.43010--3.63301 | 4/4 `WIN` | 10% `PASS`；严格 5% 亦全过 |
+| W1-WSL exact-file atomic replace | 18,956.02--19,433.31 / 19,325.27--19,583.35 | 0.96813--0.98638 / lower 0.94623--0.97570 | 2 `PARITY`、2 `INCONCLUSIVE`、0 `LOSE` | 10% `PASS`；严格 5% 为 2 `PASS`、2 `UNRESOLVED` |
+| W1-WSL non-recursive directory burst | 63,264.42--64,099.34 / 59,063.84--60,046.83 | 1.06254--1.06909 / lower 1.04309--1.05844 | 2 `WIN`、2 `INCONCLUSIVE` | 10% `PASS`；严格 5% 全过 |
+| M1-MAC exact-file atomic replace | 21.23--21.26 / 21.23--21.26 | 0.99953--1.00000 / lower 0.99484--0.99859 | 4/4 `PARITY` | 10% `PASS`；严格 5% 亦全过 |
+| M1-MAC non-recursive directory burst | 153.74--153.78 / 153.75--153.79 | 0.99987--1.00000 / lower 0.99598--0.99890 | 4/4 `PARITY` | 10% `PASS`；严格 5% 亦全过 |
+
+closure card 在任何采样前把工程 material margin 预声明为 10%，其非劣下界是 `1/1.10 = 0.90909`；
+三平台所有区间均在该界内，所以 terminal engineering gate 为 `PASS`。统一 runner 的合同使用了更严格的
+默认 5% 门；它在 WSL exact-file 的两个 placement 格因下界 `0.94810/0.94623` 略低于 `0.95238` 而诚实
+返回 `UNRESOLVED`，不是 `LOSE`。这项附加诊断不被隐藏，也不事后替换原先的产品行动阈值。
+
+WSL 的 exact-file 路线显示 HYLE 约 1.4%--3.2% 的点差：HYLE 为完整通用路径支付 UTF-8 校验、multiple-target
+expected-O(1) route、bounded coalescing 与 fiber wake，libuv adapter 可直接比较一个 basename 并回调；
+同一实现到了 directory burst 可摊销这些成本，点估计反而领先约 6.3%--6.9%。Mac 两种形状均 parity，
+Windows 两种形状均 win；没有跨平台、跨顺序的 material 固定劣化，也没有依据为了点值给对象增加
+常态 metadata 或扭曲公开 API。single-owner、one outstanding `next()`、borrowed batch、显式容量和
+显式 close/rescan 是换取无逐事件分配、无 busy polling 和 bounded teardown 的公开性能限制。
+
+三份 bundle 的 A/A、5%/10% known-delta、timer floor、placement、artifact/build/consumer/source/peer
+provenance 和采样稳定性全部 `PASS`；origin verifier 均为 `QUALIFIED`、`paths_verified=true`、
+`provenance=EXACT`、`environment_policy=CURRENT`：
+
+- [`W1-WIN bundle`](../../../../evidence/performance/io-watch-p1-v1-30e133db-w1-win-4c06445c/)：manifest / summary /
+  controls SHA-256 为 `fcf7cb653c2ba2188b52629ff9922dc66063f4ed12c7a2da3a7460180f62d29a` /
+  `d228f8b4e258fa0dc116e62d144dd57135047ed0ff8534e82506d62fcb5cfc03` /
+  `a4e19c49fecf550232782e68ed504962cf7494e9c81682b4cd186eddc6244d56`；
+- [`W1-WSL bundle`](../../../../evidence/performance/io-watch-p1-v1-30e133db-w1-wsl-4c06445c/)：
+  `035ca99e7fb3d05d3077bacc78b9cbd31a8bdf8aba353059fedb02ea8aaef5ae` /
+  `7224734b9cab7ac5c45bbbbb88ccc42b3787a7c9209827cec4df01b077339f4c` /
+  `24035f0bb766814902aa632d76d08bb5ac0f93d1837deb0e7f4e007f18ba5dd1`；
+- [`M1-MAC bundle`](../../../../evidence/performance/io-watch-p1-v1-30e133db-m1-mac-4c06445c/)：
+  `9c1db2fac23bf5d4125a259aa72fa599094883bbe0ca8b7be2550a9a5bab040e` /
+  `ac2ab1da37e402621229e7e910c87aeba5faae2707c85f0bf861ad5eabd23844` /
+  `0bbe1c16b76ebde59097646af864d296785b0b9598c34f5fd28f2ce9be224222`。
+
+首次 Windows attempt 在采样前暴露双方共用的 publish fixture 缺陷并中止；对称修复后才产生上述唯一
+当前 Windows bundle。一次误用 `--formal` 的运行只因机器 profile 没有 formal toolchain 而在 build-contract
+阶段失格，不承担产品结论。这里签发的是 exact-file replace 与单层 directory burst 的工程结论，不是
+递归/network filesystem、所有 workload、完整 reload service 或 Formal SOTA 证书。
 
 ## 2026-09-09 `io_core-v1` 当前工程证据（`PASS`）
 

@@ -1,0 +1,330 @@
+{
+  "after": {
+    "environment": "macos",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "source",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-source",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "build",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-build",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "output",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "peer-libuv",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/libuv",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": true,
+      "macos-qos": true,
+      "native-linux": false,
+      "windows": false,
+      "wsl2": false
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "arm64",
+        "cpu_model": "Apple M4",
+        "logical_cpu_count": 10,
+        "memory_bytes": 17179869184,
+        "model": "Mac16,12",
+        "os_build": "25G83",
+        "os_product_version": "26.6.2",
+        "system": "Darwin"
+      },
+      "logical_cpu_count": 10,
+      "machine": "arm64",
+      "node_sha256": "093a49ffd60f74120c953185b5ced531218dc8cab388ccda37feca43bb37de0a",
+      "release": "25.6.0",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+        "source": "macos-platform-uuid-sha256"
+      },
+      "system": "Darwin"
+    },
+    "observed_at_utc": "2026-09-09T20:26:03.108920+00:00",
+    "power": {
+      "low_power_mode": 0,
+      "settings": {
+        "disksleep": 10,
+        "displaysleep": 30,
+        "hibernatemode": 3,
+        "lowpowermode": 0,
+        "networkoversleep": 0,
+        "powernap": 1,
+        "sleep": 1,
+        "standby": 1,
+        "tcpkeepalive": 1,
+        "ttyskeepawake": 1,
+        "womp": 1
+      },
+      "source": "ac"
+    },
+    "scheduler": {
+      "hard_affinity_supported": false,
+      "qos": {
+        "expected_class": "interactive",
+        "matches_expected": true,
+        "process_class": "interactive",
+        "raw_value": 33,
+        "supported": true
+      }
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "before": {
+    "environment": "macos",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "source",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-source",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "build",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-build",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "output",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/hyle-scratch/io-watch-p1-4c06445c-mac-engineering-evidence",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        },
+        {
+          "device": "/dev/disk3s5",
+          "filesystem": "APFS",
+          "internal": true,
+          "label": "peer-libuv",
+          "local_fixed": true,
+          "mountpoint": "/System/Volumes/Data",
+          "path": "/Users/kiro/libuv",
+          "qualifies_for_performance": true,
+          "solid_state": true
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": true,
+      "macos-qos": true,
+      "native-linux": false,
+      "windows": false,
+      "wsl2": false
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "arm64",
+        "cpu_model": "Apple M4",
+        "logical_cpu_count": 10,
+        "memory_bytes": 17179869184,
+        "model": "Mac16,12",
+        "os_build": "25G83",
+        "os_product_version": "26.6.2",
+        "system": "Darwin"
+      },
+      "logical_cpu_count": 10,
+      "machine": "arm64",
+      "node_sha256": "093a49ffd60f74120c953185b5ced531218dc8cab388ccda37feca43bb37de0a",
+      "release": "25.6.0",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+        "source": "macos-platform-uuid-sha256"
+      },
+      "system": "Darwin"
+    },
+    "observed_at_utc": "2026-09-09T20:16:21.026801+00:00",
+    "power": {
+      "low_power_mode": 0,
+      "settings": {
+        "disksleep": 10,
+        "displaysleep": 30,
+        "hibernatemode": 3,
+        "lowpowermode": 0,
+        "networkoversleep": 0,
+        "powernap": 1,
+        "sleep": 1,
+        "standby": 1,
+        "tcpkeepalive": 1,
+        "ttyskeepawake": 1,
+        "womp": 1
+      },
+      "source": "ac"
+    },
+    "scheduler": {
+      "hard_affinity_supported": false,
+      "qos": {
+        "expected_class": "interactive",
+        "matches_expected": true,
+        "process_class": "interactive",
+        "raw_value": 33,
+        "supported": true
+      }
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "child_environment_policy": {
+    "cleared_names": [
+      "ASAN_OPTIONS",
+      "CPUPROFILE",
+      "DYLD_INSERT_LIBRARIES",
+      "DYLD_LIBRARY_PATH",
+      "GLIBC_TUNABLES",
+      "GOMP_CPU_AFFINITY",
+      "KMP_AFFINITY",
+      "LD_LIBRARY_PATH",
+      "LD_PRELOAD",
+      "LSAN_OPTIONS",
+      "MALLOC_CONF",
+      "MIMALLOC_OPTIONS",
+      "TRACY_ONLY_LOCALHOST",
+      "TSAN_OPTIONS",
+      "UBSAN_OPTIONS"
+    ],
+    "cleared_prefixes": [
+      "HYLE_BENCH_",
+      "HYLE_PERF_"
+    ],
+    "fixed_values": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "path_sha256": "ea086be5f2598bd881c8b7201a0bfd4931ccc5f39d9f0636afaffe4c3b914d65",
+    "raw_environment_recorded": false,
+    "schema": "hyle.perf.child-environment-policy/v2"
+  },
+  "child_policy": {
+    "applied_by": "benchmark-child",
+    "child_canary": {
+      "environment": "macos",
+      "gate": "PASS",
+      "mechanism": "benchmark-child-telemetry"
+    },
+    "environment": "macos",
+    "hard_affinity_supported": false,
+    "launcher_applied": true,
+    "qos": "interactive"
+  },
+  "machine_gate": {
+    "errors": [],
+    "expected_child_policy": {
+      "applied_by": "benchmark-child",
+      "environment": "macos",
+      "hard_affinity_supported": false,
+      "qos": "interactive"
+    },
+    "formal_claim": null,
+    "gate": "PASS",
+    "physical_host_identity": {
+      "environment": "macos",
+      "independent_hardware": true,
+      "mismatched_host_facts": [],
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "profile_id": "M1-MAC",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "registration_state": "UNREGISTERED",
+      "required_host_facts_match": false,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": false,
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_source": "macos-platform-uuid-sha256"
+    },
+    "profile_id": "M1-MAC",
+    "role": "engineering",
+    "warnings": [
+      "engineering evidence is explicitly unbound from a registered stable-machine identity and cannot be promoted to Formal"
+    ]
+  },
+  "physical_host_identity": {
+    "environment": "macos",
+    "independent_hardware": true,
+    "mismatched_host_facts": [],
+    "physical_host_id": "M1",
+    "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+    "profile_id": "M1-MAC",
+    "profile_provisioned": true,
+    "raw_identifier_recorded": false,
+    "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+    "registration_state": "UNREGISTERED",
+    "required_host_facts_match": false,
+    "schema": "hyle-perf-physical-host-identity-v1",
+    "stable_machine_id_matches_registered": false,
+    "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+    "stable_machine_id_source": "macos-platform-uuid-sha256"
+  },
+  "sampling_mutex": {
+    "acquired_at_utc": "2026-09-09T20:16:20.543719+00:00",
+    "environment": "macos",
+    "mutex_key": "M1",
+    "owner_token_sha256": "33b766c8e2e4636f7cceb998dade6ce46fef4b7c5c45cfbb4eae089d1fbb3a12",
+    "path": "/Users/Shared/HYLE/perf-locks/M1.sampling.lock",
+    "physical_host_id": "M1",
+    "pid": 51375,
+    "profile_id": "M1-MAC",
+    "raw_owner_token_recorded": false,
+    "release_policy": "owner-token-match-only",
+    "schema": "hyle-perf-sampling-mutex-v1"
+  }
+}

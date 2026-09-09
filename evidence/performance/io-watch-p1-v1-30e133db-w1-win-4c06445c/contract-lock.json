@@ -1,0 +1,414 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "io_watch",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/io/watch.h",
+      "revision": "runtime-bound",
+      "target": "hyle_io_watch"
+    },
+    "claim": "P1 engineering same-contract 5-percent non-inferiority of the persistent HYLE FileWatcher owner-to-consumer route against source-pinned libuv for exact-file atomic replacement and bounded non-recursive directory bursts",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      },
+      {
+        "id": "placement",
+        "kind": "placement",
+        "parameters": {}
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "comparison_contract": {
+        "comparison_class": "SAME_CONTRACT",
+        "provenance_class": "PINNED_PEER",
+        "semantic_matrix": "bench/io_watch/consumer_shapes_v1.json",
+        "semantic_matrix_sha256": "d2a238b66fda8abf724c27164b693592ce945b85668cffa908de166ab96be517"
+      },
+      "runner": {
+        "cmake": {
+          "cache": {
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_DEV_FACTORS": "io_watch",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_IO_WATCH_P1_BENCH": "ON",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF",
+            "HYLE_WERROR": "ON"
+          },
+          "peer_cache": {
+            "libuv": "HYLE_LIBUV_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_PERF_APPLE_QOS"
+        ],
+        "executables": [
+          {
+            "id": "io-watch-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_io_watch_p1_bench",
+            "target": "hyle_io_watch_p1_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_IO_WATCH_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "exact-file-atomic-replace",
+                "title": "exact-file atomic replace reload"
+              },
+              {
+                "id": "nonrecursive-directory-burst",
+                "title": "nonrecursive directory burst reload"
+              }
+            ]
+          },
+          {
+            "id": "io-watch-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_io_watch_p1_placement_bench",
+            "target": "hyle_io_watch_p1_placement_bench",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_IO_WATCH_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "exact-file-atomic-replace",
+                "title": "exact-file atomic replace reload"
+              },
+              {
+                "id": "nonrecursive-directory-burst",
+                "title": "nonrecursive directory burst reload"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "M1-MAC": {
+            "cache": {
+              "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4"
+            },
+            "compiler_id": "AppleClang",
+            "compiler_version_prefix": "21",
+            "generator": "Ninja"
+          },
+          "W1-WIN": {
+            "architecture": "x64",
+            "cache": {},
+            "compiler_id": "MSVC",
+            "compiler_version_prefix": "19.50",
+            "generator": "Visual Studio 18 2026"
+          },
+          "W1-WSL": {
+            "cache": {
+              "CMAKE_CXX_COMPILER": "g++-14",
+              "CMAKE_C_COMPILER": "gcc-14"
+            },
+            "compiler_id": "GNU",
+            "compiler_version_prefix": "14",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "windows",
+        "wsl2",
+        "macos"
+      ],
+      "certification_platforms": [
+        "windows",
+        "wsl2",
+        "macos"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WIN",
+          "W1-WSL",
+          "M1-MAC"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "io-watch-p1-v1",
+    "module": "io_watch",
+    "peers": [
+      {
+        "configuration": {
+          "adapter": "benchmark-owned target classification and authoritative eight-byte generation read identical to the HYLE consumer",
+          "delivery_shape": "clean source-pinned static libuv",
+          "progress": "one event owner plus one external publishing/waiting caller, with no polling or per-event thread",
+          "route": "one persistent uv_loop worker and uv_fs_event over the same parent or directory root"
+        },
+        "id": "libuv",
+        "revision": "3e606bc30a842701f8d12007d3ade662d258b76b"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "execution_order": "candidate-first",
+          "placement": "perturbed"
+        },
+        "id": "placement-candidate-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "execution_order": "peer-first",
+          "placement": "perturbed"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "write and close one sibling replacement",
+          "atomic replacement of the watched destination",
+          "native event delivery through the route's persistent owner",
+          "exact-target classification and authoritative generation read",
+          "external completion acknowledgement"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/io/exact-sidecar-atomic-reload",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "exact-file-atomic-replace",
+        "input": {
+          "distribution": "eight monotonically numbered eight-byte sibling replacements on one local filesystem",
+          "scale": {
+            "bytes_per_generation": 8,
+            "event_owners": 1,
+            "publications_per_callback": 8,
+            "targets": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one eight-publication TLS/config/model-sidecar replay",
+          "derivation": "inference servers commonly publish certificate, config and model-sidecar files by rename; the persistent watcher cost is paid at every reload",
+          "frequency": 8,
+          "unit": "authoritative-exact-file-publication",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "one persistent HYLE Scheduler/IoContext owner retains FileWatcher; an external caller atomically publishes and waits for the coroutine consumer",
+          "equivalence": "both independently observe the existing parent with only one route live at a time, retain runtime/watcher outside timing, publish the same sibling replacement, classify the exact basename and re-read the same authoritative generation before acknowledging",
+          "peer": "one persistent libuv loop owner retains uv_fs_event; the same external caller atomically publishes and waits for the callback consumer"
+        },
+        "pair": {
+          "candidate": "HYLE FileWatcher",
+          "peer": "libuv uv_fs_event"
+        },
+        "peer_id": "libuv",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_watch/consumer_shapes_v1.json",
+          "sha256": "d2a238b66fda8abf724c27164b693592ce945b85668cffa908de166ab96be517"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first",
+          "primary-peer-first",
+          "placement-candidate-first",
+          "placement-peer-first"
+        ],
+        "semantic_contract": "With one persistent watcher and event owner, publish and classify eight sequential atomic replacements of one exact file, re-read every new authoritative generation, reject stale duplicate notifications and retire the watcher cleanly",
+        "setup": "For one route at a time, create the local root and initial file, establish its persistent runtime/watcher, complete one event-confirmed bounded readiness probe and wait the same 100 ms quiescence outside timing; retire that route before establishing the other. Repeat the unchanged complete replay within the persistent route until the charged row spans at least 100 ms and normalize by authoritative publication; target count and completion semantics do not change. On Windows the shared publisher gives transient access-denied or sharing-violation replacement failures the same bounded 50 by 1 ms retry in both routes, and that retry remains inside the charged publication phase",
+        "tier": "consumer"
+      },
+      {
+        "charged_phases": [
+          "write and close all direct-child generations",
+          "native event delivery through the route's persistent owner",
+          "bounded batch or callback accumulation",
+          "direct-child classification and authoritative generation reads",
+          "external completion acknowledgement"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "rendering/io/flat-asset-directory-invalidation",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "nonrecursive-directory-burst",
+        "input": {
+          "distribution": "two sequential rewrites of eight stable direct children on one local filesystem",
+          "scale": {
+            "bursts": 2,
+            "bytes_per_generation": 8,
+            "children_per_burst": 8,
+            "directories": 1,
+            "event_owners": 1,
+            "publications": 16
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one two-burst flat shader/model-shard invalidation replay",
+          "derivation": "asset and model caches routinely publish several sibling files together; batching and bounded coalescing are material at this burst shape",
+          "frequency": 2,
+          "unit": "authoritative-direct-child-publication",
+          "value": 8
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "the same persistent HYLE owner receives bounded borrowed batches and coalesces repeated direct-child notifications",
+          "equivalence": "both independently retain runtime/watcher outside timing with only one route live at a time, publish two bursts over the same eight stable direct children, reject nested names, classify all direct children and re-read each authoritative generation before acknowledging",
+          "peer": "the same persistent libuv owner receives uv_fs_event callbacks and accumulates the direct-child set in benchmark-owned state"
+        },
+        "pair": {
+          "candidate": "HYLE FileWatcher",
+          "peer": "libuv uv_fs_event"
+        },
+        "peer_id": "libuv",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_watch/consumer_shapes_v1.json",
+          "sha256": "d2a238b66fda8abf724c27164b693592ce945b85668cffa908de166ab96be517"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor",
+          "placement"
+        ],
+        "required_strata": [
+          "primary-candidate-first",
+          "primary-peer-first",
+          "placement-candidate-first",
+          "placement-peer-first"
+        ],
+        "semantic_contract": "With one persistent non-recursive directory watcher and event owner, publish two bursts across eight direct children, classify and re-read all sixteen authoritative generations without accepting nested paths or silently losing a burst, then retire cleanly",
+        "setup": "For one route at a time, create the local root and eight initial children, establish its persistent runtime/watcher, complete one event-confirmed bounded readiness probe and wait the same 100 ms quiescence outside timing; retire that route before establishing the other. Repeat the unchanged complete replay within the persistent route until the charged row spans at least 100 ms and normalize by authoritative direct-child publication; burst width and completion semantics do not change",
+        "tier": "consumer"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "9d1305102cbb2d4ab619856dca91d54fd974c29993dce00082008d4b316ac125",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

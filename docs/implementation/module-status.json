@@ -320,10 +320,15 @@
     },
     {
       "module": "io_watch",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-watch-v1-file-change-stream.md",
       "candidate": "30e133dbcf37e806f9deb1b121cdf0ae559546f6",
-      "summary": "io_watch v1 CANDIDATE：首候选的 sanitizer stack finding 已用仅插桩构建的既有 64 KiB tier 修复；公开合同与 release 16 KiB 成本不变，30e133db 已通过三平台普通回归及 WSL ASan。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 10
+      },
+      "summary": "io_watch v1 CLOSED：跨平台 bounded 文件变化流完成三平台正确性/sanitizer、公开 IO 三交付、易用性、红队和同合同 libuv P1；原预声明 10% 工程非劣门全过，严格 5% 附加诊断仅在 WSL exact-file 两格未决且无 LOSE。"
     }
   ]
 }
