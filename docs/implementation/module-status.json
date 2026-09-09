@@ -1318,7 +1318,7 @@
     },
     {
       "module": "io_http",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-http-v2-duplex-progress",
       "closure_task": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md",
       "scope": "Repair only the transport-neutral progress seam used by protocol factors after an HTTP2 consumer reproduced a full-duplex backpressure stall; replay affected HTTP1 transport, delivery and performance contracts.",
@@ -1352,9 +1352,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
+      "freeze_confirmation": {
+        "id": "io-http-v2-freeze-2026-09-09",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-09",
+        "reviewed_commit": "1ac6ac6e8b7f4dce754337934cf54b0b350ccf31",
+        "reviewed_tree": "833fe7b0422d58292daf6f07999d6c265285671d",
+        "evidence": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md"
+      },
+      "loc": {
+        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "repository_code": 522116,
+        "self_without_tests": 89877,
+        "module_implementation": 2863
+      },
+      "known_limitations": [
+        "A connection and its active body reader or writer are single-owner; message views and operation buffers remain borrowed for their documented lifetimes, and unfinished bodies must be consumed, discarded or make the connection non-reusable.",
+        "This factor owns bounded HTTP1 connection framing, fixed and streaming bodies, trailers, expect-continue and keep-alive, not routing, middleware, authentication, model schemas, handler pools, batching, WebSocket or complete server policy.",
+        "The P1 receipt covers two persistent plain HTTP1 single-worker workloads on W1-WSL against Boost.Beast; it is not a TLS, WAN, multi-worker, complete-server, all-payload or Formal SOTA certificate.",
+        "TLS and HTTP2 remain separate composed factors, while source, static and shared delivery expose a C++23 API without Native FFI, C API or a stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a parsing, framing, request-smuggling, lifetime, partial-transfer, deadline, cancellation, backpressure, progress, OOM or natural C++ API-usability defect, or proves a missing common HTTP1 transport capability rather than application-server policy.",
+        "The public API or layout, parser, owner or progress algorithm, allocation bound, component dependency or source, static or shared delivery shape changes.",
+        "An io_core or io_tls transport semantic change invalidates the frozen composition, error, progress or lifetime proof.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted HTTP1 workload."
+      ],
       "reopen_trigger_id": "IOHTTP-REOPEN-H2-DUPLEX-01",
       "reopen_evidence": "Frozen io-http2-p1-v1 holdout reproducibly stalls under HYLE_IO_FORCE_EPOLL with 4 KiB socket buffers while syscall traces show both directions waiting to write with unread peer bytes.",
-      "summary": "io_http v2 VERIFIED：TCP immediate、HttpTransport dispatch、HTTP2 bounded drain 与 TLS provider 路由通过三平台、exact sanitizer、三交付和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，5% 非劣门全过。"
+      "summary": "io_http v2 CLOSED/FROZEN：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。"
     },
     {
       "module": "io_http2",

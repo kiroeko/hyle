@@ -1,6 +1,6 @@
 # IO HTTP v2：协议 transport 双向进展修复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card（`AUDITED`）
 
@@ -145,3 +145,37 @@ controls 为 `PASS`。严格 verifier 返回 `QUALIFIED`、`paths_verified=true`
 receipt 见 [`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md) 和
 [`io-http-p1-v2-18bf62f8`](../../../../evidence/performance/io-http-p1-v2-18bf62f8/)。七门已有可复核证据，
 下一法定动作仅为终局限制、重开条件、LOC 与冻结确认，不再运行产品测试或 P1。
+
+## Closure decision
+
+`io_http` v2 为 `CLOSED/FROZEN`。本轮修复的是协议组合中真实存在的全双工背压进展缺陷；普通 HTTP/1
+路线没有新增 syscall、allocation、branch、metadata 或 benchmark 专用入口。公开 C++ 形状仍是 move-only
+typed connection/body handle、明确 limits、`OperationOptions`、`Status`/`Result` 与 plain/TLS transport
+组合，用户看不到 immediate syscall seam、native provider handle、C API 或 Native FFI。
+
+- 一个 connection 及其 active body reader/writer 是 single-owner；head、header 与 body chunk 是
+  connection-owned borrowed view，只在文档规定的下一次消息操作前有效，所有 operation buffer 必须活到
+  await 完成；
+- unfinished reader 必须显式读取、discard 或按连接不可复用处理；write/read 的 partial bytes、clean EOF、
+  would-block 与 terminal error 保持独立语义，调用方不得从原 buffer 起点盲目重试；
+- HTTP/1 factor 提供 bounded framing、fixed/streaming body、trailers、Expect/continue、keep-alive 与
+  client/server connection 组合，但不拥有 route、middleware、认证、模型 schema、handler pool、batching、
+  WebSocket/Upgrade 或完整 server policy；
+- 工程 P1 仅覆盖 W1-WSL、single-worker、persistent plain HTTP/1 的 1 KiB REST/stream 与 64 KiB
+  fragmented 两条合同；不声明 TLS、WAN、多 worker、完整 Nginx/推理 server、所有 payload 或 Formal SOTA，
+  也不把 64 KiB 行的约 3x 优势外推到模块整体；
+- source/static/shared 只承诺相容 C++23 工具链。TLS 与 HTTP/2 由独立 factor 组合；本 factor 不承诺
+  Native FFI、C API 或跨工具链稳定 C++ ABI。
+
+只有以下新事实可以重开：具名 consumer 复现 parsing/framing/request-smuggling、lifetime、partial-transfer、
+deadline/cancel、backpressure/progress、OOM 或自然 C++ API 易用性缺陷；真实 consumer 证明缺少通用 HTTP/1
+transport 能力而非应用 server 策略；公开 API/layout、parser、owner/progress algorithm、allocation bound、
+依赖或 source/static/shared 交付变化；`io_core`/`io_tls` transport 语义改变并破坏本组合证明；或者合格同合同
+证据证明 material regression、成熟 peer 证明更优复杂度档。普通 benchmark 波动、非同语义 server 排名或
+想把应用框架塞入 factor 都不是 reopen trigger。
+
+候选 `18bf62f81a91975e0776439d88fca3891f10e560` 的
+`loc-report.py --module io_http --commit ... --self-check` 为 `PASS`：全库 522,116 行，自实现不含测试
+89,877 行，`io_http` 实现 2,863 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
