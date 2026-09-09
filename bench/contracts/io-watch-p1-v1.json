@@ -61,7 +61,7 @@
       "consumer_key": "inference/io/exact-sidecar-atomic-reload",
       "provenance": {
         "path": "bench/io_watch/consumer_shapes_v1.json",
-        "sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
+        "sha256": "db9dfb3708378a96c91ea5c66b732df8694c3bbf8be43cf0ba271c987ae91246"
       },
       "ownership_topology": {
         "candidate": "one persistent HYLE Scheduler/IoContext owner retains FileWatcher; an external caller atomically publishes and waits for the coroutine consumer",
@@ -84,7 +84,7 @@
         "distribution": "eight monotonically numbered eight-byte sibling replacements on one local filesystem",
         "scale": {"targets": 1, "publications_per_callback": 8, "bytes_per_generation": 8, "event_owners": 1}
       },
-      "setup": "Create the local root and initial file, establish each persistent runtime/watcher and complete one route-ordered warmup publication outside timing",
+      "setup": "Create the local root and initial file, establish each persistent runtime/watcher and complete one route-ordered event-confirmed readiness probe outside timing; the bounded probe retransmits one unchanged generation until observable",
       "charged_phases": [
         "write and close one sibling replacement",
         "atomic replacement of the watched destination",
@@ -114,7 +114,7 @@
       "consumer_key": "rendering/io/flat-asset-directory-invalidation",
       "provenance": {
         "path": "bench/io_watch/consumer_shapes_v1.json",
-        "sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
+        "sha256": "db9dfb3708378a96c91ea5c66b732df8694c3bbf8be43cf0ba271c987ae91246"
       },
       "ownership_topology": {
         "candidate": "the same persistent HYLE owner receives bounded borrowed batches and coalesces repeated direct-child notifications",
@@ -137,7 +137,7 @@
         "distribution": "two sequential rewrites of eight stable direct children on one local filesystem",
         "scale": {"directories": 1, "bursts": 2, "children_per_burst": 8, "publications": 16, "bytes_per_generation": 8, "event_owners": 1}
       },
-      "setup": "Create the local root and eight initial children, establish each persistent runtime/watcher and complete one route-ordered eight-child warmup burst outside timing",
+      "setup": "Create the local root and eight initial children, establish each persistent runtime/watcher and complete one route-ordered event-confirmed readiness probe outside timing; the bounded probe may retransmit the same eight-child generation until observable",
       "charged_phases": [
         "write and close all direct-child generations",
         "native event delivery through the route's persistent owner",
@@ -185,7 +185,7 @@
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PINNED_PEER",
       "semantic_matrix": "bench/io_watch/consumer_shapes_v1.json",
-      "semantic_matrix_sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
+      "semantic_matrix_sha256": "db9dfb3708378a96c91ea5c66b732df8694c3bbf8be43cf0ba271c987ae91246"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",

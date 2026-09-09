@@ -61,7 +61,8 @@ constexpr unsigned kOwner = 0;
 constexpr std::size_t kDirectoryFiles = 8;
 constexpr std::size_t kExactEpisodes = 8;
 constexpr std::size_t kDirectoryEpisodes = 2;
-constexpr std::size_t kWarmupEpisodes = 1;
+constexpr auto kReadinessRetry = std::chrono::milliseconds(20);
+constexpr auto kReadinessTimeout = std::chrono::seconds(5);
 
 enum class Shape : std::uint8_t { kExactReplace, kDirectoryBurst };
 
@@ -77,6 +78,17 @@ void wait_at_least(const std::atomic<T>& value, T target) noexcept {
     value.wait(observed, std::memory_order_acquire);
     observed = value.load(std::memory_order_acquire);
   }
+}
+
+template <class T, class Rep, class Period>
+bool wait_at_least_for(const std::atomic<T>& value, T target,
+                       std::chrono::duration<Rep, Period> timeout) noexcept {
+  const auto deadline = std::chrono::steady_clock::now() + timeout;
+  while (value.load(std::memory_order_acquire) < target) {
+    if (std::chrono::steady_clock::now() >= deadline) return false;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return true;
 }
 
 std::uint64_t process_id() noexcept {
@@ -214,6 +226,22 @@ bool publish_directory(WatchState* state, std::uint64_t sequence) noexcept {
   return true;
 }
 
+bool publish(WatchState* state, std::uint64_t sequence) noexcept {
+  return state->shape == Shape::kExactReplace
+             ? publish_exact(state, sequence)
+             : publish_directory(state, sequence);
+}
+
+void warm_until_observable(WatchState* state, std::uint64_t sequence,
+                           const char* failure) {
+  const auto deadline = std::chrono::steady_clock::now() + kReadinessTimeout;
+  do {
+    if (!publish(state, sequence)) fail(failure);
+    if (wait_at_least_for(state->completed, sequence, kReadinessRetry)) return;
+  } while (std::chrono::steady_clock::now() < deadline);
+  fail("watcher did not become observable during setup");
+}
+
 void mark_failed(WatchState* state) noexcept {
   state->failed.store(true, std::memory_order_release);
   state->ready.store(1, std::memory_order_release);
@@ -327,16 +355,23 @@ class HyleHarness {
       const std::uint64_t sequence = ++issued_;
       wait_at_least(state_.armed, sequence);
       state_.requested.store(sequence, std::memory_order_release);
-      const bool published = state_.shape == Shape::kExactReplace
-                                 ? publish_exact(&state_, sequence)
-                                 : publish_directory(&state_, sequence);
-      if (!published) fail("HYLE fixture publication failed");
+      if (!publish(&state_, sequence)) fail("HYLE fixture publication failed");
       wait_at_least(state_.completed, sequence);
       if (state_.failed.load(std::memory_order_acquire))
         fail("HYLE watcher episode failed");
     }
     ankerl::nanobench::doNotOptimizeAway(
         state_.checksum.load(std::memory_order_relaxed));
+  }
+
+  void warmup() {
+    const std::uint64_t sequence = ++issued_;
+    wait_at_least(state_.armed, sequence);
+    state_.requested.store(sequence, std::memory_order_release);
+    warm_until_observable(&state_, sequence,
+                          "HYLE readiness publication failed");
+    if (state_.failed.load(std::memory_order_acquire))
+      fail("HYLE watcher readiness failed");
   }
 
  private:
@@ -378,16 +413,23 @@ class LibuvHarness {
       const std::uint64_t sequence = ++issued_;
       wait_at_least(state_.armed, sequence);
       state_.requested.store(sequence, std::memory_order_release);
-      const bool published = state_.shape == Shape::kExactReplace
-                                 ? publish_exact(&state_, sequence)
-                                 : publish_directory(&state_, sequence);
-      if (!published) fail("libuv fixture publication failed");
+      if (!publish(&state_, sequence)) fail("libuv fixture publication failed");
       wait_at_least(state_.completed, sequence);
       if (state_.failed.load(std::memory_order_acquire))
         fail("libuv watcher episode failed");
     }
     ankerl::nanobench::doNotOptimizeAway(
         state_.checksum.load(std::memory_order_relaxed));
+  }
+
+  void warmup() {
+    const std::uint64_t sequence = ++issued_;
+    wait_at_least(state_.armed, sequence);
+    state_.requested.store(sequence, std::memory_order_release);
+    warm_until_observable(&state_, sequence,
+                          "libuv readiness publication failed");
+    if (state_.failed.load(std::memory_order_acquire))
+      fail("libuv watcher readiness failed");
   }
 
  private:
@@ -502,11 +544,11 @@ void run_shape(Shape shape, const char* title, std::size_t episodes,
   auto run_peer = [&] { peer.run(episodes); };
 
   if (peer_first) {
-    peer.run(kWarmupEpisodes);
-    hyle.run(kWarmupEpisodes);
+    peer.warmup();
+    hyle.warmup();
   } else {
-    hyle.run(kWarmupEpisodes);
-    peer.run(kWarmupEpisodes);
+    hyle.warmup();
+    peer.warmup();
   }
 
   ankerl::nanobench::Bench bench;

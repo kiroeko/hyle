@@ -8,7 +8,7 @@
     "libuv": "3e606bc30a842701f8d12007d3ade662d258b76b"
   },
   "common_semantics": {
-    "lifetime": "one watcher and one event owner remain established outside timing; every charged publication is awaited and classified before the next episode",
+    "lifetime": "one watcher and one event owner remain established outside timing; an uncharged bounded readiness probe retransmits one generation until the native route is observable, then every charged publication is awaited and classified exactly once before the next episode",
     "freshness": "the consumer re-reads an eight-byte authoritative generation so duplicate/coalesced notifications cannot satisfy a later publication",
     "progress": "both routes use their natural persistent asynchronous owner and native file-event backend; neither polls, creates a thread per event or registers a per-event timer",
     "accounting": "the same HYLE Platform FS helper publishes and re-reads each generation for both routes, so only watcher routing, dispatch, batching and lifecycle differ"
@@ -31,7 +31,7 @@
     }
   ],
   "negative_space": [
-    "watcher/runtime construction and one warmup episode per route are outside timing",
+    "watcher/runtime construction and a bounded event-confirmed readiness/warmup probe per route are outside timing; the probe may retransmit the same generation because libuv returns from uv_fs_event_start before its macOS FSEvents stream is asynchronously installed",
     "deadline and cancellation races are correctness/lifecycle gates, not charged to only one side of this successful-event comparison",
     "recursive traversal, debounce, content parsing and application reload policy are not watcher work",
     "a raw inotify, IOCP or FSEvents syscall is not an admissible peer for the complete owner-to-consumer route",
