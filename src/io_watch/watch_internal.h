@@ -10,6 +10,8 @@
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/pod_vector.h"
 #include "hyle/container/small_vector.h"
+#include "hyle/core/environment.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/sync.h"
@@ -19,6 +21,17 @@ namespace hyle::io::detail {
 
 inline constexpr std::size_t kNoWatchIndex =
     (std::numeric_limits<std::size_t>::max)();
+
+// Keep the shipping pump on the small IO tier. Sanitizer instrumentation can
+// expand simdutf's native-name validation frame beyond 16 KiB; use the already
+// defined default tier only in instrumented builds so the safety verifier does
+// not overflow the guarded stack it is meant to inspect.
+inline constexpr std::size_t kWatchPumpStackSize =
+#if HYLE_SANITIZER_ANY
+    mem::kFiberStackDefault;
+#else
+    mem::kFiberStackSmall;
+#endif
 
 inline std::uint64_t watch_hash_bytes(std::string_view value) noexcept {
   std::uint64_t hash = 1469598103934665603ull;

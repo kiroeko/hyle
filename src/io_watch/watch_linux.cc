@@ -221,7 +221,7 @@ Status initialize_native_watch(FileWatcherState& state) noexcept {
         "FileWatcher pump coroutine allocation failed");
   state.shared_pump = sched::spawn_task_on(
       *state.scheduler, state.owner, state.allocator, std::move(task),
-      mem::kFiberStackSmall);
+      kWatchPumpStackSize);
   if (state.shared_pump.is_finished()) {
     Result<void> started = state.shared_pump.join();
     if (!started.has_value()) return std::move(started).error();
