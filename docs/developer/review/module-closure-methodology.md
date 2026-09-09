@@ -1,4 +1,4 @@
-# HYLE 模块审查与收口协议 v3
+# HYLE 模块审查与收口协议 v4
 
 本文是新建、重构、复检和关闭一个 HYLE 组件的唯一施工流程。能力为什么准入由
 [能力完整性决策](../../architecture/capability-completeness.md)定义；组件边界和顺序由
@@ -13,7 +13,7 @@
 ```text
 QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> CLOSED
 SCOPED | AUDITED | CANDIDATE -> BLOCKED -> SCOPED
-CLOSED -> REOPENED -> SCOPED
+CLOSED -> SCOPED
 ```
 
 | 状态 | 含义 | 最小输出 |
@@ -24,8 +24,6 @@ CLOSED -> REOPENED -> SCOPED
 | `CANDIDATE` | API、算法和普通产品形状已经停止变化 | 完整 commit/tree 与候选验证 |
 | `CLOSED` | 全部适用工程门通过，应停止日常施工 | terminal record、七门与工程性能结论 |
 | `BLOCKED` | 一个外部或工具条件使本轮不能裁决 | blocker、owner、精确恢复条件 |
-| `REOPENED` | 新事实击穿旧结论 | trigger 与可复现证据 |
-
 不能跳级。候选后若改变公开合同、算法、对象布局、常态成本或正常 workload，退回 `AUDITED`；
 只补说明或证据不改变 candidate。`CLOSED` 表示当前范围已真实验收并进入变更控制，不表示永久 ABI、
 所有机器上的绝对 SOTA，或未来永远不增加能力。
@@ -33,10 +31,11 @@ CLOSED -> REOPENED -> SCOPED
 registry 只保存机器当前需要的字段：
 
 - 所有状态：`module/state/summary`；
-- 活动状态：再加 `round/record`；
-- candidate：`candidate.commit/tree`；
-- terminal：`performance` 与七项 `gates`；
-- blocked/reopen：只加恢复所需字段。
+- 非 `QUEUED` 状态：再加 `record`；
+- candidate/terminal：`candidate` 保存完整 commit；tree 可由 Git 唯一导出，不重复保存；
+- terminal：再保存性能 tier、证据和适用的 material margin；`CLOSED` 本身已表示七门通过，registry
+  不重复保存七个恒为 `PASS` 的字段；
+- blocked：只加恢复所需字段。
 
 scope、baseline、机器、仪器、限制、重开条件和 LOC 属于当前 record/evidence，不复制进 registry。
 状态表只能运行 `python scripts/check-module-closure.py --write-status` 更新。
@@ -51,8 +50,9 @@ scope、baseline、机器、仪器、限制、重开条件和 LOC 属于当前 r
 - P0/P1/P2 以及适用测试、机器/仪器、material margin；
 - 总调查预算、性能纠正预算、停止条件和可接受限制。
 
-新组件先在中央组件图和 registry 以 `QUEUED` 追加登记。已有组件必须由合法 reopen trigger 启动；
-“再看一遍”、历史 TODO 或 benchmark 输赢本身都不是 trigger。需要先重新划分全库边界时，执行
+新组件先在中央组件图和 registry 以 `QUEUED` 追加登记。已有 `CLOSED` 组件必须由合法 reopen
+trigger 启动，创建一张不同于旧 terminal record 的新卡，再直接进入 `SCOPED`；`REOPENED` 不是需要
+持久化的产品状态。“再看一遍”、历史 TODO 或 benchmark 输赢本身都不是 trigger。需要先重新划分全库边界时，执行
 [能力展开与组件质因数分解](../../architecture/capability-factorization.md)，不要边写代码边改 owner。
 
 ## 3. AUDITED：先定功能与形状
@@ -100,6 +100,10 @@ metadata。公开形状、默认值、错误形状、依赖暴露、source/stati
 API 与算法稳定、有限 `FIX` 全部处理、直接消费者迁移后，提交不可变 candidate commit/tree 并进入
 `CANDIDATE`。文档、状态、证据提交不属于新的产品 candidate，也不得因此重跑产品测试。
 
+产品实现只能在 registry owner 为 `AUDITED` 时提交。`validation-select.py` 对源码、公开头、factor
+产品 seam、中央组件归属和已登记 vendored 产品输入执行该检查；`SCOPED` 仍只允许审计，`CANDIDATE`
+已经不可变，`CLOSED` 已进入变更控制。测试和文档维护不会因此伪造 reopen。
+
 ## 6. 性能门
 
 - `P0`：检查复杂度、分配/原子/锁/syscall/拷贝等成本结构和生成代码，不用计时证明纳秒差；
@@ -129,7 +133,7 @@ red_team, engineering_performance
 ```
 
 工程性能必须 `PASS`：P0 为结构成本通过，P1/P2 为预声明门通过。terminal record 保存实际命令、结果、
-限制、reopen trigger 和三项 LOC；registry 只引用它。达到预算仍不能裁决时必须 `BLOCKED`，不能写
+限制、reopen trigger 和 LOC；registry 只引用它。达到预算仍不能裁决时必须 `BLOCKED`，不能写
 “继续研究”。
 
 常见重开条件仅包括：可复现 correctness/security/UB/lifetime 缺陷；真实消费者证明的缺失常用能力；

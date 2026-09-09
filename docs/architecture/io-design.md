@@ -1,8 +1,8 @@
 # IO 架构：Scheduler 上的完成式 I/O
 
 本页只说明当前长期设计。实际 C++ 用法见 [IO 用户指南](../user/io.md)，组件状态和当前性能证据见
-[`module-status.json`](../implementation/module-status.json)。实现过程、测试数字和被否决路线保存在
-[`implementation/tasks/io`](../implementation/tasks/io/)及性能 evidence，不复制到这里。
+[`module-status.json`](../implementation/module-status.json)。实现过程、旧测试数字和被否决路线由当前
+record 或 Git 历史追溯，不复制到这里。
 
 ## 设计目标
 

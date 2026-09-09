@@ -37,7 +37,11 @@ class ImpactTest(unittest.TestCase):
         self.git("config", "user.email", "fixture@example.invalid")
         self.git("config", "core.autocrlf", "false")
         self.write(selector.MANIFEST, self.graph_bytes)
-        self.write(selector.REGISTRY, '{"modules": []}\n')
+        modules = [row["module"] for row in json.loads(
+            (ROOT / selector.REGISTRY).read_text(encoding="utf-8"))["modules"]]
+        self.write(selector.REGISTRY, json.dumps({
+            "modules": [{"module": module, "state": "AUDITED"} for module in modules]
+        }) + "\n")
         self.write("README.md", "# Fixture\n")
         self.write(".gitignore", ".scratch/\n")
         self.write("src/container_queue/change.cc", "int value = 1;\n")
@@ -80,6 +84,11 @@ class ImpactTest(unittest.TestCase):
     def plan(self, **kwargs):
         return selector.make_plan(self.root, self.base, "HEAD", cache=self.cache, **kwargs)
 
+    def set_state(self, module, state):
+        registry = json.loads((self.root / selector.REGISTRY).read_text(encoding="utf-8"))
+        next(row for row in registry["modules"] if row["module"] == module)["state"] = state
+        self.write(selector.REGISTRY, json.dumps(registry) + "\n")
+
     def selected(self, plan):
         return {row["id"] for row in plan["gates"] if row["status"] == "SELECTED"}
 
@@ -119,6 +128,76 @@ class ImpactTest(unittest.TestCase):
         commands = sum((g["commands"] for g in plan["gates"] if g["status"] == "SELECTED"), [])
         self.assertFalse(any("hyle_tests" in command for command in commands))
         self.assertFalse(any(command[0] == "ctest" and "-L" not in command for command in commands))
+
+    def test_product_change_requires_audited_owner(self):
+        self.set_state("container_queue", "CLOSED")
+        self.write("src/container_queue/change.cc", "int value = 2;\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertEqual(plan["product_authorization"]["states"]["container_queue"], "CLOSED")
+        self.assertTrue(plan["product_authorization"]["issues"])
+
+    def test_audit_transition_must_precede_product_commit(self):
+        self.set_state("container_queue", "SCOPED")
+        self.base = self.commit()
+        self.set_state("container_queue", "AUDITED")
+        self.write("src/container_queue/change.cc", "int value = 2;\n")
+        self.commit()
+        issue = self.plan()["product_authorization"]["issues"][0]
+        self.assertIn("SCOPED -> AUDITED", issue)
+
+    def test_grouped_push_preserves_commitwise_authorization(self):
+        self.set_state("container_queue", "CLOSED")
+        self.base = self.commit()
+        for state in ("SCOPED", "AUDITED"):
+            self.set_state("container_queue", state)
+            self.commit()
+        self.write("src/container_queue/change.cc", "int value = 2;\n")
+        self.commit()
+        for state in ("CANDIDATE", "CLOSED"):
+            self.set_state("container_queue", state)
+            self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "READY")
+        self.assertEqual(plan["product_authorization"]["states"]["container_queue"], "CLOSED")
+        self.assertEqual(plan["product_authorization"]["issues"], [])
+
+    def test_docs_and_tests_do_not_require_reopening_closed_product(self):
+        self.set_state("container_queue", "CLOSED")
+        self.write("tests/container_queue/change.cc", "int expected = 2;\n")
+        self.write("README.md", "# Closed product, maintained tests and docs\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "READY")
+        self.assertEqual(plan["product_authorization"]["owners"], [])
+
+    def test_reviewed_vendored_product_change_requires_audited_owner(self):
+        self.set_state("io_http", "CLOSED")
+        self.write("third_party/picohttpparser/picohttpparser.c", "int parser_version = 2;\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertEqual(plan["product_authorization"]["owners"], ["io_http"])
+
+    def test_unmapped_maintenance_helper_may_be_retired(self):
+        self.write("scripts/obsolete-helper.py", "print('old')\n")
+        self.base = self.commit()
+        (self.root / "scripts/obsolete-helper.py").unlink()
+        self.commit()
+        plan = self.plan()
+        change = next(row for row in plan["changes"] if row["path"] == "scripts/obsolete-helper.py")
+        self.assertEqual(change["kind"], "tool")
+        self.assertEqual(plan["unknown_paths"], [])
+
+    def test_unmapped_maintenance_helper_modification_stays_blocked(self):
+        self.write("scripts/unowned-helper.py", "print('old')\n")
+        self.base = self.commit()
+        self.write("scripts/unowned-helper.py", "print('new')\n")
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "BLOCKED")
+        self.assertIn("scripts/unowned-helper.py", plan["unknown_paths"])
 
     def test_public_split_header_and_reverse_closure(self):
         self.write("include/hyle/container/unbounded_queue.h", "int queue_value = 2;\n")

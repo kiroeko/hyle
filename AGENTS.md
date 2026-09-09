@@ -58,7 +58,8 @@ python scripts/validation-select.py plan --base <baseline-commit> --candidate WO
 执行 selected gates 并保留 skipped reasons；文档/状态/已证明格式变化不构建、不跑 P1，模块实现
 只选对应 factor 与真实直接消费者。公共头/API/组件图/package seam 才扩展。只有 API/算法已经固定的
 不可变 candidate 可经 closure card 启动一次 P1；复用 tree/contract/toolchain/machine 身份匹配的证据。
-selector 不替代 closure card 的适用风险、reopen trigger 或最终裁决。
+selector 还会拒绝 owner 未处于 `AUDITED` 的产品修改；它不替代 closure card 的适用风险、reopen
+trigger 或最终裁决。
 
 每轮至少执行适用测试以及：
 

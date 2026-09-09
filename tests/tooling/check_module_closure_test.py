@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 from pathlib import Path
+import subprocess
 import tempfile
 
 
@@ -35,6 +37,35 @@ def transition(before_state: str, after_state: str):
     )
 
 
+def commit_registry(root: Path, state: str, record_path: str) -> str:
+    registry = root / "docs" / "implementation" / "module-status.json"
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    registry.write_text(
+        json.dumps({
+            "modules": [{
+                "module": "sample",
+                "state": state,
+                "record": record_path,
+            }]
+        }) + "\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", str(registry)], cwd=root, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", f"state: {state}"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
 def main() -> None:
     checker = load_checker()
     root = Path(__file__).parents[2]
@@ -49,27 +80,27 @@ def main() -> None:
     if states.count("CLOSED") != 26 or states.count("QUEUED") != 2:
         raise AssertionError(f"unexpected canonical state distribution: {states!r}")
     serialized = repr(canonical)
-    for retired in ("VERIFIED", "FROZEN", "freeze_confirmation", "formal_performance"):
+    for retired in (
+        "VERIFIED",
+        "FROZEN",
+        "REOPENED",
+        "freeze_confirmation",
+        "formal_performance",
+    ):
         if retired in serialized:
             raise AssertionError(f"retired governance term remains in registry: {retired}")
 
     for item in canonical["modules"]:
         if item["state"] != "CLOSED":
             continue
-        if set(item["candidate"]) != {"commit", "tree"}:
+        if not isinstance(item["candidate"], str) or len(item["candidate"]) != 40:
             raise AssertionError(f"candidate identity drifted for {item['module']}")
-        if item["performance"]["verdict"] != "PASS":
-            raise AssertionError(f"performance verdict drifted for {item['module']}")
-        if set(item["gates"]) != checker.GATE_NAMES:
-            raise AssertionError(f"gate set drifted for {item['module']}")
+        if "verdict" in item["performance"] or "gates" in item:
+            raise AssertionError(f"redundant terminal fields returned for {item['module']}")
 
     malformed = copy.deepcopy(canonical)
     malformed["unexpected"] = True
     require_error(checker.validate_registry(malformed, root), "unknown root fields")
-
-    malformed = copy.deepcopy(canonical)
-    malformed["updated_at"] = "2026-02-30"
-    require_error(checker.validate_registry(malformed, root), "valid calendar date")
 
     malformed = copy.deepcopy(canonical)
     core = record(malformed, "core")
@@ -81,8 +112,12 @@ def main() -> None:
     require_error(checker.validate_registry(malformed, root), "invalid state")
 
     malformed = copy.deepcopy(canonical)
-    record(malformed, "core")["candidate"]["tree"] = "1234"
-    require_error(checker.validate_registry(malformed, root), "candidate.tree")
+    record(malformed, "core")["candidate"] = "1234"
+    require_error(checker.validate_registry(malformed, root), "candidate")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "core")["candidate"] = "0" * 40
+    require_error(checker.validate_registry(malformed, root), "not a reachable Git commit")
 
     malformed = copy.deepcopy(canonical)
     record(malformed, "core")["record"] = "docs/implementation"
@@ -97,12 +132,12 @@ def main() -> None:
     require_error(checker.validate_registry(malformed, root), "positive material_margin_pct")
 
     malformed = copy.deepcopy(canonical)
-    record(malformed, "error")["performance"]["verdict"] = "INCONCLUSIVE"
-    require_error(checker.validate_registry(malformed, root), "verdict PASS")
+    record(malformed, "error")["performance"]["verdict"] = "PASS"
+    require_error(checker.validate_registry(malformed, root), "unknown performance fields")
 
     malformed = copy.deepcopy(canonical)
-    record(malformed, "error")["gates"]["correctness"] = "FAIL"
-    require_error(checker.validate_registry(malformed, root), "non-passing gates")
+    record(malformed, "error")["gates"] = {"correctness": "PASS"}
+    require_error(checker.validate_registry(malformed, root), "fields not valid")
 
     malformed = copy.deepcopy(canonical)
     malformed["modules"].append(copy.deepcopy(malformed["modules"][0]))
@@ -113,6 +148,15 @@ def main() -> None:
         raise AssertionError(f"legal CANDIDATE -> CLOSED rejected: {errors!r}")
     before, after = transition("CLOSED", "QUEUED")
     require_error(checker.validate_transitions(before, after), "illegal transition")
+    before, after = transition("CLOSED", "SCOPED")
+    before["modules"][0]["record"] = "old.md"
+    after["modules"][0]["record"] = "new.md"
+    if errors := checker.validate_transitions(before, after):
+        raise AssertionError(f"legal CLOSED -> SCOPED rejected: {errors!r}")
+    before, after = transition("CLOSED", "SCOPED")
+    before["modules"][0]["record"] = "same.md"
+    after["modules"][0]["record"] = "same.md"
+    require_error(checker.validate_transitions(before, after), "requires a new closure record")
     before, after = transition("QUEUED", "BLOCKED")
     require_error(checker.validate_transitions(before, after), "illegal transition")
 
@@ -165,6 +209,37 @@ def main() -> None:
     historical = checker.load_registry_ref(root, "HEAD")
     if not isinstance(historical.get("modules"), list):
         raise AssertionError("Git registry loader lost modules")
+
+    # A pushed range may contain every legal lifecycle step. The checker must
+    # inspect those commits individually instead of rejecting the CLOSED ->
+    # CLOSED endpoints or overlooking an illegal intermediate jump.
+    with tempfile.TemporaryDirectory(prefix="hyle-transition-history-") as temp:
+        fixture = Path(temp)
+        subprocess.run(["git", "init", "-q"], cwd=fixture, check=True)
+        subprocess.run(
+            ["git", "config", "user.name", "HYLE fixture"], cwd=fixture, check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "fixture@example.invalid"],
+            cwd=fixture,
+            check=True,
+        )
+        baseline = commit_registry(fixture, "CLOSED", "old.md")
+        commit_registry(fixture, "SCOPED", "new.md")
+        commit_registry(fixture, "AUDITED", "new.md")
+        commit_registry(fixture, "CANDIDATE", "new.md")
+        commit_registry(fixture, "CLOSED", "new.md")
+        current = checker.load_registry_ref(fixture, "HEAD")
+        if errors := checker.validate_transition_history(fixture, baseline, current):
+            raise AssertionError(f"legal grouped lifecycle rejected: {errors!r}")
+
+        illegal_baseline = commit_registry(fixture, "CLOSED", "terminal.md")
+        commit_registry(fixture, "AUDITED", "illegal.md")
+        current = checker.load_registry_ref(fixture, "HEAD")
+        require_error(
+            checker.validate_transition_history(fixture, illegal_baseline, current),
+            "illegal transition",
+        )
 
 
 if __name__ == "__main__":

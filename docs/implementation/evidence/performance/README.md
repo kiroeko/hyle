@@ -33,7 +33,5 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 registry 的 `performance.evidence` 路径是当前工程证据的唯一选择器。旧候选页面应写 `HISTORICAL`
 或 `DIAGNOSTIC`，不得靠标题中的“当前”、任务中的 `PASS`、文件名版本号或额外 marker 取得权威性。
 
-跨模块的固定方向点值复核保存在
-[模块固定方向历史审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)；
-它是历史审计输入，不替代每个 current evidence 页面，也不把一次无机制的微小固定方向改写成产品
-缺陷。
+被新 candidate 替代的旧报告不保留在当前导航中；精确历史由 Git 恢复。一次无机制的微小固定方向
+不能覆盖当前同合同证据，也不能自动成为产品缺陷。

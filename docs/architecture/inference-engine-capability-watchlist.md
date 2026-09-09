@@ -38,8 +38,8 @@ registry 管理，不能继续把已经提升的部分写成“未承诺”。
 4. **路线比较：**先证明标准库、成熟依赖、现有 HYLE 原语组合或私有 seam 不足；peer 只有 API 不算证据。
 5. **成本合同：**登记复杂度、常态 allocation/copy/lock/syscall/metadata、正确性和 source/static/shared
    影响；性能项必须有正常 consumer 与同合同 peer。
-6. **合法进入：**若 semantic owner 是 `CLOSED` 模块，形成具名 reopen trigger 并走
-   `REOPENED -> SCOPED -> ...`；若 owner 是未收口模块或引擎，不得重开相邻模块。
+6. **合法进入：**若 semantic owner 是 `CLOSED` 模块，形成具名 reopen trigger、创建新 record 并走
+   `CLOSED -> SCOPED -> ...`；若 owner 是未收口模块或引擎，不得重开相邻模块。
 
 ## Core
 

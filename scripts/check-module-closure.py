@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-import datetime
+import functools
 import json
 import posixpath
 import re
@@ -21,21 +21,10 @@ STATES = {
     "CANDIDATE",
     "CLOSED",
     "BLOCKED",
-    "REOPENED",
 }
 PERFORMANCE_TIERS = {"P0", "P1", "P2"}
-GATE_NAMES = {
-    "scope",
-    "architecture",
-    "correctness",
-    "delivery",
-    "usability_docs",
-    "red_team",
-    "engineering_performance",
-}
-ROOT_FIELDS = {"schema_version", "methodology", "updated_at", "modules"}
+ROOT_FIELDS = {"schema_version", "methodology", "modules"}
 BASE_FIELDS = {"module", "state", "summary"}
-ACTIVE_FIELDS = BASE_FIELDS | {"round", "record"}
 STATUS_TABLE_BEGIN = "<!-- BEGIN GENERATED MODULE STATUS -->"
 STATUS_TABLE_END = "<!-- END GENERATED MODULE STATUS -->"
 OBJECT_ID_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -47,9 +36,8 @@ ALLOWED_TRANSITIONS = {
     "SCOPED": {"SCOPED", "AUDITED", "BLOCKED"},
     "AUDITED": {"AUDITED", "CANDIDATE", "BLOCKED"},
     "CANDIDATE": {"CANDIDATE", "AUDITED", "CLOSED", "BLOCKED"},
-    "CLOSED": {"CLOSED", "REOPENED"},
+    "CLOSED": {"CLOSED", "SCOPED"},
     "BLOCKED": {"BLOCKED", "SCOPED"},
-    "REOPENED": {"REOPENED", "SCOPED"},
 }
 
 
@@ -145,16 +133,24 @@ def _record_state(record: dict[str, Any]) -> Any:
     return record.get("state")
 
 
+@functools.lru_cache(maxsize=None)
+def _git_commit_reachable(root: str, commit: str) -> bool:
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit, "HEAD"],
+        cwd=root,
+        capture_output=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
 def _validate_candidate(
-    value: Any, prefix: str, errors: list[str]
+    value: Any, root: Path, prefix: str, errors: list[str]
 ) -> None:
-    if not isinstance(value, dict):
-        errors.append(f"{prefix}: candidate must be an object")
-        return
-    if set(value) != {"commit", "tree"}:
-        errors.append(f"{prefix}: candidate fields must be exactly commit and tree")
-    _check_object_id(value.get("commit"), "candidate.commit", prefix, errors)
-    _check_object_id(value.get("tree"), "candidate.tree", prefix, errors)
+    _check_object_id(value, "candidate", prefix, errors)
+    if isinstance(value, str) and OBJECT_ID_RE.fullmatch(value):
+        if not _git_commit_reachable(str(root.resolve()), value):
+            errors.append(f"{prefix}: candidate is not a reachable Git commit: {value}")
 
 
 def _validate_performance(
@@ -163,15 +159,13 @@ def _validate_performance(
     if not isinstance(value, dict):
         errors.append(f"{prefix}: performance must be an object")
         return
-    allowed = {"tier", "verdict", "evidence", "material_margin_pct"}
+    allowed = {"tier", "evidence", "material_margin_pct"}
     extra = sorted(set(value) - allowed)
     if extra:
         errors.append(f"{prefix}: unknown performance fields: {', '.join(extra)}")
     tier = value.get("tier")
     if tier not in PERFORMANCE_TIERS:
         errors.append(f"{prefix}: invalid performance tier {tier!r}")
-    if value.get("verdict") != "PASS":
-        errors.append(f"{prefix}: CLOSED requires performance verdict PASS")
     _check_repo_file(root, value.get("evidence"), "performance.evidence", prefix, errors)
     margin = value.get("material_margin_pct")
     if tier in {"P1", "P2"}:
@@ -179,21 +173,6 @@ def _validate_performance(
             errors.append(f"{prefix}: {tier} requires a positive material_margin_pct")
     elif "material_margin_pct" in value:
         errors.append(f"{prefix}: P0 must not declare a timing material margin")
-
-
-def _validate_gates(value: Any, prefix: str, errors: list[str]) -> None:
-    if not isinstance(value, dict):
-        errors.append(f"{prefix}: gates must be an object")
-        return
-    missing = sorted(GATE_NAMES - set(value))
-    extra = sorted(set(value) - GATE_NAMES)
-    if missing:
-        errors.append(f"{prefix}: missing gates: {', '.join(missing)}")
-    if extra:
-        errors.append(f"{prefix}: unknown gates: {', '.join(extra)}")
-    failed = sorted(name for name, verdict in value.items() if verdict != "PASS")
-    if failed:
-        errors.append(f"{prefix}: CLOSED has non-passing gates: {', '.join(failed)}")
 
 
 def validate_module(record: Any, root: Path, errors: list[str]) -> None:
@@ -213,16 +192,14 @@ def validate_module(record: Any, root: Path, errors: list[str]) -> None:
 
     allowed = set(BASE_FIELDS)
     if state != "QUEUED":
-        allowed |= {"round", "record"}
-        _require_string(record, "round", prefix, errors)
+        allowed.add("record")
         _check_repo_file(root, record.get("record"), "record", prefix, errors)
     if state in {"CANDIDATE", "CLOSED"}:
         allowed.add("candidate")
-        _validate_candidate(record.get("candidate"), prefix, errors)
+        _validate_candidate(record.get("candidate"), root, prefix, errors)
     if state == "CLOSED":
-        allowed |= {"performance", "gates"}
+        allowed.add("performance")
         _validate_performance(record.get("performance"), root, prefix, errors)
-        _validate_gates(record.get("gates"), prefix, errors)
         if _contains_tbd(record):
             errors.append(f"{prefix}: CLOSED record contains TBD")
     elif state == "BLOCKED":
@@ -238,13 +215,7 @@ def validate_module(record: Any, root: Path, errors: list[str]) -> None:
         for field in ("blocker", "blocker_owner", "resume_condition"):
             _require_string(record, field, prefix, errors)
         if "candidate" in record:
-            _validate_candidate(record["candidate"], prefix, errors)
-    elif state == "REOPENED":
-        allowed |= {"trigger", "trigger_evidence"}
-        _require_string(record, "trigger", prefix, errors)
-        _check_repo_file(
-            root, record.get("trigger_evidence"), "trigger_evidence", prefix, errors
-        )
+            _validate_candidate(record["candidate"], root, prefix, errors)
 
     extra = sorted(set(record) - allowed)
     if extra:
@@ -260,18 +231,10 @@ def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
             errors.append(f"registry missing root fields: {', '.join(missing)}")
         if extra:
             errors.append(f"registry has retired or unknown root fields: {', '.join(extra)}")
-    if data.get("schema_version") != 3:
-        errors.append("registry schema_version must be 3")
-    if data.get("methodology") != "module-closure-v3":
-        errors.append("registry methodology must be 'module-closure-v3'")
-    updated = data.get("updated_at")
-    if not isinstance(updated, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", updated) is None:
-        errors.append("registry updated_at must be YYYY-MM-DD")
-    else:
-        try:
-            datetime.date.fromisoformat(updated)
-        except ValueError:
-            errors.append("registry updated_at must be a valid calendar date")
+    if data.get("schema_version") != 4:
+        errors.append("registry schema_version must be 4")
+    if data.get("methodology") != "module-closure-v4":
+        errors.append("registry methodology must be 'module-closure-v4'")
 
     modules = data.get("modules")
     if not isinstance(modules, list):
@@ -350,6 +313,75 @@ def validate_transitions(
             errors.append(
                 f"module {component!r}: illegal transition {old_state!r} -> {new_state!r}"
             )
+        if old_state == "CLOSED" and new_state == "SCOPED":
+            if before[component].get("record") == after[component].get("record"):
+                errors.append(
+                    f"module {component!r}: CLOSED -> SCOPED requires a new closure record"
+                )
+    return errors
+
+
+def _git_lines(root: Path, *args: str) -> list[str]:
+    result = subprocess.run(["git", *args], cwd=root, capture_output=True, check=False)
+    if result.returncode:
+        detail = result.stderr.decode(errors="replace").strip()
+        raise ValueError(f"git {' '.join(args)} failed: {detail}")
+    return result.stdout.decode().splitlines()
+
+
+def validate_transition_history(
+    root: Path, previous_ref: str, current: dict[str, Any]
+) -> list[str]:
+    """Validate each committed transition, then any current worktree transition."""
+    head = _git_lines(root, "rev-parse", "--verify", "HEAD^{commit}")[0]
+    start = _git_lines(root, "merge-base", previous_ref, head)[0]
+    commits = _git_lines(
+        root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{start}..{head}",
+        "--",
+        "docs/implementation/module-status.json",
+    )
+    errors: list[str] = []
+    for commit in commits:
+        family = _git_lines(root, "rev-list", "--parents", "-n", "1", commit)[0].split()
+        parents = family[1:]
+        after = load_registry_ref(root, commit)
+        if len(parents) == 1:
+            for error in validate_transitions(load_registry_ref(root, parents[0]), after):
+                errors.append(f"{commit[:12]}: {error}")
+            continue
+        if len(parents) > 1:
+            parent_modules = []
+            for parent in parents:
+                registry = load_registry_ref(root, parent)
+                parent_modules.append({
+                    row.get("module"): row
+                    for row in registry.get("modules", [])
+                    if isinstance(row, dict) and isinstance(row.get("module"), str)
+                })
+            after_modules = {
+                row.get("module"): row
+                for row in after.get("modules", [])
+                if isinstance(row, dict) and isinstance(row.get("module"), str)
+            }
+            all_names = set(after_modules)
+            all_names.update(name for rows in parent_modules for name in rows)
+            novel = [
+                name for name in sorted(all_names)
+                if not any(after_modules.get(name) == rows.get(name) for rows in parent_modules)
+            ]
+            if novel:
+                errors.append(
+                    f"{commit[:12]}: merge introduces novel registry records for "
+                    f"{', '.join(novel)}; make the state transition in a follow-up commit"
+                )
+
+    head_registry = load_registry_ref(root, head)
+    if head_registry != current:
+        errors.extend(validate_transitions(head_registry, current))
     return errors
 
 
@@ -370,7 +402,7 @@ def render_status_table(data: dict[str, Any]) -> str:
     for record in data["modules"]:
         performance = record.get("performance")
         if isinstance(performance, dict):
-            verdict = str(performance.get("verdict", "—"))
+            verdict = "PASS"
             evidence = performance.get("evidence")
             if isinstance(evidence, str):
                 verdict = _markdown_link(evidence, verdict)
@@ -457,11 +489,9 @@ def main(argv: list[str] | None = None) -> int:
     errors = validate_registry(data, root)
     if args.previous_ref is not None:
         try:
-            previous = load_registry_ref(root, args.previous_ref)
+            errors.extend(validate_transition_history(root, args.previous_ref, data))
         except (OSError, ValueError, json.JSONDecodeError) as error:
             errors.append(f"cannot read previous registry revision: {error}")
-        else:
-            errors.extend(validate_transitions(previous, data))
     if errors:
         print("module closure contract failed:", file=sys.stderr)
         for error in errors:

@@ -5,6 +5,11 @@
 重开 `CLOSED` 模块。适用风险及最终裁决仍以当前 closure card 和
 [模块收口方法](module-closure-methodology.md)为准。
 
+产品实现、公开头、factor 产品 seam、中央归属和已登记 vendored 产品输入还受状态授权：变更发生前
+和产品 commit 完成后，owning factor 都必须已经是 `AUDITED`。不能把 `SCOPED -> AUDITED` 与实现塞进
+同一 commit，也不能修改已冻结 `CANDIDATE/CLOSED`。selector 按 commit 检查一次 push 中的完整合法
+状态序列，所以不要求每个阶段单独 push；测试、文档和证据维护不要求伪造 reopen。
+
 ## 使用
 
 先在 task 冻结 baseline、有限 FIX、适用门及停止条件。实现未提交时可以查看工作树计划，
@@ -54,6 +59,9 @@ sanitizer、ISA、backend 风险由 closure card 另行声明，不被普通 sel
 | 组件图、公共 build/package seam、第三方产品输入 | 组件合同、已实现 factor 与交付闭包 | 未实现 `QUEUED` target、自动 P1 |
 | 已映射维护工具/CI 调度 | `validation-policy.json` 中的工具测试 | 产品 build/P1 |
 | 未登记路径/ownership、metadata 边界漂移 | 明确 `BLOCKED` 与原因 | 静默跳过、猜测全量通过 |
+
+`product_authorization` 会列出本次产品 owner、最终状态和逐 commit 违规。合并提交只对与所有 parent
+都不同的冲突解决结果增加一次检查；普通分支产品 commit 仍按其真实 parent 的 registry 状态判断。
 
 编译所选测试可能构建依赖 artifact，但依赖不因此成为额外测试根。只构建
 `hyle_<factor>_tests`，CTest 精确匹配 factor label；独立选择 `headers`，不调用全量 `hyle_tests`。

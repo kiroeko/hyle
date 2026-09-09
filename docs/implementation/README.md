@@ -6,7 +6,7 @@
 ## 入口
 
 - [当前施工状态](status.md)：新一轮逐模块重审的唯一状态表。
-- [任务索引](tasks/README.md)：按模块查找工作项和历史记录。
+- [任务入口](tasks/README.md)：进入当前 record；被替代的精确历史从 Git 恢复。
 - [性能结果](evidence/performance/README.md)：具备上下文的人读结果；原始数据位于仓库根级
   [`evidence/`](../../evidence/README.md)。
 
@@ -28,3 +28,7 @@
 - user：当前用户可以依赖的用法与陷阱。
 
 不要把整份任务日志复制过去。
+
+被当前状态链替代的旧 task/evidence 会从工作树删除，以免搜索结果冒充待办。需要追溯时使用
+`git log --all --name-status -- <path>` 定位 revision，再用 `git show <revision>:<path>` 读取；删除不等于
+抹除历史。

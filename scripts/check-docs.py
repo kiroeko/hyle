@@ -285,6 +285,59 @@ def check_relative_links(paths: list[Path], errors: list[str]) -> int:
     return checked
 
 
+def local_markdown_target(source: Path, destination: str) -> Path | None:
+    """Resolve one repository-local Markdown link for the navigation graph."""
+    if not destination or destination.startswith(("#", "//")) or URI_SCHEME_RE.match(destination):
+        return None
+    relative_path = unquote(urlsplit(destination).path)
+    if not relative_path:
+        return None
+    candidate = (
+        REPO_ROOT / relative_path.lstrip("/")
+        if relative_path.startswith("/")
+        else source.parent / relative_path
+    ).resolve(strict=False)
+    if candidate.is_dir():
+        candidate /= "README.md"
+    try:
+        candidate.relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() and candidate.suffix.lower() == ".md" else None
+
+
+def check_navigation_reachability(paths: list[Path], errors: list[str]) -> None:
+    """Require docs pages to be discoverable or retained by a raw receipt."""
+    all_pages = {path.resolve() for path in paths}
+    pages = {path for path in all_pages if path.is_relative_to(DOCS_ROOT.resolve())}
+    root = (DOCS_ROOT / "README.md").resolve()
+    evidence_root = (REPO_ROOT / "evidence").resolve()
+    visited: set[Path] = set()
+    # Raw receipts are addressed by immutable evidence identity rather than
+    # navigation, so a receipt may retain the human task that interprets it.
+    # Scripts, samples and miscellaneous root pages are deliberately not extra
+    # roots: an incidental link there must not hide an orphaned docs page.
+    pending = [
+        root,
+        *(path for path in all_pages if path.is_relative_to(evidence_root)),
+    ]
+    while pending:
+        source = pending.pop()
+        if source in visited or source not in all_pages:
+            continue
+        visited.add(source)
+        text = source.read_text(encoding="utf-8")
+        for _, destination in extracted_links(text):
+            target = local_markdown_target(source, destination)
+            if target is not None and target in all_pages and target not in visited:
+                pending.append(target)
+
+    for path in sorted(pages - visited, key=relative_display):
+        errors.append(
+            f"{relative_display(path)}: documentation page is not reachable from docs/README.md"
+        )
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -296,6 +349,7 @@ def main() -> int:
     check_retired_product_surface(errors)
     files = markdown_files()
     links = check_relative_links(files, errors)
+    check_navigation_reachability(files, errors)
 
     if errors:
         print(f"documentation contract failed with {len(errors)} error(s):", file=sys.stderr)

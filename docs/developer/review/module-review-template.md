@@ -3,15 +3,9 @@
 复制到 `docs/implementation/tasks/<area>/<round>.md`，删掉不适用的提示和空表。小组件应有小记录；
 完整事实、七问、适用验证和裁决不能省略。状态规则见[收口协议](module-closure-methodology.md)。
 
-```text
-<!-- MODULE TASK: ACTIVE -->
-```
-
-结束时改为 `HISTORICAL`。历史 task 不再授权施工。
-
 ## Closure card
 
-- component / round / owner：
+- component / owner：
 - baseline commit：
 - trigger 与证据：
 - 正常 consumer 任务：
@@ -65,7 +59,7 @@ P1/P2 只能在本节和 correctness 实现固定以后开始。
 
 ## Candidate
 
-- commit / tree：
+- commit（tree 由 Git/receipt 导出，不在 registry 重复保存）：
 - public API、layout、算法和常态成本变化：
 - 直接消费者迁移：
 - candidate 后仅证据/文档变化：
@@ -90,7 +84,7 @@ P1/P2 只能在本节和 correctness 实现固定以后开始。
 - 红队反证与处理：
 - 未决限制：
 - reopen triggers：
-- 三项 LOC：全库 / 自实现不含测试 / 本模块实现：
+- LOC：全库 / 自实现不含测试 / 本模块实现：
 - 最终状态与理由：`CLOSED / BLOCKED / 退回明确阶段`
 
 若为 `BLOCKED`，记录 blocker、owner、`blocked_from` 和唯一可验证的恢复条件。

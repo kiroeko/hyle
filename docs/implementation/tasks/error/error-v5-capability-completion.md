@@ -22,8 +22,8 @@
   literal/string 路径，没有统一的 no-throw 动态格式化入口；
 - `ERR5-R4`：标准库与第三方 adapter 普遍交付 `std::error_code`。HYLE 文档要求每个调用者自己比较
   category 并映射，形成重复、容易丢失类别的冷边界代码；
-- capability provenance：[`capability-factorization-v1`](../project/capability-factorization-v1.md)
-  的 `ERROR-A-04/06/07/08`；真实 WinSock 消费位于 `src/io/proactor.cc`，其下游迁移仍由 IO owner
+- capability provenance：长期准入与归属规则见[能力展开与组件质因数分解](../../../architecture/capability-factorization.md)；
+  本卡的 `ERR5-R1..R4` 是该轮完整有限证据。真实 WinSock 消费位于 `src/io/proactor.cc`，其下游迁移仍由 IO owner
   在自己的轮次完成；
 - 初步受影响面：Error 的 borrowed-result、native-domain/translator、冷路径动态诊断与标准错误适配，
   以及 architecture/user guide、correctness、三种 C++ 交付和定向 P1 证据；

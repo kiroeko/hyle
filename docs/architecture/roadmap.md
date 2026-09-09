@@ -1,225 +1,76 @@
-# HYLE 架构方向与模块顺序
+# HYLE 架构方向与组件关系
 
-本文只记录长期模块边界、依赖原则和审查顺序。唯一当前状态见
-[`module-status.json`](../implementation/module-status.json)，任务和历史结果见
-[implementation/tasks](../implementation/tasks/README.md)。叙述性 status、architecture 或 task 都不能覆盖
-中央 registry 的状态。
-组件图的机器真相是 [`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake)；本页解释它，
-不另建一份可手工漂移的 manifest。
+本文解释长期分层和依赖原则，不复制当前组件清单。机器可执行的 factor、产品 façade、公开/私有边和
+`QUEUED` 属性只有一份，位于 [`cmake/HyleComponents.cmake`](../../cmake/HyleComponents.cmake)；当前
+施工状态只有一份，位于 [`module-status.json`](../implementation/module-status.json)。
 
-当前图只描述当前可构建实现，不是下一版架构的先验。全库重构先按
-[能力展开与组件质因数分解](capability-factorization.md)统计功能超集和自然形状，再由完整能力集合导出
-owner、组件因子和新依赖图。
+## 分层原则
 
-Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同登记 **28 个 factor identity**，且均已有实现/target；每个 factor 的实时
-产品状态和冻结证书只读中央 registry。中央 manifest 从 28 个 factor 投影 **14 个用户产品 façade**。Build/package v7
-已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
-产品域；详见[构建系统](build-system.md)。
+HYLE 是推理引擎与工程计算消费者下面的 C++23 加速底座。能力应归到能够完整表达 ownership、lifetime、
+failure、concurrency 和复杂度的最低合理层，但不能仅为“方便复用”把上层策略下沉：
 
-## 1. 分层原则
+- Core 只承载极小、稳定、跨模块必要的编译和布局 primitive；
+- Error 统一可恢复失败，Platform 统一 OS/硬件事实与机制；
+- Mem、Time、Obs、Util、Container、SIMD/Math 提供可组合基础能力；
+- Sched 与 IO 组合底层机制；
+- Compute 与 Graph 最终承载计算后端和编排，但在 registry 为 `QUEUED` 时旧实现只作需求输入；
+- 模型格式、tokenizer、KV/批处理和 serving policy 属推理引擎；
+- source、static、shared 都是 C++ 交付，Native FFI 只由真实外语消费者触发。
 
-HYLE 是推理引擎与工程计算消费者下面的通用 C++ 加速底座。能力应归到能够完整表达其 ownership、
-failure、concurrency 和复杂度的最低合理层，但不能把上层策略塞进底层：
+全库能力和边界变化先按[能力完整性](capability-completeness.md)与
+[质因数分解](capability-factorization.md)确定自然用户任务，再改组件图；不能用现有目录或依赖反证一个
+能力“不该存在”。
 
-- core 是 header-only target，只承载极小、稳定、跨模块必要的编译与布局 primitive；
-- `container_intrusive` 单独承载零分配、header-only 的侵入式容器原语，避免底层消费者
-  为一个链表类型拉入完整 container 实现；
-- error 统一可恢复失败；platform 统一 OS/硬件机制；
-- mem/time/obs/util/container/simd 提供可组合基础能力；
-- sched/io/compute/graph 组合底层机制，但不反向渗漏策略；
-- 模型格式、token/KV、continuous batching 和 serving policy 属推理引擎；
-- source/static/shared 是 C++ 交付；Native FFI 只有真实外语任务才准入。
+## 内部 factor 与用户产品
 
-“放到底层以便复用”不是充分理由。公共基础类型必须有通用消费者形状；只有 HYLE 内部需要、
-会暴露策略或仍在变化的能力留在 internal seam。
+内部 factor 是依赖、构建、测试和状态 owner；用户选择的是较少、稳定的问题域 façade。façade 没有
+自己的源码、状态或人工依赖表，只从中央声明投影一个或多个 factor root，再解析传递闭包。因此
+`container_intrusive`、`timer_queue`、`platform_fs`、`mem_vm` 等小 factor 可以防环和减少内部闭包，
+用户仍只需理解 Container、Time、Platform、Mem 等产品。
 
-## 2. 组件图
+中央声明同时投影：
 
-本节第一张表是**当前 28-factor 可构建现树**。下一版 30-factor 候选图保存在历史任务
-[`capability-factorization-v1`](../implementation/tasks/project/capability-factorization-v1.md)，只用于后续
-逐项准入；不得把候选记录写成当前 target、当前依赖或当前模块状态。
+1. factor 身份及 `PUBLIC/PRIVATE/BUILD_ONLY` 边；
+2. target 构造的稳定拓扑序；
+3. 用户产品 façade 与安装闭包；
+4. 公开头 owner、选择器和验证图。
 
-下表是当前中央声明的直接边。`PUBLIC` 表示公开头/链接合同泄露该依赖；`PRIVATE` 只属于编译实现。
-当前 io、compute 与 graph 的公开面都暴露 sched 类型，因此它们无条件选择 sched；目标平台缺少
-fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残缺 SDK。
+模块自己的 `CMakeLists.txt` 只列源文件和所属外部依赖，不再手写另一份内部 link graph。未知边、依赖
+`QUEUED`、环、遗漏头 owner 和不完整安装闭包必须在 configure/合同测试中失败。新增 identity 通常只
+追加；合法更名要有一对一迁移证据，不能为整理观感重写历史身份。
 
-| Component | Public deps | Private deps |
-|---|---|---|
-| core | — | — |
-| error | core | — |
-| container_intrusive | core | — |
-| util_core | core | — |
-| time | core | — |
-| timer_queue | core, time, container_intrusive | — |
-| mem_reclaim | core | — |
-| obs | core, error, time | mem_reclaim |
-| math | core | — |
-| platform | core, error | — |
-| platform_thread | core, error, time | platform |
-| platform_fs | core, error, time | platform |
-| mem | core, error, platform | — |
-| mem_vm | core, error, mem, platform, platform_fs, util_core | — |
-| simd | core, platform | — |
-| container | core, mem, container_intrusive | platform |
-| container_concurrent | core, mem, mem_reclaim, container | — |
-| container_queue | core, mem | — |
-| container_text | core, mem, container | platform |
-| util_runtime | core, error, mem, container, container_text | — |
-| sched | core, container_intrusive, error, time, platform, platform_thread, mem, mem_vm, util_core | container_queue, timer_queue |
-| io_core | core, error, mem, container, time, timer_queue, sched, platform_fs | — |
-| io_tls | core, error, io_core, mem, sched, container_text | — |
-| io_http | core, io_core, io_tls, mem, sched, container_text | — |
-| io_http2 | core, io_http | container |
-| io_transfer | core, error, io_core, io_tls, mem, sched, container_text | container, io_http, platform_fs, time |
-| compute | core, error, mem, sched | platform, platform_thread, platform_fs, simd |
-| graph | core, error, mem, container, sched | util_core |
+Highway、mimalloc、OpenSSL 等是模块拥有的外部实现，不是 HYLE factor。多个 factor 可以共享一个
+build-only 外部 target；除非公开类型或链接合同泄露该依赖，否则不能据此制造内部模块边。
 
-用户看到的不是上述内部 factor，而是以下 14 个产品 façade。`Factors` 只列 façade 的直接 root；CMake
-再从同一中央图解析其完整传递闭包。façade 没有源码、状态或新的依赖边。
+## 依赖审查
 
-| Product façade | Factor roots |
-|---|---|
-| core | core |
-| error | error |
-| time | time, timer_queue |
-| platform | platform, platform_thread, platform_fs |
-| mem | mem, mem_vm, mem_reclaim |
-| obs | obs |
-| simd | simd |
-| math | math |
-| container | container_intrusive, container, container_concurrent, container_queue, container_text |
-| util | util_core, util_runtime |
-| sched | sched |
-| io | io_core, io_tls, io_http, io_http2, io_transfer |
-| compute | compute |
-| graph | graph |
+每次模块 review 都检查：
 
-因此，按状态机可独立施工的是 28 个已登记且可构建的 factor identity。普通用户仍只看到 14 个产品。
-Build/package 是贯穿所有 factor 的横向开发单元，
-外部依赖 target 与 trace/testing target 是 build-only mechanism，二者都不增加产品或 factor 数量。
+1. 是否依赖了更高层，或无故扩大 `PUBLIC` 闭包；
+2. 下游是否绕过已有 owner，私造 error、clock、allocator、CPU probe、queue 等同义机制；
+3. 公开头和符号实际需要哪些直接依赖；
+4. source、installed static、installed shared 是否都能只选择产品根并得到完整闭包。
 
-factor identity 通常按首次登记顺序只追加，不能为后来出现的自然低层边随意改写历史；只有经过审计、
-一对一且保留原账本槽位的显式 identity migration 才能更名。构造顺序由中央图稳定拓扑解析，闭包必须
-无环，unknown/QUEUED edge 与 cycle 都 fail closed。外部第三方依赖由所属模块登记，不出现在内部组件图中。
-SIMD 与 Container 的选定 per-ISA kernel 都可直接编译中央锁定的 Highway；两者共享 build-only
-`hyle_highway_headers` 外部实现 target，但 Container 不因此依赖、构建或安装 `hyle::simd`。Highway 的
-来源、许可证和产品使用由外部依赖账本登记，这不是一条 HYLE 内部组件边。
+较高 factor 需要较低 factor 时登记真实边并复用。较低 factor 看似需要较高 factor 时，依次检查能力
+owner 是否放错、公开面是否泄漏机制，以及能否提取满足质因数判据的小 factor；都不成立时才使用
+标准库、成熟依赖或有明确 layout/生命周期理由的专用实现。字段形似不等于语义重复，依赖顺序也不能
+成为复制通用实现的理由。
 
-`container_intrusive` 的公开入口是 `<hyle/container/intrusive_list.h>`、
-`<hyle/container/intrusive_forward_list.h>` 与 `<hyle/container/intrusive_hlist.h>`，公开类型位于
-`hyle::container`；内部 factor target 是 `hyle_container_intrusive`，普通用户由 `hyle::container`
-façade 取得该能力。Time 产品中的 `timer_queue` factor 公开 `TimerEntry` 与 `TimerList`，保留真实
-`PUBLIC container_intrusive` 边；host-clock `time` 不因此取得 intrusive closure。Sched 的公开 cancel
-record 嵌入 safe hlist hook，因而同样声明真实 `PUBLIC container_intrusive`；waiter 在摘链后复用 link
-storage 作锁外 wake chain，仍保留专用实现。
-这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
-[`container-intrusive-design`](container-intrusive-design.md)。
+底层边发生产品变化时只回审受影响的直接消费者和公开闭包，不顺手重开全库。公共构建变化由
+[change-impact selector](../developer/review/change-impact-validation.md)扩展验证；build/package 是横向
+合同，不伪装成具有运行时 candidate 的产品 component。
 
-Platform 产品由 `platform`、`platform_thread`、`platform_fs` 三个 factor 聚合：host facts、CPU/NUMA、
-动态库和匿名 VM 留在 dependency-light 的 `platform`；线程/等待与同步文件系统分别只在需要时进入
-HYLE 内部闭包。Mem 产品由 `mem`、`mem_vm` 与 `mem_reclaim` 聚合：allocator/resource/pool/NUMA owner 属于 `mem`，
-mapping、huge mapping、guarded fiber stack 与文件/shared storage 属于 `mem_vm`，read-mostly publication
-的 reader lifetime 属于 `mem_reclaim`。这些拆分不改变普通
-用户选择 `hyle::platform` / `hyle::mem` 的产品心智，只让内部消费者取得精确依赖。
+## 推进与停止
 
-`mem_reclaim` 是只依赖 Core 的独立 factor，拥有 read-side guard、intrusive retire record 和 grace-period
-callback。`container_concurrent` 的 node map 以真实 `PUBLIC` 边复用它，Mem façade 只负责聚合，不复制实现或状态。
-具体可交付状态只以 registry 与该 factor 的 closure card 为准。
+实际施工顺序由中央图的拓扑、registry 中的活动状态和真实 blocker 决定，不在 architecture 维护一份
+容易过期的编号队列。对一个问题域的典型顺序是：底层 factor → 产品 façade 所需其余 factor → 直接
+消费者回放。Compute 与 Graph 只有在真实推理 slice、能力边界和新 closure card 成立后才从 `QUEUED`
+进入施工。
 
-`core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` factor；只有 Core/Math
-分别形成同名用户产品，intrusive/util-core 由 Container/Util façade 聚合。公开头直接 include
-`<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol
-需要链接；这条边传播 include/build/package contract。`math` 使用 Core 的 release-surviving fail-fast
-primitive，因此同样声明真实 `PUBLIC core` 边。配置合同会把公开头扫描与中央
-声明对账，selected-header 安装或共享源码 include root 都不能充当隐藏依赖。
+`CLOSED` 模块只因可复现 correctness/security/lifetime 缺陷、真实消费者证明的常用能力缺口、相关
+依赖升级、公开合同/算法/交付变化，或合格同合同证据的 material 回归而重开。形成 trigger 和新 record
+后走 `CLOSED -> SCOPED`；只读观察、代码行数、命名偏好或单次微基准不改变状态。
 
-中央图和 target link 并不是两份人工事实：`HyleComponents.cmake` 的同一声明同时用于选择闭包和
-向 `hyle_add_module()` 投影真实 `PUBLIC/PRIVATE` link edge。模块 CMakeLists 只声明源文件与模块
-拥有的外部依赖；机器合同必须拒绝未知边、重复边、倒序和 package 漏链。
-
-## 3. 依赖审查
-
-每次模块 review 都同时检查四种问题：
-
-1. 本模块是否依赖了更高层，或只为方便而扩大 `PUBLIC` 边；
-2. 下游是否绕过本模块，私造 error、clock、allocator、CPU probe、queue 等同义机制；
-3. 公开头是否真正暴露依赖类型，决定 `PUBLIC`/`PRIVATE` 是否正确；
-4. source、installed static、installed shared 消费者能否只选择根组件并得到完整闭包。
-
-修一条底层边后，必须回审直接消费者，不做无界的全库顺手重构。若问题属于另一个模块，登记
-demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即跨边修复。
-
-依赖顺序不得成为复制实现的理由。较高 factor 需要较低 factor 时，登记真实直接边并复用；较低 factor
-若看似需要较高 factor，依次裁决 owner 是否放错、公开面是否泄漏机制类型，以及能否提取满足六项质因数
-判据的更小 factor。都不成立时，使用标准库/成熟依赖，或保留有明确状态机、layout、生命周期和成本理由
-的专用实现；不得只因“当前不能依赖”复制同义 error、clock、allocator、probe 或容器。`next/prev` 字段
-本身不证明语义重复，例如 freed-slot free-list 和摘链后复用 link 的 wake chain 可以合法特化；普通
-cancellation hlist、arena/deferred-work forward chain 等重复形状则应在其能力准入后回审公共质因数。
-
-## 4. 全局功能展开顺序
-
-下列顺序只用于有界地完成只读能力统计，不代表现有边界已正确，也不是未来实施拓扑。Build/package 是
-贯穿每个候选组件的横向合同，不是最后补票：
-
-1. core；
-2. error；
-3. container_intrusive；
-4. util_core；
-5. time；
-6. platform；
-7. mem；
-8. obs；
-9. simd 与 math 边界；
-10. container；
-11. util-runtime（registry/component ID 为 `util_runtime`）；
-12. sched；
-13. io（当前基础传输 factor ID 为 `io_core`）。
-
-这一遍必须先完成每个问题域的四组推理证据（独立 ggml + llama.cpp、ds4、vLLM、SGLang）真实需要、
-成熟库通用能力、定义性能力和现有 HYLE 承诺的超集，再统一做跨域去重、归属和质因数分解。
-四组证据是 consumer/demand input，不自动是性能 peer；不得边统计边实现，也不得以当前依赖冲突删除能力。
-新组件图完成后，实际施工顺序只由它的拓扑序决定。
-
-上述列表是能力统计顺序，不是状态表。只读新方法回放可以给出 `CONFIRMED`、`METHOD_GAP` 或
-`PRODUCT_TRIGGER` 结论，但这些是审计事实，不是第二套产品状态；是否 `CLOSED/BLOCKED/QUEUED`、能否
-进入产品修改，始终由中央 registry 与其所指 closure card 裁决。
-
-施工优先级也不是产品状态：owner 可以要求先对某个 `CLOSED` 产品执行不改产品的定向 replay；这不会
-把它伪装成 `QUEUED/SCOPED`，也不会授权跳过 `PRODUCT_TRIGGER -> REOPENED -> SCOPED`。某个较后组件
-已经进入 `SCOPED` 但尚未 `AUDITED` 时，也不能据此覆盖 owner 新指定的 replay 顺序；当前执行对象只在
-[`implementation/status`](../implementation/status.md)说明。
-
-SIMD 是不可拆分的公开产品组件；Highway、xsimd、HYLE 自实现和 ISA 路由只是内部后端。Math 与 SIMD
-的现行边界由 [Scalar math 边界](math-design.md)裁决：前者承载 scalar integer control-plane 安全，
-后者承载 lane/row/buffer data-plane 计算；新候选仍需按该边界逐项准入。Compute 与 Graph 保持
-`QUEUED` 和冻结：旧实现只用于发现需求，在新底座组件图与真实推理
-consumer slice 成立前不做产品重构，也不为旧 benchmark 形状优化。
-
-## 5. 每轮架构输出
-
-每个模块按 [审查方法](../developer/review/module-closure-methodology.md)完成：
-
-- 自顶向下 capability-family map 与现有公开面反向追踪，区分
-  `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE`，再用 capability/demand ledger 裁决实现、组合、
-  借用、上移、延后与拒绝；
-- public/internal 与 owner module 裁决；
-- ownership/lifetime/concurrency/failure/complexity 类型表；
-- 消费者与依赖双向扫描；
-- correctness、性能仪器、正常 workload、交付和易用性证据；
-- 四类文档各自的唯一事实；
-- 独立红队、已知限制、停止与 reopen trigger。
-
-推理引擎提供首要 demand 与 workload，第二种工程计算形状作为泛化留出。基础 API 必须通过语义
-擦除：去掉模型、token、服务和 backend 名称后仍然是自然的通用任务。详见
-[推理引擎北极星](inference-engine-north-star.md)与
-[能力完整性决策](capability-completeness.md)。
-
-## 6. 停止规则
-
-模块签署后停止基于 LOC、feature 数、命名偏好或单次微基准的反复重构。只有真实消费者缺口、
-correctness/security、直接依赖语义变化、新平台/ISA/backend，或强 peer 在同合同正常 workload
-证明更好复杂度或 material advantage 时才重开。
-
-项目规模不是完成度代理。可维护的模块边界、无重复实现、真实消费者可用和可复现证据，比达到
-某个总代码行数更重要。
+模块每轮的具体能力表、验证、预算和停止规则见
+[收口协议](../developer/review/module-closure-methodology.md)。项目规模不是完成度代理；自然 API、正确
+依赖、真实消费者可用和可复现证据比达到某个代码行数更重要。

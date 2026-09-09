@@ -30,6 +30,10 @@ class SelectionError(RuntimeError):
     pass
 
 
+_PROJECT_GRAPH_CACHE = {}
+_COMMITTED_SNAPSHOT_CACHE = {}
+
+
 def digest(value):
     data = value if isinstance(value, bytes) else json.dumps(
         value, sort_keys=True, separators=(",", ":")).encode()
@@ -77,10 +81,28 @@ class Snapshot:
         return git(self.root, "cat-file", "blob", entry[2])
 
 
+def remember_snapshot(snapshot):
+    if snapshot.commit is not None:
+        _COMMITTED_SNAPSHOT_CACHE[(str(Path(snapshot.root).resolve()), snapshot.commit)] = snapshot
+    return snapshot
+
+
+def committed_snapshot(root, revision):
+    root_key = str(Path(root).resolve())
+    commit = git(root, "rev-parse", "--verify", revision + "^{commit}").decode().strip()
+    key = (root_key, commit)
+    if key not in _COMMITTED_SNAPSHOT_CACHE:
+        _COMMITTED_SNAPSHOT_CACHE[key] = Snapshot(root, commit)
+    return _COMMITTED_SNAPSHOT_CACHE[key]
+
+
 def project_graph(snapshot):
     data = snapshot.read(MANIFEST)
     if data is None:
         raise SelectionError(f"missing central manifest in {snapshot.tree}")
+    cache_key = hashlib.sha256(data).hexdigest()
+    if cache_key in _PROJECT_GRAPH_CACHE:
+        return _PROJECT_GRAPH_CACHE[cache_key]
     # The historical manifest couples metadata resolution to configure-time
     # source auditing. Evaluate its exact metadata prefix with CMake, stopping
     # at the named audit-function boundary; never interpret dependency syntax.
@@ -112,6 +134,7 @@ def project_graph(snapshot):
                 raise SelectionError("unrecognized central graph projection")
         if not graph["factors"]:
             raise SelectionError("empty central graph projection")
+        _PROJECT_GRAPH_CACHE[cache_key] = graph
         return graph
 
 
@@ -167,6 +190,17 @@ def formatting_only(path, before, after):
         line.strip(" \t") for line in new.splitlines()]
 
 
+def vendored_owners(path, policy):
+    matches = [
+        owners
+        for prefix, owners in policy["vendored_input_owners"].items()
+        if path == prefix or (prefix.endswith("/") and path.startswith(prefix))
+    ]
+    if len(matches) != 1:
+        return None
+    return list(matches[0])
+
+
 def classify(before, after, graphs, policy):
     changes, unknown = [], []
     for path in sorted(before.files.keys() | after.files.keys()):
@@ -192,6 +226,16 @@ def classify(before, after, graphs, policy):
                     suites.extend(suite["tests"])
             if suites:
                 kind, reason = "tool", "mapped maintainer tool contract; no product build or P1"
+            elif (
+                path.startswith("scripts/")
+                and old_entry is not None
+                and new_entry is None
+                and path not in policy["package_tools"]
+            ):
+                kind, reason = (
+                    "tool",
+                    "unmapped maintenance helper retired; additions and modifications remain fail-closed",
+                )
             elif path == MANIFEST:
                 kind, reason = "graph", "central component or ownership contract changed"
             elif path.startswith("samples/package/"):
@@ -199,7 +243,14 @@ def classify(before, after, graphs, policy):
                 if product in graphs[1]["products"]:
                     kind, reason = "sample", "real installed/source consumer changed"
                     factors = graphs[1]["products"][product]
-            elif path in policy["package_tools"] or path in {"CMakeLists.txt", "CMakePresets.json", "tests/CMakeLists.txt", "src/CMakeLists.txt", "bench/CMakeLists.txt", "include/hyle/obs/trace.h"} or path.startswith(("cmake/", "third_party/")):
+            elif path.startswith("third_party/"):
+                reviewed = vendored_owners(path, policy)
+                if reviewed is None:
+                    kind, reason = "unknown", "vendored input lacks unique reviewed ownership"
+                else:
+                    kind, reason = "package", "reviewed vendored product or instrument input changed"
+                    factors = sorted(reviewed)
+            elif path in policy["package_tools"] or path in {"CMakeLists.txt", "CMakePresets.json", "tests/CMakeLists.txt", "src/CMakeLists.txt", "bench/CMakeLists.txt", "include/hyle/obs/trace.h"} or path.startswith("cmake/"):
                 kind, reason = "package", "shared build/package or external product input changed"
             elif factors:
                 if path.startswith("tests/"):
@@ -226,6 +277,146 @@ def read_json(path):
         return json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise SelectionError(f"invalid JSON {path}: {exc}") from exc
+
+
+def registry_states(snapshot):
+    raw = snapshot.read(REGISTRY)
+    if raw is None:
+        raise SelectionError("candidate is missing the module registry")
+    try:
+        payload = json.loads(raw)
+    except (UnicodeError, ValueError) as exc:
+        raise SelectionError(f"candidate module registry is invalid JSON: {exc}") from exc
+    modules = payload.get("modules") if isinstance(payload, dict) else None
+    if not isinstance(modules, list):
+        raise SelectionError("candidate module registry has no modules array")
+    states = {}
+    for row in modules:
+        if not isinstance(row, dict) or not isinstance(row.get("module"), str) or not isinstance(row.get("state"), str):
+            raise SelectionError("candidate module registry has an invalid module/state row")
+        if row["module"] in states:
+            raise SelectionError(f"candidate module registry repeats {row['module']!r}")
+        states[row["module"]] = row["state"]
+    return states
+
+
+def product_change_owners(changes, graphs, policy):
+    owners = {
+        factor
+        for change in changes
+        if change["kind"] in {"source", "public", "factor_seam"}
+        for factor in change["factors"]
+    }
+    for change in changes:
+        if change["path"].startswith("third_party/"):
+            reviewed = vendored_owners(change["path"], policy)
+            if reviewed:
+                owners.update(reviewed)
+    if any(change["path"] == MANIFEST for change in changes):
+        before, after = graphs
+        for factor in before["factors"].keys() | after["factors"].keys():
+            if before["factors"].get(factor) != after["factors"].get(factor):
+                # Registering a new dormant identity is governance only.  Making
+                # it buildable, or changing an existing factor contract, is a
+                # product-boundary change and needs an audited owner.
+                current = after["factors"].get(factor)
+                if current is not None and not (
+                    factor not in before["factors"] and current["queued"]
+                ):
+                    owners.add(factor)
+        for product in before["products"].keys() | after["products"].keys():
+            old_roots = set(before["products"].get(product, []))
+            new_roots = set(after["products"].get(product, []))
+            if old_roots != new_roots:
+                owners.update(old_roots | new_roots)
+    return owners
+
+
+def authorization_report(root, before, after, policy, expected_owners):
+    """Check product changes at the commit where they were introduced."""
+    if not expected_owners:
+        return {"owners": [], "states": {}, "issues": []}
+    remember_snapshot(before)
+    remember_snapshot(after)
+    snapshot_cache = {before.tree: before, after.tree: after}
+
+    def snapshot(revision):
+        item = committed_snapshot(root, revision)
+        return snapshot_cache.setdefault(item.tree, item)
+
+    if after.commit is None:
+        steps = [(snapshot("HEAD"), after, "WORKTREE")]
+    else:
+        start = before.commit
+        if subprocess.run(
+            ["git", "merge-base", "--is-ancestor", start, after.commit],
+            cwd=root, capture_output=True, check=False
+        ).returncode:
+            start = git(root, "merge-base", start, after.commit).decode().strip()
+        commits = git(root, "rev-list", "--reverse", "--topo-order",
+                      f"{start}..{after.commit}", "--", "include", "src", "third_party",
+                      MANIFEST).decode().splitlines()
+        steps = []
+        for commit in commits:
+            family = git(root, "rev-list", "--parents", "-n", "1", commit).decode().split()
+            parents = family[1:]
+            if not parents:
+                continue
+            current = snapshot(commit)
+            if len(parents) == 1:
+                steps.append((snapshot(parents[0]), current, commit))
+                continue
+            # Branch commits are already visited above. Only a path whose merge
+            # result differs from every parent can contain new conflict-resolution
+            # product bytes and therefore needs an additional authorization step.
+            parent_snapshots = [snapshot(parent) for parent in parents]
+            novel = {
+                path for path in current.files
+                if all(current.files.get(path) != parent.files.get(path)
+                       for parent in parent_snapshots)
+            }
+            novel.update(
+                path for parent in parent_snapshots for path in parent.files
+                if path not in current.files
+                and all(other.files.get(path) != current.files.get(path)
+                        for other in parent_snapshots)
+            )
+            steps.append((parent_snapshots[0], current, commit, novel))
+
+    owners, issues = set(), []
+    for step in steps:
+        previous, current, label, *filters = step
+        graphs = [project_graph(previous), project_graph(current)]
+        changes, _ = classify(previous, current, graphs, policy)
+        if filters:
+            changes = [change for change in changes if change["path"] in filters[0]]
+        changed_owners = product_change_owners(changes, graphs, policy)
+        if not changed_owners:
+            continue
+        owners.update(changed_owners)
+        old_states = registry_states(previous)
+        new_states = registry_states(current)
+        for factor in sorted(changed_owners):
+            old_state = old_states.get(factor, "MISSING")
+            new_state = new_states.get(factor, "MISSING")
+            if old_state != "AUDITED" or new_state != "AUDITED":
+                issues.append(
+                    f"{factor}: product input changed at {label[:12]} while state was "
+                    f"{old_state} -> {new_state}; AUDITED must be committed before "
+                    "implementation and retained until the product commit is complete"
+                )
+    missing = set(expected_owners) - owners
+    for factor in sorted(missing):
+        issues.append(
+            f"{factor}: net product change could not be attributed to an introducing commit"
+        )
+    owners.update(expected_owners)
+    endpoint_states = registry_states(after)
+    return {
+        "owners": sorted(owners),
+        "states": {factor: endpoint_states.get(factor, "MISSING") for factor in sorted(owners)},
+        "issues": issues,
+    }
 
 
 def environment_identity(context=None, *, native=False):
@@ -275,11 +466,10 @@ def p1_scope(snapshot, graph, policy, factor):
     inputs = {}
     for path, entry in snapshot.files.items():
         if path.startswith("third_party/"):
-            matches = [owners for prefix, owners in policy["vendored_input_owners"].items()
-                       if path == prefix or (prefix.endswith("/") and path.startswith(prefix))]
-            if len(matches) != 1:
+            owners = vendored_owners(path, policy)
+            if owners is None:
                 raise SelectionError(f"P1 vendored product input lacks unique reviewed ownership: {path}")
-            relevant = bool(dependencies & set(matches[0]))
+            relevant = bool(dependencies & set(owners))
         else:
             relevant = path in shared or path.startswith("cmake/") or (
                 path.startswith(("include/", "src/")) and owner(path, graph) in dependencies)
@@ -296,6 +486,9 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     policy = read_json(SCRIPT_DIR / "validation-policy.json")
     graphs = [project_graph(before), project_graph(after)]
     changes, unknown = classify(before, after, graphs, policy)
+    authorization = authorization_report(
+        root, before, after, policy, product_change_owners(changes, graphs, policy)
+    )
     available = {k for k, v in graphs[1]["factors"].items() if not v["queued"]}
     own, consumers, expanded, header_roots, delivery = set(), set(), set(), set(), set()
     suites, impact_reasons = set(), {}
@@ -471,8 +664,10 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
     return {"schema_version": 2, "baseline_commit": before.commit, "baseline_tree": before.tree,
             "candidate_commit": after.commit, "candidate_tree": after.tree,
             "changes": changes, "selected_factors": sorted(selected_factors), "p1_scopes": p1_scopes,
-            "unknown_paths": unknown, "gates": gates,
-            "verdict": "BLOCKED" if unknown or any(g["status"] == "BLOCKED" for g in gates) else "READY"}
+            "unknown_paths": unknown,
+            "product_authorization": authorization,
+            "gates": gates,
+            "verdict": "BLOCKED" if unknown or authorization["issues"] or any(g["status"] == "BLOCKED" for g in gates) else "READY"}
 
 
 def cached_receipt(cache, gate, root):

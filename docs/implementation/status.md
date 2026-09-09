@@ -49,7 +49,7 @@
 normal:  QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> CLOSED
 stop:    SCOPED | AUDITED | CANDIDATE -> BLOCKED
 resume:  BLOCKED -> SCOPED
-reopen:  CLOSED -> REOPENED -> SCOPED
+reopen:  CLOSED -> SCOPED（新 trigger + 新 record）
 ```
 
 状态、回放与 reopen 的精确定义见

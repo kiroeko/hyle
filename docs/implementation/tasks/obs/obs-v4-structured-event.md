@@ -18,8 +18,8 @@
 - component / owner / round / kind：`obs` / Obs / `obs-v4-structured-event` / `REOPEN`；
 - baseline：`067c3a5060390a8c592fdde38dd095f04fd68603`；前轮：`obs-v3`；
 - trigger：`OBS-STRUCTURED-EVENT-2026-09-05`；
-- [`capability-factorization-v1`](../project/capability-factorization-v1.md) 在旧 v3 关闭后完成跨域
-  A/B/C 冻结，并把 `OBS-A-02` 的 logger-neutral structured event 定为 Obs 自己的 `MUST`：现有
+- [能力展开与组件质因数分解](../../../architecture/capability-factorization.md)在旧 v3 关闭后成为长期
+  归属方法；本卡据此把 logger-neutral structured event 定为 Obs 自己的 `MUST`：现有
   `LogRecord` 只有 message/source/raw Unix-ns 与 string-only fields，缺稳定 event/category identity、
   typed value 和显式 correlation attributes；
 - 同一冻结图把 Obs 保持为 `KEEP_PRIME`，而不是应用 logger 或 metrics 聚合器；Metrics 是另一个

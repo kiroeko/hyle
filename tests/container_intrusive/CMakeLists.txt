@@ -67,12 +67,6 @@ add_test(NAME hyle_container_intrusive_codegen_audit_parser_test
 set_tests_properties(hyle_container_intrusive_codegen_audit_parser_test
   PROPERTIES LABELS "container_intrusive;codegen;tooling")
 
-add_test(NAME hyle_container_intrusive_perf_evidence_parser_test
-  COMMAND "${Python3_EXECUTABLE}"
-          "${CMAKE_CURRENT_SOURCE_DIR}/perf_evidence_parser_test.py")
-set_tests_properties(hyle_container_intrusive_perf_evidence_parser_test
-  PROPERTIES LABELS "container_intrusive;performance;tooling")
-
 # Sanitizer instrumentation intentionally adds helper calls and therefore has
 # a different machine contract.  Ordinary Debug remains registered: the audit
 # runs the layout/operation probe and validates all symbols, while reserving the

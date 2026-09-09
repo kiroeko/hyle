@@ -1,8 +1,7 @@
 # KI-1 Crash Hunt（fiber × mimalloc 跨线程 free 崩溃——调查日志）
 
-> 活账本。**边实验边记**:每条猜想、每个实验(确认/排除)都写下,防上下文丢失。
-> 关联:[`../architecture/known-issues.md`](../troubleshooting/known-issues.md) KI-1。
-> 本轮指令(用户):**不信无法复现,怀疑"缓解方案"在掩盖**;移除所有缓解、派红队、死磕可靠复现,务必解决。
+> 已结案的历史诊断。它不再是当前 known issue；当前 blocker 只看
+> [`module-status.json`](../../implementation/module-status.json)。本页保留可复用的复现与排除方法。
 
 ## 0. 被查崩溃（KI-1 摘要）
 
@@ -71,7 +70,8 @@
 
 - [x] 红队 A(调度器并发正确性)+ B(mimalloc×fcontext 机制)结论回填 → 见 §8。
 - [x] 验证红队的 TLS-缓存机制是否在 HYLE 真实路径成立 → §8(机制真实,但 HYLE 当前路径安全)。
-- [x] 清理 `bench/CMakeLists.txt` 甩锅注释 → 中性化;更新 known-issues.md KI-1(已提交 92f8ec8)。
+- [x] 清理 `bench/CMakeLists.txt` 甩锅注释并更新当时的 KI-1 清单（提交 `92f8ec8`；旧清单现从 Git
+  历史追溯）。
 - [ ] (可选)上游 mimalloc 版本对比——被 github TLS 网络阻断,非必需(崩溃不可复现=无修没修可测)。
 - [x] (防御性)在 docs 写一条 fiber 编程铁律:**fiber 体不得跨 `yield()` 持有 thread_local 派生值** → 已落 `guide/usage-contract.md` §1(见 §8)。
 

@@ -185,21 +185,6 @@ contract，不得从 v1 标签继承同合同声明。
 `C:\hyle-scratch\obs-v4-qual-structured-evidence` 与
 `C:\hyle-scratch\obs-v4-qual-concurrent-evidence`。它们是工程审计输入，不是发布包内容。
 
-## v3 证据如何保留
+## 当前声明边界
 
-- v3 ordinary Abseil 与 limiter 结果是历史事实；v4 改了 record layout、registry 与直接依赖，必须用
-  新 candidate 重跑，不能靠旧 tree 自动续证；
-- v3 `16 slots x 256 ticks / 3-second` 并非锁定 llama.cpp 的精确 source journey，现降级为历史合成
-  诊断。它不再出现在当前 contract、当前结论或 user/architecture 的性能声明中；
-- 4/16 independent sink 仍是固定 registry 容量与 contention 诊断；没有 named normal consumer 时不
-  升为产品门；
-- `trace.h` 与 direct Tracy seam 未在 v4 修改；它的旧同事件结构证据可支持“无 runtime adapter”这个
-  结构结论，trace ON/OFF correctness 仍需在当前三平台交付复验。它不证明所有 Tracy 事件全面 SOTA。
-
-## 当前可声明与禁止外推
-
-可以声明 obs-v4 candidate 在上述三个冻结的正常 journey 上通过受限 W1-WIN P1 工程门：ordinary
-自然路线明显更轻，完整 structured progress 的 candidate-stronger 自然路线落在预声明 5% 用户预算内，
-受影响 registry 的同实现回归路线通过 5% non-inferiority。不得把前两项写成 peer same-contract
-non-inferiority，不得据此声明两个 limiter 同合同等价、全面 SOTA、跨平台固定纳秒、异步 logger 性能、
-所有 sink fan-out 或 end-to-end token latency；4/16 sink 仍只是诊断。Formal 认证独立保持 `PENDING`。
+v5 只签 metrics scheduler aggregate；v4 只签上面的 ordinary natural route、structured 用户预算与 registry 同实现回归。不得外推为 limiter 同合同、异步 logger、全部 sink/trace、跨平台或端到端 token SOTA。v3 及更早候选已从当前页移除，可由 Git 恢复但不能续签当前结论。
