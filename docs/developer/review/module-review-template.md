@@ -9,6 +9,9 @@
 - baseline commit：
 - trigger 与证据：
 - 正常 consumer 任务：
+- 主产品纵切 / 具名来源：
+- 正交反偏置纵切（若不适用，说明为什么不会领域特化）：
+- 跨模块 public journey 与每段 owner：
 - scope：
 - non-goals：
 - 直接依赖 / 直接消费者：
@@ -48,7 +51,7 @@ P1/P2 只能在本节和 correctness 实现固定以后开始。
 ## 七问
 
 1. 第三方路径、版本、许可证、升级/fallback：
-2. 真实/北极星消费者、标准和 peers 下的功能完整度：
+2. 真实消费者、主/反偏置纵切、标准和 peers 下的功能完整度，以及 public journey 是否可组合：
 3. 已关闭下层组件与加速设施的复用：
 4. 复杂度、同合同拟真性能和 material 固定输：
 5. 旧 C/Native FFI 清洁度与跨语言边界：

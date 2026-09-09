@@ -20,7 +20,19 @@ HYLE 希望提供这层基础加速底座：让消费者能够按模块选择能
 因此 HYLE 不再以“模块功能很多”或“微基准多数获胜”作为方向。每项公共能力必须回到用户任务、
 所有权、正常数据分布和组合方式；微基准只解释机制。
 
-## 首要北极星：本地量化推理引擎
+## 消费者纵切组合
+
+HYLE 最先落地的可执行锚是本地量化推理引擎，但它不能独自定义整个基础库。功能完整性持续从四条
+纵切取样：量化推理与 serving、异构渲染与资源流送、批处理数值/数据管线、低延迟异步服务。它们分别
+施压于权重/KV、opaque device resource 与帧生命周期、大文件/scratch/并行分块，以及连接/cancel/
+reload/drain；相互重叠的机制才有充分理由下沉为通用能力。
+
+这不是要求每个模块机械扫描四个行业，也不是要求 HYLE 自己制造模型、渲染器或 Web 框架。模块选择
+最相关的主纵切，并在 API 可能被领域特化时选择一个正交纵切；项目级审计再走完整的跨模块 public
+journey，专门发现单模块清单看不见的 glue 缺口。详细准入和路由规则见
+[能力完整性决策](capability-completeness.md#消费者纵切组合与反偏置)。
+
+## 首个可执行锚：本地量化推理引擎
 
 一个真实推理引擎会同时压到 HYLE 的关键边界：模型加载与 mapped I/O、权重和临时内存、量化
 数据结构与 SIMD、CPU/GPU 执行、请求调度、取消、观测和三种发布形状。它能把底层优化映射到
@@ -117,7 +129,7 @@ loop-carried state 复用和动态 active-set 整理；具体模型的循环次�
 属于推理引擎。HYLE 只下沉去掉模型语义后仍自然的通用机制。详细边界见
 [inference engine north star](inference-engine-north-star.md)。
 
-## 泛化留出：工程计算
+## 其它纵切：渲染、批处理与低延迟服务
 
 参数化建模、仿真、几何与数值计算能提供与推理不同的数据和执行形状：稳定节点与依赖 DAG、
 稀疏/网格访问、长任务、交互式重算和不同精度。它当前是泛化留出，而不是要求 HYLE 同时制造
@@ -126,6 +138,11 @@ loop-carried state 复用和动态 active-set 整理；具体模型的循环次�
 这条留出用于发现 API 是否只适合 dense tensor、某种量化块或某个 backend。若一个“通用”类型
 在去掉 token/KV 名称后仍只能服务单一模型，它应留在引擎；若工程任务证明相同机制成立，公共
 基础形状才更可信。
+
+渲染/资源流送进一步施压于 host/device staging、opaque heap 子分配、copy completion、稳定资源
+identity、热重载和 fence 后延迟销毁；低延迟服务施压于 connection ownership、deadline、取消、
+backpressure、reload 与 drain。这些领域策略不同，却会重复证明相同的资源和生命周期机制。材质、
+场景、渲染算法、shader 编译、图像 codec、路由、认证与 schema 仍由专门产品或成熟依赖拥有。
 
 ## 与 clay 的关系
 
@@ -137,7 +154,7 @@ clay 的历史价值是提示成熟问题与失败模式；每项资产仍需按
 
 HYLE 成功不是因为仓库达到某个行数，也不是因为每个操作都比所有库快。成功意味着：
 
-1. 推理消费者能用自然 C++ API 组合所需机制，不再重复发明底层；
+1. 推理、渲染/资源流送、批处理和服务消费者能用自然 C++ API 组合所需机制，不再重复发明底层；
 2. 常见基础需求有明确路线，模块边界和依赖无环且可独立组装；
 3. 关键正常 workload 达到合理复杂度，并相对强 peer 没有未解释的 material 劣势；
 4. correctness、OOM、取消、并发、平台 fallback 和资源成本可复现；
@@ -155,5 +172,5 @@ HYLE 成功不是因为仓库达到某个行数，也不是因为每个操作都
 - 把 shared C++ library 误当跨语言稳定 ABI；
 - 文档保存大量旧结论却没有可信度和当前状态。
 
-当前的应对是：推理需求锚、工程留出、逐模块收口审查、仪器资格、独立红队、四类文档和机器
-合同。具体方法见 [module closure methodology](../developer/review/module-closure-methodology.md)。
+当前的应对是：多消费者纵切组合、逐模块收口审查、仪器资格、独立红队、四类文档和机器合同。
+具体方法见 [module closure methodology](../developer/review/module-closure-methodology.md)。

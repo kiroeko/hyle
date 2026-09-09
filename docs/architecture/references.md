@@ -35,6 +35,19 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 其名称和形状不构成兼容合同。未来只有满足 [Native FFI 准入策略](native-ffi-policy.md)后，才为
 已命名消费者选择并验证相应运行时参考。
 
+### 跨模块消费者纵切
+
+| 纵切 | 主要来源 | 用来发现什么 |
+|---|---|---|
+| 量化推理与 serving | ggml/llama.cpp、ds4、vLLM、SGLang | 模型映射、量化 kernel、KV/scratch、调度、流式服务与关闭 |
+| 异构渲染与资源流送 | Cycles 源码快照、OpenVDB/NanoVDB、Kompute | host/device ownership、opaque range、staging/copy/completion、资源 identity、热重载与延迟销毁 |
+| 批处理数值/数据管线 | oneDNN、OpenVDB、oneTBB 的算法形状 | 大文件、显式 scratch、并行分块、向量化变换、持久化与失败恢复 |
+| 低延迟异步服务 | Seastar、libuv、nginx、vLLM/SGLang serving | listener/session、deadline/cancel/backpressure、文件 watch、reload、drain 与指标导出 |
+
+这些来源跨越多个 HYLE owner，用于发现完整旅程中的胶水缺口；它们不是把整套引擎或 framework
+引入产品构建的依赖清单。无 Git identity 的 Cycles 本地快照只能作辅助证据，正式裁决还须绑定可复核
+版本或第二个独立来源。
+
 ## 按模块映射
 
 ### simd/（Tier 1）
@@ -124,19 +137,19 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
 | **nghttp2** | **借核(io HTTP/2)** | 中央 lock 固定 `v1.70.0` commit；只构建静态 libnghttp2 protocol core，借 HTTP/2 frame/HPACK/stream/flow-control，自写 allocator、caps 与 over-co_await transport，不取其 event loop/应用层 |
 
-### graph/（Tier 6，北极星② 编排 + 数据并行）
+### graph/（Tier 6，编排 + 数据并行）
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **oneTBB** | **参考（设计,不借运行时）** | 数据并行的成熟设计参考：`blocked_range`(grainsize + 递归 split)、`parallel_reduce`(reduction_tree_node + **deterministic** 双档)、`parallel_scan`(两趟)。**不借其 task arena/调度器**(双调度器红线)；运行仍归 HYLE sched |
 | **taskflow** | 参考 | 现代 C++ 的 DAG + 数据并行一体框架(`tf::Taskflow` 依赖图 + for_each/reduce/scan + subflow 动态图)，适合对拍 HYLE DAG 编排与数据并行的 API 形态；调度仍归 HYLE sched |
-| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 稠密/稀疏线代（matmul/分解/迭代求解器 CG/BiCGSTAB）的成熟参考。`EIGEN_GEMM_THREADPOOL` 暴露 `pool->NumThreads()` 路径，但未来 HYLE adapter 仍须实证任务提交接口和所有权，不能类比 ggml 的不可注入 `set_threadpool`。等真正有 CAE 求解器消费者时再读，不以库名代替性能结论 |
-| **openvdb** | **参考（CAD/CAE 网格/体数据,按需）** | 工业级稀疏体素/网格数据结构 + 其上的并行遍历(自带 TBB 并行,只读其数据结构 + 分块遍历设计,并行归 HYLE graph-02)。北极星② 几何核/网格 stencil 的参考。**等真做几何/体数据消费者再读**,现在超前 |
+| **eigen** | **参考（数值/几何消费,按需）** | 稠密/稀疏线代（matmul/分解/迭代求解器 CG/BiCGSTAB）的成熟参考。`EIGEN_GEMM_THREADPOOL` 暴露 `pool->NumThreads()` 路径，但未来 HYLE adapter 仍须实证任务提交接口和所有权，不能类比 ggml 的不可注入 `set_threadpool`。由具名数值或几何消费者触发，不以库名代替性能结论 |
+| **openvdb** | **参考（批处理/稀疏网格）** | 工业级稀疏体素/网格数据结构和 NanoVDB host-buffer 资源形状；只读其数据结构、分块遍历与 buffer ownership，TBB 并行不进入 HYLE runtime。完整几何/体数据消费者仍由 Graph/Compute 后续任务绑定 |
 
 ## 阅读优先级（按问题域）
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
-- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、oneDNN/oneMath（Intel CPU/数学后端参考）、seastar（io reactor_backend）。
-- **按真实消费者启用**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs）、oneTBB/taskflow（数据并行设计）、nghttp2（HTTP/2 借核）、eigen/openvdb（CAE/几何）。oneDPL/oneDAL **边界外**（见下）。
+- **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、Cycles/OpenVDB/Kompute（渲染与资源形状）、oneDNN/oneMath（Intel CPU/数学后端参考）、Seastar/libuv/nginx（异步服务与 IO）。
+- **按真实消费者启用**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs）、oneTBB/taskflow（数据并行设计）、nghttp2（HTTP/2 借核）、Eigen/OpenVDB（几何/批处理）。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 

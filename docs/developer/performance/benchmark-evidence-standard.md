@@ -62,10 +62,11 @@ peer/SOTA 声明。P1/P2 工程 `PASS` 是产品进入 `CLOSED` 的硬门。Form
 回答用户采用当前自然路线会发生什么，并可能证明 HYLE 缺少一个常见语义档位；但不能把额外 result、
 cancel、error、allocation 或 suspension 合同的成本全部归因给底层 queue/scheduler/allocator。
 
-没有当前真实消费者时，workload 来源按当前真实消费者、北极星具体旅程、至少两个独立成熟实现共同
-任务、标准/定义性算法、diagnostic synthetic 的顺序选择。由成熟共识而非生产 trace 准入的 normal
-shape 标为 `PROVISIONAL_ARCHETYPE`，冻结一个 primary 和至多一个 holdout；不得把 API 数、benchmark
-case 或单库独有示例当作调用频率。
+没有当前真实消费者时，workload 来源按当前真实消费者、与模块相关的具名产品纵切、至少两个独立成熟
+实现共同任务、标准/定义性算法、diagnostic synthetic 的顺序选择。产品纵切从推理、渲染/资源流送、
+批处理数值管线和低延迟服务中选择；主纵切可能造成特化时，增加一个正交 holdout。由成熟共识而非
+生产 trace 准入的 normal shape 标为 `PROVISIONAL_ARCHETYPE`，冻结一个 primary 和至多一个 holdout；
+不得把 API 数、benchmark case 或单库独有示例当作调用频率。
 
 ## 3. 测量前的合同卡
 
@@ -76,7 +77,7 @@ case 或单库独有示例当作调用频率。
 - 正常输入分布与至少一个边界规模，不能只选最有利 size；
 - 强 peer、版本、配置以及为什么语义等价；没有同合同 peer 时记录查找范围、`NOT_COMPARABLE` 和
   预冻结的 consumer 预算；
-- comparison class，以及 evidence provenance 属于 real consumer、north-star journey、
+- comparison class，以及 evidence provenance 属于 real consumer、named product journey、
   provisional archetype、standard 还是 diagnostic synthetic；
 - `SAME_CONTRACT` 的逐项语义等价矩阵；`NATURAL_ROUTE` 的额外语义与 route-level 解释边界；
 - setup、steady-state、teardown 哪些计费；allocation/copy/cache 是否包含；

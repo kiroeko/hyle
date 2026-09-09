@@ -8,6 +8,10 @@
 
 - [治理执行性与文档压缩 v4](project/governance-documentation-v4.md)。
 
+当前跨产品能力审计事实：
+
+- [Public C++ 消费者纵切组合审计](project/public-api-consumer-portfolio-audit-2026-09.md)。
+
 任务结束后只保留当前状态链仍引用、或被长期 architecture/developer/user 文档引用的记录。被替代的
 完整 Jira 式历史由 Git 保存，不用导航页和兼容跳转页维持第二套当前事实：
 

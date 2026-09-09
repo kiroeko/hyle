@@ -32,5 +32,5 @@ Graph 最终可能承载两类相关但未证明必须同属一个组件的任�
 5. 把现有源码逐入口映回需求；旧 API 不需要兼容，benchmark-only 形状应删除。
 6. 先验证复杂度、allocation 和 scheduling 结构，再在真实 DAG/range 上做同合同性能比较。
 
-历史方案和实验仍保存在 [`implementation/tasks/graph`](../implementation/tasks/graph/) 与 Git 中；
-它们可以避免重复调查，但不能替代新的 `SCOPED/AUDITED` 轮。
+历史方案和实验只保存在 Git 历史中；当前没有活动 `tasks/graph` 记录。它们可以避免重复调查，
+但不能替代 registry 中的新 `SCOPED/AUDITED` 轮。

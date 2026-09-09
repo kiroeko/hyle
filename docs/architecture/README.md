@@ -3,14 +3,15 @@
 本目录描述 HYLE 为什么存在、需要解决什么问题、应当具有什么形状，以及长期决策为什么如此。
 它引领开发方向，但不保存施工流水和一次性测量数字。
 
-HYLE 是面向 AI 推理和工程计算的 C++23 基础加速库。推理引擎是当前首要的可执行需求与性能锚；
-HYLE 提供通用的内存、数据结构、SIMD、调度、I/O 和异构计算机制，而模型格式、tokenizer、
-sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计算 workload 用于防止公共 API
-被单一模型过拟合。
+HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程计算的 C++23 基础加速库。推理引擎是
+首个可执行需求与性能锚，但不是唯一产品定义。HYLE 提供通用的内存、数据结构、SIMD、调度、I/O
+和异构计算机制，而模型格式、tokenizer、sampling、KV 策略与 serving policy 留在推理引擎；材质、
+场景、渲染算法与窗口/present policy 留在渲染产品。渲染/资源流送、批处理数值管线和低延迟服务
+共同防止公共 API 被单一模型或框架过拟合。
 
 ## 项目背景和方向
 
-- [动机与北极星](motivation.md)
+- [动机与消费者纵切](motivation.md)
 - [推理引擎需求锚](inference-engine-north-star.md)
 - [已收口单元的推理能力观察清单](inference-engine-capability-watchlist.md)
 - [项目范围](hyle-scope.md)

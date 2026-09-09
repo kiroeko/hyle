@@ -6,15 +6,17 @@
 
 ## 分层原则
 
-HYLE 是推理引擎与工程计算消费者下面的 C++23 加速底座。能力应归到能够完整表达 ownership、lifetime、
-failure、concurrency 和复杂度的最低合理层，但不能仅为“方便复用”把上层策略下沉：
+HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低延迟服务下面的 C++23 加速底座。能力应归到
+能够完整表达 ownership、lifetime、failure、concurrency 和复杂度的最低合理层，但不能仅为“方便
+复用”把上层策略下沉：
 
 - Core 只承载极小、稳定、跨模块必要的编译和布局 primitive；
 - Error 统一可恢复失败，Platform 统一 OS/硬件事实与机制；
 - Mem、Time、Obs、Util、Container、SIMD/Math 提供可组合基础能力；
 - Sched 与 IO 组合底层机制；
 - Compute 与 Graph 最终承载计算后端和编排，但在 registry 为 `QUEUED` 时旧实现只作需求输入；
-- 模型格式、tokenizer、KV/批处理和 serving policy 属推理引擎；
+- 模型格式、tokenizer、KV/批处理和 serving policy 属推理引擎；材质、场景、渲染算法和窗口/present
+  policy 属渲染产品；通用资源 ownership、异构 copy/completion 与调度机制仍须在正确 HYLE owner 审计；
 - source、static、shared 都是 C++ 交付，Native FFI 只由真实外语消费者触发。
 
 全库能力和边界变化先按[能力完整性](capability-completeness.md)与
@@ -64,8 +66,8 @@ owner 是否放错、公开面是否泄漏机制，以及能否提取满足质�
 
 实际施工顺序由中央图的拓扑、registry 中的活动状态和真实 blocker 决定，不在 architecture 维护一份
 容易过期的编号队列。对一个问题域的典型顺序是：底层 factor → 产品 façade 所需其余 factor → 直接
-消费者回放。Compute 与 Graph 只有在真实推理 slice、能力边界和新 closure card 成立后才从 `QUEUED`
-进入施工。
+消费者回放。Compute 与 Graph 只有在真实推理或异构资源纵切、能力边界和新 closure card 成立后才从
+`QUEUED` 进入施工。
 
 `CLOSED` 模块只因可复现 correctness/security/lifetime 缺陷、真实消费者证明的常用能力缺口、相关
 依赖升级、公开合同/算法/交付变化，或合格同合同证据的 material 回归而重开。形成 trigger 和新 record
