@@ -104,7 +104,31 @@ validation、teardown、owner lifetime、双顺序、31-run precision 和固定 
 - red-team：missed wake、cancel callback race、destroy/in-flight、false fast path、spin 和苹果/橘子计费；
 - performance：candidate clean、peer clean、双 order、controls、固定 5% margin、唯一 P1 bundle。
 
+## Product correction and candidate freeze
+
+`FIX-01` 已在 `4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3` 实现，产品 tree 为
+`cb91d5cba24706ddee390b51dab40fa12b2093ff`：
+
+- `notify_owner()` 只更新 owner-affine epoch 并直接唤醒 CV；`claim_direction()`、`release_direction()` 和
+  epoch snapshot 不再取得 session monitor；
+- 唯一 cross-thread `CancelCallback` 改走 `notify_cancelled_wait()`，仍在 session monitor 下关闭
+  predicate-check / waiter-publication 窗口，且不伪造 protocol epoch；
+- 新增同 session、同 owner direction contender 被外部 OS thread cancel 的集成用例，连续 100 次通过；
+  没有新增公开 API、layout、metadata、allocation、syscall、spin 或第二项机制修正。
+
+精确候选 archive SHA-256 为
+`73AE8B3A53797B41A841D176DFA7170138FE2B3C678B7A5F1387C7CF21CB1D2D`。受影响门结果：
+
+- W1-WIN / MSVC 19.50：plain HTTP/2 主套件与新增 cancel contender 用例通过；本机未安装可发现的
+  OpenSSL，TLS 路线不冒充已运行；
+- W1-WSL / GCC 14.2：plain/TLS HTTP/2、forced-epoll duplex、ASan、UBSan、TSan（既有
+  `setarch x86_64 -R` host mapping 修复）全部通过；
+- MacBook Air `Mac16,12` 与 Mac mini `Mac16,10` / AppleClang 21：TLS 与 HTTP/2 定向套件全部通过；
+  两台机器只作 portability/correctness，不混作性能样本；
+- WSL exact factor 的 shared 与 static 测试均通过；source archive 在 WSL 与两台 Mac 的 hash 一致。
+  Windows TLS 的环境缺口由 WSL 与两台 Mac 的真实 TLS 路线覆盖，不把 N/A 写成 PASS。
+
 ## Current decision
 
-`AUDITED`。source/P0 证明支持 `FIX-01`，且没有新增能力/API/metadata 或 peer 合同变化。下一步只可实现该
-唯一私有修正和定向 correctness/red-team；通过后冻结一个 immutable candidate 并执行唯一 P1。
+`CANDIDATE`。不可变产品身份如上；correctness、race/memory、portability 和 delivery 均已通过。下一步只可
+保存并复核这一个候选已经产生的唯一 P1 bundle，再完成终局只读红队；不得修改产品、合同或追加样本。

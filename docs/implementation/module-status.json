@@ -1307,12 +1307,14 @@
     },
     {
       "module": "io_http2",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "io-http2-v2-owner-progress-cost",
       "closure_task": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
       "scope": "Audit and, only if structurally proven, remove unconditional monitor and notification cost from the HTTP2 single-owner no-waiter progress path while preserving all public API, protocol, lifecycle and delivery contracts.",
       "non_goals": "New HTTP2 capability or public API; window, chunk or ownership changes; Sched, io_core, TLS, HTTP or transfer changes; benchmark workload, margin, sample-plan or shared-tool changes; Native FFI or C API.",
       "baseline_commit": "705b21112af34765227a132c1bd1a2e84a82e655",
+      "candidate_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
+      "candidate_tree": "cb91d5cba24706ddee390b51dab40fa12b2093ff",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1329,7 +1331,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_http2 v2 AUDITED：owner-local protocol/direction state 与唯一 cross-thread cancel notifier 已逐点分类并完成 missed-wake 证明；唯一 FIX 是移除 owner progress 外层 session monitor，cancel 仍按 monitor discipline 唤醒，API、workload、窗口、chunk 和 margin 全部不变。"
+      "summary": "io_http2 v2 CANDIDATE：唯一 owner-progress 修正冻结于 4060e217/cb91d5cb；三平台、sanitizer、HTTP/2/TLS 定向测试与 source/static/shared 交付已通过，等待唯一 P1 bundle 和终局红队签字。"
     },
     {
       "module": "io_transfer",
