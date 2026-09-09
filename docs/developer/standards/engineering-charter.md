@@ -55,6 +55,10 @@ concurrency 或复杂度机制，不得仅因最先在某个产品中发现就�
 - internal fast path 可以特化，但不得要求用户模拟 benchmark 生命周期或拆散一次自然操作。
 - 常态 metadata、allocation、indirection、branch 和对象大小都属于设计成本，必须登记。
 - 可选 placement、diagnostics、quota 或极端优化显式 opt-in，不让普通用户缴税。
+- 默认公开路线优先兑现本能力的性能目标。若 owner affinity、caller-owned storage、borrowed view、
+  batching、capacity reservation 等使用约束是避免隐藏 allocation/copy/dispatch 的必要条件，必须在类型
+  附近、guide 和 closure 限制中同时写清。只有具名消费者证明更重的 convenience 路线值得长期维护时，
+  才并列提供，并显式标出其额外成本；不能让便利 façade 偷偷取代高性能默认路线。
 
 ## 5. 失败与生命周期
 

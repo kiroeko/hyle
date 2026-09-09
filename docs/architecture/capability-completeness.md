@@ -177,6 +177,11 @@ Triton、GPU/tensor 融合层或渲染领域层，也必须裁决到正确 owner
 或不同 ownership/lifetime 合同可能没有可用加速路线。关键是逐项比较并留下可审计裁决，而不是默认手写，
 也不是为了形式统一制造依赖环、额外 metadata 或动态分派。
 
+自然路线不等于隐藏成本最重的路线。HYLE 默认 API 可以要求 owner affinity、显式容量、borrowed output
+或 caller-owned storage，只要这些约束确实支撑正常热路径、能完成完整旅程，并在 public 声明、用户指南
+与本轮限制中可发现。更方便但会稳定增加 allocation、copy、锁或 dispatch 的入口只有在真实消费者准入
+后才并列提供，并必须拥有独立名称与成本说明；不能仅为缩短样例而让所有用户付费。
+
 ### 成熟依赖、适配边界与唯一决策权威
 
 `BORROW` 不是把产品责任交给依赖。每项借用能力必须分别写清四种 owner：

@@ -46,6 +46,7 @@
 - 语义档位与选型规则：
 - ownership / lifetime / failure / OOM / concurrency / teardown：
 - 常态 allocation / copy / atomic / lock / syscall 成本：
+- 性能成立所需的使用限制，以及任何并列 convenience 路线的显式额外成本：
 - 默认值、误用诊断、source/static/shared 发现方式：
 - guide recipe 与坑：
 
