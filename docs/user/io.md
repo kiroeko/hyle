@@ -139,10 +139,12 @@ while (!shutdown.is_cancelled()) {
 ```
 
 一个 exact-file target 可以在 `create()` 时尚不存在，但其 parent 必须存在；directory target 本身必须是
-已有目录。输入 path 在 factory 返回前被复制。exact event 用稳定 `target_index` 标识，
+已有目录。输入 path 在 factory 返回前被复制；传入的 allocator 则是借用的资源 owner，必须活过 watcher
+及其 `close()`。exact event 用稳定 `target_index` 标识，
 `relative_path` 为空；directory event 的 path 只是一层 basename，深层 descendant 不会泄漏。
-根目录会按原生文件系统身份 canonicalize；子项则按 native directory stream 返回的 UTF-8 拼写做
-byte-exact 匹配。不要依赖大小写折叠、Unicode normalization 或 symlink alias 在三个平台上等价；对
+POSIX 根目录用 `realpath` 归一到现有目录身份；Windows 根目录使用绝对、分隔符归一的 lexical path，两个
+指向同一目录的 Win32 alias 可能各自占用一个 native handle。子项按 native directory stream 返回的
+UTF-8 拼写做 byte-exact 匹配。不要依赖大小写折叠、Unicode normalization 或 symlink alias 在三个平台上等价；对
 exact-file target 使用目录实际保存/枚举的名称，或者观察其 parent directory 后重读 authoritative state。
 
 返回的 `FileWatchBatchView` 借用 watcher 的双缓冲，到下一次 `next()`、`close()` 或析构即失效；需要跨
@@ -151,10 +153,14 @@ overflow、粗粒度通知或无法安全表示的名称都会设置 `rescan_req
 state，不能猜丢了哪些事件。应用 debounce、内容 hash/diff、证书验证、reload retry 和 watcher service
 不是 IO 的职责。
 
-`FileWatcher` 是 single-owner 对象：`create/next/close` 以及 live-owner 的 move assignment 都在指定
+为避免逐事件 allocation、复制和跨 worker dispatch，`FileWatcher` 有意采用以下性能/生命周期限制：它是
+single-owner 对象，`create/next/close` 以及 live-owner 的 move assignment 都在指定
 Scheduler worker 上进行；只能有一个在途 `next()`。取消或 deadline 只结束该次等待，watcher 仍可复用；
 `close()` 幂等，会唤醒 waiter 并排空 native completion。默认限制为 16 KiB native buffer、256 events
 和 16 KiB path bytes，可按一批资源数量显式调整；容量耗尽不会静默丢失，而是请求 rescan。
+从构造 `next()` 返回的 awaitable 到其 `await_resume()` 完成，awaitable 借用的是同一个 watcher 对象；
+这段时间不得移动、赋值、关闭或析构 watcher。watcher 的析构也属于 owner-worker 操作，不能把未等待的
+awaitable 带出 watcher 的生命周期。
 
 ## 4. HTTP 与 HTTPS
 

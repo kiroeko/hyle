@@ -64,6 +64,15 @@ constexpr std::size_t kDirectoryEpisodes = 2;
 constexpr auto kReadinessRetry = std::chrono::milliseconds(20);
 constexpr auto kReadinessTimeout = std::chrono::seconds(5);
 constexpr auto kRouteQuiescence = std::chrono::milliseconds(100);
+#if defined(_WIN32)
+// A watched destination can remain transiently unavailable after a directory
+// notification while Windows retires an open/indexing operation.  Real atomic
+// publishers must tolerate that condition.  The same charged helper feeds the
+// HYLE and libuv routes, so this is publication semantics rather than a
+// candidate-side allowance.
+constexpr auto kReplaceRetryDelay = std::chrono::milliseconds(1);
+constexpr std::size_t kReplaceRetryLimit = 50;
+#endif
 
 enum class Shape : std::uint8_t { kExactReplace, kDirectoryBurst };
 
@@ -214,10 +223,25 @@ void rescan_children(const WatchState& state, std::uint64_t expected,
 }
 
 bool publish_exact(WatchState* state, std::uint64_t sequence) noexcept {
-  return write_value(state->replacement_path, sequence) &&
-         hyle::platform::rename_path(state->replacement_path.c_str(),
+  if (!write_value(state->replacement_path, sequence)) return false;
+#if defined(_WIN32)
+  for (std::size_t retry = 0;; ++retry) {
+    Status renamed = hyle::platform::rename_path(
+        state->replacement_path.c_str(), state->exact_path.c_str());
+    if (renamed.ok()) return true;
+    const hyle::NativeError native = renamed.native_error();
+    const bool transient =
+        native.domain == hyle::NativeErrorDomain::Win32 &&
+        (native.code == ERROR_ACCESS_DENIED ||
+         native.code == ERROR_SHARING_VIOLATION);
+    if (!transient || retry == kReplaceRetryLimit) return false;
+    std::this_thread::sleep_for(kReplaceRetryDelay);
+  }
+#else
+  return hyle::platform::rename_path(state->replacement_path.c_str(),
                                      state->exact_path.c_str())
-             .ok();
+      .ok();
+#endif
 }
 
 bool publish_directory(WatchState* state, std::uint64_t sequence) noexcept {

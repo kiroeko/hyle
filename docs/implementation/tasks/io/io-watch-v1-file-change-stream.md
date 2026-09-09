@@ -127,7 +127,8 @@ HYLE_RETURN_IF_ERROR(watcher.close());
   next 无逐事件 heap、无 busy poll/额外 OS thread。macOS directory/coarse parent notification，以及任意
   native/library overflow，必须置 rescan flag；用户重读 authoritative state，不依赖事件日志完整性。
 - portable 保证 non-recursive；macOS 虽由递归 FSEvents source 提供机制，也必须在 factor 内过滤为 exact
-  file/直接子项，深层事件不得泄漏到 API。root 按原生目录身份 canonicalize，子项按 native stream 返回的
+  file/直接子项，深层事件不得泄漏到 API。POSIX root 用 `realpath` 归一到现有目录身份；Windows root 只作
+  absolute/分隔符 lexical normalization，因此两个 Win32 alias 可能各占一个 native handle。子项按 native stream 返回的
   UTF-8 拼写 byte-exact 匹配；case-fold、Unicode normalization 与 symlink alias 等价不作跨平台承诺，用户
   应使用目录实际保存的名称，或观察 parent 后重读 authoritative state。rename pairing、每次 write 对应一个
   event、跨 network FS 可见性、递归、内容 diff 与 debounce 都不承诺。
@@ -148,9 +149,12 @@ API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接�
 
 ## 七问
 
-1. **第三方：** 产品不链接第三方。libuv/Seastar/watchfiles 是需求与 peer evidence；inotify、IOCP 与
-   Apple FSEvents/CoreServices 是系统机制，构建只增加适用平台的 system-framework link。
-   libuv 只在 P1 harness 作同合同 peer，不泄漏其 handle/callback。
+1. **第三方：** 公开头和 ABI 不泄漏第三方类型；实现通过 private `container_text` 边复用 UTF-8
+   校验，因此静态/源码交付会包含锁定的 vendored simdutf 9.1.0，动态交付则通过 HYLE 自身的
+   `container_text` factor 闭包取得它。该依赖已由中央 lock、许可证安装和 package registry 管理。
+   libuv/Seastar/watchfiles 只作需求或 peer evidence；inotify、IOCP 与 Apple FSEvents/CoreServices 是
+   系统机制，构建只增加适用平台的 system-framework link。libuv 仅在 P1 harness 中出现，不泄漏其
+   handle/callback，也不成为产品依赖。
 2. **能力：** 八族 MUST 均由 F00--F05 覆盖；recursive/network FS/debounce 有具名负空间。主 TLS 与正交
    renderer 单层目录都能由同一 API 完成。
 3. **复用：** IoContext/proactor、Sched pinned task/cancel/CV、Error、Time、Mem allocator、Container
@@ -191,3 +195,44 @@ default tier；普通 release 仍使用 16 KiB，公开 API、layout、事件算
   16 KiB small tier；公开头、对象 layout、event/cancel 算法和 release workload 均未改变。
 - 该候选已在 W1-WIN、W1-WSL、M1-MAC 通过普通 watcher/header 回归，并在 W1-WSL 通过 ASan watcher
   11/11。`AUDITED -> CANDIDATE` 的明确 previous revision 为 `30e133db`；后续只补其余预声明证据。
+
+## 终局语义覆盖矩阵
+
+| 能力 / 风险 | 正常与边界证据 | 失败、ownership 与 teardown | 平台 / 交付 | Verdict |
+|---|---|---|---|---|
+| W01 multiple target identity | exact + directory、重复 exact、两个 root、Unicode/长 basename、尚不存在 exact | empty/NUL/invalid UTF-8/missing root/wrong kind 均为 typed failure；factory OOM 全边界 rollback | Windows/Linux/macOS focused journey | `PASS` |
+| W02 bounded borrowed batch | 稳定 target index、generation、双 bank view 在本次消费期保持；下一次 `next` 明确失效旧 view | event/path cap 耗尽返回 `rescan_required`，不覆写 sealed bank、不静默丢失 | 三平台相同公开 header | `PASS` |
+| W03 portable change vocabulary | create/content、metadata、remove、move-from/to 与 bitmask 合并 | 原生无法区分或表示时退化为 coarse/rescan，不伪造 rename identity | inotify / IOCP / FSEvents normalization | `PASS` |
+| W04 replace / coarse route | exact target 观察 parent，atomic replace 后 inode 改变仍可见；directory 只返回直接 child | FSEvents coarse、非法 native name 与不完整记录要求 authoritative rescan | 三平台 replace 与 non-recursive 用例 | `PASS` |
+| W05 backpressure / overflow | 两个预分配 bank、固定 event/path/native caps，同批 expected O(1) coalesce | tiny path cap 确定触发 rescan；kernel/library overflow 和未知 watch descriptor 走同一显式路径 | release 与 sanitizer 相同语义 | `PASS` |
+| W06 cancel / deadline / close | pre-cancel、in-flight cancel 后复用、deadline 后复用、event/cancel race | concurrent `next` typed reject；close 唤醒 waiter、幂等并 join；moved-from inert、closed next cancelled | 三平台普通回归；WSL ASan/UBSan/TSan | `PASS` |
+| W07 native progress | native wait，无 polling；Windows 每 normalized root pump、Linux 单 inotify pump、macOS 单 FSEvents stream | root loss 先交付 invalidation+rescan，全部 root 丢失后 typed terminal；late completion 在 close 前排空 | Windows、WSL、MacBook Air | `PASS` |
+| W08 C++ / delivery / docs | `<hyle/io/watch.h>` factory + awaitable + typed batch；TLS sidecar 与 renderer flat-directory recipe | allocator、owner、borrow、capacity、rescan 与 shutdown 顺序均公开 | source、relocated static、relocated shared 在三平台运行 | `PASS` |
+
+## P0 成本账本
+
+- create 复制并归一化 target，建立预分配双 batch bank、path storage 与 expected-O(1) lookup；这些 allocation
+  都在 steady event 路径之前，失败逐边界回滚；
+- Linux 为全部 root 使用一个 inotify fd、一个固定 native buffer 和一个 pinned pump；Windows 每个
+  normalized root 使用一个 directory handle、固定 buffer 和小栈 pinned pump；macOS 全部 root 共用一个
+  FSEventStream 与系统 serial dispatch queue。没有 HYLE 私有 OS thread、blocking-pool worker 或 idle polling；
+- native parse 为 O(native bytes + emitted events)，target route 和同批 coalesce 为 expected O(1)；steady
+  event 不分配 heap，容量不足转为一个 bounded rescan signal；consumer `next` 只做一次 owner-local wake；
+- shipping pump stack 使用既有 16 KiB small tier；只有 sanitizer instrumentation 使用既有 64 KiB default
+  tier。该选择不改变 release layout、公开 API 或常态 metadata；
+- single-owner、one outstanding `next`、borrowed batch、显式容量和显式 `close/rescan` 是换取上述成本结构的
+  公开限制，不另加默认 copying/callback/debounce façade。更方便但稳定增加 allocation、copy 或 dispatch 的
+  入口必须由新的具名消费者另轮准入。
+
+## P1 合同校准与夹具事实
+
+- closure card 最初给出的工程 ceiling 是 `10%`；在任何采样前，统一 P1 合同已依项目级规则收紧为
+  `5%` practical 与 non-inferiority gate。结果出现后不得退回较宽门，故 terminal verdict 只认 `5%`。
+  `experiment.holdout=false` 是 nanobench runner v1 的固定执行字段，不表示缺少反偏置 workload；directory
+  burst 仍是本轮唯一的正交产品 holdout，和 primary 一样完整采样并参与产品裁决。
+- 首次 Windows formal replay 暴露的是双方共用发布夹具的问题：watcher 活跃时，快速
+  `MoveFileExW(REPLACE_EXISTING)` 在 HYLE 路线和 libuv 路线都可瞬时返回 access denied。无 watcher 的
+  10,000 次原子替换对照通过；加入相同 watcher/re-read 生命周期后，两侧均可复现。最终合同因此把
+  Windows 真实发布者应有的 bounded transient retry 固定为最多 50 次、每次 1 ms；它位于共同
+  `publish_exact` 中、对双方完全相同并计入测量，不改变 watcher、事件数、completion 或 target shape。
+  诊断版的日志和 publish-only 入口不进入产品或正式仪器。

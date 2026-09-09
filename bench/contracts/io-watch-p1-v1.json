@@ -2,7 +2,7 @@
   "schema": "hyle.perf.contract/v1",
   "id": "io-watch-p1-v1",
   "module": "io_watch",
-  "claim": "P1 engineering same-contract non-inferiority of the persistent HYLE FileWatcher owner-to-consumer route against source-pinned libuv for exact-file atomic replacement and bounded non-recursive directory bursts",
+  "claim": "P1 engineering same-contract 5-percent non-inferiority of the persistent HYLE FileWatcher owner-to-consumer route against source-pinned libuv for exact-file atomic replacement and bounded non-recursive directory bursts",
   "candidate": {
     "target": "hyle_io_watch",
     "delivery_shape": "source",
@@ -84,7 +84,7 @@
         "distribution": "eight monotonically numbered eight-byte sibling replacements on one local filesystem",
         "scale": {"targets": 1, "publications_per_callback": 8, "bytes_per_generation": 8, "event_owners": 1}
       },
-      "setup": "For one route at a time, create the local root and initial file, establish its persistent runtime/watcher, complete one event-confirmed bounded readiness probe and wait the same 100 ms quiescence outside timing; retire that route before establishing the other. Repeat the unchanged complete replay within the persistent route until the charged row spans at least 100 ms and normalize by authoritative publication; target count and completion semantics do not change",
+      "setup": "For one route at a time, create the local root and initial file, establish its persistent runtime/watcher, complete one event-confirmed bounded readiness probe and wait the same 100 ms quiescence outside timing; retire that route before establishing the other. Repeat the unchanged complete replay within the persistent route until the charged row spans at least 100 ms and normalize by authoritative publication; target count and completion semantics do not change. On Windows the shared publisher gives transient access-denied or sharing-violation replacement failures the same bounded 50 by 1 ms retry in both routes, and that retry remains inside the charged publication phase",
       "charged_phases": [
         "write and close one sibling replacement",
         "atomic replacement of the watched destination",

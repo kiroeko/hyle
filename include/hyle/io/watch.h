@@ -172,7 +172,9 @@ class FileWatcher {
 
   // At most one next() may be outstanding. The returned view remains valid
   // until the next next(), close(), or destruction. Cancelling one wait does
-  // not close the watcher or discard a concurrently sealed batch.
+  // not close the watcher or discard a concurrently sealed batch. From next()
+  // through await_resume(), the awaitable borrows this exact watcher object:
+  // keep it alive and do not move, assign, close, or destroy it meanwhile.
   NextAwaitable next(OperationOptions options = {}) noexcept {
     return NextAwaitable{this, options};
   }
