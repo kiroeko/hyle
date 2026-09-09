@@ -144,9 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
-      "summary": "mem v7 SCOPED：跨渲染与推理消费者确认缺少 payload-free 的 64-bit aligned logical-range suballocator；范围、非目标、预算和验证已冻结，尚未授权产品实现。"
+      "summary": "mem v7 AUDITED：payload-free 64-bit aligned logical-range owner 的能力、RAII lease API、metadata 上界、TLSF common path/O(F) aligned fallback、五项有限 FIX 与同合同性能门已冻结，授权进入实现。"
     },
     {
       "module": "mem_vm",

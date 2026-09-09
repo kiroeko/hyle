@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner：`mem` / payload-free logical range ownership；round：`mem-v7-logical-range-suballocator`；
   baseline：`67893204aad888f8e801c59ec6c149432a8e779e`。
@@ -46,8 +46,138 @@
   metadata bound 或同合同 P1 在预算内不能裁决，进入 `BLOCKED`；不能用弱化语义、无限 benchmark
   姿势或修改现有已验收 allocator 来绕过。
 
-## 待完成的 `AUDITED` 输出
+## 能力与形状审计
 
-本阶段不授权产品实现。下一状态必须先给出：完整 capability/public-surface map、VMA/D3D12MA/
-OffsetAllocator 的语义与算法取舍、冻结 C++ 调用草图、有限 `FIX` ledger、P0 成本上界和实际构建/测试
-命令。F02/F03 不与本任务合并。
+| 能力族 | 准入旅程/来源 | 语义与生命周期 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|
+| payload-free virtual range owner | VMA/D3D12MA virtual block；Cycles device sub-pointer | owner 只持 metadata，不碰 opaque backing | 无；`FixedHeap` 把 metadata 放进 caller storage | `MISSING` | `FIX` |
+| 64-bit aligned dynamic allocation | GPU buffer/heap、pinned staging、KV/page backing | 返回 `[offset,size)`；alignment 为非零 2 的幂 | 无通用动态路线 | `MISSING` | `FIX` |
+| individual release / coalesce | resource completion、cache eviction | move-only lease 析构/`reset()` 归还并合并相邻 free range | 无 | `MISSING` | `FIX` |
+| phase-wide invalidation | model/device teardown、heap generation replacement | owner `reset()` 一次失效全部逻辑 allocation；旧 lease 后续销毁安全 no-op | `LifetimePlanner` 只覆盖静态 interval | `MISSING` | `FIX` |
+| bounded metadata / pressure facts | 长寿 server 和 device heap | create 时显式 live-allocation 上限；热路不增长、不锁、不分配 | 无 | `MISSING` | `FIX` |
+| fragmentation observation | heap sizing/debug | O(1) summary；显式 O(N) detailed scan | 无 | `MISSING` | `FIX` |
+| concurrent allocation | 多 worker 直接争抢同一 heap | 需要同步与进度合同 | caller-synchronized owner + 上层 pinned owner | `OUT_OF_SCOPE` | `DEFER` |
+| linear/ring/stack strategy | frame upload、FIFO fence、phase scratch | 生命周期与默认 free-list owner 不同 | `FixedArena`/`StackArena` 或 future concrete consumer | `ROUTED` | `KEEP` |
+| defragment/move callback | movable resource heap | 需要 device copy、descriptor 与 fence owner | Compute/provider | `OUT_OF_SCOPE` | `REJECT` |
+
+新公开入口全部归入 `range_allocator.h`：`RangeAllocatorOptions`、两份 stats、move-only
+`RangeAllocation` 与 move-only `RangeAllocator`。`pool.h` 只作为 Mem pool/heap 产品 façade 聚合该头；
+用户也可直接 include 精确头。没有保留旧兼容入口，也没有 benchmark-only strategy、bin、search-limit 或
+placement knob。
+
+### 成熟 peer 的取舍
+
+- OffsetAllocator 以外置 node metadata 和 TLSF-like 两级 bitmap 提供极低常数的 32-bit、无 alignment
+  offset 分配；它证明 metadata 与 payload 分离和 O(1) common lookup 的价值，但其固定 32-bit offset、
+  allocation count 与无对齐参数不能直接成为 HYLE 公共合同。
+- VMA/D3D12MA virtual block 提供 64-bit offset、alignment、individual free、clear 与统计；这构成能力/API
+  下界。VMA 的 aligned TLSF 搜索在碎片化候选中允许遍历，因此不能据其名称宣称所有 aligned request
+  都有硬 O(1) 最坏上界。
+- HYLE 采用 64-bit 两级 size-class bitmap：保守 `size + alignment - 1` 能命中时直接 O(1) 取得保证可放置
+  的 range；只有保守尺寸溢出或不存在、但地址相关的更小 range 仍可能适配时，才扫描 free ranges 保持
+  完整语义。free 与相邻 coalesce 为 O(1)。这比把 alignment padding 永久计入 allocation 更节省 backing，
+  也比为了 benchmark 隐瞒可用小洞更诚实；worst-case allocate 明确为 O(F)。
+
+### 有限改动集
+
+| ID | 问题与证据 | 允许改动 | 验收 | 结果 |
+|---|---|---|---|---|
+| `MEM7-F01` | 缺 payload-free 64-bit logical-range owner | 新增 range allocator/lease/stats；固定 metadata | 边界、alignment、OOM、随机 model | pending |
+| `MEM7-F02` | individual free、bulk reset 与 stale lifetime 缺少自然 C++ 形状 | RAII lease、generation invalidation、owner/lease 独立控制块寿命 | free/coalesce/reset/move/destroy | pending |
+| `MEM7-F03` | Mem 产品、安装和三交付尚不可发现 | façade、CMake source、focused test、package consumer | header/source/static/shared | pending |
+| `MEM7-F04` | 用户不知道它与 FixedHeap/LifetimePlanner/device policy 的边界 | architecture/user/usage 文档及最短 recipe | docs checker + usability probe | pending |
+| `MEM7-F05` | 无同合同工程性能证据 | 固定 mixed-churn contract；OffsetAllocator 仅比 alignment=1/32-bit 交集 | controls + 双顺序 5% NI | pending |
+
+本表冻结后不扩张到 F02 Sched、F03 IO、Compute/Graph、并发 wrapper、device policy 或 benchmark-only
+策略。验证发现上述语义内部缺陷可在原合同内修；能力范围变化必须退回 `SCOPED/AUDITED`。
+
+## API / usability freeze
+
+普通 C++ 调用固定为：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(
+    auto ranges,
+    hyle::mem::RangeAllocator::create(
+        8ull << 30,
+        {.max_allocations = 4096,
+         .metadata_allocator = hyle::mem::system_allocator()}));
+HYLE_ASSIGN_OR_RETURN(auto weights, ranges.allocate(768ull << 20, 256));
+create_device_view(backing, weights.offset(), weights.size());
+
+deferred_release.push(std::move(weights)); // completion owner 最终析构 lease
+ranges.reset();                            // phase-wide logical invalidation
+```
+
+- `RangeAllocatorOptions::max_allocations` 是必填且必须非零；不提供会悄悄保留数百 KiB metadata 的任意默认。
+  `metadata_allocator` 默认 system allocator，但若替换为借用 allocator，它必须长寿于 owner 及所有仍存在的
+  lease handle。
+- `RangeAllocator::create(capacity, options)` 拒绝零 capacity、零/不可表示的 live 上限和 invalid metadata
+  allocator；metadata 在 create 时一次性建立，后续 allocate/free/reset 不向 backing 申请内存。
+- `allocate(size, alignment=1)` 拒绝零 size 与非 2 次幂 alignment；空间或 live-slot 耗尽返回
+  message-less `ResourceExhausted`，避免压力热路为错误文本分配。它不分配或映射真实 payload。
+- `RangeAllocation` 不可复制、可移动，公开 `valid/offset/size/reset`；析构自动 individual free，`reset()`
+  幂等。没有接受任意 owner/token 的公共 `free`，所以 wrong-owner 与 double-free 由类型形状消除。
+- owner `reset()` 将 live ranges 一次失效并开始新 generation；旧 lease 的 offset 立即不再拥有 backing，
+  其后 `reset`/析构只释放 control reference，不会误归还新 range。owner 可在 lease 前析构；控制 metadata
+  延迟到最后一个 lease 释放，因而没有悬挂 pimpl。
+- 整个 family 是 caller-synchronized：同一 control 上的 allocate、reset、stats、lease destroy 必须外部串行。
+  普通路径没有 mutex/atomic/syscall；异步 device completion 应把 lease 移交到 pinned owner，而不是让任意
+  worker 并发析构。
+- `stats()` 为 O(1)，报告 capacity/allocated/free/peak/live/max/metadata/outstanding handles；
+  `detailed_stats()` 显式 O(N)，另报 free-range count 与 largest free range。peak 不因 reset 清零。
+- `RangeAllocator` 是一指针公开对象；`RangeAllocation` 的 offset/size 内联读取。source/static/shared 均使用
+  同一个公开 C++ 头和 `hyle::mem` target，不创建 C/Native FFI。
+
+### P0 成本上界
+
+- create：O(M) 初始化最多 `2 * max_allocations + 1` 个 node slot，三次 metadata allocation；失败完整回滚；
+- allocate：常见两级 bitmap O(1)，最多拆成 prefix/allocation/suffix；地址相关 fallback 最坏 O(F)，不拷贝
+  payload、不锁、不 syscall、不热路分配 metadata；
+- individual free：O(1) physical-neighbor coalesce + bitmap/list 更新；bulk reset O(M) 重新建立空闲 node inventory，
+  不逐个访问外部 payload；
+- summary O(1)，detailed stats O(N)；metadata 上界为 control + `(2M+1) * (node + free-index)`，由 API
+  精确报告，不能伪称只与 capacity 有关；
+- lease 生命周期只有 caller-synchronized 非原子引用计数与 node/generation 检查；没有 hidden shared_ptr。
+
+## 七问预裁决
+
+1. **第三方：**产品实现不依赖第三方；OffsetAllocator/VMA/D3D12MA 只作锁定 peer/算法参考。其许可证与
+   commit 记录在 card，未来升级 peer 不自动改变产品或继承性能 verdict。
+2. **功能/消费：**渲染 resource heap 为主纵切、推理 page/backing 为反偏置纵切；六个 MUST family 经
+   `MEM7-F01..F04` 后完整。device/fence/KV policy 在其 owner 路由，不向 Mem 下沉。
+3. **下层复用：**使用 Core compiler/assert、Error Status/Result 和 Mem `AllocatorRef`；`platform` 是 Mem
+   既有产品边但本能力无 OS 调用。固定 metadata 不反向依赖 Container，也不复制上层 queue/scheduler。
+4. **性能：**复杂度和成本如 P0；P1 只对 alignment=1/32-bit same-contract mixed churn 与
+   OffsetAllocator 做 5% NI。aligned/64-bit 是 HYLE 的 correctness holdout，不能拿 peer 缺失语义排名。
+5. **FFI：**`N/A/CLEAN`；没有旧 C header/schema/bridge 或未修饰动态符号，本轮不为假想语言绑定擦除
+   move-only C++ lifetime。
+6. **交付：**`mem` 现有 source/static/shared 产品承载新 compiled implementation；新增 public header 和
+   source 由中央组件机制发现，不增加组件边或第三方 package dependency。
+7. **易用性/文档：**显式 owner + RAII lease 对应普通资源生命周期；guide 必须写清 range 不拥有 bytes、
+   reset 后 offset 失效、caller synchronization、metadata allocator 寿命及与 FixedHeap/LifetimePlanner 的选型。
+
+Audit verdict：全部 MUST 已成为五项有限 FIX，API、成本、peer、normal/holdout shape 和停止条件均已冻结，
+允许进入产品实现。
+
+## 预声明验证命令
+
+Windows 先在独立 build directory 配置 selected Mem Release，构建并运行 `hyle_mem_test`；新增 test filter
+覆盖 create/OOM/overflow/alignment/split/coalesce/reset/stale/move/destroy/model property。随后运行现有 Mem
+suite、public-header self-contained、selected source/static/shared package journey 与直接 standalone
+consumer。候选阶段再以 archive 验证 WSL GCC ASan/UBSan 和一台 macOS AppleClang；实现没有共享状态，
+TSan 记为 `NOT_APPLICABLE`，不能写成 `PASS`。
+
+P1 只在 API/correctness 候选固定后启动，使用独立 opt-in target、锁定 peer identity、固定 seed/trace、
+相同成功/失败处理和 setup/teardown charging；记录 A/B、B/A、A/A、known-delta、timer floor、placement 与
+资源 telemetry。OffsetAllocator 不支持的 alignment 与 >4 GiB 行只作 correctness/resource holdout。
+
+每个状态迁移和终局至少执行：
+
+```text
+python scripts/check-module-closure.py --previous-ref <registry-change-before>
+python scripts/check-module-closure.py --write-status
+python scripts/check-module-closure.py
+python scripts/check-docs.py
+git diff --check
+```
