@@ -236,7 +236,7 @@ struct Drive {
 };
 void drive_entry(void *p) noexcept { static_cast<Drive *>(p)->task.resume(); }
 
-Task<int> inspect_cancelled_handshake_wire(AllocatorRef allocator,
+Task<int> inspect_cancelled_handshake_wire(AllocatorRef,
                                            TcpStream *peer,
                                            TransferResult *result) {
   std::array<std::byte, 1> byte{};
