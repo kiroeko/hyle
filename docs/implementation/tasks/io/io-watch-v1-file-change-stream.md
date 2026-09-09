@@ -266,7 +266,7 @@ UTF-8 validation、multiple-target expected-O(1) route、bounded coalescing 与 
 `0.94623 > 0.90909`。
 
 七门终局结论：scope、architecture、correctness、delivery、usability_docs、red_team 与
-engineering_performance 全部 `PASS`，`io_watch` v1 签发 `CLOSED/FROZEN`。
+engineering_performance 全部 `PASS`，`io_watch` v1 签发 `CLOSED`；API/算法随后进入变更控制。
 
 公开限制是产品形状的一部分，而不是隐藏缺陷：watcher 由一个 Scheduler worker 拥有、只允许一个在途
 `next()`；batch/path 是借用且容量显式有界；正常 shutdown 必须先 `close()` 再停止 IoContext/Scheduler；
