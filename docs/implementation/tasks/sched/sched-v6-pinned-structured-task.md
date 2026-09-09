@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner：`sched` / structured task admission and lifetime；round：
   `sched-v6-pinned-structured-task`；baseline：
@@ -80,10 +80,10 @@ Future/Executor 同样不把稳定 worker identity 纳入普通 future 合同。
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| S6-01 | pinned fire-and-forget 与 typed joinable 不可组合 | 在 `join.h` 复用一个内部 admission helper，公开 `spawn_task_on`；合法性检查早于任何 allocation | typed/void/move-only、invalid worker、OOM/closed/full 全有确定 handle 结果 | 待实现 |
-| S6-02 | owner 必须覆盖完整 suspend/wake 生命周期 | focused tests 覆盖首次 dispatch、yield、foreign Waker、cancel/detach/shutdown | 每次观测 worker 都等于所选 owner，无泄漏/挂死 | 待实现 |
-| S6-03 | 当前 inference sample 手写生命周期 | 让真实 sample 与 package sample 使用新入口，更新用户 guide/architecture | 不再手写 Task resume/result/exception wrapper；三交付可发现 | 待实现 |
-| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 baseline 已有公开 API 的手工组合；固定 5% 非劣门；既有 Marl 证据继续约束底层 wake/queue | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | 待实现 |
+| S6-01 | pinned fire-and-forget 与 typed joinable 不可组合 | 在 `join.h` 复用一个内部 admission helper，公开 `spawn_task_on`；合法性检查早于任何 allocation | typed/void/move-only、invalid worker、OOM/closed/full 全有确定 handle 结果 | `9f065791` 已实现并固定 |
+| S6-02 | owner 必须覆盖完整 suspend/wake 生命周期 | focused tests 覆盖首次 dispatch、yield、foreign Waker、cancel/detach/shutdown | 每次观测 worker 都等于所选 owner，无泄漏/挂死 | 候选测试已覆盖；等待精确候选跨平台裁决 |
+| S6-03 | 当前 inference sample 手写生命周期 | 让真实 sample 与 package sample 使用新入口，更新用户 guide/architecture | 不再手写 Task resume/result/exception wrapper；三交付可发现 | inference/package source consumer 已迁移；等待三交付裁决 |
+| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 baseline 已有公开 API 的手工组合；固定 5% 非劣门；既有 Marl 证据继续约束底层 wake/queue | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | 合同已固定；等待一次正式候选 P1 |
 
 本表之后不增加轻量 pinned queue、优先级或 IO 功能；出现相关需求另立 round。
 
@@ -123,4 +123,4 @@ auto result = handle.join();
 7. 易用与文档：一个入口表达 worker + task + typed handle；invalid worker 可恢复；guide 同时说明
    pin 的适用场景、负成本与普通可窃取默认。
 
-下一步只实现 S6-01..04；registry 已进入 `AUDITED`，不扩大冻结范围。
+产品候选固定为 `9f0657919efd9daca6e5c22f4d01f9fa4fe39082`。下一步只在该精确提交上执行预声明验证、分离红队与一次正式 P1；不再改变产品代码或扩大冻结范围。

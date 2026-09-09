@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v6-pinned-structured-task.md",
-      "summary": "sched v6 AUDITED：能力/peer/public-surface 回映已把范围冻结为 spawn_task_on；它只复用现有 TaskDriver/JoinState/Fiber pinned owner，有限 FIX 为 API、owner 生命周期测试、真实 sample/docs/三交付与同合同 P1。"
+      "candidate": "9f0657919efd9daca6e5c22f4d01f9fa4fe39082",
+      "summary": "sched v6 CANDIDATE：spawn_task_on 已在 9f065791 固定；它复用现有 TaskDriver/JoinState/Fiber pinned owner，候选验证只覆盖预声明的 owner 生命周期、错误路径、三交付、红队与同合同 P1。"
     },
     {
       "module": "io_core",
