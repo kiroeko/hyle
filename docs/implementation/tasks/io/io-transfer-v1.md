@@ -143,11 +143,33 @@ the transaction and resume safety contract cannot be weakened.
   F02--F05 set. No benchmark-only metadata, compatibility overload, pseudo C ABI or second protocol/filesystem primitive
   remains. Windows/MSVC, WSL/GCC 14 `-Werror` and macOS/AppleClang targeted correctness plus header isolation pass.
 
+## Candidate readiness（`CANDIDATE`）
+
+有限 F01--F06 产品形状在 `18bf62f81a91975e0776439d88fca3891f10e560` 完整，tree 为
+`98632557e0237bac0bed3ca5521e59420d89176e`；精确 Git archive SHA-256 为
+`329DA82D0438AA24ACB90A36DE397475A16A8FABAB65E6040F3DC7DABDE4E3DB`。`io_transfer` 自身最后一次
+产品变化在 `18d6d6b9`；后续候选仅吸收同轮冻结的 HTTP/TLS transport 修复。当前 HEAD 相对候选的
+`include/src/cmake/third_party/samples` 差异为空，文档状态提交没有改变产品。
+
+| profile / shape | result |
+|---|---|
+| W1-WIN / MSVC 19.50 / exact-product shared | transfer correctness 与逐头 `PASS`；缺失 Windows OpenSSL SDK 时 TLS `ON` 被配置期明确拒绝，合法 `OFF` 路线通过 |
+| W1-WIN / exact candidate | `hyle::io` 源码嵌入、relocated shared、relocated static 消费者均实际构造 `TransferPlan` 并 `PASS` |
+| W1-WSL / GCC 14.2 / exact archive | provider-on OpenSSL、transfer correctness 与逐头 `PASS` |
+| W1-WSL / exact archive | ASan、UBSan、TSan（`setarch x86_64 -R`）下 transfer correctness 与逐头均 `PASS` |
+| MacBook Air `Mac16,12` / AppleClang 21 | clean exact commit、OpenSSL 3.6.1、transfer correctness 与逐头 `PASS` |
+| Mac mini `Mac16,10` / AppleClang 21 | exact archive、OpenSSL 3.6.3、transfer correctness 与逐头 `PASS` |
+
+两台 Mac 的 OpenSSL deployment-target linker warning 是已知环境差异；真实 transfer 运行通过。远程/WSL
+副本只用于验证，没有反向覆盖 canonical Windows checkout。构建、sanitizer 与三交付完成后，候选 API、
+algorithm、buffer/durability contract 和 [`io-transfer-p1-v1`](../../../../bench/contracts/io-transfer-p1-v1.json)
+从此不可变。
+
 ## Current decision
 
-`AUDITED / ACTIVE`。F01--F05 产品实现、定向 Windows/WSL/macOS correctness、GCC 14 `-Werror`、逐头、
-组件图与 bounded red-team 已通过；实现期间修复 validator/total mismatch policy、stable-URL redirect
-reacquisition、unsupported redirect scheme、POSIX zero-size virtual file、local partial 前缀完整性、206 body
-extent 与 keep ownership 形状。F06 的 provider-on OpenSSL HTTPS 以及早期 WSL ASan/UBSan/TSan 已通过；
-最终 exact-candidate source/static/shared、sanitizer replay、immutable candidate 与唯一 P1 bundle 尚未完成，
-因此仍禁止把本 checkpoint 写成 terminal certificate。
+`CANDIDATE`。F01--F06 的产品、P0、三平台 correctness、exact sanitizer、source/static/shared、逐头、
+组件图、易用性/文档与 bounded red-team 已通过。实现期间修复 validator/total mismatch policy、stable-URL
+redirect reacquisition、unsupported redirect scheme、POSIX zero-size virtual file、local partial 前缀完整性、
+206 body extent 与 keep ownership 形状。唯一剩余动作是在 W1-WSL clean EXT4 上对锁定 libcurl peer 回放
+一次 256 MiB verified atomic local publish 与 64 MiB interrupted HTTP Range resume 双顺序/controls P1；结果
+未出前不得进入 `VERIFIED`，也不得再修改产品或合同。

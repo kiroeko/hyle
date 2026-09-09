@@ -1449,12 +1449,14 @@
     },
     {
       "module": "io_transfer",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "io-transfer-v1",
       "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
       "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
       "non_goals": "Model repository schema, authentication UI or token storage, archive extraction, model parsing or loading, P2P or RDMA, object-store SDKs, serving routes, Native FFI or C API.",
       "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
+      "candidate_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+      "candidate_tree": "98632557e0237bac0bed3ca5521e59420d89176e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1471,7 +1473,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_transfer v1 已完成模型/制品 bounded transfer、resume validator、checksum、atomic publish、owner 与自然 API 审计并进入 AUDITED；IOTRANSFER-F01--F06 是唯一有限实现集。"
+      "summary": "io_transfer v1 CANDIDATE：bounded local/HTTP(S) transfer、resume validator、checksum、atomic publish 与自然 C++ API 已通过三平台、sanitizer、三交付和红队；只剩唯一同合同 P1。"
     },
     {
       "module": "compute",
