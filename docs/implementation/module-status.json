@@ -320,9 +320,10 @@
     },
     {
       "module": "io_watch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-watch-v1-file-change-stream.md",
-      "summary": "io_watch v1 AUDITED：首候选 10f0bcda 的 WSL ASan 在 16 KiB pump fiber 上执行 SIMD UTF-8 校验时栈溢出；公开合同不变，限于 IOW-F04 的 sanitizer-aware 私有 stack-tier 纠正后重签候选。"
+      "candidate": "30e133dbcf37e806f9deb1b121cdf0ae559546f6",
+      "summary": "io_watch v1 CANDIDATE：首候选的 sanitizer stack finding 已用仅插桩构建的既有 64 KiB tier 修复；公开合同与 release 16 KiB 成本不变，30e133db 已通过三平台普通回归及 WSL ASan。"
     }
   ]
 }

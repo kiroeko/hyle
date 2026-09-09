@@ -183,3 +183,11 @@ guard page。此结果是预声明 sanitizer 风险，不可写成 PASS，也不
 本轮依法退回 `AUDITED`，只允许在 `IOW-F04` 内把 native pump 的 sanitizer build 选择为已有 64 KiB
 default tier；普通 release 仍使用 16 KiB，公开 API、layout、事件算法和正常成本均不得变化。修复后产生
 新候选，首候选不再承担 terminal verdict。
+
+### 纠正后候选（`CANDIDATE`）
+
+- immutable product commit：`30e133dbcf37e806f9deb1b121cdf0ae559546f6`。相对首候选只修改 private
+  pump stack-tier selection：`HYLE_SANITIZER_ANY` 使用已有 64 KiB default tier，shipping build 仍使用
+  16 KiB small tier；公开头、对象 layout、event/cancel 算法和 release workload 均未改变。
+- 该候选已在 W1-WIN、W1-WSL、M1-MAC 通过普通 watcher/header 回归，并在 W1-WSL 通过 ASan watcher
+  11/11。`AUDITED -> CANDIDATE` 的明确 previous revision 为 `30e133db`；后续只补其余预声明证据。
