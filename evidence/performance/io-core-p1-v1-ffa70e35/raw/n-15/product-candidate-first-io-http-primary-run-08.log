@@ -1,0 +1,15 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |          ns/request |           request/s |    err% |     total | HTTP/1 keep-alive REST + chunked 1KiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------
+|   100.0% |           16,040.09 |           62,343.81 |    0.9% |      0.25 | `HYLE HTTP/1 persistent runtime`
+|    98.6% |           16,274.25 |           61,446.76 |    0.8% |      0.25 | `Boost.Beast HTTP/1 persistent runtime`
+
+| relative |          ns/request |           request/s |    err% |     total | HTTP/1 fragmented holdout 64KiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------
+|   100.0% |           57,291.59 |           17,454.57 |    3.0% |      0.11 | `HYLE HTTP/1 persistent runtime`
+|    33.7% |          169,940.59 |            5,884.41 |    1.7% |      0.33 | `Boost.Beast HTTP/1 persistent runtime`
+# HYLE_IO_HTTP_RUN execution_order=candidate-first run_nonce=d800922287e36ce0b26955b6034455bb

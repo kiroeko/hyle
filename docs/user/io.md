@@ -1,6 +1,6 @@
 # IO 使用指南
 
-> **`provisional / factorized rebuild active`。** IO 当前只提供 C++ 产品面；五个内部
+> IO 当前只提供 C++ 产品面；五个内部
 > factor 的终态以 `module-status.json` 为准。本页适用于 C++23 source/static/shared 三种交付，
 > 不描述 C API 或跨语言调用层。
 

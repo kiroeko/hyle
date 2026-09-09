@@ -1,18 +1,18 @@
 # HYLE io/ 网络库选型
 
-> **当前状态：factorized rebuild active。** 本页描述当前设计与边界，不替代
+> 本页描述当前实现的设计与边界，不替代
 > `module-status.json` 的逐 factor 证书。当前只提供 C++23 source/static/shared，Native FFI 为
 > `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。各 factor 的当前状态只以
 > [`module-status.json`](../implementation/module-status.json) 为准，本页不复制易过期状态。
 
 > 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
-## 2026-09-08 当前架构（维护入口）
+## 当前架构（维护入口）
 
 ```text
 普通 C++ 用户
   TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1
-  HTTP/2 / reliable local-or-HTTP artifact transfer（重构中）
+  HTTP/2 / reliable local-or-HTTP artifact transfer
        │ co_await；deadline / CancelToken；RAII
        ▼
 IoContext（每 Scheduler worker 一个 private completion engine + blocking pool）

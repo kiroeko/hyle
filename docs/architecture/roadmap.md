@@ -12,9 +12,8 @@
 owner、组件因子和新依赖图。
 
 Stage C 的能力账本曾导出 **30 个候选 factor**，它们是下一版归属和拆分的设计输入，不是已经存在的
-CMake target。当前机器合同登记 **28 个 factor identity**，且均已有实现/target；`io_transfer` 已按其
-`AUDITED` 卡建立源码、依赖、测试与产品边，但仍是施工中的 candidate，不能写成已冻结能力。中央
-manifest 从 28 个 factor 投影 **14 个用户产品 façade**。Build/package v7
+CMake target。当前机器合同登记 **28 个 factor identity**，且均已有实现/target；每个 factor 的实时
+产品状态和冻结证书只读中央 registry。中央 manifest 从 28 个 factor 投影 **14 个用户产品 façade**。Build/package v7
 已实现双层投影，v11 又把“已登记”与“可构建”明确分开。内部 factor 只能依赖 factor，用户只需选择
 产品域；详见[构建系统](build-system.md)。
 

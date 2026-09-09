@@ -1224,7 +1224,7 @@
     },
     {
       "module": "io_core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-v1-core-factorization",
       "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
       "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
@@ -1239,17 +1239,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io_core v1 处于 CANDIDATE：十项有限 FIX 已完成，产品/API/算法冻结于 ffa70e35；三平台、sanitizer、exact-factor 与 source/static/shared 候选验证通过，等待唯一 P1 与终局红队签发。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "io_core v1 处于 VERIFIED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 保持 ffa70e35。"
     },
     {
       "module": "io_tls",

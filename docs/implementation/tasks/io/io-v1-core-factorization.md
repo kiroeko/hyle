@@ -222,10 +222,10 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 
 ## Current decision
 
-`CANDIDATE / ACTIVE`。十项有限 FIX 已完成，产品/API/算法与正常 consumer workload 冻结在
+`VERIFIED / ACTIVE`。十项有限 FIX 已完成，产品/API/算法与正常 consumer workload 冻结在
 `ffa70e35cd7b7948990c8f04117acf3c6c209c8a`（tree
-`4fd9be1c69dab36355401c128eb8eec2337f756e`）。下一步只运行已声明的唯一 P1、终局红队与状态签发；
-任何新 protocol/API/benchmark idea 都不得追加进本候选。
+`4fd9be1c69dab36355401c128eb8eec2337f756e`）。全部适用工程门已经通过；下一步只写 terminal receipt、
+接受限制与 reopen triggers，不再修改产品、追加样本或扩大结论。
 
 ## Implementation checkpoints
 
@@ -296,6 +296,31 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   installed shared 与 installed static 三种交付均配置、链接并运行成功，F09 至此完成。source archive
   SHA-256 为 `FE4CF9D59FA8CB10BD6763EAAD6542A625161947E87FA311C4CDFF09D670B98F`。
 
-以上证明十项 FIX 的候选实现和 F09 交付矩阵，但还不是 `VERIFIED` 或 `CLOSED/FROZEN` 裁决。
-`io_tls/io_http/io_http2/io_transfer` 已分别 `CLOSED/FROZEN`；本卡只剩 F10 的唯一 P1、终局红队、
-文档校准与终态 receipt。
+以上证明十项 FIX 的候选实现和 F09 交付矩阵。`io_tls/io_http/io_http2/io_transfer` 已分别
+`CLOSED/FROZEN`；下节完成 F10 并签发 `VERIFIED`。
+
+## Candidate verification（`VERIFIED`）
+
+- correctness：精确 candidate 在 Windows IOCP、WSL io_uring/强制 epoll、MacBook Air 与 Mac mini
+  kqueue 均为 `io_core` 13/13；WSL ASan、UBSan、TSan 各 13/13；
+- delivery：canonical Windows 的真实 `hyle::io` consumer 在 source embedding、重定位 installed shared
+  与 installed static 三种交付均完成 configure/link/run；exact-factor 与依赖闭包成立；
+- API/usability：终局红队封闭 raw TCP/UDP handle 绕过 backend association，invalid object 在 Release
+  仍走 typed failure/fail-fast 合同；公开面没有 Proactor、completion token、negative errno、C API 或
+  Native FFI 伪符号；guide 覆盖 owner-affinity、borrow lifetime、deadline/cancel、partial progress、
+  backend 选择与平台限制；
+- performance：唯一资格化 P1 使用完整 public transport + HTTP/1 consumer 对 Boost.Beast。同语义
+  128x1 KiB 双顺序 `PARITY`，16x64 KiB 双顺序约 3.0x `WIN`，四行 5% non-inferiority 全部 `PASS`；
+  A/A、known-delta、timer floor、输入/host/artifact/build/provenance control 全部通过；
+- fixture provenance：candidate 后的 `3c498953` 仅修正 benchmark 使用已经冻结的公开 adopt API；与
+  `ffa70e35` 间产品、CMake 与依赖 diff 为空。首次尝试在 build 前失败、没有采样；修正后只运行一次
+  合格 P1；
+- evidence：[`benchmarks-io`](../../evidence/performance/benchmarks-io.md) 与
+  [`io-core-p1-v1-ffa70e35`](../../../../evidence/performance/io-core-p1-v1-ffa70e35/)；严格 verifier 为
+  `QUALIFIED / EXACT / CURRENT / paths_verified=true`；
+- LOC：immutable candidate 上全库 `535488`，自实现不含测试 `89889`，`io_core` 实现 `11044` 行。
+  拆分后的五因子边界与 picohttpparser owner 另由已关闭的
+  [`build-io-factor-tool-projection-v1`](../build/build-io-factor-tool-projection-v1.md) 校准，不改变候选。
+
+七项 aggregate gate 全部 `PASS`，没有适用风险或产品问题留作 blocker；Formal 性能仍独立
+`PENDING`。registry 依法执行 `CANDIDATE -> VERIFIED`，但此步不提前声明 terminal freeze。

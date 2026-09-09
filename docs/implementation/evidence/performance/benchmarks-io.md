@@ -2,10 +2,44 @@
 
 <!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页当前签发 `io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
+> 本页当前签发 `io_core-v1`、`io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
 > `io_http2-v2-owner-progress-cost` 与 `io-transfer-v1` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是
-> 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成 io_core、transfer、完整服务器、
+> 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成完整服务器、
 > 全平台或全操作 SOTA。
+
+## 2026-09-09 `io_core-v1` 当前工程证据（`PASS`）
+
+产品 candidate/tree 为 `ffa70e35cd7b7948990c8f04117acf3c6c209c8a` /
+`4fd9be1c69dab36355401c128eb8eec2337f756e`；peer 是 source-pinned Boost.Beast
+`cb94f33fcb13e90922905c2d8105508e71fa6db4`。候选后的 `3c498953` 只把性能 fixture 从已封闭的 raw
+handle 构造改为公开 `TcpStream::adopt`，并更新候选记录；从产品 candidate 到该 harness commit 的
+`include/hyle/**`、`src/**`、CMake 和依赖 diff 为空。第一次尝试在 configure/build 阶段暴露此 fixture
+漂移，没有采样也没有 bundle；修正 fixture 后只执行一次资格化 P1。
+
+双方都通过完整 public transport + HTTP/1 路径，在同一个 persistent worker 上处理相同 request、
+streaming response、body validation 和 connection lifecycle；没有把 raw submit 与完整 peer、预建结果与
+运行时解析或不同 payload 形状作苹果/橘子比较。advantage 为 HYLE/Beast op/s，每个顺序 15 个独立进程，
+置信水平 99.26%，固定 non-inferiority margin 为 5%：
+
+| workload / order | HYLE / Beast op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 128x1 KiB REST/stream / candidate-first | 62,343.81 / 61,583.79 | 1.00083 / [0.97501, 1.01460] | `PARITY` | `PASS` |
+| 128x1 KiB REST/stream / peer-first | 62,298.59 / 62,000.69 | 1.00253 / [0.97934, 1.01621] | `PARITY` | `PASS` |
+| 16x64 KiB fragmented / candidate-first | 17,739.87 / 5,837.15 | 3.03820 / [2.98619, 3.11586] | `WIN` | `PASS` |
+| 16x64 KiB fragmented / peer-first | 17,714.89 / 5,901.75 | 3.00646 / [2.96475, 3.07418] | `WIN` | `PASS` |
+
+A/A、5%/10% known-delta、timer floor、artifact/build/consumer/source/peer provenance 与采样前后稳定性全部
+`PASS`；严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、
+`environment_policy=CURRENT`。唯一 68-file bundle 位于
+[`io-core-p1-v1-ffa70e35`](../../../../evidence/performance/io-core-p1-v1-ffa70e35/)；manifest、summary、
+controls SHA-256 依次为 `57927A806E2B91348A800ABCF2B7E84737263D3C9553EF304080A6BFAEAA8438`、
+`9500EC766ADD7404B7C1ED260F0AFBD6EFA7FF61A7A95923125634EBE24D360F`、
+`3C0DB58EB271CBFC4FF9612B7A7A84A149CEA6D8AB39504A61F5F64320AF3EC5`。
+
+这是 W1-WSL、GCC 14.2、Release/static、portable ISA、单 worker 的完整 HTTP consumer 工程证据：它证明
+核心 transport 没有给正常组合路线增加 material 税，并证明两个不同粒度没有固定输项；它不是裸
+`io_core` 每个操作、WAN、多 worker、全部 backend、完整服务器或 Formal SOTA 证书，也不把 64 KiB
+路线约 3 倍的优势外推到整个模块。
 
 ## 2026-09-09 `io_transfer-v1` 当前工程证据（`PASS`）
 
