@@ -1449,7 +1449,7 @@
     },
     {
       "module": "io_transfer",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-transfer-v1",
       "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
       "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
@@ -1483,7 +1483,34 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_transfer v1 VERIFIED：可靠 local/HTTP(S) transfer 与自然 C++ API 通过三平台、sanitizer、三交付和红队；同合同 P1 的 atomic local 非劣、Range resume 双顺序 WIN，5% 非劣门全过。"
+      "freeze_confirmation": {
+        "id": "io-transfer-v1-freeze-2026-09-09",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-09",
+        "reviewed_commit": "93966bc1cfbcd6807de8c2a9a798f79b6fd73866",
+        "reviewed_tree": "a441052e17730a613e6934239c07c31d64cc1ad3",
+        "evidence": "docs/implementation/tasks/io/io-transfer-v1.md"
+      },
+      "loc": {
+        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "repository_code": 522116,
+        "self_without_tests": 89877,
+        "module_implementation": 1752
+      },
+      "known_limitations": [
+        "Plan, checkpoint, report and kept-path storage depend on their creation allocator, while execution callbacks, cancellation state and an optional TLS context are borrowed through task completion; progress callbacks run on the owner fiber and must not re-enter the same transfer.",
+        "Resume requires exact local prefix and source identity or matching HTTP validators and extents; redirect, restart, retention and cleanup behavior is explicit policy, not repository-specific convenience.",
+        "Publication uses a sibling temporary file, flush, close and the strongest admitted platform atomic replace while preserving the old destination on failure; universal directory-level crash durability is not claimed.",
+        "The P1 receipt covers one W1-WSL local publication and one loopback HTTP Range resume workload against libcurl, not WAN, multi-worker, every filesystem or checksum, object stores, repository clients or Formal SOTA.",
+        "HTTPS requires an available TLS provider; repository and authentication policy, archive or model parsing, P2P, RDMA, serving routes, Native FFI and C API remain outside this factor."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a source-identity, resume, range, redirect, checksum, byte-budget, atomic-publication, old-target-preservation, partial-cleanup, deadline, cancellation, OOM, lifetime or natural C++ API-usability defect, or proves a missing common artifact-transfer mechanism rather than repository policy.",
+        "The public API or layout, state machine, buffer or durability algorithm, component dependency or source, static or shared delivery shape changes.",
+        "An io_core, io_http, io_tls, platform_fs, sched, time, mem or container_text contract change invalidates the frozen composition, ownership, error, progress or durability proof.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted reliable-transfer workload."
+      ],
+      "summary": "io_transfer v1 CLOSED/FROZEN：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。"
     },
     {
       "module": "compute",

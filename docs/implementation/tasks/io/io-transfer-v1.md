@@ -1,6 +1,6 @@
 # IO Transfer v1：可靠模型/制品传输工作流
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card（`AUDITED`）
 
@@ -175,3 +175,38 @@ libcurl 8.22.0 完成：256 MiB verified atomic local publish 为一个顺序 `W
 见 [`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md) 和
 [`io-transfer-p1-v1-18bf62f8`](../../../../evidence/performance/io-transfer-p1-v1-18bf62f8/)。七门已有可复核
 证据，下一法定动作仅为终局限制、重开条件、LOC 与冻结确认，不再运行产品测试或 P1。
+
+## Closure decision
+
+`io_transfer` v1 为 `CLOSED/FROZEN`。它把大型模型/制品获取中可复用的可靠性机制组合进基础库，但没有
+下沉 Hugging Face、对象存储、认证或模型格式策略。公开 C++ 形状由 owning `TransferPlan`、typed source/
+destination/options/checkpoint/report 与一次 `transfer()` 组成；HTTP/TLS/file/scheduler/platform authority
+仍由各自 factor 唯一实现，没有复制 parser、socket、filesystem primitive、伪 C ABI 或 benchmark 入口。
+
+- plan、checkpoint、report 与 kept partial 的路径/URL storage 由创建它们的 allocator 支撑，该 allocator
+  必须活过这些值；`TransferExecution` 中 verifier、progress observer、cancel state 和可选 TLS context 是
+  borrow，必须活到 task 完成；
+- progress callback 在 owner fiber 上同步调用，不得重入同一 transfer。buffer 与总 byte 数始终受 limits
+  约束，内存相对制品大小为 O(1)；OOM、disk full、short IO、cancel 与 deadline 均通过 typed result 返回；
+- resume 只在 exact local prefix/source identity 或 HTTP validator/extent 一致时追加；200/206/416、validator
+  缺失/变化、redirect loop/unsupported scheme 都按显式 policy restart 或 fail，绝不盲目拼接；
+- 成功发布使用 sibling temp、flush/close 与平台最强的 admitted atomic replace；失败保留旧目标，partial
+  是否移除、保留或转移所有权由 policy/report 明确表达。不同平台的目录级 crash durability 不被夸大；
+- 工程 P1 仅覆盖 W1-WSL 上 256 MiB verified atomic local publish 与 64 MiB interrupted loopback HTTP Range
+  resume，对手是 source-pinned libcurl public easy API；不声明 WAN、多 worker、所有 filesystem/checksum、
+  repository client、object store 或 Formal SOTA；
+- HTTPS 仅在 TLS provider 可用时启用。repository schema/auth/token、archive extraction、model parsing/loading、
+  P2P/RDMA、route/server policy 与 Native FFI/C API 都在本 factor 外。
+
+只有以下新事实可以重开：具名 consumer 复现 source identity、resume/range/redirect、checksum、byte budget、
+atomic publication、old-target preservation、partial cleanup、deadline/cancel、OOM、lifetime 或自然 C++ API 易用性
+缺陷；真实 consumer 证明缺少通用 artifact-transfer 机制而非 repository/application policy；公开 API/layout、
+state machine、buffer/durability algorithm、依赖或 source/static/shared 交付改变；下层 HTTP/TLS/file/platform/
+scheduler 合同变化并破坏本组合证明；或者合格同合同证据证明 material regression、成熟 peer 证明更优复杂度
+档。普通吞吐波动、裸 copy 排名或特定模型仓库功能不是 reopen trigger。
+
+候选 `18bf62f81a91975e0776439d88fca3891f10e560` 的
+`loc-report.py --module io_transfer --commit ... --self-check` 为 `PASS`：全库 522,116 行，自实现不含测试
+89,877 行，`io_transfer` 实现 1,752 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
