@@ -1,6 +1,6 @@
 # IO HTTP/2 v2：owner progress 常态成本恢复轮
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
 ## Closure card（`SCOPED`）
 
@@ -170,5 +170,26 @@ controls SHA-256 分别为
 ## Current decision
 
 `VERIFIED`。scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
-performance 七个 gate 全部 `PASS`；Formal 独立为 `PENDING`。下一步只可补 terminal limitation、reopen
-trigger 与三项 LOC 并执行 `VERIFIED -> CLOSED/FROZEN`，不得再次构建、采样或改产品。
+performance 七个 gate 全部 `PASS`；Formal 独立为 `PENDING`。产品与证据不再修改。
+
+## Closure decision
+
+`io_http2` 本轮为 `CLOSED/FROZEN`。公开能力、自然 C++ API、owner/lifetime、typed failure、bounded
+streaming、flow control、cancel/deadline、RST/GOAWAY、h2c/TLS seam、三交付和文档沿用 v1 已完成审计的
+产品范围；本轮唯一 private owner-progress 修正恢复了正常路径成本，并在不改变合同的前提下通过全部门。
+
+- 工程 P1 只覆盖 W1-WSL 上冻结的 64x1 KiB h2c multiplex 与 4x256 KiB 两级 flow-control workload；TLS
+  只作 correctness，不宣称全平台、全操作或 Formal SOTA；
+- session 与全部衍生 handle 的操作和析构必须留在 transport owner worker；只有 cancellation notification
+  可按文档从其他线程触发；
+- HTTP/1 Upgrade、server push、WebSocket、HTTP/3、gRPC schema/runtime 与应用路由仍在 factor 边界外；
+  nghttp2 继续作为 private HPACK/frame/state-machine provider；
+- source/static/shared 暴露同一 C++23 API，不承诺 Native FFI、C API 或跨工具链稳定 C++ ABI；
+- reopen 只由具名 consumer 的 protocol/flow-control/lost-wake/cancel/deadline/reset/GOAWAY/OOM/lifetime/API
+  缺陷或常用能力缺口，公开 API/layout/owner/progress/window/chunk/allocator/provider/交付变化，Sched CV/
+  cancel 合同击穿证明，或合格同合同证据证明 material regression/更优复杂度档触发。
+
+候选 `4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3` 的 `loc-report.py --self-check` 为 `PASS`：全库
+517,892 行，自实现不含测试 89,859 行，`io_http2` 实现 2,548 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

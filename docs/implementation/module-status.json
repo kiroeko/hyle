@@ -1307,7 +1307,7 @@
     },
     {
       "module": "io_http2",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-http2-v2-owner-progress-cost",
       "closure_task": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
       "scope": "Audit and, only if structurally proven, remove unconditional monitor and notification cost from the HTTP2 single-owner no-waiter progress path while preserving all public API, protocol, lifecycle and delivery contracts.",
@@ -1327,7 +1327,7 @@
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
         "instrument_profile": "closure-perf-v1",
-        "evidence": "evidence/performance/io-http2-p1-v2-4060e217/manifest.json"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "PENDING",
@@ -1342,7 +1342,33 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_http2 v2 VERIFIED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。"
+      "freeze_confirmation": {
+        "id": "io-http2-v2-freeze-2026-09-09",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-09",
+        "reviewed_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
+        "reviewed_tree": "cb91d5cba24706ddee390b51dab40fa12b2093ff",
+        "evidence": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md"
+      },
+      "loc": {
+        "snapshot_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
+        "repository_code": 517892,
+        "self_without_tests": 89859,
+        "module_implementation": 2548
+      },
+      "known_limitations": [
+        "The engineering P1 claim covers only the frozen W1-WSL h2c 64x1KiB multiplex and 4x256KiB two-level flow-control workloads against pinned nghttp2; TLS was correctness-tested but is not part of this performance claim, and no all-platform, all-operation or Formal SOTA claim is made.",
+        "A session and all derived stream/body handles are transport-owner-worker affine, including operation and destruction; only cancellation notification may originate from another thread under the documented contract.",
+        "The factor supports h2c prior knowledge and already-negotiated TLS ALPN h2, not HTTP/1 Upgrade, server push, WebSocket, HTTP/3, gRPC schema/runtime or application routing policy.",
+        "nghttp2 remains the private HPACK/frame/state-machine provider; source/static/shared expose the same C++23 API but do not promise Native FFI, C API or a stable cross-toolchain C++ ABI."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces an HTTP2 protocol, flow-control, lost-wake, cancellation, deadline, reset, GOAWAY, OOM, lifetime or natural C++ API usability defect, or proves a missing common HTTP2 transport capability within this factor's boundary.",
+        "The public API or layout, owner-worker contract, direction/progress algorithm, window or chunk ownership, allocator policy, nghttp2 integration or source/static/shared delivery shape changes.",
+        "The sched ConditionVariable or cancellation callback contract changes in a way that invalidates the owner-local or external-cancel missed-wake proof.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity or cost structure for an admitted HTTP2 workload."
+      ],
+      "summary": "io_http2 v2 CLOSED/FROZEN：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。"
     },
     {
       "module": "io_transfer",

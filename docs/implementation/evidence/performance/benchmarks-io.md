@@ -1,9 +1,9 @@
 # io 实测铁证
 
-<!-- PERFORMANCE EVIDENCE: HISTORICAL -->
+<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页顶部保存 `io_http2-v2-owner-progress-cost` 已通过的候选工程证据；只有 registry 完成 `CLOSED`
-> 后才能把它标为当前性能签名。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是历史事实；HTTP/2 结论也不能扩大成
+> 本页当前只签发 `io_http2-v2-owner-progress-cost` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧
+> io 聚合数据均是历史事实，不再是对应活动轮的当前性能签名；当前 HTTP/2 结论也不能扩大成
 > io_core、TLS、HTTP/1、transfer、完整服务器、全平台或全操作 SOTA。
 
 ## 2026-09-09 `io_http2-v2` 当前工程证据（`PASS`）
