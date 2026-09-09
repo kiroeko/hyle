@@ -1,0 +1,39 @@
+{
+  "schema": "hyle.io_watch.consumer-shapes/v1",
+  "purpose": "Freeze the serving and asset-reload journeys used by IO Watch v1 P1 before qualification.",
+  "comparison_class": "SAME_CONTRACT",
+  "reference_snapshots": {
+    "vllm": "51da0ca66c8065619c79e35dff97aa99aeaf5644",
+    "sglang": "dcebe8c4733a5cb802fb679e0c8fbb886e2801b0",
+    "libuv": "3e606bc30a842701f8d12007d3ade662d258b76b"
+  },
+  "common_semantics": {
+    "lifetime": "one watcher and one event owner remain established outside timing; every charged publication is awaited and classified before the next episode",
+    "freshness": "the consumer re-reads an eight-byte authoritative generation so duplicate/coalesced notifications cannot satisfy a later publication",
+    "progress": "both routes use their natural persistent asynchronous owner and native file-event backend; neither polls or creates a thread per event",
+    "accounting": "the same HYLE Platform FS helper publishes and re-reads each generation for both routes, so only watcher routing, dispatch, batching and lifecycle differ"
+  },
+  "workloads": [
+    {
+      "id": "exact-file-atomic-replace",
+      "consumer": "an inference service observes one TLS/config/model sidecar while an editor atomically replaces it",
+      "target": "one exact file observed through its existing parent directory",
+      "episode": "write and close one sibling replacement, atomically publish it, receive a matching change and re-read the exact generation",
+      "charged_events": 8
+    },
+    {
+      "id": "nonrecursive-directory-burst",
+      "consumer": "a renderer or model-shard cache invalidates one flat asset directory after a bounded publication burst",
+      "target": "one non-recursive directory containing eight stable direct children",
+      "episode": "rewrite all eight child generations, receive/coalesce direct-child changes, classify all eight names and re-read every authoritative generation",
+      "episodes": 2,
+      "charged_events": 16
+    }
+  ],
+  "negative_space": [
+    "watcher/runtime construction and one warmup episode per route are outside timing",
+    "recursive traversal, debounce, content parsing and application reload policy are not watcher work",
+    "a raw inotify, IOCP or FSEvents syscall is not an admissible peer for the complete owner-to-consumer route",
+    "callback count is not treated as an event-log guarantee; the gate observes authoritative publications"
+  ]
+}
