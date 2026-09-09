@@ -84,10 +84,10 @@ void publish_fsevents(ConstFSEventStreamRef, void* opaque,
     }
     const std::string_view path(raw);
 
-    // A root event is coarse or reports that the root moved/disappeared.
-    // Either way consumers must rebuild their authoritative view.
+    // FSEvents may publish a root identity record when a stream starts. The
+    // item-kind bits alone do not mean user-visible change. Dropped/coarse or
+    // invalidation flags were handled above; only those require a rescan.
     if (const std::size_t* root = state.root_by_path.find(path)) {
-      changed = state.require_rescan_locked() || changed;
       if ((flags & (kFSEventStreamEventFlagRootChanged |
                     kFSEventStreamEventFlagUnmount)) != 0) {
         state.roots[*root].active = false;
