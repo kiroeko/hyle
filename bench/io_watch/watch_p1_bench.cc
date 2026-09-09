@@ -63,6 +63,7 @@ constexpr std::size_t kExactEpisodes = 8;
 constexpr std::size_t kDirectoryEpisodes = 2;
 constexpr auto kReadinessRetry = std::chrono::milliseconds(20);
 constexpr auto kReadinessTimeout = std::chrono::seconds(5);
+constexpr auto kRouteQuiescence = std::chrono::milliseconds(100);
 
 enum class Shape : std::uint8_t { kExactReplace, kDirectoryBurst };
 
@@ -538,19 +539,6 @@ class LibuvHarness {
 
 void run_shape(Shape shape, const char* title, std::size_t episodes,
                std::size_t events_per_episode, bool peer_first) {
-  HyleHarness hyle(shape);
-  LibuvHarness peer(shape);
-  auto run_hyle = [&] { hyle.run(episodes); };
-  auto run_peer = [&] { peer.run(episodes); };
-
-  if (peer_first) {
-    peer.warmup();
-    hyle.warmup();
-  } else {
-    hyle.warmup();
-    peer.warmup();
-  }
-
   ankerl::nanobench::Bench bench;
   bench.title(title)
       .relative(true)
@@ -559,12 +547,34 @@ void run_shape(Shape shape, const char* title, std::size_t episodes,
       .minEpochTime(std::chrono::nanoseconds(0))
       .minEpochIterations(1)
       .epochs(1);
+
+  // macOS implements both routes with FSEvents streams whose 50 ms delivery
+  // windows share daemon state. Keeping both streams alive simultaneously
+  // makes the second measured route inherit the first stream's batching phase
+  // and reverses the result with execution order. A real consumer owns one
+  // route, so establish, warm, measure, and retire one route at a time. The
+  // equal uncharged quiescence also drains readiness traffic before timing.
+  auto run_hyle = [&] {
+    HyleHarness hyle(shape);
+    hyle.warmup();
+    std::this_thread::sleep_for(kRouteQuiescence);
+    bench.run("HYLE FileWatcher", [&] { hyle.run(episodes); });
+  };
+  auto run_peer = [&] {
+    LibuvHarness peer(shape);
+    peer.warmup();
+    std::this_thread::sleep_for(kRouteQuiescence);
+    bench.run("libuv uv_fs_event", [&] { peer.run(episodes); });
+  };
+
   if (peer_first) {
-    bench.run("libuv uv_fs_event", run_peer);
-    bench.run("HYLE FileWatcher", run_hyle);
+    run_peer();
+    std::this_thread::sleep_for(kRouteQuiescence);
+    run_hyle();
   } else {
-    bench.run("HYLE FileWatcher", run_hyle);
-    bench.run("libuv uv_fs_event", run_peer);
+    run_hyle();
+    std::this_thread::sleep_for(kRouteQuiescence);
+    run_peer();
   }
 }
 
