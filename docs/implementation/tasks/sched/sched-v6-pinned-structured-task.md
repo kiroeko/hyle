@@ -1,8 +1,8 @@
 # Sched v6：pinned、joinable、typed structured task
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-## Closure card（`CANDIDATE`）
+## Closure card（`CLOSED`）
 
 - component / owner：`sched` / structured task admission and lifetime；round：
   `sched-v6-pinned-structured-task`；baseline：
@@ -80,10 +80,10 @@ Future/Executor 同样不把稳定 worker identity 纳入普通 future 合同。
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| S6-01 | pinned fire-and-forget 与 typed joinable 不可组合 | 在 `join.h` 复用一个内部 admission helper，公开 `spawn_task_on`；合法性检查早于任何 allocation | typed/void/move-only、invalid worker、OOM/closed/full 全有确定 handle 结果 | `9f065791` 已实现并固定 |
-| S6-02 | owner 必须覆盖完整 suspend/wake 生命周期 | focused tests 覆盖首次 dispatch、yield、foreign Waker、cancel/detach/shutdown | 每次观测 worker 都等于所选 owner，无泄漏/挂死 | 候选测试已覆盖；等待精确候选跨平台裁决 |
-| S6-03 | 当前 inference sample 手写生命周期 | 让真实 sample 与 package sample 使用新入口，更新用户 guide/architecture | 不再手写 Task resume/result/exception wrapper；三交付可发现 | inference/package source consumer 已迁移；等待三交付裁决 |
-| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 baseline 已有公开 API 的手工组合；固定 5% 非劣门；既有 Marl 证据继续约束底层 wake/queue | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | 合同已固定；等待一次正式候选 P1 |
+| S6-01 | pinned fire-and-forget 与 typed joinable 不可组合 | 在 `join.h` 复用一个内部 admission helper，公开 `spawn_task_on`；合法性检查早于入口自有的 join-state/driver/stack allocation | typed/void/move-only、invalid worker、OOM/closed/full 全有确定 handle 结果 | `PASS`：`9f065791` 已实现并固定；终局 test-only 证据补齐全部失败路径 |
+| S6-02 | owner 必须覆盖完整 suspend/wake 生命周期 | focused tests 覆盖首次 dispatch、yield、foreign Waker、cancel/detach/shutdown | 每次观测 worker 都等于所选 owner，无泄漏/挂死 | `PASS`：三平台 exact-candidate correctness 与 sanitizers 通过 |
+| S6-03 | 当前 inference sample 手写生命周期 | 让真实 sample 与 package sample 使用新入口，更新用户 guide/architecture | 不再手写 Task resume/result/exception wrapper；三交付可发现 | `PASS`：inference sample 与 source/static/shared consumer 通过 |
+| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 baseline 已有公开 API 的手工组合；固定 5% 非劣门；既有 Marl 证据继续约束底层 wake/queue | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | `PASS`：31 个独立进程、4/4 strata 5% NI 与全部 controls 通过 |
 
 本表之后不增加轻量 pinned queue、优先级或 IO 功能；出现相关需求另立 round。
 
@@ -102,7 +102,8 @@ auto result = handle.join();
 - task 可 suspend；所有 wake 回指定 worker。`JoinHandle` 的 join/detach/cooperative cancel 语义不变；
   handle 销毁不取消 task，Scheduler 仍负责 drain。
 - 默认 stack tier 不变。相对 `spawn_task` 不新增 allocation/copy/atomic/lock/syscall、常态 metadata 或
-  runtime branch；模板 shell 在 admission 点静态选择 `spawn`/`spawn_on`。
+  每次 resume/wake 成本；入口只增加一次可预测的 scheduler/worker 合法性检查，模板 shell 在 admission
+  点用 `if constexpr` 静态选择 `spawn`/`spawn_on`，没有运行时路由分支。
 - source/static/shared 都从 `<hyle/sched/join.h>` 取得同一 API；这是 C++ template API，不增加 C/FFI
   symbol。guide 必须明确只有真实 per-worker owner 才使用 pin，普通 work 保持可窃取。
 
@@ -123,4 +124,98 @@ auto result = handle.join();
 7. 易用与文档：一个入口表达 worker + task + typed handle；invalid worker 可恢复；guide 同时说明
    pin 的适用场景、负成本与普通可窃取默认。
 
-产品候选固定为 `9f0657919efd9daca6e5c22f4d01f9fa4fe39082`。下一步只在该精确提交上执行预声明验证、分离红队与一次正式 P1；不再改变产品代码或扩大冻结范围。
+产品候选固定为 `9f0657919efd9daca6e5c22f4d01f9fa4fe39082`，tree 为
+`e5396357310099aad3ce6d6bf4597963c8a37b8b`。候选后的提交没有改变 `include/hyle/sched` 或
+`src/sched` 产品 seam；只补测试、证据、公共仪器修复和状态。
+
+## 终局候选验证
+
+精确候选以 SHA-256
+`8184A504B0926C85604290231C7A780D75542773117B22533A8D5F413DCEF8DB` 的同一 archive 进入 WSL 与
+macOS；Windows 使用 detached candidate worktree。远端副本只作验证，不是产品修改来源。
+
+| 风险面 | 候选或 test-only 证据 | 结果 |
+|---|---|---|
+| W1-WIN correctness | MSVC 19.50 Release；完整 Sched + public-header；受影响 IO integration | `2/2 PASS`、Sched `181/181`；IO `15/15 PASS` |
+| W1-WIN delivery | exact candidate 的 selected source、relocated shared、relocated static consumer；完整 inference-service sample | `3/3 PASS`；sample 编译通过 |
+| W1-WIN sanitizer | exact candidate MSVC ASan 完整 Sched | `181/181 PASS` |
+| W1-WSL portability/sanitizer | GCC 14.2 Release/header；ASan、UBSan、TSan（TSan 以 `setarch x86_64 -R` 满足运行环境） | focused/header `2/2 PASS`；三种 sanitizer 均完整通过 |
+| W1-WSL delivery | exact archive 的 source、relocated shared、relocated static consumer | `3/3 PASS` |
+| M1-MAC portability/delivery | MacBook Air arm64、AppleClang 21；Release/header 与三交付 | focused/header `2/2 PASS`；source/static/shared `3/3 PASS` |
+| failure/admission 红队补证 | 产品 seam 不变后增加 `spawn_task_on` frame/state/driver/stack-failure 与 pinned queue-full cleanup 用例 | MSVC Release 完整 Sched `184/184 PASS`；新增四条 MSVC ASan `4/4 PASS` |
+
+最后一行的 stack failure 使用 `SIZE_MAX` 触发 `VmRegion::reserve_guarded` 的确定性 overflow 拒绝，走与
+OS reserve/commit OOM 相同的 `!stack_result` 清理分支；它不靠耗尽整机内存制造不稳定测试。task 参数在
+调用表达式求值时已经拥有 coroutine frame，所以 invalid worker 只承诺不取得入口自有的 join state、
+driver 或 stack，并会在返回时正常销毁 caller 已构造的 task；用户 guide 已明确这条边界。
+
+## P0 与正式 P1
+
+P0 对 candidate/baseline 产品 diff 与生成路径的检查结论：`TaskDriver<T>`、`JoinState<T>`、`Fiber` 及
+其 layout 均未改变；合法调用仍为一个 coroutine frame、一个 join state、一个 driver 和一个可复用
+guarded stack。没有新增 persistent metadata、result copy、atomic、lock 或 syscall。新增入口只有一次
+`valid()`/worker 范围检查；`spawn_task_impl<true>` 的 admission 通过 `if constexpr` 静态落到既有
+`Scheduler::spawn_on`，resume、yield、timer/IO/foreign wake 全部复用已有 owner/reinject 路线。
+
+正式 P1 使用 [`sched-v6-pinned-task-p1-v1`](../../../../bench/contracts/sched-v6-pinned-task-p1-v1.json)
+（SHA-256 `1424330e6f359cd34e8fdefbd29afbcb9a317397a095b70586685f7cd4b7c93b`），比较相同的
+pinned+suspending+typed completion episode：HYLE 新入口对 baseline 公共 API 手工组合。W1-WIN、
+MSVC 19.50、Release/static、portable ISA、31 个独立进程、双执行顺序与独立 placement 变体；A/A、
+5%/10% known-delta、timer-floor、artifact/build/source/peer/host/input provenance 全部通过。
+
+| stratum | HYLE / manual median（op/s） | paired advantage / 98.93% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| primary / HYLE first | 371,095 / 372,502 | 1.0005 / [0.9654, 1.0263] | `PARITY` | `PASS` |
+| primary / peer first | 375,923 / 365,675 | 1.0325 / [0.9945, 1.0892] | `INCONCLUSIVE` | `PASS` |
+| placement / HYLE first | 374,976 / 367,890 | 0.9980 / [0.9796, 1.0852] | `INCONCLUSIVE` | `PASS` |
+| placement / peer first | 377,496 / 364,941 | 1.0339 / [0.9907, 1.0985] | `INCONCLUSIVE` | `PASS` |
+
+四行 exact 聚合为 `INCONCLUSIVE`，不能宣称稳定胜出；四行 5% non-inferiority 与 qualification/
+performance gate 全为 `PASS`，也没有固定方向的 material loss。manifest/summary SHA-256 分别为
+`D4E7EDFBE41607B8484051A57CA2AF246F88C3B9CEF26F35AC7E5CBC8E78EDB9` /
+`8CD00847AD0D8FC5CAE3E7F2446279652D2FEA5028527CA0A902FC795D6A7286`；独立 verifier 报
+`QUALIFIED`、`EXACT` provenance。首次运行在采样前暴露 structured-pair placement validator 的不可满足
+计数条件；独立工具任务 [`865008d4`](../project/performance-structured-placement-validator-2026-09.md)
+修正路由身份后用全新目录重跑，失败运行没有形成样本。人读性能结论同步到
+[`benchmarks-sched.md`](../../evidence/performance/benchmarks-sched.md)。
+
+## 终局红队
+
+- 全部公开 scheduling/spawn/join 入口已回映；新 API 填的是 pinned + suspending + typed 的真实交集，
+  没有新增 `fast/light`、benchmark 参数、常态 metadata 或第二套 task lifecycle；
+- invalid scheduler/worker、task frame、join state、driver、stack failure、closed/full admission 都返回可
+  join 的 typed error handle；test-only 回归确认失败时 frame、state、driver 与 stack ownership 全部释放；
+- first dispatch、cooperative yield、foreign wake、cancel、detach 与 drain 都保持 owner；底层并发由 exact
+  candidate 的 TSan 覆盖，没有发现 UAF、double completion 或 shutdown 漏计；
+- API 只把必需 worker 放在与 `spawn_task` 对称的位置；普通任务仍默认可窃取，guide 没把 pin 宣传成
+  通用加速开关；caller 已构造 task frame 的边界也不再被文档掩盖；
+- 组件边、compiled target、public header owner 与三交付不变；复用 Error、Mem/Mem-vm、Time、Platform、
+  Container-intrusive 和现有 Sched owner queue，没有为避免依赖复制 primitive；没有 C/Native FFI；
+- P1 双方语义、ownership、failure、setup/teardown、完成条件一致；placement 四个 executable 的路径和
+  binary hash 全部不同，没有把 unpinned、detached 或 worker-stack callback 当成 peer。未发现未处理的
+  medium/high 风险 finding；`schedule_task_on` 属不同的非挂起 private-inline 机制，只有新的真实 consumer
+  trigger 才能另轮准入。
+
+## 七门与裁决
+
+| Gate | 证据 | Verdict |
+|---|---|---|
+| scope | 一个真实能力交集、两个产品纵切、有限 `S6-01..S6-04` | `PASS` |
+| architecture | 只组合既有 structured lifetime 与 pinned admission；无新依赖或循环 | `PASS` |
+| correctness | 三平台、失败/admission、owner wake、三 sanitizer 与受影响 IO | `PASS` |
+| delivery | public header + source/static/shared relocated consumer + inference sample | `PASS` |
+| usability_docs | 对称入口、明确 pin 适用条件、错误/lifetime/cancel 陷阱 | `PASS` |
+| red_team | 上述分离红队，无未处理 medium/high finding | `PASS` |
+| engineering_performance | P0 成本结构 + qualified W1-WIN 4/4 的 5% NI | `PASS` |
+
+LOC 由 `python scripts/loc-report.py --module sched --commit
+9f0657919efd9daca6e5c22f4d01f9fa4fe39082 --self-check` 计算并自检通过：全库 504,811 行，自实现不含
+测试 90,560 行，Sched 实现 5,689 行。
+
+最终裁决为 `CLOSED`：本轮 pinned、joinable、typed structured task 已完成且七门全过。当前工程声明只
+覆盖上述真实 episode 的 W1-WIN 5% 非劣，不宣称全部 Scheduler 操作或跨平台 Formal SOTA。只有可复现
+correctness/security/UB/lifetime 缺陷、真实消费者证明的新通用能力缺口、公开 API/layout/算法/依赖/
+交付变化，或合格同合同证据显示超过 5% 的 material regression，才允许新 card 重开；旧点值、无新
+事实的“再看一次”或单纯希望 pinned callback 不构成 trigger。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

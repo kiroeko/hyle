@@ -203,10 +203,15 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/sched/sched-v6-pinned-structured-task.md",
       "candidate": "9f0657919efd9daca6e5c22f4d01f9fa4fe39082",
-      "summary": "sched v6 CANDIDATE：spawn_task_on 已在 9f065791 固定；它复用现有 TaskDriver/JoinState/Fiber pinned owner，候选验证只覆盖预声明的 owner 生命周期、错误路径、三交付、红队与同合同 P1。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md",
+        "material_margin_pct": 5
+      },
+      "summary": "sched v6 CLOSED：spawn_task_on 复用既有 typed lifecycle 与 pinned owner；三平台、sanitizers、失败/拥塞、三交付、易用性、红队和同合同 4/4 的 5% P1 非劣门全部通过。"
     },
     {
       "module": "io_core",

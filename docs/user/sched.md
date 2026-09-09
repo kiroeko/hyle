@@ -169,7 +169,9 @@ auto result = handle.join();
 ```
 
 `owner_worker` 必须小于 `scheduler.num_workers()`；越界会得到一个可立即 `join()` 的
-`InvalidArgument` handle，不会分配 join state、driver 或 stack。它和 `spawn_task` 的 result、detach、
+`InvalidArgument` handle，不会分配 join state、driver 或 stack。注意 C++ 会先求值
+`request_loop(alloc, state)`：coroutine frame 此时已经由调用者构造；入口拒绝任务时会正常销毁该 frame，
+但“越界零分配”只指 `spawn_task_on` 自己拥有的三项资源。它和 `spawn_task` 的 result、detach、
 cooperative cancel 与 shutdown 语义完全相同。不要把它当作“更快”的默认入口：pin 会放弃 work
 stealing，普通任务仍应使用 `spawn_task`。非挂起的短任务使用 `schedule_task`；当前不承诺它固定到某个
 worker。

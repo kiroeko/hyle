@@ -1,8 +1,40 @@
 # sched 性能证据
 
 
-> 当前产品状态只见 [`module-status.json`](../../module-status.json)。当前工程结论以紧接的 sched-v5
+> 当前产品状态只见 [`module-status.json`](../../module-status.json)。当前工程结论以紧接的 sched-v6
 > 小节为准；后续各轮数据只解释对应候选，不能拼成全操作、跨平台或 Formal SOTA。
+
+## sched-v6 pinned structured task 工程证据（2026-09-09，`PASS`）
+
+产品 candidate 为 `9f0657919efd9daca6e5c22f4d01f9fa4fe39082` / tree
+`e5396357310099aad3ce6d6bf4597963c8a37b8b`。本轮只增加 `spawn_task_on`：把既有 typed
+`Task<T>`/`JoinHandle<T>` lifecycle 静态路由到既有 pinned Fiber admission/wake owner。它没有改变
+`TaskDriver`、`JoinState`、`Fiber` layout，没有新增常态 allocation、atomic、lock、syscall 或每次 wake
+成本；一次性的 scheduler/worker 合法性检查属于公开失败合同。
+
+资格化合同是 [`sched-v6-pinned-task-p1-v1`](../../../../bench/contracts/sched-v6-pinned-task-p1-v1.json)
+（SHA-256 `1424330e6f359cd34e8fdefbd29afbcb9a317397a095b70586685f7cd4b7c93b`）。双方执行相同的
+pinned+suspending+typed completion episode：HYLE 新入口对旧公共 API 的手工
+`Task + spawn_detached_on + typed slot + WaitGroup` 组合；没有拿 unpinned、detached 或
+non-suspending task 做排名。W1-WIN、MSVC 19.50、Release/static、portable ISA、31 个独立进程，
+advantage 大于一有利于 HYLE：
+
+| stratum | HYLE / manual median（op/s） | paired advantage / 98.93% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| primary / HYLE first | 371,095 / 372,502 | 1.0005 / [0.9654, 1.0263] | `PARITY` | `PASS` |
+| primary / peer first | 375,923 / 365,675 | 1.0325 / [0.9945, 1.0892] | `INCONCLUSIVE` | `PASS` |
+| placement / HYLE first | 374,976 / 367,890 | 0.9980 / [0.9796, 1.0852] | `INCONCLUSIVE` | `PASS` |
+| placement / peer first | 377,496 / 364,941 | 1.0339 / [0.9907, 1.0985] | `INCONCLUSIVE` | `PASS` |
+
+A/A、5%/10% known-delta、timer-floor、双顺序/placement、四个不同产品 binary、build/artifact 与
+source/peer/input/host provenance 全过；qualification/performance gate 和 4/4 non-inferiority 为
+`PASS`。exact 聚合仍为 `INCONCLUSIVE`，所以结论是同合同 5% 工程非劣，不宣称稳定胜出。manifest/
+summary SHA-256 为
+`D4E7EDFBE41607B8484051A57CA2AF246F88C3B9CEF26F35AC7E5CBC8E78EDB9` /
+`8CD00847AD0D8FC5CAE3E7F2446279652D2FEA5028527CA0A902FC795D6A7286`；独立 verifier 报
+`QUALIFIED`、`EXACT` provenance。首次无样本运行暴露并修复了公共 structured-placement artifact
+validator 的计数缺陷，修复事实见[独立工具记录](../../tasks/project/performance-structured-placement-validator-2026-09.md)；
+产品、合同、workload、margin 与样本数均未改变。
 
 ## sched-v5 IO completion 工程证据（2026-09-08，`PASS`）
 

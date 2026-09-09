@@ -88,6 +88,29 @@ Task<void> observe_worker_coro(AllocatorRef, std::atomic<int>* worker) {
   co_return;
 }
 
+struct PinnedSaturationBox {
+  Scheduler* scheduler = nullptr;
+  std::atomic<int> ran{0};
+  int accepted = 0;
+  int full = 0;
+};
+
+Task<void> saturate_pinned_queue(AllocatorRef, PinnedSaturationBox* box) {
+  for (int i = 0; i < 8; ++i) {
+    auto child = spawn_task_on(
+        *box->scheduler, 0, system_allocator(),
+        bump_coro(system_allocator(), &box->ran));
+    if (child.is_finished()) {
+      auto result = child.join();
+      if (!result && result.error().IsResourceExhausted()) ++box->full;
+    } else {
+      ++box->accepted;
+      child.detach();
+    }
+  }
+  co_return;
+}
+
 struct MoveOnlyResult {
   explicit MoveOnlyResult(std::atomic<int>* destroyed) noexcept
       : destroyed(destroyed) {}
@@ -247,6 +270,55 @@ TEST(Join, SpawnTaskOnDriverOomReleasesTheJoinState) {
   EXPECT_EQ(counter.attempts.load(std::memory_order_relaxed), 2u);
   EXPECT_EQ(counter.allocations.load(std::memory_order_relaxed), 1u);
   EXPECT_EQ(counter.frees.load(std::memory_order_relaxed), 1u);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnFrameAndJoinStateOomAreRecoverable) {
+  Scheduler sched(1, system_allocator(), 64);
+
+  auto no_frame = spawn_task_on(
+      sched, 0, system_allocator(), add_coro(failing_allocator(), 1, 2));
+  auto frame_result = no_frame.join();
+  ASSERT_FALSE(frame_result.has_value());
+  EXPECT_TRUE(frame_result.error().IsResourceExhausted());
+
+  auto no_state = spawn_task_on(
+      sched, 0, failing_allocator(), add_coro(system_allocator(), 1, 2));
+  auto state_result = no_state.join();
+  ASSERT_FALSE(state_result.has_value());
+  EXPECT_TRUE(state_result.error().IsResourceExhausted());
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnStackFailureReleasesOwnedAllocations) {
+  AllocationCounter counter;
+  AllocatorRef counted(&counted_alloc, &counted_free, &counted_realloc,
+                       &counter);
+  Scheduler sched(1, system_allocator(), 64);
+  {
+    auto handle = spawn_task_on(
+        sched, 0, counted, add_coro(system_allocator(), 1, 2),
+        (std::numeric_limits<std::size_t>::max)());
+    auto result = handle.join();
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(result.error().IsOutOfRange());
+  }
+  EXPECT_EQ(counter.allocations.load(std::memory_order_relaxed), 2u);
+  EXPECT_EQ(counter.frees.load(std::memory_order_relaxed), 2u);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnQueueFullReturnsAndReleasesRejectedTasks) {
+  Scheduler sched(1, system_allocator(), 2);
+  PinnedSaturationBox box{&sched};
+  auto parent = spawn_task_on(
+      sched, 0, system_allocator(),
+      saturate_pinned_queue(system_allocator(), &box));
+  ASSERT_TRUE(parent.join().has_value());
+  sched.drain();
+  EXPECT_EQ(box.accepted, 2);
+  EXPECT_EQ(box.full, 6);
+  EXPECT_EQ(box.ran.load(std::memory_order_relaxed), box.accepted);
   sched.shutdown();
 }
 
