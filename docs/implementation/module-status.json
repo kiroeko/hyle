@@ -215,10 +215,14 @@
     },
     {
       "module": "io_core",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md",
       "candidate": "67177e41d2d34c415e6e99375cb59a499ddbbdb3",
-      "summary": "io_core v2 CANDIDATE：Windows IOCP directory-change seam 已冻结在 67177e41；新增机制和 io_core 13/13 通过，等待 Linux/macOS 条件回归、sanitizer、三交付、P0 与红队。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md"
+      },
+      "summary": "io_core v2 CLOSED：Windows IOCP directory-change seam 在 67177e41 冻结；三平台 io_core、三 sanitizer、header、source/static/shared/relocation、红队与零常态附加成本 P0 全部通过。"
     },
     {
       "module": "io_tls",

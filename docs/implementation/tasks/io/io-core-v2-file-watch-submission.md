@@ -90,3 +90,35 @@ bool Proactor::submit_directory_changes(std::intptr_t directory,
 `ReadDirectoryChangesW` submit；普通 operation 的对象 layout、admission、reap/cancel 与非 Windows
 backend 均未改变。W1-WIN 上新增 completion/rearm/admission/invalid/cancel 测试及 io_core 13/13 已通过；
 本卡进入 `CANDIDATE`，后续只补三平台、sanitizer、交付、P0/红队证据，不再改变产品快照。
+
+## Terminal receipt（`CLOSED`）
+
+- **candidate / drift：**产品候选为
+  `67177e41d2d34c415e6e99375cb59a499ddbbdb3`；candidate 后只有本卡、registry 与生成状态说明，公开头、
+  source、测试和构建输入均无漂移。
+- **correctness / platform：**W1-WIN 的 Release/shared io_core 13/13、Release/static 新机制 2/2；精确候选
+  在 W1-WSL GCC 14 与 M1-MAC AppleClang 21 的 Release/shared io_core 各 13/13。Windows 直接覆盖
+  native mutation、completion bytes、rearm、queue-depth admission、invalid handle 与 CancelIoEx terminal
+  retirement；非 Windows 构建证明条件编译没有生成伪 symbol 或改变原 backend。
+- **sanitizer / header：**精确候选在 WSL 的 ASan、UBSan、TSan 各 io_core 13/13；changed detail header
+  由 MSVC 的首 include TU 及 GCC/AppleClang 的 standalone include 编译通过。Windows native borrow 由
+  completion/cancel/destructor 测试覆盖，不拿 Linux sanitizer 冒充 Windows OS 实现插桩。
+- **build / delivery：**Windows exact factor 的 shared 与 static test 都直接链接并调用新 symbol；selected
+  `io` product smoke 的父工程源码嵌入、安装 shared、安装 static、两份 relocated consumer 全部通过。
+  `io_core` 是内部 factor，不制造用户 `hyle::io_core` 安装入口；公开产品仍只有 `hyle::io`。
+- **P0：**一个 watch arm 是一次 `ReadDirectoryChangesW`；operation 使用 init 时已有的 fixed-capacity slab，
+  completion/cancel/destructor 复用 IOCP 路径。没有新 allocation、lock、thread、map、对象字段、普通 submit
+  branch 或非 Windows 代码；`Completion`/`Proactor` layout 不变。完整 event parse/batch/wake 成本归
+  io_watch P1，本轮孤立纳秒计时 `NOT_APPLICABLE`。
+- **red team：**按 Windows 定义复核了 FILE_LIST_DIRECTORY、OVERLAPPED+IOCP association、DWORD-aligned
+  caller buffer、terminal-completion lifetime、zero-byte/`ERROR_NOTIFY_ENUM_DIR` overflow 与 remote 64 KiB
+  限制。方法固定 non-recursive 且只返回 native bytes；解析、rescan、16 KiB 默认 buffer、路径和 rearm
+  继续由 io_watch 拥有。没有 benchmark-only knob、公开 C/Native FFI、第二 loop 或隐藏 thread。
+- **七门：**scope、architecture、correctness、delivery、usability/docs、red_team、
+  engineering_performance 全部 `PASS`；没有未运行的适用风险或延迟给消费者的通用 glue。
+- **LOC：**候选上全库 `505367`，自实现不含测试 `90587`，`io_core` 实现 `11071` 行。
+- **接受边界与重开：**该 detail method 只服务 Windows non-recursive directory byte stream；network FS、
+  recursive、事件语义和应用 reload 不在本卡。只有该 symbol 的可复现 correctness/security/lifetime/交付
+  缺陷，io_watch 证明 seam 不足，或同路径常态成本发生 material 回归才可重开；其余变化归 io_watch。
+
+本卡至此 `CLOSED`，不再授权修改 io_core；`io_watch` 可以从 F01 开始唯一产品批次。
