@@ -61,16 +61,103 @@
   或同合同 peer/三平台/三交付无法取得，即进入 `BLOCKED`，记录 owner 与唯一恢复条件；不得用
   polling 冒充跨平台成功、把未运行门写成 PASS，或顺手扩入 recursive/network-FS。
 
-## 进入 `AUDITED` 前的只读队列
+## 能力与形状审计（`AUDITED`）
 
-- 双向 trace `io_core` ownership、`IoContextAccess`、blocking pool、CancelCallback 与现有 package/target
-  生成规则，证明是否无需重开任何已关闭依赖；
-- 对 libuv 的 Linux inotify、Windows `ReadDirectoryChangesW`/IOCP、macOS kqueue/FSEvents 生命周期，
-  以及 Asio/Seastar/Folly 的取消与 ownership 逐项裁决；
-- 冻结 event vocabulary、target identity/path ownership、batch lifetime、overflow/rescan、missing/root loss、
-  concurrent-next 和 close 语义；
-- 形成 capability-family map、public surface、七问、有限 FIX 集、调用草图、语义等价 P1 contract；
-- 决定原生 fd/handle 是接入现有 proactor 还是经共享 blocking pool，必须有成本与取消证据；若需要修改
-  `io_core` 产品/API/常态算法，停止并依法形成独立 reopen trigger，不能在本卡偷改。
+只读队列已经完成。libuv 的跨平台 `uv_fs_event` 证明 portable baseline 只有 rename/change、filename
+可为空、recursive 只在部分平台成立；它的 stat fallback flags 至今也未实现。Seastar
+`experimental::fsnotifier` 证明 multiple watch + owning RAII token + batched await + explicit shutdown 是自然
+形状，但它只包装 Linux inotify，且自己注明不会自动重建失效 watch。vLLM/SGLang 的真实调用则只需要
+多个 exact file、异步迭代和 task cancellation。由此不能把 Linux mask 或 Windows rename-pair 偶然能力
+伪装成 portable guarantee，也不能退化成 callback-only API。
 
-当前只完成范围登记；尚未签发 `AUDITED`，不授权产品或测试实现改动。
+| 能力族 | 准入旅程/来源 | 语义、生命周期与复杂度 | baseline | 裁决 / 动作 |
+|---|---|---|---|---|
+| W01 multiple target identity | vLLM/SGLang certificate/key/CA；Seastar token | create 时复制 UTF-8 path；稳定 input index；exact file 可暂不存在但 parent 必须存在；directory root 必须存在 | 无公开 owner | `MISSING / FIX` |
+| W02 awaitable bounded batch | 两个 serving async iteration；Seastar batched wait | one outstanding `next`；返回 borrowed batch，直到下一次 next/close；bounded events/path bytes，O(events+bytes) parse | 无 | `MISSING / FIX` |
+| W03 portable change vocabulary | libuv rename/change + 三 OS native events | content/metadata/create/remove/move-from/move-to/root-invalidated；rename correlation 尽力而为，0 表示未知 | 无 | `MISSING / FIX` |
+| W04 atomic replace 与 coarse route | TLS editor replace；macOS directory vnode | exact file 观察 parent 才能跨 inode replace；无法给 filename 时 batch 明确 `rescan_required`，不能猜 identity | 无 | `MISSING / FIX` |
+| W05 bounded backpressure/overflow | renderer burst；inotify/Windows buffer overflow | one sealed borrowed batch；producer 在消费前不覆写；native/library overflow 均返回 rescan-required，不静默丢失 | 无 | `MISSING / FIX` |
+| W06 cancel/deadline/close | serving task cancellation；HYLE OperationOptions | next cancel 只结束该 wait；close 取消所有 native waits、join owner tasks、幂等；watcher 先于 IoContext/Scheduler 关闭 | 无 | `MISSING / FIX` |
+| W07 cross-platform no-thread mechanism | libuv/Seastar + HYLE shard-per-core | Linux one inotify fd/task；Windows/macOS one owner-pinned task per unique native root；每 root one native op，零 blocking-pool thread/busy poll | io_core 缺 Win/mac submit | `PARTIAL / FIX`，依法重开 io_core v2 |
+| W08 C++/delivery/docs | HYLE source/static/shared 产品 | `<hyle/io/watch.h>`；无 C/Native FFI；exact factor + IO façade；默认值、borrow、rescan 与 teardown recipe | factor 仅有 identity | `MISSING / FIX` |
+
+public-surface 反向 trace 为空：此前没有 watcher API、兼容别名或 benchmark-only 入口需要保留。
+`platform_fs` 的同步 stat/path/handle owner 不应承载 awaitable stream；`io_core` 只补 native submission，
+`io_watch` 仍是 event semantics、lifetime、buffering 和用户文档的唯一 owner。
+
+## API / usability freeze
+
+```cpp
+std::array targets{
+    hyle::io::FileWatchTarget::file("tls/cert.pem"),
+    hyle::io::FileWatchTarget::file("tls/key.pem"),
+    hyle::io::FileWatchTarget::directory("shaders")};
+auto made = hyle::io::FileWatcher::create(
+    allocator, io, owner, targets, {.native_buffer_bytes = 16 * 1024});
+if (!made) co_return;
+auto watcher = std::move(*made);
+
+for (;;) {
+  auto changed = co_await watcher.next(operation);
+  if (!changed) break;
+  if (changed->rescan_required()) rebuild_authoritative_state();
+  for (const auto& event : changed->events()) consume(event);
+}
+HYLE_RETURN_IF_ERROR(watcher.close());
+```
+
+- `FileWatchTarget::{file,directory}(std::string_view)` 只在 create 期间借用；watcher 复制完整 path，event 的
+  `target_index` 是输入位置。exact-file event 的 relative path 为空；directory event 是一层 basename。
+- `FileWatchEvent` 包含 bitmask change、borrowed relative path 与 optional nonzero rename correlation；
+  `FileWatchBatchView` 包含 span、generation 和 batch-level `rescan_required()`。view 在下一次 next、close
+  或 watcher 销毁时失效；用户要跨 await 保存必须复制。
+- `next(OperationOptions)` 是零 coroutine-frame 的 awaitable；只允许一个在途 next。调用者运行在 watcher
+  owner worker；event 已封存时 event 胜出，否则已触发 cancel/deadline 返回标准 typed status，watcher
+  保持可继续使用。
+- `close()` owner-fiber-aware、幂等：取消内部 token、等待全部 native pump 退休、关闭 handle；析构是
+  防泄漏后备，但正常用户必须在 IoContext/Scheduler 停止前 close。move 转移唯一 owner；closed/invalid/
+  concurrent-next 有明确 FailedPrecondition/Cancelled，不崩溃。
+- 创建参数：至少一个 target；无 embedded NUL，长度/数量可表示；exact-file parent 存在即可，directory
+  必须存在；buffer/event/path caps 非零并经 checked arithmetic。默认 16 KiB native buffer、256 events、
+  16 KiB path bytes；每 unique native root 固定一个 buffer 和一个小-stack pinned task，Linux 全部 root
+  共用一个 inotify fd/task。该成本在 options/guide 可见，不随 event 数增长。
+- 同批 `(target,path)` 使用预分配索引 O(1) expected merge flags；解析 O(native bytes + emitted events)，
+  next 无逐事件 heap、无 busy poll/额外 OS thread。macOS directory/coarse parent notification，以及任意
+  native/library overflow，必须置 rescan flag；用户重读 authoritative state，不依赖事件日志完整性。
+- portable 保证 non-recursive。case/Unicode/path alias 遵循 host filesystem；rename pairing、每次 write
+  对应一个 event、跨 network FS 可见性、递归、内容 diff 与 debounce 都不承诺。
+
+## 冻结有限 FIX 集
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| `IOW-F00` | Win/mac 无现成无线程 submit seam | 先独立完成 `io-core-v2-file-watch-submission`，只增加 internal-detail native op | io_core 重新 CLOSED；三平台 submit/cancel/P0 |
+| `IOW-F01` | factor/API 全缺 | 建立 watch header/source/test/export/target 与上面的 owning/borrowed shape | self-contained、invalid/OOM/move/lifetime |
+| `IOW-F02` | target 与 native setup 全缺 | checked path copy/group；Linux inotify、Windows directory handle、macOS vnode root | exact missing/replace、dir/root loss、Unicode/long path、rollback |
+| `IOW-F03` | event/batch/backpressure 全缺 | 固定 buffer/event/path storage、linear parse、expected O(1) coalesce、sealed generation、overflow/rescan | all kinds、burst/caps/overflow、view stability、无 silent loss |
+| `IOW-F04` | async lifecycle 全缺 | 用 `spawn_task_on` + existing budget/cancel，single-owner next 与 idempotent close/join | cancel/deadline/late completion/concurrent-next/teardown/sanitizers |
+| `IOW-F05` | 交付、指南、性能全缺 | exact factor + IO product、三交付/平台、guide/architecture/evidence、同合同 libuv P1 | 全部预声明门与独立红队 |
+
+本表之外不加入 recursive watcher、polling fallback、callback façade、glob 或 application reload。任何公共
+API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接口。
+
+## 七问
+
+1. **第三方：** 产品不链接第三方。libuv/Seastar/watchfiles 是需求与 peer evidence；OS API 是机制。
+   libuv 只在 P1 harness 作同合同 peer，不泄漏其 handle/callback。
+2. **能力：** 八族 MUST 均由 F00--F05 覆盖；recursive/network FS/debounce 有具名负空间。主 TLS 与正交
+   renderer 单层目录都能由同一 API 完成。
+3. **复用：** IoContext/proactor、Sched pinned task/cancel/CV、Error、Time、Mem allocator、Container
+   bounded storage、Platform FS contract 均按 owner 复用；不新建 scheduler、timer、thread pool 或 error。
+4. **性能：** P0 固定 one native op/root、bounded storage、无 per-event allocation/busy poll；P1 以完整
+   exact-replace 和 directory-burst consumer 对 libuv，双顺序/扰动/10% margin，不比 raw call。
+5. **FFI：** 当前唯一消费者是 C++ source/static/shared；没有具名 Java/C# owner，N/A，不恢复伪 C API。
+6. **交付：** `io_watch` 独立 compiled factor，关闭后由 `hyle::io` 聚合；header/target/export/offline/
+   relocation 和 transitive runtime DLL 都要实测，不能借 io_core sample 冒充。
+7. **易用性：** factory helper、typed batch、统一 OperationOptions、explicit rescan/close；guide 按 TLS 和
+   resource reload 告诉用户如何选，突出 borrowed view、non-recursive、atomic replace 和 shutdown 顺序。
+
+## Candidate / 验证 / terminal
+
+尚未产生 candidate。先完成 F00；随后只允许 F01--F05 一个有限产品批次。验证与裁决沿用 SCOPED 卡的
+预声明矩阵，任何未运行适用门均不得写 PASS。

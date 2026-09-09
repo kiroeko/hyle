@@ -215,15 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-v1-core-factorization.md",
-      "candidate": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
-        "material_margin_pct": 5
-      },
-      "summary": "io_core v1 CLOSED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 固定于 ffa70e35。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md",
+      "summary": "io_core v2 因 io_watch 的真实无额外线程机制需求依法重开：范围仅限 Proactor 的 Windows/Linux/macOS file-watch submit/cancel seam；普通 IO API、依赖与热路不变。"
     },
     {
       "module": "io_tls",
@@ -321,9 +315,9 @@
     },
     {
       "module": "io_watch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-watch-v1-file-change-stream.md",
-      "summary": "io_watch v1 已进入 SCOPED：F03 冻结为 multiple exact-file + portable non-recursive directory 的可取消 awaitable change stream；待只读审计裁决 event/batch 生命周期、原生机制、最小依赖与有限 FIX。"
+      "summary": "io_watch v1 AUDITED：八个能力族、borrowed batch API、bounded/rescan 语义、最小依赖与 F00--F05 已冻结；先等待 io_core v2 的无额外线程 native submit seam 重新 CLOSED，再执行一个产品批次。"
     }
   ]
 }
