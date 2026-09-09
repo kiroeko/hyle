@@ -3,6 +3,9 @@
 #include "watch_internal.h"
 
 #include <algorithm>
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -29,6 +32,33 @@ namespace detail {
 namespace {
 
 using container::StringView;
+
+#if !HYLE_OS_WINDOWS
+Status canonical_watch_root(std::string_view input,
+                            mem::AllocatorRef allocator,
+                            container::PodVector<char>* output) noexcept {
+  if (input.size() >= PATH_MAX)
+    return Status::OutOfRange("file watch root exceeds native path limits");
+  container::PodVector<char> terminated(allocator);
+  if (!terminated.try_resize(input.size() + 1))
+    return Status::ResourceExhausted(
+        "file watch root canonicalization allocation failed");
+  if (!input.empty())
+    std::memcpy(terminated.data(), input.data(), input.size());
+  terminated[input.size()] = '\0';
+
+  char resolved[PATH_MAX];
+  errno = 0;
+  if (::realpath(terminated.data(), resolved) == nullptr)
+    return status_from_errno(errno, "canonicalize FileWatcher root");
+  const std::size_t length = std::strlen(resolved);
+  if (!output->try_resize(length + 1))
+    return Status::ResourceExhausted(
+        "file watch canonical root allocation failed");
+  std::memcpy(output->data(), resolved, length + 1);
+  return Status::Ok();
+}
+#endif
 
 bool checked_add(std::size_t left, std::size_t right,
                  std::size_t* output) noexcept {
@@ -304,6 +334,21 @@ Status FileWatcherState::initialize(
 #endif
       basename = full.substr(separator + 1);
     }
+
+#if !HYLE_OS_WINDOWS
+    // Native change streams identify the existing directory object rather
+    // than preserving a lexical alias. In particular, macOS reports /private/
+    // var for the common /var symlink and inotify reuses a watch descriptor
+    // for two aliases of the same directory. Canonicalize only the root (which
+    // must exist); an exact file target itself is still allowed to be absent.
+    container::PodVector<char> canonical_root(allocator);
+    Status canonical =
+        canonical_watch_root(root_name, allocator, &canonical_root);
+    if (!canonical.ok())
+      return canonical.WithContext("FileWatcher target root");
+    root_name = std::string_view(canonical_root.data(),
+                                 canonical_root.size() - 1);
+#endif
 
     std::size_t root_index = kNoWatchIndex;
     for (std::size_t i = 0; i < roots.size(); ++i) {
