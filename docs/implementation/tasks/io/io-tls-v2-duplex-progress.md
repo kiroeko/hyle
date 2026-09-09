@@ -1,6 +1,6 @@
 # IO TLS v2：流控协议下的全双工进展修复
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card（`SCOPED`）
 
@@ -197,3 +197,35 @@ controls SHA-256 依次为
 `VERIFIED`。scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
 performance 七个 gate 全部 `PASS`；Formal 独立为 `NONE`。产品与证据不再修改，下一次状态提交只允许
 写入 terminal limitation、reopen trigger、LOC 与 `CLOSED/FROZEN` receipt。
+
+## Closure decision
+
+`io_tls` v2 为 `CLOSED/FROZEN`。本轮没有为 HTTP/2 benchmark 发明公开 fast path；它修复的是任何
+single-owner、双向流控协议都会遇到的真实 TLS pump 进展和有界状态问题。公开 C++ 面仍由 typed context、
+session、stream、operation budget、`Status`/`TransferResult` 组成；用户不接触 OpenSSL handle、try-pump
+seam、第二套 light API、C API 或 Native FFI。
+
+- 单个 `TlsStream` 是 single-owner；operation buffer 在 await 完成前保持借用，`TlsContext` 及其 allocator
+  backing 必须活过由它创建的 stream/session；
+- `tls_write` 是 write-some：成功也可能只提交一个 record，调用者必须按 `bytes` 推进；`bytes + error`
+  不能从原起点重试。HTTP/HTTP2 的现有循环已经按此合同组合 exact transfer；
+- opportunistic peer ciphertext 只为解除 output pressure，未处理 pending 硬限 32 KiB；provider 自身的
+  certificate/session/cipher 状态仍由 OpenSSL 决定。本轮不声称所有 provider memory 都是常数；
+- 工程 P1 只覆盖 W1-WSL 上 verified connection 和 512x256 B small-record stream，对手是同 OpenSSL 的
+  standalone Asio async SSL；不声明 WAN、多 worker、所有 cipher/provider、所有消息分布、Formal 或完整
+  HTTPS server 的普遍 SOTA；
+- certificate provisioning、system trust policy、OCSP、key logging、0-RTT、DTLS、QUIC、HTTP framing、
+  路由、认证和模型 schema 仍在该 factor 边界外；source/static/shared 只承诺相容 C++23 工具链，不承诺
+  Native FFI、C API 或跨工具链稳定 C++ ABI。
+
+只有以下新事实可以重开：具名 HTTPS/HTTP2 consumer 复现 correctness/security/identity/truncation/
+deadline/cancel/session/context lifetime/pump progress/partial-transfer/API 易用性缺陷；真实 consumer 证明缺少
+通用 TLS 能力而非应用策略；公开 API、layout、algorithm、allocation/BIO bound、owner、dependency、OpenSSL
+语义或 source/static/shared 交付发生变化；或者合格同合同证据证明 material regression、成熟 peer 证明更优
+复杂度档。普通 benchmark 波动、未限定比较或想增加第二套 surface 都不是 reopen trigger。
+
+候选 `18bf62f81a91975e0776439d88fca3891f10e560` 的
+`loc-report.py --module io_tls --commit ... --self-check` 为 `PASS`：全库 522,049 行，自实现不含测试
+89,877 行，`io_tls` 实现 987 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

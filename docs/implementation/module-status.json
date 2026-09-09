@@ -1251,7 +1251,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-tls-v2-duplex-progress",
       "closure_task": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
       "scope": "Repair only the TLS ciphertext-pump progress seam after an HTTP2 consumer reproduced a forced-epoll full-duplex flow-control stall; replay affected TLS correctness, delivery and performance contracts.",
@@ -1285,9 +1285,36 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
+      "freeze_confirmation": {
+        "id": "io-tls-v2-freeze-2026-09-09",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-09",
+        "reviewed_commit": "3b4e87f22963fcbdcdbf70a332de4578c676c585",
+        "reviewed_tree": "075d9a145dd60673f3eb977f49088183c9a596fa",
+        "evidence": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md"
+      },
+      "loc": {
+        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "repository_code": 522049,
+        "self_without_tests": 89877,
+        "module_implementation": 987
+      },
+      "known_limitations": [
+        "TlsContext and its allocator backing must outlive streams and sessions; TlsStream is single-owner, and operation buffers remain borrowed until await completion.",
+        "tls_write is write-some and may return partial bytes or bytes plus a terminal error; callers must advance by bytes and must not retry from the original buffer start.",
+        "Opportunistic unprocessed peer ciphertext is capped at 32 KiB, while provider-owned certificate, session and cipher state remains governed by OpenSSL and is not claimed to have constant total memory.",
+        "The P1 receipt covers one verified connection and one 512x256-byte small-record stream on a single W1-WSL worker against Asio over the same OpenSSL; it is not a WAN, multi-worker, all-provider, all-record, full-server or Formal SOTA certificate.",
+        "Certificate provisioning, trust policy, OCSP, key logging, early data, DTLS, QUIC, HTTP policy and Native FFI remain outside this factor; delivery is C++23 source, static and shared for compatible toolchains."
+      ],
+      "reopen_triggers": [
+        "A named HTTPS or HTTP2 consumer reproduces a correctness, security, identity, truncation, deadline, cancellation, session, context-lifetime, pump-progress, partial-transfer or natural C++ API-usability defect.",
+        "A real consumer proves a missing generic TLS capability rather than HTTP framing, routing, authentication, certificate provisioning, model schema or other application policy.",
+        "The public API, layout, owner model, algorithm, allocation or BIO bound, direct dependency, OpenSSL semantic assumption, component identity or source, static or shared delivery shape changes.",
+        "Qualified same-contract evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
+      ],
       "reopen_trigger_id": "IOTLS-REOPEN-H2-EPOLL-DUPLEX-01",
       "reopen_evidence": "A deterministic HTTP2-over-TLS consumer with 4 KiB socket buffers and a 65,535-byte receive window completes on io_uring but stalls on forced epoll after exactly 32 KiB is consumed; syscall traces end with both TLS ciphertext pumps waiting for EPOLLOUT.",
-      "summary": "io_tls v2 VERIFIED：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，全部七门通过。"
+      "summary": "io_tls v2 CLOSED/FROZEN：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，七门全部通过。"
     },
     {
       "module": "io_http",
