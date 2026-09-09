@@ -544,7 +544,11 @@ void run_shape(Shape shape, const char* title, std::size_t episodes,
       .relative(true)
       .batch(static_cast<std::uint64_t>(episodes * events_per_episode))
       .unit("change")
-      .minEpochTime(std::chrono::nanoseconds(0))
+      // One Linux/Windows reload replay can be shorter than host scheduling
+      // and filesystem jitter even though it is far above the clock floor.
+      // Let nanobench repeat the unchanged complete episode until the charged
+      // row has enough duration; macOS already exceeds this with one replay.
+      .minEpochTime(std::chrono::milliseconds(20))
       .minEpochIterations(1)
       .epochs(1);
 
