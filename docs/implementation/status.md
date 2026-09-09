@@ -30,7 +30,7 @@
 | container | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container-v6 CLOSED：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | util_runtime | CLOSED | P0 / [PASS](evidence/performance/benchmarks-util.md) | [record](tasks/util/util-runtime-v5-blocker-resolution.md) | util-runtime v5 CLOSED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。 |
 | sched | CLOSED | P1 / [PASS](evidence/performance/benchmarks-sched.md) / 5% | [record](tasks/sched/sched-v6-pinned-structured-task.md) | sched v6 CLOSED：spawn_task_on 复用既有 typed lifecycle 与 pinned owner；三平台、sanitizers、失败/拥塞、三交付、易用性、红队和同合同 4/4 的 5% P1 非劣门全部通过。 |
-| io_core | AUDITED | — | [record](tasks/io/io-core-v2-file-watch-submission.md) | io_core v2 AUDITED：W01--W05 只允许增加复用既有 slab/pending-map/completion/cancel 的三平台 internal file-watch submission；无新线程/loop/map，普通 IO API、依赖、layout 与常态 submit 路径不变。 |
+| io_core | AUDITED | — | [record](tasks/io/io-core-v2-file-watch-submission.md) | io_core v2 AUDITED：实现前语义纠正后只允许增加 Windows IOCP directory-change operation；Linux 复用现有 read，macOS FSEvents 归 io_watch；无新线程/loop/map，普通 IO API、依赖、layout 与常态路径不变。 |
 | io_tls | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-tls-v2-duplex-progress.md) | io_tls v2 CLOSED：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，七门全部通过。 |
 | io_http | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http-v2-duplex-progress.md) | io_http v2 CLOSED：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。 |
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。 |
-| io_watch | AUDITED | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 AUDITED：八个能力族、borrowed batch API、bounded/rescan 语义、最小依赖与 F00--F05 已冻结；先等待 io_core v2 的无额外线程 native submit seam 重新 CLOSED，再执行一个产品批次。 |
+| io_watch | AUDITED | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 AUDITED：八个能力族、borrowed batch API、bounded/rescan 语义与 F00--F05 已冻结；Linux 用 async read、Windows 用 IOCP、macOS 用 FSEvents，先等待 io_core v2 Windows seam CLOSED。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

@@ -75,10 +75,10 @@
 | W01 multiple target identity | vLLM/SGLang certificate/key/CA；Seastar token | create 时复制 UTF-8 path；稳定 input index；exact file 可暂不存在但 parent 必须存在；directory root 必须存在 | 无公开 owner | `MISSING / FIX` |
 | W02 awaitable bounded batch | 两个 serving async iteration；Seastar batched wait | one outstanding `next`；返回 borrowed batch，直到下一次 next/close；bounded events/path bytes，O(events+bytes) parse | 无 | `MISSING / FIX` |
 | W03 portable change vocabulary | libuv rename/change + 三 OS native events | content/metadata/create/remove/move-from/move-to/root-invalidated；rename correlation 尽力而为，0 表示未知 | 无 | `MISSING / FIX` |
-| W04 atomic replace 与 coarse route | TLS editor replace；macOS directory vnode | exact file 观察 parent 才能跨 inode replace；无法给 filename 时 batch 明确 `rescan_required`，不能猜 identity | 无 | `MISSING / FIX` |
+| W04 atomic replace 与 coarse route | TLS editor replace；macOS FSEvents | exact file 观察 parent 才能跨 inode replace；无法给 filename 时 batch 明确 `rescan_required`，不能猜 identity | 无 | `MISSING / FIX` |
 | W05 bounded backpressure/overflow | renderer burst；inotify/Windows buffer overflow | one sealed borrowed batch；producer 在消费前不覆写；native/library overflow 均返回 rescan-required，不静默丢失 | 无 | `MISSING / FIX` |
 | W06 cancel/deadline/close | serving task cancellation；HYLE OperationOptions | next cancel 只结束该 wait；close 取消所有 native waits、join owner tasks、幂等；watcher 先于 IoContext/Scheduler 关闭 | 无 | `MISSING / FIX` |
-| W07 cross-platform no-thread mechanism | libuv/Seastar + HYLE shard-per-core | Linux one inotify fd/task；Windows/macOS one owner-pinned task per unique native root；每 root one native op，零 blocking-pool thread/busy poll | io_core 缺 Win/mac submit | `PARTIAL / FIX`，依法重开 io_core v2 |
+| W07 cross-platform no-dedicated-thread mechanism | libuv/Seastar + HYLE shard-per-core | Linux one inotify fd/owner task；Windows one IOCP owner task per unique root；macOS one file-event FSEventStream over all roots，系统 dispatch callback 只发布 bounded batch；零 blocking-pool thread/busy poll | io_core 只缺 Windows submit | `PARTIAL / FIX`，依法重开 io_core v2 |
 | W08 C++/delivery/docs | HYLE source/static/shared 产品 | `<hyle/io/watch.h>`；无 C/Native FFI；exact factor + IO façade；默认值、borrow、rescan 与 teardown recipe | factor 仅有 identity | `MISSING / FIX` |
 
 public-surface 反向 trace 为空：此前没有 watcher API、兼容别名或 benchmark-only 入口需要保留。
@@ -119,21 +119,23 @@ HYLE_RETURN_IF_ERROR(watcher.close());
   concurrent-next 有明确 FailedPrecondition/Cancelled，不崩溃。
 - 创建参数：至少一个 target；无 embedded NUL，长度/数量可表示；exact-file parent 存在即可，directory
   必须存在；buffer/event/path caps 非零并经 checked arithmetic。默认 16 KiB native buffer、256 events、
-  16 KiB path bytes；每 unique native root 固定一个 buffer 和一个小-stack pinned task，Linux 全部 root
-  共用一个 inotify fd/task。该成本在 options/guide 可见，不随 event 数增长。
+  16 KiB path bytes；Windows 每 unique native root 一个固定 buffer/小-stack pinned task，Linux 全部 root
+  共用一个 inotify fd/task，macOS 全部 root 共用一个 FSEventStream 和系统 dispatch source。该成本在
+  options/guide 可见，不随 event 数增长；FSEvents callback 只能向 bounded state 发布并唤醒 owner。
 - 同批 `(target,path)` 使用预分配索引 O(1) expected merge flags；解析 O(native bytes + emitted events)，
   next 无逐事件 heap、无 busy poll/额外 OS thread。macOS directory/coarse parent notification，以及任意
   native/library overflow，必须置 rescan flag；用户重读 authoritative state，不依赖事件日志完整性。
-- portable 保证 non-recursive。case/Unicode/path alias 遵循 host filesystem；rename pairing、每次 write
+- portable 保证 non-recursive；macOS 虽由递归 FSEvents source 提供机制，也必须在 factor 内过滤为 exact
+  file/直接子项，深层事件不得泄漏到 API。case/Unicode/path alias 遵循 host filesystem；rename pairing、每次 write
   对应一个 event、跨 network FS 可见性、递归、内容 diff 与 debounce 都不承诺。
 
 ## 冻结有限 FIX 集
 
 | ID | 问题与证据 | 允许改动 | 验收 |
 |---|---|---|---|
-| `IOW-F00` | Win/mac 无现成无线程 submit seam | 先独立完成 `io-core-v2-file-watch-submission`，只增加 internal-detail native op | io_core 重新 CLOSED；三平台 submit/cancel/P0 |
+| `IOW-F00` | Windows 无现成无线程 submit seam；macOS kqueue 不具备目录子文件 content 语义 | 先独立完成 `io-core-v2-file-watch-submission` 的 Windows IOCP op；Linux 复用 async read；本 factor 用 FSEvents file-events + dispatch lifecycle | io_core 重新 CLOSED；三平台机制/cancel/P0 |
 | `IOW-F01` | factor/API 全缺 | 建立 watch header/source/test/export/target 与上面的 owning/borrowed shape | self-contained、invalid/OOM/move/lifetime |
-| `IOW-F02` | target 与 native setup 全缺 | checked path copy/group；Linux inotify、Windows directory handle、macOS vnode root | exact missing/replace、dir/root loss、Unicode/long path、rollback |
+| `IOW-F02` | target 与 native setup 全缺 | checked path copy/group；Linux inotify、Windows directory handle、macOS FSEvents roots/file-events | exact missing/replace、dir/root loss、Unicode/long path、nonrecursive filter、rollback |
 | `IOW-F03` | event/batch/backpressure 全缺 | 固定 buffer/event/path storage、linear parse、expected O(1) coalesce、sealed generation、overflow/rescan | all kinds、burst/caps/overflow、view stability、无 silent loss |
 | `IOW-F04` | async lifecycle 全缺 | 用 `spawn_task_on` + existing budget/cancel，single-owner next 与 idempotent close/join | cancel/deadline/late completion/concurrent-next/teardown/sanitizers |
 | `IOW-F05` | 交付、指南、性能全缺 | exact factor + IO product、三交付/平台、guide/architecture/evidence、同合同 libuv P1 | 全部预声明门与独立红队 |
@@ -143,12 +145,14 @@ API、算法/常态成本变化在 candidate 前完成；P1 不反向塑造接�
 
 ## 七问
 
-1. **第三方：** 产品不链接第三方。libuv/Seastar/watchfiles 是需求与 peer evidence；OS API 是机制。
+1. **第三方：** 产品不链接第三方。libuv/Seastar/watchfiles 是需求与 peer evidence；inotify、IOCP 与
+   Apple FSEvents/CoreServices 是系统机制，构建只增加适用平台的 system-framework link。
    libuv 只在 P1 harness 作同合同 peer，不泄漏其 handle/callback。
 2. **能力：** 八族 MUST 均由 F00--F05 覆盖；recursive/network FS/debounce 有具名负空间。主 TLS 与正交
    renderer 单层目录都能由同一 API 完成。
 3. **复用：** IoContext/proactor、Sched pinned task/cancel/CV、Error、Time、Mem allocator、Container
-   bounded storage、Platform FS contract 均按 owner 复用；不新建 scheduler、timer、thread pool 或 error。
+   bounded storage、Platform FS contract 均按 owner 复用；FSEvents dispatch source 是 host completion
+   mechanism，不是第二套产品 scheduler；不新建 timer、thread pool 或 error。
 4. **性能：** P0 固定 one native op/root、bounded storage、无 per-event allocation/busy poll；P1 以完整
    exact-replace 和 directory-burst consumer 对 libuv，双顺序/扰动/10% margin，不比 raw call。
 5. **FFI：** 当前唯一消费者是 C++ source/static/shared；没有具名 Java/C# owner，N/A，不恢复伪 C API。
