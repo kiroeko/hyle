@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。 |
-| io_watch | QUEUED | — | — | F03 已确认跨产品 file-change-stream trigger；当前仅保留 factor 身份，待独立 closure card 冻结 API、依赖、平台语义与验证预算。 |
+| io_watch | SCOPED | — | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 已进入 SCOPED：F03 冻结为 multiple exact-file + portable non-recursive directory 的可取消 awaitable change stream；待只读审计裁决 event/batch 生命周期、原生机制、最小依赖与有限 FIX。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
