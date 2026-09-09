@@ -105,6 +105,18 @@ HYLE 准入理由；例如 JSON 可以完整借给 simdjson，UUID 可以继续�
 termination 与可靠 reap，这个**生命周期组合**值得进入独立能力审计，但不能因此复制某个语言框架的
 `ProcessStartInfo` 全部选项。
 
+这里的“原子”不是“一次 syscall”或“只有一个函数”。一个由多个 syscall/数据结构组成、但能完全用
+领域无关的 ownership、failure、concurrency、cancel、backpressure、teardown 和成本合同描述的最小
+生命周期单元，仍是 HYLE 的**机制闭包**。`FileWatcher`、HTTP framing/connection、atomic file publication
+和 structured task 都可以是机制闭包；拆掉它们会迫使每个消费者重写同一套竞态状态机。若组合开始选择
+listener 数量、route/middleware、JSON schema、鉴权、证书/模型 reload 策略或部署拓扑，它已经越过基础
+库边界。
+
+面向服务的易用层由独立的 `hyle-service` 消费库承载：它单向依赖 HYLE 的 IO/Sched/Error/Obs 等机制，
+可按产品需要直接借成熟 JSON、TLS 或配置依赖，并提供 listener、router、request context、streaming、
+graceful drain 等完整 server journey。它既是 HYLE 的真实纵切消费者，也不是 HYLE factor DAG 的反向
+依赖；不能为了让 `hyle-service` API 更短而把服务策略下沉到 HYLE。
+
 ### 先审能力族，再审函数
 
 每轮 `AUDITED` 前必须形成一张自顶向下的 capability-family map。能力族按用户任务命名，例如
