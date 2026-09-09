@@ -236,6 +236,17 @@ struct Drive {
 };
 void drive_entry(void *p) noexcept { static_cast<Drive *>(p)->task.resume(); }
 
+Task<int> inspect_cancelled_handshake_wire(AllocatorRef allocator,
+                                           TcpStream *peer,
+                                           TransferResult *result) {
+  std::array<std::byte, 1> byte{};
+  *result = co_await peer->read_some(
+      std::span<std::byte>{byte},
+      hyle::io::OperationOptions{
+          .deadline = hyle::time::deadline_after(std::chrono::seconds(1))});
+  co_return 0;
+}
+
 struct TlsDeadlineResult {
   std::atomic<bool> connected{false};
   std::atomic<hyle::StatusCode> status{hyle::StatusCode::Unknown};
@@ -542,10 +553,30 @@ TEST(IoTls, HandshakePropagatesCancellationBudget) {
   scheduler.spawn_on(kOwner, &server_fiber);
   scheduler.spawn_on(kOwner, &client_fiber);
   scheduler.drain();
+
+  // Completed Task frames retain coroutine locals until destruction. Release
+  // the client frame so the native peer observes EOF after any bytes that the
+  // cancelled operation might have leaked.
+  client.reset();
+  TransferResult wire_result{
+      1, hyle::Status::Unknown("wire probe did not run"), false};
+  if (result->held.valid()) {
+    auto probe = std::make_unique<Drive>();
+    probe->task = inspect_cancelled_handshake_wire(
+        system_allocator(), &result->held, &wire_result);
+    Fiber probe_fiber(kDefaultStackSize, &drive_entry, probe.get());
+    scheduler.spawn_on(kOwner, &probe_fiber);
+    scheduler.drain();
+  }
   scheduler.shutdown();
 
   EXPECT_TRUE(result->connected.load());
+  EXPECT_TRUE(result->held.valid());
   EXPECT_EQ(result->status.load(), hyle::StatusCode::Cancelled);
+  EXPECT_TRUE(wire_result.ok()) << wire_result.status.message();
+  EXPECT_TRUE(wire_result.eof);
+  EXPECT_EQ(wire_result.bytes, 0u)
+      << "pre-cancelled TLS handshake performed transport I/O";
 }
 
 TEST(IoTls, HandshakeAndEncryptedEcho) {

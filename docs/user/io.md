@@ -178,7 +178,9 @@ TLS 1.3 ticket 可能在握手完成后的 post-handshake record 中才到达；
 
 `TlsStream` 是 single-owner transport；不得同时从多个 fiber 调用其操作。任一操作
 返回非 OK 后，尤其是 deadline/cancel 或底层 partial write 后，关闭该 stream 并按
-应用边界重连，不要把同一 plaintext buffer 从头盲重试。
+应用边界重连，不要把同一 plaintext buffer 从头盲重试。HTTP/2 等流控协议造成底层
+write backpressure 时，TLS 内部会有界地吸收已经到达的 peer ciphertext 并继续原操作；
+用户不需要、也不得另起并发 read/write 来手工驱动 memory-BIO pump。
 
 HTTP/1 是连接级协议因子，不是应用 server framework。server 在 accept 后创建
 `HttpServerConnection`，由自己的 route/handler/task owner 驱动循环：

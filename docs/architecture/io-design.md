@@ -2,8 +2,8 @@
 
 > **当前状态：factorized rebuild active。** 本页描述当前设计与边界，不替代
 > `module-status.json` 的逐 factor 证书。当前只提供 C++23 source/static/shared，Native FFI 为
-> `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。IO 五个 factor 当前仍须完成各自活动卡
-> 的 terminal gates 才能写成 `CLOSED/FROZEN`。
+> `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。各 factor 的当前状态只以
+> [`module-status.json`](../implementation/module-status.json) 为准，本页不复制易过期状态。
 
 > 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
@@ -47,6 +47,9 @@ private backend engine ───────────────────
 - TLS config/session/provider 由独立 `io_tls` factor 持有；OpenSSL 类型不进入
   公开面。client/server factory、handshake/read/write/shutdown 都返回共享 typed
   Error 形状，一个绝对 `OperationOptions` 贯穿 memory-BIO pump 的每次底层操作。
+  stream 保持 single-owner；底层 write pressure 下，provider pump 至多吸收一块已经到达的
+  peer ciphertext 再重试输出，双向都不能立即前进就回到原 awaitable，因此流控协议不需要也
+  不允许用户为“帮忙推进”而并发操作同一 stream。
   默认验证 client peer、默认把缺少 close-notify 的 EOF 视为截断；通用 ALPN 与
   context-bound opaque session ticket 不含 HTTP 专有状态机。
   可选 client identity + server-side client CA 组成完整 mTLS；每条 stream 的
@@ -54,8 +57,8 @@ private backend engine ───────────────────
   分配一次，allocator backing 生命周期是显式 context/stream 前置条件，operation
   allocator 只拥有 coroutine frame；provider session cache/ticket 默认关闭，只在
   client/server 配置显式启用。
-- HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；当前 factor
-  仍为 `AUDITED`，但旧 fixed-buffer API 已被 typed client/server session、checked stream ID、
+- HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；旧 fixed-buffer API 已被
+  typed client/server session、checked stream ID、
   增量 reader/writer、真实 connection/stream flow control、RST/GOAWAY 与统一 operation budget
   取代。plain TCP 与已协商 `h2` 的 TLS 都经同一个 `HttpTransport`；private driver 直接借
   现有 owner stackful fiber 推进 transport，不复制 TCP/TLS transport、scheduler 或 event loop。
@@ -90,9 +93,9 @@ private backend engine ───────────────────
 > 现存例外和补全工单见
 > [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
-IO 正在按 factor 重构；`io_core`、`io_tls`、`io_http`、`io_http2` 与
-`io_transfer` 当前均以中央 registry 的 `AUDITED` 活动卡为准，不得把实现或测试
-checkpoint 当成已收口证书。
+IO 按 factor 独立裁决；`io_core`、`io_tls`、`io_http`、`io_http2` 与
+`io_transfer` 的实时状态只读中央 registry。不得把实现或测试 checkpoint 当成已收口证书，
+也不得因相邻 factor 已冻结而跳过本 factor 的活动 closure card。
 当前轮与唯一状态见各 closure card 和
 [`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
 施工历史，若与本节、活动卡或代码冲突，以活动卡和代码为准。

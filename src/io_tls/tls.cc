@@ -14,6 +14,8 @@
 #include <new>
 #include <utility>
 
+#include "hyle/sched/cancel.h"
+
 namespace hyle::io {
 namespace {
 
@@ -220,6 +222,20 @@ struct FeedResult {
   bool eof = false;
 };
 
+Status operation_budget_status(const OperationOptions &options) noexcept {
+  // Match io_core's BudgetState ordering before the optimistic transport seam
+  // performs any syscall. Otherwise a socket that happens to be immediately
+  // writable could leak protocol bytes after a pre-cancelled or already
+  // expired operation should have terminated.
+  if (options.cancel != nullptr && options.cancel->is_cancelled())
+    return Status::Cancelled("TLS operation cancelled");
+  if (options.deadline.has_value() &&
+      *options.deadline <= time::monotonic_now()) {
+    return Status::DeadlineExceeded("TLS operation deadline exceeded");
+  }
+  return {};
+}
+
 Status consume_sent_ciphertext(BIO *write_bio, std::byte *scratch,
                                std::size_t bytes) noexcept {
   while (bytes != 0) {
@@ -262,6 +278,9 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
                                      BIO *read_bio, BIO *write_bio,
                                      std::byte *scratch,
                                      OperationOptions options) noexcept {
+  Status budget = operation_budget_status(options);
+  if (!budget.ok())
+    co_return budget;
   bool opportunistic_read_used = false;
   for (;;) {
     char *pending = nullptr;
