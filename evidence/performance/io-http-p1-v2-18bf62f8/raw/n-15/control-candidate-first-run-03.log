@@ -1,0 +1,85 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=1
+|--------------------:|--------------------:|--------:|----------:|:-------------------------------
+|                0.18 |    5,412,318,123.06 |    0.7% |      0.10 | `timer floor candidate`
+|                0.18 |    5,414,546,137.66 |    1.1% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=2
+|--------------------:|--------------------:|--------:|----------:|:-------------------------------
+|                0.09 |   10,880,773,053.81 |    1.1% |      0.10 | `timer floor candidate`
+|                0.09 |   10,601,423,186.86 |    1.8% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=4
+|--------------------:|--------------------:|--------:|----------:|:-------------------------------
+|                0.05 |   20,844,987,953.76 |    0.8% |      0.10 | `timer floor candidate`
+|                0.05 |   21,090,837,055.37 |    0.7% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=8
+|--------------------:|--------------------:|--------:|----------:|:-------------------------------
+|                0.02 |   42,976,970,643.36 |    1.0% |      0.10 | `timer floor candidate`
+|                0.02 |   43,272,855,177.71 |    0.5% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=16
+|--------------------:|--------------------:|--------:|----------:|:--------------------------------
+|                0.01 |   86,463,333,430.46 |    1.9% |      0.10 | `timer floor candidate`
+|                0.01 |   83,199,819,993.03 |    1.5% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=32
+|--------------------:|--------------------:|--------:|----------:|:--------------------------------
+|                0.01 |  170,252,685,454.25 |    1.5% |      0.10 | `timer floor candidate`
+|                0.01 |  167,511,437,189.99 |    2.5% |      0.09 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=64
+|--------------------:|--------------------:|--------:|----------:|:--------------------------------
+|                0.00 |  327,048,614,387.44 |    0.8% |      0.10 | `timer floor candidate`
+|                0.00 |  333,361,982,559.36 |    4.6% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=128
+|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|                0.00 |  661,254,662,867.96 |    2.5% |      0.10 | `timer floor candidate`
+|                0.00 |  679,711,773,174.31 |    2.4% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=256
+|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|                0.00 |1,325,865,856,534.55 |    1.3% |      0.10 | `timer floor candidate`
+|                0.00 |1,365,522,901,644.64 |    1.7% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=512
+|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|                0.00 |2,770,765,698,854.79 |    1.2% |      0.10 | `timer floor candidate`
+|                0.00 |2,764,904,938,087.08 |    1.4% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=1024
+|--------------------:|--------------------:|--------:|----------:|:----------------------------------
+|                0.00 |5,457,419,893,076.08 |    2.0% |      0.10 | `timer floor candidate`
+|                0.00 |5,540,350,012,185.82 |    1.0% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=2048
+|--------------------:|--------------------:|--------:|----------:|:----------------------------------
+|                0.00 |10,852,337,789,304.29 |    1.7% |      0.10 | `timer floor candidate`
+|                0.00 |10,865,882,926,237.50 |    1.4% |      0.10 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument timer floor batch=4096
+|--------------------:|--------------------:|--------:|----------:|:----------------------------------
+|                0.00 |21,423,745,445,769.44 |    1.3% |      0.10 | `timer floor candidate`
+|                0.00 |22,291,891,570,407.79 |    1.2% |      0.09 | `timer floor peer`
+
+|               ns/op |                op/s |    err% |     total | instrument A/A N=4096
+|--------------------:|--------------------:|--------:|----------:|:----------------------
+|                1.20 |      831,686,471.77 |    0.7% |      1.18 | `A/A candidate`
+|                1.20 |      833,839,633.42 |    0.9% |      1.17 | `A/A peer`
+
+|               ns/op |                op/s |    err% |     total | instrument known delta N=4096
+|--------------------:|--------------------:|--------:|----------:|:------------------------------
+|                1.20 |      831,383,249.47 |    1.1% |      1.18 | `delta5 candidate`
+|                1.26 |      792,699,780.27 |    1.3% |      1.23 | `delta5 peer slower`
+
+|               ns/op |                op/s |    err% |     total | instrument known delta 10 percent N=4096
+|--------------------:|--------------------:|--------:|----------:|:-----------------------------------------
+|                1.22 |      822,931,082.16 |    0.8% |      1.19 | `delta10 candidate`
+|                1.33 |      750,620,851.69 |    0.4% |      1.30 | `delta10 peer slower`
+# HYLE_PERF_CONTROL_RUN execution_order=candidate-first apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable parent_mask=not-applicable priority=not-applicable base_work=16384 delta5_work=17203 delta10_work=18022 run_nonce=dd95c4bc3a9055df5a5ce0209172abae

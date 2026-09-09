@@ -2,9 +2,42 @@
 
 <!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页当前签发 `io_tls-v2-duplex-progress` 与 `io_http2-v2-owner-progress-cost` 的工程性能结论。
-> `io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是历史事实，不再是对应活动轮的当前性能签名；两项
-> 当前结论也不能扩大成 io_core、HTTP/1、transfer、完整服务器、全平台或全操作 SOTA。
+> 本页当前签发 `io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress` 与
+> `io_http2-v2-owner-progress-cost` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是
+> 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成 io_core、transfer、完整服务器、
+> 全平台或全操作 SOTA。
+
+## 2026-09-09 `io_http-v2` 当前工程证据（`PASS`）
+
+不可变 candidate/tree 为 `18bf62f81a91975e0776439d88fca3891f10e560` /
+`98632557e0237bac0bed3ca5521e59420d89176e`；peer 是 Boost.Beast
+`cb94f33fcb13e90922905c2d8105508e71fa6db4`。本轮增加的 immediate progress seam 仅由 HTTP/2
+组合路径使用；普通 HTTP/1 parser、message/body API、runtime、socket、输入、validation、teardown、
+双顺序和固定 5% margin 均保持冻结合同。双方在一个 persistent worker 上完成同一 keep-alive
+request/response 生命周期，均计入 framing、body 保留、逐字节验证、应用粒度 chunk 与连接退休。
+
+advantage 为 HYLE/Beast op/s，越大越有利于 HYLE；每个顺序 15 个独立进程，置信水平 99.26%：
+
+| workload / order | HYLE / Beast op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 128x1 KiB REST/stream / candidate-first | 62,138.71 / 61,837.99 | 1.00250 / [0.98076, 1.01702] | `PARITY` | `PASS` |
+| 128x1 KiB REST/stream / peer-first | 62,083.94 / 63,012.44 | 0.98944 / [0.95496, 1.00659] | `PARITY` | `PASS` |
+| 16x64 KiB fragmented / candidate-first | 17,834.58 / 5,881.35 | 3.03025 / [2.97461, 3.10162] | `WIN` | `PASS` |
+| 16x64 KiB fragmented / peer-first | 17,655.12 / 5,829.72 | 3.06541 / [2.97468, 3.14026] | `WIN` | `PASS` |
+
+A/A、5%/10% known-delta、timer floor、artifact/build/consumer/source/peer provenance 与采样前后稳定性全部
+`PASS`；n=15 已裁决，没有触发 n=31。唯一有效 68-file bundle 位于
+[`io-http-p1-v2-18bf62f8`](../../../../evidence/performance/io-http-p1-v2-18bf62f8/)；manifest、summary、
+controls SHA-256 依次为
+`757E15424213E1C0C036A0F8E4814E428BCB64CDB1648A7DBEECFD1A78C3A22B`、
+`10B060A0014B78B6675133D650CFC5769265F14D9E2CF96AEDDF41E7545F6B3D`、
+`B2187A8E78119A7BF63CB2BBBD6EE62AA5A1240AA0166D420832F42144CFDB86`。保留的 WSL EXT4
+候选与 modular Boost peer 上严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、
+`provenance=EXACT`、`environment_policy=CURRENT`。
+
+这是 W1-WSL、GCC 14.2、Release/static、portable ISA 的 HTTP/1 工程 P1；它不声明 WAN、TLS、路由、
+handler 调度、多 worker、完整 Nginx/推理服务器或 Formal SOTA，也不把 64 KiB 行的约 3x 优势外推到
+模块整体。1 KiB 行诚实裁决为 parity，不因单次点值或执行顺序修改实现。
 
 ## 2026-09-09 `io_http2-v2` 当前工程证据（`PASS`）
 

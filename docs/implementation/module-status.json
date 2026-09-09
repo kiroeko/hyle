@@ -1318,7 +1318,7 @@
     },
     {
       "module": "io_http",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-http-v2-duplex-progress",
       "closure_task": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md",
       "scope": "Repair only the transport-neutral progress seam used by protocol factors after an HTTP2 consumer reproduced a full-duplex backpressure stall; replay affected HTTP1 transport, delivery and performance contracts.",
@@ -1333,18 +1333,28 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
       "reopen_trigger_id": "IOHTTP-REOPEN-H2-DUPLEX-01",
       "reopen_evidence": "Frozen io-http2-p1-v1 holdout reproducibly stalls under HYLE_IO_FORCE_EPOLL with 4 KiB socket buffers while syscall traces show both directions waiting to write with unread peer bytes.",
-      "summary": "io_http v2 CANDIDATE：TCP immediate、HttpTransport dispatch、HTTP2 bounded drain 与 TLS provider 路由已通过三平台、exact sanitizer、三交付及红队；只剩原 HTTP/1 P1 一次回放。"
+      "summary": "io_http v2 VERIFIED：TCP immediate、HttpTransport dispatch、HTTP2 bounded drain 与 TLS provider 路由通过三平台、exact sanitizer、三交付和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，5% 非劣门全过。"
     },
     {
       "module": "io_http2",

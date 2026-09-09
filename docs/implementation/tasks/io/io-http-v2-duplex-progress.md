@@ -137,7 +137,11 @@ parser/message/body surface：
 
 ## Current decision
 
-`CANDIDATE`。有限 FIX、P0、三平台 correctness、exact sanitizer、source/static/shared、TLS/h2c 分类、
-易用性/文档与红队均通过；plain HTTP2 的已冻结 P1 由逐字节等价直接继承。候选产品与
-[`io-http-p1-v1`](../../../../bench/contracts/io-http-p1-v1.json) 从此不可变；唯一剩余动作是在 W1-WSL
-clean EXT4 上回放一次 HTTP/1 双顺序/controls P1，结果未出前不得进入 `VERIFIED`。
+`VERIFIED`。有限 FIX、P0、三平台 correctness、exact sanitizer、source/static/shared、TLS/h2c 分类、
+易用性/文档与红队均通过；plain HTTP2 的已冻结 P1 由逐字节等价直接继承。不可变候选在 W1-WSL clean
+EXT4 上完成唯一一次 [`io-http-p1-v1`](../../../../bench/contracts/io-http-p1-v1.json) 回放：1 KiB
+REST/stream 双顺序为 `PARITY`，64 KiB fragmented 双顺序为约 3.03x/3.07x `WIN`，所有 5% 非劣门与
+controls 为 `PASS`。严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`；完整
+receipt 见 [`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md) 和
+[`io-http-p1-v2-18bf62f8`](../../../../evidence/performance/io-http-p1-v2-18bf62f8/)。七门已有可复核证据，
+下一法定动作仅为终局限制、重开条件、LOC 与冻结确认，不再运行产品测试或 P1。

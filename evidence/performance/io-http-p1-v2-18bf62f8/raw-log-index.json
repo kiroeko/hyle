@@ -1,0 +1,699 @@
+{
+  "entries": [
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-01.log",
+        "sha256": "d409c7e9d17186b3deca55199c9c25e7290b7e780f26560f500e19221e5bd792"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "bed5284f37b08cfcb58a51d159b1c727",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-02.log",
+        "sha256": "7f7d5e4e0dcecbafbdbd4405ac8d3451be14d726904401cee675db5f7861904b"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "784d3f8ae15f3105c4176e423fbadcd3",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-03.log",
+        "sha256": "655c14823af09979e21a062c2a1eedb913842adcf8ca879b89791d50dbbe63e7"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "2523e65c1f727d0b1bb7e6563c96112f",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-04.log",
+        "sha256": "54e5cca1bafebe886439b6c8a20dc7617715d3724395e596b4d32432ee73d26e"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "90f1d9607f418e4dddabf5fea1d0bcba",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-05.log",
+        "sha256": "1d992b512841bba0a1bab11d8deb54cd0f4dc858ef0a5ef0207cdba8eeb2feba"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "e3a1551953b1974ec9a3b415fcbe305b",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-06.log",
+        "sha256": "c52c0b0c034b8cb337672f9650716961b32981565b17cfeef31e83b730ac7e53"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "6516b414abbd2960bdd6b8805b709815",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-07.log",
+        "sha256": "c92ef0ceb34215cdcba0781ec369524c79d0c22cd897526d5067f29112dbf9f4"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "d55a383941b662ad902501b9bf5bdd23",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-08.log",
+        "sha256": "746651d5f4c28d680afa9c721f7f9df84c926fe860f5fa7ffbfe37ca16b04b70"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "692220cfeb2cbfad088f052a8367c035",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-09.log",
+        "sha256": "80a873be67838ce260084f40bdfddb901dc5c1958e3dbbb6b27b5e5f488c96e8"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "8b572f7e873a1350e100fc2ef66966e1",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-10.log",
+        "sha256": "5b7a4333ffcfceaf21a9cdf08e54dfe4283825f0223bc41427e71aefa296047c"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "877dd94dc7499ae94156e6f8ca74d059",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-11.log",
+        "sha256": "6be22cd49e52f607e1983bde0811923eba2f77019cf1f6aacf1bf8d5f2aee77f"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "134819978f99469e147c3162ac2370b1",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-12.log",
+        "sha256": "03a11a60fc6a2a9e46d4bb87edddf4dc73faa33576c2cc93ab149973dea13b5a"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "b1d87378328c76f101c502cafc8f2af8",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-13.log",
+        "sha256": "70f169a5dd9044ee1fc4aaf9fc77670e8ca1e95039d4ce4def034cdd76ce2f5f"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "61027923f5601a18d60da5b71699ae04",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-14.log",
+        "sha256": "36557f53f5b71449724798f5f3bc80e38081e5813197c08cba4303ab834b466f"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "98d1b3e4c6f459618489c2d862d803e7",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-candidate-first-io-http-primary-run-15.log",
+        "sha256": "75499762f438a26cb71f6a2b12606bd4ef56a9ffc2eba9a4b4ce8017dfb52801"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "dce19ea62fba631be450537d025e6639",
+      "stage": 15,
+      "stratum_id": "candidate-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-01.log",
+        "sha256": "99f6d26bdd2a49c1e79b6a3384b42fb9aa3db0878edaa35f227cd38e2e857884"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "7801e0ef881d93726af67559968cb1ac",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-02.log",
+        "sha256": "e18de8a50764b50efb45f8b46449cfc4700d0b8d81d65dc9a19a47fec3d9d2c6"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "336f8e54870635651d88b41b20ef41b5",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-03.log",
+        "sha256": "af88fb1c963c64ea921a8d2fc02394687d4b6225fd8c4e15d35373410a8b0f19"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "cba5a7cb2da008bd94609732137d8a91",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-04.log",
+        "sha256": "f48ab97196e28addbf6e2a3e7b72aebbd527bd29d5b0e03087fbcbaaddaf23a5"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "631c33b0091ecae88dc4d22e3f7d158b",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-05.log",
+        "sha256": "45a74675ea765ebfbdc2cf25824943b0faf6464f3e1ad836d1bd268c1a333d82"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "51a8308ab954ef82c1ea588713a77a21",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-06.log",
+        "sha256": "35d5b54860c78c2435a812a4f0ca429adeb686e2164e053991bd17d9a940a92e"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "f8c0c43908f68ade1c638cb4d4bdcef1",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-07.log",
+        "sha256": "f96d8f12d76f5052de43fa922f58f6618145ddf6218553bdb4d4734bba78229a"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "2a661bf79f77c07f3d5f2255cbdcba08",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-08.log",
+        "sha256": "c447af3746550ed85f43d9407c6b695b4bc38823ed73a0585aed64408154df30"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "b7d6c92d6cdd72691b8bafa86180ba39",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-09.log",
+        "sha256": "b44cb2e49cbfce0990dc87316ea12e80cb9b2e82a3e4d0851bfcf584fa1c5a15"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "477448c13a5b6518dc4fbb88b256fdff",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-10.log",
+        "sha256": "ddd9d489ecbc47ccd99bdb6f52bb6dec971da2bf539fa086143ea5aed6b42e0b"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "07eb04f8c9d4a13ad9058d3ddbb0ae63",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-11.log",
+        "sha256": "253a29fe211adfd5cb4553e3f2ac75ea5c0b4c486d435a28abd2df32aad4d4c8"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "a46e237b0a9640defa7c516ffe0cffbc",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-12.log",
+        "sha256": "cd45cb38fb91eae06510ffda1007508a8c916a6cf70a8f8aa50c048760d0bb60"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "0b105c4a09b41182918fb8bf6454c793",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-13.log",
+        "sha256": "84ad8a6edf2bd48f165df4018c359394d01658db402ae5397553e703708e92f5"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "01d7f8c4ed7fae4843f6db1b71809a37",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-14.log",
+        "sha256": "5a7d36bbed13099c3e2197fc08dda4d02ad13150bdc57263b76ff0990a511104"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "630c0ecebe591a836b896e53f035a24f",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "executable_id": "io-http-primary",
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/product-peer-first-io-http-primary-run-15.log",
+        "sha256": "d8c374b7db88703571074ea15619799c6e923f5c3d0968d7d96ab14eb9efcfb4"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "45232ce455d2d61f2db7a786e4938fc3",
+      "stage": 15,
+      "stratum_id": "peer-first"
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "d7c007108e82e7863835a83a1a14986f815e174fb2698cf4cceaeed91e57279c"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "77c3b4fdbca41a3c4d26b44da3c79e1b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "cb96d28c22421f7eea219e1bdb6df822a999aa307fbf9ba10bee595fc9696bc7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "d6dfe879bc8fcd9f0561d0868b84a715",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "6400362b376a4dd8a00cd330261a010a3ea212e03919bfa78df2dadd4a01d9b0"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "dd95c4bc3a9055df5a5ce0209172abae",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "7d043ee80c98e76f79bd3460e7dfcc58967c49b6d8205d3b8264a720e43d4f43"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "095b62c300b1b32c2475060776fc5070",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "45dad82a27c44fc2e389eba6da1ed832582b0b5e8024b1c606218d332b9c16e8"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "5c99f3187717d3e9720c348e164fbcb9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "7ceeb35609b566f247ca0ff7aed769dbef91ab135434e2989723d417b922b50b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "147b4227ff383b85855f639beb8da472",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "e36eea8cb7643efd4012b35fa4b8f8c46b16f0606ac7b421fab768b5defe5938"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "0039c6762ac87127277ecb2062ddd542",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "548d7f8e01ff55c553a65c07791dc014cc032d16d1ac5a3990b6331330c32b53"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "acf63a2a33b0ad02e76bf6c8616a793c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "3dfc3d0fe3d8a51292d4af8a78f4718dde7bd5990492dbd2d3d607afa825b7dc"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "66af95e0db235221d5bb3534cd407c50",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "b11609237e33f44c473ac69757101577316d0da399c172b28460113c42572ade"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "d87da742b37f6dddc6f85d8e2fc676f7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "ef9d1d6488ef269f7ef6799a7911fb18bd588b6dfb73fd912c7da00b632340c6"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "f9b77a315f62ccbc4a8d74bd5e0dcb90",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "4943c5eed250d54211708bed5a271d8b4a956b0943185153c49012dcb1772994"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "d6d056af5a446cbf76f7856cb3cd2489",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "b6bc763853494fbf3eeed2bff52dbe5a9df3266c6765c54348470a56bd635cce"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "2b47b7415664b0046e7083f047cd071d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "62fb88a5aa19e1c675f378dd0935d25a039c3dd912245682ce96d0d5d5a022a0"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "88b083189106cb78495b24b494894a17",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "c43bdb12a93e060ff894d60d63d6f95820f37959bc0d5a49fe34ab0bcedb2ffe"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "7051e24b3ef319dab3f9a4a9959d1d0c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "49bd111011273418aa2fd262411ea8beb953e43877712da7391d66a00c7ba777"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "6e2e339d6a278c34ac37bc5e85a10d72",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "d44547ef49eecf7cc62436571cfd100abbc1bd0e15a37090eafede1364587541"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "4cfd0010f4e167e93166ddb8f577f576",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "5751cebaae657ec8c99d69bc9709b8304a481ea246febbaf1da0080885358f6c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "2c64d4ab5428f8ed2a10f73b2e3b10cc",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "292ff529adb0507340b9de630fbdda6513c80c260abc8ef81aebb2eb55bc0aef"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "db569eac70c5b6cbcaa7a11486b07742",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "a040713ce18a8157d1020a14172cecfc973f7ac51ea303a86871d005b15d4bad"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "f11a99f7a28dff18fe5fef4bb31afa6d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "e059f3b0f7f67d03e3620089617bbd4e196d2d0cb7f067429d19b411af9a191a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "9aa8641fcb7626c22b3c12c9da519fec",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "745b5c9544db0725c70669ae2481bf7ac9e091aef0c88a0793332f02365f4078"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "7063ead3d8501da421ede73624a0faa4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "86be7cff69d8faec40dd2a2ccf304df99a94dce257f89280085ad408a952197c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "2d02bbbbd52353121cf8ee9c78cb93ed",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "802c70da5a9288d5f362d1376cfeef27e697f46e04ec31dd78eb8eb3efc2c896"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "bffa7d0229e2012096875a2c745ad4b7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "21b81056575efe9764adc31c0140be8ca08358a2bc085bc587b13426a060ca8a"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "977611ea5f0ce20b23bf7ff5013e2b97",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "da8af48651c42e2435c685f856dac80b93edb0215779f2e0e680b12159cd4ad3"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "01cef4bf2b628cf7c2c0cafbdc59ae7c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "80022144edaebd373b946e0b3e6e8c28edc501f12a2f7651ee47c6fcd5f7c340"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "497bdadfd88f051d03bb52ee7bd13989",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "ca402df57dd5688dfeb2de90759ae83a78db3ee84d41456fc3a2042d462c5861"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "0c485191bcba86df8a508eba2dd61707",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "6899419ad84808d6bc895702e84180e861fac3136ac93cef64e58719a166b25e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "da7d5177213344f8a1d3ebdad3daf2d6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/root/hyle-perf/io-http-v2-18bf62f8/evidence/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "1a488f75b2bdb47e87d0634df37748fb0aa54e493970fa4bcc8825592c1addc9"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "9499ed4ce9c84d1bbce0c5a7f95a05e6",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

@@ -1,0 +1,126 @@
+{
+  "contract_sha256": "4340d27b845dc83d1c2a86a02192fad1de0110992e583eccf4a6723c1c716c9c",
+  "experiment_id": "io-http-p1-v1",
+  "qualification": "QUALIFIED",
+  "ratio_definition": "candidate/peer for higher-is-better; peer/candidate for lower-is-better; greater than one favors candidate",
+  "record": "hyle_perf_summary",
+  "schema": "hyle.perf.summary/v1",
+  "workloads": [
+    {
+      "combined_exact_verdict": "PARITY",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "persistent-http1-rest-stream-128x1k",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 62138.71,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 61837.99,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9807550619034698,
+              1.0170184141879046
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0024962901704602,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 62083.94,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 63012.44,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              0.9549632412301851,
+              1.006591841873269
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 0.9894354674398558,
+            "sample_count": 15
+          },
+          "exact_reason": "median-ci-inside-equivalence-band",
+          "exact_verdict": "PARITY",
+          "id": "peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    },
+    {
+      "combined_exact_verdict": "WIN",
+      "combined_noninferiority_gate": "PASS",
+      "comparability": "COMPARABLE",
+      "id": "persistent-http1-fragmented-16x64k",
+      "strata": [
+        {
+          "absolute": {
+            "candidate_median": 17834.58,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 5881.35,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              2.974611343301907,
+              3.101620674551029
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.0302501896656304,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "candidate-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        },
+        {
+          "absolute": {
+            "candidate_median": 17655.12,
+            "independent_runs": 15,
+            "paired_observations": 15,
+            "peer_median": 5829.72,
+            "unit": "op/s"
+          },
+          "estimate": {
+            "confidence_interval": [
+              2.9746848905264747,
+              3.140259771328778
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 3.0654104722118145,
+            "sample_count": 15
+          },
+          "exact_reason": "candidate-faster-outside-margin",
+          "exact_verdict": "WIN",
+          "id": "peer-first",
+          "noninferiority_gate": "PASS",
+          "noninferiority_reason": "median-ci-lower-within-noninferiority-limit"
+        }
+      ]
+    }
+  ]
+}
