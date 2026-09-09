@@ -215,9 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md",
-      "summary": "io_core v2 因 io_watch 的真实无额外线程机制需求依法重开：范围仅限 Proactor 的 Windows/Linux/macOS file-watch submit/cancel seam；普通 IO API、依赖与热路不变。"
+      "summary": "io_core v2 AUDITED：W01--W05 只允许增加复用既有 slab/pending-map/completion/cancel 的三平台 internal file-watch submission；无新线程/loop/map，普通 IO API、依赖、layout 与常态 submit 路径不变。"
     },
     {
       "module": "io_tls",

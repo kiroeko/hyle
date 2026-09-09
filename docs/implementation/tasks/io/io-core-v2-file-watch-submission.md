@@ -35,5 +35,54 @@
 - stop / blocker：三平台中任一路线不能经已有 completion/cancel 生命周期安全退休，或必须改变普通
   public IO API/常态成本，则 `BLOCKED` 并返回 io_watch 重新裁决；否则全部适用门通过即重新 CLOSED。
 
-进入 `AUDITED` 前只读核对三 backend 的 operation admission、cancel、teardown、tag/bit 空间及测试 seam；
-本卡当前不授权产品改动。
+## 机制审计与有限 FIX（`AUDITED`）
+
+三 backend 的只读追踪已完成：Windows 每个真实 operation 使用固定-capacity `IoOp` slab，
+`GetQueuedCompletionStatusEx` 后才 recycle，`CancelIoEx` 提供 terminal completion；Linux io_uring 与 epoll
+已经能对 inotify fd 完成 read/cancel；macOS kqueue 的 `pending_in` 已是固定 admission map，vnode 可以作为
+独立 opcode 共用该 map而无需给每个普通 IoContext 预分配第三张表。现有 completion bits 只占低三位，
+可在高位登记 internal normalized watch bits，不改变 struct size/layout。
+
+### Internal API freeze
+
+```cpp
+enum class FileWatchInterest : std::uint32_t { /* high-bit normalized mask */ };
+bool Proactor::submit_file_watch(std::intptr_t handle, void* buffer,
+                                std::uint32_t length,
+                                FileWatchInterest interests,
+                                std::uint64_t user_data) noexcept;
+```
+
+- Windows：从既有 slab 取得一个 `kFileWatch` op，调用 overlapped `ReadDirectoryChangesW`；buffer 由 caller
+  借到 completion，结果为 native bytes，error 保留 Win32 negative domain。handle 必须先 bind IOCP。
+- Linux：同名方法直接走已有 `submit_read`；interest 在 inotify add-watch 时已经冻结，因此 submission
+  不产生第二套 mask decision。result 是 inotify buffer bytes。
+- macOS：在既有 `pending_in` 插入 `kFileWatch`，以 `EVFILT_VNODE|EV_ONESHOT` arm；completion result 为 0，
+  normalized content/metadata/rename/remove 位写入现有 flags 高位。cancel 根据 opcode 删除正确 filter。
+- 无 backend capability/public selection：HYLE 支持的三 OS 都有路线。方法仍位于 `hyle/io/detail`，只有
+  factor 实现可依赖；用户 API 由 io_watch 拥有。普通 read/write/socket/file 操作没有新增 allocation、
+  map、branch-at-submit 或 layout；macOS reap 仅在收到 vnode filter 时走新分支。
+
+| ID | 已证实问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `IOCORE-W01` | 缺 neutral interest/completion vocabulary | 在 detail header 增加高位 mask、operators 与一个 submit 声明 | existing bits/layout static checks、header self-contained |
+| `IOCORE-W02` | Windows 无 directory-change operation | 一个 slab kind 与 overlapped submit；reap/cancel/teardown 复用原路径 | mutation completion、queue full、cancel、buffer lifetime |
+| `IOCORE-W03` | Linux 需同名 portable seam | forwarding 到 existing read；不改 io_uring/epoll 算法 | inotify completion + forced epoll + cancel |
+| `IOCORE-W04` | macOS 无 vnode operation | 复用 pending_in，增加 vnode arm/reap/cancel 分支；禁止新常驻 map | NOTE mapping、one-shot/rearm、cancel、ordinary socket regression |
+| `IOCORE-W05` | 新 detail symbol 的交付证据缺失 | 三平台测试、exact io_core source/static/shared/header 与 P0 账本 | 全部预声明门，terminal receipt |
+
+### 七问
+
+1. 无第三方或版本变化；直接调用 host OS。libuv/Seastar 只是机制证据。
+2. 本卡只拥有一个 internal submission family，三 OS 的 submit/completion/cancel/teardown 全生命周期由
+   W01--W04 覆盖；path/event/rearm 属 io_watch。
+3. 复用固定 slab、pending map、completion token、`submit_cancel`、worker park merge；没有 blocking pool、
+   新 thread/loop、allocator 或 runtime decision authority。
+4. P0：每次 arm 一个 syscall/native op；Windows/Linux 不新增常态 metadata，macOS 复用既有 map；普通
+   IO path 代码结构不变。完整性能交 io_watch P1，故本卡计时 `NOT_APPLICABLE`。
+5. detail C++ mechanism 不是 C/Native FFI；不导出稳定跨工具链 ABI 承诺。
+6. 中央依赖不变；新增 symbol 随现有 io_core source/static/shared export，exact factor consumer 证明。
+7. 普通用户不可见；detail 注释必须足以防止 buffer/token lifetime 与 macOS flag 误读，公开 recipe 只在
+   io_watch guide 出现。
+
+本卡至此进入 `AUDITED`，只授权 W01--W05 一个实现批次；没有 candidate，不能提前签 PASS。
