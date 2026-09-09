@@ -31,6 +31,27 @@ source bundle 没有 `.git` 时只验证当前文件与 registry 结构，不冒
 | docs / usability | architecture、user、task/evidence 分工及 `check-docs.py`、状态 registry 检查 | docs gate `FAIL` |
 | red team | reviewer、日期、预算、逐 finding severity/disposition/evidence | 缺记录即 `INCONCLUSIVE` |
 
+## 语义覆盖矩阵
+
+行覆盖率、分支覆盖率和“测试数量”只用于发现完全未触达的代码，不能证明产品合同。每个 candidate 必须
+在 task 中给出下面的逐能力矩阵；不能用一个 happy-path 单元测试同时替所有格签字：
+
+| 能力族 / public journey | 正常与边界 | failure / OOM / overflow | ownership / move / teardown | cancel / deadline / concurrency | 主消费者纵切 | 正交纵切 | 平台 / delivery |
+|---|---|---|---|---|---|---|---|
+| `<task 填写>` | `PASS/NA/...` | `PASS/NA/...` | `PASS/NA/...` | `PASS/NA/...` | `PASS/NA/...` | `PASS/NA/...` | `PASS/NA/...` |
+
+- 每个 `MUST` 能力族至少有一个只经公开 API 走通的主消费者旅程；存在领域特化风险时，还要有一个正交
+  旅程。原子 primitive 可以由拥有它的最小下游 factor 测试组合，不要求在底层模块复制高层产品。
+- 测试必须观察消费者最终依赖的结果与资源状态，而不只观察某个内部函数被调用。错误恢复、旧值保留、
+  backpressure、晚到 completion 和 teardown 是旅程的一部分。
+- 平台 backend、allocator、并发或交付形状不同会改变语义风险时必须分别取证；一个平台的 sanitizer
+  不能冒充另一个平台的 native mechanism 测试。
+- property/differential/fuzz 与 coverage 报告用于扩大输入空间；它们不能替代具名 lifecycle 和真实组合
+  旅程。反过来，端到端样例也不能替代 checked arithmetic、OOM 和 race 等原子反证。
+- 旧 `CLOSED` 记录若没有该矩阵，不自动变成失败；项目级 evidence audit 应把缺失项标为
+  `UNPROVEN`，只有具体可复现缺陷或准入 `MUST` 缺口才触发重开。不得把“曾跑过全库测试”改写成逐格
+  `PASS`。
+
 “所有直接消费者”不是默认命令：底层组件可能扇出全库。closure card 必须按公开头暴露、语义调用、
 本轮 diff 和失败半径选择代表集，并列出未选消费者及理由；否则一次 P0 回放会退化成全库验收。
 

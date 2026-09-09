@@ -72,6 +72,10 @@ P1/P2 只能在本节和 correctness 实现固定以后开始。
 
 ## 验证
 
+先按 [`closure-correctness-v1`](correctness-profile-v1.md) 填逐能力语义覆盖矩阵。测试数或 coverage
+百分比不能代替主/正交 public journey、故障/生命周期以及适用平台与交付格；未取证写
+`UNPROVEN/BLOCKED`，不得猜成 `PASS`。
+
 | Gate | 适用风险与命令/证据 | Verdict |
 |---|---|---|
 | scope | | |
