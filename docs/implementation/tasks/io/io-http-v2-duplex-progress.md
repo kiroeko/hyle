@@ -82,3 +82,62 @@ FIX 集到此冻结。不得把 public `try_read`、background thread、第二 s
 `io-http-v1` 的 HTTP/1 能力、三平台/三交付和 P1 receipt 仍是历史证据，不因重开而改写。
 新一轮不得借机重做 parser、增加 server framework、公开 native provider handle，或把 HTTP/2
 frame/flow-control 语义下沉到 `io_http`。
+
+## Candidate readiness（`CANDIDATE`）
+
+有限 FIX 集的产品形状在 `18bf62f81a91975e0776439d88fca3891f10e560` 完整，tree 为
+`98632557e0237bac0bed3ca5521e59420d89176e`；精确 Git archive SHA-256 为
+`329DA82D0438AA24ACB90A36DE397475A16A8FABAB65E6040F3DC7DABDE4E3DB`。本轮没有重写 HTTP/1
+parser/message/body surface：
+
+- `io_core` 的 internal TCP attempt 在 owner worker 上一次执行一个 allocation-free nonblocking
+  `recv/send`；POSIX 使用 `MSG_DONTWAIT`，Windows 对可能由 host adopt 的 blocking socket 先做零等待
+  `WSAPoll`，随后在 single-reader/single-writer 条件下调用 WinSock；
+- `ImmediateTransferResult` 显式区分 ready、would-block 与 provider unsupported；ready 中继续完整保留
+  partial bytes、clean EOF 和 typed terminal `Status`。invalid transport 仍是 typed
+  `FailedPrecondition`，不会伪装成 would-block；
+- `io_http` 只负责 `HttpTransport` 的 type-erased dispatch。plain TCP 走上述 immediate seam；TLS 不复制
+  OpenSSL，而是返回 unsupported，由已冻结 `io_tls` 的普通 awaitable write/pump 保证双向进展；
+- `io_http2` 在阻塞 write 前至多吸收一个已经到达的 bounded input chunk；一次 cooperative yield 后仍
+  无即时进展便回到 proactor。parser、flow-control、deadline/cancel 和 owner 仍由原 authority 负责，
+  没有 spin、后台 task、无界 queue 或常态 metadata；
+- ordinary HTTP/1 read/write 不调用 immediate seam，因此没有新增 syscall、allocation、branch 或对象
+  layout 成本；新增函数只存在于 `detail` factor-composition 边界，没有 public `try_*` 或第二套 light API。
+
+### Correctness、sanitizer 与 delivery
+
+| profile / shape | result |
+|---|---|
+| W1-WIN / MSVC 19.50 / shared | TCP immediate、HTTP/1 主/取消与 HTTP/2 套件 `PASS` |
+| W1-WSL / GCC 14.2 / exact archive shared | 上述套件在默认 io_uring 与 forced epoll 均 `PASS`；独立 deterministic epoll duplex regression `PASS` |
+| W1-WSL / exact archive | ASan、UBSan、TSan（`setarch x86_64 -R`）下 TCP/TLS/HTTP/HTTP2 五项均 `PASS` |
+| MacBook Air `Mac16,12` / AppleClang 21 | exact commit TCP/HTTP/HTTP2 定向套件 `PASS` |
+| Mac mini `Mac16,10` / AppleClang 21 | exact archive TCP/HTTP/HTTP2 定向套件 `PASS` |
+| Windows exact archive / source embedding | downstream 只链接 `hyle::io` 并实际调用 typed HTTP factory，configure/build/run `PASS` |
+| Windows exact archive / installed shared + static | 两个 downstream 只链接 `hyle::io` 并实际调用 typed HTTP factory，configure/build/run `PASS` |
+
+`HYLE_IO_TLS=OFF` 的 HTTP source/static/shared 交付已在本轮 seam 首次落地的 `e201f86f` 精确矩阵通过；
+该提交之后 `src/io_http` 零变化，`include/hyle/io/http.h` 只增加 `Http2SessionAccess` 的 private friend，
+不改变 TLS-off API/layout/编译路线。当前 exact archive 的 TLS-on 三交付与两种 transport correctness 又全部
+通过，故不重复制造一套无影响的 SDK build。
+
+### Bounded red-team receipt
+
+- Windows readiness→`recv/send` 之间没有 suspension point；detail 合同又禁止同方向第二 operation，因此
+  不存在另一个 consumer 抢走 readiness 后令 adopted blocking socket 卡住的窗口；POSIX syscall 自身带
+  `MSG_DONTWAIT`；
+- empty buffer、would-block、EOF、partial+error 和 invalid transport 均有独立语义；HTTP/2 只在 owner
+  校验后持有 direction claim 的区间调用，临时 claim 内没有 suspension；
+- TLS 不支持 OS-level immediate attempt 是刻意的 provider boundary，而非能力缺口：已冻结 pump 在
+  output pressure 下有界吸收 peer ciphertext。HTTP 不接触 native/OpenSSL handle，也不复制 deadline；
+- `4060e217` 的 HTTP2 P1 候选到本候选之间，plain HTTP2 合同涉及的 `io_core/io_http/io_http2` 产品、fixture
+  与合同逐字节无差异；其 normal/holdout 双顺序 5% P1 可以直接复用，不应重新采样；
+- 未发现 lost bytes、重复消费、busy loop、unbounded state、owner race、公开 ABI 污染、伪 C ABI、
+  HTTP/1 正常路线成本或其他 high-severity finding。
+
+## Current decision
+
+`CANDIDATE`。有限 FIX、P0、三平台 correctness、exact sanitizer、source/static/shared、TLS/h2c 分类、
+易用性/文档与红队均通过；plain HTTP2 的已冻结 P1 由逐字节等价直接继承。候选产品与
+[`io-http-p1-v1`](../../../../bench/contracts/io-http-p1-v1.json) 从此不可变；唯一剩余动作是在 W1-WSL
+clean EXT4 上回放一次 HTTP/1 双顺序/controls P1，结果未出前不得进入 `VERIFIED`。
