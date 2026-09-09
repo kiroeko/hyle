@@ -2,7 +2,7 @@
 
 #include "hyle/core/environment.h"
 
-#if HYLE_OS_APPLE
+#if HYLE_OS_MACOS
 
 #include <CoreServices/CoreServices.h>
 #include <dispatch/dispatch.h>
@@ -213,4 +213,4 @@ Status shutdown_native_watch(FileWatcherState& state) noexcept {
 
 }  // namespace hyle::io::detail
 
-#endif  // HYLE_OS_APPLE
+#endif  // HYLE_OS_MACOS
