@@ -35,8 +35,9 @@
   application debounce/reload、watcher multiplex service、第二套 scheduler/event loop、Native FFI/C API、
   Compute/Graph 或其它已关闭 factor 的无证据重开。递归树只在具名 consumer 证明单层目录+rescan
   无法自然组合时另开能力轮。
-- 直接依赖 / 直接消费者：依赖上限暂冻结为 public `core,error,io_core,mem,sched`，private
-  `container,container_text,platform_fs,time`；AUDITED 必须删掉未被公开 layout/实现真实使用的边。
+- 直接依赖 / 直接消费者：依赖冻结为 public `core,error,io_core,mem`，private
+  `container,container_text,mem_vm,platform_fs,sched,time,util_core`；`sched` 没有公开类型泄漏，
+  `mem_vm` 只提供已冻结的小型 fiber stack 档位，`util_core` 只承载实现内同步 primitive。
   直接消费者为 IO product façade、exact-factor package sample 与两个 compile-only TLS/resource reload recipe；
   当前没有产品实现反向依赖。
 - 性能 tier 与原因：`P1`。等待是 OS 主导，但 idle polling、逐 event allocation、额外线程/loop、无界队列、

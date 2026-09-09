@@ -303,10 +303,11 @@ _hyle_declare_component(container_text
     hyle/container/string_interner.h
     hyle/container/string_view.h)
 
-# Reserved by the F03 cross-product trigger. Dependencies, public headers and
-# the IO facade membership are admitted only after the closure audit freezes a
-# real cross-platform file-change-stream contract.
-_hyle_declare_component(io_watch QUEUED)
+_hyle_declare_component(io_watch
+  PRIVATE_DEPS container container_text mem_vm platform_fs sched time util_core
+  PUBLIC_DEPS core error io_core mem
+  PUBLIC_TYPE_DEPS io_core mem
+  SPLIT_PUBLIC_HEADERS hyle/io/watch.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -365,7 +366,8 @@ _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
-_hyle_declare_product(io FACTORS io_core io_tls io_http io_http2 io_transfer)
+_hyle_declare_product(io FACTORS
+  io_core io_tls io_http io_http2 io_transfer io_watch)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
 
