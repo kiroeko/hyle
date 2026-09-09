@@ -144,10 +144,15 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
       "candidate": "d3f732979f396aa5651e5eb81c228fdc73b7c166",
-      "summary": "mem v7 CANDIDATE：候选 2 只修复 AppleClang optimizer-assumption 可移植性，payload-free RangeAllocator 的 API、算法、layout、workload 与 peer 均未改变；等待精确候选终局验证。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v7.md",
+        "material_margin_pct": 5
+      },
+      "summary": "mem v7 CLOSED：payload-free 64-bit aligned RangeAllocator、固定 metadata、RAII individual release、generation bulk reset 与 O(1) summary 已完成三平台正确性、source/shared/static 交付、文档/红队及 W1-WIN 同合同 8/8 strata 的 5% P1 非劣门。"
     },
     {
       "module": "mem_vm",

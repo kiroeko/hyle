@@ -1,8 +1,8 @@
 # Mem v7：动态逻辑区间子分配
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-## Closure card（`CANDIDATE`）
+## Closure card（`CLOSED`）
 
 - component / owner：`mem` / payload-free logical range ownership；round：`mem-v7-logical-range-suballocator`；
   baseline：`67893204aad888f8e801c59ec6c149432a8e779e`。
@@ -86,11 +86,11 @@ placement knob。
 
 | ID | 问题与证据 | 允许改动 | 验收 | 结果 |
 |---|---|---|---|---|
-| `MEM7-F01` | 缺 payload-free 64-bit logical-range owner | 新增 range allocator/lease/stats；固定 metadata | 边界、alignment、OOM、随机 model | implemented；候选复验待签 |
-| `MEM7-F02` | individual free、bulk reset 与 stale lifetime 缺少自然 C++ 形状 | RAII lease、generation invalidation、owner/lease 独立控制块寿命 | free/coalesce/reset/move/destroy | implemented；候选复验待签 |
-| `MEM7-F03` | Mem 产品、安装和三交付尚不可发现 | façade、CMake source、focused test、package consumer | header/source/static/shared | Windows pre-candidate PASS；候选跨平台待签 |
-| `MEM7-F04` | 用户不知道它与 FixedHeap/LifetimePlanner/device policy 的边界 | architecture/user/usage 文档及最短 recipe | docs checker + usability probe | implemented；候选复验待签 |
-| `MEM7-F05` | 无同合同工程性能证据 | 固定 mixed-churn contract；OffsetAllocator 算法只在 alignment=1/32-bit 交集并经完整 lifecycle adapter 对拍 | controls + 双顺序 5% NI；raw route 不签排名 | contract/adapter qualified for sampling；正式 P1 待签 |
+| `MEM7-F01` | 缺 payload-free 64-bit logical-range owner | 新增 range allocator/lease/stats；固定 metadata | 边界、alignment、OOM、随机 model | `PASS` |
+| `MEM7-F02` | individual free、bulk reset 与 stale lifetime 缺少自然 C++ 形状 | RAII lease、generation invalidation、owner/lease 独立控制块寿命 | free/coalesce/reset/move/destroy | `PASS` |
+| `MEM7-F03` | Mem 产品、安装和三交付尚不可发现 | façade、CMake source、focused test、package consumer | header/source/static/shared | `PASS` |
+| `MEM7-F04` | 用户不知道它与 FixedHeap/LifetimePlanner/device policy 的边界 | architecture/user/usage 文档及最短 recipe | docs checker + usability probe | `PASS` |
+| `MEM7-F05` | 无同合同工程性能证据 | 固定 mixed-churn contract；OffsetAllocator 算法只在 alignment=1/32-bit 交集并经完整 lifecycle adapter 对拍 | controls + 双顺序 5% NI；raw route 不签排名 | `PASS`；8/8 strata 的 5% NI 通过 |
 
 本表冻结后不扩张到 F02 Sched、F03 IO、Compute/Graph、并发 wrapper、device policy 或 benchmark-only
 策略。验证发现上述语义内部缺陷可在原合同内修；能力范围变化必须退回 `SCOPED/AUDITED`。
@@ -218,3 +218,62 @@ python scripts/check-module-closure.py
 python scripts/check-docs.py
 git diff --check
 ```
+
+## 终局候选验证
+
+候选 2 的产品 tree 保持 `16ac17e2fb501abeaeac623785ccf9daca1b29de`。状态和证据提交没有改变
+公开头、实现、测试 workload 或 benchmark contract。
+
+| 风险面 | 精确候选或可继承证据 | 结果 |
+|---|---|---|
+| W1-WIN correctness | MSVC 19.50 Release/WERROR；`hyle_mem_header_self_contained_test` + 完整 `hyle_mem_test` | `2/2 PASS`；RangeAllocator 14 个具名用例包含在完整 suite |
+| W1-WIN 三交付 | detached candidate 的 source、relocated shared、relocated static Mem package consumer | `3/3 PASS`；安装树包含 `hyle/mem/range_allocator.h` |
+| W1-WSL sanitizer | candidate 1 完整 Mem/header 的 GCC 14.2 ASan 与 UBSan；candidate 2 对受影响 RangeAllocator 14/14 作 UBSan 重放 | `PASS`；candidate 2 只改变四个等价 optimizer assumption 表达式 |
+| M1-MAC portability | MacBook Air arm64、AppleClang 21、Release/WERROR，从 candidate 2 独立 worktree 构建完整 Mem/header | `2/2 PASS`；candidate 1 的 `-Wassume` 阻塞已消失 |
+| TSan | 产品明确 caller-synchronized，未引入共享可并发状态 | `NOT_APPLICABLE` |
+| P1 | W1-WIN、15 独立进程、8 个 execution/allocation/placement strata 与全部 controls | qualification/performance `PASS`；8/8 的 5% NI `PASS` |
+
+P1 绑定
+[`benchmarks-mem-v7.md`](../../evidence/performance/benchmarks-mem-v7.md)：HYLE 的八个 median advantage
+为 `1.0310–1.0432`，全部点估计朝 HYLE 方向；因多数置信区间跨 parity/WIN 的 5% 边界，exact 聚合
+保留 `INCONCLUSIVE`，没有夸大为普遍胜出。raw OffsetAllocator 的弱语义路线没有进入当前性能声明。
+
+## 终局红队
+
+与实现过程分离的只读检查再次攻击公开 API、metadata 证明、溢出、生命周期、依赖、交付和性能比较：
+
+- `2*M+1` nodes 覆盖 M 个 live allocation 下每次最多 prefix/suffix 两个 split；create 的三处分配逐点
+  OOM 回滚，metadata byte 加法/乘法和 32-bit node sentinel 均有表示范围检查；
+- alignment rounding、`offset + size` 与最大 64-bit capacity 不越界；快速 size-class 搜索不能证明可放置
+  时走完整 physical fallback，不会为保持 O(1) 宣传而错误拒绝可用 range；
+- move-only lease 消除了 wrong-owner/double-free 入口；generation 阻止 stale lease 释放复用 node，owner
+  销毁后 control 由最后一个 lease 回收，reset 跨 generation 仍准确保留 outstanding handle references；
+- caller-synchronized、borrowed metadata allocator lifetime、observer 前置条件、payload-free/device-policy
+  边界均在公开头和 guide 显式可见；没有 benchmark-only knob、常态锁/原子/syscall 或隐藏增长；
+- `mem` 的 Core/Error/Platform 公共边、compiled source、header ownership、安装导出与三种 C++ journey
+  一致；没有新增或遗留 C/Native FFI；
+- 正式 peer adapter 对双方计入相同正常生命周期；32-bit/alignment 能力差异只作 correctness holdout，
+  没有苹果对橘子排名。未发现未映射公开入口或 medium/high 风险遗留。
+
+## 七门与裁决
+
+| Gate | 证据 | Verdict |
+|---|---|---|
+| scope | 六个 MUST family、两个真实产品纵切、有限 `MEM7-F01..F05` | `PASS` |
+| architecture | payload-free owner 与 device/KV policy 分离；依赖向下且无 Container 反向边 | `PASS` |
+| correctness | 边界/OOM/property/lifetime、Windows、WSL sanitizer、macOS portability | `PASS` |
+| delivery | public header + source/shared/static relocated consumer | `PASS` |
+| usability_docs | 自然 owner/RAII recipe、选型、同步/reset/allocator-lifetime 陷阱 | `PASS` |
+| red_team | 上述分离红队，无未处理 medium/high finding | `PASS` |
+| engineering_performance | P0 成本结构 + qualified W1-WIN 8/8 5% NI | `PASS` |
+
+LOC 由 `python scripts/loc-report.py --module mem --commit d3f732979f396aa5651e5eb81c228fdc73b7c166
+--self-check` 计算并自检通过：全库 503,751 行，自实现不含测试 90,524 行，Mem 实现 8,266 行。
+
+最终裁决为 `CLOSED/FROZEN`：本轮真实缺口已实现，七门全部通过。Formal 独立硬件声明仍为
+`PENDING`；当前只签发上述 W1-WIN 同合同工程非劣结论。只有可复现 correctness/security/UB/lifetime
+缺陷、具名消费者证明的新通用能力缺口、公开 API/layout/算法/依赖/交付变化，或合格同合同证据显示
+超过 5% 的 material regression/更优复杂度档，才允许创建新 card 重开；无新事实的“再看一次”和旧
+benchmark 点值不构成 trigger。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
