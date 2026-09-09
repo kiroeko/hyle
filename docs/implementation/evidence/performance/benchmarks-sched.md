@@ -1,6 +1,5 @@
 # sched 性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前产品状态只见 [`module-status.json`](../../module-status.json)。当前工程结论以紧接的 sched-v5
 > 小节为准；后续各轮数据只解释对应候选，不能拼成全操作、跨平台或 Formal SOTA。

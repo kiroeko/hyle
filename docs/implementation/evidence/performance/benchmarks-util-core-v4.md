@@ -1,6 +1,5 @@
 # Util-core v4 性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > **当前工程 verdict：`PASS`。** 最终候选
 > `439b8915e2c63a6a15545324444b594a25c62a62` / tree

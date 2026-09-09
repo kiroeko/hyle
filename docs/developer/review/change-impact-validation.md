@@ -2,7 +2,7 @@
 
 `scripts/validation-select.py` 是普通本地迭代和 PR/main push 的验证入口。给定两份 Git 快照，
 它输出 `selected_gates`、`skipped_gates` 和逐项理由，再按需执行；不改变产品状态，也不授权
-重开 `CLOSED/FROZEN` 模块。适用风险及最终裁决仍以当前 closure card 和
+重开 `CLOSED` 模块。适用风险及最终裁决仍以当前 closure card 和
 [模块收口方法](module-closure-methodology.md)为准。
 
 ## 使用
@@ -82,8 +82,8 @@ P1 从不自动选择。只有 `--p1-card` 显式绑定不可变候选、diff �
 {
   "candidate_commit": "<full 40-hex commit>",
   "candidate_tree": "<full 40-hex tree>",
-  "api_state": "FROZEN",
-  "algorithm_state": "FROZEN",
+  "api_state": "FIXED",
+  "algorithm_state": "FIXED",
   "factors": ["<factor>"],
   "contract": "bench/contracts/<frozen-contract>.json",
   "contract_hash": "<SHA256 of the exact candidate Git blob>",

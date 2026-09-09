@@ -1,6 +1,5 @@
 # Container 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 ## Container v6 终态候选
 

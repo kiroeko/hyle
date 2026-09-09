@@ -1,6 +1,5 @@
 # Time / timer_queue 当前工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前状态与精确证据绑定只看 [`module-status.json`](../../module-status.json)。`time` 与
 > `timer_queue` 是两个 factor：当前 Time v5 是 P0，证据直接位于

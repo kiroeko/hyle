@@ -25,17 +25,15 @@ engineering bundle 可通过精确 hash renewal 链回放并报告 `REVIEWED_NON
 
 ## 当前证据怎样查
 
-不要在本目录维护第二份容易漂移的“当前版本列表”。当前模块、冻结标记、工程性能 verdict 和精确证据
+不要在本目录维护第二份容易漂移的“当前版本列表”。当前模块、工程性能 verdict 和精确证据
 链接统一由 [`module-status.json`](../../module-status.json) 投影到
 [`status.md`](../../status.md)；状态表中的 Engineering performance 单元格可直接进入该模块当前证据。
 同一个报告可以服务多个拆分 factor，例如 Platform 三个 factor；这不会创造第二个产品状态。
 
-registry 当前引用的 performance 页面必须带且只能带一个 `PERFORMANCE EVIDENCE: CURRENT` HTML
-注释标记，文档检查器会拒绝漏标、重复标记和没有 registry
-引用的伪 current 页。旧候选页面应写 `HISTORICAL` 或 `DIAGNOSTIC`，不得靠标题中的“当前”、任务中的
-`PASS` 或文件名版本号取得权威性。
+registry 的 `performance.evidence` 路径是当前工程证据的唯一选择器。旧候选页面应写 `HISTORICAL`
+或 `DIAGNOSTIC`，不得靠标题中的“当前”、任务中的 `PASS`、文件名版本号或额外 marker 取得权威性。
 
 跨模块的固定方向点值复核保存在
-[新 FROZEN 模块固定方向审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)；
+[模块固定方向历史审计](../../tasks/performance/frozen-module-fixed-direction-audit-2026-09-05.md)；
 它是历史审计输入，不替代每个 current evidence 页面，也不把一次无机制的微小固定方向改写成产品
 缺陷。

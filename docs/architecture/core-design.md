@@ -1,7 +1,7 @@
 # Core 架构：header-only 编译与布局地基
 
 > 本页描述当前长期设计，不是验收证书。当前产品状态只见
-> [`module-status.json`](../implementation/module-status.json)，并由其中的 `closure_task` 指向当前轮
+> [`module-status.json`](../implementation/module-status.json)，并由其中的 `record` 指向当前轮
 > task；历史施工、三平台、codegen、package 与红队记录只作追溯。性能结论边界见
 > [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
 > [`user/core`](../user/core.md)。

@@ -1,120 +1,23 @@
 {
-  "schema_version": 2,
-  "methodology": "module-closure-v2",
+  "schema_version": 3,
+  "methodology": "module-closure-v3",
   "updated_at": "2026-09-09",
-  "component_identity_migrations": [
-    {
-      "from": "text",
-      "to": "container_text",
-      "evidence": "docs/implementation/tasks/build/container-text-factor-identity-migration-v1.md"
-    },
-    {
-      "from": "util",
-      "to": "util_runtime",
-      "evidence": "docs/implementation/tasks/build/util-runtime-factor-identity-migration-v1.md"
-    },
-    {
-      "from": "io",
-      "to": "io_core",
-      "evidence": "docs/implementation/tasks/build/io-core-factor-identity-migration-v1.md"
-    }
-  ],
   "modules": [
     {
       "module": "core",
-        "product_state": "CLOSED",
-      "reopen_trigger_id": "CORE-ASSERT-MACRO-CONTRACT-01",
-      "reopen_evidence": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
-      "round_id": "core-v5-assert-macro-contract",
-      "closure_task": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
-      "scope": "Repair the reproduced public assertion-macro hygiene and disabled-Debug semantic checking defects without changing Core's admitted capability families or normal runtime cost contract.",
-      "non_goals": "New Core capabilities, logging or crash management, recoverable errors, arbitrary formatting, C or Native FFI, timing benchmarks, adjacent-module review and build-system redesign.",
-      "baseline_commit": "b94b451e3209dc65a6887f0888dc0688b8c86391",
-        "candidate_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
-        "candidate_tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a",
-      "performance_tier": "P0",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-        "engineering_performance": {
-          "verdict": "PASS",
-          "mode": "STRUCTURAL",
-          "instrument_profile": "closure-correctness-v1",
-          "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
-        },
-        "formal_performance": {
-          "state": "NONE"
-        },
-        "gate_verdicts": {
-          "scope": "PASS",
-          "architecture": "PASS",
-          "correctness": "PASS",
-          "delivery": "PASS",
-          "usability_docs": "PASS",
-          "red_team": "PASS",
-          "engineering_performance": "PASS"
-        },
-        "freeze_confirmation": {
-          "id": "core-freeze-replay-2026-09-05",
-          "marker": "FROZEN",
-          "confirmed_at": "2026-09-05",
-          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-        },
-        "loc": {
-          "snapshot_commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
-          "repository_code": 414925,
-          "self_without_tests": 62142,
-          "module_implementation": 762
-        },
-        "known_limitations": [
-          "The fatal observer remains image-local and synchronously borrowed; callback exchange is not a quiescence barrier, so the embedding host owns restore and quiescence before plugin unload.",
-          "Core owns bounded typed invariant context, not arbitrary formatting, logging, backtraces, signal or minidump handling, process-wide crash policy or Native FFI.",
-          "The P0 certificate covers structural normal-path cost on the frozen candidate, toolchains and delivery shapes; it makes no failure-I/O, downstream-workload, universal timing, cache-hit, SOTA or Formal-performance claim."
-        ],
-        "reopen_triggers": [
-          "A named real consumer reproduces a Core correctness, security, missing-foundation or C++ API-usability defect.",
-          "A supported compiler or target invalidates assertion semantic parity, the one-to-eight field bound, macro hygiene, normal-path code generation, public-header closure or visibility contract.",
-          "The public API, normal-path cost, layout, compiler or environment semantics, component dependency or delivery shape changes.",
-          "A named host consumer proves that fatal-observer lifetime or coordination must be owned by Core with a different complexity or ownership shape.",
-          "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage."
-        ],
-        "summary": "core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。"
-    },
-    {
-      "module": "container_intrusive",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "INTR-CAPABILITY-EXTENSION-2026-09-02",
-      "reopen_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
-      "round_id": "container-intrusive-v4-capability-extension",
-      "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
-      "scope": "Audit and, after a finite API/cost freeze, add modular counted safe-list, one-pointer forward membership, hlist membership and admitted non-owning sequence algorithms without taxing the existing default list shape.",
-      "non_goals": "Owning storage, allocators, internal synchronization, lock-free publication or reclamation, intrusive tree/hash/heap and the full Boost policy matrix, Sched/IO policy, Native FFI/C API, Formal certification and common instrument redesign.",
-      "baseline_commit": "b4915574020cc7da857d2871c545a3489c75288b",
-      "candidate_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
-      "candidate_tree": "8df2b7d7806918d03b5bb5c31611adb196f30c7f",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "core-v5-assert-macro-contract",
+      "record": "docs/implementation/tasks/core/core-v5-assert-macro-contract.md",
+      "candidate": {
+        "commit": "4b7f28c55e9ca118cf87b80058ce291261033ec5",
+        "tree": "074617e1b1dc9d11843493c1e2240da7fd798d9a"
+      },
+      "performance": {
+        "tier": "P0",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container-intrusive.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-core.md"
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -123,69 +26,50 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "loc": {
-        "snapshot_commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
-        "repository_code": 423430,
-        "self_without_tests": 64452,
-        "module_implementation": 1590
+      "summary": "core-v5 CLOSED：断言宏卫生、Release/Debug 编译语义、字段边界和 observer 生命周期文档已修复；公开 API 不变，三平台正确性、三种 C++ 交付、文档/易用性、红队与 P0 结构性能全部通过。"
+    },
+    {
+      "module": "container_intrusive",
+      "state": "CLOSED",
+      "round": "container-intrusive-v4-capability-extension",
+      "record": "docs/implementation/tasks/container_intrusive/container-intrusive-v4-capability-extension.md",
+      "candidate": {
+        "commit": "58431ddbef6f54f9d4275b0fea2d317cba00b9f3",
+        "tree": "8df2b7d7806918d03b5bb5c31611adb196f30c7f"
       },
-      "freeze_confirmation": {
-        "id": "container-intrusive-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
+      "performance": {
+        "tier": "P1",
+        "verdict": "PASS",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container-intrusive.md",
+        "material_margin_pct": 5
       },
-      "known_limitations": [
-        "The P1 claim covers only four frozen N=4096 W1-WIN consumer replays, MSVC 19.50 and locked Boost or pre-v4 Sched peers; cross-platform timing, all operations or scales, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
-        "All intrusive containers are caller-owned stable-address thread-compatible primitives; external owners synchronize mutation, traversal, reclamation and lifetime, while wrong-owner iterators, ranges or verified counts are program-contract violations.",
-        "Safe and forward hooks require explicit retirement; forward membership has no arbitrary-node O(1) unlink, hlist is not a sorted or counted sequence, and ordinary counted range splice is O(k).",
-        "Concurrent publication or reclamation, intrusive tree, hash or heap and advanced base, value or fancy-pointer policies remain with a concurrency owner, mature peer or a future admitted consumer demand.",
-        "Sched cancellation uses the safe hlist, but waiter, pool and IOCP links retain specialized storage-reuse, publication or kernel-state contracts.",
-        "Pointer-to-member header templates expose neither Native FFI nor a stable cross-toolchain C++ ABI; retained performance artifacts are local engineering evidence and Formal remains PENDING."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces a correctness, security, ownership, lifetime, concurrency, exception-safety, API-usability or missing common intrusive-capability defect.",
-        "The public API, layout, algorithm, complexity, Core-only factor dependency, selected-header ownership or source, static or shared delivery shape changes.",
-        "A supported compiler or ABI changes pointer-to-member recovery, hook layout, assumption or exception and no-exception code generation.",
-        "Time, Sched, Mem, IO or a future inference consumer proves that the current type boundary or a retained specialized link no longer matches its real contract.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen 5% margin.",
-        "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity."
-      ],
+      "gates": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
       "summary": "container_intrusive v4 CLOSED：counted safe-list、一指针 cached-tail forward-list、auto/safe hlist 与稳定 sequence algorithms 已完成三平台正确性、三种 C++ 交付、直接 Sched 消费、文档/红队及 W1-WIN 四项 5% P1 工程门验证。"
     },
     {
       "module": "util_core",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "UTILCORE-RESOURCE-MOVE-CTAD-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/project/math-util-core-v3-post-closure-replay-2026-09.md",
-      "round_id": "util-core-v4-resource-move-ctad",
-      "closure_task": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md",
-      "scope": "Repair the reproduced move-only deleter transfer, checked-factory exception specification and unambiguous nontype bound-callable deduction defects without changing Util-core's capability families or Core-only header-only boundary.",
-      "non_goals": "New utility families, nullable or owning callbacks, asynchronous storage, pointer-like or default UniqueResource policy, typed domain owners, Util-runtime, downstream migration, Native FFI, benchmark-shaped APIs, common instrument redesign and Formal certification.",
-      "baseline_commit": "66ac957109bff59262bc3ebdf7f2478fb7c67070",
-      "candidate_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
-      "candidate_tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "util-core-v4-resource-move-ctad",
+      "record": "docs/implementation/tasks/util/util-core-v4-resource-move-ctad.md",
+      "candidate": {
+        "commit": "439b8915e2c63a6a15545324444b594a25c62a62",
+        "tree": "a7891b8d6a3dab26599e443f9e03150a195b3ba9"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v4.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util-core-v4.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -194,67 +78,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "loc": {
-        "snapshot_commit": "439b8915e2c63a6a15545324444b594a25c62a62",
-        "repository_code": 449005,
-        "self_without_tests": 73155,
-        "module_implementation": 1549
-      },
-        "freeze_confirmation": {
-          "id": "util-core-freeze-replay-2026-09-05",
-          "marker": "FROZEN",
-          "confirmed_at": "2026-09-05",
-          "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-          "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-          "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-        },
-      "known_limitations": [
-        "FunctionRef remains a synchronous non-owning call-only view; storage, return and asynchronous use require an owning callable or an owner-defined function-plus-context shape.",
-        "If a resource is only potentially-throwing copyable and its deleter is move-only, failed owner move cleans the token through the transferred deleter and disarms the source; it prevents leak and double release but does not preserve source ownership after the exception.",
-        "UniqueResource is a narrow fallback for value-like native tokens, not a replacement for typed Platform, Mem or IO owners and not a general error channel.",
-        "The P1 claim covers three frozen W1-WIN FunctionRef consumer workloads against locked Abseil; cross-platform timing, all utilities or signatures, end-to-end inference, universal SOTA and Formal are not claimed."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces a Util-core correctness, exception-safety, ownership, lifetime, concurrency, missing-foundation or natural C++ API-usability defect.",
-        "The public API, layout, algorithm, complexity, Core-only dependency, selected-header ownership or source, static or shared delivery shape changes.",
-        "A supported compiler or target invalidates conditional-noexcept, move-or-copy transfer, member-function deduction, two-word FunctionRef, no-exceptions or public-header code generation.",
-        "A frozen downstream owner proves an existing helper is being used with the wrong semantic contract, or a complete same-contract duplicate should be replaced through an explicit dependency edge.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer workload proves a reproducible material regression or advantage beyond the frozen 5% margin.",
-        "Renewing the engineering claim encounters a material change in consumer provenance, peer, machine, instrument, compiler or retained evidence identity."
-      ],
-      "summary": "Util-core v4 CLOSED/FROZEN：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已完成三平台正确性、三种 C++ 交付、文档/易用性、红队、中央组件合同及固定 FunctionRef 5% P1 工程门验证。"
+      "summary": "Util-core v4 CLOSED：move-only deleter、失败安全、checked sentinel 完整不抛判定和无歧义 member CTAD 已完成三平台正确性、三种 C++ 交付、文档/易用性、红队、中央组件合同及固定 FunctionRef 5% P1 工程门验证。"
     },
     {
       "module": "error",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "ERROR-CAPABILITY-2026-09-01",
-      "reopen_evidence": "docs/implementation/tasks/error/error-v5-capability-completion.md",
-      "round_id": "error-v5-capability-completion",
-      "closure_task": "docs/implementation/tasks/error/error-v5-capability-completion.md",
-      "scope": "Complete the consumer-proven WinSock domain plus the admitted borrowed-result, no-throw dynamic-diagnostic and standard-error adapter families while preserving the existing owning Status/Result hot-path contract.",
-      "non_goals": "Exceptions, arbitrary payload/cause/source-location systems, MultiError, runtime domain registries, logging, downstream IO migration, adjacent-module closure, Native FFI/C API, stable C++ ABI, benchmark-invented APIs, instrumentation redesign and Formal certification.",
-      "baseline_commit": "afdb6b81ab4e8e3ad9d790be87a80dc9242c1cec",
-      "candidate_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
-      "candidate_tree": "305b2cb5947627dfb5b9697c939205b6c26cc6b7",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "error-v5-capability-completion",
+      "record": "docs/implementation/tasks/error/error-v5-capability-completion.md",
+      "candidate": {
+        "commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
+        "tree": "305b2cb5947627dfb5b9697c939205b6c26cc6b7"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -263,67 +104,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "loc": {
-        "snapshot_commit": "d61f0710ec0e465b31d458257e2587fdfe37ed52",
-        "repository_code": 417715,
-        "self_without_tests": 62970,
-        "module_implementation": 2178
-      },
-      "freeze_confirmation": {
-        "id": "error-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "known_limitations": [
-        "The P1 certificate covers only the frozen five W1-WIN consumer workloads, Abseil identity and MSVC 19.50 source/static benchmark delivery; cross-platform performance, all Error operations, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
-        "Result<T&> is a caller-owned non-null deep-const borrow and does not extend referent lifetime; nullable, range/text and shared-ownership tasks use their dedicated pointer, view/span or owning-handle shapes.",
-        "format_status retains at most 1023 bytes with an explicit truncation marker; in exception-disabled builds a custom formatter must itself obey the non-throw contract.",
-        "Custom std::error_category pointers are not retained; the category owner supplies canonical semantics and keeps its defining image alive through the adapter call.",
-        "HYLE promises neither stable C++ ABI nor Native FFI; matched headers and binaries are required, IO adoption remains IO-owned, the retained engineering bundle is local evidence and Formal remains PENDING."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces an Error correctness, security, ownership or lifetime, OOM or no-throw, API-usability or missing-capability defect.",
-        "A supported compiler, standard library or OS changes std::expected representation, reference lifetime diagnostics, standard-category image identity, formatting or native-translator semantics.",
-        "The public API, Status or Result layout or normal cost, direct dependency, component closure, selected-header inventory or delivery shape changes.",
-        "Renewing the engineering claim encounters a material change in frozen consumer provenance or ownership, peer, machine, instrument, compiler or retained evidence identity.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer or profile proves a reproducible material regression or advantage beyond the frozen 5% margin."
-      ],
       "summary": "error-v5 CLOSED：WinSock、Result<T&>、bounded format_status 与 std::error_code adapter 已补齐；既有 Status/Result 无回归，三平台正确性和三种 C++ 交付、易用性/文档、红队及 W1-WIN 五个同合同 consumer 的 5% P1 非劣门全部通过。"
     },
     {
       "module": "obs",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "OBS-METRICS-PRIMITIVES-2026-09-06",
-      "reopen_evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
-      "round_id": "obs-v5-metrics-primitives",
-      "closure_task": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
-      "scope": "Add model-independent counter, gauge and fixed-bucket histogram aggregation primitives for production inference observability without coupling them to exporters, labels or runtime policy.",
-      "non_goals": "Prometheus/OpenTelemetry formats, names/labels/cardinality registry, time windows, exporters, persistence/network/background work, automatic task context, GPU timing, engine policy, Native FFI/C API, adjacent-module redesign, common instrumentation changes and Formal certification.",
-      "baseline_commit": "c51599be2fdcd4caeacc5b05aa0f61f725c62491",
-      "candidate_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
-      "candidate_tree": "093836f0791f304deb521e86be8ba5a9c94b5913",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "obs-v5-metrics-primitives",
+      "record": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md",
+      "candidate": {
+        "commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
+        "tree": "093836f0791f304deb521e86be8ba5a9c94b5913"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -332,62 +130,23 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "obs-v5-metrics-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
-        "reviewed_tree": "093836f0791f304deb521e86be8ba5a9c94b5913",
-        "evidence": "docs/implementation/tasks/obs/obs-v5-metrics-primitives.md"
-      },
-      "loc": {
-        "snapshot_commit": "47a9e03a6bfd4d2d299d26d1d32739bb84541166",
-        "repository_code": 461132,
-        "self_without_tests": 75879,
-        "module_implementation": 1829
-      },
-      "known_limitations": [
-        "FixedHistogram boundary count is a compile-time constant while boundary values are supplied at construction; dynamic bucket schemas remain an exporter or application concern.",
-        "Concurrent metric types require an always-lock-free atomic representation, expose weakly consistent running snapshots and require quiescence for exact reset or destruction.",
-        "Counts and integral values must remain representable for the metric lifetime, floating sums follow IEEE arithmetic, and this factor provides no hidden sharding, labels, registry, exporter, time window or quantile sketch.",
-        "The engineering timing claim covers the frozen W1-WIN scheduler aggregate and a 5 percent margin; cross-platform timing and Formal certification remain pending."
-      ],
-      "reopen_triggers": [
-        "A named inference or general C++ consumer proves that a model-independent numeric metric primitive, ownership contract or natural aggregation journey belonging in Obs cannot be expressed without an adapter-local reimplementation.",
-        "A reproducible correctness, concurrency, lifetime, numeric, security or C++ usability defect is demonstrated in the frozen metric, log or trace surface.",
-        "The public API, algorithm, complexity, resource contract, dependency graph, selected-header inventory or source, static or shared delivery shape changes.",
-        "Qualified same-contract evidence proves a reproducible material regression, or a mature peer demonstrates a better complexity class without weakening the admitted semantics."
-      ],
-      "summary": "obs v5 CLOSED/FROZEN：生产级 counter、gauge、fixed histogram、batch observe、snapshot merge 与 bucket quantile 已完成三平台 correctness/sanitizer、三种 C++ 交付、易用性/docs、依赖和红队；W1-WIN owner 4/4 WIN、shared 4/4 PARITY 且 5% 非劣门全过。"
+      "summary": "obs v5 CLOSED：生产级 counter、gauge、fixed histogram、batch observe、snapshot merge 与 bucket quantile 已完成三平台 correctness/sanitizer、三种 C++ 交付、易用性/docs、依赖和红队；W1-WIN owner 4/4 WIN、shared 4/4 PARITY 且 5% 非劣门全过。"
     },
     {
       "module": "math",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "MATH-CHECKED-DISCRETE-SIZING-2026-09-06",
-      "reopen_evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
-      "round_id": "math-v4-checked-discrete-sizing",
-      "closure_task": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
-      "scope": "Add checked scalar least-common-multiple and next-power-of-two policies for untrusted model-independent sizing while preserving Math's Core-only header-only boundary.",
-      "non_goals": "SIMD lane or buffer variants, trusted standard-library wrappers, tensor or model policy, arbitrary precision, downstream frozen-module migration, component-edge changes, Native FFI/C API, stable C++ ABI, timing SOTA and Formal certification.",
-      "baseline_commit": "cc2bb5b648cfa43dc5b72a32db318eca5d4a80e7",
-      "candidate_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
-      "candidate_tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0",
-      "performance_tier": "P0",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "math-v4-checked-discrete-sizing",
+      "record": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md",
+      "candidate": {
+        "commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
+        "tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0"
+      },
+      "performance": {
+        "tier": "P0",
         "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
         "evidence": "docs/implementation/evidence/performance/benchmarks-math-v4.md"
       },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -396,64 +155,23 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "math-v4-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
-        "reviewed_tree": "1cb4bb81451ba016e09aecce563b3b591648d7a0",
-        "evidence": "docs/implementation/tasks/math/math-v4-checked-discrete-sizing.md"
-      },
-      "loc": {
-        "snapshot_commit": "686ec1c0215fa7a808ee470fe103ac62a1050759",
-        "repository_code": 452775,
-        "self_without_tests": 74346,
-        "module_implementation": 420
-      },
-      "known_limitations": [
-        "Math covers fixed-width non-Boolean scalar integral control-plane values; ordinary multi-operand operations use one explicit type and conversion is the only heterogeneous entry.",
-        "try_lcm is logarithmic scalar work and try_bit_ceil may use a bounded standard-library ISA selector; lane or buffer variants remain with SIMD after a real batch consumer is admitted.",
-        "Trusted scalar GCD, LCM and bit operations continue to use the C++ standard library directly; tensor, model, floating, arbitrary-precision and domain layout policy remain with their semantic owners.",
-        "The P0 claim covers complexity and structural cost on the frozen compilers and delivery shapes; nanosecond timing, every platform, end-to-end inference, universal SOTA, Native FFI and stable cross-toolchain C++ ABI are not claimed."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces an incorrect result, undefined behavior, missing common scalar integer policy or natural C++ API-usability defect.",
-        "A supported compiler, standard library or target changes integer, GCD, bit-primitive, constexpr or normal-path code-generation semantics.",
-        "The public API, algorithm or complexity, component dependency, header closure or source, static or shared delivery shape changes.",
-        "A locked llama.cpp or ggml journey, or two mature independent peers, prove a new model-independent scalar control-plane MUST.",
-        "A real batch or lane consumer admits a SIMD variant, a same-contract mechanism proves a better complexity class, or a real consumer or profile proves a reproducible material regression."
-      ],
-      "summary": "math-v4 CLOSED/FROZEN：checked scalar lcm/bit-ceil 已补齐；三平台 correctness/UBSan/逐头/三交付、真实 package consumer、文档/红队与 P0 原生结构成本全部通过。"
+      "summary": "math-v4 CLOSED：checked scalar lcm/bit-ceil 已补齐；三平台 correctness/UBSan/逐头/三交付、真实 package consumer、文档/红队与 P0 原生结构成本全部通过。"
     },
     {
       "module": "time",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "TIME-INTEROP-COMPLETENESS-2026-09-02",
-      "reopen_evidence": "docs/implementation/tasks/time/time-v5-interoperability.md",
-      "round_id": "time-v5-interoperability",
-      "closure_task": "docs/implementation/tasks/time/time-v5-interoperability.md",
-      "scope": "Audit and complete common checked system-time interoperability while preserving UnixTimestamp as the canonical wide value and isolating POSIX, Winsock and Win32 header costs from ordinary clock consumers.",
-      "non_goals": "Calendar, timezone, locale or text protocols, filesystem or device clocks, scheduler execution or cancellation, timer_queue changes, C or Native FFI, stable C++ ABI, host-clock retuning, benchmark-driven APIs, instrument redesign and Formal certification.",
-      "baseline_commit": "1f18f8fc26298b39524420735c7cc4713b1ee729",
-      "candidate_commit": "680c9941d7af787067afae904a8ba886c14ba851",
-      "candidate_tree": "b09b704304d943adb8d6442c3790fbe02a3048de",
-      "performance_tier": "P0",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "time-v5-interoperability",
+      "record": "docs/implementation/tasks/time/time-v5-interoperability.md",
+      "candidate": {
+        "commit": "680c9941d7af787067afae904a8ba886c14ba851",
+        "tree": "b09b704304d943adb8d6442c3790fbe02a3048de"
+      },
+      "performance": {
+        "tier": "P0",
         "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
         "evidence": "docs/implementation/tasks/time/time-v5-interoperability.md"
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -462,64 +180,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "time-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "loc": {
-        "snapshot_commit": "680c9941d7af787067afae904a8ba886c14ba851",
-        "repository_code": 424240,
-        "self_without_tests": 64671,
-        "module_implementation": 1420
-      },
-      "known_limitations": [
-        "POSIX and Win32 native structs are C++ interoperability mechanisms, not stable wire, C FFI or cross-toolchain ABI types; Windows callers include the relevant OS header before constructing those structs.",
-        "timeval and signed Unix units lose sub-unit precision by their documented floor, truncation or timeout-ceiling route, and checked conversion can fail when a platform-defined seconds field cannot represent the value.",
-        "Calendar, timezone, text protocols, filesystem and device clocks, scheduler execution and Native FFI remain routed to their named owners rather than folded into Time interoperability.",
-        "The P0 certificate proves fixed O(1), zero unexpected resources and frozen-toolchain code shape; it does not claim universal timing SOTA, host-clock P1 renewal, end-to-end inference impact or Formal performance."
-      ],
-      "reopen_triggers": [
-        "A named real consumer exposes a correctness, security, API-usability or missing common system-time interoperability defect.",
-        "A supported platform invalidates canonical range, negative-epoch, rounding, native-field, header-isolation or output-unchanged semantics.",
-        "The public API, layout, normal cost, direct dependency, component ownership or source/static/shared delivery shape changes materially.",
-        "A profile proves a material hot-path regression, or a mature same-contract peer proves a better complexity class or reproducible material consumer advantage.",
-        "A currently routed civil, device-clock, scheduling or Native FFI journey is formally admitted with a common Time-owned value contract."
-      ],
       "summary": "time-v5 CLOSED：signed Unix units、absolute/relative POSIX、timeout rounding、direct FILETIME 与 header isolation 已通过三平台正确性/WSL sanitizers、三种 C++ 交付、文档/红队和 P0 结构性能门；候选 680c9941/b09b7043 无产品漂移。"
     },
     {
       "module": "timer_queue",
-      "product_state": "CLOSED",
-      "round_id": "timer-queue-v1-factor",
-      "closure_task": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
-      "scope": "Move caller-owned TimerEntry, TimerQueue and CommonTimeoutQueue ownership into the accepted header-only factor, compose the frozen injectable host-clock API, and revalidate current Sched/IO consumers and the hyle::time product facade.",
-      "non_goals": "Callback execution, blocking or suspension, periodic/cross-thread scheduling policy, total-order metadata, Sched/IO state-machine redesign, Native FFI/C API, stable C++ ABI, benchmark-driven APIs, instrument redesign and Formal certification.",
-      "baseline_commit": "f342f8d92cebaae9f4870fe05e78afe6c6ca1391",
-      "candidate_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
-      "candidate_tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "timer-queue-v1-factor",
+      "record": "docs/implementation/tasks/timer_queue/timer-queue-v1-factor.md",
+      "candidate": {
+        "commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
+        "tree": "a5d48a259161c1a60e19450e42b4a6eac9a1a712"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-time.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-time.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -528,65 +206,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "timer-queue-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "loc": {
-        "snapshot_commit": "381eb4b195973ed35ed23ca63c05f9605a132f9b",
-        "repository_code": 420468,
-        "self_without_tests": 63430,
-        "module_implementation": 438
-      },
-      "known_limitations": [
-        "The P1 WIN covers only W1-WIN and the frozen N=64 Scheduler timer lifecycle against the pinned Seastar timer_set; other cardinalities, every timer operation, cross-platform performance, end-to-end inference KPIs, universal SOTA and Formal are not claimed.",
-        "TimerEntry and both queues are caller-owned single-owner structures: linked addresses must remain stable, queues do not execute callbacks or wake waiters, and the consumer must drain detached delivery lists before rearm or destruction.",
-        "Cancelling the current radix minimum may preserve one conservative early wake to keep cancel O(1), and delivery across radix buckets is not promised to be globally ordered.",
-        "CommonTimeoutQueue has correctness and O(1) arm/cancel/next plus output-sensitive advance evidence but no current HYLE product performance consumer, so no P1 ranking is claimed for it.",
-        "The internal factor is header-only and does not create a binary or Native FFI/C API; ordinary users consume it through the hyle::time C++ product facade, with no stable C++ ABI promise."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, owner/lifetime, ordering, concurrency, API-usability, delivery or missing-capability defect within caller-owned timer queues.",
-        "TimerEntry or queue public API/layout, radix/common algorithm, complexity or normal metadata, direct dependency, factor ownership or hyle::time facade delivery changes materially.",
-        "Sched or IO admits callback execution, wait, periodic, cross-thread command or cancellation-budget semantics that cannot remain in its owning runtime state machine.",
-        "Renewing the engineering claim encounters a material candidate, Seastar peer, Scheduler provenance/ownership, workload/accounting, machine, instrument, compiler or retained evidence change.",
-        "A mature same-contract peer proves a better complexity class, or a normal consumer/profile proves a reproducible regression beyond the frozen 5% margin."
-      ],
       "summary": "timer_queue v1 CLOSED：caller-owned radix/common-timeout 已成为独立 header-only factor，provider 组合与 Sched/IO 直接边正确；三平台正确性/sanitizer、三种 C++ 交付、文档/红队及对当前 Seastar 的 8/8 P1 WIN 全部通过。"
     },
     {
       "module": "platform",
-      "product_state": "CLOSED",
-      "round_id": "platform-v11-perf-control-resume",
-      "closure_task": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
-      "scope": "Rebind the unchanged Platform v10 NUMA-memory candidate and execute exactly one fresh W1-WIN platform-host-p1-v3 qualification after the independent common instrument task admitted precision-only known-delta escalation.",
-      "non_goals": "Any Platform product, API, test, benchmark, adapter, contract, peer or margin change; another common-instrument change, preflight, second bundle, order or sample selection, old-sample merging, adjacent modules, Native FFI and Formal certification.",
-      "baseline_commit": "aac877695b04b76b68eeff69c9bccbbafc55f411",
-      "candidate_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-      "candidate_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "platform-v11-perf-control-resume",
+      "record": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
+      "candidate": {
+        "commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
+        "tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -595,63 +232,23 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "platform-v11-inference-replay-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-        "reviewed_tree": "63b58d1051d86c4aecb1bf736ae84265e359a5f5",
-        "evidence": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-        "repository_code": 459121,
-        "self_without_tests": 75504,
-        "module_implementation": 6964
-      },
-      "known_limitations": [
-        "Multi-node Windows exposes current free and zeroed bytes but no trustworthy per-node total, so physical_total_bytes is absent there.",
-        "Linux per-node available memory is a planning estimate without the global MemAvailable watermark correction; snapshots are not reservations or allocation-success promises.",
-        "Process-wide cgroup, job and commit constraints stay in host_memory_info and must be composed once by the consumer rather than copied onto every node.",
-        "This round has native Windows, Linux and macOS coverage but no Windows multi-node hardware coverage; its P1 claim is only the W1-WIN host-planning snapshot at a 5% margin."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a Platform node-memory, CPU or host-fact correctness, security, ownership, concurrency, error or natural C++ API-usability defect.",
-        "The public API, OS semantics, algorithm, complexity, dependency graph or source, static or shared delivery shape changes.",
-        "A named inference journey proves that deferred node distance, bandwidth, residency or pressure capability belongs in Platform.",
-        "Qualified same-contract or consumer evidence proves a reproducible material regression or a mature peer proves a better complexity class."
-      ],
-      "summary": "platform v11 CLOSED/FROZEN：NUMA node memory fact 与原有 host facts 已完成三平台 correctness、三交付、API/docs、依赖和红队；唯一 fresh W1-WIN receipt 全 controls 与 4/4 host-planning NI PASS，未改 3c1ef239/63b58d10 产品重新冻结。"
+      "summary": "platform v11 CLOSED：NUMA node memory fact 与原有 host facts 已完成三平台 correctness、三交付、API/docs、依赖和红队；唯一 fresh W1-WIN receipt 全 controls 与 4/4 host-planning NI PASS，未改 3c1ef239/63b58d10 产品候选重新确认。"
     },
     {
       "module": "platform_thread",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-THREAD-PARKER-PROVENANCE-2026-09-05",
-      "reopen_evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
-      "round_id": "platform-v8-os-resource-contract",
-      "closure_task": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
-      "scope": "Restore complete source provenance, license, dependency-lock and installed-package projection for the existing Rust-std-derived futex parker without changing its algorithm.",
-      "non_goals": "Parker algorithm redesign, new wait or thread capability, CPU/FS ownership, scheduler policy, Native FFI/C API, stable C++ ABI, common instrument redesign and Formal certification.",
-      "baseline_commit": "f679026d3dc7fe3e8f68df005df90637dd29bebd",
-      "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-      "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-      "performance_tier": "P0",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "platform-v8-os-resource-contract",
+      "record": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md",
+      "candidate": {
+        "commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "tree": "37889346564f3a5cdc895f26c9d610883076ba02"
+      },
+      "performance": {
+        "tier": "P0",
         "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
         "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -660,64 +257,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "platform-thread-v8-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-        "evidence": "docs/implementation/tasks/platform/platform-v8-os-resource-contract.md"
-      },
-      "loc": {
-        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "repository_code": 451412,
-        "self_without_tests": 74308,
-        "module_implementation": 857
-      },
-      "known_limitations": [
-        "This round signs the Rust-derived parker provenance, license and unchanged P0 cost structure; it does not rebind historical timing points into a new cross-platform P1 claim.",
-        "Thread priority and affinity controls remain subject to OS permissions and can fail through Status; they are mechanisms rather than scheduler policy.",
-        "The C++ API does not promise a stable cross-toolchain ABI, a C API or Native FFI."
-      ],
-      "reopen_triggers": [
-        "The selected Rust upstream revision, source bytes, license option or HYLE adapted parker state machine changes.",
-        "A named consumer reproduces a wait/thread correctness, lifetime, progress, cancellation or C++ API-usability defect.",
-        "The public API, wait algorithm, memory-order contract, layout, component dependency or source, static or shared delivery shape changes.",
-        "A same-contract mechanism proves a better complexity class, or a qualified normal consumer workload proves a reproducible material regression."
-      ],
-      "summary": "platform_thread v8 CLOSED/FROZEN：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台正确性、三交付、直接消费者、易用性、红队与 P0 结构门全部通过。"
+      "summary": "platform_thread v8 CLOSED：Parker 产品 bytes 未改，Rust MIT provenance/lock/license/package 完整；三平台正确性、三交付、直接消费者、易用性、红队与 P0 结构门全部通过。"
     },
     {
       "module": "platform_fs",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "PLATFORM-FS-CONTROL-WINDOW-2026-09-06",
-      "reopen_evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
-      "round_id": "platform-fs-v2-control-resume",
-      "closure_task": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
-      "scope": "Rebind the unchanged Platform-fs v8 product candidate and run exactly one fresh W1-WIN same-contract warm-file P1 qualification after an independent controls-only preflight proves a stable sampling window.",
-      "non_goals": "Product, API, benchmark, peer adapter, contract, margin or instrument changes; replacing Windows evidence with WSL/macOS; sample merging, selection or run-until-green; adjacent-module review, Native FFI and Formal certification.",
-      "baseline_commit": "27e6128683fbfdf371310dc433ab9abf68d13e9a",
-      "candidate_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-      "candidate_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "platform-fs-v2-control-resume",
+      "record": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md",
+      "candidate": {
+        "commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
+        "tree": "37889346564f3a5cdc895f26c9d610883076ba02"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -726,63 +283,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "platform-fs-v2-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "reviewed_tree": "37889346564f3a5cdc895f26c9d610883076ba02",
-        "evidence": "docs/implementation/tasks/platform_fs/platform-fs-v2-control-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "c39df6f94c636ab8fa94cb700dd263763a42d680",
-        "repository_code": 451412,
-        "self_without_tests": 74308,
-        "module_implementation": 2712
-      },
-      "known_limitations": [
-        "This factor owns synchronous buffered file-handle and namespace journeys; asynchronous and direct I/O remain with the IO owner.",
-        "POSIX EINTR retry is limited to restart-safe controls without known side effects; close-like or potentially committed operations are intentionally not retried blindly.",
-        "The numeric receipt covers one warmed 4 MiB model-file journey on W1-WIN; cold-cache, other filesystems, cross-machine ranking and Formal SOTA remain unclaimed.",
-        "W1-WSL and M1-MAC provide correctness, sanitizer and delivery coverage and are not pooled with Windows NTFS timing."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces synchronous file correctness, ownership, EOF, short-transfer, EINTR, close or C++ usability failure.",
-        "The public API, complexity, native-call cost or semantics, direct dependencies, delivery, or measured product bytes change materially.",
-        "Qualified same-contract normal-consumer evidence proves a reproducible regression beyond the 5% material margin, or a mature peer proves a better complexity class.",
-        "A supported OS or SDK changes the file-handle or synchronous-I/O contract used by this factor."
-      ],
-      "summary": "platform_fs v2 CLOSED/FROZEN：未变化的 v8 第二候选取得唯一 fresh W1-WIN receipt；31 个独立进程下 controls 全 PASS，8/8 同合同 warm-file strata 为 PARITY 且 5% NI PASS，无固定方向产品劣化。"
+      "summary": "platform_fs v2 CLOSED：未变化的 v8 第二候选取得唯一 fresh W1-WIN receipt；31 个独立进程下 controls 全 PASS，8/8 同合同 warm-file strata 为 PARITY 且 5% NI PASS，无固定方向产品劣化。"
     },
     {
       "module": "mem_reclaim",
-      "product_state": "CLOSED",
-      "round_id": "mem-reclaim-v2-inference-resume",
-      "closure_task": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
-      "scope": "Resume the allocation-free read-side reclamation factor for an owner-authorized inference snapshot journey, migrate ConcurrentNodeHashMap table retirement, enter the Mem facade, and qualify official Folly same-contract P1 evidence.",
-      "non_goals": "Hazard-pointer cohorts, async executors, GPU fence retirement, allocating retire nodes, lock-free containers, Obs migration, Native FFI/C API, Compute/Graph, common instrument redesign and Formal certification.",
-      "baseline_commit": "444b02c01afe00f4cd3b44433204e58db3c24712",
-      "candidate_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-      "candidate_tree": "8cb5ba0024cdb20af65347144f09e16f26147632",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "mem-reclaim-v2-inference-resume",
+      "record": "docs/implementation/tasks/mem/mem-reclaim-v2-inference-resume.md",
+      "candidate": {
+        "commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
+        "tree": "8cb5ba0024cdb20af65347144f09e16f26147632"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-reclamation.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -791,201 +309,76 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "mem-reclaim-freeze-replay-2026-09-05",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-05",
-        "reviewed_commit": "6cb31bf4512225ef4a9b065837000f31125a14a2",
-        "reviewed_tree": "792da0317ab46b7a403febfaa2ab312aa071e99d",
-        "evidence": "docs/implementation/tasks/project/frozen-foundation-replay-2026-09.md"
-      },
-      "loc": {
-        "snapshot_commit": "0f6ef8e83ee290ab565c0d53081a0acb75a46675",
-        "repository_code": 436638,
-        "self_without_tests": 70416,
-        "module_implementation": 227
-      },
-      "known_limitations": [
-        "Domain, payload and intrusive record are caller-owned; the domain outlives guards and pending records, guards exit on their entry thread, and drain or destruction requires external quiescence.",
-        "A stalled reader delays its whole domain; callbacks run synchronously on the collector thread, and the 65th concurrent live thread onward shares bounded fallback stripes.",
-        "The P1 claim covers one W1-WIN short immutable-read contract; writer-side, long-reader, fallback-contention, end-to-end token-latency, cross-platform ranking and Formal performance remain unclaimed."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces reader, retire, lifetime, callback, ownership or C++ API-usability failure.",
-        "A supported compiler, atomic-wait or TLS implementation invalidates the epoch, route or teardown contract.",
-        "The public API or layout, algorithm, direct dependency, normal cost or source/static/shared delivery changes materially.",
-        "A qualified same-contract peer or normal consumer profile proves a material regression or promotes the path to P2.",
-        "A real consumer formally admits stalled-reader-independent hazard, GPU-fence or executor-affine reclamation that has no natural existing owner."
-      ],
       "summary": "mem_reclaim v2 CLOSED：推理 read-mostly snapshot 回收、零分配 typed retire 与 Container 直接 consumer 完成；三平台正确性/sanitizer/三交付、文档/红队及官方 Folly 同合同 P1 全部通过。"
     },
     {
       "module": "mem",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "MEM-V6-PLATFORM-V8-CONSUMER-REPLAY",
-      "reopen_evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
-      "round_id": "mem-v6-comprehensive-rebuild",
-      "closure_task": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
-      "scope": "Re-establish the current host-memory capability superset, natural C++ product shape, internal reuse, performance and delivery contract after Platform v8, coordinated with but independently from Mem-VM v2.",
-      "non_goals": "Mem reclamation without a new trigger; async or device completion, Tensor, Graph or model policy; Native FFI/C API; stable C++ ABI; common instrument redesign; benchmark-only API or metadata; Formal certification.",
-      "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
-      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-    "engineering_performance": {
-      "verdict": "PASS",
-      "mode": "P1_ENGINEERING",
-      "material_margin_pct": 5,
-      "machine_profile": "W1-WIN",
-      "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v6.md"
+      "state": "CLOSED",
+      "round": "mem-v6-comprehensive-rebuild",
+      "record": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md",
+      "candidate": {
+        "commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+        "tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b"
       },
-    "formal_performance": {
-      "state": "PENDING",
-      "instrument_profile": "formal-release-v1"
-    },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "freeze_confirmation": {
-      "id": "mem-v6-freeze-2026-09-06",
-      "marker": "FROZEN",
-      "confirmed_at": "2026-09-06",
-      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "evidence": "docs/implementation/tasks/mem/mem-v6-comprehensive-rebuild.md"
-    },
-    "loc": {
-      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "repository_code": 454713,
-      "self_without_tests": 74519,
-      "module_implementation": 7631
-    },
-    "known_limitations": [
-      "A growable variable-size individual-free pool is routed through standard PMR over a HYLE resource rather than duplicated as a distinct HYLE owner.",
-      "Large-page arena partial effects are observable but not rollbackable; physical page granularity and NUMA placement remain unverified when the vendor or OS cannot prove them.",
-      "Tensor/KV eviction, asynchronous completion, device providers, IPC protocols and secure-secret policy remain upper-layer owners.",
-      "The P1 receipt covers one W1-WIN isolated runtime-erased heap lifecycle; other families are structural and this is not an all-platform, all-shape or Formal SOTA certificate."
-    ],
-    "reopen_triggers": [
-      "A real consumer reproduces an allocator/resource/buffer/pool/arena/planner correctness, OOM, lifetime, concurrency, ownership or C++ usability defect, or proves a routed family cannot perform a named foundation task.",
-      "The locked mimalloc or a direct HYLE dependency changes source, semantics, default policy, ABI, code generation or delivery on the product path.",
-      "The public API, layout, default metadata, complexity, component dependency, delivery shape or system-fact semantics changes.",
-      "A same-contract normal consumer workload proves a material regression, or a mature peer proves a better complexity class.",
-      "New OS, NUMA or large-page facts invalidate the current unknown, partial-outcome or placement contract."
-    ],
-    "summary": "mem v6 CLOSED/FROZEN：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。"
+      "performance": {
+        "tier": "P1",
+        "verdict": "PASS",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v6.md",
+        "material_margin_pct": 5
+      },
+      "gates": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "mem v6 CLOSED：九族超集 COMPLETE/ROUTED，三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WIN 8/8 5% P1 非劣门全部通过。"
     },
     {
       "module": "mem_vm",
-    "product_state": "CLOSED",
-      "reopen_trigger_id": "MEMVM-INFERENCE-SPARSE-MAP-01",
-      "reopen_evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
-      "round_id": "mem-vm-v2-inference-mapping",
-      "closure_task": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
-      "scope": "Complete inference-shaped file mapping and range lifetime, replay anonymous/shared/huge/guarded storage against Platform v8, and re-establish natural C++ API, performance and delivery contracts.",
-      "non_goals": "Base allocator, pool or lifetime-planner redesign; reclamation; async/direct IO; backend/device or model policy; IPC synchronization protocol; Native FFI/C API; stable C++ ABI; common instrument redesign; Formal certification.",
-      "baseline_commit": "5aaeaa770be72cd7a58465659b2abc7d98a2d89b",
-      "candidate_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "candidate_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-    "engineering_performance": {
-      "verdict": "PASS",
-      "mode": "P1_ENGINEERING",
-      "material_margin_pct": 5,
-      "machine_profile": "W1-WSL",
-      "instrument_profile": "closure-perf-v1",
-      "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md"
-    },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
+      "state": "CLOSED",
+      "round": "mem-vm-v2-inference-mapping",
+      "record": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
+      "candidate": {
+        "commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
+        "tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b"
       },
-    "gate_verdicts": {
-      "scope": "PASS",
-      "architecture": "PASS",
-      "correctness": "PASS",
-      "delivery": "PASS",
-      "usability_docs": "PASS",
-      "red_team": "PASS",
-      "engineering_performance": "PASS"
-    },
-    "freeze_confirmation": {
-      "id": "mem-vm-v2-freeze-2026-09-06",
-      "marker": "FROZEN",
-      "confirmed_at": "2026-09-06",
-      "reviewed_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "reviewed_tree": "57adb69f185cf02d42ab7f220ebeccbb91170b1b",
-      "evidence": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md"
-    },
-    "loc": {
-      "snapshot_commit": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "repository_code": 454713,
-      "self_without_tests": 74519,
-      "module_implementation": 1318
-    },
-    "known_limitations": [
-      "Windows whole-view mappings have no safe partial-unmap equivalent, and file-backed kDontNeed is rejected instead of using a content-weakening anonymous-memory primitive.",
-      "SharedMapping payload size, readiness and synchronization are an external IPC protocol; Darwin and Windows native capacities may be page-rounded.",
-      "Existing borrowed pointers, spans and views must not outlive owner release, reset or move; checked accessors prevent new cross-hole views but do not track prior borrows.",
-      "The Linux model-loader P1 receipt is from W1-WSL guest engineering and is not a native-Linux, independent-hardware or Formal certificate."
-    ],
-    "reopen_triggers": [
-      "A real loader, scheduler or IPC consumer reproduces a mapping, hole, access, flush, lock, shared-publication, guarded-stack, placement, lifetime or C++ usability defect.",
-      "A supported OS adds a safe same-contract partial-unmap or file-discard primitive, or changes an adopted mapping syscall contract.",
-      "The public API, layout, normal metadata/allocation/syscall cost, Platform/Error/Mem dependency, component graph or delivery shape changes.",
-      "A same-contract normal model-loader workload proves a material regression, or a mature peer proves a better complexity class.",
-      "Async/direct IO, persistent memory or device mapping gains a named foundation consumer that cannot compose the current owner routes."
-    ],
-    "summary": "mem_vm v2 CLOSED/FROZEN：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
+      "performance": {
+        "tier": "P1",
+        "verdict": "PASS",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md",
+        "material_margin_pct": 5
+      },
+      "gates": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "mem_vm v2 CLOSED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
     },
     {
       "module": "simd",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "SIMD-V6-DELIVERY-DOC-CONTRADICTION",
-      "reopen_evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "round_id": "simd-v6-provider-consumer-replay",
-      "closure_task": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
-      "scope": "Reconcile the contradictory installed expert-SDK contract and audit only the SIMD capability, provider and build seams affected by current Highway plus current ggml/llama.cpp, ds4, vLLM and SGLang inference-consumer evidence.",
-      "non_goals": "An open 422-scope benchmark sweep, benchmark-shaped APIs, a restored public register DSL, model-specific tensor operators, block-quant/GEMM/attention ownership, Compute or Graph implementation, Native FFI/C API, stable cross-toolchain C++ ABI, common instrument redesign or Formal certification.",
-      "baseline_commit": "b03fd9503885818a41f91375d761eed5d54238ff",
-      "candidate_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
-      "candidate_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "simd-v6-provider-consumer-replay",
+      "record": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md",
+      "candidate": {
+        "commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
+        "tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-simd.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-simd.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -994,66 +387,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "simd-v6-freeze-2026-09-06",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-06",
-        "reviewed_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
-        "reviewed_tree": "a1bb30a63415b4a1ef02f04d860b42ae50bdbd5b",
-        "evidence": "docs/implementation/tasks/simd/simd-v6-provider-consumer-replay.md"
-      },
-      "loc": {
-        "snapshot_commit": "e72089c196f6b38f897524087bc53201a0fd8df4",
-        "repository_code": 458401,
-        "self_without_tests": 75356,
-        "module_implementation": 15097
-      },
-      "known_limitations": [
-        "P1 covers three inference rows on W1-WIN MSVC exact AVX2; SVE and RVV have no physical performance receipt, and Formal remains PENDING.",
-        "The same-contract n=256/k=6 top-k row is consistently about 0.95%–1.58% behind its bounded peer; code size and branch routing provide a mechanism, but no real-engine profile provides a material consumer key.",
-        "Block quantization, GEMM, attention, RoPE, Mamba, tensor fusion and sampling policy remain owned by Compute, format or engine layers rather than ordinary SIMD.",
-        "Unknown-CPU ordinary fat calls may pay one cached indirect call per whole buffer; zero selector cost is promised only for fixed or exact targets, and no Native FFI or cross-toolchain stable C++ ABI is provided."
-      ],
-      "reopen_triggers": [
-        "A named inference or foundation consumer proves a missing model-independent row primitive that the expert seam cannot naturally carry.",
-        "A real consumer profile proves the top-k 4–8 ns diagnostic or another route has material end-to-end impact, or a mature peer proves a better complexity class.",
-        "An adopted Highway, xsimd or VQSort update changes semantics, code generation, licensing or delivery for a used primitive.",
-        "The public API or layout, target/provider route, normal dispatch/allocation/state cost, Core/Platform dependency, component graph, or source/static/shared expert delivery changes.",
-        "A supported ISA, compiler or OS cannot preserve correctness, baseline SIGILL safety, fixed/exact zero-selector cost, or fat whole-buffer single-selector cost."
-      ],
-      "summary": "simd-v6 CLOSED/FROZEN：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。"
+      "summary": "simd-v6 CLOSED：当前推理能力缺口已补齐或路由，三平台正确性/ASan、三交付、387/422/0 路由、文档/易用性、红队和 W1-WIN 三行同合同 5% P1 非劣门全部通过。"
     },
     {
       "module": "container",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "CONTAINER-INFERENCE-SUPERSET-AND-DELIVERY-2026-09-07",
-      "reopen_evidence": "docs/implementation/tasks/container/container-current-product-replay-2026-09.md",
-      "round_id": "container-v6-identity-p1-resume",
-      "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
-      "scope": "Rename the internal text factor to container_text without changing the public hyle::container product, equalize the four previously rejected P1 peer contracts, and replay affected correctness, direct-consumer, source/static/shared, symbol, documentation, performance and red-team gates.",
-      "non_goals": "New Container capabilities or public API, layout, algorithm, default allocator or metadata changes; tokenizer, KV, scheduler or IO policy; Native FFI or C API; stable C++ ABI; common performance-instrument changes; Formal certification.",
-      "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-      "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "container-v6-identity-p1-resume",
+      "record": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "candidate": {
+        "commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1062,60 +413,23 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "container-v6-freeze-2026-09-07",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-07",
-        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "repository_code": 465734,
-        "self_without_tests": 77078,
-        "module_implementation": 7962
-      },
-      "known_limitations": [
-        "The P1 claim covers one frozen 4096-entry entry-and-weight LRU model-cache workload on W1-WIN; it is not an all-container, cross-platform or Formal SOTA certificate.",
-        "Standard containers remain the route where HYLE cannot supply a distinct layout, complexity, ownership or failure contract; Container does not promise full std, Boost or Folly API parity.",
-        "Tokenizer automata, KV or device cache policy, blocking service, compressed rank/select structures and model-specific storage remain higher-layer owners.",
-        "The product is C++23 source, static and shared delivery for compatible C++ toolchains without a Native FFI, C API or stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a sequential container correctness, security, OOM, lifetime, invalidation or natural C++ API-usability defect, or proves a missing common Container-owned capability.",
-        "A public API or layout, normal algorithm or metadata cost, allocator, hash, ISA/provider route, dependency graph or source, static or shared delivery shape changes.",
-        "An adopted Highway, xxHash or wyhash update changes semantics, code generation, licensing or delivery on a used Container path.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted workload."
-      ],
-      "summary": "container-v6 CLOSED/FROZEN：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
+      "summary": "container-v6 CLOSED：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。"
     },
     {
       "module": "util_runtime",
-      "product_state": "CLOSED",
-      "round_id": "util-runtime-v5-blocker-resolution",
-      "closure_task": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
-      "scope": "Resolve only the three retained util-runtime v4 blockers: erased argument transport, the private Windows demangle fixture include prerequisite, and the native long-symbol fallback assertion; then complete the previously selected P0 and delivery gates.",
-      "non_goals": "New capability families; util_core or frozen dependency changes; Sched, IO, Compute or Graph work; unregister/unload/drain; Native FFI/C API; P1 timing; shared closure, selector or build-system redesign.",
-      "baseline_commit": "3ed2a2cef5ffc0c5acbcaff6421e568a5546f77a",
-      "candidate_commit": "7019998034f8025890770fad04406dc5ef2d6194",
-      "candidate_tree": "a0f5b8d9ae5af99b9e15d60678ec6dac7d566327",
-      "performance_tier": "P0",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "util-runtime-v5-blocker-resolution",
+      "record": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md",
+      "candidate": {
+        "commit": "7019998034f8025890770fad04406dc5ef2d6194",
+        "tree": "a0f5b8d9ae5af99b9e15d60678ec6dac7d566327"
+      },
+      "performance": {
+        "tier": "P0",
         "verdict": "PASS",
-        "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
         "evidence": "docs/implementation/evidence/performance/benchmarks-util.md"
       },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1124,66 +438,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "util-runtime-v5-blocker-resolution",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-07",
-        "reviewed_commit": "342dbcfd10c2ab985aab023991db2c7367c3719e",
-        "reviewed_tree": "2edd6da353a43cde252282772cf6d6910436bdb4",
-        "evidence": "docs/implementation/tasks/util/util-runtime-v5-blocker-resolution.md"
-      },
-      "loc": {
-        "snapshot_commit": "7019998034f8025890770fad04406dc5ef2d6194",
-        "repository_code": 480987,
-        "self_without_tests": 77069,
-        "module_implementation": 544
-      },
-      "known_limitations": [
-        "Registry is a process-local startup registry with one-way freeze; it does not own dynamic-module unregister, unload, drain or quiescence, so the host must retire borrowed creators before unloading their image.",
-        "EntryView, FrozenView and cached Creator handles borrow Registry-owned immutable storage; the Registry must outlive them, and replaced entries remain alive until Registry destruction.",
-        "Demangling is a best-effort cold diagnostic facility and may return the exact input after platform rejection, OOM or ambiguous truncation; arbitrary ABI name quality and cross-process DbgHelp coordination are not promised.",
-        "The P0 certificate covers complexity and normal-path allocation, lock, metadata and forwarding structure; it makes no P1 timing, Native FFI, cross-toolchain C++ ABI, Formal-performance or universal SOTA claim."
-      ],
-      "reopen_triggers": [
-        "A named real consumer reproduces a Registry forwarding, exception, entry, allocator or image-lifetime, concurrent-publication, demangle-completeness, OOM or natural C++ API-usability defect.",
-        "A real dynamic-plugin consumer proves that generic unregister, drain or quiescence belongs in util-runtime rather than in the host policy owner.",
-        "The public API, layout, algorithm, complexity, normal-path cost, direct dependency, component identity or source, static or shared delivery shape changes.",
-        "A real profile promotes Registry or demangle to P1 or P2, or a mature same-contract peer proves a better complexity class or reproducible material consumer advantage.",
-        "A supported compiler, standard library, ABI demangler, Windows DbgHelp or sanitizer runtime changes semantics relied on by this round."
-      ],
-      "summary": "util-runtime v5 CLOSED/FROZEN：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。"
+      "summary": "util-runtime v5 CLOSED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。"
     },
     {
       "module": "sched",
-      "product_state": "CLOSED",
-      "reopen_trigger_id": "SCHED-V5-IO-COMPLETION-SEARCH-2026-09-08",
-      "reopen_evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
-      "round_id": "sched-v5-io-completion-search",
-      "closure_task": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
-      "scope": "Correct the scheduler idle transition when an attached IO driver reports in-flight work so default balanced search does not delay completion reaping, then replay the directly affected IO and TLS consumers.",
-      "non_goals": "Public Sched API or capability expansion; queue, fiber, synchronization or cancellation redesign; idle constant tuning; TLS/provider specialization; multi-worker IO rewrite; Compute, Graph or common performance-instrument changes.",
-      "baseline_commit": "d53cdadfb1184a57f5ed18880edfeaf719a4412f",
-      "candidate_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
-      "candidate_tree": "212a5c0305d9a756cdea91b2ed1270319264db8a",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "sched-v5-io-completion-search",
+      "record": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md",
+      "candidate": {
+        "commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
+        "tree": "212a5c0305d9a756cdea91b2ed1270319264db8a"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1192,65 +464,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "sched-v5-freeze-2026-09-08",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-08",
-        "reviewed_commit": "c1b2a5b775fcc8100281bf3acc3117d09b764987",
-        "reviewed_tree": "7bb2e83a57fa740d84625c1a9539d63e10ee351d",
-        "evidence": "docs/implementation/tasks/sched/sched-v5-io-completion-search.md"
-      },
-      "loc": {
-        "snapshot_commit": "2f9ecc8168b4d303a17ae4fcad385b8150cdd072",
-        "repository_code": 491234,
-        "self_without_tests": 83216,
-        "module_implementation": 5653
-      },
-      "known_limitations": [
-        "The current P1 receipt covers the single-worker natural TLS completion route; the prior v4 evidence covers selected no-IO batch routes, and neither is an all-operation, cross-platform or Formal SOTA certificate.",
-        "An attached IO driver must report a reliable pre-reap in-flight state and provide a wait that Scheduler wake can interrupt; the current integration admits one owner and is private to IO.",
-        "Cancellation is cooperative and an in-flight timer, IO or backend operation must be cancelled or retired by its owner before a waiting Fiber resumes; stackful Fibers cannot be force-destroyed safely.",
-        "Gang or SPMD execution, adaptive model or request priority, continuous batching and heterogeneous or GPU scheduling remain upper-layer policy.",
-        "Vendored fcontext is verified for Windows and Linux x86-64 plus macOS arm64; new targets or toolchain ABI changes require new evidence."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a task, synchronization, cancellation, shutdown, ownership, concurrency or natural C++ API-usability defect.",
-        "A supported IO consumer reproduces a lost wake, hang, busy poll, completion-latency regression or incorrect in-flight or interruptible-wait contract at the Sched integration boundary.",
-        "The public API, layout, algorithm, complexity, normal-path allocation, lock, syscall or metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
-        "Boost.Context, a supported compiler, operating-system wait or thread contract, or target architecture changes semantics relied on by this round.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
-      ],
-      "summary": "sched-v5 CLOSED/FROZEN：IO completion 空闲转换缺陷已修复；三平台定向正确性、WSL sanitizers、直接交付、红队及 W1-WSL 自然 TLS consumer 双顺序 5% P1 非劣门全部通过，无公开 API 或普通无 IO 路线扩张。"
+      "summary": "sched-v5 CLOSED：IO completion 空闲转换缺陷已修复；三平台定向正确性、WSL sanitizers、直接交付、红队及 W1-WSL 自然 TLS consumer 双顺序 5% P1 非劣门全部通过，无公开 API 或普通无 IO 路线扩张。"
     },
     {
       "module": "io_core",
-      "product_state": "CLOSED",
-      "round_id": "io-v1-core-factorization",
-      "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
-      "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
-      "non_goals": "TLS, HTTP1, HTTP2 or transfer semantic closure in this card; changes to closed lower factors without a named trigger; Compute or Graph work; Native FFI or C API; benchmark-shaped entry points; cross-platform or all-operation SOTA claims.",
-      "baseline_commit": "2e4b0606b08f57ac15a3717f8b0e9be82db16123",
-      "candidate_commit": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
-      "candidate_tree": "4fd9be1c69dab36355401c128eb8eec2337f756e",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "io-v1-core-factorization",
+      "record": "docs/implementation/tasks/io/io-v1-core-factorization.md",
+      "candidate": {
+        "commit": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
+        "tree": "4fd9be1c69dab36355401c128eb8eec2337f756e"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1259,64 +490,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "io-core-v1-freeze-2026-09-09",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-09",
-        "reviewed_commit": "9e0bd42147f8b5838271691b566e9683f0162388",
-        "reviewed_tree": "2802cdb4368f284eca9a126f7eab023187239160",
-        "evidence": "docs/implementation/tasks/io/io-v1-core-factorization.md"
-      },
-      "loc": {
-        "snapshot_commit": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
-        "repository_code": 535488,
-        "self_without_tests": 89889,
-        "module_implementation": 11044
-      },
-      "known_limitations": [
-        "IO resources are owner-worker affine, and operation buffers plus cancellation tokens remain borrowed until await completion; callers must cancel and drain before destroying a suspended fiber or IoContext.",
-        "Backends without natively cancellable file operations reject deadline or cancellation options instead of pretending to cancel blocking system calls; macOS direct IO, Windows named-pipe half-close and unsupported socket tuning return typed Unimplemented.",
-        "Linux io_uring expert operations require a successfully acquired runtime capability; the portable one-shot route remains available on all supported backends.",
-        "The P1 receipt covers two complete HTTP1 consumer shapes on one W1-WSL worker against Boost.Beast; it is not a WAN, multi-worker, all-operation, all-backend, full-server or Formal SOTA certificate.",
-        "The product is a C++23 source, static and shared SDK for compatible toolchains; Native FFI and a C API are not provided."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a transport correctness, security, owner-affinity, buffer lifetime, cancellation, late-completion, teardown, error-domain or natural C++ API-usability defect.",
-        "A real inference or general systems consumer proves a missing common core transport, file, endpoint, resolver, signal or local-IPC capability with no complete routed owner.",
-        "The public API or layout, backend algorithm, normal allocation, copy, syscall, lock, wake or metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
-        "A supported operating system, compiler or backend contract changes semantics relied on by this round.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
-      ],
-      "summary": "io_core v1 CLOSED/FROZEN：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 冻结于 ffa70e35。"
+      "summary": "io_core v1 CLOSED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 冻结于 ffa70e35。"
     },
     {
       "module": "io_tls",
-      "product_state": "CLOSED",
-      "round_id": "io-tls-v2-duplex-progress",
-      "closure_task": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
-      "scope": "Repair only the TLS ciphertext-pump progress seam after an HTTP2 consumer reproduced a forced-epoll full-duplex flow-control stall; replay affected TLS correctness, delivery and performance contracts.",
-      "non_goals": "Public TLS configuration or stream API redesign, HTTP framing or routing, HTTP2 protocol semantics, QUIC or DTLS, certificate provisioning policy, Native FFI or C API and benchmark-shaped entry points.",
-      "baseline_commit": "79848f76946ac661abb221a537e71e4d70abdb1e",
-      "candidate_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-      "candidate_tree": "98632557e0237bac0bed3ca5521e59420d89176e",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "io-tls-v2-duplex-progress",
+      "record": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
+      "candidate": {
+        "commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "tree": "98632557e0237bac0bed3ca5521e59420d89176e"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1325,65 +516,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "io-tls-v2-freeze-2026-09-09",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-09",
-        "reviewed_commit": "3b4e87f22963fcbdcdbf70a332de4578c676c585",
-        "reviewed_tree": "075d9a145dd60673f3eb977f49088183c9a596fa",
-        "evidence": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md"
-      },
-      "loc": {
-        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-        "repository_code": 522049,
-        "self_without_tests": 89877,
-        "module_implementation": 987
-      },
-      "known_limitations": [
-        "TlsContext and its allocator backing must outlive streams and sessions; TlsStream is single-owner, and operation buffers remain borrowed until await completion.",
-        "tls_write is write-some and may return partial bytes or bytes plus a terminal error; callers must advance by bytes and must not retry from the original buffer start.",
-        "Opportunistic unprocessed peer ciphertext is capped at 32 KiB, while provider-owned certificate, session and cipher state remains governed by OpenSSL and is not claimed to have constant total memory.",
-        "The P1 receipt covers one verified connection and one 512x256-byte small-record stream on a single W1-WSL worker against Asio over the same OpenSSL; it is not a WAN, multi-worker, all-provider, all-record, full-server or Formal SOTA certificate.",
-        "Certificate provisioning, trust policy, OCSP, key logging, early data, DTLS, QUIC, HTTP policy and Native FFI remain outside this factor; delivery is C++23 source, static and shared for compatible toolchains."
-      ],
-      "reopen_triggers": [
-        "A named HTTPS or HTTP2 consumer reproduces a correctness, security, identity, truncation, deadline, cancellation, session, context-lifetime, pump-progress, partial-transfer or natural C++ API-usability defect.",
-        "A real consumer proves a missing generic TLS capability rather than HTTP framing, routing, authentication, certificate provisioning, model schema or other application policy.",
-        "The public API, layout, owner model, algorithm, allocation or BIO bound, direct dependency, OpenSSL semantic assumption, component identity or source, static or shared delivery shape changes.",
-        "Qualified same-contract evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
-      ],
-      "reopen_trigger_id": "IOTLS-REOPEN-H2-EPOLL-DUPLEX-01",
-      "reopen_evidence": "A deterministic HTTP2-over-TLS consumer with 4 KiB socket buffers and a 65,535-byte receive window completes on io_uring but stalls on forced epoll after exactly 32 KiB is consumed; syscall traces end with both TLS ciphertext pumps waiting for EPOLLOUT.",
-      "summary": "io_tls v2 CLOSED/FROZEN：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，七门全部通过。"
+      "summary": "io_tls v2 CLOSED：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，七门全部通过。"
     },
     {
       "module": "io_http",
-      "product_state": "CLOSED",
-      "round_id": "io-http-v2-duplex-progress",
-      "closure_task": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md",
-      "scope": "Repair only the transport-neutral progress seam used by protocol factors after an HTTP2 consumer reproduced a full-duplex backpressure stall; replay affected HTTP1 transport, delivery and performance contracts.",
-      "non_goals": "HTTP1 framing or public message API redesign, routing, middleware, authentication, model schema, server policy, HTTP2 protocol semantics, TLS provider internals, Native FFI or C API.",
-      "baseline_commit": "720c055b4e4bcf98556641acb77f82ad689c10cc",
-      "candidate_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-      "candidate_tree": "98632557e0237bac0bed3ca5521e59420d89176e",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "io-http-v2-duplex-progress",
+      "record": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md",
+      "candidate": {
+        "commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "tree": "98632557e0237bac0bed3ca5521e59420d89176e"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1392,65 +542,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "io-http-v2-freeze-2026-09-09",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-09",
-        "reviewed_commit": "1ac6ac6e8b7f4dce754337934cf54b0b350ccf31",
-        "reviewed_tree": "833fe7b0422d58292daf6f07999d6c265285671d",
-        "evidence": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md"
-      },
-      "loc": {
-        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-        "repository_code": 522116,
-        "self_without_tests": 89877,
-        "module_implementation": 2863
-      },
-      "known_limitations": [
-        "A connection and its active body reader or writer are single-owner; message views and operation buffers remain borrowed for their documented lifetimes, and unfinished bodies must be consumed, discarded or make the connection non-reusable.",
-        "This factor owns bounded HTTP1 connection framing, fixed and streaming bodies, trailers, expect-continue and keep-alive, not routing, middleware, authentication, model schemas, handler pools, batching, WebSocket or complete server policy.",
-        "The P1 receipt covers two persistent plain HTTP1 single-worker workloads on W1-WSL against Boost.Beast; it is not a TLS, WAN, multi-worker, complete-server, all-payload or Formal SOTA certificate.",
-        "TLS and HTTP2 remain separate composed factors, while source, static and shared delivery expose a C++23 API without Native FFI, C API or a stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a parsing, framing, request-smuggling, lifetime, partial-transfer, deadline, cancellation, backpressure, progress, OOM or natural C++ API-usability defect, or proves a missing common HTTP1 transport capability rather than application-server policy.",
-        "The public API or layout, parser, owner or progress algorithm, allocation bound, component dependency or source, static or shared delivery shape changes.",
-        "An io_core or io_tls transport semantic change invalidates the frozen composition, error, progress or lifetime proof.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted HTTP1 workload."
-      ],
-      "reopen_trigger_id": "IOHTTP-REOPEN-H2-DUPLEX-01",
-      "reopen_evidence": "Frozen io-http2-p1-v1 holdout reproducibly stalls under HYLE_IO_FORCE_EPOLL with 4 KiB socket buffers while syscall traces show both directions waiting to write with unread peer bytes.",
-      "summary": "io_http v2 CLOSED/FROZEN：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。"
+      "summary": "io_http v2 CLOSED：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。"
     },
     {
       "module": "io_http2",
-      "product_state": "CLOSED",
-      "round_id": "io-http2-v2-owner-progress-cost",
-      "closure_task": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
-      "scope": "Audit and, only if structurally proven, remove unconditional monitor and notification cost from the HTTP2 single-owner no-waiter progress path while preserving all public API, protocol, lifecycle and delivery contracts.",
-      "non_goals": "New HTTP2 capability or public API; window, chunk or ownership changes; Sched, io_core, TLS, HTTP or transfer changes; benchmark workload, margin, sample-plan or shared-tool changes; Native FFI or C API.",
-      "baseline_commit": "705b21112af34765227a132c1bd1a2e84a82e655",
-      "candidate_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
-      "candidate_tree": "cb91d5cba24706ddee390b51dab40fa12b2093ff",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "io-http2-v2-owner-progress-cost",
+      "record": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
+      "candidate": {
+        "commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
+        "tree": "cb91d5cba24706ddee390b51dab40fa12b2093ff"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1459,62 +568,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "io-http2-v2-freeze-2026-09-09",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-09",
-        "reviewed_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
-        "reviewed_tree": "cb91d5cba24706ddee390b51dab40fa12b2093ff",
-        "evidence": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md"
-      },
-      "loc": {
-        "snapshot_commit": "4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3",
-        "repository_code": 517892,
-        "self_without_tests": 89859,
-        "module_implementation": 2548
-      },
-      "known_limitations": [
-        "The engineering P1 claim covers only the frozen W1-WSL h2c 64x1KiB multiplex and 4x256KiB two-level flow-control workloads against pinned nghttp2; TLS was correctness-tested but is not part of this performance claim, and no all-platform, all-operation or Formal SOTA claim is made.",
-        "A session and all derived stream/body handles are transport-owner-worker affine, including operation and destruction; only cancellation notification may originate from another thread under the documented contract.",
-        "The factor supports h2c prior knowledge and already-negotiated TLS ALPN h2, not HTTP/1 Upgrade, server push, WebSocket, HTTP/3, gRPC schema/runtime or application routing policy.",
-        "nghttp2 remains the private HPACK/frame/state-machine provider; source/static/shared expose the same C++23 API but do not promise Native FFI, C API or a stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces an HTTP2 protocol, flow-control, lost-wake, cancellation, deadline, reset, GOAWAY, OOM, lifetime or natural C++ API usability defect, or proves a missing common HTTP2 transport capability within this factor's boundary.",
-        "The public API or layout, owner-worker contract, direction/progress algorithm, window or chunk ownership, allocator policy, nghttp2 integration or source/static/shared delivery shape changes.",
-        "The sched ConditionVariable or cancellation callback contract changes in a way that invalidates the owner-local or external-cancel missed-wake proof.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity or cost structure for an admitted HTTP2 workload."
-      ],
-      "summary": "io_http2 v2 CLOSED/FROZEN：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。"
+      "summary": "io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。"
     },
     {
       "module": "io_transfer",
-      "product_state": "CLOSED",
-      "round_id": "io-transfer-v1",
-      "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
-      "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
-      "non_goals": "Model repository schema, authentication UI or token storage, archive extraction, model parsing or loading, P2P or RDMA, object-store SDKs, serving routes, Native FFI or C API.",
-      "baseline_commit": "e1499bb404e1a69881fb1c4d91c60aa183d1d1a7",
-      "candidate_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-      "candidate_tree": "98632557e0237bac0bed3ca5521e59420d89176e",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "io-transfer-v1",
+      "record": "docs/implementation/tasks/io/io-transfer-v1.md",
+      "candidate": {
+        "commit": "18bf62f81a91975e0776439d88fca3891f10e560",
+        "tree": "98632557e0237bac0bed3ca5521e59420d89176e"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "NONE"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1523,74 +594,34 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "io-transfer-v1-freeze-2026-09-09",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-09",
-        "reviewed_commit": "93966bc1cfbcd6807de8c2a9a798f79b6fd73866",
-        "reviewed_tree": "a441052e17730a613e6934239c07c31d64cc1ad3",
-        "evidence": "docs/implementation/tasks/io/io-transfer-v1.md"
-      },
-      "loc": {
-        "snapshot_commit": "18bf62f81a91975e0776439d88fca3891f10e560",
-        "repository_code": 522116,
-        "self_without_tests": 89877,
-        "module_implementation": 1752
-      },
-      "known_limitations": [
-        "Plan, checkpoint, report and kept-path storage depend on their creation allocator, while execution callbacks, cancellation state and an optional TLS context are borrowed through task completion; progress callbacks run on the owner fiber and must not re-enter the same transfer.",
-        "Resume requires exact local prefix and source identity or matching HTTP validators and extents; redirect, restart, retention and cleanup behavior is explicit policy, not repository-specific convenience.",
-        "Publication uses a sibling temporary file, flush, close and the strongest admitted platform atomic replace while preserving the old destination on failure; universal directory-level crash durability is not claimed.",
-        "The P1 receipt covers one W1-WSL local publication and one loopback HTTP Range resume workload against libcurl, not WAN, multi-worker, every filesystem or checksum, object stores, repository clients or Formal SOTA.",
-        "HTTPS requires an available TLS provider; repository and authentication policy, archive or model parsing, P2P, RDMA, serving routes, Native FFI and C API remain outside this factor."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a source-identity, resume, range, redirect, checksum, byte-budget, atomic-publication, old-target-preservation, partial-cleanup, deadline, cancellation, OOM, lifetime or natural C++ API-usability defect, or proves a missing common artifact-transfer mechanism rather than repository policy.",
-        "The public API or layout, state machine, buffer or durability algorithm, component dependency or source, static or shared delivery shape changes.",
-        "An io_core, io_http, io_tls, platform_fs, sched, time, mem or container_text contract change invalidates the frozen composition, ownership, error, progress or durability proof.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted reliable-transfer workload."
-      ],
-      "summary": "io_transfer v1 CLOSED/FROZEN：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。"
+      "summary": "io_transfer v1 CLOSED：可靠 local/HTTP(S) transfer、resume、checksum 与 atomic publish 通过三平台、sanitizer、三交付、易用性和红队；P1 的 local publish 非劣、Range resume 双顺序 WIN，5% 门全过。"
     },
     {
       "module": "compute",
-      "product_state": "QUEUED",
+      "state": "QUEUED",
       "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"
     },
     {
       "module": "graph",
-      "product_state": "QUEUED",
+      "state": "QUEUED",
       "summary": "实现尚不完整；前置与真实 consumer slice 建立前保持可变。"
     },
     {
       "module": "container_concurrent",
-      "product_state": "CLOSED",
-      "round_id": "container-concurrent-v2-p1-resume",
-      "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
-      "scope": "Preserve the complete concurrent map, set and vector product while equalizing allocator/resource and membership semantics for the frozen read-mostly P1 workload, then replay affected correctness, delivery, documentation and red-team gates.",
-      "non_goals": "New concurrent capabilities, public API, layout, reclamation, shard, algorithm or default allocator changes; queues, wait/service policy, Native FFI or C API, common instrument changes and Formal certification.",
-      "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-      "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "container-concurrent-v2-p1-resume",
+      "record": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "candidate": {
+        "commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1599,63 +630,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "container-concurrent-v2-freeze-2026-09-07",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-07",
-        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "repository_code": 465734,
-        "self_without_tests": 77078,
-        "module_implementation": 1600
-      },
-      "known_limitations": [
-        "The P1 claim covers one frozen eight-worker read-mostly membership workload on W1-WIN; exact superiority is inconclusive and no all-operation, cross-platform or Formal SOTA claim is made.",
-        "Custom Alloc, Hash and Eq policies can be called concurrently by different shards and must themselves satisfy the documented concurrency contract.",
-        "Node address stability is limited to the documented guard lifetime; destruction requires external quiescence, and the default node map trades retained old tables for a zero read-side reclamation tax.",
-        "The factor is a private build and dependency boundary behind the C++ Container product, not a Native FFI, C API or stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a concurrent map, set or vector correctness, security, publication, reclamation, lifetime, OOM or natural C++ API-usability defect, or proves a missing common concurrent-container capability.",
-        "A public API or layout, shard, table, reclamation or progress algorithm, allocator policy, dependency graph or source, static or shared delivery shape changes.",
-        "The mem_reclaim contract used by the reclaiming node-map route changes in a way that affects lifetime, synchronization or cost.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted concurrent workload."
-      ],
-      "summary": "container_concurrent v2 CLOSED/FROZEN：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
+      "summary": "container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。"
     },
     {
       "module": "container_queue",
-      "product_state": "CLOSED",
-      "round_id": "container-queue-v2-p1-resume",
-      "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
-      "scope": "Preserve the complete role-specific and unbounded typed queue product while equalizing allocator/resource, OOM, result, setup and producer-participation semantics for the frozen P1 handoff workload, then replay affected gates.",
-      "non_goals": "New queue capabilities, public API, layout, progress algorithm or default allocator changes; wait, close, cancel, deadline or backpressure service; Native FFI or C API; common instrument changes; Formal certification.",
-      "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-      "candidate_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "container-queue-v2-p1-resume",
+      "record": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "candidate": {
+        "commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
+        "tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1664,63 +656,24 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "container-queue-v2-freeze-2026-09-07",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-07",
-        "reviewed_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "reviewed_tree": "a2e578165582cd4f34c23d5350bfd7d019ca900b",
-        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "111c28eab99daff6257427473a2a1b11ac1cfd0c",
-        "repository_code": 465734,
-        "self_without_tests": 77078,
-        "module_implementation": 1101
-      },
-      "known_limitations": [
-        "The P1 claim covers one frozen unbounded typed 4P4C handoff workload on W1-WIN; it is not an all-queue, cross-platform or Formal SOTA certificate.",
-        "UnboundedQueue payload construction, extraction callback and destruction require the documented nothrow behavior; its allocator may see producer allocation and consumer deallocation concurrently.",
-        "Queue destruction requires quiescence, and try-only storage deliberately does not own waiting, close, cancellation, deadline or backpressure service policy.",
-        "The factor is a private build and dependency boundary behind the C++ Container product, not a Native FFI, C API or stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a queue correctness, security, progress, FIFO, OOM, lifetime or natural C++ API-usability defect, or proves a missing common handoff or work-sharing capability.",
-        "A public API or layout, queue or progress algorithm, allocator policy, dependency graph or source, static or shared delivery shape changes.",
-        "A real Scheduler or IO consumer proves that an excluded storage-level semantic cannot be composed above the current try-only queue contract.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted queue workload."
-      ],
-      "summary": "container_queue v2 CLOSED/FROZEN：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选冻结在 111c28ea。"
+      "summary": "container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。"
     },
     {
       "module": "container_text",
-      "product_state": "CLOSED",
-      "round_id": "container-text-v2-identity-p1-resume",
-      "closure_task": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
-      "scope": "Rename the internal factor to container_text while preserving public hyle::container text/path/Unicode APIs, equalize the frozen safe Unicode peer contract, and replay affected correctness, delivery, symbol, documentation and red-team gates.",
-      "non_goals": "New text capabilities, public header, namespace, API, algorithm, provider or default behavior changes; owning strings, locale, normalization, grapheme, regex or tokenizer policy; Native FFI or C API; common instrument changes; Formal certification.",
-      "baseline_commit": "d04710a33319e4f1088d81608bc5a7bd031b8eef",
-      "candidate_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
-      "candidate_tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f",
-      "performance_tier": "P1",
-      "validation_machine_profiles": [
-        "W1-WIN",
-        "W1-WSL",
-        "M1-MAC"
-      ],
-      "engineering_performance": {
+      "state": "CLOSED",
+      "round": "container-text-v2-identity-p1-resume",
+      "record": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
+      "candidate": {
+        "commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
+        "tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f"
+      },
+      "performance": {
+        "tier": "P1",
         "verdict": "PASS",
-        "mode": "P1_ENGINEERING",
-        "material_margin_pct": 5,
-        "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md",
+        "material_margin_pct": 5
       },
-      "formal_performance": {
-        "state": "PENDING",
-        "instrument_profile": "formal-release-v1"
-      },
-      "gate_verdicts": {
+      "gates": {
         "scope": "PASS",
         "architecture": "PASS",
         "correctness": "PASS",
@@ -1729,33 +682,7 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "freeze_confirmation": {
-        "id": "container-text-v2-freeze-2026-09-07",
-        "marker": "FROZEN",
-        "confirmed_at": "2026-09-07",
-        "reviewed_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
-        "reviewed_tree": "bde13e7f012dd8616eaf75fdb2f2e39fc6782e1f",
-        "evidence": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md"
-      },
-      "loc": {
-        "snapshot_commit": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
-        "repository_code": 465870,
-        "self_without_tests": 77122,
-        "module_implementation": 2084
-      },
-      "known_limitations": [
-        "The P1 claim covers one frozen safe UTF-8-to-UTF-16 caller-buffer workload on W1-WIN; it is not an all-text, cross-platform or Formal SOTA certificate.",
-        "StringView and lookup results are borrowed; UTF input and output are caller-owned, undeclared overlap is unsupported, and output-too-small performs no partial conversion.",
-        "Container Text deliberately does not own locale, normalization, grapheme segmentation, regex, tokenizer automata, filesystem IO or a general owning-string policy.",
-        "simdutf is a private implementation provider, and the factor is a private build boundary behind the C++ Container product without a Native FFI, C API or stable cross-toolchain C++ ABI."
-      ],
-      "reopen_triggers": [
-        "A named consumer reproduces a borrowed-text, path, interner or Unicode correctness, security, lifetime, OOM or natural C++ API-usability defect, or proves a missing common Container-owned text capability.",
-        "A public API or layout, Unicode error or complete-write semantic, provider or ISA route, allocator, dependency graph or source, static or shared delivery shape changes.",
-        "An adopted simdutf or Highway update changes semantics, code generation, licensing or delivery on a used Container Text path.",
-        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted text workload."
-      ],
-      "summary": "container_text v2 CLOSED/FROZEN：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选冻结在 3ba50461。"
+      "summary": "container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。"
     }
   ]
 }

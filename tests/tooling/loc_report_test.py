@@ -160,8 +160,8 @@ def main() -> None:
     if "scripts/validation-select.py" not in build_files:
         raise AssertionError("build/package boundary lost validation selector")
 
-    registry = reporter.snapshot_registry(root, commit)
-    graph = reporter.snapshot_component_graph(root, commit)
+    registry = reporter.snapshot_registry(root, None)
+    graph = reporter.snapshot_component_graph(root, "WORKTREE")
     closed_modules, closed_files = reporter.registry_state_scope(
         "CLOSED", files, registry, graph
     )

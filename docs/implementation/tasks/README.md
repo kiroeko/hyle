@@ -31,10 +31,10 @@
 factor 状态或依赖。当前 closure record 必须从 [`module-status.json`](../module-status.json) 查找，不能
 根据“某目录里最新的文件”猜测。
 
-2026-09 的[冻结模块性能机会审计](project/frozen-performance-opportunity-audit-2026-09.md)保存 CURRENT
+2026-09 的[模块性能机会历史审计](project/frozen-performance-opportunity-audit-2026-09.md)保存当时
 证据的逐格盘点、合同/分辨率限制与条件观察项；它不授权重开产品模块。
 
-同月的[冻结模块推理能力审计](project/frozen-inference-capability-audit-2026-09.md)把五个锁定参考仓库的
+同月的[模块推理能力历史审计](project/frozen-inference-capability-audit-2026-09.md)把五个锁定参考仓库的
 真实源码需求映射到当前公开 C++ 能力，记录缺口裁决、有限观察项及未来 owner 输入；它同样不授权重开模块。
 
 ## 新记录的最低内容

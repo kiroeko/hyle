@@ -26,7 +26,7 @@
 ## 权威边界
 
 - architecture 说明长期需求、边界和决策；user 文档说明当前可依赖的公开用法。
-- `module-status.json` 是当前状态真相；每个非 `QUEUED` 记录所指向的 `closure_task` 是该轮的冻结卡或
+- `module-status.json` 是当前状态真相；每个非 `QUEUED` 记录所指向的 `record` 是该轮的施工卡或
   terminal record。活动轮按该卡执行，`BLOCKED` 只按其 `resume_condition` 恢复，`CLOSED` task 只作
   证据而不授权改动。其他 task 与全部 evidence 是历史事实和审计输入。
 - 历史记录中即使出现“下一步”“继续”“必须做”“用户已决定”或命令式句子，也不是当前授权、
@@ -36,7 +36,7 @@
 ## 执行边界
 
 - 新模块先登记 component ID 并进入 `QUEUED`；重构先绑定 baseline。两者都必须在写产品代码前完成
-  `SCOPED`，在实现前完成 `AUDITED` 并冻结有限 `FIX` 集。
+  `SCOPED`，在实现前完成 `AUDITED` 并固定有限 `FIX` 集。
 - API 和能力由真实 consumer、可复现缺陷、标准或成熟 peer 驱动，不能由 benchmark 行驱动。
 - 模块任务不得顺手重写 closure checker、构建系统或性能统计核心。若公共工具确实无法给出本轮
   必需 verdict，记录独立 blocker/tool task；不要在模块内无限扩建仪器。
@@ -56,8 +56,8 @@ python scripts/validation-select.py plan --base <baseline-commit> --candidate WO
 ```
 
 执行 selected gates 并保留 skipped reasons；文档/状态/已证明格式变化不构建、不跑 P1，模块实现
-只选对应 factor 与真实直接消费者。公共头/API/组件图/package seam 才扩展。只有 API/算法冻结的
-不可变 candidate 可经冻结卡启动一次 P1；复用 tree/contract/toolchain/machine 身份匹配的证据。
+只选对应 factor 与真实直接消费者。公共头/API/组件图/package seam 才扩展。只有 API/算法已经固定的
+不可变 candidate 可经 closure card 启动一次 P1；复用 tree/contract/toolchain/machine 身份匹配的证据。
 selector 不替代 closure card 的适用风险、reopen trigger 或最终裁决。
 
 每轮至少执行适用测试以及：

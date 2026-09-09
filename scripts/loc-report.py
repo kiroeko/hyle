@@ -319,9 +319,9 @@ def snapshot_registry(root: Path, commit: str | None) -> dict[str, object]:
 
 
 def registry_record_state(record: dict[str, object]) -> str | None:
-    """Return the registry state during the v2 -> v3 governance migration."""
+    """Return the current registry state."""
 
-    value = record.get("state", record.get("product_state"))
+    value = record.get("state")
     return value if isinstance(value, str) else None
 
 

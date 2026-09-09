@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Focused contract tests for scripts/check-module-closure.py."""
+"""Focused regression tests for the executable module-closure contract."""
 
 from __future__ import annotations
 
 import copy
 import importlib.util
-import json
 from pathlib import Path
+import tempfile
 
 
 def load_checker():
     script = Path(__file__).parents[2] / "scripts" / "check-module-closure.py"
-    spec = importlib.util.spec_from_file_location("hyle_module_closure", script)
+    spec = importlib.util.spec_from_file_location("hyle_check_module_closure", script)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load {script}")
     module = importlib.util.module_from_spec(spec)
@@ -21,7 +21,18 @@ def load_checker():
 
 def require_error(errors: list[str], fragment: str) -> None:
     if not any(fragment in error for error in errors):
-        raise AssertionError(f"missing diagnostic {fragment!r}: {errors!r}")
+        raise AssertionError(f"missing error containing {fragment!r}: {errors!r}")
+
+
+def record(data, component: str):
+    return next(item for item in data["modules"] if item["module"] == component)
+
+
+def transition(before_state: str, after_state: str):
+    return (
+        {"modules": [{"module": "sample", "state": before_state}]},
+        {"modules": [{"module": "sample", "state": after_state}]},
+    )
 
 
 def main() -> None:
@@ -29,288 +40,131 @@ def main() -> None:
     root = Path(__file__).parents[2]
     registry_path = root / "docs" / "implementation" / "module-status.json"
     status_path = root / "docs" / "implementation" / "status.md"
-    data = json.loads(registry_path.read_text(encoding="utf-8"))
+    canonical = checker.load_registry(registry_path)
 
-    errors = checker.validate_registry(data, root)
+    errors = checker.validate_registry(canonical, root)
     if errors:
         raise AssertionError(f"canonical registry rejected: {errors!r}")
-    status_errors = checker.validate_status_page(
-        data, status_path.read_text(encoding="utf-8"))
-    if status_errors:
-        raise AssertionError(f"canonical status projection rejected: {status_errors!r}")
+    states = [item["state"] for item in canonical["modules"]]
+    if states.count("CLOSED") != 26 or states.count("QUEUED") != 2:
+        raise AssertionError(f"unexpected canonical state distribution: {states!r}")
+    serialized = repr(canonical)
+    for retired in ("VERIFIED", "FROZEN", "freeze_confirmation", "formal_performance"):
+        if retired in serialized:
+            raise AssertionError(f"retired governance term remains in registry: {retired}")
 
-    actual_modules = [record["module"] for record in data["modules"]]
-    if actual_modules != checker.declared_components(root):
-        raise AssertionError("registry stopped following the central component graph")
+    for item in canonical["modules"]:
+        if item["state"] != "CLOSED":
+            continue
+        if set(item["candidate"]) != {"commit", "tree"}:
+            raise AssertionError(f"candidate identity drifted for {item['module']}")
+        if item["performance"]["verdict"] != "PASS":
+            raise AssertionError(f"performance verdict drifted for {item['module']}")
+        if set(item["gates"]) != checker.GATE_NAMES:
+            raise AssertionError(f"gate set drifted for {item['module']}")
 
-    # Contract tests must remain valid while any particular module is moving
-    # through a legal closure round. Pick a terminal receipt for mutations that
-    # specifically exercise CLOSED-only fields instead of assuming Core is
-    # permanently CLOSED.
-    terminal_record = next(
-        record for record in data["modules"]
-        if record["product_state"] == "CLOSED"
+    malformed = copy.deepcopy(canonical)
+    malformed["unexpected"] = True
+    require_error(checker.validate_registry(malformed, root), "unknown root fields")
+
+    malformed = copy.deepcopy(canonical)
+    malformed["updated_at"] = "2026-02-30"
+    require_error(checker.validate_registry(malformed, root), "valid calendar date")
+
+    malformed = copy.deepcopy(canonical)
+    core = record(malformed, "core")
+    core["product_state"] = core["state"]
+    require_error(checker.validate_registry(malformed, root), "retired registry fields")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "core")["state"] = "VERIFIED"
+    require_error(checker.validate_registry(malformed, root), "invalid state")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "core")["candidate"]["tree"] = "1234"
+    require_error(checker.validate_registry(malformed, root), "candidate.tree")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "core")["record"] = "docs/implementation"
+    require_error(checker.validate_registry(malformed, root), "not a repository file")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "core")["performance"]["material_margin_pct"] = 5
+    require_error(checker.validate_registry(malformed, root), "P0 must not")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "error")["performance"].pop("material_margin_pct")
+    require_error(checker.validate_registry(malformed, root), "positive material_margin_pct")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "error")["performance"]["verdict"] = "INCONCLUSIVE"
+    require_error(checker.validate_registry(malformed, root), "verdict PASS")
+
+    malformed = copy.deepcopy(canonical)
+    record(malformed, "error")["gates"]["correctness"] = "FAIL"
+    require_error(checker.validate_registry(malformed, root), "non-passing gates")
+
+    malformed = copy.deepcopy(canonical)
+    malformed["modules"].append(copy.deepcopy(malformed["modules"][0]))
+    require_error(checker.validate_registry(malformed, root), "duplicate module ids")
+
+    before, after = transition("CANDIDATE", "CLOSED")
+    if errors := checker.validate_transitions(before, after):
+        raise AssertionError(f"legal CANDIDATE -> CLOSED rejected: {errors!r}")
+    before, after = transition("CLOSED", "QUEUED")
+    require_error(checker.validate_transitions(before, after), "illegal transition")
+    before, after = transition("QUEUED", "BLOCKED")
+    require_error(checker.validate_transitions(before, after), "illegal transition")
+
+    before = {"modules": [{"module": "a", "state": "QUEUED"}]}
+    after = {
+        "modules": [
+            {"module": "a", "state": "QUEUED"},
+            {"module": "b", "state": "SCOPED"},
+        ]
+    }
+    require_error(checker.validate_transitions(before, after), "must enter as 'QUEUED'")
+    require_error(
+        checker.validate_transitions(
+            {"modules": [{"module": "a", "state": "QUEUED"}]},
+            {"modules": []},
+        ),
+        "component removal",
     )
-    terminal_module = terminal_record["module"]
-    p1_terminal_record = next(
-        record for record in data["modules"]
-        if record["product_state"] == "CLOSED" and
-        record.get("performance_tier") == "P1"
-    )
-    p1_terminal_module = p1_terminal_record["module"]
-
-    p1_engineering_close = copy.deepcopy(data)
-    p1_record = next(
-        record for record in p1_engineering_close["modules"]
-        if record["module"] == p1_terminal_module)
-    p1_record["engineering_performance"]["verdict"] = "PASS"
-    p1_record["gate_verdicts"]["engineering_performance"] = "PASS"
-    p1_record["gate_verdicts"]["red_team"] = "PASS"
-    errors = checker.validate_registry(p1_engineering_close, root)
-    if errors:
-        raise AssertionError(
-            "P1 engineering PASS was blocked by independent Formal PENDING: "
-            f"{errors!r}")
-
-    p1_false_close = copy.deepcopy(data)
-    p1_record = next(
-        record for record in p1_false_close["modules"]
-        if record["module"] == p1_terminal_module)
-    p1_record["engineering_performance"]["verdict"] = "PLANNED"
-    p1_record["gate_verdicts"]["engineering_performance"] = "INCONCLUSIVE"
-    p1_record["gate_verdicts"]["red_team"] = "PASS"
-    errors = checker.validate_registry(p1_false_close, root)
-    require_error(errors, "CLOSED requires engineering verdict PASS")
-    require_error(errors, "CLOSED has non-passing gates")
-
-    missing_loc = copy.deepcopy(data)
-    core = next(
-        record for record in missing_loc["modules"]
-        if record["module"] == terminal_module)
-    del core["loc"]["module_implementation"]
-    errors = checker.validate_registry(missing_loc, root)
-    require_error(errors, "missing LOC fields")
-
-    retired_test_count_rejected = copy.deepcopy(data)
-    record = next(
-        item for item in retired_test_count_rejected["modules"]
-        if item["module"] == terminal_module)
-    record["loc"]["self_with_tests"] = 1
-    errors = checker.validate_registry(retired_test_count_rejected, root)
-    require_error(errors, "retired v1 LOC field 'self_with_tests'")
-
-    retired_terminal_identities_rejected = copy.deepcopy(data)
-    record = next(
-        item for item in retired_terminal_identities_rejected["modules"]
-        if item["module"] == terminal_module)
-    record["end_commit"] = "1" * 40
-    record["registry_anchor_commit"] = "2" * 40
-    errors = checker.validate_registry(retired_terminal_identities_rejected, root)
-    require_error(errors, "retired v1 field 'end_commit'")
-    require_error(errors, "retired v1 field 'registry_anchor_commit'")
-
-    duplicate_closure_evidence_rejected = copy.deepcopy(data)
-    record = next(
-        item for item in duplicate_closure_evidence_rejected["modules"]
-        if item["module"] == terminal_module)
-    record["closure_evidence"] = record["closure_task"]
-    errors = checker.validate_registry(duplicate_closure_evidence_rejected, root)
-    require_error(errors, "retired v1 field 'closure_evidence'")
-
-    previous_ref = checker.load_registry_ref(root, "HEAD")
-    if [item["module"] for item in previous_ref["modules"]] != actual_modules:
-        raise AssertionError("--previous-ref Git reader lost the component ledger")
-
-    frozen_record = next(
-        record for record in data["modules"]
-        if isinstance(record.get("freeze_confirmation"), dict)
+    require_error(
+        checker.validate_transitions(
+            {
+                "modules": [
+                    {"module": "a", "state": "QUEUED"},
+                    {"module": "b", "state": "QUEUED"},
+                ]
+            },
+            {
+                "modules": [
+                    {"module": "b", "state": "QUEUED"},
+                    {"module": "a", "state": "QUEUED"},
+                ]
+            },
+        ),
+        "reordering",
     )
 
-    invalid_freeze_marker = copy.deepcopy(data)
-    record = next(
-        item for item in invalid_freeze_marker["modules"]
-        if item["module"] == frozen_record["module"])
-    record["freeze_confirmation"]["marker"] = "DONE"
-    errors = checker.validate_registry(invalid_freeze_marker, root)
-    require_error(errors, "freeze_confirmation.marker must be 'FROZEN'")
+    status_text = status_path.read_text(encoding="utf-8")
+    if errors := checker.validate_status_page(canonical, status_text):
+        raise AssertionError(f"canonical status projection rejected: {errors!r}")
+    drifted = status_text.replace("| core | CLOSED |", "| core | QUEUED |", 1)
+    require_error(checker.validate_status_page(canonical, drifted), "differs")
+    with tempfile.TemporaryDirectory(prefix="hyle-status-test-") as temp:
+        copy_path = Path(temp) / "status.md"
+        copy_path.write_text(drifted, encoding="utf-8")
+        checker.write_status_page(canonical, copy_path)
+        repaired = copy_path.read_text(encoding="utf-8")
+        if errors := checker.validate_status_page(canonical, repaired):
+            raise AssertionError(f"status writer failed to repair drift: {errors!r}")
 
-    invalid_freeze_identity = copy.deepcopy(data)
-    record = next(
-        item for item in invalid_freeze_identity["modules"]
-        if item["module"] == frozen_record["module"])
-    record["freeze_confirmation"]["reviewed_tree"] = "1234"
-    errors = checker.validate_registry(invalid_freeze_identity, root)
-    require_error(errors, "full 40-digit lowercase Git id")
-
-    frozen_active = copy.deepcopy(data)
-    record = next(
-        item for item in frozen_active["modules"]
-        if item["module"] == frozen_record["module"])
-    record["product_state"] = "VERIFIED"
-    errors = checker.validate_registry(frozen_active, root)
-    require_error(errors, "freeze_confirmation is only valid for CLOSED")
-
-    short_identity = copy.deepcopy(data)
-    core = next(
-        record for record in short_identity["modules"]
-        if record["module"] == terminal_module)
-    core["baseline_commit"] = core["baseline_commit"][:7]
-    errors = checker.validate_registry(short_identity, root)
-    require_error(errors, "full 40-digit lowercase Git id")
-
-    ghost_machine = copy.deepcopy(data)
-    intrusive = next(
-        record for record in ghost_machine["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["engineering_performance"]["machine_profile"] = "GHOST"
-    errors = checker.validate_registry(ghost_machine, root)
-    require_error(errors, "unknown engineering machine profile")
-
-    wrong_p2_instrument = copy.deepcopy(data)
-    intrusive = next(
-        record for record in wrong_p2_instrument["modules"]
-        if record["module"] == "container_intrusive")
-    intrusive["performance_tier"] = "P2"
-    intrusive["engineering_performance"]["mode"] = "P2_CONSUMER"
-    intrusive["engineering_performance"]["instrument_profile"] = (
-        "closure-correctness-v1")
-    errors = checker.validate_registry(wrong_p2_instrument, root)
-    require_error(errors, "P2 must use closure-perf-v1")
-
-    verified_planned = copy.deepcopy(data)
-    p1_record = next(
-        record for record in verified_planned["modules"]
-        if record["module"] == p1_terminal_module)
-    p1_record["product_state"] = "VERIFIED"
-    p1_record["engineering_performance"]["verdict"] = "PLANNED"
-    errors = checker.validate_registry(verified_planned, root)
-    require_error(errors, "cannot retain a PLANNED engineering verdict")
-
-    closed_red_team_na = copy.deepcopy(p1_engineering_close)
-    p1_record = next(
-        record for record in closed_red_team_na["modules"]
-        if record["module"] == p1_terminal_module)
-    p1_record["gate_verdicts"]["red_team"] = "NOT_APPLICABLE"
-    errors = checker.validate_registry(closed_red_team_na, root)
-    require_error(errors, "CLOSED has non-passing gates: red_team")
-
-    task_is_directory = copy.deepcopy(data)
-    core = next(
-        record for record in task_is_directory["modules"]
-        if record["module"] == terminal_module)
-    core["closure_task"] = "docs/implementation/tasks/core"
-    errors = checker.validate_registry(task_is_directory, root)
-    require_error(errors, "must name a repository file")
-
-    invalid_date = copy.deepcopy(data)
-    invalid_date["updated_at"] = "2026-99-99"
-    errors = checker.validate_registry(invalid_date, root)
-    require_error(errors, "valid calendar date")
-
-    duplicate = copy.deepcopy(data)
-    duplicate["modules"].append(copy.deepcopy(duplicate["modules"][0]))
-    errors = checker.validate_registry(duplicate, root)
-    require_error(errors, "duplicate module ids")
-    require_error(errors, "differs from HyleComponents.cmake")
-
-    illegal = copy.deepcopy(data)
-    core = next(
-        record for record in illegal["modules"]
-        if record["module"] == terminal_module)
-    core["product_state"] = "QUEUED"
-    errors = checker.validate_transitions(data, illegal)
-    require_error(errors, "illegal transition 'CLOSED' -> 'QUEUED'")
-
-    queued_before = copy.deepcopy(data)
-    error = next(
-        record for record in queued_before["modules"]
-        if record["module"] == "error")
-    error["product_state"] = "QUEUED"
-    queued_to_blocked = copy.deepcopy(queued_before)
-    error = next(
-        record for record in queued_to_blocked["modules"]
-        if record["module"] == "error")
-    error["product_state"] = "BLOCKED"
-    errors = checker.validate_transitions(queued_before, queued_to_blocked)
-    require_error(errors, "illegal transition 'QUEUED' -> 'BLOCKED'")
-
-    queued_addition = copy.deepcopy(data)
-    queued_addition["modules"].insert(
-        1,
-        {
-            "module": "new_factor",
-            "product_state": "QUEUED",
-            "summary": "Registered before its closure round starts.",
-        },
-    )
-    errors = checker.validate_transitions(data, queued_addition)
-    if errors:
-        raise AssertionError(f"legal QUEUED component addition rejected: {errors!r}")
-
-    scoped_addition = copy.deepcopy(queued_addition)
-    scoped_addition["modules"][1]["product_state"] = "SCOPED"
-    errors = checker.validate_transitions(data, scoped_addition)
-    require_error(errors, "new component 'new_factor' must enter as 'QUEUED'")
-
-    # A pre-release corrective rename is legal only when the current registry
-    # records a one-to-one migration and preserves the component's ledger slot
-    # and state transition. It does not turn the target into a newly queued
-    # component or reset its history.
-    renamed_component = copy.deepcopy(data)
-    old_name = "core"
-    new_name = "core_identity_test"
-    renamed_record = next(
-        record for record in renamed_component["modules"]
-        if record["module"] == old_name)
-    renamed_record["module"] = new_name
-    renamed_component.setdefault("component_identity_migrations", []).append(
-        {
-            "from": old_name,
-            "to": new_name,
-            "evidence": (
-                "docs/implementation/tasks/build/"
-                "container-text-factor-identity-migration-v1.md"
-            ),
-        }
-    )
-    errors = checker.validate_transitions(data, renamed_component)
-    if errors:
-        raise AssertionError(f"recorded component identity migration rejected: {errors!r}")
-
-    unrecorded_rename = copy.deepcopy(data)
-    next(
-        record for record in unrecorded_rename["modules"]
-        if record["module"] == old_name)["module"] = new_name
-    errors = checker.validate_transitions(data, unrecorded_rename)
-    require_error(errors, "unrecorded component removal or rename")
-
-    reordered_rename = copy.deepcopy(renamed_component)
-    renamed_index = next(
-        index for index, record in enumerate(reordered_rename["modules"])
-        if record["module"] == new_name)
-    reordered_rename["modules"].append(
-        reordered_rename["modules"].pop(renamed_index))
-    errors = checker.validate_transitions(data, reordered_rename)
-    require_error(errors, "does not allow reordering existing components")
-
-    removed_component = copy.deepcopy(data)
-    removed_component["modules"].pop()
-    errors = checker.validate_transitions(data, removed_component)
-    require_error(errors, "unrecorded component removal or rename")
-
-    reordered_components = copy.deepcopy(data)
-    reordered_components["modules"][0:2] = reversed(
-        reordered_components["modules"][0:2])
-    errors = checker.validate_transitions(data, reordered_components)
-    require_error(errors, "does not allow reordering existing components")
-
-    drifted_status = status_path.read_text(encoding="utf-8").replace(
-        f"| {terminal_module} | CLOSED |",
-        f"| {terminal_module} | QUEUED |",
-        1,
-    )
-    errors = checker.validate_status_page(data, drifted_status)
-    require_error(errors, "differs from module-status.json")
+    historical = checker.load_registry_ref(root, "HEAD")
+    if not isinstance(historical.get("modules"), list):
+        raise AssertionError("Git registry loader lost modules")
 
 
 if __name__ == "__main__":

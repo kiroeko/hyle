@@ -260,7 +260,7 @@ class ImpactTest(unittest.TestCase):
         snapshot = selector.Snapshot(self.root, commit)
         path = Path(self.temp.name) / "p1-card.json"
         selector.write_json(path, {"candidate_commit": commit, "candidate_tree": snapshot.tree,
-                                   "api_state": "FROZEN", "algorithm_state": "FROZEN",
+                                   "api_state": "FIXED", "algorithm_state": "FIXED",
                                    "factors": ["container_queue"], "contract": "bench/contracts/fixture.json",
                                    "contract_hash": selector.digest(snapshot.read("bench/contracts/fixture.json")), "peers": {}})
         return path

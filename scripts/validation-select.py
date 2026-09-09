@@ -413,8 +413,8 @@ def make_plan(root, baseline, candidate, *, context=None, card_path=None, cache=
         else:
             if not after.commit or card.get("candidate_commit") != after.commit or card.get("candidate_tree") != after.tree:
                 issues.append("card must name this exact immutable candidate commit/tree")
-            if card.get("api_state") != "FROZEN" or card.get("algorithm_state") != "FROZEN":
-                issues.append("API and algorithm must both be FROZEN")
+            if card.get("api_state") != "FIXED" or card.get("algorithm_state") != "FIXED":
+                issues.append("API and algorithm must both be FIXED")
             if not context:
                 issues.append("P1 requires explicit toolchain and machine profile context")
             elif not all(identity["toolchain"].get(key) for key in

@@ -133,7 +133,7 @@ python scripts/check-docs.py
 The Linux baseline CI runs the same command. Content correctness still requires
 module review; this script prevents structural and navigation drift.
 
-## Module closure and performance evidence v2
+## Module closure and performance evidence v3
 
 `check-module-closure.py` validates the canonical current-state registry at
 `docs/implementation/module-status.json` and its generated human projection.
@@ -146,32 +146,33 @@ python scripts/check-module-closure.py
 python scripts/check-docs.py
 ```
 
-The first command is the fast editing loop. It validates the current registry's
-schema, paths, component set, optional `FROZEN` confirmation identity, and
-generated status projection. The projection exposes `Freeze` separately from
-product state and links each engineering verdict to the exact current evidence
-record. It is an engineering consistency check, not a Git anti-tamper system; use
+The first command is the fast editing loop. It validates the compact current
+registry, paths, component set, legal state, terminal gates and generated status
+projection. `CLOSED` is the sole accepted terminal state. Each engineering verdict
+links to the exact current evidence record. This is an engineering consistency
+check, not a Git anti-tamper system; use
 `--previous-ref <revision>` for an explicit before/after state comparison without
 copying the old registry to an external file. Candidate/tree/receipt checks use
 ordinary read-only Git commands in the module review. CMake dependency and
 delivery semantics stay with the real build/package contract tests rather than a
 second parser here.
 
-An explicit `--previous-ref` comparison permits a newly declared component only
-when its first registry state is `QUEUED`. Unrecorded removal, rename or
-reordering remains invalid, as does introducing a new component directly in a
-later closure state. A pre-release corrective rename is allowed only through a
-one-to-one `component_identity_migrations` registry entry with repository
-evidence: the target must replace the source in the same ledger position and
-continue a legal source-state transition. No compatibility alias or history
-reset is inferred. This makes both new-factor registration and rare explicit
-identity correction mechanically auditable without weakening ordinary checks.
+The status page is a checked projection, not another truth source:
 
-`check-docs.py` additionally requires every performance page referenced by a
-current `CLOSED` record to carry one exact
-`<!-- PERFORMANCE EVIDENCE: CURRENT -->` marker, and rejects current markers
-that are not reachable from the registry. This keeps filenames and historical
-prose from becoming a second current-evidence catalog.
+```bash
+python scripts/check-module-closure.py --write-status
+```
+
+An explicit `--previous-ref` comparison permits a newly declared component only
+when its first registry state is `QUEUED`. Removal, rename, reordering or direct
+entry into a later state remains invalid. A rare pre-release identity correction
+is a separate horizontal task that changes the central graph and registry in one
+reviewed commit; Git and that task preserve history, so the current registry does
+not carry a permanent migration ledger.
+
+The registry's `performance.evidence` path alone identifies the current
+engineering record. Performance filenames and historical prose carry no current
+status marker and therefore cannot become a second evidence catalog.
 
 `scripts/hyle_perf/` is the shared schema/statistics/evidence/machine core for
 performance instrument v1. It owns contract locking, canonical observations,

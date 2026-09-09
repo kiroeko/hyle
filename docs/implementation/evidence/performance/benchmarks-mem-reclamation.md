@@ -1,6 +1,5 @@
 # Mem reclamation / Container table lifetime 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > **`QUALIFIED / PASS`。** 本页只签署 2026-09-03 的两个冻结 P1 consumer：短期不可变
 > snapshot read，以及稳定 node registry 的 warmed hit。它不是 Formal 证书，也不外推为全部

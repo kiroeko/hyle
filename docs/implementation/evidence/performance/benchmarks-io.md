@@ -1,6 +1,5 @@
 # io 实测铁证
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 本页当前签发 `io_core-v1`、`io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
 > `io_http2-v2-owner-progress-cost` 与 `io-transfer-v1` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是

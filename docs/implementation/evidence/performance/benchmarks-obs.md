@@ -1,6 +1,5 @@
 # Obs 工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 ## v5 metrics：同合同 P1 资格完成
 

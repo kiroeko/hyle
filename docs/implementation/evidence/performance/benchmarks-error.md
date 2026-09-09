@@ -1,6 +1,5 @@
 # error 性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > **error-v5 current engineering evidence：`PASS`。** candidate `d61f0710` / tree `305b2cb5` 在
 > W1-WIN 以 `error-source-consumer-v2` 完成 fresh n=15 qualification；资格门、工程性能门、全部

@@ -1,6 +1,5 @@
 # Platform 当前工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前状态与精确 closure record 只看 [`module-status.json`](../../module-status.json)。本页同时服务
 > `platform`、`platform_thread` 和 `platform_fs` 三个内部 factor；共享报告不把它们合成一个分数，

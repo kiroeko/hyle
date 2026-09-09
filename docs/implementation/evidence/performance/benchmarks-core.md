@@ -1,6 +1,5 @@
 # Core 当前工程性能证据
 
-<!-- PERFORMANCE EVIDENCE: CURRENT -->
 
 > 当前状态只见 [`module-status.json`](../../module-status.json)。本页绑定 Core v5 candidate
 > `4b7f28c55e9ca118cf87b80058ce291261033ec5` 的 P0 结构证据；完整三平台结果见
