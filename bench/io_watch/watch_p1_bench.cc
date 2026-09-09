@@ -547,8 +547,9 @@ void run_shape(Shape shape, const char* title, std::size_t episodes,
       // One Linux/Windows reload replay can be shorter than host scheduling
       // and filesystem jitter even though it is far above the clock floor.
       // Let nanobench repeat the unchanged complete episode until the charged
-      // row has enough duration; macOS already exceeds this with one replay.
-      .minEpochTime(std::chrono::milliseconds(20))
+      // row has enough duration; macOS exact-file delivery already exceeds
+      // this with one replay.
+      .minEpochTime(std::chrono::milliseconds(100))
       .minEpochIterations(1)
       .epochs(1);
 

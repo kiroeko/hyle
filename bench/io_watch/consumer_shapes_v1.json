@@ -11,7 +11,7 @@
     "lifetime": "each side independently establishes one watcher and one event owner outside timing; only one route is live at a time, an equal uncharged bounded readiness probe and quiescence precede timing, then every charged publication is awaited and classified exactly once before the next episode",
     "freshness": "the consumer re-reads an eight-byte authoritative generation so duplicate/coalesced notifications cannot satisfy a later publication",
     "progress": "both routes use their natural persistent asynchronous owner and native file-event backend; neither polls, creates a thread per event or registers a per-event timer",
-    "accounting": "the same HYLE Platform FS helper publishes and re-reads each generation for both routes, so only watcher routing, dispatch, batching and lifecycle differ; the measurement engine repeats the unchanged complete replay until one charged row spans at least 20 ms and normalizes by authoritative change"
+    "accounting": "the same HYLE Platform FS helper publishes and re-reads each generation for both routes, so only watcher routing, dispatch, batching and lifecycle differ; the measurement engine repeats the unchanged complete replay until one charged row spans at least 100 ms and normalizes by authoritative change"
   },
   "workloads": [
     {
@@ -33,7 +33,7 @@
   "negative_space": [
     "watcher/runtime construction, a bounded event-confirmed readiness/warmup probe and equal post-probe quiescence per route are outside timing; the probe may retransmit the same generation because libuv returns from uv_fs_event_start before its macOS FSEvents stream is asynchronously installed",
     "candidate and peer watcher lifetimes do not overlap; simultaneous macOS FSEvents streams would make the second route inherit the first stream's daemon batching phase, while a real consumer selects one route",
-    "measurement repetition changes only statistical duration, not target count, publication order, ownership, setup or completion semantics; one replay is retained where it already exceeds 20 ms",
+    "measurement repetition changes only statistical duration, not target count, publication order, ownership, setup or completion semantics; one replay is retained where it already exceeds 100 ms",
     "deadline and cancellation races are correctness/lifecycle gates, not charged to only one side of this successful-event comparison",
     "recursive traversal, debounce, content parsing and application reload policy are not watcher work",
     "a raw inotify, IOCP or FSEvents syscall is not an admissible peer for the complete owner-to-consumer route",
