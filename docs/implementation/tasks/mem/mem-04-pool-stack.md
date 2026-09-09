@@ -24,7 +24,8 @@
 ## 前置依赖
 
 - 硬前置：`mem-01`（Allocator）、`mem-03`（MemoryArena 做 ObjectPool 底座）。
-- 决策依据：`mem-design.md`（落地清单 3：pool/stack 推倒重写修 UB）；`clay-asset-liability.md` 行34/35/41/42（两个 bug 的精确定位）。
+- 决策依据：`mem-design.md`（落地清单 3：pool/stack 推倒重写修 UB）；项目历史任务
+  `clay-asset-liability-2026-07.md` 的对应资产表（两个 bug 的精确定位）。
 
 ## 目的（为什么做这一步）
 
@@ -68,5 +69,5 @@ mem/（T0）特化分配器。ObjectPool 给 sched/容器的定长对象复用�
 
 ## 参考
 
-- `mem-design.md` 落地清单 3；`clay-asset-liability.md` 行34/35/41/42。
+- `mem-design.md` 落地清单 3；`../project/clay-asset-liability-2026-07.md` 的历史资产表。
 - clay `utils/object_pool.h`、`utils/stack_allocator.h`（设计意图，实现重写）。

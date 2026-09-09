@@ -74,7 +74,7 @@ def main() -> None:
     malformed = copy.deepcopy(canonical)
     core = record(malformed, "core")
     core["product_state"] = core["state"]
-    require_error(checker.validate_registry(malformed, root), "retired registry fields")
+    require_error(checker.validate_registry(malformed, root), "fields not valid")
 
     malformed = copy.deepcopy(canonical)
     record(malformed, "core")["state"] = "VERIFIED"

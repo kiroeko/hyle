@@ -1,6 +1,6 @@
 # 工程治理与文档体系 v3
 
-<!-- PROJECT TASK: ACTIVE -->
+<!-- PROJECT TASK: HISTORICAL -->
 
 ## 任务合同
 
@@ -69,5 +69,43 @@ CLOSED -> REOPENED -> SCOPED
 
 ## 结果
 
-待完成后填写迁移数量、删并文档清单、最终规模、工具测试与限制。本页结束时改为 `HISTORICAL`；
-它只保存本次迁移事实，不成为第二份治理方法。
+### 状态与工具迁移
+
+- `module-status.json` 从 schema 2 的 1,761 行迁为 schema 3 的 688 行；中央顺序、26 个真实
+  `CLOSED`、`compute/graph` 两个 `QUEUED`、round、terminal record、candidate commit/tree、七门、
+  工程性能 tier/verdict/evidence/margin 与摘要全部保留。
+- `CLOSED` 成为唯一 acceptance；中间验证状态、第二 terminal confirmation、默认 Formal 轴、当前
+  migration ledger 及 scope/机器/LOC/限制等 task 事实不再复制到 registry。
+- checker 从 722 行降到 502 行，直接支持 `CANDIDATE -> CLOSED`、合法 blocked/reopen、严格 v3
+  schema、中央组件顺序和 `--write-status`。一次性 v2 transition adapter 在迁移提交验证后删除；当前
+  工具不兼容旧 registry。
+- P1 card 的两个重复固定字段合为 `candidate_fixed=true`；文档/状态/格式仍不触发产品 build 或 P1。
+- LOC 工具新增 `--registry-state`，按中央组件 owner 对当前实现文件做并集去重。当前 26 个 CLOSED
+  组件为 84,603 行自实现、不含测试；QUEUED 的 compute/graph 为 5,286 行，两组恰好覆盖全库
+  89,889 行自实现代码。
+
+### 文档清洗
+
+- 收口方法从 495 行降到 164 行，任务模板从 275 行降到 106 行；AGENTS、review/implementation
+  入口和 scripts 说明只保留一套状态与命令。
+- 删除 16 份当前性能页的第二 `CURRENT` marker 及其 checker；当前证据只由 registry 的
+  `performance.evidence` 选择。
+- `compute`/`graph` 架构改为诚实的 `QUEUED` 问题边界，删除重复的 `graph-02-design`；IO 架构只保留
+  当前 factor、ownership、backend、协议和成本设计，移除 2026-07 施工日志与点值；macOS setup 不再
+  把 compute 实验写成已验收状态。
+- clay 逐文件资产表移到 implementation 历史 task，architecture 只保留“迁移来源不授予保留或兼容
+  权利”的长期决策。历史任务和性能 evidence 保留原文，不为今天的术语批量改写。
+- baseline `docs/` 为 454 份 Markdown、69,594 行；终局为 455 份、68,550 行。文件数增加来自本任务
+  和 clay 历史迁移，`docs/` 总量净减少 1,044 行。总入口对 architecture/developer/user 的可达性为
+  31/31、38/38、17/17；全部相对链接仍通过。
+
+### 验证与边界
+
+- schema 迁移提交上执行旧 registry `508d5b026638342d5a6bc8268111dd795d997fbc` 的 before/after
+  比较为 PASS；移除一次性 adapter 后，以首个 v3 提交 `b90a9a83` 做 previous-ref 仍为 PASS。
+- `check_module_closure_test.py`、`validation_selector_test.py`、`loc_report_test.py`、closure checker、
+  docs checker 与 `git diff --check` 全部 PASS。
+- diff 不含 `include/hyle/**`、`src/**`、组件图、benchmark 或原始性能数据；C++ build/test、sanitizer、
+  三交付与 P1 均为 `NOT_APPLICABLE`，没有重开或重新裁决任何产品模块。
+
+本页只保存本次迁移事实；当前方法只看 developer/review，当前状态只看 registry。

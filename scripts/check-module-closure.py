@@ -36,28 +36,6 @@ GATE_NAMES = {
 ROOT_FIELDS = {"schema_version", "methodology", "updated_at", "modules"}
 BASE_FIELDS = {"module", "state", "summary"}
 ACTIVE_FIELDS = BASE_FIELDS | {"round", "record"}
-RETIRED_MODULE_FIELDS = {
-    "product_state",
-    "round_id",
-    "closure_task",
-    "scope",
-    "non_goals",
-    "baseline_commit",
-    "candidate_commit",
-    "candidate_tree",
-    "performance_tier",
-    "validation_machine_profiles",
-    "engineering_performance",
-    "formal_performance",
-    "gate_verdicts",
-    "freeze_confirmation",
-    "loc",
-    "known_limitations",
-    "reopen_triggers",
-    "closure_evidence",
-    "end_commit",
-    "registry_anchor_commit",
-}
 STATUS_TABLE_BEGIN = "<!-- BEGIN GENERATED MODULE STATUS -->"
 STATUS_TABLE_END = "<!-- END GENERATED MODULE STATUS -->"
 OBJECT_ID_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -164,9 +142,7 @@ def _contains_tbd(value: Any) -> bool:
 
 
 def _record_state(record: dict[str, Any]) -> Any:
-    """Read v3 state, with v2 accepted only as a transition baseline."""
-
-    return record.get("state", record.get("product_state"))
+    return record.get("state")
 
 
 def _validate_candidate(
@@ -270,9 +246,6 @@ def validate_module(record: Any, root: Path, errors: list[str]) -> None:
             root, record.get("trigger_evidence"), "trigger_evidence", prefix, errors
         )
 
-    retired = sorted(RETIRED_MODULE_FIELDS & set(record))
-    if retired:
-        errors.append(f"{prefix}: retired registry fields: {', '.join(retired)}")
     extra = sorted(set(record) - allowed)
     if extra:
         errors.append(f"{prefix}: fields not valid for {state}: {', '.join(extra)}")

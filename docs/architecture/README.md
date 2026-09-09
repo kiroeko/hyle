@@ -44,7 +44,7 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 - [sched](sched-design.md)
 - [io](io-design.md)
 - [compute](compute-design.md)
-- [graph](graph-design.md) 与 [数据并行](graph-02-design.md)
+- [graph（含待裁决的数据并行边界）](graph-design.md)
 
 ## 可信度边界
 

@@ -54,6 +54,7 @@
 
 ## 参考
 
-- [`graph-02-design.md`](../../../architecture/graph-02-design.md)：5 决策 + 归属 + 不做清单。
+- 当时的 `graph-02-design.md` 方案已随当前架构清洗移出工作树；本 task 与 Git 历史保留其施工事实，
+  新一轮不得把旧方案当作已接受设计。
 - 本地 `oneTBB`（设计对标,不借运行时）：`blocked_range.h`（grainsize + 递归 split）。
 - graph-01 `src/graph/parallel_eval.cc`：复用的 sched fork-join 基建 + Status-in-JoinState UAF 教训。

@@ -1,222 +1,102 @@
-# HYLE io/ 网络库选型
+# IO 架构：Scheduler 上的完成式 I/O
 
-> 本页描述当前实现的设计与边界，不替代
-> `module-status.json` 的逐 factor 证书。当前只提供 C++23 source/static/shared，Native FFI 为
-> `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。各 factor 的当前状态只以
-> [`module-status.json`](../implementation/module-status.json) 为准，本页不复制易过期状态。
+本页只说明当前长期设计。实际 C++ 用法见 [IO 用户指南](../user/io.md)，组件状态和当前性能证据见
+[`module-status.json`](../implementation/module-status.json)。实现过程、测试数字和被否决路线保存在
+[`implementation/tasks/io`](../implementation/tasks/io/)及性能 evidence，不复制到这里。
 
-> 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
+## 设计目标
 
-## 当前架构（维护入口）
-
-```text
-普通 C++ 用户
-  TcpStream / UdpSocket / File / DNS / Signal / TLS / HTTP/1.1
-  HTTP/2 / reliable local-or-HTTP artifact transfer
-       │ co_await；deadline / CancelToken；RAII
-       ▼
-IoContext（每 Scheduler worker 一个 private completion engine + blocking pool）
-       │ internal submit state                 │ internal completion state
-       ▼                                       ▼
-private backend engine ──────────────────────► sched::Waker
-       │
-       ├─ Windows IOCP：真完成；OVERLAPPED intrusive list + owner free-list
-       ├─ Linux io_uring：真完成；不可用时自动降为 epoll
-       ├─ Linux epoll：readiness→completion；HYLE FlatHashMap<fd, PendingOp>
-       └─ macOS kqueue：readiness→completion；HYLE FlatHashMap<fd, PendingOp>
-
-       Linux runtime 选中 io_uring 时
-       └─ IoContext::io_uring()
-           └─ typed provided-buffer multishot receive
-              （显式公开快腿；fixed-file/direct-accept 仍是内部机制）
-```
-
-当前不变量：
-
-- socket/file shard 由一个 owner worker 提交和收割；IOCP handle 绑定后不可换
-  completion port。
-- 普通 C++ 文件腿依据 backend capability 自动选原生异步或 blocking pool；
-  用户不取得低层 engine、completion token 或同步 fallback seam。
-- plain TCP 与已握手 TLS 经同一个 owning `HttpTransport` 进入 HTTP framing 核。
-  HTTP/1 只拥有 connection/framing/body lifecycle：typed client/server factory、
-  borrowed head/chunk view、有界 `read_all` 与增量 reader、awaitable source/writer、
-  keep-alive、trailers、Expect/Continue fallback 和统一 operation budget。每次 writer
-  await 完成后才拉取下一 source chunk，不建立隐藏发送队列；大 head/body 聚合缓冲
-  在安全消息边界按 `HttpLimits` 释放高水位。listener host、routing、auth、模型
-  schema、handler admission/batching 和 graceful service policy 仍由应用拥有。
-- TLS config/session/provider 由独立 `io_tls` factor 持有；OpenSSL 类型不进入
-  公开面。client/server factory、handshake/read/write/shutdown 都返回共享 typed
-  Error 形状，一个绝对 `OperationOptions` 贯穿 memory-BIO pump 的每次底层操作。
-  stream 保持 single-owner；底层 write pressure 下，provider pump 至多吸收一块已经到达的
-  peer ciphertext 再重试输出，双向都不能立即前进就回到原 awaitable，因此流控协议不需要也
-  不允许用户为“帮忙推进”而并发操作同一 stream。
-  默认验证 client peer、默认把缺少 close-notify 的 EOF 视为截断；通用 ALPN 与
-  context-bound opaque session ticket 不含 HTTP 专有状态机。
-  可选 client identity + server-side client CA 组成完整 mTLS；每条 stream 的
-  16 KiB memory-BIO scratch 在 typed construction 时由 context 配置的 Mem allocator
-  分配一次，allocator backing 生命周期是显式 context/stream 前置条件，operation
-  allocator 只拥有 coroutine frame；provider session cache/ticket 默认关闭，只在
-  client/server 配置显式启用。
-- HTTP/2 协议机制固定为 private nghttp2，且不拥有 IO/event loop；旧 fixed-buffer API 已被
-  typed client/server session、checked stream ID、
-  增量 reader/writer、真实 connection/stream flow control、RST/GOAWAY 与统一 operation budget
-  取代。plain TCP 与已协商 `h2` 的 TLS 都经同一个 `HttpTransport`；private driver 直接借
-  现有 owner stackful fiber 推进 transport，不复制 TCP/TLS transport、scheduler 或 event loop。
-  `read()` 是 coroutine pull 形状；同步 borrowed sink 用单 task 的 `consume()`，sink failure
-  终止当前 stream，避免产生看似可重试却跳过已拒绝 chunk 的语义。
-- `io_transfer` 只拥有有界的 local/HTTP(S) source 到 sibling temporary file、
-  validator-safe resume、caller verifier、file sync 与 atomic replacement 状态机。
-  它复用 IO/HTTP/TLS/Platform FS，不复制协议或文件原语；repository/auth/model
-  schema、archive、路由与服务策略留在上层。plan/checkpoint 拥有跨 suspend 状态，
-  body/copy buffer 对制品大小保持 O(1)，旧目标只在校验与 sync 成功后被替换。
-  HTTPS 默认创建只协商 HTTP/1.1 的系统信任 client context；custom CA/mTLS 复用
-  `io_tls::TlsContext` 的 borrow，不在 transfer 中复制第二套 TLS option。普通 local
-  copy 使用一个 buffer；local resume 才用第二个同上限 buffer 对源和 partial 前缀
-  逐字节核对。POSIX size=0 的 virtual regular file 读到真实 EOF，不能把元数据 0
-  当成空内容。
-  HTTP resume 每次从原始稳定 URL 重新取得 redirect chain；206/416 必须重复提供
-  checkpoint validator，缺失与改变同样进入显式 restart/fail policy。`keep_partial()`
-  关闭句柄并返回 owning C++ path value，不暴露 buffer-fill 式伪 C 接口。
-- TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
-  CancelToken 腿；base 腿只用于确定能完成的受控路径。
-- Linux-only provided-buffer/multishot receive 只能经成功取得的
-  `IoUringExtension` 调用；portable one-shot 永远保留。fixed-file/direct-accept
-  目前只是 private backend capability，不能从 capability bit 推断公开操作存在。
-- epoll/kqueue pending 表使用 Container 的 `FlatHashMap`。IOCP/io_uring
-  不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
-- Native FFI 为 `N/A`；普通 io 修改不得恢复 BUILD-03 已删除的 C schema/bridge。若未来出现已命名
-  foreign-runtime 任务，先按全局 [Native FFI 准入策略](native-ffi-policy.md)独立立项。
-
-> **维护警戒线**：portable API 必须在所有支持后端真实实现、等价模拟或明确
-> 返回 `StatusCode::Unimplemented`；该状态只是平台/实现不支持当前操作的
-> 错误提示，不是 stub 实现。不得以恒定 `false`/成功 no-op 冒充完整能力。
-> 现存例外和补全工单见
-> [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
-
-IO 按 factor 独立裁决；`io_core`、`io_tls`、`io_http`、`io_http2` 与
-`io_transfer` 的实时状态只读中央 registry。不得把实现或测试 checkpoint 当成已收口证书，
-也不得因相邻 factor 已冻结而跳过本 factor 的活动 closure card。
-当前轮与唯一状态见各 closure card 和
-[`module-status.json`](../implementation/module-status.json)。下文“已落地纪要”只保留
-施工历史，若与本节、活动卡或代码冲突，以活动卡和代码为准。
-
-## 两个调查事实
-
-1. **slate 已自带 boost::asio**（`lib/windows_x64/boost/.../asio/`、`linux_x64` 均有完整 asio）——可借，但下面说明为何不借。
-2. **proactor 跨平台天生不对称**：Windows IOCP 是真 proactor；Linux io_uring 现在也是真 proactor；**macOS/BSD 只有 kqueue（reactor），无任何 proactor**。这是跨平台高性能网络最硬的现实。
-
-## 决定性约束：HYLE 已自带调度器
-
-HYLE 的 `sched/` 是「线程/进程/纤程/协程统一调度 + fiber」。**任何自带 event loop / executor 的网络库（asio `io_context`、libuv loop、seastar reactor）都会和 HYLE 调度器抢线程管理权——双调度器冲突。**
-
-与 `parallel/` 盘点结论同构：thread_pool 单全局锁架构长不出统一调度器、须基于 catomics 重写；网络层同理——**IO 必须长在 fiber 调度器上，不能 import 第二个调度器**。
-
-## 编程模型：proactor（完成式），非 reactor（就绪式）
-
-| | reactor（epoll/kqueue 原生）| proactor（IOCP/io_uring 原生）|
-|---|---|---|
-| 内核语义 | "可读了"，应用自己做 IO | 应用提交 IO，内核做完通知结果 |
-| 配 fiber | 唤醒后还要自己 read，多一跳 | 提交即让出、完成即唤醒——**天然契合** |
-| 零拷贝/批量 | 弱 | io_uring multishot + IOCP 均支持 |
-
-fiber-blocking（`co_await async_read()` → 提交 → 挂起 fiber → 完成唤醒）与 proactor 一一对应。**HYLE 对上暴露 proactor 完成式 API**，reactor 后端内部模拟完成。方向与 C++ 标准网络一致（WG21 P4100R0《Coroutine-Native I/O for C++29》）。
-
-## 后端矩阵（跨平台答案）
-
-| 平台 | 首选后端 | 性质 | 降级 |
-|---|---|---|---|
-| Linux ≥5.1 | **io_uring** | 真 proactor，最高性能 | epoll（老内核 reactor 模拟）|
-| Windows | **IOCP** | 真 proactor，OS 原生 | — |
-| macOS / BSD | **kqueue** | 仅 reactor，须模拟完成 | ✅ 已做(镜像 epoll,真机全绿) |
-
-**诚实代价**：真·零开销 proactor 只在 Linux+Windows；mac/BSD 永远付"就绪→完成"模拟税（readiness 上内联做 IO 或丢线程池）。物理现实，asio 也这么扛。
-
-## 借 vs 造：只借到 syscall 薄封装层
-
-| 方案 | 借什么 | 判断 |
-|---|---|---|
-| asio（已带）| 全套 | ❌ 自带 `io_context` 调度器，与 HYLE fiber 冲突；默认 epoll，io_uring 后端不成熟 |
-| libuv | 全套 | ❌ 自带 loop，双调度器；非 io_uring-first |
-| seastar | 全框架 | ❌ share-nothing + 自有调度/内存模型，会"吞掉"HYLE；**仅 Linux**（实测无 IOCP/kqueue，后端链 io_uring→aio→epoll）。但其 `reactor_backend` 后端抽象（epoll/aio 也对上呈现 completion 语义）值得照镜 |
-| **liburing(仅Linux) + IOCP/kqueue(OS原生)** | 只借 syscall shim | ✅ liburing 只是 io_uring 系统调用封装、**非调度器**；IOCP/kqueue 本就是 OS API。proactor 抽象 + fiber 绑定 HYLE 自造 |
-
-**结论：方案 C。** 后端只借到"系统调用薄封装"这一层（liburing 在 Linux；IOCP/kqueue OS 原生无需库），**统一 proactor 抽象 + fiber 让出/唤醒由 HYLE 自写**，直接绑 `sched/`。既拿到 io_uring/IOCP 满血性能，又不引入第二调度器。
-
-## 模块形状
+HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 I/O：socket、文件、DNS、signal、
+TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
+一套线程或 coroutine runtime。
 
 ```text
-include/hyle/io/
-├─ capabilities.h            typed backend/capability snapshot
-├─ io_context.h              scheduler-bound runtime owner
-├─ operation.h / buffer.h    deadline/cancel 与 borrowed buffer sequence
-├─ tcp.h / udp.h / local.h   普通 C++ RAII transport facade
-├─ file.h / dns.h / signal.h 文件、解析与关闭事件
-├─ io_uring.h                Linux-only typed receive accelerator
-├─ tls.h / http*.h           由独立协议 factor 拥有，仍保持统一用户 namespace
-├─ transfer.h                可靠制品传输 transaction/resume owner
-└─ detail/proactor.h + net*  不承诺的完成引擎与 awaitable 实现 seam
-
-
-src/io_core/
-├─ proactor.cc               四后端按平台条件编译；OS 类型不进入公开 API
-├─ io_context.cc + operation.cc + io_uring.cc
-└─ file.cc / dns.cc          capability-aware blocking offload
-
-src/io_tls/                  OpenSSL provider/config/session/stream owner
-src/io_http/                 HTTP/1 lifecycle + private picohttpparser
-src/io_http2/                HTTP/2 lifecycle + private nghttp2
-src/io_transfer/             local/HTTP(S) download/copy/resume/publish owner
+Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/Transfer
+              │ co_await + deadline/cancel + RAII
+              ▼
+IoContext（每 Scheduler worker 一个 owner completion engine）
+              │
+              ├─ Windows: IOCP
+              ├─ Linux: io_uring，运行时不可用时 epoll
+              └─ macOS: kqueue
+                         │
+                         └─ completion -> sched::Waker
 ```
 
-F09 已把协议源码、测试、benchmark、依赖与导出边分别迁入 `io_tls/io_http/io_http2`；
-它们不再属于 `io_core`。对用户暴露的仍是统一 `hyle::io` 任务型 awaitable/RAII，对下仍是四种
-private backend；调度和 completion lifetime 由 HYLE 自己管理。
+IOCP/io_uring 原生是 completion 模型；epoll/kqueue 在 private backend 内把 readiness 转成相同的
+completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 backend event loop。
 
-## 已落地（io-01/02 历史实现纪要）
+## 组件边界
 
-> 下面 3 项原为"待深挖"(JIT 延到开工),io-01/02 开工时已定并实现,记录当前真相:
+| factor | 责任 | 不拥有 |
+|---|---|---|
+| `io_core` | context、operation、buffer、TCP/UDP/local、file、DNS、signal、backend 与 Linux typed extension | TLS/HTTP 状态机、服务路由 |
+| `io_tls` | provider-neutral config/context/session/stream 与 handshake/read/write/shutdown | socket runtime、HTTP |
+| `io_http` | HTTP/1 framing、head/body lifecycle、client/server connection | listener、routing、auth、batching |
+| `io_http2` | HTTP/2 session/stream、HPACK/frame provider、flow control、RST/GOAWAY | transport event loop、gRPC policy |
+| `io_transfer` | local/HTTP(S) copy/download、resume、verify、temporary file 与 atomic publication | repository/model schema、credentials、archive |
 
-1. **proactor.h 接口形状**:`Proactor{init/reap/post}` + `Completion{user_data,result,flags,buffer_id}`。收割式(reap 批量取完成),平台无关。**接口在写之前先研究 liburing v2.15 的 SOTA 机制**(multishot/registered buf/SQPOLL/linked SQE),确保不挡:`flags` 带 `kMore`(multishot 一提交多完成、token 不早回收)+`kBuffer`(零拷贝 provided buffer id);reap 批量=io_uring for_each_cqe(N 完成 1 次 release-store);timeout 走 EXT_ARG 不额外 syscall。submit 侧的具体 op(read/write/accept + link/fixed-file flag)留 io-04 net/。
-2. **io_uring↔fiber 映射**:`user_data`(SQE)= Waker token,完成时原样回来(`cqe->user_data`)→ reap 交回 → sched wake。这正是 sched-design §3.3 的物理机制,IOCP 用 completion key 同构。
-3. **只借 syscall shim 的力度**:实测比 io-design 预想更省——**连 liburing 都不链**,只用 3 个 io_uring syscall + `linux/io_uring.h` uapi 头 + 自写内联环算术(barrier 精确复刻 liburing v2.15 的 4 个 fast-path 点)。IOCP/kqueue 本就 OS 原生。**零第三方链依赖。**
+五个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
+构建和交付。中央依赖图是 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)，本页不复制边。
 
-**当时后端进度（2026-07-03 历史快照）**:io-01 **收割接缝**在 IOCP(Windows)+ io_uring(Linux)双后端均 ✅ 真测。io-02 **read/write 真 op 两后端全通 ✅**:io_uring 填 SQE(WSL 真测 write→read + bad-fd 负 errno;TSan 净);IOCP 用 `ReadFile/WriteFile` + per-op OVERLAPPED——proactor 侵入式在途链表**自持** OVERLAPPED 生命周期(OVERLAPPED 是 IoOp 首成员;reap cast `lpOverlapped` 回 IoOp;`post()` 保持 nullptr 以区分合成唤醒;dtor 先 CancelIoEx 再排空端口回收防关机 UAF)。**先前"IOCP 真 op 需随 net/ 定形"是过度谨慎——OVERLAPPED 纯 IOCP 内部细节 proactor 自持,net/ 不可见,故此处已落地。** io-03 **epoll 降级 + SOTA-first 后端选择 ✅**:`init()` 总先试 io_uring,仅真不可用(老内核/`io_uring_disabled` sysctl/容器 seccomp)才退 epoll——生产走 io_uring,epoll 保 io_uring 被禁环境仍可跑;epoll reactor→completion 模拟(记 pending op、就绪时内联 IO;**红队 L3 修 2026-07-05:pending 拆 in/out 双槽,同 fd 全双工 recv+send 并发不再互相覆盖孤儿**)。后续 kqueue、UDP 与 park 合并均已完成，见本页顶部当前架构。
+## Ownership 与进度
 
-## 2026-07-05 历史缺口快照
+- 一个 socket/file/session 由一个 worker 拥有，提交、完成和销毁在 owner 上发生；跨 worker 只通过
+  明确迁移或消息，不并发操作同一 stream。
+- buffer、取消 token 和 callback state 必须活到 await 完成。析构不是取消协议；shutdown 先停止
+  admission，再 cancel，最后 drain completion。
+- deadline 使用 Time 的 absolute monotonic 形状；取消使用 Sched 的 token；失败统一返回 Error 的
+  typed `Status/Result`，backend 原生错误在边界转换。
+- base、deadline 与 cancellation 路线共享一个 operation state，不为便利复制三套 I/O 状态机。
+- partial read/write/progress 与错误可以同时有意义；结果不能假装事务性回滚已经完成的字节。
+- context、stream 和协议 driver 的内部状态使用 Mem/Container；IO 不复制 allocator、hash table、
+  timer queue 或 filesystem 原语。
 
-> 本节保留当时的施工判断；其中 io-07b/c 所述 portable/stub 债已在
-> 2026-07-20 通过 `IoUringExtension` 收口，STATX 也已改为原生 SQE。
-> 当前维护者应以本文顶部架构和 capability fill list 为准。
+## 文件与平台能力
 
-**① JIT 延后(次要):**
-- **reactor 后端(mac kqueue)✅ 已落地(2026-07-05,Apple Silicon 真机)**：kqueue 镜像 epoll reactor 把 readiness 合成为 completion。2026-07-20 已把 io_uring 专属 buf-ring/fixed-files/direct-accept 从通用面移入显式 extension，kqueue 不再编译恒定失败的后端方法。真机 io/net/tcp/udp/file/signal/timeout/http 全绿。
-- **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
+普通 `File` 根据 backend capability 选择原生异步或 `IoContext` 的 blocking offload；用户不按 OS 名字
+猜路线。direct/non-buffered I/O 是显式请求，alignment 合同不可满足时诚实失败，不静默变成 buffered。
+named shared storage 属于 Mem，原子 replace/同步文件机制属于 Platform FS，IO 只组合异步 workflow。
 
-**② 参考库审计真缺口(能力驱动,见 roadmap 轴 C / milestones):**
-- **io-06 带超时 io(C2)✅**:TCP read/write/connect/accept 与 UDP recv/send 的 deadline/cancel 腿已完成；取消在途内核 op 用 io_uring `ASYNC_CANCEL`、IOCP `CancelIoEx`、epoll/kqueue 删除 readiness watch 并合成最终 completion。
-- **io-07a multishot accept ✅(kMore 半成品补完)**:`submit_accept_multishot` 三后端(io_uring `IORING_ACCEPT_MULTISHOT` 原生;IOCP AcceptEx 循环 + epoll 重 arm 两路 emulation,对上同一 kMore 流)。一次 arm 持续吐连接,补完 `Completion.kMore` 当初留的接口。双平台 + TSan 净。
-- **io-07b provided buffer ring + multishot recv ✅(io_uring 显式快腿)**：`IoUringExtension::register_buffer_ring` + `submit_recv_multishot` + `buffer_address/return_buffer`。`MultishotRecvStream` 和 `TcpStream::read_multishot` 都必须拿到有效 extension；非 io_uring 后端不再暴露首次 `next()` 才失败的伪 portable 入口。普通跨平台连续接收就是循环 `read()`。
-- **io-07c registered/fixed files ✅第一步(2026-07-05)**:`register_file_table`(sparse `IORING_REGISTER_FILES2`)+ `assign_fixed_slot`/`release_fixed_slot`(线性找空槽 + `FILES_UPDATE` 填/清)+ `submit_recv_fixed`/`submit_send_fixed`(`IOSQE_FIXED_FILE` + 槽索引,内核免每 op fget/fput)。io_uring 原生实现已验证；IOCP/epoll 使用普通 fd 产品腿，但这些扩展方法本身仍需移出 portable Proactor，不能把恒定失败叫“透明 fallback”。**性能实测边际(fixed vs raw fd loopback ping-pong 0.8-3.3% 更快,一致为正但小)**。**io-07c 第二步 direct-accept ✅原语已做+实测无收益,TcpStream 主动不改**:`submit_accept_direct`(accept 直落 registered-file 槽、CQE res=槽索引、连接从不是进程 fd)+ `submit_close_direct` + RecvOp/SendOp 加 fixed_slot。proactor_test.DirectAccept 验证全路径。**但 proactor 层(零 fiber)合并计时 direct 稳定慢 ~1%(6 跑,非噪声)——拆相追根后是 teardown 伪影,非 accept 回退**:预建连接分相计时显示 **accept 原语本身 direct 反而快 ~10-30ns/conn**(省内核 fget/fput,合理),那 ~1% 全来自 microbench 即建即关的 teardown 不对称(direct 的 `close_direct`+reap+`FILES_UPDATE` 2 syscall 其一冗余 vs normal `::close` 1 syscall),生产不 accept-完-立刻-close 故不出现。故**停在原语层,不做 TcpStream 拥有语义改造**(accept 机制赢面 ~10-30ns 被 TCP 握手 ~330µs 淹没,为它改核心 RAII = 纯风险);原语留供未来高建连速率/多核争 fd 表场景。详见 performance/benchmarks-io.md direct-accept 拆相节。
-- **io-07c 2026-07-20 收口补记**：register/assign/release、fixed
-  recv/send、direct accept/close 全部位于 `IoUringExtension`；普通
-  `RecvOp/SendOp` 的 `fixed_slot` 暗门已删除，IOCP/kqueue 不再有 stub
-  定义。`release_fixed_file` 现在检查内核 `FILES_UPDATE` 结果。
-- **io-08 TLS(C9) 历史落点**：最初实现了 OpenSSL memory-BIO over co_await
-  stream、SNI 和 HTTPS loopback，但当时仍暴露 native provider pointer、invalid
-  object 与 `int/long`。当前 `io_tls` v1 已用 typed config/session/result、统一
-  deadline/cancel、通用 ALPN、严格 truncation 与显式 shutdown policy 取代这些
-  旧形状；是否最终冻结只看活动 closure card 与 registry。
-- **io-09 异步 DNS + signal ✅(C10，历史落点)**：当时首次用 blocking pool 卸载
-  `getaddrinfo`，并建立 signal self-pipe/console-handler 路径。当前 resolver 已改为
-  `resolve(IoContext&, ...).join(OperationOptions)`：host 与全部 IPv4/IPv6 endpoint
-  都拥有所有权，deadline/cancel 可提前返回，而不可强停的 OS 查询通过引用状态在后台
-  安全退休；数字地址由 `Endpoint::parse()` 处理。`SignalSet::create()` / `wait()`
-  返回 typed result，维持进程级单 owner、顺序单 waiter 合同。
-- **io-05 文件/shmem(C5)✅（历史）**：`proactor` 覆盖 open/close/stat/fsync/fallocate，`File` 按 capability 自动把非原生异步操作卸载到 `IoContext` blocking pool。旧 `io::SharedMemory` 曾实现 Windows file mapping / POSIX `shm_open`；Mem v2 已把 storage owner 迁为 `mem::SharedMapping`，Platform 保留 syscall mechanism，IO 只组合 IPC/async protocol，旧 C++ owner 与伪 C ABI 均不再是当前产品面。
+Linux 专属的 provided-buffer/multishot receive 经成功取得的 `IoUringExtension` 使用；portable
+one-shot 永远存在。backend-specific 快腿必须用 typed capability/extension 显式取得，不能在其他平台
+暴露第一次调用才恒定失败的伪 portable API。
 
-## 参考
+## TLS 与 HTTP
 
-- Why you should use io_uring for network I/O — Red Hat Developer
-- Zero-Copy I/O and io_uring for High-Performance Async Servers
-- From epoll to io_uring's Multishot Receives (r/programming, 2025)
-- Coroutine-Native I/O for C++29 — WG21 P4100R0
+TLS provider 类型不进入公开 API。config/context 拥有长期 provider policy，stream/session 拥有连接
+状态；证书验证、ALPN、mTLS、session ticket 与 close-notify 都使用明确选项和 typed failure。
+plain TCP 与已经握手的 TLS 通过同一 transport abstraction 进入 HTTP framing，避免复制协议解析器。
+
+HTTP API 只负责 connection、framing、body 和 flow-control lifecycle。增量 reader/writer 是默认大消息
+形状；有界 `read_all` 是显式便利。writer 每次 await 完成后才拉下一块，不能建立不可见的无界发送
+队列。HTTP/2 可借 nghttp2 处理 HPACK/frame/state machine，但 transport、Scheduler、allocator 和
+application policy 仍由 HYLE/应用拥有。
+
+listener ownership、routing、middleware、authentication、request admission、dynamic batching、模型
+schema、graceful service policy 和 metrics policy 都属于上层 server/推理引擎；基础库不伪装成框架。
+
+## 可靠制品传输
+
+Transfer 是对现有 file/HTTP/TLS/Platform FS 的有界组合，不复制协议。它必须：
+
+- 把跨 suspend 的 plan/checkpoint/report 状态变成 owning value；
+- 对制品大小保持 O(1) 工作 buffer；
+- 用 source identity/validator 验证 resume，不能盲信 partial file；
+- 在校验、flush/close 和 atomic publication 成功前保留旧目标；
+- 明确 redirect、restart、keep-partial、cancel 与 cleanup policy。
+
+repository client、token storage、archive extraction、模型解析和分片调度留给推理引擎。
+
+## 性能与实现约束
+
+- 热路径目标先看 syscall、copy、allocation、wake 和 contention 数量；不同持久化、错误、完成或
+  lifecycle 合同不能直接排名。
+- completion 应批量收割；owner-local free list/operation state 可以复用，但不得改变外部 lifetime。
+- readiness backend 才需要 fd→pending 映射；IOCP/io_uring 不为统一外观增加无用 hash lookup。
+- provider/library 只借其成熟机制，不引入第二 scheduler。依赖、版本与许可证由 build system 一处管理。
+- 当前只交付 C++ source/static/shared；没有 C API 或 Native FFI。未来跨语言 server 使用 HTTP/协议，
+  只有具名 foreign runtime 需求才按 [Native FFI 策略](native-ffi-policy.md)设计窄边界。
+
+任何新 portable 能力都必须在支持平台真实实现或有语义等价 fallback；`Unimplemented` 可以诚实描述
+运行时 capability 缺失，但恒定失败声明不能冒充功能完整。

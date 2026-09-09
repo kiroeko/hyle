@@ -25,7 +25,8 @@
 ## 前置依赖
 
 - 硬前置：`mem-01`（slab 走 `Allocator` 注入）。**不依赖 mem-02**（mimalloc）——MemoryArena 在任何 backing 上都工作。
-- 决策依据：`mem-design.md`（MemoryArena 无锁块池=最亮资产、5 bug 之 #5=64 槽上限、#附注=16字节 atomic 需 cmcx16）；`clay-asset-liability.md` 行30/43/45。
+- 决策依据：`mem-design.md`（MemoryArena 无锁块池=最亮资产、5 bug 之 #5=64 槽上限、#附注=16字节 atomic 需 cmcx16）；项目历史任务
+  `../project/clay-asset-liability-2026-07.md` 的对应资产表。
 
 ## 目的（为什么做这一步）
 

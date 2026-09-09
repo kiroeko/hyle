@@ -82,8 +82,7 @@ P1 从不自动选择。只有 `--p1-card` 显式绑定不可变候选、diff �
 {
   "candidate_commit": "<full 40-hex commit>",
   "candidate_tree": "<full 40-hex tree>",
-  "api_state": "FIXED",
-  "algorithm_state": "FIXED",
+  "candidate_fixed": true,
   "factors": ["<factor>"],
   "contract": "bench/contracts/<frozen-contract>.json",
   "contract_hash": "<SHA256 of the exact candidate Git blob>",

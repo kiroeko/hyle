@@ -490,7 +490,7 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_core v1 CLOSED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 冻结于 ffa70e35。"
+      "summary": "io_core v1 CLOSED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 固定于 ffa70e35。"
     },
     {
       "module": "io_tls",

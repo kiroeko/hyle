@@ -260,7 +260,7 @@ class ImpactTest(unittest.TestCase):
         snapshot = selector.Snapshot(self.root, commit)
         path = Path(self.temp.name) / "p1-card.json"
         selector.write_json(path, {"candidate_commit": commit, "candidate_tree": snapshot.tree,
-                                   "api_state": "FIXED", "algorithm_state": "FIXED",
+                                   "candidate_fixed": True,
                                    "factors": ["container_queue"], "contract": "bench/contracts/fixture.json",
                                    "contract_hash": selector.digest(snapshot.read("bench/contracts/fixture.json")), "peers": {}})
         return path
@@ -286,10 +286,10 @@ class ImpactTest(unittest.TestCase):
             selector.execute(self.root, plan, self.cache, Path(self.temp.name) / "scratch", context=self.context)
         return calls
 
-    def test_p1_requires_both_freezes_identity_contract_and_context(self):
+    def test_p1_requires_fixed_candidate_identity_contract_and_context(self):
         path = self.p1_card()
         card = selector.read_json(path)
-        for key, wrong in (("api_state", "DRAFT"), ("algorithm_state", "DRAFT"),
+        for key, wrong in (("candidate_fixed", False),
                            ("candidate_tree", "0" * 40), ("candidate_commit", "0" * 40),
                            ("contract_hash", "0" * 64), ("factors", ["mem"])):
             with self.subTest(key=key):

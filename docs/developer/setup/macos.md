@@ -100,11 +100,11 @@ scripts/fetch-bench-vendors.sh
 - **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
 - **CUDA**：mac 无 NVIDIA GPU，不适用。
 
-## 七、Vulkan compute（compute-06，Apple 走 MoltenVK）
+## 七、可选 Vulkan/MoltenVK 实验环境
 
-Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vulkan 调用翻译成 Metal）。HYLE 的 Vulkan 后端经 volk 运行时 dlopen `libvulkan.dylib`（loader），loader 再路由到 MoltenVK ICD，所以 mac 上一份 SPIR-V 也能在 Apple GPU 上跑（compute-06 SaxpyEndToEnd）。
-
-> **状态（2026-07-08）**：mac 真机全绿——`hyle_compute_vulkan_test` 在 **Apple M4 via MoltenVK 3/3 PASS**（SaxpyEndToEnd + BatchedSaxpy + CoAwaitCompletion），与 Win/WSL RTX4070 3/3 同路径，compute-06 三平台闭环。`vulkaninfo` 枚举 `Apple M4` / `driverName = MoltenVK`（apiVersion 1.4.334）。⚠️ mac 真跑抓出一个 portability 真 bug 并已修（见下「portability 扩展」）。
+Apple 无原生 Vulkan；MoltenVK 是 Vulkan-over-Metal ICD。未来 Compute 重新开工时可以用 volk 动态取得
+`libvulkan.dylib`，再由 loader 路由到 MoltenVK。`compute` 当前仍为 `QUEUED`，下面只说明怎样准备和
+探测这个可选实验环境，不构成后端正确性或交付结论。
 
 **装（brew，一次）**：
 
