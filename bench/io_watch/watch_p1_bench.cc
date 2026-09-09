@@ -31,7 +31,6 @@
 #include "hyle/platform/fs.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
-#include "hyle/time/clock.h"
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -255,8 +254,7 @@ Task<int> hyle_watch_owner(AllocatorRef allocator, IoContext* io,
     std::uint64_t directory_mask = 0;
     bool observed = false;
     while (!observed) {
-      auto batch = co_await watcher.next(
-          {.deadline = hyle::time::deadline_after(std::chrono::seconds(15))});
+      auto batch = co_await watcher.next();
       if (!batch) {
         mark_failed(state);
         (void)watcher.close();

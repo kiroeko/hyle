@@ -61,7 +61,7 @@
       "consumer_key": "inference/io/exact-sidecar-atomic-reload",
       "provenance": {
         "path": "bench/io_watch/consumer_shapes_v1.json",
-        "sha256": "cc72781a58ce6191276661e1c5d3b7f80f1be138f07af3855bcf1ccc98c8fce2"
+        "sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
       },
       "ownership_topology": {
         "candidate": "one persistent HYLE Scheduler/IoContext owner retains FileWatcher; an external caller atomically publishes and waits for the coroutine consumer",
@@ -114,7 +114,7 @@
       "consumer_key": "rendering/io/flat-asset-directory-invalidation",
       "provenance": {
         "path": "bench/io_watch/consumer_shapes_v1.json",
-        "sha256": "cc72781a58ce6191276661e1c5d3b7f80f1be138f07af3855bcf1ccc98c8fce2"
+        "sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
       },
       "ownership_topology": {
         "candidate": "the same persistent HYLE owner receives bounded borrowed batches and coalesces repeated direct-child notifications",
@@ -185,7 +185,7 @@
       "comparison_class": "SAME_CONTRACT",
       "provenance_class": "PINNED_PEER",
       "semantic_matrix": "bench/io_watch/consumer_shapes_v1.json",
-      "semantic_matrix_sha256": "cc72781a58ce6191276661e1c5d3b7f80f1be138f07af3855bcf1ccc98c8fce2"
+      "semantic_matrix_sha256": "5620d6ca5479b31714df7cbacbc2c3f2798db9b7a0a292004deecfc476e0e6e2"
     },
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",

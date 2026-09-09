@@ -10,7 +10,7 @@
   "common_semantics": {
     "lifetime": "one watcher and one event owner remain established outside timing; every charged publication is awaited and classified before the next episode",
     "freshness": "the consumer re-reads an eight-byte authoritative generation so duplicate/coalesced notifications cannot satisfy a later publication",
-    "progress": "both routes use their natural persistent asynchronous owner and native file-event backend; neither polls or creates a thread per event",
+    "progress": "both routes use their natural persistent asynchronous owner and native file-event backend; neither polls, creates a thread per event or registers a per-event timer",
     "accounting": "the same HYLE Platform FS helper publishes and re-reads each generation for both routes, so only watcher routing, dispatch, batching and lifecycle differ"
   },
   "workloads": [
@@ -32,6 +32,7 @@
   ],
   "negative_space": [
     "watcher/runtime construction and one warmup episode per route are outside timing",
+    "deadline and cancellation races are correctness/lifecycle gates, not charged to only one side of this successful-event comparison",
     "recursive traversal, debounce, content parsing and application reload policy are not watcher work",
     "a raw inotify, IOCP or FSEvents syscall is not an admissible peer for the complete owner-to-consumer route",
     "callback count is not treated as an event-log guarantee; the gate observes authoritative publications"
