@@ -1307,7 +1307,7 @@
     },
     {
       "module": "io_http2",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-http2-v2-owner-progress-cost",
       "closure_task": "docs/implementation/tasks/io/io-http2-v2-owner-progress-cost.md",
       "scope": "Audit and, only if structurally proven, remove unconditional monitor and notification cost from the HTTP2 single-owner no-waiter progress path while preserving all public API, protocol, lifecycle and delivery contracts.",
@@ -1322,16 +1322,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "evidence/performance/io-http2-p1-v2-4060e217/manifest.json"
       },
       "formal_performance": {
-        "state": "NONE"
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
       },
-      "summary": "io_http2 v2 CANDIDATE：唯一 owner-progress 修正冻结于 4060e217/cb91d5cb；三平台、sanitizer、HTTP/2/TLS 定向测试与 source/static/shared 交付已通过，等待唯一 P1 bundle 和终局红队签字。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "io_http2 v2 VERIFIED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。"
     },
     {
       "module": "io_transfer",

@@ -128,7 +128,47 @@ validation、teardown、owner lifetime、双顺序、31-run precision 和固定 
 - WSL exact factor 的 shared 与 static 测试均通过；source archive 在 WSL 与两台 Mac 的 hash 一致。
   Windows TLS 的环境缺口由 WSL 与两台 Mac 的真实 TLS 路线覆盖，不把 N/A 写成 PASS。
 
+## Unique P1 receipt
+
+原合同 [`io-http2-p1-v1`](../../../../bench/contracts/io-http2-p1-v1.json) 在 W1-WSL、GCC 14.2、
+Release/static、portable ISA、EXT4 fresh build/evidence 路径上原样运行。candidate 与 nghttp2 peer 均为
+clean/exact，A/A、5%/10% known-delta、timer floor、artifact/build/consumer provenance 全部 `PASS`；n=15
+已经裁决，没有触发 n=31 精度升级：
+
+| workload / order | HYLE / nghttp2 op/s | advantage / 99.26% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 64x1 KiB / candidate-first | 201,866.21 / 140,934.08 | 1.46578 / [1.38347, 1.50749] | `WIN` | `PASS` |
+| 64x1 KiB / peer-first | 204,507.86 / 139,537.62 | 1.47803 / [1.40242, 1.52690] | `WIN` | `PASS` |
+| 4x256 KiB / candidate-first | 5,341.92 / 5,313.12 | 1.01046 / [0.97785, 1.02041] | `PARITY` | `PASS` |
+| 4x256 KiB / peer-first | 5,308.97 / 5,286.09 | 1.00024 / [0.96383, 1.02025] | `PARITY` | `PASS` |
+
+qualification 与 aggregate performance 均为 `PASS`。第一次调用在采样前因 canonical Windows checkout
+位于 `/mnt/c`、不满足 W1-WSL 的 EXT4 machine gate 而被拒绝；第二次只由 shell fresh-path guard 直接退出；
+两者没有产生样本或 bundle。唯一有效 68-file bundle 在
+[`io-http2-p1-v2-4060e217`](../../../../evidence/performance/io-http2-p1-v2-4060e217/)；manifest、summary、
+controls SHA-256 分别为
+`30172CD904CA90E641529DDEDAFE59C815EEEFAB5DE882F020CADF94656D394E`、
+`44728C2EC8901B309F8FA37F798BADB9C9D24D3124E7F9AC498EF506FD810D94`、
+`BE2643F97F369A1ED6C7DA87E9C2E6CF64310F98D5C1F966FE4BA1AFC65E589E`；严格 verifier 为
+`QUALIFIED`、`paths_verified=true`、`provenance=EXACT`。
+
+## Terminal red-team
+
+终局只读红队 verdict 为 `PASS`：
+
+- `read_busy`、`write_busy`、epoch 与 protocol state 只由 transport owner worker 读写；同 worker fiber
+  之间没有 C++ data race，错误 worker 仍由公开入口的 typed check 拒绝；
+- owner waiter 在当前 fiber 让出 worker 前已把 CV node 发布完成，因此后继 owner progress 的 direct
+  notify 不存在 predicate-check/publication 窗口；wake-before-suspend 由既有 fiber rendezvous 仲裁；
+- external cancel 仍先取得 session monitor，覆盖注册前、predicate 检查前和 waiter publication 三种顺序；
+  callback 先于 lock 构造、后于 lock 析构，注销会等待并发 callback，栈 context 不会逃逸；
+- owner progress 与 cancel 并发 notify 由 CV 内部 waiter lock/winner 状态仲裁；无 waiter fast path 没有
+  allocation、syscall、spin 或新 metadata，也没有通过 public waiter count 制造 benchmark seam；
+- v1/v2 contract 和 peer 的 bytes、窗口、credit、validation、teardown、lifetime 与执行顺序逐项相同；双顺序
+  结果一致，不能由 placement 或苹果/橘子解释；公开 API、layout 和正常 consumer shape 均未改变。
+
 ## Current decision
 
-`CANDIDATE`。不可变产品身份如上；correctness、race/memory、portability 和 delivery 均已通过。下一步只可
-保存并复核这一个候选已经产生的唯一 P1 bundle，再完成终局只读红队；不得修改产品、合同或追加样本。
+`VERIFIED`。scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
+performance 七个 gate 全部 `PASS`；Formal 独立为 `PENDING`。下一步只可补 terminal limitation、reopen
+trigger 与三项 LOC 并执行 `VERIFIED -> CLOSED/FROZEN`，不得再次构建、采样或改产品。

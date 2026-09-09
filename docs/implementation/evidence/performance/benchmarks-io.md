@@ -2,10 +2,38 @@
 
 <!-- PERFORMANCE EVIDENCE: HISTORICAL -->
 
-> 本页历史证据曾签发 `io_tls-v1` 与 `io_http-v1` 各自冻结的自然路线；两者现已因具名
-> full-duplex progress 缺陷进入新轮，旧 receipt 不再是当前性能签名。后续 V2 与旧 io 聚合数据均为
-> `HISTORICAL / UNQUALIFIED`，不能扩大成 io_core、HTTP/2、transfer、完整服务器、全平台或全操作
-> SOTA。
+> 本页顶部保存 `io_http2-v2-owner-progress-cost` 已通过的候选工程证据；只有 registry 完成 `CLOSED`
+> 后才能把它标为当前性能签名。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是历史事实；HTTP/2 结论也不能扩大成
+> io_core、TLS、HTTP/1、transfer、完整服务器、全平台或全操作 SOTA。
+
+## 2026-09-09 `io_http2-v2` 当前工程证据（`PASS`）
+
+不可变 candidate/tree 为 `4060e217c88d0ed35356b1ee21e5aefbe0c5b5d3` /
+`cb91d5cba24706ddee390b51dab40fa12b2093ff`；peer 仍是 nghttp2
+`85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2`。本轮只移除 owner worker 普通 progress 的外层 session
+monitor；公开 API、协议状态、body、窗口、chunk、ownership、validation、teardown、双顺序与固定 5%
+margin 均与 v1 相同。双方仍在一个 persistent worker 上完成同一 h2c multiplex/flow-control consumer，
+没有以轻语义、预分配或不同 body 形状获得结果。
+
+advantage 为 HYLE/nghttp2 op/s，越大越有利于 HYLE；每个顺序 15 个独立进程，置信水平 99.26%：
+
+| workload / order | HYLE / nghttp2 op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| 64x1 KiB / candidate-first | 201,866.21 / 140,934.08 | 1.46578 / [1.38347, 1.50749] | `WIN` | `PASS` |
+| 64x1 KiB / peer-first | 204,507.86 / 139,537.62 | 1.47803 / [1.40242, 1.52690] | `WIN` | `PASS` |
+| 4x256 KiB / candidate-first | 5,341.92 / 5,313.12 | 1.01046 / [0.97785, 1.02041] | `PARITY` | `PASS` |
+| 4x256 KiB / peer-first | 5,308.97 / 5,286.09 | 1.00024 / [0.96383, 1.02025] | `PARITY` | `PASS` |
+
+A/A、5%/10% known-delta、timer floor、artifact/build/consumer/source/peer provenance 全部 `PASS`；n=15
+已经裁决，没有触发预声明的 n=31 精度升级。第一次启动在任何采样前因 `/mnt/c` 不满足 W1-WSL EXT4
+合同而被仪器拒绝，第二次仅由 shell fresh-path guard 退出；它们都没有样本或 bundle。唯一有效测量位于
+[`io-http2-p1-v2-4060e217`](../../../../evidence/performance/io-http2-p1-v2-4060e217/)；manifest、summary、
+controls SHA-256 依次为
+`30172CD904CA90E641529DDEDAFE59C815EEEFAB5DE882F020CADF94656D394E`、
+`44728C2EC8901B309F8FA37F798BADB9C9D24D3124E7F9AC498EF506FD810D94`、
+`BE2643F97F369A1ED6C7DA87E9C2E6CF64310F98D5C1F966FE4BA1AFC65E589E`。
+保留的 WSL live build/toolchain 上严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、
+`provenance=EXACT`。这是 W1-WSL 工程 P1，不是 Formal 或全平台性能证书。
 
 ## 2026-09-09 `io_http2-v1` terminal 工程证据（`INCONCLUSIVE`）
 
