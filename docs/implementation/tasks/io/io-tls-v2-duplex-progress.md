@@ -111,3 +111,64 @@ FIX 集到此冻结。不得加入第二 scratch、公开 TLS pump 状态、HTTP
 `io-tls-v1` 对配置、验证、ALPN、session、deadline/cancel、truncation、普通小记录路线以及三种
 C++ 交付的结论仍是历史证据。新轮不得借机增加 QUIC/DTLS、0-RTT、证书配置策略、公开 OpenSSL
 handle、Native FFI/C API，或按 benchmark 发明第二套 TLS stream。
+
+## Candidate readiness（`CANDIDATE`）
+
+产品纠正在 `18bf62f81a91975e0776439d88fca3891f10e560` 完成，产品 tree 为
+`98632557e0237bac0bed3ca5521e59420d89176e`；精确 Git archive 的 SHA-256 为
+`329DA82D0438AA24ACB90A36DE397475A16A8FABAB65E6040F3DC7DABDE4E3DB`。本轮没有修改公开对象模型、
+TLS 配置、provider 选择、factor 依赖或 benchmark 合同：
+
+- `flush_ciphertext()` 每次循环先检查同一绝对 deadline/cancel budget；底层 write 立即 would-block 时，
+  才能从 peer 吸收至多一个 16 KiB chunk；read BIO 中尚未被 provider 消费的 opportunistic ciphertext
+  硬限为 32 KiB，达到上限便回到原 awaitable，不 spin、不新建后台 task；
+- `tls_write()` 明确恢复 `TransferResult` 的 write-some 合同：一次 provider 成功只提交一个至多 16 KiB
+  TLS record，HTTP/HTTP2 与普通调用者按返回的 `bytes` 推进。由此一个任意大的 plaintext span 不再让单次
+  operation 反复吸收无界 peer ciphertext；
+- scratch 仍为 stream 构造时一次分配的固定 16 KiB；普通无背压路线没有新增 allocation、虚分派、公开
+  metadata 或 syscall。write BIO 的 ciphertext 只在 native send 已确认后消费，read BIO 只在
+  `SSL_ERROR_WANT_READ` 且 provider 已耗尽既有输入后补充；
+- 新增 64 KiB plaintext 的 partial-progress 回归：第一次成功写只返回一个 record，peer 精确解密返回的
+  byte 数；原 small-socket HTTP/2 flow-control、pre-cancel 零 wire、partial/EOF/truncation、ALPN/session、
+  deadline/cancel 与 shutdown 路线全部回放通过。
+
+### Correctness、portability 与 delivery
+
+| profile / shape | result |
+|---|---|
+| W1-WIN / MSVC 19.50 / shared | `io_tls`、`io_http2` 与新增 partial-progress 回归 `PASS` |
+| W1-WSL / GCC 14.2 / exact archive shared | 默认 backend 与 `HYLE_IO_FORCE_EPOLL=1` 的 `io_tls`、`io_http2` 均 `PASS` |
+| W1-WSL / GCC 14.2 / sanitizer | ASan、UBSan、TSan（既有 `setarch x86_64 -R` host mapping 修复）定向 TLS 套件均 `PASS` |
+| MacBook Air `Mac16,12` / AppleClang 21 | exact commit shared `io_tls`、`io_http2` `PASS` |
+| Mac mini `Mac16,10` / AppleClang 21 | exact archive shared `io_tls`、`io_http2` `PASS` |
+| Windows exact archive / source embedding | downstream 只链接 `hyle::io`，configure/build/run `PASS` |
+| Windows exact archive / installed shared + static | 两个 downstream 均只链接 `hyle::io`，configure/build/run `PASS`；static OpenSSL closure 由 package 传递发现 |
+| W1-WSL / exact archive / `HYLE_IO_TLS=OFF` | 配置明确报告 dependency probe skipped，不生成 TLS binary；底层 `io_core` build/test `PASS` |
+
+两台 Mac 只签 portability/correctness，不混入 P1 数值；Homebrew OpenSSL 的 deployment-target warning 属于
+既有验证环境差异，真实 TLS runtime 全部通过。Windows、WSL 与 Mac 使用的产品内容均由同一 commit 或上述
+同 SHA archive 得到；远程副本没有反向覆盖 canonical Windows checkout。
+
+### Bounded red-team receipt
+
+- 修复前的 duplex deadlock 是同一 owner operation 在底层 send pressure 下拒绝读取 peer flow-control
+  ciphertext；修复后的 deterministic 4 KiB socket / 65,535-byte window / 256 KiB H2 用例在默认与 forced
+  epoll 均前进并完成；
+- 红队发现第一版 correction 会在一次巨大 `tls_write` 内随每次 output progress 重置 opportunistic-read
+  机会，从而允许 dynamic read BIO 随输入增长。最终实现用 write-some + 32 KiB pending cap 消除了该隐藏
+  无界状态；这属于产品成本结构修复，不是为 benchmark 加 metadata；
+- pre-cancel 在第一次 wire effect 前仍返回 typed cancellation；provider 的 private state 可能已初始化，
+  但回归证明 wire 为零，失败后的 stream 仍按公开合同关闭；
+- deadline/cancel 检查位于 pump 每次迭代，而不是只在 blocking await 前检查，持续 immediate progress
+  不能越过绝对 budget；双向均无进展时进入既有 proactor，未发现 lost wake、busy loop、第二 owner、
+  ciphertext 丢失/重复或新的 high-severity finding；
+- `validation-select.py` 因本卡 baseline 覆盖 IO factorization 的较长历史而保守选择了宽闭包；它不是本轮
+  产品裁决器。依法只运行卡片预声明且与 TLS pump 改动相关的 gates，没有在模块任务中改写公共仪器。
+
+## Current decision
+
+`CANDIDATE`。有限 FIX 集、P0 成本证明、correctness、sanitizer、三平台 portability、feature OFF/ON 与
+source/static/shared 交付门均完成；公开 API 仅澄清既有 partial-transfer 语义。候选产品和冻结的
+[`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 合同从此不再修改。唯一剩余 gate 是在
+W1-WSL clean EXT4 上运行一次双顺序、带 controls 的 P1 replay；结果未出前不得写成 `VERIFIED` 或
+`CLOSED/FROZEN`。
