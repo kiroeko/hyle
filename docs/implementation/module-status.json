@@ -144,10 +144,9 @@
     },
     {
       "module": "mem",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
-      "candidate": "f13ee33bb0ecc2a882f32a7a7403197f78c2055a",
-      "summary": "mem v7 CANDIDATE：payload-free 64-bit aligned RangeAllocator 的 API、算法、测试、三交付和同合同 P1 adapter 已固定于 f13ee33b；仅余精确候选的正式性能、macOS、终局红队与关闭记录。"
+      "summary": "mem v7 AUDITED：候选 1 在 M1-MAC/AppleClang 21 `-Werror` 下因含 helper call 的 optimizer assumption 被拒绝；范围/API/算法不变，只授权四处可移植 assumption 修复后建立候选 2。"
     },
     {
       "module": "mem_vm",

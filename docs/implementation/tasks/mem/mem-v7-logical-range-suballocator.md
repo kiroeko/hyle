@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - component / owner：`mem` / payload-free logical range ownership；round：`mem-v7-logical-range-suballocator`；
   baseline：`67893204aad888f8e801c59ec6c149432a8e779e`。
@@ -168,8 +168,13 @@ ranges.reset();                            // phase-wide logical invalidation
 Audit verdict：全部 MUST 已成为五项有限 FIX，API、成本、peer、normal/holdout shape 和停止条件均已冻结，
 允许进入产品实现。
 
-产品候选固定为 `f13ee33bb0ecc2a882f32a7a7403197f78c2055a`。此后不得改变公开合同、算法、layout、
-常态成本或 workload；若候选验证发现产品缺陷，必须依法退回 `AUDITED` 并建立新 candidate。
+### 撤回的 candidate 1
+
+`f13ee33bb0ecc2a882f32a7a7403197f78c2055a` 在 W1-WIN、W1-WSL 与 Windows 三交付通过，但
+M1-MAC/AppleClang 21 `-Werror` 编译在四处 `HYLE_ASSUME(is_free(...))` 报 `-Wassume`：Clang 不接受
+assumption expression 内潜在有副作用的 helper call。它没有生成 macOS 产品 binary，不能成为终局候选，
+也不继承开发性能结果。registry 已退回 `AUDITED`；唯一追加修复是先物化纯布尔值再交给 optimizer
+precondition，范围、公开 API、算法、layout、workload 和 peer 均不得变化。
 
 ## Pre-candidate implementation receipt
 
