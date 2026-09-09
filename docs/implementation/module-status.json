@@ -1224,7 +1224,7 @@
     },
     {
       "module": "io_core",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "io-v1-core-factorization",
       "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
       "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
@@ -1259,7 +1259,35 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "io_core v1 处于 VERIFIED：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 保持 ffa70e35。"
+      "freeze_confirmation": {
+        "id": "io-core-v1-freeze-2026-09-09",
+        "marker": "FROZEN",
+        "confirmed_at": "2026-09-09",
+        "reviewed_commit": "9e0bd42147f8b5838271691b566e9683f0162388",
+        "reviewed_tree": "2802cdb4368f284eca9a126f7eab023187239160",
+        "evidence": "docs/implementation/tasks/io/io-v1-core-factorization.md"
+      },
+      "loc": {
+        "snapshot_commit": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
+        "repository_code": 535488,
+        "self_without_tests": 89889,
+        "module_implementation": 11044
+      },
+      "known_limitations": [
+        "IO resources are owner-worker affine, and operation buffers plus cancellation tokens remain borrowed until await completion; callers must cancel and drain before destroying a suspended fiber or IoContext.",
+        "Backends without natively cancellable file operations reject deadline or cancellation options instead of pretending to cancel blocking system calls; macOS direct IO, Windows named-pipe half-close and unsupported socket tuning return typed Unimplemented.",
+        "Linux io_uring expert operations require a successfully acquired runtime capability; the portable one-shot route remains available on all supported backends.",
+        "The P1 receipt covers two complete HTTP1 consumer shapes on one W1-WSL worker against Boost.Beast; it is not a WAN, multi-worker, all-operation, all-backend, full-server or Formal SOTA certificate.",
+        "The product is a C++23 source, static and shared SDK for compatible toolchains; Native FFI and a C API are not provided."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a transport correctness, security, owner-affinity, buffer lifetime, cancellation, late-completion, teardown, error-domain or natural C++ API-usability defect.",
+        "A real inference or general systems consumer proves a missing common core transport, file, endpoint, resolver, signal or local-IPC capability with no complete routed owner.",
+        "The public API or layout, backend algorithm, normal allocation, copy, syscall, lock, wake or metadata cost, direct dependency, component identity or source, static or shared delivery shape changes.",
+        "A supported operating system, compiler or backend contract changes semantics relied on by this round.",
+        "Qualified same-contract or real-consumer evidence proves a material regression, or a mature peer proves a better complexity class for an admitted journey."
+      ],
+      "summary": "io_core v1 CLOSED/FROZEN：十项有限 FIX、三平台与 sanitizers、exact-factor、三交付、易用性/文档、终局红队及唯一同合同 P1 全部通过；产品 candidate 冻结于 ffa70e35。"
     },
     {
       "module": "io_tls",

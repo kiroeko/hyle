@@ -1,8 +1,8 @@
 # IO Core v1：异步传输因子化与收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-> 本卡是现有 `io_core` factor 的当前活动轮。其 round ID 在身份纠正前已冻结为
+> 本卡是 `io_core` factor 的 terminal closure record。其 round ID 在身份纠正前已冻结为
 > `io-v1-core-factorization`；component 已通过
 > [`io-core-factor-identity-migration-v1`](../build/io-core-factor-identity-migration-v1.md)
 > 从含混的 `io` 纠正为 `io_core`。公共产品仍是 `hyle::io`，公开 namespace/include 仍是
@@ -222,10 +222,10 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 
 ## Current decision
 
-`VERIFIED / ACTIVE`。十项有限 FIX 已完成，产品/API/算法与正常 consumer workload 冻结在
+`CLOSED / FROZEN`。十项有限 FIX 已完成，产品/API/算法与正常 consumer workload 冻结在
 `ffa70e35cd7b7948990c8f04117acf3c6c209c8a`（tree
-`4fd9be1c69dab36355401c128eb8eec2337f756e`）。全部适用工程门已经通过；下一步只写 terminal receipt、
-接受限制与 reopen triggers，不再修改产品、追加样本或扩大结论。
+`4fd9be1c69dab36355401c128eb8eec2337f756e`）。全部适用工程门已经通过；本卡不再授权修改产品、
+追加样本或扩大结论。
 
 ## Implementation checkpoints
 
@@ -324,3 +324,26 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 
 七项 aggregate gate 全部 `PASS`，没有适用风险或产品问题留作 blocker；Formal 性能仍独立
 `PENDING`。registry 依法执行 `CANDIDATE -> VERIFIED`，但此步不提前声明 terminal freeze。
+
+## Terminal receipt（`CLOSED/FROZEN`）
+
+- verified evidence anchor：`9e0bd42147f8b5838271691b566e9683f0162388`，tree
+  `2802cdb4368f284eca9a126f7eab023187239160`；产品 candidate/tree 仍为
+  `ffa70e35cd7b7948990c8f04117acf3c6c209c8a` /
+  `4fd9be1c69dab36355401c128eb8eec2337f756e`；
+- freeze marker：`io-core-v1-freeze-2026-09-09`；七项工程 gate 全部 `PASS`，Formal 仍为独立
+  `PENDING`；
+- immutable candidate LOC：全库 `535488`、自实现不含测试 `89889`、`io_core` 实现 `11044` 行；
+- 接受限制：resource 与提交它的 worker owner-affine，buffer/cancel token 借用至 await 完成；非原生
+  cancellable 的 file backend 不提供带 deadline/cancel 的伪异步；macOS direct-I/O、Windows named-pipe
+  half-close 及部分 socket tuning 会明确返回 `Unimplemented`；Linux io_uring expert route 必须先经
+  capability 成功取得；portable one-shot 始终保留；
+- P1 只覆盖 W1-WSL 上两个完整 HTTP/1 consumer shape，不是 WAN、多 worker、全部 operation/backend、
+  完整服务端或 Formal SOTA 证书；Native FFI/C API 仍为 `N/A`，交付合同是同工具链 C++23
+  source/static/shared；
+- 重开只接受 registry 中列出的 correctness/security/lifetime、真实通用能力、产品/API/算法/成本/依赖/
+  平台/交付变化，或合格同合同 material regression。新的 protocol 与应用 serving policy 进入自己的
+  factor/上层任务，不能借本记录重开 core transport。
+
+`VERIFIED -> CLOSED` 只增加 terminal receipt、registry freeze anchor 与投影，不改变产品或性能证据，
+也不重复构建或采样。本页至此成为历史事实；IO 五个因子均有独立 `CLOSED/FROZEN` 证书。
