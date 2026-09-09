@@ -140,7 +140,7 @@ bool root_failure_code(std::int64_t result) noexcept {
 }
 
 void publish_root_loss(FileWatcherState& state, std::size_t root_index,
-                       std::int64_t native_result) noexcept {
+                       std::int64_t) noexcept {
   bool no_roots = true;
   {
     std::lock_guard<util::SpinLock> lock(state.monitor);
@@ -152,9 +152,11 @@ void publish_root_loss(FileWatcherState& state, std::size_t root_index,
     state.publish_locked(changed);
   }
   if (no_roots) {
-    state.fail(status_from_native_result(
-        native_result, NativeOperationDomain::kWin32,
-        "all FileWatcher roots were invalidated"));
+    // ReadDirectoryChangesW commonly completes a deleted/moved directory with
+    // ERROR_ACCESS_DENIED. That value describes the terminal native handle,
+    // not a new permission decision by the caller. Expose the same portable
+    // lifecycle result as inotify/FSEvents after publishing RootInvalidated.
+    state.fail(Status::NotFound("all FileWatcher roots were invalidated"));
   }
 }
 
