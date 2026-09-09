@@ -222,8 +222,10 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
 
 ## Current decision
 
-`AUDITED / ACTIVE`。identity、能力超集、自然 API、P0 成本、ownership 与有限 FIX 集已冻结。下一步只可
-按 `IOCORE-F01..F10` 实施；任何新 protocol/API/benchmark idea 都不得追加进本候选。
+`CANDIDATE / ACTIVE`。十项有限 FIX 已完成，产品/API/算法与正常 consumer workload 冻结在
+`ffa70e35cd7b7948990c8f04117acf3c6c209c8a`（tree
+`4fd9be1c69dab36355401c128eb8eec2337f756e`）。下一步只运行已声明的唯一 P1、终局红队与状态签发；
+任何新 protocol/API/benchmark idea 都不得追加进本候选。
 
 ## Implementation checkpoints
 
@@ -287,7 +289,13 @@ Sched poll hook。因而 internalize 不会迫使已冻结下游迁移，也不�
   不生成恒失败 operation。Windows shared build 在 TLS/H2 OFF 下 18/18、ON 下 20/20，
   完整 component/source-embedding 合同通过。static/shared install、offline package 与
   另外两平台仍归 F09 terminal gate，不由本检查点冒充完成。
+- `ffa70e35`：候选前红队封闭 TCP/UDP raw-handle 构造绕过 backend association 的入口，统一
+  invalid `IoContext` 的 typed failure，并冻结最终产品快照。该精确快照在 Windows IOCP、WSL
+  io_uring/强制 epoll、MacBook Air 与 Mac mini kqueue 的 `io_core` 13/13 测试通过；WSL
+  ASan/UBSan/TSan 各 13/13 通过。Windows `hyle::io` 真实 consumer 的 source embedding、重定位
+  installed shared 与 installed static 三种交付均配置、链接并运行成功，F09 至此完成。source archive
+  SHA-256 为 `FE4CF9D59FA8CB10BD6763EAAD6542A625161947E87FA311C4CDFF09D670B98F`。
 
-以上只证明对应 FIX 子项的实现 checkpoint，不是 candidate、P1 或 `CLOSED/FROZEN`
-裁决；F09 的交付矩阵与 F10 仍未完成。三个协议 factor 已有真实 target，`io_transfer`
-已完成 `AUDITED` 但仍等待自己的首个真实实现。
+以上证明十项 FIX 的候选实现和 F09 交付矩阵，但还不是 `VERIFIED` 或 `CLOSED/FROZEN` 裁决。
+`io_tls/io_http/io_http2/io_transfer` 已分别 `CLOSED/FROZEN`；本卡只剩 F10 的唯一 P1、终局红队、
+文档校准与终态 receipt。

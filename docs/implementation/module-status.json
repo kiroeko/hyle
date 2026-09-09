@@ -1224,12 +1224,14 @@
     },
     {
       "module": "io_core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "io-v1-core-factorization",
       "closure_task": "docs/implementation/tasks/io/io-v1-core-factorization.md",
       "scope": "Refactor the existing aggregate IO implementation into the scheduler-bound io_core factor, freeze its complete capability and natural C++ API contracts, coordinate removal of TLS, HTTP, HTTP2 and transfer ownership into separately registered factors, and close only after the core factor no longer contains unaudited higher-layer code.",
       "non_goals": "TLS, HTTP1, HTTP2 or transfer semantic closure in this card; changes to closed lower factors without a named trigger; Compute or Graph work; Native FFI or C API; benchmark-shaped entry points; cross-platform or all-operation SOTA claims.",
       "baseline_commit": "2e4b0606b08f57ac15a3717f8b0e9be82db16123",
+      "candidate_commit": "ffa70e35cd7b7948990c8f04117acf3c6c209c8a",
+      "candidate_tree": "4fd9be1c69dab36355401c128eb8eec2337f756e",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -1247,7 +1249,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "io_core v1 处于 AUDITED：F01--F08 已实现，TLS/HTTP/HTTP2 source/header/test/dependency 已在 ea45d866 迁入独立 factor；F09 交付矩阵、F10 candidate/P1/红队仍待完成。"
+      "summary": "io_core v1 处于 CANDIDATE：十项有限 FIX 已完成，产品/API/算法冻结于 ffa70e35；三平台、sanitizer、exact-factor 与 source/static/shared 候选验证通过，等待唯一 P1 与终局红队签发。"
     },
     {
       "module": "io_tls",
