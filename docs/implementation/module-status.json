@@ -318,6 +318,11 @@
         "material_margin_pct": 5
       },
       "summary": "container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。"
+    },
+    {
+      "module": "io_watch",
+      "state": "QUEUED",
+      "summary": "F03 已确认跨产品 file-change-stream trigger；当前仅保留 factor 身份，待独立 closure card 冻结 API、依赖、平台语义与验证预算。"
     }
   ]
 }
