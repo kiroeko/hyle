@@ -1,0 +1,349 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "io_transfer",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/io/transfer.h",
+      "revision": "runtime-bound",
+      "target": "hyle_io_transfer"
+    },
+    "claim": "P1 engineering natural-route non-inferiority for bounded verified atomic local model-artifact transfer and interrupted HTTP Range resume against source-pinned libcurl 8.22.0 through its public easy API",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BENCH_CURL": "ON",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_DEV_FACTORS": "io_transfer",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_IO_HTTP2": "OFF",
+            "HYLE_IO_TLS": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF"
+          },
+          "peer_cache": {
+            "curl": "HYLE_CURL_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST"
+        ],
+        "executables": [
+          {
+            "id": "io-transfer-local-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_io_transfer_local_p1_bench",
+            "target": "hyle_io_transfer_local_p1_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_IO_TRANSFER_LOCAL_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "verified-atomic-local-256m",
+                "title": "verified atomic model transfer 256MiB"
+              }
+            ]
+          },
+          {
+            "id": "io-transfer-resume-holdout",
+            "measurement_batch": 1,
+            "stem": "hyle_io_transfer_resume_p1_bench",
+            "target": "hyle_io_transfer_resume_p1_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_IO_TRANSFER_RESUME_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "interrupted-http-range-resume-64m",
+                "title": "interrupted HTTP Range model transfer 64MiB"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "W1-WSL": {
+            "cache": {
+              "CMAKE_CXX_COMPILER": "g++-14",
+              "CMAKE_C_COMPILER": "gcc-14"
+            },
+            "compiler_id": "GNU",
+            "compiler_version_prefix": "14",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "wsl2"
+      ],
+      "certification_platforms": [
+        "wsl2"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WSL"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "io-transfer-p1-v1",
+    "module": "io_transfer",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "clean source-pinned static libcurl 8.22.0",
+          "progress": "one caller-owned easy handle per attempt; global curl state, source fixture and loopback server remain outside timing",
+          "protocols": "ordinary FILE and identity-encoded HTTP/1.1 routes from the unmodified release source tree",
+          "route": "public curl_easy file and HTTP APIs with benchmark-owned checksum, source-identity, temporary-file, sync and atomic-publication adapters"
+        },
+        "id": "curl",
+        "revision": "01346829096c61b372692f6dc43ffa778c6caccd"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "execution_order": "candidate-first"
+        },
+        "id": "candidate-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "execution_order": "peer-first"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "peer-first",
+        "target_variant": "primary"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "per-attempt plan or easy-handle and bounded adapter construction",
+          "source open and initial metadata validation",
+          "complete source reads, incremental FNV-1a verification and positioned temporary-file writes",
+          "final source-identity validation",
+          "temporary-file sync and close",
+          "atomic replacement of an existing sibling destination and attempt teardown"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/io/model-artifact-local-publication",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "verified-atomic-local-256m",
+        "input": {
+          "distribution": "one fixed zero-filled sparse regular file with a precomputed deterministic digest",
+          "scale": {
+            "artifact_bytes": 268435456,
+            "artifacts": 1,
+            "dedicated_workers": 1,
+            "requested_buffer_bytes": 1048576
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete local model-artifact publication",
+          "derivation": "Inference startup and cache preparation commonly stage one complete local model artifact before making it visible to loaders",
+          "frequency": 1,
+          "unit": "verified-artifact-byte",
+          "value": 268435456
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "One persistent HYLE Scheduler/IoContext remains outside timing; each episode constructs one owning TransferPlan, one verifier and one joined transfer task, then retires all attempt state",
+          "equivalence": "Both open and validate the same source, transfer exactly 256 MiB through a requested 1 MiB bounded block, verify every byte, recheck source identity, sync and close a sibling temporary file, and atomically replace an existing destination",
+          "peer": "One persistent curl global context remains outside timing; each episode constructs one easy handle and benchmark-owned verifier/file adapter, then retires all attempt state"
+        },
+        "pair": {
+          "candidate": "HYLE verified atomic transfer 256MiB",
+          "peer": "libcurl verified atomic transfer 256MiB"
+        },
+        "peer_id": "curl",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_transfer/consumer_shapes_v1.json",
+          "sha256": "d2c5e07c2daddefef2d08345f1c337ba02cd04e626743b57afd89e1b8f832ef1"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Copy one sparse 256 MiB regular model artifact to a sibling temporary file with O(1) memory, incremental FNV-1a verification, before/after source-identity validation, file data-and-metadata sync, close and atomic replacement of an existing destination",
+        "setup": "Create and sync the sparse source and old destinations, compute the expected digest and construct persistent runtimes before timing; complete one route-ordered warmup episode",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "initial HTTP GET, response validation and bounded temporary-file writes",
+          "intentional cancellation after reaching the threshold plus partial retention",
+          "second connection with Range and If-Range",
+          "206, ETag, Content-Range and response-extent validation",
+          "bounded suffix transfer from the retained offset",
+          "temporary-file sync and close, atomic replacement and attempt teardown"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/io/model-artifact-http-range-resume",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "interrupted-http-range-resume-64m",
+        "input": {
+          "distribution": "one deterministic identity-encoded zero body with a fixed strong ETag served on loopback HTTP/1.1",
+          "scale": {
+            "artifact_bytes": 67108864,
+            "artifacts": 1,
+            "connections": 2,
+            "dedicated_workers": 1,
+            "interruption_threshold_bytes": 33554432,
+            "requested_buffer_bytes": 1048576
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one interrupted and resumed model download",
+          "derivation": "Large model downloads are routinely interrupted; a valid retained prefix must avoid a second full download without weakening publication safety",
+          "frequency": 2,
+          "unit": "resumable-artifact-byte",
+          "value": 67108864
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The persistent HYLE runtime owns one interrupted plan/checkpoint and a resumed plan; one external caller joins both attempts before retiring the report state",
+          "equivalence": "Both fetch the same 64 MiB identity representation, stop after reaching the 32 MiB threshold, retain the partial, open a new connection with Range plus If-Range, validate 206, ETag, Content-Range and complete extent, sync and atomically publish; both download exactly one artifact in total",
+          "peer": "The persistent curl global context owns two sequential easy handles while one benchmark adapter retains the sibling partial and exact offset between attempts"
+        },
+        "pair": {
+          "candidate": "HYLE HTTP Range resume 64MiB",
+          "peer": "libcurl HTTP Range resume 64MiB"
+        },
+        "peer_id": "curl",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_transfer/consumer_shapes_v1.json",
+          "sha256": "d2c5e07c2daddefef2d08345f1c337ba02cd04e626743b57afd89e1b8f832ef1"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Fetch one 64 MiB loopback HTTP/1 representation, intentionally interrupt at the first completed body progress point at or beyond 32 MiB, retain the sibling partial and strong ETag, then resume from the exact retained offset through Range and If-Range, validate the 206 extent and atomically publish after sync",
+        "setup": "Construct the loopback Range server, old destinations and persistent runtimes before timing; complete one route-ordered interrupted-plus-resumed warmup episode",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "72d6556db9b665c18558af660a019289560d47f1d1af5cc873412495e00f919b",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

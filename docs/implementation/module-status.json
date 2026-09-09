@@ -1449,7 +1449,7 @@
     },
     {
       "module": "io_transfer",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-transfer-v1",
       "closure_task": "docs/implementation/tasks/io/io-transfer-v1.md",
       "scope": "Add a bounded reliable local or HTTP model and artifact transfer workflow with range resume validation, redirect limits, checksum hooks, temporary-file durability, atomic publication, progress, cancellation and cleanup.",
@@ -1464,16 +1464,26 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "io_transfer v1 CANDIDATE：bounded local/HTTP(S) transfer、resume validator、checksum、atomic publish 与自然 C++ API 已通过三平台、sanitizer、三交付和红队；只剩唯一同合同 P1。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "io_transfer v1 VERIFIED：可靠 local/HTTP(S) transfer 与自然 C++ API 通过三平台、sanitizer、三交付和红队；同合同 P1 的 atomic local 非劣、Range resume 双顺序 WIN，5% 非劣门全过。"
     },
     {
       "module": "compute",

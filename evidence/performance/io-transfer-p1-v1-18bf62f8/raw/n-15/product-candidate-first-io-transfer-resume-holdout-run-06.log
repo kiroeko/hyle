@@ -1,0 +1,10 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |         ns/transfer |          transfer/s |    err% |     total | interrupted HTTP Range model transfer 64MiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------
+|   100.0% |       27,816,512.00 |               35.95 |    0.9% |      0.08 | `HYLE HTTP Range resume 64MiB`
+|    90.8% |       30,650,769.00 |               32.63 |    4.5% |      0.09 | `libcurl HTTP Range resume 64MiB`
+# HYLE_IO_TRANSFER_RESUME_RUN execution_order=candidate-first affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=2ae51806c8cbf140a62730ae93e3ad82

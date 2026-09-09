@@ -1,0 +1,10 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |         ns/transfer |          transfer/s |    err% |     total | verified atomic model transfer 256MiB
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------
+|   100.0% |      322,092,017.00 |                3.10 |    0.4% |      0.96 | `libcurl verified atomic transfer 256MiB`
+|    94.4% |      341,044,030.00 |                2.93 |    1.5% |      0.98 | `HYLE verified atomic transfer 256MiB`
+# HYLE_IO_TRANSFER_LOCAL_RUN execution_order=peer-first affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=f7c32c47bc9615f12b1565d024871445

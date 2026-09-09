@@ -167,9 +167,11 @@ algorithm、buffer/durability contract 和 [`io-transfer-p1-v1`](../../../../ben
 
 ## Current decision
 
-`CANDIDATE`。F01--F06 的产品、P0、三平台 correctness、exact sanitizer、source/static/shared、逐头、
-组件图、易用性/文档与 bounded red-team 已通过。实现期间修复 validator/total mismatch policy、stable-URL
-redirect reacquisition、unsupported redirect scheme、POSIX zero-size virtual file、local partial 前缀完整性、
-206 body extent 与 keep ownership 形状。唯一剩余动作是在 W1-WSL clean EXT4 上对锁定 libcurl peer 回放
-一次 256 MiB verified atomic local publish 与 64 MiB interrupted HTTP Range resume 双顺序/controls P1；结果
-未出前不得进入 `VERIFIED`，也不得再修改产品或合同。
+`VERIFIED`。F01--F06 的产品、P0、三平台 correctness、exact sanitizer、source/static/shared、逐头、
+组件图、易用性/文档与 bounded red-team 已通过。唯一 P1 在 W1-WSL clean EXT4 上使用 source-pinned
+libcurl 8.22.0 完成：256 MiB verified atomic local publish 为一个顺序 `WIN`、一个顺序
+`INCONCLUSIVE`，64 MiB interrupted HTTP Range resume 双顺序 `WIN`；四行固定 5% 非劣门及全部 controls
+均为 `PASS`。严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT`；完整 receipt
+见 [`benchmarks-io.md`](../../evidence/performance/benchmarks-io.md) 和
+[`io-transfer-p1-v1-18bf62f8`](../../../../evidence/performance/io-transfer-p1-v1-18bf62f8/)。七门已有可复核
+证据，下一法定动作仅为终局限制、重开条件、LOC 与冻结确认，不再运行产品测试或 P1。

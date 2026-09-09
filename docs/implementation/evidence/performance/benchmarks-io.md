@@ -2,10 +2,43 @@
 
 <!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页当前签发 `io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress` 与
-> `io_http2-v2-owner-progress-cost` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是
+> 本页当前签发 `io_tls-v2-duplex-progress`、`io_http-v2-duplex-progress`、
+> `io_http2-v2-owner-progress-cost` 与 `io-transfer-v1` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是
 > 历史事实，不再是对应活动轮的当前性能签名；当前结论也不能扩大成 io_core、transfer、完整服务器、
 > 全平台或全操作 SOTA。
+
+## 2026-09-09 `io_transfer-v1` 当前工程证据（`PASS`）
+
+不可变 candidate/tree 为 `18bf62f81a91975e0776439d88fca3891f10e560` /
+`98632557e0237bac0bed3ca5521e59420d89176e`；peer 是 source-pinned libcurl 8.22.0
+`01346829096c61b372692f6dc43ffa778c6caccd`。本合同不是拿裸 copy 和可靠工作流比较：本地行双方都
+传输 256 MiB、增量 FNV-1a 校验、前后复验源身份、同步并关闭 sibling temp、原子替换旧目标；HTTP 行
+双方都完成 64 MiB、在 32 MiB 后中断、保留 partial、第二连接发送 Range/If-Range、验证 206/ETag/
+Content-Range、同步并原子发布。runtime/server/fixture 在 timing 外，attempt state 与 teardown 在 timing 内。
+
+advantage 为 HYLE/libcurl op/s，越大越有利于 HYLE；每个顺序 15 个独立进程，置信水平 99.26%：
+
+| workload / order | HYLE / libcurl op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| verified atomic local 256 MiB / candidate-first | 3.29 / 2.98 | 1.09797 / [1.06061, 1.12615] | `WIN` | `PASS` |
+| verified atomic local 256 MiB / peer-first | 3.28 / 3.10 | 1.06796 / [0.95455, 1.10559] | `INCONCLUSIVE` | `PASS` |
+| interrupted HTTP Range resume 64 MiB / candidate-first | 34.90 / 29.37 | 1.20629 / [1.13160, 1.25449] | `WIN` | `PASS` |
+| interrupted HTTP Range resume 64 MiB / peer-first | 33.63 / 28.03 | 1.24736 / [1.13803, 1.27406] | `WIN` | `PASS` |
+
+本地 publish 聚合 exact verdict 因一个顺序的 CI 跨 superiority 边界而诚实记为 `INCONCLUSIVE`，但两顺序
+固定 5% 非劣门都通过；resume 双顺序明确 `WIN`。A/A、5%/10% known-delta、timer floor、artifact/build/
+consumer/source/peer provenance 与采样前后稳定性全部 `PASS`；n=15 已裁决，没有触发 n=31。唯一有效
+98-file bundle 位于
+[`io-transfer-p1-v1-18bf62f8`](../../../../evidence/performance/io-transfer-p1-v1-18bf62f8/)；manifest、
+summary、controls SHA-256 依次为
+`BB150DE26D07691739C3158C764E79C746AAB84E4ACA36BB8E1C8B179C75769F`、
+`81B519ACA75D129A0B50CD0C0F1D066AC07AF11D8E8F15797E561C65987945D5`、
+`D8A4DAD9AE5A13F831E50BBC0FFE77E160CC8FF67D7A679B3B8AD64B3F8FBB5D`。严格 verifier 返回
+`QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、`environment_policy=CURRENT`。
+
+这是 W1-WSL、GCC 14.2、Release/static、portable ISA、单 worker 的工程 P1，不是远程 WAN、多 worker、
+所有 filesystem、所有 checksum、object-store、repository client 或 Formal SOTA 证书。结果只支持冻结的
+可靠发布/续传合同，不外推为所有传输场景的普遍倍率。
 
 ## 2026-09-09 `io_http-v2` 当前工程证据（`PASS`）
 
