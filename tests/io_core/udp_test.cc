@@ -6,6 +6,7 @@
 #include <cstring>
 #include <memory>
 #include <span>
+#include <type_traits>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/udp.h"
@@ -45,6 +46,10 @@ using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::Task;
+
+static_assert(!std::is_constructible_v<UdpSocket, IoContext&, std::intptr_t,
+                                       unsigned>);
+static_assert(std::is_constructible_v<bool, UdpSocket>);
 
 namespace {
 
@@ -159,6 +164,21 @@ Task<int> send_oversized(AllocatorRef, UdpSocket* socket, Endpoint destination,
 }
 
 }  // namespace
+
+TEST(IoUdp, InvalidContextReturnsTypedSetupFailure) {
+  Scheduler scheduler(1, system_allocator(), 256);
+  ASSERT_TRUE(scheduler.valid());
+
+  hyle::io::IoContextOptions options;
+  options.queue_depth = 0;
+  IoContext invalid(scheduler, options);
+  ASSERT_FALSE(invalid.valid());
+
+  auto opened = UdpSocket::open(invalid, kOwner);
+  ASSERT_FALSE(opened.has_value());
+  EXPECT_TRUE(opened.error().IsFailedPrecondition());
+  scheduler.shutdown();
+}
 
 TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
   constexpr unsigned kWorkers = 2;

@@ -29,9 +29,10 @@ hyle_add_module(io_core ${_io_module_options} SOURCES ${_io_sources})
 unset(_io_module_options)
 
 # Export the exact coroutine-transport product fact on hyle::io in both
-# source-embedded and installed-package use. net.h turns value 0 into an
-# actionable diagnostic while the raw proactor remains available. Named mapped
-# storage is owned by mem::SharedMapping and reaches the same Platform mechanism.
+# source-embedded and installed-package use. capabilities.h turns a target/header
+# mismatch into an actionable diagnostic; the raw proactor remains an unsupported
+# detail seam. Named mapped storage is owned by mem::SharedMapping and reaches the
+# same Platform mechanism.
 if(HYLE_HAS_FCONTEXT)
   target_compile_definitions(hyle_io_core
     PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=1)

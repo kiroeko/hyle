@@ -76,8 +76,6 @@ struct TcpKeepaliveOptions {
 class TcpStream {
  public:
   TcpStream() noexcept = default;
-  HYLE_IO_API TcpStream(IoContext& io, std::intptr_t fd,
-                        unsigned owner_worker) noexcept;
   HYLE_IO_API ~TcpStream();
   HYLE_IO_API TcpStream(TcpStream&& o) noexcept;
   HYLE_IO_API TcpStream& operator=(TcpStream&& o) noexcept;
@@ -97,6 +95,7 @@ class TcpStream {
                                              std::intptr_t native_socket) noexcept;
 
   bool valid() const noexcept { return fd_ >= 0; }
+  explicit operator bool() const noexcept { return valid(); }
   std::intptr_t native_handle() const noexcept { return fd_; }
   HYLE_IO_API std::intptr_t release_native_handle() noexcept;
   unsigned owner_worker() const noexcept { return owner_; }
@@ -320,6 +319,11 @@ class TcpStream {
 #endif
 
  private:
+  friend class TcpListener;
+
+  HYLE_IO_API TcpStream(IoContext& io, std::intptr_t fd,
+                        unsigned owner_worker) noexcept;
+
   IoContext* io_ = nullptr;
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;
@@ -345,8 +349,6 @@ tcp_try_write_some(TcpStream &stream,
 class TcpListener {
  public:
   TcpListener() noexcept = default;
-  HYLE_IO_API TcpListener(IoContext& io, std::intptr_t fd,
-                          unsigned owner_worker) noexcept;
   HYLE_IO_API ~TcpListener();
   HYLE_IO_API TcpListener(TcpListener&& o) noexcept;
   HYLE_IO_API TcpListener& operator=(TcpListener&& o) noexcept;
@@ -358,6 +360,7 @@ class TcpListener {
       const TcpListenOptions& options = {}) noexcept;
 
   bool valid() const noexcept { return fd_ >= 0; }
+  explicit operator bool() const noexcept { return valid(); }
   std::intptr_t native_handle() const noexcept { return fd_; }
   unsigned owner_worker() const noexcept { return owner_; }
   HYLE_IO_API Result<Endpoint> local_endpoint() const noexcept;
@@ -392,6 +395,9 @@ class TcpListener {
   }
 
  private:
+  HYLE_IO_API TcpListener(IoContext& io, std::intptr_t fd,
+                          unsigned owner_worker) noexcept;
+
   Result<TcpStream> finish_accept(std::int64_t result,
                                   unsigned assign_owner) noexcept;
   IoContext* io_ = nullptr;

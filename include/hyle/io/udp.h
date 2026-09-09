@@ -68,8 +68,6 @@ struct [[nodiscard]] BufferDatagramResult {
 class UdpSocket {
  public:
   UdpSocket() noexcept = default;
-  HYLE_IO_API UdpSocket(IoContext& io, std::intptr_t fd,
-                        unsigned owner_worker) noexcept;
   HYLE_IO_API ~UdpSocket();
   HYLE_IO_API UdpSocket(UdpSocket&& o) noexcept;
   HYLE_IO_API UdpSocket& operator=(UdpSocket&& o) noexcept;
@@ -88,6 +86,7 @@ class UdpSocket {
       std::intptr_t native_socket) noexcept;
 
   bool valid() const noexcept { return fd_ >= 0; }
+  explicit operator bool() const noexcept { return valid(); }
   std::intptr_t native_handle() const noexcept { return fd_; }
   HYLE_IO_API std::intptr_t release_native_handle() noexcept;
   unsigned owner_worker() const noexcept { return owner_; }
@@ -197,6 +196,9 @@ class UdpSocket {
   }
 
  private:
+  HYLE_IO_API UdpSocket(IoContext& io, std::intptr_t fd,
+                        unsigned owner_worker) noexcept;
+
   IoContext* io_ = nullptr;
   std::intptr_t fd_ = -1;
   unsigned owner_ = 0;

@@ -9,6 +9,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <type_traits>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
@@ -56,6 +57,13 @@ using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::Task;
+
+static_assert(!std::is_constructible_v<TcpStream, IoContext&, std::intptr_t,
+                                       unsigned>);
+static_assert(!std::is_constructible_v<TcpListener, IoContext&, std::intptr_t,
+                                       unsigned>);
+static_assert(std::is_constructible_v<bool, TcpStream>);
+static_assert(std::is_constructible_v<bool, TcpListener>);
 
 namespace {
 

@@ -187,6 +187,9 @@ UdpSocket& UdpSocket::operator=(UdpSocket&& o) noexcept {
 Result<UdpSocket> UdpSocket::open(IoContext& io, unsigned owner_worker,
                                   AddressFamily family,
                                   const UdpSocketOptions& options) noexcept {
+  if (!io.valid())
+    return make_unexpected(
+        Status::FailedPrecondition("UDP open requires a valid IoContext"));
   if (owner_worker >= io.num_workers())
     return make_unexpected(Status::OutOfRange("UDP owner worker is out of range"));
   std::intptr_t fd = make_udp_socket(family);
@@ -232,6 +235,11 @@ Result<UdpSocket> UdpSocket::adopt(IoContext& io, unsigned owner_worker,
                                    std::intptr_t native_socket) noexcept {
   if (native_socket < 0)
     return make_unexpected(Status::InvalidArgument("invalid native UDP socket"));
+  if (!io.valid()) {
+    close_fd(native_socket);
+    return make_unexpected(
+        Status::FailedPrecondition("UDP adopt requires a valid IoContext"));
+  }
   if (owner_worker >= io.num_workers()) {
     close_fd(native_socket);
     return make_unexpected(Status::OutOfRange("UDP owner worker is out of range"));
