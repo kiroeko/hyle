@@ -2,9 +2,9 @@
 
 <!-- PERFORMANCE EVIDENCE: CURRENT -->
 
-> 本页当前只签发 `io_http2-v2-owner-progress-cost` 的工程性能结论。`io_tls-v1`、`io_http-v1` 与旧
-> io 聚合数据均是历史事实，不再是对应活动轮的当前性能签名；当前 HTTP/2 结论也不能扩大成
-> io_core、TLS、HTTP/1、transfer、完整服务器、全平台或全操作 SOTA。
+> 本页当前签发 `io_tls-v2-duplex-progress` 与 `io_http2-v2-owner-progress-cost` 的工程性能结论。
+> `io_tls-v1`、`io_http-v1` 与旧 io 聚合数据均是历史事实，不再是对应活动轮的当前性能签名；两项
+> 当前结论也不能扩大成 io_core、HTTP/1、transfer、完整服务器、全平台或全操作 SOTA。
 
 ## 2026-09-09 `io_http2-v2` 当前工程证据（`PASS`）
 
@@ -34,6 +34,40 @@ controls SHA-256 依次为
 `BE2643F97F369A1ED6C7DA87E9C2E6CF64310F98D5C1F966FE4BA1AFC65E589E`。
 保留的 WSL live build/toolchain 上严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、
 `provenance=EXACT`。这是 W1-WSL 工程 P1，不是 Formal 或全平台性能证书。
+
+## 2026-09-09 `io_tls-v2` 当前工程证据（`PASS`）
+
+不可变 candidate/tree 为 `18bf62f81a91975e0776439d88fca3891f10e560` /
+`98632557e0237bac0bed3ca5521e59420d89176e`；peer 是 Asio
+`8806a6803cde7054c3049d3666d3ec36786568c5`。本轮只修复 TLS ciphertext pump 在 write pressure 下的
+全双工进展，并把 public `tls_write` 明确恢复为既有 `TransferResult` write-some 语义；合同、benchmark、
+OpenSSL provider、verified localhost、persistent single-worker runtime、输入、teardown、双顺序和 5% margin
+均与 v1 相同。没有通过缩短生命周期、移除验证、预建连接、改变消息数或把 blocking provider 与 async
+runtime 混作 peer 获利。
+
+advantage 为 HYLE/Asio op/s，越大越有利于 HYLE；每个顺序 15 个独立进程，置信水平 99.26%：
+
+| workload / order | HYLE / Asio op/s | advantage / CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| verified handshake / candidate-first | 1,120.78 / 1,026.02 | 1.09879 / [1.06150, 1.15334] | `WIN` | `PASS` |
+| verified handshake / peer-first | 1,175.95 / 1,061.78 | 1.10161 / [1.07436, 1.13795] | `WIN` | `PASS` |
+| 512x256 B encrypted stream / candidate-first | 214.79 / 207.07 | 1.04147 / [0.99905, 1.06048] | `INCONCLUSIVE` | `PASS` |
+| 512x256 B encrypted stream / peer-first | 223.71 / 214.05 | 1.05265 / [1.00579, 1.06548] | `INCONCLUSIVE` | `PASS` |
+
+握手双顺序均达到 5% practical margin 外的 `WIN`；small-record stream 两个点估计都偏向 HYLE，但置信区间
+跨过 superiority 决策边界，因此只诚实声明 `INCONCLUSIVE` 与 5% non-inferiority `PASS`。A/A、5%/10%
+known-delta、timer floor、artifact/build/consumer/source/peer provenance、host/input/artifact stability 全部
+`PASS`；n=15 已裁决，没有触发 n=31。唯一有效 68-file bundle 位于
+[`io-tls-p1-v2-18bf62f8`](../../../../evidence/performance/io-tls-p1-v2-18bf62f8/)；manifest、summary、controls
+SHA-256 依次为
+`D6B9A542FB091D3CFC221D1620F51A0FBAA63BD6FACF30C468EF0802232B5751`、
+`71D09A4D8DAD0904A40C6AFE939A313EB04FE101864831C255549BE459E33C91`、
+`15DB83BC0737C3DD0773D187264A33A5A57B859B0E7FB1AF35D4AB259EB2313C`。
+
+保留的 WSL live build/toolchain 上严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、
+`provenance=EXACT`、`environment_policy=CURRENT`，且没有 provenance renewal。这是 W1-WSL、GCC 14.2、
+Release/static、portable ISA、同一 OpenSSL 的工程 P1；它不声明 Formal、WAN、跨机、所有 cipher/provider、
+多 worker、所有记录大小或完整 HTTPS server 的普遍优势。
 
 ## 2026-09-09 `io_http2-v1` terminal 工程证据（`INCONCLUSIVE`）
 

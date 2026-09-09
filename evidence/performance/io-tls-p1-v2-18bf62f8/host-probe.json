@@ -1,0 +1,348 @@
+{
+  "after": {
+    "environment": "wsl2",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "filesystem": "ext4",
+          "label": "source",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/source",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "build",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/build",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "output",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/evidence",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "peer-asio",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/peers/asio-8806a680",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": false,
+      "macos-qos": false,
+      "native-linux": false,
+      "windows": false,
+      "wsl2": true
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "x86_64",
+        "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "logical_cpu_count": 32,
+        "memory_bytes": 33503776768,
+        "os_release": "6.18.33.2-microsoft-standard-WSL2",
+        "os_version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+        "system": "Linux"
+      },
+      "logical_cpu_count": 32,
+      "machine": "x86_64",
+      "node_sha256": "90275dfb23dc5a103ca7fd8ee76c882075840f3b255ea1e08fd4c178701781e7",
+      "release": "6.18.33.2-microsoft-standard-WSL2",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "525399e45073ec21cc6c449682d5349f30f7c379a80a53c4a9fa6b8f4d19c119",
+        "source": "linux-machine-id-sha256"
+      },
+      "system": "Linux"
+    },
+    "observed_at_utc": "2026-09-09T02:17:39.698128+00:00",
+    "power": {
+      "source": "host-managed"
+    },
+    "scheduler": {
+      "guest_vcpu_only": true,
+      "hard_physical_affinity_verifiable": false,
+      "process_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ]
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "before": {
+    "environment": "wsl2",
+    "filesystem": {
+      "all_paths_qualified": true,
+      "paths": [
+        {
+          "filesystem": "ext4",
+          "label": "source",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/source",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "build",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/build",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "output",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/io-tls-v2-18bf62f8/evidence",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        },
+        {
+          "filesystem": "ext4",
+          "label": "peer-asio",
+          "local_fixed": true,
+          "mountpoint": "/",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/hyle-perf/peers/asio-8806a680",
+          "qualifies_for_performance": true,
+          "source": "/dev/sdd"
+        }
+      ]
+    },
+    "formal_capability": {
+      "independent-hardware": false,
+      "macos-qos": false,
+      "native-linux": false,
+      "windows": false,
+      "wsl2": true
+    },
+    "host": {
+      "identity_facts": {
+        "architecture": "x86_64",
+        "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "logical_cpu_count": 32,
+        "memory_bytes": 33503776768,
+        "os_release": "6.18.33.2-microsoft-standard-WSL2",
+        "os_version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+        "system": "Linux"
+      },
+      "logical_cpu_count": 32,
+      "machine": "x86_64",
+      "node_sha256": "90275dfb23dc5a103ca7fd8ee76c882075840f3b255ea1e08fd4c178701781e7",
+      "release": "6.18.33.2-microsoft-standard-WSL2",
+      "stable_machine_id": {
+        "raw_identifier_recorded": false,
+        "sha256": "525399e45073ec21cc6c449682d5349f30f7c379a80a53c4a9fa6b8f4d19c119",
+        "source": "linux-machine-id-sha256"
+      },
+      "system": "Linux"
+    },
+    "observed_at_utc": "2026-09-09T02:11:46.303029+00:00",
+    "power": {
+      "source": "host-managed"
+    },
+    "scheduler": {
+      "guest_vcpu_only": true,
+      "hard_physical_affinity_verifiable": false,
+      "process_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ]
+    },
+    "schema": "hyle-perf-machine-probe-v1"
+  },
+  "child_environment_policy": {
+    "cleared_names": [
+      "ASAN_OPTIONS",
+      "CPUPROFILE",
+      "DYLD_INSERT_LIBRARIES",
+      "DYLD_LIBRARY_PATH",
+      "GLIBC_TUNABLES",
+      "GOMP_CPU_AFFINITY",
+      "KMP_AFFINITY",
+      "LD_LIBRARY_PATH",
+      "LD_PRELOAD",
+      "LSAN_OPTIONS",
+      "MALLOC_CONF",
+      "MIMALLOC_OPTIONS",
+      "TRACY_ONLY_LOCALHOST",
+      "TSAN_OPTIONS",
+      "UBSAN_OPTIONS"
+    ],
+    "cleared_prefixes": [
+      "HYLE_BENCH_",
+      "HYLE_PERF_"
+    ],
+    "fixed_values": {
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "path_sha256": "ed9b984b59eb87b6e511dac4b6740cf97280895e964ac0a6a1c614db7ddc0d91",
+    "raw_environment_recorded": false,
+    "schema": "hyle.perf.child-environment-policy/v2"
+  },
+  "child_policy": {
+    "applied_by": "benchmark-child-launcher",
+    "child_canary": {
+      "environment": "wsl2",
+      "gate": "PASS",
+      "mechanism": "not-applicable"
+    },
+    "environment": "wsl2",
+    "guest_affinity_only": true,
+    "launcher_applied": true,
+    "physical_core_class_verifiable": false
+  },
+  "machine_gate": {
+    "errors": [],
+    "expected_child_policy": {
+      "applied_by": "benchmark-child-launcher",
+      "environment": "wsl2",
+      "guest_affinity_only": true,
+      "physical_core_class_verifiable": false
+    },
+    "formal_claim": null,
+    "gate": "PASS",
+    "physical_host_identity": {
+      "environment": "wsl2",
+      "independent_hardware": false,
+      "mismatched_host_facts": [],
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "profile_id": "W1-WSL",
+      "profile_provisioned": true,
+      "raw_identifier_recorded": false,
+      "registered_profile_contract_sha256": "432f7b94d6ffebfc6f5cd714af1e08ddb2ccaf792fcfcfe065797872b96b9caf",
+      "registration_state": "UNREGISTERED",
+      "required_host_facts_match": false,
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "stable_machine_id_matches_registered": false,
+      "stable_machine_id_sha256": "525399e45073ec21cc6c449682d5349f30f7c379a80a53c4a9fa6b8f4d19c119",
+      "stable_machine_id_source": "linux-machine-id-sha256"
+    },
+    "profile_id": "W1-WSL",
+    "role": "engineering",
+    "warnings": [
+      "engineering evidence is explicitly unbound from a registered stable-machine identity and cannot be promoted to Formal"
+    ]
+  },
+  "physical_host_identity": {
+    "environment": "wsl2",
+    "independent_hardware": false,
+    "mismatched_host_facts": [],
+    "physical_host_id": "W1",
+    "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+    "profile_id": "W1-WSL",
+    "profile_provisioned": true,
+    "raw_identifier_recorded": false,
+    "registered_profile_contract_sha256": "432f7b94d6ffebfc6f5cd714af1e08ddb2ccaf792fcfcfe065797872b96b9caf",
+    "registration_state": "UNREGISTERED",
+    "required_host_facts_match": false,
+    "schema": "hyle-perf-physical-host-identity-v1",
+    "stable_machine_id_matches_registered": false,
+    "stable_machine_id_sha256": "525399e45073ec21cc6c449682d5349f30f7c379a80a53c4a9fa6b8f4d19c119",
+    "stable_machine_id_source": "linux-machine-id-sha256"
+  },
+  "sampling_mutex": {
+    "acquired_at_utc": "2026-09-09T02:11:46.269086+00:00",
+    "environment": "wsl2",
+    "mutex_key": "W1",
+    "owner_token_sha256": "6520a3482134070a58bc084ad0153f424ee8fd9bc58095b3cdf11a7a1249db9e",
+    "path": "/mnt/c/hyle-perf-locks/W1.sampling.lock",
+    "physical_host_id": "W1",
+    "pid": 673,
+    "profile_id": "W1-WSL",
+    "raw_owner_token_recorded": false,
+    "release_policy": "owner-token-match-only",
+    "schema": "hyle-perf-sampling-mutex-v1"
+  }
+}

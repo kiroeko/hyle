@@ -1,0 +1,15 @@
+Note: perf_event_open failed, so the ins/op, cyc/op, IPC, bra/op and miss% columns are missing.
+This is usually a container or VM without virtualized performance counters, or
+/proc/sys/kernel/perf_event_paranoid being too restrictive.
+
+
+| relative |        ns/handshake |         handshake/s |    err% |     total | TLS handshake (connect + handshake + close)
+|---------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------
+|   100.0% |          836,690.60 |            1,195.18 |    0.7% |      0.04 | `HYLE TLS persistent runtime handshake`
+|    85.3% |          980,345.70 |            1,020.05 |    5.7% |      0.05 | :wavy_dash: `Asio SSL persistent runtime handshake` (Unstable with ~10.4 iters. Increase `minEpochIterations` to e.g. 104)
+
+| relative |          ns/episode |           episode/s |    err% |     total | TLS encrypted stream (512 round-trips x 256B)
+|---------:|--------------------:|--------------------:|--------:|----------:|:----------------------------------------------
+|   100.0% |        4,417,870.00 |              226.35 |    1.5% |      0.02 | `HYLE TLS persistent runtime encrypted stream`
+|    93.9% |        4,706,281.00 |              212.48 |    3.4% |      0.02 | `Asio SSL persistent runtime encrypted stream`
+# HYLE_IO_TLS_RUN execution_order=candidate-first run_nonce=056e21cc9e55d569947c0b1448270573

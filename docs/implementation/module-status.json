@@ -1251,7 +1251,7 @@
     },
     {
       "module": "io_tls",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "io-tls-v2-duplex-progress",
       "closure_task": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
       "scope": "Repair only the TLS ciphertext-pump progress seam after an HTTP2 consumer reproduced a forced-epoll full-duplex flow-control stall; replay affected TLS correctness, delivery and performance contracts.",
@@ -1266,18 +1266,28 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WSL",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
       "reopen_trigger_id": "IOTLS-REOPEN-H2-EPOLL-DUPLEX-01",
       "reopen_evidence": "A deterministic HTTP2-over-TLS consumer with 4 KiB socket buffers and a 65,535-byte receive window completes on io_uring but stalls on forced epoll after exactly 32 KiB is consumed; syscall traces end with both TLS ciphertext pumps waiting for EPOLLOUT.",
-      "summary": "io_tls v2 CANDIDATE：有界 provider pump、write-some 语义、三平台 correctness/sanitizer、feature OFF/ON 与 source/static/shared 交付均已通过；候选冻结，唯一剩余 gate 是原 io-tls-p1-v1 的一次合格回放。"
+      "summary": "io_tls v2 VERIFIED：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，全部七门通过。"
     },
     {
       "module": "io_http",

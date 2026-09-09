@@ -1,0 +1,332 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "io_tls",
+      "delivery_shape": "source",
+      "entrypoint": "include/hyle/io/tls.h",
+      "revision": "runtime-bound",
+      "target": "hyle_io_tls"
+    },
+    "claim": "P1 engineering natural-route non-inferiority for verified TLS connection establishment and a bounded encrypted inference-stream episode against standalone Asio SSL on one persistent dedicated-worker runtime",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15,
+        31
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "HYLE_BENCH_ASIO_TLS": "ON",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_DEV_FACTORS": "io_tls",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_IO_HTTP2": "OFF",
+            "HYLE_IO_TLS": "ON",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF"
+          },
+          "peer_cache": {
+            "asio": "HYLE_ASIO_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST"
+        ],
+        "executables": [
+          {
+            "id": "io-tls-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_io_tls_bench",
+            "target": "hyle_io_tls_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_IO_TLS_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "persistent-runtime-verified-handshake",
+                "title": "TLS handshake (connect + handshake + close)"
+              },
+              {
+                "id": "persistent-runtime-encrypted-stream-512x256",
+                "title": "TLS encrypted stream (512 round-trips x 256B)"
+              }
+            ]
+          }
+        ],
+        "profiles": {
+          "W1-WSL": {
+            "cache": {
+              "CMAKE_CXX_COMPILER": "g++-14",
+              "CMAKE_C_COMPILER": "gcc-14"
+            },
+            "compiler_id": "GNU",
+            "compiler_version_prefix": "14",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "wsl2"
+      ],
+      "certification_platforms": [
+        "wsl2"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "W1-WSL"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "io-tls-p1-v1",
+    "module": "io_tls",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "clean source-pinned standalone header library",
+          "progress": "one persistent dedicated event worker and one external admitting/waiting caller",
+          "provider_policy": "TLS 1.2 minimum, verified localhost identity, session cache and tickets disabled",
+          "route": "asio::io_context plus TCP async accept/connect and asio::ssl::stream over the same host OpenSSL"
+        },
+        "id": "asio",
+        "revision": "8806a6803cde7054c3049d3666d3ec36786568c5"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "execution_order": "candidate-first"
+        },
+        "id": "candidate-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "execution_order": "peer-first"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "peer-first",
+        "target_variant": "primary"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "per-connection async state construction and admission",
+          "TCP accept and connect",
+          "SNI plus certificate-chain and localhost verification",
+          "full TLS handshake",
+          "bidirectional close_notify",
+          "per-connection state teardown and external completion handoff"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/io/https-connection-establishment",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "persistent-runtime-verified-handshake",
+        "input": {
+          "distribution": "one deterministic self-signed localhost RSA-2048 identity with TLS 1.2 minimum and provider-default negotiated version/cipher",
+          "scale": {
+            "connections_per_callback": 1,
+            "dedicated_workers": 1
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one inference HTTPS connection-establishment episode",
+          "derivation": "Inference HTTP clients and servers retain runtimes and contexts while every new connection pays this complete lifecycle",
+          "frequency": 1,
+          "unit": "verified-tls-connection",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "One external owner admits client and server Tasks to one persistent HYLE worker, waits through JoinHandles and destroys all per-connection state after verified shutdown",
+          "equivalence": "Both retain runtime, listener and contexts outside timing; charge one TCP accept/connect, verified full handshake, bidirectional close_notify and complete per-connection teardown",
+          "peer": "One external owner posts one shared connection episode to one persistent Asio worker, waits through its future and destroys all per-connection state after verified shutdown"
+        },
+        "pair": {
+          "candidate": "HYLE TLS persistent runtime handshake",
+          "peer": "Asio SSL persistent runtime handshake"
+        },
+        "peer_id": "asio",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_tls/consumer_shapes_v1.json",
+          "sha256": "a08de6d24d9366d18c1afac7b81ce69339f9c281860293e6aff7168845347d7a"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "Establish one verified localhost TLS connection through a persistent one-worker asynchronous runtime, then exchange bidirectional close_notify and retire every connection resource",
+        "setup": "Construct persistent runtime, listener and TLS contexts, disable tickets/session cache and complete one route-ordered warmup episode before timing",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "all verified-handshake phases",
+          "512 exact client-to-server 256-byte transfers",
+          "512 exact server-to-client 256-byte transfers",
+          "bidirectional close_notify",
+          "per-connection state teardown and external completion handoff"
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "inference/io/https-small-record-stream",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "persistent-runtime-encrypted-stream-512x256",
+        "input": {
+          "distribution": "one fixed zero-padded payload in sequential request/echo order",
+          "scale": {
+            "bytes_per_direction": 256,
+            "connections_per_callback": 1,
+            "dedicated_workers": 1,
+            "round_trips": 512
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one bounded inference streaming connection episode",
+          "derivation": "Small REST/SSE control and token-stream records exercise the TLS pump repeatedly; 512 exchanges amortize the timer without removing handshake or teardown",
+          "frequency": 512,
+          "unit": "encrypted-byte-per-direction",
+          "value": 256
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "The same persistent HYLE owner creates one verified stream and loops typed partial transfers until every 256-byte message is exact",
+          "equivalence": "Both charge one full connection lifecycle, 512 sequential request/echo exchanges of identical bytes, exact completion validation and bidirectional shutdown",
+          "peer": "The same persistent Asio owner creates one verified SSL stream and uses async_read/async_write composed operations for the identical exact messages"
+        },
+        "pair": {
+          "candidate": "HYLE TLS persistent runtime encrypted stream",
+          "peer": "Asio SSL persistent runtime encrypted stream"
+        },
+        "peer_id": "asio",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/io_tls/consumer_shapes_v1.json",
+          "sha256": "a08de6d24d9366d18c1afac7b81ce69339f9c281860293e6aff7168845347d7a"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "candidate-first",
+          "peer-first"
+        ],
+        "semantic_contract": "On one newly verified TLS connection, transfer and validate 512 exact 256-byte request/echo round trips, then exchange bidirectional close_notify and retire every connection resource",
+        "setup": "Use the same persistent runtime/listener/context setup and complete one route-ordered 512-round-trip warmup episode before timing",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "a1423e3a5c86ee5fd5557bb687efc22c4f722a6d959047d14091c1bfb06a9cf4",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

@@ -165,10 +165,35 @@ TLS 配置、provider 选择、factor 依赖或 benchmark 合同：
 - `validation-select.py` 因本卡 baseline 覆盖 IO factorization 的较长历史而保守选择了宽闭包；它不是本轮
   产品裁决器。依法只运行卡片预声明且与 TLS pump 改动相关的 gates，没有在模块任务中改写公共仪器。
 
+## Unique P1 receipt
+
+冻结合同 [`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 在全新的 W1-WSL EXT4 checkout、
+GCC 14.2、Release/static、portable ISA 上只运行一次。candidate 与 Asio peer 都是 clean/exact；双方使用
+同一 host OpenSSL、persistent single-worker async runtime、verified localhost、禁用 session/ticket，并对每个
+连接完整计入 TCP accept/connect、handshake、双向 `close_notify` 和 teardown。stream workload 另对称计入
+512 次 256 B request/echo，没有苹果/橘子计费：
+
+| workload / order | HYLE / Asio op/s | advantage / 99.26% CI | exact | 5% NI |
+|---|---:|---:|---|---|
+| verified handshake / candidate-first | 1,120.78 / 1,026.02 | 1.09879 / [1.06150, 1.15334] | `WIN` | `PASS` |
+| verified handshake / peer-first | 1,175.95 / 1,061.78 | 1.10161 / [1.07436, 1.13795] | `WIN` | `PASS` |
+| 512x256 B stream / candidate-first | 214.79 / 207.07 | 1.04147 / [0.99905, 1.06048] | `INCONCLUSIVE` | `PASS` |
+| 512x256 B stream / peer-first | 223.71 / 214.05 | 1.05265 / [1.00579, 1.06548] | `INCONCLUSIVE` | `PASS` |
+
+四行 5% non-inferiority 全部通过；握手双顺序为 material `WIN`，stream 点估计偏向 HYLE 但 CI 跨过
+superiority 边界，所以不冒充确定胜出。A/A、5%/10% known-delta、timer floor、artifact/build/consumer、
+source/peer provenance 与 host/input/artifact stability 全部 `PASS`；n=15 已裁决，没有触发 n=31。
+68-file 精确 bundle 位于
+[`io-tls-p1-v2-18bf62f8`](../../../../evidence/performance/io-tls-p1-v2-18bf62f8/)；manifest、summary、
+controls SHA-256 依次为
+`D6B9A542FB091D3CFC221D1620F51A0FBAA63BD6FACF30C468EF0802232B5751`、
+`71D09A4D8DAD0904A40C6AFE939A313EB04FE101864831C255549BE459E33C91`、
+`15DB83BC0737C3DD0773D187264A33A5A57B859B0E7FB1AF35D4AB259EB2313C`。保留 live build/toolchain 的
+严格 verifier 返回 `QUALIFIED`、`paths_verified=true`、`provenance=EXACT` 和 environment policy
+`CURRENT`；这是工程 P1，不是 Formal 或全 TLS 场景 SOTA 声明。
+
 ## Current decision
 
-`CANDIDATE`。有限 FIX 集、P0 成本证明、correctness、sanitizer、三平台 portability、feature OFF/ON 与
-source/static/shared 交付门均完成；公开 API 仅澄清既有 partial-transfer 语义。候选产品和冻结的
-[`io-tls-p1-v1`](../../../../bench/contracts/io-tls-p1-v1.json) 合同从此不再修改。唯一剩余 gate 是在
-W1-WSL clean EXT4 上运行一次双顺序、带 controls 的 P1 replay；结果未出前不得写成 `VERIFIED` 或
-`CLOSED/FROZEN`。
+`VERIFIED`。scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
+performance 七个 gate 全部 `PASS`；Formal 独立为 `NONE`。产品与证据不再修改，下一次状态提交只允许
+写入 terminal limitation、reopen trigger、LOC 与 `CLOSED/FROZEN` receipt。
