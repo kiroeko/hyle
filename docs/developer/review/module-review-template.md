@@ -23,11 +23,14 @@
 
 ## 能力与形状审计
 
-| 能力族 | 准入旅程/来源 | 语义与生命周期 | 当前路线 | 覆盖状态 | 动作 |
-|---|---|---|---|---|---|
-| | | | | `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE` | `KEEP/FIX/BORROW/DEFER/REJECT` |
+| 能力族 | 层级 | 准入旅程/来源 | 语义与生命周期 | 原子分解/应用边界 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|---|---|
+| | `原子机制/复合功能/应用策略` | | | | | `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE` | `KEEP/FIX/BORROW/DEFER/REJECT` |
 
-补充全部公开入口如何回指能力族；列出 benchmark-only、单向生命周期或不可自然组合的旧形状。
+补充全部公开入口如何回指能力族；列出 benchmark-only、单向生命周期或不可自然组合的旧形状。对复合
+功能还要写明普通用户完成旅程仍需自写哪些通用 glue；原子存在不能自动把这些 glue 判为 `ROUTED`。
+对每个缺口先按能力完整性决策记录 `SELF/BORROW/ROUTED/APPLICATION` 承载裁决及其长期 owner；“某个
+样例用到了”或“包装后更整齐”不能单独形成自实现理由。
 
 ### 有限改动集
 

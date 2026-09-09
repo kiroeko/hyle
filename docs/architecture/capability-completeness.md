@@ -70,6 +70,41 @@ HYLE 的公开能力至少从以下真实产品纵切持续取样，任何一个
 复杂度机制，必须进入通用能力审计，不能借 `OUT_OF_SCOPE` 隐藏。完整路线可以合法止于尚未施工的
 具名 owner，但项目级纵切此时应如实记为 `BLOCKED_BY_OWNER`，而不是 `COMPLETE`。
 
+### 原子机制、复合功能与应用策略
+
+能力清单必须显式区分三个层级，不能把它们混成一张“已有 API”列表：
+
+1. **原子机制**是可以独立拥有成本与语义的最小通用操作，例如一次 positional read、一次 map lookup、
+   timer arm、cancel edge 或 file sync。它必须可组合、复杂度和隐藏成本透明，并只与同语义原子比较性能。
+2. **复合功能**把多个原子组合成反复出现的完整用户任务，并拥有组合后的 ownership、failure、cancel、
+   backpressure 与 teardown。例如 atomic file publication、structured task、managed subprocess、file-change
+   stream 或 HTTP connection lifecycle。它可以是独立 factor，也可以是 product façade，但必须有自然的
+   public journey；不能让每个消费者重新手写同一套易错状态机。
+3. **应用策略**决定领域 schema、路由、鉴权、模型/脚本语义、保留周期或业务状态迁移。它留给消费方，
+   除非去掉领域名称后仍由至少两个独立纵切证明为稳定通用机制。
+
+原子齐全不证明复合功能完整；复合功能存在也不授权复制下层原子。每个复合能力必须列出其原子分解、
+隐藏 allocation/copy/thread/syscall、异常与关闭路径，以及用户为完成正常任务仍需自写的通用 glue。
+性能比较也必须同层：原子对原子，完整 journey 对拥有相同完成、持久化和 teardown 合同的完整 journey。
+拿 raw syscall 与成熟库 façade 排名，或拿 HYLE 完整 lifecycle 与 peer 的轻量原子排名，都属于苹果对
+橘子，不能形成产品 verdict。
+
+发现缺口后不得直接按“缺什么就自写什么”施工，必须分别裁决准入和承载方式：
+
+- `SELF`：HYLE 自己拥有实现。只适用于与既有 allocator/scheduler/IO/cancel/dispatch 紧密耦合、能提供
+  明确性能或生命周期价值，并且项目能够长期维护的机制；
+- `BORROW`：由受审成熟依赖提供算法或协议核，HYLE 只拥有必要的交付、错误、allocator 或异步组合边界；
+- `ROUTED`：标准库或成熟库已经给出自然、完整的用户路线，HYLE 只在指南中说明组合方式，不制造仅改名
+  或可能阻碍升级的包装；
+- `APPLICATION`：schema、业务 identity、命令模板、保留策略等由最终产品拥有。
+
+裁决至少比较跨纵切复用度、重复 glue 的错误风险、HYLE 能带来的集成/性能收益、成熟实现质量、平台
+语义可移植性以及长期安全和升级成本。UUID、JSON、Base64、摘要算法或命令行 option 等名称本身不是
+HYLE 准入理由；例如 JSON 可以完整借给 simdjson，UUID 可以继续由随机原子与消费方选定的成熟格式库
+承载。反过来，若多个服务都重复实现 child spawn、stdio、异步 wait、cancel/timeout、owned process-tree
+termination 与可靠 reap，这个**生命周期组合**值得进入独立能力审计，但不能因此复制某个语言框架的
+`ProcessStartInfo` 全部选项。
+
 ### 先审能力族，再审函数
 
 每轮 `AUDITED` 前必须形成一张自顶向下的 capability-family map。能力族按用户任务命名，例如
