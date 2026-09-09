@@ -144,9 +144,10 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
-      "summary": "mem v7 AUDITED：候选 1 在 M1-MAC/AppleClang 21 `-Werror` 下因含 helper call 的 optimizer assumption 被拒绝；范围/API/算法不变，只授权四处可移植 assumption 修复后建立候选 2。"
+      "candidate": "d3f732979f396aa5651e5eb81c228fdc73b7c166",
+      "summary": "mem v7 CANDIDATE：候选 2 只修复 AppleClang optimizer-assumption 可移植性，payload-free RangeAllocator 的 API、算法、layout、workload 与 peer 均未改变；等待精确候选终局验证。"
     },
     {
       "module": "mem_vm",

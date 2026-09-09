@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner：`mem` / payload-free logical range ownership；round：`mem-v7-logical-range-suballocator`；
   baseline：`67893204aad888f8e801c59ec6c149432a8e779e`。
@@ -175,6 +175,12 @@ M1-MAC/AppleClang 21 `-Werror` 编译在四处 `HYLE_ASSUME(is_free(...))` 报 `
 assumption expression 内潜在有副作用的 helper call。它没有生成 macOS 产品 binary，不能成为终局候选，
 也不继承开发性能结果。registry 已退回 `AUDITED`；唯一追加修复是先物化纯布尔值再交给 optimizer
 precondition，范围、公开 API、算法、layout、workload 和 peer 均不得变化。
+
+### Candidate 2
+
+不可变产品候选为 `d3f732979f396aa5651e5eb81c228fdc73b7c166`。它相对 candidate 1 只把四处
+helper-call assumption 展开成相同的纯字段表达式；W1-WIN/MSVC 与 W1-WSL/GCC 14 定向测试及开发
+性能重放均未回归。后续只允许补精确候选证据；任何产品变化都再次退回 `AUDITED`。
 
 ## Pre-candidate implementation receipt
 
