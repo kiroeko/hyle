@@ -806,6 +806,35 @@ class RunnerBuildArtifactTest(unittest.TestCase):
             for executable_id in paths}
         _validate_variant_artifacts(value, runner, paths, hashes)
 
+    def test_structured_pair_placement_accepts_two_roles_per_variant(self):
+        value = json.loads(
+            (ROOT / "bench" / "contracts" /
+             "sched-v6-pinned-task-p1-v1.json").read_text(encoding="utf-8"))
+        runner = validate_runner_extension(value)
+        paths = {
+            executable["id"]: pathlib.Path(executable["stem"])
+            for executable in runner["executables"]}
+        hashes = {
+            executable_id: f"hash-{executable_id}"
+            for executable_id in paths}
+
+        # A structured comparison has two artifacts (candidate and peer) for
+        # each target variant.  Placement identity is the
+        # (target_variant, pair_role) route, not target_variant alone.
+        _validate_variant_artifacts(value, runner, paths, hashes)
+
+        placement_candidate = next(
+            executable["id"] for executable in runner["executables"]
+            if executable["target_variant"] == "placement" and
+            executable["pair_role"] == "candidate")
+        primary_candidate = next(
+            executable["id"] for executable in runner["executables"]
+            if executable["target_variant"] == "primary" and
+            executable["pair_role"] == "candidate")
+        hashes[placement_candidate] = hashes[primary_candidate]
+        with self.assertRaisesRegex(ValidationError, "same path or binary"):
+            _validate_variant_artifacts(value, runner, paths, hashes)
+
     def test_runner_v1_freezes_common_controls_and_stop_rule(self):
         mutations = []
         value = pilot_contract()

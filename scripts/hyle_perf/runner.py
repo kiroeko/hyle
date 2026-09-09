@@ -1018,16 +1018,22 @@ def _validate_variant_artifacts(
                 executable_id = executable["id"]
                 mappings.append((
                     executable["target_variant"],
+                    executable.get("pair_role"),
                     executable_paths[executable_id],
                     artifact_hashes[executable_id],
                 ))
-        variants = {variant for variant, _, _ in mappings}
-        paths = {path for _, path, _ in mappings}
-        hashes = {digest for _, _, digest in mappings}
-        if len(mappings) < 2 or len(variants) != len(mappings):
+        variants = {variant for variant, _, _, _ in mappings}
+        variant_roles = {(variant, role) for variant, role, _, _ in mappings}
+        paths = {path for _, _, path, _ in mappings}
+        hashes = {digest for _, _, _, digest in mappings}
+        roles_per_variant = (2 if runner.get("measurement_adapter") ==
+                             STRUCTURED_PAIR_ADAPTER else 1)
+        if (len(variants) < 2 or
+                len(mappings) != len(variants) * roles_per_variant or
+                len(variant_roles) != len(mappings)):
             raise ValidationError(
-                f"placement workload {workload['id']!r} lacks one distinct "
-                "artifact per target variant")
+                f"placement workload {workload['id']!r} lacks one artifact "
+                "per target-variant/pair-role route")
         if len(paths) != len(mappings) or len(hashes) != len(mappings):
             raise ValidationError(
                 f"placement workload {workload['id']!r} resolves variants to "
