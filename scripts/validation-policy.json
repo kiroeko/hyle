@@ -6,7 +6,7 @@
     "third_party/wyhash/": ["container"],
     "third_party/simdutf/": ["container_text"],
     "third_party/fcontext/": ["sched"],
-    "third_party/picohttpparser/": ["io_core"],
+    "third_party/picohttpparser/": ["io_http"],
     "third_party/ported/LICENSE-RUST": ["platform_thread"],
     "third_party/ported/LICENSE-HIGHWAY": ["simd"],
     "third_party/nanobench/": []

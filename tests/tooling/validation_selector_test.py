@@ -42,6 +42,7 @@ class ImpactTest(unittest.TestCase):
         self.write(".gitignore", ".scratch/\n")
         self.write("src/container_queue/change.cc", "int value = 1;\n")
         self.write("src/container/change.cc", "int value = 1;\n")
+        self.write("third_party/picohttpparser/picohttpparser.c", "int parser_version = 1;\n")
         self.write("include/hyle/container/unbounded_queue.h", "int queue_value = 1;\n")
         self.write("include/hyle/container/string_view.h", "int text_value = 1;\n")
         self.write("include/hyle/visibility.h", "#define EXPORT 1\n")
@@ -124,7 +125,13 @@ class ImpactTest(unittest.TestCase):
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["changes"][0]["factors"], ["container_queue"])
-        self.assertEqual(set(plan["selected_factors"]), {"container_queue", "sched", "io_core", "compute", "graph"})
+        self.assertEqual(
+            set(plan["selected_factors"]),
+            {
+                "container_queue", "sched", "io_core", "io_tls", "io_http",
+                "io_http2", "io_transfer", "compute", "graph",
+            },
+        )
         self.assertIn("headers:container_queue", self.selected(plan))
         self.assertIn("delivery:container", self.selected(plan))
         self.assertNotIn("factor:container", self.selected(plan))
@@ -136,7 +143,10 @@ class ImpactTest(unittest.TestCase):
         self.assertEqual(plan["changes"][0]["factors"], ["container_text"])
         self.assertEqual(
             set(plan["selected_factors"]),
-            {"container_text", "util_runtime", "io_core"},
+            {
+                "container_text", "util_runtime", "io_tls", "io_http",
+                "io_http2", "io_transfer",
+            },
         )
 
     def test_deletion_rename_mixed_changes_keep_old_and_new_owners(self):
@@ -147,7 +157,10 @@ class ImpactTest(unittest.TestCase):
         plan = self.plan()
         self.assertEqual(
             set(plan["selected_factors"]),
-            {"container_queue", "sched", "container_text", "util_runtime", "io_core"},
+            {
+                "container_queue", "sched", "container_text", "util_runtime",
+                "io_tls", "io_http", "io_transfer",
+            },
         )
         self.assertEqual(len(plan["changes"]), 3)
 
@@ -179,7 +192,7 @@ class ImpactTest(unittest.TestCase):
         plan = self.plan()
         self.assertIn("component-contract", self.selected(plan))
         self.assertIn("factor:sched", self.selected(plan))
-        self.assertNotIn("io_tls", plan["selected_factors"])
+        self.assertIn("io_tls", plan["selected_factors"])
         for graph in (selector.project_graph(selector.Snapshot(self.root, self.base)),):
             self.assertIn("sched", selector.reverse_consumers({"container_queue"}, [graph]))
 
@@ -362,6 +375,16 @@ class ImpactTest(unittest.TestCase):
         self.assertNotEqual(dependent["p1_scopes"]["container_queue"]["scope_hash"], scope["scope_hash"])
         self.assertIn("third_party/mimalloc/include/mimalloc.h", dependent["p1_scopes"]["container_queue"]["input_paths"])
         self.assertEqual(self.row(dependent, "p1")["status"], "SELECTED")
+
+    def test_picohttpparser_belongs_to_http_evidence_not_core_transport(self):
+        snapshot = selector.Snapshot(self.root, "HEAD")
+        graph = selector.project_graph(snapshot)
+        policy = selector.read_json(ROOT / "scripts/validation-policy.json")
+        core = selector.p1_scope(snapshot, graph, policy, "io_core")
+        http = selector.p1_scope(snapshot, graph, policy, "io_http")
+        parser = "third_party/picohttpparser/picohttpparser.c"
+        self.assertNotIn(parser, core["input_paths"])
+        self.assertIn(parser, http["input_paths"])
 
     def test_independent_factor_scopes_and_multifactor_grouping(self):
         path = self.p1_card()

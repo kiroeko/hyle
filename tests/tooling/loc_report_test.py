@@ -71,6 +71,7 @@ def main() -> None:
                 f"util_runtime boundary lost implementation: {implementation}")
 
     evolving_io = (
+        "include/hyle/io/buffer.h",
         "include/hyle/io/capabilities.h",
         "include/hyle/io/detail/io_context_access.h",
         "include/hyle/io/detail/net.h",
@@ -80,22 +81,60 @@ def main() -> None:
         "include/hyle/io/detail/net_timeout.h",
         "include/hyle/io/detail/proactor.h",
         "include/hyle/io/dns.h",
+        "include/hyle/io/endpoint.h",
         "include/hyle/io/file.h",
         "include/hyle/io/http.h",
         "include/hyle/io/http2.h",
         "include/hyle/io/io_context.h",
         "include/hyle/io/io_uring.h",
+        "include/hyle/io/local.h",
+        "include/hyle/io/operation.h",
         "include/hyle/io/signal.h",
         "include/hyle/io/tcp.h",
         "include/hyle/io/tls.h",
+        "include/hyle/io/transfer.h",
         "include/hyle/io/udp.h",
         "src/io_core/file.cc",
+        "src/io_tls/tls.cc",
+        "src/io_http/http.cc",
+        "src/io_http2/http2.cc",
+        "src/io_transfer/transfer.cc",
     )
     io_specs, io_files = reporter.module_scope("io_core", evolving_io)
     if "src/io_core" not in io_specs or "include/hyle/io/file.h" not in io_specs:
         raise AssertionError(f"split IO Core boundary drifted: {io_specs!r}")
     if "src/io_core/file.cc" not in io_files:
         raise AssertionError("a newly added IO Core source escaped its factor scope")
+    for core_header in (
+        "include/hyle/io/buffer.h",
+        "include/hyle/io/endpoint.h",
+        "include/hyle/io/local.h",
+        "include/hyle/io/operation.h",
+    ):
+        if core_header not in io_files:
+            raise AssertionError(f"IO Core boundary lost public header: {core_header}")
+    for protocol_header in (
+        "include/hyle/io/http.h",
+        "include/hyle/io/http2.h",
+        "include/hyle/io/tls.h",
+        "include/hyle/io/transfer.h",
+    ):
+        if protocol_header in io_files:
+            raise AssertionError(
+                f"IO Core boundary absorbed protocol factor: {protocol_header}")
+
+    for factor, header, source in (
+        ("io_tls", "include/hyle/io/tls.h", "src/io_tls/tls.cc"),
+        ("io_http", "include/hyle/io/http.h", "src/io_http/http.cc"),
+        ("io_http2", "include/hyle/io/http2.h", "src/io_http2/http2.cc"),
+        ("io_transfer", "include/hyle/io/transfer.h", "src/io_transfer/transfer.cc"),
+    ):
+        factor_specs, factor_files = reporter.module_scope(factor, evolving_io)
+        expected_specs = reporter.MODULE_BOUNDARIES[factor.replace("_", "-")]
+        if tuple(factor_specs) != expected_specs:
+            raise AssertionError(f"{factor} canonical boundary drifted")
+        if header not in factor_files or source not in factor_files:
+            raise AssertionError(f"{factor} boundary lost its public header or source")
 
     build_specs, build_files = reporter.module_scope(
         "build-package",
