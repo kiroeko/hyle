@@ -83,4 +83,10 @@ bool Proactor::submit_directory_changes(std::intptr_t directory,
 7. 普通用户不可见；detail 注释必须足以防止 buffer/token lifetime 与 macOS flag 误读，公开 recipe 只在
    io_watch guide 出现。
 
-本卡至此保持 `AUDITED`，只授权 W01--W02 一个实现批次；没有 candidate，不能提前签 PASS。
+## Candidate freeze
+
+`IOCORE-W01--W02` 的产品/API/算法快照冻结在
+`67177e41d2d34c415e6e99375cb59a499ddbbdb3`。Windows 实现只增加一个 slab operation kind 和一次
+`ReadDirectoryChangesW` submit；普通 operation 的对象 layout、admission、reap/cancel 与非 Windows
+backend 均未改变。W1-WIN 上新增 completion/rearm/admission/invalid/cancel 测试及 io_core 13/13 已通过；
+本卡进入 `CANDIDATE`，后续只补三平台、sanitizer、交付、P0/红队证据，不再改变产品快照。
