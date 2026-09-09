@@ -1,0 +1,21 @@
+{
+  "schema": "hyle.consumer-shapes/v1",
+  "module": "sched",
+  "round": "sched-v6-pinned-structured-task",
+  "workloads": [
+    {
+      "id": "pinned-structured-task",
+      "consumer": "inference per-worker IO completion and rendering upload owner",
+      "task": "Keep one suspending typed task on each of four worker-owned rings across repeated foreign completion wakes, then join every result.",
+      "lifecycle": "Scheduler and four worker-owned tasks are persistent; 256 warmup episodes precede 4096 measured episodes; every task publishes one fresh Waker, suspends, resumes on its owner, acknowledges completion, returns a checksum and is joined.",
+      "normal_scale": {
+        "workers": 4,
+        "warmup_episodes": 256,
+        "measured_episodes": 4096,
+        "completion_resumes": 16384
+      },
+      "semantic_equivalence": "The candidate uses spawn_task_on plus JoinHandle. The migration baseline uses only the pre-v6 public Task, spawn_detached_on, one caller-owned typed result slot and one WaitGroup per task. Both charge the same publication, foreign wake, pinned reinjection/resume, typed completion and per-task join; construction is setup for the long-lived owner lifecycle.",
+      "negative_space": "This is not an unpinned load-balancing row, a detached fire-and-forget row, a worker-stack callback, an empty task or an IO/backend latency benchmark."
+    }
+  ]
+}

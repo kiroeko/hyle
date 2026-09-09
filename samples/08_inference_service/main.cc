@@ -34,6 +34,7 @@
 #include "hyle/platform/host_memory.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
+#include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/simd/ops.h"
 #include "hyle/time/clock.h"
@@ -478,31 +479,43 @@ Task<Status> serve_connection(AllocatorRef allocator, ServiceState* state,
   co_return co_await connection.close(close_budget);
 }
 
-Status launch_pinned(Scheduler& scheduler, unsigned owner,
-                     Task<Status> task, ServiceState* state,
+Task<void> report_service_task(AllocatorRef, Task<Status> task,
+                               ServiceState* state,
+                               bool report_error) noexcept {
+  try {
+    Status status = co_await task;
+    if (report_error && !status.ok()) {
+      state->errors.add();
+      print_status("service task", status);
+    }
+  } catch (...) {
+    state->errors.add();
+    std::fputs("service task: uncaught exception\n", stderr);
+  }
+  co_return;
+}
+
+Status launch_pinned(Scheduler& scheduler, unsigned owner, Task<Status> task,
+                     ServiceState* state,
                      bool report_error = true) noexcept {
   if (!task.valid()) {
     return Status::ResourceExhausted("coroutine frame allocation failed");
   }
-  return scheduler.spawn_detached_on(
-      owner,
-      [task = std::move(task), state, report_error]() mutable noexcept {
-        task.resume();
-        if (!task.done()) {
-          state->errors.add();
-          return;
-        }
-        try {
-          Status status = task.result();
-          if (report_error && !status.ok()) {
-            state->errors.add();
-            print_status("service task", status);
-          }
-        } catch (...) {
-          state->errors.add();
-          std::fputs("service task: uncaught exception\n", stderr);
-        }
-      });
+  auto handle = hyle::sched::spawn_task_on(
+      scheduler, owner, system_allocator(),
+      report_service_task(system_allocator(), std::move(task), state,
+                          report_error));
+  // Admission failures are represented by an already-completed handle. A task
+  // that genuinely completed before this check has already reported its own
+  // result, so joining it is equally correct. Running tasks intentionally
+  // detach: Scheduler::drain still owns their lifetime.
+  if (!handle.is_finished()) {
+    handle.detach();
+    return Status::Ok();
+  }
+  auto launched = handle.join();
+  if (!launched) return std::move(launched).error();
+  return Status::Ok();
 }
 
 Task<Status> accept_loop(AllocatorRef allocator, TcpListener* listener,

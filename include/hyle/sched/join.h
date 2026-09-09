@@ -40,8 +40,9 @@
 //    job.
 //  * schedule_task runs a non-suspending callable directly on a worker stack and
 //    keeps its callable + JoinState in one allocation. spawn_task owns a Fiber
-//    via a heap TaskDriver for work that really can suspend. In both routes,
-//    dropping the JoinHandle detaches without abandoning scheduler ownership.
+//    via a heap TaskDriver for work that really can suspend; spawn_task_on only
+//    changes that driver's admission/wake owner. In every route, dropping the
+//    JoinHandle detaches without abandoning scheduler ownership.
 //  * when_all/when_any share ONE GroupSignal (a target-count latch each task
 //    signals on completion). when_all targets N; when_any targets 1 + records the
 //    winner. The critical UAF guard (folly WhenN-inl.h:59): the waiter UNINSTALLS
@@ -625,14 +626,29 @@ struct TaskDriver<void> {
 
 }  // namespace detail
 
-template <class T>
-JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task,
-                         std::size_t stack_size = kDefaultStackSize) noexcept {
+namespace detail {
+
+template <bool Pinned, class T>
+JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
+                              mem::AllocatorRef alloc, Task<T>&& task,
+                              std::size_t stack_size) noexcept {
   using detail::JoinState;
   using detail::TaskDriver;
+  if constexpr (Pinned) {
+    if (!sched.valid()) {
+      return JoinHandle<T>(
+          Status::InvalidArgument("spawn_task_on requires a valid scheduler"));
+    }
+    if (worker_idx >= sched.num_workers()) {
+      return JoinHandle<T>(Status::InvalidArgument(
+          "spawn_task_on worker is out of range"));
+    }
+  }
   if (!alloc.valid()) {
     return JoinHandle<T>(
-        Status::InvalidArgument("spawn_task requires a complete allocator"));
+        Status::InvalidArgument(Pinned
+                                    ? "spawn_task_on requires a complete allocator"
+                                    : "spawn_task requires a complete allocator"));
   }
   if (stack_size < mem::kFiberStackSmall) {
     return JoinHandle<T>(
@@ -679,7 +695,14 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task
   // its stack (a fiber must never free its own stack from within entry). The
   // Fiber dtor returns the stack to `pool` (if any) at that safe point.
   d->arm_finish_hook();
-  if (!sched.spawn(&d->fiber)) {
+  const bool admitted = [&]() noexcept {
+    if constexpr (Pinned) {
+      return sched.spawn_on(worker_idx, &d->fiber);
+    } else {
+      return sched.spawn(&d->fiber);
+    }
+  }();
+  if (!admitted) {
     // Admission closed or a recursively-submitting worker saturated every
     // bounded runnable queue. Resolve the handle instead of leaking the
     // self-owned driver and leaving join() blocked forever.
@@ -691,6 +714,33 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task
     TaskDriver<T>::destroy(d);
   }
   return JoinHandle<T>(st);
+}
+
+}  // namespace detail
+
+// Submit a result-bearing coroutine to a stealable worker. Use this default
+// unless the task owns worker-local state that requires stable placement.
+template <class T>
+JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task,
+                         std::size_t stack_size = kDefaultStackSize) noexcept {
+  return detail::spawn_task_impl<false>(sched, 0, alloc, std::move(task),
+                                        stack_size);
+}
+
+// Submit a result-bearing coroutine pinned to `worker_idx`. Initial dispatch,
+// cooperative yields and every timer/IO/foreign-thread wake remain on that
+// worker. The returned handle has exactly the same join/detach/cooperative-
+// cancellation lifetime as spawn_task. Prefer the stealable overload unless a
+// per-worker ring, arena, scratch region or backend context owns the task.
+// An out-of-range worker returns an already-completed InvalidArgument handle
+// before join-state, driver or stack allocation.
+template <class T>
+JoinHandle<T> spawn_task_on(
+    Scheduler& sched, unsigned worker_idx, mem::AllocatorRef alloc,
+    Task<T> task,
+    std::size_t stack_size = kDefaultStackSize) noexcept {
+  return detail::spawn_task_impl<true>(sched, worker_idx, alloc,
+                                       std::move(task), stack_size);
 }
 
 // ---- when_all / when_any (select) -------------------------------------------

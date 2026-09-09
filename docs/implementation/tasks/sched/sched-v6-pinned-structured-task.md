@@ -83,7 +83,7 @@ Future/Executor 同样不把稳定 worker identity 纳入普通 future 合同。
 | S6-01 | pinned fire-and-forget 与 typed joinable 不可组合 | 在 `join.h` 复用一个内部 admission helper，公开 `spawn_task_on`；合法性检查早于任何 allocation | typed/void/move-only、invalid worker、OOM/closed/full 全有确定 handle 结果 | 待实现 |
 | S6-02 | owner 必须覆盖完整 suspend/wake 生命周期 | focused tests 覆盖首次 dispatch、yield、foreign Waker、cancel/detach/shutdown | 每次观测 worker 都等于所选 owner，无泄漏/挂死 | 待实现 |
 | S6-03 | 当前 inference sample 手写生命周期 | 让真实 sample 与 package sample 使用新入口，更新用户 guide/architecture | 不再手写 Task resume/result/exception wrapper；三交付可发现 | 待实现 |
-| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 marl 组合路线；固定 5% 非劣门 | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | 待实现 |
+| S6-04 | 交集成本没有独立证据 | 新增 opt-in v6 P1，同一 pinned+suspending+typed completion episode 对 baseline 已有公开 API 的手工组合；固定 5% 非劣门；既有 Marl 证据继续约束底层 wake/queue | 仪器 controls、双顺序/placement 和全部预声明 strata 通过 | 待实现 |
 
 本表之后不增加轻量 pinned queue、优先级或 IO 功能；出现相关需求另立 round。
 
@@ -114,8 +114,9 @@ auto result = handle.join();
    IO owner、Task 和 JoinHandle。轻量 pinned callback 已显式分离而非伪装成同一语义。
 3. 内部复用：必须复用 Error、Mem/Mem-vm stack pool、Time wake、Platform thread、
    Container-intrusive waiters与现有 Scheduler pinned queue；不增加同义 primitive。
-4. 性能：算法仍为现有 pinned enqueue/reinject；P0 检查零新增常态成本，P1 只比较同一完整 episode，
-   不把 unpinned/detached/non-suspending 路线当 peer。
+4. 性能：算法仍为现有 pinned enqueue/reinject；P0 检查零新增常态成本，P1 对比 baseline 的
+   `Task + spawn_detached_on + typed slot + per-task WaitGroup` 完整迁移 episode；既有 Marl P1 继续证明
+   底层 completion spine，不把 unpinned/detached/non-suspending 路线当成 v6 比较对象。
 5. 交付边界：没有 C/Native FFI；模板 API 只服务当前 C++ source/static/shared 产品。
 6. 构建交付：component graph 与 `sched` target 不增边；头 owner 已存在。本轮只需证明三种 consumer 都
    能实例化并运行新入口。

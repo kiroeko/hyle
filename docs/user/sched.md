@@ -17,6 +17,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 很短、不挂起、需要 typed result/join/cancel | `schedule_task` + `JoinHandle<T>` | worker stack + 一个 allocator cell；`request_cancel` 只发布协作请求 |
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
+| 可挂起、有结果且必须留在一个 worker | `Task<T>` + `spawn_task_on` + `JoinHandle<T>` | 仅用于 per-worker ring/arena/backend owner；全部 wake 保持 pin |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
@@ -60,8 +61,8 @@ status = scheduler.spawn_detached([]() noexcept {
 
 捕获 lambda 入口要求 callable 可无异常 move 且调用为 `noexcept`，记录从 Scheduler 注入的 allocator
 取得。已有 `fn(void*)` 的极限热路可以使用 raw overload，避免 callable record；这不是普通用户的
-默认形状。`spawn_detached_on(worker, ...)`/`spawn_on` 只用于确实拥有 per-worker ring、scratch 或
-shard state 的 consumer；普通工作保持可窃取。
+默认形状。`spawn_detached_on(worker, ...)`、`spawn_task_on(worker, ...)`/`spawn_on` 只用于确实拥有
+per-worker ring、scratch 或 shard state 的 consumer；普通工作保持可窃取。
 
 需要显式 placement 时填 `SchedulerOptions::worker_cpu_order` 或 `worker_cpu_set`。默认
 `ThreadConfigPolicy::kBestEffort` 允许平台降级；只有应用确实不能接受 affinity/priority 失败时才选
@@ -157,6 +158,21 @@ auto result = handle.join();
 if (!result) return result.error();
 use(*result);                         // 42
 ```
+
+如果 task 持有只能由一个 worker 访问的 IO ring、arena、scratch 或 backend context，把 owner 明确写进
+提交操作；首次运行、`yield` 以及 timer/IO/foreign-thread wake 都回到该 worker：
+
+```cpp
+auto handle = hyle::sched::spawn_task_on(
+    scheduler, owner_worker, alloc, request_loop(alloc, state));
+auto result = handle.join();
+```
+
+`owner_worker` 必须小于 `scheduler.num_workers()`；越界会得到一个可立即 `join()` 的
+`InvalidArgument` handle，不会分配 join state、driver 或 stack。它和 `spawn_task` 的 result、detach、
+cooperative cancel 与 shutdown 语义完全相同。不要把它当作“更快”的默认入口：pin 会放弃 work
+stealing，普通任务仍应使用 `spawn_task`。非挂起的短任务使用 `schedule_task`；当前不承诺它固定到某个
+worker。
 
 两条路线返回相同的 `JoinHandle`，因此可以混合进入 `when_all/when_any`。它是 move-only result slot；
 析构或 `detach()` 只放弃结果，任务继续运行且仍被

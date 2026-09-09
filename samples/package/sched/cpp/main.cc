@@ -43,8 +43,8 @@ int main() {
   auto scheduled_result = scheduled.join();
   if (!scheduled_result || *scheduled_result != 42) return 3;
 
-  auto task = hyle::sched::spawn_task(
-      scheduler, allocator, delayed_value(allocator, 42));
+  auto task = hyle::sched::spawn_task_on(
+      scheduler, 1, allocator, delayed_value(allocator, 42));
   auto task_result = task.join();
   if (!task_result || *task_result != 42) return 4;
 

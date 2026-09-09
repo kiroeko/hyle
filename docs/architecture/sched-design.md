@@ -70,6 +70,7 @@ move-only、一次消费的 handle；多个 completion source 必须在 operatio
 | `schedule_task` + `JoinHandle<T>` | worker 自身栈 | callable/result 合并为一个 allocator cell；协作 cancellation request | 很短、不会挂起或阻塞、需要 typed result/join |
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
 | `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 cancellation request | 会挂起且需要结果、join/select/fan-out |
+| `spawn_task_on` + `JoinHandle<T>` | 指定 worker 的独立 Fiber + coroutine frame | 与 `spawn_task` 相同；只改变 admission/wake ownership | 会挂起、有结果且持有 per-worker ring/arena/backend state |
 | `spawn_blocking` + `BlockingPool` | 专用 OS thread pool | 独立有界 runtime metadata；结果走 JoinHandle | 阻塞 syscall、外部同步 API、长 CPU 工作 |
 
 Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；其
@@ -105,9 +106,12 @@ LIFO slot 只容纳刚在本 worker 变 ready 的一个 Fiber，使其栈和数�
 公平预算，超过预算就回到 FIFO。它不是另一套公开 RunQueue 类型，也不能成为用户调度 policy。
 
 默认 worker 不绑核，让嵌入 HYLE 的 host runtime 和 OS 保留调度权。需要 per-core IO、NUMA 或专用
-runtime 时，用户可显式提供 CPU 顺序/集合和 best-effort/required policy。`spawn_on` 的 Fiber 始终回到
-owner worker，且不能被偷；通用任务仍默认可迁移。大小核偏好由 Platform 的 CPU 事实与 ThreadPriority
-表达，Sched 不根据 CPU id 或 benchmark 猜测核心类型。
+runtime 时，用户可显式提供 CPU 顺序/集合和 best-effort/required policy。`spawn_on`、
+`spawn_detached_on` 与 `spawn_task_on` 的 Fiber 始终回到 owner worker，且不能被偷；通用任务仍默认
+可迁移。轻量 worker-stack inline queue 刻意保持可由任意 worker 消费，因此没有伪造
+`schedule_task_on`：若未来真实消费者需要该不同成本档，必须单独审计 private-inline admission、容量与
+公平性。大小核偏好由 Platform 的 CPU 事实与 ThreadPriority 表达，Sched 不根据 CPU id 或 benchmark
+猜测核心类型。
 
 Idle policy 是语义选择：balanced 做有限搜索后 park，low-latency 延长搜索，power-saving 尽快 park。
 防惊群只允许有限 searching worker，并用单 worker 唤醒/接力扩张并行度。不得把固定自旋次数解释为

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <limits>
 #include <span>
 #include <thread>
 #include <vector>
@@ -17,6 +18,7 @@ using hyle::sched::JoinHandle;
 using hyle::sched::Scheduler;
 using hyle::sched::schedule_task;
 using hyle::sched::spawn_task;
+using hyle::sched::spawn_task_on;
 using hyle::sched::SuspendFiber;
 using hyle::sched::CaptureWaker;
 using hyle::sched::Task;
@@ -37,13 +39,18 @@ AllocatorRef failing_allocator() noexcept {
 
 struct AllocationCounter {
   AllocatorRef backing = system_allocator();
+  std::atomic<std::size_t> attempts{0};
   std::atomic<std::size_t> allocations{0};
   std::atomic<std::size_t> frees{0};
+  std::size_t fail_on = (std::numeric_limits<std::size_t>::max)();
 };
 
 void* counted_alloc(void* raw, std::size_t size,
                     std::size_t alignment) noexcept {
   auto* counter = static_cast<AllocationCounter*>(raw);
+  const std::size_t attempt =
+      counter->attempts.fetch_add(1, std::memory_order_relaxed);
+  if (attempt == counter->fail_on) return nullptr;
   void* result = counter->backing.allocate(size, alignment);
   if (result != nullptr)
     counter->allocations.fetch_add(1, std::memory_order_relaxed);
@@ -72,6 +79,12 @@ Task<int> add_coro(AllocatorRef, int a, int b) { co_return a + b; }
 
 Task<void> bump_coro(AllocatorRef, std::atomic<int>* c) {
   c->fetch_add(1, std::memory_order_relaxed);
+  co_return;
+}
+
+Task<void> observe_worker_coro(AllocatorRef, std::atomic<int>* worker) {
+  worker->store(hyle::sched::current_worker_index(),
+                std::memory_order_release);
   co_return;
 }
 
@@ -110,6 +123,28 @@ Task<int> wait_then(AllocatorRef, WaitBox* box, int ret) {
   co_return ret;
 }
 
+struct PinnedWaitBox {
+  std::atomic<bool> ready{false};
+  Waker waker;
+  std::atomic<int> first_worker{-1};
+  std::atomic<int> after_yield_worker{-1};
+  std::atomic<int> after_wake_worker{-1};
+};
+
+Task<int> pinned_wait_then(AllocatorRef, PinnedWaitBox* box, int ret) {
+  box->first_worker.store(hyle::sched::current_worker_index(),
+                          std::memory_order_relaxed);
+  hyle::sched::Fiber::yield();
+  box->after_yield_worker.store(hyle::sched::current_worker_index(),
+                                std::memory_order_relaxed);
+  box->waker = co_await CaptureWaker{};
+  box->ready.store(true, std::memory_order_release);
+  co_await SuspendFiber{};
+  box->after_wake_worker.store(hyle::sched::current_worker_index(),
+                               std::memory_order_relaxed);
+  co_return ret;
+}
+
 }  // namespace
 
 // A spawn_task result can be joined for its value.
@@ -119,6 +154,99 @@ TEST(Join, SpawnTaskJoinReturnsValue) {
   auto r = h.join();
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, 42);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnReturnsTypedValueAndKeepsOwnerAcrossWake) {
+  constexpr unsigned kTarget = 2;
+  Scheduler sched(4, system_allocator(), 256);
+  PinnedWaitBox box;
+  auto handle = spawn_task_on(
+      sched, kTarget, system_allocator(),
+      pinned_wait_then(system_allocator(), &box, 42));
+
+  while (!box.ready.load(std::memory_order_acquire)) std::this_thread::yield();
+  ASSERT_TRUE(box.waker.valid());
+  box.waker.wake();  // this test thread is foreign to the scheduler
+
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(*result, 42);
+  EXPECT_EQ(box.first_worker.load(std::memory_order_relaxed),
+            static_cast<int>(kTarget));
+  EXPECT_EQ(box.after_yield_worker.load(std::memory_order_relaxed),
+            static_cast<int>(kTarget));
+  EXPECT_EQ(box.after_wake_worker.load(std::memory_order_relaxed),
+            static_cast<int>(kTarget));
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnSupportsVoidAndMoveOnlyResults) {
+  Scheduler sched(2, system_allocator(), 128);
+  std::atomic<int> calls{0};
+  auto void_handle = spawn_task_on(
+      sched, 0, system_allocator(), bump_coro(system_allocator(), &calls));
+  EXPECT_TRUE(void_handle.join().has_value());
+
+  std::atomic<int> destroyed{0};
+  {
+    auto move_handle = spawn_task_on(
+        sched, 1, system_allocator(),
+        move_only_coro(system_allocator(), &destroyed));
+    auto result = move_handle.join();
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 0);
+  }
+  EXPECT_EQ(calls.load(std::memory_order_relaxed), 1);
+  EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 1);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnRejectsInvalidWorkerBeforeOwnedAllocations) {
+  AllocationCounter counter;
+  AllocatorRef counted(&counted_alloc, &counted_free, &counted_realloc,
+                       &counter);
+  Scheduler sched(2, system_allocator(), 64);
+  auto handle = spawn_task_on(
+      sched, sched.num_workers(), counted,
+      add_coro(system_allocator(), 20, 22));
+  EXPECT_TRUE(handle.is_finished());
+  auto result = handle.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+  EXPECT_EQ(counter.allocations.load(std::memory_order_relaxed), 0u);
+  EXPECT_EQ(counter.frees.load(std::memory_order_relaxed), 0u);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnRejectsInvalidSchedulerWithoutDereferencingIt) {
+  hyle::Status scheduler_status;
+  Scheduler invalid(/*num_workers=*/0, system_allocator(), 64,
+                    &scheduler_status);
+  ASSERT_FALSE(scheduler_status.ok());
+  ASSERT_FALSE(invalid.valid());
+  auto handle = spawn_task_on(
+      invalid, 0, system_allocator(),
+      add_coro(system_allocator(), 20, 22));
+  auto result = handle.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+}
+
+TEST(Join, SpawnTaskOnDriverOomReleasesTheJoinState) {
+  AllocationCounter counter;
+  counter.fail_on = 1;  // JoinState succeeds; TaskDriver allocation fails.
+  AllocatorRef counted(&counted_alloc, &counted_free, &counted_realloc,
+                       &counter);
+  Scheduler sched(1, system_allocator(), 64);
+  auto handle = spawn_task_on(
+      sched, 0, counted, add_coro(system_allocator(), 20, 22));
+  auto result = handle.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsResourceExhausted());
+  EXPECT_EQ(counter.attempts.load(std::memory_order_relaxed), 2u);
+  EXPECT_EQ(counter.allocations.load(std::memory_order_relaxed), 1u);
+  EXPECT_EQ(counter.frees.load(std::memory_order_relaxed), 1u);
   sched.shutdown();
 }
 
@@ -313,6 +441,18 @@ TEST(Join, SpawnAfterAdmissionClosedReturnsCancelled) {
   sched.shutdown();
 }
 
+TEST(Join, SpawnTaskOnAfterAdmissionClosedReturnsCancelled) {
+  Scheduler sched(2, system_allocator(), 64);
+  sched.begin_shutdown();
+  auto handle = spawn_task_on(
+      sched, 1, system_allocator(),
+      add_coro(system_allocator(), 20, 22));
+  auto result = handle.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  sched.shutdown();
+}
+
 // Detaching a handle lets the task run to completion unjoined (drain observes it).
 TEST(Join, DetachRunsToCompletion) {
   std::atomic<int> c{0};
@@ -336,6 +476,22 @@ TEST(Join, DropIsDetach) {
     sched.shutdown();
   }
   EXPECT_EQ(c.load(), 1);
+}
+
+TEST(Join, SpawnTaskOnDetachStillDrainsOnTheSelectedWorker) {
+  constexpr unsigned kTarget = 1;
+  std::atomic<int> observed{-1};
+  {
+    Scheduler sched(2, system_allocator(), 64);
+    auto handle = spawn_task_on(
+        sched, kTarget, system_allocator(),
+        observe_worker_coro(system_allocator(), &observed));
+    handle.detach();
+    sched.drain();
+    sched.shutdown();
+  }
+  EXPECT_EQ(observed.load(std::memory_order_acquire),
+            static_cast<int>(kTarget));
 }
 
 // when_all waits for every task; each is joinable for its value afterwards.
@@ -448,6 +604,22 @@ TEST(Join, CancelRequestDoesNotForgeWakeForParkedTask) {
   // chose to return normally). The point: the flag was observable.
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, -1);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnTaskOnCancelRequestKeepsPinnedWakeOwnership) {
+  constexpr unsigned kTarget = 1;
+  Scheduler sched(2, system_allocator(), 128);
+  WaitBox box;
+  auto handle = spawn_task_on(
+      sched, kTarget, system_allocator(),
+      cancellable(system_allocator(), &box));
+  while (!box.ready.load(std::memory_order_acquire)) std::this_thread::yield();
+  handle.request_cancel();
+  box.waker.wake();
+  auto result = handle.join();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(*result, -1);
   sched.shutdown();
 }
 
