@@ -144,9 +144,10 @@
     },
     {
       "module": "mem",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
-      "summary": "mem v7 AUDITED：payload-free 64-bit aligned logical-range owner 的能力、RAII lease API、metadata 上界、TLSF common path/O(F) aligned fallback、五项有限 FIX 与同合同性能门已冻结，授权进入实现。"
+      "candidate": "f13ee33bb0ecc2a882f32a7a7403197f78c2055a",
+      "summary": "mem v7 CANDIDATE：payload-free 64-bit aligned RangeAllocator 的 API、算法、测试、三交付和同合同 P1 adapter 已固定于 f13ee33b；仅余精确候选的正式性能、macOS、终局红队与关闭记录。"
     },
     {
       "module": "mem_vm",

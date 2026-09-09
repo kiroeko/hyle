@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner：`mem` / payload-free logical range ownership；round：`mem-v7-logical-range-suballocator`；
   baseline：`67893204aad888f8e801c59ec6c149432a8e779e`。
@@ -167,6 +167,9 @@ ranges.reset();                            // phase-wide logical invalidation
 
 Audit verdict：全部 MUST 已成为五项有限 FIX，API、成本、peer、normal/holdout shape 和停止条件均已冻结，
 允许进入产品实现。
+
+产品候选固定为 `f13ee33bb0ecc2a882f32a7a7403197f78c2055a`。此后不得改变公开合同、算法、layout、
+常态成本或 workload；若候选验证发现产品缺陷，必须依法退回 `AUDITED` 并建立新 candidate。
 
 ## Pre-candidate implementation receipt
 
