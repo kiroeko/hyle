@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
-      "summary": "sched v7 AUDITED：TaskScope API 与 scoped-only driver/原子生命周期机制已冻结为 S7-01..S7-05；普通 TaskDriver/JoinState/queue 不变，等待有限实现。"
+      "candidate": "35f318a3fc33393b144b6576e272788b3cc0a7d0",
+      "summary": "sched v7 CANDIDATE：动态 TaskScope 已冻结在 35f318a3/1bf7c2d2；W1-WIN 定向 21/21、完整 205/205 与逐头门通过，等待精确候选三平台、三交付、sanitizer、P0/P1 和终局红队。"
     },
     {
       "module": "io_core",

@@ -160,3 +160,19 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 实现前红队没有发现需要扩大产品范围的 finding。高风险点已进入 S7-02/S7-03：last completion 与 waiter
 publication 的失唤醒、close/admit 半接纳、cancel token 在 join 后 UAF、失败路径漏减计数、scope error 早返、
 live-child 析构、普通 task metadata 污染。下一步只实施上述有限改动集。
+
+## Product candidate（`CANDIDATE`）
+
+- immutable product commit / tree：
+  `35f318a3fc33393b144b6576e272788b3cc0a7d0` /
+  `1bf7c2d2c1f1750f5e019fc039a7c176ec16c9c6`；后续 correctness、delivery、sanitizer、P0/P1 与终局红队
+  只能验证该候选，若产品/API/测试语义改变则依法退回 `AUDITED` 并签发新候选；
+- 实现严格落在 `S7-01..S7-04`：新增独立 `TaskScope` state/driver/header/source/test，普通 `TaskDriver`、
+  `JoinState`、Scheduler queue 与 admission 算法没有产品改动；`Fiber` 仅增加 scoped driver 的 private friend
+  声明，中央 component edge 不变；
+- W1-WIN 候选前检查：TaskScope 21/21、Sched 完整 205/205、sched public-header self-containment、closure
+  checker、docs checker 与 `git diff --check` 均通过。它们是候选签发门，不替代后续精确候选三平台、三交付、
+  sanitizer、P0/P1 和终局红队；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-candidate.json`，
+  SHA-256 `CE085F878A9717264BAF3D79DA6224BEE05BB0742801F365145FA060049E0BB9`。
