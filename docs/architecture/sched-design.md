@@ -104,9 +104,9 @@ void/Status child 走 scope-owned `add`，typed/per-child ownership 才走 `spaw
 coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或 Scheduler queue。
 
 v7 候选用独立 admission/completion cache line 和一个共享 completion counter。Folly `Barrier` 与 oneTBB
-`wait_context` 证明这种 constant-state barrier 是成熟选择，但合格同合同证据不能证明它在多 worker 短
-child 上达到 HYLE 的 5% 非劣门，因此当前产品状态仍以 registry 的 `BLOCKED` 为准。恢复设计采用
-Tokio `JoinSet` 已验证的另一种成熟取舍：每个 scope child 保留一个独立 completion record，record 与本来
+`wait_context` 证明这种 constant-state barrier 是成熟选择，但当轮同合同证据未证明它在多 worker 短
+child 上达到 HYLE 的 5% 非劣门，因而历史裁决为 `BLOCKED`。v8/v9 恢复设计采用 Tokio `JoinSet`
+已验证的另一种成熟取舍：每个 scope child 保留一个独立 completion record，record 与本来
 就需要的 scoped driver **同次分配**，driver 退出并归还 Fiber stack 后再发布完成；scope close 后遍历稳定
 record 集完成 fiber/thread-aware drain。terminal owner claim 后逐项观察并释放 record；重复或并发 join
 返回 `FailedPrecondition`，与 Folly AsyncScope、Tokio JoinSet 及真实 request/frame owner 的生命周期一致。
@@ -117,9 +117,11 @@ completion line 做 RMW；失败才进入 scope 的首错控制锁。record 由 
 这个取舍明确把资源从共享 cache-line 争用换成 terminal owner 观察前的 O(N) 小记录保留：单次 admission 和
 completion 仍为 O(1)，close 为 O(1)，完整 drain 为 O(N)，与 owner 必须回收 N 个 child 的任务一致；
 普通 task 仍是零新增 metadata/分支。旧同合同 manual owner 的分散 JoinState 已在相同 32-child workload
-中给出这种成本方向的直接机制证据；新候选仍必须只运行一次同合同 qualified P1，不能凭该设计说明预签
-性能 PASS。固定分片 counter、close 后轮询和无界重采样均被否决：前者按 worker 数放大每个 request 的常态
-metadata 且仍有末项握手，后两者分别破坏阻塞语义和性能证据停止规则。
+中给出这种成本方向的直接机制证据；v9 不靠设计说明预签性能，而是在 workload-matched A/A 通过后，对
+不可变候选完成一次 qualified P1，四个双顺序/placement strata 均为 `PARITY` 且通过 5% 非劣门。完整身份、
+区间和限制见当前 registry 指向的 terminal record。固定分片 counter、close 后轮询和无界重采样均被
+否决：前者按 worker 数放大每个 request 的常态 metadata 且仍有末项握手，后两者分别破坏阻塞语义和性能
+证据停止规则。
 
 ## Worker 与队列
 

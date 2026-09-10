@@ -1,6 +1,6 @@
 # Sched v9：TaskScope 源码成本审计
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -46,7 +46,7 @@
 4. 先用源码回答“慢在哪里、换取了什么”；本卡在 `AUDITED` 前不写产品代码，在 `CANDIDATE` 前不启动
    qualified performance run。
 
-候选已经固定；下一步只执行本卡预声明的 candidate 验证，不再改变 API、算法、layout 或 workload。
+候选固定后只执行了本卡预声明的 candidate 验证，没有再改变 API、算法、layout 或 workload。
 
 ## 静态成本与生成代码审计（`AUDITED`）
 
@@ -117,3 +117,93 @@ control-plane snapshot。修正不增加 benchmark-only 入口或常态 metadata
 - 唯一 bounded interleaved preflight 的 HYLE/manual `op/s` ratio 为
   `1.056 / 1.018 / 1.095 / 1.051`（primary/placement × candidate-first/peer-first）。四格均不再固定输，
   因此允许签发 candidate；这些短样本仍是 `DIAGNOSTIC`，不冒充最终 qualified P1。
+
+## 七问终局
+
+1. **第三方路径**：TaskScope 产品实现不引入第三方代码；Folly AsyncScope、Tokio JoinSet 与 Seastar gate
+   只用于核对 owner/join 语义。Sched 既有 fcontext/mimalloc 闭包、锁定版本、许可证和 fallback 本轮未变。
+2. **功能完整**：动态 admission、scope cancellation、首错/full drain、typed `spawn`、无逐 child 结果的
+   `add`、fiber/thread-aware terminal wait 以及 cancellation token → IO public journey 均闭合。重复/并发
+   terminal join 没有真实 consumer 或成熟 peer 依据，已从产品承诺中删除，而不是为 benchmark 添加轻接口。
+3. **内部复用**：继续复用已关闭 Core/Error/Time/Timer-queue/Mem/Platform 与既有 Scheduler/Fiber/CancelToken；
+   没有复制 queue、Event、allocator 或 error 通道，普通 task 路径没有承担 scope 分支或 metadata。
+4. **性能**：admission/completion 均 O(1)，完整 drain O(N)；每 child 仍只有 driver+record 一次同分配。
+   源码时序/成本账单和 codegen 先排除了错误内联方向，qualified P1 再证明四格同合同 5% 非劣。
+5. **交付边界**：没有公开 C header、伪 C ABI 或 Native FFI；公开面是惯用 C++23 owner API。
+6. **构建交付**：exact candidate 的 source embedding、relocated static/shared SDK、公开头和运行时依赖在适用
+   三平台闭合；独立 IO consumer 只链接 `hyle::io` 即取得正确传递闭包。
+7. **易用与文档**：唯一 lifecycle owner 调用一次 `join`/`cancel_and_join`；需要 per-child typed result 时用
+   `spawn`，只需统一拥有 Status child 时用 `add`。同步 admission failure 不转移 task ownership；并发
+   admission/close/cancel 仍受支持，`remaining()` 不得与 terminal join 并发。
+
+## Terminal validation
+
+- exact product candidate：`d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7`；归档
+  `C:\public\project-hyle\_validation\sched-v9-task-scope-cost-audit\hyle-d32f4fc4.tar.gz`，长度
+  `6,160,051 B`，SHA-256
+  `4CFDD80EF7057881013E491153718B3519DABE8848749EC8AA8C95F7CCB3DEBB`；
+- Windows/MSVC 19.50：focused TaskScope `31/31`、完整 shipping Sched `215/215`、11 个公开头逐头编译、
+  ASan、source/static/shared relocation 全部通过；独立 `TaskScope → CancelToken → TcpStream` consumer 在
+  exact candidate 上以 `HYLE_WERROR=ON` 构建并运行成功；
+- WSL/GCC 14：Release Sched+header 两门、ASan/UBSan/TSan 各 `216/216`、source/static/shared relocation
+  全部通过；TSan 按既有合同使用 `setarch x86_64 -R`。sanitizer Debug 首次叠加 `HYLE_WERROR=ON` 时被既有
+  allocator-first coroutine placement-new 的 `-Wmismatched-new-delete` 诊断阻止编译；sanitizer 合同未声明
+  Werror，按默认 Werror off 重跑后没有 sanitizer 产品报告。该 warning 早于 TaskScope 候选，分配/释放路径
+  已被 ASan/UBSan 覆盖，不冒充首次驱动为 PASS；
+- macOS arm64/AppleClang 21：Release Sched+header 两门和 source/static/shared relocation 全部通过；没有在
+  远端机器补跑未预声明的性能样本；
+- MSVC codegen 为已有 refcount acquire load → 条件 Event wait → release RMW；未采用会让 paired executable
+  增大 1,024 B、`task_scope.obj` 增大 3,498 B 的强制内联。最终 paired executable 均为 `315,392 B`，
+  `task_scope.obj` 为 `188,899 B`。
+
+### Qualified P1
+
+合同是 [`sched-v8-task-scope-cleanup-p1-v2`](../../../../bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json)，
+peer 是 exact `37b62460` public manual `spawn_task + JoinHandle + Scheduler::drain` 组合；两侧在同一
+source-built consumer 中保持 32-child owner、四 worker、allocator、完整 finish-hook/stack cleanup 与 owner
+teardown，只有自然 API 不同。候选/peer advantage ratio 大于 1 表示 HYLE 占优：
+
+| stratum | median ratio | 98.93% CI | exact / 5% NI |
+|---|---:|---:|---|
+| primary, candidate first | 1.005108 | [0.965416, 1.017617] | PARITY / PASS |
+| primary, peer first | 0.997022 | [0.959895, 1.006246] | PARITY / PASS |
+| placement, candidate first | 0.995692 | [0.958694, 1.009204] | PARITY / PASS |
+| placement, peer first | 0.970796 | [0.955245, 0.989531] | PARITY / PASS |
+
+合同预声明在 `n=15` 未决时自动升级到 `n=31`；这是同一次冻结实验的声明内阶段，不是看结果后扩样。
+qualification 与 performance 均 `PASS`。raw evidence 位于
+`C:\public\project-hyle\_validation\sched-v9-task-scope-cost-audit\p1-qualified-evidence`；contract hash
+`5419B0483D7B2861FD6A02E27E6D040D377AD1A6CEB02C54DAF59379F8D93435`，manifest hash
+`0815B15E51C50B346043E26DE92A43DD70E7367554EC18F7413EF94E943A0910`，summary hash
+`B44E7CC90FBEE8D2BBD57031A6F81C62766FA846CE3D74AC084CC9B40F6C13F4`。
+
+## Red team and closure decision
+
+红队复核 admission/close 共锁、single-owner claim、首错发布、publisher-release acquire observation、
+wake-before-wait、final-publisher pause、取消/full drain、OOM/move/death、立即析构和普通 task 零增量路径。
+没有发现未映射 API、隐藏 lifetime/data race、错误依赖、苹果对橘子比较、benchmark-only shape 或交付差异。
+`remaining()` 与 terminal join 并发、析构与 join 并发都不属于 single lifecycle owner 合同；文档已显式说明。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS |
+| architecture | PASS |
+| correctness | PASS |
+| delivery | PASS |
+| usability_docs | PASS |
+| red_team | PASS |
+| engineering_performance | PASS / P1, 5% non-inferiority |
+
+- `CANDIDATE -> CLOSED` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\sched-v9-task-scope-cost-audit\transitions\module-status-before-closed.json`，
+  SHA-256 `F4D1814B533959E763E2628BFBA704562825BD4B51353B152CBDCD0FD350E275`；
+- LOC 绑定 exact candidate：全库代码 `535,916`，自实现不含测试 `93,676`，Sched 实现 `6,272`；
+  `scripts/loc-report.py --module sched --commit d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7 --self-check`
+  通过；
+- 已知限制：cooperative cancel 不能抢占不观察 token 的 child；terminal join 是 single-shot；P1 只裁决冻结的
+  32-child inference/rendering owner，不宣称所有机器、fanout 或任务粒度上的绝对 SOTA；
+- reopen triggers：真实 consumer 证明缺失常用 scope 语义或可复现 correctness/lifetime/progress 缺陷；公开
+  API、算法、常态成本、依赖或交付改变；合格同合同证据证明 material regression。噪声带内点值、换序/地址
+  反转、历史 TODO 或“再看一次”都不构成 trigger；
+- 最终裁决：七门全部通过，`sched` v9 为 **`CLOSED`**。源码/API 审计在计时前识别并删除无消费依据的
+  multi-join 承诺；测试只裁决剩余同合同差异，未反向塑造 API 或实现。

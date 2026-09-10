@@ -203,10 +203,15 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
       "candidate": "d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7",
-      "summary": "sched v9 CANDIDATE：TaskScope 已对齐 single-owner terminal lifecycle，join 逐项回收 completion record，并以既有 refcount 跳过已完成 Event；31 项 focused tests、codegen 和四格 bounded A/B preflight 通过，候选固定在 d32f4fc4。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
+        "material_margin_pct": 5
+      },
+      "summary": "sched v9 CLOSED：TaskScope 对齐 single-owner lifecycle 并逐项回收 completion record；三平台正确性/交付、sanitizers、直接 IO consumer、红队与同合同 qualified P1 四格 PARITY/5% 非劣门全部通过。"
     },
     {
       "module": "io_core",
