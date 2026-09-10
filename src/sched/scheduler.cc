@@ -298,9 +298,9 @@ struct Scheduler::Impl {
     container::BoundedQueue<PriorityRunnable, mem::AllocatorRef> low;
     ReadyOverflow low_overflow;
     PriorityWorker* worker_lanes = nullptr;
-    unsigned worker_count = 0;
+    std::size_t worker_count = 0;
 
-    PriorityState(mem::AllocatorRef owner_allocator, unsigned workers,
+    PriorityState(mem::AllocatorRef owner_allocator, std::size_t workers,
                   std::size_t capacity) noexcept
         : allocator(owner_allocator),
           high(owner_allocator, capacity),
@@ -312,14 +312,14 @@ struct Scheduler::Impl {
                                          alignof(PriorityWorker));
       if (storage == nullptr) return;
       worker_lanes = static_cast<PriorityWorker*>(storage);
-      for (unsigned i = 0; i < workers; ++i) {
+      for (std::size_t i = 0; i < workers; ++i) {
         new (&worker_lanes[i]) PriorityWorker(allocator, capacity);
       }
     }
 
     ~PriorityState() {
       if (worker_lanes == nullptr) return;
-      for (unsigned i = 0; i < worker_count; ++i)
+      for (std::size_t i = 0; i < worker_count; ++i)
         worker_lanes[i].~PriorityWorker();
       allocator.deallocate(worker_lanes, sizeof(PriorityWorker) * worker_count,
                            alignof(PriorityWorker));
@@ -328,7 +328,7 @@ struct Scheduler::Impl {
     bool valid() const noexcept {
       if (!high.valid() || !low.valid() || worker_lanes == nullptr)
         return false;
-      for (unsigned i = 0; i < worker_count; ++i) {
+      for (std::size_t i = 0; i < worker_count; ++i) {
         if (!worker_lanes[i].valid()) return false;
       }
       return true;
