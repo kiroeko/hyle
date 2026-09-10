@@ -308,9 +308,9 @@
     },
     {
       "module": "container_text",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/container/container-text-v3-base64.md",
-      "summary": "container_text v3 SCOPED：以已接受 G01 重开，只增加 caller-buffer Base64/Base64URL 批量编解码、明确策略与 typed progress；审计冻结前不改产品代码。"
+      "summary": "container_text v3 AUDITED：G01 的显式策略、caller-buffer API、simdutf 映射、O(1)/O(n) 成本与四项有限 FIX 已冻结，允许实现但尚未获得 correctness/delivery/P1 终态。"
     },
     {
       "module": "io_watch",

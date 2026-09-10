@@ -39,7 +39,7 @@
 | graph | QUEUED | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
-| container_text | SCOPED | — | [record](tasks/container/container-text-v3-base64.md) | container_text v3 SCOPED：以已接受 G01 重开，只增加 caller-buffer Base64/Base64URL 批量编解码、明确策略与 typed progress；审计冻结前不改产品代码。 |
+| container_text | AUDITED | — | [record](tasks/container/container-text-v3-base64.md) | container_text v3 AUDITED：G01 的显式策略、caller-buffer API、simdutf 映射、O(1)/O(n) 成本与四项有限 FIX 已冻结，允许实现但尚未获得 correctness/delivery/P1 终态。 |
 | io_watch | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 10% | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 CLOSED：跨平台 bounded 文件变化流完成三平台正确性/sanitizer、公开 IO 三交付、易用性、红队和同合同 libuv P1；原预声明 10% 工程非劣门全过，严格 5% 附加诊断仅在 WSL exact-file 两格未决且无 LOSE。 |
 
 <!-- END GENERATED MODULE STATUS -->

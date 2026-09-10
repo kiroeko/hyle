@@ -64,3 +64,107 @@
 - 扫描四个推理基座、Folly/simdutf 与未来 IO consumer，确认没有遗漏本轮必须的 contiguous bulk shape；
 - 冻结有限 `KEEP/FIX/BORROW` ledger、测试矩阵、P0 成本和唯一 P1 workload。完成这些之前不得修改产品代码。
 
+## 能力与形状审计（`AUDITED`）
+
+| 能力族 | 层级 | 准入旅程/来源 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|
+| standard / URL bulk encode | 原子机制 | embedding、文件响应、WebSocket accept；simdutf/Folly | simdutf 已编译但无 HYLE API | `MISSING` | `BORROW + FIX` |
+| strict/forgiving bulk decode | 原子机制 | multimodal data URI、环境/协议载荷；四个推理基座 | llama.cpp/ds4 自写 owning scalar，HYLE 无路线 | `MISSING` | `BORROW + FIX` |
+| exact encoded / max decoded size | 原子机制 | caller-owned Container/Mem allocation | 无可发现路线 | `MISSING` | `FIX` O(1) checked arithmetic |
+| checked exact decoded size / diagnosis | 复合功能 | 配置校验、错误响应和 tight allocation | simdutf size helper 不验证完整语义 | `MISSING` | `FIX` 冷标量 validator；不复制 codec |
+| owning string/vector convenience | convenience | llama.cpp/Folly 高层包装 | `std::string`/Container/Mem 可自然组合 | `ROUTED` | 不隐藏 allocation |
+| streaming/MIME/mixed alphabet | 协议策略 | MIME、任意 chunk stream | 没有本轮具名 journey | `OUT_OF_SCOPE` | `DEFER/REJECT` |
+
+四个推理基座的共同最低需求是 contiguous standard Base64；URL alphabet 是协议基础能力，Folly 与 simdutf
+均直接提供。llama.cpp 的 auto alphabet、in-place owning decode 与 ds4 的函数内 allocation 不是 HYLE 的
+默认形状：前者会放宽协议，后者把 allocator/OOM/lifetime 藏进 codec。HYLE 用显式 alphabet 和 caller buffer
+覆盖其原子需求；data URI 拆分、媒体类型、JSON 和请求大小上限继续由 IO/service owner 负责。
+
+### API / usability freeze
+
+新公开头为 `<hyle/container/base64.h>`，namespace 保持 `hyle::container`：
+
+```cpp
+enum class Base64Alphabet : std::uint8_t { kStandard, kUrl };
+enum class Base64EncodePadding : std::uint8_t { kInclude, kOmit };
+enum class Base64DecodePadding : std::uint8_t {
+  kRequired, kAllowed, kForbidden
+};
+enum class Base64Whitespace : std::uint8_t { kReject, kAllowAscii };
+
+struct Base64EncodeOptions;
+struct Base64DecodeOptions;
+enum class Base64Status : std::uint8_t;
+struct Base64SizeResult;  // status, input_count/error offset, output_size
+struct Base64Result;      // status, input_count, output_count actually written
+
+constexpr Base64SizeResult base64_encoded_size(
+    std::size_t, Base64EncodeOptions = {}) noexcept;
+constexpr std::size_t base64_max_decoded_size(std::size_t) noexcept;
+Base64SizeResult base64_decoded_size(
+    std::span<const char>, Base64DecodeOptions = {}) noexcept;
+Base64Result base64_encode(std::span<const std::byte>, std::span<char>,
+                           Base64EncodeOptions = {}) noexcept;
+Base64Result base64_decode(std::span<const char>, std::span<std::byte>,
+                           Base64DecodeOptions = {}) noexcept;
+```
+
+- options 默认值严格固定为 standard + include/required padding + reject ASCII whitespace；decode 的三种
+  padding 都要求 canonical unused bits，`kAllowed` 只表示 padded/unpadded 两种 canonical 拼法均可；
+- ASCII whitespace 精确指 space、tab、LF、CR、form-feed；`kAllowAscii` 忽略这些字符，不接受其他垃圾；
+- `base64_decoded_size` 是 O(n) 的 checked exact-size 与 first-invalid cold diagnosis；想单遍 decode 的调用方
+  先按 O(1) `base64_max_decoded_size` 分配，成功后缩到 `output_count`；
+- fast decode 的 provider 错误可比 cold diagnosis 粗，但始终给 input progress 和实际 output bytes。失败输出
+  未提交且必须整体丢弃；policy precheck 在写入前失败时 `output_count==0`；
+- byte-span 是核心 ABI；`StringView`、`span<const char>` encode 和 `span<char>` decode 只作为 header-inline、
+  reinterpretation-free `std::as_bytes/as_writable_bytes` 便利重载，不拥有、复制或分配；
+- 输入输出不得重叠；empty span 合法；非法 enum、容量、size overflow 和无法满足的 span 参数返回 typed
+  status。调用方不能把 output buffer 当 NUL-terminated string，结果长度只认 `output_count`；
+- exported 核心保持 `noexcept`。本地 hot-path 状态不升级为 `error::Status/Result`，因此不为 `container_text`
+  增加 Error 边；需要请求上下文时由 IO/service 在边界映射。
+
+### 复杂度与 provider 映射
+
+- encoded/max size 为 O(1)；checked exact size、encode、decode 均为 O(n)，无 allocation、lock、atomic、
+  syscall 或 TLS 状态；公开对象只是值类型 options/results；
+- encode 路由 simdutf `binary_to_base64`；decode 路由 capacity-safe `base64_to_binary_safe`，每次操作至多一次
+  provider dispatch。HYLE 不复制标量/SIMD codec，也不暴露 provider enum/bitmask；
+- simdutf 默认忽略 whitespace，且 loose/strict 不能单独表达三档 padding。HYLE policy precheck 只补这些
+  语义：默认拒绝 whitespace；forbidden 拒绝 `=`；allowed/forbidden 校验 unpadded unused bits；required 走
+  provider strict last-chunk。cold exact-size validator 逐字符给出稳定 offset，但不进入正常 decode；
+- 默认 strict route 与 peer 必须共同计入相同 policy scan。不能拿 simdutf 的 forgiving one-pass 数字判 HYLE
+  输，也不能通过删除严格语义换性能；若 scan 自身 material，唯一允许的内部纠正是复用/扩展既有
+  `container_text` bulk search，不改变 API 或默认值。
+
+### 有限 FIX ledger
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| `G01-F01` | 没有公开类型、size 与 caller-buffer surface | 新 `base64.h`、header-inline conveniences、component header 宣告 | self-contained、compile/API、overflow/default tests |
+| `G01-F02` | simdutf 能力未映射 HYLE 严格策略 | 在 `string_algo.cc` 或相邻单一 TU 实现 policy validator 与 provider adapter | RFC/敌意矩阵、typed progress、无复制 codec |
+| `G01-F03` | 没有 consumer/document/delivery 路线 | 定向 unit、Container installed sample、architecture/user guide 与 provider/license 说明 | W1/WSL/Mac、source/static/shared、symbols/deps |
+| `G01-F04` | 无同合同工程性能证据 | 新的窄 Base64 P1 contract/bench/evidence；只含 bulk image decode 与批量短 accept encode | direct simdutf semantic adapter、双顺序、5% NI、qualified bundle |
+
+本表冻结后不增加 owning、streaming、MIME、mixed-auto、JSON/data-URI 或第二 provider。红队发现属于上述
+四项的缺陷可作一次纠正；新能力必须退回 `SCOPED/AUDITED`。
+
+## 七问（审计冻结）
+
+1. 第三方：只借 vendored simdutf v9.1.0，版本/双许可证/安装已由 `container_text_simdutf` package
+   dependency 锁定；无新下载，现有 scalar fallback 只覆盖 Unicode，不冒充 Base64 fallback。
+2. 功能：四个推理基座、Folly 与 simdutf 共同需要的 contiguous bulk、两 alphabet、size、明确 validation
+   已全部进入；owning/data URI/JSON 属于可组合高层，streaming/MIME 没有本轮准入。
+3. 复用：使用 Core 编译/export 基础、Container 的 StringView/span façade、Mem/Container caller storage、
+   Platform 驱动的既有 component/provider 构建；不新增假的 Error/Platform 调用。
+4. 性能：复杂度最优 O(n)，size O(1)/O(n) 分层；P1 固定 256 KiB multimodal-style strict decode 与批量
+   20-byte WebSocket-accept-style encode，计费相同 buffer/result/validation，peer 为同 revision direct
+   simdutf semantic adapter，5% material margin。
+5. FFI：项目当前没有 C consumer/Native FFI surface；本轮不恢复伪 C API。类型擦除跨语言边界仍由未来
+   有真实 consumer 的 native FFI 决策处理。
+6. 交付：新头属于 `container_text` split public header；同一 exported core 在 source/static/shared 可用，
+   不泄漏 simdutf target/header；Container package probe 必须实际调用 encode/decode。
+7. 易用性：默认安全、策略名不含糊；exact 与 max 两条 sizing recipe、partial-output 丢弃、非 NUL 输出、
+   no-overlap、byte/char 转换和 forgiving 选择写入 Container guide。
+
+Audit verdict 为 **PASS**：能力、API、provider、成本和有限改动集已冻结，允许进入产品实现；未运行的
+correctness/delivery/P1 不在本阶段冒充通过。
