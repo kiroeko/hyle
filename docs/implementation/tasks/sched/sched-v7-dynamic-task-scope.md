@@ -106,8 +106,10 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
   child 的失败由 scope 聚合，其它 `T` 只聚合 infrastructure failure，值仍只由返回的 handle 拥有；丢弃/
   detach handle 不影响 scope ownership；
 - `add(Task<void/Status>, stack_size=kDefaultStackSize) -> Status` 是无需独立 child result/cancel handle 时的默认
-  scope-owned 路线；它同步返回 admission/resource 错误，运行期错误由 `join` 聚合，不制造随后立即丢弃的
-  `JoinState/JoinHandle`；需要 typed value 或逐 child cancellation 时才使用 `spawn`；
+  scope-owned 路线；它只同步返回 ownership 尚未转移时的 invalid/closed rejection；一旦 admission CAS 成功就
+  返回 OK，此后的 allocation/Scheduler/运行期错误统一由 `join` 聚合，因而调用者可安全使用
+  `HYLE_RETURN_IF_ERROR(add(...))` 而不会跳过必须的 drain；该路线不制造随后立即丢弃的 `JoinState/JoinHandle`；
+  需要 typed value 或逐 child cancellation 时才使用 `spawn`；
 - `close()` 幂等且与 spawn 原子线性化；`join()` 隐式 close，`cancel_and_join()` 依次 close、发布 cooperative
   cancellation、drain。二者可由 OS thread 或本 Scheduler 的 Fiber 调用，允许多个 waiter 并返回同一首错；
 - `request_cancel()` 只发布 cancellation、不关闭准入；之后接纳的 child 立即继承已取消 token。查询面为
@@ -119,8 +121,9 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 
 错误优先级固定为 invalid/moved-from scope → invalid Task/frame → unsafe stack size → closed/overflow admission
 → join-state（仅 `spawn`）/driver/stack allocation → Scheduler closed/full admission → child completion。close 后
-的调用没有被接纳，`spawn` 错误由其 `JoinHandle`、`add` 错误由返回 Status 表达；try-admit 已成功后的资源或
-Scheduler admission 失败也进入 scope 首错并将计数归零，不能让 join 挂起。
+的调用没有被接纳，`spawn` 错误由其 `JoinHandle`、`add` 的 pre-admission rejection 由返回 Status 表达；
+try-admit 已成功后的资源或 Scheduler admission 失败只进入 scope 首错并将计数归零，`add` 仍返回 OK，不能让
+常见错误传播宏绕过后续 join，也不能让 join 挂起。
 
 ### Internal mechanism freeze
 
