@@ -70,6 +70,7 @@ shared 三种交付暴露同一套 HYLE C++ 源码接口。
 | active membership | `DynamicBitSet` / `SparseSet` | dense algebra 或稀疏 O(1) membership |
 | borrowed text/path | `StringView`、string/path algorithms | 显式借用、长度和 known-NUL 事实 |
 | UTF 边界 | `UtfResult` 与 UTF-8/16/32 conversion | typed error offset、精确 caller-buffer 大小、零隐式 owning allocation |
+| 二进制文本编解码 | Base64/Base64URL size + caller-buffer codec | 显式 alphabet/padding/whitespace、typed progress、借 simdutf bulk core |
 | string identity | `StringInterner` / `StringId` | stable bytes、generation handle、可回收/永久两种生命周期 |
 | table hash | `Hash`、`StringHash`、`HardenedStringHash` | semantic composition、trusted 与 hostile key 分流 |
 
@@ -131,6 +132,8 @@ deallocation 重叠。默认 `SystemAllocator` 与无状态 hash/equality 满足
 | StringView copy | O(1)；search 按输入长度，且不分配 |
 | StringInterner acquire/lookup/release | expected O(1)，按 shard 同步；bytes 只保存一份 |
 | UTF validation/transcode | O(input bytes + output units)，caller-buffer、无隐式分配 |
+| Base64 encoded/max size | O(1)；checked exact decoded size O(input bytes) |
+| Base64 encode/decode | O(input bytes)，caller-buffer、无隐式分配；严格策略检查与 codec 同计费 |
 
 复杂度门先于点值 benchmark。任何优化都不得通过为全部对象增加无需求字段、改变 lifetime、减少
 正确性检查、削弱进展保证或偷掉被计费阶段来换分。
@@ -149,6 +152,11 @@ wire fingerprint 或 cryptographic MAC。攻击者可控 key 使用 caller-secre
 `StringView` 额外保存 `is_null_terminated()` 事实。它不保证逻辑内容中没有更早的 NUL，也不延长
 来源生命周期；把它交给只接受 C string 的 API 前必须同时检查合同。4 GiB 上限是公开选择，不是
 `std::string_view` 的无损替代。
+
+Base64 公开面同样是长度化 byte/text span，不是 owning string 工具。默认 standard + canonical padded +
+reject whitespace；URL、unpadded 与 ASCII-whitespace acceptance 是互相正交的显式策略。快速 decode
+报告 progress，失败输出不提交；O(n) checked-size 才承担稳定 first-invalid diagnosis。simdutf 的
+forgiving 默认不能越过 HYLE 的策略边界，provider types/options 也不能泄露到公开头。
 
 ## 外部实现与升级
 

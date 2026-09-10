@@ -116,8 +116,10 @@ Base64Result base64_decode(std::span<const char>, std::span<std::byte>,
   先按 O(1) `base64_max_decoded_size` 分配，成功后缩到 `output_count`；
 - fast decode 的 provider 错误可比 cold diagnosis 粗，但始终给 input progress 和实际 output bytes。失败输出
   未提交且必须整体丢弃；policy precheck 在写入前失败时 `output_count==0`；
-- byte-span 是核心 ABI；`StringView`、`span<const char>` encode 和 `span<char>` decode 只作为 header-inline、
-  reinterpretation-free `std::as_bytes/as_writable_bytes` 便利重载，不拥有、复制或分配；
+- byte-span 是核心 ABI；`span<const char>` encode 和 `span<char>` decode 只作为 header-inline、
+  `std::as_bytes/as_writable_bytes` 便利重载，不拥有、复制或分配。红队编译证明同时提供 `StringView`
+  重载会让 `std::string/vector<char>` 在两个隐式 range conversion 间二义，故不准入；现有 view 使用
+  `view.as_std()`；
 - 输入输出不得重叠；empty span 合法；非法 enum、容量、size overflow 和无法满足的 span 参数返回 typed
   status。调用方不能把 output buffer 当 NUL-terminated string，结果长度只认 `output_count`；
 - exported 核心保持 `noexcept`。本地 hot-path 状态不升级为 `error::Status/Result`，因此不为 `container_text`
@@ -168,3 +170,30 @@ Base64Result base64_decode(std::span<const char>, std::span<std::byte>,
 
 Audit verdict 为 **PASS**：能力、API、provider、成本和有限改动集已冻结，允许进入产品实现；未运行的
 correctness/delivery/P1 不在本阶段冒充通过。
+
+## 产品实现回执
+
+- `G01-F01/F02`：新增 `<hyle/container/base64.h>` 与 `string_algo.cc` 中唯一 provider adapter；公开面
+  保持 caller-buffer、typed size/progress、显式四类策略。RFC 4648、all-byte、0..513 长度尾块、错误
+  offset、padding/whitespace/alphabet、容量和 overlap 测试均通过。
+- `G01-F03`：header self-containment、Container 安装样例和 source/shared/static relocated consumer
+  已实际调用 codec；新头由中央 `container_text` split-header 集安装，simdutf 头仍不泄露给用户。
+- `G01-F04`：`container-text-base64-p1-v1` 固定两个同合同 consumer shape、双执行顺序和独立 placement
+  artifact。peer 使用锁定 revision 的外部 simdutf 声明，并链接产品内字节相同的 provider core；自定义
+  validator 同时锁 benchmark/shape hash、语义 oracle、函数未折叠和 placement authenticity。
+- P0：encoded/max size 为 O(1)，checked size/codec 为 O(n)；无 allocation、lock、atomic、TLS 或
+  syscall。初次诊断发现默认 strict decode 的通用 policy loop 产生约 45% 固定 tax；把 required-padding
+  常用路线与 unpadded tail 状态机算法分离后，双顺序诊断回到约 ±1.5%。语义、扫描阶段和 provider
+  均未减少；该诊断不冒充 candidate P1。
+
+候选前验证回执：
+
+| 门 | 环境/形状 | 结果 |
+|---|---|---|
+| correctness/header | W1-WIN MSVC Release shared，定向 `container_text` | `2/2 PASS` |
+| delivery | W1-WIN Container source/shared/static + relocated installed consumer | `PASS` |
+| portability | W1-WSL GCC 14 Release shared，定向 header/unit | `2/2 PASS` |
+| UB | W1-WSL GCC 14 RelWithDebInfo static + UBSan，定向 unit | `PASS`，零 sanitizer report |
+| contract validator | W1-WIN primary + placement | semantic/same-contract/placement `PASS` |
+
+M1-MAC、不可变 candidate P1 和独立终局红队仍待执行，因此本表不构成 `CLOSED`。

@@ -1,11 +1,13 @@
 hyle_add_header_self_contained_test(container_text
   HEADER_DIR container
   HEADERS
+    base64.h
     path.h
     string_algo.h
     string_interner.h
     string_view.h)
 hyle_add_test(container_text SOURCES
+  base64_test.cc
   path_test.cc
   string_algo_test.cc
   string_buf_test.cc

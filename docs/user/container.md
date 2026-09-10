@@ -37,6 +37,7 @@ Container 给 C++23 用户提供 HYLE 的高频数据结构、borrowed text、ha
 | 不拥有字符串、并需要 known-NUL/search/path helper | `StringView` |
 | 重复字符串只存一份并获得 generation ID | `StringInterner` |
 | typed UTF 错误位置，或 UTF-8/16/32 caller-buffer 转换 | `UtfResult` 与 `utf*_to_utf*` |
+| 二进制与 Base64/Base64URL 的无分配 bulk 转换 | `base64_encode` / `base64_decode` |
 | 普通 borrowed text，不需要 HYLE 额外事实/算法 | `std::string_view` |
 
 `intrusive_list.h` 与 owning/concurrent/queue/text 能力都通过 `hyle::container` 产品交付；其中 compiled
@@ -309,6 +310,63 @@ if (size.status == UtfStatus::kOutputTooSmall) {
 六个 UTF-8/16/32 方向都不分配。offset/count 的单位是对应 input/output code unit（UTF-8 为 byte）。
 output 不足时不会部分写入，`output_count` 是精确所需容量；空 output span 是正常 size-query。input/output
 不得重叠。只要 bool 的 UTF-8 边界继续用 `utf8_validate`，不要为了得到未使用的详细结果走重接口。
+
+### Base64 / Base64URL
+
+```cpp
+#include <hyle/container/base64.h>
+
+using namespace hyle::container;
+
+const Base64SizeResult capacity = base64_encoded_size(binary.size());
+if (!capacity) {
+  return report_size_error(capacity.status);
+}
+std::vector<char> encoded(capacity.output_size);
+const Base64Result encoded_result =
+    base64_encode(std::as_bytes(std::span{binary}), encoded);
+if (!encoded_result) {
+  return report_codec_error(encoded_result.status);
+}
+
+// A one-pass decode reserves a safe upper bound, then commits only the bytes
+// reported by a successful result.
+std::vector<std::byte> decoded(base64_max_decoded_size(encoded.size()));
+const Base64Result decoded_result = base64_decode(encoded, decoded);
+if (!decoded_result) {
+  decoded.clear();  // failed decode output is uncommitted
+  return report_codec_error(decoded_result.status);
+}
+decoded.resize(decoded_result.output_count);
+```
+
+默认是 RFC 4648 standard alphabet、canonical padding required、ASCII whitespace rejected。协议要求
+Base64URL 或 unpadded 时显式传 `Base64DecodeOptions`：
+
+```cpp
+constexpr Base64DecodeOptions token_policy{
+    .alphabet = Base64Alphabet::kUrl,
+    .padding = Base64DecodePadding::kForbidden,
+    .whitespace = Base64Whitespace::kReject,
+};
+Base64Result token = base64_decode(encoded_token, output, token_policy);
+```
+
+三档 padding 都拒绝非零 unused tail bits。`kAllowed` 只允许 canonical padded/unpadded 两种拼法；
+`kAllowAscii` 只忽略 space、tab、LF、CR、form-feed，不接受其他垃圾或自动混用 alphabet。需要 tight
+allocation 或稳定 first-invalid offset 时，先调用 O(n) 的 `base64_decoded_size`；正常 bulk 路线若能接受
+上界容量，使用 O(1) `base64_max_decoded_size` 后单次 decode。
+
+常见坑：
+
+- encode/decode 都不追加 NUL；只能使用成功结果的 `output_count`。
+- decode 失败时 provider 可能已经写入 partial bytes；这些字节没有提交语义，必须整体丢弃。
+- input/output 不得重叠；HYLE 不承诺 in-place decode。
+- 已持有 HYLE `StringView` 时传 `view.as_std()`；API 刻意不再提供第二个可与标准 contiguous range
+  同时匹配的隐式重载，避免 `std::string`/`vector<char>` 调用二义。
+- 默认严格 whitespace 检查是协议安全选择，会计入正常路径；只有上层协议明确允许时才选择
+  `kAllowAscii`，不能为 benchmark 放宽输入。
+- API 不拥有 buffer。需要 `std::string`/`std::vector` 时由调用方按上述 size helper 明确分配并处理 OOM。
 
 ## StringInterner
 

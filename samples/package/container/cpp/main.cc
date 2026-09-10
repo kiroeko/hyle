@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 
+#include "hyle/container/base64.h"
 #include "hyle/container/circular_buffer.h"
 #include "hyle/container/concurrent_node_hash_map.h"
 #include "hyle/container/concurrent_flat_hash_set.h"
@@ -156,6 +157,24 @@ int main() {
   if (!converted || converted.output_count != utf16.size() ||
       utf16[0] != u'A' || utf16[1] != u'\u00e9') {
     return 14;
+  }
+
+  // The installed Container product must carry the private simdutf provider;
+  // consumers include only the HYLE header and own both buffers.
+  constexpr std::array<std::byte, 3> binary = {
+      std::byte{'H'}, std::byte{'Y'}, std::byte{'L'}};
+  std::array<char, 4> base64{};
+  const auto encoded = hyle::container::base64_encode(binary, base64);
+  if (!encoded || encoded.output_count != base64.size() ||
+      std::string_view(base64.data(), base64.size()) != "SFlM") {
+    return 15;
+  }
+  std::array<std::byte, 3> roundtrip{};
+  const auto decoded = hyle::container::base64_decode(
+      std::span<const char>{base64}, roundtrip);
+  if (!decoded || decoded.output_count != roundtrip.size() ||
+      roundtrip != binary) {
+    return 16;
   }
   return 0;
 }

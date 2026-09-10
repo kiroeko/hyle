@@ -1,5 +1,7 @@
 #include "hyle/container/string_algo.h"
 
+#include "hyle/container/base64.h"
+
 #if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
 #  include "simdutf.h"
 
@@ -428,6 +430,288 @@ UtfResult utf32_to_utf16(std::span<const char32_t> input,
   if (!validation) return validation;
   (void)output;
   return {UtfStatus::kOther, 0, 0};
+#endif
+}
+
+}  // namespace hyle::container
+
+namespace hyle::container {
+namespace {
+
+constexpr bool is_base64_ascii_whitespace(char value) noexcept {
+  return value == ' ' || value == '\t' || value == '\n' || value == '\r' ||
+         value == '\f';
+}
+
+constexpr int base64_value(char value, Base64Alphabet alphabet) noexcept {
+  const auto byte = static_cast<unsigned char>(value);
+  if (byte >= static_cast<unsigned char>('A') &&
+      byte <= static_cast<unsigned char>('Z')) {
+    return byte - static_cast<unsigned char>('A');
+  }
+  if (byte >= static_cast<unsigned char>('a') &&
+      byte <= static_cast<unsigned char>('z')) {
+    return 26 + byte - static_cast<unsigned char>('a');
+  }
+  if (byte >= static_cast<unsigned char>('0') &&
+      byte <= static_cast<unsigned char>('9')) {
+    return 52 + byte - static_cast<unsigned char>('0');
+  }
+  if (alphabet == Base64Alphabet::kStandard) {
+    if (value == '+') return 62;
+    if (value == '/') return 63;
+  } else {
+    if (value == '-') return 62;
+    if (value == '_') return 63;
+  }
+  return -1;
+}
+
+template <class T>
+bool invalid_base64_span(std::span<T> value) noexcept {
+  return value.data() == nullptr && !value.empty();
+}
+
+bool byte_ranges_overlap(const void* first, std::size_t first_size,
+                         const void* second,
+                         std::size_t second_size) noexcept {
+  if (first_size == 0 || second_size == 0) return false;
+  const auto first_begin = reinterpret_cast<std::uintptr_t>(first);
+  const auto second_begin = reinterpret_cast<std::uintptr_t>(second);
+  constexpr auto kMax = std::numeric_limits<std::uintptr_t>::max();
+  if (first_size > kMax - first_begin || second_size > kMax - second_begin) {
+    return true;
+  }
+  const auto first_end = first_begin + first_size;
+  const auto second_end = second_begin + second_size;
+  return first_begin < second_end && second_begin < first_end;
+}
+
+Base64Result base64_fast_policy_check(
+    std::span<const char> input, Base64DecodeOptions options) noexcept {
+  // Keep the canonical default route free of the tail/alphabet bookkeeping
+  // needed by the two unpadded policies.  Besides being the normal protocol
+  // shape, this gives the compiler a simple whitespace-membership loop that it
+  // can lower independently of the policy matrix below.
+  if (options.padding == Base64DecodePadding::kRequired) {
+    if (options.whitespace == Base64Whitespace::kAllowAscii) return {};
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      if (is_base64_ascii_whitespace(input[i])) {
+        return {Base64Status::kWhitespaceRejected, i, 0};
+      }
+    }
+    return {};
+  }
+
+  std::size_t data_count = 0;
+  std::size_t last_data_offset = 0;
+  int last_value = 0;
+  bool saw_invalid_character = false;
+
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const char value = input[i];
+    if (is_base64_ascii_whitespace(value)) {
+      if (options.whitespace == Base64Whitespace::kReject) {
+        return {Base64Status::kWhitespaceRejected, i, 0};
+      }
+      continue;
+    }
+    if (value == '=') {
+      if (options.padding == Base64DecodePadding::kForbidden) {
+        return {Base64Status::kInvalidPadding, i, 0};
+      }
+      continue;
+    }
+    const int decoded = base64_value(value, options.alphabet);
+    if (decoded < 0) {
+      // Let simdutf return progress for malformed alphabet input. Tail checks
+      // are meaningful only after every data symbol was recognized.
+      saw_invalid_character = true;
+      continue;
+    }
+    ++data_count;
+    last_data_offset = i;
+    last_value = decoded;
+  }
+
+  if (!saw_invalid_character) {
+    const std::size_t remainder = data_count % 4;
+    if ((remainder == 2 && (last_value & 0x0f) != 0) ||
+        (remainder == 3 && (last_value & 0x03) != 0)) {
+      return {Base64Status::kNonCanonicalBits, last_data_offset, 0};
+    }
+  }
+  return {};
+}
+
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
+simdutf::base64_options to_simdutf(Base64EncodeOptions options) noexcept {
+  if (options.alphabet == Base64Alphabet::kUrl) {
+    return options.padding == Base64EncodePadding::kInclude
+               ? simdutf::base64_url_with_padding
+               : simdutf::base64_url;
+  }
+  return options.padding == Base64EncodePadding::kInclude
+             ? simdutf::base64_default
+             : simdutf::base64_default_no_padding;
+}
+
+simdutf::base64_options to_simdutf(Base64DecodeOptions options) noexcept {
+  return options.alphabet == Base64Alphabet::kUrl ? simdutf::base64_url
+                                                   : simdutf::base64_default;
+}
+
+simdutf::last_chunk_handling_options to_simdutf_last_chunk(
+    Base64DecodeOptions options) noexcept {
+  return options.padding == Base64DecodePadding::kRequired
+             ? simdutf::last_chunk_handling_options::strict
+             : simdutf::last_chunk_handling_options::loose;
+}
+
+Base64Status from_simdutf_base64(simdutf::error_code error) noexcept {
+  switch (error) {
+    case simdutf::SUCCESS: return Base64Status::kSuccess;
+    case simdutf::INVALID_BASE64_CHARACTER:
+      return Base64Status::kInvalidCharacter;
+    case simdutf::BASE64_INPUT_REMAINDER:
+      return Base64Status::kInvalidLength;
+    case simdutf::BASE64_EXTRA_BITS:
+      return Base64Status::kNonCanonicalBits;
+    case simdutf::OUTPUT_BUFFER_TOO_SMALL:
+      return Base64Status::kOutputTooSmall;
+    default: return Base64Status::kOther;
+  }
+}
+#endif
+
+}  // namespace
+
+Base64SizeResult base64_decoded_size(
+    std::span<const char> input, Base64DecodeOptions options) noexcept {
+  if (!detail::valid_base64_decode_options(options) ||
+      invalid_base64_span(input)) {
+    return {Base64Status::kInvalidArgument, 0, 0};
+  }
+
+  std::size_t data_count = 0;
+  std::size_t padding_count = 0;
+  std::size_t first_padding = input.size();
+  std::size_t last_data_offset = 0;
+  int last_value = 0;
+  bool saw_padding = false;
+
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const char value = input[i];
+    if (is_base64_ascii_whitespace(value)) {
+      if (options.whitespace == Base64Whitespace::kReject) {
+        return {Base64Status::kWhitespaceRejected, i, 0};
+      }
+      continue;
+    }
+    if (value == '=') {
+      if (options.padding == Base64DecodePadding::kForbidden) {
+        return {Base64Status::kInvalidPadding, i, 0};
+      }
+      if (!saw_padding) first_padding = i;
+      saw_padding = true;
+      ++padding_count;
+      if (padding_count > 2) {
+        return {Base64Status::kInvalidPadding, i, 0};
+      }
+      continue;
+    }
+    if (saw_padding) {
+      return {Base64Status::kInvalidPadding, i, 0};
+    }
+    const int decoded = base64_value(value, options.alphabet);
+    if (decoded < 0) {
+      return {Base64Status::kInvalidCharacter, i, 0};
+    }
+    ++data_count;
+    last_data_offset = i;
+    last_value = decoded;
+  }
+
+  const std::size_t remainder = data_count % 4;
+  if (remainder == 1) {
+    return {Base64Status::kInvalidLength, input.size(), 0};
+  }
+  const std::size_t required_padding =
+      remainder == 2 ? 2 : (remainder == 3 ? 1 : 0);
+
+  if (padding_count != 0 && padding_count != required_padding) {
+    return {Base64Status::kInvalidPadding, first_padding, 0};
+  }
+  if (options.padding == Base64DecodePadding::kRequired &&
+      padding_count != required_padding) {
+    return {Base64Status::kInvalidPadding,
+            padding_count == 0 ? input.size() : first_padding, 0};
+  }
+
+  if ((remainder == 2 && (last_value & 0x0f) != 0) ||
+      (remainder == 3 && (last_value & 0x03) != 0)) {
+    return {Base64Status::kNonCanonicalBits, last_data_offset, 0};
+  }
+
+  const std::size_t output_size =
+      (data_count / 4) * 3 + (remainder == 0 ? 0 : remainder - 1);
+  return {Base64Status::kSuccess, input.size(), output_size};
+}
+
+Base64Result base64_encode(std::span<const std::byte> input,
+                           std::span<char> output,
+                           Base64EncodeOptions options) noexcept {
+  if (!detail::valid_base64_encode_options(options) ||
+      invalid_base64_span(input) || invalid_base64_span(output) ||
+      byte_ranges_overlap(input.data(), input.size(), output.data(),
+                          output.size())) {
+    return {Base64Status::kInvalidArgument, 0, 0};
+  }
+  const Base64SizeResult required = base64_encoded_size(input.size(), options);
+  if (!required) return {required.status, required.input_count, 0};
+  if (output.size() < required.output_size) {
+    return {Base64Status::kOutputTooSmall, 0, 0};
+  }
+  if (input.empty()) return {};
+
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
+  const std::size_t written = simdutf::binary_to_base64(
+      reinterpret_cast<const char*>(input.data()), input.size(), output.data(),
+      to_simdutf(options));
+  return {Base64Status::kSuccess, input.size(), written};
+#else
+  (void)output;
+  return {Base64Status::kOther, 0, 0};
+#endif
+}
+
+Base64Result base64_decode(std::span<const char> input,
+                           std::span<std::byte> output,
+                           Base64DecodeOptions options) noexcept {
+  if (!detail::valid_base64_decode_options(options) ||
+      invalid_base64_span(input) || invalid_base64_span(output) ||
+      byte_ranges_overlap(input.data(), input.size(), output.data(),
+                          output.size())) {
+    return {Base64Status::kInvalidArgument, 0, 0};
+  }
+  if (input.empty()) return {};
+
+  const Base64Result policy = base64_fast_policy_check(input, options);
+  if (!policy) return policy;
+
+#if defined(HYLE_CONTAINER_TEXT_SIMDUTF)
+  char empty_output = 0;
+  char* output_data = output.empty()
+                          ? &empty_output
+                          : reinterpret_cast<char*>(output.data());
+  std::size_t output_count = output.size();
+  const simdutf::result result = simdutf::base64_to_binary_safe(
+      input.data(), input.size(), output_data, output_count,
+      to_simdutf(options), to_simdutf_last_chunk(options), false);
+  return {from_simdutf_base64(result.error), result.count, output_count};
+#else
+  (void)output;
+  return {Base64Status::kOther, 0, 0};
 #endif
 }
 

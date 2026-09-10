@@ -208,7 +208,7 @@ class ImpactTest(unittest.TestCase):
             set(plan["selected_factors"]),
             {
                 "container_queue", "sched", "io_core", "io_tls", "io_http",
-                "io_http2", "io_transfer", "compute", "graph",
+                "io_http2", "io_transfer", "io_watch", "compute", "graph",
             },
         )
         self.assertIn("headers:container_queue", self.selected(plan))
@@ -224,9 +224,52 @@ class ImpactTest(unittest.TestCase):
             set(plan["selected_factors"]),
             {
                 "container_text", "util_runtime", "io_tls", "io_http",
-                "io_http2", "io_transfer",
+                "io_http2", "io_transfer", "io_watch",
             },
         )
+
+    def test_new_split_header_has_only_its_declared_owner(self):
+        needle = b"    hyle/container/string_view.h)"
+        replacement = (
+            b"    hyle/container/string_view.h\n"
+            b"    hyle/container/text_codec.h)"
+        )
+        self.assertEqual(self.graph_bytes.count(needle), 1)
+        self.write(selector.MANIFEST, self.graph_bytes.replace(needle, replacement))
+        self.write("include/hyle/container/text_codec.h", "int codec_value = 1;\n")
+        self.commit()
+        plan = self.plan()
+        change = next(
+            row for row in plan["changes"]
+            if row["path"] == "include/hyle/container/text_codec.h"
+        )
+        self.assertEqual(change["factors"], ["container_text"])
+        self.assertEqual(plan["product_authorization"]["owners"], ["container_text"])
+        self.assertNotIn("container", plan["product_authorization"]["owners"])
+
+    def test_new_performance_contract_and_validator_are_not_unknown(self):
+        self.write("bench/contracts/new-contract.json", '{"id":"new"}\n')
+        self.write(
+            "scripts/validate-new-bench.py",
+            "print('semantic validator')\n",
+        )
+        self.commit()
+        plan = self.plan()
+        changed = {
+            row["path"]: row["kind"] for row in plan["changes"]
+            if row["path"] in {
+                "bench/contracts/new-contract.json",
+                "scripts/validate-new-bench.py",
+            }
+        }
+        self.assertEqual(
+            changed,
+            {
+                "bench/contracts/new-contract.json": "benchmark",
+                "scripts/validate-new-bench.py": "benchmark",
+            },
+        )
+        self.assertEqual(plan["unknown_paths"], [])
 
     def test_deletion_rename_mixed_changes_keep_old_and_new_owners(self):
         (self.root / "src/container_queue/change.cc").unlink()
@@ -238,7 +281,7 @@ class ImpactTest(unittest.TestCase):
             set(plan["selected_factors"]),
             {
                 "container_queue", "sched", "container_text", "util_runtime",
-                "io_tls", "io_http", "io_transfer",
+                "io_tls", "io_http", "io_transfer", "io_watch",
             },
         )
         self.assertEqual(len(plan["changes"]), 3)
@@ -574,7 +617,7 @@ class RepositoryContractTest(unittest.TestCase):
     def test_central_graph_covers_tracked_product_ownership(self):
         snapshot = selector.Snapshot(ROOT, "HEAD")
         graph = selector.project_graph(snapshot)
-        self.assertEqual(len(graph["factors"]), 28)
+        self.assertEqual(len(graph["factors"]), 29)
         self.assertEqual(len(graph["products"]), 14)
         exceptions = {"include/hyle/version.h", "include/hyle/visibility.h"}
         missing = [p for p in snapshot.files if p.startswith(("src/", "include/hyle/"))

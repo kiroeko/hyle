@@ -1,0 +1,246 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "container-text-base64-p1-v1",
+  "module": "container_text",
+  "claim": "P1 engineering non-inferiority of the public allocation-free HYLE Base64 seam against the exact simdutf provider under identical strict multimodal decode and short WebSocket-accept encode contracts",
+  "candidate": {
+    "target": "hyle_container_text",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "container",
+    "entrypoint": "hyle/container/base64.h"
+  },
+  "peers": [
+    {
+      "id": "simdutf",
+      "revision": "2d4e249dcfd978b39dd567b156f20a43db97377b",
+      "configuration": {
+        "delivery_shape": "source-pinned declarations linked to the byte-identical HYLE vendored v9.1.0 implementation",
+        "algorithm": "direct semantic adapters for capacity-safe strict standard Base64 decode and padded standard Base64 encode",
+        "source": "clean external checkout at the dependency-lock revision"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "container-text-base64-contract", "kind": "codegen", "parameters": {"validator_id": "container-text-base64-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "multimodal-base64-strict-decode-4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "inference-runtime/multimodal/base64-payload-decode",
+      "provenance": {
+        "path": "bench/container_text/base64_consumer_shapes_v1.json",
+        "sha256": "6956afd915f15eb18c888d5cc89dfb592455f57de073a115bdaa3d2b4340546b"
+      },
+      "ownership_topology": {
+        "candidate": "One public HYLE call validates and decodes one canonical caller-owned Base64 payload into caller-owned pre-sized output, returning typed status and progress",
+        "peer": "One noinline direct simdutf adapter applies the identical option, span, overlap, whitespace, capacity, provider and typed-result contract to the same buffers",
+        "equivalence": "Both charge the strict whitespace pass, capacity-safe SIMD decode, result mapping and checksum; neither charges allocation, JSON, data-URI parsing or transport"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 64,
+        "unit": "decoded payload byte",
+        "budget": 5,
+        "denominator": "one 256 KiB decoded multimodal request payload represented as 4096 64-byte measurement units",
+        "derivation": "llama.cpp/ggml, vLLM and SGLang accept Base64-backed multimodal request data; the foundation codec owns only contiguous conversion"
+      },
+      "semantic_contract": "Decode one deterministic canonical standard padded Base64 input to exactly 262144 bytes while rejecting ASCII whitespace, enforcing canonical tail bits and returning typed progress",
+      "comparability": "COMPARABLE",
+      "peer_id": "simdutf",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "deterministic full-range binary payload encoded once outside measurement as canonical standard padded Base64",
+        "scale": {"decoded_bytes": 262144, "measurement_units": 4096, "bytes_per_unit": 64}
+      },
+      "setup": "Input and same-sized candidate/peer output storage are initialized outside measurement and reused without allocation",
+      "charged_phases": [
+        "public option, span and overlap validation",
+        "strict ASCII-whitespace rejection scan",
+        "capacity-safe simdutf decode",
+        "typed status and progress mapping",
+        "constant-size observable checksum"
+      ],
+      "pair": {
+        "candidate": "HYLE Base64 strict decode 64-byte units N=4096",
+        "peer": "simdutf semantic Base64 strict decode 64-byte units N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-text-base64-contract"]
+    },
+    {
+      "id": "websocket-accept-base64-encode-4096",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "network/websocket/opening-handshake-accept-encode",
+      "provenance": {
+        "path": "bench/container_text/base64_consumer_shapes_v1.json",
+        "sha256": "6956afd915f15eb18c888d5cc89dfb592455f57de073a115bdaa3d2b4340546b"
+      },
+      "ownership_topology": {
+        "candidate": "The public HYLE API independently encodes each caller-owned 20-byte digest into its caller-owned 28-byte slot with typed progress",
+        "peer": "A noinline direct simdutf adapter independently applies the identical option, overlap, sizing, capacity and typed-result contract to each slot",
+        "equivalence": "Both charge 4096 complete public-contract calls and provider invocations over identical buffers; neither charges SHA-1, HTTP parsing, allocation or socket I/O"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "WebSocket accept digest encoding",
+        "budget": 5,
+        "denominator": "one replay batch of 4096 independent RFC 6455-sized digest encodes",
+        "derivation": "RFC 6455 Base64-encodes a 20-byte SHA-1 result; the batch preserves the real per-call boundary while lifting timer resolution"
+      },
+      "semantic_contract": "Independently encode 4096 deterministic 20-byte records using standard alphabet and canonical included padding into exact 28-byte caller-owned slots",
+      "comparability": "COMPARABLE",
+      "peer_id": "simdutf",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "4096 deterministic full-range 20-byte records",
+        "scale": {"records": 4096, "bytes_per_record": 20, "encoded_bytes_per_record": 28}
+      },
+      "setup": "Input and exact-sized output batches are allocated and initialized outside measurement and reused",
+      "charged_phases": [
+        "4096 public option, span and overlap validations",
+        "4096 exact capacity checks",
+        "4096 simdutf encode calls",
+        "4096 typed status and progress mappings",
+        "constant work per-record checksum"
+      ],
+      "pair": {
+        "candidate": "HYLE Base64 20-byte encode records N=4096",
+        "peer": "simdutf semantic 20-byte encode records N=4096"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-text-base64-contract"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {"configuration": "Release", "fresh": true, "linkage": "static", "lto": "off", "isa": "portable", "toolchain": "machine-profile-bound"},
+  "artifacts": {"validators": ["artifact-identity", "build-contract", "container-text-base64-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "comparison_contract": {
+      "comparison_class": "SAME_CONTRACT",
+      "provenance_class": "PROVISIONAL_ARCHETYPE",
+      "semantic_matrix": "bench/container_text/base64_consumer_shapes_v1.json",
+      "semantic_matrix_sha256": "6956afd915f15eb18c888d5cc89dfb592455f57de073a115bdaa3d2b4340546b"
+    },
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "container",
+          "HYLE_CONTAINER_TEXT_BASE64_P1_BENCH": "ON",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {"simdutf": "HYLE_SIMDUTF_PEER_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "container-text-base64-primary",
+          "target": "hyle_container_text_base64_p1_bench",
+          "stem": "hyle_container_text_base64_p1_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_TEXT_BASE64_RUN "],
+          "workloads": [
+            {"id": "multimodal-base64-strict-decode-4096", "title": "container_text multimodal Base64 strict decode 64-byte units N=4096"},
+            {"id": "websocket-accept-base64-encode-4096", "title": "container_text WebSocket-accept Base64 encode records N=4096"}
+          ]
+        },
+        {
+          "id": "container-text-base64-placement",
+          "target": "hyle_container_text_base64_p1_bench_placement",
+          "stem": "hyle_container_text_base64_p1_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_TEXT_BASE64_RUN "],
+          "workloads": [
+            {"id": "multimodal-base64-strict-decode-4096", "title": "container_text multimodal Base64 strict decode 64-byte units N=4096"},
+            {"id": "websocket-accept-base64-encode-4096", "title": "container_text WebSocket-accept Base64 encode records N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "container-text-base64-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-container-text-base64-bench.py",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--expected-benchmark-sha256",
+            "1f33010f161885180ea699570f2650bd1c8f34e30294167a1844887e018048f3",
+            "--expected-shape-sha256",
+            "6956afd915f15eb18c888d5cc89dfb592455f57de073a115bdaa3d2b4340546b"
+          ]
+        }
+      ]
+    },
+    "factor_owners": {
+      "multimodal-base64-strict-decode-4096": "container_text",
+      "websocket-accept-base64-encode-4096": "container_text"
+    }
+  }
+}

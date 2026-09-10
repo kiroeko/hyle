@@ -1,0 +1,74 @@
+{
+  "schema": "hyle.container-text-base64-consumer-shapes/v1",
+  "id": "container-text-base64-v1",
+  "classification": "NORTH_STAR_JOURNEY",
+  "admission": {
+    "capability": "allocation-free contiguous Base64/Base64URL conversion",
+    "consumer_sources": [
+      "llama.cpp and ggml multimodal request payloads",
+      "vLLM and SGLang OpenAI-compatible multimodal request payloads",
+      "ds4 model-serving protocol paths",
+      "RFC 6455 WebSocket opening handshake"
+    ],
+    "provider": "simdutf v9.1.0",
+    "public_journey": "samples/package/container/cpp/main.cc",
+    "architecture": "docs/architecture/container-design.md"
+  },
+  "decode": {
+    "consumer_key": "inference-runtime/multimodal/base64-payload-decode",
+    "input": "one deterministic canonical standard padded Base64 payload",
+    "decoded_bytes": 262144,
+    "allocation": "caller-owned input and pre-sized output allocated outside measurement",
+    "policy": {
+      "alphabet": "standard",
+      "padding": "required",
+      "whitespace": "reject",
+      "tail_bits": "canonical"
+    },
+    "result": "typed status plus consumed input units and produced output bytes",
+    "charged": [
+      "public argument and overlap validation",
+      "strict whitespace policy enforcement",
+      "capacity-safe SIMD decode",
+      "typed result mapping",
+      "constant-size observable checksum"
+    ]
+  },
+  "encode": {
+    "consumer_key": "network/websocket/opening-handshake-accept-encode",
+    "records": 4096,
+    "bytes_per_record": 20,
+    "encoded_bytes_per_record": 28,
+    "allocation": "caller-owned input and output batches allocated outside measurement",
+    "policy": {
+      "alphabet": "standard",
+      "padding": "include"
+    },
+    "result": "typed status plus consumed input bytes and produced output units",
+    "charged": [
+      "4096 public argument, overlap, option and capacity checks",
+      "4096 independent SIMD-provider encodes",
+      "4096 typed result mappings",
+      "constant work per-record checksum"
+    ]
+  },
+  "equivalence": {
+    "candidate": "public hyle::container Base64 API linked from the static Container Text product",
+    "peer": "noinline semantic adapter using the exact source-pinned simdutf declarations and the byte-identical provider implementation linked by Container Text",
+    "shared": [
+      "input bytes and output capacity",
+      "alphabet, padding, whitespace and canonical-tail policy",
+      "overlap and invalid-option checks",
+      "capacity-safe provider operation",
+      "status/progress result shape",
+      "ownership and charged lifetimes"
+    ],
+    "excluded": [
+      "allocation",
+      "JSON or data-URI parsing",
+      "network I/O",
+      "hashing the WebSocket nonce",
+      "forgiving or mixed-alphabet decoding"
+    ]
+  }
+}

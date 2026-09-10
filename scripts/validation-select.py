@@ -208,7 +208,20 @@ def classify(before, after, graphs, policy):
             continue
         old_entry, new_entry = before.files.get(path), after.files.get(path)
         same_mode = old_entry and new_entry and old_entry[:2] == new_entry[:2]
-        factors = sorted({x for g in graphs if (x := owner(path, g))})
+        # A newly added split header has no owner in the old tree, and a
+        # deleted one has no owner in the new tree.  Consulting both manifests
+        # for a path that did not exist manufactures a fallback owner from its
+        # directory prefix (for example, a new container_text header appears
+        # to have moved from container).  Attribute only snapshots that
+        # actually contain the path; real renames still retain their old and
+        # new owners as two independent changed paths.
+        factor_set = set()
+        for snapshot, graph in zip((before, after), graphs):
+            if path in snapshot.files:
+                factor = owner(path, graph)
+                if factor:
+                    factor_set.add(factor)
+        factors = sorted(factor_set)
         kind, reason, suites = "unknown", "no reviewed ownership or gate mapping", []
         if path == REGISTRY or path == "docs/implementation/status.md":
             kind, reason = "state", "registry/projection maintenance; no product execution"
@@ -238,6 +251,16 @@ def classify(before, after, graphs, policy):
                 )
             elif path == MANIFEST:
                 kind, reason = "graph", "central component or ownership contract changed"
+            elif path.startswith("bench/contracts/") and path.endswith(".json"):
+                kind, reason = (
+                    "benchmark",
+                    "performance contract requires an explicit frozen P1 card; no automatic sampling",
+                )
+            elif path.startswith("scripts/validate-") and path.endswith("-bench.py"):
+                kind, reason = (
+                    "benchmark",
+                    "benchmark semantic validator requires an explicit frozen P1 card",
+                )
             elif path.startswith("samples/package/"):
                 product = path.split("/")[2]
                 if product in graphs[1]["products"]:

@@ -298,6 +298,7 @@ _hyle_declare_component(container_text
   PRIVATE_DEPS platform
   PUBLIC_DEPS core mem container
   SPLIT_PUBLIC_HEADERS
+    hyle/container/base64.h
     hyle/container/path.h
     hyle/container/string_algo.h
     hyle/container/string_interner.h
