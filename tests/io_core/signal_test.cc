@@ -136,53 +136,65 @@ TEST(IoSignal, DistinctBurstSignalsAreNotOverwritten) {
 
 TEST(IoSignal, FactoryRejectsDuplicateAndInvalidOwnership) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler);
-  ASSERT_TRUE(io.valid());
-  auto first = SignalSet::create(
-      io, kOwner, SignalInterest::kInterrupt | SignalInterest::kTerminate);
-  ASSERT_TRUE(first.has_value());
-  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kInterrupt)
-                  .error()
-                  .IsAlreadyExists());
+  {
+    IoContext io(scheduler);
+    ASSERT_TRUE(io.valid());
+    {
+      auto first = SignalSet::create(
+          io, kOwner,
+          SignalInterest::kInterrupt | SignalInterest::kTerminate);
+      ASSERT_TRUE(first.has_value());
+      EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kInterrupt)
+                      .error()
+                      .IsAlreadyExists());
 
-  SignalSet moved = std::move(*first);
-  EXPECT_TRUE(moved.valid());
-  EXPECT_EQ(moved.interest(),
-            SignalInterest::kInterrupt | SignalInterest::kTerminate);
+      SignalSet moved = std::move(*first);
+      EXPECT_TRUE(moved.valid());
+      EXPECT_EQ(moved.interest(),
+                SignalInterest::kInterrupt | SignalInterest::kTerminate);
+    }
+    scheduler.shutdown();
+  }
 }
 
 TEST(IoSignal, InvalidInputIsTyped) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler);
-  ASSERT_TRUE(io.valid());
-  EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
-                  .error()
-                  .IsInvalidArgument());
-  EXPECT_TRUE(
-      SignalSet::create(io, io.num_workers(), SignalInterest::kInterrupt)
-          .error()
-          .IsOutOfRange());
+  {
+    IoContext io(scheduler);
+    ASSERT_TRUE(io.valid());
+    EXPECT_TRUE(SignalSet::create(io, kOwner, SignalInterest::kNone)
+                    .error()
+                    .IsInvalidArgument());
+    EXPECT_TRUE(
+        SignalSet::create(io, io.num_workers(), SignalInterest::kInterrupt)
+            .error()
+            .IsOutOfRange());
+    scheduler.shutdown();
+  }
 }
 
 TEST(IoSignal, RestoresPriorHandler) {
   Scheduler scheduler(1, system_allocator(), 256);
-  IoContext io(scheduler);
-  ASSERT_TRUE(io.valid());
-
-  struct sigaction original{};
-  struct sigaction custom{};
-  struct sigaction observed{};
-  ASSERT_EQ(::sigaction(SIGINT, nullptr, &original), 0);
-  custom.sa_handler = &prior_interrupt_handler;
-  sigemptyset(&custom.sa_mask);
-  ASSERT_EQ(::sigaction(SIGINT, &custom, nullptr), 0);
   {
-    auto created = SignalSet::create(io, kOwner, SignalInterest::kInterrupt);
-    ASSERT_TRUE(created.has_value());
+    IoContext io(scheduler);
+    ASSERT_TRUE(io.valid());
+
+    struct sigaction original{};
+    struct sigaction custom{};
+    struct sigaction observed{};
+    ASSERT_EQ(::sigaction(SIGINT, nullptr, &original), 0);
+    custom.sa_handler = &prior_interrupt_handler;
+    sigemptyset(&custom.sa_mask);
+    ASSERT_EQ(::sigaction(SIGINT, &custom, nullptr), 0);
+    {
+      auto created = SignalSet::create(io, kOwner, SignalInterest::kInterrupt);
+      ASSERT_TRUE(created.has_value());
+    }
+    ASSERT_EQ(::sigaction(SIGINT, nullptr, &observed), 0);
+    EXPECT_EQ(observed.sa_handler, &prior_interrupt_handler);
+    ASSERT_EQ(::sigaction(SIGINT, &original, nullptr), 0);
+    scheduler.shutdown();
   }
-  ASSERT_EQ(::sigaction(SIGINT, nullptr, &observed), 0);
-  EXPECT_EQ(observed.sa_handler, &prior_interrupt_handler);
-  ASSERT_EQ(::sigaction(SIGINT, &original, nullptr), 0);
 }
 
 #else
