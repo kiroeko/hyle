@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
-      "summary": "sched v7 AUDITED：首个候选的三平台正确性/交付与 sanitizer 已通过，但同合同 P1 暴露仅需 scope 聚合的 Status helper 被迫创建后立即丢弃 JoinHandle，W1-WIN 四个顺序/布局层均低于旧手工组合；已依法退回并冻结 scope-owned add 与可传递 cancellation token 的一次有限纠正。"
+      "candidate": "07934c25b2500fa0db9184d450a1d85846dd65e7",
+      "summary": "sched v7 第二候选：scope-owned add 不再制造无用 JoinState/JoinHandle，admission/completion 分离缓存线，scope cancellation token 可传给 IO；候选前 Windows 完整 Sched 与公开头门已通过，等待精确候选三平台、sanitizer、三交付、P1 与终局红队。"
     },
     {
       "module": "io_core",

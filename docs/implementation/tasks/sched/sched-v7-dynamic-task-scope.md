@@ -207,3 +207,23 @@ P1 verdict；但跨层固定约 12%–16% 的损失足以构成产品 finding。
 `S7-06` 后签发新候选。退回前 registry snapshot 为
 `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-audit-return.json`，
 SHA-256 `85BAE7921BA41E81B7966538BB6561CFEE2584AFE7638C07C13A87500BC19929`。
+
+## 第二个 product candidate（`CANDIDATE`）
+
+- immutable product commit / tree：
+  `07934c25b2500fa0db9184d450a1d85846dd65e7` /
+  `0e324fca14354dee3634883997f3aec336cd5061`；它实现且只实现 `S7-06`，后续产品改动必须依法退回
+  `AUDITED` 并签发新候选；
+- 相比首候选，scope-only `Task<void/Status>` 改走 `add` 专用 driver，不再分配 `JoinState` 或构造随后
+  detach 的 `JoinHandle`；producer admission 与 worker completion 位于不同 cache line，普通
+  `spawn_task/schedule`、Scheduler queue、Fiber layout 和 JoinState layout 均未改变；
+- 新增的 cancellation-token copy 复用既有取消树，可直接传给 cancellable IO；pre-admission rejection 与
+  post-admission aggregate failure 的 ownership 边界已经由 OOM、invalid task/stack、shutdown、cancel、异常、
+  并发 add/close 和 moved-from 测试覆盖；
+- 候选前 W1-WIN 真实重编译后的完整 Sched 与 public-header self-containment 均通过；closure checker、docs
+  checker、P1 contract validation 与 `git diff --check` 均通过。候选签发前 registry snapshot 为
+  `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-second-candidate.json`，
+  SHA-256 `39862F2551A1919ED5E7BCAF48D247977ADA95D64643527B4888040B85D2B0E9`。
+
+下面只补精确候选的三平台 correctness/sanitizer、source/static/shared、受影响 IO cancellation journey、同合同
+P1 与终局红队证据；不得再次改变产品或测试语义。
