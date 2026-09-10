@@ -217,10 +217,14 @@ return scope.join(); // 原子关闭 admission，等待全部 child，返回首�
 不可能被意外提交到另一个 runtime。只需 scope 统一拥有 `Task<void/Status>` 时用 `add`；需要 typed value
 或逐 child cancellation 时用 `spawn` 并保留 `JoinHandle`。它支持并发 admission，且每个调用与 `close()` 有
 唯一顺序：close 之前成功接纳的任务一定被 drain，之后 `add` 返回 `FailedPrecondition`、`spawn` 返回可立即
-join 的失败 handle。`add` 的 direct rejection 没有接管当前 task，但 owner 仍必须先 cancel/join 之前已接纳
-的 child，不能用早返回宏绕过 drain。`join()` 会
+join 的失败 handle。driver/stack 准备失败也发生在 admission 之前：`add` 直接返回错误，`spawn` 返回失败
+handle，scope 不会把这类未接管任务再计入 `join()`；一旦 admission 成功，后续 Scheduler admission 与运行期
+失败才由 scope 聚合。任何 direct rejection 都不解除 owner 对更早已接纳 child 的责任，不能用早返回宏绕过
+cancel/join。`join()` 会
 隐式 close；`cancel_and_join()` 是 close + cooperative cancellation + full drain。首错从任务完成顺序中
-选取，绝不为了尽快返回而遗弃后续任务。
+选取，绝不为了尽快返回而遗弃后续任务。成功 completion 只发布各自的完成单元，不争用一个 scope-wide
+完成计数；代价是每个已接纳 child 的同分配 cell storage 会保留到 scope teardown（Task、Fiber 与 stack 已在
+发布前释放），完整 drain/析构为 O(N)。`remaining()` 同样是 O(N) 控制面快照，不要放进热循环。
 
 `Task<void>` 的 runtime/exception/cancel failure 与 `Task<Status>` 返回的第一个 non-OK Status 会成为
 scope 结果；其它 `Task<T>` 的业务值仍只在返回的 `JoinHandle<T>` 中。scope 不保存 handle 或任意 `T`，

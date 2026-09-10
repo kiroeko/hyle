@@ -48,7 +48,8 @@
 5. driver 必须先离开 Fiber stack、归还 stack/JoinState task reference，再发布 record terminal。scope 与
    publisher 各持一个内部 record 引用，解决 waiter 醒来后立即 teardown 与 `signal()` 尾部并发的 UAF。
 6. admission/completion 每 child O(1)，close O(1)；完整 drain/destruction O(N)，scope 生命周期保留 O(N)
-   小记录。`remaining()` 若保留须诚实标为 O(N) snapshot，不能暗藏共享完成写来维持旧点复杂度。
+   个同分配 completion cell 的 storage（Task、Fiber 与 stack 会在完成发布前释放）。`remaining()` 若保留须
+   诚实标为 O(N) snapshot，不能暗藏共享完成写来维持旧点复杂度。
 7. public API 与 v7 的自然任务形状不因 P1 改名或增加 `fast/light` 变体；性能成立依赖由实现承担。
 
 SCOPED 阶段没有写产品代码；以下审计冻结实现范围后才进入 `AUDITED`。
@@ -89,8 +90,9 @@ in-flight admission counter，也不在 allocator/stack acquisition 期间持锁
 未接管的同步失败，queue admission/运行期失败属于 join 的聚合失败。`spawn` 继续把 typed value 与逐 child
 cancel 放在 `JoinHandle<T>`；scope 不复制任意 `T`。`join/cancel_and_join` 支持多个 OS-thread/Fiber waiter，
 都等待 driver cleanup 后的 record terminal；`remaining()` 只用于控制面观测，是 O(N) 瞬时快照，不应放在
-热循环。每个 child 增加的是同一 driver allocation 内的一份 record 并保留到 scope teardown；普通 task、
-没有 TaskScope 的 Scheduler 和 queue 不支付任何成本。
+热循环。每个 child 不增加第二次 allocation；Task、Fiber 与 stack 在完成发布前释放，但同一 driver
+allocation 的 cell storage 会保留到 scope teardown。普通 task、没有 TaskScope 的 Scheduler 和 queue 不支付
+任何成本。
 
 ### 七问预裁决
 

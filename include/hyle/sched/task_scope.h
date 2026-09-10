@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <new>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -19,26 +20,73 @@ namespace detail {
 
 struct TaskScopeState;
 
+// One retained completion record per scoped child. It is embedded in the
+// allocation that already owns the scoped driver: admission adds the scope
+// reference, while the publisher keeps the initial reference until Event
+// publication and its test-only tail are fully complete. Thus a waiter may
+// tear down the TaskScope immediately after observing completion without
+// freeing a record still touched by its publisher.
+struct TaskScopeCompletion {
+  using DisposeFn = void (*)(void*) noexcept;
+
+  TaskScopeCompletion(void* owner_value, DisposeFn dispose_value) noexcept
+      : owner(owner_value), dispose(dispose_value) {}
+  TaskScopeCompletion(const TaskScopeCompletion&) = delete;
+  TaskScopeCompletion& operator=(const TaskScopeCompletion&) = delete;
+
+  void retain() noexcept { references.fetch_add(1, std::memory_order_relaxed); }
+
+  void release() noexcept {
+    const unsigned previous =
+        references.fetch_sub(1, std::memory_order_acq_rel);
+    HYLE_FATAL_ASSERT(previous != 0);
+    if (previous == 1) dispose(owner);
+  }
+
+  TaskScopeCompletion* next = nullptr;
+  std::atomic<unsigned> references{1};  // publisher; scope adds one on admit
+  Event completed{EventResetMode::kManual};
+  void* owner = nullptr;
+  DisposeFn dispose = nullptr;
+};
+
 // Compiled state operations keep synchronization and cancellation-tree layout
 // out of the installed template header. Only scoped tasks call these seams;
 // ordinary spawn_task/schedule paths do not carry a scope branch or field.
+HYLE_SCHED_API mem::AllocatorRef task_scope_allocator(
+    TaskScopeState* state) noexcept;
 HYLE_SCHED_API Status task_scope_try_admit(
-    TaskScopeState* state, mem::AllocatorRef* allocator) noexcept;
-HYLE_SCHED_API void task_scope_complete(TaskScopeState* state,
-                                        const Status& status) noexcept;
+    TaskScopeState* state, TaskScopeCompletion* completion) noexcept;
+HYLE_SCHED_API void task_scope_publish(TaskScopeState* state,
+                                       TaskScopeCompletion* completion,
+                                       const Status& status) noexcept;
 HYLE_SCHED_API const CancelToken& task_scope_cancel_token(
     TaskScopeState* state) noexcept;
 
 template <class T>
 struct ScopedTaskDriver {
+  TaskScopeCompletion completion;
   mem::AllocatorRef allocator;
-  Task<T> task;
+  std::optional<Task<T>> task;
   JoinState<T>* join_state;
   TaskScopeState* scope_state;
-  Fiber fiber;
+  std::optional<Fiber> fiber;
+  Status scope_status;
+
+  ScopedTaskDriver(mem::AllocatorRef owner_allocator, Task<T> owner_task,
+                   JoinState<T>* owner_join_state,
+                   TaskScopeState* owner_scope_state, mem::FiberStack stack,
+                   mem::FiberStackPool* pool) noexcept
+      : completion(this, &ScopedTaskDriver::dispose),
+        allocator(owner_allocator),
+        task(std::move(owner_task)),
+        join_state(owner_join_state),
+        scope_state(owner_scope_state),
+        fiber(std::in_place, std::move(stack), &ScopedTaskDriver::entry, this,
+              pool) {}
 
   void arm_finish_hook() noexcept {
-    fiber.set_on_finish(&ScopedTaskDriver::destroy, this);
+    fiber->set_on_finish(&ScopedTaskDriver::finish, this);
   }
 
   static void entry(void* raw) noexcept {
@@ -59,20 +107,20 @@ struct ScopedTaskDriver {
         scope_status = Status::Cancelled("scoped task cancelled before start");
         join_state->set_error(scope_status);
       } else {
-        self->task.resume();
+        self->task->resume();
         if ((join_state->cancel_req.load(std::memory_order_acquire) ||
              scope_token.is_cancelled()) &&
-            !self->task.done()) {
+            !self->task->done()) {
           scope_status =
               Status::Cancelled("scoped task cancellation requested");
           join_state->set_error(scope_status);
         } else {
           try {
             if constexpr (std::is_void_v<T>) {
-              self->task.result();
+              self->task->result();
               join_state->set_done();
             } else {
-              T value = self->task.result();
+              T value = self->task->result();
               if constexpr (std::is_same_v<T, Status>) {
                 scope_status = value;
               }
@@ -86,19 +134,30 @@ struct ScopedTaskDriver {
       }
     }
 
-    // JoinState is terminal before active-count publication: once scope.join()
-    // returns, every retained JoinHandle is immediately joinable.
-    task_scope_complete(self->scope_state, scope_status);
+    self->scope_status = std::move(scope_status);
   }
 
-  static void destroy(void* raw) noexcept {
+  // Scheduler finish hook: only now is the Fiber off-stack. Release the Fiber
+  // stack, coroutine frame and task-side JoinState reference before publishing
+  // the record; scope.join() therefore includes all child cleanup.
+  static void finish(void* raw) noexcept {
     auto* self = static_cast<ScopedTaskDriver*>(raw);
     JoinState<T>* join_state = self->join_state;
+    self->fiber.reset();
+    self->task.reset();
+    join_state->release();
+    task_scope_publish(self->scope_state, &self->completion,
+                       self->scope_status);
+    // May destroy `self` if scope teardown already released its reference.
+    self->completion.release();
+  }
+
+  static void dispose(void* raw) noexcept {
+    auto* self = static_cast<ScopedTaskDriver*>(raw);
     mem::AllocatorRef allocator = self->allocator;
     self->~ScopedTaskDriver();
     allocator.deallocate(self, sizeof(ScopedTaskDriver),
                          alignof(ScopedTaskDriver));
-    join_state->release();
   }
 };
 
@@ -107,6 +166,10 @@ struct ScopedTaskDriver {
 // Owns a runtime-sized set of Tasks submitted to one Scheduler. Admission is
 // thread-safe and linearized with close(); join() closes admission and waits
 // for every admitted child, whether its JoinHandle was retained or detached.
+// Each child keeps its co-allocated completion cell until scope teardown. The
+// Task, Fiber and stack are released before publication, but the cell storage
+// remains; successful completions therefore do not contend on one scope-wide
+// counter.
 //
 // TaskScope is deliberately separate from WaitGroup: it owns child lifetime,
 // propagates one cooperative-cancellation source, and retains the first
@@ -133,14 +196,13 @@ class HYLE_SCHED_API TaskScope {
   // Add a child whose result is owned only by the scope. Prefer this route for
   // void/Status helpers when no per-child result or cancellation handle is
   // needed: it avoids manufacturing a JoinState/JoinHandle. A non-OK return
-  // means ownership was not transferred. Once admitted, later infrastructure
-  // and child failures are retained by join(), and add() returns OK.
-  [[nodiscard]] Status add(
-      Task<void> task,
-      std::size_t stack_size = kDefaultStackSize) noexcept;
-  [[nodiscard]] Status add(
-      Task<Status> task,
-      std::size_t stack_size = kDefaultStackSize) noexcept;
+  // means ownership was not transferred (including driver/stack preparation or
+  // closed admission). Once the completion record is admitted, Scheduler and
+  // child failures are retained by join(), and add() returns OK.
+  [[nodiscard]] Status add(Task<void> task,
+                           std::size_t stack_size = kDefaultStackSize) noexcept;
+  [[nodiscard]] Status add(Task<Status> task,
+                           std::size_t stack_size = kDefaultStackSize) noexcept;
 
   // Stop future admission. Idempotent and safe to race with add()/spawn().
   void close() noexcept;
@@ -164,6 +226,8 @@ class HYLE_SCHED_API TaskScope {
   // token; copying does not create a second cancellation tree.
   [[nodiscard]] CancelToken cancellation_token() const noexcept;
 
+  // Control-plane snapshot. O(N) in admitted children because TaskScope avoids
+  // a shared completion write on the worker hot path.
   [[nodiscard]] std::size_t remaining() const noexcept;
   [[nodiscard]] bool is_closed() const noexcept;
   [[nodiscard]] bool is_cancel_requested() const noexcept;
@@ -198,27 +262,19 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
         "scoped task fiber stack is smaller than the safe tier"));
   }
 
-  mem::AllocatorRef allocator;
-  Status admitted = detail::task_scope_try_admit(state_, &allocator);
-  if (!admitted.ok()) return JoinHandle<T>(std::move(admitted));
-
-  auto fail_immediate = [this](Status status) noexcept {
-    detail::task_scope_complete(state_, status);
-    return JoinHandle<T>(std::move(status));
-  };
+  const mem::AllocatorRef allocator = detail::task_scope_allocator(state_);
 
   auto* join_state = static_cast<JoinState*>(
       allocator.allocate(sizeof(JoinState), alignof(JoinState)));
   if (join_state == nullptr) {
-    return fail_immediate(
+    return JoinHandle<T>(
         Status::ResourceExhausted("scoped task join-state allocation failed"));
   }
   new (join_state) JoinState{};
   join_state->alloc = allocator;
 
-  auto fail_with_state = [this, join_state](Status status) noexcept {
+  auto fail_before_admission = [join_state](Status status) noexcept {
     join_state->set_error(status);
-    detail::task_scope_complete(state_, status);
     join_state->release();  // no driver owns the task-side reference
     return JoinHandle<T>(join_state);
   };
@@ -226,7 +282,7 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
   auto* driver =
       static_cast<Driver*>(allocator.allocate(sizeof(Driver), alignof(Driver)));
   if (driver == nullptr) {
-    return fail_with_state(
+    return fail_before_admission(
         Status::ResourceExhausted("scoped task driver allocation failed"));
   }
 
@@ -235,24 +291,32 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
       pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
   if (!stack_result) {
     allocator.deallocate(driver, sizeof(Driver), alignof(Driver));
-    return fail_with_state(
+    return fail_before_admission(
         std::move(stack_result)
             .error()
             .WithContext("scoped task fiber stack allocation"));
   }
 
   mem::FiberStack stack = *std::move(stack_result);
-  new (driver) Driver{allocator, std::move(task), join_state, state_,
-                      Fiber(std::move(stack), &Driver::entry, driver, pool)};
+  new (driver) Driver(allocator, std::move(task), join_state, state_,
+                      std::move(stack), pool);
+  Status admitted = detail::task_scope_try_admit(state_, &driver->completion);
+  if (!admitted.ok()) {
+    join_state->set_error(admitted);
+    join_state->release();         // no worker owns the task-side reference
+    driver->completion.release();  // record was never scope-owned
+    return JoinHandle<T>(join_state);
+  }
+
   driver->arm_finish_hook();
-  if (!scheduler_->spawn(&driver->fiber)) {
+  if (!scheduler_->spawn(&*driver->fiber)) {
     Status status = scheduler_->accepting()
                         ? Status::ResourceExhausted(
                               "scheduler runnable queues are full on a worker")
                         : Status::Cancelled("scheduler is shutting down");
     join_state->set_error(status);
-    detail::task_scope_complete(state_, status);
-    Driver::destroy(driver);
+    driver->scope_status = status;
+    Driver::finish(driver);
   }
   return JoinHandle<T>(join_state);
 }

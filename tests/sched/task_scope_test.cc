@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -241,49 +242,35 @@ TEST(TaskScope, DynamicChildrenDetachButScopeStillDrains) {
 }
 
 #if defined(HYLE_TESTING)
-TEST(TaskScope, FinalCompletionCannotPublishBeforeItsLastStateAccess) {
+TEST(TaskScope, PublisherReferenceOutlivesImmediateScopeTeardown) {
   Scheduler scheduler(1, system_allocator(), 64);
   auto created = TaskScope::create(scheduler, system_allocator());
   ASSERT_TRUE(created.has_value());
-  TaskScope scope = *std::move(created);
+  std::optional<TaskScope> scope(std::in_place, *std::move(created));
   FinalPublishProbe probe;
   hyle::sched::detail::set_task_scope_final_publish_hook_for_testing(
       &pause_final_publish, &probe);
 
   std::atomic<bool> child_release{false};
   ASSERT_TRUE(
-      scope.add(status_wait_for_release(system_allocator(), &child_release))
+      scope->add(status_wait_for_release(system_allocator(), &child_release))
           .ok());
-  scope.close();
+  scope->close();
   child_release.store(true, std::memory_order_release);
   while (!probe.entered.load(std::memory_order_acquire)) {
     std::this_thread::yield();
   }
 
-  // completed == admitted is already externally visible here, but the final
-  // publisher still owns wait_lock and has not made its last state access.
-  Status joined;
-  std::atomic<bool> join_started{false};
-  std::atomic<bool> join_returned{false};
-  std::thread joiner([&] {
-    join_started.store(true, std::memory_order_release);
-    joined = scope.join();
-    join_returned.store(true, std::memory_order_release);
-  });
-  while (!join_started.load(std::memory_order_acquire)) {
-    std::this_thread::yield();
-  }
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  const bool returned_before_publisher_exit =
-      join_returned.load(std::memory_order_acquire);
+  // Event completion is already visible while the publisher is paused before
+  // dropping its record reference. join() may return and the owner may be
+  // destroyed; the publisher reference must keep its co-allocated cell alive.
+  Status joined = scope->join();
+  EXPECT_TRUE(joined.ok());
+  scope.reset();
   probe.release.store(true, std::memory_order_release);
-  joiner.join();
+  scheduler.shutdown();  // waits until the publisher has dropped its ref
   hyle::sched::detail::set_task_scope_final_publish_hook_for_testing(nullptr,
                                                                      nullptr);
-
-  EXPECT_FALSE(returned_before_publisher_exit);
-  EXPECT_TRUE(joined.ok());
-  scheduler.shutdown();
 }
 #endif
 
@@ -295,13 +282,13 @@ TEST(TaskScope, ScopeOwnedAddAggregatesStatusAndDrainsVoidChildren) {
   std::atomic<int> status_completed{0};
   std::atomic<int> void_completed{0};
 
-  EXPECT_TRUE(scope.add(status_task(system_allocator(), Status::NotFound(
-                                                            "owned child"),
-                                    &status_completed))
-                  .ok());
+  EXPECT_TRUE(
+      scope
+          .add(status_task(system_allocator(), Status::NotFound("owned child"),
+                           &status_completed))
+          .ok());
   for (int i = 0; i < 32; ++i) {
-    EXPECT_TRUE(
-        scope.add(increment(system_allocator(), &void_completed)).ok());
+    EXPECT_TRUE(scope.add(increment(system_allocator(), &void_completed)).ok());
   }
 
   Status joined = scope.join();
@@ -331,8 +318,8 @@ TEST(TaskScope, ScopeOwnedAddPropagatesScopeCancellation) {
   std::atomic<bool> started{false};
   std::atomic<bool> observed{false};
 
-  EXPECT_TRUE(scope.add(wait_for_cancel(system_allocator(), &started, &observed))
-                  .ok());
+  EXPECT_TRUE(
+      scope.add(wait_for_cancel(system_allocator(), &started, &observed)).ok());
   while (!started.load(std::memory_order_acquire)) std::this_thread::yield();
   EXPECT_TRUE(scope.cancel_and_join().IsCancelled());
   EXPECT_TRUE(observed.load(std::memory_order_acquire));
@@ -423,7 +410,7 @@ TEST(TaskScope, ScopeOwnedAddReportsOnlyPreAdmissionRejectionDirectly) {
   scheduler.shutdown();
 }
 
-TEST(TaskScope, ScopeOwnedPostAdmissionOomIsDeferredToJoin) {
+TEST(TaskScope, ScopeOwnedPreparationOomIsReturnedWithoutAdmission) {
   Scheduler scheduler(1, system_allocator(), 64);
   AllocationCounter counter;
   {
@@ -435,25 +422,27 @@ TEST(TaskScope, ScopeOwnedPostAdmissionOomIsDeferredToJoin) {
     const std::size_t next_attempt = counter.attempts.load();
     counter.fail_on.store(next_attempt);  // scope-owned driver allocation
 
-    EXPECT_TRUE(scope.add(increment(system_allocator(), &ran)).ok());
+    EXPECT_TRUE(
+        scope.add(increment(system_allocator(), &ran)).IsResourceExhausted());
     EXPECT_EQ(counter.attempts.load(), next_attempt + 1);
-    EXPECT_TRUE(scope.join().IsResourceExhausted());
+    EXPECT_TRUE(scope.join().ok());
     EXPECT_EQ(ran.load(std::memory_order_relaxed), 0);
   }
   EXPECT_EQ(counter.allocations.load(), counter.frees.load());
   scheduler.shutdown();
 }
 
-TEST(TaskScope, ScopeOwnedStackAndSchedulerFailuresAreDeferredToJoin) {
+TEST(TaskScope, ScopeOwnedPreparationAndSchedulerFailuresKeepTheirBoundary) {
   {
     Scheduler scheduler(1, system_allocator(), 64);
     auto created = TaskScope::create(scheduler, system_allocator());
     ASSERT_TRUE(created.has_value());
     TaskScope scope = *std::move(created);
-    EXPECT_TRUE(scope.add(status_task(system_allocator(), Status{}),
-                          (std::numeric_limits<std::size_t>::max)())
-                    .ok());
-    EXPECT_TRUE(scope.join().IsOutOfRange());
+    EXPECT_TRUE(scope
+                    .add(status_task(system_allocator(), Status{}),
+                         (std::numeric_limits<std::size_t>::max)())
+                    .IsOutOfRange());
+    EXPECT_TRUE(scope.join().ok());
     scheduler.shutdown();
   }
 
@@ -744,7 +733,7 @@ TEST(TaskScope, ScopeStateJoinStateAndDriverOomCannotStrandJoin) {
     auto result = child.join();
     ASSERT_FALSE(result.has_value());
     EXPECT_TRUE(result.error().IsResourceExhausted());
-    EXPECT_TRUE(scope.join().IsResourceExhausted());
+    EXPECT_TRUE(scope.join().ok());
   }
 
   {
@@ -758,7 +747,7 @@ TEST(TaskScope, ScopeStateJoinStateAndDriverOomCannotStrandJoin) {
     auto result = child.join();
     ASSERT_FALSE(result.has_value());
     EXPECT_TRUE(result.error().IsResourceExhausted());
-    EXPECT_TRUE(scope.join().IsResourceExhausted());
+    EXPECT_TRUE(scope.join().ok());
   }
 
   scheduler.shutdown();
@@ -776,7 +765,7 @@ TEST(TaskScope, StackAndSchedulerAdmissionFailureCannotStrandJoin) {
     ASSERT_FALSE(result.has_value());
     EXPECT_TRUE(result.error().IsOutOfRange());
     Status joined = scope.join();
-    EXPECT_TRUE(joined.IsOutOfRange());
+    EXPECT_TRUE(joined.ok());
     scheduler.shutdown();
   }
 

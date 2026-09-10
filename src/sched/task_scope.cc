@@ -2,14 +2,12 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <new>
+#include <optional>
 #include <utility>
 
-#include "hyle/core/cache.h"
-#include "hyle/core/compiler.h"
 #include "fiber_access.h"
+#include "hyle/core/compiler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/util/spin_lock.h"
 
@@ -17,15 +15,6 @@ namespace hyle::sched {
 namespace detail {
 
 namespace {
-
-constexpr std::uint64_t kClosed = 1;
-constexpr std::uint64_t kEverAdmitted = 2;
-constexpr std::uint64_t kJoined = 4;
-constexpr unsigned kCountShift = 3;
-constexpr std::uint64_t kCountOne = std::uint64_t{1} << kCountShift;
-constexpr std::uint64_t kMaxCount =
-    (std::numeric_limits<std::uint64_t>::max)() >> kCountShift;
-
 #if defined(HYLE_TESTING)
 using TaskScopeFinalPublishHookForTesting = void (*)(void*) noexcept;
 std::atomic<TaskScopeFinalPublishHookForTesting> g_final_publish_hook{nullptr};
@@ -47,107 +36,79 @@ struct TaskScopeState {
                  CancelToken owner_cancel) noexcept
       : allocator(owner_allocator), cancel(std::move(owner_cancel)) {}
 
+  ~TaskScopeState() {
+    TaskScopeCompletion* current = head;
+    while (current != nullptr) {
+      TaskScopeCompletion* next = current->next;
+      current->release();  // release the scope-owned reference
+      current = next;
+    }
+  }
+
   mem::AllocatorRef allocator;
   CancelToken cancel;
-  std::atomic<std::uint64_t> lifecycle{0};
-  // Admission/close is producer-written while completion is worker-written.
-  // Keeping their counters on different cache lines avoids making every short
-  // child bounce the producer's CAS line back across the worker set.
-  alignas(core::kDestructiveInterferenceSize)
-      std::atomic<std::uint64_t> completed{0};
-  util::SpinLock wait_lock;
-  ConditionVariable drained;
+  // One short control lock is the admission/close linearization point and the
+  // rare error aggregator. Successful child completion never touches it.
+  util::SpinLock control_lock;
+  TaskScopeCompletion* head = nullptr;
+  TaskScopeCompletion* tail = nullptr;
+  std::atomic<bool> closed{false};
+  bool ever_admitted = false;
+  bool joined = false;
   Status first_error;
 };
 
+mem::AllocatorRef task_scope_allocator(TaskScopeState* state) noexcept {
+  HYLE_FATAL_ASSERT(state != nullptr);
+  return state->allocator;
+}
+
 Status task_scope_try_admit(TaskScopeState* state,
-                            mem::AllocatorRef* allocator) noexcept {
+                            TaskScopeCompletion* completion) noexcept {
   HYLE_FATAL_ASSERT(state != nullptr);
-  HYLE_FATAL_ASSERT(allocator != nullptr);
-  std::uint64_t current = state->lifecycle.load(std::memory_order_acquire);
-  for (;;) {
-    if ((current & kClosed) != 0) {
-      return Status::FailedPrecondition("task scope is closed");
-    }
-    if ((current >> kCountShift) == kMaxCount) {
-      return Status::ResourceExhausted("task scope child count overflow");
-    }
-    const std::uint64_t next = (current | kEverAdmitted) + kCountOne;
-    if (state->lifecycle.compare_exchange_weak(current, next,
-                                               std::memory_order_acq_rel,
-                                               std::memory_order_acquire)) {
-      *allocator = state->allocator;
-      return Status{};
-    }
+  HYLE_FATAL_ASSERT(completion != nullptr);
+  HYLE_FATAL_ASSERT(completion->next == nullptr);
+  HYLE_FATAL_ASSERT(completion->dispose != nullptr);
+
+  state->control_lock.lock();
+  if (state->closed.load(std::memory_order_relaxed)) {
+    state->control_lock.unlock();
+    return Status::FailedPrecondition("task scope is closed");
   }
+  completion->retain();  // scope ownership; publisher owns the initial ref
+  if (state->tail == nullptr) {
+    state->head = completion;
+  } else {
+    state->tail->next = completion;
+  }
+  state->tail = completion;
+  state->ever_admitted = true;
+  state->control_lock.unlock();
+  return Status{};
 }
 
-void task_scope_complete(TaskScopeState* state, const Status& status) noexcept {
+void task_scope_publish(TaskScopeState* state, TaskScopeCompletion* completion,
+                        const Status& status) noexcept {
   HYLE_FATAL_ASSERT(state != nullptr);
+  HYLE_FATAL_ASSERT(completion != nullptr);
   if (!status.ok()) {
-    state->wait_lock.lock();
+    state->control_lock.lock();
     state->first_error.Update(status);
-    const std::uint64_t completed =
-        state->completed.fetch_add(1, std::memory_order_acq_rel) + 1;
-    const std::uint64_t lifecycle =
-        state->lifecycle.load(std::memory_order_acquire);
-    HYLE_FATAL_ASSERT(completed <= (lifecycle >> kCountShift));
-    const bool last = (lifecycle & kClosed) != 0 &&
-                      completed == (lifecycle >> kCountShift);
-    if (last) state->drained.notify_all();
-    // Publishing completion while holding wait_lock prevents a joiner from
-    // freeing state until this function has made its final state access.
-    state->wait_lock.unlock();
-    return;
+    state->control_lock.unlock();
   }
 
-  std::uint64_t completed = state->completed.load(std::memory_order_relaxed);
-  for (;;) {
-    const std::uint64_t lifecycle =
-        state->lifecycle.load(std::memory_order_acquire);
-    const std::uint64_t admitted = lifecycle >> kCountShift;
-    HYLE_FATAL_ASSERT(completed < admitted);
-
-    if (completed + 1 == admitted) {
-      // A currently-final publisher must retain wait_lock from before the
-      // predicate becomes true through its final access to state. This both
-      // prevents a joiner from freeing state after publication and closes the
-      // lost-wakeup race where close occurs after the lifecycle load above.
-      state->wait_lock.lock();
-      completed = state->completed.load(std::memory_order_relaxed);
-      const std::uint64_t locked_lifecycle =
-          state->lifecycle.load(std::memory_order_acquire);
-      const std::uint64_t locked_admitted = locked_lifecycle >> kCountShift;
-      if (completed + 1 != locked_admitted) {
-        state->wait_lock.unlock();
-        continue;
-      }
-      state->completed.store(completed + 1, std::memory_order_release);
+  // Event is per-child, so successful publishers never bounce a scope-wide
+  // cache line. The publisher reference remains live across signal() and the
+  // test seam; the caller releases it only after this function returns.
+  completion->completed.signal();
 #if defined(HYLE_TESTING)
-      // Pause after publication so the regression can prove that a joiner
-      // cannot free state before the publisher's remaining notify/unlock.
-      run_final_publish_hook_for_testing();
+  run_final_publish_hook_for_testing();
 #endif
-      if ((locked_lifecycle & kClosed) != 0) {
-        state->drained.notify_all();
-      }
-      state->wait_lock.unlock();
-      return;
-    }
-
-    if (state->completed.compare_exchange_weak(completed, completed + 1,
-                                               std::memory_order_release,
-                                               std::memory_order_relaxed)) {
-      // The release publication is deliberately the last state access. If
-      // close races immediately afterwards, join may now destroy state safely.
-      return;
-    }
-  }
 }
 
 #if defined(HYLE_TESTING)
-// TEST-ONLY: installs a deterministic pause in the final completion publisher.
-// This declaration is kept in the test TU rather than the installed header.
+// TEST-ONLY: pauses a record publisher after Event visibility but before it
+// drops its publisher reference. The declaration stays out of installed API.
 HYLE_SCHED_API void set_task_scope_final_publish_hook_for_testing(
     TaskScopeFinalPublishHookForTesting hook, void* context) noexcept {
   if (hook == nullptr) {
@@ -169,13 +130,25 @@ template <class T>
 struct ScopeOwnedTaskDriver {
   static_assert(std::is_void_v<T> || std::is_same_v<T, Status>);
 
+  TaskScopeCompletion completion;
   mem::AllocatorRef allocator;
-  Task<T> task;
+  std::optional<Task<T>> task;
   TaskScopeState* scope_state;
-  Fiber fiber;
+  std::optional<Fiber> fiber;
+  Status scope_status;
+
+  ScopeOwnedTaskDriver(mem::AllocatorRef owner_allocator, Task<T> owner_task,
+                       TaskScopeState* owner_scope_state, mem::FiberStack stack,
+                       mem::FiberStackPool* pool) noexcept
+      : completion(this, &ScopeOwnedTaskDriver::dispose),
+        allocator(owner_allocator),
+        task(std::move(owner_task)),
+        scope_state(owner_scope_state),
+        fiber(std::in_place, std::move(stack), &ScopeOwnedTaskDriver::entry,
+              this, pool) {}
 
   void arm_finish_hook() noexcept {
-    FiberAccess::set_on_finish(&fiber, &ScopeOwnedTaskDriver::destroy, this);
+    FiberAccess::set_on_finish(&*fiber, &ScopeOwnedTaskDriver::finish, this);
   }
 
   static void entry(void* raw) noexcept {
@@ -189,16 +162,16 @@ struct ScopeOwnedTaskDriver {
         scope_status =
             Status::Cancelled("scope-owned task cancelled before start");
       } else {
-        self->task.resume();
-        if (scope_token.is_cancelled() && !self->task.done()) {
+        self->task->resume();
+        if (scope_token.is_cancelled() && !self->task->done()) {
           scope_status =
               Status::Cancelled("scope-owned task cancellation requested");
         } else {
           try {
             if constexpr (std::is_void_v<T>) {
-              self->task.result();
+              self->task->result();
             } else {
-              scope_status = self->task.result();
+              scope_status = self->task->result();
             }
           } catch (...) {
             scope_status =
@@ -207,10 +180,20 @@ struct ScopeOwnedTaskDriver {
         }
       }
     }
-    task_scope_complete(self->scope_state, scope_status);
+    self->scope_status = std::move(scope_status);
   }
 
-  static void destroy(void* raw) noexcept {
+  static void finish(void* raw) noexcept {
+    auto* self = static_cast<ScopeOwnedTaskDriver*>(raw);
+    self->fiber.reset();
+    self->task.reset();
+    task_scope_publish(self->scope_state, &self->completion,
+                       self->scope_status);
+    // May destroy `self` if scope teardown already released its reference.
+    self->completion.release();
+  }
+
+  static void dispose(void* raw) noexcept {
     auto* self = static_cast<ScopeOwnedTaskDriver*>(raw);
     mem::AllocatorRef allocator = self->allocator;
     self->~ScopeOwnedTaskDriver();
@@ -235,23 +218,13 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
         "scope-owned task fiber stack is smaller than the safe tier");
   }
 
-  mem::AllocatorRef allocator;
-  Status admitted = task_scope_try_admit(state, &allocator);
-  if (!admitted.ok()) return admitted;
+  const mem::AllocatorRef allocator = task_scope_allocator(state);
 
-  auto complete_after_admission = [state](Status status) noexcept {
-    task_scope_complete(state, status);
-    // The scope owns every post-admission outcome. Returning OK makes it safe
-    // for callers to propagate only true pre-admission rejection and still
-    // reach the mandatory join/drain point.
-    return Status{};
-  };
-
-  auto* driver = static_cast<Driver*>(
-      allocator.allocate(sizeof(Driver), alignof(Driver)));
+  auto* driver =
+      static_cast<Driver*>(allocator.allocate(sizeof(Driver), alignof(Driver)));
   if (driver == nullptr) {
-    return complete_after_admission(Status::ResourceExhausted(
-        "scope-owned task driver allocation failed"));
+    return Status::ResourceExhausted(
+        "scope-owned task driver allocation failed");
   }
 
   mem::FiberStackPool* pool = scheduler->fiber_stack_pool(stack_size);
@@ -259,23 +232,28 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
       pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
   if (!stack_result) {
     allocator.deallocate(driver, sizeof(Driver), alignof(Driver));
-    return complete_after_admission(
-        std::move(stack_result)
-            .error()
-            .WithContext("scope-owned task fiber stack allocation"));
+    return std::move(stack_result)
+        .error()
+        .WithContext("scope-owned task fiber stack allocation");
   }
 
   mem::FiberStack stack = *std::move(stack_result);
-  new (driver) Driver{allocator, std::move(task), state,
-                      Fiber(std::move(stack), &Driver::entry, driver, pool)};
+  new (driver)
+      Driver(allocator, std::move(task), state, std::move(stack), pool);
+  Status admitted = task_scope_try_admit(state, &driver->completion);
+  if (!admitted.ok()) {
+    driver->completion.release();  // record was never scope-owned
+    return admitted;
+  }
+
   driver->arm_finish_hook();
-  if (!scheduler->spawn(&driver->fiber)) {
+  if (!scheduler->spawn(&*driver->fiber)) {
     Status status = scheduler->accepting()
                         ? Status::ResourceExhausted(
                               "scheduler runnable queues are full on a worker")
                         : Status::Cancelled("scheduler is shutting down");
-    task_scope_complete(state, status);
-    Driver::destroy(driver);
+    driver->scope_status = std::move(status);
+    Driver::finish(driver);
   }
   return Status{};
 }
@@ -327,16 +305,16 @@ TaskScope::~TaskScope() { reset_(); }
 
 void TaskScope::reset_() noexcept {
   if (state_ == nullptr) return;
-  const std::uint64_t lifecycle =
-      state_->lifecycle.load(std::memory_order_acquire);
-  const std::uint64_t completed =
-      state_->completed.load(std::memory_order_acquire);
-  HYLE_FATAL_ASSERT_MSG((lifecycle >> detail::kCountShift) == completed,
-                        "TaskScope destroyed with live children");
+  state_->control_lock.lock();
+  for (detail::TaskScopeCompletion* current = state_->head; current != nullptr;
+       current = current->next) {
+    HYLE_FATAL_ASSERT_MSG(current->completed.is_signaled(),
+                          "TaskScope destroyed with live children");
+  }
   HYLE_FATAL_ASSERT_MSG(
-      (lifecycle & detail::kEverAdmitted) == 0 ||
-          (lifecycle & detail::kJoined) != 0,
+      !state_->ever_admitted || state_->joined,
       "TaskScope with admitted children must be joined before destruction");
+  state_->control_lock.unlock();
 
   mem::AllocatorRef allocator = state_->allocator;
   state_->~TaskScopeState();
@@ -348,7 +326,9 @@ void TaskScope::reset_() noexcept {
 
 void TaskScope::close() noexcept {
   if (state_ == nullptr) return;
-  state_->lifecycle.fetch_or(detail::kClosed, std::memory_order_acq_rel);
+  state_->control_lock.lock();
+  state_->closed.store(true, std::memory_order_release);
+  state_->control_lock.unlock();
 }
 
 Status TaskScope::join() noexcept { return wait_(false); }
@@ -372,15 +352,19 @@ Status TaskScope::wait_(bool cancel) noexcept {
   close();
   if (cancel) state_->cancel.cancel();
 
-  state_->wait_lock.lock();
-  while (state_->completed.load(std::memory_order_acquire) !=
-         (state_->lifecycle.load(std::memory_order_acquire) >>
-          detail::kCountShift)) {
-    state_->drained.wait(state_->wait_lock);
+  // close() makes the intrusive list stable. Each manual-reset Event supports
+  // both Fiber and OS-thread waiters, so multiple joins can traverse it safely.
+  state_->control_lock.lock();
+  detail::TaskScopeCompletion* current = state_->head;
+  state_->control_lock.unlock();
+  for (; current != nullptr; current = current->next) {
+    current->completed.wait();
   }
+
+  state_->control_lock.lock();
   Status result = state_->first_error;
-  state_->lifecycle.fetch_or(detail::kJoined, std::memory_order_release);
-  state_->wait_lock.unlock();
+  state_->joined = true;
+  state_->control_lock.unlock();
   return result;
 }
 
@@ -394,18 +378,18 @@ CancelToken TaskScope::cancellation_token() const noexcept {
 
 std::size_t TaskScope::remaining() const noexcept {
   if (state_ == nullptr) return 0;
-  const std::uint64_t completed =
-      state_->completed.load(std::memory_order_acquire);
-  const std::uint64_t admitted =
-      state_->lifecycle.load(std::memory_order_acquire) >> detail::kCountShift;
-  HYLE_FATAL_ASSERT(completed <= admitted);
-  return static_cast<std::size_t>(admitted - completed);
+  std::size_t count = 0;
+  state_->control_lock.lock();
+  for (detail::TaskScopeCompletion* current = state_->head; current != nullptr;
+       current = current->next) {
+    if (!current->completed.is_signaled()) ++count;
+  }
+  state_->control_lock.unlock();
+  return count;
 }
 
 bool TaskScope::is_closed() const noexcept {
-  return state_ != nullptr &&
-         (state_->lifecycle.load(std::memory_order_acquire) &
-          detail::kClosed) != 0;
+  return state_ != nullptr && state_->closed.load(std::memory_order_acquire);
 }
 
 bool TaskScope::is_cancel_requested() const noexcept {
