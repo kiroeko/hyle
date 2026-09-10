@@ -221,14 +221,9 @@
     },
     {
       "module": "io_tls",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md",
-      "candidate": "4bd86adf0b4027414ebe5cb576b217a5e87c2170",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md"
-      },
-      "summary": "io_tls v3 CLOSED：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、client/server identity 与 mTLS 固定在 4bd86adf；三平台、ASan/UBSan、直接消费者、TLS-on 三交付、TLS-off、红队与零连接热路附加成本 P0 全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-tls-v4-context-identity.md",
+      "summary": "io_tls v4 SCOPED：G06 HTTPS file-body 证明仅比较 owner index 不能排除跨 IoContext 组合；范围限于零字段、零符号的 internal inline context identity seam。"
     },
     {
       "module": "io_http",
