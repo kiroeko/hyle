@@ -203,15 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/sched/sched-v6-pinned-structured-task.md",
-      "candidate": "9f0657919efd9daca6e5c22f4d01f9fa4fe39082",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-sched.md",
-        "material_margin_pct": 5
-      },
-      "summary": "sched v6 CLOSED：spawn_task_on 复用既有 typed lifecycle 与 pinned owner；三平台、sanitizers、失败/拥塞、三交付、易用性、红队和同合同 4/4 的 5% P1 非劣门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
+      "summary": "sched v7 SCOPED：G02 合法重开，仅增加绑定单一 Scheduler 的动态 TaskScope owner；普通 spawn/schedule 热路径与后续 G08 priority 不变。"
     },
     {
       "module": "io_core",
