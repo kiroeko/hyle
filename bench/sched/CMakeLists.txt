@@ -59,6 +59,125 @@ if(HYLE_HAS_FCONTEXT)
   unset(_hyle_sched_source)
 endif()
 
+# sched-v7 dynamic TaskScope migration evidence. The peer is the natural
+# pre-v7 public composition (spawn_task + same-allocator PMR handle storage +
+# per-handle join/first-error aggregation), not a bare WaitGroup or detached
+# route. Keep the pair opt-in and in separate executables so code placement and
+# ownership state never leak across providers.
+option(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH
+  "build the Sched v7 dynamic TaskScope P1 pair" OFF)
+if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
+  if(NOT WIN32 OR NOT HYLE_STATIC)
+    message(FATAL_ERROR
+      "HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH requires Windows and HYLE_STATIC")
+  endif()
+  set(HYLE_SCHED_V7_BASELINE_DIR "" CACHE PATH
+    "exact 37b62460 HYLE checkout for the pre-v7 manual route identity")
+  if(NOT HYLE_SCHED_V7_BASELINE_DIR)
+    message(FATAL_ERROR
+      "HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH requires HYLE_SCHED_V7_BASELINE_DIR")
+  endif()
+  set(_hyle_sched_v7_baseline_files
+    include/hyle/sched/coro.h
+    include/hyle/sched/join.h
+    include/hyle/sched/scheduler.h
+    include/hyle/sched/sync.h
+    include/hyle/sched/waker.h
+    include/hyle/mem/pmr.h
+    src/sched/fiber.cc
+    src/sched/scheduler.cc
+    src/sched/sync.cc
+    src/sched/join.cc
+    src/sched/cancel.cc
+    third_party/fcontext/asm/jump_x86_64_ms_pe_masm.asm
+    third_party/fcontext/asm/make_x86_64_ms_pe_masm.asm
+    third_party/fcontext/asm/ontop_x86_64_ms_pe_masm.asm)
+  set(_hyle_sched_v7_baseline_hashes
+    8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54
+    266d0bbc139304501d1501d915d6b45577e40ab63f8d043232a09f450ee8da86
+    a97bb529d434980ead638fb20bb5ca8de324f2fb60e0fa698cf46bc018194f5f
+    dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5
+    cc89173f57dd37373899ad0955c37c203108fa2ff0932136f3451d657db2d0d7
+    bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f
+    b327158f0f3e9d46a05a1da5aeb24f90651c0dc6453eda5beaa9aaf25f8ab3a8
+    c6cdc451d904611ae5252372973a6bbb4d2324e64d406448c8b3f4a9394aed65
+    564d5dc96e20ba9da6db1188455a360c005b6de8eeb75ed6d3e1501295f0572d
+    b88776fc3828d123054d065da67f21c82069c93a5d90e6f7485a55eaa5a6c3d8
+    634465e979b8978dc2c54a5d8b2c2e93ec302d2652f406d0aaf88aa98f559b8e
+    27b88678004fccbab0a74cdca8a153641852a3036a410c05b714fc18cecc7469
+    c14fa188661d1c0460fd660f221ff7f382af2e96b97e6a3932667f22b64f64a1
+    ae05d63df36415f3bb6dd2188cf240dd7fc8c3bcf764290f485cef97561f6b0b)
+  list(LENGTH _hyle_sched_v7_baseline_files _hyle_sched_v7_baseline_count)
+  math(EXPR _hyle_sched_v7_baseline_last
+    "${_hyle_sched_v7_baseline_count} - 1")
+  foreach(_hyle_sched_v7_index RANGE 0 ${_hyle_sched_v7_baseline_last})
+    list(GET _hyle_sched_v7_baseline_files ${_hyle_sched_v7_index}
+      _hyle_sched_v7_file)
+    list(GET _hyle_sched_v7_baseline_hashes ${_hyle_sched_v7_index}
+      _hyle_sched_v7_expected)
+    set(_hyle_sched_v7_path
+      "${HYLE_SCHED_V7_BASELINE_DIR}/${_hyle_sched_v7_file}")
+    if(NOT EXISTS "${_hyle_sched_v7_path}")
+      message(FATAL_ERROR
+        "Sched v7 baseline lacks ${_hyle_sched_v7_file}: ${HYLE_SCHED_V7_BASELINE_DIR}")
+    endif()
+    file(SHA256 "${_hyle_sched_v7_path}" _hyle_sched_v7_actual)
+    if(NOT _hyle_sched_v7_actual STREQUAL _hyle_sched_v7_expected)
+      message(FATAL_ERROR
+        "Sched v7 37b62460 identity mismatch: ${_hyle_sched_v7_file}")
+    endif()
+    file(SHA256 "${HYLE_SOURCE_DIR}/${_hyle_sched_v7_file}"
+      _hyle_sched_v7_candidate_actual)
+    if(NOT _hyle_sched_v7_candidate_actual STREQUAL _hyle_sched_v7_expected)
+      message(FATAL_ERROR
+        "Sched v7 manual-route runtime drift: ${_hyle_sched_v7_file}")
+    endif()
+  endforeach()
+
+  function(_hyle_configure_sched_v7_task_scope_bench target)
+    target_link_libraries(${target} PRIVATE hyle_sched)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_sched_v7_task_scope_candidate_bench
+    task_scope_p1_candidate_bench.cc)
+  _hyle_configure_sched_v7_task_scope_bench(
+    hyle_sched_v7_task_scope_candidate_bench)
+  add_executable(hyle_sched_v7_task_scope_manual_bench
+    task_scope_p1_manual_bench.cc)
+  _hyle_configure_sched_v7_task_scope_bench(
+    hyle_sched_v7_task_scope_manual_bench)
+  add_executable(hyle_sched_v7_task_scope_candidate_placement_bench
+    task_scope_p1_candidate_bench.cc)
+  _hyle_configure_sched_v7_task_scope_bench(
+    hyle_sched_v7_task_scope_candidate_placement_bench)
+  add_executable(hyle_sched_v7_task_scope_manual_placement_bench
+    task_scope_p1_manual_bench.cc)
+  _hyle_configure_sched_v7_task_scope_bench(
+    hyle_sched_v7_task_scope_manual_placement_bench)
+  target_link_options(hyle_sched_v7_task_scope_candidate_placement_bench
+    PRIVATE /FUNCTIONPADMIN:64)
+  target_link_options(hyle_sched_v7_task_scope_manual_placement_bench
+    PRIVATE /FUNCTIONPADMIN:64)
+
+  hyle_register_benches(sched
+    hyle_sched_v7_task_scope_candidate_bench
+    hyle_sched_v7_task_scope_manual_bench
+    hyle_sched_v7_task_scope_candidate_placement_bench
+    hyle_sched_v7_task_scope_manual_placement_bench)
+  unset(_hyle_sched_v7_baseline_files)
+  unset(_hyle_sched_v7_baseline_hashes)
+  unset(_hyle_sched_v7_baseline_count)
+  unset(_hyle_sched_v7_baseline_last)
+  unset(_hyle_sched_v7_index)
+  unset(_hyle_sched_v7_file)
+  unset(_hyle_sched_v7_expected)
+  unset(_hyle_sched_v7_path)
+  unset(_hyle_sched_v7_actual)
+  unset(_hyle_sched_v7_candidate_actual)
+endif()
+
 # sched-05 fiber-aware sync primitives bench (own exe: scheduler_bench.cc already
 # owns main(), so this is a second target rather than another source in it).
 add_executable(hyle_sched_sync_bench sync_bench.cc)

@@ -1,0 +1,22 @@
+{
+  "schema": "hyle.consumer-shapes/v1",
+  "module": "sched",
+  "round": "sched-v7-dynamic-task-scope",
+  "workloads": [
+    {
+      "id": "dynamic-task-scope",
+      "consumer": "inference request, model-load or rendering-frame helper owner",
+      "task": "Discover 32 Status-bearing helper tasks while processing one owner, stop admission, retain the first business failure and drain every helper before owner teardown.",
+      "lifecycle": "One persistent four-worker Scheduler serves 64 warmup and 1024 measured owners. Each owner creates all helper coroutine frames, admits them dynamically, lets every helper yield once, validates every output, aggregates one failure in roughly one of sixteen owners and tears down all ownership before the next owner.",
+      "normal_scale": {
+        "workers": 4,
+        "warmup_owners": 64,
+        "measured_owners": 1024,
+        "helpers_per_owner": 32,
+        "measured_helper_completions": 32768
+      },
+      "semantic_equivalence": "The candidate uses TaskScope and immediately drops each JoinHandle. The pre-v7 migration baseline uses spawn_task, one same-allocator PMR vector of JoinHandle<Status>, joins every handle and preserves the first Status. Both use the same Task<Status> body, allocator, scheduler, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged.",
+      "negative_space": "This is not detached fire-and-forget, a fixed compile-time when_all pack, a bare WaitGroup counter, a worker-stack callback, concurrent admission policy or an IO/backend latency benchmark."
+    }
+  ]
+}

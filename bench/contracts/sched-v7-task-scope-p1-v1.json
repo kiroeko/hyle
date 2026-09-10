@@ -1,0 +1,212 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "sched-v7-task-scope-p1-v1",
+  "module": "sched",
+  "claim": "P1 engineering non-inferiority of TaskScope against the exact pre-v7 public manual ownership composition for dynamically discovered Status-bearing helper tasks",
+  "candidate": {
+    "target": "hyle_sched",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "sched",
+    "entrypoint": "include/hyle/sched/task_scope.h"
+  },
+  "peers": [
+    {
+      "id": "hyle-v6-manual-dynamic-task-owner",
+      "revision": "37b6246010fad38f36abcc5fed0cf3a5cc88ba2f",
+      "configuration": {
+        "delivery_shape": "source-built static HYLE runtime in a separate process",
+        "route": "Only the pre-v7 public spawn_task, same-allocator PMR vector of JoinHandle<Status>, per-handle join and first-error aggregation",
+        "purpose": "same-contract migration baseline; existing Sched evidence separately qualifies the shared queue, fiber, wake and typed-completion mechanisms"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}}
+  ],
+  "workloads": [
+    {
+      "id": "dynamic-task-scope",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-rendering/sched/dynamic-structured-helper-owner",
+      "provenance": {
+        "path": "bench/sched/consumer_shapes_v7.json",
+        "sha256": "4b30798d8fbd681d739caea02ec8dda32fc44e5f1a30f712ed2337a539b76bfc"
+      },
+      "ownership_topology": {
+        "candidate": "Each owner creates one allocator-backed TaskScope, admits 32 Task<Status> helpers, drops their JoinHandles and closes/joins the scope; scope state owns admission, cancellation, first-error retention and complete drain",
+        "peer": "Each owner creates one same-allocator PMR vector, admits the same 32 Task<Status> helpers through spawn_task, retains every JoinHandle<Status>, joins all handles and retains the first error",
+        "equivalence": "Both routes use the same persistent four-worker Scheduler, allocator, Task<Status> body, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged"
+      },
+      "material_contribution": {
+        "frequency": 1024,
+        "value": 1,
+        "unit": "dynamic-scope-owner-lifecycle",
+        "budget": 5,
+        "denominator": "one measured owner lifecycle",
+        "derivation": "Inference requests, model loads and rendering frames commonly discover tens of independent helper tasks at runtime and must retain first failure while draining all admitted work"
+      },
+      "semantic_contract": "Dynamically discover 32 Status-bearing helper tasks for one owner, stop admission, retain the first business failure and drain every helper before owner teardown",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-v6-manual-dynamic-task-owner",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {
+        "distribution": "sequential owners; every helper suspends once, one helper fails in roughly one of sixteen owners, and every helper publishes a deterministic output",
+        "scale": {"workers": 4, "warmup_owners": 64, "measured_owners": 1024, "helpers_per_owner": 32, "helper_completions": 32768}
+      },
+      "setup": "Scheduler creation, exact worker placement and 64 complete warmup owners are outside measurement",
+      "charged_phases": [
+        "per-owner ownership-state construction",
+        "32 coroutine, JoinState, driver and stack admissions",
+        "one cooperative yield and scheduler reinjection per helper",
+        "first-error retention, every helper completion and full drain",
+        "per-owner ownership-state teardown"
+      ],
+      "pair": {
+        "candidate": "HYLE TaskScope plus detached JoinHandles",
+        "peer": "HYLE v6 spawn_task plus same-allocator PMR JoinHandle vector plus explicit joins"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": [
+        "primary-candidate-first",
+        "primary-peer-first",
+        "placement-candidate-first",
+        "placement-peer-first"
+      ],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "measurement_adapter": "structured-paired-process-v1",
+      "sampling_topology": "n-worker-physical-cores",
+      "sampling_worker_count": 4,
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "sched",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH": "ON",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "hyle-v6-manual-dynamic-task-owner": "HYLE_SCHED_V7_BASELINE_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "sched-v7-task-scope-candidate",
+          "target": "hyle_sched_v7_task_scope_candidate_bench",
+          "stem": "hyle_sched_v7_task_scope_candidate_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1024,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "dynamic-task-scope", "row_id": "dynamic-task-scope"}]
+        },
+        {
+          "id": "sched-v7-task-scope-manual",
+          "target": "hyle_sched_v7_task_scope_manual_bench",
+          "stem": "hyle_sched_v7_task_scope_manual_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1024,
+          "pair_role": "peer",
+          "peer_id": "hyle-v6-manual-dynamic-task-owner",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "dynamic-task-scope", "row_id": "dynamic-task-scope"}]
+        },
+        {
+          "id": "sched-v7-task-scope-candidate-placement",
+          "target": "hyle_sched_v7_task_scope_candidate_placement_bench",
+          "stem": "hyle_sched_v7_task_scope_candidate_placement_bench",
+          "target_variant": "placement",
+          "measurement_batch": 1024,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "dynamic-task-scope", "row_id": "dynamic-task-scope"}]
+        },
+        {
+          "id": "sched-v7-task-scope-manual-placement",
+          "target": "hyle_sched_v7_task_scope_manual_placement_bench",
+          "stem": "hyle_sched_v7_task_scope_manual_placement_bench",
+          "target_variant": "placement",
+          "measurement_batch": 1024,
+          "pair_role": "peer",
+          "peer_id": "hyle-v6-manual-dynamic-task-owner",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [{"id": "dynamic-task-scope", "row_id": "dynamic-task-scope"}]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": [],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}
