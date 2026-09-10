@@ -315,10 +315,9 @@
     },
     {
       "module": "io_watch",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md",
-      "candidate": "03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d",
-      "summary": "io_watch v2 CANDIDATE：不可变产品树实现显式 directory_tree、root-relative path、native cap、Windows/macOS 原生递归与 Linux 有界 O(D) watch set；direct/exact 默认路径不携带递归 metadata。"
+      "summary": "io_watch v2 AUDITED：首个候选被源码红队否决；Linux 混合 target 的扫描顺序可能让先出现的 direct 子 root 在被父 tree 升级后漏扫后代，须在既定 IOW-R03 内改为收敛 worklist 后再签新候选。"
     }
   ]
 }

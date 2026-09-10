@@ -1,6 +1,6 @@
 # IO Watch v2：递归目录树变化流
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -165,7 +165,10 @@ default direct 路径没有复制 owner。
 
 ## 验证、红队与裁决
 
-不可变产品候选为 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d`；它恰好包含冻结的
-`IOW-R01--R03`，没有第四个产品批次。公开 API、三 backend 算法、对象布局与常态成本停止变化；后续只
-对该 commit/tree 执行预声明候选验证。尚未运行的三交付、sanitizer、macOS、候选后红队与 terminal gate
-仍为 `UNPROVEN`。
+首个产品候选 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d` 已被候选后源码红队否决，不再是
+当前 candidate。Linux `populate_native_directories` 的单向 index 扫描存在 target-order 反例：若 direct
+子 root 先入表、父 tree 后入表，扫描父 root 时才把已经跳过的子目录升级为 recursive，循环不会回访它，
+从而漏装更深层 watch。这个问题属于既定 `IOW-R03` 的正确性纠正，不增加第四个能力或 backend 策略；
+本轮退回 `AUDITED`，将扫描改成所有被升级目录都恰好进入一次的收敛 worklist，并加入顺序反转回归后再
+签发新候选。首候选已经取得的三交付、三平台和 sanitizer 结果只作诊断，不得沿用为新候选 terminal
+PASS。
