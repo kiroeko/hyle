@@ -1,6 +1,6 @@
 # Sched v8：TaskScope 分散完成记录
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -83,6 +83,7 @@ in-flight admission counter，也不在 allocator/stack acquisition 期间持锁
 | `S8-03` | close/admission/list 稳定性 | driver/stack 先准备；一个 scope SpinLock 原子完成 closed check + link；close 持同一锁 | concurrent add/spawn-vs-close、OOM、queue full、recursive add |
 | `S8-04` | 旧计数 API/文档成本不真实 | `remaining()` 保留为 O(N) snapshot；guide/architecture 说明 record retention、同步 rejection 和 teardown | 公开 API 不增 benchmark 变体；header/guide/三交付 |
 | `S8-05` | v7 P1 未过门 | 沿用同一 qualified contract/peer/5% threshold，只更新 candidate provenance | 一次 qualified P1 全 required strata NI PASS，否则 BLOCKED |
+| `S8-06` | 成功 `join()` 后的合法析构仍逐 child 调用 `Event::is_signaled()`，为 32-child owner 增加 32 组无语义价值的锁；`joined` 只会在 `wait_` 已等待完整稳定 list 后置位 | `reset_` 只用 `ever_admitted && !joined` 保留 misuse fail-fast；正常 joined teardown 直接释放 record，不再重复证明 completion | 两项 death test 仍通过；短 paired probe 不再出现 material 固定输；不得改变 record、publication 或 public API |
 
 ### API / usability freeze
 
@@ -109,7 +110,7 @@ allocation 的 cell storage 会保留到 scope teardown。普通 task、没有 T
 fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额外 allocation/result state）。有限
 `S8-01..S8-05` 已冻结，下一步只实现该集合。
 
-## Product candidate（`CANDIDATE`）
+## 第一候选与性能 preflight 退回（`AUDITED`）
 
 - immutable product commit / tree：
   `cb4e892b6df85d779c7df03af7f1d4508981dfe2` /
@@ -126,8 +127,11 @@ fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额
   `C:\public\project-hyle\_validation\sched-v8-task-scope-distributed-completion\transitions\module-status-before-candidate.json`，
   SHA-256 `022EC2246247F5E31D4C73C6B633E79443C0BAE34F23EBB441B5F7C50681C3C8`。
 
-下面只运行 closure card 已声明的 exact-candidate correctness、sanitizer、三交付、IO consumer、P0、唯一一次
-qualified P1 与终局红队；不得改产品、peer、workload 或门槛。
+该 candidate 的正确性证据仍是历史事实，但性能 preflight 发现下述有限产品问题后不再是活动 candidate。
+`CANDIDATE -> AUDITED` 前态 registry snapshot 是
+`C:\public\project-hyle\_validation\sched-v8-task-scope-distributed-completion\transitions\module-status-before-performance-return.json`，
+SHA-256 `D26B0763ED68161ADBBA595A884703F098F87DA5844020CED8553E75BC2E4681`。只允许实现 `S8-06`、重跑其
+直接 correctness/P0/短 probe 后签发新 candidate；peer、用户任务、API、主算法和 5% 门槛不变。
 
 ## P1 完成边界预审纠正
 

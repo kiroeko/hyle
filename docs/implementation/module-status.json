@@ -203,10 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v8-task-scope-distributed-completion.md",
-      "candidate": "cb4e892b6df85d779c7df03af7f1d4508981dfe2",
-      "summary": "sched v8 CANDIDATE：TaskScope 已改为逐 child、driver 同分配 completion record；W1-WIN 候选前 correctness/header/stress 通过，候选 cb4e892b 已冻结，待三平台、sanitizer、三交付、IO、P0、P1 与红队。"
+      "summary": "sched v8 AUDITED：完成边界与执行拓扑已在正式 P1 前纠正；短 paired probe 将 2.2%–5.8% 固定成本定位到成功 join 后的逐 child Event 断言扫描，只允许删除该冗余扫描并重签候选。"
     },
     {
       "module": "io_core",
