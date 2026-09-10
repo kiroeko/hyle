@@ -197,3 +197,17 @@ correctness/delivery/P1 不在本阶段冒充通过。
 | contract validator | W1-WIN primary + placement | semantic/same-contract/placement `PASS` |
 
 M1-MAC、不可变 candidate P1 和独立终局红队仍待执行，因此本表不构成 `CLOSED`。
+
+## Product candidate（`CANDIDATE`）
+
+- immutable product commit：`e50a2d94f601ba0d9b7d87c854c868126ca4e596`；对应 tree
+  `b6d00764459b8c9d9825a5e20b652e19aee9c585`。公开 API、codec/policy 算法、provider 边界、正常
+  consumer shape 和常态成本从该提交起停止变化。
+- candidate 前已在 W1-WIN 与 W1-WSL 通过定向 header/correctness，W1-WSL UBSan 无报告；W1-WIN
+  source/shared/static 与 relocated consumer 均通过，正式合同的 semantic/same-contract/placement
+  validator 也已通过。
+- `AUDITED -> CANDIDATE` 的明确 previous revision 为
+  `e50a2d94f601ba0d9b7d87c854c868126ca4e596`。后续只允许证据、task/user/developer 文档、测试专用
+  修正和状态投影变化；发现产品/API/算法问题必须退回 `AUDITED`。
+- 尚待 M1-MAC correctness、不可变候选正式 P1、终局红队、terminal evidence 与 LOC；未运行项不提前
+  写成 PASS。

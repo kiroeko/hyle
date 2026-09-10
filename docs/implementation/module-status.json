@@ -308,9 +308,10 @@
     },
     {
       "module": "container_text",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/container/container-text-v3-base64.md",
-      "summary": "container_text v3 AUDITED：G01 的显式策略、caller-buffer API、simdutf 映射、O(1)/O(n) 成本与四项有限 FIX 已冻结，允许实现但尚未获得 correctness/delivery/P1 终态。"
+      "candidate": "e50a2d94f601ba0d9b7d87c854c868126ca4e596",
+      "summary": "container_text v3 CANDIDATE：Base64/Base64URL caller-buffer API、显式策略、simdutf 私有实现和常用 strict 路线已固定在 e50a2d94；后续只补 Mac、正式 P1、红队和 terminal 证据。"
     },
     {
       "module": "io_watch",
