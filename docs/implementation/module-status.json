@@ -203,9 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
-      "summary": "sched v9 SCOPED：v8 的独立仪器恢复条件已由 workload-matched interleaved A/A 8/8 通过；本轮禁止扩样，先以静态成本账单和 codegen 定位完整 TaskScope owner 的剩余同合同成本，再冻结至多两个有限修正。"
+      "summary": "sched v9 AUDITED：共同生命周期成本与完成边界已逐项对账；MSVC codegen 将剩余可消除成本限定为 add 的一层未内联内部调用，以及 join 未利用现有 publisher-release 状态而重复进入 Event。仅 S9-01/S9-02 获准实现，API/layout/语义不变。"
     },
     {
       "module": "io_core",
