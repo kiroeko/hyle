@@ -1,6 +1,6 @@
 # Sched v8：TaskScope 分散完成记录
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: BLOCKED -->
 
 ## Closure card
 
@@ -182,5 +182,45 @@ HYLE 的首要消费者是同一 source/static/shared 进程内直接调用公�
 allocator 历史留给后一路线，也避免第一条路线只预热约 1 ms 而第二条路线继承近一秒热状态；
 allocator/helper body 相同，每个计时 operation 都完成一个 32-child owner 的 admission、yield、
 结果/首错、finish-hook/stack cleanup、`drain` 和 owner teardown。
-双顺序与独立 placement target 仍保留，公共 A/A 现在与产品同为同进程 paired rows。该修改只纠正证据
-形状，不改变 immutable product candidate、API、算法或 material margin。
+双顺序与独立 placement target 仍保留，产品 comparison 现在使用同进程 paired rows；下述终局进一步
+检查该 workload 自身的同路线 A/A。该修改只纠正证据形状，不改变 API、算法或 material margin。
+
+## 终局：workload-matched A/A 阻塞（`BLOCKED`）
+
+`S8-06/S8-07` 的实现提交是 `8488b6025443e2bc1d90dbcff03929e0178a2c2e`，但它没有被签成新的
+candidate。Windows focused `TaskScope*` 30/30（含两项 death test）通过；MSVC 19.50 反汇编确认
+admission 的 `lock inc` 已变为普通 `mov refs, 2`。这是源码证明成立的 P0 成本修正，不等于 P1 通过。
+
+正式采样前只运行一次固定的短判别组。产品 A/B 在 primary 两个顺序为 `1.065/1.127`，在只增加 80 B
+virtual `.text`、raw `.text` 同为 `0x32a00` 的 placement artifact 上为 `0.970/0.934`。随后在**同一个
+executable**内把两个标记行都替换为完全相同的 candidate route 或完全相同的 peer route，保持各自独立、
+同配置 Scheduler、4096-owner warmup、allocator、worker affinity 和 owner teardown；结果如下：
+
+| same route | primary candidate-first | primary peer-first | placement candidate-first | placement peer-first |
+|---|---:|---:|---:|---:|
+| candidate/candidate first÷second | `0.917` | `1.044` | `1.012` | `0.972` |
+| peer/peer first÷second | `0.974` | `1.052` | `1.010` | `1.052` |
+
+同路线 A/A 自身覆盖 `0.917..1.052`，已经跨过 5% material margin；通用算术 control 没有相同
+Scheduler/stack-pool/allocator/四 worker 热状态，不能否证该偏差。因此 primary/placement 的产品方向翻转
+没有资格归因给 TaskScope，完整 `n=15` 未启动，也没有生成 qualified manifest/summary。增加样本、选择
+primary 的 WIN、选择 placement 的 LOSE 或继续改产品都会让 benchmark 塑造实现，均被拒绝。
+
+| 聚合 gate | Verdict |
+|---|---|
+| scope / architecture | `PASS` |
+| correctness | `UNPROVEN`：本提交只按停止协议完成 Windows focused 30/30，未伪造三平台/三 sanitizer |
+| delivery | `UNPROVEN`：没有在仪器 preflight 失败后浪费三交付回放 |
+| usability_docs | `PASS`：公开 API 未变 |
+| red_team | `UNPROVEN`：未签新 candidate，终局 candidate 红队不适用 |
+| engineering_performance | `INCONCLUSIVE`：workload-matched A/A 未通过 5% preflight |
+| product | **`BLOCKED`** |
+
+blocker owner 是 **HYLE performance-instrument owner**。唯一恢复条件是独立、有界的仪器任务提供一个
+保持当前真实 owner 语义、Scheduler/allocator/worker 拓扑和双顺序的测量方式，并在 primary/placement 上
+先让 candidate/candidate 与 peer/peer 的 workload-matched A/A 全部落入预声明 5% band；随后为 `sched`
+建立新 closure card，依法 `BLOCKED -> SCOPED -> AUDITED`，签发不可变 candidate，只运行一次 qualified
+P1。重跑现有 harness、扩样、放宽门或继续修改 TaskScope 都不满足恢复条件。
+
+LOC 绑定实现提交 `8488b602`：全库代码 `535,654`，自实现不含测试 `93,660`，Sched 实现 `6,256` 行；
+`loc-report.py --self-check` 通过。
