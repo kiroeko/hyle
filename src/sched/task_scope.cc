@@ -26,6 +26,20 @@ constexpr std::uint64_t kCountOne = std::uint64_t{1} << kCountShift;
 constexpr std::uint64_t kMaxCount =
     (std::numeric_limits<std::uint64_t>::max)() >> kCountShift;
 
+#if defined(HYLE_TESTING)
+using TaskScopeFinalPublishHookForTesting = void (*)(void*) noexcept;
+std::atomic<TaskScopeFinalPublishHookForTesting> g_final_publish_hook{nullptr};
+std::atomic<void*> g_final_publish_context{nullptr};
+
+// TEST-ONLY: invokes the deterministic final-publication race seam.
+void run_final_publish_hook_for_testing() noexcept {
+  const auto hook = g_final_publish_hook.load(std::memory_order_acquire);
+  if (hook != nullptr) {
+    hook(g_final_publish_context.load(std::memory_order_relaxed));
+  }
+}
+#endif
+
 }  // namespace
 
 struct TaskScopeState {
@@ -80,25 +94,71 @@ void task_scope_complete(TaskScopeState* state, const Status& status) noexcept {
     HYLE_FATAL_ASSERT(completed <= (lifecycle >> kCountShift));
     const bool last = (lifecycle & kClosed) != 0 &&
                       completed == (lifecycle >> kCountShift);
-    state->wait_lock.unlock();
     if (last) state->drained.notify_all();
+    // Publishing completion while holding wait_lock prevents a joiner from
+    // freeing state until this function has made its final state access.
+    state->wait_lock.unlock();
     return;
   }
 
-  const std::uint64_t completed =
-      state->completed.fetch_add(1, std::memory_order_acq_rel) + 1;
-  const std::uint64_t lifecycle =
-      state->lifecycle.load(std::memory_order_acquire);
-  HYLE_FATAL_ASSERT(completed <= (lifecycle >> kCountShift));
-  if ((lifecycle & kClosed) != 0 &&
-      completed == (lifecycle >> kCountShift)) {
-    // Pair with wait_() checking the predicate and publishing its waiter while
-    // holding wait_lock. Only the final successful completion pays this lock.
-    state->wait_lock.lock();
-    state->wait_lock.unlock();
-    state->drained.notify_all();
+  std::uint64_t completed = state->completed.load(std::memory_order_relaxed);
+  for (;;) {
+    const std::uint64_t lifecycle =
+        state->lifecycle.load(std::memory_order_acquire);
+    const std::uint64_t admitted = lifecycle >> kCountShift;
+    HYLE_FATAL_ASSERT(completed < admitted);
+
+    if (completed + 1 == admitted) {
+      // A currently-final publisher must retain wait_lock from before the
+      // predicate becomes true through its final access to state. This both
+      // prevents a joiner from freeing state after publication and closes the
+      // lost-wakeup race where close occurs after the lifecycle load above.
+      state->wait_lock.lock();
+      completed = state->completed.load(std::memory_order_relaxed);
+      const std::uint64_t locked_lifecycle =
+          state->lifecycle.load(std::memory_order_acquire);
+      const std::uint64_t locked_admitted = locked_lifecycle >> kCountShift;
+      if (completed + 1 != locked_admitted) {
+        state->wait_lock.unlock();
+        continue;
+      }
+      state->completed.store(completed + 1, std::memory_order_release);
+#if defined(HYLE_TESTING)
+      // Pause after publication so the regression can prove that a joiner
+      // cannot free state before the publisher's remaining notify/unlock.
+      run_final_publish_hook_for_testing();
+#endif
+      if ((locked_lifecycle & kClosed) != 0) {
+        state->drained.notify_all();
+      }
+      state->wait_lock.unlock();
+      return;
+    }
+
+    if (state->completed.compare_exchange_weak(completed, completed + 1,
+                                               std::memory_order_release,
+                                               std::memory_order_relaxed)) {
+      // The release publication is deliberately the last state access. If
+      // close races immediately afterwards, join may now destroy state safely.
+      return;
+    }
   }
 }
+
+#if defined(HYLE_TESTING)
+// TEST-ONLY: installs a deterministic pause in the final completion publisher.
+// This declaration is kept in the test TU rather than the installed header.
+HYLE_SCHED_API void set_task_scope_final_publish_hook_for_testing(
+    TaskScopeFinalPublishHookForTesting hook, void* context) noexcept {
+  if (hook == nullptr) {
+    g_final_publish_hook.store(nullptr, std::memory_order_release);
+    g_final_publish_context.store(nullptr, std::memory_order_relaxed);
+    return;
+  }
+  g_final_publish_context.store(context, std::memory_order_relaxed);
+  g_final_publish_hook.store(hook, std::memory_order_release);
+}
+#endif
 
 const CancelToken& task_scope_cancel_token(TaskScopeState* state) noexcept {
   HYLE_FATAL_ASSERT(state != nullptr);

@@ -39,7 +39,7 @@ else()
     "${_fctx}/ontop_x86_64_sysv_elf_gas.S")
 endif()
 
-hyle_add_module(sched TRACE
+hyle_add_module(sched TRACE TESTING
   SOURCES
     fiber.cc
     scheduler.cc

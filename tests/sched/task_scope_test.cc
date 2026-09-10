@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <limits>
 #include <thread>
@@ -14,6 +15,14 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
+
+#if defined(HYLE_TESTING)
+namespace hyle::sched::detail {
+using TaskScopeFinalPublishHookForTesting = void (*)(void*) noexcept;
+HYLE_SCHED_API void set_task_scope_final_publish_hook_for_testing(
+    TaskScopeFinalPublishHookForTesting hook, void* context) noexcept;
+}  // namespace hyle::sched::detail
+#endif
 
 using hyle::Status;
 using hyle::mem::AllocatorRef;
@@ -58,6 +67,11 @@ Task<void> wait_for_release(AllocatorRef, std::atomic<bool>* started,
   started->store(true, std::memory_order_release);
   while (!release->load(std::memory_order_acquire)) Fiber::yield();
   co_return;
+}
+
+Task<Status> status_wait_for_release(AllocatorRef, std::atomic<bool>* release) {
+  while (!release->load(std::memory_order_acquire)) Fiber::yield();
+  co_return Status{};
 }
 
 Task<Status> join_from_fiber(AllocatorRef allocator, Scheduler* scheduler,
@@ -175,6 +189,21 @@ void mark_cancelled(void* raw) noexcept {
   static_cast<std::atomic<bool>*>(raw)->store(true, std::memory_order_release);
 }
 
+#if defined(HYLE_TESTING)
+struct FinalPublishProbe {
+  std::atomic<bool> entered{false};
+  std::atomic<bool> release{false};
+};
+
+void pause_final_publish(void* raw) noexcept {
+  auto* probe = static_cast<FinalPublishProbe*>(raw);
+  probe->entered.store(true, std::memory_order_release);
+  while (!probe->release.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
+}
+#endif
+
 }  // namespace
 
 TEST(TaskScope, EmptyJoinClosesAndIsRepeatable) {
@@ -208,6 +237,53 @@ TEST(TaskScope, DynamicChildrenDetachButScopeStillDrains) {
   EXPECT_EQ(scope.remaining(), 0u);
   scheduler.shutdown();
 }
+
+#if defined(HYLE_TESTING)
+TEST(TaskScope, FinalCompletionCannotPublishBeforeItsLastStateAccess) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  FinalPublishProbe probe;
+  hyle::sched::detail::set_task_scope_final_publish_hook_for_testing(
+      &pause_final_publish, &probe);
+
+  std::atomic<bool> child_release{false};
+  ASSERT_TRUE(
+      scope.add(status_wait_for_release(system_allocator(), &child_release))
+          .ok());
+  scope.close();
+  child_release.store(true, std::memory_order_release);
+  while (!probe.entered.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
+
+  // completed == admitted is already externally visible here, but the final
+  // publisher still owns wait_lock and has not made its last state access.
+  Status joined;
+  std::atomic<bool> join_started{false};
+  std::atomic<bool> join_returned{false};
+  std::thread joiner([&] {
+    join_started.store(true, std::memory_order_release);
+    joined = scope.join();
+    join_returned.store(true, std::memory_order_release);
+  });
+  while (!join_started.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  const bool returned_before_publisher_exit =
+      join_returned.load(std::memory_order_acquire);
+  probe.release.store(true, std::memory_order_release);
+  joiner.join();
+  hyle::sched::detail::set_task_scope_final_publish_hook_for_testing(nullptr,
+                                                                     nullptr);
+
+  EXPECT_FALSE(returned_before_publisher_exit);
+  EXPECT_TRUE(joined.ok());
+  scheduler.shutdown();
+}
+#endif
 
 TEST(TaskScope, ScopeOwnedAddAggregatesStatusAndDrainsVoidChildren) {
   Scheduler scheduler(2, system_allocator(), 128);

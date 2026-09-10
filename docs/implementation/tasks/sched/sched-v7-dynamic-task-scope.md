@@ -132,8 +132,9 @@ pre-admission rejection 后调用者必须先 drain 更早接纳的 child，任�
 
 - scope state 用一个 producer-written lifecycle word 表达 closed、ever-admitted、joined 与 admitted count；
   spawn/add 与 close 通过 CAS/fetch-or 给出单一线性化点。worker-written completed counter 独占另一 cache line，
-  避免 admission 与短 child completion 在同一 line 上跨核来回争用；每个成功 completion 只做一次 fetch-add，
-  仅首错和 close 后最后一个 completion 进入现有 fiber-aware ConditionVariable 的短控制锁；
+  避免 admission 与短 child completion 在同一 line 上跨核来回争用；非当前末项的成功 completion 以一次 CAS
+  作为最后 state access，首错和当前末项进入现有 fiber-aware ConditionVariable 的短控制锁；当前末项即使尚未
+  观察到 close 也在锁内重验并发布，从而同时封住 close 竞态下的失唤醒和 join/destruct 的 state UAF；
 - scoped child 使用专用 `ScopedTaskDriver<T>`，与现有 `spawn_task_impl` 共享相同的用户 coroutine frame、
   `JoinState<T>`、一个 driver allocation 和 scheduler stack pool。driver 只多 raw scope state pointer；不增加
   wrapper coroutine/frame，也不修改普通 `TaskDriver`、`JoinState`、Fiber、Scheduler queue 或 wake path；
@@ -278,3 +279,12 @@ final publisher 的回归 seam，再重跑受影响 correctness/sanitizer 和未
 snapshot 为
 `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-final-p1-correctness-return.json`，
 SHA-256 `8090A43ED4B24C47D22FDD70D50C836EDB9399C2A7DC1146156945C3A8F03C82`。
+
+实现复核进一步证明，仅在已经观察到 closed 时才进入末项锁仍不充分：completion 可以先读到 open，随后
+close/join 发布 waiter，再由 completion 无通知地 CAS 到最终计数，形成真实失唤醒。旧修正的 1000 轮并发
+重复测试因此挂起；改为“任何当前末项都先持锁、重验后发布”后，同一组 3 个 add/spawn/close 测试 1000 轮
+在 1.4 秒内全部通过。测试专用 seam 在锁内完成计数发布后暂停 final publisher，外部 join 在 publisher 的
+notify/unlock 前不能返回；该确定性用例 100 轮通过。W1-WIN shipping-layout Sched 213/213、instrumented Sched
+214/214、public-header self-containment、closure checker、docs checker 与 `git diff --check` 均通过。这些只作
+新候选签发前检查；产品提交后仍须从 exact commit 完成卡片预声明的三平台、sanitizer、三交付、IO consumer、
+终局红队和一次 qualified P1。
