@@ -39,7 +39,7 @@
 | graph | QUEUED | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
-| container_text | CANDIDATE | — | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CANDIDATE：Base64/Base64URL caller-buffer API、显式策略、simdutf 私有实现和常用 strict 路线已固定在 e50a2d94；后续只补 Mac、正式 P1、红队和 terminal 证据。 |
+| container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
 | io_watch | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 10% | [record](tasks/io/io-watch-v1-file-change-stream.md) | io_watch v1 CLOSED：跨平台 bounded 文件变化流完成三平台正确性/sanitizer、公开 IO 三交付、易用性、红队和同合同 libuv P1；原预声明 10% 工程非劣门全过，严格 5% 附加诊断仅在 WSL exact-file 两格未决且无 LOSE。 |
 
 <!-- END GENERATED MODULE STATUS -->

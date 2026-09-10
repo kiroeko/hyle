@@ -308,10 +308,15 @@
     },
     {
       "module": "container_text",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/container/container-text-v3-base64.md",
       "candidate": "e50a2d94f601ba0d9b7d87c854c868126ca4e596",
-      "summary": "container_text v3 CANDIDATE：Base64/Base64URL caller-buffer API、显式策略、simdutf 私有实现和常用 strict 路线已固定在 e50a2d94；后续只补 Mac、正式 P1、红队和 terminal 证据。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container-text-base64.md",
+        "material_margin_pct": 5
+      },
+      "summary": "container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。"
     },
     {
       "module": "io_watch",

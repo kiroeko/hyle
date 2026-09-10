@@ -244,3 +244,5 @@ mixed alphabet、owning convenience、JSON/data-URI 与 WebSocket 状态机不�
 `python scripts/loc-report.py --module container_text --commit
 e50a2d94f601ba0d9b7d87c854c868126ca4e596 --self-check --json` 为 `PASS`：全库 531,562 行、自实现不含
 测试 92,715 行、`container_text` 实现 1,580 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
