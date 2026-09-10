@@ -226,9 +226,9 @@
     },
     {
       "module": "io_tls",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md",
-      "summary": "io_tls v3 SCOPED：G07 合法重开，限定为 file/borrowed PEM 与 encrypted-key password/callback 的同步凭据构造；TLS 数据路径和既有 transport P1 不变。"
+      "summary": "io_tls v3 AUDITED：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、同步 secret lifetime 与 OpenSSL BIO 映射已经冻结；有限四项 FIX 等待实现。"
     },
     {
       "module": "io_http",

@@ -70,3 +70,134 @@
 - 冻结有限 `KEEP/FIX/BORROW/REJECT` ledger、correctness 矩阵、P0 结构门、三平台和三交付范围。完成这些
   之前不得修改产品代码。
 
+## 能力与形状审计（`AUDITED`）
+
+| 能力族 | 层级 | 准入旅程/来源 | 语义与生命周期 | 当前路线 | 覆盖状态 | 动作 |
+|---|---|---|---|---|---|---|
+| trust authority file/PEM | 原子机制 | client system/explicit trust、mTLS；Asio/cURL | source 仅在同步构造借用；context 拥有解析后 store | 只有 file；client none=system trust | `PARTIAL` | `BORROW + FIX` |
+| identity certificate chain | 原子机制 | HTTPS server、mTLS client；Asio/Folly | leaf + 最多 63 个 intermediates；file/PEM 同 parser | 只有 OpenSSL chain file | `PARTIAL` | `BORROW + FIX` |
+| private key file/PEM | 原子机制 | server/client identity；Asio/Folly/cURL | 与 cert source 可混用，解析后 provider 拥有 key | 只有未加密 PEM file | `PARTIAL` | `BORROW + FIX` |
+| encrypted-key password | 原子机制 | SGLang `ssl_keyfile_password`、secret manager | borrowed value 或可失败同步 callback；不安装进 context | 无 HYLE 路线；provider 默认可能交互提示 | `MISSING` | `BORROW + FIX` |
+| identity pair + typed construction | 复合功能 | 普通 `make_client/make_server` | 配对、trust、version、ALPN、allocator 一次校验并原子提交 context | file-only pair 已有 | `PARTIAL` | `KEEP + FIX` |
+| context lifetime / stream retention | 复合功能 | 连接跨 reload 生存 | context immutable/ref-counted，stream 保活旧 provider state | 已完整 | `COMPLETE` | `KEEP` |
+| credential reload / atomic swap | 应用策略 | certificate rotation | service owner 监控、重建并替换 context | `hyle-service` owner 尚未施工 | `ROUTED` | 不进入连接或本轮 |
+| DER/PKCS#12、cipher/provider/HSM、cert selection | 策略/扩展格式 | 尚无两个 provider-neutral consumer | 会引入格式、硬件或安全 profile policy | watchlist | `OUT_OF_SCOPE` | `DEFER/REJECT` |
+
+公开面反向追踪覆盖 `TlsClientOptions`、`TlsServerOptions`、`TlsContext`、`TlsSession`、`TlsStream` 与 TLS
+operations。stream/session/ALPN/version/verification/allocator 每项仍映射到 v1/v2 已准入旅程，没有
+benchmark-only 入口；只有四个 `*_file` 字段把 credential source 锁成路径且缺少 password。项目未发布且
+不承诺兼容，本轮删除这些旧字段、完整迁移 HYLE tests/bench/sample/consumer，只保留一个自然配置面。
+
+### API / usability freeze
+
+公开头继续为 `<hyle/io/tls.h>`，新增的 provider-neutral 形状为：
+
+```cpp
+enum class TlsCredentialSourceKind : std::uint8_t { kNone, kFile, kPem };
+
+class TlsCredentialSource {
+public:
+  constexpr TlsCredentialSource() noexcept = default;
+  static constexpr TlsCredentialSource file(container::StringView) noexcept;
+  static constexpr TlsCredentialSource pem(container::StringView) noexcept;
+  constexpr TlsCredentialSourceKind kind() const noexcept;
+  constexpr container::StringView value() const noexcept;
+};
+
+using TlsPasswordCallback =
+    util::FunctionRef<Result<container::StringView>() noexcept>;
+
+enum class TlsPrivateKeyPasswordKind : std::uint8_t {
+  kNone, kBorrowed, kCallback
+};
+
+class TlsPrivateKeyPassword {
+public:
+  constexpr TlsPrivateKeyPassword() noexcept = default;
+  static constexpr TlsPrivateKeyPassword
+  borrowed(container::StringView) noexcept;
+  static TlsPrivateKeyPassword callback(TlsPasswordCallback) noexcept;
+  constexpr TlsPrivateKeyPasswordKind kind() const noexcept;
+};
+```
+
+`TlsClientOptions` 使用 `certificate_authority`、`certificate_chain`、`private_key`、
+`private_key_password`；`TlsServerOptions` 使用 `certificate_chain`、`private_key`、
+`private_key_password`、`client_certificate_authority`。调用形状例如：
+
+```cpp
+TlsServerOptions options;
+options.certificate_chain = TlsCredentialSource::pem(certificate_pem);
+options.private_key = TlsCredentialSource::file("server-key.pem");
+options.private_key_password =
+    TlsPrivateKeyPassword::borrowed(secret_password);
+auto context = TlsContext::make_server(options);
+```
+
+- source value 是无 allocation 的 borrowed tagged value；default `kNone` 与显式 `file("")` / `pem("")`
+  不混淆。file path 拒绝 empty、embedded NUL 和不可表示长度；PEM 是 length-delimited text，拒绝 empty、
+  embedded NUL 和 `BIO_new_mem_buf` 的 `INT_MAX` 外输入；
+- server identity 必须有 cert+key，client identity 要么两者皆无、要么两者皆有；cert/key 可分别来自 file
+  或 PEM。password 无 key、verification 关闭却提供 CA、server mTLS 开启却没有 CA 都是
+  `InvalidArgument`，不静默忽略配置；
+- client `verify=kPeer` 且 CA 为 none 继续使用系统 trust；server mTLS 必须显式提供 client CA。CA bundle
+  可有多个证书，重复证书等幂接受；identity chain 最多 64 张，防止错误 bundle 造成无界 provider state；
+- callback 在调用 `make_*` 的线程串行调用零次或多次；只读 private key，因此不暴露 OpenSSL 的
+  read/write purpose。它可以返回任意 `Status`，该失败原样传播；成功 view 必须由 callback 外部状态拥有，
+  并至少活到 `make_*` 返回。callback 本身也须活到 `make_*` 返回；
+- borrowed/callback password 可以为空且按长度处理；过长、non-null size 配 null data 或 provider buffer
+  不足 typed fail。没有 password 也始终安装一次栈上拒绝 adapter，encrypted key 绝不回退到 provider 的
+  stdin/terminal prompt；
+- password adapter 只传给 `PEM_read_bio_PrivateKey`，不调用 `SSL_CTX_set_default_passwd_cb*`。返回后
+  context/stream 不含 credential source、password 或 callback；错误文本不拼接 secret/PEM/provider queue；
+- `FunctionRef` 是现有 `util_core` 的恰当同步 borrow，因此新增 `io_tls PUBLIC_DEPS util_core`，不复制第二套
+  erased callback。它允许 lvalue capturing lambda、函数和 compile-time callable，不分配；guide 明确禁止
+  把短命 callable 存进长期 options 后再调用；
+- file 与 PEM 都使用 OpenSSL BIO + 同一 chain/key/CA loader；provider objects 采用 RAII 临时 owner，成功
+  后由 `SSL_CTX` 增持，任意失败只销毁未发布 context。OpenSSL 类型不出 public header。
+
+### 复杂度与性能合同
+
+- source/tag/password option 的创建为 O(1)、零 allocation；PEM 构造不复制。file source 若 view 没有已知
+  NUL terminator，可产生一个仅活到构造返回的 O(path bytes) 临时副本；
+- credential parse 为 O(input bytes)，certificate/key/CA 的 allocation 只来自 OpenSSL provider object；
+  identity chain 占 O(chain certificates)，CA store 占 O(unique CA certificates)；
+- 新类型只存在于 cold options/context factory；`ContextImpl`、`TlsStream`、pump scratch、TLS operation 和
+  transport syscall 均不得改变。P0 通过产品 diff、对象 layout/static assertions 和 provider call graph
+  证明零连接热路成本；不计时、不建立 credential benchmark；
+- 旧 v2 transport P1 只在 stream/operation/provider transport 路径发生产品变化时失效。本轮预声明不触碰
+  这些路径，因此保留其历史证据但不冒充新 credential 性能排名。
+
+### 有限 FIX ledger
+
+| ID | 问题与证据 | 允许改动 | 验收 |
+|---|---|---|---|
+| `G07-F01` | 四个路径字段不能表达 memory/password，且 callback 形状不应重复实现 | 新 source/password value；`io_tls -> util_core`；删除旧字段并迁移全部 HYLE consumer | header/API misuse、component graph、无 provider leak |
+| `G07-F02` | file-only provider shortcuts 不能统一 secret lifetime，默认 key loader可能交互 prompt | BIO source、chain/CA/key RAII loader、栈上 password adapter、typed validation/error | file/PEM/mixed、encrypted key、callback failure、无 retain/prompt |
+| `G07-F03` | credential correctness/安全边界无覆盖 | 扩展 io_tls tests 与必要 package sample；只做测试 fixture/adapter | chain/CA/mTLS、坏输入/密码、callback次数与销毁、ASan/UBSan、三平台 |
+| `G07-F04` | 旧 guide 声明 memory/encrypted unsupported，构建最低版本和新 public edge需校准 | user/architecture/setup、OpenSSL 3.0 configure floor、三交付/符号/许可证检查 | source/static/shared relocation、TLS OFF、docs/red-team/P0 |
+
+本 ledger 到此冻结。不得加入 reload、cipher、HSM、DER/PKCS#12、connection callback、第二 provider 或
+TLS transport tuning；新事实若改变公共形状或范围必须退回 `SCOPED/AUDITED`。
+
+## 七问（审计冻结）
+
+1. **第三方：** OpenSSL 3.x 仍是唯一 private provider，由宿主 SDK/dynamic security update 路线提供；
+   Windows vcpkg、WSL system package、macOS Homebrew 均有现有安装合同。产品不 vendoring crypto；
+   Boost.Asio `cb94f33f`、Folly `65749da4` 与 cURL `01346829` 只作当前 source/password peer。
+2. **功能：** file/PEM trust、chain、key、borrowed/callback password、client identity、server identity、mTLS
+   和 context lifetime 覆盖 G07 的推理与正交 embedded journey；reload 路由 `hyle-service`，其它格式/策略
+   无稳定 MUST。
+3. **内部复用：** Status/Result、StringView、Allocator、TLS transport 均沿既有 owner；同步 callback 改用
+   `util_core::FunctionRef`。OpenSSL 独占证书/key/parser 决策，不在 HYLE 复制密码学或 PEM parser。
+4. **性能：** 最优线性 parse、无 PEM copy、无长期 secret/callback；只允许临时 path C-string copy。
+   stream layout/data path 不变，P0 足够且禁止苹果对橘子的 credential 纳秒比较。
+5. **旧 ABI：** 项目没有 C/Native FFI，本轮删除未发布旧 C++ file-only 字段，不加兼容 alias；OpenSSL C
+   API 只是 private provider boundary。
+6. **构建交付：**中央图新增真实 `util_core` public edge；OpenSSL feature 继续 `AUTO/ON/OFF`，但 configure
+   与 installed dependency 统一要求 3.0；必须验证 source/static/shared、relocation、TLS OFF 和 public header。
+7. **易用性：** 一个 source value 覆盖 file/PEM、一个 password value覆盖 direct/callback；默认安全、无效
+   组合尽早 typed fail。guide 给 file、memory、encrypted 和 reload 四条 recipe，并写 callback/borrow 陷阱。
+
+审计结论为 **PASS**：能力边界、自然 C++ 形状、provider 映射、依赖、有限改动集与 P0 门已冻结，允许进入
+产品实现；correctness、三平台、三交付、红队仍未运行，不能提前写成通过。
