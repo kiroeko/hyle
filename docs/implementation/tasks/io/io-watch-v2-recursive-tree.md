@@ -118,9 +118,10 @@ HYLE_ASSIGN_OR_RETURN(auto watcher,
   下一次 `next/close`。create 后先扫描是跨平台无丢失状态收敛合同，不承诺 event log 完整。
 - 普通事件不 allocation；写入预留 batch path/event/index，溢出转 rescan。Windows/macOS 每唯一 root 一个
   原生递归 owner（macOS 是单 stream 中的 root）；Linux 一个 fd、每唯一目录一个 wd 与一个 owned path。
-- Linux 初建 O(D+path bytes)；普通 event 为 O(1) wd lookup + O(R) root-prefix routing + O(path copy)，其中
-  `R` 是唯一 roots；目录拓扑变化/overflow 是已显式要求 consumer 全树重扫的恢复路径，内部同步 O(D)
-  重建，不把它伪装为常态热路径。Windows/macOS 普通 dispatch 同样 O(R) 最坏，root-local Windows 为 O(1)。
+- Linux 初建 O(D+path bytes)；普通 recursive event 为 O(1) wd lookup + O(Rt) tree-root prefix routing +
+  O(path copy)，其中 `Rt` 是启用 tree 的唯一 roots；目录拓扑变化/overflow 是已显式要求 consumer 全树
+  重扫的恢复路径，内部同步 O(D) 重建，不把它伪装为常态热路径。未启用 tree 时 Linux 保留一 root 一 wd
+  的 O(1) direct router，macOS 也在 direct lookup 后立即返回；Windows 的 root-local dispatch 始终 O(1)。
 - `max_watched_directories` 是资源上限而非 reserve；触顶、native watch limit 或 OOM 明确
   `ResourceExhausted`。可恢复 loss 先产生 rescan；无法保持完整后续覆盖时下一次 `next()` terminal failure。
 - 不提供 polling fallback、后台 reload、debounce 或 symlink traversal；这些限制写入 user guide。
@@ -129,13 +130,28 @@ HYLE_ASSIGN_OR_RETURN(auto watcher,
 
 | 路线 | syscall / owner | 常态 allocation / lock / copy | 复杂度与裁决 |
 |---|---|---|---|
-| Windows direct/tree | 每 root 一个 overlapped `ReadDirectoryChangesW(FALSE/TRUE)`，同 IOCP pump | create 时 buffer+UTF 转换 scratch；每 native batch 一次既有 SpinLock，事件只拷贝进预留 bank | subtree 是 syscall 语义而非第二实现；普通路径无新增 submit/wake |
-| macOS direct/tree | 一个 FSEventStream + serial dispatch owner | callback 内既有锁；absolute path 只做 view/prefix 与 bounded bank copy | OS 本来递归；删除旧 deeper filter，不新增 stream/thread/allocation |
-| Linux direct/tree | 一个 inotify fd；每唯一 directory 一个 wd；同一 async read pump | setup/recovery 分配 O(D+path bytes)；普通 event 不分配，锁内解析并拷贝有界路径 | setup O(D)，普通 O(1) lookup+O(R) route；topology/loss O(D) 与已要求的 consumer rescan 同阶 |
+| Windows direct/tree | 每 root 一个 overlapped `ReadDirectoryChangesW(FALSE/TRUE)`，同 IOCP pump | 两档 create 时都有 native buffer；只有 tree 分配最长 record 的 UTF 转换 scratch；每 native batch 一次既有 SpinLock，事件只拷贝进预留 bank | subtree 是 syscall 语义而非第二实现；direct 保留固定 component stack scratch，无新增 submit/wake/heap |
+| macOS direct/tree | 一个 FSEventStream + serial dispatch owner | callback 内既有锁；direct-only 做一次 parent hash 后立即返回；tree 才做 ancestor prefix route 与 bounded bank copy | OS 本来递归；删除旧 deeper filter，不新增 stream/thread/allocation，direct 不扫描 root 集 |
+| Linux direct/tree | 一个 inotify fd；direct 为每 root 一个 wd，tree 为每唯一 directory 一个 wd；同一 async read pump | tree setup/recovery 分配 O(D+path bytes)；普通 event 不分配；direct 不构造目录表/PATH scratch | direct O(1) wd→root；tree setup O(D)，普通 O(1) lookup+O(Rt) route；topology/loss O(D) 与 consumer rescan 同阶 |
 
 源码已把性能问题分成机制事实而不是点值：Windows 固定 `FALSE` 是明确能力缺陷，Linux 缺 O(D) watch set
 是明确算法缺陷，macOS descendant filter 是明确路由缺陷。没有需要用计时猜测的剩余机制，故本轮 P1
-`NOT_APPLICABLE`；测试只证明正确性、idle 无 busy poll、资源界和 default direct 路径没有复制 owner。
+`NOT_APPLICABLE`。实现前后的第二次源码账单还发现并移除了两项 default-cost 污染：Windows direct root
+不再分配 tree UTF scratch，Linux direct-only 不再建立 recursive directory/path 表；macOS direct-only 也由
+tree-presence fast return 保持 O(1)。Linux 使用 `IN_ONLYDIR|IN_DONT_FOLLOW`，并对 `d_type=unknown` 做受检
+stat，避免为追求扫描速度破坏 link/文件系统正确性。测试只证明正确性、idle 无 busy poll、资源界和
+default direct 路径没有复制 owner。
+
+## 实现批次与候选前回放
+
+- `IOW-R01`：公开 `directory_tree(path)`、root-relative event、目录资源上限和公共路由已经实现；既有
+  exact/direct 语义不变。
+- `IOW-R02`：Windows subtree 参数、仅 tree 使用的动态 UTF scratch、separator 归一化与 macOS ancestor
+  routing 已实现。
+- `IOW-R03`：Linux 单 fd/唯一目录 watch set、root-first 非 link 遍历、O(1) wd lookup，以及 topology/loss
+  后 rescan+重建已经实现；direct-only 保留原轻路线。
+- 候选前定向回放：Windows MSVC Release/WERROR 与 WSL GCC 14 Release/WERROR 的 io_core/io_watch +
+  changed header 各 `15/15 PASS`。这只是实现反馈，不冒充候选验证或 terminal evidence。
 
 ## 七问
 

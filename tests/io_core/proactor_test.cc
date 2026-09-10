@@ -1070,7 +1070,7 @@ TEST(Proactor, DirectoryChangesCompleteAndRearmIocp) {
   alignas(DWORD) unsigned char buffer[4096]{};
   ASSERT_TRUE(p.submit_directory_changes(
       reinterpret_cast<std::intptr_t>(directory), buffer, sizeof(buffer),
-      0xD1u));
+      false, 0xD1u));
 
   std::wstring child = unique_path;
   child += L"\\changed.txt";
@@ -1095,13 +1095,71 @@ TEST(Proactor, DirectoryChangesCompleteAndRearmIocp) {
   // The native operation is one-shot: a second arm reports a later mutation.
   ASSERT_TRUE(p.submit_directory_changes(
       reinterpret_cast<std::intptr_t>(directory), buffer, sizeof(buffer),
-      0xD2u));
+      false, 0xD2u));
   ASSERT_TRUE(::DeleteFileW(child.c_str()));
   ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);
   EXPECT_EQ(completion.user_data, 0xD2u);
   EXPECT_GT(completion.result, 0);
 
   ASSERT_TRUE(::CloseHandle(directory));
+  ASSERT_TRUE(::RemoveDirectoryW(unique_path));
+}
+
+TEST(Proactor, DirectoryChangesCanWatchSubtreeIocp) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+
+  wchar_t temp_path[MAX_PATH];
+  wchar_t unique_path[MAX_PATH];
+  ASSERT_NE(::GetTempPathW(MAX_PATH, temp_path), 0u);
+  ASSERT_NE(::GetTempFileNameW(temp_path, L"hyw", 0, unique_path), 0u);
+  ASSERT_TRUE(::DeleteFileW(unique_path));
+  ASSERT_TRUE(::CreateDirectoryW(unique_path, nullptr));
+  std::wstring nested = unique_path;
+  nested += L"\\nested";
+  ASSERT_TRUE(::CreateDirectoryW(nested.c_str(), nullptr));
+
+  HANDLE directory = ::CreateFileW(
+      unique_path, FILE_LIST_DIRECTORY,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+      OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, nullptr);
+  ASSERT_NE(directory, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(directory)));
+
+  alignas(DWORD) unsigned char buffer[4096]{};
+  ASSERT_TRUE(p.submit_directory_changes(
+      reinterpret_cast<std::intptr_t>(directory), buffer, sizeof(buffer), true,
+      0xD7u));
+  std::wstring child = nested + L"\\deep.txt";
+  HANDLE file = ::CreateFileW(child.c_str(), GENERIC_WRITE,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                  FILE_SHARE_DELETE,
+                              nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
+                              nullptr);
+  ASSERT_NE(file, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(::CloseHandle(file));
+
+  Completion completion{};
+  ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0xD7u);
+  ASSERT_GT(completion.result, 0);
+  bool found_deep = false;
+  std::size_t offset = 0;
+  const std::size_t bytes = static_cast<std::size_t>(completion.result);
+  while (offset + offsetof(FILE_NOTIFY_INFORMATION, FileName) <= bytes) {
+    const auto* info = reinterpret_cast<const FILE_NOTIFY_INFORMATION*>(
+        buffer + offset);
+    const std::wstring name(info->FileName,
+                            info->FileNameLength / sizeof(wchar_t));
+    found_deep = found_deep || name == L"nested\\deep.txt";
+    if (info->NextEntryOffset == 0) break;
+    offset += info->NextEntryOffset;
+  }
+  EXPECT_TRUE(found_deep);
+
+  ASSERT_TRUE(::CloseHandle(directory));
+  ASSERT_TRUE(::DeleteFileW(child.c_str()));
+  ASSERT_TRUE(::RemoveDirectoryW(nested.c_str()));
   ASSERT_TRUE(::RemoveDirectoryW(unique_path));
 }
 
@@ -1125,13 +1183,14 @@ TEST(Proactor, DirectoryChangesHonorAdmissionAndCancellationIocp) {
   alignas(DWORD) unsigned char first[1024]{};
   alignas(DWORD) unsigned char second[1024]{};
   ASSERT_TRUE(p.submit_directory_changes(
-      reinterpret_cast<std::intptr_t>(directory), first, sizeof(first), 0xD3u));
+      reinterpret_cast<std::intptr_t>(directory), first, sizeof(first), false,
+      0xD3u));
   EXPECT_FALSE(p.submit_directory_changes(
       reinterpret_cast<std::intptr_t>(directory), second, sizeof(second),
-      0xD4u));
+      false, 0xD4u));
   EXPECT_FALSE(p.submit_directory_changes(
       reinterpret_cast<std::intptr_t>(INVALID_HANDLE_VALUE), second,
-      sizeof(second), 0xD5u));
+      sizeof(second), true, 0xD5u));
   ASSERT_TRUE(p.submit_cancel(0xD3u, 0xD6u));
   Completion completion{};
   ASSERT_EQ(p.reap(&completion, 1, 5'000'000'000ull), 1u);

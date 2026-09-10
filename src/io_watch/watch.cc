@@ -215,6 +215,8 @@ Status validate_options(const FileWatchOptions& options) noexcept {
     return Status::InvalidArgument("max_batch_events must be nonzero");
   if (options.max_batch_path_bytes == 0)
     return Status::InvalidArgument("max_batch_path_bytes must be nonzero");
+  if (options.max_watched_directories == 0)
+    return Status::InvalidArgument("max_watched_directories must be nonzero");
   return Status::Ok();
 }
 
@@ -249,9 +251,17 @@ FileWatcherState::FileWatcherState(mem::AllocatorRef selected_allocator,
       targets(selected_allocator), roots(selected_allocator),
       root_by_path(selected_allocator), exact_targets(selected_allocator),
       native_root_by_watch(selected_allocator),
+#if HYLE_OS_LINUX
+      native_directories(selected_allocator),
+      native_directory_by_path(selected_allocator),
+#endif
       banks{WatchBatchStorage(selected_allocator),
             WatchBatchStorage(selected_allocator)},
-      shared_native_buffer(selected_allocator) {}
+      shared_native_buffer(selected_allocator)
+#if HYLE_OS_LINUX
+      , shared_path_buffer(selected_allocator)
+#endif
+      {}
 
 FileWatcherState::~FileWatcherState() {
   HYLE_FATAL_ASSERT(closed);
@@ -277,6 +287,17 @@ std::string_view FileWatcherState::target_basename(
   return path_slice(targets[target].basename_offset,
                     targets[target].basename_size);
 }
+
+#if HYLE_OS_LINUX
+std::string_view FileWatcherState::native_directory_path(
+    std::size_t directory) const noexcept {
+  HYLE_FATAL_ASSERT(directory < native_directories.size());
+  const auto& path = native_directories[directory].path;
+  HYLE_FATAL_ASSERT(!path.empty() && path.back() == '\0');
+  return std::string_view(path.data(), path.size() - 1);
+}
+
+#endif
 
 Status FileWatcherState::initialize(
     std::span<const FileWatchTarget> inputs) noexcept {
@@ -320,6 +341,10 @@ Status FileWatcherState::initialize(
         "FileWatcher batch storage allocation failed");
 
   for (const FileWatchTarget& input : inputs) {
+    if (input.kind() != FileWatchTargetKind::kFile &&
+        input.kind() != FileWatchTargetKind::kDirectory &&
+        input.kind() != FileWatchTargetKind::kDirectoryTree)
+      return Status::InvalidArgument("FileWatcher target kind is invalid");
     const std::string_view raw = input.path();
     if (raw.empty() || raw.find('\0') != std::string_view::npos)
       return Status::InvalidArgument(
@@ -333,6 +358,16 @@ Status FileWatcherState::initialize(
     Status resolved = absolute_watch_path(raw, allocator, &absolute);
     if (!resolved.ok()) return resolved.WithContext("FileWatcher target");
     const std::string_view full(absolute.data(), absolute.size() - 1);
+
+    if (input.kind() == FileWatchTargetKind::kDirectoryTree) {
+      Result<platform::FileInfo> tree_info = platform::stat(absolute.data());
+      if (!tree_info.has_value())
+        return std::move(tree_info).error().WithContext(
+            "FileWatcher recursive root");
+      if (tree_info->is_symlink)
+        return Status::FailedPrecondition(
+            "FileWatcher recursive root must not be a symlink or junction");
+    }
 
     std::string_view root_name = full;
     std::string_view basename{};
@@ -422,6 +457,10 @@ Status FileWatcherState::initialize(
     target.basename_size = basename.size();
   }
 
+  if (roots.size() > options.max_watched_directories)
+    return Status::ResourceExhausted(
+        "FileWatcher native directory limit is smaller than its roots");
+
   if (!root_by_path.try_reserve(roots.size()) ||
       !exact_targets.try_reserve(targets.size()))
     return Status::ResourceExhausted(
@@ -438,6 +477,12 @@ Status FileWatcherState::initialize(
     if (target.kind == FileWatchTargetKind::kDirectory) {
       target.next_directory = roots[target.root].first_directory;
       roots[target.root].first_directory = index;
+      continue;
+    }
+    if (target.kind == FileWatchTargetKind::kDirectoryTree) {
+      target.next_tree = roots[target.root].first_tree;
+      roots[target.root].first_tree = index;
+      has_tree_targets = true;
       continue;
     }
     const ExactTargetKey key{target.root, target_basename(index)};
@@ -472,24 +517,31 @@ Status FileWatcherState::initialize(
 }
 
 bool FileWatcherState::emit_for_root_locked(
-    std::size_t root, std::string_view basename, FileWatchChange changes,
+    std::size_t root, std::string_view relative, FileWatchChange changes,
     std::uint64_t rename_correlation) noexcept {
   if (root >= roots.size() || changes == FileWatchChange::kNone) return false;
   // POSIX directory entries are arbitrary bytes and native macOS events can
   // also fail to round-trip through UTF-8. The public path contract is UTF-8;
   // an unrepresentable entry therefore becomes an explicit rescan request
   // instead of leaking malformed text or silently missing an exact target.
-  if (basename.size() > container::StringView::npos ||
-      !container::utf8_validate(container::StringView(basename)))
+  if (relative.empty() || relative.size() > container::StringView::npos ||
+      !container::utf8_validate(container::StringView(relative)))
     return require_rescan_locked();
   bool changed_batch = false;
 
-  for (std::size_t target = roots[root].first_directory;
-       target != kNoWatchIndex; target = targets[target].next_directory)
-    changed_batch = emit_target_locked(target, basename, changes,
+  for (std::size_t target = roots[root].first_tree;
+       target != kNoWatchIndex; target = targets[target].next_tree)
+    changed_batch = emit_target_locked(target, relative, changes,
                                        rename_correlation) || changed_batch;
 
-  const ExactTargetKey exact{root, basename};
+  if (relative.find('/') != std::string_view::npos) return changed_batch;
+
+  for (std::size_t target = roots[root].first_directory;
+       target != kNoWatchIndex; target = targets[target].next_directory)
+    changed_batch = emit_target_locked(target, relative, changes,
+                                       rename_correlation) || changed_batch;
+
+  const ExactTargetKey exact{root, relative};
   if (const std::size_t* first = exact_targets.find(exact)) {
     for (std::size_t target = *first; target != kNoWatchIndex;
          target = targets[target].next_same_exact)
@@ -497,6 +549,44 @@ bool FileWatcherState::emit_for_root_locked(
                                          rename_correlation) || changed_batch;
   }
   return changed_batch;
+}
+
+bool FileWatcherState::emit_absolute_path_locked(
+    std::string_view path, FileWatchChange changes,
+    std::uint64_t rename_correlation) noexcept {
+  bool output = false;
+  std::size_t immediate_root = kNoWatchIndex;
+  const std::size_t separator = path.find_last_of('/');
+  if (separator != std::string_view::npos && separator + 1 < path.size()) {
+    const std::string_view parent =
+        separator == 0 ? path.substr(0, 1) : path.substr(0, separator);
+    if (const std::size_t* root = root_by_path.find(parent)) {
+      if (roots[*root].active) {
+        immediate_root = *root;
+        output = emit_for_root_locked(*root, path.substr(separator + 1),
+                                      changes, rename_correlation) || output;
+      }
+    }
+  }
+  if (!has_tree_targets) return output;
+  for (std::size_t root = 0; root < roots.size(); ++root) {
+    if (root == immediate_root || !roots[root].active ||
+        roots[root].first_tree == kNoWatchIndex)
+      continue;
+    const std::string_view prefix = root_path(root);
+    if (path.size() <= prefix.size() ||
+        path.compare(0, prefix.size(), prefix) != 0)
+      continue;
+    std::size_t relative = prefix.size();
+    if (prefix.empty() || prefix.back() != '/') {
+      if (path[relative] != '/') continue;
+      ++relative;
+    }
+    if (relative == path.size()) continue;
+    output = emit_for_root_locked(root, path.substr(relative),
+                                  changes, rename_correlation) || output;
+  }
+  return output;
 }
 
 bool FileWatcherState::emit_target_locked(

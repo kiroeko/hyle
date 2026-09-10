@@ -205,10 +205,15 @@ Task<int> exercise_factory_contract(AllocatorRef allocator, IoContext* io,
   FileWatchOptions no_paths;
   no_paths.max_batch_path_bytes = 0;
   auto paths = FileWatcher::create(allocator, *io, kOwner, directory, no_paths);
+  FileWatchOptions no_directories;
+  no_directories.max_watched_directories = 0;
+  auto directories = FileWatcher::create(allocator, *io, kOwner, directory,
+                                         no_directories);
   outcome->option_bounds_rejected =
       !small.has_value() && small.error().IsOutOfRange() &&
       !events.has_value() && events.error().IsInvalidArgument() &&
-      !paths.has_value() && paths.error().IsInvalidArgument();
+      !paths.has_value() && paths.error().IsInvalidArgument() &&
+      !directories.has_value() && directories.error().IsInvalidArgument();
 
   const std::string absent_file = root + "/published-later.bin";
   const std::array absent{FileWatchTarget::file(absent_file)};

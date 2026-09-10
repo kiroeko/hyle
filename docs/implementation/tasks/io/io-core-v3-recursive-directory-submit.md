@@ -74,4 +74,7 @@ bool submit_directory_changes(std::intptr_t directory, void* buffer,
 
 ## 验证与裁决
 
-尚未执行；产品只允许实施 `IOCORE-R01--R02`，未运行项均为 `UNPROVEN`。
+`IOCORE-R01--R02` 已按冻结形状实现：detail declaration/definition 只增加一个 `watch_subtree` 参数，
+Windows caller 从 root 上的预计算 tree bit 传入；新增 IOCP 机制测试直接验证 `true` 可见孙级文件，原
+`false` rearm/cancel/admission 测试保持。候选前 Windows MSVC 与 WSL GCC 14 的 io_core/io_watch + changed
+header 各 `15/15 PASS`；这只是实现反馈，候选验证、三交付、红队和 terminal 裁决仍为 `UNPROVEN`。

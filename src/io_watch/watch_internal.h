@@ -97,11 +97,12 @@ struct StoredWatchTarget {
   std::size_t basename_size = 0;
   std::size_t next_same_exact = kNoWatchIndex;
   std::size_t next_directory = kNoWatchIndex;
+  std::size_t next_tree = kNoWatchIndex;
 };
 
 struct NativeWatchRoot {
   explicit NativeWatchRoot(mem::AllocatorRef allocator) noexcept
-      : native_buffer(allocator) {}
+      : native_buffer(allocator), native_path_buffer(allocator) {}
   NativeWatchRoot(NativeWatchRoot&&) noexcept = default;
   NativeWatchRoot& operator=(NativeWatchRoot&&) noexcept = default;
   NativeWatchRoot(const NativeWatchRoot&) = delete;
@@ -110,16 +111,36 @@ struct NativeWatchRoot {
   std::size_t path_offset = 0;
   std::size_t path_size = 0;
   std::size_t first_directory = kNoWatchIndex;
+  std::size_t first_tree = kNoWatchIndex;
   std::intptr_t native_handle = -1;
   int native_watch = -1;
   // DWORD alignment is a documented ReadDirectoryChangesW requirement. The
   // same storage type is harmless on POSIX and avoids relying on an allocator
   // returning stronger alignment than requested for std::byte.
   container::PodVector<std::uint32_t> native_buffer;
+  // Windows converts one FILE_NOTIFY_INFORMATION name here. It is allocated
+  // once at create; ordinary events never allocate.
+  container::PodVector<char> native_path_buffer;
   sched::JoinHandle<void> pump;
   std::uint64_t pending_rename = 0;
   bool active = false;
 };
+
+#if HYLE_OS_LINUX
+struct NativeWatchDirectory {
+  explicit NativeWatchDirectory(mem::AllocatorRef allocator) noexcept
+      : path(allocator) {}
+  NativeWatchDirectory(NativeWatchDirectory&&) noexcept = default;
+  NativeWatchDirectory& operator=(NativeWatchDirectory&&) noexcept = default;
+  NativeWatchDirectory(const NativeWatchDirectory&) = delete;
+  NativeWatchDirectory& operator=(const NativeWatchDirectory&) = delete;
+
+  container::PodVector<char> path;
+  int native_watch = -1;
+  bool recursive = false;
+  bool scanned = false;
+};
+#endif
 
 struct WatchBatchStorage {
   explicit WatchBatchStorage(mem::AllocatorRef allocator) noexcept
@@ -153,12 +174,18 @@ struct FileWatcherState {
                               std::size_t size) const noexcept;
   std::string_view root_path(std::size_t root) const noexcept;
   std::string_view target_basename(std::size_t target) const noexcept;
+#if HYLE_OS_LINUX
+  std::string_view native_directory_path(std::size_t directory) const noexcept;
+#endif
 
   // Native producers hold monitor while calling these functions and notify
   // once after parsing a complete native buffer.
   bool emit_for_root_locked(std::size_t root, std::string_view basename,
                             FileWatchChange changes,
                             std::uint64_t rename_correlation) noexcept;
+  bool emit_absolute_path_locked(std::string_view path,
+                                 FileWatchChange changes,
+                                 std::uint64_t rename_correlation) noexcept;
   bool emit_target_locked(std::size_t target, std::string_view relative_path,
                           FileWatchChange changes,
                           std::uint64_t rename_correlation) noexcept;
@@ -187,6 +214,13 @@ struct FileWatcherState {
   container::FlatHashMap<int, std::size_t, container::Hash<int>,
                          std::equal_to<>, mem::AllocatorRef>
       native_root_by_watch;
+#if HYLE_OS_LINUX
+  container::SmallVector<NativeWatchDirectory, 0, mem::AllocatorRef>
+      native_directories;
+  container::FlatHashMap<std::string_view, std::size_t, WatchStringHash,
+                         std::equal_to<>, mem::AllocatorRef>
+      native_directory_by_path;
+#endif
   WatchBatchStorage banks[2];
   unsigned pending_bank = 0;
   int sealed_bank = -1;
@@ -202,12 +236,16 @@ struct FileWatcherState {
   bool waiting = false;
   bool closing = false;
   bool closed = false;
+  bool has_tree_targets = false;
 
   // Linux owns one inotify descriptor/read pump. macOS stores an opaque
   // FSEventStreamRef and serial dispatch queue here. Windows uses each root's
   // handle/buffer/pump fields.
   std::intptr_t native_stream = -1;
   container::PodVector<std::uint32_t> shared_native_buffer;
+#if HYLE_OS_LINUX
+  container::PodVector<char> shared_path_buffer;
+#endif
   sched::JoinHandle<void> shared_pump;
   void* apple_stream = nullptr;
   void* apple_queue = nullptr;

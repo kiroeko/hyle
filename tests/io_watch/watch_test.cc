@@ -308,12 +308,17 @@ TEST(FileWatchApi, TargetFactoriesAndChangeMaskAreTyped) {
   constexpr auto file = hyle::io::FileWatchTarget::file("model.json");
   constexpr auto directory =
       hyle::io::FileWatchTarget::directory("models");
+  constexpr auto tree =
+      hyle::io::FileWatchTarget::directory_tree("models");
 
   static_assert(file.kind() == hyle::io::FileWatchTargetKind::kFile);
   static_assert(directory.kind() ==
                 hyle::io::FileWatchTargetKind::kDirectory);
+  static_assert(tree.kind() ==
+                hyle::io::FileWatchTargetKind::kDirectoryTree);
   EXPECT_EQ(file.path(), std::string_view("model.json"));
   EXPECT_EQ(directory.path(), std::string_view("models"));
+  EXPECT_EQ(tree.path(), std::string_view("models"));
 
   constexpr auto changes = hyle::io::FileWatchChange::kContent |
                            hyle::io::FileWatchChange::kMetadata;

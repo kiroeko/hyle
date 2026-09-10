@@ -10,9 +10,10 @@ HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 
 DNS、signal、TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
-WebSocket、recursive tree watch、file-region streaming/HTTP file body 和完整 TLS credential source 已进入
+WebSocket 和 file-region streaming/HTTP file body 已进入
 [基础能力扩展范围](foundation-capability-expansion.md)，但在各自 closure round 完成前不属于当前公开 API。
-该决策同时明确 file-region streaming 归 `io_core + io_http`，而不是制品发布语义不同的 `io_transfer`。
+TLS credential source 已交付；recursive tree watch 的当前状态以 registry 为准。该决策同时明确
+file-region streaming 归 `io_core + io_http`，而不是制品发布语义不同的 `io_transfer`。
 
 ```text
 Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/Transfer
@@ -39,7 +40,7 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 | `io_http` | HTTP/1 framing、head/body lifecycle、client/server connection | listener、routing、auth、batching |
 | `io_http2` | HTTP/2 session/stream、HPACK/frame provider、flow control、RST/GOAWAY | transport event loop、gRPC policy |
 | `io_transfer` | local/HTTP(S) copy/download、resume、verify、temporary file 与 atomic publication | repository/model schema、credentials、archive |
-| `io_watch` | bounded non-recursive file/directory change stream、coalescing、overflow/rescan、cancel/close | debounce、content diff、TLS/config/model/shader reload policy |
+| `io_watch` | bounded exact/direct/tree change stream、root-relative path、coalescing、overflow/rescan、cancel/close | snapshot、debounce、content diff、TLS/config/model/shader reload policy |
 
 六个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
 构建和交付。中央依赖图是 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)，本页不复制边。
@@ -66,8 +67,11 @@ named shared storage 属于 Mem，原子 replace/同步文件机制属于 Platfo
 
 文件变化使用 parent/root 的原生 stream（Windows IOCP + `ReadDirectoryChangesW`、Linux inotify、macOS
 FSEvents），对外统一为 bounded borrowed batch。exact file 也观察 parent，才能跨 inode atomic replace；
-overflow 或粗粒度事件只承诺显式 rescan，不伪装成完整 event log。watcher 复用 Scheduler 的 owner、取消、
-deadline 和唤醒，不建立 polling loop 或永久私有线程。reload/验证/发布策略属于调用方或计划中的独立
+direct directory 与 recursive tree 是两个显式 target 语义，后者返回 root-relative path。Windows/macOS
+使用原生 subtree stream；Linux 只在选择 tree 时维护有界 O(directory count) watch set，topology/loss 后
+发 rescan 并恢复覆盖。普通 direct/exact 路径不建立递归 metadata。overflow 或粗粒度事件只承诺显式
+rescan，不伪装成完整 event log。watcher 复用 Scheduler 的 owner、取消、deadline 和唤醒，不建立 polling
+loop 或永久私有线程，也不跟随 symlink/junction。reload/验证/发布策略属于调用方或计划中的独立
 `hyle-service`，不能反向进入 IO factor。
 
 Linux 专属的 provided-buffer/multishot receive 经成功取得的 `IoUringExtension` 使用；portable

@@ -29,6 +29,7 @@ struct FileWatcherState;
 enum class FileWatchTargetKind : std::uint8_t {
   kFile,
   kDirectory,
+  kDirectoryTree,
 };
 
 // A borrowed factory input. FileWatcher::create copies the path, so the input
@@ -43,6 +44,10 @@ class FileWatchTarget {
   }
   static constexpr FileWatchTarget directory(std::string_view path) noexcept {
     return FileWatchTarget(FileWatchTargetKind::kDirectory, path);
+  }
+  static constexpr FileWatchTarget directory_tree(
+      std::string_view path) noexcept {
+    return FileWatchTarget(FileWatchTargetKind::kDirectoryTree, path);
   }
 
   constexpr FileWatchTargetKind kind() const noexcept { return kind_; }
@@ -95,7 +100,7 @@ struct FileWatchEvent {
   std::size_t target_index = 0;
   FileWatchChange changes = FileWatchChange::kNone;
   // Empty for an exact-file target. A directory target receives one direct
-  // child basename; recursive descendants are never exposed.
+  // child basename; a directory-tree target receives its root-relative path.
   std::string_view relative_path{};
   // Best-effort native rename correlation. Zero means unavailable. Consumers
   // must remain correct by rescanning/re-reading without it.
@@ -133,13 +138,18 @@ struct FileWatchOptions {
   std::size_t native_buffer_bytes = 16 * 1024;
   std::size_t max_batch_events = 256;
   std::size_t max_batch_path_bytes = 16 * 1024;
+  // Maximum unique native directory resources. Windows/macOS consume one per
+  // canonical root; Linux recursive trees consume one inotify watch per
+  // directory. This is a bound, not an eager reservation.
+  std::size_t max_watched_directories = 65'536;
 };
 
-// Bounded, non-recursive, cross-platform file-change stream. The watcher is a
-// single-owner IO object: create(), next(), close(), move assignment over a
-// live owner, and destruction all run on owner_worker. close() is idempotent
-// on that owner and cancels/joins all native pumps. It
-// must finish before the IoContext or Scheduler is stopped.
+// Bounded cross-platform file-change stream. Recursive observation is explicit
+// per directory_tree target; directory remains direct-child-only. The watcher
+// is a single-owner IO object: create(), next(), close(), move assignment over
+// a live owner, and destruction all run on owner_worker. close() is idempotent
+// on that owner and cancels/joins all native pumps. It must finish before the
+// IoContext or Scheduler is stopped.
 class FileWatcher {
  public:
   HYLE_IO_WATCH_API static Result<FileWatcher> create(

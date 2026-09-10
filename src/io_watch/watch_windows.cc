@@ -91,7 +91,7 @@ struct DirectoryReadAwaitable {
         root->native_buffer.size() * sizeof(std::uint32_t));
     if (!proactor->submit_directory_changes(
             root->native_handle, root->native_buffer.data(), bytes,
-            cancel.token)) {
+            root->first_tree != kNoWatchIndex, cancel.token)) {
       operation.result = kSubmitFailed;
       return false;
     }
@@ -182,18 +182,35 @@ bool publish_directory_buffer(FileWatcherState& state, std::size_t root_index,
       break;
     }
     const int name_units = static_cast<int>(name_bytes / sizeof(wchar_t));
-    char name[1024];
+    char direct_name[1024];
+    char* const name = root.first_tree == kNoWatchIndex
+                           ? direct_name
+                           : root.native_path_buffer.data();
+    const std::size_t name_capacity = root.first_tree == kNoWatchIndex
+                                          ? sizeof(direct_name)
+                                          : root.native_path_buffer.size();
     int name_size = 0;
     if (name_units != 0) {
-      name_size = ::WideCharToMultiByte(
-          CP_UTF8, WC_ERR_INVALID_CHARS, record->FileName, name_units, name,
-          static_cast<int>(sizeof(name)), nullptr, nullptr);
-      if (name_size <= 0) {
+      const int required = ::WideCharToMultiByte(
+          CP_UTF8, WC_ERR_INVALID_CHARS, record->FileName, name_units, nullptr,
+          0, nullptr, nullptr);
+      if (required <= 0 ||
+          static_cast<std::size_t>(required) > name_capacity) {
         changed = state.require_rescan_locked() || changed;
+      } else {
+        name_size = ::WideCharToMultiByte(
+            CP_UTF8, WC_ERR_INVALID_CHARS, record->FileName, name_units,
+            name, static_cast<int>(name_capacity), nullptr, nullptr);
+        if (name_size <= 0)
+          changed = state.require_rescan_locked() || changed;
       }
     }
     const FileWatchChange action = translate_action(record->Action);
     if (name_size > 0 && action != FileWatchChange::kNone) {
+      for (int i = 0; i < name_size; ++i) {
+        if (name[static_cast<std::size_t>(i)] == '\\')
+          name[static_cast<std::size_t>(i)] = '/';
+      }
       std::uint64_t correlation = 0;
       if (record->Action == FILE_ACTION_RENAMED_OLD_NAME) {
         correlation = state.next_rename_correlation++;
@@ -273,6 +290,13 @@ Status initialize_native_watch(FileWatcherState& state) noexcept {
     if (!root.native_buffer.try_resize(words))
       return Status::ResourceExhausted(
           "FileWatcher native buffer allocation failed");
+    if (root.first_tree != kNoWatchIndex) {
+      const std::size_t path_capacity =
+          (state.options.native_buffer_bytes / sizeof(wchar_t)) * 3 + 1;
+      if (!root.native_path_buffer.try_resize(path_capacity))
+        return Status::ResourceExhausted(
+            "FileWatcher native path scratch allocation failed");
+    }
     container::PodVector<wchar_t> path(state.allocator);
     Status encoded = encode_native_root(state.root_path(index), state.allocator,
                                         &path);

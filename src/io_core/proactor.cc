@@ -458,7 +458,7 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
 
 bool Proactor::submit_directory_changes(
     std::intptr_t directory, void* buffer, std::uint32_t length,
-    std::uint64_t user_data) noexcept {
+    bool watch_subtree, std::uint64_t user_data) noexcept {
   if (impl_ == nullptr || buffer == nullptr || length == 0 ||
       reinterpret_cast<HANDLE>(directory) == INVALID_HANDLE_VALUE)
     return false;
@@ -474,7 +474,8 @@ bool Proactor::submit_directory_changes(
       FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION |
       FILE_NOTIFY_CHANGE_SECURITY;
   const BOOL ok = ::ReadDirectoryChangesW(
-      op->handle, buffer, length, FALSE, kFilter, nullptr, &op->ov, nullptr);
+      op->handle, buffer, length, watch_subtree ? TRUE : FALSE, kFilter,
+      nullptr, &op->ov, nullptr);
   if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
   impl_->unlink(op);
   impl_->recycle(op);

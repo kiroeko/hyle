@@ -51,17 +51,6 @@ FileWatchChange translate_flags(FSEventStreamEventFlags flags) noexcept {
   return changes;
 }
 
-std::string_view parent_path(std::string_view path,
-                             std::string_view* basename) noexcept {
-  const std::size_t separator = path.find_last_of('/');
-  if (separator == std::string_view::npos) {
-    *basename = path;
-    return {};
-  }
-  *basename = path.substr(separator + 1);
-  return separator == 0 ? path.substr(0, 1) : path.substr(0, separator);
-}
-
 void publish_fsevents(ConstFSEventStreamRef, void* opaque,
                       std::size_t event_count, void* event_paths,
                       const FSEventStreamEventFlags event_flags[],
@@ -94,21 +83,10 @@ void publish_fsevents(ConstFSEventStreamRef, void* opaque,
         root_was_invalidated = true;
         changed = state.invalidate_root_locked(*root) || changed;
       }
-      continue;
-    }
-
-    std::string_view basename;
-    const std::string_view parent = parent_path(path, &basename);
-    const std::size_t* root = state.root_by_path.find(parent);
-    if (root == nullptr || basename.empty()) {
-      // FSEvents is recursive internally. A parent not present in the root
-      // table is a deeper descendant and is deliberately filtered out.
-      continue;
     }
     const FileWatchChange event = translate_flags(flags);
     if (event != FileWatchChange::kNone)
-      changed = state.emit_for_root_locked(*root, basename, event, 0) ||
-                changed;
+      changed = state.emit_absolute_path_locked(path, event, 0) || changed;
   }
   if (root_was_invalidated) {
     bool any_active = false;

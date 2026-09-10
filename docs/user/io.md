@@ -111,8 +111,14 @@ offset/POD，不能保存本进程裸指针。详见 [Mem 指南](mem.md)。
 ### 文件变化：观察后重读 authoritative state
 
 证书、配置、model sidecar 或 shader 由另一个进程以 write/rename/atomic replace 发布时，使用
-`FileWatcher`；不要轮询 mtime，也不要依赖“一次 write 必有一个 event”。watcher 只提供通用、
-non-recursive 的变化流，解析证书、验证配置以及发布新对象仍由调用方或计划中的 `hyle-service` 拥有：
+`FileWatcher`；不要轮询 mtime，也不要依赖“一次 write 必有一个 event”。先按实际任务选择 target：
+
+- `file(path)`：只关心一个文件，文件暂时不存在也可以；event 的 `relative_path` 为空；
+- `directory(path)`：只关心一层 direct children；event path 是 basename；
+- `directory_tree(path)`：关心整个 model bundle、shader include 或 asset tree；event path 相对该 root。
+
+watcher 只提供通用变化流；解析、验证、debounce 以及发布新对象仍由调用方或计划中的
+`hyle-service` 拥有：
 
 ```cpp
 #include <hyle/io/watch.h>
@@ -120,10 +126,16 @@ non-recursive 的变化流，解析证书、验证配置以及发布新对象仍
 std::array targets{
     hyle::io::FileWatchTarget::file("tls/server.crt"),
     hyle::io::FileWatchTarget::file("tls/server.key"),
-    hyle::io::FileWatchTarget::file("tls/ca.pem")};
-auto made = hyle::io::FileWatcher::create(alloc, io, owner, targets);
+    hyle::io::FileWatchTarget::file("tls/ca.pem"),
+    hyle::io::FileWatchTarget::directory_tree("models/current")};
+hyle::io::FileWatchOptions options;
+options.max_watched_directories = 65'536;
+auto made = hyle::io::FileWatcher::create(alloc, io, owner, targets, options);
 if (!made) co_return;
 auto watcher = std::move(*made);
+
+// create 后先扫描 authoritative state；随后到达的 event/rescan 只负责失效。
+scan_and_publish_current_state();
 
 while (!shutdown.is_cancelled()) {
   auto batch = co_await watcher.next(
@@ -138,10 +150,11 @@ while (!shutdown.is_cancelled()) {
 (void)watcher.close();  // 必须早于 IoContext/Scheduler shutdown
 ```
 
-一个 exact-file target 可以在 `create()` 时尚不存在，但其 parent 必须存在；directory target 本身必须是
-已有目录。输入 path 在 factory 返回前被复制；传入的 allocator 则是借用的资源 owner，必须活过 watcher
-及其 `close()`。exact event 用稳定 `target_index` 标识，
-`relative_path` 为空；directory event 的 path 只是一层 basename，深层 descendant 不会泄漏。
+一个 exact-file target 可以在 `create()` 时尚不存在，但其 parent 必须存在；direct/tree target 本身必须是
+已有目录。tree root 不得是 symlink/junction，遍历也不跟随 descendant links；需要观察 link target 时应把
+真实目录作为独立 target。输入 path 在 factory 返回前被复制；传入的 allocator 则是借用的资源 owner，
+必须活过 watcher 及其 `close()`。每个 event 用稳定 `target_index` 标识；重叠 tree target 会各自收到按其
+root 计算的相对路径，direct target 仍不会泄漏深层 descendant。
 POSIX 根目录用 `realpath` 归一到现有目录身份；Windows 根目录使用绝对、分隔符归一的 lexical path，两个
 指向同一目录的 Win32 alias 可能各自占用一个 native handle。子项按 native directory stream 返回的
 UTF-8 拼写做 byte-exact 匹配。不要依赖大小写折叠、Unicode normalization 或 symlink alias 在三个平台上等价；对
@@ -150,14 +163,19 @@ exact-file target 使用目录实际保存/枚举的名称，或者观察其 par
 返回的 `FileWatchBatchView` 借用 watcher 的双缓冲，到下一次 `next()`、`close()` 或析构即失效；需要跨
 await 保存时复制。event 可能合并多个 change bit，rename correlation 只是尽力提供。任何 native/library
 overflow、粗粒度通知或无法安全表示的名称都会设置 `rescan_required()`；此时枚举并重建 authoritative
-state，不能猜丢了哪些事件。应用 debounce、内容 hash/diff、证书验证、reload retry 和 watcher service
-不是 IO 的职责。
+state，不能猜丢了哪些事件。Linux 在目录 topology 改变后也会要求 rescan，并同步恢复每目录 inotify
+coverage；Windows/macOS 使用原生 recursive stream。网络文件系统没有 polling fallback，必须确认其 native
+通知保证，或者由应用提供轮询/远端协议。应用 debounce、内容 hash/diff、证书验证、reload retry 和
+watcher service 不是 IO 的职责。
 
 为避免逐事件 allocation、复制和跨 worker dispatch，`FileWatcher` 有意采用以下性能/生命周期限制：它是
 single-owner 对象，`create/next/close` 以及 live-owner 的 move assignment 都在指定
 Scheduler worker 上进行；只能有一个在途 `next()`。取消或 deadline 只结束该次等待，watcher 仍可复用；
 `close()` 幂等，会唤醒 waiter 并排空 native completion。默认限制为 16 KiB native buffer、256 events
-和 16 KiB path bytes，可按一批资源数量显式调整；容量耗尽不会静默丢失，而是请求 rescan。
+、16 KiB path bytes 和 65,536 个 native directory resources，可按实际资源预算显式调整；该目录上限不会
+被预分配。Windows/macOS 按 canonical root 计，Linux tree 按唯一目录 watch 计。容量耗尽不会静默丢失：
+可恢复的 batch overflow 请求 rescan，无法继续覆盖的 watch/OOM 失败则在已有 rescan batch 之后返回 typed
+terminal error。未选择 tree 时不会建立递归目录表或 path scratch，普通 direct/exact 路线不为该能力付费。
 从构造 `next()` 返回的 awaitable 到其 `await_resume()` 完成，awaitable 借用的是同一个 watcher 对象；
 这段时间不得移动、赋值或析构 watcher。owner worker 上的另一 fiber 可以调用 `close()`，它会取消并
 排空该等待，随后 awaitable 以取消状态恢复；watcher 的析构也属于 owner-worker 操作，不能把未等待的
