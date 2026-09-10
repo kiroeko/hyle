@@ -203,13 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/sched/sched-v8-task-scope-distributed-completion.md",
-      "blocked_from": "AUDITED",
-      "blocker": "源码预审已移除两项确定冗余成本，但同一 paired artifact 的 workload-matched candidate/candidate 与 peer/peer A/A 仍覆盖 0.917..1.052，跨过预声明 5% margin；80 B 非计时 placement 扰动也让产品 A/B 从 WIN 翻到 LOSE，现有仪器无资格裁决工程性能。",
-      "blocker_owner": "HYLE performance-instrument owner",
-      "resume_condition": "独立有界的仪器任务必须保持真实 owner 完成语义、Scheduler/allocator/四 worker 拓扑和双顺序，并先证明 primary/placement 下 candidate/candidate 与 peer/peer 的 workload-matched A/A 全部位于 5% band；随后建立新的 sched closure card，依法回到 SCOPED/AUDITED、签发新 candidate 并只运行一次 qualified P1。重跑、扩样、放宽门或继续修改产品不满足条件。",
-      "summary": "sched v8 BLOCKED：完成边界、进程拓扑、placement control 与两个源码可证冗余成本均在正式 P1 前纠正；Windows focused 30/30 和生成代码通过，但真实 TaskScope/manual workload 的同路线 A/A 自身跨过 5%，故未启动 n=15，correctness/delivery/红队未伪造完成。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
+      "summary": "sched v9 SCOPED：v8 的独立仪器恢复条件已由 workload-matched interleaved A/A 8/8 通过；本轮禁止扩样，先以静态成本账单和 codegen 定位完整 TaskScope owner 的剩余同合同成本，再冻结至多两个有限修正。"
     },
     {
       "module": "io_core",
