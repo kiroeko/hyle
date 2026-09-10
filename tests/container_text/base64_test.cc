@@ -326,5 +326,70 @@ TEST(Base64, ProviderBlockTailsRoundTripAcrossPolicies) {
   }
 }
 
+TEST(Base64, ShortAdversarialPolicySpaceAgreesAcrossColdAndFastRoutes) {
+  // This is deliberately a state-space check rather than another list of
+  // friendly vectors.  It crosses both alphabets, all padding policies and
+  // both whitespace policies with alphabet-only, wrong-alphabet, padding,
+  // accepted whitespace and garbage symbols.  The cold diagnostic and the
+  // fast provider route may report different error categories, but they must
+  // never disagree about whether an input is accepted.
+  constexpr std::array<char, 12> kSymbols = {
+      'A', 'B', 'Z', 'g', '+', '/', '-', '_', '=', ' ', '#', '\v'};
+  constexpr std::array<Base64Alphabet, 2> kAlphabets = {
+      Base64Alphabet::kStandard, Base64Alphabet::kUrl};
+  constexpr std::array<Base64DecodePadding, 3> kPadding = {
+      Base64DecodePadding::kRequired, Base64DecodePadding::kAllowed,
+      Base64DecodePadding::kForbidden};
+  constexpr std::array<Base64Whitespace, 2> kWhitespace = {
+      Base64Whitespace::kReject, Base64Whitespace::kAllowAscii};
+
+  std::string input;
+  std::array<std::byte, 8> output{};
+  std::size_t combinations = 1;
+  for (std::size_t length = 0; length <= 5; ++length) {
+    input.resize(length);
+    for (std::size_t encoded = 0; encoded < combinations; ++encoded) {
+      std::size_t digits = encoded;
+      for (std::size_t i = 0; i < length; ++i) {
+        input[i] = kSymbols[digits % kSymbols.size()];
+        digits /= kSymbols.size();
+      }
+
+      for (Base64Alphabet alphabet : kAlphabets) {
+        for (Base64DecodePadding padding : kPadding) {
+          for (Base64Whitespace whitespace : kWhitespace) {
+            const Base64DecodeOptions options{alphabet, padding, whitespace};
+            const Base64SizeResult cold =
+                base64_decoded_size(std::span<const char>{input}, options);
+            const Base64Result fast = base64_decode(
+                std::span<const char>{input}, output, options);
+            if (cold.ok() != fast.ok()) {
+              ADD_FAILURE() << "cold/fast acceptance mismatch for input="
+                            << testing::PrintToString(input)
+                            << " alphabet=" << static_cast<int>(alphabet)
+                            << " padding=" << static_cast<int>(padding)
+                            << " whitespace=" << static_cast<int>(whitespace)
+                            << " cold=" << static_cast<int>(cold.status)
+                            << " fast=" << static_cast<int>(fast.status);
+              return;
+            }
+            if (cold.ok() &&
+                (fast.input_count != input.size() ||
+                 fast.output_count != cold.output_size)) {
+              ADD_FAILURE() << "cold/fast progress mismatch for input="
+                            << testing::PrintToString(input)
+                            << " expected_output=" << cold.output_size
+                            << " input_count=" << fast.input_count
+                            << " output_count=" << fast.output_count;
+              return;
+            }
+          }
+        }
+      }
+    }
+    combinations *= kSymbols.size();
+  }
+}
+
 }  // namespace
 }  // namespace hyle::container
