@@ -5,11 +5,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 
 #include "hyle/error/status.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
+#include "hyle/sched/cancel.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
@@ -37,11 +39,23 @@ constexpr std::uint64_t child_value(std::uint64_t seed) noexcept {
   return seed ^ (seed >> 31);
 }
 
-inline hyle::sched::Task<hyle::Status> helper(hyle::mem::AllocatorRef,
-                                              Child *child) noexcept {
+inline hyle::sched::Task<hyle::Status> helper(
+    hyle::mem::AllocatorRef, Child *child,
+    const hyle::sched::CancelToken *manual_group_token = nullptr) noexcept {
+  // The candidate installs its scope token in the scope-owned driver. The
+  // pre-v7 composition has no such owner, so it installs the same public token
+  // in the coroutine frame. Keeping the actual helper body shared prevents the
+  // comparison from drifting into two different workloads.
+  std::optional<hyle::sched::CancelScope> manual_cancel_scope;
+  if (manual_group_token != nullptr) {
+    manual_cancel_scope.emplace(*manual_group_token);
+  }
   // A real helper is not guaranteed to finish in its first dispatch. Both
   // routes pay the same cooperative yield and scheduler reinjection.
   hyle::sched::Fiber::yield();
+  if (hyle::sched::is_cancel_requested()) {
+    co_return hyle::Status::Cancelled();
+  }
   child->hits->hit(hyle::sched::current_worker_index());
   child->output = child_value(child->seed);
   if (child->fail)

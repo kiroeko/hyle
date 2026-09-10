@@ -16,7 +16,7 @@
       "revision": "37b6246010fad38f36abcc5fed0cf3a5cc88ba2f",
       "configuration": {
         "delivery_shape": "source-built static HYLE runtime in a separate process",
-        "route": "Only the pre-v7 public spawn_task, same-allocator PMR vector of JoinHandle<Status>, per-handle join and first-error aggregation",
+        "route": "Only pre-v7 public primitives: SpinLock-linearized admission/close, a group CancelToken visible to child IO, spawn_task, same-allocator PMR vector of JoinHandle<Status>, per-handle join and first-error aggregation",
         "purpose": "same-contract migration baseline; existing Sched evidence separately qualifies the shared queue, fiber, wake and typed-completion mechanisms"
       }
     }
@@ -58,12 +58,12 @@
       "consumer_key": "inference-rendering/sched/dynamic-structured-helper-owner",
       "provenance": {
         "path": "bench/sched/consumer_shapes_v7.json",
-        "sha256": "b0384a55c505bd5af31fd85342c3ac81c738acb4ba399015786c33a0da260342"
+        "sha256": "73ed55b92306b424fdf543a35031284eb38fe86d4d10cd0579eb0ed56c88a9aa"
       },
       "ownership_topology": {
         "candidate": "Each owner creates one allocator-backed TaskScope, admits 32 scope-owned Task<Status> helpers through add and closes/joins the scope; no unused per-child result handle is created, while scope state owns admission, cancellation, first-error retention and complete drain",
-        "peer": "Each owner creates one same-allocator PMR vector, admits the same 32 Task<Status> helpers through spawn_task, retains every JoinHandle<Status>, joins all handles and retains the first error",
-        "equivalence": "Both routes use the same persistent four-worker Scheduler, allocator, Task<Status> body, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged"
+        "peer": "Each owner creates a public group CancelToken, SpinLock-linearized admission/close state and one same-allocator PMR vector, admits the same 32 Task<Status> helpers through spawn_task, exposes the group token inside every helper, retains every JoinHandle<Status>, joins all handles and retains the first error",
+        "equivalence": "Both routes use the same persistent four-worker Scheduler, allocator, Task<Status> body, group-cancellation visibility, cooperative yield, output slots, failure distribution and full-drain completion boundary; both own runtime-sized admission through an explicit close boundary and all per-owner ownership setup and teardown is charged"
       },
       "material_contribution": {
         "frequency": 1024,
@@ -84,6 +84,7 @@
       "setup": "Scheduler creation, exact worker placement and 64 complete warmup owners are outside measurement",
       "charged_phases": [
         "per-owner ownership-state construction",
+        "runtime-sized admission/close synchronization and one shareable group-cancellation source",
         "32 coroutine, JoinState, driver and stack admissions",
         "one cooperative yield and scheduler reinjection per helper",
         "first-error retention, every helper completion and full drain",
@@ -91,7 +92,7 @@
       ],
       "pair": {
         "candidate": "HYLE TaskScope scope-owned add",
-        "peer": "HYLE v6 spawn_task plus same-allocator PMR JoinHandle vector plus explicit joins"
+        "peer": "HYLE v6 public SpinLock/CancelToken owner plus spawn_task, same-allocator PMR JoinHandle vector and explicit joins"
       },
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,

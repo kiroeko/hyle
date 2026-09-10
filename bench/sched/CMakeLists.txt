@@ -79,11 +79,13 @@ if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
   endif()
   set(_hyle_sched_v7_baseline_files
     include/hyle/sched/coro.h
+    include/hyle/sched/cancel.h
     include/hyle/sched/join.h
     include/hyle/sched/scheduler.h
     include/hyle/sched/sync.h
     include/hyle/sched/waker.h
     include/hyle/mem/pmr.h
+    include/hyle/util/spin_lock.h
     src/sched/fiber.cc
     src/sched/scheduler.cc
     src/sched/sync.cc
@@ -94,11 +96,13 @@ if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
     third_party/fcontext/asm/ontop_x86_64_ms_pe_masm.asm)
   set(_hyle_sched_v7_baseline_hashes
     8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54
+    11cd27341282367f7d366e7a802b09f0699c868903bdc5657ac59388b2a8b11e
     266d0bbc139304501d1501d915d6b45577e40ab63f8d043232a09f450ee8da86
     a97bb529d434980ead638fb20bb5ca8de324f2fb60e0fa698cf46bc018194f5f
     dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5
     cc89173f57dd37373899ad0955c37c203108fa2ff0932136f3451d657db2d0d7
     bd3c370b8729b5d82eeb62fa86798f020b8ffe22afdbaef023acbe7105e9f38f
+    2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce
     b327158f0f3e9d46a05a1da5aeb24f90651c0dc6453eda5beaa9aaf25f8ab3a8
     c6cdc451d904611ae5252372973a6bbb4d2324e64d406448c8b3f4a9394aed65
     564d5dc96e20ba9da6db1188455a360c005b6de8eeb75ed6d3e1501295f0572d
