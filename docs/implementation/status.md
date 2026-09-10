@@ -30,7 +30,7 @@
 | container | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container-v6 CLOSED：sequential 能力、三平台/三交付、文档、红队与同合同 weighted-LRU 8/8 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | util_runtime | CLOSED | P0 / [PASS](evidence/performance/benchmarks-util.md) | [record](tasks/util/util-runtime-v5-blocker-resolution.md) | util-runtime v5 CLOSED：三条 blocker 已关闭；三平台、三交付、WSL sanitizers、decorated C++ exports、易用性/文档、候选后红队与 P0 结构成本全部通过。 |
 | sched | CLOSED | P1 / [PASS](tasks/sched/sched-v10-execution-priority.md) / 5% | [record](tasks/sched/sched-v10-execution-priority.md) | sched v10 CLOSED：三档非抢占 execution priority 覆盖 admission/yield/wake/pinned/TaskScope 全路径；三平台正确性/sanitizer/三交付、IO 直接消费者、易用性、红队和 W1-WIN 两条同合同产品路线的 5% P1 非劣门全部通过。 |
-| io_core | AUDITED | — | [record](tasks/io/io-core-v3-recursive-directory-submit.md) | io_core v3 AUDITED：Win32/libuv 与 HYLE 源码账单把有限改动冻结为一个 subtree bool 的原样透传及唯一 io_watch consumer 迁移；普通 IO、operation layout 与非 Windows 成本不变。 |
+| io_core | CANDIDATE | — | [record](tasks/io/io-core-v3-recursive-directory-submit.md) | io_core v3 CANDIDATE：不可变产品树只把 Win32 directory submission 的 subtree bool 原样透传并迁移唯一 io_watch consumer；普通 IO、operation layout 与非 Windows 成本不变。 |
 | io_tls | CLOSED | P0 / [PASS](tasks/io/io-tls-v3-credential-sources.md) | [record](tasks/io/io-tls-v3-credential-sources.md) | io_tls v3 CLOSED：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、client/server identity 与 mTLS 固定在 4bd86adf；三平台、ASan/UBSan、直接消费者、TLS-on 三交付、TLS-off、红队与零连接热路附加成本 P0 全部通过。 |
 | io_http | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http-v2-duplex-progress.md) | io_http v2 CLOSED：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。 |
 | io_http2 | CLOSED | P1 / [PASS](evidence/performance/benchmarks-io.md) / 5% | [record](tasks/io/io-http2-v2-owner-progress-cost.md) | io_http2 v2 CLOSED：4060e217 的 owner-progress 修正通过三平台、sanitizer、三交付与终局红队；唯一同合同 P1 中 64x1KiB 双顺序 WIN、4x256KiB 双顺序 PARITY，固定 5% 非劣门全部 PASS。 |
@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
-| io_watch | AUDITED | — | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 AUDITED：directory_tree、root-relative path、native resource cap 与三平台机制已冻结；源码预审将有限改动锁为 common API/router、Windows/macOS 原生递归和 Linux O(D) watch-set 三批。 |
+| io_watch | CANDIDATE | — | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CANDIDATE：不可变产品树实现显式 directory_tree、root-relative path、native cap、Windows/macOS 原生递归与 Linux 有界 O(D) watch set；direct/exact 默认路径不携带递归 metadata。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

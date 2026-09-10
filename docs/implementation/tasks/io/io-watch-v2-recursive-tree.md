@@ -1,6 +1,6 @@
 # IO Watch v2：递归目录树变化流
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -165,4 +165,7 @@ default direct 路径没有复制 owner。
 
 ## 验证、红队与裁决
 
-产品实现只允许 `IOW-R01--R03`；任何未运行项仍为 `UNPROVEN`。
+不可变产品候选为 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d`；它恰好包含冻结的
+`IOW-R01--R03`，没有第四个产品批次。公开 API、三 backend 算法、对象布局与常态成本停止变化；后续只
+对该 commit/tree 执行预声明候选验证。尚未运行的三交付、sanitizer、macOS、候选后红队与 terminal gate
+仍为 `UNPROVEN`。

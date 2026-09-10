@@ -215,9 +215,10 @@
     },
     {
       "module": "io_core",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md",
-      "summary": "io_core v3 AUDITED：Win32/libuv 与 HYLE 源码账单把有限改动冻结为一个 subtree bool 的原样透传及唯一 io_watch consumer 迁移；普通 IO、operation layout 与非 Windows 成本不变。"
+      "candidate": "03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d",
+      "summary": "io_core v3 CANDIDATE：不可变产品树只把 Win32 directory submission 的 subtree bool 原样透传并迁移唯一 io_watch consumer；普通 IO、operation layout 与非 Windows 成本不变。"
     },
     {
       "module": "io_tls",
@@ -314,9 +315,10 @@
     },
     {
       "module": "io_watch",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md",
-      "summary": "io_watch v2 AUDITED：directory_tree、root-relative path、native resource cap 与三平台机制已冻结；源码预审将有限改动锁为 common API/router、Windows/macOS 原生递归和 Linux O(D) watch-set 三批。"
+      "candidate": "03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d",
+      "summary": "io_watch v2 CANDIDATE：不可变产品树实现显式 directory_tree、root-relative path、native cap、Windows/macOS 原生递归与 Linux 有界 O(D) watch set；direct/exact 默认路径不携带递归 metadata。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # IO Core v3：Windows 递归目录提交语义
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -77,4 +77,8 @@ bool submit_directory_changes(std::intptr_t directory, void* buffer,
 `IOCORE-R01--R02` 已按冻结形状实现：detail declaration/definition 只增加一个 `watch_subtree` 参数，
 Windows caller 从 root 上的预计算 tree bit 传入；新增 IOCP 机制测试直接验证 `true` 可见孙级文件，原
 `false` rearm/cancel/admission 测试保持。候选前 Windows MSVC 与 WSL GCC 14 的 io_core/io_watch + changed
-header 各 `15/15 PASS`；这只是实现反馈，候选验证、三交付、红队和 terminal 裁决仍为 `UNPROVEN`。
+header 各 `15/15 PASS`。
+
+不可变产品候选为 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d`。公开 shape、算法、layout 与常态成本停止
+变化；后续只对该 commit/tree 执行预声明的候选验证。三交付、候选后红队和 terminal 裁决仍为
+`UNPROVEN`。
