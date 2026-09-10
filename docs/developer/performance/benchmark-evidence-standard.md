@@ -86,7 +86,22 @@ cancel、error、allocation 或 suspension 合同的成本全部归因给底层 
 - 样本数、随机化、统计方法、停止条件、开发集与 holdout；
 - 预计最小差异和它对真实消费者的影响预算。
 
-### 3.1 完成边界源码预审（计时前硬门）
+### 3.1 Peer 合同与实现预审（构造 benchmark 前硬门）
+
+在编写、构建或运行带 peer 的 benchmark 前，先阅读双方公开合同、正常调用示例和对应实现，回答：
+
+- 两侧面向的是不是同一个 owner、生命周期和并发模型；
+- HYLE 是否额外承诺了 peer 与真实消费者都不需要的 result、cancel、重复调用、并发 waiter、进展保证或
+  资源保留；
+- peer 的优势是否来自更弱语义、不同完成边界、批处理、缓存、延迟释放或专用 allocator；
+- 双方自然 API 是否能直接形成 `SAME_CONTRACT`；不能时，应先把能力差异裁决为 `KEEP/FIX/DEFER`，
+  或把实验降为 `NATURAL_ROUTE`，不能靠 benchmark adapter 隐藏产品形状问题。
+
+此门必须给出真实 consumer/peer 的源码或公开合同锚点，并先形成候选 API 与生命周期图。若静态审计已经
+发现 material 的复杂度、allocation、同步或语义差异，先调查实现或修正产品/比较合同；不得先写长时间
+runner 来重复证明已知差异。只有本门通过，才进入完成边界和成本账单。
+
+### 3.2 完成边界源码预审（计时前硬门）
 
 任何带 peer 的 P1/P2 在配置、编译或采样前，必须根据**实际源码**填写下面的时序账单；只在合同里
 写一句“full drain”或“teardown 相同”不构成证据：

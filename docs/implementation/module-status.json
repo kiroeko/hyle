@@ -205,7 +205,7 @@
       "module": "sched",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
-      "summary": "sched v9 AUDITED：共同生命周期成本与完成边界已逐项对账；MSVC codegen 将剩余可消除成本限定为 add 的一层未内联内部调用，以及 join 未利用现有 publisher-release 状态而重复进入 Event。仅 S9-01/S9-02 获准实现，API/layout/语义不变。"
+      "summary": "sched v9 AUDITED：peer/API 源码预审确认重复、并发 join 是无真实 consumer 或成熟 peer 依据的过重合同，并阻止 terminal owner 逐项回收 record；强制内联因 code-size 膨胀被拒绝。仅 S9-02 publisher-release 快观察与 S9-03 single-owner terminal join 获准实现。"
     },
     {
       "module": "io_core",

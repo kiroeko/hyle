@@ -22,13 +22,13 @@
 - scope：先形成两条路线逐阶段时序及每 owner/per-child 的 allocation、retained bytes、atomic、lock、wake、
   deallocation 和 out-of-line call 静态账单；只检查账单中未决项的 MSVC codegen。只有源码能定位正常消费
   路径上的 material 可消除成本，才冻结有限产品修正；
-- non-goals：扩样或 qualified `n=15`、换 peer/workload/margin、修改公开 API/layout 以迎合点值、G08
+- non-goals：扩样或 qualified `n=15`、换 peer/workload/margin、为点值添加 benchmark-only API/layout、G08
   priority、Scheduler queue/idle/steal、IO、Compute/Graph、再次修改公共仪器；
 - 直接依赖/消费者：既有 `sched` 边不变；直接消费者仍为 IO 与后续 G03/G04；
 - 性能：`P1`，material margin `5%`。本阶段只做 P0 源码/生成代码审计，不计时；API、算法和 correctness
   固定成新 candidate 后，才允许用已通过 A/A 的 v2 合同运行唯一一次 qualified P1；
-- 调查与纠正预算：一次静态成本表、一次生成代码检查；至多冻结两个由源码直接证明、保持语义和 API 的
-  产品修正。AUDITED 前不得改产品；修正后只允许一次 focused correctness/P0 preflight 和一次 bounded
+- 调查与纠正预算：一次静态成本表、一次生成代码检查、一次 peer/API 复核；至多冻结两个由源码和正常
+  consumer 直接证明的产品修正。AUDITED 前不得改产品；修正后只允许一次 focused correctness/P0 preflight 和一次 bounded
   A/B 判定是否有资格签 candidate；
 - 预声明验证：若形成产品修正，运行受影响 TaskScope focused correctness/death tests、产品 diff/P0/codegen；
   candidate 后才运行 v8 已声明的三平台、sanitizer、三交付、红队和唯一 qualified P1。无产品修正则直接
@@ -70,22 +70,34 @@ MSVC 19.50 Release object 进一步把未决成本缩小到两项。公开 `Task
 `spawn_task_impl` 调用。`TaskScope::wait_` 的循环则无条件调用 out-of-line `Event::wait()`，即使
 `TaskScopeCompletion::references == 1` 已经由 publisher 的 release RMW 证明 Fiber、Task、stack、publish
 tail 全部结束。该 acquire observation 可以直接复用现有 refcount，不增加 layout/metadata；观察到 2 时
-仍走原 Event slow path，保持 wake-before-wait、多个 waiter 与 final-publisher race 语义。
+仍走原 Event slow path，保持 wake-before-wait 与 final-publisher race 语义。
+
+对这两个改动做了一次预声明的 bounded interleaved A/B 后，四格 candidate/peer ratio 仍为
+`0.968 / 0.938 / 0.967 / 0.924`，因此没有启动 qualified `n=15`。codegen 同时证明强制内联虽消除 call，
+却使 paired executable 增大 `1024 B`、`task_scope.obj` 增大 `3498 B`；它不是可靠的产品优化。
+
+随后补做 peer/API 预审发现更早的合同错误：HYLE 文档与测试承诺重复、并发多个 `join()` waiter；
+Folly `AsyncScope::joinAsync()` 明确只允许一次 join，Tokio `JoinSet` 的 join 需要独占 `&mut self`，当前
+推理 request/model-load/render frame 纵切也只有一个 lifecycle owner。manual peer 同样只有一个 owner。
+HYLE 的额外承诺使所有 completion record 必须保留到 scope 析构，而不能由 owner 在终止等待时逐项释放。
+这不是同合同 peer 的必要成本，而是缺少消费证据的 API 过度设计；应在采样前由合同审计发现。
 
 ### 有限改动集
 
 | ID | 已证实问题 | 唯一允许改动 | 验收 |
 |---|---|---|---|
-| `S9-01` | 每次 `add` 多一层同 TU、未内联 wrapper→template call | 强制内联内部 `task_scope_add` 到两个既有公开 overload；不改变公开 inline/ABI、校验或错误路径 | Release codegen 的公开 overload 不再调用内部 template；产品 API/layout 不变 |
-| `S9-02` | `wait_` 对 publisher 已释放的 record 仍进入 Event lock/wait | 以现有 refcount 的 acquire load 提供 `publisher_released()` 快路径；值为 2 时保持原 `Event::wait()` | 无新字段；已完成 record 不调用 Event，未完成/final-publisher pause/multiple waiter 行为不变 |
+| `S9-01` | 每次 `add` 多一层同 TU、未内联 wrapper→template call | `REJECT`：强制内联造成可测 code-size 膨胀，保留编译边界 | 不再为微观点值强制 inline |
+| `S9-02` | `wait_` 对 publisher 已释放的 record 仍进入 Event lock/wait | 以现有 refcount 的 acquire load 提供 `publisher_released()` 快路径；值为 2 时保持原 `Event::wait()` | 无新字段；已完成 record 不调用 Event，未完成/final-publisher pause 行为不变 |
+| `S9-03` | 无 consumer/peer 依据的重复/并发 join 承诺阻止 owner 及时释放 record | terminal join 改为 single-owner、single-shot；claim 后 detach 稳定 list，逐项等待并释放 scope reference；重复或并发 join 返回 typed `FailedPrecondition` | concurrent add/close/cancel、首错/full-drain/final-publisher race 不变；一次 owner join 后不保留全部 child record |
 
-没有第三项候选。尤其不拆 completion allocation、不改多 waiter 合同、不引入 shared counter、不把 driver
-释放移到远端 worker，也不增加 batch/fast API。实现上述两项后只跑 focused correctness、生成代码和一次
+没有第四项候选。尤其不拆 completion allocation、不引入 shared counter、不把 driver
+释放移到远端 worker，也不增加 batch/fast API。实现 `S9-02/S9-03` 后只跑 focused correctness、生成代码和一次
 bounded interleaved A/B；若仍有 material signal，按卡停止，不继续猜测。
 
 ## API / usability freeze
 
-公开调用和语义档位完全沿用 v8：无逐 child 结果时使用 `add`，需要 typed result/独立取消时使用
-`spawn`，最后显式 `join` 或 `cancel_and_join`。同步 admission failure 不转移 ownership；已 admission 的
-失败由 scope 在 full drain 后聚合。`remaining()` 仍是 O(N) control-plane snapshot。两项修正只移除编译
-边界和已完成观察的冗余常态成本，不产生 benchmark-only 入口或 delivery 差异。
+公开调用名称沿用 v8：无逐 child 结果时使用 `add`，需要 typed result/独立取消时使用 `spawn`，最后由
+唯一 lifecycle owner 显式调用一次 `join` 或 `cancel_and_join`。同步 admission failure 不转移 ownership；
+已 admission 的失败由 scope 在 full drain 后聚合。重复或并发 terminal join 返回
+`Status::FailedPrecondition`；concurrent admission/close/cancel 仍受支持。`remaining()` 仍是 O(N)
+control-plane snapshot。修正不增加 benchmark-only 入口或常态 metadata。
