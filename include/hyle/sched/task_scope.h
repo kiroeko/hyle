@@ -49,6 +49,14 @@ struct TaskScopeCompletion {
     if (previous == 1) dispose(owner);
   }
 
+  // Admission gives the scope one reference in addition to the publisher's.
+  // Observing one with acquire semantics proves that publication, including
+  // Fiber/Task/stack cleanup, has completed and the owner need not enter the
+  // Event slow path.
+  [[nodiscard]] bool publisher_released() const noexcept {
+    return references.load(std::memory_order_acquire) == 1;
+  }
+
   TaskScopeCompletion* next = nullptr;
   std::atomic<unsigned> references{1};  // publisher; scope adds one on admit
   Event completed{EventResetMode::kManual};
@@ -154,7 +162,7 @@ struct ScopedTaskDriver {
     join_state->release();
     task_scope_publish(self->scope_state, &self->completion,
                        self->scope_status);
-    // May destroy `self` if scope teardown already released its reference.
+    // May destroy `self` if the terminal owner already released its reference.
     self->completion.release();
   }
 
@@ -172,10 +180,9 @@ struct ScopedTaskDriver {
 // Owns a runtime-sized set of Tasks submitted to one Scheduler. Admission is
 // thread-safe and linearized with close(); join() closes admission and waits
 // for every admitted child, whether its JoinHandle was retained or detached.
-// Each child keeps its co-allocated completion cell until scope teardown. The
-// Task, Fiber and stack are released before publication, but the cell storage
-// remains; successful completions therefore do not contend on one scope-wide
-// counter.
+// Each child keeps its co-allocated completion cell until the terminal owner
+// observes it. The Task, Fiber and stack are released before publication;
+// successful completions therefore do not contend on one scope-wide counter.
 //
 // TaskScope is deliberately separate from WaitGroup: it owns child lifetime,
 // propagates one cooperative-cancellation source, and retains the first
@@ -213,9 +220,10 @@ class HYLE_SCHED_API TaskScope {
   // Stop future admission. Idempotent and safe to race with add()/spawn().
   void close() noexcept;
 
-  // close + drain. Multiple waiters are supported and receive the same first
-  // failure. Calling from a Scheduler fiber yields that fiber; calling from an
-  // external thread parks the thread.
+  // close + drain. This terminal operation is single-shot and belongs to the
+  // scope's lifecycle owner; a repeated or concurrent call returns
+  // FailedPrecondition. Calling from a Scheduler fiber yields that fiber;
+  // calling from an external thread parks the thread.
   [[nodiscard]] Status join() noexcept;
 
   // close + cooperative cancellation + drain. Cancellation does not preempt a

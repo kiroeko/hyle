@@ -209,7 +209,7 @@ void pause_final_publish(void* raw) noexcept {
 
 }  // namespace
 
-TEST(TaskScope, EmptyJoinClosesAndIsRepeatable) {
+TEST(TaskScope, EmptyJoinClosesAndRejectsRepeat) {
   Scheduler scheduler(1, system_allocator(), 64);
   auto created = TaskScope::create(scheduler, system_allocator());
   ASSERT_TRUE(created.has_value());
@@ -219,7 +219,7 @@ TEST(TaskScope, EmptyJoinClosesAndIsRepeatable) {
   EXPECT_FALSE(scope.is_closed());
   EXPECT_TRUE(scope.join().ok());
   EXPECT_TRUE(scope.is_closed());
-  EXPECT_TRUE(scope.join().ok());
+  EXPECT_TRUE(scope.join().IsFailedPrecondition());
   scheduler.shutdown();
 }
 
@@ -238,6 +238,28 @@ TEST(TaskScope, DynamicChildrenDetachButScopeStillDrains) {
   EXPECT_TRUE(scope.join().ok());
   EXPECT_EQ(completed.load(std::memory_order_relaxed), 257);
   EXPECT_EQ(scope.remaining(), 0u);
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, JoinReleasesCompletedRecordsBeforeScopeDestruction) {
+  Scheduler scheduler(2, system_allocator(), 128);
+  AllocationCounter counter;
+  AllocatorRef allocator = counted_allocator(&counter);
+  auto created = TaskScope::create(scheduler, allocator);
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  std::atomic<int> completed{0};
+
+  constexpr int kChildren = 16;
+  for (int i = 0; i < kChildren; ++i) {
+    ASSERT_TRUE(scope.add(increment(system_allocator(), &completed)).ok());
+  }
+  scheduler.drain();
+  ASSERT_EQ(completed.load(std::memory_order_relaxed), kChildren);
+
+  const std::size_t frees_before_join = counter.frees.load();
+  EXPECT_TRUE(scope.join().ok());
+  EXPECT_EQ(counter.frees.load(), frees_before_join + kChildren);
   scheduler.shutdown();
 }
 
@@ -623,7 +645,7 @@ TEST(TaskScope, ConcurrentSpawnAndCloseHasNoHalfAdmission) {
   scheduler.shutdown();
 }
 
-TEST(TaskScope, MultipleExternalJoinersReceiveSameError) {
+TEST(TaskScope, ExactlyOneExternalJoinerOwnsTerminalDrain) {
   Scheduler scheduler(2, system_allocator(), 128);
   auto created = TaskScope::create(scheduler, system_allocator());
   ASSERT_TRUE(created.has_value());
@@ -643,8 +665,9 @@ TEST(TaskScope, MultipleExternalJoinersReceiveSameError) {
   release.store(true, std::memory_order_release);
   a.join();
   b.join();
-  EXPECT_TRUE(left.ok());
-  EXPECT_TRUE(right.ok());
+  const bool left_owns = left.ok() && right.IsFailedPrecondition();
+  const bool right_owns = right.ok() && left.IsFailedPrecondition();
+  EXPECT_TRUE(left_owns || right_owns);
   scheduler.shutdown();
 }
 

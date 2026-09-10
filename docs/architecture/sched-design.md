@@ -98,7 +98,7 @@ handoff 才能销毁 caller-stack batch state。观察到 Event signaled 只证�
 已离开 notification primitive。这个约束适用于任何借用 caller storage 的同步批处理实现。
 
 动态 `TaskScope` 是 task owner，不是另一种 queue。它填的是 Folly AsyncScope 与 Seastar gate 所证明的
-ownership 闭环，而不是把 WaitGroup 包装成 benchmark 别名：`join` 先 close 再 drain，scope cancellation
+ownership 闭环，而不是把 WaitGroup 包装成 benchmark 别名：single-owner `join` 先 close 再 drain，scope cancellation
 token 可传给 cancellable IO，Task<Status> 首错只影响最终 Status，不能提前释放其它 child。只需统一拥有的
 void/Status child 走 scope-owned `add`，typed/per-child ownership 才走 `spawn`；两条路线都不包 wrapper
 coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或 Scheduler queue。
@@ -108,12 +108,14 @@ v7 候选用独立 admission/completion cache line 和一个共享 completion co
 child 上达到 HYLE 的 5% 非劣门，因此当前产品状态仍以 registry 的 `BLOCKED` 为准。恢复设计采用
 Tokio `JoinSet` 已验证的另一种成熟取舍：每个 scope child 保留一个独立 completion record，record 与本来
 就需要的 scoped driver **同次分配**，driver 退出并归还 Fiber stack 后再发布完成；scope close 后遍历稳定
-record 集完成 fiber/thread-aware drain。正常成功 completion 只写自己的 record，不再对 scope-wide
+record 集完成 fiber/thread-aware drain。terminal owner claim 后逐项观察并释放 record；重复或并发 join
+返回 `FailedPrecondition`，与 Folly AsyncScope、Tokio JoinSet 及真实 request/frame owner 的生命周期一致。
+正常成功 completion 只写自己的 record，不再对 scope-wide
 completion line 做 RMW；失败才进入 scope 的首错控制锁。record 由 scope 与 publisher 各持一个内部引用，
 因此 waiter 观察完成后立刻析构 owner 也不能释放仍在 `signal()` 中的记录。
 
-这个取舍明确把资源从共享 cache-line 争用换成 scope 生命周期内的 O(N) 小记录保留：单次 admission 和
-completion 仍为 O(1)，close 为 O(1)，完整 drain/析构为 O(N)，与 owner 必须回收 N 个 child 的任务一致；
+这个取舍明确把资源从共享 cache-line 争用换成 terminal owner 观察前的 O(N) 小记录保留：单次 admission 和
+completion 仍为 O(1)，close 为 O(1)，完整 drain 为 O(N)，与 owner 必须回收 N 个 child 的任务一致；
 普通 task 仍是零新增 metadata/分支。旧同合同 manual owner 的分散 JoinState 已在相同 32-child workload
 中给出这种成本方向的直接机制证据；新候选仍必须只运行一次同合同 qualified P1，不能凭该设计说明预签
 性能 PASS。固定分片 counter、close 后轮询和无界重采样均被否决：前者按 worker 数放大每个 request 的常态

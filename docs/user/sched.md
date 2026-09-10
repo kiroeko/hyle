@@ -210,7 +210,7 @@ for (const auto& shard : request.shards()) {
   }
 }
 
-return scope.join(); // 原子关闭 admission，等待全部 child，返回首个失败
+return scope.join(); // lifecycle owner 只调用一次：关闭 admission、完整等待并返回首错
 ```
 
 `TaskScope` 在创建时绑定一个 Scheduler 和 allocator，之后 `add/spawn` 不再重复接收 scheduler；因此 child
@@ -220,11 +220,13 @@ return scope.join(); // 原子关闭 admission，等待全部 child，返回首�
 join 的失败 handle。driver/stack 准备失败也发生在 admission 之前：`add` 直接返回错误，`spawn` 返回失败
 handle，scope 不会把这类未接管任务再计入 `join()`；一旦 admission 成功，后续 Scheduler admission 与运行期
 失败才由 scope 聚合。任何 direct rejection 都不解除 owner 对更早已接纳 child 的责任，不能用早返回宏绕过
-cancel/join。`join()` 会
-隐式 close；`cancel_and_join()` 是 close + cooperative cancellation + full drain。首错从任务完成顺序中
+cancel/join。`join()` 会隐式 close；`cancel_and_join()` 是 close + cooperative cancellation + full drain。
+两者是 lifecycle owner 的 single-shot terminal 操作；重复或并发调用返回 `FailedPrecondition`。需要从
+其它线程请求停止时用 `request_cancel()`，不要再建立第二个 join owner。首错从任务完成顺序中
 选取，绝不为了尽快返回而遗弃后续任务。成功 completion 只发布各自的完成单元，不争用一个 scope-wide
-完成计数；代价是每个已接纳 child 的同分配 cell storage 会保留到 scope teardown（Task、Fiber 与 stack 已在
-发布前释放），完整 drain/析构为 O(N)。`remaining()` 同样是 O(N) 控制面快照，不要放进热循环。
+完成计数；每个已接纳 child 的同分配 cell storage 会保留到 terminal owner 观察该 child，随后在
+`join()` 中逐项释放（Task、Fiber 与 stack 已在发布前释放），完整 drain 为 O(N)。`remaining()` 同样是
+O(N) 控制面快照，不要放进热循环，也不要与 terminal join 并发使用。
 
 `Task<void>` 的 runtime/exception/cancel failure 与 `Task<Status>` 返回的第一个 non-OK Status 会成为
 scope 结果；其它 `Task<T>` 的业务值仍只在返回的 `JoinHandle<T>` 中。scope 不保存 handle 或任意 `T`，

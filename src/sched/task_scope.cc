@@ -32,6 +32,8 @@ void run_final_publish_hook_for_testing() noexcept {
 }  // namespace
 
 struct TaskScopeState {
+  enum class JoinPhase : unsigned char { kOpen, kJoining, kJoined };
+
   TaskScopeState(mem::AllocatorRef owner_allocator,
                  CancelToken owner_cancel) noexcept
       : allocator(owner_allocator), cancel(std::move(owner_cancel)) {}
@@ -54,7 +56,7 @@ struct TaskScopeState {
   TaskScopeCompletion* tail = nullptr;
   std::atomic<bool> closed{false};
   bool ever_admitted = false;
-  bool joined = false;
+  JoinPhase join_phase = JoinPhase::kOpen;
   Status first_error;
 };
 
@@ -191,7 +193,7 @@ struct ScopeOwnedTaskDriver {
     self->task.reset();
     task_scope_publish(self->scope_state, &self->completion,
                        self->scope_status);
-    // May destroy `self` if scope teardown already released its reference.
+    // May destroy `self` if the terminal owner already released its reference.
     self->completion.release();
   }
 
@@ -308,13 +310,12 @@ TaskScope::~TaskScope() { reset_(); }
 void TaskScope::reset_() noexcept {
   if (state_ == nullptr) return;
   state_->control_lock.lock();
-  // wait_ sets joined only after it has traversed the now-stable list and
-  // observed every completion. Re-locking all per-child Events here used to
-  // prove the same fact a second time on every valid teardown. The owner
-  // invariant is sufficient and still makes both live and completed-but-
-  // unjoined destruction fatal in release builds.
+  // wait_ reaches kJoined only after it has consumed the stable list and
+  // observed every completion. The owner invariant still makes both live and
+  // completed-but-unjoined destruction fatal in release builds.
   HYLE_FATAL_ASSERT_MSG(
-      !state_->ever_admitted || state_->joined,
+      !state_->ever_admitted ||
+          state_->join_phase == detail::TaskScopeState::JoinPhase::kJoined,
       "TaskScope with admitted children must be joined before destruction");
   state_->control_lock.unlock();
 
@@ -351,21 +352,36 @@ Status TaskScope::wait_(bool cancel) noexcept {
   if (state_ == nullptr) {
     return Status::InvalidArgument("TaskScope join requires a valid scope");
   }
-  close();
+
+  // close and terminal-owner claim share the admission linearization point.
+  // Detaching the stable list lets this one owner release each completion
+  // record as soon as it has observed it instead of retaining all records until
+  // TaskScope destruction.
+  state_->control_lock.lock();
+  state_->closed.store(true, std::memory_order_release);
+  if (state_->join_phase != detail::TaskScopeState::JoinPhase::kOpen) {
+    state_->control_lock.unlock();
+    return Status::FailedPrecondition(
+        "TaskScope terminal join may be called only once");
+  }
+  state_->join_phase = detail::TaskScopeState::JoinPhase::kJoining;
+  detail::TaskScopeCompletion* current = state_->head;
+  state_->head = nullptr;
+  state_->tail = nullptr;
+  state_->control_lock.unlock();
+
   if (cancel) state_->cancel.cancel();
 
-  // close() makes the intrusive list stable. Each manual-reset Event supports
-  // both Fiber and OS-thread waiters, so multiple joins can traverse it safely.
-  state_->control_lock.lock();
-  detail::TaskScopeCompletion* current = state_->head;
-  state_->control_lock.unlock();
-  for (; current != nullptr; current = current->next) {
-    current->completed.wait();
+  while (current != nullptr) {
+    detail::TaskScopeCompletion* next = current->next;
+    if (!current->publisher_released()) current->completed.wait();
+    current->release();  // release the scope-owned reference
+    current = next;
   }
 
   state_->control_lock.lock();
   Status result = state_->first_error;
-  state_->joined = true;
+  state_->join_phase = detail::TaskScopeState::JoinPhase::kJoined;
   state_->control_lock.unlock();
   return result;
 }
