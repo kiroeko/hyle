@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
+#include <type_traits>
 
 #include "hyle/container/string_view.h"
 #include "hyle/error/result.h"
@@ -10,6 +12,7 @@
 #include "hyle/io/tcp.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
+#include "hyle/util/function_ref.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -21,6 +24,10 @@
 #endif
 
 namespace hyle::io {
+
+namespace detail {
+struct TlsCredentialAccess;
+}
 
 // Package/runtime capability query. A build without the TLS factor exposes no
 // operation-shaped failure stubs; callers can test this before selecting TLS.
@@ -39,19 +46,121 @@ enum class TlsVerifyMode : std::uint8_t {
   kPeer,
 };
 
-// All strings are borrowed only for make_client()/make_server(). The resulting
-// context owns provider state and encoded ALPN data. Peer verification is the
-// secure client default; tests and explicitly opportunistic transports must opt
-// out rather than reaching through a provider-native handle.
+enum class TlsCredentialSourceKind : std::uint8_t {
+  kNone,
+  kFile,
+  kPem,
+};
+
+// A provider-neutral, non-owning credential input. The source is borrowed only
+// during make_client()/make_server(); the resulting context owns parsed
+// provider state, never the path or PEM bytes.
+class TlsCredentialSource {
+public:
+  constexpr TlsCredentialSource() noexcept = default;
+
+  static constexpr TlsCredentialSource
+  file(container::StringView path) noexcept {
+    return TlsCredentialSource(TlsCredentialSourceKind::kFile, path);
+  }
+
+  static constexpr TlsCredentialSource
+  pem(container::StringView bytes) noexcept {
+    return TlsCredentialSource(TlsCredentialSourceKind::kPem, bytes);
+  }
+
+  constexpr TlsCredentialSourceKind kind() const noexcept { return kind_; }
+  constexpr container::StringView value() const noexcept { return value_; }
+  constexpr bool supplied() const noexcept {
+    return kind_ != TlsCredentialSourceKind::kNone;
+  }
+
+private:
+  constexpr TlsCredentialSource(TlsCredentialSourceKind kind,
+                                container::StringView value) noexcept
+      : value_(value), kind_(kind) {}
+
+  container::StringView value_{};
+  TlsCredentialSourceKind kind_ = TlsCredentialSourceKind::kNone;
+};
+
+// Called synchronously, on the make_client()/make_server() thread, only when
+// the provider needs to decrypt a private key. The callback and the successful
+// returned view must remain valid until make_* returns; neither is retained.
+using TlsPasswordCallback =
+    util::FunctionRef<Result<container::StringView>() noexcept>;
+
+enum class TlsPrivateKeyPasswordKind : std::uint8_t {
+  kNone,
+  kBorrowed,
+  kCallback,
+};
+
+class TlsPrivateKeyPassword {
+public:
+  constexpr TlsPrivateKeyPassword() noexcept = default;
+
+  static constexpr TlsPrivateKeyPassword
+  borrowed(container::StringView password) noexcept {
+    TlsPrivateKeyPassword result;
+    result.kind_ = TlsPrivateKeyPasswordKind::kBorrowed;
+    result.borrowed_ = password;
+    return result;
+  }
+
+  static TlsPrivateKeyPassword callback(TlsPasswordCallback callback) noexcept {
+    TlsPrivateKeyPassword result;
+    result.kind_ = TlsPrivateKeyPasswordKind::kCallback;
+    result.callback_.emplace(callback);
+    return result;
+  }
+
+  // A temporary capturing callable would dangle if the options outlived the
+  // full expression. Function pointers and explicit FunctionRef values remain
+  // safe rvalues; stateful callables must be named lvalues.
+  template <class Callback>
+    requires(!std::is_lvalue_reference_v<Callback &&> &&
+             !std::is_pointer_v<std::remove_cvref_t<Callback>> &&
+             !std::is_same_v<std::remove_cvref_t<Callback>,
+                             TlsPasswordCallback>)
+  static TlsPrivateKeyPassword callback(Callback &&) = delete;
+
+  constexpr TlsPrivateKeyPasswordKind kind() const noexcept { return kind_; }
+  constexpr bool supplied() const noexcept {
+    return kind_ != TlsPrivateKeyPasswordKind::kNone;
+  }
+
+private:
+  friend struct detail::TlsCredentialAccess;
+
+  constexpr container::StringView borrowed_value() const noexcept {
+    return borrowed_;
+  }
+  const TlsPasswordCallback *callback_ref() const noexcept {
+    return callback_ ? &*callback_ : nullptr;
+  }
+
+  container::StringView borrowed_{};
+  std::optional<TlsPasswordCallback> callback_{};
+  TlsPrivateKeyPasswordKind kind_ = TlsPrivateKeyPasswordKind::kNone;
+};
+
+// All option views are borrowed only for make_client()/make_server(). The
+// resulting context owns provider state and encoded ALPN data. Peer
+// verification is the secure client default; tests and explicitly
+// opportunistic transports must opt out rather than reaching through a
+// provider-native handle.
 struct TlsClientOptions {
   TlsVerifyMode verify = TlsVerifyMode::kPeer;
   TlsVersion min_version = TlsVersion::kTls12;
   TlsVersion max_version = TlsVersion::kProviderDefault;
-  container::StringView certificate_authority_file{};
+  // kNone uses the provider's system trust store when peer verification is on.
+  TlsCredentialSource certificate_authority{};
   // Optional client identity for mutual TLS. Supply both fields together;
-  // make_client() loads them before returning and does not retain the paths.
-  container::StringView certificate_chain_file{};
-  container::StringView private_key_file{};
+  // certificate and key sources may independently be file or borrowed PEM.
+  TlsCredentialSource certificate_chain{};
+  TlsCredentialSource private_key{};
+  TlsPrivateKeyPassword private_key_password{};
   std::span<const container::StringView> alpn_protocols{};
   // Backs the one reusable 16 KiB pump buffer allocated for each stream.
   // Custom allocator state must outlive every stream made from this context.
@@ -63,12 +172,13 @@ struct TlsClientOptions {
 };
 
 struct TlsServerOptions {
-  container::StringView certificate_chain_file{};
-  container::StringView private_key_file{};
+  TlsCredentialSource certificate_chain{};
+  TlsCredentialSource private_key{};
+  TlsPrivateKeyPassword private_key_password{};
   TlsVerifyMode client_verification = TlsVerifyMode::kNone;
   TlsVersion min_version = TlsVersion::kTls12;
   TlsVersion max_version = TlsVersion::kProviderDefault;
-  container::StringView client_certificate_authority_file{};
+  TlsCredentialSource client_certificate_authority{};
   std::span<const container::StringView> alpn_protocols{};
   // Same lifetime contract as TlsClientOptions::connection_allocator.
   mem::AllocatorRef connection_allocator = mem::system_allocator();

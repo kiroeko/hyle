@@ -14,5 +14,5 @@ if(HYLE_IO_TLS_ENABLED)
     NAME openssl
     OWNER io_tls
     FEATURES io_tls
-    STATIC_FIND_DEPENDENCIES OpenSSL)
+    STATIC_FIND_DEPENDENCIES OpenSSL|3.0)
 endif()

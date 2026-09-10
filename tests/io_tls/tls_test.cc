@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <span>
@@ -65,16 +66,18 @@ using hyle::io::tls_write;
 using hyle::io::TlsClientOptions;
 using hyle::io::TlsConnectOptions;
 using hyle::io::TlsContext;
+using hyle::io::TlsCredentialSource;
+using hyle::io::TlsPrivateKeyPassword;
 using hyle::io::TlsServerOptions;
 using hyle::io::TlsStream;
 using hyle::io::TransferResult;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
+using hyle::sched::Event;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
 using hyle::sched::Task;
-using hyle::sched::Event;
 
 namespace {
 
@@ -131,6 +134,37 @@ const char *kKeyPem =
     "1/HH0oyQh5LdX6vLMtXxoZI8GPnmtbeJ4fmXckbRXev925vXgdcknQ2RY6OU9HzI\n"
     "A48heHgTiFQ6QIIrkn9z7lQJ\n"
     "-----END PRIVATE KEY-----\n";
+const char *kEncryptedKeyPem =
+    "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+    "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\n"
+    "-----END ENCRYPTED PRIVATE KEY-----\n";
 
 std::string write_temp(const char *name, const char *pem) {
   std::string path = std::string("hyle_tls_test_") + name;
@@ -236,8 +270,7 @@ struct Drive {
 };
 void drive_entry(void *p) noexcept { static_cast<Drive *>(p)->task.resume(); }
 
-Task<int> inspect_cancelled_handshake_wire(AllocatorRef,
-                                           TcpStream *peer,
+Task<int> inspect_cancelled_handshake_wire(AllocatorRef, TcpStream *peer,
                                            TransferResult *result) {
   std::array<std::byte, 1> byte{};
   *result = co_await peer->read_some(
@@ -388,8 +421,7 @@ struct TlsPartialWriteResult {
 };
 
 Task<int> tls_partial_write_server(AllocatorRef allocator,
-                                   TcpListener *listener,
-                                   TlsContext *context,
+                                   TcpListener *listener, TlsContext *context,
                                    TlsPartialWriteResult *result) {
   auto accepted = co_await listener->accept(kOwner);
   if (!accepted)
@@ -538,7 +570,8 @@ TEST(IoTls, TypedFactoryRejectsInvalidConfiguration) {
 
   TlsClientOptions incomplete_client_identity;
   incomplete_client_identity.verify = hyle::io::TlsVerifyMode::kNone;
-  incomplete_client_identity.certificate_chain_file = "client.pem";
+  incomplete_client_identity.certificate_chain =
+      TlsCredentialSource::file("client.pem");
   auto missing_client_key = TlsContext::make_client(incomplete_client_identity);
   ASSERT_FALSE(missing_client_key);
   EXPECT_TRUE(missing_client_key.error().IsInvalidArgument());
@@ -549,6 +582,249 @@ TEST(IoTls, TypedFactoryRejectsInvalidConfiguration) {
   auto bad_allocator = TlsContext::make_client(invalid_allocator);
   ASSERT_FALSE(bad_allocator);
   EXPECT_TRUE(bad_allocator.error().IsInvalidArgument());
+}
+
+TEST(IoTls, CredentialSourcesLoadFromFileMemoryAndMixedInputs) {
+  std::string cert_path = write_temp("source-cert.pem", kCertPem);
+  std::string key_path = write_temp("source-key.pem", kKeyPem);
+
+  TlsServerOptions from_files;
+  from_files.certificate_chain = TlsCredentialSource::file(cert_path);
+  from_files.private_key = TlsCredentialSource::file(key_path);
+  EXPECT_TRUE(TlsContext::make_server(from_files));
+
+  TlsServerOptions from_memory;
+  from_memory.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  from_memory.private_key = TlsCredentialSource::pem(kKeyPem);
+  EXPECT_TRUE(TlsContext::make_server(from_memory));
+
+  TlsServerOptions mixed;
+  mixed.certificate_chain = TlsCredentialSource::file(cert_path);
+  mixed.private_key = TlsCredentialSource::pem(kKeyPem);
+  EXPECT_TRUE(TlsContext::make_server(mixed));
+
+  std::string duplicate_chain = std::string(kCertPem) + kCertPem;
+  TlsServerOptions chained;
+  chained.certificate_chain = TlsCredentialSource::pem(duplicate_chain);
+  chained.private_key = TlsCredentialSource::file(key_path);
+  EXPECT_TRUE(TlsContext::make_server(chained));
+
+  std::string duplicate_authorities = std::string(kCertPem) + kCertPem;
+  TlsClientOptions client;
+  client.certificate_authority =
+      TlsCredentialSource::pem(duplicate_authorities);
+  EXPECT_TRUE(TlsContext::make_client(client));
+
+  std::remove(cert_path.c_str());
+  std::remove(key_path.c_str());
+}
+
+TEST(IoTls, EncryptedPrivateKeySupportsBorrowedAndCallbackPasswords) {
+  TlsServerOptions direct;
+  direct.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  direct.private_key = TlsCredentialSource::pem(kEncryptedKeyPem);
+  direct.private_key_password = TlsPrivateKeyPassword::borrowed("hyle-secret");
+  EXPECT_TRUE(TlsContext::make_server(direct));
+
+  std::string encrypted_path =
+      write_temp("encrypted-key.pem", kEncryptedKeyPem);
+  TlsServerOptions encrypted_file = direct;
+  encrypted_file.private_key = TlsCredentialSource::file(encrypted_path);
+  EXPECT_TRUE(TlsContext::make_server(encrypted_file));
+  std::remove(encrypted_path.c_str());
+
+  TlsServerOptions wrong = direct;
+  wrong.private_key_password = TlsPrivateKeyPassword::borrowed("wrong");
+  auto rejected = TlsContext::make_server(wrong);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsInvalidArgument());
+
+  TlsServerOptions absent = direct;
+  absent.private_key_password = {};
+  auto no_prompt = TlsContext::make_server(absent);
+  ASSERT_FALSE(no_prompt);
+  EXPECT_TRUE(no_prompt.error().IsInvalidArgument());
+
+  struct CallbackState {
+    std::string password = "hyle-secret";
+    unsigned calls = 0;
+  } state;
+  auto callback =
+      [&state]() noexcept -> hyle::Result<hyle::container::StringView> {
+    ++state.calls;
+    return hyle::container::StringView(state.password);
+  };
+  TlsServerOptions callback_options;
+  callback_options.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  callback_options.private_key = TlsCredentialSource::pem(kEncryptedKeyPem);
+  callback_options.private_key_password =
+      TlsPrivateKeyPassword::callback(callback);
+  auto callback_context = TlsContext::make_server(callback_options);
+  ASSERT_TRUE(callback_context);
+  EXPECT_GT(state.calls, 0u);
+  const unsigned construction_calls = state.calls;
+  state.password = "invalid-after-construction";
+  callback_context = hyle::make_unexpected(
+      hyle::Status::Internal("release callback-context test owner"));
+  EXPECT_EQ(state.calls, construction_calls)
+      << "destroying a context must not call or retain the password callback";
+
+  auto unavailable =
+      []() noexcept -> hyle::Result<hyle::container::StringView> {
+    return hyle::make_unexpected(
+        hyle::Status::Unavailable("credential store unavailable"));
+  };
+  callback_options.private_key_password =
+      TlsPrivateKeyPassword::callback(unavailable);
+  auto callback_error = TlsContext::make_server(callback_options);
+  ASSERT_FALSE(callback_error);
+  EXPECT_TRUE(callback_error.error().IsUnavailable());
+  EXPECT_EQ(callback_error.error().message(), "credential store unavailable");
+
+  unsigned unused_calls = 0;
+  auto unused =
+      [&unused_calls]() noexcept -> hyle::Result<hyle::container::StringView> {
+    ++unused_calls;
+    return hyle::make_unexpected(
+        hyle::Status::Internal("must not run for an unencrypted key"));
+  };
+  TlsServerOptions unencrypted;
+  unencrypted.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  unencrypted.private_key = TlsCredentialSource::pem(kKeyPem);
+  unencrypted.private_key_password = TlsPrivateKeyPassword::callback(unused);
+  EXPECT_TRUE(TlsContext::make_server(unencrypted));
+  EXPECT_EQ(unused_calls, 0u);
+
+  std::string long_password(4096, 'x');
+  auto too_long =
+      [&long_password]() noexcept -> hyle::Result<hyle::container::StringView> {
+    return hyle::container::StringView(long_password);
+  };
+  callback_options.private_key_password =
+      TlsPrivateKeyPassword::callback(too_long);
+  auto oversized_password = TlsContext::make_server(callback_options);
+  ASSERT_FALSE(oversized_password);
+  EXPECT_TRUE(oversized_password.error().IsOutOfRange());
+
+  auto invalid_view =
+      []() noexcept -> hyle::Result<hyle::container::StringView> {
+    return hyle::container::StringView(nullptr, 1);
+  };
+  callback_options.private_key_password =
+      TlsPrivateKeyPassword::callback(invalid_view);
+  auto invalid_password = TlsContext::make_server(callback_options);
+  ASSERT_FALSE(invalid_password);
+  EXPECT_TRUE(invalid_password.error().IsInvalidArgument());
+}
+
+TEST(IoTls, CredentialConfigurationRejectsUnsafeOrIgnoredInputs) {
+  TlsClientOptions password_without_key;
+  password_without_key.verify = hyle::io::TlsVerifyMode::kNone;
+  password_without_key.private_key_password =
+      TlsPrivateKeyPassword::borrowed("unused");
+  auto rejected_password_without_key =
+      TlsContext::make_client(password_without_key);
+  ASSERT_FALSE(rejected_password_without_key);
+  EXPECT_TRUE(rejected_password_without_key.error().IsInvalidArgument());
+
+  TlsClientOptions ignored_client_authority;
+  ignored_client_authority.verify = hyle::io::TlsVerifyMode::kNone;
+  ignored_client_authority.certificate_authority =
+      TlsCredentialSource::pem(kCertPem);
+  auto rejected_client_authority =
+      TlsContext::make_client(ignored_client_authority);
+  ASSERT_FALSE(rejected_client_authority);
+  EXPECT_TRUE(rejected_client_authority.error().IsInvalidArgument());
+
+  TlsServerOptions ignored_server_authority;
+  ignored_server_authority.certificate_chain =
+      TlsCredentialSource::pem(kCertPem);
+  ignored_server_authority.private_key = TlsCredentialSource::pem(kKeyPem);
+  ignored_server_authority.client_certificate_authority =
+      TlsCredentialSource::pem(kCertPem);
+  auto rejected_server_authority =
+      TlsContext::make_server(ignored_server_authority);
+  ASSERT_FALSE(rejected_server_authority);
+  EXPECT_TRUE(rejected_server_authority.error().IsInvalidArgument());
+
+  TlsServerOptions empty_source;
+  empty_source.certificate_chain = TlsCredentialSource::pem("");
+  empty_source.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_empty_source = TlsContext::make_server(empty_source);
+  ASSERT_FALSE(rejected_empty_source);
+  EXPECT_TRUE(rejected_empty_source.error().IsInvalidArgument());
+
+  TlsServerOptions missing_file;
+  missing_file.certificate_chain =
+      TlsCredentialSource::file("hyle-definitely-missing-certificate.pem");
+  missing_file.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_missing_file = TlsContext::make_server(missing_file);
+  ASSERT_FALSE(rejected_missing_file);
+  EXPECT_FALSE(rejected_missing_file.error().ok());
+
+  std::array<char, 3> nul_path{'x', '\0', 'y'};
+  TlsServerOptions embedded_path_nul;
+  embedded_path_nul.certificate_chain =
+      TlsCredentialSource::file(hyle::container::StringView(
+          nul_path.data(), static_cast<std::uint32_t>(nul_path.size())));
+  embedded_path_nul.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_path_nul = TlsContext::make_server(embedded_path_nul);
+  ASSERT_FALSE(rejected_path_nul);
+  EXPECT_TRUE(rejected_path_nul.error().IsInvalidArgument());
+
+  std::array<char, 4> nul_pem{'x', '\0', 'y', '\n'};
+  TlsServerOptions embedded_pem_nul;
+  embedded_pem_nul.certificate_chain =
+      TlsCredentialSource::pem(hyle::container::StringView(
+          nul_pem.data(), static_cast<std::uint32_t>(nul_pem.size())));
+  embedded_pem_nul.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_pem_nul = TlsContext::make_server(embedded_pem_nul);
+  ASSERT_FALSE(rejected_pem_nul);
+  EXPECT_TRUE(rejected_pem_nul.error().IsInvalidArgument());
+
+  char byte = 'x';
+  TlsServerOptions oversized;
+  oversized.certificate_chain =
+      TlsCredentialSource::pem(hyle::container::StringView(
+          &byte,
+          static_cast<std::uint32_t>((std::numeric_limits<int>::max)()) + 1));
+  oversized.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto too_large = TlsContext::make_server(oversized);
+  ASSERT_FALSE(too_large);
+  EXPECT_TRUE(too_large.error().IsOutOfRange());
+
+  TlsServerOptions truncated;
+  truncated.certificate_chain =
+      TlsCredentialSource::pem("-----BEGIN CERTIFICATE-----\nAAAA\n");
+  truncated.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_truncated = TlsContext::make_server(truncated);
+  ASSERT_FALSE(rejected_truncated);
+  EXPECT_TRUE(rejected_truncated.error().IsInvalidArgument());
+
+  TlsServerOptions malformed_key;
+  malformed_key.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  malformed_key.private_key = TlsCredentialSource::pem("not a private key");
+  auto rejected_malformed_key = TlsContext::make_server(malformed_key);
+  ASSERT_FALSE(rejected_malformed_key);
+  EXPECT_TRUE(rejected_malformed_key.error().IsInvalidArgument());
+
+  TlsClientOptions malformed_authority;
+  malformed_authority.certificate_authority =
+      TlsCredentialSource::pem("not a certificate authority");
+  auto rejected_malformed_authority =
+      TlsContext::make_client(malformed_authority);
+  ASSERT_FALSE(rejected_malformed_authority);
+  EXPECT_TRUE(rejected_malformed_authority.error().IsInvalidArgument());
+
+  std::string excessive_chain;
+  for (unsigned i = 0; i < 65; ++i)
+    excessive_chain += kCertPem;
+  TlsServerOptions excessive;
+  excessive.certificate_chain = TlsCredentialSource::pem(excessive_chain);
+  excessive.private_key = TlsCredentialSource::pem(kKeyPem);
+  auto rejected_excessive = TlsContext::make_server(excessive);
+  ASSERT_FALSE(rejected_excessive);
+  EXPECT_TRUE(rejected_excessive.error().IsInvalidArgument());
 }
 
 TEST(IoTls, StreamRetainsOpaqueContextState) {
@@ -635,12 +911,12 @@ TEST(IoTls, HandshakePropagatesCancellationBudget) {
   // the client frame so the native peer observes EOF after any bytes that the
   // cancelled operation might have leaked.
   client.reset();
-  TransferResult wire_result{
-      1, hyle::Status::Unknown("wire probe did not run"), false};
+  TransferResult wire_result{1, hyle::Status::Unknown("wire probe did not run"),
+                             false};
   if (result->held.valid()) {
     auto probe = std::make_unique<Drive>();
-    probe->task = inspect_cancelled_handshake_wire(
-        system_allocator(), &result->held, &wire_result);
+    probe->task = inspect_cancelled_handshake_wire(system_allocator(),
+                                                   &result->held, &wire_result);
     Fiber probe_fiber(kDefaultStackSize, &drive_entry, probe.get());
     scheduler.spawn_on(kOwner, &probe_fiber);
     scheduler.drain();
@@ -657,15 +933,26 @@ TEST(IoTls, HandshakePropagatesCancellationBudget) {
 }
 
 TEST(IoTls, HandshakeAndEncryptedEcho) {
-  std::string cert = write_temp("cert.pem", kCertPem);
-  std::string key = write_temp("key.pem", kKeyPem);
-
+  struct PasswordState {
+    std::string value = "hyle-secret";
+    unsigned calls = 0;
+  } password_state;
+  auto password_callback = [&password_state]() noexcept
+      -> hyle::Result<hyle::container::StringView> {
+    ++password_state.calls;
+    return hyle::container::StringView(password_state.value);
+  };
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  server_options.private_key = TlsCredentialSource::pem(kEncryptedKeyPem);
+  server_options.private_key_password =
+      TlsPrivateKeyPassword::callback(password_callback);
   server_options.alpn_protocols = hyle::io::tls_http2_protocols();
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server) << "server ctx (cert/key load) failed";
+  ASSERT_GT(password_state.calls, 0u);
+  const unsigned construction_calls = password_state.calls;
+  password_state.value = "wrong-after-context-construction";
   TlsContext sctx = std::move(*made_server);
   TlsClientOptions client_options;
   client_options.verify = hyle::io::TlsVerifyMode::kNone;
@@ -695,9 +982,6 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   sched.drain();
   sched.shutdown();
 
-  std::remove(cert.c_str());
-  std::remove(key.c_str());
-
   EXPECT_TRUE(r->server_done.load());
   EXPECT_TRUE(r->client_done.load());
   EXPECT_EQ(r->server_hs.load(), 0) << "server handshake failed";
@@ -708,6 +992,8 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   EXPECT_EQ(r->server_echoed.load(), static_cast<long>(sizeof(kMsg)));
   EXPECT_EQ(r->client_recv.load(), static_cast<long>(sizeof(kMsg)));
   EXPECT_STREQ(r->client_got, "tls-encrypted-echo");
+  EXPECT_EQ(password_state.calls, construction_calls)
+      << "handshake must not retain or re-invoke the credential callback";
 }
 
 TEST(IoTls, LargeWriteReturnsOneRecordOfPartialProgress) {
@@ -716,8 +1002,8 @@ TEST(IoTls, LargeWriteReturnsOneRecordOfPartialProgress) {
   std::string key = write_temp("partial-key.pem", kKeyPem);
 
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server);
   TlsContext server_context = std::move(*made_server);
@@ -730,18 +1016,17 @@ TEST(IoTls, LargeWriteReturnsOneRecordOfPartialProgress) {
   Scheduler scheduler(1, system_allocator(), 256);
   IoContext io(scheduler);
   auto made_listener = TcpListener::bind(
-      io, kOwner,
-      Endpoint::loopback(AddressFamily::kIpv4, kPartialWritePort));
+      io, kOwner, Endpoint::loopback(AddressFamily::kIpv4, kPartialWritePort));
   ASSERT_TRUE(made_listener);
   TcpListener listener = std::move(*made_listener);
   auto result = std::make_unique<TlsPartialWriteResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = tls_partial_write_server(
-      system_allocator(), &listener, &server_context, result.get());
-  client->task = tls_partial_write_client(system_allocator(), &io,
-                                           &client_context, result.get(),
-                                           kPartialWritePort);
+  server->task = tls_partial_write_server(system_allocator(), &listener,
+                                          &server_context, result.get());
+  client->task =
+      tls_partial_write_client(system_allocator(), &io, &client_context,
+                               result.get(), kPartialWritePort);
   Fiber server_fiber(kDefaultStackSize, &drive_entry, server.get());
   Fiber client_fiber(kDefaultStackSize, &drive_entry, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));
@@ -760,28 +1045,25 @@ TEST(IoTls, LargeWriteReturnsOneRecordOfPartialProgress) {
   EXPECT_LE(result->first_write_bytes.load(), 16u * 1024u);
   EXPECT_LT(result->first_write_bytes.load(), kPartialWritePayload.size());
   EXPECT_GT(result->first_read_bytes.load(), 0u);
-  EXPECT_LE(result->first_read_bytes.load(),
-            result->first_write_bytes.load());
+  EXPECT_LE(result->first_read_bytes.load(), result->first_write_bytes.load());
 }
 
 TEST(IoTls, MutualTlsAuthenticatesClientIdentity) {
   constexpr std::uint16_t kMutualTlsPort = 54402;
-  std::string cert = write_temp("mtls-cert.pem", kCertPem);
-  std::string key = write_temp("mtls-key.pem", kKeyPem);
-
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  server_options.private_key = TlsCredentialSource::pem(kKeyPem);
   server_options.client_verification = hyle::io::TlsVerifyMode::kPeer;
-  server_options.client_certificate_authority_file = cert;
+  server_options.client_certificate_authority =
+      TlsCredentialSource::pem(kCertPem);
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server);
   TlsContext server_context = std::move(*made_server);
 
   TlsClientOptions client_options;
   client_options.verify = hyle::io::TlsVerifyMode::kNone;
-  client_options.certificate_chain_file = cert;
-  client_options.private_key_file = key;
+  client_options.certificate_chain = TlsCredentialSource::pem(kCertPem);
+  client_options.private_key = TlsCredentialSource::pem(kKeyPem);
   auto made_client = TlsContext::make_client(client_options);
   ASSERT_TRUE(made_client);
   TlsContext client_context = std::move(*made_client);
@@ -806,8 +1088,6 @@ TEST(IoTls, MutualTlsAuthenticatesClientIdentity) {
   scheduler.drain();
   scheduler.shutdown();
 
-  std::remove(cert.c_str());
-  std::remove(key.c_str());
   EXPECT_EQ(result->server_hs.load(), 0);
   EXPECT_EQ(result->client_hs.load(), 0);
   EXPECT_GT(result->client_recv.load(), 0);
@@ -818,8 +1098,8 @@ TEST(IoTls, OpaqueSessionCanResumeOnItsOwningContext) {
   std::string cert = write_temp("resume-cert.pem", kCertPem);
   std::string key = write_temp("resume-key.pem", kKeyPem);
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   server_options.max_version = hyle::io::TlsVersion::kTls12;
   server_options.enable_session_resumption = true;
   auto made_server = TlsContext::make_server(server_options);
@@ -877,8 +1157,8 @@ TEST(IoTls, MissingCloseNotifyIsReportedAsDataLoss) {
   std::string cert = write_temp("truncation-cert.pem", kCertPem);
   std::string key = write_temp("truncation-key.pem", kKeyPem);
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server);
   TlsContext server_context = std::move(*made_server);
@@ -1008,8 +1288,8 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   std::string cert = write_temp("https-cert.pem", kCertPem);
   std::string key = write_temp("https-key.pem", kKeyPem);
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server);
   TlsContext server_context = std::move(*made_server);
@@ -1163,8 +1443,8 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
   std::string cert = write_temp("h2-cert.pem", kCertPem);
   std::string key = write_temp("h2-key.pem", kKeyPem);
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   server_options.alpn_protocols = hyle::io::tls_http2_protocols();
   server_options.require_alpn = true;
   auto made_server = TlsContext::make_server(server_options);
@@ -1245,10 +1525,9 @@ bool make_tls_small_socket_pair(std::array<int, 2> &sockets) noexcept {
   return true;
 }
 
-Task<hyle::Status> consume_h2_tls_body(AllocatorRef,
-                                       hyle::io::Http2BodyReader &body,
-                                       char expected,
-                                       std::atomic<std::size_t> *total) noexcept {
+Task<hyle::Status>
+consume_h2_tls_body(AllocatorRef, hyle::io::Http2BodyReader &body,
+                    char expected, std::atomic<std::size_t> *total) noexcept {
   std::size_t consumed = 0;
   total->store(0, std::memory_order_release);
   for (;;) {
@@ -1350,8 +1629,8 @@ TEST(IoTls, Http2TlsDuplexProgressSurvivesSmallSocketAndFlowControl) {
   std::string cert = write_temp("h2-duplex-cert.pem", kCertPem);
   std::string key = write_temp("h2-duplex-key.pem", kKeyPem);
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = TlsCredentialSource::file(cert);
+  server_options.private_key = TlsCredentialSource::file(key);
   server_options.alpn_protocols = hyle::io::tls_http2_protocols();
   server_options.require_alpn = true;
   auto made_server = TlsContext::make_server(server_options);
@@ -1380,12 +1659,12 @@ TEST(IoTls, Http2TlsDuplexProgressSurvivesSmallSocketAndFlowControl) {
   auto result = std::make_unique<H2TlsDuplexResult>();
   auto server = std::make_unique<Drive>();
   auto client = std::make_unique<Drive>();
-  server->task = h2_tls_duplex_server(system_allocator(),
-                                       std::move(*server_transport),
-                                       &server_context, result.get());
-  client->task = h2_tls_duplex_client(system_allocator(),
-                                       std::move(*client_transport),
-                                       &client_context, result.get());
+  server->task =
+      h2_tls_duplex_server(system_allocator(), std::move(*server_transport),
+                           &server_context, result.get());
+  client->task =
+      h2_tls_duplex_client(system_allocator(), std::move(*client_transport),
+                           &client_context, result.get());
   Fiber server_fiber(kDefaultStackSize, &drive_entry, server.get());
   Fiber client_fiber(kDefaultStackSize, &drive_entry, client.get());
   ASSERT_TRUE(scheduler.spawn_on(kOwner, &server_fiber));

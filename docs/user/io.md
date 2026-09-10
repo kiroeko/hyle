@@ -201,16 +201,49 @@ auto body = co_await response->body.read_all(64 * 1024, budget);
 client 默认验证系统信任链；verifying client 必须给 `server_name`，它同时用于
 SNI 与证书 DNS/IP identity 校验。自签测试或明确的机会式加密必须显式设置
 `TlsVerifyMode::kNone`，不再通过 OpenSSL native pointer 偷改验证。server 用
-`TlsServerOptions` 提供证书链、私钥以及可选 mTLS CA；mTLS client 同时填写
-`TlsClientOptions::certificate_chain_file/private_key_file`，只给其中一项会在
-factory 返回 `InvalidArgument`。路径只在 factory 调用期间借用，provider/config
-与编码后的通用 ALPN list 由 `TlsContext` 持有。
+`TlsServerOptions` 提供证书链、私钥以及可选 mTLS CA。每个 credential 独立选择 file path 或 borrowed
+PEM，所以 cert file + memory key 等混合配置也是正常路线：
 
-当前 context 只能加载未加密的 PEM private-key file；没有 password/callback，也没有公开 provider native
-handle 可安全绕行。需要 encrypted key 的部署当前应由外部 TLS terminator 承担，或等待已登记的 IOTLS
-能力 trigger，不能把加载失败误诊为证书路径问题。自定义 cipher suite、内存证书和热 reload 同样不是
-当前合同；安全默认以外的 provider policy 见
-[观察清单](../architecture/inference-engine-capability-watchlist.md)。
+```cpp
+hyle::io::TlsServerOptions server;
+server.certificate_chain =
+    hyle::io::TlsCredentialSource::file("server-chain.pem");
+server.private_key = hyle::io::TlsCredentialSource::pem(private_key_pem);
+server.private_key_password =
+    hyle::io::TlsPrivateKeyPassword::borrowed(password);
+auto context = hyle::io::TlsContext::make_server(server);
+```
+
+`TlsCredentialSource` 是不 owning 的 tagged value：`file()` 和 `pem()` 的输入都只需活过同步
+`make_client/make_server`；成功的 context 只保留解析后的 OpenSSL state。server 必须同时提供 cert/key，
+mTLS client 也要同时填写 `certificate_chain/private_key`；只给一项返回 `InvalidArgument`。client
+`verify=kPeer` 且没有显式 `certificate_authority` 时使用系统 trust store；显式 CA 可以是 file 或含多张
+证书的 PEM bundle。关闭 verification 却提供 CA、server 开启 client verification 却不提供
+`client_certificate_authority` 都会失败，而不是静默忽略。identity chain 最多 64 张证书。
+
+动态 secret store 使用同步、非 owning 的 `FunctionRef` callback。callback 必须是活到 factory 返回的具名
+lvalue；成功返回的 view 同样由外部状态拥有到 factory 返回。它只在调用线程上、解析 encrypted key 时
+调用零次或多次，可以用 `Status` 原样报告 vault/permission 失败：
+
+```cpp
+auto read_password = [&secret]() noexcept
+    -> hyle::Result<hyle::container::StringView> {
+  if (!secret.available())
+    return hyle::make_unexpected(
+        hyle::Status::Unavailable("credential store unavailable"));
+  return secret.borrowed_view();
+};
+server.private_key_password =
+    hyle::io::TlsPrivateKeyPassword::callback(read_password);
+auto context = hyle::io::TlsContext::make_server(server);
+```
+
+HYLE 不把 callback 安装到长期 context，也不保留、记录或拼接 password/PEM；stream 和后续 handshake
+不会再次取密码。没有 password 的 encrypted key 会直接 typed fail，不会退回 OpenSSL 的终端交互提示。
+不要从 callback 返回指向局部临时 string 的 view，也不要在 factory 返回前销毁 options 中借用的 callable。
+证书 watch、失败重试、构造新 context 后的 atomic swap 和 listener 策略属于 `hyle-service` reload 组合；
+已有 stream 会继续保活其旧 context。自定义 cipher suite、provider/HSM、PKCS#12 和证书选择 callback
+仍不在当前合同，见[观察清单](../architecture/inference-engine-capability-watchlist.md)。
 
 每条 stream 在构造时从 context 的 `connection_allocator` 取得一个可复用的 16 KiB
 pump buffer；默认使用 `mem::system_allocator()`，record 热路不会反复分配。显式注入

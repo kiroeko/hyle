@@ -4,19 +4,38 @@
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
+#include <openssl/x509err.h>
 
 #include <algorithm>
 #include <atomic>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <new>
 #include <utility>
 
 #include "hyle/sched/cancel.h"
 
 namespace hyle::io {
+namespace detail {
+
+struct TlsCredentialAccess {
+  static constexpr container::StringView
+  borrowed_value(const TlsPrivateKeyPassword &password) noexcept {
+    return password.borrowed_value();
+  }
+
+  static const TlsPasswordCallback *
+  callback_ref(const TlsPrivateKeyPassword &password) noexcept {
+    return password.callback_ref();
+  }
+};
+
+} // namespace detail
 namespace {
 
 constexpr std::size_t kPumpBytes = 16 * 1024;
@@ -65,7 +84,7 @@ void release_context(ContextImpl *context) noexcept {
 class OwnedCString {
 public:
   OwnedCString() noexcept = default;
-  ~OwnedCString() { delete[] data_; }
+  ~OwnedCString() { delete[] owned_; }
   OwnedCString(const OwnedCString &) = delete;
   OwnedCString &operator=(const OwnedCString &) = delete;
 
@@ -77,26 +96,385 @@ public:
       return {};
     }
     if (value.data() == nullptr ||
-        value.size() == container::StringView::npos) {
+        value.size() >
+            static_cast<std::uint32_t>((std::numeric_limits<int>::max)())) {
       return Status::InvalidArgument(field);
     }
     if (std::memchr(value.data(), '\0', value.size()) != nullptr) {
       return Status::InvalidArgument("TLS path/name contains an embedded NUL");
     }
-    data_ = new (std::nothrow) char[static_cast<std::size_t>(value.size()) + 1];
-    if (data_ == nullptr) {
+    if (value.is_null_terminated()) {
+      data_ = value.data();
+      return {};
+    }
+    owned_ =
+        new (std::nothrow) char[static_cast<std::size_t>(value.size()) + 1];
+    if (owned_ == nullptr) {
       return Status::ResourceExhausted("TLS option copy allocation failed");
     }
-    std::memcpy(data_, value.data(), value.size());
-    data_[value.size()] = '\0';
+    std::memcpy(owned_, value.data(), value.size());
+    owned_[value.size()] = '\0';
+    data_ = owned_;
     return {};
   }
 
   const char *get() const noexcept { return data_; }
 
 private:
-  char *data_ = nullptr;
+  const char *data_ = nullptr;
+  char *owned_ = nullptr;
 };
+
+template <class T, auto Release> struct ProviderDeleter {
+  void operator()(T *value) const noexcept {
+    if (value != nullptr)
+      (void)Release(value);
+  }
+};
+
+using BioOwner = std::unique_ptr<BIO, ProviderDeleter<BIO, BIO_free>>;
+using CertificateOwner =
+    std::unique_ptr<X509, ProviderDeleter<X509, X509_free>>;
+using PrivateKeyOwner =
+    std::unique_ptr<EVP_PKEY, ProviderDeleter<EVP_PKEY, EVP_PKEY_free>>;
+
+constexpr std::size_t kMaxIdentityCertificateCount = 64;
+
+static_assert(std::is_trivially_copyable_v<TlsCredentialSource>);
+static_assert(std::is_trivially_copyable_v<TlsPrivateKeyPassword>);
+
+void clear_provider_errors() noexcept {
+  while (ERR_get_error() != 0) {
+  }
+}
+
+Status invalid_credential(const char *message) noexcept {
+  bool allocation_failed = false;
+  for (unsigned long error = ERR_get_error(); error != 0;
+       error = ERR_get_error()) {
+    allocation_failed |= ERR_GET_REASON(error) == ERR_R_MALLOC_FAILURE;
+  }
+  return allocation_failed ? Status::ResourceExhausted(
+                                 "TLS provider credential allocation failed")
+                           : Status::InvalidArgument(message);
+}
+
+Status validate_credential_source(const TlsCredentialSource &source,
+                                  const char *missing_message) noexcept {
+  if (!source.supplied())
+    return Status::InvalidArgument(missing_message);
+  if (source.kind() != TlsCredentialSourceKind::kFile &&
+      source.kind() != TlsCredentialSourceKind::kPem) {
+    return Status::InvalidArgument("invalid TLS credential source kind");
+  }
+  const container::StringView value = source.value();
+  if (value.empty() || value.data() == nullptr) {
+    return Status::InvalidArgument(missing_message);
+  }
+  if (value.size() >
+      static_cast<std::uint32_t>((std::numeric_limits<int>::max)())) {
+    return Status::OutOfRange("TLS credential source is too large");
+  }
+  if (std::memchr(value.data(), '\0', value.size()) != nullptr) {
+    return Status::InvalidArgument(
+        source.kind() == TlsCredentialSourceKind::kFile
+            ? "TLS credential path contains an embedded NUL"
+            : "TLS PEM contains an embedded NUL");
+  }
+  return {};
+}
+
+Status open_credential_bio(const TlsCredentialSource &source,
+                           const char *missing_message,
+                           BioOwner &result) noexcept {
+  Status status = validate_credential_source(source, missing_message);
+  if (!status.ok())
+    return status;
+
+  ERR_clear_error();
+  if (source.kind() == TlsCredentialSourceKind::kFile) {
+    OwnedCString path;
+    status = path.assign(source.value(), true, missing_message);
+    if (!status.ok())
+      return status;
+    result.reset(BIO_new_file(path.get(), "rb"));
+    if (!result) {
+      return invalid_credential("TLS credential file could not be opened");
+    }
+  } else {
+    result.reset(BIO_new_mem_buf(source.value().data(),
+                                 static_cast<int>(source.value().size())));
+    if (!result) {
+      clear_provider_errors();
+      return Status::ResourceExhausted(
+          "TLS credential memory BIO allocation failed");
+    }
+  }
+  return {};
+}
+
+int reject_pem_password(char *, int, int, void *) noexcept { return 0; }
+
+bool reached_pem_end() noexcept {
+  const unsigned long error = ERR_peek_last_error();
+  const bool finished =
+      error == 0 || (ERR_GET_LIB(error) == ERR_LIB_PEM &&
+                     ERR_GET_REASON(error) == PEM_R_NO_START_LINE);
+  clear_provider_errors();
+  return finished;
+}
+
+Status load_certificate_chain(SSL_CTX *provider,
+                              const TlsCredentialSource &source) noexcept {
+  BioOwner bio;
+  Status status = open_credential_bio(
+      source, "TLS certificate chain source is required", bio);
+  if (!status.ok())
+    return status;
+
+  ERR_clear_error();
+  CertificateOwner leaf(
+      PEM_read_bio_X509_AUX(bio.get(), nullptr, &reject_pem_password, nullptr));
+  if (!leaf) {
+    return invalid_credential("TLS certificate chain is not valid PEM");
+  }
+  if (SSL_CTX_use_certificate(provider, leaf.get()) != 1 ||
+      SSL_CTX_clear_chain_certs(provider) != 1) {
+    return invalid_credential("TLS certificate could not be installed");
+  }
+
+  std::size_t count = 1;
+  while (count < kMaxIdentityCertificateCount) {
+    CertificateOwner certificate(
+        PEM_read_bio_X509(bio.get(), nullptr, &reject_pem_password, nullptr));
+    if (!certificate) {
+      return reached_pem_end()
+                 ? Status{}
+                 : invalid_credential("TLS certificate chain is malformed");
+    }
+    if (SSL_CTX_add1_chain_cert(provider, certificate.get()) != 1) {
+      return invalid_credential(
+          "TLS certificate chain entry could not be installed");
+    }
+    ++count;
+  }
+
+  CertificateOwner overflow(
+      PEM_read_bio_X509(bio.get(), nullptr, &reject_pem_password, nullptr));
+  if (overflow) {
+    return invalid_credential(
+        "TLS certificate chain exceeds the 64-certificate limit");
+  }
+  return reached_pem_end()
+             ? Status{}
+             : invalid_credential("TLS certificate chain is malformed");
+}
+
+bool duplicate_authority_error(unsigned long error) noexcept {
+  return ERR_GET_LIB(error) == ERR_LIB_X509 &&
+         ERR_GET_REASON(error) == X509_R_CERT_ALREADY_IN_HASH_TABLE;
+}
+
+Status
+load_certificate_authorities(SSL_CTX *provider,
+                             const TlsCredentialSource &source) noexcept {
+  BioOwner bio;
+  Status status = open_credential_bio(
+      source, "TLS certificate authority source is required", bio);
+  if (!status.ok())
+    return status;
+  X509_STORE *store = SSL_CTX_get_cert_store(provider);
+  if (store == nullptr) {
+    clear_provider_errors();
+    return Status::ResourceExhausted(
+        "TLS certificate authority store is unavailable");
+  }
+
+  bool added = false;
+  ERR_clear_error();
+  for (;;) {
+    CertificateOwner certificate(PEM_read_bio_X509_AUX(
+        bio.get(), nullptr, &reject_pem_password, nullptr));
+    if (!certificate) {
+      if (added && reached_pem_end())
+        return {};
+      return invalid_credential(
+          "TLS certificate authority bundle is malformed");
+    }
+    if (X509_STORE_add_cert(store, certificate.get()) != 1) {
+      const unsigned long error = ERR_peek_last_error();
+      if (!duplicate_authority_error(error)) {
+        return invalid_credential(
+            "TLS certificate authority could not be installed");
+      }
+      clear_provider_errors();
+    }
+    added = true;
+  }
+}
+
+Status
+validate_private_key_password(const TlsPrivateKeyPassword &password) noexcept {
+  switch (password.kind()) {
+  case TlsPrivateKeyPasswordKind::kNone:
+    return {};
+  case TlsPrivateKeyPasswordKind::kBorrowed: {
+    const container::StringView value =
+        detail::TlsCredentialAccess::borrowed_value(password);
+    if (value.data() == nullptr && !value.empty()) {
+      return Status::InvalidArgument(
+          "TLS private key password has no backing storage");
+    }
+    if (value.size() >
+        static_cast<std::uint32_t>((std::numeric_limits<int>::max)())) {
+      return Status::OutOfRange("TLS private key password is too large");
+    }
+    return {};
+  }
+  case TlsPrivateKeyPasswordKind::kCallback:
+    return detail::TlsCredentialAccess::callback_ref(password) != nullptr
+               ? Status{}
+               : Status::InvalidArgument(
+                     "TLS private key password callback is missing");
+  }
+  return Status::InvalidArgument("invalid TLS private key password kind");
+}
+
+struct PasswordAdapter {
+  const TlsPrivateKeyPassword *source = nullptr;
+  Status failure{};
+};
+
+int provide_private_key_password(char *buffer, int capacity, int,
+                                 void *opaque) noexcept {
+  auto *adapter = static_cast<PasswordAdapter *>(opaque);
+  if (buffer == nullptr || capacity <= 0 || adapter == nullptr ||
+      adapter->source == nullptr || !adapter->failure.ok()) {
+    return 0;
+  }
+
+  container::StringView password;
+  switch (adapter->source->kind()) {
+  case TlsPrivateKeyPasswordKind::kNone:
+    return 0;
+  case TlsPrivateKeyPasswordKind::kBorrowed:
+    password = detail::TlsCredentialAccess::borrowed_value(*adapter->source);
+    break;
+  case TlsPrivateKeyPasswordKind::kCallback: {
+    const TlsPasswordCallback *callback =
+        detail::TlsCredentialAccess::callback_ref(*adapter->source);
+    if (callback == nullptr) {
+      adapter->failure = Status::InvalidArgument(
+          "TLS private key password callback is missing");
+      return 0;
+    }
+    Result<container::StringView> supplied = (*callback)();
+    if (!supplied) {
+      adapter->failure = static_cast<Status>(std::move(supplied).error());
+      return 0;
+    }
+    password = *supplied;
+    break;
+  }
+  }
+
+  if (password.data() == nullptr && !password.empty()) {
+    adapter->failure = Status::InvalidArgument(
+        "TLS private key password callback returned an invalid view");
+    return 0;
+  }
+  if (password.size() >= static_cast<std::uint32_t>(capacity)) {
+    adapter->failure = Status::OutOfRange(
+        "TLS private key password exceeds the provider buffer");
+    return 0;
+  }
+  if (!password.empty())
+    std::memcpy(buffer, password.data(), password.size());
+  buffer[password.size()] = '\0';
+  return static_cast<int>(password.size());
+}
+
+Status load_private_key(SSL_CTX *provider, const TlsCredentialSource &source,
+                        const TlsPrivateKeyPassword &password) noexcept {
+  Status status = validate_private_key_password(password);
+  if (!status.ok())
+    return status;
+
+  BioOwner bio;
+  status =
+      open_credential_bio(source, "TLS private key source is required", bio);
+  if (!status.ok())
+    return status;
+
+  PasswordAdapter adapter{&password};
+  ERR_clear_error();
+  PrivateKeyOwner key(PEM_read_bio_PrivateKey(
+      bio.get(), nullptr, &provide_private_key_password, &adapter));
+  if (!adapter.failure.ok()) {
+    clear_provider_errors();
+    return std::move(adapter.failure);
+  }
+  if (!key) {
+    return invalid_credential(
+        "TLS private key is invalid or could not be decrypted");
+  }
+  if (SSL_CTX_use_PrivateKey(provider, key.get()) != 1) {
+    return invalid_credential("TLS private key could not be installed");
+  }
+  clear_provider_errors();
+  return {};
+}
+
+Status load_identity(SSL_CTX *provider,
+                     const TlsCredentialSource &certificate_chain,
+                     const TlsCredentialSource &private_key,
+                     const TlsPrivateKeyPassword &password) noexcept {
+  Status status = load_certificate_chain(provider, certificate_chain);
+  if (status.ok())
+    status = load_private_key(provider, private_key, password);
+  if (status.ok() && SSL_CTX_check_private_key(provider) != 1) {
+    status = invalid_credential("TLS certificate and private key do not match");
+  }
+  return status;
+}
+
+Status validate_client_credentials(const TlsClientOptions &options) noexcept {
+  const bool has_certificate = options.certificate_chain.supplied();
+  const bool has_key = options.private_key.supplied();
+  if (has_certificate != has_key) {
+    return Status::InvalidArgument(
+        "TLS client certificate and private key must be supplied together");
+  }
+  if (!has_key && options.private_key_password.supplied()) {
+    return Status::InvalidArgument(
+        "TLS private key password requires a private key");
+  }
+  if (options.verify == TlsVerifyMode::kNone &&
+      options.certificate_authority.supplied()) {
+    return Status::InvalidArgument(
+        "TLS certificate authority requires peer verification");
+  }
+  return validate_private_key_password(options.private_key_password);
+}
+
+Status validate_server_credentials(const TlsServerOptions &options) noexcept {
+  if (!options.certificate_chain.supplied() ||
+      !options.private_key.supplied()) {
+    return Status::InvalidArgument(
+        "TLS server certificate and private key are required");
+  }
+  if (options.client_verification == TlsVerifyMode::kPeer &&
+      !options.client_certificate_authority.supplied()) {
+    return Status::InvalidArgument(
+        "TLS client certificate authority is required for peer verification");
+  }
+  if (options.client_verification == TlsVerifyMode::kNone &&
+      options.client_certificate_authority.supplied()) {
+    return Status::InvalidArgument(
+        "TLS client certificate authority requires peer verification");
+  }
+  return validate_private_key_password(options.private_key_password);
+}
 
 int provider_version(TlsVersion version) noexcept {
   switch (version) {
@@ -273,8 +651,7 @@ Status retain_received_ciphertext(BIO *read_bio, std::byte *scratch,
         "TLS transport ended while ciphertext output was pending");
   }
   if (received.bytes == 0) {
-    return Status::Unavailable(
-        "TLS transport read made no forward progress");
+    return Status::Unavailable("TLS transport read made no forward progress");
   }
   return {};
 }
@@ -296,8 +673,8 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
       co_return Status::Internal(
           "TLS provider reported pending ciphertext without storage");
     }
-    const std::size_t pending_size = (std::min)(
-        static_cast<std::size_t>(available), kPumpBytes);
+    const std::size_t pending_size =
+        (std::min)(static_cast<std::size_t>(available), kPumpBytes);
     const auto output = std::span<const std::byte>(
         reinterpret_cast<const std::byte *>(pending), pending_size);
 
@@ -305,8 +682,8 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
         detail::tcp_try_write_some(socket, output);
     if (immediate.state == detail::ImmediateTransferState::kReady) {
       if (immediate.transfer.bytes != 0) {
-        Status consumed = consume_sent_ciphertext(
-            write_bio, scratch, immediate.transfer.bytes);
+        Status consumed = consume_sent_ciphertext(write_bio, scratch,
+                                                  immediate.transfer.bytes);
         if (!consumed.ok())
           co_return consumed;
       }
@@ -333,12 +710,11 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
       const std::size_t receive_capacity =
           (std::min)(kPumpBytes,
                      kMaxRetainedCiphertextBytes - retained_ciphertext);
-      detail::ImmediateTransferResult received =
-          detail::tcp_try_read_some(
-              socket, std::span<std::byte>(scratch, receive_capacity));
+      detail::ImmediateTransferResult received = detail::tcp_try_read_some(
+          socket, std::span<std::byte>(scratch, receive_capacity));
       if (received.state == detail::ImmediateTransferState::kReady) {
-        Status retained = retain_received_ciphertext(
-            read_bio, scratch, received.transfer);
+        Status retained =
+            retain_received_ciphertext(read_bio, scratch, received.transfer);
         if (!retained.ok())
           co_return retained;
         opportunistic_read_used = true;
@@ -356,8 +732,7 @@ sched::Task<Status> flush_ciphertext(mem::AllocatorRef, TcpStream &socket,
     // actually accepted.
     TransferResult sent = co_await socket.write_some(output, options);
     if (sent.bytes != 0) {
-      Status consumed =
-          consume_sent_ciphertext(write_bio, scratch, sent.bytes);
+      Status consumed = consume_sent_ciphertext(write_bio, scratch, sent.bytes);
       if (!consumed.ok())
         co_return consumed;
     }
@@ -564,26 +939,10 @@ TlsContext &TlsContext::operator=(TlsContext &&other) noexcept {
 
 Result<TlsContext>
 TlsContext::make_client(const TlsClientOptions &options) noexcept {
-  const bool has_certificate = !options.certificate_chain_file.empty();
-  const bool has_key = !options.private_key_file.empty();
-  if (has_certificate != has_key) {
-    return make_unexpected(Status::InvalidArgument(
-        "TLS client certificate and private key must be supplied together"));
-  }
-
-  OwnedCString certificate;
-  OwnedCString key;
-  Status status;
-  if (has_certificate) {
-    status = certificate.assign(options.certificate_chain_file, true,
-                                "TLS client certificate is required");
-    if (status.ok()) {
-      status = key.assign(options.private_key_file, true,
-                          "TLS client private key is required");
-    }
-    if (!status.ok())
-      return make_unexpected(std::move(status));
-  }
+  Status status = validate_client_credentials(options);
+  if (!status.ok())
+    return make_unexpected(std::move(status));
+  const bool has_identity = options.certificate_chain.supplied();
 
   ERR_clear_error();
   SSL_CTX *provider = SSL_CTX_new(TLS_client_method());
@@ -613,15 +972,9 @@ TlsContext::make_client(const TlsClientOptions &options) noexcept {
 
   status =
       configure_versions(provider, options.min_version, options.max_version);
-  if (status.ok() && has_certificate &&
-      (SSL_CTX_use_certificate_chain_file(provider, certificate.get()) != 1 ||
-       SSL_CTX_use_PrivateKey_file(provider, key.get(), SSL_FILETYPE_PEM) !=
-           1 ||
-       SSL_CTX_check_private_key(provider) != 1)) {
-    status = Status::InvalidArgument(
-        "TLS client certificate/private key could not be loaded or do not "
-        "match");
-  }
+  if (status.ok() && has_identity)
+    status = load_identity(provider, options.certificate_chain,
+                           options.private_key, options.private_key_password);
   if (status.ok())
     status = encode_alpn(options.alpn_protocols, context);
   if (status.ok())
@@ -631,20 +984,14 @@ TlsContext::make_client(const TlsClientOptions &options) noexcept {
                        context->verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
                        nullptr);
     if (context->verify_peer) {
-      if (options.certificate_authority_file.empty()) {
+      if (!options.certificate_authority.supplied()) {
         if (SSL_CTX_set_default_verify_paths(provider) != 1) {
           status = Status::FailedPrecondition(
               "TLS system trust store could not be loaded");
         }
       } else {
-        OwnedCString authority;
-        status = authority.assign(options.certificate_authority_file, true,
-                                  "TLS certificate authority path is required");
-        if (status.ok() && SSL_CTX_load_verify_locations(
-                               provider, authority.get(), nullptr) != 1) {
-          status = Status::InvalidArgument(
-              "TLS certificate authority file could not be loaded");
-        }
+        status = load_certificate_authorities(provider,
+                                              options.certificate_authority);
       }
     }
   }
@@ -665,14 +1012,7 @@ TlsContext::make_client(const TlsClientOptions &options) noexcept {
 
 Result<TlsContext>
 TlsContext::make_server(const TlsServerOptions &options) noexcept {
-  OwnedCString certificate;
-  OwnedCString key;
-  Status status = certificate.assign(options.certificate_chain_file, true,
-                                     "TLS server certificate is required");
-  if (status.ok()) {
-    status = key.assign(options.private_key_file, true,
-                        "TLS server private key is required");
-  }
+  Status status = validate_server_credentials(options);
   if (!status.ok())
     return make_unexpected(std::move(status));
 
@@ -705,14 +1045,9 @@ TlsContext::make_server(const TlsServerOptions &options) noexcept {
 
   status =
       configure_versions(provider, options.min_version, options.max_version);
-  if (status.ok() &&
-      (SSL_CTX_use_certificate_chain_file(provider, certificate.get()) != 1 ||
-       SSL_CTX_use_PrivateKey_file(provider, key.get(), SSL_FILETYPE_PEM) !=
-           1 ||
-       SSL_CTX_check_private_key(provider) != 1)) {
-    status = Status::InvalidArgument(
-        "TLS certificate/private key could not be loaded or do not match");
-  }
+  if (status.ok())
+    status = load_identity(provider, options.certificate_chain,
+                           options.private_key, options.private_key_password);
   if (status.ok())
     status = encode_alpn(options.alpn_protocols, context);
   if (status.ok())
@@ -724,15 +1059,8 @@ TlsContext::make_server(const TlsServerOptions &options) noexcept {
                            : SSL_VERIFY_NONE,
                        nullptr);
     if (context->verify_peer) {
-      OwnedCString authority;
-      status = authority.assign(options.client_certificate_authority_file, true,
-                                "TLS client certificate authority is required "
-                                "when verification is enabled");
-      if (status.ok() && SSL_CTX_load_verify_locations(
-                             provider, authority.get(), nullptr) != 1) {
-        status = Status::InvalidArgument(
-            "TLS client certificate authority file could not be loaded");
-      }
+      status = load_certificate_authorities(
+          provider, options.client_certificate_authority);
     }
   }
   if (status.ok()) {

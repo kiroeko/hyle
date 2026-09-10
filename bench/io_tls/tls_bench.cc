@@ -656,12 +656,13 @@ int main() {
   // HYLE contexts (reused across iterations -- SSL_CTX is shareable; per-conn
   // SSL is made from it, matching how a real server holds one CTX).
   hyle::io::TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert;
-  server_options.private_key_file = key;
+  server_options.certificate_chain = hyle::io::TlsCredentialSource::file(cert);
+  server_options.private_key = hyle::io::TlsCredentialSource::file(key);
   auto made_server = TlsContext::make_server(server_options);
   hyle::io::TlsClientOptions client_options;
   client_options.verify = hyle::io::TlsVerifyMode::kPeer;
-  client_options.certificate_authority_file = cert;
+  client_options.certificate_authority =
+      hyle::io::TlsCredentialSource::file(cert);
   auto made_client = TlsContext::make_client(client_options);
   if (!made_server || !made_client)
     std::abort();

@@ -16,7 +16,7 @@
 | **glslang** | 测试/benchmark shader 工具 | Vulkan 已开启且 compute tests/bench 打开时才拉取；生产 SDK 不需要 | 同属 `vulkan-sdk-1.4.357.0` |
 | **Tracy** | 启用 trace 时自动取得的外部源码树 | `HYLE_TRACE=ON` 才取得并编译；任意/脏/被改写的覆盖源码会配置失败 | lock pin `v0.14.1`；`HYLE_TRACY_DIR` 仍可显式覆盖 |
 | **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），不改变其他已配置能力 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
-| **OpenSSL** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失即配置失败 | `find_package(OpenSSL QUIET)` |
+| **OpenSSL 3.0+** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失或低于 3.0 即配置失败 | `find_package(OpenSSL 3.0 QUIET)` |
 | **CUDA Toolkit** | 可选能力 | `HYLE_COMPUTE_CUDA=AUTO/OFF` 可只用 host；ON 时缺失即配置失败 | `find_package(CUDAToolkit QUIET)` |
 | **cuDNN / TensorRT** | 可选能力（更后） | 当前里程碑不依赖，完全可不装 | 手动 `-I/-L`（未来算子/推理路径） |
 
@@ -184,7 +184,7 @@ io 与 compute 的当前公开头都暴露 sched 类型，因此中央组件图�
 
 ## OpenSSL（io-08 TLS，可选）
 
-TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现，`ON` 要求 OpenSSL，`OFF` 不探测且保持零 OpenSSL
+TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现 OpenSSL 3.0+，`ON` 要求 OpenSSL 3.0+，`OFF` 不探测且保持零 OpenSSL
 依赖。启用后编 `tls.cc` 并对消费者公开同名编译宏。OpenSSL 使用动态链（安全库应跟随系统 CVE
 更新，不静态焊死）。这项 option 只在可构建的 io 闭包中存在；无 fcontext 目标会拒绝 io 根，
 不会退化成 TLS stub。

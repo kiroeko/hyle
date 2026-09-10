@@ -59,10 +59,8 @@ int main() {
   // The bounded file-change stream is carried by the same IO product. Its
   // target/options values are source-level C++ contracts, while close() proves
   // that the owning binary boundary is present in static and shared SDKs.
-  constexpr auto watch_target =
-      hyle::io::FileWatchTarget::file("tls/cert.pem");
-  static_assert(watch_target.kind() ==
-                hyle::io::FileWatchTargetKind::kFile);
+  constexpr auto watch_target = hyle::io::FileWatchTarget::file("tls/cert.pem");
+  static_assert(watch_target.kind() == hyle::io::FileWatchTargetKind::kFile);
   hyle::io::FileWatchOptions watch_options;
   watch_options.max_batch_events = 16;
   hyle::io::FileWatcher empty_watcher;
@@ -73,11 +71,27 @@ int main() {
 #if defined(HYLE_IO_TLS)
   if (!hyle::io::tls_available())
     return 10;
+  constexpr auto pem_source =
+      hyle::io::TlsCredentialSource::pem("embedded PEM bytes");
+  static_assert(pem_source.kind() == hyle::io::TlsCredentialSourceKind::kPem);
+  constexpr auto borrowed_password =
+      hyle::io::TlsPrivateKeyPassword::borrowed("secret");
+  static_assert(borrowed_password.kind() ==
+                hyle::io::TlsPrivateKeyPasswordKind::kBorrowed);
+  auto password_callback =
+      []() noexcept -> hyle::Result<hyle::container::StringView> {
+    return hyle::container::StringView("secret");
+  };
+  auto callback_password =
+      hyle::io::TlsPrivateKeyPassword::callback(password_callback);
+  if (callback_password.kind() !=
+      hyle::io::TlsPrivateKeyPasswordKind::kCallback)
+    return 11;
   hyle::io::TlsClientOptions tls_options;
   tls_options.verify = hyle::io::TlsVerifyMode::kNone;
   auto tls_context = hyle::io::TlsContext::make_client(tls_options);
   if (!tls_context.has_value() || !tls_context->valid())
-    return 11;
+    return 12;
 #endif
   return 0;
 }

@@ -243,7 +243,7 @@ _hyle_declare_component(io_core
 # source, dependency and delivery boundaries. Optional provider gates make a
 # factor header inert; they never manufacture constant-failure operations.
 _hyle_declare_component(io_tls
-  PUBLIC_DEPS core error io_core mem sched container_text
+  PUBLIC_DEPS core error io_core mem sched container_text util_core
   SPLIT_PUBLIC_HEADERS hyle/io/tls.h)
 _hyle_declare_component(io_http
   PUBLIC_DEPS core error io_core io_tls mem sched container_text time

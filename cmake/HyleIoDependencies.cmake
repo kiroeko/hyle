@@ -28,7 +28,7 @@ function(hyle_configure_io_dependencies)
   # product contract; OFF is deterministic and does not even probe OpenSSL.
   set(_hyle_io_tls_enabled OFF)
   if(HYLE_BUILD_IO_TLS AND NOT HYLE_IO_TLS STREQUAL "OFF")
-    find_package(OpenSSL QUIET)
+    find_package(OpenSSL 3.0 QUIET)
     if(OpenSSL_FOUND)
       set(_hyle_io_tls_enabled ON)
       message(STATUS

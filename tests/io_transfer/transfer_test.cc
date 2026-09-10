@@ -50,6 +50,7 @@ using hyle::io::TransferVerifier;
 using hyle::io::tls_handshake;
 using hyle::io::TlsClientOptions;
 using hyle::io::TlsContext;
+using hyle::io::TlsCredentialSource;
 using hyle::io::TlsServerOptions;
 using hyle::io::TlsStream;
 #endif
@@ -935,15 +936,15 @@ TEST(IoTransferHttp, HttpsUsesBorrowedVerifiedTlsPolicy) {
 
   const hyle::container::StringView protocols[] = {"http/1.1"};
   TlsServerOptions server_options;
-  server_options.certificate_chain_file = cert_path;
-  server_options.private_key_file = key_path;
+  server_options.certificate_chain = TlsCredentialSource::file(cert_path);
+  server_options.private_key = TlsCredentialSource::file(key_path);
   server_options.alpn_protocols = protocols;
   auto made_server = TlsContext::make_server(server_options);
   ASSERT_TRUE(made_server.has_value()) << made_server.error().message();
   TlsContext server_context = std::move(*made_server);
 
   TlsClientOptions client_options;
-  client_options.certificate_authority_file = cert_path;
+  client_options.certificate_authority = TlsCredentialSource::file(cert_path);
   client_options.alpn_protocols = protocols;
   auto made_client = TlsContext::make_client(client_options);
   ASSERT_TRUE(made_client.has_value()) << made_client.error().message();
