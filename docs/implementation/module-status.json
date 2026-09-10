@@ -221,9 +221,9 @@
     },
     {
       "module": "io_tls",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-tls-v4-context-identity.md",
-      "summary": "io_tls v4 SCOPED：G06 HTTPS file-body 证明仅比较 owner index 不能排除跨 IoContext 组合；范围限于零字段、零符号的 internal inline context identity seam。"
+      "summary": "io_tls v4 AUDITED：G06 HTTPS file-body 的跨 IoContext 风险已冻结为一个零字段、零符号的 internal inline identity seam；只改 header friend/accessor 与 io_http pre-wire 检查。"
     },
     {
       "module": "io_http",

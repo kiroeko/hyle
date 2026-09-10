@@ -1,6 +1,6 @@
 # IO TLS v4：组合层 context identity
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -31,4 +31,23 @@
 - 调查/纠正预算：一个 API 方案、一个产品 patch；没有 P1 sampling。若不能零字段/零符号取得 identity，
   本轮 `BLOCKED`，不得泄漏 provider/native state。
 
-当前只冻结问题、负空间和验证边界；尚未审计具体 header seam，也未授权产品修改。
+## 形状与成本审计（`AUDITED`）
+
+`TlsStream` 已经以值成员拥有 `TcpStream socket_`，而 `tls.h` 已公开 include `tcp.h`。因此唯一最小形状是：
+
+```cpp
+namespace detail {
+inline const IoContext *io_context_identity(const TlsStream &stream) noexcept {
+  return io_context_identity(stream.socket_);
+}
+}
+```
+
+它需要一个 forward declaration、一个 friend 和一个 inline overload；不增加 object bytes、export symbol、
+provider access、allocation 或 runtime dispatch。公开 `context()`/native socket accessor 会错误扩大用户产品面；
+在 `HttpTransport` 复制一份 pointer 会让每条普通 HTTP connection 永久付费；继续只比较 owner index 则无法
+保证进度。三者均拒绝。`io_http` 只在 file overload 的 pre-wire validation 调用 detail seam；其它 TLS/HTTP
+代码不引用它。
+
+审计结论为 **PASS**，授权上述一个 header seam 与一个 io_http 调用点；correctness、交付与候选红队尚未
+运行，不能提前写 terminal verdict。
