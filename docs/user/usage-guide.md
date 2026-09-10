@@ -71,6 +71,11 @@ TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相�
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有
 回答这些问题，请把它当作文档缺陷，不要从 benchmark 名称反推产品 API。
 
+JSON/schema、UUID、认证、路由和压缩等相邻能力不是因为“常见”就自动成为 HYLE 模块。当前 JSON
+路线是由消费方直接选择并链接 simdjson 等成熟库；FlatBuffers/Cap'n Proto 同样是消费方拥有版本与
+schema 的序列化路线，HYLE 目前没有 `serialize` factor，也不会通过薄包装假装已经集成。当前能力边界
+和已确认但尚未施工的缺口见[范围重定标扫描](../implementation/tasks/project/hyle-scope-capability-audit-2026-09.md)。
+
 ## 基本原则
 
 - 使用公开头和 CMake target，不依赖 `src/`、测试 helper 或 benchmark-only 入口。

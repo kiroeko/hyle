@@ -10,7 +10,10 @@
 
 当前跨产品能力审计事实：
 
-- [Public C++ 消费者纵切组合审计](project/public-api-consumer-portfolio-audit-2026-09.md)。
+- [HYLE 范围重定标与全组件能力扫描](project/hyle-scope-capability-audit-2026-09.md)：当前 27 个已实现
+  factor 的产品边界与缺口结论；
+- [Public C++ 消费者纵切组合审计](project/public-api-consumer-portfolio-audit-2026-09.md)：此前 F01–F08
+  纵切事实；已完成项和当前边界以新扫描为准。
 
 当前公共工具修复事实：
 

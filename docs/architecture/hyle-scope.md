@@ -52,6 +52,33 @@ case 数都不是完整度指标。完整判据与能力准入、已有能力反
 [基础库能力完整性决策](capability-completeness.md)。特别地，“已经有一个公开 API”不等于该能力完整；
 单向互操作、缺少正常关闭/销毁路径或只覆盖 benchmark 生命周期都必须标为 `PARTIAL`。
 
+### 可执行的产品边界
+
+一项新能力只有同时通过下面七道门，才进入 HYLE 产品范围：
+
+1. **语义通用：**去掉 model、token、route、tenant、material 等领域名后，仍能用 ownership、failure、
+   concurrency、cancel、backpressure、teardown 和复杂度完整描述；
+2. **需求可复核：**它是定义性能力，或至少由“一个具名真实消费者 + 一个成熟实现”证明，或在两个
+   独立消费者/纵切中重复出现；库名、LOC 和 API 数量本身不是证据；
+3. **HYLE 有集成价值：**HYLE 能减少 material allocation/copy/syscall/同步成本，统一已有
+   allocator/scheduler/IO/error 合同，或消除每个消费者都会重复手写的易错状态机；
+4. **归属成立：**semantic owner、实现载体、决策 authority 和 delivery owner 唯一，能够落进无环
+   factor DAG；当前依赖图不能反过来否决本来应该存在的能力；
+5. **承载可持续：**明确裁决为 `SELF`、`BORROW`、`ROUTED` 或 `APPLICATION`。成熟实现更合适时不为
+   symbol 数自造一套，HYLE 只拥有确有价值的 adapter；
+6. **成本隔离：**可选能力不给默认热路径增加无关 metadata、allocation、锁、syscall 或动态分发；
+7. **旅程自然：**C++ 用户能从公开 API 或指南完成创建、正常操作、取消/关闭和销毁，并能在 source、
+   installed static、installed shared 三种交付中得到同一语义。
+
+这里的最小单位不必是一条函数或一次 syscall。若拆开一个通用组合，会迫使每个消费者重复实现
+child reap、取消后 drain、bounded backpressure、残留字节交接或资源树终止等竞态，它就是应独立审计的
+**机制闭包**。反过来，listener 数量、route/middleware、鉴权、JSON schema、模型 batching、材质或部署
+策略仍是上层产品责任。
+
+`ROUTED` 只有在文档命名实际库/API、ownership 与线程模型、错误边界及构建接入后才算完整；“用户自己
+实现”不是路线。未通过任一道门的想法只能成为带晋级条件的 `WATCH` 或明确的上层责任，不能新增产品
+API、依赖或 benchmark。
+
 ## 当前不属于 HYLE 的产品
 
 - 模型文件解析、tokenizer、sampling、KV/prefix-cache 策略和 serving policy；
@@ -74,14 +101,10 @@ HYLE 提供完整源码、headers + static 和 headers + shared 三种 C++ 形�
 
 ## 扩展准则
 
-新增模块或公共能力必须满足：
-
-1. 有真实消费者任务或成熟库反复证明的通用需求；
-2. 不能由现有模块自然覆盖；
-3. ownership、failure、concurrency、complexity 和负空间能独立说明；
-4. 不造成依赖环或把上层策略下沉；
-5. 有 correctness、三种交付、易用性与适用性能验证计划；
-6. 有长期 owner，文档和机器合同能阻止边界漂移。
+新增能力先通过上面的七道产品边界，再按
+[能力展开与组件质因数分解](capability-factorization.md)确定 factor 和依赖；只有随后建立的模块
+closure card 才授权实现与验证。项目级扫描发现 `PRODUCT_TRIGGER` 不自动修改模块状态，也不把未经
+SCOPED/AUDITED 的候选变成施工清单。
 
 项目可以因为真实需求增长，但不以达到某个代码行数为目标。当前施工状态只见
 [implementation/status](../implementation/status.md)。

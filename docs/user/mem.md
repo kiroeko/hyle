@@ -92,7 +92,9 @@ teardown 时，应使用显式 domain。`try_reclaim()` 从不等待，`synchron
 所以只能做 `noexcept` 的短释放工作，不能在同一 domain 的 guard 内调用 blocking collection。
 
 它不替代所有生命周期方案：对象更新同样频繁时用 mutex/并发容器；读者需要独立延长对象生命时用
-`shared_ptr`；停顿读者绝不能阻塞其它对象回收时需要 hazard-pointer family。domain 必须长寿于所有 guard
+`shared_ptr`；停顿读者绝不能阻塞其它对象回收时需要 hazard-pointer family。该形状当前不由 HYLE
+实现；消费方应显式选择并链接成熟实现，例如 Folly `hazptr`，且不能把它的 guard/record 与 HYLE
+`ReclamationDomain` 混用。domain 必须长寿于所有 guard
 和 pending record；record 在 callback 开始前不能销毁或再次 retire，callback 也必须理解对象真正使用的
 allocator。`ConcurrentNodeHashMap` 已把这种 table hand-off 封装起来，普通 map 用户无需手写 record。
 

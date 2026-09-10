@@ -1,8 +1,8 @@
 # HYLE 参考库映射
 
-> 参考项目均已 clone 到 `C:\public\project-hyle\`（与 hyle 并列）。本表把每个库映射到 HYLE 模块，标注**借**（vendored 依赖/adapter 对接）还是**参考**（读设计、不依赖），及开工优先级。
+> 参考项目均已 clone 到 `C:\public\project-hyle\`（与 hyle 并列）。本表把每个库映射到 HYLE 模块，标注**借**（vendored 依赖/adapter 对接）、**参考**（读设计、不依赖）或 **ROUTED**（消费方直接采用成熟路线），及开工优先级。
 >
-> 角色定义：**借** = 进 HYLE 构建（封 adapter 或 vendored）；**参考** = 读其设计/代码，自己实现，不引入依赖。
+> 角色定义：**借** = 进 HYLE 构建（封 adapter 或 vendored）；**参考** = 读其设计/代码，自己实现，不引入依赖；**ROUTED** = 不进 HYLE 构建，由消费方拥有依赖和领域合同。
 
 ## 严格收口对照矩阵
 
@@ -114,12 +114,16 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **wyhash** | **借（baseline long-input core）** | 17–128B 先走库内 inline multiply stream；其上默认进入 vendored wyhash baseline，达到平台实测 crossover 且 ISA 可用时再转宽 XXH3 |
 | **SipHash-2-4** | **按公开算法/known vectors 自实现** | 显式 `HardenedStringHash` 与 stateless keyed primitive；128-bit secret 必须由调用方安全注入，默认 fast process seed 不冒充 CSPRNG |
 
-### serialize/（Tier 3）
+### 格式与序列化（消费方路线；当前没有 HYLE serialize factor）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **simdjson** | **借（vendoring）** | **JSON 读+写都归它**（two-stage SIMD 解析 + on-demand；写侧 `string_builder`/`to_json` + C++26 reflection——"只读"已过时）。x64 需 `-march` 满速 |
-| **flatbuffers** | **借（vendoring）** | 权重/张量 mmap 直读；轻、footprint 小、贴 ggml/gguf 生态 |
-| **capnproto** | **借核，RPC 边界外** | 跨进程消息/shared-mem 一等公民；只取序列化核（`capnp`），不取 `capnp-rpc`（L1）|
+| **simdjson** | **ROUTED / 参考** | JSON 读写的成熟候选；当前不在 HYLE dependency lock、target 或安装闭包中。需要 JSON 的 service/engine 自己选择并链接，未来只有具名 adapter 价值才重新准入 |
+| **flatbuffers** | **ROUTED / 参考** | mmap-friendly schema/serialization 候选；当前不是 HYLE vendored 依赖，权重或张量 schema 仍由 loader/engine 拥有 |
+| **capnproto** | **ROUTED / 参考** | 跨进程消息候选；当前不构建 `capnp` 或 RPC。若未来进程/IPC 旅程准入，先分别裁决 serialization core 与 runtime，而不是预先借入 |
+
+`ROUTED` 不表示 HYLE 已把这些库下载、编译或导出；它只说明 HYLE 不复制该成熟问题域。真正使用时由
+消费方拥有版本、构建和 schema，直到新的 closure card 证明一个 HYLE adapter 能提供 allocator、error、
+IO 或交付价值。
 
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
@@ -149,7 +153,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
 - **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、Cycles/OpenVDB/Kompute（渲染与资源形状）、oneDNN/oneMath（Intel CPU/数学后端参考）、Seastar/libuv/nginx（异步服务与 IO）。
-- **按真实消费者启用**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs）、oneTBB/taskflow（数据并行设计）、nghttp2（HTTP/2 借核）、Eigen/OpenVDB（几何/批处理）。oneDPL/oneDAL **边界外**（见下）。
+- **按真实消费者裁决**：simdjson/flatbuffers/capnproto 当前是消费方路线；tracy 与 nghttp2 是已经审查的
+  产品机制；oneTBB/taskflow、Eigen/OpenVDB 继续作设计/消费参考。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 

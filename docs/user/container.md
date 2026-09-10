@@ -283,6 +283,11 @@ if (suffix.is_null_terminated()) {
 跨平台 lexical path。它们不访问文件系统，不替代 `std::filesystem` 的 IO/normalization 语义。
 需要输出的 helper 优先写 caller buffer；按返回合同处理容量不足，不能假设一定 NUL-terminate。
 
+Unicode normalization、case folding、grapheme segmentation、bidi 与 locale collation 当前不属于
+Container 的窄 encoding surface。需要这些完整 Unicode 数据表和版本策略时，消费方应选择并链接 ICU4C
+或 utf8proc；HYLE 私有编入的 simdutf 只承载已公开的 validate/count/transcode 路线，不是可包含的 SDK
+依赖，也不能被用户从 `third_party/` 直接引用。
+
 需要错误位置或编码转换时使用 typed Unicode 路线：
 
 ```cpp
