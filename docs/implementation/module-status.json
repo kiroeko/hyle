@@ -203,9 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
-      "summary": "sched v10 SCOPED：G08 固定为 opt-in low/normal/high 非抢占 execution hint；先审 peer 与 admission/yield/wake/继承全路径，并以默认 all-normal 零额外 lane/metadata 和 5% 同合同非劣为硬边界。"
+      "summary": "sched v10 AUDITED：Folly/oneTBB 与 HYLE 全路径已核对；冻结 opt-in high/low sidecar、三档固定扫描、yield/wake/child 继承和自然 options API，默认模式无额外队列/逐任务增长并受 5% exact-baseline 非劣门约束。"
     },
     {
       "module": "io_core",

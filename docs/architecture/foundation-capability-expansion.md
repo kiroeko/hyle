@@ -138,9 +138,12 @@ termination 是当前路线。
   显式覆盖，避免高优先级 parent 产生 normal child 的 priority inversion；
 - 非抢占：已经运行的低优先级任务不会被中断；高优先级 ready task 优先选择，持续高流量可以饿死低级，
   用户需要隔离/硬保证时应使用独立 Scheduler/OS thread；
-- 默认 Scheduler 只有 normal lane，不分配额外 queue，不增加 branch/dispatch；只有启用三档的 Scheduler
-  才支付 priority context、lane 与选择成本。若实现无法保持默认 layout/hot path，必须退回独立 opt-in
-  owner，不能让所有任务付费。
+- 默认 Scheduler 只有 normal lane，不分配额外 queue、per-task metadata 或 run-loop lane scan；只有启用
+  三档的 Scheduler 才支付 priority context、sidecar queue 与选择成本。统一 Waker/IO spine 和隐式 child
+  inheritance 要求 admission/wake 两个边界做一次可预测 mode gate；复制第二套 Scheduler/Task/Waker/IO
+  类型宇宙只为字面消除该判断会破坏公共组合面，因而拒绝。默认 public/Fiber layout、循环 codegen 和
+  material 性能仍必须由 exact baseline 的 P0/P1 证明；若超过 5% 非劣门，退回独立 opt-in owner，而不是
+  让所有任务无界付费。
 
 Folly Executor 的 priority queue 和 oneTBB 的 low/normal/high arena 都采用非抢占语义。vLLM/SGLang 的
 request priority、KV/preemption 和 cache-aware policy 只是 consumer evidence，仍由推理引擎映射到这个
