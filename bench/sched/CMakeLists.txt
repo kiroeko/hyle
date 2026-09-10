@@ -185,13 +185,15 @@ if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH OR
     target_link_libraries(hyle_sched_v8_task_scope_paired_bench PRIVATE
       nanobench)
     add_executable(hyle_sched_v8_task_scope_paired_placement_bench
-      task_scope_cleanup_p1_bench.cc)
+      task_scope_cleanup_p1_bench.cc
+      task_scope_placement_shift.cc)
     _hyle_configure_sched_v7_task_scope_bench(
       hyle_sched_v8_task_scope_paired_placement_bench)
     target_link_libraries(hyle_sched_v8_task_scope_paired_placement_bench
       PRIVATE nanobench)
-    target_link_options(hyle_sched_v8_task_scope_paired_placement_bench
-      PRIVATE /FUNCTIONPADMIN:64)
+    target_compile_definitions(
+      hyle_sched_v8_task_scope_paired_placement_bench PRIVATE
+      HYLE_SCHED_V8_PLACEMENT_SHIFT=1)
 
     hyle_register_benches(sched
       hyle_sched_v8_task_scope_paired_bench

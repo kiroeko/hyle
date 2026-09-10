@@ -26,9 +26,9 @@
 - 性能：`P1`，material margin `5%`。只运行 v7 已资格化的同语义 32-child dynamic owner 合同；同一
   Scheduler/allocator/body/yield/failure/output/cancel/close/drain，双顺序/placement、A/A、known-delta 与
   timer-floor；
-- 调查与纠正预算：peer/机制审计已经结束；一次 API/实现审计、一个产品实现批次、至多一次 correctness
-  修正、一次 P0 和一次 qualified P1。不能扩样、换轻语义 peer、放宽门、增加普通 task 成本或继续发明
-  completion 算法；
+- 调查与纠正预算：peer/机制审计已经结束；第一候选实现批次之后，只允许性能 preflight 从实际源码
+  证明的 `S8-06/S8-07` 两项无 API/layout 纠正、至多一次 correctness 修正、一次 P0 和一次 qualified
+  P1。不能扩样、换轻语义 peer、放宽门、增加普通 task 成本或继续发明 completion 算法；
 - 预声明验证：TaskScope 0/1/N、void/Status/typed、并发 add-vs-close、recursive add、多个 waiter、首错/full
   drain、cancel token + IO、OOM/queue-full/shutdown、moved-from/live-child death；W1-WIN/W1-WSL/M1-MAC
   focused Sched + public header；Windows ASan、WSL ASan/UBSan/TSan；source/static/shared relocated consumer；
@@ -83,7 +83,8 @@ in-flight admission counter，也不在 allocator/stack acquisition 期间持锁
 | `S8-03` | close/admission/list 稳定性 | driver/stack 先准备；一个 scope SpinLock 原子完成 closed check + link；close 持同一锁 | concurrent add/spawn-vs-close、OOM、queue full、recursive add |
 | `S8-04` | 旧计数 API/文档成本不真实 | `remaining()` 保留为 O(N) snapshot；guide/architecture 说明 record retention、同步 rejection 和 teardown | 公开 API 不增 benchmark 变体；header/guide/三交付 |
 | `S8-05` | v7 P1 未过门 | 沿用同一 qualified contract/peer/5% threshold，只更新 candidate provenance | 一次 qualified P1 全 required strata NI PASS，否则 BLOCKED |
-| `S8-06` | 成功 `join()` 后的合法析构仍逐 child 调用 `Event::is_signaled()`，为 32-child owner 增加 32 组无语义价值的锁；`joined` 只会在 `wait_` 已等待完整稳定 list 后置位 | `reset_` 只用 `ever_admitted && !joined` 保留 misuse fail-fast；正常 joined teardown 直接释放 record，不再重复证明 completion | 两项 death test 仍通过；短 paired probe 不再出现 material 固定输；不得改变 record、publication 或 public API |
+| `S8-06` | 成功 `join()` 后的合法析构仍逐 child 调用 `Event::is_signaled()`，为 32-child owner 增加 32 组无语义价值的锁；`joined` 只会在 `wait_` 已等待完整稳定 list 后置位 | `reset_` 只用 `ever_admitted && !joined` 保留 misuse fail-fast；正常 joined teardown 直接释放 record，不再重复证明 completion | 两项 death test 仍通过；不得改变 record、publication 或 public API |
+| `S8-07` | `S8-06` 后的同拓扑短 probe 仍在 8/8 次中同向落后（diagnostic ratio `0.894..0.969`）。静态账单和 MSVC 生成代码把唯一额外的逐 child 同类成本定位为 admission 的 `references.fetch_add`（`lock inc`）：candidate 与 peer 都有 publisher/owner 两次 release RMW，但 peer 的 `JoinState` 直接以 2 refs 构造 | record 尚未进入 list、driver 尚未交给 Scheduler 时，以 relaxed initialization store 建立 scope reference；失败 admission 仍保留单一 publisher ref | admission 生成代码不再有额外 locked RMW；final-publisher race、concurrent add/close、OOM/queue failure 与 death tests 通过；一次短 paired probe 后立即决定是否有资格签 candidate，不再增加修正或样本 |
 
 ### API / usability freeze
 
@@ -130,8 +131,11 @@ fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额
 该 candidate 的正确性证据仍是历史事实，但性能 preflight 发现下述有限产品问题后不再是活动 candidate。
 `CANDIDATE -> AUDITED` 前态 registry snapshot 是
 `C:\public\project-hyle\_validation\sched-v8-task-scope-distributed-completion\transitions\module-status-before-performance-return.json`，
-SHA-256 `D26B0763ED68161ADBBA595A884703F098F87DA5844020CED8553E75BC2E4681`。只允许实现 `S8-06`、重跑其
-直接 correctness/P0/短 probe 后签发新 candidate；peer、用户任务、API、主算法和 5% 门槛不变。
+SHA-256 `D26B0763ED68161ADBBA595A884703F098F87DA5844020CED8553E75BC2E4681`。`S8-06` 后的短 probe 在所有
+八次换序/placement 诊断中仍同向落后，因而没有浪费正式 P1 样本；源码与反汇编随后证明 admission 比
+同语义 peer 多一次逐 child locked refcount RMW。只允许再实现 `S8-07`、重跑其直接 correctness/P0/短
+probe 后决定是否签发新 candidate；peer、用户任务、API、主算法和 5% 门槛不变。若短 probe 仍有
+material 固定输，本轮立即 `BLOCKED`，不得继续扩充修正或样本。
 
 ## P1 完成边界预审纠正
 
@@ -174,7 +178,9 @@ first/second ratio 仍为 `0.98, 1.04, 0.94, 0.97, 1.01`。这不是 TaskScope �
 
 HYLE 的首要消费者是同一 source/static/shared 进程内直接调用公开 C++ 路线。最终 v2 合同据此使用既有
 `nanobench-paired-rows-v1`：candidate 和 exact pre-v7 public composition 位于同一个 source-built consumer，
-共享 Scheduler/allocator/helper body，每个计时 operation 都完成一个 32-child owner 的 admission、yield、
-结果/首错、finish-hook/stack cleanup、`drain` 和 owner teardown；64 个完整 owner/route 只作测量外 warmup。
+各自拥有同配置、同 4096-owner（W1 约 60 ms）warmup 的持久 Scheduler，避免前一路线把 stack pool/
+allocator 历史留给后一路线，也避免第一条路线只预热约 1 ms 而第二条路线继承近一秒热状态；
+allocator/helper body 相同，每个计时 operation 都完成一个 32-child owner 的 admission、yield、
+结果/首错、finish-hook/stack cleanup、`drain` 和 owner teardown。
 双顺序与独立 placement target 仍保留，公共 A/A 现在与产品同为同进程 paired rows。该修改只纠正证据
 形状，不改变 immutable product candidate、API、算法或 material margin。

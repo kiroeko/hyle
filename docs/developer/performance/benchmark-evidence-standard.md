@@ -110,12 +110,20 @@ atomic、锁、wake、syscall、copy 和常驻 metadata。能从源码、对象�
 先完成归因或修正合同；不要先花样本预算再猜。独立 reviewer 必须沿源码锚点复核，不能只复述合同作者
 写的等价性文字。
 
-完成边界通过后，先用同一 artifact 对自身做**与产品完全相同的执行拓扑**短诊断：同进程成对 row 就在
-同进程中 A/A，分离子进程 pair 就必须以同样的启动、亲和、优先级和先后顺序启动两个相同 product
-executable。至少覆盖 A/B 与 B/A；若首个/第二个位置、进程启动、热状态或 placement 产生接近或超过
+完成边界通过后，先用同一 artifact 对自身做**与产品完全相同的 workload 和执行拓扑**短诊断：同进程
+成对 row 就把两行都替换为同一个真实 workload route，保留相同 Scheduler/allocator/working set/warmup；
+分离子进程 pair 就必须以同样的启动、亲和、优先级和先后顺序启动两个相同 product executable。通用
+算术 A/A 只能验证 timer、parser 和统计管线，不能替代涉及 runtime、allocator、线程或设备状态的
+workload-matched A/A。至少覆盖 A/B 与 B/A；若首个/第二个位置、进程启动、热状态或 placement 产生接近或超过
 material margin 的固定影响，仪器 preflight 失败，不能启动完整样本。公共 control executable 内部的
 A/A 只能证明它自己的同进程拓扑；它不能替代 separate-process product pair 的同拓扑 A/A。此时应选择
 更贴近真实 delivery 的已有 adapter，或登记独立仪器 blocker，不能用更多 n 掩盖拓扑失配。
+
+placement control 还必须只改变待研究的地址/layout 变量。给每个函数增加大段 hot-patch padding、切换
+LTO/异常/安全开关、显著扩大 `.text`/数据 working set，或改变调用/内联/分配语义，都不是纯 placement
+replica。preflight 要记录两份 artifact 的 `.text` 大小与实际扰动机制；若代码工作集发生 material 膨胀，
+先修 control，不能把它造成的输赢归给产品。小型前置 section contribution、受控 link order 或等价的
+非执行地址位移可以使用，但它们不得进入计时区间。
 
 跑后更换 peer、规模、计费边界、margin 或剔除规则会使结果失去签署资格；可以建立新的实验，
 不能回写原假设。

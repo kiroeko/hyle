@@ -23,5 +23,18 @@ paired-row benchmark 仍必须由进程退出状态和 telemetry 证明 exact wo
 不优于 material margin 都会在完整 n=15 前停止。公共 control process 的 A/A 不再被误写成独立 product
 process 的拓扑证据。
 
+G02 的同进程改造进一步证明“同拓扑”还不够：通用算术 control 没有 Scheduler、stack pool、allocator
+和四 worker 热状态，不能校准这个 workload。paired executable 新增只用于 preflight 的 same-route 模式，
+把两个标记行都执行 candidate 或都执行 peer。八个单次换序/placement 诊断中，完全相同路线的
+first/second ratio 仍覆盖约 `0.917..1.052`，跨过 5% 门；因此产品 `A/B` 即使从 primary 的 `1.065/1.127`
+翻到 placement 的 `0.970/0.934`，也没有资格解释为产品输赢。正式 n=15 没有启动。后续仪器必须让
+workload-matched A/A 在同样的 runtime/allocator/线程拓扑下先通过，而不是增加产品样本。
+
+同一 preflight 还发现既有 `/FUNCTIONPADMIN:64` replica 把 G02 benchmark `.text` 从 `0x32c00` 扩大到
+`0x3f600`（约 +24.9%）。Microsoft 的合同是给每个函数入口增加 hot-patch padding；它同时改变代码
+working set，并非单变量 placement control。G02 改用一个 `.text$AAA` 小型前置 contribution，只在 setup
+前执行一次以防链接器丢弃；计时路线、产品库选项与函数体不变。其他历史合同不在本任务内批量改写；
+以后被合法重开时先过新的 artifact-size preflight。
+
 验证范围固定为 runner tooling tests、实际 G02 合同 validate、两个 opt-in benchmark target 编译、短
 双顺序 probe、文档/closure checker 与 `git diff --check`。

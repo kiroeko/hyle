@@ -128,7 +128,8 @@ margin，才允许继续改产品。比较证据遵守
 
 正式采样之前必须按顺序完成四项 preflight：源码时序账单确认两侧在同一用户可见完成边界返回；静态
 成本账单列出复杂度、allocation、atomic、lock、wake、syscall、copy 与常驻 metadata；只对账单中的未决
-机制查看对象布局或生成代码；最后用极短 diagnostic 做同拓扑 A/A、双顺序与分辨率检查。任一项发现
+机制查看对象布局或生成代码；最后用极短 diagnostic 做同 workload route、同拓扑 A/A、双顺序与分辨率
+检查，通用算术 control 不替代 runtime/allocator/线程/设备 workload 自身的 A/A。任一项发现
 语义不等价、可由源码解释的差异、固定顺序/地址效应，或仪器噪声不低于 material margin，就在完整
 `n=15` 前停止并修合同/仪器，不能靠增加样本寻找 PASS。preflight 结论和源码锚点写入 closure card；
 完整流程见性能证据标准。

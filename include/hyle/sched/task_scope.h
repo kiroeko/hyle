@@ -34,7 +34,13 @@ struct TaskScopeCompletion {
   TaskScopeCompletion(const TaskScopeCompletion&) = delete;
   TaskScopeCompletion& operator=(const TaskScopeCompletion&) = delete;
 
-  void retain() noexcept { references.fetch_add(1, std::memory_order_relaxed); }
+  // Admission is the only path that establishes the scope reference. The
+  // record is still private to its driver here and the driver is not submitted
+  // until after admission, so this is initialization rather than a concurrent
+  // retain and does not need a locked read-modify-write.
+  void retain_scope_before_publish() noexcept {
+    references.store(2, std::memory_order_relaxed);
+  }
 
   void release() noexcept {
     const unsigned previous =

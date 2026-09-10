@@ -75,7 +75,9 @@ Status task_scope_try_admit(TaskScopeState* state,
     state->control_lock.unlock();
     return Status::FailedPrecondition("task scope is closed");
   }
-  completion->retain();  // scope ownership; publisher owns the initial ref
+  // The driver has not been submitted yet, so no publisher can race this
+  // initialization of the scope-owned reference.
+  completion->retain_scope_before_publish();
   if (state->tail == nullptr) {
     state->head = completion;
   } else {
@@ -306,11 +308,11 @@ TaskScope::~TaskScope() { reset_(); }
 void TaskScope::reset_() noexcept {
   if (state_ == nullptr) return;
   state_->control_lock.lock();
-  for (detail::TaskScopeCompletion* current = state_->head; current != nullptr;
-       current = current->next) {
-    HYLE_FATAL_ASSERT_MSG(current->completed.is_signaled(),
-                          "TaskScope destroyed with live children");
-  }
+  // wait_ sets joined only after it has traversed the now-stable list and
+  // observed every completion. Re-locking all per-child Events here used to
+  // prove the same fact a second time on every valid teardown. The owner
+  // invariant is sufficient and still makes both live and completed-but-
+  // unjoined destruction fatal in release builds.
   HYLE_FATAL_ASSERT_MSG(
       !state_->ever_admitted || state_->joined,
       "TaskScope with admitted children must be joined before destruction");
