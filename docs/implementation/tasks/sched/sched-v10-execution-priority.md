@@ -182,3 +182,12 @@ PASS。状态依法退回 `AUDITED`；只允许在既有 `S10-02` 内先把 work
 checked-size 计算得到 allocation bytes，并让 allocate/deallocate 共用该值。公开 API、lane 算法、对象
 布局、默认成本、workload 和性能合同均不得改变。修正后签发新 candidate，只重跑受影响的编译/
 correctness/交付/sanitizer；候选前 preflight 不重跑，正式 P1 仍保持唯一一次。
+
+## 第二产品候选
+
+修正提交暨 immutable product candidate 为
+`a9847b9cebe373fe9daae68ae8ae7ab152560616`。内部 worker count 改用 allocation/indexing 的自然类型
+`size_t`，原有 `max / sizeof(PriorityWorker)` 检查因而在 32 位和 64 位目标上都具有有效语义；没有增加
+metadata、分支、allocation、公开 API 或依赖。Windows MSVC Release 的 Sched/header `2/2 PASS`；
+MacBook Air AppleClang 21 以 `HYLE_WERROR=ON` fresh build 后 Sched/header `2/2 PASS`，原告警消失。
+后续只验证该候选；任何产品变化必须再次退回 `AUDITED`。

@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
-      "summary": "sched v10 AUDITED：首候选的 Linux/macOS correctness 已通过，但 AppleClang 21 揭示 worker-lane 字节数保护存在 32/64 位恒假比较并会阻断 WERROR 交付；只允许在既有 S10-02 内改为同宽 checked-size 计算后签发新候选，不扩范围、不重跑性能。"
+      "candidate": "a9847b9cebe373fe9daae68ae8ae7ab152560616",
+      "summary": "sched v10 CANDIDATE：三档非抢占 execution priority 已覆盖全部 admission/yield/wake/pinned/TaskScope 路径；第二候选消除了 AppleClang worker-lane sizing 警告，默认布局与算法不变，等待剩余交付、sanitizer、红队与唯一正式 P1。"
     },
     {
       "module": "io_core",
