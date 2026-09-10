@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v8-task-scope-distributed-completion.md",
-      "summary": "sched v8 AUDITED：逐 child、driver 同分配的 completion record 与 publisher/scope 双引用已冻结；有限 S8-01..S8-05 只替换 TaskScope accounting，普通 task、G08、依赖图和性能合同不变。"
+      "candidate": "cb4e892b6df85d779c7df03af7f1d4508981dfe2",
+      "summary": "sched v8 CANDIDATE：TaskScope 已改为逐 child、driver 同分配 completion record；W1-WIN 候选前 correctness/header/stress 通过，候选 cb4e892b 已冻结，待三平台、sanitizer、三交付、IO、P0、P1 与红队。"
     },
     {
       "module": "io_core",

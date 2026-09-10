@@ -1,6 +1,6 @@
 # Sched v8：TaskScope 分散完成记录
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -108,3 +108,23 @@ allocation 的 cell storage 会保留到 scope teardown。普通 task、没有 T
 红队预审否决了固定 per-worker cache-line 数组（每 request O(workers) metadata）、close 后 polling（破坏
 fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额外 allocation/result state）。有限
 `S8-01..S8-05` 已冻结，下一步只实现该集合。
+
+## Product candidate（`CANDIDATE`）
+
+- immutable product commit / tree：
+  `cb4e892b6df85d779c7df03af7f1d4508981dfe2` /
+  `68ae82483ffad1484e285eed24ba8dc69dbce43c`；公开 API 不增入口，算法、对象布局、测试语义与用户文档已经
+  固定；
+- 实现用每个 scoped driver 同分配的 manual-reset completion record 取代 owner-wide completion counter；
+  Task、Fiber、stack 与 typed JoinState task reference 均在 record terminal 发布前释放；scope/publisher 双引用
+  保护 signal 尾部与即时 teardown；
+- admission/close 由一个短锁线性化；未 admission 的 driver/stack 准备失败直接返回，admission 后的 Scheduler
+  与运行期失败进入首错/full-drain 聚合；成功 completion 不写 scope state；
+- 候选前 W1-WIN instrumented Sched、公开头与 TaskScope 28 项通过，并发 admission/close 与即时 teardown
+  三项回归重复 1000 轮通过；closure/docs/diff 检查通过。这些只是签发检查，不代替下述精确候选验证；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\sched-v8-task-scope-distributed-completion\transitions\module-status-before-candidate.json`，
+  SHA-256 `022EC2246247F5E31D4C73C6B633E79443C0BAE34F23EBB441B5F7C50681C3C8`。
+
+下面只运行 closure card 已声明的 exact-candidate correctness、sanitizer、三交付、IO consumer、P0、唯一一次
+qualified P1 与终局红队；不得改产品、peer、workload 或门槛。
