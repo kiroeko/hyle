@@ -69,10 +69,12 @@ Task<void> wait_for_release(AllocatorRef, std::atomic<bool>* started,
   co_return;
 }
 
+#if defined(HYLE_TESTING)
 Task<Status> status_wait_for_release(AllocatorRef, std::atomic<bool>* release) {
   while (!release->load(std::memory_order_acquire)) Fiber::yield();
   co_return Status{};
 }
+#endif
 
 Task<Status> join_from_fiber(AllocatorRef allocator, Scheduler* scheduler,
                              std::atomic<int>* completed) {
