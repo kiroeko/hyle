@@ -60,12 +60,12 @@
       "consumer_key": "inference-rendering/sched/dynamic-structured-helper-owner-cleanup-aligned",
       "provenance": {
         "path": "bench/sched/consumer_shapes_v8.json",
-        "sha256": "b97dea9a94317fecf79326171ea0b0a0afbc83a850dc52b8c27bf0c105568b3e"
+        "sha256": "8248ddfe7b07b6ec40414183f695937bd8a512bed48ddb97b2ad6a6c33b1fe32"
       },
       "ownership_topology": {
         "candidate": "Each owner creates one allocator-backed TaskScope, admits 32 scope-owned Task<Status> helpers, closes/joins, crosses Scheduler::drain and destroys the scope before returning",
         "peer": "Each owner creates the public group CancelToken, SpinLock close state and same-allocator PMR JoinHandle vector, admits the same helpers with spawn_task, joins all handles, crosses Scheduler::drain and destroys handles/token before returning",
-        "equivalence": "Both run in the same direct-source process but own separate, identically configured persistent four-worker Schedulers with the same 4096-owner warmup, allocator, Task<Status> body, group cancellation, yield, output, failure distribution and owner boundary; Scheduler::drain places every Fiber finish hook, coroutine/driver cleanup and stack return before owner return on both sides"
+        "equivalence": "Both run in the same direct-source process and use one normal persistent four-worker Scheduler, the same allocator, alternating 4096-owner warmup, common calibrated iteration count, 52 paired interleaved rounds, Task<Status> body, group cancellation, yield, output, failure distribution and owner boundary; Scheduler::drain places every Fiber finish hook, coroutine/driver cleanup and stack return before owner return on both sides"
       },
       "material_contribution": {
         "frequency": 1,
@@ -81,9 +81,9 @@
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {
         "distribution": "sequential owners; every helper suspends once, one helper fails in roughly one of sixteen owners, and every helper publishes a deterministic output",
-        "scale": {"workers": 4, "warmup_owners_per_route": 4096, "measured_unit": "one complete owner", "helpers_per_owner": 32}
+        "scale": {"workers": 4, "warmup_owners_per_route": 4096, "paired_rounds": 52, "measured_unit": "one complete owner", "helpers_per_owner": 32}
       },
-      "setup": "Scheduler creation, exact worker placement and 4096 complete warmup owners per route are outside measurement; nanobench times repeated complete owner lifecycles in one direct-source process",
+      "setup": "Scheduler creation, exact worker placement and alternating 4096 complete warmup owners per route are outside measurement; nanobench compare uses one common iteration count and cyclic Latin-square interleaving for 52 paired rounds of complete owner lifecycles in one direct-source process",
       "charged_phases": [
         "per-owner ownership-state construction",
         "runtime-sized admission/close synchronization and one group-cancellation source",

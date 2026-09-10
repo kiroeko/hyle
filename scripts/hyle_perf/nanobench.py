@@ -40,13 +40,14 @@ def parse_nanobench(text: str) -> dict[tuple[str, str], NanobenchRow]:
         columns = [column.strip() for column in line.split("|")]
         if len(columns) < 6:
             continue
-        if columns[1] == "relative":
+        if columns[1] in {"relative", "ns/op"}:
             title = columns[-1]
-            operations_column = 3
-            continue
-        if columns[1] == "ns/op":
-            title = columns[-1]
-            operations_column = 2
+            try:
+                operations_column = columns.index("op/s")
+            except ValueError as error:
+                raise ValidationError(
+                    f"nanobench header has no op/s column: {original_line!r}") \
+                    from error
             continue
         variant_column = next(
             (column for column in columns[5:] if _BACKTICK in column), None)

@@ -33,6 +33,13 @@ RELATIVE = """
 | 105.0% | 1.050 | 952,380,952 | 0.1% | 0.01 | `peer` | (Unstable with ~1.0 iters. Increase `minEpochIterations` to e.g. 10.)
 """
 
+COMPARE = """
+| relative | 95% CI | ns/op | op/s | err% | total | demo compare
+|---------:|-------:|------:|-----:|-----:|------:|:------------
+| 100.0% | | 14,676.65 | 68,135.45 | 4.2% | 0.14 | `candidate`
+| 106.2% | 103.4% .. 111.3% | 13,757.49 | 72,687.70 | 3.8% | 0.12 | `peer`
+"""
+
 
 class NanobenchAdapterTest(unittest.TestCase):
     def test_parses_absolute_and_relative_tables(self):
@@ -41,6 +48,17 @@ class NanobenchAdapterTest(unittest.TestCase):
                                       title="demo relative")
         self.assertEqual(candidate.operations_per_second, 1_000_000_000.0)
         self.assertEqual(peer.operations_per_second, 952_380_952.0)
+
+    def test_parses_paired_compare_table_by_header(self):
+        rows = parse_nanobench(COMPARE)
+        candidate, peer = select_pair(rows, "candidate", "peer",
+                                      title="demo compare")
+        self.assertEqual(candidate.operations_per_second, 68_135.45)
+        self.assertEqual(peer.operations_per_second, 72_687.70)
+
+    def test_header_without_operations_column_fails_closed(self):
+        with self.assertRaisesRegex(ValidationError, "no op/s column"):
+            parse_nanobench(COMPARE.replace("op/s", "items/s", 1))
 
     def test_pair_without_title_must_be_unambiguous(self):
         rows = parse_nanobench(ABSOLUTE + RELATIVE)

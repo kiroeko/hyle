@@ -125,6 +125,12 @@ replica。preflight 要记录两份 artifact 的 `.text` 大小与实际扰动�
 先修 control，不能把它造成的输赢归给产品。小型前置 section contribution、受控 link order 或等价的
 非执行地址位移可以使用，但它们不得进入计时区间。
 
+使用 nanobench 的同进程 pair 默认应调用其 `Bench::compare()`：它为 alternatives 使用同一个 iteration
+count，并按 cyclic Latin square 逐 round 交错；两侧时就是 ABBA/BAAB。先完整执行一侧的 `run()`、再完整
+执行另一侧，即使打印在同一张表里也不是 paired measurement。若真实生命周期不允许交错，必须说明
+原因并改用具名 topology/adapter，不能把 sequential rows 称为 paired。严格 parser 按表头定位 `op/s`；
+`compare()` 增加的 relative/CI 列不能靠固定列号猜测。
+
 跑后更换 peer、规模、计费边界、margin 或剔除规则会使结果失去签署资格；可以建立新的实验，
 不能回写原假设。
 

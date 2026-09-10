@@ -140,14 +140,39 @@ void run_one_owner(Route &&route, RouteState &state,
   nb::doNotOptimizeAway(state.checksum);
 }
 
-struct RouteResult {
-  std::uint64_t owners = 0;
-  std::uint64_t callbacks = 0;
-};
+using OwnerRoute = hyle::Status (*)(
+    hyle::sched::Scheduler &, hyle::mem::AllocatorRef,
+    std::span<task_scope::Child>);
 
-template <class Route>
-RouteResult benchmark_route(
-    const char *row_name, Route &&route,
+void run_warmup(OwnerRoute candidate_route, OwnerRoute peer_route,
+                RouteState &candidate_state, RouteState &peer_state,
+                hyle::sched::Scheduler &scheduler,
+                hyle::mem::AllocatorRef allocator,
+                common::WorkerHits &candidate_hits,
+                common::WorkerHits &peer_hits) {
+  // Alternate the warmup order as well: neither route inherits an entire
+  // one-sided stack-pool/allocator phase before paired measurement begins.
+  for (std::size_t warmup = 0; warmup < kPairedWarmupOwners; ++warmup) {
+    if ((warmup & 1U) == 0) {
+      run_one_owner(candidate_route, candidate_state, scheduler, allocator,
+                    candidate_hits);
+      run_one_owner(peer_route, peer_state, scheduler, allocator, peer_hits);
+    } else {
+      run_one_owner(peer_route, peer_state, scheduler, allocator, peer_hits);
+      run_one_owner(candidate_route, candidate_state, scheduler, allocator,
+                    candidate_hits);
+    }
+  }
+  candidate_hits.reset();
+  peer_hits.reset();
+  candidate_state.completed_owners = 0;
+  candidate_state.checksum = 0;
+  peer_state.completed_owners = 0;
+  peer_state.checksum = 0;
+}
+
+void benchmark_pair(
+    OwnerRoute candidate_route, OwnerRoute peer_route, bool peer_first,
     const std::array<unsigned, common::kWorkerCount> &cpus,
     hyle::mem::AllocatorRef allocator) {
   common::AffinityState affinity(cpus);
@@ -169,30 +194,53 @@ RouteResult benchmark_route(
   if (!affinity.exact())
     common::fail("Scheduler worker placement is not exact");
 
-  common::WorkerHits hits;
-  RouteState state;
-  for (std::size_t warmup = 0; warmup < kPairedWarmupOwners; ++warmup)
-    run_one_owner(route, state, scheduler, allocator, hits);
-  hits.reset();
-  state.completed_owners = 0;
+  common::WorkerHits candidate_hits;
+  common::WorkerHits peer_hits;
+  RouteState candidate_state;
+  RouteState peer_state;
+  run_warmup(candidate_route, peer_route, candidate_state, peer_state,
+             scheduler, allocator, candidate_hits, peer_hits);
+
+  auto candidate = [&] {
+    run_one_owner(candidate_route, candidate_state, scheduler, allocator,
+                  candidate_hits);
+  };
+  auto peer = [&] {
+    run_one_owner(peer_route, peer_state, scheduler, allocator, peer_hits);
+  };
 
   nb::Bench bench;
   bench.title(kTitle)
       .batch(1)
-      .epochs(9)
-      .minEpochTime(std::chrono::milliseconds(100));
-  bench.run(row_name, [&] {
-    run_one_owner(route, state, scheduler, allocator, hits);
-  });
+      .epochs(52)
+      .minEpochTime(std::chrono::milliseconds(2))
+      .performanceCounters(false);
+  if (peer_first) {
+    (void)bench.compare(kPeerRow, peer, kCandidateRow, candidate);
+  } else {
+    (void)bench.compare(kCandidateRow, candidate, kPeerRow, peer);
+  }
 
-  if (state.completed_owners == 0 ||
-      hits.total() != state.completed_owners * task_scope::kFanout)
-    common::fail("paired owner callback accounting is inconsistent");
-  if (!affinity.exact() || hits.active() == 0)
+  if (candidate_state.completed_owners == 0 ||
+      peer_state.completed_owners == 0 ||
+      candidate_hits.total() !=
+          candidate_state.completed_owners * task_scope::kFanout ||
+      peer_hits.total() != peer_state.completed_owners * task_scope::kFanout)
+    common::fail("interleaved owner callback accounting is inconsistent");
+  if (!affinity.exact() || candidate_hits.active() == 0 ||
+      peer_hits.active() == 0)
     common::fail("paired owner worker placement is inconsistent");
-  const RouteResult result{state.completed_owners, hits.total()};
+
+  std::printf("# HYLE_SCHED_TASK_SCOPE_V8_ACCOUNTING "
+              "candidate_owners=%llu peer_owners=%llu "
+              "candidate_callbacks=%llu peer_callbacks=%llu "
+              "accounting_ok=1\n",
+              static_cast<unsigned long long>(
+                  candidate_state.completed_owners),
+              static_cast<unsigned long long>(peer_state.completed_owners),
+              static_cast<unsigned long long>(candidate_hits.total()),
+              static_cast<unsigned long long>(peer_hits.total()));
   scheduler.shutdown();
-  return result;
 }
 
 void print_telemetry(const std::array<unsigned, common::kWorkerCount> &cpus,
@@ -202,7 +250,8 @@ void print_telemetry(const std::array<unsigned, common::kWorkerCount> &cpus,
   const char *priority = std::getenv("HYLE_PERF_PRIORITY");
   std::printf(
       "# HYLE_SCHED_TASK_SCOPE_V8_RUN execution_order=%s "
-      "aa_route=%s affinity_topology=%s worker_count=%zu worker_cpus=",
+      "aa_route=%s paired_mode=nanobench-compare "
+      "affinity_topology=%s worker_count=%zu worker_cpus=",
       peer_first ? "peer-first" : "candidate-first",
       aa_route == AaRoute::kCandidate
           ? "candidate"
@@ -226,33 +275,12 @@ int main() {
   const hyle::mem::AllocatorRef allocator = hyle::mem::system_allocator();
   const bool peer_first = peer_first_requested();
   const AaRoute aa_route = aa_route_requested();
-  using OwnerRoute = hyle::Status (*)(
-      hyle::sched::Scheduler &, hyle::mem::AllocatorRef,
-      std::span<task_scope::Child>);
   const OwnerRoute candidate_row_route =
       aa_route == AaRoute::kPeer ? &manual_owner : &candidate_owner;
   const OwnerRoute peer_row_route =
       aa_route == AaRoute::kCandidate ? &candidate_owner : &manual_owner;
-  RouteResult candidate_result;
-  RouteResult peer_result;
-  if (peer_first) {
-    peer_result = benchmark_route(kPeerRow, peer_row_route, cpus, allocator);
-    candidate_result = benchmark_route(kCandidateRow, candidate_row_route,
-                                       cpus, allocator);
-  } else {
-    candidate_result = benchmark_route(kCandidateRow, candidate_row_route,
-                                       cpus, allocator);
-    peer_result = benchmark_route(kPeerRow, peer_row_route, cpus, allocator);
-  }
-
-  std::printf("# HYLE_SCHED_TASK_SCOPE_V8_ACCOUNTING "
-              "candidate_owners=%llu peer_owners=%llu "
-              "candidate_callbacks=%llu peer_callbacks=%llu "
-              "accounting_ok=1\n",
-              static_cast<unsigned long long>(candidate_result.owners),
-              static_cast<unsigned long long>(peer_result.owners),
-              static_cast<unsigned long long>(candidate_result.callbacks),
-              static_cast<unsigned long long>(peer_result.callbacks));
+  benchmark_pair(candidate_row_route, peer_row_route, peer_first, cpus,
+                 allocator);
   print_telemetry(cpus, peer_first, aa_route);
   return 0;
 }
