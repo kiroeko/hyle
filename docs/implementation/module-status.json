@@ -226,9 +226,10 @@
     },
     {
       "module": "io_tls",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md",
-      "summary": "io_tls v3 AUDITED：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、同步 secret lifetime 与 OpenSSL BIO 映射已经冻结；有限四项 FIX 等待实现。"
+      "candidate": "4bd86adf0b4027414ebe5cb576b217a5e87c2170",
+      "summary": "io_tls v3 CANDIDATE：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、OpenSSL 3.0 构建合同与三种 TLS-on C++ 交付已固定在 4bd86adf；后续只补候选绑定的平台、sanitizer、consumer、红队和 terminal 证据。"
     },
     {
       "module": "io_http",

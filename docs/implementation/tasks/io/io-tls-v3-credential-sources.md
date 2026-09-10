@@ -201,3 +201,26 @@ TLS transport tuning；新事实若改变公共形状或范围必须退回 `SCOP
 
 审计结论为 **PASS**：能力边界、自然 C++ 形状、provider 映射、依赖、有限改动集与 P0 门已冻结，允许进入
 产品实现；correctness、三平台、三交付、红队仍未运行，不能提前写成通过。
+
+## 产品实现与候选（`CANDIDATE`）
+
+- `G07-F01/F02`：`<hyle/io/tls.h>` 的单一 source/password 配置面与 OpenSSL BIO/RAII loader 已完成；
+  file、borrowed PEM、混合 cert/key、encrypted key、borrowed/callback password、client/server identity、
+  mTLS 和 64 张 chain 上限均走同一同步构造与 typed failure 路线。旧 `*_file` 字段已从 HYLE
+  tests、bench、sample 与直接 consumer 清除，没有兼容别名。
+- `G07-F03`：Windows MSVC Release 与 WSL GCC 14/OpenSSL 3.0.13 的 header/unit 均为 `2/2 PASS`；
+  边界矩阵覆盖 empty/missing/malformed/truncated/NUL/oversize、错误密码、callback failure/不保留、
+  duplicate CA、完整 chain、实际 encrypted-key handshake 与全内存 mTLS。
+- `G07-F04`：Windows 的 TLS-on source embedding、relocated shared SDK、relocated static SDK consumer
+  均通过；shared DLL 没有导出 OpenSSL/X509/BIO/EVP 类型符号，static package 明确生成
+  `OpenSSL|3.0` dependency spec。通用 TLS-off IO smoke 也通过，但不冒充 TLS-on 交付证据。
+- P0：source/password value 为 O(1)、零 allocation；credential parse 为 O(input bytes)，只有
+  OpenSSL provider 对象和非 NUL-terminated file path 可能分配。相对 baseline 的忽略空白产品 diff
+  只触及 credential helper 与 `make_client/make_server` 配置，`ContextImpl`、`TlsStream` layout、pump、
+  handshake/read/write/shutdown 路径未改变，因此没有连接热路新增成本，也不运行 credential 纳秒 benchmark。
+
+immutable product commit 为 `4bd86adf0b4027414ebe5cb576b217a5e87c2170`，tree 为
+`706e74449022ec825c7e5432cbbaf53815092112`。从此公开 API、provider 算法、正常 consumer shape 与成本
+结构停止变化；发现产品问题必须退回 `AUDITED`。`AUDITED -> CANDIDATE` 的 previous revision 是该产品
+提交自身。尚待候选绑定的 WSL ASan/UBSan、M1-MAC、直接 HTTP/HTTP2/Transfer consumer、组件合同复验、
+终局独立红队、LOC 与 terminal record；这些未运行项不提前写成 PASS。
