@@ -137,8 +137,8 @@ struct NativeWatchDirectory {
 
   container::PodVector<char> path;
   int native_watch = -1;
+  std::size_t next_scan = kNoWatchIndex;
   bool recursive = false;
-  bool scanned = false;
 };
 #endif
 

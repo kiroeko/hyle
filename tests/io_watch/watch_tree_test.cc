@@ -98,6 +98,7 @@ struct TreeOutcome {
   bool root_relative = false;
   bool overlap_relative = false;
   bool direct_filtered = true;
+  bool reversed_order_descendant = false;
   bool topology_reported = false;
   bool new_descendant = false;
   bool renamed_descendant = false;
@@ -105,11 +106,15 @@ struct TreeOutcome {
 
 Task<int> exercise_tree(AllocatorRef allocator, IoContext* io,
                         std::string root, std::string nested,
+                        std::string direct_subroot,
                         TreeOutcome* outcome) noexcept {
   const std::array targets{
-      FileWatchTarget::directory(root),
+      // Keep this direct child root before its recursive parent. Linux must
+      // revisit it when the parent-tree scan upgrades it to recursive.
+      FileWatchTarget::directory(direct_subroot),
       FileWatchTarget::directory_tree(root),
-      FileWatchTarget::directory_tree(nested)};
+      FileWatchTarget::directory_tree(nested),
+      FileWatchTarget::directory(root)};
   auto made = FileWatcher::create(allocator, *io, kOwner, targets);
   if (!made.has_value()) {
     outcome->status = std::move(made).error();
@@ -117,6 +122,29 @@ Task<int> exercise_tree(AllocatorRef allocator, IoContext* io,
   }
   FileWatcher watcher = std::move(*made);
   const auto deadline = hyle::time::deadline_after(std::chrono::seconds(5));
+
+  const std::string reversed =
+      direct_subroot + "/preexisting/reversed-order.bin";
+  outcome->status = write_file(reversed, "reversed");
+  for (unsigned attempt = 0;
+       outcome->status.ok() && attempt != 16 &&
+       !outcome->reversed_order_descendant;
+       ++attempt) {
+    auto batch = co_await watcher.next({.deadline = deadline});
+    if (!batch.has_value()) {
+      outcome->status = std::move(batch).error();
+      break;
+    }
+    for (const auto& event : batch->events()) {
+      if (event.target_index == 0 &&
+          event.relative_path.find('/') != std::string_view::npos)
+        outcome->direct_filtered = false;
+      if (event.target_index == 1 &&
+          event.relative_path ==
+              "direct-first/preexisting/reversed-order.bin")
+        outcome->reversed_order_descendant = true;
+    }
+  }
 
   const std::string deep = nested + "/deep.bin";
   outcome->status = write_file(deep, "deep");
@@ -130,7 +158,7 @@ Task<int> exercise_tree(AllocatorRef allocator, IoContext* io,
       break;
     }
     for (const auto& event : batch->events()) {
-      if (event.target_index == 0 &&
+      if (event.target_index == 3 &&
           event.relative_path.find('/') != std::string_view::npos)
         outcome->direct_filtered = false;
       if (event.target_index == 1 && event.relative_path == "nested/deep.bin")
@@ -279,15 +307,19 @@ Task<int> exercise_link_root(AllocatorRef allocator, IoContext* io,
 TEST(FileWatchTree, DeepOverlapAndDynamicTopologyRemainObservable) {
   TempDirectory temporary;
   const std::filesystem::path nested = temporary.path() / "nested";
+  const std::filesystem::path direct_subroot =
+      temporary.path() / "direct-first";
   std::filesystem::create_directory(nested);
+  std::filesystem::create_directories(direct_subroot / "preexisting");
   TreeOutcome outcome;
   run_watch_journey(&outcome, [&](IoContext* io) {
     return exercise_tree(system_allocator(), io, temporary.path().string(),
-                         nested.string(), &outcome);
+                         nested.string(), direct_subroot.string(), &outcome);
   });
   EXPECT_TRUE(outcome.root_relative);
   EXPECT_TRUE(outcome.overlap_relative);
   EXPECT_TRUE(outcome.direct_filtered);
+  EXPECT_TRUE(outcome.reversed_order_descendant);
   EXPECT_TRUE(outcome.topology_reported);
   EXPECT_TRUE(outcome.new_descendant);
   EXPECT_TRUE(outcome.renamed_descendant);

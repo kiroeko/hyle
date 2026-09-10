@@ -99,10 +99,19 @@ bool directory_topology_changed(std::uint32_t mask) noexcept {
 Result<std::size_t> add_native_directory(FileWatcherState& state,
                                          int descriptor,
                                          std::string_view path,
-                                         bool recursive) noexcept {
+                                         bool recursive,
+                                         std::size_t* scan_head,
+                                         std::size_t* scan_tail) noexcept {
   if (std::size_t* existing = state.native_directory_by_path.find(path)) {
-    state.native_directories[*existing].recursive =
-        state.native_directories[*existing].recursive || recursive;
+    NativeWatchDirectory& directory = state.native_directories[*existing];
+    if (recursive && !directory.recursive) {
+      directory.recursive = true;
+      if (*scan_tail == kNoWatchIndex)
+        *scan_head = *existing;
+      else
+        state.native_directories[*scan_tail].next_scan = *existing;
+      *scan_tail = *existing;
+    }
     return *existing;
   }
   if (state.native_directories.size() ==
@@ -148,6 +157,13 @@ Result<std::size_t> add_native_directory(FileWatcherState& state,
     return make_unexpected(Status::FailedPrecondition(
         "FileWatcher roots alias one native directory identity"));
   (void)watch_entry;
+  if (recursive) {
+    if (*scan_tail == kNoWatchIndex)
+      *scan_head = index;
+    else
+      state.native_directories[*scan_tail].next_scan = index;
+    *scan_tail = index;
+  }
   return index;
 }
 
@@ -155,6 +171,8 @@ struct DirectoryScanContext {
   FileWatcherState* state = nullptr;
   int descriptor = -1;
   std::size_t prefix_size = 0;
+  std::size_t* scan_head = nullptr;
+  std::size_t* scan_tail = nullptr;
   Status status{};
 };
 
@@ -187,7 +205,8 @@ bool add_scanned_directory(const char* name, platform::FileType type,
   }
   Result<std::size_t> added = add_native_directory(
       *context.state, context.descriptor,
-      std::string_view(scratch.data(), size), true);
+      std::string_view(scratch.data(), size), true, context.scan_head,
+      context.scan_tail);
   if (!added.has_value()) {
     context.status = std::move(added).error();
     return false;
@@ -202,13 +221,15 @@ Status populate_native_directories(FileWatcherState& state, int descriptor,
     return Status::ResourceExhausted(
         "FileWatcher native lookup allocation failed");
 
+  std::size_t scan_head = kNoWatchIndex;
+  std::size_t scan_tail = kNoWatchIndex;
   for (std::size_t root_index = 0; root_index < state.roots.size();
        ++root_index) {
     NativeWatchRoot& root = state.roots[root_index];
     if (!initial && !root.active) continue;
     Result<std::size_t> added = add_native_directory(
         state, descriptor, state.root_path(root_index),
-        root.first_tree != kNoWatchIndex);
+        root.first_tree != kNoWatchIndex, &scan_head, &scan_tail);
     if (!added.has_value()) {
       Status error = std::move(added).error();
       if (!initial && error.IsNotFound()) {
@@ -224,10 +245,17 @@ Status populate_native_directories(FileWatcherState& state, int descriptor,
     root.active = true;
   }
 
-  for (std::size_t index = 0; index < state.native_directories.size(); ++index) {
-    NativeWatchDirectory& directory = state.native_directories[index];
-    if (!directory.recursive || directory.scanned) continue;
-    directory.scanned = true;
+  // A FIFO of table indices is deliberately embedded in the directory table:
+  // target order may insert a direct child root before its recursive parent.
+  // Scanning the parent then upgrades that already-passed child to recursive.
+  // A monotonic vector loop would miss the child's descendants; this worklist
+  // enqueues every false->true transition exactly once without a second O(D)
+  // allocation or an O(D^2) restart scan.
+  while (scan_head != kNoWatchIndex) {
+    const std::size_t index = scan_head;
+    scan_head = state.native_directories[index].next_scan;
+    state.native_directories[index].next_scan = kNoWatchIndex;
+    if (scan_head == kNoWatchIndex) scan_tail = kNoWatchIndex;
     const std::string_view parent = state.native_directory_path(index);
     if (parent.size() >= static_cast<std::size_t>(PATH_MAX))
       return Status::OutOfRange("FileWatcher directory exceeds PATH_MAX");
@@ -236,7 +264,8 @@ Status populate_native_directories(FileWatcherState& state, int descriptor,
     if (prefix == 0 || state.shared_path_buffer[prefix - 1] != '/')
       state.shared_path_buffer[prefix++] = '/';
     state.shared_path_buffer[prefix] = '\0';
-    DirectoryScanContext context{&state, descriptor, prefix};
+    DirectoryScanContext context{&state, descriptor, prefix, &scan_head,
+                                 &scan_tail};
     Result<bool> walked = platform::directory_iterate(
         state.native_directories[index].path.data(), add_scanned_directory,
         &context);
