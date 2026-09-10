@@ -2,7 +2,8 @@
 
 > 本页只保存仍可能晋级、但当前证据不足的长期候选。它不是 backlog、状态表、施工授权或功能缺口清单。
 > 当前模块状态只看 [`module-status.json`](../implementation/module-status.json)；当前能力覆盖、已确认缺口与
-> 路由见[能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)。
+> 路由见[能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)，已准入
+> 但尚未施工的当前范围只看[基础能力扩展决策](foundation-capability-expansion.md)。
 
 ## 使用规则
 
@@ -32,19 +33,19 @@
 | `CONTAINER-W02` | parser/tokenizer/cache 需要 generic trie、Aho-Corasick、radix/patricia storage | llama.cpp 有 symbol trie/Aho；SGLang 有 token-frequency/LRU trie | 两者的 alphabet、failure output、eviction、build/persist policy 仍不同；先冻结共同 storage/lifetime，而非求 API 并集 |
 | `CONTAINER-W03` | 多 owner 需要 generation-safe dense slot/handle table | StringInterner/RangeAllocator/HTTP owner各有专用 generation；SGLang NodeRef 也检测 reuse | 两个 owner 能由同一 create/get/erase/reuse/stale 与 address-stability 合同替换，并证明 metadata/性能收益 |
 | `UTIL-W01` | native plugin 动态 load/register/quiesce/unload/reload | Platform DynLib + startup/freeze Registry；完整 manager 是独立 owner | 两个 native plugin consumer 的 library/object/callback 排空、并发 reader、失败与 rollback 旅程 |
-| `SCHED-W01` | interactive/background、prefill/decode 等 service class/priority lane | 当前由应用 admission/queue policy 表达 | 真实 queueing trace，并冻结 shares/strict priority、公平、starvation、继承和默认零 metadata |
 | `SCHED-W02` | request/trace/allocator context 随 fiber migration 自动传播 | 显式参数；CancelScope 只有专用 context | 两个 C++ consumer 证明显式传递重复且易错，并冻结 nesting/destruction/跨 worker 语义 |
-| `IPC-W01` | scheduler-native shared-memory message/broadcast channel | 一般 IPC 走 Boost.Interprocess/ZeroMQ；HYLE 只有 SharedMapping storage 与 LocalStream | vLLM broadcast 和 SGLang collective 的 membership/ack/crash/notification/payload ownership 尚非同一合同；需一个可移植共同 trace |
+| `IPC-W01` | fixed-membership single-writer/N-reader shared-memory broadcast channel | 一般 IPC 走 Boost.Interprocess/ZeroMQ；HYLE 只有 SharedMapping storage 与 LocalStream | 冻结 borrow/ack、slot reuse、跨进程 wake、reader crash/lease 和 coordinator shutdown；G03 后取得三平台共同 trace |
 | `OBS-W01` | 不引入第二 runtime 的 async log/exporter/OTel/Prometheus adapter | 同步 sink/value 接宿主 logger/telemetry | 一个窄 adapter 的 owning queue、copy、flush/drain/backpressure/error 旅程，且 producer 默认成本不变 |
-| `TLS-W01` | in-memory cert/key、cipher suite 或 provider policy customization | 安全默认 + 外部 TLS termination；加密 PEM password 已是 G07，不再是 WATCH | 第二个无需泄漏 OpenSSL string/type 的 consumer，及 secret lifetime、reload、兼容和三交付合同 |
+| `TLS-W01` | cipher suite、provider/HSM 或证书选择 policy customization | 安全默认 + 外部 TLS termination；file/borrowed PEM/password credential source 已归 G07 | 第二个无需泄漏 OpenSSL string/type 的 consumer，以及安全 profile、reload、兼容和三交付合同 |
 | `IO-W01` | QUIC/HTTP/3 或 gRPC transport | 成熟 QUIC/gRPC runtime；HTTP/1/2 与 schema 保持分层 | 具名 C++ consumer、单一 event-loop integration、cancel/backpressure/0-RTT/security 与 package 路线 |
 | `BUILD-W01` | backend/ISA 生成物、交叉编译、签名/SBOM/reproducible release | CMake toolchain + 当前 lock/offline/license contract | 具名 toolchain、artifact identity 和验收方；Compute 尚未冻结时不预造全局开关 |
 | `BUILD-W02` | Java/C# 等 foreign runtime 的 stable native entry | 当前 Native FFI 为 N/A | 具名 consumer 的 create/call/error/cancel/destroy/unload 完整旅程；不能机械导出 C++ template surface |
 
 ## 不在观察清单重复的内容
 
-- 已确认的 Base64、dynamic task scope、managed subprocess、WebSocket、recursive watch、zero-copy file send
-  和 encrypted TLS private key 是当前审计中的 `PRODUCT_TRIGGER`，不是 WATCH；
+- 已确认的 Base64、dynamic task scope、managed subprocess、WebSocket、recursive watch、file-region send、
+  TLS credential source 和三档非抢占 execution priority 已进入当前[扩展范围](foundation-capability-expansion.md)，
+  不是 WATCH；request/tenant/KV/admission priority 仍是应用策略；
 - JSON/schema、URL/UUID、摘要、压缩/archive、完整 Unicode、一般 IPC 与领域格式已有具名成熟路线；
 - model/KV/sampling/material/auth/router 等应用策略，以及 Compute/Graph 尚未设计的 tensor/device/DAG
   能力，分别属于 `APPLICATION` 或 `OWNER_BLOCKED`；

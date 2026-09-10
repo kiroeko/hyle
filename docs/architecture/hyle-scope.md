@@ -54,6 +54,8 @@ case 数都不是完整度指标。完整判据与能力准入、已有能力反
 当前已实现 factor 的能力族、公开头反向追溯、完整消费者纵切和具名生态路线见
 [能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)；它是版本化审计
 事实，不替代 `module-status.json` 的模块状态。
+从该审计继续对照成熟 runtime/protocol 库后，本轮已经准入但尚未施工的八个能力包及其负空间统一见
+[基础能力扩展范围](foundation-capability-expansion.md)。该页是需求合同，不是模块状态或自动施工授权。
 
 ### 可执行的产品边界
 

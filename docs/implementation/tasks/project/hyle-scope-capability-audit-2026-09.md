@@ -1,8 +1,9 @@
 # HYLE 范围重定标与全组件能力扫描（2026-09-10）
 
 > 本页保存第一遍 factor 粒度扫描事实。当前能力总表和缺口数量已由后续
-> [能力族深度复审](hyle-capability-family-deep-audit-2026-09.md)取代；不要把本页末尾的六项顺序当作当前
-> backlog 或施工授权。
+> [能力族深度复审](hyle-capability-family-deep-audit-2026-09.md)取代，当前已准入范围又由
+> [基础能力扩展决策](../../../architecture/foundation-capability-expansion.md)稳定；不要把本页末尾的六项
+> 顺序、旧 owner 或 WATCH 裁决当作当前 backlog 或施工授权。
 
 > 终态：`PROJECT AUDIT: CLOSED`。本记录冻结新的产品准入边界，并对 Compute/Graph 之外 27 个已实现
 > factor 与 build/package 做一次只读能力扫描。它不修改

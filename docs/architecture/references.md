@@ -55,7 +55,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 |---|---|---|
 | **highway** | 借（锁定产品源码）+ 参考 + bench 对照 | 当前直接承载 SIMD 数学实现，后续 foundation/dispatch 仍按 capability 裁决；HYLE façade 不泄漏 vendor 类型。独立 peer checkout 只用于同身份 benchmark，不能与产品 source override 混用 |
 | **xsimd** | 参考 + bench 对照 | 当前只作数学精度/性能 oracle，不进产品构建；只有 Highway 无法满足的具名 capability/accuracy gap 才重新准入 |
-| **simdutf** | 借（container_text 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container_text`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
+| **simdutf** | 借（container_text 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container_text`；当前 UTF validate/count 与已准入 G01 Base64 共用其 runtime ISA dispatch 和 caller-buffer algorithm core，公开头不泄露 vendor 类型或 option bitmask |
 | **sleef** | **已退役** | 曾评估作 transcendental 核；当前不进产品或基准默认闭包，只有新的具名缺口才重新准入 |
 | **nanobench** | 借（测试期） | 微基准框架，vendored 在 `third_party/`；统一性能仪器在其上做跨进程同进程配对：预声明 margin、分布无关中位数 CI、comparability/qualification/exact-performance 分轴、同合同 non-inferiority gate、逐进程 raw JSON 与正反序/shape 合成；sign p 值只作诊断 |
 
@@ -79,12 +79,13 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **marl** | 参考（精读）| **最贴 HYLE 的 fiber + work-stealing 调度库**，第一参考 |
+| **folly** | 参考 | `AsyncScope/CancellableAsyncScope` 的动态 child owner、显式 join/drain，以及 Executor 多 priority queue；只借语义，不引入其 executor/runtime |
 | **tokio** | 参考 | work-stealing、LIFO slot、unpark 接力、per-core queue，以及 IO submit/park 协作的成熟机制参考；不引入第二 runtime |
 | **tokio-uring** | 参考 | io_uring submit/flush 节奏和跨异步边界保持 kernel argument backing 的生命周期参考 |
 | **crossbeam-deque** | 参考(bench 对照)| Chase-Lev work-stealing deque(Rust)；work-stealing 同族的成熟对照（独立 cargo crate，gated 编译） |
 | **boost**(context) | **借（仅 3 汇编）** | **fcontext** 是 fiber 切换原语来源；`fcontext_t`/`transfer_t` 纯 POD 零依赖，只取 `jump/make/ontop` 三例程 .S/.asm（**本地 context 是空 submodule，须从上游拉**）+ 自写 ~10 行头，不要 config/封装层。boost.intrusive 仅参考 |
 | **seastar** | 参考 | per-core 局部性、reactor_backend completion 抽象;**不学** share-nothing 调度;**xcpu_freelist 评估后否决**(其 owner-local 非原子表依赖 share-nothing+线程钉死+池长于进程,HYLE 通用生命周期固定池给不出,且跨核 free 正确性已由地址路由原子 push 解决,见 mem-design) |
-| **oneTBB** | **多为边界外**（深读校正）| task scheduler 边界外（自带 work-stealing 抢权，同拒 boost.fiber）；`concurrent_bounded_queue` **不借**（票号+分页+链 libtbb，非定长 ring，用 Vyukov/rigtorp）；仅 `scalable_allocator`/rml pool policy 设计**参考** mem/，不 vendor |
+| **oneTBB** | **多为边界外**（深读校正）| task scheduler 边界外（自带 work-stealing 抢权，同拒 boost.fiber）；只参考 low/normal/high 非抢占 priority 语义。`concurrent_bounded_queue` **不借**（票号+分页+链 libtbb，非定长 ring，用 Vyukov/rigtorp）；`scalable_allocator`/rml pool policy 只作 mem 设计参考，不 vendor |
 | **oneDPL** | **边界外**（深读校正）| 并行 STL 架在 TBB/OpenMP 之上——而那层正是 HYLE 自造调度器要替换的；算法层非 infra 原语 |
 
 ### container/（Tier 0）
@@ -148,6 +149,10 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **liburing** | **参考(不链)** | io_uring barrier、SQE 布局、multishot、provided buffers 与 async cancel 的机制参考；HYLE 的 Linux backend 直接使用 kernel ABI，不把 liburing 变成公开或链接依赖 |
 | **tokio-uring** | 参考 | submit/flush 节奏与 `msghdr` 等 kernel argument backing 的异步生命周期参考 |
 | **libevent** | 参考 | common-timeout 有序链、异步 DNS 与水位控制的 reactor 参考；HYLE 对外仍保持自己的 completion、Time 与 backpressure 合同 |
+| **libuv** | 参考 | recursive file watch、sendfile 和 child-process 的跨平台语义/退化边界；不借其 event loop、thread pool 或 process runtime |
+| **Boost.Beast** | 参考 | WebSocket 的预读 HTTP handoff、message/partial I/O、control frame、close 与并发约束；不引入 Boost.Asio 第二 runtime |
+| **Boost.Process v2** | 参考 | argv/env/cwd、stdio、async wait/cancel 和 process group 的成熟生命周期；其 Asio 绑定不进入 HYLE process factor |
+| **OpenSSL** | 借核(io TLS) | provider 机制承载证书、会话、ALPN 与已准入 file/borrowed PEM/password credential source；HYLE 拥有 opaque context、secret lifetime、错误和 Scheduler transport，不泄漏 provider 类型 |
 | **nghttp2** | **借核(io HTTP/2)** | 中央 lock 固定 `v1.70.0` commit；只构建静态 libnghttp2 protocol core，借 HTTP/2 frame/HPACK/stream/flow-control，自写 allocator、caps 与 over-co_await transport，不取其 event loop/应用层 |
 
 ### graph/（Tier 6，编排 + 数据并行）

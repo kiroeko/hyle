@@ -10,6 +10,10 @@ HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 
 DNS、signal、TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
+WebSocket、recursive tree watch、file-region streaming/HTTP file body 和完整 TLS credential source 已进入
+[基础能力扩展范围](foundation-capability-expansion.md)，但在各自 closure round 完成前不属于当前公开 API。
+该决策同时明确 file-region streaming 归 `io_core + io_http`，而不是制品发布语义不同的 `io_transfer`。
+
 ```text
 Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/Transfer
               │ co_await + deadline/cancel + RAII
@@ -39,6 +43,7 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 
 六个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
 构建和交付。中央依赖图是 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)，本页不复制边。
+未来 `io_websocket` 只有在登记中央 identity 和 registry 后才成为第七个 factor；架构决策本身不预造 target。
 
 ## Ownership 与进度
 

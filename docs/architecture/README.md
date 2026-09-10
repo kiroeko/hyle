@@ -22,6 +22,7 @@ HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程�
 ## 系统级决策
 
 - [基础库能力完整性](capability-completeness.md)
+- [当前基础能力扩展范围](foundation-capability-expansion.md)
 - [能力展开与组件质因数分解](capability-factorization.md)
 - [构建与打包架构](build-system.md)
 - [生命周期、取消和失败边界](lifecycle-design.md)

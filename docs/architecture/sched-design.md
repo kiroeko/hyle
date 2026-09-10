@@ -211,7 +211,8 @@ Sched 以 C++23 source、installed static 和 installed shared 三种形状交�
 依赖；`sched/detail`、fcontext shim 和汇编是 build/private 资产，不进入安装 SDK。当前没有 C API 或
 Native FFI；decorated C++ symbol 和私有 fcontext `extern "C"` 都不构成跨语言承诺。
 
-可触发新架构决策的事实包括：真实推理 consumer 需要通用 task priority、多个 completion source 共存、
-caller-participating SPMD 或不同 stack strategy；成熟 peer 证明更好的复杂度级别；支持平台/ABI 需要替换
-fcontext；或现有 lifetime/backpressure 合同无法表达可复现需求。此类变化先进入 capability decision，
-不能从 benchmark 行直接长成公共类型。
+动态 TaskScope 与 low/normal/high 非抢占 execution priority 已进入
+[基础能力扩展范围](foundation-capability-expansion.md)，但在对应 closure round 完成前不是当前公共能力；
+默认 Scheduler 仍只有 normal lane。多个 completion source、caller-participating SPMD、不同 stack strategy，
+或现有 lifetime/backpressure 合同无法表达的需求仍须先进入 capability decision，不能从 benchmark 行直接
+长成公共类型。

@@ -4,6 +4,10 @@
 > 四条完整消费者纵切三重校验。它只校准需求事实和文档，不修改
 > [`module-status.json`](../../module-status.json)，不授权产品施工，也不续签任何模块的 correctness、性能或
 > source/static/shared 证据。
+>
+> 后续[范围稳定任务](foundation-capability-expansion-scope-2026-09.md)继续对照成熟实现，并形成当前
+> [基础能力扩展决策](../../../architecture/foundation-capability-expansion.md)。本页第 7 节保存初次发现，
+> 不再冒充当前需求范围；特别是 G06 owner、G07 credential 范围和 G08 priority 以架构决策为准。
 
 ## 1. 为什么需要第二遍
 
@@ -253,9 +257,9 @@ threading 与安全更新，除非未来 adapter closure card 证明 HYLE 有额
 
 ## 7. 最终差距与停止规则
 
-本轮确认的基础产品 trigger 为 7 项。G01–G06 的版本化 consumer 行号和完整准入裁决保存在
-[第一遍扫描](hyle-scope-capability-audit-2026-09.md)，本表重复当前最小语义与 owner，避免读者从历史任务
-猜当前缺口：
+本轮初次确认的基础产品 trigger 为 7 项。G01–G06 的版本化 consumer 行号和初次准入裁决保存在
+[第一遍扫描](hyle-scope-capability-audit-2026-09.md)。本表保存当时发现；当前语义和 owner 已由上方所指
+架构决策取代：
 
 | ID | 最小缺口 | 证据与 owner |
 |---|---|---|
