@@ -226,15 +226,9 @@
     },
     {
       "module": "io_tls",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-tls-v2-duplex-progress.md",
-      "candidate": "18bf62f81a91975e0776439d88fca3891f10e560",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
-        "material_margin_pct": 5
-      },
-      "summary": "io_tls v2 CLOSED：有界 provider pump 与 write-some 修复通过三平台、sanitizer、三交付、终局红队；唯一同合同 P1 的握手双顺序 WIN、small-record stream 双顺序非劣，七门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md",
+      "summary": "io_tls v3 SCOPED：G07 合法重开，限定为 file/borrowed PEM 与 encrypted-key password/callback 的同步凭据构造；TLS 数据路径和既有 transport P1 不变。"
     },
     {
       "module": "io_http",
