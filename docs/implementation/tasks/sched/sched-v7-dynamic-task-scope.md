@@ -1,6 +1,6 @@
 # Sched v7：动态 structured task scope
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: BLOCKED -->
 
 ## Closure card（`SCOPED`）
 
@@ -302,3 +302,109 @@ notify/unlock 前不能返回；该确定性用例 100 轮通过。W1-WIN shippi
   SHA-256 `A91A12842879A9F96B13AB4417ECF38CB9A19040C9C44199F06A47777507F41D`。
 
 下面只运行本卡已经声明且受这次 correctness 修正影响的精确候选验证；不得再改产品、合同、peer 或测试语义。
+
+## 第四候选终局验证与 `BLOCKED` 裁决
+
+第四候选产品仍是 `f344f6c5d9faf2fa8e1259906ae00d4143548ef8`，tree
+`82811576ca8c4fbd0227423256f37996c42d6cfa`。候选源码归档为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\archive\hyle-f344f6c5.tar`，
+SHA-256 `41747F750FABF69E3FE3ACDA9CD56705FD3F41BCE8EE7BB4122EBE18D1E9EAF9`。随后只提交了
+状态/说明以及把测试 helper 包进 `HYLE_TESTING` 的测试专用修正；用于 Linux/macOS 的完整证据归档
+`hyle-c45d0320-evidence.tar` 的 SHA-256 为
+`1E44D78140E33A95A127133019811AAA3F8496A1ECBB7DE608BD53694253E253`。从候选到
+`c45d0320bf6ab236a0f4a1b79c3b07de991f8416` 对 `include/src/third_party/cmake/CMakeLists.txt` 的
+产品 diff 为空，selector 对后续 state/docs/test-only 改动裁决为 `READY`，没有伪造新产品候选。
+
+### Correctness、消毒器与交付
+
+| 门 | 精确结果 |
+|---|---|
+| W1-WIN shipping / instrumented | Sched `213/213`、`214/214`；公开头自包含通过；确定性 final-publication seam 100 轮通过 |
+| W1-WIN ASan | shipping-layout Sched `213/213` 通过；MASM 按工具链规则不接受 C++ ASan flag，C++ 产品 TU 已插桩 |
+| W1-WSL GCC 14.2 | shipping Sched `215/215` + 11 个公开头；instrumented `216/216`；`-Werror` 通过 |
+| W1-WSL sanitizers | ASan、UBSan、TSan 均为 Sched `215/215`；WSL 直接 TSan 启动受内核 `unexpected memory mapping` 限制，同一二进制在 `setarch x86_64 -R` 下完整通过 |
+| M1-MAC AppleClang 21 | shipping Sched 与 11 个公开头通过；instrumented Sched `214/214` 通过 |
+| 三平台三交付 | Windows、Linux、macOS 的直接 source、安装后 relocated shared、安装后 relocated static consumer 全部通过 |
+| 受影响 IO journey | scope 通过 `add` 拥有 `Task<Status>`，其 token 传给 `TcpStream::read_some`；`cancel_and_join()` 返回 typed `Cancelled` 并完整 drain，Windows 精确候选通过 |
+| shipping 隔离 | Linux/macOS `nm` 证明 final-publication test hook 在 shipping library 中不存在，只在 instrumented library 中存在 |
+
+这次 race 修正后的 1000 轮 add/spawn/close 并发重复也已通过。ASan/UBSan/TSan、三平台和三交付没有
+发现新的 leak、UAF、失唤醒、OOM、ABI 或 package finding。首次 Windows IO fixture 只是把已取消 token
+交给 scope 外的 task，不能证明 scope ownership；终局 fixture 已纠正为上述真实跨模块 journey，产品未改。
+
+### P0 与终局红队
+
+P0 **PASS**：所有 scope 操作为 O(1)；普通 `schedule/spawn_task` 的对象 layout、分配、原子、锁、分支和
+queue path 没有产品改动，唯一既有头改动是给 scope 专用 driver 的 private friend。scope-only `add` 不创建
+`JoinState/JoinHandle`；其真实成本是每 child 一个 driver/stack admission、一次 admission CAS 和一次共享
+completion publication，末项/失败才进入控制锁。测试 hook 由 `HYLE_TESTING` 完全裁掉。
+
+终局红队逐项复核 close/admit 线性化、末项 publication、错误路径、多个 waiter、scope/token/driver/
+JoinState 生命周期、live-child 析构、moved-from、allocator/Scheduler owner、公开头、直接/静态/动态交付、
+IO 组合以及 benchmark 合同；没有发现新的 correctness、范围、易用性、依赖、交付或 benchmark-only API
+问题。手工 peer 与候选都承担动态 membership、显式 close、共享 group cancellation、相同 helper/yield/
+failure/output 和 full drain；这次比较不是轻语义或固定 handle 集的苹果对橘子。
+
+### 唯一 qualified P1
+
+实际命令是：
+
+```text
+python scripts/hyle-perf.py qualify-platform
+  --contract bench/contracts/sched-v7-task-scope-p1-v1.json
+  --machine W1-WIN
+  --peer hyle-v6-manual-dynamic-task-owner=<exact-37b62460-checkout>
+  --source <exact-f344f6c5-checkout>
+  --build <fresh-p1-fourth-qualified-build>
+  --output <p1-fourth-qualified-evidence>
+```
+
+证据目录为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\p1-fourth-qualified-evidence`；manifest
+SHA-256 `947BE3DD33C66CF9FA25CC6DDBD31664C32EEABB79EBDE53F2CE8B8E5C57DA91`，summary SHA-256
+`C3A8C05E126153D0E4709A0383EDE45DA2E79C700D8CF8C829C4E631E55F5177`。`hyle-perf verify` 对全部
+路径/hash、exact provenance 和当前 policy 回放通过；fresh build、artifact identity、MSVC 19.50、Release、
+static、LTO-off、portable ISA、A/A、5%/10% known-delta、timer floor 与 placement 全为 `PASS`。
+
+| stratum | candidate / peer median | 98.93% CI | 5% NI |
+|---|---:|---:|---|
+| primary / candidate-first | `0.94037` | `[0.89252, 0.96627]` | `UNRESOLVED` |
+| primary / peer-first | `0.91865` | `[0.89214, 0.96216]` | `UNRESOLVED` |
+| perturbed / candidate-first | `0.96492` | `[0.90463, 1.00576]` | `UNRESOLVED` |
+| perturbed / peer-first | `0.97167` | `[0.94032, 1.02779]` | `UNRESOLVED` |
+
+资格为 `QUALIFIED`，但四层 CI 都跨过预先冻结的 `0.95` 非劣边界，故聚合性能门是
+`INCONCLUSIVE/UNRESOLVED`。前两层点估计约慢 6.0%/8.1%，后两层约慢 3.5%/2.8%；顺序/placement
+差异禁止把它写成固定 `LOSE`，但同样禁止把它猜成 `PASS`。此前误调用一次 `probe` 只产生一个明确
+`DIAGNOSTIC` 样本并被 build-contract 拒绝，不是 qualified P1，也没有进入本裁决。
+
+### 七门与恢复条件
+
+| 聚合 gate | Verdict |
+|---|---|
+| scope | PASS |
+| architecture | PASS |
+| correctness | PASS |
+| delivery | PASS |
+| usability_docs | PASS |
+| red_team | PASS |
+| engineering_performance | **INCONCLUSIVE：qualified P1 未通过 5% NI** |
+| product | **BLOCKED；不得签 CLOSED** |
+
+blocker 是当前 scope-owned completion 的同合同工程非劣性在已耗尽的候选/P1 预算内无法裁决；owner 为
+**Sched performance owner**。唯一恢复条件是：先在本轮之外形成一个有界、可审计的 completion-accounting
+方案与机制证据，证明它能减少多 worker 对共享 completion line 的 material 成本，同时保持动态 admission/
+close、共享取消、首错、多个 waiter、full drain、O(1) 复杂度，并且不给普通 task 增加 metadata/分支；然后
+为 `sched` 新建不同的 closure card，依法 `BLOCKED -> SCOPED -> AUDITED`、签发新产品 candidate，并只运行
+一次新的同合同 qualified P1。单纯重跑、增加样本、换轻语义 peer、放宽 5% 门或为 benchmark 特化 layout
+都不满足恢复条件。
+
+`CANDIDATE -> BLOCKED` 前 registry 快照位于
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-fourth-blocked.json`，
+SHA-256 `4095D08325CAD558DC2CFF70E1D0F56B292F388B1319A81CF95E10002A7E5D06`。
+
+### 候选 LOC
+
+`python scripts/loc-report.py --module sched --commit f344f6c5... --self-check --json` 使用 cloc 2.08 并通过
+self-check：全库代码 `534,791` 行，自实现不含测试 `93,631` 行，Sched 实现 `6,227` 行。后续终态提交只
+包含状态和文档，不改变这些候选产品数字。

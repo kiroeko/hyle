@@ -203,10 +203,14 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
       "candidate": "f344f6c5d9faf2fa8e1259906ae00d4143548ef8",
-      "summary": "sched v7 CANDIDATE：TaskScope 当前末项 completion 在 wait_lock 内重验、发布并完成最后 state access，封住 close/join 的失唤醒和析构 UAF；确定性 publication 回归、shipping/instrumented Sched、1000 轮并发重复、header 与 shared instrumented 预检均通过。候选 f344f6c5/82811576 等待精确三平台、sanitizer、三交付、IO consumer、终局红队与一次 qualified P1。"
+      "blocked_from": "CANDIDATE",
+      "blocker": "精确候选已通过三平台 correctness/sanitizer、三交付、IO journey、P0 与终局红队，但唯一 qualified 同合同 P1 的四层置信区间都跨过预声明 5% 非劣边界，engineering_performance 为 INCONCLUSIVE，不能签 CLOSED。",
+      "blocker_owner": "Sched performance owner",
+      "resume_condition": "先形成一个有界且经审计的 completion-accounting 方案与机制证据：减少多 worker 共享 completion line 的 material 成本，同时保持动态 admission/close、共享取消、首错、多个 waiter、full drain、O(1) 和普通 task 零新增 metadata/分支；随后用新 closure card 依法回到 SCOPED/AUDITED，签发新 candidate 并运行一次新的同合同 qualified P1。重跑、扩样、换轻语义 peer 或放宽 5% 门不满足条件。",
+      "summary": "sched v7 BLOCKED：TaskScope 的功能、correctness、三平台、sanitizer、source/static/shared、IO 组合、P0、易用性文档和红队均通过；候选 f344f6c5 的 qualified P1 资格通过，但四层 5% 非劣门均 UNRESOLVED，因此按预算和停止规则不得写 CLOSED。"
     },
     {
       "module": "io_core",
