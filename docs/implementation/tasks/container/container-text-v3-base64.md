@@ -211,3 +211,36 @@ M1-MAC、不可变 candidate P1 和独立终局红队仍待执行，因此本表
   修正和状态投影变化；发现产品/API/算法问题必须退回 `AUDITED`。
 - 尚待 M1-MAC correctness、不可变候选正式 P1、终局红队、terminal evidence 与 LOC；未运行项不提前
   写成 PASS。
+
+## 终局验证与裁决
+
+candidate `e50a2d94f601ba0d9b7d87c854c868126ca4e596` 的产品 tree 为
+`b6d00764459b8c9d9825a5e20b652e19aee9c585`。从 candidate 到终局，
+`git diff e50a2d94..HEAD -- include/hyle/container/base64.h src/container_text/string_algo.cc
+src/container_text/CMakeLists.txt cmake/HyleComponents.cmake` 为空；后续只增加状态空间测试、证据、task、
+architecture 与状态投影，没有用 P1 点值反向改变 API、算法或正常 workload。
+
+| 风险 / 命令或 receipt | 结果 |
+|---|---|
+| W1-WIN exact factor，MSVC Release shared | header + `container_text` `2/2 PASS`；RFC 4648、全部 byte、0..513 provider tails、策略/错误/容量/overlap 全过 |
+| candidate 后独立状态空间红队 | 长度 0..5 的 271,453 个 adversarial strings × 12 个 alphabet/padding/whitespace 组合；cold/fast 接受性及成功 progress 全一致 |
+| W1-WSL GCC 14 | Release shared `2/2 PASS`；RelWithDebInfo static UBSan `PASS`；candidate 产品不变后的 static ASan header/unit/ISA `3/3 PASS`，零 sanitizer report |
+| M1-MAC MacBook Air arm64、AppleClang 21、exact candidate | header + `container_text` `2/2 PASS` |
+| Container 三交付 | W1-WIN source embedding、relocated shared、relocated static consumer 全部 `PASS`；样例实际执行 Base64 round trip |
+| shared boundary / provider | dylib 导出 Base64 encode/decode/checked-size；导出 simdutf 符号数 0，安装头无 simdutf 泄漏；双 license 由 `container_text_simdutf` package dependency 安装 |
+| P1 `container-text-base64-p1-v1` | W1-WIN n=31；qualification/performance/verify `PASS`，两个 workload 的 8 格 5% NI 全过、无 `LOSE`；完整数字见 [`benchmarks-container-text-base64`](../../evidence/performance/benchmarks-container-text-base64.md) |
+| 独立 bounded red-team | `PASS`；核对 malformed/policy、error precedence、capacity/overlap、partial output、公开易用性、simdutf mapping、symbols/license/delivery、benchmark 同合同与文档限制，无产品反证 |
+
+七门终局结论：scope、architecture、correctness、delivery、usability_docs、red_team 与
+engineering_performance 全部 `PASS`，`container_text` v3 可以签发 `CLOSED`。公开限制是 caller-owned
+contiguous buffer、无隐式 allocation/NUL、input/output 不重叠、失败 output 不提交；streaming、MIME、
+mixed alphabet、owning convenience、JSON/data-URI 与 WebSocket 状态机不属于 G01。
+
+只有以下新事实可以重开：可复现的错误接受/拒绝、错误 bytes/progress、overflow/overlap/UB 或 provider
+映射缺陷；真实消费者证明 contiguous bulk 之外存在两个 owner 重复同一通用 codec glue；公开 API、策略、
+算法/provider、正常 workload、组件依赖、source/static/shared 交付或 simdutf revision material 改变；或者
+合格同合同证据证明超过预声明 5% margin 的固定回归。一次地址/顺序点值或其他协议层功能不是 trigger。
+
+`python scripts/loc-report.py --module container_text --commit
+e50a2d94f601ba0d9b7d87c854c868126ca4e596 --self-check --json` 为 `PASS`：全库 531,562 行、自实现不含
+测试 92,715 行、`container_text` 实现 1,580 行。

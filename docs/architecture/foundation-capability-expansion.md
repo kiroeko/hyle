@@ -21,9 +21,9 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 
 本轮准入八个能力包。它们是八个独立的产品问题，不是一张必须一次完成的巨型施工卡。
 
-| ID | 已准入用户任务 | semantic owner / 承载 | 当前缺口 |
+| ID | 已准入用户任务 | semantic owner / 承载 | 执行状态 / 当前缺口 |
 |---|---|---|---|
-| `G01` | bulk Base64/Base64URL size、caller-buffer encode/decode 与明确校验策略 | `container_text`；`BORROW` 已锁定 simdutf algorithm core | simdutf 已编入产品，但 HYLE 没有可发现的公共路线 |
+| `G01` | bulk Base64/Base64URL size、caller-buffer encode/decode 与明确校验策略 | `container_text`；`BORROW` 已锁定 simdutf algorithm core | 公开 `<hyle/container/base64.h>` 路线已交付；后续 G04 直接复用，不复制 codec |
 | `G02` | runtime-sized structured task scope：动态 spawn、cancel、close、join/drain | `sched`；`SELF`，复用现有 Task/JoinHandle/CancelToken | `JoinHandle` drop 会 detach，无法拥有动态 child 集合 |
 | `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | 新 `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 只有零散 OS/IO 原子，用户必须重写最易出错的生命周期 |
 | `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | 新 `io_websocket` factor + 定向重开 `io_http`；协议状态机归 HYLE | HTTP 101 与预读残留字节不能安全移交，且没有 RFC 6455 owner |
