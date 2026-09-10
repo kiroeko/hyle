@@ -308,15 +308,9 @@
     },
     {
       "module": "container_text",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/container/container-v6-identity-p1-resume.md",
-      "candidate": "3ba50461ec7c8f387f4d953f1e499a1f6d449870",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md",
-        "material_margin_pct": 5
-      },
-      "summary": "container_text v2 CLOSED：六种 safe conversion、三平台/三交付、文档、红队与同合同 Unicode 8/8 PARITY、5% P1 非劣门全部通过；候选固定在 3ba50461。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/container/container-text-v3-base64.md",
+      "summary": "container_text v3 SCOPED：以已接受 G01 重开，只增加 caller-buffer Base64/Base64URL 批量编解码、明确策略与 typed progress；审计冻结前不改产品代码。"
     },
     {
       "module": "io_watch",
