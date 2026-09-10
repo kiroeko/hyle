@@ -255,3 +255,11 @@ drain。产品候选仍固定为 `07934c25b2500fa0db9184d450a1d85846dd65e7`；�
 P1，不再扩样、不改门槛，也不为点值改变 TaskScope layout。退回前 registry snapshot 为
 `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-second-p1-audit-return.json`，
 SHA-256 `AAD271AC0197E34AE7671C5A6206FFA00E8BF1EED1818397F39CB5750C75CE89`。
+
+纠正后的 consumer trace、contract、baseline identity guard 与 manual fixture 固定在 evidence-only commit
+`cce0389f0a15647f5d0c28b656c5c39a327a99d0`；产品源码相对 `07934c25` 没有变化。W1-WIN Release 已重新编译
+candidate/manual 两个 executable，均完成相同的 32,768 次 callback、checksum、错误与 drain；一次 unmanaged
+smoke 只证明 fixture 可执行，不形成性能结论。`AUDITED -> CANDIDATE` 前态 registry snapshot 为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-third-candidate.json`，
+SHA-256 `A09AFFE2AE589D2B49FF664F508754003E94D406DD1871DCFEB0B78C4660B484`。终局只允许从该 evidence commit
+构建、链接不变的 `07934c25` 产品文件并运行一次 qualified P1；不能再次纠正 peer 或产品。
