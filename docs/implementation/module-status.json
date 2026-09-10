@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
-      "summary": "sched v10 AUDITED：Folly/oneTBB 与 HYLE 全路径已核对；冻结 opt-in high/low sidecar、三档固定扫描、yield/wake/child 继承和自然 options API，默认模式无额外队列/逐任务增长并受 5% exact-baseline 非劣门约束。"
+      "candidate": "66dae758927a3d0f84cf11a716aa10ef50c592b1",
+      "summary": "sched v10 CANDIDATE：三档非抢占 execution priority 已覆盖 raw/owning/Fiber/typed/pinned/TaskScope 及 yield/wake/timer/cancel/shutdown；opt-in sidecar 固定 O(1) lane probe，默认布局不变，候选等待三平台、交付、sanitizer、红队与唯一 P1。"
     },
     {
       "module": "io_core",
