@@ -168,3 +168,17 @@ admission 与统一 Waker 各保留一次 sidecar-null route seam；这是继承
 路径迁移造成的 provenance hash 漂移；后者已独立审计为不改变实现/合同，并由只更新 provenance 的
 [`provenance renewal`](../../evidence/performance/provenance-reviews/sched-v1-consumer-shapes-io-core-rename.md)
 和 `sched-p1-v2` 承接终局 P1。不得为这些证据状态改产品或追加 diagnostic 样本。
+
+## 第一候选撤回（`CANDIDATE -> AUDITED`）
+
+首候选 `66dae758927a3d0f84cf11a716aa10ef50c592b1` 在 Windows MSVC Release/ASan、Linux GCC 14
+Release 和 macOS AppleClang 21 Release 的 Sched/header correctness 均通过；Windows source、relocated
+static 与 relocated shared consumer 也全部可执行。macOS 编译同时给出
+`-Wtautological-constant-out-of-range-compare`：`PriorityState` 把 32 位 `unsigned workers` 与 64 位
+`size_t` 上限直接比较，在当前目标上保护恒假，并会使预声明的 `HYLE_WERROR=ON` 交付失败。
+
+这是源码与类型宽度已经充分解释的 portability 缺陷，不是性能回归，也不允许靠重复构建或采样寻找
+PASS。状态依法退回 `AUDITED`；只允许在既有 `S10-02` 内先把 worker count 提升到 `size_t`，再用同宽
+checked-size 计算得到 allocation bytes，并让 allocate/deallocate 共用该值。公开 API、lane 算法、对象
+布局、默认成本、workload 和性能合同均不得改变。修正后签发新 candidate，只重跑受影响的编译/
+correctness/交付/sanitizer；候选前 preflight 不重跑，正式 P1 仍保持唯一一次。
