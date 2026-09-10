@@ -130,7 +130,19 @@ class HYLE_SCHED_API TaskScope {
   [[nodiscard]] JoinHandle<T> spawn(
       Task<T> task, std::size_t stack_size = kDefaultStackSize) noexcept;
 
-  // Stop future admission. Idempotent and safe to race with spawn().
+  // Add a child whose result is owned only by the scope. Prefer this route for
+  // void/Status helpers when no per-child result or cancellation handle is
+  // needed: it avoids manufacturing a JoinState/JoinHandle. A non-OK return
+  // means ownership was not transferred. Once admitted, later infrastructure
+  // and child failures are retained by join(), and add() returns OK.
+  [[nodiscard]] Status add(
+      Task<void> task,
+      std::size_t stack_size = kDefaultStackSize) noexcept;
+  [[nodiscard]] Status add(
+      Task<Status> task,
+      std::size_t stack_size = kDefaultStackSize) noexcept;
+
+  // Stop future admission. Idempotent and safe to race with add()/spawn().
   void close() noexcept;
 
   // close + drain. Multiple waiters are supported and receive the same first
@@ -146,6 +158,11 @@ class HYLE_SCHED_API TaskScope {
   // inherit the already-cancelled scope token and finish as Cancelled unless
   // they have already completed normally.
   void request_cancel() noexcept;
+
+  // A shareable copy of the scope cancellation source for explicit
+  // cancellable IO/wait options. An invalid/moved-from scope returns an invalid
+  // token; copying does not create a second cancellation tree.
+  [[nodiscard]] CancelToken cancellation_token() const noexcept;
 
   [[nodiscard]] std::size_t remaining() const noexcept;
   [[nodiscard]] bool is_closed() const noexcept;

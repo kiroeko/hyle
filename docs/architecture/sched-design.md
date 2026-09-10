@@ -71,7 +71,7 @@ move-only、一次消费的 handle；多个 completion source 必须在 operatio
 | `spawn_detached` | 独立 guarded Fiber 栈 | runtime 持有并回收 callable/Fiber/stack | 会 yield/sleep/等待，但调用方不 join |
 | `spawn_task` + `JoinHandle<T>` | 独立 Fiber + coroutine frame | allocator-backed frame/driver/result/stack；协作 cancellation request | 会挂起且需要结果、join/select/fan-out |
 | `spawn_task_on` + `JoinHandle<T>` | 指定 worker 的独立 Fiber + coroutine frame | 与 `spawn_task` 相同；只改变 admission/wake ownership | 会挂起、有结果且持有 per-worker ring/arena/backend state |
-| `TaskScope` + `Task<T>` | 一个 Scheduler 上运行期增长的独立 Fiber 集 | scope state + 每个 scoped child 的原有 frame/driver/result/stack；close/cancel/drain 与首错 | request/frame owner 在运行时发现 child，退出前不得 detach |
+| `TaskScope` + `Task<T>` | 一个 Scheduler 上运行期增长的独立 Fiber 集 | `add(void/Status)` 只有 frame/driver/stack；`spawn(T)` 另有 result handle；close/cancel/drain 与首错 | request/frame owner 在运行时发现 child，退出前不得 detach |
 | `spawn_blocking` + `BlockingPool` | 专用 OS thread pool | 独立有界 runtime metadata；结果走 JoinHandle | 阻塞 syscall、外部同步 API、长 CPU 工作 |
 
 Raw function-pointer/context seam 保留给已经拥有稳定 storage、需要避免 callable record 的内部热路；其
@@ -97,11 +97,13 @@ worker-stack callback 嵌套时仍串行退化，避免一个 worker 同时成�
 handoff 才能销毁 caller-stack batch state。观察到 Event signaled 只证明业务完成，不能单独证明 signaler
 已离开 notification primitive。这个约束适用于任何借用 caller storage 的同步批处理实现。
 
-动态 `TaskScope` 是 task owner，不是另一种 queue。它用一个原子 lifecycle word 线性化 child admission 与
-close，并在最后 completion 上复用 fiber/thread-aware ConditionVariable；scope 的 cancellation token 在
-child 执行期间与 JoinHandle 的 cancel flag 嵌套。scoped child 使用独立 driver 变体，只多一个 scope-state
-指针和 admission/completion 原子，不包 wrapper coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或
-Scheduler queue。`join` 先 close 再 drain；Task<Status> 首错只影响最终 Status，不能提前释放其它 child。
+动态 `TaskScope` 是 task owner，不是另一种 queue。producer-written lifecycle word 线性化 child admission
+与 close，worker-written completed counter 位于另一 cache line，避免短任务在 producer/worker 间争用同一
+计数 line；close 后最后 completion 复用 fiber/thread-aware ConditionVariable。只需统一拥有的 void/Status
+child 走 scope-owned `add` driver，不创建 JoinState/JoinHandle；typed/per-child ownership 走 `spawn` driver。
+scope cancellation token 在 child 执行期间与后者的 handle cancel flag 嵌套，并可复制给 cancellable IO。
+两条路线都不包 wrapper coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或 Scheduler queue。`join` 先
+close 再 drain；Task<Status> 首错只影响最终 Status，不能提前释放其它 child。
 这填的是 Folly AsyncScope 与 Seastar gate 所证明的 ownership 闭环，而不是把 WaitGroup 包装成 benchmark
 别名。
 
@@ -207,7 +209,7 @@ build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改
 | timer arm/cancel | 继承 Time queue 的 O(1) node operation |
 | semaphore timeout unlink | O(1) |
 | join group | O(n) install/clear，等待期间无 polling |
-| TaskScope admit / completion | O(1)；每个 scoped child 一次 admission CAS、一次 completion fetch-sub；只有错误/最后 completion 进入短控制锁 |
+| TaskScope admit / completion | O(1)；每个 scoped child 一次 producer-line admission CAS、一次隔离 worker-line completion fetch-add；scope-only child 无 JoinState，只有错误/close 后最后 completion 进入短控制锁 |
 | shutdown | O(workers + retained work/resources) |
 
 P0 先证明复杂度、allocation、syscall、锁和常态 metadata；P1 才测 callback、spawn/join、yield/wake、

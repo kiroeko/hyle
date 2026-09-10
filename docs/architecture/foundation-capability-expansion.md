@@ -57,7 +57,9 @@ simdutf 已提供标准/URL alphabet、padding/last-chunk 选项、safe caller-b
 - scope 绑定一个 Scheduler；其任务可以并发 spawn，spawn 与 close 的竞态必须线性化，另一个 Scheduler
   或任意外部 runtime 不能把任务塞入该 scope；
 - `cancel_and_join` 只发 cooperative cancellation，但无论首个错误或取消何时出现，都必须 drain 全部 child；
-- typed result 仍由明确 JoinHandle 拥有；scope 至少能聚合 `void/Status` child 的首个失败，同时保留 drain；
+- 只需 scope ownership 的 `void/Status` child 用 `add`，不制造无用 JoinHandle；typed/per-child ownership 仍由
+  `spawn` 返回的明确 JoinHandle 承担；scope 聚合首个失败并保留 drain，且 cancellation token 可显式传给
+  cancellable IO/等待；
 - 析构不能静默 detach。异步析构不可实现，因此 live child 下析构是明确 misuse；指南要求显式 join/drain；
 - 只有加入 scope 的任务支付 tracking，普通 spawn/schedule 的 record、queue 和 hot path 不增加 metadata。
 

@@ -91,7 +91,10 @@ owner；`when_all/when_any` 要求调用前已经持有固定 handle 集；`Join
 auto scope_result = hyle::sched::TaskScope::create(scheduler, allocator);
 HYLE_ASSIGN_OR_RETURN(auto scope, std::move(scope_result));
 
-HYLE_RETURN_IF_ERROR(scope.add(make_status_task(allocator)));
+if (Status admitted = scope.add(make_status_task(allocator)); !admitted.ok()) {
+  (void)scope.cancel_and_join(); // drain any earlier children
+  return admitted;
+}
 auto value = scope.spawn(make_value_task(allocator));
 auto cancellation = scope.cancellation_token(); // pass to cancellable IO
 HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
@@ -106,10 +109,10 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
   child 的失败由 scope 聚合，其它 `T` 只聚合 infrastructure failure，值仍只由返回的 handle 拥有；丢弃/
   detach handle 不影响 scope ownership；
 - `add(Task<void/Status>, stack_size=kDefaultStackSize) -> Status` 是无需独立 child result/cancel handle 时的默认
-  scope-owned 路线；它只同步返回 ownership 尚未转移时的 invalid/closed rejection；一旦 admission CAS 成功就
-  返回 OK，此后的 allocation/Scheduler/运行期错误统一由 `join` 聚合，因而调用者可安全使用
-  `HYLE_RETURN_IF_ERROR(add(...))` 而不会跳过必须的 drain；该路线不制造随后立即丢弃的 `JoinState/JoinHandle`；
-  需要 typed value 或逐 child cancellation 时才使用 `spawn`；
+  scope-owned 路线；它只同步返回 ownership 尚未转移时的 invalid/closed/task/stack rejection；一旦 admission
+  CAS 成功就返回 OK，此后的 allocation/Scheduler/运行期错误统一由 `join` 聚合。循环中 direct rejection 后
+  仍须 cancel/join 已有 child，不能裸 `HYLE_RETURN_IF_ERROR` 跳过 drain；该路线不制造随后立即丢弃的
+  `JoinState/JoinHandle`；需要 typed value 或逐 child cancellation 时才使用 `spawn`；
 - `close()` 幂等且与 spawn 原子线性化；`join()` 隐式 close，`cancel_and_join()` 依次 close、发布 cooperative
   cancellation、drain。二者可由 OS thread 或本 Scheduler 的 Fiber 调用，允许多个 waiter 并返回同一首错；
 - `request_cancel()` 只发布 cancellation、不关闭准入；之后接纳的 child 立即继承已取消 token。查询面为
@@ -122,14 +125,15 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 错误优先级固定为 invalid/moved-from scope → invalid Task/frame → unsafe stack size → closed/overflow admission
 → join-state（仅 `spawn`）/driver/stack allocation → Scheduler closed/full admission → child completion。close 后
 的调用没有被接纳，`spawn` 错误由其 `JoinHandle`、`add` 的 pre-admission rejection 由返回 Status 表达；
-try-admit 已成功后的资源或 Scheduler admission 失败只进入 scope 首错并将计数归零，`add` 仍返回 OK，不能让
-常见错误传播宏绕过后续 join，也不能让 join 挂起。
+try-admit 已成功后的资源或 Scheduler admission 失败只进入 scope 首错并将计数归零，`add` 仍返回 OK；
+pre-admission rejection 后调用者必须先 drain 更早接纳的 child，任何路径都不能让 join 挂起。
 
 ### Internal mechanism freeze
 
-- scope state 用一个原子 lifecycle word 表达 closed、ever-admitted、joined 与 active count；spawn 与 close
-  通过 CAS/fetch-or 给出单一线性化点。成功 child completion 只做一次 count fetch-sub；仅首错和最后一个
-  completion 进入现有 fiber-aware ConditionVariable 的短控制锁；
+- scope state 用一个 producer-written lifecycle word 表达 closed、ever-admitted、joined 与 admitted count；
+  spawn/add 与 close 通过 CAS/fetch-or 给出单一线性化点。worker-written completed counter 独占另一 cache line，
+  避免 admission 与短 child completion 在同一 line 上跨核来回争用；每个成功 completion 只做一次 fetch-add，
+  仅首错和 close 后最后一个 completion 进入现有 fiber-aware ConditionVariable 的短控制锁；
 - scoped child 使用专用 `ScopedTaskDriver<T>`，与现有 `spawn_task_impl` 共享相同的用户 coroutine frame、
   `JoinState<T>`、一个 driver allocation 和 scheduler stack pool。driver 只多 raw scope state pointer；不增加
   wrapper coroutine/frame，也不修改普通 `TaskDriver`、`JoinState`、Fiber、Scheduler queue 或 wake path；
@@ -150,7 +154,7 @@ try-admit 已成功后的资源或 Scheduler admission 失败只进入 scope 首
 | `S7-03` | void/Status 首错与 full drain 缺失 | completion 时只保存首个非 OK Status，全部 child 仍递减/drain | first-error、后续完成、detach/typed result |
 | `S7-04` | 公开消费与交付缺证 | focused/header/source/static/shared、三平台、sanitizers、guide/architecture | 预声明矩阵全部诚实裁决 |
 | `S7-05` | 新抽象成本未知 | opt-in v7 P1：动态 Status helper fan-out 的完整 scope lifecycle 对 pre-v7 公共手工组合；双向顺序/placement | qualified 5% NI；无同合同则明确阻塞，不换轻语义 peer |
-| `S7-06` | 首候选强迫只需聚合的 helper 创建并立即 detach `JoinHandle`，且 scope token 不能传给 cancellable IO | 增加 `add(Task<void/Status>)` scope-owned driver 与 `cancellation_token()`；保留 `spawn` 给 typed/per-child ownership | 无 unused JoinState；IO token 消费测试；同合同 P1 重新过 5% NI |
+| `S7-06` | 首候选强迫只需聚合的 helper 创建并立即 detach `JoinHandle`，且 admission/completion 争用一个计数 line、scope token 不能传给 cancellable IO | 增加 `add(Task<void/Status>)` scope-owned driver、拆分 admitted/completed cache line 与 `cancellation_token()`；保留 `spawn` 给 typed/per-child ownership | 无 unused JoinState/producer-worker line ping-pong；IO token 消费测试；同合同 P1 重新过 5% NI |
 
 本表之后不加入 G08 priority、deadline、轻量 callback scope、DAG、IO/process/WebSocket 或普通 scheduler
 优化；出现问题只能在 `S7-01..S7-06` 内纠正，否则依法回退/阻塞。
@@ -162,8 +166,9 @@ try-admit 已成功后的资源或 Scheduler admission 失败只进入 scope 首
    上层 request policy 已分离。
 3. 内部复用：复用 Error、Mem/Mem-vm、CancelToken、ConditionVariable、Scheduler admission/stack pool 和
    JoinState；不重复容器、wake 或 cancellation tree。
-4. 性能：所有操作 O(1)，普通 task 零产品改动；scope child 每次一次 admission CAS、一次 completion
-   fetch-sub，失败/末项才进入控制锁；scope-only helper 不再支付 JoinState/JoinHandle。P1 只测完整同合同 episode。
+4. 性能：所有操作 O(1)，普通 task 零产品改动；scope child 每次一次 producer-line admission CAS、一次隔离
+   worker-line completion fetch-add，失败/末项才进入控制锁；scope-only helper 不再支付 JoinState/JoinHandle。
+   P1 只测完整同合同 episode。
 5. 交付：只承诺 C++ source/static/shared；模板 spawn 不增加 Native FFI/C ABI。
 6. 构建：新 source 加入既有 `sched` target，中央依赖图不变；新 public header 由 sched owner 自动安装并
    自包含测试。

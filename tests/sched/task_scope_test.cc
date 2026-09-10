@@ -18,6 +18,7 @@
 using hyle::Status;
 using hyle::mem::AllocatorRef;
 using hyle::mem::system_allocator;
+using hyle::sched::CancelCallback;
 using hyle::sched::Fiber;
 using hyle::sched::is_cancel_requested;
 using hyle::sched::Scheduler;
@@ -170,6 +171,10 @@ AllocatorRef counted_allocator(AllocationCounter* counter) noexcept {
   return AllocatorRef(&counted_alloc, &counted_free, &counted_realloc, counter);
 }
 
+void mark_cancelled(void* raw) noexcept {
+  static_cast<std::atomic<bool>*>(raw)->store(true, std::memory_order_release);
+}
+
 }  // namespace
 
 TEST(TaskScope, EmptyJoinClosesAndIsRepeatable) {
@@ -202,6 +207,188 @@ TEST(TaskScope, DynamicChildrenDetachButScopeStillDrains) {
   EXPECT_EQ(completed.load(std::memory_order_relaxed), 257);
   EXPECT_EQ(scope.remaining(), 0u);
   scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedAddAggregatesStatusAndDrainsVoidChildren) {
+  Scheduler scheduler(2, system_allocator(), 128);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  std::atomic<int> status_completed{0};
+  std::atomic<int> void_completed{0};
+
+  EXPECT_TRUE(scope.add(status_task(system_allocator(), Status::NotFound(
+                                                            "owned child"),
+                                    &status_completed))
+                  .ok());
+  for (int i = 0; i < 32; ++i) {
+    EXPECT_TRUE(
+        scope.add(increment(system_allocator(), &void_completed)).ok());
+  }
+
+  Status joined = scope.join();
+  EXPECT_TRUE(joined.IsNotFound());
+  EXPECT_EQ(joined.message(), "owned child");
+  EXPECT_EQ(status_completed.load(std::memory_order_relaxed), 1);
+  EXPECT_EQ(void_completed.load(std::memory_order_relaxed), 32);
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedAddConvertsVoidExceptionToAggregateFailure) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+
+  EXPECT_TRUE(scope.add(throwing_task(system_allocator())).ok());
+  EXPECT_TRUE(scope.join().IsInternal());
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedAddPropagatesScopeCancellation) {
+  Scheduler scheduler(2, system_allocator(), 128);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  std::atomic<bool> started{false};
+  std::atomic<bool> observed{false};
+
+  EXPECT_TRUE(scope.add(wait_for_cancel(system_allocator(), &started, &observed))
+                  .ok());
+  while (!started.load(std::memory_order_acquire)) std::this_thread::yield();
+  EXPECT_TRUE(scope.cancel_and_join().IsCancelled());
+  EXPECT_TRUE(observed.load(std::memory_order_acquire));
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, CancellationTokenIsShareableWithExternalOperations) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  auto token = scope.cancellation_token();
+  ASSERT_TRUE(token.valid());
+  std::atomic<bool> callback_fired{false};
+  CancelCallback callback(token, &mark_cancelled, &callback_fired);
+
+  token.cancel();
+  EXPECT_TRUE(token.is_cancelled());
+  EXPECT_TRUE(scope.is_cancel_requested());
+  EXPECT_TRUE(callback_fired.load(std::memory_order_acquire));
+  EXPECT_TRUE(scope.join().ok());
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ConcurrentScopeOwnedAddAndCloseHasNoHalfAdmission) {
+  constexpr int kThreads = 4;
+  constexpr int kAttempts = 128;
+  Scheduler scheduler(4, system_allocator(), 4096);
+  auto created = TaskScope::create(scheduler, system_allocator());
+  ASSERT_TRUE(created.has_value());
+  TaskScope scope = *std::move(created);
+  std::atomic<bool> start{false};
+  std::atomic<int> ran{0};
+  std::atomic<int> accepted{0};
+  std::atomic<int> rejected{0};
+  std::vector<std::thread> submitters;
+
+  for (int thread = 0; thread < kThreads; ++thread) {
+    submitters.emplace_back([&] {
+      while (!start.load(std::memory_order_acquire)) std::this_thread::yield();
+      for (int i = 0; i < kAttempts; ++i) {
+        Status status = scope.add(increment(system_allocator(), &ran));
+        if (status.ok()) {
+          accepted.fetch_add(1, std::memory_order_relaxed);
+        } else {
+          EXPECT_TRUE(status.IsFailedPrecondition());
+          rejected.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
+
+  start.store(true, std::memory_order_release);
+  scope.close();
+  for (auto& submitter : submitters) submitter.join();
+  EXPECT_TRUE(scope.join().ok());
+  EXPECT_EQ(accepted.load() + rejected.load(), kThreads * kAttempts);
+  EXPECT_EQ(ran.load(), accepted.load());
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedAddReportsOnlyPreAdmissionRejectionDirectly) {
+  Scheduler scheduler(1, system_allocator(), 64);
+
+  {
+    auto created = TaskScope::create(scheduler, system_allocator());
+    ASSERT_TRUE(created.has_value());
+    TaskScope scope = *std::move(created);
+    std::atomic<int> ran{0};
+    scope.close();
+    Status rejected = scope.add(increment(system_allocator(), &ran));
+    EXPECT_TRUE(rejected.IsFailedPrecondition());
+    EXPECT_TRUE(scope.join().ok());
+    EXPECT_EQ(ran.load(std::memory_order_relaxed), 0);
+  }
+
+  {
+    auto created = TaskScope::create(scheduler, system_allocator());
+    ASSERT_TRUE(created.has_value());
+    TaskScope scope = *std::move(created);
+    std::atomic<int> ran{0};
+    Status rejected = scope.add(increment(failing_allocator(), &ran));
+    EXPECT_TRUE(rejected.IsResourceExhausted());
+    EXPECT_TRUE(scope.join().ok());
+    EXPECT_EQ(ran.load(std::memory_order_relaxed), 0);
+  }
+
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedPostAdmissionOomIsDeferredToJoin) {
+  Scheduler scheduler(1, system_allocator(), 64);
+  AllocationCounter counter;
+  {
+    AllocatorRef allocator = counted_allocator(&counter);
+    auto created = TaskScope::create(scheduler, allocator);
+    ASSERT_TRUE(created.has_value());
+    TaskScope scope = *std::move(created);
+    std::atomic<int> ran{0};
+    const std::size_t next_attempt = counter.attempts.load();
+    counter.fail_on.store(next_attempt);  // scope-owned driver allocation
+
+    EXPECT_TRUE(scope.add(increment(system_allocator(), &ran)).ok());
+    EXPECT_EQ(counter.attempts.load(), next_attempt + 1);
+    EXPECT_TRUE(scope.join().IsResourceExhausted());
+    EXPECT_EQ(ran.load(std::memory_order_relaxed), 0);
+  }
+  EXPECT_EQ(counter.allocations.load(), counter.frees.load());
+  scheduler.shutdown();
+}
+
+TEST(TaskScope, ScopeOwnedStackAndSchedulerFailuresAreDeferredToJoin) {
+  {
+    Scheduler scheduler(1, system_allocator(), 64);
+    auto created = TaskScope::create(scheduler, system_allocator());
+    ASSERT_TRUE(created.has_value());
+    TaskScope scope = *std::move(created);
+    EXPECT_TRUE(scope.add(status_task(system_allocator(), Status{}),
+                          (std::numeric_limits<std::size_t>::max)())
+                    .ok());
+    EXPECT_TRUE(scope.join().IsOutOfRange());
+    scheduler.shutdown();
+  }
+
+  {
+    Scheduler scheduler(1, system_allocator(), 64);
+    auto created = TaskScope::create(scheduler, system_allocator());
+    ASSERT_TRUE(created.has_value());
+    TaskScope scope = *std::move(created);
+    scheduler.begin_shutdown();
+    EXPECT_TRUE(scope.add(status_task(system_allocator(), Status{})).ok());
+    EXPECT_TRUE(scope.join().IsCancelled());
+    scheduler.shutdown();
+  }
 }
 
 TEST(TaskScope, TypedAndMoveOnlyResultsRemainInJoinHandles) {
@@ -552,6 +739,8 @@ TEST(TaskScope, MoveTransfersOwnerAndMovedFromCallsAreTyped) {
   TaskScope destination = std::move(source);
   EXPECT_FALSE(source.valid());
   EXPECT_TRUE(destination.valid());
+  EXPECT_FALSE(source.cancellation_token().valid());
+  EXPECT_TRUE(destination.cancellation_token().valid());
 
   auto rejected = source.spawn(value_task(system_allocator(), 1));
   auto rejected_result = rejected.join();

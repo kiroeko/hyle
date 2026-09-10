@@ -18,7 +18,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
 | 可挂起、有结果且必须留在一个 worker | `Task<T>` + `spawn_task_on` + `JoinHandle<T>` | 仅用于 per-worker ring/arena/backend owner；全部 wake 保持 pin |
-| 运行期不断发现 child，owner 必须统一 close/cancel/drain | `TaskScope` | 绑定一个 Scheduler；handle 可丢弃，scope 不会 detach child |
+| 运行期不断发现 child，owner 必须统一 close/cancel/drain | `TaskScope::add` / `spawn` | scope-only void/Status 用 `add`；typed/per-child ownership 才用 `spawn` |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
@@ -202,17 +202,23 @@ if (!created) return created.error();
 auto scope = *std::move(created);
 
 for (const auto& shard : request.shards()) {
-  // 不需要逐项结果时可以 detach handle；task 仍归 scope 所有。
-  auto child = scope.spawn(process_shard(alloc, shard)); // Task<Status>
-  child.detach();
+  // Task<Status> 只需统一首错与 drain，不制造随后丢弃的 JoinHandle。
+  if (auto admitted = scope.add(process_shard(alloc, shard));
+      !admitted.ok()) {
+    (void)scope.cancel_and_join(); // 先排空更早接纳的 child
+    return admitted;
+  }
 }
 
 return scope.join(); // 原子关闭 admission，等待全部 child，返回首个失败
 ```
 
-`TaskScope` 在创建时绑定一个 Scheduler 和 allocator，之后 `spawn(Task<T>)` 不再重复接收 scheduler；因此
-child 不可能被意外提交到另一个 runtime。它支持并发 spawn，且每个调用与 `close()` 有唯一顺序：close
-之前成功接纳的任务一定被 drain，之后的调用得到可立即 join 的 `FailedPrecondition` handle。`join()` 会
+`TaskScope` 在创建时绑定一个 Scheduler 和 allocator，之后 `add/spawn` 不再重复接收 scheduler；因此 child
+不可能被意外提交到另一个 runtime。只需 scope 统一拥有 `Task<void/Status>` 时用 `add`；需要 typed value
+或逐 child cancellation 时用 `spawn` 并保留 `JoinHandle`。它支持并发 admission，且每个调用与 `close()` 有
+唯一顺序：close 之前成功接纳的任务一定被 drain，之后 `add` 返回 `FailedPrecondition`、`spawn` 返回可立即
+join 的失败 handle。`add` 的 direct rejection 没有接管当前 task，但 owner 仍必须先 cancel/join 之前已接纳
+的 child，不能用早返回宏绕过 drain。`join()` 会
 隐式 close；`cancel_and_join()` 是 close + cooperative cancellation + full drain。首错从任务完成顺序中
 选取，绝不为了尽快返回而遗弃后续任务。
 
@@ -220,7 +226,9 @@ child 不可能被意外提交到另一个 runtime。它支持并发 spawn，且
 scope 结果；其它 `Task<T>` 的业务值仍只在返回的 `JoinHandle<T>` 中。scope 不保存 handle 或任意 `T`，
 所以保留 handle 后可以先 `scope.join()`，再逐个无等待地读取结果。`request_cancel()` 只发布取消而不关闭
 admission；随后接纳的 child 会继承已经取消的 token。任务必须在循环边界检查 `is_cancel_requested()`，
-或进入支持 `CancelScope` 的 HYLE wait；没有安全的 stackful 强杀。
+或进入支持 `CancelScope` 的 HYLE wait；没有安全的 stackful 强杀。需要让 in-flight DNS/socket/file 等主动
+取消时，在 admission 前取一次 `auto token = scope.cancellation_token()`，把该 copy 放进操作 options；
+`request_cancel()`、`cancel_and_join()` 或该 token 的任一 copy 上调用 `cancel()` 都发布同一取消 source。
 
 Scheduler 与 allocator backing 必须活过 scope 及其所有 child。曾经接纳过任务的 scope 必须显式
 `join()`/`cancel_and_join()`；live child 或只等单个 handle 后直接析构 scope 都会 fail-fast。不要在 scope
