@@ -97,15 +97,27 @@ worker-stack callback 嵌套时仍串行退化，避免一个 worker 同时成�
 handoff 才能销毁 caller-stack batch state。观察到 Event signaled 只证明业务完成，不能单独证明 signaler
 已离开 notification primitive。这个约束适用于任何借用 caller storage 的同步批处理实现。
 
-动态 `TaskScope` 是 task owner，不是另一种 queue。producer-written lifecycle word 线性化 child admission
-与 close，worker-written completed counter 位于另一 cache line，避免短任务在 producer/worker 间争用同一
-计数 line；close 后最后 completion 复用 fiber/thread-aware ConditionVariable。只需统一拥有的 void/Status
-child 走 scope-owned `add` driver，不创建 JoinState/JoinHandle；typed/per-child ownership 走 `spawn` driver。
-scope cancellation token 在 child 执行期间与后者的 handle cancel flag 嵌套，并可复制给 cancellable IO。
-两条路线都不包 wrapper coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或 Scheduler queue。`join` 先
-close 再 drain；Task<Status> 首错只影响最终 Status，不能提前释放其它 child。
-这填的是 Folly AsyncScope 与 Seastar gate 所证明的 ownership 闭环，而不是把 WaitGroup 包装成 benchmark
-别名。
+动态 `TaskScope` 是 task owner，不是另一种 queue。它填的是 Folly AsyncScope 与 Seastar gate 所证明的
+ownership 闭环，而不是把 WaitGroup 包装成 benchmark 别名：`join` 先 close 再 drain，scope cancellation
+token 可传给 cancellable IO，Task<Status> 首错只影响最终 Status，不能提前释放其它 child。只需统一拥有的
+void/Status child 走 scope-owned `add`，typed/per-child ownership 才走 `spawn`；两条路线都不包 wrapper
+coroutine，也不改变普通 TaskDriver、JoinState、Fiber 或 Scheduler queue。
+
+v7 候选用独立 admission/completion cache line 和一个共享 completion counter。Folly `Barrier` 与 oneTBB
+`wait_context` 证明这种 constant-state barrier 是成熟选择，但合格同合同证据不能证明它在多 worker 短
+child 上达到 HYLE 的 5% 非劣门，因此当前产品状态仍以 registry 的 `BLOCKED` 为准。恢复设计采用
+Tokio `JoinSet` 已验证的另一种成熟取舍：每个 scope child 保留一个独立 completion record，record 与本来
+就需要的 scoped driver **同次分配**，driver 退出并归还 Fiber stack 后再发布完成；scope close 后遍历稳定
+record 集完成 fiber/thread-aware drain。正常成功 completion 只写自己的 record，不再对 scope-wide
+completion line 做 RMW；失败才进入 scope 的首错控制锁。record 由 scope 与 publisher 各持一个内部引用，
+因此 waiter 观察完成后立刻析构 owner 也不能释放仍在 `signal()` 中的记录。
+
+这个取舍明确把资源从共享 cache-line 争用换成 scope 生命周期内的 O(N) 小记录保留：单次 admission 和
+completion 仍为 O(1)，close 为 O(1)，完整 drain/析构为 O(N)，与 owner 必须回收 N 个 child 的任务一致；
+普通 task 仍是零新增 metadata/分支。旧同合同 manual owner 的分散 JoinState 已在相同 32-child workload
+中给出这种成本方向的直接机制证据；新候选仍必须只运行一次同合同 qualified P1，不能凭该设计说明预签
+性能 PASS。固定分片 counter、close 后轮询和无界重采样均被否决：前者按 worker 数放大每个 request 的常态
+metadata 且仍有末项握手，后两者分别破坏阻塞语义和性能证据停止规则。
 
 ## Worker 与队列
 
@@ -209,7 +221,7 @@ build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改
 | timer arm/cancel | 继承 Time queue 的 O(1) node operation |
 | semaphore timeout unlink | O(1) |
 | join group | O(n) install/clear，等待期间无 polling |
-| TaskScope admit / completion | O(1)；每个 scoped child 一次 producer-line admission CAS、一次隔离 worker-line completion fetch-add；scope-only child 无 JoinState，只有错误/close 后最后 completion 进入短控制锁 |
+| TaskScope admit / completion | 每 child admission/completion O(1)，普通 task 零成本；恢复设计让成功 child 只发布自己的同分配 completion record，失败才进入 scope 首错锁；close O(1)，完整 drain/析构 O(N) |
 | shutdown | O(workers + retained work/resources) |
 
 P0 先证明复杂度、allocation、syscall、锁和常态 metadata；P1 才测 callback、spawn/join、yield/wake、
