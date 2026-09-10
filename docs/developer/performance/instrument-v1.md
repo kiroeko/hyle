@@ -74,7 +74,9 @@ host probe 中，以登记 caller 的 processor group 和最高 efficiency class
 core id 与 priority 全部进入 child policy。workload 必须逐 worker 应用 singleton mask，并在每个进程
 回报 requested/observed CPU、worker/work/callback 守恒；只继承宽 parent mask、硬编码一台机器的 CPU
 编号或仅回报“affinity 调用成功”均 fail closed。该拓扑目前同样只在 Windows 准入，不改变历史
-`cross-core-pair` 的 caller/next-core 选择语义。
+`cross-core-pair` 的 caller/next-core 选择语义。它可与 structured separate-process 或默认同进程
+paired-row adapter 组合；拓扑描述 worker placement，measurement adapter 描述 candidate/peer 如何成对，
+两者没有从属关系。benchmark 仍须自行核对并回报 worker 与工作量守恒。
 
 ## 4. Experiment contract v1
 
@@ -161,6 +163,12 @@ candidate 与 peer product executable，并要求两侧使用同一 row set、wo
 配对。两者共用 Observation、统计、controls、停止规则和 raw replay，模块不得复制 runner 或自行
 解释区间。platform backend 只负责 machine probe、affinity/QoS 与 artifact 身份。模块 plugin 只能
 声明 target、row mapping 和确实特有的 codegen、DSE、资源守恒 validator。
+
+两种 adapter 的 A/A 拓扑不能混用。公共 `hyle_perf_control_bench` 是同进程 paired-row control；它足以
+校验默认 nanobench adapter，但不模拟 structured adapter 的两个独立 product process。新的 structured
+合同若执行先后/启动热状态可能达到 material margin，必须在完整 qualification 前另有同启动拓扑的
+same-artifact A/A gate；缺少该 gate 时只能诊断。若真实消费者本来就在一个 source/static/shared 进程
+中调用两条公开路线，应直接使用默认 paired-row adapter，不得为了隔离而人为引入跨进程偏差。
 
 runner validator 是整个 artifact bundle 的全局完整性门，不存在“只影响某一 diagnostic row”的隐含
 scope；所以它只能检查 build/artifact/合同整体。某个 mechanism 或 diagnostic replay 特有的风险应放在

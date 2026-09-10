@@ -62,11 +62,15 @@ endif()
 # sched-v7 dynamic TaskScope migration evidence. The peer is the natural
 # pre-v7 public composition (spawn_task + same-allocator PMR handle storage +
 # per-handle join/first-error aggregation), not a bare WaitGroup or detached
-# route. Keep the pair opt-in and in separate executables so code placement and
-# ownership state never leak across providers.
+# route. The historical v7 pair keeps separate executables. The v8 correction
+# uses paired rows in one source consumer because both routes are public HYLE
+# compositions and cross-process launch order is not part of that journey.
 option(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH
   "build the Sched v7 dynamic TaskScope P1 pair" OFF)
-if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
+option(HYLE_SCHED_V8_TASK_SCOPE_P1_BENCH
+  "build the Sched v8 cleanup-aligned TaskScope P1 pair" OFF)
+if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH OR
+   HYLE_SCHED_V8_TASK_SCOPE_P1_BENCH)
   if(NOT WIN32 OR NOT HYLE_STATIC)
     message(FATAL_ERROR
       "HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH requires Windows and HYLE_STATIC")
@@ -144,32 +148,55 @@ if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
     hyle_apply_warnings(${target})
   endfunction()
 
-  add_executable(hyle_sched_v7_task_scope_candidate_bench
-    task_scope_p1_candidate_bench.cc)
-  _hyle_configure_sched_v7_task_scope_bench(
-    hyle_sched_v7_task_scope_candidate_bench)
-  add_executable(hyle_sched_v7_task_scope_manual_bench
-    task_scope_p1_manual_bench.cc)
-  _hyle_configure_sched_v7_task_scope_bench(
-    hyle_sched_v7_task_scope_manual_bench)
-  add_executable(hyle_sched_v7_task_scope_candidate_placement_bench
-    task_scope_p1_candidate_bench.cc)
-  _hyle_configure_sched_v7_task_scope_bench(
-    hyle_sched_v7_task_scope_candidate_placement_bench)
-  add_executable(hyle_sched_v7_task_scope_manual_placement_bench
-    task_scope_p1_manual_bench.cc)
-  _hyle_configure_sched_v7_task_scope_bench(
-    hyle_sched_v7_task_scope_manual_placement_bench)
-  target_link_options(hyle_sched_v7_task_scope_candidate_placement_bench
-    PRIVATE /FUNCTIONPADMIN:64)
-  target_link_options(hyle_sched_v7_task_scope_manual_placement_bench
-    PRIVATE /FUNCTIONPADMIN:64)
+  if(HYLE_SCHED_V7_TASK_SCOPE_P1_BENCH)
+    add_executable(hyle_sched_v7_task_scope_candidate_bench
+      task_scope_p1_candidate_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v7_task_scope_candidate_bench)
+    add_executable(hyle_sched_v7_task_scope_manual_bench
+      task_scope_p1_manual_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v7_task_scope_manual_bench)
+    add_executable(hyle_sched_v7_task_scope_candidate_placement_bench
+      task_scope_p1_candidate_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v7_task_scope_candidate_placement_bench)
+    add_executable(hyle_sched_v7_task_scope_manual_placement_bench
+      task_scope_p1_manual_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v7_task_scope_manual_placement_bench)
+    target_link_options(hyle_sched_v7_task_scope_candidate_placement_bench
+      PRIVATE /FUNCTIONPADMIN:64)
+    target_link_options(hyle_sched_v7_task_scope_manual_placement_bench
+      PRIVATE /FUNCTIONPADMIN:64)
 
-  hyle_register_benches(sched
-    hyle_sched_v7_task_scope_candidate_bench
-    hyle_sched_v7_task_scope_manual_bench
-    hyle_sched_v7_task_scope_candidate_placement_bench
-    hyle_sched_v7_task_scope_manual_placement_bench)
+    hyle_register_benches(sched
+      hyle_sched_v7_task_scope_candidate_bench
+      hyle_sched_v7_task_scope_manual_bench
+      hyle_sched_v7_task_scope_candidate_placement_bench
+      hyle_sched_v7_task_scope_manual_placement_bench)
+  endif()
+
+  if(HYLE_SCHED_V8_TASK_SCOPE_P1_BENCH)
+    add_executable(hyle_sched_v8_task_scope_paired_bench
+      task_scope_cleanup_p1_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v8_task_scope_paired_bench)
+    target_link_libraries(hyle_sched_v8_task_scope_paired_bench PRIVATE
+      nanobench)
+    add_executable(hyle_sched_v8_task_scope_paired_placement_bench
+      task_scope_cleanup_p1_bench.cc)
+    _hyle_configure_sched_v7_task_scope_bench(
+      hyle_sched_v8_task_scope_paired_placement_bench)
+    target_link_libraries(hyle_sched_v8_task_scope_paired_placement_bench
+      PRIVATE nanobench)
+    target_link_options(hyle_sched_v8_task_scope_paired_placement_bench
+      PRIVATE /FUNCTIONPADMIN:64)
+
+    hyle_register_benches(sched
+      hyle_sched_v8_task_scope_paired_bench
+      hyle_sched_v8_task_scope_paired_placement_bench)
+  endif()
   unset(_hyle_sched_v7_baseline_files)
   unset(_hyle_sched_v7_baseline_hashes)
   unset(_hyle_sched_v7_baseline_count)

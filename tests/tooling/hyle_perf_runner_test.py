@@ -897,6 +897,16 @@ class RunnerBuildArtifactTest(unittest.TestCase):
         value["extensions"]["runner"]["sampling_topology"] = "cross-core-pair"
         runner = validate_runner_extension(value)
         self.assertEqual(runner["sampling_topology"], "cross-core-pair")
+
+        value = pilot_contract()
+        value["extensions"]["runner"]["sampling_topology"] = \
+            "n-worker-physical-cores"
+        value["extensions"]["runner"]["sampling_worker_count"] = 4
+        runner = validate_runner_extension(value)
+        self.assertEqual(runner["measurement_adapter"],
+                         "nanobench-paired-rows-v1")
+        self.assertEqual(runner["sampling_worker_count"], 4)
+
         value["extensions"]["runner"]["sampling_topology"] = "let-os-decide"
         with self.assertRaisesRegex(ValidationError, "sampling topology"):
             validate_runner_extension(value)

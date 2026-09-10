@@ -86,6 +86,37 @@ cancel、error、allocation 或 suspension 合同的成本全部归因给底层 
 - 样本数、随机化、统计方法、停止条件、开发集与 holdout；
 - 预计最小差异和它对真实消费者的影响预算。
 
+### 3.1 完成边界源码预审（计时前硬门）
+
+任何带 peer 的 P1/P2 在配置、编译或采样前，必须根据**实际源码**填写下面的时序账单；只在合同里
+写一句“full drain”或“teardown 相同”不构成证据：
+
+```text
+admission -> user work ends -> result/error becomes visible
+          -> cancellation/wait links detach -> coroutine/driver/stack cleanup
+          -> allocator-visible reclamation -> owner returns
+```
+
+对 candidate 和 peer 的每个阶段分别记录 `CHARGED`、`DEFERRED` 或 `NOT_APPLICABLE`，并给出实现文件、
+符号和行号锚点。还要列出 owner 返回后仍可能执行的 callback、finish hook、析构、deallocation、wake 或
+异步提交；“最终都会完成”不能替代“都在测量边界内完成”。至少一侧把 material 工作延迟到 owner 返回
+以后时，`SAME_CONTRACT` preflight 立即失败，不得启动 A/A、样本升级或 qualified P1。只能：
+
+1. 用公开且自然的 adapter 把两侧推进到同一完成边界，并把 adapter 全部计费；或
+2. 降为 `NATURAL_ROUTE`，只报告用户可见路线成本，不签同合同非劣/SOTA。
+
+同一 preflight 还须附一张静态资源账单：每个正常 operation/owner 的 allocation/deallocation、共享
+atomic、锁、wake、syscall、copy 和常驻 metadata。能从源码、对象布局和生成代码解释的 material 差异，
+先完成归因或修正合同；不要先花样本预算再猜。独立 reviewer 必须沿源码锚点复核，不能只复述合同作者
+写的等价性文字。
+
+完成边界通过后，先用同一 artifact 对自身做**与产品完全相同的执行拓扑**短诊断：同进程成对 row 就在
+同进程中 A/A，分离子进程 pair 就必须以同样的启动、亲和、优先级和先后顺序启动两个相同 product
+executable。至少覆盖 A/B 与 B/A；若首个/第二个位置、进程启动、热状态或 placement 产生接近或超过
+material margin 的固定影响，仪器 preflight 失败，不能启动完整样本。公共 control executable 内部的
+A/A 只能证明它自己的同进程拓扑；它不能替代 separate-process product pair 的同拓扑 A/A。此时应选择
+更贴近真实 delivery 的已有 adapter，或登记独立仪器 blocker，不能用更多 n 掩盖拓扑失配。
+
 跑后更换 peer、规模、计费边界、margin 或剔除规则会使结果失去签署资格；可以建立新的实验，
 不能回写原假设。
 

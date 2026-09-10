@@ -128,3 +128,49 @@ fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额
 
 下面只运行 closure card 已声明的 exact-candidate correctness、sanitizer、三交付、IO consumer、P0、唯一一次
 qualified P1 与终局红队；不得改产品、peer、workload 或门槛。
+
+## P1 完成边界预审纠正
+
+第一次启动的 v7 合同运行在四个 product strata 各完成 31 个样本后被人工终止；它只完成了 31-sample
+control 的 33/62 个进程，没有生成 manifest/summary，因此不是 qualified P1，也不进入产品裁决。停止不是
+为了挑结果，而是源码复核证明合同把不同完成边界错误写成了 `SAME_CONTRACT`：
+
+| 时序阶段 | v8 TaskScope candidate | 37b62460 public manual peer |
+|---|---|---|
+| user task / `Status` result 结束 | `ScopeOwnedTaskDriver::entry` 保存结果，但不 signal | `TaskDriver::entry` 调用 `JoinState::set_value` 并 signal |
+| waiter 可返回 | 尚不可；record 未发布 | `JoinHandle::join` 此时即可返回 |
+| Fiber finish hook、coroutine/driver 与 stack 清理 | `ScopeOwnedTaskDriver::finish` 在 record signal **之前**完成 | `TaskDriver::destroy` 在 result signal **之后**由 worker dispatch 执行 |
+| owner 返回 | `TaskScope::join` 已包含上述 cleanup；scope 析构释放 retained cells | 原 v7 bench 可在 finish hook 尚未完成时返回并开始下一 owner |
+
+源码锚点是候选 `src/sched/task_scope.cc::ScopeOwnedTaskDriver::entry/finish`、
+`TaskScope::wait_/reset_`，以及 identity-locked 37b62460
+`include/hyle/sched/join.h::JoinState::complete_/TaskDriver::entry/destroy`；Scheduler dispatch 在 finish hook
+之后才 `finish_one()`，故公开 `Scheduler::drain()` 是能把 peer 推进到同一资源完成边界的自然 adapter。
+原始 product 点值约为 peer 的 92.6%–96.6%，只能说明 stronger candidate route 与 result-visible peer route
+不同，不能成为同合同输赢或继续改产品的依据。
+
+对象/生成代码静态账单也不支持“候选必然更重”的猜测：MSVC 19.50 exact artifacts 中 candidate 的
+scope-only Status driver 是 288 B、每 child 一次 allocation；manual peer 是 120 B `JoinState` + 184 B
+`TaskDriver`、每 child 两次 allocation，另有 16 B handle slot。candidate 的 retained 288 B cell 与 peer
+retained 120 B state + 已发布后异步清理的 184 B driver 只是生命周期分布不同。先对齐完成边界，才有资格
+判断分散 record 是否非劣。
+
+证据修正不改变产品 candidate。新合同
+[`sched-v8-task-scope-cleanup-p1-v2`](../../../../bench/contracts/sched-v8-task-scope-cleanup-p1-v2.json)
+在双方 owner 返回前都调用公开 `Scheduler::drain()`；candidate 路线该 fence 已满足，peer 路线等待
+dispatch finish hook。随后两侧都在 lambda 返回前析构各自 retained owner records。旧 v7 executable/contract
+保留为历史事实；v8 使用独立 target 与 consumer provenance，避免改写旧 bundle。
+
+完整采样前的有界 diagnostic 又发现第二个仪器问题。cleanup-aligned 的四个 separate-process rows 在
+1024-owner 聚合下随顺序在约 `0.94..1.12` 间反转；增至 4096 owner（每进程约 60 ms）后，candidate-first
+约 `1.01..1.03`，peer-first 约 `0.94..0.96`。再把**同一个 candidate executable**放在 pair 两侧，五组
+first/second ratio 仍为 `0.98, 1.04, 0.94, 0.97, 1.01`。这不是 TaskScope 固定劣化，而是第一个/第二个
+独立进程的启动与 CPU 热状态差；公共 A/A 却在一个 control process 内跑两行，无法否证这种拓扑偏差。
+因此 structured v2 草案没有进入正式采样，也没有生成证据。
+
+HYLE 的首要消费者是同一 source/static/shared 进程内直接调用公开 C++ 路线。最终 v2 合同据此使用既有
+`nanobench-paired-rows-v1`：candidate 和 exact pre-v7 public composition 位于同一个 source-built consumer，
+共享 Scheduler/allocator/helper body，每个计时 operation 都完成一个 32-child owner 的 admission、yield、
+结果/首错、finish-hook/stack cleanup、`drain` 和 owner teardown；64 个完整 owner/route 只作测量外 warmup。
+双顺序与独立 placement target 仍保留，公共 A/A 现在与产品同为同进程 paired rows。该修改只纠正证据
+形状，不改变 immutable product candidate、API、算法或 material margin。

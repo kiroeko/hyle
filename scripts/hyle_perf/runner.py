@@ -203,10 +203,6 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
             raise ValidationError(
                 "n-worker-physical-cores requires sampling_worker_count in "
                 "the range 2..64")
-        if measurement_adapter != STRUCTURED_PAIR_ADAPTER:
-            raise ValidationError(
-                "n-worker-physical-cores requires the structured paired-process "
-                "adapter")
         config["sampling_worker_count"] = sampling_worker_count
     elif sampling_worker_count is not None:
         raise ValidationError(

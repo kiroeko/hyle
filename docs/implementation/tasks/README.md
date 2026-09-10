@@ -19,7 +19,8 @@
 
 当前公共工具修复事实：
 
-- [Structured pair placement validator 修复](project/performance-structured-placement-validator-2026-09.md)。
+- [Structured pair placement validator 修复](project/performance-structured-placement-validator-2026-09.md)；
+- [性能计时前完成边界与执行拓扑预审](project/performance-preflight-topology-2026-09.md)。
 
 任务结束后只保留当前状态链仍引用、或被长期 architecture/developer/user 文档引用的记录。被替代的
 完整 Jira 式历史由 Git 保存，不用导航页和兼容跳转页维持第二套当前事实：

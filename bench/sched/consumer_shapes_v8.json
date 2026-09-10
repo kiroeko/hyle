@@ -1,0 +1,22 @@
+{
+  "schema": "hyle.consumer-shapes/v1",
+  "module": "sched",
+  "round": "sched-v8-task-scope-distributed-completion",
+  "workloads": [
+    {
+      "id": "dynamic-task-scope",
+      "consumer": "inference request, model-load or rendering-frame helper owner",
+      "task": "Discover 32 Status-bearing helper tasks while processing one owner, stop admission, retain the first business failure, drain every helper and complete runtime cleanup before owner return.",
+      "lifecycle": "One persistent four-worker Scheduler serves 64 warmup owners per route, then nanobench repeats complete owners in paired rows in the same direct-source process. Each owner creates all helper coroutine frames, admits them dynamically, lets every helper yield once, validates every output, aggregates one failure in roughly one of sixteen owners, crosses Scheduler::drain after result visibility and tears down all ownership before the next owner.",
+      "normal_scale": {
+        "workers": 4,
+        "warmup_owners_per_route": 64,
+        "measured_unit": "one complete owner lifecycle",
+        "helpers_per_owner": 32,
+        "helper_completions_per_unit": 32
+      },
+      "semantic_equivalence": "The candidate uses TaskScope::add and the peer composes public SpinLock, CancelToken, spawn_task, a same-allocator PMR handle vector, every-handle join and first-error retention. Both call the public Scheduler::drain fence after result visibility, so Fiber finish hooks, coroutine/driver cleanup and stack return are charged before owner return. Both then destroy their retained owner records before returning.",
+      "negative_space": "This is not detached fire-and-forget, a fixed compile-time when_all pack, a bare WaitGroup counter, an admission-unaware handle vector, a worker-stack callback or an IO/backend latency benchmark. A result-visible-only boundary is explicitly excluded because it lets the manual peer defer runtime cleanup. Separate product processes are also excluded: the primary consumer links both public routes from the same HYLE source graph, and a cross-process pair introduced a first-process bias absent from that journey."
+    }
+  ]
+}
