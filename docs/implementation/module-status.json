@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
-      "summary": "sched v7 AUDITED：同合同终局 P1 在第 28 个 placement 样本复现最后 completion 发布后仍访问已被 owner 释放的 scope state；这是 S7-02 预声明生命周期 finding。性能未裁决，只允许把最终完成发布移到 wait_lock 保护的最后一次 state access，补确定性回归后签发新候选。"
+      "candidate": "f344f6c5d9faf2fa8e1259906ae00d4143548ef8",
+      "summary": "sched v7 CANDIDATE：TaskScope 当前末项 completion 在 wait_lock 内重验、发布并完成最后 state access，封住 close/join 的失唤醒和析构 UAF；确定性 publication 回归、shipping/instrumented Sched、1000 轮并发重复、header 与 shared instrumented 预检均通过。候选 f344f6c5/82811576 等待精确三平台、sanitizer、三交付、IO consumer、终局红队与一次 qualified P1。"
     },
     {
       "module": "io_core",

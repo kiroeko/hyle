@@ -288,3 +288,17 @@ notify/unlock 前不能返回；该确定性用例 100 轮通过。W1-WIN shippi
 214/214、public-header self-containment、closure checker、docs checker 与 `git diff --check` 均通过。这些只作
 新候选签发前检查；产品提交后仍须从 exact commit 完成卡片预声明的三平台、sanitizer、三交付、IO consumer、
 终局红队和一次 qualified P1。
+
+## 第四个 product candidate（`CANDIDATE`）
+
+- immutable product commit / tree：
+  `f344f6c5d9faf2fa8e1259906ae00d4143548ef8` /
+  `82811576ca8c4fbd0227423256f37996c42d6cfa`；产品、API 与测试语义再次固定；
+- 当前末项 completion 无论首次观察到 open 或 closed，都在 `wait_lock` 内重验 admitted/completed 后发布；
+  非末项的成功 completion 仍以一次 release CAS 作为最后 state access，普通 Scheduler 路径未改；
+- test-only hook 不进入安装头或 shipping binary；instrumented static/shared 均已证明该 seam 可链接执行；
+- `AUDITED -> CANDIDATE` 前态 registry snapshot：
+  `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-fourth-candidate.json`，
+  SHA-256 `A91A12842879A9F96B13AB4417ECF38CB9A19040C9C44199F06A47777507F41D`。
+
+下面只运行本卡已经声明且受这次 correctness 修正影响的精确候选验证；不得再改产品、合同、peer 或测试语义。
