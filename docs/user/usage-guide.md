@@ -71,10 +71,25 @@ TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相�
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有
 回答这些问题，请把它当作文档缺陷，不要从 benchmark 名称反推产品 API。
 
-JSON/schema、UUID、认证、路由和压缩等相邻能力不是因为“常见”就自动成为 HYLE 模块。当前 JSON
-路线是由消费方直接选择并链接 simdjson 等成熟库；FlatBuffers/Cap'n Proto 同样是消费方拥有版本与
-schema 的序列化路线，HYLE 目前没有 `serialize` factor，也不会通过薄包装假装已经集成。当前能力边界
-和已确认但尚未施工的缺口见[范围重定标扫描](../implementation/tasks/project/hyle-scope-capability-audit-2026-09.md)。
+相邻能力不是因为“常见”就自动成为 HYLE 模块，也不能用“用户自己处理”假装已有完整路线。当前选择是：
+
+| 任务 | 消费方路线 | HYLE 提供的组合边界 |
+|---|---|---|
+| JSON hot read / owning build-write | simdjson；需要完整 owning mutation/write 时选 Boost.JSON 等 | bytes、UTF、allocator、IO |
+| mmap/IPC schema | FlatBuffers 或 Cap'n Proto | mapping、buffer、file/stream；schema/version 仍归消费方 |
+| URL / UUID | Boost.URL / Boost.UUID | HTTP/Transfer 接收已经决定的 target/identity |
+| stable digest | OpenSSL EVP 的 SHA-2/3 或官方 BLAKE3 | `TransferVerifier` 注入；`hash_bytes` 不能持久化或上 wire |
+| gzip/zstd/Brotli/archive | zlib、Zstandard、Brotli、libarchive 等 | bounded input/output buffer 与 IO；codec 安全更新归消费方 |
+| Unicode normalization/casefold/grapheme | ICU4C 或 utf8proc | HYLE 保留 UTF validate/count/convert 快路径 |
+| 一般 local IPC | Boost.Interprocess；复杂消息 topology 用 ZeroMQ/nng | SharedMapping storage、LocalStream control；不冒充跨进程协议 |
+| regex / many-pattern scan | RE2 / Hyperscan | SIMD 只提供 literal/value search；pattern compiler 与 match policy 留给成熟 owner |
+| CLI / 配置 / 通用格式化 | CLI11/cxxopts、toml++/yaml-cpp、`std::format`/fmt | HYLE 只接已经决定的值；Error 的 formatter 是失败路径专用面 |
+| matrix/geometry / columnar data | Eigen/GLM、OpenVDB/Embree、Apache Arrow | Math/SIMD/Mem 提供原语与 backing；领域 schema/算法不下沉 |
+
+这些库当前并非 HYLE 自动下载或安装的产品依赖，消费方拥有版本、构建、schema、threading 与安全更新。
+认证、业务路由和 request schema 属应用；listener/router/request context/graceful drain 计划由尚未实现的
+`hyle-service` 消费库承载，所以今天不能把它算作已完成 server façade。当前能力边界与已确认但尚未施工
+的缺口见[能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)。
 
 ## 基本原则
 

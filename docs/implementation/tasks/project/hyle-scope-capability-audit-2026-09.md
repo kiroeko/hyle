@@ -1,5 +1,9 @@
 # HYLE 范围重定标与全组件能力扫描（2026-09-10）
 
+> 本页保存第一遍 factor 粒度扫描事实。当前能力总表和缺口数量已由后续
+> [能力族深度复审](hyle-capability-family-deep-audit-2026-09.md)取代；不要把本页末尾的六项顺序当作当前
+> backlog 或施工授权。
+
 > 终态：`PROJECT AUDIT: CLOSED`。本记录冻结新的产品准入边界，并对 Compute/Graph 之外 27 个已实现
 > factor 与 build/package 做一次只读能力扫描。它不修改
 > [`module-status.json`](../../module-status.json)，不授权产品施工，也不续签既有 correctness、性能或
@@ -61,7 +65,7 @@
 | `math` | 标量 checked sizing、整数/bit/浮点补位 | `NO_TRIGGER`；lane、tensor、quant/fused math 归 SIMD/Compute |
 | `time` | monotonic/realtime/profiling clock、deadline、Unix/native interchange | `WATCH`：paired monotonic/realtime correlation 仍只有有限 consumer 证据 |
 | `timer_queue` | caller-owned arbitrary/common-timeout queue，运行时 callback 由 Sched/IO 拥有 | `NO_TRIGGER` |
-| `platform` | CPU/cache/topology/frequency/NUMA/host-memory/process facts、VM/env/entropy/dynlib | `NO_TRIGGER`；managed subprocess 不是该 prime factor，见 G04 |
+| `platform` | CPU/cache/topology/frequency/NUMA/host-memory/process facts、VM/env/entropy/dynlib | `NO_TRIGGER`；managed subprocess 不是该 prime factor，见 G03 |
 | `platform_thread` | thread owner、name/affinity/priority/ISA permission、wait/Parker | `NO_TRIGGER` |
 | `platform_fs` | 同步 file/directory/link/lock/random-access/atomic filesystem mechanism | `NO_TRIGGER`；async/recursive stream 归 IO |
 
@@ -125,7 +129,7 @@ G03/G04 在登记新 component ID 前同样不能施工。
 | generation-safe slot map | 可由现有 container + owner generation 组合 | 两个独立 owner 的 create/get/erase/reuse/stale failure 与 storage-stability 合同 |
 | dynamic plugin unload | Util Registry 有意 startup/freeze；DynLib 只提供装载机制 | 两个 native plugin owner 的 library/object/callback quiescence、失败与 unload 旅程 |
 | paired host clock correlation | 直接读 realtime 或 owner calibration 可用 | 第二个 consumer/peer，加上 NTP jump、采样误差、重校准和跨进程边界 |
-| recursive watch 之上的 debounce/reload | G06 只产出事实 stream；内容 diff、证书/模型/shader 验证与发布是 policy | 仍归应用或 `hyle-service`，不因 G06 下沉 |
+| recursive watch 之上的 debounce/reload | G05 只产出事实 stream；内容 diff、证书/模型/shader 验证与发布是 policy | 仍归应用或 `hyle-service`，不因 G05 下沉 |
 | JSON/UUID/schema/auth/router | JSON `ROUTED` 到 simdjson 等；UUID/业务 schema/auth/router 由上层拥有 | 只有新的通用机制证据，不因名称常见而进入 HYLE |
 
 Compute 的 device/pinned/unified storage、量化 tensor/operator/fusion、GPU event，以及 Graph 的 DAG、动态

@@ -62,7 +62,7 @@ named shared storage 属于 Mem，原子 replace/同步文件机制属于 Platfo
 文件变化使用 parent/root 的原生 stream（Windows IOCP + `ReadDirectoryChangesW`、Linux inotify、macOS
 FSEvents），对外统一为 bounded borrowed batch。exact file 也观察 parent，才能跨 inode atomic replace；
 overflow 或粗粒度事件只承诺显式 rescan，不伪装成完整 event log。watcher 复用 Scheduler 的 owner、取消、
-deadline 和唤醒，不建立 polling loop 或永久私有线程。reload/验证/发布策略属于调用方或独立的
+deadline 和唤醒，不建立 polling loop 或永久私有线程。reload/验证/发布策略属于调用方或计划中的独立
 `hyle-service`，不能反向进入 IO factor。
 
 Linux 专属的 provided-buffer/multishot receive 经成功取得的 `IoUringExtension` 使用；portable

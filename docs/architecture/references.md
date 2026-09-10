@@ -62,16 +62,16 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **ggml** | 借（主力）| 当前中央 lock 固定 `v0.21.0`；HYLE 实际只构建私有 PIC 静态 CPU + 可选 CUDA 闭包，全部类型封在 `ggml_bridge`。其自有 threadpool 不可替换成 HYLE scheduler；按合批性选择 ggml 自有并行或 `n_threads=1`，阻塞提交走 HYLE blocking pool |
-| **kompute** | 参考（compute-06 Vulkan 后端骨架）| Vulkan compute 封装，**纯 Vulkan 零隐藏运行时**（无 std::thread/事件循环，唯一同步=可选 submit mutex + 每 Sequence 一个 vk::Fence），合"不引入第二调度器"铁律。抄其 Manager 初始化链 / Algorithm 的 SPIR-V→pipeline→descriptor / Tensor 的 memory-type 选择+staging 双缓冲+barrier 编排；**丢**阻塞 `waitForFences`（换非阻塞 `getFenceStatus` 轮询接 fiber，= Event::query 语义，fence=Vulkan Event 的 native handle）、shared_ptr 所有权、logger、OpBase 虚基类。详见 compute-design「compute-06 kompute 映射」节 |
+| **ggml** | Compute 需求/机制输入 | `compute` 当前为 `QUEUED`，旧 bridge 与 dependency lock 只作重设计输入，不是可选择的产品能力。未来可借其 CPU/backend/operator 核，但 HYLE 必须重新裁决 threadpool、allocator、device lifetime 与 source/static/shared 交付 |
+| **kompute** | Compute 参考 | Vulkan compute 的无隐藏 event-loop 形状可参考；`compute` 尚未开工时，不从旧 task 编号继承 backend、fence 或 ownership 决策 |
 | **vitamin-cuda** | **参考（compute 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英“beating cuBLAS”逐步优化 writeup（`posts/`）。它是 ggml 显存边界之外 HYLE 自造 kernel 的优化参考，不是 HYLE kernel 的性能证明。SGEMM 展示 naive → block tiling+共享内存 → 转置写 smem+float4 → swizzle → 合并写回 → double buffer 的阶梯；采用前仍须在 HYLE 的真实合同上复证 |
-| **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式；compute-05 显存归属边界（host 归调用方/device 归 ggml gallocr）的权威范本 |
+| **llama.cpp** | 参考 | 多变体 dispatch、CMake ISA 处理、探测器隔离和推理引擎工程范式；host/device 资源、backend 与 operator 形状只作未来 Compute 审计输入 |
 | **ds4** | 真实消费参考 | 紧凑 CPU/统一内存量化推理路径；用于发现行算子、内存、top-k 和数据布局需求，不自动作性能 peer |
 | **vLLM** | 真实消费参考 | runtime、CPU offload/custom-op、paged KV、sampling 与 serving 需求；GPU/Triton/tensor fusion 形状必须归到正确 owner |
 | **SGLang** | 真实消费参考 | serving/kernel registry、attention、MoE、sampling、speculative decoding 需求；用于发现语义族，不机械复制 Python/GPU API |
 | **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
-| **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
+| **oneDNN** | Compute 候选/参考 | Intel DL primitive、AMX/VNNI、runtime dispatch 与 JIT 的成熟来源；`compute` 重设计时再按具体 operator、artifact、threading 与 delivery 合同裁决是否借入，目前不是 HYLE 产品依赖 |
 | **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
 | **oneDAL** | **边界外**（深读校正）| 经典 ML（kmeans/PCA/knn/forest）是 L1/L2 应用层，非 infra 原语 |
 
@@ -79,8 +79,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **marl** | 参考（精读）| **最贴 HYLE 的 fiber + work-stealing 调度库**，第一参考 |
-| **tokio** | 参考 | work-stealing/LIFO slot/unpark 接力/per-core 队列的设计源;io-04 批量 submit 的 tick/park flush 节奏直接照搬 `tokio-uring` 前身 tokio runtime |
-| **tokio-uring** | 参考 | io_uring 运行时:submit/flush 模型(on_thread_park flush + SQ 满触发)、recv_from 的 `Box<msghdr>` 生命周期契约(io-04 udp 照搬)。读本地源码挖出 io P0 hang 真病根 |
+| **tokio** | 参考 | work-stealing、LIFO slot、unpark 接力、per-core queue，以及 IO submit/park 协作的成熟机制参考；不引入第二 runtime |
+| **tokio-uring** | 参考 | io_uring submit/flush 节奏和跨异步边界保持 kernel argument backing 的生命周期参考 |
 | **crossbeam-deque** | 参考(bench 对照)| Chase-Lev work-stealing deque(Rust)；work-stealing 同族的成熟对照（独立 cargo crate，gated 编译） |
 | **boost**(context) | **借（仅 3 汇编）** | **fcontext** 是 fiber 切换原语来源；`fcontext_t`/`transfer_t` 纯 POD 零依赖，只取 `jump/make/ontop` 三例程 .S/.asm（**本地 context 是空 submodule，须从上游拉**）+ 自写 ~10 行头，不要 config/封装层。boost.intrusive 仅参考 |
 | **seastar** | 参考 | per-core 局部性、reactor_backend completion 抽象;**不学** share-nothing 调度;**xcpu_freelist 评估后否决**(其 owner-local 非原子表依赖 share-nothing+线程钉死+池长于进程,HYLE 通用生命周期固定池给不出,且跨核 free 正确性已由地址路由原子 push 解决,见 mem-design) |
@@ -114,16 +114,25 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **wyhash** | **借（baseline long-input core）** | 17–128B 先走库内 inline multiply stream；其上默认进入 vendored wyhash baseline，达到平台实测 crossover 且 ISA 可用时再转宽 XXH3 |
 | **SipHash-2-4** | **按公开算法/known vectors 自实现** | 显式 `HardenedStringHash` 与 stateless keyed primitive；128-bit secret 必须由调用方安全注入，默认 fast process seed 不冒充 CSPRNG |
 
-### 格式与序列化（消费方路线；当前没有 HYLE serialize factor）
+### 相邻格式、标识、数据处理与 IPC（消费方路线）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **simdjson** | **ROUTED / 参考** | JSON 读写的成熟候选；当前不在 HYLE dependency lock、target 或安装闭包中。需要 JSON 的 service/engine 自己选择并链接，未来只有具名 adapter 价值才重新准入 |
+| **simdjson / Boost.JSON** | **ROUTED / 参考** | simdjson 承载 hot read/DOM；需要 owning mutation/write 时使用 Boost.JSON 等完整 JSON owner。它们当前不在 HYLE dependency lock、target 或安装闭包中；service/engine 自己选择并链接，只有具名 adapter 价值才重新准入 |
 | **flatbuffers** | **ROUTED / 参考** | mmap-friendly schema/serialization 候选；当前不是 HYLE vendored 依赖，权重或张量 schema 仍由 loader/engine 拥有 |
 | **capnproto** | **ROUTED / 参考** | 跨进程消息候选；当前不构建 `capnp` 或 RPC。若未来进程/IPC 旅程准入，先分别裁决 serialization core 与 runtime，而不是预先借入 |
+| **Boost.URL / Boost.UUID** | **ROUTED** | URL parse/resolve 与 UUID generate/format 的消费方路线；Transfer 内部窄 parser 和 HYLE random primitive 都不冒充完整公开产品 |
+| **OpenSSL EVP / BLAKE3** | **ROUTED** | stable/cryptographic digest 路线；`TransferVerifier` 接受 incremental adapter，Container `hash_bytes` 只作进程内 table hash |
+| **zlib / Zstandard / Brotli / libarchive** | **ROUTED** | HTTP/content、artifact 与 archive codec 由消费方拥有格式、limits、版本和安全更新；HYLE 提供 bounded buffer 与 IO，不再造薄 codec façade |
+| **ICU4C / utf8proc** | **ROUTED** | normalization、casefold 与 grapheme 路线；HYLE ContainerText 只拥有 byte/ASCII/UTF validation/count/conversion 快路径 |
+| **Boost.Interprocess / ZeroMQ** | **ROUTED / 参考** | 一般 local IPC 的 named sync/message/shared-memory 以及复杂消息 topology 路线；HYLE `SharedMapping` 只承诺 storage，scheduler-native zero-copy channel 仍需独立证据 |
+| **RE2 / Hyperscan** | **ROUTED** | 通用 linear-time regex 与大规则集 bulk scan 路线；HYLE SIMD 的 literal/value search 不复制 pattern compiler 或 automaton runtime |
+| **CLI11 / cxxopts / toml++ / yaml-cpp** | **ROUTED** | 命令行与配置格式由应用拥有 option/schema/default/reload；未来 Process 机制只消费已经决定的 argv/env |
+| **fmt / ICU** | **ROUTED** | 通用 formatting/localization 路线；HYLE Error 的 bounded/no-throw formatter 只服务失败路径成本与可用性 |
+| **Eigen / GLM / Apache Arrow** | **ROUTED / 参考** | matrix/geometry 与 columnar schema 路线；HYLE Math/SIMD/Mem 只提供可组合原语和 backing，不复制领域数据模型 |
 
-`ROUTED` 不表示 HYLE 已把这些库下载、编译或导出；它只说明 HYLE 不复制该成熟问题域。真正使用时由
-消费方拥有版本、构建和 schema，直到新的 closure card 证明一个 HYLE adapter 能提供 allocator、error、
-IO 或交付价值。
+`ROUTED` 不表示 HYLE 已把这些库下载、编译或导出；OpenSSL 只有在选择 IOTLS 时才由 HYLE package
+拥有，其它场景仍是消费方依赖。路线只说明 HYLE 不复制该成熟问题域。真正使用时由消费方拥有版本、
+构建和 schema，直到新的 closure card 证明一个 HYLE adapter 能提供 allocator、error、IO 或交付价值。
 
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
@@ -136,9 +145,9 @@ IO 或交付价值。
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **seastar**(reactor_backend) | 参考 | epoll/aio 也对上呈现 completion 语义的后端抽象范本;HTTP 栈是"自有运行时→自写 HTTP(Ragel parser)"的直接先例(io HTTP 定案参考) |
-| **liburing** | **参考(不链)** | io_uring 机制权威:barrier/SQE 布局/多 op(multishot accept/recv、provided buf_ring、ASYNC_CANCEL)。**HYLE 用裸 syscall 自写,不链 liburing**——精确复刻其 v2.15 fast-path barrier + buf_ring 协议(io-01/02/07 已落地) |
-| **tokio-uring** | 参考 | 见 sched/ 段:submit/flush 节奏 + msghdr 生命周期(io-04 udp) |
-| **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
+| **liburing** | **参考(不链)** | io_uring barrier、SQE 布局、multishot、provided buffers 与 async cancel 的机制参考；HYLE 的 Linux backend 直接使用 kernel ABI，不把 liburing 变成公开或链接依赖 |
+| **tokio-uring** | 参考 | submit/flush 节奏与 `msghdr` 等 kernel argument backing 的异步生命周期参考 |
+| **libevent** | 参考 | common-timeout 有序链、异步 DNS 与水位控制的 reactor 参考；HYLE 对外仍保持自己的 completion、Time 与 backpressure 合同 |
 | **nghttp2** | **借核(io HTTP/2)** | 中央 lock 固定 `v1.70.0` commit；只构建静态 libnghttp2 protocol core，借 HTTP/2 frame/HPACK/stream/flow-control，自写 allocator、caps 与 over-co_await transport，不取其 event loop/应用层 |
 
 ### graph/（Tier 6，编排 + 数据并行）
@@ -153,8 +162,9 @@ IO 或交付价值。
 
 - **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
 - **计算与 IO**：ggml + llama.cpp、ds4、vLLM、SGLang（推理需求/工程参考）、Cycles/OpenVDB/Kompute（渲染与资源形状）、oneDNN/oneMath（Intel CPU/数学后端参考）、Seastar/libuv/nginx（异步服务与 IO）。
-- **按真实消费者裁决**：simdjson/flatbuffers/capnproto 当前是消费方路线；tracy 与 nghttp2 是已经审查的
-  产品机制；oneTBB/taskflow、Eigen/OpenVDB 继续作设计/消费参考。oneDPL/oneDAL **边界外**（见下）。
+- **按真实消费者裁决**：本页 `ROUTED` 表中的格式、标识、codec、Unicode 与 IPC 库由消费方直接选择；
+  Tracy 与 nghttp2 是已经审查的产品机制；oneTBB/taskflow、Eigen/OpenVDB 继续作设计/消费参考。
+  oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 

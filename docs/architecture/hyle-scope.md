@@ -51,6 +51,9 @@ HYLE 关注四类可以重复利用的加速：
 case 数都不是完整度指标。完整判据与能力准入、已有能力反向审计规则见
 [基础库能力完整性决策](capability-completeness.md)。特别地，“已经有一个公开 API”不等于该能力完整；
 单向互操作、缺少正常关闭/销毁路径或只覆盖 benchmark 生命周期都必须标为 `PARTIAL`。
+当前已实现 factor 的能力族、公开头反向追溯、完整消费者纵切和具名生态路线见
+[能力族深度复审](../implementation/tasks/project/hyle-capability-family-deep-audit-2026-09.md)；它是版本化审计
+事实，不替代 `module-status.json` 的模块状态。
 
 ### 可执行的产品边界
 

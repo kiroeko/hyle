@@ -15,7 +15,7 @@ HYLE 是推理引擎、异构渲染/资源流送、批处理数值管线和低�
   且不得隐藏第二套线程、事件循环、allocator 或不必要拷贝；
 - 模型、协议业务规则和部署策略留给消费方。原子覆盖与复合旅程覆盖分别审计、分别做同层性能比较，
   不能把“零件存在”写成“用户功能已完成”。
-- 容易启动 Web/推理服务的 listener/router/middleware/schema/drain 产品面由独立消费库
+- 容易启动 Web/推理服务的 listener/router/middleware/schema/drain 产品面由计划中的独立消费库
   `hyle-service` 组合；HYLE 只下沉领域无关、生命周期完整的机制闭包，依赖永远从 service 指向 HYLE。
 
 - Core 只承载极小、稳定、跨模块必要的编译和布局 primitive；

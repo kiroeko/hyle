@@ -57,8 +57,8 @@ source/static/shared 交付本身不要求制造 FFI parity。
 |---|---|---|
 | core | 编译器合同、稳定的编译期 cache-layout、极小的无所有权 primitive、产品身份 | 模型常量、token/layer 元数据、为单个 kernel 定制的公共入口 |
 | error | 统一 `Status/Result`、context、OS/backend 错误映射 | 模型格式错误分类、对用户的恢复与重试策略 |
-| platform | CPU/ISA/topology、线程亲和、NUMA、VM、mapped file、动态库和 OS 机制 | 用哪些核、如何放权重/KV、模型级 offload 策略 |
-| mem | host allocator/resource、arena/pool、对齐、大页、NUMA placement 机制 | KV cell/page 表、prefix cache、sequence copy/evict/defrag 策略 |
+| platform | CPU/ISA/topology、线程亲和、NUMA、VM、动态库和 OS 机制 | 用哪些核、如何放权重/KV、模型级 offload 策略 |
+| mem | host allocator/resource、arena/pool、对齐、大页、file/shared mapping 与 NUMA placement 机制 | KV cell/page 表、prefix cache、sequence copy/evict/defrag 策略 |
 | time | 单调时钟、deadline、timer queue | 请求 SLO、batch 等待窗口和超时策略 |
 | container/util | 通用连续、flat、queue、bitset、registry 等数据结构与工具 | 词表、token 表、模型 registry 语义和模型专用索引 |
 | sched | task/fiber/coroutine、waker、取消、work stealing、blocking handoff | continuous batching、admission、优先级、公平与多模型仲裁策略 |

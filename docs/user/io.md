@@ -112,7 +112,7 @@ offset/POD，不能保存本进程裸指针。详见 [Mem 指南](mem.md)。
 
 证书、配置、model sidecar 或 shader 由另一个进程以 write/rename/atomic replace 发布时，使用
 `FileWatcher`；不要轮询 mtime，也不要依赖“一次 write 必有一个 event”。watcher 只提供通用、
-non-recursive 的变化流，解析证书、验证配置以及发布新对象仍由调用方或 `hyle-service` 拥有：
+non-recursive 的变化流，解析证书、验证配置以及发布新对象仍由调用方或计划中的 `hyle-service` 拥有：
 
 ```cpp
 #include <hyle/io/watch.h>
@@ -205,6 +205,12 @@ SNI 与证书 DNS/IP identity 校验。自签测试或明确的机会式加密�
 `TlsClientOptions::certificate_chain_file/private_key_file`，只给其中一项会在
 factory 返回 `InvalidArgument`。路径只在 factory 调用期间借用，provider/config
 与编码后的通用 ALPN list 由 `TlsContext` 持有。
+
+当前 context 只能加载未加密的 PEM private-key file；没有 password/callback，也没有公开 provider native
+handle 可安全绕行。需要 encrypted key 的部署当前应由外部 TLS terminator 承担，或等待已登记的 IOTLS
+能力 trigger，不能把加载失败误诊为证书路径问题。自定义 cipher suite、内存证书和热 reload 同样不是
+当前合同；安全默认以外的 provider policy 见
+[观察清单](../architecture/inference-engine-capability-watchlist.md)。
 
 每条 stream 在构造时从 context 的 `connection_allocator` 取得一个可复用的 16 KiB
 pump buffer；默认使用 `mem::system_allocator()`，record 热路不会反复分配。显式注入
@@ -394,6 +400,10 @@ if (!report.published() && report.checkpoint.resumable()) {
 }
 ```
 
+这里的 `sha256_verifier` 是消费方拥有的 incremental adapter 示例，不是遗漏 include 的 HYLE 类型。可用
+OpenSSL EVP SHA-2/3 或官方 BLAKE3 实现 `reset/update/finish`；不要用 Container 的 `hash_bytes` 代替，
+后者只承诺进程内 hash-table 使用，不稳定、也不是 cryptographic digest。
+
 本地文件用 `TransferPlan::local`，HTTP 与 HTTPS 用
 `TransferPlan::http`。factory 在返回前复制 source、URL、destination 和 options；
 factory 的 allocator 为 plan、checkpoint 和 kept-path value 提供存储，必须比这些值活得更久；
@@ -443,6 +453,12 @@ identity encoding；`max_bytes` 计算最终制品总量而非“本次剩余量
 同步运行在 owner fiber，不得重入同一 transfer；它们返回非 OK `Status` 就按普通失败
 策略停止。commit 在 atomic replace 开始后不可取消，避免出现调用方无法判断目标名字
 指向哪一版的状态。
+
+Transfer 内部 parser 只覆盖这条 HTTP(S) 下载路线，不是公共 URL 产品。其它 URL parse/resolve 用
+Boost.URL 等成熟库；gzip/zstd/Brotli 或 archive 由对应 codec/libarchive 在上层组合。HTTP multipart、
+router/middleware/request context 和 graceful listener drain 计划由尚未实现的 `hyle-service` 或其它完整
+server framework 承载，不能要求 handler 手写无界 multipart parser，也不能把设计中的 service owner
+算成今天已经交付的能力。
 
 ## 6. DNS、signal 与 Linux 专属快腿
 

@@ -100,8 +100,9 @@ HYLE 的公开能力至少从以下真实产品纵切持续取样，任何一个
 
 裁决至少比较跨纵切复用度、重复 glue 的错误风险、HYLE 能带来的集成/性能收益、成熟实现质量、平台
 语义可移植性以及长期安全和升级成本。UUID、JSON、Base64、摘要算法或命令行 option 等名称本身不是
-HYLE 准入理由；例如 JSON 可以完整借给 simdjson，UUID 可以继续由随机原子与消费方选定的成熟格式库
-承载。反过来，若多个服务都重复实现 child spawn、stdio、异步 wait、cancel/timeout、owned process-tree
+HYLE 准入理由；例如 JSON hot read 可以直接走 simdjson，owning build/write 可走 Boost.JSON 等完整
+owner，UUID 可由消费方选择 Boost.UUID 等成熟格式库承载。反过来，若多个服务都重复实现 child spawn、
+stdio、异步 wait、cancel/timeout、owned process-tree
 termination 与可靠 reap，这个**生命周期组合**值得进入独立能力审计，但不能因此复制某个语言框架的
 `ProcessStartInfo` 全部选项。
 
@@ -112,10 +113,11 @@ termination 与可靠 reap，这个**生命周期组合**值得进入独立能�
 listener 数量、route/middleware、JSON schema、鉴权、证书/模型 reload 策略或部署拓扑，它已经越过基础
 库边界。
 
-面向服务的易用层由独立的 `hyle-service` 消费库承载：它单向依赖 HYLE 的 IO/Sched/Error/Obs 等机制，
+面向服务的易用层计划由独立的 `hyle-service` 消费库承载：它单向依赖 HYLE 的 IO/Sched/Error/Obs 等机制，
 可按产品需要直接借成熟 JSON、TLS 或配置依赖，并提供 listener、router、request context、streaming、
 graceful drain 等完整 server journey。它既是 HYLE 的真实纵切消费者，也不是 HYLE factor DAG 的反向
-依赖；不能为了让 `hyle-service` API 更短而把服务策略下沉到 HYLE。
+依赖；不能为了让 `hyle-service` API 更短而把服务策略下沉到 HYLE。该库尚未实现时，项目级 server
+纵切必须写 `BLOCKED_BY_OWNER(hyle-service)`，不能拿这项设计意图证明当前用户旅程已经完整。
 
 ### 先审能力族，再审函数
 
