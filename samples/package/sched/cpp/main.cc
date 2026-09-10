@@ -1,5 +1,6 @@
 #include <atomic>
 #include <chrono>
+#include <utility>
 
 #include <hyle/mem/allocator.h>
 #include <hyle/sched/blocking.h>
@@ -7,6 +8,7 @@
 #include <hyle/sched/join.h>
 #include <hyle/sched/scheduler.h>
 #include <hyle/sched/sync.h>
+#include <hyle/sched/task_scope.h>
 #include <hyle/sched/timer.h>
 
 namespace {
@@ -48,18 +50,26 @@ int main() {
   auto task_result = task.join();
   if (!task_result || *task_result != 42) return 4;
 
+  auto scope_result = hyle::sched::TaskScope::create(scheduler, allocator);
+  if (!scope_result) return 5;
+  auto scope = *std::move(scope_result);
+  auto scoped_task = scope.spawn(delayed_value(allocator, 84));
+  if (!scope.join().ok()) return 6;
+  auto scoped_result = scoped_task.join();
+  if (!scoped_result || *scoped_result != 84) return 7;
+
   hyle::sched::Channel<int> channel(allocator, 2);
-  if (!channel.try_send(7)) return 5;
+  if (!channel.try_send(7)) return 8;
   auto message = channel.try_recv();
-  if (!message || *message != 7) return 6;
+  if (!message || *message != 7) return 9;
 
   hyle::sched::BlockingPool blocking(allocator, 2);
   auto blocking_task = hyle::sched::spawn_blocking(
       blocking, allocator, []() noexcept { return 11; });
   auto blocking_result = blocking_task.join();
-  if (!blocking_result || *blocking_result != 11) return 7;
+  if (!blocking_result || *blocking_result != 11) return 10;
   blocking.shutdown();
 
   scheduler.shutdown();
-  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 8;
+  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 11;
 }

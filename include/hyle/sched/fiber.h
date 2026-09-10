@@ -27,6 +27,8 @@ namespace detail {
 struct FiberAccess;
 template <class T>
 struct TaskDriver;
+template <class T>
+struct ScopedTaskDriver;
 
 // One active cooperative-cancellation source on a sched execution context.
 // Fiber work stores the chain on the Fiber so migration is safe; worker-stack
@@ -158,6 +160,8 @@ class Fiber {
   friend struct detail::FiberAccess;
   template <class T>
   friend struct detail::TaskDriver;
+  template <class T>
+  friend struct detail::ScopedTaskDriver;
   friend bool detail::push_cancel_flag(detail::CancelFlagLink*,
                                        std::atomic<bool>*) noexcept;
   friend void detail::pop_cancel_flag(detail::CancelFlagLink*) noexcept;

@@ -18,13 +18,14 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 可挂起、无需结果的 fire-and-forget 工作 | `Scheduler::spawn_detached` | Scheduler 拥有 Fiber/stack；默认 stack tier |
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
 | 可挂起、有结果且必须留在一个 worker | `Task<T>` + `spawn_task_on` + `JoinHandle<T>` | 仅用于 per-worker ring/arena/backend owner；全部 wake 保持 pin |
+| 运行期不断发现 child，owner 必须统一 close/cancel/drain | `TaskScope` | 绑定一个 Scheduler；handle 可丢弃，scope 不会 detach child |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
 | 不占用 worker 地等待时间 | `hyle::sched::sleep_for/until` | 只能在 Scheduler fiber 内调用；使用 monotonic typed time |
 | 一个请求取消整棵子任务 | `CancelToken` / `CancelScope` | `is_cancel_requested()` 是检查点，不会强杀 stack |
 | 等待任务结果 | `JoinHandle::join` | worker 中挂起 fiber，裸线程上阻塞线程；drop 等于 detach |
-| 静态或动态 fan-out | `when_all` / `when_any` | span 版本不分配；`when_any` 不自动处理 loser |
+| 已经拥有固定 membership 的 fan-out | `when_all` / `when_any` | span 版本不分配；`when_any` 不自动处理 loser |
 | 一次性等待 N 个完成 | `Latch` | 计数只减不增 |
 | 可增减的完成计数 | `WaitGroup` | 先 add 再发布任务，避免提前归零 |
 | 一批参与者反复会合 | `Barrier` | 可复用 phase；退出成员用 `arrive_and_drop` |
@@ -187,6 +188,45 @@ worker。
 detach。`when_any` 只返回 winner index，不会猜测 loser 应继续、取消还是复用。如果 loser 正在等待
 外部操作，应先通过该操作的 `CancelToken`/owner 撤销或完成它，再 `request_cancel()` 并 `join()`；只写
 task flag 后立刻销毁 operation state 是悬挂回调风险。
+
+## 运行期增长的 structured task owner
+
+当一个 request、模型加载或资源 frame 在运行时才发现 child 数量，而且 owner 退出前必须保证这些 child
+全部结束时，使用 `TaskScope`，不要把 `JoinHandle` 塞进共享 vector 再手写 close/cancel/error 竞态：
+
+```cpp
+#include "hyle/sched/task_scope.h"
+
+auto created = hyle::sched::TaskScope::create(scheduler, alloc);
+if (!created) return created.error();
+auto scope = *std::move(created);
+
+for (const auto& shard : request.shards()) {
+  // 不需要逐项结果时可以 detach handle；task 仍归 scope 所有。
+  auto child = scope.spawn(process_shard(alloc, shard)); // Task<Status>
+  child.detach();
+}
+
+return scope.join(); // 原子关闭 admission，等待全部 child，返回首个失败
+```
+
+`TaskScope` 在创建时绑定一个 Scheduler 和 allocator，之后 `spawn(Task<T>)` 不再重复接收 scheduler；因此
+child 不可能被意外提交到另一个 runtime。它支持并发 spawn，且每个调用与 `close()` 有唯一顺序：close
+之前成功接纳的任务一定被 drain，之后的调用得到可立即 join 的 `FailedPrecondition` handle。`join()` 会
+隐式 close；`cancel_and_join()` 是 close + cooperative cancellation + full drain。首错从任务完成顺序中
+选取，绝不为了尽快返回而遗弃后续任务。
+
+`Task<void>` 的 runtime/exception/cancel failure 与 `Task<Status>` 返回的第一个 non-OK Status 会成为
+scope 结果；其它 `Task<T>` 的业务值仍只在返回的 `JoinHandle<T>` 中。scope 不保存 handle 或任意 `T`，
+所以保留 handle 后可以先 `scope.join()`，再逐个无等待地读取结果。`request_cancel()` 只发布取消而不关闭
+admission；随后接纳的 child 会继承已经取消的 token。任务必须在循环边界检查 `is_cancel_requested()`，
+或进入支持 `CancelScope` 的 HYLE wait；没有安全的 stackful 强杀。
+
+Scheduler 与 allocator backing 必须活过 scope 及其所有 child。曾经接纳过任务的 scope 必须显式
+`join()`/`cancel_and_join()`；live child 或只等单个 handle 后直接析构 scope 都会 fail-fast。不要在 scope
+自己的 child 内 join 同一个 scope（它会等待自己）；由外层 owner 负责 close/join。多条外部线程或 Fiber
+可以同时等待同一个 scope，都会获得相同首错。对于调用前 membership 已固定、需要全部 typed 结果的集合，
+继续使用 `when_all`；只有计数、不拥有 task/error/cancel 的底层组合才使用 `WaitGroup`。
 
 ## 阻塞工作不是 Fiber 工作
 
