@@ -1,6 +1,6 @@
 # IO Watch v2：递归目录树变化流
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -172,3 +172,11 @@ default direct 路径没有复制 owner。
 本轮退回 `AUDITED`，将扫描改成所有被升级目录都恰好进入一次的收敛 worklist，并加入顺序反转回归后再
 签发新候选。首候选已经取得的三交付、三平台和 sanitizer 结果只作诊断，不得沿用为新候选 terminal
 PASS。
+
+纠正后的不可变产品候选为 `fa5718715aaf7a9d867e0ef9ce81f435b8f5b116`。每个 Linux native
+directory 在自己的 table node 中保存一个 pending-scan link；新 recursive directory 以及
+`direct -> recursive` 的唯一状态跃迁各入 FIFO 一次，故任意 target 顺序都收敛为 O(D) 枚举，没有第二份
+O(D) worklist allocation，也没有回扫造成的 O(D²)。顺序反转回归把 direct 子 root 放在父 tree 之前，并在
+create 前放入更深子目录；W1-WIN MSVC Release/WERROR 与 W1-WSL GCC 14 Release/WERROR 的 io_core / io_watch
+定向集合均 `15/15 PASS`。公开 API、非 Linux backend、direct-only 路线及常态 event cost 均未改变；新候选
+验证不得沿用首候选 receipt。

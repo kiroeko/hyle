@@ -40,7 +40,7 @@
 | container_concurrent | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_concurrent v2 CLOSED：并发表能力、三平台/三交付、文档、红队与约 134ms 同合同 membership 双顺序 PARITY、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
-| io_watch | AUDITED | — | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 AUDITED：首个候选被源码红队否决；Linux 混合 target 的扫描顺序可能让先出现的 direct 子 root 在被父 tree 升级后漏扫后代，须在既定 IOW-R03 内改为收敛 worklist 后再签新候选。 |
+| io_watch | CANDIDATE | — | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CANDIDATE：第二候选在既有三平台递归实现上，以无额外分配的 intrusive FIFO 修复 Linux 混合 target 的顺序相关漏扫；公开 API、direct 热路径和 O(D) 上界不变。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
