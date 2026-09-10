@@ -319,15 +319,9 @@
     },
     {
       "module": "io_watch",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-watch-v1-file-change-stream.md",
-      "candidate": "30e133dbcf37e806f9deb1b121cdf0ae559546f6",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
-        "material_margin_pct": 10
-      },
-      "summary": "io_watch v1 CLOSED：跨平台 bounded 文件变化流完成三平台正确性/sanitizer、公开 IO 三交付、易用性、红队和同合同 libuv P1；原预声明 10% 工程非劣门全过，严格 5% 附加诊断仅在 WSL exact-file 两格未决且无 LOSE。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md",
+      "summary": "io_watch v2 SCOPED：G05 递归目录树变化流已冻结 consumer、三平台机制边界、P0 成本目标与停止条件；等待 API、Linux O(D) watch set、重叠路由和 rescan 时序审计，尚未修改产品。"
     }
   ]
 }
