@@ -203,15 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
-      "candidate": "d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
-        "material_margin_pct": 5
-      },
-      "summary": "sched v9 CLOSED：TaskScope 对齐 single-owner lifecycle 并逐项回收 completion record；三平台正确性/交付、sanitizers、直接 IO consumer、红队与同合同 qualified P1 四格 PARITY/5% 非劣门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
+      "summary": "sched v10 SCOPED：G08 固定为 opt-in low/normal/high 非抢占 execution hint；先审 peer 与 admission/yield/wake/继承全路径，并以默认 all-normal 零额外 lane/metadata 和 5% 同合同非劣为硬边界。"
     },
     {
       "module": "io_core",
