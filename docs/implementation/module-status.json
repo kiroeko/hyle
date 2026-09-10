@@ -203,10 +203,15 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
       "candidate": "a9847b9cebe373fe9daae68ae8ae7ab152560616",
-      "summary": "sched v10 CANDIDATE：三档非抢占 execution priority 已覆盖全部 admission/yield/wake/pinned/TaskScope 路径；第二候选消除了 AppleClang worker-lane sizing 警告，默认布局与算法不变，等待剩余交付、sanitizer、红队与唯一正式 P1。"
+      "performance": {
+        "tier": "P1",
+        "evidence": "docs/implementation/tasks/sched/sched-v10-execution-priority.md",
+        "material_margin_pct": 5
+      },
+      "summary": "sched v10 CLOSED：三档非抢占 execution priority 覆盖 admission/yield/wake/pinned/TaskScope 全路径；三平台正确性/sanitizer/三交付、IO 直接消费者、易用性、红队和 W1-WIN 两条同合同产品路线的 5% P1 非劣门全部通过。"
     },
     {
       "module": "io_core",

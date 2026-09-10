@@ -1,6 +1,6 @@
 # Sched v10：三档非抢占 execution priority
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -221,3 +221,81 @@ normal-only loop、对象布局和 allocation 数不变。红队发现的唯一�
 至此 scope、architecture、correctness、delivery、usability/docs 与 red-team 六门均已完成。剩余唯一
 动作是对 immutable candidate 运行一次 `sched-p1-v2` 正式 P1；无论结果如何都不重复采样，若门失败则
 直接依据原始证据和已经冻结的源码成本账单裁决根因。
+
+## Qualified engineering P1
+
+合同是 [`sched-p1-v2`](../../../../bench/contracts/sched-p1-v2.json)，Marl 固定为
+`b8406ab0a82524170ead6dd6c371b579bbc28b3e`。双方使用四个独占 P-core worker、一个外部 caller、相同
+输入/计算/容量/完成边界；只有两个 `COMPARABLE + product` 行参与 5% 非劣门。typed structured 行明确
+具有不同 ownership，只作诊断。ratio 大于 1 表示 HYLE 占优：
+
+| workload / order | median ratio | 99.26% CI | exact / 5% NI |
+|---|---:|---:|---|
+| request fan-out，candidate first | 1.662540 | [1.569446, 1.749545] | WIN / PASS |
+| request fan-out，peer first | 1.646163 | [1.600032, 1.762377] | WIN / PASS |
+| completion wake，candidate first | 1.026570 | [1.009291, 1.057084] | INCONCLUSIVE / PASS |
+| completion wake，peer first | 1.028494 | [1.008014, 1.057683] | INCONCLUSIVE / PASS |
+
+completion-wake 的区间跨过 5% exact decision boundary，因此不宣称 WIN；两个顺序都通过 5% 非劣门。
+request fan-out 两个顺序均为 WIN。A/A、5%、10% 和 timer-floor 四项 control 全部 PASS。n=15 时一个
+产品非劣门仍为 `UNRESOLVED`，runner 按冻结的 `[15,31]` schedule 合法升级；n=31 后 qualification 与
+performance 均 `PASS`，没有第三轮、额外 workload 或看结果改实现。
+
+有效 bundle 位于
+`C:/public/project-hyle/_validation/sched-v10-execution-priority/p1-eng-evidence-a9847b9c`；contract hash
+`EEC258544865B5959DDCF449743CB173221434B41411647033109E7641801FF3`，manifest hash
+`33D391F6D5AC0C7EB3F968ADC90CAA8079AF6E089CCB178FCC03EFB250D1AA73`，summary hash
+`BF434DE04F56AEDD60BC3B2A7B23AAD77831CDA6E8D342439C1BC39439BE2283`。
+
+此前同一候选被误用 `--formal` 运行一次；其 control 和产品行都可读，但 W1-WIN runner profile 没有事先
+钉死 Formal compiler/linker binary hash，`build-contract` 按设计 FAIL，bundle 只能是 `DIAGNOSTIC`。该
+无效 bundle 保留在 `p1-evidence-a9847b9c`，manifest hash
+`7F2BE94FF8F132B4CD4CF30D7EDDF00EB47E85C8C8DD5821F9E0884000000CBE`。这是采样前即可从 machine
+role 与 profile 看出的 operator/contract mismatch，不是产品失败；后续 closure card 必须先核对 role 和
+`formal_toolchain`，再启动昂贵采样。
+
+## 七问终局与关闭
+
+1. **第三方路径**：本轮没有新增产品第三方依赖；Folly/oneTBB 只提供公开语义和源码形状，Marl 只作为
+   performance peer。Sched 既有 fcontext、Mem/mimalloc 传递闭包、锁定版本、许可证与 fallback 未改变。
+2. **功能完整**：固定三档、opt-in owner、admission/override、yield/timer/IO/foreign wake 保持、child/
+   TaskScope 继承、pinned 正交与当前档位查询全部闭合；deadline、抢占、tenant/share 和跨 runtime QoS 是
+   已具名应用策略，不伪装成遗漏 primitive。
+3. **内部复用**：复用已关闭的 Core/Error/Container-intrusive/Util-core/Time/Timer-queue/Mem/Platform、
+   现有 Fiber/Waker/IO completion spine 和 Container bounded queue；没有复制第二套 runtime、timer、
+   cancellation 或错误系统。
+4. **性能**：normal-only 的对象尺寸、allocation、queue 数和 worker lane scan 不变；priority selection 是
+   固定 O(1) probes，完整 drain 为 O(N)。源码/P0 先移除了 O(workers) 错误路线，唯一 qualified P1 的两个
+   产品行均通过 5% 非劣门。
+5. **交付边界**：没有历史 C header、伪 C ABI 或 Native FFI；公开面是惯用 C++23 enum/options/query。
+6. **构建交付**：三平台 Sched/header、source embedding、relocated static/shared、priority package probe
+   和直接 IO consumer 均通过，组件图和 target 传递依赖没有变化。
+7. **易用与文档**：默认 API 自然继承，显式 options 可覆盖；guide 说明非抢占、可能饥饿、跨 Scheduler/
+   BlockingPool 不继承、bulk 继承、normal-only 拒绝 low/high，以及硬隔离应使用独立 runtime。
+
+| Gate | Verdict |
+|---|---|
+| scope | PASS |
+| architecture | PASS |
+| correctness | PASS |
+| delivery | PASS |
+| usability_docs | PASS |
+| red_team | PASS |
+| engineering_performance | PASS / P1, 5% non-inferiority |
+
+- `CANDIDATE -> CLOSED` 前态 registry 快照：
+  `C:/public/project-hyle/_validation/sched-v10-execution-priority/transitions/module-status-before-closed.json`，
+  SHA-256 `8C3E1713DC0616C42231E0F075A0CEA77795412FEC88B084FD206A0EDB2AF589`；
+- LOC 绑定 exact candidate：全库代码 `537,933`，自实现不含测试 `94,503`，Sched 实现 `7,099`；
+  `python scripts/loc-report.py --module sched --commit a9847b9cebe373fe9daae68ae8ae7ab152560616 --self-check`
+  通过；
+- 已知限制：priority 是可能饿死 low 的非抢占 execution hint，不提供 deadline/fair-share/tenant policy，
+  也不跨 Scheduler 或 BlockingPool 传播；P1 只裁决冻结的四 worker Windows consumer，不宣称所有机器和
+  粒度的绝对 SOTA；
+- reopen triggers：真实 consumer 证明缺失常用 execution-priority 语义；可复现 correctness/lifetime/
+  progress 缺陷；公开 API、算法、常态成本、依赖或交付改变；合格同合同证据证明 material regression。
+  换序/地址噪声、历史 TODO、精确胜负未决或“再看一次”都不构成 trigger；
+- 最终裁决：七门全部通过，`sched` v10 为 **`CLOSED`**。性能先由真实 consumer/peer 源码和成本结构裁决，
+  P1 只量化剩余同合同风险，没有反向塑造 API、layout 或常态 metadata。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
