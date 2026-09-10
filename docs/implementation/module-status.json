@@ -215,14 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md",
-      "candidate": "03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md"
-      },
-      "summary": "io_core v3 CLOSED：Win32 subtree 参数只沿既有 IOCP submit/completion spine 原样透传；三平台、sanitizer、三交付、红队与零普通路径附加成本 P0 全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-core-v4-file-region-streaming.md",
+      "summary": "io_core v4 SCOPED：G06 只处理 borrowed File 的显式区域到 TcpStream 的异步 progress/cancel/teardown、三平台 native fast path 与有界 fallback；先做源码成本审计，不以 benchmark 决定 API。"
     },
     {
       "module": "io_tls",
@@ -237,15 +232,9 @@
     },
     {
       "module": "io_http",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-http-v2-duplex-progress.md",
-      "candidate": "18bf62f81a91975e0776439d88fca3891f10e560",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-io.md",
-        "material_margin_pct": 5
-      },
-      "summary": "io_http v2 CLOSED：双向 progress 组合修复通过三平台、exact sanitizer、三交付、易用性和红队；唯一 HTTP/1 P1 为 1 KiB 双顺序 PARITY、64 KiB 双顺序 WIN，固定 5% 非劣门全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-http-v3-file-body.md",
+      "summary": "io_http v3 SCOPED：G06 组合 fixed-length file-region response，plain TCP 复用 io_core route、TLS 使用有界同语义 fallback；HEAD/status/keep-alive 与失败完成边界必须先冻结。"
     },
     {
       "module": "io_http2",
