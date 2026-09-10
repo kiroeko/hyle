@@ -203,9 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v8-task-scope-distributed-completion.md",
-      "summary": "sched v8 SCOPED：v7 性能 blocker 的唯一恢复条件已由 3ef5eed9 的分散 completion-record 机制决策满足；本轮只允许替换 TaskScope 内部 accounting，不改变普通 task 路线、G08 或性能合同。"
+      "summary": "sched v8 AUDITED：逐 child、driver 同分配的 completion record 与 publisher/scope 双引用已冻结；有限 S8-01..S8-05 只替换 TaskScope accounting，普通 task、G08、依赖图和性能合同不变。"
     },
     {
       "module": "io_core",

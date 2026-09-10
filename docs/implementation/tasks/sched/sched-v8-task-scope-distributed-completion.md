@@ -1,6 +1,6 @@
 # Sched v8：TaskScope 分散完成记录
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -51,5 +51,58 @@
    小记录。`remaining()` 若保留须诚实标为 O(N) snapshot，不能暗藏共享完成写来维持旧点复杂度。
 7. public API 与 v7 的自然任务形状不因 P1 改名或增加 `fast/light` 变体；性能成立依赖由实现承担。
 
-下一步仅进行一次实现审计，冻结有限 `FIX` ledger 和 record/cell 生命周期后进入 `AUDITED`；SCOPED 阶段
-不得写产品代码。
+SCOPED 阶段没有写产品代码；以下审计冻结实现范围后才进入 `AUDITED`。
+
+## 能力与机制审计（`AUDITED`）
+
+peer snapshot 已固定为 Folly `65749da4` 的 `coro/detail/Barrier.h`、oneTBB `e00c68dc` 的
+`detail/_task.h::wait_context` 与 Tokio `060cc4e4` 的 `task/join_set.rs` + `util/idle_notified_set.rs`。前两者
+都让每个 completion RMW 一个 owner-wide count；Tokio 则保留逐 task entry，让完成通知写该 entry。HYLE
+不需要 Tokio 的 unordered result queue、task ID、abort handle 或第二 runtime，只借其“动态 owner 可以用
+O(N) retained entry 换掉中央完成写争用”的机制边界。
+
+现有 HYLE `Event` 已提供 manual-reset、多个 fiber/thread waiter 与 wake-before-wait 正确性；`JoinState`
+已证明 publisher-side reference 可以保护 notification 尾部。故 record 不再发明 wait primitive：每个
+scoped driver cell 内嵌 `TaskScopeCompletion`（intrusive next、manual Event、publisher/scope 两引用、dispose
+seam），scope close 后按 admission 顺序等待这些稳定 record。运行期 non-OK 先在 scope 短锁中执行
+`Status::Update`，再 signal 自己的 record；成功路径完全不写 scope state。
+
+资源准备移到 admission 线性化之前：driver cell 和 Fiber stack 无法准备时，`add` 直接返回 typed error、
+`spawn` 返回 ready failed handle，当前 task ownership 未转移；调用者仍须 drain 更早成功接纳的 child。
+record 链入短 `SpinLock` 临界区是唯一 admission/close 顺序点，链入后才由 Scheduler 接管；链入后的 queue
+full/shutdown 与运行期错误由 scope/handle 聚合。这避免为了兼容 v7 的“先 admission 再分配”时序而新增
+in-flight admission counter，也不在 allocator/stack acquisition 期间持锁。
+
+### 有限改动集
+
+| ID | 已证实问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `S8-01` | 成功 child 争用 owner-wide completion line | 以 driver 同分配 `TaskScopeCompletion` 和稳定 intrusive record list 取代 admitted/completed counters | 产品路径无第二 allocation；成功 publish 只触碰自己的 record |
+| `S8-02` | waiter 可在 `Event::signal()` 尾部前 teardown | record 初始 publisher ref，admission 增加 scope ref；signal 后 publisher 才 release，scope teardown 只 release 自己引用 | 确定性 final-publisher pause 下 join/destruct 安全；ASan/TSan |
+| `S8-03` | close/admission/list 稳定性 | driver/stack 先准备；一个 scope SpinLock 原子完成 closed check + link；close 持同一锁 | concurrent add/spawn-vs-close、OOM、queue full、recursive add |
+| `S8-04` | 旧计数 API/文档成本不真实 | `remaining()` 保留为 O(N) snapshot；guide/architecture 说明 record retention、同步 rejection 和 teardown | 公开 API 不增 benchmark 变体；header/guide/三交付 |
+| `S8-05` | v7 P1 未过门 | 沿用同一 qualified contract/peer/5% threshold，只更新 candidate provenance | 一次 qualified P1 全 required strata NI PASS，否则 BLOCKED |
+
+### API / usability freeze
+
+公开方法名、参数和返回类型不变。`add` 的成功仍只表示 scope 已接管 task；资源准备、invalid/closed 属于
+未接管的同步失败，queue admission/运行期失败属于 join 的聚合失败。`spawn` 继续把 typed value 与逐 child
+cancel 放在 `JoinHandle<T>`；scope 不复制任意 `T`。`join/cancel_and_join` 支持多个 OS-thread/Fiber waiter，
+都等待 driver cleanup 后的 record terminal；`remaining()` 只用于控制面观测，是 O(N) 瞬时快照，不应放在
+热循环。每个 child 增加的是同一 driver allocation 内的一份 record 并保留到 scope teardown；普通 task、
+没有 TaskScope 的 Scheduler 和 queue 不支付任何成本。
+
+### 七问预裁决
+
+1. 第三方只作设计证据；运行时依赖仍只有既有 fcontext，版本/许可证/构建不变。
+2. G02 能力与 v7 public journey 不缩减；变化只是内部 accounting 和更自然的 ownership-transfer 错误边界。
+3. 复用 Error Status、Mem AllocatorRef、Sched Event/SpinLock/CancelToken/Fiber/JoinState，不复制容器或 wait。
+4. admission/completion 每 child O(1)，drain/destruction O(N)，无共享成功 completion RMW；P1 不预判结果。
+5. 仍仅 C++ source/static/shared，没有 C/Native FFI 或新 ABI 面。
+6. source/header 仍属于现有 `sched` target，中央依赖与 package component 不变。
+7. 调用形状不变；guide 将明确同步 rejection 后也要 drain、record retention、O(N) remaining 和 child 内
+   不得 join 自身 scope。
+
+红队预审否决了固定 per-worker cache-line 数组（每 request O(workers) metadata）、close 后 polling（破坏
+fiber/thread blocking）以及重新使用 JoinState（恢复 v7 已删除的额外 allocation/result state）。有限
+`S8-01..S8-05` 已冻结，下一步只实现该集合。
