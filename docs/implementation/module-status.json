@@ -226,10 +226,14 @@
     },
     {
       "module": "io_tls",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md",
       "candidate": "4bd86adf0b4027414ebe5cb576b217a5e87c2170",
-      "summary": "io_tls v3 CANDIDATE：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、OpenSSL 3.0 构建合同与三种 TLS-on C++ 交付已固定在 4bd86adf；后续只补候选绑定的平台、sanitizer、consumer、红队和 terminal 证据。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-tls-v3-credential-sources.md"
+      },
+      "summary": "io_tls v3 CLOSED：file/borrowed PEM、encrypted-key borrowed password/FunctionRef callback、client/server identity 与 mTLS 固定在 4bd86adf；三平台、ASan/UBSan、直接消费者、TLS-on 三交付、TLS-off、红队与零连接热路附加成本 P0 全部通过。"
     },
     {
       "module": "io_http",

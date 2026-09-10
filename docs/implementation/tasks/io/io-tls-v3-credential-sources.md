@@ -224,3 +224,64 @@ immutable product commit 为 `4bd86adf0b4027414ebe5cb576b217a5e87c2170`，tree �
 结构停止变化；发现产品问题必须退回 `AUDITED`。`AUDITED -> CANDIDATE` 的 previous revision 是该产品
 提交自身。尚待候选绑定的 WSL ASan/UBSan、M1-MAC、直接 HTTP/HTTP2/Transfer consumer、组件合同复验、
 终局独立红队、LOC 与 terminal record；这些未运行项不提前写成 PASS。
+
+## 终局验证与裁决
+
+候选 `4bd86adf0b4027414ebe5cb576b217a5e87c2170` 的产品 tree 为
+`706e74449022ec825c7e5432cbbaf53815092112`。候选状态提交之后，
+`git diff 4bd86adf..HEAD -- include/hyle/io/tls.h src/io_tls cmake/HyleComponents.cmake
+cmake/HyleIoDependencies.cmake` 为空；后续验证没有反向修改 API、provider 算法、对象 layout 或普通数据路径。
+
+| 风险 / 候选绑定 receipt | 结果 |
+|---|---|
+| W1-WIN / MSVC 19.50 / Release shared | `io_tls` header + unit `2/2 PASS`；显式开启 TLS 与 HTTP/2 后，`io_tls`、`io_http`、`io_http2`、`io_transfer` 的 unit/header `9/9 PASS` |
+| W1-WSL / GCC 14.2 / OpenSSL 3.0.13 | Release shared header + unit `2/2 PASS`；独立 ASan 与 UBSan RelWithDebInfo 构建各 `2/2 PASS`，零 sanitizer report |
+| M1-MAC / MacBook Air `Mac16,12` / AppleClang 21 | 产品 candidate 的 Git archive SHA-256 为 `D4DEEB3FDCBA513084416485414B5E0DEFA1B0AB9F146FC285A625BDB25B077E`；远端核对同 SHA 后，OpenSSL 3.6.1 header + unit `2/2 PASS` |
+| source / shared / static delivery | W1-WIN TLS-on source embedding、relocated shared SDK、relocated static SDK consumer 全部 `PASS`；static config 生成 `OpenSSL|3.0` dependency spec |
+| feature / component contract | candidate 后组件合同 `PASS`；TLS-off exact IO factor 仍配置、构建和测试，且不探测/链接 OpenSSL；显式 TLS-on 缺 OpenSSL 3.0+ 会配置失败 |
+| shared provider boundary | `hyle_io_tls.dll` 导出表中 OpenSSL/SSL_CTX/X509/EVP/BIO 名称匹配数为 `0`；动态依赖 OpenSSL runtime，但公开头与 sample 的 provider type 匹配数为 `0` |
+| P0 成本结构 | source/password value 构造 O(1)、零分配；PEM 不复制，file path 仅在不能证明 NUL 结尾时做一次 O(path bytes) 临时复制；解析 O(input bytes)，连接 layout、pump 与 handshake/read/write/shutdown 路径相对 baseline 不变 |
+
+Mac 上 Homebrew OpenSSL 3.6.1 由 macOS 26 构建，而 HYLE source configure 保留 14.4 deployment target，
+linker 因此给出 dependency deployment warning；实际 macOS 26.6.2 运行通过。本项只签当前 M1-MAC 的
+source correctness/portability，不冒充 OpenSSL bottle 在 macOS 14.4 的二进制兼容证明，也不改变
+Windows 三交付结论。
+
+### Bounded red-team receipt
+
+- 全部 HYLE TLS 公开入口、tests、bench、sample 和直接 consumer 已反向扫描；旧 HYLE `*_file` 字段为零，
+  唯一文字命中是 Asio/OpenSSL peer 自己的 file API。file/PEM/mixed source、完整 chain、client/server
+  identity、mTLS、encrypted key 与 password callback 均有正常 journey，不存在 benchmark-only surface；
+- source、password 和 callback 只由 `make_client/make_server` 同步借用。callback adapter 是栈对象，
+  只传给一次 private-key parse，不调用 `SSL_CTX_set_default_passwd_cb*`；构造后销毁 context、执行 handshake
+  都不会重新调用 callback。错误文本不拼接 PEM/password/provider queue；callback 主动返回的 `Status`
+  按公开合同原样传播，由 callback owner 负责其消息内容；
+- BIO、X509、EVP_PKEY 使用唯一 RAII owner；成功安装由 `SSL_CTX` 增持，任意中途失败最终释放整个未发布
+  context。HYLE metadata/path allocation 使用 `nothrow` 并返回 `ResourceExhausted`；provider error queue 中
+  的 `ERR_R_MALLOC_FAILURE` 同样映射为 `ResourceExhausted`。没有采用进程全局且要求在 OpenSSL 首次使用前
+  安装的 allocator hook 来伪造局部 OOM；真实 malformed/password/config 失败矩阵与 ASan leak 检查覆盖清理；
+- empty、missing、malformed、truncated、embedded NUL、`INT_MAX` 外输入、65 张 identity chain、duplicate
+  CA、错误/缺失/过长密码、callback failure、忽略型配置和无效 allocator 均 typed fail。duplicate CA
+  等幂接受；没有密码的 encrypted key 使用拒绝 callback，不会退回 terminal prompt；
+- `io_tls -> util_core` 是公开头使用 `FunctionRef` 所需的真实边；OpenSSL 仍是 private provider，source、
+  static 与 shared 的 dependency/compile-definition/安装闭包一致。未发现复制 Error、Container、Mem、
+  Sched 或 IO Core 能力，也没有 C/Native FFI、稳定 C++ ABI 或兼容旧字段；
+- 本轮是冷配置能力，未运行 credential 纳秒 benchmark。没有拿 file I/O 与 memory parse、未加密与加密 key
+  或不同验证语义做苹果/橘子排名；已有 transport P1 不因未变数据路径重新运行或冒充本轮成绩。
+
+七门终局结论：scope、architecture、correctness、delivery、usability_docs、red_team 与
+engineering_performance 全部 `PASS`，`io_tls` v3 可以签发 `CLOSED`。当前公开限制是同步构造、借用输入、
+file/PEM 两种来源、identity chain 最多 64 张；credential watch/reload/atomic swap 属 `hyle-service`，
+DER/PKCS#12、provider/HSM、cipher profile 与证书选择策略仍无足够通用准入证据。
+
+只有以下新事实可以重开：可复现的 credential parse、identity/mTLS、秘密泄漏、交互 prompt、OOM/清理、
+callback lifetime 或 provider 错误；真实 consumer 证明当前 file/PEM/password 之外存在两个 owner 重复同一
+通用 TLS glue；公开 API、provider 算法、OpenSSL minimum、对象 layout、依赖或 source/static/shared 交付
+发生变化；或者 credential 改动进入连接热路径。未限定 benchmark 点值、应用 reload policy 或想恢复旧
+字段都不是 trigger。
+
+`python scripts/loc-report.py --module io_tls --commit
+4bd86adf0b4027414ebe5cb576b217a5e87c2170 --self-check --json` 为 `PASS`：全库 532,574 行、自实现不含
+测试 93,093 行、`io_tls` 实现 1,528 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
