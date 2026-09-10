@@ -1,6 +1,6 @@
 # IO HTTP v3：文件区域响应体
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -44,7 +44,52 @@
   keep-alive/close 的前提下组合 io_core transfer，则退回 `SCOPED` 或 `BLOCKED`；不得为 fast path 新建第二
   HTTP API 宇宙，也不得把应用静态文件策略下沉。
 
-## 审计待办
+## 能力、API 与状态机审计（`AUDITED`）
 
-进入 `AUDITED` 前必须冻结 file-region 形状、transport dispatch、HEAD/status/Content-Length 与 failure 后
-connection 状态，完成 capability map、公开面回映、依赖/交付审计和 P0 源码账单。
+| 能力族 | 当前公开面 | 完整目标 | 动作 |
+|---|---|---|---|
+| fixed bytes response | `send_response(head, span)` | 保持原形状和成本 | `KEEP` |
+| generated streaming body | `start_response` / `HttpBodyWriter` / `HttpBodySource` | 保持 chunked/fixed/close-delimited 合同 | `KEEP` |
+| opened file region response | 用户手写 source callback 与 offset | `send_response(head, file, region)` | `FIX` `G06-H01/H02` |
+| HEAD / bodyless status | writer 已有 suppressed state | file overload 必须复用相同状态机 | `KEEP + FIX` |
+| path/range/MIME/cache/conditional | 无 | service/router policy | `REJECT` |
+
+公开面回映覆盖 server read/continue/start/fixed/source/close、client request/response、`HttpTransport` TCP/TLS
+variant 与 `HttpBodyWriter` generation/busy/remaining/abandon。文件便利入口只增加一个现有名称的 overload：
+
+```cpp
+connection.send_response(head, file, FileRegion{offset, length}, options);
+```
+
+它先调用既有 `start_response(..., region.length)`，因此 request body retirement、header validation、HTTP/1.0/
+1.1 framing、keep-alive 与 allocator failure没有第二份实现。HEAD 与 304 发送声明长度但不读 file；204/205
+仍只接受零长度且不序列化 `Content-Length`。普通 fixed response：plain `TcpStream` 委托 io_core G06；TLS
+只分配一块 64 KiB scratch，逐块 positional read 后走现有 TLS body write。成功恰好把 writer remaining 归零
+并调用同一个 finish；partial、EOF、cancel、deadline、peer close 或 file error 都 abandon writer、令 connection
+不可复用，并返回 typed status，不尝试在已发 header 后换一套 response。
+
+## P0 时序与成本账单
+
+| 路线 | 既有成本 | 本轮新增成本 | 裁决 |
+|---|---|---|---|
+| HEAD/204/205/304 | build/write one response head | 一次 overload dispatch；零 file IO、零 scratch | O(headers)，不污染默认 fixed/span 路线 |
+| plain fixed file | response head + writer lifecycle | 一次 io_core Task；body 为 `TransmitFile/sendfile` chunk，零 payload userspace copy | O(headers + chunks)，无第二 HTTP parser/writer |
+| TLS fixed file | response head + TLS record pump | 一次 64 KiB scratch；每块一 file read + 现有 TLS write；无逐块 buffer allocation | O(n)，加密本就必须读取 plaintext；不得与 plain zero-copy 排名 |
+| failure | 已写出的 head/bytes 不可回滚 | 保留 lower progress 用于内部 state；writer abandonment 关闭复用 | O(progress)，不重试/不改 framing |
+
+nginx `5c812c034e6c` 与 Beast `cb94f33fcb13` 证明 plain file response 的 kernel path；SGLang
+`dcebe8c4733a` `FileResponse` 与 llama.cpp `e71b80510c84` static mount 证明 consumer task。Starlette/httplib
+同时拥有 router/path/MIME，因此只借任务，不把其服务策略下沉。TLS 没有等价 zero-copy，使用同一
+`OperationOptions` 贯穿 read/write；任何对 raw sendfile 与完整 HTTP/TLS façade 的排名都是苹果对橘子。
+
+## 冻结有限改动集
+
+| ID | 已证问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `G06-H01` | fixed/source 不能自然消费 open File | 一个 file-region overload、内部 transport/writer access，不复制 framing | overload/header/三交付 |
+| `G06-H02` | plain/TLS 路由、partial failure 未统一提交 | plain 委托 io_core；TLS bounded fallback；统一 remaining/abandon/finish | HEAD/status/EOF/peer close/reuse/TLS |
+| `G06-H03` | 用户不知道何时选 bytes/source/file | 更新 IO guide/architecture 与定向 tests | recipe、限制、无过时 owner 文案 |
+
+不允许加入 static-file server、path open、Range/MIME/ETag、client upload、HTTP/2 或 WebSocket。新增公开头只
+复用既有 `io_core` dependency；不增加 component edge、provider、开关或 binary。审计结论为 **PASS**，允许
+进入三项有限实现；correctness、交付、红队与候选性能尚未运行。

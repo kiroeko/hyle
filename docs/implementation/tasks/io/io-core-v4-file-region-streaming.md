@@ -1,6 +1,6 @@
 # IO Core v4：异步文件区域流送
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -45,7 +45,78 @@
   合同下提供一致 progress/cancel/teardown，则 `BLOCKED`；若 native 机制语义不等价，明确走 fallback，
   不降低公共合同或用 raw syscall 对完整 façade 做苹果对橘子排名。
 
-## 审计待办
+## 能力与形状审计（`AUDITED`）
 
-进入 `AUDITED` 前必须完成 capability-family map、全部现有公开入口回映、三 OS 时序/资源账单、peer
-源码锚点、自然 C++ 草图、依赖与三交付影响，并冻结有限 `KEEP/FIX/BORROW/DEFER/REJECT` ledger。
+| 能力族 | 层级 | 真实任务 / peer | 当前能力 | 裁决 |
+|---|---|---|---|---|
+| borrowed file region | 原子机制 | Seastar `make_file_data_source(file, offset, len)`；pack-file asset | `File::read_some_at`，调用者自己维护 progress | `FIX`：一个显式 value region，不接管 file |
+| file-to-TCP progress | 复合原子 | nginx `sendfile` chain；Boost.Beast Win32 file body | 只能手写 read/write loop | `FIX`：完整发送或保留 partial+typed terminal |
+| native fast path | backend 机制 | nginx Linux/Darwin；Beast Win32 `TransmitFile` | 无 | `BORROW` 机制与边界，不复制 peer runtime |
+| bounded fallback | backend 机制 | libuv 64 KiB emulation、TLS/不支持 native 的文件 | 用户自己分配和循环 | `FIX`：一次有界分配，逐块 positional read/write |
+| cancel/deadline/teardown | 公共合同 | 推理制品服务、渲染 asset stream | 两个原子分别有合同，组合易漏 | `KEEP + FIX`：复用一个 absolute budget，等待原 op retirement |
+| path/range/MIME/cache | 应用策略 | llama.cpp mount、SGLang `FileResponse` | 不属于 byte transfer | `REJECT`：留给 HTTP/service owner |
+
+全部现有公开面已反向追踪到 `File`、`TcpStream`、`OperationOptions`、`TransferResult`、完整 read/write helpers
+和 Linux expert extension。没有旧 file-region 入口可兼容，也不新增 whole-file convenience 或 native handle
+overload。自然 C++ 形状冻结为：
+
+```cpp
+struct FileRegion {
+  std::uint64_t offset = 0;
+  std::uint64_t length = 0;
+};
+
+sched::Task<TransferResult>
+send_file_region(mem::AllocatorRef, TcpStream&, File&, FileRegion,
+                 OperationOptions = {}) noexcept;
+```
+
+目标 stream 在 source file 之前，和 `write_all(allocator, stream, bytes)` 及 OS `sendfile(out, in, ...)`
+一致。`FileRegion` 按值进入 coroutine frame，调用者只需保持 `File`、`TcpStream` 活到 task 完成。两者必须
+有效、绑定同一 owner worker，且调用 task 的 fiber 必须在该 owner；范围须能由 native signed file offset
+及 `size_t` progress 表示。零长度仍校验 owner/对象后成功。区域短于文件以外时返回 `DataLoss`、
+`eof=true` 与已发送字节；任意错误保留已提交 progress，调用者可从 `offset + bytes` 显式恢复。
+
+### consumer 与 peer 源码锚点
+
+- llama.cpp `e71b80510c84` 的 `tools/server/server-http.cpp:335` 使用 static mount；SGLang
+  `dcebe8c4733a` 的 image/video/mesh endpoints 返回 `FileResponse`。这些证明已打开制品到 response 的任务，
+  但 path authorization、MIME 和 route 仍由服务层拥有；vLLM 未增加更低层 MUST，ds4 无独立形状。
+- nginx `5c812c034e6c` 的 `ngx_linux_sendfile_chain.c:177-291` 与
+  `ngx_darwin_sendfile_chain.c:135-185` 保留 partial，`EAGAIN` 后等可写事件，零进度解释为截断，并把单次
+  Linux 调用限制为 bounded chunk。该 source timeline 是 POSIX strong peer。
+- Boost `cb94f33fcb13` 的 Beast `file_body_win32.hpp:416-511` 把 file offset 写入 `OVERLAPPED`，每次
+  `TransmitFile` 限定到 serializer limit/`INT_MAX-1`，最终 completion 才推进 body position；这是 Win32
+  strong peer。
+- libuv `3e606bc30a84` 的 Unix `fs.c:1048-1155` 有 sendfile/fallback，但 `POST` 把 FS request 投到
+  `UV__WORK_FAST_IO`；Windows `fs.c:2488-2531` 更是 64 KiB `_read/_write` emulation。它不是 HYLE owner
+  fiber/nonblocking completion 的同合同性能 peer，只借 fallback 边界，禁止直接排名。
+- Seastar `78f64e2317b1` 的 `fstream.cc:209-218,343-348` 验证显式 offset/length 是自然 region 形状；它的
+  DMA input stream 生命周期不同，不作为 file-to-socket 性能 peer。
+
+## 三 OS 时序、资源与 P0 成本账单
+
+| 路线 | submit / wait / complete | allocation / copy / lock / wake | 复杂度与停止裁决 |
+|---|---|---|---|
+| Windows plain TCP | 每个至多 2 MiB region chunk 用 overlapped `TransmitFile`；IOCP completion 后推进 offset | 复用 Proactor 预分配 `IoOp` slab；零 payload copy、无新锁、每 chunk 至多一次 wake；bounded 档只用既有 timed slot | O(bytes/chunk)，取消走 `CancelIoEx(socket, ov)` 并等 terminal completion；支持 |
+| Linux plain TCP | 非阻塞 `sendfile`；有 progress 立即提交，`EAGAIN` 用同 ring `POLL_ADD(POLLOUT)`/epoll 后重试 | 零 payload copy；poll 用既有 ring/map admission，普通档不分配；每 2 MiB cooperative yield 防止垄断 worker | O(bytes/chunk)，无 busy poll；支持 |
+| macOS plain TCP | 非阻塞 Darwin `sendfile`，读取 `len` 中的 partial；`EAGAIN` 用 kqueue write filter 后重试 | 与 Linux 相同；无 payload copy；文件页由 kernel 路由 | O(bytes/chunk)，无 busy poll；支持 |
+| portable fallback | 一次分配 64 KiB scratch；每块 positional read，再把同一块完整写出 | O(1) bounded storage、每字节一次 userspace copy；无逐块 scratch 分配；file offload 沿既有 pool | O(n)，取消/deadline 在块边界检查且 socket wait 使用原 budget；支持 |
+
+native 不支持的已知 errno 才切 fallback；真实 file/socket 错误不伪装为“不支持”。direct/unbuffered file 若
+native 机制拒绝且 region 不满足 direct alignment，则 typed `Unimplemented/InvalidArgument`，不能偷偷改成
+buffered IO。一次 native success 或 poll completion都必须先核对 reported bytes 不超过请求。默认
+`File`/`TcpStream` layout 不变；新增 detail submit 只扩 backend seam，不给用户暴露 syscall。
+
+## 冻结有限改动集
+
+| ID | 已证问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `G06-C01` | 两个原子不能表达 region owner/progress | `FileRegion` + `send_file_region`，完整 validation/partial/EOF | zero/overflow/short file/wrong owner/peer close |
+| `G06-C02` | 无 OS fast path 和背压等待 | IOCP `TransmitFile`；POSIX `sendfile` + private writable wait；一次 scratch fallback | 无 busy loop、cancel/deadline retirement、native/fallback 差分 |
+| `G06-C03` | 新公共 journey 尚无交付与说明 | 定向 unit/header/source-static-shared、三平台/sanitizer、user/architecture 文档 | 预声明矩阵诚实裁决 |
+
+不允许第四个产品批次；不得加入 path API、MIME/Range、TLS、file cache、第二 event loop 或 benchmark-only
+knob。源码账单已经给出算法差异，在实现正确性稳定前不运行 P1；候选时仅当能构造完整同合同 peer 才运行
+一次。审计结论为 **PASS**，允许进入上述有限实现；全部 correctness/交付/性能结果仍未运行，不能提前写
+成通过。
