@@ -215,14 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md",
-      "candidate": "67177e41d2d34c415e6e99375cb59a499ddbbdb3",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/io/io-core-v2-file-watch-submission.md"
-      },
-      "summary": "io_core v2 CLOSED：Windows IOCP directory-change seam 在 67177e41 冻结；三平台 io_core、三 sanitizer、header、source/static/shared/relocation、红队与零常态附加成本 P0 全部通过。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md",
+      "summary": "io_core v3 SCOPED：G05 源码预审证明 Windows detail seam 把 subtree 固定为 false；本轮只审计并透传该原生提交语义，不改变公开 IO API、operation layout 或普通路径成本。"
     },
     {
       "module": "io_tls",
