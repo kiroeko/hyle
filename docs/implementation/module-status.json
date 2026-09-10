@@ -203,10 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
-      "candidate": "07934c25b2500fa0db9184d450a1d85846dd65e7",
-      "summary": "sched v7 第二候选：scope-owned add 不再制造无用 JoinState/JoinHandle，admission/completion 分离缓存线，scope cancellation token 可传给 IO；候选前 Windows 完整 Sched 与公开头门已通过，等待精确候选三平台、sanitizer、三交付、P1 与终局红队。"
+      "summary": "sched v7 AUDITED：第二产品候选已通过三平台正确性/sanitizer/三交付与 IO cancellation journey；首份 qualified P1 暴露旧手工 peer 没有承担 G02 的并发 admission/close 与可传递 group cancellation，故不能作为同合同性能门。产品保持 07934c25 不变，只允许纠正 peer 合同并执行一次终局 P1。"
     },
     {
       "module": "io_core",

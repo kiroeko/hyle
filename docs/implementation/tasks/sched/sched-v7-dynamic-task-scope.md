@@ -155,9 +155,10 @@ pre-admission rejection 后调用者必须先 drain 更早接纳的 child，任�
 | `S7-04` | 公开消费与交付缺证 | focused/header/source/static/shared、三平台、sanitizers、guide/architecture | 预声明矩阵全部诚实裁决 |
 | `S7-05` | 新抽象成本未知 | opt-in v7 P1：动态 Status helper fan-out 的完整 scope lifecycle 对 pre-v7 公共手工组合；双向顺序/placement | qualified 5% NI；无同合同则明确阻塞，不换轻语义 peer |
 | `S7-06` | 首候选强迫只需聚合的 helper 创建并立即 detach `JoinHandle`，且 admission/completion 争用一个计数 line、scope token 不能传给 cancellable IO | 增加 `add(Task<void/Status>)` scope-owned driver、拆分 admitted/completed cache line 与 `cancellation_token()`；保留 `spawn` 给 typed/per-child ownership | 无 unused JoinState/producer-worker line ping-pong；IO token 消费测试；同合同 P1 重新过 5% NI |
+| `S7-07` | 第二候选的首份 qualified P1 把完整 TaskScope 与不具备并发 admission/close、也不能向 IO 传递 group cancellation token 的固定 handle vector 标成同合同 | 产品代码不变；peer 只用 baseline 已有公开 SpinLock、CancelToken、spawn_task 与 PMR handle storage 补齐同一 owner 合同，保留相同 task/body/output/failure/drain | contract validator、A/A、5%/10% delta、双顺序/placement 和 5% NI；纠正后只运行一次终局 P1 |
 
 本表之后不加入 G08 priority、deadline、轻量 callback scope、DAG、IO/process/WebSocket 或普通 scheduler
-优化；出现问题只能在 `S7-01..S7-06` 内纠正，否则依法回退/阻塞。
+优化；出现问题只能在 `S7-01..S7-07` 内纠正，否则依法回退/阻塞。
 
 ### 七问与红队预裁决
 
@@ -227,3 +228,30 @@ SHA-256 `85BAE7921BA41E81B7966538BB6561CFEE2584AFE7638C07C13A87500BC19929`。
 
 下面只补精确候选的三平台 correctness/sanitizer、source/static/shared、受影响 IO cancellation journey、同合同
 P1 与终局红队证据；不得再次改变产品或测试语义。
+
+## 第二候选 P1 语义纠正（退回 `AUDITED`）
+
+精确候选已通过 W1-WIN/W1-WSL/M1-MAC 的完整 Sched correctness/header、Windows ASan、WSL
+ASan/UBSan/TSan、三平台 source/static/shared relocated consumer，以及把 `cancellation_token()` 传给
+`TcpStream::read_some` 后由 scope cancel 得到 typed `Cancelled` 并完整 join 的 IO journey。产品实现没有
+出现新的 correctness、delivery 或跨模块 finding。
+
+W1-WIN qualified engineering P1 bundle 位于
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\p1-engineering-evidence-second`。资格、artifact、
+build、A/A、5%/10% known-delta、timer-floor 与 placement 控制全部 `PASS`；31-run 四层 median advantage 为
+`0.96346`、`0.93417`、`0.92896`、`0.92425`，置信区间都跨过 5% 非劣边界，聚合门为
+`INCONCLUSIVE/UNRESOLVED`，不能签发性能 `PASS`。
+
+终局语义复核发现该合同仍不是 G02 的同合同对比：候选不可选择地拥有并发 add-vs-close 线性化与一个可传给
+IO/等待的 group cancellation source；旧 peer 只是单线程填充一个预留容量 handle vector，然后逐个 join，
+既没有 admission/close owner，也没有 group token。极短 helper 下观察到的共享 completion counter 与分散
+JoinState cache line 差异是真实成本，但它只能作为较弱语义路线的诊断，不能据此裁决完整 TaskScope。
+Folly `AsyncScope` 的成熟机制同样使用单个 atomic barrier；Seastar `gate` 的普通计数只因 reactor 单线程才
+无需原子，因而没有依据给每个 HYLE scope 增加常态分片 metadata。
+
+本轮据此只纠正证据：manual peer 必须用 baseline 已公开的 `SpinLock` 表达 concurrent admission/close、用
+`CancelToken` 表达可传递 group cancellation，并保留相同 Scheduler、allocator、task body、输出、失败与完整
+drain。产品候选仍固定为 `07934c25b2500fa0db9184d450a1d85846dd65e7`；纠正合同后只允许一次 qualified
+P1，不再扩样、不改门槛，也不为点值改变 TaskScope layout。退回前 registry snapshot 为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-second-p1-audit-return.json`，
+SHA-256 `AAD271AC0197E34AE7671C5A6206FFA00E8BF1EED1818397F39CB5750C75CE89`。
