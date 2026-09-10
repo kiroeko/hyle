@@ -15,8 +15,10 @@ int main() {
           return std::move(created).error();
         auto scope = *std::move(created);
         for (task_scope::Child &child : children) {
-          // The scope owns lifecycle/error/drain after this handle is dropped.
-          scope.spawn(task_scope::helper(allocator, &child)).detach();
+          const hyle::Status admitted =
+              scope.add(task_scope::helper(allocator, &child));
+          if (!admitted.ok())
+            return admitted;
         }
         return scope.join();
       });

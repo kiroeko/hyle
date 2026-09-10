@@ -91,8 +91,9 @@ owner；`when_all/when_any` 要求调用前已经持有固定 handle 集；`Join
 auto scope_result = hyle::sched::TaskScope::create(scheduler, allocator);
 HYLE_ASSIGN_OR_RETURN(auto scope, std::move(scope_result));
 
+HYLE_RETURN_IF_ERROR(scope.add(make_status_task(allocator)));
 auto value = scope.spawn(make_value_task(allocator));
-scope.spawn(make_status_task(allocator)).detach();
+auto cancellation = scope.cancellation_token(); // pass to cancellable IO
 HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 // 或 scope.cancel_and_join();             // close + cooperative cancel + drain
 ```
@@ -104,17 +105,22 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 - `spawn(Task<T>, stack_size=kDefaultStackSize) -> JoinHandle<T>`；不接收另一个 Scheduler。`void/Status`
   child 的失败由 scope 聚合，其它 `T` 只聚合 infrastructure failure，值仍只由返回的 handle 拥有；丢弃/
   detach handle 不影响 scope ownership；
+- `add(Task<void/Status>, stack_size=kDefaultStackSize) -> Status` 是无需独立 child result/cancel handle 时的默认
+  scope-owned 路线；它同步返回 admission/resource 错误，运行期错误由 `join` 聚合，不制造随后立即丢弃的
+  `JoinState/JoinHandle`；需要 typed value 或逐 child cancellation 时才使用 `spawn`；
 - `close()` 幂等且与 spawn 原子线性化；`join()` 隐式 close，`cancel_and_join()` 依次 close、发布 cooperative
   cancellation、drain。二者可由 OS thread 或本 Scheduler 的 Fiber 调用，允许多个 waiter 并返回同一首错；
 - `request_cancel()` 只发布 cancellation、不关闭准入；之后接纳的 child 立即继承已取消 token。查询面为
   `remaining()`、`is_closed()`、`is_cancel_requested()` 与 moved-from 检查用 `valid()`；
+- `cancellation_token()` 返回可共享的 token，让 child 把同一个 scope cancellation source 显式传给 cancellable
+  IO/等待；无效 scope 返回 invalid token，不新建 cancellation tree；
 - moved-from owner 仅可析构/赋值/查询；其它操作返回 typed `InvalidArgument` 或安全 no-op。曾接纳 child 的
   scope 在析构前必须完成 `join/cancel_and_join`；live child 或未 join 的已用 scope 析构 fail-fast。
 
 错误优先级固定为 invalid/moved-from scope → invalid Task/frame → unsafe stack size → closed/overflow admission
-→ join-state/driver/stack allocation → Scheduler closed/full admission → child completion。close 后的调用没有被
-接纳，错误只在其 `JoinHandle` 返回；try-admit 已成功后的资源或 Scheduler admission 失败既完成该 handle，
-也进入 scope 首错，然后将计数归零，不能让 join 挂起。
+→ join-state（仅 `spawn`）/driver/stack allocation → Scheduler closed/full admission → child completion。close 后
+的调用没有被接纳，`spawn` 错误由其 `JoinHandle`、`add` 错误由返回 Status 表达；try-admit 已成功后的资源或
+Scheduler admission 失败也进入 scope 首错并将计数归零，不能让 join 挂起。
 
 ### Internal mechanism freeze
 
@@ -124,6 +130,9 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 - scoped child 使用专用 `ScopedTaskDriver<T>`，与现有 `spawn_task_impl` 共享相同的用户 coroutine frame、
   `JoinState<T>`、一个 driver allocation 和 scheduler stack pool。driver 只多 raw scope state pointer；不增加
   wrapper coroutine/frame，也不修改普通 `TaskDriver`、`JoinState`、Fiber、Scheduler queue 或 wake path；
+- `add` 使用只拥有 coroutine/Fiber/scope pointer 的 scope-owned driver，直接把 void/Status completion 发布给
+  scope；它不分配 `JoinState`、不构造 `JoinHandle`、不安装逐 child cancel flag，仍复用同一 stack pool、
+  Scheduler admission、scope CancelToken 和 lifecycle 线性化点；
 - driver 执行期间把 scope `CancelToken` 作为嵌套 `CancelScope`，与每个 JoinHandle 的既有 cancel flag 组合；
   在发布 scope completion 之前销毁该临时 scope，保证 join 返回后 state/token 可安全销毁；
 - child 先完成自己的 `JoinState`，再递减 scope active count；因此 scope join 返回时所有保留的 handles 都已
@@ -138,9 +147,10 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
 | `S7-03` | void/Status 首错与 full drain 缺失 | completion 时只保存首个非 OK Status，全部 child 仍递减/drain | first-error、后续完成、detach/typed result |
 | `S7-04` | 公开消费与交付缺证 | focused/header/source/static/shared、三平台、sanitizers、guide/architecture | 预声明矩阵全部诚实裁决 |
 | `S7-05` | 新抽象成本未知 | opt-in v7 P1：动态 Status helper fan-out 的完整 scope lifecycle 对 pre-v7 公共手工组合；双向顺序/placement | qualified 5% NI；无同合同则明确阻塞，不换轻语义 peer |
+| `S7-06` | 首候选强迫只需聚合的 helper 创建并立即 detach `JoinHandle`，且 scope token 不能传给 cancellable IO | 增加 `add(Task<void/Status>)` scope-owned driver 与 `cancellation_token()`；保留 `spawn` 给 typed/per-child ownership | 无 unused JoinState；IO token 消费测试；同合同 P1 重新过 5% NI |
 
 本表之后不加入 G08 priority、deadline、轻量 callback scope、DAG、IO/process/WebSocket 或普通 scheduler
-优化；出现问题只能在 `S7-01..S7-05` 内纠正，否则依法回退/阻塞。
+优化；出现问题只能在 `S7-01..S7-06` 内纠正，否则依法回退/阻塞。
 
 ### 七问与红队预裁决
 
@@ -149,19 +159,20 @@ HYLE_RETURN_IF_ERROR(scope.join());       // closes admission, then drains
    上层 request policy 已分离。
 3. 内部复用：复用 Error、Mem/Mem-vm、CancelToken、ConditionVariable、Scheduler admission/stack pool 和
    JoinState；不重复容器、wake 或 cancellation tree。
-4. 性能：所有操作 O(1)，普通 task 零产品改动；scope task 每次一次 admission CAS、一次 completion
-   fetch-sub，失败/末项才进入控制锁。P1 只测完整同合同 episode。
+4. 性能：所有操作 O(1)，普通 task 零产品改动；scope child 每次一次 admission CAS、一次 completion
+   fetch-sub，失败/末项才进入控制锁；scope-only helper 不再支付 JoinState/JoinHandle。P1 只测完整同合同 episode。
 5. 交付：只承诺 C++ source/static/shared；模板 spawn 不增加 Native FFI/C ABI。
 6. 构建：新 source 加入既有 `sched` target，中央依赖图不变；新 public header 由 sched owner 自动安装并
    自包含测试。
-7. 易用：allocator/scheduler 在 create 时只写一次；spawn 返回熟悉的 JoinHandle；join 自动 close；guide
-   明确 detach、取消合作性、late spawn、错误聚合、析构和 owner lifetime 陷阱。
+7. 易用：allocator/scheduler 在 create 时只写一次；`add` 对应 fire-within-scope，`spawn` 返回熟悉的
+   JoinHandle，join 自动 close，token 可直接传给 IO；guide 明确取消合作性、late spawn、错误聚合、析构和
+   owner lifetime 陷阱。
 
 实现前红队没有发现需要扩大产品范围的 finding。高风险点已进入 S7-02/S7-03：last completion 与 waiter
 publication 的失唤醒、close/admit 半接纳、cancel token 在 join 后 UAF、失败路径漏减计数、scope error 早返、
 live-child 析构、普通 task metadata 污染。下一步只实施上述有限改动集。
 
-## Product candidate（`CANDIDATE`）
+## 首个 product candidate（已依法退回 `AUDITED`）
 
 - immutable product commit / tree：
   `35f318a3fc33393b144b6576e272788b3cc0a7d0` /
@@ -176,3 +187,15 @@ live-child 析构、普通 task metadata 污染。下一步只实施上述有限
 - `AUDITED -> CANDIDATE` 前态 registry snapshot：
   `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-candidate.json`，
   SHA-256 `CE085F878A9717264BAF3D79DA6224BEE05BB0742801F365145FA060049E0BB9`。
+
+精确候选随后完成 W1-WIN/W1-WSL/M1-MAC Sched correctness/header、source/static/shared relocated delivery、
+Windows ASan 以及 WSL ASan/UBSan/TSan，均通过。W1-WIN v1 仪器的 15-run 诊断样本中 A/A、5%/10%
+known-delta、timer-floor、placement 与 host/artifact identity 全部通过；但 `spawn(...).detach()` 候选在四个
+顺序/布局层的 median advantage 分别为 `0.8552`、`0.8434`、`0.8785`、`0.8573`，两个 primary 层明确
+`LOSE`。该 manifest 因错误使用 `--formal` 而缺少合同未声明的 formal toolchain pin，整体只作诊断，不能签
+P1 verdict；但跨层固定约 12%–16% 的损失足以构成产品 finding。代码归因显示只需 scope 聚合的 Status child
+仍为每个 helper 分配 `JoinState`、构造/释放 `JoinHandle` 并叠加 scope 计数，而 Folly AsyncScope 的正常
+形状是直接 `add` void work。故不放宽门槛、不重复采样，按方法从 `CANDIDATE` 退回 `AUDITED`，只实施
+`S7-06` 后签发新候选。退回前 registry snapshot 为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-audit-return.json`，
+SHA-256 `85BAE7921BA41E81B7966538BB6561CFEE2584AFE7638C07C13A87500BC19929`。

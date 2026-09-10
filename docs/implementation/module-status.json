@@ -203,10 +203,9 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v7-dynamic-task-scope.md",
-      "candidate": "35f318a3fc33393b144b6576e272788b3cc0a7d0",
-      "summary": "sched v7 CANDIDATE：动态 TaskScope 已冻结在 35f318a3/1bf7c2d2；W1-WIN 定向 21/21、完整 205/205 与逐头门通过，等待精确候选三平台、三交付、sanitizer、P0/P1 和终局红队。"
+      "summary": "sched v7 AUDITED：首个候选的三平台正确性/交付与 sanitizer 已通过，但同合同 P1 暴露仅需 scope 聚合的 Status helper 被迫创建后立即丢弃 JoinHandle，W1-WIN 四个顺序/布局层均低于旧手工组合；已依法退回并冻结 scope-owned add 与可传递 cancellation token 的一次有限纠正。"
     },
     {
       "module": "io_core",

@@ -15,7 +15,7 @@
         "helpers_per_owner": 32,
         "measured_helper_completions": 32768
       },
-      "semantic_equivalence": "The candidate uses TaskScope and immediately drops each JoinHandle. The pre-v7 migration baseline uses spawn_task, one same-allocator PMR vector of JoinHandle<Status>, joins every handle and preserves the first Status. Both use the same Task<Status> body, allocator, scheduler, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged.",
+      "semantic_equivalence": "The candidate uses TaskScope::add so scope-only Status helpers do not manufacture unused result handles. The pre-v7 migration baseline uses spawn_task, one same-allocator PMR vector of JoinHandle<Status>, joins every handle and preserves the first Status because that is the natural pre-v7 public route. Both use the same Task<Status> body, allocator, scheduler, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged.",
       "negative_space": "This is not detached fire-and-forget, a fixed compile-time when_all pack, a bare WaitGroup counter, a worker-stack callback, concurrent admission policy or an IO/backend latency benchmark."
     }
   ]

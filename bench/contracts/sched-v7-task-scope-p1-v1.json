@@ -2,7 +2,7 @@
   "schema": "hyle.perf.contract/v1",
   "id": "sched-v7-task-scope-p1-v1",
   "module": "sched",
-  "claim": "P1 engineering non-inferiority of TaskScope against the exact pre-v7 public manual ownership composition for dynamically discovered Status-bearing helper tasks",
+  "claim": "P1 engineering non-inferiority of TaskScope scope-owned add against the exact pre-v7 public manual ownership composition for dynamically discovered Status-bearing helper tasks",
   "candidate": {
     "target": "hyle_sched",
     "delivery_shape": "source",
@@ -58,10 +58,10 @@
       "consumer_key": "inference-rendering/sched/dynamic-structured-helper-owner",
       "provenance": {
         "path": "bench/sched/consumer_shapes_v7.json",
-        "sha256": "4b30798d8fbd681d739caea02ec8dda32fc44e5f1a30f712ed2337a539b76bfc"
+        "sha256": "b0384a55c505bd5af31fd85342c3ac81c738acb4ba399015786c33a0da260342"
       },
       "ownership_topology": {
-        "candidate": "Each owner creates one allocator-backed TaskScope, admits 32 Task<Status> helpers, drops their JoinHandles and closes/joins the scope; scope state owns admission, cancellation, first-error retention and complete drain",
+        "candidate": "Each owner creates one allocator-backed TaskScope, admits 32 scope-owned Task<Status> helpers through add and closes/joins the scope; no unused per-child result handle is created, while scope state owns admission, cancellation, first-error retention and complete drain",
         "peer": "Each owner creates one same-allocator PMR vector, admits the same 32 Task<Status> helpers through spawn_task, retains every JoinHandle<Status>, joins all handles and retains the first error",
         "equivalence": "Both routes use the same persistent four-worker Scheduler, allocator, Task<Status> body, cooperative yield, output slots, failure distribution and full-drain completion boundary; all per-owner ownership setup and teardown is charged"
       },
@@ -90,7 +90,7 @@
         "per-owner ownership-state teardown"
       ],
       "pair": {
-        "candidate": "HYLE TaskScope plus detached JoinHandles",
+        "candidate": "HYLE TaskScope scope-owned add",
         "peer": "HYLE v6 spawn_task plus same-allocator PMR JoinHandle vector plus explicit joins"
       },
       "practical_margin_percent": 5,
