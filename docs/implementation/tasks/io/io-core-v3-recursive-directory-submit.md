@@ -1,6 +1,6 @@
 # IO Core v3：Windows 递归目录提交语义
 
-<!-- MODULE CLOSURE RECORD: SCOPED -->
+<!-- MODULE CLOSURE RECORD: AUDITED -->
 
 ## Closure card
 
@@ -32,12 +32,46 @@
 - stop：上述有限 seam 及调用方不能完整表达两种语义，或 Windows 递归需要第二 runtime 时 `BLOCKED`；
   否则通过预声明门后恢复 `CLOSED`。
 
-## SCOPED 待审
+## 审计与有限改动集（`AUDITED`）
 
-1. 裸 `bool watch_subtree` 与 detail enum 二选一；公开 target 枚举不得泄漏进 `io_core`。
-2. true/false 必须共享相同 operation kind、filter、buffer lifetime、cancel 和 completion 路线。
-3. 在 `AUDITED` 冻结 API、有限 FIX 和成本账单前不改产品。
+Win32 合同与 libuv `3e606bc30a84` 的 Windows backend 均把递归性直接映射为
+`ReadDirectoryChangesW` 的 `bWatchSubtree` 参数；它不改变事件 buffer、one-shot rearm 或 completion
+机制。HYLE 当前 `proactor.cc` 已经拥有唯一 IOCP operation/slab/cancel 路线，差距只在把该参数硬编码为
+`FALSE`。故冻结最窄 detail API：
+
+```cpp
+bool submit_directory_changes(std::intptr_t directory, void* buffer,
+                              std::uint32_t length, bool watch_subtree,
+                              std::uint64_t user_data) noexcept;
+```
+
+裸 `bool` 在这里是 Win32 已定义的二值 syscall 语义，不是用户档位或可扩展 policy；引入 detail enum
+只会再造名字。`io_watch` 从 root 的 target 集合预计算一次值，rearm 不重复扫描 targets。
+
+| ID | 已证实问题 | 唯一允许改动 | 验收 |
+|---|---|---|---|
+| `IOCORE-R01` | subtree 被硬编码为 `FALSE` | detail declaration/definition 增加 `bool watch_subtree` 并原样透传 | false 不报告孙级；true 报告孙级；既有 completion/rearm/cancel |
+| `IOCORE-R02` | 唯一 consumer 尚不能传语义 | `io_watch` Windows awaitable 从 root 的预计算 bit 传参；迁移 direct tests | exact/direct 不变，recursive journey 后续由 G05 验证 |
+
+### P0 源码账单
+
+- 两档均为一个 slab acquire、一个 in-flight link、一个 `ReadDirectoryChangesW`、一个 terminal IOCP
+  completion；allocation/lock/wake/copy 数完全相同。
+- 只增加一个调用参数和 root 上由 G05 所有的预计算 bit；不增加 operation/Proactor layout、runtime branch、
+  syscall、线程或 map。Win32 内核是否遍历 subtree 是请求语义本身，不能与 direct-child 冒充同合同计时。
+- Linux/macOS 声明和 object 不含该方法；所有其他 IO submit 路径字节级不变。没有源码未决机制，因此 P1
+  `NOT_APPLICABLE`。
+
+### 七问
+
+1. 无产品第三方；Win32 与 libuv 仅作定义/成熟 peer 证据。
+2. 本轮完整表达 native direct/recursive 两档，不拥有 event 产品语义。
+3. 复用既有 Proactor slab、IOCP、cancel/completion；没有复制 runtime。
+4. P0 如上，时间复杂度及用户请求的 syscall 数不变。
+5. detail C++ seam，不建立 C/Native FFI。
+6. 仍随既有 io_core source/static/shared object 交付，无新 target/dependency/export macro。
+7. 普通用户不可见；参数名、注释和 true/false 直接测试防止误用。
 
 ## 验证与裁决
 
-尚未执行；`SCOPED` 阶段只允许只读审计，未运行项均为 `UNPROVEN`。
+尚未执行；产品只允许实施 `IOCORE-R01--R02`，未运行项均为 `UNPROVEN`。

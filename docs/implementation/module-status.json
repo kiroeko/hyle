@@ -215,9 +215,9 @@
     },
     {
       "module": "io_core",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md",
-      "summary": "io_core v3 SCOPED：G05 源码预审证明 Windows detail seam 把 subtree 固定为 false；本轮只审计并透传该原生提交语义，不改变公开 IO API、operation layout 或普通路径成本。"
+      "summary": "io_core v3 AUDITED：Win32/libuv 与 HYLE 源码账单把有限改动冻结为一个 subtree bool 的原样透传及唯一 io_watch consumer 迁移；普通 IO、operation layout 与非 Windows 成本不变。"
     },
     {
       "module": "io_tls",
