@@ -263,3 +263,18 @@ smoke 只证明 fixture 可执行，不形成性能结论。`AUDITED -> CANDIDAT
 `C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-third-candidate.json`，
 SHA-256 `A09AFFE2AE589D2B49FF664F508754003E94D406DD1871DCFEB0B78C4660B484`。终局只允许从该 evidence commit
 构建、链接不变的 `07934c25` 产品文件并运行一次 qualified P1；不能再次纠正 peer 或产品。
+
+终局 P1 没有产生性能 verdict：在 `placement-peer-first` 的第 28 个产品样本，candidate 命中
+`task_scope_complete` 的 `completed <= admitted` fatal assert。复现窗口是最后一个成功 completion 先用
+`fetch_add` 发布 predicate，外部 joiner 随即观察完成、返回并释放 state，而 completion 线程在发布后仍读取
+`lifecycle`/访问 `drained`；allocator 把同一地址交给下一个 owner 后，旧 completion 读到了新 lifecycle。
+这不是 benchmark 特例，而是任意“completion 与外部 join/destruct 并发”的真实 UAF，属于 SCOPED 时已经
+列明的 S7-02 state-lifetime 风险。
+
+因此候选再次退回 `AUDITED`，只允许一项 correctness 修正：非最后的成功 completion 以原子增量作为最后
+一次 state access；已经 close 的最后 completion 必须在 `wait_lock` 内重验 predicate、发布完成并 notify，
+unlock 后不再触碰 state；错误 completion 原本已持有同一锁，也改成 notify-before-unlock。补一条确定性阻塞
+final publisher 的回归 seam，再重跑受影响 correctness/sanitizer 和未得出 verdict 的 P1。退回前 registry
+snapshot 为
+`C:\public\project-hyle\_validation\sched-v7-dynamic-task-scope\transitions\module-status-before-final-p1-correctness-return.json`，
+SHA-256 `8090A43ED4B24C47D22FDD70D50C836EDB9399C2A7DC1146156945C3A8F03C82`。
