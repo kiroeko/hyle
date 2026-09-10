@@ -203,9 +203,10 @@
     },
     {
       "module": "sched",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/sched/sched-v9-task-scope-cost-audit.md",
-      "summary": "sched v9 AUDITED：peer/API 源码预审确认重复、并发 join 是无真实 consumer 或成熟 peer 依据的过重合同，并阻止 terminal owner 逐项回收 record；强制内联因 code-size 膨胀被拒绝。仅 S9-02 publisher-release 快观察与 S9-03 single-owner terminal join 获准实现。"
+      "candidate": "d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7",
+      "summary": "sched v9 CANDIDATE：TaskScope 已对齐 single-owner terminal lifecycle，join 逐项回收 completion record，并以既有 refcount 跳过已完成 Event；31 项 focused tests、codegen 和四格 bounded A/B preflight 通过，候选固定在 d32f4fc4。"
     },
     {
       "module": "io_core",

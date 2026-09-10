@@ -1,6 +1,6 @@
 # Sched v9：TaskScope 源码成本审计
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -46,7 +46,7 @@
 4. 先用源码回答“慢在哪里、换取了什么”；本卡在 `AUDITED` 前不写产品代码，在 `CANDIDATE` 前不启动
    qualified performance run。
 
-下一步仅执行静态成本与 codegen 审计，并据此冻结有限 `FIX/KEEP` 集。
+候选已经固定；下一步只执行本卡预声明的 candidate 验证，不再改变 API、算法、layout 或 workload。
 
 ## 静态成本与生成代码审计（`AUDITED`）
 
@@ -63,7 +63,7 @@ acquire/recycle、32 次 Scheduler admission、一次 cooperative yield/re-injec
 | admission lock | scope control lock + closed check + list link | manual admission lock + closed check | 同一用户任务的 O(1) control cost |
 | terminal publish | per-record Event signal；罕见失败再聚合首错 | JoinState result signal | 都是 per-child record，不存在 candidate 共享成功 completion line |
 | owner observation | 逐 record `Event::wait()` | 逐 handle `JoinState::take()` | 都是 O(N)，但 candidate 未利用 publisher 已释放这一可证状态 |
-| teardown | scope 遍历 32 records、同 owner sized-free | driver/JoinState 分布释放、handle buffer 回收 | 生命周期分布不同，但 candidate 没有更多 allocation 或渐近成本 |
+| teardown | terminal owner 观察后逐项 sized-free | driver/JoinState 分布释放、handle buffer 回收 | 都在 owner wait 中释放，不再延迟到 scope 析构 |
 
 MSVC 19.50 Release object 进一步把未决成本缩小到两项。公开 `TaskScope::add(Task<Status>)` 的正常路径
 先调用自身 wrapper，再调用同 TU 但未内联的 `task_scope_add<Status>`；manual route 每 child 只有一次
@@ -101,3 +101,19 @@ bounded interleaved A/B；若仍有 material signal，按卡停止，不继续�
 已 admission 的失败由 scope 在 full drain 后聚合。重复或并发 terminal join 返回
 `Status::FailedPrecondition`；concurrent admission/close/cancel 仍受支持。`remaining()` 仍是 O(N)
 control-plane snapshot。修正不增加 benchmark-only 入口或常态 metadata。
+
+## Candidate
+
+- product candidate：`d32f4fc465edc4b6b6a450b1cd14cdc08383f5a7`；
+- `S9-02` 复用已有 completion refcount 的 acquire observation，publisher 尚未释放时仍进入原 Event；
+- `S9-03` 在 admission/close 同一控制锁上 claim single-shot terminal owner，detach 稳定 record list，并在
+  观察每个 child 后立即释放 scope reference。重复或并发 terminal join 返回 `FailedPrecondition`；
+- TaskScope focused correctness/death suite 为 `31/31 PASS`，其中新增 completed-record 即时释放与两个
+  external joiner 只产生一个 terminal owner 的断言；final-publisher pause、concurrent admission/close、
+  cancellation、首错/full-drain 与 fiber-aware join 继续通过；
+- MSVC 19.50 Release codegen 在 wait loop 中形成 refcount acquire load → `cmp 1` → conditional
+  `Event::wait()` → release RMW；没有强制内联 `task_scope_add`。两个 paired executable 均为
+  `315392 B`，未重现 S9-01 的 `1024 B` executable 膨胀；
+- 唯一 bounded interleaved preflight 的 HYLE/manual `op/s` ratio 为
+  `1.056 / 1.018 / 1.095 / 1.051`（primary/placement × candidate-first/peer-first）。四格均不再固定输，
+  因此允许签发 candidate；这些短样本仍是 `DIAGNOSTIC`，不冒充最终 qualified P1。
