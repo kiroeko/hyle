@@ -191,3 +191,33 @@ correctness/交付/sanitizer；候选前 preflight 不重跑，正式 P1 仍保�
 metadata、分支、allocation、公开 API 或依赖。Windows MSVC Release 的 Sched/header `2/2 PASS`；
 MacBook Air AppleClang 21 以 `HYLE_WERROR=ON` fresh build 后 Sched/header `2/2 PASS`，原告警消失。
 后续只验证该候选；任何产品变化必须再次退回 `AUDITED`。
+
+## 第二候选 correctness、交付与红队
+
+验证只覆盖 closure card 预声明且受本轮影响的范围，没有因为文档或测试夹具变化重跑全库：
+
+| 风险面 | Windows / MSVC | Linux / GCC 14 | macOS / AppleClang 21 |
+|---|---|---|---|
+| Sched + 逐头 | Release `2/2 PASS` | Release + `HYLE_WERROR=ON`，`2/2 PASS` | Release + `HYLE_WERROR=ON`，`2/2 PASS` |
+| sanitizer | 首候选 MSVC ASan `232/232 PASS`；第二候选的同类内存/并发风险由右列 exact-candidate 三 sanitizer 覆盖 | 第二候选 ASan、UBSan、TSan 各 `234/234 PASS` | 不重复运行；本轮未预声明平台专属 sanitizer |
+| source/static/shared | 三种 selected-Sched consumer 全部 `PASS` | 三种 selected-Sched consumer 全部 `PASS` | 三种 selected-Sched consumer 全部 `PASS`；更新后的 priority package probe 在 static/shared SDK 再次 `PASS` |
+| 直接消费者 | exact-candidate `io_core` 13 个独立测试全部 `PASS` | 不重复运行同一 consumer | 不重复运行同一 consumer |
+
+Windows IO direct-consumer 使用 fresh
+`C:/public/project-hyle/_validation/sched-v10-execution-priority/windows-io-direct-a9847b9c`；Linux 三交付使用
+`/root/hyle-g08-delivery-04d1676c-gcc14`。Linux 首次交付 configure 使用机器默认 GCC 13，被项目已有
+GCC 14 最低版本合同拒绝；指定 `CC=gcc-14 CXX=g++-14` 后三种交付全部通过。这是环境选择失败，不是
+产品或交付失败，也没有据此修改构建系统。测试专用提交
+`04d1676cb356ea438c155ca379e5dc4e3390afd9` 让 package probe 实际启用 three-lane mode，并从 high/low
+入口查询当前 priority；它没有修改 immutable product candidate。
+
+候选后源码红队按 admission、selection、yield、wait/wake、timer/IO、pinned、TaskScope、cancel、full/
+OOM、shutdown 与 delivery 逐路径核对。没有发现新的产品缺陷：每次 lane selection 为固定数量 O(1)
+probe；priority 只存于既有 Fiber padding 或 opt-in sidecar；失败前后 ownership 与 lifecycle count 对称；
+normal-only loop、对象布局和 allocation 数不变。红队发现的唯一证明缺口是旧 package sample 没有调用
+新增 API，已由上述测试专用提交补齐。`bulk_execute` 的同 Scheduler 继承和 `BlockingPool` 不继承属于
+既有架构语义，已在 user guide 明示；它们不构成增加另一组 priority API 的理由。
+
+至此 scope、architecture、correctness、delivery、usability/docs 与 red-team 六门均已完成。剩余唯一
+动作是对 immutable candidate 运行一次 `sched-p1-v2` 正式 P1；无论结果如何都不重复采样，若门失败则
+直接依据原始证据和已经冻结的源码成本账单裁决根因。

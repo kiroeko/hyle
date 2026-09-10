@@ -106,6 +106,11 @@ worker 每次选择下一项时按 high → normal → low 查找；已经开始
 两者都省略时仍按 admission caller 继承。priority 会随 Fiber 的 yield、timer/IO wait、foreign wake 和
 pinned placement 保持。
 
+`bulk_execute` 从同一 Scheduler 的 root Fiber 调用时，root 与 sibling runners 都继承该 Fiber 的档位；
+外部线程发起的同步 bulk 没有 execution identity，按 normal 提交。若整批工作需要 high/low，应先把
+bulk root 作为相应档位的 Fiber/Task 提交。`BlockingPool` 是独立 OS-thread runtime，不继承 Scheduler
+lane；需要硬隔离或 blocking-work 分级时使用独立 pool，而不是把 execution hint 当成跨 runtime QoS。
+
 默认 `kNormalOnly` 不分配 high/low queue，也不扫描额外 lane；显式启用后 sidecar storage 为
 `O(workers × queue_capacity)`。向 normal-only Scheduler 显式提交 low/high 会返回 `InvalidArgument`，
 不会悄悄降级。不要为了某个吞吐 benchmark 开启 priority：如果全部工作都是 normal，它没有产品收益。
