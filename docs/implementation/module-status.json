@@ -314,9 +314,9 @@
     },
     {
       "module": "io_watch",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md",
-      "summary": "io_watch v2 SCOPED：G05 递归目录树变化流已冻结 consumer、三平台机制边界、P0 成本目标与停止条件；等待 API、Linux O(D) watch set、重叠路由和 rescan 时序审计，尚未修改产品。"
+      "summary": "io_watch v2 AUDITED：directory_tree、root-relative path、native resource cap 与三平台机制已冻结；源码预审将有限改动锁为 common API/router、Windows/macOS 原生递归和 Linux O(D) watch-set 三批。"
     }
   ]
 }
