@@ -215,10 +215,14 @@
     },
     {
       "module": "io_core",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md",
       "candidate": "03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d",
-      "summary": "io_core v3 CANDIDATE：不可变产品树只把 Win32 directory submission 的 subtree bool 原样透传并迁移唯一 io_watch consumer；普通 IO、operation layout 与非 Windows 成本不变。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-core-v3-recursive-directory-submit.md"
+      },
+      "summary": "io_core v3 CLOSED：Win32 subtree 参数只沿既有 IOCP submit/completion spine 原样透传；三平台、sanitizer、三交付、红队与零普通路径附加成本 P0 全部通过。"
     },
     {
       "module": "io_tls",
@@ -315,10 +319,14 @@
     },
     {
       "module": "io_watch",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md",
       "candidate": "fa5718715aaf7a9d867e0ef9ce81f435b8f5b116",
-      "summary": "io_watch v2 CANDIDATE：第二候选在既有三平台递归实现上，以无额外分配的 intrusive FIFO 修复 Linux 混合 target 的顺序相关漏扫；公开 API、direct 热路径和 O(D) 上界不变。"
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/io/io-watch-v2-recursive-tree.md"
+      },
+      "summary": "io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。"
     }
   ]
 }

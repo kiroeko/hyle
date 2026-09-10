@@ -173,7 +173,7 @@ single-owner 对象，`create/next/close` 以及 live-owner 的 move assignment 
 Scheduler worker 上进行；只能有一个在途 `next()`。取消或 deadline 只结束该次等待，watcher 仍可复用；
 `close()` 幂等，会唤醒 waiter 并排空 native completion。默认限制为 16 KiB native buffer、256 events
 、16 KiB path bytes 和 65,536 个 native directory resources，可按实际资源预算显式调整；该目录上限不会
-被预分配。Windows/macOS 按 canonical root 计，Linux tree 按唯一目录 watch 计。容量耗尽不会静默丢失：
+被预分配。Windows/macOS 按后端归一化 root key 计，Linux tree 按唯一目录 watch 计。容量耗尽不会静默丢失：
 可恢复的 batch overflow 请求 rescan，无法继续覆盖的 watch/OOM 失败则在已有 rescan batch 之后返回 typed
 terminal error。未选择 tree 时不会建立递归目录表或 path scratch，普通 direct/exact 路线不为该能力付费。
 从构造 `next()` 返回的 awaitable 到其 `await_resume()` 完成，awaitable 借用的是同一个 watcher 对象；

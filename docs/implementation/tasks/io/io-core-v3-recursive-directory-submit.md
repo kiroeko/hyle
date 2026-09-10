@@ -1,6 +1,6 @@
 # IO Core v3：Windows 递归目录提交语义
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -79,6 +79,26 @@ Windows caller 从 root 上的预计算 tree bit 传入；新增 IOCP 机制测�
 `false` rearm/cancel/admission 测试保持。候选前 Windows MSVC 与 WSL GCC 14 的 io_core/io_watch + changed
 header 各 `15/15 PASS`。
 
-不可变产品候选为 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d`。公开 shape、算法、layout 与常态成本停止
-变化；后续只对该 commit/tree 执行预声明的候选验证。三交付、候选后红队和 terminal 裁决仍为
-`UNPROVEN`。
+不可变产品候选为 `03fe0a1f8ef52bed09bc4e1b0f3d85be7200056d`。后续 Linux `io_watch` 修正和测试
+fixture 提交均未改变 `io_core` 的公开头、实现、layout 或成本结构。
+
+| 风险 / 候选绑定 receipt | 结果 |
+|---|---|
+| Windows MSVC 19.50 / Release / WERROR | io_core + io_watch 定向集合 `15/15 PASS`，包含 `FALSE/TRUE` 的孙级可见性、rearm、cancel 与 admission |
+| Linux GCC 14.2 / Release / WERROR | exact product tree 的 io_core + io_watch 定向集合 `15/15 PASS` |
+| macOS arm64 / AppleClang 21 / Release / WERROR | Git archive 的 io_core + io_watch 定向集合 `15/15 PASS` |
+| sanitizer | WSL ASan 的完整定向集合 `15/15 PASS`；UBSan/TSan 的 watcher/header 各 `2/2 PASS`，没有 sanitizer report |
+| source / shared / static delivery | Windows `io` selected-product smoke 全部通过，包含源码嵌入、relocated shared SDK 与 relocated static SDK consumer |
+| P0 | 参数只原样进入既有 Win32 syscall；allocation、lock、wake、copy、operation layout 与 non-Windows object 均不变；P1 `NOT_APPLICABLE` |
+
+候选后源码红队反查了 `submit_directory_changes` 的全部声明、定义和调用者：唯一产品调用者仍为
+`io_watch`，两档都沿用同一 Proactor slab、in-flight、cancel 和 terminal completion 路线；没有第二
+operation/runtime，也没有公开 API 或 ABI 扩张。ASan 暴露的 signal fixture shutdown 顺序错误已在纯测试
+提交 `77513172cebf18bd09fb821e5902cc486084105e` 中纠正，产品候选没有随测试修复变化。
+
+七门全部 `PASS`，`io_core` v3 裁决为 **`CLOSED`**。只有 Win32 目录提交合同、唯一 consumer、公开
+IO API/layout、普通 submit 成本或 source/static/shared 交付发生变化，或者出现可复现 completion/cancel
+缺陷时才可重开；递归事件产品语义仍由 `io_watch` 拥有。exact candidate 的 LOC：全库 `539,025` 行、
+自实现不含测试 `94,884` 行、`io_core` 实现 `11,072` 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->

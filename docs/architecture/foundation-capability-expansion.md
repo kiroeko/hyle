@@ -24,13 +24,13 @@ ggml/llama.cpp、ds4、vLLM、SGLang 的推理基座为主需求锚，并用渲�
 | ID | 已准入用户任务 | semantic owner / 承载 | 执行状态 / 当前缺口 |
 |---|---|---|---|
 | `G01` | bulk Base64/Base64URL size、caller-buffer encode/decode 与明确校验策略 | `container_text`；`BORROW` 已锁定 simdutf algorithm core | 公开 `<hyle/container/base64.h>` 路线已交付；后续 G04 直接复用，不复制 codec |
-| `G02` | runtime-sized structured task scope：动态 spawn、cancel、close、join/drain | `sched`；`SELF`，复用现有 Task/JoinHandle/CancelToken | `JoinHandle` drop 会 detach，无法拥有动态 child 集合 |
+| `G02` | runtime-sized structured task scope：动态 spawn、cancel、close、join/drain | `sched`；`SELF`，复用现有 Task/JoinHandle/CancelToken | 已交付 `TaskScope`；普通 spawn 不承担 tracking 成本 |
 | `G03` | managed child process：spawn、stdio、async wait、timeout/cancel、tree termination、reap | 新 `process` factor/product；HYLE 拥有语义和 scheduler-native lifecycle，OS mechanism 自有 | 只有零散 OS/IO 原子，用户必须重写最易出错的生命周期 |
 | `G04` | WebSocket client/server handshake、HTTP handoff、message/frame/control/close | 新 `io_websocket` factor + 定向重开 `io_http`；协议状态机归 HYLE | HTTP 101 与预读残留字节不能安全移交，且没有 RFC 6455 owner |
-| `G05` | recursive directory-tree change stream | `io_watch`；`SELF` 三平台 backend | 当前只公开 exact file/direct child |
+| `G05` | recursive directory-tree change stream | `io_watch`；`SELF` 三平台 backend | 已交付显式 `directory_tree`、root-relative batch、rescan/cap 与三平台 backend |
 | `G06` | async file-region to byte-stream + HTTP file body，支持时走 kernel fast path | `io_core` + `io_http`；`SELF` OS fast path 和 portable fallback | 只能由用户手写 read/write loop；现有 `io_transfer` 不是该任务 owner |
-| `G07` | TLS credential source closure：file/borrowed PEM、encrypted-key password/callback | `io_tls`；`BORROW` OpenSSL credential mechanism，HYLE 拥有 provider-neutral C++ 形状 | 当前只有未加密 file path，无法接 encrypted key 或内存 secret |
-| `G08` | opt-in low/normal/high non-preemptive execution priority | `sched`；`SELF`，独立于 OS thread priority 和应用 request policy | 现有 Scheduler 只能表达一个 runnable class |
+| `G07` | TLS credential source closure：file/borrowed PEM、encrypted-key password/callback | `io_tls`；`BORROW` OpenSSL credential mechanism，HYLE 拥有 provider-neutral C++ 形状 | 已交付 file/borrowed PEM、encrypted-key password/callback、client/server identity 与 mTLS |
+| `G08` | opt-in low/normal/high non-preemptive execution priority | `sched`；`SELF`，独立于 OS thread priority 和应用 request policy | 已交付 opt-in 三档、继承/覆盖和全 wake/admission 路由；默认 normal-only 成本隔离 |
 
 八项之外没有隐含的“顺手补齐”。发现新的真实缺口时，先回到能力准入，而不是扩大某一张 closure card。
 

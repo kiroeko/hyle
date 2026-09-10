@@ -1,6 +1,6 @@
 # IO Watch v2：递归目录树变化流
 
-<!-- MODULE CLOSURE RECORD: CANDIDATE -->
+<!-- MODULE CLOSURE RECORD: CLOSED -->
 
 ## Closure card
 
@@ -69,7 +69,7 @@
    语义而不是整个 watcher 的 option，故一个 watcher 可自然混用 exact/direct/tree，也没有含混 `tree()`。
 6. `FileWatchOptions::max_watched_directories` 默认 `65536` 且必须非零；它限制 native directory resource，
    Windows/macOS 按唯一 root、Linux 按唯一被观察目录计数，不预分配该上限。
-7. 相同 canonical root 只建一个 native subscription；嵌套/重叠 roots 向每个匹配 target 独立发事件，batch
+7. 相同后端归一化 root key 只建一个 native subscription；嵌套/重叠 roots 向每个匹配 target 独立发事件，batch
    的既有 `(target,path)` key 去重。direct/exact 只接收 immediate child，tree 接收完整相对路径。
 8. recursive root 本身若是 symlink/junction 则 `FailedPrecondition`；遍历按 `platform_fs` entry type 不跟随
    descendant link。direct/exact 的既有 alias/canonicalization 行为不变。
@@ -160,7 +160,8 @@ default direct 路径没有复制 owner。
 3. 复用 io_core IOCP/read、platform_fs 无分配 entry type、sched cancel/join、mem allocator 与 container bounded maps；不建第二 runtime。
 4. P0 如上；没有苹果对橘子的计时，也不拿 direct-child 与 recursive 比速度。
 5. 旧 C/Native FFI 不变；异步 view/owner 暂不承诺跨语言 runtime ABI。
-6. 仍是独立 `io_watch` factor 并由 `hyle::io` 聚合；依赖图不变，io_core v3 只扩 detail seam；三交付需实测。
+6. 仍是独立 `io_watch` factor 并由 `hyle::io` 聚合；依赖图不变，io_core v3 只扩 detail seam；源码、
+   relocated static/shared 三交付均已实测通过。
 7. factory 名称直接表达三种 target；guide 必须写 create→scan→consume→rescan→close、path lifetime、cap、link 和 network-FS 限制。
 
 ## 验证、红队与裁决
@@ -180,3 +181,45 @@ O(D) worklist allocation，也没有回扫造成的 O(D²)。顺序反转回归�
 create 前放入更深子目录；W1-WIN MSVC Release/WERROR 与 W1-WSL GCC 14 Release/WERROR 的 io_core / io_watch
 定向集合均 `15/15 PASS`。公开 API、非 Linux backend、direct-only 路线及常态 event cost 均未改变；新候选
 验证不得沿用首候选 receipt。
+
+### 第二候选的终局 receipt
+
+`git diff fa571871..77513172 -- include/hyle/io src/io_core src/io_watch` 只包含测试以外的空差异；
+`77513172` 仅修正 signal 测试 fixture 的既有 shutdown 顺序。因此下列执行均绑定同一个产品 candidate：
+
+| 风险 / 候选绑定 receipt | 结果 |
+|---|---|
+| Windows MSVC 19.50 / Release / WERROR | io_core + io_watch `15/15 PASS` |
+| Linux GCC 14.2 / Release / WERROR | 独立 exact-candidate build，io_core + io_watch `15/15 PASS` |
+| macOS arm64 / AppleClang 21 / Release / WERROR | Git archive 独立 build，io_core + io_watch `15/15 PASS` |
+| sanitizer | WSL ASan 完整定向集合 `15/15 PASS`；UBSan 与 TSan 的 io_watch/header 各 `2/2 PASS`，零 report |
+| source / shared / static delivery | Windows selected `io` smoke 通过源码嵌入、relocated shared SDK、relocated static SDK consumer |
+| correctness / lifecycle | 深树、空树、Unicode、长路径、重叠/同 root、反序 direct+tree、动态 topology、capacity、link root、rescan、cancel/deadline/close/move 均通过 |
+
+通用 changed-component selector 会把 `io` 产品展开到本构建中显式关闭、因而没有测试实例的可选
+`io_http2` factor；其 `--no-tests=error` 结果不对应 G05 风险，不能冒充产品失败或要求在模块卡内改治理
+工具。本卡改用预先声明的 exact io_core/io_watch 集合和 selected-product delivery smoke，实际适用风险均已
+执行，没有把未运行项写成 `PASS`。
+
+### 终局红队与性能裁决
+
+- 第二候选按 target 顺序、重复/嵌套 root、descriptor 生命周期、OOM/cap、link、root loss、event bank、
+  cancellation 和 shutdown 再做了一次有界源码反查。FIFO 只在新 recursive node 或唯一的
+  `direct -> recursive` 跃迁入队；每个目录最多扫描一次，不会漏扫、重复入队或退化为 O(D²)。没有发现
+  新产品缺陷；
+- Windows/macOS tree 使用 OS 原生递归 owner；Linux 使用一个 inotify fd、O(D+path bytes) metadata、O(1)
+  wd lookup。普通 recursive event 不分配，direct-only 不建立 tree table、PATH scratch 或额外 root scan；
+  P0 源码账单已裁决真实机制与默认成本，P1 `NOT_APPLICABLE`，没有拿 direct-child 和 recursive 做苹果对
+  橘子的计时；
+- API 仍是显式 `directory_tree`，默认 `directory` 不变。guide 给出 create→authoritative scan→consume→
+  rescan→close 旅程，并明确 borrowed view、owner、cap、alias、link、network filesystem 与非无损日志限制；
+  没有 benchmark-only 入口、隐藏 background service、Native FFI 或第二 runtime。
+
+七门全部 `PASS`，`io_watch` v2 裁决为 **`CLOSED`**。已知边界是 rename 仅 best effort、overflow/topology
+loss 需要 consumer rescan、不跟随 link、无 network-filesystem polling、Linux 资源与启动成本随真实目录数
+O(D) 增长。只有可复现漏报/lifetime/resource 缺陷、公开 API/算法/default-cost/依赖/交付改变，或新 OS/真实
+consumer 证明上述边界不能承载已准入任务时才可重开；点值、顺序噪声和想把 reload/debounce 下沉都不是
+trigger。exact candidate 的 LOC：全库 `539,087` 行、自实现不含测试 `94,907` 行、`io_watch` 实现
+`2,002` 行。
+
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
