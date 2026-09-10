@@ -6,6 +6,7 @@
 #include <hyle/sched/blocking.h>
 #include <hyle/sched/fiber.h>
 #include <hyle/sched/join.h>
+#include <hyle/sched/priority.h>
 #include <hyle/sched/scheduler.h>
 #include <hyle/sched/sync.h>
 #include <hyle/sched/task_scope.h>
@@ -25,18 +26,39 @@ int main() {
   auto allocator = hyle::mem::system_allocator();
   hyle::sched::SchedulerOptions options;
   options.idle_policy = hyle::sched::SchedulerIdlePolicy::kPowerSaving;
+  options.priority_mode = hyle::sched::SchedulerPriorityMode::kThreeLanes;
   hyle::sched::Scheduler scheduler(2, allocator, 64, options);
 
   std::atomic<int> callbacks{0};
-  if (!scheduler.schedule([&callbacks]() noexcept {
-        callbacks.fetch_add(1, std::memory_order_relaxed);
-      }).ok()) {
+  std::atomic<int> scheduled_priority{-1};
+  std::atomic<int> detached_priority{-1};
+  if (!scheduler
+           .schedule(
+               [&callbacks, &scheduled_priority]() noexcept {
+                 scheduled_priority.store(
+                     static_cast<int>(
+                         hyle::sched::current_execution_priority()),
+                     std::memory_order_relaxed);
+                 callbacks.fetch_add(1, std::memory_order_relaxed);
+               },
+               hyle::sched::ExecutionOptions{
+                   .priority = hyle::sched::ExecutionPriority::kHigh})
+           .ok()) {
     return 1;
   }
-  if (!scheduler.spawn_detached([&callbacks]() noexcept {
-        hyle::sched::Fiber::yield();
-        callbacks.fetch_add(1, std::memory_order_relaxed);
-      }).ok()) {
+  if (!scheduler
+           .spawn_detached(
+               [&callbacks, &detached_priority]() noexcept {
+                 hyle::sched::Fiber::yield();
+                 detached_priority.store(
+                     static_cast<int>(
+                         hyle::sched::current_execution_priority()),
+                     std::memory_order_relaxed);
+                 callbacks.fetch_add(1, std::memory_order_relaxed);
+               },
+               hyle::sched::FiberLaunchOptions{
+                   .priority = hyle::sched::ExecutionPriority::kLow})
+           .ok()) {
     return 2;
   }
 
@@ -71,5 +93,13 @@ int main() {
   blocking.shutdown();
 
   scheduler.shutdown();
-  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 11;
+  if (scheduled_priority.load(std::memory_order_relaxed) !=
+      static_cast<int>(hyle::sched::ExecutionPriority::kHigh)) {
+    return 11;
+  }
+  if (detached_priority.load(std::memory_order_relaxed) !=
+      static_cast<int>(hyle::sched::ExecutionPriority::kLow)) {
+    return 12;
+  }
+  return callbacks.load(std::memory_order_relaxed) == 2 ? 0 : 13;
 }
