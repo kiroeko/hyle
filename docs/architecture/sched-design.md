@@ -16,6 +16,8 @@ Sched 拥有：
 - 短 callback、固定 grain 的有限 bulk execution、worker-stack typed task、可挂起 detached/structured
   task 与 blocking offload；
 - suspend/wake、typed monotonic sleep/deadline、协作取消和两阶段 shutdown；
+- opt-in low/normal/high 非抢占 ready-work selection，并在 yield/wake 与结构化 child 上保持 execution
+  identity；
 - fiber/thread 双模同步原语，以及 bounded、oneshot、watch、broadcast 消息形状；
 - scheduler 需要的 allocator、错误和生命周期合同。
 
@@ -132,6 +134,20 @@ global injection queue，冷路径还有不丢 ready Fiber 的 overflow。空闲
 LIFO slot 只容纳刚在本 worker 变 ready 的一个 Fiber，使其栈和数据仍热时立即继续；连续使用有固定
 公平预算，超过预算就回到 FIFO。它不是另一套公开 RunQueue 类型，也不能成为用户调度 policy。
 
+三档 execution priority 复用同一个 Scheduler、Fiber、Waker、timer/IO completion 和 lifecycle authority，
+不建立第二 runtime。默认 normal-only worker 在启动时选择既有循环；没有 high/low queue、lane scan 或
+逐任务 allocation。显式 three-lane owner 才分配 high/low shared queue 与每 worker pinned sidecar，下一
+ready boundary 固定按 high → normal → low 选择。high/low 各用一条 audited bounded MPMC queue；不能在
+normal work 前使用会扫描全部 worker shard 的 queue，否则空 high lane 也会把选择退化成 O(workers)。Fiber
+的 priority 填入 `owner_worker_` 前既有 padding，不增加 Fiber size；inline job 用 sidecar tagged value，
+不产生逐项 allocation。sidecar 总空间为 O(workers × queue_capacity)，档位和每条 queue probe 都是常数。
+
+priority 是 execution identity 而非一次 enqueue 属性：cooperative yield、timer/IO wait、foreign wake 和
+pinned route 都必须保留原档。同一 Scheduler 内省略 override 的 child 继承当前档，外部线程或跨
+Scheduler submission 回到 normal。正在运行的工作从不被抢占，持续 high 可以饿死 low；硬隔离仍由独立
+Scheduler/OS worker owner 承担。应用 request priority、KV policy、deadline、aging 和 tenant fairness
+留在推理/服务 owner，只映射成这个窄提示。
+
 默认 worker 不绑核，让嵌入 HYLE 的 host runtime 和 OS 保留调度权。需要 per-core IO、NUMA 或专用
 runtime 时，用户可显式提供 CPU 顺序/集合和 best-effort/required policy。`spawn_on`、
 `spawn_detached_on` 与 `spawn_task_on` 的 Fiber 始终回到 owner worker，且不能被偷；通用任务仍默认
@@ -226,6 +242,7 @@ build-only detail bridge 注册 worker poll/wake hook；普通用户不直接改
 | semaphore timeout unlink | O(1) |
 | join group | O(n) install/clear，等待期间无 polling |
 | TaskScope admit / completion | 每 child admission/completion O(1)，普通 task 零成本；恢复设计让成功 child 只发布自己的同分配 completion record，失败才进入 scope 首错锁；close O(1)，完整 drain/析构 O(N) |
+| priority admission / selection | 固定三档；bounded queue 常态 O(1) 且不扫描 worker shards，ready selection 为常数 lane scan；仅 opt-in sidecar 为 O(workers × capacity)，无逐任务 allocation |
 | shutdown | O(workers + retained work/resources) |
 
 P0 先证明复杂度、allocation、syscall、锁和常态 metadata；P1 才测 callback、spawn/join、yield/wake、
@@ -239,8 +256,8 @@ Sched 以 C++23 source、installed static 和 installed shared 三种形状交�
 依赖；`sched/detail`、fcontext shim 和汇编是 build/private 资产，不进入安装 SDK。当前没有 C API 或
 Native FFI；decorated C++ symbol 和私有 fcontext `extern "C"` 都不构成跨语言承诺。
 
-动态 TaskScope 由独立 closure round 交付；low/normal/high 非抢占 execution priority 仍在
-[基础能力扩展范围](foundation-capability-expansion.md)等待下一轮，因此默认 Scheduler 仍只有 normal
-lane。多个 completion source、caller-participating SPMD、不同 stack strategy，
+动态 TaskScope 与 low/normal/high 非抢占 execution priority 都由独立 closure round 管理；是否已经达到
+可依赖状态只看中央 registry，架构页不重复施工结论。默认 Scheduler 始终只有 normal lane，三档必须由
+owner 显式启用。多个 completion source、caller-participating SPMD、不同 stack strategy，
 或现有 lifetime/backpressure 合同无法表达的需求仍须先进入 capability decision，不能从 benchmark 行直接
 长成公共类型。

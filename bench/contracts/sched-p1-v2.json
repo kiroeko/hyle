@@ -1,0 +1,204 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "sched-p1-v2",
+  "module": "sched",
+  "claim": "G08 P1 engineering non-inferiority of the unchanged default normal scheduling and completion-wake routes against Marl, plus the existing non-gating typed ownership diagnostic, under the same four-worker physical-core contract",
+  "candidate": {
+    "target": "hyle_sched",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "sched",
+    "entrypoint": "hyle/sched/scheduler.h"
+  },
+  "peers": [
+    {
+      "id": "marl",
+      "revision": "b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+      "configuration": {
+        "delivery_shape": "source-built static library in a separate peer process",
+        "scheduler": "Marl owns worker scheduling, fibers, Event/ConditionVariable, WaitGroup and channel synchronization composition",
+        "cancellation": "C++23 std::stop_token from the same MSVC 19.50 toolchain supplies the O(1) poll because Marl has no cancellation-token product primitive",
+        "caller_participation": "disabled; both sides use four dedicated workers and one external submitting/completion caller"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "candidate-first",
+      "dimensions": {"execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "peer-first",
+      "dimensions": {"execution_order": "peer-first"},
+      "target_variant": "primary"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}}
+  ],
+  "workloads": [
+    {
+      "id": "request-fanout-collect",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-foundation/sched/request-fanout-collect",
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "416f33964ae320212d5699cec7f9fb96eb1361cf1423158a3030a564ae090a5e"},
+      "ownership_topology": {
+        "candidate": "One external caller submits preallocated raw callbacks; HYLE workers poll one shared CancelToken, process one short tile, publish to one bounded HYLE Channel and signal a WaitGroup",
+        "peer": "The same caller and preallocated records enqueue Marl tasks; Marl workers poll one shared standard stop_token, process the identical tile, publish to an equal-capacity Marl mutex/ConditionVariable ring and signal Marl WaitGroup",
+        "equivalence": "Both processes retain four dedicated pinned workers, 16384 admitted callbacks, identical input and tile code, one non-cancelled O(1) poll, equal bounded capacity, exact result collection and persistent scheduler lifetime"
+      },
+      "material_contribution": {"frequency": 16384, "value": 1, "unit": "short-request-callback", "budget": 5, "denominator": "one four-worker request replay", "derivation": "The sched-v1 closure card admits short CPU callbacks with external injection, cancellation and bounded producer/consumer collection as a normal foundation journey"},
+      "semantic_contract": "Dispatch, cancellation-poll, compute, publish, complete and collect every admitted short request without loss or hidden caller execution",
+      "comparability": "COMPARABLE",
+      "peer_id": "marl",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "fixed deterministic uint64 input with per-callback seed", "scale": {"workers": 4, "callbacks": 16384, "tile_elements": 64, "channel_capacity": 16384}},
+      "setup": "Scheduler/thread creation, exact CPU pinning, input/context/channel/token construction, expected checksum and a 2048-callback warmup are outside the measured interval",
+      "charged_phases": ["external admission and dispatch", "one cooperative cancellation poll", "64-element deterministic tile", "bounded publication", "WaitGroup completion and exact result drain"],
+      "pair": {"candidate": "HYLE raw schedule + CancelToken + Channel + WaitGroup", "peer": "Marl Task + std::stop_token + Marl synchronization channel composition + WaitGroup"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["candidate-first", "peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    },
+    {
+      "id": "structured-spawn-join",
+      "tier": "replay",
+      "gate_role": "diagnostic",
+      "consumer_key": "inference-foundation/sched/structured-spawn-join",
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "416f33964ae320212d5699cec7f9fb96eb1361cf1423158a3030a564ae090a5e"},
+      "ownership_topology": {
+        "candidate": "One admitted root fiber creates 128 single-cell non-suspending schedule_task<uint64_t> values per batch, retains JoinHandles, waits through dynamic when_all, consumes typed results and completes every callable/result-cell lifecycle",
+        "peer": "One admitted Marl root fiber enqueues 128 Marl tasks per batch, retains preallocated typed result slots, waits through Marl WaitGroup and consumes every result",
+        "equivalence": "Both root fibers run the same tile/count/accounting shape, but ownership is intentionally not equivalent: HYLE pays one typed result/status/cancel/lifetime cell per item while Marl writes caller-owned result slots behind one batch WaitGroup"
+      },
+      "material_contribution": {"frequency": 16, "value": 128, "unit": "typed-tile-task", "budget": 5, "denominator": "one four-worker structured fan-out replay", "derivation": "Current Graph source consumes dynamic typed spawn/join from a scheduler fiber and fixes 1024 elements as its automatic grain floor; this is a consumer boundary rather than a benchmark-only noop"},
+      "semantic_contract": "Fan out typed nonzero tile tasks, wait for each complete dynamic batch and consume every exact result with no detached lifetime",
+      "comparability": "NOT_COMPARABLE",
+      "peer_id": "marl",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "fixed deterministic 1024-element uint64 tile with per-task seed", "scale": {"workers": 4, "batches": 16, "fanout": 128, "tasks": 2048}},
+      "setup": "Scheduler/thread creation, exact CPU pinning, input allocation, expected checksum, vector reservation, root admission and a 64-task warmup are outside the measured interval",
+      "charged_phases": ["single-cell typed task/result ownership construction", "admission, dispatch and stealing", "1024-element deterministic tile", "whole-batch wait", "typed result collection and callable/cell lifecycle teardown"],
+      "pair": {"candidate": "HYLE schedule_task/JoinHandle/span when_all", "peer": "Marl Task/preallocated typed slots/WaitGroup"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["candidate-first", "peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    },
+    {
+      "id": "completion-wake",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "inference-foundation/sched/external-completion-wake",
+      "provenance": {"path": "bench/sched/consumer_shapes_v1.json", "sha256": "416f33964ae320212d5699cec7f9fb96eb1361cf1423158a3030a564ae090a5e"},
+      "ownership_topology": {
+        "candidate": "One persistent pinned HYLE fiber per worker publishes a fresh episode Waker, suspends, is woken from the external caller and acknowledges resume before the next episode",
+        "peer": "One persistent pinned Marl fiber per worker publishes episode readiness, waits on an auto-reset Marl Event, is signalled from the same external-caller role and acknowledges resume",
+        "equivalence": "Both processes exclude scheduler/fiber setup and 256 warmups, retain four persistent pinned fibers, perform 4096 four-way completion episodes, block the external role while awaiting acknowledgements and charge publication, cross-thread wake, reinjection/unpark, resume and acknowledgement"
+      },
+      "material_contribution": {"frequency": 4096, "value": 4, "unit": "external-completion-resume", "budget": 5, "denominator": "one four-worker completion replay", "derivation": "Current IO and GPU polling sources converge on the sched Waker completion spine; persistent episodes avoid contaminating the result with fiber construction"},
+      "semantic_contract": "Wake and resume exactly one already-owned suspended fiber on every pinned worker for every external completion episode without lost wakeups or migration",
+      "comparability": "COMPARABLE",
+      "peer_id": "marl",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "sequential externally acknowledged completion episodes", "scale": {"workers": 4, "warmup_episodes": 256, "measured_episodes": 4096, "resumes": 16384}},
+      "setup": "Scheduler/thread creation, exact CPU pinning, persistent fiber admission and 256 complete wake episodes are outside the measured interval",
+      "charged_phases": ["episode readiness publication", "external cross-thread wake", "scheduler reinjection and unpark", "pinned fiber resume", "completion acknowledgement"],
+      "pair": {"candidate": "HYLE fresh Waker + suspend/reinject", "peer": "Marl auto-reset Event fiber wait/signal"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["candidate-first", "peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor"]
+    }
+  ],
+  "experiment": {"sample_schedule": [15, 31], "order_policy": "fixed-dual", "holdout": false},
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {"validators": ["artifact-identity", "build-contract"]},
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {"machine_profiles": ["W1-WIN"], "qualified_role": "engineering", "formal_independent_hardware": true}
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "measurement_adapter": "structured-paired-process-v1",
+      "sampling_topology": "n-worker-physical-cores",
+      "sampling_worker_count": 4,
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_MARL": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "sched",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"marl": "HYLE_MARL_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "sched-p1-candidate",
+          "target": "hyle_sched_p1_candidate_bench",
+          "stem": "hyle_sched_p1_candidate_bench",
+          "target_variant": "primary",
+          "measurement_batch": 256,
+          "pair_role": "candidate",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [
+            {"id": "request-fanout-collect", "row_id": "request-fanout-collect"},
+            {"id": "structured-spawn-join", "row_id": "structured-spawn-join"},
+            {"id": "completion-wake", "row_id": "completion-wake"}
+          ]
+        },
+        {
+          "id": "sched-p1-marl",
+          "target": "hyle_sched_p1_peer_bench",
+          "stem": "hyle_sched_p1_peer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 256,
+          "pair_role": "peer",
+          "peer_id": "marl",
+          "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+          "workloads": [
+            {"id": "request-fanout-collect", "row_id": "request-fanout-collect"},
+            {"id": "structured-spawn-join", "row_id": "structured-spawn-join"},
+            {"id": "completion-wake", "row_id": "completion-wake"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": [],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"}
+      ]
+    }
+  }
+}
+
+

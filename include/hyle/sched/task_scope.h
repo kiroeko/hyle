@@ -76,6 +76,8 @@ HYLE_SCHED_API void task_scope_publish(TaskScopeState* state,
                                        const Status& status) noexcept;
 HYLE_SCHED_API const CancelToken& task_scope_cancel_token(
     TaskScopeState* state) noexcept;
+HYLE_SCHED_API std::optional<ExecutionPriority> task_scope_priority(
+    TaskScopeState* state) noexcept;
 
 template <class T>
 struct ScopedTaskDriver {
@@ -177,6 +179,12 @@ struct ScopedTaskDriver {
 
 }  // namespace detail
 
+struct TaskScopeOptions {
+  // An absent value inherits the admission caller for each child. An explicit
+  // value becomes the scope default and can still be overridden per child.
+  std::optional<ExecutionPriority> priority;
+};
+
 // Owns a runtime-sized set of Tasks submitted to one Scheduler. Admission is
 // thread-safe and linearized with close(); join() closes admission and waits
 // for every admitted child, whether its JoinHandle was retained or detached.
@@ -190,7 +198,8 @@ struct ScopedTaskDriver {
 class HYLE_SCHED_API TaskScope {
  public:
   [[nodiscard]] static Result<TaskScope> create(
-      Scheduler& scheduler, mem::AllocatorRef allocator) noexcept;
+      Scheduler& scheduler, mem::AllocatorRef allocator,
+      TaskScopeOptions options = {}) noexcept;
 
   TaskScope(TaskScope&& other) noexcept;
   TaskScope& operator=(TaskScope&& other) noexcept;
@@ -205,6 +214,9 @@ class HYLE_SCHED_API TaskScope {
   template <class T>
   [[nodiscard]] JoinHandle<T> spawn(
       Task<T> task, std::size_t stack_size = kDefaultStackSize) noexcept;
+  template <class T>
+  [[nodiscard]] JoinHandle<T> spawn(Task<T> task,
+                                    FiberLaunchOptions options) noexcept;
 
   // Add a child whose result is owned only by the scope. Prefer this route for
   // void/Status helpers when no per-child result or cancellation handle is
@@ -214,8 +226,12 @@ class HYLE_SCHED_API TaskScope {
   // child failures are retained by join(), and add() returns OK.
   [[nodiscard]] Status add(Task<void> task,
                            std::size_t stack_size = kDefaultStackSize) noexcept;
+  [[nodiscard]] Status add(Task<void> task,
+                           FiberLaunchOptions options) noexcept;
   [[nodiscard]] Status add(Task<Status> task,
                            std::size_t stack_size = kDefaultStackSize) noexcept;
+  [[nodiscard]] Status add(Task<Status> task,
+                           FiberLaunchOptions options) noexcept;
 
   // Stop future admission. Idempotent and safe to race with add()/spawn().
   void close() noexcept;
@@ -260,6 +276,12 @@ class HYLE_SCHED_API TaskScope {
 
 template <class T>
 JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
+  return spawn(std::move(task), FiberLaunchOptions{std::nullopt, stack_size});
+}
+
+template <class T>
+JoinHandle<T> TaskScope::spawn(Task<T> task,
+                               FiberLaunchOptions options) noexcept {
   using Driver = detail::ScopedTaskDriver<T>;
   using JoinState = detail::JoinState<T>;
 
@@ -271,9 +293,20 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
     return JoinHandle<T>(
         Status::ResourceExhausted("scoped task coroutine allocation failed"));
   }
-  if (stack_size < mem::kFiberStackSmall) {
+  if (options.stack_size < mem::kFiberStackSmall) {
     return JoinHandle<T>(Status::InvalidArgument(
         "scoped task fiber stack is smaller than the safe tier"));
+  }
+  if (options.priority.has_value() &&
+      !detail::is_valid_execution_priority(*options.priority)) {
+    return JoinHandle<T>(
+        Status::InvalidArgument("scoped task priority is invalid"));
+  }
+  if (options.priority.has_value() &&
+      *options.priority != ExecutionPriority::kNormal &&
+      !scheduler_->execution_priorities_enabled()) {
+    return JoinHandle<T>(Status::InvalidArgument(
+        "scoped low/high priority requires three-lane mode"));
   }
 
   const mem::AllocatorRef allocator = detail::task_scope_allocator(state_);
@@ -300,9 +333,10 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
         Status::ResourceExhausted("scoped task driver allocation failed"));
   }
 
-  mem::FiberStackPool* pool = scheduler_->fiber_stack_pool(stack_size);
-  auto stack_result =
-      pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
+  mem::FiberStackPool* pool = scheduler_->fiber_stack_pool(options.stack_size);
+  auto stack_result = pool != nullptr
+                          ? pool->acquire()
+                          : mem::FiberStack::allocate(options.stack_size);
   if (!stack_result) {
     allocator.deallocate(driver, sizeof(Driver), alignof(Driver));
     return fail_before_admission(
@@ -323,11 +357,18 @@ JoinHandle<T> TaskScope::spawn(Task<T> task, std::size_t stack_size) noexcept {
   }
 
   driver->arm_finish_hook();
-  if (!scheduler_->spawn(&*driver->fiber)) {
-    Status status = scheduler_->accepting()
-                        ? Status::ResourceExhausted(
-                              "scheduler runnable queues are full on a worker")
-                        : Status::Cancelled("scheduler is shutting down");
+  std::optional<ExecutionPriority> priority = options.priority;
+  if (!priority.has_value()) priority = detail::task_scope_priority(state_);
+  Status status;
+  if (priority.has_value()) {
+    status = scheduler_->spawn(&*driver->fiber, ExecutionOptions{priority});
+  } else if (!scheduler_->spawn(&*driver->fiber)) {
+    status = scheduler_->accepting()
+                 ? Status::ResourceExhausted(
+                       "scheduler runnable queues are full on a worker")
+                 : Status::Cancelled("scheduler is shutting down");
+  }
+  if (!status.ok()) {
     join_state->set_error(status);
     driver->scope_status = status;
     Driver::finish(driver);

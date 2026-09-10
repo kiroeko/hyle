@@ -254,6 +254,42 @@
         "file size, sharing, caller buffers, short-read loop and delivery are unchanged",
         "all added text records post-benchmark verification, limits and immutable identities"
       ]
+    },
+    {
+      "contract_id": "sched-p1-v1",
+      "contract_sha256": "699b22ee70c7ef147c85ec66171426aae4ae9a48e2275eca3b12a4061e4ed16d",
+      "workload_id": "request-fanout-collect",
+      "path": "bench/sched/consumer_shapes_v1.json",
+      "from_sha256": "ac0fa52f7f45203024b55c8ae78bae184852a7fff29535518f0cfa2975c8191a",
+      "to_sha256": "416f33964ae320212d5699cec7f9fb96eb1361cf1423158a3030a564ae090a5e",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/sched-v1-consumer-shapes-io-core-rename.md",
+      "review_task_sha256": "fede7587570300d1ec8d2fbf327ad826da662fad59bb18ef6ca3f1bd7d1924e3",
+      "reason": "The matrix changed only because another journey's IO source path followed the io_core component rename; this request journey is byte-for-byte unchanged.",
+      "reviewed_contract_facts": [
+        "request topology, ownership, input scale and charged phases are unchanged",
+        "the request journey source reference and its SHA-256 are unchanged",
+        "the unrelated IO path rename executes no work in this journey"
+      ]
+    },
+    {
+      "contract_id": "sched-p1-v1",
+      "contract_sha256": "699b22ee70c7ef147c85ec66171426aae4ae9a48e2275eca3b12a4061e4ed16d",
+      "workload_id": "completion-wake",
+      "path": "bench/sched/consumer_shapes_v1.json",
+      "from_sha256": "ac0fa52f7f45203024b55c8ae78bae184852a7fff29535518f0cfa2975c8191a",
+      "to_sha256": "416f33964ae320212d5699cec7f9fb96eb1361cf1423158a3030a564ae090a5e",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/sched-v1-consumer-shapes-io-core-rename.md",
+      "review_task_sha256": "fede7587570300d1ec8d2fbf327ad826da662fad59bb18ef6ca3f1bd7d1924e3",
+      "reason": "The completion consumer moved from src/io to the separately named src/io_core component without changing the referenced file, Waker route or replay contract.",
+      "reviewed_contract_facts": [
+        "the referenced proactor file SHA-256 is unchanged",
+        "four pinned workers, 4096 episodes and fresh Waker ownership are unchanged",
+        "wake, reinjection, resume and acknowledgement charged phases are unchanged"
+      ]
     }
   ]
 }

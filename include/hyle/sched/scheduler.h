@@ -16,6 +16,7 @@
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
+#include "hyle/sched/priority.h"
 #include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
@@ -67,6 +68,10 @@ struct SchedulerOptions {
   // Semantic latency/energy choice. Balanced preserves the normal bounded
   // search; LowLatency spins longer before parking; PowerSaving parks directly.
   SchedulerIdlePolicy idle_policy = SchedulerIdlePolicy::kBalanced;
+  // Opt-in execution lanes. Normal-only allocates and scans exactly the
+  // existing single lane. Three-lane mode adds low/high sidecar queues; it is a
+  // non-preemptive selection hint, independent of OS thread priority above.
+  SchedulerPriorityMode priority_mode = SchedulerPriorityMode::kNormalOnly;
   // Cold lifecycle hooks for backend TLS, scratch arenas or profiler setup.
   // They run on each worker after scheduler TLS is installed and immediately
   // before it is removed. Hooks must not throw or block shutdown indefinitely.
@@ -116,6 +121,12 @@ class HYLE_SCHED_API Scheduler {
   // owned by the caller. External producers apply backpressure instead.
   bool spawn(Fiber* fiber);
 
+  // Explicit/inheriting priority route with a typed error. An absent priority
+  // inherits only from a task currently running on this Scheduler; otherwise it
+  // is normal. Explicit low/high requires kThreeLanes. Failure does not
+  // transfer ownership of `fiber`.
+  Status spawn(Fiber* fiber, ExecutionOptions options) noexcept;
+
   // Submit a self-owned fire-and-forget callback. Unlike spawn(Fiber*), the
   // scheduler allocates the driver, obtains a guarded stack from its recycle
   // pool, and destroys both after the callback returns. This is the lightweight
@@ -126,9 +137,11 @@ class HYLE_SCHED_API Scheduler {
   // in the pointer type so a potentially-throwing function is rejected at
   // compile time.
   using DetachedFn = void (*)(void* ctx) noexcept;
+  Status spawn_detached(
+      DetachedFn fn, void* ctx,
+      std::size_t stack_size = mem::kFiberStackDefault) noexcept;
   Status spawn_detached(DetachedFn fn, void* ctx,
-                        std::size_t stack_size =
-                            mem::kFiberStackDefault) noexcept;
+                        FiberLaunchOptions options) noexcept;
 
   // Owning C++ convenience for capturing/move-only noexcept callables. It pays
   // one allocator-backed callable record; the raw fn+ctx overload above remains
@@ -137,11 +150,19 @@ class HYLE_SCHED_API Scheduler {
     requires std::invocable<std::decay_t<Fn>&> &&
              std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
              std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
-  Status spawn_detached(Fn&& fn,
-                        std::size_t stack_size =
-                            mem::kFiberStackDefault) noexcept {
-    return submit_owned_callable_(false, 0, true, stack_size,
+  Status spawn_detached(
+      Fn&& fn, std::size_t stack_size = mem::kFiberStackDefault) noexcept {
+    return submit_owned_callable_(false, 0, true, stack_size, std::nullopt,
                                   std::forward<Fn>(fn));
+  }
+
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status spawn_detached(Fn&& fn, FiberLaunchOptions options) noexcept {
+    return submit_owned_callable_(false, 0, true, options.stack_size,
+                                  options.priority, std::forward<Fn>(fn));
   }
 
   // Queue a small non-suspending callback that runs directly on a worker stack.
@@ -155,6 +176,7 @@ class HYLE_SCHED_API Scheduler {
   // full receives ResourceExhausted instead of spinning and deadlocking its own
   // consumer.
   Status schedule(DetachedFn fn, void* ctx) noexcept;
+  Status schedule(DetachedFn fn, void* ctx, ExecutionOptions options) noexcept;
 
   // Natural one-shot lambda route for short, non-suspending work. The callable
   // record uses this Scheduler's injected allocator and destroys itself after
@@ -164,7 +186,16 @@ class HYLE_SCHED_API Scheduler {
              std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
              std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
   Status schedule(Fn&& fn) noexcept {
-    return submit_owned_callable_(false, 0, false, 0,
+    return submit_owned_callable_(false, 0, false, 0, std::nullopt,
+                                  std::forward<Fn>(fn));
+  }
+
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status schedule(Fn&& fn, ExecutionOptions options) noexcept {
+    return submit_owned_callable_(false, 0, false, 0, options.priority,
                                   std::forward<Fn>(fn));
   }
 
@@ -173,9 +204,13 @@ class HYLE_SCHED_API Scheduler {
   // to keep a connection's fiber on the core that owns its io ring so submit +
   // reap + resume stay single-threaded. `worker_idx` must be < num_workers().
   bool spawn_on(unsigned worker_idx, Fiber* fiber);
+  Status spawn_on(unsigned worker_idx, Fiber* fiber,
+                  ExecutionOptions options) noexcept;
+  Status spawn_detached_on(
+      unsigned worker_idx, DetachedFn fn, void* ctx,
+      std::size_t stack_size = mem::kFiberStackDefault) noexcept;
   Status spawn_detached_on(unsigned worker_idx, DetachedFn fn, void* ctx,
-                           std::size_t stack_size =
-                               mem::kFiberStackDefault) noexcept;
+                           FiberLaunchOptions options) noexcept;
   template <class Fn>
     requires std::invocable<std::decay_t<Fn>&> &&
              std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
@@ -184,13 +219,24 @@ class HYLE_SCHED_API Scheduler {
       unsigned worker_idx, Fn&& fn,
       std::size_t stack_size = mem::kFiberStackDefault) noexcept {
     return submit_owned_callable_(true, worker_idx, true, stack_size,
-                                  std::forward<Fn>(fn));
+                                  std::nullopt, std::forward<Fn>(fn));
+  }
+
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>&> &&
+             std::is_nothrow_invocable_v<std::decay_t<Fn>&> &&
+             std::is_nothrow_constructible_v<std::decay_t<Fn>, Fn&&>
+  Status spawn_detached_on(unsigned worker_idx, Fn&& fn,
+                           FiberLaunchOptions options) noexcept {
+    return submit_owned_callable_(true, worker_idx, true, options.stack_size,
+                                  options.priority, std::forward<Fn>(fn));
   }
 
   // The number of worker threads (for choosing a spawn_on target / sizing an
   // IoContext's per-worker rings).
   unsigned num_workers() const noexcept;
   bool valid() const noexcept { return impl_ != nullptr; }
+  bool execution_priorities_enabled() const noexcept;
 
   // Shared fiber-stack recycle pool for a given USABLE size.
   // Returns a pool whose tier matches `usable_bytes` when it equals one of the
@@ -289,9 +335,27 @@ class HYLE_SCHED_API Scheduler {
   };
 
   template <class Fn>
-  Status submit_owned_callable_(bool pinned, unsigned worker_idx,
-                                bool detached, std::size_t stack_size,
+  Status submit_owned_callable_(bool pinned, unsigned worker_idx, bool detached,
+                                std::size_t stack_size,
+                                std::optional<ExecutionPriority> priority,
                                 Fn&& fn) noexcept {
+    if (impl_ == nullptr) {
+      return Status::InvalidArgument(
+          "scheduler callable submission requires a valid scheduler");
+    }
+    if (pinned && worker_idx >= num_workers()) {
+      return Status::InvalidArgument(
+          "scheduler callable worker is out of range");
+    }
+    if (priority.has_value() &&
+        !detail::is_valid_execution_priority(*priority)) {
+      return Status::InvalidArgument("execution priority is invalid");
+    }
+    if (priority.has_value() && *priority != ExecutionPriority::kNormal &&
+        !execution_priorities_enabled()) {
+      return Status::InvalidArgument(
+          "low/high execution priority requires three-lane mode");
+    }
     using Callable = std::decay_t<Fn>;
     using Record = OwnedCallable<Callable>;
     void* storage =
@@ -304,12 +368,20 @@ class HYLE_SCHED_API Scheduler {
         Record{this, Callable(std::forward<Fn>(fn))};
     Status status;
     if (!detached) {
-      status = schedule(&Record::run, record);
+      status = priority.has_value()
+                   ? schedule(&Record::run, record, ExecutionOptions{priority})
+                   : schedule(&Record::run, record);
     } else if (pinned) {
-      status = spawn_detached_on(worker_idx, &Record::run, record,
-                                 stack_size);
+      status =
+          priority.has_value()
+              ? spawn_detached_on(worker_idx, &Record::run, record,
+                                  FiberLaunchOptions{priority, stack_size})
+              : spawn_detached_on(worker_idx, &Record::run, record, stack_size);
     } else {
-      status = spawn_detached(&Record::run, record, stack_size);
+      status = priority.has_value()
+                   ? spawn_detached(&Record::run, record,
+                                    FiberLaunchOptions{priority, stack_size})
+                   : spawn_detached(&Record::run, record, stack_size);
     }
     if (!status.ok()) {
       record->~Record();
@@ -318,7 +390,8 @@ class HYLE_SCHED_API Scheduler {
     return status;
   }
   Status spawn_detached_(unsigned worker_idx, bool pinned, DetachedFn fn,
-                         void* ctx, std::size_t stack_size) noexcept;
+                         void* ctx, std::size_t stack_size,
+                         std::optional<ExecutionPriority> priority) noexcept;
 };
 
 // True if the scheduler running the CURRENT fiber has begun shutting down (phase 1
@@ -328,6 +401,10 @@ class HYLE_SCHED_API Scheduler {
 // Reads a scheduler-wide flat flag via the worker's thread-local owner; returns
 // false if not called from a scheduler worker fiber. Cheap (one relaxed load).
 HYLE_SCHED_API bool shutdown_requested() noexcept;
+
+// Priority of the callback/fiber currently executing on this thread. Outside a
+// priority-enabled Scheduler execution context this is always kNormal.
+HYLE_SCHED_API ExecutionPriority current_execution_priority() noexcept;
 
 // Suspend the current scheduler fiber until begin_shutdown() is called. Unlike
 // polling shutdown_requested() between yields, this consumes no worker time and

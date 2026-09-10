@@ -19,6 +19,7 @@ completion 等事件统一成一次 `Waker` 唤醒。普通用户通常只需要
 | 可挂起且需要结果、join、cancel 或 fan-out | `Task<T>` + `spawn_task` + `JoinHandle<T>` | coroutine 首参数必须是 `AllocatorRef`；独立 guarded Fiber |
 | 可挂起、有结果且必须留在一个 worker | `Task<T>` + `spawn_task_on` + `JoinHandle<T>` | 仅用于 per-worker ring/arena/backend owner；全部 wake 保持 pin |
 | 运行期不断发现 child，owner 必须统一 close/cancel/drain | `TaskScope::add` / `spawn` | scope-only void/Status 用 `add`；typed/per-child ownership 才用 `spawn` |
+| 同一 runtime 内区分交互、普通常与后台 ready work | opt-in `ExecutionPriority` | low/normal/high，非抢占且 low 可能饥饿；硬隔离用独立 Scheduler |
 | 阻塞 syscall 或不可切片的长 CPU 工作 | `BlockingPool` + `spawn_blocking` | 在独立 OS thread 执行；body 内没有 fiber context |
 | 手工拥有/恢复 stackful execution | `Fiber` | 仅低层 runtime owner；调用方负责完整生命周期 |
 | 合作让出 worker | `Fiber::yield()` | 可能换 worker；不能跨 yield 缓存 thread-local 派生状态 |
@@ -70,6 +71,44 @@ per-worker ring、scratch 或 shard state 的 consumer；普通工作保持可�
 `kRequired`。`kLowLatency`、`kBalanced`、`kPowerSaving` 是延迟/功耗策略，不是 benchmark 档位。
 worker start/stop hook 适合安装 runtime TLS、scratch 或 profiler state；hook 不得抛异常或无限阻塞
 shutdown。
+
+## 软执行优先级
+
+只有同一个 runtime 中确实同时存在交互控制/首 token、普通执行和后台预取/清理时，才显式启用三档
+execution priority。它是 **ready work 的选择提示**，不代表请求价值、deadline、租户份额、OS 线程
+优先级或抢占：
+
+```cpp
+hyle::sched::SchedulerOptions scheduler_options;
+scheduler_options.priority_mode =
+    hyle::sched::SchedulerPriorityMode::kThreeLanes;
+hyle::sched::Scheduler scheduler(4, alloc, 256, scheduler_options);
+
+auto control = scheduler.schedule(
+    []() noexcept { publish_control_update(); },
+    hyle::sched::ExecutionOptions{
+        .priority = hyle::sched::ExecutionPriority::kHigh});
+
+auto background = hyle::sched::spawn_task(
+    scheduler, alloc, prefetch_weights(alloc),
+    hyle::sched::FiberLaunchOptions{
+        .priority = hyle::sched::ExecutionPriority::kLow});
+```
+
+worker 每次选择下一项时按 high → normal → low 查找；已经开始执行的 low 工作不会被中断。持续 high
+流量可以无限推迟 low，因此 latency SLO、互不干扰的模型或必须推进的维护工作应放入独立 Scheduler，
+不能把这个 hint 当作资源隔离。`worker_priority` 配置的是 Platform 的 OS thread preference，与这里的
+任务 lane 正交。
+
+未显式给 priority 时，只在提交者正运行于**同一个**启用三档的 Scheduler 上才继承当前档；外部线程和
+跨 Scheduler 提交都解析为 normal。`current_execution_priority()` 可在任务内读取解析后的档位。
+`TaskScopeOptions::priority` 可设 scope 默认值，单个 `add/spawn` 的 `FiberLaunchOptions::priority` 可覆盖；
+两者都省略时仍按 admission caller 继承。priority 会随 Fiber 的 yield、timer/IO wait、foreign wake 和
+pinned placement 保持。
+
+默认 `kNormalOnly` 不分配 high/low queue，也不扫描额外 lane；显式启用后 sidecar storage 为
+`O(workers × queue_capacity)`。向 normal-only Scheduler 显式提交 low/high 会返回 `InvalidArgument`，
+不会悄悄降级。不要为了某个吞吐 benchmark 开启 priority：如果全部工作都是 normal，它没有产品收益。
 
 ## 一批短任务只需要一次完成态
 

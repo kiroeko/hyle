@@ -144,6 +144,7 @@ Fiber::Fiber(Fiber&& o) noexcept
       started_(o.started_),
       finished_(o.finished_),
       wait_requested_(o.wait_requested_),
+      execution_priority_(o.execution_priority_),
       owner_worker_(o.owner_worker_),
       on_finish_(o.on_finish_),
       on_finish_ctx_(o.on_finish_ctx_),
@@ -172,6 +173,7 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     started_ = o.started_;
     finished_ = o.finished_;
     wait_requested_ = o.wait_requested_;
+    execution_priority_ = o.execution_priority_;
     owner_worker_ = o.owner_worker_;
     on_finish_ = o.on_finish_;
     on_finish_ctx_ = o.on_finish_ctx_;

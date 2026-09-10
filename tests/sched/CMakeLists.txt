@@ -14,4 +14,5 @@ hyle_add_test(sched
     shutdown_test.cc
     cancel_test.cc
     task_scope_test.cc
+    priority_test.cc
     bulk_test.cc)

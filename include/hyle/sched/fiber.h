@@ -9,6 +9,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/fiber_stack.h"
+#include "hyle/sched/priority.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -187,6 +188,12 @@ class Fiber {
   // resume all single-threaded, share-nothing). Set once before spawn_on.
   int owner_worker() const noexcept { return owner_worker_; }
   void set_owner_worker(int idx) noexcept { owner_worker_ = idx; }
+  ExecutionPriority execution_priority() const noexcept {
+    return execution_priority_;
+  }
+  void set_execution_priority(ExecutionPriority priority) noexcept {
+    execution_priority_ = priority;
+  }
 
   // ---- finish hook -----------------------------------------------------------
   // Optional callback the scheduler invokes AFTER this fiber has finished, from
@@ -230,10 +237,13 @@ class Fiber {
   void* arg_ = nullptr;
   bool started_ = false;
   bool finished_ = false;
-  bool wait_requested_ = false;       // set by request_wait(), read by scheduler
-  int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
-  FinishFn on_finish_ = nullptr;      // run by dispatch after done()
-  void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
+  bool wait_requested_ = false;  // set by request_wait(), read by scheduler
+  // Fills the byte that was padding before owner_worker_; normal Fiber size and
+  // alignment therefore do not grow when priority support is compiled in.
+  ExecutionPriority execution_priority_ = ExecutionPriority::kNormal;
+  int owner_worker_ = -1;  // shard-per-core pin (-1 = unpinned/stealable)
+  FinishFn on_finish_ = nullptr;   // run by dispatch after done()
+  void* on_finish_ctx_ = nullptr;  // ctx for on_finish_ (e.g. the TaskDriver)
   detail::CancelFlagLink* cancel_flags_ = nullptr;  // active cancel sources
   Fiber* ready_next_ = nullptr;       // scheduler cold overflow intrusive link
   const char* name_ = nullptr;        // obs-02: trace label (stable ptr), OFF-build unused

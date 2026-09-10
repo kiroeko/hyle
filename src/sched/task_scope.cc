@@ -34,9 +34,11 @@ void run_final_publish_hook_for_testing() noexcept {
 struct TaskScopeState {
   enum class JoinPhase : unsigned char { kOpen, kJoining, kJoined };
 
-  TaskScopeState(mem::AllocatorRef owner_allocator,
-                 CancelToken owner_cancel) noexcept
-      : allocator(owner_allocator), cancel(std::move(owner_cancel)) {}
+  TaskScopeState(mem::AllocatorRef owner_allocator, CancelToken owner_cancel,
+                 std::optional<ExecutionPriority> owner_priority) noexcept
+      : allocator(owner_allocator),
+        cancel(std::move(owner_cancel)),
+        priority(owner_priority) {}
 
   ~TaskScopeState() {
     TaskScopeCompletion* current = head;
@@ -49,6 +51,7 @@ struct TaskScopeState {
 
   mem::AllocatorRef allocator;
   CancelToken cancel;
+  std::optional<ExecutionPriority> priority;
   // One short control lock is the admission/close linearization point and the
   // rare error aggregator. Successful child completion never touches it.
   util::SpinLock control_lock;
@@ -130,6 +133,12 @@ const CancelToken& task_scope_cancel_token(TaskScopeState* state) noexcept {
   return state->cancel;
 }
 
+std::optional<ExecutionPriority> task_scope_priority(
+    TaskScopeState* state) noexcept {
+  HYLE_FATAL_ASSERT(state != nullptr);
+  return state->priority;
+}
+
 template <class T>
 struct ScopeOwnedTaskDriver {
   static_assert(std::is_void_v<T> || std::is_same_v<T, Status>);
@@ -208,7 +217,7 @@ struct ScopeOwnedTaskDriver {
 
 template <class T>
 Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
-                      std::size_t stack_size) noexcept {
+                      FiberLaunchOptions options) noexcept {
   using Driver = ScopeOwnedTaskDriver<T>;
   if (state == nullptr || scheduler == nullptr) {
     return Status::InvalidArgument("TaskScope::add requires a valid scope");
@@ -217,9 +226,19 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
     return Status::ResourceExhausted(
         "scope-owned task coroutine allocation failed");
   }
-  if (stack_size < mem::kFiberStackSmall) {
+  if (options.stack_size < mem::kFiberStackSmall) {
     return Status::InvalidArgument(
         "scope-owned task fiber stack is smaller than the safe tier");
+  }
+  if (options.priority.has_value() &&
+      !detail::is_valid_execution_priority(*options.priority)) {
+    return Status::InvalidArgument("scope-owned task priority is invalid");
+  }
+  if (options.priority.has_value() &&
+      *options.priority != ExecutionPriority::kNormal &&
+      !scheduler->execution_priorities_enabled()) {
+    return Status::InvalidArgument(
+        "scope-owned low/high priority requires three-lane mode");
   }
 
   const mem::AllocatorRef allocator = task_scope_allocator(state);
@@ -231,9 +250,10 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
         "scope-owned task driver allocation failed");
   }
 
-  mem::FiberStackPool* pool = scheduler->fiber_stack_pool(stack_size);
-  auto stack_result =
-      pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
+  mem::FiberStackPool* pool = scheduler->fiber_stack_pool(options.stack_size);
+  auto stack_result = pool != nullptr
+                          ? pool->acquire()
+                          : mem::FiberStack::allocate(options.stack_size);
   if (!stack_result) {
     allocator.deallocate(driver, sizeof(Driver), alignof(Driver));
     return std::move(stack_result)
@@ -251,11 +271,18 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
   }
 
   driver->arm_finish_hook();
-  if (!scheduler->spawn(&*driver->fiber)) {
-    Status status = scheduler->accepting()
-                        ? Status::ResourceExhausted(
-                              "scheduler runnable queues are full on a worker")
-                        : Status::Cancelled("scheduler is shutting down");
+  std::optional<ExecutionPriority> priority = options.priority;
+  if (!priority.has_value()) priority = task_scope_priority(state);
+  Status status;
+  if (priority.has_value()) {
+    status = scheduler->spawn(&*driver->fiber, ExecutionOptions{priority});
+  } else if (!scheduler->spawn(&*driver->fiber)) {
+    status = scheduler->accepting()
+                 ? Status::ResourceExhausted(
+                       "scheduler runnable queues are full on a worker")
+                 : Status::Cancelled("scheduler is shutting down");
+  }
+  if (!status.ok()) {
     driver->scope_status = std::move(status);
     Driver::finish(driver);
   }
@@ -265,7 +292,8 @@ Status task_scope_add(TaskScopeState* state, Scheduler* scheduler, Task<T> task,
 }  // namespace detail
 
 Result<TaskScope> TaskScope::create(Scheduler& scheduler,
-                                    mem::AllocatorRef allocator) noexcept {
+                                    mem::AllocatorRef allocator,
+                                    TaskScopeOptions options) noexcept {
   if (!scheduler.valid()) {
     return std::unexpected(
         Status::InvalidArgument("TaskScope requires a valid Scheduler"));
@@ -273,6 +301,17 @@ Result<TaskScope> TaskScope::create(Scheduler& scheduler,
   if (!allocator.valid()) {
     return std::unexpected(
         Status::InvalidArgument("TaskScope requires a complete allocator"));
+  }
+  if (options.priority.has_value() &&
+      !detail::is_valid_execution_priority(*options.priority)) {
+    return std::unexpected(
+        Status::InvalidArgument("TaskScope priority is invalid"));
+  }
+  if (options.priority.has_value() &&
+      *options.priority != ExecutionPriority::kNormal &&
+      !scheduler.execution_priorities_enabled()) {
+    return std::unexpected(Status::InvalidArgument(
+        "TaskScope low/high priority requires three-lane mode"));
   }
 
   auto cancel_result = CancelToken::try_create_root(allocator);
@@ -287,8 +326,8 @@ Result<TaskScope> TaskScope::create(Scheduler& scheduler,
     return std::unexpected(
         Status::ResourceExhausted("TaskScope state allocation failed"));
   }
-  auto* state = new (storage)
-      detail::TaskScopeState(allocator, *std::move(cancel_result));
+  auto* state = new (storage) detail::TaskScopeState(
+      allocator, *std::move(cancel_result), options.priority);
   return TaskScope(state, &scheduler);
 }
 
@@ -340,12 +379,20 @@ Status TaskScope::cancel_and_join() noexcept { return wait_(true); }
 
 Status TaskScope::add(Task<void> task, std::size_t stack_size) noexcept {
   return detail::task_scope_add(state_, scheduler_, std::move(task),
-                                stack_size);
+                                FiberLaunchOptions{std::nullopt, stack_size});
+}
+
+Status TaskScope::add(Task<void> task, FiberLaunchOptions options) noexcept {
+  return detail::task_scope_add(state_, scheduler_, std::move(task), options);
 }
 
 Status TaskScope::add(Task<Status> task, std::size_t stack_size) noexcept {
   return detail::task_scope_add(state_, scheduler_, std::move(task),
-                                stack_size);
+                                FiberLaunchOptions{std::nullopt, stack_size});
+}
+
+Status TaskScope::add(Task<Status> task, FiberLaunchOptions options) noexcept {
+  return detail::task_scope_add(state_, scheduler_, std::move(task), options);
 }
 
 Status TaskScope::wait_(bool cancel) noexcept {

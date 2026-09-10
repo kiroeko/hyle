@@ -28,9 +28,10 @@
   priority、blocking pool priority、跨 Scheduler migration、Compute/Graph、G03--G06 或修改公共性能仪器；
 - 直接依赖/消费者：直接依赖仍为已关闭的 Core/Error/Container-intrusive/Util-core/Time/Timer-queue/Mem/
   Platform；直接消费者为 IO 与未来 inference/rendering owner。本轮不得令任何已关闭下层反向依赖 Sched；
-- 性能：`P1`，material margin `5%`。主工程门是默认 all-normal candidate 对 exact baseline 的同合同
-  schedule/spawn/wake 组合非劣；priority-enabled 路线只与相同语义/完成边界的三 lane peer 或自身 normal
-  control 比较，无法等价时降为 P0 成本账单而不制造输赢；
+- 性能：`P1`，material margin `5%`。默认 all-normal candidate 复用已资格化形状的 `sched-p1-v2`，在相同
+  consumer contract 下与 Marl 比较 schedule 与 completion-wake；exact baseline 只承担 layout/codegen 的
+  P0 差分，避免为了版本 A/B 人造第二套跨进程仪器。priority-enabled 路线只与相同语义/完成边界的三
+  lane peer 比较；没有这种 peer 时降为 P0 成本账单而不拿较弱 normal-only 路线制造输赢；
 - 调查与纠正预算：一次 Folly/oneTBB 源码与 API 时序审计，一次 HYLE admission/yield/wake/pinned/steal
   全路径账单，一次候选架构裁决；AUDITED 后最多两个有限产品修正批次。计时前只允许一次 codegen/layout
   检查和一次短 A/A/双顺序 preflight，candidate 后只运行一次 qualified P1；
@@ -79,7 +80,7 @@ execution hint，但这些应用字段没有共同底层合同，保持 `OUT_OF_
 | 路径 | priority 必须保存/选择的位置 | 默认隔离裁决 |
 |---|---|---|
 | raw/owned `schedule`、`schedule_task` | inline item 入 lane；执行回调期间发布 TLS current priority | normal item/queue 形状不变 |
-| raw Fiber、`spawn_detached`、`spawn_task` | admission 解析 inherit/override；Fiber 记录 route | 复用现有 32-bit owner-worker route，不增 Fiber size |
+| raw Fiber、`spawn_detached`、`spawn_task` | admission 解析 inherit/override；Fiber 记录 route | 填入 `owner_worker_` 前既有 padding byte，不增 Fiber size |
 | `Fiber::yield` | dispatch 后按 Fiber route 回原 lane | normal worker loop 走原 reschedule |
 | Waker/Timer/IO | rendezvous 后按同一 Fiber route re-inject | 统一 Waker 必须做一次 sidecar-null mode gate |
 | pinned | 每 worker 的 high/low pinned queue；只由 owner pop | sidecar 只在 three-lane mode 分配 |
@@ -87,8 +88,8 @@ execution hint，但这些应用字段没有共同底层合同，保持 `OUT_OF_
 | shutdown/drain/full | 既有 lifecycle/accounting 覆盖全部 lane；worker 递归满队列仍失败而不自锁 | 不复制 lifecycle authority |
 
 逐任务新 allocation、第二 completion/cancel state、任意整数比较或 heap 都没有必要。three-lane sidecar 使用两个
-固定档的 allocator-backed sharded ready queues、每 worker high/low pinned queues 和现有 intrusive Fiber
-overflow；选择是固定常数扫描，admission/completion 仍为 O(1)，完整 drain 仍为 O(N)。priority 模式在持续
+固定档的 allocator-backed MPMC ready queues、每 worker high/low pinned queues 和现有 intrusive Fiber
+overflow；每次选择只做固定档位和单队列 O(1) probe，不扫描 worker shards，完整 drain 仍为 O(N)。priority 模式在持续
 normal/low backlog 下定期做非阻塞 IO reap，使已经完成的 high IO 有机会进入 ready lane；默认 loop 保持
 既有 drain-time reap。
 
@@ -99,10 +100,11 @@ normal/low backlog 下定期做非阻塞 IO reap，使已经完成的 high IO �
 PriorityWaker + PriorityIO` 类型宇宙（破坏统一 completion spine，并形成第二 runtime）。
 
 采用一个 Scheduler 的显式 `SchedulerPriorityMode::kThreeLanes` 与可空 sidecar。worker 启动时只选择一次
-normal loop 或 priority loop，normal loop 没有 lane scan；公开 `Scheduler` 仍是一指针 pimpl，Fiber 复用既有
-route word。统一 admission 和 Waker 边界必须各做一次可预测的 sidecar-null 判断，否则无法同时实现隐式
+normal loop 或 priority loop，normal loop 没有 lane scan；公开 `Scheduler` 仍是一指针 pimpl，Fiber 的
+priority 填入 `owner_worker_` 前既有 padding byte。统一 admission 和 Waker 边界必须各做一次可预测的 sidecar-null 判断，否则无法同时实现隐式
 继承、IO wake 保持和一个公共 Waker；这是两处必要 routing seam，不伪称字面零指令。默认模式仍不得增加
-队列、allocation、per-task size 或 run-loop scan，并由 exact-baseline codegen/size 与 5% P1 非劣门裁决。
+队列、allocation、per-task size 或 run-loop scan，并由 exact-baseline codegen/size 与既有同合同 Sched
+`5%` P1 非劣门共同裁决。
 
 ready-order 合同是“每次 worker 选择下一项时，选择当时可观察到的最高 ready lane”。若 low 已开始运行后
 high 才到达，或 high 与 dequeue 并发，它不被抢占；持续 high 可以无限推迟 low。用户需要硬隔离时创建独立
@@ -135,3 +137,34 @@ Scheduler，不用 priority hint 冒充 QoS。
 
 没有第四个产品改动集。先实现 S10-01/02 为一个 engine 批次，再实现 S10-03/文档为 integration 批次；之后
 只做 correctness/P0 和一次短 preflight，不能边跑数边改变 lane、queue、inheritance 或默认值。
+
+## AUDITED 实施与源码优先性能预审
+
+两批有限产品修正已经完成，未增加第四批：
+
+- `ExecutionPriority`、`ExecutionOptions`、`FiberLaunchOptions` 和显式 `SchedulerPriorityMode::kThreeLanes`
+  覆盖 raw/owning callback、Fiber、typed task、pinned 与 TaskScope；absent priority 只在同一 Scheduler
+  execution 中继承，跨 Scheduler/外部线程回到 normal；
+- opt-in sidecar 使用 high/low 各一条 allocator-backed bounded MPMC queue，以及每 worker high/low pinned
+  lane；正常 Fiber 既有 padding byte 保存 priority，没有增加 `Fiber` size；yield、Waker、timer、pinned、
+  shutdown 和 cancellation 都回到同一 lane；
+- `Scheduler::Impl` 构造把 raw sidecar allocation 移到所有可能抛出的 vector 建立之后，关闭构造异常时的
+  隐藏泄漏；确定性 allocator seam 会让恰好第一个 priority-only allocation 失败并核对 allocation/free；
+- 初版 high/low 曾错误使用 `ShardedQueue`，导致每次选择 normal 前的空 high probe 为 O(workers)。源码
+  成本审计在计时前发现并改为每档单一 MPMC queue；现在 admission/selection 为固定 lane、常态 O(1)，
+  不扫描 worker shard。该修正来自复杂度根因，不来自 benchmark 点值；
+- three-lane mode 不能沿用 normal loop 的 8-callback batch：严格合同要求每个 runnable 完成边界重新观察
+  high lane。这个 opt-in 固定 probe 是功能的必要成本；normal-only worker loop 仍保留原 batch 和队列。
+
+exact `4845e715` MSVC Release P0 差分确认：`Fiber` 仍为 `136/8`，`Scheduler` 为 `8/8`，
+`SchedulerOptions` 为 `56/8`；`spawn_normal`、`reinject_normal` 和 `schedule_with_hint` 的主体指令数与
+baseline 分别保持 `167`、`183`、`121`，normal worker 只在进入旧 loop 前增加一次模式选择。公开 raw
+admission 与统一 Waker 各保留一次 sidecar-null route seam；这是继承/恢复语义所需，未伪称字面零指令。
+
+候选前唯一 `n=1` workload-matched preflight 使用 `sched-p1-v1` 原形状：A/A 双顺序 ratio 为
+`0.9953/0.9816`，低于 5% bias；两个 comparable consumer rows 中 HYLE schedule 为 Marl 的
+`1.3219/1.5908x`，completion-wake 为 `1.1289/1.0164x`。typed per-item ownership 仍按既有合同列为
+`NOT_COMPARABLE`，不制造输赢。预飞的机械 FAIL 来自 `n=1` 不足以签统计 verdict，以及 IO component
+路径迁移造成的 provenance hash 漂移；后者已独立审计为不改变实现/合同，并由只更新 provenance 的
+[`provenance renewal`](../../evidence/performance/provenance-reviews/sched-v1-consumer-shapes-io-core-rename.md)
+和 `sched-p1-v2` 承接终局 P1。不得为这些证据状态改产品或追加 diagnostic 样本。

@@ -43,6 +43,12 @@ namespace {
 // the private nested Impl type.
 thread_local Scheduler* tls_owner = nullptr;
 
+// Published only while a priority-enabled worker executes one callback/fiber.
+// Normal-only workers never write it; outside such an execution context the
+// public query therefore has the stable normal answer.
+thread_local ExecutionPriority tls_execution_priority =
+    ExecutionPriority::kNormal;
+
 // The current worker's timing queue, published by run_worker (file-local so the
 // sleep_*_ns free functions can arm a timer without naming the private nested
 // Impl::Worker type). Null when not on a worker fiber. Single-threaded access:
@@ -100,6 +106,28 @@ struct InlineJob {
   std::uint32_t accounting_idx = 0;
 };
 static_assert(std::is_trivially_copyable_v<InlineJob>);
+
+// High/low sidecar lanes carry either an inline job or a Fiber without another
+// allocation. A null fn is the internal tag for a Fiber stored in ctx; public
+// schedule() rejects null callbacks, so the representations cannot collide.
+struct PriorityRunnable {
+  Scheduler::DetachedFn fn = nullptr;
+  void* ctx = nullptr;
+  std::uint32_t accounting_idx = 0;
+
+  static PriorityRunnable from_fiber(Fiber* fiber) noexcept {
+    return PriorityRunnable{nullptr, fiber, 0};
+  }
+  static PriorityRunnable from_inline(InlineJob job) noexcept {
+    return PriorityRunnable{job.fn, job.ctx, job.accounting_idx};
+  }
+  bool is_fiber() const noexcept { return fn == nullptr; }
+  Fiber* fiber() const noexcept { return static_cast<Fiber*>(ctx); }
+  InlineJob inline_job() const noexcept {
+    return InlineJob{fn, ctx, accounting_idx};
+  }
+};
+static_assert(std::is_trivially_copyable_v<PriorityRunnable>);
 
 // Allocation-free cold overflow for READY fibers. A wake/reschedule cannot
 // report "queue full" or spin on the worker that must drain that same queue.
@@ -166,6 +194,11 @@ constexpr int kMaxLifoPolls = 3;
 // only matters for very-long-poll workloads, and a fixed prime already closes the
 // starvation hole, which is the correctness point here.
 constexpr std::uint32_t kGlobalQueueInterval = 61;
+
+// Priority mode must surface a high-priority IO completion even while normal
+// or low CPU work keeps the ready queues non-empty. This bounded non-blocking
+// reap cadence is paid only by the opt-in worker loop.
+constexpr std::uint32_t kPriorityIoPollInterval = 61;
 
 // Worker-stack callbacks cannot suspend, so draining a small bounded batch is
 // safe and avoids a full pinned/local/global/steal scan after every two-word
@@ -235,6 +268,73 @@ struct Scheduler::Impl {
           inline_cursor(i) {}
   };
 
+  // Allocated only for kThreeLanes. Normal remains in Worker/the existing
+  // global queues; this sidecar owns the two additional fixed lanes.
+  struct PriorityWorker {
+    container::BoundedQueue<Fiber*, mem::AllocatorRef> high_pinned;
+    ReadyOverflow high_pinned_overflow;
+    container::BoundedQueue<Fiber*, mem::AllocatorRef> low_pinned;
+    ReadyOverflow low_pinned_overflow;
+    std::uint32_t io_tick = 0;
+
+    PriorityWorker(mem::AllocatorRef allocator,
+                   std::size_t capacity) noexcept
+        : high_pinned(allocator, capacity),
+          low_pinned(allocator, capacity) {}
+
+    bool valid() const noexcept {
+      return high_pinned.valid() && low_pinned.valid();
+    }
+  };
+
+  struct PriorityState {
+    mem::AllocatorRef allocator;
+    // One audited MPMC queue per priority matches Folly's multi-queue shape and
+    // makes an empty-lane probe O(1). A ShardedQueue here would scan every
+    // worker shard before each normal task, turning priority selection into
+    // O(workers) even when no high work exists.
+    container::BoundedQueue<PriorityRunnable, mem::AllocatorRef> high;
+    ReadyOverflow high_overflow;
+    container::BoundedQueue<PriorityRunnable, mem::AllocatorRef> low;
+    ReadyOverflow low_overflow;
+    PriorityWorker* worker_lanes = nullptr;
+    unsigned worker_count = 0;
+
+    PriorityState(mem::AllocatorRef owner_allocator, unsigned workers,
+                  std::size_t capacity) noexcept
+        : allocator(owner_allocator),
+          high(owner_allocator, capacity),
+          low(owner_allocator, capacity),
+          worker_count(workers) {
+      if (workers > static_cast<std::size_t>(-1) / sizeof(PriorityWorker))
+        return;
+      void* storage = allocator.allocate(sizeof(PriorityWorker) * workers,
+                                         alignof(PriorityWorker));
+      if (storage == nullptr) return;
+      worker_lanes = static_cast<PriorityWorker*>(storage);
+      for (unsigned i = 0; i < workers; ++i) {
+        new (&worker_lanes[i]) PriorityWorker(allocator, capacity);
+      }
+    }
+
+    ~PriorityState() {
+      if (worker_lanes == nullptr) return;
+      for (unsigned i = 0; i < worker_count; ++i)
+        worker_lanes[i].~PriorityWorker();
+      allocator.deallocate(worker_lanes, sizeof(PriorityWorker) * worker_count,
+                           alignof(PriorityWorker));
+    }
+
+    bool valid() const noexcept {
+      if (!high.valid() || !low.valid() || worker_lanes == nullptr)
+        return false;
+      for (unsigned i = 0; i < worker_count; ++i) {
+        if (!worker_lanes[i].valid()) return false;
+      }
+      return true;
+    }
+  };
+
   struct Ctx {
     Impl* self;
     unsigned idx;
@@ -258,6 +358,7 @@ struct Scheduler::Impl {
   // admitted count keeps shutdown/drain correct while removing one malloc/free
   // pair per tiny task.
   container::ShardedQueue<InlineJob, mem::AllocatorRef> inline_jobs;
+  PriorityState* priorities = nullptr;
   mem::AllocatorRef allocator;
   std::vector<Worker*, mem::StdAllocator<Worker*>> workers;
   std::vector<Ctx, mem::StdAllocator<Ctx>> ctxs;
@@ -461,6 +562,28 @@ struct Scheduler::Impl {
         return;
       }
     }
+    // Allocate the optional raw sidecar only after every allocator-backed
+    // vector operation above has completed. If one of those operations throws,
+    // C++ destroys the fully constructed data members but cannot discover a raw
+    // pointer acquired in the constructor body. This order therefore keeps the
+    // priority-mode exception path leak-free without adding a smart-pointer or
+    // branch to the normal worker representation.
+    if (options.priority_mode == SchedulerPriorityMode::kThreeLanes) {
+      void* priority_storage =
+          allocator.allocate(sizeof(PriorityState), alignof(PriorityState));
+      if (priority_storage == nullptr) {
+        init_status = Status::ResourceExhausted(
+            "scheduler priority sidecar allocation failed");
+        return;
+      }
+      priorities =
+          new (priority_storage) PriorityState(allocator, num_workers, cap);
+      if (!priorities->valid()) {
+        init_status = Status::ResourceExhausted(
+            "scheduler priority lane allocation failed");
+        return;
+      }
+    }
     for (unsigned i = 0; i < num_workers; ++i) {
       platform::ThreadOpts opts;
       if (!worker_cpus.empty())
@@ -496,6 +619,11 @@ struct Scheduler::Impl {
     for (Worker* worker : workers) {
       worker->~Worker();
       allocator.deallocate(worker, sizeof(Worker), alignof(Worker));
+    }
+    if (priorities != nullptr) {
+      priorities->~PriorityState();
+      allocator.deallocate(priorities, sizeof(PriorityState),
+                           alignof(PriorityState));
     }
   }
 
@@ -566,6 +694,80 @@ struct Scheduler::Impl {
     return nullptr;
   }
 
+  enum class ReadyKind : unsigned char { kNone, kInline, kFiber };
+
+  ExecutionPriority resolve_priority(
+      std::optional<ExecutionPriority> requested) const noexcept {
+    if (requested.has_value()) return *requested;
+    if (priorities != nullptr && t_current == this)
+      return tls_execution_priority;
+    return ExecutionPriority::kNormal;
+  }
+
+  static bool valid_priority(ExecutionPriority priority) noexcept {
+    return detail::is_valid_execution_priority(priority);
+  }
+
+  bool priority_supported(ExecutionPriority priority) const noexcept {
+    return valid_priority(priority) &&
+           (priority == ExecutionPriority::kNormal || priorities != nullptr);
+  }
+
+  bool try_push_priority(PriorityRunnable runnable,
+                         ExecutionPriority priority) noexcept {
+    HYLE_FATAL_ASSERT(priorities != nullptr);
+    auto& queue = priority == ExecutionPriority::kHigh ? priorities->high
+                                                       : priorities->low;
+    return queue.try_push(runnable);
+  }
+
+  ReadyKind try_take_priority_lane(unsigned worker_idx,
+                                   ExecutionPriority priority,
+                                   Fiber*& fiber) noexcept {
+    HYLE_FATAL_ASSERT(priorities != nullptr);
+    PriorityWorker& lane_worker = priorities->worker_lanes[worker_idx];
+    auto& pinned = priority == ExecutionPriority::kHigh
+                       ? lane_worker.high_pinned
+                       : lane_worker.low_pinned;
+    auto& pinned_overflow = priority == ExecutionPriority::kHigh
+                                ? lane_worker.high_pinned_overflow
+                                : lane_worker.low_pinned_overflow;
+    if (pinned.try_pop(fiber)) return ReadyKind::kFiber;
+    if ((fiber = pinned_overflow.pop()) != nullptr) return ReadyKind::kFiber;
+
+    auto& queue = priority == ExecutionPriority::kHigh ? priorities->high
+                                                       : priorities->low;
+    auto& overflow = priority == ExecutionPriority::kHigh
+                         ? priorities->high_overflow
+                         : priorities->low_overflow;
+    PriorityRunnable runnable{};
+    if (queue.try_pop(runnable)) {
+      if (runnable.is_fiber()) {
+        fiber = runnable.fiber();
+        return ReadyKind::kFiber;
+      }
+      const InlineJob job = runnable.inline_job();
+      tls_execution_priority = priority;
+      job.fn(job.ctx);
+      tls_execution_priority = ExecutionPriority::kNormal;
+      finish_inline(job.accounting_idx);
+      return ReadyKind::kInline;
+    }
+    if ((fiber = overflow.pop()) != nullptr) return ReadyKind::kFiber;
+    return ReadyKind::kNone;
+  }
+
+  ReadyKind take_priority_work(Worker& worker, unsigned worker_idx,
+                               Fiber*& fiber) noexcept {
+    ReadyKind kind =
+        try_take_priority_lane(worker_idx, ExecutionPriority::kHigh, fiber);
+    if (kind != ReadyKind::kNone) return kind;
+    if (run_inline(worker)) return ReadyKind::kInline;
+    if ((fiber = find_task(worker, worker_idx)) != nullptr)
+      return ReadyKind::kFiber;
+    return try_take_priority_lane(worker_idx, ExecutionPriority::kLow, fiber);
+  }
+
   void reschedule(Worker& w, Fiber* f) noexcept {
     // A pinned fiber (shard-per-core) must NOT go on the stealable local queue --
     // a plain cooperative yield would otherwise let another core steal it. Keep it
@@ -592,6 +794,41 @@ struct Scheduler::Impl {
       if (!queued) global_overflow.push(f);
       notify();  // landed in global -> a parked worker may need to take it
     }
+  }
+
+  void push_priority_ready(Fiber* fiber,
+                           ExecutionPriority priority) noexcept {
+    HYLE_FATAL_ASSERT(priority != ExecutionPriority::kNormal);
+    if (!try_push_priority(PriorityRunnable::from_fiber(fiber), priority)) {
+      ReadyOverflow& overflow = priority == ExecutionPriority::kHigh
+                                    ? priorities->high_overflow
+                                    : priorities->low_overflow;
+      overflow.push(fiber);
+    }
+    notify();
+  }
+
+  void reschedule_priority(Worker& worker, Fiber* fiber) noexcept {
+    const ExecutionPriority priority =
+        detail::FiberAccess::execution_priority(fiber);
+    if (priority == ExecutionPriority::kNormal) {
+      reschedule(worker, fiber);
+      return;
+    }
+    const int owner_idx = detail::FiberAccess::owner_worker(fiber);
+    if (owner_idx >= 0) {
+      PriorityWorker& lane_worker =
+          priorities->worker_lanes[static_cast<unsigned>(owner_idx)];
+      auto& queue = priority == ExecutionPriority::kHigh
+                        ? lane_worker.high_pinned
+                        : lane_worker.low_pinned;
+      auto& overflow = priority == ExecutionPriority::kHigh
+                           ? lane_worker.high_pinned_overflow
+                           : lane_worker.low_pinned_overflow;
+      if (!queue.try_push(fiber)) overflow.push(fiber);
+      return;  // pinned work is running on its owner, which is already awake
+    }
+    push_priority_ready(fiber, priority);
   }
 
   // Wake a parked worker ONLY when no worker is already searching (the §2.3 ②
@@ -742,12 +979,72 @@ struct Scheduler::Impl {
     }
   }
 
-  ScheduleResult schedule(InlineJob job) noexcept {
+  ScheduleResult schedule_priority_with_hint(InlineJob job,
+                                             ExecutionPriority priority,
+                                             std::size_t hint,
+                                             bool on_worker) noexcept {
+    HYLE_FATAL_ASSERT(priorities != nullptr);
+    HYLE_FATAL_ASSERT(priority != ExecutionPriority::kNormal);
+    if ((lifecycle.load(std::memory_order_acquire) & kAdmissionClosed) != 0)
+      return ScheduleResult::kClosed;
+    job.accounting_idx = static_cast<std::uint32_t>(
+        (n & (n - 1)) == 0 ? hint & (n - 1) : hint % n);
+    const std::uint64_t prior_inline =
+        workers[job.accounting_idx]->inline_outstanding.fetch_add(
+            1, std::memory_order_acq_rel);
+    if ((lifecycle.load(std::memory_order_acquire) & kAdmissionClosed) != 0) {
+      finish_inline(job.accounting_idx);
+      return ScheduleResult::kClosed;
+    }
+    const PriorityRunnable runnable = PriorityRunnable::from_inline(job);
+    for (;;) {
+      if (try_push_priority(runnable, priority)) {
+        if (prior_inline == 0) notify();
+        return ScheduleResult::kQueued;
+      }
+      if (on_worker) {
+        finish_inline(job.accounting_idx);
+        return ScheduleResult::kFull;
+      }
+      platform::this_thread::yield();
+    }
+  }
+
+  HYLE_NOINLINE ScheduleResult schedule_priority_inherited(
+      InlineJob job) noexcept {
+    HYLE_FATAL_ASSERT(priorities != nullptr);
     const bool on_worker = t_current == this && t_worker_idx >= 0;
     const std::size_t hint =
-        on_worker
-            ? static_cast<std::size_t>(t_worker_idx)
-            : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+        on_worker ? static_cast<std::size_t>(t_worker_idx)
+                  : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+    if (on_worker && tls_execution_priority != ExecutionPriority::kNormal) {
+      return schedule_priority_with_hint(job, tls_execution_priority, hint,
+                                         true);
+    }
+    return schedule_with_hint(job, hint, on_worker);
+  }
+
+  HYLE_FORCE_INLINE ScheduleResult schedule_inherited(InlineJob job) noexcept {
+    if (priorities != nullptr) return schedule_priority_inherited(job);
+    const bool on_worker = t_current == this && t_worker_idx >= 0;
+    const std::size_t hint =
+        on_worker ? static_cast<std::size_t>(t_worker_idx)
+                  : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+    return schedule_with_hint(job, hint, on_worker);
+  }
+
+  ScheduleResult schedule(
+      InlineJob job,
+      std::optional<ExecutionPriority> requested_priority) noexcept {
+    if (!requested_priority.has_value()) return schedule_inherited(job);
+    const bool on_worker = t_current == this && t_worker_idx >= 0;
+    const std::size_t hint =
+        on_worker ? static_cast<std::size_t>(t_worker_idx)
+                  : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+    if (*requested_priority != ExecutionPriority::kNormal) {
+      return schedule_priority_with_hint(job, *requested_priority, hint,
+                                         on_worker);
+    }
     return schedule_with_hint(job, hint, on_worker);
   }
 
@@ -757,6 +1054,11 @@ struct Scheduler::Impl {
     HYLE_FATAL_ASSERT(ordinal + 1 < n);
     const std::size_t root = static_cast<std::size_t>(t_worker_idx);
     const std::size_t hint = (root + ordinal + 1) % n;
+    if (priorities != nullptr &&
+        tls_execution_priority != ExecutionPriority::kNormal) {
+      return schedule_priority_with_hint(job, tls_execution_priority, hint,
+                                         true);
+    }
     return schedule_with_hint(job, hint, true);
   }
 
@@ -806,15 +1108,35 @@ struct Scheduler::Impl {
     }
   }
 
+  void dispatch_priority(Worker& worker, Fiber* fiber) noexcept {
+    const ExecutionPriority priority =
+        detail::FiberAccess::execution_priority(fiber);
+    tls_execution_priority = priority;
+    fiber->resume();
+    if (fiber->done()) {
+      detail::FiberAccess::FinishFn finish =
+          detail::FiberAccess::on_finish(fiber);
+      void* finish_context = detail::FiberAccess::on_finish_context(fiber);
+      if (finish != nullptr) finish(finish_context);
+      finish_one();
+    } else if (detail::FiberAccess::consume_wait_request(fiber)) {
+      if (detail::FiberAccess::wake_rendezvous(fiber))
+        reschedule_priority(worker, fiber);
+    } else {
+      reschedule_priority(worker, fiber);
+    }
+    tls_execution_priority = ExecutionPriority::kNormal;
+  }
+
   // Hand a (suspended) fiber back to the run loop from ANY thread. Goes through
-  // the global queue + notify so it's correct whether wake() runs on a worker or
-  // a foreign thread. Does NOT touch `outstanding` -- a waiting fiber was never
-  // decremented, it stayed counted while parked.
-  void reinject(Fiber* f) noexcept {
-    // A pinned fiber (shard-per-core) must wake back onto its OWNER worker, never
-    // the global stealable pool -- so its io ring + fiber stay on one core. Push
-    // to that worker's private queue and unpark IT specifically. The queue is a
-    // bounded MPMC ring, so a Waker firing from any thread is safe.
+  // the global queue + notify so it's correct whether wake() runs on a worker
+  // or a foreign thread. Does NOT touch `outstanding` -- a waiting fiber was
+  // never decremented, it stayed counted while parked.
+  void reinject_normal(Fiber* f) noexcept {
+    // A pinned fiber (shard-per-core) must wake back onto its OWNER worker,
+    // never the global stealable pool -- so its io ring + fiber stay on one
+    // core. Push to that worker's private queue and unpark IT specifically. The
+    // queue is a bounded MPMC ring, so a Waker firing from any thread is safe.
     int owner_idx = detail::FiberAccess::owner_worker(f);
     if (owner_idx >= 0) {
       Worker& owner_worker = *workers[static_cast<unsigned>(owner_idx)];
@@ -871,6 +1193,39 @@ struct Scheduler::Impl {
     notify();
   }
 
+  void reinject_priority(Fiber* fiber) noexcept {
+    const ExecutionPriority priority =
+        detail::FiberAccess::execution_priority(fiber);
+    if (priority == ExecutionPriority::kNormal) {
+      reinject_normal(fiber);
+      return;
+    }
+    const int owner_idx = detail::FiberAccess::owner_worker(fiber);
+    if (owner_idx >= 0) {
+      PriorityWorker& lane_worker =
+          priorities->worker_lanes[static_cast<unsigned>(owner_idx)];
+      auto& queue = priority == ExecutionPriority::kHigh
+                        ? lane_worker.high_pinned
+                        : lane_worker.low_pinned;
+      auto& overflow = priority == ExecutionPriority::kHigh
+                           ? lane_worker.high_pinned_overflow
+                           : lane_worker.low_pinned_overflow;
+      if (!queue.try_push(fiber)) overflow.push(fiber);
+      if (!(t_current == this && t_worker_idx == owner_idx))
+        unpark_specific(static_cast<unsigned>(owner_idx));
+      return;
+    }
+    push_priority_ready(fiber, priority);
+  }
+
+  void reinject(Fiber* fiber) noexcept {
+    if (priorities == nullptr) {
+      reinject_normal(fiber);
+    } else {
+      reinject_priority(fiber);
+    }
+  }
+
   // ---- sched-04b timer integration ------------------------------------------
 
   // Advance THIS worker's queue to now and re-inject every fiber whose sleep
@@ -922,7 +1277,121 @@ struct Scheduler::Impl {
     return nd > now ? nd - now : 0;
   }
 
+  void run_priority_worker(unsigned idx) noexcept {
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+    char trace_thread_name[24];
+    std::snprintf(trace_thread_name, sizeof(trace_thread_name),
+                  "hyle.worker.%u", idx);
+    HYLE_TRACE_THREAD_NAME(trace_thread_name);
+#endif
+    t_current = this;
+    t_worker_idx = static_cast<int>(idx);
+    tls_owner = owner;
+    tls_worker_idx = static_cast<int>(idx);
+    tls_execution_priority = ExecutionPriority::kNormal;
+    Worker& worker = *workers[idx];
+    PriorityWorker& priority_worker = priorities->worker_lanes[idx];
+    tls_timer_queue = &worker.timers;
+    if (on_worker_start != nullptr) on_worker_start(worker_hook_context, idx);
+
+    while (!stop.load(std::memory_order_acquire)) {
+      fire_due_timers(worker);
+
+      // Unlike the normal drain-before-reap loop, an opt-in priority worker
+      // periodically surfaces completed IO while lower lanes remain busy. That
+      // lets a newly-ready high fiber participate in the next lane selection.
+      if (++priority_worker.io_tick % kPriorityIoPollInterval == 0) {
+        if (IoPollFn poll = io_poll.load(std::memory_order_acquire);
+            poll != nullptr) {
+          (void)poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
+        }
+      }
+
+      Fiber* fiber = nullptr;
+      ReadyKind ready = take_priority_work(worker, idx, fiber);
+      if (ready != ReadyKind::kNone) {
+        if (ready == ReadyKind::kFiber) dispatch_priority(worker, fiber);
+        continue;
+      }
+
+      bool io_in_flight = false;
+      if (IoPollFn poll = io_poll.load(std::memory_order_acquire);
+          poll != nullptr) {
+        io_in_flight =
+            poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
+        ready = take_priority_work(worker, idx, fiber);
+        if (ready != ReadyKind::kNone) {
+          if (ready == ReadyKind::kFiber) dispatch_priority(worker, fiber);
+          continue;
+        }
+      }
+
+      bool got = false;
+      ReadyKind searched = ReadyKind::kNone;
+      if (!io_in_flight) {
+        num_searching_.fetch_add(1, std::memory_order_relaxed);
+        for (int spin = 0; spin < spin_polls && !got; ++spin) {
+          util::cpu_relax();
+          searched = take_priority_work(worker, idx, fiber);
+          got = searched != ReadyKind::kNone;
+        }
+        for (int yield = 0; yield < yields_before_park && !got; ++yield) {
+          platform::this_thread::yield();
+          searched = take_priority_work(worker, idx, fiber);
+          got = searched != ReadyKind::kNone;
+        }
+      }
+      if (got) {
+        if (num_searching_.fetch_sub(1, std::memory_order_relaxed) == 1)
+          unpark_one();
+        if (searched == ReadyKind::kFiber) dispatch_priority(worker, fiber);
+        continue;
+      }
+
+      {
+        std::lock_guard<std::mutex> lock(idle_mu);
+        sleeper_pos[idx] = sleepers.size();
+        sleepers.push_back(idx);
+      }
+      if (!io_in_flight) num_searching_.fetch_sub(1, std::memory_order_seq_cst);
+
+      ready = take_priority_work(worker, idx, fiber);
+      if (ready != ReadyKind::kNone) {
+        remove_sleeper(idx);
+        if (ready == ReadyKind::kFiber) dispatch_priority(worker, fiber);
+        continue;
+      }
+
+      const std::uint64_t timeout = park_timeout_ns(worker);
+      if (IoPollFn poll = io_poll.load(std::memory_order_acquire);
+          poll != nullptr) {
+        if (poll(io_poll_ctx.load(std::memory_order_relaxed), idx, timeout)) {
+          remove_sleeper(idx);
+          continue;
+        }
+      }
+      if (timeout == UINT64_MAX) {
+        worker.parker.park();
+      } else {
+        worker.parker.park_for(time::Duration(timeout));
+      }
+      remove_sleeper(idx);
+    }
+
+    if (on_worker_stop != nullptr) on_worker_stop(worker_hook_context, idx);
+    tls_execution_priority = ExecutionPriority::kNormal;
+    t_current = nullptr;
+    t_worker_idx = -1;
+    tls_timer_queue = nullptr;
+    tls_worker_idx = -1;
+    tls_owner = nullptr;
+  }
+
   void run_worker(unsigned idx) noexcept {
+    if (priorities != nullptr) {
+      run_priority_worker(idx);
+      return;
+    }
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
     char trace_thread_name[24];
     std::snprintf(trace_thread_name, sizeof(trace_thread_name),
@@ -1109,7 +1578,10 @@ struct Scheduler::Impl {
     }
   }
 
-  bool spawn(Fiber* f) noexcept {
+  // Keep the normal-only implementation physically separate. Its caller makes
+  // one cold mode decision before entering this function; the established
+  // admission/local/global hot path below does not read priority state.
+  bool spawn_normal(Fiber* f) noexcept {
     HYLE_FATAL_ASSERT(f != nullptr);
     if (!try_admit()) return false;
     const bool on_worker = t_current == this && t_worker_idx >= 0;
@@ -1140,10 +1612,74 @@ struct Scheduler::Impl {
     }
   }
 
-  // Spawn a fiber PINNED to worker `idx` (shard-per-core). It records its owner so
-  // every subsequent wake also routes back here (reinject), then goes onto that
-  // worker's private queue and unparks it specifically. Never stolen.
-  bool spawn_on(unsigned idx, Fiber* f) noexcept {
+  bool spawn_priority(
+      Fiber* fiber,
+      std::optional<ExecutionPriority> requested_priority) noexcept {
+    HYLE_FATAL_ASSERT(fiber != nullptr);
+    HYLE_FATAL_ASSERT(priorities != nullptr);
+    const ExecutionPriority priority = resolve_priority(requested_priority);
+    HYLE_FATAL_ASSERT(valid_priority(priority));
+    if (!try_admit()) return false;
+
+    const ExecutionPriority previous_priority =
+        detail::FiberAccess::execution_priority(fiber);
+    detail::FiberAccess::set_execution_priority(fiber, priority);
+    const bool on_worker = t_current == this && t_worker_idx >= 0;
+    if (priority != ExecutionPriority::kNormal) {
+      for (;;) {
+        if (try_push_priority(PriorityRunnable::from_fiber(fiber), priority)) {
+          notify();
+          return true;
+        }
+        // Recursive submission must never wait on a queue whose only consumers
+        // include this worker. Foreign producers may apply backpressure.
+        if (on_worker) {
+          detail::FiberAccess::set_execution_priority(fiber, previous_priority);
+          finish_one();
+          return false;
+        }
+        platform::this_thread::yield();
+      }
+    }
+
+    // Normal work inside a three-lane Scheduler deliberately retains the
+    // existing local/global route; only its Fiber identity records kNormal so a
+    // later yield or wake remains in the normal lane.
+    const std::size_t hint =
+        on_worker ? static_cast<std::size_t>(t_worker_idx)
+                  : inject_rr_.fetch_add(1, std::memory_order_relaxed);
+    if (on_worker &&
+        workers[static_cast<unsigned>(t_worker_idx)]->local.try_push_back(
+            fiber)) {
+      notify();
+      return true;
+    }
+    for (;;) {
+      for (std::size_t i = 0; i < global.num_shards(); ++i) {
+        if (global.try_push(hint + i, fiber)) {
+          notify();
+          return true;
+        }
+      }
+      if (on_worker) {
+        detail::FiberAccess::set_execution_priority(fiber, previous_priority);
+        finish_one();
+        return false;
+      }
+      platform::this_thread::yield();
+    }
+  }
+
+  bool spawn(Fiber* fiber, std::optional<ExecutionPriority> requested_priority =
+                               std::nullopt) noexcept {
+    if (priorities == nullptr) return spawn_normal(fiber);
+    return spawn_priority(fiber, requested_priority);
+  }
+
+  // Spawn a fiber PINNED to worker `idx` (shard-per-core). It records its owner
+  // so every subsequent wake also routes back here (reinject), then goes onto
+  // that worker's private queue and unparks it specifically. Never stolen.
+  bool spawn_on_normal(unsigned idx, Fiber* f) noexcept {
     HYLE_FATAL_ASSERT(idx < n);
     HYLE_FATAL_ASSERT(f != nullptr);
     if (!try_admit()) return false;
@@ -1159,6 +1695,47 @@ struct Scheduler::Impl {
     }
     unpark_specific(idx);
     return true;
+  }
+
+  bool spawn_on_priority(
+      unsigned idx, Fiber* fiber,
+      std::optional<ExecutionPriority> requested_priority) noexcept {
+    HYLE_FATAL_ASSERT(idx < n);
+    HYLE_FATAL_ASSERT(fiber != nullptr);
+    HYLE_FATAL_ASSERT(priorities != nullptr);
+    const ExecutionPriority priority = resolve_priority(requested_priority);
+    HYLE_FATAL_ASSERT(valid_priority(priority));
+    if (!try_admit()) return false;
+
+    const int previous_owner = detail::FiberAccess::owner_worker(fiber);
+    const ExecutionPriority previous_priority =
+        detail::FiberAccess::execution_priority(fiber);
+    detail::FiberAccess::set_owner_worker(fiber, static_cast<int>(idx));
+    detail::FiberAccess::set_execution_priority(fiber, priority);
+
+    PriorityWorker& priority_worker = priorities->worker_lanes[idx];
+    auto* queue =
+        priority == ExecutionPriority::kHigh  ? &priority_worker.high_pinned
+        : priority == ExecutionPriority::kLow ? &priority_worker.low_pinned
+                                              : &workers[idx]->pinned;
+    while (!queue->try_push(fiber)) {
+      if (t_current == this && t_worker_idx >= 0) {
+        detail::FiberAccess::set_owner_worker(fiber, previous_owner);
+        detail::FiberAccess::set_execution_priority(fiber, previous_priority);
+        finish_one();
+        return false;
+      }
+      platform::this_thread::yield();
+    }
+    unpark_specific(idx);
+    return true;
+  }
+
+  bool spawn_on(unsigned idx, Fiber* fiber,
+                std::optional<ExecutionPriority> requested_priority =
+                    std::nullopt) noexcept {
+    if (priorities == nullptr) return spawn_on_normal(idx, fiber);
+    return spawn_on_priority(idx, fiber, requested_priority);
   }
 
   void drain() noexcept {
@@ -1396,6 +1973,11 @@ void Scheduler::init_(unsigned num_workers, mem::AllocatorRef alloc,
     *status = Status::InvalidArgument("scheduler idle policy is invalid");
     return;
   }
+  if (options.priority_mode != SchedulerPriorityMode::kNormalOnly &&
+      options.priority_mode != SchedulerPriorityMode::kThreeLanes) {
+    *status = Status::InvalidArgument("scheduler priority mode is invalid");
+    return;
+  }
   if (queue_capacity < 2 || queue_capacity > (std::size_t{1} << 31) ||
       !std::has_single_bit(queue_capacity)) {
     *status = Status::InvalidArgument(
@@ -1441,14 +2023,54 @@ Scheduler::~Scheduler() {
 }
 
 bool Scheduler::spawn(Fiber* fiber) { return impl_->spawn(fiber); }
+Status Scheduler::spawn(Fiber* fiber, ExecutionOptions options) noexcept {
+  if (fiber == nullptr)
+    return Status::InvalidArgument("scheduled fiber is null");
+  if (options.priority.has_value() && !Impl::valid_priority(*options.priority))
+    return Status::InvalidArgument("execution priority is invalid");
+  if (options.priority.has_value() &&
+      !impl_->priority_supported(*options.priority))
+    return Status::InvalidArgument(
+        "low/high execution priority requires three-lane mode");
+  if (impl_->spawn(fiber, options.priority)) return Status{};
+  return impl_->lifecycle.load(std::memory_order_acquire) &
+                 Impl::kAdmissionClosed
+             ? Status::Cancelled("scheduler admission is closed")
+             : Status::ResourceExhausted(
+                   "scheduler runnable queues are full on a worker");
+}
 Status Scheduler::spawn_detached(DetachedFn fn, void* ctx,
                                  std::size_t stack_size) noexcept {
-  return spawn_detached_(0, false, fn, ctx, stack_size);
+  return spawn_detached_(0, false, fn, ctx, stack_size, std::nullopt);
+}
+Status Scheduler::spawn_detached(DetachedFn fn, void* ctx,
+                                 FiberLaunchOptions options) noexcept {
+  return spawn_detached_(0, false, fn, ctx, options.stack_size,
+                         options.priority);
 }
 Status Scheduler::schedule(DetachedFn fn, void* ctx) noexcept {
   if (fn == nullptr)
     return Status::InvalidArgument("scheduled task callback is null");
-  const auto submitted = impl_->schedule(InlineJob{fn, ctx});
+  const auto submitted = impl_->schedule_inherited(InlineJob{fn, ctx});
+  if (submitted != Impl::ScheduleResult::kQueued) {
+    if (submitted == Impl::ScheduleResult::kClosed)
+      return Status::Cancelled("scheduler admission is closed");
+    return Status::ResourceExhausted(
+        "scheduler inline queue is full on a worker");
+  }
+  return Status{};
+}
+Status Scheduler::schedule(DetachedFn fn, void* ctx,
+                           ExecutionOptions options) noexcept {
+  if (fn == nullptr)
+    return Status::InvalidArgument("scheduled task callback is null");
+  if (options.priority.has_value() && !Impl::valid_priority(*options.priority))
+    return Status::InvalidArgument("execution priority is invalid");
+  if (options.priority.has_value() &&
+      !impl_->priority_supported(*options.priority))
+    return Status::InvalidArgument(
+        "low/high execution priority requires three-lane mode");
+  const auto submitted = impl_->schedule(InlineJob{fn, ctx}, options.priority);
   if (submitted != Impl::ScheduleResult::kQueued) {
     if (submitted == Impl::ScheduleResult::kClosed)
       return Status::Cancelled("scheduler admission is closed");
@@ -1488,15 +2110,41 @@ void Scheduler::deallocate_owned_callable_(void* pointer, std::size_t size,
 bool Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber) {
   return impl_->spawn_on(worker_idx, fiber);
 }
+Status Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber,
+                           ExecutionOptions options) noexcept {
+  if (fiber == nullptr)
+    return Status::InvalidArgument("scheduled fiber is null");
+  if (worker_idx >= impl_->n)
+    return Status::InvalidArgument("scheduled fiber worker is out of range");
+  if (options.priority.has_value() && !Impl::valid_priority(*options.priority))
+    return Status::InvalidArgument("execution priority is invalid");
+  if (options.priority.has_value() &&
+      !impl_->priority_supported(*options.priority))
+    return Status::InvalidArgument(
+        "low/high execution priority requires three-lane mode");
+  if (impl_->spawn_on(worker_idx, fiber, options.priority)) return Status{};
+  return impl_->lifecycle.load(std::memory_order_acquire) &
+                 Impl::kAdmissionClosed
+             ? Status::Cancelled("scheduler admission is closed")
+             : Status::ResourceExhausted(
+                   "scheduler runnable queues are full on a worker");
+}
 Status Scheduler::spawn_detached_on(unsigned worker_idx, DetachedFn fn,
                                     void* ctx,
                                     std::size_t stack_size) noexcept {
-  return spawn_detached_(worker_idx, true, fn, ctx, stack_size);
+  return spawn_detached_(worker_idx, true, fn, ctx, stack_size, std::nullopt);
+}
+Status Scheduler::spawn_detached_on(unsigned worker_idx, DetachedFn fn,
+                                    void* ctx,
+                                    FiberLaunchOptions options) noexcept {
+  return spawn_detached_(worker_idx, true, fn, ctx, options.stack_size,
+                         options.priority);
 }
 
-Status Scheduler::spawn_detached_(unsigned worker_idx, bool pinned,
-                                  DetachedFn fn, void* ctx,
-                                  std::size_t stack_size) noexcept {
+Status Scheduler::spawn_detached_(
+    unsigned worker_idx, bool pinned, DetachedFn fn, void* ctx,
+    std::size_t stack_size,
+    std::optional<ExecutionPriority> priority) noexcept {
   if (fn == nullptr)
     return Status::InvalidArgument("detached task callback is null");
   if (stack_size < mem::kFiberStackSmall)
@@ -1504,6 +2152,11 @@ Status Scheduler::spawn_detached_(unsigned worker_idx, bool pinned,
         "detached task stack is smaller than the safe tier");
   if (pinned && worker_idx >= impl_->n)
     return Status::InvalidArgument("detached task worker is out of range");
+  if (priority.has_value() && !Impl::valid_priority(*priority))
+    return Status::InvalidArgument("execution priority is invalid");
+  if (priority.has_value() && !impl_->priority_supported(*priority))
+    return Status::InvalidArgument(
+        "low/high execution priority requires three-lane mode");
 
   mem::FiberStackPool* pool = impl_->fiber_stack_pool(stack_size);
   auto stack_result =
@@ -1525,8 +2178,8 @@ Status Scheduler::spawn_detached_(unsigned worker_idx, bool pinned,
   auto* driver = new (storage)
       DetachedDriver(impl_->allocator, fn, ctx, std::move(stack), pool);
   const bool admitted =
-      pinned ? impl_->spawn_on(worker_idx, &driver->fiber)
-             : impl_->spawn(&driver->fiber);
+      pinned ? impl_->spawn_on(worker_idx, &driver->fiber, priority)
+             : impl_->spawn(&driver->fiber, priority);
   if (!admitted) {
     DetachedDriver::destroy(driver);
     return impl_->lifecycle.load(std::memory_order_acquire) &
@@ -1538,7 +2191,11 @@ Status Scheduler::spawn_detached_(unsigned worker_idx, bool pinned,
   return Status{};
 }
 unsigned Scheduler::num_workers() const noexcept { return impl_->n; }
-mem::FiberStackPool* Scheduler::fiber_stack_pool(std::size_t usable_bytes) noexcept {
+bool Scheduler::execution_priorities_enabled() const noexcept {
+  return impl_ != nullptr && impl_->priorities != nullptr;
+}
+mem::FiberStackPool* Scheduler::fiber_stack_pool(
+    std::size_t usable_bytes) noexcept {
   return impl_->fiber_stack_pool(usable_bytes);
 }
 void Scheduler::drain() { impl_->drain(); }
@@ -1610,6 +2267,10 @@ Waker current_waker() noexcept {
 }
 
 int current_worker_index() noexcept { return tls_worker_idx; }
+
+ExecutionPriority current_execution_priority() noexcept {
+  return tls_execution_priority;
+}
 
 bool detail::SchedulerAccess::is_current_scheduler(
     const Scheduler* scheduler) noexcept {

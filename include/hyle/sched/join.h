@@ -508,11 +508,27 @@ struct ScheduledTaskCell<F, void> final : JoinState<void> {
 template <class Fn>
   requires detail::WorkerStackTask<Fn>
 JoinHandle<detail::ScheduledResult<Fn>> schedule_task(
-    Scheduler& scheduler, mem::AllocatorRef allocator, Fn&& fn) noexcept {
+    Scheduler& scheduler, mem::AllocatorRef allocator, Fn&& fn,
+    ExecutionOptions options = {}) noexcept {
   using Callable = detail::ScheduledCallable<Fn>;
   using R = detail::ScheduledResult<Fn>;
   using Cell = detail::ScheduledTaskCell<Callable, R>;
 
+  if (!scheduler.valid()) {
+    return JoinHandle<R>(
+        Status::InvalidArgument("schedule_task requires a valid scheduler"));
+  }
+  if (options.priority.has_value() &&
+      !detail::is_valid_execution_priority(*options.priority)) {
+    return JoinHandle<R>(
+        Status::InvalidArgument("schedule_task priority is invalid"));
+  }
+  if (options.priority.has_value() &&
+      *options.priority != ExecutionPriority::kNormal &&
+      !scheduler.execution_priorities_enabled()) {
+    return JoinHandle<R>(Status::InvalidArgument(
+        "schedule_task low/high priority requires three-lane mode"));
+  }
   if (!allocator.valid()) {
     return JoinHandle<R>(
         Status::InvalidArgument("schedule_task requires a complete allocator"));
@@ -525,7 +541,9 @@ JoinHandle<detail::ScheduledResult<Fn>> schedule_task(
   }
   new (cell) Cell(allocator, std::forward<Fn>(fn));
 
-  Status admitted = scheduler.schedule(&Cell::run, cell);
+  Status admitted = options.priority.has_value()
+                        ? scheduler.schedule(&Cell::run, cell, options)
+                        : scheduler.schedule(&Cell::run, cell);
   if (!admitted.ok()) {
     cell->fn.reset();
     cell->set_error(std::move(admitted).WithContext("schedule_task"));
@@ -631,18 +649,32 @@ namespace detail {
 template <bool Pinned, class T>
 JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
                               mem::AllocatorRef alloc, Task<T>&& task,
-                              std::size_t stack_size) noexcept {
+                              FiberLaunchOptions options) noexcept {
   using detail::JoinState;
   using detail::TaskDriver;
+  if (!sched.valid()) {
+    return JoinHandle<T>(Status::InvalidArgument(
+        Pinned ? "spawn_task_on requires a valid scheduler"
+               : "spawn_task requires a valid scheduler"));
+  }
   if constexpr (Pinned) {
-    if (!sched.valid()) {
-      return JoinHandle<T>(
-          Status::InvalidArgument("spawn_task_on requires a valid scheduler"));
-    }
     if (worker_idx >= sched.num_workers()) {
       return JoinHandle<T>(Status::InvalidArgument(
           "spawn_task_on worker is out of range"));
     }
+  }
+  if (options.priority.has_value() &&
+      !detail::is_valid_execution_priority(*options.priority)) {
+    return JoinHandle<T>(
+        Status::InvalidArgument(Pinned ? "spawn_task_on priority is invalid"
+                                       : "spawn_task priority is invalid"));
+  }
+  if (options.priority.has_value() &&
+      *options.priority != ExecutionPriority::kNormal &&
+      !sched.execution_priorities_enabled()) {
+    return JoinHandle<T>(Status::InvalidArgument(
+        Pinned ? "spawn_task_on low/high priority requires three-lane mode"
+               : "spawn_task low/high priority requires three-lane mode"));
   }
   if (!alloc.valid()) {
     return JoinHandle<T>(
@@ -650,7 +682,7 @@ JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
                                     ? "spawn_task_on requires a complete allocator"
                                     : "spawn_task requires a complete allocator"));
   }
-  if (stack_size < mem::kFiberStackSmall) {
+  if (options.stack_size < mem::kFiberStackSmall) {
     return JoinHandle<T>(
         Status::InvalidArgument("fiber stack is smaller than the safe tier"));
   }
@@ -674,13 +706,15 @@ JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
     st->release();  // no driver exists: drop its reserved task-side reference
     return JoinHandle<T>(st);
   }
-  // Recycle the fiber stack through the scheduler's shared per-tier pool when the
-  // size is a standard tier (the common case: kDefaultStackSize) -- a hot
-  // spawn/join loop then reuses stacks instead of reserve_guarded'ing every time.
-  // A non-tier size gets a one-off stack (pool == nullptr, released on destroy).
-  mem::FiberStackPool* pool = sched.fiber_stack_pool(stack_size);
-  auto stack_result =
-      pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
+  // Recycle the fiber stack through the scheduler's shared per-tier pool when
+  // the size is a standard tier (the common case: kDefaultStackSize) -- a hot
+  // spawn/join loop then reuses stacks instead of reserve_guarded'ing every
+  // time. A non-tier size gets a one-off stack (pool == nullptr, released on
+  // destroy).
+  mem::FiberStackPool* pool = sched.fiber_stack_pool(options.stack_size);
+  auto stack_result = pool != nullptr
+                          ? pool->acquire()
+                          : mem::FiberStack::allocate(options.stack_size);
   if (!stack_result) {
     alloc.deallocate(d, sizeof(TaskDriver<T>), alignof(TaskDriver<T>));
     st->set_error(std::move(stack_result).error().WithContext(
@@ -695,22 +729,28 @@ JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
   // its stack (a fiber must never free its own stack from within entry). The
   // Fiber dtor returns the stack to `pool` (if any) at that safe point.
   d->arm_finish_hook();
-  const bool admitted = [&]() noexcept {
+  Status admitted = [&]() noexcept {
     if constexpr (Pinned) {
-      return sched.spawn_on(worker_idx, &d->fiber);
+      if (options.priority.has_value())
+        return sched.spawn_on(worker_idx, &d->fiber,
+                              ExecutionOptions{options.priority});
+      if (sched.spawn_on(worker_idx, &d->fiber)) return Status{};
     } else {
-      return sched.spawn(&d->fiber);
+      if (options.priority.has_value())
+        return sched.spawn(&d->fiber, ExecutionOptions{options.priority});
+      if (sched.spawn(&d->fiber)) return Status{};
     }
+    return sched.accepting()
+               ? Status::ResourceExhausted(
+                     "scheduler runnable queues are full on a worker")
+               : Status::Cancelled("scheduler is shutting down");
   }();
-  if (!admitted) {
+  if (!admitted.ok()) {
     // Admission closed or a recursively-submitting worker saturated every
     // bounded runnable queue. Resolve the handle instead of leaking the
     // self-owned driver and leaving join() blocked forever.
-    st->set_error(
-        sched.accepting()
-            ? Status::ResourceExhausted(
-                  "scheduler runnable queues are full on a worker")
-            : Status::Cancelled("scheduler is shutting down"));
+    st->set_error(std::move(admitted).WithContext(Pinned ? "spawn_task_on"
+                                                         : "spawn_task"));
     TaskDriver<T>::destroy(d);
   }
   return JoinHandle<T>(st);
@@ -723,8 +763,16 @@ JoinHandle<T> spawn_task_impl(Scheduler& sched, unsigned worker_idx,
 template <class T>
 JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task,
                          std::size_t stack_size = kDefaultStackSize) noexcept {
+  return detail::spawn_task_impl<false>(
+      sched, 0, alloc, std::move(task),
+      FiberLaunchOptions{std::nullopt, stack_size});
+}
+
+template <class T>
+JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc,
+                         Task<T> task, FiberLaunchOptions options) noexcept {
   return detail::spawn_task_impl<false>(sched, 0, alloc, std::move(task),
-                                        stack_size);
+                                        options);
 }
 
 // Submit a result-bearing coroutine pinned to `worker_idx`. Initial dispatch,
@@ -737,10 +785,18 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::AllocatorRef alloc, Task<T> task
 template <class T>
 JoinHandle<T> spawn_task_on(
     Scheduler& sched, unsigned worker_idx, mem::AllocatorRef alloc,
-    Task<T> task,
-    std::size_t stack_size = kDefaultStackSize) noexcept {
+    Task<T> task, std::size_t stack_size = kDefaultStackSize) noexcept {
+  return detail::spawn_task_impl<true>(
+      sched, worker_idx, alloc, std::move(task),
+      FiberLaunchOptions{std::nullopt, stack_size});
+}
+
+template <class T>
+JoinHandle<T> spawn_task_on(Scheduler& sched, unsigned worker_idx,
+                            mem::AllocatorRef alloc, Task<T> task,
+                            FiberLaunchOptions options) noexcept {
   return detail::spawn_task_impl<true>(sched, worker_idx, alloc,
-                                       std::move(task), stack_size);
+                                       std::move(task), options);
 }
 
 // ---- when_all / when_any (select) -------------------------------------------

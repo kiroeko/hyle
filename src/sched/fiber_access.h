@@ -25,8 +25,14 @@ struct FiberAccess {
   static void set_owner_worker(Fiber* fiber, int worker) noexcept {
     fiber->set_owner_worker(worker);
   }
-  static void set_on_finish(Fiber* fiber, FinishFn fn,
-                            void* context) noexcept {
+  static ExecutionPriority execution_priority(const Fiber* fiber) noexcept {
+    return fiber->execution_priority();
+  }
+  static void set_execution_priority(Fiber* fiber,
+                                     ExecutionPriority priority) noexcept {
+    fiber->set_execution_priority(priority);
+  }
+  static void set_on_finish(Fiber* fiber, FinishFn fn, void* context) noexcept {
     fiber->set_on_finish(fn, context);
   }
   static FinishFn on_finish(const Fiber* fiber) noexcept {
