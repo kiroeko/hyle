@@ -144,27 +144,15 @@
     },
     {
       "module": "mem",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/mem/mem-v7-logical-range-suballocator.md",
-      "candidate": "d3f732979f396aa5651e5eb81c228fdc73b7c166",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-v7.md",
-        "material_margin_pct": 5
-      },
-      "summary": "mem v7 CLOSED：payload-free 64-bit aligned RangeAllocator、固定 metadata、RAII individual release、generation bulk reset 与 O(1) summary 已完成三平台正确性、source/shared/static 交付、文档/红队及 W1-WIN 同合同 8/8 strata 的 5% P1 非劣门。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/mem/mem-v8-resource-type-visibility.md",
+      "summary": "mem v8 SCOPED：default-hidden Mach-O 暴露公开多态 MemoryResource 缺少类型级 export；本轮只修复跨 shared-factor RTTI/vtable 可见性。"
     },
     {
       "module": "mem_vm",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/mem_vm/mem-vm-v2-inference-mapping.md",
-      "candidate": "9604bf4a33f13bd5f84ef78fedce55f305ac9d50",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-mem-vm-v2.md",
-        "material_margin_pct": 5
-      },
-      "summary": "mem_vm v2 CLOSED：Platform 单一 OS authority、hole-aware FileMapping、headerless SharedMapping 与 LargeMapping 已完成三平台正确性/sanitizer、三交付/direct-consumer、文档/易用性、红队与 W1-WSL 4/4 5% P1 非劣门。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/mem_vm/mem-vm-v3-resource-visibility-replay.md",
+      "summary": "mem-vm v3 SCOPED：Mac default-hidden shared 链接无法解析下层 MemoryResource RTTI；本轮不改 VM 能力，只重放修正后的跨 factor 交付。"
     },
     {
       "module": "simd",
@@ -203,10 +191,9 @@
     },
     {
       "module": "sched",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/sched/sched-v11-private-fcontext-export.md",
-      "candidate": "e07c025ee7f97e7f132b2daf42abaa5ac23bfb63",
-      "summary": "sched v11 CANDIDATE：Windows 三交付与 8 个 DLL 的实际导出扫描已证明 fcontext 仍可内部链接且不再公开；等待 Unix 默认隐藏和全包回归后终局裁决。"
+      "summary": "sched v11 AUDITED：fcontext 修复本身已通过 Windows/Linux；Mac 发现下层 Mem 类型可见性缺口，待该依赖修复后重新签完整闭包 candidate。"
     },
     {
       "module": "io_core",
