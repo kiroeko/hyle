@@ -237,14 +237,9 @@
     },
     {
       "module": "io_http",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/io/io-http-v3-file-body.md",
-      "candidate": "d72bd68aa4d23d14c66b31d5d4d1f4b9818dec6d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/io/io-http-v3-file-body.md"
-      },
-      "summary": "io_http v3 CLOSED：file-region response 复用既有 framing；plain 委托 io_core、TLS 使用一次有界 scratch，状态/复用语义通过三平台、sanitizer、三交付和红队。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-http-v4-upgrade-handoff.md",
+      "summary": "io_http v4 SCOPED：G04 所需协议无关 Upgrade handoff 已冻结为唯一改动；transport、prefetched bytes、borrow invalidation 与失败原子性待源码审计。"
     },
     {
       "module": "io_http2",
@@ -340,8 +335,9 @@
     },
     {
       "module": "io_websocket",
-      "state": "QUEUED",
-      "summary": "G04 WebSocket 的 component identity 已保留；尚未冻结依赖、公开 API 或 target，不进入 io 产品 façade。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/io/io-websocket-v1-rfc6455.md",
+      "summary": "io_websocket v1 SCOPED：G04 RFC 6455 journey、负空间、同层 P1 与四批实现预算已冻结；公开 streaming/control/close、SHA-1、UTF-8 和 mask 形状待审计。"
     }
   ]
 }
