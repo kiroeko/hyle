@@ -213,7 +213,8 @@ unset(_hyle_owner_upper)
 # superproject include closure in one place: individual benchmark directories
 # only decide which targets instantiate which peer capability.
 set(_hyle_bench_boost_owner FALSE)
-foreach(_hyle_owner IN ITEMS container_intrusive platform util_core mem io_http)
+foreach(_hyle_owner IN ITEMS
+    container_intrusive platform util_core mem io_http io_websocket)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_boost_owner TRUE)

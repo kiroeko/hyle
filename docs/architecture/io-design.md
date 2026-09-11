@@ -7,16 +7,15 @@ record 或 Git 历史追溯，不复制到这里。
 ## 设计目标
 
 HYLE IO 为推理服务和普通系统程序提供一套 scheduler-native C++23 I/O：socket、文件、文件变化流、
-DNS、signal、TLS、HTTP/1.1、HTTP/2 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
+DNS、signal、TLS、HTTP/1.1、HTTP/2、WebSocket 与可靠制品传输。应用不应手写 socket/event loop，也不应为了使用协议层再引入
 一套线程或 coroutine runtime。
 
-WebSocket 已进入[基础能力扩展范围](foundation-capability-expansion.md)，但在自己的 closure round 完成前
-不属于当前公开 API。file-region streaming/HTTP file body、TLS credential source 与 recursive tree watch
-已经按各自 factor 交付；终态仍以 registry 为准。file-region streaming 归 `io_core + io_http`，而不是
-制品发布语义不同的 `io_transfer`。
+WebSocket 的公开可依赖状态、file-region streaming/HTTP file body、TLS credential source 与 recursive
+tree watch 的终态都以 registry 为准。file-region streaming 归 `io_core + io_http`，而不是制品发布语义
+不同的 `io_transfer`。
 
 ```text
-Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/Transfer
+Tcp/Udp/Local/File/DNS/Signal/TLS/HTTP/WebSocket/Transfer
               │ co_await + deadline/cancel + RAII
               ▼
 IoContext（每 Scheduler worker 一个 owner completion engine）
@@ -41,10 +40,10 @@ completion 语义。公开层不暴露 fd readiness、OVERLAPPED、SQE/CQE 或 b
 | `io_http2` | HTTP/2 session/stream、HPACK/frame provider、flow control、RST/GOAWAY | transport event loop、gRPC policy |
 | `io_transfer` | local/HTTP(S) copy/download、resume、verify、temporary file 与 atomic publication | repository/model schema、credentials、archive |
 | `io_watch` | bounded exact/direct/tree change stream、root-relative path、coalescing、overflow/rescan、cancel/close | snapshot、debounce、content diff、TLS/config/model/shader reload policy |
+| `io_websocket` | RFC 6455 client/server handshake、message streaming、mask、fragment/control/close 与 limits | listener、route/auth、JSON/schema、reconnect/rooms、extension、HTTP/2/3 |
 
-六个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
+七个 factor 对用户聚合为 `hyle::io` 产品并共享 `hyle::io` namespace；拆分只服务内部无环依赖、独立
 构建和交付。中央依赖图是 [`HyleComponents.cmake`](../../cmake/HyleComponents.cmake)，本页不复制边。
-未来 `io_websocket` 只有在登记中央 identity 和 registry 后才成为第七个 factor；架构决策本身不预造 target。
 
 ## Ownership 与进度
 
@@ -97,6 +96,18 @@ TLS 使用一次 64 KiB plaintext scratch；HEAD/bodyless status 不触碰 file�
 connection reuse。path traversal、MIME、Range/conditional/cache 是服务 policy，不进入这个原子组合。
 HTTP/2 可借 nghttp2 处理 HPACK/frame/state machine，但 transport、Scheduler、allocator 和 application
 policy 仍由 HYLE/应用拥有。
+
+HTTP/1 Upgrade 是协议无关的唯一 ownership seam：server 只有在 request body 完成后才发送 101，client
+先取得并检查普通 response，再显式接管 101。成功时 `HttpUpgradeStream` 以 O(1) 移动 transport 和 parser
+已经预读的 bytes；源 HTTP connection 与 body borrow 同时失效，后续 read 先排空 prefix，不能丢掉与 head
+同包到达的首帧。普通 HTTP 对象和热路径不为可选 Upgrade 增加字段、分支、allocation 或 syscall。
+
+`io_websocket` 只在该 seam 上拥有 RFC 6455。公开心智是 text/binary message 而不是 frame：caller-buffer
+read 保留跨 frame 的 type、UTF-8 和 message limit，move-only writer 提供有界 fragmentation；ping 自动回复
+pong，close 是有类型的完整握手。连接允许一读一写并发，同方向第二项确定拒绝。server payload 可 vector
+write；client 按协议必须 mask，因此复用有界 scratch 做一次 copy+xor。mask key 由每连接一次系统安全随机
+种子派生，不逐 frame 调 OS。SHA-1/ChaCha 只是私有握手/掩码机制，不建立通用 crypto 产品，也不引入 Asio
+或另一 event loop。extension、Origin/auth、route、heartbeat/reconnect 和应用消息 schema 留给上层。
 
 listener ownership、routing、middleware、authentication、request admission、dynamic batching、模型
 schema、graceful service policy 和 metrics policy 都属于上层 server/推理引擎；基础库不伪装成框架。

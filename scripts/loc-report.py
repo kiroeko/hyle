@@ -103,6 +103,10 @@ MODULE_BOUNDARIES = {
         "include/hyle/io/http.h",
         "src/io_http",
     ),
+    "io-websocket": (
+        "include/hyle/io/websocket.h",
+        "src/io_websocket",
+    ),
     "io-http2": (
         "include/hyle/io/http2.h",
         "src/io_http2",

@@ -122,6 +122,30 @@ bool valid_request_target(StringView target) noexcept {
   return true;
 }
 
+bool valid_upgrade_protocol(StringView protocol) noexcept {
+  if (protocol.empty())
+    return false;
+  bool saw_slash = false;
+  for (char byte : protocol) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    const bool alpha_numeric = (ch >= 'a' && ch <= 'z') ||
+                               (ch >= 'A' && ch <= 'Z') ||
+                               (ch >= '0' && ch <= '9');
+    const bool token_punctuation =
+        ch == '!' || ch == '#' || ch == '$' || ch == '%' || ch == '&' ||
+        ch == '\'' || ch == '*' || ch == '+' || ch == '-' || ch == '.' ||
+        ch == '^' || ch == '_' || ch == '`' || ch == '|' || ch == '~';
+    if (alpha_numeric || token_punctuation)
+      continue;
+    if (ch == '/' && !saw_slash) {
+      saw_slash = true;
+      continue;
+    }
+    return false;
+  }
+  return protocol.front() != '/' && protocol.back() != '/';
+}
+
 bool parse_u64(StringView text, std::uint64_t &output) noexcept {
   if (text.empty())
     return false;
@@ -148,6 +172,20 @@ struct GrowBuffer {
   }
   GrowBuffer(const GrowBuffer &) = delete;
   GrowBuffer &operator=(const GrowBuffer &) = delete;
+  GrowBuffer(GrowBuffer &&other) noexcept
+      : allocator(other.allocator), data(std::exchange(other.data, nullptr)),
+        size(std::exchange(other.size, 0)),
+        capacity(std::exchange(other.capacity, 0)) {}
+  GrowBuffer &operator=(GrowBuffer &&other) noexcept {
+    if (this != &other) {
+      release();
+      allocator = other.allocator;
+      data = std::exchange(other.data, nullptr);
+      size = std::exchange(other.size, 0);
+      capacity = std::exchange(other.capacity, 0);
+    }
+    return *this;
+  }
 
   bool reserve(std::size_t requested) noexcept {
     if (requested <= capacity)
@@ -259,6 +297,8 @@ std::size_t format_hex(char *destination, std::size_t capacity,
 
 const char *reason_phrase(int status) noexcept {
   switch (status) {
+  case 101:
+    return "Switching Protocols";
   case 200:
     return "OK";
   case 201:
@@ -682,6 +722,23 @@ public:
   static HttpBodyReader reader(HttpBodyState &state,
                                mem::AllocatorRef allocator) noexcept {
     return HttpBodyReader(&state, state.generation, allocator);
+  }
+
+  static bool reader_matches(const HttpBodyReader &reader,
+                             const HttpBodyState &state) noexcept {
+    return reader.state_ == &state && reader.generation_ == state.generation &&
+           state.active && !state.abandoned;
+  }
+
+  static void disarm_reader(HttpBodyReader &reader,
+                            HttpBodyState &state) noexcept {
+    const bool matched =
+        reader.state_ == &state && reader.generation_ == state.generation;
+    state.retire();
+    if (matched) {
+      reader.state_ = nullptr;
+      reader.generation_ = 0;
+    }
   }
 
   static HttpBodyWriter writer(HttpWriteState &state,
@@ -1535,6 +1592,207 @@ struct HttpClientConnection::Impl {
   bool closed = false;
 };
 
+struct HttpUpgradeStream::Impl {
+  Impl(HttpTransport byte_transport, GrowBuffer prefetched_bytes) noexcept
+      : transport(std::move(byte_transport)),
+        prefetched(std::move(prefetched_bytes)) {}
+
+  HttpTransport transport;
+  GrowBuffer prefetched;
+  std::uint32_t prefetched_offset = 0;
+  bool read_busy = false;
+  bool write_busy = false;
+  bool closed = false;
+};
+
+HttpUpgradeStream::~HttpUpgradeStream() {
+  if (impl_ != nullptr) {
+    impl_->~Impl();
+    allocator_.deallocate_n(impl_, 1);
+  }
+}
+
+HttpUpgradeStream::HttpUpgradeStream(HttpUpgradeStream &&other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)), allocator_(other.allocator_) {
+}
+
+HttpUpgradeStream &
+HttpUpgradeStream::operator=(HttpUpgradeStream &&other) noexcept {
+  if (this != &other) {
+    if (impl_ != nullptr) {
+      impl_->~Impl();
+      allocator_.deallocate_n(impl_, 1);
+    }
+    impl_ = std::exchange(other.impl_, nullptr);
+    allocator_ = other.allocator_;
+  }
+  return *this;
+}
+
+bool HttpUpgradeStream::valid() const noexcept {
+  return impl_ != nullptr && !impl_->closed && impl_->transport.valid();
+}
+
+bool HttpUpgradeStream::encrypted() const noexcept {
+  return impl_ != nullptr && impl_->transport.encrypted();
+}
+
+StringView HttpUpgradeStream::negotiated_protocol() const noexcept {
+  return impl_ == nullptr ? StringView{}
+                          : impl_->transport.negotiated_protocol();
+}
+
+unsigned HttpUpgradeStream::owner_worker() const noexcept {
+  return impl_ == nullptr ? 0 : impl_->transport.owner_worker();
+}
+
+namespace detail {
+namespace {
+
+class BusyFlagGuard {
+public:
+  explicit BusyFlagGuard(bool &flag) noexcept : flag_(&flag) { flag = true; }
+  ~BusyFlagGuard() { *flag_ = false; }
+  BusyFlagGuard(const BusyFlagGuard &) = delete;
+  BusyFlagGuard &operator=(const BusyFlagGuard &) = delete;
+
+private:
+  bool *flag_;
+};
+
+} // namespace
+
+sched::Task<TransferResult>
+http_upgrade_read(mem::AllocatorRef allocator, HttpUpgradeStream &stream,
+                  std::span<std::byte> output,
+                  OperationOptions options) noexcept {
+  HttpUpgradeStream::Impl *impl = stream.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return TransferResult{
+        0, Status::FailedPrecondition("HTTP Upgrade stream is invalid"), false};
+  }
+  if (impl->read_busy) {
+    co_return TransferResult{0,
+                             Status::FailedPrecondition(
+                                 "only one HTTP Upgrade read may be in flight"),
+                             false};
+  }
+  BusyFlagGuard busy(impl->read_busy);
+  if (output.empty())
+    co_return TransferResult{};
+
+  if (impl->prefetched_offset < impl->prefetched.size) {
+    const std::size_t available =
+        impl->prefetched.size - impl->prefetched_offset;
+    const std::size_t count = std::min(output.size(), available);
+    std::memcpy(output.data(), impl->prefetched.data + impl->prefetched_offset,
+                count);
+    impl->prefetched_offset += static_cast<std::uint32_t>(count);
+    if (impl->prefetched_offset == impl->prefetched.size) {
+      impl->prefetched.release();
+      impl->prefetched_offset = 0;
+    }
+    co_return TransferResult{count, Status{}, false};
+  }
+
+  auto task = impl->transport.read_some(allocator, output, options);
+  if (!task.valid()) {
+    co_return TransferResult{
+        0,
+        Status::ResourceExhausted(
+            "HTTP Upgrade read coroutine allocation failed"),
+        false};
+  }
+  co_return co_await task;
+}
+
+sched::Task<TransferResult>
+http_upgrade_write(mem::AllocatorRef allocator, HttpUpgradeStream &stream,
+                   std::span<const std::byte> input,
+                   OperationOptions options) noexcept {
+  HttpUpgradeStream::Impl *impl = stream.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return TransferResult{
+        0, Status::FailedPrecondition("HTTP Upgrade stream is invalid"), false};
+  }
+  if (impl->write_busy) {
+    co_return TransferResult{
+        0,
+        Status::FailedPrecondition(
+            "only one HTTP Upgrade write may be in flight"),
+        false};
+  }
+  BusyFlagGuard busy(impl->write_busy);
+  auto task = impl->transport.write_some(allocator, input, options);
+  if (!task.valid()) {
+    co_return TransferResult{
+        0,
+        Status::ResourceExhausted(
+            "HTTP Upgrade write coroutine allocation failed"),
+        false};
+  }
+  co_return co_await task;
+}
+
+sched::Task<BufferSequenceResult>
+http_upgrade_write_all(mem::AllocatorRef allocator, HttpUpgradeStream &stream,
+                       std::span<const ConstBuffer> buffers,
+                       OperationOptions options) noexcept {
+  HttpUpgradeStream::Impl *impl = stream.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return BufferSequenceResult{
+        {},
+        Status::FailedPrecondition("HTTP Upgrade stream is invalid"),
+        false};
+  }
+  if (impl->write_busy) {
+    co_return BufferSequenceResult{
+        {},
+        Status::FailedPrecondition(
+            "only one HTTP Upgrade write may be in flight"),
+        false};
+  }
+  BusyFlagGuard busy(impl->write_busy);
+  auto task =
+      http_transport_write_all(allocator, impl->transport, buffers, options);
+  if (!task.valid()) {
+    co_return BufferSequenceResult{
+        {},
+        Status::ResourceExhausted(
+            "HTTP Upgrade vector-write coroutine allocation failed"),
+        false};
+  }
+  co_return co_await task;
+}
+
+sched::Task<Status> http_upgrade_shutdown(mem::AllocatorRef allocator,
+                                          HttpUpgradeStream &stream,
+                                          OperationOptions options) noexcept {
+  HttpUpgradeStream::Impl *impl = stream.impl_;
+  if (impl == nullptr)
+    co_return Status::FailedPrecondition("HTTP Upgrade stream is invalid");
+  if (impl->closed)
+    co_return Status{};
+  if (impl->read_busy || impl->write_busy) {
+    co_return Status::FailedPrecondition(
+        "finish HTTP Upgrade I/O before shutdown");
+  }
+  impl->closed = true;
+  auto task = impl->transport.shutdown(allocator, options);
+  if (!task.valid()) {
+    co_return Status::ResourceExhausted(
+        "HTTP Upgrade shutdown coroutine allocation failed");
+  }
+  co_return co_await task;
+}
+
+} // namespace detail
+
+sched::Task<Status>
+HttpUpgradeStream::shutdown(OperationOptions options) noexcept {
+  return detail::http_upgrade_shutdown(allocator_, *this, options);
+}
+
 namespace detail {
 
 void HttpConnectionAccess::writer_finished(HttpWriteState &state) noexcept {
@@ -1595,6 +1853,82 @@ Status append_outgoing_headers(GrowBuffer &output,
         !put(output, header.value) || !put_cstr(output, "\r\n")) {
       return Status::ResourceExhausted("HTTP head allocation failed");
     }
+  }
+  return Status{};
+}
+
+Status validate_upgrade_headers(std::span<const HttpHeader> headers,
+                                bool request) noexcept {
+  Status valid = validate_headers(headers, request);
+  if (!valid.ok())
+    return valid;
+  for (const HttpHeader &header : headers) {
+    if (ascii_iequal(header.name, "upgrade")) {
+      return Status::InvalidArgument(
+          "HTTP Upgrade header is owned by the upgrade operation");
+    }
+  }
+  return Status{};
+}
+
+Status build_upgrade_request_head(GrowBuffer &output,
+                                  const HttpRequestHead &head,
+                                  StringView protocol) noexcept {
+  if (head.version != HttpVersion::kHttp11 || !head.keep_alive ||
+      head.expect_continue) {
+    return Status::InvalidArgument(
+        "HTTP Upgrade requires a persistent HTTP/1.1 request without Expect");
+  }
+  if (!valid_header_name(head.method) || !valid_request_target(head.target) ||
+      head.authority.empty() || contains_crlf(head.authority) ||
+      !valid_upgrade_protocol(protocol)) {
+    return Status::InvalidArgument("HTTP Upgrade request method, target, "
+                                   "authority, or protocol is invalid");
+  }
+  for (char byte : head.authority) {
+    const unsigned char ch = static_cast<unsigned char>(byte);
+    if (ch <= 0x20 || ch == 0x7f) {
+      return Status::InvalidArgument("HTTP authority contains invalid bytes");
+    }
+  }
+  Status headers = validate_upgrade_headers(head.headers, true);
+  if (!headers.ok())
+    return headers;
+
+  if (!put(output, head.method) || !put(output, " ", 1) ||
+      !put(output, head.target) || !put_cstr(output, " HTTP/1.1\r\nHost: ") ||
+      !put(output, head.authority) || !put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP Upgrade head allocation failed");
+  }
+  headers = append_outgoing_headers(output, head.headers);
+  if (!headers.ok())
+    return headers;
+  if (!put_cstr(output, "Upgrade: ") || !put(output, protocol) ||
+      !put_cstr(output, "\r\nConnection: Upgrade\r\n\r\n")) {
+    return Status::ResourceExhausted("HTTP Upgrade head allocation failed");
+  }
+  return Status{};
+}
+
+Status
+build_upgrade_response_head(GrowBuffer &output, StringView protocol,
+                            std::span<const HttpHeader> headers) noexcept {
+  if (!valid_upgrade_protocol(protocol)) {
+    return Status::InvalidArgument("HTTP Upgrade protocol is invalid");
+  }
+  Status valid = validate_upgrade_headers(headers, false);
+  if (!valid.ok())
+    return valid;
+  if (!put_cstr(output, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: ") ||
+      !put(output, protocol) ||
+      !put_cstr(output, "\r\nConnection: Upgrade\r\n")) {
+    return Status::ResourceExhausted("HTTP Upgrade head allocation failed");
+  }
+  valid = append_outgoing_headers(output, headers);
+  if (!valid.ok())
+    return valid;
+  if (!put_cstr(output, "\r\n")) {
+    return Status::ResourceExhausted("HTTP Upgrade head allocation failed");
   }
   return Status{};
 }
@@ -2271,6 +2605,86 @@ http_server_read_request(mem::AllocatorRef allocator,
       impl->current_request,
       detail::HttpConnectionAccess::reader(impl->body, allocator)};
   co_return std::optional<HttpIncomingRequest>(std::move(incoming));
+}
+
+sched::Task<Result<HttpUpgradeStream>>
+http_server_accept_upgrade(mem::AllocatorRef allocator,
+                           HttpServerConnection &connection,
+                           HttpIncomingRequest &&request, StringView protocol,
+                           std::span<const HttpHeader> response_headers,
+                           OperationOptions options) noexcept {
+  HttpServerConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<HttpUpgradeStream>(
+        Status::FailedPrecondition("HTTP server connection is invalid"));
+  }
+  if (!impl->request_active || impl->response_started || impl->writer.active ||
+      !detail::HttpConnectionAccess::reader_matches(request.body, impl->body)) {
+    co_return http_failure<HttpUpgradeStream>(Status::FailedPrecondition(
+        "HTTP Upgrade request does not own this active connection"));
+  }
+  if (impl->body.busy || !impl->body.done) {
+    co_return http_failure<HttpUpgradeStream>(Status::FailedPrecondition(
+        "finish the HTTP request body before accepting an Upgrade"));
+  }
+  const HttpRequestView head = impl->current_request;
+  if (head.version() != HttpVersion::kHttp11 ||
+      !header_has_token(head.headers(), "connection", "upgrade") ||
+      !header_has_token(head.headers(), "upgrade", protocol)) {
+    co_return http_failure<HttpUpgradeStream>(Status::InvalidArgument(
+        "request is not an HTTP/1.1 Upgrade for the selected protocol"));
+  }
+
+  GrowBuffer &output = impl->output;
+  output.clear();
+  Status built =
+      build_upgrade_response_head(output, protocol, response_headers);
+  if (!built.ok()) {
+    output.clear();
+    output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+    co_return http_failure<HttpUpgradeStream>(std::move(built));
+  }
+
+  HttpUpgradeStream::Impl *upgrade =
+      allocator.allocate_n<HttpUpgradeStream::Impl>(1);
+  if (upgrade == nullptr) {
+    output.clear();
+    output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+    co_return http_failure<HttpUpgradeStream>(
+        Status::ResourceExhausted("HTTP Upgrade stream allocation failed"));
+  }
+
+  auto task = write_all(
+      allocator, impl->transport,
+      std::span<const std::byte>(
+          reinterpret_cast<const std::byte *>(output.data), output.size),
+      options);
+  if (!task.valid()) {
+    allocator.deallocate_n(upgrade, 1);
+    output.clear();
+    output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+    impl->reusable = false;
+    co_return http_failure<HttpUpgradeStream>(Status::ResourceExhausted(
+        "HTTP Upgrade response coroutine allocation failed"));
+  }
+  Status written = co_await task;
+  output.clear();
+  output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+  if (!written.ok()) {
+    allocator.deallocate_n(upgrade, 1);
+    impl->reusable = false;
+    co_return http_failure<HttpUpgradeStream>(std::move(written));
+  }
+
+  detail::HttpConnectionAccess::disarm_reader(request.body, impl->body);
+  request.head = {};
+  new (upgrade) HttpUpgradeStream::Impl(std::move(impl->transport),
+                                        std::move(impl->wire));
+  impl->request_active = false;
+  impl->response_started = false;
+  impl->reusable = false;
+  impl->closed = true;
+  co_return HttpUpgradeStream(allocator, upgrade);
 }
 
 sched::Task<Status>
@@ -3282,6 +3696,121 @@ http_client_request_source(mem::AllocatorRef allocator,
         Status::ResourceExhausted("HTTP response coroutine allocation failed"));
   }
   co_return co_await response;
+}
+
+sched::Task<Result<HttpIncomingResponse>>
+http_client_request_upgrade(mem::AllocatorRef allocator,
+                            HttpClientConnection &connection,
+                            const HttpRequestHead &head, StringView protocol,
+                            OperationOptions options) noexcept {
+  HttpClientConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    co_return http_failure<HttpIncomingResponse>(
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  if (impl->request_active || impl->writer.active) {
+    co_return http_failure<HttpIncomingResponse>(Status::FailedPrecondition(
+        "finish the active HTTP request before starting an Upgrade"));
+  }
+  if (impl->response_active) {
+    if (impl->body.abandoned)
+      impl->reusable = false;
+    if (!impl->body.done) {
+      co_return http_failure<HttpIncomingResponse>(Status::FailedPrecondition(
+          "drain the HTTP response body before reusing the connection"));
+    }
+    impl->body.retire();
+    impl->response_active = false;
+  }
+  if (!impl->reusable) {
+    co_return http_failure<HttpIncomingResponse>(Status::FailedPrecondition(
+        "HTTP client connection is no longer reusable"));
+  }
+
+  GrowBuffer &output = impl->output;
+  output.clear();
+  Status built = build_upgrade_request_head(output, head, protocol);
+  if (!built.ok()) {
+    output.clear();
+    output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+    co_return http_failure<HttpIncomingResponse>(std::move(built));
+  }
+  auto write = write_all(
+      allocator, impl->transport,
+      std::span<const std::byte>(
+          reinterpret_cast<const std::byte *>(output.data), output.size),
+      options);
+  if (!write.valid()) {
+    output.clear();
+    output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+    impl->reusable = false;
+    co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+        "HTTP Upgrade request coroutine allocation failed"));
+  }
+  Status written = co_await write;
+  output.clear();
+  output.release_if_empty_above(connection.limits_.max_retained_head_bytes);
+  if (!written.ok()) {
+    impl->reusable = false;
+    co_return http_failure<HttpIncomingResponse>(std::move(written));
+  }
+
+  impl->request_active = true;
+  impl->request_finished = true;
+  impl->last_request_was_head = ascii_iequal(head.method, "HEAD");
+  impl->last_request_expects_continue = false;
+  impl->continue_decided = true;
+
+  auto read = http_client_read_response(allocator, connection, options);
+  if (!read.valid()) {
+    impl->reusable = false;
+    co_return http_failure<HttpIncomingResponse>(Status::ResourceExhausted(
+        "HTTP Upgrade response coroutine allocation failed"));
+  }
+  co_return co_await read;
+}
+
+Result<HttpUpgradeStream> http_client_take_upgrade(
+    mem::AllocatorRef allocator, HttpClientConnection &connection,
+    HttpIncomingResponse &&response, StringView protocol) noexcept {
+  HttpClientConnection::Impl *impl = connection.impl_;
+  if (impl == nullptr || impl->closed || !impl->transport.valid()) {
+    return http_failure<HttpUpgradeStream>(
+        Status::FailedPrecondition("HTTP client connection is invalid"));
+  }
+  if (!impl->response_active || impl->request_active || impl->writer.active ||
+      !detail::HttpConnectionAccess::reader_matches(response.body,
+                                                    impl->body)) {
+    return http_failure<HttpUpgradeStream>(Status::FailedPrecondition(
+        "HTTP Upgrade response does not own this active connection"));
+  }
+  if (impl->body.busy || !impl->body.done) {
+    return http_failure<HttpUpgradeStream>(Status::FailedPrecondition(
+        "finish the HTTP response body before taking an Upgrade"));
+  }
+  const HttpResponseView head = impl->current_response;
+  if (head.status() != 101 || head.version() != HttpVersion::kHttp11 ||
+      !valid_upgrade_protocol(protocol) ||
+      !header_has_token(head.headers(), "connection", "upgrade") ||
+      !header_has_token(head.headers(), "upgrade", protocol)) {
+    return http_failure<HttpUpgradeStream>(Status::InvalidArgument(
+        "response is not an HTTP/1.1 101 for the selected protocol"));
+  }
+
+  HttpUpgradeStream::Impl *upgrade =
+      allocator.allocate_n<HttpUpgradeStream::Impl>(1);
+  if (upgrade == nullptr) {
+    return http_failure<HttpUpgradeStream>(
+        Status::ResourceExhausted("HTTP Upgrade stream allocation failed"));
+  }
+  detail::HttpConnectionAccess::disarm_reader(response.body, impl->body);
+  response.head = {};
+  new (upgrade) HttpUpgradeStream::Impl(std::move(impl->transport),
+                                        std::move(impl->wire));
+  impl->response_active = false;
+  impl->reusable = false;
+  impl->closed = true;
+  return HttpUpgradeStream(allocator, upgrade);
 }
 
 } // namespace hyle::io

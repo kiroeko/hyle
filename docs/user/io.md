@@ -1,6 +1,6 @@
 # IO 使用指南
 
-> IO 当前只提供 C++ 产品面；六个内部
+> IO 当前只提供 C++ 产品面；七个内部
 > factor 的终态以 `module-status.json` 为准。本页适用于 C++23 source/static/shared 三种交付，
 > 不描述 C API 或跨语言调用层。
 
@@ -399,10 +399,79 @@ helper。source 和它借出的字节必须活到 `send_response` await 完成�
 chunked、obsolete folding 和 CRLF/token 注入；trailers 仅能随 chunked 的最终块
 发送，调用方还应在 head 中声明相应 `Trailer` 字段。
 
-HTTP/1 因子不提供协议接管：`CONNECT` tunnel、`101 Upgrade`/WebSocket 和取得底层
-transport 都不在当前合同中。不要用通用 method/header 字段发起这些操作；若 peer 返回 `101`，
-只能观察 response head，连接会变为不可复用并应关闭。需要 tunnel 或 upgraded protocol 时应先为
-独立因子冻结 ownership、残留已读字节和 transport hand-off 合同，不能从当前 connection 私自取句柄。
+### HTTP Upgrade 与 WebSocket
+
+领域自有的 HTTP/1.1 Upgrade 协议使用 `HttpUpgradeStream`；不要从 connection 私取 native socket，也不要
+另跑一遍 HTTP parser。server 在 route/auth 完成并读完 request body 后调用 `accept_upgrade()`；client 用
+`request_upgrade()` 取得普通 response，先验证协议专用 headers，再用 `take_upgrade()` 接管有效 101。非 101
+仍是可读取 body 的普通响应：
+
+```cpp
+auto incoming = std::move(next->value());
+if (!route_and_authorize(incoming.head)) {
+  co_await connection.send_response(
+      {.status = 403}, std::span<const std::byte>{});
+  co_return;
+}
+if (!(co_await incoming.body.discard(operation)).ok()) co_return;
+
+auto upgraded = co_await connection.accept_upgrade(
+    std::move(incoming), "hyle-control/1", {}, operation);
+if (!upgraded) co_return;
+auto stream = std::move(*upgraded);
+auto read = co_await stream.read_some(buffer, operation);
+```
+
+成功 handoff 会让源 HTTP connection 和 request/response body borrow 失效；parser 已预读的 bytes 会由新
+stream 先按原顺序返回。失败于输入校验或 state allocation 时原 HTTP owner 仍可用，发送 101 时发生的
+transport failure 则只允许关闭。`accept_upgrade()` 返回的是 lazy task，它在完成前借用传入的 request、
+connection 和 header storage，必须在这些对象仍存活时立即 await。`CONNECT` 与 HTTP/2/3 extended CONNECT
+仍不属于该 API。
+
+标准 WebSocket 不需要应用手写 Upgrade/SHA-1/frame。server 先用普通 HTTP view 做 route、auth、Origin 和
+subprotocol 选择，再把同一个 request 交给协议 owner：
+
+```cpp
+#include <hyle/io/websocket.h>
+
+hyle::io::WebSocketServerOptions options;
+options.subprotocol = "hyle.tokens.v1"; // 必须确实出现在 client offer 中
+options.limits.max_message_bytes = 4u << 20;
+options.limits.max_frame_bytes = 1u << 20;
+options.limits.write_fragment_bytes = 16u << 10;
+
+auto accepted_ws = co_await hyle::io::WebSocketConnection::accept(
+    alloc, connection, std::move(incoming), options, operation);
+if (!accepted_ws) co_return;
+auto websocket = std::move(*accepted_ws);
+
+std::array<std::byte, 16 * 1024> chunk{};
+for (;;) {
+  auto part = co_await websocket.read_some(chunk, operation);
+  if (!part || part->close) break;
+  consume_message_part(part->type, std::span(chunk).first(part->bytes));
+  if (part->end_message) finish_message();
+}
+```
+
+client 负责先完成 TCP 连接，以及 `wss` 所需 TLS handshake；然后把已连接的 `HttpTransport` 移入
+`WebSocketConnection::connect()`，并提供非空 authority/target。DNS、proxy、认证与 reconnect policy 不会
+被协议对象暗中接管。
+
+选择和陷阱：
+
+- 普通 request/response 或 SSE 用 HTTP；双向 text/binary message 用 WebSocket；没有 RFC 6455 语义的领域
+  协议才使用通用 Upgrade；纯字节协议直接使用 TCP/TLS/local stream。
+- 一个 connection 可以同时有一项 read 和一项 write；第二项同方向操作会返回 `FailedPrecondition`。
+  `WebSocketMessageWriter` 必须比 connection 短命，并在销毁前 `finish()`；丢弃已开始但未结束的消息会让
+  connection 失效，因为 wire 上的 fragmented message 已无法撤销。
+- `read_some()` 的非空 payload 路线需要非空 caller buffer；返回的 close reason 属 connection，到下一项
+  operation 前复制。ping 会自动 pong，无分配 callback 只作同步通知，不能重入同一 connection。
+- client frame 的 RFC mask 必然需要一次有界 copy+xor；`write_fragment_bytes` 同时限制复用 scratch 峰值。
+  server write 不做这次 copy。frame/message 上限在读取 payload 前生效，不能用超大单 frame 绕过内存预算。
+- 当前明确拒绝 `permessage-deflate` 等 extension，也不提供 JSON/schema、listener loop、rooms/pubsub、
+  heartbeat/reconnect、route/auth 或 graceful service drain；这些属于应用或 `hyle-service`，不是让用户
+  绕过 mask、UTF-8、close 与 backpressure 的理由。
 
 所有 composed operation 复用同一个绝对 deadline/`CancelToken`，不会按 partial
 read/write 重置预算。`close()` 幂等，在安全完成 TCP shutdown 或 TLS close-notify

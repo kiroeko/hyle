@@ -471,8 +471,97 @@ private:
 #endif
 };
 
+class HttpUpgradeStream;
 class HttpServerConnection;
 class HttpClientConnection;
+
+namespace detail {
+HYLE_IO_HTTP_API sched::Task<TransferResult>
+http_upgrade_read(mem::AllocatorRef, HttpUpgradeStream &, std::span<std::byte>,
+                  OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<TransferResult>
+http_upgrade_write(mem::AllocatorRef, HttpUpgradeStream &,
+                   std::span<const std::byte>, OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<BufferSequenceResult>
+http_upgrade_write_all(mem::AllocatorRef, HttpUpgradeStream &,
+                       std::span<const ConstBuffer>, OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<Status>
+http_upgrade_shutdown(mem::AllocatorRef, HttpUpgradeStream &,
+                      OperationOptions) noexcept;
+} // namespace detail
+
+// Protocol-neutral owner returned after an HTTP/1.1 Upgrade. Reads drain every
+// byte already prefetched by the HTTP parser before touching the transport, so
+// a protocol never loses the first frame merely because it shared a packet with
+// the handshake head. One read and one write may be in flight concurrently;
+// another operation in the same direction is rejected.
+class HttpUpgradeStream {
+public:
+  HttpUpgradeStream() noexcept = default;
+  HYLE_IO_HTTP_API ~HttpUpgradeStream();
+  HYLE_IO_HTTP_API HttpUpgradeStream(HttpUpgradeStream &&) noexcept;
+  HYLE_IO_HTTP_API HttpUpgradeStream &operator=(HttpUpgradeStream &&) noexcept;
+  HttpUpgradeStream(const HttpUpgradeStream &) = delete;
+  HttpUpgradeStream &operator=(const HttpUpgradeStream &) = delete;
+
+  HYLE_IO_HTTP_API bool valid() const noexcept;
+  HYLE_IO_HTTP_API bool encrypted() const noexcept;
+  // The transport-level TLS ALPN selection, not the HTTP Upgrade token.
+  HYLE_IO_HTTP_API StringView negotiated_protocol() const noexcept;
+  HYLE_IO_HTTP_API unsigned owner_worker() const noexcept;
+
+  sched::Task<TransferResult>
+  read_some(std::span<std::byte> buffer,
+            OperationOptions options = {}) noexcept {
+    return detail::http_upgrade_read(allocator_, *this, buffer, options);
+  }
+  sched::Task<TransferResult>
+  write_some(std::span<const std::byte> buffer,
+             OperationOptions options = {}) noexcept {
+    return detail::http_upgrade_write(allocator_, *this, buffer, options);
+  }
+  // Completes the whole sequence or reports the exact progress cursor. This is
+  // the efficient protocol-head + payload route used by unmasked server frames.
+  sched::Task<BufferSequenceResult>
+  write_all(std::span<const ConstBuffer> buffers,
+            OperationOptions options = {}) noexcept {
+    return detail::http_upgrade_write_all(allocator_, *this, buffers, options);
+  }
+  HYLE_IO_HTTP_API sched::Task<Status>
+  shutdown(OperationOptions options = {}) noexcept;
+
+private:
+  friend class detail::HttpConnectionAccess;
+  friend HYLE_IO_HTTP_API sched::Task<TransferResult>
+  detail::http_upgrade_read(mem::AllocatorRef, HttpUpgradeStream &,
+                            std::span<std::byte>, OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<TransferResult>
+  detail::http_upgrade_write(mem::AllocatorRef, HttpUpgradeStream &,
+                             std::span<const std::byte>,
+                             OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<BufferSequenceResult>
+  detail::http_upgrade_write_all(mem::AllocatorRef, HttpUpgradeStream &,
+                                 std::span<const ConstBuffer>,
+                                 OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<Status>
+  detail::http_upgrade_shutdown(mem::AllocatorRef, HttpUpgradeStream &,
+                                OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<Result<HttpUpgradeStream>>
+  http_server_accept_upgrade(mem::AllocatorRef, HttpServerConnection &,
+                             HttpIncomingRequest &&, StringView,
+                             std::span<const HttpHeader>,
+                             OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API Result<HttpUpgradeStream>
+  http_client_take_upgrade(mem::AllocatorRef, HttpClientConnection &,
+                           HttpIncomingResponse &&, StringView) noexcept;
+
+  struct Impl;
+  HttpUpgradeStream(mem::AllocatorRef allocator, Impl *impl) noexcept
+      : impl_(impl), allocator_(allocator) {}
+
+  Impl *impl_ = nullptr;
+  mem::AllocatorRef allocator_{};
+};
 
 HYLE_IO_HTTP_API sched::Task<Result<std::optional<HttpIncomingRequest>>>
 http_server_read_request(mem::AllocatorRef, HttpServerConnection &,
@@ -495,6 +584,11 @@ HYLE_IO_HTTP_API sched::Task<Status>
 http_server_send_file(mem::AllocatorRef, HttpServerConnection &,
                       const HttpResponseHead &, File &, FileRegion,
                       OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<Result<HttpUpgradeStream>>
+http_server_accept_upgrade(mem::AllocatorRef, HttpServerConnection &,
+                           HttpIncomingRequest &&, StringView,
+                           std::span<const HttpHeader>,
+                           OperationOptions) noexcept;
 
 class HttpServerConnection {
 public:
@@ -556,6 +650,17 @@ public:
     return http_server_send_file(allocator_, *this, head, file, region,
                                  options);
   }
+  // Send the final 101 response and atomically transfer this connection to a
+  // protocol-neutral byte stream. The request/body borrow is consumed on
+  // success. Validation or allocation failure leaves this HTTP owner intact;
+  // transport failure leaves it available only for close().
+  sched::Task<Result<HttpUpgradeStream>>
+  accept_upgrade(HttpIncomingRequest &&request, StringView protocol,
+                 std::span<const HttpHeader> response_headers = {},
+                 OperationOptions options = {}) noexcept {
+    return http_server_accept_upgrade(allocator_, *this, std::move(request),
+                                      protocol, response_headers, options);
+  }
   HYLE_IO_HTTP_API sched::Task<Status>
   close(OperationOptions options = {}) noexcept;
 
@@ -585,6 +690,11 @@ private:
   http_server_send_file(mem::AllocatorRef, HttpServerConnection &,
                         const HttpResponseHead &, File &, FileRegion,
                         OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<Result<HttpUpgradeStream>>
+  http_server_accept_upgrade(mem::AllocatorRef, HttpServerConnection &,
+                             HttpIncomingRequest &&, StringView,
+                             std::span<const HttpHeader>,
+                             OperationOptions) noexcept;
 
   struct Impl;
   HttpServerConnection(mem::AllocatorRef allocator, HttpLimits limits,
@@ -618,6 +728,13 @@ HYLE_IO_HTTP_API sched::Task<Result<HttpIncomingResponse>>
 http_client_request_source(mem::AllocatorRef, HttpClientConnection &,
                            const HttpRequestHead &, HttpBodySource,
                            OperationOptions) noexcept;
+HYLE_IO_HTTP_API sched::Task<Result<HttpIncomingResponse>>
+http_client_request_upgrade(mem::AllocatorRef, HttpClientConnection &,
+                            const HttpRequestHead &, StringView,
+                            OperationOptions) noexcept;
+HYLE_IO_HTTP_API Result<HttpUpgradeStream>
+http_client_take_upgrade(mem::AllocatorRef, HttpClientConnection &,
+                         HttpIncomingResponse &&, StringView) noexcept;
 
 class HttpClientConnection {
 public:
@@ -682,6 +799,20 @@ public:
           OperationOptions options = {}) noexcept {
     return http_client_request_source(allocator_, *this, head, body, options);
   }
+  // Send a bodyless HTTP/1.1 Upgrade request while preserving an ordinary
+  // response on rejection. Inspect protocol-specific response headers, then
+  // call take_upgrade() exactly once for a valid 101 response.
+  sched::Task<Result<HttpIncomingResponse>>
+  request_upgrade(const HttpRequestHead &head, StringView protocol,
+                  OperationOptions options = {}) noexcept {
+    return http_client_request_upgrade(allocator_, *this, head, protocol,
+                                       options);
+  }
+  Result<HttpUpgradeStream> take_upgrade(HttpIncomingResponse &&response,
+                                         StringView protocol) noexcept {
+    return http_client_take_upgrade(allocator_, *this, std::move(response),
+                                    protocol);
+  }
   HYLE_IO_HTTP_API sched::Task<Status>
   close(OperationOptions options = {}) noexcept;
 
@@ -708,6 +839,13 @@ private:
   http_client_request_source(mem::AllocatorRef, HttpClientConnection &,
                              const HttpRequestHead &, HttpBodySource,
                              OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API sched::Task<Result<HttpIncomingResponse>>
+  http_client_request_upgrade(mem::AllocatorRef, HttpClientConnection &,
+                              const HttpRequestHead &, StringView,
+                              OperationOptions) noexcept;
+  friend HYLE_IO_HTTP_API Result<HttpUpgradeStream>
+  http_client_take_upgrade(mem::AllocatorRef, HttpClientConnection &,
+                           HttpIncomingResponse &&, StringView) noexcept;
 
   struct Impl;
   HttpClientConnection(mem::AllocatorRef allocator, HttpLimits limits,

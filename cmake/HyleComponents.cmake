@@ -317,9 +317,14 @@ _hyle_declare_component(process
   PRIVATE_DEPS container container_intrusive platform_thread util_core
   PUBLIC_DEPS core error time platform_fs mem sched io_core)
 
-# Reserved by G04. A QUEUED identity deliberately has no target metadata or
-# consumer-facing product until its closure round freezes the protocol shape.
-_hyle_declare_component(io_websocket QUEUED)
+# RFC 6455 is a protocol factor over the existing HTTP handoff and byte
+# transport. Platform is private (secure client entropy); message/HTTP/task
+# types form the source/static/shared consumer contract.
+_hyle_declare_component(io_websocket
+  PRIVATE_DEPS platform
+  PUBLIC_DEPS core error io_core io_http mem sched container_text time
+  PUBLIC_TYPE_DEPS time
+  SPLIT_PUBLIC_HEADERS hyle/io/websocket.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -379,7 +384,7 @@ _hyle_declare_product(container FACTORS
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
-  io_core io_tls io_http io_http2 io_transfer io_watch)
+  io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
 _hyle_declare_product(compute FACTORS compute)
 _hyle_declare_product(graph FACTORS graph)
