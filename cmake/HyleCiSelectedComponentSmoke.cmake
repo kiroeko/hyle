@@ -17,6 +17,7 @@ endif()
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
 include("${HYLE_SOURCE_DIR}/cmake/HylePlatformRequirements.cmake")
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiSharedExportHygiene.cmake")
 set(_sample
   "${HYLE_SOURCE_DIR}/samples/package/${HYLE_SMOKE_COMPONENT}/cpp")
 if(NOT EXISTS "${_sample}/CMakeLists.txt" OR
@@ -131,6 +132,11 @@ foreach(_linkage IN ITEMS shared static)
     "${CMAKE_COMMAND}" --build "${_sdk_build}" --config Release --parallel 2)
   _hyle_selected_run("install ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" --install "${_sdk_build}" --config Release)
+  if(_linkage STREQUAL "shared")
+    hyle_ci_check_shared_export_hygiene("${_staging}"
+      ALLOW_EMPTY
+      LABEL "selected ${HYLE_SMOKE_COMPONENT} shared SDK")
+  endif()
   if(HYLE_SMOKE_COMPONENT STREQUAL "simd")
     foreach(_expert_simd_header IN ITEMS
         hyle/simd/fat_kernel.h

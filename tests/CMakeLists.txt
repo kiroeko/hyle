@@ -172,6 +172,11 @@ add_test(NAME hyle_module_closure_registry_test
                  "${HYLE_SOURCE_DIR}/scripts/check-module-closure.py")
 set_tests_properties(hyle_module_closure_registry_test PROPERTIES
   LABELS "tooling;documentation;closure")
+add_test(NAME hyle_shared_export_hygiene_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/shared_export_hygiene_test.py")
+set_tests_properties(hyle_shared_export_hygiene_test PROPERTIES
+  LABELS "tooling;build;package")
 # LOC ownership/revision checks are maintainer contracts over a Git checkout,
 # not product tests. Complete source archives intentionally omit .git, so do
 # not register a test there that cannot possibly resolve the audited revision.

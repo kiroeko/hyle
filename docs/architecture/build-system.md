@@ -94,7 +94,10 @@ cache、benchmark peer checkout 和编译产物是三类目录，不能混用。
    relocation 必须由真实 consumer 验证。
 
 这三种都是 C++ 接口。内部 `extern "C"`、C/汇编编译单元不构成公开 C ABI；Native FFI 只有满足
-[准入策略](native-ffi-policy.md)的具名跨语言消费者后才建立。
+[准入策略](native-ffi-policy.md)的具名跨语言消费者后才建立。compiled shared factor 默认隐藏
+C/C++/inline definition，只有显式 `HYLE_*_API` 标注形成 C++ export；安装 smoke 还扫描实际
+PE/ELF/Mach-O artifact，拒绝退役 `hyle_*` C 入口、vendored allocator 符号和 raw 汇编 seam。这个门
+只守住“FFI=N/A”，不把编译器修饰后的 C++ symbol 集伪装成稳定 ABI 白名单。
 
 源码包不复制联网依赖源码；全离线发布必须同时交付受管 source cache/注入目录和许可证资产。详细用户
 命令与陷阱只在[distribution](../user/distribution.md)和[offline setup](../developer/setup/offline.md)

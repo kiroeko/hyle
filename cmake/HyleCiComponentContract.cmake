@@ -1334,4 +1334,36 @@ if(NOT _instrumentation_default STREQUAL
     "HYLE_TEST_INSTRUMENTATION default is not OFF: ${_instrumentation_default}")
 endif()
 
+# Shared factor targets must fail closed: Unix/Mach-O definitions are hidden
+# unless a public declaration carries HYLE_<FACTOR>_API. Test the target
+# property directly so a header-only selected product is not forced to invent a
+# binary solely for this contract.
+set(_shared_visibility_source
+  "${_hyle_contract_root}/shared-visibility-source")
+file(MAKE_DIRECTORY "${_shared_visibility_source}")
+file(WRITE "${_shared_visibility_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_shared_visibility_contract LANGUAGES CXX)\n"
+"set(HYLE_COMPONENTS error)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"set(HYLE_STATIC OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"foreach(_property IN ITEMS C_VISIBILITY_PRESET CXX_VISIBILITY_PRESET)\n"
+"  get_target_property(_value hyle_error \${_property})\n"
+"  if(NOT _value STREQUAL \"hidden\")\n"
+"    message(FATAL_ERROR \"hyle_error \${_property}=\'\${_value}\'\")\n"
+"  endif()\n"
+"endforeach()\n"
+"get_target_property(_hidden_inlines hyle_error VISIBILITY_INLINES_HIDDEN)\n"
+"if(NOT _hidden_inlines)\n"
+"  message(FATAL_ERROR \"hyle_error inline visibility is not hidden\")\n"
+"endif()\n")
+_hyle_contract_run("shared factor default-hidden visibility" TRUE
+  "${CMAKE_COMMAND}" -S "${_shared_visibility_source}"
+  -B "${_hyle_contract_root}/shared-visibility-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+
 message(STATUS "HYLE component contracts passed")

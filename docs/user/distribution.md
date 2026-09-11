@@ -93,7 +93,9 @@ cmake --install build-sdk-shared --config Release
 
 shared package 仍是 C++ SDK。运行时必须能找到动态库闭包；Linux/macOS 使用正常的 rpath/loader
 策略，Windows consumer 可使用 package 提供的 `hyle_stage_runtime_dependencies()` 把 imported DLL
-闭包复制到 executable 旁。它与 static SDK 使用同一 selected-closure header 规则。示例见
+闭包复制到 executable 旁。shared factor 默认只导出显式标注的 C++ API；内部 C、汇编与第三方符号
+不会因此成为受支持入口。安装验证会检查实际动态库的导出表，但这既不建立 C ABI，也不承诺跨
+工具链 C++ ABI。它与 static SDK 使用同一 selected-closure header 规则。示例见
 [`samples/04_prebuilt_lib`](../../samples/04_prebuilt_lib/README.md)。
 
 ## 4. 消费安装包

@@ -13,6 +13,7 @@
 | 盘点正确性证据入口 | `correctness-inventory.py` | 生成 CLOSED factor 的公开头/测试/record 清单；`--print-closed-products` 从中央图和 registry 投影资格验证产品；计数只用于发现漏项 |
 | 查找未触达产品路径 | `correctness-coverage.py` | 在独占 GCC 14 build 中生成 line/branch discovery；不得把百分比写成正确性 verdict |
 | 校验文档 | `check-docs.py` | 四类目录、相对链接、退役 FFI 和从 `docs/README.md` 可达性 |
+| 检查 shared 导出 | `check-shared-export-hygiene.py` | 扫描实际 PE/ELF/Mach-O artifact，拒绝意外 HYLE C、mimalloc 与 raw fcontext 导出；不冒充 C++ ABI 白名单 |
 | 统计代码 | `loc-report.py` | 全库、自实现不含测试、单 factor 或 registry 状态集合；支持 immutable commit |
 | Unix 工具链入口 | `hyle-unix.sh` | 选择受支持 GCC/Clang，拒绝半配置环境，不安装系统工具 |
 | Windows 工具链入口 | `hyle-windows.ps1` | 选择已安装 VS/SDK，支持独占 `-BinaryDir`、factor 与产品 smoke |

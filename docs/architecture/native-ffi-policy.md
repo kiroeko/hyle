@@ -60,10 +60,13 @@ C calling convention 只能解决函数调用和简单布局，不能自动表�
 - 没有只为 FFI 存在的 CMake option、target、package metadata 或 ABI version；
 - 没有把 C fixture 写成用户 sample 的文档；
 - 没有为假想 FFI 增加常态字段、间接调用或所有权限制；
-- architecture/implementation 可以保留决策和清理记录，user 文档不出现不存在的入口。
+- architecture/implementation 可以保留决策和清理记录，user 文档不出现不存在的入口；
+- shared artifact 的实际 export table 不泄漏退役 `hyle_*` C 入口、vendored allocator API、raw 汇编
+  procedure 或私有 signal trampoline。编译器修饰后的显式 C++ exports 仍是 C++ SDK，不是 FFI。
 
 内部与操作系统、汇编、GPU kernel 或第三方库交互所需的 `extern "C"` 不等于产品 FFI，可以在
-清楚的私有边界继续存在。
+清楚的私有边界继续存在，但必须在 shared artifact 中保持隐藏。该要求由安装后 PE/ELF/Mach-O
+扫描守护；header-only 产品没有虚构的 shared binary。
 
 ## 重新开启
 

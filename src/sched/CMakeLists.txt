@@ -5,7 +5,8 @@
 set(_fctx "${PROJECT_SOURCE_DIR}/third_party/fcontext/asm")
 
 if(MSVC)
-  # Windows x64: MASM (ml64). PROCs need BOOST_CONTEXT_EXPORT to be PUBLIC.
+  # Windows x64: MASM (ml64). PROCs must be visible between objects in
+  # hyle_sched, but they are not public DLL entry points.
   set(_fctx_asm
     "${_fctx}/jump_x86_64_ms_pe_masm.asm"
     "${_fctx}/make_x86_64_ms_pe_masm.asm"
@@ -53,12 +54,12 @@ hyle_add_module(sched TRACE TESTING
 
 if(MSVC)
   # The MASM files tag their PROCs with BOOST_CONTEXT_EXPORT (undefined in-file).
-  # Define it to EXPORT so jump/make/ontop_fcontext become PUBLIC and link from
-  # fiber.cc. Visual Studio's MASM integration consumes the target's
+  # PUBLIC lets jump/make/ontop_fcontext link from fiber.cc without putting the
+  # raw procedures in the PE export table. Visual Studio's MASM integration consumes the target's
   # PreprocessorDefinitions property, while generic COMPILE_OPTIONS (including
   # a language generator expression) are not emitted into its MASM item. Keep
   # this target-private; the same unused definition on the C++ TUs is harmless.
-  target_compile_definitions(hyle_sched PRIVATE BOOST_CONTEXT_EXPORT=EXPORT)
+  target_compile_definitions(hyle_sched PRIVATE BOOST_CONTEXT_EXPORT=PUBLIC)
 endif()
 
 hyle_register_package_dependency(

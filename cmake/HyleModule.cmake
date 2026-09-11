@@ -344,6 +344,12 @@ function(hyle_add_module name)
     FOLDER "hyle/modules")
   if(ARG_SOURCES AND NOT HYLE_STATIC)
     set_target_properties(${target} PROPERTIES
+      # A shared factor exports only declarations carrying its HYLE_<FACTOR>_API
+      # marker. Private definitions and objects pulled from static vendor
+      # archives must not become accidental Native FFI on ELF or Mach-O.
+      C_VISIBILITY_PRESET hidden
+      CXX_VISIBILITY_PRESET hidden
+      VISIBILITY_INLINES_HIDDEN YES
       VERSION "${PROJECT_VERSION}"
       SOVERSION "${HYLE_ABI_VERSION}")
   endif()

@@ -19,6 +19,7 @@ endif()
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
 include("${HYLE_SOURCE_DIR}/cmake/HyleCiClosedProducts.cmake")
+include("${HYLE_SOURCE_DIR}/cmake/HyleCiSharedExportHygiene.cmake")
 hyle_ci_closed_product_csv(_hyle_closed_products)
 
 file(STRINGS "${HYLE_SOURCE_DIR}/include/hyle/version.h"
@@ -94,6 +95,10 @@ foreach(_linkage IN ITEMS shared static)
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
   _hyle_smoke_run("install ${_linkage} SDK"
     "${CMAKE_COMMAND}" --install "${_build}" --config Release)
+  if(_linkage STREQUAL "shared")
+    hyle_ci_check_shared_export_hygiene("${_prefix}"
+      LABEL "all-CLOSED-products shared SDK")
+  endif()
   file(GLOB _hyle_installed_version_files
     "${_prefix}/*/cmake/Hyle/HyleConfigVersion.cmake")
   list(LENGTH _hyle_installed_version_files _hyle_version_file_count)
