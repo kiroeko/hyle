@@ -22,7 +22,7 @@ def load_inventory():
 def main() -> None:
     tool = load_inventory()
     root = Path(__file__).parents[2]
-    report = tool.build_inventory(root, "HEAD")
+    report = tool.build_inventory(root, "WORKTREE")
 
     if report["schema"] != "hyle.correctness-inventory/v1":
         raise AssertionError("correctness inventory schema drifted")
@@ -38,6 +38,21 @@ def main() -> None:
         raise AssertionError("WebSocket tests were not discovered")
     if report["cross_cutting_public_headers"] != ["include/hyle/obs/trace.h"]:
         raise AssertionError("cross-cutting trace-header exception drifted")
+
+    expected_journeys = {
+        "tests/correctness/async_runtime_journey_test.cc",
+        "tests/correctness/data_preparation_journey_test.cc",
+        "tests/correctness/model_file_lifecycle_journey_test.cc",
+        "tests/correctness/service_connection_journey_test.cc",
+        "tests/correctness/working_process_journey_test.cc",
+    }
+    journeys = {row["path"] for row in report["project_tests"]}
+    if journeys != expected_journeys:
+        raise AssertionError(f"project correctness journeys drifted: {journeys!r}")
+    if not all(row["registered"] for row in report["project_tests"]):
+        raise AssertionError("a project correctness journey is not registered")
+    if report["summary"]["project_test_sources"] != 5:
+        raise AssertionError("expected the five project correctness journeys")
 
     products = {row["product"]: row for row in report["products"]}
     if not products["io"]["all_factors_closed"]:

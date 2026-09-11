@@ -470,6 +470,9 @@ subprotocol spans 都是借用，必须活到 await 完成。`send_text()`、`se
   connection 失效，因为 wire 上的 fragmented message 已无法撤销。
 - `read_some()` 的非空 payload 路线需要非空 caller buffer；返回的 close reason 属 connection，到下一项
   operation 前复制。ping 会自动 pong，无分配 callback 只作同步通知，不能重入同一 connection。
+- framing 已开始后的 transport failure（包括 deadline/cancel）会让 connection 失效：实现不能知道 wire 上
+  是否已经消费或发送了半个 frame，因而不能把取消伪装成可恢复的“暂停”。调用方应销毁该连接并按应用策略
+  重连；需要正常协议关闭时，在预算尚未到期时显式 `close()`。
 - client frame 的 RFC mask 必然需要一次有界 copy+xor；`write_fragment_bytes` 同时限制复用 scratch 峰值。
   server write 不做这次 copy。frame/message 上限在读取 payload 前生效，不能用超大单 frame 绕过内存预算。
 - 当前明确拒绝 `permessage-deflate` 等 extension，也不提供 JSON/schema、listener loop、rooms/pubsub、

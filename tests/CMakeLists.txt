@@ -226,3 +226,11 @@ unset(_hyle_module_target)
 unset(_hyle_module_targets)
 unset(_hyle_test_fragment)
 unset(_component)
+
+# Cross-product correctness journeys are project-owned integration tests, not
+# factor tests.  Register them only after every selected factor fragment has
+# run, so helpers owned by a factor (notably the Process child fixture) already
+# exist.  The subdirectory independently checks for the required public product
+# facades and therefore disappears from narrow component builds without
+# inventing another product option or factor owner.
+add_subdirectory(correctness)

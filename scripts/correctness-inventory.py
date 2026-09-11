@@ -197,6 +197,39 @@ def build_inventory(root: Path, revision: str) -> dict:
             "non_closed_factors": sorted(closure - closed_set),
         })
 
+    # Cross-factor public journeys are project-owned evidence.  Keep them out
+    # of every factor's totals so their existence cannot make an individual
+    # CLOSED factor appear more qualified than it is.
+    project_test_fragment = "tests/correctness/CMakeLists.txt"
+    project_fragment_data = snapshot.read(project_test_fragment)
+    project_fragment_text = (
+        project_fragment_data.decode("utf-8", errors="replace")
+        if project_fragment_data is not None else ""
+    )
+    project_tests = []
+    project_test_lines = 0
+    project_test_declarations = 0
+    for path in sorted(
+        candidate for candidate in snapshot.files
+        if candidate.startswith("tests/correctness/")
+        and Path(candidate).suffix.lower() in TEST_SUFFIXES
+    ):
+        data = snapshot.read(path) or b""
+        declarations = len(TEST_DECLARATION.findall(data))
+        lines = data.count(b"\n") + (1 if data and not data.endswith(b"\n") else 0)
+        registered = Path(path).name in project_fragment_text
+        if not registered:
+            issues.append({"kind": "unregistered_project_test_source", "path": path})
+        project_tests.append({
+            "path": path,
+            "lines": lines,
+            "test_declarations": declarations,
+            "test_fragment": project_test_fragment,
+            "registered": registered,
+        })
+        project_test_lines += lines
+        project_test_declarations += declarations
+
     return {
         "schema": "hyle.correctness-inventory/v1",
         "disclaimer": (
@@ -214,11 +247,15 @@ def build_inventory(root: Path, revision: str) -> dict:
             "test_sources": total_test_sources,
             "test_lines": total_test_lines,
             "test_declarations": total_test_declarations,
+            "project_test_sources": len(project_tests),
+            "project_test_lines": project_test_lines,
+            "project_test_declarations": project_test_declarations,
             "issues": len(issues),
         },
         "cross_cutting_public_headers": cross_cutting_headers,
         "factors": factors,
         "products": products,
+        "project_tests": project_tests,
         "issues": issues,
     }
 
