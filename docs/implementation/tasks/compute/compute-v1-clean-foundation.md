@@ -83,7 +83,7 @@ memory factories、`GgmlBackend`/`FfnBlock` 重复或越过 owner；`KernelArgs`
 | C06 | 无模型偏置的 custom compute 只有裸参数袋 | 提供 CPU-only typed host submit；语义明确为 return 前完成 | compile-time misuse 与 SAXPY journey | 完成实现；nothrow void/Status callable、同步完成和 closed-queue 测试通过 |
 | C07 | 旧测试只证明旧 API | 从需求重新建立 header/correctness/OOM/lifetime/concurrency 测试 | 预声明 CPU matrix 全部有 verdict | 完成：Windows/MSVC、macOS ARM64/AppleClang 21 和 WSL/GCC 14 的 unit/header 全过；WSL ASan、UBSan、TSan 各 2/2 Compute 门通过且无报告 |
 | C08 | 旧 sample、setup、package smoke 和 guide 宣称旧功能 | 重写 Compute 用户页、package consumer 和选择/限制说明 | source/static/shared consumer 使用同一 API | 完成：独立用户页与 package consumer 使用同一 prepared RMSNorm/typed-host API；Windows source、可搬迁 shared、可搬迁 static 均编译运行通过，shared export hygiene 通过（5 库、659 exports） |
-| C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 待处理 |
+| C09 | 没有同合同 one-op 抽象成本结论 | API 稳定后做 P0 静态账单、短 preflight 与一次 P1 | 不存在无法解释的 material 固定输 | 完成：消除 view/数组复制、重复 properties 读取和固定 8-rank 比较后，正式仪器全 PASS；相对语义更窄的 direct Mem+SIMD 固定安全合同成本为 22.2--29.8 ns，明确降为非等价 diagnostic，不伪造胜负 |
 
 本轮不保留任何旧实现以等待未来比较；若后续 GPU/provider 需要某段算法，只能从 Git 提取事实并在新
 backend closure card 中重新审计，不能把旧 TU 恢复进产品树。
@@ -137,5 +137,8 @@ HYLE_TRY(completion.wait());
 
 ## 当前状态
 
-当前审计已完成，有限改动集与 API 形状已冻结；registry 同步进入 `AUDITED` 后才授权 C01--C09，范围外
-发现必须退回本卡而不能顺手实现。
+候选 `5c9dc1604e6daaec1d73062296f2a71d019e7b35` 的 C01--C09 已全部完成。Windows、macOS、WSL、
+sanitizer、source/static/shared、红队与 P1 事实见本卡及
+[`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)。本卡只终结清洁 CPU
+one-op foundation；完整算子目录和异构 provider 必须由新的有限卡合法重开，不能把本轮称为完整
+Compute 产品。

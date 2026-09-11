@@ -1,0 +1,1059 @@
+{
+  "entries": [
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-01.log",
+        "sha256": "e1434f12f12d24879eff7f6fa63183b7f2894c2e4b9b817bb642cb7f4772626b"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "e9d35609f909491c32ceee5df84610dc",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-02.log",
+        "sha256": "34da3ee3d2f61a22a81c96df3fefb325f458c4daf0ad3988ab78f24bf3c5a445"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "4495b86f5c0f5ff4495008619b3cae65",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-03.log",
+        "sha256": "a41c79bec962baf172c47c764abcbcb6677760341af97ddf3625356e08f52e1e"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "d5089167f12ca2fac0432cfdf4255440",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-04.log",
+        "sha256": "5802019dcfd327606475e53fc6bbfbd794aaf5aee0b601366d036e93cf87b562"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "8c79c92dba0420dbc42a4443ca932e1b",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-05.log",
+        "sha256": "a4b489ebcc71485853575514cde834f153b1d10faee9b96390936f1935879f7d"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "a86cdc0ef09788c8a640aa0d76df3e27",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-06.log",
+        "sha256": "ebae2d330a128564720ac4c574b2465254f6d329b22d3c9a0ff8424321d65a7b"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "0202eeced0d27cd1490c0749159f5b17",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-07.log",
+        "sha256": "55d2488b96d9bdde6c8d7ad8eff0b1b3f6d22cdfae466ae67a40589424996a0a"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "a6d1fa6e3b826958215b8fcaadf1e769",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-08.log",
+        "sha256": "5577732059ae677d14c3376bbfcd7d02957a59c2cdf3fa78735cfe9a24b3f4c5"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "6f6585e725d39754b177da1a0c8d2cf1",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-09.log",
+        "sha256": "2d7da7bc99975a662ed4f2ccc53b290206d825dfdea57e1eb5c8bc5a8b41bd34"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "6a25913526e12001e3ca2240ec833d58",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-10.log",
+        "sha256": "15ad688f2f4a1061274b90edcef3e7b7756cf3b9554d9281fc89079113ca0ae8"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "37347747904bf03f28baacfddd30f28a",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-11.log",
+        "sha256": "f5267fc2fe283bfc21c95fca3b2c1a0662a55d69130422a22bf36185ef7e2d97"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "fe04887af16e533f4f2eb9701ebadbc4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-12.log",
+        "sha256": "4e163a867df3ea9b4e4a8b0f27f6292d71f94aac51879fe9f965ad8dee87a34c"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "7cdca25c8cb1d44de51891870b57df46",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-13.log",
+        "sha256": "b36cfc4d71b3a21bb19b979f5c9adba8a067b596a784afe1eecf2d212d88a34f"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "e1cedd66f6e20023c217cd333c45caf4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-14.log",
+        "sha256": "670af76e74e95ebeab4f709b06fba3ea8156e921af86fb62198b45ecdde98ba0"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "d84b2a4b32893577ada1c0a5affb2ec7",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-candidate-first-compute-graph-one-op-primary-run-15.log",
+        "sha256": "fad525ee563dc488fd41d5c5cc9a66fd93a2c4ba2e08b4b7f7dcc1fefecf3991"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "d41a22c592545cac7ce9e3996e9615f9",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-01.log",
+        "sha256": "2323ec0077c915eae7026cc1e24596f49b1ff409e60d105281ffc2a751003e6e"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "62b36c079f6054fbb34017bac2744155",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-02.log",
+        "sha256": "536922a43885f559051e1747235d22b0c5852f1a2d41eb3545bce8876f1e3880"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "0c89d2acdd63b20d5c47a896f66654db",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-03.log",
+        "sha256": "7a008acfe9c4585a059fa36547c576569fe1dba5ac2463199930d81866d80f60"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "21b07d9571f65d075f74137e64d73065",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-04.log",
+        "sha256": "2a533df7eae418b4da65d8b7e8e15b619563bd64b7bca6a2a9cc4b6c5d3d1baa"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "8117bf60be8a956f00c22f26da6d971c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-05.log",
+        "sha256": "fd86f2a10387ab109218dce5334ad05161ef55a76a7380ebd346c589568e88d5"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "6ccd6150f7d22be79f8d7a827cf43007",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-06.log",
+        "sha256": "5f0feb14c595a6386e20945fb518069a503f75dab921439beb4107eabea9f3b4"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "d37a0866aacd2acd63fb1c4bf968eed6",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-07.log",
+        "sha256": "1d64546d0ab3eef9a83acc55c475e14990cdc49f822337ab204014bf83b621e2"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "422987f64ec146ba88499989035530ff",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-08.log",
+        "sha256": "d4e14d5174bea4a7827a6c2e7552f5e9a2ea77ad610739dec6dee13c903e1831"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "0ac1803f3056a29ac49983b7f0899875",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-09.log",
+        "sha256": "c3a447d20e66282c71a65add2b2ae237b80a58bd72876c31abf35235869a6f5b"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "948fb8d20666f6dbf0239805f54e9ec2",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-10.log",
+        "sha256": "25e5f047ce32e17756ccd125a1be1f461a9deaccd83edfd8bce9d10146080abc"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "d4234ace577bf29f18d2986def45d4b8",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-11.log",
+        "sha256": "1a721965da414b15ae10ab9dd0676442a352d7156672b076dca0addccdb3ea5a"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "d5844ada877da71c864a388100bc991e",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-12.log",
+        "sha256": "2c616245706392f32552604be46e6a0dddc4f56c71358364ce5567bfc0162f05"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "898f2d6d85c07dfa8ad95a9f35109d4c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-13.log",
+        "sha256": "7bd41edbded66f2bd29ae94129d6e6c50d0dfbf912a1fc29e458df6f78e9b794"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "ef437b064f1d0d18591e11bf0f858614",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-14.log",
+        "sha256": "924858ba91065c3888ab6e22c11e7bf722e2e0ebd65ce0c7c3845ef8bd7e3335"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "c38816225feedf6bbbe425cd79ef59c5",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-primary",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-primary-peer-first-compute-graph-one-op-primary-run-15.log",
+        "sha256": "1bfd2792d349a1f491109de481cc10423c0f8802554e5d531ddae040ee5b02f8"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "5ed5da5d6fa2f060552707a2f4f80772",
+      "stage": 15,
+      "stratum_id": "primary-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-01.log",
+        "sha256": "cb456406b2e0766295e52951188412bd790c9d28448c57b8f0c0befa94bb5c79"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "c49b25541a2266e60f8a926176b1dc6d",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-02.log",
+        "sha256": "94d34712a85d531c4dd301dee2be6a4cc8a3865f30b2b5a8e79486b3abdd3604"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "6b8c339a82db3b09c93fc871f12375a8",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-03.log",
+        "sha256": "13d6d513bf69a4100b114f94cb06f4dfafa152621ec94ae0baba9a1b34f35940"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "21371617478bd05ab6b229c9eeacb0db",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-04.log",
+        "sha256": "47701f7597833c94d3e9c7f0079ceacaf003f2e8052bb3f739cb2f5ec574b7ea"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "f8dd41f5ba9baa9010f7bd97c7e09acd",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-05.log",
+        "sha256": "4103dbce68b61ec7624ae9382898744c4c4af45ec663db5f8f2540dddcc49061"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "d7d49fa0071be96d89928c8d63ef4ccf",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-06.log",
+        "sha256": "201728409f35e945cb38df9a289211bf924c9eed166ac4250b18e86830ff315a"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "f1bd3f604dabea41f3ae810b1bed57cf",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-07.log",
+        "sha256": "cf4dd2d48ef612eac64a64a833c6a2dd7fbfd9437a5ee4709ad704b6a63aed0f"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "fefdde3655a8dc952ef4c2cb25c331b5",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-08.log",
+        "sha256": "f96753f7f903e00014cba6608c88b10567b892138c21d2ba3006374a56009811"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "00d27cb1efeb4119842ad5a2ae5376fb",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-09.log",
+        "sha256": "f639c7a5ca18fa3a5890a4b0f9fe7740c285486853c6d6c2f534b4d430468405"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "058b91e689dbbf41610842c99a36fc32",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-10.log",
+        "sha256": "f413b94500fcead4da88a23137c791c2fd4035c75bb58d9e7a2dbbc3de481940"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "209291fcbb70c74db2bbd8e88f5c7600",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-11.log",
+        "sha256": "ec131a4df079cf2ae4deeb88f402f22651471b112195d80d37426dc3d8a9c6e7"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "6a350352bf95dd9301d262a88fd364e1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-12.log",
+        "sha256": "7693939c33fbc2489044fd1a49547d8bc1bc030ca7aa329b5e0f5595c2803602"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "6c21973b6e86b523631bf1aa5ed8c9f8",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-13.log",
+        "sha256": "4810558d31efd329a5665897cc27b1a607606c060c4d9b3b57cb53edae9fe535"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "6c02c027c912dd6ad1324d61d37afad9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-14.log",
+        "sha256": "102731b16c766c8044421e5d98e80f427594ac6813da82425189077070d51120"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "747414dfa31601f54f89a8d672ab170d",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-candidate-first-compute-graph-one-op-placement-run-15.log",
+        "sha256": "9224fce56aedef7b6896200b5e8cb61f902712d46e4ecb5fa66859e550f644a3"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "d9868d9b1c48a4f8d7804a5b96dc86fd",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-01.log",
+        "sha256": "77d634d744849b94fbb8b427f4361f85727b849ae8b7f2dd424912e8f9bcfa3f"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "156b9e8273b2d111cb00f3e0556f7707",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-02.log",
+        "sha256": "bbb56426d505676ff76f6832284c457187a1d4642ce89e592f4d8104e43c16bd"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "06ab6fa7c0734d131661be5cd9f079fd",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-03.log",
+        "sha256": "6bcc16f97973f87a981dcec4f6d8e637846074e91c80a0b9bec4679672330327"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "11b82855abb9aa531e6faa945d45b3ef",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-04.log",
+        "sha256": "4c28a6f33c15123471ad976bf6f5f919a0dde9d0a72c13448f738c290bc48103"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "aaeafab4a7d37785b869aef9818c9721",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-05.log",
+        "sha256": "14d50148190bec76b831233b55b53907171a157691d1c5fde4aa1a029d91ec16"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "c3d3a6dcff420fcbb2c7535f0d791d56",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-06.log",
+        "sha256": "3420787fdf2e542f24c5430c3ff6bfffac5daecefb9f43e24c6a61674493a577"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "656be87880bccda94c50094bdd7a1b65",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-07.log",
+        "sha256": "b851de3bd627e968a0792b2d0e65380483ca400359a9bdcefad4db1646c6c17d"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "09e0046d8e09a2a967e7a48ce3949af9",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-08.log",
+        "sha256": "57bd37c4665cc7c8ada667a866b3dbff7ebc163b449ffd89a02a51eb6453696c"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "313c0d8de024d3f2c015888dc2adb604",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-09.log",
+        "sha256": "5aacf2bf6fac6593f0bf5749e9e7dc4a11f5955b911a430b9b192f47cec1d1f1"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "43aa1e2c612603ab8edba699a6283794",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-10.log",
+        "sha256": "958ee3d25e41bec209da60bd3ab415314150e13b0a6b1ce3056523cb80d619a4"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "fe9851563a8d259e39783677d8653fee",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-11.log",
+        "sha256": "b557cf87a198f1ff4c44f1c9f8d3199bb822729a8e1197956d674287b89d1900"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "1937e800d25a20cd1ebf1c7056446af0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-12.log",
+        "sha256": "1c88c0216fe80ec6c9a687256f3adee156020c635173b942f51e593d4c398a7d"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "8556eef842dbf8743cbdaf447a7813be",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-13.log",
+        "sha256": "f3fcc443d084912c3958ad682e78d95fc9f82642fbcb6f896a5dc927ca2f808f"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "3b7a7b711275e90f347d4bf1a69bf733",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-14.log",
+        "sha256": "9c2541890219865e0cb601a31b0830caac9ebfddaf9844f43ff56732a8faea53"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "22b0c942f9381f6116080b7d6c41657a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "executable_id": "compute-graph-one-op-placement",
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\product-placement-peer-first-compute-graph-one-op-placement-run-15.log",
+        "sha256": "a51f3c489c1ef6fd02588bf1de7cf63b88015757bb4f762ef024ef0482ce9891"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "a9e5b7a6faf57f47ca522f4cb77afa4a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first"
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-01.log",
+        "sha256": "3996251bdfef5c5179fb8cab8a817bb509b07a5605086980fc67ca490e0fb721"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "71b7035fd08a0157ac89b071a0aadaf8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-02.log",
+        "sha256": "69bc292e489fac17b5b54d83fe49fdf038255e5cdff8b3db1ff2532c5b6b9081"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "089d51fdefa854d65121cceb5c878a88",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-03.log",
+        "sha256": "cd01bb1a9b4156172d8604cbdb19fee7ed4c6339c358423d60c80ec281da718b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "d72f446dc04146669c70fc6f841d924a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-04.log",
+        "sha256": "864682fdfadccfcb56e511b6ed8a1df95e665dab901dc4d1bdea9f0f7322845a"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "7f6fcfab6a7ab4ac023b693bd4dc8951",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-05.log",
+        "sha256": "dfd82f03dd0d05bf14c27b7c40f123e47b9813e2240a8faa1612bbd542d32a83"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "8bed0db2c2bcd0a0d77cdaf4e6251db6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-06.log",
+        "sha256": "b5bdfbf0466b97bf6667ed5dc440e78037640de491d21112bd0d5895f5cbab27"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "413c00fb782eba9817f0b9203942cb15",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-07.log",
+        "sha256": "4aa7f67c802b5618dd7ccec7a01cb0c29829887d6b82199a8afe7b9e11466640"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "a31e4281dbbf733299ca8b5a7f646b3e",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-08.log",
+        "sha256": "df5f777640fe82798133b5dcdbc665a2c4b5537047bbfc841dbd27c961ee64ca"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "bf118399f109864bab51d585c2e1b6af",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-09.log",
+        "sha256": "d8b3d0926eb09a3479f63766b045cd62174a4e736fb66e53bde245a07ab97c73"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "1b62d3c8c2d0b6bad07023ce57dac7ca",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-10.log",
+        "sha256": "f5dff9101586e83d96a6983e85894c2b76d207477c3ba8c912a51a707fdbdaef"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "7618385dfa806af878a41e434ac66d3a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-11.log",
+        "sha256": "1059c43dc40511eef7961617a509c82d6df62f1d5af57e5993799b5413833474"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "0ef709be6678207ba773c077afd2e366",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-12.log",
+        "sha256": "58537324ad476e692ac60f567e7afd917fad84e7dc3b432d14e2d73ecdff6b4e"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "ad82f85afdaa066068ae5469f9f64c9f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-13.log",
+        "sha256": "769d10e961b52ecc3537a839798849d0803af74c2ae5f77169bcfdf2a3c665de"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "7568ce3a2c39a5a7a4df7556107ac212",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-14.log",
+        "sha256": "2aae44885afe13ab9810708d8d5b70fed7740abd657d23322406a5501fc19624"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "3b3c93f1ef3c3a49623acc9fe63d6ce8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-candidate-first-run-15.log",
+        "sha256": "83ad43948f1786bfd28aabb678fc341a51a64fa84622a7142fd5de1a62130c80"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "6acbc6950fb505d6e270c7347ae35cb9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-01.log",
+        "sha256": "d325aaf297108116c988fb5b31f56662f4ff4541ace4e1c8f26b5996233f0957"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "d88ca554bbe2371f5efe409615206222",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-02.log",
+        "sha256": "cbfdcb2f3c551863a3a61f1fb489a2c867e1db3a5b5ff0585e74c1ead89b4498"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "b547f542aefa5b029b6544924ebf3c98",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-03.log",
+        "sha256": "4cdbe5b3d69d3c2b78600e6d1da562b71514d9eabbc31543a65d64cbff65272e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "5c42fe56cf9b264e6b0b4c011b58f0fc",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-04.log",
+        "sha256": "704b53804d4bc79354311f44fb14fc65655c010d3feea25e09fd4f10d2946964"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "3d5d8e23c64be6be8f2d1232e11c9b49",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-05.log",
+        "sha256": "ef084f39e7f5314c718ad8caf58077b3c9088722bf8de0da28272e1fab58e68c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "1528c57edadca3b575c08df15f4771d7",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-06.log",
+        "sha256": "0e3aa7637b85f688e9cd8f51f56bba6f62c01b3dea69c29a9ad83bb3892daaf2"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "97b1b8e526250a9786a78402e724886b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-07.log",
+        "sha256": "063d4b49868d3deafc9f6d010e8512fa639afde81566e4a374d2eb4f0a372c37"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "1f824486969032c1d88ba7eac4071a63",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-08.log",
+        "sha256": "e7b3f8e661391989edd6b49b201dbeac457ff8c5ac2e3ad62c71ba806b81a036"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "2a0a9dc90a5b81c67cc54a661d74ea0d",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-09.log",
+        "sha256": "2996f3077ac9572ed8602c60b6473347786570db3e0729fc34dc693a9333a1c3"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "60669f5b80203fb8bbc8300d334b6ae3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-10.log",
+        "sha256": "939be7829060aff423e37d17a4b0a3c35f4038abae9e4a5d7f4767a25a4c7b2e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "942a71140a1daad7b73cce5973397a28",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-11.log",
+        "sha256": "fc32af8449213f4ab47797fd4d6b9221a793d0cf721a26a8c24049063f1b4032"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "db58a59fe3a8e5a049118dedef1bc978",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-12.log",
+        "sha256": "ba9bb269041054d73c35896a2713aab00d7c95019cb7503db82ad97d4e8f2f19"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "7954cc7ffe66e4210e60d7655555c3eb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-13.log",
+        "sha256": "92a770040722cfbfa31896197e4f1e7daafa453305a8cfbcf2db5cb0dc716b90"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "533ea2a7ad71c4a8978fded52883d028",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-14.log",
+        "sha256": "ae5c8888f88d1ac908b5e50e715ecce74475f63532c817ea7afafd486a6a1a2c"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "1bf750dcee12af1e8e8619541cc0473b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-graph-one-op-p1-evidence\\raw\\n-15\\control-peer-first-run-15.log",
+        "sha256": "479670987f24cdbf274a69088438ddb385fea1d6cac77647682a5c5b1dc4fa7b"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "0c00af05a91b4148b7c8471db5b3ff40",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

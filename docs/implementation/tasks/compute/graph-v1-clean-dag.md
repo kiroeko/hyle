@@ -73,7 +73,7 @@ Invocation，反而把 Sched 和 Container 强制泄漏给 Graph。因此没有�
 | G05 | 没有与 Compute 共用的运行合同 | one-op plan 直接持有 `PreparedOperation` 并提交 bindings | steady 不读 Graph、不 search/allocate/prepare | 完成实现：plan 直接拥有 PreparedOperation，Invocation 仅固定 slot bind 后转交 submit |
 | G06 | 旧测试无法迁移为证据 | 重新建立 correctness/OOM/lifetime/concurrency/reset 测试 | 预声明 CPU matrix 全部有 verdict | 完成：Windows/MSVC、macOS ARM64/AppleClang 21 和 WSL/GCC 14 的 unit/header 全过；WSL ASan、UBSan、TSan 各 2/2 Graph 门通过，two-thread 独立 Invocation 无 TSan 报告 |
 | G07 | 旧文档/sample/package 没有新用户 journey | 新 Graph guide 与 source/static/shared consumer | 三交付同 API，误用有诊断 | 完成：独立用户页与 package consumer 覆盖 builder/compile/report/bind/submit；Windows source、可搬迁 shared、可搬迁 static 均编译运行通过，shared export hygiene 通过（6 库、691 exports） |
-| G08 | Graph 税未量化 | candidate 后做 P0、one-op A/A preflight 与一次 P1 | 无无法解释的 material fixed loss | 待处理 |
+| G08 | Graph 税未量化 | candidate 后做 P0、one-op A/A preflight 与一次 P1 | 无无法解释的 material fixed loss | 完成：同一 PreparedOperation/Queue/TensorView/Completion 的四 strata paired ratio 0.9879--0.9971，全部 CI 在 5% 等价带，combined `PARITY/PASS`；controls 全 PASS |
 
 ### API / usability freeze
 
@@ -118,5 +118,7 @@ auto completion = HYLE_TRY(invocation.submit(queue));
 
 ## 当前状态
 
-当前审计已完成，有限改动集与 API 形状已冻结；registry 同步进入 `AUDITED` 后授权 G01--G08。Graph
-产品代码仍须等 Compute one-op 合同可消费，不能先造兼容 adapter。
+候选 `5c9dc1604e6daaec1d73062296f2a71d019e7b35` 的 G01--G08 已全部完成。Windows、macOS、WSL、
+sanitizer、source/static/shared、红队与 P1 事实见本卡及
+[`benchmarks-compute-graph`](../../evidence/performance/benchmarks-compute-graph.md)。本卡只终结清洁 one-op
+Graph 生命周期；multi-op compiler/plan 必须由新的有限卡合法重开，不能让 one-op 状态冒充完整 Graph。

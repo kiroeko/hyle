@@ -272,15 +272,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-v1-clean-foundation.md",
-      "summary": "compute v1 AUDITED：旧实现已逐入口裁决为删除，有限 C01-C09 集冻结；从空白实现 CPU Device/Context/Queue/Completion、Mem tensor binding、prepared RMSNorm 与 typed host custom-kernel。"
+      "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35",
+      "summary": "compute v1 CANDIDATE：旧实现已彻底删除；从空白实现的 CPU Device/Context/Queue/Completion、Mem tensor binding、prepared RMSNorm 与 typed host custom-kernel 已完成三平台、sanitizer、三交付和 one-op P1，等待终局记录。"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/graph-v1-clean-dag.md",
-      "summary": "graph v1 AUDITED：旧 TaskGraph/parallel/data-parallel 全部裁决为删除，有限 G01-G08 集冻结；从空白实现 one-op GraphBuilder/Graph/Executable/Invocation。"
+      "candidate": "5c9dc1604e6daaec1d73062296f2a71d019e7b35",
+      "summary": "graph v1 CANDIDATE：旧 TaskGraph/parallel/data-parallel 已彻底删除；从空白实现的 one-op GraphBuilder/Graph/Executable/Invocation 已完成三平台、sanitizer、三交付和同合同 P1，等待终局记录。"
     },
     {
       "module": "container_concurrent",

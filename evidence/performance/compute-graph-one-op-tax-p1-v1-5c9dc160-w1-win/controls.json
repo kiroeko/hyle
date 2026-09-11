@@ -1,0 +1,185 @@
+[
+  {
+    "details": {
+      "kind": "aa",
+      "maximum_bias_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.993143098553612,
+              1.0140235335561711
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0026869950460147,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        },
+        "peer-first": {
+          "equivalence_band": [
+            0.9523809523809523,
+            1.05
+          ],
+          "estimate": {
+            "confidence_interval": [
+              0.9901285750115734,
+              1.0162346211316178
+            ],
+            "confidence_level": 0.99261474609375,
+            "estimator": "process-median",
+            "independent_clusters": 15,
+            "median_advantage_ratio": 1.0058080264638747,
+            "sample_count": 15
+          },
+          "reason": "median-ci-inside-equivalence-band",
+          "verdict": "PARITY"
+        }
+      }
+    },
+    "gate": "PASS",
+    "id": "aa"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.025,
+        1.075
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 5.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0157131561348376,
+            1.068063232836166
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0515246588156903,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0258652798488255,
+            1.0602736365352625
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0428875885395903,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta5"
+  },
+  {
+    "details": {
+      "accepted_median_band": [
+        1.05,
+        1.15
+      ],
+      "kind": "known-delta",
+      "monotonic_5_to_10": true,
+      "nominal_percent": 10.0,
+      "orders": {
+        "candidate-first": {
+          "confidence_interval": [
+            1.0870432281076001,
+            1.1153384313590498
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.1071552019114577,
+          "sample_count": 15
+        },
+        "peer-first": {
+          "confidence_interval": [
+            1.0841982164224147,
+            1.1091438934197555
+          ],
+          "confidence_level": 0.99261474609375,
+          "estimator": "process-median",
+          "independent_clusters": 15,
+          "median_advantage_ratio": 1.0957333894545929,
+          "sample_count": 15
+        }
+      },
+      "relative_tolerance_percent": 50.0
+    },
+    "gate": "PASS",
+    "id": "delta10"
+  },
+  {
+    "details": {
+      "kind": "timer-floor",
+      "minimum_workload_floor_multiple": 20.0,
+      "workloads": [
+        {
+          "candidate_median_ns_per_op": 593.3649088642646,
+          "conservative_floor_ns_per_op": 0.19923793538875964,
+          "gate": "PASS",
+          "id": "compute-prepared-rmsnorm-f32-4096",
+          "measurement_batch": 1,
+          "observed_multiple": 2845.1349263483926,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19612719182853625,
+              "peer_median_ns_per_op": 0.19923793538875964
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19635491415286818,
+              "peer_median_ns_per_op": 0.19885772628608056
+            }
+          },
+          "peer_median_ns_per_op": 566.8588086281045
+        },
+        {
+          "candidate_median_ns_per_op": 598.8808093848093,
+          "conservative_floor_ns_per_op": 0.19923793538875964,
+          "gate": "PASS",
+          "id": "graph-invocation-rmsnorm-f32-4096",
+          "measurement_batch": 1,
+          "observed_multiple": 2982.8559213021313,
+          "orders": {
+            "candidate-first": {
+              "candidate_median_ns_per_op": 0.19612719182853625,
+              "peer_median_ns_per_op": 0.19923793538875964
+            },
+            "peer-first": {
+              "candidate_median_ns_per_op": 0.19635491415286818,
+              "peer_median_ns_per_op": 0.19885772628608056
+            }
+          },
+          "peer_median_ns_per_op": 594.2980553223731
+        }
+      ]
+    },
+    "gate": "PASS",
+    "id": "timer-floor"
+  },
+  {
+    "details": {
+      "kind": "placement",
+      "target_variants": [
+        "placement",
+        "primary"
+      ]
+    },
+    "gate": "PASS",
+    "id": "placement"
+  }
+]

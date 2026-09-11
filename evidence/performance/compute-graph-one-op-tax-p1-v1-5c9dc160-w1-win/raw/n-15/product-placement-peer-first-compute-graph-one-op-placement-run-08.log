@@ -1,0 +1,11 @@
+
+| relative |               ns/op |                op/s |    err% |     total | compute prepared RMSNorm f32 N=4096
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------
+|   100.0% |              564.53 |        1,771,374.36 |    1.0% |      0.09 | `HYLE direct Mem+SIMD N=4096`
+|    95.5% |              591.01 |        1,692,020.54 |    0.6% |      0.09 | `HYLE Compute PreparedOperation N=4096`
+
+| relative |               ns/op |                op/s |    err% |     total | graph invocation RMSNorm f32 N=4096
+|---------:|--------------------:|--------------------:|--------:|----------:|:------------------------------------
+|   100.0% |              593.78 |        1,684,134.62 |    1.3% |      0.09 | `HYLE Compute PreparedOperation N=4096`
+|    98.8% |              600.93 |        1,664,095.74 |    1.8% |      0.09 | `HYLE Graph Invocation N=4096`
+# HYLE_COMPUTE_GRAPH_ONE_OP_RUN execution_order=peer-first apple_qos=not-applicable qos_ok=not-applicable affinity_topology=external caller_cpu=external affinity_ok=not-applicable run_nonce=313c0d8de024d3f2c015888dc2adb604
