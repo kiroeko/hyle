@@ -611,6 +611,57 @@ TEST(Process, FileMergeAndWorkingDirectoryAreNaturalCompositions) {
   EXPECT_TRUE(runtime.shutdown().ok());
 }
 
+#if !defined(_WIN32)
+TEST(Process, FileStdioSnapshotsAliasedStandardDescriptor) {
+  auto runtime_result = ProcessRuntime::create();
+  ASSERT_TRUE(runtime_result.has_value());
+  ProcessRuntime runtime = std::move(*runtime_result);
+
+  int channel[2] = {-1, -1};
+  ASSERT_EQ(::pipe(channel), 0);
+
+  const int saved_stdin = ::fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC,
+                                  STDERR_FILENO + 1);
+  ASSERT_GE(saved_stdin, 0);
+  const int redirected = ::dup2(channel[1], STDIN_FILENO);
+  if (redirected != STDIN_FILENO) {
+    (void)::close(saved_stdin);
+    (void)::close(channel[0]);
+    (void)::close(channel[1]);
+    FAIL() << "could not install aliased standard descriptor";
+    return;
+  }
+  const int write_end_closed = ::close(channel[1]);
+
+  // The FileHandle is a temporary owner-shaped view of fd 0. Release it before
+  // restoring stdin; ProcessStdio snapshots only the native value.
+  hyle::platform::FileHandle aliased_file(STDIN_FILENO);
+  const std::array<std::string_view, 1> arguments{"streams"};
+  ProcessStartOptions options = helper_options(arguments);
+  options.stdin_stream = ProcessStdio::null();
+  options.stdout_stream = ProcessStdio::file(aliased_file);
+  auto child = runtime.spawn(options);
+
+  (void)aliased_file.release();
+  const int restored = ::dup2(saved_stdin, STDIN_FILENO);
+  const int saved_closed = ::close(saved_stdin);
+
+  EXPECT_EQ(write_end_closed, 0);
+  ASSERT_EQ(restored, STDIN_FILENO);
+  ASSERT_EQ(saved_closed, 0);
+  ASSERT_TRUE(child.has_value())
+      << (child.has_value() ? "" : child.error().message());
+  auto exit = child->wait();
+  ASSERT_TRUE(exit.has_value());
+  EXPECT_EQ(exit->exit_code, 0u);
+  std::array<char, 3> output{};
+  hyle::platform::FileHandle pipe_read(channel[0]);
+  ASSERT_TRUE(pipe_read.read_exact(output.data(), output.size()).ok());
+  EXPECT_EQ(std::string_view(output.data(), output.size()), "out");
+  EXPECT_TRUE(runtime.shutdown().ok());
+}
+#endif
+
 TEST(Process, CancellationCancelsWaitButNotChild) {
   auto runtime_result = ProcessRuntime::create();
   ASSERT_TRUE(runtime_result.has_value());

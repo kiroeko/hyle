@@ -172,6 +172,26 @@ Status set_nonblocking(int descriptor) noexcept {
   return Status{};
 }
 
+Result<int> duplicate_above_stdio(int descriptor) noexcept {
+#if defined(F_DUPFD_CLOEXEC)
+  const int duplicate =
+      ::fcntl(descriptor, F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
+#else
+  const int duplicate = ::fcntl(descriptor, F_DUPFD, STDERR_FILENO + 1);
+#endif
+  if (duplicate < 0)
+    return make_unexpected(
+        errno_status(errno, "duplicate child stdio file descriptor"));
+#if !defined(F_DUPFD_CLOEXEC)
+  Status status = set_cloexec(duplicate);
+  if (!status.ok()) {
+    (void)::close(duplicate);
+    return make_unexpected(std::move(status));
+  }
+#endif
+  return duplicate;
+}
+
 struct StdioSetup {
   explicit StdioSetup(ProcessState* value) noexcept : state(value) {}
   ~StdioSetup() {
@@ -268,6 +288,20 @@ struct StdioSetup {
         if (raw < 0 || raw > INT_MAX)
           return Status::OutOfRange("child stdio file descriptor is invalid");
         source[slot] = static_cast<int>(raw);
+        // posix_spawn applies file actions in order. If a later slot borrows
+        // fd 0/1/2, an earlier dup2 could overwrite that source before it is
+        // consumed. Snapshot only those alias-prone sources above stderr;
+        // ordinary file descriptors keep the one-dup2 fast path.
+        if (source[slot] <= STDERR_FILENO) {
+          auto duplicate = duplicate_above_stdio(source[slot]);
+          if (!duplicate.has_value()) return std::move(duplicate).error();
+          if (!remember(*duplicate)) {
+            (void)::close(*duplicate);
+            return Status::ResourceExhausted(
+                "too many child stdio descriptors");
+          }
+          source[slot] = *duplicate;
+        }
         return Status{};
       }
       case ProcessStdioKind::kPipe:
