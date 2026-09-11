@@ -135,8 +135,9 @@ vector write；client 因 RFC masking 必须在 `write_fragment_bytes` 有界复
   一次 xor；每 message metadata O(1)，内存 O(write_fragment_bytes + 125-byte control + HTTP prefix)。
 - random seed 每 client connection 一次 syscall；每 frame key 为 O(1) ChaCha word，不用弱 PRNG，也不逐 frame
   调 OS。server frame payload 无复制 vector write；client masking copy 是协议合同成本。
-- P1 唯一同层计时是连续 bulk mask primitive 对 Beast scalar mask；同 role、相同 bytes、相同已生成 key、同
-  completion，双顺序 5% non-inferiority。端到端 HYLE/Asio runtime 只作诊断，不签产品胜负。
+- P1 唯一同层计时是完整的单帧 bulk mask step 对 Beast scalar mask；同 role、相同 bytes、相同已生成的
+  4-byte key、同 completion，并同时计入两侧把 key 转为内部 word representation 的成本，双顺序 5%
+  non-inferiority。端到端 HYLE/Asio runtime 只作诊断，不签产品胜负。
 
 七问：能力覆盖已准入 RFC 6455 core 且拒绝 service/extension；依赖全部是已关闭 HYLE 原子，不引入第二
 runtime；message-first、caller-buffer、move-only owner 不是 benchmark seam；复杂度/常态成本如上；错误统一
@@ -160,3 +161,20 @@ control interleave、126/65536 长度、mask/role/canonical length、UTF-8、fra
 extension rejection、close、同方向误用、OOM coroutine、deadline 与 cancel。模块实现代码为 **2,077 行**
 （`scripts/loc-report.py --module io-websocket --commit f231b6f4... --self-check`）。完整三平台、三交付、
 sanitizer、P1 与终局红队仍待候选验证，不能提前写 CLOSED。
+
+### P1 sampling preflight
+
+冻结合同为 [`io-websocket-mask-p1-v1.json`](../../../../bench/contracts/io-websocket-mask-p1-v1.json)，
+consumer matrix 为 [`consumer_shapes_v1.json`](../../../../bench/io_websocket/consumer_shapes_v1.json)。它是
+WebSocket client 每帧必经的 component replay，不把 HYLE runtime 与 Asio 排成伪同合同：
+
+- HYLE `websocket_apply_mask` 与 Beast `prepare_key + mask_inplace` 都接收已生成的 4-byte key、独立可变
+  buffer，并在同步返回前完成全部 XOR；random、const-payload copy、header、IO、allocation 与 scheduler
+  两侧都不计。HYLE 源码锚点为 `src/io_websocket/websocket_mask_internal.h`，Beast 锚点为 revision
+  `cb94f33` 的 `libs/beast/include/boost/beast/websocket/detail/mask.ipp:21,41`。
+- 两侧没有 deferred callback、allocation、atomic、lock、wake 或 syscall；每 frame 都计 key-word preparation，
+  每 byte 一次 load/XOR/store，owner 返回即完成。124 B、4 KiB、64 KiB、1 MiB 每次 measurement 都处理
+  32 个完整 frame；buffer 初始化和 warmup 不计。
+- harness 使用 nanobench `compare()` 的共同 iteration count 与 cyclic interleave；candidate-first/peer-first
+  两个固定 stratum、A/A、5%/10% known delta 与 batch-matched timer floor 在唯一 n=15 qualification 中执行。
+  5% 是预冻结 material/NI margin；固定输先读上述源码/codegen，不追加样本找 PASS。

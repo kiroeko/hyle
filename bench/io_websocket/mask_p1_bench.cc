@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -24,14 +25,12 @@ namespace {
 
 constexpr std::array<std::byte, 4> kHyleKey{std::byte{0x37}, std::byte{0xfa},
                                             std::byte{0x21}, std::byte{0x3d}};
-constexpr std::size_t kBytesPerEpoch = 16u * 1024u * 1024u;
+constexpr std::size_t kFramesPerMeasurement = 32;
 
 void run_case(std::size_t size, const char *title, bool peer_first) {
   std::vector<std::byte> hyle_bytes(size, std::byte{0x5a});
   std::vector<unsigned char> beast_bytes(size, 0x5a);
-  beast_websocket::detail::prepared_key beast_key{};
-  beast_websocket::detail::prepare_key(beast_key, 0x3d21fa37u);
-  const std::size_t rounds = std::max<std::size_t>(1, kBytesPerEpoch / size);
+  constexpr std::size_t rounds = kFramesPerMeasurement;
 
   auto run_hyle = [&] {
     for (std::size_t i = 0; i != rounds; ++i)
@@ -40,6 +39,11 @@ void run_case(std::size_t size, const char *title, bool peer_first) {
   };
   auto run_beast = [&] {
     for (std::size_t i = 0; i != rounds; ++i) {
+      // A WebSocket frame has a fresh four-byte key. Charge Beast's conversion
+      // to its internal word representation just as HYLE charges building its
+      // repeated word inside websocket_apply_mask().
+      beast_websocket::detail::prepared_key beast_key{};
+      beast_websocket::detail::prepare_key(beast_key, 0x3d21fa37u);
       beast_websocket::detail::mask_inplace(boost::asio::buffer(beast_bytes),
                                             beast_key);
     }
@@ -57,17 +61,18 @@ void run_case(std::size_t size, const char *title, bool peer_first) {
 
   ankerl::nanobench::Bench bench;
   bench.title(title)
-      .relative(true)
-      .unit("byte")
-      .batch(static_cast<std::uint64_t>(rounds * size))
+      .unit("frame")
+      .batch(rounds)
       .minEpochIterations(1)
-      .epochs(11);
+      .minEpochTime(std::chrono::milliseconds(2))
+      .epochs(52)
+      .performanceCounters(false);
   if (peer_first) {
-    bench.run("Boost.Beast prepared-key mask", run_beast);
-    bench.run("HYLE prepared-key mask", run_hyle);
+    (void)bench.compare("Boost.Beast RFC frame mask", run_beast,
+                        "HYLE RFC frame mask", run_hyle);
   } else {
-    bench.run("HYLE prepared-key mask", run_hyle);
-    bench.run("Boost.Beast prepared-key mask", run_beast);
+    (void)bench.compare("HYLE RFC frame mask", run_hyle,
+                        "Boost.Beast RFC frame mask", run_beast);
   }
 }
 

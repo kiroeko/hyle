@@ -1,0 +1,61 @@
+{
+  "schema": "hyle.io-websocket-consumer-shapes/v1",
+  "id": "io-websocket-mask-v1",
+  "classification": "NORTH_STAR_JOURNEY",
+  "admission": {
+    "capability": "RFC 6455 client-frame payload masking",
+    "consumer_sources": [
+      "vLLM and SGLang realtime text, audio and multimodal WebSocket sessions",
+      "ds4 browser-devtools WebSocket client",
+      "llama.cpp and cpp-httplib WebSocket serving"
+    ],
+    "peer": "Boost.Beast cb94f33fcb13e90922905c2d8105508e71fa6db4",
+    "architecture": "docs/architecture/io-design.md"
+  },
+  "contract": {
+    "candidate": "HYLE private RFC frame-mask core used by every client frame",
+    "peer": "Boost.Beast private RFC frame-mask core used by its WebSocket stream",
+    "input": "caller-owned mutable payload and one already generated four-byte RFC mask key",
+    "output": "the complete payload XOR-masked in place with the repeating key",
+    "charged": [
+      "conversion of the four key bytes to each implementation's repeated machine-word representation",
+      "every payload load, XOR and store",
+      "one constant observable buffer address"
+    ],
+    "excluded_equally": [
+      "mask-key random generation",
+      "copy from an immutable application payload into mutable frame storage",
+      "HTTP handshake, frame header encoding, transport IO and scheduler work",
+      "allocation and connection teardown"
+    ],
+    "ownership": "both mutate independent equally sized preallocated buffers and retain no borrow after return",
+    "failure": "both operations are total and noexcept for a valid mutable span and four-byte key",
+    "completion": "all payload bytes are transformed before the measured call returns"
+  },
+  "workloads": [
+    {
+      "id": "websocket-mask-124b",
+      "consumer_key": "network/websocket/control-and-small-message-frame",
+      "frame_bytes": 124,
+      "role": "short boundary holdout"
+    },
+    {
+      "id": "websocket-mask-4k",
+      "consumer_key": "inference/websocket/token-audio-chunk",
+      "frame_bytes": 4096,
+      "role": "primary realtime chunk"
+    },
+    {
+      "id": "websocket-mask-64k",
+      "consumer_key": "inference/websocket-binary-multimodal-chunk",
+      "frame_bytes": 65536,
+      "role": "primary binary chunk"
+    },
+    {
+      "id": "websocket-mask-1m",
+      "consumer_key": "rendering-inference/websocket-large-binary-frame",
+      "frame_bytes": 1048576,
+      "role": "large-frame holdout"
+    }
+  ]
+}
