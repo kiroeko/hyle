@@ -329,9 +329,10 @@
     },
     {
       "module": "process",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/process/process-v1-managed-child.md",
-      "summary": "process v1 AUDITED：首个候选的终局红队发现 POSIX file-stdio 来源为 0/1/2 时存在 dup2 顺序别名；冻结一次来源 duplicate 修正及定向回归，其他 API/backend/验证结果保持有效。"
+      "candidate": "fc08ce90697881ce6ffb1c70beb53df1631d4739",
+      "summary": "process v1 CANDIDATE：POSIX file-stdio 的 0/1/2 来源别名已在 spawn action 前安全快照；受管 child 全能力通过四平台定向回归、三 sanitizer 与 Linux/双 macOS 三交付复验，等待一次终局红队。"
     }
   ]
 }

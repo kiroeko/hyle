@@ -41,7 +41,7 @@
 | container_queue | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container.md) / 5% | [record](tasks/container/container-v6-identity-p1-resume.md) | container_queue v2 CLOSED：queue 能力、三平台/三交付、文档、红队与同合同 unbounded 4P4C handoff 双顺序 WIN、5% P1 非劣门全部通过；候选固定在 111c28ea。 |
 | container_text | CLOSED | P1 / [PASS](evidence/performance/benchmarks-container-text-base64.md) / 5% | [record](tasks/container/container-text-v3-base64.md) | container_text v3 CLOSED：Base64/Base64URL caller-buffer API、显式策略与 simdutf 私有 bulk core 通过三平台正确性、ASan/UBSan、Container 三交付、易用性和红队；W1-WIN 两个真实形状的 5% P1 非劣门全过。 |
 | io_watch | CLOSED | P0 / [PASS](tasks/io/io-watch-v2-recursive-tree.md) | [record](tasks/io/io-watch-v2-recursive-tree.md) | io_watch v2 CLOSED：显式递归树、root-relative bounded stream、rescan/cap 与三平台 backend 通过三平台、sanitizer、三交付、红队；direct 默认成本隔离，Linux 建树 O(D)、普通 descriptor lookup O(1)。 |
-| process | AUDITED | — | [record](tasks/process/process-v1-managed-child.md) | process v1 AUDITED：首个候选的终局红队发现 POSIX file-stdio 来源为 0/1/2 时存在 dup2 顺序别名；冻结一次来源 duplicate 修正及定向回归，其他 API/backend/验证结果保持有效。 |
+| process | CANDIDATE | — | [record](tasks/process/process-v1-managed-child.md) | process v1 CANDIDATE：POSIX file-stdio 的 0/1/2 来源别名已在 spawn action 前安全快照；受管 child 全能力通过四平台定向回归、三 sanitizer 与 Linux/双 macOS 三交付复验，等待一次终局红队。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

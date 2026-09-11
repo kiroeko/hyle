@@ -1,6 +1,6 @@
 # Process v1：受管子进程生命周期
 
-<!-- MODULE CLOSURE RECORD: AUDITED -->
+<!-- MODULE CLOSURE RECORD: CANDIDATE -->
 
 ## Closure card
 
@@ -182,3 +182,17 @@ null。这是 API/ownership 正确性缺陷，不是性能样本波动。
 parent 侧先把每个 `file()` 来源 duplicate 到大于 stderr 的 CLOEXEC fd，并由既有 temporary owner/closefrom
 路径管理；公开 API、对象 layout、carrier、依赖和正常复杂度均不变。只补覆盖 `0/1/2` 来源别名的回归，重跑
 Process 定向测试、sanitizer 与三交付；不重跑无关 IO 或 P1。
+
+## 修正候选签署（`CANDIDATE`）
+
+- 不可变候选：`fc08ce90697881ce6ffb1c70beb53df1631d4739`；tree：
+  `457f83ca89874b579d0ca1e7b2508ad6c65ee8d1`。POSIX 仅在 `file()` 来源为 0/1/2 时先执行一次
+  `F_DUPFD_CLOEXEC`，普通文件 fd、公开 API、layout、carrier、依赖和复杂度不变。
+- 新回归把 parent fd 0 临时指向 pipe，组合 stdin→null 与 stdout→file(fd 0)；旧 action 顺序会把 stdout
+  错接到 null，修正候选在 Linux、Mac mini 和 MacBook Air 均读到精确输出。Linux/两台 macOS 各 20 个
+  Process tests 与逐头通过；Windows 条件分支不变，18 个 tests 与逐头通过。
+- WSL ASan、UBSan、TSan 的 Process 定向套件通过；TSan 继续使用已登记的 `setarch $(uname -m) -R`
+  启动方式。Linux、Mac mini、MacBook Air 的 source、relocated shared、relocated static consumer 全部
+  复验通过；Windows 产品分支未改变，既有三交付证据保持有效。
+- 候选 LOC：全库 `544,539`；自实现不含测试 `97,551`；Process 实现 `1,937`。候选后只允许终局红队、
+  说明、证据与状态；再次改变产品/API/算法必须退回 `AUDITED`。
