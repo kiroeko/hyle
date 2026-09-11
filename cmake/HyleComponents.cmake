@@ -332,10 +332,12 @@ _hyle_declare_component(io_websocket
   PUBLIC_TYPE_DEPS time
   SPLIT_PUBLIC_HEADERS hyle/io/websocket.h)
 
-# Reserved CPU operator-provider identity. Its dependency and product-facade
-# edges are declared only after the provider SPI, ownership and optional-source
-# delivery contract have been audited; QUEUED must not download oneDNN.
-_hyle_declare_component(compute_provider_onednn QUEUED)
+# Optional oneDNN CPU implementation factor. Its public factory returns the
+# provider-erased Compute value; no oneDNN type enters the product contract and
+# Compute never depends back on this implementation leaf.
+_hyle_declare_component(compute_provider_onednn
+  PUBLIC_DEPS compute
+  PUBLIC_TYPE_DEPS compute)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -397,8 +399,8 @@ _hyle_declare_product(sched FACTORS sched)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
-_hyle_declare_product(compute FACTORS compute)
-_hyle_declare_product(graph FACTORS graph)
+_hyle_declare_product(compute FACTORS compute compute_provider_onednn)
+_hyle_declare_product(graph FACTORS graph compute_provider_onednn)
 
 # Resolve requested product or developer factor roots before inspecting source
 # text. The two selectors are intentionally mutually exclusive. Downstream

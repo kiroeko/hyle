@@ -51,3 +51,105 @@
 6. HYLE-native 和 oneDNN 无法形成稳定 material 区分的 shape 默认借 oneDNN；明显胜出的原生 route 才保留。
 
 AUDITED 前不得添加 oneDNN 产品代码、下载门或公开 provider API。
+
+## AUDITED 能力、所有权与交付裁决（2026-09-12）
+
+### 依赖与成熟实现事实
+
+- shipping pin 采用 oneDNN `v3.13.2` / `71094df451909e95ceeefc8f64c275cdcbbcdff5`，而不是本地
+  `master` 的 3.14 development commit；许可证为 Apache-2.0；源码进入统一 dependency lock/source
+  cache，不能从 `C:/public/project-hyle/oneDNN` 直接构建；
+- 最小构建为 static CPU inference、MatMul-only、Graph/GPU/tests/examples/docs OFF、primitive cache OFF、
+  user scratchpad ON；CPU runtime 使用 THREADPOOL，使串行和显式外部 executor 共用同一 artifact，拒绝
+  OMP/TBB 的 process-global pool policy；
+- oneDNN C API 允许 `DNNL_MEMORY_NONE` memory object 后设置 caller data handle，并可从 primitive
+  descriptor 查询 scratchpad descriptor。primitive 可跨线程共享，但 stream、memory handle 和 scratchpad
+  必须属于一次独立 invocation；library scratchpad 与 global primitive cache 都不满足 HYLE owner 合同；
+- oneDNN 没有接受 HYLE allocator 的 engine/JIT 内部 allocation seam；这些只允许发生在 context/prepare/
+  invocation 冷路径，并由 provider 拥有。任何 steady execute allocation 都由 allocation probe 判 blocker，
+  不能在文档里冒充 caller-owned。
+
+### 能力与有限施工 ledger
+
+| ID | 类型 | 裁决 | 冻结合同 |
+|---|---|---|---|
+| OD01 | explicit provider value | `FIX` | `Provider` 是可复制、小型、类型擦除值；无 registry/static initializer；`ContextOptions` 可给有序 provider span，并提供单 provider convenience |
+| OD02 | context provider state | `FIX` | Context 冷创建 provider engine/state；provider 配置及其借用 executor 必须活到 Context 及全部 retained artifact 结束 |
+| OD03 | immutable prepared artifact | `FIX` | `PreparedOperation` 改为可复制共享的 allocator-owned artifact，固定 provider/layout/workspace；只读对象可跨线程共享 |
+| OD04 | exclusive run state | `FIX` | 新增 move-only `OperationInvocation`；每个并发运行独占 stream/memory handles/scratchpad view；submit 只改本 invocation |
+| OD05 | caller-owned scratchpad | `FIX` | prepared 报告 bytes/alignment；caller 或 Graph Invocation 提供 Mem `BufferView`；不足、错域、错对齐在 create-invocation 失败 |
+| OD06 | explicit threading | `FIX` | `ParallelExecutorRef` 是借用、同步、infallible 的 Compute 原子；空值为 caller-thread serial；oneDNN adapter 不创建线程、不改变全局线程数 |
+| OD07 | row-major f32 MatMul route | `BORROW` | oneDNN 首轮只接受 dense row-major `A/B/C` rank-2 f32；转置连续-K 权重继续走已有 HYLE SIMD dot route |
+| OD08 | cold ordered fallback | `FIX` | Context 声明顺序逐 provider prepare；只有 `Unimplemented` 继续，OOM/runtime/corruption 立即返回；native 最终 fallback；submit 不再裁决 |
+| OD09 | Graph run-state reuse | `FIX` | Graph plan 保存共享 prepared；每次 Graph Invocation 为每个 node 创建 OperationInvocation，provider scratchpad 进入同一 Mem lifetime plan |
+| OD10 | truthful report | `FIX` | direct observer/Graph report 区分 native、oneDNN、mixed 与 fallback；版本、线程数、workspace 可发现；不声称 weight 已持久 packing |
+| OD11 | constant-weight prepack | `DEFER` | 当前 `prepare(desc)` 没有 weight payload lifetime；不得隐藏复制。由未来 constant binding/weight artifact 卡承载 |
+| OD12 | quantized/f16/bf16/epilogue | `DEFER` | 另开 op/provider 卡；本卡不把 oneDNN 大 API 面伪装成 HYLE 已支持能力 |
+| OD13 | automatic link-time activation | `REJECT` | 链接 provider 不改变 `Context::create(cpu)`；自然入口是显式 provider。没有进程全局注册、弱符号或初始化顺序 |
+
+这是本轮全部产品改动。新 operation、Graph partition、persistent weight、第二种 provider 或 Sched adapter
+都必须另立有限卡。
+
+### API 与生命周期冻结
+
+自然 direct journey 为：
+
+```cpp
+auto provider = hyle::compute::onednn::provider({.executor = executor});
+auto context = hyle::compute::Context::create(
+    hyle::compute::Device::cpu(), provider).value();
+auto prepared = hyle::compute::prepare(context, hyle::compute::MatMul{},
+                                       a_desc, b_desc, c_desc).value();
+auto scratch = allocator.allocate(prepared.workspace_requirement()).value();
+auto invocation = prepared.create_invocation(scratch.view()).value();
+auto done = invocation.submit(queue, a, b, c).value();
+```
+
+空 executor 表示同步串行，且无需用户理解 oneDNN threadpool 类型。自定义 executor 是借用句柄，合同为：
+`parallel_for(n, fn)` 返回时全部 `fn(i,n)` 已完成，不能失败/抛异常，嵌套调用必须保证进展；若应用已有
+可失败或可关闭 scheduler，必须由拥有它的上层 adapter 保证在 Context lifetime 内可用，不能把失败吞进
+oneDNN `void` callback。
+
+`PreparedOperation` 保留 Context；`OperationInvocation` 保留 prepared 并借用 scratch storage 到析构。
+tensor views 只借用到同步 Completion 终态。provider 内部 C handle 销毁顺序固定为 invocation memory/stream
+→ prepared primitive/descriptor → context engine。provider shared library 必须比这些 C++ 对象存活更久，和
+任何 installed C++ shared dependency 相同。
+
+### 构建与产品形状
+
+- factor 真实边为 `compute_provider_onednn -> compute`（PUBLIC）；Compute/Graph semantic factor 不反向依赖
+  provider。用户产品 `hyle::compute` 聚合 provider factor，`hyle::graph` 也聚合它以提供相同显式选择；
+- `HYLE_COMPUTE_ONEDNN=AUTO|ON|OFF` 只在相关产品 closure 中生效。OFF 不探测/下载且不定义 factory；
+  AUTO 在 oneDNN 支持的平台启用，ON 遇到不支持环境失败。factor identity/target 仍存在，方便依赖图稳定；
+- provider public header 不暴露 `dnnl_*`。shared provider 私链静态 oneDNN 并隐藏 vendor symbols；static SDK
+  导出所需静态 target/header metadata；source、static、shared 使用同一 HYLE C++ provider API；
+- oneDNN archive/hash、展开树、许可证、online/offline cache 由中央 lock/package registry 唯一登记。
+
+### P0/P1 preflight 与停止线
+
+- cold：Context O(provider count)，prepare 一次 oneDNN primitive selection/JIT，create-invocation 创建固定
+  stream/memory wrappers并映射 scratch；这些 allocation/JIT 不计入 submit，但必须单独报告；
+- steady：binding validation/mapping O(bindings)，一次 `dnnl_primitive_execute`，零 HYLE allocation、零 route
+  search、零 descriptor creation、零 packing API。allocation probe 若发现 oneDNN execute 隐藏 allocation，
+  本卡 BLOCKED，不用 timing 掩盖；
+- correctness 对 native/reference 做 M={0,1,4,32}、K/N 含 0/1/非整块、大值、NaN/Inf 容忍策略、wrong
+  workspace/layout/alias、context close、并发 invocation、provider failure/OOM 差分；
+- P1 分 direct wrapper tax 与 kernel 两层。只比较相同 f32、layout、线程数、预热/prepare、scratch、完成
+  边界；row-major oneDNN 对成熟 oneDNN direct C route，transposed native 不拿来冒充 oneDNN 胜负。Windows
+  W1 immutable candidate 固定 5% material 门；换序/A-A/地址效应不合格即记 INCONCLUSIVE，不调 API 迎合。
+
+### 七问直答
+
+1. 第三方：pin、许可证、cache、最小 build、升级 owner 和 native fallback 均已冻结；
+2. 功能：本卡 dense row-major f32 MatMul journey 完整；constant/quantized/epilogue 明确不冒充完成；
+3. 复用：Tensor/Mem/Status/Context/Graph lifetime plan 全部复用已有 owner，不复制 allocator/scheduler；
+4. 性能：route 在 prepare 冻结，steady 无 HYLE 搜索/分配；最终仍须 allocation probe 与公平 P1；
+5. 交付：只有 C++ provider；无 C/Native FFI、无 oneDNN 类型泄漏；
+6. 构建：一个可选 factor、一份 lock、一份 package registry 覆盖 source/static/shared；
+7. 易用：单 provider Context convenience、显式 threading/workspace 与 provider observer；坑写入 Compute guide。
+
+## Audit verdict
+
+`OD01--OD10` 是有限且可实施的 provider seam；`OD11--OD13` 划清负空间。允许
+`compute_provider_onednn` 进入 `AUDITED`，并依法修改 Compute/Graph 的 artifact/run-state 合同。任何
+submit 时隐藏分配、全局线程/registry、provider 反向依赖或 vendor 类型泄漏立即触发本卡停止线。

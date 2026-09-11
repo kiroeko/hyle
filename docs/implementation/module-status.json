@@ -354,9 +354,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-provider-onednn-v1.md",
-      "summary": "compute_provider_onednn v1 SCOPED：以 Compute v2 普通 MatMul 的源码 P0 缺口启动；范围限显式 provider SPI、dense f32 MatMul、caller-owned scratchpad、诚实线程/packing/workspace 与可选三交付，AUDITED 前不改产品。"
+      "summary": "compute_provider_onednn v1 AUDITED：冻结显式无注册 provider、shared prepared/per-run invocation、caller-owned scratchpad、THREADPOOL+显式 executor、row-major f32 MatMul、native fallback 与 oneDNN v3.13.2 三交付；有限 OD01--OD10 现可实施。"
     }
   ]
 }

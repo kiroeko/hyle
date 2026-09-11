@@ -157,3 +157,11 @@ refcount 直接实现；这些是已有模块的正确复用，不需要新公�
 - Windows/Linux/两台 Apple Silicon 的 Compute/Graph public-header 与功能测试已通过；WSL ASan、UBSan、
   TSan 的定向 Compute/Graph 测试已通过。上述红队产品纠正发生在最终 candidate 之前，需对修正后的字节
   重新跑定向候选门；P1 仍未执行。
+
+### Provider run-state follow-up（2026-09-12）
+
+[`compute-provider-onednn-v1`](compute-provider-onednn-v1.md) 证明第三方 prepared artifact 可共享，但
+stream/memory handles/scratchpad 不能放在它或 `Executable` 中。Graph 的既有 owner 分层不变：plan node
+保存 shared `PreparedOperation`；每个 Graph `Invocation` 创建对应的 Compute `OperationInvocation`，并把
+其 scratchpad request 与 tensor intermediates 一起交给 Mem LifetimePlanner。steady submit 仍为每 node
+一次已裁决调用，不搜索 provider、不创建 descriptor、不分配；CompileReport 对混合 provider如实报告。

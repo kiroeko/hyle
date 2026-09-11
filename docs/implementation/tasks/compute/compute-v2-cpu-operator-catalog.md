@@ -121,3 +121,12 @@ auto prepared = prepare(context, MatMul{}, x, logical_w, projected).value();
 `C20--C25` 构成一个有限、模型无关且可由当前依赖实现的 CPU 产品增量；没有新质因数或反向依赖。
 允许状态进入 `AUDITED` 并修改 Compute 产品。实现若要求隐藏 packing、引入 provider 专名或扩大到
 `C26--C28`，必须停下另立卡。
+
+## Provider seam follow-up（2026-09-12）
+
+本卡预声明的普通 row-major MatMul stop 已由
+[`compute-provider-onednn-v1`](compute-provider-onednn-v1.md) 精确触发。该卡依法接管 provider、packing/
+scratchpad 与并发 run-state，不回写本卡的算子语义。为支持 provider，`PreparedOperation` 从 move-only
+inline native state 调整为可复制的不可变 shared artifact，实际 submit 移到每次运行独占的
+`OperationInvocation`；native route 也走同一公开形状。此项不是兼容层或 benchmark API，而是异步/第三方
+provider 都需要的 ownership 修正。
